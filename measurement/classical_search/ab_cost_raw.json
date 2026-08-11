@@ -1,0 +1,3098 @@
+{
+  "kind": "c6_ab_cost_surface",
+  "host": "Doctor",
+  "cpu": "x86_64",
+  "python": "3.12.3",
+  "started_utc": "2026-07-13T13:39:35Z",
+  "env": {
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CARCASSONNE_USE_FLAT_LEAF": "1"
+  },
+  "provenance": {
+    "use_flat_leaf": true,
+    "use_cy_leaf": true,
+    "cy_int_bound": true,
+    "cy_float_bound": true,
+    "cy_supports_v29_curve": true,
+    "v29_curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ],
+    "cython_leaf_active": true
+  },
+  "leaf_curve": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+  ],
+  "champ_sims": 2750,
+  "depths": [
+    2,
+    4,
+    6,
+    8
+  ],
+  "step_cap": 20000000,
+  "max_search_secs": 90.0,
+  "escalate_budget_mult": 6.0,
+  "positions": [
+    {
+      "seed": 9100000,
+      "ply": 30,
+      "n_legal": 21
+    },
+    {
+      "seed": 9100001,
+      "ply": 36,
+      "n_legal": 21
+    },
+    {
+      "seed": 9100002,
+      "ply": 42,
+      "n_legal": 24
+    },
+    {
+      "seed": 9100003,
+      "ply": 47,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100004,
+      "ply": 53,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100005,
+      "ply": 59,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100006,
+      "ply": 65,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100007,
+      "ply": 71,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100008,
+      "ply": 76,
+      "n_legal": 36
+    },
+    {
+      "seed": 9100009,
+      "ply": 82,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100010,
+      "ply": 88,
+      "n_legal": 40
+    },
+    {
+      "seed": 9100011,
+      "ply": 94,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100012,
+      "ply": 99,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100013,
+      "ply": 105,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100014,
+      "ply": 111,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100015,
+      "ply": 117,
+      "n_legal": 3
+    },
+    {
+      "seed": 9100016,
+      "ply": 123,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100017,
+      "ply": 128,
+      "n_legal": 47
+    },
+    {
+      "seed": 9100018,
+      "ply": 134,
+      "n_legal": 47
+    },
+    {
+      "seed": 9100019,
+      "ply": 140,
+      "n_legal": 55
+    }
+  ],
+  "champ_median_ms": 2986.2,
+  "champ_mean_ms": 2946.5,
+  "champ_p10_ms": 2263.5,
+  "champ_p90_ms": 3693.7,
+  "champ_per_pos_ms": [
+    2487.7,
+    2308.4,
+    3653.3,
+    2593.2,
+    2266.6,
+    2234.9,
+    3084.5,
+    3133.4,
+    2497.6,
+    2917.0,
+    3751.8,
+    3868.9,
+    2678.6,
+    2715.1,
+    2084.2,
+    3094.2,
+    3687.3,
+    3344.7,
+    3055.4,
+    3473.2
+  ],
+  "micro": [
+    {
+      "bucket": "early",
+      "ply_lo": 30,
+      "ply_hi": 59,
+      "agg": {
+        "get_valid_moves_meeples_us": 113.062,
+        "get_next_state_us": 25.008,
+        "string_repr_plus_blake2b_us": 31.684,
+        "leaf_us": 19.41,
+        "get_valid_moves_tiles_us": 237.732
+      },
+      "per_pos": [
+        {
+          "phase": "tiles",
+          "leaf_us": 13.407,
+          "get_next_state_us": 10.222,
+          "get_valid_moves_tiles_us": 206.628,
+          "get_valid_moves_meeples_us": 59.527,
+          "string_repr_plus_blake2b_us": 21.875
+        },
+        {
+          "phase": "tiles",
+          "leaf_us": 17.379,
+          "get_next_state_us": 10.413,
+          "get_valid_moves_tiles_us": 237.732,
+          "get_valid_moves_meeples_us": 55.711,
+          "string_repr_plus_blake2b_us": 26.714
+        },
+        {
+          "phase": "tiles",
+          "leaf_us": 18.629,
+          "get_next_state_us": 10.443,
+          "get_valid_moves_tiles_us": 261.795,
+          "get_valid_moves_meeples_us": 262.707,
+          "string_repr_plus_blake2b_us": 30.374
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 20.192,
+          "get_next_state_us": 56.819,
+          "get_valid_moves_meeples_us": 74.068,
+          "string_repr_plus_blake2b_us": 32.994
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 20.318,
+          "get_next_state_us": 39.574,
+          "get_valid_moves_meeples_us": 170.75,
+          "string_repr_plus_blake2b_us": 36.419
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 20.942,
+          "get_next_state_us": 58.645,
+          "get_valid_moves_meeples_us": 152.057,
+          "string_repr_plus_blake2b_us": 38.613
+        }
+      ]
+    },
+    {
+      "bucket": "mid",
+      "ply_lo": 65,
+      "ply_hi": 99,
+      "agg": {
+        "get_valid_moves_meeples_us": 60.713,
+        "get_next_state_us": 32.746,
+        "string_repr_plus_blake2b_us": 49.608,
+        "leaf_us": 24.192,
+        "get_valid_moves_tiles_us": 365.733
+      },
+      "per_pos": [
+        {
+          "phase": "meeples",
+          "leaf_us": 21.898,
+          "get_next_state_us": 32.746,
+          "get_valid_moves_meeples_us": 48.963,
+          "string_repr_plus_blake2b_us": 42.111
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 22.884,
+          "get_next_state_us": 28.806,
+          "get_valid_moves_meeples_us": 43.62,
+          "string_repr_plus_blake2b_us": 45.476
+        },
+        {
+          "phase": "tiles",
+          "leaf_us": 23.84,
+          "get_next_state_us": 10.606,
+          "get_valid_moves_tiles_us": 291.803,
+          "get_valid_moves_meeples_us": 32.499,
+          "string_repr_plus_blake2b_us": 46.437
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 24.192,
+          "get_next_state_us": 40.384,
+          "get_valid_moves_meeples_us": 90.761,
+          "string_repr_plus_blake2b_us": 49.608
+        },
+        {
+          "phase": "tiles",
+          "leaf_us": 24.575,
+          "get_next_state_us": 10.254,
+          "get_valid_moves_tiles_us": 439.663,
+          "get_valid_moves_meeples_us": 93.494,
+          "string_repr_plus_blake2b_us": 52.189
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 25.832,
+          "get_next_state_us": 42.085,
+          "get_valid_moves_meeples_us": 127.73,
+          "string_repr_plus_blake2b_us": 55.198
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 26.366,
+          "get_next_state_us": 45.864,
+          "get_valid_moves_meeples_us": 60.713,
+          "string_repr_plus_blake2b_us": 58.169
+        }
+      ]
+    },
+    {
+      "bucket": "late",
+      "ply_lo": 105,
+      "ply_hi": 140,
+      "agg": {
+        "get_valid_moves_meeples_us": 76.829,
+        "get_next_state_us": 23.885,
+        "string_repr_plus_blake2b_us": 68.519,
+        "leaf_us": 28.829,
+        "get_valid_moves_tiles_us": 464.147
+      },
+      "per_pos": [
+        {
+          "phase": "meeples",
+          "leaf_us": 26.769,
+          "get_next_state_us": 23.885,
+          "get_valid_moves_meeples_us": 30.406,
+          "string_repr_plus_blake2b_us": 61.074
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 27.462,
+          "get_next_state_us": 45.438,
+          "get_valid_moves_meeples_us": 55.954,
+          "string_repr_plus_blake2b_us": 63.103
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 26.95,
+          "get_next_state_us": 27.582,
+          "get_valid_moves_meeples_us": 76.829,
+          "string_repr_plus_blake2b_us": 66.269
+        },
+        {
+          "phase": "meeples",
+          "leaf_us": 28.879,
+          "get_next_state_us": 51.065,
+          "get_valid_moves_meeples_us": 125.09,
+          "string_repr_plus_blake2b_us": 68.519
+        },
+        {
+          "phase": "tiles",
+          "leaf_us": 28.829,
+          "get_next_state_us": 10.395,
+          "get_valid_moves_tiles_us": 395.719,
+          "get_valid_moves_meeples_us": 29.672,
+          "string_repr_plus_blake2b_us": 71.755
+        },
+        {
+          "phase": "tiles",
+          "leaf_us": 30.034,
+          "get_next_state_us": 10.5,
+          "get_valid_moves_tiles_us": 464.147,
+          "get_valid_moves_meeples_us": 96.076,
+          "string_repr_plus_blake2b_us": 74.478
+        },
+        {
+          "phase": "tiles",
+          "leaf_us": 31.129,
+          "get_next_state_us": 10.38,
+          "get_valid_moves_tiles_us": 727.5,
+          "get_valid_moves_meeples_us": 118.613,
+          "string_repr_plus_blake2b_us": 79.949
+        }
+      ]
+    }
+  ],
+  "branching": {
+    "tiles": {
+      "n": 1142,
+      "min": 16,
+      "p50": 37,
+      "mean": 38.1,
+      "p95": 66,
+      "max": 74
+    },
+    "meeples": {
+      "n": 18681,
+      "min": 1,
+      "p50": 1,
+      "mean": 1.6,
+      "p95": 5,
+      "max": 9
+    }
+  },
+  "ab_per_position": [
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -7.1,
+          "best_action": 1037,
+          "steps": 124,
+          "nodes": 22,
+          "leaf_evals": 227,
+          "wall_ms": 12.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -5.9,
+          "best_action": 1037,
+          "steps": 2965,
+          "nodes": 272,
+          "leaf_evals": 3268,
+          "wall_ms": 179.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -9.4,
+          "best_action": 1037,
+          "steps": 26011,
+          "nodes": 3641,
+          "leaf_evals": 35001,
+          "wall_ms": 1808.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -7.25,
+          "best_action": 1037,
+          "steps": 365668,
+          "nodes": 38694,
+          "leaf_evals": 424245,
+          "wall_ms": 23066.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -7.1,
+          "best_action": 1037,
+          "steps": 124,
+          "nodes": 22,
+          "leaf_evals": 227,
+          "wall_ms": 13.3,
+          "tt_probes": 21,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -5.9,
+          "best_action": 1037,
+          "steps": 2864,
+          "nodes": 249,
+          "leaf_evals": 3066,
+          "wall_ms": 178.5,
+          "tt_probes": 271,
+          "tt_hits": 23,
+          "tt_exact_hits": 2,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -9.4,
+          "best_action": 1037,
+          "steps": 15428,
+          "nodes": 1963,
+          "leaf_evals": 19853,
+          "wall_ms": 1164.8,
+          "tt_probes": 3192,
+          "tt_hits": 1230,
+          "tt_exact_hits": 12,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -7.25,
+          "best_action": 1037,
+          "steps": 179578,
+          "nodes": 19063,
+          "leaf_evals": 208555,
+          "wall_ms": 12399.4,
+          "tt_probes": 20479,
+          "tt_hits": 1417,
+          "tt_exact_hits": 47,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.89,
+        "6": 2.962,
+        "8": 3.749
+      },
+      "tt_on_b_eff": {
+        "4": 4.806,
+        "6": 2.321,
+        "8": 3.412
+      },
+      "seed": 9100000,
+      "ply": 30,
+      "champ_ms": 2487.7252370351925,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -3.75,
+          "best_action": 942,
+          "steps": 42,
+          "nodes": 22,
+          "leaf_evals": 63,
+          "wall_ms": 5.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -6.75,
+          "best_action": 942,
+          "steps": 1258,
+          "nodes": 135,
+          "leaf_evals": 1894,
+          "wall_ms": 125.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -5.25,
+          "best_action": 942,
+          "steps": 19622,
+          "nodes": 2281,
+          "leaf_evals": 21016,
+          "wall_ms": 1302.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -5.65,
+          "best_action": 942,
+          "steps": 124532,
+          "nodes": 18238,
+          "leaf_evals": 199472,
+          "wall_ms": 12006.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -3.75,
+          "best_action": 942,
+          "steps": 42,
+          "nodes": 22,
+          "leaf_evals": 63,
+          "wall_ms": 6.1,
+          "tt_probes": 21,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -6.75,
+          "best_action": 942,
+          "steps": 796,
+          "nodes": 81,
+          "leaf_evals": 970,
+          "wall_ms": 70.9,
+          "tt_probes": 134,
+          "tt_hits": 54,
+          "tt_exact_hits": 24,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -5.25,
+          "best_action": 942,
+          "steps": 6251,
+          "nodes": 1138,
+          "leaf_evals": 7105,
+          "wall_ms": 542.1,
+          "tt_probes": 1200,
+          "tt_hits": 63,
+          "tt_exact_hits": 27,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -5.65,
+          "best_action": 942,
+          "steps": 46820,
+          "nodes": 6097,
+          "leaf_evals": 66119,
+          "wall_ms": 4436.3,
+          "tt_probes": 6150,
+          "tt_hits": 54,
+          "tt_exact_hits": 24,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.473,
+        "6": 3.949,
+        "8": 2.519
+      },
+      "tt_on_b_eff": {
+        "4": 4.353,
+        "6": 2.802,
+        "8": 2.737
+      },
+      "seed": 9100001,
+      "ply": 36,
+      "champ_ms": 2308.428460964933,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 1.25,
+          "best_action": 1441,
+          "steps": 154,
+          "nodes": 25,
+          "leaf_evals": 284,
+          "wall_ms": 21.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 8.75,
+          "best_action": 1441,
+          "steps": 4024,
+          "nodes": 317,
+          "leaf_evals": 4186,
+          "wall_ms": 281.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 3.25,
+          "best_action": 1441,
+          "steps": 13990,
+          "nodes": 4047,
+          "leaf_evals": 19834,
+          "wall_ms": 1517.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 6.25,
+          "best_action": 1441,
+          "steps": 215610,
+          "nodes": 18595,
+          "leaf_evals": 223677,
+          "wall_ms": 15968.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 1.25,
+          "best_action": 1441,
+          "steps": 154,
+          "nodes": 25,
+          "leaf_evals": 284,
+          "wall_ms": 22.8,
+          "tt_probes": 24,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 8.75,
+          "best_action": 1441,
+          "steps": 4024,
+          "nodes": 317,
+          "leaf_evals": 4186,
+          "wall_ms": 293.0,
+          "tt_probes": 316,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 3.25,
+          "best_action": 1441,
+          "steps": 11081,
+          "nodes": 2275,
+          "leaf_evals": 14016,
+          "wall_ms": 1198.6,
+          "tt_probes": 4046,
+          "tt_hits": 1772,
+          "tt_exact_hits": 9,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 6.25,
+          "best_action": 1441,
+          "steps": 113103,
+          "nodes": 10160,
+          "leaf_evals": 117896,
+          "wall_ms": 9169.1,
+          "tt_probes": 12046,
+          "tt_hits": 1887,
+          "tt_exact_hits": 21,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.112,
+        "6": 1.865,
+        "8": 3.926
+      },
+      "tt_on_b_eff": {
+        "4": 5.112,
+        "6": 1.659,
+        "8": 3.195
+      },
+      "seed": 9100002,
+      "ply": 42,
+      "champ_ms": 3653.2902730396017,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 0.15,
+          "best_action": 2510,
+          "steps": 65,
+          "nodes": 34,
+          "leaf_evals": 97,
+          "wall_ms": 9.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -3.75,
+          "best_action": 2510,
+          "steps": 896,
+          "nodes": 121,
+          "leaf_evals": 951,
+          "wall_ms": 60.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -0.75,
+          "best_action": 2510,
+          "steps": 3614,
+          "nodes": 1220,
+          "leaf_evals": 4658,
+          "wall_ms": 401.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -2.75,
+          "best_action": 2510,
+          "steps": 42669,
+          "nodes": 4096,
+          "leaf_evals": 44501,
+          "wall_ms": 2972.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 0.15,
+          "best_action": 2510,
+          "steps": 65,
+          "nodes": 34,
+          "leaf_evals": 97,
+          "wall_ms": 10.8,
+          "tt_probes": 33,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -3.75,
+          "best_action": 2510,
+          "steps": 884,
+          "nodes": 109,
+          "leaf_evals": 927,
+          "wall_ms": 71.9,
+          "tt_probes": 120,
+          "tt_hits": 12,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -0.75,
+          "best_action": 2510,
+          "steps": 3249,
+          "nodes": 1184,
+          "leaf_evals": 4281,
+          "wall_ms": 440.4,
+          "tt_probes": 1195,
+          "tt_hits": 12,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -2.75,
+          "best_action": 2510,
+          "steps": 41492,
+          "nodes": 3642,
+          "leaf_evals": 42918,
+          "wall_ms": 2998.0,
+          "tt_probes": 3653,
+          "tt_hits": 12,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 3.713,
+        "6": 2.008,
+        "8": 3.436
+      },
+      "tt_on_b_eff": {
+        "4": 3.688,
+        "6": 1.917,
+        "8": 3.574
+      },
+      "seed": 9100003,
+      "ply": 47,
+      "champ_ms": 2593.199286959134,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -8.8,
+          "best_action": 2510,
+          "steps": 45,
+          "nodes": 24,
+          "leaf_evals": 67,
+          "wall_ms": 5.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -8.8,
+          "best_action": 2510,
+          "steps": 734,
+          "nodes": 95,
+          "leaf_evals": 783,
+          "wall_ms": 44.6,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -8.9,
+          "best_action": 2510,
+          "steps": 7409,
+          "nodes": 1534,
+          "leaf_evals": 8465,
+          "wall_ms": 658.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -7.9,
+          "best_action": 2510,
+          "steps": 38282,
+          "nodes": 7430,
+          "leaf_evals": 43122,
+          "wall_ms": 3001.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -8.8,
+          "best_action": 2510,
+          "steps": 34,
+          "nodes": 13,
+          "leaf_evals": 45,
+          "wall_ms": 4.6,
+          "tt_probes": 23,
+          "tt_hits": 11,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -8.8,
+          "best_action": 2510,
+          "steps": 371,
+          "nodes": 41,
+          "leaf_evals": 388,
+          "wall_ms": 25.4,
+          "tt_probes": 72,
+          "tt_hits": 32,
+          "tt_exact_hits": 4,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -8.9,
+          "best_action": 2510,
+          "steps": 1839,
+          "nodes": 561,
+          "leaf_evals": 2298,
+          "wall_ms": 238.7,
+          "tt_probes": 661,
+          "tt_hits": 101,
+          "tt_exact_hits": 26,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -7.9,
+          "best_action": 2510,
+          "steps": 14491,
+          "nodes": 2058,
+          "leaf_evals": 15529,
+          "wall_ms": 1173.5,
+          "tt_probes": 2158,
+          "tt_hits": 101,
+          "tt_exact_hits": 26,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.039,
+        "6": 3.177,
+        "8": 2.273
+      },
+      "tt_on_b_eff": {
+        "4": 3.303,
+        "6": 2.226,
+        "8": 2.807
+      },
+      "seed": 9100004,
+      "ply": 53,
+      "champ_ms": 2266.642148955725,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 8
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 23.35,
+          "best_action": 2510,
+          "steps": 223,
+          "nodes": 36,
+          "leaf_evals": 411,
+          "wall_ms": 27.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 17.7,
+          "best_action": 2510,
+          "steps": 7983,
+          "nodes": 533,
+          "leaf_evals": 8292,
+          "wall_ms": 556.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 19.7,
+          "best_action": 2510,
+          "steps": 27728,
+          "nodes": 6833,
+          "leaf_evals": 37471,
+          "wall_ms": 3020.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 9.7,
+          "best_action": 2510,
+          "steps": 366846,
+          "nodes": 30278,
+          "leaf_evals": 382452,
+          "wall_ms": 25756.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 23.35,
+          "best_action": 2510,
+          "steps": 223,
+          "nodes": 36,
+          "leaf_evals": 411,
+          "wall_ms": 29.7,
+          "tt_probes": 35,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 17.7,
+          "best_action": 2510,
+          "steps": 7983,
+          "nodes": 533,
+          "leaf_evals": 8292,
+          "wall_ms": 584.8,
+          "tt_probes": 532,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 19.7,
+          "best_action": 2510,
+          "steps": 22917,
+          "nodes": 3898,
+          "leaf_evals": 27849,
+          "wall_ms": 2506.2,
+          "tt_probes": 6832,
+          "tt_hits": 2935,
+          "tt_exact_hits": 3,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 9.7,
+          "best_action": 2510,
+          "steps": 193568,
+          "nodes": 15536,
+          "leaf_evals": 200831,
+          "wall_ms": 14873.7,
+          "tt_probes": 20341,
+          "tt_hits": 4806,
+          "tt_exact_hits": 41,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.983,
+        "6": 1.864,
+        "8": 3.637
+      },
+      "tt_on_b_eff": {
+        "4": 5.983,
+        "6": 1.694,
+        "8": 2.906
+      },
+      "seed": 9100005,
+      "ply": 59,
+      "champ_ms": 2234.8774049896747,
+      "achievable_tt_off": 4,
+      "achievable_tt_on": 4
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 8.05,
+          "best_action": 2510,
+          "steps": 61,
+          "nodes": 32,
+          "leaf_evals": 91,
+          "wall_ms": 8.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 9.1,
+          "best_action": 2510,
+          "steps": 1160,
+          "nodes": 124,
+          "leaf_evals": 1222,
+          "wall_ms": 93.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 6.8,
+          "best_action": 2510,
+          "steps": 4323,
+          "nodes": 1239,
+          "leaf_evals": 5376,
+          "wall_ms": 512.6,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 7.8,
+          "best_action": 2510,
+          "steps": 44292,
+          "nodes": 5671,
+          "leaf_evals": 47477,
+          "wall_ms": 3287.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 8.05,
+          "best_action": 2510,
+          "steps": 61,
+          "nodes": 32,
+          "leaf_evals": 91,
+          "wall_ms": 10.2,
+          "tt_probes": 31,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 9.1,
+          "best_action": 2510,
+          "steps": 1160,
+          "nodes": 124,
+          "leaf_evals": 1222,
+          "wall_ms": 102.2,
+          "tt_probes": 123,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 6.8,
+          "best_action": 2510,
+          "steps": 4323,
+          "nodes": 1239,
+          "leaf_evals": 5376,
+          "wall_ms": 595.2,
+          "tt_probes": 1238,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 7.8,
+          "best_action": 2510,
+          "steps": 44292,
+          "nodes": 5671,
+          "leaf_evals": 47477,
+          "wall_ms": 3717.7,
+          "tt_probes": 5670,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.361,
+        "6": 1.93,
+        "8": 3.201
+      },
+      "tt_on_b_eff": {
+        "4": 4.361,
+        "6": 1.93,
+        "8": 3.201
+      },
+      "seed": 9100006,
+      "ply": 65,
+      "champ_ms": 3084.464691928588,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 4.7,
+          "best_action": 2510,
+          "steps": 69,
+          "nodes": 36,
+          "leaf_evals": 103,
+          "wall_ms": 9.0,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -2.8,
+          "best_action": 2510,
+          "steps": 1426,
+          "nodes": 239,
+          "leaf_evals": 1595,
+          "wall_ms": 108.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -0.4,
+          "best_action": 2510,
+          "steps": 9888,
+          "nodes": 2775,
+          "leaf_evals": 12757,
+          "wall_ms": 934.0,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -4.9,
+          "best_action": 2510,
+          "steps": 63028,
+          "nodes": 7371,
+          "leaf_evals": 66953,
+          "wall_ms": 5228.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 4.7,
+          "best_action": 2510,
+          "steps": 52,
+          "nodes": 19,
+          "leaf_evals": 69,
+          "wall_ms": 7.4,
+          "tt_probes": 35,
+          "tt_hits": 17,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -2.8,
+          "best_action": 2510,
+          "steps": 703,
+          "nodes": 93,
+          "leaf_evals": 760,
+          "wall_ms": 62.4,
+          "tt_probes": 150,
+          "tt_hits": 58,
+          "tt_exact_hits": 18,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -0.4,
+          "best_action": 2510,
+          "steps": 3996,
+          "nodes": 1297,
+          "leaf_evals": 5382,
+          "wall_ms": 475.2,
+          "tt_probes": 1354,
+          "tt_hits": 58,
+          "tt_exact_hits": 18,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -4.9,
+          "best_action": 2510,
+          "steps": 30237,
+          "nodes": 3359,
+          "leaf_evals": 31932,
+          "wall_ms": 2684.1,
+          "tt_probes": 3396,
+          "tt_hits": 38,
+          "tt_exact_hits": 7,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.546,
+        "6": 2.633,
+        "8": 2.525
+      },
+      "tt_on_b_eff": {
+        "4": 3.677,
+        "6": 2.384,
+        "8": 2.751
+      },
+      "seed": 9100007,
+      "ply": 71,
+      "champ_ms": 3133.4442360093817,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 8
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -3.0,
+          "best_action": 1644,
+          "steps": 72,
+          "nodes": 37,
+          "leaf_evals": 108,
+          "wall_ms": 9.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 1644,
+          "steps": 1409,
+          "nodes": 160,
+          "leaf_evals": 1496,
+          "wall_ms": 118.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -8.0,
+          "best_action": 1036,
+          "steps": 8492,
+          "nodes": 2802,
+          "leaf_evals": 10943,
+          "wall_ms": 867.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -16.0,
+          "best_action": 1644,
+          "steps": 104568,
+          "nodes": 11101,
+          "leaf_evals": 112166,
+          "wall_ms": 8775.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -3.0,
+          "best_action": 1644,
+          "steps": 54,
+          "nodes": 19,
+          "leaf_evals": 72,
+          "wall_ms": 7.7,
+          "tt_probes": 36,
+          "tt_hits": 18,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 1644,
+          "steps": 739,
+          "nodes": 97,
+          "leaf_evals": 799,
+          "wall_ms": 72.4,
+          "tt_probes": 114,
+          "tt_hits": 18,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -8.0,
+          "best_action": 1036,
+          "steps": 4535,
+          "nodes": 608,
+          "leaf_evals": 4900,
+          "wall_ms": 439.4,
+          "tt_probes": 1519,
+          "tt_hits": 912,
+          "tt_exact_hits": 62,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -16.0,
+          "best_action": 1644,
+          "steps": 18772,
+          "nodes": 3175,
+          "leaf_evals": 21982,
+          "wall_ms": 2125.2,
+          "tt_probes": 4089,
+          "tt_hits": 915,
+          "tt_exact_hits": 64,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.424,
+        "6": 2.455,
+        "8": 3.509
+      },
+      "tt_on_b_eff": {
+        "4": 3.699,
+        "6": 2.477,
+        "8": 2.035
+      },
+      "seed": 9100008,
+      "ply": 76,
+      "champ_ms": 2497.592890053056,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 8
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 5.1,
+          "best_action": 2510,
+          "steps": 63,
+          "nodes": 33,
+          "leaf_evals": 94,
+          "wall_ms": 10.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 2.1,
+          "best_action": 2510,
+          "steps": 1343,
+          "nodes": 133,
+          "leaf_evals": 1412,
+          "wall_ms": 107.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 5.7,
+          "best_action": 2510,
+          "steps": 5904,
+          "nodes": 1577,
+          "leaf_evals": 7251,
+          "wall_ms": 661.6,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 5.7,
+          "best_action": 2510,
+          "steps": 48220,
+          "nodes": 5892,
+          "leaf_evals": 51188,
+          "wall_ms": 3785.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 5.1,
+          "best_action": 2510,
+          "steps": 63,
+          "nodes": 33,
+          "leaf_evals": 94,
+          "wall_ms": 12.1,
+          "tt_probes": 32,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 2.1,
+          "best_action": 2510,
+          "steps": 1343,
+          "nodes": 133,
+          "leaf_evals": 1412,
+          "wall_ms": 115.4,
+          "tt_probes": 132,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 5.7,
+          "best_action": 2510,
+          "steps": 5904,
+          "nodes": 1577,
+          "leaf_evals": 7251,
+          "wall_ms": 764.9,
+          "tt_probes": 1576,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 5.7,
+          "best_action": 2510,
+          "steps": 47383,
+          "nodes": 5055,
+          "leaf_evals": 49514,
+          "wall_ms": 4059.1,
+          "tt_probes": 5891,
+          "tt_hits": 837,
+          "tt_exact_hits": 2,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.617,
+        "6": 2.097,
+        "8": 2.858
+      },
+      "tt_on_b_eff": {
+        "4": 4.617,
+        "6": 2.097,
+        "8": 2.833
+      },
+      "seed": 9100009,
+      "ply": 82,
+      "champ_ms": 2916.9982930179685,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 15.1,
+          "best_action": 1160,
+          "steps": 80,
+          "nodes": 41,
+          "leaf_evals": 120,
+          "wall_ms": 11.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 14.1,
+          "best_action": 1160,
+          "steps": 1481,
+          "nodes": 150,
+          "leaf_evals": 1550,
+          "wall_ms": 124.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 18.1,
+          "best_action": 1160,
+          "steps": 44046,
+          "nodes": 7347,
+          "leaf_evals": 49362,
+          "wall_ms": 4003.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 11.5,
+          "best_action": 1160,
+          "steps": 303381,
+          "nodes": 53522,
+          "leaf_evals": 345364,
+          "wall_ms": 28665.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 15.1,
+          "best_action": 1160,
+          "steps": 80,
+          "nodes": 41,
+          "leaf_evals": 120,
+          "wall_ms": 14.8,
+          "tt_probes": 40,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 14.1,
+          "best_action": 1160,
+          "steps": 1481,
+          "nodes": 150,
+          "leaf_evals": 1550,
+          "wall_ms": 134.6,
+          "tt_probes": 149,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 18.1,
+          "best_action": 1160,
+          "steps": 44046,
+          "nodes": 7347,
+          "leaf_evals": 49362,
+          "wall_ms": 4591.0,
+          "tt_probes": 7346,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 11.5,
+          "best_action": 1160,
+          "steps": 303381,
+          "nodes": 53522,
+          "leaf_evals": 345364,
+          "wall_ms": 33138.7,
+          "tt_probes": 53521,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.303,
+        "6": 5.454,
+        "8": 2.624
+      },
+      "tt_on_b_eff": {
+        "4": 4.303,
+        "6": 5.454,
+        "8": 2.624
+      },
+      "seed": 9100010,
+      "ply": 88,
+      "champ_ms": 3751.76779308822,
+      "achievable_tt_off": 4,
+      "achievable_tt_on": 4
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 59,
+          "nodes": 31,
+          "leaf_evals": 88,
+          "wall_ms": 9.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 979,
+          "nodes": 112,
+          "leaf_evals": 1031,
+          "wall_ms": 89.4,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 3555,
+          "nodes": 1130,
+          "leaf_evals": 4521,
+          "wall_ms": 416.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 58419,
+          "nodes": 5659,
+          "leaf_evals": 61352,
+          "wall_ms": 4221.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 59,
+          "nodes": 31,
+          "leaf_evals": 88,
+          "wall_ms": 11.1,
+          "tt_probes": 30,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 961,
+          "nodes": 94,
+          "leaf_evals": 995,
+          "wall_ms": 87.0,
+          "tt_probes": 111,
+          "tt_hits": 18,
+          "tt_exact_hits": 3,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 2997,
+          "nodes": 1076,
+          "leaf_evals": 3945,
+          "wall_ms": 459.8,
+          "tt_probes": 1093,
+          "tt_hits": 18,
+          "tt_exact_hits": 3,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -9.0,
+          "best_action": 2510,
+          "steps": 45156,
+          "nodes": 3049,
+          "leaf_evals": 46049,
+          "wall_ms": 3380.7,
+          "tt_probes": 3600,
+          "tt_hits": 552,
+          "tt_exact_hits": 22,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.073,
+        "6": 1.906,
+        "8": 4.054
+      },
+      "tt_on_b_eff": {
+        "4": 4.036,
+        "6": 1.766,
+        "8": 3.882
+      },
+      "seed": 9100011,
+      "ply": 94,
+      "champ_ms": 3868.888088967651,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 8
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 16.8,
+          "best_action": 2510,
+          "steps": 77,
+          "nodes": 40,
+          "leaf_evals": 115,
+          "wall_ms": 12.4,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 14.3,
+          "best_action": 2510,
+          "steps": 1575,
+          "nodes": 186,
+          "leaf_evals": 1683,
+          "wall_ms": 121.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 17.3,
+          "best_action": 2510,
+          "steps": 7277,
+          "nodes": 1861,
+          "leaf_evals": 8844,
+          "wall_ms": 669.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 15.3,
+          "best_action": 2510,
+          "steps": 77837,
+          "nodes": 10176,
+          "leaf_evals": 84565,
+          "wall_ms": 5907.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 16.8,
+          "best_action": 2510,
+          "steps": 77,
+          "nodes": 40,
+          "leaf_evals": 115,
+          "wall_ms": 15.0,
+          "tt_probes": 39,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 14.3,
+          "best_action": 2510,
+          "steps": 1575,
+          "nodes": 186,
+          "leaf_evals": 1683,
+          "wall_ms": 137.4,
+          "tt_probes": 185,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 17.3,
+          "best_action": 2510,
+          "steps": 7277,
+          "nodes": 1861,
+          "leaf_evals": 8844,
+          "wall_ms": 807.9,
+          "tt_probes": 1860,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 15.3,
+          "best_action": 2510,
+          "steps": 77837,
+          "nodes": 10176,
+          "leaf_evals": 84565,
+          "wall_ms": 6753.4,
+          "tt_probes": 10175,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.523,
+        "6": 2.149,
+        "8": 3.271
+      },
+      "tt_on_b_eff": {
+        "4": 4.523,
+        "6": 2.149,
+        "8": 3.271
+      },
+      "seed": 9100012,
+      "ply": 99,
+      "champ_ms": 2678.569817915559,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -4.0,
+          "best_action": 2510,
+          "steps": 67,
+          "nodes": 35,
+          "leaf_evals": 100,
+          "wall_ms": 12.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -3.0,
+          "best_action": 2510,
+          "steps": 1377,
+          "nodes": 138,
+          "leaf_evals": 1447,
+          "wall_ms": 112.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -4.0,
+          "best_action": 2510,
+          "steps": 5527,
+          "nodes": 1613,
+          "leaf_evals": 6932,
+          "wall_ms": 702.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 2510,
+          "steps": 64719,
+          "nodes": 5904,
+          "leaf_evals": 67605,
+          "wall_ms": 5873.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -4.0,
+          "best_action": 2510,
+          "steps": 67,
+          "nodes": 35,
+          "leaf_evals": 100,
+          "wall_ms": 15.0,
+          "tt_probes": 34,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -3.0,
+          "best_action": 2510,
+          "steps": 1358,
+          "nodes": 119,
+          "leaf_evals": 1409,
+          "wall_ms": 125.7,
+          "tt_probes": 137,
+          "tt_hits": 19,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -4.0,
+          "best_action": 2510,
+          "steps": 4780,
+          "nodes": 1556,
+          "leaf_evals": 6166,
+          "wall_ms": 786.9,
+          "tt_probes": 1574,
+          "tt_hits": 19,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 2510,
+          "steps": 62456,
+          "nodes": 5070,
+          "leaf_evals": 64584,
+          "wall_ms": 5939.6,
+          "tt_probes": 5088,
+          "tt_hits": 19,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.533,
+        "6": 2.003,
+        "8": 3.422
+      },
+      "tt_on_b_eff": {
+        "4": 4.502,
+        "6": 1.876,
+        "8": 3.615
+      },
+      "seed": 9100013,
+      "ply": 105,
+      "champ_ms": 2715.149520081468,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 7.85,
+          "best_action": 2510,
+          "steps": 89,
+          "nodes": 46,
+          "leaf_evals": 133,
+          "wall_ms": 12.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 4.7,
+          "best_action": 2510,
+          "steps": 2290,
+          "nodes": 184,
+          "leaf_evals": 2384,
+          "wall_ms": 165.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 4.7,
+          "best_action": 2510,
+          "steps": 8421,
+          "nodes": 2268,
+          "leaf_evals": 10411,
+          "wall_ms": 881.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 4.0,
+          "best_action": 2510,
+          "steps": 84278,
+          "nodes": 9531,
+          "leaf_evals": 89277,
+          "wall_ms": 7577.8,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 7.85,
+          "best_action": 2510,
+          "steps": 89,
+          "nodes": 46,
+          "leaf_evals": 133,
+          "wall_ms": 16.3,
+          "tt_probes": 45,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 4.7,
+          "best_action": 2510,
+          "steps": 2290,
+          "nodes": 184,
+          "leaf_evals": 2384,
+          "wall_ms": 181.0,
+          "tt_probes": 183,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 4.7,
+          "best_action": 2510,
+          "steps": 8421,
+          "nodes": 2268,
+          "leaf_evals": 10411,
+          "wall_ms": 1068.9,
+          "tt_probes": 2267,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 4.0,
+          "best_action": 2510,
+          "steps": 83403,
+          "nodes": 8656,
+          "leaf_evals": 87527,
+          "wall_ms": 8075.1,
+          "tt_probes": 9530,
+          "tt_hits": 875,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.073,
+        "6": 1.918,
+        "8": 3.164
+      },
+      "tt_on_b_eff": {
+        "4": 5.073,
+        "6": 1.918,
+        "8": 3.147
+      },
+      "seed": 9100014,
+      "ply": 111,
+      "champ_ms": 2084.1552020283416,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 9.8,
+          "best_action": 2505,
+          "steps": 165,
+          "nodes": 46,
+          "leaf_evals": 207,
+          "wall_ms": 20.1,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 15.8,
+          "best_action": 2510,
+          "steps": 5887,
+          "nodes": 568,
+          "leaf_evals": 7755,
+          "wall_ms": 609.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 14.0,
+          "best_action": 2510,
+          "steps": 91250,
+          "nodes": 9151,
+          "leaf_evals": 97964,
+          "wall_ms": 7711.2,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": false,
+          "value": null,
+          "best_action": -1,
+          "steps": 774144,
+          "nodes": 127542,
+          "leaf_evals": 1150311,
+          "wall_ms": 90085.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 9.8,
+          "best_action": 2505,
+          "steps": 165,
+          "nodes": 46,
+          "leaf_evals": 207,
+          "wall_ms": 24.0,
+          "tt_probes": 45,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 15.8,
+          "best_action": 2510,
+          "steps": 5887,
+          "nodes": 568,
+          "leaf_evals": 7755,
+          "wall_ms": 664.2,
+          "tt_probes": 567,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 14.0,
+          "best_action": 2510,
+          "steps": 91250,
+          "nodes": 9151,
+          "leaf_evals": 97964,
+          "wall_ms": 8629.2,
+          "tt_probes": 9150,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": false,
+          "value": null,
+          "best_action": -1,
+          "steps": 679936,
+          "nodes": 111268,
+          "leaf_evals": 996564,
+          "wall_ms": 90004.5,
+          "tt_probes": 111268,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.973,
+        "6": 3.937
+      },
+      "tt_on_b_eff": {
+        "4": 5.973,
+        "6": 3.937
+      },
+      "seed": 9100015,
+      "ply": 117,
+      "champ_ms": 3094.1895089345053,
+      "achievable_tt_off": 4,
+      "achievable_tt_on": 4
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -11.4,
+          "best_action": 2510,
+          "steps": 81,
+          "nodes": 42,
+          "leaf_evals": 121,
+          "wall_ms": 13.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -9.4,
+          "best_action": 2510,
+          "steps": 1814,
+          "nodes": 163,
+          "leaf_evals": 1895,
+          "wall_ms": 158.4,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -13.4,
+          "best_action": 2510,
+          "steps": 68965,
+          "nodes": 10697,
+          "leaf_evals": 117828,
+          "wall_ms": 9068.4,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": false,
+          "value": null,
+          "best_action": -1,
+          "steps": 888832,
+          "nodes": 91878,
+          "leaf_evals": 980499,
+          "wall_ms": 90003.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": -11.4,
+          "best_action": 2510,
+          "steps": 61,
+          "nodes": 22,
+          "leaf_evals": 81,
+          "wall_ms": 11.4,
+          "tt_probes": 41,
+          "tt_hits": 20,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": -9.4,
+          "best_action": 2510,
+          "steps": 927,
+          "nodes": 82,
+          "leaf_evals": 967,
+          "wall_ms": 88.3,
+          "tt_probes": 122,
+          "tt_hits": 41,
+          "tt_exact_hits": 2,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": -13.4,
+          "best_action": 2510,
+          "steps": 17102,
+          "nodes": 2764,
+          "leaf_evals": 27947,
+          "wall_ms": 2485.2,
+          "tt_probes": 3285,
+          "tt_hits": 522,
+          "tt_exact_hits": 61,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": -7.15,
+          "best_action": 2510,
+          "steps": 422293,
+          "nodes": 42344,
+          "leaf_evals": 455390,
+          "wall_ms": 45785.9,
+          "tt_probes": 43415,
+          "tt_hits": 1096,
+          "tt_exact_hits": 105,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 4.732,
+        "6": 6.166
+      },
+      "tt_on_b_eff": {
+        "4": 3.898,
+        "6": 4.295,
+        "8": 4.969
+      },
+      "seed": 9100016,
+      "ply": 123,
+      "champ_ms": 3687.272162991576,
+      "achievable_tt_off": 4,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 14.2,
+          "best_action": 1129,
+          "steps": 94,
+          "nodes": 48,
+          "leaf_evals": 141,
+          "wall_ms": 11.6,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 14.2,
+          "best_action": 1129,
+          "steps": 3064,
+          "nodes": 201,
+          "leaf_evals": 3170,
+          "wall_ms": 212.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 15.35,
+          "best_action": 1129,
+          "steps": 10669,
+          "nodes": 2755,
+          "leaf_evals": 13117,
+          "wall_ms": 991.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 14.75,
+          "best_action": 1129,
+          "steps": 126930,
+          "nodes": 11316,
+          "leaf_evals": 132725,
+          "wall_ms": 9763.9,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 14.2,
+          "best_action": 1129,
+          "steps": 94,
+          "nodes": 48,
+          "leaf_evals": 141,
+          "wall_ms": 15.4,
+          "tt_probes": 47,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 14.2,
+          "best_action": 1129,
+          "steps": 3019,
+          "nodes": 156,
+          "leaf_evals": 3080,
+          "wall_ms": 222.5,
+          "tt_probes": 200,
+          "tt_hits": 45,
+          "tt_exact_hits": 3,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 15.35,
+          "best_action": 1129,
+          "steps": 8467,
+          "nodes": 2620,
+          "leaf_evals": 10870,
+          "wall_ms": 1114.2,
+          "tt_probes": 2664,
+          "tt_hits": 45,
+          "tt_exact_hits": 3,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 14.75,
+          "best_action": 1129,
+          "steps": 118183,
+          "nodes": 8161,
+          "leaf_evals": 121087,
+          "wall_ms": 9795.7,
+          "tt_probes": 8639,
+          "tt_hits": 479,
+          "tt_exact_hits": 12,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.709,
+        "6": 1.866,
+        "8": 3.449
+      },
+      "tt_on_b_eff": {
+        "4": 5.667,
+        "6": 1.675,
+        "8": 3.736
+      },
+      "seed": 9100017,
+      "ply": 128,
+      "champ_ms": 3344.727610005066,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 5.35,
+          "best_action": 1556,
+          "steps": 94,
+          "nodes": 48,
+          "leaf_evals": 141,
+          "wall_ms": 15.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 6.0,
+          "best_action": 1556,
+          "steps": 2443,
+          "nodes": 185,
+          "leaf_evals": 2533,
+          "wall_ms": 189.3,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 6.0,
+          "best_action": 1556,
+          "steps": 11026,
+          "nodes": 3252,
+          "leaf_evals": 14003,
+          "wall_ms": 1421.5,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 7.0,
+          "best_action": 1556,
+          "steps": 157849,
+          "nodes": 11105,
+          "leaf_evals": 162725,
+          "wall_ms": 13081.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 5.35,
+          "best_action": 1556,
+          "steps": 94,
+          "nodes": 48,
+          "leaf_evals": 141,
+          "wall_ms": 19.9,
+          "tt_probes": 47,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 6.0,
+          "best_action": 1556,
+          "steps": 2443,
+          "nodes": 185,
+          "leaf_evals": 2533,
+          "wall_ms": 207.8,
+          "tt_probes": 184,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 6.0,
+          "best_action": 1556,
+          "steps": 11026,
+          "nodes": 3252,
+          "leaf_evals": 14003,
+          "wall_ms": 1742.5,
+          "tt_probes": 3251,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 7.0,
+          "best_action": 1556,
+          "steps": 157849,
+          "nodes": 11105,
+          "leaf_evals": 162725,
+          "wall_ms": 14375.4,
+          "tt_probes": 11104,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.098,
+        "6": 2.124,
+        "8": 3.784
+      },
+      "tt_on_b_eff": {
+        "4": 5.098,
+        "6": 2.124,
+        "8": 3.784
+      },
+      "seed": 9100018,
+      "ply": 134,
+      "champ_ms": 3055.4161539766937,
+      "achievable_tt_off": 6,
+      "achievable_tt_on": 6
+    },
+    {
+      "tt_off": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 5.2,
+          "best_action": 1671,
+          "steps": 110,
+          "nodes": 56,
+          "leaf_evals": 165,
+          "wall_ms": 17.4,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 1671,
+          "steps": 3956,
+          "nodes": 233,
+          "leaf_evals": 3956,
+          "wall_ms": 557.0,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 1671,
+          "steps": 3956,
+          "nodes": 233,
+          "leaf_evals": 3956,
+          "wall_ms": 560.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 1671,
+          "steps": 3956,
+          "nodes": 233,
+          "leaf_evals": 3956,
+          "wall_ms": 553.7,
+          "tt_probes": 0,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        }
+      },
+      "tt_on": {
+        "2": {
+          "depth": 2,
+          "completed": true,
+          "value": 5.2,
+          "best_action": 1671,
+          "steps": 110,
+          "nodes": 56,
+          "leaf_evals": 165,
+          "wall_ms": 22.8,
+          "tt_probes": 55,
+          "tt_hits": 0,
+          "tt_exact_hits": 0,
+          "window_overflows": 0
+        },
+        "4": {
+          "depth": 4,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 1671,
+          "steps": 3922,
+          "nodes": 199,
+          "leaf_evals": 3922,
+          "wall_ms": 512.0,
+          "tt_probes": 232,
+          "tt_hits": 34,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "6": {
+          "depth": 6,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 1671,
+          "steps": 3922,
+          "nodes": 199,
+          "leaf_evals": 3922,
+          "wall_ms": 508.1,
+          "tt_probes": 232,
+          "tt_hits": 34,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        },
+        "8": {
+          "depth": 8,
+          "completed": true,
+          "value": 2.0,
+          "best_action": 1671,
+          "steps": 3922,
+          "nodes": 199,
+          "leaf_evals": 3922,
+          "wall_ms": 507.3,
+          "tt_probes": 232,
+          "tt_hits": 34,
+          "tt_exact_hits": 1,
+          "window_overflows": 0
+        }
+      },
+      "tt_off_b_eff": {
+        "4": 5.997,
+        "6": 1.0,
+        "8": 1.0
+      },
+      "tt_on_b_eff": {
+        "4": 5.971,
+        "6": 1.0,
+        "8": 1.0
+      },
+      "seed": 9100019,
+      "ply": 140,
+      "champ_ms": 3473.2238919241354,
+      "achievable_tt_off": 8,
+      "achievable_tt_on": 8
+    }
+  ],
+  "n_midgame": 13,
+  "ab_agg_midgame": {
+    "2": {
+      "n_completed_tt_off": 13,
+      "n_completed_tt_on": 13,
+      "steps_tt_off": 69,
+      "steps_tt_on": 63,
+      "wall_tt_off": 9.2,
+      "wall_tt_on": 11.1,
+      "b_eff_tt_off": null
+    },
+    "4": {
+      "n_completed_tt_off": 13,
+      "n_completed_tt_on": 13,
+      "steps_tt_off": 1409,
+      "steps_tt_on": 1160,
+      "wall_tt_off": 118.5,
+      "wall_tt_on": 102.2,
+      "b_eff_tt_off": 4.523
+    },
+    "6": {
+      "n_completed_tt_off": 13,
+      "n_completed_tt_on": 13,
+      "steps_tt_off": 8492,
+      "steps_tt_on": 5904,
+      "wall_tt_off": 867.8,
+      "wall_tt_on": 595.2,
+      "b_eff_tt_off": 2.149
+    },
+    "8": {
+      "n_completed_tt_off": 13,
+      "n_completed_tt_on": 13,
+      "steps_tt_off": 77837,
+      "steps_tt_on": 46820,
+      "wall_tt_off": 5907.1,
+      "wall_tt_on": 4059.1,
+      "b_eff_tt_off": 3.271
+    }
+  },
+  "tt_step_ratio_d6": 1.21,
+  "tt_exact_hit_frac_d6": 0.0022,
+  "median_midgame_depth_tt_off": 6,
+  "median_midgame_depth_tt_on": 6,
+  "p10_midgame_depth_tt_off": 4,
+  "p10_midgame_depth_tt_on": 4,
+  "verdict": "GO",
+  "verdict_reason": "median midgame completed depth >= 6 plies (3 full turns) within the champion budget \u2014 proceed to the Stage-1 agent build (\u00a78).",
+  "finished_utc": "2026-07-13T13:52:32Z"
+}

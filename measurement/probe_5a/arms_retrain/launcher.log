@@ -1,0 +1,29 @@
+[eta] 12 sequential runs (4 arms x 3 seeds): inert/early-stop arms ~15m, live tempo arms ~60-75m (2026-07-01 arms-run wallclocks) -> total ~6-9h
+=== ARM tempo_only seed 0 2026-07-03_16:34:24 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/tempo_only_s0.log ===
+    OK tempo_only s0 (rc=0) -> measurement/probe_5a/arms_retrain/tempo_only_s0/V4_listwise/ranknet_best.pt
+=== ARM tempo_only seed 1 2026-07-03_16:51:26 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/tempo_only_s1.log ===
+    OK tempo_only s1 (rc=0) -> measurement/probe_5a/arms_retrain/tempo_only_s1/V4_listwise/ranknet_best.pt
+=== ARM tempo_only seed 2 2026-07-03_17:26:27 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/tempo_only_s2.log ===
+    OK tempo_only s2 (rc=0) -> measurement/probe_5a/arms_retrain/tempo_only_s2/V4_listwise/ranknet_best.pt
+=== ARM both seed 0 2026-07-03_18:39:31 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/both_s0.log ===
+    OK both s0 (rc=0) -> measurement/probe_5a/arms_retrain/both_s0/V4_listwise/ranknet_best.pt
+=== ARM both seed 1 2026-07-03_18:54:25 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/both_s1.log ===
+    OK both s1 (rc=0) -> measurement/probe_5a/arms_retrain/both_s1/V4_listwise/ranknet_best.pt
+=== ARM both seed 2 2026-07-03_19:43:50 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/both_s2.log ===
+    OK both s2 (rc=0) -> measurement/probe_5a/arms_retrain/both_s2/V4_listwise/ranknet_best.pt
+=== ARM all_three seed 0 2026-07-03_19:56:54 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/all_three_s0.log ===
+    OK all_three s0 (rc=0) -> measurement/probe_5a/arms_retrain/all_three_s0/V4_listwise/ranknet_best.pt
+=== ARM all_three seed 1 2026-07-03_20:33:47 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/all_three_s1.log ===
+    OK all_three s1 (rc=0) -> measurement/probe_5a/arms_retrain/all_three_s1/V4_listwise/ranknet_best.pt
+=== ARM all_three seed 2 2026-07-03_21:05:11 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/all_three_s2.log ===
+    OK all_three s2 (rc=0) -> measurement/probe_5a/arms_retrain/all_three_s2/V4_listwise/ranknet_best.pt
+=== ARM none seed 0 2026-07-03_21:29:21 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/none_s0.log ===
+    OK none s0 (rc=0) -> measurement/probe_5a/arms_retrain/none_s0/V4_listwise/ranknet_best.pt
+=== ARM none seed 1 2026-07-03_21:44:23 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/none_s1.log ===
+    OK none s1 (rc=0) -> measurement/probe_5a/arms_retrain/none_s1/V4_listwise/ranknet_best.pt
+=== ARM none seed 2 2026-07-03_21:57:35 — ETA ~15m if inert/early-stop, ~60-75m if live -> measurement/probe_5a/arms_retrain/none_s2.log ===
+    OK none s2 (rc=0) -> measurement/probe_5a/arms_retrain/none_s2/V4_listwise/ranknet_best.pt
+=== all retrains done -> measurement/probe_5a/arms_retrain ===
+score:  .venv/bin/python scripts/canonical_az/solver_score.py --max-k 2 \
+          $(for d in measurement/probe_5a/arms_retrain/*_s*/V4_listwise/ranknet_best.pt; do echo --arm-ckpt $d; done) \
+          --workers 8 --out measurement/probe_5a/arms_retrain/solver_score_k2.json

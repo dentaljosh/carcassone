@@ -1,0 +1,20 @@
+G3: 382 jobs over ['golden', 'midgame', 'champ', 'distill', 'e4', 'det'] at sims=[1376], workers=12
+  25/382 jobs | 37 searches | 0 mismatches | 9s
+  50/382 jobs | 62 searches | 0 mismatches | 15s
+  75/382 jobs | 87 searches | 0 mismatches | 20s
+  100/382 jobs | 112 searches | 0 mismatches | 26s
+  125/382 jobs | 137 searches | 0 mismatches | 31s
+  150/382 jobs | 180 searches | 0 mismatches | 42s
+  175/382 jobs | 230 searches | 0 mismatches | 53s
+  200/382 jobs | 280 searches | 0 mismatches | 64s
+  225/382 jobs | 330 searches | 0 mismatches | 75s
+  250/382 jobs | 380 searches | 0 mismatches | 86s
+  275/382 jobs | 430 searches | 0 mismatches | 97s
+  300/382 jobs | 480 searches | 0 mismatches | 108s
+  325/382 jobs | 530 searches | 0 mismatches | 119s
+  350/382 jobs | 580 searches | 0 mismatches | 130s
+  375/382 jobs | 630 searches | 0 mismatches | 141s
+  382/382 jobs | 644 searches | 0 mismatches | 144s
+G3/search: PASS  644 searches / 886144 sims / 5152 field checks / 0 full games (0 plies) | 0 mismatches
+G3/search: throughput py=567 sims/s  rs=6658 sims/s  (11.75x)
+G3/search: result -> /home/doctor/projects/carcassone/measurement/rustport_p3/G3_search_verdict1376.json

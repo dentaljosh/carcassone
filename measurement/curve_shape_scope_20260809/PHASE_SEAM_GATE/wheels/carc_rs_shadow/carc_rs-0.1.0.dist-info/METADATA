@@ -1,0 +1,6 @@
+Metadata-Version: 2.4
+Name: carc-rs
+Version: 0.1.0
+Classifier: Programming Language :: Rust
+Summary: Rust core for the Carcassonne AI (carc_rs)
+Requires-Python: >=3.12

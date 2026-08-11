@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = ["carc-core", "carc-py", "carc-cli"]
+# `carc-net` (the ONNX-Runtime net-evaluator backend) is an INDEPENDENT workspace,
+# excluded on purpose: it must not be able to perturb THIS workspace's Cargo.lock,
+# which every bit-exactness gate builds against. It depends on carc-core by path;
+# carc-core does not depend on it. See rust/carc/carc-net/Cargo.toml.
+exclude = ["carc-net"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+carc-core = { path = "carc-core" }
+
+# Match rust/carc-orch's release profile so the two Rust crates in this repo
+# are built with the same codegen settings.
+[profile.release]
+opt-level = 3
+lto = "thin"
+
+# The dev profile is used by `cargo test`; keep it fast enough that the
+# 10^6-sample reconcile fuzzers are usable without --release.
+[profile.dev]
+opt-level = 1

@@ -1,0 +1,190 @@
+{
+  "gate": "rustport P6 / Gap 2 \u2014 the persistent tree, three-way reproduced",
+  "why": "GAP2_ORACLE_CONTINUATION_TREE.json showed the oracle continuation is a PERSISTING-TREE search and a sibling's attribution leg named the mechanism (cleared-python == rust, shipped-python != rust). This gate adds the fourth leg \u2014 rust WITH the persistent tree \u2014 and requires the two families to close in both directions.",
+  "identity_surface": "the per-ply ACTION STREAM (not just the terminal margin \u2014 row 1 of the GAP2 artifact diverges on 66 plies at margin_delta 0.0), plus ply count, terminal margin and the per-ply CARRIED-IN root visit counts",
+  "oracle_sims": 100,
+  "positions": 4,
+  "discriminating_positions": 3,
+  "mismatches": [],
+  "verdict": "PASS",
+  "scope": "the clairvoyant continuation at these knobs, net-free. The persistent tree closes Gap 2; Gap 3 (evaluator injection) and the snapshot/UCT family remain OPEN and still fail closed.",
+  "rows": [
+    {
+      "rid": "s28000000002_p115_r2",
+      "deck_seed": 28000000002,
+      "ply": 115,
+      "source": "bank",
+      "pick": 843,
+      "root_player": 0,
+      "oracle_sims": 100,
+      "python_as_shipped": {
+        "margin": -14.0,
+        "plies": 27,
+        "max_carried_in": 318,
+        "plies_with_preexisting_root": 26
+      },
+      "python_cleared_per_ply": {
+        "margin": -14.0,
+        "plies": 27
+      },
+      "rust_carry": {
+        "margin": -14.0,
+        "plies": 27,
+        "max_carried_in": 318
+      },
+      "rust_fresh": {
+        "margin": -14.0,
+        "plies": 27
+      },
+      "carry_matches_shipped": true,
+      "fresh_matches_cleared": true,
+      "carried_visits_match": true,
+      "world_discriminates": false,
+      "shipped_vs_cleared": null,
+      "python_secs": 9.55,
+      "rust_secs": 1.14,
+      "speedup": 8.35
+    },
+    {
+      "rid": "s28000000008_p124_r2",
+      "deck_seed": 28000000008,
+      "ply": 124,
+      "source": "bank",
+      "pick": 1070,
+      "root_player": 0,
+      "oracle_sims": 100,
+      "python_as_shipped": {
+        "margin": 2.0,
+        "plies": 19,
+        "max_carried_in": 275,
+        "plies_with_preexisting_root": 18
+      },
+      "python_cleared_per_ply": {
+        "margin": 3.0,
+        "plies": 19
+      },
+      "rust_carry": {
+        "margin": 2.0,
+        "plies": 19,
+        "max_carried_in": 275
+      },
+      "rust_fresh": {
+        "margin": 3.0,
+        "plies": 19
+      },
+      "carry_matches_shipped": true,
+      "fresh_matches_cleared": true,
+      "carried_visits_match": true,
+      "world_discriminates": true,
+      "shipped_vs_cleared": {
+        "first_divergent_ply": 9,
+        "n_divergent_plies": 3,
+        "plies": [
+          19,
+          19
+        ],
+        "margin": [
+          2.0,
+          3.0
+        ]
+      },
+      "python_secs": 10.36,
+      "rust_secs": 1.13,
+      "speedup": 9.13
+    },
+    {
+      "rid": "s28000000001_p102_r2",
+      "deck_seed": 28000000001,
+      "ply": 102,
+      "source": "bank",
+      "pick": 1235,
+      "root_player": 1,
+      "oracle_sims": 100,
+      "python_as_shipped": {
+        "margin": 4.0,
+        "plies": 41,
+        "max_carried_in": 203,
+        "plies_with_preexisting_root": 40
+      },
+      "python_cleared_per_ply": {
+        "margin": -2.0,
+        "plies": 41
+      },
+      "rust_carry": {
+        "margin": 4.0,
+        "plies": 41,
+        "max_carried_in": 203
+      },
+      "rust_fresh": {
+        "margin": -2.0,
+        "plies": 41
+      },
+      "carry_matches_shipped": true,
+      "fresh_matches_cleared": true,
+      "carried_visits_match": true,
+      "world_discriminates": true,
+      "shipped_vs_cleared": {
+        "first_divergent_ply": 3,
+        "n_divergent_plies": 13,
+        "plies": [
+          41,
+          41
+        ],
+        "margin": [
+          4.0,
+          -2.0
+        ]
+      },
+      "python_secs": 15.98,
+      "rust_secs": 2.14,
+      "speedup": 7.46
+    },
+    {
+      "rid": "s28000000005_p91_r3",
+      "deck_seed": 28000000005,
+      "ply": 91,
+      "source": "bank",
+      "pick": 2508,
+      "root_player": 1,
+      "oracle_sims": 100,
+      "python_as_shipped": {
+        "margin": 3.0,
+        "plies": 52,
+        "max_carried_in": 414,
+        "plies_with_preexisting_root": 51
+      },
+      "python_cleared_per_ply": {
+        "margin": 1.0,
+        "plies": 52
+      },
+      "rust_carry": {
+        "margin": 3.0,
+        "plies": 52,
+        "max_carried_in": 414
+      },
+      "rust_fresh": {
+        "margin": 1.0,
+        "plies": 52
+      },
+      "carry_matches_shipped": true,
+      "fresh_matches_cleared": true,
+      "carried_visits_match": true,
+      "world_discriminates": true,
+      "shipped_vs_cleared": {
+        "first_divergent_ply": 38,
+        "n_divergent_plies": 7,
+        "plies": [
+          52,
+          52
+        ],
+        "margin": [
+          3.0,
+          1.0
+        ]
+      },
+      "python_secs": 24.57,
+      "rust_secs": 2.44,
+      "speedup": 10.06
+    }
+  ]
+}

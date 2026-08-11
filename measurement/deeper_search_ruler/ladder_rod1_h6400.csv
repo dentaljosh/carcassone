@@ -1,0 +1,2 @@
+matchup,n,W,D,L,winrate,winrate_z,elo,elo_sig,avg_diff,paired_margin,paired_z,n_paired,n_deckhash,sec_mean,sec_median,sec_p95,sec_max,moves_mean,timeouts
+iter8 vs heur@6400,200,85,4,111,0.435,-1.84,-45.4,24.8,-4.405,-4.405,-3.24,100,100,454.7,452.8,501.6,537.8,144.0,0

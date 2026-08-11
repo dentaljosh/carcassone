@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon foreground layer: a meeple silhouette, drawn as vector geometry
+  (no external art — the bundled tile art is Hans im Glück's and must not leak
+  into anything as public as a launcher icon).
+
+  Two paths, both symmetric about x=54: the head as a circle, the body as a
+  polygon with the arm tips and feet eased by quadratics. Everything sits inside
+  x 22..86, y 22..88 — comfortably within the adaptive icon's 18..90 safe zone,
+  so no mask can clip a limb.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- head -->
+    <path
+        android:fillColor="#F4E7CD"
+        android:pathData="M54,34 m-12,0 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0" />
+
+    <!-- body: shoulders -> arms -> legs, mirrored -->
+    <path
+        android:fillColor="#F4E7CD"
+        android:pathData="M44,48
+            L27,58
+            Q22,61 22.5,66
+            Q23,69.5 26,67.5
+            L46,62
+            L36,84
+            Q34.5,88 38,88
+            L48,88
+            L54,72
+            L60,88
+            L70,88
+            Q73.5,88 72,84
+            L62,62
+            L82,67.5
+            Q85,69.5 85.5,66
+            Q86,61 81,58
+            L64,48
+            Z" />
+
+</vector>

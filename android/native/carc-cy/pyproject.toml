@@ -1,0 +1,6 @@
+# Build-system only. Package metadata stays in setup.py so the version can be
+# supplied at build time (CARC_CY_VERSION) without fighting setuptools' handling of
+# a `dynamic = ["version"]` field.
+[build-system]
+requires = ["setuptools>=68", "Cython>=3.0"]
+build-backend = "setuptools.build_meta"

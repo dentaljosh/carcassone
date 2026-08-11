@@ -1,0 +1,103 @@
+[ranker] cap6 <- leaf variant {'V25_CAP': '6'} (explicit LeafConfig)
+[ranker] cap10 <- leaf variant {'V25_CAP': '10'} (explicit LeafConfig)
+[ranker] cap12 <- leaf variant {'V25_CAP': '12'} (explicit LeafConfig)
+[ranker] curve075 <- leaf variant {'V29_MEEPLE_CURVE': '-8,-4,-1,0,1.5,2.25,3,3.75'} (explicit LeafConfig)
+[ranker] curve125 <- leaf variant {'V29_MEEPLE_CURVE': '-8,-4,-1,0,2.5,3.75,5,6.25'} (explicit LeafConfig)
+[ranker] flatk15 <- leaf variant {'V29_MEEPLE_CURVE': '', 'V25_MEEPLE_K': '1.5'} (explicit LeafConfig)
+[ranker] flatk20 <- leaf variant {'V29_MEEPLE_CURVE': '', 'V25_MEEPLE_K': '2.0'} (explicit LeafConfig)
+[ranker] flatk25 <- leaf variant {'V29_MEEPLE_CURVE': '', 'V25_MEEPLE_K': '2.5'} (explicit LeafConfig)
+[ranker] drop3 <- leaf variant {'V25_DROP_THREE_OPEN': '1'} (explicit LeafConfig)
+[ranker] cap6_curve075 <- leaf variant {'V25_CAP': '6', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,1.5,2.25,3,3.75'} (explicit LeafConfig)
+[ranker] cap6_curve125 <- leaf variant {'V25_CAP': '6', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,2.5,3.75,5,6.25'} (explicit LeafConfig)
+[ranker] cap10_curve075 <- leaf variant {'V25_CAP': '10', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,1.5,2.25,3,3.75'} (explicit LeafConfig)
+[ranker] cap10_curve125 <- leaf variant {'V25_CAP': '10', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,2.5,3.75,5,6.25'} (explicit LeafConfig)
+[ranker] cap12_curve075 <- leaf variant {'V25_CAP': '12', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,1.5,2.25,3,3.75'} (explicit LeafConfig)
+[ranker] cap12_curve125 <- leaf variant {'V25_CAP': '12', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,2.5,3.75,5,6.25'} (explicit LeafConfig)
+[ranker] drop3_cap6 <- leaf variant {'V25_DROP_THREE_OPEN': '1', 'V25_CAP': '6'} (explicit LeafConfig)
+[ranker] drop3_cap10 <- leaf variant {'V25_DROP_THREE_OPEN': '1', 'V25_CAP': '10'} (explicit LeafConfig)
+[ranker] drop3_curve075 <- leaf variant {'V25_DROP_THREE_OPEN': '1', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,1.5,2.25,3,3.75'} (explicit LeafConfig)
+[ranker] drop3_curve125 <- leaf variant {'V25_DROP_THREE_OPEN': '1', 'V29_MEEPLE_CURVE': '-8,-4,-1,0,2.5,3.75,5,6.25'} (explicit LeafConfig)
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
+[done] scored=1119 skipped=0 errors=0 in 1545.4s
+[out] wrote measurement/v210_leaf/screen_trackA.json
+
+==== SOLVER-SCORE (v29_leaf) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6153
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6153  14.09s/solve
+
+==== SOLVER-SCORE (cap6) ====
+AGG  n=1119  solver_regret mean=0.9088 median=0.0 max=23.0  top1=0.6425  tau=0.648
+  K=2 (marg)  n=1119  regret=0.9088  top1=0.6425  tau=0.648  14.09s/solve
+
+==== SOLVER-SCORE (cap10) ====
+AGG  n=1119  solver_regret mean=0.9911 median=0.0 max=23.0  top1=0.5818  tau=0.5958
+  K=2 (marg)  n=1119  regret=0.9911  top1=0.5818  tau=0.5958  14.09s/solve
+
+==== SOLVER-SCORE (cap12) ====
+AGG  n=1119  solver_regret mean=1.0063 median=0.0 max=23.0  top1=0.5576  tau=0.5821
+  K=2 (marg)  n=1119  regret=1.0063  top1=0.5576  tau=0.5821  14.09s/solve
+
+==== SOLVER-SCORE (curve075) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6153
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6153  14.09s/solve
+
+==== SOLVER-SCORE (curve125) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6153
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6153  14.09s/solve
+
+==== SOLVER-SCORE (flatk15) ====
+AGG  n=1119  solver_regret mean=0.9589 median=0.0 max=23.0  top1=0.6077  tau=0.6192
+  K=2 (marg)  n=1119  regret=0.9589  top1=0.6077  tau=0.6192  14.09s/solve
+
+==== SOLVER-SCORE (flatk20) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6143
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6143  14.09s/solve
+
+==== SOLVER-SCORE (flatk25) ====
+AGG  n=1119  solver_regret mean=0.9634 median=0.0 max=23.0  top1=0.6059  tau=0.6149
+  K=2 (marg)  n=1119  regret=0.9634  top1=0.6059  tau=0.6149  14.09s/solve
+
+==== SOLVER-SCORE (drop3) ====
+AGG  n=1119  solver_regret mean=0.958 median=0.0 max=23.0  top1=0.6005  tau=0.6092
+  K=2 (marg)  n=1119  regret=0.958  top1=0.6005  tau=0.6092  14.09s/solve
+
+==== SOLVER-SCORE (cap6_curve075) ====
+AGG  n=1119  solver_regret mean=0.9088 median=0.0 max=23.0  top1=0.6425  tau=0.6481
+  K=2 (marg)  n=1119  regret=0.9088  top1=0.6425  tau=0.6481  14.09s/solve
+
+==== SOLVER-SCORE (cap6_curve125) ====
+AGG  n=1119  solver_regret mean=0.9088 median=0.0 max=23.0  top1=0.6425  tau=0.6481
+  K=2 (marg)  n=1119  regret=0.9088  top1=0.6425  tau=0.6481  14.09s/solve
+
+==== SOLVER-SCORE (cap10_curve075) ====
+AGG  n=1119  solver_regret mean=0.9911 median=0.0 max=23.0  top1=0.5818  tau=0.5958
+  K=2 (marg)  n=1119  regret=0.9911  top1=0.5818  tau=0.5958  14.09s/solve
+
+==== SOLVER-SCORE (cap10_curve125) ====
+AGG  n=1119  solver_regret mean=0.9911 median=0.0 max=23.0  top1=0.5818  tau=0.5958
+  K=2 (marg)  n=1119  regret=0.9911  top1=0.5818  tau=0.5958  14.09s/solve
+
+==== SOLVER-SCORE (cap12_curve075) ====
+AGG  n=1119  solver_regret mean=1.0063 median=0.0 max=23.0  top1=0.5576  tau=0.5821
+  K=2 (marg)  n=1119  regret=1.0063  top1=0.5576  tau=0.5821  14.09s/solve
+
+==== SOLVER-SCORE (cap12_curve125) ====
+AGG  n=1119  solver_regret mean=1.0063 median=0.0 max=23.0  top1=0.5576  tau=0.5821
+  K=2 (marg)  n=1119  regret=1.0063  top1=0.5576  tau=0.5821  14.09s/solve
+
+==== SOLVER-SCORE (drop3_cap6) ====
+AGG  n=1119  solver_regret mean=0.9276 median=0.0 max=23.0  top1=0.6273  tau=0.6394
+  K=2 (marg)  n=1119  regret=0.9276  top1=0.6273  tau=0.6394  14.09s/solve
+
+==== SOLVER-SCORE (drop3_cap10) ====
+AGG  n=1119  solver_regret mean=0.9991 median=0.0 max=23.0  top1=0.5746  tau=0.5876
+  K=2 (marg)  n=1119  regret=0.9991  top1=0.5746  tau=0.5876  14.09s/solve
+
+==== SOLVER-SCORE (drop3_curve075) ====
+AGG  n=1119  solver_regret mean=0.958 median=0.0 max=23.0  top1=0.6005  tau=0.6092
+  K=2 (marg)  n=1119  regret=0.958  top1=0.6005  tau=0.6092  14.09s/solve
+
+==== SOLVER-SCORE (drop3_curve125) ====
+AGG  n=1119  solver_regret mean=0.958 median=0.0 max=23.0  top1=0.6005  tau=0.6092
+  K=2 (marg)  n=1119  regret=0.958  top1=0.6005  tau=0.6092  14.09s/solve

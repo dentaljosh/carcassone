@@ -1,0 +1,40 @@
+[jcz-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=10 seats=[0, 1] repeats=1 workers=8 done=0 todo=20
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+[jcz-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=10 seats=[0, 1] repeats=1 workers=8 done=0 todo=20
+[1/20] deck=107000000001 champ_seat=1 rep=0 scores=[72, 72] void=None champ=763.2ms/mv jcz=41.6ms/mv replay_ok=True
+[2/20] deck=107000000003 champ_seat=1 rep=0 scores=[99, 75] void=None champ=874.4ms/mv jcz=37.5ms/mv replay_ok=True
+[3/20] deck=107000000001 champ_seat=0 rep=0 scores=[100, 105] void=None champ=894.0ms/mv jcz=40.9ms/mv replay_ok=True
+[4/20] deck=107000000002 champ_seat=0 rep=0 scores=[100, 85] void=None champ=1054.5ms/mv jcz=38.0ms/mv replay_ok=True
+[5/20] deck=107000000002 champ_seat=1 rep=0 scores=[90, 90] void=None champ=1183.4ms/mv jcz=46.0ms/mv replay_ok=True
+[6/20] deck=107000000003 champ_seat=0 rep=0 scores=[97, 88] void=None champ=1230.9ms/mv jcz=39.5ms/mv replay_ok=True
+[7/20] deck=107000000000 champ_seat=1 rep=0 scores=[93, 91] void=None champ=1405.7ms/mv jcz=36.5ms/mv replay_ok=True
+[8/20] deck=107000000000 champ_seat=0 rep=0 scores=[128, 115] void=None champ=1523.9ms/mv jcz=41.6ms/mv replay_ok=True
+[9/20] deck=107000000004 champ_seat=0 rep=0 scores=[104, 61] void=None champ=966.0ms/mv jcz=37.9ms/mv replay_ok=True
+[10/20] deck=107000000004 champ_seat=1 rep=0 scores=[106, 86] void=None champ=1208.8ms/mv jcz=40.2ms/mv replay_ok=True
+[11/20] deck=107000000005 champ_seat=1 rep=0 scores=[114, 123] void=None champ=1249.0ms/mv jcz=37.6ms/mv replay_ok=True
+[12/20] deck=107000000005 champ_seat=0 rep=0 scores=[102, 115] void=None champ=1371.5ms/mv jcz=37.0ms/mv replay_ok=True
+[13/20] deck=107000000006 champ_seat=0 rep=0 scores=[119, 87] void=None champ=1174.0ms/mv jcz=42.2ms/mv replay_ok=True
+[14/20] deck=107000000006 champ_seat=1 rep=0 scores=[113, 112] void=None champ=1435.8ms/mv jcz=35.1ms/mv replay_ok=True
+[15/20] deck=107000000007 champ_seat=0 rep=0 scores=[102, 111] void=None champ=1301.0ms/mv jcz=38.8ms/mv replay_ok=True
+[16/20] deck=107000000007 champ_seat=1 rep=0 scores=[95, 121] void=None champ=1253.7ms/mv jcz=38.1ms/mv replay_ok=True
+[17/20] deck=107000000008 champ_seat=0 rep=0 scores=[96, 92] void=None champ=1388.3ms/mv jcz=33.8ms/mv replay_ok=True
+[18/20] deck=107000000008 champ_seat=1 rep=0 scores=[99, 99] void=None champ=1156.2ms/mv jcz=34.7ms/mv replay_ok=True
+[19/20] deck=107000000009 champ_seat=0 rep=0 scores=[92, 97] void=None champ=937.7ms/mv jcz=32.9ms/mv replay_ok=True
+[20/20] deck=107000000009 champ_seat=1 rep=0 scores=[92, 112] void=None champ=1337.8ms/mv jcz=36.8ms/mv replay_ok=True
+
+[jcz-match] DONE 20 games in 4.5 min
+{
+ "n_records": 20,
+ "n_scored": 20,
+ "voids": {},
+ "wins": 9,
+ "draws": 3,
+ "losses": 8,
+ "win_rate": 0.525,
+ "n_paired_decks": 10,
+ "paired_margin_mean": 4.6,
+ "paired_margin_sem": 2.2271057451320084,
+ "mean_margin_unpaired": 4.6,
+ "replay_failures": []
+}

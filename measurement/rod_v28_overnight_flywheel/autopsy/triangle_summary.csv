@@ -1,0 +1,6 @@
+set,A,B,n,n_decks,W,D,L,winrate,winrate_elo,paired_margin,paired_z
+iter08_vs_RoD1,iter08,RoD1,400,200,217,4,179,0.5475,33.1,2.23,2.0
+iter10_vs_RoD1,iter10,RoD1,400,200,211,3,186,0.5312,21.7,0.735,0.69
+iter08_vs_heur3200,iter08,heur3200,800,400,402,11,387,0.5094,6.5,-0.378,-0.48
+RoD1_vs_heur3200,RoD1,heur3200,800,400,412,14,374,0.5238,16.5,-0.359,-0.47
+RoD1_vs_iter8parent,RoD1,iter8parent,400,200,227,7,166,0.5763,53.4,3.675,3.51

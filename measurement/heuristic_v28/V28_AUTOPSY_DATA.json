@@ -1,0 +1,381 @@
+{
+  "v28_completion_endgame": {
+    "n_positions": 150,
+    "slack_counterfactual_top1": {
+      "0.0": 0.7632,
+      "1.0": 0.8261,
+      "2.0": 0.8261,
+      "3.0": 0.8261,
+      "4.0": 0.8261
+    },
+    "flips_vs_v27": {
+      "n": 41,
+      "toward_optimal": 8,
+      "away": 0
+    },
+    "flip_cases": [
+      {
+        "position_id": "g3200000018_k2",
+        "k": 2,
+        "v27_pick": 1335,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 729,
+        "comp_pick_regret": 0.0,
+        "leaf_v27_on_v27pick": -14,
+        "leaf_v27_on_comppick": -15,
+        "leaf_comp_on_v27pick": -5,
+        "leaf_comp_on_comppick": -5,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000026_k2",
+        "k": 2,
+        "v27_pick": 1860,
+        "v27_pick_regret": null,
+        "comp_pick": 640,
+        "comp_pick_regret": 0.0,
+        "leaf_v27_on_v27pick": 15,
+        "leaf_v27_on_comppick": 14,
+        "leaf_comp_on_v27pick": 9,
+        "leaf_comp_on_comppick": 11,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000027_k2",
+        "k": 2,
+        "v27_pick": 773,
+        "v27_pick_regret": null,
+        "comp_pick": 1072,
+        "comp_pick_regret": 0.0,
+        "leaf_v27_on_v27pick": -38,
+        "leaf_v27_on_comppick": -38,
+        "leaf_comp_on_v27pick": -35,
+        "leaf_comp_on_comppick": -34,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000000_k2",
+        "k": 2,
+        "v27_pick": 1564,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 660,
+        "comp_pick_regret": 0.0,
+        "leaf_v27_on_v27pick": -2,
+        "leaf_v27_on_comppick": -5,
+        "leaf_comp_on_v27pick": -2,
+        "leaf_comp_on_comppick": -2,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000046_k2",
+        "k": 2,
+        "v27_pick": 1365,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 637,
+        "comp_pick_regret": null,
+        "leaf_v27_on_v27pick": 6,
+        "leaf_v27_on_comppick": 3,
+        "leaf_comp_on_v27pick": 1,
+        "leaf_comp_on_comppick": 1,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000033_k2",
+        "k": 2,
+        "v27_pick": 842,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 672,
+        "comp_pick_regret": 0.0,
+        "leaf_v27_on_v27pick": 22,
+        "leaf_v27_on_comppick": 21,
+        "leaf_comp_on_v27pick": 23,
+        "leaf_comp_on_comppick": 23,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000028_k2",
+        "k": 2,
+        "v27_pick": 1372,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 756,
+        "comp_pick_regret": 0.0,
+        "leaf_v27_on_v27pick": -3,
+        "leaf_v27_on_comppick": -4,
+        "leaf_comp_on_v27pick": 0,
+        "leaf_comp_on_comppick": 0,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000029_k2",
+        "k": 2,
+        "v27_pick": 1660,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 541,
+        "comp_pick_regret": null,
+        "leaf_v27_on_v27pick": -26,
+        "leaf_v27_on_comppick": -29,
+        "leaf_comp_on_v27pick": -25,
+        "leaf_comp_on_comppick": -25,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000004_k2",
+        "k": 2,
+        "v27_pick": 1651,
+        "v27_pick_regret": 3.0,
+        "comp_pick": 1657,
+        "comp_pick_regret": 2.0,
+        "leaf_v27_on_v27pick": 8,
+        "leaf_v27_on_comppick": 7,
+        "leaf_comp_on_v27pick": 10,
+        "leaf_comp_on_comppick": 11,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000055_k2",
+        "k": 2,
+        "v27_pick": 968,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 964,
+        "comp_pick_regret": null,
+        "leaf_v27_on_v27pick": 34,
+        "leaf_v27_on_comppick": 33,
+        "leaf_comp_on_v27pick": 33,
+        "leaf_comp_on_comppick": 33,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000036_k2",
+        "k": 2,
+        "v27_pick": 962,
+        "v27_pick_regret": 0.0,
+        "comp_pick": 640,
+        "comp_pick_regret": null,
+        "leaf_v27_on_v27pick": 46,
+        "leaf_v27_on_comppick": 45,
+        "leaf_comp_on_v27pick": 37,
+        "leaf_comp_on_comppick": 37,
+        "deck_size": 1
+      },
+      {
+        "position_id": "g3200000066_k2",
+        "k": 2,
+        "v27_pick": 1955,
+        "v27_pick_regret": 4.0,
+        "comp_pick": 539,
+        "comp_pick_regret": null,
+        "leaf_v27_on_v27pick": -5,
+        "leaf_v27_on_comppick": -6,
+        "leaf_comp_on_v27pick": -7,
+        "leaf_comp_on_comppick": -7,
+        "deck_size": 1
+      }
+    ]
+  },
+  "v28_meeple_midgame": {
+    "n_recovered_cases": 14,
+    "cases": [
+      {
+        "position_id": "heur3200_s3502000023_K52",
+        "band": "opening",
+        "tiles_remaining": 51,
+        "teacher": 1144,
+        "v27_pick": 856,
+        "t0_sweep": {
+          "0": 856,
+          "36": 856,
+          "72": 1144,
+          "10000": 1144
+        },
+        "recovered_at_t0": [
+          72,
+          10000
+        ]
+      },
+      {
+        "position_id": "iter8_s3501000012_K52",
+        "band": "opening",
+        "tiles_remaining": 51,
+        "teacher": 1343,
+        "v27_pick": 1145,
+        "t0_sweep": {
+          "0": 1145,
+          "36": 1145,
+          "72": 1343,
+          "10000": 1145
+        },
+        "recovered_at_t0": [
+          72
+        ]
+      },
+      {
+        "position_id": "iter8_s3501000022_K52",
+        "band": "opening",
+        "tiles_remaining": 51,
+        "teacher": 1454,
+        "v27_pick": 1156,
+        "t0_sweep": {
+          "0": 1156,
+          "36": 1156,
+          "72": 1454,
+          "10000": 1156
+        },
+        "recovered_at_t0": [
+          72
+        ]
+      },
+      {
+        "position_id": "iter8_s3501000025_K52",
+        "band": "opening",
+        "tiles_remaining": 51,
+        "teacher": 1161,
+        "v27_pick": 856,
+        "t0_sweep": {
+          "0": 856,
+          "36": 856,
+          "72": 1161,
+          "10000": 856
+        },
+        "recovered_at_t0": [
+          72
+        ]
+      },
+      {
+        "position_id": "greedy_s3500000045_K40",
+        "band": "early_mid",
+        "tiles_remaining": 39,
+        "teacher": 1649,
+        "v27_pick": 1149,
+        "t0_sweep": {
+          "0": 1149,
+          "36": 1149,
+          "72": 1649,
+          "10000": 1149
+        },
+        "recovered_at_t0": [
+          72
+        ]
+      },
+      {
+        "position_id": "heur3200_s3502000001_K40",
+        "band": "early_mid",
+        "tiles_remaining": 39,
+        "teacher": 1652,
+        "v27_pick": 1132,
+        "t0_sweep": {
+          "0": 1132,
+          "36": 1132,
+          "72": 1652,
+          "10000": 1652
+        },
+        "recovered_at_t0": [
+          72,
+          10000
+        ]
+      },
+      {
+        "position_id": "heur3200_s3502000047_K40",
+        "band": "early_mid",
+        "tiles_remaining": 39,
+        "teacher": 1646,
+        "v27_pick": 1438,
+        "t0_sweep": {
+          "0": 1646,
+          "36": 1646,
+          "72": 1646,
+          "10000": 1646
+        },
+        "recovered_at_t0": [
+          0,
+          36,
+          72,
+          10000
+        ]
+      },
+      {
+        "position_id": "iter8_s3501000034_K40",
+        "band": "early_mid",
+        "tiles_remaining": 39,
+        "teacher": 1166,
+        "v27_pick": 944,
+        "t0_sweep": {
+          "0": 944,
+          "36": 944,
+          "72": 1166,
+          "10000": 1166
+        },
+        "recovered_at_t0": [
+          72,
+          10000
+        ]
+      },
+      {
+        "position_id": "iter8_s3501000035_K40",
+        "band": "early_mid",
+        "tiles_remaining": 39,
+        "teacher": 753,
+        "v27_pick": 1060,
+        "t0_sweep": {
+          "0": 1060,
+          "36": 1060,
+          "72": 753,
+          "10000": 753
+        },
+        "recovered_at_t0": [
+          72,
+          10000
+        ]
+      },
+      {
+        "position_id": "greedy_s3500000018_K16",
+        "band": "late_mid",
+        "tiles_remaining": 15,
+        "teacher": 1341,
+        "v27_pick": 648,
+        "t0_sweep": {
+          "0": 648,
+          "36": 648,
+          "72": 1341,
+          "10000": 648
+        },
+        "recovered_at_t0": [
+          72
+        ]
+      },
+      {
+        "position_id": "heur3200_s3502000011_K16",
+        "band": "late_mid",
+        "tiles_remaining": 15,
+        "teacher": 1276,
+        "v27_pick": 752,
+        "t0_sweep": {
+          "0": 752,
+          "36": 1276,
+          "72": 1276,
+          "10000": 752
+        },
+        "recovered_at_t0": [
+          36,
+          72
+        ]
+      },
+      {
+        "position_id": "heur3200_s3502000024_K16",
+        "band": "late_mid",
+        "tiles_remaining": 15,
+        "teacher": 1749,
+        "v27_pick": 1657,
+        "t0_sweep": {
+          "0": 1657,
+          "36": 1657,
+          "72": 1749,
+          "10000": 1749
+        },
+        "recovered_at_t0": [
+          72,
+          10000
+        ]
+      }
+    ]
+  }
+}

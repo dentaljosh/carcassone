@@ -1,0 +1,18 @@
+[ranker] cap12 <- leaf variant {'V25_CAP': '12'} (explicit LeafConfig)
+[ranker] flatk25 <- leaf variant {'V29_MEEPLE_CURVE': '', 'V25_MEEPLE_K': '2.5'} (explicit LeafConfig)
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
+[done] scored=6 skipped=0 errors=0 in 58.8s
+[out] wrote measurement/v210_leaf/smoke_variants.json
+
+==== SOLVER-SCORE (v29_leaf) ====
+AGG  n=6  solver_regret mean=1.1667 median=0.0 max=7.0  top1=0.8333  tau=0.698
+  K=2 (marg)  n=6  regret=1.1667  top1=0.8333  tau=0.698  7.87s/solve
+
+==== SOLVER-SCORE (cap12) ====
+AGG  n=6  solver_regret mean=1.1667 median=0.0 max=7.0  top1=0.8333  tau=0.6693
+  K=2 (marg)  n=6  regret=1.1667  top1=0.8333  tau=0.6693  7.87s/solve
+
+==== SOLVER-SCORE (flatk25) ====
+AGG  n=6  solver_regret mean=0.0 median=0.0 max=0.0  top1=1.0  tau=0.7001
+  K=2 (marg)  n=6  regret=0.0  top1=1.0  tau=0.7001  7.87s/solve

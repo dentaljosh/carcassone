@@ -1,0 +1,9 @@
+G3: 80 jobs over ['champ'] at sims=[344], workers=12
+  25/80 jobs | 200 searches | 0 mismatches | 18s
+  50/80 jobs | 400 searches | 0 mismatches | 33s
+  75/80 jobs | 600 searches | 0 mismatches | 46s
+  80/80 jobs | 640 searches | 0 mismatches | 48s
+G3/search: PASS  640 searches / 220160 sims / 5120 field checks / 0 full games (0 plies) | 0 mismatches
+G3/search: throughput py=455 sims/s  rs=3907 sims/s  (8.59x)
+G3/search: legal-cache collide-check: 0 disagreeing hits / 0 hits
+G3/search: result -> /home/doctor/projects/carcassone/measurement/rustport_p3/G3_search_collidecheck.json

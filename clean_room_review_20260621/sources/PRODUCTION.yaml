@@ -1,0 +1,53 @@
+# PRODUCTION.yaml — the canonical "current production champion" pointer.
+# ONE authoritative, box-portable, git-tracked place naming the net + leaf config that
+# "production play" and the next flywheel's warm-from should use. Nothing in the codebase
+# reads this yet (production is, by repo convention, set per-launcher via --checkpoint +
+# env knobs) — this file is the human/agent source of truth that those launchers cite.
+# Update it (and governance/CHECKPOINT_LINEAGE.csv) whenever the champion changes.
+
+folded_in: "2026-06-11"
+supersedes:
+  - residual (lever_seq/ckpt/residual.pt)        # prior CL-017 champion = this net's iter0
+  - stage_b_iter_01 (stage_b/ckpt/iter_01.pt)     # prior clean-base policy champion
+
+champion:
+  ckpt_id: flywheel2_champion_iter8
+  # CIFS share — mount path differs per box (see CLAUDE.md): local 5800x = /mnt/c/carc-shared,
+  # xeon/laptop = /mnt/carc-shared. Resolve $SHARE per box.
+  path_local:  /mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
+  path_remote: /mnt/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
+  sha256: 0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c
+  arch: "96x6 ResNet, n_scalar_features=12, value_global_pool=False"
+
+# The full play config. Set ALL of these for production play / eval / warm-from.
+play_config:
+  agent: NeuralMCTS            # net priors + the v2.7 leaf as the VALUE (production config)
+  sims: 200                    # production play plane (the deeper-teacher experiment explores 800)
+  c_puct: 3.0
+  leaf: virtual_score_v2       # "v2.7"
+  env_knobs:
+    CARCASSONNE_V25_RESIDUAL_SCALE: "0.25"   # <-- the validated value-head lever, NOW folded in
+    CARCASSONNE_V25_CAP: "12"
+    CARCASSONNE_V25_DROP_THREE_OPEN: "1"
+    CARCASSONNE_V25_VALUE_BLEND: "0"
+    CARCASSONNE_USE_FLAT_LEAF: "1"           # flat-leaf rewrite (ea70fbf), bit-exact; ~2.26x per LEAF (~+8% end-to-end cluster self-play — both real, different denominators)
+
+# Why iter8 is the champion (the trustworthy-anchor evidence, NOT in-lineage-only):
+validation:
+  ruler: "out-of-lineage HeuristicMCTS v2.7 @ heur_sims=800, deck-paired, SEALED held-out band 1.7e9, n=400"
+  iter8_vs_heur800:  "+58.7 elo"
+  iter0_vs_heur800:  "-8.7 elo"   # iter0 == residual.pt (the incumbent) on the SAME anchor + decks
+  iter8_vs_incumbent: "+67.4 elo / z=2.73 SIGNIFICANT"   # direct: both nets vs the same independent ruler
+  results_csv_rows:
+    - flywheel2_SEALED_champ_iter8_vs_heur800_v27_n400
+  caveat: >
+    The +67.4 is a REAL strength gain over the incumbent on an independent ruler (not the
+    anchor-lie failure mode — iter0 IS residual.pt, both scored vs the SAME heur@800 anchor).
+    BUT it is a POLICY-DISTILLATION gain bounded by the v2.7 leaf (decomp 2026-06-10: ~95%
+    policy, plateaued iter5). It is NOT a v2.7-ceiling break. Genuinely-superhuman play still
+    requires the learned components to EXCEED the heuristic, which they do not yet.
+
+notes: >
+  The 1.7e9 sealed deck panel is SPENT — do NOT reuse it to select the next lever.
+  The next flywheel (deeper-teacher, docs/DEEPER_TEACHER_SPEC_2026-06-11.md) warm-starts
+  from THIS champion (ITER0_CKPT override), not from residual.pt.

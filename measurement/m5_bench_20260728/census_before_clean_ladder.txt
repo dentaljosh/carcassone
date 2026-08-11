@@ -1,0 +1,17 @@
+=== census 2026-07-29T04:12:23Z ===
+ 0:12  up 6 days, 22:06, 2 users, load averages: 6.26 11.71 8.49
+ 1869  12.0 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events
+  599   4.5 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow
+ 1173   3.5 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd
+  566   2.9 /System/Library/CoreServices/launchservicesd
+ 1163   2.6 /usr/libexec/trustd
+  596   2.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer
+  597   1.9 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd
+ 1699   1.8 /opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python
+  523   1.2 /usr/libexec/logd
+  602   1.0 /usr/libexec/runningboardd
+53627   0.6 /Applications/Claude.app/Contents/MacOS/Claude
+ 1379   0.6 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+--- mediaanalysisd? ---
+20995 /System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd
+69292 /System/Library/PrivateFrameworks/MediaAnalysisAccess.framework/Versions/A/XPCServices/mediaanalysisd-access.xpc/Contents/MacOS/mediaanalysisd-access

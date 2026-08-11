@@ -200,3 +200,90 @@ def test_root_visit_distribution_runs_search_if_not_already_run() -> None:
     board = g.get_init_board()
     counts, actions = mcts.root_visit_distribution(board)
     assert int(counts.sum()) == 8
+
+
+# --- root_value (search-value target source) -------------------------------
+
+
+def _signed_evaluator(board) -> tuple[np.ndarray, float]:
+    """Uniform priors, constant non-zero leaf value (+0.5 from the leaf's
+    current-player POV) so root.Q is a definite non-zero number to read back."""
+    a = action_size(board.offset.size)
+    return np.full(a, 1.0 / a, dtype=np.float32), 0.5
+
+
+def test_root_value_matches_root_q_after_search() -> None:
+    """root_value reuses the most recent search's root: returns root.W / root.N
+    (current-player POV) and runs no extra simulations."""
+    g, board = _board_with_branching()
+    mcts = NeuralMCTS(game=g, evaluator=_signed_evaluator, simulations=16, seed=0)
+    mcts.search(board)
+    root = mcts._nodes[g.string_representation(board)]
+    expected = root.W / root.N
+    assert mcts.root_value(board) == pytest.approx(expected)
+    # Did not run extra sims (N unchanged by the read).
+    assert root.N == 16
+    assert -1.0 <= mcts.root_value(board) <= 1.0
+
+
+def test_root_value_runs_search_if_not_already_run() -> None:
+    g, board = _board_with_branching()
+    mcts = NeuralMCTS(game=g, evaluator=_signed_evaluator, simulations=8, seed=0)
+    v = mcts.root_value(board)  # no prior search
+    assert np.isfinite(v) and -1.0 <= v <= 1.0
+    assert mcts._nodes[g.string_representation(board)].N == 8
+
+
+# --- interior_value_targets (flywheel step 1) ------------------------------
+
+
+def test_interior_value_targets_empty_without_record_boards() -> None:
+    """Without record_boards the nodes carry no board → nothing to harvest."""
+    g, board = _board_with_branching()
+    mcts = NeuralMCTS(game=g, evaluator=_signed_evaluator, simulations=32, seed=0)
+    mcts.search(board)
+    assert mcts.interior_value_targets(board, min_visits=1, max_nodes=99) == []
+
+
+def test_interior_value_targets_excludes_root_and_carries_node_q() -> None:
+    """With record_boards, harvest (board, player_to_move, Q) from the tree
+    interior: never the search root, never terminals, and each returned Q equals
+    the node's own W/N (current-player POV)."""
+    g, board = _board_with_branching()
+    mcts = NeuralMCTS(
+        game=g, evaluator=_signed_evaluator, simulations=64, seed=0,
+        record_boards=True,
+    )
+    mcts.search(board)
+    root_key = g.string_representation(board)
+    out = mcts.interior_value_targets(board, min_visits=2, max_nodes=99)
+    assert out, "expected at least one well-visited interior node at sims=64"
+    for nb, player, q in out:
+        node = mcts._nodes[g.string_representation(nb)]
+        assert g.string_representation(nb) != root_key          # never the root
+        assert not node.is_terminal                              # never terminal
+        assert player == node.player_to_move
+        assert q == pytest.approx(node.Q)
+        assert node.N >= 2                                       # respects min_visits
+        assert -1.0 <= q <= 1.0
+
+
+def test_interior_value_targets_respects_max_nodes() -> None:
+    """max_nodes caps the harvest at the top-N by visit count."""
+    g, board = _board_with_branching()
+    mcts = NeuralMCTS(
+        game=g, evaluator=_signed_evaluator, simulations=64, seed=0,
+        record_boards=True,
+    )
+    mcts.search(board)
+    capped = mcts.interior_value_targets(board, min_visits=1, max_nodes=3)
+    full = mcts.interior_value_targets(board, min_visits=1, max_nodes=99)
+    assert len(capped) <= 3
+    if len(full) > 3:
+        # capped keeps the highest-visit nodes
+        cap_visits = [mcts._nodes[g.string_representation(nb)].N for nb, _, _ in capped]
+        full_visits = sorted(
+            (mcts._nodes[g.string_representation(nb)].N for nb, _, _ in full),
+            reverse=True,
+        )
+        assert sorted(cap_visits, reverse=True) == full_visits[:len(capped)]

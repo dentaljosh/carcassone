@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carcassone/governance/CLAIM_REGISTRY_SCHEMA.json",
+  "title": "Claim registry row",
+  "description": "One row of governance/CLAIM_REGISTRY.csv. The interpretation layer of the 3-layer spine: claims + controlled status. Columns are in CSV order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claim_id",
+    "claim",
+    "category",
+    "status",
+    "confidence",
+    "best_evidence",
+    "counterevidence",
+    "assumptions",
+    "falsifier_or_decision_experiment",
+    "superseded_claims",
+    "epoch",
+    "last_updated",
+    "evidence_files_or_run_ids"
+  ],
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "pattern": "^CL-[0-9]{3}$",
+      "description": "Stable claim identifier, e.g. CL-001."
+    },
+    "claim": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The claim, stated as a falsifiable assertion."
+    },
+    "category": {
+      "type": "string",
+      "enum": ["strength", "mechanism", "measurement", "infra", "decision"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Controlled status vocabulary (7 values); never 'confirmed by repetition'.",
+      "enum": [
+        "Confirmed",
+        "Supported",
+        "Provisional",
+        "Inconclusive",
+        "Disfavored",
+        "Invalidated",
+        "Untested"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "best_evidence": {
+      "type": "string",
+      "description": "Strongest evidence FOR the claim. May be empty for Untested decisions."
+    },
+    "counterevidence": {
+      "type": "string",
+      "description": "Caveats or evidence against. May be empty."
+    },
+    "assumptions": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The load-bearing assumption the status depends on."
+    },
+    "falsifier_or_decision_experiment": {
+      "type": "string",
+      "description": "What measurement would falsify the claim, or the decision experiment that resolves it."
+    },
+    "superseded_claims": {
+      "type": "string",
+      "description": "Space- or semicolon-separated claim_ids this claim supersedes. May be empty."
+    },
+    "epoch": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Evidence epoch id(s) from EVIDENCE_EPOCHS.md (e.g. E6-clean-ruler, 'spans', or 'old=E3..., clean=E6...')."
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "evidence_files_or_run_ids": {
+      "type": "string",
+      "minLength": 1,
+      "description": "results.csv exp_id(s) and/or clean_eval / governance paths backing the claim."
+    }
+  }
+}

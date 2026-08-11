@@ -1,0 +1,124 @@
+[extchain 2026-07-19 09:14:55] START host=Doctor SHARE=/mnt/c/carc-shared OW=12 band=13200000000
+[extchain 2026-07-19 09:14:55] START iter_16 (eval_iter16_vs_rodv2iter02_EXT132): 0/200 jsons, OW=12 cand=iter_16.pt
+[fair-nvn-orch] CAND iter_16.pt: 81ch/42sc (sighted)
+[fair-nvn-orch] OPP  iter_02.pt: 78ch/12sc (non-sighted)
+[fair-nvn-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt on cuda
+[export] tracing... (n_ch=81, n_scalar=42)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=8.28e-05  max|dvalue|=5.45e-04  OK
+[export] OK -> /tmp/carc_fairnvnC_Doctor.ts.pt  (n_scalar=42, C=81, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_fairnvnO_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[fair-nvn-orch] start carc-orch CAND (W=12 fwd=2 max_batch=16) shm=fairnvnCDoctor n_ch=81 n_scalar=42
+[fair-nvn-orch] start carc-orch OPP  (W=12 fwd=2 max_batch=16) shm=fairnvnODoctor n_ch=78 n_scalar=12
+[fair-nvn-orch] BOTH servers READY | CAND shm='fairnvnCDoctor' 81ch/42sc | OPP shm='fairnvnODoctor' 78ch/12sc | client W=12
+[head-to-head] opponent=net
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[head-to-head] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[head-to-head] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+[warn] --opponent net: the shared search config deviates from governance/PRODUCTION.yaml (k_dets=2 (production 4); sims=200 (production 688)). BOTH sides use these values, so the swap stays single-variable, but the opponent is NOT the shipped production champion — do not report this cell as 'vs production'.
+[fair-netprior] net=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt
+[fair-netprior] rep=SIGHTED 81ch/42sc (inferred from the checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+fair-puct[fair_fair-netprior_c1.5_tau5_float_kd2_s200_vs_net-iter_02_k2-leafa36d2e15]: info=fair-netprior n=200 paired=True K=2 k_dets=2 sims=200 | 0 cached, 200 to play, 12 workers, out=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/eval_iter16_vs_rodv2iter02_EXT132
+  [orch] candidate SHM eval-server 'fairnvnCDoctor': 12 CPU workers attach to /dev/shm/carc_fairnvnCDoctor (81ch/42-scalar sighted PRIORS)
+  [orch] opponent  SHM eval-server 'fairnvnODoctor': 12 CPU workers attach to /dev/shm/carc_fairnvnODoctor (78ch/12-scalar non-sighted PRIORS)
+  10/200 played (34.2s/game, ~108 min left)
+  20/200 played (29.0s/game, ~87 min left)
+  30/200 played (25.7s/game, ~73 min left)
+  40/200 played (27.7s/game, ~74 min left)
+  50/200 played (28.0s/game, ~70 min left)
+  60/200 played (27.8s/game, ~65 min left)
+  70/200 played (28.3s/game, ~61 min left)
+  80/200 played (28.3s/game, ~57 min left)
+  90/200 played (29.0s/game, ~53 min left)
+  100/200 played (28.0s/game, ~47 min left)
+  110/200 played (30.7s/game, ~46 min left)
+
+=== FAIR-PUCT[fair-netprior] (K=2, k_dets=2, sims=200, total~400) vs FAIR NET-PRIOR agent (iter_02.pt, non-sighted rep, curve125 leaf, k2x200) ===
+games: 200   candidate: 98W / 2D / 100L   winrate 0.495 (z=-0.14)
+avg score diff (candidate - opponent): -0.95
+ELO: -3.5  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin -0.95   z = -0.59
+prefix ms/move: candidate 2106  opponent 1996  (ratio 1.06x)
+fair endgame: candidate latched 200/200 games, 20.61s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 20.19s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/distill_flywheel_sighted_20260716/eval_iter16_vs_rodv2iter02_EXT132/summary.json
+[extchain 2026-07-19 10:11:25] EXIT iter_16 (eval_iter16_vs_rodv2iter02_EXT132): rc=1, now 200/200 jsons
+[extchain 2026-07-19 10:11:25] START iter_20 (eval_iter20_vs_rodv2iter02_EXT132): 6/200 jsons, OW=12 cand=iter_20.pt
+[fair-nvn-orch] CAND iter_20.pt: 81ch/42sc (sighted)
+[fair-nvn-orch] OPP  iter_02.pt: 78ch/12sc (non-sighted)
+[fair-nvn-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_20.pt on cuda
+[export] tracing... (n_ch=81, n_scalar=42)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=5.32e-05  max|dvalue|=2.41e-04  OK
+[export] OK -> /tmp/carc_fairnvnC_Doctor.ts.pt  (n_scalar=42, C=81, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_fairnvnO_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[fair-nvn-orch] start carc-orch CAND (W=12 fwd=2 max_batch=16) shm=fairnvnCDoctor n_ch=81 n_scalar=42
+[fair-nvn-orch] start carc-orch OPP  (W=12 fwd=2 max_batch=16) shm=fairnvnODoctor n_ch=78 n_scalar=12
+[fair-nvn-orch] BOTH servers READY | CAND shm='fairnvnCDoctor' 81ch/42sc | OPP shm='fairnvnODoctor' 78ch/12sc | client W=12
+[head-to-head] opponent=net
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[head-to-head] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[head-to-head] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+[warn] --opponent net: the shared search config deviates from governance/PRODUCTION.yaml (k_dets=2 (production 4); sims=200 (production 688)). BOTH sides use these values, so the swap stays single-variable, but the opponent is NOT the shipped production champion — do not report this cell as 'vs production'.
+[fair-netprior] net=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_20.pt
+[fair-netprior] rep=SIGHTED 81ch/42sc (inferred from the checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+fair-puct[fair_fair-netprior_c1.5_tau5_float_kd2_s200_vs_net-iter_02_k2-leafa36d2e15]: info=fair-netprior n=200 paired=True K=2 k_dets=2 sims=200 | 7 cached, 193 to play, 12 workers, out=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/eval_iter20_vs_rodv2iter02_EXT132
+  [orch] candidate SHM eval-server 'fairnvnCDoctor': 12 CPU workers attach to /dev/shm/carc_fairnvnCDoctor (81ch/42-scalar sighted PRIORS)
+  [orch] opponent  SHM eval-server 'fairnvnODoctor': 12 CPU workers attach to /dev/shm/carc_fairnvnODoctor (78ch/12-scalar non-sighted PRIORS)
+  10/193 played (37.8s/game, ~115 min left)
+  20/193 played (37.7s/game, ~109 min left)
+  30/193 played (35.1s/game, ~95 min left)
+  40/193 played (35.2s/game, ~90 min left)
+  50/193 played (34.5s/game, ~82 min left)
+  60/193 played (32.8s/game, ~73 min left)
+  70/193 played (32.0s/game, ~66 min left)
+  80/193 played (31.6s/game, ~60 min left)
+  90/193 played (31.7s/game, ~54 min left)
+
+=== FAIR-PUCT[fair-netprior] (K=2, k_dets=2, sims=200, total~400) vs FAIR NET-PRIOR agent (iter_02.pt, non-sighted rep, curve125 leaf, k2x200) ===
+games: 199   candidate: 105W / 3D / 91L   winrate 0.535 (z=+0.99)
+avg score diff (candidate - opponent): +2.27
+ELO: +24.5  (+/- 24.7 1sigma)
+PAIRED: 99 decks   mean seat-balanced margin +2.26   z = +1.64
+prefix ms/move: candidate 2116  opponent 1987  (ratio 1.07x)
+fair endgame: candidate latched 199/199 games, 21.59s solver/game, timeouts=0
+fair endgame: opponent  latched 199/199 games, 18.42s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=199 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/distill_flywheel_sighted_20260716/eval_iter20_vs_rodv2iter02_EXT132/summary.json
+[extchain 2026-07-19 11:01:12] EXIT iter_20 (eval_iter20_vs_rodv2iter02_EXT132): rc=1, now 199/200 jsons
+[extchain 2026-07-19 11:01:12] CHAIN DONE

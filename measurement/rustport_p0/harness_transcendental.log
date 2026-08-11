@@ -1,0 +1,29 @@
+  ... fuzz 20000000/100000000 (7s)
+  ... fuzz 40000000/100000000 (14s)
+  ... fuzz 60000000/100000000 (21s)
+  ... fuzz 80000000/100000000 (28s)
+  ... fuzz 100000000/100000000 (35s)
+{
+  "corpus": "measurement/champ_action_logs/champ_games.jsonl",
+  "games_used": 89,
+  "plies": 12808,
+  "n_z": 201525,
+  "n_tanh_arg": 214333,
+  "tau_p": 5.0,
+  "value_norm": 15.0,
+  "leaf_quantize": "float",
+  "z_range": [
+    -7.08,
+    0.0
+  ],
+  "z_distinct": 1666,
+  "tanh_range": [
+    -3.1166666666666667,
+    2.82
+  ],
+  "tanh_distinct": 2673,
+  "wall_s": 23.9,
+  "path": "measurement/rustport_p0/transcendental_inputs.npz"
+}
+G0/transcendental: PASS  corpus exp: bit-exact via ['corpus_exp_vs_exp64_fma'] (exp64 7205/201525 max 1 ulp; exp64_fma 0/201525); corpus tanh: bit-exact via ['msun_fma', 'glibc_fma']; fuzz exp ['exp64_fma'], fuzz tanh ['tanh64[glibc_fma]']
+G0/transcendental: result -> /home/doctor/projects/carcassone/measurement/rustport_p0/G0_transcendental.json

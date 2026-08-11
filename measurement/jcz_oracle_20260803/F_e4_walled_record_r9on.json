@@ -1,0 +1,230 @@
+{
+ "profile": "walled",
+ "policy": "record",
+ "r9": true,
+ "n_games": 2,
+ "totals": {
+  "START_TILE_PLY": 2,
+  "START_TILE_MEEPLE": 1,
+  "WALL_LEGALITY": 25,
+  "SCORE_FINAL_EXPLAINED": 112
+ },
+ "real": {},
+ "score_agreement": {
+  "agree": 1,
+  "compared": 2
+ },
+ "games": [
+  {
+   "game_id": 1785205383,
+   "deck_seed": 867966,
+   "profile": "walled",
+   "policy": "record",
+   "r9": true,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    111,
+    113
+   ],
+   "jcz_final": [
+    111,
+    113
+   ],
+   "final_agree": true,
+   "counts": {
+    "START_TILE_PLY": 1
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "straight_road",
+       "our_rotation": 0
+      }
+     }
+    ]
+   },
+   "error": null,
+   "jcz_over": true,
+   "score_gap_causes": [],
+   "real": {}
+  },
+  {
+   "game_id": 1785466497,
+   "deck_seed": 161583,
+   "profile": "walled",
+   "policy": "record",
+   "r9": true,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    73,
+    108
+   ],
+   "jcz_final": [
+    59,
+    108
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "WALL_LEGALITY": 25,
+    "SCORE_FINAL_EXPLAINED": 112
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_top",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 88,
+      "detail": {
+       "tile": "BA/CFC.2",
+       "jcz_only": [
+        [
+         -3,
+         -7,
+         90
+        ],
+        [
+         -3,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 92,
+      "detail": {
+       "tile": "BA/CG",
+       "jcz_only": [
+        [
+         -3,
+         -7,
+         0
+        ],
+        [
+         -3,
+         -7,
+         90
+        ],
+        [
+         -3,
+         -7,
+         270
+        ]
+       ],
+       "n": 3
+      }
+     },
+     {
+      "ply": 94,
+      "detail": {
+       "tile": "BA/RCr",
+       "jcz_only": [
+        [
+         -3,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         0
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        73,
+        108
+       ],
+       "jcz": [
+        59,
+        108
+       ],
+       "classified_causes": [
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours": [
+        18,
+        14
+       ],
+       "jcz": [
+        4,
+        14
+       ]
+      }
+     },
+     {
+      "ply": 34,
+      "detail": {
+       "ours": [
+        18,
+        14
+       ],
+       "jcz": [
+        4,
+        14
+       ]
+      }
+     },
+     {
+      "ply": 35,
+      "detail": {
+       "ours": [
+        18,
+        16
+       ],
+       "jcz": [
+        4,
+        16
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  }
+ ]
+}

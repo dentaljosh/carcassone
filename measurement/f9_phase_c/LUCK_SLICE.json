@@ -1,0 +1,73 @@
+{
+ "schema": "carcassonne-f9-phase-c-luck-slice/v1",
+ "generated_utc": "2026-08-03T17:57:47+00:00",
+ "note": "unpaired self-play slice; ICC/sigma_pair NOT derivable \u2014 see not_derivable/how_to_complete",
+ "walled449": {
+  "label": "walled449",
+  "n_games": 449,
+  "sigma_game": 17.74940432694962,
+  "sigma_game_sem": 0.5929659804532893,
+  "mean_seat0_margin": -0.5389755011135857,
+  "mean_seat0_margin_sem": 0.8376461797255272,
+  "seat0_win_rate": 0.48329621380846327,
+  "mean_total_points": 196.52115812917594,
+  "abs_margin_mean": 14.276169265033408,
+  "sizing_unpaired": {
+   "0.55": {
+    "edge_points_implied": 2.2304140539730213,
+    "n_games_unpaired_test": 381,
+    "n_games_paired_test": null
+   },
+   "0.60": {
+    "edge_points_implied": 4.49676016372341,
+    "n_games_unpaired_test": 93,
+    "n_games_paired_test": null
+   },
+   "0.65": {
+    "edge_points_implied": 6.839208751279498,
+    "n_games_unpaired_test": 39,
+    "n_games_paired_test": null
+   }
+  },
+  "not_derivable": {
+   "luck_share_icc": "needs a SEAT-SWAP PAIRED archive (same deck, both seatings, two agents) \u2014 a self-play champion corpus has one seating per deck.",
+   "sigma_pair": "same reason; the paired-margin statistic does not exist without the second seating.",
+   "n_games_paired_test": "follows from sigma_pair."
+  },
+  "how_to_complete": "generate a seat-swap paired eval archive under this rules profile (the `seedNNN_a0.json` / `_a1.json` shape luck_floor.load_pairs reads) and add its directory to luck_floor.NEAR_EQUAL, then re-run scripts/human_anchor/luck_floor.py."
+ },
+ "fixed_v1": {
+  "label": "fixed_v1",
+  "n_games": 400,
+  "sigma_game": 19.56211756814686,
+  "sigma_game_sem": 0.6924914553457082,
+  "mean_seat0_margin": 1.4075,
+  "mean_seat0_margin_sem": 0.978105878407343,
+  "seat0_win_rate": 0.48875,
+  "mean_total_points": 195.9125,
+  "abs_margin_mean": 15.4375,
+  "sizing_unpaired": {
+   "0.55": {
+    "edge_points_implied": 2.458202041362013,
+    "n_games_unpaired_test": 381,
+    "n_games_paired_test": null
+   },
+   "0.60": {
+    "edge_points_implied": 4.956005811696689,
+    "n_games_unpaired_test": 93,
+    "n_games_paired_test": null
+   },
+   "0.65": {
+    "edge_points_implied": 7.537684262591883,
+    "n_games_unpaired_test": 39,
+    "n_games_paired_test": null
+   }
+  },
+  "not_derivable": {
+   "luck_share_icc": "needs a SEAT-SWAP PAIRED archive (same deck, both seatings, two agents) \u2014 a self-play champion corpus has one seating per deck.",
+   "sigma_pair": "same reason; the paired-margin statistic does not exist without the second seating.",
+   "n_games_paired_test": "follows from sigma_pair."
+  },
+  "how_to_complete": "generate a seat-swap paired eval archive under this rules profile (the `seedNNN_a0.json` / `_a1.json` shape luck_floor.load_pairs reads) and add its directory to luck_floor.NEAR_EQUAL, then re-run scripts/human_anchor/luck_floor.py."
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "chunk": "06_light_f",
+ "tree": "seam",
+ "rc": 1,
+ "duration_s": 17,
+ "attempt": 1,
+ "peak_rss_kb": 789128,
+ "n_failing": 3,
+ "failing_ids": [
+  "tests/test_r9_field_on_city_edge.py::TestFlagsOffByteIdentity::test_replay_sample_is_lockstep_with_no_flag[uniform]",
+  "tests/test_r9_field_on_city_edge.py::TestFlagsOffByteIdentity::test_replay_sample_is_lockstep_with_no_flag[wall]",
+  "tests/test_r9_field_on_city_edge.py::TestFlagsOffByteIdentity::test_the_fuzz_refuses_a_flag_the_environment_does_not_carry"
+ ]
+}

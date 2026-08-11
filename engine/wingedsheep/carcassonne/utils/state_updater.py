@@ -41,6 +41,9 @@ class StateUpdater:
         for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
             if 0 <= nr < n_rows and 0 <= nc < n_cols and game_state.board[nr][nc] is None:
                 game_state.open_positions.add(Coordinate(row=nr, column=nc))
+        # Patched (vendored fork, 2026-05-13): track placed coords for fast
+        # string_representation iteration. Tiles never get unplaced; pure add.
+        game_state.placed_coords.add(tile_action.coordinate)
         return game_state
 
     @staticmethod
@@ -113,6 +116,59 @@ class StateUpdater:
         next player. There is no meeple decision because no tile was played.
         Caught by external review 2026-04-28; regression test in
         tests/test_engine_adjacency.py::test_tile_phase_pass_does_not_leak_meeples.
+
+        ⚠️ F9/A3 (2026-08-03), `state.redraw_unplaceable`: the `next_player`
+        call above is the RULES DIVERGENCE (audit RF-D-2,
+        docs/RULES_FIDELITY_AUDIT_20260802.md clause P4). The retail rule is
+        *"In the rare circumstances where a drawn tile cannot be placed, the
+        player returns the tile to the box and draws another tile"* — the tile
+        is REMOVED FROM THE GAME and the SAME player continues their turn.
+        Default stays False (the engine of record); `Game(draw_rule="redraw")`
+        opts in. The two pre-registered sub-decisions the flag resolves:
+
+        **(1) Recursion.** The redrawn tile may itself be unplaceable, and the
+        rule re-applies per draw. We realize the loop as a SEQUENCE of forced
+        `PassAction`s -- one set-aside + one draw per action, phase left at
+        TILES with the drawer still to move -- rather than as a `while` loop
+        inside this handler. Behaviourally identical (the redrawn-and-still-
+        unplaceable state has `PassAction` as its only legal move, so no agent
+        decision is invented), and it buys two things a loop cannot: each draw
+        stays a SEPARATE chance event that the marginalized exact solver can
+        price (sub-decision 2), and the diff here is the removal of one call.
+        TERMINATION is structural, not a guard: the bag strictly shrinks by one
+        tile per Pass because a set-aside tile is removed from the game rather
+        than returned to it. Deck exhausted mid-redraw resolves exactly as the
+        normal path does -- `draw_tile` leaves `next_tile = None`,
+        `is_terminated()` becomes True and `count_final_scores` fires from this
+        same block (audit E7).
+
+        **(2) The bag / the exact solver's histogram.** A set-aside tile is
+        removed PERMANENTLY: not returned to the bag, not reshuffled, never
+        redrawn, and absent from every later determinization and chance node.
+        Nothing extra is needed to keep the bag a correct multiset of genuinely
+        unseen tiles -- `state.deck` IS the bag in both engines (there is no
+        separate histogram anywhere in the hot path) and `draw_tile`'s
+        `deck.pop(0)` already removes it. What the flag DOES owe the bag is two
+        consequences, both gated on it and both implemented outside this file:
+          * `Board.total_tiles` is decremented per set-aside
+            (`game_wrapper.Game.get_next_state` / `apply_action_inplace`), so
+            the two live definitions of "tiles left" -- `len(deck) + has_next`
+            (fair_agent's latch band) and `total_tiles - tile_count` (the
+            window audit, clip_trace, `features.progress`) -- stay equal;
+          * the marginalized solver re-marginalizes the replacement draw
+            (`scripts/level2/endgame_solver._Solver`, `fair/solver.rs`),
+            because the solver's TT key is the SORTED (multiset) bag, so
+            letting the value depend on which tile happened to sit at the front
+            of the deck would poison the table. (That unsoundness is latent on
+            the flag-OFF discard path too; it is NOT fixed here, because
+            flag-off must stay byte-identical.)
+
+        `set_aside_tiles` is appended under BOTH rules -- pure telemetry, read
+        by no scorer/repr/mask/leaf -- so the manifest counter prices both
+        profiles. Only `redraw_unplaceable` makes it behavioural.
+        `action_util.py` is correct and untouched: it emits the Pass only when
+        there is genuinely no legal placement, so the must-place-if-possible
+        rule is already honoured under both draw rules.
         """
         if isinstance(action, TileAction):
             cls.play_tile(game_state=target, tile_action=action)
@@ -128,8 +184,11 @@ class StateUpdater:
                 # next_tile, and hand off directly to the next player. Phase
                 # stays at TILES — the new player owes a tile decision next.
                 target.last_tile_action = None
+                if target.next_tile is not None:
+                    target.set_aside_tiles.append(target.next_tile)
                 cls.draw_tile(game_state=target)
-                cls.next_player(game_state=target)
+                if not target.redraw_unplaceable:
+                    cls.next_player(game_state=target)
                 if target.is_terminated():
                     PointsCollector.count_final_scores(game_state=target)
                 return

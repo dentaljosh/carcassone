@@ -1,0 +1,10 @@
+{
+ "chunk": "15e09_puct_k_dets_validation",
+ "tree": "main",
+ "rc": 0,
+ "duration_s": 1,
+ "attempt": 1,
+ "peak_rss_kb": 52316,
+ "n_failing": 0,
+ "failing_ids": []
+}

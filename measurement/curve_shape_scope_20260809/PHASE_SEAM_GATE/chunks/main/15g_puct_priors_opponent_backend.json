@@ -1,0 +1,10 @@
+{
+ "chunk": "15g_puct_priors_opponent_backend",
+ "tree": "main",
+ "rc": 0,
+ "duration_s": 25,
+ "attempt": 1,
+ "peak_rss_kb": 62980,
+ "n_failing": 0,
+ "failing_ids": []
+}

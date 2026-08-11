@@ -1,0 +1,45 @@
+[load] 10067 sibling roots; K<=2 candidates selected: 300 (subset_seed=20260704)
+[eta] ~14s/root search-side x 300 roots / W10 ~= 7 min (+ solves)
+  scored=10/300  4.0s/root  eta 19 min
+  scored=20/300  3.2s/root  eta 15 min
+  scored=30/300  2.9s/root  eta 13 min
+  scored=40/300  2.8s/root  eta 12 min
+  scored=50/300  2.6s/root  eta 11 min
+  scored=60/300  2.5s/root  eta 10 min
+  scored=70/300  2.5s/root  eta 10 min
+  scored=80/300  2.5s/root  eta 9 min
+  scored=90/300  2.4s/root  eta 9 min
+  scored=100/300  2.4s/root  eta 8 min
+  scored=110/300  2.5s/root  eta 8 min
+  scored=120/300  2.5s/root  eta 8 min
+  scored=130/300  2.5s/root  eta 7 min
+  scored=140/300  2.6s/root  eta 7 min
+  scored=150/300  2.6s/root  eta 6 min
+  scored=160/300  2.5s/root  eta 6 min
+  scored=170/300  2.6s/root  eta 6 min
+  scored=180/300  2.5s/root  eta 5 min
+  scored=190/300  2.6s/root  eta 5 min
+  scored=200/300  2.6s/root  eta 4 min
+  scored=210/300  2.6s/root  eta 4 min
+  scored=220/300  2.7s/root  eta 4 min
+  scored=230/300  2.7s/root  eta 3 min
+  scored=240/300  2.7s/root  eta 3 min
+  scored=250/300  2.7s/root  eta 2 min
+  scored=260/300  2.6s/root  eta 2 min
+  scored=270/300  2.6s/root  eta 1 min
+  scored=280/300  2.6s/root  eta 1 min
+  scored=290/300  2.6s/root  eta 0 min
+  scored=300/300  2.6s/root  eta 0 min
+[done] scored=300 skipped=0 errors=0 in 13.1 min
+[out] wrote measurement/fairness_probe/fairness_decision_s1600_k8_n300.json
+
+==== FAIRNESS DECISION PROBE (exact-solver regret, raw points) ====
+roots=300  sims=1600  K=8  deck_len_dist={1: 300}
+  clair         regret mean=0.4467 median=0.0000 max=11.00 top1=0.793
+  fair_pooledN  regret mean=0.3933 median=0.0000 max=6.00 top1=0.803
+  fair_pooledQ  regret mean=0.3833 median=0.0000 max=6.00 top1=0.807
+  paired_pooledN: mean Δ(fair−clair)=-0.0533 (paired z=-1.27)  differ=70/300 (23.3%)  sign fair/clair better=6/3 (z=+1.00)
+  paired_pooledQ: mean Δ(fair−clair)=-0.0633 (paired z=-1.46)  differ=69/300 (23.0%)  sign fair/clair better=7/3 (z=+1.26)
+
+NOTE: at K<=2 the deck has <=1 hidden draw beyond the current tile — clairvoyance advantage is structurally SMALL here (this measures the endgame-decision tax, not the midgame tax)
+NOTE: at deck_len<=1 the unseen-deck reshuffle is an identity permutation (the single hidden tile's identity is inferable from the public multiset), so the two arms differ only by search RNG and aggregation (K pooled searches vs one) — zero hidden information; see deck_len_dist for how much of the sample is in that regime

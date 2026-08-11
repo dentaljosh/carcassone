@@ -29,6 +29,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.train_provenance import add_provenance_args, build_training_provenance
 from carcassonne_ai.warmstart import (
     count_positions,
     iter_game_dataset_files,
@@ -78,6 +79,52 @@ def policy_cross_entropy(
     return -(target * log_probs).sum(dim=-1).mean()
 
 
+def ownership_loss(
+    pred: torch.Tensor, target: torch.Tensor, board: torch.Tensor
+) -> torch.Tensor:
+    """Path B ownership aux loss: MSE between tanh ownership prediction and the
+    {-1,0,+1} target, restricted to placed-tile cells.
+
+    pred / target: (B, P, W, W); board: (B, C, W, W). Cells with no tile carry no
+    ownership signal, so we mask to CH_TILE_PRESENT to keep the gradient focused
+    on the placed region (the only place ownership is defined) instead of diluting
+    it with trivial empty-cell zeros.
+    """
+    from carcassonne_ai.board_repr import CH_TILE_PRESENT
+
+    tile_present = board[:, CH_TILE_PRESENT : CH_TILE_PRESENT + 1, :, :]
+    sq = (pred - target) ** 2 * tile_present
+    denom = tile_present.sum() * pred.shape[1] + 1e-6
+    return sq.sum() / denom
+
+
+def masked_policy_ownership_loss(
+    policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+):
+    """Policy CE + ownership MSE over FULL-TRAJECTORY rows only (aux_b True).
+
+    Flywheel step 1 (DECISIONS 2026-06-04): value-only tree-interior rows
+    (aux_b False) carry dummy zero policy / all-False mask / zero ownership that
+    would trip policy_cross_entropy's "rows sum to 1 / have a legal action"
+    validators, so they are subset OUT of these two heads here. The value MSE is
+    computed separately over the FULL batch (interior rows DO train the value).
+    If a batch is entirely value-only, both returned losses are an exact zero
+    (no policy/ownership gradient that step). Returns (pol_loss, own_loss)."""
+    aux = aux_b.bool()
+    if bool(aux.all()):
+        return (
+            policy_cross_entropy(policy_logits, policy_b, mask_b),
+            ownership_loss(own_pred, own_b, board_b),
+        )
+    if not bool(aux.any()):
+        z = policy_logits.new_zeros(())
+        return z, z
+    return (
+        policy_cross_entropy(policy_logits[aux], policy_b[aux], mask_b[aux]),
+        ownership_loss(own_pred[aux], own_b[aux], board_b[aux]),
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="train_warmstart")
     p.add_argument(
@@ -92,6 +139,36 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--weight-decay", type=float, default=1e-4)
     p.add_argument("--filters", type=int, default=96)
     p.add_argument("--blocks", type=int, default=6)
+    p.add_argument(
+        "--global-pool", action="store_true",
+        help="Flywheel step 2: feed a board-wide global-pool summary (trunk "
+             "mean+max) into the value head. The choice is saved in the "
+             "checkpoint (value_global_pool) and propagates to train_iter/eval.")
+    p.add_argument(
+        "--include-farm-scalars",
+        action="store_true",
+        help="Path B Step E: train a 12-scalar net (10 base + 2 farm-control). "
+        "The training data MUST have been generated with the same flag "
+        "(Game(include_farm_scalars=True)) so the scalar widths match. The "
+        "choice is saved in the checkpoint as n_scalar_features and propagates "
+        "to train_iter automatically.",
+    )
+    p.add_argument(
+        "--sighted",
+        action="store_true",
+        help="M2 canonical-AZ: train the SIGHTED net (81 board channels = 78 + 3 "
+        "farm-connectivity planes; scalars = base(+farm) + 32 bag histogram). The "
+        "training data MUST have been dumped with the same flag "
+        "(generate_warmstart_smoke.py --sighted). n_input_channels + sighted are "
+        "saved in the checkpoint and propagate to gen/train_iter/eval.",
+    )
+    p.add_argument(
+        "--aux-weight",
+        type=float,
+        default=0.15,
+        help="Path B ownership aux-loss weight (added to policy CE + value MSE). "
+        "0.0 disables the aux gradient. Step-6 sensitivity sweeps {0.0,0.15,0.5}.",
+    )
     p.add_argument("--val-fraction", type=float, default=0.05)
     p.add_argument(
         "--num-workers",
@@ -101,7 +178,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--seed", type=int, default=0)
+    add_provenance_args(p)
     args = p.parse_args(argv)
+    _argv = argv if argv is not None else sys.argv[1:]
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -161,8 +240,25 @@ def main(argv: list[str] | None = None) -> int:
         persistent_workers=(args.num_workers > 0),
     )
 
-    net = CarcassonneNet(n_filters=args.filters, n_blocks=args.blocks).to(device)
-    print(f"  net params: {net.param_count():,}  (filters={args.filters}, blocks={args.blocks})")
+    # Derive net input dims from a Game built with the SAME sighted/farm flags,
+    # so the net width can never drift from what get_canonical_form emits into
+    # the training data (single source of truth).
+    from carcassonne_ai.game_wrapper import Game
+    _dims_game = Game(sighted=args.sighted, include_farm_scalars=args.include_farm_scalars)
+    n_scalar_features = _dims_game.get_scalar_feature_size()
+    n_input_channels = _dims_game.get_input_channels()
+    net = CarcassonneNet(
+        n_filters=args.filters, n_blocks=args.blocks,
+        n_input_channels=n_input_channels,
+        n_scalar_features=n_scalar_features,
+        value_global_pool=args.global_pool,
+    ).to(device)
+    print(
+        f"  net params: {net.param_count():,}  (filters={args.filters}, "
+        f"blocks={args.blocks}, channels={n_input_channels}, "
+        f"scalars={n_scalar_features}, sighted={args.sighted}, "
+        f"global_pool={args.global_pool})"
+    )
 
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     # ceil so we don't underestimate batch count and let the cosine schedule
@@ -175,6 +271,27 @@ def main(argv: list[str] | None = None) -> int:
     best_val = math.inf
     best_path = args.output.with_suffix(".best.pt")
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    # Phase-B provenance stamp (warmstart is the lineage ROOT — trains from
+    # scratch on the heuristic corpus; no parent ckpt). Pure metadata.
+    _prov = build_training_provenance(
+        out_path=args.output,
+        warm_from=None,
+        file_list=list(train_files) + list(val_files),
+        buffer_files=[],
+        n_filters=args.filters,
+        n_blocks=args.blocks,
+        value_global_pool=args.global_pool,
+        n_scalar_features=n_scalar_features,
+        iter_idx=-1,
+        argv=_argv,
+        loss_weights={"lr": args.lr, "weight_decay": getattr(args, "weight_decay", None),
+                      "value": getattr(args, "value_loss_weight", 1.0)},
+        aux_heads=["ownership"],
+        value_target=args.prov_value_target or "heuristic_warmstart",
+        selfplay_leaf=args.prov_selfplay_leaf or "n/a (warmstart corpus)",
+        selfplay_seed_range=args.prov_seed_range,
+        run_tag=args.prov_run_tag or "warmstart",
+    )
     do_validation = n_val > 0
     if not do_validation:
         print("  --val-fraction == 0.0: skipping validation + best-by-val checkpoint")
@@ -185,19 +302,26 @@ def main(argv: list[str] | None = None) -> int:
         t0 = time.perf_counter()
         train_pol_loss = 0.0
         train_val_loss = 0.0
+        train_own_loss = 0.0
         n_batches = 0
         nan_skipped = 0
-        for board_b, scalar_b, policy_b, value_b, mask_b in train_loader:
+        for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, _group_b in train_loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             policy_b = policy_b.to(device, non_blocking=True)
             value_b = value_b.to(device, non_blocking=True)
             mask_b = mask_b.to(device, non_blocking=True)
+            own_b = own_b.to(device, non_blocking=True)
+            aux_b = aux_b.to(device, non_blocking=True)
             opt.zero_grad()
-            policy_logits, value_pred = net(board_b, scalar_b)
-            pol_loss = policy_cross_entropy(policy_logits, policy_b, mask_b)
+            policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
+            # warmstart data is all full rows; the mask helper is a no-op there
+            # but keeps this trainer correct if ever pointed at flywheel data.
+            pol_loss, own_loss = masked_policy_ownership_loss(
+                policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+            )
             val_loss = F.mse_loss(value_pred, value_b)
-            loss = pol_loss + val_loss
+            loss = pol_loss + val_loss + args.aux_weight * own_loss
             if not torch.isfinite(loss):
                 nan_skipped += 1
                 continue  # skip the step; weights stay clean
@@ -206,47 +330,60 @@ def main(argv: list[str] | None = None) -> int:
             scheduler.step()
             train_pol_loss += pol_loss.item()
             train_val_loss += val_loss.item()
+            train_own_loss += own_loss.item()
             n_batches += 1
         if nan_skipped:
             print(f"  [warn] skipped {nan_skipped} NaN-loss batch(es) this epoch")
         train_pol_loss /= max(n_batches, 1)
         train_val_loss /= max(n_batches, 1)
+        train_own_loss /= max(n_batches, 1)
 
         if do_validation:
             net.train(False)
             val_pol_loss = 0.0
             val_val_loss = 0.0
+            val_own_loss = 0.0
             v_n = 0
             with torch.no_grad():
-                for board_b, scalar_b, policy_b, value_b, mask_b in val_loader:
+                for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, _group_b in val_loader:
                     board_b = board_b.to(device, non_blocking=True)
                     scalar_b = scalar_b.to(device, non_blocking=True)
                     policy_b = policy_b.to(device, non_blocking=True)
                     value_b = value_b.to(device, non_blocking=True)
                     mask_b = mask_b.to(device, non_blocking=True)
-                    policy_logits, value_pred = net(board_b, scalar_b)
-                    val_pol_loss += policy_cross_entropy(policy_logits, policy_b, mask_b).item()
+                    own_b = own_b.to(device, non_blocking=True)
+                    aux_b = aux_b.to(device, non_blocking=True)
+                    policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
+                    v_pol_loss, v_own_loss = masked_policy_ownership_loss(
+                        policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+                    )
+                    val_pol_loss += v_pol_loss.item()
                     val_val_loss += F.mse_loss(value_pred, value_b).item()
+                    val_own_loss += v_own_loss.item()
                     v_n += 1
             val_pol_loss /= max(v_n, 1)
             val_val_loss /= max(v_n, 1)
+            val_own_loss /= max(v_n, 1)
+            # best-by-val tracks the mains (policy+value); the aux head is a
+            # regularizer, not the objective we checkpoint on.
             val_total = val_pol_loss + val_val_loss
         else:
             val_pol_loss = float("nan")
             val_val_loss = float("nan")
+            val_own_loss = float("nan")
             val_total = float("inf")
 
         elapsed = time.perf_counter() - t0
         if do_validation:
             print(
                 f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
-                f"train pol/val={train_pol_loss:.3f}/{train_val_loss:.4f}  "
-                f"val pol/val={val_pol_loss:.3f}/{val_val_loss:.4f}"
+                f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}  "
+                f"val pol/val/own={val_pol_loss:.3f}/{val_val_loss:.4f}/{val_own_loss:.4f}"
             )
         else:
             print(
                 f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
-                f"train pol/val={train_pol_loss:.3f}/{train_val_loss:.4f}  (no val)"
+                f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}  (no val)"
             )
         sys.stdout.flush()
 
@@ -257,10 +394,16 @@ def main(argv: list[str] | None = None) -> int:
                     "model_state": net.state_dict(),
                     "n_filters": args.filters,
                     "n_blocks": args.blocks,
+                    "n_input_channels": n_input_channels,
+                    "n_scalar_features": n_scalar_features,
+                    "sighted": bool(args.sighted),
+                    "include_farm_scalars": bool(args.include_farm_scalars),
+                    "value_global_pool": args.global_pool,
                     "epoch": epoch,
                     "val_pol_loss": val_pol_loss,
                     "val_val_loss": val_val_loss,
                     "data_root": str(args.data_root),
+                    "provenance": _prov,
                 },
                 best_path,
             )
@@ -270,7 +413,13 @@ def main(argv: list[str] | None = None) -> int:
             "model_state": net.state_dict(),
             "n_filters": args.filters,
             "n_blocks": args.blocks,
+            "n_input_channels": n_input_channels,
+            "n_scalar_features": n_scalar_features,
+            "sighted": bool(args.sighted),
+            "include_farm_scalars": bool(args.include_farm_scalars),
+            "value_global_pool": args.global_pool,
             "data_root": str(args.data_root),
+            "provenance": _prov,
         },
         args.output,
     )

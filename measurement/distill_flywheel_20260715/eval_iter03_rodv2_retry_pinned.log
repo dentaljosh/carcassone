@@ -1,0 +1,41 @@
+[fair-nvn-orch] CAND iter_03.pt: 81ch/42sc (sighted)
+[fair-nvn-orch] OPP  iter_02.pt: 78ch/12sc (non-sighted)
+[fair-nvn-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt on cuda
+[export] tracing... (n_ch=81, n_scalar=42)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=2.34e-05  max|dvalue|=1.65e-04  OK
+[export] OK -> /tmp/carc_fairnvnC_Doctor.ts.pt  (n_scalar=42, C=81, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_fairnvnO_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[fair-nvn-orch] start carc-orch CAND (W=4 fwd=2 max_batch=16) shm=fairnvnCDoctor n_ch=81 n_scalar=42
+[fair-nvn-orch] start carc-orch OPP  (W=4 fwd=2 max_batch=16) shm=fairnvnODoctor n_ch=78 n_scalar=12
+[fair-nvn-orch] BOTH servers READY | CAND shm='fairnvnCDoctor' 81ch/42sc | OPP shm='fairnvnODoctor' 78ch/12sc | client W=4
+[head-to-head] opponent=net
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[head-to-head] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[head-to-head] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+[warn] --opponent net: the shared search config deviates from governance/PRODUCTION.yaml (k_dets=2 (production 4); sims=200 (production 688)). BOTH sides use these values, so the swap stays single-variable, but the opponent is NOT the shipped production champion — do not report this cell as 'vs production'.
+[fair-netprior] net=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt
+[fair-netprior] rep=SIGHTED 81ch/42sc (inferred from the checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+fair-puct[fair_fair-netprior_c1.5_tau5_float_kd2_s200_vs_net-iter_02_k2-leafa36d2e15]: info=fair-netprior n=100 paired=True K=2 k_dets=2 sims=200 | 7 cached, 93 to play, 4 workers, out=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/eval_iter03_vs_rodv2iter02_gpu
+  [orch] candidate SHM eval-server 'fairnvnCDoctor': 4 CPU workers attach to /dev/shm/carc_fairnvnCDoctor (81ch/42-scalar sighted PRIORS)
+  [orch] opponent  SHM eval-server 'fairnvnODoctor': 4 CPU workers attach to /dev/shm/carc_fairnvnODoctor (78ch/12-scalar non-sighted PRIORS)
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:123: UserWarning: resource_tracker: process died unexpectedly, relaunching.  Some resources might leak.
+  warnings.warn('resource_tracker: process died unexpectedly, '
+scripts/classical_search/fair_net_vs_net_orch.sh: line 150: 2093135 Killed                  nice -n 19 "$PY" -u scripts/classical_search/eval_fair_puct.py --info fair-netprior --net "$CAND_CKPT" --opponent net --opp-net "$OPP_CKPT" --orch-shm-name "$SHMN_C" --opp-orch-shm-name "$SHMN_O" --workers "$OW" "$@"

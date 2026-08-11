@@ -1,0 +1,60 @@
+JCZ  basic:2: 32 kinds, 72 tiles
+ours base_deck: 32 kinds, 72 tiles
+count multiset identical: True
+
+====================================================================================================
+MAPPING TABLE  (rot = # of 90-deg CW rotations applied to OUR base orientation)
+====================================================================================================
+our kind                                  JCZ id          n  rot  edges(NESW)  verdict
+city_top                                  BA/C            4    0  CFFF        MATCH
+city_top_right                            BA/CC.2         1    3  CFFC        MATCH
+city_top_left_flowers                     BA/CCG          1    0  CFFC        MATCH
+city_left_right                           BA/CFC.2        2    1  CFCF        MATCH
+city_top_bottom_flowers                   BA/CFCG         1    0  CFCF        MATCH
+city_narrow_shield                        BA/CFc+         2    0  FCFC        MATCH
+city_narrow                               BA/CFc.1        1    0  FCFC        MATCH
+city_top_flowers                          BA/CG           1    0  CFFF        MATCH
+city_top_crossroads                       BA/CRRR         3    0  CRRR        MATCH
+city_top_road_bend_right                  BA/CRr          3    0  CRRF        MATCH
+city_diagonal_top_right_shield            BA/Cc+          1    3  CFFC        MATCH
+city_diagonal_top_right_shield_flowers    BA/Cc+G         1    3  CFFC        MATCH
+city_diagonal_top_right                   BA/Cc.1         2    3  CFFC        MATCH
+city_diagonal_top_right_flowers           BA/CcG          1    3  CFFC        MATCH
+city_diagonal_top_left_road               BA/CcRr         3    0  CRRC        MATCH
+city_diagonal_top_left_shield_road        BA/CcRr+        2    0  CRRC        MATCH
+city_bottom_grass                         BA/Ccc          2    0  CCFC        MATCH
+city_bottom_grass_shield                  BA/Ccc+         1    0  CCFC        MATCH
+city_bottom_grass_flowers                 BA/CccG         1    0  CCFC        MATCH
+city_bottom_road                          BA/CccR         1    0  CCRC        MATCH
+city_bottom_road_shield                   BA/CccR+        2    0  CCRC        MATCH
+full_city_with_shield                     BA/Cccc+        1    0  CCCC        MATCH
+chapel                                    BA/L            4    0  FFFF        MATCH
+chapel_with_road                          BA/LR           2    0  FFRF        MATCH
+city_top_straight_road                    BA/RCr          4    0  CRFR        *** FIELD DIFF ***
+straight_road                             BA/RFr          7    1  FRFR        MATCH
+straight_road_flowers                     BA/RFrG         1    1  FRFR        MATCH
+three_split_road                          BA/RRR          4    0  FRRR        MATCH
+crossroads                                BA/RRRR         1    0  RRRR        MATCH
+bent_road                                 BA/Rr           8    0  FFRR        MATCH
+city_top_road_bend_left                   BA/RrC          3    0  CFRR        MATCH
+bent_road_flowers                         BA/RrG          1    0  FFRR        MATCH
+
+====================================================================================================
+FIELD-DATA DIFFS: 1 of 32 tile kinds
+====================================================================================================
+
+--- city_top_straight_road  <->  BA/RCr   (x4 in deck, our tile rotated 0x90CW)
+    edges (N E S W)  : CRFR
+    JCZ  fields      : [EL WR] + city{N} [ER SL SR WL]
+    ours fields      : [NL NR EL WR] + city{N} [ER SL SR WL]
+    ours-only region : [NL NR EL WR]
+    JCZ-only  region : [EL WR]
+    >>> ours claims half-edges lying ON A CITY EDGE: NL NR  (edge types N E S W = CRFR)
+
+====================================================================================================
+GLOBAL SWEEP: field regions claiming a half-edge that lies on a CITY edge
+(such a claim lets a farm cross a city border -- geometrically impossible)
+====================================================================================================
+  ours: 1 kind(s)
+        city_top_straight_road                   NL NR
+  JCZ : 0 kind(s)  -- clean

@@ -1,0 +1,72 @@
+{
+  "schema": "carcassonne-lever-menu-item6-s3/v1",
+  "prereg": "measurement/jcz_mining_20260809/MINING_PREREG.md",
+  "plan": "docs/LEVER_MENU_PLAN_20260810.md#4.6",
+  "candidates": "/home/doctor/projects/carcassone/measurement/jcz_mining_20260809/mining/CANDIDATES.jsonl",
+  "k_late": 14,
+  "n_target": 50,
+  "s3_predicate": "merge_exposure_differs == true",
+  "control_predicate": "merge_exposure_differs == false",
+  "match_key": [
+    "ply_class",
+    "phase_bucket"
+  ],
+  "match_nearest_on": "our_leaf_gap",
+  "n_s3_pool_candidates": 1650,
+  "n_s3_pool_distinct_games": 393,
+  "n_control_pool_candidates": 5150,
+  "n_control_pool_distinct_games": 400,
+  "s3": {
+    "n": 50,
+    "by_ply_class": {
+      "TILE": 50
+    },
+    "by_phase_bucket": {
+      "EARLY": 41,
+      "LATE": 9
+    },
+    "by_ply_class_x_phase": {
+      "TILE/EARLY": 41,
+      "TILE/LATE": 9
+    },
+    "by_jcz_seat": {
+      "1": 25,
+      "0": 25
+    },
+    "mean_our_leaf_gap": 3.266,
+    "mean_k_remaining": 33.92,
+    "n_distinct_games": 50
+  },
+  "control": {
+    "n": 50,
+    "by_ply_class": {
+      "TILE": 50
+    },
+    "by_phase_bucket": {
+      "EARLY": 41,
+      "LATE": 9
+    },
+    "by_ply_class_x_phase": {
+      "TILE/EARLY": 41,
+      "TILE/LATE": 9
+    },
+    "by_jcz_seat": {
+      "1": 21,
+      "0": 29
+    },
+    "mean_our_leaf_gap": 3.2689999999999997,
+    "mean_k_remaining": 33.66,
+    "n_distinct_games": 50
+  },
+  "control_match": {
+    "n_targets": 50,
+    "n_matched": 50,
+    "truncated": false,
+    "truncated_by": 0,
+    "mean_gap_diff": 0.0070000000000001086,
+    "mean_gap_targets": 3.266,
+    "mean_gap_control": 3.2689999999999997
+  },
+  "sizing_note": "n_target=50 per stratum. PREREG \u00a74 gate is n>=25 scored or the stratum is INCONCLUSIVE BY CONSTRUCTION; its own re-open bar was n=74 for 80% power at +1.4 pts/ply. n=50 sits BETWEEN the gate and the powered bar.",
+  "governance": "measurement only; governance/PRODUCTION.yaml untouched; exploratory by construction; band 1.08e11 stays retired from confirmatory use, this reuse does not un-retire it."
+}

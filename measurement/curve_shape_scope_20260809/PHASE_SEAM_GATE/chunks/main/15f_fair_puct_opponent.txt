@@ -1,0 +1,31 @@
+......................................                                   [100%]
+============================= slowest 10 durations =============================
+0.66s call     tests/test_fair_puct_opponent.py::test_both_sides_resolve_the_same_curve125_leaf
+0.05s call     tests/test_fair_puct_opponent.py::test_cross_rep_sides_use_different_encoders
+0.02s call     tests/test_fair_puct_opponent.py::test_net_opponent_honours_its_own_rep[True-81-42]
+0.02s call     tests/test_fair_puct_opponent.py::test_net_opponent_honours_its_own_rep[False-78-10]
+
+(6 durations < 0.005s hidden.  Use -vv to show these durations.)
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_fair_puct_opponent.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 0.96
+	System time (seconds): 0.20
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.17
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 698356
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 101594
+	Voluntary context switches: 57
+	Involuntary context switches: 8
+	Swaps: 0
+	File system inputs: 273
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,46 @@
+[load] measurement/utility_calibration_20260721/margins_champ125.npz: 215887 positions / 1500 games
+[load] corr(raw,leaf) = 0.7729
+
+=== [leaf] n_pos=215887 (valid 214387)  n_games=1500   margin range [-86.8,81.8]  sd=13.13
+[leaf][sanity] P(win|m>0,t1-5)=0.914 (n=7302)  P(win|m<0,t1-5)=0.104  P(win|m>15,t1-5)=0.994 (n=3356)  draws=4750 (2.20%)
+[leaf][globalT] T*=20.00  logloss 0.5736  |  T=15 logloss 0.5812  (dLL15 = +0.0076)  brier 0.1952->0.1926
+[leaf][globalT] bootstrap-by-game 95% CI = [18.67, 21.00] (n_boot=200, 81s)
+[leaf][stageT] band     T   [95% CI]      n_games   L      L@15
+    60-72  T= 69.92  [ 39.4, 70.0]  ng= 1500  L=0.6918  L@15=0.7087
+    45-59  T= 36.64  [ 29.2, 49.6]  ng= 1500  L=0.6718  L@15=0.7074
+    30-44  T= 28.07  [ 25.1, 33.2]  ng= 1500  L=0.6252  L@15=0.6612
+    15-29  T= 18.50  [ 16.7, 20.0]  ng= 1500  L=0.5053  L@15=0.5106
+     6-14  T= 11.70  [ 10.7, 12.7]  ng= 1500  L=0.3446  L@15=0.3516
+      1-5  T=  8.00  [  7.3,  8.7]  ng= 1500  L=0.2331  L@15=0.2696
+[leaf][oos] 2-fold-by-game:
+      M0_tanh15            logloss=0.5812  brier=0.1952
+      M1_globalT           logloss=0.5738  brier=0.1926
+      M2_stageT            logloss=0.5591  brier=0.1882
+      M3_isotonic          logloss=0.5618  brier=0.1885
+      M4_global_isotonic   logloss=0.5732  brier=0.1924
+[leaf][GAP] dLL15 in-sample=+0.0076  OOS=+0.0074  | global-isotonic OOS=+0.0081  | mean|p_emp-tanh15| 0.0505 -> 0.0189 @T*
+
+=== [raw] n_pos=215887 (valid 214387)  n_games=1500   margin range [-73.0,73.0]  sd=13.38
+[raw][sanity] P(win|m>0,t1-5)=0.778 (n=7127)  P(win|m<0,t1-5)=0.239  P(win|m>15,t1-5)=0.908 (n=3251)  draws=4750 (2.20%)
+[raw][globalT] T*=31.12  logloss 0.6255  |  T=15 logloss 0.6700  (dLL15 = +0.0446)  brier 0.2264->0.2139
+[raw][globalT] bootstrap-by-game 95% CI = [29.17, 33.30] (n_boot=200, 81s)
+[raw][stageT] band     T   [95% CI]      n_games   L      L@15
+    60-72  T= 74.96  [ 41.4, 70.0]  ng= 1500  L=0.6922  L@15=0.7059
+    45-59  T= 54.79  [ 41.4, 70.0]  ng= 1500  L=0.6832  L@15=0.7405
+    30-44  T= 39.96  [ 35.2, 47.6]  ng= 1500  L=0.6526  L@15=0.7321
+    15-29  T= 29.06  [ 27.1, 33.2]  ng= 1500  L=0.5831  L@15=0.6380
+     6-14  T= 23.53  [ 21.0, 25.1]  ng= 1500  L=0.5105  L@15=0.5391
+      1-5  T= 23.53  [ 21.0, 25.1]  ng= 1500  L=0.4872  L@15=0.5151
+[raw][oos] 2-fold-by-game:
+      M0_tanh15            logloss=0.6700  brier=0.2264
+      M1_globalT           logloss=0.6256  brier=0.2139
+      M2_stageT            logloss=0.6222  brier=0.2126
+      M3_isotonic          logloss=0.6271  brier=0.2132
+      M4_global_isotonic   logloss=0.6259  brier=0.2138
+[raw][GAP] dLL15 in-sample=+0.0446  OOS=+0.0445  | global-isotonic OOS=+0.0442  | mean|p_emp-tanh15| 0.0974 -> 0.0158 @T*
+
+=== SIDE BY SIDE (identical sample) ===
+  leaf  T*= 20.00 [18.67,21.00]   L@15=0.5812 L@T*=0.5736  dLL15_oos=+0.0074  dLL_globiso_oos=+0.0081  mean|gap|@15=0.0505
+  raw   T*= 31.12 [29.17,33.30]   L@15=0.6700 L@T*=0.6255  dLL15_oos=+0.0445  dLL_globiso_oos=+0.0442  mean|gap|@15=0.0974
+
+[done] wrote calibration_stats_champ125.json in 245s

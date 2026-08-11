@@ -1,0 +1,14 @@
+loaded 400 games from measurement/post_search_residual/data/games_mcts.jsonl
+loaded 200 games from /mnt/c/carc-shared/l23_k4_expand.jsonl
+loaded 96 games from measurement/level2/l23_k4_multisource.jsonl
+total games to audit: 696
+=== WINDOW AUDIT ===
+games=696 decisions=97683
+% games with any overflow: 0.000%
+% games with any oow tile: 0.000%
+% decisions dropping a legal action: 0.0000% (0/97683)
+% decisions with oow placed tile:    0.0000% (0/97683)
+total dropped legal actions: 0
+total oow placed tiles:      0
+all-overflow (raise) decisions: 0
+wrote measurement/window_audit/audit_real.json

@@ -1,0 +1,282 @@
+{
+  "gate": "G5/flags",
+  "verdict": "PASS",
+  "phase": "P5",
+  "default_semantics": "unchanged \u2014 no flag is enabled anywhere; MirrorState.from_seed(seed) with no kwargs is the byte-compatible walled engine (start_rule missing => 'engine', start (6, 15))",
+  "leg1_flag_tests": {
+    "pytest": "tests/rustport/test_p5_flags.py",
+    "cargo": "carc-core game:: unit tests",
+    "note": "run by the suite, not aggregated here"
+  },
+  "leg2_even_shift": [
+    {
+      "leg": "row6->18, engine rule, n=500",
+      "path": "measurement/rustport_p5/G5_even_shift_engine.json",
+      "total_positions_compared": 47012,
+      "total_games": 500,
+      "mismatch_count": 0,
+      "wallclock_s": 6.264109304989688,
+      "stop_reasons": {
+        "mask_divergence": 354,
+        "terminal": 146
+      },
+      "verdict": "PASS",
+      "shift": [
+        12,
+        0
+      ]
+    },
+    {
+      "leg": "row6->18, retail rule, n=500",
+      "path": "measurement/rustport_p5/G5_even_shift_retail.json",
+      "total_positions_compared": 45169,
+      "total_games": 500,
+      "mismatch_count": 0,
+      "wallclock_s": 5.999440710002091,
+      "stop_reasons": {
+        "mask_divergence": 360,
+        "terminal": 140
+      },
+      "verdict": "PASS",
+      "shift": [
+        12,
+        0
+      ]
+    },
+    {
+      "leg": "row6->8   (d=+2),  n=150",
+      "path": "measurement/rustport_p5/G5_even_shift_drow2.json",
+      "total_positions_compared": 14185,
+      "total_games": 150,
+      "mismatch_count": 0,
+      "wallclock_s": 2.2279444900050294,
+      "stop_reasons": {
+        "mask_divergence": 100,
+        "terminal": 50
+      },
+      "verdict": "PASS",
+      "shift": [
+        2,
+        0
+      ]
+    },
+    {
+      "leg": "row6->0   (d=-6),  n=150",
+      "path": "measurement/rustport_p5/G5_even_shift_drow-6.json",
+      "total_positions_compared": 559,
+      "total_games": 150,
+      "mismatch_count": 0,
+      "wallclock_s": 0.16992455400759354,
+      "stop_reasons": {
+        "mask_divergence": 150
+      },
+      "verdict": "PASS",
+      "shift": [
+        -6,
+        0
+      ]
+    },
+    {
+      "leg": "row6->30  (d=+24), n=60 \u2014 last-row refusal probe",
+      "path": "measurement/rustport_p5/G5_even_shift_drow24.json",
+      "total_positions_compared": 2824,
+      "total_games": 60,
+      "mismatch_count": 0,
+      "wallclock_s": 0.5782637609809171,
+      "stop_reasons": {
+        "mask_divergence": 22,
+        "count_final_scores_refusal": 12,
+        "engine_refusal": 26
+      },
+      "verdict": "PASS",
+      "shift": [
+        24,
+        0
+      ]
+    },
+    {
+      "leg": "row+12/col+4 (both even), n=150",
+      "path": "measurement/rustport_p5/G5_even_shift_dcol4.json",
+      "total_positions_compared": 14185,
+      "total_games": 150,
+      "mismatch_count": 0,
+      "wallclock_s": 2.1930467970087193,
+      "stop_reasons": {
+        "mask_divergence": 100,
+        "terminal": 50
+      },
+      "verdict": "PASS",
+      "shift": [
+        12,
+        4
+      ]
+    }
+  ],
+  "leg3_flags_on_fuzz": [
+    {
+      "leg": "retail @ row 6, n=1000",
+      "path": "measurement/rustport_p5/G5_lockstep_fuzz_p5_retail.json",
+      "total_positions_compared": 142985,
+      "total_games": 1000,
+      "mismatch_count": 0,
+      "wallclock_s": 6.495071211975301,
+      "engine_error_games": 0,
+      "window_overflow_games": 0,
+      "verdict": "PASS",
+      "flags": {
+        "start_rule": "retail",
+        "start_row": 6,
+        "start_col": 15,
+        "default_semantics": false
+      }
+    },
+    {
+      "leg": "engine @ row 6, n=1000 (flags-off control)",
+      "path": "measurement/rustport_p5/G5_lockstep_fuzz_p5_engine_ctl.json",
+      "total_positions_compared": 144922,
+      "total_games": 1000,
+      "mismatch_count": 0,
+      "wallclock_s": 6.495203794009285,
+      "engine_error_games": 0,
+      "window_overflow_games": 0,
+      "verdict": "PASS",
+      "flags": {
+        "start_rule": "engine",
+        "start_row": 6,
+        "start_col": 15,
+        "default_semantics": true
+      }
+    },
+    {
+      "leg": "engine @ row 18, n=1000",
+      "path": "measurement/rustport_p5/G5_lockstep_fuzz_p5_engine_row18.json",
+      "total_positions_compared": 144922,
+      "total_games": 1000,
+      "mismatch_count": 0,
+      "wallclock_s": 6.7183585810125805,
+      "engine_error_games": 0,
+      "window_overflow_games": 0,
+      "verdict": "PASS",
+      "flags": {
+        "start_rule": "engine",
+        "start_row": 18,
+        "start_col": 15,
+        "default_semantics": false
+      }
+    },
+    {
+      "leg": "retail @ row 18, n=1000",
+      "path": "measurement/rustport_p5/G5_lockstep_fuzz_p5_retail_row18.json",
+      "total_positions_compared": 142986,
+      "total_games": 1000,
+      "mismatch_count": 0,
+      "wallclock_s": 6.655835874989862,
+      "engine_error_games": 0,
+      "window_overflow_games": 0,
+      "verdict": "PASS",
+      "flags": {
+        "start_rule": "retail",
+        "start_row": 18,
+        "start_col": 15,
+        "default_semantics": false
+      }
+    },
+    {
+      "leg": "engine @ row 30, n=120 \u2014 last-row refusal probe",
+      "path": "measurement/rustport_p5/G5_lockstep_fuzz_p5_row30_probe.json",
+      "total_positions_compared": 9058,
+      "total_games": 120,
+      "mismatch_count": 0,
+      "wallclock_s": 1.1576234530075453,
+      "engine_error_games": 95,
+      "window_overflow_games": 0,
+      "verdict": "PASS",
+      "flags": {
+        "start_rule": "engine",
+        "start_row": 30,
+        "start_col": 15,
+        "default_semantics": false
+      }
+    }
+  ],
+  "leg4_flags_off_regate": [
+    {
+      "leg": "G1 reconcile_engine --corpus all",
+      "path": "measurement/rustport_p5/G5_regate_G1_engine_all.json",
+      "total_positions_compared": 67086,
+      "total_games": 463,
+      "mismatch_count": 0,
+      "wallclock_s": 3.322431829001289,
+      "verdict": "PASS"
+    },
+    {
+      "leg": "G2 reconcile_leaf --corpus all --configs all",
+      "path": "measurement/rustport_p5/G5_regate_G2_leaf_all.json",
+      "total_values_compared": 3341772,
+      "mismatch_count": 0,
+      "wallclock_s": 137.5799400289834,
+      "verdict": "PASS"
+    },
+    {
+      "leg": "G3 reconcile_search golden+det @344",
+      "path": "measurement/rustport_p3/G3_search_p5_regate.json",
+      "n_mismatches": 0,
+      "wall_secs": 10.398677850986132,
+      "totals": {
+        "positions": 156,
+        "sims_run": 53664,
+        "checks": 1248,
+        "plies": 0,
+        "games": 0,
+        "py_secs": 94.81470213807188,
+        "rs_secs": 10.359233947092434,
+        "py_sims": 53664,
+        "rs_sims": 53664,
+        "cache_hits": 0,
+        "cache_collisions": 0
+      },
+      "verdict": "PASS"
+    },
+    {
+      "leg": "G4 reconcile_fair --leg latch @k8x1376",
+      "path": "measurement/rustport_p4/G4_fair_p5_regate_latch.json",
+      "n_mismatches": 0,
+      "wall_secs": 0.5020530223846436,
+      "totals": {
+        "checks": 199869,
+        "decisions": 0,
+        "plies": 66623,
+        "games": 463,
+        "solves": 0,
+        "solver_nodes": 0,
+        "exact_moves": 0,
+        "py_secs": 0.0,
+        "rs_secs": 0.0,
+        "py_moves": 0,
+        "rs_moves": 0
+      },
+      "verdict": "PASS"
+    },
+    {
+      "leg": "G4 reconcile_fair --leg game @k8x1376",
+      "path": "measurement/rustport_p4/G4_fair_p5_regate_game.json",
+      "n_mismatches": 0,
+      "wall_secs": 2456.5726351737976,
+      "totals": {
+        "checks": 14140,
+        "decisions": 2012,
+        "plies": 2012,
+        "games": 14,
+        "solves": 0,
+        "solver_nodes": 38869,
+        "exact_moves": 56,
+        "py_secs": 27395.146584352304,
+        "rs_secs": 2884.583499894419,
+        "py_moves": 2012,
+        "rs_moves": 2012
+      },
+      "verdict": "PASS"
+    }
+  ],
+  "failures": []
+}

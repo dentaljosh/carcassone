@@ -1,0 +1,10 @@
+{
+ "chunk": "16e_jcz_tile_oracle",
+ "tree": "seam",
+ "rc": 0,
+ "duration_s": 0,
+ "attempt": 1,
+ "peak_rss_kb": 52912,
+ "n_failing": 0,
+ "failing_ids": []
+}

@@ -119,6 +119,92 @@ def encode_meeple_action(action: MeepleAction, off: WindowOffset) -> int:
     )
 
 
+# ---------------------------------------------------------------------------
+# Symmetry augmentation (C5): remap a flat action index under a 90° CCW board
+# rotation, the companion of board_repr.rotate_board_repr_90. Same geometric
+# direction so (rotated_repr, rotated_policy_target) is a valid training example.
+#
+# Decomposition (each component is rotated consistently with the board encoding):
+#   - tile cell (wr, wc) -> (W-1-wc, wr)        [matches np.rot90(k=1) spatial]
+#   - tile_rotations rot -> (rot + 3) % 4       [engine tile.turn is CW, so one
+#                                                CCW board turn = +3; pinned by
+#                                                test against the edge-channel perm]
+#   - normal meeple side  -> _FWD_SIDE[side]    [inverse of board_repr._SRC_SIDE_4]
+#   - farmer corner       -> _FWD_CORNER[corner][inverse of board_repr._SRC_CORNER]
+#   - CENTER / passes are rotation-fixed
+ROT_TILE_DELTA = 3  # tile_rotations added per 90° CCW board rotation (validated)
+_FWD_SIDE: dict[Side, Side] = {
+    Side.TOP: Side.LEFT,
+    Side.RIGHT: Side.TOP,
+    Side.BOTTOM: Side.RIGHT,
+    Side.LEFT: Side.BOTTOM,
+}
+_FWD_CORNER: dict[Side, Side] = {
+    Side.TOP_LEFT: Side.BOTTOM_LEFT,
+    Side.TOP_RIGHT: Side.TOP_LEFT,
+    Side.BOTTOM_RIGHT: Side.TOP_RIGHT,
+    Side.BOTTOM_LEFT: Side.BOTTOM_RIGHT,
+}
+
+
+def rotate_action(idx: int, window_size: int) -> int:
+    """Map a flat action index to its image under a 90° CCW board rotation.
+
+    Applying this 4× is the identity. Pairs with board_repr.rotate_board_repr_90
+    (same geometric direction) so a (board, policy) example can be augmented to
+    its 4 rotations without corrupting the policy target.
+    """
+    W = window_size
+    ta = tile_action_count(W)
+    if idx < ta:  # TileAction: (wr*W + wc)*4 + rot
+        cell, rot = divmod(idx, N_ROTATIONS)
+        wr, wc = divmod(cell, W)
+        nwr, nwc = W - 1 - wc, wr
+        nrot = (rot + ROT_TILE_DELTA) % N_ROTATIONS
+        return (nwr * W + nwc) * N_ROTATIONS + nrot
+    if idx == tile_pass_index(W):
+        return idx
+    nb = meeple_normal_base(W)
+    fb = meeple_farmer_base(W)
+    pb = meeple_pass_index(W)
+    if nb <= idx < fb:
+        side = NORMAL_SIDES[idx - nb]
+        if side == Side.CENTER:
+            return idx
+        return nb + NORMAL_SIDES.index(_FWD_SIDE[side])
+    if fb <= idx < pb:
+        corner = FARMER_SIDES[idx - fb]
+        return fb + FARMER_SIDES.index(_FWD_CORNER[corner])
+    if idx == pb:
+        return idx
+    raise ValueError(f"action index {idx} out of range for window {W}")
+
+
+def action_rotation_perm(window_size: int):
+    """Permutation array P with P[a] = rotate_action(a, W), for rotating a whole
+    policy/valid-mask vector under a 90° CCW board rotation:
+
+        rotated_policy = np.zeros_like(policy); rotated_policy[P] = policy
+        rotated_mask   = np.zeros_like(mask);   rotated_mask[P]   = mask
+
+    (P is a bijection, so this scatters each action's value to its rotated slot.)
+    Cached per window size.
+    """
+    import numpy as np
+
+    cached = _ROT_PERM_CACHE.get(window_size)
+    if cached is None:
+        A = action_size(window_size)
+        cached = np.fromiter(
+            (rotate_action(a, window_size) for a in range(A)), dtype=np.int64, count=A
+        )
+        _ROT_PERM_CACHE[window_size] = cached
+    return cached
+
+
+_ROT_PERM_CACHE: dict[int, "object"] = {}
+
+
 def encode(action: Action, off: WindowOffset, phase: str) -> int:
     """Encode any engine Action to a flat index. `phase` is "tiles" or "meeples"."""
     if isinstance(action, TileAction):

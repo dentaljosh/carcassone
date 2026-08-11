@@ -29,6 +29,39 @@ def test_search_returns_visit_distribution_summing_to_simulations() -> None:
     assert set(visits.keys()).issubset(legal)
 
 
+def test_fpu_reduction_stored_and_default_none() -> None:
+    g = Game(enable_legal_moves_cache=True)
+    assert NeuralMCTS(game=g, evaluator=_uniform_evaluator, simulations=4).fpu_reduction is None
+    m = NeuralMCTS(game=g, evaluator=_uniform_evaluator, simulations=4, fpu_reduction=0.25)
+    assert m.fpu_reduction == 0.25
+
+
+def test_fpu_reduction_changes_search_but_stays_valid() -> None:
+    """FPU (round-2 audit) is an active knob: a nonzero reduction changes the
+    visit distribution vs legacy q=0 while still returning a valid distribution.
+    With uniform priors + value=0, node.Q stays ~0, so fpu=0.5 makes unvisited
+    children (q=-0.5) less attractive than legacy (q=0) → selection order differs."""
+    import random
+    g = Game(enable_legal_moves_cache=True)
+    board = g.get_init_board()
+    # The init board has ~1 legal move (first tile forced to start) — advance to a
+    # branchy mid-game position so there are many children for FPU to reorder.
+    rng = random.Random(3)
+    for _ in range(12):
+        if g.get_game_ended(board, 0) != 0.0:
+            break
+        legal_moves = np.flatnonzero(g.get_valid_moves(board)).tolist()
+        board, _ = g.get_next_state(board, rng.choice(legal_moves))
+    legal = set(np.flatnonzero(g.get_valid_moves(board)).tolist())
+    assert len(legal) > 1, "need a branchy board to exercise FPU"
+    v_legacy = NeuralMCTS(game=g, evaluator=_uniform_evaluator, simulations=24, seed=0).search(board)
+    v_fpu = NeuralMCTS(game=g, evaluator=_uniform_evaluator, simulations=24, seed=0, fpu_reduction=0.5).search(board)
+    for v in (v_legacy, v_fpu):
+        assert sum(v.values()) == 24
+        assert set(v.keys()).issubset(legal)
+    assert v_legacy != v_fpu, "fpu_reduction had no effect on the search"
+
+
 def test_best_action_in_legal_set() -> None:
     g = Game(enable_legal_moves_cache=True)
     mcts = NeuralMCTS(game=g, evaluator=_uniform_evaluator, simulations=5, seed=0)

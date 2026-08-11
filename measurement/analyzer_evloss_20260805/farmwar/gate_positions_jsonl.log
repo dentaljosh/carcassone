@@ -1,0 +1,141 @@
+[gate] $ --n 100 --head 2 --workers 2 --out-root /tmp/farmwar_gate_r35yw5tf --out-subdir leg1
+[pilot] population=628 disagreements | sampled n=2 | M=32 | policy=clair-puct | oracle_sims=100 | W=2
+[pilot] out -> /tmp/farmwar_gate_r35yw5tf/leg1
+[1/2] s28000000001_p102_r2 ok delta=+0.250 crn=True 722.576s
+[2/2] s28000000009_p47_r2 ok delta=+4.469 crn=True 1508.128s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 2,
+  "m_worlds": 32,
+  "sd_delta_positions": 2.9831067331307475,
+  "mean_delta_pts": 2.359375,
+  "se_mean_delta": 2.109375,
+  "z_pilot_observed": 1.1185185185185185,
+  "mean_within_position_var": 65.2898185483871,
+  "var_between_positions_est": 6.858618951612903,
+  "sd_delta_projected_by_m": {
+    "8": 3.8755446417453756,
+    "16": 3.3074510746021772,
+    "32": 2.9831067331307475,
+    "64": 2.8069150978309714
+  },
+  "median_crn_var_reduction": 1.7736866791744839,
+  "n_positions_perfect_pairing": 0,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.3819901678580118,
+    "N=628_at_M=32": 0.5880429796820643,
+    "N=628_at_M=8": 0.45263185802701034,
+    "N=628_at_M=16": 0.530376695676694,
+    "N=628_at_M=64": 0.6249547673940613
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 2,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 628,
+  "wall_secs": 1508.2,
+  "manifest": "/tmp/farmwar_gate_r35yw5tf/leg1/manifest.json"
+}
+[gate] $ --positions-jsonl /tmp/farmwar_gate_r35yw5tf/positions.jsonl --workers 2 --out-root /tmp/farmwar_gate_r35yw5tf --out-subdir leg2
+[pilot] population=2 positions | n=2 | M=32 | policy=clair-puct | oracle_sims=100 | W=2
+[pilot] out -> /tmp/farmwar_gate_r35yw5tf/leg2
+[1/2] s28000000001_p102_r2 ok delta=+0.250 crn=True 859.185s
+[2/2] s28000000009_p47_r2 ok delta=+4.469 crn=True 1684.828s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 2,
+  "m_worlds": 32,
+  "sd_delta_positions": 2.9831067331307475,
+  "mean_delta_pts": 2.359375,
+  "se_mean_delta": 2.109375,
+  "z_pilot_observed": 1.1185185185185185,
+  "mean_within_position_var": 65.2898185483871,
+  "var_between_positions_est": 6.858618951612903,
+  "sd_delta_projected_by_m": {
+    "8": 3.8755446417453756,
+    "16": 3.3074510746021772,
+    "32": 2.9831067331307475,
+    "64": 2.8069150978309714
+  },
+  "median_crn_var_reduction": 1.7736866791744839,
+  "n_positions_perfect_pairing": 0,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.3819901678580118,
+    "N=2_at_M=32": 0.033185185185185186,
+    "N=2_at_M=8": 0.02554349350018935,
+    "N=2_at_M=16": 0.02993088850997557,
+    "N=2_at_M=64": 0.035268237875315314
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 2,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 2,
+  "wall_secs": 1684.9,
+  "manifest": "/tmp/farmwar_gate_r35yw5tf/leg2/manifest.json"
+}
+{
+  "gate": "oracle_score_pilot --positions-jsonl adapter",
+  "rids": [
+    "s28000000001_p102_r2",
+    "s28000000009_p47_r2"
+  ],
+  "value_fields_checked": 31,
+  "leg1_default_path": {
+    "mode": "default (--run-dir bank), no new flag set",
+    "mismatches": [
+      {
+        "rid": "s28000000001_p102_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      },
+      {
+        "rid": "s28000000009_p47_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      }
+    ],
+    "field_checks": 62
+  },
+  "leg2_positions_jsonl": {
+    "mode": "--positions-jsonl with the same rids, same arm order",
+    "mismatches": [
+      {
+        "rid": "s28000000001_p102_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      },
+      {
+        "rid": "s28000000009_p47_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      }
+    ],
+    "field_checks": 62
+  },
+  "verdict": "FAIL"
+}

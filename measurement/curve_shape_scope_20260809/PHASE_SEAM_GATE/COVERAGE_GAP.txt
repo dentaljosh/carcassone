@@ -1,0 +1,21 @@
+COVERAGE GAP — this gate did NOT cover every cell.
+VERDICT is GREEN_WITH_GAP: the merge is HELD for owner review, by design.
+excluded from BOTH legs: 15e07_puct_exact_max_k_configurable_latches_at_k4
+
+Why: the cell could not be run within a memory ceiling that is safe on
+any available box. The ceiling was not raised further because the cap
+lives inside the WSL VM that the work itself runs in, so cap creep risks
+the session, not just the cell.
+
+Residual risk argument (why a verdict is still worth having): the seam
+under test is a DEFAULT-OFF leaf phase multiplier; the excluded cell is
+an exact_max_k latch test; and its test file is byte-identical across the
+two trees. So the excluded cell is unlikely to be where a seam-induced
+regression would show. That is an argument for accepting a KNOWN gap --
+it is not evidence the cell passes.
+
+WHAT HAPPENS NEXT: night_chain refuses any verdict that is not exactly
+GREEN, so it stamps PHASE_ARM_BLOCKED and stops before the merge. In THIS
+case that marker means HELD-FOR-REVIEW, not seam-failed -- the diff over
+the cells that DID run was clean. Joshua decides whether to accept the gap
+and merge, or to close it first.

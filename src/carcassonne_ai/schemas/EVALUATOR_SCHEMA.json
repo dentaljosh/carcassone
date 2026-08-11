@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carcassonne-evaluator-provenance/v1",
+  "title": "Carcassonne evaluator provenance block",
+  "description": "The `evaluator` block stored in an eval run's manifest.json. Captures the full effective config of BOTH sides of a matchup plus runtime-verified leaf-path counters, so a results.csv row can never silently claim a leaf/value path that did not actually execute (outside-review findings R1 and R7).",
+  "type": "object",
+  "required": ["schema", "kind", "code_commit", "dirty", "sides"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "carcassonne-evaluator-provenance/v1"},
+    "kind": {"type": "string", "description": "eval kind, e.g. net_vs_heuristic, iter_head_to_head, heur_vs_heur"},
+    "code_commit": {"type": "string", "description": "full git HEAD sha, or 'unknown'"},
+    "dirty": {"type": "boolean", "description": "working tree had uncommitted changes at run time"},
+    "argv": {"type": ["array", "null"], "items": {"type": "string"}},
+    "runtime_verified": {
+      "type": ["object", "null"],
+      "description": "result of the --provenance-smoke counter check; null if the run did not execute the single-process smoke",
+      "properties": {
+        "ok": {"type": "boolean"},
+        "checked": {"type": "array"},
+        "counters": {"type": "object"}
+      }
+    },
+    "sides": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/side"}
+    }
+  },
+  "$defs": {
+    "side": {
+      "type": "object",
+      "required": ["side", "agent_class", "leaf_name", "policy_source", "sims"],
+      "additionalProperties": true,
+      "properties": {
+        "side": {"type": "string"},
+        "agent_class": {"type": "string"},
+        "search_impl": {"type": "string"},
+        "leaf_name": {"enum": ["v1", "v2_5", "v2_7", "nn", "none"]},
+        "leaf_version": {"type": ["string", "null"]},
+        "policy_source": {"enum": ["network", "uniform", "none"]},
+        "sims": {"type": "integer", "minimum": 0},
+        "c_puct": {"type": ["number", "null"]},
+        "fpu": {"type": ["number", "null"]},
+        "residual_scale": {"type": "number"},
+        "value_blend": {"type": "number"},
+        "cap": {"type": ["number", "null"]},
+        "opp_cap": {"type": ["number", "null"]},
+        "drop_three_open": {"type": ["boolean", "null"]},
+        "closure_schedule": {"type": ["object", "null"]},
+        "checkpoint_path": {"type": ["string", "null"]},
+        "checkpoint_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$|^$"},
+        "code_commit": {"type": "string"},
+        "dirty": {"type": "boolean"},
+        "seed_range": {"type": ["array", "null"]},
+        "paired": {"type": ["boolean", "null"]},
+        "eval_script": {"type": ["string", "null"]},
+        "argv": {"type": ["array", "null"]}
+      }
+    }
+  }
+}

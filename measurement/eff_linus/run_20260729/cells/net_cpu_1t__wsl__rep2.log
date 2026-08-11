@@ -1,0 +1,3 @@
+[cpu_1t          ] forward   11.183 ms (p50 11.122 / p90 11.534)   full   12.028 ms   83.1 pos/s
+
+wrote /home/doctor/projects/carcassone/measurement/eff_linus/run_20260729/cells/net_cpu_1t__wsl__rep2.json

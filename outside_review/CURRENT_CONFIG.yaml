@@ -1,0 +1,120 @@
+# CURRENT_CONFIG.yaml — the resolved production configuration as of commit fd9952e (2026-06-07)
+# Sourced from code defaults + run_pathb_cluster_loop.sh + run_selfplay_iter.py + STATUS.md.
+# "UNKNOWN" = not determinable from the repo. Risk flags point to OUTSIDE_REVIEW.md.
+
+meta:
+  repo: /home/doctor/projects/carcassone
+  head_commit: fd9952e90a2186444b4cb7e385c8d474f5970d9f
+  branch: stage-b-wiring
+  date: 2026-06-07
+  goal: "genuinely superhuman 2-player Base+Farmers (set 2026-05-28, overrides original prompt)"
+  scope: "2-player, Base game + Farmers. NO River (dropped 2026-06-02), NO Inns&Cathedrals, NO Abbots, NO Big meeples"
+
+game:
+  players: 2
+  tile_sets: [BASE]            # River dropped; engine still supports it for explicit callers
+  deck_size: 72               # DECK_NORM = 72 (was 85 with River)
+  score_norm_scale: 15.0      # tanh((p0-p1)/15) terminal value;  game_wrapper.py:53
+  window_size: 25             # 25x25 centered board encoding; overflow -> WindowOverflowError (hard fail)
+  action_size: 2511           # 25*25*4 + 11; action_space.py:71
+
+network:
+  class: CarcassonneNet        # network.py:56
+  trunk: resnet
+  blocks: 6
+  filters: 96
+  params: 7411887             # measured; network.py docstring says ~4M (STALE)
+  input_planes: 78            # board_repr.py
+  input_scalars: 10           # farm scalars OFF in prod (include_farm_scalars=False)
+  policy_head_dim: 2511
+  value_head: tanh            # scalar in [-1,1]; network.py:142
+  aux_ownership_head: present_but_training_only_and_OFF_in_global_best_ckpts
+  value_global_pool: false
+  ABSENT_representation:       # the F-B3 / C4 blind spots (see OUTSIDE_REVIEW §10)
+    - farm_connectivity_input_plane   # only corner-presence bits exist
+    - bag_tile_type_histogram         # only a scalar tiles_remaining/72
+    - open_feature_closure_progress_plane
+
+mcts:
+  neural:
+    class: NeuralMCTS          # mcts.py:357
+    c_puct: 3.0                # production/ladder default (run_selfplay_iter.py:389); NOTE gate confirm path uses 1.5 (G-M4)
+    sims_selfplay: 200
+    sims_eval_default: 200
+    fpu_reduction: null        # legacy optimistic q=0 unless --new-fpu; FPU=0.2 is a pending lever (+45 screen, unconfirmed)
+    virtual_loss: 1.0          # only active when batch_size>1
+    dirichlet_alpha: 0.3       # F-C4: measured optimum ~0.53 -> thin exploration
+    dirichlet_eps: 0.25
+    temp_threshold: 15         # tau=1 for first 15 plies (game clock), then tau=0
+    chance_handling: clairvoyant   # search descends the TRUE future deck; no chance nodes
+    fair_chance: false         # single-determinization path exists, only used by diag_clairvoyance.py; UNSOUND vs transposition key
+    transposition: state_key_dict  # C2 alias dedup in NeuralMCTS selection + readout
+  reference_opponent:
+    class: HeuristicMCTS       # mcts.py:284 — the primary strength yardstick
+    leaf: virtual_score_v1     # <-- mcts.py:298-304 uses v1, NOT v2.7 (docstring claims v2.7) [RISK]
+    c: 3.0
+    note: "vanilla UCT + v1 virtual_score rollout-replacement; NO learned policy"
+
+leaf_eval:
+  production: virtual_score_v2 # "v2.7"
+  env_knobs:
+    CARCASSONNE_V25_CAP: "12"
+    CARCASSONNE_V25_DROP_THREE_OPEN: "1"   # closure_p = {1:0.5, 2:0.2}
+    CARCASSONNE_V25_VALUE_BLEND: "0"        # net value NOT in the leaf in production
+    CARCASSONNE_V25_RESIDUAL_SCALE: "0"     # the validated residual lever would set 0.25 (not yet folded into prod)
+  leaf_value_formula: "tanh(virtual_score_v2(state, current_player, cfg) / 15.0)"
+  residual_formula: "clip(v2.7 + scale * Delta, +/-1), Delta = head's predicted (searchQ - v2.7)"
+
+selfplay:
+  leaf_eval: v2_5             # the v2.7 wrapper; net VALUE never drives a move in prod (F-B1)
+  value_target: score_diff    # tanh((p0-p1)/15); search-derived modes exist (search_value, residual, ...)
+  anchor: iter_11             # frozen anchor, anchor_fraction=0.3; only learner moves recorded
+  max_plies: 400
+  resignation: none
+  truncation: none
+
+training:
+  script: train_iter.py
+  optimizer: AdamW
+  lr: 1.0e-3                  # FLAT (no schedule by default); --lr-schedule cosine is opt-in (G-T1)
+  weight_decay: 1.0e-4
+  epochs: 3
+  batch_size: 256
+  replay_window_iters: 10    # sliding window; no recency weighting (staleness)
+  warmstart_mix_fraction: 0.0
+  loss: "pol_loss + value_loss_weight*val_loss + 0.15*own_loss + rank_weight*rank_loss + center_weight*center_loss"
+  value_loss_weight: 1.0     # G-T2: policy CE ~5-10x larger -> value head under-weighted in gradient
+  augment_rotations: false   # C5 built (4x rotation) but default OFF
+  symmetry: rotation_only    # reflection NOT a symmetry (curved roads)
+
+gating:
+  loop: run_pathb_cluster_loop.sh
+  gate_opponent: HeuristicMCTS   # out-of-lineage (G-S3 fix, in tracked snapshot)
+  gate_c_puct: 3.0
+  keep_margin_elo: 10        # adopt iter N only if gate_elo >= best_elo + 10
+  warm_from: best_so_far     # in the tracked snapshot; CAVEAT: live ~/ copy may differ (header :2-8)
+  gate_n: 200                # per-iter screen; verdict requires n>=400 paired
+  WARNING: "tracked snapshot != the copy that actually ran historically; F-C3 advisory-gate may have governed earlier runs"
+
+evaluation:
+  ladder: eval_net_vs_heuristic.py
+  odometer: ladder_asymmetric.py   # net@200 vs heur@{50,200,800,3200}
+  pairing: optional --paired       # same deck both colors; default unpaired (G-M2)
+  seed_floors:
+    ladder: 600000           # eval_net_vs_heuristic default; COLLIDES with self-play iter~60 decks (G-M6, unfixed here)
+    odometer: 800000         # ladder_asymmetric default; collides with iter~80
+    head_to_head: 1000000000 # FIXED for G-M6
+  manifest: run_manifest.json  # records game/code_rev/leaf_env/config; NO ckpt content hash; omits residual_scale
+  sigma: unpaired_binomial_delta_method  # does not credit pairing (G-M2 caveat)
+
+current_global_best:
+  clean_base_game:
+    policy: "stage_b/ckpt/iter_01.pt = +86.9 elo vs HeuristicMCTS@200 (n=400 paired)"
+    value_lever: "residual leaf scale=0.25 = +46.5 marginal (pooled), survives out-of-lineage odometer to heur@800"
+  note: "value gain is a MECHANISM win (value finally helps the leaf), NOT a strength breakthrough; v2.7-leaf ceiling stands"
+
+hardware_cluster:
+  box_5800x: {cpu: "AMD 5800X 16T", gpu: "RTX 5060 Ti 16GB", selfplay_W: 14, mode: orch-off}
+  box_xeon:  {cpu: "Xeon W-2135 12T", gpu: "Quadro RTX 4000 8GB", selfplay_W: 10, mode: orch-off}
+  box_laptop:{cpu: "pop-os laptop", gpu: "RTX 4070m 8GB", selfplay_W: 20, mode: orch-off}
+  share: /mnt/c/carc-shared  # CIFS; mount path differs per box

@@ -1,0 +1,77 @@
+{
+  "driver": "run_farmwar",
+  "prereg": "measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+  "strata": "/home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/STRATA.json",
+  "world_seed_salt": "farmwar-v1",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "workers": 14,
+  "judges": {
+    "clair-puct": "PRIMARY \u2014 in-family clairvoyant PUCT over the champion's own leaf. Biased TOWARD the champion's picks, so a positive result is conservative and a null is uninformative.",
+    "tier1-greedy": "SECONDARY \u2014 out-of-family Tier-1 greedy. SIGN ONLY."
+  },
+  "legs": [
+    {
+      "judge": "clair-puct",
+      "profile": "app_aug2",
+      "rc": 0,
+      "workers": 2,
+      "n_positions": 6,
+      "out": "/mnt/c/carc-shared/analyzer_farmwar_20260805/clair-puct/app_aug2",
+      "log": "/home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/leg_clair-puct_app_aug2.log",
+      "wall_secs": 5167.0
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "fixed_v1",
+      "rc": 0,
+      "workers": 7,
+      "n_positions": 20,
+      "out": "/mnt/c/carc-shared/analyzer_farmwar_20260805/clair-puct/fixed_v1",
+      "log": "/home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/leg_clair-puct_fixed_v1.log",
+      "wall_secs": 5167.0
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "rc": 0,
+      "workers": 5,
+      "n_positions": 16,
+      "out": "/mnt/c/carc-shared/analyzer_farmwar_20260805/clair-puct/walled",
+      "log": "/home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/leg_clair-puct_walled.log",
+      "wall_secs": 5167.0
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "app_aug2",
+      "rc": 0,
+      "workers": 2,
+      "n_positions": 6,
+      "out": "/mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/app_aug2",
+      "log": "/home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/leg_tier1-greedy_app_aug2.log",
+      "wall_secs": 531.6
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "fixed_v1",
+      "rc": 0,
+      "workers": 7,
+      "n_positions": 20,
+      "out": "/mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/fixed_v1",
+      "log": "/home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/leg_tier1-greedy_fixed_v1.log",
+      "wall_secs": 545.0
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "walled",
+      "rc": 0,
+      "workers": 5,
+      "n_positions": 16,
+      "out": "/mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/walled",
+      "log": "/home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/leg_tier1-greedy_walled.log",
+      "wall_secs": 545.0
+    }
+  ],
+  "wall_secs": 5712.0,
+  "finished_utc": "2026-08-06T05:56:43Z"
+}

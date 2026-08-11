@@ -1,0 +1,130 @@
+{
+  "packet_name": "clean_room_review_20260621",
+  "purpose": "Clean-room external review snapshot before the tool-augmented / action-ranker branch. Packaging, indexing, and evidence hygiene only — no new experiments, training, or claim changes.",
+  "created_utc": "2026-06-22T01:11:32Z",
+  "created_local_date": "2026-06-21",
+  "git": {
+    "commit": "4021698022debd2e1e6b115d25a29575d4c44b19",
+    "commit_short": "4021698",
+    "branch": "stage-b-wiring"
+  },
+  "champion": {
+    "ckpt_id": "flywheel2_champion_iter8",
+    "path": "flywheel_residual_attempt2/ckpt/iter8.pt",
+    "sha256": "0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c",
+    "arch": "96x6 ResNet, n_scalar_features=12, value_global_pool=False",
+    "play_config": {
+      "agent": "NeuralMCTS",
+      "sims": 200,
+      "c_puct": 3.0,
+      "leaf": "virtual_score_v2 (v2.7)",
+      "CARCASSONNE_V25_RESIDUAL_SCALE": "0.25",
+      "CARCASSONNE_V25_CAP": "12",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CARCASSONNE_USE_FLAT_LEAF": "1"
+    },
+    "folded_in": "2026-06-11"
+  },
+  "strongest_known_practical_ruler": {
+    "id": "heur@3200",
+    "definition": "HeuristicMCTS with v2.7 leaf, 3200 sims, c_puct=1.5",
+    "note": "Strongest PRACTICAL agent/ruler (catches iter8 full-game, most endgame-precise). NOT optimal, NOT ground truth, NOT human-anchored — ladder shows deeper search keeps gaining."
+  },
+  "other_checkpoint_hashes": {
+    "deepteacher_iter12": "059e394cb0a2e1e6bf8c5f04bef2e7eb1f3ea8806fccd9819b8ab0aaa55f7d0c",
+    "incumbent_residual_pt": "f1e67cab8a8808184c763c21a8dda7d83fa52b6fa66de5847386166b833b3770"
+  },
+  "packet_documents": [
+    "README_CLEAN_ROOM.md",
+    "CURRENT_STATE_SUMMARY.md",
+    "CLAIMS_FOR_REVIEW.md",
+    "RESULTS_DIGEST.md",
+    "EVIDENCE_INDEX.md",
+    "OPEN_QUESTIONS_AND_NEXT_OPTIONS.md",
+    "OVERCLAIM_RISKS.md",
+    "REVIEWER_PROMPT.md",
+    "PACKET_MANIFEST.json"
+  ],
+  "copied_source_files": [
+    {"path": "sources/STATUS.md", "from": "STATUS.md", "type": "governance"},
+    {"path": "sources/PRODUCTION.yaml", "from": "governance/PRODUCTION.yaml", "type": "governance"},
+    {"path": "sources/CLAIM_REGISTRY.csv", "from": "governance/CLAIM_REGISTRY.csv", "type": "governance"},
+    {"path": "sources/CHECKPOINT_LINEAGE.csv", "from": "governance/CHECKPOINT_LINEAGE.csv", "type": "governance"},
+    {"path": "sources/MEASUREMENT_FIRST_SPEC_2026-06-18.md", "from": "docs/MEASUREMENT_FIRST_SPEC_2026-06-18.md", "type": "spec"},
+    {"path": "sources/LEVEL2_LADDER_VERDICT.md", "from": "measurement/level2/LEVEL2_LADDER_VERDICT.md", "type": "verdict"},
+    {"path": "sources/LEVEL2_L22_VERDICT.md", "from": "measurement/level2/LEVEL2_L22_VERDICT.md", "type": "verdict"},
+    {"path": "sources/LEVEL2_L23_VERDICT.md", "from": "measurement/level2/LEVEL2_L23_VERDICT.md", "type": "verdict"},
+    {"path": "sources/LEVEL2_K4_PROBE_VERDICT.md", "from": "measurement/level2/LEVEL2_K4_PROBE_VERDICT.md", "type": "verdict"},
+    {"path": "sources/LEVEL2_HYBRID_VERDICT.md", "from": "measurement/level2/LEVEL2_HYBRID_VERDICT.md", "type": "verdict"},
+    {"path": "sources/CLAIRVOYANCE_GAP_VERDICT.md", "from": "measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md", "type": "verdict"},
+    {"path": "sources/VALUE_RANKING_VERDICT.md", "from": "value_ranking/VALUE_RANKING_VERDICT.md", "type": "verdict"},
+    {"path": "sources/DEEPTEACHER_PROVENANCE_AUDIT.md", "from": "deepteacher_audit/DEEPTEACHER_PROVENANCE_AUDIT.md", "type": "verdict"},
+    {"path": "sources/ITER8_VS_ITER12_VERDICT.md", "from": "deepteacher_audit/ITER8_VS_ITER12_VERDICT.md", "type": "verdict"},
+    {"path": "sources/LEVEL2_LADDER_PROTOCOL.md", "from": "measurement/level2/LEVEL2_LADDER_PROTOCOL.md", "type": "protocol"},
+    {"path": "sources/LEVEL2_L23_PROTOCOL.md", "from": "measurement/level2/LEVEL2_L23_PROTOCOL.md", "type": "protocol"},
+    {"path": "sources/CLAIRVOYANCE_GAP_PROTOCOL.md", "from": "measurement/clairvoyance/CLAIRVOYANCE_GAP_PROTOCOL.md", "type": "protocol"},
+    {"path": "sources/ITER8_VS_ITER12_PROTOCOL.md", "from": "deepteacher_audit/ITER8_VS_ITER12_PROTOCOL.md", "type": "protocol"},
+    {"path": "sources/DEEPTEACHER_LINEAGE.csv", "from": "deepteacher_audit/DEEPTEACHER_LINEAGE.csv", "type": "governance"},
+    {"path": "sources/K4_PROBE_RESULTS.json", "from": "measurement/level2/K4_PROBE_RESULTS.json", "type": "processed_result"},
+    {"path": "sources/L23_REGRET_RESULTS.json", "from": "measurement/level2/L23_REGRET_RESULTS.json", "type": "processed_result"},
+    {"path": "sources/LADDER_RESULTS.json", "from": "measurement/level2/LADDER_RESULTS.json", "type": "processed_result"},
+    {"path": "sources/GAP_RESULTS.json", "from": "measurement/clairvoyance/GAP_RESULTS.json", "type": "processed_result"},
+    {"path": "sources/VALUE_RANKING_RESULTS.csv", "from": "value_ranking/VALUE_RANKING_RESULTS.csv", "type": "processed_result"},
+    {"path": "sources/ITER8_VS_ITER12_RESULTS.csv", "from": "deepteacher_audit/ITER8_VS_ITER12_RESULTS.csv", "type": "processed_result"},
+    {"path": "sources/results_csv_relevant_rows.csv", "from": "experiments/results.csv (filtered subset)", "type": "processed_result"}
+  ],
+  "result_row_ids_included": [
+    "flywheel2_SEALED_iter0_vs_heur800_v27_n400",
+    "flywheel2_SEALED_champ_iter8_vs_heur800_v27_n400",
+    "p2_iter8_vs_heur800_v27_s200_n400",
+    "p2_iter12_vs_heur800_v27_s200_n400",
+    "p2_iter8_vs_heur800_v27_s800_n400",
+    "p2_iter12_vs_heur800_v27_s800_n400",
+    "clairvoyance_clair_iter8_vs_heur800_v27_s200_n200",
+    "clairvoyance_nonclair_iter8_K12_vs_heur800_v27_s200_n182",
+    "l2_ladder_R1vR0_greedy_vs_random_n200",
+    "l2_ladder_R2vR1_heurv1s200_vs_greedy_n200",
+    "l2_ladder_R3vR2_heurv27s200_vs_heurv1s200_n200",
+    "l2_ladder_R4vR3_heurv27s800_vs_heurv27s200_n200",
+    "l2_ladder_R5vR4_heurv27s1600_vs_heurv27s800_n400",
+    "l2_ladder_R5bvR5_heurv27s3200_vs_heurv27s1600_n200",
+    "l2_ladder_R5bvR5_heurv27s3200_vs_heurv27s1600_n400",
+    "l22_iter8_vs_heur800_v27_s200_n400",
+    "l22_iter8_vs_heur1600_v27_s200_n400",
+    "l22_ctrl_iter8_vs_heur1600_b310_n400",
+    "l22_ctrl_heur1600_vs_heur800_b310_n400",
+    "l22_orchoff_iter8_vs_heur800_b310_n400",
+    "l22_iter8_vs_heur3200_b310_n400",
+    "l2hyb_K2h3200_vs_iter8_b340_n200",
+    "l2hyb_K3h3200_vs_iter8_b340_n200",
+    "l2hyb_K5h3200_vs_iter8_b340_n200",
+    "l2hyb_K8h3200_vs_iter8_b340_n200",
+    "l2hyb_K5h800_vs_iter8_b340_n200",
+    "l2hyb_K5h3200_vs_heur3200_b340_n200",
+    "l2hyb_K8h3200_vs_heur3200_b340_n200"
+  ],
+  "claims_covered": [
+    "CL-001", "CL-004", "CL-005", "CL-018", "CL-019", "CL-020", "CL-021",
+    "CL-022", "CL-023", "CL-024", "CL-025", "CL-026", "CL-027", "PROP-1 (proposed, not in registry)"
+  ],
+  "referenced_not_copied": [
+    {"path": "experiments/results.csv", "reason": "90KB source-of-truth; the 28 cited rows are copied into sources/results_csv_relevant_rows.csv"},
+    {"path": "DECISIONS.md", "reason": "386KB dated decision log; grep by date/keyword, not packet-sized"},
+    {"path": "measurement/level2/l23_positions.jsonl", "reason": "5.2MB raw K=2/K=3 endgame suite positions"},
+    {"path": "measurement/level2/l23_k4_multisource.jsonl", "reason": "744KB raw K=4 multi-source suite positions"},
+    {"path": "clean_eval/CLEAN_EVAL_AUDIT.md", "reason": "trustworthy-ruler audit (CL-013/014/015); referenced in EVIDENCE_INDEX"},
+    {"path": "/mnt/c/carc-shared/level2_*, /mnt/c/carc-shared/iter8_vs_iter12, /mnt/c/carc-shared/l23_k4_expand_probe", "reason": "off-repo CIFS-share per-game JSON + manifests (deck hashes, runtime checkpoint sha)"}
+  ],
+  "intentionally_omitted": [
+    {"path": "outside_review/ and outside_review.zip (2026-06-07)", "reason": "Prior external-review packet that predates all Level-2 / clairvoyance / endgame / deepteacher-clean work; its strength framing is stale/superseded. Kept in repo for traceability, excluded from this packet."},
+    {"path": "engine/ (vendored wingedsheep) and src/ code", "reason": "This is an evidence-review packet, not a code audit; CODE_MAP-level detail is out of scope. Eval-provenance code is named in EVIDENCE_INDEX where it backs CL-013."}
+  ],
+  "global_caveats": [
+    "All elo/solver labels are CLAIRVOYANT (true deck order) and IN-ECOSYSTEM (v2.7-leaf family), NOT human-anchored.",
+    "n=400 paired ~= +/-17.5 elo (1 sigma); only same-band paired comparisons compose; cross-band composition stacks noise.",
+    "All solver endgame labels are clairvoyant; the preferred fair-information (bag-expectation) ground truth is untested at K>=3.",
+    "'Strongest known practical agent' (heur@3200) is distinct from 'optimal / superhuman'.",
+    "Champion unchanged by this packet; no training, no promotion, no claim edits."
+  ]
+}

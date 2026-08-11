@@ -1,0 +1,118 @@
+[4a-eval] fair=/home/doctor/carc_probe_b/ds_fair_full clair=/home/doctor/carc_probe_b/ds_clair_full out=measurement/probe_b_4a/eval_full ep=30 variant=V4_listwise gpb=8 09:52:28
+=== fair : full (farm+bag) — α-sweep + τ (H-4A-inert) 09:52:28 ===
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0193 top1=0.463 (n=1544)
+    [V4_listwise] ep1/30 train=3.3119 val=3.3102 (109s) *
+    [V4_listwise] ep2/30 train=3.3123 val=3.3102 (106s)
+    [V4_listwise] ep3/30 train=3.3106 val=3.3102 (106s)
+    [V4_listwise] ep4/30 train=3.3118 val=3.3102 (106s)
+    [V4_listwise] ep5/30 train=3.3128 val=3.3102 (106s)
+    [V4_listwise] ep6/30 train=3.3119 val=3.3102 (106s)
+    [V4_listwise] ep7/30 train=3.3121 val=3.3102 (107s)
+    [V4_listwise] early-stop ep7 (no val gain in 6 epochs)
+  [V4_listwise       ] net-alone tau=+0.002 top1=0.054 | combined a*=0.0 regret 0.0193->0.0193 (+0.0%) beats_leaf=False
+    (V4_listwise done in 768s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0193  best net-alone tau=+0.002
+ANY variant beats leaf (leaf+a*net < leaf): False
+-> measurement/probe_b_4a/eval_full/fair_both/stage5_offline_gate.json
+=== fair : bag-only (drop farm planes) — H-4A-bag 10:05:24 ===
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[drop-farm] zeroing 3 farm planes at gather (mode -> bag-only)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0193 top1=0.463 (n=1544)
+    [V4_listwise] ep1/30 train=3.3119 val=3.3102 (108s) *
+    [V4_listwise] ep2/30 train=3.3123 val=3.3101 (105s) *
+    [V4_listwise] ep3/30 train=3.3106 val=3.3101 (106s)
+    [V4_listwise] ep4/30 train=3.3118 val=3.3102 (105s)
+    [V4_listwise] ep5/30 train=3.3127 val=3.3102 (106s)
+    [V4_listwise] ep6/30 train=3.3119 val=3.3102 (105s)
+    [V4_listwise] ep7/30 train=3.3120 val=3.3100 (105s) *
+    [V4_listwise] ep8/30 train=3.3127 val=3.3097 (105s) *
+    [V4_listwise] ep9/30 train=3.3118 val=3.3095 (105s) *
+    [V4_listwise] ep10/30 train=3.3114 val=3.3093 (105s) *
+    [V4_listwise] ep11/30 train=3.3108 val=3.3097 (105s)
+    [V4_listwise] ep12/30 train=3.3119 val=3.3097 (105s)
+    [V4_listwise] ep13/30 train=3.3111 val=3.3095 (105s)
+    [V4_listwise] ep14/30 train=3.3118 val=3.3095 (106s)
+    [V4_listwise] ep15/30 train=3.3105 val=3.3096 (106s)
+    [V4_listwise] ep16/30 train=3.3116 val=3.3090 (106s) *
+    [V4_listwise] ep17/30 train=3.3118 val=3.3097 (106s)
+    [V4_listwise] ep18/30 train=3.3116 val=3.3093 (106s)
+    [V4_listwise] ep19/30 train=3.3118 val=3.3093 (105s)
+    [V4_listwise] ep20/30 train=3.3117 val=3.3095 (106s)
+    [V4_listwise] ep21/30 train=3.3118 val=3.3098 (106s)
+    [V4_listwise] ep22/30 train=3.3116 val=3.3093 (106s)
+    [V4_listwise] early-stop ep22 (no val gain in 6 epochs)
+  [V4_listwise       ] net-alone tau=+0.040 top1=0.038 | combined a*=0.0 regret 0.0193->0.0193 (+0.0%) beats_leaf=False
+    (V4_listwise done in 2342s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0193  best net-alone tau=+0.040
+ANY variant beats leaf (leaf+a*net < leaf): False
+-> measurement/probe_b_4a/eval_full/fair_bag_only/stage5_offline_gate.json
+=== fair : farm-only (drop bag scalars) — H-4A-bag 10:44:31 ===
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[drop-bag] zeroed 32 bag scalars (mode -> farm-only)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0193 top1=0.463 (n=1544)
+    [V4_listwise] ep1/30 train=3.3118 val=3.3104 (107s) *
+    [V4_listwise] ep2/30 train=3.3123 val=3.3102 (105s) *
+    [V4_listwise] ep3/30 train=3.3106 val=3.3102 (105s)
+    [V4_listwise] ep4/30 train=3.3118 val=3.3102 (105s)
+    [V4_listwise] ep5/30 train=3.3128 val=3.3102 (105s)
+    [V4_listwise] ep6/30 train=3.3119 val=3.3102 (105s)
+    [V4_listwise] ep7/30 train=3.3121 val=3.3102 (105s)
+    [V4_listwise] ep8/30 train=3.3129 val=3.3102 (105s)
+    [V4_listwise] early-stop ep8 (no val gain in 6 epochs)
+  [V4_listwise       ] net-alone tau=-0.007 top1=0.054 | combined a*=0.0 regret 0.0193->0.0193 (+0.0%) beats_leaf=False
+    (V4_listwise done in 862s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0193  best net-alone tau=-0.007
+ANY variant beats leaf (leaf+a*net < leaf): False
+-> measurement/probe_b_4a/eval_full/fair_farm_only/stage5_offline_gate.json
+=== clair : full (farm+bag) — α-sweep + τ (H-4A-inert) 10:58:57 ===
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0204 top1=0.510 (n=1544)
+    [V4_listwise] ep1/30 train=3.3119 val=3.3102 (147s) *
+    [V4_listwise] ep2/30 train=3.3123 val=3.3101 (121s) *
+    [V4_listwise] ep3/30 train=3.3106 val=3.3101 (106s)
+    [V4_listwise] ep4/30 train=3.3118 val=3.3101 (105s)
+    [V4_listwise] ep5/30 train=3.3127 val=3.3101 (105s) *
+    [V4_listwise] ep6/30 train=3.3118 val=3.3100 (106s) *
+    [V4_listwise] ep7/30 train=3.3120 val=3.3097 (105s) *
+    [V4_listwise] ep8/30 train=3.3126 val=3.3096 (105s) *
+    [V4_listwise] ep9/30 train=3.3118 val=3.3094 (106s) *
+    [V4_listwise] ep10/30 train=3.3114 val=3.3093 (105s) *
+    [V4_listwise] ep11/30 train=3.3108 val=3.3093 (106s) *
+    [V4_listwise] ep12/30 train=3.3118 val=3.3094 (106s)
+    [V4_listwise] ep13/30 train=3.3111 val=3.3094 (106s)
+    [V4_listwise] ep14/30 train=3.3117 val=3.3092 (106s) *
+    [V4_listwise] ep15/30 train=3.3105 val=3.3091 (106s) *
+    [V4_listwise] ep16/30 train=3.3117 val=3.3090 (106s) *
+    [V4_listwise] ep17/30 train=3.3119 val=3.3094 (106s)
+    [V4_listwise] ep18/30 train=3.3117 val=3.3092 (106s)
+    [V4_listwise] ep19/30 train=3.3119 val=3.3091 (106s)
+    [V4_listwise] ep20/30 train=3.3117 val=3.3094 (106s)
+    [V4_listwise] ep21/30 train=3.3117 val=3.3090 (106s)
+    [V4_listwise] ep22/30 train=3.3116 val=3.3094 (106s)
+    [V4_listwise] early-stop ep22 (no val gain in 6 epochs)
+  [V4_listwise       ] net-alone tau=+0.034 top1=0.078 | combined a*=0.0 regret 0.0204->0.0204 (+0.0%) beats_leaf=False
+    (V4_listwise done in 2429s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0204  best net-alone tau=+0.034
+ANY variant beats leaf (leaf+a*net < leaf): False
+-> measurement/probe_b_4a/eval_full/clair_both/stage5_offline_gate.json
+=== clair : bag-only (drop farm planes) — H-4A-bag 11:39:32 ===
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[drop-farm] zeroing 3 farm planes at gather (mode -> bag-only)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0204 top1=0.510 (n=1544)
+    [V4_listwise] ep1/30 train=3.3120 val=3.3102 (110s) *
+    [V4_listwise] ep2/30 train=3.3123 val=3.3102 (108s)
+    [V4_listwise] ep3/30 train=3.3106 val=3.3102 (109s)

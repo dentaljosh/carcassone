@@ -1,0 +1,12 @@
+bench_champion: Intel64 Family 6 Model 183 Stepping 1, GenuineIntel (AMD64, py3.13.14)
+  leaf path : PURE_PYTHON  <-- ~4.5x slower than the Cython path
+  champion  : puct_priors_v29_bmild_cap8  (YAML budget k4x688)
+  positions : 12 from positions.jsonl
+  budgets   : k4x172  repeat=1
+  out       : C:\carc-bench-eff_linus\aff_free.json
+  -> k4x172 (688 sims/move) ...
+     mean 5.933s  p50 4.815s  p90 10.652s  (n=11, 70s wall)
+
+bench_champion: wrote C:\carc-bench-eff_linus\aff_free.json
+  leaf_path=pure_python  machine=AMD64
+  k4x172  (  688 sims/move): mean   5.933 s/move   p90  10.652 s/move

@@ -35,6 +35,25 @@ def test_get_game_ended_zero_during_play_nonzero_at_end() -> None:
     assert v != 0.0
 
 
+def test_get_init_board_asserts_no_abbots() -> None:
+    """Hygiene 4d: the central scope guard in get_init_board fails loud if an
+    out-of-scope ABBOTS state ever reaches it. A default Game (Base+Farmers) has
+    abbots == [0, 0] and must pass; forcing ABBOTS into the rule set past the
+    __init__ guard makes the built state's abbots non-zero and must AssertionError
+    rather than silently mis-score gardens/abbots."""
+    from wingedsheep.carcassonne.tile_sets.supplementary_rules import SupplementaryRule
+
+    # Default in-scope game: assert is a no-op.
+    Game().get_init_board()
+
+    # Out-of-scope: bypass the __init__ ABBOTS guard by mutating the rule set on an
+    # already-constructed Game, then confirm get_init_board's assert fires.
+    g = Game()
+    g.supplementary_rules = (SupplementaryRule.FARMERS, SupplementaryRule.ABBOTS)
+    with pytest.raises(AssertionError, match="abbots"):
+        g.get_init_board()
+
+
 def test_canonical_form_returns_correct_shapes() -> None:
     g = Game()
     board = g.get_init_board()

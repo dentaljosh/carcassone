@@ -1,0 +1,12 @@
+[2026-07-27_14:04:01] === blind curve START on Doctor (OW=40 n=200 band=70000000000) ===
+[2026-07-27_14:04:01] --- RUNG 0.125x : k4x86 = 344 sims
+[2026-07-27_14:12:11] --- RUNG 0.125x exited rc=0
+[2026-07-27_14:12:11] --- RUNG 0.25x : k4x172 = 688 sims
+[2026-07-27_14:27:21] --- RUNG 0.25x exited rc=0
+[2026-07-27_14:27:21] --- RUNG 0.5x : k4x344 = 1376 sims
+[2026-07-27_14:47:40] --- RUNG 0.5x exited rc=0
+[2026-07-27_14:47:40] --- RUNG 0.75x : k4x516 = 2064 sims
+[2026-07-27_15:14:13] --- RUNG 0.75x exited rc=0
+[2026-07-27_15:14:13] --- RUNG 1x_PRODUCTION : k4x688 = 2752 sims
+[2026-07-27_15:48:10] --- RUNG 1x_PRODUCTION exited rc=0
+[2026-07-27_15:48:10] === blind curve DONE on Doctor ===

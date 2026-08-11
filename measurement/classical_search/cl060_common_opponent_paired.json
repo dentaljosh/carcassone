@@ -1,0 +1,34 @@
+{
+ "what": "PAIRED difference-of-differences through the common h800 rung: candidate k8x1376 (11008) MINUS deploy champion k4x688 (2752), same decks, same opponent.",
+ "why": "Corrects a same-day misreading that compared the two runs' UNPAIRED elo point estimates (+123.0 vs +135.0, sigma~18.5 each) and reported a 12-elo 'sign flip' / ~2.4sigma contradiction with the direct H2H. Both runs share seed band 24e9 and are deck-paired, so the paired statistic is available and is the correct one.",
+ "runs": {
+  "champion": "fair_ruler_rebase_2752",
+  "candidate": "fair_ruler_k8x1376_11008",
+  "seed_start": 24000000000,
+  "games_each": 400,
+  "common_keys": 400,
+  "deck_hash_mismatches": 0
+ },
+ "result": {
+  "n_decks": 200,
+  "mean_pts_per_deck": 1.1225,
+  "sd": 18.436,
+  "se": 1.3036,
+  "z": 0.861,
+  "champion_mean_margin_vs_h800": 8.6425,
+  "candidate_mean_margin_vs_h800": 9.765
+ },
+ "reconciliation": {
+  "direct_h2h_pts_per_deck": 2.9775,
+  "direct_h2h_paired_z": 3.48,
+  "direct_h2h_se_implied": 0.8556,
+  "common_opponent_pts_per_deck": 1.1225,
+  "common_opponent_se": 1.3036,
+  "difference": 1.855,
+  "difference_se": 1.5593,
+  "difference_z": 1.19,
+  "verdict": "CONSISTENT (z=1.19, n.s.). Same sign, magnitudes agree within noise. CL-060 was closed on an UNDERPOWERED design, not refuted by a conflicting one. The direct H2H is more sensitive: no third-party variance, and no ceiling compression from measuring two near-equals through an opponent both beat by ~9 pts/deck.",
+  "note": "+1.12 pts/deck at z=0.86 is precisely CL-060's own recorded closure figure, so the closure always rested on this statistic.",
+  "still_open": "The H2H changed WIDTH and BUDGET together (k8x1376 vs k4x688). CL-054 established k4 beats k8 at fixed total 2752. The decomposition cell k4x2752 (11008) vs k4x688 (2752) isolates BUDGET at fixed width."
+ }
+}

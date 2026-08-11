@@ -1,0 +1,35 @@
+{
+  "n_games": 2096,
+  "n_replay_fail": 0,
+  "n_decisions": 299165,
+  "n_all_overflow_decisions": 0,
+  "games_with_overflow": 0,
+  "games_with_oow_tile": 0,
+  "decisions_with_drop": 0,
+  "decisions_with_oow_tile": 0,
+  "total_dropped_actions": 0,
+  "total_oow_tiles": 0,
+  "phase_decisions": {
+    "tiles": 149680,
+    "meeples": 149485
+  },
+  "phase_drop_decisions": {},
+  "stage_decisions": {
+    "opening": 98690,
+    "mid": 100619,
+    "endgame": 99856
+  },
+  "stage_drop_decisions": {},
+  "noverflow_hist": {
+    "0": 299165
+  },
+  "noow_hist": {
+    "0": 299165
+  },
+  "source_files": [
+    "measurement/post_search_residual/data/games_mcts.jsonl",
+    "/mnt/c/carc-shared/l23_k4_expand.jsonl",
+    "measurement/level2/l23_k4_multisource.jsonl",
+    "measurement/window_audit/gen_games.jsonl"
+  ]
+}

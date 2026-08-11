@@ -1,0 +1,19 @@
+{
+ "chunk": "03_light_c",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 433,
+ "attempt": 1,
+ "peak_rss_kb": 1960452,
+ "n_failing": 8,
+ "failing_ids": [
+  "tests/test_engine_adjacency.py::test_open_positions_starts_empty",
+  "tests/test_engine_adjacency.py::test_open_positions_survives_deepcopy",
+  "tests/test_engine_adjacency.py::test_placed_coords_starts_empty",
+  "tests/test_engine_adjacency.py::test_tile_phase_pass_does_not_leak_meeples",
+  "tests/test_f3_caller_backends.py::test_gui_python_and_rust_play_the_same_game",
+  "tests/test_f3_caller_backends.py::test_gui_raises_when_an_advance_is_skipped",
+  "tests/test_f3_caller_backends.py::test_play_harness_python_and_rust_play_the_same_game",
+  "tests/test_f3_caller_backends.py::test_play_harness_raises_when_the_advance_is_skipped"
+ ]
+}

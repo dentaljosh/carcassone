@@ -1,0 +1,5 @@
+rung	status	n	W	D	L	elo	sigma	paired_z	latch_solves	cap_hits	fallback	censored_rate	censor	profile	r9_ok	secs	timestamp
+k2	DONE	400	191	5	204	-11.3	17.4	-8.51	800	0	0	0.000	ok	fixed_v1	true	6455	2026-08-05_01:25:02
+k3	DONE	399	190	6	203	-11.3	17.4	-6.44	1196	0	0	0.000	ok	fixed_v1	true	6607	2026-08-05_03:15:16
+k5	DONE	395	193	10	192	0.9	17.5	2.72	1826	148	148	0.081	ok	fixed_v1	true	6557	2026-08-05_05:04:39
+k6	DONE	394	194	10	190	3.5	17.5	2.81	2102	267	267	0.127	ok	fixed_v1	true	15048	2026-08-05_09:15:34

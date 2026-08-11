@@ -1,0 +1,125 @@
+{
+  "probe": "P3/quirk-mutation",
+  "question": "is G3's '0 mismatches' informative, or blind to the quirks?",
+  "reconcile": ".venv/bin/python scripts/rustport/reconcile_search.py --corpus champ --sims <sims> --stride 18 --per-game 3 --limit 10 --workers 6 --tag mutprobe",
+  "sims_ladder": [
+    8,
+    24,
+    88,
+    344,
+    1376
+  ],
+  "note": "mismatch COUNT per sim budget: a quirk that only perturbs the ORDER of the first simulations heals as the budget grows, so a high-sims gate can be blind to it while a low-sims trace is not.",
+  "results": [
+    {
+      "mutation": "root_f32_roundtrip_removed",
+      "quirk": "the ROOT-only float32 value round-trip (_eval_boards packs into np.float32)",
+      "ladder": {
+        "8": 20,
+        "24": 20,
+        "88": 20,
+        "344": 20,
+        "1376": 20
+      },
+      "first_mismatches": [
+        "sims=8 MISMATCH champ/28000000005@36/s8 [root_leaf_value_bits] {'python': 13819881780825554944, 'rust': 13819881780559087954}",
+        "sims=8 MISMATCH champ/28000000005@90/s8 [root_leaf_value_bits] {'python': 13827460631797694464, 'rust': 13827460631909868957}",
+        "sims=8 MISMATCH champ/28000000000@36/s8 [root_leaf_value_bits] {'python': 13826696401960042496, 'rust': 13826696401692531901}"
+      ],
+      "status": "DISCRIMINATED (gate went red)",
+      "discriminated_at_gate_budgets": true,
+      "secs": 19.1
+    },
+    {
+      "mutation": "transposition_alias_skip_removed",
+      "quirk": "_select_child_puct skipping actions in node.child_aliases",
+      "ladder": {
+        "8": 0,
+        "24": 0,
+        "88": 0,
+        "344": 0,
+        "1376": 0
+      },
+      "status": "NOT DISCRIMINATED (gate stayed green at every budget)",
+      "discriminated_at_gate_budgets": false,
+      "first_mismatches": [],
+      "secs": 19.2
+    },
+    {
+      "mutation": "f32_prior_renormalization_removed",
+      "quirk": "_expand_with_priors' SECOND (float32, numpy-pairwise) prior normalization",
+      "ladder": {
+        "8": 5,
+        "24": 5,
+        "88": 5,
+        "344": 5,
+        "1376": 5
+      },
+      "first_mismatches": [
+        "sims=8 MISMATCH champ/28000000000@36/s8 [root_priors] {'n_actions': [24, 24], 'diffs': [(1049, 4585198255570157568, 4585198255033286656), (1051, 4585198255570157568, 4585198255033286656), (1132, 458631355764",
+        "sims=8 MISMATCH champ/28000000003@90/s8 [root_priors] {'n_actions': [35, 35], 'diffs': [(644, 4585157269234122752, 4585157269770993664), (645, 4585157269234122752, 4585157269770993664), (647, 458515726923412",
+        "sims=8 MISMATCH champ/28000000001@90/s8 [root_priors] {'n_actions': [37, 37], 'diffs': [(746, 4581467494505512960, 4581467493968642048), (838, 4582014672802152448, 4582014672265281536), (841, 458146749450551"
+      ],
+      "status": "DISCRIMINATED (gate went red)",
+      "discriminated_at_gate_budgets": true,
+      "secs": 18.1
+    },
+    {
+      "mutation": "puct_tiebreak_last_best_wins",
+      "quirk": "strict-> PUCT argmax (FIRST best = lowest action index wins ties)",
+      "ladder": {
+        "8": 40,
+        "24": 39,
+        "88": 56,
+        "344": 73,
+        "1376": 94
+      },
+      "first_mismatches": [
+        "sims=8 MISMATCH champ/28000000004@36/s8 [root_children] {'n_actions': [8, 8], 'diffs': [(1256, (1, 13818138837141351181), None), (1257, (1, 13818138837141351181), None), (1442, None, (1, 13818138837141351181",
+        "sims=8 MISMATCH champ/28000000004@36/s8 [deduped] {'n_actions': [8, 8], 'diffs': [(1256, (1, 13818138837141351181), None), (1257, (1, 13818138837141351181), None), (1442, None, (1, 13818138837141351181)), (1",
+        "sims=8 MISMATCH champ/28000000004@90/s8 [chosen_action] {'python': 756, 'rust': 1948}"
+      ],
+      "status": "DISCRIMINATED (gate went red)",
+      "discriminated_at_gate_budgets": true,
+      "secs": 18.1
+    },
+    {
+      "mutation": "sqrt_parent_n_not_clamped_to_1",
+      "quirk": "sqrt(max(node.N, 1)) \u2014 the N==0 clamp on the first simulation",
+      "ladder": {
+        "8": 31,
+        "24": 15,
+        "88": 4,
+        "344": 0,
+        "1376": 0
+      },
+      "first_mismatches": [
+        "sims=8 MISMATCH champ/28000000001@90/s8 [chosen_action] {'python': 1137, 'rust': 746}",
+        "sims=8 MISMATCH champ/28000000001@90/s8 [root_children] {'n_actions': [8, 8], 'diffs': [(746, None, (1, 13826511376367967893)), (1232, (1, 13825130485831215603), None)], 'n_diffs': 2}",
+        "sims=8 MISMATCH champ/28000000001@90/s8 [deduped] {'n_actions': [8, 8], 'diffs': [(746, None, (1, 13826511376367967893)), (1232, (1, 13825130485831215603), None)], 'n_diffs': 2}"
+      ],
+      "status": "DISCRIMINATED (gate went red)",
+      "discriminated_at_gate_budgets": false,
+      "secs": 19.5
+    },
+    {
+      "mutation": "prior_bonus_fold_removed",
+      "quirk": "_link_child folding an alias's prior into its representative",
+      "ladder": {
+        "8": 5,
+        "24": 1,
+        "88": 23,
+        "344": 52,
+        "1376": 68
+      },
+      "first_mismatches": [
+        "sims=8 MISMATCH champ/28000000006@36/s8 [chosen_action] {'python': 1160, 'rust': 1044}",
+        "sims=8 MISMATCH champ/28000000006@36/s8 [root_children] {'n_actions': [2, 8], 'diffs': [(1044, None, (2, 13821583052959942036)), (1046, None, (2, 13821583052959942036)), (1048, None, (2, 13821583052959942036",
+        "sims=8 MISMATCH champ/28000000006@36/s8 [deduped] {'n_actions': [1, 4], 'diffs': [(1044, None, (2, 13821583052959942036)), (1048, None, (2, 13821583052959942036)), (1141, None, (2, 13821583052959942036)), (1"
+      ],
+      "status": "DISCRIMINATED (gate went red)",
+      "discriminated_at_gate_budgets": true,
+      "secs": 19.8
+    }
+  ]
+}

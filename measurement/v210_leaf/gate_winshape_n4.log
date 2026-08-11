@@ -1,0 +1,52 @@
+v29[Bmild_cap8_n4] vs [Bmild_cap8]: n=400 sims=800 | 0 cached, 400 to play, 30 workers, out=/mnt/c/carc-shared/v210_gates/winshape_n4_vs_cap8_h800_n400
+  10/400 played (10.7s/game, ~69 min left)
+  20/400 played (5.6s/game, ~36 min left)
+  30/400 played (4.3s/game, ~26 min left)
+  40/400 played (5.4s/game, ~32 min left)
+  50/400 played (4.4s/game, ~26 min left)
+  60/400 played (4.0s/game, ~23 min left)
+  70/400 played (4.5s/game, ~25 min left)
+  80/400 played (4.1s/game, ~22 min left)
+  90/400 played (3.8s/game, ~20 min left)
+  100/400 played (4.2s/game, ~21 min left)
+  110/400 played (4.0s/game, ~19 min left)
+  120/400 played (3.9s/game, ~18 min left)
+  130/400 played (4.1s/game, ~18 min left)
+  140/400 played (3.9s/game, ~17 min left)
+  150/400 played (3.9s/game, ~16 min left)
+  160/400 played (4.0s/game, ~16 min left)
+  170/400 played (3.9s/game, ~15 min left)
+  180/400 played (3.9s/game, ~14 min left)
+  190/400 played (3.9s/game, ~14 min left)
+  200/400 played (3.8s/game, ~13 min left)
+  210/400 played (3.8s/game, ~12 min left)
+  220/400 played (3.8s/game, ~12 min left)
+  230/400 played (3.8s/game, ~11 min left)
+  240/400 played (3.8s/game, ~10 min left)
+  250/400 played (3.8s/game, ~10 min left)
+  260/400 played (3.8s/game, ~9 min left)
+  270/400 played (3.8s/game, ~8 min left)
+  280/400 played (3.8s/game, ~8 min left)
+  290/400 played (3.7s/game, ~7 min left)
+  300/400 played (3.7s/game, ~6 min left)
+  310/400 played (3.8s/game, ~6 min left)
+  320/400 played (3.7s/game, ~5 min left)
+  330/400 played (3.7s/game, ~4 min left)
+  340/400 played (3.8s/game, ~4 min left)
+  350/400 played (3.7s/game, ~3 min left)
+  360/400 played (3.7s/game, ~2 min left)
+  370/400 played (3.7s/game, ~2 min left)
+  380/400 played (3.7s/game, ~1 min left)
+  390/400 played (3.7s/game, ~1 min left)
+  400/400 played (3.6s/game, ~0 min left)
+
+=== v2.9[Bmild_cap8_n4] vs v2.8 @ sims=800 ===
+games:  400   candidate: 209W / 3D / 188L   winrate 0.526
+avg score diff (cand - base): +1.20   paired z(margin): +1.08
+ELO: +18.3  (+/- 17.4 1sigma)
+  pre-endgame split (snapshot at deck<=6):
+    behind         n= 171  wr=0.211  avg_diff=-14.13
+    even           n=  62  wr=0.524  avg_diff=+0.47
+    ahead          n=  90  wr=0.767  avg_diff=+11.94
+    blowout_ahead  n=  77  wr=0.948  avg_diff=+23.26
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=0.53 verdict needs n>=400.

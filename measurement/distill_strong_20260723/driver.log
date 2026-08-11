@@ -1,0 +1,48 @@
+=== DISTILL STAGE-1 @ Thu Jul 23 23:25:53 EDT 2026 — TAG=distill_strong_20260723 iters 0..3 games=600 ===
+    teacher: FairHeuristicPriorAgent k_dets=8 x sims=1376 (curve125) · window 12 · aux_weight 0
+    boxes (gen): local W16  laptop W16 (use_laptop=1) · orch-OFF (net-free CPU)
+  bundle tip: 97857b7
+  laptop synced to 97857b7
+
+########## DISTILL ITER 0 -> iter_00 @ Thu Jul 23 23:26:21 EDT 2026 (warm from warmstart_sighted.pt) ##########
+[it0] gen seed_start=50000000000 -> /mnt/c/carc-shared/distill_strong_20260723/iter_00 @ Thu Jul 23 23:26:21 EDT 2026
+[it0] gen complete (600 npz) @ Fri Jul 24 11:36:21 EDT 2026
+[it0] train (accumulate iter_00..iter_00, window 12) @ Fri Jul 24 11:36:21 EDT 2026
+[it0] screen @ Fri Jul 24 11:39:43 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it0] probe set absent (/mnt/c/carc-shared/distill_strong_20260723/probe_data/iter_00) — skipping probe_metrics (operator gens it at launch)
+[it0] ✅ iter complete (screen HEALTHY) @ Fri Jul 24 11:39:43 EDT 2026
+
+########## DISTILL ITER 1 -> iter_01 @ Fri Jul 24 11:39:43 EDT 2026 (warm from iter_00.pt) ##########
+[it1] gen seed_start=50000100000 -> /mnt/c/carc-shared/distill_strong_20260723/iter_01 @ Fri Jul 24 11:39:43 EDT 2026
+[it1] gen complete (600 npz) @ Sat Jul 25 00:28:23 EDT 2026
+[it1] train (accumulate iter_00..iter_01, window 12) @ Sat Jul 25 00:28:23 EDT 2026
+[it1] screen @ Sat Jul 25 00:33:20 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it1] probe set absent (/mnt/c/carc-shared/distill_strong_20260723/probe_data/iter_00) — skipping probe_metrics (operator gens it at launch)
+[it1] ✅ iter complete (screen HEALTHY) @ Sat Jul 25 00:33:20 EDT 2026
+
+########## DISTILL ITER 2 -> iter_02 @ Sat Jul 25 00:33:20 EDT 2026 (warm from iter_01.pt) ##########
+[it2] gen seed_start=50000200000 -> /mnt/c/carc-shared/distill_strong_20260723/iter_02 @ Sat Jul 25 00:33:20 EDT 2026
+[it2] gen complete (600 npz) @ Sat Jul 25 11:58:51 EDT 2026
+[it2] train (accumulate iter_00..iter_02, window 12) @ Sat Jul 25 11:58:51 EDT 2026
+[it2] screen @ Sat Jul 25 12:06:17 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it2] probe set absent (/mnt/c/carc-shared/distill_strong_20260723/probe_data/iter_00) — skipping probe_metrics (operator gens it at launch)
+[it2] ✅ iter complete (screen HEALTHY) @ Sat Jul 25 12:06:17 EDT 2026
+
+########## DISTILL ITER 3 -> iter_03 @ Sat Jul 25 12:06:17 EDT 2026 (warm from iter_02.pt) ##########
+[it3] gen seed_start=50000300000 -> /mnt/c/carc-shared/distill_strong_20260723/iter_03 @ Sat Jul 25 12:06:17 EDT 2026
+[it3] gen complete (600 npz) @ Sat Jul 25 23:19:34 EDT 2026
+[it3] train (accumulate iter_00..iter_03, window 12) @ Sat Jul 25 23:19:34 EDT 2026
+[it3] screen @ Sat Jul 25 23:29:23 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it3] probe set absent (/mnt/c/carc-shared/distill_strong_20260723/probe_data/iter_00) — skipping probe_metrics (operator gens it at launch)
+[it3] ✅ iter complete (screen HEALTHY) @ Sat Jul 25 23:29:23 EDT 2026
+
+=== DISTILL STAGE-1 DONE @ Sat Jul 25 23:29:23 EDT 2026 — completed 4 iter(s); latest: /mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt ===
+=== distill stage-1 exiting @ Sat Jul 25 23:29:24 EDT 2026 (cleaned gen pools on both boxes) ===

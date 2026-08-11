@@ -6,6 +6,227 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 **Don't log:** variable names, file organization, formatting choices, library version pinning, anything that's purely a style decision.
 
+## Index (newest first)
+
+> Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [STATUS.md](STATUS.md) (live state; the 06-02 correction plan is an executed historical artifact).
+
+**2026-06 — correction era (current)**
+- 2026-08-09 overnight (**THE "WHERE DOES HEADROOM LIVE" TRIPLE — two of three answers landed, both closures.** (1) **SEARCH TAIL MEASURED SHUT**: the oracle-price cell at the extrapolation point (150/150, CRN, rust 9.48×-verified) read **+0.0673 pts/disagreement vs +0.7375 one rung below — price ratio 0.091**; pre-registered branch 2 fired POWERED (the "bound stands" prediction +0.511 would have read z 2.5; the CI's upper bound sits below it) ⇒ the geometric headroom bound above deploy collapses **+54 → ≈+7.1 elo** [−35,+49]. Mechanism: above ~5504 sims the search *moves but does not improve* — the r₄>1 rate anomaly is real but the *price* collapsed. (2) **CURVE-SHAPE PROBE PARKED**: 4 cells n=400 fair k8×1376 fixed_v1 (band 1.10e11 retired): identity −21.7±17.4 (gate pass, instrument zero) / flattop −1.7 (the Wave-2 Bflattop tie replicates) / broadlow −47.2 (vs C0: −25.5, z~−1.0) / hoard +2.6 ⇒ **A4_UNRESOLVABLE — no cell clears 2σ vs the identity zero; the 3.9-box-day sweep is NOT funded on a sub-2σ signal.** Instrument defect caught pre-launch by its own gate design: a manifest-path lookup returned None and fired a false INSTRUMENT-BROKEN; fixed so missing evidence reads PROVENANCE-UNREADABLE, never burns a band (`5aeae98`). (3) **PHASE ARM**: seam 549c0d1 verified 3/4 gates (hash exact; golden 194/0; reconcile 0/3,325,532 knob-off + 0/3,199,556 knob-ON, py==cy==rust bit-exact; e4 corpus excluded — its 7 fixed_v1 archives PANIC the rust engine via a geometry-blind loader, pre-existing, BACKLOG'd `1028046`) but the full-suite gate was UNKNOWN ⇒ merge blocked pending the suite-vs-clean-checkout comparison; the 06:51 dirty reboot (4th this week) killed the gate mid-suite AND wiped the seam wheel from /tmp, producing a FALSE PHASE_ARM_BLOCKED (verdict MISSING, suite never ran) — marker cleared with cause logged, wheel path made durable + rebuild-if-absent, chain relaunched. Ops lesson: **artifacts a resumable chain depends on must not live in the session scratchpad.** By-catch same night: JCZ harness built + smoke n=20 (separate entry). Everything measurement-only; PRODUCTION.yaml untouched.)
+- 2026-08-09 (evening) (**THE §7 TIGHTENER RAN THE SAME DAY AND SUPERSEDED THE MORNING'S BOUND — pre-registered BRANCH 2 fired, POWERED: the price of a top-of-ladder disagreement is +0.0673, not the assumed 0.511, so the +54 elo headroom bound collapses to ≈ +7 elo with a bracket that spans zero.** `oracle_score_pilot.py` UNCHANGED on the adjacent pair 5504-vs-11008 (`--level-a 1376 --level-b 2752 --n 150 --m 32 --oracle-sims 100 --workers 16 --backend rust`, default clair-puct judge, M=32 CRN); population 474, **150/150 ok, 0 failed, `crn_verified_all`, 126 roots, 990.1 s at W16**; rust licensed by the committed identity gate `measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json` and **re-verified at HEAD pre-launch (8 positions / 376 field checks / 0 mismatches, 9.48×)** ⇒ same ruler. **Mean +0.0673 pts/disagreement, cluster-robust se 0.2041, z +0.330, p 0.742; bootstrap 95% CI [−0.3300, +0.4668], P(≤0) 0.365, deff 1.204; price ratio 0.091 vs the +0.7375 composite.** Powered, not null-by-weakness: the P-constant prediction 0.511 would have read **z = 2.5** at the realized se and sits **above** the CI. **Re-stated bound (same chain, only P replaced; the assumed 0.51125 reproduces the published +54.1 elo): H = +0.5652 pts/game ≈ +7.1 elo (σ 22.2) / +7.7 (σ 20.4), bracket ≈ [−35, +49].** 🔑 **The decay moved from the RATE into the PRICE** — Δ₅ > Δ₄ is real, but essentially all of the composite's value came from the 2752→5504 half; **above 5504 the deeper pick MOVES but does not IMPROVE.** Geometric family stands; constant price does not. **No `results.csv` row — deliberately, not an oversight** (no opponent, no elo, no W/L/D; the schema has no slot); no CL id, `governance/PRODUCTION.yaml` untouched, no band involved. → [MEMO §9](measurement/budget_headroom_bound_20260809/MEMO.md); LEVER_INDEX "budget-headroom decay bound"; roadmap.)
+- 2026-08-09 (**THE BUDGET-HEADROOM DECAY BOUND — assembled from data already on disk, no compute, and it is a BOUND not a prediction.** Joshua's idea: elo-vs-budget extrapolation is confounded (CL-069's flat top vs CL-060's directly-measured +49.85 are ~70 elo apart *with a sign flip*), so fit the per-doubling decay of an **opponent-free** statistic instead — CL-070's budget-attributable disagreement Δ — and sum the geometric tail. **`MOVE_AGREEMENT_REPORT.json` turned out to carry all five adjacent doublings**, not just the 2752v11008 headline: Δ = 0.0866 / 0.0497 / 0.0287 / 0.0173 / 0.0206. **Decay ratio r = 0.675 ± 0.057, 95% CI [0.573, 0.796]** (all-5 log-linear), reproduced independently in the narrow-gap stratum at 0.642 [0.544, 0.757]; the three low-end adjacent ratios are 0.574 / 0.578 / 0.603 → weighted **0.579 ± 0.069**. Both exclude 1.0 ⇒ **the sum converges at measurable confidence.** Priced through the oracle (+0.7375 pts/disagreement, ONE pair) and the n=1 ÷3.2 non-additivity divisor ⇒ **total remaining raw-search-budget headroom above 11008 ≈ +4.3 pts/game ≈ +54 elo, bracket +7 … +181**, ~55% of it in the first two doublings. Closure check: the last two doublings sum to +47.5 elo vs CL-060's +49.85 ± 17.55. Out-of-sample: **both KWIDTH rungs above 11008 land BELOW the model** (11008→22016 measured 0.013 vs 0.053 pts/move; →110080 measured 0.069 vs 0.106) ⇒ it behaves like a bound. ⚠️ **The honest asterisk: the ONE adjacent ratio measured AT the extrapolation point is r₄ = 1.19 ± 0.40, >1 in both strata — on that number alone the sum DOES NOT CONVERGE.** Convergence is imported from the low end, where Δ is **sub-additive by 34%** and the CL-069 margin slope says the pricing route runs 1.64× hot even after ÷3.2 (the divisor is itself budget-dependent, ~5.23 low-end). ⚠️ **Two structural caveats and BOTH push the bound too HIGH: (i) cliff-vs-geometric** — F13/CL-076 is an in-house component that cliffs (marginal exact-K +0.31/+0.76/+0.11/−0.01, ~7× collapse at the incumbent K), and a geometric fit through a cliffing component over-states the tail in the flattering direction; **(ii) the oracle judge is in-family** — tested-and-not-supported, not excluded, and the out-of-family read is *lower*. No mechanism was identified pushing it too low ⇒ **treat +54 as ceiling-flavoured, not a target.** 💡 **One cheap tightener, costed and NOT run: oracle-price the 5504-vs-11008 disagreement set** (records already banked in CL-070, ~470 candidates; n ≈ 90–150 positions ≈ 75–120 min at W16 python-era, ~20–30 min rust-era) — it replaces the constant-price assumption with a measured price at the extrapolation point and makes r measurable on **prices** rather than rates; preferred over a low-end pair, which would test P-constancy in the regime that matters least. **Understanding, not a deploy lever** — no CL id, no `results.csv` row, `governance/PRODUCTION.yaml` untouched; CL-068's clock sentence and CL-071's promotion both still stand, and 22016 is the first rung this bound speaks to. ⚠️ **SUPERSEDED THE SAME DAY — see the 2026-08-09 (evening) entry above: the tightener ran, branch 2 fired powered, and the +54 elo central is now ≈ +7 elo.** → [MEMO](measurement/budget_headroom_bound_20260809/MEMO.md); LEVER_INDEX "budget-headroom decay bound"; roadmap Parking lot.)
+- 2026-08-05 night (**FIRST HUMAN WIN 98–78 vs the full-strength champion · ITS GRADING RETRACTED AND RE-RUN · `app_aug2` profile added · fixed_v1 INSTALLED.** Four linked events. **(1) The win:** archive `1785975832_66810.json`, `played_sims_effective 1376 × played_k_dets_effective 8` = **11008**, rust backend, `verify: true`, leaf `a36d2e15a3b3d71d`, no `runtime_budget_override`, no resume ⇒ the champion of record at full strength. Won on the endgame ledger — during-play 41–43 (−2), **unfinished features 42–26 (+16)**, farms 15–9 (+6) — which is exactly the correction slice-1 flagged (his two losses banked 2 and ~20 incomplete-pts vs corpus mean 23.0). E4 record 1–3; **n=4 with ~6.25% pooled luck and the protocol pricing the champion at wr 0.55 ⇒ a milestone and a datum, NOT parity.** **(2) THE RETRACTION — the methodology lesson of the night.** The grader resolved the archive to `fixed_v1` from `start_rule: retail` + `grid_rule: centered18` and graded it with R9 ON + fixed cloister + redraw. **Wrong: the phone was on the 2026-08-02 build** (drifting cloister, `next_player`, R9 OFF). Proven by APK sha256 — installed `54a08d51…` == the Aug-2 `app-debug.apk`, ≠ staged fixed_v1 `b8f2cef6…` — and by the archive lacking `rules_profile`/`cloister_rule`/`farm_rule`, which only the fixed_v1 build stamps. **The fail-closed guard could not fire: `(start_rule, grid_rule)` hits `fixed_v1` uniquely IN THE REGISTRY, but the registry had no row for a build that exists in the world.** `replay_scores_match: true` did not save it (R9 flips the legal mask ~1/200 games) — a matching replay is weak evidence, not proof. **Generalisable rules, both now standing: identify an APP BUILD BY APK HASH, never by rules fields; and a "profiles partition the key space" argument is only ever true of the registry, never of reality.** **(3) The fix + re-grade:** registry row **`app_aug2`** (centered18 + retail, keeping drifting/`next_player`/R9-off; adopts nothing, no default touched) + `resolve_profile_name` rewritten to a priority contract (explicit `rules_profile` stamp wins → else pre-fixed_v1, resolved among pre-fixed_v1 profiles ONLY, **never `fixed_v1`** → else raise), pinned by tests against the real archive; both pre-08-01 archives still resolve `walled`, artifacts unchanged. Corrected numbers: gate PASS (champion ΔQ 0.0119 vs null p95 0.0708), **human 0.0610 vs champion 0.0119 = 5.12×, z +2.97** — largest of the three games, 9 blunder-class human moves vs 1, all 9 in plies 12–60, tiles (0.081) not meeples (0.019), exact tail 0.0 pts both seats. **The void run's "past 3σ" claim DID NOT survive** (z +3.11 → +2.97); everything else did. **(4) fixed_v1 INSTALLED 20:55** on Joshua's ask, hash-verified `b8f2cef6…`, as an update so app data survived ⇒ **the E4-rules flip HAS happened and games from here are a different rules epoch than every game to date.** By-catch booked to BACKLOG: archives should stamp build provenance (`code_rev`/`app_build`) so this is a field lookup not forensics — today it was recoverable only because the old APK still sat on disk; and slice-1's analyzer has no rules-profile seam (`replay_stats.py:179,189` builds a bare walled Game). Commits `1bc2b1a` `75daec7` `46b3334` `d8b8279` `dfd03db`.)
+- 2026-08-05 evening (**F12 SLICE 2a FUNDED — the offline per-move EV-loss grader — and the design sketch's UNITS CLAIM RETRACTED.** Joshua funded the analyzer's second slice after the F13 close ("EV loss grader it is"), choosing the offline grader over coach-mode, a fresh k8×1376 reference corpus, and the Phase-6 folk claims. **The retraction is the load-bearing part and would have silently corrupted the tool:** BACKLOG's coach-mode sketch and the slice-1 report both asserted "Q values are natively in expected-margin points (virtual-score scale), so Δ = Q(best) − Q(played) is the EV loss in points". They are NOT — the leaf handed to MCTS is `tanh(flat_virtual_score_v2_float(…)/value_norm)` with `value_norm = 15.0` (`heuristic_prior_mcts.py:283`), so pooled `Q = W/N ∈ (−1,1)` is **dimensionless** and the points conversion is nonlinear (`≈15·atanh(Q)`, unbounded as |Q|→1). Pre-registered resolution: **raw ΔQ is the primary statistic**, a clipped `15·Δatanh(Q)` ships beside it explicitly labelled an estimate, and the **exact tail (k≤2) is the one genuinely points-scale grader** (`endgame_solver.regret_of`) reported in its own block, never pooled with tanh-scale means. Three further pre-registrations: buckets are **measured** from a reseeded null (p95/p99), not chosen — CL-070's 30.0%/44.9% self-disagreement floor is a *rate*, not a ΔQ threshold; **both seats are graded**, so the champion seat is the paired control AND the acceptance gate (an instrument that scores the move-generating agent as materially lossy is mis-wired, and no human number from it is reportable); the **same-family self-preference** threat is inherited from the oracle-scored-disagreement lever and mitigated by pairing, not eliminated. **Coach mode stays DEFERRED and gated** — coached games measure a learning curve, not a rating, so shipping it before uncoached E4 volume exists would contaminate the E4 stream; it needs the `coached:` archive flag from day one. Spec [EVLOSS_SPEC.md](measurement/analyzer_evloss_20260805/EVLOSS_SPEC.md) committed BEFORE any result (`ece490c`); no cluster compute (~45 s/archive), no strength claim, PRODUCTION.yaml untouched. **RAN THE SAME EVENING — gate PASS, results in [EVLOSS_READOUT.md](measurement/analyzer_evloss_20260805/EVLOSS_READOUT.md):** champion-seat mean ΔQ 0.0083/0.0132 vs null p95 0.0472/0.1245 (below even the null mean) ⇒ the instrument agrees with the agent that generated the moves; human seat runs **~2–4×** the champion's per-move disagreement cost on the same board (z +2.33/+2.48, replicating across both games), **7 blunder-class human moves vs 0**, median human ply zero-loss (a tail, not uniform), exact tail **1.0 pt total**. Screen-grade at n=2; **no CL minted deliberately** — two games of descriptive tooling output is not a claim. **Two build-time corrections worth carrying forward:** (a) the delegation brief's "export `CARCASSONNE_FIX_R9=1`" was WRONG for these archives — pre-2026-08-01 games resolve to the `walled` profile (`rules_profile.py:162`, "the engine of record"), whose `r9_env_expected` is False; setting R9 unconditionally would have graded under the wrong farm data, and `integrity.replay_scores_match: true` is the check that caught it. **Generalise: resolve the rules profile FROM the archive, never from the current production default.** (b) `fair_agent.root_stats_list` **dedups root children by node identity**, so the played action is frequently absent from the pool verbatim (at g1 ply 20, 18 legal actions collapse to 9 entries) — any future consumer of pooled root stats must resolve actions through successor-`string_representation` alias groups or it will silently fail to find the move it is grading.)
+- 2026-08-05 (**F13 EXACT-K LADDER RAN AND CLOSED — THE CURVE SATURATES EXACTLY AT PRODUCTION, AND THE ENDGAME NET IS STILLBORN.** Four rungs vs the K=4 incumbent, band 1.06e11 (retired), n≈400 deck-paired each, fixed_v1+R9, rust solver, NONE censored: margin/deck K2 −1.07 · K3 −0.76 · K5 +0.11 · K6 +0.10 ⇒ **marginal value per +1 K = +0.31 → +0.76 → +0.11 → −0.01**, the return collapsing ~7× at the incumbent's own K. **Winrate FLAT at every rung** (elo +0.9±17.4 / +3.5±17.5 vs a ±35 elo 2σ floor) ⇒ the June "margin scales with K, winrate does not" REPLICATES powered at every rung. Branch 2 fired on MARGIN while the prereg's question was WINS — a drafting defect recorded, not reinterpreted. Deploy-budget confirm offered and NOT bought. **CL-076 minted; the specialized endgame net dies on the ceiling argument without a line written — the cheap ladder killed the expensive lever, which is what dominance-ordering is for.** Gates first: identity 17/20 games 0 divergences (rust tail vs the pre-F13 PYTHON tail — which also measured the tail at **4–10× faster**, the defect that would have made K5/K6 infeasible), K6 rider cap-hit 0.038. Full entry at file end.)
+- 2026-08-04 (morning) (**FAIR-K FRONTIER PRICED — marg K5 is NOT an option (~26% under a 1 h cap, clean), K6 no; marg K4 is the offline-labeling frontier (75–80% under 1 h, K−1 fallback needed for the tail).** Clean desktop verdict run REPRODUCES the confounded laptop run (K4 15/20 vs 16/20; K5 5/19 vs 5/20) ⇒ the CL-074-farm co-location contaminated the instrument but not the answer. Play latch unchanged at K≤2 — no K≥4 marg is interactive. W4-for-timing stands; W-for-throughput now RAM-guarded at local ≤12 / laptop ≤5 from measured rss (1.23 GB max); `wsweep_exact_solver.py` teed, gated on a funded label consumer. WSL teardown ate the last 2 jobs (1 K5 censored; K6 probe re-fired). Full entry at file end.) (**CL-074 COMPONENT TABLE REMEASURED UNDER fixed_v1 — IT TRANSFERS.** All 8 knockout cells n=400 deck-paired, band 1.05e11 (retired), both sides fixed_v1+R9 rust: same rank order, same nulls, every Δ-vs-walled inside CL-068 cross-band humility. The anticipation pair's balance-not-information null REPLICATES (Joshua's remeasure rider DISCHARGED); farm-growth reads suggestive-positive a THIRD time (+42.8 → +10.4 → +25.2, none ≥2σ) and stays UNPROMOTED. ⚠️ its artifacts are misnamed `F7C_*` — unrelated to the F7c skew-guard item.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (night) (**PAPER G2 TRANSFORMER CONTROL CLOSED — pre-registered verdict C_GRAY, quote both halves in order.** Three scratch arms (resnet 7.51M / tf_match 7.73M / tf_large 28.06M), 16 passes, identical solver ruler: (i) the referee objection is ANSWERED — the matched-parameter transformer is ruler-identical to the conv-ResNet, no tested architecture escapes; (ii) it is NOT a generalisation result — all three failed the §4.2 fit gate, so no scratch arm ever showed the *prediction* half. Branch B did not fire; blocker #2 neither reopened nor further closed. New datum D5: the heuristic WARM START was load-bearing for outcome prediction itself.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (evening) (**JOSHUA'S DIRECTIVE BATCH — eight rulings, all executed same evening.** APK rebuild + E4 rules flip to fixed_v1 FUNDED → delivered and device-verified (13/13 on the Pixel; E4 games from here are played under fixed_v1) · ANE n≈2150 CLOSED UNFUNDED · CL-074 component remeasure FUNDED · F7c skew-guard hoist LAUNCHED · G1 pondering and G3 per-move cost MOOT · WC tie-break flag approved-but-unscheduled · **FIRST PUSH** of `android-app` to origin. Standing policy banked: default W for rust workloads = cpu threads − 2 absent a measured W\*.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (late afternoon) (**THE fixed_v1 SEAT-SWAP LUCK ARCHIVE — Phase C's named residue MEASURED same-day.** 200 decks × 2 seatings champion-vs-champion, fixed_v1+R9 at k8×1376, ~50 min two-box: deck-luck ICC ~0.19 · σ_game 20.4 · σ_pair 12.8 · seat_adv +3.1 pts · seat-swap pairing factor ~0.79 ⇒ **E4 sizing: a true-wr-0.55 edge needs ~193 seat-swap paired games** (vs 381 naive; 0.60 → 48). Recommendation: run the E4 human protocol as seat-swap deck-pairs. Bug caught before it could bite: `luck_floor` read an unrecognized win-field spelling as a LOSS.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (afternoon) (**F9 Phase C COMPLETE — the F9 program CLOSES.** 400-game fixed_v1 champion corpus (laptop, deck-matched seeds) + the pre-registered walled-vs-fixed descriptives doc: σ_game 17.75→19.56, decision density ~unchanged, farm economy stable; 0 wall events; residual 0.05/game cloister deferrals with the fix ON flagged. Luck floor's paired half NOT DERIVABLE from self-play — seat-swap fixed_v1 archive named, unfunded. New instrument `scripts/rules_fixed/descriptives.py`. Full entry at file end.)
+- 2026-08-03 (afternoon) (**Rust deep-K exact solver PORTED + COST-BENCHED — K-ladder fundable.** `carc_core::endgame` both modes, all parity gates PASS incl. node-count equality; K=4 clair 20.8× paired / RSS 19× smaller; the cost wall is the MODE (marginalized has no alpha-beta) not the depth; clair K5/6 need bigger-than-300s caps. Clairvoyant K2..6 winrate ladder under fixed_v1 = the fundable next cell; endgame net stays behind it. Full entry at file end.)
+- 2026-08-03 (morning) (**CAPS/CURVE RE-SWEEP CLOSED ALL-NULL — the walled optima TRANSFER under fixed_v1+R9; absolute fixed-rules claims UNLOCK as-is.** Six screen cells n=200 deck-paired, band 1.03e11 CRN-shared (retired), rust both sides; no cell at z ≥ +2.0 ⇒ **cap8 / opp_cap8 / curve125 stand** — no leaf change, no re-tune, no confirm. ⚠️ Power caveat carried verbatim into PRODUCTION.yaml: the screen resolves ~50 elo unpaired / ~35 paired at 2σ, so a ≤20-elo optimum shift is NOT excluded. The run existed BECAUSE `feedback_bug_fix_shifts_optima`.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (mid-morning) (**D1 CLOSED — the JCZ replay oracle: 43/43 final-score agreement with an INDEPENDENT implementation under fixed_v1+R9.** 7 legs / 128 games / zero unclassified divergences, including Joshua's real E4 111–113 loss score-for-score; the meeple mapping (the spike's named unknown) closed with semantic verification (121/121 deploys). This is the independent-implementation validation plank of the publication story. ⚠️ Never quote the E4 border game's 14-pt gap as "the wall cost" — explained-but-contaminated.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (**BACKEND DEFAULT FLIPPED — `make_production_champion(backend="auto")`, resolved PER MODE.** fair → rust (G4 bit-exact / G6 14,384/14,384); clairvoyant → python, fail closed; any python-only capability → python; yaml-says-rust but `carc_rs` missing → raise. `governance/PRODUCTION.yaml` is UNTOUCHED (it has said rust since 2026-08-01 — this makes the FACTORY read it). The builders keep `backend="python"` defaults deliberately, so no elo cell silently moves engine. Two real bugs surfaced, both omitted-kwarg python reference legs: `rustport/fair_common.py::py_agent` and `gate_f3_callers.py`.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (morning) (**ADOPTION: fixed_v1 is the rules profile of record for new eval/desktop work** — Joshua, "1-4 I'll take your recs". PRODUCTION.yaml gains `rules_profile: fixed_v1`; the walled record stays interpretable via the Phase-B bound; absolute fixed-rules claims gated on the caps/curve re-sweep. Same batch: champ-vs-10× NOT FUNDED, rodv3 PARKED, farm-growth CLOSED; backend default flip + CUDA-Graph net-arm spike FUNDED. Walled bands retire from confirmatory use for fixed-rules claims.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (pre-dawn) (**F9 PHASE B: B1 FIRES — the flagship contrast TRANSFERS to fixed rules.** Both arms n=400 on band 1.02e11, same 200 decks: walled +20.0 elo vs fixed_v1+R9 +41.9 ⇒ deck-matched Δ(F−W) **+1.18 ± 1.20 pts/deck**, 95% CI ≈ [−18, +53] elo-equiv — inside 1σ, so the promotion contrast of record reproduces under canonical-fidelity rules within a measured bound. Falsifiers clean. En route the MirrorDesync guard caught a ply-0 composition bug (retail start tile pre-placed twice) that made arm F honest, plus a latent geometry/flags-forwarding hole in `make_production_champion`'s rust branch.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (night) (**F9 WALL PROBE: W2 FIRES — champion play at row 18 = ZERO wall events in 400 games.** 400 champion self-play games at production k8×1376 rust, centered18: 0/400 games with any sentinel event (CI upper bound 0.95%/game), and the counterfactual replay at 45×45 / 55×55 / 143×143 is IDENTICALLY CLEAN ⇒ **W3 (runtime board size) buys nothing champion play reaches**. Recorded as a policy-dependent MITIGATION BOUND (the CI, never "zero"). A2 economics at strength: 0.250 completion-deferrals/game but **0 monks pinned at terminal** — the audit's permanent-pinning worst case does not materialize.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (early) (**F7d RE-SWEEP (both-sides-rust era): local W\*=30 (peak W36), laptop W\*=26** — owed since port 1 converted the ablation opponent, per the code-era re-bench rule. Throughput at settle ~54/51 moves/s vs 8.18/7.22 on the morning's half-converted workload (~6.6×); the curve moved gen-ward (peak above thread count) exactly as the W-heuristic predicts for a nearly-GIL-free workload. Bench only, throwaway band.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (early) (**JCZ ORACLE SPIKE: GO, edition-exact — and the tile-data diff already found R9, a real farm-adjacency bug.** JCZ's `basic:2` tile set IS our exact C3 edition (32/32 kinds, 72/72 tiles), its farm model is our model, and the headless line-JSON protocol takes our deck order verbatim ⇒ both J6 risks retired. **R9:** `city_top_straight_road` declares field half-edges on its CITY edge, so two such tiles placed city-to-city merge under-city field strips into one farm (the only defective kind in the deck; trigger ≤3.3% of random games). Symmetric ⇒ recorded A/Bs survive; the fix is one line of DATA but moves farm scoring ⇒ flag-gated, and `feedback_bug_fix_shifts_optima` applies.) *(index line backfilled 2026-08-04)*
+- 2026-08-03 (early) (**FARM-GROWTH DELETION CONFIRM: UNCONFIRMED** — +10.4 ± 17.4 elo, deck-paired margin z −0.07 on fresh band 1.01e11 (retired). The screen's +42.8 was a winner's-curse crest — the project's FIFTH screen-shrinks-on-extension observation. Pooled elo reads z +2.16 but pooled margin z ≈ +1.27 and the two statistics disagree in the confirm, so the robust class does not support a positive verdict. **Disposition: PARKED suggestive-unpromoted, no leaf change.**) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (late night) (**F7b FARM KNOCKOUTS DONE — farm base = −142 elo; the farm-growth block LEANS DELETABLE.** Both cells n=400 deck-paired, band 1.00e11 (retired), rust both sides — the first ablation cells of the converted era (~1800 games/h two-box vs 101/h python). `abl_farmbaseoff` **−142.1 ± 18.8, paired z −9.39**; `abl_farmgrowthoff` **+42.8 ± 17.5, z +1.87** — positive but sub-2σ, so a LEAN not a verdict; confirm owed and do NOT touch the production leaf on it. CL-074 AMENDED (the component table gains both farm rows).) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (night) (**THE SIX-PORT WAVE — every named python↔rust wiring residual closed in one evening** (5 conversions + 1 crate feature), all bit-exact-gated; six worktree'd Opus agents on disjoint territories, fleet atomic at 9c57d80. Port 1: both clairvoyant sides rust (~49×/side) · port 2: class-B instruments, snapshot/UCT family fail-closed · port 3 (F11): all four desktop `make_production_champion` callers on the mirror protocol · port 4: audit A-items · port 5: net-evaluator design memo — **CUDA-Graph capture is the un-indexed lever (7.1× batch-1)** · port 6: Gap 2. Fair-eval W-sweep same evening settles local W\*=32; an n=400 elo cell drops ~7.5 h → **~45 min**.) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (evening) (**GAP 2 CLOSED — the persistent / re-rootable search tree lands in `carc_core`**, so the whole oracle/clairvoyant instrument tier stops failing closed on `--backend rust`. `SearchSession` + `PersistentSearcher` + `RustCarryClairvoyantAgent`, opt-in and default-off, all three Python transitions ported (carry / clear / `_reroot_or_clear`). ⚠️ The audit's "Gap 2 = no `reuse_tree`" was named TOO NARROWLY — `best_action()` never clears at ANY `reuse_tree`. A full-game gate caught a real bug a single-move gate is structurally blind to; `RustClairvoyantAgent` still defaults `reuse_tree=False` and owes a full-game re-gate. ~49× end-to-end.) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (evening) (**XEON REVIVAL PROBE: RE-RETIRE — and a FOURTH libm implementation found, so the G0 x86-64-parity claim is QUALIFIED.** Per-thread steady gen throughput is parity within 4% across all three boxes ⇒ rust-era gen is thread-count-bound and the Xeon adds exactly its 21% thread share against a real ops surface. ⚠️ **G0 FAILS by default on this box** — its AVX-512 dispatches a different `np.exp` kernel; it passes byte-identical only with `NPY_DISABLE_CPU_FEATURES` set. Any future AVX-512 box, cloud rentals included, must run G0 before results-bearing work.) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (evening) (**PERF PASS MERGED (55f7eea): champion wall −20–30%, peak RSS −50–60%, all bit-exact.** Staged via a worktree'd Opus agent, each change its own commit and each gated (cargo 72 · pytest 419 · G3 raw-float 0-mismatch at 10.09× throughput · G6 1435/1435 actions). `perfprobe.rs` committed as the standing cost instrument — the review's meta-complaint was that no gate measures cost. **C-f is the methodological keeper:** the LICM refutation was wrong at source level yet the adoption bar held on end-to-end wrong-sign — measure-first riders earn their keep. Fleet updated atomically; no strength claim (bit-exactness transfers, CL-071 pattern).) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (late afternoon) (**RUST-ERA GEN W-SWEEP: local W\*=48, laptop W\*=24 — gen scales past thread count and the python-era RAM caps are OBSOLETE.** `gen_fair_distill` at PRODUCTION knobs, leaf verified = the champion curve125; the curve is latency-bound-shaped and only flattens at 2× threads. RAM NEVER binding (local peak 10G used / ≥31G avail) ⇒ a rust gen worker's marginal footprint is ~100–300 MB. Realized ~328 games/h local + ~260 laptop ⇒ **~590 games/h two-box at full production budget**. Bench only, no results.csv row.) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (afternoon) (**F7d W-SWEEP DONE (rust-era workload): local W\*=30, laptop W\*=22 — the python-era W14–16 lore does NOT transfer.** Crude 4-point pass + endpoint-bracketing refine per the house protocol (both crude passes peaked at the ladder ENDPOINT, so neither was adoptable until extended — `feedback_bracket_hyperparams` applied as written). ⚠️ The standing "self-play is DRAM-latency-bound, W optimum ≈14–16 regardless of cores" rule is REFUTED for this workload class: throughput scales to full thread count. Bench only; superseded same day by the both-sides-rust re-sweep.) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (**G10 CHAMP-vs-10× ORACLE SCREEN: the pre-registered UNDERPOWERED/INCONCLUSIVE branch fires.** The 110k screen closed clean (900/900 pick cells, 129 disagreements scored at M=32 CRN, 0 failures); cluster-robust +0.484 pts/disagreement (z +1.51) ⇒ compound **+19.4 elo-equiv, 95% CI [−5.7, +44.6]** against a pre-fixed 25-elo funding bar. **Default recommendation: DO NOT FUND the h2h**; what the screen fails to exclude is an effect up to ~45 elo-equiv. No CL id, no results.csv row, PRODUCTION.yaml untouched — all pre-committed.) *(index line backfilled 2026-08-04)*
+- 2026-08-02 (early) (**THE INVISIBLE BORDER IS FIXED, APP-ONLY: new phone games start at row 18, not row 6.** `Game` gains an opt-in `start_row`/`start_col` — the gap the Rust port already had and Python did not — while the GLOBAL engine default stays walled and its strict-xfail sentinel still fails. Measured with the instrument that priced the bug: 400 games at row 18 = **0.0% of games with any denial** vs 64.8% walled. The shift must be EVEN (`offset_from_centroid_sums` is equivariant under even translations only). App side gains `grid_rule` (`centered18` / `engine6`), travelling in the save payload and the E4 archive because an action index is a window-relative coordinate. No strength claim moves.) *(index line backfilled 2026-08-04)*
+- 2026-07-30 (midday) (**eff_linus ROUND 3 — BARE-METAL LINUX IS PARITY WITH WSL2 ON THE SAME SILICON ⇒ THE LEVER CLOSES ON EVERY ROUTE.** Joshua booted the laptop (i7-14650HX 8P+8E / RTX 4070 Laptop) into **Pop!_OS 22.04** so the one arm rounds 1–2 could not reach — native *Linux*, the thing his original "the laptop felt faster on Pop" was actually about — could be measured against round 2's committed WSL numbers on the same machine. p50, 3 reps each: `champ_k1x32` **0.09252 vs 0.09505 = 0.973×** · `champ_k4x172` **2.20177 vs 2.25024 = 0.978×** · `net_cpu_1t` **10.4298 vs 10.7114 ms = 0.974×**. All three inside the runbook's **pre-registered 0.95–1.05 parity band** ⇒ **decision hook 2 fired: `eff_linus` CLOSED, no dual-boot gen fleet.** `gap_exceeds_run_spread: true` on all three so the 2–3% is real *as a measurement*, but it is the same size as the **~0.9% between-sitting floor measured in the same session** and smaller than the cross-boot uncertainty ⇒ read as **parity, not "Pop wins by 2.5%"**. Arm-matching was **tighter than round 2 matched its own two arms**: the *same* python-build-standalone CPython 3.13.14/Clang 22.1.3 artifact both sides, numpy 2.5.1/pyyaml 6.0.3, md5-identical `positions.jsonl` `e36c4d2a…`, ckpt `6e26799…`, `pysrc` content-hash-verified byte-identical at git `17ba2ce` before any cell ran, pure-Python leaf asserted both arms — **and all 11 chosen actions matched the WSL arm on both champion cells, every rep** (same search result, not merely comparable timings). ⭐ **Round 2's E-CORE TRAP IS A *WINDOWS* TRAP, NOT A HYBRID-CPU TRAP:** on the same silicon Linux put the same single-threaded niced *unpinned* job on P-cores in 100% of reps (**pinned vs unpinned 0.5%**, where Windows was **1.81×** off), while a deliberate `taskset -c 16-23` E-core pin still costs **1.61×** ⇒ **the standing rule narrows to "pin affinity before quoting any native-WINDOWS cell"**. Two confounds bracketed rather than assumed: **the CPU governor is NOT load-bearing** (a full `powersave` re-run gave 2.19600 vs `performance` 2.20177 — 0.3% *faster*, so the verdict is not an artifact of having tuned the Linux side) and **`nice -n 19` is innocuous a third time** (un-niced 2.18848 sits *between* two niced sittings). 🔧 Separable side-finding: **interpreter start-up is ~3.5× cheaper on bare metal** (0.140 s vs 0.484 s non-decision wall per process) — irrelevant to long-lived workers, relevant to anything forking short-lived ones. ⚠️ Caveats stated not smoothed: **cross-boot, not same-session** (dual boot forbids alternation; the reference is round 2's artifact ~18 h and one reboot earlier — structural, not fixable with more reps), **`net_cuda_b1` SKIPPED on a disk guard** (this old Pop install runs off a **USB flash drive**, 8.7 G free vs a 6.6 G `+cu128` venv — the one genuinely missing cell), **`net_cpu_1t` on a `+cpu` torch build** for the same reason, and **Cython deliberately NOT built** despite `gcc` being present (the WSL numbers are pure-Python; the staged tree has zero `.so` files, making that structural rather than env-asserted) ⇒ round-2's Cython-parity question is untouched and now moot. Three rounds together: native Windows **1.06–1.26× slower** on two boxes, native Linux **parity** on one ⇒ **WSL2 sits at the top of the range and costs this project nothing.** Read-out [POPOS_ROUND3_20260730.md](measurement/eff_linus/POPOS_ROUND3_20260730.md), spec [EFFLINUS3_POPOS_RUNBOOK.md](scripts/measurement_infra/EFFLINUS3_POPOS_RUNBOOK.md) (hooks pre-registered before the run), artifacts `measurement/eff_linus/run_pop_20260730/` incl. the drivers. Box left clean: governor **restored to `powersave`**, no processes of ours, 8.0 G free. **Latency only — no games, no elo, no results.csv row, no claim id; `governance/` and `PRODUCTION.yaml` UNTOUCHED.**)
+- 2026-07-30 (morning) (**THE UNMEASURED PAIR IS MEASURED — and the pre-registered branch that fired is BRACKET-NARROWING, NOT a verdict.** The CL-067 distilled net at its own deploy budget **k4×688 = 2752** (POLICY priors + FROZEN curve125 leaf, value severed) vs **its OWN corpus teacher** — the production champion at its CL-071-promoted **k8×1376 = 11008** — the one pair every derivation had to route around, and which had no `results.csv` row in either direction. n=400 deck-paired (200 decks), fresh band 94e9, both sides leaf `a36d2e15`, exact-K 2. **Verbatim from `summary.json`: W 184 / D 8 / L 208, winrate 0.47 (z −1.2000), elo −20.871204666 ± 17.403133160, paired_mean_margin −2.0025 pts/deck (paired_z −1.8956), n_paired 200, champ_timeouts 0.** Both statistics **agree in sign (negative)**. `|elo| = 20.9` is inside the pre-committed **[5, 25]** interval at `|z| < 2` ⇒ by the rule fixed before the first game this is **BRACKET-NARROWING, EXPLICITLY NOT A VERDICT**, and the pre-committed **n→800 extension on fresh decks of band 94e9 FIRES — and is NOT LAUNCHED** (~7 h two-box; **the spend is Joshua's call, decision PENDING**). **What it discriminates:** the two cross-band derivations that motivated the cell disagreed in SIGN (≈**+8** via CL-060's budget-only route, ≈**−14** via CL-067's `counterevidence` equal-cost route); the measured −20.87 is consistent with the −14 route and ~**1.7σ** from the +8 route, so *"the operator produces data above its own corpus tier"* is the reading the data **disfavours** — 1.7σ disfavours, it does not exclude, and **both** derivations were the transitive-through-a-shared-baseline move the audit's **F1/F2** flag (F1 as corrected 2026-07-30 `e9b8a97`: the honest prior statement was "UNMEASURED", never a signed number, because `+14.1` appears TWICE in CL-067 meaning two unrelated things). **It does NOT contradict CL-067** (+35.7 ± 12.3 at *equal* sims, untouched): together they say the net beats same-budget CLASSICAL play and still does not reach the tier that generated its corpus once that tier gets its 4× budget. **Cost makes it worse:** candidate 16100.05 vs opponent 14047.32 ms/move = **1.15×** — more clock for ~21 elo less (field→arm mapping verified at `eval_fair_puct.py:1645-1674`). **Limits:** one band, n=400 resolves only ~35 elo at 2σ, elo is 1.20σ and only the margin reaches 1.90σ; it *is* a within-band deck-paired contrast so no over-dispersion inflation applies. **Consequence, pre-registered:** if the extension confirms weak, gen at the corpus-teacher budget 11008 (~29 h) becomes the ONLY clean lever-6 test and a DEAD rodv3 turn-1 gate becomes *expected* rather than informative — the outcome that saves that 29 h. rodv3 turn-1 gen **PARKED at 65/300**, no train, **gate NOT funded**. Also on record: the harness's *"NOT the shipped production champion"* banner is **stale and inverted** (`PROD_KNOBS` hardcoded at pre-promotion k4×688, `ceb49a9`) — the opponent IS the champion of record; and an **eval fails-OPEN incident** at n=399 whose first diagnosis was wrong (a LIVE laptop-owned claim was cleared after checking local only; the system self-corrected, the duplicate was killed before it overwrote anything — **a `.claim` NAMES its owning host**). Read-out [READOUT.md](measurement/teacher_h2h_94e9/READOUT.md) (`3467f73`), prereg [TEACHER_H2H_PREREG.md](scripts/distill_flywheel/TEACHER_H2H_PREREG.md) (`f2e11ca`, before the first game); row `teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9`; **claim CL-072 (Provisional/Open)**. NOT promoted; `governance/PRODUCTION.yaml` UNTOUCHED.)
+- 2026-07-29 (**CL-067 EQTIME/ANE CELL — PRE-REGISTERED BRANCH C (WASH) FIRED. The ANE deletes the forward tax as designed, and the candidate is STILL indistinguishable from the deploy champion at equal clock.** The equal-wall-clock gate's own reopen condition was `r = forward_ms/search_ms_per_sim <= ~1.5`; only the Apple ANE cleared it. Built the path (`--net-backend coreml`, `src/carcassonne_ai/coreml_evaluator.py`) and ran the one cell §6 asked for: netprior `iter_03` with the **policy forward on the Neural Engine** at its own measured equal-time budget **k4×438**, vs the deploy champion k4×688, n=400 deck-paired, fresh band 92e9, M5 Air W6. **MEASURED r = 0.3512** — condition met by a wide margin; per-sim cost multiple **1.496×** vs 4.2–5.5× on CUDA. **Result: 208W-6D-186L, elo +19.13 ± 17.40 (z +1.10), deck-paired margin −0.2675 pts/deck (z −0.29).** Cost guard **0.9522** (candidate/opponent — the candidate got 4.8% LESS clock, so the cell is mildly candidate-DISfavoured; the inverse 1.0502 is NOT the guard). **Branch C fires** on its stated condition "both statistics inside 2σ". ⚠️ **The two statistics DISAGREE IN SIGN**, so branch B ("positive but < 2σ") does not fire — and my branch table did not anticipate a sign disagreement, a drafting weakness recorded in the read-out rather than papered over. Honest summary: **indistinguishable from zero on 400 paired games.** 🔬 **Cross-cell contrast, both halves: Δ vs gate arm A (−17.4 ± 17.4, desktop CUDA) = +36.53 ± 24.61, z +1.485 = UNRESOLVED.** The *direction* is exactly what the r-model predicted (r 3.0 → 0.35 moved the estimate from clearly-negative to mildly-positive, matching §6's +11…+15 projection, independently derived); the *effect size* is unmeasured, and it must NOT be cited as a confirmation — independent bands AND boxes, quadrature not deck-pairing, and cross-band pooling has burned this project twice (L2-2, CL-069). 💰 **Resolving +15 vs 0 needs n ≈ 2150 paired (n=2000 is only z ≈ 1.9) ≈ 40 h more Air compute / 3–4 Air-days — explicitly a JOSHUA DECISION, NOT queued**, for a candidate that is at best mildly positive at equal clock and whose gain applies only to Apple hardware we don't deploy on. 🛠️ **Two methodology lessons worth more than the elo:** (1) the gate's projected search cost (0.5741 ms/sim) was **single-stream and 1.75× optimistic** — measured 1.0036 at the cell's actual W6, so **search cost is a function of W**; (2) therefore **never compute r from an uncontended forward over a contended search** — six workers serialise on the ONE shared ANE, so the naive r = 0.436 would have over-budgeted the candidate to k4×479. The budget was set from the **direct paired cost ratio** instead, which contains every contention effect. ⚙️ OPS: the Air slept mid-run at 377/400 despite `caffeinate -dimsu`; the watchdog relaunched and it **resumed from 377 with integrity intact** (per-record atomic writes + resume-by-existence; 0 deck_hash mismatches, 0 timeouts) — third payout for that design, and a reminder that success is RECORD COUNT, never an exit code. Wall 9.10 h vs 7.37 h predicted ⇒ **future Air ETAs need ~25% headroom.** Fidelity gate passed BEFORE launch (60 real positions: argmax 60/60, top-5 1.0000, max-abs 1.1e-03) so this is a COST intervention, not a different agent. Read-out [EQTIME_ANE_CELL_20260729_READOUT.md](measurement/classical_search/EQTIME_ANE_CELL_20260729_READOUT.md), pre-registration committed `f6a6ff9` BEFORE the result; `results.csv distill_strong_iter03_netprior_EQTIME_ANE_k4x438_vs_champ_deploy_b92e9_n400_paired`; CL-067 amended. NOT promoted; `governance/PRODUCTION.yaml` UNTOUCHED.)
+- 2026-07-29 (late evening) (**IS THE NEW CHAMPION AT ITS KNEE? INCONCLUSIVE per prereg — but the per-MOVE value of doubling width COLLAPSED ~13.5×.** 11008 (k8×1376, the new champion) vs 22016 at the measured-best allocation k16×1376 — NOT naive k8×2752 — scored on the positions where they disagree by the CRN world-paired clairvoyant oracle (M=32, no opponent, no elo, **no bands**). Cluster-robust mean **+0.1054 pts/disagreement, z +0.53, CI [−0.286, +0.497]**, bootstrap P(≤0) 0.29, sign test 102+/109− *centred*. ⭐ The headline is the COMPOUND: D̂ **0.1244 ± 0.0076** vs CL-070's 0.2398 (0.52×, powered on its own) **and** the mean at 0.14× ⇒ **+0.1769 → +0.0131 pts/move, 13.5× collapse** (that product's own CI includes 0 — descriptive; what IS powered is that the CI **excludes** the rung below's +0.7375). ⚠️ **"NO ROOM DETECTED above 11008", NEVER "nothing above 11008"** — the 100-sim judge biases toward zero, pre-committed in prereg §4. ⚠️ **The prereg's own KNEE branch was UNREACHABLE at the realized sd 2.9495** (needed hi95 < +0.369 while the CI half-width alone is ±0.392) — a power mis-specification, documented, re-open priced at ~2× cost and NOT recommended. ⇒ **the promotion's "cheapest point on the plateau" call SURVIVES an independent check**; convergence NOT established (the pick still moves 12.4%). Cost trick PROVEN: one k16 run yields both picks (prefix pooling; deployed `_pimc_move` parity 20/20) ⇒ 22016 sims/cell not 33024. No results.csv row, no CL id, PRODUCTION.yaml untouched; **nothing un-parks the oracle teacher-curve pricing**.) → [read-out](measurement/classical_search/KWIDTH_22016_READOUT_20260729.md) · [prereg](measurement/classical_search/KWIDTH_22016_PREREG_20260729.md)
+- 2026-07-29 (evening) (**CLIFF LADDER COMPLETE — the low end is MONOTONE (G2's loose end ANSWERED); the identity control EXONERATES the harness and localises the 3σ contradiction to BAND-LEVEL OVER-DISPERSION (~1.8–2.2×).**) *(index line backfilled 2026-07-29 late)*
+- 2026-07-29 (afternoon) (**🏆 PROMOTION: the deploy champion moves k4×688 (2752) → k8×1376 (11008), executed `parallel_workers=8`** — first budget change to the fair deploy champion; PRODUCTION.yaml touched for the first time since 2026-07-13. Claim CL-071.) *(index line backfilled 2026-07-29 late)*
+- 2026-07-29 (midday) (**EFF JENSEN BENCH BATCH: k-parallel 6.37× REOPENS THE CLOCK CLOSURE** — k8×1376 now ~14–17% of clock, faster than the then-deploy single-stream; net-on-CPU REFUTED; WSL tax REFUTED (inverted); three contention artifacts corrected.) *(index line backfilled 2026-07-29 late)*
+- 2026-07-29 (morning) (**EQUAL-WALL-CLOCK GATE: WASH (branch C fired)** — the net priors' +35.7 is bought back in full by the clock; reopen condition r ≤ ~1.5, only the ANE clears it.) *(index line backfilled 2026-07-29 late)*
+- 2026-07-29 (overnight) (**LUCK FLOOR REPLICATES on band 2 (Apple-silicon first)**; cliff ladder rung 1 launched on shared band 88e9.) *(index line backfilled 2026-07-29 late)*
+- 2026-07-28 (**MOVE-AGREEMENT PROBE — THE SEARCH HAS NOT CONVERGED (H1 REFUTED), BUT BUDGET'S EFFECT ON THE PICK IS SMALL (~4pp) AND THE PROBE ALONE DOES NOT ESTABLISH COMPRESSION.** ⚠️ **A FALSE DICHOTOMY WAS CAUGHT AND CORRECTED BEFORE COMMIT.** The pre-registration framed this as H1 (convergence) *vs* H2 (compression), and my first write-up read "H1 refuted ⇒ H2 established". Joshua caught it with the question that breaks it: *"we're sure these disagreements are consequential? if they are, how is it that the 11008 guy can barely beat the 2752 guy?"* A **third** explanation fits everything: the move changes but the change is nearly **strength-neutral**. The probe measured whether the pick MOVED, never whether it IMPROVED. Two facts support the neutral reading: **budget's own share of the disagreement is only 13%** (observed cross-budget `D_cross` 0.3039 against a reseed-only null of 0.2644 ⇒ `Delta` +0.0396), and **the agent disagrees with ITSELF 30.0% of the time at 11008 at FIXED budget** (44.9% narrow-gap) — near-tie behaviour, and the reason that self-churn doesn't destabilise its measured strength. **WHAT ACTUALLY IMPLICATES THE RULER IS CL-060, NOT THIS PROBE:** the same pair of agents measured two ways is ~70 elo apart — direct head-to-head `cl060_h2h_k8x1376_vs_deploy_k4x688` (n=400 paired, 221W-164L-15D) = **+49.85 ±17.55**, but through RoD-v2 on this deck-matched band the same pair reads 11008 +105.6 vs 2752 +127.0 = **−21.4, wrong sign, n.s.** **THE EXCHANGE RATE — the honest synthesis:** ~4pp of budget-attributable move change buys ~+50 elo. Real, but thin for 4× the compute: *weakly* consequential, not "deeper search finds much better moves". The practical decision is unchanged and still sound — **RoD-v2 cannot price budget above 2752, so stop buying budget rungs graded against it** — but it rests on CL-060's contrast, not on this probe. **SUCCESSOR EXPERIMENT this points at, and it needs no game-playing opponent:** take the positions where 2752 and 11008 disagree and score **both** picks against a stronger reference (the exact solver where `k_remaining` allows, or a much deeper search), converting "the move changed" into "the move improved" and pricing budget directly — sidestepping structural blocker #1 for this one question. The original probe write-up follows.
+- 2026-07-28 (**MOVE-AGREEMENT PROBE — the run, the design, and what it did establish.** The direct test of the question 2026-07-27's blind curve could not settle, and it needs **no opponent**, so it sidesteps the elo-compression confound entirely. Pre-registered in full BEFORE any result existed, with the read-out code committed in the same commit so the metric definitions were fixed in advance → [MOVE_AGREEMENT_PREREG.md](measurement/classical_search/MOVE_AGREEMENT_PREREG.md). **Design:** 898 roots sampled (max 2/game, seed 20260727) from 449 champion self-play games at *exactly* the deploy budget (`measurement/champ_action_logs/champ_games.jsonl`, lossless action logs); 25 solver-region roots excluded per the pre-registered rule ⇒ **873 analysable**. Each replayed at 7 per-world sim levels (k4 fixed; totals 344…11008) under **3 independent seed lineages** = **2694 records, 0 failed**. Primary metric = `pooled_q_argmax`, the DEPLOYED pick (visits rule recorded too). **The noise floor is built in, not bolted on:** the agent is stochastic (k determinizations/move), so a raw disagreement rate is uninterpretable; the decision quantity is `Delta = D_cross − D_cross_null` where `D_cross_null = 1 − √((1−D_same(L1))(1−D_same(L2)))`, CI by position-level bootstrap B=10 000. **HEADLINE (deploy 2752 → 4× 11008), read as `Delta` and NOT as `D_paired`:** observed cross-budget `D_cross` **0.3039** against a reseed-only null of **0.2644** ⇒ **`Delta` +0.0396 [0.0283, 0.0517] z 6.72** — budget's own share is **4.0 points, 13%** of the raw disagreement; the other 87% is the agent's own churn. Narrow-gap stratum (n=437, the pre-registered headline stratum): 0.4622 vs null 0.4053 ⇒ **`Delta` +0.0570 [0.0374, 0.0776] z 5.57**. `D_paired` (worlds held FIXED — the maximum-power detector of *"does depth change anything at all"*, **not** the size of the budget effect) = 0.2398 overall / 0.3699 narrow-gap. Pre-registered H1 needed `D_paired` ≤0.05 **and** `Delta` CI covering 0 ⇒ **REFUTED**; `Delta`'s CI excludes 0 in *every* stratum (both gap halves, all three game phases, TILES and MEEPLES), so the third named outcome **H1-WEAK/INDIFFERENCE does not occur anywhere** either. ⇒ **"The search stopped changing its move" is dead as an explanation for the flat curve** — see the correction entry above for why that does NOT promote compression on this probe's evidence alone. **SECONDARY FINDINGS:** (1) **the noise floor GROWS monotonically with depth** — `D_same` 0.1226/0.1615/0.2043/0.2089/0.2272/0.2684/0.2997 across 344…11008; more search means MORE run-to-run churn, which is exactly why the matched null was load-bearing. (2) ⚠️ **the validity guard passed but NARROWLY in the headline stratum** — the pre-reg voids the probe at `D_same ≥ 0.5`, and narrow-gap `D_same(11008)` = **0.4493**; quote it alongside the overall 0.2997, never the overall alone. (3) **volatility is lowest at deploy and rises above it** — adjacent-step `D_paired` bottoms at 2064→2752 (0.1218) then climbs (2752→5504 0.1749, 5504→11008 0.1810). **INFRA VERIFIED, NOT INHERITED:** `measurement_infra`'s multi-depth snapshot bit-exactness is written for the clairvoyant `HeuristicMCTS` path and does **not** automatically cover per-determinization fair PIMC; it was re-established for this agent and proven per run by `--verify-bit-exact` and `--verify-agent-parity` (the latter asserts the REAL `_pimc_move` returns the reported deepest pick), dedicated verify cell **41/41**. Because it holds, the 7-rung ladder cost what its deepest rung alone would. ⚠️ **AGREEMENT IS STABILITY, NOT QUALITY** — this says budget still *moves* the pick, NOT that the deeper pick is better; it does not reopen "search is a strength lever". Nothing promoted; `governance/PRODUCTION.yaml` untouched. **⚠️ CORRECTION to the 2026-07-27 entry below, item (iii):** the rc=0 bug was **NOT** in `bare_net_opp_orch.sh` — that wrapper exits 1 correctly (reproduced end-to-end). The bug was in the **callers** and is a bash expansion trap: in `echo "[$(date …)] rc=$?"` the command substitution RUNS during word expansion and resets `$?` to 0 before the later `$?` is read, so **every** failed run logged rc=0. Found in **8 scripts** repo-wide, all fixed (`437f5a7`), with a lint to stop it recurring (`a0623bd`, `tests/test_shell_harness_hygiene.py`). Same family as the stranded-claim short cell: the eval path fails **OPEN**. `results.csv move_agreement_k4_b28e9`; claim **CL-070**.)
+- 2026-07-27 (**BLIND CURVE COMPLETE (7 rungs, 1400 deck-paired games) — THE BUDGET TREND IS DECISIVE (z +6.5) AND THE TOP IS FLAT ABOVE ~2064, REPRODUCED OUT-OF-LINEAGE. The flat top is therefore NOT a self-anchoring artifact — but it is NOT yet distinguishable from instrument compression, and a move-agreement probe was launched to settle that half.** Our champion playing **BLIND** (fair PIMC k4, frozen curve125 `a36d2e15`, exact-K≤2) vs **RoD-v2 iter_02 playing SIGHTED** (bare NeuralMCTS `fair_chance=False` descending the TRUE deck, anchor knobs sims=200/c=3.0, its OWN v2.9 Bmild_cap8 curve100+rs0.25 leaf `4bc26f12`, no tail; net on GPU via carc-orch). **All 7 rungs share band 70e9** ⇒ adjacent rungs deck-matched (CL-046 CRN); the deltas are sharp and **the absolutes are correlated across rungs**. n=200 paired (100 decks) each, 0 timeouts. **CURVE (elo):** 344 −29.6 · 688 −24.4 · 1376 +72.2 · 2064 +96.2 · **2752 +127.0** · 5504 +94.3 · 11008 +105.6. **(1) THE TREND IS THE MEASUREMENT** — within-deck slope on the clean k4-only axis (344…5504) = **+2.782 pts/deck per doubling (se 0.426, z +6.54)**; full frontier incl. the k8 rung +2.449 (z +7.26). Individual steps span z 0.16–2.90 and only ONE clears 2σ; the LINE is the evidence, the standard CL-054 used for a coherent monotone axis. This was Joshua's methodological call ("the line itself is data though, even if any individual point is underpowered") and it was correct. **(2) RISES TO ~2064 THEN FLAT** — the only 2σ step is 688→1376 (winrate +0.138 z +2.80 AND margin +5.73 z +2.90, both agreeing); every step above 2752 is null on BOTH statistics (2752−2064 wr z +1.00 / margin z −0.30; 5504−2752 wr z −0.92 / margin z −0.27; 11008−5504 wr z +0.39 / margin z +1.51). **This reproduces CL-068's flat top against an INDEPENDENT opponent, so it is not an artifact of grading the champion against itself.** ⚠️ It also **supersedes the earlier cross-band screen** that suggested halving costs ~50 elo out-of-lineage (rr_puct1376 vs rr_puct2750, z 1.23, different bands): measured on ONE band deck-matched, 2752 vs 1376 = +2.46 pts/deck z +1.23 — real-signed, unresolved, and much smaller than the cross-band read implied. Cross-band comparison struck again, exactly as in L2-2. **(3) WHAT IT DOES NOT SETTLE, AND THE PROBE LAUNCHED FOR IT** — elo against a FIXED opponent COMPRESSES as the candidate climbs, so an unknown share of the flattening is INSTRUMENT, not agent. Two hypotheses: (a) genuine convergence (above ~2064 the search stops changing its chosen move) vs (b) compression (the champion improves; RoD2 at ~h3200 tier cannot register it). **No game against RoD2 can separate them** — separating them needs a stronger reference, which is structural blocker #1. But (a) is directly measurable with NO opponent: move agreement between budgets, judged against a **same-budget replicate NOISE FLOOR** (the champion is stochastic — k determinizations per move — so a raw disagreement rate is uninterpretable without that floor; getting this wrong would make the probe worthless). Pre-registered + launched 2026-07-27 → `measurement/classical_search/MOVE_AGREEMENT_PREREG.md`. **DECISION on 22016: DO NOT QUEUE** — three consecutive null steps above 2752 and projected winrate approaching saturation, where the instrument degrades further; the open question is now WHY it flattens, not how far up it goes. ⚠️ **CAVEATS:** the 11008 rung changes ALLOCATION (k8, the measured optimum there per CL-060) so the top step mixes budget with width — the k4-only subset is the clean budget axis; fixed k4 UNDER-allocates the low rungs (CL-068: k2 beat k4 at 688) so 344/688 are pessimistic; NOT cost-matched (0.29× to 8.5× candidate/opponent ms/move); TRANSPORT — RoD2's anchor rows on record were net-on-CPU and these served the same weights from GPU (0/140 chosen-action flips, rule-of-three 95% UB ~2.1%/move) ⇒ cite as "same weights, GPU transport", never bit-identical. **OPS INCIDENTS worth the memory:** (i) the 11008 rung first completed **SHORT at n=160** — killing local for a W change left 40 stranded `.claim` files that neither box ever retried and the harness summarised over what it had; claims cleared, topped up to full n=200, partial retained as `summary_n160_PARTIAL.json`. My error, and I had flagged that exact failure mode twice the same day. (ii) Another session edited `fair_agent.py`/`mcts.py`/`eval_fair_puct.py` MID-RUN; local was relaunched from a **pinned worktree** (`/home/doctor/projects/carc-pinned-c72053a`) verified byte-identical to the laptop on all four agent sources plus the harness md5 — note a worktree needs `target/` and the Cython `.so` grafted in, both gitignored. (iii) **`bare_net_opp_orch.sh` exits rc=0 after printing `FATAL: carc-orch died early`** — a failure that reports success, caught only because 8 s was implausibly fast. FIX QUEUED, NOT DONE. `results.csv blindcurve_*` (7 rows); claim **CL-069**.)
+- 2026-07-27 (**BLIND-vs-SIGHTED vs THE RoD-v2 LINEAGE — our champion, BLIND and at HALF the deploy budget, BEATS the RoD-v2 anchor agent playing SIGHTED (+105.6 elo, both statistics past 2σ). AND a self-anchored/out-of-lineage TENSION with CL-068 that motivated a new ladder.** Two cells landed, one ladder launched. **(a) HALF-BUDGET CLAIRVOYANT REPLICATION** — `rr_puct1376_vs_net-iter02_k2`, a single-variable replication of the 2026-07-07 round-robin cell (+230.2 at 2750): ONLY `cand_sims` changes 2750→1376, every other knob held, band 66e9, n=200. **147W-1D-52L, winrate 0.7375 (z +6.72), elo +179.5 ±27.9, deck-paired margin +10.37 pts/deck (z +7.39).** Not saturated ⇒ a measurement, not a floor. Clairvoyant matched-mode both sides ⇒ **not human-facing**. **⚠️ THE POINT: this is in TENSION with CL-068.** The Pareto curve found champion@1376 **ties** champion@2752 (+0.9 ±17.4) on the champion's OWN anchor; against this out-of-lineage opponent the same halving costs **−50.7 ±41.1, z 1.23**. NOT significant, and CROSS-BAND (9.5e9 vs 66e9), so **no contradiction is established** — but the point estimates diverge in a direction that matters and the mechanism is plausible: **a self-anchored comparison structurally cannot see a weakness both sides share.** n=200/cell gives se≈41 elo, so this design *cannot* resolve a 30–50 elo effect; it is a SCREEN that flags the question. **(b) BLIND vs SIGHTED** — new harness capability (`eval_fair_puct.py --opponent bare-net`, commits 3e95f42 + b65926d): our champion BLIND (fair PIMC k4×344 = 1376 = half deploy, frozen curve125 `a36d2e15`, exact-K≤2) vs RoD-v2 iter_02 SIGHTED (bare NeuralMCTS `fair_chance=False` descending the TRUE deck, anchor knobs sims=200/c=3.0, **its own** v2.9 Bmild_cap8 curve100 + rs0.25 leaf `4bc26f12`, no tail). Band 68e9, n=200 paired, 0 timeouts: **127W-5D-68L, winrate 0.6475 (z +4.17), elo +105.6 ±25.7, margin +6.59 pts/deck (z +4.92).** Both statistics past 2σ, not saturated. **⚠️ INTERPRETATION CORRECTED THE SAME DAY — it is NOT a clean "conservative lower bound", and the harness banner that says so is queued for a fix.** The asymmetries do not all run one way: **information → HANDICAP** (blind vs sighted; tax ~156 elo, large) but **leaf → ADVANTAGE** (curve125 > curve100+residual, CL-051) and **endgame → ADVANTAGE** (exact-K≤2 tail vs their none), and **cost → we spend 1.38×** (1745 vs 1266 ms/move, not cost-matched). Net direction UNDETERMINED ⇒ licensed claim is the narrow one only. **(c) THE BLIND CURVE, LAUNCHED** — 5 rungs at fixed k4 (344/688/1376/2064/2752) vs the same sighted opponent, n=200 each, **one shared band 70e9** so adjacent rungs are deck-matched (CL-046 CRN design; deltas sharp, absolutes correlated). It is the instrument the self-anchored curve is not. Affordable because the blind cell did not saturate. Fixed width is a deliberate simplification with a known cost: CL-068 found optimal width grows with budget and k2 beat k4 at 688, so the low rungs are UNDER-allocated and slightly understate their budget. **OPS:** net on GPU via one carc-orch server **per box** (local RTX 5060 Ti / laptop RTX 4070 Laptop), per-host SHM names, `OMP_NUM_THREADS=1` on the SERVER's own env line, `max_batch = W`, `78ch/12sc` peeked from the checkpoint (a wrong plane count is a SILENT mis-encode, not a crash). ⚠️ **TRANSPORT:** anchor rows on record were net-on-CPU; these are net-on-GPU — same weights, different float reduction order. Measured 0/140 chosen-action differences (max|Δpriors| 2.5e-4 vs median top-2 Q gap 1.7e-2), but rule-of-three bounds that at ≤2.1%/move ⇒ cite as "same weights, GPU transport", NEVER as bit-identical. ⚠️ **MEMORY RISK, FLAGGED AND ACCEPTED:** at W=40/24 the cheapest rung leaves local 10G/41G and laptop 2G/11G, projecting short before the top rungs. Joshua 2026-07-27: *"let it ride, lets keep an eye on it, but dont change anything without my okay"* ⇒ monitors are report-only. `results.csv {rr_puct1376_vs_net-iter02_k2, blind_k4x1376_vs_sighted_rodv2_it02_b68e9}`; claim **CL-069**.)
+- 2026-07-27 (**BUDGET/ELO PARETO CURVE = THE SEARCH-BUDGET LEVER IS CLOSED IN BOTH DIRECTIONS FOR CLOCKED PLAY. The curve is FLAT-THEN-CLIFF: 1376→5504 (a 4× span) is statistically indistinguishable from the deploy champion; below 1376 it falls off a cliff. Nothing promoted; a fresh-band confirmation is OWED before any production proposal.** Five n=400 deck-paired cells (2000 games total) vs the **deploy champion head-to-head** — not the h800 rung, because that rung is ceiling-compressed for strong configs and is exactly what made CL-060's first closure read "flat past 2752" at z=0.86 before the direct H2H refuted it at z=3.48. Pre-registered in full BEFORE launch ([measurement/classical_search/PARETO_CURVE_PREREG.md](measurement/classical_search/PARETO_CURVE_PREREG.md)), including the read-out rules, the conditional-pooling gate and an explicit "expected sign is NEGATIVE, so a flattering low-budget cell is a config-bug red flag" guard. **Motivation:** the tournament-clock finding (15 min/player, sudden death ⇒ ~12.9 s/decision) made "what does elo COST going down" the decision-relevant question, since clock margin is a resource and the sub-deploy region was entirely unmeasured at production width. **Results** (elo vs deploy, both statistics, %of 900 s clock): 688 = **−37.5** (k2; wr z −2.15, margin z −3.28; 9.2%) · 1376 = **+0.9** (k4; wr z +0.05, margin z −1.26; **14.6%**) · 2752 = 0 anchor (26%) · 5504 = **+12.2** (k4; wr z +0.70, margin z +1.23; 46.6%) · [CL-060: 11008 = +49.9 at 91%, 22016 = +35.6 at 178%]. All cells 0 solver timeouts, 0 guard failures, and cost ratios matching nominal budget to ±2% — an independent confirmation each cell really ran its claimed budget. **FINDING 1 — flat-then-cliff.** Everything from 1376 to 5504 is one flat region (all |z| < 1.3); the cliff is below 1376. ⚠️ This **refutes the SHAPE** CL-046's ladder implied (~−27 to −34 elo per uniform halving) — its levels were already known not to transfer (k_dets=8), and now its shape does not either. **FINDING 2 — optimal width GROWS with budget, four points long.** The deck-matched allocation contrast FLIPS SIGN: k4−k2 = −2.21 (z −1.92) at 688 ⇒ **k2 wins**; +1.34 (z +1.10) at 1376; +1.82 (z +1.33) at 2752 (CL-054); k8−k4 = +22 elo (z +1.16) at 11008 (CL-060). This is what CL-060 hypothesised but **explicitly could not establish**; this run supplies the downward half. ⚠️ **No individual contrast clears 2σ** — the evidence is the monotone pattern across four independent budgets, the same standard CL-054 used. Pooling was **BLOCKED by pre-registered rule 3 in both tiers** (|z| ≥ 1), which is the rule working as intended. **FINDING 3 — the decision-bearing one.** Within everything comfortably clock-legal (≤~50% of clock) budget buys **nothing measurable**; the only real gain we have (+49.9) sits at **91% of clock** and is unusable in sudden death. ⇒ this **sharpens** [docs/research/TOURNAMENT_TIMING_2026-07-26.md](docs/research/TOURNAMENT_TIMING_2026-07-26.md): it is not merely that 4× is unspendable, it is that **everything spendable is already spent** — search budget is a closed lever for clocked play in BOTH directions, and the remaining levers are pondering (G1) and per-move cost (G3), not sims. **The one actionable option:** k4×344 halves clock usage to 14.6% for no resolvable strength cost. ⚠️ **Honest limit:** +0.9 ± 17.4 ⇒ 95% CI ≈ [−33, +35], which rules out a LARGE loss, not a moderate one; "halving is free" is NOT established, and rule 3 blocked the pooling that would have tightened it. Proposal-eligible under prereg rule 6, but **OWES a fresh-band n=400 confirmation** (60/62/64e9 now burned) before any production proposal. **DECISION: record, do NOT promote; champion + `governance/PRODUCTION.yaml` UNTOUCHED.** Validity note: another session switched the repo to branch `android-app` mid-run, so cells recorded three different `code_rev`s — **verified harmless**, `eval_fair_puct.py` md5 and the `src/carcassonne_ai/`+`engine/` tree hash are identical across all three revs. Claim **CL-068**; `results.csv pareto_*_vs_deploy` (5 rows).)
+- 2026-07-26 (**DISTILL-STRONG-TEACHER CONFIRMATION = THE EQUAL-SIMS CLAIM REPLICATES AND IS CONFIRMED (pooled 2σ on both statistics) — BUT THE BLOCKER MOVED FROM STRENGTH TO COST, and on the measured cost ratio the candidate is NOT deployable. CL-067 → Supported/high. NOT promoted.** The owed fresh-band replication of the same-day gate above. Same config (iter_03 net POLICY priors + FROZEN curve125 leaf, value SEVERED, k4×688 exact-K2, both sides leaf `a36d2e15` verified in-log), **FRESH band 56e9** (52e9 was the gate; 22/24/26/28/32/44/46e9 also burned — band chosen by enumerating results.csv, not by eyeball), n=400 deck-paired, 200 decks, **0 deck_hash mismatches / 400**. **Result: 213W-7D-180L, winrate 0.5413 (z +1.65), elo +28.7 ±17.4, deck-paired margin +1.18 pts/deck (paired z +1.28).** ⇒ **REPLICATES IN SIGN, WEAKER**: both statistics positive, both shrank, and **neither clears 2σ alone**. **Why this is a replication and not the familiar death:** the two cells are **statistically indistinguishable** (elo diff +14.1 ± 24.7, **z = 0.57**), so the drop is winner's-curse shrinkage of a *selected first look* — the gate was the first measurement and therefore biased high; the confirmation is unbiased. Contrast the three findings of this shape that WERE overturned: the flywheel's +88.7 flipped SIGN to −3.5 on a fresh band (cross-band z 2.60), t020's +32.1 COLLAPSED to +3.4 on extension, c=3's +47 was a neighbour-inconsistent spike. None of those is what happened here. **Pooled over 800 deck-paired games across the two bands: 434W-14D-352L, winrate 0.5513 winrate z +2.90, elo +35.7 ± 12.3 (z +2.89), margin +1.387 pts/deck paired z +2.12 ⇒ BOTH statistics clear 2σ, including the deck-paired MARGIN statistic that was the weak one (1.71) in the gate and was precisely what this cell owed.** ⚠️ Caveat stated plainly: **pooling across bands was NOT pre-registered** (the pre-registration asked only that the fresh band reproduce a positive effect, which it did), and no single cell clears 2σ by itself. ⚠️⚠️ **THE DECISION-BEARING FINDING IS THE COST, AND IT INVERTS THE DEPLOYABILITY PICTURE.** Measured prefix ms/move (candidate/champion, both solver-free counters): gate **4.29×**, confirmation **5.48×** — and the confirmation ran on the *pinned* orch server, so the ratio got WORSE, not better. Applying **CL-060's own measured exchange rate** (4.07× budget ⇒ +27.85 elo), a champion granted EQUAL WALL-CLOCK gains ~+33.8 elo at 5.48× and ~+28.9 at 4.29× ⇒ **the candidate nets −5.1 / −0.2 elo and is NOT deployable.** It nets ~+17.7 only if the true ratio is the **1.74×** that 2026-07-19's UNLOADED W2 probe produced. Since EVERY loaded cost ratio in this project has collapsed when re-probed unloaded (4.48× → 1.74×), the loaded figures are suspect *in the candidate's favour* — but unverified, so an **UNLOADED cost probe** (`measurement/distill_strong_20260723/cost_probe_unloaded.sh`, W=2) was launched immediately and is the deciding measurement. **W=2 is the honest deployment regime, not merely a quiet one**: the fair-netprior evaluator is `make_remote_single_evaluator` (k=1 per request) and the worker BLOCKS on its response semaphore, so a single deployed agent gets NO batching and pays full per-forward latency. **Decision rule, fixed BEFORE it read out: ≤~2× ⇒ deployable (~+18 net) · ~3× ⇒ marginal (~+9) · ≥~4.3× ⇒ real strength but NOT deployable (~0/negative).** If it lands not-deployable, the honest next direction is making the net CHEAPER (quantisation, smaller net, batching the k determinizations) rather than more strength work — the strength question is answered. **DECISION: record, do NOT promote; champion + `governance/PRODUCTION.yaml` UNTOUCHED pending Joshua.** Ops: ran n=400 in ~4.2 h on two boxes (local W48 + laptop W26, `--shared-claim`, server OMP pinned) vs the gate's 7.3 h on one starved box at W28 — but see the same-day ops entry, the CPU-utilisation proxy overstated that gain (~1.7–2× actual, not the 2.54× utilisation implied). `results.csv distill_strong_iter03_netprior_vs_champ_CONFIRM_56e9_n400_paired`; claim **CL-067** (Supported/high, deployability open); spec [docs/DISTILL_STRONG_TEACHER_SPEC_2026-07-23.md](docs/DISTILL_STRONG_TEACHER_SPEC_2026-07-23.md).)
+- 2026-07-26 (**DISTILL-STRONG-TEACHER CHAMPION GATE = POSITIVE, +42.8 elo at DEPLOY cost — the first positive strength result of the learned-component programme, but a SINGLE SCREEN at the edge; NOT promoted, confirmation owed (CL-067).** The thread's premise: the budget curve (CL-060) established a teacher that is genuinely *stronger* than deploy (k8×1376 = 11008 sims = 4× budget, **+49.85 elo** over the deploy champion) and *expensive*; distillation was already known to be **faithful but not exceeding** (CL-058 stage-1 tied the champion 100-100-0). Copying a *stronger* teacher is therefore the one shape of the bet that had never been run. Executed as a ONE-SHOT (not a flywheel): 2,400 teacher games generated at the FULL 4× budget recording pooled-visit policy targets (2026-07-23 23:26 → 2026-07-25 23:29, both boxes, 4 chunks of 600, each trained + collapse-screened HEALTHY) → policy-head distillation with the **value loop SEVERED** (value stays the frozen curve125 leaf per CL-039/065) → gate eval of the net-priors agent at **DEPLOY budget and production depth**. **Result (n=400 deck-paired, band 52e9, k4×688 exact-K2, both sides leaf `a36d2e15`): 221W-7D-172L, winrate 0.5613, elo +42.8 (1σ ±17.5), winrate z +2.45; deck-paired margin +1.595 pts/deck, se 0.931, paired z +1.71 over 200 decks.** Read: the point estimate is ~**86% retention of the teacher's +49.85 edge at ¼ of its budget** — i.e. teacher-tier strength at deploy cost, which is what the spec called full retention and is a genuine production-upgrade candidate. ⚠️ **BUT the two significance measures disagree in strength**: the candidate wins more *games* (z 2.45, clears 2σ) by *smaller margins* (z 1.71, does not) — coherent for a policy-prior improvement that converts close games rather than blowing opponents out, but it puts the effect at the edge of what n=400 resolves. Against the project's n-threshold rule (n=400 is a verdict only for effects ≥~35 elo at 2σ) it qualifies; against "**never promote from a single screen**" it does not — and the graveyard of exactly this shape is long (c=3 "+47", anchor-fraction "+39", flywheel "+88.7", all overturned). **DECISION: record, do not promote. Champion + `PRODUCTION.yaml` UNTOUCHED.** Owed before any promotion: a confirmation cell on a FRESH seed band (~3.5 h at n=200, ~7 h at n=400 with the tuned orch). Also UNVERIFIED and not asserted: the gate summary reports `champ_prefix_ms_per_move` 19,977 vs `rung_ms_per_move` 4,653, which at face value would make the net-prior agent ~4× *cheaper* per move at identical sims (a wall-clock win on top of the strength win) — field semantics not yet understood, do not cite until checked. **[⚠️ CHECKED 2026-07-26 SAME DAY AND THE SIGN WAS BACKWARDS — retained above so the error is not silently rewritten. `fair-champion` is in `_HEAD_TO_HEAD` (`eval_fair_puct.py` line 717), so both figures are the handoff's own solver-free prefix counters (lines 1189-1191) and `champ_*` is the CANDIDATE: the log prints `prefix ms/move: candidate 19977 opponent 4653 (ratio 4.29x)`. The net-prior agent is ~4.3× MORE EXPENSIVE per move, not cheaper — so +42.8 is an equal-SIMS result carrying a real wall-clock cost, and the deployability question is OPEN rather than settled in the candidate's favour. See the 2026-07-26 confirmation entry above.]** **Note this does NOT contradict the flywheel post-mortem**: the thread distils a *policy* and never asks a learned value to evaluate anything, which is precisely the component the post-mortem's §3 leaves alive. Ops finding worth carrying: the carc-orch defaults (`fwd=2, max_batch=16`) are tuned for LOW-sims gen and **starve a high-sims eval** — this gate at 2,752 forwards/move (~21× az_zero's) ran at 14.6% worker CPU with the box 87% idle until retuned to `fwd=6, max_batch=28` (~1.5–2× throughput); second instance in two days of a *default carried across workloads* (the other: the laptop joiner missing `--shared-claim`). `results.csv distill_strong_iter03_netprior_vs_champ_deploy_k4x688_n400_paired`; commit `8145eb4`; spec [docs/DISTILL_STRONG_TEACHER_SPEC_2026-07-23.md](docs/DISTILL_STRONG_TEACHER_SPEC_2026-07-23.md); claim **CL-067** (Provisional/medium pending confirmation).)
+- 2026-07-24 (**AZ_ZERO = FLATLINE (CL-066) — the tabula-rasa arm removes the last confound, and the scaffolding trap was NOT the binding constraint.** Every prior learned-value kill (CL-039/042/064/065) was measured inside a *heuristic-warmstarted* lineage, leaving AlphaGo Zero's thesis live: maybe nets fail here only because they are raised in the heuristic's basin. az_zero tests it directly — random-init SIGHTED net, pure self-play, **no heuristic anywhere in the loop** (its own value head IS the leaf), 12 iters × 300 games, screened every 2 iters on a fixed deck band (770000000) against the same-arch heuristic-taught `warmstart_sighted`. Margin series **−47.12 → −32.78 → −27.46 → −34.60 → −36.08 → −26.86 → −29.84**; random floor solved by it2 (0.98–1.00) and never converted. **All three pre-registered ALIVE bars missed**: best gap-closure 43% vs the 50% bar, best winrate 0.12 vs 0.35, and non-monotone (oscillates −27 to −36 since it2; the it10 bounce is within the band and is NOT read as progress). **Mechanism measured, not inferred** (`PROBE_OFFDIST_20260724.md`): the trainer's per-iter `value↔outcome corr` rose 0.161→0.855 but that statistic is computed on a split of the *training window* — on games from the net's own NEXT policy generation it collapses to **0.530**, and on a stronger agent's games to **0.437**, while a neutral control net scores a flat 0.65–0.73 on all four sets (so the sets are equally predictable and the collapse is the net's). Cause: **the value head's effective sample size is the number of GAMES, not positions** (~144 positions share one outcome label ⇒ ~1,200 independent labels for a 7M-param head ⇒ memorisation is the cheapest fit). AlphaGo hit this exact wall and solved it with one position per game across 30M games. **What it does NOT settle:** compute-bounded (3,600 games) and CLAIRVOYANT regime (`fair_chance=False`) — fair between both sides but no number transfers to blind-PIMC deployment strength; the anchor is a v2.7-era distillation so it measures *scaffolding*, not champion strength. **Do NOT fund a v2 on the obvious levers** — all checked against the record after the fact: ownership aux (Path B reached held-out corr **0.81** and the value-in-leaf A/B still hurt), `search_value` (0.29→0.47, no strength), `search_value_tree` interior targets ("one-shot is not enough"), STEP B.1 ranking loss ("HELPS but INSUFFICIENT", no positive marginal), anchor-fraction (+39 overturned to a tie), capacity/regularisation (C4a); symmetry augmentation is untried but multiplies views of the *same* label, adding no independent information. Byproducts kept: the laptop work-stealing joiner and the GPU orch-SHM anchor-screen path (~1 h → ~5 min/point). Measurement-only, champion/`PRODUCTION.yaml` UNTOUCHED. Full read `measurement/az_zero_20260724/RESULTS.md`; PREREG committed before any game; `results.csv az_zero_it*`; claim **CL-066** (Disfavored/high); lever audit `docs/LEVER_INDEX.md`; post-mortem `docs/FLYWHEEL_POSTMORTEM_2026-07-24.md`.)
+- 2026-07-23 (**GATE-C learnability probe = DEAD (CL-065) — the learned-leaf direction is terminally closed.** C0 hands a boring learner (ridge/GBDT) the v2.9 leaf's OWN union-find component decomposition (84 mover-POV features, a strict superset of the leaf's 4 terms) + exact-solver labels, on the same 1,119 K≤2 CL-064 roots, 5-fold cross-fit grouped by deck seed. Gate statistic = max(full ridge 0.3466, full gbdt 0.3856) vs FIRE≥0.65 / DEAD<0.62 → **DEAD by ~0.23** (leaf floor τ 0.6153; the sanity leaf-terms-only free-reweight TIES it at 0.6157; the full 84-feat set lands BELOW both despite containing the exact leaf value → raw features DILUTE under MSE — the sibling-ordering signal lives in the leaf's globally-calibrated absolute values, not in contrasts a boring learner re-derives). Representation-independent extension of CL-039/CL-064 (which killed *capacity* on a conv representation; C0 kills the *representation* axis itself). CONFIRMS the distill-flywheel null (CL-058): learning can faithfully COPY the champion but cannot EXCEED the leaf's ordering. Combined with Fable's read (CFR dead-on-mechanism, ISMCTS marginal), the whole Gate-C direction is exhausted; pre-registered fallback = the analyzer (CL-039's rec) unless the budget-curve / distill-strong-teacher path opens. Measurement-only, champion/`PRODUCTION.yaml` UNTOUCHED. `results.csv gatec_c0_learnability_probe`; commit `81152f4`; claim **CL-065** (Closed); PREREG.md committed BEFORE any result.)
+- 2026-07-23 (**F6 SOFT-CAP S1 = NULL (CL-063 re-open (a) tested, does NOT fire).** 5-slope dose sweep {0.1..1.0} of linear credit above the closure cap, fair k4×688 deck-paired n=400/cell CRN band 46e9 vs the deploy champion = flat-to-negative, no slope helps (best paired z ~0 at slope 0.25). The AMBIGUOUS survivor of leaf residual-mining does NOT convert to fair strength → the leaf-accuracy channel stays closed. Engineering `ee38534` (4 leaf paths, default-OFF bit-exact, champion `a36d2e15` untouched, cost ~1.00×). Champion/`PRODUCTION.yaml` untouched. `results.csv f6_softcap*_vs_champion`.)
+- 2026-07-23 (**CL-060 budget-curve extended to 8×: allocation matters more than budget — corrected k16×1376 = +35.58 elo/z2.68 real; naive k8×2752 = +3.51 flat; the fair curve PLATEAUS at ~+40 over deploy by ~4×.** Two 8×-budget (22016 total sims) cells vs the deploy k4×688 champion, both curve125, CRN band 48e9: `curve_k8x2752_22016_vs_deploy_k4x688` (n=198 paired) = +3.51 elo/paired_z+0.21 = flat/tie — but UNDER-DETERMINIZED (width should scale ~√budget: k4@2752, k8@11008 → ~k11-16@22016, not k8). Corrected `curve_k16x1376_22016_vs_deploy_k4x688` (n=196 paired) = **+35.58 elo/paired_z+2.68 — a REAL gain, clears 2σ.** Deck-matched k16−k8 = +2.985 pts/deck se 1.746 z+1.71 (same band) → k8×2752 was width-starved, a ~32 elo swing from allocation alone. CURVE SHAPE: the 4× point (k8×1376, CL-060's own falsifier) = +49.85/z3.48 ≈ the 8× point (k16×1376) = +35.58/z2.68 within cross-band noise → **the fair budget→elo curve PLATEAUS at ~+40 over the deploy champion, reached by ~4× budget; more compute past 4× buys ~0 additional.** Peak NOT bracketed above k16 (k32+ untested; CL-054's inverted-U predicts it would hurt). ⇒ **a distill-strong-teacher project now has a genuine, cheap +40-elo teacher target** (the k8×1376 4× cell, cheapest at that tier). All runs `--no-results-csv`, hand-added to `results.csv`. Measurement-only, champion/`PRODUCTION.yaml` UNTOUCHED. Claim **CL-060** amended (stays Reopened); roadmap F5 re-stamped.)
+- 2026-07-22 (**CL-060 (F5 throughput) RE-OPENED BY ITS OWN FALSIFIER; budget-vs-width DECOMPOSED — BUDGET converts at ≈+14 elo per doubling of wall-clock, WIDTH unresolved.** CL-060's pre-written re-open trigger (a) — *a direct k8×1376@11008 vs k4×688@2752 head-to-head showing ≥+35 elo* — was run and **fired: +49.85 elo, paired z 3.48, W221/D15/L164, +2.98 pts/deck** (`cl060_h2h_k8x1376_vs_deploy_k4x688`, band 32e9, n=400 paired). ⚠️ **The closure was UNDERPOWERED, not wrong, and the two designs AGREE:** CL-060's statistic ran *through* the fixed h800 rung that **both** arms beat by ~9 pts/deck (ceiling compression); recomputed as a paired diff-of-deltas on the shared 24e9 band (0 `deck_hash` mismatches/400) it is **+1.123 pts/deck, se 1.304, z=+0.861 in the candidate's favour** — same sign, unresolvable; designs differ by z=1.19 n.s. *(An intermediate read of mine called this a "sign-flip contradiction" — WRONG STATISTIC: unpaired elo point estimates compared across deck-paired rungs. Recorded, not rewritten.)* **The confound resolved:** the H2H moved WIDTH and BUDGET together, so the fixed-width cell `cl060_budget_k4x2752_vs_deploy_k4x688` (band 44e9, n=400 paired, k=4 both sides) isolated budget = **+27.85 elo (paired σ 12.43, z 2.24, 95% CI [+3.5,+52.2]), +2.24 pts/deck, 4.07× wall-clock**; by difference the **width residual at fixed 11008 = +21.99 ± 18.96, z 1.16 — NOT RESOLVED** (different seed bands ⇒ independent estimates in quadrature, not a deck-paired contrast). ⇒ **budget carries 56% of the gain and stands alone; width is real-signed but unresolved.** **Refuted:** "the fair ladder is FLAT past ~2752" and "throughput converts effort into ~0 elo". **But the exchange rate is the finding: ~+14 elo per DOUBLING ⇒ ~128× compute for +100 elo** — a purchasable but expensive *match-play knob* that leaves the structural blocker untouched (learned components still don't exceed the hand-crafted leaf: CL-039/042/059/061/063/064). **My recommendation: this does NOT by itself justify funding a throughput/search-core program.** ⚠️ CL-054 tension unresolved (k4>k8 at 2752 vs nominally reversed at 11008, z=1.16 — "optimal width grows with budget" is a *hypothesis* this data doesn't establish). ⚠️ Caveats: ONE unreplicated cell at nominal significance; **+27.85 lands between the arms of the ≥+35/≈0 rule it was read against, and that rule was MINE — pre-result but NOT pre-registered**, so this is a measurement, not a gate outcome; the rate is extrapolated from a single 4× step. **Next tests, none funded:** k8×1376 vs k4×2752 at fixed 11008 on ONE band (resolves width directly) · k4×5504 vs k4×1376 (second doubling — does the rate hold?) · replicate +27.85 on a fresh band. Both cells `code_rev c65a92fbe`, `eval_fair_puct.py` md5 `26b75b2b…` byte-identical on both boxes. **Measurement close-out only — champion + `governance/PRODUCTION.yaml` UNTOUCHED; the scoping call this feeds is Joshua's and is deliberately NOT written.** `results.csv {cl060_h2h_k8x1376_vs_deploy_k4x688, cl060_budget_k4x2752_vs_deploy_k4x688}`; claim CL-060 → **Reopened**; roadmap F5 re-stamped; reconciliation [cl060_common_opponent_paired.json](measurement/classical_search/cl060_common_opponent_paired.json).)
+- 2026-07-15 (**T3 JOINT OPTUNA KNOB SWEEP — CLOSED NULL (CL-057).** The joint 7-knob TPE sweep (c_puct/tau_p/value_norm + curve/closure/caps scales) over the classical PUCT-priors curve125 champion ("interaction insurance"; roadmap BACKLOG-reaudit item T3), clair-screen + mandatory-fair-confirm template (CL-051/CL-054), MED-LOW prior → **no free FAIR strength.** **Stage-1** (clairvoyant, nested successive-halving n=52→120→240, CRN) FIRED two candidates at the rung-C +30/z2 gate: **t020 +36.3/z2.97** and **t27 +34.9/z2.35** (t18 +24.7/z1.82 and t12 UNRELIABLE were sub-gate). **S3 fair-transfer test** (the decisive gate; `eval_fair_puct.py --info fair` k4×688 vs the FROZEN clairvoyant h800 rung, CRN band 2.02e10, delta-of-deltas cand−champ, read via `crn_delta_fairnet.py`) killed BOTH: **t27 DEAD fair +4.7 elo / paired z −0.55** (t27 ≈ champion config, expected), and **t020 was a winner's-curse spike — +32.1 elo / z +1.68 at n=400 → extended to n=800 (fresh decks 400-799) → COLLAPSED to +3.4 elo / paired z +0.73** (the n=400 spike was noise; the extension caught the false positive). Verdict JSONs on the share (`/mnt/c/carc-shared/classical_search/t3_s3/s3_verdict_{t020,t27,t020_n800}.json`, not in repo). **Takeaway: knob-tuning the heuristic-leaf search has no free FAIR strength — clairvoyant edges wash out ~4:1 under PIMC (CL-045/CL-048); leaf AND search are now tapped out; the frontier is the distill-champion→net→flywheel bet, not more classical tuning.** Champion + `governance/PRODUCTION.yaml` UNTOUCHED (design-only sweep). Design + close-out banner: [measurement/classical_search/OPTUNA_KNOB_SWEEP_DESIGN.md](measurement/classical_search/OPTUNA_KNOB_SWEEP_DESIGN.md); `results.csv t3_s3_*`; commits 2ace9e5/0f245a8/74efa91/db17799/dec7916/1f46d97 (S0 driver+helper) / e53d6d3 (S3 launcher).)
+- 2026-07-09 (**FABLE STRATEGIC PIVOT — MEASURE FAIR BEFORE MORE SEARCH/LEARNING; clairvoyant ruler DEMOTED to a screen; program order B → A-small → C-cheap; the +148 flip and +39 reuse need FAIR re-confirmation.** A Fable consult reframed the whole strength program. (1) **Elo was quoted in the wrong currency:** the +148.2 flip (CL-043) and +39.3 reuse fold (CL-044) were measured CLAIRVOYANT-matched; deployable is FAIR (blind PIMC); the exchange rate for this agent is ≈4:1 (A2/CL-045: +205 clair → +49 fair; tax ~156). → discount clairvoyant wins; **re-confirm both production wins FAIR** (reuse is most at risk — fair PIMC resamples the deck each move so the reused tree is a stale determinization). (2) **The clairvoyant sub-ladder (D-1, graded this session: clair champion vs h6400 = +149/+193/+215 at sims {1375,2750,5500}, `results.csv clair_pair_*`; scales by sims, not saturated) is a Goodhart trap as the ruler of record** — clair strength is a bad proxy for fair (tax swings 26↔156, agent-dependent) → **DEMOTE clair to a cheap screen; the ruler of record is a FAIR sub-ladder** (PIMC agents at graded sims). (3) Blockers #1 (measurement) and #2 (leaf caps the learned value) are **not independent**, and #1 is ~10× cheaper → **B (measurement) first.** (4) **"Learned must beat the heuristic" is the wrong success condition** (pre-NNUE Stockfish was superhuman on a hand-crafted eval via deep search; our +148 pure-*search* win over the same v2.9 leaf already shows the cap is not where the charter drew it) → right condition = the full agent beats humans, FAIR. (5) **The ~156 tax IS the prize that reprices C:** learned value can marginalize deck uncertainty in weights where PIMC only samples it → C's target is "shrink the tax → raise fair strength", a cheap local fair-self-play experiment on the existing 7M net BEFORE any cloud spend. **Program:** **B (now)** = fair sub-ladder (ruler of record, reuse A2 `eval_fair_puct.py`) + fair re-confirm of reuse/flip + human-anchor arc E4 (the priority deployment exam); **A-small (after B, fair-gated)** = ID-alpha-beta+TT ENDGAME module only, kill fast if the fair gain is small; **C-cheap (gated on B)** = deck-aware value head, local fair self-play. Also this session: **Track-C1 Gumbel-root CLOSED — DEAD as a play-strength lever** (top-m sampling −81/−98 clairvoyant; completed-Q-over-all-actions a small +15.6/z2.30 n=400 equal-time edge ~23% faster, `results.csv rr_puct*gumbel*`; build flag-gated default-OFF `b4a833c`/`6c188f7`/`100f1e1`/`b567c59`, champion untouched; its improved-policy TARGET may still help Phase-5 training). MEASUREMENT/DOCS ONLY — PRODUCTION.yaml + the frozen v2.9 leaf UNCHANGED. Full pivot: [docs/PROGRAM_ROADMAP_2026-07-07.md](docs/PROGRAM_ROADMAP_2026-07-07.md) NOW block; live state: [STATUS.md](STATUS.md).)
+- 2026-07-08 (**TREE-REUSE FOLDED INTO THE CHAMPION (CL-044) + A2 fair-PIMC clairvoyance tax ≈156 elo (CL-045).** Track-C search-squeeze: the champion's per-move `clear()` replaced by tree RE-ROOT — `reuse_tree: true` added to `governance/PRODUCTION.yaml` `agent_knobs` (a config knob on the SAME PUCT-priors agent, NOT a new agent; SAME v2.9 Bmild_cap8 leaf). Screen +47.2/z1.73 (n=200) → confirm **+39.3 elo / paired z=2.81 / wr 0.556 (W217/D11/L172) / n=400 fresh band 1.1e10** at VERIFIED equal wall-clock (ms-ratio 1.060) → clears the ≥+15 keep-gate; a search-EFFICIENCY win (free effective depth on the reused subtree) that dodges sims-washout. Two sibling Track-C axes CLOSED in the same screen: **LCB final-select = WASH** (0.0/z0.11 → visits stays, ROADMAP C2) and **value_norm=15 CONFIRMED optimal** (both {8,30} wings negative, −24.4/−36.6, ROADMAP C4); null champ-vs-champ 0.0 = seat-bias clean. (The finding-doc snapshot was n=378/+38.8 mid-aggregation; the run completed to n=400/+39.3 — same conclusion.) **A2 fair-PIMC SCREEN (CL-045):** at the champion's own config (k_dets=8×sims=344=2752, exact-K=2 marginalized) vs a fixed clairvoyant h800 rung — **fair +49.0/z2.86** (champion plays BLIND and still beats a deck-sighted rung → genuinely > h800 under honest play) vs **clair +205.0/z6.68**, so **clairvoyance tax ≈ 156 elo** (~6× the stale iter8 CL-022 ~26.6). → any human/superhuman claim must be graded FAIR; the clairvoyant HeuristicMCTS-calibrated strength ladders OVERSTATE deployable strength → **Phase-3 ruler re-anchor (ROADMAP Track D) is now load-bearing**, and the A2 fair config unblocks the human-anchor arc (ROADMAP E4). n=100 A2 is a SCREEN (±35 1σ/arm; the paired z is the strong part); reuse was OFF in the A2 run → a reuse×determinization re-check is pending before any FAIR-mode deploy. Full detail: [measurement/classical_search/PUCT_PRIORS_RESULTS.md](measurement/classical_search/PUCT_PRIORS_RESULTS.md); results.csv `rr_puct2750-*` + `fair_puct2752_*`.)
+- 2026-07-07 (**CHAMPION FLIPPED — PUCT-heuristic-priors is production (CL-043; supersedes CL-041).** Phase 1.1 confirmed +148.2 elo / paired z=10.17 / n=400 fresh band 9.4e9 vs the deep-classical h6400 champion at equal wall-clock (`b3d3312`), then **transitivity-verified** by a 4-cell round-robin (`ef95711`): on shared decks the new agent beats the independent neural lineage rod_v2 iter_02 by +230.2 where h6400 gets +36.6, and beats h12800 by +149.3 while **h6400 ties its own double (−8.7/z−0.96 = search-saturated)** → the +148 is algorithmic (priors + expand-all + visit-select), not RPS/compute/depth. Joshua authorized ("flip and go"): `governance/PRODUCTION.yaml` champion → `puct_priors_v29_bmild_cap8` (SAME v2.9 Bmild_cap8 leaf — a pure SEARCH win; no CHECKPOINT_LINEAGE row, it's a classical agent-config not a `.pt`). **SELF-ANCHORED, NOT superhuman:** raises the classical ceiling + the Phase-5 distillation teacher but does not move the 2 structural blockers. En route: a latent `connect_shm` `n_ch` bug found+fixed (`085206b`, broke every 3-arg orch caller since the M2 signature change). Follow-ups: K=3 endgame confirm (in flight, TT-capped), fair-PIMC deployable verdict, Phase-3 ruler re-anchor, and a Fable premise-expiration audit that reopened the learned track (the 2026-06-24 distillation-EV-LOW kill was justified by near-uniform *random-expansion* visit distributions — Stage-0 teacher-τ test pre-registered). Full queue: [docs/PROGRAM_ROADMAP_2026-07-07.md](docs/PROGRAM_ROADMAP_2026-07-07.md); results.csv `puct_*`/`rr_*`.)
+- 2026-07-06 (**POST-REVIEW IMPLEMENTATION PROGRAM — Phase 0 correctness gates DONE + Phase 1.1 classical-search lever FIRING: a PUCT-with-heuristic-priors agent BEATS the deep-classical h6400 champion at equal wall-clock, OVERTURNING the 2026-07-05 "every lever closed" convergence for the classical-search rung the reviews flagged as highest-EV**; executing the combined external-review prompt; MEASUREMENT ONLY, champion-flip PROPOSED-not-executed pending the confirm) — **Phase 0 (`2d292ce`/`cfc3ee3`/`ca757f7`):** 0.1 fair-handoff audit (deployable fair agent honest — 0 clairvoyant solves, K≤2 marginalized, order-invariant; PRODUCTION.yaml "K≤4 alpha-beta" describes the CLAIRVOYANT reference agent — wording fix proposed); 0.2 window audit = clean null (0/299,165 decisions drop a legal action); 0.3 self-play invalid-visit clip ROOT-CAUSED = a legal-cache rotation-instance collision (symmetric tile shares a `string_representation` key but has rotated `.farms` → different farmer index; stale cross-ply cache served the wrong-rotation mask) → fixed (clear-before-snapshot + hard assert), 60-game validated + regression test; 0.4 golden suite (`tests/golden/`, 194 tests). **Pre-existing red suite FIXED (`a989fef`):** ~17 branch failures (NOT this work — v2.10 bag_close stale FROZEN_V29_HASH + v2.9 test-isolation) → `pytest tests/` green, `frozen_v29_cfg()` deterministic (unblocks Phase 3). **Phase 4 human-anchor infra (`c39cfa0`):** expert suite + logged fair-play harness + luck-floor (deck-luck ~14% variance → ~200–1300 seat-swap-paired games to prove superhuman at +8–15pt edge). **Phase 1.1 (`c1fd320` build, `d4e3157` Cython float-leaf bit-exact 800→2750 equal-time sims, `b9ad65d` launcher):** candidate = PUCT + softmax(Δleaf/τ) heuristic-leaf priors + expand-all into the tested NeuralMCTS PUCT; equal-wall-clock deck-paired vs HeuristicMCTS h6400 v2.9. Round-1 c×τ/Q @800 best **c1.5/τ5 +107.5** (paired-sig, broad soft-prior plateau); the **`visits` selector = +135 vs Q +63 (~+72 elo)** (visit-argmax fixes Q-max picking under-visited overestimated children). Fable design consult → fix τ=5/visits/float, sweep only c at the deployable 2750, winner's-curse ≈ +60–70 (true best ~+90–110), confirm top-1 fresh-band n=400 gate +35. **Round-5 RUNNING** (local W30 + laptop W22). If the confirm holds: propose champion flip + **Phase-3 ruler re-anchor** (the ruler is calibrated to the HeuristicMCTS this beats). Full detail: `measurement/classical_search/PUCT_PRIORS_RESULTS.md`; live state: STATUS.md top block. results.csv `puct_*`.
+- 2026-07-05 (**MOTZASH ARC — the post-M2 strength roadmap CONVERGED: v2.10 leaf arc CLOSED · "do points add up to wins?"/win-shaping CLOSED · capacity ABANDONED · phone bench + fair mode DONE → deep-classical v2.9 is confirmed as the strength, PRODUCTION UNCHANGED**; Joshua green-lit "the whole arc") — **v2.10 leaf (`e297c39`):** both game-gated candidates TIE the champion (cap6 reweight +4.3/z0.45, bag-close −6.1/z0.40, h800 n=400 paired) → leaf at practical ceiling; two findings — the **K≤2 solver-endgame screen does NOT predict full-game leaf strength** (cap6 won the screen τ0.615→0.648, tied in games; it tunes the region the exact endgame solver overrides) and the v2.9 leaf is already game-tuned so reweights can't beat it. New infra kept: `LeafConfig.bag_close` (`1f521dd`), `Bmild_..._bcap<N>` (`77e2af8`), multi-`--leaf-variant` solver_score (`db111a8`). **"Points→wins"/win-shaping (`62d80a0`):** margin gains are NOT pure padding (exact-endgame +0.57/z5.95 into close games) but sub-point, and the champion already stacks the margin levers; re-aiming the objective (`tanh(margin/T)`) is NULL at mild (n12, Wave-D) AND aggressive (n4 — the +18.3/z1.05 screen FAILED fresh-band replication, flipped to −27.9, combined wr 0.493 = noise spike). **Capacity/scale ABANDONED:** the WSL-crash cause (30GB obs dataset hard-crashes the VM at f128, 3×); scale weakly-DEAD from indirect evidence (§5A 386K nets ≈ τ0.13). **Phone bench (`8b73f53`):** single-thread ladder h800 326 → h6400 2854 ms/move; net-fwd 12ms CPU (corrects "net@200 instant" = GPU/NPU-only); CPU-phone → classical h1600-3200, NPU → neural. **Fair mode (`2903dd6`/`c967686`):** production PIMC pooled-Q + marginalized K≤2 built+validated (champion as-shipped is CLAIRVOYANT → human play needs fair PIMC). Next steps + box state: STATUS.md top block. results.csv `v210_*`.
+- 2026-07-04 (**§5A RESOLVED — REAL-BUT-DOMINATED (CL-040 → Supported/high); the tempo lead survives non-circular scrutiny but is leaf-dominated 4×**) — 4 arms × 3 seeds retrained with saved weights (`7fa6e6e`) + ONE solver pass vs the same 1,119 exact K≤2 roots as the M2 verdict (leaf reproduces τ=0.6153 exactly): tempo_only **solver-τ 0.116/0.144/0.173 (mean 0.145)** = genuine sibling signal ~7× the M2 value heads (0.02), so H-5A-inert stays refuted — BUT best seed paired **sign-z −9.2 vs the leaf** (+0.587 pts exact margin/root), τ 4× below 0.615. The circular +44.7% was a **tail draw** (h6400-frame retrain spread +17.5/+21.1/+38.8); the `both` control bimodality **replicates in both frames** (width-54 optimization fragility, not data corruption → the original single-seed cross-arm Δ_indep was never interpretable). No route implication (CL-034 washout precedent; M2 KILL stands). results.csv `probe5a_arms_solver_rescore_4x3_n1119`; artifacts `measurement/probe_5a/arms_retrain/`.
+- 2026-07-03 (**M2 KILL — the canonical-AZ cell KILLED on both pre-registered reads → CL-039 upgraded "premature" → EARNED, SCOPED closure; autopsy §7 FINAL; CL-042 finalized Supported/high**; protocol pre-registered `9cbd818` BEFORE the numbers; executed autonomously under Joshua's 2026-07-03 standing authorization) — the 5-iter loop completed (400 games/iter, sims=200, local W28 + laptop W12 orch). **PRIMARY (F4 non-circular, `solver_score.py` multi-ranker `573499b`):** on 1,119 exact K≤2 marginalized roots (solve-once-score-many, identical roots per ranker), v2.9 leaf **τ=0.615 / top1 0.610 / regret 0.951** vs nets **τ=0.018→0.023 FLAT across iters 00–04** (~27× below; top1 ~0.08; paired sign-z −17…−18 = +0.9–1.0 pts exact margin lost/root). Heads NOT dead-forward (v_nn↔cp-score-diff corr 0.50→0.65, rising with training) → position *level* learned, between-sibling discrimination ZERO → **§3A's "residual value space ~1-D" confirmed NON-CIRCULARLY for the first time**. **CONVERSION (rs-sweep {0,.25,.5} × iters {00,02,04}, n=200/cell, fpu0.6, vs RoD-v2 iter_02):** 0/6 cells ≥2σ over rs=0, non-monotone every column, harm at weight (iter_00 −36.6/−34.9/−68.6 · iter_02 −65.0/−19.1/−31.4 · iter_04 −22.6/−68.6/−38.4) = M3's mechanism (FPU masks a contentless value at low rs; weight degrades search). h_v2.9@3200 confirm leg MOOT by precondition (no winning rs). In-loop policy flat-negative ~−40, no compounding. **§10(b) flywheel NOT triggered.** Scope guard: at-this-scale (7M net, ≤5 iters, sims≤200) — not a claim about 10–100× scale/Gumbel/other architectures. results.csv `m2_solver_score_k2_it00_04_n1119` + `m2_rs_sweep_*` + `m2_inloop_*`; artifact `measurement/canonical_az/solver_score_m2_final_it00_04.json` (independent de-risk run reproduces to 4 decimals); autopsy `docs/AZ_VALUE_ROUTE_AUTOPSY_2026-07-01.md` FINAL (+§6.1 five-departure provenance `2d576bf`). Follow-on running: §5A arm solver-rescore (CL-040 fold-in; save-patch+ranker+launcher `7fa6e6e`, 12 retrains ~6–9h).
+- 2026-07-02 (**S1 FLIP — v2.9.1 Bmild_cap8 PROMOTED to the production leaf + deep-classical (HeuristicMCTS h6400–h12800 + exact K≤4 endgame handoff) as the production champion, superseding neural iter8**; post-review plan `docs/POST_REVIEW_PLAN.md` §1; CL-041; authorized by Joshua "flip s1" 2026-07-02) — the DEFERRED h6400 promotion arbiter (fresh band 4.21e9, n=399 paired, `scripts/v29/eval_v29_vs_v28.py`): **v2.9 Bmild_cap8 vs REAL production v2.8 (`v28prod` cap12+drop3open) @ h6400 = winrate 0.591 (234W/4D/161L), +64.3 elo, paired z(margin) +3.77** = verdict-grade, clears the ≥0.55 promotion bar at the DEPLOY depth. Completes the 2026-06-25 audit's deferred h6400 arbiter + the throne-test depth ladder (sims200 +55.2/z3.94, sims800 +34.9/z2.77 — depth-robust). Classical is the stronger agent at depth (RoD1 LOSES to h6400; the sims=200 neural champion capped near strong-human), so PRODUCTION.yaml champion → **deep-classical v2.9 Bmild_cap8**; neural iter8 retained as lineage. **A LEAF/AGENT promotion, NOT a learned-superhuman result** — whether a learned value can EXCEED this leaf is the open post-review autopsy (M1/M2/M3). results.csv `v291_THRONE_bmild_cap8_vs_v28prod_h6400_n399`; **CL-041** (supersedes flywheel2_champion_iter8 as PRODUCTION). Infra: the arbiter tail-stalled repeatedly (workers crash under sustained 5+hr load → stranded shared-claims the once-through harness won't revisit) → cleaned stranded claims + relaunched fresh pools to complete.
+- 2026-07-03 (**M2 REOPENER — the never-run canonical-AZ cell BUILT + orch-accelerated + LOOP RUNNING; read-out PRE-REGISTERED, solver-scored**; post-review plan `docs/POST_REVIEW_PLAN.md` §4; contributes to CL-042) — samples the one cell the whole value-inertness ledger left structurally open (every prior net had a saturated/0.5%-variance target, `value_global_pool=False`, blind rep): **sighted rep (+3 union-find farm planes / +32 bag histogram) × pooled value head (`--global-pool`) × `score_diff_wide` target × FPU=0.6 installed × `--leaf-eval nn`** (the value drives the leaf). carc-orch extended to the sighted 81-channel input, gen **parity-proven bit-exact vs orch-off**; loop running 5 iters on local+laptop. Read-out ([measurement/canonical_az/M2_PLAN.md](measurement/canonical_az/M2_PLAN.md), `9cbd818`) fixed before the numbers: eval iters 1/3/5 = (1) solver-scored value ranking vs the exact K≤4 solver (`scripts/canonical_az/solver_score.py`, the F4 non-circular scorer, `b0e7158`) + (2) rs-sweep {0,0.25,0.5}@FPU0.6 game effect vs RoD-v2 iter_02, headline confirm vs h_v2.9@3200. **FIRE** = solver-τ beats the leaf + improves 1→3→5 + ≥2σ monotone rs game gain (first in project history → revives the flywheel); else **earned CL-039 scoped closure**. Commits: sighted `86f9695`/`41d49df`/`e5b6ac0`, orch `f83b38e`, stall-heal `8dd20ed`. MEASUREMENT ONLY.
+- 2026-07-03 (**M3 REOPENER — Gate-B refuted as a LAW (FPU recovers the weaned-value crater to parity) but the FPU AXIS is CLOSED (peaks at parity, rolls off beyond)**; post-review plan `docs/POST_REVIEW_PLAN.md` §3; contributes to CL-042) — full n=400 FPU curve on the additive weaned-value crater (candidate-only FPU/c_puct knobs added `724c903`; anchor = additive blend0 wr 0.500): **fpu=None 0.265 → 0.4 0.391 → 0.6 0.496 (PEAK = parity, z−0.15 vs the 0.500 pure-heuristic anchor) → 0.8 0.4825 → 1.0 0.476.** So **Gate-B (CL-038, "a learned value can't drive MCTS search") is refuted as a LAW** — the crater is a fixable FPU/optimistic-tail artifact (isotonic recovered *less* than FPU → mechanism = the MCTS max-operator hunting the value's optimistic tail, which FPU tames directly; the 3 nails were blind to it). BUT recovery is to PARITY not exceeding, and higher FPU rolls off → **FPU removes the weak τ≈0.43 value's harm but cannot make it exceed the τ≈0.895 leaf**; the exceed-lever is a better VALUE (M2), not more FPU. The value-leaf lever REOPENS; CL-039 stays QUALIFIED, not upgraded. results.csv `m3_confirm_fpu0{4,6,8,10}_c3_b027_n400`; commits `0738450`, `1d962e6`. MEASUREMENT ONLY.
+- 2026-07-02 (**M1 REOPENER — deepteacher iter2 KILLED: its prior "+53.7" was band noise; "deeper-teacher doesn't help" now POWERED**; post-review plan `docs/POST_REVIEW_PLAN.md` §2; contributes to CL-042) — fresh-band fixed-rung paired eval (each of iter2/iter8 vs heur@800-v2.7, band 5.0e9, sims=800, n=400): iter8 +136.0/z7.71, iter2 +138.0/z7.93 → **paired Δ(iter2−iter8)=+2.0 elo, z=0.09 = TIE.** iter2 does NOT clear ≥2σ over iter8 → the mid-run +53.7/z2.14 (+50.4/z1.42 on a second band) was band-max noise / forking paths, refuted on a third fresh band. No revival of the deeper-teacher line — CL-019 ("a deeper policy teacher doesn't raise strength over its warm-from at the deep plane") STANDS, now powered. results.csv `m1_deepteacher_iter2_vs_iter8_freshband_h800_s800_n400`; commit `0738450`. MEASUREMENT ONLY.
+- 2026-07-01 (**PROBE §5A — TEMPO/TIMING third-independent-axis gate: RAN, INCONCLUSIVE on the rigorous gate, but a LIVE OFFLINE LEAD that QUALIFIES CL-039's "genuinely low-dimensional" clause**; spec `docs/PROBE_5A_TEMPO_AXIS_GATE.md`, results `measurement/probe_5a/PROBE_5A_RESULTS.md`; branch `rod_v2_flywheel`; CL-040) — the honest falsifier owed to CL-039's dimensionality claim, which rested on only **two known-redundant axes (farm, bag)**. §5A tests a third axis **uncorrelated-by-construction** with farm/bag: tempo/timing (the leaf's meeple-economy term is FLAT → timing is the named axis the heuristic handles crudely, never value-tested). **Gate-zero (free correlation kill) PASS→PARTIAL:** emitted a structural-tempo block via `step1_dump.py`'s exact enumeration, joined to the CL-037 dataset by (game_seed, ply, child_index), **bit-exact leaf-recompute (0.00e+00)**; the naive counts (open-road/city R²=0.86/0.79, farmer counts ~0.73) are ≥0.72 reconstructible from the already-present representation → dropped; a genuine **10-feature timing-depth core survives** (depth-weighted meeple lockup Σ open_n, closure-race, contested, open-city-delta — mean R²=0.28, canonical ρ₁=0.76 < 0.90). **Single-seed 4-arm at h6400** (n_scalar=54, tempo appended to all arms): **`tempo_only` = +44.7% regret-reduction (τ 0.223, α=0.25, clean monotone sweep), leak-verified** (all tempo features |r|≤0.51 vs oracle_q vs the leaf's own +0.996) = the **strongest clean offline ranker in the whole probe program, LARGER than CL-037's farm/bag −20.5%** → tempo is **NOT** an inert/redundant axis (H-5A-inert REFUTED). **BUT the run is single-seed with a BROKEN positive control:** `both` (farm+bag) came back inert (+0.0%) though the same harness gives CL-037's `both` **+20.5% at n_scalar=44** — appending 10 zero-variance tempo columns (width 44→54) flipped it (**RNG-init/normalization fragility**); the non-monotonic `all_three +17.5 < tempo_only +44.7` confirms single-seed training is noise-dominated. Per §4's invalid-gate guard no clean Δ_indep is readable from one seed → the confirming **4-config × 4-seed sweep was launched and OOM-KILLED before any of the 16 runs finished** (concurrency-4 on the 41 GB WSL box, self-inflicted; **not relaunched** — Joshua's call to start fresh). **NET: INCONCLUSIVE on the pre-registered ≥3pp CRACK bar, but a live, unresolved OFFLINE tempo lead.** **This QUALIFIES CL-039** — the "residual value is genuinely low-dimensional" clause rested on two known-redundant axes; the third, uncorrelated axis was the strongest clean offline ranker, *not* redundant → the low-dimensionality claim is **NOT established**. **The SHIP decision is UNCHANGED (analyzer endgame-2 + B1):** §7 is invariant across branches, AND this is an **OFFLINE** signal — CL-034's −41% offline win WASHED OUT under sims=200 search, so even a seed-confirmed tempo crack is a *recorded lead, not a loop authorization*. If the AZ-value question is ever reopened, step 1 is the seed-swept tempo confirmation (run SOLO / concurrency-2 to avoid the OOM), and **tempo — not farm/bag — is where a future fair-from-scratch loop or scale-up would aim.** No games (offline ranking gate → no results.csv row). MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED. **CL-040** (qualifies CL-039); docs `measurement/probe_5a/`; scripts `scripts/probe_5a/` (`emit_tempo.py`/`gate_zero.py`/`leak_check.py`/`run_seedsweep.sh`/`aggregate_seedsweep.py`); commits `58262ef`/`6710492`/`334bef8`.
+- 2026-07-01 (**POST-GATE-B AZ-VALUE PROBES A & B BOTH CLOSED → the learned-value route is EXHAUSTED across scalar/structured/clairvoyant/fair; ship the analyzer (endgame-2) + B1**; specs `docs/PROBE_A_STRUCTURED_VALUE_SPEC.md` / `docs/PROBE_B_FAIR_INFO_SPEC.md`; §4A results `measurement/probe_b_4a/PROBE_B_4A_RESULTS.md`; branch `rod_v2_flywheel`; CL-039) — the two unfalsified AZ-value bets after Gate-B, pre-registered + boxed, both ran and closed. **PROBE A (structure-emitting value LEAF)** — gate-zero speed PASS (structured per-component leaf feasible at 2.24–2.71× the Cython leaf; 24-dim feature contract + bit-exact Cython emit; g_θ trained, aggregate R² 0.99), then **KILLED at the pre-registered §3A farm/bag INDEPENDENCE gate**: re-running CL-037's farm/bag ablation on the *structured* head gave `Δ_indep = both − max(farm-only, bag-only) = +0.05pp` (paired σ 0.36, 95% CI [−0.61,+0.78], ~8σ below the +3pp "separated" bar) — farm/bag stay REDUNDANT in the structured object too (even cleaner than CL-037's scalar +0.8pp; emphasis flips — farm carries it, bag inert). ⇒ the value signal beyond the leaf is genuinely LOW-DIMENSIONAL, the scalar was NOT the bottleneck, the structured object extracts nothing the scalar destroyed. Killed at the CHEAP gate — no crater screen, no in-loop budget. Commits `315122d`/`b48694a`. **PROBE B (fair-info flywheel)** — gate-zero done (`fair_isolate` leak fix: the flywheel-gen path — persistent tree, K=1, per-move reshuffle — reused stale cross-determinization nodes; 0 after the fix, 10/10 deterministic; fair-target range ADEQUATE, `451fadb`). The §4A fair-target diagnostic ran full-n (matched-depth **fair@800 vs clair@800**, obs/scalars/split/ids bit-identical so the only variable is clairvoyance; n_test=1544): **ALL SIX arms INERT** (best_α=0, regret_red +0.0%, beats_leaf=False), and the n=150 preview's "clair non-inert (α=0.05)" was an **8-group small-sample artifact, refuted at full n**. **§4A is DEPTH-SATURATED / inconclusive on its own** — the clean H-4A-inert test needs a *non-inert* clair baseline, but clair@800 is inert too (CL-037's α=0.05 required the DEEP h6400 teacher; at play depth even clairvoyant targets give the value no residual over the v2.9 leaf); clairvoyance-vs-depth is **deliberately left UNRESOLVED, out-of-scope for the ship decision** (an h6400-depth §4A would answer it — a mechanism nicety, not funded). **THE CLOSE IS ON THE LEDGER, NOT THE SCREEN:** the flywheel bet closes on the accumulated value-inertness ledger — CL-029 (RoD2 flywheel null), CL-032 (value/search autopsy), CL-033 (value-resurrection ranker), CL-034/CL-036 (comparator washout / typed-GNN inert), CL-038 (Gate-B scalar leaf), Probe-A §3A (structured leaf) — spanning **scalar+structured on clairvoyant targets**, plus Gate-B's offline→online mechanism (a value can rank yet fail to drive search); §4A only *extends* the pattern to **fair** targets (consistent but inconclusive alone). ⇒ **the AZ-VALUE route is exhausted (scalar/structured/clairvoyant/fair). Ship the analyzer** (endgame-2, the original Phase-5 win condition), served by the proven sighted value head, **with B1 (the fair-info agent, `fair_isolate` fixed) as the deployable, human-anchorable artifact** (Probe B's non-empty failure path). Commits `c4a5465`/`be538a7`. Infra scars (self-inflicted, logged): laptop WSL tore down on the detached gen launch (→ local fallback); the fair+clair 32 GB retargets run CONCURRENTLY OOM-restarted the 41 GB WSL (→ large-obs ops run SOLO); the full-n eval hit a GPU fragmentation OOM (→ `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` + `--groups-per-batch 8`) then a cross-obs page-cache OOM (→ don't cache two 32 GB obs at once — re-run same-obs arms together). No games (offline ranking diagnostic → no results.csv row). MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED. **CL-039**; scripts `scripts/probe_a/` + `scripts/probe_b/`.
+- 2026-06-29 (**REPRESENTATION GATE (charter Step 1, the decision gate) CONCLUDED — Gate A PASS: farm-connectivity planes (+3, from `flat_leaf.decompose`) + a per-tile-type bag/deck-composition histogram (+32 scalars) FLIP CL-033's best-α=0 on the SAME sibling-ranking protocol → the value head's inertness was partly a REPRESENTATION confound, not a pure architecture-independent ceiling**; full detail `measurement/feature_planes_gate/STEP1_GATE_RESULTS.md`; branch `rod_v2_flywheel`) — re-ran the CL-033/CL-034 sibling-ranking gate (same 10,067 h6400_v2.9 sets, same RankNet V4_listwise, same α-sweep, group-split by `game_seed` n_test=1544, frozen v2.9 leaf hash `7fc930b82801cb43`) on 5 feature regimes. **Sighted `both` (78+3 farm planes, 12+32 bag scalars): τ 0.207 / α 0.05 / regret 0.0263→0.0209 = −20.5% vs blind `none` (78ch): τ 0.140 / α 0.05 / −1.9%** — clears the pre-registered ≥15% criterion. **Pre-registered NEGATIVE CONTROL `both_shuffled` (farm planes + bag scalars permuted off their true rows, base 78ch+12 kept aligned) collapses the whole effect** (τ→0.139, α→0, +0.0%, val_loss 3.3014 ≈ `none`'s 3.3020, no sub-`none` leak) ⇒ the signal is real + position-aligned, not a leak/artifact. **ATTRIBUTION (farm/bag ablation): farm-only −17.1%, bag-only −19.7%, both −20.5% ⇒ the two are LARGELY REDUNDANT** (substitutes, not additive; each alone recovers most of the signal; at n=1544 the farm-vs-bag gap is within noise — do not hard-rank). **The bag/deck-composition axis is information the v2.7/v2.9 leaf STRUCTURALLY CANNOT see** (it scores the current board, not what remains to draw), yet bag-only alone recovers ~the full effect = the cleanest "net saw something the heuristic can't" evidence. **QUALIFIERS: this is the OFFLINE scientific lock (Gate A) ONLY** — τ 0.207 ≪ the leaf's 0.895 and α is small (0.05), so it is a weak-but-nonzero *sighted-residual* ranker, NOT a value head that rivals/replaces the leaf. Whether it CONVERTS through MCTS search (Gate B) is **UNTESTED** and is the open Step-2 question; CL-034's bigger −41% offline win WASHED OUT under sims=200 search, so conversion arguably trends against a static-integration win — **Gate B is a de-risk signal, NOT a Step-1 kill (the loop is the arbiter, not a one-shot screen).** **METHODOLOGY/ARCH:** this dense board-CNN got −20.5% but CL-034's cheap explicit-scalar model got −41% ⇒ **Step 2's value head should be STRUCTURE-AWARE** (feature-MLP / set-transformer over the decomposition objects), not a dense CNN. Also logged: a mid-run val-loss preview misread bag as low-signal — the listnet val-loss DIVERGED from the regret gate metric (selection-on-val-loss not monotone with regret); only the final regret/α is the result. **CONTESTS** CL-033's "value head inert as an architecture-independent law" reading but does not supersede the row. **Next active step = Step 2 scoping (structure-aware value head), with Gate B (search conversion) the open question.** No games (offline ranking pilot → no results.csv row). MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED. CL-037; docs `measurement/feature_planes_gate/`; scripts `scripts/feature_planes_gate/`.
+- 2026-06-27 (**VALUE/SEARCH CONVERSION AUTOPSY (follow-on to Path-3 decision B) CONCLUDED — decision D (value head INERT) + the headline correction "root metrics DON'T convert to game strength"**; full detail `measurement/value_search_autopsy/VALUE_SEARCH_{RESULTS,DECISION}.md`; branch `rod_v2_flywheel`) — localizes WHERE the learned stack fails. Built a 1321-miss diagnostic set (gap≥0.02 roots where iter04 NMCTS@200 misses h6400) + a 9-leg root intervention matrix (sims/prior/residual/classical/forced-move), local+laptop. **ROOT-LEVEL (the seductive-but-misleading part):** the neural **value is inert** (rs0/rs0.25/rs0.5 indistinguishable; residual never corrupts — 107 wrong→right/0 right→wrong at 1-ply), and on decision states the **policy prior makes WORSE decisions than bare classical search** — full-pool (n=4277) agreement with h6400: **classical h200 0.911 > flat-prior neural 0.867 > production neural 0.799** (monotone; flattening the net's OWN prior gains +6.8pp). 88% of misses are explored-but-misranked (the prior concentrates visits, starving the right move's subtree → wrong backed-up Q); more neural sims overcomes it only slowly (0.350→0.553 at 4×). **GAME-LEVEL (the correction):** the root edge does **NOT convert** — classical h200 vs neural iter04 head-to-head at matched 200-sim compute (n=96 paired, v2.9 leaf) = classical **WR 0.438 / margin −2.6 / paired-z −1.19 = not significant, slight lean to NEURAL**. So the net is **game-NEUTRAL vs classical, not game-harmful**; the decision-state errors wash out because most game positions are low-gap (prior fine + efficient there). **THIRD independent instance** (Path-3 prior-washout, sims-washout, now this) that **root/policy agreement ≠ head-to-head strength → gate strength on GAMES, never on root metrics.** Binding constraint for strength = search depth + a value head that beats the v2.9 leaf (blocker #2, still open, value confirmed inert); prior-tempering DEPRIORITIZED (fixes a non-converting metric); policy distillation stays dead. results.csv `valsearch_m1_classical_h200_vs_neural_iter04_n96`; CL-032; scripts `scripts/rod_v2/value_search/`. MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED.
+- 2026-06-26 (**HIGH-CONTRAST DECISION-SIGNAL DISTILLATION (Path 3 = the hard-policy-repair NAMED BOUNDARY) CONCLUDED — decision B: the high-contrast signal EXISTS and is LEARNABLE, but does NOT convert through search to strength; the bottleneck is VALUE/SEARCH, not policy exposure**; full detail `measurement/high_gap_distillation/HIGH_GAP_{RESULTS,DECISION}.md`; branch `rod_v2_flywheel`, commits `cbb40fc`/`edbf514`) — selects 'hard' by h6400 **Q-gap/regret**, not argmax disagreement → **inverts** the prior experiment's null. 20160-root fresh pool labeled h6400_v2.9 across **local+laptop** (sharded; cross-leg Q-gap density matched 36.6% vs 38.0% = no stale-code contamination). **Gate PASS:** gap≥0.02 = **37%**, gap≥0.02∧iter04-wrong = 22%, regret≥0.02 = **43%**, phase-balanced (~20–24% every phase incl. endgame) — vs the prior disagreement-only **3%**. **Stage 5 (held-out hard TEST n=1390 game-disjoint, soft Q-softmax targets temp 0.03, policy-only fine-tune from iter04):** prior top1 **0.000→0.18** (R1), top3 0.30→0.42, mean regret **−27%**, median −42%, strong-gap top1 0→0.27, **endgame 0→0.17** — LEARNS + generalises (where the prior one-hot target did not; the scale-up turned the pilot's ambiguous +8pp into +18pp at 14× test size). Ordinary regression modest (R2 top1 1.0→0.95). **Stage 5b NMCTS@200 = WASHOUT:** iter04's *wrong* prior already searches to top1 **0.497**; R2 also **0.497** (R1 0.453) — the prior gain is **redundant at the root** under production search; only endgame moves (0.483→0.552). **Stage 6 games (R2 vs h6400_v2.9, n=126 paired, local+laptop):** WR **0.409 / elo −64 / paired −11.7**, *below* iter04's 0.463 — **NO conversion, if anything harmful** (the ordinary −5pp regression is NOT washed out in full play). **MECHANISM:** search extracts the decision-relevant move from the existing prior → improving the prior is redundant at depth and the broad-distribution cost outweighs it. **SHARPENS autopsy blocker #2:** the **policy** is NOT the binding learned component (already adequate for search); **value/search** is. **Policy distillation (any target) = DEAD END for RoD strength** (this fails signal-but-redundant; the prior fails no-signal). Named boundary (NOT pursued): value/search lever, or endgame-restricted distillation gated on a game screen. results.csv `highgap_R2_vs_heur6400_v29_n126`; CL-031; lineage `highgap_R2_from_iter04` (NOT_CHAMPION); scripts `scripts/rod_v2/highgap/`. MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED.
+- 2026-06-26 (**HARD-POSITION POLICY REPAIR (follow-on to the RoD2 autopsy) CONCLUDED — decision A: explicit h6400-labeled exposure CANNOT repair the policy because the target is SIGNAL-FREE on disagreement states**; full detail `measurement/hard_policy_repair/HARD_POLICY_REPAIR_{RESULTS,DECISION}.md`; branch `rod_v2_flywheel`, commits `319cd98`/`a099073`) — narrow diagnostic test of the autopsy's policy-diffuseness finding. Pilot (1620-pool, no gen): 438 hard (h3200!=h6400 = 27%), split 306/66/66 + 1182 ordinary. **PIVOT:** on disagreement states h6400's visit dist is ~uniform (top-share 0.04) and its Q-values are near-tied at the top (**Q-gap #1-#2 = 0.0021 / median 0.0007 vs 0.040 on agreement states; only 3% have gap>0.02**) → 'h3200!=h6400 disagreement' selects **value-INDIFFERENT** states, not deep-distinctive ones; the argmax is a near-coin-flip. **Stage 3/4 (policy-only fine-tune from iter04):** P1-visit test top1 0.076 ≤ 0.091 baseline (no move); P1-onehot **memorizes train (top1 0.775) but generalizes to 0.061** = full capacity, zero transferable signal — a SIGNAL problem, not capacity/training. **Stage 5:** same nets agree with h6400 3.4× more on agreement states (top1 0.311 vs 0.091) — policy already aligned where the teacher is decisive. **REFRAMES the autopsy:** the 'diffuse policy on disagreement states' signal was a NON-failure (diffuseness is correct on indifferent positions); **downweights** that supporting mode but does **NOT overturn decision C** (blocker #2 / value ceiling untouched). Named boundary (NOT pursued): any future distillation must define 'hard' by h6400 Q-gap, not argmax disagreement. P2/P3/Stage-6 games NOT run. No results.csv row (policy-agreement diagnostic, not elo/wr). MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 UNCHANGED. CL-030; scripts `scripts/rod_v2/repair/`.
+- 2026-06-26 (**RoD v2 FLYWHEEL (v2.9 leaf Bmild_cap8) AUTOPSY COMPLETE — CONFIRMED NULL, decision C (stop the AZ-style blind flywheel; classical v2.9 is the strength)**; full detail `measurement/rod_v2_flywheel/autopsy/ROD2_AUTOPSY_REPORT.md`; branch `rod_v2_flywheel`, autopsy commit `9e15e28`) — 5 warm-start self-play iters (RoDv2_iter_02..06, gen+train only) on the frozen v2.9 leaf did NOT restart compounding: every ckpt LOSES to h6400_v2.9 (−22..−32 elo, no climb), ~h3200_v2.9 parity, indistinguishable from RoD1 (adjacent deltas NON-transitive, iter04−RoD1 +6 vs h6400 / −40 vs h3200). **Stage F:** training healthy but TARGET-LIMITED (train_pol & entropy RISING = policy diffusing; value_corr flat ~0.45 = value head inert on a near-zero-range residual target). **Stage D:** self-play merely different not stronger (residual 38–43% within ±0.02 of 0). **Stage E:** fixed-ruler odometer shows no climb; selection-on-adjacent-wins invalid. **Stage A-lite (400 fixed pos, provenance-verified v2.9 rulers):** prior lean toward h6400 ~0 and FLAT across iters; DIFFUSE (77.5% "neither" on h3200≠h6400); endgame agreement collapses 0.10–0.13 — reproduces the v2.8 flywheel autopsy exactly. Strength carried by the v2.9 leaf inside MCTS not the net → blocker #2 stands. Stage B/C NOT run (Stage A confirmed, did not contradict). MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 UNCHANGED. results.csv `rodv2_*_vs_heur*_v29`; lineage `rod_v2_iter_06` (NOT_CHAMPION); CL-029; scripts `scripts/rod_v2/autopsy/`.
+- 2026-06-24 (**STRATEGIC-BEHAVIOR LADDER (pseudo-human diagnostic) COMPLETE — 3 of 4 motifs are non-diagnostic; the one credible motif (`farm_claim`) shows RoD_iter_01 plays at HEURISTIC level (compression, not a new capability) with ONE clean deficit: it UNDER-CLAIMS farms vs h6400, concentrated vs WEAK opponents (−16pp) and LATE game — i.e. RoD1 does NOT punish weak opponents; deeper heuristic search buys NO extra strategic behavior**; full detail `measurement/strategic_behavior_ladder/STRATEGIC_BEHAVIOR_LADDER_REPORT.md` + `MOTIF_DEFINITIONS.md` + STATUS; branch `strategic-behavior-ladder`) — Joshua-directed diagnostic to answer whether agents exhibit recognizable higher-level strategic behaviors (block/steal/farm/denial/punish/conversion) now that internal Elo/margin rulers are saturated. **DIAGNOSTIC ONLY — not a promotion benchmark, not a training target; full-game winrate vs `h6400_v2.8` remains the strength arbiter.** Built 4 operational motifs (structural detectors off the flat decomposition, NOT gated on the v2.7 score) over **1,918 labeled positions** / 12 regimes / 9-agent weak→strong panel counterfactually harvested (every agent on every position; agent-unbiased). **RULES FINDING:** in 2p base you cannot place a meeple on an occupied feature → meeple-phase steal/denial is IMPOSSIBLE (fired 0/22 games); contest/denial exist ONLY as a TILES-phase MERGE (`contest_merge`). **RESULTS:** `block`/`avoid_feeding` = NOISE (random ≈ h6400, ~2–6pp spread, flat/negative outcome-sanity → KILL); `contest_merge` = coarse "searches-at-all" STEP (random 18% → all search ~45–49%, saturated above greedy, outcome −11pp → descriptive only); **`farm_claim` = the one credible motif** — discriminates (greedy 12% rule-decline → heuristics 60% → rod1 54% → random 24%) AND predicts winning (**+17pp** in close games, strength-confounded so suggestive-not-causal). **RoD1 deficit (clean, identical positions): `farm_claim` 54% vs h6400 60% (−6pp overall), but −16pp vs WEAK opponents (41 vs 57; EQUAL 53/53 vs strong) and growing LATE (pre_endgame 24 vs 53).** Deeper heuristic search h3200→h6400 buys ~0 extra behavior (all ~60%) — consistent w/ the deeper-search ruler (depth sharpens margin not decisions). Anti-benchmax safeguards WORKED: outcome-sanity killed 3/4 motifs; cross-opponent split exposed the vs-weak-only effect a single score would hide. **VERDICT (TIGHTENED by a follow-up validation audit `VALIDATION_FARMCLAIM.md`):** RoD1 compresses heuristic-level strategic play (NOT random/RPS, NOT super-heuristic). The first pass flagged late/weak-opp farm-claim value as a candidate lever; the **audit downgraded it to STOP** — the headline +17pp was a close-game COLLIDER artifact (honest +11pp → **+5pp** after controlling for pre-move lead + removing the vs-weak ceiling), it is **agent-dependent (rod1's OWN farm claims are outcome-neutral, −2pp)**, and rod1's deficit is **LOW-LEVERAGE** (62% of its farm misses vs h6400 are vs WEAK opponents; top misses at already-won pre-move margins +33…+54 = margin-padding; where farms have leverage — vs strong / even / opening — rod1 ALREADY matches h6400 53/53). **Expected winrate move vs h6400_v2.8 ≈ 0 → NO actionable lever; do NOT run the farm probe; do NOT optimize the benchmark score (3/4 motifs are Goodhart traps; the killed motifs confirmed dead — random≡h6400 on 82%/87% of block/avoid_feeding opps). rod1's real loss to h6400 stays the known endgame PLACEMENT/conversion leak.** **HIGH-PRECISION FOLLOW-UP (2026-06-25, `HIGH_PRECISION_STRATEGIC_TRAPS_REPORT.md`, `scripts/strategic_ladder/strict_motifs.py`, fresh 312 strict positions + 1918-bank relabel): PARTIALLY REVERSES the "block is dead / no lever" — that was PARTLY a DETECTOR-FIDELITY ARTIFACT.** Narrow traps requiring PHYSICAL interference (not arg-min "play elsewhere") DISCRIMINATE: take rate random→h6400 `MUST_PUNISH_WEAK` 15→92 (rod1 84), `HIGH_VALUE_FARM_CLAIM_REFINED` 25→89 (rod1 82), `MUST_BLOCK_CITY` 8→50 (rod1 42, **n=12 thin**); `MUST_NOT_FEED` 77→85 = KILL (no discrimination, forced-feed-dominated). **RoD1 −7/−8pp vs h6400 on IDENTICAL positions with disagreements mostly COMPETITIVE (10/14 punish, 6/7 farm — NOT the broad farm_claim's vs-weak padding).** Pre-move-controlled outcome (no collider): punish take−miss +31pp even-score / +29pp vs-strong — **suggestive but AGENT-CONFOUNDED** (strong agents take+win; control removes leading-state not agent identity). **REVISED VERDICT: the narrowing worked; RoD1 has a REAL but MODEST competitive tactical-punish deficit → ONE gated probe NOW JUSTIFIED** (distil h6400 tactical-punish policy / value-head recal toward immediate ≥8 completions+claims), **GATED on ≥2σ full-game paired winrate vs h6400_v2.8 (n≥400, ≈+24 Elo); else the 8pp wasn't the bottleneck. `MUST_BLOCK_CITY` needs a larger targeted sample before quantifying.** Still DIAGNOSTIC ONLY — no training on labels, PRODUCTION.yaml + champion + v2.7 UNCHANGED. No results.csv row (take-rate diagnostic, not an elo/wr experiment). PRODUCTION.yaml + champion UNCHANGED, v2.7 frozen, v2.8 opt-in. INFRA: laptop again UNUSABLE for detached long jobs (WSL distro tore down despite WSL-KeepAlive — gen died right after the launching ssh closed) → ran local-only; scripts `scripts/strategic_ladder/`.
+- 2026-06-24 (**DEEPER-SEARCH RULER PROBE COMPLETE — deeper v2.8 heuristic search is a SHARPER RULER not a stronger match agent; RoD_iter_01 LOSES to h6400 so h6400 is the non-saturated REFERENCE the measurement program needs; deeper search EXHAUSTED as a strength/teacher lever**; full detail `measurement/deeper_search_ruler/DEEPER_SEARCH_RULER_REPORT.md` + STATUS; branch `deeper-search-ruler`, commits `589c925`→ HEAD) — Joshua-directed follow-on to the exact-endgame verdict (which recommended exactly this h6400/h12800 ruler probe). Does deeper heuristic search under the SAME v2.8 leaf (v2.7 + flat `meeple_k=2`) produce a stronger ruler/teacher than `heur@3200_v2.8`? **Part B (verdict-grade, `eval_hybrid_handoff.py` heur@N paired both-seats): h6400 vs h3200 n=400 = winrate 0.539 (z+1.6 NS) but paired score margin +2.49pt z+2.61 SIG** — the exact-endgame pattern reproduced for WHOLE-GAME heuristic depth: sharper score-ruler, NOT a stronger match-winner. **Margin SCALES with depth** (h12800 vs h6400 n=100 SCREEN = +3.87pt z+2.27; its winrate 0.605/z+2.1 is an n=100 SCREEN not a verdict — exceeds the margin-slope, likely small-n overshoot like h6400's early +4→+2.49; deliberately NOT topped to n=400 ~7h). **Part C (carc-orch W20): RoD_iter_01 vs h6400 n=200 = winrate 0.435, paired margin −4.41pt z−3.24 SIG = RoD1 LOSES** — it only reached h3200 parity; the deeper ruler erodes it (root agreement looked equidistant but agreement≠strength: RoD1's ~48% disagreements cost more vs the deeper, more-often-right opponent; margin transitivity holds). **Part D (1620-position multi-phase root audit): deeper search changes ~29% of root moves but only ~10% are a STABLE deeper preference (matched ~1:1 by ~10% pure noise), endgame/pre_endgame-weighted; heuristic visit distributions stay near-uniform even at h12800 (top_share 0.05→0.08, no rich policy target — rod1 0.27); RoD1 equidistant from all depths.** **Part E: all disagreements are tile-PLACEMENT (suite is TILES-phase roots), 95.5% positionally-equivalent on immediate turn-score → h6400's margin = better POSITIONING that compounds over ~144 moves, NOT blunder-recovery (h3200 leaves a completion only 1.3%).** **Part F: distillation EV LOW** (no rich policy target, outcome-neutral signal, net adopts the deep move only 19%, and distilling the ruler caps the net AT the heuristic = the v2.7/v2.8-leaf blocker). **VERDICT (Part G): deeper heuristic search EXHAUSTED as a strength lever — both "search-deeper-under-v2.8" endpoints (exact endgame + deeper whole-game heuristic) land on the SAME margin-not-winrate ceiling; the v2.8 leaf dominates move CHOICE, more search refines SCORE not WINS; blocker #2 stands (learned must beat the heuristic on WINRATE not margin). ONE constructive output: ADOPT h6400 as the non-saturated measurement REFERENCE for future learned-agent gates (RoD1 saturated h3200 yet loses to h6400); h12800 only if the sharpest score discriminator is needed (2×/4× cost).** MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion UNCHANGED, v2.7 frozen, v2.8 opt-in. INFRA: laptop UNUSABLE for long jobs (WSL distro tears down <8min after the launching ssh ends; 4 detach methods all failed — `setsid&`/bg-ssh/tmux/`start /b`) → ran local-only (faster per-game for h12800 anyway). results.csv `deepsearch_{h6400_vs_h3200,h12800_vs_h6400,rod1_vs_h6400}_v28_*`; scripts `scripts/deeper_search/`.
+- 2026-06-23 (**RoD v2.8 OVERNIGHT FLYWHEEL + TAIL EVAL COMPLETE — the chain plateaus at heuristic PARITY; the extension (iters 11–17) does NOT beat keep-best iter_08; NOT superhuman**; full detail `measurement/rod_v28_overnight_flywheel/EVAL_RESULTS.md` + `OVERNIGHT_STATUS.md` + STATUS; branch `rod_v28_overnight_flywheel`, flywheel commits `85bda88`→`a668cf6`, this-session infra+close-out `5c80aa4`→ HEAD) — Joshua-directed dedicated larger v2.8 flywheel (the "test COMPOUNDING past parity" follow-on the RoD probe recommended), latest-chain warm-from **RoD_iter_01**, **16 continuation iters RoD_iter_02→iter_17** (v2.8 leaf `meeple_k=2`, batch 256 / 3 ep / VLW 1.5 / sims 200 / 400 games·iter, gen W28/8), all HEALTHY no-collapse, all checkpoints retained; STOPPED early at iter_17 (target was 30). **EVAL (net-vs-net, same v2.8 leaf, deck-paired, NeuralMCTS@200):** iters 02–10 → **keep-best iter_08 = +33.1 elo / paired_z +2.00 vs RoD_iter_01 (n=400)**, vs **`heur@3200_v2.8` = TIE at n=800** (+6.5 wr / −0.38 paired) = reaches deep-heuristic PARITY, does NOT exceed; iter_10 endpoint +21.7/z0.69 ~tie; gain NON-monotonic (the n=100 screens overstated throughout — iter_10's +77.7 screen → +21.7 at n400). **TAIL EVAL (iters 11–17 + early 02/03, after-the-fact):** vs RoD1 n100 screens iter_11 +96.2 / iter_17 +41.9 / iter_13 +17.4 / iter_02 +20.9 / iter_15 +3.5 / iter_03 −3.5 — BUT the decisive **vs keep-best iter_08 head-to-heads** show **NO tail iter beats it**: iter_11 (strongest-vs-RoD1) **LOSES −56.1 / z−1.80** (its +96 was non-transitive noise), iter_13 ties (−13.9/z+0.56), iter_17 ties (+13.9/z−0.74), and the **n=384 top-up of the best contender iter_17 vs iter_08 = +6.3 / paired_z −0.16 = TIE at verdict power** (40-min harness timeout clipped from 400). **VERDICT: the whole chain (early/middle/best/endpoint/tail) hovers at RoD1/heuristic level; iter_08 is the lone 2σ-over-RoD1 point and the keep-best, sitting at heur@3200 parity without crossing it — blocker #2 (learned must EXCEED the heuristic) stands.** MEASUREMENT ONLY — no promotion, **PRODUCTION.yaml + champion (`flywheel2_champion_iter8`) UNCHANGED, v2.7 frozen, v2.8 opt-in.** results.csv `rod_ov_*_n100` / `rod_ov_iter08_vs_rod1_v28_n400` / `…_vs_heur3200_v28_n800` / `rod_ov_iter17_vs_iter08_v28_n384`; harnesses `scripts/rod_v28/{run_overnight_evals,run_screens_vs_base,run_heur_eval}.sh`. **INFRA (this session, separate commits):** (a) **SSH cd-drop = a known Claude Code failure mode** — the model silently omits `cd /path &&` from SSH Bash-tool commands at *generation* (over-applies the "avoid cd" Bash-tool guidance to remote SSH; proven not-external via a plain non-ssh echo that drops the phrase too); CLAUDE.md "Remote command rule" + the PreToolUse cd-hook now mandate & allow **path-stable forms** (`git -C`, absolute paths, `--manifest-path`, wrapper scripts) instead of an inline cd. (b) **2-box work-stealing diagnosed** — the "laptop drops out / truncated screens" was a MISREAD: work-stealing distributes correctly (32/68 laptop/local split on iter17, all games played), the laptop never faulted (no OOM/crash — clean-tally early exits); the n=72/80 clips were a **premature-tally race** in the shared-claim path (`v28_net_vs_net_orch.py` — each box does a one-shot pickup + writes `result.json` when *its own* imap pass ends, with NO completion barrier for the peer's in-flight claimed games) compounded by cross-box CIFS→drvfs file-visibility lag; the data always reached full n on re-tally. **FIX PENDING (no speed-ratio prediction):** keep work-stealing, add a drain-to-completion barrier (re-map remaining until all-N json) + lower `--claim-stale-secs` 5400→~180s so a genuine mid-game death self-heals within a screen.
+- 2026-06-23 (**BATCH-512 CALIBRATION COMPLETE — KEEP BATCH 256: batch 512 in the RoD v2.8 recipe TIES B256 head-to-head but FAILS the parent gate + under-trains the policy; 1.31× speedup not worth it**; full detail `measurement/rod_batch512_calibration/BATCH512_CALIBRATION_REPORT.md` + STATUS; branch `rod_batch512_calibration`, commits `12558b6`→`ba766ea`) — Joshua-directed recipe-calibration probe: can batch **512** replace **256** in the RoD v2.8 continuation recipe (speed motive: the RoD A/B/C measured 512 ≈ 1.29×/epoch faster) WITHOUT weakening the net? Clean controlled experiment — trained `ROD_ITER1_B512_TEST` from the **same frozen iter8 parent** on the **same 1000-game v2.8 self-play data** (dataset fp `61a12d76` IDENTICAL to B256, REUSED not re-gen), `--batch-size 512` the ONLY change (same lr 1e-3 / seed 0 / 3 epochs / leaf / arch; batch treated as a scientific variable per DECISIONS 2026-06-10 "bigger batch = different net"). B512 sha `9cca3edf`, warm-from iter8 `0d355002`. **SPEED: 1.31× wall-clock** (58.2 vs 76.3 min, 3-epoch) but **HALF the optimizer steps** (12,099 vs 24,196). **TRAINING: no collapse (entropy 1.5393) but the POLICY head is UNDER-FIT** — val_pol plateaus at 0.435 vs B256's 0.270 (+61%), stable across all 3 epochs (halved step count at fixed LR; not an epochs deficit); value head unaffected (corr +0.4115). **vs FROZEN parent (net-vs-net, carc-orch SHM work-stealing local W48 + laptop W16, same v2.8 leaf, deck-paired band 1.922e9 = SAME decks as B256-vs-parent): B512 = +10.4 elo / paired z1.65, n=400 — INCONCLUSIVE** (does NOT credibly beat the parent; B256 was +53.4/z3.51 on the SAME decks). **vs B256 DIRECT (THE decider, fresh band 1.923e9): B512 = −1.7 elo / paired z−0.41, n=400 — TIE** (point est −6.9 n200 → −1.7 n400) — **the val_pol under-fit WASHED OUT under MCTS@200** (policy precision ≠ play strength). **NON-TRANSITIVITY (a real ~41-elo result): transitivity predicted −43 (from the +10.4/+53.4 parent margins) but the direct head-to-head is −1.7** — B512 ties validated B256 yet lost B256's specific edge over the parent; corroborates "parent-relative Elo is a non-transitive proxy for sibling strength." **ROOT AUDIT (1000 v2.8 midgame pos, `BATCH_ROOT_AUDIT.md`): B512 plays 0.737 like B256** (MORE than either vs parent 0.65/0.68) = a *less-converged version of the SAME policy*, not degraded; heur3200 agreement flat (Δ+0.010); no entropy collapse; divergence concentrated in the endgame. **INTERPRETATION / VERDICT: KEEP BATCH 256.** B512 is strength-neutral head-to-head but (a) fails the parent gate (the defining RoD-positive result), (b) under-trains the policy, (c) is untested vs the heur ruler where B256 reached parity (non-transitivity risk) — NOT validated as a drop-in; the modest 1.31× speedup is dominated by a safe lever (2-epoch batch-256 ≈ 1.5× at zero risk; val loss flat by epoch 2). A properly LR-rescaled batch-512 is the only future-worth path (a labeled speed variant that must clear the parent gate — NOT this naive same-LR swap). **MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion (`flywheel2_champion_iter8`) UNCHANGED, v2.7 frozen, v2.8 opt-in.** results.csv `b512_vs_iter8_v28_n400` / `b512_vs_b256_v28_n400`; lineage `rod_iter_01_b512` (NOT_CHAMPION).
+- 2026-06-22 (**RoD v2.8 CONTINUATION PROBE COMPLETE — RoD POSITIVE: one continuation iter under the v2.8 leaf BEATS the frozen iter8+v2.8 parent (+53.4/z3.51) and CLOSES the equal-leaf gap to deep heuristic search (parent −38.4 → RoD TIE @n800) = PARITY, NOT exceeded; NOT superhuman**; full detail `measurement/rod_v28_continuation/ROD_V28_CONTINUATION_REPORT.md` + STATUS; branch `rod_v28_continuation_probe`, commits `dbdd4b3`→`c73b58a`) — Joshua-directed small continuation probe ("Revenge of Demis"): does the stronger **v2.8 leaf** (= v2.7 + `meeple_k=2`, the heuristic-v28 survivor) restart self-play improvement BEYOND the frozen `iter8` that the v2.7 substrate had pinned (every v2.7 continuation — deeper-teacher, residual-flywheel plateau — was a powered null)? Recipe held = attempt#2 (warm-from iter8, residual_scale 0.25, sims=200, value_target residual, VLW 1.5, batch256/3ep); the ONLY substrate change = `CARCASSONNE_V25_MEEPLE_K=2.0` in the self-play worker env (legacy LeafConfig field → flat fast path, `_v28_active` stays False; **verified it reaches the MCTS SEARCH leaf** via `run_selfplay_iter.py:354` `replace(DEFAULT_CONFIG,…)` → the visit-count policy targets are genuinely v2.8-guided; **NO code change; v2.7 bit-identical** — reproduction gate `scripts/rod_v28/verify_iter8_v28_parent.py` passed). 1000 v2.8 self-play games (local+laptop carc-orch, 0 failed, 2.12M pos) → `RoD_iter_01` (sha `a8b824df`, warm-from iter8 `0d355002` verified unchanged). **BINDING (net-vs-net, NEW two-server harness `scripts/heuristic_v28/v28_net_vs_net_orch.{py,sh}` — one carc-orch per checkpoint, same v2.8 leaf both sides, deck-paired band 1.922e9): RoD_iter_01 vs frozen `iter8+v2.8` = +53.4 elo, paired z=3.51, n=400** (pilot +70.4/z2.91 regressed) — **RoD POSITIVE, the FIRST continuation to beat its parent.** **RULER (RoD vs `heur@3200_v28`, n=800): TIE** — winrate elo +16.5/z1.34 but paired score margin −0.36/z−0.47 → RoD **CLOSED the equal-leaf gap** (parent `iter8+v2.8` was −38.4 vs the same ruler, row `iter8_v28_vs_heur3200_v28_n200`) to **PARITY**, does NOT exceed deep search (transitivity holds: −38.4+53.4=+15 predicted, +16.5 measured ⇒ the parent-beating is a REAL strength gain, NOT non-transitive). **ROOT AUDIT (1000 midgame pos under v2.8, `ROOT_AUDIT_V28.md`): the +53 is GENUINE POLICY RESHAPING, NOT teacher-imitation** — RoD root-move agreement with heur@3200_v28 = 0.511 vs parent 0.520 (Δ−0.009 ≈0); ~35% of iter8's root moves changed but net agreement with the ruler is flat; phase-dependent (MORE heuristic-aligned in endgame where the meeple term bites, LESS in opening). **INTERPRETATION: the v2.7 leaf WAS a real ceiling (blocker #2) — v2.8 unstuck a continuation gain v2.7 could NOT produce — BUT the DEEPER blocker (learned EXCEEDING the heuristic) is UNRESOLVED: RoD only reached PARITY.** Raising the leaf raised the floor to the heuristic's level, not above it. **NOT superhuman** (hand-crafted leaf, no human/external anchor — still the binding measurement gate). Side: batch A/B/C speed (throwaway, prod unchanged) 256/512/1024 = 1.00/1.29/1.46×/epoch (diminishing; latency-bound only at batch 256; bigger batch = systematically different/less-converged net per DECISIONS 2026-06-10). **MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion (`flywheel2_champion_iter8`) UNCHANGED, v2.7 frozen, v2.8 opt-in.** results.csv `rod_iter01_v28_vs_iter8_v28_n400` / `rod_iter01_v28_vs_heur3200_v28_n800`; lineage `rod_iter_01` (NOT_CHAMPION). **NEXT (recommended): a dedicated larger v2.8 flywheel (branch `rod_v28_flywheel`, warm-from RoD_iter_01) to test COMPOUNDING past parity** (one iter2 too noisy to resolve it); secondary distillation-from-heur@3200_v28; the **external/human anchor** remains the unaddressed superhuman gate.
+- 2026-06-21 (**MIDGAME REFERENCE PROBE COMPLETE: no midgame tool/action-ranker case either — the pre-tool audit's blind spot now measured**; full detail `measurement/midgame_reference/MIDGAME_REFERENCE_REPORT.md` + STATUS; commit `2b24831`) — Joshua-directed follow-on to the pre-tool audit (the corrected `f84eb01`, which re-ran `b4c552c` on scoring-resolved afterstates after finding the per-action deltas were read one half-move pre-scoring). The audit named the **opening/midgame as its blind spot** (raw quantities vary there; no exact-solver labels) and recommended this probe BEFORE any tool-coding. Built a **1000-position midgame sample** — 250 each greedy/heur@3200/hybrid:8:3200/iter8 self-play; 200 each in tiles-remaining bands K=52/40/28/16/10 — by replaying `l23_k4_expand` full-game prefixes to earlier plies (free, all 4 source distributions, no MCTS at gen time). REUSED the corrected scoring-resolved afterstate logic verbatim (no pre-scoring bug) + added bag-aware features from `flat_leaf.decompose` and the v2.7 leaf's own `_deck_city_supply`/`_supply_factor`. **No exact solver at midgame K** → references kept distinct, NONE ground truth: deep-search TEACHER heur@800/1600/3200 (one incremental same-seed tree: first-800-sims-of-3200 == an independent heur@800), iter8 MCTS@200 + policy prior, v2.7-static. All search descends the real fixed deck (clairvoyant-leaning; weaker leakage than endgame, intractable to marginalize). **Verdict — do NOT start the tool branch (same pattern as endgame, sharper):** (1) static **v2.7 explains the deep teacher** — Kendall τ **+0.61** (90% informative), offline diagnostic ranker **0.453** top-1 WITH v2.7 vs **0.147** without (v2.7 std-coef **0.594**, every raw/bag coef ≤0.013); (2) raw deltas **sparse** (~22–36%, τ ~0.22–0.30) — **NOT** more informative than the endgame (refutes the audit's hoped-for midgame variance gain for raw deltas); (3) the **bag-aware/structural features vary a LOT** (open-edge/scarcity 55–62% of positions) **but carry ~zero teacher-aligned signal** (τ **+0.01**) and recover only **~2–6%** of v2.7/iter8 disagreements — a variance trap; (4) where v2.7 errs the fix is **deeper SEARCH** (iter8 recovers ~30% of v2.7 misses; heur@800 recovers ~47% of iter8 misses), not a cheap feature; (5) **90% of disagreement cases are structural/positional** (mirrors the endgame ~82 structural/7 completion). iter8's edge over v2.7 is small, search-mediated, **front-loaded in the opening** (0.61 vs 0.485) and **inverts by pre-endgame** (0.39 vs 0.515) — reproduces CL-027. **The weak gate fails in BOTH regimes now (endgame where tools look worst + midgame where the audit expected them best).** Measurement only — no train/flywheel/promotion; champion stays iter8. Scripts `scripts/midgame_reference/{build_midgame_sample,compute_midgame_features,label_midgame,analyze_midgame}.py`.
+- 2026-06-21 (**L2 K=4 ENDGAME REGRET COMPLETE: iter8 plays the K=4 endgame WORST overall (top-1 0.561 vs heur@3200 0.679) — replicates CL-025 K2/K3 deeper; the pilot's source-split was n=12 NOISE**; full detail `measurement/level2/LEVEL2_K4_PROBE_VERDICT.md` + `K4_PROBE_RESULTS.json` + STATUS) — Joshua-directed expansion of L2-3 from K=2 to K=4 via an EXACT alpha-beta clairvoyant solver (`endgame_solver.py`, gated 0-mismatch vs the no-prune oracle on K2/K3). Balanced multi-source suite: 200 positions, 50 each from greedy/iter8/heur@3200/hybrid:8:3200 self-play (action-replay reconstruction, bit-exact). **187 solved (94%) @1M-node budget; 13 genuine budget-hits (greedy 7, heur 2, hybrid 2, iter8 2) = correct selection-bias data, NOT failures.** top-1 overall: heur@3200 0.679 > heur@800 0.652 > greedy 0.647 > iter8 0.561 (WORST), mean regret iter8 1.48 vs heur@3200 1.07. **The multi-source control DISENTANGLED the pilot's dramatic 0.92-own/0.36-greedy split as n=12 NOISE** → real effect 0.65-own/0.44-greedy (same direction): TWO compounding effects, each ~2-3× smaller — (1) iter8 REACHES easier endgames (iter8-source within1=28.5 near-opt moves / randReg1.1 vs greedy within1=7 / randReg1.9), AND (2) iter8 still handles SHARP/OOD endgames WORST (0.44 greedy-source vs 0.58-0.60; 0.40 on sharp gap≥2, regret 3.34). heur@3200 GENERALIZES best across sources (0.58-0.73); iter8 most variable. Measurement backing for the hybrid-handoff (CL-026). **Engineering this round:** COMPACT blake2b-128 TT key (`6f9dd08`, bit-identical 12/12 incl node counts) — but the HONEST memory lesson is monsters reach ~10.6GB driven by TRANSIENT deepcopy churn in `get_next_state` (the TT is only ~0.04GB of a ~4.9GB solve), so compact keys bought only ~1.5×; **make/unmake (incremental apply/undo, no deepcopy) is the real lever** + the prerequisite for marginalized labels & K=5 (deferred, BACKLOG; ~3-5 day project, helps the solver family only — NOT production MCTS). Local W dropped 5→3 mid-run after an OOM-warn (W=5×~11GB > 42GB). **CL-027.** Measurement gate only — no train/promote; champion stays iter8. Marginalized K=4 + K=5 feasibility PENDING (gated on make/unmake).
+- 2026-06-19 (**L2-3 ENDGAME REGRET (K=2): iter8 plays the endgame WORST — endgame-optimality DECOUPLED from full-game Elo**; full detail `measurement/level2/LEVEL2_L23_VERDICT.md` + STATUS) — Joshua-directed ("go for endgame regret" + detailed spec). Built the program's FIRST NON-circular measurement: an EXACT minimax (clairvoyant)/expectiminimax (bag-marginalized) solver over the final K tiles → ground-truth optimal moves (kills the clairvoyant-label circularity of L1/L2). Brute-force validated (V-brute==reference, V9 value-realized, V2 K1 clair==marg; 9 tests). Suite: 150 greedy-self-play positions/K, band 3.2e9, full provenance. **K=2 result (150 pos, top-1 vs exact optimum, decision positions): heur@3200 0.837 = heur_v1@200 0.837 > heur@1600 0.780 > greedy/heur@800 0.759 > iter8 0.667 (WORST).** ⇒ (1) the full-game Elo champion iter8 is the LEAST precise endgame technician; (2) the weakest full-game agent (v1) ties the best → **endgame-optimality is DECOUPLED from full-game Elo** (kept SEPARATE per Joshua #7); (3) deeper heur search monotonically helps endgame; (4) blunders rare/small (iter8 bidirectional — also optimal where heurs blunder). Hypothesis: iter8's full-game-value policy underweights the last-tile score-squeeze. **Tractability: engine 1.7ms/node deepcopy caps EXACT solving at K=2** (K≥3 needs minutes; make/unmake solver → K=3-6 is future work). **K=3 partial (68 decision pos, clairvoyant): iter8 WORST again (top-1 0.574) → the deficit is DEPTH-ROBUST.** ⚠️ the K=3 run at **W=20 OOM-crashed the 5800x WSL** (solver TTs + heur@3200 trees + nets > 42GB) — 74/150 saved on the share, VM restarted, session reconnected, 0 work lost; memory-bound solver runs need **W≤8-10** (banked `feedback_worker_count_by_bottleneck`). **Joshua #8 — same-band (3.10e9) iter8-vs-heur@3200 DONE: −28.7 elo, 180W/7D/213L=45.9% wr, paired z=−0.70 (tie on margin; winrate z~−1.65).** Completes the MONOTONE same-band ladder **iter8 vs h800 +40.1 / h1600 +24.4 / h3200 −28.7** — iter8's full-game edge shrinks with heur depth and is ERASED by the deepest heuristic (results.csv `l22_iter8_vs_heur3200_b310_n400`; Elo, separate from regret per #7). **Convergence: heur@3200 is BOTH the most endgame-precise (L2-3) AND the heuristic that catches iter8 full-game (#8) — deep search wins on both axes.** **CL-025** (regret) + **CL-024** (same-band ladder extended w/ h3200). Measurement gate only — no train/promote. (Optional: complete K=3 to 150 at W≤8.)
+- 2026-06-19 (**L2-2 DONE: iter8 beats BOTH validated rungs but the scale is NON-TRANSITIVE → same-band control running**; full detail `measurement/level2/LEVEL2_L22_VERDICT.md` + STATUS "Right now") — Phase L2-2: re-ground frozen champion iter8 on the *validated* L1 ladder, NEURAL ⇒ via the **carc-orch SHM eval server, both boxes** (5800x OW48 + laptop OW16/24, shared-claim, CY_REPR; eval_orch.sh; smoke validated parity+timing first). **iter8 vs heur@800 (R4): +40.1/z2.29** (V6 reproduce of published +72.2 / sealed +58.7 — within ~1σ band-variation; apparatus+orch path sound; the n=24 smoke's −29 was small-n noise). **iter8 vs heur@1600 (R5): +34.9/z2.0** — iter8 beats the DEEPER rung too, ~same margin (BETTER than predicted; I expected iter8<heur@1600). **⚠️ NON-TRANSITIVE:** compose with CL-023 (heur@1600>heur@800 +55.2) ⇒ transitivity predicts iter8<heur@1600 by ~15, but iter8 WINS by +35 = ~50elo intransitivity. Either real rock-paper-scissors (cf. CL-016; ⇒ elo not a valid single strength axis — central caveat for the measurement program) or band-variance (3 different bands; iter8 swings ±30/band per CL-018). **NOT decidable from different-band data → same-band transitivity control (band 3.10e9: iter8-vs-h1600 + h1600-vs-h800, n=400 each on shared decks) RESOLVED = BAND-VARIANCE: on band 3.10 iter8-vs-h800 +40.1, iter8-vs-h1600 +24.4, h1600-vs-h800 +20.0 → transitive (40.1−20.0=+20.1 pred vs +24.4 meas). The elo ladder IS a valid total order; the ~50elo "non-transitivity" was cross-band artifact (h1600-vs-h800 swung +55 b3.04 → +20 b3.10, but z≈3.2 both → CL-023 replicates). LESSON: cross-band elo composition unreliable ±30-35; only same-band paired comparisons compose.** **CL-024.** Measurement gate only — no train/promote/redesign/modify-iter8. (Overnight autonomous; Joshua's "keep going, keep using both boxes".)
+- 2026-06-18 (**L2-1 LADDER DONE: ruler NOT saturated — DEPTH (not leaf-design) moves the heuristic ruler; NEXT = L2-2 iter8-vs-validated-ladder on orch**; full detail `measurement/level2/LEVEL2_LADDER_VERDICT.md` + `LADDER_RESULTS.json` + STATUS "Right now") — Level-2 §8.3 saturated-ruler gate. Pure-CPU adjacent-rung matrix (n=200 paired each, fresh bands 3.0e9+, heur rungs at the **production c=1.5** [eval gate's `--c-puct` hits the NET side only; the HeuristicMCTS opponent has always run at the 1.5 default → the ladder's R4 IS the established ruler] + v2.7-env, per-rung leaf-provenance verified; harness `scripts/ladder_rung_eval.py`). **R1vR0** greedy/random +800/z55.6 ✅, **R2vR1** v1@200/greedy +26.1/z1.87 ⚠, **R3vR2** v2.7@200/v1@200 +24.4/z1.68 ⚠, **R4vR3** v2.7@800/@200 +75.9/z3.59 ✅, **R5vR4 (SATURATION GATE)** v2.7@1600/@800 **+55.2/z3.23 ✅ (n=400, topped up from n=200 +70.4/z2.23 per the pre-registered [1.5,2.5] escalation; z strengthened with n).** Findings: (1) **saturation REFUTED** — deeper plain heur search beats the heur@800 production ruler ⇒ the elo scale has real headroom above it (a stronger, cheap, out-of-lineage reference exists by just spending search); (2) **depth, not leaf-quality, drives resolvable heur strength** — the mid-rungs (greedy↔v1@200↔v2.7@200) are compressed ~+25 elo/z1.7, only the depth rungs separate cleanly (refines the old `heurdepth_*` "≈0" read, which used a FIXED-NET opponent; pure heur-vs-heur differs); (3) ladder monotone-in-ordering, no inverted step (no harness bug). **CL-023.** Pure-CPU ⇒ no orchestrator (correct — no net to batch); **L2-2 IS neural ⇒ run on the carc-orch SHM server at high W** (memory `feedback_use_orch_for_eval_and_gen`). Follow-on R5'@3200-vs-@1600 RUNNING (does depth-headroom continue?). **Measurement gate only — no train/promote/redesign/modify-iter8.** Infra side-win: pretooluse hook now blocks the recurring `ssh host '<repo-cmd>'`-with-no-cd slip (`edc44a9`).
+- 2026-06-18 (**CLAIRVOYANCE-GAP MEASURED = small (~27 elo, not ≥100) → numbers transfer to honest play; NEXT = Level-2 ladder**; full detail `measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md` + STATUS "Right now") — First measurement-first experiment (the spec §7 belief-changer). **Step 0** sentinel confirmed production search is deck-order clairvoyant (root value moved 8/8 when only the unseen deck order changed). **Gap** (fresh band 2.7e9, paired, vs heur@800-v2.7, both arms production `best_action`): CLAIR(clairvoyant) **+66.8** [reproduces published +72.2 = harness valid] vs NONCLAIR(K=12 root-determinization, best_action pooled) **+40.3** @ n=182 → paired gap **+26.6 elo z=−0.9** (V1 monotonic; ≤30 minor-contributor gate; ~2σ excludes ≥100). ⟹ clairvoyance is NOT a decision-changing inflation; clairvoyant numbers ~transfer; the non-clairvoyant agent is NOT mandatory for Level 2 → go straight to the saturated-ruler ladder. **CL-022.** Method note: the interim read caught a visit-argmax-vs-`best_action` aggregation bug (~105 elo at sims200/c3.0; clair fixed +70.4 = published, commit `f7ebec3`); harness gained a carc-orch `--shm-eval-server` path (`ad9ad03`) + standing rule (memory `feedback_use_orch_for_eval_and_gen`: default eval+gen to orch+highW). Stopped nonclair at n=182 (Joshua's call; gap stable). Champion unchanged (iter8).
+- 2026-06-18 (**VALUE-RANKING KILL-TEST CLOSED = swing DISFAVORED → PIVOT to measurement-first**; full detail `value_ranking/VALUE_RANKING_VERDICT.md` + STATUS "Right now") — The structural value-head lever (the other fork from the deepteacher policy lever) tested + killed. Arms (leakage-safe by-game split, 1494 nodes, held-out Kendall-τ vs deep oracle): A conv+MSE −0.004 / B conv+rank +0.029 / **C attn+rank (THE SWING) +0.012** / C0 conv-wide (capacity-match) +0.015 / E advantage +0.014 — vs **v2.7 leaf 0.579**. **Architecture C-vs-C0 = z−0.12 (NO effect); ranking-loss B-vs-A = z1.63 (weak).** 4A ceiling: target reliably rankable (oracle self-consistent; v2.7 extracts 0.58) ⇒ all arms fail while labels reliable = **learned-ranking formulations DISFAVORED, not probe-limited** (prod net on millions also ranks 0.081 ≪ 0.58 → scale isn't the unlock). **CL-021.** **Both strength levers (policy-teacher + value-head) now exhausted → PIVOT to measurement-first** (spec `docs/MEASUREMENT_FIRST_SPEC_2026-06-18.md`: 3 levels minimal/robust/ideal; first belief-changing experiment = the **clairvoyance gap**, clairvoyant vs non-clairvoyant iter8 paired, NOT yet run). Champion stays iter8. Infra side-win: cd-proof `scripts/sync_box.sh` sync wrapper (deployed laptop).
+- 2026-06-17 (PM-3 — **DEEPTEACHER CLOSED: clean iter8-vs-iter12 = TIE both planes**; provenance defect found; full detail STATUS "Right now" + `deepteacher_audit/`) — Audit (Joshua's 5-phase order-of-ops): (1) provenance — deepteacher warm-started from **iter8** (hash-verified chain) but its sealed/washout "iter0" baseline was **residual.pt, not iter8** → the "+8.1 tie"/"+82.8 washout" are vs residual, never vs the warm-from; (2) clean re-measure (FRESH band 2.5e9, n=400 paired): iter12 vs iter8 = **+14.6/z0.65 @s200, +12.4/z0.51 @s800 = TIE**. Deeper-teacher hypothesis = **powered-null at the deep plane**; champion **stays iter8**; iter12 NOT promoted. The "iter2 +53.7 over iter8" was band-favorable noise. New claims CL-019 (deeper-teacher tie), CL-020 (baseline defect). NEXT = value-ranking kill-test. **⚠️ CORRECTS the 2026-06-17 "deepteacher SEALED = WASHOUT not plateau" line below — that washout was iter12-vs-residual, not vs iter8.**
+- 2026-06-17 (PM-2 — ORCH-IN-EVAL CONFIRMED + DEPLOYED to the flywheel + cython folded into eval + XEON RETIRED; full detail STATUS "Right now") — confirmed & shipped the 2.24× find below. **Full W-sweep (moves/s, net@800 heur@800, `scripts/ab_orch_eval.sh`, committed `4dc52b6`):** 5800x off W14=**1.95** → orch climbs and **plateaus ~9.3–9.4 from W48** (W40 8.92 / W48 9.25 / W52 9.30 / W56 9.37 / W60 9.39; GPU finally the bottleneck, fwd_busy 32→59%); laptop off→orch climbs to **W28=7.85 but RAM-bound** (0GB avail on the 11GB box; W32 stopped to avoid OOM-wedge) → prod **W26** (2.4GB headroom). **Cython A/B (CARCASSONNE_USE_CY_REPR=1, env-inherits through `eval_orch.sh`/`ab_orch_eval.sh`'s `env $LEAFENV`):** 5800x W48 9.25→**9.78 (+5.7%)**, laptop W26 7.49→**8.04 (+7.3%)** — pure worker-CPU win (fwd_busy unchanged), converts ~directly while the orch eval workers are CPU-bound. **Net: 5800x eval 1.95→9.78 = 5.0×; laptop →8.04.** Eval = 64% of cycle ⟹ **~2× whole-cycle.** **DECISION — DEPLOYED:** `_eval_launch` in `run_residual_flywheel_v2.sh` routes 5800x (W48) + laptop (W26) through `scripts/eval_orch.sh` (TS export → carc-orch → `--shm-eval-server` client → trap-clean), both with `CY_REPR=1` added to `eval_orch.sh`'s LEAFENV; `EVAL_W`=48/26/12. `_eval_launch` is the single chokepoint (covers the keep-best odometer @289/290, sealed @316/317, telemetry gate @231/304). **Smoke PASS** at production knobs (net@200 heur@800 W48: server ready, CY_REPR active in workers, 48 workers, 41 games, no errors; `bash -n` clean both scripts). **✅ PRODUCTION-SIMS NUMBER (net@200 heur@800 A/B, 2026-06-17):** off W14=**8.24** → orch W48=**28.79 (3.49×)** → +cython=**30.32 (3.68× total = production eval speedup)**; cython +5.3%. Smaller than the net@800 5.0× **as predicted** (at net@200 the net is hit ~4× less/move → off baseline far higher, 8.24 vs 1.95 → less context-thrash to collapse); fwd_busy 46–48% at W48 confirms eval-W headroom. Orch wins at every sims plane; **3.68× is the production eval multiple** (the 5.0× was a net@800 upper bound). **Why gen-W (≈28) ≠ eval-W (≈48):** in gen every MCTS node hits the net (high per-worker GPU demand → orch saturates ~W28); in eval the heuristic opponent runs pure-CPU v2.7 MCTS at heur@800 (a CPU sink), so per-worker GPU demand is far lower → the orch server stays underfed (fwd_busy ≤59%) → packs ~2× more workers — expected, not anomalous. **XEON RETIRED (`USE_XEON=0` default):** its weight collapsed once 5800x+laptop got orch+cython eval (it stayed orch-off — Quadro flaky) and it was the #1 cluster-friction source; costs ~10–15% aggregate (mostly gen-side); `USE_XEON=1` re-enlists. (Joshua locked W48 + full-retire via two decisions.) Commits: `4dc52b6` (harness+gitignore) + this deploy.
+- 2026-06-17 (PM — CLUSTER orch+cython DEPLOY + 🔥 ORCH-IN-EVAL ≈2.24×; full detail STATUS "Right now" + memory `reference_carc_orch_verdict`) — **(A) GEN deploy:** laptop SWITCHED to **orch W8** @sims800 (sweep orch W8=24/W12=24 games vs off W12=18 = 1.33x; W8 = best throughput at peak_mem 9.1GB vs the 11.9GB RAM ceiling W12+ hit) + **`CY_REPR=1` on the orch GEN path** (5800x py3.12 + laptop py3.14 `.so` built+reconciled 0-mism). Xeon kept **orch-off W10** (orch tentative ~2x but flaky: stall + server-fail; warm positions/s proxy `orch_throughput_sweep.sh`). Commits `cec4237`/`125f96d`/`59c125f`. **(B) 🔥 ORCH-IN-EVAL = 2.24× on the 5800x** (matched W14: orch 4.7 vs off 2.1 moves/s; `fwd_busy=18%` = server idle = headroom for higher W). **REVERSES the 2026-06-16 'orch eval = tie' conclusion below — that tie was XEON-only (CPU-leaf-bound); the 5800x eval is net-GPU-CONTEXT-THRASH-bound** (orch-off runs N separate net CUDA contexts; orch = 1 shared). **Eval = 64% of cycle ⟹ ~35% cycle reduction** — the biggest lever found this session, and the gen-side wins (orch 1.4×, cython +7%) only touched the 15% gen. Confirm + higher-W sweep RUNNING (`scripts/ab_orch_eval.sh`, moves/s via `CARC_BENCH_TP`). IF confirmed → wire eval→orch (client already built, commit 9068640) + add `CY_REPR=1` (free ~+3-5%, only the net player encodes). **Lesson: don't generalize a per-box bottleneck (xeon CPU-leaf-bound) to other boxes — the regime differs (the recurring theme); the 5800x/laptop eval is GPU-context-bound where orch wins big.** ⚠️ n=1, confirm in flight.
+- 2026-06-17 (deepteacher SEALED = WASHOUT not plateau + PERF FOLDS banked + value-head pivot; full detail STATUS "Right now" + memories `feedback_sims_washout_net_eval`/`reference_training_latency_bound`/`reference_laptop_cluster_access`) — deepteacher (iters 10-12) finished. **SEALED cumulative (iter12 vs iter0, n=400 paired, held-out band 1.7e9, heur@800-v2.7): deck-paired Δ = +8.1 elo, z=0.34 = TIE at agent sims=800** (iter0 already +135 vs heur; the +143 iter12 was INHERITED). Conditionally did NOT launch iters 13-16 (bar Δ≥90/z≥3). **WASHOUT CONFIRMED (re-eval at agent sims=200, SAME decks): Δ(iter12−iter0) = +82.8, z=3.48 = SIGNIFICANT** (iter12 +74.1, iter0 −8.7 reproducing its old −8.69 to the decimal). ⟹ **the net GENUINELY improved (> old attempt2 +67), but the gain is POLICY which deep search washes out — so the sims=800 selection gate was BLIND the whole run (the per-iter "ties" were measurement, not plateau).** **DECISION: not a strength dead-end-by-failure but by WRONG-COMPONENT — for superhuman (deep play) the lever stays a VALUE head that beats the v2.7 leaf (helps at depth, unlike policy); warm future runs from iter12 (strongest net: +74@s200 > prod iter8 +58.75); gate policy at sims=200 (cheap + not-blind), value work at sims=800.** **PERF FOLDS banked** (between-runs boundary): Cython flat-leaf (`f48ffd1`, default-ON + graceful fallback) + O(1) window-offset (`62d3772`), bit-exact-reconciled on all 3 boxes → ~1.5× heur search / ~1.3× cycle (the 2026-06-12 FOLD-WORTHY pair). **NEXT Cython target landed (`1b55721`): `encode_board` → `flat_repr_cy.encode_board_cy`** — after the leaf was ported, encode_board was the largest pure-Python hot-path cost (~15% self/~25% cum); port (per-tile identity cache + `is`-dispatch zero-hash + array union-find + memoryview + `placed_coords` walk) is **bit-exact** (`reconcile_repr_cy.py` 28,988 encodes 0-mism; `tests/test_flat_repr_cy.py`), behind `CARCASSONNE_USE_CY_REPR` (DEFAULT OFF; redirect at the single call site → all prod paths incl orch-worker). A/B **18.25× isolated / 1.275× (−21.6%) single-process end-to-end**. ⚠️ **Production W=14 orch-off A/B (5800x, same-seed 42 games) = NULL: 9.96→10.08 g/min = 1.012× (noise)** — both arms loadavg ~14 but GPU ~82W/90% (~45% board power) = GPU-dispatch-latency-bound, so the encode CPU win doesn't convert orch-off (the 1.275× single-process was real only because 1 worker leaves the GPU idle). Same kills the eval gate (96% net-GPU @s800). **STAYS DEFAULT-OFF — validated zero-risk tool;** carc-orch IS where it pays — **TESTED 2026-06-17 (5800x, warm examples/s A/B at fixed W28, sims=800): cy ON = 1.07× (+7%) over OFF (4899→5241 ex/s, fwd_busy 85→96%)** — the orchestrator leaves server headroom (85%, not pinned) so faster worker-side encode feeds it harder. So REGIME-DEPENDENT (NULL orch-off W14 GPU-dispatch-bound; +7% orch W28). n=1/arm + gen~15% of cycle ⟹ ~+1% net cycle = real+positive but small, doesn't touch strength. STAYS default-OFF; a flip pays only on the 5800x orch gen path (per-box `.so` + CY_REPR=1). Measurement note: sims=800 W28 completed-game windows are intractable (~13min/game → 20-min window completes ~0) — used the warm examples/s proxy (`scripts/ab_orch_cy_repr_tput.sh`). Lesson → memory `feedback_profile_the_production_path`. **#4 TCC-test SKIPPED** (xeon has no native-Windows Python + TCC breaks WSL CUDA; informational). **Session infra:** heal-thrash FIXED (`73d5150`+`4ac840e`: false-stall window, SIGKILL-scoped reap, timeout-ssh, rc124=launched-no-retry), laptop recovered (S3-sleep via hidden lid-close → power fixed + autologin), **WSL-tax RESOLVED — native-Windows == WSL same 5060 Ti (2.62 vs 2.51ms B=1) = Windows WDDM+torch launch NOT WSL; native-Windows port dead, only OS escape = native Linux.** Commits `1b0485a`/`aae8c31` (verdict) → `62d3772`/`f48ffd1` (folds) → `1b55721` (encode-cy port, default-OFF).
+- 2026-06-16 (pm — ORCH-IN-EVAL built + xeon eval-W characterized + xeon FOLDED into the flywheel; full detail STATUS "Right now" + memory `reference_carc_orch_verdict`) — executed the two post-compact decisions from the AM entry below, plus a full eval-W study. **(1) ORCH-IN-EVAL BUILT** — `eval_net_vs_heuristic.py --shm-eval-server` (spawn Pool + worker-id queue → `connect_shm` → `make_remote_single_evaluator`, same v2.7+residual wrapper) + wrapper `scripts/eval_orch.sh`; orch-off path byte-identical. **Verified PARITY_OK** (6/6 games bit-identical orch vs orch-off at matched seeds; TorchScript export parity 1e-9/2e-7). Commit **9068640**. **(2) Xeon eval-W characterized** (game-counts, production leaf, `--heur-leaf v2_7`): orch-off peaks at **W=12** (=12 threads) at BOTH sims=200 and 800, thrash beyond — **CPU-thread-bound** (the v2.7 CPU leaf runs on BOTH the net AND the HeuristicMCTS sides). **orch@W12@800 TIES orch-off** (0.72 g/min both) at **~30% lower CPU load** (8.5 vs 12.1 — orch offloads the net-side forwards to the server). **⇒ xeon eval = orch-OFF W12**; orch doesn't raise throughput on this CPU-bound box (heur-side leaf caps both), and its capacity lever (W>12) isn't worth wiring orch-eval into the flywheel for one box. The matched-W tie also makes the xeon eval a WEAK WSL-latency probe (CPU-bound) → the clean probe is the laptop (`scripts/bench_forward_latency.py`, commit **5cb58f1**, forward-latency vs batch-size: flat ⇒ launch/`/dev/dxg`-tax-bound). **(3) `EVAL_W_<box>` decouple knob** (commit **c8d712e**): eval-W decoupled from gen-W in `run_residual_flywheel_v2.sh` (`EVAL_W_5800X/LAPTOP/XEON`, default per-box gen-W, xeon=12); eval-W=12 > gen-W=10 (modest gain). **(4) XEON FOLDED IN.** Found the deepteacher run (AM entry) had **hung 6h on iter12's selection** (best=iter10; **iter11 REJECTED** Δ−2.0/z−0.06; 2 zombie mains + orphans). Cleaned all 3 boxes + stranded claims, relaunched the resume with `USE_XEON=1` + `TELEMETRY_GATE=0` (the discredited telemetry gate heal-caps ~1h/iter at sims=800). **Laptop went DOWN** mid-cleanup (WSL :2222 AND Windows ssh both unreachable — real box-down) → resume runs on **5800x+xeon**. **PENDING: the SEALED cumulative** (iter12 vs iter0, n=400 held-out) — the verdict for "did 10→12 grow?" — decides extend(START=13)-vs-stop; do NOT extend on the noisy per-iter promotions alone. Commits `9068640`→`c8d712e`.
+- 2026-06-16 (CLEAN GAME-COUNT MATRIX → cluster re-wired → FLYWHEEL RESUMED — full detail STATUS "Right now" + memory `reference_carc_orch_verdict`) — Q (Joshua): the per-box orch verdicts rested on uneven/forward-rate evidence; "start over cleanly, done systematically." **The forward-rate (examples/s) proxy proved UNRELIABLE** — it claimed orch wins on the laptop while game-counts said TIE (it over-rewards orch's high W: those workers inflate forwards but thrash RAM without completing more games). Built an opt-in **per-worker throughput counter** (`CARC_THROUGHPUT_LOG`, `da4621d`, zero-cost when off) for a clean forward-rate, but it has a synchronized-start game-cycle oscillation → reverted to **GAME-COUNTS (ground truth)** on all 3 boxes ×{200,800}×{orch,off}, long windows (`scripts/parse_gamecount.py`, harness `laptop_orch_ab.sh`): **5800x orch ~1.4x** (corroborated by 2 methods+2 sims, z~1.2-1.3 → keep orch W28), **laptop TIE → orch-off W10**, **xeon TIE** (@800 orch W12=12 vs off W10=10, z=0.43, GPU only 36% busy = CPU-leaf-bound → orch-off W10). Gaps 1.0-1.4x; gen=~15% of cycle. **⇒ the xeon's deployed "1.40x" (a forward-rate number) is NOT confirmed by games.** **CLUSTER RE-WIRED** (`run_residual_flywheel_v2.sh`): rebuilt-laptop support (`laptop-wsl` ssh + `/home/doctor` path — was dead `/home/pop`) + `USE_XEON` gate (`4adaed9`), xeon hardcoded orch-off W10 (`d3a19e6`). **FLYWHEEL RESUMED** 2026-06-16 (Joshua's GO: "continue the iters") — deepteacher iters 10→12, 5800x orch W28 + laptop orch-off W10, xeon EXCLUDED (was benching). **iter10 ✅ PROMOTED: Δ+84.0/z=2.17 over iter9 (first ≥2σ promotion — compounding NOT plateaued); best=iter10.** iter11 in selection. **DECIDED (post-compact): (1) fold xeon in at the iter11→12 boundary** (USE_XEON=1, orch-off W10); **(2) build orch-in-eval** (eval=~64% of cycle, the higher-leverage win — `eval_net_vs_heuristic.py` needs orchestrator support added + parity test + a restart). Commits `da4621d`→`d3a19e6`.
+- 2026-06-15 (carc-orch DEPLOYED to XEON + cluster torch standardized — full detail STATUS "carc-orch" block + memory `reference_carc_orch_verdict`) — after the local 1.33x win, extended the orchestrator to **xeon**: copied the binary (same torch 2.11/cu128 → no rebuild; streams bind on Turing, export parity bit-exact). **A/B via a forward-rate probe** (sims-800 games take >12min on the slow Turing → 0 complete in a 720s window, game-counting impractical): orch server `examples/s` scales **2150 (W10, GPU 37% busy) → 2650 (W14) → 3000 (W18, 85%)** = **≥1.40x over orch-off's VRAM-capped W10** (lower bound; orch-W10 ≥ orch-off-W10 via batching). xeon's Turing is GPU-STARVED at W10 (idle 63%) with idle CPU = SAME winning condition as local; NB the bottleneck FLIPS with sims (CPU-bound at 200, GPU-bound at 800). gen_flywheel.sh gate now allows HOST=xeon (per-host W default: 5800x=28, xeon=18); run_residual passes USE_ORCH to the xeon gen launch; end-to-end smoke clean (code-sync→export→server→SHM self-play→4 games). **Production bundle `carc_stage-b-wiring.bundle` regenerated to the deploy HEAD** (it was stale at 110e38d → a resume would revert remotes to pre-carc-orch code). Also **standardized cluster torch to 2.11.0/cu128**: laptop was drifted to 2.12.0/cu130, downgraded via offline cp311 wheels staged on the share (laptop has no internet), pinned in requirements.txt. Laptop stays orch-off (no Rust binary copied yet, but torch now matches → feasible). Commits `f6f99a3`→`b8bc488`. Flywheel still PARKED at iter10 (resume = Joshua's GO; xeon auto-orchestrates via USE_ORCH=1).
+- 2026-06-15 (carc-orch CUDA-streams gambit — full detail STATUS "carc-orch" block + memory `reference_carc_orch_verdict`) — Q (Joshua): reverse the orch-shelve, "make it fast enough to deploy." **Built per-forwarder CUDA streams** (`c10_cuda` C++ shim — tch 0.24 has no stream API; `rust/carc-orch/csrc/cuda_stream_shim.cpp` + `build.rs`, CXX11_ABI=1, CUDA headers from triton's tree) **→ REVERSES the prior orch-off-wins verdict: stream-SHM W28 = 56 games/360s BEATS orch-off W14 = 42 (1.33x, confirmed n=2 on independent seeds, lower power).** Mechanism: orch-off caps at W14 (per-process context VRAM ceiling); the orchestrator runs **W28 on ONE shared context** + streams keep it fed — the prior "CPU-leaf-bound → can't win" read MISSED the W28-vs-W14 worker asymmetry (without streams the default stream serialized → couldn't feed 28 → old 28-35, lost). **W-sweep:** peak W18-28 (~1.33-1.37x, noisy plateau), W≥32 degrades (CPU v2.7-leaf oversubscribes 32 threads), W48 breaks. **SQUEEZE EXHAUSTED — all 3 server-side levers neutral/worse:** cuDNN benchmark (~7% early, drifts + parity risk → reverted), more-forwarders FWD=8 (ex/s capped ~5700), **H2D double-buffer pipeline 0.94x WORSE** (killed by a cheap Python probe `scripts/probe_pipeline.py` BEFORE the ~1-2hr Rust rewrite — the cost-discipline cheap-first pattern). **1.33x is the ceiling** (server has spare capacity; the per-worker CPU v2.7 leaf is the bottleneck — no server-side opt moves games). **DEPLOYED local-only (`d5d8b8e`, Joshua's call):** stall watchdog (`--watchdog-secs`, wedge = jobs-in/no-batches-out → exit(2) loud → flywheel heal-loop restart; verified no false-fire) + `gen_flywheel.sh` orchestrator branch (HOST=5800x + `USE_ORCH=1`: export→TorchScript parity-gated BIT-IDENTICAL→carc-orch→SHM self-play, result-identical priors; smoke-tested 10 games clean) + `run_residual_flywheel_v2.sh` passes `USE_ORCH`/`ORCH_WORKERS` to the LOCAL gen only; STATUS resume recipe now prefixes `USE_ORCH=1`. **xeon/laptop DEFERRED** (no Rust/g++; laptop torch 2.12≠local 2.11 — xeon has same torch → binary could be copied if more gen throughput wanted). NB tch DOES have `pin_memory` (an earlier session note was wrong). Commits `cd949ee`→`708ef84`. No training; flywheel still PARKED at iter10 (resume = Joshua's GO; orchestrator auto-activates via the recipe).
+- 2026-06-12 (pm — throughput-rewrite investigation; full detail BACKLOG "2026-06-12 (pm)" + STATUS top block) — Q (Joshua): "is our code slow / would Cython/Rust help?" → 3 **isolated-worktree** spikes, all **bit-exact validated, OFF/branch-only, NONE folded**. **(a) Cython leaf** (branch `worktree-agent-a1588…`/`dd893e4`, flag `CARCASSONNE_USE_CY_LEAF`): 12.5× isolated; leaf=27% of heur@800 search (py-spy) → ~1.33× search — **FOLD-WORTHY**. **(b) Window-offset incremental** (branch `worktree-agent-aedf22…`/`775a8c0`): O(1) centroid, 4.27×/call, 12.3% of search → ~1.10× search — **FOLD-WORTHY**. **(c) Engine de-objectification** (branch `worktree-agent-a659ae…`/`6050ecd`): cheap-hash coords/sides = **NULL** (~0.9% Amdahl, 0.993 ratio, bit-exact 17,270 plies); full array-rewrite caps ~1.3–1.6× / multi-week → **SHELVED**. **Net: leaf+offset ≈ 1.5× eval search ≈ ~1.3× cycle → fold BOTH at a supervised boundary, skip de-objectify.** **Methodology: profile with py-spy NOT cProfile** — cProfile distorted the map (OVERstated primitive tax 37%→16%, UNDERstated window-offset 8.6%→12.3%); memory `feedback_cprofile_overstates_hot_functions`. **VERDICT: NO throughput rewrite touches STRENGTH** (the v2.7-leaf ceiling / superhuman goal is untouched; gen/train are GPU-latency-bound so throughput isn't even the binding constraint). Flywheel (UPDATE 2026-06-14): iters 3,4,5 REJECTED (plateau vs iter2) then **iters 6,7,8 ALL PROMOTED** (lineage iter2→6→7→8, best=iter8) — the "no compounding" read at iter5 was PREMATURE; climb resumed (each Δ marginal z~1.2; SEALED champion-vs-iter0 verdict pending). Extend-to-12 (chain watcher) vindicated. On iter9, ~Mon AM.
+- 2026-06-11/12 (index-only summary; full narrative in STATUS + results.csv) — **(a) iter8 FOLDED TO PRODUCTION** (`governance/PRODUCTION.yaml`, anchor-checked +67.4/z2.73 vs incumbent on the sealed heur@800 ruler; CL-005 closed Supported). **(b) DEEPER-TEACHER CONFIRMED REAL:** gen-SIMS 200→800 warm-from-iter8 → iter1 NULL, **iter2 +53.7/z2.14 over iter8** (n=400 paired, fresh band 1.3e9; `confirm_iter2_vs_heur800_v27_s800_n400`) — the earlier "deep search does not distill" read RETRACTED; flywheel RESUMED `START=3` (iters 3→6, warm-from iter2) to test compounding → **iter3 REJECTED (−81.0/z=−2.36)**, iter4 in flight. Still a within-v2.7-leaf policy-distillation gain, NOT a ceiling break. **(c) Xeon flap root-caused** = WSL2 idle VM-teardown → self-healing held-ssh keepalive (`scripts/xeon/xeon_keepalive_loop.sh`); `networkingMode=mirrored` ASSESSED → **SKIP** (removes only the portproxy, not the root cause). **(d) compact-leaf numba bench KILLED** (microbench: `_label_components` = 4.7% of build self-time; see BACKLOG 2026-06-09 entry). **(e) replay-window history recorded** (BACKLOG 2026-06-11): `--window` ran live for all 13 pathb_loop iters, deliberately collapsed in selection-gated flywheels; never A/B'd in isolation.
+- 2026-06-10 (pm-3, symmetry-aug A/B RESULT + training-throughput finding) — **NULL: `--augment-rotations` does NOT make a stronger net → shelved.** The pm-2 A/B finished (verdict 23:23). aug_off (1× control) vs aug_on (4× rotated data = 4× gradient steps), both warm-from iter5 on iter8 gen + iter8 recipe, evaluated **n=400 paired vs heur@800-v2.7** (band 2.0e9, scale 0.25): **aug_off +53.4 / aug_on +44.5 → paired EFFECT = −8.9 elo, z=−0.38 = NULL** (slightly negative, within noise; the ±~23 elo paired bar rules out any gain >~+37, can't exclude a small <+15). **SANITY** aug_off vs decomp `sb_iter8_s025` = −19.9 / z=−0.61 → reproduces iter8 within noise = control valid, null trustworthy. **Interpretation:** the net already effectively encodes the 4-fold rotational symmetry, so teaching it via 4× augmented data adds nothing — and the extra 4× gradient steps don't help either, so the pm-2 "4×-steps confound → run matched-steps to disentangle" follow-up is **moot** (turning the flag on as-is simply isn't worth the 4× train cost). **Decision: do NOT fold symmetry aug into production; shelve** (`tests/test_symmetry_aug.py` + the `--augment-rotations` path stay; flag stays OFF). Symmetry was always throughput/prep, never a plateau-breaker → the deeper-teacher experiment (attack the policy) is unaffected and remains the ceiling lever. **Also recorded — GPU-latency-bound training finding (measured):** `train_iter.py` on the 7M net is bottlenecked by per-batch kernel-launch + `.item()` CUDA-sync round-trip *latency*, NOT CPU/workers (idle behind a full prefetch queue) nor GPU compute. Decisive bench: the laptop (i7-14650HX, **1.5× faster** single-thread) trained **~10% SLOWER** than the 5900XT (0.216 vs 0.196 s/batch) — its power-capped mobile 4070m has higher launch latency. ⟹ don't CPU-shop training boxes; more workers / uncompressed npz don't help; the only throughput levers are **(a) one-sync-per-epoch** (accumulate losses on-GPU; strength-neutral, free) and **(b) bigger batch** (strength-affecting via effective-LR → its own mini-A/B w/ LR rescale before trusting; note it only speeds the ~21% train slice of the deeper-teacher cycle, eval is ~64%). Memory `reference_training_latency_bound`. `results.csv: symaug_aug_{off,on}_vs_heur800_v27_n400`; `symaug_ab/eval/SYMAUG_VERDICT.txt`.
+- 2026-06-10 (pm-2) — **Speedup triage + symmetry-aug A/B launched, ahead of the deeper-teacher experiment.** Another thread surfaced two loop speedups; verified both. **(1) Symmetry augmentation** (`--augment-rotations`, 4× rotated training data) was **built + tested 2026-06-02** (C5; `tests/test_symmetry_aug.py`, 16 tests) and left **OFF with NO kill decision** (BACKLOG: "to USE pass `--augment-rotations` at the Stage-B retrain" — never switched on, never A/B'd; just queued behind everything). **(2) Async flywheel loop** (`docs/ASYNC_FLYWHEEL_DESIGN_2026-06-10.md`): measured phase split gen 15% / train 21% / **eval 64%** (the in-loop heur@800 selection); async packing + two eval-cost cuts (don't re-play the champion each iter; SPRT-style accumulate-until-significant — NOT naive peek-until-p<0.05, which inflates FPs the project has been bitten by) ≈ 2× iter-rate. **Framing (mine, Joshua agreed): both are throughput multipliers, NOT plateau-breakers** — the policy plateaus on TEACHER quality, so faster iters reach the same ceiling faster; their value is making the (more expensive) deeper-teacher run affordable. **Decisions (Joshua):** fold iter8 to production first → then a single-lever deeper-teacher experiment; settle speedups before that experiment; **async ON HOLD pending the 5800x VRM fix** (needs trustworthy per-box W-throughput; symmetry does NOT — it's a relative A/B where throttling only slows training, can't bias the winner) → **symmetry A/B first.** **Symmetry A/B (running):** aug-ON (5800x, 4× data) vs aug-OFF (laptop), both warm-from iter5 on `iter8_data`, iter8's recipe, 3 epochs, only the flag differs; readout = h2h aug-on-vs-aug-off (net@200, deployed v2.7+0.25·Δ leaf, paired n=400) + sanity aug-off-vs-iter8 (~tie validates reproduction + controls the GPU confound). Tests "turn the flag on as-is" (4× steps included), not symmetry-in-isolation; a matched-steps follow-up (aug-off @12 epochs) disentangles if it wins. **⚠️ OOM bug found (first-ever end-to-end run of `--augment-rotations`):** the in-loader augment (`warmstart.py:608`) 4×-`np.concatenate`s each file INSIDE every DataLoader worker → at `--num-workers 12` it OOM-killed the 5800x (and at 2 workers GPU-starved at 1% — the per-row yield of 4× rows can't feed the GPU); the 16 unit tests cover the transform, not the loader memory model. **Fix:** pre-materialize the 4× data to disk once (`augment_with_rotations`+`GameDataset.save` → `symaug_ab/iter8_data_aug4x/`, validated 4.00×), then train via the normal path (no `--augment-rotations`); aug-ON now runs this on the 5800x, GPU 94–96%, no OOM. For production symmetry use: pre-materialize per-iter or make the streaming augment memory-bounded (rotate per-row, not whole-file concatenate). Live handles in STATUS (watcher `bguaorc5g`, `/tmp/run_symaug_h2h.sh`).
+- 2026-06-10 (Track-B flywheel attempt #2 CONCLUDED — SIGNIFICANT but BOUNDED) — **The residual flywheel produced a real, properly-powered cumulative gain, then plateaued; stopped at iter10 on Joshua's call.** Run `flywheel_residual_attempt2` (12 iters planned, external keep-best on heur@800-v2.7 paired, flat leaf from iter5). **Trajectory:** champion lineage iter0→2→4→5→8; per-iter external Δ(new−best): iter1 −17.5✗ · iter2 +32.1✅ · iter3 −19.9✗ · iter4 +31.8✅ · iter5 +43.6✅ · iter6 −33.2✗ · iter7 −21.0✗ · iter8 +3.6✅(noise, margin0) · iter9 −28.2✗ · iter10 −46.2✗. So a **clean 3-promotion climb iter0→5, then a 5-iter plateau (iter6–10 all within ~1.5σ of iter5, trending mildly down)**. **SEALED HEADLINE (held-out band 1.7e9, n=400 paired heur@800-v2.7, champion iter8 vs iter0): +67.4 elo / z=2.73 = SIGNIFICANT** (iter0 −8.7 / iter8 +58.7 vs the heuristic). Clears the charter's cum-≥+45 bar; **strongest pro-compounding evidence the project has produced**, well above attempt #1's null (+14.3 cum) and better-powered than the mid-run 5v0 (+40.6/z1.26). **Two honest caveats:** (1) **BOUNDED** — the gain was banked by iter5 and saturated; this is real *bounded* compounding, NOT open-ended self-improvement toward superhuman. **(⚠️ MECHANISM CORRECTION 2026-06-10 pm, external review — my first writeup of this entry was wrong):** I attributed the plateau to "the value head stopped bootstrapping (flat corr) + the tanh-cap." Both are WITHDRAWN: the tanh-cap is **falsified by my own S-R3-1 scan** (2.6M targets, std 0.071, 0% with |Δ|>1, saturation 0.013% of MSE → clip/linear-head would do nothing), and the flat ~0.49 corr is **residual-vs-residual (mislabeled, not value-vs-outcome)** and can't identify the cause anyway. **The plateau cause is UNIDENTIFIED**; v2.7-anchoring is a live-but-untested hypothesis → resolve via a plateau decomposition before choosing any lever. (2) iter0's absolute vs heur swings by deck band (−8.7 sealed / +22.6 5v0 / +52.5 attempt#1) so this band drew iter0 low; deck-pairing is internally valid but the **honest cumulative gain is ~+40 to +67** (5v0 & sealed bracket it), both real, sealed says significant. **Decision: skip iters 11–12** (plateau clear → ~zero info) **but run the pre-registered sealed on iter8 anyway** (the deliverable, doesn't need the remaining iters). **Claim recording (dual, per external review — don't bury a real result under the unmet grand version):** **CL-011** (strict = *sustained monotonic* compounding) stays **Provisional/not-met** (it plateaued). **NEW CL-018** = "residual-guided self-play yields bounded multi-generation compounding on held-out eval" = **Supported** (sealed n=400 +67.4/z2.73, corroborating 5v0 +40.6, gain accumulated over ~5 gens then saturated). `results.csv: flywheel2_SEALED_{iter0,champ_iter8}_vs_heur800_v27_n400` + `flywheel2_cum_*` (5v0); `flywheel_residual_attempt2/{SEALED_VERDICT.txt,selection.csv}`. **Next:** (a) bank the win — promote iter8, freeze lineage/manifests/sealed panel, update baseline, don't reuse the sealed decks for lever-selection; (b) **plateau decomposition** (eval-only, across iter0/3/5/8/10) to find which ceiling binds — policy absorbed residual / residual stopped improving / both saturated at the heuristic / the ruler became the constraint — **THEN** pick a lever (NOT the falsified tanh fix). **→ DECOMP RESULT (2026-06-10 pm, Stages A+B, eval-only; [docs/PLATEAU_DECOMP_2026-06-10.md](docs/PLATEAU_DECOMP_2026-06-10.md)): the gain is the POLICY.** Stage A (sibling-ranking probe iter0/5/8): raw value head ranks at chance (τ≈0) at every checkpoint, never improves → locally inert. Stage B (policy-only scale0 vs residual-on scale0.25, band 2.0e9 n=200): policy-only climbs iter0 +10.4 → iter5 +52.5 → iter8 +54.3; full lineage gain iter0→8 = +46.4, of which **+43.9 is policy and only +2.5 residual**; residual marginal is a flat static ~+22 (non-growing). Policy gains +42 by iter5 then +1.8 → **the policy plateaus at iter5 = the flywheel plateau.** ⟹ **CL-011's residual-COMPOUNDS mechanism is REFUTED** (the residual is a static additive; what compounded was the policy, then saturated); CL-018 stays Supported but is **reattributed to policy distillation**. Stage C (ruler test) not needed. **Ceiling lever = attack the POLICY** (stronger/deeper self-play teacher — deepsearch +35.8 precedent — opening/deck diversity, stronger gen-time search); value-head/residual tweaks are dead ends. `results.csv: stageB_decomp_*`.
+- 2026-06-10 (5v0 cumulative anchor) — **Added a mid-run champion-vs-iter0 cumulative check (Joshua, after asking "why aren't we testing this each iter").** The per-iter selection Δ is *new vs the PREVIOUS champion on a rotating band* → those marginal steps do NOT compose into cumulative-vs-iter0 (cross-band deck variance swamps absolute elos), so the marginal chain **cannot distinguish genuine compounding from non-transitive (RPS) churn**, and we had zero direct evidence iter5 > iter0. 5v0 = iter5 vs iter0, paired heur@800-v2.7, fresh band 1.5e9, n=200 → `Δelo(iter5−iter0)`. Why not every iter automatically: cost + the sealed 1.7e9/n=400 at iter12 stays the unbiased final word. **Logistics constraint discovered:** 5v0 and the flywheel **can't co-locate on any box** — the 5900XT is DRAM-bandwidth-bound, so train + heur@800 eval throttle each other to a crawl (38 s/game → 10+ min; epoch 10→18 min), and the laptop's 8 GB GPU OOMs hosting both; the agent net is too heavy for laptop CPU. ⇒ run 5v0 only while the flywheel is **paused** (burst at the iter7→iter8 boundary). Parked at 71/200; burst script `/tmp/run_5v0_burst.sh`. **→ RESULT (2026-06-10 01:17, flywheel paused at iter7→8, local W14 + laptop W20 contention-free):** iter0 **+22.6** elo (z0.89) · iter5 **+63.2** elo (z2.85) · **deck-paired Δ(iter5−iter0) = +40.6 elo / z1.26 / 100 decks = PARTIAL compounding.** Middle of the pre-registered bands (compounding ~+80–100; RPS ~0–30): the marginal chain (iter2 +32 · iter4 +32 · iter5 +43 ≈ +107 if additive) **transferred ~+40 cumulative (~40% of the naive sum)** → a **real directional gain, NOT pure RPS churn**, but with substantial non-transitivity and underpowered at n=100 (paired z1.26 = directional, not significant). The champion is genuinely stronger than iter0 (iter5 clears the heuristic at z2.85, iter0 only z0.89). Read alongside iter6 + iter7 BOTH rejecting vs iter5 → **real gains through iter5, now plateauing**; the sealed n=400 at iter12 is the unbiased final word. `results.csv: flywheel2_cum_iter{0,5}_vs_heur800_v27_n200`. (Aside: iter0 +22.6 here vs the attempt-#1 odometer's +52.5 same-net/opp/band — ~1.2σ at n=200; the deck-paired Δ controls for it.) Flywheel resumed at iter8 immediately after (warm from iter5).
+- 2026-06-09 (leaf-deploy) — **Flat leaf turned ON mid-attempt-2 (iter5 selection onward), Joshua's call ("deploy now, resume iter5").** Merged `leaf-rewrite`→`stage-b-wiring` (`ea70fbf`, default-OFF inert), flag `CARCASSONNE_USE_FLAT_LEAF=1` in `gen_flywheel.sh:28` (gen) + `run_residual_flywheel_v2.sh:40` ENVV (eval), commit `1682797`; remotes bundle-synced. **Why safe mid-run:** bit-exactness independently re-verified before deploy (fresh-seed reconcile 0 mismatches; pytest green; production-redirect probe 20/20 fired, value-diff 0) → the iter1–4 (naive) ↔ iter5+ (flat) chain stays comparable; the only change is canonical-fsum semantics (~7e-5 of evals ±1, within existing cross-process FP noise). **Why now vs next-experiment:** the run was paused and needed a restart regardless, so the cross-box ~+8% on the remaining ~7 iters is ~free (the runbook's own "<1.3× → defer" tree was overridden by the zero-disruption restart). `USE_COMPACT_LEAF` stays OFF. Runbook: docs/FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md; switch point logged in STATUS.
+- 2026-06-09 (leaf) — **Compact flat-union-find leaf rewrite (branch `leaf-rewrite`, default OFF): LOGIC-EXACT (0 mismatches over 935k farm + 580k city partition + 14.4k score + 28.8k base-value checks), and it surfaced a PRE-EXISTING leaf nondeterminism — the v2.7 closure bonus sums non-associative floats in hash-seed-dependent SET order, so the same position gets different `virtual_score_v2` ints across workers in ~1e-4 of evals (±1 pt; 2 flips in one process, 12 in another; ULP-scale ≈1e-15 reorder tipping banker's rounding at exact-.5).** Added `CANONICAL_BONUS_SUM` (math.fsum, default OFF) → 0 flips, true bit-exact AND deterministic. Compact is NOT yet a measured speedup (pure-Python core; the deferred numba/Cython Phase-4 bench was subsequently **KILLED 2026-06-11** — microbench showed the compilable core is only ~4.7% of build self-time; see BACKLOG 2026-06-09 entry — and the compact approach itself was superseded by the deployed flat leaf, entry above). Gate `scripts/reconcile_compact_leaf.py`; see [docs/COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md](docs/COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md). Full entry below.
+- 2026-06-09 — **CPU upgrade (5800X→5900XT, 16C/32T): self-play is RAM-BANDWIDTH-bound, NOT core/thermal/OOM-bound → W≈16 optimum UNCHANGED; the extra 8 cores give ~0 for self-play (same dual-channel DDR4 bus as the 5800X).** Trigger: CPU swap + suspected VRM thermal throttling → worker sweep (Joshua's 14/24/30, refined to a full W=1..30 scan). **Root cause of "no gain over the 5800X": memory bandwidth, directly demonstrated** (tooling committed; run dirs `/mnt/c/carc-shared/wsweep_thermal`): **(1)** per-worker self-play throughput erodes *smoothly* from W=4 — 100/99/84/66/43/37/34% of the W=1 rate at W=1/2/4/8/14/16/18 — a shared-resource signature, NOT a core-count cliff (a core limit would hold ~100% to 16 then drop). **(2)** a pure-memory microbench (`scripts/bw_scaling.py`) saturates at just **2–4 threads ≈ 40 GB/s** and *degrades* to ~24–28 GB/s under many threads (Zen3 2-CCD→shared-IOD arbitration penalty); the DDR5 laptop holds ~53 GB/s flat by contrast. **(3)** a clean in-cache SIMD bench (`bw_fpu.py`) scales **+40% from 16→32 threads** — so the CORES have headroom; the wall is the DRAM bus, not the cores or SMT. **(4)** effective clock (Windows `\Processor Information % Processor Performance`, the only throttle gauge reachable from WSL — no IMC/uncore counters, no temp sensors under Hyper-V) **held 117–133% (~3.9–4.4 GHz) across every run including sustained back-to-back load → NO VRM throttling** (a hot VRM that doesn't drop the clock costs 0 throughput; throttle ≡ clock drop, which never happened). **(5)** swap stayed flat except W≥28 (per-worker ≈ **0.9 GB**, background/MCP ≈ 10 GB, 36 GB cap; W=30 overshoots → swaps ~2 GB). **Cross-box natural experiment (decisive):** the DDR5 laptop (i7-14650HX, **same 16 cores**, DDR5-4800 dual ≈ **1.9× usable BW at load**) peaks at **W=20 > its core count**, vs the 5900XT's W=16 = core count → **peak-W tracks bandwidth-per-core, not cores.** So the 5900XT ≈ the 5800X for self-play (both dual-channel DDR4-3200); no AM4 CPU swap could move it (reconciles Joshua's "5800X SMT helped at W=14": on 8 cores the same ~40 GB/s left headroom for SMT workers; on 16 cores it's already saturated at W=16). **Config fix:** `.wslconfig` was STALE from the 5800X era (`processors=16`, `memory=32GB`) → bumped to `processors=32`, `memory=36GB` (host has **48 GB** physical; `memory=` is a ceiling not a reservation [verified: `vmmemWSL` held ~8 GB of the 32 cap, Windows saw 29.8 GB free]; 36 fits W≈30 swap-free while leaving Windows a 12 GB floor; `autoMemoryReclaim=dropcache` returns it after runs; needs `wsl --shutdown` to apply, done). **Levers tested & KILLED:** more workers (BW wall — W=24/28/30 ≤ W=16); **thread-pinning** (`OMP/MKL/OPENBLAS_NUM_THREADS=1`+torch — A/B: **−14% at W=16, −3% at W=24**; the ~35 threads/worker productively use the spare logical CPUs, pinning wastes them; so the "560-thread oversubscription" is a non-issue); **CCD/chiplet pinning** (WSL flattens topology to ONE L3 / one package — the 2 CCDs are invisible to the guest, `taskset` can't target them; and low-EV regardless since both CCDs share the same dual-channel DRAM controller). **Real self-play levers (deferred, for if gen speed ever gates):** faster RAM (3200→3600 ≈ +10%, fiddly on the 4-DIMM mixed kit), the **cluster** (3 independent memory buses; the DDR5 laptop is the best per-core engine), a **compact/cache-friendly leaf rewrite** (cut bytes/sim → raise the saturation point → finally let the extra cores help self-play; BACKLOG "2026-06-09 — Compact leaf" entry — NB there are no numbered BACKLOG entries), and **`train(N) ∥ gen(N+1)` overlap** (the GPU is mostly idle during gen — it's CPU-leaf-bound — so a GPU train slots into that idle time across iters; not within one iter — gen→train→eval is a hard data chain). **Scope:** governs the two CPU-MCTS phases — **self-play (gen) and eval/gate** (same v2.7 leaf, same wall); **training is GPU-bound and untouched.** **Production knob: NO CHANGE** — the launcher's `W=14` is already on the flat W=14–18 plateau (differences inside the ±15–20% run-to-run noise; W=16 absolute ranged 13.75–16.87 pos/s across runs). Tooling committed: `scripts/{sweep_w_thermal,scan_loww,sweep_w_mcpswap,bench_threadpin,measure_worker_mem}.sh`, `scripts/{analyze_w_thermal,bw_scaling,bw_fpu}.py`. No training; no model/eval/leaf changes.
+- 2026-06-08 (pm-3, EDT) — **Attempt-#2 pre-flight: both research decisions settled by CHEAP measurement (no cluster); attempt-#2 launcher BUILT (not launched).** Joshua's recipe: pre-flight (fix restart+seed hygiene, guarantee the external odometer on every exit, run the leaf comparison + residual ablation, freeze choices) → then a fixed-3-iter attempt #2 with EXTERNAL keep-best. **Pre-flight resolved both experiments without spending cluster (the "run the cheap option first" discipline):** **(1) Residual-output ablation (S-R3-1) is EMPIRICALLY DEAD** — scanned the residual target Δ across **2.6M positions** (flywheel iter1/iter2 + lever_seq residual_data): std **0.071**, p99 **0.27**, **|Δ|>1 in 0.00%** of rows (max 1.369, a handful), saturation = **0.013% of the MSE budget**. The tanh head [−1,1] never saturates (Δ lives near 0); clipping/linearizing changes nothing → **FROZEN: raw Δ + tanh head, unchanged.** The real residual lever is the SCALE, not the head shape; scale **0.25 confirmed +37.6 marginal** (clean r4 +62.0 → r5 +99.6, n=1200) → Joshua: keep 0.25, no sweep. **(2) Leaf comparison (CL-010) was already measured on the clean ruler (2026-06-07, n=400 paired):** pure leaf gap heur-v2.7-vs-v1 = **−24.4 ± 16.5 (1.5σ = INCONCLUSIVE)** — v1 nominally the stronger standalone leaf but unresolved at n=400; the combined net beats BOTH leaves at matched compute (iter_11 vs v2.7 +89.7 / vs v1 +35.7; Stage-B vs v2.7 +34.9 / vs v1 +24.4). v2.7 is the fully-tuned ecosystem (CAP=12, DROP_THREE_OPEN, residual lineage, +86.9 Stage-B); switching to v1 forces a full re-tune → **Joshua: KEEP v2.7** (v1-leaf = a separate future fork, not a pre-flight). **BUILT `scripts/run_residual_flywheel_v2.sh`** (the attempt-#2 launcher; `bash -n` clean, TALLY-parse verified against real attempt-#1 odo data). KEY changes vs attempt #1, each fixing an attempt-#1 failure mode: **EXTERNAL keep-best** — the warm-from is chosen by a DECK-PAIRED heur@800-v2.7 (out-of-lineage) head-to-head new-vs-best on the iter's ROTATING band (`odo_paired_tally.py` TALLY line → promote iff paired Δelo > KEEP_MARGIN), NOT the discordant in-lineage gate (attempt #1's gate kept iter1 +40 and discarded the stronger iter3 +66.8); the **heur@200 gate is demoted to TELEMETRY** (logged, no authority to crown/terminate); **FIXED 3-iter run, NO plateau-stop**; **distinct self-play decks per iter** (`gen_flywheel.sh` gained a `SEED_START` env, default 0; the launcher passes `it*GAMES` → 400/800/1200) + **rotating selection decks** (SEL_SEED_BASE 1.2e9 + it·stride) + a **SEALED held-out confirmation** (1.7e9, n=400) on the final champion vs iter0; **all per-iter ckpts retained**; the external odometer cannot be skipped (selection runs inline every iter, sealed confirmation runs after the loop unconditionally incl. on a DEADLINE break — fixes attempt #1's D-S7 skip structurally). All hardened helpers (heal-cap, kill-pool-before-relaunch, claim-age-30min, `_ssh_bg` rc=255 retry) carried over. Workers 5800x=14 / laptop=20 / xeon=10, all `nice -n 19` (Joshua). **NOT LAUNCHED — Joshua: "build but don't launch until I tell you."** Frozen recipe: [docs/ATTEMPT2_SPEC_2026-06-08.md](docs/ATTEMPT2_SPEC_2026-06-08.md). No training performed.
+- 2026-06-08 (pm-2, EDT) — **"Fix all outstanding bugs" pass → v2.7 leaf confirmed SOUND; ≤2-attempt budget LIFTED.** After the flywheel null, cleared the entire safe/mechanical review backlog (commits `3699605` + `29d37f4`, pytest green, bundle current): **D-R4-1** (warmstart train/val leak → unique-path split, +regression test; byte-identical at mix=0.0), **D-S5** (h2h leaf-config cache-collision → `.leafconfig.json` stamp + startup hard-fail), **D-S1–S7** (restart batch applied LIVE — heal-cap, kill-pool-before-relaunch, claim-age 4→30min, best.pt fail-loud, odometer-before-plateau-break, + new `_ssh_bg` rc=255 retry; `next.sh` removed), **D-R4-2** (auto_chain count/tally → clean-namespace seeds), **D-R3-2** (corr printout relabel in residual mode), **5 launcher seeds→1e9** (run_pathb GATE_SEED, scaling_curve, ladder_highsim, rank_sweep, lever_sequencer — no more guard-hang on reuse), **D16** (a board-edge unfinished city with 0 in-bounds open positions no longer gets a 100% closure bonus, both leaf call sites), **D2** (phase compared by `GamePhase` enum, not a `"tiles"`/`"meeples"` string literal, in board_repr/features/warmstart). **The v2.7 leaf is SOUND:** D16's trigger (a city chain reaching the edge of a 35×35 board in a ~72-tile game) is practically unreachable → the leaf/ruler change is negligible, no cap re-sweep needed; **D3** is NOT a bug (intentional asymmetric-cap denial feature, equal in production → antisymmetry holds); **D1** (TILES/MEEPLES ref-tile encoding) was ALREADY resolved 2026-05-29 as intentional (`board_repr.py:321-329`) — I'd mislabeled it "D2, retrain-gated" earlier in the session and corrected REVIEW_LOG + RESTART_BATCH. **No open code bugs across all five review rounds.** **BUDGET CHANGE (Joshua):** the charter's **≤2-funded-attempts cap is RELAXED** — fine with **~10 more iters** of flywheel/research iteration; the pivot-to-Track-A clock is PAUSED (`PROJECT_CHARTER.md` "Pivot/abandonment budgets" updated). **Attempt-#2 recipe (decision PENDING):** (1) gate keep-best on the out-of-lineage **odometer**, not the discordant in-lineage gate — the #1 attempt-#1 lesson (it discarded the stronger iter3 +66.8); (2) **S-R3-1** residual tanh-cap (clip Δ to [−1,1] or linear head); (3) per-iter deck diversity; (4) CL-010 leaf-choice. No training launched.
+- 2026-06-08 (pm, EDT) — **Track-B flywheel attempt #1 (`flywheel_residual_v2`) = NULL out-of-lineage → CL-011 stays Disfavored, now on the clean matched-v2.7 ruler.** The 12-iter residual flywheel (warm from the residual net; per iter: 3-box residual self-play [leaf=v2.7+0.25·Δ, value_target=residual] → train → gate scale-curve vs HeuristicMCTS@200-v2.7 → keep-best @+15 margin, plateau-stop on 2 flat) **plateau-stopped at iter3** @ 12:25 EDT. **Gate (in-lineage vs heur@200-v2.7, n=400):** iter0 **76.8** → iter1 **106.6 (best, +30 — the one significant climb)** → iter2 **99.0** → iter3 **116.2** (the high-water by point estimate, but +9.6 over iter1 < the +15 keep-margin = within-noise tie at σ≈18 → 2 flat iters → plateau). So in-lineage: ONE real step then drift buried in noise. **THE VERDICT (out-of-lineage, deck-paired):** `best.pt`(=iter1) vs **heur@800-v2.7**, n=200, seed 1.5e9 = iter0's IDENTICAL decks → paired: **iter0 +52.5, best +40.1, Δ(best−iter0) = −12.4 elo / z=−0.42 = a WASH (B≤A).** The +30 in-lineage gate climb **did NOT transfer** to the stronger out-of-lineage reference — the textbook **overfit-to-the-gate** signature (the net got better at beating its heur@200 co-adaptation opponent without getting stronger vs a harder one). *(iter3.pt — the actual HIGH-WATER net (116.2 in-lineage) that the +15 keep-margin REJECTED — odometers at **+66.8**, the STRONGEST of the three out-of-lineage: iter3−iter0 = **+14.3/z=+0.49**, iter3−best = +26.7/z=+0.72, BOTH within noise at n=200.)* **→ CL-011 stays Disfavored (conf medium→high).** Even the strongest signal (iter3 high-water) is +14.3 over iter0 = z=0.49 within noise AND, at face value, +14.3 cumulative over 3 iters = **+4.8/iter ≈ 3× SHORT of the charter +15/iter & cum-+45 bar** → fails regardless of significance. **Two honest nuances beyond a flat null:** (a) the high-water point estimate IS the best of the three out-of-lineage → the signal is **positive-but-underpowered, not negative** (n=200 can't resolve +14; ~n=1500 would — but +4.8/iter is below-bar anyway, so not worth the cluster); (b) the **in-lineage gate is a DISCORDANT proxy** — iter1 was +30 IN-lineage but −12 OUT-of-lineage vs iter0 — so the keep-best +15 in-lineage margin **SELECTED THE WRONG net** (kept iter1 +40.1, discarded the stronger iter3 +66.8). 2nd attempt null overall (the 2026-06-07 attempt was null too, pre-clean-ruler). **Attempt-#2 levers:** gate keep-best on the ODOMETER not the noisy in-lineage gate; + S-R3-1 (residual tanh-cap), deck diversity. **R5 live-code audit** (6-surface multi-agent, adversarially verified, same session): shell/provenance/training surfaces **CLEAN**; 3 eval-layer findings — #1 re-confirms D-S5 (h2h leaf-config cache key, latent, h2h done), #2/#3 NEW but **LOW** (`odo_paired_tally.py` seat-count guard + `eval_iter_head_to_head` paired-odd seed-range off-by-one), both fixed result-neutral. **Nothing result-affecting was missed.** The residual value head is a confirmed **STATIC** asset (CL-004 Supported, +37.6 marginal) but **does NOT compound** via self-play co-adaptation. **CL-005 unaffected** — that's about the *static* residual net (iter0, +52.5 odometer), which the flywheel neither improved nor harmed; its production fold-in still gates on a clean n≥400 out-of-lineage confirm + the leaf-choice (CL-010). **BUG found + fixed (D-S7):** the iter3 odometer was **SKIPPED** — the plateau `break` lived before the per-iter odometer block, so the terminal iter's out-of-lineage signal (the single most important number) never ran; **recovered manually** via `scripts/odo_oneshot.sh` + `odo_paired_tally.py` (deck-paired tally), and **fixed** in `run_residual_flywheel.next.sh` (break now after the odometer; odometer also fires on any terminal iter, not just the ODO_EVERY cadence) + documented in `RESTART_BATCH.md`. Commit `61e4fcc`. **This was attempt #1 of the ≤2-attempt P-B charter budget** — attempt #2 levers (decisions, not mechanical): **S-R3-1** (residual target Δ∈[−2,2] saturates the tanh value head [−1,1] → high-signal residuals under-learned — the top lever), per-iter deck diversity, and the v2.7-vs-v1 leaf-choice (CL-010). `results.csv: flywheel_v2_odo_*`. Run dir `/mnt/c/carc-shared/flywheel_residual_v2`. No further training launched.
+- 2026-06-08 (overnight, EDT) — **AUTO-CHAIN: h2h verdict `residual_wins` (+34.2/z=4.0, n=1500); a multi-agent pre-launch review caught an R1-REDUX before it ran; Track-B flywheel #1 launched (training, Joshua-authorized).** Joshua: "wire up those shits to auto launch." Built `scripts/auto_chain_h2h_flywheel.sh` (detached orchestrator): wait the running PROTOCOL_002 h2h → deck-paired tally → fire the n=1500 top-up **iff** 1.3<|z|<2 (pre-registered band) → write `AUTOCHAIN_VERDICT.json` → launch the flywheel. **H2H RESULT (eval-only):** n=400 **+29.6/z=1.77** landed in the escalation band → auto-escalated → n=1500 **+34.2 ± 8.5 / z=4.00 = `residual_wins`** (815/17/668 over 750 decks; thin win-rate edge, avg +0.41 pts/game; independently re-tallied, exact match). → **CL-002 Disfavored** (its named falsifier fired), **CL-017 Supported** (residual net = strongest established agent, in-ecosystem), **CL-005 Provisional** (agent-comparison gate passed; production fold-in still FORBIDDEN until the clean out-of-lineage odometer). `results.csv: cleaneval_h2h_residual_rs025_vs_iter11_s200_n1500`; `PROTOCOL_002` RESULT filled. **PRE-LAUNCH REVIEW (multi-agent workflow, adversarially verified — 16 confirmed):** the load-bearing catch was an **R1-REDUX** — the flywheel gate AND the out-of-lineage odometer defaulted to `--heur-leaf v1` while the net runs v2.7 (mismatched opponent, the exact bug the clean-eval effort exists to kill); had it run, the "vs heur@800" odometer would have measured the WRONG opponent and could have falsely shown CL-011 flipping. Plus keep-best **nan-corruption** (gawk treats `nan>x` as TRUE → a degenerate gate could be promoted as "best" and burn the run). **FIXED + committed `702781e` BEFORE launch:** `--heur-leaf v2_7` on all 6 eval calls; continuity-corrected gate_elo (never nan) + `-9999` sentinel + string-based nan rejection; ITERS-override validation; orchestrator JSON/nan/stall-heal/partial hygiene. **Deferred (non-blocking):** #5 seed-keyed gate dir, #12 per-box provenance-smoke, #13/#14 manifest residual_scale, #16 other launchers (`run_pathb_cluster_loop.sh`, `rank_sweep.sh`, `lever_sequencer.sh`, `scaling_curve.sh`, `ladder_highsim.sh`) still carry pre-1e9 eval seeds that would hang like the gate did — fix before reuse. Also fixed earlier: `GATE_SEED` 900000→1e9 (`a888134`, the eval guard would have hung iter0) + the in-loop heur@800 odometer. **TRACK-B FLYWHEEL #1 launched 02:48 EDT** (`flywheel_residual_v2`, warm from the residual net): 12 iters, gate@1e9 matched-v2.7, `VLW=1.5` (attacks CL-008 value-gradient-starvation), in-loop out-of-lineage odometer (best vs heur@800-v2.7, clean seed 1.5e9) at iter 0/3/6/9/12 → `flywheel_residual_v2/odometer.csv`. **This is the P-B attempt #1 of the ≤2-attempt charter budget — the falsifier on CL-011.** Plateau-stops on 2 flat iters; no wall-clock cap. **This IS training (Joshua explicitly authorized it; the no-train ruler-build task is complete).**
+- 2026-06-08 (pm) — **TOP-UP RESOLVED (PROTOCOL_001, eval-only): residual value-head marginal is REAL (+37.6 elo/z=2.98), and the "non-transitivity" reframe is OVERTURNED.** The n=400 clean pass left two items open; the pre-registered top-up (`scripts/run_clean_eval_topup.sh`, 3-box, commit `4d43c79`) extended the residual cells to **n=1200 paired** and added clean net-vs-heur-**v1** cells. **RESULT (1) — residual marginal:** scale0 **+62.0**, scale0.25 **+99.6** (n=1200); deck-paired marginal **+0.0512 wr / +37.6 elo / z=2.98** → clears the pre-registered +35/2σ bar → **CL-004 Inconclusive→Supported**. The n=400 screen (+26/z=1.30) was **UNDERPOWERED, not wrong**; the old lever-1 "+45 robust" largely survives clean. The residual value head is a confirmed **STATIC** strength asset — but still NOT a self-improvement breakthrough (the flywheel to compound it was null, CL-011 stays Disfavored). **CL-005 (residual→production)** moves from "auto-drop" to a **live decision**: strength precondition met, but PROTOCOL_001 FORBIDS auto-fold-in without a head-to-head + clean out-of-lineage check. **RESULT (2) — non-transitivity OVERTURNED:** the earlier reframe (CLEAN_EVAL_AUDIT: "the opponent-leaf effect is sign-varying — iter_11 finds v2.7 easier, Stage-B finds it harder") was an **artifact of the contaminated v1 baseline**. Clean net-vs-v1: **iter_11 +35.7** (old +25.2), **Stage-B +24.4** (old **+86.9** — a 62-elo inflation). Clean Δ(v2.7−v1): iter_11 **+54 (z=2.29)**, Stage-B **+10 (z=0.46 n.s.)** — **SAME sign for both** (`analyze_nontransitivity.py`). So the leaf effect is NOT sign-varying; both nets simply beat the **weaker v2.7-leaf opponent** (corroborating r1's −24.4) by a net-specific margin. No single universal discount stands (magnitudes differ), and old unmatched-leaf absolutes are confirmed incomparable → **CL-012 strengthened**, new **CL-016 (non-transitivity) Disfavored**. Deliverables updated: `governance/protocols/PROTOCOL_001_*` (RESULT filled), `governance/CLAIM_REGISTRY.csv` (CL-004/005/012/016), `clean_eval/CLEAN_RESULTS.csv` (7 rows) + `CLEAN_EVAL_AUDIT.md` (banner + 2 superseded spots), `results.csv: cleaneval_{r4,r5}_n1200,t1,t2`. **NEXT:** residual@0.25-vs-iter_11 head-to-head (PROTOCOL_002) to crown the production agent. No training performed.
+- 2026-06-08 — **GOVERNANCE LAYER (Phase A) + TRACK DECISION: P-B primary, superhuman DEFERRED (no training).** After the clean-eval ruler, two outside reviews asked for an experiment-governance layer to stop hypotheses becoming facts by repetition, incomparable checkpoints being treated as one lineage, and invalidated eras re-entering reasoning. **Gap analysis first** (the repo was already narrative-rich — DECISIONS 314KB, outside_review/ 240KB — so the gap was machine-readable STRUCTURE, not more prose). **Built Phase A** (commit `d0245a0`, branch `stage-b-wiring`, 5 parallel subagents under a frozen canonical spec) in a new top-level `governance/`: **CLAIM_REGISTRY.csv** (+schema) — 15 claims under a controlled 7-term status vocab (Confirmed/Supported/Provisional/Inconclusive/Disfavored/Invalidated/Untested), honestly seeded so two of the reviewers' OWN seed claims landed where evidence forced them — "AlphaZero flywheel demonstrated"=**Disfavored** (CL-011), "use residual in production"=**Untested** (CL-005), "historical unmatched-leaf elo comparable to clean"=**Invalidated** (CL-012), residual marginal=**Inconclusive** (CL-004); only 3 test-backed ruler-infra claims are Confirmed. **CHECKPOINT_LINEAGE.csv** (+schema) — 8 ckpts, real sha256, recovered chain (warmstart→v25_retrain→{optionB,deepsearch}; iter_10→iter_11→stage_b→residual, confirmed `stage_b/warm.pt==iter_11.pt`). **EVIDENCE_EPOCHS.md** (7 epochs: River, farmbug, transposition, unmatched-leaf R1, overlap-seed, R7-residual, clean-ruler). **PROTOCOL_TEMPLATE.md + protocols/PROTOCOL_001** (pre-registration; the running top-up is the worked example, stored separately from results so the hypothesis can't be rewritten). **README.md** (the 3-layer spine: raw→interpretation→decisions). **Consolidation** (additive, 0 deletions): EXPERIMENTS.md superseded-banner, CLAUDE.md truth-table row, experiments/README + outside_review pointer. **KEY FINDING (→ Phase B):** no checkpoint persists its training dataset hash, code commit, or seed ranges (all `unknown@train`, unrecoverable) — a "stamp train-config into the ckpt dict" step MUST land before the next training run. **TRACK DECISION (Joshua):** **Track B (genuine self-improvement) is PRIMARY**; "superhuman vs humans" is **kept but DEFERRED** (unmeasurable — no human/out-of-lineage-strength anchor). Operational consequence: the near-term Track-B objective is the MEASURABLE one — a genuine **out-of-lineage climbing curve** on the asymmetric ladder (heur@800 fixed reference), i.e. **flip CL-011 from Disfavored to Supported**. Superhuman promotes from aspiration to active goal only after the human-anchor rung exists. `PROJECT_CHARTER.md` updated: primary=P-B, superhuman deferred, + the ~12 strategic thresholds filled as **PROPOSED defaults Joshua edits/ratifies** (Track-B bar: ≥3 non-regressing iters, ≥+15 elo/iter out-of-lineage, cumulative ≥+45, gate n≥400; Track-A ship bar: +30 vs heur@800 out-of-lineage n=400 [currently UNMET]; B→A pivot: ≤2 funded attempts ≤~7d each; abandon→analyzer if a structural redesign also fails). The original-prompt-vs-2026-05-28 goal conflict is surfaced in the charter, not papered over; the analyzer (Phase 5) is the explicit abandonment landing zone, not a competing live target. **Phase B** (training observability + the ckpt-stamp) is gated before any next training; **Phase C** (review-bundle automation) deferred. No training performed.
+- 2026-06-07 (pm-2) — **CLEAN-EVAL RULER BUILT (no training) → the learned-policy edge is REAL on a trustworthy ruler, but the "leaf-gap = universal +45% inflation" framing is OVERTURNED and the residual value-head marginal does NOT survive clean.** Two outside reviews of `outside_review/` said: repair measurement+provenance before any more training (trigger = R1: the yardstick `HeuristicMCTS` ran the **v1** leaf while the agent ran **v2.7**). Built it in 3 phases (commits `328594e`→`3cc0c9a`, branch `stage-b-wiring`): **(1) provenance** — `src/carcassonne_ai/eval_provenance.py` runtime-asserts the leaf/value path that ACTUALLY executed (fails if a side claims v2.7 but ran v1 [R1], or sets residual_scale>0 but the residual path never fired [R7]); `EvaluatorSpec` (full both-sides config), deck hashes, `EVAL_SEED_FLOOR=1e9` namespace guard; `_V25Wrapped`+`HeuristicMCTS` expose live leaf-path counters; `EVALUATOR_SCHEMA.json`; all 4 eval scripts hardened (`--seed-start 1e9`+guard, deck_hash, evaluator manifest block, `eval_net_vs_heuristic --residual-scale/--provenance-smoke`, `eval_iter_head_to_head` R7 fix `_value_head_needed`); `verify_evaluator_provenance.py` passes. **(2) semantics** — `tests/test_semantic_eval_contracts.py` (11 contracts) + `tests/test_eval_provenance.py` (incl negative tests) = 35/35 green, full suite green; `gen_semantic_test_report.py`→`clean_eval/SEMANTIC_TEST_REPORT.md`. **(3) 5 clean reruns** (3-box `--shared-claim` `run_clean_eval_reruns.sh` W=14/10/20, n=400 paired, seed 1e9, sims=200, matched v2.7 opp CAP=12; aggregator `summarize_clean_eval.py`). **CLEAN RESULTS (vs the MATCHED v2.7 yardstick, `results.csv: cleaneval_*`, `clean_eval/CLEAN_RESULTS.csv`):** iter_11 **+89.7±17 (z=5.2, resolved)**, Stage-B iter_01 **+34.9±18 (~2σ)**, residual scale0 **+56.1**, residual scale0.25 **+83.2**; pure leaf gap heur-v2.7-vs-v1 **−24.4±16 (z=1.5, INCONCLUSIVE, leans v2.7-WEAKER)**; residual value-head **marginal (scale0.25−scale0, deck-paired) = +26±20 / z=1.30 → INCONCLUSIVE**. **THREE NARRATIVE SHIFTS:** (a) the learned policy edge is REAL — every net beats the matched yardstick, so "results are all lies" is NOT the story (the R1 fear was overblown); (b) the **leaf-gap "universal +45% discount" is WRONG** — the pure v2.7 leaf is *weaker* than v1 in standalone search, and the opponent-leaf effect is **NON-TRANSITIVE across nets** (iter_11 +25.2[v1]→+89.7[v2.7] = v2.7 *easier*; Stage-B +86.9[v1]→+34.9[v2.7] = v2.7 *harder*) — absolutes must be re-measured per-net at a matched leaf, not blanket-discounted; (c) the **residual value-head marginal does NOT survive clean** — drops from the old "+45 robust" to +26/z=1.30 once R7 guarantees the residual path fired → do NOT fold the residual into production without an n≈900–1500 top-up (the single most consequential downgrade). **Process note:** cluster eval throughput was ~12.5 games/min combined (net-vs-heur, n=400×4 cells, CIFS+GPU contention) — a 2-worker bench under-predicted wall-clock ~2× (quoted ~1hr, ran ~2hr); bench at production W/share, not low-W. **⏭ NEXT (recommended sequence): (1)+(2) one cluster top-up run (eval-only ~2hr): residual scale0-vs-0.25 at n≈1200 + clean net-vs-heur-**v1** cells for iter_11/Stage-B (nail the non-transitivity); (3) make the residual production fold-in decision on that; (4) return to the strength/superhuman question on the now-trustworthy ruler; (5) refresh `outside_review/` to mark R1+R7 CLOSED.** Deliverables: `clean_eval/` (CLEAN_EVAL_AUDIT.md classifies every old claim, CLEAN_RESULTS.csv, manifests, raw_per_game.tar.gz [2000 games], provenance_smoke). No training performed.
+- 2026-06-07 (pm) — **ODOMETER (out-of-lineage) → the residual gain is REAL, not ecosystem illusion; modest (~doubles heur-equiv depth); ceiling RAISED not broken.** Ran the asymmetric-compute ladder (`scripts/ladder_asymmetric.py`, 3-box, seed 950k, n=120/rung): hold the residual net @200 sims, sweep HeuristicMCTS @{200,800,3200}, at BOTH residual scales (0.25 = residual leaf, 0 = pure v2.7). **Result (residual margin = scale0.25 − scale0 elo):** heur@200 **+63.6**, heur@800 (4× deeper, OUT-OF-LINEAGE) **+47.5**, heur@3200 (16×) **−17.5** (within noise of 0 at n=120, σ~45). **Crossover (heur-equiv depth, wr=0.5): residual net ~588 vs pure-policy ~325.** **THE DECISIVE FINDING: the residual margin SURVIVES at heur@800** (+47.5 ≈ the n=300-400 in-ecosystem +45) — a 4×-deeper opponent the net was NEVER gated against → the residual is NOT overfit to the heur@200 operating point (unlike the 2026-06-01 iter_4 "+39 = dead tie on the independent ladder"). It roughly **doubles the heuristic-equivalent depth (325→588)** = a genuine, externally-validated modest strength gain. **BUT it's bounded:** the net still LOSES to heur@800 (−29) and heur@3200 (−38), and the residual edge WASHES OUT at heur@3200 (margin ~0 — against a vastly deeper searcher a small leaf correction stops mattering). So the v2.7-leaf ceiling is **RAISED ~1 doubling, NOT broken** — nowhere near superhuman. **NET (answering "is this the breakthrough?"): the value head genuinely helps now and it's validated out-of-lineage — the project's long-standing value-as-leaf blocker is PARTIALLY cracked — but it's a modest v2.7-anchored refinement, not the superhuman unlock.** (Infra: the asymmetric ladder is now a working non-saturating out-of-lineage odometer — addresses the measurement structural blocker. Also: laptop CPU-bound EVAL worker count corrected to W=20 [24-thread box], was under-utilized at 14.) Results: `results.csv: odometer_residual_*`. Run dir `/mnt/c/carc-shared/odometer_residual`. **NEXT (Joshua's call): (a) accept the residual as a validated modest gain + fold into production + reassess the superhuman goal honestly, or (b) a more careful flywheel / higher-capacity learned leaf to try to push past heur@588 (lower EV — the first flywheel was null + unstable, and the residual washes out at depth).**
+- 2026-06-07 — **Lever 3 (residual FLYWHEEL) = NULL for compounding → the residual is a confirmed STATIC asset, not a climbing one.** Wired residual-scale-IN-SELF-PLAY (`1d5ae26`: `--residual-scale` keeps the value head active at value_blend=0, threads to leaf_cfg) + built `run_residual_flywheel.sh` (`ac0afd7`; per iter: 3-box residual self-play [leaf=v2.7+0.25·Δ, value_target=residual] → train → gate scale-curve vs HeuristicMCTS@200 → keep-best, plateau-stop). Hardened: fanned the gate 3-box (`a528b0b`, the eval is ~3 g/min single-box — per-worker CUDA thrash), overnight deadline/keep-margin (`a23f1cf`), and **orphan-stall self-heal** (`cd853b1`) after the first overnight attempt **silently stalled 3h** on a shared-claim orphan-stall (28 stranded `.claim` files from a kill — the 556/600 bug; my gate lacked the stage-b launcher's self-heal). **RESULT (gate seed 900000, n=300):** iter0 (the residual net) scale0.25 **+116.5** (marginal +41); iter1 **+66.8** (REGRESSED −50 — the co-adaptation train destabilized the policy: scale0 +75→+35); iter2 **+125.7** (+9.2 vs iter0, < the +12 keep-margin = TIED within noise; marginal +46.8). Plateau-stopped (2 flat); best stays iter0. **VERDICT: the residual gain does NOT compound via this flywheel** — neither the policy (scale0 flat +75/+35/+79) nor the value-contribution (marginal stable +41/+32/+47) climbs; iter1 showed co-adaptation can DESTABILIZE. (Caveat: only 2 iters, both from the iter0 baseline; gate noise ±21 hides a small <+12 climb but rules out STRONG compounding.) **The residual marginal is now ROBUSTLY confirmed ~+45 across 4 measurements (3 seeds 700k/800k/900k + the iter2 gate)** — a real, modest, STATIC v2.7-refinement. **This does NOT break the v2.7-leaf ceiling** (CLAUDE.md structural blocker stands): the value head is a junior partner nudging v2.7, not a standalone strong eval (pure-NN leaf still craters; inverted-U says more value-weight hurts). **NEXT: the out-of-lineage ODOMETER (Lever 4 measurement) on iter0 best (`flywheel_residual/best.pt` = the residual net)** — the in-ecosystem +116/+45 may overstate (the 2026-06-01 iter_4 "+39 = dead tie on the independent ladder" precedent). If the +45 marginal SURVIVES the odometer → genuine modest strength gain; if it evaporates → in-ecosystem illusion. Results: `results.csv: flywheel_residual_*`. Run dir `/mnt/c/carc-shared/flywheel_residual`.
+- 2026-06-06 — **4-LEVER CAMPAIGN → Lever 1 (predict-v2.7 + residual) is the FIRST asset-positive learned-value leaf (confirmed, modest).** Built all 4 levers + an auto-sequencer (`scripts/lever_sequencer.sh` + `lever_summary.py`, judged on the MARGINAL = knob>0 elo − knob=0 elo, with σ+z so a low-n point≥0 isn't mistaken for a win). **Lever 1** (`44100a9`): head predicts the RESIDUAL Δ=search-Q−tanh(vs2/15); leaf = `clip(v2.7 + scale·Δ, ±1)` (`CARCASSONNE_V25_RESIDUAL_SCALE`, `value_target="residual"`). **Lever 2** (`d2a6a53`): per-node-centered MSE (`--center-weight`, reuses rank_data group_id, NO gen). Ran 3-box (laptop solo did the 400-game residual gen in ~1h54m; sequencer train+eval on laptop). **RESULT (paired vs HeuristicMCTS@200):** Lever 1 scale-curve scale0=+28, **scale0.25=+96 (marginal +68, z=1.93)**, scale0.5=+80 (marginal +52, z=1.5) — an inverted-U, two consistent +ve scales (not a lone spike). **INDEPENDENT n=400 confirmation (fresh seed 800000):** scale0=+32, scale0.25=+68 → marginal **+35.5 ± 25 (z=1.43)**; the +68 screen regressed to +36 (regression-to-mean, screen was high). **POOLED (screen n200 + confirm n400, independent seeds) = +46.5 ± 20, z=2.29** → ~99% the residual value is a REAL asset. **Lever 2 FAILED** (marginal −62, value still hurts). **This is the FIRST positive-marginal learned value in the whole investigation** (vs −24/−38/−67/−94 for every prior MSE/ranking approach) — predicting the residual lets the leaf inherit v2.7's local sibling-ranking BY CONSTRUCTION and only nudge where deep search disagrees (the on-distribution Δ is small/tailed: median |Δ|=0.02, but 12% >0.1). **⚠️ Scoping honestly: this is a MECHANISM win (value finally HELPS the search), NOT yet a strength win** — it's ~+40 elo marginal, measured IN-ECOSYSTEM vs our own HeuristicMCTS (the marginal is clean/paired, but absolute strength vs an OUT-OF-LINEAGE odometer is untested; the residual training may also have cost some policy [scale0 baselines +28-32, noisy-consistent with the prior +74 gate]). **NEXT (Joshua to confirm — a multi-hour 3-box run): Lever 3 flywheel** — use the residual leaf in NEW self-play + retrain + iterate so value+policy co-adapt (KataGo; where a modest +40 can compound). ⚠️ the flywheel needs residual-scale-IN-SELF-PLAY wired into `run_pathb_cluster_loop` (it only ramps `--value-blend`; the printed STAGE_B_BLEND hand-off is a placeholder for l1 — set `CARCASSONNE_V25_RESIDUAL_SCALE` + `value_target=residual`, and the per-iter gate must use the residual leaf, not value_blend=0). Results: `results.csv: lever1_residual_*`, `lever2_centered_*`. Run dir: `/mnt/c/carc-shared/lever_seq`.
+- 2026-06-05 (pm-5) — **STEP B.1 ranking-loss sweep: HELPS but INSUFFICIENT → DECISION: design + auto-run all 4 levers sequentially.** Sweep (`88a5b5e`, 6 configs α∈{.5,1,3}×τ∈{.1,.3}, each train + λ-curve n=200, 3-box, `/mnt/c/carc-shared/rank_sweep`). **Read the MARGINAL (λ0.5 − λ0), NOT absolute λ0.5** — absolute is confounded by the policy baseline (λ0≈+70; rank_data α=0 gate=+74). Only-complete config a05t01(α=.5) = marginal **−67** (value still hurts); others partial+noisy. **Verdict: ranking loss helps (best −67 vs pure-MSE −80/−94; λ1.0 crater −356 vs −576/−604) but NO config reaches marginal≥0 → not an asset.** ⚠️ **Process note:** I initially over-claimed "a05t01 λ0.5=+6.9 clears the gate" — RETRACTED within the hour (Joshua's "false positive?" caught it): +6.9 is within noise of 0 (z=0.28) AND confounded by the strong policy baseline; the marginal (−67) shows the value still hurts. `rank_sweep_summary.py` rewritten to report the marginal + the corrected verdict so the autonomous read can't repeat the error. **DECISION (Joshua): the sweep tuned ONE lever; now design all 4 genuinely-different levers + wire a SEQUENCER to run them automatically (gen→train→λ-curve each, gate on marginal≥0, early-stop on a winner):** (1) **predict-v2.7+residual** (leaf=v2.7+Δ, inherits local consistency by construction — cheapest/most-likely); (2) **per-node-centered targets** (fit relative sibling diffs; reuse group_id harvest); (3) **in-loop flywheel** (use the value as a λ-leaf in NEW self-play + iterate; KataGo co-adaptation; the one the one-shot sweep can't test; STAGE_B_BLEND already does value-in-self-play); (4) **measurement/accept-ceiling** (odometer `ladder_asymmetric.py` + diverse opponents, or different leaf, or accept ~strong-human). Plan: `docs/VALUE_LOSS_ATTACK_2026-06-05.md` ("the 4-lever auto-sequencer"). ⚠️ ssh-to-xeon-wsl inline `cd` keeps vanishing (use `CMD="cd $REPO && …"` var); detach remotes with `setsid …</dev/null &`; remote scripts via ABSOLUTE path (`$REPO/scripts/x.sh`).
+- 2026-06-05 (pm-4) — **STEP B.1 (listwise sibling-ranking loss) BUILT + launched as the Shabbos autonomous sweep.** The fix STEP A/B.0 proved necessary (MSE can't rank siblings even on the optimal target). Build (`369677f`): `mcts.interior_sibling_groups` (each well-visited parent's children as a group, own-POV Q — all children share one POV so own-POV Q is the ordering target); selfplay `value_target=search_value_rank` (trajectory root.Q rows + value-only group rows tagged with a globally-unique `group_id`); `GameDataset.group_id` int64 array (the `aux_mask` pattern: save/load/rotate/augment + `make_streaming_dataset` 8th tuple element; -1 = ungrouped); `train_iter` `listwise_ranking_loss` (per-group segment softmax-CE of head outputs vs search-Q, `--rank-weight α --rank-temp τ`; `shuffle_within_file=False` keeps groups batch-contiguous; value-MSE kept for absolute scale). 3 selfplay group tests + a listwise-loss unit test; updated all 8-tuple consumers; full suite green; gen+train smoke clean (rank loss live). **Shabbos run (Joshua chose the SWEEP over an iterated flywheel — robust unattended):** 3-box gen of the `search_value_rank` dataset (`RUN=rank_data`, 400 games) then `scripts/rank_sweep.sh` over 6 configs α∈{0.5,1,3}×τ_rank∈{0.1,0.3}, each = train + full λ-curve (0/0.5/1.0, n=200 paired) vs HeuristicMCTS@200, split across boxes (self-contained, resumable). **SUCCESS = any config λ0.5 ≥ 0** (prior failures −24/−38/−38). Verdict: `scripts/rank_sweep_summary.py --out /mnt/c/carc-shared/rank_sweep`. If it clears → iterate the flywheel; if not → v2.7-leaf ceiling real (5×) → measurement / different approach (`docs/VALUE_LOSS_ATTACK_2026-06-05.md` "If this ALSO fails"). ⚠️ ssh-to-xeon-wsl inline `cd` keeps vanishing — build remote cmds as `CMD="cd $REPO && …"` (var), and detach remotes with `setsid …</dev/null &` (NOT `nohup…& disown`, which hangs the ssh).
+- 2026-06-05 (pm-3) — **STEP B.0 (mimic-v2.7 de-risk) ✅ PROVES the LOSS FORM is the problem (not the target) → STEP B.1 (ranking loss) is mandatory.** The cheap de-risk before the full ranking-loss plumbing: `value_target="v2_7"` (commit `a7691e4`, 3 tests) trains a head to predict the **v2.7 LEAF VALUE** tanh(vs2/15) — the OPTIMAL target (v2.7 itself ranks siblings at τ=0.60). 3-box gen (400 games, warm iter_01, vlw=1.0; remotes bundle-synced to a7691e4) → train → re-probe + λ-curve. **RESULT: the head fit v2.7 globally (corr 0.86) yet ranks siblings at τ=0.088 — chance, IDENTICAL to the search-Q head (0.081), and barely agrees with the v2.7 it was trained to copy (τ_net,v2.7=0.14).** Same λ-failure: λ0=+3.5\* / λ0.5=−38 / λ1.0=−604 (`results.csv: mimic_v27_*`; \*λ0 is a noisy n=100 gate at seed 500000, ~1.5σ below searchval's +56 — the games are near-identical across runs, so it's noise; τ is the low-noise signal). **VERDICT: MSE regression cannot produce a sibling-ranker REGARDLESS of target** — it fits global variance but the within-node Q differences that decide a move are swamped by approximation error. So the failure is the **loss FORM**, not the target (search-Q vs v2.7). This QUADRUPLY confirms value-as-leaf failure and is the FIRST to isolate the cause. **DECISION: build STEP B.1 (the ranking loss)** — the designated and LAST clean lever. Design resolved: a node's children all share one current_player (Carcassonne splits tile vs meeple actions), so the harvest = the existing search_value_tree interior harvest + a `group_id` tag (encode child own-POV, target own-POV Q, value-only rows); the real work is the **batch-grouped listwise loss** in train_iter (segment-softmax of head outputs vs own-POV search-Q within each group, + value-MSE for scale; success = λ0.5≥0). If B.1 ALSO fails → the v2.7-leaf ceiling is real (5× confirmed) → pivot to measurement / a fundamentally different approach (`docs/VALUE_LOSS_ATTACK_2026-06-05.md` "If this ALSO fails"). Probe: `scripts/probe_decision_ranking.py`.
+- 2026-06-05 (pm-2) — **STEP A (decision-ranking probe) ✅ CONFIRMS the value LOSS is the problem → proceed to STEP B (ranking-loss retrain).** Built `scripts/probe_decision_ranking.py` (commit `98364bd`; parallel CPU multiprocessing, net on CPU per worker → sidesteps the fork+CUDA crash; `kendall_tau_b` validated on hand-computed cases incl. ties). For on-distribution decision positions (real v2.7-leaf self-play), each legal move's child board is scored 3 ways from the decision-maker's POV: **value-net head**, **1-ply v2.7**, and the **oracle = a deep `oracle_sims=400` v2.7-leaf search from each child** (the move's converged value, = what `search_value_tree` trained the head on). Ranked vs the oracle by Kendall-τ-b / top-1 / oracle-regret. **RESULT (`searchval_tree/ckpt/iter_00.pt`, n=120 nodes, mean k=13.8):** value-net τ **+0.081±0.023** (≈22 SE below v2.7's **+0.579±0.024**), top-1 0.15 vs 0.44, oracle regret **1.92 pts vs 0.62 pts** — the net's regret (0.0675 tanh) is **barely better than random** (0.0794), and net↔v2.7 rankings barely agree (τ=0.10). **→ a 0.84-outcome-corr value head has near-ZERO local move-discrimination; corr is definitively the wrong gauge; the LOSS optimizes the wrong objective.** Methodology that mattered: **oracle DEPTH is load-bearing** — a shallow oracle (sims=60) ≈ 1-ply v2.7 (circular) understated the gap (net τ 0.48); deepening to 400 collapsed net τ→0.08. **⚠️ Caveat:** the 1-ply regret gap (1.9 vs 0.6 pts) is *smaller* than the λ1.0=−576 crater → that crater is ALSO error-compounding at depth + off-distribution (search drives into the net's blind spots), which a 1-ply probe can't capture. So **STEP B targets the λ0.5≥0 gate** (v2.7 still anchors local consistency at 50%), NOT necessarily fixing λ1.0 (that's the flywheel problem). **DECISION: build STEP B** (sibling-set harvest in self-play → batch-grouped **listwise** softmax-CE ranking loss on child search-Q, multi-task with the value-MSE for absolute scale; cheaper de-risk = a "mimic-v2.7" head first). Full plumbing spec in `docs/VALUE_LOSS_ATTACK_2026-06-05.md` ("NEXT action — STEP B build"). No second probe run — 22 SE is conclusive (cost discipline). Result on share: `/mnt/c/carc-shared/decision_ranking_svtree/summary.json`.
+- 2026-06-05 (pm) — **FLYWHEEL STEP 2 (global pooling) ALSO FAILS the value-as-leaf gate → DECISION: attack the value LOSS (decision-ranking), not data/architecture.** Built a global-pooling value head (`CarcassonneNet(value_global_pool=True)`: inject `cat[trunk.mean, trunk.amax]` into value_fc1; commit `e4a77ed`, +4 tests, plumbed through all 5 pipeline scripts; `train_iter --global-pool --warm-value-fresh` = partial-warm = keep iter_01 trunk/policy, re-init only the value head → isolates the arch change). Trained it (partial-warm on the 822K interior data, 5 epochs). **3-box λ-gate (xeon via the new `xeon-wsl`!): λ0.5 = −38 ±35, λ1.0 = −552 (4W/96L), corr 0.8446 ≈ step-1's 0.8435** (`results.csv: searchval_tree_GP_iter00_blend{05,10}_*`). **Global pooling moved NOTHING** — same curve as step 1 (+56/−24/−576), all within noise. **VERDICT (TRIPLY confirmed across 3 value nets): a 0.84-outcome-corr value is NOT a usable MCTS leaf, and it's fixed by neither more data (step 1) nor board-wide context (step 2).** **DECISION (Joshua): attack the value LOSS.** Hypothesis: a leaf needs to RANK sibling moves correctly (relative), not predict the absolute outcome; outcome/Q-MSE optimizes the wrong objective (v2.7's corr is lower at 0.61 but it's locally consistent → a good leaf). Plan (`docs/VALUE_LOSS_ATTACK_2026-06-05.md`): **STEP A (cheap gate, ~1-2hr, no training)** = offline decision-ranking probe — harvest decision nodes' sibling sets `(child board, search-Q oracle, v2.7 value)`, compare value-net vs v2.7 vs search-Q rankings (Kendall-τ / oracle-regret); predict value-net τ LOW despite corr 0.84, v2.7 τ HIGH. **STEP B (only if A confirms)** = ranking-loss retrain (listwise softmax-CE / pairwise margin on sibling search-Q; needs sibling-set harvest in self-play), success = λ0.5 crosses ≥0. If B also fails → v2.7-leaf ceiling is real (quadruply confirmed) → measurement / different approach. **Step 3 (iterated ramp) DEFERRED** — my gate (do step 3 only once a net clears λ0.5≥0) is unmet; iterating a known-liability leaf isn't justified yet. NEXT ACTION = build STEP A.
+- 2026-06-05 — **FLYWHEEL STEP 1 (interior value targets) BUILT + VALIDATED → one-shot is NOT enough (value-in-leaf still hurts); cheap test exhausted, next lever = step 2 (global pooling) before step 3 (iterated ramp).** Built `value_target="search_value_tree"` (commit `67fd90e`): `NeuralMCTS(record_boards=True)` + `interior_value_targets()` harvest (board→converged Q) from the search TREE INTERIOR; selfplay emits them as **value-only rows** (new per-row `GameDataset.aux_mask`, None→all-True back-compat, threaded through save/load/rotate/augment/streaming-7-tuple); shared `masked_policy_ownership_loss` trains policy+ownership on full rows only, value on all. Full pytest green + plumbing smoke. Ran the validation: 400-game `search_value_tree` (sims=200, warm iter_01, λ=0, 3 boxes), trained warm-from-iter_01 (3 epochs). **Three measures of the interior-trained net:** (1) held-out value↔search-Q corr **0.84** (vs trajectory head 0.46) — the value DID learn to model the interior; (2) **λ-curve vs HeuristicMCTS@200, n=100 paired: λ0=+56 ±35 → λ0.5=−24 ±35 → λ1.0=crater (0/14)** (`results.csv: searchval_tree_iter00_blend{00,05,10}_*`). **VERDICT:** value-in-leaf still degrades strength MONOTONICALLY — essentially the same shape as the trajectory head (+96→−37→−576), all diffs within ~1σ. **One-shot interior training did NOT make the value usable as a search leaf**, even though corr nearly doubled → **re-confirms (3rd time) that value↔Q/outcome correlation is the WRONG gauge for search-leaf usefulness.** Mechanism: the value learned the interior of a *v2.7-guided* search; blending it in shifts the search to a distribution it hasn't seen (KataGo closes this over MANY in-loop iters, not one). **The cheap one-shot flywheel test is exhausted.** Remaining levers both expensive: **step 2 (global pooling** — a better value ARCHITECTURE; the 6×96 conv+flatten can't integrate board-wide farm/meeple state, reviewers' "single biggest quality lever") and **step 3 (the full iterated λ-ramp).** RECOMMENDATION (pending Joshua): **step 2 first** — a one-shot arch upgrade is cheap to test (retrain once, re-measure λ); if the value is fundamentally under-powered, no amount of step-3 iteration on the current net fixes it; only commit to the multi-iteration ramp once a net clears λ=0.5≥0. **Side wins this session:** (a) **9p training-stall fix** — a Windows-drvfs/9p stall wedged the validation train mid-epoch (GPU idle ~50min); `train_iter --stage-local` copies the buffer to ext4 before streaming, wired into the loop (`47fd796`); (b) **Xeon direct-WSL-ssh LIVE** (`ee0c090`) — sshd in WSL :2222 + portproxy + `Host xeon-wsl` → `ssh xeon-wsl "a && b | c"` works like the laptop, cmd.exe hop gone (Windows sshd :22 stays as fallback); (c) **odometer rung 1** — `scripts/ladder_asymmetric.py` (asymmetric-compute v2.7 ladder = heuristic-equivalent depth, out-of-lineage, `07ebda8`).
+- 2026-06-04 (pm-5) — **REGROUP (4 independent outside opinions) → BUILD the in-loop value FLYWHEEL; keep superhuman as north star.** After characterizing the search-value lever (pm-3/pm-4), measured the value-as-leaf cliff: value-blend@play **λ0=+96 → λ0.5=−37 → λ1.0 (pure NN leaf)=−576** (`results.csv: searchval_s400_iter00_valueblend10_*`). Then got **4 independent unbiased opinions** (3 blind subagents on a neutral brief + 1 external reviewer Joshua sourced). They converged and **corrected the pm-4 "information ceiling" call:** (a) **~0.47 is NOT an info ceiling** — it's corr with the *noisy final margin* (tile-draw variance); decision-ranking / expected-value is what matters, and outcome-corr is the wrong gauge; (b) the **−576 is a DISTRIBUTION MISMATCH** (value trained on the self-play trajectory, queried on the tree interior it never saw) — KataGo fixes this by training value **in-the-loop on its own search distribution**; (c) the curve **erodes because the value flywheel is OFF** (only policy learns; frozen v2.7 leaf = a half-flywheel that settles) — AlphaGo's climb came from value+policy turning together; (d) **even +87 may be ecosystem-overfit** (vs the same v2.7 we train/play; the iter_4 "+39 = dead tie on the independent ladder" proves the gauge lies) → need a light **out-of-lineage odometer**; (e) all four flagged the goal as resource-mismatched (3 GPUs ≪ known superhuman recipes; high-variance game) and suggested re-scoping. **Joshua's call (reconciling with the AlphaGo playbook — "they didn't know AlphaGo was superhuman until they let it climb, THEN challenged Lee Sedol"):** KEEP superhuman as the north star (do NOT re-scope to the analyzer); **build the in-loop value flywheel** (the only lever that can make the curve CLIMB), put a *light non-lying odometer* on it (the reviewers' measurement point = the trustworthy curve-meter the AlphaGo plan requires — our own gauge lied once), let it climb, challenge a human LAST. We are NOT throwing out the reviewers — the flywheel IS their #1 technical recommendation; only the "lower the goal" counsel is set aside (Joshua's prerogative), with the resource risk recorded honestly. **Build spec: `docs/INLOOP_VALUE_FLYWHEEL_BUILD_2026-06-04.md`** (step 1 = value records the MCTS interior/search distribution [the −576 fix; needs value-only rows + loss masking]; step 2 = global pooling; step 3 = value-into-leaf-in-loop; step 4 = out-of-lineage odometer [asymmetric-compute v2.7 ladder + diverse non-v2.7 opponents + deck-paired cross-play + oracle-regret]; step 5 = diagnose iterate-erosion). Open Qs: chance-node/tile-draw handling, win-prob+score-distribution target form, decision-ranking metric. NEXT ACTION = step 1 + stand up the odometer in parallel.
+- 2026-06-04 (pm-4) — **HIGHER-SIMS TARGETS ARE FLAT → ~0.47 (team first read this as an INFORMATION CEILING — ⚠️ SUPERSEDED by pm-5: it's the wrong gauge, outcome-corr not decision value).** Ran the sims=400 search-value iter (`RUN=searchval_s400`, same config as searchval_s200, SIMS=400) and re-ran Gate A on all three heads on the same held-out set (stage_b/iter_05, 600 games): **sims=400 head +0.4675 vs sims=200 head +0.4644 vs iter_01 +0.2888.** sims 200→400 = **+0.003 = within 1 SE = FLAT.** Doubling target search depth did NOT push the head past v2.7. **Reconciliation (the real finding): ~0.47 matches the C4a probe's from-scratch CNN (0.469 BLIND) almost exactly** — two unrelated setups (small outcome-CNN; 7M search-value net @ sims 200/400) both land at ~0.47 → **~0.47 is the information ceiling of predicting the final margin from (board,scalars)**, set by how much a Carcassonne mid-game position inherently determines the outcome — NOT by target source or sims. So the search-value target's achievement is **REACHING** that ceiling (overfitting fix 0.29→0.47), and no target (higher sims, lower variance) can EXCEED it from these inputs. Did NOT run sims=800 (cost discipline: 400 flat + the ceiling argument → 800 would be flat too). sims=400 policy gate +70.4 (n=100, consistent with +87/+96). **NET: the value head is now a working ~v2.7-level component (overfitting fixed, no longer the gross bottleneck), but the search-value lever does NOT break the ~0.47/v2.7 strength ceiling.** Remaining value work (Joshua: "do both") is about making the head USABLE in-search, not superhuman: **(1)** quantify + bank a fast NN-leaf (the λ-blend sweep incl λ1.0 pure-NN-leaf — running); **(2)** off-distribution value targets (train on MCTS-explored nodes, not just the trajectory) to fix the in-search calibration gap (Gate B λ0.5 = −36.6 < the λ0 +96.2 baseline) — Option 2 *enables* Option 1. The superhuman unlock remains measurement (no humans) / better inputs. `results.csv: searchval_s400_iter00_*`. Probe: `scripts/probe_heldout_value_corr.py` (multi-ckpt table).
+- 2026-06-04 (pm-3) — **SEARCH-VALUE RETRAIN BUILT + first run; 🎉 GATE A PASS — the value-head overfitting is FIXED.** Built `search_value` as a generation-side `--value-target` mode (cleaner than the pm-2 spec — NO train_iter change, 6-array GameDataset schema unchanged): `NeuralMCTS.root_value()` returns root.Q (current-player POV, W/N from the root's mover); `selfplay.py` records it per learner ply into `values_arr` (no per-ply z-flip — root.Q is already POV-signed — length-guarded); `run_selfplay_iter.py` exposes the `--value-target search_value` choice; the cluster loop already threads `VALUE_TARGET`. 23 tests pass. Smoke confirmed the production orch-off path is FAST (gate-2's W=1 thrash was the ad-hoc generator, NOT the production loop). **Ran one iteration** (`RUN=searchval_s200`; 3-box synced to 5b21023 via git bundle; 400 games sims=200; warm from `stage_b/ckpt/iter_01.pt`; λ=0; pure self-play anchor=0; value-loss-weight 1.0 = clean A/B vs iter_01). **GATE A — held-out value-head corr vs TRUE margin** (`scripts/probe_heldout_value_corr.py` on stage_b/iter_05, 600 games, both ckpts on identical streamed batches): **new search-value head +0.464 vs iter_01 outcome head +0.289** (baseline reproduced first-hand). **The learned value head reaches v2.7's range (0.40–0.65) for the first time → per-position root.Q targets fix the overfitting**, exactly as the pm-2 diagnosis + gate-2 (+0.166 vs −0.04) predicted, now at production scale/power. Policy intact (loop's gate **+96.2 elo** vs HeuristicMCTS @ n=200, consistent with +87 — search-value training did not damage the policy; value-loss-weight stayed 1.0). **READ:** 0.464 sits at the LOW end of v2.7's range → the head now MATCHES v2.7; to BEAT it (the superhuman lever) the TARGET itself must be stronger → **higher-sims root.Q** (sims=200 root.Q ≈ v2.7-quality; 400/800 should exceed it). DECISION (Joshua, "both"): **(1) Gate B** = value-blend@play λ0.5 vs HeuristicMCTS — **RESULT −36.6 elo (89W/1D/110L) vs iter_01's −123** = +86 better blend behavior (head no longer poisons the search) but still net-negative vs the λ=0 baseline (+96.2) → the head MATCHES v2.7 but doesn't yet BEAT it (consistent with Gate A's 0.464 at the low end of v2.7's range). `results.csv: searchval_s200_iter00_valueblend05_vs_heuristic_baseonly_s200_n200`. **(2) sims=400 search-value run LAUNCHED** (`RUN=searchval_s400`, same config, SIMS=400, GATE_GAMES=100) — mechanism: root.Q is the SEARCH-refined v2.7 value, so deeper search → root.Q exceeds the raw leaf → the head can finally beat v2.7. Re-gate held-out corr (target: >0.464) next. Gate harness STREAMS held-out data (the load-all-into-RAM first cut **OOM'd the 31 GB 5800x at ~1200 games** — `--max-games` bounds it; lesson logged). **`stage-b-wiring` commits ffe823e + 5b21023 + 6f18ade + 5c102d6.** AS-BUILT spec: `docs/IN_LOOP_SEARCHVALUE_BUILD_2026-06-04.md`.
+- 2026-06-04 (pm-2) — **VALUE HEAD OVERFITS = the real bottleneck; DECISION: BUILD the in-loop search-value retrain.** Gating the value-target-source lever surfaced the deepest diagnostic of the project: iter_01's **actual** value head goes **0.79 corr on its training games → 0.32 held-out** (iter_02/iter_05), *below* v2.7 (~0.4–0.65) — THAT's why blending it into search HURTS (off-distribution positions). Small-CNN C4a/C6 probes got ~0.5 held-out (better than the big net's 0.32 → the 7M net's capacity *hurts* generalization). **Root cause: the value target is the game OUTCOME — one label per game shared across ~144 positions → only ~600–1200 independent labels vs a 7M net → memorization.** Not representation (C4a refuted), not target saturation (C6 refuted) — **label scarcity → overfitting.** **gate-2** (`scripts/gate2_value_head_searchvalue.py`, 24 games sims=50, held-out): per-position **search-value (root.Q)** head **+0.166** vs outcome head **−0.04** → per-position targets fix the overfitting DIRECTION (mechanism confirmed); but underpowered (sims=50 search-value ≈ v2.7 0.42 → can't exceed; 24 games underfits → 0.166 << its 0.423 target). **DECISION (Joshua): BUILD the in-loop search-value retrain** — record `root.Q` per ply in production self-play + `--value-target search_value` in train_iter + one iteration warm-from-iter_01 at sims=200, then gate the new value head (held-out corr vs 0.32; value-blend-at-play vs the −123). Full spec: `docs/IN_LOOP_SEARCHVALUE_BUILD_2026-06-04.md`. Clear-eyed: payoff capped by root.Q quality (needs sims≥200 so the target beats v2.7), elo gain uncertain, superhuman still unprovable w/o measurement. INFRA: multi-worker single-board GPU eval thrashes the CUDA context (gate-2 gen ran W=1) → use the orchestrator/production loop for fast generation. **`stage-b-wiring` commits 994c6f3…2bd3962.**
+- 2026-06-04 (pm) — **+87 IS A HARD CEILING; SCALING-CURVE VERDICT; CSV PROVENANCE FIX; C4/C6 SKETCH.** policy_scale (the overnight clean-policy iteration) **FAILED to climb past +87** — 7 gates pooled +38±10 SEM, ~50 elo *below* the +87 parent (warm-from-latest erodes the peak; no ratchet). Then a **test-time scaling sweep** (iter_01, n=100 screens, `results.csv: scalingcurve_iter01_*_base`): **Curve A** (net@S vs FIXED heur@200) climbs −74(s50)→+49(s100)→+85(s400) out of search-starvation then **flat top** — which I initially mis-called "saturation"; **reconciling vs results.csv (per the discipline rule) caught the error**: the flat top is a **weak-fixed-reference artifact** (can't widen the margin vs a shallow opponent), NOT saturation. **Depth-scaling is OPEN** (the only matched-depth evidence is iter_11's ladder +25.2@200→+56.7@800, but that's ~1.5σ AND the wrong net; iter_01 unmeasured — DEFERRED, modest effect). **#1 value-at-play-time probe: HURTS** (λ0→+35, λ0.25→+28, λ0.5→**−123**). **NET RESULT: +87 is a hard ceiling all three CHEAP levers fail to move** (policy-iteration, value-blend, depth-vs-fixed-ref). Confirms the foundational-audit thesis from a new angle: the v2.7 leaf caps learned strength and the value head is *worse* than v2.7, so it can't push past it. **CSV PROVENANCE FIX (commit 8bf0ce3, closes D21):** results.csv conflated eras (iter_11@200-vs-heur read as both +181.7 *river* and +25.2 *base*) — added `game`(river|base)+`code_rev` cols (70 rows backfilled: 9 base/61 river), eval harness now writes self-describing `manifest.json` per run (`carcassonne_ai/run_manifest.py`), `append_result_row.py` appends rows FROM the manifest (drift-proof). **NEXT LEVER = C4/C6 value-head rebuild** (`docs/CEILING_AND_C4C6_2026-06-04.md`): give the value head the inputs v2.7 uses (C4a farm-connectivity planes, C4b bag histogram, C4c open-feature planes, C4d farm scalars) + C6 de-saturated target. ⚠️ HONESTY FLAG: PHASE1_BUILD_SPEC's own gate said "if Stage B value-in-loop is flat/worse → ceiling is deeper than F-B1, RECONSIDER before C4" — and Stage B WAS worse → **C4 is a bet, not a sure thing.** DECISION: run a **cheap OFFLINE value-head probe first** (train a small value head WITH the C4 features on existing positions, compare held-out accuracy to v2.7 — ~1hr) to gate the ~1.5-day full retrain. Measurement wall ("meatbag") still deferred — it calibrates the ceiling, doesn't raise it. **→ PROBE RESULT (same day, `scripts/probe_value_head_c4.py` c26e468): C4a REFUTED.** Data has no stored states (can't compute v2.7/live-features cheaply) so the probe used the npz's terminal `ownership` planes as an ORACLE upper bound on farm-connectivity sight. A capacity-adequate value CNN on iter_01 self-play gains **nothing** from oracle ownership: BLIND corr **0.469** vs +OWN **0.447** (tied/worse; fixing model capacity made BLIND jump 0.28→0.47 and absorb the gain the under-capacity model got from ownership). → the value head is **NOT bottlenecked by farm-representation blindness**; **don't build C4a** (the ~½–1 day piece). Caveats: outcome-prediction proxy (not direct beat-v2.7), C4b/bag untested, from-scratch CNN. Remaining cheap value lever = **C6 only** (de-sat target, already built); if C6 doesn't break +87, the cheap path is exhausted → measurement / a fundamentally different value approach. This is the cheap-probe-first gate working: ~30 min killed a 1.5-day bet. **→ C6 PROBE (same day, `scripts/probe_value_target_c6.py` 1c862ce): also REFUTED.** Margins recover cleanly from the npz (0% hit the float32 ceiling); same deep CNN trained on tanh(m/15) vs tanh(m/40), scored by corr(output, true margin): t15 corr(all)=0.521 / corr(|m|>33)=**0.733**, t40 corr(all)=0.491 / corr(|m|>33)=**0.690** → de-saturation gives NO gain (marginally worse). The head already tracks big margins with the saturating target (corr 0.733 on |m|>33) — MSE on ±0.99 targets still carries graded gradient and corr is scale-invariant, so saturation never destroyed the ranking. **NET: BOTH cheap value levers (C4a representation, C6 target) are REFUTED — the cheap path to beat the v2.7 leaf is FULLY EXHAUSTED; +87 stands as the ceiling.** Remaining paths are all expensive/external (`docs/CEILING_AND_C4C6_2026-06-04.md` "Where that leaves us"): **(1)** a different value-TARGET SOURCE — every probe + the training used the noisy raw-MC game outcome (corr tops ~0.5); a lower-variance target (MCTS search-value / n-step bootstrap / predict-v2.7+residual) is the only untested lever with a real mechanism, but it's a genuine build+retrain not a cheap probe; **(2)** measurement (no humans available now); **(3)** accept ~strong-amateur+ and pivot to the analyzer (Phase 5). Today's net: cheap superhuman push has hit a well-characterized wall; ~1hr of probing ruled out ~2 days of builds.
+- 2026-06-04 — **STAGE-B VERDICT + PIVOT TO POLICY-SCALING.** Stage B (value-in-loop, λ ramp 0→1, warm-from-iter_11) ran 11 iters. **(1) iter_1 (λ=0 clean-data policy retrain) = +86.9 elo vs HeuristicMCTS @ n=400 paired — CONFIRMED** (the n=200 screen reproduced EXACTLY; 245W/8D/147L=62.3%, ±17.9). ~+62 over iter_11 (+25.2 same plane) → clears the Stage-B success bar (+25) by a mile. **The bug-fixed base-only clean-data POLICY retrain is the real win** (largest confirmed gain on the clean game; iter_1@sims200 already > iter_11@sims800=+57). `results.csv: stage_b_iter1_vs_heuristic_baseonly_s200_n400`. **(2) value-in-loop is NET-NEGATIVE at current value quality** — every λ>0 iter warmed from the legit-best iter_01 and FELL to ~+35 → the v2.7 heuristic leaf is a BETTER self-play guide than the learned value head (C3 answered: value-in-loop fails *because* the value head is below the heuristic; the keep-chain freezing at iter_01 was CORRECT, not a noise artifact). UNTESTED cheap lever: value at PLAY-time (eval-time blend on a fixed net) ≠ value in self-play; may still help. **DECISION: pivot the overnight cluster to `policy_scale`** — pure λ=0 clean-policy iteration, warm-from-LATEST (`KEEP_MARGIN_ELO=-9999`), from iter_01, ITERS=12 — to test whether clean policy climbs PAST +87. Climbs → policy has headroom, keep scaling; plateaus → policy-only ceiling, next lever = fix the value head (play-time-only use, or C4 representation / C6 target) so it can beat the heuristic. New loop knobs `STAGE_B_BLEND_CONST` + `VALUE_TARGET` (ea36499); keep-best persistence F16 (cc35fed); claim self-heal (db018e3). STRATEGIC: policy-centric AZ WORKS (refutes the audit's "learned can't beat the heuristic"); superhuman now gated less by strength than by the MEASUREMENT WALL (no above-amateur reference).
+- 2026-06-03 — **READ-ONLY AUDIT (independent agent; REVIEW_LOG D17-D22 / F16).** Confirmed C1/C2 fixes correct on code-read + value sign/scale consistent + deck-pairing correct. Flagged: **D17** Stage B doesn't cleanly isolate C3 (warm-from-iter_11 river-era + C6/C8/aug held → it's a SCREEN, not a clean C3 verdict); **D18** per-iter n=200 gate can't resolve its own +10-elo keep margin (±25 → adopt/reject is noise-driven); **D19** base `MCTS.search()` returns raw un-deduped child N (future MCTS-warmstart could resurrect C2); **D20** fair-chance determinization key omits deck order; **D21** no per-iter/eval manifests; **D22** deterministic-seed crash strands an iter (no `.failed` marker). **F16 FIXED** (keep-best persistence across relaunches). Verdict: treat live runs as SCREENS; gate Stage C on an n≥400 re-measure. Also fixed: STATUS "from-scratch warmstart" was FALSE (md5: warm.pt == iter_11.pt) → corrected.
+- 2026-06-03 — WORKER/MODE RE-BENCH (current-code, blend=0.5). **(1) MODE: orch-off wins ALL 3 boxes ~2×** — orchestrator GIL dispatch is pure overhead for the CPU v2.7 leaf (even xeon's Quadro: off 5.87 > sh3 5.14 > orch 4.5; `sweep_selfplay.sh`, CSVs `wsweep/`). **(2) W: per-box, NOT uniform** (Joshua flagged uniform-W14 as a grid artifact — correct). Fine sweep `sweep_w.sh` (orch-off, FIXED seed = identical games per W, G=40, CSVs `wsweep2/`): **laptop W20** (peak 19.29, +12% vs W14; 24T), **5800x W14** (11.99 jump), **xeon W10** (12T, conservative; sweep cut early, lowest-impact). Was 5800x W16 / laptop W10 / xeon shards=2 W18. Stale +87% mixed-mode bench (2026-06-01) was river-era → superseded. Also: deterministic process provenance via CARC_RUN env-tag + `cluster_census.py`.
+- 2026-06-03 — STAGE-B GATES 1+2 LOCKED (Joshua): success bar = ≥25 elo over iter_11 @ n=400 paired; blend curve = `0,0,0.15,0.30,0.50,0.70,1.0` (= `blend_for_iter()`). G-S3 gate design = last open decision before launch
+- 2026-06-03 — STAGE-B WIRING (branch `stage-b-wiring`): value-blend-in-loop (G-S1, the F-B1 fix) + G-T1/T2 knobs + anchor stays blend=0; code-reviewed "safe to launch"; NOT launched (gated on Joshua's success-bar + blend-curve)
+- 2026-06-03 — TEST-GAP CLOSE: C1/C2/F-B1 regression guards added to pytest (were script-only or absent; the suite green-lit all 4 shipped bugs)
+- 2026-06-02 (late) — STAGE-A2 VERDICT (paired n=400): c_puct + cap FLAT → production unchanged; FPU the one lever (+45 screen, n=400 confirm pending)
+- 2026-06-02 (late) — Work-stealing is the DEFAULT for eval sweeps (`--shared-claim`, not disjoint shards); cluster dashboard (heartbeat + status) added
+- 2026-06-02 — RE-BASELINE VERDICT: iter_11 = +25.2 elo on the clean game (was +181.7); learned policy ≈ v2.7 leaf
+- 2026-06-02 — PHASE 1 STAGED A→B→C (not "one batched retrain"); Stage A progress
+- 2026-06-02 — PHASE 0 EXECUTED: C1+C2 bugs fixed & verified; RIVER DROPPED
+- 2026-06-02 — FOUNDATIONAL AUDIT: the leaf was a symptom; clairvoyance DE-PRIORITIZED
+- 2026-06-01 — Anchor-fraction self-play VERDICT: +39 over iter_11 OVERTURNED by the ladder
+- 2026-06-01 — Confirm-before-kill: plateau-stop made symmetric with the keep decision
+- 2026-06-01 — Strength-push loop wired: mixed-mode + anchor-fraction + plateau guard
+- 2026-06-01 — Pipeline bench: orchestrator wrong for CPU v2.7 leaf → mixed-mode (+87% cluster); W≈48/fp16 superseded
+
+**2026-05 — measurement / Path-B / leaf-tuning era**
+- 2026-05-31 — PIVOT off value-as-leaf → measurement ladder; iter_11 +119 elo vs strong reference
+- 2026-05-31 — Path B Step 9 VERDICT: pure NN-value leaf fails (-800) but it's a CALIBRATION CLIFF
+- 2026-05-31 — Path B screening SUCCEEDED (value head crosses heuristic); loop extended to iter 24
+- 2026-05-29 — Path B Steps 6–8: smoke PASS, collapse guard + value-corr; 3-box screening LAUNCHED
+- 2026-05-29 — Path B Step E: farm scalars IN + free + flip-on wired
+- 2026-05-29 — c=3 "+47" RE-VALIDATED at n=1600 → corrected to +18.5; default unchanged
+- 2026-05-29 — Leaf flood-fill speedup: lazy per-leaf farm + city memo (1.70× leaf / 1.48× search)
+- 2026-05-29 — Prioritize the find_farm speedup as next dev task
+- 2026-05-29 — Engine fix: farmer-adjacency bug made farm scoring start-dependent
+- 2026-05-28 — GOAL CHANGE: attempt genuinely superhuman play (overrides original prompt)
+- 2026-05-28 — Measurement infrastructure: results.csv as source of truth + results discipline
+- 2026-05-28 (evening) — Optuna eval-search softens the c=3 "+47"; flagged for re-validation
+- 2026-05-28 — c_puct bump: eval-side validated, self-play-side on hypothesis (not yet A/B'd)
+- 2026-05-26 — c_puct=1.5→3.0 free win at iter_B1: +47.2 elo n=400; "plateau" was stale-PUCT
+- 2026-05-24 — Option B chain KILLED after B4; chain-vs-prev anchors lied; pivot to anchor-fraction
+- 2026-05-20 — Network-distributed eval-server: TCP bridge for GPU-less box
+- 2026-05-20 — Retroactive-validation pipeline: re-running 4 high-leverage past nulls at n=400
+- 2026-05-20 (results) — 2 of 4 false-negatives recovered; iter_B1 promoted to global-best
+- 2026-05-19 (late) — Deepsearch verdict revised: matched-regime sims=800 = +17 elo (within noise)
+- 2026-05-19 — Deeper-search self-play didn't advance; v2.7 plateau confirmed across 3 strategies
+- 2026-05-19 — Code-review loop: 14 fixes; work-stealing stale-recovery race accepted
+- 2026-05-18 — Option 2 (NN value-head leaf blend) closed; plain v2.7 plateaued
+- 2026-05-17 — self-play perf: hash-cache + get_side shipped; deeper memoization parked
+- 2026-05-17 — closure-probability accuracy is not the leaf lever → pivot to Option-2
+- 2026-05-17 — iter_02 flattens: policy saturated against fixed v2.7 leaf; compounding ceiling found
+- 2026-05-16 — iter_01 retrain confirms data-scarcity hypothesis
+- 2026-05-15 — PUCT c sweep: low c (≤1.0) catastrophic; default c=1.5 well-chosen
+- 2026-05-15 — v3 leaf: cap tuning fitting n=20 noise; v2.7 cap=12 at local optimum
+- 2026-05-15 — v2.5 dedup bug fix + cap/P re-sweep + cloud retrain: iter_00 +21pp over warmstart
+- 2026-05-14 — v2.5 hyperparameter sweep: sims=200 sweet spot, cap=5 inverted-U optimum
+- 2026-05-14 — orchestrator at W=6 hurts, W=12 helps — IPC vs batching tradeoff
+- 2026-05-14 — v2.5 BENCH PASSES 83.3% vs Tier-1; production candidate
+- 2026-05-14 — v2-diagnostic: bonus scale 4-7× v1 base — tanh saturates
+- 2026-05-14 — virtual_score_v2 FAILS bench: ~47pp regression vs v1
+- 2026-05-14 — Virtual_score diagnostic: closure-blindness + farm-composition opacity dominant
+- 2026-05-14 — Sims sweep + uniform-priors ablation: policy worth ~18pp; sims=400 ceiling
+- 2026-05-14 — The NN value head was the bug: NN priors + virtual_score flipped Tier-1 75%→40%
+- 2026-05-14 — Cloud-prep: --leaf-eval v2_5 plumbed; MCTS virtual-loss 3× batch-fill
+- 2026-05-13 — Tier-1 baseline destroys warmstart_canonical AND iter_12 → recipe-ceiling confirmed
+- 2026-05-13 — Phase B cloud bench: W=32 optimum, full iter 5.2 min, h2h OOM falsified
+- 2026-05-13 — Phase A cloud bench: 5-loop MCTS perf patches validated
+- 2026-05-13 — MCTS perf loop 2/3/4: tile/rotation/str caches, placed_coords set
+- 2026-05-13 — MCTS perf loop 1: engine state __deepcopy__ cut wallclock 3.3×
+- 2026-05-13 — Orchestrator multi-process pool: NULL, workers are bottleneck not GIL
+- 2026-05-13 — Phase 4 v6 cloud: 20 iters, iter_12 = 70% wr (new peak above v5's 65%)
+- 2026-05-12 — Phase 4 v5 HALTED at iter 9 (3 anchor FAILs); peak iter 6 = 65%
+- 2026-05-12 — Phase A cloud bench: W=96 optimum (15% faster than W=48)
+- 2026-05-12 — GPU orchestrator landed + validated, 10-14% slower local (expected)
+- 2026-05-12 — MPS test: W=48 + fp32 + no-MPS optimal
+- 2026-05-12 — Cloud bench: W=48 + fp32 optimum on RTX 5090 + 48-core EPYC
+- 2026-05-11 — Phase 4 v2 recipe FAILED acceptance: mix=0.3 floor not enough
+- 2026-05-10 — Chain-vs-prev ELO discredited; 30-iter "PASS" was absolute regression
+- 2026-05-08 — Virtual-loss + batched-eval MCTS landed
+
+**2026-04 — Phase 0-4 foundation era**
+- 2026-05-03 — Phase 4 smoke PASS: 5 iters, ELO 0→176
+- 2026-04-29 — Phase 3 closure: v2 the warmstart, proceed to Phase 4
+- 2026-04-28 — Phase 3 v1 acceptance + v2 retry plan (sharper tau)
+- 2026-04-28 — Engine bug: city_diagonal_top_left_road shared description
+- 2026-04-28 — Phase 3 production gen sized to 100K not 500K
+- 2026-04-28 — Phase 3 production prerequisites landed
+- 2026-04-28 — Phase 3 smoke: HEURISTIC wins, scale to 500K (pause for prereqs)
+- 2026-04-28 — External review findings + bug fixes
+- 2026-04-28 — Phase 3 network capacity: 6 ResBlocks × 96 filters
+- 2026-04-28 — Phase 2 acceptance: MCTS(s=20) 96/100 vs random + Q-tiebreak fix
+- 2026-04-27 — Phase 4 prereq: get_valid_moves performance strategy
+- 2026-04-27 — Phase 1 quick-bench results (per-call cost map)
+- 2026-04-27 — Phase 1 action-space encoding: phase-aware flat (size 2511)
+- 2026-04-27 — Window size is a Game config parameter
+- 2026-04-27 — Parallel-worker count: full SMT fan-out (16 on 5800X)
+- 2026-04-27 — Phase 0 measurement results (random play only)
+- 2026-04-27 — Vendor upstream repos rather than git submodules
+- 2026-04-27 — Reward normalization: tanh(diff / 15)
+- 2026-04-27 — Window-overflow handling: drop the game
+- 2026-04-27 — Patch engine: ties award full points to all tied players
+- 2026-04-27 — Patch engine: lazy tkinter import
+- 2026-04-27 — Patch engine: silence print statements behind flag
+
 ## Format
 
 ```
@@ -22,6 +243,1706 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 ```
 
 ## Decisions
+
+## 2026-06-09 (leaf) — Compact flat-union-find leaf rewrite (logic-exact, default OFF) + a discovered pre-existing leaf nondeterminism
+
+On branch **`leaf-rewrite`** (isolated worktree, off `stage-b-wiring`@4ea8a46 while attempt-#2 ran on the cluster — no commits to stage-b-wiring, no bundle refresh, NO benchmarking). Executes the "compact/cache-friendly leaf rewrite" lever from the 2026-06-09 bandwidth entry / BACKLOG "2026-06-09 — Compact leaf" entry.
+
+**What it does.** `src/carcassonne_ai/compact_leaf.py` replaces the v2.7 leaf's object-graph farm/city flood-fills (`FarmUtil.find_farm` / `CityUtil._compute_city` — pointer-chasing over Tile→FarmerConnection graphs, the RAM-bandwidth source) with a flat union-find: enumerate nodes → small int ids → parallel edge arrays → `parent[]` union-find → reconstruct the engine's own `Farm`/`City` objects. It pre-populates the SAME `_farm_cache`/`_city_cache` dicts the engine already reads, so `find_farm`/`find_city` resolve every query as a cache hit and the BFS never runs — **zero engine edits**. Behind `USE_COMPACT_LEAF` (default **False**); shared into `virtual_score`'s deepcopy snapshot (valid because the state deepcopy shares Tile/FarmerConnection refs → `id()`-keys survive).
+
+**It is LOGIC-EXACT.** Gate `scripts/reconcile_compact_leaf.py` (n=400, production v2.7 env), compact-ON vs the production object-BFS path: **0 mismatches** across **935,018 farm-partition + 579,575 city-partition + 14,400 `count_final_scores` `scores[]` + 28,800 base `virtual_score`** checks. Partitions, end-scores, and the base value are bit-identical. pytest: full suite green OFF (no regression), leaf suite green ON.
+
+**But it surfaced a PRE-EXISTING leaf nondeterminism (the real finding).** `virtual_score_v2` int differs in **2–12 / 28,800** evals (±1 pt). Root cause is NOT compact: the closure-anticipation bonus (`_closure_anticipation_bonus`) sums non-associative floats (0.2-multiples) in the iteration order of a **set** (`farm.farmer_connections_with_coordinate`), which is keyed on enum hashes → **randomized per process by `PYTHONHASHSEED`**. So two self-play/eval workers already compute different `virtual_score_v2` ints for the **same position** in ~1e-4 of cases (max pre-round drift ≈1e-15, flipping `int(round())` only where a score sits exactly on a `.5` banker's-rounding boundary). Evidence: identical gate config → 2 flips in one process, 12 in another. The 2026-05-29 fix made `find_farm` start-independent but left this summation order hash-dependent. **The leaf is the measurement ruler, and it is currently mildly non-reproducible across processes.**
+
+**Fix offered: `CANONICAL_BONUS_SUM`** (default **False**) — accumulate the bonus with `math.fsum` (the correctly-rounded, order-independent sum). With it on, the gate is **0 / 28,800** (`--canonical`, drift 0.0) → compact becomes a TRUE bit-exact drop-in AND the leaf becomes deterministic across processes. **Why default OFF / not flipped now:** turning it on changes production's exact output vs the **currently-running** attempt-#2 flywheel by those same ~1e-4 ±1 flips, so it must be a deliberate decision bundled with the compact merge (Phase 4), never mid-run.
+
+**NOT yet a measured speedup.** The pure-Python union-find still allocates engine objects during enumeration and runs interpreted; the bandwidth win needs the core compiled (numba `cache=True` to dodge per-worker JIT warmup, or Cython-AOT). numba is NOT installed and installing into the shared venv could perturb the flywheel, so it + the benchmark were deferred to Phase 4 (quiet box). The core (`_label_components`) is written as a pure-int kernel over parallel arrays specifically so it can be `@njit`'d later without touching enumeration/reconstruction. **Success criterion for Phase 4 is not "faster" but "moves the bandwidth wall"** (per-worker erosion curve flattens, saturation-W rises above 16 — `scan_loww.sh`).
+
+**Options considered.** (a) Accept the ULP int drift as within-noise — rejected as the default because the leaf is the ruler. (b) Replicate production's exact (arbitrary) set order in compact — infeasible/fragile (depends on which meeple populated the shared cache first). (c) Canonicalize summation (fsum) on both paths — chosen as the recommended closer; it's strictly more correct (also kills the latent hash-seed nondeterminism) and is a clean toggle.
+
+Files (all on `leaf-rewrite`, commit e4902dc): `src/carcassonne_ai/compact_leaf.py` (new), `virtual_score.py` + `virtual_score_v2.py` (toggles; OFF path byte-identical), `scripts/reconcile_compact_leaf.py` (gate), `tests/test_compact_leaf.py` + `tests/conftest.py` (new), `docs/COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md` (full report).
+
+**Phase:** Phase 4 (correction-era perf lever; gated, not in production).
+
+## 2026-06-03 — STAGE-B WIRING built on a branch (value-in-loop, the F-B1 fix) + test-gap close
+
+Done overnight (Joshua authorized autonomous progress on the decided path, stop at launch). All on branch **`stage-b-wiring`** (off `gpu-orchestrator`@e595d6c; merge is Joshua's call). Stage B is the cheap retrain that tests whether the learned value head, finally IN the search loop, beats the v2.7 leaf ceiling on the clean base-only game.
+- **G-S1 (7fa696d, b2ba341, bfbd47d):** `run_selfplay_iter.py --value-blend λ` blends the NN value into the leaf `(1-λ)·tanh(vs2/15) + λ·v_nn`; the 3 guard sites now read the per-iter value (not import-time `DEFAULT_CONFIG`); `blend_for_iter()` ramp in `run_pathb_cluster_loop.sh` is **DEFAULT OFF** (`STAGE_B_BLEND=1` enables; the curve is a PROPOSAL Joshua tunes). The fixed iter_11 anchor stays **blend=0** (plays pure v2.7 as trained; plan risk #4) — incl. its orch eval-server forced policy_only (review Issue 1, saves 8GB-box VRAM). Smoke-verified: same-seed self-play differs between blend 0.0 and 0.9 (the value reaches the leaf + steers the search).
+- **G-T1/T2 (8965852):** `LR_SCHEDULE` (none|cosine) + `VALUE_LOSS_WEIGHT` env knobs into the loop train step; defaults = current behavior; Stage B un-starves the value head (e.g. cosine / 3×).
+- **Code review:** subagent verdict "**correct + safe to launch**" — found + I fixed 1 issue (anchor orch server wasted full-forward → OOM-margin on 8GB). Otherwise clean (propagation both paths, default-off byte-identical, score-diff currency matches, no set-u bugs).
+- **Test-gap close (be46466):** the suite had green-lit all 4 shipped bugs (C1/C2 guarded only by un-wired `scripts/verify_*.py`; F-B1 untested). Added pytest guards: `test_farm_dedup_c1` (C1), `test_mcts_transposition_c2` (C2), `test_value_in_loop_fb1` (F-B1: value_blend steers the search — guards the wiring). All pass with teeth-assertions (they exercise the bug-prone paths). #4 cross-proc determinism + #5 tied-scoring still open.
+- **NOT launched.** Gated on Joshua: (1) pre-registered success bar (suggest ≥25 elo over iter_11 @ n=400 paired), (2) blend curve. Then warm.pt train + Xeon OOM smoke + G-S3 (gate→HeuristicMCTS). Package: `docs/STAGE_B_LAUNCH_READINESS.md` + `docs/STAGE_B_G-S1_PLAN_2026-06-03.md` + `docs/TEST_SUITE_GAP_ANALYSIS_2026-06-03.md`.
+**Phase:** Phase 1 (Stage B readiness; build complete, launch pending).
+
+## 2026-06-02 (late) — STAGE-A2 VERDICT: c_puct + cap FLAT (production unchanged); FPU the one live lever
+
+The post-Phase-0 re-sweep owed since the C1/C2 bug fixes (which moved scoring + visit-distribution optima). Paired (G-M2) n=400 head-to-head, iter_11 both sides, only the knob-under-test differing, work-stealing across 3 boxes. Rows: `results.csv: verdict_*`.
+- **Pairing validated:** `self_c3` (iter_11 vs itself, identical c=3.0) = 49.5% / z=−0.20. The *unpaired* wave-1 self-cell was 42% — that 8pp was pure first-player harness bias, now cancelled, and variance ~halved (se 2.5pp). This is why we pair.
+- **c_puct FLAT across 1.5/2.0/2.5/3.0:** c15 +15.6 (z=0.90), c20 −17.4 (z=−1.0), c25 −15.6 (z=−0.90) — all n.s. vs c=3.0. The n=100 "+18pp at c=2.0" wave-1 screen **reversed** → it was harness bias + noise (textbook lone-spike-is-noise, the c=3 lesson again). **Production c=3.0 stays.**
+- **cap FLAT** (wave-1: cap=8/16 ≈ cap=12) → **cap=12 stays.**
+- **FPU is the ONE lever showing signal:** fpu_reduction=0.2 (vs legacy q=0) = 56.5% / +45.4 elo / **z=+1.85** at n=200 — the only non-flat cell in the entire sweep. **Per our own discipline this is a SCREEN, not a verdict** (z<2σ) → must confirm at n=400 paired before promoting `fpu_reduction` to the production NeuralMCTS config. fpu04 (0.4) finishing. FPU also gets re-tuned at Stage B (G-S4), so the confirm can fold into the Stage-B sweep.
+
+**Net production change: NONE** (c=3.0 + cap=12 both confirmed). The value of this run was negative (ruling out phantom levers) + validating the paired/work-stealing methodology for everything downstream.
+**Phase:** Phase 1 (Stage A re-sweep, closes the C1/C2-owed re-tune except FPU).
+
+## 2026-06-02 (late) — Work-stealing is the DEFAULT for eval sweeps; cluster dashboard added
+
+**Work-stealing (Joshua: "we need to do work stealing whenever possible").** The Stage-A2 verdict first ran with **disjoint per-box seed shards**, which stranded the fast laptop idle ~24 min on the foregone c25 tail while slower boxes ground on. Killed + relaunched with `--shared-claim`: all boxes point at the SAME full seed range and atomically claim `(seed, player)` via O_CREAT|O_EXCL `.claim` sidecars; the on-disk `.json` exists-check is the permanent done-marker so the existing 318 games were reused. **Decision: prefer `--shared-claim` over disjoint shards for ALL eval sweeps**, not just self-play loops. Wired the launcher `scripts/sweep_verdict_steal.sh` (12153b6) and back-ported `--shared-claim` + `--paired` into the ladder gauntlet `eval_net_vs_heuristic.py` (14bcb75) for the upcoming high-sim reference rung. **Known residual:** claim-based stealing has a *tail* inefficiency — once all remaining seeds are claimed-in-flight, a box that drains its queue exits rather than re-stealing (claims only expire after `claim-stale-secs`=90min), so the last ~Σworkers games finish on whichever box is fastest. Acceptable (the bulk idle is gone); a future refinement is a short stale window or queue-drain re-attempt.
+
+**Cluster dashboard (Tier A + B; fe27b9c).** `scripts/cluster_heartbeat.py` (stdlib-only, runs on each box with any `python3`) samples CPU%/loadavg/GPU(util,power,VRAM)/running-job every 4s → `<share>/status/<host>.json`. The CIFS share is the bus — boxes never talk to each other, sidestepping cross-Tailscale networking. `scripts/cluster_status.py` reads them: no flag = consolidated text table (replaces ad-hoc ssh-`ps` bash for my status checks — kills the rewrite-bash-every-time anti-pattern); `--serve PORT` = a tiny stdlib HTTP server rendering a live auto-refreshing web page (Tier B, the one Joshua picked). Tolerates laptop GPUs reporting `[N/A]` power.limit (parse per-field, don't drop the GPU). Reachability gotcha: server binds inside WSL2 (NAT'd) while tailscaled is on the Windows host → reach from Mac via SSH `-L 8765:localhost:8765` or a Windows `netsh portproxy` (for tailnet/phone); WSL mirrored-networking is the clean long-term fix but needs a WSL restart (deferred — would kill running jobs). The dashboard immediately surfaced a real read: the laptop runs GPU-bound on eval (load 12/24 but 4070 at 97%), and the claim-tail idle above.
+**Phase:** tooling (supports Phase 1+).
+
+## 2026-06-02 — RE-BASELINE VERDICT: iter_11 = +25.2 elo on the clean game (was +181.7) — the learned policy adds ~nothing over the v2.7 leaf
+
+**The headline empirical result of the Phase-0 cleanup.** iter_11 (our "strongest" checkpoint) vs HeuristicMCTS, n=400, matched c=3.0/sims=200, on the NEW base-only **bug-fixed** game (C1 farm-dedup + C2 MCTS-transposition fixes, River dropped), 3-box disjoint seed shards 700000–700399:
+- **212W / 5D / 183L = 53.6% = +25.2 elo (±17.4, ~1.45σ).** Row: `results.csv: ladder_iter11_vs_heuristic_baseonly_n400`.
+- **COLLAPSED from the old-game +181.7 elo** (`ladder_iter11_vs_heuristic_n400`, measured on River + buggy farm scoring).
+
+**Interpretation.** ~85% of our headline "beats strong heuristic-search by +181.7" was **game-artifact**: River, the buggy farm scoring, and the fact that iter_11 trained on that exact broken game (so both the checkpoint and the apparent edge lived in the old distribution). On the real game the learned policy is **statistically ≈ the v2.7 leaf** (+25 at 1.45σ — barely positive, not the +180 we believed). This is the audit's central thesis (F-B1: the learned value was never doing the work; the hand-crafted leaf was) measured at verdict strength.
+
+**Consequences.**
+- This is NOT new failure — it's the bill for cleaning the foundation, predicted when the n=8 smoke flashed 0.375. The infrastructure (pipeline, 3-box cluster, warmstart, MCTS, val-corr→0.81) is sound; the *game underneath it* was rotten and is now fixed.
+- **We finally have a trustworthy baseline:** clean game, n=400 verdict, independent non-saturated reference, correct scoring. Numbers from here are real.
+- **Stage B is now unambiguous and low-risk:** there's no real learned strength to lose (we're at ≈heuristic), so the only question that matters is whether value-head-in-the-loop can build genuine learned strength past the v2.7 ceiling on the clean game.
+- **iter_11 is no longer a meaningful champion.** Stage B retrains from scratch on the real game. The 12 old screening checkpoints are off-distribution.
+**Phase:** Phase 1 (Stage A re-baseline).
+
+## 2026-06-02 — PHASE 1 STAGED A→B→C (not "one batched retrain"); Stage A progress
+
+**Context.** The correction plan said "batch C3+C4+C5+C6+C7+C8 into ONE retrain (pay it once)." A 3-agent review of the Phase-0 work + a direct code read changed the calculus.
+
+**Decision: stage by QUESTION, cheapest-informative-first** (Joshua-approved). Full spec: [docs/PHASE1_BUILD_SPEC_2026-06-02.md](docs/PHASE1_BUILD_SPEC_2026-06-02.md).
+  - **Stage A** (no retrain): re-baseline on the new game + cheap code (symmetry aug, gate, exploration, target mode) + the owed re-sweeps.
+  - **Stage B** (cheap retrain): does the value head IN the search loop (C3, the F-B1 root cause) beat the v2.7 ceiling with NO new planes? Gate Stage C on it.
+  - **Stage C** (expensive): representation planes (C4), only if Stage B breaks upward.
+**Reason:** C4 (representation) is ~1 day of engineering and is independent of whether C3 helps. Testing the near-free root-cause lever first de-risks the expensive build. "A few days of real science" > one big bet we can't attribute.
+**Reversal cost:** low (it's a sequencing choice).
+
+**Review findings that shaped this (3 agents, no new critical bugs):**
+- **F-B1 CONFIRMED:** prod loop `run_pathb_cluster_loop.sh:283` passes `--leaf-eval v2_5`; the `nn` argparse default is overridden. The net value really never drove a move.
+- Negamax signs, canonical form, action round-trip, terminal scoring re-verified clean.
+- **C2 PUCT-selection residual** (pre-existing, beyond the original C2 fix): `_select_child_puct` double-scored transposition-collided actions. FIXED 2026-06-02 (commit 3a31d2a) via an incremental alias structure on `_NeuralNode` + `_link_child`; base `MCTS` selection left unchanged (it's the reference ladder — changing it breaks comparability). Verified by an extended `scripts/verify_mcts_transposition_fix.py`.
+
+**Stage-A work landed (committed + pushed):**
+- **C5 symmetry augmentation DONE** end-to-end (rotate board/action/policy + dataset augment + streaming-loader flag `--augment-rotations`, default off; 16 tests). 90° only; reflection deferred.
+- Loop orchestrator **version-controlled** (`scripts/run_pathb_cluster_loop.sh`).
+- **3 boxes synced** to HEAD via an offline git **bundle** on the CIFS share — the remotes have no github DNS over Tailscale, so `push`+`pull` doesn't work; `git bundle create` on the share + `git fetch <bundle>` + `git reset --hard` on each box does. Reusable pattern.
+- **Re-baseline DONE:** see the headline entry above — iter_11 +25.2 elo on the new game (was +181.7).
+**Phase:** Phase 1 (staging + Stage A).
+
+## 2026-06-02 — PHASE 0 EXECUTED: C1+C2 bugs fixed & verified; RIVER DROPPED
+
+**Context.** Acting on the foundational-audit correction plan. Joshua confirmed "drop rivers" and "get started on all those bug fixes."
+
+**What was done (commit follows this entry):**
+- **C1 — farm scoring double-count FIXED.** `count_farm_points` (points_collector.py) now dedups touched cities by `frozenset(city.city_positions)` (mirrors virtual_score_v2.py:348) instead of relying on an identity-keyed `set[City]`. Added value `__eq__/__hash__` to `City` (defense-in-depth). **Verify (no retrain):** `scripts/verify_farm_dedup_fix.py` n=150 (876 farms) — fixed score equals an independent position-set-dedup reference on ALL farms; 16.3% of farms were over-scored pre-fix (matches the audit's ~17%), 633 spurious points removed, worst single farm +12.
+- **C2 — MCTS transposition visit double-count FIXED.** Rotationally-symmetric tiles emit ≥2 rotations → identical board → the transposition table (`self._nodes`, keyed by board string) hands both action slots the SAME child object, so reading `children[a].N` per action double-counts visit mass. Added `NeuralMCTS._deduped_children` (collapse actions sharing a child object to the lowest-index action) and routed `root_visit_distribution`, `select_for_training`, `best_action`, and base `MCTS.best_action` through it. **Verify (no retrain):** `scripts/verify_mcts_transposition_fix.py` sims=64 — 17.5% of decision nodes had collisions (audit ~20%); the fixed visit vector is collision-free and its mass equals the unique-child sum. (HeuristicMCTS.best_action outcome was provably robust to the collision — same child object → same board — so the +181.7 ladder numbers were NOT corrupted by C2; only NeuralMCTS policy *targets* were.)
+
+**Decision: DROP RIVER (Joshua confirmed).**
+**Options considered:**
+  - A: keep River (status quo) — more tiles/strategies, but competitive/world-championship play is base-only and the River opening is a non-scoring setup variant we'd be optimizing for needlessly.
+  - B: drop River → base-only (BASE tile set, FARMERS). Matches the target meta. Caveat (Joshua): base-only opening is MORE chaotic (no scripted river spine) → deeper/sharper game AND higher draw-variance.
+**Decision:** B. `Game` default `tile_sets=(TileSet.BASE,)`; `features.DECK_NORM 85→72` (base deck = 72 tiles vs 83 with River). Engine retains River support for explicit callers; production self-play/eval/training now base-only. Test harness fix: `test_farm_scalars._play` ply cap 150→130 (base games terminate at ~141-144 plies; 150 returned a terminal board and crashed `get_valid_moves`). Full suite green (323 passed, 1 skipped).
+**Reason:** C4 (representation planes) forces a from-scratch warmstart anyway → this was the free moment to switch the rule scope. Aligns the whole pipeline with the actual superhuman target meta.
+**Reversal cost:** low (flip the default back; engine code unchanged).
+**Consequence:** existing river-trained checkpoints (iter_11 etc.) are now off-distribution — expected; Phase 1 retrains from scratch base-only. Carry-over re-sweeps still owed (do alongside retrain prep): v2.7 caps (C1 shifts scoring optima) and c_puct/FPU (C2 changed the visit distribution).
+**Phase:** Phase 0 (correctness) + folded-forward scope decision.
+
+## 2026-06-02 — FOUNDATIONAL AUDIT: the leaf was a symptom; pivot to correctness/architecture fixes; clairvoyance DE-PRIORITIZED
+
+**Context.** After the residual-leaf soft-no, the question became "why has AlphaZero failed so badly on a game we *accidentally made deterministic*?" First finding: the MCTS never modeled chance — it descends the engine's pre-shuffled deck in true order (clairvoyant single-determinization; documented in mcts.py:18 as a deliberate Phase-2 simplification for the OLD modest goal, never re-audited when the goal changed to superhuman 2026-05-28). Then a 6-agent parallel audit swept every foundational domain.
+
+**Findings (full evidence: docs/research/foundational_audit_2026-06-02.md; plan: docs/CORRECTION_PLAN_2026-06-02.md).** Multiple agents converged independently. Two LIVE correctness bugs (verified in code): (C1) farm scoring double-counts cities — `count_farm_points` sets `City` objects with no `__eq__/__hash__` → identity dedup → ~17% of farms over-scored (up to +69pts, asymmetric) → **corrupts the reward AND the v2.7 leaf**; (C2) MCTS keys children by action → rotationally-symmetric tiles share a node → ~20% of nodes **double-count visits in every policy target**. Plus architectural caps: the learned **value head is never in the search loop** (prod uses the v2.7 leaf; net value is a side-regression that never drives a move → can't bootstrap past the teacher = root of the calibration cliff); representation **blind to farm connectivity + bag composition**; no symmetry aug; saturated `tanh(diff/15)` value target; advisory loop gate (chain random-walks).
+
+**Clairvoyance screen (n=76, iter_11, sims=200/c=3): clairvoyant vs fair = 36W/40L = 0.474 (−0.5σ) = DEAD EVEN.** Future-sight is NOT a strength lever.
+
+**Decision.** (1) Reframe: the leaf ceiling was a *symptom*, not the disease. Stop leaf-tuning. (2) Fix C1+C2 FIRST (cheap, verify without a retrain — they corrupt every downstream measurement). (3) Then ONE batched retrain turning on the real engine: value-head-in-loop + representation planes (farm connectivity + bag histogram) + drop River (pending Joshua) + symmetry aug + de-saturated target + conditional gate. (4) **Exact chance nodes DEMOTED** to value-target-quality (Phase 3), since the screen proved clairvoyance isn't a strength lever — saved a multi-week build of the wrong thing.
+**Reason.** A corrupted reward + corrupted policy targets + a value head that never drives search make every prior strength number partly contaminated and explain the calibration cliff mechanically. Fix the foundation before any more strength work.
+**Reversal cost:** medium (C1 shifts v2.7 cap optima → re-sweep; Phase-1 changes net input → retrain from warmstart).
+**Phase:** 4 (foundational correction).
+**Built this session:** `NeuralMCTS(fair_chance=…)` + `scripts/diag_clairvoyance.py` (commit e88d82b); draw-luck control variate `diag_leaf_gate.py --with-luck` (×1.21 measurement win, commit 7e7ebf1).
+
+## 2026-06-01 — Anchor-fraction self-play VERDICT: ~~real +39 over iter_11~~ → OVERTURNED by the ladder (no absolute gain)
+
+**⚠️ UPDATE (same day, ladder result `ladder_iter4_vs_heuristic_n400`): the +39 below was a FALSE POSITIVE.** iter_4 vs HeuristicMCTS @ c=3.0 n=400 = +165.1 elo vs iter_11's +181.7 → **diff −16.6 ±27.7 = 0.6σ = TIED** (iter_4 nominally *lower*). On the absolute, independent anchor at production c=3.0, **iter_4 is NOT stronger than iter_11.** The head-to-head +39 (c=1.5, vs the same-lineage iter_11) was **anchor-overfitting** (iter_4 trained 30% vs iter_11 → learned to beat *it specifically*) ± a c=1.5 artifact — classic [[feedback_anchor_before_scaling]]: relative-vs-lineage-anchor ≠ absolute strength. **anchor-fraction did NOT break the v2.7 leaf ceiling.** The "takeaways" below (esp. #1 "ceiling NOT absolute") are RETRACTED; the leaf ceiling stands. New lessons: (a) anchor against an INDEPENDENT reference, never a same-lineage one; (b) the ladder caught a false positive the head-to-head would have shipped — always confirm a relative gain absolutely. **Next lever = leaf rework (learned-residual leaf).** The original (now-superseded) reasoning is preserved below for the record.
+
+**Context.** First full run of the anchor-fraction strength loop (`RUN=pathb_anchor`: warm-chain from iter_11, 30% of self-play games vs the fixed iter_11 anchor, all 3 boxes). Ran iters 0–6, then self-stopped via the new confirm-before-kill (plateau confirmed). The open question from the prompt-superseding goal: can the *learned* signal exceed the hand-crafted v2.7 leaf, which was hypothesized to cap strength near iter_11?
+
+**Result (verdict-grade, n=400, c=1.5 sims=200; `results.csv` `anchor_*`):**
+- **iter_4 vs iter_11 = 55.6% = +39.3 elo / 2.25σ → REAL gain.** iter_4 is the new best checkpoint.
+- iter_6 vs iter_4 = 49.1% (equal) — the two best ckpts are the same strength despite n=40 iter_11 gates of 57.5 vs 68.8 ⇒ those swings were **noise**.
+- iter_0 vs iter_5 = 46.5% (floor check, n=100) — chain is **non-monotonic**: checkpoints bounce (iter_4/iter_6 ~+39 over iter_11; iter_0/iter_5 ~iter_11 level). Pipeline healthy (val-corr climbed 0.18→0.81 monotonically, entropy OK).
+
+**Decision / takeaways:**
+1. **The v2.7 leaf ceiling is NOT an absolute wall** — anchor-fraction self-play produced a checkpoint measurably stronger than iter_11. This was the open hypothesis (see the "Value-as-leaf CLOSED" entry, which said lifting the ceiling "needs a genuinely stronger *learned* signal — what anchor-fraction is meant to produce"). It produced one. Modest (+39), but real.
+2. **The gain is small and noisy/non-monotonic** — not a steady climb; the best checkpoints happen to land ~+39, others sit at iter_11. So anchor-fraction is a real but weak lever; the leaf remains the bigger one for a *large* gain.
+3. **Methodology, logged hard: per-iter n=40 gates are SCREENS, not verdicts.** The +39 real signal was invisible/misleading at n=40 (gates swung 37.5–68.8%); only n=400 resolved it. I flip-flopped twice reading the n=40 trend (null→"climbing"→noise→real). Reinforces [[feedback_results_table_source_of_truth]] and the n=100-screen/n=400-verdict rule — and validates the confirm-before-kill design (it correctly auto-escalated to n=400 at the plateau).
+
+**Caveat.** Measured at the loop gate's c=1.5, not the ladder's c=3.0 — iter_4's *absolute* strength vs HeuristicMCTS not yet re-laddered (NEXT #1).
+**Reversal cost:** n/a (a measurement). **Phase:** 4.
+
+## 2026-06-01 — Confirm-before-kill: make the plateau-stop symmetric with the keep decision
+
+**Context.** The plateau guard (entry below, item 5) hard-`break`s the loop after MAX_FLAT(=2) consecutive n=40 gates fail to beat the running best. Joshua flagged the asymmetry: a *positive* n=40 gate we (correctly) distrust as noise and demand more data — but a *negative* streak we acted on by killing the whole run. Same ±8% noise, opposite credence. Worse, the guard compared each gate against the running **max** (`best_wr`), so a lucky early high (e.g. iter_1's 55%, when the true rate was ~47%) inflates the bar and biases the counter toward false-trips. And the cost asymmetry runs the same way: a false-positive wastes ~1 iter (~1 hr); a false-negative abandons a working approach and sends us to the much harder leaf rework.
+
+**Options considered:**
+  - A: Leave it — accept that n=40×2 is the stop signal. Cheap but kills on screen-grade evidence; violates our own "n=400 = verdict, never promote/demote on a screen" rule.
+  - B: Just raise ANCHOR_GAMES/MAX_FLAT — tightens but multiplies *every* iter's gate cost, and still a fixed-threshold guess.
+  - C: **Confirm-before-kill** — when the flat streak trips, run ONE n=CONFIRM_GAMES(400) head-to-head of **latest iter vs current best** (net-vs-net), and only stop if latest fails CONFIRM_THRESH(0.54, ~1.5σ over 0.5 at n=400). Else the streak was noise → adopt latest as best, reset, continue.
+
+**Decision:** chose **C**. Live in `~/run_pathb_cluster_loop.sh` (`confirm_gate()` + rewritten plateau block; backed up to `code_sync/`).
+
+**Reason / properties:**
+- **Symmetric** — the kill now needs the same verdict-grade (n=400) evidence we'd demand to believe a positive.
+- **Ratchet-immune** — confirm compares latest-vs-best *directly* (head-to-head), not against the noise-inflated iter_11 ref.
+- **Reversible** — a positive confirm resets and continues; a confirmed stop logs the follow-up (gate best vs iter_11 @ n=400 to classify success-vs-null before the leaf pivot).
+- **No false-kill on infra failure** — if the confirm gate yields no verdict (boxes die / share hiccup mid-confirm), it resets flat and re-confirms next plateau rather than killing on no data.
+- Two bugs caught while wiring: (1) the eval script zero-pads vs-iter (`:02d`) so the confirm's output-dir lookup had to match (`iter_NN_vs_ON`), else `wait_for_count` hangs → false "kill"; (2) the infra-failure fall-through above.
+
+**Reversal cost:** low (env knobs `CONFIRM_GAMES`/`CONFIRM_THRESH`; set `CONFIRM_GAMES=0`-style or revert the block to restore the bare guard).
+**Phase:** 4 (self-play strength push). **Activates on next driver restart** (running driver parsed the loop pre-edit).
+
+## 2026-06-01 — Strength-push loop wired: mixed-mode + anchor-fraction + plateau guard (ready to launch, HELD for go)
+
+**Context.** With the bench done (entry below), wired the bench-optimal config + the long-deferred anchor-fraction strength loop into `~/run_pathb_cluster_loop.sh` (the untracked production launcher; backed up to `code_sync/`).
+
+**What was wired (all 6, two smokes clean):**
+1. **Mixed-mode self-play** — `selfplay_mode()` per box: 5800x orch-off W=16, xeon `--orch-shards 2` (W=18), laptop orch-off W=10. +87% cluster (21.9→41.0 mv/s). Strength-neutral: orch-off uses the inline evaluator that `tests/test_eval_server.py` proves matches the orchestrator <1e-5 — **this is the Pass-3 check, satisfied by existing passing tests, no new experiment needed.**
+2. **3-box anchor-gate fan-out** — gate launches on all boxes with `--shared-claim`; after `wait_for_count`, a consolidated Python tally over all boxes' JSONs (eval is fastest on the laptop, so fanning beats inline-on-5800x).
+3. **WARM/anchor/gate-ref = iter_11** — default `WARM_SRC` now the confirmed-strongest ckpt; gates cumulative climb vs a FIXED ref.
+4. **Anchor-fraction self-play** — `--anchor-fraction 0.3 --anchor-checkpoint <WARM=iter_11>` on the self-play cmd (anchor fixed at iter_11 while warm_from chains). Review-hardened (REVIEW_LOG iters 5-8); per-worker anchor-net path works under orch-off (smoke-confirmed, no scalar-width crash).
+5. **Plateau guard** — `stop-after-MAX_FLAT(=2)`: tracks the best gate wr vs iter_11, stops after 2 consecutive non-improving iters. n=ANCHOR_GAMES(40) is noisy (1σ≈±8%) → coarse; raise ANCHOR_GAMES/MAX_FLAT to tighten. (This guard previously did NOT exist.)
+6. **Safety** — clobber guard (refuses START=0 over an existing `iter_00.pt`) + default `RUN=pathb_anchor` (fresh dir, can't overwrite the pathb_loop screening ckpts iter_00..iter_11).
+
+**Decision:** loop is launch-ready, HELD for Joshua's go (big multi-box compute, ~9–10 hr for 12 iters ≈2× faster post-bench). Launch: `RUN=pathb_anchor nohup nice -n 19 bash /home/doctor/run_pathb_cluster_loop.sh > /tmp/pathb_anchor.log 2>&1 & disown`. sims=200 first; escalate to 800 only if it gates positive.
+
+**Reversal cost:** low (launcher only; checkpoints/data untouched until launched).
+**Phase:** 4 (strength push).
+
+## 2026-06-01 — Pipeline bench: orchestrator is the wrong tool for the CPU v2.7 leaf → mixed-mode self-play (+87% cluster); cloud-era W≈48 / fp16 doctrines superseded
+
+**Context.** Ran a per-box per-lever throughput sweep (`scripts/bench_pipeline_sweep.py`, real self-play at production knobs sims=200/v2_5 leaf/score_diff, 240s windows) on all 3 boxes, then a 3-rep verdict-grade confirm of the surprising cells, then a 3-rep deploy-config pass. **Consolidated table (every cell tested, all passes, mean±std): [`experiments/bench_pipeline_results.csv`](experiments/bench_pipeline_results.csv)** (regenerate via `scripts/aggregate_bench_results.py`); raw per-pass data `/mnt/c/carc-shared/bench/sweep_*.csv`.
+
+**What the data says (all confirm/deploy numbers are 3-rep, CV ≤2%).**
+- **Worker count is FLAT** under the orchestrator on every box (5800x 7.4–8.1 across W=8–20; xeon ~5.4; laptop ~9.8). All read `ipc_latency` → workers block on the eval-server socket, not CPU.
+- **The orchestrator's single GIL-bound dispatch thread is the limiter** (`eval_server.py:135`, mp.Queue pickling a ~0.5MB obs/request). The production leaf is **`v2_5` = `virtual_score`, a CPU heuristic** — the NN only supplies priors — so the GPU sits idle (28W/180W) while the dispatcher is the wall. **The orchestrator earns its keep only when the leaf is a GPU NN-value forward (the abandoned v1–v6 recipes); it outlived its workload.**
+- Turning the orchestrator OFF (per-worker inline eval) wins on every box: 5800x 7.4→**14.70** (orch-off W=16, cpu_bound), laptop 9.2→**19.26** (orch-off W=10, gpu 95%), xeon 5.4→**7.0** (→gpu_compute on the weak Turing). `orch_shards=2` is a partial recovery (5800x 11.2, laptop 13.4, xeon 6.9).
+- **fp16 is batch-regime-dependent** (reconciles the old "benched slower twice" claim — it was right for small batch): under the **orchestrator** (max_batch 256) fp16 is FASTER on Blackwell (5800x 5060Ti, 9.19 vs 7.40, +24%) and Ada (laptop 4070m, 12.05 vs 9.17, +31%), ~null on Turing. But under **orch-off** (small per-worker batch) fp16 HURTS: 5800x deploy orch-off+fp16 = 13.81 < 14.70 no-fp16 (−6%). The deploy pass also showed the laptop shards+fp16+mb16 stack (18.39) does NOT beat plain orch-off (19.26).
+
+**Decision — mixed-mode per box (the SIMPLEST lever wins where VRAM fits):**
+| box | config | mv/s (3-rep) | vs prod orch-on Wdef |
+|---|---|---|---|
+| 5800x (16GB) | **orch-off W=16, no fp16** | 14.70 | +99% |
+| xeon (8GB) | **orch_shards=2** (≈orch-off W=8) | 6.99 | +30% |
+| laptop (8GB) | **orch-off W=10** | 19.26 | +110% |
+
+Cluster 21.9→41.0 mv/s = **+87%**. fp16 + shards were red herrings on the strong boxes; orch-off alone wins where the net×W fits VRAM. **Not yet wired into the strength loop** — gated on a Pass-3 strength/correctness check that orch-off + prior-batching-order is strength-neutral (likely — MCTS is robust to tiny prior noise — but unverified; do not promote unverified).
+
+**Superseded cloud-era doctrines (the root cause of weeks of mis-tuning):**
+- **"orchestrator saturates / GIL bites at W≈48"** (this file ~L806/838/859/1085) was measured on the **2026-05-12 vast.ai 48-CORE EPYC + 5090** box ($0.37/hr). On the 12–16-thread cluster the GIL-bound dispatcher saturates at **W≈14**. W≈48 was never valid here.
+- **"orch-shards GIL only bites at W≈48"** (BACKLOG) — sharding gives +35–50% at W=14–24 on the cluster. Same vast.ai origin.
+- **"fp16 is not a lever / benched slower"** (BACKLOG:295, `bench_pipeline_sweep.py:74-77` comment) — REFINED to batch-conditional (above), not blanket-true.
+
+**Not doing:** a shared-memory-IPC orchestrator rewrite (the real single-thread fix — kill the mp.Queue pickle). Parked in BACKLOG; revisit ONLY if a future GPU-bound (NN-value) leaf returns, where cross-worker batching pays off again. For the CPU leaf, orch-off already wins.
+
+**Reversal cost:** low (mode flags only; no checkpoint/data change).
+**Phase:** 4 (self-play throughput).
+
+**Phase-3 eval addendum (same session).** Added `--mode eval` + BENCHTP to `eval_net_vs_heuristic` and swept its W (no-orchestrator, batch-1 priors + CPU leaf — the n=400-gauntlet path; n=1/cell screen). Findings:
+- **Eval is FASTEST on the laptop = 15.8 mv/s (4070m, GPU-bound 99%) — 2.2× the 5800x (7.1) and 3× the xeon (5.3).** Box-ranking is more lopsided than self-play (an n=400 gauntlet ≈ 63 min on laptop vs ≈2.3 hr on 5800x). So verdict gauntlets should run on the laptop, or work-steal across 3 (`--shared-claim`), NOT inline on the 5800x — yet the in-loop anchor-gate (`run_pathb_cluster_loop.sh:145`) currently runs inline on the 5800x (the *slowest* eval box). Move it / fan it out when convenient.
+- **The "eval → W≤10 CPU-bound" rule (CLAUDE.md) is box-dependent — REFINED:** only the strong-GPU 5800x is CPU/latency-bound (plateau ~7 across W=8–16, peak W≈10). The GPU-weaker xeon (Turing) and laptop (Ada) are **GPU-bound** and want W≈14–16 (more workers keep the slow GPU fed — same as orchestrator self-play, opposite of the rule). xeon default W=12 leaves ~5%; bump eval `--workers` to 14–16.
+- No big throughput knob remains — the find_farm/leaf speedup (2026-05-29) already captured it; defaults are near-optimal except the xeon W bump + the placement win. Data: `sweep_evalw_*.csv`.
+
+## 2026-05-31 — PIVOT off value-as-leaf → measurement ladder; iter_11 beats a strong reference (+119 elo, first absolute signal)
+
+**Context.** Step 9 closed the value-as-leaf lever (calibration cliff — see entry below). Value-leaf needs scale we don't have. Joshua chose to PIVOT to **measure absolute strength + enable play**, explicitly NOT scale-blind (which would burn weeks into an unmeasurable ceiling). Selected: #1 measurement ladder, #2 headless play, #3 confirm blend.
+
+**The measurement wall this addresses.** Tier-1 (1-ply heuristic) is saturated; self-anchored elo (iter_N vs warm/prev) can climb while absolute strength regresses (the Option-B lesson). We had NO trustworthy absolute read. Fix: a strong, NON-saturated reference = **HeuristicMCTS** (v2.7 leaf + UCT search — the same leaf our bot uses, but NO learned policy). Test: NeuralMCTS(net priors + v2.7 leaf VALUE — the production play config, NOT the raw value head Step 9 killed) vs HeuristicMCTS at **matched sims**. Isolates exactly: does the LEARNED POLICY beat pure heuristic search at equal compute?
+
+**Result (n=100, matched sims=200, c=3):** iter_11 net **66W/1D/33L = 66.5%, +119 elo / 3.2σ, +14.5 score margin.** (Early n=28 was 86%/+311 → regressed to mean, as flagged; the n=100 is the honest number, n=400 verdict running.)
+
+**Reading.** The first TRUSTWORTHY absolute-strength signal in the project: the learned policy decisively beats a strong, non-saturated reference at matched compute. This **validates the +190 self-anchored gain as real strength, not drift** — measurement-first paid off (we now KNOW). Calibration: +119 over our own heuristic+search = "clearly stronger than the thing we built," = ladder rung 1 cleared, NOT "superhuman" (HeuristicMCTS ≈ strong-amateur, not expert). Next rungs: beat Joshua → stronger external reference → pros.
+
+**Tools built + committed.** `scripts/eval_net_vs_heuristic.py` (ladder gauntlet, `ca24392`/`9d39cc5`), `scripts/play_vs_net.py` (headless terminal play — the tkinter GUI is unusable over the SSH chain; `5504fb6`), `scripts/tally_ladder.py` (union tally over fanned-out 3-box runs, validated vs n=100; `1b151c9`).
+
+**Decisions.** (1) Pivot accepted: measurement + play before any more scaling. (2) Promote ladder to n=400 (3-box, disjoint seed ranges → shared folder, running). (3) Don't switch the production leaf to NN value. (4) iter_11 is our confirmed-strongest checkpoint → the play-bot target at sims=800.
+
+**Reversal cost.** Low — additive tooling + eval; no production change.
+
+**Phase.** Phase 4 / Path B → measurement workstream (CLAUDE.md Wall #1).
+
+---
+
+## 2026-05-31 — Path B Step 9 VERDICT: pure NN-value leaf fails (-800), but it's a CALIBRATION CLIFF, not a dead value head
+
+**Result.** Step 9 go/no-go (iter_11, same policy net both sides, NEW=pure NN-value leaf λ=1.0 vs OLD=pure v2.7 leaf λ=0.0, n=400, sims=200, c=3, 3-box): **3W/1D/396L, avg margin −73.7, −800 elo (capped).** Authoritative tally (`scripts/tally_step9.py`, 400/400, 0 corrupt, slot balance 200/200) confirms the driver's number.
+
+**This contradicted the screening (held-out corr 0.81), so before filing a NO-GO we ran diagnostics.** Three checks (`scripts/diag_value_leaf.py` + two inline) RULED OUT the bug hypotheses:
+- **Not a sign/POV flip:** corr(NN, v2.7)=+0.31, sign-agreement 57.5% (both > chance); NN value sane (mean −0.01, std 0.64, range [−0.94,+0.96]).
+- **No train/serve skew:** recorded iter_11 self-play data is genuinely 12-wide with live, varying farm scalars (contested/balance non-zero); self-play records via the SAME `get_canonical_form` eval uses; encode is deterministic.
+- **Leaf wrapper does not perturb:** `make_v25_value_wrapper` at λ=1.0 returns EXACTLY the raw NN value + identical priors (−0.83183 both). Not pathologically overconfident (|v|>0.9 only 11.7%).
+
+**Blend sweep (the decisive follow-up; n=30 each, same net both sides, NEW=λ blend vs OLD=pure v2.7):**
+| λ | record | elo vs pure-v2.7 |
+|---|---|---|
+| 0.1 | 16W/14L | **+23** (break-even, ±64) |
+| 0.25 | 12W/2D/16L | −47 |
+| 0.5 | 13W/17L | −47 |
+| 1.0 | 3W/1D/396L | **−800** |
+→ **A smooth, monotonic CALIBRATION CLIFF**: graceful for λ≤0.5 (all within ~1σ of break-even), catastrophic ONLY at pure-NN. A wiring bug would break at all λ; this degrades gracefully → consistent with a real property, not a bug.
+
+**Verdict / reading.** Path B is a **partial success, NOT the NO-GO the −800 implied.** The learned value head DID learn real signal (corr 0.18→0.81, correctly wired) and is **usable as a small blend** (≈break-even at λ=0.1). It is simply **not robust enough at 12-iter scale to be the SOLE search leaf** — MCTS at c=3 steered entirely by it walks into its off-distribution errors. This is the same value-as-search-leaf wall Option 2 hit in May, now at much better in-distribution prediction; KataGo got past it with massive scale + regularization. **The original Step-9 framing (pure-NN-leaf, GO if >+15) was too-extreme a test** — the production-relevant question is the blend, and the blend is viable-to-neutral, not harmful.
+
+**Decisions.**
+1. **Step 9 = soft NO-GO on the PURE-NN-leaf**; **partial GO on the value head as a blend.** Don't switch the production leaf to NN value.
+2. **Review-agent team: SKIP for now.** The smooth λ-curve + 3 cleared bug hypotheses make a hidden-bug explanation unlikely; a deep code review is low-EV here. Revisit only if a future result looks anomalous.
+3. **Strength gain stands:** the +190 anchor-gate (iter_11 vs warm) came via the v2.7 leaf and is untouched by this — the policy genuinely improved.
+4. **Next levers (not the value-leaf):** keep iterating (the extended loop is the cheap continuation); if we want the value-leaf to harden, that needs scale + a value-target regularizer, which is a bigger commitment than 12 iters.
+
+**Reversal cost.** None — diagnostics + logging only; no production change.
+
+**Phase.** Phase 4 / Path B Step 9 (closed).
+
+---
+
+## 2026-05-31 — Path B screening SUCCEEDED (value head crosses the heuristic); loop extended to iter 24
+
+**Result.** The 3-box screening loop (12 iters, 600 games/iter, sims=200, farm scalars + ownership aux on) finished Sat 18:26. The diagnostic that gates the whole probe — **held-out value↔outcome correlation** (`train_iter._value_outcome_corr`, val split) — traced a clean S-curve: **0.38 → 0.81**, crossing the v2.7 heuristic's **0.61** ~iter 3-4 and plateauing ~0.81 (old data-starved NN value head = 0.18). No policy-entropy collapse (1.75 → 1.66, floor 0.87). Per-iter anchor-gate iter_11 vs frozen warm: **30W/0D/10L, +190.8 elo**.
+
+**Reading.** A **strong GO *signal***: the learned value head now substantially out-predicts the heuristic on held-out outcomes — the exact Path-B question, on the right (fixed-reference) metric. **NOT yet the verdict:** +190 is self-anchored vs warm (Option-B lesson: self-anchored elo can climb while absolute strength regresses), and corr is mechanism, not playing strength. **Step 9 — go/no-go A/B (NN-value-leaf vs v2.7, same policy net both sides, n=400; GO if >+15 elo) — remains the decisive test, still pending.**
+
+**Why it stopped at 12.** Hardcoded `ITERS=12`, NOT a plateau (loop halts only on NaN / entropy-floor collapse; anchor-gate non-halting). corr-saturation ≠ strength-saturation (value-corr ceiling <1 from tile-draw luck).
+
+**Decision: extend the loop** (Joshua, 2026-05-31). Resumed iters **12→23** in the same run dir (warm-from iter_11, `--window 10` buffer continuous); `run_pathb_cluster_loop.sh` gained `START` resume-in-place support. 3-box WS, nice -19, ~24h. Driver 29976, Monitor `bhnvreb82`.
+
+**Open gaps (production loop v2).** (1) Loop gates only vs frozen warm → no per-iter marginal-strength signal / no plateau-stop; gate vs running-best + stop-after-2-flat. (2) Post-leaf-speedup self-play is GPU/eval-bound (Step-1b W-rebench: W barely matters ≥10, Xeon 10→18) → open throughput lever is a multi-shard eval-server, not more workers. (3) Beyond Step 9, an external/absolute reference ladder (Joshua → club/online → pros) is required to *claim* superhuman.
+
+**Reversal cost.** Low (additive; just more iters; stoppable anytime).
+
+**Phase.** Phase 4 / Path B Step 8 → Step 9 pending.
+
+---
+
+## 2026-05-29 (evening) — Path B Steps 6–8 executed: smoke PASS, collapse guard + value-corr built, 3-box work-stealing screening run LAUNCHED over Shabbos
+
+**Context.** Joshua gave the go to run Step 6 ("run the smoke. low priority nice"), then escalated to launch the loop over Shabbos ("yolo it… wire up 7 and 8, I check back after havdalah"), then **demanded all 3 boxes** for the loop.
+
+**Step 6 (de-risk) — PASS.** Tiny end-to-end smoke (gen 12-scalar → aux-weight sweep {0,0.15,0.5} → self-play → train_iter → anchor-gate): 0 NaN, aux loss falls, mains flat across aux weights (→ freezing aux=0.15 justified), value-leaf swap runs. **1a profile (in-process, sims=200) → PROCEED:** leaf eval ~86% (expected), `get_next_state`/deepcopy only ~10% (confirms the speedup analysis), no >2× surprise. ⚠️ cProfiling `run_selfplay_iter` directly is useless (it spawns a Pool → misses worker hot path); profile in-process via `play_one_selfplay_game` (`scripts/profile_selfplay_inproc.py`). **1b W-rebench (3 boxes, real `run_selfplay_iter`, NOT bench_workers which times raw-engine games): curves FLAT** (post-speedup self-play is eval/dispatch-bound, W barely matters ≥10) → **5800x W=14, Xeon W=18, laptop W=24**; cluster ≈546 g/h.
+
+**Collapse guard + value-corr (new, committed `00b093e` + value-corr commit).** `train_iter.py --entropy-floor-frac` (default 0.5): baseline = warmstart-net policy entropy at iter 0, propagated in the checkpoint; per-iter trained entropy < frac×baseline → exit 2 → loop halts. And a per-iter **value↔outcome correlation** readout (Pearson of value-head vs stored outcome target) — the TRUSTWORTHY progress signal (vs self-anchored chain elo which can climb while absolute strength regresses; beat heuristic's 0.61, old NN was 0.18). Tests + e2e verified. Gate audit found the entropy floor was the only one of the 3 promised deterministic guards not implemented; now all 3 active (NaN-abort, anchor-gate stop, entropy floor).
+
+**3-box loop — DECISION: adapt the proven maximalist infra, don't build from scratch.** `run_phase4_smoke` is single-box; the multi-iter 3-box work-stealing loop wasn't wired. `maximalist_sequencer.sh` already had proven 5800x+xeon work-stealing (`launch_on_host`/`run_selfplay`, held-ssh foreground keeps the Xeon WSL VM alive; `stage_launcher.sh` copies the launcher LOCAL on Xeon to dodge the share-unmounted chicken-egg). Adapted it into `/home/doctor/run_pathb_cluster_loop.sh` + added a **laptop branch** (native Linux, share already mounted, simple held-ssh). Verified each box claims+plays SOLO (mini-scale combined tests just race — the 5800x fills tiny/fast batches before the others boot; irrelevant at production scale). **Launch-hang bug found+fixed:** `pid=$(launch_on_host …)` hung — command substitution waits on the backgrounded worker's orchestrator children holding the pipe fd. Fixed via **pidfile** (launch_on_host writes PID to a file, called WITHOUT `$()`). After fix: all 3 launch instantly, all 3 GPUs active (~26-40% — NOT pegged, consistent with dispatch/CPU-leaf-bound, not GPU-bound), 56 claims = 14+18+24 workers, games landing.
+
+**Screening run (NOT the verdict).** Launched 600 games/iter (not the frozen 1200) for trajectory density over Shabbos: ~9 g/min cluster → ~66min self-play/iter → ~15+ iters in 25h. Directional read of the value-corr trajectory; the GO/NO-GO verdict still needs the frozen 1200 + n=400 Step-9 A/B. Box choice: all 3 per Joshua's demand, accepting the risk that the 3-box multi-iter loop is freshly-wired (mitigated: solo-verified each box + no-hang mini-test + the gates halt on trouble).
+
+**Reversal cost.** Low — the run is killable; warm.pt + per-iter checkpoints preserved on the share; the loop halts cleanly on collapse/NaN.
+
+**Phase.** Phase 4 / Path B Steps 6–8.
+
+---
+
+## 2026-05-29 — Path B Step E shipped: farm scalars IN + made free + flip-on wired; launch plan set (HELD)
+
+**Context.** Joshua decided (2026-05-29) to include the 2 farm-control input scalars in the Path B probe ("farm scalars in. make them free."), and to launch Path B as **3-box work-stealing at `nice -19`** — but **not** until he gives the go.
+
+**Make-free.** The scalars cost +0.49 ms/encode standalone (a whole farmer-field flood per encode), which would erode the 1.48× leaf speedup when on. Fixed by **sharing one `_farm_cache`/`_city_cache` across the policy-encode and the v2.7 leaf-value pass** in `make_v25_value_wrapper` (single + batch): the leaf value floods the same fields anyway, so the scalar floods are reused → **+0.035 ms/leaf (2.2%)**. `virtual_score_v2` was changed to REUSE an attached cache rather than create+delete its own (so it doesn't clobber the wrapper's shared cache). Value-invariant: reconciliation gate n=400 (920k nodes, 0/0) + a wrapper-value==standalone-leaf test. (`70e1b62`)
+
+**Flip-on wired end-to-end.** Rather than a manual flag in every worker script (mismatch-prone), the 12-scalar shape **propagates from the checkpoint's `n_scalar_features`**: eval-server builds net+warmup from it; `run_selfplay_iter` sizes worker/anchor nets from it and the main process peeks the learner checkpoint to set `cfg["include_farm_scalars"]` for worker Games; `eval_iter_head_to_head` derives a per-side Game flag from each checkpoint; `train_iter` reads it from the warm-from checkpoint; `generate_one_game_dataset`/`generate_warmstart_smoke` take `--include-farm-scalars`. **The only manual flag is at the start** (gen + `train_warmstart --include-farm-scalars`); everything downstream auto-derives. Default off → all pre-Step-E (10-scalar) checkpoints byte-identical. (`06b065c`)
+
+**Launch plan (HELD).** 3-box work-stealing (`--shared-claim`), `nice -19`, farm scalars on, frozen knobs per [docs/PATH_B.md](docs/PATH_B.md) table. Full step-by-step in PATH_B "LAUNCH RECIPE" (Step 6 smoke first, then 7 warmstart → 8 loop → 9 go/no-go A/B + value↔outcome corr). **Do NOT launch until Joshua says go.** Pre-launch: propagate commits to Xeon+laptop clones.
+
+**Reversal cost.** Low — all additive + gated; farm scalars opt-in, the share-cache is behind the same toggles.
+
+**Phase.** Phase 4 / Path B Step E + launch prep.
+
+---
+
+## 2026-05-29 — c=3 "+47" RE-VALIDATED at n=1600 → corrected to +18.5; production default unchanged
+
+**Context.** The c_puct=3 production default rested on Phase 2b's +47.2 elo / 5.2σ (n=400), flagged UNDER RE-VALIDATION on 2026-05-28 after Optuna #17 re-screened the same config at +13.9 (n=100) — ~2σ below. Run A was the clean settle: a fresh **n=1600** A/B, iter_B1 both sides, (c=3,cap=12,v2_7) vs (c=1.5,cap=12,v2_7), sims=200, on the **pre-fix engine** (so the leaf matches the original c=3 measurement — this is a hygiene check of the historical claim, not the new fixed leaf).
+
+**Result.** 832W / 747L / 20D = **+18.5 elo / 2.1σ at n=1599** (`experiments/results.csv` `hygiene_c3_vs_c15_n1600`).
+
+**Decision / reading.** c=3 IS a real, significant positive over c=1.5 — but **~40% of the headline +47.2**, which was an inflated point estimate (regression to mean), exactly as the [[bracket-hyperparams]] / [[results-table-source-of-truth]] memories warn. **c=3 stays the production eval-side default** (it's still ≥ c=1.5); the "biggest single free win in weeks / sharp +47 peak" framing is **retired → ~+18**. This closes the last open eval-config re-validation. Consistent with Optuna #17 (+13.9/n=100) and the broader study (winners cluster c=1.5–2.0, c=3 not a standout). Forward: stop spending on eval-config tuning (rounding error vs the superhuman goal); the levers are the structural/Path-B work.
+
+**Caveat unchanged.** This validates the *eval-side* c=3 only; the *self-play-side* c=3 bump (training-data generation) remains hypothesis-only (see 2026-05-28 entry).
+
+**Reversal cost.** None — documentation/epistemics correction; production default unchanged.
+
+**Phase.** Phase 4 hyperparameter methodology.
+
+---
+
+## 2026-05-29 — Leaf flood-fill speedup IMPLEMENTED: lazy per-leaf farm + city memo (not incremental union-find) — 1.70× leaf / 1.48× search
+
+**Context.** Executing the speedup prioritized below. Two priors turned out wrong and reshaped the implementation; both were caught by measuring first (profiling + an A/B bench) instead of trusting the plan's framing.
+
+**Finding 1 — the architecture rules out incremental-union-find-with-rollback.** The plan (PATH_B Step 2) described "maintain a farm union-find as tiles are placed down the tree, with rollback." But the production leaf path is **NeuralMCTS**, which reaches every leaf via **functional `get_next_state`** (deepcopy per step, `StateUpdater.apply_action`), *not* mutate-and-undo. `apply_action_inplace` (the rollback path) is only used by vanilla-MCTS *random rollouts*, which the v2.7 leaf never runs. So there is no tree to thread an incremental structure through — the correct shape is **per-leaf-state**, not incremental-across-tree.
+
+**Finding 2 (profiling, post-fix) — find_farm is ~41% of the leaf, and 54% of its calls are redundant within a single eval.** `cProfile` of `virtual_score_v2` over representative mid/late states: `find_farm` cumtime ≈ 41% (was quoted ~58% pre-fix), `find_cities` ≈ 31%, **deepcopy negligible (~0.4%)** (contradicts old "deepcopy dominates" lore for this leaf). 11.1 `find_farm` calls/leaf, **6.0 redundant** — the same field re-flood-filled once per farmer meeple, across both consumers (`count_final_scores` + the two closure-bonus passes).
+
+**Options for capturing the redundancy.**
+  - A: **Eager whole-board decomposition** (`find_all_farms`: one CC pass, index every farm). Benched **1.11× leaf / 1.16× search** — modest, because it pays to enumerate fields no meeple queries.
+  - B: **Lazy per-region memo** (`_farm_cache`: memoize `find_farm` under every node of each region as it's first queried; share one cache across all three consumers per leaf). Benched **1.29× leaf / 1.20× search**. Strictly less work than A (only queried fields), and trivially correct (pure memoization of the already-trusted `find_farm`).
+
+**Decision.** Chose **B (lazy memo)** as the production path. `find_farm_by_coordinate` consults an optional `state._farm_cache`; `virtual_score`/`virtual_score_v2` attach one shared cache per leaf eval and detach in `finally`. Behind a `virtual_score.USE_FARM_CACHE` toggle (the A/B baseline). Kept `find_all_farms` (the eager decomposition) in `farm_util` for the future farm INPUT features (Step E, which needs every farm) and as the reconciliation oracle. Safe because: `find_farm` is now start-independent (the farmer-adjacency fix), board topology is frozen during a leaf eval (`count_final_scores` mutates scores/meeples, never `tile.farms`), and `CarcassonneGameState.__deepcopy__` strips unknown attrs so a cache can't leak across `get_next_state`.
+
+**Correctness gate (non-negotiable, mirrors the aux n=2000 gate).** `scripts/reconcile_farm_index.py` — REGION equivalence (`find_all_farms[node]` == `find_farm(node)` for every farmer connection) AND VALUE equivalence (`virtual_score_v2` bit-identical cache-on vs cache-off). **n=400: 919,457 farm nodes, 0 region + 0 value mismatches.** Permanent regression: `tests/test_farm_index.py` (16 cases). No regressions in `test_virtual_score`/`test_aux_targets`.
+
+**City follow-on (same day, Joshua's "fix find cities for now").** Applied the same lazy memo to `CityUtil.find_city` (`_city_cache`) — the other big redundant leaf cost (~31%; `find_cities`/`count_farm_points` re-run it per farmer connection + per city side, count_final_scores per city meeple). `find_city` is a symmetric BFS to closure → start-independent by construction (no farm-style bug), so caching is safe. **One subtlety:** `count_farm_points` dedups adjacent cities via a `set()` keyed on City *identity*, so the memo caches only the `(positions, finished)` flood-fill data and **returns a fresh `City` object each call** — preserving that identity-dedup exactly (value-invariant). Gated by `USE_CITY_CACHE`, shared per leaf eval alongside `_farm_cache` (CoordinateWithSide keys are value-hashable → valid across the deepcopy). `find_meeples`/consumers only read `city_positions`, so sharing the positions set is safe.
+
+**Impact (combined farm + city).** Benched **1.70× leaf / 1.48× end-to-end search** (farm-only was 1.27×/1.20×; city adds 1.33× on top) — ~33% throughput on ALL self-play + eval across the cluster (every NeuralMCTS leaf runs the v2.7 leaf). Gate re-run with BOTH caches toggled: **n=400, 921,953 nodes, 0 region + 0 value mismatches.** `tests/test_farm_index.py` (now incl. a fresh-City memo test) green.
+
+**Reversal cost.** Low — additive, behind `USE_FARM_CACHE` / `USE_CITY_CACHE`, gate-verified. Files: `engine/.../farm_util.py` (find_all_farms + cache branch), `engine/.../city_util.py` (find_city memo + `_compute_city`), `src/.../virtual_score.py`, `virtual_score_v2.py`; tools `scripts/{reconcile_farm_index,bench_farm_index,profile_leaf_farm}.py`; `tests/test_farm_index.py`.
+
+**Phase.** Phase 4 / Path B Step 2 prerequisite.
+
+---
+
+## 2026-05-29 — Prioritize the find_farm speedup (leaf-sharing + union-find) as the next dev task
+
+**Context.** Path B Step 2 ("domain input planes") turned out mostly redundant — 4/6 proposed inputs already exist as scalars; the only net-new ones (`contested_features`, `my/opp_dominant_farms`) are farm-derived and would run `find_farm` at every MCTS leaf-encode, hammering the #1 hot path (~58% of leaf cost). Separately, the 2026-05-29 farmer-adjacency fix made `find_farm` **start-independent**, which unblocks the incremental farmer union-find that was parked 2026-05-17 *precisely because* find_farm was start-dependent.
+
+**Options.** (A) Skip farm inputs for the go/no-go probe, revisit at scale only if Step 9 = GO. (B) Build the `find_farm` speedup now (union-find + leaf-sharing), un-gating it from a GO.
+
+**Decision.** Chose **(B) — build the speedup now** (Joshua's call, 2026-05-29). Rationale: the union-find speeds the EXISTING leaf eval (every leaf already runs count_final_scores → find_farm), so it accelerates **all** self-play + eval throughput across the cluster — value independent of the farm-input feature, and independent of the Step-9 outcome. The farm inputs then come ~free as a downstream. It's pure dev (no compute), so it's productive work to do while the compute decisions (Steps 6–9 box choice) are still open.
+
+**Plan + guardrails.** [docs/PATH_B.md](docs/PATH_B.md) Step 2 (revised) + BACKLOG 2026-05-29. Sequence: incremental union-find → **reconciliation gate** (assert union-find == `find_farm` across many positions, mirroring the aux-target n=2000 gate) → **throughput bench** (measure, don't extrapolate) → leaf-pass sharing → then the farm input features. Correctness risks: the `apply_action_inplace` rollout path + MCTS tree backtrack/rollback of the incremental structure.
+
+**Reversal cost.** Low — additive perf work behind a correctness gate; if the union-find can't match find_farm or doesn't bench faster, drop it and keep the (correct) fixed find_farm.
+
+**Phase.** Phase 4 / Path B Step 2 prerequisite.
+
+---
+
+## 2026-05-29 — Engine fix: farmer-adjacency bug made farm scoring start-dependent (taints virtual_score / v2.7 leaf)
+
+**Context.** Path B Step 1 (aux-target generation) needs per-feature *ownership* labels at game end, validated to reconcile with the engine's `count_final_scores`. Building the validator surfaced that the engine's farm scoring is **non-deterministic across processes**: the same terminal position can score differently depending on Python hash/set-pop order. Root cause traced to two layers:
+1. `SideModificationUtil.opposite_farmer_side` was **not a bijection** — `TRT → BRR` (a typo; should be `BRB`). So `BRR` was the image of both `TRT` and `BLL`, and `BRB` was never produced. Crossing the top edge's right-half must mirror to the neighbour's bottom edge right-half (`BRB`). The typo made farmer adjacency **asymmetric**.
+2. `FarmUtil.find_farm`'s flood-fill kept a single `to_ignore` edge-set seeded asymmetrically from the start node and marked edges visited in set-pop order, pruning branches before they were explored. Combined with (1), `find_farm` returned **start-dependent** regions — from some farmer meeples it under-collected connections, so `find_meeples` missed meeples and `count_farm_points` missed adjacent finished cities. Via `count_final_scores` this made two same-player farmers on one field score **once or twice depending on pop order**.
+
+**Magnitude (measured, 500 random games):** ~**2.2%** of games mis-scored, mean score-diff error **9.3 pts** (max 30), **0.2%** flip who wins. The same bug lives in `virtual_score` → the **v2.7 leaf eval** the entire current strength rests on, and in `possible_move_finder` (farmer-placement legality). All historical `results.csv` numbers were produced against this buggy, slightly-nondeterministic scorer.
+
+**Options considered.**
+  - A: **Fix the engine** — correct `opposite_farmer_side` + rewrite `find_farm` as a complete, start-independent connected-component search. Pro: fixes the root cause everywhere (scoring, leaf, move-gen); deterministic. Con: changes the v2.7 leaf on ~2.2% of evals → per the "bug-fix-shifts-optima" rule, cap/c_puct optima may move; invalidates exact reproduction of some past numbers.
+  - B: **Path-B-local** — use a deterministic dedup-correct scorer only for the new self-play data; leave the engine alone. Pro: zero blast radius. Con: leaves the buggy leaf in place; value-target currency mismatch.
+  - C: **Replicate the bug** so labels match the (buggy) value target exactly. Con: teaches the aux head a non-deterministic target.
+
+**Decision.** Chose **A — fix the engine now** (Joshua's explicit call when the fork was surfaced). Two vendored-fork patches: `side_modification_util.opposite_farmer_side` `TRT → BRB`; `farm_util.find_farm` rewritten as a node-deduped CC traversal (visits each `(coord, connection)` once, explores every `tile_connection`). After the fix `opposite_farmer_side` is a clean bijective involution ({TLL,TRR}{TLT,BLB}{TRT,BRB}{BRR,BLL}), `find_farm` is start-independent (0/… overlapping-but-unequal components across 300 games, was 112), and the aux-ownership extractor reconciles with `count_final_scores` **exactly at n=2000 (0 failures; was 2.2%)**.
+
+**Consequences / follow-ups.**
+- **Re-sweep flag:** the v2.7 leaf changed slightly → the cap=12 / c_puct production optima were tuned against the buggy leaf and should be re-validated before being trusted (memory: bug-fix-shifts-optima). Path B regenerates everything from a fresh warmstart anyway, so this lands naturally.
+- **`find_farm` is now start-independent → safely cacheable** (it was previously called out as un-cacheable for exactly this reason) — a real future throughput lever for the hot leaf path. Logged for BACKLOG.
+- The overnight hygiene runs (c=3, cap=20) are on the pre-fix engine on their boxes; not disrupted — their results just describe the old leaf. Propagate this fix to all cluster boxes before the next training/eval run.
+
+**Reversal cost.** Medium — it's a vendored-engine correctness change, but well-tested (full suite + n=2000 reconciliation) and isolated to farmer adjacency.
+
+**Phase.** Phase 4 / Path B Step 1.
+
+---
+
+## 2026-05-28 — GOAL CHANGE: attempt genuinely superhuman play (overrides the original-prompt scope)
+
+**Context.** The original prompt ([docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md)) explicitly scoped superhuman strength *out*: *"This is not a 'build superhuman Carcassonne AI' project. That's been attempted by academic groups since 2020 and has stalled — not because the idea is wrong, but because nobody's bothered to throw serious compute at it. We're not going to either."* The stated win condition was the **analyzer (Phase 5)** — "a 90th-percentile bot that explains *why* a move was bad is more useful to me than a superhuman black box." On 2026-05-28, during a strategic regroup, Joshua changed the goal: **he wants genuinely superhuman play — to beat the world champion.**
+
+**Decision.** Superhuman strength is now the **primary** goal. The analyzer (Phase 5) and heuristic research (Phase 6) become **downstream** — pursued after strength milestones, not the target. The locked *rule* scope (2p Base+River+Farmers) is unchanged.
+
+**What this honestly implies (surfaced at decision time, not papered over).**
+- This is a **research-grade goal the prompt deliberately avoided**; comparable academic attempts stalled. On a 3-box consumer cluster (~300 g/h eval) this is months-to-maybe-unreachable. We pursue it clear-eyed: real measurable progress is achievable; the summit is not promised.
+- **Two structural walls, neither touched by the eval-config tuning of the last month:**
+  1. **Measurement.** We have no strong, non-saturated reference. Tier-1 is a saturated 1-ply heuristic; self-anchored elo can climb +600 while absolute strength regresses (the Option-B-chain result proved this). *We cannot tell if we're approaching world-champ level.* First unblock: build a strong reference ladder (high-sim vanilla MCTS / the Ameneyro 2020 baseline) as an absolute yardstick, since a human benchmark isn't available now.
+  2. **Leaf ceiling.** Our strength is PUCT search over the **hand-crafted** v2.7 `virtual_score` leaf. A human-designed heuristic caps learned play near strong-human by construction. We already tried to let the NN value head exceed it (Option 2) and it was *worse* (closed 2026-05-18). Superhuman requires the *learned* components to beat the heuristic — the documented path is KataGo-style (domain-feature input planes + auxiliary loss heads + scale), all gated behind a fresh from-scratch warmstart (bundle the deferred D1/D13 feature fixes).
+- **The eval-config tuning era (c_puct/leaf_cap/leaf_variant, incl. tonight's Optuna) is rounding error against this goal** and should stop — see the meta-rule in EXPERIMENTS.md ("try-harder-with-the-same-architecture is the trap").
+
+**Roadmap implied (not yet committed — to be planned):** (1) strong reference ladder [unblocks measurement], (2) structural leaf/architecture change [the real lever], (3) scale compute + Optuna-over-*recipe* [where Optuna's automation finally earns its keep].
+
+**Reversal cost.** Low to state; high to pursue (months of compute). The goal can be re-narrowed to the analyzer at any time if the strength climb proves infeasible — the analyzer work is not lost, just deferred.
+
+**Phase.** Strategic pivot atop Phase 4.
+
+---
+
+## 2026-05-28 — Measurement infrastructure: `experiments/results.csv` as source of truth + results discipline
+
+**Context.** The regroup found that disorganization, not just bad luck, produced the false "c=3 = +47 elo" production change. Audit: **54 completed evals across 41 ad-hoc dirs**, config encoded only in directory names, and `elo_log.json` records the *outcome but not the config* (no c_puct/cap/variant). Four disconnected representations of the same results (dirnames, config-less elo_logs, the hand-maintained EXPERIMENTS.md table, the optuna study.db), none queryable. The c=3 contradiction (noise spike at n=400 vs the earlier "c is noise at n=20" finding, vs tonight's +13.9 re-screen) was invisible because no structure forced the comparison.
+
+**Decision.** Build one structured, queryable, git-diffable results table and make it the source of truth; adopt query-before-claim discipline.
+- **Artifact:** `experiments/results.csv` — one row per eval (full config both sides + outcome + n + sigma + provenance). CSV (not a DB) because ~54 rows, diffable in PRs, one-line pandas load. Optuna `study.db` exports into it.
+- **Root-cause fix:** `eval_iter_head_to_head.py` writes a self-describing `manifest.json` and appends its row to results.csv on completion → the table self-maintains; no future dirname archaeology.
+- **Backfill:** the existing 54 elo_logs + 18k per-game JSONs are reconciled with a one-time hand-authored dirname→config map (config isn't in the data). Run as a background subagent 2026-05-28; low-confidence rows flagged, not fabricated.
+- **Discipline (also added to CLAUDE.md operating norms):** cite the table, never duplicate authoritative numbers; query for prior measurements of a cell before declaring a finding; n=100 = screen (±17), n=400 = verdict (±9); a lone >1σ spike vs neighbors is noise, not a peak.
+
+**Why not heavier infra (SQLite/dashboard/framework).** 54 rows. A CSV + a 10-line pandas query helper covers every "pivot config-dim × n → elo" view we need. Over-building a results system would itself be the procrastination trap. EXPERIMENTS.md stays as the *narrative* layer that cites the table.
+
+**Reversal cost.** Trivial — it's additive (a CSV + a manifest write + doc norms); nothing depends on it that can't fall back to the old prose tables.
+
+**Phase.** Methodology / measurement, prerequisite for the superhuman push (addresses Wall 1 above).
+
+---
+
+## 2026-05-28 (evening) — Optuna eval-search softens the c=3 "+47 free win"; flagging the headline claim for re-validation
+
+**Context.** The Optuna eval-time study (`eval_time_search_v1`, TPE over {c_puct, leaf_cap, leaf_variant}, multi-fidelity n=100→n=400) ran ~16 trials across 5800X+Xeon+laptop. To bridge it against the 2026-05-26 Phase 2 result, we `enqueue_trial`'d the exact canonical config (c=3.0, cap=12, v2_7) as a NEW-side-vs-(c=1.5,cap=12)-baseline trial — identical A/B design to Phase 2b.
+
+**Result.** Trial #17 screened at **+13.9 elo at n=100** (did not clear the +15 promote threshold, so stayed at n=100). Phase 2b measured the same config at **+47.2 at n=400**. At n=100, 1σ ≈ ±17 elo, so +13.9 is ~2σ below +47.2.
+
+**Reading (careful — sample sizes differ).** A single n=100 screen CANNOT refute an n=400 result; the error bars overlap at ~2σ. But combined with the rest of the study — winners cluster at c=1.5–2.0, the study best is (c=2.0, cap=19, tcc) +24.4, and no high-c config stands out — the weight of evidence is that **Phase 2b's +47.2 was an inflated point estimate (regression-to-mean candidate), and c=3's true edge over the c=1.5 baseline is more modest (~+14, in line with the field).** This is exactly the failure mode the [[bracket-hyperparams]] memory warns about, applied to our own headline result: a single n=400 reading made c=3 look like a sharp +47 peak; broader sampling flattens it.
+
+**What this does and doesn't change.**
+- Does NOT mean c=3 is wrong — every measurement still has c=3 ≥ the c=1.5 baseline. The production default is not in danger of being *worse* than old.
+- DOES retract the "sharp +47 peak / biggest single free win in weeks" framing. c=3 is *a* reasonable setting, not a standout.
+- The whole **c×cap interaction** claim from the 2026-05-28 10:30 STATUS entry is downgraded — it was built on n=100 noise.
+
+**Decision.** Keep c=3 as the production default for now (it's not worse), but **flag the +47 claim as UNDER RE-VALIDATION** and run a fresh **n=400 (c=3, cap=12) vs (c=1.5, cap=12)** before treating any c value as settled. Do NOT re-bump or re-tune off the Optuna n=100 screens — they're too noisy. The clean follow-up is one targeted n=400 eval (cheap, dual-box ~3h), ideally alongside (c=2.0, cap=19) to check the study's apparent best at full power.
+
+**Reversal cost.** None — this is a documentation/epistemics correction, not a code change. The production default is unchanged.
+
+**Phase.** Phase 4 hyperparameter tuning. Methodology: re-validate your own headline wins at full n before enshrining them.
+
+---
+
+## 2026-05-28 — c_puct bump: eval-side validated, self-play-side bumped on hypothesis (NOT yet A/B'd). Documenting the conflation before it bites us.
+
+**Context.** On 2026-05-27 we bumped the `--c-puct` default in both `scripts/eval_iter_head_to_head.py` and `scripts/run_selfplay_iter.py` from 1.5 → 3.0, citing the Phase 2b sweep (+47.2 elo at sims=200) and J4 (+39.3 at sims=800) as justification. That was the same commit. Today (2026-05-28) we noticed the two scripts use c_puct in **structurally different ways**, and the evidence only validates one of them.
+
+**The distinction.**
+- **Eval-side c_puct** (`eval_iter_head_to_head.py`): controls PUCT during head-to-head play with a *trained* checkpoint. Phase 2b and J4 tested exactly this: same iter_B1 both sides, different c, count wins. Verdict +47.2 / +39.3 — clean, validated.
+- **Self-play-side c_puct** (`run_selfplay_iter.py`): controls PUCT during *training data generation*. A different c changes (a) which actions get selected in self-play games, (b) the shape of the visit distribution that becomes the policy target, and (c) downstream game outcomes that become value targets. The resulting `.npz` files are then fed to `train_iter.py`. The thing we'd measure is the **strength of the trained checkpoint that results** — not the strength of self-play games themselves.
+
+**Why the conflation is plausible-but-unverified.** It's reasonable to assume that c=3 self-play yields a stronger checkpoint than c=1.5 self-play: deeper exploration → more diverse training data → better generalization. But this is a hypothesis. Counter-arguments: (1) Self-play also has Dirichlet noise on root priors and τ=1 for the first 15 moves, which already inject exploration; an additional PUCT widening may be redundant or even hurt by over-spreading visit distributions and producing softer (less informative) policy targets. (2) The Phase 2b/J4 result was specifically about **playing strength of a fixed checkpoint with different c**, which is upstream of the data-generation question. (3) AlphaZero papers typically use the same c at self-play and eval, but their c was tuned end-to-end; ours wasn't.
+
+**Options considered.**
+- **A. Roll back self-play default to c=1.5 until A/B run.** Conservative. Costs ~0 (just a default change). Reverts the change that was never validated.
+- **B. (chosen) Keep c=3 self-play default, document the gap loudly, schedule an A/B.** Pragmatic. The hypothesis is reasonable and every new run from today onward generates evidence under c=3. Reverting now would create a "what default were the files in this dir generated under?" tracking burden, since we have ~0 c=3 self-play data on disk yet. Document the unverified status, run an explicit A/B at some point.
+- **C. Train two iters now (c=1.5 self-play vs c=3 self-play from same warm-from), eval head-to-head before producing any more self-play data.** Most rigorous but blocks ~25h of compute on validating something that probably works.
+
+**Decision.** Option B. Update the docstring on `run_selfplay_iter.py --c-puct` to flag the eval-vs-selfplay distinction and the unverified status. Add a "UNTESTED" row to the STATUS.md verdict table for "c_puct=3.0 in self-play data generation." Add this decision entry. The A/B test gets queued in the forward queue, not blocking.
+
+**What would falsify.** Train iter_X(c=1.5_sp) and iter_X(c=3.0_sp) from the same warm-from on the same data-volume budget. Eval head-to-head, both at c=3 (the validated eval setting). If c=3-self-play loses or is null, roll back the self-play default to 1.5 and reconcile.
+
+**Reversal cost.** Low. Changing the default back to 1.5 is a one-line edit. If we later discover c=3 self-play hurt, the affected output is the data on disk from c=3 self-play runs — flagged via metadata or just the `cfg` JSON each run writes.
+
+**Phase.** Phase 4. Methodology lesson, not a scientific finding.
+
+**Memory cross-ref:** `feedback_bracket_hyperparams` (auto-memory) — same family of failure mode (declaring a config change settled from off-target evidence).
+
+---
+
+## 2026-05-26 — c_puct=1.5 → ~3.0 free win at iter_B1 (sims=200): +47.2 elo at n=400, 2.8σ. Most "leaf-eval plateau" symptoms were stale-PUCT, not leaf saturation.
+
+**Context.** After 8 days of leaf-eval ablations (cap A/B, value-blend, tile-counting) and chain experiments (Option B, anchor-fraction, deepsearch_v2) all returning null or negative, ran the maximalist's Phase 2 PUCT wider sweep (deferred for ~6 weeks since the original c_puct calibration on warmstart-level checkpoints). Same checkpoint iter_B1 both sides; only the per-side c_puct differs. n=400 at sims=200.
+
+**Result table.** All measured at iter_B1, sims=200, leaf v2_5, c=1.5 as the OLD side:
+- c=0.5 → −54.3 elo (165W/227L/8D) — catastrophic
+- c=1.0 → −11.3 elo (192/205/3) — mildly worse
+- c=1.5 (baseline) → 0
+- c=2.0 → +5.2 (from 2026-05-20 retroactive test; null)
+- **c=3.0 → +47.2 elo (226/172/2) — 2.8σ positive**
+
+Phase 2b (c=2.5/4.0/5.0) is in flight to triangulate the peak; outcome lands ~2026-05-26 18:00.
+
+**Conceptual reading.** In `U(s,a) = Q + c_puct * P * sqrt(ΣN)/(1+N)`, raising c shifts action selection from Q-driven (trust the v2_5 leaf eval's accumulated rollups) to P-driven (trust the network's policy prior). The +47 elo at c=3.0 means **the network's policy is now sharper than the leaf-eval's Q values**. The original c=1.5 was tuned during Phase 3 warmstart on much weaker policies; it never got retuned as the network trained through iter_00 → iter_01 → iter_B1. Classic stale-hyperparameter failure. Several recent "leaf-eval plateau" symptoms (v2.7 leaf doesn't scale, Option-2 blend hurts, cap retunes null) look in retrospect like search wasn't using the policy enough — not that the leaf was actually the limit.
+
+**Why this was missed.** All ablations of the last 6 weeks held c=1.5 constant. The 2026-05-15 PUCT sweep (`puct_c2_vs_c15`) only tested c=2.0 (got +5.2, near-null) and concluded "c=1.5 holds" — that single near-baseline data point made the whole search-config axis look settled when it wasn't. **Lesson: never declare a hyperparameter axis settled from one off-peak point — at minimum bracket above and below.**
+
+**Options considered (the strategic pivot the PUCT find triggers):**
+- **A. Update production c_puct to peak (≈3.0 pending Phase 2b) and call it done.** Easiest. Banks the free win immediately. Risks: c may not transfer to sims=800, may have interactions with other hyperparams.
+- **B. (chosen) A + retune-everything-stale audit.** Bump production c, then sweep the other "set early, never re-tuned" hyperparams (temp_threshold=15, dirichlet_alpha=0.3, dirichlet_eps=0.25, virtual_loss=1.0) at the new peak c. Same staleness pattern likely applies. Also re-test the recent null verdicts (anchor-fraction, deepsearch_v2, tile-counting) at peak c — many may flip positive.
+- **C. Skip the retune audit, jump to bigger projects (transformer net, multi-anchor league).** Higher EV in theory, but option-B audit is cheap (~2-3 days dual-box) and several entries have meaningful probability of paying off.
+
+**Decision.** Option B. Wire (sims × c) 2D probe → re-test top nulls at peak c → other-hyperparam sweep, all dual-box shared-claim. Forward queue documented in STATUS.md. Once stale-hyperparam audit settles, take stock and decide on bigger architectural projects.
+
+**Reversal cost.** Low for the production c bump (config change). Low-medium for the queue itself (each eval is ~3h dual-box, easily killable). The lesson — "bracket hyperparameters above and below the current setpoint when you sweep" — is the durable change in methodology.
+
+**Phase.** Phase 4 (self-play loop) hyperparameter tuning.
+
+**Memory cross-ref:** `feedback_bug_fix_shifts_optima` (auto-memory) — same lesson applied to bug fixes; here it applies to checkpoint progression. Adding a new memory note for the methodological lesson.
+
+---
+
+## 2026-05-24 — Option B chain Phase 1 KILLED after B4; chain-vs-prev anchors were lying about absolute strength; pivoting to anchor-fraction multi-opponent self-play
+
+**Context.** Maximalist sequencer ran Phase 1 chain B2→B4 (B5 in progress, killed mid-flight) over 2026-05-21→24. Each chain step measured iter B(i) vs B(i-1) at n=2000, sims=200. Chain elo deltas looked acceptable: B2=+11.4 / B3=+2.4 / B4=+1.4 — no skip-forward (<−10 elo threshold) trigger. But **directly anchored against iter_01 (the canonical reference) at n=400**, B4 came back at **−19.1 elo** (186W/208L/6D, 1.1σ regression). Given iter_B1 = chain-step-0 = B1 was confirmed at +25.2 over iter_01 (2026-05-20 n=400), this means the chain drifted **~55 elo against the fixed reference** while each chain step looked ~neutral against its predecessor.
+
+This is the **"anchor before scaling" memory rule** failing in practice. Each step's measurement was vs a drifting reference, so the chain was free to spiral away from any externally-meaningful elo. The maximalist's Phase 1 (and Phases 3, 5-retrain) only does chain anchors — no global anchor — and is structurally vulnerable to this pattern.
+
+**Likely cause: RPS / intransitivity from self-specialization.** Each B(i)'s self-play data is dominated by play patterns against B(i-1). The network specializes against B(i-1)'s style → loses generality vs off-distribution opponents (iter_01). Classic AlphaZero failure mode without league/multi-opponent training.
+
+**Options considered:**
+- **A. Run more chain steps and hope** (B5/B6/B7 already queued). Rejected: drift is already 55 elo deep; another 60h of compute almost certainly worsens it.
+- **B. Anchor-fraction multi-opponent self-play.** Mix N% of self-play games against a fixed strong anchor (iter_B1) into the chain. Prevents drift by tying training data distribution to a fixed reference. Well-established cure for this failure mode. ~190 LoC, ~5h to implement. **CHOSEN pending B2 vs iter_01 anchor verdict.**
+- **C. League play (AlphaStar-style, N specialized agents).** Right long-term solution but overkill for our scale (1200 games/iter, 7M-param net). Engineering project: ~2-3 days.
+- **D. Different recipe entirely (e.g., score_diff abandoned, leaf-eval rework).** Doesn't address the structural drift, just hopes a different starting point doesn't show it.
+
+**Decision.** Kill chain after B4 (executed 2026-05-24 07:55). Run B2 vs iter_01 direct anchor at n=400 to differentiate "Option B recipe was broken from step 1" (B2 also ≈ −19) from "chain held for 1 step then drifted" (B2 ≈ +25). Then:
+- **If B2 ≥ ~+10**: implement anchor-fraction self-play (static anchor=iter_B1, fraction=0.3, alternating sides) per design in this session. Pilot 1 chain step under anchor-fraction; if validates, chain forward.
+- **If B2 ≈ −19**: anchor-fraction won't save a broken recipe; pivot to Phase 3 deepsearch / loop's orphaned deepsearch train+anchor / leaf-eval rework.
+
+**Resolved 2026-05-24 11:00.** B2 anchor came back at **−6.1 elo vs iter_01** (193W/200L/7D, n=400, 0.36σ null). Not −19, but not positive either — **Option B chain doesn't even gain in step 1**. B1's confirmed +25 cushion already half-erased by B2. Anchor-fraction would hold the line at iter_B1's strength but can't manufacture gains where the recipe produces none. **Option B as a chain lever is dead.** Pivoting per the B2≈−19 branch above: kicked off the orphaned loop deepsearch train+anchor immediately (PID 5369, nice 19, train+anchor n=100 sims=200 vs iter_01, ETA ~35 min from 11:23). Anchor-fraction implementation will be scoped to the deepsearch lever instead of Option B.
+
+**Updated 2026-05-24 22:30.** Two follow-ons landed:
+1. **deepsearch_v2 verdict** (the orphaned /loop train+anchor): trained from the 2026-05-18→21 sims=800 work-stealing data, anchor-gated at **+13.9 elo @ n=100** then re-confirmed at **+5.2 elo @ n=400** (combined +11.4 over 500 games). Under σ=17 → **null vs iter_01 at sims=200**. Sims=800 training data did NOT move the sims=200 needle. The deepsearch (v1) ckpt remains the sims=800-plane best; deepsearch_v2 is roughly equivalent to iter_01 for warm-from purposes.
+2. **Anchor-fraction self-play implemented + smoke-validated.** ~280 LoC across `src/carcassonne_ai/selfplay.py` (dual-MCTS routing per `current_player == learner_player_idx`, learner-only record filter — anchor's moves are played but never saved), `scripts/run_selfplay_iter.py` (`--anchor-checkpoint` + `--anchor-fraction` flags, dual eval-server pool wiring, per-seed RNG XOR'd to decorrelate), and `tests/test_anchor_fraction_selfplay.py` (6 new tests covering regression-when-anchor-None, learner-only-records, ~50% record-count, distinct-evaluator legality). Full suite green. Smoke run (4 games at fraction=0.5) showed exact contract: 2 anchor games at ~83 records single-sign (learner-only), 2 self-play games at ~165 records mixed-sign. Mutually exclusive with `--serve-on`/`--remote-eval-server` (single-host or `--shared-claim`-only); compatible with `--shared-claim` for dual-box work-stealing.
+
+**Strategy pivot:** anchor-fraction will be tested at **sims=200 FIRST** (cheap, ~4-5h dual-box) before committing to sims=800 production (~20-25h). The deepsearch lever (sims=800 training) was null at sims=200; no reason to assume sims=800 amplifies the anchor-fraction signal more than sims=200 reveals it. Warm-from = iter_01 (deepsearch_v2 was equivalent strength-wise — picking the simpler chain). Static anchor = iter_B1 (current sims=200 global best, the strongest "fixed opponent" we have).
+
+**Other phase impacts:**
+- **Phase 2 (PUCT sweep on iter_B1)**: unaffected by drift — no chain step. Still valid to run as-is (~24h).
+- **Phase 4 (FN re-confirms, leaf-eval ablations on iter_B1)**: unaffected — no chain step. Still valid (~10h).
+- **Phase 5 smoke (tile-counting vs v2.7 leaf on iter_B1)**: unaffected — no chain step. Still valid (~3h).
+- **Phase 3 (deepsearch DS_02)**: IS a chain step — same drift risk. Should be re-implemented under anchor-fraction (anchor = iter_01 or existing deepsearch ckpt). Defer until anchor-fraction lands.
+- **Phase 5 conditional retrain**: IS a chain step. Same — defer or rewrite under anchor-fraction.
+
+**Reason.** B2-B4 chain elo (+11.4 / +2.4 / +1.4) "looked fine" by chain measurement, but the direct anchor revealed catastrophic drift. The sequencer's design lacked a global anchor and shipped that bug into ~3 days of compute. The cure (anchor-fraction in self-play, OR adding a "vs iter_01 anchor at n=400 each step" to chain phases as a cheap drift detector) is cheap enough that NOT having it was the real mistake.
+
+**Reversal cost.** Low for the kill itself (`--shared-claim` makes restart cheap — wasted compute is sunk). Medium for the anchor-fraction implementation: new flag in `run_selfplay_iter.py`, second eval-server in pool, two-evaluator routing in `selfplay.py:play_one_selfplay_game`. Defaults off; legacy behavior preserved when `--anchor-fraction 0.0`.
+
+**Phase.** Phase 4 (self-play loop), specifically the chain methodology.
+
+**Memory cross-refs.** `feedback_anchor_before_scaling` (auto-memory) was the exact warning. The maximalist sequencer's design (chain-only anchors) was the mechanism that ignored it. Future autonomous pipelines must include a global anchor per chain step.
+
+---
+
+## 2026-05-20 — Network-distributed eval-server: TCP bridge in front of the existing orchestrator pool, lets a GPU-less box (Zenbook) borrow the 5800X's GPU for inference
+
+**Context.** Zenbook (i7-12700H, 16 GB, no NVIDIA) bootstrapped 2026-05-20 to add as a 3rd cluster box. Two ways to use it: (a) run its own standalone CPU eval-server — works without any new code, but CPU forward is ~80 ms/eval and contributes maybe Xeon-tier throughput; (b) network-distribute the orchestrator so Zenbook's CPU workers offload inference to the 5800X GPU via TCP. Option (b) is meaningfully faster (workers do MCTS only, not torch forwards) and uses RAM Zenbook already has.
+
+**Options considered:**
+- **A. Standalone CPU eval-server (no new code).** Trivial: just point Zenbook's existing self-play at its own CPU. Works today, ~0.5-1.0 games/min added. But it's also the upper bound on what CPU can do at sims=200 — the laptop CPU is the limiter, the GPU on the 5800X sits unused for Zenbook's share of work.
+- **B. Network-distributed eval-server bridge** (chosen). Add a small TCP listener in front of the existing eval-server orchestrator pool; remote workers connect, ship `(obs, scalars, mask)` over the wire, get `(priors, value)` back. ~0.8-1.0 games/min, much less Zenbook CPU pressure, GPU does the heavy work for both boxes.
+- **C. Build a real distributed coordinator (Ray / gRPC / ZMQ).** Overkill — we have 2-3 boxes on one LAN with one tenant. The complexity tax buys nothing.
+
+**Decision.** Build B as a thin TCP bridge:
+
+- **Wire format**: 4 B big-endian uint32 frame length, then per-message payload. Each numpy array is serialised via `np.save` with `allow_pickle=False` into a `BytesIO`, length-prefixed. **No serialization-via-eval anywhere** — `np.load` with `allow_pickle=False` refuses object dtypes. Wire path: `[frame_len][worker_id][request_id][3 npy blobs]`. ~70 KB per single-board request, well under the 64 MB safety cap.
+- **Server side**: a daemon thread per connection runs `recv_framed → request_q.put → response_q.get → send_framed`. The bridge **pre-claims K extra slots** in the existing `start_server_pool` (i.e. starts the pool with `n_workers + K` slots) and binds one slot per inbound connection. The running eval-server code is **unchanged** — to the server, the bridge looks like K more local mp.Queue workers.
+- **Client side**: a `SocketServerHandles` mimics the existing `eval_server.ServerHandles` interface (same `.request_q.put()` / `.response_q.get()` API), so the existing `make_remote_batch_evaluator` factories work without changes.
+- **Failure handling**: if a remote worker disconnects with a request in flight, the bridge drains the eventual server response before releasing the slot — otherwise the next connection on that slot would receive the prior reply. CIFS-style transient errors fall through to the worker's existing `BrokenServerError` path; reconnect is at the worker level.
+
+**Reason.** Bridge mode is ~20% faster than CPU-only and saves Zenbook's CPU for MCTS work where it actually helps. The thin-wrapper approach (re-use the existing orchestrator pool, just front it with TCP) means zero changes to the running self-play code path — workers don't know whether their `ServerHandles` is local mp.Queue or socket-backed.
+
+**Verification.** 9 unit tests (`tests/test_remote_eval_bridge.py`) cover wire roundtrip, concurrent workers, slot exhaustion, slot recycling on disconnect, worker_id restamping. All pass on both the 5800X and Zenbook venvs. Loopback smoke (server + client both on the 5800X, CPU mode): 12932 evals roundtripped, 0 failures, 13 fresh server games + 7 fresh client games out of 20 total — work-stealing balanced as expected.
+
+**Reversal cost.** Low. New code is additive — the `--serve-on` / `--remote-eval-server` flags are off by default; without them the script behaves exactly as before. Easy to revert by not using the flags.
+
+**Phase.** Phase 4 (self-play loop).
+
+**Worker-count knee on Zenbook.** Bridge-mode bench 2026-05-20 with localhost stub (5 ms simulated forward) swept W ∈ {4,8,12,14,16,20}: peak at W=8 (5.26 games/min), curve flat 8→20 (5.0-5.3 games/min). Production recommendation **W=10** (pad +2 from raw peak to give bridge-conn threads + OS headroom, since stub workers in the bench cost ~0.5 cores). Matches the "2×P-cores − 2" heuristic for the 12700H (6 P-cores → 10). HT didn't add throughput on this hybrid CPU because (i) E-cores have no HT, (ii) Linux Thread Director on Alder Lake is shaky pre-6.2, (iii) laptop thermal envelope limits sustained boost. Decision: pin v3 sequencer to `WORKERS_ZENBOOK=10`; sanity-check W=10 vs W=12 against real 5800X GPU once firewall opens.
+
+**Deploy blocker.** Windows firewall on the 5800X needs to allow inbound TCP 19999 LAN-scoped — 1-line PowerShell as admin, see `/home/doctor/network_bridge_deploy.md`. Until then, deploying CPU-only Zenbook (option A) as the interim — adds Xeon-tier throughput today without admin work, swap to bridge mode the moment firewall opens.
+
+---
+
+## 2026-05-20 — Methodological retroactive-validation pipeline: the project's n=100 matched-strength comparisons have been systematically false-negative-prone; re-running 4 high-leverage past nulls at n=400
+
+**Context.** The sims=800 matched-plane re-bench (entry below) — 52% wr at n=100, point estimate slightly positive — sits squarely in the "ambiguous, would-need-more-data" band, the same band where several earlier "null" calls landed (iter_02 at 53.5% / n=100, iter_B1 at 49% / n=100, PUCT c-sweep at n=50). The question came up: have we been throwing out false negatives across the project?
+
+**The math, briefly.** For wr-based head-to-heads:
+- n=100: SE ±5.0pp; "significant" (α=0.05 one-sided) bar = ≥58.2% wr → detects ≥+58 elo edges confidently
+- n=200: SE ±3.5pp; bar = ≥55.8% → detects ≥+40 elo
+- n=400: SE ±2.5pp; bar = ≥54.1% → detects ≥+30 elo
+- n=600: SE ±2.0pp; bar = ≥53.4% → detects ≥+25 elo
+
+Matched-strength comparisons (iter vs iter at same leaf) are the project's hardest signal-to-noise regime, and we'd been running them at n=100. Most of our "compounding cadence" conclusions therefore had ~50-60% power against +30 elo edges → up to ~45% miss rate at that effect size. The discipline against *false positives* was strong (the n=50-minimum-for-variant-comparison memory rule caught v3/PUCT noise), but the symmetric guard against false negatives was missing.
+
+**False-negative-suspect calls, ranked by impact-if-wrong:**
+
+| call | n | wr | downstream impact | re-run? |
+|---|---|---|---|---|
+| iter_02 "saturated against fixed leaf" | 100 | 53.5%, +24.4 elo | huge — closed plain-recipe compounding lever | **yes** |
+| iter_B1 ≈ iter_01 (Option 2 NN-value blend) | 100 | 49% wr / +4.6 score diff | big — closed value-head blend pipeline | **yes** |
+| deepsearch matched-plane (already in flight) | 100 | 52.5%, +17.4 elo | matched-plane ambiguity, see entry below | **extend to n=400** |
+| PUCT c=2.0 vs c=1.5 | 50 ea | 88/84% | small — one-time +25 elo at best, cheap to test | **yes** (separate per-side c_puct job) |
+| closure-P leaf A/Bs | 100 ea | 45/50% | small — pooled 47.5% over n=200 is mildly negative, not noisy | no |
+| v3 cap sweep | 50 | flat | small — cap=12 production-tested, multiple n=50 readings | no |
+| Option 2 blend smoke | 50 | 31% | confirmed negative (2.7σ) | no |
+
+**Implementation.** Autonomous 4-job pipeline (`/home/doctor/sequencer.sh` + `/home/doctor/puct_followup.sh`), nohup'd on the 5800X, drives both boxes via the work-stealing `--shared-claim` primitive (now wired into `eval_iter_head_to_head.py` too, see infra notes below). Each job's verdict appended to `/tmp/retest_verdicts.txt`; sentinel files at `/tmp/{retest_sequencer,puct_followup}.DONE`. Total cluster wallclock ~12-14h overnight.
+
+**Decision.** (1) Run the 4 high-leverage re-tests at n=400. (2) Skip the low-impact ones (closure-P, v3 cap, Option-2 blend) — those were either decisively negative (Option 2) or repeatedly null (closure-P pooled across two leaf variants at n=200, v3 across multiple cap values at n=50). (3) **Going forward, n=400 minimum for matched-strength comparisons**; n=100 reserved for first-look smokes or for variant tests where the effect-size-of-interest is >+50 elo. Add this to the project's operating norms.
+
+**Expected information value.** P(at least one of the 4 re-tests recovers a real positive) ≈ 40-50% under reasonable Bayesian priors. The expected-value math favors running it: even a single "false-negative recovered" outcome unblocks a major lever (e.g. if iter_02 turns out to be a real +30 elo gain, the multi-iteration training pipeline is back open; if PUCT c=2.0 is real, +25 elo free at play time). At ~12-14h cluster cost split across two idle boxes overnight, it's nearly free.
+
+**Infra extracted along the way (commit-worthy in their own right):**
+- New `src/carcassonne_ai/claim.py` — work-stealing claim primitive (atomic O_CREAT|O_EXCL on a `.claim` sidecar, with stale-recovery semantics from the run_selfplay_iter implementation). Refactored out of `run_selfplay_iter.py`; both that script and `eval_iter_head_to_head.py` import it.
+- `eval_iter_head_to_head.py` gained `--shared-claim` / `--claim-stale-secs` / `--claim-host` — evals can now work-steal across boxes the same way self-play does. Plus per-job consolidated-from-disk summary so each box's printed verdict reflects the cross-box outcome.
+- `eval_iter_head_to_head.py` gained `--new-c-puct` / `--old-c-puct` — per-side PUCT exploration constant. Default None falls through to `--c-puct`, so all existing call sites are unaffected. Enables A/B testing exploration constants on the same checkpoint both sides (the PUCT job's whole reason for being).
+- 12 tests still green; smoke confirmed.
+
+**Reversal cost:** low. The re-test outcomes either confirm the original verdicts (no change to current conclusions, narrowed noise bands) or update them (correction we should have made earlier). The infra changes are backwards-compat and useful regardless of the re-test results.
+
+**Phase:** 4 (self-play) — methodological / infrastructure.
+
+## 2026-05-20 (results) — Retroactive-validation pipeline complete: 2 of 4 false-negatives recovered. iter_B1 promoted to new global-best. Audit identifies several more reservoirs of likely false-negatives.
+
+**Outcome (4 of 4 jobs done, cluster wallclock ~16h 13:55 → 16:10):**
+
+| job | n | result | elo Δ | σ vs 50% | verdict |
+|---|---|---|---|---|---|
+| deepsearch vs iter_01 @ sims=800 | 380 | 208W/169L/3D | **+35.8** | 2.0σ | **recovered FN** (already suspected from n=100 +17.4 reading; n=400 confirms at 2σ) |
+| iter_02 vs iter_01 @ sims=200 | 400 | 193W/198L/9D | **−4.3** | 0.25σ below 0 | **genuine null** — plain v2.7 recipe really did plateau at iter_01; not a false-negative |
+| iter_B1 vs iter_01 @ sims=200 | 400 | 213W/184L/3D | **+25.2** | 1.5σ | **🎯 NEW recovered FN** — Option B (score-diff-targeted self-play, no NN-value blend) is a real +25 elo gain over iter_01. iter_B1 should become global-best. |
+| iter_01 c=2.0 NEW vs c=1.5 OLD @ sims=200 | 400 | 200W/194L/6D | **+5.2** | 0.3σ | **genuine null** — c=2.0 does not beat c=1.5; the c-axis is closed at this resolution (n=400 against the ~+20-30 elo effect-of-interest has ~65% power; a small positive effect could still hide) |
+
+**Headline:** Of the 4 hypothesized false-negative-suspect calls, the math from the prior entry (P(at least one recovered) ≈ 40-50%) actually delivered 2 recoveries. **The biggest is iter_B1: the project's claimed "plain v2.7 plateau at iter_01" was wrong — Option B (score-diff value targets, no blend) is a +25 elo lever the n=100 verdict (49% wr, +4.6 score diff) called null.**
+
+**Decisions:**
+1. **Promote `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` to global-best**, replacing iter_01. Update CLAUDE.md "current global-best" line accordingly.
+2. **Reframe the "plateau" finding.** The 2026-05-19 entry concluded "two-strategy plateau (iter_02 + iter_B1) is real" — half of that (iter_B1) is now retracted. The plain v2.7 *recipe* (W/L value targets, vanilla self-play) really does plateau at iter_01 (iter_02 confirmed at n=400). But the Option B *variant* of the recipe (`score_diff` value targets) is a real +25 elo lever. The plateau is recipe-specific, not net+leaf-bound.
+3. **n=400 is the new minimum** for matched-strength comparisons (already decided in the prior entry). Re-confirmed empirically: 3 of the 4 n=100 verdicts in this set were within ±15 elo of a genuinely-different n=400 reading.
+4. **No retraining of the deepsearch verdict's downstream implications** — the 2026-05-19 (late) entry's call ("deepsearch becomes global-best for the sims=800 play regime if confirmed") stands and is now confirmed. Deepsearch is global-best for sims=800-plane play; iter_B1 is global-best for sims=200-plane play. (Practical implication: choose the checkpoint by your play-time sims setting. Most matches will be sims=200 → iter_B1; sims=800 power moves → deepsearch.)
+5. **PUCT c-axis closed at this resolution.** c=2.0 vs c=1.5 at +5.2 elo / 0.3σ is the strongest single-axis-sweep negative result yet. A real +20 elo c=2.0 effect would need n≥800 to detect at α=0.05 — not worth the compute.
+
+**Broader audit — other reservoirs of likely false-negatives (next-step planning):**
+
+The n=100 verdicts were one source. Reservoirs we should sweep through next:
+- **Single-iteration rejections.** Many recipes were killed after one self-play+train cycle. Recipes that compound over 2-3 iters (like Option B might — iter_B1 is +25, iter_B2 could be more) look flat-vs-prev each step. **Highest EV: chain Option B forward (iter_B2, iter_B3, iter_B4) before assuming the lever is single-shot.**
+- **Smoke-test rejections (n=20-50).** Even more underpowered than n=100. Any past variant rejection where the smoke landed within ±50 elo of zero was effectively "unknown" — re-run candidates that had borderline smokes.
+- **Coarse hyperparameter sweeps.** Only 2 c_puct points tested (1.5 vs 2.0, now null) — never tried 0.5, 3.0, 5.0. Cap sweep stopped at the v2.7-era optimum (5 → 12) — never tested cap=20 or cap=∞. Network: 6×96 ResNet picked in Phase 3, never re-swept at v2.7-era data scale.
+- **Pre-bug-fix benchmarks.** The v2.5 farm/city dedup fix (2026-05-15) shifted optima. Any variant rejected *before* that fix was tested against inflated bonus magnitudes — verdicts may not hold.
+- **Other plane mismatches.** The sims=200 / sims=800 mismatch was caught. Other potential mismatches: cap value at train vs play, leaf-eval variant at train vs play, orchestrator on/off — not systematically audited.
+
+**Next-step plan (drafted separately, to be wired into a multi-day autonomous pipeline while Joshua is away):** chain Option B forward 3-4 iters; wider c_puct sweep at sims=200; cap=20 and cap=∞ smokes. See STATUS.md "Next" for the queued sequence.
+
+**Reversal cost:** medium. The iter_B1-as-global-best call is well-supported (1.5σ at n=400) but not as solid as iter_01's original promotion (1.9σ at n=100 against warmstart). If a future n=400 deepsearch-style re-test pulls iter_B1 back below iter_01, we'd re-revert. The plateau-retraction is a real correction; the original conclusion was actively misleading and gated several decisions on the wrong premise.
+
+**Phase:** 4 (self-play) — strength.
+
+## 2026-05-19 (late) — Deepsearch verdict revised: anchor-gate plane mattered; matched-regime (sims=800) reading is +17 elo / 52% wr (n=100) — within noise but flips sign from the sims=200 verdict
+
+**Context.** The earlier 2026-05-19 entry below ("Deeper-search self-play retrain did not advance") rested on a single anchor-gate at sims=200. After publishing it, the question came up: deepsearch was *trained* with sims=800 teacher search — was it fair to evaluate it at sims=200 play, the regime tuned to iter_01? The natural matched-regime test (deepsearch vs iter_01 both played at sims=800, n=100) had not been run. We then ran it.
+
+**The run.** Same 100 (seed, player) pairs as the sims=200 anchor (seeds 900000–900099, i%2 player split). Both sides played at sims=800. Work-stealing across both boxes via a newly-extracted `carcassonne_ai.claim` module + a `--shared-claim` flag added to `eval_iter_head_to_head.py`. The eval started as a manual seed-split (5800X 70 / Xeon 30); mid-run the durability gap (no crash failover) prompted a pivot to shared-claim — 54 cached games preserved via exists-check, then both boxes ran the *same* `--games 100 --seed-start 900000` command pointed at one CIFS eval_dir; the claim primitive divvied up the remaining 43 seeds atomically. 24 active workers, 14 5800x + 10 xeon. Wallclock ~3.5h end-to-end (kill→pivot→restart→complete).
+
+**Result.** deepsearch (NEW) vs iter_01 (OLD), 100 games: **52W / 1D / 47L, avg diff +0.61, elo +17.4** (0.50σ above 50%; binomial SE ±5pp).
+
+**Comparison across measurement planes:**
+
+| play sims | result | avg diff | elo |
+|---|---|---|---|
+| 200 (anchor-gate v1, iter_01-matched) | 45W/0D/55L | −1.2 | **−34.9** |
+| 800 (anchor-gate v2, deepsearch-matched) | 52W/1D/47L | +0.6 | **+17.4** |
+
+~52-elo swing from measurement plane alone, with a clean sign flip. Each reading individually is within its noise band (0.5–1σ from 50%); the *anti-correlation* across planes is the suggestive signal — if both were pure noise we'd expect drift in the same direction or independent, not a clean flip.
+
+**What this changes about the prior entry.** "The plain v2.7 retrain recipe is confirmed plateaued at iter_01 across all three lever attempts" overreached on the deepsearch leg. iter_02 (+0.2 at sims=200, iter_01's matched plane) and iter_B1 (+4.6 / 49% at sims=200, iter_01's matched plane) remain flat — those were measured at their training-matched plane and the conclusion stands for those legs. The deepsearch leg was measured *off-plane* and the matched-plane reading is ambiguous (point estimate slightly positive, not significant). The two-strategy plateau (iter_02 + iter_B1) is real; calling it three strategies was wrong.
+
+**Hypothesis the data is consistent with.** Training-sims and play-sims should match. A deeper-teacher policy is tuned to behaviors a deeper search will actually take advantage of at play time; at shallower play it may even score slightly worse because the policy is now relatively under-confident in lines a deeper search would close out. Not proven at n=100 (point estimate within noise) — but the +52-elo flip is the right shape if the hypothesis holds, and the wrong shape if both readings are pure noise.
+
+**Decision.** (1) Do NOT promote deepsearch to global-best yet — +17.4 elo at 0.5σ doesn't clear the same bar iter_01 cleared (1.9σ at n=100 in 2026-05-16). (2) **The n=200 confirmation plan was upgraded to n=400** after a meta-audit (next entry below) revealed n=100/200 is below the resolution needed for matched-strength comparisons in this project. (3) **Conditional on the n=400 confirmation:** if the matched-plane edge holds (≥+30 elo ≈ 1.7σ at n=400), deepsearch becomes the new global-best **for the sims=800 play regime**; if it reverts to ~50%, iter_01 stays. Either way the +200 elo sims=200→800 play-time win (2026-05-18 sims-ladder) is a free side-channel benefit independent of which checkpoint is selected.
+
+**Independent of the n=200 outcome:** the broader claim "the v2.7 leaf is the ceiling" is now less load-bearing. iter_02 and iter_B1 are still flat, so the policy IS saturated at iter_01-matched-plane evaluation. But the deepsearch leg leaves open the chance that training-and-play matched search regimes have more room than the sims=200-only view suggested. Leaf-eval redesign remains the highest-leverage longer-term lever; the matched-regime hypothesis is a cheaper near-term experiment if n=200 confirms.
+
+**Reversal cost:** low. The original entry stays below (history); this entry corrects its conclusion in light of the matched-plane data.
+
+**Phase:** 4 (self-play).
+
+## 2026-05-19 — Deeper-search self-play retrain did not advance; v2.7 plateau confirmed across 3 strategies — leaf-eval becomes the next ceiling
+
+> **2026-05-19 (late) — partial retraction:** see the entry immediately above. The deepsearch leg of this argument used the wrong measurement plane (sims=200 anchor); at the matched sims=800 plane the verdict is ambiguous (+17.4 elo, 0.5σ above 50%) rather than negative. The iter_02 and iter_B1 legs were measured at their matched plane and stand. The original text below is preserved unedited for history.
+
+
+**Context.** STATUS 2026-05-18 had two strength levers still on the table: (a) deeper-search self-play — retrain with a sims=800 teacher (might un-stick the plateau); (b) leaf-eval redesign (bigger project). The sims-depth A/B (iter_01 @ sims=800 vs itself @ sims=200, n=50, +200 elo) had proved search itself is a large lever *given the leaf* — the working hypothesis was that compounding stronger teacher search into training would lift the policy at production sims=200.
+
+**The run.** 1200-game sims=800 self-play from iter_01, work-stealing across both boxes (one shared SMB folder, atomic-claim load-balance — commit 1895b02). Dataset finished clean (1200/1200, no failures). `train_iter.py` on the 1200-game buffer (188,736 train positions, warm-from iter_01, 3 epochs, batch 256, value-target score_diff per the running default — harmless here, see 2026-05-19 value_target note in BACKLOG.md) → `checkpoints/v25_retrain_deepsearch/iter_00.pt`. Anchor-gate `eval_iter_head_to_head.py`: new vs iter_01, n=100, sims=200 both sides, v2.7 leaf (`CAP=12`, drop-3-open), orchestrator, batch_size=1.
+
+**Result — 45W / 0D / 55L, avg diff −1.2, elo_delta −34.9.** Within ~1σ of flat (n=100 binomial SE ~5pp), not significantly worse, definitely not better. The running tally trended steadily down through the run (60% after 20 → 53% after 40 → 47% after 60 → 43% after 80 → 45% final) — consistent with early-fluke regression to a true ≈50%.
+
+**Compound with the prior anchor-gates from iter_01:**
+  - iter_02: +0.2 avg diff (flat — DECISIONS 2026-05-17)
+  - iter_B1 (Option-2 value-head blend pipeline, score_diff value head): 49W/0D/51L, +4.6 avg, elo −6.9 (≈ iter_01 — DECISIONS 2026-05-18)
+  - deepsearch (this run, stronger teacher search): 45W/0D/55L, −1.2, elo −34.9 (≈ iter_01, slightly worse end of noise)
+
+Three independent strategies — same recipe more iterations, value-head blend, stronger teacher search — all return flat-to-slightly-worse from iter_01. **The plain v2.7 retrain recipe is now confirmed plateaued at iter_01 across all three lever attempts.**
+
+**Why.** The sims=800-at-PLAY result (+200 elo, 2026-05-18) proved search is a large lever *given the leaf*. But teacher-search quality only flows into training as POLICY targets, and a sims=800 teacher's targets are still bounded by what the v2.7 heuristic scores as good during that search. Stronger search refines the policy toward what THIS leaf considers best; it cannot teach the policy moves the evaluator can't recognize as good. iter_01 has converged to ≈ what the v2.7 leaf can teach; deeper teacher search doesn't widen that ceiling.
+
+**Decision:** close deeper-search self-play as a strength lever *for this leaf*. Global-best remains `checkpoints/v25_retrain_iter01/iter_00.pt`. Next strength lever — Joshua's call (no auto-launch): **leaf-eval redesign** is now the only un-closed strength lever for the v2.7-recipe line (BACKLOG.md 2026-05-16 captures the strategy-lit ideas — tile-counting closure P, large-open-city penalty, targeted denial, meeple economy, farm majority-flip).
+
+**Independent of this verdict:** the sims=800-at-PLAY +200-elo gain (2026-05-18 sims-ladder) is still on the table as a free win for production play — no retrain, ~4× per-move latency (fine for human-paced play). Should land in the production config whenever play-vs-human is wired up.
+
+**Reversal cost:** low — checkpoint kept (`checkpoints/v25_retrain_deepsearch/iter_00.pt`), buffer kept (`/mnt/c/carc-shared/deepsearch/iter_00/`); the conclusion can be revisited if a leaf-eval redesign changes the substrate the policy is training against.
+
+**Phase:** 4 (self-play).
+
+## 2026-05-19 — Code-review loop: 14 fixes; work-stealing stale-recovery race accepted, not redesigned
+
+**Context.** A 4-iteration multi-agent review of all living code (24 agent-reviews — 6 subsystems × 4 passes). Applied 14 safe corrections (F1–F14, see REVIEW_LOG.md); deferred 16 findings (D1–D16). Most deferrals are routine (latent / unreachable / retraining-boundary — tracked in REVIEW_LOG.md and BACKLOG.md). One — D15 — is a genuine architecture call worth recording here.
+
+**D15 — the work-stealing stale-claim recovery (`_try_claim`) has a TOCTOU race.** When several workers re-claim the same abandoned (stale) seed, a worker that judged staleness against the *old* claim can `os.rename` aside a *fresh* claim re-created by an earlier winner — so N racers can yield up to N winners, not one. The fast path (the O_EXCL create) is unaffected and correct; this is recovery-only.
+
+**Options considered:**
+  - A: Redesign recovery to be single-winner — a per-seed `.recovering` O_EXCL lock, or capture-`st_ino`-then-re-verify. Correct, but ~half a day, and a botched fix to a *live* primitive could lose a claim (a seed never played → a training game silently missing) — strictly worse than the current behavior.
+  - B: Accept it. The duplication is bounded (≤ N) and fires only on crash-recovery; the atomic `.npz` write (last-writer-wins) means the worst case is a few duplicate games — wasted compute, never corruption. Relax the docstring's "exactly one winner" overpromise and the test (`xfail` → assert `1 ≤ winners ≤ N`).
+
+**Decision:** chose B — accept + document.
+
+**Reason.** The `.claim` is a *best-effort* lock by design; correctness is owned by the atomic `.npz`. The race's worst case is a handful of recomputed games after a box crash. Option A's risk — losing a claim on a live primitive — is not justified by that. Parked in BACKLOG.md if the cost ever proves real.
+
+**Reversal cost:** low — option A stays available; the BACKLOG entry preserves the analysis.
+**Phase:** 4 (self-play).
+
+## 2026-05-18 — Option 2 (NN value-head leaf blend) closed; plain v2.7 recipe confirmed plateaued
+
+**Context.** iter_02 flatlined (+0.2 over iter_01) → working hypothesis: the policy had saturated against the *fixed* v2.7 heuristic leaf. Option 2's response: blend the network value head into the leaf — `leaf = (1−λ)·tanh(vs2/15) + λ·v_nn` — so the leaf co-improves with the policy. Phase A wired it (eb42c25); the λ=0.5 fixed-checkpoint smoke with iter_01's *W/L* value head gave −11.3 avg / 46% wr, hypothesised as a currency mismatch (W/L head vs score-diff heuristic leaf). Phase B: iter_B1 minted a *score-diff* value head (1200-game retrain from iter_01); the re-smoke tested blending it.
+
+**Result — re-smoke (n=50, iter_B1 blended-λ=0.5 vs plain leaf).** −15.5 avg / 31% wr (15W/1D/34L) — *worse* than Phase A, not better. The currency-mismatch hypothesis is refuted. A residual-structure diagnostic (60 games, 9946 positions) confirmed the mechanism: the NN value head correlates only +0.18 with the true outcome vs the v2.7 heuristic's +0.61, and is beaten by the heuristic in every game-phase quartile; the MSE-optimal static blend cuts prediction error only ~4% (in-sample-optimised, so an overestimate).
+
+**Result — iter_B1 strength.** iter_B1's own anchor-gate (n=20) scored 70%/+12.6 vs iter_01, which looked like a gain. An n=100 confirm corrected it: **49W/0D/51L, +4.6 avg diff, elo −6.9** — iter_B1 ≈ iter_01 (even win rate, a marginal score-diff edge at most). The n=20 was a high-side fluke.
+
+**Decision.** (1) **Option 2 is closed** — value-head injection abandoned, both the convex blend and the residual-head variant. The 7.4M-param value head on ~1200 self-play games is simply a weaker position evaluator than the hand-tuned v2.7 heuristic; no blend repairs that. Triple-confirms the v1–v6 finding. (2) **The plain v2.7 self-play recipe is plateaued** — iter_00→iter_01 gained big (+13.3), iter_01→iter_02 flat (+0.2), iter_01→iter_B1 flat (+4.6 / 49%). More plain retrains will not move the needle.
+
+**Reason.** Both the exotic lever (NN-value-leaf) and the simple lever (more plain self-play) are now empirically exhausted against the v2.7-heuristic-leaf ceiling.
+
+**Next.** Not another training-recipe tweak. The real blocker (per EXPERIMENTS.md) is that no checkpoint has been benchmarked against a strong human — "superhuman" is undefined-by-measurement. Branch decision: benchmark iter_01-level play vs a human / strong reference to learn where we actually stand, then either pivot toward Phase 5 (if it clears the bar) or commit to a harder strength lever (heuristic-leaf redesign, net capacity, or search-side knobs — see EXPERIMENTS.md open list).
+
+**Reversal cost:** low — the Option 2 infra (`LeafConfig.value_blend`, blend wiring, `--value-target score_diff`) stays in the tree dormant; revisiting needs a materially stronger value head.
+**Phase:** 4 (self-play).
+
+## 2026-05-17 — self-play perf optimization: hash-cache + get_side shipped; deeper leaf-eval memoization (Options A & B) parked — find_farm is start-dependent
+
+**Context.** iter_01/iter_02 each took ~11h of local self-play; iter_B1 and any future iterations pay the same. Profiling one production self-play game (sims=200, v2.5 leaf) showed the heuristic leaf eval is ~83% of CPU, with object hashing ~31% of self-time and the set-based connected-component flood-fills (`find_farm` 328s cumulative, `find_city` 96s) dominating. Three optimization tiers were considered, cheapest first.
+
+**Tier 1 — shipped (committed `080fea7`, on `gpu-orchestrator`).** Cache `__hash__` on the immutable engine value objects (`Coordinate` family, `FarmerConnection`) and precompute `FarmerSide.get_side` (it was walking the enum `.value` descriptor up to 4× per call). Both behavior-preserving (bitwise-identical hashes / outputs; full suite green). cProfile re-profile: 651→561s — ~14% from hashing alone, `get_side` projected ~+12%, ~20-24% combined. Live in iter_B1.
+
+**Tier 2 — Option A, memoize the find_* flood-fills — PARKED.** Cache `find_city`/`find_road`/`find_farm` results per board on the game state, invalidated at the single tile-placement site (`StateUpdater.play_tile`). find_city + find_road were memoized and verified bitwise-identical via a differential test (240 states early/mid/late/terminal + the in-place MCTS-rollout path + `count_final_scores`, all memo-on == memo-off). **But `find_farm` — the #1 hot path — is start-dependent**: the engine's farm flood-fill returns *different* farmer-connection sets depending on which connection you start from (verified by the differential test: 11 vs 4 from the "same" farm). Caching a farm under its member positions is therefore unsound — a query would hit a result computed from a different start point. find_farm was reverted; the surviving find_city+road memo is only ~6% (find_city is ~96s of the ~420s of find_* cost). Committed on branch `leaf-memoization` (`3db30f1`), **not merged**.
+
+**Tier 3 — Option B, incremental connected-components (union-find) — PARKED, not started.** A union-find represents *symmetric* connectivity by construction, so it cannot reproduce a start-dependent `find_farm` without adopting the corrected symmetric farm semantics — which would change the leaf's farm bonus and `count_final_scores`' farm points (a behavior change, not a transparent optimization). For cities/roads alone it could beat Option A's 6% modestly (~10-12%) but needs incremental maintenance on every tile placement (touching `apply_action_inplace` + every River/farmer edge case) — worse risk/reward than A.
+
+**Options considered:**
+  - A: Memoize find_* (Tier 2). Found unsound for find_farm; the safe remainder is ~6%.
+  - B: Incremental union-find (Tier 3). Cannot represent the engine's start-dependent farm semantics; cities/roads-only is marginal at higher risk.
+  - C: Ship Tier 1, park A and B.
+
+**Decision:** chose C.
+
+**Reason.** `find_farm` is ~58% of the leaf-eval cost and is structurally resistant to *both* memoization and union-find, because the engine's farm traversal is start-dependent — no caching strategy reaches it. The reachable remainder (find_city+road) is only ~6%, and it is a vendored-engine change on the scoring path (project-wide blast radius — `count_final_scores` feeds real game outcomes and training labels), so a ~6% gain does not justify the merge-risk attention. The only routes to the find_farm win are (a) micro-optimizing its flood-fill internals — grindy, and the easy parts (hashing, get_side) are already done — or (b) deliberately replacing the buggy start-dependent `find_farm` with a correct symmetric one, a behavior change needing a re-validation A/B, not a free optimization. Neither is worth diverting from the iter_02-ceiling work (Option 2 / iter_B1). Local optimization has hit diminishing returns at the ~20-24% already banked.
+
+**Reversal cost:** low. Tier 1 is committed and behavior-preserving. Option A's verified work sits on `leaf-memoization` if the 6% is ever wanted; Option B was never built.
+
+**Phase:** 4 (self-play infrastructure).
+
+## 2026-05-17 — closure-probability accuracy is not the leaf-eval lever; Option-1 (heuristic-leaf refinement) yields two null results → pivot to Option-2
+
+**Context.** The iter_02 entry below established the next lever is leaf-eval quality, and named two candidates: (1) improve the heuristic leaf, (2) NN value head as a correction term. Option 1 was tried first — lower risk, incremental. The most lit-review-backed leaf refinement was tile-counting closure probability: `virtual_score_v2`'s closure-anticipation bonus uses a fixed P(closure) schedule `{1:0.5, 2:0.2}` keyed only on a feature's open-position count; it never consults the remaining deck. A city needing 3 more city-tiles when only 1 city-tile remains in the deck *cannot* close — yet the fixed schedule still pays the bonus. Making P(closure) deck-aware should be strictly more accurate.
+
+**Infra built (committed, kept regardless of outcome).** `LeafConfig` dataclass — per-evaluator config, replacing the process-global `CARCASSONNE_V25_*` env vars — plus `--{new,old}-leaf-variant` on `eval_iter_head_to_head.py`. Two leaf variants can now run in one process for a clean same-checkpoint leaf-vs-leaf A/B. Reusable for Option-2 tuning. Commits f83ce34, 89f82e3, 1f1c01f.
+
+**Test design.** Both A/Bs: iter_01 checkpoint on *both* sides, only the leaf differs — isolates the leaf change with zero confound from network strength. n=100, sims=200, v2.7 production knobs (cap=12, drop-3-open).
+
+**Two variants tried.**
+- *Step 3b — hard tile-counting gate.* P(closure)→0 only when the deck literally cannot finish the feature. **45W/1D/54L = 45% wr, −4.8 avg score diff.** Within noise of 50%, point estimate negative.
+- *Step 5 — continuous deck-aware ramp.* P(closure) scaled smoothly by `_supply_factor(supply, need, slack=3)` — discounts in the mid-game, not just the impossible endgame. Unit tests confirm it fires on far more positions than the cliff. **50W/1D/49L = 50% wr, −1.4 avg score diff.** A flat wash.
+
+**Verdict — closure-probability accuracy is not the lever.** The hard gate's 45% could be dismissed as "the cliff fires too rarely." The continuous ramp was built precisely to kill that objection: it fires constantly in the mid-game and still nets *exactly zero*. Pooled across both benches the deck-aware-closure direction is 95/200 = 47.5% — a tight null. MCTS does not need a calibrated P(closure); the rough fixed schedule is already sufficient.
+
+**Decision — Option 1 is closed for the closure-probability angle; pivot to Option 2 (NN value-head correction term).** Reasoning: iter_02 established that the policy saturates against a *fixed* leaf. Hand-tuning the leaf only nudges a fixed ceiling — and two n=100 benches now show how little it nudges. Option 2 makes the leaf value carry a *learnable* component (the value head, trained on iter_01/iter_02's now-good self-play outcomes), so the leaf co-improves with self-play and the ceiling is no longer fixed. That attacks the saturation diagnosis structurally, where leaf hand-tuning cannot.
+
+**Caveat — not every leaf refinement is dead.** Closure-P was one of ~4 lit-review refinements (large-open-city penalty, targeted denial, stranding-risk meeple weighting remain, parked in BACKLOG 2026-05-16). A null on closure-P does not prove a null on those — they are different *features*, not recalibrations of an existing term. But chasing them one-at-a-time is diminishing returns against the structural fix; Option 2 takes priority. The remaining refinements stay parked.
+
+**Reversal cost:** low. The closure-continuous code is committed and off by default (`LeafConfig.closure_continuous_slack=0.0`); production behavior is unchanged. If Option 2 stalls, the parked refinements are still available.
+
+**Phase:** 4 (self-play / leaf-eval).
+
+## 2026-05-17 — iter_02 flattens: policy saturated against the fixed v2.7 leaf; the compounding ceiling is found
+
+**Context.** iter_00 beat warmstart_canonical by +14.3 (2026-05-15); iter_01 beat iter_00 by +13.3 (2026-05-16). Two consecutive ~+14pt jumps from the same recipe (v2.7 leaf, 1200-game self-play, retrain from prev) raised the question: does it keep compounding? iter_02 — a third iteration, same recipe, from iter_01 — tests it.
+
+**Run.** 1200-game v2.7 self-play from iter_01, local, W=14, 11.3h, $0. Pure self-play training (warmstart-mix 0.0), same recipe as iter_01.
+
+**Result.** Anchor-gate vs iter_01 n=20: 11W/0D/9L = 55%. n=100 confirmation: **51W/5D/44L = 53.5% wr, +0.2 avg score diff, +24.4 elo.**
+
+**Verdict — the compounding flattened.**
+
+| step | avg score diff | n=100 wr |
+|---|---|---|
+| warmstart → iter_00 | +14.3 | (61.7% anchor n=30) |
+| iter_00 → iter_01 | +13.3 | 59.5% |
+| iter_01 → iter_02 | **+0.2** | **53.5%** |
+
+53.5% is only 0.7σ above 50% (n=100 SE ~5pp) — within noise. The score-diff signal, the reliable one all week, says **+0.2 = zero gain**. iter_02 ≈ iter_01.
+
+**Decision. iter_01 (`checkpoints/v25_retrain_iter01/iter_00.pt`) remains the global best. iter_02 is NOT promoted.** Promoting on 0.7σ would be the exact n=20-noise mistake the v3 cap sweep and PUCT c=2.0 sweep both made this week — at n=100 the discipline is the same: a sub-1σ wr gain with a zero score-diff is not a confident improvement. iter_02 is *equivalent* to iter_01, not better. (iter_02's checkpoint is kept; future work can warm-start from either — they're interchangeable.)
+
+**What this establishes — the data-scarcity hypothesis was right but bounded.** More v2.7-recipe self-play helped for *exactly two iterations* (+14.3, +13.3), then hit a wall. This is **policy saturation against the fixed leaf**: `virtual_score_v2` is a fixed hand-crafted heuristic that never improves, so it defines a ceiling — "the best policy prior achievable given this leaf." iter_01 reached that ceiling; iter_02 can't exceed it. The sharp drop (+13.3 → +0.2, not a gradual taper) is the signature of a hard ceiling, not gradually-diminishing data returns.
+
+**What this rules out.**
+- *More iterations of the same recipe* — iter_03+ would also land ~+0. Dead direction.
+- *Bigger policy net* — a higher-capacity policy head would saturate against the *same* leaf. Capacity is not the bottleneck. Bigger-net is de-prioritized by this result.
+
+**What this points to — the next lever is leaf-eval quality.** Two candidate structural changes (both gated on a plan-mode session, neither auto-started):
+1. **Improve the heuristic leaf** — the competitive-strategy lit-review refinements parked in BACKLOG 2026-05-16 (tile-counting closure probability, large-open-city penalty, targeted denial, stranding-risk meeple weighting). Lower-risk, incremental.
+2. **NN value head as a correction term** — train a value head on the now-good iter_01/iter_02 self-play outcomes and use it to correct virtual_score's known blind spots (farm-composition path-dependence especially). Higher-ceiling, more invasive. The value head failed in v1-v6 because it trained on degrading self-play; it now has strong games to learn from.
+
+**Also still open: no human benchmark.** iter_01 has never played a human. Before committing to a structural leaf change, knowing where iter_01 actually stands vs a strong human would size the remaining gap to "superhuman" — worth doing first or in parallel.
+
+## 2026-05-14 — v2.5 hyperparameter sweep: sims=200 is the sweet spot, cap=5 is the inverted-U optimum
+
+**Context:** After v2.5 cleared the v1 baseline at sims=400 (83.3%), two open tuning questions: (1) does sims<400 still match? (2) is cap=5 actually right, or did we get lucky?
+
+**Sims sweep** (hybrid_v2.5 vs Tier-1, n=30 each):
+
+| sims | v2.5 wr | v1 wr (same config) | Δ |
+|---|---|---|---|
+| 50  | 50.0% | 63.3% | -13.3pp |
+| 100 | 71.7% | 58.3% | +13.4pp |
+| **200** | **80.0%** | 70.0% | **+10.0pp** |
+| 400 | 83.3% | 76.7% | +6.6pp |
+
+**v2.5 ramps with depth more steeply than v1.** At sims=50 v2.5 is *worse* than v1 (the bonus is noise without enough search depth). At sims≥100 the anticipation signal becomes informative and v2.5 pulls ahead. **sims=200 is the new sweet spot** — 80% wr at half the compute of sims=400 (only 3pp less). Production for ablation benches: sims=200. For raw-strength benches: sims=400.
+
+**Cap sweep** (cap ∈ {2, 5, 8, 15} at sims=200 n=30):
+
+| cap | v2.5 wr | Δ vs cap=5 |
+|---|---|---|
+| 2  | 60.0% | -20.0pp |
+| **5 (production)** | **80.0%** | — |
+| 8  | 73.3% | -6.7pp |
+| 15 | 76.7% | -3.3pp |
+
+Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh saturation (smaller dose of v2's failure mode). Hand-picked cap=5 happens to land on the knee. n=30 SE ~9pp, so cap=5 dominance over cap=2 is decisive (~2σ); over cap=8/15 it's suggestive but not bulletproof.
+
+**Decision: production = `_BONUS_CAP=5.0`, sims=200 (ablation) or sims=400 (raw strength).**
+
+**Plumbed:** `CARCASSONNE_V25_CAP` env var on `virtual_score_v2.py` for future cap sweeps without source edits.
+
+**Lesson:** when a hand-picked initial value happens to be optimal, the clean inverted-U around it is reassuring — confirms it's not a knife-edge dependent on noise. If cap=5 had been on a slope, we'd worry the next change downstream might shift the optimum.
+
+## 2026-05-16 — iter_01 retrain confirms data-scarcity hypothesis: more v2.7 self-play → stronger model
+
+**Context.** iter_00 (1200-game v2.7 self-play retrain) beat warmstart_canonical +21pp on 2026-05-15. Open question: was that a one-shot warmstart→trained jump, or does the recipe keep compounding with more self-play? iter_01 tests it — another 1200 games, same recipe, initialized from iter_00.
+
+**Run.** Launched locally (vast.ai's docker-pull infra was down — 7 boxes stalled; see [[feedback-vastai-success-false-still-creates]]). 1200-game v2.7 self-play, W=14 (the v2.7-recipe worker optimum, freshly benched — not the old W=16 NN-value optimum), sims=200, c_puct=1.5, initialized from iter_00. **Pure self-play training** (`--warmstart-mix-schedule 0,0,0,0`) to replicate iter_00's exact recipe — iter_00 trained with `warmstart_in_list=0` because the cloud box never had the warmstart .npz, so for a clean "more data, same recipe" A/B iter_01 matched that. 10.6h wallclock, $0.
+
+**Result.** Anchor-gate vs iter_00 n=20: 12W/0D/8L = 60% wr, +11.8 avg diff. **n=100 confirmation: 59W/1D/40L = 59.5% wr, +13.3 avg score diff, +66.8 elo.**
+
+**Why the n=100 confirmation.** 60% at n=20 is only ~0.9σ above 50% — the same noise band that produced false winners in the v3 cap sweep and PUCT c-sweep this week (both evaporated at larger n; see [[feedback-n50-min-for-variant-comparison]]). iter_01's 60% was NOT allowed to stand on n=20. At n=100 it held at 59.5% (~1.9σ above 50%) with the score-diff signal *strengthening* (+11.8 → +13.3). First n=20 result of the week to survive — because this one was real.
+
+**Decision. iter_01 (`checkpoints/v25_retrain_iter01/iter_00.pt`) is the new global best.** Supersedes iter_00 and the v6 `iter_12.pt`.
+
+**What this establishes.** The +13.3 score-diff over iter_00 is a similar magnitude to iter_00's +14.3 over warmstart_canonical. Two consecutive ~+14-point jumps from the same recipe → **the ceiling is data quantity, not recipe or architecture.** The v1-v6 plateau was a leaf-eval problem (NN value head), not a fundamental one. With the v2.7 leaf, each 1200-game retrain compounds.
+
+**Open question for iter_02.** Does a third iteration keep the ~+13 cadence, or do returns diminish? If iter_02 also lands ~+13, a longer multi-iter run is clearly worth the compute. If iter_02 flattens, we've found the data-per-iteration knee and should either grow games/iter or accept the current level and pivot to human-play evaluation. iter_02 not launched autonomously — pending Joshua's go.
+
+## 2026-05-15 — PUCT c sweep: low c (≤1.0) catastrophic; default c=1.5 is well-chosen; don't promote c=2.0
+
+**Context.** After v3 cap tuning closed as inconclusive, ran the PUCT c sweep from EXPERIMENTS.md as the next ablation. The 2026-05-14 diagnostic identified "low c → search over-explores into virtual_score's blind spots" as a hypothesis. PUCT formula: `U(a) = Q(a) + c · P(a) · sqrt(N_parent)/(1+N_child)`. Low c down-weights the NN policy prior P(a), so search explores more uniformly.
+
+**Sweep.** iter_00 + v2.7 leaf vs Tier-1 at sims=200, n=20:
+
+| c_puct | iter_00 wr | score diff (NN POV) |
+|---|---|---|
+| 0.5 | 67.5% | +4.2 |
+| 1.0 | **52.5%** ← barely beats Tier-1 | +7.2 |
+| 1.5 (current default) | 80% | +27.4 |
+| 2.0 | 85% | +40.3 |
+| 3.0 | 75% | +37.0 |
+
+**Confirmation runs (n=50, per the n=50-for-comparison memory rule):**
+- c=2.0: iter_00 88% wr, score diff -38.5 (rule POV)
+- c=1.5: iter_00 84% wr, score diff -38.0 (rule POV)
+
+**Result.** c=2.0 vs c=1.5 at n=50: indistinguishable. WR gap 4pp ≈ 0.6σ (SE ~7pp combined). Score-diff gap 0.5pt = effectively zero. The n=20 spread between c=1.5/2.0/3.0 was within noise; only c=2.0's *winner-at-n=20* status was noise.
+
+**Real finding: catastrophic low-c boundary.** c=1.0 → iter_00 52.5% (nearly ties Tier-1, who is supposed to lose 80%+ of the time). c=0.5 → 67.5%. Both well outside n=20 noise; score-diff signal confirms (+4 to +7 vs default's +27). The 2026-05-14 hypothesis "low c over-explores into virtual_score's blind spots" is CONFIRMED. The NN policy prior is load-bearing — search has to trust it heavily, not explore around it.
+
+**Decision.** Default c=1.5 stays. Don't promote c=2.0. Add a note to mcts.py's `DEFAULT_PUCT_C` constant explaining the lower bound is enforced by empirical data (c≤1.0 catastrophic).
+
+**Why this matters for future work.**
+1. If anyone (or future-me) tries to lower c "for more exploration," they'll break iter_00's strength. The constant comment should warn.
+2. iter_01 retrain doesn't need a c_puct hyperparameter sweep — c=1.5 is in the flat region, not on a knife-edge.
+3. The result indirectly confirms iter_00's policy prior is **well-trained enough that search wants to trust it.** This is a positive signal for the training pipeline.
+
+**Today's second case of n=20-noise-evaporating-at-n=50.** v3 cap tuning (morning) and PUCT high-c promotion (afternoon) both looked like winners at n=20 and collapsed at n=50. The n=50 memory rule has earned its keep twice today. See [[feedback-n50-min-for-variant-comparison]].
+
+## 2026-05-15 — v3 leaf: cap tuning is fitting n=20 noise; v2.7 cap=12 is at the local optimum (or indistinguishable from one)
+
+> **⚠️ MEASURED 1-OF-2 ERROR RATE — DO NOT CITE THIS ENTRY'S KILLS AS SETTLED EVIDENCE (stamped 2026-07-30, false-negative sweep `059c982` / buried-caveats audit F7).**
+> This entry contains **two** strength kills — `meeple_K` and the asymmetric `opp_cap` — and **one of
+> the two was worth +179.5 elo.** `meeple_K` ("null, all 3 magnitudes gave identical outcomes at n=20")
+> was **OVERTURNED five and a half weeks later** by a pure-leaf deck-paired cell:
+> `results.csv v28_meeple_flat_vs_v27_heur200_n200` (2026-06-22) = 145W/50L/5D, **+179.5 ± 27.9 elo**,
+> z_margin 9.92. That lever became **v2.8 → v2.9.1 `Bmild_cap8` → v2.9.2 `Bmild_cap8_curve125` — the
+> leaf the current champion runs.** The entire production leaf lineage descends from a term this entry
+> recorded as dead.
+>
+> **AND THE ENTRY DISQUALIFIES ITS OWN INSTRUMENT, three paragraphs below — the defect is the
+> instrument, not the sample size:** (1) **the reference was saturated** — *"Tier-1 is saturated as a
+> reference now — same ~80% wr regardless of leaf cap, so it doesn't discriminate iter_00 from anything
+> similar in strength"*; (2) **the knob reached only one side** — *"`RuleBasedPlayer` uses
+> `virtual_score_inplace` from `virtual_score` (v1, NOT v2) … the `CARCASSONNE_V25_*` env vars only
+> affect the NN's hybrid_v2 leaf, not the rule-player side"*. So these verdicts were graded by a
+> **saturated, leaf-asymmetric instrument at n=20**.
+>
+> **Scope note (corrects a natural misreading):** this is **NOT** a pre-bug-fix benchmark. `DECISIONS.md`
+> is newest-first within a day, and this entry opens *"Post-iter_00 retrain landed today"* — `iter_00` is
+> trained in the dedup-fix entry earlier the same day. The v3 sweep ran on **fixed** leaf code, so it
+> belongs to reservoir **2** (smoke size), not reservoir 4. **The cap axis and `opp_cap` have each since
+> been re-tested independently (C5/C7/F6) and stay dead** — the sweep found **no** live resurrect
+> candidate here. The banner exists so the *citation* carries the error rate, not to reopen anything.
+
+**Context.** Post-iter_00 retrain landed today, the next leaf-eval iteration was v3 — two additions from the 2026-05-14 failure-mode diagnostic that v2.7 didn't address:
+1. **Meeple economy** — `_MEEPLE_K × (meeples_self - meeples_opp)` added after caps (failure-mode 4: over-committed meeples).
+2. **Asymmetric opp cap** — `_OPP_BONUS_CAP` separate from `_BONUS_CAP`, raising it amplifies the negative contribution of opponent's near-closures to search value (failure-mode 3: denial invisible).
+
+Implementation refactor: cap moved from inside `_closure_anticipation_bonus` to `virtual_score_v2` via a `_capped(bonus, cap)` helper. Without this, self and opp couldn't be capped differently. Tests updated to reflect the new location.
+
+**Key fact about the bench setup.** The bench was rule_player vs iter_00 (opponent=hybrid_v2). `RuleBasedPlayer` uses `virtual_score_inplace` from `virtual_score` (v1, NOT v2) — see `src/carcassonne_ai/rule_based_player.py:46`. So the `CARCASSONNE_V25_*` env vars **only affect the NN's hybrid_v2 leaf, not the rule-player side.** Tier-1's behavior is invariant under v3.
+
+This means the sweep is a direct test of "does v3 leaf strengthen iter_00 against Tier-1?"
+
+**Sweep.** rule_player (Tier-1) vs iter_00+v3 at n=20 sims=200 W=12+orch. Tier-1 uses v1 virtual_score (env-var-immune), so env vars affect only the NN's hybrid_v2 leaf.
+
+**Full results** (rule_player wr shown; iter_00 wr = 100 - rule wr):
+
+| variant | n=20 rule wr | n=20 iter_00 wr | n=50 iter_00 wr | n=50 score diff (rule POV) |
+|---|---|---|---|---|
+| v2.7 baseline (cap=12, opp_cap=12 implicit) | 10% | 90% | (not run) | -37 (n=20) |
+| meeple_K ∈ {0.5, 1.0, 2.0} | 10% (all 3) | 90% | — | -31.8 to -42.2 |
+| opp_cap=5 | 5% | 95% | **80%** | -26.3 |
+| opp_cap=8 | 25% | 75% | — | — |
+| opp_cap=20 | 20% | 80% | 80% | -27.3 |
+| opp_cap=30 | 20% | 80% | — | — |
+
+**The n=20 results suggested a story.** At first read: high opp_cap regressed (80% wr), low opp_cap=5 helped (95% wr), opp_cap=8 was a dip (75%). I built a "denial double-counting" hypothesis around it — NN policy prior already encodes opp-threat awareness, so leaf amplification at high cap hurts; low cap helps by reducing double-counting.
+
+**n=50 broke the story.** Both opp_cap=5 and opp_cap=20 landed at 80% at n=50. Score diffs were identical (-26.3 vs -27.3). The whole n=20 spread (75-95%) was fitting noise — at n=20 SE ~7pp, the 90% v2.7 baseline anchor itself is indistinguishable from 80%.
+
+**Correct conclusion.**
+- **v3 cap tuning is exhausted.** opp_cap ∈ {5..30} all produce iter_00 wr ~80% ± 5pp vs Tier-1 at n=50.
+- **v2.7 cap=12 IS at the local optimum, or indistinguishable from one.** No tuning direction (up or down) moves the needle at n=50.
+- **Meeple_K is null** — all 3 magnitudes gave identical outcomes at n=20. Plausibly an additive-on-saturating-cap dead-zone, but with cap itself being non-tunable, this story doesn't matter much.
+
+**Decision.** Keep v3 env-var infra committed (zero default impact: `_OPP_BONUS_CAP` defaults to `_BONUS_CAP`, `_MEEPLE_K` defaults to 0.0). **Production stays at v2.7 cap=12.** Defaults unchanged.
+
+**The two lessons here are bigger than v3.**
+1. **n=20 benches at SE ~7pp can't distinguish 75% from 95% wr.** If I'd run the baseline at n=50 alongside opp_cap variants, I'd have known immediately that the "v3 regresses" story was over-read. Standard practice now: anchor measurements at n=50 minimum when comparing variants within 15pp of each other.
+2. **Two separate analytical errors compounded today.** First I mis-identified WHICH side of the bench used env vars (wrote "v3 helps rule-player" when env vars only affected the NN). Then I corrected to "v3 regresses NN" without questioning whether the BASELINE was solid. Both errors live in the prior commit messages (`e55f622`, `862ec37`) — this entry is the third-and-correct read. Lesson: when a result reverses a story, also re-question what the *reference* says.
+
+**Where next.** Cap tuning is closed. Three live directions:
+1. **iter_01 cloud retrain** on v2.7 leaf (~$2.40, ~6h). Tests data-scarcity ceiling.
+2. **Human play vs iter_00.** Tier-1 is saturated as a reference now — same ~80% wr regardless of leaf cap, so it doesn't discriminate iter_00 from anything similar in strength.
+3. **PUCT c sweep** (~30 min local). Search-side knob, separate from leaf.
+
+## 2026-05-15 — v2.5 dedup bug fix + cap/P re-sweep + cloud retrain: iter_00 +21pp over warmstart_canonical
+
+**Context:** Pre-launch we held v2.5 at 80% wr vs Tier-1 (sims=200, cap=5, P={1:0.5, 2:0.2, 3:0.05}). Cloud retrain at sims=200 on a vast.ai 5090 box hit 6× the predicted wallclock (5.8h vs 1.6h estimate). Investigated v2.5 leaf-eval cost; found a real over-counting bug: multiple meeples on the same farm/city each got `_closure_anticipation_bonus` added separately, but the engine itself only scores each farm/city once per player. Bonus inflated for multi-meeple farms.
+
+**Bug fix (commit `08dfead`):** dedup farms/cities by canonical content (`frozenset(farmer_connections_with_coordinate)` and `frozenset(city_positions)`). The engine returns fresh `City`/`Farm` objects per call (no `__eq__`/`__hash__`), so identity dedup didn't work — needed canonical fingerprints.
+
+Side-effect: per-leaf perf was within noise (~325s/game/worker locally, same as pre-fix). The dedup was a correctness fix, not a perf fix. But the wallclock projection was honest — 1500 games on cloud takes ~5h regardless. Reduced retrain target to 1200 games.
+
+**Bench fallout:** fixed v2.5 + cap=5 dropped to 70% wr (from buggy 80%). The over-counting was load-bearing on cap=5's tuning. Re-swept cap on FIXED v2.5:
+
+| config (n=20 sims=200 each) | wr | avg diff |
+|---|---|---|
+| fixed + cap=5 (3-tier P) | 70% | n/a |
+| fixed + cap=8 | 60% | -17.8 |
+| **fixed + cap=12** | **85%** | -22.4 |
+| fixed + cap=20 | 85% | -34.7 |
+
+cap=12 + cap=20 plateau. cap=12 is safer (lower bonus magnitude → less risk in unusual states).
+
+**P-schedule sweep (cap=12 fixed):**
+
+| variant | _CLOSURE_P | wr |
+|---|---|---|
+| 3-tier (default) | {1:0.5, 2:0.2, 3:0.05} | 85% |
+| v2.6 (1-only) | {1:1.0} | 77.5% |
+| **v2.7 (drop 3-open)** | **{1:0.5, 2:0.2}** | **90%** |
+
+v2.7 wins by 5pp over 3-tier and 12.5pp over 1-only. **Joshua's intuition:** 3-open features are lottery tickets — the 0.05 weight just adds noise without useful signal. Dropping them removes the noise floor and lets the higher-quality 1-open and 2-open signals dominate.
+
+**Decision:** production v2.5 leaf = `_BONUS_CAP=12` + `_CLOSURE_P={1:0.5, 2:0.2}` (env vars `CARCASSONNE_V25_CAP=12 CARCASSONNE_V25_DROP_THREE_OPEN=1`). +10pp over the buggy v2.5 ceiling.
+
+**Cloud retrain (commit `f89b5f3`, watchdog `b46b539`):**
+- 1200 games of warmstart_canonical-vs-warmstart_canonical self-play with v2.7 leaf
+- sims=200, batch=8, virtual_loss=1.0, orchestrator, W=48
+- 6h10min wallclock, ~$2.40 vast.ai (5090 + 48-core EPYC, $0.37/hr)
+- Train 3 epochs on 188K positions: train_pol_loss 1.5358→1.5015, train_val_loss 0.9552→0.9125. val_pol_loss drifted up slightly (1.5475→1.5661, mild overfit signal) but anchor result is positive so net-positive.
+
+**Anchor result (apples-to-apples both sides v2.7 leaf, sims=200, n=30):**
+- iter_00.pt vs warmstart_canonical.pt: **18W/1D/11L = 61.7% wr**
+- avg diff +14.3 (iter_00 wins by ~14 pts/game)
+- elo_delta +82.6
+- Anchor-gate threshold 50% met cleanly.
+
+**Significance:** the policy retrain on v2.7-driven self-play data improved iter_00 by +21pp over the warmstart it started from. This is the first checkpoint generated by the new pipeline (correct leaf, retuned hyperparameters, fixed dedup) — it cleanly beats the v1-v6 best (iter_12 at 70% wr vs warmstart_canonical with NN value, but those numbers are from the old leaf eval; not directly comparable here).
+
+**Lessons:**
+1. **Pre-flight smoke must use SAME knobs as production.** I ran sims=50 smoke locally and extrapolated linearly to sims=200 cloud. Real per-leaf v2.5 cost grows nonlinearly with placed meeples (more late-game state = more farm-util work). Cost: 6× wallclock surprise.
+2. **Bug fixes can shift hyperparameter optima.** The cap=5 was tuned against the buggy bonus magnitudes. After dedup, the bonus magnitudes dropped, and cap=5 became too tight. A correct fix doesn't preserve bench numbers — re-tune.
+3. **Lottery-ticket weights add noise, not signal.** Dropping the 3-open tier (P=0.05) gained 5pp over including it. The intuitive "more terms is more information" was wrong; small-weight terms can hurt by giving the search small uniform pushes that drown out the high-confidence ones.
+
+## 2026-05-14 — Cloud-prep: --leaf-eval v2_5 plumbed through self-play harness; MCTS virtual-loss batching validates 3× batch-fill improvement
+
+**Context:** Before any cloud retrain on v2.5 self-play data, the harness needs three things consistent: (1) self-play uses v2.5 leaf during MCTS so generated games reflect the v2.5 strategy, (2) MCTS virtual-loss batching is enabled so the orchestrator gets full benefit, (3) anchor-gate / h2h evals use the same leaf eval for apples-to-apples comparison.
+
+**Implemented (commit `1d3a0cb`):**
+- `evaluators.py`: new `make_v25_value_wrapper` / `make_v25_batch_value_wrapper`. Wrap any (priors, value) evaluator: keep its priors, replace its value with `tanh(virtual_score_v2(state, current_player) / 15)`. Compatible with both local and remote (orchestrator) evaluators since it only consumes the (priors, value) shape.
+- `run_selfplay_iter.py`: added `--leaf-eval {nn, v2_5}` flag. Defaults to `nn` for v1-v6 back-compat.
+- `eval_iter_head_to_head.py`: same flag, applied to BOTH sides simultaneously so an anchor-gate eval comparing iter_X to warmstart_canonical compares them at the same leaf eval.
+- `run_phase4_smoke.py`: propagates `--leaf-eval` to all 3 substages.
+- `train_iter.py`: NOT TOUCHED. Training labels (`z`) come from game outcomes, not leaf evals. Independent of this change.
+
+**Smoke-validated:** End-to-end smoke at W=4 sims=50 batch_size=8 vloss=1.0 orchestrator v2_5 (4 self-play games):
+- 78s wallclock, 663 positions saved.
+- `avg_batch=7.2` — up from 2.4 measured at W=6 without batching earlier today (~3× batch-fill improvement).
+- Stage breakdown 74% dequeue / 26% forward — GPU is now waiting for workers, the inversion we wanted. Earlier bottleneck (PCIe-bound serial inference) is fixed by batching.
+- h2h smoke at same config: 89% dequeue / 10% forward (two server pools split traffic). At cloud W=48 the orchestrator should approach saturation.
+
+**Caveat to watch on real cloud run:** smoke h2h with same checkpoint both sides (n=4 only) gave 4-0 instead of expected 50/50. Almost certainly MCTS-seed asymmetry × low N noise, but verify with n≥20 on the actual cloud before trusting any v2.5-vs-v1-warmstart anchor-gate signal.
+
+**Decision:** cloud-ready. Recipe for the policy-retrain run = v6 baseline + `--leaf-eval v2_5 --batch-size 8 --virtual-loss 1.0 --orchestrator`. Estimated cost $1 (vs yesterday's $5 estimate; sims=400→200 + batching + orchestrator each cut a chunk).
+
+## 2026-05-14 — orchestrator at W=6 hurts, at W=12 helps — IPC overhead vs batching tradeoff
+
+**Context:** GPU-Z showed 35% GPU / 76% PCIe load during v2.5 bench at W=6 — looked like PCIe-bound. Plumbed `--orchestrator` into `eval_rule_player.py` (mirroring `eval_iter_head_to_head.py`).
+
+**Local A/B at sims=100 n=12:**
+
+| Config | wallclock/game | avg_batch | speedup |
+|---|---|---|---|
+| W=6 baseline | 19.0s | n/a | 1.00× |
+| W=6 + orchestrator | 16.0s+ | 2.4 | -19% (slower) |
+| W=12 baseline | 16.8s | n/a | 1.13× |
+| W=12 + orchestrator | 14.6s | 4.8 | 1.30× |
+
+**Diagnosis:** PCIe load was high *count* (many small transfers), not high *latency* (per-transfer is fast). The orchestrator can only amortize forward-pass cost when batches fill, but at W=6 workers pipeline serial inference without contending — avg_batch stays at 2.4. IPC overhead per request exceeds the batching gain. At W=12 contention rises, avg_batch hits 4.8, and the orchestrator pays back.
+
+**Decision:** local production = W=12 + `--orchestrator` for ablation benches. Saves ~25% wallclock vs prior W=6 default. Cloud (W=48 with naturally higher contention) still benefits more, as proven in the 2026-05-12 cloud bench.
+
+**Caveat:** numerical agreement <1e-5 vs baseline at sims≥200; at sims=100 small float noise → argmax flips → different MCTS games. Production sims=200 is fine.
+
+**Bigger lever not yet pulled:** MCTS virtual-loss batching (`batch_size > 1` per worker, with virtual_loss=1.0). One worker submits K sims in parallel via virtual losses → orchestrator batch fill multiplies by K. Code already supports it; calls just don't use it. Estimated 2-4× additional speedup at our worker count. Worth wiring before any cloud retrain.
+
+## 2026-05-14 — v2.5 BENCH PASSES at 83.3% vs Tier-1 — +6.6pp over v1; production candidate
+
+**Context:** v2.5 = halved P heuristic ({1: 0.5, 2: 0.2, 3: 0.05}) + bonus cap at ±5 per player. Built per v2-diagnostic finding that tanh-saturation was the v2 failure mode.
+
+**Bench:** hybrid_v2.5 vs Tier-1, sims=400, n=30, 6 workers, ~35 min wallclock. Result:
+
+| | wr | avg score diff |
+|---|---|---|
+| Tier-1 (rule-player) | 16.7% (5/30) | +30.7 (Tier-1 loses by avg ~31 pts) |
+| **hybrid_v2.5** | **83.3% (25/30)** | -30.7 |
+
+Comparison:
+- v1 hybrid_warmstart sims=400 n=30: 76.7% (prior production config)
+- v2 hybrid_warmstart_v2 sims=400 n=30: 30.0% (47pp regression, halted)
+- **v2.5 hybrid_warmstart_v2.5 sims=400 n=30: 83.3% (+6.6pp over v1, +53pp over v2)**
+
+**Decision:** **v2.5 becomes the production leaf eval.** The closure-anticipation + farm-growth design was strategically correct; the issue was tanh saturation, not the underlying signal. Capping the bonus brings the signal into tanh's responsive region while preserving the strategic content.
+
+Production config update:
+- `warmstart_canonical.pt` + `_hybrid_v2_evaluator` + sims=400 + ≥4 workers
+- v2 module is named `virtual_score_v2.py` but its constants are now v2.5 (`_CLOSURE_P = {1: 0.5, 2: 0.2, 3: 0.05}`, `_BONUS_CAP = 5.0`). Module name kept for git continuity; the file IS v2.5.
+
+**Still NOT superhuman.** 83.3% wr is 6.6pp better than v1 but Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Next levers (in priority order):
+
+1. **Sims sweep for v2.5** — v1's optimum was sims=400; v2.5's optimum may differ. If sims=200 matches sims=400, production throughput doubles.
+2. **Cap tuning** — cap=5 was a hand-picked initial value. Sweep cap ∈ {2, 5, 8, 15} to find the knee.
+3. **Retrain policy head on hybrid_v2.5 game data** — the NN policy was trained on virtual_score_v1 self-play. Generating ~10K games with hybrid_v2.5 self-play and retraining the policy head should compound — better leaf → better self-play targets → better policy → better leaf-weighted search.
+
+**Lesson recorded:** When stacking signals into a tanh-squashed leaf eval, **scale matters more than sign-correctness**. v2 had the right design but wrong magnitudes; v2.5 fixed magnitudes alone and unlocked a +6.6pp gain over the v1 baseline. This is the first 50pp+ improvement from a single ablation knob in the project's history.
+
+## 2026-05-14 — v2-diagnostic: bonus scale is 4-7× larger than v1 base — tanh saturates, search loses gradient
+
+**Context:** v2 lost the bench by 47pp. Before tuning P heuristics blindly, built `scripts/diagnose_v2.py` to dump per-move bonus contributions and aggregate signals. One game, sims=100.
+
+**Findings (seed 0, 165 moves):**
+- **Cathedral branch never fires.** Good — that hypothesis was wrong; not a bug.
+- **|net_bonus| > |base| in 92% of moves.** v2's added bonus dominates v1's base on nearly every move.
+- **`bonus_self + bonus_opp` > |base| in 95% of moves.** Same conclusion.
+- **Max `bonus_self` = 133 in one game.** v1 base typically sits at ±15-30. Bonus is 4-7× the base.
+- **Bonus is wildly asymmetric.** Self farmer contributions: ~9466 cumulative; opp farmer: ~357. Self has many farmers; Tier-1 plays few; v2 gives hybrid a phantom advantage.
+- **Terrain-by-terrain attribution (self):** None (farmer) 9466 / city 545 / chapel 109. Farm-growth bonus is the dominant signal by ~20×.
+
+**Root cause:**
+
+The leaf eval is `tanh((base + bonus_self - bonus_opp) / 15)`. With base=+10 and net bonus = +80, `tanh(90/15) = tanh(6) ≈ 1.0`. Most leaves saturate at ±1 because the bonus magnitude exceeds 15. Once tanh saturates, MCTS can no longer distinguish good leaf states from bad ones — the leaf value collapses to a constant, the search loses its gradient, and it picks worse moves than v1 (whose base eval still varied across leaves).
+
+The farm-growth bonus is the dominant offender. Each farmer with K incomplete-but-likely-to-close adjacent cities adds `3K × P` to the bonus. A connected farm can touch 5-15 cities; with P=0.5 for 2-open cities, a single farmer easily contributes +10-15 to the bonus. Multiple farmers + multiple closable cities = bonus magnitudes of 50-130.
+
+**Decision: v2.5 = scale + cap.**
+
+Two complementary fixes (build both, bench together; smallest change that addresses the saturation):
+
+1. **Halve the closure-P heuristic:** `{1: 0.5, 2: 0.2, 3: 0.05}` (was `{1: 1.0, 2: 0.5, 3: 0.25}`). Brings the bonus magnitude into the same scale as the base.
+2. **Cap the bonus term at ±5 per player.** Hard ceiling so even if many features chain into a closure-wave, the leaf-eval scale doesn't blow past tanh's linear region. This is a stability measure, not a strategic one.
+
+Acceptance: hybrid_v2.5 sims=400 n=30 vs Tier-1: hybrid wr ≥ 76% (match v1 baseline). Stretch: ≥ 80% (the bonus adds real signal at the right scale).
+
+**If v2.5 fails:** the structural design is wrong, not the magnitude. Pivot to v3 (drop closure-anticipation, try denial-value of opponent's near-closures or meeple-economy state).
+
+**Lesson:** when stacking signals into a leaf eval that's then squashed by tanh, scale matters more than sign-correctness. A *correct* signal of the wrong magnitude is worse than no signal at all because it saturates the squash and kills the gradient.
+
+## 2026-05-14 — virtual_score_v2 FAILS the bench: ~47pp regression vs v1 (30% vs 76.7% wr at sims=400)
+
+**Context:** Built v2 per the prior decision (closure-anticipation bonus + farm-growth potential). Implementation, tests (11/11 pass), wiring through `eval_rule_player.py` as `--opponent hybrid_v2`. Bench: n=30 sims=400 vs Tier-1, 6 workers, ~37 min wallclock.
+
+**Result:** Tier-1 21W / 0D / 9L vs hybrid_v2. **hybrid_v2 wr = 30.0%** vs hybrid_v1 wr = 76.7% at the same sims/n. Avg score diff = -10.6 (v2 loses by ~11pts on average). **~47pp regression.**
+
+**Diagnosis (hypotheses, not yet verified):**
+1. **Closure-P heuristic too aggressive.** `P=0.5 at 2 open positions` is probably wrong — most 2-open city positions never close because tile supply runs out or the tiles needed don't exist in the remaining deck.
+2. **Farm-growth bonus double-counts denial.** If a farm meeple gets +3 × P for each incomplete adjacent city, AND the same city's closure also fires the city closure bonus on the opponent's side, we may be over-rewarding both players' bonuses asymmetrically.
+3. **Cathedral-flag detection is broken.** v2 treats `tile.inn` as the cathedral flag on city tiles, but `inn` is the actual road-inn flag. Cities don't have `tile.cathedral`. This means `_city_closure_delta` adds `6 if tile.shield else 3` for any tile that has an inn-adjacent road. **Likely bug** — needs verification. The base-game + River + Farmers scope shouldn't even have cathedrals, so this branch should never fire; if it does, it's wrong.
+4. **Bonus dominates the base.** Median per-game `bonus_self` + `bonus_opp` might be larger than `base`, flipping the leaf-value sign mid-game.
+
+**Decision:** **Halt v2 deployment.** Commit the infrastructure (the diagnostic tools and v2 module remain useful for v2.5 iteration), but do NOT use v2 in production. Production stays at `hybrid_warmstart_canonical` with v1 `virtual_score` + sims=400.
+
+**Next step:** rather than tune the P heuristic blindly (which would burn many bench cycles), build a v2-diagnostic — replay one game with v2 logging EVERY meeple-bonus contribution at every move. Catalog which bonus type fires most, whether the totals are sane, and whether the cathedral branch is firing incorrectly. THEN decide between (a) v2.5 (fix bugs + retune P), (b) v3 (drop closure-anticipation, try denial-value or meeple-economy), or (c) accept v1 + pivot to retraining the policy head on hybrid-generated data.
+
+**Lesson recorded:** Adding *more* signal to a leaf evaluator can hurt search if the signal has the wrong sign or scale at any depth. v2's bonuses were summed onto v1's base then fed through `tanh(diff/15)` — if the bonuses are systematically larger than the base, they overwhelm v1's real signal. Counterintuitive but matches the observed regression magnitude.
+
+## 2026-05-14 — Virtual_score diagnostic: closure-blindness + farm-composition opacity are the dominant failure modes
+
+**Context:** With production hybrid_warmstart still losing 23% to Tier-1 (n=30 sims=400), the next ablation question per [EXPERIMENTS.md](EXPERIMENTS.md) was: what specifically does `virtual_score` miss? Built `scripts/diagnose_virtual_score.py` — replays full hybrid-vs-Tier-1 games at sims=400 and prints per-move tables showing `vs_hybrid` (virtual_score from hybrid's perspective) at every step.
+
+**Method:** n=10 games, 6 workers, ~10 min wallclock. Got 7W/3L (matches n=30 70-77% rate). Inspected all 3 lost games' per-move trajectories.
+
+**Failure modes (ranked by frequency / severity):**
+
+1. **Closure-event blindness (3/3 games).** Partial credit (`virtual_score` = 1pt/tile for incomplete city, 0 for farm with incomplete city) ≠ closure credit (2pt/tile + 3pt/city for farm). When opponent closes a near-complete feature, `vs_hybrid` swings by 5-30pts in *one move* with no advance warning. seed=1 example: tier1 placed TILE(6,16) at move 151, closed a ~13-tile city, `vs_hybrid` went -7 → -36 instantly. Hybrid had no signal that this closure was imminent and could have placed a denial tile.
+
+2. **Farm composition opacity (2/3 games).** `count_farm_points` only counts cities with `city.finished == True`. As cities complete through the game, farm scores change in ways `virtual_score` doesn't anticipate. seed=0 example: at move 158, `vs_hybrid` = +24 (hybrid looking good). By move 163, it crashed to -6 — a 30pt swing where the actual on-board score change was only +11 for opponent. The extra ~20pts came from farm composition flipping.
+
+3. **Denial-value invisible (≥1/3 games obvious).** Hybrid never plays defensive tiles to block opponent's near-complete features because `virtual_score` only sees current state, not opponent's expected future closure value.
+
+4. **Over-committed meeples (1/3 games).** seed=8 showed hybrid playing FARMER moves while behind 18-50 — no meeple opportunity-cost modeling.
+
+5. **Late-game volatility (3/3 games).** Single tile placements in endgame swing `vs_hybrid` by 30+ pts. Predictions aren't robust enough to drive late-game decisions.
+
+**Decision: build virtual_score_v2** with the top two failure modes addressed:
+
+- **Closure-proximity bonus**: for each incomplete feature with a meeple, add `(full_credit - partial_credit) × P(closes by game-end)`. Initial heuristic for P: based on open-positions-needed, e.g. 1.0 if 1 needed, 0.5 if 2, 0.25 if 3, else 0.
+- **Farm-growth potential**: for each farm meeple, for each adjacent INCOMPLETE city, add `3 × P(completes)`. Same closure-probability heuristic.
+
+Both extensions reuse the existing engine utilities (`CityUtil.find_city`, etc.). No engine changes needed. Estimated ~1 day implementation + tests + bench.
+
+Acceptance: hybrid_warmstart sims=400 with v2 leaf beats hybrid v1 leaf by ≥10pp winrate at n=30 (i.e., ~13% vs Tier-1 → confirms 1 sigma improvement). If v2 doesn't improve, the failure mode is something else (probably denial-value) and we redesign.
+
+The remaining 3 failure modes (denial, meeple economy, late-game volatility) are deferred — addressed in v3+ if v2 alone doesn't reach superhuman.
+
+## 2026-05-14 — Sims sweep + uniform-priors ablation: policy head worth ~18pp; sims=400 is the ceiling; production config locked.
+
+**Context:** After the value-head finding (next section below), two follow-up questions: (1) is sims=100 the sweet spot or are we missing a peak elsewhere? (2) does the NN policy head actually contribute, or could uniform priors + virtual_score leaf match it?
+
+**Sims sweep** (hybrid_warmstart_canonical vs Tier-1, n=30 each, 4-6 workers):
+
+| sims | Tier-1 winrate | hybrid winrate | avg diff | wallclock/game |
+|---|---|---|---|---|
+| 50 | 36.7% | 63.3% | -10.3 | 8.8s |
+| 100 | 41.7% | 58.3% | -2.0 | 16.9s |
+| 150 | 41.7% | 58.3% | +5.7 | 25.0s |
+| 200 | 30.0% | 70.0% | -7.6 | 34.5s |
+| 400 | 23.3% | 76.7% | -15.5 | 34.5s (4w) / 68.0s (4w) — see note |
+| 800 | 23.3% | 76.7% | -12.6 | 97.3s (6w) |
+
+**Uniform-priors ablation** (no NN — uniform priors + virtual_score leaf, sims=100 n=30 vs Tier-1): Tier-1 60% wr / +8.7 avg diff. Compare hybrid_warmstart sims=100 at Tier-1 41.7%. **The NN policy head is worth ~18pp winrate.**
+
+**Findings:**
+1. **Sims=400 is the scaling ceiling for hybrid_warmstart.** Doubling to sims=800 produced zero winrate improvement. The earlier "U-shape" hypothesis at sims=100-150 is probably just noise (SE ~9pp at n=30); the true curve is monotonically improving with diminishing returns, plateauing by sims=400.
+2. **The NN policy head matters meaningfully.** Uniform priors + virtual_score leaf loses to Tier-1 60-40; with NN priors it wins 58-42. We cannot drop the network.
+3. **Production config:** `warmstart_canonical.pt` + `_hybrid_evaluator` + sims=400 + ≥4 workers. Beats Tier-1 76.7% of games by avg 15 points.
+
+**Still not superhuman.** Joshua beats Tier-1 2-of-3 in casual play; beating Tier-1 ~77% is not sufficient. The next ablation is diagnosing virtual_score's blind spots from games where hybrid lost — this informs whether a richer leaf eval (virtual_score_v2 with farm-growth, denial, meeple-economy components) is the path past 77%.
+
+**Caveats:**
+- n=30 per point gives SE ~9pp; the sims=100 vs sims=400 gap (~18pp) is ~2σ — real but not bulletproof.
+- Earlier n=20 sims=100 result (Tier-1 20%) was a lucky sample; n=30 corrects to ~42%.
+- We have NOT tested if the 18pp policy-head advantage holds at higher sims (i.e., possible policy × sims interaction). Open question.
+- Bench setup uses per-worker NN forward passes; PCIe is saturated at 4-6 workers. Wiring through the orchestrator would 2-3× throughput on the same box.
+
+## 2026-05-14 — The NN value head was the bug. NN policy priors + `virtual_score` leaf flipped Tier-1 75%→40%.
+
+**Context:** Day 2 after Tier-1 confirmed our trained nets all lose to a 1-ply heuristic. Day 1 result: Tier-1 beat warmstart_canonical 77% and iter_12 75% (both n=50 sims=100). Question: is the NN's policy or value head the broken component?
+
+**Diagnostic:** built `_hybrid_evaluator` in `scripts/eval_rule_player.py` — identical to `_network_evaluator` except the value output is replaced with `tanh(virtual_score(state) / 15)`. Plugged into existing `NeuralMCTS` via its evaluator slot. ~20 LoC change. n=20 bench vs Tier-1.
+
+**Result:**
+| Setup | Tier-1 winrate | Avg score diff |
+|---|---|---|
+| iter_12 NN-only sims=100 (yesterday's bench, n=50) | 75% | (Tier-1 dominant) |
+| HeuristicMCTS (no NN, UCT+virtual_score) sims=200 (n=20) | 60% | -1.1 |
+| **Hybrid iter_12 (NN priors + virtual_score leaf) sims=100 (n=20)** | **40%** | **-6.8 (hybrid wins by ~7 pts/game)** |
+
+**Conclusion:** 35-percentage-point swing from one knob. Same network, same MCTS, same sims — only swapped the value output. The NN's value head was actively harmful to the search. The policy head is decent (hybrid 60% > pure-heuristic 40% at half the sims). The value head's failure is doubly damning because it IS trained on `tanh(virtual_score/15)` targets — i.e. it's an *approximation* of what we now just compute exactly, and it's WORSE than the exact answer.
+
+**Hypothesized causes** (not yet diagnosed): (a) MCTS-induced distribution shift — training labels from completed-game states, search evaluates partial-game leaves outside that distribution; (b) capacity starved by the policy head's `Linear(2500, 2511)` ~6M params dominating the trunk; (c) subtle perspective/sign bug.
+
+**Decision:** production NeuralMCTS will run with `_hybrid_evaluator` (NN priors + virtual_score leaf). Architectural follow-up: deprecate the value head entirely — it's harmful AND it's a slow forward pass we don't need.
+
+---
+
+### Lesson learned (the meta-decision)
+
+Yes, we should have caught this much earlier. The diagnostic is ~30 LoC + ~10 min bench. The right protocol after Phase 3 (warmstart finished) would have been a 3-bench ablation battery:
+1. NN policy + NN value (baseline NeuralMCTS)
+2. NN policy + virtual_score value (this finding)
+3. uniform policy + NN value (test if priors matter at all)
+
+Run those three after warmstart finished, you immediately see "value head adds nothing or hurts." Total cost: ~30 min compute.
+
+Instead we did try-another-recipe for six variants (v1-v6) over multiple weeks. When v3 plateaued, the right move was diagnose-by-ablation; we kept iterating recipes instead. That's the systemic mistake.
+
+**Fair caveat:** swapping an exact heuristic for the NN value head is *off-path* in AlphaZero literature. The whole AlphaZero premise is that the NN value generalizes better than any hand-designed eval — true in Go/chess because there's no cheap-exact partial-game scorer. Carcassonne is unusual: the engine's `count_final_scores` IS a cheap-exact partial-game scorer. We had something most AlphaZero domains don't, and we used it only as a training target instead of recognizing it could also be the search-time evaluator.
+
+**Generalized rule for next time:** when self-play plateaus, the next experiment is component ablation, not another recipe variant. "Try harder with the same architecture" is the trap.
+
+## 2026-05-13 — Tier-1 baseline destroys both warmstart_canonical AND iter_12 → recipe-ceiling story confirmed
+
+**Context:** Day 1 of the v7 prep plan. Before committing to v7 (symmetry augmentation + warmstart-from-iter_12), test whether the v6 recipe family even matched the heuristic labeler that generated warmstart's training data. Tier-1 = a hand-coded fixed-policy player whose tile-phase rule is "argmax 1-ply virtual_score" (the same scoring function used to label warmstart training data, just at τ→0 instead of τ=0.5 softmax).
+
+**Setup:** `scripts/eval_rule_player.py` extended with `--opponent checkpoint`. NeuralMCTS at sims=100, default c_puct=1.5, GPU-spawn pool with 2 workers. Both N=50, alternating sides each game.
+
+**Results:**
+
+| Tier-1 vs ... | Win rate | Avg score diff (Tier-1 − opp) | ELO Δ |
+|---|---|---|---|
+| random (sanity, N=20) | 100% | +70.3 | (saturated) |
+| **warmstart_canonical (NeuralMCTS s=100), N=50** | **77.0%** (38W/1D/11L) | **+33.9** | +210 |
+| **iter_12 (NeuralMCTS s=100), N=50** | **75.0%** (37W/1D/12L) | **+19.9** | +191 |
+
+**Interpretation:**
+1. The heuristic oracle (1-ply virtual_score argmax, no search) **dominates** both trained networks at the v6 production sim budget. The supposed "global best" (iter_12, the v6 peak we measured at 70% wr vs warmstart_canonical) loses to the *labeler* 75% of the time.
+2. iter_12 is barely stronger than warmstart_canonical against Tier-1 (75% loss vs 77% loss = 2pp on win rate; +19.9 vs +33.9 on margin = 14 points narrower). The 70% wr vs warmstart_canonical that we'd treated as v6's headline result reflected modest progress over an already-weak baseline, not progress over the labeler.
+3. The anchor reference (`warmstart_canonical.pt`) was the wrong yardstick all along. We've been measuring NN-vs-NN (two approximations of the same oracle) instead of NN-vs-oracle. v1-v6 were all comparing two flavors of "weaker than the labeler".
+4. The mechanism is plausible: NeuralMCTS at sims=100 uses the trained value head (a noisy approximation of `virtual_score`) + shallow tree search; Tier-1 uses the *exact* `virtual_score` at depth 1. Approximation noise + 100-sim search vs exact-oracle-no-search → the oracle wins. Higher sims would close the gap (NeuralMCTS at sims=10000+ would presumably surface the gap), but that's not the production regime.
+
+**Implication for v7 (symmetry augmentation):**
+- Symmetry aug provides 4× more training data on the same heuristic-labeled distribution. Adding more data of the same flavor cannot help if the model isn't even matching the labeler at deployment-time sim budgets.
+- The recipe-ceiling story is now confirmed empirically, not just suspected. The ceiling is structural (recipe shape), not data-volume.
+- Predicted v7 outcome with high confidence: would converge to ~iter_12-equivalent (≤25% wr vs Tier-1, plateau at ~70-75% vs warmstart_canonical anchor). Wouldn't break the ceiling.
+
+**Decision:** Cancel v7 as originally specified (symmetry augmentation alone). Choose Day 2 from the four below.
+
+**Options for Day 2 / next direction:**
+- **A. Pivot to Phase 5 using Tier-1 as the policy oracle.** The project's actual win condition (analyzer/coaching tool, per `docs/ORIGINAL_PROMPT.md`) doesn't require a stronger AI than Tier-1 — it needs a tool that explains where the human lost points. Tier-1 already plays at a level the family game can build on; ship it as the policy and use a small NN for value smoothing if needed. Lowest cost, highest project-goal-alignment.
+- **B. Specialist league (DOMAIN-SPECIFIC track).** Bias the heuristic labeler 3 ways (roads/cities/farms), train 3 specialists, league play in self-play. Forces the network past the heuristic via diverse opposition. Tagged "high priority if v6 plateaus" in BACKLOG.md — v6 plateaued, so this is now the high-leverage AlphaZero bet. ~$5-10 cloud, 1-2 weeks.
+- **C. Heuristic-as-teacher self-play.** Replace NN-vs-NN self-play with NN-vs-Tier1 self-play. Forces the network to first MATCH the heuristic before exceeding it. Smaller architectural change than league. Risk: may just fit Tier-1 exactly without going past.
+- **D. Drop self-play, train directly to imitate Tier-1 at higher capacity.** Generate 500K (state, Tier-1's chosen action) tuples; train a deeper net to argmax-imitate. Simple supervised learning. Tells us if model capacity (not recipe) is the bottleneck.
+
+**Recommendation:** A (Phase 5 pivot). Reasons:
+- The project's win condition is the analyzer, not the bot. Spending another week+$5-10 chasing a stronger network for a coaching tool that doesn't need one is misaligned.
+- Tier-1 is "good enough" for the analyzer use case — it makes principled moves explainable in terms of virtual_score deltas.
+- B/C/D are interesting research questions but each adds 1-2 weeks before the project ships its actual user-facing win condition.
+
+**Reversal cost:** low for A (Tier-1 + virtual_score are already in `src/`); medium for B/C/D (each adds 1-2 weeks of fresh work).
+
+**Phase:** 4 closure → 5 entry.
+
+**Artifacts:** `tests/test_rule_based_player.py` (new); `src/carcassonne_ai/rule_based_player.py` (Rules 4+5 added); `scripts/eval_rule_player.py` (--opponent checkpoint added). Logs at `/tmp/tier1_random.log`, `/tmp/tier1_vs_warmstart.log`, `/tmp/tier1_vs_iter12.log`.
+
+## 2026-05-13 — Phase B cloud bench: W-sweep finds W=32 optimum, full iter measured at 5.2 min, h2h OOM hypothesis falsified
+
+**Context:** Phase A (entry below) confirmed 5-loop patches give ~4-5× CPU-side speedup but exposed two gaps: W=48 still OOMs (VRAM-bound, not CPU-bound, so the patches don't help here), and orchestrator-at-N=1 dispatcher saturates with 48 workers. Phase B bundles four experiments on one box to retire all v7 design questions: W-sweep, orchestrator-with-bigger-batch-timeout, full-iter timing, and train cProfile.
+
+**Box:** vast.ai instance 36719047, RTX 5090 + AMD EPYC 9J14 host 384353 mach 79960 Japan ($0.3747/hr). Hardware confirmed via `lscpu`: **192 physical cores / 384 logical via SMT**, cgroup-capped to 48 effective for this rental. torch 2.7.0+cu128, sm_120. Total Phase B spend ~$0.30.
+
+**Phase 1 — W-sweep (no orchestrator), games=64 sims=200 batch=8:**
+
+| W | Wallclock | Success/Failed | Peak VRAM | Mean GPU util |
+|---|---|---|---|---|
+| **32** | **172.8 s** | **64/0** | 22325 MiB / 32 GB | **87.2%** |
+| 40 | 176.4 s | 64/0 | 27906 MiB | 86.8% |
+| 44 | 180.3 s | 64/0 | 30695 MiB | 85.9% |
+
+W=32 wins. Higher W doesn't help because **GPU is already saturated at W=32 (87% util)** — extra workers add CPU contention without throughput gain. W=44 sits ~95% of VRAM cap (no headroom) for ~4% throughput penalty.
+
+**Phase 2 — Orchestrator v2 (W=48, `batch_timeout_ms=16` vs default 2):**
+Dispatcher still saturated. Killed after 3 min with 0/64 games written, GPU at 5% util. **Bumping batch_timeout_ms doesn't help** — the bottleneck is single-process dispatch CPU work, not batch-assembly latency. To use orchestrator at W=48 we'd need either N>1 shards or a different IPC mechanism (pinned-memory / shared tensors); deferred.
+
+**Phase 3 — Full iter at winner W=32:**
+1 iter via `run_phase4_smoke.py` (selfplay + train + anchor; chain h2h auto-skipped because iter 0 has no prior).
+
+| Stage | Wallclock | Notes |
+|---|---|---|
+| Self-play (64 games, sims=200, W=32) | 187.1 s | 64/0, 10599 positions, ~0% slower than Phase 1 standalone |
+| Train (3 epochs, 95K warmstart positions) | ~100 s | Iter 0 has the biggest train cost; later iters ~10-15 s |
+| Anchor (16 games, sims=50) | 19.7 s | 8W/0D/8L vs warmstart_canonical (sanity: 50/50 — correct since iter_00 is warmstart_canonical at iter 0) |
+| **Per-iter total** | **5.2 min** | vs my earlier "~10 min" estimate |
+
+**Phase 3 supplement — h2h-only test at W=32 (closes the OOM-stress gap):**
+Ran `eval_iter_head_to_head.py` with iter_00.pt (the just-trained checkpoint) vs warmstart_canonical at W=32, 32 games, sims=100. **No OOM.** Wallclock 55.2 s. Result: 20W/1D/11L = 63% wr, +12.4 avg diff, ELO Δ +100. **h2h at W=32 works** — the per-worker VRAM for 2-net eval is much smaller than my naive 2×600 MB worst-case math (the eval_iter script must share net allocator pools more efficiently). **No split-W config needed for v7.**
+
+**Phase 4 — Train cProfile (with corrected CLI flags):**
+Train iter 1 at warmstart_mix=0.5, 10.5K positions × 1 epoch = 7.8 s wallclock. Cumtime split:
+
+| Phase | cumtime | % |
+|---|---|---|
+| Process startup (imports, optimizer init) | 2.55 s | 33% |
+| DataLoader queue wait (single-worker `__next__`) | 2.34 s | 30% |
+| Actual forward + backward + optimizer | ~3 s | 37% |
+
+DataLoader queue-wait is the biggest single non-trivial slice and would shrink ~3× with `--num-workers 4`. But train at iter ≥ 1 is already only ~10-15 s; not the next bottleneck.
+
+**v7 cloud-iter math (revised from Phase A's estimate):**
+- Self-play (W=32, games=64, sims=200): ~3 min
+- Train (~10K positions × 3 epochs): ~15 s
+- Chain h2h (32 games, sims=100, W=32): ~1 min
+- Anchor gate (16 games, sims=50, W=32): ~20 s
+- **Per-iter total: ~4.5-5 min** (vs Phase A's ~10 min estimate)
+- 20-iter v7 run: **~1.5-1.7h, ~$0.65 on this hardware class.**
+
+**Phase B findings, summary:**
+1. W=32 is the v7 selfplay+h2h winner. No split config needed.
+2. Orchestrator with batch_timeout knob alone can't fix the N=1 dispatcher saturation. Multi-shard N≥2 might (re-test on this hardware once a real motivating workload exists; currently no need).
+3. Per-iter cost is ~4.5-5 min — half of what I'd estimated post-Phase-A.
+4. **Total budget for v7 = ~$0.65 (down from $3.40 v6 baseline).** 5× cheaper per iter.
+5. Train DataLoader could be faster via `num_workers > 0`, but train is already << selfplay+h2h, so not worth the optimization right now.
+
+**Reversal cost:** none. Box destroyed. v7 plan-mode session can lock W=32 + games=64 + no-orch as the cloud-side defaults.
+
+**Phase:** 4 (perf validation)
+
+---
+
+## 2026-05-13 — Phase A cloud bench: 5-loop MCTS perf patches validated on production hardware
+
+**Context:** local A/B at sims=200 batch=8 on 5060 Ti showed ~7.6× cumulative game-wallclock speedup vs the pre-patch baseline. The cloud question: does that translate to a real per-iter throughput win on production hardware (5090 + 48-core EPYC), and does orchestrator-on still pull weight when deepcopy is no longer the bottleneck?
+
+**Box:** vast.ai instance 36717091, RTX 5090 + 96-effective-core box (mach_id 19968, Michigan, host 65203, $0.3481/hr). Different physical machine than v6's host 384353 because Phase A's first attempt on that host (instance 36715218) failed SSH-banner exchange after ~30 min wait — the "SSH-ready ≠ usable" failure mode from CLAUDE.md. Sunk ~$0.19. Total Phase A spend ~$0.40.
+
+**Bench script:** `scripts/cloud_phase_a_bench.sh` runs iter-0 self-play twice back-to-back on the same box (eliminates host variance):
+- A1: `--workers 48 --sims 200 --batch-size 8 --games 80` (no orchestrator)
+- A2: same + `--orchestrator --orch-shards 1`
+
+Captures wallclock, nvidia-smi GPU util samples (every 2s).
+
+**Results (the interesting story):**
+
+| Config | Wallclock | Games OK | Games OOM-failed | Mean GPU util | Peak VRAM |
+|---|---|---|---|---|---|
+| A1 (no orchestrator) | 2:41 | **37/80** | **43/80** | 64.7% | **32108 MiB / 32 GB** |
+| A2 (orchestrator) | killed after 5:30 (workers stuck blocking on single dispatcher) | 0/80 | 0/80 | 5.6% | 2896 MiB |
+
+**A1 hit the W=48 OOM** — same shape as the 2026-05-12 Phase A bench. Each surviving worker holds a ~600-700 MB allocator pool × 48 ≈ 30+ GB, right at the 32 GB cap. The 5-loop MCTS perf patches do NOT change per-worker VRAM (deepcopy fix saves CPU time, not memory) — VRAM behavior is unchanged from pre-patch. The 37 surviving games finished fast (effectively 4.3 s/successful-game), but 43 failures means the iter would have to be re-run to fill the buffer.
+
+**A2 hit orchestrator dispatcher serialization** — with 48 workers all routing through 1 dispatcher process, the dispatcher saturates (~49% CPU, queue contention) and worker throughput collapses. Killed after 5:30 with 0 games written. This matches the 2026-05-13 N-sweep finding (N=1 optimal among N>=1, but still strictly slower than no-orchestrator) — except now there's no fallback because A1 OOMs.
+
+**The real takeaway:** the 5-loop patches deliver the predicted ~4-5× CPU-side speedup (A1's 37 successful games went very fast), but production at W=48 needs either:
+1. **Lower W** (e.g. W=32 or W=24): fits VRAM, no orchestrator needed. Probably the right v7 choice.
+2. **Multi-shard orchestrator** (N=2 or N=4): spreads dispatch load. The 2026-05-13 N-sweep on 48-core box said N=1 is optimal, but that test was W=80 on 48 cores; on this 96-core box at W=48 the calculus might differ. Worth a sub-bench.
+3. **Bigger GPU** (80 GB H100/A100): ~$1.50-2/hr. Solves OOM without ergonomic compromises but doubles cost.
+
+**v7 implication:** the cloud-iter math from the loop-5 doc commit assumed clean W=48 throughput. With A1's 43/80 OOM, that's wrong. Realistic v7 path:
+- Pick W=32 + games=64 (or W=24 + games=48): fits VRAM, all games succeed, similar effective throughput
+- Per-iter wallclock: probably still ~10 min (matches the 2.6× estimate)
+- 20-iter v7: still ~3-3.5h / ~$1.30 — but only if we make this knob choice
+
+**Reversal cost:** none. Validates the patches without committing to v7 launch. Documents the W=48 OOM as still-present (and the orchestrator-N=1 ceiling) so the v7 plan-mode session has correct constraints.
+
+**Phase:** 4 (perf)
+
+---
+
+## 2026-05-13 — MCTS perf loop 2/3/4: tile `_type_cache`, rotation-signature cache, str_repr cache, `placed_coords` set
+
+**Context:** After the `__deepcopy__` patch (entry below) cut game wallclock 3.3×, re-profiled and chased the next bottlenecks. Three more patches landed in sequence; numbers from `scripts/profile_mcts.py --no-profile --sims 50 --batch-size 8 --seed 42` on local 5060 Ti:
+
+| Loop | Patch | s/game | Cumulative |
+|---|---|---|---|
+| 0 | baseline (default deepcopy) | 84.7 | 1.00× |
+| 1 | engine state `__deepcopy__` | 25.5 | 3.32× |
+| 2 | tile `_type_cache` (precompute `(side → TerrainType)` dict per Tile, lazily) | 16.9 | 5.01× |
+| 3 | `_rot_sig_cache` on Tile + `_str_repr_cache` on Board (auto-invalidated by Board replacement on `get_next_state`; manual reset on `apply_action_inplace`) | 14.3–17.1 | ~5.4× |
+| 4 | `placed_coords: set[Coordinate]` on engine state, replaces 1225-cell board walk in `string_representation` with ~80-coord iteration | 14.5 | **5.84×** |
+| 5 | `tile.turn(N)` cache per Tile (production-sims profile showed 1.08M calls/game, ~22s cumtime). Compounds — cached rotated Tile retains its own `_type_cache` + `_rot_sig_cache`. | _(sims=200: 80→44.5, 1.79× incremental)_ | **~7.6× at sims=200** |
+
+**Loop 2 (tile `_type_cache`):** original `Tile.get_type(side)` re-derives `get_road_ends() / get_river_ends() / get_city_sides()` from scratch on every call (~5M calls/game from `TilePositionFinder` + farmer-position lookups). Patched to precompute a `dict[Side, TerrainType]` once per Tile (lazily). Verified by 1584 (tile × rotation × side) checks against the original implementation — zero mismatches.
+
+**Loop 3 (signature + str_repr caches):** Tiles are immutable canonical refs (`base_tiles` dict + `Tile.turn()` returns a fresh Tile per rotation), so `_tile_rotation_signature` can be cached on each Tile. Board is created fresh by every `Game.get_next_state`, so `_str_repr_cache` is auto-invalidated by replacement — *except* `apply_action_inplace` mutates in place without creating a new Board, so the cache must be explicitly reset there. Regression test in `tests/test_state_deepcopy.py::test_string_repr_cache_invalidated_on_apply_action_inplace`. Smaller than predicted — most Boards are queried once, so cache hits are rare; the actual win was the rotation-signature cache.
+
+**Loop 4 (`placed_coords` set):** the remaining cost in `string_representation` after loop 3 was a 35×35 = 1225-cell walk to find ~80 placed tiles. Mirroring the existing `open_positions` patch: added `state.placed_coords: set[Coordinate]`, maintained by `StateUpdater.play_tile` (pure add — tiles never get unplaced). `string_representation` iterates this set (sorted for determinism) instead of the full board. Wrapped in the custom `__deepcopy__` and tested in `tests/test_engine_adjacency.py::test_placed_coords_*`.
+
+**Loop 5 (`tile.turn(N)` cache):** the production-scale (sims=200) profile showed `tile.turn` called 1.08M times/game (~22s of 126.5s cProfile cumtime), each call rebuilding a fresh rotated `Tile` from scratch. The result is a pure function of `(self, times)` and Tiles are immutable, so cache per-base-Tile keyed by `times`. Bigger payoff than predicted (1.79× incremental at sims=200) because the cached rotated Tile carries forward the loop-2 `_type_cache` and loop-3 `_rot_sig_cache` it builds during use — every downstream get_type and rotation_signature on a rotated Tile is also pre-warmed.
+
+**Diminishing returns + final cumulative.** At sims=50 the loop-4 cumulative was 5.84×. At sims=200 the loop-5 cumulative is ~7.6× (production scale matters more — local pre-patch 80s/game → 44.5s/game post-loop-5; vs an extrapolated pre-patch baseline of ~339s/game). Remaining residual at sims=200 is dominated by per-call GPU IPC (`.to()` + `.cpu()` + tensor construction), which only architectural changes (orchestrator + bigger batches across more concurrent workers, persistent CUDA streams) can crack.
+
+**Implications for v7 (revised after loop 5):**
+- Self-play phase only: ~7.6× faster at production sims=200. v6's self-play was ~13 min/iter of the ~26 min/iter total; post-patch ~1.7 min/iter.
+- Per-iter total (including unchanged train + h2h + anchor): ~26 min → ~10 min, i.e. **~2.6× per-iter**. 20-iter run: ~9h → ~3.4h / ~$1.30.
+- Cheaper headline; train is now the next bottleneck per-iter at ~5 min, and we haven't touched it.
+- Higher sims (eval at sims=400+) become affordable. Persistent CUDA streams + bigger eval batches via orchestrator-on-selfplay are the next architectural lever; not pursued in this loop.
+
+**Reversal cost:** none. All patches are local; tests gate any regression.
+
+**Phase:** 4 (perf)
+
+---
+
+## 2026-05-13 — MCTS perf loop 1: engine state `__deepcopy__` cut game wallclock 3.3×
+
+**Context:** Orchestrator N-sweep (entry below) proved workers, not the dispatcher, are the bottleneck. Local cProfile of one self-play game (sims=50, batch_size=8, warmstart_canonical, seed=42) showed the actual hot path **inside** the worker. Top 7 by cumtime:
+
+| Function | cumtime | % of wallclock |
+|---|---|---|
+| `copy.deepcopy` | 199.9s | **75%** |
+| `state_updater.apply_action` | 204.2s | 77% |
+| `get_next_state` | 205.8s | 77% |
+| `_select_leaf_with_vloss` | 212.2s | 79% |
+| `batch_evaluator` (GPU fwd) | 43.9s | 16% |
+| `get_valid_moves` | 32.0s | 12% |
+| `string_representation` | 21.2s | 8% |
+
+(`_select_child_puct`, the PUCT loop I expected to be hot, didn't appear in the top 40 — it's negligible vs deepcopy.) Per-tree-step `get_next_state` deepcopies the entire `CarcassonneGameState`, which by default recursively walks every `Tile` (with `FarmerConnection`s), every `MeeplePosition`, every `Coordinate` in the 35×35 board. ~19,500 deepcopies per game × ~2.2ms each = 200s — way more than the GPU.
+
+**Fix:** custom `__deepcopy__` on `CarcassonneGameState` (vendored engine; ~50 LoC). All immutable refs (`Tile`, `TileAction`, `MeeplePosition`, `Coordinate`, enums) are shared; mutable containers (`board`, `deck`, `scores`, `meeples`, `placed_meeples`, `open_positions`) are shallow-copied at one level. Verified by reading every mutation site in `state_updater.py` and `points_collector.py`: nothing ever mutates Tile/TileAction/MeeplePosition fields after construction — `Tile.turn()` returns a NEW Tile (immutable pattern).
+
+**Microbench** (mid-game state, 80 placed tiles, N=200 copies):
+
+| | per-copy |
+|---|---|
+| default recursive deepcopy | 2.216 ms |
+| custom `__deepcopy__` | 0.004 ms |
+| **per-copy speedup** | **503×** |
+
+**End-to-end A/B** (one game, sims=50 batch=8, --no-profile):
+
+| | plies | wallclock | s/ply |
+|---|---|---|---|
+| default deepcopy | 166 | 84.7 s | 0.510 |
+| custom `__deepcopy__` | 165 | **25.5 s** | **0.154** |
+| **game speedup** | — | **3.3×** | 3.3× |
+
+**Correctness:** `tests/test_state_deepcopy.py` (4 tests, all pass) verifies: (a) signature equality of fresh state, (b) signature equality after 60 random actions applied to a custom-copy vs a default-copy, (c) no shared mutable substructure (mutating the copy leaves original unchanged), (d) signature equality at mid-game (~60 moves placed). Full suite: **166/166 tests pass** post-patch.
+
+**Other beneficiaries** (any codepath that does `copy.deepcopy(state)`):
+- `virtual_score.py` (heuristic labeler used by warmstart gen)
+- `warmstart.py` 2-ply heuristic lookahead
+- vanilla MCTS rollouts (`mcts.py`, partially mitigated by `apply_action_inplace`)
+- analysis scripts (`classify_v2_losses.py`, `audit_virtual_score_farmers.py`)
+
+**Implications for v7:**
+- At production sims=200, deepcopy load scales with sims × avg-tree-depth → the 3.3× should hold or widen.
+- v6 cloud run was 9h / $3.40 for 20 iters → v7 with this fix runs the same in ~3h / ~$1.10, or ~60 iters in the original 9h budget.
+- This eliminates the need to chase fp16 (already proved slower) or Cython-rewrite the PUCT loop (which the profile says was never hot).
+
+**Reversal cost:** none. Engine patch is local to one method; old behavior preserved by deleting the method. Tests gate any future regression.
+
+**Phase:** 4 (perf)
+
+---
+
+## 2026-05-13 — Orchestrator multi-process pool: NULL RESULT, workers are the bottleneck, not the GIL
+
+**Context:** v6 cloud showed GPU at 5-20% utilization with the single-server orchestrator, suggesting the Python dispatch loop was GIL-bound and starving the GPU. Built multi-process pool (`src/carcassonne_ai/eval_server_pool.py`) to shard workers across N parallel server processes (commit `c34ecf9`). Hypothesis: more dispatchers → faster request servicing → 1.5-2× wallclock speedup.
+
+**Cloud sweep** (vast.ai EPYC 9J14 Japan, $0.375/hr, ~$0.56 sweep cost, 2026-05-13):
+
+| N | wallclock | dequeue % (avg per shard) | forward % | vs N=1 |
+|---|---|---|---|---|
+| 1 | **1134.5 s** | 64% | 35% | baseline |
+| 2 | 1181.6 s | 68% | 31% | +4% slower |
+| 4 | 1211.6 s | 76% | 23% | +7% slower |
+| 8 | 1211.7 s | 84% | 16% | +7% (saturated) |
+
+Each row is iter-0 self-play, 80 games × 200 sims × 80 workers on identical hardware. Per-stage timers in `eval_server.py` capture where the dispatcher Python loop spends time.
+
+**Finding: the orchestrator GIL is NOT the bottleneck.** The dequeue % climbs monotonically (64→68→76→84) as we add shards — each shard waits LONGER for requests to assemble into batches. Forward % drops correspondingly (35→16). Dispatch is always 0% (instant). Multi-process sharding made the dispatcher even more idle, not less.
+
+**What's actually bottlenecked: workers (CPU-bound MCTS tree work).** Each self-play worker spends ~50% of its time on MCTS tree expansion and ~50% blocked on eval responses. The eval responses ARE prompt (dispatch is 0% of orchestrator time); the workers can't generate requests fast enough because their own CPU work is the binding constraint. Fewer requests per shard → each shard idles more.
+
+**Implications for v7:**
+
+1. **The multi-process pool is correctly engineered but solves the wrong problem.** Keep the code (no harm in n_shards=1 default; back-compat preserved) but **do not use N>1 in any production run**. Each shard just wastes VRAM and adds queue contention.
+2. **Real perf levers, in priority order:**
+   - **fp16 inference** — workers spend 50% of time waiting on eval; cutting eval latency 1.5-2× directly reduces worker block time. Already supported via `--fp16` flag. Free perf, never enabled in production.
+   - **Faster MCTS hot path** — 50% of worker time is Python MCTS tree work. Numpy hotspot profiling or Cython rewrite of the inner loop. Significant engineering, but the only path to real throughput gains at our worker count.
+   - **More cores** — N=80 workers on 48 effective cores is 1.67× oversubscribed. A 64-core (effective) box would help, but at our box class the 48-core EPYC 9J14 is already the throughput optimum per $.
+3. **Don't twiddle worker count to fix this.** Yesterday's W=96 sweep already confirmed games=96 is the worker-count optimum on this box class; we're already there in expectation. The throughput ceiling is real and structural.
+
+**Decision:** orchestrator pool code stays in repo (validated correct + back-compat at n_shards=1) but **v7 will launch at `--orch-shards 1`**. Pivot the perf-engineering effort from "multi-dispatcher" to "fp16 + MCTS hot path".
+
+**Cost of being wrong:** ~$0.56 cloud sweep + ~half a day of engineering on a fix that doesn't help. Cheap diagnostic; would have been ~$4-5 if we'd skipped the sweep and just launched v7 with N=4 (we'd have been 7% slower for the whole run).
+
+**Reversal cost:** none. Code is committed and tested; we can revisit if the workload ever shifts (e.g. bigger net = forward % climbs = orchestrator might matter again).
+
+**Phase:** 4
+
+---
+
+## 2026-05-13 — Phase 4 v6 cloud COMPLETED 20 iters; iter_12 = 70% wr (NEW global peak, first break above v5's 65% ceiling)
+
+**Context:** v6 = same recipe as v5 + two changes: `--initial-checkpoint = selfplay_v5/iter_06.pt` (the 65% wr peak from v5) and `--orchestrator on` (validated 2026-05-12 Phase A). The hypothesis: does a stronger starting checkpoint let the same recipe compound past v5's ceiling?
+
+Box: vast.ai 5090 + EPYC 9J14 Japan ($0.375/hr × ~9 h ≈ $3.40 actual cloud cost; +$0.06 sunk on a destroyed pre-launch box). Total wallclock 490 min for 20 iters (24.5 min/iter average).
+
+**Three launch-time bugs (all now fixed on `gpu-orchestrator`):**
+- Dockerfile lacked `openssh-server` → vast.ai SSH proxy rejected all keys. Fixed `62d5283`.
+- `bootstrap_cloud.sh` pulled checkpoints but NOT the `heuristic_tau05/` warmstart training data → iter 0 train crashed after 16 min of self-play. Tarballed to bootstrap-v1 release; fixed `7a6f535`.
+- `run_phase4_smoke.py` didn't pass `--orchestrator` to the subprocess calls. Fixed `19d8fe8`.
+
+**Anchor-gate trajectory (n=20 vs warmstart_canonical):**
+```
+iter   v5         v6
+ 0     40 P       65 P
+ 1     20 F       65 P
+ 2     50 P       35 F
+ 3     60 P       60 P
+ 4     30 F       50 P
+ 5     50 P       40 P
+ 6     65 P       50 P   ← v5 peak (run halted at iter 9)
+ 7     35 F       35 F
+ 8     35 F       50 P   ← v6 breaks v5's death-spiral
+ 9     25 F       60 P   ← v5 halted here; v6 climbing
+10     —          35 F
+11     —          45 P
+12     —          70 P   ← v6 PEAK (new global best, +5pp over v5)
+13     —          65 P
+14     —          45 P
+15     —          55 P
+16     —          30 F
+17     —          45 P
+18     —          25 F
+19     —          65 P
+```
+Summary: **v5 = 5/10 PASS best 65%; v6 = 15/20 PASS best 70%.** Pass rate 50% → 75%, peak +5pp, survived 2× more iters.
+
+**Findings:**
+
+1. **Compounding past v5's ceiling IS possible — iter_12 demonstrates it.** First checkpoint that beats `warmstart_canonical` at ≥70% wr. The "iter_06 warmstart compounds" hypothesis is partially supported: it did push past 65%, just took 12 iters.
+
+2. **The recipe cannot SUSTAIN the gain.** Late iters (14-19) oscillate 25-70% with no plateau. Suggests a structural bound around ~70%.
+
+3. **v6 strictly Pareto-dominates v5 on every metric** (pass rate, peak, floor, survived iters). The "iter_06 + orchestrator" recipe is strictly better than starting from warmstart_canonical.
+
+4. **Recipe drift is real but the rachet does its job.** Every FAIL was followed by a rachet recovery (warm from best-so-far + fresh RNG). Fail counter never reached 2/3.
+
+5. **Capacity is not the immediate bottleneck.** Local 192×14 warmstart (15.8M params, 2.1× the 96×6 baseline) trained on the same heuristic_tau05 data showed essentially no validation improvement (val pol loss 1.65 → 1.62). The 96×6 net is already capacity-saturated at our data scale.
+
+6. **Tile-placement dominates over meeple decisions.** Rule-based player with 3 meeple-phase rules + RANDOM tile placement scored 44% wr / ELO -42 vs random (n=50). Meeple-only rules can't compete. Tile-placement is where the value lives.
+
+**Decision: keep `iter_12.pt` as the new strongest model. v7 should target sample efficiency / data diversity, not capacity or recipe twiddles.**
+
+**Acceptance bars status:**
+- ✅ Bar 1 (≥40% wr by iter 5): passed at 40% iter 5
+- ❌ Bar 2 (≥55% wr by iter 10): failed at 35% iter 10 (redeemed by iter 12's 70%)
+- ❌ Bar 3 (3 consecutive ≥55% by iter 15): never achieved 3 in a row; best was 2 (iters 12+13)
+- ✅ Bar 4 (≥70% wr by iter 20): met at iter 12, 8 iters early
+
+Mixed: 2/4 bars hit. Bar 3 (stability) is the real gap.
+
+**v7 direction (deferred to separate plan-mode):** data-scarcity hypothesis. Cheap leverage: symmetry rotation augmentation (free 4× data), then KataGo-style aux loss heads if augmentation alone doesn't break the ceiling. See BACKLOG.md "Phase 4 v7 candidates".
+
+**Reversal cost:** none. v6 artifacts persisted to `checkpoints/selfplay_v6/iter_00..19.pt` + `data/selfplay/v6_cloud/`. Cloud box destroyed. `iter_12.pt` is now the canonical strongest model.
+
+**Phase:** 4
+
+---
+
+## 2026-05-12 — Phase 4 v5 cloud HALTED at iter 9 (3 consecutive anchor FAILs); peak iter 6 = 65% wr vs warmstart
+
+**Context:** v5 cloud recipe = mix-floor 0.5 floor + window K=30 + best-so-far rachet + anchor-gate (n=20, threshold 40%, max-fails 3) + sims=200. Ran on rented 5090 + 48-core EPYC ($0.443/hr) starting 2026-05-12. Final result: harness halted on its own per anchor-max-fails=3 rule.
+
+**Anchor-gate trajectory:**
+
+| Iter | wr | passed | notes |
+|---|---|---|---|
+| 0 | 40% | ✅ | baseline (warmstart_canonical reference) |
+| 1 | 20% | ❌ | rollback to iter_00 |
+| 2 | 50% | ✅ | recovery |
+| 3 | 60% | ✅ | first time ever above baseline |
+| 4 | 30% | ❌ | rollback to iter_03 |
+| 5 | 50% | ✅ | recovery |
+| 6 | **65%** | ✅ | **peak** — new best ever, +25 pp above baseline |
+| 7 | 35% | ❌ | fail #1 |
+| 8 | 35% | ❌ | fail #2 |
+| 9 | 25% | ❌ | fail #3 — halt |
+
+**What's new this round:**
+1. **First time we produced a meaningfully-above-baseline checkpoint.** iter_03 hit 60% and iter_06 hit 65%, vs the +0 pp ceiling on every prior recipe (v1-v4 all regressed to 12-30%).
+2. **Best-so-far rachet engaged correctly** — recovered from iter_01 (FAIL) and iter_04 (FAIL) by rolling back to the prior peak's base.
+3. **But the recipe still drifts.** After peak iter_06, three consecutive iters regressed and the rachet couldn't recover. Suggests the closed-loop drift mode is still present, just slower than v1-v4. mix-floor 0.5 is not enough on its own.
+
+**Cost:** ~$3 cloud spend for the actual v5 run (6.5h wallclock × $0.443/hr) + ~$2 across multiple bootstrap attempts (rsync proxy throttling, wrong PyTorch wheel on Blackwell, OOM at W=48 chain h2h before --eval-workers cap was added). Total today ~$5.
+
+**Decision:** Pull data + checkpoints (96 MB) + log. Destroy box. Quarantine v5 checkpoints (`checkpoints/selfplay_v5/iter_NN.pt`) for Phase 6 emergence analysis — they're the first set we have that includes any genuinely-above-baseline weights.
+
+**Acceptance status:** v5 PARTIAL — recipe peaks above baseline (proves the AlphaZero loop CAN improve our warmstart) but is not stable enough to compound. Need another recipe iteration OR more compute per iter OR a structural change (the GPU orchestrator, see entry below).
+
+**Phase:** 4 (self-play loop sanity)
+
+---
+
+## 2026-05-12 — Phase A cloud bench: orchestrator validated, W=96 emerges as new optimum (15% faster than W=48)
+
+**Context:** Phase A of the v6 plan — rent a 5090 + 48-core EPYC box, prove the orchestrator survives W=48 chain h2h (where baseline OOMs on torch 2.11), and sweep W to find the v6 production setting. Ran on instance 36645490 (machine 79615 / host 384353 Japan, $0.3747/hr). Total Phase A spend ~$1.40 across one wedged box + the real one.
+
+**A1 — OOM-relief test: orchestrator W=48 chain h2h:**
+- 50 self-vs-self games at sims=100. **30W/0D/20L, avg diff +0.4** (≈50/50 as expected by symmetry).
+- **Final VRAM: 2 MiB** (vs baseline's projected 58 GB OOM at W=48). Smoking-gun pass.
+- Wallclock: 464.8 s.
+
+**A3a vs A3b — orchestrator vs baseline self-play at W=48 sims=200:**
+- A3a (orchestrator): 80/80 games, 1168.1 s, 13246 positions, 2 MiB peak VRAM.
+- A3b (baseline): **36 of 80 games OOM'd** with `CUBLAS_STATUS_ALLOC_FAILED` + `CUDA out of memory`. Only 44 completed.
+- **The baseline pattern is BROKEN at W=48 on torch 2.11.** v5 ran fine at W=48 on torch 2.7; the difference is torch 2.11's larger per-worker allocator pool (~700 MB) × 48 > 32 GB. The orchestrator isn't just nice-to-have; it's structurally required for W=48 with current torch.
+
+**Worker sweep (orchestrator on, sims=200, 80 games, same hardware):**
+
+| W | Wallclock | s/game | Δ vs W=48 |
+|---|---|---|---|
+| 44 | 1173.6 s | 14.7 | +0.5% (tie) |
+| 48 | 1168.1 s | 14.6 | baseline |
+| 52 | 1191.3 s | 14.9 | +2% |
+| 64 | 1326.1 s | 16.6 | **+14% (local worst)** |
+| 80 | 1006.4 s | 12.6 | −14% |
+| **96** | **992.9 s** | **12.4** | **−15% (best)** |
+
+**Non-monotonic curve.** Light oversubscription (W=52, W=64) is the WORST regime: workers thrash CPU but don't queue-block enough to free slots. Heavy oversubscription (W=80, W=96) flips into a regime where workers spend so much time waiting on the orchestrator's request queue that other workers run on freed CPU. Net: **W=96 is 15% faster than W=48 on this hardware**.
+
+**Implications for v6:**
+- Use `--workers 96` (not 48). Saves ~110 min over a 12 h run = ~$0.75.
+- Confounds the v5→v6 clean A/B (v5 was W=48), but the throughput win is large enough that we accept the confound. v6 vs v5 comparison stays valid for the "recipe + warmstart" question; W is independently the new optimum.
+- Could try W=128 in a follow-up bench — curve hadn't turned back upward yet at W=96. Deferred.
+
+**Decision:** v6 launches at W=96 with orchestrator on, iter_06.pt as initial weights, otherwise identical to v5 recipe.
+
+**Phase:** 4 (perf / infra → recipe)
+
+---
+
+## 2026-05-12 — GPU orchestrator (inference-server pattern) — landed + numerically validated, 10-14% slower on local 5060 Ti (expected); cloud bench pending
+
+**Context:** Each self-play / eval worker currently loads its own copy of the net (~600 MB allocator pool per worker). At W=48 chain h2h that's 58 GB > 32 GB → OOM. The fix in production was capping `--eval-workers 20`, leaving cores idle. The GPU orchestrator addresses this structurally: one server process owns the net + CUDA context; N CPU-only workers send (obs, scalars, mask) over IPC; server batches across workers.
+
+**What landed (branch `gpu-orchestrator` off `phase-4-selfplay`):**
+- `src/carcassonne_ai/eval_server.py` (210 LoC) — `_server_loop` + `start_server` + `shutdown_server` + `ServerHandles` dataclass. Adaptive batching with `max_batch=256`, `batch_timeout_ms=2.0`. Uses `mp.Queue` for IPC (no extra deps).
+- `src/carcassonne_ai/remote_evaluators.py` (115 LoC) — drop-in `make_remote_single_evaluator` / `make_remote_batch_evaluator` matching the existing factory contract.
+- `tests/test_eval_server.py` (175 LoC) — numerical agreement (single + batch), concurrent 4-worker no-hang, shutdown propagation (BrokenServerError within timeout, not infinite block). **All 4 pass in 24 s.**
+- `scripts/run_selfplay_iter.py` — `--orchestrator` flag. 1 server process for the lone net.
+- `scripts/eval_iter_head_to_head.py` — `--orchestrator` flag. 2 server processes (one per net).
+
+**Local bench, RTX 5060 Ti, W=8, sims=50, batch_size=8, 10 games:**
+
+| Mode | Wallclock | Positions | Note |
+|---|---|---|---|
+| Baseline (per-worker net) | 204.5 s | 1658 | reference |
+| Orchestrator (1 server) | 224.7 s | 1657 | **0.91× (10% slower)** — IPC overhead wins over batch-coalescing gain at small W |
+
+Eval bench (W=4, sims=25, 6 games, 2 nets):
+
+| Mode | Wallclock | W/L | avg diff |
+|---|---|---|---|
+| Baseline (2 nets/worker) | 74.3 s | 6/0/0 | +42.3 |
+| Orchestrator (2 servers) | 84.5 s | 6/0/0 | +40.0 |
+
+Same W/L tally — fp32-reorder argmax ties cause minor MCTS-tree shifts (the documented ±1-game noise floor). 14% wallclock slowdown.
+
+**Acceptance:** plan called for ≥0.95× baseline wallclock at W=16; we got 0.91× at W=8. Below bar **on the small GPU as expected** — overhead dominates when the per-worker pattern already fits VRAM and only 8 concurrent workers can't generate enough request density to amortize IPC.
+
+**Why this still matters for cloud:** on the 5090 + 48-core box:
+- Baseline OOMs at W=48 chain h2h (58 GB > 32 GB). Production has to cap W=20.
+- Orchestrator holds 1 GB server + 0 per-worker VRAM → unlocks W=48 chain h2h (and W=96+ on bigger CPU boxes).
+- Cross-worker batching: 48 workers × 8 boards = up to 384 boards/forward (vs current 8 boards/forward × 48 separate forwards) — 4-8× higher per-forward efficiency.
+
+**Decision:** Land on `gpu-orchestrator` branch behind `--orchestrator` flag (default off). Validated locally; cloud bench is the actual proof-point. Bench during the next cloud run before turning it on for prod.
+
+**Phase:** 4 (perf / infra), gated on v6 plan-mode decision
+
+---
 
 ## 2026-05-12 — MPS test confirms W=48 + fp32 + no-MPS is optimal; ~$1.50 spent across 4 rentals
 
@@ -787,3 +2708,2522 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Reversal cost:** low
 **Phase:** Phase 0
+
+---
+
+## 2026-06-19 — Hybrid-handoff measurement (iter8 early/mid → heur endgame); CL-026
+
+**Context:** L2-3 found iter8 plays the endgame worst; #8 found iter8 −28.7 Elo vs heur@3200. Question: can iter8's early/mid policy combine with deep-heuristic endgame precision?
+
+**Built:** `scripts/level2/eval_hybrid_handoff.py` (+orch SHM, aggregator, autonomous Phase-2 gate `auto_phase2.sh`). Handoff = latched switch to HeuristicMCTS@N at the first own TILES decision with `k_remaining<=K` (k = len(deck)+in-hand; identical to gen_endgame_positions → "K≤2" == L2-3 K=2). Fresh band b340, n=200 paired, shared decks. Measurement only; champion (iter8) unchanged.
+
+**Phase 1 verdict (DONE): endgame weakness is locally PATCHABLE.** All hybrids beat iter8 on paired margin, monotone in K: K2 +0.36/z2.65, K3 +0.25/z1.18, K5 +0.80/z3.45, K8 +1.36/z4.68; K8 reproduced at n=400 (+1.31/z5.61). Compute sanity K5@heur800 +0.60/z2.89 (cheap heur endgame captures most of it). Modest absolute size. results.csv `l2hyb_*`.
+
+**Phase 2 verdict (DONE): gap-closing, NOT a new champion.** hybrid:5 vs heur@3200 −13.9 Elo/pz−0.30, hybrid:8 −19.1 Elo/pz−0.51 (both n=200) — both *lose* to heur@3200 at |z|<1 (tie-to-slight-loss), but clearly better than iter8's −28.7. The early/mid iter8 policy + deep-heuristic endgame closes most of iter8's gap to the deep heuristic without surpassing it. Promotion rule (beat iter8 paired AND beat heur@3200) NOT met → nothing promoted. Phase 1 reproduced at n=400 (K5 margin+0.90/z+6.23, K8 +1.32/z+5.79). Interpretation: "Hybrid ties/loses heur@3200 → deep heuristic remains strongest." Full writeup [measurement/level2/LEVEL2_HYBRID_VERDICT.md](measurement/level2/LEVEL2_HYBRID_VERDICT.md).
+
+**Cluster decision:** pulled the laptop after 2 transient mobile-4070 GPU stalls (carc-orch cmp 2.4ms→3316ms → 60s SHM worker timeout → BrokenServerError → set -e aborted launcher). Local RTX 5060 Ti stable; runs Phase 2 solo. Per-game JSONs cached/resumable.
+
+**Reversal cost:** low (measurement; no production change).
+**Phase:** measurement-first
+
+
+## 2026-06-22 — Heuristic v2.8 leaf branch: meeple-economy term is a real, large heur-leaf gain (measurement)
+
+**Context:** With both strength levers exhausted and the tool/midgame branches closed, the next live branch was "build a stronger heuristic leaf v2.8 via controlled ablations" (classical-engine progress first; ML progress only if neural search can later use/distill/surpass it). v2.7 frozen forever; v2.8 opt-in. Full writeup: [measurement/heuristic_v28/HEURISTIC_V28_REPORT.md](measurement/heuristic_v28/HEURISTIC_V28_REPORT.md).
+
+**Built:** opt-in versioned v2.8 variants (LeafConfig fields, default OFF == bit-identical v2.7, proven 184 tests; HeuristicMCTS `leaf_cfg=` threading). 4 patches from a 678-case failure taxonomy: farm-majority-gate, deck-aware-closure, meeple-economy, opp-denial. Root-action audit (exact K=2 + heur@3200 teacher), mechanistic autopsies (line autopsy + counterfactual), paired full-game heur search pilots.
+
+**Verdict (DONE): ONE survivor — the flat meeple-economy term.** Killed at root audit: farm (broad degradation, cap-masked), denial (no movement). Killed at search: completion/deck-aware-closure (exact-endgame-K2 top-1 0.763->0.826 but NULL full-game +3.5 elo z=1.09 — endgame-local washes out, hybrid-handoff lesson). **Survivor: meeple-economy = +179.5 elo z=9.9 @ heur@200, holds @ heur@800 (+94.9 z=3.8), and v28@200 BEATS v27@800 (+202.6 z=7.0) — quadrupling v2.7's search does NOT close the gap (real leaf-quality gain, not search-imitation).** results.csv `v28_meeple_*`.
+
+**Key correction:** the candidate is BIT-IDENTICAL to the existing legacy `meeple_k=2` knob (verified 560/560), already implemented in object/flat/Cython paths at full speed. **This OVERTURNS the 2026-05-15 "meeple_K null" verdict** *(date corrected 2026-07-30 from "2026-05-14" — the `meeple_K` table lives in the `## 2026-05-15 — v3 leaf` entry; there is no meeple_K verdict in any 2026-05-14 entry, so a grep by the cited date missed the kill)* **— that was an n=20 screen (one-sigma noise) graded by a saturated, leaf-asymmetric instrument (see that entry's banner) and the additive-on-saturating-cap hypothesis was wrong (the term is post-cap).** The recovery-scaling refinement I added DETRACTS (-75 elo) and is excluded. Autopsy mechanism: fixes v2.7 failure-mode #4 (over-committed meeples).
+
+**Decision:** candidate **v2.8 = v2.7 + meeple_k=2** is an EXPERIMENTAL reference (clears 4/5 promotion gates). **NOT promoted to production, NOT a v2.7 replacement, no PRODUCTION.yaml change, no training.** The open decisive gate: does it help the NEURAL policy (iter8 leaf-swap) — deferred to the SHM orchestrator (net-on-CPU infeasible; harness ready). Next: orchestrator neural leaf-swap, k-optimization, out-of-lineage anchor.
+
+**Reversal cost:** low (measurement; no production change).
+**Phase:** measurement-first
+
+
+## 2026-06-22 (cont.) — v2.8 leaf-swap battery: meeple leaf is a CLASSICAL gain, NOT an ML/superhuman lever
+
+**Context:** the heur-search finding (meeple_k=2 = +179 elo vs v2.7) needed the generalization gate — does it help the NEURAL production policy and let it exceed the deep-heuristic ruler? Ran via the carc-orch SHM orchestrator (2-box, local 5060 Ti + laptop 4070, deck-paired, both seats). Full writeup [measurement/heuristic_v28/V28_LEAF_SWAP_REPORT.md](measurement/heuristic_v28/V28_LEAF_SWAP_REPORT.md); rows results.csv `iter8_v28_*` / `hybrid8_*`.
+
+**Results (same net/sims/c_puct/residual 0.25/decks/seats; ONLY leaf differs):**
+- iter8+v2.8 vs iter8+v2.7: **+154.5 elo (z=9.82, n=400)** — the meeple leaf helps the NEURAL policy.
+- iter8+v2.8 vs heur@3200_v2.7: **+153.4 (z=5.87)** — flips Joshua #8's iter8+v2.7 = −28.7.
+- iter8+v2.8 vs heur@3200_**v2.8** (EQUAL leaf): **−38.4 (z=−1.56)** — the disambiguator.
+- hybrid:8:800 v2.8 vs v2.7: **+153.4 (z=5.87)** — the hybrid gains too.
+- k-sweep (heur@200, flat term): inverted-U, **peak k=2** (+179.5); k1 +75.9, k3 +159.8, k4 +34.9.
+- terminal-hoarding (n=60): NO pathology (last-5-plies in-hand 0.26 v2.8 vs 0.05 v2.7, tiny).
+
+**Decision (INTERPRETATION):** The +153.4 vs heur@3200_v2.7 was **entirely the leaf gap** — at EQUAL leaf the neural agent still LOSES to deep heuristic search (−38.4, ~the same relative position as v2.7's −28.7). So the meeple leaf is a **real, large CLASSICAL-ENGINE improvement** that lifts the heuristic, the neural agent, AND the hybrid ~uniformly (+150–180 each over v2.7) — but it is **NOT an ML/superhuman lever**: the learned components still do not exceed the (now stronger) heuristic. **Structural blocker #2 REMAINS.** v2.8 raises the ceiling for everyone; it does not change who is on top. **Positive:** heur@3200_v2.8 is a stronger non-saturated reference ruler (the better measurement anchor the program is gated on). v2.8 = v2.7 + meeple_k=2 → EXPERIMENTAL reference / stronger ruler. **NOT promoted to production, NOT a v2.7 replacement, no PRODUCTION.yaml change, no training; v2.7 frozen.**
+
+**Next lever:** the learned value/policy must EXCEED the v2.8 heuristic (distillation-from-v2.8 or a fundamentally stronger learned value), measured against the heur@3200_v2.8 ruler.
+
+**Ops:** disambiguator hit the shared-claim orphan-stall (laptop mobile-4070 carc-orch BrokenServerError / 60s SHM timeout → set -e abort → 38 stranded claims); recovered per playbook (cleaned stale claims, finished on local). Reinforces feedback_shared_claim_orphan_stall + the laptop-4070 instability note.
+
+**Reversal cost:** low (measurement; no production change).
+**Phase:** measurement-first
+
+## 2026-06-23 — Autopsy: RoD v2.8 overnight iter_08 is a NON-TRANSITIVE style point, not a champion (measurement)
+
+**Context:** deep-dive autopsy of the overnight-flywheel keep-best (iter_08, +33/z2.0 over RoD1 but heur@3200_v2.8 PARITY). Goal: where does iter_08 beat RoD1, is it ruler-aligned or RPS, and what's the highest-EV next branch? Constraints held: nothing promoted, PRODUCTION.yaml/champion/v2.7 untouched, v2.8 opt-in. Full report: **[measurement/rod_v28_overnight_flywheel/autopsy/AUTOPSY_RoD_v28_iter08.md](measurement/rod_v28_overnight_flywheel/autopsy/AUTOPSY_RoD_v28_iter08.md)** (+ CSVs/digests in that dir).
+
+**Method:** all from CACHED records + on-disk metadata except ONE new run (iter_08 root choices on the 1000 fixed midgame positions, NeuralMCTS@200 v2.8, identical method to the cached rod/parent labels). Scripts `scripts/rod_v28/autopsy_*.py`.
+
+**FACT — outcome triangle:** iter08>RoD1 (+33.1 wr / +2.23 paired z2.0, n400) but iter08-vs-h3200 (−0.38) ≡ RoD1-vs-h3200 (−0.36): the +33 transfers ZERO to the external ruler. Clean non-transitive cycle (iter08 > RoD1 ≈ h3200 ≈ iter08). The +33 is **concentrated** (top 10% of decks = 132% of net margin; median deck +0.8) = RPS/exploit tail, not broad skill.
+
+**FACT — training space:** value_outcome_corr DRIFTS DOWN parent 0.510 → RoD1 0.413 → chain 0.36–0.49; iter_08 (0.397) is among the chain's LOWEST value-corr + HIGHEST entropy (1.594). Not a value gain, not a sharper policy.
+
+**FACT — root audit (executed, 1000 pos):** iter08≡h3200 0.521 ≈ RoD1 0.511 ≈ parent 0.520. iter08's divergence from RoD1 = net +10 toward the ruler (z+0.7, NOT significant) → orthogonal/style, confirmed at move level. The disagreement LOCALIZES to the endgame (late_mid/pre_endgame agreement 0.445–0.485, iter08 moves AWAY there) — where the ruler is most confident (L2-3 most endgame-precise).
+
+**Decision (INTERPRETATION):** iter_08 = keep-best parent (conditional yes) but NOT a champion; its gain is RPS/style + selection noise, not ruler-aligned improvement. Structural blocker #2 stands. **Highest-EV next branch = exact/endgame-solver hybrid** (the executed audit localizes the learned policy's costliest, most persistent gap to the endgame — the one place an EXACT solver can provably exceed any heuristic; the l2hyb handoffs only tied h3200 because they handed off to another heuristic). Then h6400 as a non-saturated ruler; deprioritize v2.9-leaf and blind RoD continuation. **STOP undirected RoD continuation iters.**
+
+**Reversal cost:** none (measurement/analysis only; no checkpoint, config, or production change).
+**Phase:** measurement-first
+
+## 2026-06-24 — Exact endgame-solver hybrid (exact:K): margin scales with depth, winrate does not — COMPLETE
+
+**Context:** the iter_08 autopsy (2026-06-23) localized the learned agents' costliest gap to the endgame and named the exact/endgame-solver hybrid as the highest-EV next branch (the one place an exact solver can provably exceed a heuristic). Built `exact:K:MODE` in `scripts/level2/eval_hybrid_handoff.py` — RoD1 (v2.8) prefix, then a clairvoyant alpha-beta exact solver for the final K tiles (leaf-independent; fair clairvoyant-vs-clairvoyant). Full report: `measurement/exact_endgame_hybrid/EXACT_ENDGAME_HYBRID_REPORT.md`.
+
+**Finding (FACT, deck-paired both seats):** the exact tail adds a real, highly-significant endgame SCORE-MARGIN gain that SCALES ~linearly with exact depth — Δ-margin vs h3200 +0.65 (K=2, n=400) → +1.26 (K=3, n=400) → +1.94 (K=4, n=94); z+4.5/+7.3/+2.8; vs RoD1 +0.65 → +1.42 (n=400). But the WINRATE does NOT follow: deck-paired 0.526/0.537/0.568, NON-SIGNIFICANT at every depth (z≤1.5; empirical margin→winrate slope only ~1.6%/pt). A K=4 n=82 partial's 0.61/z2.09 was deck-selection bias → regressed to 0.568 (the winrate-vs-margin distinction was decisive). Mechanism (regret micro, n=24): h3200's OWN endgame degrades with depth (top-1 0.833 K=2 → 0.667 K=4 = tied with RoD1), so exact's edge compounds. Mechanism (Part E): RoD1's leak is pure last-tile PLACEMENT, not meeple mgmt; h3200 shares 40% of those mistakes. results.csv `exact{2,3,4}_vs_{rod1,heur3200}_v28_*`.
+
+**Decision (INTERPRETATION):** exact endgame play is PROVABLY better than the deep heuristic on score-margin (and more so the deeper you solve) but the superiority is SUB-POINT and OUTCOME-NEUTRAL — it sharpens the ruler, it does not beat it on winrate. NOT a champion and NOT a path to one: confined to the last ~2–4 tiles; blocker #2 (whole-game learned strength > heuristic) stands untouched. Distillation EV low (value-calibration only). **Next: a non-saturated reference (h6400/h12800) + whole-game strength levers, NOT deeper endgame exactness.** STOP at K=4 (K≥5 needs make-unmake/Rust; not worth it — winrate flat at K≤4).
+
+**Infra lesson (memory `reference_exact_solver_eval_infra`):** carc-orch is INCOMPATIBLE with K≥4 (minutes-long solves starve the SHM eval-server → 60s timeout → BrokenServerError → eval crash) → run K≥4 net-on-CPU; net-on-CPU is RAM-BOUND (solver TT ~1–2GB/worker on hard K=4; W=18 OOMed local's 42GB and took the Claude session down — size W ≤ RAM/~2GB).
+
+**Reversal cost:** none (measurement/engineering only; no checkpoint/config/production change; v2.7 frozen, PRODUCTION + champion `flywheel2_champion_iter8` unchanged, v2.8 opt-in).
+**Phase:** measurement-first
+
+## 2026-06-25 — v2.9.1 leaf retune: closure-cap is the one lever; Bmild_cap8 BEATS real production v2.8 (measurement)
+
+**Context.** The v2.9 audit found the nonlinear meeple curve (`Bmild`) beats its baseline. Per the bug-fix-shifts-optima rule, changing the meeple economy can shift the OTHER leaf knobs' optima, so we re-tuned them around the Bmild anchor (sequential waves, NOT a grid). **Success bar: beat the Bmild ANCHOR, not merely v2.8.**
+
+**Finding 0 (the mislabel, found mid-retune).** Every prior v29 run measured against the harness `v28` = `DEFAULT_CONFIG`+meeple_k=2, which resolves from env defaults to **cap=5 + 3-open schedule** — NOT documented production (cap=12 + drop-three-open). The comparisons were internally valid (both sides shared the base), but "Bmild beats v2.8" really meant "beats cap5/3-open". Added a `v28prod` harness baseline (real production) for the throne test the audit never ran.
+
+**Retune result (sims=200, paired, 3-box, vs Bmild anchor).** Of four knobs, exactly ONE moved the needle:
+- **Wave A meeple-curve SCALE: NULL.** ×0.75 (−37 elo) and ×1.25 (−26) both lose → the curve shape already captured the magnitude (inverted-U peak at ×1.00).
+- **Wave B closure CAP: WIN.** cap 5→8 = **+46 elo @ n=400**, even-bucket 0.669 (competitive gain). cap8 beat cap12 on the even-bucket (0.669 vs 0.453 = cap12 over-values fantasy closures, pads blowouts, loses tight games). Flat plateau 8–16; cap8 the pick. The anchor's cap=5 (env default) was simply too low.
+- **Wave C closure-P: NULL.** Only flag (p060, higher prob) collapsed 0.557→0.506 @ n=400, even-bucket 0.385 = padding (same trap as cap12). Schedule already well-tuned.
+- **Wave D tanh-norm: NULL.** n12 (diff/12) 0.542→0.515 @ n=400 = noise; norm=15 already fine. (Wired a per-instance `HeuristicMCTS.value_norm`, default-preserving.)
+
+**Final v2.9.1 = `Bmild_cap8`** = MILD curve `(-8,-4,-1,0,2,3,4,5)` + cap=8 + 3-open + diff/15 norm.
+
+**THRONE TEST (the one the audit skipped): `Bmild_cap8` vs REAL production `v28prod`.** sims=200 n=400 = **0.579 wr / +55 elo / z+3.94 / even-bucket 0.636** (competitive win, not padding). Depth-robust: survives the sims=800 washout (0.550 / +35 / z+1.84 / even 0.569; mirrors the original Bmild ladder which recovered at h6400). The curve is the bulk of the win; cap8 adds. results.csv `v291_*` rows.
+
+**Decision (INTERPRETATION).** v2.9.1 (`Bmild_cap8`) is a CONFIRMED, depth-robust CLASSICAL-leaf win over actual production v2.8 — promotion-worthy as a candidate. But this is a classical heuristic-vs-heuristic result; whether it helps the NEURAL champion (value head trained against the v2.8 residual base) is UNTESTED and needs the orchestrator + likely a retrain. **h6400 arbiter DEFERRED to promotion-time** (Joshua's call; ~3-5 hr, ~37 min/game under cluster contention). Pre-registered plan + full tables: [measurement/v29_leaf_audit/V29_1_RETUNE_PLAN.md](measurement/v29_leaf_audit/V29_1_RETUNE_PLAN.md).
+
+**Reversal cost:** none (measurement only; no checkpoint/config/production change; v2.7 frozen, PRODUCTION + champion `flywheel2_champion_iter8` unchanged, v2.8 prod, v2.9/v2.9.1 opt-in). 39 tests green; harness commits d1251ae/c21f751/6133739.
+**Phase:** measurement-first
+
+## 2026-06-26 — Autopsy: RoD v2 flywheel (v2.9 leaf Bmild_cap8) is a CONFIRMED NULL — decision C (measurement)
+
+**Context.** RoD v2 = the v2.9-leaf redo of the same warm-start self-play flywheel that the v2.8 overnight autopsy (2026-06-23) found stuck at heuristic parity. One change vs that run: the frozen **v2.9 leaf `Bmild_cap8`** (Bmild meeple curve −8,−4,−1,0,2,3,4,5 replaces flat meeple_k; cap 8; 3-open) instead of the v2.8 leaf. Recipe held (batch 256 · 3 ep · VLW 1.5 · residual_scale 0.25 · sims 200 · c_puct 3.0 · 400 games/iter). 5 train iters RoDv2_iter_02..06, warm-from RoD_iter_01, gen+train only. **Question:** does the better classical leaf restart compounding? **Answer: no.**
+
+**Method (cheapest-informative-first; diagnosis only, no new fixes).** Free stages from existing artifacts: F training dynamics (metrics.json), D self-play data distribution (npz), E fixed-ruler odometer (eval tallies). Then ONE gated compute stage — A-lite: a 400-position root-agreement audit (reused `measurement/deeper_search_ruler/multiphase_positions.jsonl`; v2.9 rulers built by hard-setting the v2.9 leaf env so `eval_hybrid_handoff`'s setdefault is inert → DEFAULT_CONFIG=v2.9; runtime-verified bonus_cap=8 + Bmild curve) comparing RoD1/iter04/iter06 policy-prior argmax + NeuralMCTS@200 against h3200_v2.9 and h6400_v2.9. Stage B (value sibling ranking) and Stage C (residual scale) were pre-gated to run ONLY if A contradicted the free read; it confirmed, so they were NOT run.
+
+**Findings.** (F) Training is healthy per-iter but TARGET-LIMITED: train_pol RISES 1.562→1.619 and policy_entropy RISES 1.567→1.609 toward the warmstart baseline (policy diffusing, not sharpening); value_outcome_corr flat ~0.45, train_val flat ~0.007 (value head inert). (D) Later self-play is merely different, not stronger: residual value target std ~0.13 with 38–43% within ±0.02 of 0; policy-target entropy rising 1.494→1.538; margins flat. (E) vs h6400_v2.9 every checkpoint LOSES (RoD1 −32.2 / iter02 −29.6 / iter04 −26.1@n400/z−4.67 / iter06 −22.6) with no significant climb; vs h3200_v2.9 RoD1 +34.9 but iter04 −5.2; iter04−RoD1 SIGN-FLIPS by ruler (+6 vs h6400, −40 vs h3200) = non-transitive; the inter-checkpoint net-vs-net harness deadlocked (unusable). (A-lite) On the h3200≠h6400 disagreement subset (n=111), prior lean toward h6400 = RoD1 −0.009 → iter04 −0.063 → iter06 −0.027 (Δ −0.018 vs ±0.095 noise) = NO movement toward h6400; the prior picks NEITHER ruler's move 77.5% of the time (DIFFUSE, not h3200-like); NeuralMCTS@200 recovers agreement to ~0.5 but stays h6400≈h3200-equidistant; endgame agreement collapses to 0.10–0.13 and the lean goes negative there.
+
+**Verdict.** RoD2's playing strength is carried by the **v2.9 leaf inside the MCTS, not by the learned net** (diffuse prior + inert value head). No source of supra-heuristic signal — value target = residual-around-the-leaf with no dynamic range; policy target = heuristic-MCTS visits, which cannot exceed the heuristic. Reproduces the v2.8 flywheel autopsy signature exactly; the v2.9 leaf swap changed nothing. Blocker #2 (learned must EXCEED the hand-crafted leaf) stands. **Ranked failure modes:** (1) no source of supra-heuristic signal [root cause, ~0.9]; (2) value head inert [~0.85]; (3) data drifting not climbing [~0.85]; (4) policy not moving toward h6400 [~0.85]; (5) parent/adjacent wins don't transfer [confirmed]; (6) only compresses ~h3200-level search [~0.8]; (7) tether too strong [~0.15, unlikely].
+
+**Decision: C — stop the AlphaZero-style blind flywheel; classical v2.9 is the strength of record.** Continuing (A) won't break blocker #2; a single-component change (B) isn't justified by this autopsy (the failure is joint). The only direction with an EV thesis is D-flavored (the gap localizes to the endgame → an exact/endgame-solver or supra-heuristic-teacher signal, as a SEPARATE project) — named as the decision boundary, **not proposed or started here** (governance: no new branches/curriculum/tools in this autopsy). MEASUREMENT ONLY — no promotion; PRODUCTION.yaml + champion (`flywheel2_champion_iter8`) + v2.7 frozen UNCHANGED; v2.9 stays opt-in/experimental. Deliverables `measurement/rod_v2_flywheel/autopsy/` (ROD2_AUTOPSY_REPORT + TRAINING_DYNAMICS + DATA_DISTRIBUTION + NONTRANSITIVITY + POLICY_ROOT_AUDIT); scripts `scripts/rod_v2/autopsy/{stage_a_lite,phase_breakdown}.py`; results.csv `rodv2_*_vs_heur*_v29`; lineage `rod_v2_iter_06` (NOT_CHAMPION); CL-029; commits 9e15e28/b6ce55f/6a135d5. Precedent `measurement/rod_v28_overnight_flywheel/autopsy/AUTOPSY_RoD_v28_iter08.md`.
+
+## 2026-06-26 — Hard-position policy repair (follow-on to the RoD2 autopsy): decision A — the target is signal-free on disagreement states
+
+**Question (Joshua-directed, narrow):** can explicit h6400-labeled hard-position exposure repair the RoD2 policy failure (diffuse, no movement toward h6400 on `h3200≠h6400` disagreement states)? Built as a single diagnostic repair test, NOT a new flywheel.
+
+**Answer: NO — decision A, with a sharper mechanism than the literal outcome.** Pilot on the fixed 1620-root multiphase pool (no generation), labeled with v2.9 rulers h3200(classify)+h6400(deep teacher): 438 hard (disagreement = 27%), split 306/66/66 hard + 1182 ordinary.
+
+- **Stage 2 baseline** reproduces the autopsy on an independent held-out set (lean≈0, P_neither≈0.80, endgame top1 0.00–0.05) → the metric harness is validated.
+- **The pivot (load-bearing):** on disagreement states the h6400 visit distribution is ~uniform (top-move share 0.04; `best_action` ranks by **Q**, not visits) and the **Q-gap between the #1 and #2 move is 0.0021 (median 0.0007) vs 0.040 on ordinary states** — ~20× smaller; only 3% of hard states have a gap >0.02. Two search depths disagree on a position precisely when its top moves are value-near-equal. So **'h3200≠h6400 disagreement' selects VALUE-INDIFFERENT states, not deep-distinctive ones**, and the deep teacher's 'best move' there is a near-coin-flip argmax — there is no generalizable signal to learn.
+- **Stage 3/4 (policy-only fine-tune from iter04, `--aux-weight 0 --value-loss-weight 0`):** the soft (visit) target leaves the held-out metric unmoved (top1 0.091→0.076, lean ≈0); the one-hot (h6400 argmax) target — given an aggressive fit — **memorizes the training argmax to top1 0.775 but generalizes to 0.061 on held-out** (below the 0.091 baseline). Full capacity, zero transferable signal → **a SIGNAL problem, not capacity or training.**
+- **Stage 5:** the same nets agree with h6400 **3.4× more** on ordinary (decisive, Q-gap 0.040) states than on hard (indifferent) ones (top1 0.311 vs 0.091) — the policy is already aligned with the teacher wherever the teacher is decisive; the fine-tunes mildly degraded ordinary alignment (forgetting), no collapse.
+
+**Reframe of the autopsy (does NOT overturn decision C):** the RoD2 autopsy's headline 'diffuse policy on disagreement states' (Stage A-lite) was **measuring a non-failure** — a diffuse policy is the *correct* response to value-indifferent positions. This **downweights** that supporting mode as evidence of a learnable failure but leaves the binding constraint (blocker #2: the learned value cannot exceed the v2.9 leaf) untouched. The bottleneck is the value/eval ceiling, not policy diffuseness.
+
+**Named boundary (NOT pursued — governance: no new branches/curriculum/tools mid-experiment):** IF policy distillation is ever revisited, define 'hard' by **decision-relevance (h6400 root Q-gap)**, not by argmax disagreement. Genuinely deep-distinctive states (large Q-gap where shallow search errs) are a different, much rarer set (~3% of the disagreement pool) and whether the policy fails *there* is open and untested — a separate experiment, named here, not started.
+
+P2 (ordinary mix) / P3 (from-RoD1) / Stage-6 games NOT run (gated; same signal-free target). No `results.csv` row (policy-agreement diagnostic, not an elo/wr experiment). MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion (`flywheel2_champion_iter8`) + v2.7 frozen + v2.9 evaluator UNCHANGED. Evidence `measurement/hard_policy_repair/HARD_POLICY_REPAIR_{PLAN,RESULTS,DECISION}.md`; scripts `scripts/rod_v2/repair/`; CL-030; lineage `rod_iter04_hardrepair` (NOT_CHAMPION); commits `319cd98`/`a099073`.
+
+---
+
+## 2026-06-26 — HIGH-CONTRAST DECISION-SIGNAL DISTILLATION (Path 3) — decision B (signal learnable, does not convert; bottleneck is value/search)
+
+The follow-on that pursued the hard-policy-repair **named boundary**: define "hard" by h6400
+**Q-gap / regret** (decision-relevance), not argmax disagreement. Net-free labeling of a fresh
+20160-root multiphase pool with h6400_v2.9, **sharded local + laptop** (the laptop bundle-synced to
+the same commit + a cross-leg density check — 36.6% vs 38.0% at gap≥0.02 — confirmed bit-exact, no
+stale-code contamination). Soft **Q-softmax** targets (advantage-based, peaked ∝ the gap), policy-only
+fine-tune of `iter04` with a decisive-state stabiliser mix (R1 70/30, R2 50/50). Cheapest-informative
+discipline throughout: density gate on the existing 1616-pool first, then a pilot-train, then the scale-up.
+
+**Verdict (decision B): the high-contrast signal EXISTS, is LEARNABLE, and GENERALISES — but it does
+NOT convert through search to strength. The bottleneck is value/search, not policy exposure.**
+
+- **Gate (Stage 2) — PASS, abundant.** Across the pool: gap≥0.02 = 37%, gap≥0.02∧iter04-wrong = 22%,
+  regret≥0.02 = 43%, phase-balanced (~20–24% every phase incl. endgame). This **inverts** the prior
+  experiment's disagreement-only 3% — selecting by gap (not disagreement) finds dense, decisive,
+  student-wrong states.
+- **Stage 5 (held-out hard TEST n=1390, game-disjoint) — learns + generalises.** Prior top1 **0→0.18**,
+  top3 0.30→0.42, mean regret −27%, median −42%, strong-gap top1 0→0.27, **endgame 0→0.17**. The soft
+  Q-softmax target transferred where the prior experiment's one-hot did not; the scale-up turned the
+  pilot's ambiguous +8pp into an unambiguous +18pp at 14× the test size. Ordinary regression modest
+  (R2 top1 1.0→0.95).
+- **Stage 5b NMCTS@200 — WASHOUT.** iter04's prior is wrong on every hard state (top1 0.000) yet its
+  NMCTS@200 already reaches **0.497**; R2 also **0.497** (R1 0.453). The prior improvement is
+  **redundant at the root** under production search — search already extracts the decision move. Only
+  the **endgame** subset moves (R2 0.552 vs iter04 0.483), the autopsy's collapse region.
+- **Stage 6 games (R2 vs h6400_v2.9, n=126 paired, local+laptop, sims=200 c=3.0 rs=0.25) — NO
+  conversion, if anything harmful.** WR **0.409 / elo −64 / paired −11.7**, *below* the iter04 baseline
+  (0.463) it was fine-tuned from. The redundant-at-root prior gain is bought at a broad-distribution
+  cost (ordinary −5pp) that search does **not** wash out in full play.
+
+**Mechanism / why it matters:** at production depth, search backs up the value through the existing
+prior and recovers the decision-relevant move from a *bad* prior — so improving the prior adds nothing
+at the root, while perturbing the whole policy distribution costs real strength. This **sharpens RoD2
+autopsy blocker #2**: the learned **policy** is not the binding component (already adequate for search);
+the binding constraint is the learned **value / the search**. **Policy distillation (any target) is a
+dead end for RoD strength** — the prior experiment failed for *no signal* (indifferent states), this
+one fails for *signal-but-redundant-under-search*. **Named boundary (NOT pursued):** the real next
+lever is value/search; or, at most, an endgame-restricted distillation that must itself clear a game
+screen. No RoD3 / new flywheel / curriculum / tools / aux-head proposed.
+
+MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion (`flywheel2_champion_iter8`) + v2.7 frozen +
+v2.9 evaluator UNCHANGED. Evidence `measurement/high_gap_distillation/HIGH_GAP_{PLAN,SIGNAL_DENSITY,
+DATASET,TRAINING,RESULTS,DECISION}.md`; scripts `scripts/rod_v2/highgap/`; results.csv
+`highgap_R2_vs_heur6400_v29_n126`; CL-031; lineage `highgap_R2_from_iter04` (NOT_CHAMPION); commits
+`cbb40fc`/`edbf514`.
+
+## 2026-06-27 — Value/Search Conversion Autopsy (follow-on to Path-3 decision B): decision D (value inert) + "root metrics don't convert to game strength" (measurement)
+
+**Context.** Path-3 (decision B) proved the high-gap POLICY signal is learnable but non-converting and named the bottleneck as "value/search, not policy exposure." This autopsy localized it. Built a **1321-miss diagnostic set** (the gap≥0.02 decision-relevant roots where iter04 NMCTS@200 misses h6400, out of 4277) and a **9-leg root intervention matrix** run net-on-CPU local+laptop: I0 baseline · I1 sims 400/800 · I2 teacher-prior injection · I3 flat (uniform) prior · I4 residual 0/0.5 · I5 classical HeuristicMCTS@200/800 · I6 forced-move child eval · I7 endgame slice. Scripts `scripts/rod_v2/value_search/{miss_harness,forced_move,classical_leg,agg_miss}.py`.
+
+**Root-level findings (rigorous, but the seductive-and-misleading part).** (1) **Neural VALUE is inert** — rs0/rs0.25/rs0.5 indistinguishable (miss-set top1 0.365/0.350/0.357), and the residual NEVER corrupts the leaf ranking (I6: 107 wrong→right, 0 right→wrong at 1-ply). Kills decision C (value-corrupts) and the value half of D's opposite. (2) **The policy PRIOR makes worse decisions than bare classical search on decision states.** Full-pool (n=4277, same states, un-confounded) agreement with h6400: **classical h200 0.911 > flat-prior neural 0.867 > production neural 0.799** — monotone; flattening the net's OWN prior gains +6.8pp / −45% regret, dropping the net for classical +11.2pp / −63%. (3) **Mechanism:** 88% of misses are explored-but-mis-ranked (not unexplored); `best_action` ranks by backed-up search Q, and the over-confident prior concentrates visits → the right move's subtree is under-searched → its backed-up Q is wrong. Uniform/UCB exploration lets the value-blind leaf's AGGREGATE Q rank correctly (I6: static leaf ranks the teacher child correctly only 22% at 1-ply, 9% in endgame — but deep broad search recovers 79–81%). More neural sims overcomes the bad prior only slowly (miss-set top1 0.350→0.457→0.553 at 200→400→800; classical is 0.815 at 200).
+
+**Game-level finding (THE CORRECTION).** The root edge does **NOT convert.** Stage-5 game screen — classical HeuristicMCTS@200 vs neural iter04@200, head-to-head at MATCHED compute, v2.9 leaf, paired, net-on-CPU 2-box, **n=96 (48 paired decks)**: classical **WR 0.438 (42W/1D/53L), mean score margin −2.6, paired-z −1.19 = NOT significant, a slight lean toward NEURAL.** So despite agreeing with h6400 +11pp MORE at decision roots, classical is ~even with (if anything below) neural in games. The decision-state errors WASH OUT because the vast majority of game positions are low-gap, where the net prior is fine and more efficient than uniform UCB. The net is **game-NEUTRAL vs classical, not game-harmful.**
+
+**Verdict — decision D + non-conversion; NOT F.** The neural **value head is irrelevant (D)**; the policy prior is over-confident at the root (A is real there) but **game-neutral**; classical is better at decision-roots but NOT in games (refutes the strong F). **Headline (methodological):** root/decision-state agreement-with-a-deeper-teacher is NOT a proxy for head-to-head strength — this is the THIRD independent instance (Path-3 held-out-prior washout, the sims-washout, now this) ⇒ **gate strength claims on GAMES, never on root/policy metrics.** Binding constraint for game/superhuman strength stays **search depth + a value head that beats the v2.9 leaf** (blocker #2, still open; this autopsy confirms the current value is inert). **NOT pursued / for review:** a value head that beats the leaf (gate on a game screen vs deep search, never root MSE/rank) is the single highest-value lever; prior-tempering is DEPRIORITIZED (fixes a non-converting metric); policy distillation stays a dead end. results.csv `valsearch_m1_classical_h200_vs_neural_iter04_n96`; CL-032. **MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED.** INFRA: net-on-CPU full games are ~5min each (200 fwd/ply on CPU); W30 oversubscribes a 16-core box for CPU-bound forwards (W=cores is optimal) — the rust orchestrator is the right tool for neural games (deferred here, diagnosis was already decisive at the root). Laptop swap-died from orphaned spawn-workers (killing an mp main doesn't reap them; their cmdline is `multiprocessing.spawn`, invisible to `pkill -f <script>`) → rebooted via Windows `ssh laptop 'shutdown /r'` (autologin WSL-KeepAlive self-recovers); kill spawn-pools by exact pid.
+
+## 2026-06-28 — Value Resurrection Pilot (follow-on to CL-021 / CL-032): decision B — learned value/ranking still cannot beat the v2.9 leaf at sibling child-state ordering (measurement)
+
+**Decision B.** Asked the narrow question the value head actually needs to pass — can a learned value/ranking *out-rank the v2.9 leaf on held-out sibling child states* (not predict game outcome)? **No.** Reused existing h6400_v2.9 labels (`qprobe_A ∩ pool_A` = 10,067 sibling sets, 0 checksum errors, `replay_to` reconstruction) → the whole offline gate cost **zero cluster** (local CPU + 1 GPU). **Stage 3 (leaf audit, gate 1 PASS):** the v2.9 leaf already ranks siblings at **τ=0.895 / top1 0.455** vs h6400, but mis-ranks a real tail (~1,197 decisive sets, gap≥0.02 & regret≥0.02) → a target exists (not decision A). **Stage 5 (offline gate, FAIL → STOP):** V4 listwise / V2 advantage / V1 residual-regression (policy frozen; 124,842-row dataset; leaf~oracle corr **0.995**) all fail — the combined ranker `leaf + α·learned` picks **best α=0** (zero weight on the net) for every variant, regret rises monotonically with α, and the **endgame is no exception** (refutes decision F — the leaf is *strongest* in the endgame, τ 0.94). net-alone τ peaked **0.105** (residual variant **0.005**) vs leaf 0.895 — reproduces **CL-021** (+0.029) against the stronger v2.9 leaf + deeper h6400 teacher. No NMCTS, no games, no orch. **Side-finding:** `forced_move.py` / b99c9ed **I6 has a POV sign-flip** on same-player TILES roots (1816/1816 children keep the mover) — evaluating from the fixed root seat flips leaf~teacher correlation −0.90 → +0.90, implying I6's "leaf value-blind ~91% endgame" was inverted (the leaf ranks the teacher child *correctly* far more often) → reinforces decisions D and B; flagged for a correction pass. **MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED.** CL-033; docs `measurement/value_resurrection_pilot/`; scripts `scripts/rod_v2/value_resurrection/`.
+
+## 2026-06-28 — Feature-Graph Action Comparator Pilot (follow-on to CL-033): decision C — explicit feature/action representation BEATS the v2.9 leaf OFFLINE (representation, not reweighting) but the win WASHES OUT under search (measurement)
+
+**Decision C.** The dead value pilots (CL-021/032/033) all varied training target/architecture but held the *representation* fixed (CNN board encoding → scalar value head). This pilot varied the one axis they never did: an **action-conditioned, sibling-relative learned object** over **50 handcrafted feature/action/delta scalars** (from `decompose` / `decompose_v29` — leaf components, contested control, open-edge exposure, meeple lockup/return, completed value, move semantics; no engine change). Reused the same 10,067 h6400_v2.9 sibling sets → a 314,911-child feature dataset with **bit-identical** enumeration to CL-033 (built-in audit reproduced τ=0.8951 / top1=0.4553 / 1197 decisive **exactly**; leaf_q bit-exact) → **zero cluster**. **Stage 4 (offline gate, PASS — the FIRST learned ranker to clear the static v2.9 leaf):** a cheap **linear** model beats the leaf at held-out sibling regret — full-pool **−41%** (0.0289→0.0171), top1 0.464→0.535, and the **ordinary subset also improves** (no broad regression); decisive tail **−44%** (linear) to **−52%** (listwise). The win is **REPRESENTATION, not reweighting**: Tier-1 (the leaf's OWN components, reweighted) buys only −13% on the tail; the Tier-2 explicit structure drives the rest — **reversing CL-033's best-α=0** (VR's CNN value head ≈ our Tier-1). Robust: no label leak (max single-feature corr 0.996 = `leaf_q` itself; label columns not in `feat`), and negative controls (shuffled-label refits) collapse **below** the leaf. → **Answers the open question from CL-032/033:** the scalar head was dead for lack of explicit Carcassonne feature/action **structure**, NOT because learned value is hopeless. **Stage 5 (search screen, FAIL → STOP):** 596 held-out roots at HeuristicMCTS(200), four narrow integrations (small-α leaf blend, top-k, decisive-tail gating, post-search rerank) — **none beats `search_leaf` on decisive-tail regret, and every α>0 regresses ordinary play.** MECHANISM = **washout**: search alone collapses the static leaf's decisive regret 0.122→0.019 (6×, decisive top1→0.79) and at sims=200 explores **every** sibling (`teacher_explored_frac=1.0`), so the offline comparator (decisive regret 0.075) is *behind* search, not ahead; the blend fixes only **3/41** explored-but-misranked decisive roots, breaking as many. The offline sibling-ranking metric was a **screen** and the screened win does not convert through search — **b99c9ed in clean, pre-registered form. SHARPENS blocker #2:** a learned component must beat what **search** extracts, not what the **static leaf** misses; better static sibling ranking is not the strength lever. No games run (gated out), no graph-architecture escalation justified (bottleneck is redundancy-with-search, not capacity), no flywheel. BACKLOG-only, NOT pursued: the washout is sims-dependent → the only conceivable use is search **efficiency** (priors/ordering to reach the same quality at fewer sims), a compute play, not strength. **MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED.** CL-034; docs `measurement/feature_graph_comparator/`; scripts `scripts/feature_graph/`.
+
+## 2026-06-28 — Post-Search Residual / Adaptive-Compute Pilot (follow-on to CL-034): decision C — the residual that survives shallow search is predictable and an oracle beats uniform compute decisively, but a one-line heuristic captures it and the magnitude is too small to convert (measurement)
+
+**Decision C.** Takes the CL-034 mechanism ("a learned component must beat what SEARCH extracts, not what the STATIC leaf misses") to its conclusion by retargeting from `h6400 − static_leaf` to **`h6400 − h200_search`** — the residual error that *survives* shallow search — and asking the adaptive-compute question: *can we predict where h200 is still materially wrong vs h6400, to escalate deep search ONLY there and beat uniform compute at matched average sims?* Built the dataset two ways: Phase A 3000 greedy roots + **Phase B 12,000 REAL MCTS-play roots** (new lossless reconstruction: record each HeuristicMCTS(200,v2.9) self-play game's deck-seed + action-sequence, replay to any ply — `recon_ok` verified; one HeuristicMCTS(**6400**) search per root **snapshotted** at {200,400,800,1600,3200,6400}, bit-exact to a standalone h_L since MCTS is incremental → all uniform levels + the h6400 reference from ONE search, ~6× cheaper). Frozen v2.9 leaf (`7fc930b82801cb43`) throughout; **net-free, zero cluster, zero metered spend.** **Stage 2 (oracle gate, PASS on BOTH distributions):** a perfect oracle (route each root to the cheapest depth) beats uniform search at matched avg-compute **+92.5% @ C=400** on MCTS roots (greedy +88.6%/+96%). The residual is **extreme-tail-concentrated** — the worst **5%** of roots hold **67%** of all h200 regret, worst 20% hold 99%; median regret(h200)=**0**, mean **0.0031** tanh-Q, h200 agrees with h6400's top move **71%**; positive_strong **2.8%**, phase-concentrated in the **opening**. So the opportunity is real and the ceiling is high. **Stage 3+4 (offline adaptive gate → decision C):** trained escalation predictors held-out **by game** on h200-visible features (NO h6400 leak). The signal **IS predictable** — best model = MLP over h200 diagnostics + 21 Tier-B structural features (`decompose`/`decompose_v29`): **AUROC(positive_strong)=0.78**, robustly beats uniform at matched compute (bootstrap **P=1.00 @C=400**). **BUT a single one-line heuristic — `low_top2gap` (escalate when h200's top-2 backed-up Q are nearly tied) — captures essentially all of it** (AUROC 0.73), and the learned model does **NOT robustly beat it**: bootstrap P(MLP beats heuristic) = **0.92 @C=400** (Δ +0.00023, 95% CI **[−0.00009, +0.00059] crosses 0**) and **0.54 @C=800**. Tier-A (no structural feats) was clearer still — the heuristic *beat* every learned model. **→ Decision C: predictable offline, but a trivial rule suffices; ML adds no robust value; no ML scheduler, no flywheel.** Compounding caveat — **magnitudes are tiny**: mean regret 0.0031, oracle ceiling removes only ~0.0016, the achievable (heuristic/learned) slice ~0.0003–0.0006 → far below game-resolution; **game-conversion doubtful — the b99c9ed "root metrics don't convert" pattern, now its 4th instance** (sims-washout, value/search autopsy, feature-graph, here). Stages 5–6 gated out (**no games, no cluster, no spend**). The roots where shallow search is wrong are simply where h200 itself reports a near-tie — no board understanding needed. **BACKLOG (not pursued):** a *heuristic* (not ML) escalation scheduler as a possible compute-**efficiency** tool (same strength at fewer average sims), gated on a large-n paired game screen; **not** a strength lever. **MEASUREMENT ONLY — no promotion, PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED.** CL-035; docs `measurement/post_search_residual/`; scripts `scripts/post_search_residual/`.
+
+## 2026-06-29 — Feature-Graph Search-Residual Architecture Pilot (follow-on to CL-035): decision B — a Carcassonne-native feature-graph / GNN does NOT learn the post-search residual better than flat scalars; beats neither the scalar MLP nor low_top2gap; graph structure is INERT (measurement)
+
+**Decision B.** The first serious attempt to *redesign* the learned object after the RoD/value/policy/comparator lines closed: instead of a board-tensor CNN or flat scalars, build a **typed feature graph of actual Carcassonne objects** (cities/roads/farms/monasteries/meeples/players/deck + legal-action nodes, 8 node + 8 edge types) and train it against the **post-search residual `h6400 − h200`** (CL-035's target) — asking the one question that would reopen the flywheel: *can a relational model beat what shallow search already extracts?* **Stage 0–0.5 (feasibility, PASS):** `flat_leaf.decompose` already enumerates every city/road/farm component as a union-find root with attributes (finished, open-edge count, tile coords, closure delta, farm→city adjacency) → the graph is ~95% read-offs, ~67 ms/root, 0 errors; the structurally-blind slice (~20% of the decisive tail has `leaf_q_gap≈0` — only deep search separates those children) was surfaced here. **Stage 2 (dataset, net-free, zero cluster):** reused CL-035's 10,351 MCTS-play roots (all {200…6400} Q levels already stored) + extended the replay pass with the graph + the CL-034 50-scalar per-action features → 168,567 action rows + `graphs.pkl`; leakage-safe seed-split 270/64/66; labels derived from stored q200/q6400 (not baked). **Stage 3 (baselines reproduced):** B3 `low_top2gap` AUROC(pos_strong) **0.725**, B5 flat-MLP **0.78**, oracle ceiling ~0.0016 tanh-Q removed @C=400. **Stage 4–6 (the critical offline gate, FAIL → STOP):** two models each with a G3 escalation head + a G4 reranker head — **G0** graph-lite MLP (50 action scalars + diagnostics + Tier-B, 60K params) and **G1** typed message-passing GNN (969K params). *Methodology guard:* G1's first run looked null but was **underfit** (best_epoch=1, train AUROC 0.62 < the 60K MLP's 0.73); after a real fix (lower/scheduled LR, less-noisy `pos_medium` early-stop, balanced 2574-root subsample, per-epoch logging) G1 **fit train to 0.68–0.92 yet still generalized to test AUROC 0.559** — a *fair* null. **Results (TEST=1672, 2000-resample bootstrap):** G3 — G0 AUROC 0.660 / G1 **0.559**, both *below* B3 (0.725) and B5 (0.78); P(beats B3)=0.05–0.34 (need ≥0.95), max matched-compute regret reduction vs B3 = **−100%** (worse). G4 — decisive-tail (46 roots) regret 0.04582→0.037 (G0) / 0.036 (G1), P(reduction>0)=0.94/0.92 (below 0.95) **AND `ordinary_no_regression=False`** (the first full-pool run regressed ordinary play 0.00164→0.0086, 5×) → not a win. **Graph-ablation (decisive):** zeroing G1's graph embedding *lowers* its G4 tail regret (0.03602→0.03324, Δ−0.00278) → **the relational structure is INERT**; whatever marginal effect exists comes from the action scalars, not message passing. **→ Decision B, NOT C** (C would require beating *simple features* offline — G1 is *worse* than both flat models) and **NOT F/H** (gate failed → no search integration, no games, per spec). Root cause is not a fluke: the signal is thin (287 pos_strong train), ~20% structurally blind, a flat MLP already extracts what's extractable (0.78), and the magnitude is below game-resolution (oracle ~0.0016, achievable ~0.0003–0.0006) — exactly CL-035's prior. **Consolation (G-flavor):** the feature graph + ablation harness are useful **evaluator archaeology** (localizing the residual: opening-heavy, low-top2gap, static-invisible) and remain available if a much larger teacher/architecture change ever revisits — but the feature-graph is **not a live search/scheduler module**. No games (gated out → no results.csv row), no promotion. **MEASUREMENT ONLY — PRODUCTION.yaml + champion + v2.7 + v2.9 evaluator UNCHANGED; learned-flywheel line stays CLOSED.** CL-036; docs `measurement/feature_graph_search_residual/`; scripts `scripts/feature_graph_search_residual/`.
+
+## 2026-06-30 — Step-2 PeNS Weaned-Value-Leaf Flywheel → genuine GATE-B (CL-038); §10 decision: value can RANK but can't DRIVE search → ship the analyzer (endgame-2) (strength/flywheel)
+
+**Verdict.** The Step-2 PeNS program (a sighted 89-scalar value substrate + a regime that weans the v2.9 heuristic OUT of the MCTS leaf and the learned value IN, gated on games) reached its pre-registered conclusion: **genuine Gate-B.** The learned value head — even on the representation that passed Step-1 Gate A (CL-037: farm-connectivity planes + bag histogram FLIP CL-033's α=0; the value genuinely ranks) — **cannot drive the MCTS leaf better than the v2.9 heuristic.** Weaning/adding it craters play vs RoD2 iter02 across all three objectives: **MSE 0.525→0.212, ranking 0.453→0.287, frozen 0.355→0.215** (all @ blend 0.27, paired, n=100–172).
+
+**Three nails (ruling out every recoverable alternative).**
+1. **interior-τ HOLDS flat across search-tree depth** (d1 0.42 / d2-3 0.45 / d4-7 0.43; n=4156/9126/1327) → the value ranks DEEP interior nodes as well as shallow roots → NOT an F-B2 train/serve distribution mismatch. (Refutes the external reviewer's recoverable reading: the in-loop τ was depth-1-only, but the value is not deep-specifically-broken.)
+2. **ADDITIVE leaf** (heuristic at FULL weight + value added, clip(h+0.27·v)) craters 0.500→0.285 vs the pure-h anchor (0.500 exact) → it's the value ADDITION that hurts, NOT the heuristic subtraction (the convex down-weighting adds only a secondary hit, 0.285→0.195).
+3. **FROZEN warmstart value** (the +43% offline winner, NEVER retrained) craters 0.215 (z−7.47) ≈ MSE 0.212 → freezing the value doesn't rescue it → NOT retraining-drift.
+
+**Why §10 "(a) passes, (b) fails", not "abandon all AZ".** Step-1 PASSED (the value CAN rank — α>0, τ~0.43 every depth, +43% offline). Step-2 FAILED (weaning it into the leaf craters in games). §10's own words for this branch: *"value can rank but can't drive search — keep the analyzer, representation was the issue."* The value head is a proven EVALUATOR → the **analyzer (endgame-2, the original Phase-5 win condition)** is the pre-registered fallback, now with a sighted evaluator.
+
+**SCOPED — NOT "superhuman is impossible".** Gate-B closes the **weaned-learned-value-LEAF** lever (learned value driving the MCTS leaf). It does NOT foreclose other approaches. Program continues — fresh approaches pending (new thread).
+
+**The verdict survived heavy scrutiny.** An external review caught that the in-loop τ was depth-1-only (→ the interior-τ probe, nail 1). A 3-round code-review loop found+fixed 5 bugs (export-parity tolerance, done-marker fabrication, gen orphan-sweep race, gen+eval orch pkill scoping) and verified the crater results were NOT poisoned (every cited eval at full n, intact deck-pairing; the result-critical leaf/POV/win-count paths verified correct). The BUG-8 export-parity fix (1e-4→5e-4) un-blocked the frozen re-run (validated in prod: the trained-policy export that FATAL-halted now passes).
+
+**Options considered & rejected before "ship the analyzer":** (a) objective mismatch — refuted (ranking arm cratered too, τ healthy); (b) miscalibration — refuted (MSE arm is scale-calibrated, still craters); (c) F-B2 interior distribution mismatch — refuted (nail 1); (d) heuristic-subtraction not value-addition — refuted (nail 2); (e) retraining-drift — refuted (nail 3). Evidence: CL-038; results.csv `step2_nail2_*`/`step2_frozen_*`; `measurement/step2_pens/interior_tau/`.
+
+## 2026-07-10 — C-cheap v2 (residual deck-aware value) = NULL; Track C CLOSED (CL-050)
+
+**Decision:** C-cheap is closed. The v2 residual redo — built specifically to fix CL-049's botch (full leaf-replacement + zero sibling contrasts) — ran the complete pre-registered pipeline clean and failed the online gate decisively: n=200 CRN on the cached D0 baseline decks (band 15e9) = fair-net +90.6 vs fair +81.4 → **+9.2 elo (gate ≥+35) / paired Δz +0.18**. `results.csv fairnet_v2_*`; verdict json `classical_search/fairnet_v2_n200/crn_delta.json`.
+
+**Why this is a strong null, not another botch:** (1) λ=0 verified byte-identical to the champion (fails safe by construction); (2) orch serving parity-verified both boxes (1.4e-5 / 4.2e-5); (3) the offline kill-gate PASSED — the net genuinely beats the predict-0 champion-null by ~25% val-MSE offline — so the pipeline had real signal to translate, and it didn't: the **offline↔online disconnect at pooled-Q deploy knobs** is the finding (value-inertness confirmation #8, strongest form). (4) The offline A≈B result (bag-blind control gained ~95% as much) had already falsified the deck-awareness thesis specifically: the net learned a generic leaf-correction, not deck marginalization.
+
+**Options considered:** re-run at λ=0.1 (its n=40 arm showed +137) — rejected: the margin criterion was pre-registered (λ=0.25 won it), +137 vs baseline +81 is under 1.5σ at n=40 = noise-consistent, and chasing a post-hoc arm after a failed pre-registered gate is exactly the c=3-noise-spike mistake. **Reopen bar (in CL-050):** a NEW mechanism (sibling-contrastive data / ranking loss), not another blend or target reshape.
+
+**Consequence:** no live lever attacks the ~120 clairvoyance tax. The demonstrated strength lever remains "search deeper, fair" (D0 scaling). Next: C5 leaf re-tune (autonomous overnight), E4 human exam (attended).
+
+## 2026-07-13 — ADOPT C5 curve125 (v29_meeple_curve ×1.25) as the champion leaf (Joshua: "adopt")
+
+**Decision:** the champion's heuristic leaf changes from `v2_9_1_Bmild_cap8` (curve `[-8,-4,-1,0,2,3,4,5]`, hash `7fc930b82801cb43`) to **`v2_9_2_Bmild_cap8_curve125`** (curve ×1.25 = `[-10,-5,-1.25,0,2.5,3.75,5,6.25]`, hash **`158f17ff76adaa02`**). This is the FIRST leaf change to the champion — every prior flip (PUCT priors 2026-07-07, tree-reuse) was a pure search change over the frozen v2.9 leaf. `governance/PRODUCTION.yaml` + `governance/LEAF_SUBSTRATES.yaml` updated.
+
+**Evidence (CL-051):** confirmed on BOTH rulers — clair **+66.8 elo / paired_z 4.59** (n=400 fresh band vs the champion-sibling, compute-neutral 1.00×) AND fair **+48.8 elo / paired_z 3.13** (CRN vs the D0 fair baseline, 451 decks). The S1 curve-scale screen was a coherent axis (nocurve −92.5 → ×0.75 −34.9 → base → ×1.25 +81.4); S4/S5 re-checked τ and c_puct at the winner (unchanged, τ5/c1.5). Mechanism: the v2.9 curve was tuned under random-expansion UCT; PUCT+priors visit meeple-heavy lines more selectively → the old curve under-weighted meeple commitment.
+
+**Peak-find ruled out going higher:** clean n=400 across ×0.75–2.0 = a noisy plateau top (×1.25 +66.8 / ×1.5 +44.5 / ×1.75 +77.7), no scale cleanly beats ×1.25. ×1.75's screen +119 / partial +134 was an **OpenBLAS thread-oversubscription hang-bias** (root-caused + fixed, commits e006036/89caf37 — the canon env pinned OMP/MKL but not OPENBLAS_NUM_THREADS, so multi-worker runs spawned box-sized spin-pools → thrash/stall); its clean n=400 regressed to +77.7 (within noise of ×1.25, fair-unconfirmed) → not worth a further fair confirm.
+
+**Leaf_hash recompute (trap avoided):** PRODUCTION.yaml's hash uses the frozen-cfg recipe (`snapshot._frozen_config_hash`), NOT the eval-manifest recipe (which gives `96d2c075` for the same curve125). Verified the base recomputes to `7fc930b8` before deriving `158f17ff`.
+
+**Operational follow-up (DONE 2026-07-13):** production play reads the curve from env `CARCASSONNE_V29_MEEPLE_CURVE`, wired in `scripts/human_anchor/env_preamble.py` — the production-leaf preamble imported-first by the human-anchor play harness (the only real production-play path; the classical champion has no separate launcher). Verified: play resolves curve125, the frozen v2.9 substrate `7fc930b8` stays on the OLD curve (`frozen_v29_cfg` hard-sets+restores it, R1/R7 guards curve-blind), and the eval rulers keep their own `_CANON_ENV` old curve. ⚠️ Do NOT export `CARCASSONNE_V29_MEEPLE_CURVE` globally — the rulers `setdefault`, so an ambient curve125 would silently move the fixed ruler/anchor side and contaminate future baselines. E4 human exam remains deferred per Joshua ("no human yet").
+
+## 2026-07-13 — CLOSE Track-C1 Gumbel completed-Q selector as CLAIR-ONLY (fair re-price is inapplicable by construction; CL-052)
+
+**Context:** the Gumbel completed-Q selector (visit-argmax → completed-Q selection over *all* root actions) was the one confirmed-but-unadopted strength win — clairvoyant **+15.6 elo / paired_z 2.30 / n=400**, ~23% faster (`results.csv rr_puct2750-gumbel256ng_confirm_n400_k2`). Roadmap C1 had parked it "deferred until B re-prices it FAIR." Investigated whether that fair re-confirm could ride on the newly-adopted curve125 leaf (do the two loose threads in one experiment).
+
+**Finding — the fair re-price cannot be done as a flag flip, and the mechanism predicts ~0:** the fair agent (`FairHeuristicPriorAgent`) bypasses the entire `best_action`/`final_select` path the selector lives in. It searches each determinization with `NeuralMCTS.search()` and picks by **pooled-Q argmax** over dedup'd root children (`fair_agent.py:135-146`); `final_select` is documented **INERT in fair mode** (`fair_agent.py:325-326`, echoed in the fair-harness manifest). Crucially, the +15.6 clair edge is a *visit-argmax → Q* improvement — but **fair play is already Q-based selection.** The weakness the selector fixes (visit-count final selection) is one fair mode does not have, so there is no visit-argmax fair baseline to beat.
+
+**Decision:** CLOSE Track-C1 as a **clairvoyant-only dev artifact**, not deployed. A fair analog would require *new* aggregation code in `fair_agent.py` (a pooled-completed-Q-with-priors rule) measuring a different quantity the mechanism predicts is ~0 — not worth the ~1–2 box-days to build + a ~2000-deck fair read. Build stays flag-gated **default-OFF** (`b567c59`), champion untouched. (Gumbel's improved-policy TARGET — the completed-Q reweighted *policy* — may still matter for Phase-5 TRAINING, a different use than play-strength; untested; revisit only if the flywheel restarts.) This retires the last parked strength win: **no confirmed-but-unadopted lever remains.** CL-052 added; the clair numbers stand as clair-only.
+
+## 2026-07-13 — CLOSE C6 full-game alpha-beta (a real but small +35 clair win that CAN'T deploy fair; clair-only dead-end; CL-053)
+
+**Decision:** CLOSE C6 (ID-alpha-beta+TT) after the Stage-1 n=100 screen, WITHOUT the pre-registered n=400 confirm or make/unmake escalation.
+
+**Arc (all 2026-07-13):** Fable design ([C6_ALPHABETA_DESIGN.md](measurement/classical_search/C6_ALPHABETA_DESIGN.md)) → **Stage-0 cost bench = GO** (median achievable depth 6 plies / 3 full turns at equal wall-clock; TT confirmed NOT a transposition collapser under a fixed deck — 0.22% cross-parent hits, so the "chess-engine" half of the premise died on data) → **Stage-1 agent built** (`src/carcassonne_ai/alphabeta_agent.py`, gauntlet-green: terminal-horizon root value + optimal action == `endgame_solver.solve(clairvoyant, alphabeta=True)` exactly) → **calibrated** (child-step budget 17600 = ms-ratio 0.98 @ W30 sustained load, depth median 6; a 4-worker pre-flight smoke's 0.80/depth-4.5 was low-contention + small-n noise, caught + corrected by the pre-flight-at-production-knobs discipline) → **n=100 screen** vs the PUCT champion (curve125 both sides, K2, CRN, both boxes) = **αβ +34.9 elo / paired_z 2.94 / 53W-4D-43L**.
+
+**Why CLOSE (not confirm) — two reasons:** (1) SMALL — the +206/z3.56 (n=30) and +190 (n=4) calibration smokes were small-n draws on different, αβ-favorable decks; they regressed to +35 at n=100 (the lone-spike lesson). (2) DECISIVE — alpha-beta is **CLAIRVOYANT-ONLY BY CONSTRUCTION**: chance/deck nodes break the minimax cutoffs (established when A-small was declined 2026-07-09; the endgame solver asserts it), so there is **no fair form of alpha-beta**. Unlike the +148 flip (CL-043), which had a fair analog and transferred, a C6 win can **NEVER** deploy to fair play — the only regime that matters for beating humans. So it is strategically inert for the superhuman-FAIR goal *regardless of magnitude*; the n=400 confirm + make/unmake escalation are not worth spending on a dead-end.
+
+**Candid note:** C6 should have been weighted lower up front. "Clair-only" was flagged repeatedly, but the sharp point — *clair-only + no fair path = cannot help the actual goal* — was under-weighted before the ~1hr cluster spend. Recorded so the next clair-only-by-construction lever gets that filter applied *before* the build, not after.
+
+**Banked:** exact search does NOT dominate PUCT here (+34.9 clair, z2.94 — a real but small edge) → rules out "point a chess engine at it." Build retained default-OFF; champion + PRODUCTION.yaml untouched. `results.csv c6_ab_screen_*`; CL-053. → next: the k_dets bracket (the fair-tax lever).
+
+## 2026-07-13 — k_dets width axis RESOLVED: k_dets=4 optimal, cost-neutral — FIRST fair lever to fire AND confirm (CL-054; ADOPT awaiting Joshua)
+
+**Decision:** the PIMC determinization-width axis (k_dets = # determinizations per move, at FIXED total sim budget k_dets × sims/det = 2752) is **FULLY RESOLVED — k_dets=4 is optimal**, beating the deployed k8. This is the FIRST fair lever in the whole program to fire on the screen AND clear the n=400 confirm. It is **COST-NEUTRAL** (same total budget 2752 as the deployed k8). **STATUS: confirmed, ADOPT awaiting Joshua's approval** — k_dets 8→4 is a `governance/PRODUCTION.yaml` champion-config change and NOT applied autonomously; PRODUCTION.yaml + champion UNTOUCHED.
+
+**Evidence (CL-054).** Config B (curve125 champion via `--cand-leaf-json` vs a FROZEN curve100 clairvoyant h800 rung), K=2 exact endgame both sides, deck-matched delta-vs-k8 (double-CRN) the verdict. **SCREEN** (n=150, band 17e9): k8x344 anchor +110.1 elo (~expected +118.7 → setup validated); delta-vs-k8 k4×688 +3.21±1.79/z1.80 (winner), k16×172 −0.91/z−0.48 (≈k8), k32×86 −6.28/z−3.55 (worse) → coherent monotone axis, k8 over-provisioned on determinizations. **CONFIRM** (n=400, fresh band 17.0001e9): **k4×688 delta-vs-k8 +5.18±1.24/z+4.17** (past the z≥2 adopt gate; abs +136.0 elo/wr 0.686), **k2×1376 +3.36±1.41/z+2.38** (also beats k8; abs +103.7/wr 0.645), k8 anchor +69.5 elo/wr 0.599, direct k4−k2 +1.82±1.37/z+1.33 (flat peak neighborhood). Full axis = an **inverted-U peaked at k4** (k32<k16≈k8<k2<k4).
+
+**k1/k6 skipped:** the peak is bracketed (k2<k4 and k16<k8 both measured), k4-vs-k2 is flat within noise so k6 sits below the noise floor, and k1 is the far strategy-fusion end (guaranteed worse). **Mechanism:** fewer/deeper determinizations > k8 > more/shallower — the deployed k8 spent budget on determinization count that deeper per-determinization search uses better. Unlike C6 (clair-only), this is a **fair lever on the DEPLOYED champion** → a k_dets 8→4 re-tune would move SERVED strength. `results.csv kdets_k*_{screen,confirm}` rows; CL-054; run dirs `kdets_k*_{b17e9,confirm_b17001}` (share); launchers `scripts/classical_search/kdets_bracket_{screen,confirm}.sh`; verdict reader `scripts/classical_search/kdets_delta.py`.
+
+**ADOPTED 2026-07-13 (Joshua "adopt into production").** k_dets 8→4 folded into the champion: `governance/PRODUCTION.yaml` gains a `champion.fair_deploy` block (k_dets=4 / sims_per_det=688) + `fair_kdets_folded_in`/`fair_kdets_authorized_by` stamps; `FairHeuristicPriorAgent` (`src/carcassonne_ai/fair_agent.py`) and `eval_fair_puct.py` `--k-dets`/`--sims` constructor+CLI defaults flipped 8→4 / 344→688 (cost-neutral, same 2752 total — no test relied on the old defaults; the one default-relying test checks only seed derivation). CL-054 → **Promoted**. ⚠️ Flagged (NOT fixed): `scripts/human_anchor/play_harness.py` still instantiates the PRE-FLIP `FairHeuristicMCTSAgent` — the 2026-07-07 champion flip (→ PUCT-priors HeuristicPriorAgent) and the 2026-07-13 curve125 leaf were never propagated to the human-play harness, so it does not run the current champion. A SEPARATE, larger gap (E4-adjacent) for Joshua's call; its `--k-dets` already defaults to 4 (harmless coincidence).
+
+## 2026-07-14 — C7 leaf-terms wave (roadmap T2 / 2nd C5 wave) CLOSED NULL (CL-055)
+
+**Decision:** the 2nd C5 wave — two new opt-in default-OFF leaf *terms* (not reweights) — is **CLOSED NULL**; neither fires. Champion + `governance/PRODUCTION.yaml` UNTOUCHED. Design: [C7_LEAF_TERMS_DESIGN.md](measurement/classical_search/C7_LEAF_TERMS_DESIGN.md).
+
+- **Term R (`v29_meeple_return_k`, meeple-return liquidity) — DROPPED at Stage-0 on the per-leaf COST gate.** 1.204× median (p95 1.166×) vs the pre-registered ≤1.10 cap. Fully implemented + bit-exact across all 3 leaf paths (object==flat==cy), default-OFF, but at equal wall-clock a ~20% leaf tax ≈ −18 elo of hidden lost sims (would need ~+48 raw to break even vs a ~25-30% prior). Couldn't be cheaply rescued (inherent meeple-iteration + 2× fsum; dropping the road branch only reached ~1.16×). NEVER screened. Kept in code default-OFF (correct/harmless).
+- **Term F (`v29_farm_flip_k`, farm majority-flip) — SCREENED, DEAD at S1.** 3-cell clair dose axis, n=100 CRN band 1.80e10, curve125 champion vs curve125+flip candidate (clean isolate-F A/B), ms-ratio ~1.01-1.02 (fair, not cost-inflated). Paired-vs-champion: flip025 (k=0.25) **+20.9 / z1.50** (W52/D2/L46), flip050 +13.9/z0.99, flip100 +10.4/z0.80. Pre-registered S1 kill gate (design §8) = ≥+35 elo AND paired_z ≥1.5. Best cell +20.9 < +35 → gate NOT cleared → Term F DEAD. Coherent MONOTONE-DECREASING axis (less flip → more gain, all shrinking toward the champion 0-anchor) = a clean, well-powered null, NOT a lone spike; design §8 forbids re-dosing / "one more k".
+- **Mechanism (the honest reading, per design's ~65-75% all-null prior):** the curve125 reweight (CL-051) already captured the extractable meeple-economy headroom → cheap adjacent term-shapes don't add. The leaf's remaining headroom is NOT in cheap adjacent terms. Term-shape wave-2 CLOSED (null).
+
+**CL-055** added (Closed/high). `results.csv c7_flip{025,050,100}_vs_puctchamp2750_k2` notes enriched. Commits: design 294c622, code 3060ce7..da6dec7, launcher+cells 93c7c29. No PRODUCTION change (null result).
+
+## 2026-07-14 (update) — C7 Term R RE-TESTED at Joshua's request: DECISIVELY HARMFUL → C7 wave FINAL CLOSED NULL (CL-055 re-Closed)
+
+**Supersedes the R bullet of the same-day entry above** (which had R "DROPPED at Stage-0 on cost, NEVER screened"). Joshua re-opened CL-055 (commit `463eab7`) to screen Term R despite its ~1.2× per-leaf cost (cost accepted → equal sims=2750, RAW paired elo vs the +35/z1.5 gate, band 1.80e10). Result: **Term R (`v29_meeple_return_k`, meeple-return liquidity) is ACTIVELY HARMFUL, steeply monotone-worse:**
+- **ret050 (R k=0.5): −34.9 elo / z−1.63** (W45/D0/L55, in-run ms 1.05).
+- **ret100 (R k=1.0): −251.9 elo / z−10.17** (W18/D2/L80, ms 1.08) — catastrophic.
+- **ret200 (R k=2.0): KILLED before running** (cost-discipline, Joshua's call). R is monotone-catastrophic (−35 → −252 as the dose doubled), so k=2.0 would only be far worse; no decision value in spending on it. Recorded explicitly (a deliberate no-silent-cap disclosure — the cell was designed but never run).
+
+**Mechanism:** R grossly over-credits meeple commitment that curve125 (CL-051) + the closure bonus already price → it wrecks the move ranking, and worse with dose. **Composite (R×F) NOT run and MOOT:** R is strongly negative, so R+F would be deeply negative — the compounding hypothesis ("could two sub-threshold terms sum past +35?") is refuted by R being *harmful*, not sub-threshold-positive; the staged composite prep was discarded. **Net:** the C7 leaf-terms wave is FINAL CLOSED NULL — Term F weak/sub-threshold (best flip025 +20.9/z1.50 < the +35 gate), Term R actively harmful, composite moot. The extractable meeple-economy headroom was captured by the curve125 reweight (CL-051); cheap adjacent leaf terms don't add and one actively hurts. **CL-055 → Closed** (re-Closed after the R re-open). `results.csv c7_ret{050,100}_vs_puctchamp2750_k2` notes enriched. Champion + `governance/PRODUCTION.yaml` UNTOUCHED (null).
+
+## 2026-07-14 — PIMC determinization fairness fix APPROVED by Joshua + APPLIED (CL-056); fair-baseline discontinuity caveat
+
+**Decision:** Joshua APPROVED the PIMC deck-sort fairness fix (2026-07-14); it was RE-APPLIED as commit `249f5b9` (a reapply of the reverted `2f97361` / `180138c`). `fair_agent.py::reshuffled_determinization` reshuffled the unseen `state.deck` in the engine's TRUE (hidden-future) input order, so `random.shuffle` produced a permutation **correlated with the hidden true deck order the blind agent must not see** — a genuine clairvoyance leak (fair-handoff audit 2026-07-06, probe C: **19% of permutation trials flipped the chosen move** in the deployed fair agent). The fix canonically sorts the unseen deck by tile description BEFORE the reshuffle → a determinization is a pure function of (unseen multiset, rng), invariant to the hidden true order; strength-neutral in expectation (same PIMC distribution), just properly blind. 17 fair_agent tests green; pinned by `test_determinization_invariant_to_input_deck_order`. [HYGIENE_PRODUCTION_YAML_PROPOSALS.md](measurement/classical_search/HYGIENE_PRODUCTION_YAML_PROPOSALS.md) section (c) marked APPROVED+APPLIED; (a)/(b) stay PROPOSED (unapplied). CL-056 added (Promoted/high). `governance/PRODUCTION.yaml` UNTOUCHED (this is a code fix; the champion still plays the same PIMC in expectation).
+
+**⚠️ FAIR-BASELINE DISCONTINUITY CAVEAT.** Every past FAIR number in this repo — the k_dets CL-054 +136 anchor, the curve125 fair confirm (CL-051), the D0 fair ladder (CL-046) — was measured on the *leaky* determinization. Those results are **NOT invalidated** (they remain valid PIMC measurements) but they are **NOT bit-reproducible** against the fixed agent. Consequently any FUTURE fair eval must **re-establish its own fair baseline** with the fixed code before applying a ruler-reproduction sanity gate against the old numbers (do not gate a new fair run on reproducing the old +136 anchor bit-for-bit).
+
+## 2026-07-14 — T4 hygiene bundle CLOSED OUT (deck_hash first-tile + abbots assert applied; bundle summary)
+
+**Decision:** the BACKLOG re-audit **T4 code/config-hygiene bundle** is fully applied and closed. Behavior-neutral for champion PLAY throughout **except** the PIMC fairness fix (a fair-champion behavior change, separately approved + recorded in the entry above). The four applied pieces:
+- **T4e npz value_target stamp** (`gen_fair_selfplay.py`) — commit `46a3bae`. Off the eval/leaf path; behavior-neutral (adds a per-shard metadata sidecar field).
+- **T4d PIMC deck-sort fairness fix** (`fair_agent.py`) — commit `249f5b9` (reapply of the reverted `2f97361`/`180138c`), CL-056. The ONE non-neutral item (changes deployed fair-champion play); Joshua-approved, fully recorded above incl. the fair-baseline discontinuity caveat.
+- **PRODUCTION.yaml hygiene** — commit `cf6384b`: endgame-line wording fix (splits the CLAIRVOYANT reference/eval config from the FAIR deployable config) + removal of the INERT `meeple_k: 2.0` key (dead once the meeple curve is non-null). Joshua-approved, YAML edited directly. Behavior-neutral (documentation + proven-inert key). `HYGIENE_PRODUCTION_YAML_PROPOSALS.md` (a)/(b) marked APPLIED.
+- **deck_hash first-tile fix + abbots defensive assert** — THIS commit. **(c)** `eval_provenance.py::deck_hash` now hashes the FULL initial deck (`[next_tile] + deck`): the engine pops the first tile into `next_tile` at init, so the old hash (deck only) omitted it and two decks differing only in the first drawn tile collided (already-correct in `play_harness.py:56`). **(d)** a 5-LoC scope-guard `assert not any(state.abbots)` in `game_wrapper.py::get_init_board` fails loud if an out-of-scope ABBOTS state ever reaches the leaf path — a strict no-op in every valid 2p Base+Farmers game (engine sets `abbots=[0,0]` without the ABBOTS rule). Both behavior-neutral for play (deck_hash is a provenance record, never a move input; the assert never fires in-scope). Tests added + green: `test_deck_hash_covers_first_drawn_tile`, `test_get_init_board_asserts_no_abbots`; broad `-k "provenance or deck or wrapper or board or mcts"` = 179 passed; deck_hash-comparing harnesses (c5_leaf_ab / c5_fair_leaf_ab / rr_roundrobin) = 35 passed. `HYGIENE_DEFERRED.md` (c)/(d) marked APPLIED.
+
+**⚠️ deck_hash PROVENANCE-DISCONTINUITY CAVEAT (T4c).** The fix changes the hash *value* for EVERY deck, so new `deck_hash` provenance rows are **incomparable** to pre-fix rows — a future cross-epoch deck-overlap check must NOT silently compare old vs new hashes across the format change. Within a single run the pairing still holds (a run is self-consistent → CRN deck-pairing unaffected). The old hash was defective (blind to the first tile); this is an accepted one-time discontinuity, not a bug. `governance/PRODUCTION.yaml` UNTOUCHED by this commit (its hygiene landed separately in `cf6384b`).
+
+## 2026-07-18 — Distill-flywheel viability run: GROWTH CONFIRMED (first growing flywheel); stage-1 confirm = exact tie; standing plan adopted
+
+**Findings (results.csv is authoritative):** (1) **Goal-1 confirm** `distill_s1_confirm_n200`: the distilled net's policy priors vs the fair champion's heuristic priors, single-variable swap at production budget (fair PIMC k4×688=2752, frozen curve125 leaf both sides, n=200 paired) = **exact 100-100 TIE** (margin +1.87) — the n=100 +88.7/z=1.92 screen regressed exactly as its pre-registered t020-profile caveat warned. Distillation is FAITHFUL at prod depth, not superior. (2) **Goal-2 (the viability question): the flywheel GROWS.** 17 self-play iters (4-20, sims200 k4 gen over the frozen champion leaf, policy-only improvement channel) ran unattended over Shabbos (2-box shared-claim; ops narrative `measurement/distill_flywheel_20260715/SHABBOS_OPS_20260718.md`). Anchor trend vs rodv2_iter02 (n=200 paired k2×200, deck-matched CRN band 13.0e9): `eval_iter07` +17.4/z0.7 (tie) → `eval_iter11` +10.4/z0.4 (tie) → **`eval_iter16` +88.7/z=+3.65 — the first statistically decisive anchor win by a learned lineage in this project.** Deck-matched deltas: it7→it11 −2.15±2.00 pts/deck (flat), it11→it16 **+4.03±1.74 (z=+2.31, real climb)**.
+
+**Semantics correction (recorded so it never recurs):** in `eval_fair_puct` result jsons, **`won_by_champ` = the CANDIDATE won** (the harness names the candidate side "champion"). The it7/it11 rows were first tallied inverted (−17/−10); caught via the avg_diff contradiction at it16, verified diff>0 ⟺ won_by_champ (0/312 disagreements), rows corrected same day.
+
+**Decisions (Joshua, 2026-07-18 evening):** (a) growth curve > vs-champion comparison for now ("if we still have room to grow, I don't care" how we do vs the champ — that eval + the prod-depth washout check stay QUEUED, roadmap E5, before any promotion talk); (b) retro/endpoint curve points it09/13/14/18/20 launched (same band, 2-box work-steal) → 8-point curve; (c) **pre-registered overnight branch:** deck-matched it16→it20 ≥ +1.5 pts/deck → continuation iters 21-28; below → Plan-B prod-depth washout eval (flat counts as Plan-B; continuation resumes from iter_20.pt anytime); (d) **standing plan adopted** (roadmap E5): grow-by-default with a 2-flat-checkpoint stall rule · depth-verify at next checkpoint (both k2×200 AND prod depth) · mine free mechanism evidence (curve shape tests the 12-iter-window teacher-aging hypothesis; CE/entropy traces) before any ablation flywheel · no recipe optimization while it works · stage-3 value-unlock (blend learned value vs the frozen leaf) is the next deliberate bet on flatten.
+
+**Candidate causal levers** (the 7 first-time recipe choices — severed value loop / strong-teacher warmstart / FAIR teacher / pooled-visit targets / sighted rep / ¼-budget gen / 12-iter window): memory `project_flywheel_design_levers`. **Caveats:** the breakout is LOW-SIMS (washout risk per the deepteacher lesson) and a single trend point; governance claim-registry row DEFERRED to the morning close-out when the full curve lands. Champion + PRODUCTION.yaml UNTOUCHED.
+
+## 2026-07-19 — Flywheel arc CLOSED: growth claim REFUTED (fresh-deck extension); washout confirmed; CL-058
+
+The 2026-07-18 "GROWTH CONFIRMED" heading above is **superseded by this entry.** Overnight + morning follow-ups (all pre-registered) resolved the arc in three steps:
+
+1. **Curve completed (8 points, n=200 deck-paired each, k2×200, band 13.0e9):** it7 +17.4 / it9 +8.7 / it11 +10.4 / it13 +49.0 / it14 +26.1 / it16 +88.7 / it18 +15.6 / it20 +17.4. it18 (the post-13 discriminator) came back at tie level, identical to it20 (deck-matched z=0.02) → no held gain past 16.
+2. **PROD-DEPTH washout (Plan B, fired by the pre-registered it16→it20 < +1.5 pts/deck bar):** it16 at k4×688 on the SAME 100 decks = 100-99-1, **+1.7 elo (z=0.07)** vs +88.7 at k2×200 → the gain does not survive production depth (deepteacher washout replicates).
+3. **Fresh-deck extension (Joshua "keep going.. extend"; band 13.2e9):** **it16 = −3.5 elo (z=−0.14, 98-100-2)** — the +88.7 peak FAILED replication (cross-band z=2.60); the it20 control REPLICATED (+26.1 vs +17.4, pooled n=400 +21.7/z1.25); the deck-matched it16−it20 delta FLIPPED SIGN across bands (+6.86±3.74 → −5.91±4.14). This is the t020/CL-057 winner's-curse shape exactly: the selected max of 8 curve points, killed by the extension the house rules demand.
+
+**Final verdict (CL-058 as amended):** the flywheel **held** anchor tier — the stage-1 result (distilled net TIES the fair champion at production budget, 100-100-0) is intact and remains the arc's real deliverable — but produced **no robust growth at any iteration, at any depth.** The "first-ever growth signal" claim is retracted. The window-aging/"anchored rise" mechanism story is moot (no rise to explain); gen-shard archaeology is now optional and the shards may be cleaned under disk pressure. The open problem for any restart is CL-058 trigger (b): a flywheel variant that exceeds the anchor **at production depth** (stage-3 value-unlock is the sharpest such bet — policy-only gains demonstrably wash out at depth even when present at k2×200). Rows: `eval_iter{09,13,14,16,18,20}_vs_rodv2iter02`, `eval_iter16_vs_rodv2iter02_PROD_DEPTH`, `eval_iter{16,20}_vs_rodv2iter02_EXT132` (+ REFUTED stamp on the original it16 row). Ops narrative: SHABBOS_OPS_20260718.md CHECKLOG (02:25→12:00 entries).
+
+## 2026-07-22 — CL-060 (F5 throughput) RE-OPENED by its own falsifier; budget-vs-width decomposed: BUDGET converts (~+14 elo/doubling), WIDTH unresolved
+
+**Measurement close-out only. No promotion, no PRODUCTION.yaml change, no strategic decision — the scoping call this feeds is Joshua's and is deliberately not written here.**
+
+CL-060 closed F5 (throughput) NO-GO on 2026-07-21 and, per house rules, wrote its own re-open trigger: *"(a) a direct head-to-head k8×1376@11008 vs the k4×688@2752 champion shows ≥+35 elo."* That head-to-head was run and **fired**.
+
+1. **The falsifier (`cl060_h2h_k8x1376_vs_deploy_k4x688`, band 32e9, n=400 paired, both sides frozen curve125):** **+49.85 elo (unpaired σ 17.55, paired σ 14.32), W221/D15/L164, wr 0.5713, paired z 3.48, +2.98 pts/deck** — clears +35. Registry status Closed → **Reopened**.
+
+2. **⚠️ The closure was UNDERPOWERED, not wrong — the two designs AGREE.** CL-060's statistic was a delta-of-deltas *through* the fixed h800 clairvoyant rung, which **both** arms beat by ~9 pts/deck: ceiling-compressed and unable to resolve the effect. Recomputed correctly as a paired diff-of-deltas over the shared 24e9 band (0 `deck_hash` mismatches / 400): **+1.123 pts/deck, se 1.304, z = +0.861 in the candidate's FAVOUR** — same sign as the H2H, merely unresolvable; the two designs differ by **z = 1.19 (n.s.)**. That +1.12/z0.86 is *precisely* CL-060's own recorded closure figure. Reproducible: [measurement/classical_search/cl060_common_opponent_paired.json](measurement/classical_search/cl060_common_opponent_paired.json). **An intermediate read of mine called this a "sign-flip contradiction" between the H2H and the ladder — that was the WRONG STATISTIC** (unpaired elo point estimates compared across deck-*paired* rungs). Recorded so the error is not silently rewritten. Non-transitivity is not needed to explain anything.
+
+3. **The confound, and the decomposition that resolved it.** The H2H moved **WIDTH and BUDGET together** (k8×1376 vs k4×688) at ~4× wall-clock, while CL-054 has k4 beating k8 *at fixed 2752* — so on its own it could not attribute the gain. The fixed-width cell **`cl060_budget_k4x2752_vs_deploy_k4x688`** (band 44e9, n=400 paired, k=4 both sides, only per-world sims move) = **+27.85 elo (paired σ 12.43, z 2.24, 95% CI [+3.5,+52.2]), W211/D10/L179, +2.24 pts/deck, 4.07× wall-clock.** By difference, the **width residual at fixed 11008 = +21.99 ± 18.96, z 1.16 — NOT RESOLVED.** ⚠️ The two cells sit on *different seed bands*, so that residual is a difference of **independent** estimates added in quadrature, **not** a deck-paired contrast. ⇒ **budget carries 56% of the H2H gain and stands on its own; width is real-signed but unresolved.**
+
+4. **What is now refuted, and what it actually buys.** Refuted: *"the fair ladder is FLAT past ~2752"* and *"a throughput program converts effort into ~0 elo."* But the **exchange rate is the finding: 4× compute → +27.85 elo ≈ +14 elo per DOUBLING of wall-clock ⇒ ~128× compute for +100 elo.** Compute is a **purchasable but expensive match-play knob**, and it leaves the structural blocker untouched — the learned components still do not exceed the hand-crafted leaf (CL-039/042/059/061/063/064). **My recommendation: this does NOT by itself justify funding a throughput/search-core engineering program.**
+
+5. **⚠️ CL-054 tension, unresolved.** CL-054 has k4 > k8 at fixed 2752; here at 11008 the width sign is nominally *reversed* (+22 for k8) at z=1.16. Consistent with *"optimal width grows with budget"* (the textbook determinization story) — **a hypothesis this data does not establish.**
+
+6. **Honest caveats.** The budget cell is **one unreplicated cell at nominal significance** — exactly the shape the results-discipline rule warns about. **+27.85 lands *between* the arms of the ≥+35 / ≈0 rule it was read against, and that rule was MINE — stated pre-result but NOT pre-registered** — so the attribution above is a measurement, not a gate outcome. The ~+14/doubling rate is extrapolated from a **single 4× step**, and CL-060's own ladder previously showed a (since-explained) bend. Only k4/k8 at these sims are tested, and elo is vs **one** opponent (the deploy champion), i.e. distance from the champion, not absolute strength.
+
+**Sharp next tests, none funded:** (1) k8×1376 vs k4×2752 head-to-head at **fixed 11008 on ONE band** — resolves width directly instead of by quadrature difference; (2) **k4×5504 (22016) vs k4×1376 (5504)** — a second budget doubling on a fresh band, to test whether ~+14 elo/doubling holds or bends; (3) replicate the +27.85 cell on a fresh band before treating the exchange rate as real. Re-close only if a powered replication returns budget to ~0 at the deploy scale.
+
+*Both cells: `code_rev c65a92fbe`, `scripts/classical_search/eval_fair_puct.py` md5 `26b75b2bf6b3072419e3476abad810e3` verified byte-identical on both boxes — the decomposition depends on that parity.* Rows: `results.csv {cl060_h2h_k8x1376_vs_deploy_k4x688, cl060_budget_k4x2752_vs_deploy_k4x688}`; claim **CL-060** (Reopened); roadmap **F5** re-stamped. Champion + `governance/PRODUCTION.yaml` **UNTOUCHED**.
+
+## 2026-07-23 — Gate-C0 learnability probe = DEAD (CL-065); the learned-leaf direction is terminally closed
+
+**Measurement close-out only. Champion + `governance/PRODUCTION.yaml` UNTOUCHED.**
+
+Every identified strength lever on the classical champion was closed by a pre-registered kill (learned value CL-039/CL-042, learned policy-prior CL-059, throughput CL-060 — now reopened but plateauing, value-transform CL-061, leaf-accuracy CL-063). CL-064 additionally showed model **capacity** is not the bottleneck for a learned sibling-ranker — but it tested nets on an 81-channel CONV board tensor whose small receptive field cannot even reconstruct board-spanning farm topology. C0 asks the sharper, terminal question: is the gap a *capacity* problem or a *representation* problem?
+
+1. **Design (pre-registered `PREREG.md`, commit before any result).** The v2.9 leaf is a hand-weighted graph read-out: a sum over components (cities/roads/farms/cloisters) of hand-crafted per-component scores, computed over the union-find decomposition `flat_leaf.py` already produces per leaf. C0 hands a boring learner (ridge / GBDT) that **same component decomposition** — 84 mover-POV features: the leaf's own terms (`lt_base`, capped self/opp closure, meeple-curve diff, full `virtual_score`, uncapped bonuses) plus per-component pooled raw attributes by owner (city/road/farm/cloister sizes, open-edges, shields, deltas, finished-pts, farm→city adjacency, cloister completion) plus global meeple economy — **and exact-solver labels**, and asks whether ANY learnable re-weighting beats the leaf's own sibling move-ordering. Because the feature set CONTAINS the leaf's own terms, the leaf's τ is a *guaranteed floor*; the only open question is whether anything sits above it.
+
+2. **Corpus.** The exact same 1,119 K≤2 sibling roots as CL-064 (`qprobe_A` JOIN `pool_A`, all K=2, all marginalized — exact bag-expectation == clairvoyant at K=2), solved once each (0 skip / 0 err, 1,428s W14 local). Export leaf self-check reproduced the CL-064 ruler EXACTLY (τ 0.6153 / top1 0.6095 / regret 0.9508) — the pipeline is verified comparable before any learned number is trusted. 5-fold cross-fitting **grouped by deck seed** (every root a unique seed by construction, so a seed cannot span train/test), no per-root normalization.
+
+3. **Result.**
+
+   | run | learner | cols | τ | top1 | regret |
+   |---|---|---:|---:|---:|---:|
+   | leaf floor / sanity leaf-score OLS | ols | 1 | **0.6153** | 0.6095 | 0.9508 |
+   | sanity leaf-terms free-reweight | ols/ridge | 4 | **0.6157** | 0.6381 | 0.8132 |
+   | diag raw feats, no leaf terms | ridge / gbdt | 77 | 0.3498 / 0.2825 | | |
+   | **GATE full set** | ridge | 84 | 0.3466 | 0.4638 | 0.7900 |
+   | **GATE full set** | **gbdt** | 84 | **0.3856** | 0.4978 | 0.8633 |
+
+   Gate statistic = max(full ridge, full gbdt) = **0.3856** vs FIRE≥0.65 / DEAD<0.62 → **DEAD by ~0.23.** (Advantage/demean target degrades further: leaf-terms 0.48, full 0.12–0.28 — recorded, not the gate.)
+
+4. **Robustness — this is the load-bearing point.** The full 84-feature set is a strict SUPERSET of the leaf's own 4 terms and contains the exact leaf value as one of its inputs, yet the learners land BELOW both the floor (0.6153) and the trivial 4-term free-reweight (0.6157). Raw features DILUTE under MSE: the sibling-ordering signal lives in the leaf's globally-calibrated ABSOLUTE values (the CL-062/M2 "freakish global ranker" property), not in contrasts a boring learner re-derives from the same inputs. This is not a capacity story (CL-064 already ruled that out on a different representation) and not a missing-information story (the features are a superset) — it is a genuine representation/objective mismatch between "predict the right numbers" (MSE) and "preserve the right sibling ordering" (ranking).
+
+5. **Caveat, and why it doesn't reopen the question cheaply.** Pre-registered learners are MSE regressors, not learning-to-rank — a listwise objective is untested here. But the leaf-terms-only free-reweight already TIES the floor at 0.6157 (no headroom even on the easiest possible ranking problem), and CL-064's listwise RankNet sat at 0.13–0.17 on the conv representation — so a LTR fire on this representation is implausible, not ruled out with certainty.
+
+6. **CONFIRMS the distill-flywheel null (CL-058).** The Shabbos flywheel showed a trained net could faithfully COPY the champion's play but never exceeded it (the it16 "peak" was a winner's-curse noise-crest, refuted by the fresh-deck extension). C0 explains *why* at the representation level: even with the leaf's own graph decomposition and ground-truth solver labels handed to it, a learner cannot find an ordering that beats the leaf's hand-tuned absolute-value calibration. Learning can copy; it cannot (yet, on this representation) exceed.
+
+7. **Decision.** The learned-leaf architecture direction (Gate-C "d") is closed. Combined with Fable's read on the other Gate-C branches (CFR dead-on-mechanism, ISMCTS marginal), the **whole Gate-C direction is exhausted** on current evidence. Pre-registered fallback = the analyzer (CL-039's original recommendation), unless the budget-curve / distill-strong-teacher path (see the same-day CL-060 extension below) opens a different door — a genuinely stronger *teacher* to distill from is a different lever than a better *representation* to learn with, and C0 says nothing about the former.
+
+**Re-open bar:** a learning-to-rank objective over these same component features reaching τ≥0.65 held-out. Nothing weaker reopens it. `measurement/gatec_c0_20260723/{results.json,PREREG.md}`; commit `81152f4`; `results.csv gatec_c0_learnability_probe`; claim **CL-065** (Closed, high confidence).
+
+## 2026-07-23 (update) — F6 soft-cap S1 = NULL; CL-063 re-open trigger (a) tested, does not fire
+
+**Measurement close-out only. Champion + `governance/PRODUCTION.yaml` UNTOUCHED. Engineering commit `ee38534` (unpushed).**
+
+CL-063 (leaf residual-mining, 2026-07-21) closed AMBIGUOUS-at-the-floor: exactly one candidate term, `bonus_overflow_self` (the closure-anticipation value truncated by `bonus_cap=8`), cleared Holm significance but sat only 0.0007 above the pre-registered NULL floor. CL-063's own decision text named a specific re-open path: fund converting it to a **soft cap** (linear credit above 8, a different functional form from every cap-*level* test already run) through the standard Stage-0 → S1 → S2 → S3 pipeline. This entry records that trigger being tested.
+
+1. **Engineering.** Four soft-cap leaf paths added, default-OFF, bit-exact when off (`ee38534`); champion leaf `a36d2e15` untouched; measured cost ~1.00× (no meaningful overhead).
+
+2. **S1 dose-response (fair k4×688, deck-paired n=400/cell, CRN band 46e9, candidate curve125+soft-cap vs the deploy champion, distinct candidate leaf hash per slope confirming the soft cap is genuinely active and not silently falling back):**
+
+   | slope | W/L/D | elo | paired z | margin |
+   |---:|---|---:|---:|---:|
+   | 0.10 | 187/206/7 | −16.52 | **−1.41** | −1.165 |
+   | 0.25 | 190/202/8 | −10.43 | **−0.02** | −0.020 |
+   | 0.50 | 192/202/6 | −8.69 | **−0.54** | −0.482 |
+   | 0.75 | 189/203/8 | −12.17 | **−0.88** | −0.830 |
+   | 1.00 | 196/196/8 | +0.00 | **0.00** | −0.895 |
+
+3. **Read.** Flat-to-negative dose-response, zero positive signal at any slope: 0.25 is a dead tie, 0.5/0.75 n.s. negative, 0.1 mildly hurts, and the uncapped limit (1.0) is exactly flat — consistent with the river-era `phase4_capInf` precedent (−0.9) and every prior cap-level test (`v210_cap6_vs_cap8` +4.3, C5 cap5 0.0 / cap12 −13.9). This is exactly what CL-063's ambiguous-at-the-floor read predicted: a real-but-negligible offline statistical signal (ρ=0.0507, 30% of the CL-051 curve125 yardstick) does not survive the trip to fair online play.
+
+4. **Decision.** The AMBIGUOUS survivor does NOT convert to fair strength. **CL-063's re-open trigger (a) is TESTED and does NOT fire** — no S2/S3 warranted. The leaf-accuracy channel opened by the residual-mining method (CL-063) is now CONFIRMED CLOSED; the remaining re-open triggers (b) a feature outside the cheap-leaf-viable class, or (c) an exact-solver ground-truth residual target at midgame depth, are both structurally harder and neither is funded here.
+
+**Engineering note (loose end for Joshua):** the `soft_cap_slope` knob itself (`ee38534`) is clean, default-OFF, bit-exact, and harmless to keep even though the lever nulled — pushing it is optional, not required by this close-out.
+
+`results.csv f6_softcap{0p1,0p25,0p5,0p75,1p0}_vs_champion`; claim **CL-063** amended (status stays Closed); roadmap F6 line stamped NULL.
+
+## 2026-07-23 — CL-060 budget-curve extended to 8×: allocation is critical, the fair budget→elo curve plateaus at ~+40 over deploy
+
+**Measurement close-out only. Champion + `governance/PRODUCTION.yaml` UNTOUCHED. All runs `--no-results-csv`, hand-added to `results.csv`.**
+
+CL-060 (reopened 2026-07-22) established that budget is purchasable at the deploy scale: the 4× cell (`cl060_h2h_k8x1376_vs_deploy_k4x688`, k8×1376=11008 total sims) beat the k4×688=2752 deploy champion by +49.85 elo (paired z 3.48). Its own "sharp next tests" list included a second budget doubling to see whether the exchange rate holds or bends. This entry is that doubling, run at 8× (22016 total sims) — and it surfaced an allocation trap along the way.
+
+1. **First 8× cell — naive width, FLAT.** `curve_k8x2752_22016_vs_deploy_k4x688` (8 determinizations × 2752 sims = 22016 total, both sides curve125, band 48e9, n=198 paired) = **+3.51 elo, paired z +0.21 — a dead tie** with the deploy champion, despite 8.03× the wall-clock. Naively kept k=8 (the width that won at 4×/11008) and simply doubled per-world depth.
+
+2. **The allocation error, and the correction.** The determinization-width optimum scales roughly with √budget, not with the previous winning width: k4 was optimal at 2752, k8 was optimal at 11008 → at 22016 the optimum is closer to k11–16, not k8. Re-run with the corrected allocation: `curve_k16x1376_22016_vs_deploy_k4x688` (16 determinizations × 1376 sims = 22016 total, same band 48e9 for CRN comparability, n=196 paired) = **+35.58 elo, paired z +2.68 — a REAL gain, clears 2σ.**
+
+3. **Deck-matched confirmation that width, not budget, explains the gap.** Both 8× cells share the same 48e9 band, so a direct deck-matched contrast is possible: k16 − k8 = **+2.985 pts/deck, se 1.746, z +1.71** (`measurement/classical_search/curve_k16_vs_k8_paired.py`) — the naive k8×2752 cell was genuinely width-starved; correcting the allocation alone is worth roughly a 32-elo swing at this budget tier.
+
+4. **Curve shape — the actual finding.** The 4× point (`cl060_h2h_k8x1376_vs_deploy_k4x688`, CL-060's own falsifier) = +49.85 elo / z3.48; the corrected 8× point (`curve_k16x1376_22016_vs_deploy_k4x688`) = +35.58 elo / z2.68 — these are the SAME within cross-band noise (different seed bands, not a deck-paired contrast against each other). **The fair budget→elo curve therefore PLATEAUS at roughly +40 elo over the deploy champion, reached by about 4× the deploy budget; buying additional compute past ~4× adds approximately zero.** The plateau itself, not either point in isolation, is the finding — a genuinely stronger-than-deploy classical configuration exists and is cheap to reach, but it does not keep climbing.
+
+5. **Consequence — a concrete distill-strong-teacher target.** This closes the "does more budget keep buying elo" question (no, it plateaus) but opens a different, more valuable one: the ~+40-elo-over-deploy configuration is real, replicated in direction across two independent cells, and CHEAP at its lowest-cost realization (the 4× k8×1376 cell, at 4× wall-clock, is cheaper than the 8× cells and reaches essentially the same ceiling). **A distill-strong-teacher project now has a genuine, well-measured teacher to distill from** — this is a different lever than C0's now-closed learned-*representation* question (same-day entry above): C0 asked whether a learner can find a *better ordering* than the leaf on its own features and said no; this asks whether a *stronger classical search config* (same leaf, more/better-allocated search) can serve as a teacher signal for a learner, which remains open.
+
+6. **Caveats.** Peak not bracketed above k16 (k32+ untested at this budget; CL-054's inverted-U width result at fixed 2752 predicts wider-than-optimal would hurt, but that was measured at a different budget tier). Both 8× cells are single unreplicated cells. The plateau claim rests on comparing point estimates across DIFFERENT seed bands (32e9/44e9 for the 4× cells vs 48e9 for the 8× cells) — real but not deck-paired against each other, so "≈" is a noise-band statement, not a formal equality test.
+
+`results.csv {curve_k8x2752_22016_vs_deploy_k4x688, curve_k16x1376_22016_vs_deploy_k4x688}`; claim **CL-060** amended (stays Reopened); roadmap **F5** re-stamped.
+
+## 2026-07-27/28 — Android app SHIPPED (side project); luck floor measured 6.5%; two search levers BUILT flag-gated; G1/G3 parked; az_zero record repaired
+
+**Context.** Joshua asked (morning 07-27) for an Android app to play the production champion on his phone. Built same-day by parallel agents; spawned two live search levers, one calibration measurement, and a batch of governance repairs. Everything below is on `android-app` (commits `a0ac379..de685b0` era).
+
+1. **Android app (side project, NOT a strength lever).** Kotlin/Compose GUI + Chaquopy 17-embedded Python running the REAL fair champion on-device (bundle synced from repo at build time; `verify=True` on the phone; Cython leaf cross-compiled to arm64/x86_64 wheels via NDK — Chaquopy itself cannot compile native code). Decisions: on-device over server (offline play), personal sideload only (C2 tile art is Hans im Glück's — NOT distributable), difficulty slider Instant/Fast/Medium/Strong/Champion with the YAML owning the champion budget (keys omitted, never copied), finished games archived as root_replay `(deck_seed, action_log)` + result (human-anchor-grade records). **Measured on Pixel 9 Pro: 1.7 s/move at the full k4×688 fair budget** — faster than the desktop tkinter harness. Vetted by 2 independent code reviews + 3 agent playtest rounds (one played a full 72-tile game and audited every scoring delta — engine scoring verified in play; a P0 Chaquopy import-strictness bug was found ON-DEVICE only and fixed with a desktop regression simulating AssetFinder semantics). Docs: [android/README.md](android/README.md); STATUS side-project block. Joshua vs champion so far: L by 7, L by 2 — farms won BOTH times.
+2. **Luck floor (calibration cell): tier1 greedy takes 13/200 = 6.50% [Wilson 3.84, 10.80] off the production champion** (187W/2D/11L, elo +478±52, +27.4 pts/deck, band 54e9 deck-paired, boxes local+laptop W16/W16 work-stealing). Read as a FLOOR: any single-game human result carries a ≥6% coin-flip; multi-game matches required for human-facing claims. Harness gap closed: `eval_fair_puct.py --opponent greedy` (`c236150`, leafless rung; the h800 path's curve100 ruler-leaf trap deliberately avoided — candidate side gets the curve125 injection). Row `luckfloor_champ_k4x688_vs_greedy_b54e9`; close-out `de685b0`.
+3. **Two search levers BUILT, flag-gated default-OFF, bit-exact-OFF proven, UNSCREENED** (screens ready, launch = Joshua's call): (a) **meeple-dedup** `CARCASSONNE_MEEPLE_DEDUP` — census over 449 replayed champion games: 60.75% of real meeple choice points contain game-equivalent duplicate actions, 28.6% of actual placements visit-diluted; dilution lever → low-sims screen (`meeple_dedup_screen.sh`). (b) **C3-intra** `CARCASSONNE_INTRA_TURN_REUSE` — within-turn tile→meeple tree carry (the only fair-LEGAL reuse; meeple think measured 52.5% of search time; carry fires 16/17 with 34% mean warm start; `intra_reuse_screen.sh`, equal-wall-clock confirm mandatory). Both in LEVER_INDEX + roadmap parking lot (5)/(6). Also filed: **(7) adaptive-k** (phase-adaptive determinization width, census-first, prior SMALL).
+4. **Joshua's queue decisions:** G1 pondering HELD until contest registration; G3 per-move-cost PARKED (no net in production; unpark trigger = funding the distilled-net line, whose confirmed +35.7-at-equal-sims stays shelved on 4.24× cost); E4 stays parked (but the app's archives now accumulate logged human-vs-champion games).
+5. **Record repairs:** az_zero (tabula-rasa, CL-066 FLATLINE) was invisible — 4 self-contradicting doc spots said "never run" + CHECKPOINT_LINEAGE had no row; all fixed, family-summary lineage row added (schema/status-enum divergence flagged: `NOT_CHAMPION` used by 7 rows but absent from the enum — reconciliation owed). Roadmap currency sweep: 9 stale lines stamped. Cross-session collision norm added to CLAUDE.md (worktree isolation when the tree is live) after this session's build agents edited shared source under another session's live run — see memory `feedback-worktree-isolation-live-tree`.
+
+**Supersedes/refines:** nothing upstream; the app changes no production config. PRODUCTION.yaml untouched throughout.
+
+## 2026-07-28 — screen verdicts: meeple-dedup KILLED, intra-reuse INCONCLUSIVE-POSITIVE → n=600 confirm funded
+
+**Measurement close-out only. Champion + `governance/PRODUCTION.yaml` UNTOUCHED. Both screens ran `--no-results-csv`; rows hand-added.** Both levers were BUILT flag-gated on 2026-07-27 (previous entry, item 3) and screened today by the experiment-runner session on local 5900XT + laptop, W16/box, `--shared-claim` work-stealing. Full read-out (per-cell tables, exact config, anomalies): [DEDUP_INTRA_SCREEN_REPORT_20260728.md](measurement/classical_search/DEDUP_INTRA_SCREEN_REPORT_20260728.md). Design of both screens: the SYMMETRIC head-to-head (`--opponent fair-champion`) — candidate and opponent are the SAME production agent at the SAME budget with the SAME curve125 leaf (`a36d2e15`, `both_sides_curve125: true`), the ONLY asymmetry being the per-agent flag, so the delta is attributable to the flag and nothing else. n=200 deck-paired (100 decks × 2 seats) per cell; screen bar 1σ ≈ ±24.7 elo, "clears" at ~2σ. **0 solver timeouts and 200/200 endgame latches on both sides in all four cells.**
+
+| screen | cell | total sims | band | W/D/L | elo ±1σ | elo z | paired margin | paired z | ms-ratio cand/opp |
+|---|---|---:|---|---|---:|---:|---:|---:|---:|
+| meeple-dedup | k2x172 | 344 | 72e9 | 110/4/86 | +41.9 ± 24.7 | +1.69 | +0.500 | +0.48 | 0.999x |
+| meeple-dedup | k4x172 | 688 | 72e9 | 98/3/99 | −1.7 ± 24.6 | −0.07 | −0.200 | −0.20 | 1.010x |
+| C3-intra | k4x344 | 1376 | 74e9 | 96/5/99 | −5.2 ± 24.6 | −0.21 | +0.800 | +0.72 | 1.024x |
+| C3-intra | k4x688 (**deploy**) | 2752 | 74e9 | 109/5/86 | +40.1 ± 24.7 | +1.62 | +1.650 | +1.32 | 0.994x |
+
+1. **MEEPLE-DEDUP — 🛑 KILLED AT SCREEN. Deploy-budget confirm NOT funded.** The deeper cell (k4x172, the deployed *width*) is dead flat on both statistics; the cheap cell's +41.9 is contradicted by its own deck-paired margin (+0.500 pts/deck, z +0.48) — the two statistics disagree in size by 3.5×, which is the house's win-rate noise signature ("a lone value that beats its neighbours by >1σ is a noise signature, not a peak"), and the neighbouring deeper cell is exactly zero. **Options considered:** (a) fund the deploy-budget k4x688 confirm — rejected, the lever's own dilution theory says the effect is SMALLEST at the deploy budget and k4x172 already reads zero by 688; (b) chase the cheap cell at n≥800 paired — rejected on cost discipline, it would buy an effect at a budget we do not ship; (c) rescue on wall-clock — impossible, the mask is cost-neutral (ms-ratio 0.999x/1.010x), there is no time story. **Chosen: kill.** Honest caveat recorded: the sign pattern (bigger at 344 than 688) is what dilution theory predicts, so this is "not demonstrated at screen power", not a proof of zero. Re-open bar: n≥800 paired at the cheapest cell.
+2. **C3-INTRA (within-turn tile→meeple tree carry) — 🟡 INCONCLUSIVE-POSITIVE. NOT dead, NOT established. n=600 confirm FUNDED.** Neither cell clears 2σ, but at the **deploy budget** both statistics are positive and agree in sign (+40.1 elo z +1.62; +1.650 pts/deck z +1.32) and the effect **grows with depth** (1376 → −5.2, 2752 → +40.1) — the opposite of a sims-washout profile, and what a search-efficiency lever should look like. **The mandatory cost caveat is empirically discharged:** the script header warned that at equal *nominal* sims the ON candidate does more work per turn (warm start ~34% of a fresh budget, max 81%), so a positive delta could be "more search helps" rather than "the carry is free". The emitter was read before the field was trusted (`champ_prefix_ms_per_move` = CANDIDATE, `rung_ms_per_move` = OPPONENT via `opp_prefix_*`, *not* the driver-timed `rung_secs`) and the measured ratio is **0.994x at the deploy cell** — the candidate is marginally *cheaper* per move, tighter than the 1.06x at which CL-044 was accepted. ⚠️ **Winner's-curse suspect:** CL-068 measured that *doubling* the deploy budget buys only +12.2 elo (z +0.70), so a true +40 from a free carry would exceed the measured value of 2× compute. **Options considered:** (a) promote — refused outright, no cell clears the bar and this project has overturned three findings of exactly this shape (c=3 "+47", anchor-fraction "+39", flywheel "+88.7"); (b) kill as an unpowered null — rejected, the noisy-plateau rule forbids concluding at z +1.62 and the depth profile + discharged cost caveat are real information; (c) n=400 paired (~2h) — rejected as under-powered, it only resolves the effect if it is near the full +40; (d) **n=600 paired at k4x688 on a FRESH band (1σ ≈ ±14 elo ⇒ ~3σ on a +40, ~1σ on a +15), ~3 h on two boxes — CHOSEN and funded.** Band **78e9 claimed** in `/mnt/c/carc-shared/BAND_CLAIMS.txt`; launch queued behind the live G2 confirm (laptop) and the oracle-score pilot (local). Because ms-ratio ≈ 1.0 the equal-wall-clock confirm the header demands is a near-no-op resize — but it has NOT itself been run, so this screen must not be cited as a strength result.
+3. **⚠️ PROCESS FINDING — the band-enumeration instruction printed in both screen headers is BROKEN and silently fails open.** Both headers prescribed `grep -o 'seed_start[^,]*' experiments/results.csv | sort -u` before picking a CRN band. **results.csv has no `seed_start` column** (header is `exp_id,date,game,code_rev,n,…`); bands are recorded only in prose inside the `note` field, so the grep returns **nothing** — which reads as "no bands are burned" to anyone following the header. The runner caught it and enumerated the real surface instead: **386 `manifest.json` files under `/mnt/c/carc-shared` (maxdepth 5)**, plus `/mnt/c/carc-shared/BAND_CLAIMS.txt` for bands claimed-but-not-yet-written. **Fixed in this close-out:** both script headers now say ⛔ do not grep results.csv, and give the manifest grep + BAND_CLAIMS.txt (comment-only edits). Bands 72e9/74e9 were verified unused before launch and are now burned; 76e9 (G2 confirm) and 78e9 (the intra confirm) are claimed. **Not fixed:** results.csv still has no machine-readable band column — a schema addition, deliberately not taken during a docs close-out.
+4. **Provenance note.** The games ran at `dcd7c96`; a session restart mid-flight left the intra k4x688 cell at 199/200 behind an orphan `.claim`, which was cleared and the single game replayed at `47c2e59` (resume log `measurement/classical_search/intra_screen_resume.log`). Verified cosmetic: `git diff --name-only dcd7c96 47c2e59 -- src engine scripts` returns only two new, unrelated files (`scripts/measurement_infra/oracle_score_pilot.{py,sh}`) plus docs/tests — **no change to `src/`, `engine/`, or `scripts/classical_search/`** — so the search/leaf/eval code is byte-identical across the two revs and the cell is not behaviourally mixed. The results.csv rows cite `dcd7c96`.
+
+`results.csv {meepledup_k2x172_screen, meepledup_k4x172_screen, intrareuse_k4x344_screen, intrareuse_k4x688_screen}`; [LEVER_INDEX](docs/LEVER_INDEX.md) rows 'action-space dedup' (→ KILLED-AT-SCREEN) and 'within-turn tree carry' (→ SCREEN-INCONCLUSIVE-POSITIVE) re-stamped; roadmap Parking-lot items (5)/(6) re-stamped; both screen scripts carry a STATUS banner. **Supersedes/refines:** the 2026-07-27/28 entry above, item 3 ("two search levers BUILT, UNSCREENED") — both are now screened.
+
+## 2026-07-28 — G2 owed confirm REFUTES "halving is free": k4×344 costs −53.4 elo on a fresh band; CL-068's actionable option is dead, its decision-bearing finding is strengthened
+
+**Measurement close-out only. NOTHING PROMOTED; the deploy budget k4×688 = 2752 stays; `governance/PRODUCTION.yaml` and the champion UNTOUCHED.** Read-out of record: [G2_CONFIRM_READOUT_20260728.md](measurement/classical_search/G2_CONFIRM_READOUT_20260728.md). This entry **refines the 2026-07-27 CL-068 entry** (pareto curve) and discharges the debt that entry, [PARETO_CURVE_PREREG.md](measurement/classical_search/PARETO_CURVE_PREREG.md) §4, and roadmap G2 all recorded: *"a fresh-band n=400 confirmation of `k4×344` vs deploy before any production proposal."*
+
+1. **The cell.** `pareto_k4x344_1376_vs_deploy_CONFIRM` — candidate `k_dets=4 × 344` (1376 total) vs the deploy champion `k4×688` (2752), n=400 deck-paired (200 decks × 2 seats), **fresh band 76e9**, laptop-only W16 `--shared-claim`, code_rev `4e67f2b`. Identical to the original cell in every respect except the band: same harness flags, same frozen curve125 leaf both sides (`a36d2e15`, `both_sides_curve125: true`), same marginalized exact-K=2 endgame, and the leaf/BLAS env **replicated byte-for-byte from the original cell's `manifest.json`**. Band chosen after enumerating 616 share manifests + `BAND_CLAIMS.txt` (76e9 had zero hits repo-wide before launch) and claimed before launch.
+
+   | | band | W/D/L | winrate (z) | elo ± 1σ | margin pts/deck (z) |
+   |---|---|---|---|---:|---|
+   | original screen (CL-068) | 60e9 | 196/9/195 | 0.5013 (+0.05) | +0.9 ± 17.4 | −1.032 (−1.26) |
+   | **confirm (this run)** | **76e9** | 166/7/227 | **0.4238 (−3.05)** | **−53.4 ± 17.6** | **−3.285 (−3.54)** |
+
+   95% CI on the confirm's elo: **[−87.9, −18.9]**. Validity all green: **cost ratio 0.50× verified** (1880 vs 3773 prefix ms/move — an independent confirmation the halving really happened), **0 solver timeouts** both sides, endgame latched **400/400** both sides, **0 deck_hash mismatches**, leaf-hash guard equal on both sides. The runner independently recomputed every figure from the 400 per-game records against `eval_fair_puct.py::_summary` (only difference: 1σ 17.38 vs the harness's 17.58, a formula constant).
+
+2. **Verdict: "halving the deploy budget to 1376 is free" is REFUTED — it costs 3.1σ.** Under pre-registered **rule 6** a sub-deploy config is proposal-eligible only if it costs **< ~1σ (≈17 elo)**; −53.4 is 3.1σ of cost, so **`k4×344` is NOT proposal-eligible and must not be proposed for production.** **Options considered:** (a) treat the confirm as the outlier and keep the +0.9 headline — rejected, the confirm is the *pre-registered* test and the original was the selected first look; (b) **pool the two cells** — **BLOCKED** by the same logic as prereg rule 3 (inter-cell |z| = 2.20 ≫ 1); for completeness only, an inverse-variance pool would read −26.0 ± 12.4 and **must not be cited as an estimate**; (c) run a third band as a tie-breaker — rejected on cost discipline, both statistics in the confirm are past 3σ and the decision (do not propose) is the same at −26 as at −53; (d) **accept the refutation and close the option — CHOSEN.**
+3. **Why this is rule 1 working, not a surprise.** The original cell's *deck-paired margin* already leaned negative (−1.03 pts/deck, z −1.26) while its *winrate* read a dead tie (z +0.05) — the house "both statistics reported" rule made that visible at the time, and the headline rested on the winrate reading alone. It is exactly the winrate reading that failed to reproduce. The confirm also lands slightly **outside the original's own 95% CI** ([−33, +35]), i.e. the original was, if anything, an optimistic-tail draw. Fourth finding of this shape overturned here (c=3 "+47", anchor-fraction "+39", flywheel "+88.7", now this).
+4. **What it does to CL-068's three findings.** **(3) — the decision-bearing one — is UNCHANGED and STRENGTHENED:** search budget stays a closed lever for clocked play, and now closed *demonstrably* in both directions — going up buys nothing spendable (5504 = +12.2 n.s. at 46.6% of clock; the only real gain sits at 91%), going down **costs**. The remaining clock levers are still **G1 (pondering)** and **G3 (per-move cost)**, not sims. **(1) FLAT-THEN-CLIFF needs its low edge redrawn:** with 1376 at −53.4 the flat region is **2752 → 5504**, and the cliff starts one rung *higher* than CL-068 drew it (between 1376 and 2752, not between 688 and 1376). **(2) optimal width grows with budget is UNTOUCHED** — it rests on deck-matched within-band contrasts this cell does not revisit.
+5. **Loose end, named and NOT resolved.** The confirm puts **1376 (−53.4, band 76e9) below 688 (−37.5, band 62e9)** — non-monotone. Both are cross-band comparisons of absolutes (a shape this project has been burned by twice: L2-2, and CL-069's own supersession of the cross-band halving screen) and their difference is **−15.9 ± 24.7 = z −0.64, i.e. unresolved**. So this is a shrug, not a contradiction. The honest statement of the curve's low end: *both 688 and 1376 are clearly worse than deploy by roughly 40–55 elo, and their ordering relative to each other is unmeasured.* Shaping the cliff would need **688 / 1376 / 2752 deck-matched on one shared fresh band** — a new experiment, not a re-read of these cells. **Not funded here.**
+6. **Code-drift check (recorded, cleared).** Original at `0bfdc00`, confirm at `4e67f2b`: `scripts/classical_search/eval_fair_puct.py` and `src/carcassonne_ai/` are NOT identical across that span (`--opponent bare-net` added; new `intra_reuse.py`, `meeple_equiv.py`; `fair_agent.py`/`mcts.py`/`heuristic_prior_mcts.py` touched), `engine/` is byte-identical. Cleared for two reasons: every added feature is **opt-in and defaults OFF** (the `heuristic_prior_mcts.py` change is a `_prune_to_subtree` refactor reached only when `reuse_tree=True`, which the champion sets False), and **both sides of the cell run the same code**, so residual drift is common-mode and cancels in a head-to-head. Strict statement: this is a fresh-band confirm **at current code**, not a bit-for-bit replay.
+
+`results.csv pareto_k4x344_1376_vs_deploy_CONFIRM`; claim **CL-068 AMENDED** (status stays Supported — finding 3 survives and strengthens; the k4×344 sub-claim is marked REFUTED in the claim/counterevidence/falsifier fields, `last_updated` → 2026-07-28); [PARETO_CURVE_PREREG.md](measurement/classical_search/PARETO_CURVE_PREREG.md) gained a dated addendum banner + a §4 "DEBT DISCHARGED / CLAIM REFUTED" block (the 2026-07-27 text preserved unedited beneath); roadmap **G2** flipped from ⚠️ OWED to ✅ DONE-REFUTED. **Supersedes/refines:** the 2026-07-27 CL-068 entry's "ACTIONABLE OPTION: k4×344 halves clock usage to 14.6% for no resolvable strength cost" — that option is dead.
+
+## 2026-07-28 — oracle-score pilot RAN: the full 628-position probe is UNDERPOWERED (z 0.72) at the assumed effect → full run NOT funded, approach PARKED with its data
+
+**Measurement close-out only. No results.csv row — this is not an elo cell; the pilot's data record is its `manifest.json` + `summary.json` + 20 per-position records on the share.** Decision taken under Joshua's standing move-forward authority; **reversible** — the pilot data is kept and the re-open bars are written below. Champion + `governance/PRODUCTION.yaml` untouched (by construction: this harness never plays a competitive game and never writes a results row).
+
+**What it was.** CL-070 established that the deployed champion's pick still *changes* between the deploy budget (2752) and 4× (11008), but never whether the change is an *improvement*. The successor experiment named in [MOVE_AGREEMENT_PREREG.md](measurement/classical_search/MOVE_AGREEMENT_PREREG.md) and scoped in [CLAIRVOYANT_REFERENCE_MEMO_2026-07-28.md](measurement/classical_search/CLAIRVOYANT_REFERENCE_MEMO_2026-07-28.md) §4.2 is: score BOTH picks on the disagreement positions under the SAME M sampled deck completions (world-level CRN, no opponent, no ruler — so no elo compression and no transitivity worry). The memo's own verdict was that the whole probe lives or dies on one unmeasured quantity — the per-position sd of the CRN-paired oracle delta — and that a ~20-position pilot measuring it was "the true cheapest informative step in this entire memo". **Harness built + smoked at `47c2e59`** (`scripts/measurement_infra/oracle_score_pilot.py`); the ladder alternative (clairvoyant champion as a game *opponent* for a sims ladder) was assessed weak in the same memo and is NOT revisited here — see the [LEVER_INDEX](docs/LEVER_INDEX.md) 'clairvoyant-champion reference' row and roadmap parking-lot (8).
+
+1. **The run.** 2026-07-28, local box W16, **20/20 positions, 0 failed, `crn_verified_all: true`, ~28 min wall** (1678 s). M=32 worlds/position, `--oracle-sims 100`, bank = **628** banked 2752-vs-11008 disagreements (the memo's estimate was ~265; the realised bank is larger). Out-dir `/mnt/c/carc-shared/classical_search/oracle_score_pilot/`; log `measurement/classical_search/oracle_score_pilot.log`.
+2. **The deliverable — the sd — landed on the memo's PESSIMISTIC branch.** Per-position sd of the paired delta = **2.43 pts at M=32**, versus the memo's fork of *sd ≈ 0.5 ⇒ z ≈ 2.2 (fund it)* / *sd ≈ 1.5 ⇒ z ≈ 0.75 (don't)*. **More worlds cannot rescue it:** the variance decomposes into between-position 2.27 (irreducible) + within-position 115.9/M, so the sd floor as M→∞ is **≈1.51 pts** — still the "don't" branch. Projected sd: M=8 → 4.09, M=16 → 3.09, M=32 → 2.43, M=64 → 2.02. Measured CRN efficiency was real but modest (median variance reduction **1.47×**, 2/20 positions perfectly paired, 0 identical afterstates).
+3. **Implied power for the full run, at the pre-registered assumed effect** (+0.07 pts per disagreed move ⇔ ~+50 elo, the memo's arithmetic): **N=628 at M=32 → z 0.72**; M=64 → 0.87; M=16 → 0.57; N=265 at M=32 → 0.47. **Options considered:** (a) fund the full 628-position run anyway — rejected, z 0.72 buys an uninformative null and the memo pre-registered exactly that ("a null here must be pre-registered as uninformative", open risk #2, the error CL-060 already made once); (b) raise M to 64 — rejected, it costs 2× and moves z to 0.87 because the binding term is *between*-position variance, not oracle noise; (c) shrink to the solver-only subset — rejected, only ~24 of the bank have `k_remaining ≤ 4`; (d) **park the approach with its pilot data and write re-open bars — CHOSEN.**
+4. **Cost of learning this: ~28 minutes.** At the pilot's own measured throughput (20 positions / 1678 s at W16) the full bank is **≈14.6 h on one box, ≈7 h split across both** — so the pilot bought the decision for roughly 3% of the run it cancelled. This is the cheapest-informative-first rule paying out exactly as designed, and it is worth naming as the reusable pattern: *when a probe's power turns on one unmeasured variance, measure the variance first.*
+5. **⚠️ THE TENSION THIS PARKING DECISION MUST OWN — do not let it get lost.** The pilot's **own** mean delta (deeper pick minus deploy pick, positive = the 11008 pick scores better) is **+1.91 pts/position, se 0.54, z +3.53** — roughly **27× the +0.07 pts the power arithmetic assumed**. Taken at face value that would make the full run powered many times over, and it would arguably satisfy re-open bar (b) *from the pilot itself*. Two readings, unresolved: **(i) real** — budget genuinely improves the move far more per disagreement than the +50-elo-equivalent assumption, in which case the whole probe is mis-sized and cheap; **(ii) instrument self-preference** — the oracle is a *same-family* search (PUCT + the same curve125 leaf) playing out from the afterstate, so it may systematically reward the move a deeper same-family search preferred, independent of true quality. That is memo open-risk #1 (shared-leaf blindness) in a sharper form, plus risk #4 (clairvoyant-oracle bias against correct hedges). The pilot's own read-out explicitly refuses to call its mean a verdict ("a 20-position SCREEN, NOT a verdict"), and this close-out honours that — **but the parking rests on distrusting that mean, not on the sd alone, and that is the thing to re-examine first if anyone re-opens.** Cheapest resolution if wanted: extend the SAME pilot to ~60–100 positions (~1.5–2.5 h at W16, `--resume` is built in) — that both tightens the mean and, if it holds, converts the decision on its own without the full bank.
+6. **Re-open bars (any ONE):** (a) a materially bigger disagreement bank, **~5000 positions** (z scales √N: 0.72 × √(5000/628) ≈ 2.0); (b) evidence the true per-disagreement effect **exceeds ~3× the assumed 0.07 pts** — see item 5, which may already bear on this; (c) a **variance-reduction design change** that attacks the *between-position* term, e.g. control variates beyond world-CRN (world-CRN only touches the within-position part, which is already not the binding constraint). Nothing weaker re-opens it.
+
+`scripts/measurement_infra/oracle_score_pilot.py` carries a STATUS banner; [LEVER_INDEX](docs/LEVER_INDEX.md) 'clairvoyant-champion reference / oracle-scored disagreement picks' → **PILOTED → PARKED-UNDERPOWERED**; roadmap parking-lot (8) re-stamped; STATUS.md line closed. **No claim row:** no CL id was ever issued for this probe and none is owed for a parked pilot — if it re-opens, it gets one then. **Refines:** the 2026-07-28 `0fae42c` scoping (memo + LEVER_INDEX row + roadmap line) which funded this pilot; its ladder-form assessment is unchanged and not revisited.
+
+## 2026-07-28 — C3-intra powered confirm: the screen's +40 was WINNER'S CURSE; combined n=1200 is +16.2 ± 10.0 (CI includes zero) → PARKED, not killed
+
+**Measurement close-out only. NOT ADOPTED — no `PRODUCTION.yaml` flag flip proposed, `intra_reuse` stays default OFF, champion untouched.** This closes the debt opened by the same-day screen entry above ("n=600 confirm FUNDED"). Read-out of record: the **CONFIRM section** of [DEDUP_INTRA_SCREEN_REPORT_20260728.md](measurement/classical_search/DEDUP_INTRA_SCREEN_REPORT_20260728.md).
+
+1. **The decay, which is the finding.** Two independent n=600 deck-paired tranches on fresh bands, config identical to the screen's k4×688 cell (symmetric head-to-head, only `--intra-reuse` differs; `both_sides_curve125`, `cand_leaf_hash == opp_leaf_hash == a36d2e15`, k4×688 both sides, exact-K2):
+
+   | cell | band | n | W/D/L | winrate | elo ± 1σ | elo z | paired margin | paired z | ms-ratio | status |
+   |---|---|---:|---|---:|---:|---:|---:|---:|---:|---|
+   | SCREEN k4x688 | 74e9 | 200 | 109/5/86 | 0.5575 | +40.1 ± 24.7 | +1.62 | +1.650 | +1.32 | 0.994x | **selection-biased — excluded from the pool** |
+   | CONFIRM tranche 1 | 78e9 | 600 | 316/15/269 | 0.5392 | +27.3 ± 14.2 | +1.92 | +1.200 | +1.76 | 1.011x | unbiased |
+   | CONFIRM tranche 2 | 80e9 | 600 | 297/15/288 | 0.5075 | **+5.2 ± 14.2** | +0.37 | +0.340 | +0.47 | 1.010x | unbiased |
+   | **COMBINED** | 78e9+80e9 | **1200** | 613/30/557 | 0.5233 | **+16.2 ± 10.0** | **+1.62** | **+0.770** | **+1.55** | 1.010x | **the verdict** |
+
+   **95% CI on the combined elo: [−3.5, +35.9] — includes zero.** Neither statistic reaches 2σ. **+40.1 → +27.3 → +5.2** as power rises is the textbook winner's-curse signature.
+2. **Pooling rules applied explicitly.** The **screen cell is EXCLUDED** from the pooled estimate because it is the observation that *selected* this lever for follow-up; including it would re-import the very bias the confirm exists to remove. The two tranches **may** be pooled: T1 − T2 = +22.1 ± 20.1 elo (**z +1.10**) and, on the paired margin, +0.860 ± 0.992 (**z +0.87**) — ordinary sampling noise, not a band-dependent effect. (Contrast the same day's G2 confirm, where inter-cell z −2.20 *blocked* pooling; the rule is applied consistently in both directions.)
+3. **The pre-registered calibration argument HELD, and that is the reusable lesson.** The screen read-out flagged the +40 as winner's-curse-suspect on a specific quantitative ground: *doubling the entire search budget* buys only **+12.2 elo** (CL-068's 5504 cell, n=400), so a **free** within-turn carry worth +40 would have to out-earn 2× compute — implausible on its face. The confirmed +16.2 sits comfortably under that ceiling and is not distinguishable from zero. **Lesson to carry:** when a candidate's point estimate exceeds what a *known-priced* alternative buys, price it against that alternative before believing it — the calibration was available before the confirm ran and predicted the outcome.
+4. **The equal-wall-clock obligation is DISCHARGED, not deferred.** ms/move ratio candidate/opponent across all three cells: **0.994× / 1.011× / 1.010×** — tighter than the 1.06× at which CL-044 was accepted. At nominal-equal sims the carry is wall-clock-neutral at this budget, so these cells *are* the equal-wall-clock confirm the `intra_reuse_screen.sh` header made mandatory. **The lever is time-neutral; it simply does not buy resolvable strength.**
+5. **Verdict: PARKED, not killed. Options considered:** (a) **adopt** — refused, nothing clears 2σ and the CI includes zero; there is no adoption proposal to put to Joshua and no governance touch is warranted (had it cleared, the touches would have been a `PRODUCTION.yaml` `intra_reuse: true` flip + CLAIM_REGISTRY row + CHECKPOINT_LINEAGE note — none requested); (b) **kill** — refused, all three point estimates are positive, the mechanism is sound and information-legal, and the cost side is genuinely neutral; that is a parked profile, not a dead one; (c) **fund the resolving run** — refused on cost discipline: resolving +16 elo at 2σ needs **n ≈ 4800 paired (1σ ≈ ±5 elo) ≈ 32 box-hours** at the observed ~190 games/h on two boxes, and the same box time buys more elsewhere; (d) **park with the data and a written re-open bar — CHOSEN.**
+6. **Re-open bar (either):** a funded **n ≈ 4800** paired campaign at the deploy budget (only worth it if ~+16 elo becomes decision-relevant — e.g. bundled with a contest entry where every point counts), **or** a *mechanism* argument that the carry should pay off much more at some other budget/allocation than the deployed k4×688 (the screen's k4×344 cell was flat, so depth-scaling is the only live shape). The flag stays built, default OFF, and bit-exact-when-off.
+7. **Cross-tranche provenance (why combining is defensible).** T1 ran at `693ef39`, T2 at `81f6e5d` — **read from the cell manifests, which are the authority** (the launch brief had named T1 as `4e67f2b`; the tree advanced between the HEAD check and the launch). Only two source files differ on the paths these cells touch: **(i)** `flat_leaf.py` commit `8949fd7`, dispatching `flat_base_score` (the exact solver's terminal leaf — genuinely exercised here, these cells run `--exact-k 2`) to the Cython port, **proven bit-exact by that commit's own gate** (690,816 leaf evals / 0 mismatches; 86,352 base evals / 0; 9,000 endgame states / 0), with **empirical corroboration in our own data**: solver time per game fell 22.6 → 17.8 s on the candidate (1.27×) and 24.2 → 19.2 s on the opponent (1.26×) — **both arms equally**, so it cannot bias a candidate-vs-opponent comparison; **(ii)** `champion_factory.py` commit `40c79c8`, an optional `exact_budget` kwarg that is **inert here** (defaults to None ⇒ empty kwargs; `eval_fair_puct.py` never passes it; both manifests record an identical endgame block). Outcomes identical, timings faster.
+
+`results.csv {intrareuse_k4x688_confirm_t1, intrareuse_k4x688_confirm_t2, intrareuse_k4x688_confirm_COMBINED}` (the combined row is the citable one; the tranche rows are superseded as standalone reads); [LEVER_INDEX](docs/LEVER_INDEX.md) 'within-turn tree carry' → **PARKED**; roadmap parking-lot (6) re-stamped; `intra_reuse_screen.sh` + `intra_confirm.sh` carry STATUS banners. **No claim row** — no CL id was issued for this lever and none is owed for a parked null. **Supersedes/refines:** the same-day screen entry's "INCONCLUSIVE-POSITIVE, n=600 confirm funded" — the confirm ran, and the answer is "time-neutral, non-negative, not resolvable".
+
+## 2026-07-28 — oracle-score pilot EXTENDED to n=100: the DISTRUSTED MEAN SURVIVES (cluster-robust z +2.97). The deeper pick is genuinely BETTER ⇒ 2752 is NOT the knee; the full 628-run is now UNNECESSARY, and this banks UNDERSTANDING, not a deploy lever
+
+**AMENDS the same-day "oracle-score pilot RAN → PARKED-UNDERPOWERED" entry above.** That parking rested on *distrusting the pilot's own mean* (item 5: "+1.91 pts, z +3.53, ~27× the assumed effect — either the probe is mis-sized or the same-family oracle self-prefers the deeper pick; unresolved"). The cheapest resolution it named — extend the SAME pilot to ~60–100 positions on `--resume` — was run the same evening. **The mean survived.** Everything else in that entry stands: the sd deliverable is unchanged, the full 628-position bank stays unfunded (for a *new* reason), no claim row, no `results.csv` row (not an elo cell), `governance/PRODUCTION.yaml` untouched by construction. Full read-out: [ORACLE_PILOT_EXT_READOUT_20260728.md](measurement/classical_search/ORACLE_PILOT_EXT_READOUT_20260728.md).
+
+1. **The run.** Local box W16, `--resume`, **100/100 positions, 0 failed, `crn_verified_all: true`**, M=32 CRN-paired deck completions, `--oracle-sims 100`, 4865 s (~81 min) for the 80 new positions. Log `measurement/classical_search/oracle_score_pilot_ext.log`; data `/mnt/c/carc-shared/classical_search/oracle_score_pilot/`.
+2. **⚠️ THE HEADLINE MUST BE THE CLUSTER-ROBUST NUMBER, AND THIS ENTRY CITES IT.** The 628-record bank spans only **385 distinct roots** (a root can disagree under more than one salt), so records are not independent. The 100-record sample covers **89 distinct roots** (78×1, 11×2). Recomputed from the on-disk records, sign = V(11008 pick) − V(2752 pick):
+
+   | estimator | n / G | mean (pts) | se | z | p |
+   |---|---:|---:|---:|---:|---:|
+   | naive record-level (the harness summary's figure) | 100 | +0.7375 | 0.2406 | +3.07 | 0.0022 |
+   | **cluster-robust sandwich on root** (G/(G−1) corrected) — **THE VERDICT** | 100 / 89 | **+0.7375** | **0.2486** | **+2.97** | **0.0030** |
+   | root-collapsed, unit-weighted (the conservative read) | 89 | +0.5920 | 0.2416 | +2.45 | 0.0143 |
+
+   Clustering costs little here — **design effect 1.067** — because only 11 of 89 roots carry a second record. Cluster bootstrap **of roots** (20 000 draws): record-level 95% CI **[+0.251, +1.226]**, P(≤0) = 0.0014; root-collapsed CI [+0.123, +1.077], P(≤0) = 0.0069. Distribution-free sign test on roots: **51 + / 34 − / 4 zero**, one-sided binomial p 0.041 (weaker — some of the signal is magnitude, not sign). Median +0.391, 10%-trimmed mean +0.660: not an outlier artefact.
+3. **The 1.91 → 0.74 shrink is regression to the mean, and the resume did NOT recompute anything.** Verified explicitly: the extension logged `resume: 20 already done, 80 to go`, and re-reading the 20 morning records off disk reproduces the morning `summary.json` mean **exactly** (+1.9140625). New-80-only mean **+0.4434** (z +1.71). The first-20-vs-new-80 difference is +1.471 ± 0.602 (z 2.44) — **not interpretable**, since the split point was chosen post hoc *because* the first 20 looked high. What licenses "fluctuation": the 20 are a nested member of the seeded, position-blind 100-rid draw (`sample_seed 20260728`), and the covariates are balanced (ply 72.8/78.6 · `k_remaining` 35.8/32.9 · `n_legal` 18.7/22.3 · `q_gap` 0.031/0.021 · similar phase mix). **Fourth sighting of this shape in a fortnight** (c=3 "+47", flywheel it16 "+88.7", C3-intra "+40.1", now this): a screen selected for being interesting shrinks on extension, and it is the *sign*, not the screen's magnitude, that carries.
+4. **What it means for the knee question — 2752 is NOT at the knee.** CL-069/CL-068 put the strength curve flat above ~2064–2752; CL-070 showed the *pick* still changes at 4× budget but could not say whether it improves. **It improves**, measured with **no opponent, no elo and no ruler compression**, so the flat top is not "the search converged". This **corroborates CL-060's directly-measured +49.85 ± 17.55** through a completely independent instrument — which is the strongest thing said all day about the ruler-vs-agent question that CL-070 deliberately left open.
+5. **Effect translation — an ORDER-OF-MAGNITUDE check, deliberately not sold as more.** Each delta is a whole-game terminal margin from **one** swapped decision, so summing across a game is **not additive-valid** and must overstate. Forward: 0.7375 pts × `D_paired(2752,11008)` **0.2398** (CL-070) × ~71.5 own decisions/game (the root bank spans plies 1…143; tile and meeple decisions are separate plies) ≈ **+12.6 pts/game**. Backward from CL-060: +49.85 elo ⇒ wr 0.5713 ⇒ **≈3.98 pts/game** on LUCK_FLOOR's σ_game 22.2 with wr = Φ(e/σ) ⇒ **≈+0.23 pts per disagreement**. So the naive sum overshoots by **≈3.2×**, in exactly the direction non-additivity predicts — **consistent, not contradictory**, and it is a falsification test the measurement passes, never a price for budget. ⚠️ Note the memo's 17.4 elo/pt linear rate (`results.csv luckfloor_champ_k4x688_vs_greedy_n200_b54e9`, +27.40 pts/deck ↔ +478 elo) sits at **wr 0.94** and is not a valid local rate near 0.5; on it the figures are 2.86 pts/game and +0.17/disagreement (overshoot 4.4×).
+6. **Why the power calculation and the observation disagreed — the reusable lesson.** The probe was sized against a pre-registered **+0.07 pts/disagreement**; the measured effect is **~10× that**. The memo's own stated formula ("gain per disagreed move × 0.30 × ~70 moves = pts/game") yields **0.137** at +50 elo on its own rate, i.e. the 0.07 it used was already ~2× conservative before the non-linear-rate and `D_paired` corrections. **A power calculation is only as good as its assumed effect — and the same pilot that measures the variance can also falsify the effect assumption.** The morning's "z 0.72 ⇒ uninformative null" arithmetic was correct given its input and wrong about the world.
+7. **The full 628-position run is now UNNECESSARY, which is a different verdict from "unfunded".** The morning parked it because it was underpowered *for +0.07 pts*. The question it was built to answer — does the deeper pick improve? — is **answered at n=100** at z +2.97 cluster-robust. Running the remaining 528 would buy a tighter estimate of a quantity that changes no decision. **Options considered:** (a) run the full bank for precision — rejected, ~11 h of box time for no decision change; (b) declare a claim and a `results.csv` row — rejected, not an elo cell and the self-preference caveat (item 9) is unresolved, so there is nothing to register; (c) treat it as a deploy lever — rejected, see item 8; (d) **close it out as banked understanding with the discriminating test named as the re-open — CHOSEN.**
+8. **⚠️ THIS BANKS UNDERSTANDING, NOT A DEPLOY LEVER — CL-068 STANDS.** The extra strength is **clock-unusable**: 11008 costs **11.2 s/move = 91% of a 15-min sudden-death clock**, 8× is 178% = automatic loss ([TOURNAMENT_TIMING_2026-07-26](docs/research/TOURNAMENT_TIMING_2026-07-26.md); LEVER_INDEX "buying elo with raw compute AT TOURNAMENT TIME CONTROL"). CL-068 finding 3 — budget is a closed lever for clocked play, closed demonstrably in both directions after today's G2 confirm — is **untouched**. Nothing here is a promotion candidate; no `PRODUCTION.yaml` change is implied or proposed. **Any future citation of "deeper search finds better moves" must travel with this sentence.**
+9. **⚠️ SOLE REMAINING THREAT TO VALIDITY — same-family self-preference, UNRESOLVED and NOT excluded by anything measured today.** The oracle plays both afterstates out with the **clairvoyant PUCT champion** on the **same frozen curve125 leaf** as the agents whose picks are compared. A deeper same-family search may prefer positions a same-family continuation then converts well, independent of true quality (memo open-risk #1, shared-leaf blindness, sharpened). **Extension cannot help:** this is a *bias*, so more samples make it more precise, not smaller. A distinct, secondary threat also survives: `--oracle-sims 100` is *below* the per-determinization budgets under test (688, 2752), so the oracle is a cheaper same-family search averaged over 32 worlds, not "a much deeper search" (weak-continuation bias, already flagged in the manifest).
+10. **Named re-open / cheapest discriminating test — NOT RUN, NOT FUNDED.** Re-score a random ~30-position subset with the continuation policy swapped **out of the family**, world seeds and CRN pairing held fixed: play the afterstates out with the **Tier-1 greedy `RuleBasedPlayer`** (v1 1-ply leaf, no search, no curve125 — the rung already used as the opponent in `luckfloor_champ_k4x688_vs_greedy_n200_b54e9`). It shares **neither** the search **nor** the leaf, so a surviving positive sign cannot be self-preference. Cost is trivial (~26 ms/move vs the clairvoyant PUCT's seconds ⇒ minutes, not hours — strictly cheaper than the pilot it would validate). ⚠️ **Read it as a SIGN check only, never a magnitude check:** a Tier-1 continuation is far weaker and noisier and carries its own bias (weak play rewards positions that survive bad continuations). Raising `--oracle-sims` instead addresses **only** the secondary weak-continuation threat — the family is unchanged — so it is **not** a discriminator; do not substitute it.
+
+[ORACLE_PILOT_EXT_READOUT_20260728.md](measurement/classical_search/ORACLE_PILOT_EXT_READOUT_20260728.md) (new); `scripts/measurement_infra/oracle_score_pilot.py` STATUS banner re-stamped; [LEVER_INDEX](docs/LEVER_INDEX.md) §8 'clairvoyant-champion reference / oracle-scored disagreement picks' + list item 14 → **PARKED-UNDERPOWERED → MEASURED (n=100)**; roadmap parking-lot (8) re-stamped; STATUS.md top block updated. **No claim row** (no CL id was ever issued for this probe; a parked-then-answered pilot that changes no production decision does not earn one — if the item-10 test runs and the finding is asserted, it gets one then). **No `results.csv` row** — not an elo cell, consistent with the morning's decision. **Amends:** the same-day oracle-pilot entry, items 5 (the tension is resolved in favour of "real, but ~2.5× smaller than the screen said") and 6b (re-open bar (b), "effect exceeds ~3× the assumed 0.07 pts", is **MET** — measured ~10×; bars (a) and (c) are moot because the question no longer needs the bank).
+
+**— SUB-NOTE 2026-07-28 (late), appended: item 10's DISCRIMINATOR WAS RUN. THE SIGN SURVIVES OUT OF FAMILY ⇒ item 9's threat moves from UNRESOLVED to TESTED-AND-NOT-SUPPORTED.** Item 10 named the test and did not fund it; it cost 4 minutes, so it was run rather than left standing. **Build:** `scripts/measurement_infra/oracle_score_pilot.py` gained `--oracle-policy {clair-puct,tier1-greedy}` (+ `--head`, which makes a nested prefix-subset possible — `--n 30` is NOT nested inside the n=100 draw because `random.sample` switches algorithm with k). The flag swaps **only** the continuation agent; world sampling, the SHA-256 CRN seed derivation, the lossless replay, the deck-hash CRN witness and the terminal-score read are one shared code path. **The default path's byte-identity was PROVEN, not asserted:** two already-banked positions re-scored with default flags after the edit match the banked records on every value-bearing field (`values_a/b`, `delta`, `per_world_delta`, the variance block, both afterstate hash arrays, `playout_plies_*`, both seed arrays, `crn_verified`); the edit adds exactly one key, `oracle_policy`. Contracts pinned in `tests/test_oracle_score_pilot.py` (29 pass). **Run:** local W16 `nice -n 19`, `--n 100 --head 30 --oracle-policy tier1-greedy --resume`, **30/30, 0 failed, `crn_verified_all: true`, M=32, 254.5 s**; judge = Tier-1 greedy `RuleBasedPlayer` (no search, v1 OBJECT `virtual_score` leaf, no curve125 — shares neither the search nor the leaf with the agents under test). **Result:** out-of-family mean **+0.626 pts** (cluster-robust se 0.918, z +0.68), sign **19 + / 10 − / 1 zero** (one-sided p 0.068), and — the load-bearing statistic because it needs no common scale — **per-position sign agreement with the in-family judge 24/30 = 80.0%** (non-zero pairs 23/29; one-sided binomial vs a coin **p 0.0012**; Pearson r of the two judges' deltas **+0.415**). **The damning outcome — a sign flip — did not occur.** ⚠️ **This is a SIGN check and is underpowered BY CONSTRUCTION, exactly as item 10 pre-registered:** the Tier-1 judge is **1.83× noisier** (sd 5.080 vs 2.771 on the same 30; mean within-position variance 259.2 vs 131.5), so its own mean is n.s. and the conservative root-collapsed estimator is **~0 (+0.094)**; even *perfect* agreement with the in-family effect on this subset could only have reached **z +1.90** at n=30 (≈264 positions would be needed for z 2). **Never compare +0.626 to +0.7375 or +1.766 as magnitudes** — a weak continuation is a differently-biased oracle, not a worse-calibrated one. ⚠️ **Subset caveat:** the nested first-30 is a **chance-high draw** — the in-family judge reads **+1.766** on it vs +0.738 on the full 100 (only 7 of the 20 morning rids fall in it, so this is not the morning subsample re-appearing); that makes the discriminator *more* sensitive, but the +0.626 must be read against +1.766. **What changes:** item 9's *primary* sub-threat (family bias) is tested and not supported, so the §1 headline no longer travels with an untested confound. **What does NOT change:** family bias is not *excluded* to zero; the magnitude is not independently re-established; item 9's *secondary* sub-threat (weak-continuation bias) is untouched and the Tier-1 judge is a **more extreme** instance of it; item 8 stands verbatim (understanding, not a deploy lever — 11.2 s/move, CL-068); **still no CL id** — the §7 provenance note said a claim would be earned "if the discriminating test is run *and the finding is asserted as a claim*", and a sign check that changes no production decision does not assert one; **still no `results.csv` row** (not an elo cell); `governance/PRODUCTION.yaml` untouched. **Not worth re-opening:** powering the out-of-family judge to z 2 is only ~37 min at W16, but it buys a tighter estimate of a quantity that already changes no decision — the same §5/item-7 argument that retired the 628-run. Invocation if ever wanted: `--n 628 --oracle-policy tier1-greedy --resume`. → §8 of [ORACLE_PILOT_EXT_READOUT_20260728.md](measurement/classical_search/ORACLE_PILOT_EXT_READOUT_20260728.md); log `measurement/classical_search/oracle_score_pilot_t1greedy.log`; data `/mnt/c/carc-shared/classical_search/oracle_score_pilot_t1greedy/`.
+
+## 2026-07-28 — adaptive-k PRE-GATE RUN: the lever's own mechanism is FLAT and its duplicate-world prize is 0.93% of compute (+0.16 elo) ⇒ **DIES FREE, never built**
+
+**Decision: DO NOT FUND A BUILD of the phase-adaptive k schedule ("adaptive-k"). The lever is closed at its own pre-registered pre-gate, before any code that could change play was written.** Nothing was promoted, no game was played, no band was consumed, `governance/PRODUCTION.yaml` is untouched, and there is **no `results.csv` row** (a census with no opponent and no elo is not an experiment cell — same call as the oracle-pilot entries above).
+
+**Why this ran at all.** The [LEVER_INDEX](docs/LEVER_INDEX.md) row for adaptive-k (named by Joshua 2026-07-27) pre-registered its own kill condition: *"Pre-gate before building: replay archived champion games, per-move census of (a) root-value spread across the k worlds, (b) duplicate-world rate, by phase — if disagreement is flat, dies free."* The row's prior was already SMALL (every allocation contrast measured is thin; k4−k2 is z 1.33), so the honest question was never "how big is it" but "is there a mechanism at all". The pre-gate is cheap because the CL-070 roots bank already exists.
+
+**Build.** New files only, no source touched: `scripts/measurement_infra/adaptive_k_census.py` + `tests/test_adaptive_k_census.py` (33 tests: world-seed determinism and salt-disjointness from CL-070's tag lineage, duplicate/prefix detection, the pooled-Q prefix picks incl. the min-visits floor, the stratified sampler, the bank's phase-cut boundary quirk, and — load-bearing — the proof that shuffling a description list consumes the identical rng stream and yields the identical permutation as shuffling the real Tile list, which is what lets the duplicate census run at zero search cost).
+
+**Run.** All **898** CL-070 roots (449 champion self-play games, `(deck_seed, actions)` lossless replay), **898/898 replay checksums matched** the bank's stored `string_representation`, **0 failures**, 362 s at W14 local `nice -n 19`. Per root: 4 worlds drawn with the champion's exact `reshuffled_determinization` semantics off a dedicated salt (20260728), each searched at the **PRODUCTION** per-world budget (688 sims, production `HeuristicPriorConfig`/curve125 leaf) — i.e. the actual searches the champion runs, not a shallow proxy. **25 roots at k_remaining ≤ 2 are excluded** (the marginalized solver has latched and draws no determinizations at all) ⇒ **n = 873 live**.
+
+1. **(a) THE NAMED MECHANISM IS FLAT.** Across-world **value spread** (per-world root-POV best-child Q) is **0.0921 / 0.0957 / 0.0924** for early / mid / late — Welch early−mid z −0.54, mid−late z +0.36, **early−late z −0.04**. It stays flat inside each game phase (TILES 0.084/0.080/0.084, early−late **z −0.01**; MEEPLES 0.100/0.117/0.104, **z −0.27**), so this is not a TILES/MEEPLES mix artifact. There is no phase signal for a k schedule to track.
+2. **The decision-relevant version is flat too.** The quantity that actually prices reallocation is how often the 3rd/4th world **changes the POOLED pick**: **7.0 / 6.1 / 8.4 %** (early−late z −0.59; within TILES 9.5/7.8/10.5, z −0.29; within MEEPLES 4.7/3.8/5.5, z −0.29). k1≠k4 is 20.5 % and likewise flat — the ensemble does real work, uniformly, which is a reason k=4 exists (CL-054) and not a reason for k to vary.
+3. **⚠️ TWO OF THE ROW'S OWN PREMISES ARE REFUTED, not merely unsupported.** (i) The row predicted *"early-game disagreement may be small (substitutable tiles)"*; early is in fact the **highest**-disagreement phase on every per-world measure (worlds disagree on the best move **39.9 % early vs 24.0 % late, z +4.03**, surviving the mix control at z +3.39 TILES / +3.25 MEEPLES). Substitutable tiles make worlds *look* different without making the pooled answer different. (ii) The row predicted late-game worlds are wasteful; late is where extra worlds change the pooled pick **most** (k2≠k4 **16.7 % late vs 10.6 % mid, z +2.16**). A schedule that trimmed k late to buy depth would be cutting exactly where the ensemble is worth most — the lever has **no direction to move in**.
+4. **(b) DUPLICATE WORLDS ARE REAL, LOCALISED, AND ARITHMETICALLY WORTHLESS.** Because the determinization canonically sorts the unseen deck before shuffling, a world *is* its deck ordering, so this half is exact combinatorics (32 replicate 4-world groups per root). Exact duplicates are **0.00 % for every k_remaining ≥ 8** — onset k7 2.8 % → k6 9.9 % → k5 26.3 % → k4 73.7 % → k3 100 %. Severe duplication lives only at k ≤ 5 = **27 of 873 live decisions (3.1 %)**, sitting 1–3 plies before the K ≤ 2 solver latch takes the game anyway; k ≥ 10 is **92.8 % of decisions at 0.000 wasted worlds**. Mean waste **0.0374 worlds of 4 = 0.93 % of ALL fair-search compute**; at CL-068's calibration (2× compute = +12.2 elo) reclaiming **all** of it perfectly and for free is worth **+0.16 elo**. (`same next tile` is high everywhere — 28 % early → 57 % late — but is not waste: those worlds diverge from tile 2 on, and `same next 2/3` is ≤ 2 % outside k ≤ 9.)
+5. **The instrument has NO noise floor, and this is verified rather than assumed.** `NeuralMCTS` consumes its rng only in `_reshuffled_root`/`sample_action`, neither of which runs on this path, so a per-world search is deterministic; `--noise-control` re-searched world 0 under a different seed on **898/898 roots and every root-child table was bit-identical**. This matters specifically because a phase-varying noise floor is the one artifact that could have manufactured the phase structure the gate was hunting — it cannot be the explanation here, in either direction.
+6. **⚠️ LIMITATION THAT MUST TRAVEL WITH THE VERDICT — the census measures the SIGNAL, not the TRADE.** Sims-per-world is held **fixed** at 688; a real phase-varying k at fixed *total* budget would give each world proportionally **more** sims wherever k is smaller, and that deeper search is not simulated. Consequence: a **positive** census would have been permission to build and measure, never evidence of gain — the asymmetry only permits a **flat/negative** reading to be conclusive, which is what landed. Two further proxy caveats: the archived games do **not** record the agent's per-game seed, so worlds are a distributionally-equivalent redraw and **no individual row is "what happened"** (only the aggregate is valid); and `pick_k2` pools worlds {0,1} of the same 4-draw, so it measures the *marginal information* of adding worlds, **not** a k2-vs-k4 strength comparison (that is CL-054, already resolved).
+7. **Powered honestly, not over-claimed.** At n ≈ 300/phase a 6–8 % rate carries a 68 % half-width ≈ 1.3 pp, so these tables exclude a *large* phase effect on the marginal-world rate, not a 2 pp one. The value-spread nulls are tighter (|z| < 0.6 with a zero noise floor). The claim is **not** that the effect is exactly zero — it is that the mechanism is far too small and, where measurable, directionally wrong.
+8. **Consistency with the day.** This is the fourth allocation-axis result of 2026-07-28 to return nothing (meeple-dedup KILLED, C3-intra PARKED after a powered n=1200 confirm, G2's "halving is free" REFUTED, adaptive-k dead at pre-gate). CL-068's budget closure plus CL-054's width closure now bracket both axes; **fair-search allocation-within-budget should be treated as a closed direction absent a new premise**, not re-proposed idea-by-idea.
+9. **Re-open bar (parked with a key, not sealed).** A **different** per-decision statistic that (i) varies by phase at |z| > 3 *after* the TILES/MEEPLES mix control **and** (ii) is demonstrated to move the **pooled** pick, not just the per-world picks. Value spread is now ruled out as that statistic. The one live cousin the census surfaced: the pooled top-2 Q gap does drift (0.065 / 0.066 / 0.050) — but conditioning k on *that* is **gap-adaptive k**, a different lever that needs its own LEVER_INDEX row and its own pre-gate, and it inherits the same "signal ≠ trade" burden.
+
+[ADAPTIVE_K_CENSUS_20260728.md](measurement/classical_search/ADAPTIVE_K_CENSUS_20260728.md) (new, full tables + limitations); harness `scripts/measurement_infra/adaptive_k_census.py`; tests `tests/test_adaptive_k_census.py`; data `/mnt/c/carc-shared/classical_search/adaptive_k_census/{rows,summary,manifest}_main.*`; log `measurement/classical_search/adaptive_k_census.log`. [LEVER_INDEX](docs/LEVER_INDEX.md) row **NEVER-TRIED → 🛑 DIED AT ITS PRE-GATE**; roadmap parking-lot line added; STATUS.md top block updated. **No claim (CL) id** — a pre-gate that funds nothing and changes no production decision does not earn one; if gap-adaptive k is ever pre-gated and asserted, it earns its own. **No `results.csv` row** (no elo cell). Uses and does not disturb the CL-070 bank; salt 20260728 is disjoint from that bank's 9000/9001 tag lineage.
+
+## 2026-07-28 (late evening) — CL-067 equal-wall-clock gate LAUNCHED (two arms, pre-registered) · k-PARALLEL INFERENCE named — the engineering reopening of the clock closure · queue decisions
+
+**Context.** Joshua asked whether the distilled net (CL-067, +35.7 pooled at equal sims, 4.24× cost) "would do okay deployed at 2752/4 to offset the compute cost". The retention arithmetic projects ≈ a wash; the champion's own budget curve projects −11; the flywheel net's degradation curve projects −40; only CL-060's exchange rate projects +8. That spread is exactly an unmeasured cell.
+
+1. **LAUNCHED — the equal-wall-clock gate**, `df93dcc` pre-registration committed BEFORE any result. Timing probe (n=32 paired, W16, orch tuned) found the net's relative cost is **per-box**: 4.08× local (reproducing the 4.24× record) vs **5.67× laptop** ⇒ one sims value cannot equalize both boxes and mixed-box deck-pairing would pair two different agents. Design forked: **Arm A (VERDICT) = local-only, band 82e9, candidate k4×169, measured cost ratio 1.00** · **Arm B (bracket) = laptop-only, band 84e9, same candidate at ×1.39 clock advantage** — a loss even in B kills knife-edge objections; a B-win/A-loss locates the break-even cost multiple in (1.0, 1.4), the number G3 must beat. n=400 deck-paired each, exact-K2, curve125 both sides, watchdogs on-disk, in-flight cost guard [0.90, 1.10]. Modal expectation NEGATIVE (recorded in the prereg). ETA ~03:20 07-29.
+2. **k-PARALLEL INFERENCE named (Joshua: "can't the k4 sims be split into at least 4 workers?") — roadmap G6, LEVER_INDEX row.** The k determinization searches are independent until the pooled-Q argmax ⇒ a k-process split is *behavior-identical* — pure engineering, no strength re-eval. **It reopens CL-068's closure**: budget was closed at fixed clock under an unstated single-stream assumption; k8×1376=11008 (+49.9, CL-060) is 91% of clock sequentially but ~12–15% split 8-way. Never built because eval farms parallelize at game level; only single-game latency ever needed it. Queued: worktree prototype + DRAM-wall bench (morning 07-29); if it holds, a clock-legal k8×1376 measurement. Stage 2 = virtual-loss tree parallelism (behavior-CHANGING, needs a strength gate; separate row).
+3. **Queue decisions (Joshua):** oracle teacher-curve pricing (gate 1 of the deep-teacher/200k-distill idea) **PARKED** — "can't commit to days yet". Phone k-parallelism deprioritized in favor of desktop (the elo lives in clocked play; Chaquopy has no mp — fork-under-ART hazardous, native core is the eventual phone path). Hardware routes noted for the net forward tax: Pixel Tensor NPU via LiteRT (one artifact, per-vendor delegates) and Joshua's **Apple M5** (available; CoreML/ANE + champion single-stream bench scripts queued). Net-transport bench (single-game CPU vs GPU-batch-1) queued — batch-1 is the GPU's worst case and CPU inference composes with k-parallel workers without a shared device.
+4. **Historical recap corrections made in-chat, recorded so they stick:** CL-067's confirmation debt is smaller than the roadmap phrasing suggests — a second band ran (+28.7 z1.65) and the pooled n=800 clears 2σ on both statistics (+35.7, wr z 2.90 / margin z 2.12); pooling was not pre-registered, hence not stamped. And the intra-carry warm-start figure to cite at deploy is 15–22%, not the k4×172-era 34% (LEVER_INDEX row already corrected).
+
+**Six touches:** results.csv — none owed yet (gate rows land with its read-out) · this entry · prereg = the spec stamp (`df93dcc`) · governance — none (no verdict yet) · STATUS top block rewritten (one run live, morning queue) · roadmap G3 amended + G6 added. Laptop bundle-sync owed at the morning quiet window (6 docs-only commits behind, tree mid-run).
+
+## 2026-07-29 (overnight) — luck floor REPLICATES on band 2 (Apple-silicon first) · cliff ladder rung 1 launched on shared band 88e9
+
+**Context:** stage Eff Jensen; the Air was donated for the evening ("batch it in. caffeinate away").
+
+1. **Luck-floor caveat (2) DISCHARGED.** `luckfloor_champ_k4x688_vs_greedy_n200_b86e9` (results.csv): 12/200 = 6.00% [3.47, 10.19] vs band 1's 13/200 = 6.50% — two-proportion z −0.21, winrate/elo identical to 3 s.f. ⇒ the floor is a property of the MATCHUP, not band 54e9. **Cite pooled: 25/400 = 6.25% [4.27%, 9.06%]** for the human-facing claim. Full row + platform verification in results.csv; readout [M5_CAMPAIGN_READOUT_20260729.md](measurement/classical_search/M5_CAMPAIGN_READOUT_20260729.md).
+2. **First results-bearing run on darwin-arm64.** Trust basis (in the row): verify=True on arm64, 3/3 leaf hashes, native Cython active, 7/7 harness md5 parity, and a pool-computed record replayed single-process bit-identical (spawn-vs-fork risk measured away, not assumed).
+3. **Cliff ladder rung 688 RUNNING on the Air, band 88e9 = the ladder's SHARED band** — rungs 1376/2752 must reuse it (deck-matching is the point). Watchdogged, per-record checkpointed; pending row drafted in readout §5, land on completion.
+4. **W-ladder verdict (cc73b3c):** Air aggregate optimum W=10 = 3.04 moves/s = **0.75× the 5900XT box** (bar was 0.5×), zero thermal throttle (1_post/1 = 1.000), efficiency ~5–6× per watt. Operational precondition for cluster membership: fix the 1-minute idle-sleep (Settings) — every launch tonight needed caffeinate + retry loops.
+
+## 2026-07-29 (morning) — EQUAL-WALL-CLOCK GATE: WASH (branch C fired) — the net priors' +35.7 is bought back in full by the clock · reopen condition r ≤ ~1.5, ANE clears it
+
+**The verdict** (prereg `df93dcc` BEFORE any result; read-out `b457850`, [NETPRIOR_EQTIME_GATE_20260728.md](measurement/classical_search/NETPRIOR_EQTIME_GATE_20260728.md); rows landed in results.csv `distill_strong_iter03_netprior_EQTIME_*`):
+1. **Arm A (equal-time, cost-ratio 0.9811 verified): −17.39 ± 17.39** (wr z −1.00, margin z −1.74) — inside the pre-registered wash window [−20,0). **Arm B (candidate given ×1.25 clock): −37.49, both stats past 2σ** — the loss is not a knife-edge of the sims choice. Pooled 800: −27.42 ± 12.32. Arms statistically indistinguishable (z +0.82). Nothing promoted; PRODUCTION.yaml untouched. CL-067's +35.7 stands as an EQUAL-SIMS fact only.
+2. **The projection was right** (priors −40/−11/+8, modal negative); +8 refuted for the pre-named reason (concavity: it priced a budget cut with an increase-measured exchange rate).
+3. **Reopen condition, pre-stated in the read-out: r = forward_ms/search_ms_per_sim ≤ ~1.5 on the target device.** Measured/projected: desktop CUDA b1 r=2.99 (−17), M5 torch-CPU 4.53 (−29), **M5 ANE fp16 0.73 (+11…+15 projected)**, Pixel GPU 12.6 (−63). **Only the ANE clears.** Cheapest decisive test named: ONE M5 cell, net-through-CoreML, at its own equal-time budget (~k4×397) — requires building the CoreML evaluator path (the May BACKLOG ANE integration, now justified by a pre-stated condition). ANE row is a projection until that cell runs.
+4. **Ops:** `fair_net_vs_net_orch.sh` exits rc=1 on SUCCESS (mirror of the CL-069 rc=0-on-FATAL) — never read these wrappers' exit codes; count records. Both directions now on record.
+
+## 2026-07-29 (midday) — EFF JENSEN BENCH BATCH: k-parallel 6.37× REOPENS THE CLOCK CLOSURE (k8×1376 now ~14–17% of clock, faster than today's deploy) · net-on-CPU REFUTED · WSL tax REFUTED (inverted) · three contention artifacts corrected
+
+All from [EFFJENSEN_BENCH_BATCH_20260729.md](measurement/EFFJENSEN_BENCH_BATCH_20260729.md) (commits 5e731de/7b5fc1a/fe2f69c/1e653b1; quiet-box, manifests on disk):
+1. **k-parallel (G6 stage 1) MEASURED: 3.16× at k4×688 W4; 6.37× at k8×1376 W8 (13.755 → 2.160 s/move)** — identical chosen action on all 30 roots in every parallel row (the behavior-identity holds under the bench too); transport 0.3–0.6%/move. **CL-068's clock closure is REOPENED: k8×1376 = 91% → ~14.3–17.4% of the 900s clock** (band reflects an unreconciled 3.5× vs measured 4.262× sequential-cost anchor — flagged, insensitive to the conclusion). ⇒ **PROMOTION CANDIDATE, Joshua's call, no new measurement owed:** k8×1376 + parallel_workers=8 is behavior-identical to the CL-060-measured +49.85 ± 14.3 (z 3.48) config AND runs FASTER than today's deploy single-stream (2.16 vs 3.23 s/move clean). Desktop/Mac only; phone stays k4×688 (Chaquopy no mp).
+2. **Net-on-CPU (single-game transport) REFUTED:** cpu_1t 11.64 ms vs cuda_b1 2.00 ms = 5.8× against the ≲3× bar (cpu_4t 2.4× clears but steals k-parallel's cores). The "everyone stays in DRAM" hypothesis dies for the net; the clean GPU was the surprise.
+3. **Eff Linus (WSL-vs-native-Windows) REFUTED, sign INVERTED:** native Windows 1.06–1.25× SLOWER across all cells, ab_valid true. WSL stays; no OS switch; the Pop!_OS memory was likely hardware-era. Round-2 MSVC/Cython-parity question is MOOT.
+4. **Contention artifacts corrected (the gate's 16 workers polluted three numbers-of-record):** GPU batch-1 19.4 → **2.00 ms** clean (9.7×) ⇒ desktop reopen-r falls ~2.99 → **~1.7** — still >1.5 (ANE cell remains the decisive netprior test) but a near-miss now on record; M5-vs-5900XT single-stream 2.85× → **1.74×** (flat across 86× sims range); clean deploy sequential 3.228 s/move. Rule reinforced: never cite a latency measured co-tenant with a W16 run.
+
+## 2026-07-29 (afternoon) — 🏆 **PROMOTION: the deploy champion moves k4×688 (2752) → k8×1376 (11008), executed `parallel_workers=8`.** First budget change to the fair deploy champion; PRODUCTION.yaml touched for the first time since 2026-07-13
+
+**Decision.** `governance/PRODUCTION.yaml` `champion.fair_deploy` is now **k_dets=8 × sims_per_det=1376 = 11008 sims/move**, with a desktop-class execution profile of **`parallel_workers: 8`**. Authorized by **Joshua, 2026-07-29 — *"yes, lets promote k8x1376."*** Nothing else about the champion moved.
+
+**Why now — the thing that changed is the CLOCK, not the strength.** k8×1376 has been the strongest *measured* fair configuration since 2026-07-22 and was un-deployable for one reason only: single-stream it costs ~91% of the 900 s tournament clock. G6's k-parallel split removes that constraint. The promotion is therefore an **engineering unlock of an already-measured strength**, not a new strength claim.
+
+**The evidence chain, three links (each verified in its named source before this entry was written).**
+1. **STRENGTH — `results.csv cl060_h2h_k8x1376_vs_deploy_k4x688`** (2026-07-22, band 32e9, n=400 deck-paired = 200 decks × 2 seats): **+49.85 elo** (unpaired σ 17.55; **paired σ 14.32**), **paired z 3.48**, W221/D15/L164, wr 0.5713, **+2.9775 pts/deck**, 0 timeouts, 400/400 latched. Both sides the frozen curve125 leaf `a36d2e15a3b3d71d`, fair PIMC, exact-K≤2. This is a **direct head-to-head against the incumbent** — the falsifier CL-060 itself pre-registered — and it cleared the ≥+35 re-open bar. It is deliberately *not* a rung-mediated read: CL-070 showed the RoD-v2 ruler to be ~70 elo unreliable on precisely this contrast.
+2. **PLATEAU CONTEXT — `results.csv curve_k16x1376_22016_vs_deploy_k4x688`** (n=196, band 48e9): 8× budget at the corrected allocation reads **+35.58 / z 2.68**, statistically the same place as the 4× point. ⇒ the fair budget→elo curve **plateaus at ~+40 over deploy and is reached by ~4×**. k8×1376 is chosen as the **cheapest point on the plateau**; 8× (k16×1376) is **strictly dominated** — 2× the clock for ~0 additional elo. This is why the promotion stops at 4× rather than buying more.
+3. **CLOCK LEGALITY — [EFFJENSEN_BENCH_BATCH_20260729.md](measurement/EFFJENSEN_BENCH_BATCH_20260729.md) §2** (`kparallel_latency_bench.py`, 30 replayed real mid-game roots, quiet 5900XT): k8×1376 sequential **13.7552 s/move → W=8 2.1595 s/move mean, 2.6167 p90 = 6.370×**, 80% parallel efficiency, transport 7.24 ms/move (0.3% of the move). That is **~14.3–17.4% of the 900 s clock** — and *faster than yesterday's deploy single-stream* (3.2276 s/move). (The 14.3/17.4 band is an unreconciled 3.5× vs measured 4.262× sequential-cost anchor in the roadmap; the conclusion is insensitive to it, but somebody should reconcile the 26%/91% pair.)
+
+**⭐ THE KEY LOGICAL STEP — why a sequentially-measured strength transfers to a parallel execution.** CL-060 measured k8×1376 run **sequentially**; we deploy it run on **8 workers**. That is legitimate *only* because the split is **behavior-identical**, and that is **proven, not asserted**: the k determinization worlds are independent until the pooled-Q argmax, so `parallel_workers` runs the same worlds with the same decks and the same per-world seeds and merges them through the **same pooled-Q code in the same world order**. `tests/test_kparallel.py` steps sequential and parallel champions through **full games side by side** and asserts the chosen action **and** the pooled root `(N, W)` are equal at **every** move, including the K≤2 marginalized-endgame latch; the latency bench re-verified action identity at **production** budget (30/30 identical roots on every parallel row, and it fails loudly otherwise). ⇒ the parallel agent **is the same player** whose strength CL-060 measured, so **no new strength measurement is owed by this promotion**. `parallel_workers` is a *latency* lever and must never be treated as a strength lever.
+
+**Sequential fallback is NOT a different player.** Where `parallel_workers` is unavailable — Android/Chaquopy, a daemonic eval-farm worker, a notebook — the champion runs its sequential k-loop: **byte-for-byte identical play, 6.37× slower**. That is a clock problem, never an agent substitution.
+
+**⚠️ THE MOBILE CARVE-OUT — the phone stays at k4×688 and is now deliberately weaker than the champion of record.** Chaquopy has no `multiprocessing`, so the phone can only run the sequential loop, where 11008 sims ≈ **25 s/move** (4.26× the measured 1.7 s/move at 2752) behind an uncancellable, progress-less spinner. Unshippable. So the YAML gained `champion.fair_deploy.deploy_profiles.{desktop,mobile}` and `android_bridge.py` resolves the **`mobile`** profile — **fail-closed**: if that profile is ever absent from a bundled YAML the bridge falls back to its own hardcoded 4×688 floor, **never** to the champion-of-record fields. Consequences stated plainly: the on-device opponent is ~50 elo (the CL-060 margin) below the champion of record; it is the **same agent family, same leaf `a36d2e15`, same priors, same exact-K≤2 endgame** — only the budget differs; every on-device manifest records it via `runtime_budget_override`; and **E4 human-vs-champion games archived on the phone must be graded against k4×688, not the champion of record.** Unpin condition: a native (non-Chaquopy) search core with real parallelism benchmarked at ≤3 s/move at 11008.
+
+**⚠️ CONSEQUENCE FOR EVAL COST — budget for it.** The deploy baseline is now **~4.26× more expensive per move sequentially** (13.76 vs 3.23 s/move). Eval farms are *game*-parallel and already saturate a box, so they get **no benefit** from the k-split: every future n=400 confirm graded against this champion costs ~4× the wall-clock it used to. Plan cheaper screens, fewer cells, or run the champion side k-parallel where the harness allows it.
+
+**What did NOT change.** Leaf (curve125 `a36d2e15a3b3d71d`, caps 8/8) · priors (heuristic leaf-softmax, `tau_p` 5.0) · `c_puct` 1.5 · `final_select` visits · `value_norm` 15 · agent family (`FairHeuristicPriorAgent`, PIMC, pooled-Q argmax) · exact **K≤2 marginalized** endgame handoff · the clairvoyant ruler's own 2750-sim identity (see the caveat below) · the phone. **Only the fair-deploy budget and its execution moved.**
+
+**Side effect worth knowing (documented in the YAML's `champion.sims`).** `champion_factory` derives the **clairvoyant** mode's *default* sim count as `k_dets × sims_per_det`, so a `make_production_champion("clairvoyant")` call with **no explicit `sims`** now builds at 11008 rather than 2752. Every real clairvoyant caller (`oracle_score_pilot`, `gate_b_depth_transfer`, `eval_fair_puct`'s prefix agent) passes explicit sims and is unaffected. **If you are reproducing a clairvoyant RULER number, pass `sims=2752`** — the ruler is the 2750-sim agent, and this is a fair-deploy budget change, not a ruler re-anchor.
+
+**Wiring status — deliberately partial, and named as follow-up.** `load_production_spec()` now parses `parallel_workers` + `deploy_profiles` onto `ProductionSpec` and exposes `champion_factory.deploy_profile(name)`. It does **not** auto-apply `parallel_workers`: a spawn-process split is not safe to impose on every embedder (daemonic eval-farm parents, Chaquopy, notebooks) and the factory cannot tell which it is in, so passing it stays an explicit caller decision. **FOLLOW-UP (not done here):** teach `scripts/human_anchor/play_harness.py` to read `desktop.parallel_workers`, so clocked human-facing play gets the 6.37× automatically instead of by hand — until then harness play is the sequential 13.76 s/move execution of the same player.
+
+**What this does NOT claim.** Nothing about absolute or superhuman strength; neither structural blocker moves. +49.85 is a **self-anchored** head-to-head against the outgoing champion, and per the bench's own caveat "tournament-legal" is a **clock** claim. No new games were played for this promotion, so **`experiments/results.csv` gains no row** — the two rows cited above already exist.
+
+**Touches:** PRODUCTION.yaml (budget + execution profiles + provenance blocks) · CLAIM_REGISTRY CL-071 · CHECKPOINT_LINEAGE (champion-config row) · STATUS top block · roadmap G6 + LEVER_INDEX k-parallel row flipped **PROMOTION CANDIDATE → PROMOTED** · `champion_factory` profile parsing · `android_bridge` mobile carve-out · assertions in `tests/release/test_factory_manifest.py` + `tests/android/test_bridge.py` updated to the new budget (they hard-coded 4/688/2752), plus two new guard tests for the profiles and the fail-closed mobile path.
+
+## 2026-07-29 (evening) — CLIFF LADDER COMPLETE: the low end is MONOTONE (G2's loose end ANSWERED) · the identity control EXONERATES the harness and localises the 3σ contradiction to BAND-LEVEL OVER-DISPERSION (~1.8–2.2×)
+
+Three rungs, one band, one deck set, one opponent → [CLIFF_LADDER_88E9_READOUT_20260729.md](measurement/classical_search/CLIFF_LADDER_88E9_READOUT_20260729.md). Rows: `cliff688_k4x172_vs_deploy_n400_b88e9` · `cliff1376_k4x344_vs_deploy_n400_b88e9` · **`cliff2752_k4x688_IDENTITY_CONTROL_vs_deploy_n400_b88e9` (landed today)**. Every figure below was re-derived from the per-game records, not copied from the summaries; the `diff` sign convention was read off the emitter (`eval_fair_puct.py:1551`) first, which caught a double-flip that would have reported +0.88 instead of −5.2725 on the 688 rung.
+
+1. **VERDICT — the low end is MONOTONE; there is no inversion. G2's loose end is DISCHARGED.** Deck-matched on the same 200 decks vs the same opponent, margin in pts/deck: **688 −5.2725 (z −7.22) · 1376 −0.2425 (z −0.29) · 2752 +1.2325 (z +1.44)**. Contrasts: **1376 − 688 = +5.030, deck-paired z +4.85** (STEEP RISE); **1376 − identity-zero = −1.475, z −1.23** (FLAT — 1376 sits within ~1.2σ of deploy on this band). ⇒ **STEEP RISE 688→1376, then FLAT by 2752**, reproducing CL-068's flat-then-cliff *shape* on ONE band, deck-matched, for the low end. The cross-band "1376 below 688" ordering CL-068 recorded as unresolved was an artifact. ⚠️ Precision note: CL-068's loose end quoted −37.5, which is the **k2×344** allocation; the ladder's 688 rung is **k4×172**, whose like-for-like prior is −46.3 (b62e9).
+2. **THE IDENTITY CONTROL IS THE LOAD-BEARING NEW INSTRUMENT.** Rung 2752's candidate is *identical* to its opponent — same k4×688, same curve125 leaf hash both sides, same `exact_k`/`exact_budget`, same box, same decks ⇒ **true value EXACTLY 0 by construction**, so whatever it reads IS the harness+deck noise floor on this band. It reads **+25.23 ± 17.42 elo (wr z +1.45, p 0.147)** and **+1.2325 pts/deck (margin z +1.44, p 0.150)**, with **seat-arm asymmetry +0.885 ± 1.926 (z +0.46)** and cost ratio **1.012×**. **No harness asymmetry beyond noise** — a broken seat/colour/latch/scoring asymmetry would surface here first, in the cell where every other difference is removed. ⚠️ Its +25.2 elo must NEVER be cited as strength; the row says so in capitals.
+3. **THEREFORE the 3σ cross-band contradiction is NOT a broken harness — the economical reading is BAND-LEVEL OVER-DISPERSION.** The same `k4×344` config reads **+0.9 (b60e9) · −53.4 (b76e9) · +20.9 (b88e9)**: sample sd **38.45** vs nominal ~17.5 = **2.20×** on elo, and sample sd **1.579** vs mean per-cell σ_margin **0.861** = **1.83×** on the deck-paired margin. **Present in BOTH house statistics at similar magnitude ⇒ not an artifact of the winrate→elo transform.** The same signature, weaker, shows on the 688-total config across its two bands (−46.3 b62e9 vs −83.2 b88e9 = −36.9 ± 25.0, z −1.47).
+4. **⚠️ The obvious explanation does NOT work — do not reach for it.** "Different bands mean different decks" is *already priced*: the per-deck SEM is computed from the observed per-deck spread, so the deck-draw component is inside the nominal σ. A cross-band difference of the same config should carry σ ≈ √2 × 0.86 ≈ 1.2 pts/deck; the observed spread is ~1.6. **The excess is real and unexplained**, which is why it gets a mechanism list rather than a dismissal. Candidates ENUMERATED, NOT ADJUDICATED (readout §5.4, each with its cheapest test): heavy-tailed per-deck margins · **code-era drift with a budget-asymmetric interaction** (the usual "common-mode, both sides share the code" wave-off does NOT apply to these cells — candidate 1376 vs opponent 2752 is asymmetric, so a budget-interacting change does not cancel) · box/platform float-reduction differences · latch-depth/solver interaction with deck composition · opponent-era drift via `PRODUCTION.yaml` resolved at import time. **This deserves its own systematic look; it is not resolved here.**
+5. **CITATION PRACTICE (the actionable part).** **Inflate σ ~1.5–2× on ANY cross-band comparison in this family** (a cross-band z of 3.0 becomes ~1.5–2.0 = suggestive, not decisive) · **prefer within-band deck-matched contrasts** — which is what this ladder is, and why its +4.85/−1.23 are trustworthy while the +3.00 cross-band z is not · **do not pool across bands and quote it as an estimate** (for the record the three 1376 cells pool to **−10.5 ± 22.2, 95% CI [−54, +33]**, cited only as a *width*).
+6. **⚠️ WHAT THIS DOES NOT TOUCH — CL-060 / the promotion is UNAFFECTED.** `cl060_h2h_k8x1376_vs_deploy_k4x688` is a **within-band, deck-paired** contrast: +49.85 elo, **paired z 3.48**, one band (32e9), n=400 paired. That is exactly the class §5 endorses, and the identity control shows no within-band pathology to discount it with. **Nothing here reopens or weakens CL-071 / the k8×1376 promotion.** It also **refines G7's motivation**: the suspicion about head-to-heads applies to **cross-band** ones; within-band deck-paired head-to-heads pass the identity control.
+7. **`k4×344` STAYS NOT PROPOSAL-ELIGIBLE, and the reason gets STRONGER, not weaker.** On b88e9 it is flat (z −1.23) where b76e9 read −3.54; the two bands disagree and that disagreement *is* finding 3, so **the flat region's lower edge is band-dependent and NOT settled**. But prereg rule 6 wants a candidate to cost **< ~1σ**, and the three-band pooled interval **[−54, +33]** is ~2× too wide to certify safe. ⇒ the verdict upgrades from "**proven costly on one band**" to "**not certifiable as safe on any band, because the measurement is over-dispersed**". **Do not propose it.** Moot for production regardless: the champion of record is now k8×1376 (CL-071), far above every rung here.
+8. **Platform caveat that travels with the 688-vs-1376 contrast:** rung 688 ran `darwin-arm64`/W10, rungs 1376+2752 x86-64/W16. Each cell is internally same-platform (so internally sound), but the +5.030 contrast is not platform-clean, and the harness itself documents that float reduction order can flip a near-tied argmax. At z +4.85 platform is an implausible *full* explanation; a platform-clean 688 re-run on x86-64 is the cheap closer if the contrast ever needs to be exact rather than directional.
+9. **Provenance nit on record:** the 688 rung's manifest `code_rev 3d7ce4f` **does not resolve in this repo** (the M5 has a separate rsync'd tree, no share mount); its row cites `cc73b3c`, the local launch rev. Standing in for the rev: that cell's leaf hashes and curve125 provenance hash are byte-identical to the other two, and both its sides share the code.
+10. **Manifests diffed field-by-field across all three cells: they differ in EXACTLY four keys** (`sims_per_det`, `total_sims`, `host`, `code_rev`/`utc`); `seed_start 88000000000`, `paired`, both leaf hashes, curve125 provenance hash, endgame settings and leaf env are identical, and the **deck seed sets are verified identical set-for-set**. **Opponent is the PRE-PROMOTION champion (`pre54b31ac`) by design** — all three rungs share it, which is what makes the ladder valid; these elos are distances from the OLD champion and must not be compared to figures graded against the new one. Costs: 4.11 h (M5, W10) + 2.95 h + 3.83 h (laptop, W16) ≈ 10.9 h, 146.7 CPU-hours, 0 timeouts and 400/400 latches on every side of every cell. **Band 88e9 is burned.** Nothing promoted; `governance/PRODUCTION.yaml` untouched.
+
+**Touches:** results.csv (identity-control row) · this entry · readout status banner · CLAIM_REGISTRY CL-068 amended (2026-07-29) · STATUS top block (cliff-running line → verdict) · roadmap G2 loose end → **ANSWERED** · docs/INDEX.md row.
+
+## 2026-07-29 (late evening) — **IS THE NEW CHAMPION AT ITS KNEE? VERDICT: INCONCLUSIVE per prereg — but the per-MOVE value of doubling width COLLAPSED ~13.5×, so no room is DETECTED above 11008 (never "there is nothing above")**
+
+**Read-out:** [KWIDTH_22016_READOUT_20260729.md](measurement/classical_search/KWIDTH_22016_READOUT_20260729.md). **Pre-registration** (before any score existed, `b940ff5`): [KWIDTH_22016_PREREG_20260729.md](measurement/classical_search/KWIDTH_22016_PREREG_20260729.md). Read-out estimator pass also committed pre-result (`0486759`).
+
+**WHY THIS WAS ASKED NOW.** The afternoon promotion made **k8×1376 = 11008** the champion, chosen as the **cheapest point on a plateau** — `PRODUCTION.yaml budget_authorized_by` (2) cites `curve_k16x1376_22016_vs_deploy_k4x688` at +35.58/z2.68 against the 4× point's +49.85/z3.48, "statistically the same place", so 8× was called strictly dominated. That reasoning is only as good as the ruler, and two things made it worth re-asking: (a) the evening's own cliff read-out localised a **3σ contradiction to band-level over-dispersion**, so head-to-heads across bands are suspect; (b) the oracle pilot had already shown the **same flatness one rung DOWN was the RULER, not convergence** (+0.7375 pts/disagreement, cluster-robust z +2.97). This instrument has **no opponent, no elo, no bands** — roots are replayed from the CL-070 bank, worlds are CRN-derived — so it sidesteps (a) entirely.
+
+1. **THE QUESTION.** On positions where 11008 and 22016 pick different moves, does the 22016 pick score better? Judge: clairvoyant-PUCT continuation, M=32 CRN-paired deck completions, `--oracle-sims 100`, value = the engine's own TERMINAL score margin. Sign convention: **positive = the 22016 (wider) pick is better**.
+2. **⚠️ 22016 WAS RUN AT k16×1376, NOT NAIVE k8×2752.** Width is re-solved per budget (CL-054's k4 optimal *at* 2752; k8 *at* 11008; `curve_k16x1376` is the measured 22016 cell). Doubling sims-per-determinization instead would price a different, worse agent.
+3. **THE VERDICT — INCONCLUSIVE at this n**, the pre-registered §6 "neither" branch. Cluster-robust on root (**the cited row**): mean **+0.1054 pts/disagreement**, se 0.1999, **z +0.53**, 95% CI **[−0.2864, +0.4972]**; root-collapsed +0.1449 (z +0.67); naive z +0.55 (NOT cited); design effect 1.089; G 187 / n 237. Bootstrap of roots (20k, seed 20260729) P(≤0) **0.2915**. Sign test **102+ / 109− / 26 zero** (p 0.709) and by root 83+/84− (p 0.562) — *centred*, not merely weak, unlike the pilot's 58+/36−. sd 2.9495, **median exactly 0.0000**, 10%-trimmed +0.0242. **11.0% of positions have delta exactly 0** with 0 identical afterstates — genuine oracle ties, not harness no-ops.
+4. **⭐ THE REPORTABLE HEADLINE IS THE COMPOUND COLLAPSE, not the mean.** Budget must do two things to buy strength — change the move, and change it for the better — and **both factors fell**: D̂(11008,22016) = **0.1244 ± 0.0076** against CL-070's `D_paired(2752,11008)` = 0.2398 (**0.519×**, and D̂ is powered on its own at 1905 cells), and the per-disagreement mean fell to **0.143×**. Their product — expected points per MOVE actually bought — went **+0.1769 → +0.0131 pts/move, a 13.5× collapse**. ⚠️ **Descriptive only:** that product's own interval, D̂ × the CR CI, is **[−0.036, +0.062] and includes zero.** What IS powered is the *comparison*: **the CI upper bound +0.497 EXCLUDES the rung below's +0.7375**, so the supported statement is "this step is measurably less valuable per disagreement than 2752→11008", **not** "this step is zero".
+5. **⚠️ THE PRE-REGISTERED LANGUAGE, AND IT IS NOT PEDANTRY: "NO ROOM DETECTED above 11008", NEVER "there is nothing above 11008."** Prereg §4 pre-committed the reason before any score existed: the judge is a weak continuation (100 sims), and a weak continuation **biases the measured effect toward zero**, so a null is the *weaker* of the two outcomes on this instrument and is not an upper bound on the truth. Any citation of this result must carry that sentence.
+6. **⚠️ SELF-CRITICISM — THE PREREG'S OWN "KNEE" BRANCH WAS UNREACHABLE.** It required 95% CI upper bound < +0.3688, planned against the pilot's sd 2.406. The realized sd is **2.9495** (+23%), so the CR CI half-width is **±0.3918 — already larger than the threshold**. The knee branch could only have fired on a point estimate ≤ **−0.023**, i.e. only if the wider pick had come out nominally worse. **⇒ the design could reach "there IS room" or "INCONCLUSIVE", but not "at the knee", at any positive point estimate.** A power mis-specification in §5, not a property of the world; it is the one thing to fix on any re-open. Priced: powering it at the observed +0.1054 needs se ≤ 0.1344 ⇒ **n ≈ 482 positions ⇒ ~3875 cells ⇒ ~2× this run (~11 h)**. And **more worlds cannot rescue it** — the variance is between-position dominated (var_between 3.81 vs within/M 4.88; sd at M→∞ ≈ 1.95), the same wall the pilot hit. **NOT RECOMMENDED:** it buys a tighter estimate of a quantity every reading already puts near zero, and 22016 is not deployable regardless.
+7. **ORDER-OF-MAGNITUDE CROSS-CHECK — a consistency test, NOT a measurement** (same non-additivity caveat as the pilot's §4; the naive sum overstates, measured at 3.2× one rung down): 0.0131 pts/move × 71.5 decisions ≈ 0.94 pts/game naive → ÷3.2 ≈ 0.29 pts/game → wr 0.5053 (σ_game 22.2) ≈ **+3.7 elo**. Against results.csv by difference: `curve_k16x1376_22016` (+35.58) − `cl060_h2h_k8x1376` (+49.85) = **−14.3 elo** (cross-band, n.s.). **Both indistinguishable from zero ⇒ the two instruments now AGREE that this rung buys ~nothing** — the useful part, because one rung down they disagreed by ~70 elo (+49.85 head-to-head vs −21.4 through RoD-v2).
+8. **⇒ WHAT IT CHANGES: the promotion's judgement call SURVIVES an independent check.** The plateau `PRODUCTION.yaml` cited to pick 11008 over 22016 looks like a **real plateau at this rung**, on a ruler with no opponent, no elo and no bands. **What it does NOT establish: convergence.** The pick still changes **12.4%** of the time — that is "changes, but the change is not worth anything measurable", exactly the third hypothesis 2026-07-28's correction flagged, not CL-070-style convergence.
+9. **THE COST TRICK — AND IT WAS PROVEN, NOT ASSUMED.** One k16×1376 run yields BOTH picks, because arm A is the world-0..7 **prefix** pool of arm B: `det_seed_base` and the per-world search seed `base+100+i` are both `k_dets`-independent, `_merge_root_stats` pools in world order, and `min_pooled_visits` is the constant 2 — so the prefix pool reproduces a real k8 agent's accumulators through the same `+=` sequence, order-sensitive float addition included (the k-parallel split's own argument, applied along **k**). ⇒ **22016 sims/cell, not 33024.** On **20 cells** the harness built REAL `FairHeuristicPriorAgent`s at both widths and asserted the **deployed `_pimc_move`** returned exactly the reported picks: **20/20 passed**. That is why a 1905-cell pick phase fit in 63 min.
+10. **RUN HEALTH.** Picks 1905/1905 ok, 0 failed, 861 distinct roots (237 disagreements span 187). Score 237/237, 0 failed, `crn_verified_all: true`, 0 identical afterstates, 23 perfectly paired, median CRN variance reduction 1.485×. **The WHOLE frozen disagreement population was scored** (237 = population), so there is no sampling step. Total 5.6 h at W16 local (picks 3805 s + score 15625 s + batch-1 669 s), inside the pre-registered 8 h guard. Adaptive rule sized N_cells=1905 off the batch-1 D̂ 0.105 ± 0.022; the full run's 0.1244 ± 0.0076 sits inside that interval and **delivered 237 disagreements against a 200 target**, so §5's under-run clause never bound.
+11. **NON-BREAKING TOOLING.** `oracle_score_pilot.py` gained `--alloc-a/--alloc-b` ("k8x1376") because these arms differ in **width**, so the harness's historical hardcoded `4 × level` would have written a wrong total budget into the manifest. Default path proven byte-inert, not asserted: a default-flag rescore of a banked position reproduced **every value-bearing field** and left `alloc_a/alloc_b = None` with the banked 2752/11008 totals.
+12. **⚠️ SCOPE GUARD-RAIL: NOTHING HERE UN-PARKS THE ORACLE TEACHER-CURVE PRICING** (roadmap G6 tail; Joshua 2026-07-28, *"can't commit to days yet"*; memory `project_effjensen_48h_window`). Same harness, different question: that item asks whether a 22016 **teacher** is worth days of generation for a distill program; this asked whether the **deployed champion** is at its knee, in 5.6 h, from picks the champion already makes. **No result here may be cited as pricing a teacher** — that stays a fresh ask to Joshua.
+13. **NO PROMOTION, and none proposed.** 22016 costs 2× the champion's clock; CL-068 and TOURNAMENT_TIMING stand untouched. **No `results.csv` row** (not an elo cell) · **no CL id** (a null that changes no production decision does not assert a claim) · **`governance/PRODUCTION.yaml` untouched** — all three exactly as the prereg pre-committed. Reserved and still NOT RUN: the `--oracle-sims 400` sensitivity (the only follow-up that could overturn a null, since it attacks item 5's bias directly) and the out-of-family sign check (near-uninformative on a null — there is no sign to check).
+
+**Touches:** this entry · read-out doc + prereg status banner · STATUS top block · roadmap **G7 → DONE** · docs/INDEX.md rows. **Deliberately NOT touched:** results.csv (no elo cell), CLAIM_REGISTRY / CHECKPOINT_LINEAGE (no CL id), PRODUCTION.yaml.
+
+## 2026-07-29 (late evening, 2nd) — **EFF_LINUS REPLICATED ON THE LAPTOP: the WSL exoneration holds on a second architecture — and the apparent 2.16× "divergence" was an E-CORE SCHEDULER ARTIFACT, not a hypervisor tax**
+
+**Read-out:** [LAPTOP_REPLICATION_20260729.md](measurement/eff_linus/LAPTOP_REPLICATION_20260729.md). Driver made path-portable in `17ba2ce` (`EFFL_*` env overrides; the 5900XT invocation is byte-unchanged). **Measurement infrastructure — no games, no elo, no claim, no `results.csv` row, `governance/` untouched.**
+
+1. **THE REPLICATION HOLDS.** Same 4-cell A/B on the laptop (i7-14650HX **hybrid 8P+8E** / RTX 4070 Laptop / Win11 26100 / WSL 6.18.33), 3 reps × 2 arms, alternating A/B/B/A, `audit.ab_valid: true`, **24/24 cells rc=0**, pure-Python leaf asserted both arms, same bundle and md5-verified `positions.jsonl` `e36c4d2a…` as the 5900XT run. **Native Windows is slower on EVERY cell of BOTH boxes** ⇒ H1 (nested-paging/EPT) and H2 (`/dev/dxg` batch-1) are refuted a second time, **sign inverted a second time**. The lever stays **DEAD**.
+2. **⭐ THE HEADLINE IS THE CONFOUND, BECAUSE IT NEARLY SHIPPED AS A FINDING.** As run, the laptop reads **1.182× / 2.158× / 2.711× / 2.927×** against the 5900XT's 1.259/1.251/1.060/1.137 — a 1.7–2.6× magnitude gap that would have read as a failed replication. It is **not** virtualisation: on this hybrid CPU a **windowless, WSL-launched native console process is scheduled onto the E-cores.** Probe (`ecore_probe/`, n=3, affinity the only variable): unpinned **4.815** s/move vs E-core-pinned **4.843** (agree to **0.6%**) vs P-core-pinned **2.665**. **Affinity-controlled the laptop reads 1.185× / 1.181× / 1.055× — the same 1.06–1.26× band as the 5900XT.**
+3. **TWO CONFOUNDS TESTED AND REJECTED BEFORE THE NUMBER WAS BELIEVED.** (a) **`nice -n 19` is not it** — un-niced 3-rep control gives **2.202×** vs the niced **2.158×**, identical within noise (this also clears the 5900XT run, which was niced too). (b) **Not thermal / EcoQoS / time drift** — the champion cells carry per-decision samples on paired positions, and the within-cell ratio is **flat at ~2.14 from 4 s to 67 s**, no ramp. What varies is *work per decision*: in µs/sim, **three of the four arms scale 1.10–1.11× from 32→688 sims and exactly one — laptop native Windows — scales 2.01×**, which is what localised the anomaly to one arm of one box.
+4. **⇒ STANDING RULE ADOPTED: pin CPU affinity (or verify core placement) before quoting ANY native-Windows cell.** The 5900XT is homogeneous so §4 was never exposed; the driver now runs on a box that is not. Recorded in the LEVER_INDEX row, the roadmap G3 line, and a warning appended to EFFJENSEN §4 itself.
+5. **A METHOD IMPROVEMENT over §4, worth carrying:** both laptop arms are **exact-patch-matched CPython 3.13.14** (WSL via `uv`/python-build-standalone, Windows via python.org's silent user-scope installer — **no `winget` on that box**, App Installer absent) with numpy 2.5.1 / pyyaml 6.0.3 / torch 2.11.0+cu128 on both. §4 compared 3.13.12 to 3.13.14 and carried that as a caveat; this run does not.
+6. **DELIBERATELY NOT REPEATING §4's ONE REGRET: the Windows venv was KEPT.** C: has **118.77 GiB free**, so there was no reason to trade reproducibility for space — §4's `win` arm became non-reproducible when its venv was deleted. All 103 artifact files are committed, **including the generated `.bat`s**, so the affinity probes re-run verbatim.
+7. **⚠️ WHAT THIS DOES NOT DO.** Latency only; no strength. **Round-2 Cython parity is untouched and still blocked on MSVC Build Tools (admin — open question for Joshua)**, and is now moot unless the sign reverses. `champ_k1x32` was not probed pinned — its as-run 1.182× already sits in the controlled band and its µs/sim growth is the normal 1.10×, but "it was never demoted" is an **inference from the scaling table, not a measurement** (the one loose end). The cross-box observation that the laptop's WSL arm beats the 5900XT's on every cell is **build-confounded** (pbs vs miniforge) — **not a box ranking**.
+
+**Touches:** this entry · read-out memo (new, status-banner stamped) · docs/INDEX.md row · LEVER_INDEX row flipped NOT-RUN → **RUN + REFUTED-INVERTED/DEAD** (it was stale — the 5900XT result had landed without updating it) · roadmap G3 eff_linus line → **CLOSED NEGATIVE, two boxes** · warning appended to EFFJENSEN §4 · STATUS clause. **Deliberately NOT touched:** results.csv, CLAIM_REGISTRY / CHECKPOINT_LINEAGE, PRODUCTION.yaml (no elo, no claim, no champion).
+
+## 2026-07-30 (morning) — **THE UNMEASURED PAIR IS MEASURED: the CL-067 net at 2752 is −20.9 ± 17.4 vs its OWN corpus teacher at 11008. Pre-registered branch = BRACKET-NARROWING, NOT a verdict; the n→800 extension FIRES and is NOT LAUNCHED**
+
+**Read-out:** [READOUT.md](measurement/teacher_h2h_94e9/READOUT.md) (`3467f73`). **Pre-registration, committed BEFORE the first game of the cell:** [TEACHER_H2H_PREREG.md](scripts/distill_flywheel/TEACHER_H2H_PREREG.md) (`f2e11ca`, amended `ceb49a9`), which promoted [PROPOSED_TEACHER_H2H_CELL.md](scripts/distill_flywheel/PROPOSED_TEACHER_H2H_CELL.md) (`eaf900f`) on Joshua's 01:25 direction — verbatim: *"maybe we should run the eval first."* Row: `teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9`. Claim: **CL-072 (Provisional / Open)**. Ops report for the same window: [GEN_TRAIN_REPORT.md](measurement/rodv3_turn1/GEN_TRAIN_REPORT.md) (`08c1cac`).
+
+**WHY THIS CELL EXISTED AT ALL.** The rodv3 awakening premise had been paraphrased as *"the operator beats its teacher at 2752."* The measured fact was narrower: CL-067's **+35.7 ± 12.3** is net+search@2752 vs the **same-budget classical** champion@2752. The net's *actual* corpus teacher ran at **k8×1376 = 11008** (`distill_strong_20260723/iter_03/manifest.json` → `config.teacher`), and against **that** player the net was **UNMEASURED in either direction** — no `results.csv` row held the pair. That is the audit's **F1** finding as corrected 2026-07-30 (`e9b8a97`): the correct statement was the manifest fact plus *"the gap is UNMEASURED"*, **never a signed elo number** — because the two available cross-band derivations **disagreed in sign** (≈**+8** via CL-060's budget-only route; ≈**−14** via CL-067's `counterevidence` equal-per-move-cost route, itself derived, and colliding arithmetically with an unrelated `+14.1` in `best_evidence`). Both are the transitive-through-a-shared-baseline maneuver F2 documents inverting a +50 contrast.
+
+1. **THE MEASUREMENT.** Candidate = CL-067 `iter_03` net **POLICY** priors + **FROZEN** curve125 leaf (value severed), **k4×688 = 2752**. Opponent = the production champion `FairHeuristicPriorAgent` / `puct_priors_v29_bmild_cap8` at its CL-071-promoted `fair_deploy` budget **k8×1376 = 11008**. Asymmetry via `OPP_K_DETS=8 OPP_SIMS=1376` (the k-axis; `--opp-sims` alone cannot express it), proven at exactly this budget by CL-060's candidate arm. Both sides leaf `a36d2e15a3b3d71d`, `c_puct 1.5`, `tau_p 5.0`, `value_norm 15`, exact-K 2 marginalized endgame. **n=400 deck-paired (200 decks × 2 seats), fresh band 94e9** (`seed_start 94000000000`, claimed by enumeration in `BAND_CLAIMS.txt`), `code_rev 7d3fc6f-dirty`, two boxes `--shared-claim`. Every figure below is read off `summary.json`, not paraphrased: **W 184 / D 8 / L 208**, `winrate 0.47`, `winrate_z −1.2000`, `elo −20.871204666`, `elo_sig_1sigma 17.403133160`, `paired_mean_margin −2.0025` pts/deck, `paired_z −1.8956`, `n_paired 200`, `champ_latched_games 400`, `champ_timeouts 0`.
+2. **THE PRE-REGISTERED BRANCH THAT FIRED IS BRACKET-NARROWING — EXPLICITLY NOT A VERDICT.** `|elo| = 20.9` lands inside the pre-committed **[5, 25]** interval at `|z| < 2`, so by the rule fixed before the first game the response is: **extend the SAME cell to n=800 on FRESH decks of band 94e9, then verdict.** **That extension FIRES and has NOT been launched** — it is a **~7 h two-box spend** and the compute call is Joshua's (cost-discipline rule). **Decision PENDING as of this entry.** Nothing is promoted in any branch; `governance/PRODUCTION.yaml` is **UNTOUCHED**.
+3. **WHAT IT ALREADY DISCRIMINATES.** The measured **−20.87** is consistent with the ≈−14 route and sits **~1.7σ from the ≈+8 route** ⇒ *"the operator produces data above its own corpus tier"* is the reading the data **DISFAVOURS** — which is exactly the question the cell was funded to settle. ⚠️ 1.7σ **disfavours; it does not exclude**, and the ≈−14 route it agrees with is *itself* a derived cross-band figure that must never be cited as a head-to-head. The value of this cell is that it replaces **both** derivations with one direct, within-band, deck-paired contrast.
+4. **IT DOES NOT CONTRADICT CL-067, AND MUST NOT BE READ AS DOING SO.** CL-067's **+35.7 ± 12.3** is at **EQUAL sims** (2752 vs 2752) against the deploy champion and is untouched. The two are **tier-relative statements about different opponents**, and together they say something sharper than either alone: *the net beats same-budget CLASSICAL play, and still does not reach the tier that generated its training corpus once that tier is given its own 4× budget.*
+5. **THE COST PICTURE MAKES IT WORSE, NOT BETTER — and the field names were checked against the emitter.** `champ_prefix_ms_per_move 16100.05` (the **candidate**) vs `rung_ms_per_move 14047.32` (the **opponent**) = **1.15×**, i.e. the candidate spent **more** wall-clock per move while scoring ~21 elo below. The candidate/opponent mapping is verified at `eval_fair_puct.py:1645-1674`, where `champ_ms` prints as *"candidate"* and `rung_ms` as *"opponent"* — the same field-naming trap that once produced a backwards "4× cheaper" read. ⚠️ The unequal budget is **the point of the cell, not a confound**, and a cost-ratio guard was pre-registered as **NOT a gate** here; deployability is CL-067's question, answered NEGATIVE, and is not reopened.
+6. **THE LIMITS, stated at the strength the evidence supports.** ONE band, n=400 — which resolves only effects ≳35 elo at 2σ. The **elo** statistic is **1.20σ**; the **margin** statistic (the harder one to move) is the stronger at **1.90σ** and **agrees in sign**. This **is** a *within-band deck-paired* contrast — the class the 2026-07-29 identity control exonerated — so **no cross-band over-dispersion inflation applies**; the underpowering here is ordinary n. **−20.9 sits precisely in the zone where this program has been fooled before**, which is why the extension exists.
+7. **CONSEQUENCE FOR rodv3 turn 1, pre-registered rather than improvised.** If the extension confirms **PREMISE WEAK**, the awakening premise narrows to *"above same-budget classical only"*, **gen at the corpus-teacher budget (k8×1376 = 11008, ~29 h local-only) becomes the ONLY clean test of recipe lever 6**, and **a DEAD turn-1 gate becomes EXPECTED rather than informative** — the outcome that *saves* funding that 29 h on a hunch. This is F1's surviving discriminator, and the cell was run first precisely to price it. **Turn-1 gen stays PARKED at 65/300** (claims at parity both hosts, losslessly resumable), **no train ran**, and its **gate remains NOT FUNDED** either way.
+8. **PROVENANCE DEFECT ON RECORD, measurement unaffected (`ceb49a9`).** `eval_fair_puct.py`'s *"the opponent is NOT the shipped production champion"* banner is **STALE AND INVERTED**: the check compares against a hardcoded `PROD_KNOBS = {..., "k_dets": 4, "sims": 688}` — the **pre-promotion** budget — not against `governance/PRODUCTION.yaml` as its own text claims, and CL-071 moved the champion to k8×1376 on 2026-07-29 without updating it. So a cell at the **actual** champion budget is flagged as deviating while one at the superseded k4×688 is silently blessed. **The opponent arm of this cell IS the champion of record**; the harness's own `opponent_label` (*"FAIR PRODUCTION CHAMPION … k8x1376"*) is the correct one. **Not fixed here** — main-tree source, quiet-window edit — and recorded so nobody "corrects" this cell's opponent back to k4×688 on the strength of a stale banner.
+9. **⚠️ INCIDENT, recorded against the operator, not buried.** At 09:52 a `summary.json` appeared at **`n=399 / n_paired=199`** — the documented **eval-path fails-OPEN** hazard (self-play fails closed and loud; eval writes a plausible short summary). The integrity check caught it, **but the first diagnosis was wrong**: the one claim without a record named **`laptop:107288`**, the operator checked for live clients on **local only**, declared it stranded, cleared a **LIVE** claim and started a **duplicate** worker. Truth: local had exhausted its share first and summarised the 399 records then on disk; the laptop finished the last game at **09:56:08** and rewrote `summary.json` at **n=400**. **The system self-corrected; the intervention was unnecessary.** The duplicate was killed (main + 21 spawn children by exact pid, then orch + SHM) before it could overwrite a completed record — verified: final record mtime unchanged at 09:56:08, 400 records, 400 claims, `n=400 / n_paired=200`. The short summary is retained as `summary_n399_PARTIAL.json`. **LESSON: a `.claim` file NAMES the host that owns it — check THAT host before calling it stranded.** The information needed was already printed on screen.
+
+**Touches:** `results.csv` row `teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9` · this entry + index line · status banners on [TEACHER_H2H_PREREG.md](scripts/distill_flywheel/TEACHER_H2H_PREREG.md) and [PROPOSED_TEACHER_H2H_CELL.md](scripts/distill_flywheel/PROPOSED_TEACHER_H2H_CELL.md) · **CLAIM_REGISTRY new claim CL-072 (Provisional/Open)** · [STATUS.md](STATUS.md) top block · roadmap **G8** premise wording + STATE · [LEVER_INDEX.md](docs/LEVER_INDEX.md) full-budget-flywheel-gen row.
+
+## 2026-07-30 (midday) — **eff_linus ROUND 3: bare-metal Linux (Pop!_OS) is PARITY with WSL2 on the SAME silicon ⇒ the lever CLOSES on every route, and round 2's E-core rule narrows to native-Windows only**
+
+**Read-out:** [POPOS_ROUND3_20260730.md](measurement/eff_linus/POPOS_ROUND3_20260730.md). **Spec, written and committed before the run:** [EFFLINUS3_POPOS_RUNBOOK.md](scripts/measurement_infra/EFFLINUS3_POPOS_RUNBOOK.md) — including its three **pre-registered decision hooks** (≥1.10× native win → surface a dual-boot fleet option; 0.95–1.05× → close the lever; >1.10× slower → hunt a WSL *advantage*). Artifacts: `measurement/eff_linus/run_pop_20260730/` (103 files, incl. the drivers, so the arm re-runs verbatim). **Latency only: no games, no elo, no `results.csv` row, no claim id, `governance/` and `PRODUCTION.yaml` untouched.**
+
+**The question rounds 1–2 could not reach.** Both prior rounds compared WSL2 against native **Windows** and refuted the hypervisor tax with the sign inverted (native Windows 1.06–1.26× *slower*, two boxes). But Joshua's original memory — *"the laptop felt faster on Pop"* — is about native **Linux**, and had never been measured this era. Joshua booted the laptop (i7-14650HX 8P+8E / RTX 4070 Laptop) into Pop!_OS 22.04 to make that arm reachable.
+
+1. **THE RESULT: PARITY. Decision hook 2 fired and `eff_linus` is CLOSED.** Pop!_OS vs the committed round-2 WSL arm on the same machine, p50, 3 reps each: `champ_k1x32` **0.09252 vs 0.09505 = 0.973×** · `champ_k4x172` **2.20177 vs 2.25024 = 0.978×** · `net_cpu_1t` **10.4298 vs 10.7114 ms = 0.974×**. All three inside the pre-registered 0.95–1.05 band; `gap_exceeds_run_spread: true` on all three, so the 2–3% is real as a *measurement* — but it is the same size as the **~0.9% between-sitting reproducibility floor measured in the same session** and smaller than the cross-boot uncertainty, so the honest read is **"parity", not "Pop wins by 2.5%"**. **There is no dual-boot gen fleet to build and no OS-level speed lever left in this family.**
+
+2. **THE ARMS WERE MATCHED TIGHTER THAN ROUND 2 MATCHED ITS OWN.** Same physical machine; **the same python-build-standalone CPython 3.13.14 (Clang 22.1.3) artifact on both arms** (round 2 had python.org/MSVC vs pbs/Clang); numpy 2.5.1 / pyyaml 6.0.3; the same M5 bundle with `positions.jsonl` md5 `e36c4d2a…`; ckpt sha256 `6e26799…3751a1`; the net cell's `pysrc` staged at git `17ba2ce` and **content-hash-verified byte-identical** to the WSL arm's staging (168 `.py` files, `9d364c64…`) *before any cell ran*; pure-Python leaf asserted both arms. **And the determinism cross-check passed: all 11 chosen actions are identical to the WSL arm on both champion cells, every rep** — the two OSes produce the same search result, not merely comparable timings.
+
+3. **⭐ ROUND 2'S HEADLINE TRAP IS A *WINDOWS* TRAP, NOT A HYBRID-CPU TRAP — the standing rule narrows.** Round 2 found a windowless WSL-launched native-Windows process parked on the E-cores (unpinned reproduced E-core-pinned to 0.6%; 1.81× penalty). On the *same silicon*, **Linux placed the same single-threaded, niced, unpinned job on P-cores in 100% of reps: pinned vs unpinned differ by 0.5%** — while a deliberate `taskset -c 16-23` E-core pin still costs **1.61×**, so the hardware penalty is real and the scheduler is simply choosing correctly. **Revised standing rule: pin (or verify) CPU affinity before quoting any native-WINDOWS cell on a hybrid CPU; native Linux does not need it.**
+
+4. **TWO CONFOUNDS BRACKETED RATHER THAN ASSUMED.** (a) **CPU governor is NOT load-bearing** — the primary ran under `performance`/EPP `performance`, but a full re-run under the as-found `powersave`/`balance_performance` gave **2.19600 vs 2.20177** (0.3% *faster*) and 0.09288 vs 0.09252, i.e. noise. `intel_pstate` + HWP already boosts a sustained single thread. **So the parity verdict is not an artifact of having tuned the Linux side.** (b) **`nice -n 19` is innocuous a third time** (un-niced 2.18848 sits *between* two niced sittings, 2.20177 and 2.18168).
+
+5. **🔧 SEPARABLE SIDE-FINDING: interpreter start-up is ~3.5× cheaper on bare metal.** Non-decision wall-clock per cell process is **0.140 s (Pop) vs 0.484 s (WSL2)**, the same ~0.35 s constant on both champion cells. Irrelevant to our long-lived `--shared-claim` workers; relevant to anything that forks many short-lived processes. It also **kills the obvious worry about the storage medium** (see 6): a USB-stick root did not cost startup, it *won* it.
+
+6. **DEVIATIONS AND CAVEATS, STATED NOT SMOOTHED.** (a) **Cross-boot, not same-session** — dual boot makes A/B/B/A alternation impossible, so the reference is round 2's committed artifact from ~18 h and one reboot earlier; thermal history, firmware/EC power policy and background daemons are uncontrolled across boots. This is structural and is the dominant caveat. (b) **`net_cuda_b1` SKIPPED on a disk guard** — this is Joshua's *old* Pop install running from a **USB flash drive** (`/dev/sda4`, `TRAN=usb`) with 8.7 G free, and the round-2 Linux venv carrying `torch 2.11.0+cu128` measured **6.6 G**, under the runbook's ≥3 G headroom rule ⇒ the native-Linux-CUDA vs WSL-CUDA batch-1 datum is **not collected**, the one genuinely missing cell. (c) **`net_cpu_1t` ran `torch 2.11.0+cpu`** rather than `+cu128`, same disk reason — same version and ATen CPU kernels, 1 thread pinned both arms, but a difference, which is why the verdict rests on the champion cells. (d) **Cython deliberately NOT built** even though `gcc 11.4.0` is present: the WSL numbers being compared against are pure-Python, so building a `.so` would have made this Cython-vs-interpreted. The staged tree contains **zero `.so` files**, making the pure-Python path structural rather than merely env-asserted. **Round-2's Cython-parity question is untouched — and now moot unless the sign reverses.** (e) The box's DNS was broken on arrival (stale tailscale claim on `/etc/resolv.conf`) and was repaired out-of-band before provisioning, so no install was routed around it.
+
+7. **MECHANISM KNOBS RECORDED FOR ANY FUTURE ROUND.** THP is `madvise` on Pop **and** on WSL2 (checked on the 5900XT box), so round-2's proposed THP arm is moot. Pop's mitigations are Enhanced/Automatic IBRS + `BHI_DIS_S` + Clear Register File + `vmscape` IBPB; **the laptop's WSL-side mitigation string could not be read** (the box cannot be in both OSes at once) — the one dimension this round genuinely could not match. Given parity, no mechanism hunt is owed.
+
+8. **WHERE ALL THREE ROUNDS LAND.** Native Windows **1.06–1.26× slower** than WSL2 (5900XT + laptop, affinity-controlled); native Linux **0.97–0.98× of** WSL2 (this round). **WSL2 sits at the top of the range** — it beats native Windows on the same silicon and ties bare-metal Linux on the same silicon. The remaining virtualisation cost on our workload is smaller than the reproducibility floor of the bench that would measure it. **Joshua's "the laptop felt faster on Pop" is now measured and is not a compute effect.**
+
+9. **BOX LEFT CLEAN.** Governor **restored to `powersave`** (as found), no processes of ours running, **8.0 G free on `/`** (~1.5 G consumed: `~/.local/share/uv` 105 M, `carc-pop-bench/.venv` 811 M incl. torch-CPU, the M5 bundle, a `--no-checkout` repo clone, and the run outputs). The venv and bundle are **deliberately kept** so this arm stays reproducible — round 1's deleted Windows venv is exactly why *its* arm is not.
+
+**Touches:** this entry + index line · read-out memo (new, status-banner stamped) · runbook status banner flipped DRAFT → **✅ EXECUTED / PARITY** · docs/INDEX.md row · LEVER_INDEX row rewritten (**"native Windows" → "outside WSL2"**, now covering both routes, verdict **DEAD, ALL ROUTES**) · roadmap G3 eff_linus line → **round 3 closed the family** · follow-up §9 appended to the round-2 laptop memo · round-3 pointer appended to EFFJENSEN §4 · STATUS block. **Deliberately NOT touched:** `results.csv`, CLAIM_REGISTRY / CHECKPOINT_LINEAGE, `PRODUCTION.yaml` (no elo, no claim, no champion).
+
+## 2026-07-31 (afternoon) — **RUST PORT P0 LANDS: G0 PASSES ON THE LOCAL LEG — full bit-exactness is achievable, the pre-registered ≥99.9% fallback is not needed on desktop; the LibmFlavor finding**
+
+**Context.** F8 (docs/RUSTPORT_BUILD_SPEC_2026-07-31.md) phase P0 = the determinism substrate: CPython MT19937, `math.fsum` (Shewchuk), numpy pairwise sum, and the two transcendental sites (`np.exp` at the softmax prior, `math.tanh` at value_norm). G0 was pre-registered as the gate that "decides the libm strategy."
+
+1. **All five primitives bit-exact, 0 mismatches** (local leg: 5900XT, glibc 2.39, CPython 3.12.3, numpy 2.4.4, rustc 1.96.0 pinned): MT19937 33,200 checks / 9,965 seeds incl. 1,953 ≥ 2⁶⁴ · fsum 10⁶ multisets / 63.9M terms · npsum 10,764 reductions f32+f64 · exp and tanh on 200k+ corpus-harvested args (89 champ games replayed through the production prior evaluator) + 10⁸ fuzz each. Raw: `measurement/rustport_p0/G0_*.json` (authoritative over the report prose).
+
+2. **The libm finding — two independent axes, not one.** A faithful FreeBSD-msun `tanh` port was off 3/214,333; localization showed the divergence lives entirely in `expm1`, where glibc uses a different polynomial *grouping* (the 1997 Shimizu pipelining rewrite) than fdlibm — same coefficients, different rounding sequence. Axes = {polynomial: msun|glibc} × {FMA contraction: off|on}, enumerated as `compat::LibmFlavor`; **`glibc_fma` is exact on this platform (0/0/0)**, every other flavour loses (≤3 ulp). Load-bearing for P7: bionic is msun-derived, so **Android is expected to select a different flavour** — the enum is the mechanism, no second port. Cautionary: `msun_fma` passes the corpus while failing the fuzz — a corpus-only gate would have shipped a latent divergence.
+
+3. **numpy dispatch probed, not assumed.** `np.exp` float64 is SIMD-dispatch-invariant (falls through to glibc's ifunc `__exp_fma` = the ARM optimized-routines exp with contraction — exactly the port). `np.tanh` float64 IS SIMD-dispatched AND ≠ `math.tanh` on ~36% of corpus args (≤2 ulp); production uses scalar `math.tanh` so v1 is unaffected — a test asserts the inequality so nobody "fixes" it into a false equivalence.
+
+4. **Both transcendental sites see a few-thousand-element discrete input set** (1,666 / 2,673 distinct values over 200k+ draws) — the leaf is coarse; useful for P2/P3 debugging.
+
+**Consequences.** P1 (engine core) proceeds against a substrate with no known freedom in it. Fleet legs (laptop py3.14 / M5 aarch64) dispatched same day; Android/device leg deferred to P7 per spec (E4's ARM↔x86 losslessness is the interim evidence). Toolchain bump = re-run G0. Commits `348d3e9`/`de1cbf3`/`f3f8f38`; maturin 1.14.1 into .venv (dev tool, not a runtime dep). **Touches:** this entry · INDEX row (G0_REPORT) · roadmap F8 line. **Deliberately NOT touched:** results.csv, CLAIM_REGISTRY, PRODUCTION.yaml (no elo, no claim, no champion — the port is a substrate, not a lever).
+
+**AMENDMENT (same day, evening) — fleet legs ran: laptop PASS, M5 FAIL.** Laptop-WSL (glibc **2.43**, CPython **3.14.4**, numpy 2.4.6, different Intel CPU) reproduces the local verdict exactly — same winning flavours, 0 mismatches, byte-identical np.exp digest ⇒ **x86-64/glibc parity is robust across glibc/CPython/CPU generations, not a single-box accident.** The **M5 (arm64 macOS) has NO LibmFlavor at 0 mismatches** (best exp = 1 miss; tanh 31.9% off at ≤2 ulp; FMA axis a near-no-op there): Apple's libm is a **third implementation**, not either upstream at either contraction setting — the enum cannot be widened by picking a member. Consequences: macOS is **pre-registered-fallback territory** if ever targeted (it is NOT a v1 target — v1 = Linux + Android; the M5 stays a bench/exhibition box on the Python path), and the P7 Android/bionic leg must be **measured, not assumed** msun-derived-therefore-matching (the M5 is the existence proof that a platform can be a third thing). Also: np.exp float64 bits differ across ISA while numpy's np.tanh SIMD kernel is byte-identical on all three boxes — consistent with §3's dispatch story. Raw: `measurement/rustport_p0/G0_fleet_{laptop,m5,summary}.json`, G0_REPORT §5; commit `e970065`.
+
+## 2026-07-31 (evening) — **RUST PORT P1 LANDS: G1 PASSES — the Rust engine core replays the ENTIRE game record byte-exactly; count_final_scores proven order-irrelevant; the cloister-rebinding quirk found and proven load-bearing**
+
+**G1 = PASS, 0 mismatches** (`scripts/rustport/reconcile_engine.py --corpus all`): 463 games / 66,623 plies / **67,086 positions × 6 checks each** — per-ply `string_representation` byte equality, legal-mask sha256, running scores, `flat_base_score` both POVs, phase/player/deck/terminal scalars — across the golden fixture (56 frozen positions re-checked against DISK, not live Python), all 449 champ games, and both E4 phone archives (which terminate on the phone-recorded scores). Artifacts `measurement/rustport_p1/G1_engine_*.json`; commits `1c44f05`/`ff5ea12`.
+
+1. **count_final_scores set-`.pop()` order is OUTCOME-IRRELEVANT — the pre-registered escalation does NOT fire.** 1,407 positions × 20 drain orders = 28,140 comparisons, 0 differences, and the *mechanism* is identified: features are disjoint components and the first visit removes every meeple on the component, so later visits score nothing. Rust drains in insertion order. `measurement/rustport_p1/P1_p1_count_final_scores_order.json`.
+2. **A genuine undocumented quirk found by reading, then proven load-bearing by mutation:** `remove_meeples_and_collect_points` rebinds `coordinate` inside the 3×3 cloister scan (inner column range re-evaluated from the last-touched tile). Regressing it to the naive scan ⇒ **86 mismatches on the champ corpus — and the 12 golden games alone would NOT have caught it** (the fixture is necessary, not sufficient; the full-record replay is the real gate).
+3. **Quirk-mutation probe: 4/5 ported quirks discriminated by the gate** (tied-feature points, TRT→BRB involution, meeple-repr insertion order, cloister rebinding all FAIL when regressed) ⇒ "0 mismatches" is informative, not vacuous. The 5th — `find_roads` non-dedup (Python `Road` lacks `__eq__`) — is provably a no-op and only the 10⁴-game lockstep fuzz can cover it empirically.
+4. **CPython negative-index wrap ported exactly:** three direct `board[r][c]` sites read row −1 → row 34 (the champ corpus DOES reach row 0, so `board[-1]` executes; benign only because row 34 stays empty — a property of the corpus, not the code). Another face of the walled-variant geometry.
+5. **Incidental re-gate:** Rust computes `flat_base_score` engine-exactly (clone + count_final_scores) while Python uses the flat union-find — agreement on all 134,172 evaluations re-proves `flat_leaf`'s base score against the object scorer across the whole record.
+6. Throughput: **4.3× Python at identical per-ply work** (8,408 vs 1,955 plies/s), with `flat_base_score` still naively cloning per call — the port is unoptimised and already 4×.
+
+**Open half of G1:** the 10⁴-game lockstep fuzz (Workflow, when the boxes free) — the only coverage for `find_roads` and the board-wrap edges. **Next: P2 (leaf v2.9.2 → G2).** Touches: this entry · roadmap F8. NOT touched: results.csv, claims, PRODUCTION.yaml.
+
+## 2026-07-31 (night) — **RUST PORT P2 LANDS: G2 PASSES — the v2.9.2 leaf is bit-exact over 3,341,772 values across every corpus, in ALL 12 config dialects; Rust leaf = 7.05 µs, 4.3× the Cython path**
+
+**G2 = PASS, 0 mismatches** (`scripts/rustport/reconcile_leaf.py`): 3.34M leaf values over champ 449 games per-ply (1.56M) · distill 1500-game corpus (1.59M) · golden per-ply (97k) · midgame 1,000 (56k) · K3 354 roots (19.8k) · both E4 archives (16.2k) · the on-disk golden frozen values · `_LEAF_VALUE_PANEL`. Three legs per position — pure-Python `flat_leaf` (USE_CY_LEAF forced off), `flat_leaf_cy` called DIRECTLY (dispatcher bypassed so a capability-flag fallback can't collapse the leg), Rust — compared on the int leaf AND the pre-round float via `float.hex()`, plus `flat_base_score` four ways. **Python and Cython never disagreed** (no upstream discovery). Config `prod-curve125` asserted to hash `a36d2e15a3b3d71d` + exact curve values before running; nothing about the champion leaf is hard-coded in Rust (`LeafConfigRs` driven from Python). Commits `1aeca0b`/`7bd6cb1`/`bbc853d`; artifacts `measurement/rustport_p2/`.
+
+1. **Throughput: Rust 7.05 µs/leaf vs Cython 30.54 vs pure-Python 437.6** (same positions) = 4.3× the deployed Cython path, 62× Python — before the remaining lever (a reusable scratch struct to kill ~16 KB/call of buffer zeroing, which matters at P3/P4 search rates). Decompose was flattened from 15.4 → 5.14 µs (allocation, not arithmetic).
+2. **Correction to the spec's G2 row: the golden fixture holds 448 frozen leaf values on disk (56 positions × 3 dialects × 2 POVs + base pairs), not "4,492"** — the larger figure counted all fixture values (masks, solver, etc.). All 448 re-judged against DISK; live golden replay adds 97k more.
+3. **Landmines recorded** (ported as-is): `city_root_delta` is the *closure increment* (`cathedral ? 3T+3S : T+S`), not `_city_points` — easy to "fix" into a bug · **two different 3×3 cloister scans coexist** — the leaf's `_cloister_points` is bounds-checked while the engine's `chapel_or_flowers_points` negative-index-wraps (P1); they agree only because far rows stay empty · board-edge features hit `open_n <= 0 → continue` and contribute ZERO closure bonus (another face of the walled-variant leaf distortion, now in load-bearing code) · `flat_leaf` silently ignores `v28_*`/tanh/punish/farm_access knobs (that dispatch lives in `virtual_score_v2`) · champion `meeple_k=2.0` is dead under a non-null curve (confirms the 2026-07-14 hygiene finding from the code side).
+4. **P3 handoff mapped:** the softmax priors live in `heuristic_prior_mcts.py::_legal_deltas` (~L261) — Δleaf/τ_p=5.0, z-=max, `np.exp`, float64-sum-normalize, astype(float32); value = `math.tanh(leaf/15.0)`. P3 needs compat::{exp64 flavour-selected, tanh64, np_sum, f32 round-trip}; the leaf's own contribution (`leaf_value_float`) is already bit-exact.
+
+**Next: P3 (single-world PUCT + per-sim trace harness → G3).** Touches: this entry · roadmap F8 · spec G2 row corrected (448). NOT touched: results.csv, claims, PRODUCTION.yaml.
+
+## 2026-07-31 (late night) — **RUST PORT P3 LANDS: G3 PASSES — single-world PUCT search bit-exact over 9,425 searches / 6.91M sims (raw-float N/W, priors, tree shape), 9.55× Python; the trace harness works and the mutation probe teaches a gate lesson**
+
+**G3 = PASS, 0 mismatches** (`scripts/rustport/`): chosen action + every root child `(action, N, W)` with W as raw f64 bits + full prior vector bits + root N/W/leaf_value + node count, at sims 344 AND 1376, across golden/midgame/champ-449/distill/E4 + determinized-deck positions, plus 40 full games searched both seats every ply to termination. Knobs read from PRODUCTION.yaml; leaf hash asserted. Commits `eb7b1e5`..`c9a9714`; artifacts `measurement/rustport_p3/`.
+
+1. **Search quirks ported** (found by reading): the ROOT's leaf_value takes a float32 round-trip (interior nodes don't — loudest mutation, 20 mismatches at every budget) · TWO prior normalizations in two dtypes (f64 pairwise softmax → f32 cast → f32 renorm under NEP-50) · legal-mask cache keyed by string_representation and force-enabled by the search (measured inert single-world: hits==expansions, 0 collisions under the collide-check) · terminal root never expands (leaf_value stays 0.0) · `children` insertion order observable · `reuse_tree: true` in PRODUCTION.yaml documented as a fair-deploy NO-OP (fresh tree per determinization).
+2. **Gate-methodology lesson — ordering-quirk sensitivity DECAYS with budget:** the `sqrt(max(N,1))` mutation shows 31 mismatches at 8 sims and **0 at ≥344** — a high-sims identity gate is BLIND to it (the correctness-gate face of the known sims-washout effect). Standing rule for P4-P7 debugging: run the per-sim trace harness at LOW sims. 5/6 mutations discriminate; the alias-skip is a provable no-op given the prior-bonus fold (same shape as P1's find_roads).
+3. **The search is nearly libm-blind: G3-green does NOT re-prove G0.** 720 positions × 344 sims: exp-no-FMA changes nothing, wrong-tanh flavours touch 2/720 root children and never the action. The 10⁸ fuzz is the only thing pinning the flavour — a P7 Android build with the wrong flavour could pass a search-sized gate and still be wrong. (Recorded so nobody "validates" P7 with a G3-shaped gate.)
+4. **Scratch struct shipped:** leaf 10.67→7.18 µs (1.49×), end-to-end search 1.26× — bit-exactness re-proved by a FULL G2 re-run (3.34M values, 0 mismatches). Throughput at sims 1376: **Python 650 vs Rust 6,210 sims/s = 9.55×** (contended box; ratio clean, 8.6–11.8× across legs).
+5. **P4 handoff:** `set_unseen_deck` is the determinization hook (gated by the det corpus); one gap named — `root_children` W is child-POV, pooled merge needs root-POV-signed W (tile→meeple keeps the mover, so child ≠ always-opponent); P4 must carry `player_to_move` or expose the signed value. Not ported (explicit): virtual loss, Dirichlet, tree-reuse, Gumbel, meeple_dedup, training accessors.
+
+**Next: P4 (fair agent — k-parallel PIMC + latch + marginalized solver → G4), the phase that reproduces the deployed champion.** Touches: this entry · roadmap F8 · spec P3 row. NOT touched: results.csv, claims, PRODUCTION.yaml.
+
+## 2026-07-31 (Shabbat eve) — **LEAF KNOCKOUT ABLATION CLOSED OUT (F7, 6/6 cells; CL-074): the meeple-economy CURVE is the champion's biggest single component (~300 elo), anticipation's value is BALANCE not information (interaction ≈+234), the F6 soft cap is a NULL — and capoff is ACCEPTED AT n=384 after a contention post-mortem**
+
+**Design** (PREREG.md, committed before game 1): candidate = champion leaf v2.9.2 minus exactly ONE component vs the intact champion (`a36d2e15a3b3d71d`), PUCT both sides sims 2750 exact-K2, n=400 deck-paired, ONE shared band 9.60e10 (CRN across cells), component value = −elo. Two-box work-stealing W16 (the F7c clock-skew guard was added at launch after it bit live). `results.csv abl_*_vs_puctchamp2750_k2`.
+
+| cell (knockout) | elo ± 1σ | winrate z | paired z | ms ratio | component value |
+|---|---|---|---|---|---|
+| meepleoff (whole meeple term) | −299.6 ± 24.2 | −13.95 | −18.94 | 1.00 | **~300 elo** |
+| meepleflat (curve shape only; flat k=2.0 kept) | −177.2 ± 19.7 | −9.40 | −12.92 | 0.99 | **curve SHAPE ~177 = the majority of the meeple term** |
+| oppanticoff (opponent-anticipation half) | −153.4 ± 19.1 | −8.30 | −8.71 | 1.07 | ~153 |
+| selfanticoff (self-anticipation half) | −88.7 ± 17.9 | −5.00 | −6.95 | 0.85 | ~89 |
+| anticoff (BOTH anticipation halves) | −7.8 ± 17.4 | −0.45 | −1.81 | 1.00 | **≈NULL — interaction ≈ +234 elo** |
+| capoff (F6 soft cap) — **n=384 accepted** | −13.6 ± 17.7 | −0.77 | −1.53 | 1.00 | **NULL at this power** |
+
+(Both statistics agree in sign everywhere; paired z is the robust one.)
+
+**Findings.** (1) **Anticipation's value is BALANCE, not information:** each half alone is worth 89–153 elo, yet removing BOTH is a wash — a leaf that anticipates for only one side is strictly worse than one that anticipates for neither, and opp-blind loses more than self-blind. (2) **The curve SHAPE is the majority of the meeple term** (−177 of −300; the flat-k fallback recovers only ~40%). (3) **F6 soft cap NULL** — consistent with its adoption story as a small refinement. (4) The anticoff pair was the one pre-registered pair; no blanket pair sweep (per prereg policy). (5) Farm knockouts remain F7b — post-G6 they become cheap Rust-severable cells.
+
+**Validity.** Within-band deck-paired contrasts vs one shared intact-champion opponent — the robust class. Band 96e9 RETIRED (BAND_REGISTRY row → CL-074). ms ratios 0.85–1.07 price the clock: selfanticoff's −89 is mildly understated on equal-clock terms (candidate 15% cheaper), oppanticoff's −153 mildly overstated (7% dearer); neither changes a verdict.
+
+**capoff n=384 acceptance + post-mortem (ROOT CAUSE CORRECTED after the first write-up: it is a BUG CLASS, not contention).** The last 16 games crash DETERMINISTICALLY: the replay attempt died with **`action_space.WindowOverflowError: All 4 legal actions fall outside the 25x25 window centered at (-9, 2)`** — mid-late game, the capoff candidate's play drives the board against the grid wall until the centroid-centered 25×25 action window can no longer encode ANY legal move; the worker raises ~40–60 min into the game, the pool dies, zero records land, and the launcher relaunches into the identical crash (CRN decks ⇒ deterministic). ~5 h of iterations spun this way; the cross-workload contention (the port agents' gate legs beside the eval's W16 — itself a real coexistence mistake, kept as its own lesson in memory `no-agent-compute-beside-eval`) merely stretched each crash cycle, and my first post-mortem wrongly blamed it entirely. **Three facts that matter:** (1) the exclusion is CANDIDATE-CORRELATED, not deck-intrinsic — the same 16 decks completed in all 5 sibling cells, so capoff's missing games are ones where the cap-free leaf's style sprawls into the wall; (2) worst-case adversarial bound: 16 games all-wins/all-losses moves the elo by ~±14 — the NULL verdict (no ≥35-elo effect) survives, but quote n=384 with this sentence attached; (3) **this is a NEW face of the invisible-border saga: the walled 35×35 grid + 25×25 centroid window can make positions UNENCODABLE, crashing eval games** — it feeds the F9/recentring dossier and is exactly the class the port's P5 flags + recentring decision address. The `(-9, 2)` centroid (negative row!) also deserves its own look at the window-offset math. Killed the chain (watchdogs → launcher → harness → workers by pid), cleaned result-less claims, wrote the results.csv row by hand from `summary.json` (the harness aggregate cannot complete those games on this code). Launcher hardening still owed: N consecutive zero-record iterations should abort loudly, not spin (BACKLOG 2026-07-31).
+
+**Touches:** results.csv rows ×6 (5 by harness aggregate, capoff by the n=384 re-aggregate) · this entry · PREREG banner · **CL-074** · BAND_REGISTRY 96e9 retired · STATUS · roadmap F7 · LEVER_INDEX §6 row. **NOT touched:** PRODUCTION.yaml (understanding, not a lever).
+
+**AMENDMENT (2026-07-31 night) — G1's open half CLOSES: the 10⁴-game lockstep fuzz PASSES (0 mismatches / 1,448,900 positions × 8 checks, error parity 5/5), and it finds a THIRD invisible-border bug class.** 8,000 uniform + 2,000 wall-biased games, laptop W16, 57.8 s (24,895 plies/s). The two record-blind quirks are now MEASURED: `find_roads` non-dedup 0 divergence over 1.45M positions (no-op confirmed empirically); `board[-1]` wrap executes in 68% of uniform games (row 0 is only 6 rows above the start row) and stays benign. **NEW: a tile on the LAST COLUMN (col 34) is FATAL — `FarmUtil.farm_for_position` indexes `board[..][35]`, CPython raises IndexError, 4/4 games that reached col 34 died there** (Rust panics identically, same ply — ported-bug parity held). With the same day's WindowOverflowError (reproduced in-fuzz at origin (−11,2)) the border saga now has three faces: silent rule-denial at the wall · negative-index wrap · hard crash at the positive edge. It never shows in the record because no strong policy sprawls that far — the wall-biased fuzz mode is what found it (uniform play dropped window actions on 1 ply in 8,000 games; wall-biased on 68,670 plies — the record-corpus blind spot, quantified). Reproducers: `measurement/rustport_p1/G1_lockstep_reproducers/`; artifact `G1_lockstep_fuzz.json`; commits `720eb15`/`d30015d`/`7487d09`. → F9 dossier. G1 is now FULLY closed (record + fuzz).
+
+## 2026-08-01 (early) — **RUST PORT P4 LANDS: G4 PASSES — the DEPLOYED CHAMPION is reproduced bit-exactly (0/305,515 checks incl. all 1,852 record solver decisions node-for-node); Rust t8 = 0.457 s/move at k8×1376, mobile budget 0.327 s/move t1**
+
+**G4 = PASS, 0 mismatches:** latch leg = full record (463 games / 66,623 plies); solver leg = 1,952 solves exact on value bits + optimal set + child values + NODE COUNT (4.68M nodes; Rust 16.9× Python); thread invariance bit-identical at threads {1,4,8}; 14 full games to termination at k8×1376; all 463 games stride-30 at k8×1376 + 64 games EVERY ply at mobile k4×688. Pooled (N,W) compared as raw f64 bits in pool insertion order. QUEUED-not-skipped: every-ply k8×1376 on all 449 champ games (~280 CPU-h) — coverage delivered via stride-30-all-games + every-ply-at-k4×688 instead. Commits `3f590f5`..`79bd282`; artifacts `measurement/rustport_p4/`.
+
+1. **Clock:** Python sequential 13.74 s/move (lineage 13.76 ✓) → **Rust t1 1.457 (9.4×) ≈ the deployed 8-process Python champion (2.16); t8 0.457 = 4.7× the deployed champion.** Mobile k4×688: 3.02 → **0.327 s/move t1.** P7's ≤2 s/move full-budget Pixel bar looks comfortable from here.
+2. **War story with teeth — the oracle was silently the wrong champion:** `production_leaf_cfg` starts from import-frozen `DEFAULT_CONFIG`, so without `env_preamble` BEFORE any carcassonne_ai import (and with `verify=False` disarming the guard) the "oracle" was a cap-5/meeple_k-0 leaf. Caught because determinizations matched while 13/30 plies diverged ⇒ leaf, not RNG. `fair_common.py` now hard-guards import order + `verify=True` + cross-checks the resolved leaf. **Standing trap for ANY script building the champion: env_preamble first, verify on.**
+3. **Semantics found and pinned:** the solver's chance node drops the whole TILE TYPE (bag identity ≡ description via canonical shared objects) — ported as `ChanceDrop`, proven inert at deployed K≤2 · `latch_any_phase` is structurally dead (k_remaining constant across a turn's TILES/MEEPLES pair ⇒ first k≤K decision is always TILES; 463/463) · min_pooled_visits floor fires 1/261 at sims=8 and 0/90 at sims=128 — P3's debug-at-LOW-sims lesson reproduced independently.
+4. **P7-relevant tail:** one champ K=2 root = 10,913 solver nodes → 252 s Python vs 15.2 s Rust — bigger than the Android-memo max (7,067); the 2M budget is far, but latency is where Rust matters on-device.
+
+**Next: worktree merge (border/start-tile flags) → P5 (flags → G5) → P6 (desktop integration → G6) → P7 (Android → G7).** Touches: this entry · roadmap F8 · spec P4 row. NOT touched: results.csv, claims, PRODUCTION.yaml (G6 is where "no elo owed" gets its 100-game proof; the backend flip stays Joshua's).
+
+## 2026-08-01 (pre-dawn) — **RUST PORT P5 LANDS: G5 PASSES — the rules-fix flags are ported and gated (44 flag tests both-engines, even-shift property at 92k positions, 4×1,000-game flags-on fuzz, full flags-off G1–G4 regate all 0-mismatch); a FOURTH border face found**
+
+**G5 = PASS, 0 mismatches on all four legs** (commits `b24256d`..`66b2958`, artifacts `measurement/rustport_p5/G5_VERDICT.json`): (1) every merged Python flag test reproduced against carc_rs (fixed_start_tile / bridge start_rule semantics / even-shift contracts; strict-xfail still xfails; nothing on by default anywhere — FFI missing ⇒ engine/legacy); (2) even-shift property 6→18 bit-identical modulo offset over 92,181 positions + shift sweeps, odd shifts REFUSED at all three entry points with a negative test; (3) flags-on lockstep fuzz 4×1,000 games × 12 checks = 575,815 positions, 0; (4) **flags-off G1–G4 full regate: G1 67,086 / G2 3,341,772 / G3 1,248 / G4 214,009 checks — all 0** (default byte-compat proven post-flags).
+
+1. **FOURTH border face: last-ROW placement is FATAL in the object engine** — `count_final_scores` walks `board[r+1]` unguarded (the row twin of the col-34 `FarmUtil` fatal). Unreachable from row 6 (needs a 28-row span) but quantified at start-row 30: 95/96 games die. Rust reproduces class+ply exactly. **AND the routes disagree: `flat_leaf.flat_base_score` scores those positions FINE while the object `count_final_scores` dies** — a Python-internal inconsistency now pinned by both drivers (flat = hard equality, object = error parity). Border ledger: silent wall denial · negative-row wrap · col-34 fatal · last-row fatal · WindowOverflowError.
+2. **Independent corroboration of the border blast radius:** the 6→18 shift probe reads 70.8% of games mask-diverging at the wall vs the Python diagnosis's 67.8% — two instruments, same number.
+3. `open_positions` is not shift-equivariant BY CONSTRUCTION (each grid drops its own edge) — that IS the invisible border, now stated as an equivariance failure. Python cannot even express a shifted start through `Game` (hard-coded starting_position); the Rust `GameConfig` can — the recentring decision, when Joshua makes it, executes through the port.
+4. Retail semantics pinned: first D removed from `[next_tile]+deck` (200-seed verify), `last_tile_action=None` visible in the node key, `total_tiles` +1 quirk ported verbatim.
+5. Pre-existing (NOT P5, noted for hygiene): `reconcile_leaf`'s `flat_leaf_cy` import can poison a same-session pytest run of the bridge tests with a ProvenanceError (order-dependent); passes standalone. Owed a small fix at P6's quiet window if it bites CI-style runs.
+
+**Next: P6 (desktop integration → G6: 100% action agreement ≥100 games + throughput ≥ Cython).** Touches: this entry · roadmap F8 · spec P5 row. NOT touched: results.csv, claims, PRODUCTION.yaml.
+
+## 2026-08-01 (morning) — **RUST PORT P7 LANDS: G7 PASSES ON THE REAL PIXEL — the FULL k8×1376 champion runs at 1.551 s/move median (bar ≤2 s), thermal 1.007×, replay identity 0/3,165 plies, and bionic is covered by the LibmFlavor enum (fallback NOT invoked)**
+
+**All five G7 legs ran on the Pixel 9 Pro** (adb over tailscale; stale port re-found by TCP scan → 38025). Commits `e0a6022`/`28e35b6`/`a7a502c`; full write-up `measurement/rustport_p7/G7_REPORT.md`.
+
+1. **The libm decision (leg 1, run FIRST as designed): Android = `msun` for bionic `math.tanh`/`expm1` (0/214,333 corpus + 0/10⁷ fuzz each) and `exp64_fma` for numpy's own arm64 SIMD exp — but `exp64` NO-FMA on x86_64 Android (ABI-dependent WITHIN Android, caught only by the emulator leg; resolved from `platform.machine()`).** The pre-registered fallback is NOT needed; no enum widening; desktop and phone simply select different members, exactly the mechanism G0 built. **G0's corpus-only trap reproduced on a second platform:** `glibc` is bit-exact on the whole tanh corpus yet fails 12,867/10⁷ fuzz — a corpus-sized gate would have shipped the wrong flavour twice now.
+2. **Clock (leg 3): full champion k8×1376 = 1.551 s/move median (1.29–1.71, p90 1.66) at threads=4; the mobile-carve-out budget k4×688 = 0.499 s vs 1.7 s Python ⇒ 4× the search for ~0.9× the old clock.** The ~50-elo mobile carve-out is now closable pending G6 + Joshua's flip.
+3. **Thermal (leg 4): 1.007× — flat.** The naive walk-forward soak read 1.645× but confounds heat with board-fill (per-leaf cost grows with placed meeples); the fixed-position soak (same position ×50, action asserted constant) is the honest instrument. Methodology note worth keeping.
+4. Replay identity (leg 2): both E4 archives + 20 champ games, per-ply repr-sha/scores/terminal vs desktop-frozen digests, 0 mismatches, BOTH ABIs. Emulator (leg 5) 7/7.
+5. **Two items for Joshua:** (a) ⚠️ **the SHIPPED carc-cy wheels are 4 KiB-aligned — they would fail to load on a 16 KiB-page device** (NDK r27.3 does NOT default the flag; measured). Latent (Pixel 9 Pro = 4 KiB) and deliberately NOT fixed in-place (would change shipped bytes; the cy refactor was proven byte-identical instead); the Rust wheel passes + asserts the flag. Fix = rebuild cy wheels with the flag at the next app release. (b) spec correction: `PYO3_CROSS_LIB_DIR` is unusable against Chaquopy's target artifact (no stdlib ⇒ no `_sysconfigdata` ⇒ pyo3 hard-fails); its purpose is carried by explicit `-L/-lpython3.12` + readelf DT_NEEDED asserts — spec P7 row amended.
+6. Hygiene: `build_cy_wheels.py` refactored onto `_chaquopy_common.py` PROVEN byte-identical (sha256, both ABIs); bridge backend flag default-unchanged (python), degrades-with-note if wheel absent; wheel named cp312-cp312 (narrower-than-true, always correct; abi3+android tag unexercised by Chaquopy's pip). Known: tests/android and tests/rustport cannot share one pytest process (pre-existing, each green standalone: 96 + 269).
+
+**Remaining for port completion: G6 only** (identity gate running). Touches: this entry · roadmap F8 · spec P7 row + cross-lib-dir correction. NOT touched: results.csv, claims, PRODUCTION.yaml, app default behavior (the phone still plays the python k4×688 path until Joshua flips).
+
+## 2026-08-01 (early morning; booked evening) — **RUST PORT P6 LANDS: G6 PASSES — 100 deck-paired games, 14,384/14,384 actions = 100.0000% agreement, 0/101,088 checks ⇒ NO ELO OWED (CL-071 precedent); THE PORT IS COMPLETE, ALL SEVEN GATES GREEN IN ~38 HOURS**
+
+**G6** (`measurement/rustport_p6/G6_backend_g6_k8x1376.json`, 05:26): 100 games at k8×1376 production config on throwaway seeds 98e9+ (not a band), Rust-vs-Python per-move action identity 14,384/14,384; first 10 games with `CARC_RS_RECONCILE=1` = 2,880 per-move digest asserts, 0 raised; per-game terminal scores identical. **Deploy-path multiplier (the honest "are all evals faster" answer): single-stream 7.98× (12.688→1.590 s/move), W8 game-parallel 7.31×, champion t8 41.6× (0.305 s/move)** — all vs the runtime-probed deployed Cython path (`G6_backend_deploy_multiplier.json`). Adapter `src/carcassonne_ai/rust_agent.py` + smallest-diff `backend=` selector in champion_factory (default python at gate time); P5's order-dependent ProvenanceError fixed (`scripts/rustport/prod_leaf_env.py`). Commit `e8ebfa4` + gate artifacts.
+
+**Port scoreboard (docs/RUSTPORT_BUILD_SPEC_2026-07-31.md, all rows now ✅):** G0 substrate (+ laptop fleet PASS, M5 = third-libm finding) · G1 record + 10⁴ fuzz (+ 2 fatal border classes found) · G2 leaf 3.34M values · G3 search 6.91M sims · G4 champion 305,515 checks · G5 flags + flags-off regate · G6 identity + multiplier · G7 real-Pixel full budget 1.551 s/move. Every phase 0-mismatch on its gate; the pre-registered fallback acceptance was never needed on a v1 platform. **Consequences: Rust-era eval numbers are table-compatible with the whole record; the backend and app flips (Joshua "1 yes / 2 yes" tonight) execute on this evidence — separate entry when landed.**
+
+## 2026-08-01 (evening) — **BOTH FLIPS LAND, BUT NOT AS ASKED: the app gets the full champion on Rust (carve-out CLOSED); the desktop backend becomes the BACKEND OF RECORD in governance while `make_production_champion` KEEPS defaulting to python — because a plain default flip would have silently misplayed, and that is now measured, not argued**
+
+Joshua approved two things tonight, verbatim **"1 yes / 2 yes"**: (1) flip the desktop champion backend default to Rust; (2) flip the Android app to the full-budget Rust champion, rebuild, install. Both are delivered on the G6/G7 evidence. **Item (1) is deliberately NOT delivered as a changed default**, and the reason is the substantive finding of the night.
+
+**⛔ THE DEFAULT FLIP IS UNSAFE, AND IT FAILS SILENTLY.** `RustFairAgent` is not a drop-in for the Python champion: the Rust core owns a game MIRROR that advances only on an explicit `advance()` call, and `_check_sync` was a no-op unless `CARC_RS_RECONCILE=1`. **Reproduced directly, not inferred:** a caller that builds the agent and simply calls `choose_action(board)` in a normal play loop gets its **ply-1 action returned again at ply 2**, for a position the game left long ago, **with no exception anywhere**. The parallel bypass audit (`measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md`, `f7f1b6b`) found **5 of the 6 `make_production_champion` call sites never call `advance()`** — including `scripts/human_anchor/play_harness.py` and `scripts/play_vs_tier1_gui.py`, i.e. **the E4 human path**. G6's 14,384/14,384 is not contradicted by this and never covered it: G6 proves the ENGINE plays identically *when driven correctly* (its harness advances the mirror every ply); it says nothing about drop-in-ness. **The gap is an integration contract, not a correctness one** — which is exactly the kind of thing a 100% agreement number can hide.
+
+**What landed instead, three pieces:**
+
+1. **Fail-loud, unconditionally (the enabling fix).** `RustFairAgent.choose_action` now hard-raises `MirrorDesync` on any drift, not just under the reconcile env var. **Cost measured before adopting, per the standing rule:** **12.8 µs/decision** (python `string_representation` ~0.1 µs memoised + rust `string_repr` 12.6 µs) against a **266 ms** k8×1376 t8 decision = **0.005%**. At that price there is no budget argument for leaving a correctness guard opt-in, and the original "gate/CI mode, not production" reasoning does not survive the audit. The probe that silently misplayed now raises at the exact moment of drift, naming both digests.
+2. **`backend: rust` recorded in `governance/PRODUCTION.yaml`** (`champion.fair_deploy.backend` + the desktop profile) as the champion's **execution backend of record**, with the evidence inline. **Reached only via `backend="auto"`**, a new third value that resolves the YAML; the plain default stays `"python"`, so every existing caller is byte-identical and unbroken. Passing `"auto"` is a caller **asserting** it drives the mirror. Caller conversion (and the thin `build_fair_champion`-family builders the eval farms use, which have no `backend` parameter at all) is separate, in-flight work.
+3. **The app flip, in full** — below.
+
+**📱 THE MOBILE CARVE-OUT IS CLOSED; THE PHONE NOW PLAYS THE CHAMPION OF RECORD.** The profile's own written unpin condition read: *"a native (non-Chaquopy) search core with real thread/process parallelism on the device, benchmarked at ≤3 s/move at 11008 — not before."* G7 met it literally (4 OS threads inside one GIL-released call; **1.551 s/move** median at 11008 on the Pixel 9 Pro; thermal 1.007×). So `deploy_profiles.mobile` moves **k4×688 = 2752 → k8×1376 = 11008**, `backend: rust`, `rust_threads: 4`, `parallel_workers` stays `null` forever (Chaquopy has no processes; the parallelism is threads inside one call). **The ~50-elo (CL-060) on-device deficit is gone, with no new strength claim** — behaviour identity is what transfers strength (CL-071 precedent), and G6 + G7-leg-2 are the identity evidence.
+
+**⚠️ THE BUDGET AND THE BACKEND ARE ONE DECISION, and the code now enforces it.** 11008 sims on the Python engine is still ~25 s/move on this device. Unpinning the YAML alone would therefore have re-shipped the exact hang the carve-out existed to prevent, in any process without the wheel. `android_bridge.budget_for_backend()` couples them: no `carc_rs` ⇒ degrade the **engine AND the budget** to the k4×688 floor, with a `REDUCED` note. **Never read that profile's `total_sims` without its `backend`.**
+
+**Two real correctness bugs found while wiring it (both would have shipped):**
+- **Restore did not re-seat the mirror.** `restore_game` replays with `advance()` only — which runs neither the search nor the latch trigger — so the Rust agent's move counter and endgame latch stayed at 0 and a **resumed game would derive different per-move search seeds than the saved one** (`FairAgentRs.set_latched`'s own docstring names this case). Now seated alongside the Python agent's. **Guarded structurally, not behaviourally:** at a tiny test budget both seeds usually pick the same move, and a move-equality assertion **passed with the fix deleted** (verified by mutation) — so the test asserts the timeline, and fails 0-vs-4 without the fix.
+- **The mirror ran a test-only leaf preset.** `_start_rust_mirror` built `carc_rs.LeafConfigRs.curve125()`, whose own docstring says *"a convenience for tests only"*, while every save/archive stamps the YAML `leaf_hash` — **a label, not the function that executed**, the precise R1/R7 failure `champion_factory` exists to prevent. Now derived from `production_leaf_cfg(spec)` via `leaf_config_rs()` and **hard-verified** with `verify_leaf(backend="rust")` before a move is played or archived. (Found by the coordinator's bypass audit, not by me — worth recording as a case where the second pair of eyes caught the provenance hole rather than the crash.)
+
+**🔧 The 16 KiB page-alignment fix shipped — and its own version rule nearly ate it.** cy wheels now link `-Wl,-z,max-page-size=16384` on both ABIs and `require_page_align` is hard for cy as well as rust (bytes deliberately changed: arm64 `2d7ef8e0→835f4ee4`, x86_64 `1b6c402e→2ab8f36b`; readelf-asserted `p_align 0x4000` on all six `.so` **inside the built APK**). **But the cy wheel version is content-addressed from the `.pyx` bytes only**, which did not change — so pip re-served the stale 4 KiB wheel from cache and the fix silently did not ship. **Caught on disk** (`app/build/python/pip/debug/*/carc_cy/*.so` still `0x1000` after a successful wheel rebuild), not in theory. `content_version()` now takes an `extra` salt and the cy build mixes in `LINK_SIGNATURE`; version moved `1.31762.7661 → 1.16720.45215`. ⚠️ **Not fixed and not ours:** Chaquopy's own numpy 1.26.2 `.so` are all 4 KiB-aligned (as is x86_64 libopenblas), so **the APK as a whole still cannot claim 16 KiB-page readiness** — this change removes our contribution and makes it gate-enforced; the rest is a Chaquopy-version question.
+
+**On-device acceptance (Pixel 9 Pro / caiman, arm64-v8a, adb over tailscale; new instrumented leg `BridgeFlipDeviceTest`, 4/4 green, raw in `measurement/rustport_p7/device/flip/`):** backend `rust` with `backend_note` null · `tanh msun` + **`exp_fma true`** (the arm64 answer — the same code resolves `false` on the x86_64 desktop, so G7 leg 5's ABI-dependent knob is working on real hardware) · budget **11008 = champion of record**, `profile_from_yaml true` · **`runtime_budget_override` ABSENT** (asserted, not read: its absence is the E4 signal that a game was played at full strength) · retail start tile **`city_top_straight_road` pre-placed @(6,15)**, 0 meeples on it, 71 tiles remaining · save carries `start_rule: retail` + `leaf_hash a36d2e15a3b3d71d` and restores on the rust backend · **s/move 0.902 / 0.730 / 0.735, median 0.735 s**. ⚠️ **Read that last number correctly:** these are OPENING plies, not G7's ply-60 roots, and per-leaf cost grows with placed tiles/meeples — G7 leg 4's own walk-forward soak measured first-10 mean 0.695 s vs last-10 1.14 s. So 0.735 early-game is **consistent with, and does not supersede,** the 1.551 s midgame median the YAML records.
+
+**E4 GRADING CHANGED — state it plainly.** Games archived on the phone **from this build forward are played by the champion of record and grade against it**; because the running budget now equals the champion of record, `champion_factory` correctly stamps **no** `runtime_budget_override`, so the **absence** of that key is the marker. Games archived **before** this build carry the override naming k4×688 and are still graded there. The archive is self-describing either way.
+
+**NO STRENGTH CLAIM MOVES ANYWHERE IN THIS ENTRY.** No `results.csv` row, no new claim id, no band consumed. The Rust backend is an ENGINE, behaviour-identical by gate; the mobile unpin is that engine buying a budget that was already measured (CL-060 / CL-071).
+
+**Touches:** this entry · `governance/PRODUCTION.yaml` (fair_deploy.backend + desktop profile + the mobile unpin & rewritten note) · `champion_factory` (`backend="auto"`, `spec.backend`, profile `backend`/`rust_threads`) · `rust_agent` (unconditional desync raise) · `android_bridge` (default, coupling, restore re-seat, leaf provenance, honest progress) · wheel tooling · STATUS · roadmap F8 · **`governance/CLAIM_REGISTRY.csv` (CL-071 amended: mobile carve-out CLOSED, unpin experiment FIRED AND SATISFIED, E4 grading rule updated, execution backend of record recorded)** · **`governance/CHECKPOINT_LINEAGE.csv` (champion row's MOBILE CARVE-OUT block rewritten to CLOSED + the grading epoch)**. Tests: android 100 · rustport 272 · release+kparallel 60 · device 4/4. **NOT touched:** `results.csv` (no elo moves; the Rust core is behaviour-identical by gate). ⚠️ *The two governance touches above were applied late, on 2026-08-02 — touch 4 of the six-touch close-out was skipped on the night, and this footer originally read “NOT touched: claim registry, CHECKPOINT_LINEAGE”, which was wrong: this entry closes CL-071's own pre-registered unpin experiment and inverts its E4 grading rule. Found by the 2026-08-02 governance sweep (measurement/eff_dario_round2_20260802/ROUND2.md §3).*
+
+## 2026-08-02 (early) — **THE INVISIBLE BORDER IS FIXED, APP-ONLY: new phone games start at row 18, not row 6. `Game` gains an opt-in `start_row`/`start_col` (the gap the Rust port already had and Python did not); the GLOBAL engine default stays walled and its strict-xfail sentinel still fails**
+
+Joshua approved the recentring on 2026-08-01 evening ("I'll take your rec on recentering") — the rec being **app-only**. This entry delivers exactly that, on top of the same evening's backend flip.
+
+**THE BUG, restated once.** `CarcassonneGameState` starts the board at **(6, 15) of a 35×35 grid — 6 rows of headroom above, 28 below** — and `StateUpdater.play_tile` bounds-checks before adding to `open_positions`, so a rule-legal cell above row 0 never enters the candidate set and `TilePositionFinder` never offers it. No error, no visual cue; the bridge and the Compose canvas are pure pass-throughs of that mask. Joshua hit it playing the champion on the Pixel: *"an invisible border to the game."* Measured over 400 games (`tests/test_start_tile_grid_bound.py`, `scripts/diagnose_grid_wall.py`): **67.8% of games lose ≥1 rule-legal placement, 2.6% of all placements, 100% of denials above row 0.**
+
+**WHY 18, AND WHY THE SHIFT HAS TO BE EVEN.** `board_repr.offset_from_centroid_sums` centres the 25×25 window with banker's-rounded `round(sum/count)`, which is equivariant under **even** translations only (`round(6.5)=6` but `round(17.5)=18`). An odd shift silently slips the window one cell on ~half of all positions and would invalidate every trained checkpoint's input distribution; an even shift is **bit-identical for the representation** (pinned by `test_even_shift_preserves_the_encoding`, and at 92k positions by the port's G5 even-shift property). Row 6 → 18 is a shift of 12: even, and the closest-to-centre even row (18 above / 16 below).
+
+**HOW MUCH IT ACTUALLY BUYS — measured, not argued.** `scripts/diagnose_grid_wall.py` gained a `start_row` argument so the same 400-game method that priced the bug can price the fix; fresh seeds 1000–1399, same random policy, one run per row:
+
+| start_row | games with ≥1 denial | tile plies with ≥1 | denied share of legal | denials above row 0 |
+|---|---|---|---|---|
+| **6** (walled) | **64.8%** | 19.8% | **2.33%** | 21,566 |
+| **18** (app) | **0.0%** | 0.0% | **0.00%** | **0** |
+
+**Zero denied placements in 400 games, on any side.** (64.8% rather than the recorded 67.8% at row 6 is the fresh seed draw, not a method change; a 30-game re-run reads 70.0%.) ⚠️ **It is still a RECENTRING, not a wall removal, and that caveat is about an ADVERSARIAL policy only** — `test_the_recentred_grid_denies_nothing_the_walled_one_denies`'s wall-seeking drive (always take the lowest-row placement) reaches row 0 at row 18 too, after ~60 tile plies. Random play never gets there; the headroom now matches the board's real usage (measured spans reach 17 rows).
+
+**THE PYTHON GAP THAT THIS CLOSES.** P5 gave the Rust core a `GameConfig` that expresses the shift (`carc_rs.resolve_game_config(start_row=…)`, gated by the even-shift property). **Python could not** — `Game.get_init_board` hard-coded the engine's `starting_position`, so the shift was only expressible by hand-building a `CarcassonneGameState` (`tests/test_start_tile_grid_bound._state`, `scripts/rustport/lockstep_fuzz.init_pair`) and nothing that goes *through* `Game` — the Android bridge included — could play a recentred game. `Game(start_row=…, start_col=…)` now does, with `game_wrapper.check_start_position` making the **same two refusals** the Rust `GameConfig::resolve` makes (odd shift → "must be EVEN"; off-board → "outside").
+
+**⚠️ THE GLOBAL DEFAULT DID NOT MOVE, and that is asserted three ways.** With no argument `Game` passes **no** `starting_position` at all — the identical call it always made, so "default unchanged" is a property of the code and not of `Coordinate.__eq__` (`test_naming_the_default_explicitly_is_byte_identical` pins the explicit path onto the same state). `test_start_tile_is_not_centred` still reads (6, 28) / (15, 19). And **the strict-xfail sentinel `test_no_rule_legal_placement_is_ever_denied` still XFAILS** — i.e. the walled grid still denies, which is the whole point of leaving it walled: flipping it changes the legal-move set in ~68% of games and retires every deck band ever measured. That is **F9, not this change.**
+
+**📱 THE APP SIDE — `grid_rule`, cloned field-for-field from `start_rule`.** `"centered18"` (row 18, what a NEW app game plays) / `"engine6"` (row 6, the historical grid). It **travels in the save payload and the E4 archive**, for a sharper reason than `start_rule`'s: an action index is a **WINDOW cell**, so the identical `(deck_seed, actions)` log decodes *different board cells* on a differently-placed grid. **Missing ⇒ `engine6` forever; an unrecognised value RAISES rather than being guessed.** The Rust mirror is driven from the same resolved coordinates through the P5 flags surface, so the on-device champion searches the grid that is on screen — and because `string_representation` emits **absolute** engine coordinates, the existing per-ply `_assert_mirror` / `MirrorDesync` guard is a real grid check, not a formality (verified quiet across two full centered games, both start rules).
+
+**Two fixtures moved, and the reason is worth recording** (a grid change is a different game from ply one, so seed-keyed fixtures are not grid-portable): `test_restore_mid_endgame_latches` hand-builds a save dict and needed `grid_rule` added next to its existing `start_rule` (the same bug it was already guarding against); `test_events_survive_the_claim_that_scores_instantly` scanned 5 seeds that all hit on engine6 and none of which hit on centered18 — seeds 19 and 46 were added (4 hits each on the new grid) and the old five kept, so the fixture is now brittle on neither.
+
+**On-device acceptance (Pixel 9 Pro / caiman, arm64-v8a, adb over tailscale; `BridgeFlipDeviceTest` extended 4 → 5 legs, 5/5 green, raw in `measurement/rustport_p7/device/flip_grid/`):** retail start tile `city_top_straight_road` pre-placed **@(18, 15)**, 0 meeples on it, 71 tiles remaining, lowest legal first-placement row 18 (≫ the row-0 wall) · backend **rust**, `backend_note` null, budget **11008 = champion of record**, `profile_from_yaml true`, `tanh msun` / `exp_fma true` · save carries **`grid_rule: centered18`** + `start_rule: retail` + `leaf_hash a36d2e15a3b3d71d` and restores on the rust backend · **s/move 0.861 / 0.797 / 0.879, median 0.861** ⚠️ *opening plies again — consistent with, not superseding, G7's 1.551 s ply-60 median* · **BOTH real E4 archives still replay**: 144/144 actions each, scores `[111,113]` and `[73,108]` byte-equal to the archived values, resolving to `grid_rule: engine6` / `start_rule: engine` as an absent field must.
+
+**E4 GRADING — one more field, no grading change.** Games archived from this build forward carry `grid_rule: centered18` and were played on a **different legal-move set** than every earlier game; games archived before it carry no `grid_rule` and are engine6. The archive is self-describing either way, and no existing number is re-interpreted by this entry.
+
+**NO STRENGTH CLAIM MOVES.** No `results.csv` row, no claim id, no band consumed, `governance/PRODUCTION.yaml` untouched. The app now plays a **different game** from the eval corpus (that is the point of it being app-only), which is precisely why the global default is left for F9's rules-fix eval re-runs to price.
+
+**Touches:** this entry · `src/carcassonne_ai/game_wrapper.py` (`ENGINE_START_ROW/COL`, `check_start_position`, `Game(start_row=, start_col=)`, `Game.recentred`) · `scripts/diagnose_grid_wall.py` (`start_row` argument, so the fix is priced by the instrument that priced the bug) · `android/app/src/main/python/android_bridge.py` (`GRID_RULE*`, `_Session.grid_rule/grid_row`, both `Game`s, the mirror's `start_row`, `new_game`, `restore_game`, `_save_payload`) · tests (`test_start_tile_grid_bound` +8, `tests/android/test_bridge` +6, `tests/android/test_bridge_backend` +3, 2 fixtures re-seeded) · `BridgeFlipDeviceTest` (+leg 5, E4 archives as androidTest assets) · STATUS · LEVER_INDEX. Tests: android 106 · rustport 272 (unchanged, incl. all P5 flag/even-shift gates) · grid-bound 19 (1 xfail, still strict) · device 5/5. **NOT touched:** `results.csv`, claim registry, `CHECKPOINT_LINEAGE.csv`, `PRODUCTION.yaml`, the engine's own default.
+
+## 2026-08-02 — G10 champ-vs-10× oracle screen: read-out (pre-registered branch fires)
+
+The 110k screen closed clean (900/900 pick cells, arm-A cross-run identity vs the 22016 run
+900/900, 129 disagreements scored at M=32 CRN, 0 failures). The pre-registered analysis pass
+(`analyze_kwidth110k_oracle.py`, committed before any score existed) fires the
+**UNDERPOWERED/INCONCLUSIVE** branch of the §6 verdict map: cluster-robust mean
++0.484 pts/disagreement (z +1.51), compound elo-equivalent **+19.4, 95% CI [−5.7, +44.6]**
+against the pre-fixed 25-elo funding bar. Neither the DETECTED branch (needed ≥ +0.639 pts)
+nor NOT-DETECTED (needed ≤ −0.002 pts — effectively unreachable at the realized se) could
+fire. **Default recommendation: DO NOT FUND the h2h**; what the screen failed to exclude is
+an effect up to ~45 elo-equiv. Ladder context: 49.7 / 3.7 / 19.4 elo-equiv across the
+4×/2×/10× rungs — consistent-with (not evidence-of) returns that are locally flat but
+non-zero per decade. Read-out doc:
+measurement/classical_search/KWIDTH_110K_READOUT_20260802.md (+ .json). No CL id, no
+results.csv row, PRODUCTION.yaml untouched — all pre-committed. CL-068's clock sentence
+travels with any citation. Joshua decides: decision-queue item 1.
+
+## 2026-08-02 (afternoon) — F7d W-sweep DONE (Rust-era workload): local W*=30, laptop W*=22 — and the python-era W14–16 lore does NOT transfer
+
+Crude 4-point pass + endpoint-bracketing refine per the house protocol (both crude passes
+peaked at the ladder ENDPOINT W=30, so neither was adoptable until extended —
+feedback_bracket_hyperparams applied as written). Full ladders, throughput_idx = W/mean
+ms/move (tail-free, order-statistic-safe): local 5.575/6.681/7.716/8.182/**8.335**/8.273
+at W=12/16/24/30/**32**/36 → peak W32, settle **W*=30** (smallest within 5% of peak; W24
+= −7.4% is the desktop-friendly 10% alternative). Laptop 6.368/6.715/7.219/**7.496**/
+7.410/7.341 at W=12/16/22/**26**/30/34 (nproc=24) → peak W26, settle **W*=22**. Workload
+= the F7 ablation cell class through the CONVERTED eval_puct_priors: rust clairvoyant
+candidate + python PUCT champion opponent + python exact-K tail, s2750/K2, `--backend
+rust` (driver patched 0333d5a — the old default would have swept the dead python-era
+workload). ⚠️ The standing "self-play is DRAM-latency-bound, W optimum ≈14–16 regardless
+of cores" rule is REFUTED for this workload class: throughput scales to full thread count
+(local peak = exactly 32T; laptop peaks 1.08× oversubscribed). The re-bench-after-code-era-
+change rule did its job. Bench only: band 9.69e10 throwaway, no results.csv row
+(--no-results-csv by design), no claim id. Data:
+measurement/classical_search/WSWEEP_F7D_{local,laptop}.tsv; logs /tmp/wsweep_*.log.
+
+## 2026-08-02 (late afternoon) — Rust-era GEN W-sweep: local W*=48, laptop W*=24 — gen scales past thread count; python-era RAM caps obsolete
+
+Driver scripts/classical_search/wsweep_gen_rust.sh (committed with its smoke findings) —
+gen_fair_distill at PRODUCTION knobs (k8×1376, exact-K2, --backend rust, farm threads=1),
+leaf verified = the champion curve125 (hash 158f17ff = the meeple_k=2.0 snapshot dialect
+of a36d2e15; PRODUCTION.yaml leaf_hash_dialects, all byte-identical). Metric:
+warmup-wave-dropped shard-mtime throughput, plies/s box-wide.
+
+LOCAL (32T): 9.47 / 12.35 / 13.75 / 14.65 / 15.89 / 16.33 at W=16/24/32/40/48/64 — the
+curve is latency-bound-shaped and only flattens at 2× threads (+8.5% then +2.8%);
+**settle W*=48** (−2.7% of the W64 asymptote; W40 = −10.3% misses). LAPTOP (24T):
+7.48 / 8.90 / 9.45 / 10.16 / 11.51 / 11.85 / 11.94 at W=8..32 — flat 28→32 (+0.7%),
+**settle W*=24** (−3.7% of peak). RAM: NEVER binding — local peak 10G used / ≥31G avail,
+laptop 4G / ≥7G avail. ⇒ **The python-era gen RAM caps (local W28, laptop W8, ~0.9G/worker)
+are OBSOLETE for the rust gen profile** — a rust gen worker's marginal footprint is
+~100–300 MB and the box RAM story is flat across the whole ladder.
+
+Realized rates at the settle points (incl. warmup): **local ~328 games/h (W48), laptop
+~260 games/h (W32 point; W24 similar)** ⇒ ~590 games/h two-box at full production budget.
+Decision-queue item 2 repriced accordingly (rodv3 300-game gen@11008 ≈ 35 min two-box).
+
+Same headline as F7d this morning, stronger: neither the DRAM-wall W14–16 lore nor the
+gen RAM caps transfer across the backend era. The code-era re-bench rule is now 2-for-2
+today. Bench only: throwaway seeds 9.69e10, no results.csv row, no claim id. Data:
+measurement/classical_search/WSWEEP_GEN_RUST_{local,laptop}.tsv.
+
+## 2026-08-02 (evening) — Perf pass MERGED (55f7eea): champion wall −20–30%, peak RSS −50–60%, all bit-exact; C-f refuted by measurement
+
+The staged perf pass (review #2/#3/#4 + ROUND2 C-e/C-f riders) landed via a worktree'd
+Opus agent, each change its own commit, each gated: cargo 72 · pytest 419 (worktree wheel)
+· G3 raw-float 54 searches/432 checks 0-mismatch (throughput 884→8922 sims/s = 10.09×, up
+from 9.55× at P3 close — the pass measured in the gate itself) · G6 1435/1435 actions +
+2,880 mirror-digest asserts, 0 raised. Outcome lines + measured deltas per finding →
+REVIEW.md OUTCOMES section; full ladder + protocol in
+measurement/rustport_review_20260802/PERF_PASS_20260802.json; perfprobe.rs committed as
+the standing cost instrument (the review's meta-complaint was that no gate measures cost).
+C-f is the methodological keeper: the LICM refutation was WRONG at source level (isolated
+fn is 4.6–12% faster hoisted) yet the adoption bar held (end-to-end +0.2–0.6% wrong-sign)
+— measure-first riders earn their keep. Fleet updated atomically: wheel e08081bb (was
+c27cc1a8) installed local + laptop with repo at 55f7eea both boxes; Android wheels ride
+the NEXT app release (phone already meets its bar; bridge/wheel skew impossible — APK
+bundles both). No strength claim: bit-exactness transfers (CL-071 pattern).
+
+## 2026-08-02 (evening) — Xeon revival probe: RE-RETIRE (+ a fourth libm implementation found — the G0 x86-64-parity claim is QUALIFIED)
+
+Joshua powered the box; a probe agent ran recon → bundle-sync → wheel → G0 → one 24-game
+gen bench at production knobs. **Verdict: re-retire.** The "rust reclaims more on old
+memory-latency-bound cores" hypothesis is REFUTED for this box: per-thread steady gen
+throughput at each box's settled W* is **0.478 (xeon W16) / 0.497 (local W48) / 0.479
+(laptop W24) plies/s/thread — parity within 4%**. Rust-era gen is thread-count-bound;
+the Xeon (W-2135, 6C/12T) adds exactly its thread share (+21%, ~+123 games/h on 588)
+and not a point more, against real ops surface: the WSL VM tears down seconds after the
+last session (needs a standing keepalive daemon on local), no C compiler on the box
+(cython unbuildable; measured immaterial at 0.008% of per-worker work), the share at 99%,
+and — the finding that outlives the verdict — **G0 FAILS by default on this box**:
+its AVX-512 (Skylake-X) makes numpy dispatch a different np.exp kernel (digest 8f463c13
+vs 0c8d0bfa on local+laptop) = a FOURTH libm implementation and the first x86-64
+non-parity box, **qualifying the 2026-07-31 fleet claim** that x86-64/glibc parity is
+robust across CPU generations. With `NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512F AVX512_SKX
+AVX512_ICL AVX512_SPR"` it PASSES byte-identical (exp64_fma + glibc_fma, same as desktop)
+— so the box is results-capable ONLY with that env var on every launcher. Conditional-keep
+recipe (all three required): both boxes saturated + embarrassingly-parallel CPU gen with
+no cython dependency + the env var in the launcher. Evidence:
+/mnt/c/carc-shared/xeon_probe_20260802/ (G0 JSONs + verdict logs); box left clean, VM
+stopped, repo at 1a6cdf7 with prior work stashed. Any future AVX-512 box (cloud rentals
+included) must run G0 before results-bearing work — the flavor enum does not cover
+AVX-512 np.exp unmasked.
+
+## 2026-08-02 (evening) — **Gap 2 CLOSED: the persistent / re-rootable search tree lands in carc_core, and the whole oracle/clairvoyant instrument tier stops failing closed on `--backend rust`**
+
+`carc_core::search` had ONE search semantics — a fresh tree per call
+(`MirrorState.search_single` == `HeuristicPriorAgent(...).move()` at `reuse_tree=False`).
+The Python ruler has two, and **the instrument tier runs on the other one**:
+`best_action()` never clears `NeuralMCTS._nodes` **at any `reuse_tree`** (the guard lives
+in `move()`, which it does not call), so a `best_action`-driven playout —
+`oracle_score_pilot._playout_value`, every ply to terminal — runs ONE transposition table
+across the whole continuation. `GAP2_ORACLE_CONTINUATION_TREE.json` measured it: the
+per-ply root pre-exists with `N > sims` on 102/103 plies, and a fresh-tree replay of the
+identical world diverges in 4/4 positions. **So the audit's "Gap 2 = no `reuse_tree`" was
+named too narrowly** — no config flag controlled the blocking case, which is why "inert
+because the champion doesn't set `reuse_tree`" never applied to it.
+
+**WHAT LANDED (opt-in, default-off).** `search::session::SearchSession` — a tree that
+outlives the call — plus `carc_rs.PersistentSearcher` and
+`rust_agent.RustCarryClairvoyantAgent`. All three Python transitions are ported:
+`best_action` (carry), `move(reuse_tree=False)` (clear), `move(reuse_tree=True)`
+(`_reroot_or_clear` incl. its hit/fresh/collide outcomes and `prune_to_subtree`, which in
+an index-addressed arena must also REMAP the identity-keyed structures Python keeps for
+free by retaining node objects). Additive throughout: no existing FFI signature, no
+existing search path, no existing class changed; the champion path (`FairAgentRs`,
+k-parallel PIMC, fresh tree per world) reaches none of it, and a session whose tree is
+empty is bit-for-bit `search_single`.
+
+**CONVERTED (each `--backend python` still the default and byte-for-byte unchanged):**
+`champion_factory.build_clairvoyant_champion(backend="rust")` · `oracle_score_pilot
+--backend rust` (clair-puct only) · `eval_fair_puct --info clair --backend rust`.
+
+**GATES — 0 mismatches each.** `tests/rustport/test_p6_persistent.py` (11 tests: the
+carried root table node-for-node at every ply, as raw f64 bits) · `GATE_GAP2_PERSISTENT`
+(the three-way reproduced with a fourth leg: rust-carry == python-as-shipped AND
+rust-fresh == python-cleared, identity on the whole ACTION STREAM, 4 positions, 3
+discriminating) · `GATE_ORACLE_PILOT_BACKEND` (20 positions, 940 field checks, the whole
+`_process` record) · `GATE_CLAIR_BACKEND` (full games, per-ply action + root table +
+handoff counters). Feature-OFF regate: `cargo test --workspace` and the G3 raw-float
+`reconcile_search` at sims=1376.
+
+**⚠️ THE BUG THE FULL-GAME GATE CAUGHT, and the read-across.** `production_prior_cfg()`
+carries **`reuse_tree=True`** — the clairvoyant ruler RE-ROOTS between moves. A Rust class
+that defaults the flag to `False` therefore CLEARS where Python re-roots (caught at ply 1:
+python `root_n` 48 = 24 carried + 24 new vs rust 24). A **single-move gate is structurally
+blind to this** — a fresh agent has nothing to re-root into — so `GATE_CLAIRVOYANT.json`
+is green on the pre-existing `RustClairvoyantAgent` while a full game is not.
+**`RustClairvoyantAgent` (untouched here, additive-only scope) still defaults
+`reuse_tree=False` and aliases `best_action` to a FRESH search; its live caller
+`eval_puct_priors.py --backend rust` should be re-gated over a FULL GAME before its
+numbers are quoted.** Any multi-move Rust ruler must resolve the flag from `cfg` exactly
+as `HeuristicPriorAgent.__init__` does.
+
+**STILL FAIL-CLOSED (unchanged, deliberate):** Gap 3 (evaluator injection) — `--info
+fair-net` / `fair-netprior`; `meeple_dedup` / `intra_reuse` (python-only search variants);
+`--oracle-policy tier1-greedy` (no Rust `RuleBasedPlayer`, and porting one would destroy
+the point of an OUT-OF-FAMILY judge); `snapshot.py` and the UCT/snapshot family (different
+gap: no Rust UCT, no per-sim hook — `snapshot.RUST_BACKEND_GAP`);
+`make_production_champion(mode="clairvoyant", backend="rust")` (out of scope for this
+change — note its refusal string is now stale prose).
+
+**SPEED (a consequence, not the point):** the converted oracle continuation runs
+**~49× faster** end-to-end (41–61× per position, 20 positions). That is what makes the
+full ~652-position oracle probe affordable, but nothing here licenses re-grading anything:
+the conversion is quotable across the change precisely BECAUSE the records are bit-identical.
+
+## 2026-08-02 (night) — THE SIX-PORT WAVE: every named python↔rust wiring residual closed in one evening (5 conversions + 1 crate feature), all bit-exact-gated; fleet atomic at 9c57d80
+
+Joshua: "get opus agents working on all 5 ports" (+ port 6 on the measured blocker). Six
+worktree'd Opus agents, disjoint file territories, merged sequentially after review:
+
+- **Port 1** — eval_puct_priors OPPONENT side → RustClairvoyantAgent: **both clairvoyant
+  sides now rust, 49.4×/48.8× per side, farm wall 28×** (residual = the symmetric python
+  exact-K tail; no rust surface for the clairvoyant ordered-deck alphabeta solve — left
+  python BOTH sides, unbiased). Latent single-mirror bug found+fixed (a second seated
+  mirror was never advanced). Gates: 15 roots ×2 config legs 0/120; 4 deck-paired games
+  0/76 identical elo/margins.
+- **Port 2** — class-B instruments: gate_b_depth_transfer converted (0/42 raw-f64;
+  2.72× NET of a 1.79× work penalty — no per-sim hook, so rust runs sum(levels) not
+  max(levels); mechanism stamped in manifests); snapshot.py family FAIL-CLOSED with the
+  needs-list in-code (needs rust UCT + a stepped/snapshot API — different gap).
+- **Port 3 (F11)** — all four desktop make_production_champion callers wired to the
+  mirror protocol (444 checks 5/5 legs byte-identical; MirrorDesync proven live by 3
+  injection tests; `--backend inherit` = a future default flip reaches callers unedited).
+  Pre-flip blockers enumerated (top: factory must resolve per-mode or clairvoyant builds
+  raise). New module src/carcassonne_ai/mirror_protocol.py.
+- **Port 4** — audit A-items: kwidth probe (0/770) + adaptive_k census (0/350) converted;
+  A3/A4/A7 FAIL CLOSED with measured evidence — **Gap 2 attributed**: the oracle pilot's
+  best_action carry-over is load-bearing (fresh-tree replay diverges 4/4 positions, up to
+  12 pts terminal). New module scripts/measurement_infra/rust_world_search.py.
+- **Port 5** — net-evaluator design memo + benched prototype
+  (docs/RUST_NET_EVAL_DESIGN_20260802.md): ort recommended conditionally; **CUDA-Graph
+  capture is the un-indexed lever (7.1× batch-1)**; the right statistic is cost_ratio ≈
+  0.5 + r (netprior deletes the classical child sweep) → torch+Graph batch-8 = **2.12×,
+  inside the ~2.4–2.6× break-even for the first time**; PyO3 callback dead by measurement
+  (254 µs 8-thread GIL convoy); acceptance = argmax tiers (100% on 1,168 positions).
+  Go/no-go spike ≈ half a day (IOBinding CUDA-Graph); then encode_board is the big item.
+  LEVER_INDEX rows 16–18.
+- **Port 6** — **Gap 2 CLOSED**: carc_core SearchSession (persistent/re-rootable tree),
+  opt-in default-off, feature-off byte-identical (regate 0/576, cargo 84, pytest 288;
+  clean search-only 10.03×). All three python transitions ported incl. _reroot_or_clear
+  verbatim. Conversions same day: **oracle_score_pilot --backend rust 9.41× (0/940)** and
+  eval_fair_puct --info clair (3 full games, 432 plies bit-exact). Gate (d) CAUGHT a real
+  bug pre-merge: production_prior_cfg carries reuse_tree=True and the first implementation
+  cleared where python re-roots — a single-move gate is structurally blind to this class.
+  ⚠️ CORRECTION OF RECORD: port 2's reported 3-way magnitudes (+6.0/−16.0/−16.0) did NOT
+  reproduce — the verified numbers are +4.0/−2.0/−2.0 on the same cell, with the
+  RELATIONS exact (carry==as-shipped, fresh==cleared, 4/4 bit-exact action streams). The
+  structural claim stands; the magnitudes in port 2's report text were from its discarded
+  pre-re-scope run.
+
+**Fair-eval W-sweep (same evening): flagship elo workload settles local W\*=32** (plateau
+17.0–18.0 moves/s across W=32–64; ±8% point noise measured via a triple-run of W=32 —
+one pass contaminated by co-resident agent compute, discarded and re-run on a quiet box).
+Multiplier discipline: **7.77×/9.79× (matched-W) is the FLOOR of record**; respective-peaks
+≈10.5× wall / ~13.6× champ-side rests on an assumed-linear python baseline — quote the
+floor. An n=400 elo cell: ~7.5 h python-era → **~45 min** at W*=32.
+
+**Still fail-closed (correctly, named owners):** Gap 3 evaluator injection (net arms — the
+port-5 spike decides), snapshot/UCT family (needs rust UCT + stepped API), tier1-greedy
+oracle policy (deliberately out-of-family), meeple_dedup/intra_reuse knobs,
+make_production_champion(clairvoyant, rust) (refusal string now stale prose — small
+follow-up). ⚠️ **F7d's morning W\* (local 30 / laptop 22) is STALE** — the ablation
+workload changed era again when its opponent converted; re-sweep owed before sizing any
+farm on it (cheap at 49×/side). leaf_ablation_launcher.sh still needs --backend threaded.
+⚠️ Port-6 read-across: RustClairvoyantAgent (port 1's route) defaults reuse_tree=False —
+its full-game gate passed for the gated reuse-off cell configs, but any reuse-carrying
+config through eval_puct_priors must be re-gated over a full game first.
+
+Fleet: repo 9c57d80 + wheel fac1853e local+laptop, atomic. All gates that touch the
+champion path re-ran green post-merge. No PRODUCTION.yaml change, no strength claim, no
+results.csv row (wave = execution substrate + instruments). Roadmap F10 substantially
+done / F11 done; LEVER_INDEX rows 16–19; decision queue updated (default-flip blockers,
+net-arm spike).
+
+## 2026-08-02 (late night) — F7b farm knockouts DONE: farm base = −142 elo; farm-growth block LEANS DELETABLE (+42.8, z +1.87 — confirm owed) — CL-074 table extended
+
+Both cells n=400 deck-paired, band 1.00e11, rust backend both sides (the first ablation
+cells of the converted era — realized ~1800 games/h two-box vs F7's 101/h python era;
+14 + 13 min wall). Prereg F7B_PREREG.md committed with the band claim before game 1;
+the exact-K tail stayed farm-sighted BOTH sides by ratified design (the tail is the
+rules, not a heuristic leaf; leak biases toward null, documented).
+
+- **abl_farmbaseoff: −142.1 ± 18.8 elo, paired z −9.39** (119W/7D/274L, ms 0.93×). The
+  farm award in flat_base_score is worth ~142 elo — between selfanticoff (~89) and
+  meepleflat (~177) in the component table. The build smoke's n=32 peek (−190.8) shrank
+  to −142 at n=400: winner's-curse regression in its textbook direction, prereg
+  thresholds untouched throughout.
+- **abl_farmgrowthoff: +42.8 ± 17.5 elo, paired z +1.87** (216W/17D/167L, ms 0.96×).
+  ⚠️ POSITIVE: the champion LEANS BETTER WITHOUT the farm-growth block of
+  flat_closure_bonus — sub-2σ, so per the F7 conventions this is a LEAN, not a verdict.
+  **DELETION-CANDIDATE FLAG**: if real it is a free ~+40 elo AND ~4% cheaper. Follow-up
+  (Joshua's funding call, decision queue): a fresh-band n=400 deck-paired CONFIRM (at
+  ~13 min/cell it is nearly free); do NOT touch the production leaf on this lean
+  (feedback_results_table_source_of_truth: never promote from a single screen; and a
+  z-1.87 lone positive against parameter-neighbors is exactly the noise signature the
+  rules warn about — but the direction was unprompted and the cell was pre-registered,
+  so it has earned its confirm).
+
+CL-074 AMENDED (the component-value table gains the two farm rows; the claim's scope now
+covers all named leaf components). Band 1.00e11 → retired (influenced CL-074). Updated
+table: meeple ~300 · curve shape ~177 · oppantic ~153 · **farm base ~142** · selfantic
+~89 · **farm-growth −43 (leaning, sub-2σ)** · both-antic-off ≈ null · cap null.
+results.csv rows abl_farm{baseoff,growthoff}_vs_puctchamp2750_k2.
+
+## 2026-08-03 (early) — farm-growth deletion confirm: UNCONFIRMED (+10.4, margin z −0.07) — parked suggestive-unpromoted; the screen's +42.8 was a winner's-curse crest
+
+The funded fresh-band confirm (band 1.01e11, n=400 deck-paired, byte-identical config,
+13 min two-box) fires the |z|<2 branch of the pre-registered map: **+10.4 ± 17.4 elo,
+202W/8D/190L, deck-paired margin z −0.07** — flat. Against the screen's +42.8 (z +1.87,
+band 1.00e11) this is the project's fifth screen-shrinks-on-extension observation
+(c=3 "+47" · it16 "+88.7" · C3-intra "+40.1" · the oracle pilot's +1.91→+0.74 · this).
+Pooled per the map: elo +26.6 ± 12.3 (z +2.16) BUT margin-pooled z ≈ +1.27 and the two
+statistics disagree in the confirm — the robust class (within-band paired margin) does
+not support a positive verdict. **Disposition: PARKED suggestive-unpromoted, no leaf
+change; the map's "one more cell may be justified by the pooled read" option is Joshua's
+call (morning brief), not run tonight.** CL-074's farm-growth row reads: "component ≈
+0 to −27 (screen-inflated); champion-better-without NOT confirmed." Band 1.01e11 retired.
+results.csv row abl_farmgrowthoff_confirm_vs_puctchamp2750_k2.
+
+## 2026-08-03 (early) — JCZ oracle spike: GO, edition-exact, and the tile-data diff already found R9 (a real farm-adjacency bug on the RCr tile kind)
+
+The feasibility spike (measurement/jcz_spike_20260803/SPIKE_REPORT.md, 8ac58da) retired
+both J6 risks: JCZ's `basic:2` tile set IS our exact C3 edition (32/32 kinds, 72/72
+tiles), its farm model is our model (8 half-edges + adjacent cities, straight relabel
+NL..WR ↔ TLT..TLL, no reflection), and the 5.x Engine.jar is a headless line-JSON
+protocol whose ForcedDrawTilePack takes our deck order verbatim — no RNG matching
+needed. **FINDING (R9): `city_top_straight_road` declares TLT+TRT — field half-edges on
+its CITY edge** — so two RCr placed city-to-city merge under-city field strips into one
+farm (reproduced two-tile board + control; JCZ keeps them separate; the ONLY kind in the
+deck with this defect). Trigger ≤3.3% of random games (ceiling, not verdict); symmetric
+⇒ the recorded A/Bs survive; fix is one line of DATA but moves farm scoring ⇒ flag-gated
+in the F9 family + feedback_bug_fix_shifts_optima applies (v2.7 farm caps were tuned
+against the bug). Deliverables re-scoped: D0 = promote the tile diff to a pytest (lands
+BEFORE any rules adoption — would have caught this the day the data was typed); D1 =
+the replay harness at 1–1.5 agent-days, gated on Phase A (per-ply legality diffs will
+light up on walled/start-tile/redraw divergences by design). Unverified, named: the
+meeple-slot mapping (D1's main unknown) and whether flat_leaf/rust reproduce the merge
+(argued from shared data, not measured — D0's flag build must gate it).
+
+## 2026-08-03 (early) — F7d RE-SWEEP (both-sides-rust era): local W*=30 (peak W36), laptop W*=26 — the workload is now ~6.6× the morning's mixed figure
+
+Owed since port 1 converted the ablation opponent (code-era change ⇒ re-bench). Full
+ladders, same driver/metric: local 40.2/51.2/53.8/54.6/56.2/53.9 at W=16/24/30/32/36/48
+(peak W36, endpoint-bracketed by the W48 turn-down; settle W*=30 = smallest within 5%);
+laptop 44.0/47.6/51.3/50.9 at 16/22/26/30 (peak+settle W*=26). Throughput at settle:
+~54/51 moves/s vs 8.18/7.22 on the morning's half-converted workload. The curve moved
+gen-ward (peak above threads) exactly as the W-heuristic predicts for a
+nearly-GIL-free workload; cand/champ ms now symmetric (~550/560 at W30). Stale morning
+rows retained in the TSVs above the new ones (timestamps disambiguate).
+CLUSTER_OPS fourth profile + memory updated. Bench only, throwaway band 9.69e10.
+
+## 2026-08-03 (night) — F9 wall probe: W2 FIRES — champion play at row 18 = ZERO wall events in 400 games; bigger boards buy nothing this policy would use
+
+The bench-then-commit probe (Joshua's call; 400 champion self-play games at production
+k8×1376 rust, centered18, sentinel + A2 counters on, two-box work-stealing, throwaway
+seeds 1.09e11, no band): **0/400 games with any sentinel event** (CI upper bound
+0.95%/game) — and the counterfactual replay at 45×45, 55×55, and 143×143 is IDENTICALLY
+CLEAN, so W3 (runtime board size) would purchase nothing champion play reaches. **The
+spec's pre-registered branch fires: W2 (recentre-only, already app-shipped) is the F9
+fixed-rules geometry** — recorded as a policy-dependent MITIGATION BOUND (the CI, never
+"zero"), stamped in every fixed-rules manifest. A2 economics at strength: 0.250
+completion-deferrals/game (83/400 games) but **0 monks pinned at terminal** — the
+audit's permanent-pinning worst case does not materialize under champion play; the
+cloister fix's value is mid-game meeple availability, not terminal loss. Report:
+/mnt/c/carc-shared/f9_wall_probe_20260802/centered18/A1a_REPORT.json; harness merged at
+4b6d4bd. Spec J2 is thereby DATA-ANSWERED (W2); adoption of the profile for eval/desktop
+remains Joshua's J1.
+
+## 2026-08-03 (pre-dawn) — F9 PHASE B: B1 FIRES — the flagship contrast TRANSFERS to fixed rules (deck-matched Δ +1.18 ± 1.20 pts, z +0.98); plus the ply-0 desync fix that made arm F honest
+
+Both arms n=400 on band 1.02e11, same 200 decks, deck-paired within arm: **walled
++20.0 elo (margin +1.41)** vs **fixed_v1+R9 +41.9 elo (margin +2.59)** ⇒ deck-matched
+Δ(F−W) **+1.18 ± 1.20 pts/deck, 95% CI [−1.17, +3.53] ≈ [−18, +53] elo-equiv** — inside
+1σ, branch B1 per the prereg map: **the promotion contrast of record reproduces under
+canonical-fidelity rules within a measured bound.** Falsifiers clean (0 sentinel events,
+0 overflows, full n both arms; r9_env_ok stamped). Read-out:
+measurement/classical_search/PHASEB_TRANSFER_READOUT_20260803.md. The fresh-band walled
+arm (+20.0) vs historical +49.85 (32e9) is a new same-config cross-band datum for the
+CL-068 over-dispersion file — and the reason the same-band control arm was load-bearing.
+**En route, the MirrorDesync guard caught a ply-0 composition bug in the first arm-F
+launch** (retail start tile pre-placed TWICE: python setup + the mirror's re-setup each
+removed a copy; masked because next_tile agreed) — root-caused, fixed with a
+mutation-proven pair of regressions + a per-ply reconcile gate whose non-vacuity is
+itself checked (fixed_v1 ≠ walled results), b73cd42. A second latent hole fixed in the
+same pass: make_production_champion's rust branch forwarded no geometry/flags (its
+sibling build_fair_champion did since A0). Guards-not-vigilance, exhibits 6 and 7 of
+the weekend. PRODUCTION.yaml untouched; nothing adopted; adoption decisions (J1/J3/J5)
+remain Joshua's with W2 now data-answered and the transfer bound in hand.
+
+## 2026-08-03 (morning) — ADOPTION: fixed_v1 is the rules profile of record for new eval/desktop work (Joshua, "1-4 I'll take your recs"); backend default flip + CUDA-Graph spike funded; standing defaults accepted
+
+Joshua's morning decisions, queued shortest-wall-clock-first: (a) champ-vs-10× NOT FUNDED
+(the readout's own default), rodv3 PARKED (CL-072 stays Provisional with the lean
+banked), farm-growth CLOSED (no third cell); (b) **fixed_v1 ADOPTED** —
+PRODUCTION.yaml gains `rules_profile: fixed_v1` with the scope note: new confirmatory
+work on fresh bands under fixed rules; walled record interpretable via the Phase-B
+bound; absolute fixed-rules claims GATED on the caps/curve re-sweep (launching today);
+(c) backend default flip funded (per-mode factory resolution + release-test recheck,
+then flip); (d) CUDA-Graph net-arm spike funded (~half day, hard go/no-go at 0.18 ms
+batch-8). Walled bands retire from confirmatory use for fixed-rules claims per the F9
+spec rider — BAND_REGISTRY discipline unchanged.
+
+## 2026-08-03 — BACKEND DEFAULT FLIPPED: `make_production_champion(backend="auto")`, resolved PER MODE
+
+Executes queue item (c) above. `governance/PRODUCTION.yaml` is **untouched** — it has said
+`champion.fair_deploy.backend: rust` since 2026-08-01; this makes the FACTORY read it by
+default. The pre-flip blocker (BACKEND_BYPASS_AUDIT_20260801 §1: 5 of the 6
+`make_production_champion` call sites never `advance()` the Rust mirror) was closed by
+F11, which wired all four desktop callers to `carcassonne_ai.mirror_protocol` with
+`--backend inherit`; the Android bridge drives its own choke point and pins
+`backend="python"` for its anchor agent.
+
+**The resolution is per-mode, in one new function `champion_factory.resolve_auto_backend`:**
+
+| request | `"auto"` resolves to | why |
+|---|---|---|
+| `mode="fair"` | `spec.backend` = **rust** | G4 bit-exact / G6 14,384/14,384 identical actions |
+| `mode="clairvoyant"` | **python**, fail closed | the yaml key is `fair_deploy.backend` — the FAIR deploy's engine. A gated Rust ruler exists (GATE_CLAIR_BACKEND / GATE_GAP2_PERSISTENT) but that evidence covers `eval_fair_puct --info clair`, which passes `backend="rust"` EXPLICITLY and owns its mirror. Three items are open on the DEFAULT path: the Rust clairvoyant agents are PROFILE-BLIND (`MirrorState.from_deck` with no geometry/rules — load-bearing now that `fixed_v1` is the profile of record), this entry point passes no `auto_advance`, and Gap 3 (evaluator injection) is open |
+| any request naming a python-only capability (`meeple_dedup` / `intra_reuse` / `parallel_workers` / an injected evaluator) | **python** | such a request is not the champion of record, so the yaml's CHAMPION backend does not speak for it. Degrading to python is the SAFE direction (it is the status-quo engine, behaviour-identical by gate); the unsafe direction is python→rust behind a caller's back. An EXPLICIT `backend="rust"` still RAISES on the same set |
+| yaml says rust, `carc_rs` not importable | **raise**, with the remedy | the factory's contract is to PROVE at construction which engine executes; a silent demotion is the failure `verify_leaf` exists to prevent. Pass `backend="python"` to opt out |
+
+**What did NOT move, deliberately:** `build_fair_champion` / `build_clairvoyant_champion`
+/ `build_fair_netprior_candidate` / `resolved_manifest` keep `backend="python"` defaults.
+`eval_fair_puct` (every elo row we own) and the whole `measurement_infra` probe family
+reach the agent through those builders WITHOUT naming a backend — including on their
+explicit `--backend python` legs — so flipping them would silently move elo cells onto an
+engine their caller did not ask for, and would hard-raise on every net arm (carc_rs
+carries no evaluator). Their defaults are NOT dead code; the flip is one entry point.
+
+**Two real bugs the flip surfaced**, both "the python reference leg was an omitted kwarg":
+`scripts/rustport/fair_common.py::py_agent` (THE python oracle every rustport gate grades
+against — unpinned it became a Rust agent and raised `MirrorDesync` at ply 0; silently it
+would have compared rust to rust) and `gate_f3_callers.py`'s python leg. Both now pin
+explicitly. `build_clairvoyant_champion(backend="rust")` additionally fails closed on any
+non-`walled` Game rather than mirroring the engine-default rules.
+
+Gates: one scripted game per caller class at the new default resolves to Rust and is
+BYTE-IDENTICAL to the `backend="python"` leg (deck-seeded, 14 plies, actions and manifest
+compared); clairvoyant-at-default constructs as `HeuristicPriorAgent`; the `MirrorDesync`
+injection tests still fire; tests/rustport 311 pass, tests/release/test_factory_manifest
+25 pass, tests/test_f3_caller_backends 15 pass.
+
+## 2026-08-03 (mid-morning) — D1 CLOSED: the JCZ replay oracle — 43/43 final-score agreement with an independent implementation under fixed_v1+R9
+
+The full replay harness (scripts/jcz_oracle/, merged 503c7cc): 7 legs / 128 games /
+ZERO unclassified divergences. **Every divergence-free game — 43/43 — agrees with
+JCloisterZone on exact final scores**, including Joshua's real E4 111–113 loss
+score-for-score. The meeple mapping (the spike's named unknown) closed with SEMANTIC
+verification (121/121 deploys re-derived feature-for-feature on both engines). R9's farm
+merge measured MORE common under champion play than random (FARM_PARTITION 66→0 with the
+fix). Permanent limits documented (bounded board, the 25×25 window, gardens); attribution
+warning: the E4 border game's 14-pt gap is explained-but-contaminated — never quote it as
+"the wall cost". This is the independent-implementation validation plank of the
+publication story. Report: measurement/jcz_oracle_20260803/VALIDATION_REPORT.md;
+CI-mode pytest tests/test_jcz_replay_oracle.py.
+
+## 2026-08-03 (morning) — CAPS/CURVE RE-SWEEP CLOSED ALL-NULL: the walled optima TRANSFER under fixed_v1+R9; absolute fixed-rules claims UNLOCK as-is
+
+The adoption gate discharged on its expected branch. Six screen cells, n=200 deck-paired
+each, band 1.03e11 CRN-shared, rust both sides, fixed_v1+R9 manifest-verified per cell
+(`experiments/results.csv` capscurve_* rows; prereg
+measurement/capscurve_resweep_20260803/PREREG.md, decision map row 1). Paired-margin z:
+cap12 +0.70 · cap5 −1.27 · curve150 −0.06 · curve100 −1.30 · oppcap4 −1.52 · oppcap12
+−0.88 — no cell at z ≥ +2.0, so **cap8 / opp_cap8 / curve125 stand under the new rules**;
+no leaf change, no re-tune, no confirm (the 1.04e11 reservation is released). The
+`curve100` positive control read right-signed but weak (−19.1 vs the −66.8 walled prior);
+the prereg's alarm line was honored — wiring re-checked BEFORE interpretation, and the
+manifests prove each cell varied exactly its knob (cand curve100 leaf 42af12fc vs champ
+curve125 a36d2e15, distinct hashes on every cell). The weak reading is a power statement,
+not an instrument one: the cell's CI contains the prior, and the prior itself takes the
+CL-068 ~1.5–2× cross-band inflation. **Power caveat carried verbatim into
+PRODUCTION.yaml: the screen resolves ~50 elo unpaired / ~35 paired at 2σ — a ≤20-elo
+optimum shift is NOT excluded** (deliberately, per the prereg's funded claim: "the optima
+did not move enough to invalidate absolute fixed-rules strength claims"). PRODUCTION.yaml
+`rules_profile` scope note updated (gate discharged, absolutes ungated); band 1.03e11
+retired (decision-influencing). Rider honored en route: this run existed BECAUSE
+`feedback_bug_fix_shifts_optima` — the F9 rules fixes moved farm decomposition (R9) and
+the meeple economy (retail start / redraw / cloister), and the answer is that neither
+moved the leaf's tuned optima at screen resolution. Cost: ~1.9 h two-box (07:50 finish).
+
+## 2026-08-03 (afternoon) — F9 Phase C COMPLETE — descriptives land, the F9 program CLOSES (measurement)
+
+**Corpus.** 400 champion-play games under full `fixed_v1` on the laptop (k8×1376 rust, W24,
+seeds 109e9+0..399 — deck-matched to the centered18 probe corpus by design), `r9_env_ok:true`,
+sentinel armed. Sentinel: **0 wall events** (W2 clean under fixed_v1 too, same bound discipline
+as A1-a), **20 cloister deferrals (0.05/game — down from 0.25/game on centered18 but NONZERO
+with the A2 fix ON; flagged for one look, monk-pins 0 so no terminal economy damage)**,
+tile-pass ≈0.01/game (redraw absorbing, as A3 predicted).
+
+**The document:** [measurement/f9_phase_c/PHASE_C_DESCRIPTIVES.md](measurement/f9_phase_c/PHASE_C_DESCRIPTIVES.md)
+(pre-registered metric set per spec §3 Gate C, reported-regardless, cross-band rider carried).
+Headlines (walled449 → fixed_v1, DESCRIPTIVE not effects): **σ_game 17.75 → 19.56 (+1.81, SEMs
+~0.6/0.7)** — if it survives a within-band check, the edge needed for a 55% target rises
+2.23 → 2.46 pts (the E4 sizing direction: slightly MORE games, not fewer); decision density
+essentially unchanged (−1 tile ply from the retail start; tile_forced 1.12 → 0.06 — the redraw
+rule converts forced/pass tiles into decisions; late-phase meeple forced% 38 → 45); farm economy
+stable (farm_pts_frac 0.207 → 0.212; first farm ~1.5 turns EARLIER; farmers/seat +0.24).
+Replay integrity 449/449 + 400/400 terminal scores reproduced under each profile.
+
+**Named residue (not funded):** the luck floor's paired half (deck-luck ICC, σ_pair, paired
+required-n) is NOT DERIVABLE from any self-play corpus — needs a seat-swap paired archive
+(same deck, both seatings) generated under fixed_v1; ~400 games ≈ 1.5 h laptop. Joshua's call.
+This is the number that would recompute "games needed for a superhuman claim" under the
+adopted rules.
+
+**New instrument:** `scripts/rules_fixed/descriptives.py` + `run_phase_c.py` (+19 tests) —
+decision-density over any actions-only corpus or games-jsonl, profile-aware, fail-loud on
+R9/profile mismatch, replay-integrity-gated.
+
+**Decision (INTERPRETATION):** with Phase C delivered, **every funded item in F9 is closed**
+(A-flags, composition gates, wall probe, transfer bound, adoption, caps/curve re-sweep, D0/D1
+JCZ oracle, Phase C). The program's residue is two named, unfunded items: the paired luck
+archive above, and the E4 protocol flip to fixed_v1 on the phone (rides the next APK build).
+
+**Reversal cost:** none (descriptive; no claim id, no band, no results.csv row, no production change).
+**Phase:** measurement-first
+
+## 2026-08-03 (afternoon) — Rust deep-K exact solver PORTED, gated, and COST-BENCHED — the K-ladder becomes fundable (engineering + measurement)
+
+**Context:** Joshua ("have a subagent code the k solver") after the deeper-endgame-solver
+re-read (see LEVER_INDEX exact:K row precision note): the June winrate null is powered only
+through K=3, K≥5 was never measured, and the June stop-note's blocker ("K≥5 needs
+make-unmake/Rust") is exactly what the rustport dissolved.
+
+**Build:** `carc_core::endgame` (`rust/carc/carc-core/src/endgame/mod.rs`), BOTH modes
+(clairvoyant alpha-beta any-K + marginalized bag-expectation any-K), driven via
+`carc_rs.MirrorState.solve_endgame`; works under walled AND fixed_v1 (redraw re-marginalization
+honored). **All parity gates PASS** (`measurement/rustport_exact_solver/`): 181-position main
+reconcile + 40 K2-wide + 2×20 synthetic (walled/fixed_v1) + smokes — value, optimal-action-set,
+AND node-count equality vs `scripts/level2/endgame_solver.py` on every gated position (identical
+search trees, so the bench prices the python solver's own tree). New: `scripts/rustport/
+{reconcile_exact_solver,bench_exact_solver,render_solver_bench}.py`, `tests/test_rustport_endgame_solver.py`.
+
+**Bench** ([measurement/rust_solver_bench_20260803/BENCH.md](measurement/rust_solver_bench_20260803/BENCH.md),
+real corpus endgames, checksum-verified, one solve per forked child, RLIMIT-guarded):
+- **K=4 clairvoyant comfortably tractable:** 20/20, median 14.5 s (p90 53 s, max 180 s),
+  **paired 20.8× median / 22.1× aggregate vs python** on identical trees; peak RSS **88 MB vs
+  python's 1,670 MB (~19×)** — the old "1–2 GB/worker, cap the TT, keep W low" constraint was
+  an implementation property, not a search property.
+- **The cost wall is the MODE, not the depth:** marginalized has NO alpha-beta (chance nodes
+  admit no minimax cutoff), so marg K=4 finishes 1/6 under a 300 s cap while clairvoyant K=6 —
+  two tiles deeper — finishes 2/6. Marg K=5 is **">300 s", unmeasured**. Marg K=3 is fine
+  (6/6, median 94 s).
+- Clair K=5/K=6 at a 300 s cap: 2/4 and 2/6 — the cap is the wrong budget; completed solves
+  bound the easy tail only. Per-position variance spans orders of magnitude (434 vs 74k nodes
+  at the same K); size anything by p90/max, never the median. TT ~107 B/entry held everywhere
+  (2.23 M entries / 239 MB at K=6) — RSS extrapolates safely; wall clock does not.
+
+**Decision (INTERPRETATION):** the modern **clairvoyant K2..6 winrate ladder under fixed_v1**
+is now a concrete fundable cell (roadmap line added; Joshua's call): clair-vs-clair matched-mode
+both sides, the June design at today's champion/rules. Ladder cost is dominated by the K=5/6
+tail solves — pre-register per-K wall caps with a cap-hit branch, or the cells inherit the
+June K=4 small-n problem. The **specialized endgame net** (Joshua's brute-force-K6-teacher idea)
+stays dominance-ordered BEHIND the ladder (its ceiling = the value of exact play; LEVER_INDEX
+row). Fair-mode deep-K play remains bounded by F3's +0.256 pts/root at K=3; marginalized deep-K
+as an OFFLINE label source is the one route the bench prices as genuinely expensive (no
+alpha-beta), which matters if the net idea ever fires — its fair labels are the brutal half.
+
+**Reversal cost:** none (new code + bench only; no production wiring, PRODUCTION.yaml untouched;
+the fair agent's K≤2 marginalized latch path is unchanged and its parity gate is part of the suite).
+**Phase:** measurement-first
+
+## 2026-08-03 (late afternoon) — The fixed_v1 seat-swap luck archive: Phase C's named residue MEASURED same-day (measurement)
+
+**Trigger:** Joshua ("anything we should be running on laptop now?") — the idle laptop funded the
+residue the Phase C close-out had named an hour earlier. Producer = `eval_fair_puct --opponent
+fair-champion` (champion-vs-champion, near-equal by construction), 200 decks × 2 seatings on the
+F9 throwaway range 109.5e9, fixed_v1+R9 both sides at k8×1376, two-box shared-claim (laptop W26 +
+local W14 beside the GPU-bound G2 training), ~50 min wall. Driver `scripts/rules_fixed/gen_luck_pairs.sh`;
+consumer adapter in `luck_floor.py` (+10 tests; June walled outputs re-verified byte-identical).
+**Bug caught by the build agent before it could bite:** `luck_floor` read an unrecognized win-field
+spelling as a LOSS — a champion-vs-champion archive would have reported wr_A ≈ 0.0, plausible-looking
+and silently wrong (the guards-not-vigilance file grows again).
+
+**Numbers under the adopted rules** ([measurement/f9_phase_c/LUCK_FLOOR_fixed_v1.md](measurement/f9_phase_c/LUCK_FLOOR_fixed_v1.md);
+h2h sanity: 0.487 wr / −8.7 ± 17.4 = identity-consistent): **deck-luck ICC ~0.19 · σ_game 20.4 ·
+σ_pair 12.8 · seat_adv +3.1 pts · seat-swap pairing factor ~0.79**. **E4 sizing: a true-wr-0.55
+edge needs ~193 seat-swap paired games (vs 381 naive); 0.60 → 48 paired.** The June walled pool
+(ICC 0.14 / σ_pair 14.5 / factor 0.86) is scale, not a controlled contrast — different pairings,
+budgets, era. Recommendation carried from the instrument: run the E4 human protocol as seat-swap
+deck-pairs — each deck twice, seats swapped — for the ~21% variance cut.
+
+**Reversal cost:** none (descriptive; throwaway seeds, no claim id, no band, no results.csv row, no production change).
+**Phase:** measurement-first
+
+## 2026-08-03 (evening) — Joshua's directive batch: APK+E4 flip funded · ANE closed · component remeasure funded · F7c launched · G1/G3 moot · WC tie approved · FIRST PUSH (decisions)
+
+Eight rulings in one message, all executed same evening:
+
+1. **APK rebuild + E4 rules flip → fixed_v1: FUNDED** ("apk, go for it") — agent building: app's NEW
+   games flip to full fixed_v1 (cloister fix + redraw + R9 env in the bridge; centered18+retail
+   already shipped), archives self-label with the profile, both wheel families rebuilt (perf-pass+R9
+   rust). Sideload remains Joshua's. **→ ✅ DELIVERED + DEVICE-VERIFIED same night (~20:00):** built
+   (184 desktop + 37 mirror + 75 JVM tests green; rust wheel 1.55895.7991; R9 flips legal-masks in
+   ~1/200 games so pre-R9 records get VERIFIED cross-rule replay — both E4 archives proven
+   score-identical), installed over re-paired wireless adb, **`connectedDebugAndroidTest` 13/13 on
+   the Pixel** (fixed_v1 latch, on-device R9, mirror under the new flags, E4 cross-rule legs).
+   **E4 games from here are played under fixed_v1 — the rules of record and the real rules.**
+   Side-finds: the "cy wheels 4 KiB" worry was stale (Aug-2 APK already 16 KiB); cy content-version
+   depends on `.venv` presence (BACKLOG).
+2. **ANE n≈2150 cell: CLOSED UNFUNDED** ("we dont need anand anymore") — decision-queue item 3's
+   dangling ack landed; CL-067 amended via csv. The equal-clock question stands unresolved by choice.
+3. **CL-074 component-table remeasure under fixed_v1: FUNDED** ("anticipation remeasure, go for it") —
+   8 knockout cells n=400 deck-paired, both sides fixed_v1+R9, rust, unchanged optima (the re-sweep's
+   all-null makes that legitimate); agent launching laptop-first (local owned by the G2 ruler),
+   shared-claim so local joins later; fresh band from the registry.
+4. **F7c skew-guard hoist: LAUNCHED** — agent building the shared measurement_infra guard + wiring
+   every unguarded --shared-claim launcher (donor files left inline for now; concurrent-edit safety).
+5. **G1 pondering: MOOT** (Joshua: "g1 is moot now isnt it" — yes: clock closure landed, budget rungs
+   unfundable per G10; reopen = contest registration AND budget-value evidence). Roadmap stamped.
+6. **G3 per-move cost: MOOT** (same ruling; its unpark trigger — funding the distilled-net line — is
+   counterfactual after value-unlock/rodv3/ANE/G2-failed-to-fit). Roadmap stamped; trigger unchanged.
+7. **WC tie-break flag: APPROVED to build, unscheduled** ("fine we'll update") — BACKLOG entry: F9
+   flag pattern, A3-style gates, candidate for a future fixed_v2 bundle; measure tie frequency in the
+   Phase C corpora first to size whether it can matter.
+8. **PUSH EXECUTED** — `android-app` pushed to origin for the first time (standing rule: push only on
+   ask; Joshua: "push").
+
+Also banked as standing policy (memory `feedback_worker_count_by_bottleneck`): **default W for rust
+workloads = cpu threads − 2** when no measured W* exists for the workload class.
+
+## 2026-08-03 (night) — Paper G2 transformer control CLOSED: pre-registered verdict C_GRAY — no architecture escapes, but no scratch arm fits, and the WARM START was load-bearing for outcome prediction itself (measurement)
+
+**The run:** three arms from random init (resnet_scratch 7.51M / tf_match 7.73M / tf_large 28.06M),
+16 passes over the CL-073 corpus, scored on the identical solver ruler (1,119 exact K≤2 roots,
+scored=1119/0/0; **integrity gate PASS** — v29_leaf/curve125 reproduce 0.9508/0.6095/0.6153 to 4 dp).
+Prereg `ffd9319` BEFORE the first step; ~10.9 GPU-h; survived a dirty reboot mid-arm-1.
+
+**Verdict = C_GRAY, quote BOTH halves in order:** (i) the referee objection is ANSWERED — the
+matched-parameter transformer is ruler-identical to the conv-ResNet (pre-declared paired contrast
+sign-z −0.94 vs a |z|≥2 bar; capacity leg −0.16), and all six checkpoints sit at ~2× the leaf's
+regret / τ ~0.01 vs 0.6153, sign-z −18.0..−19.3, indistinguishable from the published
+value_unlock_v1 — **no tested architecture escapes**; (ii) it is NOT a generalisation result —
+all three arms failed the §4.2 fit gate (held-out value↔outcome r 0.23/0.37/0.38, best-ever
+0.417–0.437, vs the 0.55 bar), so no scratch arm ever exhibited the *prediction* half of the
+dissociation, and per the prereg its poor ruler score is not Branch-A evidence. **Branch B did not
+fire; no strength flag; blocker #2 neither reopened nor further closed.**
+
+**New datum (CLAIMS_LEDGER D5, supporting-not-load-bearing):** the heuristic warm start was
+load-bearing for OUTCOME PREDICTION itself — the warm-started lineage reads r 0.66/0.68 on the
+same corpus/split while scratch arms memorise (resnet: train-MSE 17× down, held-out UP) or underfit
+(both tf); corroborates CL-066's "value ESS = games (2,280), not positions". Not a rescue: the two
+r≥0.61 warm-started nets still discriminate ~30× worse than the leaf.
+
+**Artifacts:** [READOUT](measurement/paper_g2_20260803/READOUT.md) · PREREG §7 filled · VERDICT.json +
+solver_score_g2.json committed · CLAIMS_LEDGER G2 row CLOSED C_GRAY with a wording lock (both halves,
+in order) + D5 row · OUTLINE §9.3 rewritten · merged `e30dc16`. No results.csv row (offline
+instrument), no PRODUCTION.yaml touch, band-free.
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first
+
+## 2026-08-03 (midnight) — CL-074 component table REMEASURED under fixed_v1: it TRANSFERS — the anticipation-pair null replicates under the adopted rules; farm-growth leans deletable a THIRD suggestive time (measurement)
+
+**The run** (Joshua "anticipation remeasure, go for it"): all 8 knockout cells n=400 deck-paired vs
+the intact champion leaf, band 1.05e11 (fresh, now retired), both sides fixed_v1+R9 rust, unchanged
+optima (legitimated by the same-day all-null re-sweep). Laptop W18 from 19:09 (bench co-tenant −4),
+local W30 joined 23:34 post-ruler; ~4.6 h wall; launcher gained `--rules-profile` + a VOID-PROFILE
+guard (agent commit `e399210`); rows `abl_*_fixed_v1_vs_puctchamp2750_k2` ×8.
+
+**The table (fixed_v1 elo vs walled CL-074):** meepleoff **−310.0** (walled −299.6) · meepleflat
+**−136.0** (−177.2) · oppanticoff **−125.0** (−153.4) · selfanticoff **−82.3** (−88.7) · anticoff
+**−22.6, z −1.61 ≈ NULL** (−7.8 ≈ null) · capoff **+9.6, z +1.23 null** (−13.6 null) · farmbaseoff
+**−132.9** (−142.1) · farmgrowthoff **+25.2, z +1.85** (+42.8 screen / +10.4 confirm).
+
+**Decision (INTERPRETATION):** the CL-074 structure TRANSFERS to the adopted rules — same rank
+order, same nulls, every Δ-vs-walled within cross-band humility (CL-068: inflate σ 1.5–2× across
+bands). Specifically: **the anticipation pair's balance-not-information finding REPLICATES under
+fixed_v1** (either half alone catastrophic, both-off statistically nothing) — Joshua's remeasure
+rider is DISCHARGED. **farm-growth deletion reads suggestive-positive a THIRD time** (+42.8 → +10.4
+→ +25.2; three independent bands, all non-negative, none ≥2σ): stays UNPROMOTED per the standing
+no-third-cell ruling; the 3-band sign consistency is banked as an observation for the next time the
+leaf is retuned, not a promotion trigger. CL-074 amended; band retired; BACKLOG rider closed.
+⚠️ Artifact naming: the run's prereg/logs say `F7C_*` — a collision with the (unrelated) F7c
+skew-guard item; this entry is the disambiguation of record.
+
+**Reversal cost:** none (measurement only; leaf/PRODUCTION.yaml untouched).
+**Phase:** measurement-first
+
+**Reversal cost:** items 1/3/4 are builds/measurements (reversible; no production change until their
+own close-outs); 2/5/6/7 are bookkeeping state; 8 is public (origin now has the branch).
+**Phase:** measurement-first
+
+---
+
+## 2026-08-04 (morning) — Fair-K frontier priced: marg K5 NOT an option, K4 is the offline-labeling frontier
+
+**Question (Joshua, 2026-08-03):** "sounds like we might as well try fair play k. is 6 an option? only 5?"
+
+**Answer: neither, for anything practical.** Verdict table = the clean desktop run
+(`marg_bench_20260804_local`, exclusive tenant, W4, 3600 s caps, seeded positions):
+marg **K4 15/20 ok** (ok med ~8 min, p90 ~36 min, rss max 1.23 GB) · marg **K5 5/19 ok**
+(ok med ~28 min — the completions themselves are near the cap) · K6 probe pending
+(bounded below by K5's ~3.8× node step; the 300 s desktop probe already put K5 over cap).
+So: **K5/K6 closed for practicality; K4 is the fair-label frontier**, and only with an
+F13-style K−1 fallback for its 20–25% timeout tail. The in-game latch stays K≤2 —
+no K≥4 marg is within orders of magnitude of interactive.
+
+**The confound resolved honestly:** the laptop run (W18 CL-074 farm co-tenant 19:09→00:05)
+turned out unbiased — the clean run reproduces it (K4 16/20→15/20, K5 5/20→5/19). The
+timing-instrument-exclusive-tenant rule stands (we could not have KNOWN without the clean
+run), but the K5 timeouts were "too slow", not "starved".
+
+**Ops footnotes:** (a) the stale-wheel trap fired TWICE more (laptop first launch + local
+first launch — the venv had a pre-`solve_endgame` carc_rs; BACKLOG has the preflight
+capability assert, and `wsweep_exact_solver.py` ships with it built in); (b) the laptop
+driver crashed post-rows in aggregation (jsonl authoritative); (c) the local run lost its
+last 2 jobs to a WSL teardown between 06:39 and 08:37 (1 K5 position censored at 19/20;
+K6 probe re-fired standalone 08:58).
+
+**Consequences:** LEVER_INDEX exact:K row updated; the specialized-endgame-net sequencing
+is unchanged (it waits on the F13 clairvoyant ladder, not on fair-K cost); the W sweep
+(teed, `9f559ec`) fires only behind a funded consumer of K4 fair labels. W-for-throughput
+is RAM-guarded at local ≤12 / laptop ≤5 from the measured rss max.
+
+**Reversal cost:** none (cost measurement only; PRODUCTION.yaml untouched).
+**Phase:** measurement-first
+
+---
+
+## 2026-08-05 — F13: the exact-K ladder saturates at production; the endgame net is stillborn
+
+**Question (prereg 2026-08-03):** does exact endgame play *deeper than production* buy **wins**
+at the modern champion under the adopted rules? The June null was powered only through K=3,
+era-bound (RoD1/h3200, v2.8, walled), and its winrate ladder 0.526→0.537→0.568 was monotone-up.
+
+**Answer: no — and the shape of the "no" is the finding.** Band 1.06e11 (now retired), four
+rungs vs the production K=4 incumbent, n≈400 deck-paired each on the SAME decks, fixed_v1+R9
+both sides, rust solver, caps 5:300/6:600 with a downward fallback floored at K=4. No rung
+censored (rates 0.000 / 0.000 / 0.082 / 0.129 against a 0.20 threshold).
+
+| rung | wr | elo ±1σ | margin/deck | paired z |
+|---|---|---|---|---|
+| K2 *(control)* | 0.484 | −11.3 ± 17.4 | −1.07 | −8.51 |
+| K3 | 0.484 | −11.3 ± 17.4 | −0.76 | −6.44 |
+| K5 | 0.501 | +0.9 ± 17.4 | +0.11 | +2.72 |
+| K6 | 0.505 | +3.5 ± 17.5 | +0.10 | +2.81 |
+
+**The saturation, which is the durable content:** marginal value per +1 K runs
+**+0.31 → +0.76 → +0.11 → −0.01** pts/deck. The return collapses ~7× exactly at the
+incumbent's K=4 and is gone by K6. **Production sits at the knee of the curve — a threshold
+originally chosen on COST grounds in June (DECISIONS 2026-06-24 stopped at K=4 because the
+winrate ladder went flat), now vindicated on VALUE.** ⚠️ Do not quote the fitted trend slope
+(+0.321/K, z +8.21) on its own: it is a straight line through a saturating curve and is driven
+almost entirely by the two rungs BELOW production.
+
+**Winrate is flat everywhere** (2σ MDE ±35 elo) ⇒ the June result replicates, powered at every
+rung, modern era. The negative control is healthy (K=2, shallower, loses at z −8.51), so
+branch 4 — the instrument alarm — did not fire: the harness measured the game, not its wiring.
+
+**⚠️ A prereg defect of mine, recorded rather than smoothed over.** The question is worded on
+*wins*; every decision-map threshold is written on *paired margin z*. So the map mechanically
+fired **branch 2** (K5 +2.72, K6 +2.81 uncensored) while the question it exists to answer read
+null. The numbers stand exactly as pre-registered; only their sufficiency for further FUNDING
+was at issue. Joshua's call: **"close"** — the amended deploy-budget confirm was NOT bought,
+because it would have priced whether a ~0.1 pts/deck winrate-null effect survives a 4× budget
+increase, and `feedback_sims_washout_net_eval` predicts it shrinks.
+
+**Consequences.** (1) **CL-076** minted (exact endgame depth saturates at K=4; deeper buys
+margin, not wins). (2) **The specialized endgame net is STILLBORN** — its ceiling is the value
+of the exact play it would distil, now measured at ~nothing; killed without a line written,
+which is exactly what dominance-ordering it behind a ~1-box-day ladder was for. (3) The
+LEVER_INDEX exact:K row gets its final stamp. (4) Band 1.06e11 retired (decision-influenced).
+
+**Gates and by-catch worth more than the verdict.** The identity gate compared the NEW rust
+tail against the pre-F13 **python** tail move-for-move — 17/20 games, 0 divergences across
+~2,400 plies — and incidentally measured the rust tail at **4–10× faster**, confirming the
+harness had been silently running the python solver under `--backend rust`; unfixed, that
+alone would have made the K5/K6 rungs infeasible. Also fixed pre-launch: `manifest.json` (and
+the results.csv note strings) stamped the CANDIDATE's exact-K into the OPPONENT's slot, so
+every asymmetric cell misdescribed its own incumbent. Three operational lessons: a 10-game
+pre-flight rider **underestimated the K6 cap-hit rate ~3×** (0.038 vs 0.129 realised — size a
+rider to the decision, not to convenience); the K≤4 incumbent tail is **uncapped by design**,
+so every rung ends with an unbounded straggler tail; and killing redundant stragglers once the
+record count reaches n is provably safe because that count IS the launcher's loop-exit
+condition.
+
+**Reversal cost:** none (measurement only; PRODUCTION.yaml, the champion, and the K≤2
+in-game latch all UNTOUCHED).
+**Phase:** measurement-first
+
+---
+
+## 2026-08-09 (late morning) — The first out-of-lineage rating: the champion is +111.4 elo over JCloisterZone's AI, and the n=20 "LEVEL" call is retracted (measurement)
+
+**Decision:** record the n=400 deck-paired match against JCloisterZone's `LegacyAiPlayer` as the
+program's first **absolute** strength anchor, and retract the n=20 smoke's "the two are LEVEL"
+headline. Nothing is promoted; `PRODUCTION.yaml` is untouched.
+
+**Result** (band 1.08e11, 200 decks x 2 seat-swapped, `fixed_v1` + `CARCASSONNE_FIX_R9=1`,
+champion k8x1376 = 11,008 rust, JCZ rev `29a1561`, tile set `basic:2`):
+wr **0.6550** (258W/8D/134L) = **+111.4 elo +/- 17.4**; deck-paired margin **+6.50 +/- 0.86 pts,
+z 7.55**; 0 voids; **0 REAL divergences**; final scores agree **400/400 across 56,777 plies**.
+Classified-only: `UNPLACEABLE_REDRAW` x23 (benign -- both engines redraw, and this *confirms* the
+A3 redraw lever against an independent implementation) and `WALL_LEGALITY` x2 (the bounded 25x25
+action window, non-score-moving, now **measured** at 0.5% of games -- VALIDATION_REPORT §5's
+"not proved empty" finally given a rate).
+
+**Why the smoke was wrong, precisely.** The n=20 smoke read wr 0.525 / paired +4.60 +/- 2.23 and
+was written up as LEVEL. At n=400 the paired margin moved only 0.85 sigma (+4.60 -> +6.50) --
+**it was telling the truth all along** -- while the win rate moved 0.13 (0.525 -> 0.655), about
+1.2 sigma at n=20's +/-0.11. The error was quoting a win rate at n=20 at all. This is exactly the
+`feedback_trend_beats_underpowered_steps` / deck-paired-is-the-robust-class discipline, and it
+failed in the direction of a *more interesting* headline, which is the direction to distrust.
+
+**What survives and what it buys.** The saturation prior (BACKLOG/LEVER_INDEX: JCZ's AI "may
+saturate instantly, then it's a floor marker, not a ruler") is still **refuted** -- wr 0.655 is
+comfortably off both rails. So structural blocker #1 is **dented, not closed**: we now hold a
+reference that is genuinely outside the lineage (independent leaf, search, engine, and a rules
+implementation certified ply-by-ply) and that **cannot drift with our training**, but which sits
+~111 elo *below* the champion and is therefore a floor-anchor, not the superhuman yardstick.
+Its three uses: catch absolute regression, price a lever against an opponent with no correlated
+blind spots, and host the disagreement mining that TERM_ARCHAEOLOGY step 1 needs.
+
+**The finding to sit with.** 11,008 sims of PIMC plus an exact endgame latch, at ~1,329 ms/move,
+beat a **static one-turn evaluator** at 38.1 ms/move (~35x cheaper) by 6.5 points a deck. That is
+a real edge and a *modest* one for that compute ratio -- the same shape blocker #2 predicts, now
+visible against an implementation that shares nothing with us. It does not by itself prove the
+leaf is the binding constraint; a budget ladder against **this** opponent would.
+
+**Riders.** (i) R9 is ON and is **not** the PRODUCTION default (built, not adopted); it is forced
+because it is the only configuration in which the two engines are provably rules-identical
+(oracle leg D), so **+111.4 is NOT comparable to walled-era elo**. (ii) `LegacyAiPlayer` has **no
+configuration knobs** -- no depth, budget, temperature or seed -- so there is no stronger JCZ to
+try; the rating is against this specific agent. (iii) One band, one deck draw. (iv) Ownership is
+not diffed at feature level, only partitions and scores.
+
+→ [CONFIRM_READOUT](measurement/jcz_match_20260809/CONFIRM_READOUT.md) ·
+[TERM_ARCHAEOLOGY](measurement/jcz_match_20260809/TERM_ARCHAEOLOGY.md) ·
+`experiments/results.csv` `jcz_legacyai_vs_champ_fixed_v1_r9_n400` · harness `scripts/jcz_match/`
+· band 1.08e11 RETIRED (1.07e11 = the smoke, stays unretired).
+
+## 2026-08-09 (afternoon) — JCZ disagreement mining: PRE-REGISTERED and BUILT, not launched; the disagreement screen turns out to be FREE (measurement)
+
+**Decision:** fund, pre-register and build step 1 of BACKLOG 2026-08-09 *"JCZ disagreement mining"*
+— locate **where JCloisterZone's evaluator out-earns ours** on real positions from the n=400
+corpus, stratified so a win localises to a TERM. Built and gated only; **nothing launched** (the
+phase-β ladder holds the local box, the chunked seam gate holds the laptop). Nothing promoted,
+`PRODUCTION.yaml` untouched, no claim id minted.
+→ [MINING_PREREG.md](measurement/jcz_mining_20260809/MINING_PREREG.md), `scripts/jcz_mining/`.
+
+**The design choice that made it cheap.** JCZ's `LegacyAiPlayer` is a one-turn BFS ranked by **one**
+static evaluation, so **its played move in the corpus already IS its evaluator's argmax**. The
+disagreement screen therefore needs **no JVM and no re-query** — 56,777 plies of their evaluator's
+answers were already on disk. We only compute our own leaf's argmax at the same state. Comparison is
+**leaf-vs-leaf** (search-vs-search is the match, already measured at +111.4), with our side made
+*chain*-argmax over JCZ's own chain space so their BFS gets no free lookahead. Split into TILE and
+MEEPLE position classes so `oracle_score_pilot.py` is used **unmodified**.
+
+**Dry run (counts only, no outcome).** 400/400 games, 6,800 disagreements, and the free ground-truth
+check **PASSED 25,871/25,871 with zero failures** — every JCZ wire payload, re-inverted in our own
+independently replayed position, returned exactly the action the archive recorded. Agreement rates,
+*conditional on our leaf expressing a strict preference*: **TILE 41.9%, MEEPLE 68.2%**.
+
+**Three findings that fell out of building it, all recorded before any scoring:**
+
+1. **A stale fact in two docs, corrected.** The production leaf's closure schedule is
+   `{1: 0.5, 2: 0.2, **3: 0.05**}`, not `{1: 0.5, 2: 0.2}` — `CARCASSONNE_V25_DROP_THREE_OPEN` is
+   opt-in and **default OFF**. So the leaf's closure anticipation dies at `open_n >= 4`, not `>= 3`.
+   TERM_ARCHAEOLOGY §2 and §3c asserted the wrong version and are annotated. The stratifier was
+   specified to *read the schedule from the loaded cfg*, which is what surfaced it.
+2. **Our leaf cannot discriminate the top tile placement 55% of the time.** 7,817/14,190 TILE plies
+   (and 1,928/11,681 MEEPLE plies) are **exact** top-2 leaf ties. This is CL-073's
+   "prediction ≠ discrimination" appearing as a raw structural fact about the heuristic leaf rather
+   than as a learned-vs-heuristic contrast.
+3. **The shipped decision map was SIMULATED rather than asserted** (4,000 draws through the real
+   `decide()`): power is **81% at +2.0 pts/ply, 53% at +1.4, 30% at +1.0**, and measured familywise
+   false-conviction is **4.9%**, better than the naive ~9%. The load-bearing consequence: when the
+   primary stratum truly carries +1.4, the "all wash" branch **still fires 41% of the time** — so a
+   null licenses *"no effect ≥2 pts/ply survives"* and must never be written up as
+   *"the evaluators are equivalent"*.
+
+**Riders carried into the readout:** the in-family judge biases toward OUR arm, so a positive is
+**conservative**; positions are JCZ-actor plies, a known **one-sided** selection effect, so a
+negative is strong and a positive carries an asterisk; and a conviction funds a native from-scratch
+term build plus a **C5 play gate**, never a promotion — the standing sims-washout pattern says a
+1-ply-evaluator win can vanish under 11,008 PIMC sims.
+
+## 2026-08-09 (evening) — The §7 tightener RAN: the price of a top-of-ladder disagreement is +0.0673, not the assumed 0.511 — pre-registered BRANCH 2 fires POWERED and the +54 elo headroom bound collapses to ≈ +7 (measurement)
+
+**Context.** The morning's desk assembly ([MEMO](measurement/budget_headroom_bound_20260809/MEMO.md))
+bounded the total remaining raw-search-budget headroom above the deployed 11008 at **≈ +54 elo**,
+and named its own weakest link: the **price per signal disagreement `P`, measured at exactly ONE
+pair (2752v11008) and then assumed constant across doublings** — "the single largest unbraced
+lever in the whole assembly" (§3.2). §7 pre-registered the one cheap measurement that would brace
+it, with an explicit decision map, and explicitly argued for the **top-of-ladder adjacent pair**
+over a low-end pair because both uncertain factors (`P`-constancy and the r₄ > 1 anomaly) live at
+the top rung. It was costed and not launched. **It was funded and ran the same day.**
+
+**What ran.** `scripts/measurement_infra/oracle_score_pilot.py` **UNCHANGED**:
+
+```
+--level-a 1376 --level-b 2752 --n 150 --m 32 --oracle-sims 100 --workers 16 \
+--out-subdir oracle_score_pilot_5504v11008 --backend rust --resume
+```
+
+Levels are `sims_per_det` at `k_dets = 4` ⇒ 5504 vs 11008 total. **No adapter was needed** —
+`--level-a/--level-b` already existed and `load_disagreements` keys off `q_pick_by_level`. Default
+`clair-puct` judge, M = 32 CRN worlds: same instrument, same knobs, same judge as the +0.7375
+reference, only the pair differs. That is what makes the two prices comparable at all.
+
+**Backend, recorded because the ruler's identity is load-bearing.** The run used `--backend rust`,
+licensed by the committed identity gate `measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json`
+(20 positions, **940 field checks, 0 mismatches**, every non-timing record field as raw f64 bits),
+**re-verified on the current revision before launch** (8 positions, **376 field checks, 0
+mismatches**, speedup 9.48×). The committed 20-position record was left in place rather than
+overwritten by the smaller re-verification. ⇒ **the rust leg is a bit-exact conversion of the
+python instrument that produced +0.7375, not a new ruler.**
+
+**Run health.** Population **474** disagreements at the pair (the memo predicted ~470 from
+`D_paired₅ 0.181 × ~2618 records`); n = 150 sampled; **150/150 ok, 0 failed,
+`crn_verified_all: true`**; **126 distinct roots**; wall **990.1 s at W16 (16.5 min)** against the
+memo's rust-era estimate of ~20–30 min. Artifacts
+`/mnt/c/carc-shared/classical_search/oracle_score_pilot_5504v11008/`
+(`manifest.json`, `summary.json`, `records/`, `price_analysis.json`); log
+`measurement/classical_search/oracle_score_pilot_5504v11008.log`.
+
+**RESULT** (recomputed by `scripts/measurement_infra/analyze_oracle_price.py`, whose acceptance
+test is that it reproduces the published 2752v11008 numbers exactly — so these are the same
+estimator, not two estimators). Cluster-robust z is the primary; the naive z is printed only so
+the design effect is auditable.
+
+| quantity | **5504 vs 11008 (NEW)** | 2752 vs 11008 (the memo's price) |
+|---|---|---|
+| n positions / roots | **150 / 126** | 100 / 89 |
+| mean Δ pts per disagreement | **+0.0673** | +0.7375 |
+| sd per position (M=32) | 2.2787 | 2.4058 |
+| naive se / z | 0.1861 / +0.362 | 0.2406 / +3.07 |
+| **cluster-robust (root) se / z / p** | **0.2041 / +0.330 / 0.742** | 0.2486 / +2.97 / 0.0030 |
+| root-collapsed mean / z | +0.1141 / +0.588 | +0.5920 / +2.45 |
+| cluster bootstrap 95% CI (20000 reps, seed 20260809) | **[−0.3300, +0.4668]** | [+0.251, +1.226] |
+| bootstrap P(≤ 0) | 0.365 | 0.0014 |
+| design effect | 1.204 | 1.067 |
+
+**Price ratio vs the +0.7375 reference: 0.091, CI [−0.447, +0.633].**
+
+**Which branch fired.** §7's map was `price ≈ 0.5 ⇒ P-constancy holds, the central bound stands,
+r₄ is noise` · `price ≪ 0.2 ⇒ the price falls faster than the rate, the true bound is well under
++54 (the GOOD outcome — headroom closes cheaply)` · `price ≫ 1.0 ⇒ r₄ > 1 is real, the geometric
+family is the wrong family above deploy, WITHDRAW the bound`. **Branch 2 fired.**
+
+**And it fired POWERED — stated explicitly because a z of +0.33 read carelessly looks like an
+underpowered null.** The memo's own P-constant point prediction for this cell was
+`Δ₅/D_paired₅ × P = 0.0206/0.181 × 4.466 = 0.511` pts/disagreement. At the **realized**
+cluster-robust se of 0.2041 that effect would have read **z = 2.5**. Measured z is **+0.33**, and
+the bootstrap CI's **upper** bound (+0.4668) sits **below** the 0.511 prediction ⇒ *"the bound
+stands"* is **excluded at roughly 95%**, not merely disfavoured. This is a powered refutation of
+budget-invariant price **at the extrapolation point**.
+
+**The re-stated bound.** Identical chain to MEMO §4.3 — `P_signal = D_paired₅ × price / Δ₅`
+(`D_paired₅ = 0.1810`, `Δ₅ = 0.0206`), `g_next = Δ₅ × r × P_signal × 71.5 / divisor`,
+`H = g_next/(1 − r)`, elo via `wr = 0.5 + (pts/σ)·φ(0)` — **only `P` is replaced by the measured
+price.** Sanity check: feeding the assumed price **0.51125** through this exact chain reproduces
+the published **+54.1 elo** central and 4.294 pts/game, so this is the memo's own arithmetic with
+one input measured instead of assumed.
+
+| branch | price | P_signal | g_next (pts/game) | H (pts/game) | elo (σ 22.2) | elo (σ 20.4, fixed_v1) |
+|---|---|---|---|---|---|---|
+| **★ CENTRAL (measured)** | **+0.0673** | 0.591 | +0.1837 | **+0.5652** | **+7.1** | **+7.7** |
+| bootstrap CI lo | −0.3300 | −2.899 | −0.9008 | −2.7717 | −34.7 | −37.8 |
+| bootstrap CI hi | +0.4668 | 4.101 | +1.2742 | +3.9206 | +49.3 | +53.7 |
+
+r-sensitivity at the measured price is now **second-order**: r = 0.573 → +4.6 elo · 0.675 → +7.1 ·
+0.796 → +13.3. **The bound's dominant uncertainty has moved off the decay ratio and onto the
+price** — exactly where §3.2 said the unbraced lever was. ⇒ **the central collapses from +54 elo
+to ≈ +7 elo, honest bracket ≈ [−35, +49] elo, spanning zero. The +54 figure is SUPERSEDED, not
+merely caveated.**
+
+**🔑 THE ACTUAL FINDING — the decay moved from the RATE into the PRICE.** MEMO §6(iii) could not
+distinguish *"r₄ = 1.19 ± 0.40 is noise"* from *"the decay has really stopped at deploy."* **This
+resolves it in a third way neither reading anticipated:**
+
+- The **rate** of budget-attributable disagreement did **not** keep decaying at the top rung
+  (Δ₄ = 0.0173 → Δ₅ = 0.0206, r₄ > 1). **That half of the anomaly is real in the data.**
+- But the **price** of a disagreement **collapsed**: +0.7375 over the 2752→11008 *composite*
+  versus **+0.0673** over its *top half alone* ⇒ **essentially all of the composite's measured
+  value came from the 2752→5504 half.**
+- ⇒ **Above 5504 the deeper pick MOVES but does not IMPROVE** — the search is churning between
+  moves of ~equal value.
+- ⇒ **The geometric family is NOT withdrawn.** The decay is still there; it lives in the **price**
+  rather than the **rate**, i.e. in precisely the quantity the memo held constant.
+
+MEMO §5's two out-of-sample misses (both rungs above 11008 landing *below* the model) now have a
+**mechanism** rather than just a consistent sign. The §7 rationale for choosing this pair over a
+low-end pair is vindicated: it converted the weakest link into a measurement, **and the link
+broke.**
+
+**The structural caveats survive and still point the same way.** MEMO §6(i) cliff-vs-geometric and
+§6(ii) in-family judge **both** argue the bound is too high — and (ii) is **sharper now, not
+weaker**: a judge sharing the champion's search and its curve125 leaf should *favour* the deeper
+pick, and it did not. Whatever residual same-family self-preference exists works **against** the
+null we measured.
+
+**On `results.csv` — the omission is deliberate, not an oversight.** This instrument has **no
+opponent, no elo and no W/L/D**; the schema has no slot for it. Both the memo and the
+`docs/LEVER_INDEX.md` row already state that this line of work carries no results.csv row, and
+that stands. Its numbers live in `summary.json` / `price_analysis.json`, MEMO §9, and here.
+
+**What is NOT claimed.** No CL id minted. `governance/PRODUCTION.yaml` **untouched**; nothing
+promoted. No band-registry involvement — **no games were played**. Still **understanding, not a
+deploy lever**: CL-068's clock sentence and CL-071's promotion both still apply, 22016 remains the
+first rung this bound speaks to, and the bound now says that rung is worth ~nothing. The
+measurement prices **one** adjacent pair — it refutes P-constancy at the top of the ladder, not at
+any low-end pair, and MEMO §3.1's low-end sub-additivity is untouched. The second-cheapest
+follow-on named in §7 (M → 64 on the banked 2752v11008 positions) is now **moot**: it would tighten
+a price that is no longer the binding uncertainty.
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first
+
+## 2026-08-09 (evening) — JCZ disagreement mining RAN: G3, no conviction, steal pipeline closed at Stage 1
+
+The pre-registered leaf-vs-leaf mining over the n=400 corpus ran on the laptop (W=22, 160 primary
++ 80 secondary records, 1.95 h, 0 failures, M=32 CRN). Verdict per MINING_PREREG decision map:
+**branch G3, no stratum convicts.** A (commitment / S1+S4): mean −0.028 pts/ply, z −0.06 — a flat
+null with 81% power at +2.0 pts/ply, so a ≥2 pts/ply advantage for JCZ's committed-meeple pricing
+is excluded; the raw mean is not even positive. B (late-deck closure / S2): −0.904, z −1.74 —
+indistinguishable from its phase-matched control C (−0.903, z −2.62), i.e. the lean is entirely
+the background disagreement effect (the amendment-7 phase-matching is what made this readable;
+the un-matched design would have manufactured a spurious B signal). The control's own reading —
+JCZ's pick ~0.9 pts/ply WORSE than ours where the evaluators disagree — is the mining-level
+corroboration of the +111.4 match. **Per the prereg's kill-gate: no conviction ⇒ the native
+term build + C5 gate (Stage 2/3) are NOT funded.** No claim minted, no results.csv row (no games
+played — measurement precedent per the oracle pilot), PRODUCTION.yaml untouched. Ops by-catch,
+both memorialized: laptop `systemd-run --user` scopes die with the last ssh session unless
+`loginctl enable-linger` (enabled, durable); in-session launches on the local box are swept by
+harness teardown (3 kills) — long local drivers now run from a cron-armed self-healing guard
+(`/home/doctor/gate_ops/gate_cron_guard.sh`).
+
+## 2026-08-09 (late night) — Joshua ACCEPTS the 15e07 coverage gap; phase arm proceeds
+
+"ok, let's do the phase arm." The GREEN_WITH_GAP verdict is accepted per the basis in
+`measurement/curve_shape_scope_20260809/PHASE_SEAM_GATE/OWNER_ACCEPTED_GAP` (byte-identical
+test file across trees; default-OFF seam with reconcile-level byte-identity 0/3.3M both knob
+states; the cell provably cannot complete under the 24 GiB safety ceiling on any box).
+night_chain patched to treat GREEN_WITH_GAP as GREEN iff the acceptance file exists — the
+gate's own verdict text is NOT rewritten. Standing follow-up: if 15e07 ever becomes runnable
+(bigger substrate or test segmentation), run it retroactively; a failure there reopens the seam.
+Authorized: merge 549c0d1 + Part C beta ladder at W=14 local.
+
+## 2026-08-10 (~02:00) — Part C attempt 1 VOIDED by its own wiring gate; gate amended prospectively; attempt 2 staged behind a second-opinion review
+
+The b0p0 identity cell (band 1.15e11) completed n=200 at elo −27.85 (1σ ±24.6, 91W/107L/2D,
+paired margin −0.255 z −0.22) and fired PREREG kill condition §6.1 (|elo| ≥ 25 ⇒ abort, no
+cell counts, restart on a new band). **Options considered:** (a) honor the abort literally;
+(b) let the ladder finish and adjudicate at readout under the robust margin statistic.
+**Chose (a)** — a pre-registered kill condition is not reinterpretable after it fires, even
+when the diagnosis says calibration: the ±25 bar was inherited from Part A's n=400 cells
+(1.44σ there) and sits at 1.01σ for an n=200 cell (~31% false-abort on a true-zero identity).
+The wiring itself is exonerated deterministically, not statistically: the cell manifest shows
+BOTH arms resolved and hash-asserted to leaf `a36d2e15a3b3d71d`, so true elo = 0 by
+construction and the −27.85 is pure sampling noise. AMENDMENT 1 (PREREG_DRAFT.md, written
+before any relaunch) rescales the identity gate for n=200 to |paired margin z| < 2.0 AND
+|elo| < 50; the voided cells are NOT re-read under it (gate-shopping). Band 1.15e11 retired;
+1.16e11 claimed; relaunch script `measurement/curve_shape_scope_20260809/relaunch_partC_band116.sh`
+guards on the old processes being dead (`d30f1c7`). **Joshua then asked for a second opinion**
+("something has been up with the part c thing") after three stumbles on this arm — the 15e07
+coverage gap, the carc_rs-assert false-block, the wiring false-fire — so an adversarial review
+agent is auditing the seam code, the pinned E[f]=1 norms, the launcher env vs PRODUCTION, the
+amendment statistics, and the remaining night-chain/analyzer path before attempt 2 launches.
+Ops note: the in-flight void run could not be killed from the session (permission classifier);
+it either exits on its own (~05:30) or Joshua kills it. Nothing promoted; PRODUCTION.yaml
+untouched.
+
+## 2026-08-10 (~05:15) — Part C phase-β dose ladder RAN AND CLOSED: **C-KILL**, a *bounded* null on the phase axis
+
+Attempt 2 (band 1.16e11) completed all five cells, and the pre-registered **C-KILL** branch fired.
+The primary statistic — the **fitted within-deck slope** across β ∈ {−0.6,−0.3,0.0,+0.3,+0.6} over
+100 decks × 5 points (500 points) — reads **+1.3167 pts/deck per unit β, se 1.4921, z +0.88**, i.e.
+inside ±2σ. Cells (all n=200 deck-paired, fair PIMC k8×1376 = 11008 both sides, `fixed_v1` +
+`CARCASSONNE_FIX_R9=1`, rust, vs the curve125 champion, every manifest enforced clean): β=−0.6 →
+−26.1 elo / margin −0.515 / z −0.47 · −0.3 → −17.4 / −0.820 / −0.64 · 0.0 → −17.4 / −1.250 / −1.11 ·
++0.3 → +33.1 / +1.960 / +1.39 · +0.6 → +8.7 / +0.070 / +0.05. The identity cell **passed** the
+AMENDMENT-1 gate (|margin z| < 2.0 **and** |elo| < 50). `results.csv` rows
+`curvephase_{bm0p6,bm0p3,b0p0,b0p3,b0p6}_band116_fixed_v1_vs_champ_n200`; readout
+`measurement/curve_shape_scope_20260809/READOUT_partC.json`.
+
+**The conclusion is bounded, and the bounded wording is mandatory (PREREG AMENDMENT 2):
+*no linear phase effect exceeding ~±22 elo at β=±0.6 (endpoint spread ~45 elo) at this instrument's
+resolution.*** It is **not** "the phase axis is dead" — this ladder bounds the linear phase effect,
+it does not exclude phase dependence of other shapes or of smaller size. It is nonetheless
+**materially stronger than the 2026-06-22 `v28_meeple_recovery_t0` kill** (−75 elo, one unbracketed
+endpoint at t0=72, magnitude confounded): this ladder is *signed*, *bracketed* and *E[f]=1
+renormalized*, so a v28-sized effect is now excluded on clean ground. Carried caveat: the norms are
+computed over the **ply-k** distribution while the leaf is read ~one mean-search-depth below the
+root, so the magnitude confound is **partially traded, not removed** (order ≤5–17 elo of monotone
+spread, biased toward the reconfirm direction).
+
+**The one live residue — recorded as an UNRESOLVED LEAN, not a signal.** The slope's sign is
+**positive** (meeples worth *more* early / *less* late) — the direction of Joshua's own
+self-described play policy (`measurement/e4_games/JOSHUA_PLAY_EVOLUTION.md`) — and β=+0.3 is the
+largest single reading of the ladder (+33.1, z +1.39). **Options considered:** (a) read +0.3 as a
+promotable hit; (b) record it as an unresolved lean and set a re-open bar; (c) drop it silently.
+**Chose (b)** — it is sub-2σ *and* non-monotone (β=+0.6 falls back to flat, +8.7 / z +0.05), which is
+exactly the house noise signature (a lone value beating its parameter-neighbours by >1σ), and the
+ladder's own primary statistic is the slope, not any cell. **RE-OPEN BAR: a powered n ≥ 800
+deck-paired re-measure of the β ∈ [+0.2,+0.4] neighbourhood on a fresh band.** Not funded now.
+
+**The history that belongs in the record — this verdict is attempt 2, and a near-miss.** Attempt 1
+(band 1.15e11) was VOIDED when its identity cell fired a kill condition inherited at Part A's n=400
+scale (AMENDMENT 1 rescaled it prospectively). Joshua then asked for fresh eyes after three stumbles
+on this arm; the **adversarial review found a double sign-flip in the analyzer that made the slope
+statistic blind to β, plus a gate that was computed and never propagated — *before* attempt 2's
+readout was taken** (fixed in `f28bb73`, tests added). Had the review not run, a **C-KILL would have
+been minted on a cancelled statistic**. Attempt 2 is the first valid application of the analyzer, and
+the near-miss is the reason the review is now the precedent for this arm.
+
+**Consequences.** Band 1.16e11 retired decision-influenced; claim **CL-077** minted (Supported);
+Part C is CLOSED and the box is free. Part B (the 3.9-box-day shape sweep) stays UNFUNDED on Part A's
+A4_UNRESOLVABLE. `governance/PRODUCTION.yaml` **untouched**; nothing promoted.
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first
+
+## 2026-08-10 (~10:00) — The β=+0.3 lean is POWERED and does NOT confirm: pre-registered branch **P2**, CL-077's falsifier **DISCHARGED-NEGATIVE**, the phase program is fully closed
+
+**Why it ran.** Part C closed five hours earlier with one live residue: β=+0.3 was the ladder's
+largest single cell (+33.1 elo, deck-paired margin +1.960, z +1.39) and the slope's sign matched
+Joshua's own self-described play evolution. It was recorded as an **unresolved lean, not a signal**,
+with an explicit re-open bar in CL-077 — *n ≥ 800 deck-paired in β ∈ [+0.2,+0.4] on a fresh band*.
+Joshua funded exactly that ("let's power 0.3") the same morning. Pre-registration
+[measurement/curve_shape_scope_20260809/PREREG_POWER03.md](measurement/curve_shape_scope_20260809/PREREG_POWER03.md)
+was written **before game 1** and named P1/P2/P3 with the primary statistic fixed in advance.
+
+**Design — one cell, no pooling, fresh band. Options considered:** (a) a mini-ladder around +0.3;
+(b) the single peak cell at full power; (c) extend the existing n=200 cell to n=800 on the same band.
+**Chose (b)** — +0.3 is already *bracketed* (both 0.0 and +0.6 read lower in attempt 2), so the
+cheap informative test is the peak cell alone: if it confirms, the neighbourhood sweep is the *next*
+experiment; if it nulls, no neighbour was going to rescue it. **(c) was excluded by rule** — pooling
+or extending across the attempt-2 band would have been a cross-band contrast, which CL-068's
+amendment forbids (over-dispersed 1.8–2.2×), and it would also have made the selecting observation
+part of its own confirmation. So: **fresh band 1.17e11**, n=800 deck-paired (400 decks × 2 seats),
+candidate = the production leaf × the E[f]=1-renormalized phase multiplier at β=+0.3 / norm 1.00825
+(`cand_leaf_hash 0283a702b8f5af51`, **bit-identical** to attempt-2's b0p3), opponent = the curve125
+production champion `a36d2e15a3b3d71d`, fair PIMC k8×1376 = 11008 both arms, exact-K2 endgame shared,
+`fixed_v1` + `CARCASSONNE_FIX_R9=1`, rust backend. Every §wiring gate was verified from the manifest
+**before any result number was read**: both leaf hashes, `v29_phase_beta` 0.3, `v29_phase_norm`
+1.00825, `rules_profile` fixed_v1, `r9_env_ok` true, backend rust, `band_seed_start` 117000000000,
+and completion **800/800 = 100%** against the ≥90% VOID bar.
+
+**The result.** W378 / D24 / L398 — winrate 0.4875 (z −0.71), **elo −8.688 ± 12.288**,
+`paired_mean_margin` **−0.4975 pts/deck**, and the pre-registered **primary statistic, the
+deck-paired margin z, reads −0.7845**. Equal wall-clock (1814 ms/move candidate vs 1767 ms/move
+champion prefix). Source
+`/mnt/c/carc-shared/curvephase_ladder/cp3_b0p3/{summary,manifest}.json`; `results.csv` row
+`curvephase_b0p3_power_fixed_v1_vs_champ_n800`.
+
+**Adjudication: P2 — THE LEAN DOES NOT CONFIRM** (|margin z| 0.78 < 2.0). Per the prereg: **CL-077
+stands**, its falsifier is **DISCHARGED-NEGATIVE**, and the phase axis **stays closed**. The
+effect-size floor goes on the record: this instrument resolves **~±1.2 pts/deck ≈ ±20 elo at 2σ**, so
+a phase effect larger than that at β=+0.3 is now excluded on clean, *powered*, *within-band*,
+deck-paired ground — the robust contrast class. ⚠️ It remains a **bounded null**; the mandatory
+wording from AMENDMENT 2 carries over verbatim — **never "the phase axis is dead."**
+
+**The framing that matters more than the number: this is the winner's curse, third confirmed
+instance.** +33.1 elo / margin +1.960 / z +1.39 at n=200 became **a sign-flipped −8.7 / −0.4975 /
+z −0.78 at 4× the sample**. The house rule — *a lone value that beats its parameter-neighbours by
+>1σ is a noise signature, not a peak* — predicted this in advance and is now three-for-three in the
+program's own history: `intrareuse_k4x688` (+40.1 screen → +27.3 → +5.2 → **+16.2 combined with a 95%
+CI including zero**), the distill **it16 "+88.7" crest** (a winner's-curse peak that held anchor tier
+but never grew), and now this. The lean was *correctly* recorded as unresolved rather than
+promotable; the discipline that refused to read +33.1 as a hit is what this entry vindicates.
+
+**Operational note — the program's first two-box work-stealing eval on the seam-merged code.** The
+prereg's design line said "local box W=14 (the only box carrying the merged+built seam substrate;
+laptop deliberately excluded)". In execution the laptop *was* brought in: **local W=30 + laptop W=22
+on a shared claim, 1.24 h total wall (4462 s; an earlier "~3.1 h" was the prereg estimate mis-transcribed as realized -- corrected same day).** That is a **resource-plan deviation, not a statistical one** —
+worker count and host are not terms of the pre-registered contrast, and the laptop was
+**bundle-synced, rebuilt and capability-verified before joining**, so the candidate leaf hash is
+byte-identical across both boxes *by construction of the shared claim* (a single `cand_leaf_json`
+resolved to `0283a702b8f5af51` in every worker's manifest). Zero contamination, and the arm that had
+cost the program a stalled gate and a force-exited VM the day before is now a working second box.
+
+**Consequences.** Band 1.17e11 retired decision-influenced. **CL-077** stays **Supported**, its
+falsifier field flipped to DISCHARGED-NEGATIVE with the n=800 numbers. **The phase program — Part C's
+C-KILL plus this discharge — is now FULLY CLOSED at current instruments**: a re-open needs a **new
+mechanism argument** (a non-linear or thresholded phase form that carries one) **or a finer
+instrument**, *not* more n at this design. Both boxes are free.
+`governance/PRODUCTION.yaml` **untouched**; nothing promoted on any branch.
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first
+
+---
+
+## 2026-08-10 (evening) — Lever-menu blocks B and C RAN AND CLOSED: `farm_growth_off` does **not** confirm at n=1600 (the winner's curse, **fourth** instance), and the caps/curve **scale axis** is null on all four powered cells — the ≤20-elo caveat narrows to **~±17.5 elo**
+
+**Context.** Two items of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md), spec of record) completed
+back-to-back on the two-box work-stealing chain: **block B = item 2** (`farm_growth_off` deploy
+confirm) and **block C = item 4** (capscurve unresolved cells + the ×1.75 rung). Both had their
+designs, primary statistics and branch tables pre-registered in §4.2 and §4.4 *before* game 1.
+Block D (item 3, the CL-060 width H2H) launched immediately after block C and is **running now**;
+block E (item 5) is queued behind it. Nothing in this entry touches either.
+
+### Block B — item 2, `farm_growth_off` n=1600 deploy confirm, band 1.18e11
+
+**Design.** ONE cell, **n=1600 deck-paired (800 decks × 2 seats)** on a **fresh** band 1.18e11;
+candidate = the champion leaf with `farm_growth_off=true` (`cand_leaf_hash 86ecb5375676feae`,
+`--allow-cand-curve-drift` with the curve125 table carried verbatim in the cell JSON) vs the
+**intact** curve125 production champion `a36d2e15a3b3d71d`; fair PIMC **k8×1376 = 11008 both arms**,
+exact-K2 endgame shared, `fixed_v1` + `CARCASSONNE_FIX_R9=1` (`r9_env_ok true`), rust backend.
+Every wiring gate of §4.2/2a verified from the manifest **before any number was read**;
+completion **1600/1600**. This is the **first ever** run of the knob at the deploy budget and
+through the fair PIMC harness — all three prior cells ran at the 2750 ablation instrument.
+
+**Result.** W794 / D27 / L779 — winrate 0.5047 (z +0.375), **elo +3.257 ± 8.686**,
+`paired_mean_margin` **+0.4856 pts/deck**, **primary statistic: deck-paired margin z +1.034**.
+
+**Adjudication: |z| < 2.0 ⇒ THE LEVER DOES NOT CONFIRM.** Per the plan's branch table and the
+standing no-third-cell ruling, the row **CLOSES** and the farm-growth term **stays in the leaf**.
+No adoption, no `PRODUCTION.yaml` change, and the caps/curve re-sweep that a CONFIRM would have
+owed is **moot**.
+
+**The framing: the winner's curse, fourth confirmed instance.** The three prior cells read
+**+42.8** (z +1.866, band 1.00e11) / **+10.4** (z −0.075, band 1.01e11) / **+25.2** (z +1.855,
+band 1.05e11); the recorded 2-cell pool was **+26.6 ± 12.3 elo — elo z +2.16 but margin-pooled
+z ≈ +1.27**, the two statistics disagreeing, disposition PARKED suggestive-unpromoted. At **4×
+the sample, on a fresh band, at the deploy budget** it collapses to **+3.3 ± 8.7**. That is the
+house noise-signature rule firing a fourth time, after `c=3` "+47 elo", `intrareuse_k4x688`
+(+40.1 screen → +16.2 combined, 95% CI including zero) and the **β=+0.3 phase lean that
+sign-flipped under power earlier the same day**. No pooling with any prior cell (different band,
+budget and harness — cross-band pooling forbidden, CL-068 amendment).
+
+**⚠️ A BOUNDED null, not a proof of zero — the bound, stated.** 95% CI on elo ≈ **[−14, +20]**
+(2σ ±17.4 elo; realized deck-paired se 0.4695 pts/deck ⇒ 2σ ±0.94 pts/deck; the plan's
+pre-registered forecast was ±15.7). The **winner's-curse-calibrated residual** of the original
+lean — 0.3–0.4× of +26.6, i.e. **≈ +8 to +11 elo — is NOT excluded**, and was never resolvable at
+this n (z=2 on it needs ~2100 decks). **Never write "the deletion does nothing."**
+
+**Owner's question, and the standing decision it produced.** Joshua asked directly: *"if the farm
+growth term is almost certainly contributing nothing, why are we leaving it in?"*
+**Options considered.**
+- **(a) Delete it now.** *Rejected.* Deletion mints a **new leaf hash**, and `a36d2e15a3b3d71d`
+  is the champion identity in `PRODUCTION.yaml`, is stamped in every eval manifest, is verified
+  on-device in the E4 phone archives, and anchors every historical comparison. A hash change
+  forces re-baselining, a new APK, and three-substrate re-gating (py/cy/rust bit-exactness,
+  golden fixtures, reconcile bars) — a large bill for a **measured effect of zero**.
+- **(b) Keep it indefinitely.** *Rejected as the default.* Four independent bands
+  (+42.8 / +10.4 / +25.2 / **+3.3 at n=1600**) all read **non-negative for deletion**, so nothing
+  on record says the term earns its place.
+- **(c) CHOSEN — bank it as a drop-at-next-re-baseline item.** When a future leaf generation pays
+  the hash-change cost for other reasons, **this term comes out with it, for free**.
+
+Three numbers support (c) rather than (a): **(1)** the null is symmetric and bounded, not a zero —
+the term's own value is **−3.3 elo, 95% CI ≈ [−20, +14]**; *"unresolved within ±17"* is the honest
+statement. **(2)** The speed argument does **not** carry it: deletion is ~4% cheaper on the leaf
+(`ms_ratio` ≈ 0.96 — flagged as **era-sourced from F7b**, since this cell could not emit a ratio),
+sims are budgeted, so 4% cheaper leaves buy ~4% more search, which at CL-068's **+12.2 elo per
+doubling** converts to **≈ +0.7 elo** — far below the ~14 elo of downside risk. **(3)** A genuine
+untested region argues for keeping it until then: the cell is **champion vs champion-minus-term**,
+so **both arms play the champion's own farm policy** and the term's value against a
+**farm-contesting** opponent is **out of distribution** for this eval — and the E4 ledger shows
+exactly one such opponent exists (champion farm pts/seat **20.5** self-play, **31.9** vs JCZ who
+never farms, **14.0** vs Joshua). That is the CL-051 consumer-binding rider in
+*opponent-distribution* form: a **scope limit on the null**, not evidence the term works.
+
+**Riders.** *(i)* **`ms_ratio` could NOT be computed** — for a `--opponent fair-champion` H2H this
+harness emits only `champ_prefix_ms_per_move` (1521.3) and `rung_ms_per_move` (1574.4), not a
+per-arm cand/opp pair, and a cross-cell absolute comparison is forbidden by §2. Recorded as
+not-computed rather than silently omitted. *(ii)* The knockout reaches the **leaf only**; the
+exact-K endgame tail keeps full farm scoring on both arms. *(iii)* **Wall-clock, corrected.** The
+leaf-override harness printed its F7b warning that the candidate leaf *"leaves the Cython fast path
+for the pure-Python flat leaf (~12.5× slower per leaf)"* — but that warning is emitted before the
+backend is resolved, and the run was `--backend rust`, where **by the warning's own text no Python
+leaf runs**. Realized throughput confirms it is **inert**: the local W14 leg settled at
+**13.6–13.7 s/game** against the plan's **14.2 s/game** basis, and the two-box run finished
+1600/1600 in **9701 s = 2.69 h** against a planned **3.0 h**. ⚠️ The **18.8 s/game** figure in
+`measurement/lever_menu_20260810/logs/B_local.log` is the **first-10-games warm-up transient**, not
+the run's rate — it must not be cited as a cost deviation.
+
+### Block C — item 4, capscurve unresolved cells + the ×1.75 rung, 4 cells × n=800, shared band 1.20e11 (CRN)
+
+**Design.** Four cells — **cap5 · cap12 · curve150 · curve175** — each **n=800 deck-paired
+(400 decks × 2 seats)** on ONE **shared fresh** band 1.20e11 with **CRN across all four**
+(`seed_start 120000000000`, verified identical in all four manifests), at the **same 2750 ablation
+instrument** that produced the originals (`eval_puct_priors.py --cand-sims 2750` both sides via
+`capscurve_resweep_launcher.sh`), rust both sides, `fixed_v1`+R9, exact-K≤2, `OPENBLAS_NUM_THREADS=1`
+pinned (the ×1.75 hang lived on this exact axis). Incumbent = cap8 / oppcap8 / curve125.
+All four completed 800/800; wiring gates clean.
+
+| cell | W/D/L | elo ± 1σ | paired margin | **margin z** | verdict |
+|---|---|---|---|---|---|
+| cap5 | 381/25/394 | −5.646 ± 12.285 | −0.6175 | **−1.310** | NULL |
+| cap12 | 388/24/388 | 0.000 ± 12.284 | +0.0438 | **+0.097** | NULL |
+| curve150 | 413/21/366 | +20.435 ± 12.305 | +0.7900 | **+1.444** | NULL |
+| curve175 | 418/22/360 | +25.233 ± 12.316 | +0.3700 | **+0.703** | NULL |
+
+**Adjudication: all four |margin z| < 2.0 ⇒ ALL NULL.**
+
+**What this buys is closure, not elo — and the caveat NARROWS.** `PRODUCTION.yaml` carries verbatim
+*"the screen resolves ~50 elo unpaired / ~35 paired at 2-sigma; a <=20-elo optimum shift is NOT
+excluded"*, written against a screen (2026-08-03, band 1.03e11, n=200) whose **own prereg** recorded
+that it had **no power at all** for curve150, cap5 or cap12. **The narrowed bound, computed from the
+realized σ of these cells:** deck-paired margin se **0.4526–0.5472 pts/deck** ⇒ 2σ **±0.91 to ±1.09
+pts/deck ≈ ±15.8 to ±19.1 elo (median ±17.4)** — i.e. **~±17.5 elo at 2σ paired**; and **±24.6 elo
+at 2σ unpaired** (realized 1σ 12.28–12.32). So the caveat becomes:
+
+> **"a ≤ ~17.5-elo (2σ, deck-paired) optimum shift is NOT excluded"** — and **only for cap5 /
+> cap12 / curve150**. `curve100`, `oppcap4` and `oppcap12` were **not** re-run at n=800 and keep
+> the ~35-elo paired bound.
+
+⚠️ **Narrowed, not deleted** — and **`PRODUCTION.yaml` is deliberately NOT edited by this
+close-out.** The narrowing is recorded here, in `results.csv` and in the claim registry; its
+comment line is now *conservative* rather than wrong, and whether to rewrite it is **Joshua's
+call**.
+
+**Second finding — the ×1.75 rung does NOT transfer.** Its walled-era reading was
+`c5_s2_curve175_n400` = **+77.7 ± 17.7, paired z 4.19** (2026-07-13, post-OpenBLAS-fix),
+statistically tied with curve125's +66.8 on the same axis — which is *why* curve125 and not
+curve175 was adopted (CL-051). Under `fixed_v1` against the curve125 champion it reads **+25.2 elo
+with a FLAT margin (z +0.703)**. ⚠️ The **elo-vs-margin disagreement** is exactly the win-rate noise
+signature the house rule names: the robust statistic is the deck-paired margin, and it is flat.
+curve150's **+20.4 / z +1.444** is likewise sub-2σ.
+
+**⇒ The leaf's meeple-term SCALE axis is now measured null under `fixed_v1` across cap5 / cap12 /
+curve150 / curve175.** Combined with the 2026-08-03 re-sweep (6/6 null) the **scale axis is closed
+at ~±17 elo resolution**. This is a **bounded** null — never *"the caps and curve are dead"*.
+Minted as **CL-078**, whose falsifier is deliberately **not "more n"**: it re-opens on a **joint /
+interaction cell** (every cell on record is single-knob one-at-a-time, and a cap × curve-scale
+ridge is invisible to those), on **any adopted leaf-term change** (the bug-fix-shifts-optima rule
+re-opens the axis by construction), or on a **search/rules-regime change** (the CL-051
+consumer-binding lesson).
+
+### Consequences
+
+Bands **1.18e11** and **1.20e11** retired, decision-influenced. **CL-074**'s farm row amended and
+its F7b reopen path **DISCHARGED-NEGATIVE** with the n=1600 numbers; **CL-078** minted for the
+scale-axis closure. `results.csv`: `abl_farmgrowthoff_deploy_fixed_v1_vs_champ_n1600_b118e9` plus
+the four `capscurve_*_fixed_v1_vs_puctchamp2750_k2_n800_b120e9` rows (the latter were auto-written
+by the harness and were **corrected in place**, not duplicated). Plan items 2 and 4 stamped RAN AND
+CLOSED; items 3 and 5 remain in flight/queued. **`governance/PRODUCTION.yaml` untouched; nothing
+promoted on any branch.**
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first
+
+---
+
+## 2026-08-10 (evening) — Lever-menu block D RAN AND CLOSED: the CL-060 width-residual direct H2H is a **bounded null** — width at fixed 11008 closes unresolvable at affordable n, falsifier (1) **discharged**, no top-up run
+
+**Context.** Item 3 / block D of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.3, spec of record)
+launched immediately after block C closed (previous entry) and completed on the two-box
+work-stealing chain. Item 5 / block E is next in `menu_chain.sh` and is **not** touched by this
+entry.
+
+**The question.** CL-060 (`governance/CLAIM_REGISTRY.csv`, status **Reopened**) decomposed its
++49.85-elo budget promotion into budget and width **by quadrature across two different bands**:
+budget alone = +27.85 ± 12.43 (z 2.24, band 44e9) ⇒ width residual at fixed 11008 = **+21.99 ±
+18.96, z 1.16, NOT RESOLVED**. CL-060's own "sharp next test #1" named the fix: a direct
+k8×1376 vs k4×2752 head-to-head at fixed 11008 on ONE band, n≥400 paired.
+
+**Design.** ONE cell, direct H2H, both sides fixed **11008** total sims, ONE fresh band
+(1.19e11): candidate = k4×2752 (`--k-dets 4 --sims 2752`), opponent = the k8×1376 production
+champion (`--opp-k-dets 8 --opp-sims 1376`), both sides the frozen curve125 leaf
+`a36d2e15a3b3d71d` (identical by design — a width/budget-split contrast, not a leaf contrast).
+Fair PIMC, exact-K≤2, `fixed_v1` + `CARCASSONNE_FIX_R9=1` (`r9_env_ok true`), rust both sides.
+**n=800 deck-paired (400 decks × 2 seats)**, seeds `119000000000..119000000399`; completion
+800/800; wiring gates clean (`wiring_gate_failures: []`).
+
+**Result.** W369 / D17 / L414 — **elo −19.5639 ± 12.3032**, `paired_mean_margin` **−1.01125
+pts/deck**, **primary statistic: deck-paired margin z −1.48702**. `champ_prefix_ms_per_move`
+(candidate side) 1517.86 ms — a ratio-only figure per §2, not quotable as an absolute from this
+shared-tenancy run.
+
+**Pre-registered map (plan §4.3).** |z| ≥ 2.0 → resolved with a sign; 1.5 ≤ |z| < 2.0 → top up
+to n=1600 on fresh decks of the same band, then verdict; **|z| < 1.5 → BOUNDED NULL: the width
+axis at 11008 closes as unresolvable at affordable n, the ±22-elo bound is recorded, and CL-060's
+falsifier (1) is DISCHARGED rather than left open.**
+
+**Adjudication: |z| = 1.487 — the bounded-null branch fired, by 0.013 under the 1.5 top-up
+threshold.** Width axis at total 11008 **CLOSES**; bound **±22 elo** (2σ ≈ ±1.27 pts/deck at this
+n). **CL-060's falsifier (1) is DISCHARGED** — not resolved with a sign, but no longer an open
+falsifier either.
+
+**The top-up was NOT run, and that was deliberate.** Three reasons, all recorded: **(a)** the
+pre-registered trigger (1.5 ≤ |z| < 2.0) did not fire — |z|=1.487 sits on the bounded-null side of
+the line, narrowly. **(b)** Topping up *because* a screen lands just under a threshold is exactly
+the forking-path pattern that produced four winner's-curse instances already this campaign
+(`farm_growth_off`'s pooled 2-cell prior, `intrareuse_k4x688`, the phase β=+0.3 lean, the distill
+`it16` crest) — extending a design post hoc because the number is "close" is the same failure
+mode even when it undershoots a pre-registered bar rather than overshoots one. **(c)** Nothing
+acts on either sign regardless of outcome: plan §4.3 states outright that nothing is proposed for
+`PRODUCTION.yaml` either way, because **k4×2752 has never been benched k-parallel** and projects
+≈**4.8 s/move vs the champion's measured 2.16 s/move** — production runs
+`parallel_workers = k_dets`, so k4 can occupy only 4 workers against k8's 8. That projection, not
+a measurement, is why a k4 win would not have been deployable either. The pre-registered top-up
+(fresh decks of the same band, seeds `119000000400..119000000799`, +1.5 h) remains available as a
+named, unexercised option if Joshua ever wants the axis resolved rather than bounded.
+
+**Corroboration — recorded as an observation, explicitly NOT a verdict or a promotion basis.**
+CL-060's own cross-band quadrature estimate of the width residual was **+21.99 ± 18.96 favoring
+k8** (z 1.16); this single-band **direct** H2H reads **k8 ahead by 19.56 ± 12.30**. Same sign,
+nearly the same magnitude, from an independent instrument (a direct paired contrast rather than a
+difference of two independently-banded point estimates). Neither clears 2σ alone, and the two
+are not pooled — they simply point the same way.
+
+**CL-054 is NOT contradicted.** CL-054 has k4 > k8 at a *fixed total of 2752* — a different
+budget (+5.18 ± 1.24 pts/deck, z 4.17, Promoted, and it is what the phone still runs). This
+cell's result at fixed 11008 is *consistent with* "optimal width grows with budget" — written
+here as a **hypothesis** the data does not establish, not a finding.
+
+**Consequences.** Band **1.19e11** retired, decision-influenced. `results.csv`
+`width_k4x2752_vs_k8x1376_fixed11008_n800_b119e9`. CL-060 (`Reopened`) amended: falsifier (1)
+discharged in place (status unchanged — the claim's broader budget-responsiveness question stays
+open; tests (2) and (3) in its own decision field remain unfunded). Plan §4.3 stamped RAN AND
+CLOSED. **`governance/PRODUCTION.yaml` untouched; nothing promoted.**
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first
+
+## 2026-08-11 — Lever-menu block E RAN AND CLOSED, LAST BLOCK OF THE CAMPAIGN: CL-072's n→800 extension pools to a PRE-REGISTERED REFUTATION — the rodv3 premise does not hold against its own corpus teacher
+
+**Context.** Item 5 / block E of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.5, spec of record) was
+the last of the six items and the last block of `menu_chain.sh` (B→C→D→E). It is the
+pre-registered n→800 extension of CL-072 (`governance/CLAIM_REGISTRY.csv`, was **Provisional/low
+confidence**), which had leaned negative at n=400 — `−20.87 ± 17.40` elo (z −1.20), deck-paired
+margin `−2.0025` pts/deck (paired_z −1.90) — landing inside the prereg's `[5,25]`
+bracket-narrowing interval and firing its own pre-committed extension
+([`scripts/distill_flywheel/TEACHER_H2H_PREREG.md`](scripts/distill_flywheel/TEACHER_H2H_PREREG.md)).
+
+**The question.** Does the CL-067 distilled net used as policy priors (frozen curve125 leaf,
+value severed) at its own deploy budget `k4×688 = 2752` beat **its own corpus teacher** — the
+production classical champion `FairHeuristicPriorAgent` at the CL-071-promoted `k8×1376 = 11008`?
+This is the direct price of the rodv3 ("Revenge of Demis v3") flywheel premise.
+
+**Design.** Fresh decks of the *already-claimed* band 94e9 (seeds `94000000200..94000000399`) —
+the one licensed fresh-band exception in the plan, because the prereg requires the extension to
+draw from the SAME band as the original cell. Same config throughout: candidate k4×688 net-prior
+policy + frozen curve125 leaf `a36d2e15a3b3d71d`, opponent k8×1376 heuristic-prior champion, same
+leaf both sides, c_puct 1.5, tau_p 5.0, value_norm 15, exact-K≤2 marginalized endgame, n=400
+deck-paired (200 decks × 2 seats). ⚠️ **This cell runs under `rules_profile: walled`, not
+`fixed_v1`** — deliberately, to match the original n=400 cell's epoch so the two pool. Completion
+400/400.
+
+**Result — this cell alone.** W191/D6/L203, elo **−10.4262 ± 17.3796**, paired margin **−1.1325
+pts/deck**, paired_z **−1.1839** — sub-2σ alone, as the prereg anticipated for a single extension
+half.
+
+**Result — the POOLED n=800, 400 decks, THE PRIMARY STATISTIC.** Pooling this cell with the
+original (`teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9`, elo −20.8712 ±
+17.4031, margin −2.0025, paired_z −1.8956): **W375/D14/L411 · elo −15.6452 ± 12.2962 · deck-paired
+margin −1.5675 pts/deck · se 0.7120 · PRIMARY STATISTIC margin z −2.2015.** Cost ratio
+candidate/opponent, pooled, **1.1643×** (candidate 15799.42 vs opponent 13570.30 ms/move; the
+`champ_prefix_*` field holds the CANDIDATE's cost despite its name — re-verified against the
+emitter for this row).
+
+**Pre-registered branch (fired before the first game of the original cell).** `z ≤ −2.0` → the
+student does **not** beat its own corpus teacher; the rodv3 premise is **REFUTED**; the parked
+65/300 gen retires (formal kill is Joshua's call). **Pooled z = −2.2015 ⇒ the branch FIRES.**
+
+**⇒ ADJUDICATION: PREMISE REFUTED.**
+
+**Honesty caveats — mandatory, none softened, none omitted.**
+1. **z = −2.20 clears the bar without much room.** Each half is individually sub-2σ (−1.90 and
+   −1.18 on margin); the pooled statistic crosses because doubling n tightens se, not because
+   either half was decisive on its own.
+2. **The effect SHRANK between halves** (−2.0025 → −1.1325 pts/deck) — the same
+   regression-toward-zero signature this campaign has now logged repeatedly (`farm_growth_off`,
+   the phase β=+0.3 lean, `intrareuse_k4x688`, the distill `it16` crest). The prereg itself
+   pre-committed a curse-calibrated reading of −0.6 to −0.8 pts/deck ⇒ z ≈ −0.8 to −1.1 as **"not
+   resolvable."** The realized pooled effect (−1.5675) sits **above** that calibrated band but
+   **below** the face-value −2.00 the prereg also named — a middle reading, not the clean
+   confirmation the face-value number alone would suggest.
+3. **The elo statistic alone does not resolve.** Pooled elo −15.6452 ± 12.2962 ⇒ 2σ interval
+   ≈ **[−40.2, +9.0] includes zero.** The margin resolves where elo does not — points-per-deck
+   uses magnitude, not just win/loss, which is expected and is precisely why the margin was
+   pre-registered as PRIMARY. Do not present the elo as independently confirming the verdict.
+
+**Gate false-fire, recorded as a process lesson.** `menu_block_summary.py`'s wiring gate
+hardcoded `rules_profile != "fixed_v1"`, which false-fired a `READ_BLOCK` on this cell's first
+extract (`measurement/lever_menu_20260810/verdicts/BLOCK_E_item5.json` originally read
+`wiring_gates_clean: false`) even though `walled` is **correct-by-design** here — required to
+match the original cell's epoch for pooling; requiring `fixed_v1` would have made item 5
+impossible outright. E's wiring had already been independently verified field-by-field against
+the original cell's manifest **before any results existed**. Fixed in commit `20e83d3`
+(`--expected-rules-profile`, default `fixed_v1` preserving every other existing caller, +
+`tests/test_menu_block_summary.py`); the verdict extract was regenerated post-fix and now reads
+`wiring_gates_clean: true`, `wiring_gate_failures: []`. **Contrast with the Part C attempt-1
+abort** (this file, 2026-08-10 ~02:00): that fired gate **was pre-registered** and was correctly
+honored as a void — the distinction is whether the gate is *in the prereg* or is a *tool
+default*. A pre-registered gate blocks; a wrong tool default gets fixed and re-run, not honored.
+
+**Consequences.** Band **94000000000** flipped `claimed` → `retired` (`governance/BAND_REGISTRY.csv`,
+per the row's own pre-written instruction: flip exactly when the extension closes). **CL-072**
+moves `Provisional` → **`Refuted`** (`governance/CLAIM_REGISTRY.csv`). `results.csv`
+`cl072_ext_netprior2752_vs_champ11008_n800pooled_b94e9`. Plan §4.5 stamped RAN AND CLOSED; the
+document's top banner stamped complete (this was its last open block). `governance/PRODUCTION.yaml`
+untouched; nothing promoted, as pre-committed in every branch of the prereg.
+
+**⇒ With this, the funded six-item lever menu is fully closed.** Items 2/3/4/5 all ran and
+closed null or refuted (no confirms); items 1 and 6 have readouts on disk from before the menu
+launched and remain open close-out items not covered by this entry.
+
+**ADDENDUM, same day — Joshua authorizes the retirement.** The prereg's own consequence for a
+`z ≤ −2.0` refutation was named as *"formal kill is Joshua's call"*; this close-out surfaced it as
+an open decision without acting on it. Joshua then reviewed the pooled result in-session and
+authorized it, verbatim: **"retire it."** ⇒ **The parked rodv3 turn-1 gen (65/300 games banked,
+`measurement/rodv3_turn1/iter_04`) is formally RETIRED**, dated 2026-08-11, attributed to Joshua's
+explicit in-session authorization — not inferred from the refutation alone. **This is a
+governance status change, not a data-destructive action: no checkpoints, corpora, or `.pt` files
+were deleted or touched** — the 65 banked games and every trained checkpoint remain on disk
+exactly as they were; "retired" means the lever is closed and this generation will not be
+resumed. `governance/PRODUCTION.yaml` remains untouched and unauthorized for edit — that
+constraint was not lifted.
+
+**Reversal cost:** none for the measurement; the retirement itself would need a new mechanism
+argument to reopen (Joshua's discretion) — the underlying data is preserved and nothing was
+destroyed, so a reopen costs no re-generation, only a new authorization.
+**Phase:** measurement-first
+
+## 2026-08-10 — Lever-menu item 1 (farm-norm replay) RAN AND CLOSED, now six-touch closed out: the champion's farm-scoring collapse against Joshua is human-specific, not a generic non-self-opponent effect
+
+**Context.** Item 1 of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.1) — the cheapest item on
+the menu (a replay, 0 games, no band). It and item 6 ran before the B→C→D→E chain and had
+readouts on disk (`ITEM1_FARM_NORM.{json,md}`) but were not carried through the six-touch
+close-out at the time (STATUS.md flagged both as open); this entry and the next close that gap.
+
+**The question.** The E4 ledger shows the champion averaging **11.0 farm pts/seat against Joshua**
+vs **20.5 in its own self-play corpus** — is that collapse a generic "any non-self opponent
+suppresses farm points" effect, or specific to Joshua? §8.1 also corrected the sweep's original
+premise: the 20.5 self-play norm is not undocumented (it is derived, `CORPUS_STATS_champ449.md`
+20.49 sd 10.7 n=898, and reproduces at 20.81 on the `fixed_v1`/11008 corpus,
+`PHASE_C_DESCRIPTIVES.md` §3) — so the item was redesigned around the number that genuinely didn't
+exist: champion farm points **against a non-self opponent**, at the same rules/budget as the E4
+games.
+
+**Design.** Replay the banked JCZ n=400 confirm corpus
+(`measurement/jcz_match_20260809/confirm.jsonl`, `fixed_v1`+R9, champion k8×1376=11008 vs
+JCloisterZone's `LegacyAiPlayer`, band 1.08e11, retired) losslessly (each record carries
+`deck_seed` + full `actions`) through `scripts/analyzer/corpus_stats.py`, via a ~20-line adapter
+(`scripts/analyzer/jcz_confirm_adapter.py`) since `confirm.jsonl` lacks `game_id` and stores
+finals as `scores`. **Acceptance gate: replay must reproduce the archived finals 400/400 before
+any decomposition number is quoted — PASS 400/400** (replay_scores_match 400/400, split_ok
+400/400).
+
+**Result.** Champion-seat `farm_pts` mean ± 95% CI over 400 seats: **31.88 ± 0.77** (sd 7.91, 95%
+CI [31.11, 32.66]). JCZ-seat `farm_pts`: **0.61 ± 0.24** (sd 2.48) — 366/400 JCZ seats placed ZERO
+farmers across the whole game (mean 0.085 farmers/seat vs the champion's always ≥1), and JCZ's own
+first farm turn averages **~55.0** (n=34 non-null) vs the champion's **~3.1**. Full six-field
+decomposition (both seats) is in `ITEM1_FARM_NORM.md`.
+
+**Branch: B, and more strongly than B's own anchor.** The vs-JCZ figure (31.88 ± 0.77) is
+**outside all three pre-registered bands** — not near 11–14 (branch A, zero CI overlap) and it
+*exceeds* the self-play norms by more than 1 sd (+11.07 pts / +1.03 sd above the `fixed_v1`/11008
+norm) rather than landing "near 20" or straddling both anchors (branch C). Filed as branch B on
+decision consequence: a generic non-self opponent does not suppress the champion's farm points, it
+**elevates** them (JCZ contests almost nothing), so the ~11.0-vs-Joshua figure **cannot** be
+explained as "what any non-self opponent produces." The farm-scoring collapse against Joshua
+survives as human-specific.
+
+**Mechanism (context, not a required decomposition field).** With almost no farm contest from
+JCZ, the champion collects farm points close to uncontested — the likely reason the observed value
+*exceeds* the self-play norms (both seats sharing one farmer-timing policy, splitting real estate)
+rather than landing between them.
+
+**Riders, unsoftened.** (i) One opponent, one band (1.08e11, retired), one rules epoch
+(`fixed_v1`+R9) — bounded to this one comparison, not generalized. (ii) `farm_pts` sd ≈ 10.7 in the
+self-play references ⇒ 95% CI at 400 seats ≈ ±1.05 pts, enough to separate 11 from 20 but **not**
+to resolve 14 from 17. (iii) Band 1.08e11 reuse is licensed as an exploratory decomposition of an
+existing archive that mints no strength claim — the same licence the JCZ mining reuse (item 6
+lineage) was granted. **This item plays ZERO games, claims NO band, and mints NO strength claim.**
+
+**Consequences.** Strengthens item 2's `farm_growth_off` scope-limit rider (CL-074) — an argument
+for **funding more E4 games**, Joshua's call, not actioned here. No `results.csv` row (0 games; a
+decomposition of an existing archive, not a new head-to-head — consistent with how the E4 deck
+baseline and budget-headroom bound entries were also not given rows). No `governance/CLAIM_REGISTRY.csv`
+row minted: this is a characterization measurement of an existing rated match, not a new testable
+strength/understanding proposition with its own falsifier — the finding is recorded here and in
+`docs/LEVER_INDEX.md`'s "contested-farm-war mis-pricing" row instead. `governance/PRODUCTION.yaml`
+untouched. Plan §4.1 stamped RAN AND CLOSED.
+
+**Reversal cost:** none — a replay of an already-banked archive; re-running costs nothing, and
+nothing here forecloses funding more E4 games.
+**Phase:** measurement-first
+
+## 2026-08-10 — Lever-menu item 6 (JCZ S3 cut) RAN AND CLOSED, now six-touch closed out: NO CONVICTION — the JCZ steal file is now FULLY CLOSED
+
+**Context.** Item 6 of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.6), like item 1 above,
+ran before the B→C→D→E chain and had a readout on disk
+(`item6_s3/S3_VERDICT.{json,md}`) not yet carried through the six-touch close-out.
+
+**The question.** The 2026-08-09 JCZ disagreement mining run (branch G3, NO CONVICTION) tested
+three of its four candidate terms (S1/S4 commitment, S2 closure) and explicitly excluded the
+fourth — **S3** (`merge_exposure_differs`, `rateConnections`, city/road merge-flip anticipation) —
+`measurement/jcz_mining_20260809/MINING_PREREG.md` §3.4: *"S3 is explicitly NOT tested by this
+design… recorded so a future cut is a query, not a re-run."* This item is that query.
+
+**Design.** Query the banked `CANDIDATES.jsonl` (6,800 disagreement rows over 400/400 games, 1,650
+carrying `merge_exposure_differs: true`) for the S3 stratum plus a matched control, using the
+prereg's own §3.3–3.4 matching discipline (exact on `ply_class`, matched ΔQ/phase covariates,
+deterministic-hash sampled). Score both with `scripts/measurement_infra/oracle_score_pilot.py`
+**unmodified** at M=32, via its `--positions-jsonl` adapter; sign convention `delta = V(pick_b) −
+V(pick_a))`, `pick_b` = JCZ's played pick, so `delta > 0` means JCZ's pick was better than ours.
+50 positions per stratum (100 total) — clears the prereg's `n ≥ 25` gate, sits below its own named
+`n=74` powered re-open bar (80% power at +1.4 pts/ply); read as a coarse screen, not a powered
+verdict, exactly as pre-registered.
+
+**Result.** **S3 stratum: n=50, mean ΔQ −0.5194 pts/ply, cluster-robust z −1.171** (se 0.4435, 95%
+CI [−1.389, 0.350], both ply-class-dominated by TILE, 50/50 ok). **Matched control: n=50, mean ΔQ
+−0.9419 pts/ply, z −3.000** (se 0.3140, 95% CI [−1.557, −0.326]). The S3 stratum is, if anything,
+**weaker** than its own control — the opposite of what a real S3 effect predicts (a real S3 effect
+would read S3 more negative, or less negative, than a matched non-S3 control, not indistinguishable
+from a stronger-negative background).
+
+**Branch: NO CONVICTION.** `|z_S3| < 2.0` ⇒ the pre-registered NO CONVICTION branch fired
+(`z_bonf_threshold` 2.2414 not needed to decide this branch; S3 does not even clear the raw 2.0
+bar). Per the mining decision map, this closes S3 exactly as A (S1/S4) and B (S2) closed on
+2026-08-09 evening.
+
+**⇒ Consequence: the JCZ steal file is now FULLY CLOSED.** All four candidate terms the mining run
+identified — S1 (stranded-meeple penalty), S4 (category-convex lock-up, convicted jointly with S1
+in stratum A), S2 (deck-graded closure P), and now S3 (merge-flip anticipation) — are dead on
+ground truth. The native from-scratch term build stays unfunded; `docs/LEVER_INDEX.md`'s "JCZ
+disagreement mining" row already carries this stamp (its "✅ S3 TESTED 2026-08-10… THE STEAL FILE
+IS NOW FULLY CLOSED" clause) — verified here, not duplicated.
+
+**Riders, unsoftened.** (i) Exploratory by construction — no strength claim, no band claimed; band
+1.08e11 stays retired from confirmatory use and this reuse does not un-retire it. (ii) The oracle
+prices with a reference that is **not** the leaf under suspicion (clairvoyant PUCT continuation on
+the production curve125 leaf) — that is the point; the leaf under suspicion was never substituted
+in. (iii) Sizing honesty: n=50 sits between the prereg's `n≥25` gate and its own `n=74` powered
+re-open bar — a real S3 effect at the pre-registered +1.4 pts/ply size could not be fully excluded
+at this n, but the observed direction (weaker than control) gives no reason to spend the extension.
+
+**Consequences.** No `results.csv` row (0 games). No `governance/CLAIM_REGISTRY.csv` row minted —
+no claim tracks the JCZ mining program itself (the 2026-08-09 G3 close also minted no claim, "no
+claim, no results.csv row" being the established disposition for this instrument), and this item
+extends that same program to its natural conclusion rather than opening a new testable
+proposition; the finding is recorded here and lives permanently in `docs/LEVER_INDEX.md`'s mining
+row. `governance/PRODUCTION.yaml` untouched. Plan §4.6 stamped RAN AND CLOSED. **With items 1 and
+6 both now closed out, the entire six-item 2026-08-10 lever-menu campaign is complete — nothing
+from it remains open.**
+
+**Reversal cost:** none — a query over an already-banked extraction; re-running costs nothing.
+**Phase:** measurement-first

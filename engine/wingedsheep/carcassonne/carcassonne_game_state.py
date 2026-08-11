@@ -22,7 +22,8 @@ class CarcassonneGameState:
             supplementary_rules: [SupplementaryRule] = (SupplementaryRule.FARMERS, SupplementaryRule.ABBOTS),
             players: int = 2,
             board_size: (int, int) = (35, 35),
-            starting_position: Coordinate = Coordinate(6, 15)
+            starting_position: Coordinate = Coordinate(6, 15),
+            cloister_scan_fix: bool = False
     ):
         self.deck = self.initialize_deck(tile_sets=tile_sets)
         self.supplementary_rules: [SupplementaryRule] = supplementary_rules
@@ -44,6 +45,88 @@ class CarcassonneGameState:
         # every legal-move query. Maintained by StateUpdater.play_tile.
         # Set of Coordinate objects.
         self.open_positions: set = set()
+        # Patched (vendored fork, 2026-05-13): track placed-tile coordinates
+        # so string_representation can iterate ~80 coords instead of walking
+        # the full 1225-cell board. Maintained by StateUpdater.play_tile.
+        self.placed_coords: set = set()
+        # Patched (vendored fork, 2026-08-03, F9-A2): OPT-IN, DEFAULT OFF fix for
+        # the RF-D-1 cloister-completion scan drift. Read by
+        # PointsCollector.remove_meeples_and_collect_points; carried on the state
+        # because that is the only object the scorer sees. DEFAULT FALSE keeps
+        # every recorded measurement, checkpoint and gate byte-identical.
+        self.cloister_scan_fix: bool = bool(cloister_scan_fix)
+        # Event counter, incremented ONLY when the fix is on: completions scored
+        # at their true ply that the drifting scan would not have visited (an
+        # upper bound on monk-pins avoided). Manifest observable for the F9 gate.
+        self.cloister_completions_accelerated: int = 0
+        # Patched (vendored fork, F9/A3): the unplaceable-tile DRAW RULE.
+        #   False (DEFAULT, the walled engine of record) -- a TILES-phase
+        #     PassAction discards the tile, draws the next one AND hands the
+        #     turn to the opponent: the drawer loses their whole placement.
+        #   True  -- the retail rule: reveal, set the tile aside (it leaves the
+        #     game), draw again, SAME player continues.  Opt-in only, via
+        #     `Game(draw_rule="redraw")`.
+        # Set on the state rather than passed to StateUpdater because every
+        # transition helper is a staticmethod over the state alone; the flag
+        # therefore rides deepcopy/clone into every MCTS node and PIMC world.
+        self.redraw_unplaceable: bool = False
+        # Tiles that left the game without being placed, in removal order.
+        # Written under BOTH draw rules (it is pure telemetry -- no scorer,
+        # repr, mask or leaf reads it), so the C-lite event counter can price
+        # the flag-off discard rate too.  Only `redraw_unplaceable` makes it
+        # BEHAVIOURAL (turn retention, the total_tiles decrement and the
+        # solver's re-marginalization all key off it).
+        self.set_aside_tiles: list = []
+
+    def __deepcopy__(self, memo):
+        # Patched (vendored fork, 2026-05-13): bypass the default recursive
+        # deepcopy. cProfile of one self-play game at sims=50 batch=8 showed
+        # `copy.deepcopy` accounted for 75% of wallclock (200/267s) — every
+        # MCTS get_next_state step deepcopies the full state, which by default
+        # recursively walks every Tile (with FarmerConnections), every
+        # MeeplePosition, every Coordinate, etc.
+        #
+        # State analysis (see DECISIONS.md): everything reachable from state
+        # is either (a) mutated by reassignment, (b) a list/set we copy
+        # one level deep, or (c) an immutable value object (Tile, TileAction,
+        # Coordinate, MeeplePosition, enum members) safe to share by reference.
+        # In particular Tile.turn() returns a NEW Tile and no codepath
+        # mutates Tile / TileAction / MeeplePosition fields after construction.
+        new = CarcassonneGameState.__new__(CarcassonneGameState)
+        memo[id(self)] = new
+
+        # Immutable refs — share.
+        new.supplementary_rules = self.supplementary_rules
+        new.starting_position = self.starting_position
+        new.players = self.players
+        new.phase = self.phase
+        new.last_river_rotation = self.last_river_rotation
+        new.current_player = self.current_player
+        new.last_tile_action = self.last_tile_action
+        new.next_tile = self.next_tile
+        # F9-A2 rules flag + its event counter. Both are plain scalars; the flag
+        # MUST travel with the copy or an MCTS rollout would silently score under
+        # the other convention.
+        new.cloister_scan_fix = self.cloister_scan_fix
+        new.cloister_completions_accelerated = self.cloister_completions_accelerated
+        # F9-A3 draw rule (set_aside_tiles is copied with the other lists below).
+        new.redraw_unplaceable = self.redraw_unplaceable
+
+        # Lists/sets of immutable refs — shallow copy the container only.
+        new.deck = self.deck[:]
+        new.scores = self.scores[:]
+        new.meeples = self.meeples[:]
+        new.abbots = self.abbots[:]
+        new.big_meeples = self.big_meeples[:]
+        new.placed_meeples = [pl[:] for pl in self.placed_meeples]
+        new.open_positions = set(self.open_positions)
+        new.placed_coords = set(self.placed_coords)
+        new.set_aside_tiles = self.set_aside_tiles[:]
+
+        # 2D board: refs are immutable Tile / None; shallow per row.
+        new.board = [row[:] for row in self.board]
+
+        return new
 
     def get_tile(self, row: int, column: int):
         if row < 0 or column < 0:

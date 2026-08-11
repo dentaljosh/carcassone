@@ -1,0 +1,8 @@
+[load] 10067 sibling sets workers=28 -> /home/doctor/carc_step1_gate/tempo_5a
+  2000/10067 rows=62497 err=0 126s
+  4000/10067 rows=124459 err=0 244s
+  6000/10067 rows=188008 err=0 366s
+  8000/10067 rows=250163 err=0 483s
+  10000/10067 rows=312619 err=0 597s
+[done] rows=314911 err=0 in 603s
+[saved] /home/doctor/carc_step1_gate/tempo_5a/tempo.npz rows=314911

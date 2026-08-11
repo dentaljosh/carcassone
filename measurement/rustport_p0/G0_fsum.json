@@ -1,0 +1,32 @@
+{
+  "gate": "G0/fsum",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "348d3e9-dirty",
+    "utc": "2026-07-31T19:39:20Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "pass": true,
+  "cases": 1000000,
+  "total_elements": 63883944,
+  "per_family": {
+    "uniform": 166759,
+    "narrow": 166855,
+    "cancellation": 165915,
+    "catastrophic": 166689,
+    "subnormal": 166856,
+    "mixed_scale": 166926
+  },
+  "n_mismatches": 0,
+  "mismatches": [],
+  "comparison": "struct.pack('<d') byte equality",
+  "wall_s": 40.4,
+  "seed": 20260731
+}

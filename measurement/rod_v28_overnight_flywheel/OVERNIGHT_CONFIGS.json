@@ -1,0 +1,110 @@
+{
+  "_meta": {
+    "doc": "RoD v2.8 OVERNIGHT FLYWHEEL — fully-resolved run config (the single machine-readable source of truth for this run)",
+    "branch": "rod_v28_overnight_flywheel",
+    "date": "2026-06-23",
+    "status": "MEASUREMENT ONLY — exploratory overnight line. NO promotion, PRODUCTION.yaml UNCHANGED, champion (flywheel2_champion_iter8) UNCHANGED, v2.7 frozen, v2.8 opt-in.",
+    "question": "Does the v2.8 RoD continuation gain (RoD_iter_01 beat its parent +53.4) COMPOUND across a multi-iteration latest-chain flywheel, or does it saturate like the v2.7 substrate did?",
+    "not_a": "NOT a promotion-grade run; cheap screens are catastrophe detectors, not strength verdicts. Binding evals run TOMORROW on selected checkpoints."
+  },
+  "driver": "scripts/rod_v28/run_overnight_flywheel.sh",
+  "screen": "scripts/rod_v28/overnight_iter_screen.py",
+  "lineage": {
+    "policy": "latest-chain — warm-from the PREVIOUS iter every time (RoD_iter_01 -> RoD_iter_02 -> RoD_iter_03 -> ...). ALL checkpoints retained for after-the-fact keep-best tomorrow.",
+    "seed_warm_from": "RoD_iter_01",
+    "seed_warm_from_path_local": "/mnt/c/carc-shared/rod_v28_continuation/ckpt/iter_01.pt",
+    "seed_warm_from_sha256": "a8b824df0786284cbc5caf8e49d27ea90fb263bc1016eed27c2fe30e6d2a1f4b",
+    "catastrophe_rule": "On a COLLAPSE screen (entropy < 0.5*baseline, NaN loss, val_pol blow-up, or smoke wr-vs-parent < 0.25) the chain STOPS cleanly at the last-sane checkpoint; all artifacts preserved."
+  },
+  "frozen_recipe": {
+    "_comment": "EVERY axis below is IDENTICAL to the recipe that produced RoD_iter_01 (the user's hard constraint). The ONLY knob set to a different-but-validated value is games/iter (see deviations).",
+    "leaf": "v2.8 = v2.7 (virtual_score_v2 / flat_leaf) + legacy LeafConfig.meeple_k=2.0",
+    "leaf_env_knob": "CARCASSONNE_V25_MEEPLE_K=2.0",
+    "leaf_env_warning": "do NOT use CARCASSONNE_V28_MEEPLE_K (object path, 2.26x slower, recovery-scaled, hurt ~75 elo). Legacy field keeps the FLAT/Cython fast path (_v28_active stays False).",
+    "self_play": {
+      "leaf_eval_flag": "v2_5",
+      "value_blend": 0,
+      "value_target": "residual",
+      "residual_scale": 0.25,
+      "sims": 200,
+      "c_puct": 3.0,
+      "batch_size_eval": 8,
+      "anchor_fraction": 0
+    },
+    "training": {
+      "script": "scripts/train_iter.py",
+      "batch_size": 256,
+      "epochs": 3,
+      "value_loss_weight": 1.5,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "optimizer": "AdamW",
+      "window": 10,
+      "warmstart_mix_fraction": 0.0,
+      "warmstart_root": "data/warmstart/heuristic_tau05",
+      "prov_value_target": "residual",
+      "prov_selfplay_leaf": "v2_8_meeple_k2"
+    },
+    "architecture": "96x6 ResNet, n_scalar_features=12, value_global_pool=False, ~7.4M params",
+    "env_knobs": {
+      "CARCASSONNE_V25_CAP": "12",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CARCASSONNE_V25_RESIDUAL_SCALE": "0.25",
+      "CARCASSONNE_V25_MEEPLE_K": "2.0"
+    }
+  },
+  "deviations_from_RoD_iter_01": {
+    "games_per_iter": {
+      "RoD_iter_01_value": 1000,
+      "this_run_value": 400,
+      "rationale": "games/iter is NOT in the user's frozen-recipe list (batch/LR/epochs/arch/c_puct/residual/sims). 400 is the VALIDATED attempt-2 flywheel cadence (the residual flywheel ran 400 games/iter x 8 iters -> champion iter8, +67 elo compounding). The continuation's 1000 was a ONE-SHOT probe boost, not the flywheel cadence. 400 keeps every frozen axis identical while making 10+ iters feasible overnight. In a warm-from CHAIN the under-training concern (cf. batch-512) does NOT apply: each iter fine-tunes the already-converged policy on fresh data; the chain accumulates steps across iters.",
+      "reversible": "set GAMES=1000 to run the exact continuation data volume (then ~4-5 iters fit overnight instead of ~9-10)."
+    }
+  },
+  "cluster": {
+    "boxes": ["local 5800x-box (5900XT 16C/32T + RTX 5060 Ti 16GB)", "laptop (i7-14650HX + RTX 4070m 8GB / 11GB WSL RAM)"],
+    "gen": "2-box work-stealing via carc-orch SHM orchestrator (USE_ORCH=1), --shared-claim claim files in the shared iterN_data dir; both boxes drain ONE game pool.",
+    "train": "LOCAL only (5900XT). Training is GPU-latency-bound; the laptop trains ~10% slower (memory reference_training_latency_bound).",
+    "smoke": "LOCAL only, two carc-orch contexts (one per checkpoint).",
+    "workers_orch": { "local_OW": 28, "laptop_OW": 8, "_note": "user directive was 'w 48 and 26' — but those are the EVAL numbers. GEN workers are much heavier (each holds a sims=200 MCTS tree + position buffer), so the gen ceilings are lower AND are the throughput optima (gen is GPU-bound past them). 2026-06-23 measurements: W26 gen OOM-wedged the 11GB laptop (~131MB free, sshd banner-timeout); W48 gen drove local worker RSS past 38GB on the 42GB box (heading to OOM, killed). Reset to the documented gen peaks W28 local (gen_flywheel.sh:64 '5800x peak') + W8 laptop (gen_flywheel.sh:49). Both RAM-monitored live." },
+    "share_path_local": "/mnt/c/carc-shared",
+    "share_path_remote": "/mnt/carc-shared",
+    "code_sync": "git bundle carc_stage-b-wiring.bundle on the share; laptop git-resets to it (gen code == stage-b-wiring, unchanged on this branch). If laptop sync fails -> auto local-only."
+  },
+  "loop_control": {
+    "start_iter": 2,
+    "max_iter": 14,
+    "duration_hours": 10,
+    "target_iters": "10-15 if feasible; realistic ~9-10 at 400 games/iter",
+    "self_play_seed_base": 620000000,
+    "self_play_seed_stride": 100000,
+    "self_play_seed_note": "per-iter band = 620000000 + iter*100000, all < 1e9 (self-play namespace), disjoint from the continuation's 600010000.",
+    "smoke_seed_base": 1940000000,
+    "smoke_seed_stride": 100000,
+    "smoke_seed_note": ">= 1e9 eval floor; disjoint from spent eval bands (1.7e9 sealed, 1.906/1.907e9 battery, 1.922/1.923e9 b512).",
+    "smoke_n": 16,
+    "smoke_ow": 32,
+    "smoke_note": "two-context net-vs-net is GPU-latency-bound + startup-dominated (~80s dual TorchScript export/boot). Measured n=10@OW32 = 194s -> n=16 ~= 4 min/iter (~40 min over 10 iters). CATASTROPHE DETECTOR ONLY (wr<0.25 vs prev = collapse); n far too small for strength.",
+    "smoke_catastrophe_winrate": 0.25,
+    "stall_heal": "gen no-progress for 15 polls x 60s -> kill pools+orch on both boxes, clean stranded claims, relaunch; abort after 8 heals."
+  },
+  "deferred_to_tomorrow": {
+    "_comment": "NOT run overnight (cost discipline — the user's 'Full eval deferral').",
+    "binding_evals": [
+      "candidate vs RoD_iter_01 (n=400 paired, v2.8 leaf, net-vs-net)",
+      "candidate vs frozen ITER8_V28_PARENT (n=400 paired)",
+      "candidate vs heur@3200_v2.8 ruler (only if it beats / plausibly beats RoD_iter_01)"
+    ],
+    "selection": "latest checkpoint + best cheap/root-diagnostic checkpoint + maybe every 2nd if unclear (after-the-fact keep-best)."
+  },
+  "per_iter_records": [
+    "checkpoint path + sha256", "parent checkpoint id + sha256", "code commit at train",
+    "generation config + seed band + npz produced", "training config (batch/epochs/lr/VLW/window)",
+    "optimizer steps", "loss curves (train_pol/val_pol/train_val per epoch)", "policy entropy + baseline + floor",
+    "value_outcome_corr", "dataset fingerprint", "gen + train wall-clock", "crashes/resumes",
+    "cheap-screen verdict + reasons", "tiny n=40 paired smoke vs prev (catastrophe detector only)"
+  ]
+}

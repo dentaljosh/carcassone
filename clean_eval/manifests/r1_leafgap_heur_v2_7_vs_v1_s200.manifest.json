@@ -1,0 +1,139 @@
+{
+  "kind": "eval_heur_vs_heur",
+  "game": "base",
+  "code_rev": "1973fc1-dirty",
+  "host": "Doctor",
+  "utc": "2026-06-07T19:34:10+00:00",
+  "leaf_env": {
+    "CARCASSONNE_V25_CAP": "12",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "1"
+  },
+  "config": {
+    "n": 400,
+    "sims": 200,
+    "paired": true,
+    "seed_start": 1000000000,
+    "a_leaf": "v2_7",
+    "b_leaf": "v1"
+  },
+  "evaluator": {
+    "schema": "carcassonne-evaluator-provenance/v1",
+    "kind": "eval_heur_vs_heur",
+    "code_commit": "1973fc1e3792f86450a179c7f8fb64b3df9804c1",
+    "dirty": true,
+    "argv": [
+      "--n",
+      "400",
+      "--sims",
+      "200",
+      "--paired",
+      "--seed-start",
+      "1000000000",
+      "--shared-claim",
+      "--claim-host",
+      "Doctor",
+      "--workers",
+      "14",
+      "--out-root",
+      "/mnt/c/carc-shared/clean_eval_runs",
+      "--out-subdir",
+      "r1_leafgap_heur_v2_7_vs_v1_s200"
+    ],
+    "sides": [
+      {
+        "side": "A_v2_7",
+        "agent_class": "HeuristicMCTS",
+        "search_impl": "HeuristicMCTS",
+        "leaf_name": "v2_7",
+        "leaf_version": "2.7",
+        "policy_source": "none",
+        "sims": 200,
+        "c_puct": 3.0,
+        "fpu": null,
+        "residual_scale": 0.0,
+        "value_blend": 0.0,
+        "cap": 12.0,
+        "opp_cap": 12.0,
+        "drop_three_open": true,
+        "closure_schedule": {
+          "1": 0.5,
+          "2": 0.2
+        },
+        "checkpoint_path": null,
+        "checkpoint_sha256": null,
+        "code_commit": "1973fc1e3792f86450a179c7f8fb64b3df9804c1",
+        "dirty": true,
+        "seed_range": [
+          1000000000,
+          1000000200
+        ],
+        "paired": true,
+        "eval_script": "eval_heur_vs_heur.py",
+        "argv": [
+          "--n",
+          "400",
+          "--sims",
+          "200",
+          "--paired",
+          "--seed-start",
+          "1000000000",
+          "--shared-claim",
+          "--claim-host",
+          "Doctor",
+          "--workers",
+          "14",
+          "--out-root",
+          "/mnt/c/carc-shared/clean_eval_runs",
+          "--out-subdir",
+          "r1_leafgap_heur_v2_7_vs_v1_s200"
+        ]
+      },
+      {
+        "side": "B_v1",
+        "agent_class": "HeuristicMCTS",
+        "search_impl": "HeuristicMCTS",
+        "leaf_name": "v1",
+        "leaf_version": "1.0",
+        "policy_source": "none",
+        "sims": 200,
+        "c_puct": 3.0,
+        "fpu": null,
+        "residual_scale": 0.0,
+        "value_blend": 0.0,
+        "cap": null,
+        "opp_cap": null,
+        "drop_three_open": null,
+        "closure_schedule": null,
+        "checkpoint_path": null,
+        "checkpoint_sha256": null,
+        "code_commit": "1973fc1e3792f86450a179c7f8fb64b3df9804c1",
+        "dirty": true,
+        "seed_range": [
+          1000000000,
+          1000000200
+        ],
+        "paired": true,
+        "eval_script": "eval_heur_vs_heur.py",
+        "argv": [
+          "--n",
+          "400",
+          "--sims",
+          "200",
+          "--paired",
+          "--seed-start",
+          "1000000000",
+          "--shared-claim",
+          "--claim-host",
+          "Doctor",
+          "--workers",
+          "14",
+          "--out-root",
+          "/mnt/c/carc-shared/clean_eval_runs",
+          "--out-subdir",
+          "r1_leafgap_heur_v2_7_vs_v1_s200"
+        ]
+      }
+    ],
+    "runtime_verified": null
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "n_roots": 10351,
+  "n_tr": 7031,
+  "n_va": 1648,
+  "n_te": 1672,
+  "n_test_seeds": 66,
+  "budgets": [
+    300,
+    400,
+    600,
+    800,
+    1200
+  ],
+  "deeps": [
+    800,
+    1600,
+    3200
+  ],
+  "uniform_test": {
+    "200": 0.002841330259229031,
+    "400": 0.002346317362301013,
+    "800": 0.0016903985321281795,
+    "1600": 0.00149214627211742,
+    "3200": 0.0006112077376344615,
+    "6400": 0.0
+  },
+  "baselines": {
+    "B0_uniform_h200": {
+      "kind": "uniform",
+      "level": 200,
+      "regret_test": 0.002841330259229031,
+      "auroc_pos_strong": null
+    },
+    "B1_uniform_h800": {
+      "kind": "uniform",
+      "level": 800,
+      "regret_test": 0.0016903985321281795,
+      "auroc_pos_strong": null
+    },
+    "B2_uniform_h3200": {
+      "kind": "uniform",
+      "level": 3200,
+      "regret_test": 0.0006112077376344615,
+      "auroc_pos_strong": null
+    },
+    "B3_low_top2gap": {
+      "kind": "scheduler",
+      "score": "neg_top2_q_gap200",
+      "auroc_pos_strong": 0.7254933418899406,
+      "auroc_pos_medium": 0.7048760274667659,
+      "matched": {
+        "300": {
+          "regret": 0.0022680382230391926,
+          "D": 800
+        },
+        "400": {
+          "regret": 0.0020357323696783315,
+          "D": 800
+        },
+        "600": {
+          "regret": 0.0016796904573512619,
+          "D": 800
+        },
+        "800": {
+          "regret": 0.0015958700156831894,
+          "D": 1600
+        },
+        "1200": {
+          "regret": 0.0012994375952695356,
+          "D": 3200
+        }
+      }
+    },
+    "B4_phase_opening": {
+      "kind": "scheduler",
+      "score": "opening_then_neg_top2gap",
+      "auroc_pos_strong": 0.6913337611636986,
+      "auroc_pos_medium": 0.6951594899029192,
+      "matched": {
+        "300": {
+          "regret": 0.002472109876293614,
+          "D": 800
+        },
+        "400": {
+          "regret": 0.0021306242348426967,
+          "D": 800
+        },
+        "600": {
+          "regret": 0.0017381420272332563,
+          "D": 800
+        },
+        "800": {
+          "regret": 0.0016903985321281795,
+          "D": 800
+        },
+        "1200": {
+          "regret": 0.0015047661985791052,
+          "D": 1600
+        }
+      }
+    },
+    "B5_flat_mlp": {
+      "kind": "flat_mlp",
+      "target": "pos_medium",
+      "n_feat": 32,
+      "feat_names": [
+        "entropy200",
+        "top_share200",
+        "top2_q_gap200",
+        "log_n_visited200",
+        "log_legal_n",
+        "ply",
+        "phase_opening",
+        "phase_midgame",
+        "phase_late_mid",
+        "phase_pre_endgame",
+        "phase_endgame",
+        "tb_city_open_n_sum",
+        "tb_farm_adj_city_sum",
+        "tb_farm_fin_city_sum",
+        "tb_k_remaining",
+        "tb_meeples_free_diff",
+        "tb_meeples_free_opp",
+        "tb_meeples_free_self",
+        "tb_n_city",
+        "tb_n_city_finished",
+        "tb_n_city_open",
+        "tb_n_farm",
+        "tb_n_road",
+        "tb_n_road_open",
+        "tb_open_structures",
+        "tb_score_margin",
+        "tb_v29_base",
+        "tb_v29_closure_opp",
+        "tb_v29_closure_self",
+        "tb_v29_meeple_curve_delta",
+        "tb_v29_meeple_flat",
+        "tb_v29_pretransform"
+      ],
+      "val_auroc_pos_medium": 0.7870081327528136,
+      "auroc_pos_strong": 0.7797074709877534,
+      "auroc_pos_medium": 0.7973734059466224,
+      "matched": {
+        "300": {
+          "regret": 0.0023168648573647106,
+          "D": 800
+        },
+        "400": {
+          "regret": 0.0017614779098684414,
+          "D": 800
+        },
+        "600": {
+          "regret": 0.0017144582118934816,
+          "D": 800
+        },
+        "800": {
+          "regret": 0.001605622636352121,
+          "D": 1600
+        },
+        "1200": {
+          "regret": 0.0011042928504322402,
+          "D": 3200
+        }
+      }
+    },
+    "B7_oracle_md": {
+      "kind": "oracle_md",
+      "matched": {
+        "300": {
+          "regret": 0.0003866810084069884
+        },
+        "400": {
+          "regret": 0.00017113928439379186
+        },
+        "600": {
+          "regret": 8.34550648459298e-05
+        },
+        "800": {
+          "regret": 2.73259946840655e-05
+        },
+        "1200": {
+          "regret": null
+        }
+      }
+    }
+  },
+  "sanity": {
+    "B3_auroc_pos_strong": 0.7254933418899406,
+    "reproduced": true,
+    "expected_range": [
+      0.72,
+      0.73
+    ],
+    "B5_auroc_pos_medium": 0.7973734059466224,
+    "B5_auroc_pos_strong": 0.7797074709877534
+  },
+  "runtime_s": 4.0
+}

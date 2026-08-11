@@ -1,0 +1,46 @@
+{
+  "gate": "oracle_score_pilot --positions-jsonl adapter",
+  "rids": [
+    "s28000000001_p102_r2",
+    "s28000000009_p47_r2"
+  ],
+  "value_fields_checked": 31,
+  "leg1_default_path": {
+    "mode": "default (--run-dir bank), no new flag set",
+    "mismatches": [
+      {
+        "rid": "s28000000001_p102_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      },
+      {
+        "rid": "s28000000009_p47_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      }
+    ],
+    "field_checks": 62
+  },
+  "leg2_positions_jsonl": {
+    "mode": "--positions-jsonl with the same rids, same arm order",
+    "mismatches": [
+      {
+        "rid": "s28000000001_p102_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      },
+      {
+        "rid": "s28000000009_p47_r2",
+        "field": "oracle_policy",
+        "banked": null,
+        "got": "clair-puct"
+      }
+    ],
+    "field_checks": 62
+  },
+  "verdict": "FAIL",
+  "scratch_dir": "/tmp/farmwar_gate_r35yw5tf"
+}

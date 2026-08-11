@@ -1,0 +1,5 @@
+gen_fair_distill: games=12 k_dets=4 sims=688 (budget=2752) exact_endgame=True exact_max_k=2 sighted=True batch_size=16 rep=81ch/42sc leaf_hash=6dfffd57051690f2 net_mode=orch-shm(fbsmoke) | 0 cached, 12 to play, 12 workers, out=/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/smoke_out/w12
+  [orch] SHM eval-server 'fbsmoke': 12 CPU workers attach to /dev/shm/carc_fbsmoke (81ch/42-scalar sighted net PRIORS)
+  10/12 games (111.6s/game, 1439 rows [1399 policy / 40 value-only], ~4 min left)
+  12/12 games (109.1s/game, 1727 rows [1679 policy / 48 value-only], ~0 min left)
+[done] 12 games, 1727 rows (1679 policy / 48 value-only), 0 skipped (1309.5s). shards in /tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/smoke_out/w12

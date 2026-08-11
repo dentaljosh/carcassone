@@ -1,0 +1,7 @@
+'\\wsl.localhost\Ubuntu\home\doctor\projects\carcassone'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+WARNING: no loadavg on this OS — the contention guard is DISABLED. Only trust these numbers if you verified the box is quiet yourself (the eff_linus driver does this WSL-side before invoking).
+[cpu_1t          ] forward   12.894 ms (p50 12.784 / p90 13.067)   full   13.991 ms   71.5 pos/s
+
+wrote C:\carc-shared\eff_linus_20260728\out_net_cpu_1t__win__rep1.json

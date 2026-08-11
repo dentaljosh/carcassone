@@ -1,0 +1,3 @@
+cell	beta	status	n	W	D	L	elo	sigma	paired_z	paired_margin	profile	r9_ok	secs	timestamp
+b0p0	0.0	rc0	200	91	2	107	-27.9	24.6	-0.22	-0.255	fixed_v1	true	2843	2026-08-10_00:19:28
+bm0p3	-0.3	rc0	200	96	3	101	-8.7	24.6	-0.29	-0.340	fixed_v1	true	2810	2026-08-10_01:06:18

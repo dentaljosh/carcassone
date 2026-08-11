@@ -1,0 +1,64 @@
+......................................................................s. [ 62%]
+F...................x.......................                             [100%]
+=================================== FAILURES ===================================
+____________ test_no_command_substitution_clobbers_dollar_question _____________
+
+    def test_no_command_substitution_clobbers_dollar_question():
+        """No `$?` read after a command substitution in the same command word."""
+        findings = []
+        for path in _shell_scripts():
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for lineno, line in enumerate(text.splitlines(), 1):
+                for seg in _offending_segments(line):
+                    findings.append(f"{path.relative_to(REPO)}:{lineno}: {seg}")
+>       assert not findings, (
+            "`$?` is read after a command substitution runs in the same command word, so it "
+            "reports the substitution's status (0), NOT the command's. A failed run will log "
+            "rc=0. Capture it first: `cmd` / `rc=$?` / `echo \"[$(date)] rc=$rc\"`.\n  "
+            + "\n  ".join(findings)
+        )
+E       AssertionError: `$?` is read after a command substitution runs in the same command word, so it reports the substitution's status (0), NOT the command's. A failed run will log rc=0. Capture it first: `cmd` / `rc=$?` / `echo "[$(date)] rc=$rc"`.
+E           scripts/classical_search/curveshape_conductor.sh:71: echo "[cond $(ts)] local leg for $c returned rc=$?"
+E           scripts/classical_search/night_chain.sh:101: echo "[night $(ts)] Part C launcher returned rc=$?"
+E           scripts/classical_search/phase_seam_gate.sh:57: echo "[gate $(ts)] $label tests/ rc=$?"
+E           scripts/classical_search/phase_seam_gate.sh:60: echo "[gate $(ts)] $label tests/rustport rc=$?"
+E       assert not ['scripts/classical_search/curveshape_conductor.sh:71: echo "[cond $(ts)] local leg for $c returned rc=$?"', 'scripts/...abel tests/ rc=$?"', 'scripts/classical_search/phase_seam_gate.sh:60: echo "[gate $(ts)] $label tests/rustport rc=$?"']
+
+tests/test_shell_harness_hygiene.py:87: AssertionError
+============================= slowest 10 durations =============================
+3.84s call     tests/test_rule_based_player.py::test_tile_choice_strictly_better_than_random_in_expectation
+1.05s call     tests/test_rule_based_player.py::test_full_game_runs_to_completion[1]
+0.99s call     tests/test_rule_based_player.py::test_full_game_runs_to_completion[2]
+0.96s call     tests/test_rule_based_player.py::test_full_game_runs_to_completion[0]
+0.67s call     tests/test_string_representation.py::test_repr_diversity_across_random_play
+0.59s call     tests/test_semantic_eval_contracts.py::test_c9_selfplay_policy_survives_save_and_streaming_load
+0.53s call     tests/test_string_representation.py::test_no_collisions_within_a_single_game_progression
+0.50s call     tests/test_shm_eval_handles.py::test_get_real_timeout_still_fires
+0.25s call     tests/test_semantic_eval_contracts.py::test_c2_value_is_antisymmetric
+0.20s call     tests/test_shm_eval_handles.py::test_forward_clock_step_does_not_fake_a_timeout
+=========================== short test summary info ============================
+FAILED tests/test_shell_harness_hygiene.py::test_no_command_substitution_clobbers_dollar_question
+Command exited with non-zero status 1
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_rule_based_player.py tests/test_rules_fixed_descriptives.py tests/test_rules_profile.py tests/test_run_manifest.py tests/test_run_watchdog.py tests/test_semantic_eval_contracts.py tests/test_shell_harness_hygiene.py tests/test_shm_eval_handles.py tests/test_sighted_planes.py tests/test_stage_local.py tests/test_start_tile_grid_bound.py tests/test_state_deepcopy.py tests/test_string_representation.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 12.62
+	System time (seconds): 0.40
+	Percent of CPU this job got: 109%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:11.88
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 758440
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 110913
+	Voluntary context switches: 14192
+	Involuntary context switches: 114
+	Swaps: 0
+	File system inputs: 1161
+	File system outputs: 104
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1

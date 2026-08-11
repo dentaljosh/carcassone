@@ -1,0 +1,53 @@
+[2026-07-20T13:36:50-04:00] F3 oracle suite: roots=/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/roots_k3_suite.jsonl out=/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/records_k3 W=4 budget=2000000 tt_cap=1500000 k4x688 wall=600s
+  10/354  ok=10 skip=0 err=0  1422s
+  20/354  ok=20 skip=0 err=0  2737s
+  30/354  ok=30 skip=0 err=0  3305s
+  40/354  ok=40 skip=0 err=0  4360s
+[2026-07-20T15:56:10-04:00] F3 oracle suite: roots=/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/roots_k3_suite.jsonl out=/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/records_k3 W=4 budget=2000000 tt_cap=1500000 k4x688 wall=600s
+  10/354  ok=0 skip=10 err=0  0s
+  20/354  ok=0 skip=20 err=0  0s
+  30/354  ok=0 skip=30 err=0  0s
+  40/354  ok=0 skip=40 err=0  0s
+  50/354  ok=7 skip=43 err=0  778s
+  60/354  ok=17 skip=43 err=0  1591s
+  70/354  ok=27 skip=43 err=0  2532s
+  80/354  ok=37 skip=43 err=0  3648s
+  90/354  ok=47 skip=43 err=0  4575s
+[2026-07-20T17:12:58-04:00] F3 oracle suite: roots=/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/roots_k3_suite.jsonl out=/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/records_k3 W=8 budget=2000000 tt_cap=1500000 k4x688 wall=600s
+  10/354  ok=0 skip=10 err=0  0s
+  20/354  ok=0 skip=20 err=0  0s
+  30/354  ok=0 skip=30 err=0  0s
+  40/354  ok=0 skip=40 err=0  0s
+  50/354  ok=0 skip=50 err=0  0s
+  60/354  ok=0 skip=60 err=0  0s
+  70/354  ok=0 skip=70 err=0  0s
+  80/354  ok=0 skip=80 err=0  0s
+  90/354  ok=0 skip=90 err=0  0s
+  100/354  ok=10 skip=90 err=0  602s
+  110/354  ok=20 skip=90 err=0  925s
+  120/354  ok=30 skip=90 err=0  1384s
+  130/354  ok=40 skip=90 err=0  1887s
+  140/354  ok=50 skip=90 err=0  2242s
+  150/354  ok=60 skip=90 err=0  2723s
+  160/354  ok=70 skip=90 err=0  3136s
+  170/354  ok=80 skip=90 err=0  3541s
+  180/354  ok=90 skip=90 err=0  4089s
+  190/354  ok=100 skip=90 err=0  4691s
+  200/354  ok=110 skip=90 err=0  5101s
+  210/354  ok=120 skip=90 err=0  5543s
+  220/354  ok=130 skip=90 err=0  6084s
+  230/354  ok=140 skip=90 err=0  6478s
+  240/354  ok=150 skip=90 err=0  7080s
+  250/354  ok=160 skip=90 err=0  7623s
+  260/354  ok=170 skip=90 err=0  8128s
+  270/354  ok=180 skip=90 err=0  8528s
+  280/354  ok=190 skip=90 err=0  9043s
+  290/354  ok=200 skip=90 err=0  9512s
+  300/354  ok=210 skip=90 err=0  10086s
+  310/354  ok=220 skip=90 err=0  10688s
+  320/354  ok=230 skip=90 err=0  11184s
+  330/354  ok=240 skip=90 err=0  11582s
+  340/354  ok=250 skip=90 err=0  12323s
+  350/354  ok=260 skip=90 err=0  12689s
+  354/354  ok=264 skip=90 err=0  13152s
+done: {'ok': 264, 'skip': 90, 'error': 0}  ->  /home/doctor/projects/carcassone/measurement/f3_public_state_oracle/records_k3

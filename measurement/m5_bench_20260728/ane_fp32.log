@@ -1,0 +1,33 @@
+bench_ane_forward: distill_iter_03.pt  7.51 M params  96x6  torch 2.13.0
+-- torch CPU batch-1 (1 thread)
+   mean 2.615 ms   p50 2.595   p90 2.699
+-- CoreML convert + predict (fp32)
+Torch version 2.13.0 has not been tested with coremltools. You may run into unexpected errors. Torch 2.7.0 is the most recent version that has been tested.
+Tuple detected at graph output. This will be flattened in the converted model.
+Converting PyTorch Frontend ==> MIL Ops:   0%|          | 0/140 [00:00<?, ? ops/s]Converting PyTorch Frontend ==> MIL Ops:  99%|█████████▊| 138/140 [00:00<00:00, 11223.20 ops/s]
+Running MIL frontend_pytorch pipeline:   0%|          | 0/5 [00:00<?, ? passes/s]Running MIL frontend_pytorch pipeline: 100%|██████████| 5/5 [00:00<00:00, 1235.80 passes/s]
+Running MIL default pipeline:   0%|          | 0/92 [00:00<?, ? passes/s]/Users/joshuaishal/m5_bench_20260728/.venv/lib/python3.12/site-packages/coremltools/converters/mil/mil/passes/defs/preprocess.py:273: UserWarning: Output, '234', of the source model, has been renamed to 'var_234' in the Core ML model.
+  warnings.warn(msg.format(var.name, new_name))
+/Users/joshuaishal/m5_bench_20260728/.venv/lib/python3.12/site-packages/coremltools/converters/mil/mil/passes/defs/preprocess.py:273: UserWarning: Output, '264', of the source model, has been renamed to 'var_264' in the Core ML model.
+  warnings.warn(msg.format(var.name, new_name))
+Running MIL default pipeline: 100%|██████████| 92/92 [00:00<00:00, 1020.20 passes/s]
+Running MIL backend_mlprogram pipeline:   0%|          | 0/12 [00:00<?, ? passes/s]Running MIL backend_mlprogram pipeline: 100%|██████████| 12/12 [00:00<00:00, 1915.72 passes/s]
+Tuple detected at graph output. This will be flattened in the converted model.
+Converting PyTorch Frontend ==> MIL Ops:   0%|          | 0/140 [00:00<?, ? ops/s]Converting PyTorch Frontend ==> MIL Ops:  99%|█████████▊| 138/140 [00:00<00:00, 13323.22 ops/s]
+Running MIL frontend_pytorch pipeline:   0%|          | 0/5 [00:00<?, ? passes/s]Running MIL frontend_pytorch pipeline: 100%|██████████| 5/5 [00:00<00:00, 1253.15 passes/s]
+Running MIL default pipeline:   0%|          | 0/92 [00:00<?, ? passes/s]/Users/joshuaishal/m5_bench_20260728/.venv/lib/python3.12/site-packages/coremltools/converters/mil/mil/passes/defs/preprocess.py:273: UserWarning: Output, '234', of the source model, has been renamed to 'var_234' in the Core ML model.
+  warnings.warn(msg.format(var.name, new_name))
+/Users/joshuaishal/m5_bench_20260728/.venv/lib/python3.12/site-packages/coremltools/converters/mil/mil/passes/defs/preprocess.py:273: UserWarning: Output, '264', of the source model, has been renamed to 'var_264' in the Core ML model.
+  warnings.warn(msg.format(var.name, new_name))
+Running MIL default pipeline: 100%|██████████| 92/92 [00:00<00:00, 1103.14 passes/s]
+Running MIL backend_mlprogram pipeline:   0%|          | 0/12 [00:00<?, ? passes/s]Running MIL backend_mlprogram pipeline: 100%|██████████| 12/12 [00:00<00:00, 1951.60 passes/s]
+Tuple detected at graph output. This will be flattened in the converted model.
+Converting PyTorch Frontend ==> MIL Ops:   0%|          | 0/140 [00:00<?, ? ops/s]Converting PyTorch Frontend ==> MIL Ops:  99%|█████████▊| 138/140 [00:00<00:00, 13753.45 ops/s]
+Running MIL frontend_pytorch pipeline:   0%|          | 0/5 [00:00<?, ? passes/s]Running MIL frontend_pytorch pipeline: 100%|██████████| 5/5 [00:00<00:00, 1251.88 passes/s]
+Running MIL default pipeline:   0%|          | 0/92 [00:00<?, ? passes/s]Running MIL default pipeline: 100%|██████████| 92/92 [00:00<00:00, 1120.45 passes/s]
+Running MIL backend_mlprogram pipeline:   0%|          | 0/12 [00:00<?, ? passes/s]Running MIL backend_mlprogram pipeline: 100%|██████████| 12/12 [00:00<00:00, 1975.65 passes/s]
+   CPU_ONLY    mean 1.619 ms   p50 1.608   p90 1.681
+   CPU_AND_NE  mean 1.622 ms   p50 1.613   p90 1.671
+   ALL         mean 1.383 ms   p50 1.129   p90 2.091
+
+bench_ane_forward: wrote /Users/joshuaishal/m5_bench_20260728/results/bench_ane_Mac_20260728T230739.json

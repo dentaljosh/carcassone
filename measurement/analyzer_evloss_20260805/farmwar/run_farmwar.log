@@ -1,0 +1,16 @@
+[run] FARM n=21 CONTROL n=21 across 3 epochs | M=32 | W=14 | salt=farmwar-v1
+[run] epoch legs run CONCURRENTLY (one process per epoch is forced anyway — R9 is import-latched); worker split {'app_aug2': 2, 'fixed_v1': 7, 'walled': 5} of 14 over positions {'app_aug2': 6, 'fixed_v1': 20, 'walled': 16}
+[run] ===== launch clair-puct/app_aug2 (R9=0, W=2, n=6) -> leg_clair-puct_app_aug2.log
+[run] ===== launch clair-puct/fixed_v1 (R9=1, W=7, n=20) -> leg_clair-puct_fixed_v1.log
+[run] ===== launch clair-puct/walled (R9=0, W=5, n=16) -> leg_clair-puct_walled.log
+[run] ===== done clair-puct/app_aug2 rc=0 (5167.0s)
+[run] ===== done clair-puct/fixed_v1 rc=0 (5167.0s)
+[run] ===== done clair-puct/walled rc=0 (5167.0s)
+[run] ===== launch tier1-greedy/app_aug2 (R9=0, W=2, n=6) -> leg_tier1-greedy_app_aug2.log
+[run] ===== launch tier1-greedy/fixed_v1 (R9=1, W=7, n=20) -> leg_tier1-greedy_fixed_v1.log
+[run] ===== launch tier1-greedy/walled (R9=0, W=5, n=16) -> leg_tier1-greedy_walled.log
+[run] ===== done tier1-greedy/app_aug2 rc=0 (531.6s)
+[run] ===== done tier1-greedy/fixed_v1 rc=0 (545.0s)
+[run] ===== done tier1-greedy/walled rc=0 (545.0s)
+
+[run] 6 legs in 5712.0s -> /home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/farmwar/RUN_MANIFEST.json

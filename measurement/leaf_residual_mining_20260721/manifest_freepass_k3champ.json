@@ -1,0 +1,222 @@
+{
+  "harness": "leaf_residual_mining",
+  "schema": "carcassonne-leaf-residual/v1",
+  "prereg": "measurement/leaf_residual_mining_20260721/PREREG.md",
+  "goal": "error-guided leaf-term discovery: regress (deep pooled-Q minus shallow leaf value) on a pre-registered dictionary of cheap board features",
+  "residual_definition": "resid(L) = V_deep(L) - V_leaf ; V_leaf = tanh(flat_virtual_score_v2_float(root, mover, champion_leaf)/15) ; V_deep(L) = sum_a W_pooled(a)/sum_a N_pooled(a) over the k_dets pooled root children at per-world budget L. Mover POV. Positive = search likes the position MORE than the leaf does.",
+  "primary_level": 688,
+  "levels": [
+    200,
+    344,
+    688,
+    1376
+  ],
+  "level_semantics": "per-world PUCT sim budgets; total = k_dets x level. k4x1376 = the deployed champion budget (CL-054). ONE deep search per world, snapshotted at every level (bit-exact WITHIN a world), pooled at each level.",
+  "agent": "FairHeuristicPriorAgent via champion_factory.build_fair_champion (PRODUCTION.yaml knobs, curve125 v2.9 Bmild_cap8 leaf)",
+  "k_dets": 4,
+  "root_sampling": {
+    "mode": "explicit_roots_file",
+    "roots_file": "measurement/f3_public_state_oracle/roots_k3_champion.jsonl",
+    "roots_tag": "freepass_k3champ",
+    "phase": "TILES (asserted per root; a MEEPLES root advances one action, recorded as ply_shifted)",
+    "scope": "FREE PASS \u2014 hypothesis generation only (PREREG.md \u00a78)",
+    "note": "corpus-sampling knobs (--per-game/--tiles-lo/--tiles-hi) are NOT used in this mode and are omitted deliberately"
+  },
+  "corpora": {
+    "freepass_k3champ": {
+      "path": "measurement/f3_public_state_oracle/roots_k3_champion.jsonl",
+      "n_roots": 436,
+      "corpus_champ125": 1,
+      "scope": "FREE PASS \u2014 ENDGAME-BOUNDED (k_remaining=3). Hypothesis generation ONLY; can never pass or fail the PREREG \u00a75 gate."
+    }
+  },
+  "n_roots_selected": 436,
+  "n_todo": 0,
+  "n_resumed": 436,
+  "shard": "0/1",
+  "workers": 2,
+  "wall_cap_secs": 900,
+  "feature_dictionary": {
+    "controls": [
+      "v_leaf",
+      "v_leaf_sq",
+      "tiles_remaining",
+      "corpus_champ125"
+    ],
+    "candidates": [
+      {
+        "name": "pending_diff",
+        "tier": "A",
+        "hypothesis": "unbanked (would-score-at-end) point differential; with running_diff this tests the leaf's 1:1 banked-vs-pending weighting. NEW (P1-L2 'score as if ended now is structurally biased' was never directly tested)"
+      },
+      {
+        "name": "running_diff",
+        "tier": "A",
+        "hypothesis": "banked score differential; the paired half of the 1:1 weighting test. NEW"
+      },
+      {
+        "name": "pending_share",
+        "tier": "A",
+        "hypothesis": "share of the leaf's edge that is unbanked (risk concentration, scale-free). NEW"
+      },
+      {
+        "name": "bonus_overflow_self",
+        "tier": "A",
+        "hypothesis": "closure bonus lost to the cap=8 truncation, SELF. Cap LEVEL is dead (C5 cap5/cap12 flat, v2.10 cap6 null) \u2014 this tests the TRUNCATION, a different object"
+      },
+      {
+        "name": "bonus_overflow_opp",
+        "tier": "A",
+        "hypothesis": "closure bonus lost to the opp cap=8 truncation. Same distinction; note opp-cap moves were the worst C5 cells (oppcap4 -59.6, oppcap12 -66.8)"
+      },
+      {
+        "name": "road_anticip_diff",
+        "tier": "A",
+        "hypothesis": "road closure anticipation. The leaf's bonus covers cities/cloisters/farm-growth and gives roads ZERO. NEVER ISOLATED (review P1-L6; C7 Term R bundled roads into a harmful liquidity term). road_root_open_n already exists in the Decomp"
+      },
+      {
+        "name": "open_city_liability_diff",
+        "tier": "A",
+        "hypothesis": "raw at-risk value of MY meepled open cities minus opp's (sum of city_root_delta, unweighted). = BACKLOG 2026-05-16 item #2 'penalize large open cities' \u2014 the one lit-review term NEVER IMPLEMENTED, NEVER RUN"
+      },
+      {
+        "name": "hopeless_city_diff",
+        "tier": "A",
+        "hypothesis": "meepled unfinished cities with open_n>=4, where closure_p truncates to exactly 0. NEW (the schedule's right tail)"
+      },
+      {
+        "name": "city_exposure_diff",
+        "tier": "A",
+        "hypothesis": "sum(city_root_delta * open_n) over meepled unfinished cities \u2014 tests the SHAPE of closure_p. Adjacent to C5 pclose080/pclose120 (both sub-gate), but those RESCALED the schedule; this probes a linear-in-open_n mis-shape"
+      },
+      {
+        "name": "stuck_meeple_diff",
+        "tier": "A",
+        "hypothesis": "meeples on components that can never close (unfinished, open_n==0 \u2014 the D16 guard drops them silently). Adjacent to C7 Term R (HARMFUL) but the opposite object: R credited RETURNABLE meeples, this counts PERMANENTLY STRANDED ones"
+      },
+      {
+        "name": "barren_farm_diff",
+        "tier": "A",
+        "hypothesis": "farm components with zero adjacent cities of any kind (a farmer that can never be worth anything). NEW \u2014 distinct from Term F (dead), which priced CONTESTED-field majority flips"
+      },
+      {
+        "name": "cloister_far_diff",
+        "tier": "A",
+        "hypothesis": "cloisters needing >=4 more tiles, where closure_p gives exactly 0. NEW (the schedule's right tail, cloister branch)"
+      },
+      {
+        "name": "open_frontier",
+        "tier": "A",
+        "hypothesis": "len(state.open_positions) \u2014 how fluid/volatile the board still is. NEW"
+      },
+      {
+        "name": "frontier_x_leaf",
+        "tier": "A",
+        "hypothesis": "volatility discount: the leaf's edge is worth less on a fluid board. NEW"
+      },
+      {
+        "name": "leaf_x_tiles",
+        "tier": "A",
+        "hypothesis": "stage-conditioned leaf scaling = review item M6 'phase-conditioned leaf weights', NEVER IMPLEMENTED. CL-061 already read this channel as sub-threshold for the VALUE TRANSFORM (~0.02 nats); a null here is confirmatory"
+      },
+      {
+        "name": "free_meeples_sum",
+        "tier": "A",
+        "hypothesis": "self+opp free-meeple TOTAL \u2014 the curve prices only the DIFFERENCE, so a level effect is unpriced. NEW (distinct from the curve SCALE axis that C5 already peaked)"
+      },
+      {
+        "name": "deck_city_share",
+        "tier": "B",
+        "hypothesis": "share of remaining tiles carrying >=1 city edge. \u26a0 ADJACENT TO A 3x-KILLED FAMILY (deck-aware closure: 2026-05-17 tile_counting_closure + closure_continuous_slack null, v2.8 v28_completion null, v2.10/C5 bag_close null x2). Included in a DIFFERENT functional form \u2014 a global continuous scalar, not a per-feature hard gate \u2014 and a hit here would NOT resurrect bag_close; it would name a stage-scalar term. A null is the 4th confirmation"
+      },
+      {
+        "name": "n_legal",
+        "tier": "C",
+        "hypothesis": "DIAGNOSTIC ONLY (needs move generation -> not leaf-viable): mover mobility at the root"
+      }
+    ],
+    "neg_control": "neg_control",
+    "pos_ref": "pos_ref_c5_curve",
+    "n_candidates_in_family": 18
+  },
+  "code_rev": "f3ec3a0",
+  "host": "Doctor",
+  "utc": "2026-07-21T20:29:02+00:00",
+  "env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "champion_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "fair",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "FairHeuristicPriorAgent",
+    "reshuffle_semantics": "root-determinization PIMC: reshuffle the UNSEEN deck (canonical sort + rng), next_tile untouched; fresh tree per determinization; pooled-Q pick",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": false,
+      "config_hash": "e1ef44425aeaf9ac"
+    },
+    "fair_deploy": {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total_sims": 2752,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "f3ec3a047a8b24e50653c43257ad1bf29205791b",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory)."
+  }
+}

@@ -1,0 +1,33 @@
+[ranker] iter_00 <- /mnt/c/carc-shared/m2_sighted/ckpt/iter_00.pt (net value head, CPU)
+[ranker] iter_01 <- /mnt/c/carc-shared/m2_sighted/ckpt/iter_01.pt (net value head, CPU)
+[ranker] iter_02 <- /mnt/c/carc-shared/m2_sighted/ckpt/iter_02.pt (net value head, CPU)
+[ranker] iter_03 <- /mnt/c/carc-shared/m2_sighted/ckpt/iter_03.pt (net value head, CPU)
+[ranker] iter_04 <- /mnt/c/carc-shared/m2_sighted/ckpt/iter_04.pt (net value head, CPU)
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
+[done] scored=1119 skipped=0 errors=0 in 3212.3s
+[out] wrote measurement/canonical_az/solver_score_m2_final_it00_04.json
+
+==== SOLVER-SCORE (v29_leaf) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6153
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6153  24.06s/solve
+
+==== SOLVER-SCORE (iter_00) ====
+AGG  n=1119  solver_regret mean=1.8668 median=1.0 max=25.0  top1=0.0804  tau=0.018
+  K=2 (marg)  n=1119  regret=1.8668  top1=0.0804  tau=0.018  24.06s/solve
+
+==== SOLVER-SCORE (iter_01) ====
+AGG  n=1119  solver_regret mean=1.9651 median=1.0 max=28.0  top1=0.084  tau=0.0206
+  K=2 (marg)  n=1119  regret=1.9651  top1=0.084  tau=0.0206  24.06s/solve
+
+==== SOLVER-SCORE (iter_02) ====
+AGG  n=1119  solver_regret mean=1.9008 median=1.0 max=25.0  top1=0.076  tau=0.018
+  K=2 (marg)  n=1119  regret=1.9008  top1=0.076  tau=0.018  24.06s/solve
+
+==== SOLVER-SCORE (iter_03) ====
+AGG  n=1119  solver_regret mean=1.8177 median=1.0 max=24.0  top1=0.0742  tau=0.0212
+  K=2 (marg)  n=1119  regret=1.8177  top1=0.0742  tau=0.0212  24.06s/solve
+
+==== SOLVER-SCORE (iter_04) ====
+AGG  n=1119  solver_regret mean=1.857 median=1.0 max=25.0  top1=0.0769  tau=0.0232
+  K=2 (marg)  n=1119  regret=1.857  top1=0.0769  tau=0.0232  24.06s/solve

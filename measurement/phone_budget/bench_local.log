@@ -1,0 +1,24 @@
+[phone-budget] host=Doctor cpu=x86_64
+[phone-budget] cython leaf ACTIVE: {"use_flat_leaf": true, "use_cy_leaf": true, "cy_module_bound": true, "cy_supports_v29_curve": true, "v29_curve": [-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0], "cython_leaf_active": true}
+[phone-budget] leaf micro (20 evals, midgame): median 21.1 us
+[phone-budget] net fwd micro: {"n_params": 7411887, "n": 20, "median_ms": 12.118461000000025, "min_ms": 11.95929900001147, "max_ms": 12.461504000015111, "torch_threads": 1}
+[phone-budget] sims=800 game 1/4: 144 moves, wall 51.3s, median 329 ms/move, p90 458
+[phone-budget] sims=800 game 2/4: 144 moves, wall 56.7s, median 334 ms/move, p90 442
+[phone-budget] sims=800 game 3/4: 144 moves, wall 49.7s, median 317 ms/move, p90 424
+[phone-budget] sims=800 game 4/4: 143 moves, wall 48.8s, median 318 ms/move, p90 436
+[phone-budget] sims=1600 game 1/4: 144 moves, wall 109.6s, median 680 ms/move, p90 933
+[phone-budget] sims=1600 game 2/4: 144 moves, wall 102.7s, median 682 ms/move, p90 903
+[phone-budget] sims=1600 game 3/4: 144 moves, wall 106.6s, median 621 ms/move, p90 896
+[phone-budget] sims=1600 game 4/4: 144 moves, wall 107.3s, median 694 ms/move, p90 917
+[phone-budget] sims=3200 game 1/3: 144 moves, wall 215.7s, median 1368 ms/move, p90 1899
+[phone-budget] sims=3200 game 2/3: 144 moves, wall 223.7s, median 1304 ms/move, p90 1801
+[phone-budget] sims=3200 game 3/3: 144 moves, wall 227.2s, median 1381 ms/move, p90 1791
+[phone-budget] sims=6400 game 1/2: 144 moves, wall 480.0s, median 2754 ms/move, p90 4003
+[phone-budget] sims=6400 game 2/2: 144 moves, wall 541.1s, median 2975 ms/move, p90 4804
+
+sims | median ms/move | p90 ms/move | mean full-game wall
+  800 |      325.7 |      446.1 | 51.6s over 4 full games
+ 1600 |      669.1 |      920.1 | 106.5s over 4 full games
+ 3200 |     1347.7 |     1827.1 | 222.2s over 3 full games
+ 6400 |     2853.8 |     4637.7 | 510.6s over 2 full games
+[phone-budget] DONE -> measurement/phone_budget/raw_local.json

@@ -1,0 +1,1852 @@
+{
+  "gate": "G1/lockstep_fuzz",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "b24256d-dirty",
+    "utc": "2026-08-01T03:02:33Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "games": 120,
+    "start": 0,
+    "workers": 8,
+    "wall_frac": 0.2,
+    "policy_base": 5000000,
+    "max_plies": 400,
+    "tag": "p5_row30_probe",
+    "out": "measurement/rustport_p5/G5_lockstep_fuzz_p5_row30_probe.json",
+    "jsonl": "measurement/rustport_p5/G5_lockstep_fuzz_p5_row30_probe.jsonl",
+    "repro_dir": "measurement/rustport_p5/G5_p5_row30_probe_reproducers",
+    "start_rule": "engine",
+    "start_row": 30,
+    "start_col": 15
+  },
+  "deck_seed_range": [
+    97000000000,
+    97000000119
+  ],
+  "deck_seed_band_note": "throwaway fuzz-only range 97e9+i \u2014 NOT a registered claim band (governance/BAND_REGISTRY.csv); these games are a correctness fuzz, never an estimate",
+  "flags": {
+    "start_rule": "engine",
+    "start_row": 30,
+    "start_col": 15,
+    "default_semantics": false
+  },
+  "per_ply_checks": [
+    "string_representation(bytes)",
+    "legal_mask(bytes)",
+    "mask_counts(n_total,n_overflow)",
+    "scores",
+    "flat_base_score[p0]",
+    "flat_base_score[p1]",
+    "flat_base_score_decomp[p0]",
+    "flat_base_score_decomp[p1]",
+    "state_scalars",
+    "window_offset",
+    "window_overflow_error_parity",
+    "count_final_scores_error_parity"
+  ],
+  "setup_checks": [
+    "total_tiles",
+    "tile_count",
+    "starting_position",
+    "start_rule"
+  ],
+  "per_mode": {
+    "uniform": {
+      "games": 96,
+      "plies": 5512,
+      "positions_compared": 5578,
+      "mismatches": 0,
+      "window_overflow_games": 0,
+      "engine_error_games": 95,
+      "games_touching_row0": 0,
+      "games_touching_col0": 0,
+      "games_touching_row34": 95,
+      "games_touching_col34": 0,
+      "placements_row0": 0,
+      "placements_col0": 0,
+      "plies_with_dropped_legal": 0,
+      "dropped_legal_total": 0,
+      "min_row_seen": 21,
+      "min_col_seen": 6,
+      "max_row_seen": 34,
+      "max_col_seen": 23
+    },
+    "wall": {
+      "games": 24,
+      "plies": 3456,
+      "positions_compared": 3480,
+      "mismatches": 0,
+      "window_overflow_games": 0,
+      "engine_error_games": 0,
+      "games_touching_row0": 24,
+      "games_touching_col0": 0,
+      "games_touching_row34": 0,
+      "games_touching_col34": 0,
+      "placements_row0": 364,
+      "placements_col0": 0,
+      "plies_with_dropped_legal": 938,
+      "dropped_legal_total": 13333,
+      "min_row_seen": 0,
+      "min_col_seen": 1,
+      "max_row_seen": 30,
+      "max_col_seen": 30
+    }
+  },
+  "total_games": 120,
+  "total_plies": 8968,
+  "total_positions_compared": 9058,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "window_overflow_games": 0,
+  "window_overflow_reproducers": [],
+  "engine_error_games": 95,
+  "engine_error_reproducers": [
+    {
+      "deck_seed": 97000000000,
+      "policy_seed": 5000000,
+      "mode": "uniform",
+      "ply": 21,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        18
+      ],
+      "extent_rows": [
+        29,
+        34
+      ],
+      "extent_cols": [
+        14,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000001,
+      "policy_seed": 5000001,
+      "mode": "uniform",
+      "ply": 43,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000002,
+      "policy_seed": 5000002,
+      "mode": "uniform",
+      "ply": 35,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        13,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000003,
+      "policy_seed": 5000003,
+      "mode": "uniform",
+      "ply": 47,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        13,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000020,
+      "policy_seed": 5000020,
+      "mode": "uniform",
+      "ply": 37,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000021,
+      "policy_seed": 5000021,
+      "mode": "uniform",
+      "ply": 31,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        14,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000022,
+      "policy_seed": 5000022,
+      "mode": "uniform",
+      "ply": 51,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        12,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000023,
+      "policy_seed": 5000023,
+      "mode": "uniform",
+      "ply": 51,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        12,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000005,
+      "policy_seed": 5000005,
+      "mode": "uniform",
+      "ply": 23,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000006,
+      "policy_seed": 5000006,
+      "mode": "uniform",
+      "ply": 67,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        11,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000007,
+      "policy_seed": 5000007,
+      "mode": "uniform",
+      "ply": 45,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000016,
+      "policy_seed": 5000016,
+      "mode": "uniform",
+      "ply": 49,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        19
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        11,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000017,
+      "policy_seed": 5000017,
+      "mode": "uniform",
+      "ply": 57,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        11
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        9,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000018,
+      "policy_seed": 5000018,
+      "mode": "uniform",
+      "ply": 43,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        24,
+        34
+      ],
+      "extent_cols": [
+        13,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000028,
+      "policy_seed": 5000028,
+      "mode": "uniform",
+      "ply": 59,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000030,
+      "policy_seed": 5000030,
+      "mode": "uniform",
+      "ply": 25,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000031,
+      "policy_seed": 5000031,
+      "mode": "uniform",
+      "ply": 71,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000025,
+      "policy_seed": 5000025,
+      "mode": "uniform",
+      "ply": 51,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        11,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000026,
+      "policy_seed": 5000026,
+      "mode": "uniform",
+      "ply": 61,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        12,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000027,
+      "policy_seed": 5000027,
+      "mode": "uniform",
+      "ply": 48,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000012,
+      "policy_seed": 5000012,
+      "mode": "uniform",
+      "ply": 73,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        24,
+        34
+      ],
+      "extent_cols": [
+        11,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000013,
+      "policy_seed": 5000013,
+      "mode": "uniform",
+      "ply": 55,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000015,
+      "policy_seed": 5000015,
+      "mode": "uniform",
+      "ply": 55,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        12,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000040,
+      "policy_seed": 5000040,
+      "mode": "uniform",
+      "ply": 63,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        11,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000041,
+      "policy_seed": 5000041,
+      "mode": "uniform",
+      "ply": 47,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        13
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        12,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000042,
+      "policy_seed": 5000042,
+      "mode": "uniform",
+      "ply": 19,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        30,
+        34
+      ],
+      "extent_cols": [
+        14,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000043,
+      "policy_seed": 5000043,
+      "mode": "uniform",
+      "ply": 23,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        13
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        13,
+        16
+      ]
+    },
+    {
+      "deck_seed": 97000000008,
+      "policy_seed": 5000008,
+      "mode": "uniform",
+      "ply": 93,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        14
+      ],
+      "extent_rows": [
+        23,
+        34
+      ],
+      "extent_cols": [
+        9,
+        21
+      ]
+    },
+    {
+      "deck_seed": 97000000010,
+      "policy_seed": 5000010,
+      "mode": "uniform",
+      "ply": 129,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        10
+      ],
+      "extent_rows": [
+        23,
+        34
+      ],
+      "extent_cols": [
+        6,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000011,
+      "policy_seed": 5000011,
+      "mode": "uniform",
+      "ply": 51,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        14
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        9,
+        16
+      ]
+    },
+    {
+      "deck_seed": 97000000032,
+      "policy_seed": 5000032,
+      "mode": "uniform",
+      "ply": 93,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        20
+      ],
+      "extent_rows": [
+        22,
+        34
+      ],
+      "extent_cols": [
+        10,
+        22
+      ]
+    },
+    {
+      "deck_seed": 97000000033,
+      "policy_seed": 5000033,
+      "mode": "uniform",
+      "ply": 125,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        24,
+        34
+      ],
+      "extent_cols": [
+        9,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000035,
+      "policy_seed": 5000035,
+      "mode": "uniform",
+      "ply": 33,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000036,
+      "policy_seed": 5000036,
+      "mode": "uniform",
+      "ply": 25,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        13
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        13,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000037,
+      "policy_seed": 5000037,
+      "mode": "uniform",
+      "ply": 73,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        19
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        11,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000038,
+      "policy_seed": 5000038,
+      "mode": "uniform",
+      "ply": 58,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        13
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        10,
+        16
+      ]
+    },
+    {
+      "deck_seed": 97000000060,
+      "policy_seed": 5000060,
+      "mode": "uniform",
+      "ply": 35,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        12,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000061,
+      "policy_seed": 5000061,
+      "mode": "uniform",
+      "ply": 55,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        18
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        11,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000062,
+      "policy_seed": 5000062,
+      "mode": "uniform",
+      "ply": 41,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        29,
+        34
+      ],
+      "extent_cols": [
+        12,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000063,
+      "policy_seed": 5000063,
+      "mode": "uniform",
+      "ply": 75,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        18
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        10,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000045,
+      "policy_seed": 5000045,
+      "mode": "uniform",
+      "ply": 64,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        12,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000046,
+      "policy_seed": 5000046,
+      "mode": "uniform",
+      "ply": 29,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        29,
+        34
+      ],
+      "extent_cols": [
+        12,
+        16
+      ]
+    },
+    {
+      "deck_seed": 97000000047,
+      "policy_seed": 5000047,
+      "mode": "uniform",
+      "ply": 39,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        13,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000052,
+      "policy_seed": 5000052,
+      "mode": "uniform",
+      "ply": 29,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000053,
+      "policy_seed": 5000053,
+      "mode": "uniform",
+      "ply": 29,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        30,
+        34
+      ],
+      "extent_cols": [
+        13,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000055,
+      "policy_seed": 5000055,
+      "mode": "uniform",
+      "ply": 28,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        13,
+        16
+      ]
+    },
+    {
+      "deck_seed": 97000000065,
+      "policy_seed": 5000065,
+      "mode": "uniform",
+      "ply": 61,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        9,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000066,
+      "policy_seed": 5000066,
+      "mode": "uniform",
+      "ply": 34,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        29,
+        34
+      ],
+      "extent_cols": [
+        13,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000067,
+      "policy_seed": 5000067,
+      "mode": "uniform",
+      "ply": 47,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        24,
+        34
+      ],
+      "extent_cols": [
+        12,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000048,
+      "policy_seed": 5000048,
+      "mode": "uniform",
+      "ply": 73,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000050,
+      "policy_seed": 5000050,
+      "mode": "uniform",
+      "ply": 71,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        12
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        8,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000051,
+      "policy_seed": 5000051,
+      "mode": "uniform",
+      "ply": 27,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        18
+      ],
+      "extent_rows": [
+        29,
+        34
+      ],
+      "extent_cols": [
+        13,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000056,
+      "policy_seed": 5000056,
+      "mode": "uniform",
+      "ply": 63,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        12,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000057,
+      "policy_seed": 5000057,
+      "mode": "uniform",
+      "ply": 65,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000058,
+      "policy_seed": 5000058,
+      "mode": "uniform",
+      "ply": 98,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000072,
+      "policy_seed": 5000072,
+      "mode": "uniform",
+      "ply": 41,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        14,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000073,
+      "policy_seed": 5000073,
+      "mode": "uniform",
+      "ply": 17,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000075,
+      "policy_seed": 5000075,
+      "mode": "uniform",
+      "ply": 43,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000076,
+      "policy_seed": 5000076,
+      "mode": "uniform",
+      "ply": 79,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        9,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000077,
+      "policy_seed": 5000077,
+      "mode": "uniform",
+      "ply": 43,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000078,
+      "policy_seed": 5000078,
+      "mode": "uniform",
+      "ply": 45,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        13,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000081,
+      "policy_seed": 5000081,
+      "mode": "uniform",
+      "ply": 33,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        13
+      ],
+      "extent_rows": [
+        29,
+        34
+      ],
+      "extent_cols": [
+        13,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000082,
+      "policy_seed": 5000082,
+      "mode": "uniform",
+      "ply": 25,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000083,
+      "policy_seed": 5000083,
+      "mode": "uniform",
+      "ply": 53,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000068,
+      "policy_seed": 5000068,
+      "mode": "uniform",
+      "ply": 81,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        14
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        12,
+        23
+      ]
+    },
+    {
+      "deck_seed": 97000000070,
+      "policy_seed": 5000070,
+      "mode": "uniform",
+      "ply": 71,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        24,
+        34
+      ],
+      "extent_cols": [
+        10,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000071,
+      "policy_seed": 5000071,
+      "mode": "uniform",
+      "ply": 115,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        23,
+        34
+      ],
+      "extent_cols": [
+        12,
+        23
+      ]
+    },
+    {
+      "deck_seed": 97000000100,
+      "policy_seed": 5000100,
+      "mode": "uniform",
+      "ply": 33,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        13,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000101,
+      "policy_seed": 5000101,
+      "mode": "uniform",
+      "ply": 95,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        26,
+        34
+      ],
+      "extent_cols": [
+        9,
+        22
+      ]
+    },
+    {
+      "deck_seed": 97000000102,
+      "policy_seed": 5000102,
+      "mode": "uniform",
+      "ply": 25,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000103,
+      "policy_seed": 5000103,
+      "mode": "uniform",
+      "ply": 45,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000085,
+      "policy_seed": 5000085,
+      "mode": "uniform",
+      "ply": 37,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        28,
+        34
+      ],
+      "extent_cols": [
+        14,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000086,
+      "policy_seed": 5000086,
+      "mode": "uniform",
+      "ply": 43,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000087,
+      "policy_seed": 5000087,
+      "mode": "uniform",
+      "ply": 65,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        14
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        10,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000096,
+      "policy_seed": 5000096,
+      "mode": "uniform",
+      "ply": 47,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000097,
+      "policy_seed": 5000097,
+      "mode": "uniform",
+      "ply": 21,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000098,
+      "policy_seed": 5000098,
+      "mode": "uniform",
+      "ply": 59,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000092,
+      "policy_seed": 5000092,
+      "mode": "uniform",
+      "ply": 45,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        24,
+        34
+      ],
+      "extent_cols": [
+        14,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000093,
+      "policy_seed": 5000093,
+      "mode": "uniform",
+      "ply": 69,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        17
+      ],
+      "extent_rows": [
+        22,
+        34
+      ],
+      "extent_cols": [
+        9,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000095,
+      "policy_seed": 5000095,
+      "mode": "uniform",
+      "ply": 85,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        11,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000088,
+      "policy_seed": 5000088,
+      "mode": "uniform",
+      "ply": 117,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        20
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        8,
+        22
+      ]
+    },
+    {
+      "deck_seed": 97000000090,
+      "policy_seed": 5000090,
+      "mode": "uniform",
+      "ply": 53,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000091,
+      "policy_seed": 5000091,
+      "mode": "uniform",
+      "ply": 95,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        10,
+        20
+      ]
+    },
+    {
+      "deck_seed": 97000000108,
+      "policy_seed": 5000108,
+      "mode": "uniform",
+      "ply": 59,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        11,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000110,
+      "policy_seed": 5000110,
+      "mode": "uniform",
+      "ply": 77,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        14
+      ],
+      "extent_rows": [
+        22,
+        34
+      ],
+      "extent_cols": [
+        11,
+        17
+      ]
+    },
+    {
+      "deck_seed": 97000000111,
+      "policy_seed": 5000111,
+      "mode": "uniform",
+      "ply": 35,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000112,
+      "policy_seed": 5000112,
+      "mode": "uniform",
+      "ply": 49,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000113,
+      "policy_seed": 5000113,
+      "mode": "uniform",
+      "ply": 49,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        12,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000115,
+      "policy_seed": 5000115,
+      "mode": "uniform",
+      "ply": 117,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        11
+      ],
+      "extent_rows": [
+        22,
+        34
+      ],
+      "extent_cols": [
+        8,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000116,
+      "policy_seed": 5000116,
+      "mode": "uniform",
+      "ply": 29,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        16
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        14,
+        18
+      ]
+    },
+    {
+      "deck_seed": 97000000117,
+      "policy_seed": 5000117,
+      "mode": "uniform",
+      "ply": 116,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000118,
+      "policy_seed": 5000118,
+      "mode": "uniform",
+      "ply": 75,
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "route": "count_final_scores"
+    },
+    {
+      "deck_seed": 97000000105,
+      "policy_seed": 5000105,
+      "mode": "uniform",
+      "ply": 105,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        15
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        9,
+        21
+      ]
+    },
+    {
+      "deck_seed": 97000000106,
+      "policy_seed": 5000106,
+      "mode": "uniform",
+      "ply": 95,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        18
+      ],
+      "extent_rows": [
+        27,
+        34
+      ],
+      "extent_cols": [
+        6,
+        19
+      ]
+    },
+    {
+      "deck_seed": 97000000107,
+      "policy_seed": 5000107,
+      "mode": "uniform",
+      "ply": 89,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+      "last_tile": [
+        34,
+        21
+      ],
+      "extent_rows": [
+        25,
+        34
+      ],
+      "extent_cols": [
+        11,
+        22
+      ]
+    }
+  ],
+  "matched_error_games": 95,
+  "exception_games": 0,
+  "wallclock_s": 1.1576234530075453,
+  "games_per_s": 103.66065035071283,
+  "plies_per_s_wall": 7746.905936209939,
+  "jsonl": "measurement/rustport_p5/G5_lockstep_fuzz_p5_row30_probe.jsonl",
+  "reproducer_dir": "measurement/rustport_p5/G5_p5_row30_probe_reproducers"
+}

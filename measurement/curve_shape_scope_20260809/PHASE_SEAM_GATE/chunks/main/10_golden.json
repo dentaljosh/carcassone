@@ -1,0 +1,10 @@
+{
+ "chunk": "10_golden",
+ "tree": "main",
+ "rc": 0,
+ "duration_s": 8,
+ "attempt": 1,
+ "peak_rss_kb": 87528,
+ "n_failing": 0,
+ "failing_ids": []
+}

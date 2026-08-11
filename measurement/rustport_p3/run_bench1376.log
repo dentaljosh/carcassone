@@ -1,0 +1,6 @@
+G3: 8 jobs over ['champ'] at sims=[1376], workers=1
+  5/8 jobs | 20 searches | 0 mismatches | 46s
+  8/8 jobs | 32 searches | 0 mismatches | 75s
+G3/search: PASS  32 searches / 44032 sims / 256 field checks / 0 full games (0 plies) | 0 mismatches
+G3/search: throughput py=650 sims/s  rs=6210 sims/s  (9.55x)
+G3/search: result -> /home/doctor/projects/carcassone/measurement/rustport_p3/G3_search_bench1376.json

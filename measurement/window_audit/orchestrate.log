@@ -1,0 +1,23 @@
+[orch] waiting for generation to finish...
+[orch] generation done: wrote 1400 games to measurement/window_audit/gen_games.jsonl
+[orch] running combined audit...
+loaded 400 games from measurement/post_search_residual/data/games_mcts.jsonl
+loaded 200 games from /mnt/c/carc-shared/l23_k4_expand.jsonl
+loaded 96 games from measurement/level2/l23_k4_multisource.jsonl
+loaded 1400 games from measurement/window_audit/gen_games.jsonl
+total games to audit: 2096
+=== WINDOW AUDIT ===
+games=2096 decisions=299165
+% games with any overflow: 0.000%
+% games with any oow tile: 0.000%
+% decisions dropping a legal action: 0.0000% (0/299165)
+% decisions with oow placed tile:    0.0000% (0/299165)
+total dropped legal actions: 0
+total oow placed tiles:      0
+all-overflow (raise) decisions: 0
+wrote measurement/window_audit/audit_combined.json
+[orch] running deep-search check (h1600@W31)...
+checking 0 dropped-action decisions at h1600 W31
+=== 0/0 sampled dropped-action decisions: h1600@W31 prefers a dropped move ===
+wrote measurement/window_audit/deep_search_result.json
+[orch] DONE

@@ -1,0 +1,13 @@
+[package]
+name = "carc-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Replay/digest/fuzz CLI over carc-core"
+
+[[bin]]
+name = "carc-cli"
+path = "src/main.rs"
+
+[dependencies]
+carc-core = { workspace = true }

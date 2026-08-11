@@ -1,0 +1,3 @@
+[cpu_1t          ] forward   10.791 ms (p50 10.711 / p90 11.189)   full   11.565 ms   86.5 pos/s
+
+wrote /home/doctor/eff_linus_out/run_20260729_223554/cells/net_cpu_1t__wsl__rep2.json

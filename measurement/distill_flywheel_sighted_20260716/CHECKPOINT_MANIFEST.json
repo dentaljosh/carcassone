@@ -1,0 +1,1649 @@
+{
+  "_meta": {
+    "doc": "Distill-flywheel stage-1 (fair-champion distillation) \u2014 checkpoint manifest (appended per iter)",
+    "branch": "rod_v2_flywheel",
+    "status": "MEASUREMENT ONLY \u2014 exploratory; no promotion, PRODUCTION.yaml unchanged, v2.7 frozen, v2.8 opt-in",
+    "leaf": "v2.9 Bmild_cap8 curve125 (fair-champion distillation)",
+    "lineage": "latest-chain: warm-from previous iter (unless catastrophic)"
+  },
+  "checkpoints": [
+    {
+      "iter": 0,
+      "id": "distill_iter_00",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_00.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_00.pt",
+      "sha256": "8db88bdb59f1272f5b5e534ec5b0ac35499d699bafde52e81a30138dfcefe95b",
+      "size_bytes": 30083965,
+      "parent": "warmstart_canonical",
+      "parent_sha256": "1e38accde9be11097904b839dd73e9b9f50384f9246b23cf773bea0bd2c7fbc6",
+      "warm_from": "/mnt/c/carc-shared/m2_sighted/warmstart_sighted.pt",
+      "code_commit_at_train": "54fe12fbe97ea2b07e1d9dfbcc3bd0fa5730235c",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-champion distillation)",
+      "selfplay_gen": {
+        "games_target": 600,
+        "npz_produced": 600,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700000000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 11610.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 82031,
+        "n_val_positions": 4316,
+        "total_optimizer_steps": 966,
+        "train_wallclock_sec_metrics": 139.7,
+        "train_wallclock_sec_measured": 154.0,
+        "train_pol_loss": [
+          1.7845,
+          1.6949,
+          1.6556
+        ],
+        "val_pol_loss": [
+          1.753,
+          1.7493,
+          1.7588
+        ],
+        "train_val_loss": [
+          0.3864,
+          0.3431,
+          0.2637
+        ],
+        "policy_entropy": 1.6949,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.3128,
+        "dataset_fingerprint": "3d723c63cbb1fbaa",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage1_it0"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-16T19:22:36Z"
+    },
+    {
+      "iter": 1,
+      "id": "distill_iter_01",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_01.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_01.pt",
+      "sha256": "97d239c436c6cd0d80303a049295282692ff60c078cfa7543a49d478852997cd",
+      "size_bytes": 30083965,
+      "parent": "iter_00",
+      "parent_sha256": "8db88bdb59f1272f5b5e534ec5b0ac35499d699bafde52e81a30138dfcefe95b",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_00.pt",
+      "code_commit_at_train": "04b951ffdcd91613d96c700ac2547c005d05d240",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-champion distillation)",
+      "selfplay_gen": {
+        "games_target": 600,
+        "npz_produced": 600,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700100000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 11560.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 164048,
+        "n_val_positions": 8637,
+        "total_optimizer_steps": 1926,
+        "train_wallclock_sec_metrics": 283.1,
+        "train_wallclock_sec_measured": 304.0,
+        "train_pol_loss": [
+          1.6961,
+          1.6587,
+          1.632
+        ],
+        "val_pol_loss": [
+          1.7183,
+          1.7168,
+          1.7219
+        ],
+        "train_val_loss": [
+          0.3201,
+          0.2505,
+          0.1737
+        ],
+        "policy_entropy": 1.6561,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.5394,
+        "dataset_fingerprint": "aa08deca7d76ca29",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage1_it1"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-16T22:40:27Z"
+    },
+    {
+      "iter": 2,
+      "id": "distill_iter_02",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_02.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_02.pt",
+      "sha256": "1099eb5a08398025254f6e81e3e9693da7036f5b847edaf8a34d9b435bb0cc37",
+      "size_bytes": 30083965,
+      "parent": "iter_01",
+      "parent_sha256": "97d239c436c6cd0d80303a049295282692ff60c078cfa7543a49d478852997cd",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_01.pt",
+      "code_commit_at_train": "2b550fa66d7d25fa769ba1f06960961eaf7552fb",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-champion distillation)",
+      "selfplay_gen": {
+        "games_target": 600,
+        "npz_produced": 600,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700200000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 11643.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 246071,
+        "n_val_positions": 12947,
+        "total_optimizer_steps": 2886,
+        "train_wallclock_sec_metrics": 416.4,
+        "train_wallclock_sec_measured": 446.0,
+        "train_pol_loss": [
+          1.6695,
+          1.6376,
+          1.613
+        ],
+        "val_pol_loss": [
+          1.6759,
+          1.6773,
+          1.6749
+        ],
+        "train_val_loss": [
+          0.2794,
+          0.1958,
+          0.1408
+        ],
+        "policy_entropy": 1.6317,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.5578,
+        "dataset_fingerprint": "f9f0186583a50ebf",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage1_it2"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-17T02:02:03Z"
+    },
+    {
+      "iter": 3,
+      "id": "distill_iter_03",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt",
+      "sha256": "72639a92b0fa6ffcf5bdafe01cb5d35dee851433e3a70b663fc46f0dbe84619f",
+      "size_bytes": 30083965,
+      "parent": "iter_02",
+      "parent_sha256": "1099eb5a08398025254f6e81e3e9693da7036f5b847edaf8a34d9b435bb0cc37",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_02.pt",
+      "code_commit_at_train": "01e6753315629978b232fa17c528aa25b4b6dc32",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-champion distillation)",
+      "selfplay_gen": {
+        "games_target": 600,
+        "npz_produced": 600,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700300000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 11920.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 328080,
+        "n_val_positions": 17267,
+        "total_optimizer_steps": 3846,
+        "train_wallclock_sec_metrics": 554.0,
+        "train_wallclock_sec_measured": 589.0,
+        "train_pol_loss": [
+          1.6368,
+          1.6135,
+          1.5972
+        ],
+        "val_pol_loss": [
+          1.6574,
+          1.6621,
+          1.6702
+        ],
+        "train_val_loss": [
+          0.2363,
+          0.1571,
+          0.1222
+        ],
+        "policy_entropy": 1.621,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.7036,
+        "dataset_fingerprint": "997e7445b4e01556",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage1_it3"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-17T05:30:39Z"
+    },
+    {
+      "iter": 4,
+      "id": "distill_iter_04",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_04.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_04.pt",
+      "sha256": "3de78cbe96b626ff898aa66bdc7b8c8fdc257644beebff66296d99e6358c672c",
+      "size_bytes": 30083965,
+      "parent": "iter_03",
+      "parent_sha256": "72639a92b0fa6ffcf5bdafe01cb5d35dee851433e3a70b663fc46f0dbe84619f",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt",
+      "code_commit_at_train": "40a3acd11db41005cdf848e5705491dd5603c6f1",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700450000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 5038.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 369094,
+        "n_val_positions": 19428,
+        "total_optimizer_steps": 4329,
+        "train_wallclock_sec_metrics": 628.8,
+        "train_wallclock_sec_measured": 669.0,
+        "train_pol_loss": [
+          1.6009,
+          1.5866,
+          1.5803
+        ],
+        "val_pol_loss": [
+          1.6165,
+          1.6239,
+          1.6361
+        ],
+        "train_val_loss": [
+          0.1766,
+          0.1149,
+          0.0965
+        ],
+        "policy_entropy": 1.6069,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.7544,
+        "dataset_fingerprint": "7c722f98e0429080",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it4"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-17T22:59:17Z"
+    },
+    {
+      "iter": 5,
+      "id": "distill_iter_05",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_05.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_05.pt",
+      "sha256": "1a40f2640503700c6a15290babe947104764027d02a4745ae81e821975124cd9",
+      "size_bytes": 30083965,
+      "parent": "iter_04",
+      "parent_sha256": "3de78cbe96b626ff898aa66bdc7b8c8fdc257644beebff66296d99e6358c672c",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_04.pt",
+      "code_commit_at_train": "8f228d1265cd60d56b1a78260c0bd74473ac66a4",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700550000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 7391.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 410112,
+        "n_val_positions": 21575,
+        "total_optimizer_steps": 4809,
+        "train_wallclock_sec_metrics": 699.2,
+        "train_wallclock_sec_measured": 741.0,
+        "train_pol_loss": [
+          1.5862,
+          1.5759,
+          1.5689
+        ],
+        "val_pol_loss": [
+          1.6052,
+          1.6079,
+          1.622
+        ],
+        "train_val_loss": [
+          0.1528,
+          0.0969,
+          0.0834
+        ],
+        "policy_entropy": 1.5922,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8339,
+        "dataset_fingerprint": "22086c8b861fb0a8",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it5"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T01:14:55Z"
+    },
+    {
+      "iter": 6,
+      "id": "distill_iter_06",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_06.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_06.pt",
+      "sha256": "6dfe737140dea8006318b9645a8669fbe5a8dd9bb9d3829a252e8b2483a190c0",
+      "size_bytes": 30084029,
+      "parent": "iter_05",
+      "parent_sha256": "1a40f2640503700c6a15290babe947104764027d02a4745ae81e821975124cd9",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_05.pt",
+      "code_commit_at_train": "f4f276af0e590b3f473655877864aaade136f2d6",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700650000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 4827.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 451111,
+        "n_val_positions": 23741,
+        "total_optimizer_steps": 5289,
+        "train_wallclock_sec_metrics": 765.2,
+        "train_wallclock_sec_measured": 811.0,
+        "train_pol_loss": [
+          1.5742,
+          1.5657,
+          1.5615
+        ],
+        "val_pol_loss": [
+          1.5851,
+          1.5922,
+          1.5953
+        ],
+        "train_val_loss": [
+          0.1309,
+          0.0834,
+          0.0752
+        ],
+        "policy_entropy": 1.5893,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8309,
+        "dataset_fingerprint": "9aebac397b3dd424",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it6"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T02:48:59Z"
+    },
+    {
+      "iter": 7,
+      "id": "distill_iter_07",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_07.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_07.pt",
+      "sha256": "7171a6bdd88743b569b270a4fa8defdff211c8276aef9750bcdf061929e693c3",
+      "size_bytes": 30084029,
+      "parent": "iter_06",
+      "parent_sha256": "6dfe737140dea8006318b9645a8669fbe5a8dd9bb9d3829a252e8b2483a190c0",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_06.pt",
+      "code_commit_at_train": "389fd3c0b434269ae488fb53a5bd01daeecea83d",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700750000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 3920.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 492124,
+        "n_val_positions": 25899,
+        "total_optimizer_steps": 5772,
+        "train_wallclock_sec_metrics": 836.9,
+        "train_wallclock_sec_measured": 886.0,
+        "train_pol_loss": [
+          1.5675,
+          1.56,
+          1.5572
+        ],
+        "val_pol_loss": [
+          1.5808,
+          1.5841,
+          1.5946
+        ],
+        "train_val_loss": [
+          0.1264,
+          0.0752,
+          0.0696
+        ],
+        "policy_entropy": 1.5804,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8491,
+        "dataset_fingerprint": "c1c6212b1c4ae356",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it7"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T04:09:12Z"
+    },
+    {
+      "iter": 8,
+      "id": "distill_iter_08",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_08.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_08.pt",
+      "sha256": "42d27f96af81f4e3584d2c6d927ddbc548af0f31acae7d07e88c746e1007019c",
+      "size_bytes": 30084029,
+      "parent": "iter_07",
+      "parent_sha256": "7171a6bdd88743b569b270a4fa8defdff211c8276aef9750bcdf061929e693c3",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_07.pt",
+      "code_commit_at_train": "56cae6bddc58b004af4347ba7922c96d1c6fcac9",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700850000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 6428.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 533110,
+        "n_val_positions": 28059,
+        "total_optimizer_steps": 6249,
+        "train_wallclock_sec_metrics": 903.8,
+        "train_wallclock_sec_measured": 957.0,
+        "train_pol_loss": [
+          1.5622,
+          1.5553,
+          1.5531
+        ],
+        "val_pol_loss": [
+          1.5729,
+          1.5772,
+          1.5845
+        ],
+        "train_val_loss": [
+          0.1153,
+          0.069,
+          0.0652
+        ],
+        "policy_entropy": 1.598,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8859,
+        "dataset_fingerprint": "dc4c9d48e0844d41",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it8"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T06:12:24Z"
+    },
+    {
+      "iter": 9,
+      "id": "distill_iter_09",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_09.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_09.pt",
+      "sha256": "31a714a781822fef02adadeaea888dae5953226c74fb7215697397e35233fb3a",
+      "size_bytes": 30084029,
+      "parent": "iter_08",
+      "parent_sha256": "42d27f96af81f4e3584d2c6d927ddbc548af0f31acae7d07e88c746e1007019c",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_08.pt",
+      "code_commit_at_train": "c8fc56cc90325dadf3604da2d448dee671ad903b",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "700950000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 4040.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 574126,
+        "n_val_positions": 30215,
+        "total_optimizer_steps": 6732,
+        "train_wallclock_sec_metrics": 976.6,
+        "train_wallclock_sec_measured": 1033.0,
+        "train_pol_loss": [
+          1.5591,
+          1.553,
+          1.5511
+        ],
+        "val_pol_loss": [
+          1.5597,
+          1.5621,
+          1.5676
+        ],
+        "train_val_loss": [
+          0.1064,
+          0.0646,
+          0.0604
+        ],
+        "policy_entropy": 1.5736,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8659,
+        "dataset_fingerprint": "aeeff9957d7e939f",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it9"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T07:37:03Z"
+    },
+    {
+      "iter": 10,
+      "id": "distill_iter_10",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_10.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_10.pt",
+      "sha256": "91d8e3a22fa8386d3e285ed1f64d85cca2fa9804640feea4104f79ddc0c8a21e",
+      "size_bytes": 30084029,
+      "parent": "iter_09",
+      "parent_sha256": "31a714a781822fef02adadeaea888dae5953226c74fb7215697397e35233fb3a",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_09.pt",
+      "code_commit_at_train": "b8404c673d53d75b3d18d1a3a12546e2efd80e4d",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701050000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 3977.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 615148,
+        "n_val_positions": 32378,
+        "total_optimizer_steps": 7212,
+        "train_wallclock_sec_metrics": 1059.9,
+        "train_wallclock_sec_measured": 1104.0,
+        "train_pol_loss": [
+          1.5565,
+          1.5508,
+          1.5493
+        ],
+        "val_pol_loss": [
+          1.5583,
+          1.5626,
+          1.566
+        ],
+        "train_val_loss": [
+          0.104,
+          0.0615,
+          0.0587
+        ],
+        "policy_entropy": 1.53,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.885,
+        "dataset_fingerprint": "c653236deba0a377",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it10"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T09:01:50Z"
+    },
+    {
+      "iter": 11,
+      "id": "distill_iter_11",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_11.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_11.pt",
+      "sha256": "0275c696a6d7706a400af0a817590480c7abf61dcb91564dd2b0f8599a690dfa",
+      "size_bytes": 30084029,
+      "parent": "iter_10",
+      "parent_sha256": "91d8e3a22fa8386d3e285ed1f64d85cca2fa9804640feea4104f79ddc0c8a21e",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_10.pt",
+      "code_commit_at_train": "5e292f5e5a50841a6e82dc3227828993708bee42",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701150000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 3942.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 656149,
+        "n_val_positions": 34534,
+        "total_optimizer_steps": 7692,
+        "train_wallclock_sec_metrics": 1114.9,
+        "train_wallclock_sec_measured": 1178.0,
+        "train_pol_loss": [
+          1.5526,
+          1.5474,
+          1.5463
+        ],
+        "val_pol_loss": [
+          1.5546,
+          1.5572,
+          1.5618
+        ],
+        "train_val_loss": [
+          0.0987,
+          0.0583,
+          0.0559
+        ],
+        "policy_entropy": 1.5656,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8877,
+        "dataset_fingerprint": "8fe933d35b143715",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it11"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T10:27:16Z"
+    },
+    {
+      "iter": 12,
+      "id": "distill_iter_12",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_12.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_12.pt",
+      "sha256": "a12bdee49f53fdbf88e9a84bf93b06681c3bb00a4ff70d105b0dfed824d4b051",
+      "size_bytes": 30084029,
+      "parent": "iter_11",
+      "parent_sha256": "0275c696a6d7706a400af0a817590480c7abf61dcb91564dd2b0f8599a690dfa",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_11.pt",
+      "code_commit_at_train": "8f4b0e3ee0f4dcb7514e81c5fe18eaeac5f7d985",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701250000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 6735.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 615122,
+        "n_val_positions": 32374,
+        "total_optimizer_steps": 7212,
+        "train_wallclock_sec_metrics": 1044.2,
+        "train_wallclock_sec_measured": 1105.0,
+        "train_pol_loss": [
+          1.5531,
+          1.5479,
+          1.5467
+        ],
+        "val_pol_loss": [
+          1.5566,
+          1.5575,
+          1.5622
+        ],
+        "train_val_loss": [
+          0.0985,
+          0.0572,
+          0.0563
+        ],
+        "policy_entropy": 1.5293,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8928,
+        "dataset_fingerprint": "36688f406a09cf0d",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it12"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T12:38:03Z"
+    },
+    {
+      "iter": 13,
+      "id": "distill_iter_13",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_13.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_13.pt",
+      "sha256": "86b73ae20235f9ac11e212717cb97c6bf0c84caa21f8710f84364e47d00cccac",
+      "size_bytes": 30084029,
+      "parent": "iter_12",
+      "parent_sha256": "a12bdee49f53fdbf88e9a84bf93b06681c3bb00a4ff70d105b0dfed824d4b051",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_12.pt",
+      "code_commit_at_train": "6db7f67e502319c0e97489136d71bf79ad5f5e64",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701350000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 3920.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 574117,
+        "n_val_positions": 30207,
+        "total_optimizer_steps": 6732,
+        "train_wallclock_sec_metrics": 971.8,
+        "train_wallclock_sec_measured": 1028.0,
+        "train_pol_loss": [
+          1.5521,
+          1.5472,
+          1.5462
+        ],
+        "val_pol_loss": [
+          1.5644,
+          1.5658,
+          1.57
+        ],
+        "train_val_loss": [
+          0.0959,
+          0.0547,
+          0.0524
+        ],
+        "policy_entropy": 1.5663,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.896,
+        "dataset_fingerprint": "539e3b51bc80e3f4",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it13"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T14:00:38Z"
+    },
+    {
+      "iter": 14,
+      "id": "distill_iter_14",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_14.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_14.pt",
+      "sha256": "85f589096eae032290f27b8c7fa9cfcc6c24f305f7fdaafed361685b9fc30a16",
+      "size_bytes": 30084029,
+      "parent": "iter_13",
+      "parent_sha256": "86b73ae20235f9ac11e212717cb97c6bf0c84caa21f8710f84364e47d00cccac",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_13.pt",
+      "code_commit_at_train": "ff20977364d79b55ad7a76bb1b81312e550d1fcb",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701450000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 4104.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 533102,
+        "n_val_positions": 28062,
+        "total_optimizer_steps": 6249,
+        "train_wallclock_sec_metrics": 907.0,
+        "train_wallclock_sec_measured": 960.0,
+        "train_pol_loss": [
+          1.5545,
+          1.5497,
+          1.5486
+        ],
+        "val_pol_loss": [
+          1.5505,
+          1.5505,
+          1.5543
+        ],
+        "train_val_loss": [
+          0.1008,
+          0.054,
+          0.0507
+        ],
+        "policy_entropy": 1.5423,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.9107,
+        "dataset_fingerprint": "eb3760a8437b15a2",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it14"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T15:25:08Z"
+    },
+    {
+      "iter": 15,
+      "id": "distill_iter_15",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_15.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_15.pt",
+      "sha256": "010414447b2f4638c9aa92dc9c0765bf519abbdaaa068e8c6be03f38b9ca8bb1",
+      "size_bytes": 30084029,
+      "parent": "iter_14",
+      "parent_sha256": "85f589096eae032290f27b8c7fa9cfcc6c24f305f7fdaafed361685b9fc30a16",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_14.pt",
+      "code_commit_at_train": "6b955f02880240e265a05edc36bc8d1b1d850821",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701550000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 3981.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 492086,
+        "n_val_positions": 25903,
+        "total_optimizer_steps": 5772,
+        "train_wallclock_sec_metrics": 832.9,
+        "train_wallclock_sec_measured": 882.0,
+        "train_pol_loss": [
+          1.5536,
+          1.5497,
+          1.5494
+        ],
+        "val_pol_loss": [
+          1.5665,
+          1.5655,
+          1.5668
+        ],
+        "train_val_loss": [
+          0.1006,
+          0.0529,
+          0.0495
+        ],
+        "policy_entropy": 1.5397,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.9031,
+        "dataset_fingerprint": "05b187e50725a8db",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it15"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T16:46:18Z"
+    },
+    {
+      "iter": 16,
+      "id": "distill_iter_16",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt",
+      "sha256": "0c854d742d49b07cef15d2104bee76e01312dbb1612810f18745ff7cf06fa6bd",
+      "size_bytes": 30084029,
+      "parent": "iter_15",
+      "parent_sha256": "010414447b2f4638c9aa92dc9c0765bf519abbdaaa068e8c6be03f38b9ca8bb1",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_15.pt",
+      "code_commit_at_train": "4ae5bc061b2bc2abecf5dc921fad01674e50458b",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701650000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 4166.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 492068,
+        "n_val_positions": 25901,
+        "total_optimizer_steps": 5771,
+        "train_wallclock_sec_metrics": 833.8,
+        "train_wallclock_sec_measured": 883.0,
+        "train_pol_loss": [
+          1.5447,
+          1.5413,
+          1.5407
+        ],
+        "val_pol_loss": [
+          1.5498,
+          1.5495,
+          1.5511
+        ],
+        "train_val_loss": [
+          0.0983,
+          0.0506,
+          0.0484
+        ],
+        "policy_entropy": 1.5303,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8887,
+        "dataset_fingerprint": "c0227286f55e1f11",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it16"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T18:10:33Z"
+    },
+    {
+      "iter": 17,
+      "id": "distill_iter_17",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_17.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_17.pt",
+      "sha256": "c2902d05c945ebf7c6ad46760c3d6dd8f37618ac6eec08456b44543896114e82",
+      "size_bytes": 30084029,
+      "parent": "iter_16",
+      "parent_sha256": "0c854d742d49b07cef15d2104bee76e01312dbb1612810f18745ff7cf06fa6bd",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt",
+      "code_commit_at_train": "bbe531d186824cfd02e8be8e8a0f34df8386815c",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701750000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 6675.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 492071,
+        "n_val_positions": 25899,
+        "total_optimizer_steps": 5771,
+        "train_wallclock_sec_metrics": 832.9,
+        "train_wallclock_sec_measured": 882.0,
+        "train_pol_loss": [
+          1.5372,
+          1.5333,
+          1.5371
+        ],
+        "val_pol_loss": [
+          1.5416,
+          1.5394,
+          1.5541
+        ],
+        "train_val_loss": [
+          0.1046,
+          0.0511,
+          0.0473
+        ],
+        "policy_entropy": 1.5079,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8999,
+        "dataset_fingerprint": "42766c3c754223f3",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it17"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T20:16:55Z"
+    },
+    {
+      "iter": 18,
+      "id": "distill_iter_18",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_18.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_18.pt",
+      "sha256": "6cd68618e0da5e15f843c23fc0a7ad615681366ce64ac201ea86e50f4a6a6a21",
+      "size_bytes": 30084029,
+      "parent": "iter_17",
+      "parent_sha256": "c2902d05c945ebf7c6ad46760c3d6dd8f37618ac6eec08456b44543896114e82",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_17.pt",
+      "code_commit_at_train": "835272a20948d97b1cafd5986461463c1e3bdf23",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701850000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 3984.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 492060,
+        "n_val_positions": 25905,
+        "total_optimizer_steps": 5772,
+        "train_wallclock_sec_metrics": 833.5,
+        "train_wallclock_sec_measured": 882.0,
+        "train_pol_loss": [
+          1.53,
+          1.5264,
+          1.5256
+        ],
+        "val_pol_loss": [
+          1.5324,
+          1.5315,
+          1.5336
+        ],
+        "train_val_loss": [
+          0.0987,
+          0.0503,
+          0.0464
+        ],
+        "policy_entropy": 1.5283,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.9018,
+        "dataset_fingerprint": "f9fedf9d8066a280",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it18"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T21:38:07Z"
+    },
+    {
+      "iter": 19,
+      "id": "distill_iter_19",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_19.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_19.pt",
+      "sha256": "d0bfd921cf1787ef1043d03cbaf8f86f5033a62bb1a505154826e1301349eac6",
+      "size_bytes": 30084029,
+      "parent": "iter_18",
+      "parent_sha256": "6cd68618e0da5e15f843c23fc0a7ad615681366ce64ac201ea86e50f4a6a6a21",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_18.pt",
+      "code_commit_at_train": "cca9c93c5f844f2540b892b542dcad68725cbfca",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "701950000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 4104.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 492055,
+        "n_val_positions": 25902,
+        "total_optimizer_steps": 5772,
+        "train_wallclock_sec_metrics": 831.4,
+        "train_wallclock_sec_measured": 881.0,
+        "train_pol_loss": [
+          1.5257,
+          1.5249,
+          1.5207
+        ],
+        "val_pol_loss": [
+          1.5193,
+          1.5056,
+          1.5084
+        ],
+        "train_val_loss": [
+          0.0967,
+          0.0512,
+          0.0414
+        ],
+        "policy_entropy": 1.5156,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.8892,
+        "dataset_fingerprint": "0385951e0ef6aec5",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it19"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-18T23:01:18Z"
+    },
+    {
+      "iter": 20,
+      "id": "distill_iter_20",
+      "path_local": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_20.pt",
+      "path_remote": "/mnt/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_20.pt",
+      "sha256": "c929b2096c0b1c7c425aadf3ddf1aed1f4eb9dc0343085396e4f885474478fcf",
+      "size_bytes": 30084029,
+      "parent": "iter_19",
+      "parent_sha256": "d0bfd921cf1787ef1043d03cbaf8f86f5033a62bb1a505154826e1301349eac6",
+      "warm_from": "/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_19.pt",
+      "code_commit_at_train": "e7fa4f4590353ca0a692e61f04652f4389d103dc",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": true,
+        "n_scalar_features": 42
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.9 Bmild_cap8 curve125 (fair-net-prior flywheel; severed value loop)",
+      "selfplay_gen": {
+        "games_target": 300,
+        "npz_produced": 300,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "702050000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 4710.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 492089,
+        "n_val_positions": 25890,
+        "total_optimizer_steps": 5772,
+        "train_wallclock_sec_metrics": 836.5,
+        "train_wallclock_sec_measured": 886.0,
+        "train_pol_loss": [
+          1.52,
+          1.5164,
+          1.5165
+        ],
+        "val_pol_loss": [
+          1.5274,
+          1.5271,
+          1.5297
+        ],
+        "train_val_loss": [
+          0.0959,
+          0.0488,
+          0.0459
+        ],
+        "policy_entropy": 1.5203,
+        "baseline_policy_entropy": 1.6351,
+        "entropy_floor_0p5": 0.8175,
+        "value_outcome_corr": 0.9147,
+        "dataset_fingerprint": "1fce679d8f2b7899",
+        "prov_selfplay_leaf": "v2_9_bmild_cap8_curve125",
+        "prov_value_target": "outcome",
+        "prov_run_tag": "distill_stage2_it20"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-07-19T00:34:40Z"
+    }
+  ]
+}

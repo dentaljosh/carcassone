@@ -1,0 +1,145 @@
+{
+  "levels": [
+    200,
+    1600,
+    6400,
+    12800
+  ],
+  "n": 12,
+  "n_match": 12,
+  "verdict": "PASS",
+  "roots": [
+    {
+      "game_id": 2900000010,
+      "ply": 6,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000266,
+      "ply": 4,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000210,
+      "ply": 40,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000127,
+      "ply": 9,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000201,
+      "ply": 87,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000084,
+      "ply": 114,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000390,
+      "ply": 103,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000238,
+      "ply": 78,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000259,
+      "ply": 129,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000108,
+      "ply": 115,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000223,
+      "ply": 131,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    },
+    {
+      "game_id": 2900000344,
+      "ply": 91,
+      "all_match": true,
+      "per_level": {
+        "200": true,
+        "1600": true,
+        "6400": true,
+        "12800": true
+      }
+    }
+  ]
+}

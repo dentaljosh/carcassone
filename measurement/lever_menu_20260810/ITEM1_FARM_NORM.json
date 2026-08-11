@@ -1,0 +1,194 @@
+{
+  "schema": "carcassonne-lever-menu-item1-farm-norm/v1",
+  "generated_at": "2026-08-10T12:17:51",
+  "instrument": "scripts/analyzer/corpus_stats.py via scripts/analyzer/jcz_confirm_adapter.py",
+  "corpus": {
+    "source": "measurement/jcz_match_20260809/confirm.jsonl",
+    "adapted": "measurement/lever_menu_20260810/jcz_confirm_adapted.jsonl",
+    "corpus_stats_json": "measurement/lever_menu_20260810/CORPUS_STATS_jcz_confirm400.json",
+    "n_games": 400,
+    "n_decks": 200,
+    "design": "200 decks x 2 seat-swaps",
+    "band": "1.08e11 (RETIRED -- this reuse is an exploratory decomposition, mints no new strength claim and does not un-retire the band)",
+    "rules_profile": "fixed_v1",
+    "r9": true,
+    "champion_budget": "k8x1376 = 11008 sims/move, rust backend",
+    "opponent": "JCloisterZone LegacyAiPlayer (external, independent implementation)",
+    "verdict_of_record": "champion +111.4 elo / +6.50+-0.86 pts deck-paired, z 7.55 (measurement/jcz_match_20260809/CONFIRM_READOUT.md) -- NOT re-derived here; this item is a decomposition, not a re-verdict."
+  },
+  "replay_gate": {
+    "requirement": "replay must reproduce the archived finals 400/400 before any decomposition number is quoted",
+    "replay_scores_match": 400,
+    "replay_scores_mismatch": 0,
+    "split_ok": 400,
+    "split_failed": 0,
+    "n_games": 400,
+    "result": "PASS 400/400",
+    "mismatch_examples": []
+  },
+  "champion_seat": {
+    "n_seats": 400,
+    "fields": {
+      "final_score": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 99.5425,
+        "sd": 17.027419837303285,
+        "se": 0.8513709918651642,
+        "ci95_halfwidth": 1.6686871440557218,
+        "ci95_lo": 97.87381285594428,
+        "ci95_hi": 101.21118714405573
+      },
+      "during_play": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 48.8,
+        "sd": 16.453168901986427,
+        "se": 0.8226584450993213,
+        "ci95_halfwidth": 1.6124105523946697,
+        "ci95_lo": 47.187589447605326,
+        "ci95_hi": 50.41241055239467
+      },
+      "incomplete_pts": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 18.86,
+        "sd": 9.0199111410524,
+        "se": 0.45099555705262,
+        "ci95_halfwidth": 0.8839512918231353,
+        "ci95_lo": 17.976048708176865,
+        "ci95_hi": 19.743951291823134
+      },
+      "farm_pts": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 31.8825,
+        "sd": 7.906641588121187,
+        "se": 0.39533207940605936,
+        "ci95_halfwidth": 0.7748508756358763,
+        "ci95_lo": 31.107649124364123,
+        "ci95_hi": 32.65735087563588
+      },
+      "farm_pts_per_farmer": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 8.978875,
+        "sd": 2.5725020702866446,
+        "se": 0.12862510351433223,
+        "ci95_halfwidth": 0.2521052028880912,
+        "ci95_lo": 8.72676979711191,
+        "ci95_hi": 9.230980202888091
+      },
+      "first_farm_turn": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 3.105,
+        "sd": 2.592446131042242,
+        "se": 0.1296223065521121,
+        "ci95_halfwidth": 0.25405972084213974,
+        "ci95_lo": 2.8509402791578604,
+        "ci95_hi": 3.3590597208421396
+      }
+    }
+  },
+  "jcz_seat": {
+    "n_seats": 400,
+    "fields": {
+      "final_score": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 93.0475,
+        "sd": 13.778965617335333,
+        "se": 0.6889482808667666,
+        "ci95_halfwidth": 1.3503386304988625,
+        "ci95_lo": 91.69716136950113,
+        "ci95_hi": 94.39783863049887
+      },
+      "during_play": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 56.61,
+        "sd": 18.760404631960558,
+        "se": 0.9380202315980279,
+        "ci95_halfwidth": 1.8385196539321347,
+        "ci95_lo": 54.77148034606787,
+        "ci95_hi": 58.44851965393213
+      },
+      "incomplete_pts": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 35.83,
+        "sd": 9.567651220372047,
+        "se": 0.4783825610186024,
+        "ci95_halfwidth": 0.9376298195964606,
+        "ci95_lo": 34.89237018040354,
+        "ci95_hi": 36.76762981959646
+      },
+      "farm_pts": {
+        "n": 400,
+        "n_null": 0,
+        "mean": 0.6075,
+        "sd": 2.479680582146355,
+        "se": 0.12398402910731773,
+        "ci95_halfwidth": 0.24300869705034275,
+        "ci95_lo": 0.36449130294965726,
+        "ci95_hi": 0.8505086970503428
+      },
+      "farm_pts_per_farmer": {
+        "n": 34,
+        "n_null": 366,
+        "mean": 7.147058823529412,
+        "sd": 5.117600958671212,
+        "se": 0.8776613237360597,
+        "ci95_halfwidth": 1.7202161945226768,
+        "ci95_lo": 5.426842629006735,
+        "ci95_hi": 8.867275018052089
+      },
+      "first_farm_turn": {
+        "n": 34,
+        "n_null": 366,
+        "mean": 55.029411764705884,
+        "sd": 17.180830216151403,
+        "se": 2.94648807364363,
+        "ci95_halfwidth": 5.775116624341514,
+        "ci95_lo": 49.25429514036437,
+        "ci95_hi": 60.8045283890474
+      }
+    }
+  },
+  "primary_statistic": {
+    "description": "champion-seat farm_pts mean +/- 95% CI over 400 champion seats",
+    "mean": 31.8825,
+    "sd": 7.906641588121187,
+    "n": 400,
+    "ci95_lo": 31.107649124364123,
+    "ci95_hi": 32.65735087563588,
+    "ci95_halfwidth": 0.7748508756358763
+  },
+  "reference_points": {
+    "self_play_walled_2752": {
+      "value": 20.49,
+      "sd": 10.7,
+      "n_seats": 898,
+      "source": "measurement/analyzer_20260802/CORPUS_STATS_champ449.md"
+    },
+    "self_play_fixed_v1_11008": {
+      "value": 20.81,
+      "n_seats": 800,
+      "source": "measurement/f9_phase_c/PHASE_C_DESCRIPTIVES.md section 3"
+    },
+    "e4_vs_joshua": {
+      "value": 11.0,
+      "note": "the figure being refereed (champion farm pts vs Joshua, E4 games)"
+    }
+  },
+  "branch": "B",
+  "branch_text": "vs-JCZ champion-seat farm pts/seat (31.88 +/- 0.77) is OUTSIDE all three pre-registered bands: it is not near 11-14 (branch A; CI has zero overlap with that band), and it exceeds the self-play norms by more than 1 sd (+11.07 pts / +1.03 sd above the fixed_v1/11008 norm, using the only sd figure either reference carries), so it is not literally 'near 20' either (branch B as worded). The 95% CI also does not straddle both anchors (branch C requires that); it sits cleanly above both. Reported here as its own outcome, not force-fit to a letter -- but on DECISION CONSEQUENCE it sides with B, and more strongly than B's own anchor: a generic non-self opponent does not suppress the champion's farm points, it ELEVATES them (mechanism below), so the ~11.0-vs-Joshua figure cannot be explained as 'what any non-self opponent produces'. Filed as B on that basis, with this numeric caveat stated plainly rather than silently rounded.",
+  "mechanism_note": "Mechanism (context, not one of the six required decomposition fields): JCZ's `LegacyAiPlayer` places essentially no farmers -- mean 0.085 farmers/seat, 366/400 JCZ seats placed ZERO farmers across the whole game (vs the champion's own farmer count, always >=1). With almost no farm contest, the champion collects farm points close to uncontested, which is the likely reason the observed value exceeds the self-play norms (where both seats run the same farmer-timing policy and split farm real estate) rather than landing between them.",
+  "riders": [
+    "(i) One opponent (JCloisterZone LegacyAiPlayer), one band (1.08e11), one rules epoch (fixed_v1+R9) -- a single external opponent is not 'all opponents'; this number is bounded to that one comparison, not generalized.",
+    "(ii) farm_pts sd is ~10.7 in the self-play reference corpora; 95% CI at 400 seats is ~+-1.05 pts, enough to separate 11 from 20 but NOT to resolve 14 from 17.",
+    "(iii) band 1.08e11 is retired; this reuse is licensed because it is an exploratory decomposition of an existing archive that mints no strength claim -- the same licence the JCZ mining reuse (item 6 lineage) was granted.",
+    "This item plays ZERO games, claims NO band, and mints NO strength claim."
+  ]
+}

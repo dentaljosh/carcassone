@@ -35,11 +35,15 @@ def _checkpoint_path(checkpoint_root: Path, iter_idx: int) -> Path:
     return checkpoint_root / f"iter_{iter_idx:02d}.pt"
 
 
-def _warm_from_for(checkpoint_root: Path, iter_idx: int) -> Path:
-    """At iter 0 the warm-start is the canonical Phase-3 checkpoint;
-    afterwards it's the previous iteration's saved checkpoint."""
+def _warm_from_for(
+    checkpoint_root: Path, iter_idx: int, initial_checkpoint: Path
+) -> Path:
+    """At iter 0 the warm-start is `initial_checkpoint` (defaults to
+    warmstart_canonical.pt for the original Phase-4 recipe; v6+ recipes
+    override this to bootstrap from a prior trained checkpoint).
+    Afterwards it's the previous iteration's saved checkpoint."""
     if iter_idx == 0:
-        return WARMSTART_CANONICAL
+        return initial_checkpoint
     return _checkpoint_path(checkpoint_root, iter_idx - 1)
 
 
@@ -213,11 +217,29 @@ def main(argv: list[str] | None = None) -> int:
              "autocast at inference (master weights stay fp32). ~1.5-2× "
              "forward speedup on Blackwell/Ada Tensor Cores. No-op on CPU.",
     )
+    p.add_argument(
+        "--orchestrator", action="store_true",
+        help="Pass --orchestrator to selfplay + h2h subprocesses. Single "
+             "GPU-side eval server with CPU workers (mp.Queue IPC). Required "
+             "at W>=48 — at that fan-out the per-worker torch allocator pool "
+             "(~600 MB) blows past 32 GB VRAM. Validated 2026-05-12.",
+    )
+    p.add_argument(
+        "--leaf-eval", choices=["nn", "v2_5"], default="nn",
+        help="Leaf-value source for self-play, h2h, AND anchor eval. 'nn' "
+             "(default, back-compat) uses each net's value head; 'v2_5' uses "
+             "tanh(virtual_score_v2/15) — production at +6.6pp wr vs Tier-1 "
+             "(DECISIONS.md 2026-05-14). Applied uniformly to all three "
+             "sub-stages so eval comparisons stay apples-to-apples.",
+    )
     p.add_argument("--workers", type=int, default=8,
                    help="Pool workers for self-play. Default 8 leaves SMT "
-                        "headroom for other workloads on a 5800X; for "
-                        "dedicated runs use --workers 16 (empirical optimum, "
-                        "measured 2026-05-09).")
+                        "headroom for other workloads on a 5800X. Dedicated-run "
+                        "optimum is recipe-dependent: W=16 for the old NN-value "
+                        "leaf (measured 2026-05-09), W=14 for the v2.7 "
+                        "virtual_score leaf (measured 2026-05-15) — the heavier "
+                        "CPU leaf needs 2 threads of headroom for the "
+                        "orchestrator server + main process.")
     p.add_argument("--eval-workers", type=int, default=8,
                    help="Pool workers for head-to-head. Same guidance as "
                         "--workers; head-to-head loads 2 networks/worker "
@@ -271,6 +293,16 @@ def main(argv: list[str] | None = None) -> int:
              "Requires --anchor-gate (else nothing to track). Default OFF "
              "for backward compat with v1/v2 behavior.",
     )
+    p.add_argument(
+        "--initial-checkpoint", type=Path, default=WARMSTART_CANONICAL,
+        help="Initial weights for iter 0 (and the fallback for best-so-far "
+             "when no prior anchor-gate has PASSED yet). Default: "
+             "warmstart_canonical.pt — the heuristic-warmstart baseline. "
+             "For v6+ recipes that bootstrap from a previously-trained "
+             "checkpoint (e.g. selfplay_v5/iter_06.pt), override this. "
+             "Independent of --anchor-checkpoint, which always measures "
+             "absolute progress against a fixed reference.",
+    )
     args = p.parse_args(argv)
     if args.best_so_far_warmstart and not args.anchor_gate:
         print(
@@ -291,7 +323,7 @@ def main(argv: list[str] | None = None) -> int:
         f"output_root={args.output_root}, checkpoint_root={args.checkpoint_root}"
     )
     print(f"  warmstart-mix schedule: {schedule}")
-    print(f"  warm-from at iter 0: {WARMSTART_CANONICAL}")
+    print(f"  warm-from at iter 0 (initial-checkpoint): {args.initial_checkpoint}")
     if args.anchor_gate:
         print(
             f"  anchor-gate: ON ({args.anchor_games} games at sims={args.anchor_sims} "
@@ -313,10 +345,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.best_so_far_warmstart and iter_idx > 0:
             best_iter = _best_so_far_iter(args.output_root, iter_idx)
             if best_iter is None:
-                # No prior iter has PASSED yet — fall back to canonical
-                # warmstart. (Iter 0 always uses warmstart; this branch
-                # triggers when every prior anchor-gate FAILed.)
-                warm_from = WARMSTART_CANONICAL
+                # No prior iter has PASSED yet — fall back to the configured
+                # initial checkpoint (default warmstart_canonical.pt; v6+
+                # recipes override via --initial-checkpoint). Iter 0 uses
+                # the same; this branch triggers when every prior anchor-gate
+                # FAILed.
+                warm_from = args.initial_checkpoint
                 print(
                     f"\n[iter {iter_idx}] best-so-far: no prior PASS — "
                     f"warm-from {warm_from.name}"
@@ -330,7 +364,9 @@ def main(argv: list[str] | None = None) -> int:
                         f"of latest iter_{iter_idx - 1:02d}"
                     )
         else:
-            warm_from = _warm_from_for(args.checkpoint_root, iter_idx)
+            warm_from = _warm_from_for(
+                args.checkpoint_root, iter_idx, args.initial_checkpoint
+            )
         if not warm_from.exists():
             print(f"\nERROR: warm-from checkpoint missing: {warm_from}",
                   file=sys.stderr)
@@ -357,6 +393,10 @@ def main(argv: list[str] | None = None) -> int:
             ]
             if args.fp16:
                 cmd.append("--fp16")
+            if args.orchestrator:
+                cmd.append("--orchestrator")
+            if args.leaf_eval != "nn":
+                cmd.extend(["--leaf-eval", args.leaf_eval])
             _run_subcommand(f"iter {iter_idx}: self-play", cmd)
 
         # Step 2: train
@@ -414,6 +454,10 @@ def main(argv: list[str] | None = None) -> int:
                 ]
                 if args.fp16:
                     cmd.append("--fp16")
+                if args.orchestrator:
+                    cmd.append("--orchestrator")
+                if args.leaf_eval != "nn":
+                    cmd.extend(["--leaf-eval", args.leaf_eval])
                 _run_subcommand(
                     f"iter {iter_idx}: anchor-gate vs {args.anchor_checkpoint.name}",
                     cmd,
@@ -475,6 +519,10 @@ def main(argv: list[str] | None = None) -> int:
             ]
             if args.fp16:
                 cmd.append("--fp16")
+            if args.orchestrator:
+                cmd.append("--orchestrator")
+            if args.leaf_eval != "nn":
+                cmd.extend(["--leaf-eval", args.leaf_eval])
             _run_subcommand(
                 f"iter {iter_idx}: head-to-head vs iter {iter_idx - 1}", cmd
             )

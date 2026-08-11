@@ -1,0 +1,15 @@
+Compiling carcassonne_ai/flat_leaf_cy.pyx because it changed.
+Compiling carcassonne_ai/flat_repr_cy.pyx because it changed.
+[1/2] Cythonizing carcassonne_ai/flat_leaf_cy.pyx
+[2/2] Cythonizing carcassonne_ai/flat_repr_cy.pyx
+running build_ext
+building 'carcassonne_ai.flat_leaf_cy' extension
+creating build/temp.macosx-11.0-arm64-cpython-312/carcassonne_ai
+cc -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -arch arm64 -mmacosx-version-min=11.0 -Wno-nullability-completeness -Wno-expansion-to-defined -Wno-undef-prefix -fPIC -I/Users/joshuaishal/m5_bench_20260728/.venv/include -I/Users/joshuaishal/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/include/python3.12 -c carcassonne_ai/flat_leaf_cy.c -o build/temp.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_leaf_cy.o -O3
+creating build/lib.macosx-11.0-arm64-cpython-312/carcassonne_ai
+cc -bundle -undefined dynamic_lookup -arch arm64 -mmacosx-version-min=11.0 -Wl,-headerpad,40 build/temp.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_leaf_cy.o -L/Users/joshuaishal/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib -o build/lib.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_leaf_cy.cpython-312-darwin.so
+building 'carcassonne_ai.flat_repr_cy' extension
+cc -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -arch arm64 -mmacosx-version-min=11.0 -Wno-nullability-completeness -Wno-expansion-to-defined -Wno-undef-prefix -fPIC -I/Users/joshuaishal/m5_bench_20260728/.venv/include -I/Users/joshuaishal/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/include/python3.12 -c carcassonne_ai/flat_repr_cy.c -o build/temp.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_repr_cy.o -O3
+cc -bundle -undefined dynamic_lookup -arch arm64 -mmacosx-version-min=11.0 -Wl,-headerpad,40 build/temp.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_repr_cy.o -L/Users/joshuaishal/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib -o build/lib.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_repr_cy.cpython-312-darwin.so
+copying build/lib.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_leaf_cy.cpython-312-darwin.so -> carcassonne_ai
+copying build/lib.macosx-11.0-arm64-cpython-312/carcassonne_ai/flat_repr_cy.cpython-312-darwin.so -> carcassonne_ai

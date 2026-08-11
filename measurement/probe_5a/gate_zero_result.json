@@ -1,0 +1,46 @@
+{
+  "verdict": "PARTIAL",
+  "matched_rows": 314911,
+  "miss": 0,
+  "per_feature_r2": {
+    "lockup_self": 0.44013182946282725,
+    "lockup_opp": 0.4618250439468786,
+    "lockup_diff": 0.46506194207458584,
+    "lockup_depth_self": 0.18089269684990528,
+    "lockup_depth_opp": 0.12744627183724067,
+    "lockup_depth_diff": 0.09414640866956814,
+    "open_city_count": 0.7905247258521573,
+    "open_road_count": 0.8641724832456693,
+    "open_city_delta_self": 0.3631465103135254,
+    "open_city_delta_opp": 0.36258303717466933,
+    "contested_open_count": 0.07212153170777091,
+    "closure_race_diff": 0.23313271663164759,
+    "farmers_self": 0.7235680859285568,
+    "farmers_opp": 0.7371352871513503
+  },
+  "dropped_const": [],
+  "mean_r2_all": 0.42256346934616806,
+  "max_r2_all": 0.8641724832456693,
+  "rho1_all": 0.9637946447321695,
+  "bars": {
+    "mean_r2": 0.5,
+    "max_r2": 0.7,
+    "rho1": 0.9
+  },
+  "fb_dims": 48,
+  "tempo_dims_kept": 14,
+  "survivors": [
+    "lockup_self",
+    "lockup_opp",
+    "lockup_diff",
+    "lockup_depth_self",
+    "lockup_depth_opp",
+    "lockup_depth_diff",
+    "open_city_delta_self",
+    "open_city_delta_opp",
+    "contested_open_count",
+    "closure_race_diff"
+  ],
+  "mean_r2_survivors": 0.2800487988668619,
+  "rho1_survivors": 0.7575694756110484
+}

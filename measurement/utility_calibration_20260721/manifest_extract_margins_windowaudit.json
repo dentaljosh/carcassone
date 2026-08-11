@@ -1,0 +1,60 @@
+{
+  "kind": "f0b_prime_margin_extract",
+  "utc": "2026-07-21T13:18:48+00:00",
+  "code_rev": "2563b92",
+  "host": "Doctor",
+  "corpus": {
+    "path": "/home/doctor/projects/carcassone/measurement/window_audit/gen_games.jsonl",
+    "n_games": 1400,
+    "n_games_dropped": 0,
+    "n_positions": 201482,
+    "generator": {
+      "gen": "heur_v2_7",
+      "sims": 100
+    },
+    "replay": "scripts/measurement_infra/root_replay.py (deck_seed + action seq, lossless)"
+  },
+  "leaf": {
+    "fn": "carcassonne_ai.flat_leaf.flat_virtual_score_v2_float",
+    "cy": true,
+    "config": {
+      "v29_meeple_curve": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "closure_p": {
+        "1": 0.5,
+        "2": 0.2,
+        "3": 0.05
+      },
+      "meeple_k": 0.0,
+      "bag_close": false,
+      "v29_punish_k": 0.0,
+      "v29_farm_access_k": 0.0,
+      "v29_meeple_return_k": 0.0,
+      "v29_farm_flip_k": 0.0,
+      "frozen_config_hash": "6dfffd57051690f2"
+    }
+  },
+  "raw_margin": "encode_scalars(state, mover, total_tiles)[4] * 50 == state.scores[mover]-state.scores[opp] (identical to the 07-19 audit column)",
+  "tiles_remaining": "encode_scalars(...)[5] * 72",
+  "win_label": "sign(final score diff, mover POV); draws -> 0.5",
+  "env": {
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1"
+  },
+  "elapsed_s": 1.9953489303588867,
+  "workers": 16
+}

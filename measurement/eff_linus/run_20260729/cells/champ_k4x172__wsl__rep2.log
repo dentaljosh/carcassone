@@ -1,0 +1,12 @@
+bench_champion: AMD Ryzen 9 5900XT 16-Core Processor (x86_64, py3.13.12)
+  leaf path : PURE_PYTHON  <-- ~4.5x slower than the Cython path
+  champion  : puct_priors_v29_bmild_cap8  (YAML budget k4x688)
+  positions : 12 from positions.jsonl
+  budgets   : k4x172  repeat=1
+  out       : /home/doctor/projects/carcassone/measurement/eff_linus/run_20260729/cells/champ_k4x172__wsl__rep2.json
+  -> k4x172 (688 sims/move) ...
+     mean 3.431s  p50 2.704s  p90 5.869s  (n=11, 42s wall)
+
+bench_champion: wrote /home/doctor/projects/carcassone/measurement/eff_linus/run_20260729/cells/champ_k4x172__wsl__rep2.json
+  leaf_path=pure_python  machine=AMD Ryzen 9 5900XT 16-Core Processor
+  k4x172  (  688 sims/move): mean   3.431 s/move   p90   5.869 s/move

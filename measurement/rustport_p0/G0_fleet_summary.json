@@ -1,0 +1,430 @@
+{
+  "gate": "G0/transcendental fleet legs",
+  "utc": "2026-07-31",
+  "fuzz_n_per_impl_fleet": 10000000,
+  "note": "fleet legs run via --via-cli (no maturin on either box); the CLI path was validated on the local box against the wheel-path G0_transcendental.json (identical corpus mismatch counts).",
+  "boxes": {
+    "local_5900XT": {
+      "env": {
+        "host": "Doctor",
+        "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+        "machine": "x86_64",
+        "python": "3.12.3",
+        "python_impl": "CPython",
+        "git_rev": "4908e94-dirty",
+        "utc": "2026-07-31T19:49:40Z",
+        "numpy": "2.4.4",
+        "carc_rs": "0.1.0",
+        "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+        "libc": "glibc 2.39"
+      },
+      "platform_probe": null,
+      "corpus": {
+        "exp": {
+          "exp64": {
+            "n_mismatch": 7205,
+            "n": 201525,
+            "max_ulp": 1
+          },
+          "exp64_fma": {
+            "n_mismatch": 0,
+            "n": 201525,
+            "max_ulp": 0
+          }
+        },
+        "tanh": {
+          "msun": {
+            "n_mismatch": 3,
+            "n": 214333,
+            "max_ulp": 1
+          },
+          "msun_fma": {
+            "n_mismatch": 0,
+            "n": 214333,
+            "max_ulp": 0
+          },
+          "glibc": {
+            "n_mismatch": 3,
+            "n": 214333,
+            "max_ulp": 1
+          },
+          "glibc_fma": {
+            "n_mismatch": 0,
+            "n": 214333,
+            "max_ulp": 0
+          }
+        },
+        "expm1": {
+          "msun": {
+            "n_mismatch": 384,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "msun_fma": {
+            "n_mismatch": 85,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "glibc": {
+            "n_mismatch": 299,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "glibc_fma": {
+            "n_mismatch": 0,
+            "n": 428666,
+            "max_ulp": 0
+          }
+        },
+        "np_tanh_vs_math_tanh": {
+          "n_mismatch": 76644,
+          "n": 214333,
+          "max_ulp": 2
+        }
+      },
+      "fuzz": {
+        "n_per_impl": 100000000,
+        "exp": {
+          "exp64": {
+            "n_mismatch": 34788,
+            "n": 100000000,
+            "max_ulp": 1
+          },
+          "exp64_fma": {
+            "n_mismatch": 0,
+            "n": 100000000,
+            "max_ulp": 0
+          }
+        },
+        "tanh": {
+          "msun": {
+            "n_mismatch": 131428,
+            "n": 100000000,
+            "max_ulp": 3
+          },
+          "msun_fma": {
+            "n_mismatch": 128877,
+            "n": 100000000,
+            "max_ulp": 3
+          },
+          "glibc": {
+            "n_mismatch": 2843,
+            "n": 100000000,
+            "max_ulp": 3
+          },
+          "glibc_fma": {
+            "n_mismatch": 0,
+            "n": 100000000,
+            "max_ulp": 0
+          }
+        }
+      },
+      "verdict": {
+        "corpus_exp_bit_exact_impls": [
+          "corpus_exp_vs_exp64_fma"
+        ],
+        "corpus_tanh_bit_exact_flavors": [
+          "msun_fma",
+          "glibc_fma"
+        ],
+        "corpus_expm1_bit_exact_flavors": [
+          "glibc_fma"
+        ],
+        "fuzz_exp_bit_exact_impls": [
+          "exp64_fma"
+        ],
+        "fuzz_tanh_bit_exact_flavors": [
+          "tanh64[glibc_fma]"
+        ],
+        "platform_parity_achieved": true
+      },
+      "np_exp_sha_default": "0c8d0bfae5132d17cad8d5278c1fadf2",
+      "np_tanh_sha_default": "dac49bd5be7129a6728475dd500ea35e",
+      "np_tanh_bits_change_with_simd": true,
+      "np_exp_bits_change_with_simd": false
+    },
+    "laptop": {
+      "env": {
+        "host": "laptop-wsl",
+        "platform": "Linux-6.18.33.1-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+        "machine": "x86_64",
+        "python": "3.14.4",
+        "python_impl": "CPython",
+        "git_rev": "",
+        "utc": "2026-07-31T19:59:02Z",
+        "numpy": "2.4.6",
+        "carc_rs": "IMPORT FAILED: No module named 'carc_rs'",
+        "libc": "glibc 2.43"
+      },
+      "platform_probe": [
+        "uname: Linux laptop-wsl 6.18.33.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jun  5 01:12:21 UTC 2026 x86_64 GNU/Linux",
+        "os: \"Ubuntu 26.04 LTS\"",
+        "glibc: ldd (Ubuntu GLIBC 2.43-2ubuntu2.3) 2.43",
+        "python: 3.14.4",
+        "numpy: 2.4.6",
+        "cpu:  Intel(R) Core(TM) i7-14650HX",
+        "loadavg:  15:59:23 up 1 day, 49 min,  4 users,  load average: 16.69, 16.22, 16.08"
+      ],
+      "corpus": {
+        "exp": {
+          "exp64": {
+            "n_mismatch": 7205,
+            "n": 201525,
+            "max_ulp": 1
+          },
+          "exp64_fma": {
+            "n_mismatch": 0,
+            "n": 201525,
+            "max_ulp": 0
+          }
+        },
+        "tanh": {
+          "msun": {
+            "n_mismatch": 3,
+            "n": 214333,
+            "max_ulp": 1
+          },
+          "msun_fma": {
+            "n_mismatch": 0,
+            "n": 214333,
+            "max_ulp": 0
+          },
+          "glibc": {
+            "n_mismatch": 3,
+            "n": 214333,
+            "max_ulp": 1
+          },
+          "glibc_fma": {
+            "n_mismatch": 0,
+            "n": 214333,
+            "max_ulp": 0
+          }
+        },
+        "expm1": {
+          "msun": {
+            "n_mismatch": 384,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "msun_fma": {
+            "n_mismatch": 85,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "glibc": {
+            "n_mismatch": 299,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "glibc_fma": {
+            "n_mismatch": 0,
+            "n": 428666,
+            "max_ulp": 0
+          }
+        },
+        "np_tanh_vs_math_tanh": {
+          "n_mismatch": 76644,
+          "n": 214333,
+          "max_ulp": 2
+        }
+      },
+      "fuzz": {
+        "n_per_impl": 10000000,
+        "exp": {
+          "exp64": {
+            "n_mismatch": 3469,
+            "n": 10000000,
+            "max_ulp": 1
+          },
+          "exp64_fma": {
+            "n_mismatch": 0,
+            "n": 10000000,
+            "max_ulp": 0
+          }
+        },
+        "tanh": {
+          "msun": {
+            "n_mismatch": 13044,
+            "n": 10000000,
+            "max_ulp": 3
+          },
+          "msun_fma": {
+            "n_mismatch": 12795,
+            "n": 10000000,
+            "max_ulp": 3
+          },
+          "glibc": {
+            "n_mismatch": 273,
+            "n": 10000000,
+            "max_ulp": 3
+          },
+          "glibc_fma": {
+            "n_mismatch": 0,
+            "n": 10000000,
+            "max_ulp": 0
+          }
+        }
+      },
+      "verdict": {
+        "corpus_exp_bit_exact_impls": [
+          "corpus_exp_vs_exp64_fma"
+        ],
+        "corpus_tanh_bit_exact_flavors": [
+          "msun_fma",
+          "glibc_fma"
+        ],
+        "corpus_expm1_bit_exact_flavors": [
+          "glibc_fma"
+        ],
+        "fuzz_exp_bit_exact_impls": [
+          "exp64_fma"
+        ],
+        "fuzz_tanh_bit_exact_flavors": [
+          "tanh64[glibc_fma]"
+        ],
+        "platform_parity_achieved": true
+      },
+      "np_exp_sha_default": "0c8d0bfae5132d17cad8d5278c1fadf2",
+      "np_tanh_sha_default": "dac49bd5be7129a6728475dd500ea35e",
+      "np_tanh_bits_change_with_simd": true,
+      "np_exp_bits_change_with_simd": false
+    },
+    "m5": {
+      "env": {
+        "host": "Mac",
+        "platform": "macOS-26.5.2-arm64-arm-64bit",
+        "machine": "arm64",
+        "python": "3.12.13",
+        "python_impl": "CPython",
+        "git_rev": "",
+        "utc": "2026-07-31T20:00:12Z",
+        "numpy": "2.5.1",
+        "carc_rs": "IMPORT FAILED: No module named 'carc_rs'",
+        "libc": " "
+      },
+      "platform_probe": [
+        "uname: Darwin Mac 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:17 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T8142 arm64",
+        "sw_vers: macOS 26.5.2 25F84",
+        "libSystem: \t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)",
+        "cc: Apple clang version 21.0.0 (clang-2100.1.1.101)",
+        "rustc: rustc 1.96.0 (ac68faa20 2026-05-25)",
+        "python: 3.12.13",
+        "numpy: 2.5.1",
+        "cpu: Apple M5",
+        "loadavg: 16:00  up 9 days, 13:54, 2 users, load averages: 2.56 2.48 2.36"
+      ],
+      "corpus": {
+        "exp": {
+          "exp64": {
+            "n_mismatch": 7206,
+            "n": 201525,
+            "max_ulp": 1
+          },
+          "exp64_fma": {
+            "n_mismatch": 1,
+            "n": 201525,
+            "max_ulp": 1
+          }
+        },
+        "tanh": {
+          "msun": {
+            "n_mismatch": 68377,
+            "n": 214333,
+            "max_ulp": 2
+          },
+          "msun_fma": {
+            "n_mismatch": 68380,
+            "n": 214333,
+            "max_ulp": 2
+          },
+          "glibc": {
+            "n_mismatch": 68377,
+            "n": 214333,
+            "max_ulp": 2
+          },
+          "glibc_fma": {
+            "n_mismatch": 68380,
+            "n": 214333,
+            "max_ulp": 2
+          }
+        },
+        "expm1": {
+          "msun": {
+            "n_mismatch": 37833,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "msun_fma": {
+            "n_mismatch": 37540,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "glibc": {
+            "n_mismatch": 37918,
+            "n": 428666,
+            "max_ulp": 1
+          },
+          "glibc_fma": {
+            "n_mismatch": 37625,
+            "n": 428666,
+            "max_ulp": 1
+          }
+        },
+        "np_tanh_vs_math_tanh": {
+          "n_mismatch": 34978,
+          "n": 214333,
+          "max_ulp": 1
+        }
+      },
+      "fuzz": {
+        "n_per_impl": 10000000,
+        "exp": {
+          "exp64": {
+            "n_mismatch": 10029,
+            "n": 10000000,
+            "max_ulp": 1
+          },
+          "exp64_fma": {
+            "n_mismatch": 9200,
+            "n": 10000000,
+            "max_ulp": 1
+          }
+        },
+        "tanh": {
+          "msun": {
+            "n_mismatch": 163339,
+            "n": 10000000,
+            "max_ulp": 2
+          },
+          "msun_fma": {
+            "n_mismatch": 163292,
+            "n": 10000000,
+            "max_ulp": 2
+          },
+          "glibc": {
+            "n_mismatch": 176085,
+            "n": 10000000,
+            "max_ulp": 2
+          },
+          "glibc_fma": {
+            "n_mismatch": 176025,
+            "n": 10000000,
+            "max_ulp": 2
+          }
+        }
+      },
+      "verdict": {
+        "corpus_exp_bit_exact_impls": [],
+        "corpus_tanh_bit_exact_flavors": [],
+        "corpus_expm1_bit_exact_flavors": [],
+        "fuzz_exp_bit_exact_impls": [],
+        "fuzz_tanh_bit_exact_flavors": [],
+        "platform_parity_achieved": false
+      },
+      "np_exp_sha_default": "1da2cea9978ba12b6b107f846f3e947d",
+      "np_tanh_sha_default": "dac49bd5be7129a6728475dd500ea35e",
+      "np_tanh_bits_change_with_simd": false,
+      "np_exp_bits_change_with_simd": false
+    }
+  }
+}

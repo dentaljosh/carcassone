@@ -1,0 +1,130 @@
+[menu-fair primary Doctor] 2026-08-10_14:06:03 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-10_14:06:03 START sub=b_farmgrowthoff_n1600_b118e9 n=1600 band=118000000000 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/lever_menu_20260810/cells/menu_farmgrowthoff_fixed_v1_vs_fairchamp11008.json
+[leaf-override] WARNING: F7b farm knockout set (farm_base_off=False, farm_growth_off=True) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, ~12.5x slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=86ecb5375676feae frozen_config_hash=3c4e2dc2fac7d465 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf86ecb537]: info=fair n=1600 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 1600 to play, 14 workers, out=/mnt/c/carc-shared/lever_menu_20260810/b_farmgrowthoff_n1600_b118e9
+  10/1600 played (18.8s/game, ~498 min left)
+  20/1600 played (17.0s/game, ~449 min left)
+  30/1600 played (15.8s/game, ~413 min left)
+  40/1600 played (14.0s/game, ~363 min left)
+  50/1600 played (14.2s/game, ~367 min left)
+  60/1600 played (14.4s/game, ~370 min left)
+  70/1600 played (14.8s/game, ~377 min left)
+  80/1600 played (14.3s/game, ~362 min left)
+  90/1600 played (13.9s/game, ~349 min left)
+  100/1600 played (13.9s/game, ~348 min left)
+  110/1600 played (14.1s/game, ~350 min left)
+  120/1600 played (13.8s/game, ~339 min left)
+  130/1600 played (13.9s/game, ~341 min left)
+  140/1600 played (13.7s/game, ~334 min left)
+  150/1600 played (13.7s/game, ~331 min left)
+  160/1600 played (13.7s/game, ~330 min left)
+  170/1600 played (13.8s/game, ~328 min left)
+  180/1600 played (13.8s/game, ~327 min left)
+  190/1600 played (13.9s/game, ~326 min left)
+  200/1600 played (13.6s/game, ~318 min left)
+  210/1600 played (13.7s/game, ~317 min left)
+  220/1600 played (13.8s/game, ~317 min left)
+  230/1600 played (13.8s/game, ~315 min left)
+  240/1600 played (13.7s/game, ~310 min left)
+  250/1600 played (13.7s/game, ~309 min left)
+  260/1600 played (13.7s/game, ~306 min left)
+  270/1600 played (13.8s/game, ~305 min left)
+  280/1600 played (13.8s/game, ~303 min left)
+  290/1600 played (13.8s/game, ~301 min left)
+  300/1600 played (13.6s/game, ~295 min left)
+  310/1600 played (13.7s/game, ~295 min left)
+  320/1600 played (13.9s/game, ~296 min left)
+  330/1600 played (13.6s/game, ~288 min left)
+  340/1600 played (13.7s/game, ~287 min left)
+  350/1600 played (13.7s/game, ~286 min left)
+  360/1600 played (13.7s/game, ~283 min left)
+  370/1600 played (13.6s/game, ~280 min left)
+  380/1600 played (13.7s/game, ~278 min left)
+  390/1600 played (13.7s/game, ~276 min left)
+  400/1600 played (13.7s/game, ~273 min left)
+  410/1600 played (13.7s/game, ~271 min left)
+  420/1600 played (13.7s/game, ~269 min left)
+  430/1600 played (13.6s/game, ~266 min left)
+  440/1600 played (13.6s/game, ~263 min left)
+  450/1600 played (13.7s/game, ~262 min left)
+  460/1600 played (13.6s/game, ~258 min left)
+  470/1600 played (13.6s/game, ~257 min left)
+  480/1600 played (13.6s/game, ~254 min left)
+  490/1600 played (13.5s/game, ~250 min left)
+  500/1600 played (13.7s/game, ~250 min left)
+  510/1600 played (13.6s/game, ~247 min left)
+  520/1600 played (13.6s/game, ~244 min left)
+  530/1600 played (13.6s/game, ~243 min left)
+  540/1600 played (13.6s/game, ~241 min left)
+  550/1600 played (13.5s/game, ~237 min left)
+  560/1600 played (13.6s/game, ~236 min left)
+  570/1600 played (13.6s/game, ~234 min left)
+  580/1600 played (13.6s/game, ~232 min left)
+  590/1600 played (13.6s/game, ~229 min left)
+  600/1600 played (13.6s/game, ~227 min left)
+  610/1600 played (13.6s/game, ~224 min left)
+  620/1600 played (13.6s/game, ~222 min left)
+  630/1600 played (13.6s/game, ~220 min left)
+  640/1600 played (13.6s/game, ~218 min left)
+  650/1600 played (13.6s/game, ~215 min left)
+  660/1600 played (13.6s/game, ~213 min left)
+  670/1600 played (13.6s/game, ~211 min left)
+  680/1600 played (13.6s/game, ~209 min left)
+  690/1600 played (13.6s/game, ~206 min left)
+  700/1600 played (13.6s/game, ~204 min left)
+  710/1600 played (13.6s/game, ~201 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 1600   candidate: 794W / 27D / 779L   winrate 0.505 (z=+0.37)
+avg score diff (candidate - opponent): +0.49
+ELO: +3.3  (+/- 8.7 1sigma)
+PAIRED: 800 decks   mean seat-balanced margin +0.49   z = +1.03
+prefix ms/move: candidate 1521  opponent 1574  (ratio 0.97x)
+fair endgame: candidate latched 1600/1600 games, 1.29s solver/game, timeouts=0
+fair endgame: opponent  latched 1600/1600 games, 1.23s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=1600 (1σ≈±9); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/lever_menu_20260810/b_farmgrowthoff_n1600_b118e9/summary.json
+[menu-fair primary Doctor] 2026-08-10_16:47:43 harness pass 1 rc=0 records=1600/1600
+[menu-fair primary Doctor] 2026-08-10_16:47:44 END sub=b_farmgrowthoff_n1600_b118e9 records=1600/1600 in 9701s after 1 pass(es)
+{
+  "label": "item2_farmgrowthoff_n1600_b118e9",
+  "dir": "/mnt/c/carc-shared/lever_menu_20260810/b_farmgrowthoff_n1600_b118e9",
+  "adjudicated": false,
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 1600,
+  "n": 1600,
+  "n_paired": 800,
+  "W": 794,
+  "D": 27,
+  "L": 779,
+  "elo": 3.257304045340538,
+  "elo_sig_1sigma": 8.686271367362526,
+  "paired_z": 1.034414541935667,
+  "paired_mean_margin": 0.485625,
+  "champ_prefix_ms_per_move": 1521.3277204303024,
+  "wiring": {
+    "code_rev": "cd39f5dd9-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "86ecb5375676feae",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "cand_leaf_json": "/home/doctor/projects/carcassone/measurement/lever_menu_20260810/cells/menu_farmgrowthoff_fixed_v1_vs_fairchamp11008.json",
+    "cand_curve_drift_allowed": true,
+    "cand_k_dets": 8,
+    "cand_sims_per_det": 1376,
+    "cand_total_sims": 11008,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "opp_total_sims": 11008,
+    "band_seed_start": 118000000000,
+    "n_decks": 800,
+    "paired": true
+  },
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true
+}

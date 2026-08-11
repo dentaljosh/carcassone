@@ -1,0 +1,15 @@
+'\\wsl.localhost\Ubuntu\home\doctor'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+bench_champion: Intel64 Family 6 Model 183 Stepping 1, GenuineIntel (AMD64, py3.13.14)
+  leaf path : PURE_PYTHON  <-- ~4.5x slower than the Cython path
+  champion  : puct_priors_v29_bmild_cap8  (YAML budget k4x688)
+  positions : 12 from positions.jsonl
+  budgets   : k1x32  repeat=1
+  out       : C:\carc-bench-eff_linus\stage\out_champ_k1x32__win__rep3.json
+  -> k1x32 (32 sims/move) ...
+     mean 0.112s  p50 0.113s  p90 0.145s  (n=11, 1s wall)
+
+bench_champion: wrote C:\carc-bench-eff_linus\stage\out_champ_k1x32__win__rep3.json
+  leaf_path=pure_python  machine=AMD64
+  k1x32   (   32 sims/move): mean   0.112 s/move   p90   0.145 s/move

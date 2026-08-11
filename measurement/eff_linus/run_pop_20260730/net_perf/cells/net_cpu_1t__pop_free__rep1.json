@@ -1,0 +1,345 @@
+{
+  "manifest": {
+    "script": "scripts/measurement_infra/net_transport_bench.py",
+    "purpose": "G3 forward-transport pricing (batch-1 GPU vs CPU-Nt vs batched GPU)",
+    "not_a_strength_measurement": true,
+    "decision_rule": "if clean CPU-1t batch-1 <= ~3x clean GPU batch-1, single-game deploy should default net-on-CPU (composes with k-parallel, frees the GPU)",
+    "ckpt": "/home/pop/carc-pop-bench/m5_bench_20260728/bundle/net/distill_iter_03.pt",
+    "ckpt_sha256": "6e2679908d79a76cd2d66789d992676a5bfa85946a1543968982b308873751a1",
+    "ckpt_sha256_expected": "6e2679908d79a76cd2d66789d992676a5bfa85946a1543968982b308873751a1",
+    "smoke": false,
+    "smoke_is_not_a_measurement": false,
+    "forced": false,
+    "rows_requested": [
+      "cpu_1t"
+    ],
+    "calls": 2000,
+    "warmup": 200,
+    "boards": 16,
+    "torch_version": "2.11.0+cpu",
+    "torch_cuda_version": null,
+    "cuda_available": false,
+    "cuda_device_names": [],
+    "cpu_count": 24,
+    "platform": "Linux-6.17.9-76061709-generic-x86_64-with-glibc2.35",
+    "python": "3.13.14",
+    "hostname": "pop-os",
+    "parent_thread_env": {
+      "OMP_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "CUDA_VISIBLE_DEVICES": null,
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "0"
+    },
+    "git_rev": null,
+    "started_utc": "2026-07-30T17:15:14Z"
+  },
+  "state_start": {
+    "t": 1785431714.5780904,
+    "loadavg": {
+      "1m": 1.04,
+      "5m": 0.88,
+      "15m": 0.83
+    },
+    "loadavg_available": true,
+    "os": "Linux",
+    "nvidia_smi": {
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "power_w": 7.03,
+          "util_pct": 0.0,
+          "mem_used_mib": 257.0,
+          "mem_total_mib": 8188.0,
+          "sm_clock_mhz": 210.0
+        }
+      ]
+    }
+  },
+  "rows": [
+    {
+      "row": "cpu_1t",
+      "spec": {
+        "device": "cpu",
+        "batch": 1,
+        "threads": 1,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785431715.09317,
+        "loadavg": {
+          "1m": 1.04,
+          "5m": 0.88,
+          "15m": 0.83
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+              "power_w": 7.05,
+              "util_pct": 0.0,
+              "mem_used_mib": 257.0,
+              "mem_total_mib": 8188.0,
+              "sm_clock_mhz": 210.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 1,
+      "torch_num_interop_threads": 16,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 11.273346900501338,
+          "p50_ms": 11.256231999595911,
+          "p90_ms": 11.639843000011751,
+          "p99_ms": 11.947358999805147,
+          "min_ms": 10.70767999999589,
+          "max_ms": 12.068712000200321,
+          "stdev_ms": 0.26920554534604796,
+          "per_item_mean_ms": 11.273346900501338,
+          "items_per_s": 88.70480158430404
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 10.474187648502266,
+          "p50_ms": 10.448429999996733,
+          "p90_ms": 10.615847000281065,
+          "p99_ms": 10.885899000186328,
+          "min_ms": 10.311599000033311,
+          "max_ms": 11.471626999991713,
+          "stdev_ms": 0.11681630245771543,
+          "per_item_mean_ms": 10.474187648502266,
+          "items_per_s": 95.47279784919577
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785431763.071716,
+        "loadavg": {
+          "1m": 1.07,
+          "5m": 0.92,
+          "15m": 0.84
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+              "power_w": 7.36,
+              "util_pct": 0.0,
+              "mem_used_mib": 257.0,
+              "mem_total_mib": 8188.0,
+              "sm_clock_mhz": 210.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "CUDA_VISIBLE_DEVICES": ""
+      },
+      "wallclock_s": 48.62748725399979
+    }
+  ],
+  "state_end": {
+    "t": 1785431763.2277694,
+    "loadavg": {
+      "1m": 1.07,
+      "5m": 0.92,
+      "15m": 0.84
+    },
+    "loadavg_available": true,
+    "os": "Linux",
+    "nvidia_smi": {
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "power_w": 7.54,
+          "util_pct": 0.0,
+          "mem_used_mib": 257.0,
+          "mem_total_mib": 8188.0,
+          "sm_clock_mhz": 210.0
+        }
+      ]
+    }
+  }
+}

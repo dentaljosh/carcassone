@@ -1,0 +1,18 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688-oracle3_vs_fairchamp_k2-leafa36d2e15]: info=fair n=4 paired=True K=2 k_dets=4 sims=688 | 0 cached, 4 to play, 4 workers, out=/mnt/c/carc-shared/classical_search/gateA_fair_smoke
+  4/4 played (281.1s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 4   candidate: 2W / 0D / 2L   winrate 0.500 (z=+0.00)
+avg score diff (candidate - opponent): -0.50
+ELO: +0.0  (+/- 173.7 1sigma)
+PAIRED: 2 decks   mean seat-balanced margin -0.50   z = -0.20
+prefix ms/move: candidate 11738  opponent 3097  (ratio 3.79x)
+fair endgame: candidate latched 4/4 games, 13.38s solver/game, timeouts=0
+fair endgame: opponent  latched 4/4 games, 16.67s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=4 (1σ≈±174); a >=35-elo verdict needs n>=400.
+oracle-prior: 4 games — 980 per-world pre-searches — pre 10410 + main 2982 ms/move (total 13392, 4.49x main-only; leaf ratio 2.95x)
+[summary.json] wrote /mnt/c/carc-shared/classical_search/gateA_fair_smoke/summary.json

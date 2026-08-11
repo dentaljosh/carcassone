@@ -1,0 +1,54 @@
+[wait] waiting for oracle_score_pilot to exit ...
+[census] roots=898 from /mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl
+[census] 50/898  20s
+[census] 100/898  40s
+[census] 150/898  62s
+[census] 200/898  82s
+[census] 250/898  101s
+[census] 300/898  121s
+[census] 350/898  141s
+[census] 400/898  160s
+[census] 450/898  180s
+[census] 500/898  199s
+[census] 550/898  219s
+[census] 600/898  239s
+[census] 650/898  257s
+[census] 700/898  276s
+[census] 750/898  298s
+[census] 800/898  319s
+[census] 850/898  339s
+[census] 898 roots in 362s (0 failures)
+{
+  "n": 873,
+  "k_remaining_median": 38.0,
+  "n_legal_median": 11.0,
+  "v_std_mean": 0.0934418475804025,
+  "v_std_median": 0.06645902105149348,
+  "v_range_median": 0.14704400523284744,
+  "v_range_mean": 0.20354965554211474,
+  "n_distinct_argmax_mean": 1.4089347079037802,
+  "argmax_disagree_rate": 0.3150057273768614,
+  "argmax_disagree_ci68": [
+    0.29950340462866176,
+    0.3309313779800339
+  ],
+  "changed_k1_rate": 0.20504009163802978,
+  "changed_k2_rate": 0.13287514318442153,
+  "changed_k3_rate": 0.07101947308132875,
+  "changed_k2_ci68": [
+    0.12180579282565426,
+    0.14478459619036402
+  ],
+  "changed_k3_ci68": [
+    0.06280811453022787,
+    0.08021248043544717
+  ],
+  "dup_any_rate_group0": 0.025200458190148912,
+  "dup_any_rate_rep": 0.024233963344788088,
+  "dup_wasted_worlds_mean_rep": 0.037371134020618556,
+  "pooled_top2_gap_median": 0.0602545269473093,
+  "dup_p1_rep": 0.3894974226804124,
+  "dup_p2_rep": 0.0637528636884307,
+  "dup_p3_rep": 0.028708476517754867
+}
+[census] wrote /mnt/c/carc-shared/classical_search/adaptive_k_census/rows_main.jsonl + summary_main.json + manifest_main.json

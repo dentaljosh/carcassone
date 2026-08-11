@@ -1,0 +1,65 @@
+{
+  "args": {
+    "budget": 4000000,
+    "leg": [
+      "golden",
+      "v2"
+    ],
+    "max_k": 6,
+    "max_k_clair": 4,
+    "max_k_marg": 3,
+    "max_mismatch_report": 200,
+    "out": null,
+    "per_k": 25,
+    "rules_profile": null,
+    "synth_max_k": 3,
+    "synth_n": 6,
+    "synth_seed_base": 880000,
+    "tag": "smoke",
+    "workers": 1
+  },
+  "carc_rs_version": "0.1.0",
+  "cells": {
+    "frozen_marginalized": 14,
+    "live_marginalized": 14,
+    "py_clair_vs_marg": 12,
+    "rs_clair_vs_marg": 12,
+    "v2_clairvoyant": 12,
+    "v2_marginalized": 12
+  },
+  "checks": 76,
+  "elapsed_s": 11.6,
+  "gate": "G7/exact_solver",
+  "generated": "2026-08-03T09:24:09",
+  "mismatches": [],
+  "n_mismatches": 0,
+  "per_leg": {
+    "golden": {
+      "cells": {
+        "frozen_marginalized": 14,
+        "live_marginalized": 14
+      },
+      "checks": 28,
+      "n_mismatches": 0,
+      "positions": 14,
+      "skipped": 0
+    },
+    "v2": {
+      "cells": {
+        "py_clair_vs_marg": 12,
+        "rs_clair_vs_marg": 12,
+        "v2_clairvoyant": 12,
+        "v2_marginalized": 12
+      },
+      "checks": 48,
+      "n_mismatches": 0,
+      "positions": 12,
+      "skipped": 0
+    }
+  },
+  "positions": 26,
+  "r9_enabled": false,
+  "rules_profile": "walled",
+  "skipped_budget": 0,
+  "verdict": "PASS"
+}

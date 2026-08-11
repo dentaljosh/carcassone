@@ -1,0 +1,13 @@
+[2026-07-26_23:06:54] === pareto curve queue START on Doctor ===
+[2026-07-26_23:06:54] share=/mnt/c/carc-shared W=16 n=400 rev=0bfdc00
+[2026-07-26_23:06:54] --- CELL pareto_k4x344_1376_vs_deploy : k4x344 = 1376 sims vs deploy 2752, band 60000000000
+[2026-07-27_00:46:03] --- CELL pareto_k4x344_1376_vs_deploy exited rc=0
+[2026-07-27_00:46:03] --- CELL pareto_k2x688_1376_vs_deploy : k2x688 = 1376 sims vs deploy 2752, band 60000000000
+[2026-07-27_02:22:54] --- CELL pareto_k2x688_1376_vs_deploy exited rc=0
+[2026-07-27_02:22:54] --- CELL pareto_k4x172_688_vs_deploy : k4x172 = 688 sims vs deploy 2752, band 62000000000
+[2026-07-27_03:47:15] --- CELL pareto_k4x172_688_vs_deploy exited rc=0
+[2026-07-27_03:47:15] --- CELL pareto_k2x344_688_vs_deploy : k2x344 = 688 sims vs deploy 2752, band 62000000000
+[2026-07-27_05:11:44] --- CELL pareto_k2x344_688_vs_deploy exited rc=0
+[2026-07-27_05:11:44] --- CELL pareto_k4x1376_5504_vs_deploy : k4x1376 = 5504 sims vs deploy 2752, band 64000000000
+[2026-07-27_08:10:45] --- CELL pareto_k4x1376_5504_vs_deploy exited rc=0
+[2026-07-27_08:10:45] === pareto curve queue DONE on Doctor ===

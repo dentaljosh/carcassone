@@ -1,0 +1,373 @@
+{
+  "ranker_baseline": "v29_leaf",
+  "rankers": [
+    "v29_leaf",
+    "cap12",
+    "flatk25"
+  ],
+  "checkpoints": [],
+  "arm_ckpts": [],
+  "leaf_variants": {
+    "cap12": {
+      "overrides": {
+        "V25_CAP": "12"
+      },
+      "bag_close": null,
+      "resolved": {
+        "closure_p": {
+          "1": 0.5,
+          "2": 0.2,
+          "3": 0.05
+        },
+        "bonus_cap": 12.0,
+        "opp_bonus_cap": 12.0,
+        "meeple_k": 2.0,
+        "v29_meeple_curve": [
+          -8.0,
+          -4.0,
+          -1.0,
+          0.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      }
+    },
+    "flatk25": {
+      "overrides": {
+        "V29_MEEPLE_CURVE": "",
+        "V25_MEEPLE_K": "2.5"
+      },
+      "bag_close": null,
+      "resolved": {
+        "closure_p": {
+          "1": 0.5,
+          "2": 0.2,
+          "3": 0.05
+        },
+        "bonus_cap": 8.0,
+        "opp_bonus_cap": 8.0,
+        "meeple_k": 2.5,
+        "v29_meeple_curve": null
+      }
+    }
+  },
+  "max_k": 2,
+  "budget": 5000000,
+  "qprobe": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/qprobe_A/probe.jsonl",
+  "pool": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/pool_A.jsonl",
+  "n_roots_total": 10067,
+  "n_candidates": 1119,
+  "n_scored": 6,
+  "n_skipped": 0,
+  "n_errors": 0,
+  "aggregate": {
+    "v29_leaf": {
+      "n": 6,
+      "solver_regret_mean": 1.1667,
+      "solver_regret_median": 0.0,
+      "solver_regret_max": 7.0,
+      "top1_rate": 0.8333,
+      "tau_mean": 0.698,
+      "solve_secs_mean": 7.87,
+      "solve_secs_total": 47.2
+    },
+    "cap12": {
+      "n": 6,
+      "solver_regret_mean": 1.1667,
+      "solver_regret_median": 0.0,
+      "solver_regret_max": 7.0,
+      "top1_rate": 0.8333,
+      "tau_mean": 0.6693,
+      "solve_secs_mean": 7.87,
+      "solve_secs_total": 47.2
+    },
+    "flatk25": {
+      "n": 6,
+      "solver_regret_mean": 0.0,
+      "solver_regret_median": 0.0,
+      "solver_regret_max": 0.0,
+      "top1_rate": 1.0,
+      "tau_mean": 0.7001,
+      "solve_secs_mean": 7.87,
+      "solve_secs_total": 47.2
+    }
+  },
+  "by_k": {
+    "v29_leaf": {
+      "2": {
+        "n": 6,
+        "solver_regret_mean": 1.1667,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 7.0,
+        "top1_rate": 0.8333,
+        "tau_mean": 0.698,
+        "solve_secs_mean": 7.87,
+        "solve_secs_total": 47.2
+      }
+    },
+    "cap12": {
+      "2": {
+        "n": 6,
+        "solver_regret_mean": 1.1667,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 7.0,
+        "top1_rate": 0.8333,
+        "tau_mean": 0.6693,
+        "solve_secs_mean": 7.87,
+        "solve_secs_total": 47.2
+      }
+    },
+    "flatk25": {
+      "2": {
+        "n": 6,
+        "solver_regret_mean": 0.0,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 0.0,
+        "top1_rate": 1.0,
+        "tau_mean": 0.7001,
+        "solve_secs_mean": 7.87,
+        "solve_secs_total": 47.2
+      }
+    }
+  },
+  "by_mode": {
+    "v29_leaf": {
+      "marginalized": {
+        "n": 6,
+        "solver_regret_mean": 1.1667,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 7.0,
+        "top1_rate": 0.8333,
+        "tau_mean": 0.698,
+        "solve_secs_mean": 7.87,
+        "solve_secs_total": 47.2
+      }
+    },
+    "cap12": {
+      "marginalized": {
+        "n": 6,
+        "solver_regret_mean": 1.1667,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 7.0,
+        "top1_rate": 0.8333,
+        "tau_mean": 0.6693,
+        "solve_secs_mean": 7.87,
+        "solve_secs_total": 47.2
+      }
+    },
+    "flatk25": {
+      "marginalized": {
+        "n": 6,
+        "solver_regret_mean": 0.0,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 0.0,
+        "top1_rate": 1.0,
+        "tau_mean": 0.7001,
+        "solve_secs_mean": 7.87,
+        "solve_secs_total": 47.2
+      }
+    }
+  },
+  "per_root": [
+    {
+      "seed": 1940000000,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 21,
+      "to_move": 0,
+      "nodes": 403,
+      "solve_secs": 1.63,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.9241937481054058,
+          "pick": 763
+        },
+        "cap12": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.9241937481054058,
+          "pick": 763
+        },
+        "flatk25": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.9241937481054058,
+          "pick": 763
+        }
+      },
+      "best_vs_second_gap": 5.0,
+      "value_spread": 9.0
+    },
+    {
+      "seed": 1940000001,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 42,
+      "to_move": 0,
+      "nodes": 7101,
+      "solve_secs": 27.84,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.09415809713370452,
+          "pick": 1749
+        },
+        "cap12": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.07856598530701757,
+          "pick": 1749
+        },
+        "flatk25": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.36362297340196864,
+          "pick": 1749
+        }
+      },
+      "best_vs_second_gap": 12.0,
+      "value_spread": 17.0
+    },
+    {
+      "seed": 1940000002,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 48,
+      "to_move": 0,
+      "nodes": 1166,
+      "solve_secs": 4.85,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 7.0,
+          "top1": 0,
+          "tau": NaN,
+          "pick": 640
+        },
+        "cap12": {
+          "solver_regret": 7.0,
+          "top1": 0,
+          "tau": NaN,
+          "pick": 640
+        },
+        "flatk25": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.4392976851069794,
+          "pick": 1240
+        }
+      },
+      "best_vs_second_gap": 0.0,
+      "value_spread": 8.0
+    },
+    {
+      "seed": 1940000003,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 53,
+      "to_move": 0,
+      "nodes": 3013,
+      "solve_secs": 8.79,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.7734952686307449,
+          "pick": 964
+        },
+        "cap12": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.674615431066571,
+          "pick": 964
+        },
+        "flatk25": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.7734952686307449,
+          "pick": 964
+        }
+      },
+      "best_vs_second_gap": 2.0,
+      "value_spread": 4.0
+    },
+    {
+      "seed": 1940000004,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 50,
+      "to_move": 0,
+      "nodes": 618,
+      "solve_secs": 2.38,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": NaN,
+          "pick": 732
+        },
+        "cap12": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": NaN,
+          "pick": 732
+        },
+        "flatk25": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": NaN,
+          "pick": 732
+        }
+      },
+      "best_vs_second_gap": 0.0,
+      "value_spread": 0.0
+    },
+    {
+      "seed": 1940000005,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 68,
+      "to_move": 0,
+      "nodes": 782,
+      "solve_secs": 1.7,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 1.0,
+          "pick": 552
+        },
+        "cap12": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 1.0,
+          "pick": 552
+        },
+        "flatk25": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 1.0,
+          "pick": 552
+        }
+      },
+      "best_vs_second_gap": 0.0,
+      "value_spread": 1.0
+    }
+  ]
+}

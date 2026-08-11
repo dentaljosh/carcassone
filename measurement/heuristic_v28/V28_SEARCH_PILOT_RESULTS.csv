@@ -1,0 +1,6 @@
+variant,overrides,sims,n,W,D,L,winrate,avg_diff,z_margin,elo,elo_1sig,signal,purpose
+v28_completion,slack=3.0,200,200,99,4,97,0.505,1.75,1.094,3.5,24.6,INCONCLUSIVE,full-game-equal-budget
+v28_meeple,k2_t0=72,200,200,129,1,70,0.6475,7.56,4.65,105.6,25.7,VERDICT-RANGE,full-game-equal-budget
+v28_meeple,k2_t0=72,800,120,76,0,44,0.6333,7.575,3.763,94.9,32.9,VERDICT-RANGE,depth-robustness (survives)
+v28_meeple_flat,k2_t0=0,200,200,145,5,50,0.7375,15.45,9.924,179.5,27.9,VERDICT-RANGE,disentangle: FLAT >> scaled; overturns n=20 null
+v28_meeple_k1,k1_t0=72,200,200,109,4,87,0.555,2.19,1.382,38.4,24.7,INCONCLUSIVE,k-bracket: k1<k2

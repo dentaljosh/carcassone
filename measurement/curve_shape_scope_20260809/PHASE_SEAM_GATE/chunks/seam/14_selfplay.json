@@ -1,0 +1,10 @@
+{
+ "chunk": "14_selfplay",
+ "tree": "seam",
+ "rc": 0,
+ "duration_s": 72,
+ "attempt": 1,
+ "peak_rss_kb": 1185480,
+ "n_failing": 0,
+ "failing_ids": []
+}

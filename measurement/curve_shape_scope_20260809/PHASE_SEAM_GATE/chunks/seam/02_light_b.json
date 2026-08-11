@@ -1,0 +1,12 @@
+{
+ "chunk": "02_light_b",
+ "tree": "seam",
+ "rc": 1,
+ "duration_s": 87,
+ "attempt": 1,
+ "peak_rss_kb": 880784,
+ "n_failing": 1,
+ "failing_ids": [
+  "tests/test_c5_leaf_ab.py::test_override_reaches_prior_evaluator"
+ ]
+}

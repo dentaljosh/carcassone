@@ -1,0 +1,5 @@
+cell	status	n	W	D	L	elo	sigma	margin_z	paired_z	profile	r9_ok	cand_leaf	opp_leaf	secs	timestamp
+C0_identity	ok	400	186	3	211	-21.7	17.4	nan	-1.33	fixed_v1	true	?	a36d2e15a3b3d71d	2307	2026-08-09_03:31:20
+C1_flattop	ok	400	198	2	200	-1.7	17.4	nan	0.23	fixed_v1	true	f450d276cba6db38	a36d2e15a3b3d71d	2098	2026-08-09_04:08:31
+C2_broadlow	ok	400	167	12	221	-47.2	17.5	nan	-2.07	fixed_v1	true	3a344be3c0aab7d3	a36d2e15a3b3d71d	1946	2026-08-09_04:40:57
+C3_hoard	ok	400	200	3	197	2.6	17.4	nan	0.42	fixed_v1	true	bbcb9b134769b4fe	a36d2e15a3b3d71d	2066	2026-08-09_05:15:23

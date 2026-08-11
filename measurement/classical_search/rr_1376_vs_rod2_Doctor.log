@@ -1,0 +1,21 @@
+[2026-07-27_08:58:44] rr_puct1376_vs_net-iter02_k2 START on Doctor (W=16 n=200)
+puct-priors[rr_puct1376_vs_net-iter02_k2]: n=200 paired=True | 0 cached, 200 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/rr_puct1376_vs_net-iter02_k2
+  10/200 played (47.1s/game, ~149 min left)
+  20/200 played (45.5s/game, ~137 min left)
+  30/200 played (33.0s/game, ~94 min left)
+  40/200 played (35.7s/game, ~95 min left)
+  50/200 played (37.3s/game, ~93 min left)
+  60/200 played (32.7s/game, ~76 min left)
+  70/200 played (34.7s/game, ~75 min left)
+  80/200 played (33.5s/game, ~67 min left)
+  90/200 played (32.6s/game, ~60 min left)
+  100/200 played (32.4s/game, ~54 min left)
+
+=== PUCT-heur-priors(cand s1376) vs opponent(net:iter_02@200) ===
+games: 200   candidate: 147W / 1D / 52L   winrate 0.738 (z=+6.72)
+avg score diff (cand - champ): +10.37
+ELO: +179.5  (+/- 27.9 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +10.37   z = +7.39
+prefix ms/move: candidate 2360  champion 4271  (ratio 0.55x)
+exact endgame: latched 200/200 games, 9.17s solver/game, timeouts cand=0 champ=0
+[2026-07-27_09:53:38] exited rc=0 on Doctor

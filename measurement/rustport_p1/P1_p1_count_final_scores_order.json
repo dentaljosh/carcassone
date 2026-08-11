@@ -1,0 +1,32 @@
+{
+  "gate": "P1/p1_count_final_scores_order",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "d6f77e0-dirty",
+    "utc": "2026-08-02T05:52:18Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "positions": 34,
+  "comparisons": 238,
+  "orders_per_position": 7,
+  "meeples_seen": 444,
+  "max_meeples_on_a_position": 14,
+  "positions_with_multi_meeple_player": 34,
+  "outcome_mismatches": 0,
+  "residual_list_ORDER_differences": 0,
+  "verdict": "ORDER-IRRELEVANT",
+  "args": {
+    "games": 3,
+    "plies_per_game": 3,
+    "perms": 3,
+    "seed": 20260731
+  },
+  "mismatches": []
+}

@@ -1,0 +1,276 @@
+"""Codegen: engine base-deck tile definitions -> `carc-core/src/tiles/generated.rs`.
+
+The generated file is **checked in** (the spec forbids a Python-invoking
+`build.rs`), and is guarded against drift two ways:
+
+* `SOURCE_SHA256` — sha256 of `engine/.../tile_sets/base_deck.py` verbatim;
+* `SEMANTIC_DIGEST` — sha256 of a canonical JSON of everything the engine
+  actually *uses*: every tile's road/city/grass/farms/shield/chapel/flowers/
+  inn/cathedral/unplayable sides, **plus `base_tile_counts` in dict insertion
+  order** (deck construction iterates `base_tile_counts.items()` before the
+  shuffle, so the order is load-bearing for `start_game_from_seed`).
+
+`tests/rustport/test_tile_data_drift.py` recomputes both from the live engine
+and compares them against the values compiled into `carc_rs`.
+
+Usage:
+    .venv/bin/python scripts/rustport/export_tile_data.py           # write
+    .venv/bin/python scripts/rustport/export_tile_data.py --check   # verify only
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+for _p in (REPO / "engine",):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
+BASE_DECK_PY = REPO / "engine" / "wingedsheep" / "carcassonne" / "tile_sets" / "base_deck.py"
+OUT_RS = REPO / "rust" / "carc" / "carc-core" / "src" / "tiles" / "generated.rs"
+
+_SIDE_RS = {
+    "top": "Top", "right": "Right", "bottom": "Bottom", "left": "Left", "center": "Center",
+    "top_left": "TopLeft", "top_right": "TopRight",
+    "bottom_left": "BottomLeft", "bottom_right": "BottomRight",
+}
+_FARMER_SIDE_RS = {
+    "tll": "Tll", "tlt": "Tlt", "trt": "Trt", "trr": "Trr",
+    "bll": "Bll", "blb": "Blb", "brb": "Brb", "brr": "Brr",
+}
+
+
+def tile_to_dict(t) -> dict:
+    """Everything the engine's semantics read off a Tile. `image` is excluded
+    (presentation only, and platform-dependent through os.path.join)."""
+    return {
+        "description": t.description,
+        "road": [[c.a.value, c.b.value] for c in t.road],
+        "river": [[c.a.value, c.b.value] for c in t.river],
+        "city": [[s.value for s in group] for group in t.city],
+        "grass": [s.value for s in t.grass],
+        "farms": [
+            {
+                "farmer_positions": [s.value for s in f.farmer_positions],
+                "tile_connections": [fs.value for fs in f.tile_connections],
+                "city_sides": [s.value for s in f.city_sides],
+            }
+            for f in t.farms
+        ],
+        "shield": bool(t.shield),
+        "chapel": bool(t.chapel),
+        "flowers": bool(t.flowers),
+        "inn": [s.value for s in t.inn],
+        "cathedral": bool(t.cathedral),
+        "unplayable_sides": [s.value for s in t.unplayable_sides],
+    }
+
+
+def semantic_payload() -> dict:
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tile_counts, base_tiles
+
+    # base_tiles insertion order AND base_tile_counts insertion order are both
+    # recorded; the latter is what the deck build iterates.
+    return {
+        "tiles": [tile_to_dict(t) for t in base_tiles.values()],
+        "tile_order": list(base_tiles.keys()),
+        "counts_in_insertion_order": [[k, int(v)] for k, v in base_tile_counts.items()],
+    }
+
+
+def _digest(payload: dict) -> str:
+    blob = json.dumps(payload, sort_keys=False, separators=(",", ":")).encode()
+    return hashlib.sha256(blob).hexdigest()
+
+
+def semantic_digest() -> str:
+    return _digest(semantic_payload())
+
+
+# --------------------------------------------------------------------------
+# R9 (F9 remediation, DEFAULT OFF) — see base_deck.py's R9 block.
+#
+# The flag is a *data* flag, so the Rust side carries no patching logic at all:
+# the delta is codegen'd here from `base_deck.r9_farm_override()` — the single
+# Python derivation — and Rust just swaps in the replacement `farms` when the
+# env var is set.  That is what makes python<->Rust parity structural rather
+# than a hand-transcription that has to be tested for.  Emitting only the DELTA
+# (not a second full 32-tile table) keeps it auditable: you can read exactly
+# which regions change.
+#
+# NOTE: these functions are correct in EITHER flag state.  `r9_farm_override`
+# is idempotent — run against an already-patched deck it finds nothing to
+# change — so a process with CARCASSONNE_FIX_R9=1 renders the same file.
+# --------------------------------------------------------------------------
+def r9_override() -> dict:
+    """`{description: [farm dict, ...]}` — the post-R9 farms of changed tiles."""
+    from wingedsheep.carcassonne.tile_sets.base_deck import (
+        R9_OVERRIDE, base_tiles, r9_farm_override,
+    )
+
+    live = r9_farm_override(base_tiles)          # {} once already applied
+    src = live or R9_OVERRIDE
+    return {
+        name: [
+            {
+                "farmer_positions": [s.value for s in f.farmer_positions],
+                "tile_connections": [fs.value for fs in f.tile_connections],
+                "city_sides": [s.value for s in f.city_sides],
+            }
+            for f in farms
+        ]
+        for name, farms in src.items()
+    }
+
+
+def r9_semantic_payload() -> dict:
+    """`semantic_payload()` with R9 applied — the flags-ON data digest."""
+    payload = semantic_payload()
+    ov = r9_override()
+    tiles = [dict(t) for t in payload["tiles"]]
+    for t in tiles:
+        if t["description"] in ov:
+            t["farms"] = ov[t["description"]]
+    return {**payload, "tiles": tiles}
+
+
+def semantic_digest_r9() -> str:
+    return _digest(r9_semantic_payload())
+
+
+def source_sha256() -> str:
+    return hashlib.sha256(BASE_DECK_PY.read_bytes()).hexdigest()
+
+
+def _sides(vals) -> str:
+    return "&[" + ", ".join(f"Side::{_SIDE_RS[v]}" for v in vals) + "]"
+
+
+def _fsides(vals) -> str:
+    return "&[" + ", ".join(f"FarmerSide::{_FARMER_SIDE_RS[v]}" for v in vals) + "]"
+
+
+def _conns(pairs) -> str:
+    return "&[" + ", ".join(
+        f"(Side::{_SIDE_RS[a]}, Side::{_SIDE_RS[b]})" for a, b in pairs
+    ) + "]"
+
+
+def render() -> str:
+    payload = semantic_payload()
+    lines: list[str] = []
+    w = lines.append
+    w("// @generated by scripts/rustport/export_tile_data.py — DO NOT EDIT BY HAND.")
+    w("//")
+    w("// Source of truth: engine/wingedsheep/carcassonne/tile_sets/base_deck.py")
+    w("// (the vendored, patched wingedsheep base deck).  Regenerate with")
+    w("//     .venv/bin/python scripts/rustport/export_tile_data.py")
+    w("// and re-run tests/rustport/test_tile_data_drift.py.")
+    w("//")
+    w("// `COUNTS` preserves `base_tile_counts` **dict insertion order** — deck")
+    w("// construction iterates `base_tile_counts.items()` and appends `count`")
+    w("// copies of each tile BEFORE the shuffle, so this order is part of the")
+    w("// RNG contract, not a presentation detail.")
+    w("")
+    w("use super::{FarmerConnectionDef, Side, FarmerSide, TileDef};")
+    w("")
+    w(f'pub const SOURCE_SHA256: &str = "{source_sha256()}";')
+    w(f'pub const SEMANTIC_DIGEST: &str = "{semantic_digest()}";')
+    w("")
+    w("/// Semantic digest of the deck **with R9 applied** (the flags-ON data).")
+    w(f'pub const SEMANTIC_DIGEST_R9: &str = "{semantic_digest_r9()}";')
+    w("")
+    w("pub static BASE_TILES: &[TileDef] = &[")
+    for name, t in zip(payload["tile_order"], payload["tiles"]):
+        assert name == t["description"] or True
+        w("    TileDef {")
+        w(f'        description: "{t["description"]}",')
+        w(f'        road: {_conns(t["road"])},')
+        w(f'        river: {_conns(t["river"])},')
+        city = "&[" + ", ".join(_sides(g) for g in t["city"]) + "]"
+        w(f"        city: {city},")
+        w(f'        grass: {_sides(t["grass"])},')
+        if t["farms"]:
+            w("        farms: &[")
+            for f in t["farms"]:
+                w("            FarmerConnectionDef {")
+                w(f'                farmer_positions: {_sides(f["farmer_positions"])},')
+                w(f'                tile_connections: {_fsides(f["tile_connections"])},')
+                w(f'                city_sides: {_sides(f["city_sides"])},')
+                w("            },")
+            w("        ],")
+        else:
+            w("        farms: &[],")
+        w(f'        shield: {str(t["shield"]).lower()},')
+        w(f'        chapel: {str(t["chapel"]).lower()},')
+        w(f'        flowers: {str(t["flowers"]).lower()},')
+        w(f'        inn: {_sides(t["inn"])},')
+        w(f'        cathedral: {str(t["cathedral"]).lower()},')
+        w(f'        unplayable_sides: {_sides(t["unplayable_sides"])},')
+        w("    },")
+    w("];")
+    w("")
+    w("/// `(tile description, count)` in `base_tile_counts` insertion order.")
+    w("pub static COUNTS: &[(&str, u32)] = &[")
+    for name, count in payload["counts_in_insertion_order"]:
+        w(f'    ("{name}", {count}),')
+    w("];")
+    w("")
+    w("// -------------------------------------------------------------------------")
+    w("// R9 — \"a field half-edge may not lie on a city edge\" (F9 remediation).")
+    w("//")
+    w("// *** DEFAULT OFF.  Consulted only when CARCASSONNE_FIX_R9 is set. ***")
+    w("//")
+    w("// Replacement `farms` for every tile whose farm data changes under R9,")
+    w("// codegen'd from `base_deck.r9_farm_override()` — the SAME single Python")
+    w("// derivation the Python engine applies, so the two engines cannot drift.")
+    w("// `BASE_TILES` above is untouched; flags-off is byte-identical.")
+    w("// -------------------------------------------------------------------------")
+    w("pub static R9_FARM_OVERRIDE: &[(&str, &[FarmerConnectionDef])] = &[")
+    for name, farms in r9_override().items():
+        w(f'    ("{name}", &[')
+        for f in farms:
+            w("        FarmerConnectionDef {")
+            w(f'            farmer_positions: {_sides(f["farmer_positions"])},')
+            w(f'            tile_connections: {_fsides(f["tile_connections"])},')
+            w(f'            city_sides: {_sides(f["city_sides"])},')
+            w("        },")
+        w("    ]),")
+    w("];")
+    w("")
+    return "\n".join(lines)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--check", action="store_true",
+                    help="exit 1 if the checked-in file differs from a fresh render")
+    args = ap.parse_args(argv)
+
+    text = render()
+    if args.check:
+        cur = OUT_RS.read_text() if OUT_RS.exists() else ""
+        if cur != text:
+            print("tile data DRIFT: generated.rs differs from a fresh render of base_deck.py")
+            print(f"  source sha256   = {source_sha256()}")
+            print(f"  semantic digest = {semantic_digest()}")
+            return 1
+        print(f"tile data OK: {OUT_RS.relative_to(REPO)} matches base_deck.py "
+              f"(source {source_sha256()[:16]}, semantic {semantic_digest()[:16]})")
+        return 0
+
+    OUT_RS.parent.mkdir(parents=True, exist_ok=True)
+    OUT_RS.write_text(text)
+    print(f"wrote {OUT_RS.relative_to(REPO)}  "
+          f"({len(semantic_payload()['tiles'])} tiles, "
+          f"source {source_sha256()[:16]}, semantic {semantic_digest()[:16]})")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

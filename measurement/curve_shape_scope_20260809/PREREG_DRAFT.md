@@ -1,0 +1,391 @@
+# MEEPLE-CURVE SHAPE + PHASE SEARCH — PRE-REGISTRATION (DRAFT, CONDITIONAL ON FUNDING)
+
+> **STATUS: Part A ✅ RAN AND PARKED 2026-08-09 — pre-registered branch A4_UNRESOLVABLE fired**
+> (identity −21.7±17.4 as instrument zero; no off-production cell clears 2σ vs it; broadlow
+> the largest at elo_vs_c0 −25.5, z≈−1.0; flattop replicates the Wave-2 tie) ⇒ **Part B (the
+> 3.9-box-day sweep) is NOT FUNDED on a sub-2σ signal — the A1/A4 branches say PARK, and they
+> did.** Band 1.10e11 retired decision-influenced. Close-out `65b36fa`.
+> **Part C ✅ RAN AND KILLED 2026-08-10 — pre-registered branch C-KILL fired (a BOUNDED null):**
+> within-deck slope **+1.32 ± 1.49 pts/deck per unit β (z +0.88)** over 5 cells n=200 each on
+> band 1.16e11 (retired) ⇒ no linear phase effect exceeding ~±22 elo at β=±0.6 at this
+> instrument's resolution. Identity gate OK (margin z −1.11, PREREG AMENDMENT 1 bar). Signed,
+> bracketed, E[f]=1-renormalized — supersedes the confounded v28 kill as the phase-axis record.
+> NEVER cite as "the phase axis is dead"; the bound is linear-form- and resolution-specific.
+> Gate history: seam 549c0d1 passed the chunked suite comparison GREEN_WITH_GAP (zero novel
+> failures, one >24 GB cell excluded symmetrically), Joshua accepted the gap on disk
+> (OWNER_ACCEPTED_GAP, `8ec9ed8`), merged `0981bed`.
+> Written 2026-08-09 alongside [SCOPE.md](SCOPE.md), which carries the rationale, the cost
+> arithmetic and the dominance-order analysis. This file is the *runnable* protocol.
+> `governance/PRODUCTION.yaml` is untouched on every branch of this document.
+>
+> Bands `1.10e11` (Part A) and `1.15e11` (Part C) are `claimed` in
+> [BAND_REGISTRY.csv](../../governance/BAND_REGISTRY.csv) as of this commit, verified free
+> against **both** the registry and a `grep seed_start` over the share manifests (highest prior
+> share consumption: `1.095e11`). Launchers:
+> [`curveshape_probe_launcher.sh`](../../scripts/classical_search/curveshape_probe_launcher.sh)
+> (Part A) and the Part C ladder launcher; candidate tables are generated from §4's
+> parametrization by
+> [`gen_curve_shapes.py`](../../scripts/classical_search/gen_curve_shapes.py), not hand-typed.
+>
+> ⚠️ **DESIGN DEVIATION, APPROVED AND RECORDED — §3 WAS NOT RUNNABLE AS WRITTEN.** §3 specifies
+> the candidate arm as "identical in every respect except `v29_meeple_curve`, injected via
+> `eval_fair_puct --cand-leaf-json`". That combination **hard-exited**: `_assert_netprior_leaf`
+> (`eval_fair_puct.py:482-488`) unconditionally requires the candidate curve to be exactly
+> `curve125`, `--allow-leaf-hash-drift` covers only the later *hash* check, and there is no
+> `--opp-leaf-json`. The fix is a new default-OFF flag **`--allow-cand-curve-drift`** (merged
+> `0974ee4`) — i.e. **the seam this pre-registration assumed already existed**, not a change to
+> what is measured. The **opponent arm remains pinned to curve125 through the UNMODIFIED
+> assert** in every case, and the flag is rejected outside `--info fair --opponent
+> fair-champion`. Its gate PASSED before merge with feature-off parity *proven* (identity cell
+> re-run against a pre-change HEAD copy at the same seeds: stdout identical but for timing,
+> `summary.json` identical on every non-timing field, manifest config with zero changed and zero
+> removed keys and exactly five additive ones). **The rejected alternative was `--opponent
+> h800`**, which would have changed the opponent, the plane *and* the `margin_z` definition —
+> a real design change, and therefore not taken.
+>
+> ⚠️ **A SECOND, SMALLER WART, RECORDED BEFORE THE READ (it is a property of §4, not a bug).**
+> `C0_identity` uses the **literal** production table per §4/SCOPE §1.1, while C1/C2/C3 are
+> **generated from the 5-param family**, whose low side is `-10 / -4.444 / -1.111` against the
+> literal `-10 / -5 / -1.25`. So the three off-production cells each carry a small low-side
+> perturbation that is **not** part of the intended top-axis contrast. It is common to all
+> three, it is far smaller than the deliberate moves, and the L1 rescale holds total scale
+> fixed — but any C1/C3 reading is "ρ moved **and** the low side shifted slightly", and the
+> read-out must say so rather than attribute a null purely to ρ.
+>
+> **Funding is staged.** Part A (the curvature probe) and Part C (the β ladder) are ~3 h each and
+> can be authorized independently. **Part B (the Optuna sweep) is authorized only if Part A's
+> pre-registered reading says the response surface has curvature.**
+
+---
+
+## 1. Questions
+
+**Q1 (SHAPE).** Holding the overall scale fixed at production's, does any alternative *shape* of
+`v29_meeple_curve` beat the incumbent `Bmild × 1.25` by ≥ 25 elo when both play at the production
+fair budget under `fixed_v1`?
+
+**Q2 (PHASE).** Does multiplying the curve by a mean-1-renormalized linear function of
+`k_remaining` — i.e. making meeple value depend on how much deck is left, in either direction —
+beat `β = 0` (no phase dependence)?
+
+**Q3 (CURVATURE, the gate on Q1).** Does the shape response surface exhibit any curvature within
+±25 elo over a neighbourhood wide enough that a ±35-elo screen could navigate it?
+
+Q3 is answered first and gates Q1. Q2 is independent of both.
+
+---
+
+## 2. Primary statistic (stated before any threshold)
+
+**Primary: the deck-paired point margin, in points per deck** — `margin_z` = the paired-sample
+z of (candidate points − champion points) per deck, over decks played in both seatings.
+Reported alongside: **win-paired elo** and its z, and unpaired elo with σ.
+
+Rationale, and the F13 lesson applied: **every threshold below is stated in `margin_z`, the same
+statistic the question is posed in.** A prereg whose question is asked in one statistic and whose
+threshold fires in another mis-fires. Where a second gate part is required (S3, S4) it is
+win-paired z, and that is stated explicitly as a *conjunction*, never as an alternative.
+
+σ reference (deck-paired, near wr 0.5): n=200 → ±17 elo · n=400 → ±12 · n=900 → ±8 · n=1600 → ±6.
+**No threshold anywhere in this document is below +25 elo**, because no stage of it can resolve
+below that. See SCOPE §3.
+
+---
+
+## 3. Fixed experimental conditions (identical in every cell, all parts)
+
+| | value |
+|---|---|
+| Plane | **fair PIMC** (`FairHeuristicPriorAgent`, `eval_fair_puct --info fair`) |
+| Budget | **`k_dets = 8`, `sims_per_det = 1376` (= 11008)**, both arms |
+| Rules | **`fixed_v1`**, `CARCASSONNE_FIX_R9=1`, both arms |
+| Backend | **rust**, both arms |
+| Champion arm | `governance/PRODUCTION.yaml` champion `puct_priors_v29_bmild_cap8`, leaf hash `a36d2e15a3b3d71d` |
+| Candidate arm | identical in every respect **except** `v29_meeple_curve` (and, in Part C, the phase multiplier), injected via `eval_fair_puct --cand-leaf-json` |
+| Knobs | c_puct 1.5 · tau_p 5 · final_select visits · leaf_quantize float · value_norm 15 |
+| Endgame | fair deploy handoff: exact K≤2 marginalized |
+| Pairing | deck-paired, both seatings of every deck |
+| Boxes | local 5900XT W30 + laptop W26, `OPENBLAS_NUM_THREADS=1`, `nice -n 19`, detached |
+
+**Forbidden:** routing any candidate through `make_production_champion` (`verify_leaf` hard-raises
+unless the curve is exactly `CURVE125`); reusing any deck across stages; pooling reads across bands.
+
+---
+
+## 4. Parametrization (frozen here; see SCOPE §1.1)
+
+Anchored at `curve[3] = 0` (the term is a differential — a constant offset cancels exactly, so
+one entry must be pinned and **pure zero-point re-placement is a no-op, not a lever**):
+
+```
+curve[3-j] = -d * (j/3)**γ                       j = 1,2,3
+curve[3]   = 0
+curve[3+i] = Σ_{u≤i} g_u ,  g_1 = s0 ,  g_i = s1 * ρ**(i-2)   i = 1..4
+```
+
+| param | production | search range |
+|---|---|---|
+| `d` | 10.0 | [0, 24] |
+| `γ` | 2.0 | [0.5, 3.0] |
+| `s0` | 2.5 | [0, 6] |
+| `s1` | 1.25 | [0, 4] |
+| `ρ` | 1.0 | [0, 1.2] |
+
+Every production value is **interior** to its range (bracketed above and below). After generation
+the table is **rescaled so its L1 norm equals production's** — scale is not searched here (it was
+swept three times: CL-051, CL-057, capscurve). Trial 0 uses the **literal** production table
+`[-10, -5, -1.25, 0, 2.5, 3.75, 5, 6.25]`, not its parametric approximation.
+
+Part C phase multiplier: `f(k; β) = clip(1 + β·(k − 35)/35, 0.0, 2.0)`, then **renormalized so
+E[f] = 1** over the empirical `k_remaining` distribution of a game. The renormalization is
+load-bearing: without it, β changes the term's mean magnitude and the cell measures scale rather
+than phase — which is the confound that invalidates the 2026-06-22 `v28_meeple_recovery_t0` kill.
+
+---
+
+## 5. Stages, thresholds, and branch precedence
+
+**Branch precedence, evaluated in this order; the first that fires wins:**
+`INSTRUMENT-BROKEN` → `KILL` → `UNRESOLVABLE` → `PARK` → `PROMOTE`.
+
+### PART A — Curvature probe (**the funding gate for Part B**) · 4 cells · n=400 · ~3.3 h
+
+Band: `1.10e11` (claim before game 1). Cells:
+
+| id | shape | 
+|---|---|
+| `C0_identity` | production `curve125` (literal) |
+| `C1_flattop` | ρ = 0.4 |
+| `C2_broadlow` | γ = 0.8, d = 16 |
+| `C3_hoard` | ρ = 1.2 |
+
+**A-gate 0 (INSTRUMENT-BROKEN, checked first):** `C0_identity` must read `|elo| < 25` **and** its
+manifest must show identical leaf hashes both arms, `rules_profile: fixed_v1`, `r9_env_ok` both
+arms. Fail ⇒ **ABORT, no cell counts**, fix wiring, restart on a new band.
+
+**A-readings (pre-registered, exhaustive):**
+
+| # | condition | verdict | action |
+|---|---|---|---|
+| A1 | all of C1/C2/C3 within ±25 elo of C0 (i.e. no `\|margin_z\| ≥ 2.0`) | **SURFACE FLAT at this resolution** | **DO NOT FUND PART B.** Write CL: "no shape gain ≥ ~35 elo is findable by a ±35-elo screen over this neighbourhood." Explicitly NOT "the shape is optimal." |
+| A2 | any cell reads ≤ −40 elo with `margin_z ≤ −2.0` | **CURVATURE PRESENT** | Part B is a reasonable bet. Recommend funding. |
+| A3 | any cell reads ≥ +35 elo with `margin_z ≥ +2.0` | **HAND-PICKED WINNER** | Skip the sweep. Take that candidate directly to Part B stage S2, then S3/S4. |
+| A4 | mixed (one cell fires, others flat) with no cell past ±2σ | **UNRESOLVABLE** | Park. Record the effect-size floor. Do not fund Part B on a sub-2σ signal. |
+
+A2 and A3 can co-fire; A3 takes precedence.
+
+### PART B — Optuna shape sweep (**only if A2 or A3 fired**) · ~40 trials · ~47 h
+
+Sampler: `optuna.samplers.TPESampler(multivariate=True, n_startup_trials=10, seed=20260809)`,
+local SQLite storage. Enqueued (not sampled) trials: **T0 = production literal** (reused from
+Part A as `C0_identity` if the band permits, else re-run), **T1 = `Bflattop`×1.25 (ρ≈0.5)**,
+**T2 = `Bxaggr`-equivalent (d≈20, γ≈1.1) as a NEGATIVE CONTROL**.
+
+**B-gate 0 (INSTRUMENT-BROKEN):** T2 must read clearly negative (`margin_z ≤ −2.0`). A known-killed
+shape reading neutral means the instrument cannot see shape at all ⇒ **ABORT**.
+
+| stage | n | decks | band | selection / gate |
+|---|---|---|---|---|
+| **S1 screen** | 200 | 100 | `1.11e11` | rank all trials by `margin_z`; **keep top 10**. No significance gate (ranking only — a significance gate here would import selection bias). |
+| **S2 confirm** | 400 | 200 | `1.12e11` (**fresh decks — no S1 game is pooled**) | advance if `margin_z ≥ 2.0` **and** elo ≥ +25; **keep top 2** |
+| **S3 fair confirm** | 900 | 450 | `1.13e11` (fresh) | **BOTH parts**: `margin_z ≥ 2.0` **AND** win-paired `z ≥ 2.0`, elo ≥ +25. (The CL-051 precedent: curve125's fair confirm resolved at 451 decks with margin z 2.77 / win-paired z 3.13.) |
+| **S4 promotion read** | 1600 | 800 | `1.14e11`, **tier = sealed**, claimed only *after* the single candidate is frozen | `margin_z ≥ 2.0` on the sealed band |
+
+**B-verdicts:**
+
+| # | condition | verdict |
+|---|---|---|
+| B-KILL | S1: no trial reaches +35 elo with `margin_z ≥ 1.5` **and** the trial spread is consistent with the null | **SHAPE AXIS DEAD at this resolution.** Wording constraint: "no gain ≥ ~35 elo exists", never "the shape is optimal." |
+| B-UNRESOLVABLE | S1 leaders sit in +15…+35 and fail to separate at S2 on fresh decks | **PARK-UNRESOLVABLE.** Record the floor. Capscurve wording template (SCOPE §3). |
+| B-CONFIRMATION | the surviving candidate is statistically tied with production (e.g. ρ≈0.5 rediscovered) | **Confirmation of the 2026-06-25 Wave-2 tie. Not a finding, no CL, no promotion.** |
+| B-PROMOTE | S3 both parts pass **AND** S4 sealed read passes | **Propose to Joshua.** `PRODUCTION.yaml` is still NOT edited by this prereg — promotion is a separate decision with the six-touch close-out. |
+
+### PART C — Phase (β) dose ladder · 5 cells + 1 confirm · ~3 h · independent of A and B
+
+Band `1.15e11` (or the next free). Cells: β ∈ {−0.6, −0.3, **0.0**, +0.3, +0.6}, n=200 each,
+mean-1 renormalized, all else fixed. β = 0 is the identity cell and doubles as the wiring gate
+(`|elo| < 25`).
+
+**Primary statistic for Part C is the FITTED WITHIN-DECK SLOPE of `margin` on β across the five
+points** — not any individual cell. ("A trend beats underpowered steps"; the line across the
+ladder is the measurement.)
+
+| # | condition | verdict |
+|---|---|---|
+| C-KILL | slope `\|z\| < 2.0` | **PHASE AXIS DEAD in the modern era with the magnitude confound removed.** Materially stronger than the 2026-06-22 v28 kill (which was one unbracketed endpoint with magnitude confounded). Worth its own CL. |
+| C-RECONFIRM | slope significantly **negative** (β>0 is worse) | v28's finding **reconfirmed on clean ground**. Axis closes permanently. |
+| C-FIRE | slope `z ≥ 2.0` positive in either direction | run one n=400 fresh-deck confirm at the best-fit β. If `margin_z ≥ 2.0` there, escalate to the Part B S3/S4 ladder. |
+
+---
+
+## 6. Kill conditions (any of these stops the run immediately)
+
+1. Any identity cell reads `|elo| ≥ 25` ⇒ wiring is wrong; abort, no cell counts.
+2. Any manifest shows a leaf hash, `rules_profile`, `r9_env_ok`, backend, or budget differing
+   from §3 ⇒ that cell is void and re-run; two such cells ⇒ abort the stage.
+3. The `Bxaggr` negative control fails to read negative ⇒ the instrument cannot see shape; abort.
+4. A cell hangs or completes < 90% of its games ⇒ **void, do not read the partial.** (C5's ×1.75
+   cell hung at 141/400 from OpenBLAS oversubscription and produced a hang-biased **+134** that
+   looked like a discovery. `OPENBLAS_NUM_THREADS=1` is mandatory and the completion fraction is
+   checked before any number is quoted.)
+5. Clock drift detected on any box ⇒ stop, `date -s` from the share host, discard the affected cell.
+6. A local dirty reboot mid-cell ⇒ discard that cell; clean `--shared-claim` claims-without-records
+   before resuming.
+7. Cumulative wall-clock exceeds **65 h two-box** (the ~47 h estimate + 40%) ⇒ stop and report
+   whatever stages completed. No open-ended extension.
+
+---
+
+## 7. Band plan
+
+| part / stage | band | tier | notes |
+|---|---|---|---|
+| A curvature probe | `1.10e11` | dev | doubles as B's S0 if B is funded |
+| B S1 screen | `1.11e11` | dev | |
+| B S2 confirm | `1.12e11` | dev | fresh — no S1 deck reused |
+| B S3 fair confirm | `1.13e11` | dev | fresh |
+| B S4 promotion read | `1.14e11` | **sealed** | claimed only AFTER the candidate is frozen |
+| C β ladder (+ confirm) | `1.15e11` | dev | |
+
+Discipline:
+- Rows appended to `governance/BAND_REGISTRY.csv` **via `csv.writer`** (8 fields,
+  `newline=''`; the file contains quoted commas and doubled-quote escapes — never hand-edit),
+  `status=claimed`, **in the same commit that pre-registers the stage, before game 1**; flipped
+  to `retired` at close-out (six-touch checklist item 4).
+- Free-band verification at launch uses **both** the registry **and**
+  `grep -h seed_start /mnt/c/carc-shared/*/manifest.json /mnt/c/carc-shared/*/*/manifest.json`
+  — the registry's own caveat records that `results.csv` has no band column, so the naive check
+  fails silently open, and that share consumption at `1.09e11` was never registered.
+- **All contrasts within-band.** No pooling across bands; any cross-band remark carries the
+  ~1.5–2× σ inflation and cannot be quoted as an estimate.
+- A band that influenced a decision **retires from confirmatory use.**
+
+---
+
+## 8. Manifest and artifact requirements
+
+Every cell writes a self-describing `manifest.json` with the **full resolved config** — no
+dirname archaeology. Required fields (a cell missing any of these is void per §6.2):
+
+- `champ_leaf_hash`, `cand_leaf_hash`, and the **literal 8-entry `v29_meeple_curve` array for both arms**
+- the candidate's `(d, γ, s0, s1, ρ)` and, for Part C, `β` and the realized `E[f]`
+- `rules_profile` (`fixed_v1`), `cloister_rule`, `farm_rule`, `r9_env_ok` — **both arms**
+- `backend` (`rust`), `k_dets`, `sims_per_det`, `c_puct`, `tau_p`, `final_select`,
+  `leaf_quantize`, `value_norm`, endgame `exact_k` + mode
+- `band_seed_start`, `deck_range`, `n_games`, `n_decks`, `seatings_per_deck`, `games_completed`
+- `code_rev` (git sha), box, `W`, `OPENBLAS_NUM_THREADS`, start/end timestamps
+- per-deck results (both seatings) so the paired margin and any slope fit are re-derivable
+
+Additionally, per the six-touch close-out: a row per cell in `experiments/results.csv`
+(`curveshape_*` / `curvephase_*` prefixes), a `PROGRESS.tsv` in this directory with a `secs`
+column (the only in-repo timing record), a DECISIONS index line, a status banner update on
+[SCOPE.md](SCOPE.md) and this file, a governance row flip, the STATUS top block, the
+[roadmap](../../docs/PROGRAM_ROADMAP_2026-07-07.md) line, and the
+[LEVER_INDEX](../../docs/LEVER_INDEX.md) row status change. Then `python3 scripts/doc_lint.py`.
+
+---
+
+## 9. Riders carried into every write-up
+
+- **CL-051 (consumer = search):** results are valid for production PUCT + `fixed_v1` + rust at
+  k8×1376 **only**. Void for a different budget, rules profile, or a neural consumer.
+- **The "bug fix shifts hyperparameter optima" rule does NOT apply** — there is no bug here. The
+  curve is unsearched, not wrong. Nothing licenses reopening settled optima on the back of this.
+- **The Wave-2 tie:** a re-found `Bflattop`≈`Bmild` tie is **confirmation, not news** (branch B-CONFIRMATION).
+- **The v28 phase kill:** the retry is licensed only by the `E[f]=1` renormalization and the
+  bracketed signed ladder. A negative slope is a *reconfirmation* and closes the axis.
+- **No offline pre-screen** was used or is admissible (SCOPE §6.1). If one is ever proposed, its
+  admission gate is recovering the CL-051 ordering (−92.5 / −34.9 / 0 / +48.8) with separation.
+- **Noise signature:** a lone trial beating its parameter-neighbours by >1σ is noise, not a peak.
+  In a 5-param family a real optimum has a *neighbourhood* that also reads positive — check it.
+- **Nothing here promotes anything.** `governance/PRODUCTION.yaml` is untouched on every branch.
+
+---
+
+## AMENDMENT 1 — 2026-08-10 ~01:50, written BEFORE the fresh-band relaunch
+
+**What happened.** The first Part C attempt (band `1.15e11`, launched 2026-08-09 23:32) fired
+kill condition §6.1 exactly as written: the `b0p0` identity cell completed n=200 and read
+**elo −27.85, 1σ ±24.6** ⇒ `|elo| ≥ 25` ⇒ abort, no cell counts. Per the pre-registration the
+run was stopped mid-`bm0p3` (~50/200), **all band-1.15e11 cells are VOID** (moved to
+`curvephase_ladder_VOID_band115_wiring/` on the share), and band `1.15e11` is retired.
+
+**Why the gate fired — a calibration miss in this document, not evidence of broken wiring.**
+The `|elo| < 25` bar was inherited verbatim from Part A's A-gate 0, where cells are **n=400**
+(1σ ≈ 17.4 ⇒ the bar sits at 1.44σ). Part C cells are **n=200** (1σ ≈ 24.6), so the same
+numeric bar sits at **1.01σ of its own instrument** — a ~31% false-abort probability on a
+TRUE-ZERO identity cell. The fired cell's own robust statistic — the deck-paired margin, the
+statistic every A-reading in §4 uses — read **z −0.22, margin −0.255** (dead flat), and the
+byte-identity of the β=0 branch is separately proven at the reconcile level (0/3,325,532).
+The wiring is almost certainly fine; the bar was mis-scaled. The abort is honored anyway
+because a pre-registered kill condition is not reinterpretable after it fires.
+
+**Amended wiring gate (PROSPECTIVE ONLY — applies to the fresh-band relaunch and later):**
+the identity cell must read **`|paired margin z| < 2.0` AND `|elo| < 50`** (≈2σ at n=200).
+The margin_z criterion is primary (it is the robust within-band statistic of record); the
+elo bound is retained as a gross-wiring backstop at a correctly scaled 2σ. The original
+`|elo| < 25` remains correct for any n=400 cell and is unchanged for Part A/B.
+
+**No retroactive reading.** The voided band-1.15e11 cells are not re-adjudicated under the
+amended gate — that would be gate-shopping. They stay void; the ladder re-runs in full on
+the next free band (`1.16e11`), same five cells, same order, same knobs, W=14 local.
+
+---
+
+## AMENDMENT 2 — 2026-08-10, pre-attempt-2 review fixes (this commit)
+
+An adversarial review of the Part C arm ran **before** attempt 2 launched. Four findings are
+recorded here because they change what the readout means, not merely how it is produced.
+
+**1. The analyzer's primary statistic was blind to β by construction (BLOCKER, now fixed).**
+`analyze_curvephase.py` applied a *second* sign flip — `diff * (+1 if a_seat==0 else −1)` —
+to a `diff` the harness already emits as **candidate minus opponent**
+(`eval_fair_puct.py`: `diff = (s0 − s1) if a_seat == 0 else (s1 − s0)`; its own manifest
+schema note says so; its `_paired_z` averages the two seatings with no flip). The double flip
+subtracted the candidate's advantage in one seating from its advantage in the other, so every
+deck's seat-balanced margin collapsed toward zero and the **fitted within-deck slope could not
+see β at all**. On the voided `b0p0` records the flawed code read mean **+2.185 / z +1.403**
+against the harness's own **−0.2550 / z −0.2157**; the fixed code reproduces −0.2550 / −0.2157
+exactly. **The bug was found before any valid readout existed** — attempt 1 aborted on the
+wiring gate, so no Part C number was ever computed with it. **Attempt 2's readout is therefore
+the first valid application of this analyzer.** A permanent tripwire now runs before any
+statistic is reported: the analyzer's `mean_margin_recomputed` must equal the cell's
+`summary.json` `paired_mean_margin` within 1e-6, or it hard-errors instead of returning a verdict.
+
+**2. AMENDMENT 1's gate is now implemented in code.** The analyzer enforced the retired
+`|elo| < 25` bar — i.e. the amended gate existed only in this document. It now applies
+`|paired margin z| < 2.0 AND |elo| < 50`, margin z primary. Manifest enforcement of §6.2/§8
+(previously **zero** checks) is likewise in code: `rules_profile: fixed_v1`, `r9_env_ok`,
+`backend: rust`, one shared `band_seed_start`, plus the free positive control that the β=0 cell
+carries the production leaf hash `a36d2e15a3b3d71d` while every β≠0 cell carries a hash distinct
+from production *and* from each other, with `v29_phase_beta` matching the cell. One void
+non-identity cell ⇒ excluded and noted; two ⇒ `ABORT-STAGE`; a void identity cell ⇒
+`INSTRUMENT-BROKEN`.
+
+**3. The magnitude confound is PARTIALLY TRADED, not removed.** `E[f] = 1` is normalized over
+the **ply-k** distribution, while the leaf is evaluated ~one mean-search-depth *below* the root,
+so the leaf-k distribution is shifted down and the realized `E[f]` is off by `−β·d/35`. The
+residue is monotone in β and biased toward the *reconfirm* direction, of order **≤5–17 elo of
+spread across the ladder**. It is smaller than the ~O(10%) confound that invalidated the
+2026-06-22 `v28_meeple_recovery_t0` kill, and it is signed-symmetric so it scales the slope
+rather than flipping it — but it is not zero. **Every write-up of a Part C null must therefore
+use bounded language — "no linear phase effect exceeding ~±22 elo at β = ±0.6" — and never
+"the phase axis is dead."** The analyzer's `C-KILL` text is worded that way; the verdict *code*
+is unchanged.
+
+**4. Measured power, from the voided cells (a legitimate use of void data — it is a variance
+estimate, not a reading).** Per-deck margin sd ≈ **11.8** points (`b0p0` 11.82, `bm0p3` 11.58),
+cross-cell deck correlation **r = 0.14** over the 100 decks the two completed void cells share,
+giving SE(slope) ≈ **1.1 pts/deck per unit β** at the pre-registered 5×n=200 design — so a 2σ
+slope is ≈ **1.4 points of margin at the β = ±0.6 endpoints**, i.e. ≈ **±22 elo at the endpoints**
+(~45 elo of endpoint spread). That number, not "significance", is what a C-KILL bounds.
+(An earlier pass of this arithmetic used r ≈ 0.18 and SE ≈ 1.12 against a partial `bm0p3`;
+the completed-cell numbers above supersede it and do not move the ±22 elo conclusion.)
+
+Also fixed in this commit and recorded for completeness: the launcher's default band moved to
+`1.16e11` (1.15e11 is retired and must never be reused); `rc=$?` is captured on its own line in
+`relaunch_partC_band116.sh` and `night_chain.sh` (a `$(ts)` substitution in the same `echo` had
+been overwriting `$?`, so a launcher failure read as a clean run), and the relaunch script now
+refuses to run the analyzer at all on a non-zero launcher rc; the pinned norms are emitted to
+`norms.json` for provenance; and `tests/test_analyze_curvephase.py` covers the sign convention,
+the amended gate, manifest enforcement and the tripwire.

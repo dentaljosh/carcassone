@@ -1,0 +1,14 @@
+gen_fair_distill: games=450 k_dets=4 sims=688 (budget=2752) exact_endgame=True exact_max_k=2 sighted=False batch_size=1 rep=78ch/10sc leaf_hash=6dfffd57051690f2 net_mode=net-free (champion) | 0 cached, 450 to play, 8 workers, out=/mnt/c/carc-shared/champ_action_logs_20260721
+  10/450 games (111.4s/game, 1439 rows [1399 policy / 40 value-only], ~817 min left)
+  20/450 games (92.1s/game, 2878 rows [2798 policy / 80 value-only], ~660 min left)
+  30/450 games (80.5s/game, 4317 rows [4197 policy / 120 value-only], ~563 min left)
+  40/450 games (73.4s/game, 5755 rows [5595 policy / 160 value-only], ~502 min left)
+  50/450 games (73.2s/game, 7195 rows [6995 policy / 200 value-only], ~488 min left)
+  60/450 games (71.0s/game, 8634 rows [8394 policy / 240 value-only], ~462 min left)
+  70/450 games (73.4s/game, 10073 rows [9793 policy / 280 value-only], ~465 min left)
+  80/450 games (73.2s/game, 11512 rows [11192 policy / 320 value-only], ~451 min left)
+  90/450 games (72.5s/game, 12952 rows [12592 policy / 360 value-only], ~435 min left)
+  100/450 games (72.2s/game, 14390 rows [13990 policy / 400 value-only], ~421 min left)
+  110/450 games (73.3s/game, 15830 rows [15390 policy / 440 value-only], ~415 min left)
+  120/450 games (73.7s/game, 17268 rows [16788 policy / 480 value-only], ~405 min left)
+[done] 124 games, 17844 rows (17348 policy / 496 value-only), 0 skipped (9075.1s). shards in /mnt/c/carc-shared/champ_action_logs_20260721

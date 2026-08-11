@@ -1,0 +1,29 @@
+fair-puct[fair_fair_c1.88_tau5.42_float_kd4_s688_vs_h800_k2-leafa995a38d]: info=fair n=800 paired=True K=2 k_dets=4 sims=688 | 400 cached, 400 to play, 8 workers, out=/mnt/c/carc-shared/classical_search/t3_s3/t020_cand
+  10/400 played (69.9s/game, ~455 min left)
+  20/400 played (54.8s/game, ~347 min left)
+  30/400 played (51.7s/game, ~319 min left)
+  40/400 played (48.4s/game, ~291 min left)
+  50/400 played (49.4s/game, ~288 min left)
+  60/400 played (49.2s/game, ~279 min left)
+  70/400 played (48.7s/game, ~268 min left)
+  80/400 played (47.8s/game, ~255 min left)
+  90/400 played (47.5s/game, ~245 min left)
+  100/400 played (46.8s/game, ~234 min left)
+  110/400 played (48.0s/game, ~232 min left)
+  120/400 played (47.7s/game, ~223 min left)
+  130/400 played (47.2s/game, ~212 min left)
+  140/400 played (47.1s/game, ~204 min left)
+  150/400 played (46.8s/game, ~195 min left)
+  160/400 played (46.8s/game, ~187 min left)
+  170/400 played (47.1s/game, ~181 min left)
+  180/400 played (47.2s/game, ~173 min left)
+  190/400 played (46.3s/game, ~162 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs HeuristicMCTS(h800) ===
+games: 800   champion: 526W / 11D / 263L   winrate 0.664 (z=+9.30)
+avg score diff (champ - rung): +7.47
+ELO: +118.6  (+/- 13.0 1sigma)
+PAIRED: 400 decks   mean seat-balanced margin +7.47   z = +11.32
+prefix ms/move: champion 4881  rung 573  (ratio 8.52x)
+fair endgame: latched 800/800 games, 38.43s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/classical_search/t3_s3/t020_cand/summary.json

@@ -1,0 +1,30 @@
+.............                                                            [100%]
+============================= slowest 10 durations =============================
+0.06s call     tests/test_fair_oracle_prior.py::test_per_world_injection_each_world_its_own_distribution
+0.03s call     tests/test_fair_oracle_prior.py::test_off_agent_never_touches_oracle_state
+0.03s call     tests/test_fair_oracle_prior.py::test_injection_reaches_fair_reshuffled_root_whitebox
+
+(7 durations < 0.005s hidden.  Use -vv to show these durations.)
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_fair_oracle_prior.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 0.28
+	System time (seconds): 0.03
+	Percent of CPU this job got: 96%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.32
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 61328
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 10631
+	Voluntary context switches: 22
+	Involuntary context switches: 3
+	Swaps: 0
+	File system inputs: 1816
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,103 @@
+{
+  "gate": "G3/search",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "5fdeab0",
+    "utc": "2026-08-02T20:45:17Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/pypath/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "knobs": {
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "reuse_tree_yaml": true,
+    "reuse_tree": false,
+    "score_norm_scale": 15.0,
+    "sims_per_det": 1376,
+    "k_dets": 8,
+    "leaf": {
+      "leaf": "v2_9_2_Bmild_cap8_curve125",
+      "leaf_hash": "a36d2e15a3b3d71d",
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "closure_p": {
+        "1": 0.5,
+        "2": 0.2,
+        "3": 0.05
+      },
+      "source": "governance/PRODUCTION.yaml champion.leaf_config"
+    },
+    "use_cy_leaf": true
+  },
+  "args": {
+    "corpus": [
+      "champ"
+    ],
+    "sims": [
+      1376
+    ],
+    "stride": 16,
+    "per_game": null,
+    "limit": 6,
+    "n_games": 20,
+    "det_games": 12,
+    "workers": 12,
+    "tag": "perfpass_20260802",
+    "max_mismatch_report": 200
+  },
+  "wall_secs": 16.351910227967892,
+  "totals": {
+    "positions": 54,
+    "sims_run": 74304,
+    "checks": 432,
+    "plies": 0,
+    "games": 0,
+    "py_secs": 84.01481786486693,
+    "rs_secs": 8.327767394308466,
+    "py_sims": 74304,
+    "rs_sims": 74304
+  },
+  "n_mismatches": 0,
+  "mismatches": [],
+  "per_corpus": {
+    "champ": {
+      "positions": 54,
+      "sims_run": 74304,
+      "checks": 432,
+      "plies": 0,
+      "games": 0,
+      "py_secs": 84.01481786486693,
+      "rs_secs": 8.327767394308466,
+      "py_sims": 74304,
+      "rs_sims": 74304,
+      "n_mismatches": 0
+    }
+  },
+  "throughput": {
+    "python_sims_per_sec": 884.4154149035206,
+    "rust_sims_per_sec": 8922.439410445393,
+    "speedup": 10.088516391834629,
+    "note": "in-process, single worker each; sum over all searched positions"
+  }
+}

@@ -1,0 +1,191 @@
+[2026-07-23_01:07:09] local START cell slope=0.1 -> f6_softcap0p1_vs_champion
+[warn] [head-to-head] candidate leaf hash drift: _leaf_hash 64de897c83964850 != expected a36d2e15a3b3d71d; _frozen_config_hash 342b0196da6c17a6 != expected 6dfffd57051690f2. The curve VALUES matched, so this is most likely an additive LeafConfig field changing the hash shape (the 158f17ff precedent) — re-baseline the constants if so. Re-run with --allow-leaf-hash-drift to proceed on the semantic (curve-values) check alone.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=64de897c83964850 frozen_config_hash=342b0196da6c17a6 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_fairchamp_k2-leaf64de897c]: info=fair n=400 paired=True K=2 k_dets=4 sims=688 | 0 cached, 400 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/f6_softcap0p1_vs_champion
+  10/400 played (58.5s/game, ~380 min left)
+  20/400 played (53.8s/game, ~341 min left)
+  30/400 played (43.0s/game, ~265 min left)
+  40/400 played (42.2s/game, ~253 min left)
+  50/400 played (41.4s/game, ~242 min left)
+  60/400 played (40.1s/game, ~227 min left)
+  70/400 played (41.4s/game, ~228 min left)
+  80/400 played (40.2s/game, ~214 min left)
+  90/400 played (39.5s/game, ~204 min left)
+  100/400 played (39.4s/game, ~197 min left)
+  110/400 played (39.6s/game, ~191 min left)
+  120/400 played (39.1s/game, ~182 min left)
+  130/400 played (39.8s/game, ~179 min left)
+  140/400 played (38.6s/game, ~167 min left)
+  150/400 played (38.7s/game, ~161 min left)
+  160/400 played (39.4s/game, ~157 min left)
+  170/400 played (38.0s/game, ~146 min left)
+  180/400 played (39.1s/game, ~143 min left)
+  190/400 played (38.6s/game, ~135 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 400   candidate: 187W / 7D / 206L   winrate 0.476 (z=-0.95)
+avg score diff (candidate - opponent): -1.17
+ELO: -16.5  (+/- 17.4 1sigma)
+PAIRED: 200 decks   mean seat-balanced margin -1.17   z = -1.41
+prefix ms/move: candidate 3859  opponent 3880  (ratio 0.99x)
+fair endgame: candidate latched 400/400 games, 24.31s solver/game, timeouts=0
+fair endgame: opponent  latched 400/400 games, 22.65s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/f6_softcap0p1_vs_champion/summary.json
+[2026-07-23_03:15:40] local DONE cell slope=0.1 (pool exhausted on this box)
+[2026-07-23_03:15:40] local START cell slope=0.25 -> f6_softcap0p25_vs_champion
+[warn] [head-to-head] candidate leaf hash drift: _leaf_hash 84828cfe9b1eb109 != expected a36d2e15a3b3d71d; _frozen_config_hash 4a46b00d771071a1 != expected 6dfffd57051690f2. The curve VALUES matched, so this is most likely an additive LeafConfig field changing the hash shape (the 158f17ff precedent) — re-baseline the constants if so. Re-run with --allow-leaf-hash-drift to proceed on the semantic (curve-values) check alone.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=84828cfe9b1eb109 frozen_config_hash=4a46b00d771071a1 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_fairchamp_k2-leaf84828cfe]: info=fair n=400 paired=True K=2 k_dets=4 sims=688 | 0 cached, 400 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/f6_softcap0p25_vs_champion
+  10/400 played (56.1s/game, ~364 min left)
+  20/400 played (53.6s/game, ~339 min left)
+  30/400 played (38.9s/game, ~240 min left)
+  40/400 played (42.1s/game, ~253 min left)
+  50/400 played (41.9s/game, ~245 min left)
+  60/400 played (40.1s/game, ~227 min left)
+  70/400 played (41.1s/game, ~226 min left)
+  80/400 played (40.1s/game, ~214 min left)
+  90/400 played (40.4s/game, ~209 min left)
+  100/400 played (40.4s/game, ~202 min left)
+  110/400 played (38.9s/game, ~188 min left)
+  120/400 played (38.9s/game, ~182 min left)
+  130/400 played (39.6s/game, ~178 min left)
+  140/400 played (39.6s/game, ~172 min left)
+  150/400 played (38.6s/game, ~161 min left)
+  160/400 played (38.8s/game, ~155 min left)
+  170/400 played (39.5s/game, ~152 min left)
+  180/400 played (38.3s/game, ~140 min left)
+  190/400 played (38.7s/game, ~135 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 400   candidate: 190W / 8D / 202L   winrate 0.485 (z=-0.60)
+avg score diff (candidate - opponent): -0.02
+ELO: -10.4  (+/- 17.4 1sigma)
+PAIRED: 200 decks   mean seat-balanced margin -0.02   z = -0.02
+prefix ms/move: candidate 3810  opponent 3823  (ratio 1.00x)
+fair endgame: candidate latched 400/400 games, 21.51s solver/game, timeouts=0
+fair endgame: opponent  latched 400/400 games, 22.19s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/f6_softcap0p25_vs_champion/summary.json
+[2026-07-23_05:20:44] local DONE cell slope=0.25 (pool exhausted on this box)
+[2026-07-23_05:20:44] local START cell slope=0.5 -> f6_softcap0p5_vs_champion
+[warn] [head-to-head] candidate leaf hash drift: _leaf_hash 70c0ab743f581513 != expected a36d2e15a3b3d71d; _frozen_config_hash 88d7e6dfad5f2dc4 != expected 6dfffd57051690f2. The curve VALUES matched, so this is most likely an additive LeafConfig field changing the hash shape (the 158f17ff precedent) — re-baseline the constants if so. Re-run with --allow-leaf-hash-drift to proceed on the semantic (curve-values) check alone.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=70c0ab743f581513 frozen_config_hash=88d7e6dfad5f2dc4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_fairchamp_k2-leaf70c0ab74]: info=fair n=400 paired=True K=2 k_dets=4 sims=688 | 0 cached, 400 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/f6_softcap0p5_vs_champion
+  10/400 played (54.9s/game, ~357 min left)
+  20/400 played (53.2s/game, ~337 min left)
+  30/400 played (38.3s/game, ~236 min left)
+  40/400 played (41.8s/game, ~251 min left)
+  50/400 played (40.6s/game, ~237 min left)
+  60/400 played (39.7s/game, ~225 min left)
+  70/400 played (40.4s/game, ~222 min left)
+  80/400 played (39.6s/game, ~211 min left)
+  90/400 played (39.2s/game, ~203 min left)
+  100/400 played (38.1s/game, ~191 min left)
+  110/400 played (38.1s/game, ~184 min left)
+  120/400 played (38.0s/game, ~177 min left)
+  130/400 played (38.1s/game, ~172 min left)
+  140/400 played (38.9s/game, ~169 min left)
+  150/400 played (37.7s/game, ~157 min left)
+  160/400 played (38.0s/game, ~152 min left)
+  170/400 played (38.4s/game, ~147 min left)
+  180/400 played (38.0s/game, ~139 min left)
+  190/400 played (38.1s/game, ~133 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 400   candidate: 192W / 6D / 202L   winrate 0.487 (z=-0.50)
+avg score diff (candidate - opponent): -0.48
+ELO: -8.7  (+/- 17.4 1sigma)
+PAIRED: 200 decks   mean seat-balanced margin -0.48   z = -0.54
+prefix ms/move: candidate 3773  opponent 3768  (ratio 1.00x)
+fair endgame: candidate latched 400/400 games, 21.01s solver/game, timeouts=0
+fair endgame: opponent  latched 400/400 games, 21.34s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/f6_softcap0p5_vs_champion/summary.json
+[2026-07-23_07:22:46] local DONE cell slope=0.5 (pool exhausted on this box)
+[2026-07-23_07:22:46] local START cell slope=0.75 -> f6_softcap0p75_vs_champion
+[warn] [head-to-head] candidate leaf hash drift: _leaf_hash 0c9243b5075b30e3 != expected a36d2e15a3b3d71d; _frozen_config_hash 27d791f1965bfa75 != expected 6dfffd57051690f2. The curve VALUES matched, so this is most likely an additive LeafConfig field changing the hash shape (the 158f17ff precedent) — re-baseline the constants if so. Re-run with --allow-leaf-hash-drift to proceed on the semantic (curve-values) check alone.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=0c9243b5075b30e3 frozen_config_hash=27d791f1965bfa75 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_fairchamp_k2-leaf0c9243b5]: info=fair n=400 paired=True K=2 k_dets=4 sims=688 | 0 cached, 400 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/f6_softcap0p75_vs_champion
+  10/400 played (58.8s/game, ~382 min left)
+  20/400 played (53.1s/game, ~336 min left)
+  30/400 played (42.5s/game, ~262 min left)
+  40/400 played (42.5s/game, ~255 min left)
+  50/400 played (41.2s/game, ~240 min left)
+  60/400 played (40.8s/game, ~231 min left)
+  70/400 played (41.4s/game, ~228 min left)
+  80/400 played (38.6s/game, ~206 min left)
+  90/400 played (40.2s/game, ~208 min left)
+  100/400 played (39.3s/game, ~196 min left)
+  110/400 played (39.2s/game, ~190 min left)
+  120/400 played (38.5s/game, ~180 min left)
+  130/400 played (39.0s/game, ~175 min left)
+  140/400 played (38.6s/game, ~167 min left)
+  150/400 played (38.3s/game, ~159 min left)
+  160/400 played (38.8s/game, ~155 min left)
+  170/400 played (39.2s/game, ~150 min left)
+  180/400 played (38.3s/game, ~140 min left)
+  190/400 played (38.8s/game, ~136 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 400   candidate: 189W / 8D / 203L   winrate 0.482 (z=-0.70)
+avg score diff (candidate - opponent): -0.83
+ELO: -12.2  (+/- 17.4 1sigma)
+PAIRED: 200 decks   mean seat-balanced margin -0.83   z = -0.88
+prefix ms/move: candidate 3792  opponent 3787  (ratio 1.00x)
+fair endgame: candidate latched 400/400 games, 17.86s solver/game, timeouts=0
+fair endgame: opponent  latched 400/400 games, 23.18s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/f6_softcap0p75_vs_champion/summary.json
+[2026-07-23_09:26:33] local DONE cell slope=0.75 (pool exhausted on this box)
+[2026-07-23_09:26:33] local START cell slope=1.0 -> f6_softcap1p0_vs_champion
+[warn] [head-to-head] candidate leaf hash drift: _leaf_hash 268fd0d0c19d46b9 != expected a36d2e15a3b3d71d; _frozen_config_hash 2b544c85c7da713e != expected 6dfffd57051690f2. The curve VALUES matched, so this is most likely an additive LeafConfig field changing the hash shape (the 158f17ff precedent) — re-baseline the constants if so. Re-run with --allow-leaf-hash-drift to proceed on the semantic (curve-values) check alone.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=268fd0d0c19d46b9 frozen_config_hash=2b544c85c7da713e (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_fairchamp_k2-leaf268fd0d0]: info=fair n=400 paired=True K=2 k_dets=4 sims=688 | 0 cached, 400 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/f6_softcap1p0_vs_champion
+  10/400 played (60.3s/game, ~392 min left)
+  20/400 played (52.2s/game, ~330 min left)
+  30/400 played (44.9s/game, ~277 min left)
+  40/400 played (43.8s/game, ~263 min left)
+  50/400 played (41.0s/game, ~239 min left)
+  60/400 played (40.3s/game, ~228 min left)
+  70/400 played (39.1s/game, ~215 min left)
+  80/400 played (38.6s/game, ~206 min left)
+  90/400 played (39.5s/game, ~204 min left)
+  100/400 played (38.7s/game, ~194 min left)
+  110/400 played (38.4s/game, ~185 min left)
+  120/400 played (37.8s/game, ~176 min left)
+  130/400 played (37.9s/game, ~171 min left)
+  140/400 played (38.1s/game, ~165 min left)
+  150/400 played (37.4s/game, ~156 min left)
+  160/400 played (37.9s/game, ~152 min left)
+  170/400 played (37.1s/game, ~142 min left)
+  180/400 played (37.6s/game, ~138 min left)
+  190/400 played (37.8s/game, ~132 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 400   candidate: 196W / 8D / 196L   winrate 0.500 (z=+0.00)
+avg score diff (candidate - opponent): -0.90
+ELO: +0.0  (+/- 17.4 1sigma)
+PAIRED: 200 decks   mean seat-balanced margin -0.90   z = -1.01
+prefix ms/move: candidate 3785  opponent 3768  (ratio 1.00x)
+fair endgame: candidate latched 400/400 games, 21.68s solver/game, timeouts=0
+fair endgame: opponent  latched 400/400 games, 22.09s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/f6_softcap1p0_vs_champion/summary.json
+[2026-07-23_11:30:43] local DONE cell slope=1.0 (pool exhausted on this box)
+[2026-07-23_11:30:43] local SWEEP COMPLETE (all slopes: 0.1 0.25 0.5 0.75 1.0)

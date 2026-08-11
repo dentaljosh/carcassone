@@ -1,0 +1,29 @@
+[mine] roots=1347 todo=1347 resumed=0 levels=(200, 344, 688, 1376) k_dets=4 W=12 -> /mnt/carc-shared/leaf_residual_mining_20260721/records_replication.jsonl
+  1/1347  ok=1 bad=0  5s  0.22 roots/s  eta 103min
+  50/1347  ok=50 bad=0  30s  1.64 roots/s  eta 13min
+  100/1347  ok=100 bad=0  59s  1.70 roots/s  eta 12min
+  150/1347  ok=150 bad=0  89s  1.69 roots/s  eta 12min
+  200/1347  ok=200 bad=0  116s  1.73 roots/s  eta 11min
+  250/1347  ok=250 bad=0  144s  1.73 roots/s  eta 11min
+  300/1347  ok=300 bad=0  172s  1.74 roots/s  eta 10min
+  350/1347  ok=350 bad=0  200s  1.75 roots/s  eta 10min
+  400/1347  ok=400 bad=0  227s  1.76 roots/s  eta 9min
+  450/1347  ok=450 bad=0  254s  1.77 roots/s  eta 8min
+  500/1347  ok=500 bad=0  282s  1.77 roots/s  eta 8min
+  550/1347  ok=550 bad=0  308s  1.78 roots/s  eta 7min
+  600/1347  ok=600 bad=0  337s  1.78 roots/s  eta 7min
+  650/1347  ok=650 bad=0  366s  1.78 roots/s  eta 7min
+  700/1347  ok=700 bad=0  395s  1.77 roots/s  eta 6min
+  750/1347  ok=750 bad=0  422s  1.78 roots/s  eta 6min
+  800/1347  ok=800 bad=0  450s  1.78 roots/s  eta 5min
+  850/1347  ok=850 bad=0  477s  1.78 roots/s  eta 5min
+  900/1347  ok=900 bad=0  506s  1.78 roots/s  eta 4min
+  950/1347  ok=950 bad=0  533s  1.78 roots/s  eta 4min
+  1000/1347  ok=1000 bad=0  562s  1.78 roots/s  eta 3min
+  1050/1347  ok=1050 bad=0  590s  1.78 roots/s  eta 3min
+  1100/1347  ok=1100 bad=0  617s  1.78 roots/s  eta 2min
+  1150/1347  ok=1150 bad=0  646s  1.78 roots/s  eta 2min
+  1200/1347  ok=1200 bad=0  674s  1.78 roots/s  eta 1min
+  1250/1347  ok=1250 bad=0  702s  1.78 roots/s  eta 1min
+  1300/1347  ok=1300 bad=0  731s  1.78 roots/s  eta 0min
+[mine] done ok=1347 bad=0 in 756s

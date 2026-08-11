@@ -1,0 +1,231 @@
+{
+  "schema": "carcassonne-m5-bench-supplement/v1",
+  "kind": "ane_coverage_and_agreement",
+  "precision": "fp16",
+  "timestamp_utc": "2026-07-29T03:08:33Z",
+  "machine": {
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "node": "Mac"
+  },
+  "packages": {
+    "CPU_ONLY": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp16_CPU_ONLY.mlpackage",
+    "CPU_AND_NE": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp16_CPU_AND_NE.mlpackage",
+    "ALL": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp16_ALL.mlpackage"
+  },
+  "coremltools_version": "9.0",
+  "agreement": {
+    "seed": 0,
+    "arch": {
+      "n_filters": 96,
+      "n_blocks": 6,
+      "n_input_channels": 81,
+      "n_scalar_features": 42,
+      "value_global_pool": true
+    },
+    "ref": {
+      "policy_absmax": 88.14479064941406,
+      "value": [
+        0.9984731674194336
+      ]
+    },
+    "units": {
+      "CPU_ONLY": {
+        "output_keys": [
+          "var_234",
+          "var_264"
+        ],
+        "policy_max_abs_diff": 0.2077484130859375,
+        "policy_mean_abs_diff": 0.03587797664926316,
+        "policy_max_rel_to_range": 0.002356899500870486,
+        "value_max_abs_diff": 6.198883056640625e-05,
+        "policy_argmax_torch": 25,
+        "policy_argmax_coreml": 25,
+        "policy_argmax_agrees": true,
+        "top10_overlap": 10
+      },
+      "CPU_AND_NE": {
+        "output_keys": [
+          "var_234",
+          "var_264"
+        ],
+        "policy_max_abs_diff": 0.2077484130859375,
+        "policy_mean_abs_diff": 0.03587797664926316,
+        "policy_max_rel_to_range": 0.002356899500870486,
+        "value_max_abs_diff": 6.198883056640625e-05,
+        "policy_argmax_torch": 25,
+        "policy_argmax_coreml": 25,
+        "policy_argmax_agrees": true,
+        "top10_overlap": 10
+      },
+      "ALL": {
+        "output_keys": [
+          "var_234",
+          "var_264"
+        ],
+        "policy_max_abs_diff": 0.2077484130859375,
+        "policy_mean_abs_diff": 0.03587797664926316,
+        "policy_max_rel_to_range": 0.002356899500870486,
+        "value_max_abs_diff": 6.198883056640625e-05,
+        "policy_argmax_torch": 25,
+        "policy_argmax_coreml": 25,
+        "policy_argmax_agrees": true,
+        "top10_overlap": 10
+      }
+    }
+  },
+  "coverage": {
+    "CPU_ONLY": {
+      "package": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp16_CPU_ONLY.mlpackage",
+      "compiled": "/var/folders/h5/t7jchck55yj1rmkghwv68t5h0000gn/T/cl067_fp16_CPU_ONLY.mlmodelc",
+      "ops_total": 177,
+      "ops_by_device": {
+        "unknown": 125,
+        "MLNeuralEngineComputeDevice": 52
+      },
+      "ane_op_fraction": 0.2937853107344633,
+      "fully_on_ane": false,
+      "by_op_type": {
+        "const": {
+          "unknown": 125
+        },
+        "cast": {
+          "MLNeuralEngineComputeDevice": 4
+        },
+        "conv": {
+          "MLNeuralEngineComputeDevice": 15
+        },
+        "relu": {
+          "MLNeuralEngineComputeDevice": 16
+        },
+        "add": {
+          "MLNeuralEngineComputeDevice": 6
+        },
+        "reshape": {
+          "MLNeuralEngineComputeDevice": 2
+        },
+        "concat": {
+          "MLNeuralEngineComputeDevice": 2
+        },
+        "linear": {
+          "MLNeuralEngineComputeDevice": 3
+        },
+        "reduce_mean": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "reduce_max": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "tanh": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "squeeze": {
+          "MLNeuralEngineComputeDevice": 1
+        }
+      },
+      "non_ane_ops": [],
+      "non_ane_op_count": 0
+    },
+    "CPU_AND_NE": {
+      "package": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp16_CPU_AND_NE.mlpackage",
+      "compiled": "/var/folders/h5/t7jchck55yj1rmkghwv68t5h0000gn/T/cl067_fp16_CPU_AND_NE.mlmodelc",
+      "ops_total": 177,
+      "ops_by_device": {
+        "unknown": 125,
+        "MLNeuralEngineComputeDevice": 52
+      },
+      "ane_op_fraction": 0.2937853107344633,
+      "fully_on_ane": false,
+      "by_op_type": {
+        "const": {
+          "unknown": 125
+        },
+        "cast": {
+          "MLNeuralEngineComputeDevice": 4
+        },
+        "conv": {
+          "MLNeuralEngineComputeDevice": 15
+        },
+        "relu": {
+          "MLNeuralEngineComputeDevice": 16
+        },
+        "add": {
+          "MLNeuralEngineComputeDevice": 6
+        },
+        "reshape": {
+          "MLNeuralEngineComputeDevice": 2
+        },
+        "concat": {
+          "MLNeuralEngineComputeDevice": 2
+        },
+        "linear": {
+          "MLNeuralEngineComputeDevice": 3
+        },
+        "reduce_mean": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "reduce_max": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "tanh": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "squeeze": {
+          "MLNeuralEngineComputeDevice": 1
+        }
+      },
+      "non_ane_ops": [],
+      "non_ane_op_count": 0
+    },
+    "ALL": {
+      "package": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp16_ALL.mlpackage",
+      "compiled": "/var/folders/h5/t7jchck55yj1rmkghwv68t5h0000gn/T/cl067_fp16_ALL.mlmodelc",
+      "ops_total": 177,
+      "ops_by_device": {
+        "unknown": 125,
+        "MLNeuralEngineComputeDevice": 52
+      },
+      "ane_op_fraction": 0.2937853107344633,
+      "fully_on_ane": false,
+      "by_op_type": {
+        "const": {
+          "unknown": 125
+        },
+        "cast": {
+          "MLNeuralEngineComputeDevice": 4
+        },
+        "conv": {
+          "MLNeuralEngineComputeDevice": 15
+        },
+        "relu": {
+          "MLNeuralEngineComputeDevice": 16
+        },
+        "add": {
+          "MLNeuralEngineComputeDevice": 6
+        },
+        "reshape": {
+          "MLNeuralEngineComputeDevice": 2
+        },
+        "concat": {
+          "MLNeuralEngineComputeDevice": 2
+        },
+        "linear": {
+          "MLNeuralEngineComputeDevice": 3
+        },
+        "reduce_mean": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "reduce_max": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "tanh": {
+          "MLNeuralEngineComputeDevice": 1
+        },
+        "squeeze": {
+          "MLNeuralEngineComputeDevice": 1
+        }
+      },
+      "non_ane_ops": [],
+      "non_ane_op_count": 0
+    }
+  }
+}

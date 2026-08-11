@@ -1,0 +1,7 @@
+'\\wsl.localhost\Ubuntu\home\doctor\projects\carcassone'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+WARNING: no loadavg on this OS — the contention guard is DISABLED. Only trust these numbers if you verified the box is quiet yourself (the eff_linus driver does this WSL-side before invoking).
+[cuda_b1         ] forward    2.251 ms (p50 2.222 / p90 2.301)   full    3.218 ms   310.8 pos/s
+
+wrote C:\carc-shared\eff_linus_20260728\out_net_cuda_b1__win__rep2.json

@@ -1,0 +1,373 @@
+{
+  "kind": "equal_time_bench",
+  "host": "Doctor",
+  "cpu": "x86_64",
+  "python": "3.12.3",
+  "started_utc": "2026-07-06T06:18:09Z",
+  "env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "provenance": {
+    "use_flat_leaf": true,
+    "use_cy_leaf": true,
+    "cy_module_bound": true,
+    "cy_supports_v29_curve": true,
+    "v29_curve": [
+      -8.0,
+      -4.0,
+      -1.0,
+      0.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0
+    ],
+    "cython_leaf_active": true
+  },
+  "champion": {
+    "agent": "HeuristicMCTS",
+    "leaf": "v2.9 Bmild_cap8 (cython)",
+    "sims": 6400,
+    "c": 3.0
+  },
+  "candidate": {
+    "agent": "HeuristicPriorAgent (PUCT+heur priors)",
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "leaf_quantize": "float",
+    "final_select": "Q"
+  },
+  "n_positions": 20,
+  "positions": [
+    {
+      "seed": 9100000,
+      "ply": 30,
+      "n_legal": 21
+    },
+    {
+      "seed": 9100001,
+      "ply": 36,
+      "n_legal": 21
+    },
+    {
+      "seed": 9100002,
+      "ply": 42,
+      "n_legal": 24
+    },
+    {
+      "seed": 9100003,
+      "ply": 47,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100004,
+      "ply": 53,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100005,
+      "ply": 59,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100006,
+      "ply": 65,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100007,
+      "ply": 71,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100008,
+      "ply": 76,
+      "n_legal": 36
+    },
+    {
+      "seed": 9100009,
+      "ply": 82,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100010,
+      "ply": 88,
+      "n_legal": 40
+    },
+    {
+      "seed": 9100011,
+      "ply": 94,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100012,
+      "ply": 99,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100013,
+      "ply": 105,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100014,
+      "ply": 111,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100015,
+      "ply": 117,
+      "n_legal": 3
+    },
+    {
+      "seed": 9100016,
+      "ply": 123,
+      "n_legal": 1
+    },
+    {
+      "seed": 9100017,
+      "ply": 128,
+      "n_legal": 47
+    },
+    {
+      "seed": 9100018,
+      "ply": 134,
+      "n_legal": 47
+    },
+    {
+      "seed": 9100019,
+      "ply": 140,
+      "n_legal": 55
+    }
+  ],
+  "results": {
+    "champion_h6400": {
+      "sims": 6400,
+      "median_ms": 3080.8,
+      "mean_ms": 3105.6,
+      "p90_ms": 3704.2,
+      "per_pos_ms": [
+        2227.9,
+        2421.6,
+        2664.1,
+        2794.7,
+        3134.3,
+        2802.7,
+        3148.6,
+        2528.1,
+        2370.6,
+        3673.3,
+        2971.5,
+        3124.4,
+        3037.3,
+        3365.8,
+        3436.0,
+        3502.1,
+        3242.0,
+        2297.1,
+        3982.3,
+        5387.5
+      ]
+    },
+    "candidate_float_s100": {
+      "sims": 100,
+      "median_ms": 406.8,
+      "mean_ms": 512.0,
+      "p90_ms": 746.7,
+      "ratio_to_champ": 0.132,
+      "per_pos_ms": [
+        319.4,
+        349.5,
+        357.3,
+        395.4,
+        155.9,
+        194.1,
+        579.2,
+        321.1,
+        250.8,
+        558.7,
+        727.8,
+        612.8,
+        916.5,
+        672.1,
+        418.2,
+        293.7,
+        717.5,
+        714.2,
+        1452.8,
+        233.4
+      ]
+    },
+    "candidate_float_s200": {
+      "sims": 200,
+      "median_ms": 878.1,
+      "mean_ms": 1073.7,
+      "p90_ms": 1816.0,
+      "ratio_to_champ": 0.285,
+      "per_pos_ms": [
+        626.9,
+        495.3,
+        639.1,
+        806.7,
+        267.8,
+        384.8,
+        941.0,
+        467.5,
+        479.3,
+        1210.5,
+        1164.2,
+        1103.3,
+        1683.8,
+        815.2,
+        759.3,
+        1346.2,
+        1763.4,
+        962.2,
+        3267.9,
+        2289.8
+      ]
+    },
+    "candidate_float_s400": {
+      "sims": 400,
+      "median_ms": 1422.4,
+      "mean_ms": 1749.1,
+      "p90_ms": 2943.5,
+      "ratio_to_champ": 0.462,
+      "per_pos_ms": [
+        1153.9,
+        986.0,
+        1450.8,
+        1247.4,
+        616.0,
+        967.0,
+        1215.4,
+        1050.3,
+        937.6,
+        2278.7,
+        1688.4,
+        1394.0,
+        2140.4,
+        2072.7,
+        1909.6,
+        3567.5,
+        2653.5,
+        1197.3,
+        3581.3,
+        2874.1
+      ]
+    },
+    "candidate_float_s600": {
+      "sims": 600,
+      "median_ms": 2279.2,
+      "mean_ms": 2359.2,
+      "p90_ms": 3319.5,
+      "ratio_to_champ": 0.74,
+      "per_pos_ms": [
+        1596.9,
+        1570.1,
+        2296.7,
+        1977.7,
+        1142.7,
+        1544.3,
+        1448.3,
+        1381.2,
+        1528.6,
+        3104.6,
+        2580.5,
+        2448.1,
+        2717.8,
+        2609.0,
+        2261.7,
+        5252.5,
+        3002.6,
+        1419.0,
+        4064.2,
+        3236.8
+      ]
+    },
+    "candidate_float_s800": {
+      "sims": 800,
+      "median_ms": 2953.1,
+      "mean_ms": 2946.5,
+      "p90_ms": 3692.0,
+      "ratio_to_champ": 0.959,
+      "per_pos_ms": [
+        2075.5,
+        2154.0,
+        3132.5,
+        2883.0,
+        1954.0,
+        1957.5,
+        1705.5,
+        2020.2,
+        1831.8,
+        3532.7,
+        3131.6,
+        2957.0,
+        3113.4,
+        2966.0,
+        2543.3,
+        6213.6,
+        3202.4,
+        2949.1,
+        5126.5,
+        3480.7
+      ]
+    },
+    "candidate_float_s1000": {
+      "sims": 1000,
+      "median_ms": 3383.9,
+      "mean_ms": 3544.8,
+      "p90_ms": 4550.1,
+      "ratio_to_champ": 1.098,
+      "per_pos_ms": [
+        2581.4,
+        2804.8,
+        4293.4,
+        3355.5,
+        2349.4,
+        2451.2,
+        2007.1,
+        2283.5,
+        2628.0,
+        3911.7,
+        3631.1,
+        3257.5,
+        3412.3,
+        3454.4,
+        2945.1,
+        7841.6,
+        3501.9,
+        3511.0,
+        6860.2,
+        3814.3
+      ]
+    }
+  },
+  "match": {
+    "champ_median_ms": 3080.8,
+    "band_ms": [
+      2772.8,
+      3388.9
+    ],
+    "within_band_sims": [
+      800,
+      1000
+    ],
+    "closest_sims": 800,
+    "closest_median_ms": 2953.1,
+    "interp_sims_for_exact_match": 859,
+    "chosen_candidate_sims": 800
+  }
+}

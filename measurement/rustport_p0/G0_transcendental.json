@@ -1,0 +1,499 @@
+{
+  "gate": "G0/transcendental",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "4908e94-dirty",
+    "utc": "2026-07-31T19:49:40Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "harvest": {
+    "corpus": "measurement/champ_action_logs/champ_games.jsonl",
+    "games_used": 89,
+    "plies": 12808,
+    "n_z": 201525,
+    "n_tanh_arg": 214333,
+    "tau_p": 5.0,
+    "value_norm": 15.0,
+    "leaf_quantize": "float",
+    "z_range": [
+      -7.08,
+      0.0
+    ],
+    "z_distinct": 1666,
+    "tanh_range": [
+      -3.1166666666666667,
+      2.82
+    ],
+    "tanh_distinct": 2673,
+    "wall_s": 23.9,
+    "path": "measurement/rustport_p0/transcendental_inputs.npz"
+  },
+  "dispatch": {
+    "variants": {
+      "default": {
+        "baseline": [
+          "X86_V2"
+        ],
+        "dispatch": [
+          "X86_V3",
+          "X86_V4",
+          "AVX512_ICL",
+          "AVX512_SPR"
+        ],
+        "features_on": [
+          "MMX",
+          "SSE",
+          "SSE2",
+          "SSE3",
+          "SSSE3",
+          "SSE41",
+          "POPCNT",
+          "SSE42",
+          "X86_V2",
+          "AVX",
+          "F16C",
+          "FMA3",
+          "AVX2",
+          "LAHF",
+          "CX16",
+          "MOVBE",
+          "BMI",
+          "BMI2",
+          "LZCNT",
+          "VPCLMULQDQ",
+          "VAES",
+          "X86_V3"
+        ],
+        "exp_sha": "0c8d0bfae5132d17cad8d5278c1fadf2",
+        "tanh_sha": "dac49bd5be7129a6728475dd500ea35e",
+        "numpy": "2.4.4"
+      },
+      "no_avx512": {
+        "baseline": [
+          "X86_V2"
+        ],
+        "dispatch": [
+          "X86_V3",
+          "X86_V4",
+          "AVX512_ICL",
+          "AVX512_SPR"
+        ],
+        "features_on": [
+          "MMX",
+          "SSE",
+          "SSE2",
+          "SSE3",
+          "SSSE3",
+          "SSE41",
+          "POPCNT",
+          "SSE42",
+          "X86_V2",
+          "AVX",
+          "F16C",
+          "FMA3",
+          "AVX2",
+          "LAHF",
+          "CX16",
+          "MOVBE",
+          "BMI",
+          "BMI2",
+          "LZCNT",
+          "VPCLMULQDQ",
+          "VAES",
+          "X86_V3"
+        ],
+        "exp_sha": "0c8d0bfae5132d17cad8d5278c1fadf2",
+        "tanh_sha": "dac49bd5be7129a6728475dd500ea35e",
+        "numpy": "2.4.4"
+      },
+      "no_x86_v3": {
+        "baseline": [
+          "X86_V2"
+        ],
+        "dispatch": [
+          "X86_V3",
+          "X86_V4",
+          "AVX512_ICL",
+          "AVX512_SPR"
+        ],
+        "features_on": [
+          "MMX",
+          "SSE",
+          "SSE2",
+          "SSE3",
+          "SSSE3",
+          "SSE41",
+          "POPCNT",
+          "SSE42",
+          "X86_V2",
+          "AVX",
+          "F16C",
+          "FMA3",
+          "AVX2",
+          "LAHF",
+          "CX16",
+          "MOVBE",
+          "BMI",
+          "BMI2",
+          "LZCNT",
+          "VPCLMULQDQ",
+          "VAES"
+        ],
+        "exp_sha": "0c8d0bfae5132d17cad8d5278c1fadf2",
+        "tanh_sha": "4b59d901585277fa040670486511e92e",
+        "numpy": "2.4.4"
+      },
+      "no_avx2_fma3": {
+        "baseline": [
+          "X86_V2"
+        ],
+        "dispatch": [
+          "X86_V3",
+          "X86_V4",
+          "AVX512_ICL",
+          "AVX512_SPR"
+        ],
+        "features_on": [
+          "MMX",
+          "SSE",
+          "SSE2",
+          "SSE3",
+          "SSSE3",
+          "SSE41",
+          "POPCNT",
+          "SSE42",
+          "X86_V2",
+          "AVX",
+          "F16C",
+          "FMA3",
+          "AVX2",
+          "LAHF",
+          "CX16",
+          "MOVBE",
+          "BMI",
+          "BMI2",
+          "LZCNT",
+          "VPCLMULQDQ",
+          "VAES",
+          "X86_V3"
+        ],
+        "exp_sha": "0c8d0bfae5132d17cad8d5278c1fadf2",
+        "tanh_sha": "dac49bd5be7129a6728475dd500ea35e",
+        "numpy": "2.4.4"
+      }
+    },
+    "exp_bits_change_with_simd": false,
+    "exp_sha_by_variant": {
+      "default": "0c8d0bfae5132d17cad8d5278c1fadf2",
+      "no_avx512": "0c8d0bfae5132d17cad8d5278c1fadf2",
+      "no_x86_v3": "0c8d0bfae5132d17cad8d5278c1fadf2",
+      "no_avx2_fma3": "0c8d0bfae5132d17cad8d5278c1fadf2"
+    },
+    "tanh_bits_change_with_simd": true,
+    "tanh_sha_by_variant": {
+      "default": "dac49bd5be7129a6728475dd500ea35e",
+      "no_avx512": "dac49bd5be7129a6728475dd500ea35e",
+      "no_x86_v3": "4b59d901585277fa040670486511e92e",
+      "no_avx2_fma3": "dac49bd5be7129a6728475dd500ea35e"
+    },
+    "numpy_build": {
+      "compilers": {
+        "c": {
+          "name": "gcc",
+          "linker": "ld.bfd",
+          "version": "14.2.1",
+          "commands": "cc"
+        },
+        "cython": {
+          "name": "cython",
+          "linker": "cython",
+          "version": "3.2.4",
+          "commands": "cython"
+        },
+        "c++": {
+          "name": "gcc",
+          "linker": "ld.bfd",
+          "version": "14.2.1",
+          "commands": "c++"
+        }
+      },
+      "simd_extensions": {
+        "baseline": [
+          "X86_V2"
+        ],
+        "found": [
+          "X86_V3"
+        ],
+        "not found": [
+          "X86_V4",
+          "AVX512_ICL",
+          "AVX512_SPR"
+        ]
+      }
+    }
+  },
+  "compare": {
+    "rust_backend": "wheel",
+    "rust_version": "0.1.0",
+    "legs": {
+      "corpus_exp_vs_exp64": {
+        "impl": "exp64",
+        "n": 201525,
+        "n_bit_mismatch": 7205,
+        "frac_bit_mismatch": 0.03575238804118596,
+        "max_ulp": 1,
+        "mean_ulp": 0.03575238804118596,
+        "ulp_histogram_of_mismatches": {
+          "1": 7205
+        },
+        "bit_exact": false
+      },
+      "corpus_exp_vs_exp64_fma": {
+        "impl": "exp64_fma",
+        "n": 201525,
+        "n_bit_mismatch": 0,
+        "frac_bit_mismatch": 0.0,
+        "max_ulp": 0,
+        "mean_ulp": 0.0,
+        "ulp_histogram_of_mismatches": {},
+        "bit_exact": true
+      },
+      "corpus_tanh_vs_tanh64_msun": {
+        "impl": "tanh64[msun]",
+        "n": 214333,
+        "n_bit_mismatch": 3,
+        "frac_bit_mismatch": 1.3996911348229158e-05,
+        "max_ulp": 1,
+        "mean_ulp": 1.3996911348229158e-05,
+        "ulp_histogram_of_mismatches": {
+          "1": 3
+        },
+        "bit_exact": false
+      },
+      "corpus_tanh_vs_tanh64_msun_fma": {
+        "impl": "tanh64[msun_fma]",
+        "n": 214333,
+        "n_bit_mismatch": 0,
+        "frac_bit_mismatch": 0.0,
+        "max_ulp": 0,
+        "mean_ulp": 0.0,
+        "ulp_histogram_of_mismatches": {},
+        "bit_exact": true
+      },
+      "corpus_tanh_vs_tanh64_glibc": {
+        "impl": "tanh64[glibc]",
+        "n": 214333,
+        "n_bit_mismatch": 3,
+        "frac_bit_mismatch": 1.3996911348229158e-05,
+        "max_ulp": 1,
+        "mean_ulp": 1.3996911348229158e-05,
+        "ulp_histogram_of_mismatches": {
+          "1": 3
+        },
+        "bit_exact": false
+      },
+      "corpus_tanh_vs_tanh64_glibc_fma": {
+        "impl": "tanh64[glibc_fma]",
+        "n": 214333,
+        "n_bit_mismatch": 0,
+        "frac_bit_mismatch": 0.0,
+        "max_ulp": 0,
+        "mean_ulp": 0.0,
+        "ulp_histogram_of_mismatches": {},
+        "bit_exact": true
+      },
+      "corpus_tanh_vs_tanh64": {
+        "impl": "tanh64[glibc_fma]",
+        "n": 214333,
+        "n_bit_mismatch": 0,
+        "frac_bit_mismatch": 0.0,
+        "max_ulp": 0,
+        "mean_ulp": 0.0,
+        "ulp_histogram_of_mismatches": {},
+        "bit_exact": true
+      },
+      "corpus_expm1_vs_expm1_msun": {
+        "impl": "expm1[msun]",
+        "n": 428666,
+        "n_bit_mismatch": 384,
+        "frac_bit_mismatch": 0.0008958023262866661,
+        "max_ulp": 1,
+        "mean_ulp": 0.0008958023262866661,
+        "ulp_histogram_of_mismatches": {
+          "1": 384
+        },
+        "bit_exact": false
+      },
+      "corpus_expm1_vs_expm1_msun_fma": {
+        "impl": "expm1[msun_fma]",
+        "n": 428666,
+        "n_bit_mismatch": 85,
+        "frac_bit_mismatch": 0.00019828957743324639,
+        "max_ulp": 1,
+        "mean_ulp": 0.00019828957743324639,
+        "ulp_histogram_of_mismatches": {
+          "1": 85
+        },
+        "bit_exact": false
+      },
+      "corpus_expm1_vs_expm1_glibc": {
+        "impl": "expm1[glibc]",
+        "n": 428666,
+        "n_bit_mismatch": 299,
+        "frac_bit_mismatch": 0.0006975127488534197,
+        "max_ulp": 1,
+        "mean_ulp": 0.0006975127488534197,
+        "ulp_histogram_of_mismatches": {
+          "1": 299
+        },
+        "bit_exact": false
+      },
+      "corpus_expm1_vs_expm1_glibc_fma": {
+        "impl": "expm1[glibc_fma]",
+        "n": 428666,
+        "n_bit_mismatch": 0,
+        "frac_bit_mismatch": 0.0,
+        "max_ulp": 0,
+        "mean_ulp": 0.0,
+        "ulp_histogram_of_mismatches": {},
+        "bit_exact": true
+      },
+      "corpus_nptanh_vs_mathtanh": {
+        "impl": "np.tanh",
+        "n": 214333,
+        "n_bit_mismatch": 76644,
+        "frac_bit_mismatch": 0.3575930911245585,
+        "max_ulp": 2,
+        "mean_ulp": 0.36483882556582514,
+        "ulp_histogram_of_mismatches": {
+          "1": 75091,
+          "2": 1553
+        },
+        "bit_exact": false
+      },
+      "fuzz": {
+        "exp64": {
+          "n": 100000000,
+          "n_bit_mismatch": 34788,
+          "max_ulp": 1,
+          "frac_bit_mismatch": 0.00034788,
+          "mean_ulp": 0.00034788,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 34788
+          }
+        },
+        "exp64_fma": {
+          "n": 100000000,
+          "n_bit_mismatch": 0,
+          "max_ulp": 0,
+          "frac_bit_mismatch": 0.0,
+          "mean_ulp": 0.0,
+          "bit_exact": true,
+          "ulp_histogram_of_mismatches": {}
+        },
+        "tanh64[msun]": {
+          "n": 100000000,
+          "n_bit_mismatch": 131428,
+          "max_ulp": 3,
+          "frac_bit_mismatch": 0.00131428,
+          "mean_ulp": 0.00132573,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 130445,
+            "2": 821,
+            "3": 162
+          }
+        },
+        "tanh64[msun_fma]": {
+          "n": 100000000,
+          "n_bit_mismatch": 128877,
+          "max_ulp": 3,
+          "frac_bit_mismatch": 0.00128877,
+          "mean_ulp": 0.00129171,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 128620,
+            "2": 220,
+            "3": 37
+          }
+        },
+        "tanh64[glibc]": {
+          "n": 100000000,
+          "n_bit_mismatch": 2843,
+          "max_ulp": 3,
+          "frac_bit_mismatch": 2.843e-05,
+          "mean_ulp": 3.804e-05,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 2022,
+            "2": 681,
+            "3": 140
+          }
+        },
+        "tanh64[glibc_fma]": {
+          "n": 100000000,
+          "n_bit_mismatch": 0,
+          "max_ulp": 0,
+          "frac_bit_mismatch": 0.0,
+          "mean_ulp": 0.0,
+          "bit_exact": true,
+          "ulp_histogram_of_mismatches": {}
+        }
+      }
+    },
+    "corpus": {
+      "n_z": 201525,
+      "n_tanh": 214333,
+      "z_range": [
+        -7.08,
+        0.0
+      ],
+      "z_distinct": 1666,
+      "tanh_range": [
+        -3.1166666666666667,
+        2.82
+      ],
+      "tanh_distinct": 2673
+    },
+    "fuzz": {
+      "n_per_impl": 100000000,
+      "z_range": [
+        -100.0,
+        0.0
+      ],
+      "tanh_range": [
+        -20.0,
+        20.0
+      ],
+      "wall_s": 35.3,
+      "seed": 20260731
+    }
+  },
+  "verdict": {
+    "corpus_exp_bit_exact_impls": [
+      "corpus_exp_vs_exp64_fma"
+    ],
+    "corpus_tanh_bit_exact_flavors": [
+      "msun_fma",
+      "glibc_fma"
+    ],
+    "corpus_expm1_bit_exact_flavors": [
+      "glibc_fma"
+    ],
+    "fuzz_exp_bit_exact_impls": [
+      "exp64_fma"
+    ],
+    "fuzz_tanh_bit_exact_flavors": [
+      "tanh64[glibc_fma]"
+    ],
+    "platform_parity_achieved": true
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "prereg": "measurement/classical_search/KWIDTH_110K_PREREG_20260801.md",
+  "elo_bar": 25.0,
+  "n_cells_ok": 900,
+  "n_failed": 0,
+  "n_disagreements": 129,
+  "d_hat": 0.14333333333333334,
+  "se_d_hat": 0.01168041517949735,
+  "n_parity_verified": 20,
+  "n_roots": 608,
+  "arm_a_shared": 900,
+  "arm_a_agree": 900,
+  "mean_delta": 0.48376937984496127,
+  "se_cluster_robust": 0.31948403254967406,
+  "z_cluster_robust": 1.5142208390954368,
+  "ci95": [
+    -0.14241932395239987,
+    1.1099580836423224
+  ],
+  "sd_positions": 3.555576169769894,
+  "n_scored": 129,
+  "n_clusters": 115,
+  "root_collapsed_mean": 0.5377264492753623,
+  "root_collapsed_se": 0.3353781875228756,
+  "design_effect": 1.0415210496425007,
+  "crn_verified_all": true,
+  "boot_record": [
+    0.4789974724187583,
+    -0.1193609022556391,
+    1.1108173076923078,
+    0.0608
+  ],
+  "boot_collapsed": [
+    0.5317260009057971,
+    -0.0963768115942029,
+    1.2024909420289855,
+    0.0508
+  ],
+  "sign_records": [
+    57,
+    59,
+    13,
+    0.6096304357618654
+  ],
+  "sign_roots": [
+    52,
+    51,
+    12,
+    0.5
+  ],
+  "pts_per_move": 0.06934027777777778,
+  "pts_per_move_ci": [
+    -0.020413436433177317,
+    0.1590939919887329
+  ],
+  "elo_equiv": 19.366560643541337,
+  "elo_equiv_ci": [
+    -5.696032740780025,
+    44.63248564369993
+  ],
+  "verdict": "UNDERPOWERED / INCONCLUSIVE at this n",
+  "recommendation": "Report the interval and do NOT promote a direction. Default recommendation is still DO NOT FUND (a screen that cannot exclude the bar cannot justify the spend), but state explicitly what the screen failed to exclude.",
+  "reachability": "the NOT-DETECTED branch required a point estimate <= -0.0022 pts at the realized se 0.3195 and D_hat 0.1433; the DETECTED branch required >= +0.6390"
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "v28-candidate-1",
+  "created": "2026-06-22",
+  "name": "v2.8_candidate",
+  "status": "EXPERIMENTAL — opt-in; NOT production; v2.7 frozen",
+  "definition": "v2.7 (virtual_score_v2 DEFAULT_CONFIG @ CAP=12, DROP_THREE_OPEN) + flat meeple-economy term, post-cap",
+  "IMPORTANT_equivalence": "The candidate is BIT-IDENTICAL to v2.7 with the EXISTING legacy `meeple_k=2.0` knob (verified 560/560 on midgame states). The flat term needs NO new code: `meeple_k` is already implemented in the object, flat, AND Cython leaf paths -> the candidate runs at FULL production speed (no object-path penalty). The v28_meeple_k/recovery_t0 fields were only needed for the recovery-scaling experiment, which HURT (-75 elo) and is excluded.",
+  "canonical_overrides_on_v27_base": {
+    "meeple_k": 2.0
+  },
+  "leafconfig_overrides_equivalent_form": {
+    "v28_meeple_k": 2.0,
+    "v28_meeple_recovery_t0": 0
+  },
+  "equivalent_named_variant": "v28_meeple_flat (== meeple_k=2)",
+  "env_to_reproduce": {
+    "CARCASSONNE_V25_CAP": "12",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0"
+  },
+  "evidence": {
+    "heur200_vs_v27_elo": 179.5,
+    "heur200_vs_v27_z_margin": 9.92,
+    "heur800_vs_v27_elo": 94.9,
+    "heur800_vs_v27_z_margin": 3.76,
+    "rows": "measurement/heuristic_v28/V28_SEARCH_PILOT_RESULTS.csv"
+  },
+  "open_items": {
+    "k_optimization": "k=2 is the strongest of {1,2} tested; upper bracket {3,4} not run; HEURISTIC_VALUE_NORM=15 means k=2 is a large reweighting — tune before larger eval",
+    "neural_leaf_swap": "iter8 net + this leaf vs + v2.7 leaf — DEFERRED to SHM orchestrator (net-on-CPU infeasible)",
+    "out_of_lineage_anchor": "beats v2.7 ruler; absolute strength vs an independent reference (deeper heur / human / neural champion) NOT yet shown"
+  },
+  "guardrails": "Never set these env knobs in production launchers or PRODUCTION.yaml. v2.7 (all v28 fields OFF) remains the frozen reference ruler."
+}

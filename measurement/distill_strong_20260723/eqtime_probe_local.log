@@ -1,0 +1,40 @@
+=== EQTIME PROBE | host=Doctor cand k4x162 vs opp k4x688 | W=16 n=32 band=99500000000 rev=8fe268b 2026-07-29_01:32:14 ===
+[fair-nvn-orch] CAND iter_03.pt: 81ch/42sc (sighted)
+[fair-nvn-orch] OPP  = fair-champion (net-free heuristic priors) -> ONE server only
+[fair-nvn-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt on cuda
+[export] tracing... (n_ch=81, n_scalar=42)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=7.03e-06  max|dvalue|=1.14e-04  OK
+[export] OK -> /tmp/carc_fairnvnC_Doctor.ts.pt  (n_scalar=42, C=81, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[fair-nvn-orch] start carc-orch CAND (W=16 fwd=6 max_batch=16) shm=fairnvnCDoctor n_ch=81 n_scalar=42
+[fair-nvn-orch] server READY | CAND shm='fairnvnCDoctor' 81ch/42sc | OPP fair-champion (net-free, no server) | client W=16
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-sims: ASYMMETRIC search budgets — candidate k4x162 (total 648) vs opponent fair-champion k4x688 (total 2752). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[fair-netprior] net=/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt
+[fair-netprior] rep=SIGHTED 81ch/42sc (inferred from the checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+fair-puct[fair_fair-netprior_c1.5_tau5_float_kd4_s162_vs_fairchamp-k4x688_k2-leafa36d2e15]: info=fair-netprior n=32 paired=True K=2 k_dets=4 sims=162 | 0 cached, 32 to play, 16 workers, out=/mnt/c/carc-shared/eqtime_probe_Doctor_s162_w16
+  [orch] candidate SHM eval-server 'fairnvnCDoctor': 16 CPU workers attach to /dev/shm/carc_fairnvnCDoctor (81ch/42-scalar sighted PRIORS)
+  10/32 played (60.6s/game, ~22 min left)
+  20/32 played (55.6s/game, ~11 min left)
+  30/32 played (39.9s/game, ~1 min left)
+  32/32 played (38.4s/game, ~0 min left)
+
+=== FAIR-PUCT[fair-netprior] (K=2, k_dets=4, sims=162, total~648) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 32   candidate: 12W / 0D / 20L   winrate 0.375 (z=-1.41)
+avg score diff (candidate - opponent): -6.69
+ELO: -88.7  (+/- 63.4 1sigma)
+PAIRED: 16 decks   mean seat-balanced margin -6.69   z = -1.92
+prefix ms/move: candidate 3701  opponent 3855  (ratio 0.96x)
+fair endgame: candidate latched 32/32 games, 17.07s solver/game, timeouts=0
+fair endgame: opponent  latched 32/32 games, 19.59s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/eqtime_probe_Doctor_s162_w16/summary.json
+=== EQTIME PROBE exited rc=1 2026-07-29_01:52:55 ===

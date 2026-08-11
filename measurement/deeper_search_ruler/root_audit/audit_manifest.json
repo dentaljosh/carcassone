@@ -1,0 +1,12 @@
+{
+  "agents": [
+    "h3200",
+    "h6400",
+    "h12800",
+    "rod1"
+  ],
+  "meeple_k": 2.0,
+  "ckpt": "/mnt/c/carc-shared/rod_v28_continuation/ckpt/iter_01.pt",
+  "n_positions": 1620,
+  "positions_file": "measurement/deeper_search_ruler/multiphase_positions.jsonl"
+}

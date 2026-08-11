@@ -1,0 +1,4 @@
+wrote 144 genuinely-hidden roots to measurement/f3_public_state_oracle/roots_k3_greedy.jsonl
+by K: {3: 144}
+strata counts: {'contested_farm': 21, 'open_city': 140, 'live_meeple': 45}
+pass note: 'effectively decided' (child spread<0.5) is applied downstream in run_oracle.

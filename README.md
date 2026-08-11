@@ -1,20 +1,21 @@
 # Carcassonne AI
 
-AlphaZero-style Carcassonne agent + position analyzer for family games.
+AlphaZero-style Carcassonne agent aiming at genuinely superhuman 2-player play.
 
 **Author:** Joshua Ishal
-**Hardware:** AMD 5800X + RTX 5060 Ti 16GB, WSL2/Ubuntu.
-**Scope:** Base game + River expansion + Farmers, 2-player (Phase 1-5), with multiplayer as a stretch goal.
-**Goal:** Phase 5 position analyzer that reviews family games, not raw playing strength.
+**Hardware:** AMD 5800X + RTX 5060 Ti 16GB, WSL2/Ubuntu (+ a Xeon box and a pop-os laptop in the cluster — see CLAUDE.md).
+**Scope:** Base game + Farmers, 2-player (River expansion **dropped 2026-06-02** — competitive/WC play is base-only). No Inns & Cathedrals, no Abbots, no Big meeples.
+**Goal (changed 2026-05-28, overriding the original prompt):** genuinely superhuman play — beat strong/expert humans, aspirationally the world champion. The Phase 5 position analyzer + heuristic research are now **downstream** of strength, not the target. See [CLAUDE.md](CLAUDE.md) + DECISIONS.md.
 
 ## Status
 
 - **Phase 0** ✅ scaffolding, sanity checks, measurements, vendoring + engine patches
-- **Phase 1** ✅ AlphaZero-style game wrapper + opt-in legal-moves cache (39 tests pass)
-- **Phase 2** ✅ vanilla MCTS (UCT C=3, in-place rollouts, Q-tiebreak best_action). Acceptance: MCTS(s=20) won 96/100 vs random.
-- **Phase 3** in progress — `virtual_score` + `network` (6×96 ResNet) + `warmstart` pipeline + `NeuralMCTS` all implemented. Smoke comparison **complete**: heuristic-only labels won by 24.7× in wins-per-hour-of-generation. Three production prereqs landed (encoding richness 40→78 ch, scalar normalization, streaming/IterableDataset trainer). **v1 100K production attempt missed acceptance** (T1 net-vs-random 84/100; needed ≥90); diagnosis: heuristic policy targets at tau=10 were too soft (top-1 ~45%) for the policy head to fit. **v2 in flight at tau=0.5** (top-1 ~64% expected). See [STATUS.md](STATUS.md). 115 tests pass.
+- **Phase 1** ✅ AlphaZero-style game wrapper + opt-in legal-moves cache
+- **Phase 2** ✅ vanilla MCTS (UCT C=3, in-place rollouts, Q-tiebreak best_action). Acceptance: MCTS(s=20) won 96/100 vs random
+- **Phase 3** ✅ 6×96 ResNet (~7M params) + heuristic warmstart at 100K positions, tau=0.5. `checkpoints/warmstart_canonical.pt` is the canonical baseline. Closure: skip remaining warmstart iteration, advance to self-play (see DECISIONS.md "2026-04-29 — Phase 3 closure")
+- **Phase 4** active — self-play loop (virtual-loss / batched-eval MCTS, 3-box cluster, anchor-gate). A 2026-06-02 **foundational audit** reframed the project: the v2.7 hand-crafted leaf was masking 2 live bugs (farm-scoring + MCTS-transposition double-counts, both now FIXED) plus architectural caps (the learned value head was never in the search loop). River was dropped; symmetry augmentation built. Current work is a **staged correction** (A: re-baseline + cheap fixes → B: value-head-in-loop retrain → C: representation planes). The old per-iteration checkpoints (v6 `iter_12`, then `iter_11`) were strongest on the *old* River+buggy game and are being re-baselined on the new base-only game.
 
-See [STATUS.md](STATUS.md) for live state and [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) for the project spec.
+See [STATUS.md](STATUS.md) for live state, [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) + [docs/PHASE1_BUILD_SPEC_2026-06-02.md](docs/PHASE1_BUILD_SPEC_2026-06-02.md) for the current plan, and [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) for the (partly superseded) original spec.
 
 ## Quick start
 
@@ -55,9 +56,9 @@ python scripts/bench_workers.py 64       # parallel-worker speedup
 
 - `engine/` — vendored copy of [wingedsheep/carcassonne](https://github.com/wingedsheep/carcassonne) (MIT, last upstream release Oct 2021), patched (see `DECISIONS.md`)
 - `az/` — vendored copy of [suragnair/alpha-zero-general](https://github.com/suragnair/alpha-zero-general) (MIT, used as a reference, not imported)
-- `src/carcassonne_ai/` — our code (game wrapper, board representation, action space, scalar features, ETA helpers, MCTS placeholder)
-- `scripts/` — runnable entry points (smoke tests, measurements, benches)
-- `tests/` — pytest (33 tests covering action space, board encoding, game wrapper, invariants, legal-moves cache, string repr, window overflow)
+- `src/carcassonne_ai/` — our code (game wrapper, board representation, action space, scalar features, MCTS, NeuralMCTS, network, warmstart, selfplay, evaluators, eval_server / eval_server_pool for the GPU orchestrator)
+- `scripts/` — runnable entry points (smoke tests, measurements, benches, self-play + train + eval drivers, Phase 4 outer loop)
+- `tests/` — pytest suite (covers action space, board encoding, game wrapper, MCTS, NeuralMCTS virtual-loss, eval-server orchestrator, etc.)
 - `data/`, `checkpoints/`, `runs/` — gitignored artifacts
 
 ## Tracking docs

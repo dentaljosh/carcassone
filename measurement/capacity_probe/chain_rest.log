@@ -1,0 +1,6 @@
+[chain] 2026-07-21_14:17:26 waiting for the running cell to exit
+[chain] 2026-07-21_14:24:24 waiting for the running cell to exit
+[chain] 2026-07-21_14:51:25 no training alive
+[chain] OK f128b6_s0 -> measurement/capacity_probe/f128b6_s0/V4_listwise/ranknet_best.pt
+[chain] windows_free=21.9GB
+[chain] 2026-07-21_14:51:26 launching 128:6:1 ONLY (capped); f256b8 deferred pending scope call

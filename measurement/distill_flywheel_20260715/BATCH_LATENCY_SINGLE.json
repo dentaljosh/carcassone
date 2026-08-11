@@ -1,0 +1,146 @@
+{
+  "knobs": {
+    "sims": 688,
+    "k_dets": 4,
+    "budget": 2752,
+    "moves": 3,
+    "plies": 40,
+    "transport": "carc-orch SHM",
+    "leaf": "v2.9 Bmild_cap8 curve125"
+  },
+  "points": [
+    {
+      "label": "champion",
+      "ms_per_move_mean": 2365.0,
+      "ms_per_move_median": 2255.0,
+      "ms_per_move_min": 2141.1,
+      "ms_per_move_max": 2698.9,
+      "per_move_ms": [
+        2141.1,
+        2255.0,
+        2698.9
+      ],
+      "picks": [
+        1363,
+        2502,
+        1456
+      ],
+      "support_mean": 21.0,
+      "gpu": {
+        "util_pct_mean": 0.4,
+        "util_pct_max": 2.0,
+        "power_w_mean": 14.9,
+        "power_w_max": 17.8,
+        "n_samples": 13
+      }
+    },
+    {
+      "label": "netprior_bs1",
+      "ms_per_move_mean": 17536.2,
+      "ms_per_move_median": 17580.7,
+      "ms_per_move_min": 16962.5,
+      "ms_per_move_max": 18065.3,
+      "per_move_ms": [
+        18065.3,
+        16962.5,
+        17580.7
+      ],
+      "picks": [
+        1363,
+        2502,
+        1456
+      ],
+      "support_mean": 21.0,
+      "gpu": {
+        "util_pct_mean": 10.0,
+        "util_pct_max": 29.0,
+        "power_w_mean": 19.6,
+        "power_w_max": 20.4,
+        "n_samples": 93
+      },
+      "batch_size": 1,
+      "picks_match_bs1": "3/3"
+    },
+    {
+      "label": "netprior_bs8",
+      "ms_per_move_mean": 6192.8,
+      "ms_per_move_median": 5594.9,
+      "ms_per_move_min": 5401.6,
+      "ms_per_move_max": 7581.8,
+      "per_move_ms": [
+        7581.8,
+        5401.6,
+        5594.9
+      ],
+      "picks": [
+        1363,
+        2504,
+        1047
+      ],
+      "support_mean": 21.0,
+      "gpu": {
+        "util_pct_mean": 13.4,
+        "util_pct_max": 24.0,
+        "power_w_mean": 17.8,
+        "power_w_max": 20.4,
+        "n_samples": 34
+      },
+      "batch_size": 8,
+      "picks_match_bs1": "1/3"
+    },
+    {
+      "label": "netprior_bs16",
+      "ms_per_move_mean": 5155.6,
+      "ms_per_move_median": 5126.5,
+      "ms_per_move_min": 4897.1,
+      "ms_per_move_max": 5443.2,
+      "per_move_ms": [
+        5126.5,
+        4897.1,
+        5443.2
+      ],
+      "picks": [
+        1363,
+        2502,
+        1456
+      ],
+      "support_mean": 21.0,
+      "gpu": {
+        "util_pct_mean": 12.8,
+        "util_pct_max": 28.0,
+        "power_w_mean": 19.0,
+        "power_w_max": 19.6,
+        "n_samples": 28
+      },
+      "batch_size": 16,
+      "picks_match_bs1": "3/3"
+    },
+    {
+      "label": "netprior_bs32",
+      "ms_per_move_mean": 5273.1,
+      "ms_per_move_median": 5405.6,
+      "ms_per_move_min": 4983.8,
+      "ms_per_move_max": 5430.0,
+      "per_move_ms": [
+        5405.6,
+        4983.8,
+        5430.0
+      ],
+      "picks": [
+        1363,
+        2502,
+        1456
+      ],
+      "support_mean": 21.0,
+      "gpu": {
+        "util_pct_mean": 12.2,
+        "util_pct_max": 24.0,
+        "power_w_mean": 18.8,
+        "power_w_max": 19.7,
+        "n_samples": 29
+      },
+      "batch_size": 32,
+      "picks_match_bs1": "3/3"
+    }
+  ]
+}

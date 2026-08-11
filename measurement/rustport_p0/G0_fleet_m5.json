@@ -1,0 +1,450 @@
+{
+  "gate": "G0/transcendental",
+  "env": {
+    "host": "Mac",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.13",
+    "python_impl": "CPython",
+    "git_rev": "",
+    "utc": "2026-07-31T20:00:12Z",
+    "numpy": "2.5.1",
+    "carc_rs": "IMPORT FAILED: No module named 'carc_rs'",
+    "libc": " "
+  },
+  "compare": {
+    "rust_backend": "cli",
+    "rust_version": "ok 0.1.0",
+    "legs": {
+      "corpus_exp_vs_exp64": {
+        "impl": "exp64",
+        "n": 201525,
+        "n_bit_mismatch": 7206,
+        "frac_bit_mismatch": 0.035757350204689245,
+        "max_ulp": 1,
+        "mean_ulp": 0.035757350204689245,
+        "ulp_histogram_of_mismatches": {
+          "1": 7206
+        },
+        "bit_exact": false
+      },
+      "corpus_exp_vs_exp64_fma": {
+        "impl": "exp64_fma",
+        "n": 201525,
+        "n_bit_mismatch": 1,
+        "frac_bit_mismatch": 4.962163503287433e-06,
+        "max_ulp": 1,
+        "mean_ulp": 4.962163503287433e-06,
+        "ulp_histogram_of_mismatches": {
+          "1": 1
+        },
+        "bit_exact": false
+      },
+      "corpus_tanh_vs_tanh64_msun": {
+        "impl": "tanh64[msun]",
+        "n": 214333,
+        "n_bit_mismatch": 68377,
+        "frac_bit_mismatch": 0.31902226908595505,
+        "max_ulp": 2,
+        "mean_ulp": 0.322320874527021,
+        "ulp_histogram_of_mismatches": {
+          "1": 67670,
+          "2": 707
+        },
+        "bit_exact": false
+      },
+      "corpus_tanh_vs_tanh64_msun_fma": {
+        "impl": "tanh64[msun_fma]",
+        "n": 214333,
+        "n_bit_mismatch": 68380,
+        "frac_bit_mismatch": 0.3190362659973033,
+        "max_ulp": 2,
+        "mean_ulp": 0.32233487143836925,
+        "ulp_histogram_of_mismatches": {
+          "1": 67673,
+          "2": 707
+        },
+        "bit_exact": false
+      },
+      "corpus_tanh_vs_tanh64_glibc": {
+        "impl": "tanh64[glibc]",
+        "n": 214333,
+        "n_bit_mismatch": 68377,
+        "frac_bit_mismatch": 0.31902226908595505,
+        "max_ulp": 2,
+        "mean_ulp": 0.322320874527021,
+        "ulp_histogram_of_mismatches": {
+          "1": 67670,
+          "2": 707
+        },
+        "bit_exact": false
+      },
+      "corpus_tanh_vs_tanh64_glibc_fma": {
+        "impl": "tanh64[glibc_fma]",
+        "n": 214333,
+        "n_bit_mismatch": 68380,
+        "frac_bit_mismatch": 0.3190362659973033,
+        "max_ulp": 2,
+        "mean_ulp": 0.32233487143836925,
+        "ulp_histogram_of_mismatches": {
+          "1": 67673,
+          "2": 707
+        },
+        "bit_exact": false
+      },
+      "corpus_tanh_vs_tanh64": {
+        "impl": "tanh64[glibc_fma]",
+        "n": 214333,
+        "n_bit_mismatch": 68380,
+        "frac_bit_mismatch": 0.3190362659973033,
+        "max_ulp": 2,
+        "mean_ulp": 0.32233487143836925,
+        "ulp_histogram_of_mismatches": {
+          "1": 67673,
+          "2": 707
+        },
+        "bit_exact": false
+      },
+      "corpus_expm1_vs_expm1_msun": {
+        "impl": "expm1[msun]",
+        "n": 428666,
+        "n_bit_mismatch": 37833,
+        "frac_bit_mismatch": 0.08825752450625896,
+        "max_ulp": 1,
+        "mean_ulp": 0.08825752450625896,
+        "ulp_histogram_of_mismatches": {
+          "1": 37833
+        },
+        "bit_exact": false
+      },
+      "corpus_expm1_vs_expm1_msun_fma": {
+        "impl": "expm1[msun_fma]",
+        "n": 428666,
+        "n_bit_mismatch": 37540,
+        "frac_bit_mismatch": 0.08757400866875376,
+        "max_ulp": 1,
+        "mean_ulp": 0.08757400866875376,
+        "ulp_histogram_of_mismatches": {
+          "1": 37540
+        },
+        "bit_exact": false
+      },
+      "corpus_expm1_vs_expm1_glibc": {
+        "impl": "expm1[glibc]",
+        "n": 428666,
+        "n_bit_mismatch": 37918,
+        "frac_bit_mismatch": 0.0884558140836922,
+        "max_ulp": 1,
+        "mean_ulp": 0.0884558140836922,
+        "ulp_histogram_of_mismatches": {
+          "1": 37918
+        },
+        "bit_exact": false
+      },
+      "corpus_expm1_vs_expm1_glibc_fma": {
+        "impl": "expm1[glibc_fma]",
+        "n": 428666,
+        "n_bit_mismatch": 37625,
+        "frac_bit_mismatch": 0.08777229824618701,
+        "max_ulp": 1,
+        "mean_ulp": 0.08777229824618701,
+        "ulp_histogram_of_mismatches": {
+          "1": 37625
+        },
+        "bit_exact": false
+      },
+      "corpus_nptanh_vs_mathtanh": {
+        "impl": "np.tanh",
+        "n": 214333,
+        "n_bit_mismatch": 34978,
+        "frac_bit_mismatch": 0.16319465504611982,
+        "max_ulp": 1,
+        "mean_ulp": 0.16319465504611982,
+        "ulp_histogram_of_mismatches": {
+          "1": 34978
+        },
+        "bit_exact": false
+      },
+      "fuzz": {
+        "exp64": {
+          "n": 10000000,
+          "n_bit_mismatch": 10029,
+          "max_ulp": 1,
+          "frac_bit_mismatch": 0.0010029,
+          "mean_ulp": 0.0010029,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 10029
+          }
+        },
+        "exp64_fma": {
+          "n": 10000000,
+          "n_bit_mismatch": 9200,
+          "max_ulp": 1,
+          "frac_bit_mismatch": 0.00092,
+          "mean_ulp": 0.00092,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 9200
+          }
+        },
+        "tanh64[msun]": {
+          "n": 10000000,
+          "n_bit_mismatch": 163339,
+          "max_ulp": 2,
+          "frac_bit_mismatch": 0.0163339,
+          "mean_ulp": 0.016616,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 160518,
+            "2": 2821
+          }
+        },
+        "tanh64[msun_fma]": {
+          "n": 10000000,
+          "n_bit_mismatch": 163292,
+          "max_ulp": 2,
+          "frac_bit_mismatch": 0.0163292,
+          "mean_ulp": 0.016611,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 160474,
+            "2": 2818
+          }
+        },
+        "tanh64[glibc]": {
+          "n": 10000000,
+          "n_bit_mismatch": 176085,
+          "max_ulp": 2,
+          "frac_bit_mismatch": 0.0176085,
+          "mean_ulp": 0.0178906,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 173264,
+            "2": 2821
+          }
+        },
+        "tanh64[glibc_fma]": {
+          "n": 10000000,
+          "n_bit_mismatch": 176025,
+          "max_ulp": 2,
+          "frac_bit_mismatch": 0.0176025,
+          "mean_ulp": 0.0178844,
+          "bit_exact": false,
+          "ulp_histogram_of_mismatches": {
+            "1": 173206,
+            "2": 2819
+          }
+        }
+      }
+    },
+    "corpus": {
+      "n_z": 201525,
+      "n_tanh": 214333,
+      "z_range": [
+        -7.08,
+        0.0
+      ],
+      "z_distinct": 1666,
+      "tanh_range": [
+        -3.1166666666666667,
+        2.82
+      ],
+      "tanh_distinct": 2673
+    },
+    "fuzz": {
+      "n_per_impl": 10000000,
+      "z_range": [
+        -100.0,
+        0.0
+      ],
+      "tanh_range": [
+        -20.0,
+        20.0
+      ],
+      "wall_s": 17.6,
+      "seed": 20260731
+    }
+  },
+  "verdict": {
+    "corpus_exp_bit_exact_impls": [],
+    "corpus_tanh_bit_exact_flavors": [],
+    "corpus_expm1_bit_exact_flavors": [],
+    "fuzz_exp_bit_exact_impls": [],
+    "fuzz_tanh_bit_exact_flavors": [],
+    "platform_parity_achieved": false
+  },
+  "dispatch": {
+    "variants": {
+      "default": {
+        "baseline": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD"
+        ],
+        "dispatch": [
+          "ASIMDHP",
+          "ASIMDDP",
+          "ASIMDFHM"
+        ],
+        "features_on": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD",
+          "FPHP",
+          "ASIMDHP",
+          "ASIMDDP"
+        ],
+        "exp_sha": "1da2cea9978ba12b6b107f846f3e947d",
+        "tanh_sha": "dac49bd5be7129a6728475dd500ea35e",
+        "numpy": "2.5.1"
+      },
+      "no_avx512": {
+        "baseline": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD"
+        ],
+        "dispatch": [
+          "ASIMDHP",
+          "ASIMDDP",
+          "ASIMDFHM"
+        ],
+        "features_on": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD",
+          "FPHP",
+          "ASIMDHP",
+          "ASIMDDP"
+        ],
+        "exp_sha": "1da2cea9978ba12b6b107f846f3e947d",
+        "tanh_sha": "dac49bd5be7129a6728475dd500ea35e",
+        "numpy": "2.5.1"
+      },
+      "no_x86_v3": {
+        "baseline": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD"
+        ],
+        "dispatch": [
+          "ASIMDHP",
+          "ASIMDDP",
+          "ASIMDFHM"
+        ],
+        "features_on": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD",
+          "FPHP",
+          "ASIMDHP",
+          "ASIMDDP"
+        ],
+        "exp_sha": "1da2cea9978ba12b6b107f846f3e947d",
+        "tanh_sha": "dac49bd5be7129a6728475dd500ea35e",
+        "numpy": "2.5.1"
+      },
+      "no_avx2_fma3": {
+        "baseline": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD"
+        ],
+        "dispatch": [
+          "ASIMDHP",
+          "ASIMDDP",
+          "ASIMDFHM"
+        ],
+        "features_on": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD",
+          "FPHP",
+          "ASIMDHP",
+          "ASIMDDP"
+        ],
+        "exp_sha": "1da2cea9978ba12b6b107f846f3e947d",
+        "tanh_sha": "dac49bd5be7129a6728475dd500ea35e",
+        "numpy": "2.5.1"
+      }
+    },
+    "exp_bits_change_with_simd": false,
+    "exp_sha_by_variant": {
+      "default": "1da2cea9978ba12b6b107f846f3e947d",
+      "no_avx512": "1da2cea9978ba12b6b107f846f3e947d",
+      "no_x86_v3": "1da2cea9978ba12b6b107f846f3e947d",
+      "no_avx2_fma3": "1da2cea9978ba12b6b107f846f3e947d"
+    },
+    "tanh_bits_change_with_simd": false,
+    "tanh_sha_by_variant": {
+      "default": "dac49bd5be7129a6728475dd500ea35e",
+      "no_avx512": "dac49bd5be7129a6728475dd500ea35e",
+      "no_x86_v3": "dac49bd5be7129a6728475dd500ea35e",
+      "no_avx2_fma3": "dac49bd5be7129a6728475dd500ea35e"
+    },
+    "numpy_build": {
+      "compilers": {
+        "c": {
+          "name": "clang",
+          "linker": "ld64",
+          "version": "15.0.0",
+          "commands": "cc"
+        },
+        "cython": {
+          "name": "cython",
+          "linker": "cython",
+          "version": "3.2.8",
+          "commands": "cython"
+        },
+        "c++": {
+          "name": "clang",
+          "linker": "ld64",
+          "version": "15.0.0",
+          "commands": "c++"
+        }
+      },
+      "simd_extensions": {
+        "baseline": [
+          "NEON",
+          "NEON_FP16",
+          "NEON_VFPV4",
+          "ASIMD"
+        ],
+        "found": [
+          "ASIMDHP",
+          "ASIMDDP"
+        ],
+        "not found": [
+          "ASIMDFHM"
+        ]
+      }
+    }
+  },
+  "platform_probe": [
+    "uname: Darwin Mac 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:17 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T8142 arm64",
+    "sw_vers: macOS 26.5.2 25F84",
+    "libSystem: \t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)",
+    "cc: Apple clang version 21.0.0 (clang-2100.1.1.101)",
+    "rustc: rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "python: 3.12.13",
+    "numpy: 2.5.1",
+    "cpu: Apple M5",
+    "loadavg: 16:00  up 9 days, 13:54, 2 users, load averages: 2.56 2.48 2.36"
+  ],
+  "run_mode": {
+    "backend": "carc-cli",
+    "fuzz": 10000000,
+    "chunk": 1000000,
+    "seed": 20260731,
+    "harness_git_rev_source": "4908e94 (local repo copy)"
+  }
+}

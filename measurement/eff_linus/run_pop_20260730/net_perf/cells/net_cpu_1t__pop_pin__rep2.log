@@ -1,0 +1,3 @@
+[cpu_1t          ] forward   10.454 ms (p50 10.425 / p90 10.598)   full   11.214 ms   89.2 pos/s
+
+wrote /home/pop/carc-pop-bench/out/net_perf/cells/net_cpu_1t__pop_pin__rep2.json

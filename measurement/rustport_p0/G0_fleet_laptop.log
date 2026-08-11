@@ -1,0 +1,13 @@
++ PY=/home/doctor/projects/carcassone/.venv/bin/python
++ H=scripts/rustport/harness_transcendental.py
++ N=measurement/rustport_p0/transcendental_inputs.npz
++ C=/home/doctor/rustport_fleet/bin/carc-cli-x86_64
++ nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python scripts/rustport/harness_transcendental.py dispatch --inputs measurement/rustport_p0/transcendental_inputs.npz --via-cli /home/doctor/rustport_fleet/bin/carc-cli-x86_64
+G0/transcendental: PASS  dispatch probe only
+G0/transcendental: result -> /home/doctor/rustport_fleet/measurement/rustport_p0/G0_transcendental.json
++ mv measurement/rustport_p0/G0_transcendental.json measurement/rustport_p0/G0_dispatch_tmp.json
++ nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python scripts/rustport/harness_transcendental.py compare --inputs measurement/rustport_p0/transcendental_inputs.npz --fuzz 10000000 --chunk 1000000 --via-cli /home/doctor/rustport_fleet/bin/carc-cli-x86_64
+G0/transcendental: PASS  corpus exp: bit-exact via ['corpus_exp_vs_exp64_fma'] (exp64 7205/201525 max 1 ulp; exp64_fma 0/201525); corpus tanh: bit-exact via ['msun_fma', 'glibc_fma']; fuzz exp ['exp64_fma'], fuzz tanh ['tanh64[glibc_fma]']
+G0/transcendental: result -> /home/doctor/rustport_fleet/measurement/rustport_p0/G0_transcendental.json
++ echo 'RUN_DONE rc=0'
+RUN_DONE rc=0

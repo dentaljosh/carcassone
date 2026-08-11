@@ -1,0 +1,39 @@
+=== DISTILL STAGE-1 @ Thu Jul 16 01:53:07 EDT 2026 — TAG=distill_flywheel_20260715 iters 0..3 games=600 ===
+    teacher: FairHeuristicPriorAgent k_dets=4 x sims=688 (curve125) · window 12 · aux_weight 0
+    boxes (gen): local W16  laptop W12 (use_laptop=1) · orch-OFF (net-free CPU)
+  bundle tip: 2927d6c
+  laptop synced to 2927d6c
+
+########## DISTILL ITER 0 -> iter_00 @ Thu Jul 16 01:53:16 EDT 2026 (warm from warmstart_canonical.pt) ##########
+[it0] gen seed_start=700000000 -> /mnt/c/carc-shared/distill_flywheel_20260715/iter_00 @ Thu Jul 16 01:53:16 EDT 2026
+[it0] gen complete (600 npz) @ Thu Jul 16 05:05:40 EDT 2026
+[it0] train (accumulate iter_00..iter_00, window 12) @ Thu Jul 16 05:05:40 EDT 2026
+[it0] screen @ Thu Jul 16 05:08:11 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it0] probe_metrics @ Thu Jul 16 05:08:12 EDT 2026
+[it0] ✅ iter complete (screen HEALTHY) @ Thu Jul 16 05:08:18 EDT 2026
+
+########## DISTILL ITER 1 -> iter_01 @ Thu Jul 16 05:08:18 EDT 2026 (warm from iter_00.pt) ##########
+[it1] gen seed_start=700100000 -> /mnt/c/carc-shared/distill_flywheel_20260715/iter_01 @ Thu Jul 16 05:08:18 EDT 2026
+[it1] gen complete (600 npz) @ Thu Jul 16 08:22:46 EDT 2026
+[it1] train (accumulate iter_00..iter_01, window 12) @ Thu Jul 16 08:22:46 EDT 2026
+[it1] screen @ Thu Jul 16 08:27:38 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it1] probe_metrics @ Thu Jul 16 08:27:38 EDT 2026
+[it1] ✅ iter complete (screen HEALTHY) @ Thu Jul 16 08:27:44 EDT 2026
+
+########## DISTILL ITER 2 -> iter_02 @ Thu Jul 16 08:27:44 EDT 2026 (warm from iter_01.pt) ##########
+[it2] gen seed_start=700200000 -> /mnt/c/carc-shared/distill_flywheel_20260715/iter_02 @ Thu Jul 16 08:27:44 EDT 2026
+[it2] gen complete (600 npz) @ Thu Jul 16 11:37:05 EDT 2026
+[it2] train (accumulate iter_00..iter_02, window 12) @ Thu Jul 16 11:37:05 EDT 2026
+[it2] screen @ Thu Jul 16 11:44:22 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it2] probe_metrics @ Thu Jul 16 11:44:22 EDT 2026
+[it2] ✅ iter complete (screen HEALTHY) @ Thu Jul 16 11:44:28 EDT 2026
+[it3] already complete — skip (reboot-resume)
+
+=== DISTILL STAGE-1 DONE @ Thu Jul 16 11:44:29 EDT 2026 — completed 4 iter(s); latest: /mnt/c/carc-shared/distill_flywheel_20260715/ckpt/iter_02.pt ===
+=== distill stage-1 exiting @ Thu Jul 16 11:44:29 EDT 2026 (cleaned gen pools on both boxes) ===

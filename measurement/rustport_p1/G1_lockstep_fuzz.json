@@ -1,0 +1,211 @@
+{
+  "gate": "G1/lockstep_fuzz",
+  "verdict": "PASS",
+  "env": {
+    "host": "laptop-wsl",
+    "platform": "Linux-6.18.33.1-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+    "machine": "x86_64",
+    "python": "3.14.4",
+    "python_impl": "CPython",
+    "git_rev": "d30015d17-dirty",
+    "utc": "2026-08-01T00:00:26Z",
+    "numpy": "2.4.6",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.43"
+  },
+  "args": {
+    "games": 10000,
+    "start": 0,
+    "workers": 16,
+    "wall_frac": 0.2,
+    "policy_base": 5000000,
+    "max_plies": 400,
+    "tag": "laptop",
+    "out": "measurement/rustport_p1/G1_lockstep_fuzz.json",
+    "jsonl": "measurement/rustport_p1/G1_lockstep_fuzz_laptop.jsonl",
+    "repro_dir": "measurement/rustport_p1/G1_lockstep_reproducers"
+  },
+  "deck_seed_range": [
+    97000000000,
+    97000009999
+  ],
+  "deck_seed_band_note": "throwaway fuzz-only range 97e9+i \u2014 NOT a registered claim band (governance/BAND_REGISTRY.csv); these games are a correctness fuzz, never an estimate",
+  "per_ply_checks": [
+    "string_representation(bytes)",
+    "legal_mask(bytes)",
+    "mask_counts(n_total,n_overflow)",
+    "scores",
+    "flat_base_score[p0]",
+    "flat_base_score[p1]",
+    "state_scalars",
+    "window_overflow_error_parity"
+  ],
+  "per_mode": {
+    "uniform": {
+      "games": 8000,
+      "plies": 1151411,
+      "positions_compared": 1159411,
+      "mismatches": 0,
+      "window_overflow_games": 0,
+      "engine_error_games": 0,
+      "games_touching_row0": 5439,
+      "games_touching_col0": 0,
+      "games_touching_row34": 0,
+      "games_touching_col34": 0,
+      "placements_row0": 16745,
+      "placements_col0": 0,
+      "plies_with_dropped_legal": 1,
+      "dropped_legal_total": 2,
+      "min_row_seen": 0,
+      "min_col_seen": 1,
+      "max_row_seen": 20,
+      "max_col_seen": 28
+    },
+    "wall": {
+      "games": 2000,
+      "plies": 287489,
+      "positions_compared": 289489,
+      "mismatches": 0,
+      "window_overflow_games": 1,
+      "engine_error_games": 4,
+      "games_touching_row0": 2000,
+      "games_touching_col0": 201,
+      "games_touching_row34": 0,
+      "games_touching_col34": 4,
+      "placements_row0": 51723,
+      "placements_col0": 336,
+      "plies_with_dropped_legal": 68670,
+      "dropped_legal_total": 343216,
+      "min_row_seen": 0,
+      "min_col_seen": 0,
+      "max_row_seen": 8,
+      "max_col_seen": 34
+    }
+  },
+  "total_games": 10000,
+  "total_plies": 1438900,
+  "total_positions_compared": 1448900,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "window_overflow_games": 1,
+  "window_overflow_reproducers": [
+    {
+      "deck_seed": 97000006104,
+      "policy_seed": 5006104,
+      "mode": "wall",
+      "ply": 84,
+      "n_total": 4,
+      "n_overflow": 4,
+      "window_origin": [
+        -11,
+        2
+      ],
+      "window_size": 25,
+      "phase": "tiles",
+      "python_error": "All 4 legal actions fall outside the 25x25 window centered at (-11, 2). Caller should drop this game from training.",
+      "rust_mask_counts": [
+        4,
+        4
+      ]
+    }
+  ],
+  "engine_error_games": 4,
+  "engine_error_reproducers": [
+    {
+      "deck_seed": 97000001314,
+      "policy_seed": 5001314,
+      "mode": "wall",
+      "ply": 79,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board column index 35 out of range (len 35)",
+      "last_tile": [
+        0,
+        34
+      ],
+      "extent_rows": [
+        0,
+        6
+      ],
+      "extent_cols": [
+        14,
+        34
+      ]
+    },
+    {
+      "deck_seed": 97000003159,
+      "policy_seed": 5003159,
+      "mode": "wall",
+      "ply": 63,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board column index 35 out of range (len 35)",
+      "last_tile": [
+        0,
+        34
+      ],
+      "extent_rows": [
+        0,
+        6
+      ],
+      "extent_cols": [
+        15,
+        34
+      ]
+    },
+    {
+      "deck_seed": 97000006414,
+      "policy_seed": 5006414,
+      "mode": "wall",
+      "ply": 67,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board column index 35 out of range (len 35)",
+      "last_tile": [
+        0,
+        34
+      ],
+      "extent_rows": [
+        0,
+        6
+      ],
+      "extent_cols": [
+        14,
+        34
+      ]
+    },
+    {
+      "deck_seed": 97000009024,
+      "policy_seed": 5009024,
+      "mode": "wall",
+      "ply": 67,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board column index 35 out of range (len 35)",
+      "last_tile": [
+        0,
+        34
+      ],
+      "extent_rows": [
+        0,
+        6
+      ],
+      "extent_cols": [
+        14,
+        34
+      ]
+    }
+  ],
+  "matched_error_games": 5,
+  "exception_games": 0,
+  "wallclock_s": 57.79960239199863,
+  "games_per_s": 173.01157077482472,
+  "plies_per_s_wall": 24894.63491878953,
+  "jsonl": "measurement/rustport_p1/G1_lockstep_fuzz_laptop.jsonl",
+  "reproducer_dir": "measurement/rustport_p1/G1_lockstep_reproducers"
+}

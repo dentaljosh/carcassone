@@ -1,0 +1,28 @@
+[device_libm] device Pixel 9 Pro arm64-v8a sdk37 (17)
+[device_libm] corpus_tanh: pushed 214333 args (3 MiB, 0.7s)
+[device_libm] corpus_expm1: pushed 428666 args (6 MiB, 1.0s)
+[device_libm] corpus_exp: pushed 201525 args (3 MiB, 0.7s)
+[device_libm] fuzz_tanh: pushed 2000000 args (32 MiB, 11.3s)
+[device_libm] fuzz_expm1: pushed 2000000 args (32 MiB, 9.4s)
+[device_libm] fuzz_exp: pushed 2000000 args (32 MiB, 7.9s)
+[device_libm] fuzz 2000000/10000000 (47s)
+[device_libm] fuzz_tanh: pushed 2000000 args (32 MiB, 11.0s)
+[device_libm] fuzz_expm1: pushed 2000000 args (32 MiB, 9.8s)
+[device_libm] fuzz_exp: pushed 2000000 args (32 MiB, 6.7s)
+[device_libm] fuzz 4000000/10000000 (94s)
+[device_libm] fuzz_tanh: pushed 2000000 args (32 MiB, 10.0s)
+[device_libm] fuzz_expm1: pushed 2000000 args (32 MiB, 10.0s)
+[device_libm] fuzz_exp: pushed 2000000 args (32 MiB, 8.3s)
+[device_libm] fuzz 6000000/10000000 (142s)
+[device_libm] fuzz_tanh: pushed 2000000 args (32 MiB, 10.5s)
+[device_libm] fuzz_expm1: pushed 2000000 args (32 MiB, 10.5s)
+[device_libm] fuzz_exp: pushed 2000000 args (32 MiB, 6.3s)
+[device_libm] fuzz 8000000/10000000 (188s)
+[device_libm] fuzz_tanh: pushed 2000000 args (32 MiB, 9.6s)
+[device_libm] fuzz_expm1: pushed 2000000 args (32 MiB, 9.6s)
+[device_libm] fuzz_exp: pushed 2000000 args (32 MiB, 6.7s)
+[device_libm] fuzz 10000000/10000000 (234s)
+[device_libm] wrote measurement/rustport_p7/G7_libm_device.json
+[device_libm] VERDICT tanh flavours surviving corpus+fuzz: ['msun']
+[device_libm]         expm1 flavours surviving corpus+fuzz: ['msun']
+[device_libm]         scalar exp (corpus/fuzz): ['exp64_fma'] / ['exp64_fma']

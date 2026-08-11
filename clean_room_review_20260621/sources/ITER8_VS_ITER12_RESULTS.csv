@@ -1,0 +1,7 @@
+cell,candidate,candidate_sha256,agent_sims,opponent,heur_sims,heur_leaf,band,n,W,D,L,wr,elo,sigma,raw_dir
+i8_s200,iter8,0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c,200,HeuristicMCTS,800,v2_7,2500000000,400,237,8,155,0.6025,+72.2,17.7,/mnt/c/carc-shared/iter8_vs_iter12/i8_s200
+i12_s200,iter12,059e394cb0a2e1e6bf8c5f04bef2e7eb1f3ea8806fccd9819b8ab0aaa55f7d0c,200,HeuristicMCTS,800,v2_7,2500000000,400,246,6,148,0.6225,+86.9,17.9,/mnt/c/carc-shared/iter8_vs_iter12/i12_s200
+i8_s800,iter8,0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c,800,HeuristicMCTS,800,v2_7,2500000000,400,274,7,119,0.6937,+142.1,18.8,/mnt/c/carc-shared/iter8_vs_iter12/i8_s800
+i12_s800,iter12,059e394cb0a2e1e6bf8c5f04bef2e7eb1f3ea8806fccd9819b8ab0aaa55f7d0c,800,HeuristicMCTS,800,v2_7,2500000000,400,280,7,113,0.7087,+154.5,19.1,/mnt/c/carc-shared/iter8_vs_iter12/i12_s800
+PAIRED_s200,iter12_minus_iter8,,200,HeuristicMCTS,800,v2_7,2500000000,400,,,,+0.0200dwr,+14.6,z=0.65,common_decks=200
+PAIRED_s800,iter12_minus_iter8,,800,HeuristicMCTS,800,v2_7,2500000000,400,,,,+0.0150dwr,+12.4,z=0.51,common_decks=200

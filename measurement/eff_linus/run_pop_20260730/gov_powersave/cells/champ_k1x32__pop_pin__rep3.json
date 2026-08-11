@@ -1,0 +1,291 @@
+{
+  "schema": "carcassonne-m5-bench/v1",
+  "kind": "champion_single_stream_latency",
+  "tag": "eff_linus:champ_k1x32__pop_pin__rep3",
+  "timestamp_utc": "2026-07-30T17:05:18Z",
+  "machine": {
+    "platform": "Linux-6.17.9-76061709-generic-x86_64-with-glibc2.35",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "system": "Linux",
+    "python": "3.13.14",
+    "python_impl": "CPython",
+    "node": "pop-os",
+    "cpu_count": 24,
+    "cpu_brand": "Intel(R) Core(TM) i7-14650HX",
+    "mem_bytes": 16454234112,
+    "loadavg": [
+      1.091796875,
+      1.04736328125,
+      0.80078125
+    ]
+  },
+  "cython": {
+    "use_flat_leaf": true,
+    "use_cy_leaf_flag": false,
+    "cy_module_bound": false,
+    "cy_supports_v29_curve": false,
+    "leaf_active": false,
+    "leaf_path": "pure_python",
+    "repr_cy_importable": false,
+    "v29_curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ]
+  },
+  "binding": {
+    "bundle": "/home/pop/carc-pop-bench/m5_bench_20260728/bundle",
+    "carcassonne_ai": "/home/pop/carc-pop-bench/m5_bench_20260728/bundle/carcassonne_ai/__init__.py",
+    "production_yaml": "/home/pop/carc-pop-bench/m5_bench_20260728/bundle/carcassonne_ai/data/PRODUCTION.yaml"
+  },
+  "resolved_env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "positions_file": "/home/pop/carc-pop-bench/m5_bench_20260728/bundle/positions.jsonl",
+  "n_positions": 12,
+  "repeat": 1,
+  "seed": 101,
+  "verify": true,
+  "champion": {
+    "id": "puct_priors_v29_bmild_cap8",
+    "yaml_k_dets": 4,
+    "yaml_sims_per_det": 688,
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ],
+    "bonus_cap": 8.0,
+    "opp_bonus_cap": 8.0,
+    "exact_max_k": 2
+  },
+  "budgets": [
+    {
+      "k_dets": 1,
+      "sims_per_det": 32,
+      "total_sims": 32,
+      "warmup_discarded": 1,
+      "exact_latches": 0,
+      "overall": {
+        "n": 11,
+        "mean_s": 0.09379289472723361,
+        "min_s": 0.06536094099988077,
+        "p50_s": 0.09304708600006961,
+        "p90_s": 0.12327092499981518,
+        "max_s": 0.1233845049998763
+      },
+      "by_phase": {
+        "meeples": {
+          "n": 6,
+          "mean_s": 0.1008574801666479,
+          "min_s": 0.07328220499994131,
+          "p50_s": 0.10000742900001569,
+          "p90_s": 0.11531228600006216,
+          "max_s": 0.1233845049998763
+        },
+        "tiles": {
+          "n": 5,
+          "mean_s": 0.08531539219993647,
+          "min_s": 0.06536094099988077,
+          "p50_s": 0.06661053100015124,
+          "p90_s": 0.08939049599985083,
+          "max_s": 0.12327092499981518
+        }
+      },
+      "samples": [
+        {
+          "pos_id": 1,
+          "rep": 0,
+          "s": 0.10000742900001569,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 0,
+          "s": 0.06661053100015124,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 0,
+          "s": 0.09304708600006961,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 0,
+          "s": 0.08939049599985083,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 0,
+          "s": 0.10011136999992232,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 0,
+          "s": 0.06536094099988077,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 0,
+          "s": 0.11531228600006216,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 0,
+          "s": 0.08194406799998433,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 0,
+          "s": 0.07328220499994131,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 0,
+          "s": 0.12327092499981518,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 0,
+          "s": 0.1233845049998763,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        }
+      ],
+      "wallclock_s": 1.1627131230000032
+    }
+  ],
+  "agent_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "fair",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "FairHeuristicPriorAgent",
+    "reshuffle_semantics": "root-determinization PIMC: reshuffle the UNSEEN deck (canonical sort + rng), next_tile untouched; fresh tree per determinization; pooled-Q pick",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": false,
+      "config_hash": "82e11eedebe71db3"
+    },
+    "fair_deploy": {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total_sims": 2752,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "unknown",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory).",
+    "runtime_budget_override": {
+      "sims_per_det": 32,
+      "k_dets": 1,
+      "total_sims": 32,
+      "note": "the budget the agent ACTUALLY runs; fair_deploy above is the PRODUCTION.yaml intent (k4x688=2752)."
+    }
+  }
+}

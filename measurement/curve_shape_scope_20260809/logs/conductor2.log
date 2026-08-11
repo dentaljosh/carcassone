@@ -1,0 +1,55 @@
+[cond 2026-08-09_03:33:33] waiting for the C0_identity gate cell to complete...
+[cond 2026-08-09_03:33:33] C0 summary present; applying A-gate 0
+[cond 2026-08-09_03:33:33] gate verdict: PENDING
+[cond 2026-08-09_03:33:33] gate passed (PENDING = awaiting the off-production cells). Continuing.
+[cond 2026-08-09_03:33:33] === launching cell C1_flattop on BOTH boxes ===
+[cond 2026-08-09_04:08:31] local leg for C1_flattop returned rc=0
+[cond 2026-08-09_04:08:31] laptop leg for C1_flattop returned
+[cond 2026-08-09_04:08:31] === launching cell C2_broadlow on BOTH boxes ===
+[cond 2026-08-09_04:40:57] local leg for C2_broadlow returned rc=0
+[cond 2026-08-09_04:40:57] laptop leg for C2_broadlow returned
+[cond 2026-08-09_04:40:57] === launching cell C3_hoard on BOTH boxes ===
+[cond 2026-08-09_05:15:23] local leg for C3_hoard returned rc=0
+[cond 2026-08-09_05:15:23] laptop leg for C3_hoard returned
+[cond 2026-08-09_05:15:23] all cells attempted; final readout:
+      "completion": 1.0,
+      "W": 200,
+      "D": 3,
+      "L": 197,
+      "elo": 2.6058157511977584,
+      "elo_sig": 17.372267878035203,
+      "paired_z": 0.423277971242542,
+      "paired_mean_margin": 0.3675,
+      "n_paired": 200,
+      "avg_diff": 0.3675,
+      "cand_leaf_hash": "bbcb9b134769b4fe",
+      "opp_leaf_hash": "a36d2e15a3b3d71d",
+      "rules_profile": "fixed_v1",
+      "r9_env_ok": true,
+      "cand_curve": [
+        -9.895748,
+        -4.39811,
+        -1.099528,
+        0.0,
+        2.473937,
+        3.710906,
+        5.195268,
+        6.976503
+      ],
+      "opp_curve": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "band_seed_start": 110000000000,
+      "backend": null,
+      "elo_vs_c0": 24.34888068023484
+    }
+  ]
+}
+[cond 2026-08-09_05:15:23] conductor finished

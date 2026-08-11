@@ -1,0 +1,226 @@
+{
+  "schema": "carcassonne-analyzer-farmwar-verdict/v1",
+  "prereg": "measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+  "statistic": "delta = V(played) - V(best), engine points, Joshua's seat (pick_a = champion, pick_b = human; position_delta returns B - A)",
+  "stratifier_rule": "primary",
+  "n_gate": {
+    "min_n": 10,
+    "gate_ok_at_stratify": true,
+    "gate_ok_after_scoring": true
+  },
+  "scoring_health": {
+    "n_attempted": 42,
+    "n_ok": 42,
+    "n_failed": 0,
+    "failures": [],
+    "crn_verified_all": true,
+    "distinct_afterstates_min": 32,
+    "m_worlds": [
+      32
+    ]
+  },
+  "FARM": {
+    "stratum": "FARM",
+    "n": 21,
+    "mean_delta_pts": 0.7529761904761905,
+    "sd_pts": 4.445150807273557,
+    "se_naive": 0.9700114309440541,
+    "se_cluster_root": 0.9700114309440542,
+    "n_root_clusters": 21,
+    "root_design_effect": 1.0000000000000004,
+    "se_cluster_game": 1.0003350846473142,
+    "n_game_clusters": 6,
+    "game_design_effect": 1.0634995187996534,
+    "z_two_sided": 0.7762549661330936,
+    "z_cluster_game": 0.7527239642321107,
+    "ci95_lo": -1.1482112787663175,
+    "ci95_hi": 2.6541636597186984,
+    "ci95_covers_zero": true,
+    "n_positive": 11,
+    "n_negative": 10,
+    "n_zero": 0,
+    "mean_within_var": 257.9585253456221
+  },
+  "CONTROL": {
+    "stratum": "CONTROL",
+    "n": 21,
+    "mean_delta_pts": 0.3125,
+    "sd_pts": 4.191672361659484,
+    "se_naive": 0.9146978993218523,
+    "se_cluster_root": 0.9146978993218523,
+    "n_root_clusters": 21,
+    "root_design_effect": 1.0,
+    "se_cluster_game": 0.38610264840070807,
+    "n_game_clusters": 6,
+    "game_design_effect": 0.17817640734747414,
+    "z_two_sided": 0.34164285304654607,
+    "z_cluster_game": 0.8093702576100406,
+    "ci95_lo": -1.4802749394052748,
+    "ci95_hi": 2.105274939405275,
+    "ci95_covers_zero": true,
+    "n_positive": 10,
+    "n_negative": 11,
+    "n_zero": 0,
+    "mean_within_var": 274.8010752688172
+  },
+  "decision": {
+    "branch": 4,
+    "verdict": "INCONCLUSIVE. Report the estimate and its CI; promote nothing. Default next step is MORE E4 GAMES, not more compute on n=6.",
+    "z_gate": 2.0,
+    "predicates": {
+      "branch1_farm_pos_sig_and_control_null_or_half": false,
+      "branch2_farm_nonpos_sig": false,
+      "branch3_both_pos_sig": false,
+      "farm_mean_gt_0": true,
+      "farm_abs_z_ge_gate": false,
+      "control_ci_covers_zero": true,
+      "control_mean_lt_half_farm": true,
+      "control_abs_z_ge_gate": false
+    },
+    "mints_claim_id": false
+  },
+  "per_epoch": {
+    "FARM": {
+      "app_aug2": {
+        "n": 3,
+        "mean_delta_pts": 2.96875,
+        "sd_pts": 5.913768362896876,
+        "se_naive": 3.414315756243604,
+        "sign": 1
+      },
+      "fixed_v1": {
+        "n": 11,
+        "mean_delta_pts": -0.4147727272727273,
+        "sd_pts": 4.939617641395112,
+        "se_naive": 1.4893507567570818,
+        "sign": -1
+      },
+      "walled": {
+        "n": 7,
+        "mean_delta_pts": 1.6383928571428572,
+        "sd_pts": 2.769689053911493,
+        "se_naive": 1.0468440636610825,
+        "sign": 1
+      },
+      "_epochs_agree_in_sign": false,
+      "_pooling_licensed": false
+    },
+    "CONTROL": {
+      "app_aug2": {
+        "n": 3,
+        "mean_delta_pts": 0.3333333333333333,
+        "sd_pts": 5.537278964738307,
+        "se_naive": 3.1969495008697137,
+        "sign": 1
+      },
+      "fixed_v1": {
+        "n": 9,
+        "mean_delta_pts": -0.2152777777777778,
+        "sd_pts": 4.835841437970692,
+        "se_naive": 1.6119471459902306,
+        "sign": -1
+      },
+      "walled": {
+        "n": 9,
+        "mean_delta_pts": 0.8333333333333334,
+        "sd_pts": 3.5008369535012624,
+        "se_naive": 1.1669456511670875,
+        "sign": 1
+      },
+      "_epochs_agree_in_sign": false,
+      "_pooling_licensed": false
+    }
+  },
+  "per_game_FARM": {
+    "1785982194_705585": {
+      "n": 2,
+      "mean_delta_pts": 4.875
+    },
+    "1785984310_1698417952": {
+      "n": 4,
+      "mean_delta_pts": -1.390625
+    },
+    "1785986044_1911511187": {
+      "n": 5,
+      "mean_delta_pts": -1.75
+    },
+    "g1_867966": {
+      "n": 4,
+      "mean_delta_pts": 1.0859375
+    },
+    "g2_161583": {
+      "n": 3,
+      "mean_delta_pts": 2.375
+    },
+    "g3_66810": {
+      "n": 3,
+      "mean_delta_pts": 2.96875
+    }
+  },
+  "tier1_sign_check": {
+    "note": "SIGN ONLY \u2014 the Tier-1 judge is 1.83x noisier and has no curve125; its magnitude is never comparable to the primary's.",
+    "FARM": {
+      "n_shared": 21,
+      "n_scored": 21,
+      "n_agree": 13,
+      "agreement_rate": 0.6190476190476191,
+      "binomial_p_two_sided": 0.38331031799316406,
+      "primary_mean": 0.7529761904761905,
+      "secondary_mean_SIGN_ONLY": -0.4895833333333333
+    },
+    "CONTROL": {
+      "n_shared": 21,
+      "n_scored": 21,
+      "n_agree": 13,
+      "agreement_rate": 0.6190476190476191,
+      "binomial_p_two_sided": 0.38331031799316406,
+      "primary_mean": 0.3125,
+      "secondary_mean_SIGN_ONLY": 0.8467261904761905
+    },
+    "FARM_stratum_mean_sign_secondary": -1,
+    "secondary_FARM": {
+      "stratum": "FARM/tier1",
+      "n": 21,
+      "mean_delta_pts": -0.4895833333333333,
+      "sd_pts": 4.961525145641543,
+      "se_naive": 1.0826935496347225,
+      "se_cluster_root": 1.082693549634722,
+      "n_root_clusters": 21,
+      "root_design_effect": 0.9999999999999991,
+      "se_cluster_game": 1.1644382163083602,
+      "n_game_clusters": 6,
+      "game_design_effect": 1.1567028400303105,
+      "z_two_sided": -0.4521901266508038,
+      "z_cluster_game": -0.42044595108314836,
+      "ci95_lo": -2.6116236969112183,
+      "ci95_hi": 1.6324570302445516,
+      "ci95_covers_zero": true,
+      "n_positive": 9,
+      "n_negative": 12,
+      "n_zero": 0,
+      "mean_within_var": 405.4027937788019
+    },
+    "secondary_CONTROL": {
+      "stratum": "CONTROL/tier1",
+      "n": 21,
+      "mean_delta_pts": 0.8467261904761905,
+      "sd_pts": 5.703171273458721,
+      "se_naive": 1.24453400294868,
+      "se_cluster_root": 1.24453400294868,
+      "n_root_clusters": 21,
+      "root_design_effect": 1.0,
+      "se_cluster_game": 1.6650182668710112,
+      "n_game_clusters": 6,
+      "game_design_effect": 1.7898822917127493,
+      "z_two_sided": 0.6803560115433073,
+      "z_cluster_game": 0.5085386793187574,
+      "ci95_lo": -1.5925156328386876,
+      "ci95_hi": 3.2859680137910683,
+      "ci95_covers_zero": true,
+      "n_positive": 12,
+      "n_negative": 9,
+      "n_zero": 0,
+      "mean_within_var": 430.627448156682
+    }
+  }
+}

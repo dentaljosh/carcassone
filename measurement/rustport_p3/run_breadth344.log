@@ -1,0 +1,36 @@
+G3: 776 jobs over ['golden', 'midgame', 'champ', 'distill', 'e4', 'det'] at sims=[344], workers=12
+  25/776 jobs | 61 searches | 0 mismatches | 4s
+  50/776 jobs | 86 searches | 0 mismatches | 5s
+  75/776 jobs | 111 searches | 0 mismatches | 6s
+  100/776 jobs | 136 searches | 0 mismatches | 7s
+  125/776 jobs | 161 searches | 0 mismatches | 9s
+  150/776 jobs | 186 searches | 0 mismatches | 10s
+  175/776 jobs | 211 searches | 0 mismatches | 11s
+  200/776 jobs | 236 searches | 0 mismatches | 12s
+  225/776 jobs | 261 searches | 0 mismatches | 13s
+  250/776 jobs | 286 searches | 0 mismatches | 15s
+  275/776 jobs | 350 searches | 0 mismatches | 21s
+  300/776 jobs | 450 searches | 0 mismatches | 27s
+  325/776 jobs | 550 searches | 0 mismatches | 33s
+  350/776 jobs | 650 searches | 0 mismatches | 40s
+  375/776 jobs | 750 searches | 0 mismatches | 45s
+  400/776 jobs | 850 searches | 0 mismatches | 51s
+  425/776 jobs | 950 searches | 0 mismatches | 57s
+  450/776 jobs | 1050 searches | 0 mismatches | 61s
+  475/776 jobs | 1150 searches | 0 mismatches | 65s
+  500/776 jobs | 1250 searches | 0 mismatches | 71s
+  525/776 jobs | 1350 searches | 0 mismatches | 77s
+  550/776 jobs | 1450 searches | 0 mismatches | 84s
+  575/776 jobs | 1550 searches | 0 mismatches | 91s
+  600/776 jobs | 1650 searches | 0 mismatches | 98s
+  625/776 jobs | 1750 searches | 0 mismatches | 105s
+  650/776 jobs | 1850 searches | 0 mismatches | 111s
+  675/776 jobs | 1950 searches | 0 mismatches | 117s
+  700/776 jobs | 2050 searches | 0 mismatches | 123s
+  725/776 jobs | 2150 searches | 0 mismatches | 130s
+  750/776 jobs | 2250 searches | 0 mismatches | 137s
+  775/776 jobs | 2350 searches | 0 mismatches | 143s
+  776/776 jobs | 2354 searches | 0 mismatches | 143s
+G3/search: PASS  2354 searches / 809776 sims / 18832 field checks / 0 full games (0 plies) | 0 mismatches
+G3/search: throughput py=532 sims/s  rs=4899 sims/s  (9.21x)
+G3/search: result -> /home/doctor/projects/carcassone/measurement/rustport_p3/G3_search_breadth344.json

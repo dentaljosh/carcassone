@@ -3,8 +3,11 @@
 Mirrors alpha-zero-general's Game.py method names so a Coach/Arena port is
 trivial later, but does NOT inherit from it (its API assumes 2D board arrays).
 
-Scope (locked for Phases 1-5): 2 players, BASE + THE_RIVER tile sets,
-FARMERS supplementary rule. No Inns & Cathedrals, no Abbots, no Big meeples.
+Scope (2026-06-02 onward): 2 players, BASE tile set only, FARMERS supplementary
+rule. River was DROPPED 2026-06-02 (competitive / world-championship play is
+base-only; River is a non-scoring setup variant) — see DECISIONS.md. No Inns &
+Cathedrals, no Abbots, no Big meeples. The engine still supports THE_RIVER if a
+caller passes it explicitly, but production self-play/eval/training is base-only.
 
 Window size is configurable via Game(window_size=...). Default is 25 based on
 Phase 0 random-game measurements, but can be changed at construction time
@@ -17,7 +20,7 @@ import math
 import os
 import random
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from multiprocessing import Pool
 
 import numpy as np
@@ -40,14 +43,179 @@ from .board_repr import (
     N_CHANNELS,
     board_overflows_window,
     canonical_swap,
+    centroid_sums,
     compute_window_offset,
     encode_board,
+    offset_from_centroid_sums,
 )
+from wingedsheep.carcassonne.objects.actions.tile_action import TileAction
 from .eta import measure_one, print_banner
-from .features import N_SCALAR_FEATURES, encode_scalars
+from .features import N_FARM_SCALARS, N_SCALAR_FEATURES, encode_scalars
 
 
 SCORE_NORM_SCALE = 15.0  # see DECISIONS.md (validated against 1000 random games)
+
+
+# --- Window-overflow audit (measurement-only, DEFAULT OFF) -------------------
+# Phase 0.2 post-review measurement. `get_valid_moves` already computes
+# n_total / n_overflow (how many legal actions the centered window drops) but
+# exposes them nowhere, and `encode_board` silently skips placed tiles outside
+# the window. When CARCASSONNE_WINDOW_AUDIT=1, `get_valid_moves` appends one
+# per-decision record to `_WINDOW_AUDIT_LOG` so an offline replay can quantify
+# both effects. When the env var is unset (the default) the audit block is
+# skipped entirely — the mask, the raise condition, and every leaf/eval
+# semantic are byte-for-byte identical to before this change (asserted in the
+# audit script by confirming the log stays empty with the flag off). This is
+# read-only instrumentation: it NEVER alters the returned mask.
+_WINDOW_AUDIT = os.environ.get("CARCASSONNE_WINDOW_AUDIT", "0") == "1"
+_WINDOW_AUDIT_LOG: list = []
+
+# --- Legal-cache collision detector (Phase 0.3, DEFAULT OFF) -----------------
+# When CARCASSONNE_CACHE_COLLIDE_CHECK=1, every legal-moves-cache HIT recomputes
+# the mask fresh and, if it disagrees with the cached one, logs a full repro
+# (two distinct boards sharing one `string_representation` key) to
+# CARCASSONNE_CLIP_TRACE_DIR/cache_collision_<pid>.jsonl. Read-only diagnostic:
+# it returns the FRESH (correct) mask on a detected collision so the run is not
+# itself corrupted, but the mask/raise semantics are otherwise unchanged.
+_CACHE_COLLIDE_CHECK = os.environ.get("CARCASSONNE_CACHE_COLLIDE_CHECK", "0") == "1"
+
+# --- Strict window mode (F1 release audit, DEFAULT OFF) ----------------------
+# Production `get_valid_moves` silently DROPS individual legal actions that fall
+# outside the centered window and only raises when ALL of them overflow (the
+# review's P1-R1: a single dropped legal action is invisible). When
+# CARCASSONNE_WINDOW_STRICT=1, ANY dropped legal action raises WindowOverflowError,
+# so the F1 adversarial replay can fail loud on the FIRST drop. Default OFF ->
+# production mask/raise semantics are byte-for-byte unchanged. Read as a module
+# global (tests monkeypatch `game_wrapper._WINDOW_STRICT`).
+_WINDOW_STRICT = os.environ.get("CARCASSONNE_WINDOW_STRICT", "0") == "1"
+
+
+def _state_fingerprint(state) -> dict:
+    """A DEEP fingerprint of the engine state — captures fields that
+    `string_representation` may omit, so a collision's two boards can be diffed
+    to find the missing key component. Diagnostic-only."""
+    def _tile_full(t):
+        if t is None:
+            return None
+        from wingedsheep.carcassonne.objects.side import Side
+        farms = []
+        for fc in getattr(t, "farms", ()) or ():
+            farms.append({
+                "farmer_positions": [getattr(s, "value", str(s)) for s in fc.farmer_positions],
+                "tile_connections": [getattr(s, "value", str(s)) for s in fc.tile_connections],
+                "city_sides": [getattr(s, "value", str(s)) for s in fc.city_sides],
+            })
+        return {
+            "desc": t.description,
+            "edges": [t.get_type(s).value for s in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)],
+            "shield": bool(t.shield), "chapel": bool(t.chapel), "flowers": bool(t.flowers),
+            "farms": farms,
+        }
+    placed = []
+    for coord in sorted(state.placed_coords, key=lambda c: (c.row, c.column)):
+        placed.append((coord.row, coord.column, _tile_full(state.board[coord.row][coord.column])))
+    meeples = []
+    for p, lst in enumerate(state.placed_meeples):
+        for mp in lst:
+            cws = mp.coordinate_with_side
+            meeples.append({
+                "player": p, "type": mp.meeple_type.value,
+                "row": cws.coordinate.row, "col": cws.coordinate.column,
+                "side": cws.side.value, "repr": repr(mp),
+            })
+    lta = state.last_tile_action
+    return {
+        "phase": state.phase.value,
+        "current_player": state.current_player,
+        "scores": list(state.scores),
+        "meeples_hand": list(state.meeples),
+        "abbots": list(getattr(state, "abbots", []) or []),
+        "deck_len": len(state.deck),
+        "deck_order": [t.description for t in state.deck],
+        "next_tile": _tile_full(state.next_tile),
+        "last_tile_action_repr": repr(lta),
+        "last_tile_coord": (
+            (lta.coordinate.row, lta.coordinate.column) if lta is not None else None
+        ),
+        "last_tile_full": (_tile_full(getattr(lta, "tile", None)) if lta is not None else None),
+        "placed": placed,
+        "meeples_placed": meeples,
+    }
+
+
+def _log_cache_collision(game, board, key, cached_mask, fresh_mask) -> None:
+    import hashlib
+    import json
+    import time
+    d = os.environ.get("CARCASSONNE_CLIP_TRACE_DIR")
+    cached_legal = sorted(int(i) for i in np.flatnonzero(cached_mask))
+    fresh_legal = sorted(int(i) for i in np.flatnonzero(fresh_mask))
+    this_fp = _state_fingerprint(board.state)
+    other_fp = getattr(game, "_collide_shadow", {}).get(key)
+    # Field-level diff of the two colliding boards' fingerprints.
+    fp_diff = {}
+    if other_fp is not None:
+        for k in set(this_fp) | set(other_fp):
+            if this_fp.get(k) != other_fp.get(k):
+                fp_diff[k] = {"hit_board": this_fp.get(k), "cached_board": other_fp.get(k)}
+    rec = {
+        "ts": time.time(),
+        "pid": os.getpid(),
+        "key": key,
+        "key_hash": hashlib.blake2b(key.encode(), digest_size=8).hexdigest(),
+        "board_offset": [board.offset.origin_row, board.offset.origin_col, board.offset.size],
+        "phase": board.state.phase.value,
+        "cur_player": board.state.current_player,
+        "cached_legal": cached_legal,
+        "fresh_legal": fresh_legal,
+        "cached_minus_fresh": sorted(set(cached_legal) - set(fresh_legal)),
+        "fresh_minus_cached": sorted(set(fresh_legal) - set(cached_legal)),
+        "has_other_board": other_fp is not None,
+        "fingerprint_diff_fields": sorted(fp_diff.keys()),
+        "fingerprint_diff": fp_diff,
+    }
+    if d:
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, f"cache_collision_{os.getpid()}.jsonl"), "a") as fh:
+            fh.write(json.dumps(rec) + "\n")
+
+
+def window_audit_enabled() -> bool:
+    """True iff CARCASSONNE_WINDOW_AUDIT=1 was set at import time."""
+    return _WINDOW_AUDIT
+
+
+def drain_window_audit() -> list:
+    """Return the accumulated per-decision audit records and clear the buffer.
+
+    Each record is a dict:
+      phase           'tiles' | 'meeples'
+      n_total         legal actions the engine emitted at this decision
+      n_overflow      how many of those the centered window dropped
+      k_remaining     tiles left to place (total_tiles - tile_count); stage proxy
+      n_oow_tiles     placed tiles outside the window (what encode_board skips)
+      window_size     live window edge length (board.offset.size)
+    """
+    global _WINDOW_AUDIT_LOG
+    out = _WINDOW_AUDIT_LOG
+    _WINDOW_AUDIT_LOG = []
+    return out
+
+
+def _count_out_of_window_tiles(state, off) -> int:
+    """Count placed tiles outside the centered window — exactly the tiles
+    `encode_board` / `get_canonical_form` silently skip. Read-only; used only by
+    the audit block (mirrors board_repr.board_overflows_window but counts)."""
+    n = 0
+    origin_row, origin_col, size = off.origin_row, off.origin_col, off.size
+    for r, row in enumerate(state.board):
+        for c, tile in enumerate(row):
+            if tile is None:
+                continue
+            wr, wc = r - origin_row, c - origin_col
+            if not (0 <= wr < size and 0 <= wc < size):
+                n += 1
+    return n
 
 
 @dataclass
@@ -61,14 +229,202 @@ class Board:
     state: CarcassonneGameState
     total_tiles: int
     offset: WindowOffset
+    # Incremental centroid tracker for the window offset. The offset centers the
+    # window on the centroid of placed tiles; instead of re-scanning the whole
+    # 35x35 board every transition (compute_window_offset), we keep a running
+    # (sum_row, sum_col, tile_count) of placed-tile coordinates and recompute the
+    # offset in O(1). Only a TILE placement changes these (meeple/pass do not),
+    # so transitions that don't place a tile leave the offset untouched. Seeded
+    # by a one-time scan in from_state; updated in Game.get_next_state /
+    # apply_action_inplace. Plain ints -> copy correctly under the dataclass's
+    # default deepcopy (used by NeuralMCTS._reshuffled_root) and the manual
+    # Board(...) build in mcts._rollout (which forwards them). MUST stay
+    # consistent with state.placed_coords at every ply (offset feeds action
+    # encode/decode — a wrong offset shifts the action space). Reconciled
+    # bit-identical vs the full scan by scripts/reconcile_window_offset.py.
+    sum_row: int = 0
+    sum_col: int = 0
+    tile_count: int = 0
+    # Memoized string_representation result. None = not yet computed.
+    # Boards are created fresh per Game.get_next_state (apply_action returns
+    # a NEW Board around a deepcopied state), so this cache is auto-invalidated
+    # by replacement — no manual invalidation needed. apply_action_inplace
+    # mutates state but does NOT create a new Board; callers MUST not call
+    # string_representation on an inplace-mutated Board (rollout-only contract).
+    _str_repr_cache: str | None = field(default=None, repr=False, compare=False)
 
     @classmethod
     def from_state(cls, state: CarcassonneGameState, total_tiles: int, window_size: int) -> "Board":
+        # Seed the incremental centroid sums by a one-time scan, then derive the
+        # offset from them (same math compute_window_offset uses) so the seed and
+        # the per-ply incremental updates can never drift apart.
+        sr, sc, tc = centroid_sums(state)
         return cls(
             state=state,
             total_tiles=total_tiles,
-            offset=compute_window_offset(state, window_size),
+            offset=offset_from_centroid_sums(state, sr, sc, tc, window_size),
+            sum_row=sr,
+            sum_col=sc,
+            tile_count=tc,
         )
+
+
+# Retail/tournament rules pre-place a fixed start tile — the "D" pattern: a city
+# on one edge with a road running straight through. In the vendored deck that is
+# `city_top_straight_road` at rotation 0 (TOP=city, LEFT/RIGHT=road, BOTTOM=grass),
+# of which the base game has 4 copies; retail places one and shuffles the other 71.
+RETAIL_START_TILE = "city_top_straight_road"
+
+# --------------------------------------------------------------------------- #
+# Start-tile GRID position (2026-08-02). The engine's own defaults, and the two #
+# refusals that make moving them safe.                                          #
+#                                                                              #
+# `CarcassonneGameState` starts the board at (6, 15) on a 35x35 grid — 6 rows   #
+# of headroom above vs 28 below — and `StateUpdater.play_tile` bounds-checks    #
+# `open_positions`, so a rule-legal cell above row 0 is silently never offered  #
+# (2.6% of all rule-legal placements; tests/test_start_tile_grid_bound.py).     #
+#                                                                              #
+# `Game(start_row=...)` is the OPT-IN escape. DEFAULT OFF: with no argument the #
+# state is constructed exactly as before — the same call with the same          #
+# arguments — so every training run, eval and solver measurement is byte-       #
+# identical. The Android app opts in (`grid_rule: "centered18"`); the GLOBAL    #
+# engine default stays walled until that is separately decided, because moving  #
+# it changes the legal-move set in ~68% of games and retires every deck band.   #
+#                                                                              #
+# ⚠️ THE SHIFT MUST BE EVEN ON BOTH AXES. `board_repr.offset_from_centroid_sums`#
+# centres the window with banker's-rounded `round(sum/count)`, which is         #
+# equivariant under even translations only (round(6.5)=6 but round(17.5)=18).   #
+# An odd shift silently slips the window one cell on ~half of all positions and #
+# invalidates every trained checkpoint's input distribution. Refused at         #
+# construction, the same refusal the Rust port's `GameConfig::resolve` makes    #
+# (measurement/rustport_p5, `carc_rs.resolve_game_config`).                     #
+# --------------------------------------------------------------------------- #
+ENGINE_START_ROW, ENGINE_START_COL = 6, 15
+ENGINE_BOARD_ROWS, ENGINE_BOARD_COLS = 35, 35
+
+# --------------------------------------------------------------------------- #
+# F9/A3 — THE UNPLACEABLE-TILE DRAW RULE (audit RF-D-2, spec §A3).             #
+#                                                                             #
+# `"engine"` (DEFAULT, the walled engine of record): a TILES-phase PassAction  #
+# discards the unplaceable tile, draws the next AND passes the turn — the      #
+# drawer forfeits a whole placement and every turn parity after it flips.      #
+# Measured 8.5 discards / 100 games, 7.0% of games affected (audit RF-D-2).    #
+#                                                                             #
+# `"redraw"` (opt-in): the retail rule — reveal, set the tile aside (it leaves #
+# the game), draw again, SAME player continues, repeat while unplaceable. The  #
+# rules clause and both sub-decision resolutions (recursion; the bag / the     #
+# exact solver's histogram) are documented at length on                        #
+# `StateUpdater._apply_action_to`, which is where the divergence lives.        #
+#                                                                             #
+# LIKE `start_rule` AND `grid_rule`, THIS TRAVELS IN THE SAVE PAYLOAD:         #
+# (deck_seed, actions) decodes to a DIFFERENT game under the two rules, so a   #
+# record that omits the rule is not replayable. A payload with no `draw_rule`  #
+# was written before this shipped and means "engine" (DRAW_RULE_LEGACY).       #
+# --------------------------------------------------------------------------- #
+DRAW_RULE_ENGINE = "engine"
+DRAW_RULE_REDRAW = "redraw"
+DRAW_RULES = (DRAW_RULE_ENGINE, DRAW_RULE_REDRAW)
+DRAW_RULE_LEGACY = DRAW_RULE_ENGINE   # what a record with no `draw_rule` means
+
+
+def _next_total_tiles(total_tiles: int, state, n_set_aside_before: int) -> int:
+    """`board.total_tiles` after a transition, minus any tile set aside by it.
+
+    Under `draw_rule="redraw"` a tile can leave the game unplaced, so the
+    ORIGINAL total stops describing the game. Two live definitions of "tiles
+    left" would then drift apart by the set-aside count:
+
+      * `len(state.deck) + (state.next_tile is not None)` — what
+        `fair_agent.k_remaining` and the exact-endgame latch band use;
+      * `board.total_tiles - board.tile_count` — what the window audit
+        (`Game._audit_window`), `scripts/analyzer/clip_trace.py` and
+        `features.progress` use.
+
+    Decrementing keeps them equal, which is the bag-accounting invariant that
+    `tests/test_unplaceable_redraw.py::test_the_two_tiles_left_definitions_agree_
+    under_redraw` pins. Flag-OFF this returns `total_tiles` unchanged — the
+    flag-off discard path leaves the same latent drift it always had, and
+    byte-identity forbids fixing it here.
+    """
+    if not state.redraw_unplaceable:
+        return total_tiles
+    return total_tiles - (len(state.set_aside_tiles) - n_set_aside_before)
+
+
+def check_start_position(start_row: int, start_col: int) -> None:
+    """Refuse an ODD shift or an off-board start — mirrors the Rust `check_flags`.
+
+    Raises ``ValueError``; returns None when the position is usable.
+    """
+    for axis, v, base, extent in (
+        ("start_row", int(start_row), ENGINE_START_ROW, ENGINE_BOARD_ROWS),
+        ("start_col", int(start_col), ENGINE_START_COL, ENGINE_BOARD_COLS),
+    ):
+        if (v - base) % 2 != 0:
+            raise ValueError(
+                f"{axis} shift must be EVEN: {v} is {v - base} from the engine "
+                f"default {base}; banker's rounding in "
+                "board_repr.offset_from_centroid_sums is equivariant under even "
+                "translations only"
+            )
+        if not 0 <= v < extent:
+            raise ValueError(
+                f"{axis} {v} is outside the "
+                f"{ENGINE_BOARD_ROWS}x{ENGINE_BOARD_COLS} board"
+            )
+
+
+def preplace_retail_start_tile(state: CarcassonneGameState) -> None:
+    """Pre-place the fixed "D" start tile, retail/tournament style (in place).
+
+    The engine's native convention is that the first player DRAWS a random tile
+    which is then auto-placed at ``starting_position`` — costing that player a
+    turn and handing them a free meeple opportunity on it. Retail pre-places a
+    fixed D tile before anyone draws: nobody spends a turn on it and no meeple
+    may go on it, so player 0's first real decision is the second tile.
+
+    Tile TOTALS are unchanged (1 pre-placed + 71 drawn = 72 placed either way);
+    what changes is which tile starts the board, that it is no longer a player's
+    move, and therefore the turn parity of everything after it.
+
+    Leaves ``last_tile_action`` as None on purpose — nobody played this tile, so
+    no meeple phase follows it and no feature-completion scoring is triggered.
+    """
+    from wingedsheep.carcassonne.objects.coordinate import Coordinate
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+
+    if state.placed_coords:
+        raise ValueError("preplace_retail_start_tile requires a virgin state")
+    start_tile = base_tiles[RETAIL_START_TILE]
+
+    # Draw the D tile OUT of the shuffled pool (next_tile + deck) so the deck is
+    # the retail 71, not 72 with a duplicate.
+    pool = [state.next_tile] + list(state.deck)
+    for i, tile in enumerate(pool):
+        if tile is not None and tile.description == start_tile.description:
+            pool.pop(i)
+            break
+    else:
+        raise ValueError(
+            f"no {RETAIL_START_TILE!r} tile in the deck — the retail start tile "
+            "is a base-game tile; is TileSet.BASE enabled?"
+        )
+
+    coord = state.starting_position
+    state.board[coord.row][coord.column] = start_tile
+    state.placed_coords.add(coord)
+    n_rows, n_cols = len(state.board), len(state.board[0])
+    for nr, nc in ((coord.row - 1, coord.column), (coord.row + 1, coord.column),
+                   (coord.row, coord.column - 1), (coord.row, coord.column + 1)):
+        if 0 <= nr < n_rows and 0 <= nc < n_cols and state.board[nr][nc] is None:
+            state.open_positions.add(Coordinate(row=nr, column=nc))
+
+    state.deck = pool
+    state.next_tile = state.deck.pop(0) if state.deck else None
+    state.phase = GamePhase.TILES
+    state.current_player = 0
+    state.last_tile_action = None
 
 
 class Game:
@@ -77,10 +433,17 @@ class Game:
     def __init__(
         self,
         players: int = 2,
-        tile_sets: tuple[TileSet, ...] = (TileSet.BASE, TileSet.THE_RIVER),
+        tile_sets: tuple[TileSet, ...] = (TileSet.BASE,),
         supplementary_rules: tuple[SupplementaryRule, ...] = (SupplementaryRule.FARMERS,),
         window_size: int = DEFAULT_WINDOW_SIZE,
         enable_legal_moves_cache: bool = False,
+        include_farm_scalars: bool = False,
+        sighted: bool = False,
+        fixed_start_tile: bool = False,
+        start_row: int | None = None,
+        start_col: int | None = None,
+        cloister_scan_fix: bool = False,
+        draw_rule: str = DRAW_RULE_ENGINE,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -102,6 +465,91 @@ class Game:
         self.tile_sets = tuple(tile_sets)
         self.supplementary_rules = tuple(supplementary_rules)
         self.window_size = int(window_size)
+        # Path B Step E (2026-05-29): append the 2 farm-control scalars to the
+        # network input. OFF by default so existing 10-scalar checkpoints load &
+        # eval unchanged; the new-arch Path-B warmstart opts in (and builds its
+        # net with n_scalar_features = get_scalar_feature_size()). MUST match the
+        # net the Game feeds — a 12-scalar Game with a 10-scalar net (or vice
+        # versa) is a shape error at the policy_fc/value_fc1 cat.
+        self.include_farm_scalars = bool(include_farm_scalars)
+        # M2 canonical-AZ "sighted" representation (opt-in; DEFAULT OFF). When on,
+        # get_canonical_form appends +3 farm-connectivity planes to the board
+        # tensor (78 -> 81 channels) and the +32 bag/deck histogram to the scalar
+        # vector. The net must be built with matching dims (n_input_channels=81,
+        # n_scalar_features = base(+farm) + 32). MEASUREMENT ONLY — with sighted
+        # False the branch is never taken and the featurizer is byte-identical to
+        # the production path. See measurement/canonical_az/M2_PLAN.md.
+        self.sighted = bool(sighted)
+        # Retail/tournament fixed start tile (2026-07-30). OPT-IN, DEFAULT OFF —
+        # the Android app enables it; training/eval/solver measurement all stay on
+        # the engine's native random-start convention that every existing baseline
+        # was measured under. Flipping this default is a rules change that
+        # re-baselines everything (BACKLOG "Fixed start tile", bundle with G1).
+        # It touches game SETUP only: the board tensor, the scalar features and
+        # the action space are all window-relative and completely unaffected, so a
+        # checkpoint trained on random-start plays a fixed-start game with no
+        # shape or semantic change (only a hair of distribution shift).
+        # F9 A0 (2026-08-02): the ONE place the process-wide `rules_profile`
+        # becomes geometry. The profile fills in ONLY what the caller left
+        # unsaid — an explicit kwarg always wins — and under the default
+        # `walled` profile it fills in NOTHING (game_kwargs() is empty), so this
+        # block is a no-op on every pre-F9 call and the constructed state is the
+        # same object graph it always was. That is Gate A0's identity, held
+        # structurally rather than by assertion. Resolution is env-backed so a
+        # spawn worker cannot disagree with the manifest.
+        # See src/carcassonne_ai/rules_profile.py.
+        from . import rules_profile as _rp
+
+        _prof_kw = _rp.active().game_kwargs()
+        if start_row is None and start_col is None and "start_row" in _prof_kw:
+            start_row, start_col = _prof_kw["start_row"], _prof_kw["start_col"]
+        if not fixed_start_tile and _prof_kw.get("fixed_start_tile"):
+            fixed_start_tile = True
+        if window_size == DEFAULT_WINDOW_SIZE and "window_size" in _prof_kw:
+            self.window_size = int(_prof_kw["window_size"])
+        # A2/A3 joined the profile at the F9 compose merge (2026-08-03). Same
+        # "fill in only what the caller left unsaid" rule as the three above:
+        # the caller's explicit value always wins, and under `walled` neither key
+        # is present so this stays the no-op that Gate A0's identity rests on.
+        # ⚠️ These two lines are load-bearing — without them a `fixed_v1` leg
+        # resolves the profile, stamps all four levers in its manifest, and then
+        # plays the DRIFTING scan and the engine draw rule, which is precisely
+        # the half-applied profile F9 exists to detect
+        # (tests/test_rules_profile.py::test_fixed_v1_carries_all_four_levers...).
+        if not cloister_scan_fix and _prof_kw.get("cloister_scan_fix"):
+            cloister_scan_fix = True
+        if draw_rule == DRAW_RULE_ENGINE and "draw_rule" in _prof_kw:
+            draw_rule = _prof_kw["draw_rule"]
+        self.fixed_start_tile = bool(fixed_start_tile)
+        # Where the start tile sits on the 35x35 grid. `None` means "say nothing
+        # to the engine", which is what makes the default path byte-identical:
+        # get_init_board then constructs CarcassonneGameState with exactly the
+        # arguments it always did. See check_start_position above for the
+        # EVEN-shift refusal, and `self.recentred` for the one-bit summary.
+        self.start_row = ENGINE_START_ROW if start_row is None else int(start_row)
+        self.start_col = ENGINE_START_COL if start_col is None else int(start_col)
+        check_start_position(self.start_row, self.start_col)
+        self.recentred = (self.start_row, self.start_col) != (
+            ENGINE_START_ROW, ENGINE_START_COL)
+        # F9-A2 (2026-08-03): fix the RF-D-1 cloister-completion scan drift.
+        # OPT-IN, DEFAULT OFF. On, a cloister scores the moment its 3x3 is full
+        # and its monk returns to supply; off, ~9.6% of completions are deferred
+        # to count_final_scores and the monk is pinned for the rest of the game.
+        # Final TOTALS are the same either way (the endgame pass awards the same
+        # 9) — what changes is the PLY and the meeple supply, which is why this
+        # is a re-baselining rules change and not a bug fix to apply silently.
+        # Like `start_row`, it is passed to the engine ONLY when asked for, so the
+        # default path is the same constructor call it has always been.
+        self.cloister_scan_fix = bool(cloister_scan_fix)
+        # F9/A3 — the unplaceable-tile draw rule (audit RF-D-2). Named rules,
+        # never a loose bool at the CLI, and never a silent default: picking one
+        # for the caller would decode a DIFFERENT game from the same
+        # (deck_seed, actions), exactly as `start_rule`/`grid_rule` would.
+        if draw_rule not in DRAW_RULES:
+            raise ValueError(
+                f"unknown draw_rule {draw_rule!r}; expected one of {DRAW_RULES}")
+        self.draw_rule = str(draw_rule)
+        self.redraw_unplaceable = self.draw_rule == DRAW_RULE_REDRAW
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -117,6 +565,8 @@ class Game:
             self._legal_cache.clear()
         self._legal_cache_hits = 0
         self._legal_cache_misses = 0
+        if hasattr(self, "_collide_shadow"):
+            self._collide_shadow.clear()
 
     def cache_stats(self) -> dict:
         """Returns hits/misses/size for the legal-moves cache."""
@@ -134,25 +584,83 @@ class Game:
     # --- Construction ----------------------------------------------------
 
     def get_init_board(self) -> Board:
+        # `starting_position` is passed ONLY when it was asked for. The default
+        # path is therefore the same call it has always been — not an equal-
+        # valued Coordinate, no call at all — so "default unchanged" is a
+        # property of the code, not of Coordinate's __eq__.
+        extra = {}
+        if self.recentred:
+            from wingedsheep.carcassonne.objects.coordinate import Coordinate
+
+            extra["starting_position"] = Coordinate(self.start_row, self.start_col)
+        if self.cloister_scan_fix:
+            extra["cloister_scan_fix"] = True
         state = CarcassonneGameState(
             players=self.players,
             tile_sets=list(self.tile_sets),
             supplementary_rules=list(self.supplementary_rules),
+            **extra,
         )
-        # +1 for the first tile already drawn into next_tile.
-        total_tiles = len(state.deck) + 1
+        # Scope guard (locked scope = 2p Base+Farmers, NO Abbots): a base+farmers
+        # state has abbots == [0, 0] and no ABBOT meeple can ever be placed. If this
+        # fires, an out-of-scope ABBOTS state slipped past the __init__ guard and
+        # would silently mis-score — fail loud instead of scoring the wrong game.
+        assert not any(state.abbots), (
+            f"scope violation: abbots enabled ({state.abbots}); locked scope is "
+            "2p Base+Farmers, no Abbots")
+        # F9/A3: latch the draw rule onto the state so it rides deepcopy into
+        # every MCTS node, PIMC world and solver clone. Assigned unconditionally
+        # (it is already False from the ctor) so the flag can never be *absent*
+        # on a state the engine is about to transition.
+        state.redraw_unplaceable = self.redraw_unplaceable
+        if self.fixed_start_tile:
+            preplace_retail_start_tile(state)
+        # +1 for the first tile already drawn into next_tile, + any tile already on
+        # the board (the retail start tile, which is placed but was never drawn).
+        total_tiles = len(state.deck) + 1 + len(state.placed_coords)
         return Board.from_state(state, total_tiles, self.window_size)
 
+    def get_input_channels(self) -> int:
+        """Board-tensor channel count the net must accept (78, or 81 sighted)."""
+        n = N_CHANNELS
+        if self.sighted:
+            from .sighted_planes import N_FARM_PLANES
+            n += N_FARM_PLANES
+        return n
+
     def get_board_shape(self) -> tuple[int, int, int]:
-        return (N_CHANNELS, self.window_size, self.window_size)
+        return (self.get_input_channels(), self.window_size, self.window_size)
 
     def get_action_size(self) -> int:
         return action_size(self.window_size)
 
     def get_scalar_feature_size(self) -> int:
-        return N_SCALAR_FEATURES
+        n = N_SCALAR_FEATURES + (N_FARM_SCALARS if self.include_farm_scalars else 0)
+        if self.sighted:
+            from .sighted_planes import N_BAG
+            n += N_BAG
+        return n
 
     # --- Transitions -----------------------------------------------------
+
+    @staticmethod
+    def _next_centroid_sums(board: Board, action) -> tuple[int, int, int]:
+        """Centroid sums after `action`, carried forward from `board`.
+
+        The window offset centers on the centroid of placed tiles. Only a TILE
+        placement adds a coordinate (engine: StateUpdater.play_tile is the sole
+        writer of placed_coords); meeple actions and passes place no tile, so the
+        centroid — and therefore the offset — is unchanged. This is the O(1)
+        replacement for re-scanning the whole board every transition.
+        """
+        if isinstance(action, TileAction):
+            coord = action.coordinate
+            return (
+                board.sum_row + coord.row,
+                board.sum_col + coord.column,
+                board.tile_count + 1,
+            )
+        return board.sum_row, board.sum_col, board.tile_count
 
     def get_next_state(self, board: Board, action_idx: int) -> tuple[Board, int]:
         """Apply `action_idx` to `board`. Return (new_board, next_player).
@@ -163,8 +671,21 @@ class Game:
         """
         state = board.state
         action = self._decode_for(state, board.offset, action_idx)
+        n_set_aside_before = len(state.set_aside_tiles)
         new_state = StateUpdater.apply_action(game_state=state, action=action)
-        new_board = Board.from_state(new_state, board.total_tiles, self.window_size)
+        # Carry the centroid sums forward (O(1)) instead of re-scanning the whole
+        # board in Board.from_state. Bit-identical to the full scan; verified by
+        # scripts/reconcile_window_offset.py.
+        sr, sc, tc = self._next_centroid_sums(board, action)
+        new_board = Board(
+            state=new_state,
+            total_tiles=_next_total_tiles(board.total_tiles, new_state,
+                                          n_set_aside_before),
+            offset=offset_from_centroid_sums(new_state, sr, sc, tc, self.window_size),
+            sum_row=sr,
+            sum_col=sc,
+            tile_count=tc,
+        )
         return new_board, new_state.current_player
 
     def apply_action_inplace(self, board: Board, action_idx: int) -> tuple[Board, int]:
@@ -176,9 +697,21 @@ class Game:
         """
         state = board.state
         action = self._decode_for(state, board.offset, action_idx)
+        n_set_aside_before = len(state.set_aside_tiles)
         StateUpdater.apply_action_inplace(game_state=state, action=action)
-        # offset depends on placed tiles; recompute since state mutated.
-        board.offset = compute_window_offset(state, self.window_size)
+        board.total_tiles = _next_total_tiles(board.total_tiles, state,
+                                              n_set_aside_before)
+        # Offset depends on placed tiles. Update the running centroid sums in
+        # O(1) (only a tile placement moves the centroid) and re-derive the
+        # offset — replaces the full board re-scan (compute_window_offset).
+        # Bit-identical; verified by scripts/reconcile_window_offset.py.
+        sr, sc, tc = self._next_centroid_sums(board, action)
+        board.sum_row, board.sum_col, board.tile_count = sr, sc, tc
+        board.offset = offset_from_centroid_sums(state, sr, sc, tc, self.window_size)
+        # Invalidate the memoized string_representation since state changed.
+        # Required for rollouts and warmstart 2-ply lookahead that mutate a
+        # Board in place and then re-query get_valid_moves / string_representation.
+        board._str_repr_cache = None
         return board, state.current_player
 
     def _decode_for(self, state, offset, action_idx: int):
@@ -215,9 +748,31 @@ class Game:
             cached = self._legal_cache.get(key)
             if cached is not None:
                 self._legal_cache_hits += 1
+                if _CACHE_COLLIDE_CHECK:
+                    # DIAGNOSTIC (Phase 0.3): recompute the mask fresh and, if it
+                    # disagrees with the cached one, we have TWO distinct boards
+                    # sharing one string_representation key — a cache-corrupting
+                    # collision. Log a full repro, then return the FRESH mask so
+                    # the diagnostic run itself is not corrupted.
+                    fresh = self._compute_mask(board)
+                    if not np.array_equal(fresh, cached):
+                        _log_cache_collision(self, board, key, cached, fresh)
+                        return fresh
                 return cached
             self._legal_cache_misses += 1
 
+        mask = self._compute_mask(board)
+        if self._legal_cache is not None:
+            mask.flags.writeable = False  # protect cached masks from mutation
+            self._legal_cache[key] = mask
+            if _CACHE_COLLIDE_CHECK:
+                if not hasattr(self, "_collide_shadow"):
+                    self._collide_shadow = {}
+                self._collide_shadow[key] = _state_fingerprint(board.state)
+        return mask
+
+    def _compute_mask(self, board: Board) -> np.ndarray:
+        """Enumerate the engine's legal actions into a bool mask (no cache)."""
         mask = np.zeros(self.get_action_size(), dtype=bool)
         n_total = 0
         n_overflow = 0
@@ -230,6 +785,33 @@ class Game:
                 continue
             mask[idx] = True
 
+        # Window-overflow audit (measurement-only; skipped byte-for-byte when
+        # CARCASSONNE_WINDOW_AUDIT is unset). Records the already-computed
+        # n_total / n_overflow plus the out-of-window placed-tile count so an
+        # offline replay can quantify how often either bug site fires. Placed
+        # before the all-overflow raise so the pathological case is recorded too.
+        if _WINDOW_AUDIT:
+            _WINDOW_AUDIT_LOG.append({
+                "phase": board.state.phase.value,
+                "n_total": n_total,
+                "n_overflow": n_overflow,
+                "k_remaining": board.total_tiles - board.tile_count,
+                "n_oow_tiles": _count_out_of_window_tiles(board.state, board.offset),
+                "window_size": board.offset.size,
+            })
+
+        # Strict mode (F1 release audit, default OFF): fail loud on the FIRST
+        # dropped legal action, not only when ALL overflow. Production is byte-for-
+        # byte unchanged (the flag defaults off); the release audit sets it so an
+        # adversarial replay can assert zero dropped legal actions.
+        if _WINDOW_STRICT and n_overflow > 0:
+            raise WindowOverflowError(
+                f"STRICT window: {n_overflow}/{n_total} legal actions fall outside the "
+                f"{board.offset.size}x{board.offset.size} window centered at "
+                f"({board.offset.origin_row}, {board.offset.origin_col}). "
+                f"CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+            )
+
         # If every legal action is outside the window, surface a clear signal
         # so the caller can drop the game (rather than seeing an empty mask
         # and confusing it with a genuine no-legal-moves terminal).
@@ -241,9 +823,6 @@ class Game:
                 f"Caller should drop this game from training."
             )
 
-        if self._legal_cache is not None:
-            mask.flags.writeable = False  # protect cached masks from mutation
-            self._legal_cache[key] = mask
         return mask
 
     # --- Termination / value ---------------------------------------------
@@ -261,7 +840,13 @@ class Game:
         opp = 1 - player
         diff = board.state.scores[player] - board.state.scores[opp]
         v = math.tanh(diff / SCORE_NORM_SCALE)
-        return v if v != 0.0 else 1e-6
+        # Exact tie: return a tiny epsilon (non-zero so callers can tell
+        # "ended in a draw" from "still going"), but make it player-dependent
+        # so the perspective contract get_game_ended(b,0) == -get_game_ended(b,1)
+        # still holds for draws — MCTS value backup relies on antisymmetry.
+        if v == 0.0:
+            return 1e-6 if player == 0 else -1e-6
+        return v
 
     # --- Canonical form / encoding --------------------------------------
 
@@ -278,7 +863,23 @@ class Game:
         player. Caught by external review 2026-04-28.)
         """
         arr = encode_board(board.state, player, board.offset)
-        scalars = encode_scalars(board.state, player, board.total_tiles)
+        scalars = encode_scalars(
+            board.state, player, board.total_tiles, include_farm=self.include_farm_scalars
+        )
+        if self.sighted:
+            # M2 sighted cell: append +3 farm-connectivity planes to the board
+            # (78 -> 81 ch) and the +32 bag/deck histogram to the scalars. Both
+            # are STRUCTURAL functions of state (no label leak). encode_board may
+            # return via the Cython fast path (USE_CY_REPR) — we concatenate the
+            # Python-computed planes onto whatever the first 78 channels are, so
+            # the sighted path is fast-path-agnostic and the first 78 channels
+            # stay byte-identical to the blind path.
+            from .sighted_planes import bag_histogram, farm_connectivity_planes
+            fp = farm_connectivity_planes(
+                board.state, player, board.offset, board.offset.size
+            )
+            arr = np.concatenate([arr, fp], axis=0)
+            scalars = np.concatenate([scalars, bag_histogram(board.state)])
         return arr, scalars
 
     encode_observation = get_canonical_form
@@ -298,14 +899,25 @@ class Game:
         dense version was ~166ms in late game, dominating get_valid_moves
         and making the legal-moves cache net-negative. Sparse should be
         ~5-10x faster.
+
+        Memoized on the Board (see Board._str_repr_cache). NeuralMCTS keys
+        nodes by this string and calls it many times against the same
+        root Board within one search; the cache turns ~22K calls/game
+        into ~150 cache misses (one per unique state visited).
         """
+        cached = board._str_repr_cache
+        if cached is not None:
+            return cached
         s = board.state
+        # Iterate placed_coords (~80 cells) instead of walking the full 35x35
+        # grid (1225 cells, mostly None). Sort for determinism — placed_coords
+        # is a set. Patched 2026-05-13.
         placed = []
-        for r, row in enumerate(s.board):
-            for c, t in enumerate(row):
-                if t is None:
-                    continue
-                placed.append((r, c, t.description, _tile_rotation_signature(t)))
+        for coord in sorted(s.placed_coords, key=lambda c: (c.row, c.column)):
+            t = s.board[coord.row][coord.column]
+            if t is None:
+                continue  # defensive; shouldn't happen since the set tracks placements
+            placed.append((coord.row, coord.column, t.description, _tile_rotation_signature(t)))
         meeples = tuple(
             tuple(
                 (mp.meeple_type.value, mp.coordinate_with_side.coordinate.row,
@@ -319,7 +931,7 @@ class Game:
             if s.last_tile_action is not None
             else None
         )
-        return repr(
+        result = repr(
             (
                 tuple(placed),
                 meeples,
@@ -332,6 +944,8 @@ class Game:
                 last_tile_coord,
             )
         )
+        board._str_repr_cache = result
+        return result
 
 
 def _tile_rotation_signature(tile) -> tuple:
@@ -347,14 +961,25 @@ def _tile_rotation_signature(tile) -> tuple:
     fixed in our fork). Shields change scoring (+1 per city tile), so a state
     key that doesn't distinguish them would cause MCTS transpositions to
     merge positions with different value functions.
-    """
-    from wingedsheep.carcassonne.objects.side import Side
 
-    edges = tuple(
-        tile.get_type(side).value
-        for side in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)
+    Cached on the Tile instance: Tiles are canonically-shared immutable refs
+    (base_tiles dict + Tile.turn() builds a fresh Tile per rotation), so the
+    signature for any given Tile reference is stable for the lifetime of the
+    process.
+    """
+    cached = tile._rot_sig_cache
+    if cached is not None:
+        return cached
+    from wingedsheep.carcassonne.objects.side import Side
+    edges = (
+        tile.get_type(Side.TOP).value,
+        tile.get_type(Side.RIGHT).value,
+        tile.get_type(Side.BOTTOM).value,
+        tile.get_type(Side.LEFT).value,
     )
-    return (edges, bool(tile.shield), bool(tile.chapel), bool(tile.flowers))
+    sig = (edges, bool(tile.shield), bool(tile.chapel), bool(tile.flowers))
+    tile._rot_sig_cache = sig
+    return sig
 
 
 # --- CLI entry point ---------------------------------------------------------

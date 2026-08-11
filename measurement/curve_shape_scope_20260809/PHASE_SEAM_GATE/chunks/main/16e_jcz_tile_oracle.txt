@@ -1,0 +1,31 @@
+..........                                                               [100%]
+============================= slowest 10 durations =============================
+0.20s call     tests/test_jcz_tile_oracle.py::test_oracle_in_both_flag_states[1-True]
+0.16s call     tests/test_jcz_tile_oracle.py::test_oracle_in_both_flag_states[0-False]
+0.07s setup    tests/test_jcz_tile_oracle.py::test_edition_matches_ours
+0.01s call     tests/test_jcz_tile_oracle.py::test_pairing_matches_the_pinned_mapping
+
+(6 durations < 0.005s hidden.  Use -vv to show these durations.)
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_jcz_tile_oracle.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 6.89
+	System time (seconds): 0.11
+	Percent of CPU this job got: 1231%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.56
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 53032
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 24525
+	Voluntary context switches: 91
+	Involuntary context switches: 64
+	Swaps: 0
+	File system inputs: 120
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

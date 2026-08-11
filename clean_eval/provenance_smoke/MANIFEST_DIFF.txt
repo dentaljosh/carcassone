@@ -1,0 +1,6 @@
+B_heur.cap: v1=None  v2_7=5.0
+B_heur.closure_schedule: v1=None  v2_7={'1': 0.5, '2': 0.2, '3': 0.05}
+B_heur.drop_three_open: v1=None  v2_7=False
+B_heur.leaf_name: v1='v1'  v2_7='v2_7'
+B_heur.leaf_version: v1='1.0'  v2_7='2.7'
+B_heur.opp_cap: v1=None  v2_7=5.0

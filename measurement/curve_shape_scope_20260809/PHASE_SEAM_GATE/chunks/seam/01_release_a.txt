@@ -1,0 +1,36 @@
+........................................................................ [ 52%]
+.................................................................        [100%]
+============================= slowest 10 durations =============================
+0.94s call     tests/test_analyzer.py::test_corpus_replays_clean_and_counts_match
+0.65s setup    tests/test_analyzer_evloss.py::test_end_to_end_pool_arithmetic_and_delta_q
+0.46s call     tests/test_action_space.py::test_round_trip_on_real_random_play
+0.44s call     tests/test_analyzer.py::test_e4_diff_end_to_end
+0.38s call     tests/test_analyzer.py::test_aggregate_builds_and_reconciles
+0.13s call     tests/test_analyze_oracle_price.py::test_deterministic
+0.13s call     tests/release/test_key_collision.py::test_no_dangerous_key_collision_over_sample
+0.10s call     tests/release/test_bag_invariants.py::test_meeple_hand_counts_in_range
+0.10s call     tests/release/test_bag_invariants.py::test_scores_nonnegative_and_monotone
+0.10s call     tests/release/test_bag_invariants.py::test_current_player_is_valid
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/release/test_bag_invariants.py tests/release/test_crop_boundary.py tests/release/test_deck_canonicalization.py tests/release/test_factory_manifest.py tests/release/test_farm_scoring.py tests/release/test_key_collision.py tests/release/test_rotation_alias.py tests/release/test_sign_semantics.py tests/test_action_space.py tests/test_adaptive_k_census.py tests/test_analyze_oracle_price.py tests/test_analyzer.py tests/test_analyzer_evloss.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 7.03
+	System time (seconds): 0.25
+	Percent of CPU this job got: 148%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:04.91
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 74004
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 57618
+	Voluntary context switches: 1045
+	Involuntary context switches: 52
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

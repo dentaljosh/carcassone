@@ -1,0 +1,16 @@
+selector,scope,n,top1,top3,q_regret,regret_cov
+random,all,1000,0.038,,0.0822,0.84
+iter8(MCTS@200),all,1000,0.487,,0.0071,1.0
+iter8(policy-prior),all,1000,0.259,,0.0412,0.999
+v2.7-static(label),all,1000,0.48,,0.0113,1.0
+heur@800(shallow-teacher),all,1000,0.658,,0.0016,1.0
+immediate-score(forced-net),all,1000,0.132,0.981,0.0629,1.0
+score-diff-after,all,1000,0.132,0.981,0.0629,1.0
+meeple-recovery,all,1000,0.127,0.987,0.0663,1.0
+best-meeple(incl-claim),all,1000,0.138,0.958,0.0612,1.0
+completion-then-score,all,1000,0.13,0.955,0.0757,1.0
+open-edge-progress,all,1000,0.104,0.773,0.084,1.0
+bag-aware-closure,all,1000,0.105,0.757,0.0835,1.0
+composite-simple,all,1000,0.183,0.77,0.0616,1.0
+v2.7-static(depth0),all,1000,0.48,0.964,0.0113,1.0
+composite-v2.7+delta,all,1000,0.478,0.9,0.0116,1.0

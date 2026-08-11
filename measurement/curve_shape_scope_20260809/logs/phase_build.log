@@ -1,0 +1,44 @@
+Compiling src/carcassonne_ai/flat_leaf_cy.pyx because it changed.
+[1/1] Cythonizing src/carcassonne_ai/flat_leaf_cy.pyx
+running build_ext
+building 'carcassonne_ai.flat_leaf_cy' extension
+creating build
+creating build/temp.linux-x86_64-cpython-312
+creating build/temp.linux-x86_64-cpython-312/src
+creating build/temp.linux-x86_64-cpython-312/src/carcassonne_ai
+x86_64-linux-gnu-gcc -fno-strict-overflow -Wsign-compare -DNDEBUG -g -O2 -Wall -fPIC -I/home/doctor/projects/carcassone/.venv/include -I/usr/include/python3.12 -c src/carcassonne_ai/flat_leaf_cy.c -o build/temp.linux-x86_64-cpython-312/src/carcassonne_ai/flat_leaf_cy.o -O3
+creating build/lib.linux-x86_64-cpython-312
+creating build/lib.linux-x86_64-cpython-312/carcassonne_ai
+x86_64-linux-gnu-gcc -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-z,relro -g -fwrapv -O2 build/temp.linux-x86_64-cpython-312/src/carcassonne_ai/flat_leaf_cy.o -L/usr/lib/x86_64-linux-gnu -o build/lib.linux-x86_64-cpython-312/carcassonne_ai/flat_leaf_cy.cpython-312-x86_64-linux-gnu.so
+copying build/lib.linux-x86_64-cpython-312/carcassonne_ai/flat_leaf_cy.cpython-312-x86_64-linux-gnu.so -> src/carcassonne_ai
+🐍 Found CPython 3.12 at /home/doctor/projects/carcassone/.venv/bin/python
+🔗 Found pyo3 bindings with abi3-py3.12 support
+📡 Using build options features from pyproject.toml
+   Compiling libc v0.2.189
+   Compiling unindent v0.2.4
+   Compiling once_cell v1.21.4
+   Compiling cfg-if v1.0.4
+   Compiling carc-core v0.1.0 (/home/doctor/projects/carcassone/rust/carc/carc-core)
+   Compiling pyo3-build-config v0.23.5
+   Compiling memoffset v0.9.1
+   Compiling pyo3-macros-backend v0.23.5
+   Compiling pyo3-ffi v0.23.5
+   Compiling pyo3 v0.23.5
+   Compiling pyo3-macros v0.23.5
+   Compiling carc-py v0.1.0 (/home/doctor/projects/carcassone/rust/carc/carc-py)
+    Finished `release` profile [optimized] target(s) in 7.19s
+📦 Built wheel for abi3 Python ≥ 3.12 to /tmp/.tmpmwpOuK/carc_rs-0.1.0-cp312-abi3-linux_x86_64.whl
+✏️ Setting installed package as editable
+🛠 Installed carc-rs-0.1.0
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+AssertionError: rebuilt carc_rs lacks SUPPORTS_V29_PHASE - stale substrate
+running build_ext
+copying build/lib.linux-x86_64-cpython-312/carcassonne_ai/flat_leaf_cy.cpython-312-x86_64-linux-gnu.so -> src/carcassonne_ai
+🐍 Found CPython 3.12 at /home/doctor/projects/carcassone/.venv/bin/python
+🔗 Found pyo3 bindings with abi3-py3.12 support
+📡 Using build options features from pyproject.toml
+    Finished `release` profile [optimized] target(s) in 0.01s
+📦 Built wheel for abi3 Python ≥ 3.12 to /tmp/.tmpgmxQTZ/carc_rs-0.1.0-cp312-abi3-linux_x86_64.whl
+✏️ Setting installed package as editable
+🛠 Installed carc-rs-0.1.0

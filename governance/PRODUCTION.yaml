@@ -1,0 +1,394 @@
+# PRODUCTION.yaml — the canonical "current production champion" pointer.
+# ONE authoritative, box-portable, git-tracked place naming the agent + leaf config that
+# "production play" and the reference ruler should use. Nothing in the codebase reads this
+# yet (production is set per-launcher via flags + env knobs) — this file is the human/agent
+# source of truth that those launchers cite. Update it (+ governance/CHECKPOINT_LINEAGE.csv)
+# whenever the champion changes.
+
+folded_in: "2026-07-07"   # Phase 1.1 flip: PUCT-heuristic-priors search PROMOTED over random-expansion UCT
+flip_authorized_by: "Joshua, 2026-07-07 ('flip and go'), on the +148.2 confirm + transitivity round-robin"
+leaf_folded_in: "2026-07-13"   # C5 leaf re-tune: v29_meeple_curve ×1.25 (curve125). FIRST leaf change to the champion.
+leaf_adopt_authorized_by: >
+  Joshua, 2026-07-13 ('adopt'), on CL-051: the meeple curve ×1.25 CONFIRMED on BOTH rulers — clair +66.8/z4.59 (n=400
+  fresh band) AND fair +48.8/z3.13 (CRN vs the D0 baseline). Peak-find (clean n=400 across ×0.75–2.0) ruled out any
+  higher scale (top is a noisy +45–78 plateau; ×1.75's scary +134 was an OpenBLAS-oversubscription hang-bias, since
+  root-caused+fixed). The v2.9 curve was tuned for random-expansion UCT; PUCT+priors visit meeple-heavy lines more
+  selectively → the old curve under-weighted meeple commitment. See measurement/classical_search/C5_CURVE125_PROPOSAL.md.
+  ✅ OPERATIONAL WIRING DONE (2026-07-13): production play reads the curve from env CARCASSONNE_V29_MEEPLE_CURVE, wired in
+  scripts/human_anchor/env_preamble.py — the production-leaf preamble imported-first by the human-anchor play harness (the
+  only real production-play path; the classical champion has no separate launcher). VERIFIED: play resolves curve125 AND the
+  frozen v2.9 substrate 7fc930b8 stays on the OLD curve (frozen_v29_cfg hard-sets+restores it; each eval ruler keeps its own
+  _CANON_ENV old curve). ⚠️ Do NOT export CARCASSONNE_V29_MEEPLE_CURVE globally — the rulers setdefault, so an ambient
+  curve125 would silently move the fixed ruler/anchor side and contaminate baselines. No production/E4 run active; E4 deferred.
+fair_kdets_folded_in: "2026-07-13"   # fair-PIMC determinizations per move 8 → 4 (cost-neutral: same total budget 2752).
+fair_kdets_authorized_by: >
+  Joshua, 2026-07-13 ('adopt into production'), on CL-054 — the k_dets width bracket. At FIXED total budget
+  (k_dets × sims/det = 2752) k4 beat the deployed k8 by +5.18±1.24 pts/deck (deck-matched delta-vs-k8, double-CRN,
+  z4.17, n=400 confirm). The full width axis is an inverted-U peaked at k4 (k32<k16≈k8<k2<k4); k1/k6 ruled out (peak
+  bracketed, k4-vs-k2 flat). FIRST fair (deployable) lever in the program to fire AND confirm. See fair_deploy block below.
+  ⚠️ SUPERSEDED FOR DESKTOP DEPLOY 2026-07-29 by the k8×1376 budget promotion below — k4 remains the correct
+  allocation AT total 2752 (that finding is untouched, and it is still what the MOBILE profile runs); the promotion
+  moves the total BUDGET to 11008, where k8 is the measured-optimal allocation (CL-060 / curve_k16 cells).
+budget_folded_in: "2026-07-29"   # desktop deploy budget 2752 (k4×688) → 11008 (k8×1376), executed parallel_workers=8.
+budget_authorized_by: >
+  Joshua, 2026-07-29 ('yes, lets promote k8x1376'). THE PROMOTION IN ONE LINE: the strongest fair configuration we have
+  ever MEASURED was never deployable because it cost 91% of the tournament clock single-stream; the k-parallel split
+  (roadmap G6) makes it cost ~14–17%, so it becomes deployable through ENGINEERING, with no new strength claim owed.
+  EVIDENCE, three links, each verified in its named source before this line was written:
+  (1) STRENGTH — results.csv `cl060_h2h_k8x1376_vs_deploy_k4x688` (2026-07-22, band 32e9, n=400 deck-paired,
+      200 decks × 2 seats): k8×1376 = 11008 sims vs the k4×688 = 2752 DEPLOY champion, BOTH SIDES the frozen curve125
+      leaf a36d2e15a3b3d71d, fair PIMC, exact-K≤2 → +49.85 elo (unpaired σ 17.55; PAIRED σ 14.32), W221/D15/L164,
+      wr 0.5713, paired z 3.48, +2.9775 pts/deck, 0 timeouts, 400/400 latched. This is a DIRECT head-to-head against
+      the incumbent, not a delta-of-deltas through a rung — it is the design CL-060's own falsifier named, and it
+      cleared the pre-registered ≥+35 re-open bar.
+  (2) PLATEAU CONTEXT — results.csv `curve_k16x1376_22016_vs_deploy_k4x688` (n=196, band 48e9): 8× budget at the
+      corrected allocation reads +35.58 / z 2.68, i.e. statistically the same place as the 4× point. The fair
+      budget→elo curve PLATEAUS at ~+40 over deploy and REACHES that plateau at ~4×. So k8×1376 is chosen as the
+      CHEAPEST point on the plateau, not as "more is better" — 8× is strictly dominated (2× the clock for ~0 elo).
+  (3) CLOCK LEGALITY — measurement/EFFJENSEN_BENCH_BATCH_20260729.md §2 (kparallel_latency_bench, 30 replayed real
+      mid-game roots, quiet 5900XT): k8×1376 sequential 13.7552 s/move → **W=8 2.1595 s/move mean / 2.6167 p90 =
+      6.370× (80% parallel efficiency)**, transport 7.24 ms/move (0.3% of the move). That is **~20.6% of the 900 s
+      clock** (CORRECTED 2026-07-30, audit-F3 desk reconciliation in efdacf0: the previous "~14.3–17.4%" band divided
+      a sequential clock-share by 6.370×, silently parallelizing the ~34 s/game exact-K solve, which does NOT
+      parallelize; conclusion insensitive — still comfortably clock-legal) and is FASTER than yesterday's deploy
+      single-stream (3.2276 s/move).
+  ⭐ THE KEY LOGICAL STEP — WHY (1) TRANSFERS TO THE PARALLEL EXECUTION. CL-060 measured k8×1376 run SEQUENTIALLY.
+  We deploy it run on 8 workers. That is only legitimate because the split is BEHAVIOR-IDENTICAL, and that is PROVEN,
+  not asserted: the k determinization worlds are independent until the pooled-Q argmax, so `parallel_workers` runs the
+  same worlds with the same decks and the same per-world seeds and merges them through the SAME pooled-Q code in the
+  SAME world order. tests/test_kparallel.py steps sequential and parallel champions through FULL games side by side and
+  asserts the chosen action AND the pooled root (N, W) are equal at every move, including the K≤2 marginalized-endgame
+  latch; the latency bench re-verified action identity at PRODUCTION budget (30/30 identical roots on every parallel
+  row, and it fails loudly otherwise). ⇒ the parallel agent is the SAME PLAYER whose strength CL-060 measured, so
+  NO NEW STRENGTH MEASUREMENT IS OWED by this promotion. parallel_workers is a LATENCY lever, never a strength lever.
+  WHAT THIS DOES NOT CLAIM: nothing about absolute/superhuman strength or either structural blocker; and per the bench's
+  own caveat, "clock-legal" is a CLOCK claim — CL-060's +49.85 is a self-anchored head-to-head against the incumbent.
+  CONSEQUENCE, EVAL COST: the deploy baseline now costs ~4× per move in SIMS. Any future cell graded against the
+  champion pays ~4.26× sequential wall-clock (13.76 vs 3.23 s/move) unless it is run k-parallel. Throughput eval farms
+  are game-parallel and do NOT benefit from the split (workers already saturate the box), so budget future n=400
+  confirms against this champion at ~4× the old wall-clock, or run fewer/cheaper screens.
+supersedes:
+  - deep_classical_v29_bmild_cap8   # HeuristicMCTS random-expansion UCT (C=3.0, one-random-child/sim, no priors) @ h6400
+                                     # + exact-K<=4 — the PRIOR champion (2026-07-02 .. 2026-07-07); now LINEAGE. SAME v2.9
+                                     # leaf; this flip is a pure SEARCH-algorithm win (+148.2 elo at equal wall-clock),
+                                     # transitivity-verified. The dethroned agent is search-SATURATED (ties its own h12800 double).
+  - flywheel2_champion_iter8         # neural iter8 + v2.7 leaf @ sims200 — the champion two epochs back (2026-06-11 .. 07-02); lineage.
+
+champion:
+  id: puct_priors_v29_bmild_cap8
+  kind: classical                      # PUCT with heuristic-leaf priors — NO learned net. A search change over the SAME leaf.
+  agent: HeuristicPriorAgent           # src/carcassonne_ai/heuristic_prior_mcts.py — the tested NeuralMCTS PUCT machinery
+                                        # (PUCT selection + expand-all-children) wired with a heuristic-leaf evaluator:
+                                        # priors P(a)=softmax(dLeaf(a)/tau_p) over per-child afterstates (mover POV),
+                                        # value=tanh(leaf/norm). NOT HeuristicMCTS random-expansion UCT.
+  agent_knobs:
+    c_puct: 1.5                         # re-swept AT the deployable 2750 sims (interior plateau; the champion's C=3.0 was a random-rollout default)
+    tau_p: 5                            # prior temperature (soft priors ~= +38 mean over tau=2)
+    final_select: visits               # visit-argmax, not Q-max (a low-sims artifact at 2750: Q and visits tie there, but visits is the pinned choice)
+    leaf_quantize: float               # pre-round leaf (Cython flat_virtual_score_v2_cy_float; bit-exact to int off)
+    value_norm: 15                     # HEURISTIC_VALUE_NORM — CONFIRMED optimal (ROADMAP C4 CLOSED 2026-07-08: {8,30} wings both negative, vn8 −24.4 / vn30 −36.6 screen)
+    reuse_tree: true                   # ADDED 2026-07-08 (ROADMAP C3 FIRED): re-root the search tree between moves instead of clear() per move.
+                                        # +39.3 elo at VERIFIED equal wall-clock (ms-ratio 1.060 ∈[0.9,1.1] → free effective depth on the reused subtree,
+                                        # not a time discount), paired z=2.81, n=400 confirm (finding-doc snapshot was n=378/+38.8 mid-aggregation; screen +47.2/z1.73).
+                                        # Search-efficiency win → dodges sims-washout.
+                                        # HeuristicPriorConfig.reuse_tree; bit-exact-OFF pinned; 0 rotation-collisions in re-root smoke.
+                                        # FAIR RE-CONFIRM 2026-07-09 (ROADMAP B/D-recon) — RESOLVED BY MECHANISM, not by run: reuse is CLAIRVOYANT-ONLY.
+                                        # The +39 amortizes a single fixed true deck; fair PIMC resamples the deck each move + runs k_dets FRESH trees →
+                                        # no fixed future to reuse → fair value ~0. FairHeuristicPriorAgent has NO reuse knob (fresh tree/determinization) →
+                                        # reuse_tree is a NO-OP in fair deploy. Keep ON for CLAIRVOYANT dev only (self-play/dev-eval/clair-ruler: cheaper/deeper);
+                                        # it contributes 0 to deployable (fair) strength. Do NOT build a "fair reuse" (sticky-determinization would leak future info). CL-044 scoped clairvoyant/dev.
+  leaf: v2_9_2_Bmild_cap8_curve125     # CHANGED 2026-07-13 (C5, CL-051): meeple curve ×1.25. FIRST leaf change to
+                                        # the champion (all prior flips were pure search over the frozen v2.9 leaf).
+  # Leaf fingerprint — CORRECTED 2026-07-19 (F1 release integrity). The OLD single value
+  # 158f17ff was snapshot._frozen_config_hash in the meeple_k=2.0 sub-dialect: REPRODUCIBLE
+  # (not gone-stale), but a nonstandard string nothing else references, which is why it read
+  # as "stale". The leaf is now recorded PRIMARY in the dialect the rest of the system speaks
+  # (c5_leaf_override._leaf_hash — what STATUS verifies + every real C7 curve125 manifest
+  # carries), with all three runtime-verified variants below. meeple_k is INERT under a
+  # non-null curve, so all three describe the SAME leaf function (240/240 byte-identical).
+  # RUNTIME-VERIFIED + asserted on real boards at construction by
+  # src/carcassonne_ai/champion_factory.py (curve VALUES first — robust to config-shape
+  # drift — then these hashes; the ruler-trap note, STATUS 2026-07-17).
+  leaf_hash: "a36d2e15a3b3d71d"        # PRIMARY: _leaf_hash (harness dialect, all fields, meeple_k=2.0)
+  leaf_hash_dialects:
+    harness_leaf_hash: "a36d2e15a3b3d71d"            # c5_leaf_override._leaf_hash (all fields, meeple_k=2.0)
+    frozen_config_hash_meeple_k0: "6dfffd57051690f2" # snapshot._frozen_config_hash, meeple_k=0.0 (champ_env/distill)
+    frozen_config_hash_meeple_k2: "158f17ff76adaa02" # snapshot._frozen_config_hash, meeple_k=2.0 (the OLD value)
+  # Prior leaf was 7fc930b82801cb43 (v2_9_1_Bmild_cap8), now lineage.
+  leaf_config:                          # opt-in via LeafConfig.v29_* / src/carcassonne_ai/leaf_v29.py
+    v29_meeple_curve: [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]   # C5 curve125 = prior ×1.25 exactly
+    bonus_cap: 8.0                      # UNCHANGED (C5 confirmed cap8 optimal: opp_cap wings both negative)
+    opp_bonus_cap: 8.0                  # UNCHANGED
+    # meeple_k OMITTED (was 2.0) — INERT under a non-null curve: flat_leaf.py:988 `if curve is not None`
+    # takes the curve branch, never the flat meeple_k term. Removed 2026-07-14 (T4b hygiene, Joshua approved)
+    # to kill the sweepable-but-ignored config trap. The launcher still exports CARCASSONNE_V25_MEEPLE_K=2.0 (unused here).
+  sims: >
+    ~2750 was the CLAIRVOYANT confirm budget (EQUAL WALL-CLOCK to h6400 on the 5900XT ref box) — it is what the
+    +148.2 flip and every clairvoyant ruler/anchor number below were measured at, and that historical framing is
+    unchanged. ⚠️ CHANGED 2026-07-29 (k8×1376 promotion): champion_factory derives the CLAIRVOYANT mode's DEFAULT
+    sim count as fair_deploy.k_dets × fair_deploy.sims_per_det, so `make_production_champion("clairvoyant")` with no
+    explicit `sims` now builds at 11008, not 2752. Every real clairvoyant caller (oracle_score_pilot,
+    gate_b_depth_transfer, eval_fair_puct's prefix agent) passes its OWN explicit sims and is UNAFFECTED; only a
+    sims-less construction moves. If you are reproducing a clairvoyant RULER number, pass sims=2752 explicitly —
+    the ruler is the 2750-sim agent, and this promotion is a FAIR-DEPLOY budget change, not a ruler re-anchor.
+    The sim count floats with the compute budget — the CONFIG is the champion, not a fixed sim number.
+  c_puct_note: "agent c_puct=1.5 is the PUCT exploration constant; distinct from the dethroned champion's plain-UCT C=3.0"
+  endgame: >
+    Two handoffs share this champion. (a) CLAIRVOYANT reference/eval agent — what the
+    champion's strength numbers were measured with: exact K<=4 clairvoyant alpha-beta solver
+    (scripts/level2/endgame_solver.py, mode=clairvoyant), margin-correct; UNCHANGED and
+    identical both sides, so it does not affect the search-A/B margin. (b) FAIR deployable
+    agent for human-facing play (src/carcassonne_ai/fair_agent.py): exact K<=2 MARGINALIZED
+    expectiminimax handoff (mode=marginalized, no alpha-beta). Alpha-beta and K=3-4 are
+    clairvoyant-only (they read the true deck order) so the fair agent caps at K<=2 marginalized.
+    Audited 2026-07-06 (measurement/fair_handoff_audit/REPORT.md): 0 clairvoyant/alpha-beta
+    solves in 20 fair games; the marginalized solve is bit-invariant to deck permutation.
+  fair_deploy:                          # the human-facing (non-clairvoyant) PIMC deploy config. Clairvoyant dev/ruler
+                                        # play uses ONE true deck (no determinizations), so k_dets applies to fair deploy ONLY.
+    k_dets: 8                           # PROMOTED 2026-07-29 (budget_authorized_by above). Determinizations per move.
+                                        # k8 is the MEASURED-OPTIMAL allocation AT total 11008 — width must be re-solved
+                                        # per budget (CL-054's k4 was the optimum measured AT 2752, and remains so there;
+                                        # it is what the `mobile` profile below still runs).
+    sims_per_det: 1376                  # k8 × 1376 = 11008 total per-move budget (floats with compute like the clair sims;
+                                        # the CONFIG is k_dets=8 at ~11008 total, not a fixed sim number).
+                                        # Prior deploy budget was k4×688 = 2752 (2026-07-13 .. 2026-07-29) — now lineage.
+    fair_agent: FairHeuristicPriorAgent # src/carcassonne_ai/fair_agent.py — PIMC wrapper of the champion HeuristicPriorAgent.
+                                        # eval_fair_puct.py --k-dets/--sims defaults track the constructor defaults; the
+                                        # AUTHORITATIVE budget is these two YAML fields, read by champion_factory.
+    # ---------------------------------------------------------------------------------
+    # DEPLOY EXECUTION PROFILES (added 2026-07-29 with the k8×1376 promotion).
+    #
+    # These describe HOW the champion is EXECUTED on a given class of hardware. Only
+    # `parallel_workers` is an execution knob (behavior-identical, latency-only); the
+    # k_dets/sims_per_det inside a profile are a genuine BUDGET override for platforms
+    # that cannot pay the champion budget, and such a platform is therefore running a
+    # WEAKER configuration — which its own manifest must say (it does: champion_factory
+    # stamps `runtime_budget_override` whenever the running budget != the two fields above).
+    #
+    # ⚠️ WIRING STATUS — deliberately partial, so the promotion stayed minimally invasive:
+    #   * `champion_factory.load_production_spec()` PARSES this block onto
+    #     `ProductionSpec.deploy_profiles` / `.parallel_workers` and exposes
+    #     `champion_factory.deploy_profile(name)`. It does NOT auto-apply parallel_workers:
+    #     `make_production_champion(..., parallel_workers=N)` stays an explicit caller
+    #     decision, because a spawn-process split is not safe to impose on every embedder
+    #     (daemonic eval-farm workers, Chaquopy, notebooks) and the factory cannot tell.
+    #     Callers that want the deploy execution profile read it from here and pass it.
+    #   * FOLLOW-UP (not done here): teach the human-anchor play harness
+    #     (scripts/human_anchor/play_harness.py) to read `desktop.parallel_workers` so
+    #     clocked human-facing play gets the 6.37× automatically instead of by hand.
+    # ---------------------------------------------------------------------------------
+    rules_profile: fixed_v1             # ⭐ THE RULES PROFILE OF RECORD FOR NEW EVAL/DESKTOP WORK (2026-08-03,
+                                        # Joshua "1-4 I'll take your recs" — adopts the F9 bundle: centered18 +
+                                        # retail start + cloister_scan fixed + unplaceable redraw + R9 farm-data fix
+                                        # via CARCASSONNE_FIX_R9=1; src/carcassonne_ai/rules_profile.py "fixed_v1").
+                                        # EVIDENCE: the Phase-B transfer bound — the flagship contrast reproduces
+                                        # under fixed rules, deck-matched z +0.98, bound ≈[−18,+53] elo-equiv
+                                        # (measurement/classical_search/PHASEB_TRANSFER_READOUT_20260803.md);
+                                        # W2 geometry by probe (0/400 sentinel events). SCOPE: NEW confirmatory
+                                        # work runs fixed_v1 on fresh bands; the walled record stays interpretable
+                                        # via the bound. The caps/curve re-sweep GATE IS DISCHARGED 2026-08-03:
+                                        # all 6 cells null at screen resolution (band 1.03e11, no paired-margin
+                                        # z >= +2.0; positive-control wiring manifest-verified) — the walled
+                                        # optima cap8/oppcap8/curve125 TRANSFER, and absolute fixed-rules claims
+                                        # are UNLOCKED as-is. Power caveat: the screen resolves ~50 elo unpaired /
+                                        # ~35 paired at 2-sigma; a <=20-elo optimum shift is NOT excluded
+                                        # (measurement/capscurve_resweep_20260803/PREREG.md, decision-map row 1).
+                                        # NARROWED 2026-08-10 FOR 3 OF THE 6 CELLS ONLY: cap5, cap12 and curve150
+                                        # were re-measured at n=800 deck-paired on band 1.20e11 (all null) => their
+                                        # bound tightens to ~+/-17.5 elo (2-sigma paired); curve100, oppcap4 and
+                                        # oppcap12 were NOT re-measured and keep the ~35 figure. CL-078.
+    backend: rust                       # ⭐ THE CHAMPION'S EXECUTION BACKEND OF RECORD (2026-08-01, Joshua "1 yes").
+                                        # carc_rs, the rustport core. An ENGINE, not a player: BEHAVIOR-IDENTICAL by
+                                        # gate, so NO strength claim moves and no re-eval is owed. Evidence:
+                                        # G4 = the deployed champion reproduced bit-exactly (0/305,515 checks incl.
+                                        # all 1,852 record solver decisions node-for-node); G6 = 14,384/14,384
+                                        # identical actions over 100 full deck-paired games, 0/101,088 checks, 2,880
+                                        # reconcile asserts, 0 raised (measurement/rustport_p6/G6_backend_g6_k8x1376.json).
+                                        # Speed: 9.55x the Python champion on the same box (G6 wall: 201,179 s -> 21,071 s).
+                                        # ⚠️ HOW IT IS REACHED — read before assuming a harness runs it. `carc_rs`'s
+                                        # agent owns a game MIRROR that advances only on an explicit `advance()` call,
+                                        # so it is NOT a drop-in: 5 of the repo's 6 `make_production_champion` call
+                                        # sites never advance one (measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md).
+                                        # champion_factory therefore still DEFAULTS to python and reads this field only
+                                        # for a caller that passes `backend="auto"` — that caller asserting it drives
+                                        # the mirror. Caller conversion is a separate, in-flight piece of work; until a
+                                        # given harness is converted it runs the python engine, which is the same
+                                        # player. A wrong assertion cannot be silent: `RustFairAgent.choose_action`
+                                        # hard-raises `MirrorDesync` on any drift (12.8 us/decision, 0.005%).
+    parallel_workers: 8                 # DESKTOP-CLASS DEPLOY EXECUTION (the PYTHON engine's k-split). Splits the 8 determinization worlds across 8
+                                        # spawn processes. BEHAVIOR-IDENTICAL (tests/test_kparallel.py: same action AND
+                                        # same pooled root (N,W) at every move of full games, endgame latch included;
+                                        # latency bench re-verified 30/30 identical actions at production budget).
+                                        # MEASURED 6.370× (13.7552 → 2.1595 s/move mean, 2.6167 p90, 80% efficiency,
+                                        # transport 7.24 ms/move) — measurement/EFFJENSEN_BENCH_BATCH_20260729.md §2.
+                                        # `null`/absent = today's sequential k-loop, byte-for-byte identical play.
+    deploy_profiles:
+      desktop:                          # the DEFAULT and the champion of record. Identical to the two fields above.
+        k_dets: 8
+        sims_per_det: 1376
+        total_sims: 11008
+        backend: rust                   # as fair_deploy.backend above — read its comment before quoting this.
+        parallel_workers: 8             # the PYTHON engine's spawn split; the rust engine uses rust_threads instead.
+        measured_s_per_move: 2.1595     # quiet 5900XT, W=8 (p90 2.6167) ⇒ ~20.6% of the 900 s clock (corrected 2026-07-30, audit F3)
+        note: >
+          The champion of record. Requires ≥8 usable cores and a multiprocessing-capable runtime.
+          Run SEQUENTIALLY it is the same player, just 6.37× slower (13.76 s/move) — that is a clock
+          problem, not a different agent.
+      mobile:                           # ANDROID / CHAQUOPY. ⚠️ UNPINNED 2026-08-01 — the phone now plays
+                                        # the CHAMPION OF RECORD. The carve-out below is CLOSED. Read the note.
+        k_dets: 8                       # = the champion of record (the two fields above), not a carve-out.
+        sims_per_det: 1376
+        total_sims: 11008
+        backend: rust                   # carc_rs, the rustport core (P4 bit-exact / P6 G6 / P7 G7). LOAD-BEARING:
+                                        # the budget above is payable ONLY on this backend. See the note.
+        rust_threads: 4                 # the k worlds split across 4 OS threads INSIDE one GIL-released
+                                        # choose_action call. G4 proved threads {1,4,8} bit-identical.
+        parallel_workers: null          # still null and always will be: Chaquopy has no multiprocessing. The
+                                        # parallelism here is Rust threads inside ONE call — a different
+                                        # mechanism, which is exactly why the unpin condition could be met.
+        measured_s_per_move: 1.551      # Pixel 9 Pro (caiman), threads=4, 20 replayed midgame roots: median
+                                        # 1.551, mean 1.5154, p90 1.6552, max 1.7056. Thermal 1.007x over 68.7 s
+                                        # of continuous full-budget search (fixed-position soak, 50 repeats).
+                                        # RAW: measurement/rustport_p7/device/p7/bench_k8x1376.json (authoritative
+                                        # over the G7_REPORT.md leg-3 prose table, which is a stale earlier run).
+        note: >
+          ⭐ CARVE-OUT CLOSED 2026-08-01 (Joshua: "2 yes"). THE PHONE NOW PLAYS THE CHAMPION OF RECORD —
+          same budget (k8×1376 = 11008), same leaf a36d2e15, same priors, same exact-K≤2 endgame. What
+          changed is not the agent but the ENGINE it executes on: `carc_rs` replaces the Python search.
+          THE UNPIN CONDITION WAS MET LITERALLY. It read: "a native (non-Chaquopy) search core with real
+          thread/process parallelism on the device, benchmarked at ≤3 s/move at 11008 — not before."
+          rustport P7/G7 delivered exactly that: a native Rust core, 4 OS threads inside one GIL-released
+          call, measured 1.551 s/move median on the Pixel 9 Pro (bar was ≤2 s), thermal 1.007×. The full
+          champion budget is now CHEAPER on the phone than the old carve-out was in Python (1.551 s at
+          11008 vs ~1.7 s at 2752) — 4× the search for ~0.9× the clock.
+          ⚠️ THE BUDGET IS CONDITIONAL ON THE BACKEND. 11008 sims on the PYTHON path is ~25 s/move on this
+          device, which is the unshippable UX the carve-out existed to prevent. So the bridge ties the two
+          together: if `carc_rs` is unavailable (missing wheel, unknown ABI, failed mirror start) it falls
+          back to the Python engine AND to its own k4×688 floor, never to this budget. Never read the
+          k_dets/sims_per_det here without also honouring `backend`.
+          E4 CONSEQUENCE — THE GRADING CHANGED: human-vs-champion games archived on the phone from this
+          build forward are played by the CHAMPION OF RECORD and grade against it. Because the running
+          budget now EQUALS the champion of record, `champion_factory` correctly stamps NO
+          `runtime_budget_override` on those manifests — the absence of that key is the signal that a game
+          was played at full strength. Games archived BEFORE this build carry the override naming k4×688
+          and must still be graded against k4×688; the archive is self-describing either way.
+          NO STRENGTH CLAIM IS MADE HERE. Behaviour identity is what transfers strength (the CL-071
+          precedent): G6 = 14,384/14,384 identical actions over 100 full desktop games, G7 leg 2 = 0/3,165
+          plies of replay divergence on the device itself. The phone inherits CL-060's +49.85 by being the
+          same player, not by a new measurement.
+          HISTORY (compressed): PINNED at k4×688 = 2752 from 2026-07-29 (the desktop k8×1376 promotion was
+          approved as desktop-class only, because Chaquopy cannot spawn processes and could not buy the
+          6.37× split) until 2026-08-01. During that window the on-device opponent was deliberately ~50 elo
+          (CL-060) weaker than the champion of record. Full reasoning: DECISIONS 2026-07-29 (the promotion
+          + carve-out) and DECISIONS 2026-08-01 (the rust port P7/G7 + this unpin).
+          READER: android/app/src/main/python/android_bridge.py resolves THIS profile (fail-closed: if the
+          profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).
+    stale_path_flag: >
+      ✅ CLEARED 2026-07-26 — the gap this flag described was FIXED on 2026-07-19 by F1 (91bff94) and the flag
+      was simply never cleared (the 6-touch close-out leaking at touch 4, exactly where CLAUDE.md says it
+      historically leaks). Verified on disk today, not inferred: scripts/human_anchor/play_harness.py
+      `_make_fair_agent` now returns carcassonne_ai.champion_factory.make_production_champion("fair", ...)
+      (champion_factory.py:417), its module docstring records the rewire in the past tense, and tests/release/
+      is 38/38 green. The factory proves the leaf on real boards at construction and writes a runtime manifest
+      into every game log. ⇒ the harness DOES run the current champion (FairHeuristicPriorAgent, PUCT heuristic
+      priors + curve125, c1.5/tau5/float/visits, and now k8x1376 — it reads the budget from this file, so the
+      2026-07-29 promotion propagated to it for free). ✅ AND SINCE 2026-07-29 (late) IT ALSO READS
+      `parallel_workers`: `play_harness.resolve_parallel_workers()` resolves `deploy_profiles.<--profile>` (default
+      `desktop` ⇒ 8) through `champion_factory.deploy_profile()`, so harness play now runs the k-parallel split
+      (~2.2 s/move) instead of the sequential 13.76 s/move execution OF THE SAME PLAYER. Resolution is FAIL-SAFE
+      (absent profile / `parallel_workers: null` / any read error ⇒ sequential) and `--no-parallel` forces sequential;
+      the resolved count is written into every game log as `config.parallel_workers`. LATENCY ONLY — no strength
+      claim moves (tests/test_kparallel.py). The "E4 landmine" is defused.
+      HISTORICAL (what the flag used to say): the harness wired the PRE-FLIP FairHeuristicMCTSAgent because the
+      2026-07-07 champion flip and the 2026-07-13 curve125 adopt were never propagated there. E4 (the human exam)
+      itself remains PARKED — that is Joshua's call and is NOT what this flag tracked.
+  env_knobs:
+    CARCASSONNE_USE_FLAT_LEAF: "1"
+    CARCASSONNE_USE_CY_LEAF: "1"
+    CARCASSONNE_USE_CY_REPR: "1"
+
+# Why this is the champion (the promotion evidence):
+validation:
+  confirm: "c1.5/tau5/visits/float @ ~2750 sims (equal wall-clock) vs the prior champion h6400, deck-paired, FRESH band 9.4e9"
+  vs_prior_champion_h6400: "+148.2 elo / paired z=10.17 / winrate 0.701 (276W/9D/115L, n=400)"   # b3d3312, the pre-registered confirm
+  transitivity: >
+    Round-robin (2026-07-07, ROUND_ROBIN_PLAN.md) RETIRES the RPS hypothesis: on shared decks the new champion beats the
+    independent neural lineage (rod_v2 iter_02) by +230.2 where the prior champion manages only +36.6; and it beats h12800
+    by +149.3 while the prior champion TIES its own double (-8.7, z-0.96) = search-saturated. The +148 is algorithmic
+    (priors + expand-all + visit-select), not a compute/depth artifact or an h6400-specific exploit.
+  results_csv_rows:
+    - puct_c1.5_tau5_float_visits_s2750_vs_h6400_k2   # confirm (fresh band 9.4e9)
+    - rr_puct2750_vs_net-iter02_k2                    # M1 +230.2
+    - rr_h6400_vs_net-iter02_k2                       # M2 +36.6
+    - rr_puct2750_vs_h12800_k2                        # M3 +149.3
+    - rr_h6400_vs_h12800_k2                           # M4 -8.7
+  budget_promotion_2026_07_29:                        # the k4x688 -> k8x1376 deploy-budget promotion
+    decision: "k_dets 4 -> 8, sims_per_det 688 -> 1376 (total 2752 -> 11008), executed parallel_workers=8. Joshua approved 2026-07-29."
+    strength_row: cl060_h2h_k8x1376_vs_deploy_k4x688  # +49.85 elo, unpaired sigma 17.55 / PAIRED sigma 14.32, paired z 3.48,
+                                                      # n=400 deck-paired (200 decks x 2 seats), band 32e9, W221/D15/L164,
+                                                      # wr 0.5713, +2.9775 pts/deck, both sides leaf a36d2e15a3b3d71d.
+    plateau_row: curve_k16x1376_22016_vs_deploy_k4x688  # 8x at the corrected allocation = +35.58 / z 2.68 (n=196, band 48e9)
+                                                        # => the curve PLATEAUS at ~+40 over deploy and is REACHED by ~4x;
+                                                        # k8x1376 is the CHEAPEST plateau point, and 8x is strictly dominated.
+    latency_evidence: measurement/EFFJENSEN_BENCH_BATCH_20260729.md   # sec 2: 13.7552 -> 2.1595 s/move at W=8 = 6.370x
+                                                                     # (p90 2.6167), 80% efficiency, transport 7.24 ms/move,
+                                                                     # 30/30 action-identical roots; ~20.6% of the 900 s clock (corrected 2026-07-30).
+    behavior_identity: tests/test_kparallel.py         # full-game side-by-side: same action AND same pooled root (N,W) at
+                                                       # EVERY move incl. the K<=2 latch => the CL-060 strength measurement
+                                                       # (taken sequentially) TRANSFERS to the 8-worker execution unchanged.
+    what_did_NOT_change: >
+      leaf (curve125 a36d2e15a3b3d71d, caps 8/8) · priors (heuristic leaf-softmax, tau_p 5.0) · c_puct 1.5 ·
+      final_select visits · value_norm 15 · agent family (FairHeuristicPriorAgent, pooled-Q argmax) · exact K<=2
+      marginalized endgame · the MOBILE profile (phone stays k4x688). Only the fair-deploy BUDGET and its execution moved.
+    caveat: >
+      SELF-ANCHORED like every number in this file: +49.85 is a head-to-head against the OUTGOING champion, not an
+      absolute or out-of-lineage result, and it moves NEITHER structural blocker. Note also the bench's own caveat that
+      "tournament-legal" is a CLOCK claim; and CL-070 showed the RoD-v2 ruler to be ~70 elo unreliable on this exact
+      contrast, which is precisely why the promotion rests on the DIRECT head-to-head (CL-060 re-open trigger (a)) and
+      not on any rung-mediated read.
+  caveat: >
+    (1) SELF-ANCHORED: this is a search win over the prior CLASSICAL champion, measured on our own ruler — NOT an absolute
+    superhuman result and it does NOT move the two structural blockers (no non-saturated external reference; no learned
+    component exceeding the leaf). It RAISES the classical ceiling (and thus the Phase-5 distillation teacher). (2) Measured
+    at K<=2 endgame handoff on both sides; production runs K<=4 (identical both sides, so the margin is midgame) — the K=3
+    confirmation LANDED (+108.1/z6.11, holds at the deeper handoff). (3) CLAIRVOYANT matched-mode; the fair-PIMC deployable
+    verdict at champion config is now MEASURED as a SCREEN (ROADMAP A2, n=100): fair +49.0/z2.86 vs a clairvoyant h800 rung,
+    clairvoyance tax ~156 elo — any human-facing claim is graded FAIR; an n=400 fair confirm is the remaining tightening.
+
+lineage:
+  prior_champion:
+    id: deep_classical_v29_bmild_cap8
+    agent: "HeuristicMCTS (random-expansion UCT, C=3.0) @ h6400 + exact-K<=4"
+    reign: "2026-07-02 .. 2026-07-07"
+    note: >
+      The v2.9 Bmild_cap8 leaf it used is UNCHANGED and remains excellent — the flip replaced only the SEARCH wrapper
+      (random one-child-per-sim expansion -> PUCT + heuristic priors + expand-all). This agent is still the reference the
+      ruler ladder is calibrated to; the Phase-3 re-anchor (now load-bearing) re-draws the ladder around the new top.
+      Retained as the ruler/anchor and for lineage.
+  prior_neural_champion:
+    ckpt_id: flywheel2_champion_iter8
+    path_local:  /mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
+    sha256: 0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c
+    note: "neural champion 2026-06-11 .. 07-02; retained for lineage."
+
+notes: >
+  Production PLAY is now the PUCT-heuristic-priors classical agent (same v2.9 Bmild_cap8 leaf + exact-K<=4 endgame),
+  WITH tree-reuse ON (reuse_tree: true, added 2026-07-08 — the ROADMAP Track-C search-squeeze winner: +39.3 elo at
+  equal wall-clock, ms-ratio 1.06, paired z=2.81, n=400 confirm; a search-efficiency knob on the SAME agent, not a new
+  agent). The dethroned deep_classical_v29 (random-expansion HeuristicMCTS h6400) is RETAINED as the reference RULER
+  pending the Phase-3 re-anchor, and as lineage. K=3 endgame confirm DONE (+108.1/z6.11 — holds at the deeper handoff).
+  This is a search-algorithm promotion over the same leaf, transitivity-verified, self-anchored (not superhuman). The
+  fair-PIMC deployable verdict is now MEASURED at the champion config (ROADMAP A2, screen n=100): fair +49.0/z2.86 over
+  a clairvoyant h800 rung while playing BLIND, clairvoyance tax ~156 elo (clair +205 − fair +49) → any human-facing
+  claim must be graded FAIR and the clairvoyant ladders overstate deployable strength (Phase-3 re-anchor now load-bearing).
+  ⭐ 2026-07-29 — THE DEPLOY BUDGET MOVED: fair deploy is now k8x1376 = 11008 sims/move, executed on 8 workers
+  (2.16 s/move, ~14-17% of the 900 s clock). +49.85 elo / paired z 3.48 over the outgoing k4x688 (CL-060 head-to-head,
+  n=400 deck-paired). The k-parallel split is BEHAVIOR-IDENTICAL, so this is a budget promotion plus an execution
+  profile, NOT a new agent — nothing about the leaf, the priors, the search knobs or the endgame handoff changed.
+  ⚠️ THE PHONE WAS CARVED OUT at k4x688 (fair_deploy.deploy_profiles.mobile) from 2026-07-29 — Chaquopy has no
+  multiprocessing. ✅ CARVE-OUT CLOSED 2026-08-01: the rustport native core (carc_rs, 4 OS threads inside one call)
+  runs the FULL k8x1376 champion at 1.551 s/move on the Pixel, so the mobile profile is UNPINNED to the champion of
+  record and the phone now plays it. The budget there is CONDITIONAL on backend: rust — read that profile's note
+  before quoting its numbers. DECISIONS 2026-08-01.
+  ⚠️ EVAL COST: the deploy baseline is now ~4.26x more expensive per move sequentially; budget confirms accordingly.
+  Full queue: docs/PROGRAM_ROADMAP_2026-07-07.md.

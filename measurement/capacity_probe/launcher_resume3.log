@@ -1,0 +1,6 @@
+[eta] 6 sequential GPU runs (3 sizes x 2 seeds, ascending): f64 ~15-70min/run
+[eta] (2026-07-01 arms-run wallclocks), f128 slower, f256 possibly 2-4h/run
+[eta] -> total possibly 6-12h. First loss lines expected within ~10-20min.
+=== SKIP f64b4 s0 (exists: measurement/capacity_probe/f64b4_s0/V4_listwise/ranknet_best.pt) ===
+=== SKIP f64b4 s1 (exists: measurement/capacity_probe/f64b4_s1/V4_listwise/ranknet_best.pt) ===
+=== SIZE f128b6 seed 0 2026-07-05_14:46:08 -> measurement/capacity_probe/f128b6_s0.log ===

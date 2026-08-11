@@ -1,0 +1,6 @@
+variant,mid_top1_vs_teacher,mid_n,end_k2_top1_exact,end_k2_mean_regret,end_k2_n,patch
+v27_baseline,0.48,1000,0.7632,0.5439,150,(none — frozen reference)
+v28_farm,0.465,1000,0.7477,0.5676,150,farm_final_value_v1 — majority-gated farm-growth bonus
+v28_meeple,0.486,1000,0.7632,0.5439,150,meeple_economy_v1 — recovery-scaled meeple economy term
+v28_completion,0.476,1000,0.8261,0.3913,150,completion_timing_v1 — continuous deck-aware closure (reuses closure_continuous_slack)
+v28_denial,0.476,1000,0.7568,0.5586,150,opponent_denial_v1 — asymmetric opponent-bonus cap (reuses opp_bonus_cap)

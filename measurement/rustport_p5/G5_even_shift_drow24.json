@@ -1,0 +1,607 @@
+{
+  "gate": "G5/even_shift_property",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "5c35106-dirty",
+    "utc": "2026-08-01T02:59:39Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "games": 60,
+    "start": 0,
+    "workers": 8,
+    "wall_frac": 0.2,
+    "policy_base": 6000000,
+    "max_plies": 400,
+    "d_row": 24,
+    "d_col": 0,
+    "start_rule": "engine",
+    "tag": "drow24",
+    "out": null
+  },
+  "shift": [
+    24,
+    0
+  ],
+  "shift_is_even": [
+    true,
+    true
+  ],
+  "per_ply_checks": [
+    "python_vs_rust_repr[base]",
+    "python_vs_rust_repr[shift]",
+    "shift_transform(placed/meeples/last_tile/scores/deck/next_tile)",
+    "open_positions(restricted to cells both grids can represent)",
+    "window_offset_translates_exactly",
+    "python_vs_rust_window_offset",
+    "flat_base_score[p0,p1] x 4 engines",
+    "board_tensor",
+    "scalars",
+    "legal_mask(bytes) python_vs_rust at both rows"
+  ],
+  "stop_reasons": {
+    "mask_divergence": 22,
+    "count_final_scores_refusal": 12,
+    "engine_refusal": 26
+  },
+  "wall_denied_plies": 110,
+  "wall_denied_cells": 126,
+  "games_with_wall_denial": 60,
+  "total_games": 60,
+  "total_positions_compared": 2824,
+  "mean_plies_compared": 47.06666666666667,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "exception_games": 0,
+  "wallclock_s": 0.5782637609809171,
+  "per_game": [
+    {
+      "deck_seed": 97000000004,
+      "mode": "wall",
+      "plies": 20,
+      "compared": 21,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 6
+    },
+    {
+      "deck_seed": 97000000005,
+      "mode": "uniform",
+      "plies": 19,
+      "compared": 19,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000000,
+      "mode": "uniform",
+      "plies": 45,
+      "compared": 45,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000001,
+      "mode": "uniform",
+      "plies": 27,
+      "compared": 27,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000014,
+      "mode": "wall",
+      "plies": 20,
+      "compared": 21,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000015,
+      "mode": "uniform",
+      "plies": 63,
+      "compared": 64,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000012,
+      "mode": "uniform",
+      "plies": 59,
+      "compared": 59,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000013,
+      "mode": "uniform",
+      "plies": 38,
+      "compared": 39,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000008,
+      "mode": "uniform",
+      "plies": 79,
+      "compared": 79,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000009,
+      "mode": "wall",
+      "plies": 24,
+      "compared": 25,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000006,
+      "mode": "uniform",
+      "plies": 81,
+      "compared": 82,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000007,
+      "mode": "uniform",
+      "plies": 34,
+      "compared": 35,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000016,
+      "mode": "uniform",
+      "plies": 67,
+      "compared": 68,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000017,
+      "mode": "uniform",
+      "plies": 59,
+      "compared": 60,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000028,
+      "mode": "uniform",
+      "plies": 23,
+      "compared": 24,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000029,
+      "mode": "wall",
+      "plies": 18,
+      "compared": 19,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000002,
+      "mode": "uniform",
+      "plies": 76,
+      "compared": 77,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000003,
+      "mode": "uniform",
+      "plies": 87,
+      "compared": 87,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000026,
+      "mode": "uniform",
+      "plies": 56,
+      "compared": 57,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000027,
+      "mode": "uniform",
+      "plies": 30,
+      "compared": 30,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000010,
+      "mode": "uniform",
+      "plies": 78,
+      "compared": 79,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 6
+    },
+    {
+      "deck_seed": 97000000011,
+      "mode": "uniform",
+      "plies": 92,
+      "compared": 93,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000020,
+      "mode": "uniform",
+      "plies": 67,
+      "compared": 68,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000021,
+      "mode": "uniform",
+      "plies": 25,
+      "compared": 25,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000024,
+      "mode": "wall",
+      "plies": 18,
+      "compared": 19,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000025,
+      "mode": "uniform",
+      "plies": 92,
+      "compared": 93,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000022,
+      "mode": "uniform",
+      "plies": 61,
+      "compared": 62,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000023,
+      "mode": "uniform",
+      "plies": 83,
+      "compared": 83,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000034,
+      "mode": "wall",
+      "plies": 20,
+      "compared": 21,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 6
+    },
+    {
+      "deck_seed": 97000000035,
+      "mode": "uniform",
+      "plies": 41,
+      "compared": 42,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000044,
+      "mode": "wall",
+      "plies": 16,
+      "compared": 17,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000045,
+      "mode": "uniform",
+      "plies": 30,
+      "compared": 31,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000032,
+      "mode": "uniform",
+      "plies": 45,
+      "compared": 46,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000033,
+      "mode": "uniform",
+      "plies": 69,
+      "compared": 70,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000018,
+      "mode": "uniform",
+      "plies": 109,
+      "compared": 110,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000019,
+      "mode": "wall",
+      "plies": 20,
+      "compared": 21,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000040,
+      "mode": "uniform",
+      "plies": 37,
+      "compared": 38,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000041,
+      "mode": "uniform",
+      "plies": 49,
+      "compared": 50,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000038,
+      "mode": "uniform",
+      "plies": 41,
+      "compared": 42,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000039,
+      "mode": "wall",
+      "plies": 26,
+      "compared": 27,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000036,
+      "mode": "uniform",
+      "plies": 21,
+      "compared": 22,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000037,
+      "mode": "uniform",
+      "plies": 65,
+      "compared": 66,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000046,
+      "mode": "uniform",
+      "plies": 27,
+      "compared": 28,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000047,
+      "mode": "uniform",
+      "plies": 21,
+      "compared": 22,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000030,
+      "mode": "uniform",
+      "plies": 53,
+      "compared": 54,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000031,
+      "mode": "uniform",
+      "plies": 83,
+      "compared": 84,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000052,
+      "mode": "uniform",
+      "plies": 27,
+      "compared": 28,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000053,
+      "mode": "uniform",
+      "plies": 27,
+      "compared": 28,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000048,
+      "mode": "uniform",
+      "plies": 45,
+      "compared": 46,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000049,
+      "mode": "wall",
+      "plies": 18,
+      "compared": 19,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000042,
+      "mode": "uniform",
+      "plies": 91,
+      "compared": 92,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000043,
+      "mode": "uniform",
+      "plies": 19,
+      "compared": 19,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000058,
+      "mode": "uniform",
+      "plies": 56,
+      "compared": 57,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000059,
+      "mode": "wall",
+      "plies": 14,
+      "compared": 15,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 2
+    },
+    {
+      "deck_seed": 97000000056,
+      "mode": "uniform",
+      "plies": 50,
+      "compared": 51,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000057,
+      "mode": "uniform",
+      "plies": 51,
+      "compared": 52,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000054,
+      "mode": "wall",
+      "plies": 18,
+      "compared": 19,
+      "status": "ok",
+      "stopped_by": "mask_divergence",
+      "wall_denied_plies": 4
+    },
+    {
+      "deck_seed": 97000000055,
+      "mode": "uniform",
+      "plies": 58,
+      "compared": 58,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000050,
+      "mode": "uniform",
+      "plies": 41,
+      "compared": 41,
+      "status": "ok",
+      "stopped_by": "count_final_scores_refusal",
+      "wall_denied_plies": 1
+    },
+    {
+      "deck_seed": 97000000051,
+      "mode": "uniform",
+      "plies": 47,
+      "compared": 48,
+      "status": "ok",
+      "stopped_by": "engine_refusal",
+      "wall_denied_plies": 1
+    }
+  ]
+}

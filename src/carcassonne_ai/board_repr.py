@@ -51,10 +51,12 @@ which feature was actually claimed.
 """
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
 
+from wingedsheep.carcassonne.objects.game_phase import GamePhase
 from wingedsheep.carcassonne.objects.meeple_type import MeepleType
 from wingedsheep.carcassonne.objects.side import Side
 from wingedsheep.carcassonne.objects.terrain_type import TerrainType
@@ -203,6 +205,62 @@ def _encode_tile_internal(tile: "Tile") -> np.ndarray:
     return out
 
 
+def offset_from_centroid_sums(
+    state: "CarcassonneGameState",
+    sum_row: int,
+    sum_col: int,
+    tile_count: int,
+    window_size: int = DEFAULT_WINDOW_SIZE,
+) -> WindowOffset:
+    """Window offset from the running centroid sums of placed tiles.
+
+    Pure function shared by ``compute_window_offset`` (which seeds the sums by
+    a full board scan) and the incremental tracker on ``Board`` (which keeps
+    the sums up to date in O(1) per tile placement). Reproduces exactly the
+    same rounding/centering math, so the two paths are bit-identical.
+
+    For an empty board (``tile_count == 0`` — defensive, the first tile is
+    auto-placed) center on the engine's ``starting_position``.
+    """
+    if tile_count == 0:
+        sp = state.starting_position
+        center_r, center_c = sp.row, sp.column
+    else:
+        center_r = round(sum_row / tile_count)
+        center_c = round(sum_col / tile_count)
+    half = window_size // 2
+    return WindowOffset(
+        origin_row=center_r - half,
+        origin_col=center_c - half,
+        size=window_size,
+    )
+
+
+def centroid_sums(state: "CarcassonneGameState") -> tuple[int, int, int]:
+    """Full-scan ``(sum_row, sum_col, tile_count)`` of placed tiles.
+
+    Seeds the incremental tracker (one-time, at Board construction). Uses
+    ``placed_coords`` when the engine maintains it (the production path), else
+    falls back to a dense board scan so the helper works on any state object.
+    """
+    placed = getattr(state, "placed_coords", None)
+    if placed:
+        sum_row = sum(coord.row for coord in placed)
+        sum_col = sum(coord.column for coord in placed)
+        return sum_row, sum_col, len(placed)
+    if placed is not None:
+        # placed_coords exists but is empty -> no tiles placed.
+        return 0, 0, 0
+    sum_row = sum_col = tile_count = 0
+    for r, row in enumerate(state.board):
+        for c, tile in enumerate(row):
+            if tile is not None:
+                sum_row += r
+                sum_col += c
+                tile_count += 1
+    return sum_row, sum_col, tile_count
+
+
 def compute_window_offset(
     state: "CarcassonneGameState",
     window_size: int = DEFAULT_WINDOW_SIZE,
@@ -210,26 +268,14 @@ def compute_window_offset(
     """Center the window on the centroid of placed tiles, snapped to int.
 
     For an empty board (defensive — the first tile is auto-placed), center
-    on the engine's starting_position.
+    on the engine's starting_position. Full board scan — used at Board
+    construction; the per-ply hot path uses the incremental tracker on Board
+    (see ``offset_from_centroid_sums``), which this delegates to so the two
+    can never diverge.
     """
-    rows: list[int] = []
-    cols: list[int] = []
-    for r, row in enumerate(state.board):
-        for c, tile in enumerate(row):
-            if tile is not None:
-                rows.append(r)
-                cols.append(c)
-    if not rows:
-        sp = state.starting_position
-        center_r, center_c = sp.row, sp.column
-    else:
-        center_r = round(sum(rows) / len(rows))
-        center_c = round(sum(cols) / len(cols))
-    half = window_size // 2
-    return WindowOffset(
-        origin_row=center_r - half,
-        origin_col=center_c - half,
-        size=window_size,
+    sum_row, sum_col, tile_count = centroid_sums(state)
+    return offset_from_centroid_sums(
+        state, sum_row, sum_col, tile_count, window_size
     )
 
 
@@ -249,6 +295,17 @@ def board_overflows_window(state: "CarcassonneGameState", off: WindowOffset) -> 
 _NORMAL_SIDE_TO_OFFSET: dict[Side, int] = {s: i for i, s in enumerate(SIDES_5)}
 _FARMER_CORNER_TO_OFFSET: dict[Side, int] = {s: i for i, s in enumerate(CORNERS_4)}
 
+# Cython board-encoder toggle (2026-06-17, stage-b-wiring). When set,
+# encode_board redirects to the compiled `flat_repr_cy.encode_board_cy` port
+# (bit-exact gate: scripts/reconcile_repr_cy.py; build:
+# `python setup_flat_repr_cy.py build_ext --inplace`). DEFAULT OFF until
+# reconciled+folded — with the flag unset the compiled module is NEVER imported
+# (zero behavioral change). Same read-at-import pattern as flat_leaf.USE_CY_LEAF
+# so SPAWNED self-play/eval workers inherit an env flip; a runtime flip needs
+# `board_repr.USE_CY_REPR = True` (lazy import fires on the next call).
+USE_CY_REPR = os.environ.get("CARCASSONNE_USE_CY_REPR", "0") == "1"
+_CY_ENCODE = None  # lazily bound flat_repr_cy.encode_board_cy
+
 
 def encode_board(
     state: "CarcassonneGameState",
@@ -259,6 +316,15 @@ def encode_board(
 
     `player` is the current-player perspective (mine = `player`, opp = the other).
     """
+    if USE_CY_REPR:
+        global _CY_ENCODE  # noqa: PLW0603
+        if _CY_ENCODE is None:
+            try:
+                from .flat_repr_cy import encode_board_cy as _CY_ENCODE  # noqa: PLW0603
+            except ImportError:
+                _CY_ENCODE = False  # .so missing on this box -> pure-Python (no crash, no retry)
+        if _CY_ENCODE:
+            return _CY_ENCODE(state, player, off)
     W = off.size
     arr = np.zeros((N_CHANNELS, W, W), dtype=np.float32)
     opp = 1 - player
@@ -318,8 +384,17 @@ def encode_board(
                     "config drift?"
                 )
 
+    # D1 resolution (2026-05-29): the reference tile is intentionally
+    # phase-dependent, NOT a bug. In TILES phase the decision is where/how to
+    # place+rotate the drawn tile, so the relevant reference is the UNROTATED
+    # next_tile. In MEEPLES phase the tile is already placed and rotated and the
+    # decision is meeple placement, so the relevant reference is the placed,
+    # rotated last tile. The phase one-hots (scalars) + CH_LAST_TILE_POS let the
+    # net disambiguate the two meanings. Reviewed alternative (always encode the
+    # placed tile): rejected — it would hide the to-be-placed tile's identity
+    # during the TILES decision. Keep phase-dependent + documented.
     ref_tile: "Tile | None"
-    if state.phase.value == "tiles":
+    if state.phase == GamePhase.TILES:  # D2: enum, not the hardcoded "tiles" literal
         ref_tile = state.next_tile
     else:
         ref_tile = state.last_tile_action.tile if state.last_tile_action is not None else None
@@ -331,7 +406,7 @@ def encode_board(
             internal[:, None, None]
         )
 
-    if state.phase.value == "meeples" and state.last_tile_action is not None:
+    if state.phase == GamePhase.MEEPLES and state.last_tile_action is not None:  # D2: enum, not "meeples" literal
         coord = state.last_tile_action.coordinate
         wr, wc = coord.row - off.origin_row, coord.column - off.origin_col
         if 0 <= wr < W and 0 <= wc < W:
@@ -358,6 +433,122 @@ def canonical_swap(arr: np.ndarray) -> np.ndarray:
         arr[CH_FARMER_MEEPLE_MINE:CH_FARMER_MEEPLE_MINE + n_farmer]
     )
     return out
+
+
+# ---------------------------------------------------------------------------
+# Symmetry augmentation (C5): 90° board rotation of an ENCODED tensor.
+#
+# Carcassonne is invariant under the 4 rotations of the square (reflection is
+# NOT a symmetry — curved roads / the directed tile art break it), so each
+# self-play position yields 4 equivalent training examples. This rotates a
+# (N_CHANNELS, W, W) tensor by 90° COUNTER-CLOCKWISE, matching
+# np.rot90(., k=1, axes=(1,2)) on the spatial plane, with a matching permutation
+# of the DIRECTIONAL channel groups (edges, internal pairs, meeple sides, farmer
+# corners, and the broadcast reference-tile blocks). The companion action remap
+# lives in action_space.rotate_action and MUST use the same geometric direction.
+#
+# Direction (90° CCW), expressed as new<-old (the new channel for side/corner S
+# is sourced from the OLD side/corner that rotates INTO S):
+#   sides:   TOP<-RIGHT, RIGHT<-BOTTOM, BOTTOM<-LEFT, LEFT<-TOP
+#   corners: TL<-TR, TR<-BR, BR<-BL, BL<-TL
+# CENTER (normal-meeple slot 5) is rotation-fixed.
+_SRC_SIDE_4: dict[Side, Side] = {
+    Side.TOP: Side.RIGHT,
+    Side.RIGHT: Side.BOTTOM,
+    Side.BOTTOM: Side.LEFT,
+    Side.LEFT: Side.TOP,
+}
+_SRC_CORNER: dict[Side, Side] = {
+    Side.TOP_LEFT: Side.TOP_RIGHT,
+    Side.TOP_RIGHT: Side.BOTTOM_RIGHT,
+    Side.BOTTOM_RIGHT: Side.BOTTOM_LEFT,
+    Side.BOTTOM_LEFT: Side.TOP_LEFT,
+}
+
+
+def _pair_src_index(i: int) -> int:
+    """For SIDE_PAIRS[i] = (a, b), the index of the unordered source pair
+    (_SRC_SIDE_4[a], _SRC_SIDE_4[b]) — used to permute the internal road/city
+    pair channels under rotation."""
+    a, b = SIDE_PAIRS[i]
+    sa, sb = _SRC_SIDE_4[a], _SRC_SIDE_4[b]
+    want = {sa, sb}
+    for j, (x, y) in enumerate(SIDE_PAIRS):
+        if {x, y} == want:
+            return j
+    raise AssertionError(f"no source pair for {SIDE_PAIRS[i]!r}")
+
+
+def _build_rot_channel_perm() -> np.ndarray:
+    """perm[new_channel] = old_channel for a 90° CCW rotation. Non-directional
+    channels (tile-present, shield, chapel, last-tile-pos) map to themselves;
+    spatial rotation handles their content."""
+    perm = np.arange(N_CHANNELS, dtype=np.int64)
+
+    def side_src_idx(sides: tuple[Side, ...], s: Side) -> int:
+        src = s if s == Side.CENTER else _SRC_SIDE_4[s]
+        return sides.index(src)
+
+    # edges [0,16): 4 sides x 4 cats
+    for i, s in enumerate(SIDES_4):
+        src = SIDES_4.index(_SRC_SIDE_4[s])
+        for cat in range(EDGE_CATEGORIES):
+            perm[CH_EDGES + i * EDGE_CATEGORIES + cat] = CH_EDGES + src * EDGE_CATEGORIES + cat
+    # internal road / city pairs (6 each)
+    for i in range(N_SIDE_PAIRS):
+        src = _pair_src_index(i)
+        perm[CH_INTERNAL_ROAD + i] = CH_INTERNAL_ROAD + src
+        perm[CH_INTERNAL_CITY + i] = CH_INTERNAL_CITY + src
+    # normal meeple slots (5 sides, mine + opp); CENTER fixed
+    for i, s in enumerate(SIDES_5):
+        src = side_src_idx(SIDES_5, s)
+        perm[CH_NORMAL_MEEPLE_MINE + i] = CH_NORMAL_MEEPLE_MINE + src
+        perm[CH_NORMAL_MEEPLE_OPP + i] = CH_NORMAL_MEEPLE_OPP + src
+    # farmer corner slots (4 corners, mine + opp)
+    for i, c in enumerate(CORNERS_4):
+        src = CORNERS_4.index(_SRC_CORNER[c])
+        perm[CH_FARMER_MEEPLE_MINE + i] = CH_FARMER_MEEPLE_MINE + src
+        perm[CH_FARMER_MEEPLE_OPP + i] = CH_FARMER_MEEPLE_OPP + src
+    # reference-tile broadcast: edges (16) + internal pairs (6 road + 6 city)
+    for i, s in enumerate(SIDES_4):
+        src = SIDES_4.index(_SRC_SIDE_4[s])
+        for cat in range(EDGE_CATEGORIES):
+            perm[CH_REF_TILE_EDGES + i * EDGE_CATEGORIES + cat] = (
+                CH_REF_TILE_EDGES + src * EDGE_CATEGORIES + cat
+            )
+    for i in range(N_SIDE_PAIRS):
+        src = _pair_src_index(i)
+        perm[CH_REF_TILE_INTERNAL + i] = CH_REF_TILE_INTERNAL + src
+        perm[CH_REF_TILE_INTERNAL + N_SIDE_PAIRS + i] = (
+            CH_REF_TILE_INTERNAL + N_SIDE_PAIRS + src
+        )
+    return perm
+
+
+_ROT_CHANNEL_PERM = _build_rot_channel_perm()
+
+
+def rotate_board_repr_90(arr: np.ndarray) -> np.ndarray:
+    """Rotate an encoded (N_CHANNELS, W, W) board tensor 90° counter-clockwise.
+
+    Spatial 90° CCW (np.rot90 on the W×W plane) + a matching permutation of the
+    directional channel groups. Applying this 4× is the identity. The companion
+    policy/action remap is action_space.rotate_action (same geometric direction).
+    """
+    if arr.ndim != 3 or arr.shape[0] != N_CHANNELS:
+        raise ValueError(
+            f"expected ({N_CHANNELS}, W, W), got {arr.shape}"
+        )
+    return np.ascontiguousarray(np.rot90(arr, k=1, axes=(1, 2))[_ROT_CHANNEL_PERM])
+
+
+def rotate_board_repr_90_batch(arr: np.ndarray) -> np.ndarray:
+    """Batched rotate_board_repr_90 for a stack of tensors (N, N_CHANNELS, W, W)."""
+    if arr.ndim != 4 or arr.shape[1] != N_CHANNELS:
+        raise ValueError(f"expected (N, {N_CHANNELS}, W, W), got {arr.shape}")
+    return np.ascontiguousarray(
+        np.rot90(arr, k=1, axes=(2, 3))[:, _ROT_CHANNEL_PERM, :, :]
+    )
 
 
 # ---------------------------------------------------------------------------

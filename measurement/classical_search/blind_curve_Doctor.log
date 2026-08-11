@@ -1,0 +1,313 @@
+[2026-07-27_13:56:12] === blind curve START on Doctor (OW=16 n=200 band=70000000000) ===
+[2026-07-27_13:56:12] --- RUNG 0.125x : k4x86 = 344 sims
+[bare-net-orch] OPP iter_02.pt: 78ch/12sc (non-sighted)
+[bare-net-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_barenet_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[bare-net-orch] start carc-orch (W=16 fwd=2 max_batch=16) shm=barenetDoctor n_ch=78 n_scalar=12
+[bare-net-orch] WARNING: carc-orch pid 849895 has no VRAM allocation visible to
+[bare-net-orch]          nvidia-smi. On WSL2 --query-compute-apps is often empty
+[bare-net-orch]          even for a live CUDA process; check total used-memory
+[bare-net-orch]          delta or the log below instead of trusting this line.
+[bare-net-orch] server READY | shm='barenetDoctor' 78ch/12sc | client W=16
+[bare-net-orch] ⚠️ anchor rows on record were net-on-CPU; this cell is net-on-GPU.
+[bare-net-orch]    Same weights/leaf/knobs; float reduction order differs. Disclose it.
+[bare-net] ⚠️ BLIND (candidate) vs SIGHTED (opponent) — the asymmetry is the measurement; see the module docstring. Do NOT symmetrise.
+[bare-net] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[bare-net] opponent  frozen leaf: v2.9 Bmild_cap8 curve100 + residual_scale=0.25 (the rod_v2 ANCHOR leaf, NOT curve125) leaf_hash=4bc26f12badbb10b
+[bare-net] PER-SIDE LEAVES DIFFER (required): YES | env DEFAULT_CONFIG (unmoved) leaf_hash=42af12fce22e1a0f
+[bare-net] endgame: candidate exact-K<=2 marginalized tail; opponent BARE (no tail) — one-sided by design
+[bare-net] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[bare-net] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | agent=BARE NeuralMCTS sims=200 c_puct=3 fair_chance=False (CLAIRVOYANT — descends the TRUE deck) | priors+value=net, value replaced by the v2.9 curve100 leaf + net residual (residual_scale=0.25)
+[bare-net] candidate = OFF production config (sims=86 (production 688)), BLIND (fair PIMC k4x86 = 344 total) with the exact-K<=2 tail.
+[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on the lineage gap (we are handicapped on information, leaf and endgame). A candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the cost of blindness. Do not report a loss as 'the net is stronger'.
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s86_vs_sightedbare-iter_02_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=86 | 0 cached, 200 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/blindcurve_k4x86_344_vs_sighted_rodv2_b70e9
+  [orch] opponent  SHM eval-server 'barenetDoctor': 16 CPU workers attach to /dev/shm/carc_barenetDoctor (78ch/12-scalar non-sighted PRIORS+VALUE)
+  [orch] ⚠️ bare-net TRANSPORT NOTE: The anchor rows on record were played net-on-CPU (fp32). This cell served the SAME weights from the GPU via carc-orch SHM. Weights, leaf, search knobs and clairvoyance are identical; only float reduction order differs, which can flip a near-tied argmax. See scripts/classical_search/bare_net_gpu_divergence.py.
+  10/200 played (12.9s/game, ~41 min left)
+  20/200 played (12.4s/game, ~37 min left)
+  30/200 played (10.3s/game, ~29 min left)
+  40/200 played (9.7s/game, ~26 min left)
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 9 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+[2026-07-27_14:04:01] === blind curve START on Doctor (OW=40 n=200 band=70000000000) ===
+[2026-07-27_14:04:01] --- RUNG 0.125x : k4x86 = 344 sims
+[bare-net-orch] OPP iter_02.pt: 78ch/12sc (non-sighted)
+[bare-net-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_barenet_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[bare-net-orch] start carc-orch (W=40 fwd=2 max_batch=40) shm=barenetDoctor n_ch=78 n_scalar=12
+[bare-net-orch] WARNING: carc-orch pid 855833 has no VRAM allocation visible to
+[bare-net-orch]          nvidia-smi. On WSL2 --query-compute-apps is often empty
+[bare-net-orch]          even for a live CUDA process; check total used-memory
+[bare-net-orch]          delta or the log below instead of trusting this line.
+[bare-net-orch] server READY | shm='barenetDoctor' 78ch/12sc | client W=40
+[bare-net-orch] ⚠️ anchor rows on record were net-on-CPU; this cell is net-on-GPU.
+[bare-net-orch]    Same weights/leaf/knobs; float reduction order differs. Disclose it.
+[bare-net] ⚠️ BLIND (candidate) vs SIGHTED (opponent) — the asymmetry is the measurement; see the module docstring. Do NOT symmetrise.
+[bare-net] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[bare-net] opponent  frozen leaf: v2.9 Bmild_cap8 curve100 + residual_scale=0.25 (the rod_v2 ANCHOR leaf, NOT curve125) leaf_hash=4bc26f12badbb10b
+[bare-net] PER-SIDE LEAVES DIFFER (required): YES | env DEFAULT_CONFIG (unmoved) leaf_hash=42af12fce22e1a0f
+[bare-net] endgame: candidate exact-K<=2 marginalized tail; opponent BARE (no tail) — one-sided by design
+[bare-net] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[bare-net] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | agent=BARE NeuralMCTS sims=200 c_puct=3 fair_chance=False (CLAIRVOYANT — descends the TRUE deck) | priors+value=net, value replaced by the v2.9 curve100 leaf + net residual (residual_scale=0.25)
+[bare-net] candidate = OFF production config (sims=86 (production 688)), BLIND (fair PIMC k4x86 = 344 total) with the exact-K<=2 tail.
+[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on the lineage gap (we are handicapped on information, leaf and endgame). A candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the cost of blindness. Do not report a loss as 'the net is stronger'.
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s86_vs_sightedbare-iter_02_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=86 | 83 cached, 117 to play, 40 workers, out=/mnt/c/carc-shared/classical_search/blindcurve_k4x86_344_vs_sighted_rodv2_b70e9
+  [orch] opponent  SHM eval-server 'barenetDoctor': 40 CPU workers attach to /dev/shm/carc_barenetDoctor (78ch/12-scalar non-sighted PRIORS+VALUE)
+  [orch] ⚠️ bare-net TRANSPORT NOTE: The anchor rows on record were played net-on-CPU (fp32). This cell served the SAME weights from the GPU via carc-orch SHM. Weights, leaf, search knobs and clairvoyance are identical; only float reduction order differs, which can flip a near-tied argmax. See scripts/classical_search/bare_net_gpu_divergence.py.
+  10/117 played (19.3s/game, ~35 min left)
+  20/117 played (9.7s/game, ~16 min left)
+  30/117 played (6.8s/game, ~10 min left)
+  40/117 played (5.3s/game, ~7 min left)
+  50/117 played (4.4s/game, ~5 min left)
+  60/117 played (4.5s/game, ~4 min left)
+  70/117 played (5.4s/game, ~4 min left)
+  80/117 played (4.8s/game, ~3 min left)
+  90/117 played (5.0s/game, ~2 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=86, total~344) vs SIGHTED (CLAIRVOYANT) bare NeuralMCTS anchor (iter_02.pt, non-sighted-rep, sims=200, c_puct=3, v2.9 curve100 leaf + residual_scale=0.25, NO exact tail) ===
+games: 200   candidate: 88W / 7D / 105L   winrate 0.458 (z=-1.20)
+avg score diff (candidate - opponent): -1.05
+ELO: -29.6  (+/- 24.7 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin -1.05   z = -0.73
+prefix ms/move: candidate 460  opponent 1570  (ratio 0.29x)
+fair endgame: candidate latched 200/200 games, 14.22s solver/game, timeouts=0
+  ⚠️ BLIND vs SIGHTED (deliberate): candidate is blind (fair PIMC) on the curve125 leaf with an exact-K tail; opponent is CLAIRVOYANT bare NeuralMCTS on the curve100+rs0.25 anchor leaf with no tail. A candidate WIN is a conservative LOWER BOUND on the lineage gap; a candidate LOSS is UNINTERPRETABLE (blindness confound), NOT evidence the opponent is stronger.
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/blindcurve_k4x86_344_vs_sighted_rodv2_b70e9/summary.json
+[2026-07-27_14:12:11] --- RUNG 0.125x exited rc=0
+[2026-07-27_14:12:11] --- RUNG 0.25x : k4x172 = 688 sims
+[bare-net-orch] OPP iter_02.pt: 78ch/12sc (non-sighted)
+[bare-net-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_barenet_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[bare-net-orch] start carc-orch (W=40 fwd=2 max_batch=40) shm=barenetDoctor n_ch=78 n_scalar=12
+[bare-net-orch] WARNING: carc-orch pid 861530 has no VRAM allocation visible to
+[bare-net-orch]          nvidia-smi. On WSL2 --query-compute-apps is often empty
+[bare-net-orch]          even for a live CUDA process; check total used-memory
+[bare-net-orch]          delta or the log below instead of trusting this line.
+[bare-net-orch] server READY | shm='barenetDoctor' 78ch/12sc | client W=40
+[bare-net-orch] ⚠️ anchor rows on record were net-on-CPU; this cell is net-on-GPU.
+[bare-net-orch]    Same weights/leaf/knobs; float reduction order differs. Disclose it.
+[bare-net] ⚠️ BLIND (candidate) vs SIGHTED (opponent) — the asymmetry is the measurement; see the module docstring. Do NOT symmetrise.
+[bare-net] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[bare-net] opponent  frozen leaf: v2.9 Bmild_cap8 curve100 + residual_scale=0.25 (the rod_v2 ANCHOR leaf, NOT curve125) leaf_hash=4bc26f12badbb10b
+[bare-net] PER-SIDE LEAVES DIFFER (required): YES | env DEFAULT_CONFIG (unmoved) leaf_hash=42af12fce22e1a0f
+[bare-net] endgame: candidate exact-K<=2 marginalized tail; opponent BARE (no tail) — one-sided by design
+[bare-net] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[bare-net] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | agent=BARE NeuralMCTS sims=200 c_puct=3 fair_chance=False (CLAIRVOYANT — descends the TRUE deck) | priors+value=net, value replaced by the v2.9 curve100 leaf + net residual (residual_scale=0.25)
+[bare-net] candidate = OFF production config (sims=172 (production 688)), BLIND (fair PIMC k4x172 = 688 total) with the exact-K<=2 tail.
+[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on the lineage gap (we are handicapped on information, leaf and endgame). A candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the cost of blindness. Do not report a loss as 'the net is stronger'.
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s172_vs_sightedbare-iter_02_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=172 | 0 cached, 200 to play, 40 workers, out=/mnt/c/carc-shared/classical_search/blindcurve_k4x172_688_vs_sighted_rodv2_b70e9
+  [orch] opponent  SHM eval-server 'barenetDoctor': 40 CPU workers attach to /dev/shm/carc_barenetDoctor (78ch/12-scalar non-sighted PRIORS+VALUE)
+  [orch] ⚠️ bare-net TRANSPORT NOTE: The anchor rows on record were played net-on-CPU (fp32). This cell served the SAME weights from the GPU via carc-orch SHM. Weights, leaf, search knobs and clairvoyance are identical; only float reduction order differs, which can flip a near-tied argmax. See scripts/classical_search/bare_net_gpu_divergence.py.
+  10/200 played (25.2s/game, ~80 min left)
+  20/200 played (13.4s/game, ~40 min left)
+  30/200 played (9.9s/game, ~28 min left)
+  40/200 played (11.9s/game, ~32 min left)
+  50/200 played (10.5s/game, ~26 min left)
+  60/200 played (9.2s/game, ~21 min left)
+  70/200 played (8.4s/game, ~18 min left)
+  80/200 played (9.3s/game, ~19 min left)
+  90/200 played (8.6s/game, ~16 min left)
+  100/200 played (8.2s/game, ~14 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=172, total~688) vs SIGHTED (CLAIRVOYANT) bare NeuralMCTS anchor (iter_02.pt, non-sighted-rep, sims=200, c_puct=3, v2.9 curve100 leaf + residual_scale=0.25, NO exact tail) ===
+games: 200   candidate: 91W / 4D / 105L   winrate 0.465 (z=-0.99)
+avg score diff (candidate - opponent): +0.34
+ELO: -24.4  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +0.34   z = +0.25
+prefix ms/move: candidate 1242  opponent 1784  (ratio 0.70x)
+fair endgame: candidate latched 200/200 games, 26.12s solver/game, timeouts=0
+  ⚠️ BLIND vs SIGHTED (deliberate): candidate is blind (fair PIMC) on the curve125 leaf with an exact-K tail; opponent is CLAIRVOYANT bare NeuralMCTS on the curve100+rs0.25 anchor leaf with no tail. A candidate WIN is a conservative LOWER BOUND on the lineage gap; a candidate LOSS is UNINTERPRETABLE (blindness confound), NOT evidence the opponent is stronger.
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/blindcurve_k4x172_688_vs_sighted_rodv2_b70e9/summary.json
+[2026-07-27_14:27:21] --- RUNG 0.25x exited rc=0
+[2026-07-27_14:27:21] --- RUNG 0.5x : k4x344 = 1376 sims
+[bare-net-orch] OPP iter_02.pt: 78ch/12sc (non-sighted)
+[bare-net-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_barenet_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[bare-net-orch] start carc-orch (W=40 fwd=2 max_batch=40) shm=barenetDoctor n_ch=78 n_scalar=12
+[bare-net-orch] WARNING: carc-orch pid 873052 has no VRAM allocation visible to
+[bare-net-orch]          nvidia-smi. On WSL2 --query-compute-apps is often empty
+[bare-net-orch]          even for a live CUDA process; check total used-memory
+[bare-net-orch]          delta or the log below instead of trusting this line.
+[bare-net-orch] server READY | shm='barenetDoctor' 78ch/12sc | client W=40
+[bare-net-orch] ⚠️ anchor rows on record were net-on-CPU; this cell is net-on-GPU.
+[bare-net-orch]    Same weights/leaf/knobs; float reduction order differs. Disclose it.
+[bare-net] ⚠️ BLIND (candidate) vs SIGHTED (opponent) — the asymmetry is the measurement; see the module docstring. Do NOT symmetrise.
+[bare-net] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[bare-net] opponent  frozen leaf: v2.9 Bmild_cap8 curve100 + residual_scale=0.25 (the rod_v2 ANCHOR leaf, NOT curve125) leaf_hash=4bc26f12badbb10b
+[bare-net] PER-SIDE LEAVES DIFFER (required): YES | env DEFAULT_CONFIG (unmoved) leaf_hash=42af12fce22e1a0f
+[bare-net] endgame: candidate exact-K<=2 marginalized tail; opponent BARE (no tail) — one-sided by design
+[bare-net] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[bare-net] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | agent=BARE NeuralMCTS sims=200 c_puct=3 fair_chance=False (CLAIRVOYANT — descends the TRUE deck) | priors+value=net, value replaced by the v2.9 curve100 leaf + net residual (residual_scale=0.25)
+[bare-net] candidate = OFF production config (sims=344 (production 688)), BLIND (fair PIMC k4x344 = 1376 total) with the exact-K<=2 tail.
+[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on the lineage gap (we are handicapped on information, leaf and endgame). A candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the cost of blindness. Do not report a loss as 'the net is stronger'.
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s344_vs_sightedbare-iter_02_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=344 | 0 cached, 200 to play, 40 workers, out=/mnt/c/carc-shared/classical_search/blindcurve_k4x344_1376_vs_sighted_rodv2_b70e9
+  [orch] opponent  SHM eval-server 'barenetDoctor': 40 CPU workers attach to /dev/shm/carc_barenetDoctor (78ch/12-scalar non-sighted PRIORS+VALUE)
+  [orch] ⚠️ bare-net TRANSPORT NOTE: The anchor rows on record were played net-on-CPU (fp32). This cell served the SAME weights from the GPU via carc-orch SHM. Weights, leaf, search knobs and clairvoyance are identical; only float reduction order differs, which can flip a near-tied argmax. See scripts/classical_search/bare_net_gpu_divergence.py.
+  10/200 played (41.8s/game, ~132 min left)
+  20/200 played (22.2s/game, ~67 min left)
+  30/200 played (16.4s/game, ~46 min left)
+  40/200 played (14.2s/game, ~38 min left)
+  50/200 played (16.1s/game, ~40 min left)
+  60/200 played (14.3s/game, ~33 min left)
+  70/200 played (12.9s/game, ~28 min left)
+  80/200 played (12.5s/game, ~25 min left)
+  90/200 played (12.6s/game, ~23 min left)
+  100/200 played (11.8s/game, ~20 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=344, total~1376) vs SIGHTED (CLAIRVOYANT) bare NeuralMCTS anchor (iter_02.pt, non-sighted-rep, sims=200, c_puct=3, v2.9 curve100 leaf + residual_scale=0.25, NO exact tail) ===
+games: 200   candidate: 118W / 5D / 77L   winrate 0.603 (z=+2.90)
+avg score diff (candidate - opponent): +6.07
+ELO: +72.2  (+/- 25.1 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +6.07   z = +4.24
+prefix ms/move: candidate 2709  opponent 1944  (ratio 1.39x)
+fair endgame: candidate latched 200/200 games, 18.60s solver/game, timeouts=0
+  ⚠️ BLIND vs SIGHTED (deliberate): candidate is blind (fair PIMC) on the curve125 leaf with an exact-K tail; opponent is CLAIRVOYANT bare NeuralMCTS on the curve100+rs0.25 anchor leaf with no tail. A candidate WIN is a conservative LOWER BOUND on the lineage gap; a candidate LOSS is UNINTERPRETABLE (blindness confound), NOT evidence the opponent is stronger.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/blindcurve_k4x344_1376_vs_sighted_rodv2_b70e9/summary.json
+[2026-07-27_14:47:40] --- RUNG 0.5x exited rc=0
+[2026-07-27_14:47:40] --- RUNG 0.75x : k4x516 = 2064 sims
+[bare-net-orch] OPP iter_02.pt: 78ch/12sc (non-sighted)
+[bare-net-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_barenet_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[bare-net-orch] start carc-orch (W=40 fwd=2 max_batch=40) shm=barenetDoctor n_ch=78 n_scalar=12
+[bare-net-orch] WARNING: carc-orch pid 887928 has no VRAM allocation visible to
+[bare-net-orch]          nvidia-smi. On WSL2 --query-compute-apps is often empty
+[bare-net-orch]          even for a live CUDA process; check total used-memory
+[bare-net-orch]          delta or the log below instead of trusting this line.
+[bare-net-orch] server READY | shm='barenetDoctor' 78ch/12sc | client W=40
+[bare-net-orch] ⚠️ anchor rows on record were net-on-CPU; this cell is net-on-GPU.
+[bare-net-orch]    Same weights/leaf/knobs; float reduction order differs. Disclose it.
+[bare-net] ⚠️ BLIND (candidate) vs SIGHTED (opponent) — the asymmetry is the measurement; see the module docstring. Do NOT symmetrise.
+[bare-net] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[bare-net] opponent  frozen leaf: v2.9 Bmild_cap8 curve100 + residual_scale=0.25 (the rod_v2 ANCHOR leaf, NOT curve125) leaf_hash=4bc26f12badbb10b
+[bare-net] PER-SIDE LEAVES DIFFER (required): YES | env DEFAULT_CONFIG (unmoved) leaf_hash=42af12fce22e1a0f
+[bare-net] endgame: candidate exact-K<=2 marginalized tail; opponent BARE (no tail) — one-sided by design
+[bare-net] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[bare-net] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | agent=BARE NeuralMCTS sims=200 c_puct=3 fair_chance=False (CLAIRVOYANT — descends the TRUE deck) | priors+value=net, value replaced by the v2.9 curve100 leaf + net residual (residual_scale=0.25)
+[bare-net] candidate = OFF production config (sims=516 (production 688)), BLIND (fair PIMC k4x516 = 2064 total) with the exact-K<=2 tail.
+[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on the lineage gap (we are handicapped on information, leaf and endgame). A candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the cost of blindness. Do not report a loss as 'the net is stronger'.
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s516_vs_sightedbare-iter_02_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=516 | 0 cached, 200 to play, 40 workers, out=/mnt/c/carc-shared/classical_search/blindcurve_k4x516_2064_vs_sighted_rodv2_b70e9
+  [orch] opponent  SHM eval-server 'barenetDoctor': 40 CPU workers attach to /dev/shm/carc_barenetDoctor (78ch/12-scalar non-sighted PRIORS+VALUE)
+  [orch] ⚠️ bare-net TRANSPORT NOTE: The anchor rows on record were played net-on-CPU (fp32). This cell served the SAME weights from the GPU via carc-orch SHM. Weights, leaf, search knobs and clairvoyance are identical; only float reduction order differs, which can flip a near-tied argmax. See scripts/classical_search/bare_net_gpu_divergence.py.
+  10/200 played (51.8s/game, ~164 min left)
+  20/200 played (28.0s/game, ~84 min left)
+  30/200 played (19.6s/game, ~56 min left)
+  40/200 played (23.5s/game, ~63 min left)
+  50/200 played (21.4s/game, ~53 min left)
+  60/200 played (18.7s/game, ~44 min left)
+  70/200 played (16.9s/game, ~37 min left)
+  80/200 played (17.0s/game, ~34 min left)
+  90/200 played (16.4s/game, ~30 min left)
+  100/200 played (15.3s/game, ~26 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=516, total~2064) vs SIGHTED (CLAIRVOYANT) bare NeuralMCTS anchor (iter_02.pt, non-sighted-rep, sims=200, c_puct=3, v2.9 curve100 leaf + residual_scale=0.25, NO exact tail) ===
+games: 200   candidate: 126W / 2D / 72L   winrate 0.635 (z=+3.82)
+avg score diff (candidate - opponent): +9.10
+ELO: +96.2  (+/- 25.5 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +9.10   z = +6.05
+prefix ms/move: candidate 4055  opponent 2063  (ratio 1.97x)
+fair endgame: candidate latched 200/200 games, 19.52s solver/game, timeouts=0
+  ⚠️ BLIND vs SIGHTED (deliberate): candidate is blind (fair PIMC) on the curve125 leaf with an exact-K tail; opponent is CLAIRVOYANT bare NeuralMCTS on the curve100+rs0.25 anchor leaf with no tail. A candidate WIN is a conservative LOWER BOUND on the lineage gap; a candidate LOSS is UNINTERPRETABLE (blindness confound), NOT evidence the opponent is stronger.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/blindcurve_k4x516_2064_vs_sighted_rodv2_b70e9/summary.json
+[2026-07-27_15:14:13] --- RUNG 0.75x exited rc=0
+[2026-07-27_15:14:13] --- RUNG 1x_PRODUCTION : k4x688 = 2752 sims
+[bare-net-orch] OPP iter_02.pt: 78ch/12sc (non-sighted)
+[bare-net-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_barenet_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[bare-net-orch] start carc-orch (W=40 fwd=2 max_batch=40) shm=barenetDoctor n_ch=78 n_scalar=12
+[bare-net-orch] WARNING: carc-orch pid 896468 has no VRAM allocation visible to
+[bare-net-orch]          nvidia-smi. On WSL2 --query-compute-apps is often empty
+[bare-net-orch]          even for a live CUDA process; check total used-memory
+[bare-net-orch]          delta or the log below instead of trusting this line.
+[bare-net-orch] server READY | shm='barenetDoctor' 78ch/12sc | client W=40
+[bare-net-orch] ⚠️ anchor rows on record were net-on-CPU; this cell is net-on-GPU.
+[bare-net-orch]    Same weights/leaf/knobs; float reduction order differs. Disclose it.
+[bare-net] ⚠️ BLIND (candidate) vs SIGHTED (opponent) — the asymmetry is the measurement; see the module docstring. Do NOT symmetrise.
+[bare-net] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[bare-net] opponent  frozen leaf: v2.9 Bmild_cap8 curve100 + residual_scale=0.25 (the rod_v2 ANCHOR leaf, NOT curve125) leaf_hash=4bc26f12badbb10b
+[bare-net] PER-SIDE LEAVES DIFFER (required): YES | env DEFAULT_CONFIG (unmoved) leaf_hash=42af12fce22e1a0f
+[bare-net] endgame: candidate exact-K<=2 marginalized tail; opponent BARE (no tail) — one-sided by design
+[bare-net] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[bare-net] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | agent=BARE NeuralMCTS sims=200 c_puct=3 fair_chance=False (CLAIRVOYANT — descends the TRUE deck) | priors+value=net, value replaced by the v2.9 curve100 leaf + net residual (residual_scale=0.25)
+[bare-net] candidate = the shipped production champion config, BLIND (fair PIMC k4x688 = 2752 total) with the exact-K<=2 tail.
+[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on the lineage gap (we are handicapped on information, leaf and endgame). A candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the cost of blindness. Do not report a loss as 'the net is stronger'.
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_sightedbare-iter_02_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=688 | 0 cached, 200 to play, 40 workers, out=/mnt/c/carc-shared/classical_search/blindcurve_k4x688_2752_vs_sighted_rodv2_b70e9
+  [orch] opponent  SHM eval-server 'barenetDoctor': 40 CPU workers attach to /dev/shm/carc_barenetDoctor (78ch/12-scalar non-sighted PRIORS+VALUE)
+  [orch] ⚠️ bare-net TRANSPORT NOTE: The anchor rows on record were played net-on-CPU (fp32). This cell served the SAME weights from the GPU via carc-orch SHM. Weights, leaf, search knobs and clairvoyance are identical; only float reduction order differs, which can flip a near-tied argmax. See scripts/classical_search/bare_net_gpu_divergence.py.
+  10/200 played (64.2s/game, ~203 min left)
+  20/200 played (34.8s/game, ~104 min left)
+  30/200 played (25.6s/game, ~72 min left)
+  40/200 played (29.5s/game, ~79 min left)
+  50/200 played (27.1s/game, ~68 min left)
+  60/200 played (23.5s/game, ~55 min left)
+  70/200 played (21.3s/game, ~46 min left)
+  80/200 played (22.4s/game, ~45 min left)
+  90/200 played (21.0s/game, ~38 min left)
+  100/200 played (19.5s/game, ~33 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs SIGHTED (CLAIRVOYANT) bare NeuralMCTS anchor (iter_02.pt, non-sighted-rep, sims=200, c_puct=3, v2.9 curve100 leaf + residual_scale=0.25, NO exact tail) ===
+games: 200   candidate: 135W / 0D / 65L   winrate 0.675 (z=+4.95)
+avg score diff (candidate - opponent): +8.53
+ELO: +127.0  (+/- 26.2 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +8.53   z = +5.92
+prefix ms/move: candidate 5559  opponent 2210  (ratio 2.52x)
+fair endgame: candidate latched 200/200 games, 25.10s solver/game, timeouts=0
+  ⚠️ BLIND vs SIGHTED (deliberate): candidate is blind (fair PIMC) on the curve125 leaf with an exact-K tail; opponent is CLAIRVOYANT bare NeuralMCTS on the curve100+rs0.25 anchor leaf with no tail. A candidate WIN is a conservative LOWER BOUND on the lineage gap; a candidate LOSS is UNINTERPRETABLE (blindness confound), NOT evidence the opponent is stronger.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/blindcurve_k4x688_2752_vs_sighted_rodv2_b70e9/summary.json
+[2026-07-27_15:48:10] --- RUNG 1x_PRODUCTION exited rc=0
+[2026-07-27_15:48:10] === blind curve DONE on Doctor ===

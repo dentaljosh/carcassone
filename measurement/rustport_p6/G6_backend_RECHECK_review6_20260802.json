@@ -1,0 +1,342 @@
+{
+  "gate": "G6/backend",
+  "mode": "gate",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "00c8bab-dirty",
+    "utc": "2026-08-02T18:10:31Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "carc_rs": {
+    "carc_rs_version": "0.1.0",
+    "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "tile_data_source_sha256": "1a05c6c0ad071e4e55e5302e10fd551a7dd32fea85fd7ddeb7c3c18d417e3cce",
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800"
+  },
+  "knobs": {
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "reuse_tree_yaml": true,
+    "reuse_tree": false,
+    "score_norm_scale": 15.0,
+    "sims_per_det": 1376,
+    "k_dets": 8,
+    "leaf": {
+      "leaf": "v2_9_2_Bmild_cap8_curve125",
+      "leaf_hash": "a36d2e15a3b3d71d",
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "closure_p": {
+        "1": 0.5,
+        "2": 0.2,
+        "3": 0.05
+      },
+      "source": "governance/PRODUCTION.yaml champion.leaf_config"
+    },
+    "use_cy_leaf": true
+  },
+  "leaf_env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": null,
+    "CARCASSONNE_USE_CY_REPR": "1"
+  },
+  "deck_range": {
+    "base": 98000000000,
+    "n": 10,
+    "note": "THROWAWAY FUZZ SEEDS \u2014 not a registered claim band (governance/BAND_REGISTRY.csv). G6 is an identity gate and produces no strength number."
+  },
+  "args": {
+    "leg": [
+      "agree"
+    ],
+    "sims": 1376,
+    "k_dets": 8,
+    "threads": 1,
+    "threads_list": "1,8",
+    "games": 10,
+    "reconcile_games": 10,
+    "deck_base": 98000000000,
+    "agent_seed_base": 101,
+    "max_moves": null,
+    "workers": 10,
+    "bench_roots": 3,
+    "bench_plies": "20,60,100,130",
+    "bench_moves": 3,
+    "bench_workers": 8,
+    "bench_par_moves": 3,
+    "tag": "RECHECK_review6_20260802",
+    "max_mismatch_report": 200
+  },
+  "wall_secs": 2413.0510156154633,
+  "n_games": 10,
+  "totals": {
+    "games": 10,
+    "plies": 1435,
+    "decisions": 1435,
+    "checks": 10085,
+    "action_checks": 1435,
+    "action_agree": 1435,
+    "py_secs": 18747.477419347153,
+    "rs_secs": 1966.5980152013944,
+    "py_moves": 1435,
+    "rs_moves": 1435,
+    "exact_moves": 40,
+    "solver_nodes": 31558,
+    "reconcile_asserts": 2880
+  },
+  "action_agreement": 1.0,
+  "reconcile_games": 10,
+  "reconcile_asserts": 2880,
+  "n_mismatches": 0,
+  "mismatches": [],
+  "games": [
+    {
+      "label": "agree/006",
+      "deck_seed": 98000000006,
+      "agent_seed": 107,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        100,
+        97
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 11.088330714295605,
+      "rs_s_per_move": 1.081411614765481,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.1002984961054088,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 6402,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/009",
+      "deck_seed": 98000000009,
+      "agent_seed": 110,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        74,
+        96
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 11.344053300012295,
+      "rs_s_per_move": 1.2605848414795118,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.2873109392343653,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 7636,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/005",
+      "deck_seed": 98000000005,
+      "agent_seed": 106,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        90,
+        131
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 11.967619469633064,
+      "rs_s_per_move": 1.251719413046683,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.286618285847778,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 1006,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/003",
+      "deck_seed": 98000000003,
+      "agent_seed": 104,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        116,
+        91
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 12.61864323757901,
+      "rs_s_per_move": 1.2677425481185007,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.3018953464442997,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 901,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/002",
+      "deck_seed": 98000000002,
+      "agent_seed": 103,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        80,
+        100
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 12.549026204420645,
+      "rs_s_per_move": 1.3495348209980875,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.3860950672063543,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 625,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/008",
+      "deck_seed": 98000000008,
+      "agent_seed": 109,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        98,
+        110
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 12.668755665478885,
+      "rs_s_per_move": 1.3748984028372635,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.4107843757582097,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 1936,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/007",
+      "deck_seed": 98000000007,
+      "agent_seed": 108,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        76,
+        106
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 13.095794529883683,
+      "rs_s_per_move": 1.4096061542214657,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.4422702367991276,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 1696,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/004",
+      "deck_seed": 98000000004,
+      "agent_seed": 105,
+      "plies": 139,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        88,
+        96
+      ],
+      "action_agree": 139,
+      "action_checks": 139,
+      "py_s_per_move": 15.374498254784111,
+      "rs_s_per_move": 1.5757939585785234,
+      "rs_prefix_moves": 135,
+      "rs_prefix_s_per_move": 1.599422155104198,
+      "py_prefix_moves": 135,
+      "exact_moves": 4,
+      "solver_nodes": 7733,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/001",
+      "deck_seed": 98000000001,
+      "agent_seed": 102,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        83,
+        83
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 14.832872037378062,
+      "rs_s_per_move": 1.5695604653054842,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.6100703102133203,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 2325,
+      "n_mismatches": 0
+    },
+    {
+      "label": "agree/000",
+      "deck_seed": 98000000000,
+      "agent_seed": 101,
+      "plies": 144,
+      "reconcile": true,
+      "terminal": true,
+      "scores": [
+        109,
+        102
+      ],
+      "action_agree": 144,
+      "action_checks": 144,
+      "py_s_per_move": 15.18505874362543,
+      "rs_s_per_move": 1.5707935097759926,
+      "rs_prefix_moves": 140,
+      "rs_prefix_s_per_move": 1.6136768673584032,
+      "py_prefix_moves": 140,
+      "exact_moves": 4,
+      "solver_nodes": 1298,
+      "n_mismatches": 0
+    }
+  ],
+  "bench": null
+}

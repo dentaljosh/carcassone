@@ -1,0 +1,98 @@
+{
+  "harness": "gate_b_depth_transfer",
+  "schema": "carcassonne-gate-b/v1",
+  "goal": "fixed-root depth-transfer replay: does a policy/selection signal survive as MCTS depth grows (separates the shallow-washout mechanism)",
+  "levels": [
+    200,
+    344,
+    688
+  ],
+  "level_semantics": "per-world PUCT sim budgets; champion band k4\u00d7{200,344,688} (CL-054). One deep search snapshotted -> bit-exact at every level.",
+  "info_mode": "clairvoyant",
+  "agent": "HeuristicPriorAgent (clairvoyant PUCT-priors core of the deployable fair-PIMC champion; curve125 v2.9 Bmild_cap8 leaf)",
+  "final_select": "visits (played_action); q_argmax also recorded (selector probe)",
+  "roots_source": "/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/roots_k3_suite.jsonl",
+  "n_roots_total": 354,
+  "n_todo": 354,
+  "n_skipped_resume": 0,
+  "wall_cap_secs": 180,
+  "workers": 8,
+  "verify_bit_exact": false,
+  "env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "champion_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "clairvoyant",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "HeuristicPriorAgent",
+    "reshuffle_semantics": "clairvoyant descent of the true engine deck (dev/ruler only)",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": true,
+      "config_hash": "e1ef44425aeaf9ac"
+    },
+    "fair_deploy": {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total_sims": 2752,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "aab58ce98ef08e65ae65792dda30d71a2f619cdb",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory)."
+  }
+}

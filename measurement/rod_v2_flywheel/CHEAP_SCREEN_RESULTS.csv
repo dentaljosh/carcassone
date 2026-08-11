@@ -1,0 +1,6 @@
+iter,ckpt_id,parent_id,sha256_12,games,npz,gen_sec,train_sec,opt_steps,n_train_pos,train_pol_last,val_pol_last,policy_entropy,baseline_entropy,entropy_floor,value_corr,smoke_n,smoke_wr_vs_parent,smoke_elo_vs_parent,verdict,code_commit
+2,RoDv2_iter_02,RoD_iter_01,37162a2e2402,400,400,1268.0,1780.0,9459,806973,1.5619,0.2753,1.5669,1.7463,0.8731,0.4454,,,,HEALTHY,7cd9bd981cc5
+3,RoDv2_iter_03,RoDv2_iter_02,305007155eda,400,400,1206.0,1784.0,9345,797200,1.5914,0.3308,1.6023,1.7463,0.8731,0.4459,,,,HEALTHY,7cd9bd981cc5
+4,RoDv2_iter_04,RoDv2_iter_03,15062f6a8470,400,400,1205.0,1736.0,9330,795885,1.5952,0.2922,1.6077,1.7463,0.8731,0.439,,,,HEALTHY,7cd9bd981cc5
+5,RoDv2_iter_05,RoDv2_iter_04,090c6b0e8ae9,400,400,1206.0,1679.0,9224,786872,1.6142,0.2553,1.6136,1.7463,0.8731,0.467,,,,HEALTHY,7cd9bd981cc5
+6,RoDv2_iter_06,RoDv2_iter_05,77c79cb55949,400,400,1210.0,1737.0,9255,789484,1.6193,0.2977,1.6085,1.7463,0.8731,0.4448,,,,HEALTHY,7cd9bd981cc5

@@ -1,0 +1,48 @@
+{
+  "gate": "P1/quirk_mutation_probe",
+  "utc": "2026-07-31",
+  "what": "Sensitivity analysis for G1: each ported engine quirk was deliberately regressed in the Rust source, the wheel rebuilt, and scripts/rustport/reconcile_engine.py re-run. A quirk whose mutant still PASSES is a quirk the recorded corpora do not exercise -- '0 mismatches' says nothing about it, and only the 10^4-game lockstep fuzz (deferred to the Workflow) can cover it.",
+  "gate_command": "scripts/rustport/reconcile_engine.py --corpus {golden|all}",
+  "mutants": [
+    {
+      "mutant": "ties_award_nobody_upstream",
+      "quirk": "tied-feature scoring: every player tied for most meeples scores full points (vendored fix; upstream awarded nobody)",
+      "site": "engine/mod.rs winning_players",
+      "golden_leg": "FAIL (1 mismatch)",
+      "discriminated": true
+    },
+    {
+      "mutant": "farmer_involution_trt_to_brr_typo",
+      "quirk": "opposite_farmer_side TRT -> BRB (upstream typo was BRR, which made farm adjacency asymmetric)",
+      "site": "tiles/mod.rs FarmerSide::opposite",
+      "golden_leg": "FAIL (1 mismatch, at ply ~1611 of the leg)",
+      "discriminated": true
+    },
+    {
+      "mutant": "meeple_repr_sorted_not_insertion_order",
+      "quirk": "meeple tuples in string_representation follow placed_meeples LIST INSERTION order, not a sort",
+      "site": "repr_key.rs",
+      "golden_leg": "FAIL (12 mismatches within 113 positions)",
+      "discriminated": true
+    },
+    {
+      "mutant": "cloister_no_coordinate_rebinding",
+      "quirk": "remove_meeples_and_collect_points rebinds its `coordinate` local inside the 3x3 cloister scan, so each outer row re-derives its COLUMN range from the last tile seen (the outer ROW range is fixed from the original coordinate)",
+      "site": "engine/mod.rs remove_meeples_and_collect_points",
+      "golden_leg": "PASS (not discriminated by the 12 golden games)",
+      "all_corpora_leg": "FAIL (86 mismatches; first at champ/28000000002 ply 29, kind string_representation)",
+      "discriminated": true,
+      "note": "This is the quirk most likely to be missed by a from-memory port, and the golden leg alone would have let it through. The 449-game champ corpus catches it."
+    },
+    {
+      "mutant": "find_roads_deduped",
+      "quirk": "RoadUtil.find_roads does NOT dedup -- Python `Road` has no __eq__/__hash__, so its set() keeps one entry per road-typed side, and a straight-road tile yields the same road twice",
+      "site": "engine/mod.rs find_roads",
+      "golden_leg": "PASS",
+      "all_corpora_leg": "PASS (0 mismatches over 67,086 positions)",
+      "discriminated": false,
+      "note": "NOT a gate hole: the duplicate is provably a no-op. The first pass removes the road's meeples, so the second finds meeple_counts == 0, hits the `if sum(...) == 0: continue` guard, and scores nothing. The Rust port keeps the un-deduped form anyway (faithfulness over reasoning), but this is the one ported quirk with no empirical backing -- it rests on an argument, not a measurement."
+    }
+  ],
+  "conclusion": "4 of 5 quirks are empirically discriminated by the G1 corpora; the 5th is provably outcome-equivalent. The corpus is sensitive, so the 0-mismatch verdict is informative rather than vacuous."
+}

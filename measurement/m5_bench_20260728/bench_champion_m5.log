@@ -1,0 +1,21 @@
+bench_champion: Apple M5 (arm64, py3.12.13)
+  leaf path : CYTHON
+  champion  : puct_priors_v29_bmild_cap8  (YAML budget k4x688)
+  positions : 60 from positions.jsonl
+  budgets   : k1x32,k4x172,k4x344,k4x688  repeat=3
+  out       : /Users/joshuaishal/m5_bench_20260728/results/bench_champion_Mac_20260728T225752.json
+  -> k1x32 (32 sims/move) ...
+     mean 0.014s  p50 0.013s  p90 0.018s  (n=178, 3s wall)
+  -> k4x172 (688 sims/move) ...
+     mean 0.370s  p50 0.362s  p90 0.488s  (n=178, 67s wall)
+  -> k4x344 (1376 sims/move) ...
+     mean 0.794s  p50 0.766s  p90 1.038s  (n=178, 143s wall)
+  -> k4x688 (2752 sims/move) ...
+     mean 1.576s  p50 1.522s  p90 1.977s  (n=178, 283s wall)
+
+bench_champion: wrote /Users/joshuaishal/m5_bench_20260728/results/bench_champion_Mac_20260728T225752.json
+  leaf_path=cython  machine=Apple M5
+  k1x32   (   32 sims/move): mean   0.014 s/move   p90   0.018 s/move
+  k4x172  (  688 sims/move): mean   0.370 s/move   p90   0.488 s/move
+  k4x344  ( 1376 sims/move): mean   0.794 s/move   p90   1.038 s/move
+  k4x688  ( 2752 sims/move): mean   1.576 s/move   p90   1.977 s/move

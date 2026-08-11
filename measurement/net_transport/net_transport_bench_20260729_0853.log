@@ -1,0 +1,10 @@
+[cuda_b1         ] forward    1.975 ms (p50 1.985 / p90 2.133)   full    2.911 ms   343.5 pos/s
+[cpu_1t          ] forward   11.532 ms (p50 11.300 / p90 12.205)   full   12.362 ms   80.9 pos/s
+[cpu_2t          ] forward    7.008 ms (p50 6.837 / p90 7.369)   full    8.103 ms   123.4 pos/s
+[cpu_4t          ] forward    4.871 ms (p50 4.557 / p90 6.038)   full    5.519 ms   181.2 pos/s
+[cuda_b8         ] forward    2.348 ms (p50 2.404 / p90 2.753)   full    8.257 ms   968.9 pos/s
+[cuda_b32        ] forward    4.481 ms (p50 4.470 / p90 4.554)   full   28.447 ms   1124.9 pos/s
+[cuda_b128       ] forward   19.789 ms (p50 19.401 / p90 20.979)   full  122.539 ms   1044.6 pos/s
+[cpu_1t_compile  ] forward   10.812 ms (p50 10.426 / p90 11.450)   full   11.593 ms   86.3 pos/s
+
+wrote /home/doctor/projects/carcassone/measurement/net_transport/net_transport_bench_20260729_0853.json

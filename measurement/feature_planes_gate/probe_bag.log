@@ -1,0 +1,7 @@
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[drop-farm] zeroing 3 farm planes at gather (mode -> bag-only)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+    [V4_listwise] ep1/30 train=3.3137 val=3.3094 (453s) *
+    [V4_listwise] ep2/30 train=3.3121 val=3.3093 (132s) *
+    [V4_listwise] ep3/30 train=3.3119 val=3.3092 (126s) *

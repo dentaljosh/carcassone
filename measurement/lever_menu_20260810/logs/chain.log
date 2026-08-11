@@ -1,0 +1,97 @@
+[chain 2026-08-10_12:50:57] === LEVER-MENU CHAIN START ===
+[chain 2026-08-10_12:50:57] plan: docs/LEVER_MENU_PLAN_20260810.md (FUNDED IN FULL 2026-08-10)
+[chain 2026-08-10_12:50:57] local rev d6f9a107fcfa102441b1561517ad0f5838f304a6 | W_LOCAL=14 W_LAPTOP=22 OW=14/12
+[chain 2026-08-10_12:50:57] laptop rev d6f9a107fcfa102441b1561517ad0f5838f304a6 (busy python 16)
+[chain 2026-08-10_12:50:57] item-2 wiring gate (2a) verdict: PASS
+[chain 2026-08-10_12:50:58] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:52:59] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:55:00] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:57:01] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:59:01] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:01:02] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:03:03] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:05:03] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:07:04] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:09:05] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:11:06] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:13:07] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:15:08] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:17:09] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:19:10] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:21:11] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:23:11] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:25:12] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:27:13] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:29:14] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:31:15] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:33:16] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:35:17] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:37:18] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:39:19] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:41:20] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:43:20] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:45:21] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:47:22] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:49:23] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:51:23] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:53:24] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:55:25] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:57:26] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:59:26] laptop still busy (0
+0 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_14:01:27] laptop still busy (0
+0 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_14:03:28] laptop still busy (0
+0 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_14:06:02] === LEVER-MENU CHAIN START ===
+[chain 2026-08-10_14:06:02] plan: docs/LEVER_MENU_PLAN_20260810.md (FUNDED IN FULL 2026-08-10)
+[chain 2026-08-10_14:06:02] local rev cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5 | W_LOCAL=14 W_LAPTOP=22 OW=14/12
+[chain 2026-08-10_14:06:02] laptop rev cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5 (busy python 0)
+[chain 2026-08-10_14:06:02] item-2 wiring gate (2a) verdict: PASS
+[chain 2026-08-10_14:06:03] laptop is quiet (no oracle scorer, no game harness) - block may start
+[chain 2026-08-10_14:06:03] --- BLOCK B: item 2 farm_growth_off n=1600 band=118000000000 -> /mnt/c/carc-shared/lever_menu_20260810/b_farmgrowthoff_n1600_b118e9
+[chain 2026-08-10_14:06:03] BLOCK B: local launcher pid 202074; laptop joiner launch backgrounded
+[chain 2026-08-10_14:06:03] verify[B]: baseline records=0; waiting up to 900s for workers on BOTH boxes
+[chain 2026-08-10_14:06:24] verify[B]: busy python -> local=14 laptop=22 | laptop claims on this cell=22 (laptop rev=cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5)
+[chain 2026-08-10_14:06:24] verify[B]: waiting up to 1800s for the record count to grow past 0
+[chain 2026-08-10_14:08:24] verify[B]: PASS - records 0 -> 2, local=14 laptop=22 busy workers
+[chain 2026-08-10_16:47:44] BLOCK B: local launcher exited rc=0
+[chain 2026-08-10_16:47:44] BLOCK B: records 1600/1600
+[chain 2026-08-10_16:47:44] BLOCK B COMPLETE -> /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/BLOCK_B_item2.json
+[chain 2026-08-10_16:47:45] laptop still busy (2 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_16:49:45] laptop is quiet (no oracle scorer, no game harness) - block may start
+[chain 2026-08-10_16:49:45] --- BLOCK C: item 4 capscurve cells [cap5 cap12 curve150 curve175] n=800 band=120000000000 -> /mnt/c/carc-shared/capscurve_resweep/cc800_*
+[chain 2026-08-10_16:49:45] BLOCK C: local launcher pid 226485; laptop joiner launch backgrounded
+[chain 2026-08-10_16:49:45] verify[C]: baseline records=0; waiting up to 900s for workers on BOTH boxes
+[chain 2026-08-10_16:50:07] verify[C]: busy python -> local=14 laptop=22 | laptop claims on this cell=22 (laptop rev=cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5)
+[chain 2026-08-10_16:50:07] verify[C]: waiting up to 1800s for the record count to grow past 0
+[chain 2026-08-10_16:51:07] verify[C]: PASS - records 0 -> 23, local=14 laptop=22 busy workers
+[chain 2026-08-10_19:07:00] BLOCK C: local launcher exited rc=0
+[chain 2026-08-10_19:07:00] BLOCK C: cell cap5 records 800/800
+[chain 2026-08-10_19:07:00] BLOCK C: cell cap12 records 800/800
+[chain 2026-08-10_19:07:00] BLOCK C: cell curve150 records 800/800
+[chain 2026-08-10_19:07:00] BLOCK C: cell curve175 records 800/800
+[chain 2026-08-10_19:07:00] BLOCK C COMPLETE -> /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/BLOCK_C_item4_*.json
+[chain 2026-08-10_19:07:01] laptop is quiet (no oracle scorer, no game harness) - block may start
+[chain 2026-08-10_19:07:01] --- BLOCK D: item 3 width H2H k4x2752 vs k8x1376 n=800 band=119000000000 -> /mnt/c/carc-shared/lever_menu_20260810/d_width_k4x2752_vs_champ_n800_b119e9
+[chain 2026-08-10_19:07:01] BLOCK D: local launcher pid 247726; laptop joiner launch backgrounded
+[chain 2026-08-10_19:07:01] verify[D]: baseline records=0; waiting up to 900s for workers on BOTH boxes
+[chain 2026-08-10_19:07:22] verify[D]: busy python -> local=14 laptop=22 | laptop claims on this cell=22 (laptop rev=cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5)
+[chain 2026-08-10_19:07:22] verify[D]: waiting up to 1800s for the record count to grow past 0
+[chain 2026-08-10_19:09:52] verify[D]: PASS - records 0 -> 6, local=14 laptop=22 busy workers
+[chain 2026-08-10_20:28:14] BLOCK D: local launcher exited rc=0
+[chain 2026-08-10_20:28:14] BLOCK D: records 800/800
+[chain 2026-08-10_20:28:14] BLOCK D COMPLETE -> /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/BLOCK_D_item3.json
+[chain 2026-08-10_20:28:14] laptop is quiet (no oracle scorer, no game harness) - block may start
+[chain 2026-08-10_20:28:14] --- BLOCK E: item 5 CL-072 extension n=400 band=94000000200 -> /mnt/c/carc-shared/teacher_h2h_94e9/n800ext_paired_b94e9 (GPU exclusive)
+[chain 2026-08-10_20:28:14] BLOCK E: local cell pid 273046; laptop joiner launch backgrounded
+[chain 2026-08-10_20:28:14] verify[E]: baseline records=0; waiting up to 1200s for workers on BOTH boxes
+[chain 2026-08-10_20:28:35] verify[E]: busy python -> local=14 laptop=6 | laptop claims on this cell=12 (laptop rev=cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5)
+[chain 2026-08-10_20:28:35] verify[E]: waiting up to 4800s for the record count to grow past 0
+[chain 2026-08-10_20:56:06] verify[E]: PASS - records 0 -> 1, local=14 laptop=6 busy workers
+[chain 2026-08-11_05:19:44] BLOCK E: local cell exited rc=0
+[chain 2026-08-11_05:19:44] BLOCK E: extension records 400/400
+[chain 2026-08-11_05:19:44] BLOCK E COMPLETE -> /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/BLOCK_E_item5.json
+[chain 2026-08-11_05:19:44] === LEVER-MENU CHAIN FINISHED (B/C/D/E) ===
+[chain 2026-08-11_05:19:44] Nothing was promoted. governance/PRODUCTION.yaml untouched. No verdict was adjudicated.
+[chain 2026-08-11_05:19:44] Per-block extracts: /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/ - the orchestrating session reads and closes out.

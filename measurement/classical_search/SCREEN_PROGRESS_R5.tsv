@@ -1,0 +1,8 @@
+cell	c	tau	n	W	D	L	elo	sigma	paired_z	secs
+c1.0_tau5_float_visits_s800_k2	1.0	5	100	67	3	30	135.0	37.4	3.58	2
+c1.5_tau5_float_visits_s800_k2	1.5	5	100	56	3	41	52.5	35.1	1.99	1344
+c2.5_tau5_float_visits_s800_k2	2.5	5	100	62	2	36	92.5	36.0	1.79	1480
+c1.0_tau5_float_visits_s2750_k2	1.0	5	100	71	3	26	168.4	38.9	4.85	3002
+c1.5_tau5_float_visits_s2750_k2	1.5	5	100	72	1	27	168.4	38.9	6.75	2425
+c2.5_tau5_float_visits_s2750_k2	2.5	5	100	69	1	30	143.1	37.7	5.01	2587
+c1.5_tau5_float_Q_s2750_k2	1.5	5	100	72	1	27	168.4	38.9	6.11	2370

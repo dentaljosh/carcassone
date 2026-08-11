@@ -1,0 +1,10 @@
+{
+ "chunk": "15a_fair_agent",
+ "tree": "main",
+ "rc": 0,
+ "duration_s": 4,
+ "attempt": 1,
+ "peak_rss_kb": 92356,
+ "n_failing": 0,
+ "failing_ids": []
+}

@@ -1,0 +1,113 @@
+PHASE-SEAM GATE — INCIDENT LOG
+==============================
+Read this before using tonight's events to judge box reliability. Of the incidents
+on this gate, most were SELF-INFLICTED by the measurement, not the hardware.
+
+2026-08-09 06:51 / 09:49 (local box) and ~11:30 (laptop WSL VM)
+  Three deaths of the SERIAL gate, one pytest process for the whole suite.
+  Attributed at the time to "dirty reboots" and "VM wedge". The chunked rebuild
+  now makes the mechanism visible: chunks 1-14 of the same suite peak at
+  1922 MiB and take 1071 s TOTAL. Nothing in the suite is individually large.
+  It is the UNION in a single long-lived process that balloons (the documented
+  34.6 GB full-suite RSS of 2026-07-29), starves the Windows host and takes the
+  utility VM down. i.e. the gate was killing the boxes, not the boxes the gate.
+
+2026-08-09 ~12:5x-14:1x (laptop) — seam/15_fair_puct, TWO attempts lost
+  NOT instability. Self-inflicted by this gate's own memory cap.
+  The fair_puct tests legitimately build >5 GB of state. The default
+  MemoryHigh=5G is a THROTTLE, not a kill: the cgroup forced continuous reclaim,
+  the process sat pinned at exactly 5,235,012 KB in uninterruptible D state at
+  ~63% CPU, and crawled until the 3600 s chunk timeout SIGKILLed it. Attempt 2
+  was killed by hand at ~49 min on the same trajectory. From outside, a throttled
+  crawl that expires a deadline looks exactly like a hang or a flaky box; it is
+  neither. Cost: ~2 h of wall clock, zero completed chunks, zero data lost
+  (resume-by-artifact preserved chunks 1-14).
+  FIX: 15_fair_puct and its likely sibling 16_match_ab are split to ONE FILE PER
+  CHUNK (peak bounded by the largest single module, and the artifact name names
+  the offender), and those chunks get MemoryHigh=7G / MemoryMax=8G / 7200 s.
+  MemoryMax stays 8G on an 11G VM on purpose: the hard cap is what protects the
+  VM, and a chunk that truly wants more now gets OOM-killed -- a loud,
+  attributable death instead of a silent stall.
+
+LEDGER FOR THE NIGHT (gate-attributable vs box-attributable)
+  self-inflicted, gate design : 3 serial-run deaths + 2 lost 15_fair_puct attempts
+  genuine box instability     : none demonstrated by this gate
+
+2026-08-09 ~15:0x-16:xx — seam/15e_fair_puct_agent, ONE TEST that no laptop cap fits
+  Distinct from the throttle incident above, and my first read of it was WRONG.
+  Having just seen 15_fair_puct turn out to be a SUM across files, I assumed 15e
+  was the same shape and split it per test expecting the peak to collapse. A
+  per-test probe refuted that within one cycle:
+      plays_full_legal_determinized_game      121 MiB   17 s
+      marginalized_handoff_fires_at_k2         65 MiB    2 s
+      no_solver_above_exact_max_k              51 MiB    1 s
+      8 others                              46-51 MiB   <1 s
+      exact_max_k_configurable_latches_at_k4  >13 GB    30+ min   <-- one test
+  So the file's 8.0 GB was ONE TEST, not accumulation. The cgroup OOM record names
+  it exactly: anon-rss 8,369,916 kB, CONSTRAINT_MEMCG, at MemoryMax=8G.
+  WHY IT IS BIG AND WHY THAT IS NOT A BUG: the test drives the MARGINALIZED exact
+  solver at k_remaining=4 with exact_budget=5,000,000 nodes. Marginalized has no
+  alpha-beta (the documented cost wall), so the transposition table grows roughly
+  linearly with nodes -- measured 0.39 GB/min, sustained. The test asserts
+  exact_moves + n_timeouts == 1, i.e. it is DESIGNED to bail on the node budget.
+  RESOLUTION: the cell runs on the 41 GB LOCAL box for BOTH trees. Moving the seam
+  and main legs together keeps that cell's comparison like-for-like; only the
+  interpreter differs (local 3.12 vs laptop 3.14), which cannot manufacture a false
+  GREEN -- a 3.12-only failure appears in both legs and cancels in the diff -- and
+  is recorded in the readout. The laptop defers the cell via gate.env so no
+  supervisor relaunch can attempt it and balloon the 11.9 GB VM.
+  The ceiling was moved ONCE (16 -> 24 GB). It will not be moved again: the local
+  VM dies near 34 GB. If it OOMs at 24 GB the honest finding is that this test
+  cannot be gated on available hardware -- a fact about the suite, not a cap to
+  keep raising. The serial gate could never have surfaced this at all; it died
+  before reaching the cell.
+  ALSO NOTE: test_puct_choose_action_never_mutates_caller_board FAILS in isolation
+  but passes inside its file -- an order-dependent test. Per-test splitting is
+  applied identically to both legs, so it appears on both sides and cancels; it is
+  not a novel seam failure.
+
+REVISED LEDGER
+  self-inflicted, gate design : 3 serial-run deaths (union-in-one-process) +
+                                2 lost 15_fair_puct attempts (my MemoryHigh=5G
+                                throttle) + 1 wrong prior of mine (assumed 15e was
+                                accumulation; the probe refuted it)
+  genuine box instability     : none demonstrated by this gate
+  genuine suite property      : exactly ONE test needs >13 GB and cannot run on the
+                                11.9 GB laptop VM at all
+
+2026-08-09 15:27-17:00 — 15e07 RESOLVED AS UNRUNNABLE (definitive)
+  Ran on the 41 GB LOCAL box, ceiling raised ONCE (16 -> 24 GB). Outcome:
+    systemd: run-r3d9e...scope: Failed with result 'oom-kill'
+    kernel : Memory cgroup out of memory: Killed process (python)
+             total-vm:25248960kB  anon-rss:25112324kB   <- 23.95 GiB, all anonymous
+  So the cell needs MORE than 24 GB. It cannot run on the 11.9 GB laptop VM, and on
+  the local box the only headroom left is above the ~34 GB at which the WSL VM dies
+  -- and that VM hosts the session doing the work. The ceiling was NOT raised again.
+  ACTION: excluded from BOTH legs; verdict is GREEN_WITH_GAP so night_chain blocks
+  the merge for owner review. This is a COVERAGE GAP, not a pass.
+
+  A NOTE ON HOW MUCH THE THROTTLE COST HERE, because it distorted the diagnosis
+  three times: MemoryHigh (5G, then 20G, then 23G) never once prevented an OOM --
+  the counters read high=1210677 / max=0 right up until the band was removed. What
+  it did was keep the cell crawling in uninterruptible D state so it could not reach
+  its own answer. The "20.25 GB plateau" that looked like convergence was the
+  throttle. Only with MemoryHigh == MemoryMax did the cell state its true demand.
+  For anon-heavy work there is no safe throttle band: MemoryMax alone is the
+  protection, and a clean OOM is the useful signal.
+
+2026-08-09 ~19:40 (coordinator) — THE RESURRECTION LOOP, root-caused and retired.
+An agent-armed cron guard (*/2 min, gate_cron_guard.sh) treated VERDICT=GREEN_WITH_GAP as
+"15e07 still owed -> relaunch" and my three kills of those relaunches as "harness teardown
+sweeps of healthy work" — two automations each classifying the other as infrastructure
+failure. Its design premise was wrong on two counts: (1) the ruling of record makes
+GREEN_WITH_GAP FINAL pending owner review, not a resume state; (2) CRITICALLY, under cron
+there is no user bus, so the driver's systemd-run memory scopes silently failed and the
+third relaunch ran UNCAPPED — killed at 23.2 GiB RSS, within ~10 GiB of the VM teardown
+line, on the box hosting the coordinating session. The mechanism built to survive sweeps
+is the only one that ever endangered the machine.
+Actions: pytest tree killed by exact pid; crontab entry removed (only entry present);
+guard script left on disk for the post-mortem; VERDICT verified GREEN_WITH_GAP, no
+blocked-marker, artifacts intact.
+Transferable rule: a relauncher must never outlive the authority that armed it, and any
+launcher that changes execution context (session -> cron) must re-verify its resource
+caps actually apply there — cron has no user bus; systemd-run --user fails silently.

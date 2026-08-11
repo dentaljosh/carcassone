@@ -1,0 +1,11 @@
+puct-priors[rr_ab17600_vs_puctchamp2750_k2]: n=4 paired=True | 0 cached, 4 to play, 4 workers, out=/mnt/c/carc-shared/classical_search/c6_s1_smoke
+  4/4 played (140.4s/game, ~0 min left)
+
+=== ID-alpha-beta(cand ab17600) vs opponent(PUCT-champion flags-OFF s2750) ===
+games: 4   candidate: 3W / 0D / 1L   winrate 0.750 (z=+1.00)
+avg score diff (cand - champ): +24.25
+ELO: +190.8  (+/- 200.6 1sigma)
+PAIRED: 2 decks   mean seat-balanced margin +24.25   z = +1.02
+prefix ms/move: candidate 3098  champion 3853  (ratio 0.80x)
+exact endgame: latched 4/4 games, 48.41s solver/game, timeouts cand=0 champ=0
+ab telemetry: median depth 4 (p10 4, min 4), 15907 steps/move, cross-parent hit frac 0.0010

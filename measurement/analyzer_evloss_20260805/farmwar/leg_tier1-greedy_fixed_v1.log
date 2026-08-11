@@ -1,0 +1,66 @@
+[pilot] population=20 positions | n=20 | M=32 | policy=tier1-greedy | oracle_sims=100 | W=7
+[pilot] out -> /mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/fixed_v1
+[pilot] resume: 0 already done, 20 to go
+[1/20] 1785982194_705585_p132 ok delta=+1.531 crn=True 27.585s
+[2/20] 1785984310_1698417952_p121 ok delta=-4.000 crn=True 59.472s
+[3/20] 1785984310_1698417952_p112 ok delta=-3.000 crn=True 80.26s
+[4/20] 1785982194_705585_p105 ok delta=+3.000 crn=True 88.577s
+[5/20] 1785982194_705585_p77 ok delta=+12.406 crn=True 147.75s
+[6/20] 1785982194_705585_p8 ok delta=-8.281 crn=True 204.122s
+[7/20] 1785982194_705585_p9 ok delta=+5.906 crn=True 211.487s
+[8/20] 1785984310_1698417952_p20 ok delta=+1.500 crn=True 200.215s
+[9/20] 1785984310_1698417952_p24 ok delta=+3.469 crn=True 205.27s
+[10/20] 1785984310_1698417952_p56 ok delta=+8.688 crn=True 189.603s
+[11/20] 1785984310_1698417952_p28 ok delta=-3.000 crn=True 202.848s
+[12/20] 1785984310_1698417952_p72 ok delta=-5.344 crn=True 164.053s
+[13/20] 1785986044_1911511187_p12 ok delta=-0.156 crn=True 206.336s
+[14/20] 1785986044_1911511187_p16 ok delta=-9.844 crn=True 207.201s
+[15/20] 1785986044_1911511187_p28 ok delta=-1.625 crn=True 198.802s
+[16/20] 1785986044_1911511187_p85 ok delta=+0.469 crn=True 151.283s
+[17/20] 1785986044_1911511187_p5 ok delta=-2.469 crn=True 183.689s
+[18/20] 1785986044_1911511187_p88 ok delta=-6.438 crn=True 138.03s
+[19/20] 1785986044_1911511187_p64 ok delta=-3.688 crn=True 193.992s
+[20/20] 1785986044_1911511187_p92 ok delta=+0.062 crn=True 133.787s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 20,
+  "m_worlds": 32,
+  "sd_delta_positions": 5.50650127869202,
+  "mean_delta_pts": -0.540625,
+  "se_mean_delta": 1.231291117734487,
+  "z_pilot_observed": -0.4390716315689197,
+  "mean_within_position_var": 415.87006048387093,
+  "var_between_positions_est": 17.325616942115882,
+  "sd_delta_projected_by_m": {
+    "8": 8.325225192305597,
+    "16": 6.581602823200274,
+    "32": 5.50650127869202,
+    "64": 4.880941163052098
+  },
+  "median_crn_var_reduction": 1.542154138988493,
+  "n_positions_perfect_pairing": 1,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.20694037539525523,
+    "N=20_at_M=32": 0.05685089333609135,
+    "N=20_at_M=8": 0.03760252841440249,
+    "N=20_at_M=16": 0.047564328212949154,
+    "N=20_at_M=64": 0.06413712159034055
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "tier1-greedy",
+  "n_attempted": 20,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 20,
+  "wall_secs": 544.5,
+  "manifest": "/mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/fixed_v1/manifest.json"
+}

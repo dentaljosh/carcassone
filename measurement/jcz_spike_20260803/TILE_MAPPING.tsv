@@ -1,0 +1,33 @@
+our_kind	jcz_id	deck_count	rot_cw90	edges_NESW	jcz_fields	our_fields	verdict
+city_top	BA/C	4	0	CFFF	[EL ER SL SR WL WR] + city{N}	[EL ER SL SR WL WR] + city{N}	MATCH
+city_top_right	BA/CC.2	1	3	CFFC	[EL ER SL SR] + city{N; W}	[EL ER SL SR] + city{N; W}	MATCH
+city_top_left_flowers	BA/CCG	1	0	CFFC	[EL ER SL SR] + city{N; W}	[EL ER SL SR] + city{N; W}	MATCH
+city_left_right	BA/CFC.2	2	1	CFCF	[EL ER WL WR] + city{N; S}	[EL ER WL WR] + city{N; S}	MATCH
+city_top_bottom_flowers	BA/CFCG	1	0	CFCF	[EL ER WL WR] + city{N; S}	[EL ER WL WR] + city{N; S}	MATCH
+city_narrow_shield	BA/CFc+	2	0	FCFC	[NL NR] + city{EW} [SL SR] + city{EW}	[NL NR] + city{EW} [SL SR] + city{EW}	MATCH
+city_narrow	BA/CFc.1	1	0	FCFC	[NL NR] + city{EW} [SL SR] + city{EW}	[NL NR] + city{EW} [SL SR] + city{EW}	MATCH
+city_top_flowers	BA/CG	1	0	CFFF	[EL ER SL SR WL WR] + city{N}	[EL ER SL SR WL WR] + city{N}	MATCH
+city_top_crossroads	BA/CRRR	3	0	CRRR	[EL WR] + city{N} [ER SL] [SR WL]	[EL WR] + city{N} [ER SL] [SR WL]	MATCH
+city_top_road_bend_right	BA/CRr	3	0	CRRF	[EL SR WL WR] + city{N} [ER SL]	[EL SR WL WR] + city{N} [ER SL]	MATCH
+city_diagonal_top_right_shield	BA/Cc+	1	3	CFFC	[EL ER SL SR] + city{NW}	[EL ER SL SR] + city{NW}	MATCH
+city_diagonal_top_right_shield_flowers	BA/Cc+G	1	3	CFFC	[EL ER SL SR] + city{NW}	[EL ER SL SR] + city{NW}	MATCH
+city_diagonal_top_right	BA/Cc.1	2	3	CFFC	[EL ER SL SR] + city{NW}	[EL ER SL SR] + city{NW}	MATCH
+city_diagonal_top_right_flowers	BA/CcG	1	3	CFFC	[EL ER SL SR] + city{NW}	[EL ER SL SR] + city{NW}	MATCH
+city_diagonal_top_left_road	BA/CcRr	3	0	CRRC	[EL SR] + city{NW} [ER SL]	[EL SR] + city{NW} [ER SL]	MATCH
+city_diagonal_top_left_shield_road	BA/CcRr+	2	0	CRRC	[EL SR] + city{NW} [ER SL]	[EL SR] + city{NW} [ER SL]	MATCH
+city_bottom_grass	BA/Ccc	2	0	CCFC	[SL SR] + city{NEW}	[SL SR] + city{NEW}	MATCH
+city_bottom_grass_shield	BA/Ccc+	1	0	CCFC	[SL SR] + city{NEW}	[SL SR] + city{NEW}	MATCH
+city_bottom_grass_flowers	BA/CccG	1	0	CCFC	[SL SR] + city{NEW}	[SL SR] + city{NEW}	MATCH
+city_bottom_road	BA/CccR	1	0	CCRC	[SL] + city{NEW} [SR] + city{NEW}	[SL] + city{NEW} [SR] + city{NEW}	MATCH
+city_bottom_road_shield	BA/CccR+	2	0	CCRC	[SL] + city{NEW} [SR] + city{NEW}	[SL] + city{NEW} [SR] + city{NEW}	MATCH
+full_city_with_shield	BA/Cccc+	1	0	CCCC	(none)	(none)	MATCH
+chapel	BA/L	4	0	FFFF	[NL NR EL ER SL SR WL WR]	[NL NR EL ER SL SR WL WR]	MATCH
+chapel_with_road	BA/LR	2	0	FFRF	[NL NR EL ER SL SR WL WR]	[NL NR EL ER SL SR WL WR]	MATCH
+city_top_straight_road	BA/RCr	4	0	CRFR	[EL WR] + city{N} [ER SL SR WL]	[NL NR EL WR] + city{N} [ER SL SR WL]	FIELD_DIFF
+straight_road	BA/RFr	7	1	FRFR	[NL NR EL WR] [ER SL SR WL]	[NL NR EL WR] [ER SL SR WL]	MATCH
+straight_road_flowers	BA/RFrG	1	1	FRFR	[NL NR EL WR] [ER SL SR WL]	[NL NR EL WR] [ER SL SR WL]	MATCH
+three_split_road	BA/RRR	4	0	FRRR	[NL NR EL WR] [ER SL] [SR WL]	[NL NR EL WR] [ER SL] [SR WL]	MATCH
+crossroads	BA/RRRR	1	0	RRRR	[NL WR] [NR EL] [ER SL] [SR WL]	[NL WR] [NR EL] [ER SL] [SR WL]	MATCH
+bent_road	BA/Rr	8	0	FFRR	[NL NR EL ER SL WR] [SR WL]	[NL NR EL ER SL WR] [SR WL]	MATCH
+city_top_road_bend_left	BA/RrC	3	0	CFRR	[EL ER SL WR] + city{N} [SR WL]	[EL ER SL WR] + city{N} [SR WL]	MATCH
+bent_road_flowers	BA/RrG	1	0	FFRR	[NL NR EL ER SL WR] [SR WL]	[NL NR EL ER SL WR] [SR WL]	MATCH

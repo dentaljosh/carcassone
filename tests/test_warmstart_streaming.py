@@ -32,6 +32,7 @@ def _write_synthetic(path: Path, n_positions: int, seed: int) -> None:
         policies=rng.standard_normal((n_positions, 11)).astype(np.float32),
         values=rng.standard_normal(n_positions).astype(np.float32),
         valid_masks=rng.integers(0, 2, size=(n_positions, 11)).astype(bool),
+        ownership=rng.integers(-1, 2, size=(n_positions, 3, 5, 5)).astype(np.float32),
     )
     ds.save(path)
 
@@ -64,12 +65,15 @@ def test_streaming_yields_all_positions(synthetic_files: list[Path]) -> None:
 
 def test_streaming_yields_correct_shapes(synthetic_files: list[Path]) -> None:
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=False, shuffle_within_file=False)
-    for board, scalar, policy, value, mask in ds:
+    for board, scalar, policy, value, mask, ownership, aux, group in ds:
         assert board.shape == (4, 5, 5)
         assert scalar.shape == (3,)
         assert policy.shape == (11,)
         assert value.shape == ()
         assert mask.shape == (11,)
+        assert ownership.shape == (3, 5, 5)
+        assert aux.shape == () and aux.dtype == torch.bool
+        assert group.shape == () and group.dtype == torch.int64
         break
 
 
@@ -77,9 +81,11 @@ def test_dataloader_with_streaming_assembles_batches(synthetic_files: list[Path]
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=False, shuffle_within_file=False)
     loader = DataLoader(ds, batch_size=3, num_workers=0)
     total = 0
-    for board_b, scalar_b, policy_b, value_b, mask_b in loader:
+    for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, group_b in loader:
         total += board_b.shape[0]
         assert board_b.shape[1:] == (4, 5, 5)
+        assert own_b.shape[1:] == (3, 5, 5)
+        assert aux_b.shape == (board_b.shape[0],) and aux_b.dtype == torch.bool
     assert total == 4 * 5
 
 
@@ -89,7 +95,7 @@ def test_streaming_with_workers_yields_all_positions(synthetic_files: list[Path]
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=False, shuffle_within_file=False)
     loader = DataLoader(ds, batch_size=1, num_workers=2)
     rows = []
-    for board_b, scalar_b, policy_b, value_b, mask_b in loader:
+    for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, group_b in loader:
         rows.append((board_b.numpy(), scalar_b.numpy(), value_b.item()))
     assert len(rows) == 4 * 5
 
@@ -99,6 +105,31 @@ def test_split_files_train_val_no_leak(synthetic_files: list[Path]) -> None:
     assert set(train).isdisjoint(set(val))
     assert set(train) | set(val) == set(synthetic_files)
     assert len(val) == 2  # 40% of 5 = 2 (rounded)
+
+
+def test_split_files_train_val_no_leak_with_duplicates() -> None:
+    """D-R4-1 regression: warmstart oversampling passes the same .npz MANY times
+    (with replacement), so the file list has duplicate paths. The split must route
+    EVERY occurrence of a game to one side — a duplicated path must never straddle
+    train/val and leak positions across the boundary. val holds one occurrence of
+    each held-out game; all duplicates inflate only the TRAIN side."""
+    files = [
+        Path("a.npz"), Path("a.npz"), Path("a.npz"),  # oversampled x3
+        Path("b.npz"),
+        Path("c.npz"), Path("c.npz"),                 # oversampled x2
+        Path("d.npz"), Path("e.npz"),
+    ]
+    # sweep several seeds so the assertion holds regardless of which games are held out
+    for seed in range(8):
+        train, val = split_files_train_val(files, val_fraction=0.4, seed=seed)
+        assert set(train).isdisjoint(set(val)), f"leak @ seed {seed}: {set(train) & set(val)}"
+        assert len(val) == len(set(val)), f"val has duplicate occurrences @ seed {seed}"
+        assert set(train) | set(val) == set(files), f"a game vanished @ seed {seed}"
+        for p in set(val):
+            assert p not in set(train), f"val game {p} also in train @ seed {seed}"
+        for p in set(train):
+            # every occurrence of a train-side game is preserved (oversampling intact)
+            assert train.count(p) == files.count(p), f"dropped a {p} dup @ seed {seed}"
 
 
 def test_split_files_deterministic(synthetic_files: list[Path]) -> None:
@@ -111,9 +142,9 @@ def test_set_epoch_changes_file_order(synthetic_files: list[Path]) -> None:
     """When shuffle_files_each_epoch=True, set_epoch(k) varies the order."""
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=False, seed=7)
     ds.set_epoch(0)
-    order_a = [v.item() for _, _, _, v, _ in ds]
+    order_a = [v.item() for _, _, _, v, _, _, _, _ in ds]
     ds.set_epoch(1)
-    order_b = [v.item() for _, _, _, v, _ in ds]
+    order_b = [v.item() for _, _, _, v, _, _, _, _ in ds]
     assert order_a != order_b
     # But the multisets are equal — same positions, different order.
     assert sorted(order_a) == sorted(order_b)
@@ -165,8 +196,8 @@ def test_streaming_shuffle_reproducible_across_runs(synthetic_files: list[Path])
     """
     ds_a = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=True, seed=42)
     ds_a.set_epoch(0)
-    order_a = [v.item() for _, _, _, v, _ in ds_a]
+    order_a = [v.item() for _, _, _, v, _, _, _, _ in ds_a]
     ds_b = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=True, seed=42)
     ds_b.set_epoch(0)
-    order_b = [v.item() for _, _, _, v, _ in ds_b]
+    order_b = [v.item() for _, _, _, v, _, _, _, _ in ds_b]
     assert order_a == order_b

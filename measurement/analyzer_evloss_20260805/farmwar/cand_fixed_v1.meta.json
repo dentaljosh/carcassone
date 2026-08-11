@@ -1,0 +1,40 @@
+{
+  "profile": "fixed_v1",
+  "rules_profile_manifest": {
+    "name": "fixed_v1",
+    "grid_rule": "centered18",
+    "start_row": 18,
+    "start_col": 15,
+    "board_rows": 35,
+    "board_cols": 35,
+    "start_rule": "retail",
+    "window_size": 25,
+    "cloister_scan": "fixed",
+    "unplaceable_tile": "redraw",
+    "note": "PHASE-B BUNDLE (spec J3) \u2014 the four rules-fidelity levers composed: centered18 grid + retail start tile + fixed cloister scan + redraw on an unplaceable tile. NOT A DEFAULT: every elo of record is a `walled` number and this profile refuses a results.csv row unless the exp_id names it. \u26a0\ufe0f THE BUNDLE IS DELIBERATELY NOT ORTHOGONAL: A3 and A4 interact, and retail ABSORBS ~5.6x of A3's blast radius (A3's own gate measured the redraw rate at 7.8/100 games under the engine start rule vs 1.4/100 under retail \u2014 an unplaceable tile is almost purely a first-move event, so which tile starts the board decides it). Bundling them is the point here; a SINGLE-FLAG attribution ladder must therefore run the A3 cell at a STATED start rule, not against this profile. \u26a0\ufe0f R9 IS NOT IN THIS PROFILE AND CANNOT BE: `base_deck` derives the farm data at import time and the Rust registry latches a OnceLock, so CARCASSONNE_FIX_R9 must be exported in the ENVIRONMENT before the process starts. `r9_env_expected=True` records that a fixed_v1 leg owes that env var; `as_manifest()` stamps r9_env_observed/r9_env_ok so an artifact from a leg that forgot it is detectable after the fact.",
+    "r9_env_expected": true,
+    "fixed_start_tile": true,
+    "recentred": true,
+    "r9_env_var": "CARCASSONNE_FIX_R9",
+    "r9_env_observed": true,
+    "r9_env_ok": true
+  },
+  "r9_env": {
+    "CARCASSONNE_FIX_R9": "1",
+    "r9_env_expected": true,
+    "r9_env_observed": true
+  },
+  "artifacts": [
+    "measurement/analyzer_evloss_20260805/EV_LOSS_1785982194_705585.json",
+    "measurement/analyzer_evloss_20260805/EV_LOSS_1785984310_1698417952.json",
+    "measurement/analyzer_evloss_20260805/EV_LOSS_1785986044_1911511187.json"
+  ],
+  "n_candidates": 36,
+  "n_kept": 26,
+  "n_dropped_degenerate": 10,
+  "n_farm_driven": 11,
+  "stratifier_rule": "primary",
+  "leaf_cfg_hash": null,
+  "v29_farm_flip_k": 0.0,
+  "wall_secs": 0.17
+}

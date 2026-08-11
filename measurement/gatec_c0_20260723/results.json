@@ -1,0 +1,284 @@
+{
+  "leaf_floor": {
+    "tau_mean": 0.6152820150615235,
+    "note": "v29-leaf ranker vs solver, per-root mean (from c0_export self-check)",
+    "tau_recomputed_here": 0.6152820150615235
+  },
+  "n_roots": 1119,
+  "n_features": 84,
+  "feature_names": [
+    "lt_base",
+    "lt_bonus_self",
+    "lt_bonus_opp",
+    "lt_meeple_curve",
+    "lt_leaf_score",
+    "lt_bonus_self_uncapped",
+    "lt_bonus_opp_uncapped",
+    "city_n_me",
+    "city_n_opp",
+    "city_n_tie",
+    "city_n_none",
+    "city_size_sum_me",
+    "city_size_max_me",
+    "city_openn_sum_me",
+    "city_openn_max_me",
+    "city_shields_sum_me",
+    "city_shields_max_me",
+    "city_delta_sum_me",
+    "city_delta_max_me",
+    "city_finpts_sum_me",
+    "city_finpts_max_me",
+    "city_size_sum_opp",
+    "city_size_max_opp",
+    "city_openn_sum_opp",
+    "city_openn_max_opp",
+    "city_shields_sum_opp",
+    "city_shields_max_opp",
+    "city_delta_sum_opp",
+    "city_delta_max_opp",
+    "city_finpts_sum_opp",
+    "city_finpts_max_opp",
+    "road_n_me",
+    "road_n_opp",
+    "road_n_tie",
+    "road_n_none",
+    "road_size_sum_me",
+    "road_size_max_me",
+    "road_openn_sum_me",
+    "road_openn_max_me",
+    "road_finpts_sum_me",
+    "road_finpts_max_me",
+    "road_size_sum_opp",
+    "road_size_max_opp",
+    "road_openn_sum_opp",
+    "road_openn_max_opp",
+    "road_finpts_sum_opp",
+    "road_finpts_max_opp",
+    "farm_n_me",
+    "farm_n_opp",
+    "farm_n_tie",
+    "farm_n_none",
+    "farm_fincities_sum_me",
+    "farm_fincities_max_me",
+    "farm_adjcities_sum_me",
+    "farm_adjcities_max_me",
+    "farm_fincities_sum_opp",
+    "farm_fincities_max_opp",
+    "farm_adjcities_sum_opp",
+    "farm_adjcities_max_opp",
+    "farm_n_contested",
+    "cloister_n_me",
+    "cloister_n_opp",
+    "cloister_n_tie",
+    "cloister_n_none",
+    "cloister_needed_sum_me",
+    "cloister_needed_max_me",
+    "cloister_curpts_sum_me",
+    "cloister_curpts_max_me",
+    "cloister_needed_sum_opp",
+    "cloister_needed_max_opp",
+    "cloister_curpts_sum_opp",
+    "cloister_curpts_max_opp",
+    "g_score_diff",
+    "g_meeple_me",
+    "g_meeple_opp",
+    "g_meeple_diff",
+    "g_placed_me",
+    "g_placed_opp",
+    "g_deck_n",
+    "g_bag_n",
+    "g_bag_ge1",
+    "g_bag_ge2",
+    "g_bag_ge3",
+    "g_bag_ge4"
+  ],
+  "fold_sizes": [
+    224,
+    224,
+    224,
+    224,
+    223
+  ],
+  "ridge_lam_headline": 1.0,
+  "gbdt_params": {
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "max_leaf_nodes": 31,
+    "min_samples_leaf": 50,
+    "l2_regularization": 1.0
+  },
+  "runs": {
+    "sanity_leaf_score_ols": {
+      "learner": "ols",
+      "n_cols": 1,
+      "demean": false,
+      "tau_mean": 0.6152820150615235,
+      "top1_rate": 0.6094727435210009,
+      "regret_mean": 0.9508489722966935,
+      "per_fold_tau": [
+        0.6157763878247452,
+        0.6768017388524208,
+        0.6216489256971067,
+        0.5793147810705912,
+        0.5824119032083346
+      ],
+      "fold_tau_std": 0.03521222201447939
+    },
+    "sanity_leaf_terms_ols": {
+      "learner": "ols",
+      "n_cols": 4,
+      "demean": false,
+      "tau_mean": 0.6157272385572741,
+      "top1_rate": 0.6380697050938338,
+      "regret_mean": 0.8132260947274352,
+      "per_fold_tau": [
+        0.6051879693725354,
+        0.6688405799187227,
+        0.6310361632824723,
+        0.5958562009534719,
+        0.5765071190272212
+      ],
+      "fold_tau_std": 0.03193509161703495
+    },
+    "sanity_leaf_terms_ridge": {
+      "learner": "ridge",
+      "n_cols": 4,
+      "demean": false,
+      "tau_mean": 0.6157272385572741,
+      "top1_rate": 0.6380697050938338,
+      "regret_mean": 0.8132260947274352,
+      "per_fold_tau": [
+        0.6051879693725354,
+        0.6688405799187227,
+        0.6310361632824723,
+        0.5958562009534719,
+        0.5765071190272212
+      ],
+      "fold_tau_std": 0.03193509161703495
+    },
+    "diag_raw_no_leaf_ridge": {
+      "learner": "ridge",
+      "n_cols": 77,
+      "demean": false,
+      "tau_mean": 0.34982771312414546,
+      "top1_rate": 0.45218945487042,
+      "regret_mean": 0.7953529937444147,
+      "per_fold_tau": [
+        0.3226218403354146,
+        0.3895259738389655,
+        0.3816578945868047,
+        0.33762671891020074,
+        0.3173042431871449
+      ],
+      "fold_tau_std": 0.0301193622860643
+    },
+    "diag_raw_no_leaf_gbdt": {
+      "learner": "gbdt",
+      "n_cols": 77,
+      "demean": false,
+      "tau_mean": 0.28253907656945776,
+      "top1_rate": 0.3681858802502234,
+      "regret_mean": 1.2609472743521002,
+      "per_fold_tau": [
+        0.24418317946197793,
+        0.30955694219117824,
+        0.304291311351625,
+        0.24971626417800055,
+        0.30585942531540555
+      ],
+      "fold_tau_std": 0.029309756221335838
+    },
+    "gate_full_ridge": {
+      "learner": "ridge",
+      "n_cols": 84,
+      "demean": false,
+      "tau_mean": 0.346569572414417,
+      "top1_rate": 0.46380697050938335,
+      "regret_mean": 0.7899910634495085,
+      "per_fold_tau": [
+        0.3133853857497831,
+        0.3890571878447128,
+        0.3773830117711382,
+        0.3404534403672468,
+        0.31220294187459596
+      ],
+      "fold_tau_std": 0.031856871612458905
+    },
+    "gate_full_gbdt": {
+      "learner": "gbdt",
+      "n_cols": 84,
+      "demean": false,
+      "tau_mean": 0.38561866355573987,
+      "top1_rate": 0.49776586237712245,
+      "regret_mean": 0.8632707774798928,
+      "per_fold_tau": [
+        0.34311033902392424,
+        0.40926169106023513,
+        0.4172439396400081,
+        0.3709398624321675,
+        0.3877247288229103
+      ],
+      "fold_tau_std": 0.026780605642212085
+    },
+    "diag_leaf_terms_ridge_demean": {
+      "learner": "ridge",
+      "n_cols": 4,
+      "demean": true,
+      "tau_mean": 0.4811250827184122,
+      "top1_rate": 0.5058087578194816,
+      "regret_mean": 1.2180518319928508,
+      "per_fold_tau": [
+        0.46256049230619767,
+        0.5312834246994463,
+        0.4688191415469985,
+        0.46254826052168085,
+        0.48055796929700323
+      ],
+      "fold_tau_std": 0.025912758541480084
+    },
+    "diag_full_ridge_demean": {
+      "learner": "ridge",
+      "n_cols": 84,
+      "demean": true,
+      "tau_mean": 0.28435483187181154,
+      "top1_rate": 0.3127792672028597,
+      "regret_mean": 1.2448614834673817,
+      "per_fold_tau": [
+        0.2597696761946513,
+        0.2793239277900376,
+        0.28424420658780436,
+        0.2915649167133733,
+        0.30750182740827775
+      ],
+      "fold_tau_std": 0.015604110738107963
+    },
+    "diag_full_gbdt_demean": {
+      "learner": "gbdt",
+      "n_cols": 84,
+      "demean": true,
+      "tau_mean": 0.12305390893308757,
+      "top1_rate": 0.28150134048257375,
+      "regret_mean": 1.6630920464700625,
+      "per_fold_tau": [
+        0.1310455970949218,
+        0.07690121279681594,
+        0.13559974298049243,
+        0.136012309498911,
+        0.13543244070340088
+      ],
+      "fold_tau_std": 0.02311912239945303
+    }
+  },
+  "gate": {
+    "statistic": "max held-out full-feature tau (ridge, gbdt)",
+    "gate_tau": 0.38561866355573987,
+    "best_learner": "gbdt",
+    "leaf_floor_tau": 0.6152820150615235,
+    "thresholds": {
+      "FIRE": ">=0.65",
+      "DEAD": "<0.62",
+      "AMBIGUOUS": "[0.62,0.65)"
+    },
+    "verdict": "DEAD"
+  }
+}

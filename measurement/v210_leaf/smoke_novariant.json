@@ -1,0 +1,186 @@
+{
+  "ranker_baseline": "v29_leaf",
+  "rankers": [
+    "v29_leaf"
+  ],
+  "checkpoints": [],
+  "arm_ckpts": [],
+  "leaf_variants": {},
+  "max_k": 2,
+  "budget": 5000000,
+  "qprobe": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/qprobe_A/probe.jsonl",
+  "pool": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/pool_A.jsonl",
+  "n_roots_total": 10067,
+  "n_candidates": 1119,
+  "n_scored": 6,
+  "n_skipped": 0,
+  "n_errors": 0,
+  "aggregate": {
+    "v29_leaf": {
+      "n": 6,
+      "solver_regret_mean": 1.1667,
+      "solver_regret_median": 0.0,
+      "solver_regret_max": 7.0,
+      "top1_rate": 0.8333,
+      "tau_mean": 0.698,
+      "solve_secs_mean": 7.82,
+      "solve_secs_total": 46.9
+    }
+  },
+  "by_k": {
+    "v29_leaf": {
+      "2": {
+        "n": 6,
+        "solver_regret_mean": 1.1667,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 7.0,
+        "top1_rate": 0.8333,
+        "tau_mean": 0.698,
+        "solve_secs_mean": 7.82,
+        "solve_secs_total": 46.9
+      }
+    }
+  },
+  "by_mode": {
+    "v29_leaf": {
+      "marginalized": {
+        "n": 6,
+        "solver_regret_mean": 1.1667,
+        "solver_regret_median": 0.0,
+        "solver_regret_max": 7.0,
+        "top1_rate": 0.8333,
+        "tau_mean": 0.698,
+        "solve_secs_mean": 7.82,
+        "solve_secs_total": 46.9
+      }
+    }
+  },
+  "per_root": [
+    {
+      "seed": 1940000000,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 21,
+      "to_move": 0,
+      "nodes": 403,
+      "solve_secs": 1.87,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.9241937481054058,
+          "pick": 763
+        }
+      },
+      "best_vs_second_gap": 5.0,
+      "value_spread": 9.0
+    },
+    {
+      "seed": 1940000001,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 42,
+      "to_move": 0,
+      "nodes": 7101,
+      "solve_secs": 26.92,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.09415809713370452,
+          "pick": 1749
+        }
+      },
+      "best_vs_second_gap": 12.0,
+      "value_spread": 17.0
+    },
+    {
+      "seed": 1940000002,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 48,
+      "to_move": 0,
+      "nodes": 1166,
+      "solve_secs": 4.87,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 7.0,
+          "top1": 0,
+          "tau": NaN,
+          "pick": 640
+        }
+      },
+      "best_vs_second_gap": 0.0,
+      "value_spread": 8.0
+    },
+    {
+      "seed": 1940000003,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 53,
+      "to_move": 0,
+      "nodes": 3013,
+      "solve_secs": 9.44,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 0.7734952686307449,
+          "pick": 964
+        }
+      },
+      "best_vs_second_gap": 2.0,
+      "value_spread": 4.0
+    },
+    {
+      "seed": 1940000004,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 50,
+      "to_move": 0,
+      "nodes": 618,
+      "solve_secs": 2.14,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": NaN,
+          "pick": 732
+        }
+      },
+      "best_vs_second_gap": 0.0,
+      "value_spread": 0.0
+    },
+    {
+      "seed": 1940000005,
+      "ply": 140,
+      "phase": "endgame",
+      "k": 2,
+      "mode": "marginalized",
+      "n_legal": 68,
+      "to_move": 0,
+      "nodes": 782,
+      "solve_secs": 1.67,
+      "rankers": {
+        "v29_leaf": {
+          "solver_regret": 0.0,
+          "top1": 1,
+          "tau": 1.0,
+          "pick": 552
+        }
+      },
+      "best_vs_second_gap": 0.0,
+      "value_spread": 1.0
+    }
+  ]
+}

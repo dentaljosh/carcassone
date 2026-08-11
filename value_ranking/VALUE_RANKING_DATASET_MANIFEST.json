@@ -1,0 +1,79 @@
+{
+  "merged_from": [
+    "/mnt/c/carc-shared/value_ranking/dataset",
+    "/mnt/c/carc-shared/value_ranking/dataset_laptop"
+  ],
+  "n_rows": 20670,
+  "n_groups": 1494,
+  "n_games": 47,
+  "obs_shape": [
+    78,
+    25,
+    25
+  ],
+  "n_scalar": 12,
+  "checkpoint_sha256": "0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c",
+  "shard_metas": [
+    {
+      "checkpoint": "/mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+      "checkpoint_sha256": "0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c",
+      "n_rows": 13848,
+      "n_groups": 995,
+      "n_games": 31,
+      "obs_shape": [
+        78,
+        25,
+        25
+      ],
+      "n_scalar": 12,
+      "phase_counts": {
+        "open": 152,
+        "mid": 182,
+        "end": 661
+      },
+      "config": {
+        "n_positions": 1000,
+        "oracle_sims": 400,
+        "play_sims": 60,
+        "max_children": 16,
+        "c_puct": 1.5,
+        "stride": 4,
+        "seed": 2024,
+        "v25_cap": "12",
+        "v25_drop_three_open": "1"
+      },
+      "leakage_policy": "split by game_seed; all children of a group stay together"
+    },
+    {
+      "checkpoint": "/mnt/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+      "checkpoint_sha256": "0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c",
+      "n_rows": 6822,
+      "n_groups": 499,
+      "n_games": 16,
+      "obs_shape": [
+        78,
+        25,
+        25
+      ],
+      "n_scalar": 12,
+      "phase_counts": {
+        "open": 79,
+        "mid": 88,
+        "end": 332
+      },
+      "config": {
+        "n_positions": 500,
+        "oracle_sims": 400,
+        "play_sims": 60,
+        "max_children": 16,
+        "c_puct": 1.5,
+        "stride": 4,
+        "seed": 5000,
+        "v25_cap": "12",
+        "v25_drop_three_open": "1"
+      },
+      "leakage_policy": "split by game_seed; all children of a group stay together"
+    }
+  ],
+  "leakage_policy": "split by game_seed; shards from distinct seed bands; group_id offset per shard"
+}

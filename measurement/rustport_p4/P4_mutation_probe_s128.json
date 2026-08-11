@@ -1,0 +1,307 @@
+{
+  "probe": "P4/fair-quirk-mutation",
+  "args": {
+    "sims": 128,
+    "k_dets": 4,
+    "max_moves": 90,
+    "n_games": 1,
+    "tag": "s128",
+    "games": [
+      [
+        7,
+        101
+      ]
+    ]
+  },
+  "n_mutations": 8,
+  "n_discriminated": 5,
+  "rows": [
+    {
+      "mutation": "CONTROL(none)",
+      "decisions": 90,
+      "mismatches": 0,
+      "discriminated": false,
+      "secs": 84.0,
+      "first": null
+    },
+    {
+      "mutation": "merge_reversed",
+      "decisions": 90,
+      "mismatches": 88,
+      "discriminated": true,
+      "secs": 88.3,
+      "first": {
+        "tag": "merge_reversed/7@ply1",
+        "field": "pooled",
+        "n_actions": [
+          5,
+          5
+        ],
+        "order_py": [
+          2510,
+          2507,
+          2506,
+          2503,
+          2501
+        ],
+        "order_rs": [
+          2501,
+          2503,
+          2506,
+          2507,
+          2510
+        ],
+        "diffs": [],
+        "n_diffs": 0
+      }
+    },
+    {
+      "mutation": "no_deck_sort",
+      "decisions": 9,
+      "mismatches": 9,
+      "discriminated": true,
+      "secs": 4.0,
+      "first": {
+        "tag": "no_deck_sort/7@ply1",
+        "field": "pooled",
+        "n_actions": [
+          5,
+          5
+        ],
+        "order_py": [
+          2501,
+          2503,
+          2506,
+          2507,
+          2510
+        ],
+        "order_rs": [
+          2501,
+          2503,
+          2506,
+          2507,
+          2510
+        ],
+        "diffs": [
+          [
+            2501,
+            [
+              4638637247447433216,
+              13818038767102814016
+            ],
+            [
+              4639235381772943360,
+              4614231531588760140
+            ]
+          ],
+          [
+            2503,
+            [
+              4638426141214900224,
+              13824328407395937992
+            ],
+            [
+              4638918722424143872,
+              4611702737724840118
+            ]
+          ],
+          [
+            2506,
+            [
+              4634274385308418048,
+              13839807237878496184
+            ],
+            [
+              4633500329122463744,
+              13840206930506894814
+            ]
+          ],
+          [
+            2507,
+            [
+              4634063279075885056,
+              13840012949123216426
+            ],
+            [
+              4633500329122463744,
+              13840206930506894814
+            ]
+          ],
+          [
+            2510,
+            [
+              4638883538052055040,
+              13826967796557470115
+            ],
+            [
+              4637933560005656576,
+              13831161139489984930
+            ]
+          ]
+        ],
+        "n_diffs": 5
+      }
+    },
+    {
+      "mutation": "tiebreak_plus_a",
+      "decisions": 3,
+      "mismatches": 1,
+      "discriminated": true,
+      "secs": 1.0,
+      "first": {
+        "tag": "tiebreak_plus_a/7@ply2",
+        "field": "action",
+        "py": 1351,
+        "rs": 1148
+      }
+    },
+    {
+      "mutation": "no_min_visits",
+      "decisions": 90,
+      "mismatches": 0,
+      "discriminated": false,
+      "secs": 88.8,
+      "first": null
+    },
+    {
+      "mutation": "no_pov_sign",
+      "decisions": 2,
+      "mismatches": 2,
+      "discriminated": true,
+      "secs": 0.6,
+      "first": {
+        "tag": "no_pov_sign/7@ply1",
+        "field": "action",
+        "py": 2506,
+        "rs": 2501
+      }
+    },
+    {
+      "mutation": "no_dedup",
+      "decisions": 90,
+      "mismatches": 10,
+      "discriminated": true,
+      "secs": 89.4,
+      "first": {
+        "tag": "no_dedup/7@ply14",
+        "field": "pooled",
+        "n_actions": [
+          18,
+          9
+        ],
+        "order_py": [
+          1048,
+          1050,
+          1144,
+          1146,
+          1153,
+          1155,
+          1156,
+          1158,
+          1261,
+          1263,
+          1340,
+          1342,
+          1445,
+          1447,
+          1453,
+          1455
+        ],
+        "order_rs": [
+          1048,
+          1144,
+          1153,
+          1156,
+          1261,
+          1340,
+          1445,
+          1453,
+          1548
+        ],
+        "diffs": [
+          [
+            1050,
+            [
+              4631952216750555136,
+              13848606541375127490
+            ],
+            null
+          ],
+          [
+            1146,
+            [
+              4632374429215621120,
+              13848309291449115948
+            ],
+            null
+          ],
+          [
+            1155,
+            [
+              4643527875167780864,
+              13854605241990688928
+            ],
+            null
+          ],
+          [
+            1158,
+            [
+              4629418941960159232,
+              13846047393851027297
+            ],
+            null
+          ],
+          [
+            1263,
+            [
+              4629418941960159232,
+              13846047393851027297
+            ],
+            null
+          ],
+          [
+            1342,
+            [
+              4625759767262920704,
+              13844087373230109996
+            ],
+            null
+          ],
+          [
+            1447,
+            [
+              4623507967449235456,
+              13841835994005632886
+            ],
+            null
+          ],
+          [
+            1455,
+            [
+              4627167142146473984,
+              13844709352181315122
+            ],
+            null
+          ]
+        ],
+        "n_diffs": 9
+      }
+    },
+    {
+      "mutation": "latch_any_phase",
+      "decisions": 90,
+      "mismatches": 0,
+      "discriminated": false,
+      "secs": 67.4,
+      "first": null
+    },
+    {
+      "mutation": "solver_max_only",
+      "decisions": 90,
+      "mismatches": 0,
+      "discriminated": false,
+      "secs": 88.5,
+      "first": null
+    }
+  ]
+}

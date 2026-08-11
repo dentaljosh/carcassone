@@ -1,0 +1,23 @@
+{
+  "kind": "eval_net_vs_heuristic",
+  "game": "base",
+  "code_rev": "b3588395",
+  "host": "pop-os",
+  "utc": "2026-06-06T05:08:43+00:00",
+  "leaf_env": {
+    "CARCASSONNE_V25_CAP": "12",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+    "CARCASSONNE_V25_VALUE_BLEND": "0"
+  },
+  "config": {
+    "checkpoint": "/mnt/carc-shared/lever_seq/ckpt/centered.pt",
+    "n": 200,
+    "sims": 200,
+    "heur_sims": 200,
+    "c_puct": 3.0,
+    "paired": true,
+    "seed_start": 700000,
+    "opponent": "HeuristicMCTS",
+    "new_var": "v2_7"
+  }
+}

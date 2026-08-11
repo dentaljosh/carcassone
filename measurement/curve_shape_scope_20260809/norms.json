@@ -1,0 +1,30 @@
+{
+  "K0": 35.0,
+  "games": 6,
+  "k_dets": 2,
+  "k_max": 71,
+  "k_min": 1,
+  "mean_k": 35.96239717978848,
+  "norms": {
+    "-0.3": 0.9917508813160987,
+    "-0.6": 0.9835017626321975,
+    "0.0": 1.0,
+    "0.3": 1.0082491186839013,
+    "0.6": 1.0164982373678026
+  },
+  "plies_per_game": [
+    142,
+    142,
+    142,
+    141,
+    142,
+    142
+  ],
+  "plies_total": 851,
+  "r9_env_ok": true,
+  "rules_profile": "fixed_v1",
+  "secs": 39.5,
+  "seed": 20260809,
+  "sims": 48,
+  "source": "ply k-histogram over fixed_v1 games (APPROXIMATION \u2014 see module docstring; the exact object is the MCTS leaf-k histogram)"
+}

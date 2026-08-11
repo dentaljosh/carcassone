@@ -1,0 +1,52 @@
+== eff_linus WSL-vs-native A/B ==
+   stamp   : 20260729_223554
+   out     : /home/doctor/eff_linus_out/run_20260729_223554
+   cells   : champ_k1x32,champ_k4x172,net_cuda_b1,net_cpu_1t   reps=3   smoke=0
+   loadavg : 0.27 0.42 0.22 1/500 75196
+-- pre-flight census
+    PID     ELAPSED %CPU COMMAND
+NVIDIA GeForce RTX 4070 Laptop GPU, 6.72 W, 0 %, 365 MiB
+-- staging source to /mnt/c/carc-bench-eff_linus/stage
+   git_rev : 17ba2ced7
+-- warm-up (Defender first-touch of the venv; discarded)
+wsl warm 2.11.0+cu128
+'\\wsl.localhost\Ubuntu\home\doctor'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+win warm 2.11.0+cu128
+   champ_k1x32__wsl__rep1       rc=0  1.7s
+   champ_k1x32__win__rep1       rc=0  1.7s
+   champ_k1x32__win__rep2       rc=0  1.6s
+   champ_k1x32__wsl__rep2       rc=0  1.7s
+   champ_k1x32__wsl__rep3       rc=0  1.7s
+   champ_k1x32__win__rep3       rc=0  1.7s
+   champ_k4x172__wsl__rep1      rc=0  35.3s
+   champ_k4x172__win__rep1      rc=0  72.6s
+   champ_k4x172__win__rep2      rc=0  71.2s
+   champ_k4x172__wsl__rep2      rc=0  35.4s
+   champ_k4x172__wsl__rep3      rc=0  35.1s
+   champ_k4x172__win__rep3      rc=0  71.4s
+   net_cuda_b1__wsl__rep1       rc=0  11.2s
+   net_cuda_b1__win__rep1       rc=0  18.6s
+   net_cuda_b1__win__rep2       rc=0  18.4s
+   net_cuda_b1__wsl__rep2       rc=0  11.1s
+   net_cuda_b1__wsl__rep3       rc=0  11.5s
+   net_cuda_b1__win__rep3       rc=0  18.8s
+   net_cpu_1t__wsl__rep1        rc=0  52.7s
+   net_cpu_1t__win__rep1        rc=0  141.3s
+   net_cpu_1t__win__rep2        rc=0  142.1s
+   net_cpu_1t__wsl__rep2        rc=0  52.2s
+   net_cpu_1t__wsl__rep3        rc=0  52.1s
+   net_cpu_1t__win__rep3        rc=0  142.3s
+
+== eff_linus A/B summary ==
+   champ_k1x32    p50_s_per_move     wsl=0.0950  win=0.1123  ratio(win/wsl)=1.182  [spread wsl 1.0% / win 1.0%]
+   champ_k4x172   p50_s_per_move     wsl=2.2502  win=4.8568  ratio(win/wsl)=2.158  [spread wsl 0.3% / win 3.9%]
+   net_cuda_b1    forward_p50_ms     wsl=1.0276  win=2.7855  ratio(win/wsl)=2.711  [spread wsl 2.7% / win 1.7%]
+   net_cpu_1t     forward_p50_ms     wsl=10.7114  win=31.3486  ratio(win/wsl)=2.927  [spread wsl 1.0% / win 0.4%]
+   audit: OK — arms differ only by virtualisation.
+
+   merged -> /home/doctor/eff_linus_out/run_20260729_223554/wsl_vs_native_ab_20260729_223554.json
+
+== done ==
+   merged JSON : /home/doctor/eff_linus_out/run_20260729_223554/wsl_vs_native_ab_20260729_223554.json

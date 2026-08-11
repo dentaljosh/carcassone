@@ -1,0 +1,3594 @@
+{
+  "summary": {
+    "leaf_config_hash": "7fc930b82801cb43",
+    "n_sampled": 50,
+    "n_ok": 50,
+    "n_errors": 0,
+    "n_tail_sampled": 20,
+    "n_tail_evaluated": 20,
+    "node_count": {
+      "mean": 97.5,
+      "p50": 101.5,
+      "p90": 160.1,
+      "min": 14,
+      "max": 176
+    },
+    "edge_count": {
+      "mean": 142.2,
+      "p50": 148.5,
+      "p90": 231.3,
+      "min": 14,
+      "max": 256
+    },
+    "node_count_by_type": {
+      "tile": {
+        "mean": 37.6,
+        "min": 3,
+        "max": 69
+      },
+      "city_feature": {
+        "mean": 9.8,
+        "min": 1,
+        "max": 20
+      },
+      "road_feature": {
+        "mean": 14.2,
+        "min": 0,
+        "max": 29
+      },
+      "farm_feature": {
+        "mean": 15.9,
+        "min": 2,
+        "max": 34
+      },
+      "monastery_feature": {
+        "mean": 7.2,
+        "min": 0,
+        "max": 14
+      },
+      "player": {
+        "mean": 2,
+        "min": 2,
+        "max": 2
+      },
+      "meeple": {
+        "mean": 9.8,
+        "min": 2,
+        "max": 14
+      },
+      "deck_bucket": {
+        "mean": 1,
+        "min": 1,
+        "max": 1
+      }
+    },
+    "edge_count_by_type": {
+      "tile_belongs_to_feature": {
+        "mean": 65.2,
+        "min": 3,
+        "max": 120
+      },
+      "city_touches_farm": {
+        "mean": 18.5,
+        "min": 1,
+        "max": 40
+      },
+      "feature_touches_feature": {
+        "mean": 18.5,
+        "min": 1,
+        "max": 40
+      },
+      "meeple_on_feature": {
+        "mean": 8.1,
+        "min": 2,
+        "max": 12
+      },
+      "meeple_belongs_to_player": {
+        "mean": 9.8,
+        "min": 2,
+        "max": 14
+      },
+      "player_owns_feature": {
+        "mean": 6.1,
+        "min": 2,
+        "max": 10
+      },
+      "feature_has_open_boundary": {
+        "mean": 15.1,
+        "min": 3,
+        "max": 31
+      },
+      "player_contests_feature": {
+        "mean": 2.4,
+        "min": 2,
+        "max": 6
+      }
+    },
+    "extract_ms": {
+      "mean": 66.69,
+      "p50": 48.355000000000004,
+      "p90": 157.724
+    },
+    "total_ms_per_root": {
+      "mean": 69.82,
+      "p50": 51.935,
+      "p90": 162.94400000000002
+    },
+    "est_bytes_per_root": {
+      "mean": 9707,
+      "p50": 9214.0,
+      "p90": 17443.2
+    },
+    "tail_signal": {
+      "n_tail_evaluated": 20,
+      "n_tail_with_signal": 16,
+      "tail_signal_rate": 0.8,
+      "mean_struct_attrs_differ": 2.8,
+      "n_struct_attrs_checked": 15,
+      "verdict": "PASS"
+    },
+    "errors": []
+  },
+  "per_root": [
+    {
+      "game_id": 2900000351,
+      "ply": 6,
+      "phase": "opening",
+      "legal_n": 10,
+      "is_tail": false,
+      "n_nodes": 19,
+      "n_edges": 22,
+      "node_counts": {
+        "tile": 3,
+        "city_feature": 1,
+        "road_feature": 4,
+        "farm_feature": 5,
+        "monastery_feature": 1,
+        "player": 2,
+        "meeple": 2,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 7,
+        "city_touches_farm": 2,
+        "feature_touches_feature": 2,
+        "meeple_on_feature": 2,
+        "meeple_belongs_to_player": 2,
+        "player_owns_feature": 2,
+        "feature_has_open_boundary": 5
+      },
+      "n_action_nodes": 5,
+      "ms_replay": 0.5,
+      "ms_extract": 2.81,
+      "est_bytes": 2060
+    },
+    {
+      "game_id": 2900000156,
+      "ply": 8,
+      "phase": "opening",
+      "legal_n": 3,
+      "is_tail": false,
+      "n_nodes": 16,
+      "n_edges": 27,
+      "node_counts": {
+        "tile": 4,
+        "city_feature": 3,
+        "road_feature": 0,
+        "farm_feature": 2,
+        "monastery_feature": 0,
+        "player": 2,
+        "meeple": 4,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 4,
+        "city_touches_farm": 4,
+        "feature_touches_feature": 4,
+        "meeple_on_feature": 4,
+        "meeple_belongs_to_player": 4,
+        "player_owns_feature": 4,
+        "feature_has_open_boundary": 3
+      },
+      "n_action_nodes": 3,
+      "ms_replay": 0.37,
+      "ms_extract": 2.07,
+      "est_bytes": 1572
+    },
+    {
+      "game_id": 2900000221,
+      "ply": 7,
+      "phase": "opening",
+      "legal_n": 2,
+      "is_tail": false,
+      "n_nodes": 20,
+      "n_edges": 27,
+      "node_counts": {
+        "tile": 4,
+        "city_feature": 2,
+        "road_feature": 3,
+        "farm_feature": 4,
+        "monastery_feature": 1,
+        "player": 2,
+        "meeple": 3,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 7,
+        "city_touches_farm": 3,
+        "feature_touches_feature": 3,
+        "meeple_on_feature": 3,
+        "meeple_belongs_to_player": 3,
+        "player_owns_feature": 3,
+        "feature_has_open_boundary": 5
+      },
+      "n_action_nodes": 2,
+      "ms_replay": 0.28,
+      "ms_extract": 1.16,
+      "est_bytes": 1484
+    },
+    {
+      "game_id": 2900000176,
+      "ply": 25,
+      "phase": "opening",
+      "legal_n": 5,
+      "is_tail": false,
+      "n_nodes": 47,
+      "n_edges": 69,
+      "node_counts": {
+        "tile": 13,
+        "city_feature": 3,
+        "road_feature": 10,
+        "farm_feature": 9,
+        "monastery_feature": 1,
+        "player": 2,
+        "meeple": 8,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 24,
+        "city_touches_farm": 6,
+        "feature_touches_feature": 6,
+        "meeple_on_feature": 7,
+        "meeple_belongs_to_player": 8,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 11
+      },
+      "n_action_nodes": 5,
+      "ms_replay": 1.12,
+      "ms_extract": 6.15,
+      "est_bytes": 3644
+    },
+    {
+      "game_id": 2900000047,
+      "ply": 11,
+      "phase": "opening",
+      "legal_n": 7,
+      "is_tail": false,
+      "n_nodes": 26,
+      "n_edges": 36,
+      "node_counts": {
+        "tile": 6,
+        "city_feature": 2,
+        "road_feature": 5,
+        "farm_feature": 5,
+        "monastery_feature": 1,
+        "player": 2,
+        "meeple": 4,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 13,
+        "city_touches_farm": 4,
+        "feature_touches_feature": 4,
+        "meeple_on_feature": 3,
+        "meeple_belongs_to_player": 4,
+        "feature_has_open_boundary": 5,
+        "player_owns_feature": 3
+      },
+      "n_action_nodes": 7,
+      "ms_replay": 0.51,
+      "ms_extract": 3.39,
+      "est_bytes": 2928
+    },
+    {
+      "game_id": 2900000225,
+      "ply": 5,
+      "phase": "opening",
+      "legal_n": 5,
+      "is_tail": false,
+      "n_nodes": 14,
+      "n_edges": 14,
+      "node_counts": {
+        "tile": 3,
+        "city_feature": 1,
+        "road_feature": 2,
+        "farm_feature": 3,
+        "monastery_feature": 0,
+        "player": 2,
+        "meeple": 2,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 3,
+        "city_touches_farm": 1,
+        "feature_touches_feature": 1,
+        "meeple_on_feature": 2,
+        "meeple_belongs_to_player": 2,
+        "feature_has_open_boundary": 3,
+        "player_owns_feature": 2
+      },
+      "n_action_nodes": 5,
+      "ms_replay": 0.16,
+      "ms_extract": 1.96,
+      "est_bytes": 1772
+    },
+    {
+      "game_id": 2900000214,
+      "ply": 40,
+      "phase": "midgame",
+      "legal_n": 21,
+      "is_tail": false,
+      "n_nodes": 63,
+      "n_edges": 99,
+      "node_counts": {
+        "tile": 20,
+        "city_feature": 4,
+        "road_feature": 10,
+        "farm_feature": 12,
+        "monastery_feature": 4,
+        "player": 2,
+        "meeple": 10,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 37,
+        "city_touches_farm": 10,
+        "feature_touches_feature": 10,
+        "meeple_on_feature": 10,
+        "meeple_belongs_to_player": 10,
+        "player_owns_feature": 10,
+        "feature_has_open_boundary": 12
+      },
+      "n_action_nodes": 21,
+      "ms_replay": 1.81,
+      "ms_extract": 33.75,
+      "est_bytes": 8168
+    },
+    {
+      "game_id": 2900000371,
+      "ply": 68,
+      "phase": "midgame",
+      "legal_n": 38,
+      "is_tail": false,
+      "n_nodes": 92,
+      "n_edges": 134,
+      "node_counts": {
+        "tile": 34,
+        "city_feature": 9,
+        "road_feature": 14,
+        "farm_feature": 17,
+        "monastery_feature": 5,
+        "player": 2,
+        "meeple": 10,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 59,
+        "city_touches_farm": 17,
+        "feature_touches_feature": 17,
+        "meeple_on_feature": 7,
+        "meeple_belongs_to_player": 10,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 17
+      },
+      "n_action_nodes": 38,
+      "ms_replay": 3.28,
+      "ms_extract": 83.34,
+      "est_bytes": 13548
+    },
+    {
+      "game_id": 2900000251,
+      "ply": 38,
+      "phase": "midgame",
+      "legal_n": 16,
+      "is_tail": false,
+      "n_nodes": 58,
+      "n_edges": 83,
+      "node_counts": {
+        "tile": 19,
+        "city_feature": 6,
+        "road_feature": 8,
+        "farm_feature": 8,
+        "monastery_feature": 4,
+        "player": 2,
+        "meeple": 10,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 32,
+        "city_touches_farm": 7,
+        "feature_touches_feature": 7,
+        "meeple_on_feature": 9,
+        "meeple_belongs_to_player": 10,
+        "feature_has_open_boundary": 11,
+        "player_owns_feature": 7
+      },
+      "n_action_nodes": 8,
+      "ms_replay": 1.57,
+      "ms_extract": 14.73,
+      "est_bytes": 4832
+    },
+    {
+      "game_id": 2900000396,
+      "ply": 37,
+      "phase": "midgame",
+      "legal_n": 4,
+      "is_tail": false,
+      "n_nodes": 67,
+      "n_edges": 100,
+      "node_counts": {
+        "tile": 19,
+        "city_feature": 7,
+        "road_feature": 11,
+        "farm_feature": 14,
+        "monastery_feature": 3,
+        "player": 2,
+        "meeple": 10,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 34,
+        "city_touches_farm": 12,
+        "feature_touches_feature": 12,
+        "meeple_belongs_to_player": 10,
+        "meeple_on_feature": 9,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 14,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 4,
+      "ms_replay": 1.3,
+      "ms_extract": 6.4,
+      "est_bytes": 4572
+    },
+    {
+      "game_id": 2900000030,
+      "ply": 70,
+      "phase": "midgame",
+      "legal_n": 35,
+      "is_tail": false,
+      "n_nodes": 95,
+      "n_edges": 142,
+      "node_counts": {
+        "tile": 35,
+        "city_feature": 8,
+        "road_feature": 17,
+        "farm_feature": 17,
+        "monastery_feature": 6,
+        "player": 2,
+        "meeple": 9,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 67,
+        "city_touches_farm": 19,
+        "feature_touches_feature": 19,
+        "meeple_on_feature": 8,
+        "meeple_belongs_to_player": 9,
+        "player_contests_feature": 2,
+        "feature_has_open_boundary": 12,
+        "player_owns_feature": 6
+      },
+      "n_action_nodes": 35,
+      "ms_replay": 3.11,
+      "ms_extract": 85.96,
+      "est_bytes": 13092
+    },
+    {
+      "game_id": 2900000036,
+      "ply": 42,
+      "phase": "midgame",
+      "legal_n": 26,
+      "is_tail": false,
+      "n_nodes": 61,
+      "n_edges": 85,
+      "node_counts": {
+        "tile": 21,
+        "city_feature": 4,
+        "road_feature": 8,
+        "farm_feature": 13,
+        "monastery_feature": 4,
+        "player": 2,
+        "meeple": 8,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 34,
+        "city_touches_farm": 10,
+        "feature_touches_feature": 10,
+        "meeple_on_feature": 7,
+        "meeple_belongs_to_player": 8,
+        "player_owns_feature": 6,
+        "feature_has_open_boundary": 10
+      },
+      "n_action_nodes": 13,
+      "ms_replay": 1.97,
+      "ms_extract": 23.26,
+      "est_bytes": 6136
+    },
+    {
+      "game_id": 2900000062,
+      "ply": 89,
+      "phase": "late_mid",
+      "legal_n": 4,
+      "is_tail": false,
+      "n_nodes": 120,
+      "n_edges": 174,
+      "node_counts": {
+        "tile": 44,
+        "city_feature": 15,
+        "road_feature": 16,
+        "farm_feature": 18,
+        "monastery_feature": 11,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 77,
+        "city_touches_farm": 24,
+        "feature_touches_feature": 24,
+        "meeple_belongs_to_player": 13,
+        "meeple_on_feature": 8,
+        "feature_has_open_boundary": 21,
+        "player_owns_feature": 7
+      },
+      "n_action_nodes": 4,
+      "ms_replay": 3.31,
+      "ms_extract": 13.44,
+      "est_bytes": 7392
+    },
+    {
+      "game_id": 2900000296,
+      "ply": 85,
+      "phase": "late_mid",
+      "legal_n": 4,
+      "is_tail": false,
+      "n_nodes": 95,
+      "n_edges": 134,
+      "node_counts": {
+        "tile": 43,
+        "city_feature": 7,
+        "road_feature": 11,
+        "farm_feature": 11,
+        "monastery_feature": 7,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 66,
+        "city_touches_farm": 13,
+        "feature_touches_feature": 13,
+        "meeple_on_feature": 10,
+        "meeple_belongs_to_player": 13,
+        "feature_has_open_boundary": 11,
+        "player_owns_feature": 6,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 4,
+      "ms_replay": 3.58,
+      "ms_extract": 23.81,
+      "est_bytes": 5864
+    },
+    {
+      "game_id": 2900000376,
+      "ply": 86,
+      "phase": "late_mid",
+      "legal_n": 28,
+      "is_tail": false,
+      "n_nodes": 121,
+      "n_edges": 186,
+      "node_counts": {
+        "tile": 43,
+        "city_feature": 12,
+        "road_feature": 18,
+        "farm_feature": 23,
+        "monastery_feature": 9,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 78,
+        "city_touches_farm": 29,
+        "feature_touches_feature": 29,
+        "meeple_on_feature": 10,
+        "meeple_belongs_to_player": 13,
+        "player_owns_feature": 8,
+        "feature_has_open_boundary": 19
+      },
+      "n_action_nodes": 28,
+      "ms_replay": 3.67,
+      "ms_extract": 64.32,
+      "est_bytes": 13028
+    },
+    {
+      "game_id": 2900000229,
+      "ply": 97,
+      "phase": "late_mid",
+      "legal_n": 4,
+      "is_tail": false,
+      "n_nodes": 118,
+      "n_edges": 168,
+      "node_counts": {
+        "tile": 49,
+        "city_feature": 16,
+        "road_feature": 15,
+        "farm_feature": 14,
+        "monastery_feature": 10,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 82,
+        "city_touches_farm": 21,
+        "feature_touches_feature": 21,
+        "meeple_on_feature": 8,
+        "meeple_belongs_to_player": 11,
+        "feature_has_open_boundary": 20,
+        "player_owns_feature": 5
+      },
+      "n_action_nodes": 4,
+      "ms_replay": 4.3,
+      "ms_extract": 22.83,
+      "est_bytes": 7268
+    },
+    {
+      "game_id": 2900000001,
+      "ply": 100,
+      "phase": "late_mid",
+      "legal_n": 48,
+      "is_tail": false,
+      "n_nodes": 128,
+      "n_edges": 192,
+      "node_counts": {
+        "tile": 50,
+        "city_feature": 9,
+        "road_feature": 20,
+        "farm_feature": 24,
+        "monastery_feature": 8,
+        "player": 2,
+        "meeple": 14,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 87,
+        "city_touches_farm": 24,
+        "feature_touches_feature": 24,
+        "meeple_belongs_to_player": 14,
+        "meeple_on_feature": 12,
+        "player_owns_feature": 8,
+        "feature_has_open_boundary": 21,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 48,
+      "ms_replay": 4.26,
+      "ms_extract": 177.09,
+      "est_bytes": 17796
+    },
+    {
+      "game_id": 2900000094,
+      "ply": 72,
+      "phase": "late_mid",
+      "legal_n": 38,
+      "is_tail": false,
+      "n_nodes": 96,
+      "n_edges": 141,
+      "node_counts": {
+        "tile": 36,
+        "city_feature": 9,
+        "road_feature": 14,
+        "farm_feature": 16,
+        "monastery_feature": 6,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 65,
+        "city_touches_farm": 18,
+        "feature_touches_feature": 18,
+        "meeple_on_feature": 9,
+        "meeple_belongs_to_player": 12,
+        "feature_has_open_boundary": 12,
+        "player_owns_feature": 5,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 19,
+      "ms_replay": 2.97,
+      "ms_extract": 54.09,
+      "est_bytes": 9468
+    },
+    {
+      "game_id": 2900000351,
+      "ply": 122,
+      "phase": "pre_endgame",
+      "legal_n": 43,
+      "is_tail": false,
+      "n_nodes": 163,
+      "n_edges": 231,
+      "node_counts": {
+        "tile": 61,
+        "city_feature": 14,
+        "road_feature": 26,
+        "farm_feature": 34,
+        "monastery_feature": 14,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 108,
+        "city_touches_farm": 35,
+        "feature_touches_feature": 35,
+        "meeple_on_feature": 9,
+        "meeple_belongs_to_player": 11,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 24,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 43,
+      "ms_replay": 4.9,
+      "ms_extract": 130.25,
+      "est_bytes": 18524
+    },
+    {
+      "game_id": 2900000385,
+      "ply": 118,
+      "phase": "pre_endgame",
+      "legal_n": 55,
+      "is_tail": false,
+      "n_nodes": 143,
+      "n_edges": 212,
+      "node_counts": {
+        "tile": 59,
+        "city_feature": 16,
+        "road_feature": 20,
+        "farm_feature": 21,
+        "monastery_feature": 12,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 104,
+        "city_touches_farm": 29,
+        "feature_touches_feature": 29,
+        "meeple_on_feature": 10,
+        "meeple_belongs_to_player": 12,
+        "feature_has_open_boundary": 21,
+        "player_owns_feature": 7
+      },
+      "n_action_nodes": 55,
+      "ms_replay": 4.91,
+      "ms_extract": 211.6,
+      "est_bytes": 20200
+    },
+    {
+      "game_id": 2900000067,
+      "ply": 101,
+      "phase": "pre_endgame",
+      "legal_n": 6,
+      "is_tail": false,
+      "n_nodes": 127,
+      "n_edges": 174,
+      "node_counts": {
+        "tile": 51,
+        "city_feature": 10,
+        "road_feature": 23,
+        "farm_feature": 21,
+        "monastery_feature": 10,
+        "player": 2,
+        "meeple": 9,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 92,
+        "city_touches_farm": 18,
+        "feature_touches_feature": 18,
+        "meeple_on_feature": 9,
+        "meeple_belongs_to_player": 9,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 21
+      },
+      "n_action_nodes": 6,
+      "ms_replay": 4.35,
+      "ms_extract": 47.63,
+      "est_bytes": 8124
+    },
+    {
+      "game_id": 2900000326,
+      "ply": 114,
+      "phase": "pre_endgame",
+      "legal_n": 26,
+      "is_tail": false,
+      "n_nodes": 143,
+      "n_edges": 221,
+      "node_counts": {
+        "tile": 57,
+        "city_feature": 19,
+        "road_feature": 21,
+        "farm_feature": 19,
+        "monastery_feature": 11,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 105,
+        "city_touches_farm": 30,
+        "feature_touches_feature": 30,
+        "meeple_on_feature": 12,
+        "meeple_belongs_to_player": 13,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 22,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 26,
+      "ms_replay": 5.12,
+      "ms_extract": 133.39,
+      "est_bytes": 13864
+    },
+    {
+      "game_id": 2900000280,
+      "ply": 103,
+      "phase": "pre_endgame",
+      "legal_n": 5,
+      "is_tail": false,
+      "n_nodes": 133,
+      "n_edges": 191,
+      "node_counts": {
+        "tile": 52,
+        "city_feature": 15,
+        "road_feature": 21,
+        "farm_feature": 21,
+        "monastery_feature": 10,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 95,
+        "city_touches_farm": 27,
+        "feature_touches_feature": 27,
+        "meeple_on_feature": 7,
+        "meeple_belongs_to_player": 11,
+        "player_owns_feature": 3,
+        "feature_has_open_boundary": 19,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 5,
+      "ms_replay": 4.2,
+      "ms_extract": 22.29,
+      "est_bytes": 8384
+    },
+    {
+      "game_id": 2900000066,
+      "ply": 104,
+      "phase": "pre_endgame",
+      "legal_n": 46,
+      "is_tail": false,
+      "n_nodes": 123,
+      "n_edges": 179,
+      "node_counts": {
+        "tile": 52,
+        "city_feature": 11,
+        "road_feature": 19,
+        "farm_feature": 19,
+        "monastery_feature": 7,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 91,
+        "city_touches_farm": 20,
+        "feature_touches_feature": 20,
+        "meeple_on_feature": 12,
+        "meeple_belongs_to_player": 12,
+        "feature_has_open_boundary": 14,
+        "player_owns_feature": 4,
+        "player_contests_feature": 6
+      },
+      "n_action_nodes": 23,
+      "ms_replay": 4.59,
+      "ms_extract": 114.2,
+      "est_bytes": 11868
+    },
+    {
+      "game_id": 2900000362,
+      "ply": 136,
+      "phase": "endgame",
+      "legal_n": 43,
+      "is_tail": false,
+      "n_nodes": 165,
+      "n_edges": 234,
+      "node_counts": {
+        "tile": 68,
+        "city_feature": 19,
+        "road_feature": 26,
+        "farm_feature": 26,
+        "monastery_feature": 12,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 120,
+        "city_touches_farm": 30,
+        "feature_touches_feature": 30,
+        "meeple_on_feature": 10,
+        "meeple_belongs_to_player": 11,
+        "feature_has_open_boundary": 27,
+        "player_owns_feature": 4,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 43,
+      "ms_replay": 5.85,
+      "ms_extract": 278.93,
+      "est_bytes": 18664
+    },
+    {
+      "game_id": 2900000016,
+      "ply": 130,
+      "phase": "endgame",
+      "legal_n": 32,
+      "is_tail": false,
+      "n_nodes": 166,
+      "n_edges": 239,
+      "node_counts": {
+        "tile": 65,
+        "city_feature": 18,
+        "road_feature": 29,
+        "farm_feature": 26,
+        "monastery_feature": 12,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 114,
+        "city_touches_farm": 31,
+        "feature_touches_feature": 31,
+        "meeple_on_feature": 10,
+        "meeple_belongs_to_player": 13,
+        "feature_has_open_boundary": 31,
+        "player_owns_feature": 7,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 32,
+      "ms_replay": 5.09,
+      "ms_extract": 125.4,
+      "est_bytes": 16260
+    },
+    {
+      "game_id": 2900000138,
+      "ply": 131,
+      "phase": "endgame",
+      "legal_n": 6,
+      "is_tail": false,
+      "n_nodes": 158,
+      "n_edges": 230,
+      "node_counts": {
+        "tile": 66,
+        "city_feature": 17,
+        "road_feature": 22,
+        "farm_feature": 26,
+        "monastery_feature": 13,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 113,
+        "city_touches_farm": 33,
+        "feature_touches_feature": 33,
+        "meeple_belongs_to_player": 11,
+        "meeple_on_feature": 9,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 22,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 6,
+      "ms_replay": 5.28,
+      "ms_extract": 37.89,
+      "est_bytes": 10048
+    },
+    {
+      "game_id": 2900000304,
+      "ply": 133,
+      "phase": "endgame",
+      "legal_n": 2,
+      "is_tail": false,
+      "n_nodes": 159,
+      "n_edges": 230,
+      "node_counts": {
+        "tile": 67,
+        "city_feature": 15,
+        "road_feature": 22,
+        "farm_feature": 26,
+        "monastery_feature": 14,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 115,
+        "city_touches_farm": 33,
+        "feature_touches_feature": 33,
+        "meeple_on_feature": 9,
+        "meeple_belongs_to_player": 12,
+        "player_owns_feature": 8,
+        "feature_has_open_boundary": 20
+      },
+      "n_action_nodes": 2,
+      "ms_replay": 5.93,
+      "ms_extract": 12.28,
+      "est_bytes": 9124
+    },
+    {
+      "game_id": 2900000126,
+      "ply": 138,
+      "phase": "endgame",
+      "legal_n": 51,
+      "is_tail": false,
+      "n_nodes": 160,
+      "n_edges": 220,
+      "node_counts": {
+        "tile": 69,
+        "city_feature": 15,
+        "road_feature": 24,
+        "farm_feature": 23,
+        "monastery_feature": 14,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 120,
+        "city_touches_farm": 26,
+        "feature_touches_feature": 26,
+        "meeple_on_feature": 11,
+        "meeple_belongs_to_player": 12,
+        "feature_has_open_boundary": 19,
+        "player_owns_feature": 6
+      },
+      "n_action_nodes": 51,
+      "ms_replay": 6.01,
+      "ms_extract": 266.33,
+      "est_bytes": 19948
+    },
+    {
+      "game_id": 2900000020,
+      "ply": 138,
+      "phase": "endgame",
+      "legal_n": 33,
+      "is_tail": false,
+      "n_nodes": 176,
+      "n_edges": 256,
+      "node_counts": {
+        "tile": 69,
+        "city_feature": 19,
+        "road_feature": 27,
+        "farm_feature": 33,
+        "monastery_feature": 13,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 120,
+        "city_touches_farm": 40,
+        "feature_touches_feature": 40,
+        "meeple_on_feature": 8,
+        "meeple_belongs_to_player": 12,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 29
+      },
+      "n_action_nodes": 33,
+      "ms_replay": 6.23,
+      "ms_extract": 123.31,
+      "est_bytes": 17148
+    },
+    {
+      "game_id": 2900000246,
+      "ply": 62,
+      "phase": "midgame",
+      "legal_n": 5,
+      "is_tail": true,
+      "n_nodes": 86,
+      "n_edges": 138,
+      "node_counts": {
+        "tile": 31,
+        "city_feature": 10,
+        "road_feature": 9,
+        "farm_feature": 16,
+        "monastery_feature": 5,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 50,
+        "city_touches_farm": 21,
+        "feature_touches_feature": 21,
+        "meeple_on_feature": 12,
+        "meeple_belongs_to_player": 12,
+        "player_owns_feature": 9,
+        "feature_has_open_boundary": 13
+      },
+      "n_action_nodes": 5,
+      "ms_replay": 2.26,
+      "ms_extract": 14.23,
+      "est_bytes": 5992
+    },
+    {
+      "game_id": 2900000213,
+      "ply": 74,
+      "phase": "late_mid",
+      "legal_n": 28,
+      "is_tail": true,
+      "n_nodes": 101,
+      "n_edges": 150,
+      "node_counts": {
+        "tile": 37,
+        "city_feature": 10,
+        "road_feature": 17,
+        "farm_feature": 16,
+        "monastery_feature": 6,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 67,
+        "city_touches_farm": 17,
+        "feature_touches_feature": 17,
+        "meeple_on_feature": 11,
+        "meeple_belongs_to_player": 12,
+        "feature_has_open_boundary": 17,
+        "player_owns_feature": 7,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 28,
+      "ms_replay": 3.05,
+      "ms_extract": 89.28,
+      "est_bytes": 11800
+    },
+    {
+      "game_id": 2900000013,
+      "ply": 116,
+      "phase": "pre_endgame",
+      "legal_n": 31,
+      "is_tail": true,
+      "n_nodes": 135,
+      "n_edges": 191,
+      "node_counts": {
+        "tile": 58,
+        "city_feature": 13,
+        "road_feature": 19,
+        "farm_feature": 18,
+        "monastery_feature": 13,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 99,
+        "city_touches_farm": 24,
+        "feature_touches_feature": 24,
+        "meeple_on_feature": 8,
+        "meeple_belongs_to_player": 11,
+        "player_owns_feature": 6,
+        "feature_has_open_boundary": 17,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 31,
+      "ms_replay": 4.87,
+      "ms_extract": 112.92,
+      "est_bytes": 14176
+    },
+    {
+      "game_id": 2900000236,
+      "ply": 132,
+      "phase": "endgame",
+      "legal_n": 38,
+      "is_tail": true,
+      "n_nodes": 160,
+      "n_edges": 241,
+      "node_counts": {
+        "tile": 66,
+        "city_feature": 18,
+        "road_feature": 24,
+        "farm_feature": 23,
+        "monastery_feature": 13,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 114,
+        "city_touches_farm": 31,
+        "feature_touches_feature": 31,
+        "meeple_on_feature": 11,
+        "meeple_belongs_to_player": 13,
+        "feature_has_open_boundary": 31,
+        "player_owns_feature": 10
+      },
+      "n_action_nodes": 38,
+      "ms_replay": 5.46,
+      "ms_extract": 156.64,
+      "est_bytes": 17404
+    },
+    {
+      "game_id": 2900000060,
+      "ply": 104,
+      "phase": "pre_endgame",
+      "legal_n": 48,
+      "is_tail": true,
+      "n_nodes": 120,
+      "n_edges": 178,
+      "node_counts": {
+        "tile": 52,
+        "city_feature": 14,
+        "road_feature": 14,
+        "farm_feature": 17,
+        "monastery_feature": 10,
+        "player": 2,
+        "meeple": 10,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 87,
+        "city_touches_farm": 25,
+        "feature_touches_feature": 25,
+        "meeple_on_feature": 8,
+        "meeple_belongs_to_player": 10,
+        "player_owns_feature": 3,
+        "feature_has_open_boundary": 16,
+        "player_contests_feature": 4
+      },
+      "n_action_nodes": 12,
+      "ms_replay": 4.24,
+      "ms_extract": 53.69,
+      "est_bytes": 9304
+    },
+    {
+      "game_id": 2900000116,
+      "ply": 86,
+      "phase": "late_mid",
+      "legal_n": 29,
+      "is_tail": true,
+      "n_nodes": 108,
+      "n_edges": 147,
+      "node_counts": {
+        "tile": 43,
+        "city_feature": 9,
+        "road_feature": 14,
+        "farm_feature": 17,
+        "monastery_feature": 11,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 71,
+        "city_touches_farm": 17,
+        "feature_touches_feature": 17,
+        "meeple_on_feature": 7,
+        "meeple_belongs_to_player": 11,
+        "feature_has_open_boundary": 18,
+        "player_owns_feature": 6
+      },
+      "n_action_nodes": 29,
+      "ms_replay": 3.3,
+      "ms_extract": 78.7,
+      "est_bytes": 12136
+    },
+    {
+      "game_id": 2900000212,
+      "ply": 18,
+      "phase": "opening",
+      "legal_n": 18,
+      "is_tail": true,
+      "n_nodes": 33,
+      "n_edges": 40,
+      "node_counts": {
+        "tile": 9,
+        "city_feature": 2,
+        "road_feature": 5,
+        "farm_feature": 5,
+        "monastery_feature": 4,
+        "player": 2,
+        "meeple": 5,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 16,
+        "city_touches_farm": 4,
+        "feature_touches_feature": 4,
+        "meeple_on_feature": 3,
+        "meeple_belongs_to_player": 5,
+        "player_owns_feature": 3,
+        "feature_has_open_boundary": 5
+      },
+      "n_action_nodes": 18,
+      "ms_replay": 0.69,
+      "ms_extract": 6.92,
+      "est_bytes": 5612
+    },
+    {
+      "game_id": 2900000094,
+      "ply": 9,
+      "phase": "opening",
+      "legal_n": 4,
+      "is_tail": true,
+      "n_nodes": 20,
+      "n_edges": 29,
+      "node_counts": {
+        "tile": 5,
+        "city_feature": 2,
+        "road_feature": 3,
+        "farm_feature": 4,
+        "monastery_feature": 0,
+        "player": 2,
+        "meeple": 3,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 9,
+        "city_touches_farm": 3,
+        "feature_touches_feature": 3,
+        "meeple_on_feature": 3,
+        "meeple_belongs_to_player": 3,
+        "player_owns_feature": 3,
+        "feature_has_open_boundary": 5
+      },
+      "n_action_nodes": 4,
+      "ms_replay": 0.31,
+      "ms_extract": 2.37,
+      "est_bytes": 1980
+    },
+    {
+      "game_id": 2900000159,
+      "ply": 10,
+      "phase": "opening",
+      "legal_n": 12,
+      "is_tail": true,
+      "n_nodes": 23,
+      "n_edges": 30,
+      "node_counts": {
+        "tile": 5,
+        "city_feature": 3,
+        "road_feature": 1,
+        "farm_feature": 3,
+        "monastery_feature": 3,
+        "player": 2,
+        "meeple": 5,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 7,
+        "city_touches_farm": 4,
+        "feature_touches_feature": 4,
+        "meeple_on_feature": 3,
+        "meeple_belongs_to_player": 5,
+        "feature_has_open_boundary": 4,
+        "player_owns_feature": 3
+      },
+      "n_action_nodes": 12,
+      "ms_replay": 0.28,
+      "ms_extract": 6.26,
+      "est_bytes": 3800
+    },
+    {
+      "game_id": 2900000119,
+      "ply": 76,
+      "phase": "late_mid",
+      "legal_n": 47,
+      "is_tail": true,
+      "n_nodes": 106,
+      "n_edges": 153,
+      "node_counts": {
+        "tile": 38,
+        "city_feature": 9,
+        "road_feature": 16,
+        "farm_feature": 21,
+        "monastery_feature": 6,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 65,
+        "city_touches_farm": 20,
+        "feature_touches_feature": 20,
+        "meeple_on_feature": 11,
+        "meeple_belongs_to_player": 13,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 17
+      },
+      "n_action_nodes": 47,
+      "ms_replay": 3.06,
+      "ms_extract": 167.48,
+      "est_bytes": 16272
+    },
+    {
+      "game_id": 2900000343,
+      "ply": 86,
+      "phase": "late_mid",
+      "legal_n": 28,
+      "is_tail": true,
+      "n_nodes": 100,
+      "n_edges": 142,
+      "node_counts": {
+        "tile": 43,
+        "city_feature": 10,
+        "road_feature": 12,
+        "farm_feature": 12,
+        "monastery_feature": 9,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 73,
+        "city_touches_farm": 15,
+        "feature_touches_feature": 15,
+        "meeple_on_feature": 8,
+        "meeple_belongs_to_player": 11,
+        "player_owns_feature": 5,
+        "feature_has_open_boundary": 13,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 14,
+      "ms_replay": 3.67,
+      "ms_extract": 52.5,
+      "est_bytes": 8444
+    },
+    {
+      "game_id": 2900000057,
+      "ply": 84,
+      "phase": "late_mid",
+      "legal_n": 44,
+      "is_tail": true,
+      "n_nodes": 108,
+      "n_edges": 159,
+      "node_counts": {
+        "tile": 42,
+        "city_feature": 9,
+        "road_feature": 15,
+        "farm_feature": 20,
+        "monastery_feature": 8,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 71,
+        "city_touches_farm": 24,
+        "feature_touches_feature": 24,
+        "meeple_on_feature": 9,
+        "meeple_belongs_to_player": 11,
+        "feature_has_open_boundary": 13,
+        "player_owns_feature": 7
+      },
+      "n_action_nodes": 22,
+      "ms_replay": 3.36,
+      "ms_extract": 75.26,
+      "est_bytes": 10832
+    },
+    {
+      "game_id": 2900000392,
+      "ply": 10,
+      "phase": "opening",
+      "legal_n": 10,
+      "is_tail": true,
+      "n_nodes": 23,
+      "n_edges": 36,
+      "node_counts": {
+        "tile": 5,
+        "city_feature": 3,
+        "road_feature": 2,
+        "farm_feature": 6,
+        "monastery_feature": 0,
+        "player": 2,
+        "meeple": 4,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 8,
+        "city_touches_farm": 6,
+        "feature_touches_feature": 6,
+        "meeple_on_feature": 4,
+        "meeple_belongs_to_player": 4,
+        "feature_has_open_boundary": 4,
+        "player_owns_feature": 4
+      },
+      "n_action_nodes": 10,
+      "ms_replay": 0.51,
+      "ms_extract": 5.8,
+      "est_bytes": 3540
+    },
+    {
+      "game_id": 2900000307,
+      "ply": 76,
+      "phase": "late_mid",
+      "legal_n": 64,
+      "is_tail": true,
+      "n_nodes": 102,
+      "n_edges": 163,
+      "node_counts": {
+        "tile": 38,
+        "city_feature": 10,
+        "road_feature": 13,
+        "farm_feature": 18,
+        "monastery_feature": 7,
+        "player": 2,
+        "meeple": 13,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 63,
+        "city_touches_farm": 24,
+        "feature_touches_feature": 24,
+        "meeple_on_feature": 11,
+        "meeple_belongs_to_player": 13,
+        "feature_has_open_boundary": 17,
+        "player_owns_feature": 7,
+        "player_contests_feature": 4
+      },
+      "n_action_nodes": 16,
+      "ms_replay": 2.81,
+      "ms_extract": 49.08,
+      "est_bytes": 9332
+    },
+    {
+      "game_id": 2900000017,
+      "ply": 56,
+      "phase": "midgame",
+      "legal_n": 40,
+      "is_tail": true,
+      "n_nodes": 78,
+      "n_edges": 113,
+      "node_counts": {
+        "tile": 28,
+        "city_feature": 7,
+        "road_feature": 13,
+        "farm_feature": 13,
+        "monastery_feature": 6,
+        "player": 2,
+        "meeple": 8,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 52,
+        "city_touches_farm": 15,
+        "feature_touches_feature": 15,
+        "meeple_on_feature": 6,
+        "meeple_belongs_to_player": 8,
+        "feature_has_open_boundary": 11,
+        "player_owns_feature": 6
+      },
+      "n_action_nodes": 40,
+      "ms_replay": 2.33,
+      "ms_extract": 71.35,
+      "est_bytes": 13180
+    },
+    {
+      "game_id": 2900000094,
+      "ply": 47,
+      "phase": "midgame",
+      "legal_n": 2,
+      "is_tail": true,
+      "n_nodes": 67,
+      "n_edges": 112,
+      "node_counts": {
+        "tile": 24,
+        "city_feature": 7,
+        "road_feature": 8,
+        "farm_feature": 11,
+        "monastery_feature": 3,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 43,
+        "city_touches_farm": 14,
+        "feature_touches_feature": 14,
+        "meeple_on_feature": 10,
+        "meeple_belongs_to_player": 11,
+        "feature_has_open_boundary": 10,
+        "player_owns_feature": 10
+      },
+      "n_action_nodes": 2,
+      "ms_replay": 1.89,
+      "ms_extract": 5.54,
+      "est_bytes": 4272
+    },
+    {
+      "game_id": 2900000096,
+      "ply": 28,
+      "phase": "opening",
+      "legal_n": 16,
+      "is_tail": true,
+      "n_nodes": 38,
+      "n_edges": 57,
+      "node_counts": {
+        "tile": 14,
+        "city_feature": 4,
+        "road_feature": 4,
+        "farm_feature": 5,
+        "monastery_feature": 1,
+        "player": 2,
+        "meeple": 7,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 19,
+        "city_touches_farm": 5,
+        "feature_touches_feature": 5,
+        "meeple_on_feature": 7,
+        "meeple_belongs_to_player": 7,
+        "player_owns_feature": 7,
+        "feature_has_open_boundary": 7
+      },
+      "n_action_nodes": 16,
+      "ms_replay": 0.99,
+      "ms_extract": 14.85,
+      "est_bytes": 5628
+    },
+    {
+      "game_id": 2900000282,
+      "ply": 136,
+      "phase": "endgame",
+      "legal_n": 50,
+      "is_tail": true,
+      "n_nodes": 161,
+      "n_edges": 239,
+      "node_counts": {
+        "tile": 68,
+        "city_feature": 20,
+        "road_feature": 21,
+        "farm_feature": 23,
+        "monastery_feature": 14,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 118,
+        "city_touches_farm": 34,
+        "feature_touches_feature": 34,
+        "meeple_on_feature": 11,
+        "meeple_belongs_to_player": 12,
+        "player_owns_feature": 9,
+        "feature_has_open_boundary": 21
+      },
+      "n_action_nodes": 25,
+      "ms_replay": 6.03,
+      "ms_extract": 140.44,
+      "est_bytes": 14520
+    },
+    {
+      "game_id": 2900000191,
+      "ply": 128,
+      "phase": "pre_endgame",
+      "legal_n": 28,
+      "is_tail": true,
+      "n_nodes": 155,
+      "n_edges": 226,
+      "node_counts": {
+        "tile": 64,
+        "city_feature": 15,
+        "road_feature": 24,
+        "farm_feature": 25,
+        "monastery_feature": 12,
+        "player": 2,
+        "meeple": 12,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 113,
+        "city_touches_farm": 31,
+        "feature_touches_feature": 31,
+        "meeple_on_feature": 11,
+        "meeple_belongs_to_player": 12,
+        "feature_has_open_boundary": 20,
+        "player_owns_feature": 8
+      },
+      "n_action_nodes": 28,
+      "ms_replay": 5.25,
+      "ms_extract": 89.59,
+      "est_bytes": 14780
+    },
+    {
+      "game_id": 2900000111,
+      "ply": 52,
+      "phase": "midgame",
+      "legal_n": 24,
+      "is_tail": true,
+      "n_nodes": 78,
+      "n_edges": 116,
+      "node_counts": {
+        "tile": 26,
+        "city_feature": 8,
+        "road_feature": 10,
+        "farm_feature": 14,
+        "monastery_feature": 6,
+        "player": 2,
+        "meeple": 11,
+        "deck_bucket": 1
+      },
+      "edge_counts": {
+        "tile_belongs_to_feature": 42,
+        "city_touches_farm": 15,
+        "feature_touches_feature": 15,
+        "meeple_on_feature": 9,
+        "meeple_belongs_to_player": 11,
+        "feature_has_open_boundary": 15,
+        "player_owns_feature": 7,
+        "player_contests_feature": 2
+      },
+      "n_action_nodes": 6,
+      "ms_replay": 2.0,
+      "ms_extract": 17.35,
+      "est_bytes": 5572
+    }
+  ],
+  "tail_results": [
+    {
+      "available": true,
+      "n_struct_attrs_differ": 2,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 10.0,
+          "h6400_child": 10.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 5.0,
+          "delta": -1.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 7.0,
+          "h6400_child": 7.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 1.0,
+          "h6400_child": 0.0,
+          "delta": -1.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.25,
+          "h6400_child": 0.25,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0249
+      },
+      "any_signal": true,
+      "game_id": 2900000246,
+      "ply": 62,
+      "phase": "midgame",
+      "sel200": 2503,
+      "sel6400": 2510,
+      "regret200": 0.0249,
+      "q_gap_6400": 0.0249
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 1,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 11.0,
+          "h6400_child": 11.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.875,
+          "h6400_child": 0.875,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0623
+      },
+      "any_signal": true,
+      "game_id": 2900000213,
+      "ply": 74,
+      "phase": "late_mid",
+      "sel200": 1266,
+      "sel6400": 1261,
+      "regret200": 0.0623,
+      "q_gap_6400": 0.0623
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 5,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 10.0,
+          "h6400_child": 8.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 7.0,
+          "h6400_child": 5.0,
+          "delta": -2.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.125,
+          "h6400_child": 0.125,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.1241,
+        "_q6400_gap": 0.0786
+      },
+      "any_signal": true,
+      "game_id": 2900000013,
+      "ply": 116,
+      "phase": "pre_endgame",
+      "sel200": 860,
+      "sel6400": 1067,
+      "regret200": 0.0786,
+      "q_gap_6400": 0.0786
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 1,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 14.0,
+          "h6400_child": 14.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 7.0,
+          "h6400_child": 7.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 13.0,
+          "h6400_child": 13.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 1.75,
+          "h6400_child": 1.75,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.0584,
+        "_q6400_gap": 0.0882
+      },
+      "any_signal": true,
+      "game_id": 2900000236,
+      "ply": 132,
+      "phase": "endgame",
+      "sel200": 875,
+      "sel6400": 1231,
+      "regret200": 0.0882,
+      "q_gap_6400": 0.0882
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 0,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 10.0,
+          "h6400_child": 10.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 8.0,
+          "h6400_child": 8.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0281
+      },
+      "any_signal": false,
+      "game_id": 2900000060,
+      "ply": 104,
+      "phase": "pre_endgame",
+      "sel200": 1240,
+      "sel6400": 1444,
+      "regret200": 0.0281,
+      "q_gap_6400": 0.0281
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 6,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 8.0,
+          "h6400_child": 6.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 7.0,
+          "h6400_child": 5.0,
+          "delta": -2.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.0813,
+        "_q6400_gap": 0.0426
+      },
+      "any_signal": true,
+      "game_id": 2900000116,
+      "ply": 86,
+      "phase": "late_mid",
+      "sel200": 852,
+      "sel6400": 1462,
+      "regret200": 0.0426,
+      "q_gap_6400": 0.0419
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 5,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 6.0,
+          "h6400_child": 4.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 3.0,
+          "h6400_child": 3.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": 0.0,
+          "delta": -1.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 3.0,
+          "h6400_child": 2.0,
+          "delta": -1.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.25,
+          "h6400_child": 0.375,
+          "delta": 0.125
+        },
+        "_leaf_q_gap": 0.0556,
+        "_q6400_gap": 0.0485
+      },
+      "any_signal": true,
+      "game_id": 2900000212,
+      "ply": 18,
+      "phase": "opening",
+      "sel200": 1551,
+      "sel6400": 1444,
+      "regret200": 0.0485,
+      "q_gap_6400": 0.0485
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 1,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 3.0,
+          "h6400_child": 3.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.125,
+          "delta": 0.125
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0331
+      },
+      "any_signal": true,
+      "game_id": 2900000094,
+      "ply": 9,
+      "phase": "opening",
+      "sel200": 2509,
+      "sel6400": 2503,
+      "regret200": 0.0331,
+      "q_gap_6400": 0.0331
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 5,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 5.0,
+          "h6400_child": 3.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 3.0,
+          "h6400_child": 3.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 4.0,
+          "h6400_child": 2.0,
+          "delta": -2.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.0666,
+        "_q6400_gap": 0.0443
+      },
+      "any_signal": true,
+      "game_id": 2900000159,
+      "ply": 10,
+      "phase": "opening",
+      "sel200": 1344,
+      "sel6400": 1359,
+      "regret200": 0.0443,
+      "q_gap_6400": 0.0443
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 4,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 5.0,
+          "delta": -1.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 7.0,
+          "h6400_child": 7.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 1.125,
+          "delta": 1.125
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": -1.0,
+          "delta": -1.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 4.0,
+          "h6400_child": 4.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.375,
+          "h6400_child": 0.375,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0216
+      },
+      "any_signal": true,
+      "game_id": 2900000119,
+      "ply": 76,
+      "phase": "late_mid",
+      "sel200": 1443,
+      "sel6400": 1332,
+      "regret200": 0.0216,
+      "q_gap_6400": 0.0216
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 4,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 7.0,
+          "h6400_child": 5.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 2.0,
+          "h6400_child": 0.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": 0.0,
+          "delta": -1.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 5.0,
+          "h6400_child": 4.0,
+          "delta": -1.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.066,
+        "_q6400_gap": 0.0406
+      },
+      "any_signal": true,
+      "game_id": 2900000343,
+      "ply": 86,
+      "phase": "late_mid",
+      "sel200": 1229,
+      "sel6400": 860,
+      "regret200": 0.0406,
+      "q_gap_6400": 0.029
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 5,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 11.0,
+          "h6400_child": 9.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 2.0,
+          "h6400_child": 0.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 2.0,
+          "h6400_child": 0.0,
+          "delta": -2.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 6.0,
+          "h6400_child": 4.0,
+          "delta": -2.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.5,
+          "h6400_child": 0.5,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.2765,
+        "_q6400_gap": 0.0336
+      },
+      "any_signal": true,
+      "game_id": 2900000057,
+      "ply": 84,
+      "phase": "late_mid",
+      "sel200": 1137,
+      "sel6400": 956,
+      "regret200": 0.0336,
+      "q_gap_6400": 0.0313
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 5,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 1.0,
+          "h6400_child": 3.0,
+          "delta": 2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": -1.0,
+          "h6400_child": 1.0,
+          "delta": 2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": -1.0,
+          "h6400_child": 1.0,
+          "delta": 2.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 1.0,
+          "h6400_child": 0.0,
+          "delta": -1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": 3.0,
+          "delta": 2.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0489
+      },
+      "any_signal": true,
+      "game_id": 2900000392,
+      "ply": 10,
+      "phase": "opening",
+      "sel200": 1448,
+      "sel6400": 1346,
+      "regret200": 0.0489,
+      "q_gap_6400": 0.0489
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 0,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 2.0,
+          "h6400_child": 2.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 8.0,
+          "h6400_child": 8.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 7.0,
+          "h6400_child": 7.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.5,
+          "h6400_child": 0.5,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0719
+      },
+      "any_signal": false,
+      "game_id": 2900000307,
+      "ply": 76,
+      "phase": "late_mid",
+      "sel200": 1360,
+      "sel6400": 1040,
+      "regret200": 0.0719,
+      "q_gap_6400": 0.0719
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 4,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 9.0,
+          "h6400_child": 7.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 3.0,
+          "h6400_child": 3.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": 0.0,
+          "delta": -1.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 6.0,
+          "h6400_child": 5.0,
+          "delta": -1.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.5,
+          "h6400_child": 0.5,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0519
+      },
+      "any_signal": true,
+      "game_id": 2900000017,
+      "ply": 56,
+      "phase": "midgame",
+      "sel200": 1343,
+      "sel6400": 1166,
+      "regret200": 0.0519,
+      "q_gap_6400": 0.0262
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 2,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 5.0,
+          "h6400_child": 4.0,
+          "delta": -1.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 7.0,
+          "h6400_child": 7.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 1.0,
+          "h6400_child": 0.0,
+          "delta": -1.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.625,
+          "h6400_child": 0.625,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.0524,
+        "_q6400_gap": 0.0239
+      },
+      "any_signal": true,
+      "game_id": 2900000094,
+      "ply": 47,
+      "phase": "midgame",
+      "sel200": 2507,
+      "sel6400": 2510,
+      "regret200": 0.0239,
+      "q_gap_6400": 0.0239
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 5,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 7.0,
+          "h6400_child": 5.0,
+          "delta": -2.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 3.0,
+          "h6400_child": 3.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 4.0,
+          "h6400_child": 4.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 1.0,
+          "h6400_child": -1.0,
+          "delta": -2.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 4.0,
+          "h6400_child": 2.0,
+          "delta": -2.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.5,
+          "h6400_child": 0.5,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.066,
+        "_q6400_gap": 0.0405
+      },
+      "any_signal": true,
+      "game_id": 2900000096,
+      "ply": 28,
+      "phase": "opening",
+      "sel200": 853,
+      "sel6400": 1263,
+      "regret200": 0.0405,
+      "q_gap_6400": 0.0405
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 0,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 18.0,
+          "h6400_child": 18.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 10.0,
+          "h6400_child": 10.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 1.625,
+          "h6400_child": 1.625,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0625
+      },
+      "any_signal": false,
+      "game_id": 2900000282,
+      "ply": 136,
+      "phase": "endgame",
+      "sel200": 1072,
+      "sel6400": 945,
+      "regret200": 0.0625,
+      "q_gap_6400": 0.0606
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 0,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 11.0,
+          "h6400_child": 11.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": -1.0,
+          "h6400_child": -1.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": -1.0,
+          "h6400_child": -1.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": 0.0,
+        "_q6400_gap": 0.0231
+      },
+      "any_signal": false,
+      "game_id": 2900000191,
+      "ply": 128,
+      "phase": "pre_endgame",
+      "sel200": 745,
+      "sel6400": 871,
+      "regret200": 0.0231,
+      "q_gap_6400": 0.0231
+    },
+    {
+      "available": true,
+      "n_struct_attrs_differ": 1,
+      "n_struct_attrs_checked": 15,
+      "diffs": {
+        "T2_n_cities_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_n_farms_contested": {
+          "h200_child": 1.0,
+          "h6400_child": 1.0,
+          "delta": 0.0
+        },
+        "T2_total_city_open_edges": {
+          "h200_child": 8.0,
+          "h6400_child": 8.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_self": {
+          "h200_child": 6.0,
+          "h6400_child": 6.0,
+          "delta": 0.0
+        },
+        "T2_n_meeples_locked_opp": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_self_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_completed_value_opp_div8": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_total_city_open_edges": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_open_cities": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_meeples_locked_self": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_d_n_contested": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_opp_feature_touched": {
+          "h200_child": 0.0,
+          "h6400_child": 0.0,
+          "delta": 0.0
+        },
+        "T2_feature_completed_by_move": {
+          "h200_child": 0.0,
+          "h6400_child": 1.0,
+          "delta": 1.0
+        },
+        "T2_n_open_cities": {
+          "h200_child": 5.0,
+          "h6400_child": 5.0,
+          "delta": 0.0
+        },
+        "T2_max_open_city_value_self_div8": {
+          "h200_child": 0.25,
+          "h6400_child": 0.25,
+          "delta": 0.0
+        },
+        "_leaf_q_gap": -0.0648,
+        "_q6400_gap": 0.0301
+      },
+      "any_signal": true,
+      "game_id": 2900000111,
+      "ply": 52,
+      "phase": "midgame",
+      "sel200": 944,
+      "sel6400": 1336,
+      "regret200": 0.0301,
+      "q_gap_6400": 0.0301
+    }
+  ]
+}

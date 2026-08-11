@@ -22,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .action_space import action_size as compute_action_size
+from .aux_targets import OWNERSHIP_PLANES
 from .board_repr import N_CHANNELS
 from .features import N_SCALAR_FEATURES
 
@@ -31,6 +32,7 @@ DEFAULT_BLOCKS = 6
 DEFAULT_POLICY_PROJECT_CHANNELS = 4   # 1×1 conv channel-reduction before flatten
 DEFAULT_VALUE_PROJECT_CHANNELS = 1
 DEFAULT_VALUE_HIDDEN = 64
+DEFAULT_OWNERSHIP_PLANES = OWNERSHIP_PLANES  # Path B aux head (city/road/farm)
 
 
 class ResBlock(nn.Module):
@@ -71,10 +73,27 @@ class CarcassonneNet(nn.Module):
         policy_project_channels: int = DEFAULT_POLICY_PROJECT_CHANNELS,
         value_project_channels: int = DEFAULT_VALUE_PROJECT_CHANNELS,
         value_hidden: int = DEFAULT_VALUE_HIDDEN,
+        n_ownership_planes: int = DEFAULT_OWNERSHIP_PLANES,
+        value_global_pool: bool = False,
     ):
         super().__init__()
         self.window_size = window_size
         self.action_size = compute_action_size(window_size)
+        self.n_ownership_planes = n_ownership_planes
+        # Introspectable input dims (plain ints — NOT params/buffers, so state_dict
+        # and every existing checkpoint are unchanged). Let a caller assert the net's
+        # representation matches its encoder (78ch/10 non-sighted vs 81ch/42 sighted)
+        # BEFORE a forward, instead of hitting an opaque shape error inside policy_fc.
+        self.n_input_channels = int(n_input_channels)
+        self.n_scalar_features = int(n_scalar_features)
+        # Flywheel step 2 (DECISIONS 2026-06-05): feed a board-WIDE summary
+        # (global mean+max over the trunk's spatial dims) into the value head.
+        # The 1×1-project→flatten value head has a tiny receptive field and can't
+        # integrate board-global quantities (total farm control, tiles-left,
+        # meeple supply) — exactly what a usable value leaf needs. KataGo-style
+        # global pooling injects cat[trunk.mean, trunk.amax] (2·n_filters) into
+        # value_fc1. Default OFF so every existing checkpoint/arch is unchanged.
+        self.value_global_pool = bool(value_global_pool)
 
         self.stem = nn.Sequential(
             nn.Conv2d(n_input_channels, n_filters, kernel_size=3, padding=1, bias=False),
@@ -99,8 +118,34 @@ class CarcassonneNet(nn.Module):
             nn.ReLU(inplace=True),
         )
         value_flat_dim = value_project_channels * window_size * window_size
-        self.value_fc1 = nn.Linear(value_flat_dim + n_scalar_features, value_hidden)
+        value_in = value_flat_dim + n_scalar_features
+        if self.value_global_pool:
+            value_in += 2 * n_filters  # + global mean & max over the trunk
+        self.value_fc1 = nn.Linear(value_in, value_hidden)
         self.value_fc2 = nn.Linear(value_hidden, 1)
+
+        # Path B auxiliary head: per-cell final feature ownership (city/road/farm),
+        # current-player POV in [-1, 1] via tanh. A 1×1 conv forces the trunk's
+        # per-cell features to linearly predict who ends up owning each feature —
+        # KataGo-style representation pressure. TRAINING-ONLY: computed in
+        # forward_train, never in forward (inference skips it for speed).
+        self.ownership_head = nn.Conv2d(n_filters, n_ownership_planes, kernel_size=1)
+
+    def _value_from_trunk(
+        self, x: torch.Tensor, scalars: torch.Tensor
+    ) -> torch.Tensor:
+        """Value head, shared by forward / forward_train so they never diverge.
+        x is the trunk output (B, n_filters, W, W). Optionally concatenates a
+        board-wide global-pool summary (mean + max over the spatial dims) before
+        value_fc1 (flywheel step 2)."""
+        v = self.value_project(x).flatten(start_dim=1)
+        if self.value_global_pool:
+            g = torch.cat([x.mean(dim=(2, 3)), x.amax(dim=(2, 3))], dim=1)
+            v = torch.cat([v, scalars, g], dim=1)
+        else:
+            v = torch.cat([v, scalars], dim=1)
+        v = F.relu(self.value_fc1(v))
+        return torch.tanh(self.value_fc2(v)).squeeze(-1)
 
     def forward(
         self, board: torch.Tensor, scalars: torch.Tensor
@@ -118,12 +163,51 @@ class CarcassonneNet(nn.Module):
         p = torch.cat([p, scalars], dim=1)
         policy_logits = self.policy_fc(p)
 
-        v = self.value_project(x).flatten(start_dim=1)
-        v = torch.cat([v, scalars], dim=1)
-        v = F.relu(self.value_fc1(v))
-        value = torch.tanh(self.value_fc2(v)).squeeze(-1)
+        value = self._value_from_trunk(x, scalars)
 
         return policy_logits, value
+
+    def forward_train(
+        self, board: torch.Tensor, scalars: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Training forward: policy logits, value, AND the ownership aux output.
+
+        Returns (policy_logits (B, A), value (B,), ownership (B, P, W, W)).
+        Used only by the trainers; inference uses `forward` (2-tuple) so the
+        ownership head adds zero cost at play time.
+        """
+        x = self.stem(board)
+        x = self.trunk(x)
+
+        p = self.policy_project(x).flatten(start_dim=1)
+        p = torch.cat([p, scalars], dim=1)
+        policy_logits = self.policy_fc(p)
+
+        value = self._value_from_trunk(x, scalars)
+
+        ownership = torch.tanh(self.ownership_head(x))
+
+        return policy_logits, value, ownership
+
+    def forward_policy_only(
+        self, board: torch.Tensor, scalars: torch.Tensor
+    ) -> torch.Tensor:
+        """Compute policy logits only — skip the value head's conv +
+        flatten + 2× linear + relu/tanh.
+
+        Use when the caller will override the value (e.g. v2.5 leaf eval).
+        On the 5060 Ti the value head takes ~5% of the forward-pass cost;
+        on Blackwell tensor cores it's closer to ~10%. Bigger trunks
+        amortize less of the savings, smaller ones more.
+
+        Returns policy_logits only — caller must compute (or stub) the
+        value separately.
+        """
+        x = self.stem(board)
+        x = self.trunk(x)
+        p = self.policy_project(x).flatten(start_dim=1)
+        p = torch.cat([p, scalars], dim=1)
+        return self.policy_fc(p)
 
     def policy_softmax_with_mask(
         self, policy_logits: torch.Tensor, valid_mask: torch.Tensor
@@ -135,6 +219,28 @@ class CarcassonneNet(nn.Module):
         """
         masked_logits = policy_logits.masked_fill(~valid_mask.bool(), float("-inf"))
         return F.softmax(masked_logits, dim=-1)
+
+    def load_state_dict(self, state_dict, strict: bool = True, assign: bool = False):
+        """Load weights, tolerating ONLY a missing ownership head.
+
+        Pre-Path-B checkpoints predate the ownership aux head (added 2026-05-29),
+        so loading them into the current arch would fail strict validation on
+        `ownership_head.*`. Those checkpoints are still valid for inference
+        (`forward` never touches the head) and for continued training (the head
+        re-inits fresh and starts learning). We allow exactly those two keys to
+        be missing and keep strict checking for every other key, so a genuinely
+        mismatched checkpoint still fails loudly.
+        """
+        result = super().load_state_dict(state_dict, strict=False, assign=assign)
+        allowed_missing = {"ownership_head.weight", "ownership_head.bias"}
+        real_missing = set(result.missing_keys) - allowed_missing
+        if strict and (real_missing or result.unexpected_keys):
+            raise RuntimeError(
+                "Error(s) in loading state_dict for CarcassonneNet:\n"
+                f"  Missing key(s): {sorted(real_missing)}\n"
+                f"  Unexpected key(s): {sorted(result.unexpected_keys)}"
+            )
+        return result
 
     def param_count(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)

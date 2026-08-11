@@ -1,0 +1,12 @@
+{
+ "chunk": "08_light_h",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 76,
+ "attempt": 1,
+ "peak_rss_kb": 754928,
+ "n_failing": 1,
+ "failing_ids": [
+  "tests/test_warmstart_streaming.py::test_streaming_with_workers_yields_all_positions"
+ ]
+}

@@ -1,0 +1,100 @@
+{
+  "schema_version": "v28-variants-1",
+  "created": "2026-06-22",
+  "frozen_reference": "v2.7 == virtual_score_v2 with DEFAULT_CONFIG built under the PRODUCTION env knobs (CARCASSONNE_V25_CAP=12, CARCASSONNE_V25_DROP_THREE_OPEN=1, USE_FLAT_LEAF=1). v2.7 is NEVER modified; v2.8 variants are dc.replace() overrides on top of the same base.",
+  "base_env_knobs": {
+    "CARCASSONNE_V25_CAP": "12",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_V25_RESIDUAL_SCALE": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1"
+  },
+  "base_leafconfig_resolved": {
+    "closure_p": {"1": 0.5, "2": 0.2},
+    "bonus_cap": 12.0,
+    "opp_bonus_cap": 12.0,
+    "meeple_k": 0.0,
+    "tile_counting_closure": false,
+    "closure_continuous_slack": 0.0,
+    "value_blend": 0.0,
+    "residual_scale": 0.0,
+    "v28_farm_majority": false,
+    "v28_meeple_k": 0.0,
+    "v28_meeple_recovery_t0": 0
+  },
+  "variants": {
+    "v27_baseline": {
+      "patch": "(none — frozen reference)",
+      "overrides": {},
+      "new_code": false,
+      "code_path": "flat (bit-exact) when USE_FLAT_LEAF=1; else object",
+      "grid": null
+    },
+    "v28_farm": {
+      "patch": "farm_final_value_v1 — majority-gated farm-growth bonus",
+      "overrides": {"v28_farm_majority": true},
+      "new_code": true,
+      "code_path": "object (forced via _v28_active)",
+      "grid": null,
+      "note": "Effect at the capped int level is often masked (bonus_cap=12 saturates mid-late); change is in the uncapped closure bonus. Carry the cap interaction into search ablations."
+    },
+    "v28_meeple": {
+      "patch": "meeple_economy_v1 — recovery-scaled meeple economy term",
+      "overrides": {"v28_meeple_k": 2.0, "v28_meeple_recovery_t0": 72},
+      "new_code": true,
+      "code_path": "object (forced via _v28_active)",
+      "grid": {"v28_meeple_k": [1.0, 2.0, 3.0], "v28_meeple_recovery_t0": [0, 72]}
+    },
+    "v28_meeple_flat": {
+      "patch": "meeple_economy disentangle — FLAT term (t0=0), == the legacy v3 meeple_K declared null at n=20 (DECISIONS 2026-05-14). Re-tests at n=200 + isolates whether the recovery scaling is the lever.",
+      "overrides": {"v28_meeple_k": 2.0, "v28_meeple_recovery_t0": 0},
+      "new_code": true,
+      "code_path": "object (forced via _v28_active)",
+      "grid": null
+    },
+    "v28_meeple_k1": {
+      "patch": "meeple_economy k-bracket below — k=1, recovery t0=72",
+      "overrides": {"v28_meeple_k": 1.0, "v28_meeple_recovery_t0": 72},
+      "new_code": true,
+      "code_path": "object (forced via _v28_active)",
+      "grid": null
+    },
+    "v28_meeple_k4": {
+      "patch": "meeple_economy k-bracket above — k=4, recovery t0=72",
+      "overrides": {"v28_meeple_k": 4.0, "v28_meeple_recovery_t0": 72},
+      "new_code": true,
+      "code_path": "object (forced via _v28_active)",
+      "grid": null
+    },
+    "v28_meeple_flat_k1": {
+      "patch": "k-sensitivity of the CANDIDATE (flat, t0=0) — k=1",
+      "overrides": {"v28_meeple_k": 1.0, "v28_meeple_recovery_t0": 0},
+      "new_code": true, "code_path": "object (forced via _v28_active)", "grid": null
+    },
+    "v28_meeple_flat_k3": {
+      "patch": "k-sensitivity of the CANDIDATE (flat, t0=0) — k=3 (bracket above 2)",
+      "overrides": {"v28_meeple_k": 3.0, "v28_meeple_recovery_t0": 0},
+      "new_code": true, "code_path": "object (forced via _v28_active)", "grid": null
+    },
+    "v28_meeple_flat_k4": {
+      "patch": "k-sensitivity of the CANDIDATE (flat, t0=0) — k=4 (bracket above 2)",
+      "overrides": {"v28_meeple_k": 4.0, "v28_meeple_recovery_t0": 0},
+      "new_code": true, "code_path": "object (forced via _v28_active)", "grid": null
+    },
+    "v28_completion": {
+      "patch": "completion_timing_v1 — continuous deck-aware closure (reuses closure_continuous_slack)",
+      "overrides": {"closure_continuous_slack": 3.0},
+      "new_code": false,
+      "code_path": "object (forced via closure_continuous_slack>0)",
+      "grid": {"closure_continuous_slack": [2.0, 3.0, 4.0]}
+    },
+    "v28_denial": {
+      "patch": "opponent_denial_v1 — asymmetric opponent-bonus cap (reuses opp_bonus_cap)",
+      "overrides": {"opp_bonus_cap": 24.0},
+      "new_code": false,
+      "code_path": "object or flat (cap asymmetry is bit-correct on both); registered as v2.8",
+      "grid": {"opp_bonus_cap": [18.0, 24.0]},
+      "priority": "speculative — kill before search eval if Phase-4 root-audit shows no movement"
+    }
+  }
+}

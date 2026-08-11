@@ -1,0 +1,13 @@
+{
+ "chunk": "02_light_b",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 93,
+ "attempt": 1,
+ "peak_rss_kb": 1486276,
+ "n_failing": 2,
+ "failing_ids": [
+  "tests/test_c5_leaf_ab.py::test_override_reaches_prior_evaluator",
+  "tests/test_clock_skew_guard.py::test_every_shared_claim_launcher_carries_the_guard"
+ ]
+}

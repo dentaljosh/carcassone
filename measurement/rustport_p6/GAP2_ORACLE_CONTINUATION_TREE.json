@@ -1,0 +1,95 @@
+{
+  "gate": "rustport GAP2 (audit A3) \u2014 is oracle_score_pilot's continuation fresh-tree?",
+  "question": "`MirrorState.search_single` is documented fresh-tree (reuse_tree=False). The pilot's playout calls HeuristicPriorAgent.best_action(), which \u2014 unlike .move() \u2014 never clears the tree. Are the two the same player?",
+  "oracle_sims": 100,
+  "positions": 4,
+  "positions_with_divergent_action_stream": 4,
+  "verdict": "NOT-FRESH-TREE",
+  "conclusion": "the pilot's continuation is a PERSISTING-TREE search: its per-ply root arrives with statistics accumulated as a descendant of earlier plies' trees, and replaying the identical world fresh-tree per ply yields a DIFFERENT action stream and a different terminal margin. `carc_rs.MirrorState.search_single` is fresh-tree only (Gap 2 of BACKEND_BYPASS_AUDIT_20260801 \u00a73, still OPEN), so it is NOT a drop-in for this continuation. Converting A3 would silently CHANGE THE RULER that priced +0.7375 pts/disagreement. oracle_score_pilot therefore fails closed on --backend rust.",
+  "rows": [
+    {
+      "deck_seed": 28000000000,
+      "ply": 40,
+      "root_action": 844,
+      "persistent": {
+        "plies": 103,
+        "margin_p0": 11.0,
+        "plies_with_preexisting_root": 102,
+        "plies_root_N_over_budget": 102
+      },
+      "fresh": {
+        "plies": 103,
+        "margin_p0": 11.0,
+        "plies_with_preexisting_root": 0,
+        "plies_root_N_over_budget": 0
+      },
+      "actions_identical": false,
+      "first_divergent_ply": 3,
+      "n_divergent_plies": 66,
+      "margin_delta": 0.0
+    },
+    {
+      "deck_seed": 28000000000,
+      "ply": 72,
+      "root_action": 740,
+      "persistent": {
+        "plies": 71,
+        "margin_p0": -24.0,
+        "plies_with_preexisting_root": 70,
+        "plies_root_N_over_budget": 70
+      },
+      "fresh": {
+        "plies": 71,
+        "margin_p0": -12.0,
+        "plies_with_preexisting_root": 0,
+        "plies_root_N_over_budget": 0
+      },
+      "actions_identical": false,
+      "first_divergent_ply": 3,
+      "n_divergent_plies": 41,
+      "margin_delta": -12.0
+    },
+    {
+      "deck_seed": 28000000000,
+      "ply": 104,
+      "root_action": 732,
+      "persistent": {
+        "plies": 39,
+        "margin_p0": -9.0,
+        "plies_with_preexisting_root": 38,
+        "plies_root_N_over_budget": 38
+      },
+      "fresh": {
+        "plies": 39,
+        "margin_p0": -16.0,
+        "plies_with_preexisting_root": 0,
+        "plies_root_N_over_budget": 0
+      },
+      "actions_identical": false,
+      "first_divergent_ply": 7,
+      "n_divergent_plies": 18,
+      "margin_delta": 7.0
+    },
+    {
+      "deck_seed": 28000000001,
+      "ply": 40,
+      "root_action": 842,
+      "persistent": {
+        "plies": 103,
+        "margin_p0": -4.0,
+        "plies_with_preexisting_root": 102,
+        "plies_root_N_over_budget": 102
+      },
+      "fresh": {
+        "plies": 103,
+        "margin_p0": 5.0,
+        "plies_with_preexisting_root": 0,
+        "plies_root_N_over_budget": 0
+      },
+      "actions_identical": false,
+      "first_divergent_ply": 5,
+      "n_divergent_plies": 68,
+      "margin_delta": -9.0
+    }
+  ]
+}

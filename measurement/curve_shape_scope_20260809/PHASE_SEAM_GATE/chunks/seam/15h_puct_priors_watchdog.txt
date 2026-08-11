@@ -1,0 +1,70 @@
+...F.                                                                    [100%]
+=================================== FAILURES ===================================
+________________________ test_watchdog_fires_end_to_end ________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-doctor/pytest-19/test_watchdog_fires_end_to_end0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x734b7259fdf0>
+
+    def test_watchdog_fires_end_to_end(tmp_path, monkeypatch):
+        # Use whichever module object is registered in sys.modules (another test file may
+        # have re-registered "eval_puct_priors"): the fork-Pool pickles _play_one by that
+        # name, so main()'s module must BE the registered one, and the monkeypatch must
+        # land on it (forked workers inherit its GAME_WALL_SECS global).
+        m = sys.modules["eval_puct_priors"]
+        monkeypatch.setattr(m, "GAME_WALL_SECS", 1e-9)
+        rc = m.main([
+            "--candidate", "h48", "--opponent", "h48", "--exact-k", "2",
+            "--n", "2", "--paired", "--workers", "2",
+            "--seed-start", "9990010000",
+            "--out-root", str(tmp_path), "--no-results-csv"])
+        assert rc == 0
+        out = tmp_path / "rr_h48_vs_h48_k2"
+        recs = [json.load(open(p)) for p in out.glob("seed*.json")]
+        assert len(recs) == 2
+>       assert all(r["game_timeout"] is True for r in recs)    # every game abandoned
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert False
+E        +  where False = all(<generator object test_watchdog_fires_end_to_end.<locals>.<genexpr> at 0x734b725ddf20>)
+
+tests/test_puct_priors_watchdog.py:92: AssertionError
+----------------------------- Captured stdout call -----------------------------
+puct-priors[rr_h48_vs_h48_k2]: n=2 paired=True | 0 cached, 2 to play, 2 workers, out=/tmp/pytest-of-doctor/pytest-19/test_watchdog_fires_end_to_end0/rr_h48_vs_h48_k2
+  2/2 played (9.2s/game, ~0 min left)
+
+=== candidate(heur h48) vs opponent(heur h48) ===
+games: 2   candidate: 0W / 0D / 2L   winrate 0.000 (z=-1.41)
+avg score diff (cand - champ): -13.00
+ELO: -800.0  (+/- nan 1sigma)
+prefix ms/move: candidate 11  champion 11  (ratio 0.99x)
+exact endgame: latched 2/2 games, 9.60s solver/game, timeouts cand=0 champ=0
+============================= slowest 10 durations =============================
+18.37s call     tests/test_puct_priors_watchdog.py::test_watchdog_fires_end_to_end
+11.32s call     tests/test_puct_priors_watchdog.py::test_watchdog_off_completes_normally
+
+(8 durations < 0.005s hidden.  Use -vv to show these durations.)
+=========================== short test summary info ============================
+FAILED tests/test_puct_priors_watchdog.py::test_watchdog_fires_end_to_end - a...
+Command exited with non-zero status 1
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_puct_priors_watchdog.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 0.21
+	System time (seconds): 0.04
+	Percent of CPU this job got: 0%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:29.89
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 56636
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 15488
+	Voluntary context switches: 135
+	Involuntary context switches: 2
+	Swaps: 0
+	File system inputs: 56
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1

@@ -1,0 +1,8 @@
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
+[done] scored=6 skipped=0 errors=0 in 60.7s
+[out] wrote measurement/v210_leaf/smoke_novariant.json
+
+==== SOLVER-SCORE (v29_leaf) ====
+AGG  n=6  solver_regret mean=1.1667 median=0.0 max=7.0  top1=0.8333  tau=0.698
+  K=2 (marg)  n=6  regret=1.1667  top1=0.8333  tau=0.698  7.82s/solve

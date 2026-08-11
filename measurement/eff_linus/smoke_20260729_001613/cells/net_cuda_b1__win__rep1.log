@@ -1,0 +1,6 @@
+'\\wsl.localhost\Ubuntu\home\doctor\projects\carcassone'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+[cuda_b1         ] forward    3.567 ms (p50 3.408 / p90 4.284)   full    5.085 ms   196.7 pos/s
+
+wrote C:\carc-shared\eff_linus_20260728\out_net_cuda_b1__win__rep1.json

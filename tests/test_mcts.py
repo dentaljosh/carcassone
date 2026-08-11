@@ -12,7 +12,7 @@ import random
 import pytest
 
 from carcassonne_ai.game_wrapper import Game
-from carcassonne_ai.mcts import MCTS, virtual_score_estimate
+from carcassonne_ai.mcts import HeuristicMCTS, MCTS, virtual_score_estimate
 
 
 def _fresh_setup(sims: int = 10, seed: int = 0) -> tuple[Game, MCTS]:
@@ -106,3 +106,95 @@ def test_virtual_score_estimate_works_at_init() -> None:
     g = Game()
     board = g.get_init_board()
     assert virtual_score_estimate(board, 0) == 0
+
+
+# ---------------------------------------------------------------------------
+# HeuristicMCTS — vanilla MCTS with virtual_score leaf instead of random rollout.
+# ---------------------------------------------------------------------------
+
+
+def test_heuristic_mcts_search_returns_legal_visits() -> None:
+    g = Game(enable_legal_moves_cache=True)
+    mcts = HeuristicMCTS(game=g, simulations=8, seed=0)
+    board = g.get_init_board()
+    visits = mcts.search(board)
+    assert sum(visits.values()) == 8
+    import numpy as np
+
+    legal = set(np.flatnonzero(g.get_valid_moves(board)).tolist())
+    assert set(visits.keys()).issubset(legal)
+
+
+def test_heuristic_mcts_best_action_is_legal() -> None:
+    g = Game(enable_legal_moves_cache=True)
+    mcts = HeuristicMCTS(game=g, simulations=5, seed=0)
+    board = g.get_init_board()
+    a = mcts.best_action(board)
+    import numpy as np
+
+    legal = np.flatnonzero(g.get_valid_moves(board))
+    assert a in legal
+
+
+def test_heuristic_mcts_rollout_returns_bounded_value() -> None:
+    """The leaf evaluator must return values in [-1, +1] so UCT scaling
+    stays comparable to the vanilla rollout regime. virtual_score is an
+    unbounded integer; HeuristicMCTS normalizes via tanh."""
+    g = Game(enable_legal_moves_cache=True)
+    mcts = HeuristicMCTS(game=g, simulations=0, seed=0)
+    board = g.get_init_board()
+    v = mcts._rollout(board)
+    assert -1.0 <= v <= 1.0
+
+
+def test_heuristic_mcts_rollout_returns_terminal_value_on_terminal() -> None:
+    """At a terminal state, _rollout returns the engine's terminal value
+    (Game already normalizes the score differential into [-1, +1]) without
+    routing through the heuristic tanh normalizer."""
+    import numpy as np
+
+    g = Game(enable_legal_moves_cache=True)
+    mcts = HeuristicMCTS(game=g, simulations=0, seed=0)
+    board = g.get_init_board()
+    rng = random.Random(0)
+    while g.get_game_ended(board, 0) == 0.0:
+        mask = g.get_valid_moves(board)
+        legal = np.flatnonzero(mask)
+        board, _ = g.get_next_state(board, int(rng.choice(legal.tolist())))
+    v = mcts._rollout(board)
+    expected = g.get_game_ended(board, board.state.current_player)
+    assert v == expected and v != 0.0
+
+
+def test_heuristic_mcts_beats_random_at_sims_50() -> None:
+    """Smoke check: HeuristicMCTS at sims=50 should beat random by a wide
+    margin. This is the bare-minimum 'depth-search-on-virtual_score-leaf
+    is at least as good as just-the-leaf' sanity check."""
+    import numpy as np
+
+    n_games = 4
+    diffs = []
+    for seed in range(n_games):
+        g = Game(enable_legal_moves_cache=True)
+        b = g.get_init_board()
+        mcts = HeuristicMCTS(game=g, simulations=50, seed=seed)
+        rng = random.Random(seed)
+        mcts_idx = seed % 2
+        while g.get_game_ended(b, 0) == 0.0:
+            mask = g.get_valid_moves(b)
+            legal = np.flatnonzero(mask)
+            cur = b.state.current_player
+            if cur == mcts_idx:
+                mcts.clear()
+                a = mcts.best_action(b)
+            else:
+                a = int(rng.choice(legal.tolist()))
+            b, _ = g.get_next_state(b, a)
+        s0, s1 = b.state.scores
+        diff = (s0 - s1) if mcts_idx == 0 else (s1 - s0)
+        diffs.append(diff)
+    mean_diff = sum(diffs) / len(diffs)
+    assert mean_diff > 5.0, (
+        f"HeuristicMCTS avg diff vs random was only {mean_diff:+.1f} across "
+        f"{n_games} games — leaf evaluator may be miswired"
+    )

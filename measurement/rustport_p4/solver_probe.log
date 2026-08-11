@@ -1,0 +1,6 @@
+[G4] 74 jobs over legs=['solver'] k8x1376=11008 workers=10 rust_threads=1
+  25/74 jobs, 0 mismatches (2s)
+  50/74 jobs, 0 mismatches (14s)
+
+[G4] PASS: 0 mismatches over 412 checks / 0 decisions / 74 solves / 0 plies in 188s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_solver_probe.json
+    solver   checks=412       decisions=0       solves=74     mismatches=0

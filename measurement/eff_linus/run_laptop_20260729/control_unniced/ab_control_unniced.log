@@ -1,0 +1,31 @@
+== eff_linus WSL-vs-native A/B ==
+   stamp   : 20260729_225457
+   out     : /home/doctor/eff_linus_out/control_unniced
+   cells   : champ_k4x172   reps=3   smoke=0
+   loadavg : 0.09 0.22 0.27 1/368 77637
+-- pre-flight census
+    PID     ELAPSED %CPU COMMAND
+NVIDIA GeForce RTX 4070 Laptop GPU, 6.19 W, 0 %, 365 MiB
+-- staging source to /mnt/c/carc-bench-eff_linus/stage
+   git_rev : 17ba2ced7
+-- warm-up (Defender first-touch of the venv; discarded)
+wsl warm 2.11.0+cu128
+'\\wsl.localhost\Ubuntu\home\doctor'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+win warm 2.11.0+cu128
+   champ_k4x172__wsl__rep1      rc=0  35.2s
+   champ_k4x172__win__rep1      rc=0  73.0s
+   champ_k4x172__win__rep2      rc=0  73.6s
+   champ_k4x172__wsl__rep2      rc=0  35.0s
+   champ_k4x172__wsl__rep3      rc=0  35.1s
+   champ_k4x172__win__rep3      rc=0  72.5s
+
+== eff_linus A/B summary ==
+   champ_k4x172   p50_s_per_move     wsl=2.2375  win=4.9272  ratio(win/wsl)=2.202  [spread wsl 1.1% / win 2.4%]
+   audit: OK — arms differ only by virtualisation.
+
+   merged -> /home/doctor/eff_linus_out/control_unniced/wsl_vs_native_ab_20260729_225457.json
+
+== done ==
+   merged JSON : /home/doctor/eff_linus_out/control_unniced/wsl_vs_native_ab_20260729_225457.json

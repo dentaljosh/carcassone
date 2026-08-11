@@ -1,0 +1,20 @@
+{
+  "n_roots": 1600,
+  "K": 8,
+  "max_plies": 200,
+  "between_var": 0.3792676627635956,
+  "mean_within_var": 0.19120487570762634,
+  "noise_fraction": 0.3351692900415957,
+  "corr_ceiling_single": 0.8153715165238508,
+  "corr_single_avg": 0.834176515328271,
+  "head_single_corr_mse": [
+    0.5784441271432804,
+    0.3694810171922048
+  ],
+  "head_avg_corr_mse": [
+    0.6504076916898847,
+    0.24960159262021384
+  ],
+  "policy": "RuleBasedPlayer greedy (proxy; production target is h200 self-play)",
+  "n_errors": 0
+}

@@ -1,0 +1,45 @@
+[cs primary Doctor 2026-08-09_04:40:57] clock-skew guard OK (0s)
+[cs primary Doctor 2026-08-09_04:40:57] start: W=30 backend=rust profile=fixed_v1 r9=1
+[cs primary Doctor 2026-08-09_04:40:57] budget=k8x1376=11008 band=110000000000 n=400 cells=[C3_hoard] out=/mnt/c/carc-shared/curveshape_probe
+[cs primary Doctor 2026-08-09_04:40:57] === cell C3_hoard -> /mnt/c/carc-shared/curveshape_probe/cs_C3_hoard ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=bbcb9b134769b4fe frozen_config_hash=43f4c3193a9dca63 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leafbbcb9b13]: info=fair n=400 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 400 to play, 30 workers, out=/mnt/c/carc-shared/curveshape_probe/cs_C3_hoard
+  10/400 played (27.0s/game, ~175 min left)
+  20/400 played (14.6s/game, ~93 min left)
+  30/400 played (11.9s/game, ~74 min left)
+  40/400 played (13.2s/game, ~79 min left)
+  50/400 played (11.6s/game, ~68 min left)
+  60/400 played (10.9s/game, ~62 min left)
+  70/400 played (11.5s/game, ~63 min left)
+  80/400 played (11.0s/game, ~59 min left)
+  90/400 played (10.4s/game, ~54 min left)
+  100/400 played (10.5s/game, ~52 min left)
+  110/400 played (10.3s/game, ~50 min left)
+  120/400 played (9.9s/game, ~46 min left)
+  130/400 played (10.2s/game, ~46 min left)
+  140/400 played (10.0s/game, ~44 min left)
+  150/400 played (9.8s/game, ~41 min left)
+  160/400 played (9.9s/game, ~40 min left)
+  170/400 played (9.8s/game, ~38 min left)
+  180/400 played (9.8s/game, ~36 min left)
+  190/400 played (9.6s/game, ~34 min left)
+  200/400 played (9.6s/game, ~32 min left)
+  210/400 played (9.4s/game, ~30 min left)
+  220/400 played (9.3s/game, ~28 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 400   candidate: 200W / 3D / 197L   winrate 0.504 (z=+0.15)
+avg score diff (candidate - opponent): +0.37
+ELO: +2.6  (+/- 17.4 1sigma)
+PAIRED: 200 decks   mean seat-balanced margin +0.37   z = +0.42
+prefix ms/move: candidate 1827  opponent 1816  (ratio 1.01x)
+fair endgame: candidate latched 400/400 games, 1.40s solver/game, timeouts=0
+fair endgame: opponent  latched 400/400 games, 1.72s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/curveshape_probe/cs_C3_hoard/summary.json
+[cs primary Doctor 2026-08-09_05:15:23] cell C3_hoard done rc=0 in 2066s
+[cs primary Doctor 2026-08-09_05:15:23] launcher finished

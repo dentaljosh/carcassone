@@ -1,0 +1,133 @@
+{
+  "overall": {
+    "n": 10067,
+    "top1": 0.4553,
+    "top3": 0.6674,
+    "tau_mean": 0.8951,
+    "regret_mean": 0.02841,
+    "regret_median": 0.00023,
+    "leaf_neq_teacher": 0.5447,
+    "leaf_picks_unvisited": 0.0
+  },
+  "by_phase": {
+    "opening": {
+      "n": 1113,
+      "top1": 0.398,
+      "top3": 0.6451,
+      "tau_mean": 0.7409,
+      "regret_mean": 0.06266,
+      "regret_median": 0.00793,
+      "leaf_neq_teacher": 0.602,
+      "leaf_picks_unvisited": 0.0
+    },
+    "midgame": {
+      "n": 2238,
+      "top1": 0.4325,
+      "top3": 0.6738,
+      "tau_mean": 0.848,
+      "regret_mean": 0.04984,
+      "regret_median": 0.00138,
+      "leaf_neq_teacher": 0.5675,
+      "leaf_picks_unvisited": 0.0
+    },
+    "late_mid": {
+      "n": 1120,
+      "top1": 0.4866,
+      "top3": 0.7107,
+      "tau_mean": 0.9368,
+      "regret_mean": 0.0196,
+      "regret_median": 7e-05,
+      "leaf_neq_teacher": 0.5134,
+      "leaf_picks_unvisited": 0.0
+    },
+    "pre_endgame": {
+      "n": 2238,
+      "top1": 0.4629,
+      "top3": 0.6671,
+      "tau_mean": 0.9425,
+      "regret_mean": 0.01696,
+      "regret_median": 0.00013,
+      "leaf_neq_teacher": 0.5371,
+      "leaf_picks_unvisited": 0.0
+    },
+    "endgame": {
+      "n": 3358,
+      "top1": 0.4741,
+      "top3": 0.6563,
+      "tau_mean": 0.9394,
+      "regret_mean": 0.01334,
+      "regret_median": 4e-05,
+      "leaf_neq_teacher": 0.5259,
+      "leaf_picks_unvisited": 0.0
+    }
+  },
+  "by_gap_tier": {
+    "near-tie<0.005": {
+      "n": 4801,
+      "top1": 0.2862,
+      "top3": 0.5678,
+      "tau_mean": 0.9269,
+      "regret_mean": 0.01366,
+      "regret_median": 0.00087,
+      "leaf_neq_teacher": 0.7138,
+      "leaf_picks_unvisited": 0.0
+    },
+    "weak>=0.005": {
+      "n": 800,
+      "top1": 0.415,
+      "top3": 0.6625,
+      "tau_mean": 0.8577,
+      "regret_mean": 0.02602,
+      "regret_median": 0.00659,
+      "leaf_neq_teacher": 0.585,
+      "leaf_picks_unvisited": 0.0
+    },
+    "medium>=0.01": {
+      "n": 786,
+      "top1": 0.5025,
+      "top3": 0.6832,
+      "tau_mean": 0.8505,
+      "regret_mean": 0.02723,
+      "regret_median": 0.0,
+      "leaf_neq_teacher": 0.4975,
+      "leaf_picks_unvisited": 0.0
+    },
+    "strong>=0.02": {
+      "n": 918,
+      "top1": 0.6198,
+      "top3": 0.756,
+      "tau_mean": 0.8673,
+      "regret_mean": 0.02853,
+      "regret_median": 0.0,
+      "leaf_neq_teacher": 0.3802,
+      "leaf_picks_unvisited": 0.0
+    },
+    "very_strong>=0.04": {
+      "n": 2762,
+      "top1": 0.693,
+      "top3": 0.8081,
+      "tau_mean": 0.8784,
+      "regret_mean": 0.05504,
+      "regret_median": 0.0,
+      "leaf_neq_teacher": 0.307,
+      "leaf_picks_unvisited": 0.0
+    }
+  },
+  "gate": {
+    "n_leaf_neq_teacher": 5483,
+    "n_regret_ge_0.01": 2582,
+    "n_regret_ge_0.02": 2083,
+    "n_regret_ge_0.04": 1621,
+    "n_gap002_and_regret002": 1197,
+    "n_endgame_regret002": 727
+  },
+  "provenance": {
+    "leaf_config_hash": "7fc930b82801cb43",
+    "teacher": "h6400_v2.9",
+    "qprobe": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/qprobe_A/probe.jsonl",
+    "pool": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/pool_A.jsonl",
+    "n_in": 10067,
+    "n_ok": 10067,
+    "n_err": 0
+  }
+}

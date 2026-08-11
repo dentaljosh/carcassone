@@ -1,0 +1,16 @@
+OWNER DECISION — 2026-08-09 ~23:35 EDT
+Joshua: "ok, let's do the phase arm"
+
+The GREEN_WITH_GAP verdict (all cells green on both trees EXCEPT
+15e07_puct_exact_max_k_configurable_latches_at_k4, excluded from BOTH legs —
+see COVERAGE_GAP.txt) is ACCEPTED. Basis, as presented to the owner:
+  - the excluded test's file is byte-identical across the two trees;
+  - the seam (549c0d1) is default-OFF, and byte-identity is separately proven
+    at the reconcile level (leaf hash unchanged; 0/3,325,532 knob-off and
+    0/3,199,556 knob-on mismatches, py==cy==rust; golden 194/0);
+  - the cell cannot be run to completion on any available box within the
+    24 GiB safety ceiling (grew past it; policy: report unbounded, never raise).
+Accepting the gap authorizes: merge 549c0d1 + run the Part C beta ladder at
+W=14 local. It does NOT retire the gap: if the 15e07 cell ever becomes
+runnable (bigger box / test segmentation), running it retroactively is the
+standing follow-up, and a failure there would reopen the seam.

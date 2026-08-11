@@ -22,12 +22,14 @@ Implementation notes:
 """
 from __future__ import annotations
 
+import copy
 import math
 import random
 from dataclasses import dataclass, field
 
 import numpy as np
 
+from . import meeple_equiv
 from .game_wrapper import Board, Game
 
 
@@ -120,7 +122,19 @@ class MCTS:
             self.search(root_board)
             root = self._nodes[self.game.string_representation(root_board)]
         # Only consider visited children. Unvisited (N==0) have undefined Q.
-        visited = [(a, c) for a, c in root.children.items() if c.N > 0]
+        # Dedup transposition collisions: rotations of a symmetric tile share
+        # one child node object (root.children[a1] is root.children[a2]); keep
+        # the lowest-index action per unique child. (Outcome-neutral here —
+        # equivalent actions yield the same board — but keeps the iteration
+        # consistent with NeuralMCTS and avoids scoring one child twice.)
+        _seen: set[int] = set()
+        visited = []
+        for a in sorted(root.children):
+            c = root.children[a]
+            if c.N <= 0 or id(c) in _seen:
+                continue
+            _seen.add(id(c))
+            visited.append((a, c))
         if not visited:
             # Pathological: search ran but no child was visited. Fall back to
             # any legal action.
@@ -234,6 +248,12 @@ class MCTS:
             state=_copy.deepcopy(board.state),
             total_tiles=board.total_tiles,
             offset=board.offset,
+            # Carry the incremental centroid sums so apply_action_inplace can
+            # keep the offset O(1)-correct down the rollout (else it would start
+            # from 0 and diverge after the first tile placement).
+            sum_row=board.sum_row,
+            sum_col=board.sum_col,
+            tile_count=board.tile_count,
         )
         leaf_player = scratch.state.current_player
         steps = 0
@@ -262,10 +282,91 @@ def virtual_score_estimate(board: Board, player: int) -> float:
 
 
 # ---------------------------------------------------------------------------
+# HeuristicMCTS — Tier-1's 1-ply heuristic with UCT search depth on top.
+# ---------------------------------------------------------------------------
+
+HEURISTIC_VALUE_NORM = 15.0  # matches warmstart value-head target normalization
+
+
+class HeuristicMCTS(MCTS):
+    """Vanilla MCTS structure with a virtual_score leaf replacing the random rollout.
+
+    Tier-1 (RuleBasedPlayer) picks the action that maximizes virtual_score one
+    ply ahead. HeuristicMCTS adds UCT search on top, so a simulation can look
+    multiple plies deep and weigh tradeoffs that 1-ply argmax misses.
+
+    ``heur_leaf`` selects which leaf the rollout-replacement uses:
+      - ``"v1"`` (DEFAULT, legacy): base ``virtual_score`` (engine end-of-game
+        scoring of the current board). This is the historical reference-ladder
+        opponent — keep it the default so prior ladder numbers stay comparable.
+      - ``"v2_7"``: ``virtual_score_v2`` with the env-built DEFAULT_CONFIG
+        (cap/drop-three-open from CARCASSONNE_V25_*). Use this to MATCH the leaf
+        the neural agent plays with (make_v25_value_wrapper), so a net-vs-heur
+        eval isolates the learned policy instead of confounding it with the
+        v2.7-vs-v1 leaf gap. (See the 2026-06-07 outside-review finding R1: the
+        ladder opponent had been running v1 while the agent ran v2.7.)
+
+    Leaf values are normalized to [-1, +1] via tanh(diff / HEURISTIC_VALUE_NORM)
+    so the UCT exploration term is on a comparable scale to the exploit term —
+    raw integer differentials would dominate Q+UCT and collapse exploration.
+    Terminal leaves return the engine's signed terminal value unchanged.
+    """
+
+    def __init__(self, *args, heur_leaf: str = "v1", leaf_cfg=None, value_norm=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if heur_leaf not in ("v1", "v2_7"):
+            raise ValueError(f"heur_leaf must be 'v1' or 'v2_7'; got {heur_leaf!r}")
+        self._heur_leaf = heur_leaf
+        # value_norm (2026-06-25, v2.9.1 retune Wave D): per-INSTANCE tanh normalization
+        # denominator. None -> module default HEURISTIC_VALUE_NORM (15.0), so every existing
+        # caller is bit-identical. Per-instance (not the module global) so a paired A/B can
+        # run the candidate at a swept norm while the baseline stays at 15.0.
+        self._value_norm = HEURISTIC_VALUE_NORM if value_norm is None else float(value_norm)
+        # leaf_cfg (2026-06-22, v2.8 branch): an optional virtual_score_v2.LeafConfig
+        # passed to the v2_7 leaf, so an OPT-IN v2.8 variant can run in HeuristicMCTS
+        # search without touching v2.7. None -> virtual_score_v2 uses DEFAULT_CONFIG
+        # (bit-identical to prior behaviour). Only meaningful when heur_leaf == "v2_7".
+        self._leaf_cfg = leaf_cfg
+        # Runtime provenance counters — let an eval ASSERT which leaf actually
+        # ran (outside-review R1: the opponent ran v1 while labels implied v2.7).
+        self._v1_calls = 0
+        self._v2_7_calls = 0
+
+    @property
+    def leaf_name(self) -> str:
+        """Which leaf this opponent uses: 'v1' (base virtual_score) or 'v2_7'."""
+        return self._heur_leaf
+
+    @property
+    def counters(self) -> dict:
+        """Runtime leaf-path call counts for provenance verification."""
+        return {"v1_calls": self._v1_calls, "v2_7_calls": self._v2_7_calls}
+
+    def _rollout(self, board: Board) -> float:
+        leaf_player = board.state.current_player
+        v = self.game.get_game_ended(board, leaf_player)
+        if v != 0.0:
+            return v
+        if self._heur_leaf == "v2_7":
+            from .virtual_score_v2 import virtual_score_v2
+            diff = virtual_score_v2(board.state, leaf_player, self._leaf_cfg)
+            self._v2_7_calls += 1
+        else:
+            diff = virtual_score_estimate(board, leaf_player)
+            self._v1_calls += 1
+        return math.tanh(diff / self._value_norm)
+
+
+# ---------------------------------------------------------------------------
 # NeuralMCTS — Phase 3 acceptance Tournament 2 (net+MCTS vs vanilla MCTS).
 # ---------------------------------------------------------------------------
 
-DEFAULT_PUCT_C = 1.5  # AlphaZero-typical PUCT exploration constant
+DEFAULT_PUCT_C = 1.5
+# AlphaZero-typical PUCT exploration constant. Empirically validated 2026-05-15
+# (iter_00 + v2.7 leaf vs Tier-1, n=20 sims=200): c=1.5 = 80% wr, c=2.0 = 85%
+# (tied at 84/88% n=50, indistinguishable), c=1.0 = 52.5%, c=0.5 = 67.5%.
+# Low c is CATASTROPHIC — search over-explores into virtual_score's blind spots.
+# Don't lower this without re-benching at n=50 minimum.
 
 
 @dataclass
@@ -279,9 +380,27 @@ class _NeuralNode:
     valid_actions: list[int] = field(default_factory=list)
     priors: dict[int, float] = field(default_factory=dict)
     leaf_value: float = 0.0  # network's value at this node (from leaf-player perspective)
+    # The board at this node, stored ONLY when the owning NeuralMCTS has
+    # record_boards=True (flywheel step 1, DECISIONS 2026-06-04). Lets self-play
+    # harvest tree-INTERIOR (board, Q) pairs as value targets so the value head
+    # sees the off-trajectory positions search actually visits — the fix for the
+    # −576 pure-NN-leaf distribution mismatch. None in the normal (eval) path so
+    # search keeps its small per-node footprint.
+    board: object = None
     expanded: bool = False
     N: int = 0
     W: float = 0.0  # total value from player_to_move's perspective
+    # --- transposition-collision bookkeeping (C2 search-side fix) ---
+    # Rotations of a symmetric tile produce the IDENTICAL child board, so several
+    # actions link to the SAME child object. Without this, PUCT scores that one
+    # move once PER colliding action (each with its own prior) — the move gets
+    # multiple bites at the selection apple. We collapse them: the FIRST action
+    # to link a given child is its representative; later colliding actions become
+    # ALIASES (skipped in selection) and their prior is folded into the
+    # representative's `prior_bonus` so the move competes once with summed prior.
+    child_canon: dict[int, int] = field(default_factory=dict)   # id(child) -> repr action
+    child_aliases: set[int] = field(default_factory=set)        # actions to skip in PUCT
+    prior_bonus: dict[int, float] = field(default_factory=dict)  # repr action -> folded prior
 
     @property
     def Q(self) -> float:
@@ -318,6 +437,11 @@ class NeuralMCTS:
         batch_size: int = 1,
         batch_evaluator=None,  # Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]
         virtual_loss: float = 1.0,
+        fair_chance: bool = False,
+        fair_isolate: bool = False,
+        fpu_reduction: float | None = None,
+        record_boards: bool = False,
+        meeple_dedup: bool | None = None,
     ):
         if game._legal_cache is None:
             game._legal_cache = {}
@@ -325,6 +449,76 @@ class NeuralMCTS:
         self.evaluator = evaluator
         self.simulations = simulations
         self.c_puct = c_puct
+        # fair_chance=True makes the search NON-CLAIRVOYANT: the engine's deck is
+        # pre-shuffled in its TRUE future order, so by default every simulation
+        # descends along the actual upcoming tiles (single-determinization /
+        # perfect-info search — the agent "sees" future draws). With fair_chance
+        # the search instead runs on a copy of the root whose UNSEEN deck is
+        # re-shuffled (contents preserved, order randomized) — one plausible
+        # future per move, the information a real player actually has. The real
+        # game board is never mutated (we descend from a copy), so the actual
+        # draw order is unchanged. This is single-determinization, NOT an
+        # expectation over draws — the exact-chance-node ensemble is a separate,
+        # larger change (the tree keys children by action, which assumes a
+        # placement yields one child; per-draw branching needs real chance nodes).
+        self.fair_chance = bool(fair_chance)
+        # fair_isolate (Probe B gate-zero fix, PROBE_B_FAIR_INFO_SPEC §3b): the
+        # LEAK GUARD for the flywheel-gen regime. When fair_chance runs with a
+        # PERSISTENT tree (K=1 search per move, no clear() between moves), an
+        # interior node created under move-t's reshuffled deck order survives in
+        # `_nodes` (deck order is not in the key) and is REUSED at move t+1 after a
+        # fresh reshuffle — backing up values conditioned on move-t's now-
+        # counterfactual future. That cross-determinization reuse is the leak that
+        # tests/test_fair_info_gate_zero.py::test_3b_flywheel_regime_leak_* detects.
+        #
+        # fair_isolate=True makes that reuse STRUCTURALLY IMPOSSIBLE: every search()
+        # under fair_chance starts from a freshly re-rooted tree (clear() first), so
+        # no node from a prior move's determinization can be descended into — the
+        # cheapest-correct PIMC fix from the spec (clear/re-root-per-determinization,
+        # the clairvoyance_gap.py pattern). This is the ANTI-PATTERN-FREE fix: it does
+        # NOT add deck order to the transposition key (that would break IS-MCTS
+        # info-set merging, spec §3). Default False → every existing caller is
+        # bit-identical; callers that never persist a fair_chance tree across moves
+        # (e.g. clairvoyance_gap.py, which clear()s itself) don't need it. It is only
+        # VALID together with fair_chance; asserting that keeps the flag from silently
+        # doing nothing on a clairvoyant search.
+        self.fair_isolate = bool(fair_isolate)
+        if self.fair_isolate and not self.fair_chance:
+            raise ValueError(
+                "fair_isolate=True requires fair_chance=True — it is the "
+                "cross-determinization leak guard for the fair-chance regime; "
+                "it has no meaning for a clairvoyant (single-true-deck) search."
+            )
+        # FPU (first-play urgency) for UNVISITED children in PUCT (round-2 audit
+        # G-T/F-D-FPU). None (default) = legacy optimistic-zero (q=0). A float r
+        # uses q = parent.Q - r, so an unvisited child is valued near the
+        # parent's own estimate minus a reduction instead of a hardcoded 0 (which
+        # is mis-scaled against the [-1,1] Q range, esp. once a raw net value
+        # drives the leaf at Stage B). A/B'd via --new-fpu/--old-fpu.
+        self.fpu_reduction = fpu_reduction
+        # record_boards: store each expanded node's board on the node so self-play
+        # can harvest tree-interior (board, Q) value targets (flywheel step 1,
+        # DECISIONS 2026-06-04). Default False → eval/anchor searches keep the
+        # lean per-node footprint; only the learner's self-play MCTS turns it on.
+        self.record_boards = bool(record_boards)
+        # MEEPLE-DEDUP (flag-gated, default OFF — `CARCASSONNE_MEEPLE_DEDUP=1`).
+        # At a meeple-phase node the action space offers one slot per SIDE, so a
+        # feature with two openings on the just-placed tile (a city spanning two
+        # edges, a straight road, one farm field reachable from two corners) is
+        # offered as two actions that are GAME-IDENTICAL forever after — features
+        # only merge, never split. Their successor boards encode differently, so the
+        # existing byte-identical-transposition machinery (`child_canon` /
+        # `child_aliases`) cannot see them and the search builds duplicate subtrees
+        # with the prior mass split between them. The census measured this at 60.75%
+        # of the champion's real meeple decisions.
+        #
+        # When on, `_expand_with_priors` keeps only the lowest-action-id member of
+        # each equivalence group, BEFORE the priors are normalized and before any
+        # child exists — so the mass is not split and the duplicate subtree is never
+        # created. `None` = inherit the process-wide flag; True/False overrides it
+        # per agent, which is what lets a dedup-ON candidate face a dedup-OFF
+        # champion inside ONE worker process.
+        self.meeple_dedup = meeple_equiv.resolve(meeple_dedup)
         self.rng = random.Random(seed)
         self._np_rng = np.random.default_rng(seed)
         self.dirichlet_alpha = float(dirichlet_alpha)
@@ -338,16 +532,64 @@ class NeuralMCTS:
         self.batch_size = max(1, int(batch_size))
         self.batch_evaluator = batch_evaluator
         self.virtual_loss = float(virtual_loss)
+        # Optional parent-board threading (Step-2 PeNS weaned flywheel,
+        # 2026-06-30). An evaluator that needs the TREE-PARENT board (one move
+        # back) to compute parent->child delta features can advertise
+        # `wants_parent = True`; when it does, `_expand`/`_expand_with_priors`
+        # call it as `evaluator(child_board, parent_board)` instead of
+        # `evaluator(child_board)`. Default OFF (the attribute is absent on every
+        # production evaluator) → zero behaviour change for all existing callers;
+        # the descent already has the parent board in scope at each leaf, so this
+        # only forwards a reference that was being discarded. At the root (no
+        # parent) parent_board is None and the evaluator falls back to its
+        # self-referential / no-parent path.
+        self._eval_wants_parent = bool(getattr(evaluator, "wants_parent", False))
         self._nodes: dict[str, _NeuralNode] = {}
         # Roots that have already had Dirichlet noise mixed into their priors.
         # Per AlphaZero, noise is applied once per new root (= per move), not
         # every search call. clear() resets this so a fresh tree starts noisy
         # again at its root.
         self._noisy_roots: set[str] = set()
+        # Optional ONE-SHOT root-prior override (Track-F Gate A oracle-prior probe,
+        # 2026-07-19). When set to a {legal_action: prior} dict via
+        # ``set_root_prior_override``, the NEXT ``search`` replaces the freshly
+        # expanded root's per-action priors with it (deeper expansions untouched),
+        # then clears the override so it never leaks to a later move. Default None
+        # → the attribute is inert and every existing caller is byte-for-byte
+        # unchanged (a single ``is not None`` check per search). See
+        # scripts/classical_search/eval_puct_priors.py --oracle-prior-mult.
+        self._root_prior_override: dict[int, float] | None = None
+
+    def _reshuffled_root(self, board: Board) -> Board:
+        """Return a copy of `board` whose UNSEEN deck is re-shuffled (contents
+        preserved, order randomized) — the fair-chance / non-clairvoyant root.
+        `next_tile` (the already-revealed current tile) is left untouched; only
+        the not-yet-drawn `state.deck` is permuted. The caller's board is never
+        mutated, so the real game's draw order is preserved. Cheap: one board
+        deepcopy + one list shuffle per move (negligible vs the sims)."""
+        b = copy.deepcopy(board)
+        self.rng.shuffle(b.state.deck)
+        b._str_repr_cache = None  # deck order isn't in the key, but be safe
+        return b
 
     def search(self, root_board: Board) -> dict[int, int]:
         """Run `simulations` PUCT iterations from `root_board`. Returns a
         {action_idx: visit_count} dict for the root's children."""
+        if self.fair_chance:
+            if self.fair_isolate:
+                # LEAK GUARD (spec §3b): re-root per determinization. Wipe the tree
+                # BEFORE reshuffling so this search cannot descend into any interior
+                # node created under a PRIOR move's (now-counterfactual) reshuffled
+                # future. Makes stale cross-determinization reuse structurally
+                # impossible — the cheapest-correct PIMC fix. clear() also resets the
+                # legal-moves cache; harmless, matches clairvoyance_gap.py.
+                self._nodes.clear()
+                self._noisy_roots.clear()
+                self.game.clear_caches()
+            # One plausible future per move; the search can no longer see the
+            # true upcoming tiles. Same root_key (deck ORDER isn't in the key),
+            # so node lookup/expansion are unchanged — only the descent differs.
+            root_board = self._reshuffled_root(root_board)
         root_key = self.game.string_representation(root_board)
         root = self._nodes.get(root_key)
         if root is None:
@@ -360,6 +602,14 @@ class NeuralMCTS:
             self._expand_with_priors(
                 root, root_board, priors_b[0], float(values_b[0])
             )
+        # ONE-SHOT root-prior override (Gate A oracle-prior probe): replace the
+        # freshly-expanded root's per-action priors with the caller-supplied
+        # distribution, then consume it so it can never leak into a later move's
+        # search. Applied AFTER expansion (so root.valid_actions exists) and
+        # BEFORE any simulation, on the root ONLY — deeper node expansions keep the
+        # normal evaluator priors. Inert (skipped) unless a caller set it.
+        if self._root_prior_override is not None and root.expanded and not root.is_terminal:
+            self._apply_root_prior_override(root)
         # AlphaZero-style root-only Dirichlet noise: applied once per fresh
         # root to encourage exploration in self-play. No-op if either alpha
         # or eps is 0 (the default — keeps tournament/eval code paths
@@ -384,6 +634,34 @@ class NeuralMCTS:
                 self._simulate(root_board, root)
         return {a: child.N for a, child in root.children.items()}
 
+    def _deduped_children(
+        self, root: "_NeuralNode"
+    ) -> list[tuple[int, "_NeuralNode"]]:
+        """Return [(action, child)] with transposition collisions removed.
+
+        Rotationally-symmetric tiles (straight roads, etc.) emit ≥2 rotations
+        that produce the IDENTICAL resulting board → identical state_key → the
+        transposition table hands BOTH action slots the SAME child node object
+        (root.children[a1] is root.children[a2]). That child accumulates visits
+        from either edge, so reading children[a].N per-action counts its visit
+        mass once PER colliding slot — ~2× inflation on ~20% of decision nodes,
+        corrupting the policy target and best_action.
+
+        Collapse each group of actions sharing one child to its lowest-index
+        action (deterministic). The actions are interchangeable by definition —
+        they yield the same board the search already treats as one node — so the
+        combined visit count belongs to a single slot; the others get nothing.
+        """
+        out: list[tuple[int, "_NeuralNode"]] = []
+        seen: set[int] = set()
+        for a in sorted(root.children):
+            child = root.children[a]
+            if id(child) in seen:
+                continue
+            seen.add(id(child))
+            out.append((a, child))
+        return out
+
     def select_for_training(
         self, root_board: Board, temperature: float
     ) -> int:
@@ -403,7 +681,7 @@ class NeuralMCTS:
         if root is None or root.N == 0:
             self.search(root_board)
             root = self._nodes[root_key]
-        visited = [(a, c.N) for a, c in root.children.items() if c.N > 0]
+        visited = [(a, c.N) for a, c in self._deduped_children(root) if c.N > 0]
         if not visited:
             return next(iter(root.children))
         actions, visits = zip(*visited)
@@ -431,11 +709,179 @@ class NeuralMCTS:
         if root is None:
             self.search(root_board)
             root = self._nodes[root_key]
-        actions = list(root.children.keys())
-        counts = np.array(
-            [root.children[a].N for a in actions], dtype=np.float64
-        )
+        items = self._deduped_children(root)
+        actions = [a for a, _ in items]
+        counts = np.array([c.N for _, c in items], dtype=np.float64)
         return counts, actions
+
+    def root_value(self, root_board: Board) -> float:
+        """Return the root's search value Q (root current-player POV) from the
+        most recent search.
+
+        root.Q = W/N from `root.player_to_move`'s perspective (= the player to
+        move at the root = the position's current player), so the returned value
+        is in [-1, +1] from the current player's POV — the SAME POV convention as
+        the self-play value targets (`values_arr`). Used to record per-position
+        MCTS search-value targets (the overfitting fix, DECISIONS 2026-06-04):
+        ~100× more independent value labels than the one-per-game outcome z.
+
+        Reuses the already-computed root from the most recent search; runs one
+        search if the root is missing or unvisited (same UX as best_action /
+        root_visit_distribution).
+        """
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None or root.N == 0:
+            self.search(root_board)
+            root = self._nodes[root_key]
+        return float(root.Q)
+
+    def interior_value_targets(
+        self,
+        root_board: Board,
+        *,
+        min_visits: int = 8,
+        max_nodes: int = 16,
+    ) -> list[tuple[object, int, float]]:
+        """Harvest (board, player_to_move, Q) value targets from the SEARCH
+        TREE INTERIOR — the off-trajectory positions the value head never sees
+        in plain self-play (flywheel step 1, DECISIONS 2026-06-04). These are
+        the fix for the −576 pure-NN-leaf cliff: the value was trained only on
+        played-trajectory positions, then queried at tree-interior nodes it
+        never saw. Training on (interior board → its converged search Q)
+        teaches the raw value to predict search outcomes at exactly the
+        positions search visits → bootstraps the value/leaf flywheel.
+
+        Requires the owning MCTS was constructed with record_boards=True (else
+        every node.board is None and this returns []). The search must already
+        have run for `root_board` (self-play calls this right after search()).
+
+        Selection:
+          - EXCLUDE the search root (already recorded as a full trajectory row
+            with policy+ownership) and terminal nodes (Q == terminal_value, no
+            learning signal beyond the outcome target).
+          - keep nodes with N >= min_visits (a well-converged Q, not N=1 noise);
+          - return the top `max_nodes` by visit count (bounds the per-move row
+            blow-up / dataset size — the interior dwarfs the one trajectory row).
+
+        Q is W/N from node.player_to_move's POV (same sign convention as
+        root.Q and the value targets), so pair it with
+        get_canonical_form(board, player_to_move) — no extra sign flip.
+        """
+        root_key = self.game.string_representation(root_board)
+        cands = [
+            node
+            for key, node in self._nodes.items()
+            if key != root_key
+            and not node.is_terminal
+            and node.board is not None
+            and node.N >= min_visits
+        ]
+        cands.sort(key=lambda n: n.N, reverse=True)
+        return [
+            (node.board, node.player_to_move, float(node.Q))
+            for node in cands[:max_nodes]
+        ]
+
+    def interior_sibling_groups(
+        self,
+        root_board: Board,
+        *,
+        min_parent_visits: int = 16,
+        min_child_visits: int = 3,
+        max_groups: int = 6,
+        max_children: int = 8,
+    ) -> list[list[tuple[object, int, float]]]:
+        """Harvest SIBLING GROUPS from the search tree for the ranking loss
+        (STEP B.1, DECISIONS 2026-06-05 pm-3). For each well-visited interior
+        PARENT node, return its visited children as a group:
+        `[(child_board, child_player_to_move, child_Q)]` with child_Q in the
+        child's OWN POV.
+
+        Why this works: STEP A/B.0 showed an MSE-trained value head ranks
+        sibling moves at CHANCE (τ≈0.08) even when it fits the target globally
+        (corr 0.86) — MSE optimizes global calibration, not local ordering. A
+        listwise ranking loss over these groups trains the head to ORDER a node's
+        children by their search Q — the local discrimination a leaf needs. All
+        children of a node share one player-to-move (Carcassonne splits tile vs
+        meeple actions), so own-POV Q IS the ordering the leaf must reproduce
+        (no per-child flip), and the head's group outputs are directly comparable.
+
+        Requires record_boards=True. Selection: parent expanded, non-terminal,
+        board recorded, N≥min_parent_visits; children (deduped) non-terminal,
+        board recorded, N≥min_child_visits; a group needs ≥2 such children. Top
+        max_groups parents by N; top max_children by N within each group.
+        """
+        scored: list[tuple[int, list[tuple[object, int, float]]]] = []
+        for node in self._nodes.values():
+            if (not node.expanded) or node.is_terminal or node.board is None:
+                continue
+            if node.N < min_parent_visits:
+                continue
+            kids: list[tuple[int, object, int, float]] = []
+            for _a, child in self._deduped_children(node):
+                if (
+                    child.board is None
+                    or child.is_terminal
+                    or child.N < min_child_visits
+                ):
+                    continue
+                kids.append((child.N, child.board, child.player_to_move, float(child.Q)))
+            if len(kids) < 2:
+                continue
+            kids.sort(key=lambda t: t[0], reverse=True)
+            kids = kids[:max_children]
+            scored.append((node.N, [(b, p, q) for (_n, b, p, q) in kids]))
+        scored.sort(key=lambda t: t[0], reverse=True)
+        return [g for (_n, g) in scored[:max_groups]]
+
+    def root_sibling_group(
+        self,
+        root_board: Board,
+        *,
+        min_child_visits: int = 3,
+        max_children: int = 16,
+    ) -> list[tuple[object, int, float]]:
+        """Harvest the ROOT's sibling group for the in-loop ranking objective
+        (Step-2 PeNS ranking arm B', the in-loop analog of the warmstart's
+        h6400 (children, oracle_q) sibling sets).
+
+        Returns `[(child_board, child_player_to_move, child_Q)]` for the root's
+        VISITED children (deduped), with child_Q = W/N in the CHILD's own POV —
+        the MCTS visit-WEIGHTED backed-up search value (the mean of all sim
+        returns routed through that child), NOT the raw single-leaf value and NOT
+        the visit count. All children of one Carcassonne node share a single
+        player_to_move (tile vs meeple actions never mix at a node), so own-POV
+        child_Q IS the order the leaf must reproduce — no per-child flip — and it
+        matches the warmstart's oracle_q sibling-ordering convention.
+
+        This is the same selection as `interior_sibling_groups` restricted to the
+        root node (so the 89-vec parent=root convention is exact — the warmstart
+        ranked the ROOT's children with parent=root). Requires record_boards=True
+        on this MCTS; the search for `root_board` must already have run (the
+        on-ply harvest calls this right after search()).
+
+        Children kept: non-terminal, board recorded, N>=min_child_visits; top
+        max_children by N. Returns [] if <2 such children (no ranking signal).
+        """
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None:
+            return []
+        kids: list[tuple[int, object, int, float]] = []
+        for _a, child in self._deduped_children(root):
+            if (
+                child.board is None
+                or child.is_terminal
+                or child.N < min_child_visits
+            ):
+                continue
+            kids.append((child.N, child.board, child.player_to_move, float(child.Q)))
+        if len(kids) < 2:
+            return []
+        kids.sort(key=lambda t: t[0], reverse=True)
+        kids = kids[:max_children]
+        return [(b, p, q) for (_n, b, p, q) in kids]
 
     def best_action(self, root_board: Board) -> int:
         root_key = self.game.string_representation(root_board)
@@ -443,7 +889,7 @@ class NeuralMCTS:
         if root is None or root.N == 0:
             self.search(root_board)
             root = self._nodes[root_key]
-        visited = [(a, c) for a, c in root.children.items() if c.N > 0]
+        visited = [(a, c) for a, c in self._deduped_children(root) if c.N > 0]
         if not visited:
             return next(iter(root.children))
 
@@ -457,6 +903,98 @@ class NeuralMCTS:
         self._nodes.clear()
         self._noisy_roots.clear()
         self.game.clear_caches()
+
+    # --- tree RE-ROOT (shared by reuse_tree and C3-INTRA within-turn carry) ---- #
+    def expected_valid_actions(self, board: Board) -> set[int]:
+        """The action set ``_expand_with_priors`` WOULD give a node for ``board``.
+
+        The full legal mask, narrowed by MEEPLE-DEDUP exactly as expansion narrows it.
+        Existing (dedup-OFF) callers get ``set(np.flatnonzero(get_valid_moves(board)))``.
+        It exists so a re-root guard can compare a retained node's frozen
+        ``valid_actions`` against what a FRESH expansion of the same board would hold —
+        comparing against the raw legal mask instead would reject every reuse whenever
+        dedup is on, since a deduped node legitimately carries a subset.
+        """
+        legal = np.flatnonzero(self.game.get_valid_moves(board))
+        if self.meeple_dedup:
+            dd = meeple_equiv.dedup_legal(board, legal)
+            if dd is not None:
+                keep, _folds = dd
+                legal = legal[keep]
+        return {int(a) for a in legal}
+
+    def prune_to_subtree(self, new_root: "_NeuralNode") -> None:
+        """Rebuild ``_nodes`` to hold ONLY the subtree reachable from ``new_root``
+        (drop every other retained node). Bounds memory and makes a stale
+        cross-move transposition collision structurally impossible — an unrelated
+        stale node can no longer be looked up. THE single implementation; the
+        ``HeuristicPriorAgent`` reuse_tree path delegates here."""
+        reachable: dict = {}
+        stack = [new_root]
+        while stack:
+            node = stack.pop()
+            k = node.state_key
+            if k in reachable:
+                continue
+            reachable[k] = node
+            for child in node.children.values():
+                if child.state_key not in reachable:
+                    stack.append(child)
+        self._nodes = reachable
+        self._noisy_roots = set()
+
+    def reroot_to(self, board: Board) -> int:
+        """Re-root this tree at ``board``'s retained node, keeping its statistics.
+
+        Returns the number of visits CARRIED IN (the retained node's ``N``), or 0 when
+        the tree could not be safely re-rooted — in which case ``_nodes`` is wiped, so
+        the caller's next ``search`` is a clean fresh one either way. Never raises, and
+        never serves a subtree that a fresh expansion would disagree with.
+
+        Rejects (returning 0) when the position is not usefully in the tree (absent,
+        unexpanded, terminal, or zero-visit) and when the retained node is a
+        WRONG-ROTATION SIBLING — same ``string_representation`` key but a different
+        legal action set (the Phase-0.3 farmer-index rotation family). That second guard
+        is the same discriminator ``HeuristicPriorAgent._reroot_or_clear`` uses, lifted
+        here so both reuse paths share one definition of "safe to re-root".
+        """
+        key = self.game.string_representation(board)
+        node = self._nodes.get(key)
+        if node is None or not node.expanded or node.is_terminal or node.N == 0:
+            self._nodes.clear()
+            self._noisy_roots.clear()
+            return 0
+        if set(node.valid_actions) != self.expected_valid_actions(board):
+            self._nodes.clear()
+            self._noisy_roots.clear()
+            return 0
+        self.prune_to_subtree(node)
+        return int(node.N)
+
+    def set_root_prior_override(self, override: dict[int, float] | None) -> None:
+        """Arm a ONE-SHOT root-prior override for the next ``search`` (Gate A
+        oracle-prior probe). ``override`` maps every legal ROOT action to a prior;
+        the next ``search`` writes those onto the expanded root's ``priors`` and
+        then disarms itself (so a subsequent move without a fresh arm searches with
+        the normal evaluator priors). Deliberately NOT reset by ``clear()`` so the
+        caller can arm → clear() → search() in that order. Pass None to disarm."""
+        self._root_prior_override = None if override is None else dict(override)
+
+    def _apply_root_prior_override(self, root: "_NeuralNode") -> None:
+        """Overwrite the expanded root's per-action priors with the armed override,
+        then consume it (one-shot). Every legal root action is set; an action absent
+        from the override map gets 0.0 (its prior mass was folded into a
+        transposition representative by the caller — see eval_puct_priors
+        _oracle_prior_from_visits). PUCT reads ``priors`` as an exploration weight
+        (no re-normalization needed); the transposition-alias ``prior_bonus`` folding
+        in ``_link_child`` still applies, so a colliding rotation competes once with
+        the summed group mass exactly as it does for evaluator priors."""
+        override = self._root_prior_override
+        self._root_prior_override = None  # one-shot: never leaks to a later move
+        if not override:
+            return
+        for a in root.valid_actions:
+            root.priors[a] = float(override.get(int(a), 0.0))
 
     def _mix_dirichlet_noise(self, root: "_NeuralNode") -> None:
         """Mix Dirichlet(α) noise into root.priors per AlphaZero spec.
@@ -488,9 +1026,40 @@ class NeuralMCTS:
             terminal_value=terminal_value,
         )
 
-    def _expand(self, node: _NeuralNode, board: Board) -> None:
+    def _link_child(
+        self, node: _NeuralNode, action: int, child: _NeuralNode
+    ) -> None:
+        """Attach `child` to `node` under `action`, maintaining the
+        transposition-collision alias structure (C2 search-side fix).
+
+        The FIRST action to link a given child object becomes that child's
+        representative. A later action that links the SAME object (a symmetric
+        rotation yielding the identical board) is recorded as an alias — skipped
+        by `_select_child_puct` — and its prior is folded once into the
+        representative's `prior_bonus`, so the move competes in PUCT exactly once
+        with the summed prior instead of once per colliding rotation.
+        """
+        node.children[action] = child
+        cid = id(child)
+        canon = node.child_canon.get(cid)
+        if canon is None:
+            node.child_canon[cid] = action
+        elif canon != action and action not in node.child_aliases:
+            node.child_aliases.add(action)
+            node.prior_bonus[canon] = (
+                node.prior_bonus.get(canon, 0.0) + node.priors.get(action, 0.0)
+            )
+
+    def _expand(
+        self, node: _NeuralNode, board: Board, parent_board: Board | None = None
+    ) -> None:
         """Query the network at this state; populate node.priors, node.leaf_value,
         node.valid_actions. Idempotent — safe to call multiple times.
+
+        `parent_board` is the TREE-PARENT board (one move back). It is threaded
+        through ONLY when the evaluator advertises `wants_parent = True` (the
+        Step-2 PeNS weaned leaf); every other evaluator ignores it and is called
+        exactly as before. None = no parent (root, or a parent-unaware caller).
 
         Defensive: a bad checkpoint can return NaN/inf priors or wrong shape;
         falls back to uniform-over-legal in any of those cases. Likewise an
@@ -502,7 +1071,10 @@ class NeuralMCTS:
             node.leaf_value = node.terminal_value
             node.expanded = True
             return
-        priors, value = self.evaluator(board)
+        if self._eval_wants_parent:
+            priors, value = self.evaluator(board, parent_board)
+        else:
+            priors, value = self.evaluator(board)
         self._expand_with_priors(node, board, priors, value)
 
     def _expand_with_priors(
@@ -518,6 +1090,12 @@ class NeuralMCTS:
         finite values clamp to [-1, 1]."""
         if node.expanded:
             return
+        # Capture the board for tree-interior value harvesting (flywheel step 1).
+        # Gated on record_boards so the eval path pays nothing. Stored before the
+        # terminal/no-legal early-returns are irrelevant — interior_value_targets
+        # filters terminals; non-terminal expanded nodes are exactly what we want.
+        if self.record_boards:
+            node.board = board
         if node.is_terminal:
             node.leaf_value = node.terminal_value
             node.expanded = True
@@ -557,6 +1135,37 @@ class NeuralMCTS:
             v = 0.0
         v = max(-1.0, min(1.0, v))
 
+        # --- MEEPLE-DEDUP (default OFF; see __init__) ------------------------ #
+        # THE choke point. Every node in this tree — the root (search() and
+        # _gumbel_root_search call _expand_with_priors directly) and every interior
+        # node (_expand delegates here) — gets its action list from exactly these two
+        # lines, so narrowing `legal`/`legal_priors` here is sufficient AND complete:
+        # PUCT only ever selects from `node.valid_actions`, so a dropped duplicate is
+        # never selected, never expanded, and never becomes a child. The true legal
+        # mask from `game.get_valid_moves` is untouched — other consumers (the UI, the
+        # solver, the agents' own legality checks) still see every action.
+        if self.meeple_dedup:
+            dd = meeple_equiv.dedup_legal(board, legal)
+            if dd is not None:
+                keep, folds = dd
+                if meeple_equiv.PRIOR_MODE == "fold":
+                    # The group competes ONCE carrying the mass the evaluator gave the
+                    # concept — the same convention `_link_child` uses for byte-
+                    # identical aliases (`prior_bonus`). `legal_priors` is always a
+                    # fresh array here (a fancy-indexed copy or np.full), so the
+                    # in-place add cannot touch the evaluator's own prior vector.
+                    for dst, src in folds:
+                        legal_priors[dst] += legal_priors[src]
+                legal = legal[keep]
+                legal_priors = legal_priors[keep]
+                s2 = float(legal_priors.sum())
+                if s2 > 0 and math.isfinite(s2):
+                    legal_priors = legal_priors / s2
+                else:
+                    legal_priors = np.full(
+                        legal.size, 1.0 / legal.size, dtype=np.float32
+                    )
+
         node.valid_actions = [int(a) for a in legal]
         node.priors = {int(a): float(p) for a, p in zip(legal, legal_priors)}
         node.leaf_value = v
@@ -581,7 +1190,17 @@ class NeuralMCTS:
         priors_list = []
         values_list = []
         for b in boards:
-            p, v = self.evaluator(b)
+            # Parent-board threading is not plumbed through the batched/eval-board
+            # path (it deduplicates boards across paths, so a single parent board
+            # is ill-defined). A parent-aware evaluator is called with parent=None
+            # here and falls back to its no-parent path. The Step-2 PeNS gen runs
+            # batch_size=1 (the serial _simulate path), which DOES thread the
+            # parent; this branch only fires for root expansion (parent=None
+            # anyway) and tests.
+            if self._eval_wants_parent:
+                p, v = self.evaluator(b, None)
+            else:
+                p, v = self.evaluator(b)
             priors_list.append(p)
             values_list.append(float(v))
         return np.stack(priors_list), np.array(values_list, dtype=np.float32)
@@ -591,15 +1210,27 @@ class NeuralMCTS:
         sqrt_parent_N = math.sqrt(max(node.N, 1))
         best_action = node.valid_actions[0]
         best_score = -math.inf
+        aliases = node.child_aliases
+        prior_bonus = node.prior_bonus
         for action in node.valid_actions:
+            # Skip transposition aliases: a colliding rotation whose move is
+            # already represented by another action (its prior was folded in).
+            if aliases and action in aliases:
+                continue
             child = node.children.get(action)
             if child is None:
-                q = 0.0
+                # FPU: legacy q=0 (None) or parent.Q - reduction. node.Q is from
+                # node.player_to_move's POV — same POV the unvisited child is
+                # scored in here — so no sign flip is needed.
+                q = 0.0 if self.fpu_reduction is None else node.Q - self.fpu_reduction
                 n = 0
             else:
                 q = child.Q if child.player_to_move == node.player_to_move else -child.Q
                 n = child.N
-            u = self.c_puct * node.priors[action] * sqrt_parent_N / (1 + n)
+            p = node.priors[action]
+            if prior_bonus:
+                p += prior_bonus.get(action, 0.0)
+            u = self.c_puct * p * sqrt_parent_N / (1 + n)
             score = q + u
             if score > best_score:
                 best_score = score
@@ -668,7 +1299,7 @@ class NeuralMCTS:
             if child is None:
                 fresh = self._create_node(board)
                 child = self._nodes.setdefault(fresh.state_key, fresh)
-                parent.children[action] = child
+                self._link_child(parent, action, child)
                 self._apply_vloss_at_child(parent, child)
                 path.append(child)
                 needs_eval = (not child.is_terminal) and (not child.expanded)
@@ -731,15 +1362,32 @@ class NeuralMCTS:
                 else:
                     n.W -= leaf_value
 
-    def _simulate(self, root_board: Board, root: _NeuralNode) -> None:
-        """One PUCT iteration: select → (expand) → backprop with leaf_value."""
+    def _simulate(
+        self,
+        root_board: Board,
+        root: _NeuralNode,
+        forced_root_action: int | None = None,
+    ) -> None:
+        """One PUCT iteration: select → (expand) → backprop with leaf_value.
+
+        `forced_root_action` (Gumbel-root / sequential-halving driver ONLY): when
+        set, the FIRST descent edge (out of the root) is the given action instead of
+        the PUCT pick; every INTERIOR edge below the root still uses PUCT, byte-for-
+        byte. Default None → the whole descent is PUCT (the untouched champion path).
+        """
         path: list[_NeuralNode] = [root]
         board = root_board
         node = root
 
         # Selection: walk down using PUCT, treating expanded nodes as internal.
         while node.expanded and not node.is_terminal:
-            action = self._select_child_puct(node)
+            if forced_root_action is not None and node is root:
+                action = forced_root_action
+            else:
+                action = self._select_child_puct(node)
+            # Keep the tree-parent board (this node's board, one move back) so a
+            # parent-aware evaluator can compute parent->child delta features.
+            parent_board = board
             board, _ = self.game.get_next_state(board, action)
             child = node.children.get(action)
             if child is None:
@@ -749,9 +1397,14 @@ class NeuralMCTS:
                 # combine across paths). Otherwise register a new one.
                 fresh = self._create_node(board)
                 child = self._nodes.setdefault(fresh.state_key, fresh)
-                if child is fresh and not child.expanded:
-                    self._expand(child, board)
-                node.children[action] = child
+                # Expand any unexpanded leaf — whether freshly created here or
+                # a transposition created (but not yet expanded) on another
+                # path. The old `child is fresh` guard skipped the latter,
+                # leaving leaf_value at its 0.0 default and backing up a bogus
+                # zero. (Matches _select_leaf_with_vloss's needs_eval logic.)
+                if not child.expanded:
+                    self._expand(child, board, parent_board)
+                self._link_child(node, action, child)
                 path.append(child)
                 node = child
                 break
@@ -759,8 +1412,10 @@ class NeuralMCTS:
                 path.append(child)
                 node = child
 
-        # If we exited because we hit a terminal node, leaf_value is already set
-        # by _create_node / terminal_value. Otherwise it's set by _expand above.
+        # Every node reaching here has been through _expand — the loop only
+        # descends into expanded nodes, and the break-path expands its leaf.
+        # _expand sets leaf_value: the net's value for a non-terminal node,
+        # or terminal_value for a terminal one.
         leaf_value = node.leaf_value
         leaf_player = node.player_to_move
 

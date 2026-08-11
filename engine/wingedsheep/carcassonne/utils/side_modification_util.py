@@ -84,7 +84,18 @@ class SideModificationUtil:
         elif farmer_side == FarmerSide.TLT:
             return FarmerSide.BLB
         elif farmer_side == FarmerSide.TRT:
-            return FarmerSide.BRR
+            # Patched (vendored fork): was BRR — a typo that made
+            # opposite_farmer_side non-bijective (BRR was the image of both TRT
+            # and BLL; BRB was never produced). Crossing the top edge's
+            # right-half (TRT) must land on the neighbour's bottom edge
+            # right-half (BRB), the mirror across the shared border. The bug made
+            # farmer adjacency asymmetric, so FarmUtil.find_farm returned
+            # start-dependent regions -> nondeterministic / double-counted farm
+            # scores (~2.2% of games) that also tainted virtual_score / the v2.7
+            # leaf. With this fix the 8 farmer half-sides form 4 clean involution
+            # pairs: {TLL,TRR} {TLT,BLB} {TRT,BRB} {BRR,BLL}. See DECISIONS.md
+            # 2026-05-29.
+            return FarmerSide.BRB
         elif farmer_side == FarmerSide.TRR:
             return FarmerSide.TLL
         elif farmer_side == FarmerSide.BRR:

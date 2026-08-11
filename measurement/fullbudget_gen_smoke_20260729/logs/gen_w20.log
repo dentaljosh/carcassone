@@ -1,0 +1,4 @@
+gen_fair_distill: games=20 k_dets=4 sims=688 (budget=2752) exact_endgame=True exact_max_k=2 sighted=True batch_size=16 rep=81ch/42sc leaf_hash=6dfffd57051690f2 net_mode=orch-shm(fbsmoke) | 0 cached, 20 to play, 20 workers, out=/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/smoke_out/w20
+  [orch] SHM eval-server 'fbsmoke': 20 CPU workers attach to /dev/shm/carc_fbsmoke (81ch/42-scalar sighted net PRIORS)
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 9 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

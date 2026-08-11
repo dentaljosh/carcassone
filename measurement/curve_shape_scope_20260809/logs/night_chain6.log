@@ -1,0 +1,7 @@
+[night 2026-08-09_17:21:17] waiting for the Part-A conductor to exit...
+[night 2026-08-09_17:21:17] Part A conductor has exited.
+[night 2026-08-09_17:21:18] Part A verdict: A4_UNRESOLVABLE
+[night 2026-08-09_17:21:18] waiting for the boxes to go quiet before the phase-seam gate...
+[night 2026-08-09_17:21:18] quiet. Running phase-seam gate (d).
+[night 2026-08-09_17:21:18] phase-seam gate verdict: GREEN_WITH_GAP
+[night 2026-08-09_17:21:18] PHASE ARM IS A FULL STOP. 549c0d1 stays unmerged; no phase cell runs.

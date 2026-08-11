@@ -1,0 +1,10 @@
+{
+ "chunk": "15e06_puct_no_solver_above_exact_max_k",
+ "tree": "main",
+ "rc": 0,
+ "duration_s": 0,
+ "attempt": 1,
+ "peak_rss_kb": 60028,
+ "n_failing": 0,
+ "failing_ids": []
+}

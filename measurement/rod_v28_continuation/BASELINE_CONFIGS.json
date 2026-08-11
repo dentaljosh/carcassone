@@ -1,0 +1,137 @@
+{
+  "_meta": {
+    "doc": "RoD v2.8 continuation probe — frozen baseline configs (Phase 1)",
+    "branch": "rod_v28_continuation_probe",
+    "base_commit": "ccc33c2",
+    "date": "2026-06-22",
+    "status": "MEASUREMENT ONLY — no promotion, no PRODUCTION.yaml edit, v2.7 frozen, v2.8 opt-in",
+    "binding_baseline": "ITER8_V28_PARENT",
+    "note": "v2.8 = v2.7 leaf + legacy LeafConfig.meeple_k=2.0 (env CARCASSONNE_V25_MEEPLE_K=2.0). Legacy field -> _v28_active() stays False -> FLAT/Cython fast path. Do NOT use CARCASSONNE_V28_MEEPLE_K (object path, 2.26x slower, recovery-scaled, hurt ~75 elo)."
+  },
+  "shared": {
+    "checkpoint_iter8": {
+      "ckpt_id": "flywheel2_champion_iter8",
+      "path_local": "/mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+      "path_remote": "/mnt/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+      "sha256": "0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c",
+      "arch": "96x6 ResNet, n_scalar_features=12, value_global_pool=False"
+    },
+    "eval_protocol": {
+      "pairing": "deck-paired, same deck both seats, seat-balanced",
+      "neural_agent": "NeuralMCTS, sims=200, c_puct=3.0",
+      "eval_seed_floor": 1000000000,
+      "spent_bands_do_not_reuse": {
+        "sealed_1.7e9": "flywheel2 sealed selection panel (SPENT)",
+        "battery_1.906e9": "v28_leaf_swap_orch default seed_start",
+        "battery_1.907e9": "v28_handoff_orch --seed-start 1907220000"
+      },
+      "rod_fresh_eval_band": 1922000000,
+      "rod_selfplay_gen_band": "< 1e9 (run_residual_flywheel_v2.sh-managed SEED_START; kept below EVAL_SEED_FLOOR)"
+    },
+    "base_env_v27_neural": {
+      "CARCASSONNE_V25_CAP": "12",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CARCASSONNE_V25_RESIDUAL_SCALE": "0.25",
+      "CARCASSONNE_V25_MEEPLE_K": "0.0"
+    },
+    "base_env_v28_neural": {
+      "CARCASSONNE_V25_CAP": "12",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CARCASSONNE_V25_RESIDUAL_SCALE": "0.25",
+      "CARCASSONNE_V25_MEEPLE_K": "2.0"
+    },
+    "base_env_v28_heuristic": {
+      "_comment": "pure HeuristicMCTS: no net, so RESIDUAL_SCALE has no effect (set 0)",
+      "CARCASSONNE_V25_CAP": "12",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CARCASSONNE_V25_RESIDUAL_SCALE": "0",
+      "CARCASSONNE_V25_MEEPLE_K": "2.0"
+    }
+  },
+  "baselines": {
+    "ITER8_V27_PROD": {
+      "role": "lower reference (production champion). NOT the binding comparison.",
+      "agent": "NeuralMCTS",
+      "checkpoint": "iter8",
+      "sims": 200,
+      "c_puct": 3.0,
+      "leaf": "v2.7 (virtual_score_v2 / flat)",
+      "residual_scale": 0.25,
+      "meeple_k": 0.0,
+      "env": "base_env_v27_neural",
+      "measured_anchors": {
+        "vs_heur800_v27_sealed_n400": "+58.7 elo (PRODUCTION.yaml validation)",
+        "vs_heur3200_v27_n400": "-28.7 elo (Joshua #8, V28_LEAF_SWAP_REPORT)"
+      }
+    },
+    "ITER8_V28_PARENT": {
+      "role": "BINDING BASELINE — the frozen parent every RoD checkpoint must beat at equal (v2.8) leaf.",
+      "agent": "NeuralMCTS",
+      "checkpoint": "iter8",
+      "sims": 200,
+      "c_puct": 3.0,
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0)",
+      "residual_scale": 0.25,
+      "meeple_k": 2.0,
+      "env": "base_env_v28_neural",
+      "reproduces_battery_side": "the 'A' side of iter8_v28meeplek2_vs_iter8_v27_neural_n400 (+154.5 elo over iter8+v2.7)",
+      "measured_anchors": {
+        "vs_iter8_v27_n400": "+154.5 elo, z=9.82",
+        "vs_heur3200_v27_n200": "+153.4 elo, z=5.87",
+        "vs_heur3200_v28_n200_EQUAL_LEAF": "-38.4 elo, z=-1.56"
+      }
+    },
+    "HEUR_3200_V28": {
+      "role": "strong out-of-lineage ruler (stronger non-saturated reference than heur@3200_v2.7).",
+      "agent": "HeuristicMCTS",
+      "checkpoint": null,
+      "heur_sims": 3200,
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0)",
+      "residual_scale": 0,
+      "meeple_k": 2.0,
+      "env": "base_env_v28_heuristic",
+      "measured_anchors": {
+        "vs_iter8_v28_n200": "+38.4 elo over iter8+v2.8 (i.e. iter8+v2.8 is -38.4 vs it)"
+      }
+    },
+    "HEUR_800_V28": {
+      "role": "matched-budget ruler (the keep-best ruler family used in attempt-2/deeper-teacher was heur@800).",
+      "agent": "HeuristicMCTS",
+      "checkpoint": null,
+      "heur_sims": 800,
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0)",
+      "residual_scale": 0,
+      "meeple_k": 2.0,
+      "env": "base_env_v28_heuristic",
+      "measured_anchors": {
+        "note": "not directly measured in the battery; the v2.8 heur@200 k-sweep peak was +179.5 over heur@200_v2.7. heur@800_v28 anchor to be measured in Phase 5 if a checkpoint survives."
+      }
+    },
+    "HYBRID_K8_V28": {
+      "role": "optional ruler — existing hybrid policy (neural@200 value + heur@800 endgame handoff at K=8) with v2.8 leaf.",
+      "optional": true,
+      "agent": "hybrid:8:800",
+      "checkpoint": "iter8",
+      "sims": 200,
+      "heur_sims": 800,
+      "handoff_k": 8,
+      "c_puct": 3.0,
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0)",
+      "residual_scale": 0.25,
+      "meeple_k": 2.0,
+      "env": "base_env_v28_neural",
+      "measured_anchors": {
+        "vs_hybrid8_800_v27_n200": "+153.4 elo, z=5.87"
+      }
+    }
+  }
+}

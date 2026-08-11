@@ -1,0 +1,351 @@
+#!/usr/bin/env python3
+"""Cross-compile the repo's Cython fast paths into Android wheels for Chaquopy.
+
+WHY THIS EXISTS (read before "simplifying" it into a pip call)
+--------------------------------------------------------------
+Chaquopy 17 CANNOT build native code. Its pip wrapper (``chaquopy/pip_install.py``,
+inside ``gradle-17.0.0.jar`` -> ``build-packages.zip``) always runs:
+
+    pip install --only-binary :all: --platform android_<minSdk>_<abi> --target ...
+
+``--only-binary :all:`` rules out sdists and source directories outright; a local
+source tree containing an extension still dies with
+``error: CCompiler.compile: Chaquopy cannot compile native code``. This was tightened,
+not relaxed, in v17. The ONLY supported way to get a C extension into a Chaquopy APK is
+to hand pip a finished Android wheel, which is what this script produces.
+
+WHAT IT DOES
+------------
+1. Syncs ``src/carcassonne_ai/{flat_leaf_cy,flat_repr_cy}.pyx`` into
+   ``android/native/carc-cy/carc_cy/`` (gitignored copies -> no source drift).
+2. Runs Cython to emit ``.c`` (architecture-independent).
+3. Compiles each module for each ABI with NDK clang, against the Android
+   ``Python.h`` / ``libpython3.12.so`` from the ``com.chaquo.python:target`` artifact.
+4. Packages one wheel per ABI, tagged ``cp312-cp312-android_21_<abi>``.
+
+The wheels are dropped in ``--out``, which Gradle passes to Chaquopy as
+``pip { options("--find-links", <out>); install("carc-cy==<version>") }``.
+
+SHARED MACHINERY
+----------------
+NDK discovery, the ``com.chaquo.python:target`` artifact, the readelf link
+assertions and the wheel writer live in ``_chaquopy_common.py``, shared with
+``build_rust_wheels.py``. This script keeps only what is Cython-specific.
+
+⚠️ The link flags here are NEAR-FROZEN, and for a reason worth keeping in head:
+this wheel is a shipped artefact whose content-addressed version covers the
+``.pyx`` bytes and nothing else, so a flag change ships SILENTLY — the version
+string does not move. Change them only deliberately, and say so here.
+
+✅ CHANGED ONCE, 2026-08-01: the 16 KiB page-alignment flag
+(``C.PAGE_ALIGN_LDFLAG``) is now passed, matching ``build_rust_wheels.py``.
+Until then the cy extensions were 4 KiB-aligned and **would not dlopen on a
+16 KiB-page device** (Android 15+); the Pixel 9 Pro defaults to 4 KiB pages, so
+the bug was latent rather than live. It was left alone through P7 only so the
+build-tooling refactor could be proved byte-identical (it was: ``b663f6b0…`` /
+``535934f5…``). That proof is spent, and the fix is now in:
+``assert_links_libpython(..., require_page_align=True)`` makes it a hard gate on
+every build, so the alignment can never silently regress.
+
+VERSION / CACHE BUSTING
+-----------------------
+``--version`` is content-addressed by the Gradle task from the .pyx bytes **plus
+``link_signature()``** — the flags, the Android API/target artifact, the Cython
+version that emits the ``.c``, and the build scripts' own bytes. Any of those moving
+yields a new version, which changes the pip requirement string, which invalidates
+Chaquopy's task inputs AND cannot hit a stale wheel in pip's cache. ⚠️ The
+``.pyx``-bytes-only rule was the pre-2026-08-01 one; it shipped a stale 4 KiB-aligned
+wheel once (see the link-flag note above) and hid the Cython version entirely
+(ROUND2 F-3). See ``link_signature`` for what is in the salt and how to extend it.
+
+STANDALONE USE
+--------------
+    python3 android/tools/build_cy_wheels.py --sync-only
+    python3 android/tools/build_cy_wheels.py --out /tmp/wheels --version 1.2.3
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent            # android/tools
+ANDROID_DIR = HERE.parent                          # android
+REPO = ANDROID_DIR.parent                          # repo root
+PKG_DIR = ANDROID_DIR / "native" / "carc-cy"
+
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(PKG_DIR))
+import _chaquopy_common as C  # noqa: E402
+from build_config import (  # noqa: E402
+    ABI_TRIPLES,
+    DIST_NAME,
+    MODULES,
+    PACKAGE,
+    PYTHON_VERSION,
+    PYX_SOURCE_DIR,
+)
+
+CACHE_DIR = PKG_DIR / ".cache"
+# cp312: matches Chaquopy 17's bundled CPython. Wheels are interpreter-specific.
+PY_TAG = "cp" + PYTHON_VERSION.replace(".", "")
+
+log = C.make_logger("build_cy_wheels")
+
+# build_config.py stays the single source of truth for what THIS wheel contains;
+# the values it shares with the Rust wheel must agree with the common module or
+# the two artefacts could disagree about what "android_21" means.
+assert ABI_TRIPLES == C.ABI_TRIPLES, "ABI table drift between build_config and _chaquopy_common"
+assert PYTHON_VERSION == C.PYTHON_VERSION, "python version drift"
+
+
+# --------------------------------------------------------------------------- #
+# 1. Source sync                                                               #
+# --------------------------------------------------------------------------- #
+def sync_sources() -> list[Path]:
+    """Copy the canonical .pyx into the package dir. Returns the destinations."""
+    src_dir = REPO / PYX_SOURCE_DIR
+    dest_dir = PKG_DIR / PACKAGE
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    out = []
+    for mod in MODULES:
+        src = src_dir / f"{mod}.pyx"
+        if not src.is_file():
+            raise SystemExit(f"missing canonical source: {src}")
+        dest = dest_dir / f"{mod}.pyx"
+        data = src.read_bytes()
+        # Only rewrite on change, so Cython's own timestamp check stays useful.
+        if not dest.is_file() or dest.read_bytes() != data:
+            dest.write_bytes(data)
+            log(f"synced {src.relative_to(REPO)} -> {dest.relative_to(REPO)}")
+        out.append(dest)
+    return out
+
+
+# Build inputs that change the OUTPUT BYTES without changing any .pyx. Mixed into the
+# content-addressed version so a change can never be served stale out of pip's cache —
+# the 2026-08-01 page-alignment fix is exactly the case that proved it can.
+#
+# ⚠️ WIDENED 2026-08-02 (ROUND2 F-3). It used to be `PAGE_ALIGN_LDFLAG` and nothing
+# else, which left the CODE GENERATOR ITSELF outside the hash: the `.so` bytes are
+# decided by the Cython version that emits the `.c`, by the compile line
+# (`-O3 -DNDEBUG --target=<triple><ANDROID_API>`) and by
+# `TARGET_ARTIFACT_VERSION`/`ANDROID_API` (which pick the Android Python.h +
+# libpython3.12.so). Measured then: `pip install -U Cython` changed the shipped `.so`
+# with a byte-identical requirement string, and because `find_cython()` prefers
+# `sys.executable`, installing Cython into buildPython switched generators with no
+# version movement at all. The declared rule (`_chaquopy_common.content_version`,
+# "a build input that changes the artefact must change the version") now holds.
+def cython_signature() -> str:
+    """``cython=<version>`` for the interpreter that will actually run Cython.
+
+    Deliberately the VERSION, not the interpreter path: the path is machine-local and
+    would churn the wheel version across boxes that emit identical `.c`. A missing
+    Cython is recorded as `UNAVAILABLE` rather than raised, because `--print-version`
+    runs at Gradle CONFIGURATION time — the build must still fail at `cythonize()`,
+    with its own actionable message, not while Gradle is merely configuring."""
+    try:
+        cy = find_cython()
+        out = subprocess.run(cy + ["--version"], capture_output=True, text=True,
+                             check=True)
+        ver = (out.stdout + out.stderr).strip().splitlines()[0].strip()
+    except (SystemExit, subprocess.CalledProcessError, OSError, IndexError):
+        return "cython=UNAVAILABLE"
+    return f"cython={ver}"
+
+
+def link_signature() -> bytes:
+    parts = [
+        C.PAGE_ALIGN_LDFLAG,
+        "cflags=-shared -fPIC -O3 -DNDEBUG",
+        f"android_api={C.ANDROID_API}",
+        f"target_artifact={C.TARGET_ARTIFACT_VERSION}",
+        f"python_version={PYTHON_VERSION}",
+        f"py_tag={PY_TAG}",
+        f"modules={','.join(MODULES)}",
+        cython_signature(),
+    ]
+    h = hashlib.sha256("\0".join(parts).encode())
+    # The scripts that decide how the object is emitted. Closes F-4's stale-wheel
+    # path (bump MAX_PAGE_SIZE in the shared module and only ONE wheel rebuilds) on
+    # the version side, as the Gradle input sets do on the task side.
+    for p in (Path(__file__).resolve(), Path(C.__file__).resolve(),
+              PKG_DIR / "build_config.py"):
+        h.update(b"\0script\0")
+        h.update(p.name.encode())
+        h.update(p.read_bytes())
+    return h.digest()
+
+
+def source_version() -> str:
+    """Content-addressed version from the .pyx bytes PLUS ``link_signature()``.
+
+    Gradle normally computes this itself so it is known at CONFIGURATION time; this
+    keeps standalone runs consistent with it. (``link_signature`` is a function, not
+    the old module constant, because it probes the Cython version — a subprocess that
+    must not run on a bare ``import``.)"""
+    return C.content_version(
+        [REPO / PYX_SOURCE_DIR / f"{mod}.pyx" for mod in MODULES],
+        extra=link_signature())
+
+
+# --------------------------------------------------------------------------- #
+# 2. Toolchain discovery (shared: see _chaquopy_common)                        #
+# --------------------------------------------------------------------------- #
+def find_cython() -> list[str]:
+    """An interpreter that can run ``-m cython``. Prefers the current one."""
+    cands = [[sys.executable], [str(REPO / ".venv" / "bin" / "python")], ["cython"]]
+    for c in cands:
+        exe = c[0]
+        if exe != "cython" and not Path(exe).exists():
+            continue
+        cmd = c + (["-m", "cython", "--version"] if exe != "cython" else ["--version"])
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+        except (subprocess.CalledProcessError, OSError):
+            continue
+        return c + (["-m", "cython"] if exe != "cython" else [])
+    raise SystemExit(
+        "Cython not available. Install it into the build interpreter:\n"
+        f"    {sys.executable} -m pip install 'Cython>=3.0'"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# 3. Compile                                                                   #
+# --------------------------------------------------------------------------- #
+def cythonize(build_dir: Path) -> dict[str, Path]:
+    cy = find_cython()
+    out = {}
+    for mod in MODULES:
+        pyx = PKG_DIR / PACKAGE / f"{mod}.pyx"
+        c_file = build_dir / f"{mod}.c"
+        cmd = cy + [
+            "-3",
+            "--module-name", f"{PACKAGE}.{mod}",
+            "-o", str(c_file),
+            str(pyx),
+        ]
+        log(f"cython {mod}")
+        subprocess.run(cmd, check=True)
+        out[mod] = c_file
+    return out
+
+
+def compile_abi(abi: str, c_files: dict[str, Path], ndk: Path, build_dir: Path) -> dict[str, Path]:
+    triple = ABI_TRIPLES[abi]
+    bindir = C.ndk_bin(ndk)
+    clang = bindir / "clang"
+    strip = bindir / "llvm-strip"
+    target = C.ensure_target(abi, CACHE_DIR, log)
+    include, libdir = C.target_paths(target, abi)
+
+    out_dir = build_dir / abi / PACKAGE
+    out_dir.mkdir(parents=True, exist_ok=True)
+    built = {}
+    for mod, c_file in c_files.items():
+        so = out_dir / f"{mod}.so"
+        # FLAGS: previously frozen so the P7 build-tooling refactor could be proved
+        # byte-identical. ⚠️ UNFROZEN 2026-08-01 (Joshua: "1 yes"/"2 yes" build) to add
+        # C.PAGE_ALIGN_LDFLAG. This DELIBERATELY CHANGES THE SHIPPED BYTES: NDK r27.3
+        # does not pass -z max-page-size by default (measured, G7 build-tooling finding
+        # 2), so every cy wheel shipped before this line was 4 KiB-aligned and would not
+        # dlopen on a 16 KiB-page device. Latent, not live — the Pixel 9 Pro runs 4 KiB
+        # pages — but it is a load-time failure on the device, never here, so it is
+        # fixed before it ships rather than after. The assertion below is now HARD.
+        cmd = [
+            str(clang),
+            f"--target={triple}{C.ANDROID_API}",
+            "-shared", "-fPIC", "-O3", "-DNDEBUG",
+            # The Android include dir comes FIRST so its pyconfig.h shadows any host one.
+            "-I", str(include),
+            "-o", str(so),
+            str(c_file),
+            "-L", str(libdir), f"-lpython{PYTHON_VERSION}",
+            f"-Wl,-soname,{mod}.so",
+            C.PAGE_ALIGN_LDFLAG,
+        ]
+        log(f"clang {abi}/{mod}.so")
+        subprocess.run(cmd, check=True)
+        subprocess.run([str(strip), "--strip-unneeded", str(so)], check=True)
+        # Catches a bad cross-link here instead of at dlopen time on the phone.
+        C.assert_links_libpython(so, ndk, abi, log, require_page_align=True)
+        built[mod] = so
+    return built
+
+
+# --------------------------------------------------------------------------- #
+# 4. Wheel packaging (writer shared: see _chaquopy_common.write_wheel)          #
+# --------------------------------------------------------------------------- #
+def build_wheel(abi: str, sos: dict[str, Path], version: str, out_dir: Path) -> Path:
+    payload: list[tuple[str, bytes]] = [
+        (f"{PACKAGE}/__init__.py", (PKG_DIR / PACKAGE / "__init__.py").read_bytes())
+    ]
+    for mod in MODULES:
+        payload.append((f"{PACKAGE}/{mod}.so", sos[mod].read_bytes()))
+    return C.write_wheel(
+        out_dir=out_dir,
+        dist_name=DIST_NAME,
+        version=version,
+        tag=C.wheel_tag(abi, PY_TAG),
+        payload=payload,
+        summary="Cython fast paths (flat leaf + board encoder) for Carcassonne AI",
+        top_level=[PACKAGE],
+        generator="carc-cy build_cy_wheels.py",
+        plat=C.platform_tag(abi),
+        log=log,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# main                                                                         #
+# --------------------------------------------------------------------------- #
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out", type=Path, help="directory to write wheels into")
+    ap.add_argument("--version", help="wheel version (default: content hash of the .pyx)")
+    ap.add_argument("--sdk-dir", type=Path, help="Android SDK root (for NDK discovery)")
+    ap.add_argument("--ndk-dir", help="explicit NDK directory")
+    ap.add_argument("--abis", nargs="+", default=list(ABI_TRIPLES),
+                    choices=list(ABI_TRIPLES))
+    ap.add_argument("--sync-only", action="store_true",
+                    help="only copy the .pyx into the package dir, then exit")
+    ap.add_argument("--print-version", action="store_true")
+    args = ap.parse_args()
+
+    if args.print_version:
+        print(source_version())
+        return 0
+
+    sync_sources()
+    if args.sync_only:
+        log("sync complete")
+        return 0
+
+    if args.out is None:
+        ap.error("--out is required unless --sync-only/--print-version is given")
+
+    version = args.version or source_version()
+    ndk = C.find_ndk(args.sdk_dir, args.ndk_dir)
+    log(f"NDK {ndk.name}  version {version}  abis {' '.join(args.abis)}")
+
+    build_dir = PKG_DIR / "build" / "android"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    c_files = cythonize(build_dir)
+
+    # Clear stale wheels so a version bump can never leave two candidates behind for
+    # pip's --find-links resolution to choose between.
+    C.clear_stale_wheels(args.out, PACKAGE)
+
+    for abi in args.abis:
+        sos = compile_abi(abi, c_files, ndk, build_dir)
+        build_wheel(abi, sos, version, args.out)
+
+    log("done")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,6708 @@
+{
+  "schema": "carcassonne-m5-bench/v1",
+  "kind": "champion_single_stream_latency",
+  "tag": "clean_5900XT_quiet_window_20260729",
+  "timestamp_utc": "2026-07-29T14:01:47Z",
+  "machine": {
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "system": "Linux",
+    "python": "3.13.12",
+    "python_impl": "CPython",
+    "node": "Doctor",
+    "cpu_count": 32,
+    "cpu_brand": "AMD Ryzen 9 5900XT 16-Core Processor",
+    "mem_bytes": 44168212480,
+    "loadavg": [
+      1.16015625,
+      1.1083984375,
+      1.4169921875
+    ]
+  },
+  "cython": {
+    "use_flat_leaf": true,
+    "use_cy_leaf_flag": true,
+    "cy_module_bound": true,
+    "cy_supports_v29_curve": true,
+    "leaf_active": true,
+    "leaf_path": "cython",
+    "repr_cy_importable": true,
+    "v29_curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ]
+  },
+  "binding": {
+    "bundle": "/mnt/c/carc-shared/m5_bench_20260728/bundle",
+    "carcassonne_ai": "/mnt/c/carc-shared/m5_bench_20260728/bundle/carcassonne_ai/__init__.py",
+    "production_yaml": "/mnt/c/carc-shared/m5_bench_20260728/bundle/carcassonne_ai/data/PRODUCTION.yaml"
+  },
+  "resolved_env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "positions_file": "/mnt/c/carc-shared/m5_bench_20260728/bundle/positions.jsonl",
+  "n_positions": 60,
+  "repeat": 3,
+  "seed": 101,
+  "verify": true,
+  "champion": {
+    "id": "puct_priors_v29_bmild_cap8",
+    "yaml_k_dets": 4,
+    "yaml_sims_per_det": 688,
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ],
+    "bonus_cap": 8.0,
+    "opp_bonus_cap": 8.0,
+    "exact_max_k": 2
+  },
+  "budgets": [
+    {
+      "k_dets": 1,
+      "sims_per_det": 32,
+      "total_sims": 32,
+      "warmup_discarded": 2,
+      "exact_latches": 0,
+      "overall": {
+        "n": 178,
+        "mean_s": 0.024521071157303165,
+        "min_s": 0.0071040650000213645,
+        "p50_s": 0.024957147000350233,
+        "p90_s": 0.03366550600003393,
+        "max_s": 0.044554272999448585
+      },
+      "by_phase": {
+        "meeples": {
+          "n": 89,
+          "mean_s": 0.026677310370748244,
+          "min_s": 0.014242104000004474,
+          "p50_s": 0.026484386999982235,
+          "p90_s": 0.034763826999551384,
+          "max_s": 0.044554272999448585
+        },
+        "tiles": {
+          "n": 89,
+          "mean_s": 0.02236483194385809,
+          "min_s": 0.0071040650000213645,
+          "p50_s": 0.02236678099961864,
+          "p90_s": 0.033193496000421874,
+          "max_s": 0.03648147500007326
+        }
+      },
+      "samples": [
+        {
+          "pos_id": 2,
+          "rep": 0,
+          "s": 0.02205634999972972,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 0,
+          "s": 0.027159887000379968,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 0,
+          "s": 0.02185022300000128,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 0,
+          "s": 0.021970871999656083,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 0,
+          "s": 0.016738252000322973,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 0,
+          "s": 0.03193446200020844,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 0,
+          "s": 0.019056964999435877,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 0,
+          "s": 0.018142593999982637,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 0,
+          "s": 0.02360810399932234,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 0,
+          "s": 0.029372652000347443,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 0,
+          "s": 0.013514062000467675,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 0,
+          "s": 0.02828336299990042,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 0,
+          "s": 0.01796107900008792,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1033
+        },
+        {
+          "pos_id": 15,
+          "rep": 0,
+          "s": 0.027560583999729715,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 0,
+          "s": 0.025565091999851575,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1158
+        },
+        {
+          "pos_id": 17,
+          "rep": 0,
+          "s": 0.025415586000235635,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 0,
+          "s": 0.01601189999928465,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 849
+        },
+        {
+          "pos_id": 19,
+          "rep": 0,
+          "s": 0.039888366000013775,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 0,
+          "s": 0.01225645100021211,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 0,
+          "s": 0.031003617999886046,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 0,
+          "s": 0.01713237100011611,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 0,
+          "s": 0.025415090000024065,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 0,
+          "s": 0.030931102000067767,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1760
+        },
+        {
+          "pos_id": 25,
+          "rep": 0,
+          "s": 0.031993151000278885,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 0,
+          "s": 0.03648147500007326,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 0,
+          "s": 0.030409573000724777,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 0,
+          "s": 0.01912312300009944,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 0,
+          "s": 0.025302259999989474,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 0,
+          "s": 0.033819614999629266,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 0,
+          "s": 0.044554272999448585,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 0,
+          "s": 0.03377702200032218,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 0,
+          "s": 0.0279710389995671,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 0,
+          "s": 0.011309620999782055,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 832
+        },
+        {
+          "pos_id": 35,
+          "rep": 0,
+          "s": 0.033199312999386166,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 0,
+          "s": 0.02097216899983323,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 0,
+          "s": 0.023540144999969925,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 0,
+          "s": 0.03228688000035618,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1230
+        },
+        {
+          "pos_id": 39,
+          "rep": 0,
+          "s": 0.027943770000092627,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 0,
+          "s": 0.02903302399954555,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1271
+        },
+        {
+          "pos_id": 41,
+          "rep": 0,
+          "s": 0.028029525000420108,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 0,
+          "s": 0.027337147000253026,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1237
+        },
+        {
+          "pos_id": 43,
+          "rep": 0,
+          "s": 0.035145662000104494,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 0,
+          "s": 0.01592997599982482,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 0,
+          "s": 0.016757518000304117,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 0,
+          "s": 0.014232980000087991,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 0,
+          "s": 0.020343094000054407,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 0,
+          "s": 0.02330374400025903,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 960
+        },
+        {
+          "pos_id": 49,
+          "rep": 0,
+          "s": 0.03206058700016001,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 0,
+          "s": 0.03356394000002183,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 0,
+          "s": 0.03567014999953244,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 0,
+          "s": 0.03579377400001249,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 0,
+          "s": 0.02677864999986923,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 0,
+          "s": 0.02280326399977639,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1253
+        },
+        {
+          "pos_id": 55,
+          "rep": 0,
+          "s": 0.028639060000386962,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 0,
+          "s": 0.007151701000111643,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 832
+        },
+        {
+          "pos_id": 57,
+          "rep": 0,
+          "s": 0.014242104000004474,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 0,
+          "s": 0.028175200000077893,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 0,
+          "s": 0.027808762000859133,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2501
+        },
+        {
+          "pos_id": 0,
+          "rep": 1,
+          "s": 0.02047872500043013,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1340
+        },
+        {
+          "pos_id": 1,
+          "rep": 1,
+          "s": 0.03369338099946617,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 1,
+          "s": 0.020126620999690203,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 1,
+          "s": 0.02553181500024948,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 1,
+          "s": 0.022222109000722412,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 1,
+          "s": 0.02555483899959654,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 1,
+          "s": 0.0169206580003447,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 1,
+          "s": 0.027765120999902138,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 1,
+          "s": 0.02581420699971204,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 1,
+          "s": 0.026484386999982235,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 1,
+          "s": 0.022554699000465916,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 1,
+          "s": 0.029022466999776952,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 1,
+          "s": 0.014369587999681244,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 1,
+          "s": 0.031528207000519615,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 1,
+          "s": 0.025256156999603263,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 1,
+          "s": 0.026497765000385698,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 1,
+          "s": 0.03406256499965821,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1158
+        },
+        {
+          "pos_id": 17,
+          "rep": 1,
+          "s": 0.02538533999995707,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 1,
+          "s": 0.025567535999471147,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 849
+        },
+        {
+          "pos_id": 19,
+          "rep": 1,
+          "s": 0.025642293000601057,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 1,
+          "s": 0.01209614999970654,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 1,
+          "s": 0.025762620000023162,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 1,
+          "s": 0.019325088000186952,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 1,
+          "s": 0.028889719000289915,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 1,
+          "s": 0.023326905000430997,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1760
+        },
+        {
+          "pos_id": 25,
+          "rep": 1,
+          "s": 0.030487224999887985,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 1,
+          "s": 0.03585644200029492,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1543
+        },
+        {
+          "pos_id": 27,
+          "rep": 1,
+          "s": 0.014254561000598187,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 1,
+          "s": 0.02304691199969966,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 1,
+          "s": 0.026966549000462692,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 1,
+          "s": 0.03030356099952769,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 1,
+          "s": 0.04223894900042069,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 1,
+          "s": 0.029952797000078135,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 1,
+          "s": 0.03997736299970711,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 1,
+          "s": 0.010758856999927957,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 832
+        },
+        {
+          "pos_id": 35,
+          "rep": 1,
+          "s": 0.024746039000092424,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 1,
+          "s": 0.021362981000493164,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 1,
+          "s": 0.022630944999946223,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 1,
+          "s": 0.025922324000021035,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1230
+        },
+        {
+          "pos_id": 39,
+          "rep": 1,
+          "s": 0.01826042199991207,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 1,
+          "s": 0.02370603100007429,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1268
+        },
+        {
+          "pos_id": 41,
+          "rep": 1,
+          "s": 0.03503806899971096,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2506
+        },
+        {
+          "pos_id": 42,
+          "rep": 1,
+          "s": 0.027763524000874895,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1237
+        },
+        {
+          "pos_id": 43,
+          "rep": 1,
+          "s": 0.02084358299998712,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 1,
+          "s": 0.015450341000359913,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 1,
+          "s": 0.02154697599962674,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 1,
+          "s": 0.014115363999735564,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 1,
+          "s": 0.020836683999732486,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 1,
+          "s": 0.025748608999492717,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 960
+        },
+        {
+          "pos_id": 49,
+          "rep": 1,
+          "s": 0.02773580499979289,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 1,
+          "s": 0.03366550600003393,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 1,
+          "s": 0.02960816899940255,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 1,
+          "s": 0.020524156999272236,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 1,
+          "s": 0.024957147000350233,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 1,
+          "s": 0.02255292600057146,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1253
+        },
+        {
+          "pos_id": 55,
+          "rep": 1,
+          "s": 0.03581980300077703,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 1,
+          "s": 0.007154814999921655,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 832
+        },
+        {
+          "pos_id": 57,
+          "rep": 1,
+          "s": 0.02326669200010656,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 1,
+          "s": 0.024705367000024125,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 1,
+          "s": 0.02719805099968653,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2501
+        },
+        {
+          "pos_id": 0,
+          "rep": 2,
+          "s": 0.021749483000348846,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1340
+        },
+        {
+          "pos_id": 1,
+          "rep": 2,
+          "s": 0.019936717999371467,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 2,
+          "s": 0.021227255000667355,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 2,
+          "s": 0.02715889499995683,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 2,
+          "s": 0.021788428999570897,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 2,
+          "s": 0.025557126000421704,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 2,
+          "s": 0.016856528999596776,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 2,
+          "s": 0.028018639000038092,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 2,
+          "s": 0.025736913999935496,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 2,
+          "s": 0.01970245999928011,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 2,
+          "s": 0.024482481000632106,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 2,
+          "s": 0.018623965999722714,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 2,
+          "s": 0.01493872600076429,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 2,
+          "s": 0.0199512439994578,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 2,
+          "s": 0.020045412999934342,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1033
+        },
+        {
+          "pos_id": 15,
+          "rep": 2,
+          "s": 0.021286146999955236,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2508
+        },
+        {
+          "pos_id": 16,
+          "rep": 2,
+          "s": 0.03436489399973652,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1158
+        },
+        {
+          "pos_id": 17,
+          "rep": 2,
+          "s": 0.020944406000126037,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 2,
+          "s": 0.018763713000225835,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 849
+        },
+        {
+          "pos_id": 19,
+          "rep": 2,
+          "s": 0.028224702000443358,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 2,
+          "s": 0.012232462000611122,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 2,
+          "s": 0.01870244299971091,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 2,
+          "s": 0.019430430000284105,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 2,
+          "s": 0.030073426999479125,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 2,
+          "s": 0.027024319000702235,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1760
+        },
+        {
+          "pos_id": 25,
+          "rep": 2,
+          "s": 0.01683149400014372,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 2,
+          "s": 0.025494945999525953,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 2,
+          "s": 0.022776684999371355,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 2,
+          "s": 0.025884912999572407,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 2,
+          "s": 0.023540172000139137,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 2,
+          "s": 0.009611991000383568,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 2,
+          "s": 0.03746135300025344,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 2,
+          "s": 0.029728192999755265,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 2,
+          "s": 0.028423413999917102,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 2,
+          "s": 0.011044345000300382,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 832
+        },
+        {
+          "pos_id": 35,
+          "rep": 2,
+          "s": 0.033187772999554,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 2,
+          "s": 0.022798835000685358,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 2,
+          "s": 0.024586941999586998,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 2,
+          "s": 0.020070551000571868,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1230
+        },
+        {
+          "pos_id": 39,
+          "rep": 2,
+          "s": 0.018174364000515197,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 2,
+          "s": 0.02689134100000956,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1271
+        },
+        {
+          "pos_id": 41,
+          "rep": 2,
+          "s": 0.027824609999697714,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 2,
+          "s": 0.0271189310005866,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1237
+        },
+        {
+          "pos_id": 43,
+          "rep": 2,
+          "s": 0.02546987299956527,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2509
+        },
+        {
+          "pos_id": 44,
+          "rep": 2,
+          "s": 0.02475624699945911,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 2,
+          "s": 0.022370585999851755,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 2,
+          "s": 0.015203891000055592,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 2,
+          "s": 0.02112066399968171,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 2,
+          "s": 0.02350561899947934,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 960
+        },
+        {
+          "pos_id": 49,
+          "rep": 2,
+          "s": 0.034763826999551384,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 2,
+          "s": 0.033193496000421874,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 2,
+          "s": 0.02286329399976239,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 2,
+          "s": 0.022002788000463624,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 2,
+          "s": 0.021339121999517374,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 2,
+          "s": 0.02236678099961864,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1253
+        },
+        {
+          "pos_id": 55,
+          "rep": 2,
+          "s": 0.032411358999524964,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 2,
+          "s": 0.0071040650000213645,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 832
+        },
+        {
+          "pos_id": 57,
+          "rep": 2,
+          "s": 0.022079336999922816,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 2,
+          "s": 0.028563933999976143,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 1640
+        },
+        {
+          "pos_id": 59,
+          "rep": 2,
+          "s": 0.026168884999606234,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2503
+        }
+      ],
+      "wallclock_s": 4.956510953999896
+    },
+    {
+      "k_dets": 4,
+      "sims_per_det": 172,
+      "total_sims": 688,
+      "warmup_discarded": 2,
+      "exact_latches": 0,
+      "overall": {
+        "n": 178,
+        "mean_s": 0.6648168671966416,
+        "min_s": 0.35397727500003384,
+        "p50_s": 0.6371448660001988,
+        "p90_s": 0.8908032429999366,
+        "max_s": 1.173871943999984
+      },
+      "by_phase": {
+        "meeples": {
+          "n": 89,
+          "mean_s": 0.6769345709999981,
+          "min_s": 0.4497715179995794,
+          "p50_s": 0.6502457100004904,
+          "p90_s": 0.8653018869999869,
+          "max_s": 1.173871943999984
+        },
+        "tiles": {
+          "n": 89,
+          "mean_s": 0.652699163393285,
+          "min_s": 0.35397727500003384,
+          "p50_s": 0.6083298960002139,
+          "p90_s": 0.9040212320005594,
+          "max_s": 1.0743332189995272
+        }
+      },
+      "samples": [
+        {
+          "pos_id": 2,
+          "rep": 0,
+          "s": 0.42593588799991267,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 0,
+          "s": 0.5765629389998139,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 0,
+          "s": 0.5406197339998471,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 0,
+          "s": 0.9115990020000027,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 0,
+          "s": 0.7587088950003817,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 0,
+          "s": 0.6629964179992385,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 0,
+          "s": 0.601732494999851,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 0,
+          "s": 0.5599622330000784,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 10,
+          "rep": 0,
+          "s": 0.35397727500003384,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 0,
+          "s": 0.841195455000161,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 0,
+          "s": 0.5142072929993446,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 0,
+          "s": 0.6744622189999063,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 0,
+          "s": 0.476860148999549,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 0,
+          "s": 0.5664682369997536,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 0,
+          "s": 0.5329311360001157,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1159
+        },
+        {
+          "pos_id": 17,
+          "rep": 0,
+          "s": 0.5532416409996586,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 0,
+          "s": 0.4484462079999503,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 0,
+          "s": 0.816013137000482,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 0,
+          "s": 0.6593146590003016,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1559
+        },
+        {
+          "pos_id": 21,
+          "rep": 0,
+          "s": 0.6929056480003055,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 0,
+          "s": 0.8135924549997071,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 0,
+          "s": 0.5393551119996118,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 0,
+          "s": 0.5618345410002803,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 0,
+          "s": 0.9901638229994205,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 0,
+          "s": 0.5815094249992399,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 0,
+          "s": 0.6362805219996517,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 0,
+          "s": 0.4910507280001184,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 1441
+        },
+        {
+          "pos_id": 29,
+          "rep": 0,
+          "s": 0.5741775890001009,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 0,
+          "s": 0.70299915600026,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 0,
+          "s": 0.8285920429998441,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 0,
+          "s": 1.071075920000112,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 0,
+          "s": 0.7079256240003815,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 0,
+          "s": 0.8384417320003195,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 0,
+          "s": 0.7949987450001572,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 0,
+          "s": 0.5571536400002515,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 0,
+          "s": 0.6278128960002505,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 0,
+          "s": 0.5358899450002355,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1032
+        },
+        {
+          "pos_id": 39,
+          "rep": 0,
+          "s": 0.8483438419998492,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 0,
+          "s": 0.6832528529994306,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1166
+        },
+        {
+          "pos_id": 41,
+          "rep": 0,
+          "s": 0.9406472840000788,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 0,
+          "s": 0.7955141359998379,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 949
+        },
+        {
+          "pos_id": 43,
+          "rep": 0,
+          "s": 0.7028738639992298,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 0,
+          "s": 0.42592909099948884,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 0,
+          "s": 0.6827080439998099,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 0,
+          "s": 0.628156157000376,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 0,
+          "s": 1.173871943999984,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 0,
+          "s": 0.9254229020007188,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 0,
+          "s": 0.6772973070001171,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 0,
+          "s": 0.7796800340001937,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 0,
+          "s": 0.9359440950001954,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 0,
+          "s": 0.8171085170006336,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 0,
+          "s": 0.6821008030001394,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 0,
+          "s": 1.05421248499988,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1136
+        },
+        {
+          "pos_id": 55,
+          "rep": 0,
+          "s": 0.6227074609996635,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 0,
+          "s": 0.49374584599991067,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1236
+        },
+        {
+          "pos_id": 57,
+          "rep": 0,
+          "s": 0.6016540030004762,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 0,
+          "s": 0.5858854690004591,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 0,
+          "s": 0.45759417800036317,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2501
+        },
+        {
+          "pos_id": 0,
+          "rep": 1,
+          "s": 0.6961901630002103,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1340
+        },
+        {
+          "pos_id": 1,
+          "rep": 1,
+          "s": 0.5759658970000601,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 1,
+          "s": 0.4631978629995501,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 1,
+          "s": 0.5925205470002766,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 1,
+          "s": 0.7160480940001435,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 1,
+          "s": 0.9099943249993885,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 1,
+          "s": 0.7260280420005074,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 1,
+          "s": 0.6382849090005038,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 1,
+          "s": 0.8730610049997267,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 1,
+          "s": 0.5108028399999966,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 10,
+          "rep": 1,
+          "s": 0.38339179500053433,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 1,
+          "s": 0.7047203989995978,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 1,
+          "s": 0.5035899600006815,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 1,
+          "s": 0.6371448660001988,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 1,
+          "s": 0.4842980160001389,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 1,
+          "s": 0.4889245229996959,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 1,
+          "s": 0.6522186350002812,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1158
+        },
+        {
+          "pos_id": 17,
+          "rep": 1,
+          "s": 0.5251606230003745,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 1,
+          "s": 0.5726226169999791,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1260
+        },
+        {
+          "pos_id": 19,
+          "rep": 1,
+          "s": 0.7115269129999433,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 1,
+          "s": 0.6078447140007484,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1559
+        },
+        {
+          "pos_id": 21,
+          "rep": 1,
+          "s": 0.6051441169993268,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 1,
+          "s": 0.93608011500055,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 1,
+          "s": 0.5925620609996258,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 1,
+          "s": 0.5887457649996577,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 1,
+          "s": 0.7832305990004897,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 1,
+          "s": 0.6028361859998768,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 1,
+          "s": 0.5519767440000578,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 1,
+          "s": 0.4265060289999383,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 1441
+        },
+        {
+          "pos_id": 29,
+          "rep": 1,
+          "s": 0.5804864469992026,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 1,
+          "s": 0.6623080180006582,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 1,
+          "s": 0.6383568259998356,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 1,
+          "s": 0.986779191000096,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 1,
+          "s": 0.7384681220000857,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 1,
+          "s": 0.8077006749999782,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 1,
+          "s": 0.6855243380005049,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 1,
+          "s": 0.733634481000081,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 1,
+          "s": 0.5644052249999731,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 1,
+          "s": 0.4308934339996995,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1435
+        },
+        {
+          "pos_id": 39,
+          "rep": 1,
+          "s": 0.7151883469996392,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 1,
+          "s": 0.6083298960002139,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1166
+        },
+        {
+          "pos_id": 41,
+          "rep": 1,
+          "s": 0.8908032429999366,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 1,
+          "s": 0.7750811549994978,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1238
+        },
+        {
+          "pos_id": 43,
+          "rep": 1,
+          "s": 0.6611881780008844,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 1,
+          "s": 0.4329039809999813,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 1,
+          "s": 0.6241604090000692,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 1,
+          "s": 0.5140421380001499,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 1,
+          "s": 0.6271448540001074,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 1,
+          "s": 0.6889782179996473,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 1,
+          "s": 0.5451609189994997,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 1,
+          "s": 0.810228749000089,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 1,
+          "s": 0.8653018869999869,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 1,
+          "s": 0.682169106999936,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 1,
+          "s": 0.5549500990000524,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 1,
+          "s": 1.0527542749996428,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1136
+        },
+        {
+          "pos_id": 55,
+          "rep": 1,
+          "s": 0.6502457100004904,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 1,
+          "s": 0.6108305150000888,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1560
+        },
+        {
+          "pos_id": 57,
+          "rep": 1,
+          "s": 0.7090947070000766,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 1,
+          "s": 0.5725547000001825,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 758
+        },
+        {
+          "pos_id": 59,
+          "rep": 1,
+          "s": 0.5211147370000617,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 0,
+          "rep": 2,
+          "s": 0.6418586709996816,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1340
+        },
+        {
+          "pos_id": 1,
+          "rep": 2,
+          "s": 0.5081196729997828,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 2,
+          "s": 0.46527843099920574,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 2,
+          "s": 0.6183961369997633,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 2,
+          "s": 0.6229338249995635,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 2,
+          "s": 0.9626708119994873,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 2,
+          "s": 0.7329384730001038,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 2,
+          "s": 0.5869943349998721,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 2,
+          "s": 0.7654382720002104,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 2,
+          "s": 0.5135217380002359,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 2,
+          "s": 0.43211893499938014,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 2,
+          "s": 0.8549581140005102,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 2,
+          "s": 0.5251279690000956,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 2,
+          "s": 0.5905300889999126,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 2,
+          "s": 0.5229707340004097,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 2,
+          "s": 0.5326877509996848,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 2,
+          "s": 0.6667464020001717,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1158
+        },
+        {
+          "pos_id": 17,
+          "rep": 2,
+          "s": 0.6078304060001756,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 2,
+          "s": 0.549146194000059,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 2,
+          "s": 0.6538377380002203,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 2,
+          "s": 0.5896816289996423,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 2,
+          "s": 0.6049520389997269,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 2,
+          "s": 0.8430437220004023,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 2,
+          "s": 0.5561910859996715,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 2,
+          "s": 0.5763572349997048,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 2,
+          "s": 0.5696787039996707,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 2,
+          "s": 0.5638629639997816,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 2,
+          "s": 0.729886942000121,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 2,
+          "s": 0.5075880449994656,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 1441
+        },
+        {
+          "pos_id": 29,
+          "rep": 2,
+          "s": 0.5004177860000709,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 2,
+          "s": 0.6757214460003524,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 2,
+          "s": 0.7174596970007769,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 2,
+          "s": 1.0117486529998132,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 2,
+          "s": 0.6677650820001872,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 2,
+          "s": 0.9040212320005594,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 2,
+          "s": 0.6976947980001569,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 2,
+          "s": 0.5538628790000075,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 2,
+          "s": 0.7463090119999833,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 2,
+          "s": 0.38883413199982897,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1032
+        },
+        {
+          "pos_id": 39,
+          "rep": 2,
+          "s": 0.7426487790007741,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 2,
+          "s": 0.5711057259995869,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1166
+        },
+        {
+          "pos_id": 41,
+          "rep": 2,
+          "s": 0.9224831419996917,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 2,
+          "s": 0.74954242000058,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1237
+        },
+        {
+          "pos_id": 43,
+          "rep": 2,
+          "s": 0.627978677000101,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 2,
+          "s": 0.554021322999688,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 2,
+          "s": 0.6176153910000721,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 2,
+          "s": 0.6436066969999956,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 2,
+          "s": 0.6963718369997878,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 2,
+          "s": 0.6985045620003802,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 2,
+          "s": 0.7546358870004042,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 2,
+          "s": 0.7572574809992147,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 2,
+          "s": 0.7743136580002101,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 2,
+          "s": 1.0550799560005544,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 2,
+          "s": 0.7341837020003368,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 2,
+          "s": 1.0743332189995272,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1136
+        },
+        {
+          "pos_id": 55,
+          "rep": 2,
+          "s": 0.7080843930007177,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 2,
+          "s": 0.5700877980007135,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1236
+        },
+        {
+          "pos_id": 57,
+          "rep": 2,
+          "s": 0.71917837699948,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 2,
+          "s": 0.6203702210004849,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 759
+        },
+        {
+          "pos_id": 59,
+          "rep": 2,
+          "s": 0.4497715179995794,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2504
+        }
+      ],
+      "wallclock_s": 120.03415165600018
+    },
+    {
+      "k_dets": 4,
+      "sims_per_det": 344,
+      "total_sims": 1376,
+      "warmup_discarded": 2,
+      "exact_latches": 0,
+      "overall": {
+        "n": 178,
+        "mean_s": 1.3746468054325427,
+        "min_s": 0.782960672999252,
+        "p50_s": 1.313439360999837,
+        "p90_s": 1.805586437999409,
+        "max_s": 2.8363229959995806
+      },
+      "by_phase": {
+        "meeples": {
+          "n": 89,
+          "mean_s": 1.4460933254381263,
+          "min_s": 0.782960672999252,
+          "p50_s": 1.347738675999608,
+          "p90_s": 1.8935847370003103,
+          "max_s": 2.8363229959995806
+        },
+        "tiles": {
+          "n": 89,
+          "mean_s": 1.3032002854269593,
+          "min_s": 0.7890467719998924,
+          "p50_s": 1.2027133139999933,
+          "p90_s": 1.720813625000119,
+          "max_s": 2.242896531000042
+        }
+      },
+      "samples": [
+        {
+          "pos_id": 2,
+          "rep": 0,
+          "s": 0.8551327350005522,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 0,
+          "s": 1.233567430000221,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 0,
+          "s": 1.3255709969998861,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 0,
+          "s": 1.8780288990001281,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 0,
+          "s": 1.7597983469995597,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 0,
+          "s": 1.2280134399998133,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 0,
+          "s": 1.2027133139999933,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 0,
+          "s": 1.1576528249997864,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 10,
+          "rep": 0,
+          "s": 0.9966558529995382,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 866
+        },
+        {
+          "pos_id": 11,
+          "rep": 0,
+          "s": 2.0193716300000233,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 0,
+          "s": 0.9989687110000887,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 0,
+          "s": 1.6002545369992731,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 0,
+          "s": 1.081138583000211,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 0,
+          "s": 1.2146667020006134,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2508
+        },
+        {
+          "pos_id": 16,
+          "rep": 0,
+          "s": 0.9164100709995182,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1156
+        },
+        {
+          "pos_id": 17,
+          "rep": 0,
+          "s": 1.1830867029993897,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 0,
+          "s": 0.8411993239997173,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 0,
+          "s": 1.5031445439999516,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 0,
+          "s": 1.15899013499984,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 0,
+          "s": 1.4246642059997612,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 0,
+          "s": 1.5217528679995667,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 0,
+          "s": 1.2159869889992478,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 0,
+          "s": 1.2145360780004921,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 0,
+          "s": 2.2946058079996874,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 0,
+          "s": 1.042702497999926,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 0,
+          "s": 1.4156803629994101,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 0,
+          "s": 0.9734306540003672,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 0,
+          "s": 1.11234784699991,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 0,
+          "s": 1.4186644460005482,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 0,
+          "s": 1.7345430089999354,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 0,
+          "s": 1.7146581560000413,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 0,
+          "s": 1.4008893149994037,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 0,
+          "s": 1.676599255999463,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 0,
+          "s": 1.5430322180000076,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 0,
+          "s": 1.1512257690001206,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 0,
+          "s": 1.3175413979997757,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 0,
+          "s": 1.0637160709993623,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1545
+        },
+        {
+          "pos_id": 39,
+          "rep": 0,
+          "s": 1.8582151949995023,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 0,
+          "s": 1.4060427109998272,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1166
+        },
+        {
+          "pos_id": 41,
+          "rep": 0,
+          "s": 1.7945692570001484,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 0,
+          "s": 1.4434402160004538,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1165
+        },
+        {
+          "pos_id": 43,
+          "rep": 0,
+          "s": 1.9913317860000461,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 0,
+          "s": 1.2401298290005798,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 1156
+        },
+        {
+          "pos_id": 45,
+          "rep": 0,
+          "s": 1.9027489680001963,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 0,
+          "s": 1.1261701399998856,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 0,
+          "s": 1.183015269999487,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 0,
+          "s": 1.5680649630003245,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 0,
+          "s": 1.6398872720001236,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 0,
+          "s": 1.5484102800000983,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 0,
+          "s": 2.005565001000832,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 0,
+          "s": 1.9434321879998606,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 0,
+          "s": 1.3255921079999098,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 0,
+          "s": 1.869958176000182,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1763
+        },
+        {
+          "pos_id": 55,
+          "rep": 0,
+          "s": 1.595230855000409,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 0,
+          "s": 1.0400955839995731,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1236
+        },
+        {
+          "pos_id": 57,
+          "rep": 0,
+          "s": 1.2194846370002779,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 0,
+          "s": 1.1181818959994416,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 0,
+          "s": 1.002379304999522,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 0,
+          "rep": 1,
+          "s": 1.2857553789999656,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1440
+        },
+        {
+          "pos_id": 1,
+          "rep": 1,
+          "s": 1.6788416310000684,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 1,
+          "s": 1.6819992500004446,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 1,
+          "s": 1.3054160270003194,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 1,
+          "s": 1.720813625000119,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 1,
+          "s": 1.9118260429995644,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 1,
+          "s": 1.7019928709996748,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 1,
+          "s": 1.348598616000345,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 1,
+          "s": 1.7744405659996119,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 1,
+          "s": 1.143254061999869,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 10,
+          "rep": 1,
+          "s": 1.138157303999833,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 866
+        },
+        {
+          "pos_id": 11,
+          "rep": 1,
+          "s": 2.8363229959995806,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 1,
+          "s": 0.8708568849997391,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 1,
+          "s": 1.4260295139993104,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 1,
+          "s": 1.0943193310004062,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 1,
+          "s": 1.1070836690005308,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 1,
+          "s": 1.1440492040001118,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1156
+        },
+        {
+          "pos_id": 17,
+          "rep": 1,
+          "s": 1.1359418530000767,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 18,
+          "rep": 1,
+          "s": 1.088285834999624,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 1,
+          "s": 1.4522906090005563,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 1,
+          "s": 1.0368476799994824,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 1,
+          "s": 1.218495831999462,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 1,
+          "s": 1.4879970369993316,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 1,
+          "s": 1.1770621960004064,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 1,
+          "s": 1.2240614360007385,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 1,
+          "s": 1.8632049019997794,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 1,
+          "s": 1.1731770579999647,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 1,
+          "s": 1.282974071999888,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 1,
+          "s": 0.92068458400081,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 1750
+        },
+        {
+          "pos_id": 29,
+          "rep": 1,
+          "s": 1.2772049100003642,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 1,
+          "s": 1.4729779469998903,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 1,
+          "s": 1.4140287959999114,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 1,
+          "s": 1.7396015619997343,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 1,
+          "s": 1.5476488270005575,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 1,
+          "s": 1.522203073000128,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 1,
+          "s": 1.3721544490008455,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 1,
+          "s": 1.2603946130002441,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 1,
+          "s": 1.2515413149994856,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 1,
+          "s": 0.8623481960003119,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1545
+        },
+        {
+          "pos_id": 39,
+          "rep": 1,
+          "s": 1.5235335190000114,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 1,
+          "s": 1.14684992399998,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1268
+        },
+        {
+          "pos_id": 41,
+          "rep": 1,
+          "s": 1.805586437999409,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 1,
+          "s": 1.3760544480001045,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1238
+        },
+        {
+          "pos_id": 43,
+          "rep": 1,
+          "s": 1.5804557840001507,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 1,
+          "s": 0.8627150410002287,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 1156
+        },
+        {
+          "pos_id": 45,
+          "rep": 1,
+          "s": 1.3170555239994428,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 1,
+          "s": 1.0126939720003065,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 1,
+          "s": 1.4167469589992834,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 1,
+          "s": 1.4955655210005716,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 1,
+          "s": 1.2735302519995457,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 1,
+          "s": 1.620762282999749,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 1,
+          "s": 1.80377954100004,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 1,
+          "s": 2.0021399679999377,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 1,
+          "s": 1.163600244999543,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 1,
+          "s": 1.9108080220003103,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1763
+        },
+        {
+          "pos_id": 55,
+          "rep": 1,
+          "s": 1.313439360999837,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 1,
+          "s": 1.1932870390000971,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1544
+        },
+        {
+          "pos_id": 57,
+          "rep": 1,
+          "s": 1.3318959299995186,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 1,
+          "s": 1.1293386440001996,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 1,
+          "s": 1.0016333710000254,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 0,
+          "rep": 2,
+          "s": 1.2456697890002033,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1440
+        },
+        {
+          "pos_id": 1,
+          "rep": 2,
+          "s": 1.0110623340005986,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 2,
+          "s": 0.9117081560007136,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 2,
+          "s": 1.2751961040003152,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 2,
+          "s": 1.5260959469997033,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 2,
+          "s": 1.902127443999234,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 2,
+          "s": 1.5182387039994865,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 2,
+          "s": 1.1417458530004296,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 2,
+          "s": 1.5320616839999275,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 2,
+          "s": 1.1803628069992556,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 2,
+          "s": 1.2885367300004873,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 866
+        },
+        {
+          "pos_id": 11,
+          "rep": 2,
+          "s": 2.112950044000172,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 2,
+          "s": 0.9642335629996523,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 2,
+          "s": 1.347738675999608,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 2,
+          "s": 1.1143447900003594,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 2,
+          "s": 1.3229882010000438,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 2,
+          "s": 1.414478200999838,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1156
+        },
+        {
+          "pos_id": 17,
+          "rep": 2,
+          "s": 1.2889658750000308,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 2,
+          "s": 1.027472427000248,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 2,
+          "s": 1.4206510890007849,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 2,
+          "s": 1.0328771199992843,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 2,
+          "s": 1.2333438059995387,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 2,
+          "s": 1.5246751590002532,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 2,
+          "s": 1.1774042670003837,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 2,
+          "s": 1.1612760440002603,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 2,
+          "s": 1.612233763000404,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 2,
+          "s": 1.0584011020000617,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 2,
+          "s": 1.5511145199998282,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2501
+        },
+        {
+          "pos_id": 28,
+          "rep": 2,
+          "s": 1.0059592779998638,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 1750
+        },
+        {
+          "pos_id": 29,
+          "rep": 2,
+          "s": 1.0542370709999886,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 2,
+          "s": 1.312017444999583,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 2,
+          "s": 1.3386428079993493,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 2,
+          "s": 1.7125216909998926,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 2,
+          "s": 1.4258053489993472,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 2,
+          "s": 1.64777206799954,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 2,
+          "s": 1.4731687220000822,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 2,
+          "s": 1.1315417929999967,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 2,
+          "s": 1.6610232410002936,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 2,
+          "s": 0.7890467719998924,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1545
+        },
+        {
+          "pos_id": 39,
+          "rep": 2,
+          "s": 1.7323555269995268,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 2,
+          "s": 1.1876982300000236,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1166
+        },
+        {
+          "pos_id": 41,
+          "rep": 2,
+          "s": 1.8935847370003103,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 2,
+          "s": 1.3348642580003798,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1237
+        },
+        {
+          "pos_id": 43,
+          "rep": 2,
+          "s": 1.444202590999339,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 2,
+          "s": 1.068140009999297,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 2,
+          "s": 1.2480532580002546,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 2,
+          "s": 1.1209465820002151,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 2,
+          "s": 1.2251394620006977,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 2,
+          "s": 1.4108980430000884,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 2,
+          "s": 1.2544260620006753,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 2,
+          "s": 1.4860069060005117,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 2,
+          "s": 1.357058323000274,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 2,
+          "s": 2.242896531000042,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 2,
+          "s": 1.2686309639993851,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 2,
+          "s": 1.7986631889998534,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1763
+        },
+        {
+          "pos_id": 55,
+          "rep": 2,
+          "s": 1.3846832989993345,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 2,
+          "s": 1.1685827349992906,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1236
+        },
+        {
+          "pos_id": 57,
+          "rep": 2,
+          "s": 1.3041743339999812,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 2,
+          "s": 1.078232308999759,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 2,
+          "s": 0.782960672999252,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2504
+        }
+      ],
+      "wallclock_s": 247.62091512500047
+    },
+    {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total_sims": 2752,
+      "warmup_discarded": 2,
+      "exact_latches": 0,
+      "overall": {
+        "n": 178,
+        "mean_s": 2.7469454847471733,
+        "min_s": 1.5897777879999921,
+        "p50_s": 2.662435085000652,
+        "p90_s": 3.5420373120005024,
+        "max_s": 4.47088767599962
+      },
+      "by_phase": {
+        "meeples": {
+          "n": 89,
+          "mean_s": 2.8954183620224674,
+          "min_s": 1.7218654019998212,
+          "p50_s": 2.7839435189998767,
+          "p90_s": 3.59087525599989,
+          "max_s": 4.47088767599962
+        },
+        "tiles": {
+          "n": 89,
+          "mean_s": 2.598472607471879,
+          "min_s": 1.5897777879999921,
+          "p50_s": 2.4433434790007595,
+          "p90_s": 3.3793208180004513,
+          "max_s": 4.29930358799993
+        }
+      },
+      "samples": [
+        {
+          "pos_id": 2,
+          "rep": 0,
+          "s": 1.9031768249997185,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 0,
+          "s": 2.7318885040003806,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 0,
+          "s": 2.474248976999661,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 0,
+          "s": 3.516551024999899,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 0,
+          "s": 3.2238514930004385,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 0,
+          "s": 2.4329694380003275,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 0,
+          "s": 2.3859468409991678,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 0,
+          "s": 2.4431461379999746,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 10,
+          "rep": 0,
+          "s": 1.736027613999795,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 1742
+        },
+        {
+          "pos_id": 11,
+          "rep": 0,
+          "s": 4.149280106000333,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2504
+        },
+        {
+          "pos_id": 12,
+          "rep": 0,
+          "s": 1.9801350470006582,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 0,
+          "s": 4.092757377000453,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 0,
+          "s": 2.3256300439998085,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 0,
+          "s": 2.4737096660001043,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 0,
+          "s": 2.1028384159999405,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1156
+        },
+        {
+          "pos_id": 17,
+          "rep": 0,
+          "s": 2.479609540999263,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 0,
+          "s": 1.802627159999247,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 0,
+          "s": 2.834991798000374,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 0,
+          "s": 1.7482744779999848,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 0,
+          "s": 2.608538608999879,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 0,
+          "s": 2.1428811389996554,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 0,
+          "s": 2.4495080690003306,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 0,
+          "s": 2.682844685999953,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 0,
+          "s": 4.47088767599962,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 0,
+          "s": 2.426910813000177,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 0,
+          "s": 3.133356100000128,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 0,
+          "s": 1.9891896749995794,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 0,
+          "s": 2.314949650000017,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 0,
+          "s": 2.8827533410003525,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 0,
+          "s": 3.5420373120005024,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 0,
+          "s": 3.2447732359996735,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 0,
+          "s": 2.8991580590000012,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 0,
+          "s": 3.7665713039996263,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 0,
+          "s": 3.0593262940001296,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 0,
+          "s": 2.5571669869996185,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 0,
+          "s": 2.8730203810000603,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 0,
+          "s": 2.4433434790007595,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1545
+        },
+        {
+          "pos_id": 39,
+          "rep": 0,
+          "s": 3.386499351000566,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 0,
+          "s": 3.1792089059999853,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1167
+        },
+        {
+          "pos_id": 41,
+          "rep": 0,
+          "s": 3.2686700989997917,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 0,
+          "s": 2.56700386600005,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1165
+        },
+        {
+          "pos_id": 43,
+          "rep": 0,
+          "s": 3.5196029750004527,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 0,
+          "s": 1.7833359739997832,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 1156
+        },
+        {
+          "pos_id": 45,
+          "rep": 0,
+          "s": 2.8567617609996887,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 0,
+          "s": 2.3243869530006123,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 0,
+          "s": 2.726849693999611,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 0,
+          "s": 3.730348836000303,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 0,
+          "s": 3.4353778759996203,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 0,
+          "s": 3.0516948129998127,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 0,
+          "s": 3.098037648999707,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 0,
+          "s": 3.566877201000352,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 0,
+          "s": 2.7033823340007075,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 0,
+          "s": 3.108046882999588,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1763
+        },
+        {
+          "pos_id": 55,
+          "rep": 0,
+          "s": 2.235556161000204,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 0,
+          "s": 2.3366850729998987,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1236
+        },
+        {
+          "pos_id": 57,
+          "rep": 0,
+          "s": 2.624356240000452,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 0,
+          "s": 2.5461376520006525,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 759
+        },
+        {
+          "pos_id": 59,
+          "rep": 0,
+          "s": 2.41143599499992,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 0,
+          "rep": 1,
+          "s": 2.573161956000149,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1440
+        },
+        {
+          "pos_id": 1,
+          "rep": 1,
+          "s": 2.544492158999674,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 1,
+          "s": 1.9170201770002677,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 1,
+          "s": 2.5553860379995967,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 1,
+          "s": 3.3086393860003227,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 1,
+          "s": 3.088738872999784,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 1,
+          "s": 3.149718935999772,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 1,
+          "s": 2.506147133999548,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 1,
+          "s": 3.9308197420004944,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 1,
+          "s": 2.819377116000396,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 10,
+          "rep": 1,
+          "s": 2.010387443999207,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 1742
+        },
+        {
+          "pos_id": 11,
+          "rep": 1,
+          "s": 4.059195402999649,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 1,
+          "s": 1.5897777879999921,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 1,
+          "s": 3.343336007000289,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 1,
+          "s": 2.283837265999864,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 1,
+          "s": 2.222882851000577,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 1,
+          "s": 2.8142773939998733,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1156
+        },
+        {
+          "pos_id": 17,
+          "rep": 1,
+          "s": 2.4040378250001595,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 1,
+          "s": 2.3961899739997534,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 1,
+          "s": 2.8340768689995457,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 1,
+          "s": 1.7334552399997847,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 1,
+          "s": 2.610460451000108,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 1,
+          "s": 2.3094233649999296,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 1,
+          "s": 2.6933887370005323,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 1,
+          "s": 3.013882948000173,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 1,
+          "s": 3.8087853569995787,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 1,
+          "s": 2.464476685999216,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 1,
+          "s": 2.529937960999632,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 1,
+          "s": 1.6942438650003169,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 1,
+          "s": 2.447062239999468,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 1,
+          "s": 2.6922951899996406,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 1,
+          "s": 2.5527354119994925,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 1,
+          "s": 2.8918907079996643,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 1,
+          "s": 4.022900117000063,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 1,
+          "s": 3.664336627999546,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 1,
+          "s": 2.900895230999595,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 1,
+          "s": 2.7124783629997182,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 1,
+          "s": 2.5749236329993437,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 1,
+          "s": 2.03744287399968,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1545
+        },
+        {
+          "pos_id": 39,
+          "rep": 1,
+          "s": 3.193034178000744,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 1,
+          "s": 2.6887665700005527,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1166
+        },
+        {
+          "pos_id": 41,
+          "rep": 1,
+          "s": 3.42240228799983,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 1,
+          "s": 2.39524400099981,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 949
+        },
+        {
+          "pos_id": 43,
+          "rep": 1,
+          "s": 3.59087525599989,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 1,
+          "s": 2.0032016159993873,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 1156
+        },
+        {
+          "pos_id": 45,
+          "rep": 1,
+          "s": 2.722168156999942,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 1,
+          "s": 2.422224190000634,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 1,
+          "s": 3.250529357999767,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 1,
+          "s": 3.230480135999642,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 1,
+          "s": 2.37980901300034,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 1,
+          "s": 3.156807635000405,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 1,
+          "s": 3.203999047000252,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 1,
+          "s": 3.8542752989997098,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 1,
+          "s": 2.2169430419999117,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 1,
+          "s": 3.2015844590005145,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1763
+        },
+        {
+          "pos_id": 55,
+          "rep": 1,
+          "s": 2.797672868000518,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 1,
+          "s": 2.5789307559998633,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1560
+        },
+        {
+          "pos_id": 57,
+          "rep": 1,
+          "s": 2.9114841000000524,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 1,
+          "s": 2.3935489299992696,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 1,
+          "s": 2.1536979600004997,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2501
+        },
+        {
+          "pos_id": 0,
+          "rep": 2,
+          "s": 1.9370427530002416,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 28,
+          "action": 1440
+        },
+        {
+          "pos_id": 1,
+          "rep": 2,
+          "s": 2.1384273670000766,
+          "phase": "meeples",
+          "k_remaining": 36,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 2,
+          "rep": 2,
+          "s": 1.9248884979997456,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 2,
+          "s": 2.731501293999827,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 2,
+          "s": 4.04499162600041,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 2,
+          "s": 3.8146993939999447,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 2,
+          "s": 3.3793208180004513,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 2,
+          "s": 2.4699910259996614,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 2,
+          "s": 2.801697556000363,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 2,
+          "s": 2.5901846540000406,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 2,
+          "s": 2.059850309000467,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 1742
+        },
+        {
+          "pos_id": 11,
+          "rep": 2,
+          "s": 4.106031422999877,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 2,
+          "s": 1.7570383789998232,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 2,
+          "s": 3.1513075830007438,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 2,
+          "s": 2.35907696600043,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1136
+        },
+        {
+          "pos_id": 15,
+          "rep": 2,
+          "s": 2.414045781999448,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2503
+        },
+        {
+          "pos_id": 16,
+          "rep": 2,
+          "s": 2.8194734680000693,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1156
+        },
+        {
+          "pos_id": 17,
+          "rep": 2,
+          "s": 2.459772819999671,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 2,
+          "s": 2.280117035999865,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 1037
+        },
+        {
+          "pos_id": 19,
+          "rep": 2,
+          "s": 2.8487596459999622,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 2,
+          "s": 1.7629747579994728,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 2,
+          "s": 2.71695476900004,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 2,
+          "s": 2.3603797570003735,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 2,
+          "s": 2.58039041200027,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 2,
+          "s": 2.662435085000652,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1443
+        },
+        {
+          "pos_id": 25,
+          "rep": 2,
+          "s": 3.3571266979997745,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 2,
+          "s": 2.5614059800000177,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 2,
+          "s": 3.2336827109993465,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2501
+        },
+        {
+          "pos_id": 28,
+          "rep": 2,
+          "s": 2.0698787969995465,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 2,
+          "s": 2.1260824229993887,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 2,
+          "s": 2.6991070359999867,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 2,
+          "s": 2.538997718000246,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 2,
+          "s": 3.038558706999538,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 2,
+          "s": 3.0081634540001687,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 2,
+          "s": 3.528194810000059,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 969
+        },
+        {
+          "pos_id": 35,
+          "rep": 2,
+          "s": 2.848622468999565,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 2,
+          "s": 2.3439813539998795,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 2,
+          "s": 3.1029449210000166,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 2,
+          "s": 1.8940178329994524,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1545
+        },
+        {
+          "pos_id": 39,
+          "rep": 2,
+          "s": 3.1596702699998787,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 2,
+          "s": 2.437087500000416,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1167
+        },
+        {
+          "pos_id": 41,
+          "rep": 2,
+          "s": 3.637766531000125,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 2,
+          "s": 2.1938742990005267,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 844
+        },
+        {
+          "pos_id": 43,
+          "rep": 2,
+          "s": 3.0811847840004702,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 2,
+          "s": 2.3813364620000357,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 2,
+          "s": 2.6901576790005493,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 2,
+          "s": 2.380265290999887,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 2,
+          "s": 2.1544707530001688,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 2,
+          "s": 3.018812591999449,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 1428
+        },
+        {
+          "pos_id": 49,
+          "rep": 2,
+          "s": 2.531879563000075,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 2,
+          "s": 3.0396111850004672,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 2,
+          "s": 2.7839435189998767,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 2,
+          "s": 4.29930358799993,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 2,
+          "s": 2.581184965999455,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 2,
+          "s": 3.126103425999645,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1763
+        },
+        {
+          "pos_id": 55,
+          "rep": 2,
+          "s": 2.8009511270001894,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 2,
+          "s": 2.601635998000347,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 1560
+        },
+        {
+          "pos_id": 57,
+          "rep": 2,
+          "s": 3.177882502999637,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 2,
+          "s": 2.3758629639996798,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 759
+        },
+        {
+          "pos_id": 59,
+          "rep": 2,
+          "s": 1.7218654019998212,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2503
+        }
+      ],
+      "wallclock_s": 494.22010695299923
+    }
+  ],
+  "agent_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "fair",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "FairHeuristicPriorAgent",
+    "reshuffle_semantics": "root-determinization PIMC: reshuffle the UNSEEN deck (canonical sort + rng), next_tile untouched; fresh tree per determinization; pooled-Q pick",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": false,
+      "config_hash": "82e11eedebe71db3"
+    },
+    "fair_deploy": {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total_sims": 2752,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "unknown",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory).",
+    "runtime_budget_override": {
+      "sims_per_det": 32,
+      "k_dets": 1,
+      "total_sims": 32,
+      "note": "the budget the agent ACTUALLY runs; fair_deploy above is the PRODUCTION.yaml intent (k4x688=2752)."
+    }
+  }
+}

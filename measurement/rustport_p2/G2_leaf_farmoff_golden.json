@@ -1,0 +1,126 @@
+{
+  "gate": "G2/leaf",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "6e3269e-dirty",
+    "utc": "2026-08-03T00:27:16Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "corpus": [
+      "golden"
+    ],
+    "configs": "farmoff",
+    "limit": null,
+    "stride": 8,
+    "workers": 8,
+    "bench": 0,
+    "bench_repeats": 200,
+    "out": null
+  },
+  "leaf_of_record": {
+    "leaf": "v2_9_2_Bmild_cap8_curve125",
+    "leaf_hash": "a36d2e15a3b3d71d",
+    "curve125": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ],
+    "bonus_cap": 8.0,
+    "opp_bonus_cap": 8.0,
+    "closure_p": {
+      "1": 0.5,
+      "2": 0.2,
+      "3": 0.05
+    },
+    "source": "governance/PRODUCTION.yaml champion.leaf_config"
+  },
+  "configs": [
+    "farmbaseoff",
+    "farmbothoff",
+    "farmgrowthoff",
+    "prod-curve125",
+    "v27",
+    "v28",
+    "v29"
+  ],
+  "legs": [
+    "carcassonne_ai.flat_leaf (USE_CY_LEAF=False)",
+    "carcassonne_ai.flat_leaf_cy (direct)",
+    "carc_rs.MirrorState.leaf_value{,_float}"
+  ],
+  "checks_per_position": [
+    "flat_base_score x4 routes",
+    "leaf int (py|cy|rust)",
+    "leaf float bit-exact (py|cy|rust)"
+  ],
+  "per_corpus": {
+    "golden": {
+      "positions": 1737,
+      "plies": 1725,
+      "values_compared": 62532,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 6948,
+        "v27": 6948,
+        "v28": 6948,
+        "v29": 6948,
+        "farmbaseoff": 6948,
+        "farmgrowthoff": 6948,
+        "farmbothoff": 6948
+      },
+      "mismatches": 0
+    },
+    "golden_disk": {
+      "positions": 56,
+      "plies": 1725,
+      "values_compared": 0,
+      "disk_values_compared": 448,
+      "by_config": {
+        "v27": 112,
+        "v28": 112,
+        "v29": 112
+      },
+      "mismatches": 0
+    }
+  },
+  "cy_unsupported_configs": [
+    "farmbaseoff",
+    "farmbothoff",
+    "farmgrowthoff"
+  ],
+  "knockout_bites": {
+    "farmbaseoff": {
+      "values_compared": 3474,
+      "values_changed_vs_champion": 1806,
+      "frac_changed": 0.5199
+    },
+    "farmgrowthoff": {
+      "values_compared": 3474,
+      "values_changed_vs_champion": 3200,
+      "frac_changed": 0.9211
+    },
+    "farmbothoff": {
+      "values_compared": 3474,
+      "values_changed_vs_champion": 3220,
+      "frac_changed": 0.9269
+    }
+  },
+  "total_values_compared": 62980,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "wallclock_s": 4.522355387045536
+}

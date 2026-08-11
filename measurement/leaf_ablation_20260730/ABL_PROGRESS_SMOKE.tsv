@@ -1,0 +1,5 @@
+cell	status	n	W	D	L	elo	sigma	paired_z	ms_ratio	secs	timestamp
+farmbaseoff	DONE	32	8	0	24	-190.8	70.9	-4.52	0.94	173	2026-08-02_20:57:36
+farmgrowthoff	DONE	4	0	0	4	-800.0	nan	-8.75	0.97	53	2026-08-02_20:58:29
+farmbaseoff	DONE	32	8	0	24	-190.8	70.9	-4.52	0.94	172	2026-08-02_21:03:15
+farmgrowthoff	DONE	4	0	0	4	-800.0	nan	-8.75	0.97	52	2026-08-02_21:04:08

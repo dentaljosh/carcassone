@@ -1,0 +1,81 @@
+[cp primary Doctor 2026-08-10_08:37:48] clock-skew guard OK (0s)
+[cp primary Doctor 2026-08-10_08:37:48] start: W=14 budget=k8x1376 band=117000000000 n=800 cells=[b0p3]
+[cp primary Doctor 2026-08-10_08:37:48] === cell b0p3 -> /mnt/c/carc-shared/curvephase_ladder/cp3_b0p3 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=0283a702b8f5af51 frozen_config_hash=12e9636cf4ddace6 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf0283a702]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 800 to play, 14 workers, out=/mnt/c/carc-shared/curvephase_ladder/cp3_b0p3
+  10/800 played (20.3s/game, ~267 min left)
+Terminated
+[cp primary Doctor 2026-08-10_08:42:12] cell b0p3 done rc=143 in 264s
+[cp primary Doctor 2026-08-10_08:42:12] launcher finished
+[cp primary Doctor 2026-08-10_08:42:15] clock-skew guard OK (0s)
+[cp primary Doctor 2026-08-10_08:42:15] start: W=30 budget=k8x1376 band=117000000000 n=800 cells=[b0p3]
+[cp primary Doctor 2026-08-10_08:42:16] === cell b0p3 -> /mnt/c/carc-shared/curvephase_ladder/cp3_b0p3 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=0283a702b8f5af51 frozen_config_hash=12e9636cf4ddace6 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf0283a702]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 14 cached, 786 to play, 30 workers, out=/mnt/c/carc-shared/curvephase_ladder/cp3_b0p3
+  10/786 played (24.5s/game, ~317 min left)
+  20/786 played (14.2s/game, ~182 min left)
+  30/786 played (12.2s/game, ~153 min left)
+  40/786 played (12.1s/game, ~151 min left)
+  50/786 played (10.6s/game, ~130 min left)
+  60/786 played (10.7s/game, ~130 min left)
+  70/786 played (10.8s/game, ~129 min left)
+  80/786 played (10.2s/game, ~120 min left)
+  90/786 played (10.1s/game, ~117 min left)
+  100/786 played (10.1s/game, ~116 min left)
+  110/786 played (9.9s/game, ~111 min left)
+  120/786 played (9.7s/game, ~108 min left)
+  130/786 played (9.8s/game, ~107 min left)
+  140/786 played (9.7s/game, ~105 min left)
+  150/786 played (9.4s/game, ~100 min left)
+  160/786 played (9.6s/game, ~100 min left)
+  170/786 played (9.6s/game, ~99 min left)
+  180/786 played (9.4s/game, ~95 min left)
+  190/786 played (9.4s/game, ~93 min left)
+  200/786 played (9.5s/game, ~93 min left)
+  210/786 played (9.4s/game, ~90 min left)
+  220/786 played (9.3s/game, ~88 min left)
+  230/786 played (9.4s/game, ~87 min left)
+  240/786 played (9.3s/game, ~85 min left)
+  250/786 played (9.4s/game, ~84 min left)
+  260/786 played (9.4s/game, ~82 min left)
+  270/786 played (9.3s/game, ~80 min left)
+  280/786 played (9.3s/game, ~78 min left)
+  290/786 played (9.2s/game, ~76 min left)
+  300/786 played (9.3s/game, ~76 min left)
+  310/786 played (9.2s/game, ~73 min left)
+  320/786 played (9.2s/game, ~72 min left)
+  330/786 played (9.3s/game, ~70 min left)
+  340/786 played (9.2s/game, ~69 min left)
+  350/786 played (9.2s/game, ~67 min left)
+  360/786 played (9.1s/game, ~65 min left)
+  370/786 played (9.2s/game, ~64 min left)
+  380/786 played (9.2s/game, ~62 min left)
+  390/786 played (9.2s/game, ~61 min left)
+  400/786 played (9.2s/game, ~59 min left)
+  410/786 played (9.2s/game, ~57 min left)
+  420/786 played (9.1s/game, ~56 min left)
+  430/786 played (9.1s/game, ~54 min left)
+  440/786 played (9.1s/game, ~53 min left)
+  450/786 played (9.0s/game, ~51 min left)
+  460/786 played (9.0s/game, ~49 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 800   candidate: 378W / 24D / 398L   winrate 0.487 (z=-0.71)
+avg score diff (candidate - opponent): -0.50
+ELO: -8.7  (+/- 12.3 1sigma)
+PAIRED: 400 decks   mean seat-balanced margin -0.50   z = -0.78
+prefix ms/move: candidate 1767  opponent 1814  (ratio 0.97x)
+fair endgame: candidate latched 800/800 games, 1.20s solver/game, timeouts=0
+fair endgame: opponent  latched 800/800 games, 1.13s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=800 (1σ≈±12); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/curvephase_ladder/cp3_b0p3/summary.json
+[cp primary Doctor 2026-08-10_09:52:13] cell b0p3 done rc=0 in 4197s
+[cp primary Doctor 2026-08-10_09:52:13] launcher finished

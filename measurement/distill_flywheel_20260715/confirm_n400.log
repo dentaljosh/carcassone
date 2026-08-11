@@ -1,0 +1,25 @@
+[fair-nvn-orch] CAND iter_03.pt: 81ch/42sc (sighted)
+[fair-nvn-orch] OPP  = fair-champion (net-free heuristic priors) -> ONE server only
+[fair-nvn-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt on cuda
+[export] tracing... (n_ch=81, n_scalar=42)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=2.34e-05  max|dvalue|=1.65e-04  OK
+[export] OK -> /tmp/carc_fairnvnC_Doctor.ts.pt  (n_scalar=42, C=81, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[fair-nvn-orch] start carc-orch CAND (W=28 fwd=2 max_batch=16) shm=fairnvnCDoctor n_ch=81 n_scalar=42
+[fair-nvn-orch] server READY | CAND shm='fairnvnCDoctor' 81ch/42sc | OPP fair-champion (net-free, no server) | client W=28
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[fair-netprior] net=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt
+[fair-netprior] rep=SIGHTED 81ch/42sc (inferred from the checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+fair-puct[fair_fair-netprior_c1.5_tau5_float_kd4_s688_vs_fairchamp_k2-leafa36d2e15]: info=fair-netprior n=400 paired=True K=2 k_dets=4 sims=688 | 0 cached, 400 to play, 28 workers, out=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/confirm_n400_bs16
+  [orch] candidate SHM eval-server 'fairnvnCDoctor': 28 CPU workers attach to /dev/shm/carc_fairnvnCDoctor (81ch/42-scalar sighted PRIORS)
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 9 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

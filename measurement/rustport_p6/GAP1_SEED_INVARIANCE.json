@@ -1,0 +1,127 @@
+{
+  "gate": "rustport GAP1 \u2014 HeuristicPriorAgent seed-invariance at champion knobs",
+  "question": "does the search `seed` change the answer? (carc_rs SearchConfigRs has no seed field; G3 gated seed=None only)",
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "sims_per_world": 1376,
+  "seeds": [
+    "None",
+    0,
+    7,
+    101,
+    12345,
+    999983
+  ],
+  "roots": 15,
+  "comparisons": 75,
+  "surface": "chosen_action + root N + root W bits + every root child (action, N, W-bits) \u2014 raw f64 bit patterns, not decimals",
+  "mismatches": [],
+  "verdict": "PASS",
+  "conclusion": "the missing carc_rs search seed is INERT at champion knobs: the seed feeds NeuralMCTS._np_rng, consumed only by temperature sampling and Dirichlet root noise, neither engaged under best_action. Gap 1 is CLOSED for this knob set. Gaps 2 (reuse_tree) and 3 (evaluator injection) are untouched by this result, and a converted RULER still needs its own G6-pattern identity gate.",
+  "rows": [
+    {
+      "deck_seed": 28000000000,
+      "ply": 12,
+      "chosen_action": 1252,
+      "root_n": 1376,
+      "n_children": 15
+    },
+    {
+      "deck_seed": 28000000000,
+      "ply": 40,
+      "chosen_action": 1660,
+      "root_n": 1376,
+      "n_children": 28
+    },
+    {
+      "deck_seed": 28000000000,
+      "ply": 72,
+      "chosen_action": 1239,
+      "root_n": 1376,
+      "n_children": 31
+    },
+    {
+      "deck_seed": 28000000000,
+      "ply": 104,
+      "chosen_action": 1056,
+      "root_n": 1376,
+      "n_children": 44
+    },
+    {
+      "deck_seed": 28000000000,
+      "ply": 130,
+      "chosen_action": 1641,
+      "root_n": 1376,
+      "n_children": 46
+    },
+    {
+      "deck_seed": 28000000001,
+      "ply": 12,
+      "chosen_action": 1044,
+      "root_n": 1376,
+      "n_children": 15
+    },
+    {
+      "deck_seed": 28000000001,
+      "ply": 40,
+      "chosen_action": 1040,
+      "root_n": 1376,
+      "n_children": 16
+    },
+    {
+      "deck_seed": 28000000001,
+      "ply": 72,
+      "chosen_action": 1156,
+      "root_n": 1376,
+      "n_children": 48
+    },
+    {
+      "deck_seed": 28000000001,
+      "ply": 104,
+      "chosen_action": 932,
+      "root_n": 1376,
+      "n_children": 32
+    },
+    {
+      "deck_seed": 28000000001,
+      "ply": 130,
+      "chosen_action": 1749,
+      "root_n": 1376,
+      "n_children": 25
+    },
+    {
+      "deck_seed": 28000000002,
+      "ply": 12,
+      "chosen_action": 2510,
+      "root_n": 1376,
+      "n_children": 2
+    },
+    {
+      "deck_seed": 28000000002,
+      "ply": 40,
+      "chosen_action": 2501,
+      "root_n": 1376,
+      "n_children": 5
+    },
+    {
+      "deck_seed": 28000000002,
+      "ply": 72,
+      "chosen_action": 2510,
+      "root_n": 1376,
+      "n_children": 1
+    },
+    {
+      "deck_seed": 28000000002,
+      "ply": 104,
+      "chosen_action": 2502,
+      "root_n": 1376,
+      "n_children": 3
+    },
+    {
+      "deck_seed": 28000000002,
+      "ply": 130,
+      "chosen_action": 2505,
+      "root_n": 1376,
+      "n_children": 2
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+ "chunk": "04_light_d",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 57,
+ "attempt": 1,
+ "peak_rss_kb": 767924,
+ "n_failing": 1,
+ "failing_ids": [
+  "tests/test_farmwar_discriminator.py::TestDefaultPathUnchanged::test_banked_rescore_matches_field_by_field"
+ ]
+}

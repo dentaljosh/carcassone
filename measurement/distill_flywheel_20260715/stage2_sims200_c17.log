@@ -1,0 +1,60 @@
+=== DISTILL STAGE-2 (fair-NET-prior flywheel) @ Sat Jul 18 14:10:48 EDT 2026 — TAG=distill_flywheel_sighted_20260716 iters 17..20 ===
+    gen (LOCAL): net-priors FairHeuristicPriorAgent k_dets=4 x sims=200 via orch distill_stage2 (81/42) · 300 games
+    champ (LAPTOP): net-free fair champion k_dets=4 x sims=688 · 0 games (25% anchor)
+    train: window 12 · aux_weight 0 · warm iter N <- iter_(N-1)
+  bundle tip: 4ae5bc0
+
+########## DISTILL STAGE-2 ITER 17 -> iter_17 @ Sat Jul 18 14:10:58 EDT 2026 (net/warm = iter_16.pt) ##########
+[it17] gen net_seed=701750000 (+champ) -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_17 @ Sat Jul 18 14:10:58 EDT 2026
+[it17] export TS: /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.ts.pt @ Sat Jul 18 14:11:00 EDT 2026
+[it17] orch READY ([carc-orch] SHM /dev/shm/carc_distill_stage2 (20 slots x 1721880B = 34437600B), n_ch=81 n_scalar=42 READY)
+scripts/distill_flywheel/run_distill_stage2.sh: line 329: 2440918 Killed                  nice -n 19 "$RUN_SERVER" --model "$ts" --transport shm --shm-name "$SHM_NAME" --workers "$ORCH_WORKERS" --forwarders "$FORWARDERS" --max-batch "$MAX_BATCH" --batch-timeout-ms "$BATCH_TIMEOUT_MS" --watchdog-secs "$WATCHDOG_SECS" --n-ch "$NCH" --n-scalar "$NSCALAR" --device cuda > "$OUT/logs/orch_it${nn}.log" 2>&1
+[it17] gen complete (300 npz) @ Sat Jul 18 16:02:13 EDT 2026
+[it17] train (accumulate iter_00..iter_17, window 12) @ Sat Jul 18 16:02:13 EDT 2026
+[it17] screen @ Sat Jul 18 16:16:55 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it17] probe_metrics @ Sat Jul 18 16:16:55 EDT 2026
+[it17] ✅ iter complete (screen HEALTHY) @ Sat Jul 18 16:17:01 EDT 2026
+
+########## DISTILL STAGE-2 ITER 18 -> iter_18 @ Sat Jul 18 16:17:01 EDT 2026 (net/warm = iter_17.pt) ##########
+[it18] gen net_seed=701850000 (+champ) -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_18 @ Sat Jul 18 16:17:01 EDT 2026
+[it18] export TS: /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_17.pt -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_17.ts.pt @ Sat Jul 18 16:17:03 EDT 2026
+[it18] orch READY ([carc-orch] SHM /dev/shm/carc_distill_stage2 (20 slots x 1721880B = 34437600B), n_ch=81 n_scalar=42 READY)
+scripts/distill_flywheel/run_distill_stage2.sh: line 329: 2482668 Killed                  nice -n 19 "$RUN_SERVER" --model "$ts" --transport shm --shm-name "$SHM_NAME" --workers "$ORCH_WORKERS" --forwarders "$FORWARDERS" --max-batch "$MAX_BATCH" --batch-timeout-ms "$BATCH_TIMEOUT_MS" --watchdog-secs "$WATCHDOG_SECS" --n-ch "$NCH" --n-scalar "$NSCALAR" --device cuda > "$OUT/logs/orch_it${nn}.log" 2>&1
+[it18] gen complete (300 npz) @ Sat Jul 18 17:23:25 EDT 2026
+[it18] train (accumulate iter_00..iter_18, window 12) @ Sat Jul 18 17:23:25 EDT 2026
+[it18] screen @ Sat Jul 18 17:38:07 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it18] probe_metrics @ Sat Jul 18 17:38:07 EDT 2026
+[it18] ✅ iter complete (screen HEALTHY) @ Sat Jul 18 17:38:13 EDT 2026
+
+########## DISTILL STAGE-2 ITER 19 -> iter_19 @ Sat Jul 18 17:38:13 EDT 2026 (net/warm = iter_18.pt) ##########
+[it19] gen net_seed=701950000 (+champ) -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_19 @ Sat Jul 18 17:38:13 EDT 2026
+[it19] export TS: /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_18.pt -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_18.ts.pt @ Sat Jul 18 17:38:15 EDT 2026
+[it19] orch READY ([carc-orch] SHM /dev/shm/carc_distill_stage2 (20 slots x 1721880B = 34437600B), n_ch=81 n_scalar=42 READY)
+scripts/distill_flywheel/run_distill_stage2.sh: line 329: 2509090 Killed                  nice -n 19 "$RUN_SERVER" --model "$ts" --transport shm --shm-name "$SHM_NAME" --workers "$ORCH_WORKERS" --forwarders "$FORWARDERS" --max-batch "$MAX_BATCH" --batch-timeout-ms "$BATCH_TIMEOUT_MS" --watchdog-secs "$WATCHDOG_SECS" --n-ch "$NCH" --n-scalar "$NSCALAR" --device cuda > "$OUT/logs/orch_it${nn}.log" 2>&1
+[it19] gen complete (300 npz) @ Sat Jul 18 18:46:37 EDT 2026
+[it19] train (accumulate iter_00..iter_19, window 12) @ Sat Jul 18 18:46:37 EDT 2026
+[it19] screen @ Sat Jul 18 19:01:18 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it19] probe_metrics @ Sat Jul 18 19:01:18 EDT 2026
+[it19] ✅ iter complete (screen HEALTHY) @ Sat Jul 18 19:01:24 EDT 2026
+
+########## DISTILL STAGE-2 ITER 20 -> iter_20 @ Sat Jul 18 19:01:24 EDT 2026 (net/warm = iter_19.pt) ##########
+[it20] gen net_seed=702050000 (+champ) -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_20 @ Sat Jul 18 19:01:24 EDT 2026
+[it20] export TS: /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_19.pt -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_19.ts.pt @ Sat Jul 18 19:01:26 EDT 2026
+[it20] orch READY ([carc-orch] SHM /dev/shm/carc_distill_stage2 (20 slots x 1721880B = 34437600B), n_ch=81 n_scalar=42 READY)
+scripts/distill_flywheel/run_distill_stage2.sh: line 329: 2535562 Killed                  nice -n 19 "$RUN_SERVER" --model "$ts" --transport shm --shm-name "$SHM_NAME" --workers "$ORCH_WORKERS" --forwarders "$FORWARDERS" --max-batch "$MAX_BATCH" --batch-timeout-ms "$BATCH_TIMEOUT_MS" --watchdog-secs "$WATCHDOG_SECS" --n-ch "$NCH" --n-scalar "$NSCALAR" --device cuda > "$OUT/logs/orch_it${nn}.log" 2>&1
+[it20] gen complete (300 npz) @ Sat Jul 18 20:19:54 EDT 2026
+[it20] train (accumulate iter_00..iter_20, window 12) @ Sat Jul 18 20:19:54 EDT 2026
+[it20] screen @ Sat Jul 18 20:34:40 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it20] probe_metrics @ Sat Jul 18 20:34:40 EDT 2026
+[it20] ✅ iter complete (screen HEALTHY) @ Sat Jul 18 20:34:46 EDT 2026
+
+=== DISTILL STAGE-2 DONE @ Sat Jul 18 20:34:46 EDT 2026 — completed 4 stage-2 iter(s); latest: /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_20.pt ===
+=== distill stage-2 exiting @ Sat Jul 18 20:34:46 EDT 2026 (cleaned gen pools + orch on both boxes) ===

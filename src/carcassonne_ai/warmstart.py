@@ -20,14 +20,17 @@ Resume by skipping seeds whose .npz already exists.
 from __future__ import annotations
 
 import math
+import os
 import random
-from dataclasses import dataclass
+import socket
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 
 import numpy as np
 
 from .action_space import action_size as compute_action_size
+from .aux_targets import OWNERSHIP_PLANES, extract_terminal_ownership, ownership_planes
 from .game_wrapper import Game
 from .virtual_score import virtual_score, virtual_score_inplace
 
@@ -47,17 +50,49 @@ class GameDataset:
     policies: np.ndarray     # (N, A) float32
     values: np.ndarray       # (N,) float32
     valid_masks: np.ndarray  # (N, A) bool
+    # Path B aux target: per-cell final feature ownership, current-player POV,
+    # (N, OWNERSHIP_PLANES, W, W) float32 in {-1, 0, +1} (city/road/farm planes).
+    ownership: np.ndarray
+    # (N,) bool — True = a full trajectory row (train policy + ownership + value);
+    # False = a value-ONLY row (flywheel step 1: a tree-interior position whose
+    # only label is its search Q — policies/valid_masks/ownership are dummy zeros
+    # and MUST be skipped by the policy/ownership losses). None on construction
+    # → __post_init__ fills all-True, so every existing call site and every old
+    # .npz (no aux_mask) behaves exactly as before.
+    aux_mask: np.ndarray | None = None
+    # (N,) int64 — sibling-ranking group id (STEP B.1, DECISIONS 2026-06-05 pm-3).
+    # -1 = not in a ranking group (trajectory rows + ungrouped interior rows);
+    # >=0 = a value-only row that is one CHILD of a parent node, sharing its id
+    # with its siblings so the trainer's listwise loss orders the group by search
+    # Q. group_id is globally unique (seed*100000+counter). None on construction /
+    # old .npz → __post_init__ fills all -1 (no ranking rows → ranking loss is 0).
+    group_id: np.ndarray | None = None
+
+    def __post_init__(self) -> None:
+        if self.aux_mask is None:
+            self.aux_mask = np.ones(self.boards.shape[0], dtype=bool)
+        if self.group_id is None:
+            self.group_id = np.full(self.boards.shape[0], -1, dtype=np.int64)
 
     def save(self, path: Path) -> None:
-        """Save to a sibling .partial.npz then rename to the final path. The
-        rename is atomic on POSIX; readers see only fully-written files. A
-        worker killed mid-write leaves a .partial.npz which the next run
-        overwrites or ignores (the loader skips files matching the partial
-        glob)."""
+        """Save to a private temp file then atomically rename onto `path`.
+        The rename is atomic; readers see only fully-written files.
+
+        The temp name is `.<stem>.<host>.<pid>.partial.npz`:
+        - leading dot — never matched by the `seed_*.npz` globs every consumer
+          uses, so a straggler left by a worker killed in the narrow
+          savez->rename window cannot be picked up as a training file;
+        - `<host>.<pid>` — unique per writer across machines, not just within
+          one box: under work-stealing two workers on different boxes can
+          (re)play the same seed, and bare PIDs collide cross-box. With the
+          host included they write separate temp files; only the final atomic
+          rename contends (last writer wins, both datasets valid)."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        # np.savez_compressed appends .npz if the path doesn't already end in it,
-        # so use an explicit .npz extension on the partial.
-        partial = path.with_name(path.stem + ".partial.npz")
+        # Explicit .npz extension on the temp file: np.savez_compressed would
+        # otherwise append one.
+        partial = path.with_name(
+            f".{path.stem}.{socket.gethostname()}.{os.getpid()}.partial.npz"
+        )
         np.savez_compressed(
             partial,
             boards=self.boards,
@@ -65,22 +100,100 @@ class GameDataset:
             policies=self.policies,
             values=self.values,
             valid_masks=self.valid_masks,
+            ownership=self.ownership,
+            aux_mask=self.aux_mask,
+            group_id=self.group_id,
         )
         partial.replace(path)
 
     @classmethod
     def load(cls, path: Path) -> "GameDataset":
-        with np.load(path) as data:
-            return cls(
-                boards=data["boards"],
-                scalars=data["scalars"],
-                policies=data["policies"],
-                values=data["values"],
-                valid_masks=data["valid_masks"],
-            )
+        # Any failure reading the .npz means the file is unusable; re-raise
+        # with the path so a corrupt/truncated file is identifiable instead
+        # of surfacing as a bare BadZipFile with no filename attached.
+        try:
+            with np.load(path) as data:
+                # aux_mask absent in pre-flywheel .npz files → None lets
+                # __post_init__ default it all-True (every row is a full row).
+                return cls(
+                    boards=data["boards"],
+                    scalars=data["scalars"],
+                    policies=data["policies"],
+                    values=data["values"],
+                    valid_masks=data["valid_masks"],
+                    ownership=data["ownership"],
+                    aux_mask=(
+                        data["aux_mask"] if "aux_mask" in data.files else None
+                    ),
+                    group_id=(
+                        data["group_id"] if "group_id" in data.files else None
+                    ),
+                )
+        except Exception as e:
+            raise RuntimeError(
+                f"failed to load .npz (corrupt or truncated?): {path}"
+            ) from e
 
     def __len__(self) -> int:
         return self.boards.shape[0]
+
+
+def rotate_dataset_90(ds: "GameDataset") -> "GameDataset":
+    """Rotate every example in a GameDataset 90° CCW (C5 symmetry augmentation).
+
+    boards -> rotate_board_repr_90 (spatial + directional channel perm);
+    policies / valid_masks -> scattered through the action-rotation permutation;
+    ownership -> spatial rotation only (per-cell planes, no directional channels);
+    scalars + values -> unchanged (orientation-invariant). Applying 4× is identity.
+    """
+    from .action_space import action_rotation_perm
+    from .action_space import action_size as _asize
+    from .board_repr import rotate_board_repr_90_batch
+
+    W = ds.boards.shape[-1]
+    A = ds.policies.shape[-1]
+    if A != _asize(W):
+        raise ValueError(
+            f"policy width {A} != action_size({W})={_asize(W)} — window/action mismatch"
+        )
+    P = action_rotation_perm(W)
+    pol = np.zeros_like(ds.policies)
+    pol[:, P] = ds.policies
+    msk = np.zeros_like(ds.valid_masks)
+    msk[:, P] = ds.valid_masks
+    return GameDataset(
+        boards=rotate_board_repr_90_batch(ds.boards),
+        scalars=ds.scalars.copy(),
+        policies=pol,
+        values=ds.values.copy(),
+        valid_masks=msk,
+        ownership=np.ascontiguousarray(np.rot90(ds.ownership, k=1, axes=(2, 3))),
+        aux_mask=ds.aux_mask.copy(),  # per-row, orientation-invariant
+        group_id=ds.group_id.copy(),  # per-row id, orientation-invariant
+    )
+
+
+def augment_with_rotations(ds: "GameDataset") -> "GameDataset":
+    """Return a GameDataset with each example + its 3 rotations (4× rows).
+
+    Free data: Carcassonne is invariant under the 4 square rotations (reflection
+    is NOT — curved roads / directed art break it). Use in the training data
+    loader; no scratch retrain needed (operates on existing tensors)."""
+    rots = [ds]
+    cur = ds
+    for _ in range(3):
+        cur = rotate_dataset_90(cur)
+        rots.append(cur)
+    return GameDataset(
+        boards=np.concatenate([r.boards for r in rots], axis=0),
+        scalars=np.concatenate([r.scalars for r in rots], axis=0),
+        policies=np.concatenate([r.policies for r in rots], axis=0),
+        values=np.concatenate([r.values for r in rots], axis=0),
+        valid_masks=np.concatenate([r.valid_masks for r in rots], axis=0),
+        ownership=np.concatenate([r.ownership for r in rots], axis=0),
+        aux_mask=np.concatenate([r.aux_mask for r in rots], axis=0),
+        group_id=np.concatenate([r.group_id for r in rots], axis=0),
+    )
 
 
 DEFAULT_HEURISTIC_TAU = 10.0
@@ -165,7 +278,8 @@ def _heuristic_policy_2ply(
     half-tile/half-meeple position split: ~3-4x slower overall than 1-ply
     for the same dataset size.
     """
-    is_tile_phase = board.state.phase.value == "tiles"
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase  # trivial enum (local, mirrors this module's lazy-import style)
+    is_tile_phase = board.state.phase == GamePhase.TILES  # D2: enum, not the "tiles" literal
     if not is_tile_phase:
         return _heuristic_policy(game, board, valid_mask, tau=tau)
 
@@ -241,6 +355,8 @@ def generate_one_game_dataset(
     skip_late: int = 10,
     heuristic_tau: float = DEFAULT_HEURISTIC_TAU,
     heuristic_lookahead: str = "1ply",
+    include_farm_scalars: bool = False,
+    sighted: bool = False,
 ) -> GameDataset:
     """Play a random game; sample N mid-game positions; label each.
 
@@ -248,6 +364,10 @@ def generate_one_game_dataset(
     heuristic_lookahead: "1ply" (default; tile-phase scored at tile-only) or
                         "2ply" (tile-phase scored as tile + best meeple
                         follow-up; ~3-4x slower gen).
+    include_farm_scalars: Path B Step E — emit the 12-scalar feature vector (10
+                        base + 2 farm-control) in the recorded dataset. Must match
+                        the net trained on this corpus (train_warmstart
+                        --include-farm-scalars). Default off → legacy 10-scalar.
     """
     if label_strategy not in ("mcts", "heuristic"):
         raise ValueError(f"label_strategy must be 'mcts' or 'heuristic', got {label_strategy!r}")
@@ -260,7 +380,11 @@ def generate_one_game_dataset(
     # own action choices.
     random.seed(seed)
     rng = random.Random(seed + 1)
-    game = Game(enable_legal_moves_cache=True)
+    game = Game(
+        enable_legal_moves_cache=True,
+        include_farm_scalars=include_farm_scalars,
+        sighted=sighted,
+    )
     board = game.get_init_board()
 
     # Walk the game, recording at each step the data we'd need to label
@@ -296,6 +420,7 @@ def generate_one_game_dataset(
     policies_arr = []
     values_arr = []
     masks_arr = []
+    ownership_arr = []
 
     # Defer MCTS imports so heuristic-only runs don't pay the cost.
     # Share one MCTS-side Game across all positions in this run; the legal-moves
@@ -303,7 +428,11 @@ def generate_one_game_dataset(
     # we save N×Game-construction overhead.
     if label_strategy == "mcts":
         from .mcts import MCTS
-        mcts_game = Game(enable_legal_moves_cache=True)
+        mcts_game = Game(
+            enable_legal_moves_cache=True,
+            include_farm_scalars=include_farm_scalars,
+            sighted=sighted,
+        )
 
     for idx in chosen:
         snap_board, mask, player = snapshots[idx]
@@ -320,11 +449,17 @@ def generate_one_game_dataset(
             mcts_game.clear_caches()  # bound per-search memory; cache is per-MCTS anyway
             del mcts
         value = float(normalized_value_target(snap_board.state, player))
+        # Ownership aux label: "who owns each feature if scored now" — the same
+        # virtual_score semantics as the value target above, so value + ownership
+        # are consistent. Projected onto this position's window + POV.
+        records = extract_terminal_ownership(snap_board.state)
+        owners = ownership_planes(records, snap_board.offset, player, game.window_size)
         boards_arr.append(obs.astype(np.float32))
         scalars_arr.append(scalars.astype(np.float32))
         policies_arr.append(policy)
         values_arr.append(value)
         masks_arr.append(mask.astype(bool))
+        ownership_arr.append(owners)
 
     return GameDataset(
         boards=np.stack(boards_arr) if boards_arr else np.empty((0, 0, 0, 0), dtype=np.float32),
@@ -332,12 +467,23 @@ def generate_one_game_dataset(
         policies=np.stack(policies_arr) if policies_arr else np.empty((0, A), dtype=np.float32),
         values=np.array(values_arr, dtype=np.float32),
         valid_masks=np.stack(masks_arr) if masks_arr else np.empty((0, A), dtype=bool),
+        ownership=(
+            np.stack(ownership_arr)
+            if ownership_arr
+            else np.empty((0, OWNERSHIP_PLANES, game.window_size, game.window_size), dtype=np.float32)
+        ),
     )
 
 
 def iter_game_dataset_files(root: Path) -> Iterator[Path]:
-    """Yield all .npz files in the warmstart root, sorted by name."""
-    yield from sorted(root.glob("seed_*.npz"))
+    """Yield all .npz data shards in the root, sorted by name.
+
+    Excludes `*.meta.npz` diagnostic sidecars (e.g. gen_fair_selfplay.py's
+    per-game `{z, leaf_tanh}` files) — those are NOT training data and lack the
+    `values`/`obs` keys, so loading them as shards raises KeyError.
+    """
+    yield from (p for p in sorted(root.glob("seed_*.npz"))
+                if not p.name.endswith(".meta.npz"))
 
 
 # ---------------------------------------------------------------------------
@@ -381,17 +527,27 @@ def split_files_train_val(
     n = len(files)
     if n == 0:
         return [], []
+    # D-R4-1: split by UNIQUE path so a duplicated game (warmstart oversampling in
+    # _build_mixed_file_list passes the same .npz many times, WITH replacement) can
+    # NEVER straddle the train/val boundary and leak positions across it. `val` gets
+    # exactly ONE occurrence of each val-side game (clean, un-reweighted); ALL
+    # occurrences of train-side games — including the oversampled duplicates — go to
+    # train, and val-side games are fully excluded from train. For a duplicate-free
+    # list (the common case incl. mix=0.0) this is byte-identical to the old split:
+    # same RNG draw, same n_val, same partition.
+    unique = list(dict.fromkeys(files))  # de-dup, first-seen order preserved
+    u = len(unique)
     rng = random.Random(seed)
-    perm = list(range(n))
+    perm = list(range(u))
     rng.shuffle(perm)
-    if val_fraction == 0.0 or n < 2:
+    if val_fraction == 0.0 or u < 2:
         n_val = 0
     else:
-        n_val = max(1, int(round(n * val_fraction)))
-        n_val = min(n_val, n - 1)  # never empty the train split
-    val_idx = set(perm[:n_val])
-    train = [f for i, f in enumerate(files) if i not in val_idx]
-    val = [f for i, f in enumerate(files) if i in val_idx]
+        n_val = max(1, int(round(u * val_fraction)))
+        n_val = min(n_val, u - 1)  # never empty the train split
+    val_paths = {unique[i] for i in perm[:n_val]}
+    val = [p for p in unique if p in val_paths]       # one occurrence each, held out
+    train = [f for f in files if f not in val_paths]  # all train occurrences (incl. dupes)
     return train, val
 
 
@@ -401,9 +557,15 @@ def make_streaming_dataset(
     shuffle_files_each_epoch: bool = True,
     shuffle_within_file: bool = True,
     seed: int = 0,
+    augment_rotations: bool = False,
 ):
     """Build a torch IterableDataset that streams (board, scalar, policy,
-    value, mask) tuples from the given .npz file list.
+    value, mask, ownership, aux_mask) tuples from the given .npz file list.
+
+    aux_mask (bool scalar per row): True = full trajectory row (train policy +
+    ownership + value); False = value-only tree-interior row (train value only —
+    the trainer must subset policy/ownership to aux_mask=True rows). Old .npz
+    files without aux_mask stream all-True (GameDataset.load defaults it).
 
     Worker sharding: when used with DataLoader(num_workers > 0), each worker
     sees a disjoint slice of the file list. File order is shuffled per-epoch
@@ -453,6 +615,12 @@ def make_streaming_dataset(
                 ds = GameDataset.load(path)
                 if len(ds) == 0:
                     continue
+                # C5 symmetry augmentation: expand each file to its 4 board
+                # rotations before yielding rows (off by default → no behavior
+                # change to existing training). Carcassonne is rotation-invariant
+                # (reflection is not), so this is 4× free, label-correct data.
+                if augment_rotations:
+                    ds = augment_with_rotations(ds)
                 idx_order = list(range(len(ds)))
                 if shuffle_within_file:
                     import zlib
@@ -466,6 +634,9 @@ def make_streaming_dataset(
                         torch.from_numpy(ds.policies[i]),
                         torch.tensor(ds.values[i], dtype=torch.float32),
                         torch.from_numpy(ds.valid_masks[i]),
+                        torch.from_numpy(ds.ownership[i]),
+                        torch.tensor(bool(ds.aux_mask[i]), dtype=torch.bool),
+                        torch.tensor(int(ds.group_id[i]), dtype=torch.int64),
                     )
 
     return StreamingWarmstartDataset()
@@ -478,6 +649,11 @@ def count_positions(files: list[Path]) -> int:
     """
     total = 0
     for f in files:
-        with np.load(f) as data:
-            total += int(data["values"].shape[0])
+        try:
+            with np.load(f) as data:
+                total += int(data["values"].shape[0])
+        except Exception as e:
+            raise RuntimeError(
+                f"failed to load .npz (corrupt or truncated?): {f}"
+            ) from e
     return total

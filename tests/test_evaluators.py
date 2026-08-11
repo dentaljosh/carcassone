@@ -15,6 +15,8 @@ from carcassonne_ai.action_space import action_size
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
     make_single_evaluator,
+    make_v25_batch_value_wrapper,
+    make_v25_value_wrapper,
 )
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
@@ -113,3 +115,109 @@ def test_single_and_batch_agree_on_same_board() -> None:
     p_b, v_b = batch([board])
     assert np.allclose(p_s, p_b[0], atol=1e-5)
     assert abs(v_s - float(v_b[0])) < 1e-5
+
+
+# ---------------------------------------------------------------------------
+# v2.5 leaf wrapper — value-head blend (2026-05-17 Option 2)
+# ---------------------------------------------------------------------------
+
+
+def test_v25_value_wrapper_blend_endpoints_and_midpoint() -> None:
+    """make_v25_value_wrapper blends the NN value head into the leaf:
+    leaf = (1-λ)·h + λ·v_nn. λ=0 → pure heuristic; λ=1 → pure v_nn;
+    λ=0.5 → exact midpoint. λ=0 must also match the no-config default
+    (back-compat guard — production runs at λ=0)."""
+    from dataclasses import replace
+
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    g, board = _board_with_branching()
+    A = action_size(board.offset.size)
+    V_NN = 0.6
+    base = lambda b: (np.zeros(A, dtype=np.float32), V_NN)  # noqa: E731
+
+    h = make_v25_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.0))(board)[1]
+    assert abs(h - V_NN) > 0.01, "test not discriminating — pick a different V_NN"
+    # default cfg (None) ≡ λ=0 — production behavior unchanged.
+    assert make_v25_value_wrapper(base)(board)[1] == h
+    # λ=1 — pure NN value.
+    v1 = make_v25_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=1.0))(board)[1]
+    assert abs(v1 - V_NN) < 1e-6
+    # λ=0.5 — exact midpoint of heuristic and NN value.
+    v_mid = make_v25_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.5))(board)[1]
+    assert abs(v_mid - (0.5 * h + 0.5 * V_NN)) < 1e-6
+
+
+def test_v25_batch_value_wrapper_blend() -> None:
+    """The batched v2.5 wrapper blends per-board identically to the single
+    wrapper: λ=0 → heuristic, λ=1 → v_nn, λ=0.5 → midpoint."""
+    from dataclasses import replace
+
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    g, board = _board_with_branching()
+    A = action_size(board.offset.size)
+    V_NN = 0.6
+    boards = [board, board]
+    base = lambda bs: (  # noqa: E731
+        np.zeros((len(bs), A), dtype=np.float32),
+        np.full(len(bs), V_NN, dtype=np.float32),
+    )
+
+    h = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.0))(boards)[1]
+    assert np.allclose(make_v25_batch_value_wrapper(base)(boards)[1], h)
+    v1 = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=1.0))(boards)[1]
+    assert np.allclose(v1, V_NN, atol=1e-6)
+    v_mid = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.5))(boards)[1]
+    assert np.allclose(v_mid, 0.5 * h + 0.5 * V_NN, atol=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# v2.5 leaf wrapper — RESIDUAL mode (Lever 1, 2026-06-05)
+# ---------------------------------------------------------------------------
+
+
+def test_v25_value_wrapper_residual_mode_and_clip() -> None:
+    """residual_scale>0 → leaf = clip(h + scale·v_nn, ±1). It takes precedence
+    over value_blend, and a large residual is clipped to the tanh range."""
+    from dataclasses import replace
+
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    g, board = _board_with_branching()
+    A = action_size(board.offset.size)
+    base = lambda b: (np.zeros(A, dtype=np.float32), 0.4)  # noqa: E731
+
+    h = make_v25_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.0))(board)[1]
+    # scale=0.5, small residual stays in range → exact h + 0.5·0.4.
+    r = make_v25_value_wrapper(base, replace(DEFAULT_CONFIG, residual_scale=0.5))(board)[1]
+    assert abs(r - max(-1.0, min(1.0, h + 0.5 * 0.4))) < 1e-6
+    # residual takes precedence over a set value_blend.
+    rb = make_v25_value_wrapper(
+        base, replace(DEFAULT_CONFIG, residual_scale=0.5, value_blend=0.9)
+    )(board)[1]
+    assert abs(rb - r) < 1e-6
+    # huge residual → clipped to ±1.
+    base_hi = lambda b: (np.zeros(A, dtype=np.float32), 5.0)  # noqa: E731
+    assert make_v25_value_wrapper(base_hi, replace(DEFAULT_CONFIG, residual_scale=1.0))(board)[1] == 1.0
+    base_lo = lambda b: (np.zeros(A, dtype=np.float32), -5.0)  # noqa: E731
+    assert make_v25_value_wrapper(base_lo, replace(DEFAULT_CONFIG, residual_scale=1.0))(board)[1] == -1.0
+
+
+def test_v25_batch_value_wrapper_residual_mode_and_clip() -> None:
+    """Batched residual wrapper matches the single wrapper + clips per-board."""
+    from dataclasses import replace
+
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    g, board = _board_with_branching()
+    A = action_size(board.offset.size)
+    boards = [board, board]
+    base = lambda bs: (  # noqa: E731
+        np.zeros((len(bs), A), dtype=np.float32),
+        np.array([0.4, 5.0], dtype=np.float32),
+    )
+    h = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.0))(boards)[1]
+    r = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, residual_scale=0.5))(boards)[1]
+    assert abs(r[0] - max(-1.0, min(1.0, float(h[0]) + 0.5 * 0.4))) < 1e-6
+    assert r[1] == 1.0  # h + 0.5·5.0 > 1 → clipped to +1
