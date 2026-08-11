@@ -4923,3 +4923,78 @@ promoted on any branch.**
 
 **Reversal cost:** none (measurement only).
 **Phase:** measurement-first
+
+---
+
+## 2026-08-10 (evening) — Lever-menu block D RAN AND CLOSED: the CL-060 width-residual direct H2H is a **bounded null** — width at fixed 11008 closes unresolvable at affordable n, falsifier (1) **discharged**, no top-up run
+
+**Context.** Item 3 / block D of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.3, spec of record)
+launched immediately after block C closed (previous entry) and completed on the two-box
+work-stealing chain. Item 5 / block E is next in `menu_chain.sh` and is **not** touched by this
+entry.
+
+**The question.** CL-060 (`governance/CLAIM_REGISTRY.csv`, status **Reopened**) decomposed its
++49.85-elo budget promotion into budget and width **by quadrature across two different bands**:
+budget alone = +27.85 ± 12.43 (z 2.24, band 44e9) ⇒ width residual at fixed 11008 = **+21.99 ±
+18.96, z 1.16, NOT RESOLVED**. CL-060's own "sharp next test #1" named the fix: a direct
+k8×1376 vs k4×2752 head-to-head at fixed 11008 on ONE band, n≥400 paired.
+
+**Design.** ONE cell, direct H2H, both sides fixed **11008** total sims, ONE fresh band
+(1.19e11): candidate = k4×2752 (`--k-dets 4 --sims 2752`), opponent = the k8×1376 production
+champion (`--opp-k-dets 8 --opp-sims 1376`), both sides the frozen curve125 leaf
+`a36d2e15a3b3d71d` (identical by design — a width/budget-split contrast, not a leaf contrast).
+Fair PIMC, exact-K≤2, `fixed_v1` + `CARCASSONNE_FIX_R9=1` (`r9_env_ok true`), rust both sides.
+**n=800 deck-paired (400 decks × 2 seats)**, seeds `119000000000..119000000399`; completion
+800/800; wiring gates clean (`wiring_gate_failures: []`).
+
+**Result.** W369 / D17 / L414 — **elo −19.5639 ± 12.3032**, `paired_mean_margin` **−1.01125
+pts/deck**, **primary statistic: deck-paired margin z −1.48702**. `champ_prefix_ms_per_move`
+(candidate side) 1517.86 ms — a ratio-only figure per §2, not quotable as an absolute from this
+shared-tenancy run.
+
+**Pre-registered map (plan §4.3).** |z| ≥ 2.0 → resolved with a sign; 1.5 ≤ |z| < 2.0 → top up
+to n=1600 on fresh decks of the same band, then verdict; **|z| < 1.5 → BOUNDED NULL: the width
+axis at 11008 closes as unresolvable at affordable n, the ±22-elo bound is recorded, and CL-060's
+falsifier (1) is DISCHARGED rather than left open.**
+
+**Adjudication: |z| = 1.487 — the bounded-null branch fired, by 0.013 under the 1.5 top-up
+threshold.** Width axis at total 11008 **CLOSES**; bound **±22 elo** (2σ ≈ ±1.27 pts/deck at this
+n). **CL-060's falsifier (1) is DISCHARGED** — not resolved with a sign, but no longer an open
+falsifier either.
+
+**The top-up was NOT run, and that was deliberate.** Three reasons, all recorded: **(a)** the
+pre-registered trigger (1.5 ≤ |z| < 2.0) did not fire — |z|=1.487 sits on the bounded-null side of
+the line, narrowly. **(b)** Topping up *because* a screen lands just under a threshold is exactly
+the forking-path pattern that produced four winner's-curse instances already this campaign
+(`farm_growth_off`'s pooled 2-cell prior, `intrareuse_k4x688`, the phase β=+0.3 lean, the distill
+`it16` crest) — extending a design post hoc because the number is "close" is the same failure
+mode even when it undershoots a pre-registered bar rather than overshoots one. **(c)** Nothing
+acts on either sign regardless of outcome: plan §4.3 states outright that nothing is proposed for
+`PRODUCTION.yaml` either way, because **k4×2752 has never been benched k-parallel** and projects
+≈**4.8 s/move vs the champion's measured 2.16 s/move** — production runs
+`parallel_workers = k_dets`, so k4 can occupy only 4 workers against k8's 8. That projection, not
+a measurement, is why a k4 win would not have been deployable either. The pre-registered top-up
+(fresh decks of the same band, seeds `119000000400..119000000799`, +1.5 h) remains available as a
+named, unexercised option if Joshua ever wants the axis resolved rather than bounded.
+
+**Corroboration — recorded as an observation, explicitly NOT a verdict or a promotion basis.**
+CL-060's own cross-band quadrature estimate of the width residual was **+21.99 ± 18.96 favoring
+k8** (z 1.16); this single-band **direct** H2H reads **k8 ahead by 19.56 ± 12.30**. Same sign,
+nearly the same magnitude, from an independent instrument (a direct paired contrast rather than a
+difference of two independently-banded point estimates). Neither clears 2σ alone, and the two
+are not pooled — they simply point the same way.
+
+**CL-054 is NOT contradicted.** CL-054 has k4 > k8 at a *fixed total of 2752* — a different
+budget (+5.18 ± 1.24 pts/deck, z 4.17, Promoted, and it is what the phone still runs). This
+cell's result at fixed 11008 is *consistent with* "optimal width grows with budget" — written
+here as a **hypothesis** the data does not establish, not a finding.
+
+**Consequences.** Band **1.19e11** retired, decision-influenced. `results.csv`
+`width_k4x2752_vs_k8x1376_fixed11008_n800_b119e9`. CL-060 (`Reopened`) amended: falsifier (1)
+discharged in place (status unchanged — the claim's broader budget-responsiveness question stays
+open; tests (2) and (3) in its own decision field remain unfunded). Plan §4.3 stamped RAN AND
+CLOSED. **`governance/PRODUCTION.yaml` untouched; nothing promoted.**
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first

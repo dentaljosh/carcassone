@@ -19,10 +19,11 @@
 > **Live progress (2026-08-10 evening).** Item 1 — readout on disk (`ITEM1_FARM_NORM.{json,md}`) ·
 > **item 2 / block B 🔚 RAN AND CLOSED — does NOT confirm, bounded null (§4.2 banner)** ·
 > **item 4 / block C 🔚 RAN AND CLOSED — all four cells null, caveat narrowed to ~±17.5 elo
-> (§4.4 banner)** · **item 3 / block D 🔄 RUNNING** · item 5 / block E ⏳ queued behind D ·
-> item 6 — readout on disk (`item6_s3/S3_VERDICT.{json,md}`). *(Items 1 and 6 are not closed out by
-> this commit.)* Bands **1.18e11** and **1.20e11** retired; **1.19e11** in use by block D.
-> `PRODUCTION.yaml` still untouched.
+> (§4.4 banner)** · **item 3 / block D 🔚 RAN AND CLOSED — bounded null, width axis at 11008
+> unresolvable at affordable n, CL-060 falsifier (1) discharged, no top-up run (§4.3 banner)** ·
+> item 5 / block E 🔄 RUNNING (queued in behind block D) · item 6 — readout on disk
+> (`item6_s3/S3_VERDICT.{json,md}`). *(Items 1 and 6 are not closed out by this commit.)* Bands
+> **1.18e11**, **1.19e11** and **1.20e11** retired. `PRODUCTION.yaml` still untouched.
 
 > **Reading order:** §1 envelope + cost model → §2 the co-tenancy ruling → §3 the DAG →
 > §4 per-item mini-preregs → §5 the GO sequence → §6 what stays Joshua's → §7 out of scope →
@@ -358,6 +359,26 @@ full farm scoring on both sides, per [`F7B_PREREG.md`](../measurement/leaf_ablat
 ---
 
 ### 4.3 — Item 3. CL-060 width residual, direct H2H
+
+> **🔚 RAN AND CLOSED 2026-08-10 (block D) — pre-registered branch `|z| < 1.5` fired (by 0.013):
+> BOUNDED NULL, the width axis at fixed 11008 closes as unresolvable at affordable n, CL-060's
+> falsifier (1) DISCHARGED.** n=800 deck-paired, band 1.19e11 (retired), completion 800/800,
+> wiring gates clean: **W369/D17/L414 · elo −19.5639 ± 12.3032 · paired margin −1.01125 pts/deck
+> · PRIMARY STATISTIC margin z −1.48702.** Bound: **±22 elo** (2σ). **The pre-registered top-up
+> to n=1600 was NOT run** — the trigger (1.5 ≤ |z| < 2.0) did not fire, topping up a screen that
+> lands just under a threshold is the forking-path pattern behind four winner's-curse instances
+> this campaign, and nothing acts on either sign regardless (k4×2752 has never been benched
+> k-parallel and projects ≈4.8 s/move vs the champion's measured 2.16 — a projection, not a
+> measurement; k4 could not have deployed even on a win). It remains available as a
+> pre-specified, unexercised option (seeds 119000000400..119000000799, +1.5h). **Corroboration,
+> observation only, NOT a verdict:** CL-060's cross-band quadrature estimate (+21.99 ± 18.96
+> favoring k8, z 1.16) and this direct single-band H2H (k8 ahead 19.56 ± 12.30) agree in sign and
+> magnitude — independent instruments, neither past 2σ. **CL-054 is NOT contradicted** (its k4>k8
+> result is at a fixed 2752 budget, a different regime); "optimal width grows with budget" is
+> recorded as a hypothesis, not a finding. `PRODUCTION.yaml` untouched; nothing proposed either
+> way. → DECISIONS 2026-08-10 (evening); `results.csv`
+> `width_k4x2752_vs_k8x1376_fixed11008_n800_b119e9`; CL-060 falsifier (1) discharged in place
+> (status stays Reopened).
 
 **⚠️ The sweep's "adapt the existing launcher" instruction does not survive contact. Read [§8.3](#83-item-3--the-named-launcher-is-the-wrong-instrument).**
 
