@@ -1,0 +1,23 @@
+{
+  "capability": "simsplit",
+  "checks": [
+    {
+      "check": "harness_exists",
+      "ok": true,
+      "detail": "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py"
+    },
+    {
+      "check": "harness_has_split_flags",
+      "ok": true,
+      "detail": "both flags advertised by argparse"
+    },
+    {
+      "check": "fixed_per_turn_total",
+      "ok": true,
+      "detail": "fixed-total OK: 2752+1376 == 2*2064 == 4128"
+    }
+  ],
+  "ok": true,
+  "harness": "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py",
+  "not_probeable_here": "byte-identity of --sims-tile/--sims-meeple at the production setting; attested by the hand-written S1 go-file, never by this script"
+}

@@ -1,0 +1,3 @@
+123000000000
+SIMS-SPLIT ALLOCATION A/B at 1.5x per-turn budget: 2 cells n=800 deck-paired each, FAIR PIMC k_dets 8 both arms, fixed_v1+R9, rust, exact-K 2, leaf a36d2e15 both sides. Cell A = --sims-tile 2752/--sims-meeple 1376; Cell B = uniform --sims 2064 (matched-budget control). Opponent both cells = unmodified champion k8x1376. ONE SHARED BAND, CRN.
+claimed 2026-08-12
