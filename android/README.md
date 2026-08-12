@@ -118,11 +118,26 @@ square, Lanczos-upscales, and writes them under the relative paths the bridge re
 USB passthrough is awkward from WSL2; **wireless adb is the practical path** (outbound
 NAT works fine).
 
+The connect port **drifts every time wireless debugging restarts**, so don't hunt for it
+by hand — [`tools/adb_connect.sh`](tools/adb_connect.sh) finds it (cached port → mDNS →
+bounded TCP scan of the tailnet IP) and connects:
+
 ```bash
-# On the phone: Developer options -> Wireless debugging -> Pair device with pairing code
-adb pair 192.168.0.NN:PPPPP        # the PAIRING port + 6-digit code (one time per phone)
-adb connect 192.168.0.NN:QQQQQ     # the (different) CONNECT port shown on the main screen
-adb devices                        # expect: <ip>:<port>  device
+android/tools/adb_connect.sh            # defaults to the Pixel at 100.64.4.100
+android/tools/adb_connect.sh --help     # flags + the exit-code contract
+```
+
+It is idempotent (exit 0 if already connected) and, crucially, tells the two failure
+modes apart: **exit 3** = no open port (phone asleep, or wireless debugging off) vs
+**exit 4** = the device answered but rejected this host's client certificate, which only
+the on-device pairing flow fixes. On exit 4 it prints the exact remedy. Pairing is
+one-time per host and needs someone at the phone:
+
+```bash
+# On the phone: Settings -> System -> Developer options -> Wireless debugging
+#               -> "Pair device with pairing code"
+adb pair 100.64.4.100:PPPPP        # the PAIRING port + 6-digit code (one time per host)
+android/tools/adb_connect.sh       # then this handles the drifting CONNECT port forever
 
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb logcat -s CarcApp GameVM PythonBridge python.stdout python.stderr
@@ -205,6 +220,9 @@ finished game can be reloaded on the phone, and replayed on the desktop by the o
 docstring is the authority on *why* `(deck_seed, actions)` is lossless for any policy).
 
 ```bash
+# connect first (finds the drifting wireless-debug port); see section 2
+android/tools/adb_connect.sh
+
 # pull one game off the phone
 adb shell run-as com.jishal.carcassonne ls files/games/
 adb shell run-as com.jishal.carcassonne cat files/games/1785171903_25080.json > game.json
