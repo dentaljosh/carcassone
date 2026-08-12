@@ -1,0 +1,15 @@
+[alloc 2026-08-12_10:26:35] === SIMS-SPLIT ALLOCATION A/B START, band 123000000000 ===
+[alloc 2026-08-12_10:26:35] === CELL a_split_t2752_m1376 START (n=800 band=123000000000 W_local=30 W_laptop=22) ===
+[alloc 2026-08-12_10:26:35] cell a_split_t2752_m1376: local launcher pid 926702
+[alloc 2026-08-12_10:27:07] cell a_split_t2752_m1376: two-box check local_busy=30 laptop_busy=22 laptop_claims_on_cell=22 ok=1
+[alloc 2026-08-12_11:49:49] cell a_split_t2752_m1376: local launcher exited rc=0
+[alloc 2026-08-12_11:49:49] cell a_split_t2752_m1376: records 800/800
+[alloc 2026-08-12_11:49:49] === CELL a_split_t2752_m1376 COMPLETE -> /home/doctor/projects/carcassone/measurement/simsplit_alloc_20260812/verdicts/a_split_t2752_m1376.json ===
+[alloc 2026-08-12_11:49:49] === CELL b_uniform_2064 START (n=800 band=123000000000 W_local=30 W_laptop=22) ===
+[alloc 2026-08-12_11:49:49] cell b_uniform_2064: local launcher pid 960631
+[alloc 2026-08-12_11:50:21] cell b_uniform_2064: two-box check local_busy=30 laptop_busy=22 laptop_claims_on_cell=22 ok=1
+[alloc 2026-08-12_13:12:37] cell b_uniform_2064: local launcher exited rc=0
+[alloc 2026-08-12_13:12:37] cell b_uniform_2064: records 800/800
+[alloc 2026-08-12_13:12:37] === CELL b_uniform_2064 COMPLETE -> /home/doctor/projects/carcassone/measurement/simsplit_alloc_20260812/verdicts/b_uniform_2064.json ===
+[alloc 2026-08-12_13:12:42] A-B contrast -> /home/doctor/projects/carcassone/measurement/simsplit_alloc_20260812/verdicts/A_minus_B_contrast.json
+[alloc 2026-08-12_13:12:42] === FINISHED. Nothing promoted, PRODUCTION.yaml untouched, no verdict adjudicated. ===

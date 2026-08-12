@@ -1,0 +1,25 @@
+{
+  "fairnet_dir": "/mnt/c/carc-shared/simsplit_alloc_20260812/a_split_t2752_m1376",
+  "baseline_dir": "/mnt/c/carc-shared/simsplit_alloc_20260812/b_uniform_2064",
+  "n_common_games": 800,
+  "n_paired_decks": 400,
+  "fairnet": {
+    "n": 800,
+    "W": 376,
+    "D": 15,
+    "L": 409,
+    "wr": 0.479375,
+    "elo": -14.33985498312266
+  },
+  "fair": {
+    "n": 800,
+    "W": 385,
+    "D": 16,
+    "L": 399,
+    "wr": 0.49125,
+    "elo": -6.080743539917347
+  },
+  "elo_diff_fairnet_minus_fair": -8.259111443205313,
+  "crn_paired_delta_pts_per_deck": 0.22,
+  "crn_paired_z": 0.2484867771942357
+}

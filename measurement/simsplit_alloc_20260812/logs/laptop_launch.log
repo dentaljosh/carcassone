@@ -1,0 +1,4 @@
+laptop a_split_t2752_m1376 launched pid 4628
+[laptop-launch 2026-08-12_10:26:36] a_split_t2752_m1376 ssh rc=0 (124 == launched-and-detached)
+laptop b_uniform_2064 launched pid 5064
+[laptop-launch 2026-08-12_11:49:50] b_uniform_2064 ssh rc=0 (124 == launched-and-detached)

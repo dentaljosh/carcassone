@@ -1,0 +1,10 @@
+=== CRN-Δ: fair-net vs cached fair baseline ===
+fairnet-dir : /mnt/c/carc-shared/simsplit_alloc_20260812/a_split_t2752_m1376
+baseline-dir: /mnt/c/carc-shared/simsplit_alloc_20260812/b_uniform_2064
+common games (seed,a_seat): 800  |  paired decks (both seats): 400
+fair-net : 800 games  376W/15D/409L  wr=0.479  elo=-14.3
+fair     : 800 games  385W/16D/399L  wr=0.491  elo=-6.1
+elo(fair-net) - elo(fair) = -8.3
+CRN paired Δ (seat-balanced deck margin, fair-net - fair): +0.220 pts/deck   z = +0.25   (n_decks=400)
+  gate (C_CHEAP_SPEC §4): promote iff the fair-net elo lead is >= +35 AND the paired Δ z is clearly > 0.
+[out] wrote /home/doctor/projects/carcassone/measurement/simsplit_alloc_20260812/verdicts/A_minus_B_contrast.json
