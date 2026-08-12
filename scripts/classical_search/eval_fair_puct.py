@@ -1073,7 +1073,8 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
                    meeple_dedup=None, intra_reuse=None,
                    coreml_model=None, net_backend=None,
-                   backend="python", rust_threads=None):
+                   backend="python", rust_threads=None,
+                   simsplit=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     ``backend`` (2026-08-02) selects the ENGINE for the ``fair`` arm: ``"python"``
@@ -1116,8 +1117,24 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                         POLICY head supplies the PUCT priors while the value stays the
                         FROZEN curve125 champion leaf (the severed value loop). `cfg`
                         MUST already carry the curve125 candidate leaf.
+    ``simsplit`` (CANDIDATE side only; None = OFF = byte-identical) is the
+    ``(sims_tile, sims_meeple)`` pair of the phase-asymmetric sims-split lever —
+    per-world sims per decision phase, either element None = the shared ``sims``.
+    ``--info fair`` only (the PIMC agent is the one with a two-decision turn
+    structure); works on BOTH backends. ``_make_opponent`` never forwards it.
+
     info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
     backend = _resolve_backend(backend)
+    if simsplit is not None and info != "fair":
+        raise SystemExit(
+            f"--sims-tile/--sims-meeple is a --info fair (candidate) knob; got "
+            f"--info {info}. The split binds the fair PIMC agent's TILES/MEEPLES "
+            "decisions; the clairvoyant ruler and the net arms are out of its "
+            "tested surface.")
+    _split_kw = ({} if simsplit is None
+                 else {k: int(v) for k, v in
+                       zip(("sims_tile", "sims_meeple"), simsplit)
+                       if v is not None})
     if backend == "rust" and info == "clair":
         # THE CLAIRVOYANT RULER ON carc_rs (rustport P6). `_MarginalizedHandoff` drives
         # its prefix with `.move()`, which on `HeuristicPriorAgent` re-roots or clears
@@ -1152,7 +1169,8 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
             exact_endgame=True, exact_max_k=int(K), exact_budget=EXACT_BUDGET,
             backend="rust", rust_threads=rust_threads,
             **({} if meeple_dedup is None else dict(meeple_dedup=bool(meeple_dedup))),
-            **({} if intra_reuse is None else dict(intra_reuse=bool(intra_reuse))))
+            **({} if intra_reuse is None else dict(intra_reuse=bool(intra_reuse))),
+            **_split_kw)
     if info == "fair":
         # F1: route through the champion factory (single construction point). Byte-
         # identical to FairHeuristicPriorAgent(game, cfg, sims=..., k_dets=..., seed=...,
@@ -1174,7 +1192,7 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                      else dict(intra_reuse=bool(intra_reuse)))
         prefix = champion_factory.build_fair_champion(
             game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False,
-            **_oracle_kw, **_dedup_kw, **_intra_kw)
+            **_oracle_kw, **_dedup_kw, **_intra_kw, **_split_kw)
     elif info == "fair-netprior":
         if net is None and handles is None and coreml_model is None:
             raise ValueError(
@@ -1553,7 +1571,8 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
-                 netprior_backend=None, backend="python", rust_threads=None):
+                 netprior_backend=None, backend="python", rust_threads=None,
+                 simsplit=None):
     _W["info"] = info
     # ENGINE (rustport P6). Resolved ONCE in main() and passed as a literal, never as
     # "auto" — a worker that re-resolved the YAML could disagree with the manifest.
@@ -1575,6 +1594,8 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     _W["meeple_dedup"] = meeple_dedup
     # C3-INTRA within-turn tree carry (CANDIDATE side; None = OFF = byte-identical).
     _W["intra_reuse"] = intra_reuse
+    # SIMS-SPLIT (sims_tile, sims_meeple) pair (CANDIDATE side; None = OFF = byte-identical).
+    _W["simsplit"] = simsplit
     _W["champ_cfg_dict"] = champ_cfg_dict
     # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
     # ONLY the FAIR champion's search (via _cfg_from_dict below); the rung stays DEFAULT.
@@ -1728,6 +1749,14 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
             _W["opp_sighted_game"] = None
 
 
+def _args_simsplit(args):
+    """The (sims_tile, sims_meeple) pair, or None when neither flag was passed —
+    the OFF shape every pre-knob call keeps (nothing new reaches the agent)."""
+    if args.sims_tile is None and args.sims_meeple is None:
+        return None
+    return (args.sims_tile, args.sims_meeple)
+
+
 def _cfg_from_dict(d, leaf_cfg=None):
     return _build_champ_cfg(d["c_puct"], d["tau_p"], d["leaf_quantize"],
                             d["final_select"], d["value_norm"], leaf_cfg)
@@ -1764,7 +1793,8 @@ def _play_one(args) -> GameResult | None:
                            meeple_dedup=_W.get("meeple_dedup"),
                            intra_reuse=_W.get("intra_reuse"),
                            backend=_W.get("backend", "python"),
-                           rust_threads=_W.get("rust_threads"))
+                           rust_threads=_W.get("rust_threads"),
+                           simsplit=_W.get("simsplit"))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
@@ -2094,7 +2124,8 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                coreml_model=smoke_coreml_model,
                                net_backend=getattr(args, "net_backend", None),
                                backend=args.backend,
-                               rust_threads=args.rust_threads)
+                               rust_threads=args.rust_threads,
+                               simsplit=_args_simsplit(args))
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
@@ -2345,6 +2376,15 @@ def main(argv=None) -> int:
                     help="fair marginalized endgame handoff at k_remaining<=K (the A2 grid axis)")
     ap.add_argument("--k-dets", type=int, default=4, help="determinizations per move (fair PIMC). ⚠️ THIS DEFAULT IS NO LONGER THE DEPLOY CHAMPION: since 2026-07-29 the champion of record is k8×1376=11008 (governance/PRODUCTION.yaml). Pass --k-dets 8 --sims 1376 to grade against the champion")
     ap.add_argument("--sims", type=int, default=688, help="PUCT sims per determinization. Default k4×688=2752 = the PRE-2026-07-29 deploy budget, kept so existing cells reproduce; the champion is k8×1376=11008")
+    ap.add_argument("--sims-tile", type=int, default=None,
+                    help="SIMS-SPLIT (CANDIDATE side only, --info fair): per-world sims "
+                         "for TILES decisions; None = --sims. The phase-asymmetric "
+                         "sims-split lever's play-time knob (docs/LEVER_INDEX.md §5). "
+                         "Works on both backends (rust: stateless per-call override). "
+                         "The opponent never sees it (_make_opponent does not forward).")
+    ap.add_argument("--sims-meeple", type=int, default=None,
+                    help="SIMS-SPLIT (CANDIDATE side only, --info fair): per-world sims "
+                         "for MEEPLES decisions; None = --sims. See --sims-tile.")
     ap.add_argument("--opp-sims", type=int, default=None,
                     help="ASYMMETRIC search budgets: the head-to-head opponent "
                          "(--opponent fair-champion / net) runs at THIS per-determinization "
@@ -2885,6 +2925,32 @@ def main(argv=None) -> int:
     # and the pooled path read the same literals, never the raw "auto".
     args.backend, args.rust_threads = _backend, _rust_threads
 
+    # SIMS-SPLIT (--sims-tile/--sims-meeple): candidate-side, --info fair only.
+    # Fail HERE (one clean ap.error) rather than as a worker-pool traceback; the
+    # agent constructors enforce the same rules a second time (defense in depth).
+    _simsplit = _args_simsplit(args)
+    if _simsplit is not None:
+        if args.info != "fair":
+            ap.error(f"--sims-tile/--sims-meeple is a --info fair (candidate) knob; "
+                     f"got --info {args.info}")
+        for _nm, _v in (("--sims-tile", args.sims_tile),
+                        ("--sims-meeple", args.sims_meeple)):
+            if _v is not None and int(_v) < 1:
+                ap.error(f"{_nm} must be >= 1; got {_v}")
+        if args.intra_reuse:
+            ap.error("--sims-tile/--sims-meeple and --intra-reuse are mutually "
+                     "exclusive (carried trees were built at the tile budget)")
+        if args.oracle_prior_mult is not None:
+            ap.error("--sims-tile/--sims-meeple and --oracle-prior-mult are mutually "
+                     "exclusive (the probe's pre-search budget is defined against a "
+                     "single production sims)")
+        _st = args.sims if args.sims_tile is None else args.sims_tile
+        _sm = args.sims if args.sims_meeple is None else args.sims_meeple
+        print(f"[sims-split] CANDIDATE searches TILES at k{args.k_dets}x{_st} and "
+              f"MEEPLES at k{args.k_dets}x{_sm} (per-turn total "
+              f"{args.k_dets * (_st + _sm)} vs symmetric "
+              f"{2 * args.k_dets * args.sims}); opponent untouched.", flush=True)
+
     if args.smoke:
         if args.orch_shm_name or args.opp_orch_shm_name:
             ap.error("--smoke does not drive the orch path (single-process CPU only); "
@@ -3399,6 +3465,33 @@ def main(argv=None) -> int:
         }
         man_cfg["meeple_dedup"] = dedup_block
         man_cfg["champion"]["meeple_dedup"] = dedup_block
+    # SIMS-SPLIT provenance — added ONLY when a knob is set (CANDIDATE side), so a
+    # plain (OFF) manifest stays byte-identical to the pre-change output. Same shape
+    # and same candidate-only scope as the meeple-dedup block above.
+    if _simsplit is not None:
+        _st = args.sims if args.sims_tile is None else int(args.sims_tile)
+        _sm = args.sims if args.sims_meeple is None else int(args.sims_meeple)
+        simsplit_block = {
+            "sims_tile": args.sims_tile,        # None = inherited the shared --sims
+            "sims_meeple": args.sims_meeple,
+            "effective_sims_tile": _st,
+            "effective_sims_meeple": _sm,
+            "default_sims_per_det": args.sims,
+            "per_turn_total_sims": args.k_dets * (_st + _sm),
+            "symmetric_per_turn_total_sims": 2 * args.k_dets * args.sims,
+            "scope": ("CANDIDATE side only. Per-world sims per decision PHASE: TILES "
+                      "decisions search each of the k_dets worlds at sims_tile, "
+                      "MEEPLES decisions at sims_meeple (None = the shared --sims). "
+                      "Determinization draws, per-world seeds, pooled-Q, the "
+                      "forced-move short-circuit and the exact-K latch are untouched; "
+                      "on --backend rust this is a stateless per-call sims override "
+                      "(FairAgentRs.choose_action(sims_override=...), "
+                      "last_move()['sims_used'] is the per-move evidence)."),
+            "applies_to": "candidate",
+            "lever": "phase-asymmetric sims split (docs/LEVER_INDEX.md §5)",
+        }
+        man_cfg["sims_split"] = simsplit_block
+        man_cfg["champion"]["sims_split"] = simsplit_block
     # ENGINE provenance — stamped ONLY when the run is not on the python default, on the
     # same no-hash-drift terms as every block around it (a python-backend manifest stays
     # byte-identical to every manifest already on disk). Records WHICH carc_rs build
@@ -3518,7 +3611,8 @@ def main(argv=None) -> int:
                           args.oracle_prior_eps_coef, args.opp_k_dets,
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
-                          _netprior_backend, _backend, _rust_threads))
+                          _netprior_backend, _backend, _rust_threads,
+                          _simsplit))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -3531,7 +3625,8 @@ def main(argv=None) -> int:
                           args.oracle_prior_eps_coef, args.opp_k_dets,
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
-                          _netprior_backend, _backend, _rust_threads))
+                          _netprior_backend, _backend, _rust_threads,
+                          _simsplit))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

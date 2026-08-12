@@ -239,6 +239,11 @@ pub struct MoveInfo {
     /// compares bit-for-bit.
     pub pooled: Vec<(i32, f64, f64)>,
     pub k_remaining: i64,
+    /// The per-world sims budget the PIMC search actually ran (0 when no search
+    /// ran: forced move or a completed exact solve). Equals
+    /// `cfg.search.simulations` unless a per-call override was passed — the
+    /// sims-split knob's per-move evidence surface.
+    pub sims_used: usize,
 }
 
 /// `FairHeuristicPriorAgent`.
@@ -283,6 +288,31 @@ impl FairAgent {
     /// `choose_action(board)`.  `move_idx` is the agent's own counter; pass
     /// `None` to use it, or an explicit value when a harness owns the timeline.
     pub fn choose_action(&mut self, g: &Game, move_idx: Option<i64>) -> Result<i32, FairError> {
+        self.choose_action_with_sims(g, move_idx, None)
+    }
+
+    /// [`Self::choose_action`] with a PER-CALL per-world sims override — the
+    /// play-time seam for the phase-asymmetric sims split (`sims_tile` /
+    /// `sims_meeple`). `None` is byte-for-byte `choose_action` (the same code
+    /// path, not a parallel one).
+    ///
+    /// DESIGN: a per-call override rather than a config-swap setter, for two
+    /// reasons. (1) STATELESS — `self.cfg` is never mutated, so `stats()`
+    /// keeps reporting the constructed budget, `reset()` (which clones `cfg`
+    /// into a fresh agent) cannot carry a leaked override into the next game,
+    /// and there is no "forgot to swap back" failure mode between decisions.
+    /// (2) MIRROR-SAFE BY CONSTRUCTION — the override touches only the
+    /// `SearchConfig` handed to this move's world searches; the game mirror,
+    /// the latch, the determinization RNG stream and the pooled merge are the
+    /// untouched production code, so no override sequence can desync the
+    /// mirror protocol. The override does NOT reach the exact solver or the
+    /// forced-move short-circuit (neither consumes sims).
+    pub fn choose_action_with_sims(
+        &mut self,
+        g: &Game,
+        move_idx: Option<i64>,
+        sims_override: Option<usize>,
+    ) -> Result<i32, FairError> {
         let mi = move_idx.unwrap_or(self.move_idx);
         self.move_idx = mi + 1;
         let t0 = std::time::Instant::now();
@@ -336,14 +366,20 @@ impl FairAgent {
             }
         }
 
-        let a = self.pimc_move(g, mi, &mut info)?;
+        let a = self.pimc_move(g, mi, &mut info, sims_override)?;
         info.action = a;
         info.secs = t0.elapsed().as_secs_f64();
         self.last_move = info;
         Ok(a)
     }
 
-    fn pimc_move(&mut self, g: &Game, move_idx: i64, info: &mut MoveInfo) -> Result<i32, FairError> {
+    fn pimc_move(
+        &mut self,
+        g: &Game,
+        move_idx: i64,
+        info: &mut MoveInfo,
+        sims_override: Option<usize>,
+    ) -> Result<i32, FairError> {
         self.heur_moves += 1;
         let legal = g.legal_actions();
         if legal.is_empty() {
@@ -367,8 +403,19 @@ impl FairAgent {
             worlds.push(reshuffled_determinization(g, &mut det_rng).map_err(FairError::Engine)?);
         }
 
-        // (2) k world searches, index-addressed.
-        let stats = search_worlds(&worlds, &self.cfg.search, self.cfg.threads)?;
+        // (2) k world searches, index-addressed.  A per-call sims override swaps
+        //     ONLY the simulation budget of this move's SearchConfig; everything
+        //     else (leaf, priors, selection, threads, merge order) is the
+        //     baked config.  `None` borrows the baked config itself — the
+        //     pre-override code path, byte for byte.
+        let scfg_owned = sims_override.map(|s| {
+            let mut c = self.cfg.search.clone();
+            c.simulations = s;
+            c
+        });
+        let scfg = scfg_owned.as_ref().unwrap_or(&self.cfg.search);
+        info.sims_used = scfg.simulations;
+        let stats = search_worlds(&worlds, scfg, self.cfg.threads)?;
 
         // (3) merge — a sequential fold in world order, AFTER every join.
         let mut pool = Pool::default();
@@ -541,6 +588,66 @@ mod tests {
         assert_eq!(latch_phase, Some(Phase::Tiles), "latched off a TILES decision");
         assert!(exact_seen > 0, "the solver never played");
         assert!(a.latch_k.unwrap() <= DEFAULT_EXACT_MAX_K);
+    }
+
+    /// `choose_action` must be byte-for-byte `choose_action_with_sims(.., None)`
+    /// (the delegation contract), and a `None` override must record the baked
+    /// budget in `sims_used`.
+    #[test]
+    fn sims_override_none_is_the_plain_path() {
+        let g = midgame("28000000000", 40);
+        let mut a = FairAgent::new(cfg(4, 48, 2));
+        let mut b = FairAgent::new(cfg(4, 48, 2));
+        let act_a = a.choose_action(&g, Some(7)).unwrap();
+        let act_b = b.choose_action_with_sims(&g, Some(7), None).unwrap();
+        assert_eq!(act_a, act_b);
+        assert_eq!(a.last_move.sims_used, 48);
+        assert_eq!(b.last_move.sims_used, 48);
+        for (x, y) in a.last_move.pooled.iter().zip(b.last_move.pooled.iter()) {
+            assert_eq!(
+                (x.0, x.1.to_bits(), x.2.to_bits()),
+                (y.0, y.1.to_bits(), y.2.to_bits())
+            );
+        }
+    }
+
+    /// An override of S must be bit-identical to an agent CONSTRUCTED at S —
+    /// and must leave the agent's own config untouched (statelessness): the
+    /// next un-overridden call runs the baked budget again.
+    #[test]
+    fn sims_override_equals_a_baked_config_and_is_stateless() {
+        let g = midgame("28000000000", 40);
+        let mut over = FairAgent::new(cfg(4, 64, 2)); // baked 64, overridden to 24
+        let mut baked = FairAgent::new(cfg(4, 24, 2)); // baked 24
+        let act_o = over.choose_action_with_sims(&g, Some(7), Some(24)).unwrap();
+        let act_b = baked.choose_action(&g, Some(7)).unwrap();
+        assert_eq!(act_o, act_b, "override(24) != baked 24");
+        assert_eq!(over.last_move.sims_used, 24);
+        assert_eq!(
+            over.last_move.pooled.len(),
+            baked.last_move.pooled.len(),
+            "pool size differs"
+        );
+        for (x, y) in over.last_move.pooled.iter().zip(baked.last_move.pooled.iter()) {
+            assert_eq!(
+                (x.0, x.1.to_bits(), x.2.to_bits()),
+                (y.0, y.1.to_bits(), y.2.to_bits()),
+                "override(24) pooled floats differ from baked 24"
+            );
+        }
+        // Statelessness: the override did not leak into the config.
+        assert_eq!(over.cfg.search.simulations, 64);
+        let mut plain = FairAgent::new(cfg(4, 64, 2));
+        let act_p = plain.choose_action(&g, Some(8)).unwrap();
+        let act_o2 = over.choose_action(&g, Some(8)).unwrap();
+        assert_eq!(act_o2, act_p, "a past override changed a later plain move");
+        assert_eq!(over.last_move.sims_used, 64);
+        for (x, y) in over.last_move.pooled.iter().zip(plain.last_move.pooled.iter()) {
+            assert_eq!(
+                (x.0, x.1.to_bits(), x.2.to_bits()),
+                (y.0, y.1.to_bits(), y.2.to_bits())
+            );
+        }
     }
 
     #[test]
