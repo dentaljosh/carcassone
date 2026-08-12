@@ -1,0 +1,41 @@
+{
+  "schema": "carcassonne-analyzer-e4-autopsy/v1",
+  "design": "measurement/e4_autopsy_20260812/DESIGN.md",
+  "mode": "emit",
+  "profile": "walled",
+  "rules_profile_manifest": {
+    "name": "walled",
+    "grid_rule": "engine6",
+    "start_row": 6,
+    "start_col": 15,
+    "board_rows": 35,
+    "board_cols": 35,
+    "start_rule": "engine",
+    "window_size": 25,
+    "cloister_scan": "drifting",
+    "unplaceable_tile": "next_player",
+    "note": "the engine of record \u2014 every elo ever measured is a walled number",
+    "r9_env_expected": false,
+    "fixed_start_tile": false,
+    "recentred": false,
+    "r9_env_var": "CARCASSONNE_FIX_R9",
+    "r9_env_observed": false,
+    "r9_env_ok": true
+  },
+  "r9_env": {
+    "CARCASSONNE_FIX_R9": "0",
+    "r9_env_expected": false,
+    "r9_env_observed": false
+  },
+  "artifacts": [
+    "measurement/analyzer_evloss_20260805/EV_LOSS_g1_867966.json",
+    "measurement/analyzer_evloss_20260805/EV_LOSS_g2_161583.json"
+  ],
+  "n_games": 2,
+  "n_disagreements": 63,
+  "n_degenerate": 24,
+  "leaf_cfg_hash": null,
+  "v29_farm_flip_k": 0.0,
+  "degenerate_eps": 1e-09,
+  "wall_secs": 0.19
+}

@@ -1,0 +1,366 @@
+{
+  "schema": "carcassonne-analyzer-e4-autopsy/v1",
+  "design": "measurement/e4_autopsy_20260812/DESIGN.md",
+  "mode": "census",
+  "generated_at": "2026-08-12T23:39:18Z",
+  "inputs": [
+    "measurement/e4_autopsy_20260812/plies_app_aug2.jsonl",
+    "measurement/e4_autopsy_20260812/plies_fixed_v1.jsonl",
+    "measurement/e4_autopsy_20260812/plies_walled.jsonl"
+  ],
+  "n_disagreements": 779,
+  "n_games": 26,
+  "by_stratum": {
+    "DEG": {
+      "n": 276,
+      "n_games": 26,
+      "mean_abs_delta_q": 0.09258824818460189,
+      "by_phase_third": {
+        "endgame": 110,
+        "opening": 96,
+        "middle": 70
+      },
+      "by_decision_type": {
+        "tile": 247,
+        "meeple": 29
+      },
+      "by_bucket": {
+        "within_noise": 191,
+        "blunder": 45,
+        "inaccuracy": 40
+      },
+      "by_epoch": {
+        "fixed_v1": 244,
+        "walled": 24,
+        "app_aug2": 8
+      },
+      "by_score_diff_bucket": {
+        "level": 107,
+        "behind": 96,
+        "ahead": 73
+      },
+      "by_commit_direction": {
+        "n/a": 247,
+        "swap": 25,
+        "hold": 4
+      },
+      "mean_own_reserve": 2.503623188405797,
+      "mean_opp_reserve": 2.010869565217391,
+      "n_reinforce_champion": 77,
+      "n_reinforce_human": 58,
+      "n_tie_force_join_champion": 39,
+      "n_tie_force_join_human": 26
+    },
+    "FARM": {
+      "n": 252,
+      "n_games": 26,
+      "mean_abs_delta_q": 0.14400257328475083,
+      "by_phase_third": {
+        "opening": 105,
+        "middle": 95,
+        "endgame": 52
+      },
+      "by_decision_type": {
+        "tile": 156,
+        "meeple": 96
+      },
+      "by_bucket": {
+        "within_noise": 123,
+        "inaccuracy": 66,
+        "blunder": 63
+      },
+      "by_epoch": {
+        "fixed_v1": 227,
+        "walled": 14,
+        "app_aug2": 11
+      },
+      "by_score_diff_bucket": {
+        "level": 114,
+        "ahead": 74,
+        "behind": 64
+      },
+      "by_commit_direction": {
+        "n/a": 156,
+        "swap": 34,
+        "spend": 32,
+        "hold": 30
+      },
+      "mean_own_reserve": 2.623015873015873,
+      "mean_opp_reserve": 2.0396825396825395,
+      "n_reinforce_champion": 70,
+      "n_reinforce_human": 45,
+      "n_tie_force_join_champion": 42,
+      "n_tie_force_join_human": 30
+    },
+    "CLOISTER": {
+      "n": 59,
+      "n_games": 24,
+      "mean_abs_delta_q": 0.13287035096564656,
+      "by_phase_third": {
+        "opening": 26,
+        "middle": 19,
+        "endgame": 14
+      },
+      "by_decision_type": {
+        "tile": 41,
+        "meeple": 18
+      },
+      "by_bucket": {
+        "within_noise": 31,
+        "blunder": 16,
+        "inaccuracy": 12
+      },
+      "by_epoch": {
+        "fixed_v1": 52,
+        "app_aug2": 5,
+        "walled": 2
+      },
+      "by_score_diff_bucket": {
+        "level": 28,
+        "behind": 16,
+        "ahead": 15
+      },
+      "by_commit_direction": {
+        "n/a": 41,
+        "hold": 17,
+        "swap": 1
+      },
+      "mean_own_reserve": 2.4745762711864407,
+      "mean_opp_reserve": 1.7796610169491525,
+      "n_reinforce_champion": 14,
+      "n_reinforce_human": 17,
+      "n_tie_force_join_champion": 9,
+      "n_tie_force_join_human": 11
+    },
+    "CITY": {
+      "n": 120,
+      "n_games": 26,
+      "mean_abs_delta_q": 0.12304309771114143,
+      "by_phase_third": {
+        "middle": 51,
+        "opening": 44,
+        "endgame": 25
+      },
+      "by_decision_type": {
+        "tile": 66,
+        "meeple": 54
+      },
+      "by_bucket": {
+        "within_noise": 71,
+        "blunder": 25,
+        "inaccuracy": 24
+      },
+      "by_epoch": {
+        "fixed_v1": 103,
+        "walled": 13,
+        "app_aug2": 4
+      },
+      "by_score_diff_bucket": {
+        "level": 48,
+        "ahead": 37,
+        "behind": 35
+      },
+      "by_commit_direction": {
+        "n/a": 66,
+        "hold": 23,
+        "spend": 21,
+        "swap": 10
+      },
+      "mean_own_reserve": 2.658333333333333,
+      "mean_opp_reserve": 2.066666666666667,
+      "n_reinforce_champion": 11,
+      "n_reinforce_human": 15,
+      "n_tie_force_join_champion": 7,
+      "n_tie_force_join_human": 8
+    },
+    "ROAD": {
+      "n": 72,
+      "n_games": 25,
+      "mean_abs_delta_q": 0.09134668736480679,
+      "by_phase_third": {
+        "opening": 37,
+        "middle": 25,
+        "endgame": 10
+      },
+      "by_decision_type": {
+        "meeple": 58,
+        "tile": 14
+      },
+      "by_bucket": {
+        "within_noise": 47,
+        "inaccuracy": 14,
+        "blunder": 11
+      },
+      "by_epoch": {
+        "fixed_v1": 61,
+        "walled": 10,
+        "app_aug2": 1
+      },
+      "by_score_diff_bucket": {
+        "level": 38,
+        "behind": 19,
+        "ahead": 15
+      },
+      "by_commit_direction": {
+        "hold": 46,
+        "n/a": 14,
+        "spend": 11,
+        "swap": 1
+      },
+      "mean_own_reserve": 3.3472222222222223,
+      "mean_opp_reserve": 2.486111111111111,
+      "n_reinforce_champion": 5,
+      "n_reinforce_human": 5,
+      "n_tie_force_join_champion": 1,
+      "n_tie_force_join_human": 2
+    },
+    "NEUTRAL": {
+      "n": 0,
+      "n_games": 0,
+      "mean_abs_delta_q": null,
+      "by_phase_third": {},
+      "by_decision_type": {},
+      "by_bucket": {},
+      "by_epoch": {},
+      "by_score_diff_bucket": {},
+      "by_commit_direction": {},
+      "mean_own_reserve": null,
+      "mean_opp_reserve": null,
+      "n_reinforce_champion": 0,
+      "n_reinforce_human": 0,
+      "n_tie_force_join_champion": 0,
+      "n_tie_force_join_human": 0
+    }
+  },
+  "touch_marginals": {
+    "farm": 451,
+    "cloister": 211,
+    "city": 344,
+    "road": 370
+  },
+  "contested_marginals": {
+    "farm": 353,
+    "cloister": 87,
+    "city": 149,
+    "road": 70
+  },
+  "by_phase_third": {
+    "opening": 308,
+    "middle": 260,
+    "endgame": 211
+  },
+  "by_decision_type": {
+    "tile": 524,
+    "meeple": 255
+  },
+  "by_bucket": {
+    "within_noise": 463,
+    "blunder": 160,
+    "inaccuracy": 156
+  },
+  "by_epoch": {
+    "fixed_v1": 687,
+    "walled": 63,
+    "app_aug2": 29
+  },
+  "by_structure": {
+    "farm": 382,
+    "city": 183,
+    "road": 117,
+    "cloister": 86,
+    "neutral": 11
+  },
+  "meeple_axis": {
+    "road->pass": 48,
+    "pass->farm": 32,
+    "farm->pass": 30,
+    "city->pass": 23,
+    "pass->city": 21,
+    "cloister->pass": 19,
+    "city->city": 17,
+    "farm->city": 12,
+    "pass->road": 11,
+    "city->farm": 9,
+    "road->city": 8,
+    "road->road": 7,
+    "farm->road": 5,
+    "road->farm": 5,
+    "cloister->farm": 3,
+    "farm->farm": 2,
+    "city->road": 2,
+    "cloister->road": 1
+  },
+  "meeple_commit": {
+    "champion_places_he_passes": 120,
+    "he_places_champion_passes": 64,
+    "both_place_different_targets": 71
+  },
+  "by_score_diff_bucket": {
+    "level": 335,
+    "behind": 230,
+    "ahead": 214
+  },
+  "mean_reserve": {
+    "own": 2.6418485237483953,
+    "opp": 2.055198973042362,
+    "diff": 0.5866495507060334
+  },
+  "by_own_reserve": {
+    "1": 197,
+    "2": 145,
+    "3": 140,
+    "4": 77,
+    "0": 75,
+    "6": 62,
+    "5": 55,
+    "7": 28
+  },
+  "by_opp_reserve": {
+    "1": 203,
+    "2": 192,
+    "0": 155,
+    "3": 73,
+    "4": 61,
+    "5": 40,
+    "6": 34,
+    "7": 21
+  },
+  "contest_flags": {
+    "reinforce_losing_contest_champion": 177,
+    "reinforce_losing_contest_human": 140,
+    "tie_force_join_champion": 98,
+    "tie_force_join_human": 77,
+    "either_arm_reinforce": 254,
+    "either_arm_tie_force_join": 152
+  },
+  "cross_world_spread_status": "UNAVAILABLE \u2014 ev_loss.grade_pass reads last_move()['pooled'], already summed across the k=8 determinizations, so no per-world root value or per-world argmax survives into the artifact. Recovering it needs a re-search, which this design does not buy. Nearest retained covariate: pooled_top2_q_gap (top-2 gap WITHIN the pool), which is NOT cross-world spread.",
+  "degenerate_frac": 0.35430038510911427,
+  "per_game": {
+    "1785982194_705585": 32,
+    "1785984310_1698417952": 27,
+    "1785986044_1911511187": 30,
+    "1786045035_338139": 33,
+    "1786074812_935815": 32,
+    "1786076853_2116173857": 31,
+    "1786113542_627623": 35,
+    "1786116818_134510": 30,
+    "1786118143_1621601234": 25,
+    "1786142936_703591": 31,
+    "1786242001_49628": 32,
+    "1786243458_1382293676": 27,
+    "1786325073_523563": 24,
+    "1786329790_523563": 32,
+    "1786337185_638286": 27,
+    "1786367787_389099": 32,
+    "1786403231_207028": 25,
+    "1786417055_68387": 40,
+    "1786418867_411846845": 35,
+    "1786454767_166575": 31,
+    "1786501074_943197": 27,
+    "1786503336_446661": 27,
+    "1786511848_634689": 22,
+    "g1_867966": 30,
+    "g2_161583": 33,
+    "g3_66810": 29
+  }
+}

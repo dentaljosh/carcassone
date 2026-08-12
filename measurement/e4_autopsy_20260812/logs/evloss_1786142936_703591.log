@@ -1,0 +1,14 @@
+[ev_loss] 1786142936_703591.json: profile=fixed_v1 budget=k8x1376 (11008/move) seed=12345 cal_seed=777
+  [seed 12345] ply 24/142  10s
+  [seed 12345] ply 48/142  29s
+  [seed 12345] ply 72/142  54s
+  [seed 12345] ply 96/142  81s
+  [seed 12345] ply 120/142  118s
+  [seed 777] ply 24/142  10s
+  [seed 777] ply 48/142  28s
+  [seed 777] ply 72/142  53s
+  [seed 777] ply 96/142  80s
+  [seed 777] ply 120/142  119s
+[ev_loss] wrote measurement/analyzer_evloss_20260805/EV_LOSS_1786142936_703591.json / .md
+[ev_loss] ACCEPTANCE GATE PASS: champion mean dQ=0.007266 vs null p95=0.0719 (human mean dQ=0.04479)
+[ev_loss] integrity: replay_scores_match=True graded=121 exact=2 forced=19 unrated=0 leaf_ok=True

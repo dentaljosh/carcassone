@@ -1,0 +1,2 @@
+[emit] NOTE: artifact archive_path /home/doctor/e4_run_20260810/deckdir/1786337185_638286.json is not portable; resolved to /home/doctor/projects/carcassone/measurement/e4_games/1786337185_638286.json (deck_seed + final scores verified)
+[emit] fixed_v1: 687 disagreement plies from 23 games (244 degenerate) -> measurement/e4_autopsy_20260812/plies_fixed_v1.jsonl

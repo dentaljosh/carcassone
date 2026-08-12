@@ -1,0 +1,254 @@
+{
+  "schema": "carcassonne-analyzer-e4-autopsy/v1",
+  "design": "measurement/e4_autopsy_20260812/DESIGN.md",
+  "mode": "sample",
+  "generated_at": "2026-08-12T23:38:00Z",
+  "inputs": [
+    "measurement/e4_autopsy_20260812/plies_app_aug2.jsonl",
+    "measurement/e4_autopsy_20260812/plies_fixed_v1.jsonl",
+    "measurement/e4_autopsy_20260812/plies_walled.jsonl"
+  ],
+  "sizing_rule": {
+    "formula": "n >= (z * sd_points / target_effect)^2",
+    "z": 2.0,
+    "target_effect_points": 1.0,
+    "sd_points": 4.445,
+    "sd_source": "farm-war READOUT: cluster-robust se 0.970 pts at n=21, M=32 => sd = 0.970*sqrt(21) = 4.445 pts/position",
+    "n_max": null,
+    "min_n_floor": 15,
+    "sample_seed": 20260812
+  },
+  "sizing": {
+    "DEG": {
+      "n_needed": 80,
+      "n_population": 276,
+      "n": 80,
+      "binding": "power",
+      "se_at_n": 0.4969661079993283,
+      "mde_at_n": 0.9939322159986566,
+      "underpowered": false
+    },
+    "FARM": {
+      "n_needed": 80,
+      "n_population": 252,
+      "n": 80,
+      "binding": "power",
+      "se_at_n": 0.4969661079993283,
+      "mde_at_n": 0.9939322159986566,
+      "underpowered": false
+    },
+    "CLOISTER": {
+      "n_needed": 80,
+      "n_population": 59,
+      "n": 59,
+      "binding": "population",
+      "se_at_n": 0.5786897093097622,
+      "mde_at_n": 1.1573794186195243,
+      "underpowered": false
+    },
+    "CITY": {
+      "n_needed": 80,
+      "n_population": 120,
+      "n": 80,
+      "binding": "power",
+      "se_at_n": 0.4969661079993283,
+      "mde_at_n": 0.9939322159986566,
+      "underpowered": false
+    },
+    "ROAD": {
+      "n_needed": 80,
+      "n_population": 72,
+      "n": 72,
+      "binding": "population",
+      "se_at_n": 0.5238482737290341,
+      "mde_at_n": 1.0476965474580682,
+      "underpowered": false
+    },
+    "NEUTRAL": {
+      "n_needed": 80,
+      "n_population": 0,
+      "n": 0,
+      "binding": "population",
+      "se_at_n": null,
+      "mde_at_n": null,
+      "underpowered": true
+    }
+  },
+  "n_selected": 371,
+  "underpowered_strata": [
+    "NEUTRAL"
+  ],
+  "per_epoch": {
+    "app_aug2": 14,
+    "fixed_v1": 321,
+    "walled": 36
+  },
+  "per_stratum": {
+    "DEG": 80,
+    "FARM": 80,
+    "CLOISTER": 59,
+    "CITY": 80,
+    "ROAD": 72,
+    "NEUTRAL": 0
+  },
+  "secondary_power": {
+    "commit_direction": {
+      "n/a": {
+        "n": 221,
+        "mde_2sigma_points": 0.5980061138627218
+      },
+      "hold": {
+        "n": 88,
+        "mde_2sigma_points": 0.9476771842006884
+      },
+      "spend": {
+        "n": 35,
+        "mde_2sigma_points": 1.5026842649073024
+      },
+      "swap": {
+        "n": 27,
+        "mde_2sigma_points": 1.710881297698591
+      }
+    },
+    "phase_third": {
+      "opening": {
+        "n": 157,
+        "mde_2sigma_points": 0.7094992402917162
+      },
+      "middle": {
+        "n": 126,
+        "mde_2sigma_points": 0.7919841468671509
+      },
+      "endgame": {
+        "n": 88,
+        "mde_2sigma_points": 0.9476771842006884
+      }
+    },
+    "decision_type": {
+      "tile": {
+        "n": 221,
+        "mde_2sigma_points": 0.5980061138627218
+      },
+      "meeple": {
+        "n": 150,
+        "mde_2sigma_points": 0.7258654604447485
+      }
+    },
+    "bucket": {
+      "within_noise": {
+        "n": 218,
+        "mde_2sigma_points": 0.6021067752544722
+      },
+      "blunder": {
+        "n": 81,
+        "mde_2sigma_points": 0.9877777777777779
+      },
+      "inaccuracy": {
+        "n": 72,
+        "mde_2sigma_points": 1.0476965474580682
+      }
+    },
+    "rules_profile": {
+      "fixed_v1": {
+        "n": 321,
+        "mde_2sigma_points": 0.49619141367330744
+      },
+      "walled": {
+        "n": 36,
+        "mde_2sigma_points": 1.4816666666666667
+      },
+      "app_aug2": {
+        "n": 14,
+        "mde_2sigma_points": 2.375952440601453
+      }
+    },
+    "score_diff_bucket": {
+      "level": {
+        "n": 166,
+        "mde_2sigma_points": 0.68999781735293
+      },
+      "behind": {
+        "n": 105,
+        "mde_2sigma_points": 0.8675751648512461
+      },
+      "ahead": {
+        "n": 100,
+        "mde_2sigma_points": 0.889
+      }
+    },
+    "reinforce_losing_contest_played": {
+      "False": {
+        "n": 309,
+        "mde_2sigma_points": 0.5057344302258425
+      },
+      "True": {
+        "n": 62,
+        "mde_2sigma_points": 1.1290311290316937
+      }
+    },
+    "tie_force_join_played": {
+      "False": {
+        "n": 333,
+        "mde_2sigma_points": 0.4871689990482088
+      },
+      "True": {
+        "n": 38,
+        "mde_2sigma_points": 1.4421484338524793
+      }
+    },
+    "reinforce_losing_contest_best": {
+      "False": {
+        "n": 289,
+        "mde_2sigma_points": 0.5229411764705882
+      },
+      "True": {
+        "n": 82,
+        "mde_2sigma_points": 0.9817362668053857
+      }
+    },
+    "tie_force_join_best": {
+      "False": {
+        "n": 324,
+        "mde_2sigma_points": 0.49388888888888893
+      },
+      "True": {
+        "n": 47,
+        "mde_2sigma_points": 1.2967397744162827
+      }
+    }
+  },
+  "per_game": {
+    "1785982194_705585": 13,
+    "1785984310_1698417952": 12,
+    "1785986044_1911511187": 14,
+    "1786045035_338139": 16,
+    "1786074812_935815": 16,
+    "1786076853_2116173857": 13,
+    "1786113542_627623": 18,
+    "1786116818_134510": 14,
+    "1786118143_1621601234": 9,
+    "1786142936_703591": 13,
+    "1786242001_49628": 12,
+    "1786243458_1382293676": 13,
+    "1786325073_523563": 14,
+    "1786329790_523563": 18,
+    "1786337185_638286": 13,
+    "1786367787_389099": 14,
+    "1786403231_207028": 9,
+    "1786417055_68387": 15,
+    "1786418867_411846845": 21,
+    "1786454767_166575": 14,
+    "1786501074_943197": 14,
+    "1786503336_446661": 16,
+    "1786511848_634689": 10,
+    "g1_867966": 16,
+    "g2_161583": 20,
+    "g3_66810": 14
+  },
+  "positions_files": {
+    "app_aug2": "measurement/e4_autopsy_20260812/positions_app_aug2.jsonl",
+    "fixed_v1": "measurement/e4_autopsy_20260812/positions_fixed_v1.jsonl",
+    "walled": "measurement/e4_autopsy_20260812/positions_walled.jsonl"
+  },
+  "positions": "measurement/e4_autopsy_20260812/positions.jsonl"
+}

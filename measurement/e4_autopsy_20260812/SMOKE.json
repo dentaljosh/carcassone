@@ -1,0 +1,89 @@
+{
+  "driver": "run_autopsy",
+  "design": "measurement/e4_autopsy_20260812/DESIGN.md",
+  "sample": "/home/doctor/projects/carcassone/measurement/e4_autopsy_20260812/SAMPLE.json",
+  "world_seed_salt": "e4-autopsy-v1",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "workers": 6,
+  "backend_requested": "python",
+  "backend_resolved": "python",
+  "rust_clair_probe": {
+    "app_aug2": {
+      "ok": false,
+      "reason": "profile 'app_aug2' sets ['fixed_start_tile', 'start_col', 'start_row'], which RustCarryClairvoyantAgent cannot mirror (it seeds MirrorState.from_deck() with no geometry/rules config)"
+    },
+    "fixed_v1": {
+      "ok": false,
+      "reason": "profile 'fixed_v1' sets ['cloister_scan_fix', 'draw_rule', 'fixed_start_tile', 'start_col', 'start_row'], which RustCarryClairvoyantAgent cannot mirror (it seeds MirrorState.from_deck() with no geometry/rules config)"
+    },
+    "walled": {
+      "ok": true,
+      "reason": "profile 'walled' has empty game_kwargs"
+    }
+  },
+  "judges": {
+    "clair-puct": "PRIMARY \u2014 in-family clairvoyant PUCT over the champion's own leaf. Shares the leaf under test, so it is biased TOWARD the champion's picks: a result AGAINST the champion is conservative, a null is weak.",
+    "tier1-greedy": "SECONDARY \u2014 out-of-family Tier-1 greedy. SIGN ONLY, never magnitude (1.83x noisier, no curve125). Python backend by construction."
+  },
+  "smoke": {
+    "spec": {
+      "n": 6,
+      "by_phase_third": {
+        "opening": 2,
+        "middle": 2,
+        "endgame": 2
+      },
+      "path": "/home/doctor/projects/carcassone/measurement/e4_autopsy_20260812/positions_smoke.jsonl",
+      "epochs": [
+        "fixed_v1"
+      ]
+    },
+    "legs": [
+      {
+        "profile": "fixed_v1",
+        "n": 6,
+        "rc": 0,
+        "wall_secs": 780.3,
+        "log": "/home/doctor/projects/carcassone/measurement/e4_autopsy_20260812/logs/smoke_fixed_v1.log"
+      }
+    ],
+    "per_position_secs": {
+      "fixed_v1": {
+        "completed": {
+          "endgame": {
+            "n": 2,
+            "mean_secs": 373.896,
+            "min_secs": 268.151,
+            "max_secs": 479.641
+          }
+        },
+        "wall_capped_lower_bounds": {
+          "middle": {
+            "n": 2,
+            "mean_secs": 780.0045,
+            "min_secs": 780.003,
+            "max_secs": 780.006
+          },
+          "opening": {
+            "n": 2,
+            "mean_secs": 780.0045,
+            "min_secs": 780.003,
+            "max_secs": 780.006
+          }
+        },
+        "n_completed": 2,
+        "n_wall_capped": 4,
+        "ALL_completed": {
+          "n": 2,
+          "mean_secs": 373.896,
+          "min_secs": 268.151,
+          "max_secs": 479.641
+        }
+      }
+    },
+    "knobs_note": "production knobs; only the position count differs from the scoring run"
+  },
+  "preflight": null,
+  "legs": []
+}

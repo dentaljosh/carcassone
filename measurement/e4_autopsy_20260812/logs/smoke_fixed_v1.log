@@ -1,0 +1,52 @@
+[pilot] population=6 positions | n=6 | M=32 | policy=clair-puct | oracle_sims=100 | W=6
+[pilot] out -> /mnt/c/carc-shared/analyzer_e4_autopsy_20260812/clair-puct/fixed_v1
+[pilot] resume: 0 already done, 6 to go
+[1/6] 1786337185_638286_p116 ok delta=-0.375 crn=True 268.151s
+[2/6] 1785982194_705585_p105 ok delta=+0.656 crn=True 479.641s
+[3/6] 1785982194_705585_p25 FAIL TimeoutError: per-position wall cap delta=+nan crn=None 780.003s
+[4/6] 1785982194_705585_p56 FAIL TimeoutError: per-position wall cap delta=+nan crn=None 780.003s
+[5/6] 1786325073_523563_p80 FAIL TimeoutError: per-position wall cap delta=+nan crn=None 780.006s
+[6/6] 1786329790_523563_p40 FAIL TimeoutError: per-position wall cap delta=+nan crn=None 780.006s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 2,
+  "m_worlds": 32,
+  "sd_delta_positions": 0.7292038680986271,
+  "mean_delta_pts": 0.140625,
+  "se_mean_delta": 0.515625,
+  "z_pilot_observed": 0.2727272727272727,
+  "mean_within_position_var": 35.30191532258065,
+  "var_between_positions_est": 0.0,
+  "sd_delta_projected_by_m": {
+    "8": 2.1006521404846117,
+    "16": 1.485385373450705,
+    "32": 1.0503260702423058,
+    "64": 0.7426926867253525
+  },
+  "median_crn_var_reduction": 69.46806722689075,
+  "n_positions_perfect_pairing": 0,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 1.5626870503282302,
+    "N=6_at_M=32": 0.16324862045485206,
+    "N=6_at_M=8": 0.08162431022742603,
+    "N=6_at_M=16": 0.11543420654297483,
+    "N=6_at_M=64": 0.23086841308594966
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 6,
+  "n_failed": 4,
+  "crn_verified_all": true,
+  "population_disagreements": 6,
+  "wall_secs": 780.1,
+  "manifest": "/mnt/c/carc-shared/analyzer_e4_autopsy_20260812/clair-puct/fixed_v1/manifest.json"
+}
