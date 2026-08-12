@@ -926,3 +926,19 @@ leaving the value handed to the workers untouched, and add a net-path manifest t
   also carries the native/bundle state at HEAD (cy + rust wheels rebuilt — the only native delta
   since the 08-03 `fixed_v1` build is `549c0d1`'s default-OFF phase multiplier), so games archived
   from 2026-08-10 on are a *build* change but not a rules-epoch change.
+
+## 2026-08-12 — `EV_LOSS_1786337185_638286.json` stamps a non-portable `archive_path`
+
+The grader artifact for game `1786337185_638286` (graded on the LAPTOP during the 2026-08-10
+E4 run) stamps `archive_path = /home/doctor/e4_run_20260810/deckdir/1786337185_638286.json` —
+a laptop scratch path that exists on no other box, so any consumer trusting `archive_path`
+verbatim dies on it. Found by the 2026-08-12 autopsy extraction, which added a verified
+basename fallback (`autopsy_extract.resolve_archive_path`: falls back into
+`measurement/e4_games/` and verifies `deck_seed` + final `scores` against the artifact before
+accepting; fired exactly once, on exactly this artifact).
+
+**Why deferred:** the autopsy task's own rule was "modify no existing file", and mutating a
+committed measurement artifact deserves its own decision (immutability vs correction).
+**Fix when actioned:** prefer making the grader stamp repo-relative `archive_path` on all
+FUTURE gradings (+ a regression test) and leave the historical artifact as-is — the fallback
+already handles it; a re-stamp of the one artifact is the alternative if consumers multiply.
