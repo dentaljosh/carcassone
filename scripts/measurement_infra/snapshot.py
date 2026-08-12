@@ -123,6 +123,11 @@ _FROZEN_HASH_DEFAULT_OFF = {
     # default-off candidate-only knobs. Excluded on the same grounds as F6/F7b.
     "v29_phase_beta": 0.0,
     "v29_phase_norm": 1.0,
+    # Targeted denial (BACKLOG 2026-05-16 item 3, building 2026-08-11): default-off
+    # candidate-only knobs. Excluded on the same grounds as F6/F7b/Part C.
+    "denial_dose": 0.0,
+    "denial_size_min": 8.0,
+    "denial_open_max": 2,
 }
 
 

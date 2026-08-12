@@ -1010,6 +1010,84 @@ def flat_farm_flip_term(state, player: int, decomp: Decomp, cfg) -> float:
     return math.fsum(contribs)
 
 
+def flat_denial_term(state, player: int, decomp: Decomp, cfg) -> float:
+    """TARGETED DENIAL on near-complete large opponent cities (BACKLOG 2026-05-16
+    item 3; LEVER_INDEX "targeted denial"; v1 semantics, building 2026-08-11).
+
+    Returns the RAW denial magnitude ``T >= 0`` from `player`'s POV; the leaf
+    subtracts ``cfg.denial_dose * T`` from the evaluation. A city component
+    qualifies iff ALL of:
+
+      * OPPONENT STRICT MAJORITY — weighted meeple counts (big meeple = 2, the
+        `_final_scores` semantics) with ``counts[opp] > counts[player]``. A TIED
+        city never fires (both players majority-score it, so "denial" would also
+        hurt the evaluating player); an OWN or unmeepled city never fires.
+      * incomplete, and closable: ``0 < open_n`` (`city_root_open_n`, the same
+        distinct-empty-adjacent-cell count the closure schedule keys on; the D16
+        ``open_n == 0`` board-edge city can never close and never fires),
+      * near-complete: ``open_n <= cfg.denial_open_max``,
+      * large: anticipated completed value ``city_root_delta >= cfg.denial_size_min``
+        (`city_root_delta` == count_city_points if it closed — the exact quantity
+        the closure-anticipation bonus already prices).
+
+    Each qualifying city contributes ``delta - denial_size_min + 1`` (linear
+    escalation: 1 point of extra fear at the threshold, growing with size).
+    Contributions are fsum-reduced (order-independent), mirrored bit-exactly by
+    the Rust `carc_core::leaf::denial_term`.
+
+    ⚠️ EXPLICITLY NOT SUBJECT TO `_OPP_BONUS_CAP` / `opp_bonus_cap`: the capped
+    opponent-anticipation term can never express more than `opp_bonus_cap` points
+    of fear, no matter how large the near-complete opponent city — ESCAPING THAT
+    CAP for the (large AND near-complete) conjunction is the entire point of this
+    term. It is applied as a separate uncapped subtraction on top of the existing
+    (capped) anticipation."""
+    opp = 1 - player
+    board = state.board
+    city_counts: dict = {}   # city root -> [w_p0, w_p1] weighted meeple counts
+    for pl in (0, 1):
+        for mp in state.placed_meeples[pl]:
+            cws = mp.coordinate_with_side
+            r = cws.coordinate.row
+            c = cws.coordinate.column
+            side = cws.side
+            if board[r][c].get_type(side) != TerrainType.CITY:
+                continue
+            root = decomp.city_side_root.get((r, c, side))
+            if root is None:
+                continue
+            ent = city_counts.get(root)
+            if ent is None:
+                ent = [0, 0]
+                city_counts[root] = ent
+            ent[pl] += _meeple_weight(mp.meeple_type)
+    size_min = cfg.denial_size_min
+    open_max = cfg.denial_open_max
+    contribs: list = []
+    for root, cnt in city_counts.items():
+        if cnt[opp] <= cnt[player]:      # opponent STRICT majority only
+            continue
+        if decomp.city_root_finished[root]:
+            continue
+        open_n = decomp.city_root_open_n[root]
+        if open_n <= 0 or open_n > open_max:   # unclosable, or not near-complete
+            continue
+        delta = decomp.city_root_delta[root]
+        if delta < size_min:             # not large
+            continue
+        contribs.append(float(delta) - size_min + 1.0)
+    return math.fsum(contribs)
+
+
+def _denial_off(cfg) -> bool:
+    """True iff the targeted-denial term is OFF (dose 0.0) — then the cy route is
+    bit-exact. Like the F7b knockouts there is deliberately NO cy implementation
+    (candidate cells run `--backend rust`, where no Python leaf is computed at
+    all), so a SET dose ALWAYS leaves the cy fast path for the pure-Python flat
+    leaf: bit-exact (scripts/rustport/reconcile_leaf.py `--configs denial`
+    against Rust) but far slower per leaf."""
+    return getattr(cfg, "denial_dose", 0.0) == 0.0
+
+
 def _c7_off(cfg) -> bool:
     """True iff both C7 term knobs are OFF — then the cy route need not advertise
     SUPPORTS_V29_C7_TERMS (a stale .so still runs the champion leaf bit-exactly)."""
@@ -1090,7 +1168,8 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 and (_c7_off(cfg) or _CY_SUPPORTS_C7)
                 and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
                 and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
-                and _farm_knockout_off(cfg)):
+                and _farm_knockout_off(cfg)
+                and _denial_off(cfg)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
@@ -1104,6 +1183,14 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     bonus_opp = _soft_capped(flat_closure_bonus(state, opp, decomp, cfg, bag),
                              cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0))
     score = base + bonus_self - bonus_opp
+    # Targeted denial: an UNCAPPED extra subtraction on top of the (capped)
+    # opponent anticipation — deliberately NOT routed through `_soft_capped` /
+    # `opp_bonus_cap`; escaping that cap for near-complete large opponent cities
+    # is the point (see flat_denial_term). dose == 0.0 (default/champion) takes
+    # an early branch — never a subtract of 0.0 — so default traffic is
+    # byte-identical, not merely equal.
+    if getattr(cfg, "denial_dose", 0.0) != 0.0:
+        score -= cfg.denial_dose * flat_denial_term(state, player, decomp, cfg)
     if curve is not None:
         # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term
         # (== leaf_v29._meeple_curve_term; the object path adds it in apply_v29).
@@ -1176,7 +1263,8 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                 and (_c7_off(cfg) or _CY_SUPPORTS_C7)
                 and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
                 and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
-                and _farm_knockout_off(cfg)):
+                and _farm_knockout_off(cfg)
+                and _denial_off(cfg)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
     if state.players != 2:
@@ -1191,6 +1279,9 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
     bonus_opp = _soft_capped(flat_closure_bonus(state, opp, decomp, cfg, bag),
                              cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0))
     score = base + bonus_self - bonus_opp
+    # Targeted denial — uncapped, dose-gated early branch (see the int sibling).
+    if getattr(cfg, "denial_dose", 0.0) != 0.0:
+        score -= cfg.denial_dose * flat_denial_term(state, player, decomp, cfg)
     if curve is not None:
         if cfg.v29_phase_beta == 0.0:   # Part C: early branch == byte-identical default
             score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])

@@ -89,6 +89,10 @@ def leaf_score_float(state, player: int, cfg) -> float:
         cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0)
     )
     score = base + bonus_self - bonus_opp
+    # Targeted denial — uncapped, dose-gated early branch (dose 0.0 == champion,
+    # byte-identical). Calls the SHARED flat_leaf helper, does not re-implement.
+    if getattr(cfg, "denial_dose", 0.0) != 0.0:
+        score -= cfg.denial_dose * flat_leaf.flat_denial_term(state, player, decomp, cfg)
     curve = cfg.v29_meeple_curve
     if curve is not None:
         # Part C phase multiplier: beta == 0.0 (default/champion) keeps the

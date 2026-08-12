@@ -96,6 +96,18 @@ def leaf_config_rs(leaf_cfg):
     import carc_rs
 
     curve = leaf_cfg.v29_meeple_curve
+    # Targeted denial: forwarded as KEYWORDS, and ONLY when the dose is set. A
+    # carc_rs build that predates the denial term then keeps serving every
+    # default-off (champion) config unchanged, while a NONZERO dose against the
+    # stale build raises TypeError — fail-closed loud, never a silently-intact
+    # leaf (the F7b dropped-kwarg hazard, test_leaf_config_rs_forwards_*).
+    denial = {}
+    if float(getattr(leaf_cfg, "denial_dose", 0.0)) != 0.0:
+        denial = dict(
+            denial_dose=float(leaf_cfg.denial_dose),
+            denial_size_min=float(leaf_cfg.denial_size_min),
+            denial_open_max=int(leaf_cfg.denial_open_max),
+        )
     return carc_rs.LeafConfigRs(
         sorted((int(k), float(v)) for k, v in leaf_cfg.closure_p.items()),
         float(leaf_cfg.bonus_cap),
@@ -113,6 +125,7 @@ def leaf_config_rs(leaf_cfg):
         bool(getattr(leaf_cfg, "farm_growth_off", False)),
         float(getattr(leaf_cfg, "v29_phase_beta", 0.0)),
         float(getattr(leaf_cfg, "v29_phase_norm", 1.0)),
+        **denial,
     )
 
 
