@@ -1,0 +1,62 @@
+{
+  "capability": "denial",
+  "checks": [
+    {
+      "check": "py_leafconfig_fields",
+      "ok": true,
+      "detail": "LeafConfig.denial_dose/_size_min/_open_max present"
+    },
+    {
+      "check": "py_flat_denial_term",
+      "ok": true,
+      "detail": "flat_leaf.flat_denial_term present"
+    },
+    {
+      "check": "env_is_champion_leaf",
+      "ok": true,
+      "detail": "DEFAULT_CONFIG hash a36d2e15a3b3d71d (want a36d2e15a3b3d71d)"
+    },
+    {
+      "check": "cand_hash_moves[d1_denial_d1_s5_o3]",
+      "ok": true,
+      "detail": "candidate leaf hash effeca41772e3e78 != champion a36d2e15a3b3d71d"
+    },
+    {
+      "check": "cand_hash_unique[d1_denial_d1_s5_o3]",
+      "ok": true,
+      "detail": "effeca41772e3e78 not already used by -"
+    },
+    {
+      "check": "cand_hash_moves[d1_denial_d4_s5_o3]",
+      "ok": true,
+      "detail": "candidate leaf hash 451b61ccfa10b29e != champion a36d2e15a3b3d71d"
+    },
+    {
+      "check": "cand_hash_unique[d1_denial_d4_s5_o3]",
+      "ok": true,
+      "detail": "451b61ccfa10b29e not already used by -"
+    }
+  ],
+  "cells": [
+    {
+      "tag": "d1_denial_d1_s5_o3",
+      "dose": 1.0,
+      "size_min": 5.0,
+      "open_max": 3,
+      "cand_leaf_json": "{\"denial_dose\": 1.0, \"denial_size_min\": 5.0, \"denial_open_max\": 3}",
+      "cand_leaf_hash": "effeca41772e3e78"
+    },
+    {
+      "tag": "d1_denial_d4_s5_o3",
+      "dose": 4.0,
+      "size_min": 5.0,
+      "open_max": 3,
+      "cand_leaf_json": "{\"denial_dose\": 4.0, \"denial_size_min\": 5.0, \"denial_open_max\": 3}",
+      "cand_leaf_hash": "451b61ccfa10b29e"
+    }
+  ],
+  "ok": true,
+  "champ_leaf_hash": "a36d2e15a3b3d71d",
+  "runtime_probe": "SKIPPED (--no-runtime-probe: dry-run mode)",
+  "cells_out": "/home/doctor/projects/carcassone/measurement/night_chain_20260812/d1_cells.dryrun.tsv"
+}
