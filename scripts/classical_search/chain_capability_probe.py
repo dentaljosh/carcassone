@@ -1,0 +1,386 @@
+#!/usr/bin/env python3
+"""CAPABILITY PROBE for the denial / sims-split overnight chain.
+
+Spec: `measurement/night_chain_20260812/RUNBOOK.md`; the chain that calls this is
+`scripts/classical_search/denial_simsplit_chain.sh`.
+
+THE ONE SAFETY PROPERTY THIS FILE OWNS
+--------------------------------------
+Both blocks of that chain measure a knob that landed AFTER the currently-installed
+`carc_rs` wheel was built. If a candidate arm's knob is silently absent from the loaded
+build, the cell still runs, still completes, still writes a clean manifest -- and
+produces a **beautiful, meaningless null**: candidate == champion, margin z ~ 0, and
+nothing in the output says so. That is strictly worse than a crash, because it enters
+the record as evidence.
+
+So: every knob is probed for **three** things, and any miss is a hard non-zero exit.
+
+  1. the knob EXISTS on the Python side (dataclass field / harness CLI flag);
+  2. the knob is ACCEPTED by the loaded native build (`carc_rs.LeafConfigRs` kwargs --
+     `rust_agent.leaf_config_rs` forwards denial kwargs ONLY when the dose is nonzero,
+     precisely so a stale build raises `TypeError` instead of serving a default-off leaf);
+  3. the knob CHANGES THE NUMBER. (1) and (2) are structure; only (3) excludes
+     "accepted and ignored". For denial we play a few short scripted games through the
+     rust mirror and require that at least one leaf value MOVES at the requested dose,
+     while the dose-0.0 identity control stays bit-identical on every sampled value.
+
+`--require simsplit` can do (1) and the fixed-total arithmetic, but NOT (3): pick
+equality under a re-split budget is a game-level property and this probe plays no games.
+That gap is why the chain ALSO hard-gates block S1 on a hand-written go-file -- the
+human attests the byte-identity gate; the probe attests the flags exist.
+
+The probe is read-only: no games, no band, no governance file, no results.csv.
+
+Usage (the chain's two calls):
+  chain_capability_probe.py --require denial --doses 1.0,2.0 --size-min 5 --open-max 3 \
+      --cells-out /mnt/c/carc-shared/night_chain_20260812/d1_cells.tsv --json-out ...
+  chain_capability_probe.py --require simsplit --harness scripts/classical_search/eval_fair_puct.py \
+      --sims-tile 2064 --sims-meeple 688 --sims 1376 --json-out ...
+
+⚠️ The CALLER must export the champion leaf env before invoking this (the launcher env
+canon). `DEFAULT_CONFIG` is resolved at `virtual_score_v2` import time, so the probe
+asserts the champion hash is `a36d2e15a3b3d71d` -- that assert is what proves the caller's
+env canon is the champion and not something the shell mangled.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+CHAMP_LEAF_HASH = "a36d2e15a3b3d71d"
+
+# Playout budget for the functional (dose-moves-the-number) probe. Denial cells bite on
+# 8.4%-16.4% of leaf values (reconcile_leaf --configs denial, 2026-08-11), so a few
+# hundred sampled values is a very safe margin for "at least one differs".
+PROBE_SEEDS = ("880011", "880012", "880013")
+PROBE_MAX_PLIES = 150
+PROBE_EVERY = 3
+
+
+# --------------------------------------------------------------------------- #
+# Pure helpers (unit-tested in tests/test_night_chain_helpers.py)              #
+# --------------------------------------------------------------------------- #
+def parse_doses(spec: str, max_cells: int = 4) -> list[float]:
+    """`"1.0,2.0"` -> `[1.0, 2.0]`, with the chain's fail-loud rules applied.
+
+    Refuses: empty/absent, non-numeric, duplicates, more than `max_cells`, negative,
+    and 0.0. A 0.0 dose is byte-identical to the champion leaf (the term is
+    default-off), so it is an IDENTITY control, not a dose -- it would silently
+    make the "candidate hash must differ from the champion" gate unsatisfiable.
+    Running one is a separate, deliberately-specified cell, never a chain default.
+    """
+    if spec is None or not str(spec).strip():
+        raise ValueError(
+            "no doses given. DENIAL_DOSES is REQUIRED and has no default: the doses are "
+            "chosen by Joshua from the offline calibration, and a defaulted dose would "
+            "silently measure a cell nobody pre-registered.")
+    out: list[float] = []
+    for tok in str(spec).replace(" ", "").split(","):
+        if not tok:
+            continue
+        try:
+            d = float(tok)
+        except ValueError as e:
+            raise ValueError(f"dose {tok!r} is not a number") from e
+        if d < 0:
+            raise ValueError(f"dose {d} is negative; denial doses are >= 0")
+        if d == 0.0:
+            raise ValueError(
+                "dose 0.0 is the IDENTITY control (byte-identical to the champion leaf), "
+                "not a dose. This chain refuses it: its candidate leaf hash would equal "
+                "the champion's and the wiring gate could not distinguish it from a "
+                "silently-default-off cell.")
+        if d in out:
+            raise ValueError(f"duplicate dose {d}")
+        out.append(d)
+    if not out:
+        raise ValueError("no doses parsed from DENIAL_DOSES")
+    if len(out) > max_cells:
+        raise ValueError(f"{len(out)} doses given; this chain supports 1..{max_cells} cells")
+    return out
+
+
+def _num_tag(x: float) -> str:
+    """`1.0 -> '1p0'`, `0.5 -> '0p5'`, `3 -> '3'` -- filesystem/exp-id safe."""
+    s = ("%g" % float(x))
+    return s.replace(".", "p").replace("-", "m")
+
+
+def cell_tag(dose: float, size_min: float, open_max: int, prefix: str = "d1_denial") -> str:
+    """Stable per-cell directory / exp-id stem. Carries BOTH thresholds, because two
+    doses at different thresholds are different cells and must never share a dir."""
+    return f"{prefix}_d{_num_tag(dose)}_s{_num_tag(size_min)}_o{_num_tag(open_max)}"
+
+
+def cand_leaf_spec(dose: float, size_min: float, open_max: int) -> dict:
+    """The `--cand-leaf-json` object for one denial cell (replace-fields on
+    DEFAULT_CONFIG). Thresholds are ALWAYS written, even at their built defaults, so
+    the cell JSON on disk is self-describing rather than implying a default."""
+    return {"denial_dose": float(dose),
+            "denial_size_min": float(size_min),
+            "denial_open_max": int(open_max)}
+
+
+def check_split_total(sims_tile: int, sims_meeple: int, sims: int) -> tuple[bool, str]:
+    """The sims-split screen is a RE-ALLOCATION at fixed per-turn budget, not a budget
+    change: a champion turn runs two searches (tile, then meeple) at `sims` per
+    determinization each, so the per-turn per-determinization total is `2 * sims`.
+    A split that does not sum to that is measuring budget AND allocation at once --
+    a confound the lever's whole premise is about avoiding."""
+    want = 2 * int(sims)
+    got = int(sims_tile) + int(sims_meeple)
+    if got != want:
+        return False, (f"sims_tile+sims_meeple = {sims_tile}+{sims_meeple} = {got}, but the "
+                       f"fixed per-turn total at the production budget is 2*{sims} = {want}. "
+                       f"A non-matching split confounds re-allocation with a budget change.")
+    if sims_tile <= 0 or sims_meeple <= 0:
+        return False, "both arms of the split must be > 0 sims"
+    return True, f"fixed-total OK: {sims_tile}+{sims_meeple} == 2*{sims} == {want}"
+
+
+def harness_has_flags(help_text: str, flags: list[str]) -> tuple[bool, list[str]]:
+    """Which of `flags` the harness's own `--help` advertises. argparse prints every
+    option string it defines, so this is an authoritative existence check -- it reads
+    the LOADED harness, not the repo's source tree (they can differ mid-merge)."""
+    missing = [f for f in flags if f not in help_text]
+    return (not missing), missing
+
+
+# --------------------------------------------------------------------------- #
+# Runtime probes                                                              #
+# --------------------------------------------------------------------------- #
+def _import_leaf_bits():
+    """Import order matters: the leaf env must already be exported by the caller."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))          # c5_leaf_override
+    from c5_leaf_override import _leaf_hash, _load_cand_leaf_cfg      # noqa: E402
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG        # noqa: E402
+    return DEFAULT_CONFIG, _leaf_hash, _load_cand_leaf_cfg
+
+
+def probe_denial(doses, size_min, open_max, runtime: bool) -> dict:
+    r = {"capability": "denial", "checks": [], "cells": [], "ok": False}
+
+    def chk(name, ok, detail=""):
+        r["checks"].append({"check": name, "ok": bool(ok), "detail": detail})
+        return bool(ok)
+
+    default_cfg, leaf_hash, load_cand = _import_leaf_bits()
+
+    # --- (1) the Python side carries the knob at all -------------------------------
+    has_fields = all(hasattr(default_cfg, f)
+                     for f in ("denial_dose", "denial_size_min", "denial_open_max"))
+    ok = chk("py_leafconfig_fields", has_fields,
+             "LeafConfig.denial_dose/_size_min/_open_max present"
+             if has_fields else "LeafConfig has no denial fields -- this tree predates the term")
+    try:
+        from carcassonne_ai import flat_leaf
+        ok &= chk("py_flat_denial_term", hasattr(flat_leaf, "flat_denial_term"),
+                  "flat_leaf.flat_denial_term present")
+    except Exception as e:                                            # pragma: no cover
+        ok &= chk("py_flat_denial_term", False, f"import failed: {e!r}")
+
+    # --- (2) the caller's env canon really is the champion -------------------------
+    champ_hash = leaf_hash(default_cfg)
+    r["champ_leaf_hash"] = champ_hash
+    ok &= chk("env_is_champion_leaf", champ_hash == CHAMP_LEAF_HASH,
+              f"DEFAULT_CONFIG hash {champ_hash} (want {CHAMP_LEAF_HASH})")
+
+    # --- (3) per-cell specs + hashes; every one must MOVE off the champion ---------
+    seen = {}
+    for d in doses:
+        spec = cand_leaf_spec(d, size_min, open_max)
+        cfg = load_cand(json.dumps(spec))
+        h = leaf_hash(cfg)
+        tag = cell_tag(d, size_min, open_max)
+        r["cells"].append({"tag": tag, "dose": d, "size_min": size_min,
+                           "open_max": open_max, "cand_leaf_json": json.dumps(spec),
+                           "cand_leaf_hash": h})
+        ok &= chk(f"cand_hash_moves[{tag}]", h != champ_hash,
+                  f"candidate leaf hash {h} != champion {champ_hash}")
+        ok &= chk(f"cand_hash_unique[{tag}]", h not in seen,
+                  f"{h} not already used by {seen.get(h, '-')}")
+        seen[h] = tag
+
+    if not runtime:
+        r["runtime_probe"] = "SKIPPED (--no-runtime-probe: dry-run mode)"
+        r["ok"] = ok
+        return r
+
+    # --- (4) the LOADED native build accepts the kwargs ----------------------------
+    # This is the fail-closed seam: rust_agent.leaf_config_rs forwards denial kwargs
+    # only for a nonzero dose, so a pre-denial wheel raises TypeError HERE instead of
+    # quietly serving the champion leaf to the candidate arm.
+    try:
+        import carc_rs
+        from carcassonne_ai.rust_agent import leaf_config_rs
+        r["carc_rs_path"] = getattr(carc_rs, "__file__", "?")
+        probe_cfg = load_cand(json.dumps(cand_leaf_spec(doses[0], size_min, open_max)))
+        rs_cand = leaf_config_rs(probe_cfg)
+        rs_champ = leaf_config_rs(default_cfg)
+        ok &= chk("carc_rs_accepts_denial_kwargs", True,
+                  "carc_rs.LeafConfigRs built with denial kwargs")
+    except TypeError as e:
+        r["ok"] = False
+        chk("carc_rs_accepts_denial_kwargs", False,
+            f"the LOADED carc_rs build PREDATES the denial term ({e}). Rebuild + install "
+            f"the combined wheel on this box (maturin develop --release) before this block "
+            f"runs. Refusing: a default-off candidate arm produces a meaningless null.")
+        return r
+    except Exception as e:                                            # pragma: no cover
+        r["ok"] = False
+        chk("carc_rs_accepts_denial_kwargs", False, f"probe failed: {e!r}")
+        return r
+
+    # --- (5) the term is WIRED INTO THE LEAF, not merely accepted -------------------
+    try:
+        st = carc_rs.MirrorState.from_seed(PROBE_SEEDS[0])
+        terms = st.leaf_terms(0, rs_champ)
+        ok &= chk("carc_rs_exposes_denial_term", "denial_term" in terms,
+                  f"leaf_terms keys: {sorted(terms)}")
+    except Exception as e:                                            # pragma: no cover
+        ok &= chk("carc_rs_exposes_denial_term", False, f"{e!r}")
+
+    moved = same = 0
+    identity_breaks = 0
+    try:
+        rs_identity = leaf_config_rs(default_cfg)     # dose stays 0 -> no kwargs forwarded
+        for seed in PROBE_SEEDS:
+            st = carc_rs.MirrorState.from_seed(seed)
+            for ply in range(PROBE_MAX_PLIES):
+                if st.is_terminal():
+                    break
+                if ply % PROBE_EVERY == 0:
+                    for p in (0, 1):
+                        a = st.leaf_value_float(p, rs_champ)
+                        b = st.leaf_value_float(p, rs_cand)
+                        c = st.leaf_value_float(p, rs_identity)
+                        moved += int(a != b)
+                        same += int(a == b)
+                        identity_breaks += int(a != c)
+                acts = st.legal_actions()
+                if not acts:
+                    break
+                st.advance(acts[(ply * 7 + 3) % len(acts)])
+    except Exception as e:                                            # pragma: no cover
+        ok &= chk("carc_rs_denial_changes_leaf", False, f"playout probe failed: {e!r}")
+    else:
+        r["functional"] = {"values_moved": moved, "values_same": same,
+                           "identity_control_breaks": identity_breaks}
+        ok &= chk("carc_rs_denial_changes_leaf", moved > 0,
+                  f"{moved} of {moved + same} sampled leaf values MOVE at dose {doses[0]} "
+                  f"(0 would mean accepted-and-ignored == a silently default-off candidate)")
+        ok &= chk("carc_rs_identity_control", identity_breaks == 0,
+                  f"{identity_breaks} champion-vs-champion mismatches (must be 0)")
+
+    r["ok"] = bool(ok)
+    return r
+
+
+def probe_simsplit(harness: str, sims_tile, sims_meeple, sims, allow_unequal: bool,
+                   runtime: bool) -> dict:
+    r = {"capability": "simsplit", "checks": [], "ok": False, "harness": harness}
+
+    def chk(name, ok, detail=""):
+        r["checks"].append({"check": name, "ok": bool(ok), "detail": detail})
+        return bool(ok)
+
+    ok = True
+    ok &= chk("harness_exists", os.path.exists(harness), harness)
+    if os.path.exists(harness) and runtime:
+        py = os.environ.get("CHAIN_PY", sys.executable)
+        try:
+            p = subprocess.run([py, harness, "--help"], capture_output=True, text=True,
+                               timeout=300)
+            help_text = (p.stdout or "") + (p.stderr or "")
+        except Exception as e:                                        # pragma: no cover
+            help_text = ""
+            chk("harness_help_ran", False, f"{e!r}")
+        got, missing = harness_has_flags(help_text, ["--sims-tile", "--sims-meeple"])
+        ok &= chk("harness_has_split_flags", got,
+                  "both flags advertised by argparse" if got else
+                  f"MISSING {missing} -- the per-phase sims knob has NOT landed on this "
+                  f"harness. Block S1 SKIPS (it does not fail the chain).")
+    elif not runtime:
+        r["runtime_probe"] = "SKIPPED (--no-runtime-probe: dry-run mode)"
+
+    if sims_tile is not None and sims_meeple is not None and sims is not None:
+        good, msg = check_split_total(sims_tile, sims_meeple, sims)
+        if allow_unequal and not good:
+            chk("fixed_per_turn_total", True, f"OVERRIDDEN by --allow-unequal-total: {msg}")
+        else:
+            ok &= chk("fixed_per_turn_total", good, msg)
+
+    # Deliberately NOT claimed here: bit-exactness of the split knob at the production
+    # setting. That is a game-level property, this probe plays no games, and the chain
+    # therefore ALSO requires a hand-written go-file for S1 (see the RUNBOOK).
+    r["not_probeable_here"] = ("byte-identity of --sims-tile/--sims-meeple at the production "
+                               "setting; attested by the hand-written S1 go-file, never by "
+                               "this script")
+    r["ok"] = bool(ok)
+    return r
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--require", choices=("denial", "simsplit"), required=True)
+    ap.add_argument("--doses", default=None, help="denial: comma list, REQUIRED, no default")
+    ap.add_argument("--size-min", type=float, default=None)
+    ap.add_argument("--open-max", type=int, default=None)
+    ap.add_argument("--max-cells", type=int, default=4)
+    ap.add_argument("--harness", default=None)
+    ap.add_argument("--sims-tile", type=int, default=None)
+    ap.add_argument("--sims-meeple", type=int, default=None)
+    ap.add_argument("--sims", type=int, default=None, help="production sims per determinization")
+    ap.add_argument("--allow-unequal-total", action="store_true")
+    ap.add_argument("--no-runtime-probe", action="store_true",
+                    help="structure + arithmetic only; skips carc_rs and the harness --help "
+                         "(what --dry-run uses)")
+    ap.add_argument("--cells-out", default=None,
+                    help="denial: write a TSV of tag<TAB>cand_leaf_json<TAB>cand_leaf_hash "
+                         "(the per-box launchers read exactly this file)")
+    ap.add_argument("--json-out", default=None)
+    a = ap.parse_args()
+
+    runtime = not a.no_runtime_probe
+    try:
+        if a.require == "denial":
+            if a.size_min is None or a.open_max is None:
+                raise ValueError("--size-min and --open-max are REQUIRED for denial and have "
+                                 "no default (DENIAL_SIZE_MIN / DENIAL_OPEN_MAX)")
+            doses = parse_doses(a.doses, a.max_cells)
+            rep = probe_denial(doses, a.size_min, a.open_max, runtime)
+        else:
+            if not a.harness:
+                raise ValueError("--harness is required for the simsplit probe")
+            rep = probe_simsplit(a.harness, a.sims_tile, a.sims_meeple, a.sims,
+                                 a.allow_unequal_total, runtime)
+    except Exception as e:
+        rep = {"capability": a.require, "ok": False,
+               "checks": [{"check": "arguments", "ok": False, "detail": str(e)}]}
+
+    if a.cells_out and rep.get("cells"):
+        p = Path(a.cells_out)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("w") as f:
+            for c in rep["cells"]:
+                f.write(f"{c['tag']}\t{c['cand_leaf_json']}\t{c['cand_leaf_hash']}\n")
+        rep["cells_out"] = str(p)
+    if a.json_out:
+        p = Path(a.json_out)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(rep, indent=2))
+
+    print(json.dumps(rep, indent=2))
+    for c in rep.get("checks", []):
+        if not c["ok"]:
+            print(f"[probe] FAIL {c['check']}: {c['detail']}", file=sys.stderr)
+    return 0 if rep.get("ok") else 7
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

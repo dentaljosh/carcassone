@@ -457,7 +457,9 @@ class RustFairAgent:
                  start_row: int | None = None, start_col: int | None = None,
                  cloister_scan_fix: bool | None = None,
                  draw_rule: str | None = None,
-                 reconcile: bool | None = None):
+                 reconcile: bool | None = None,
+                 sims_tile: int | None = None,
+                 sims_meeple: int | None = None):
         import carc_rs
 
         from . import fair_agent as _fa
@@ -468,6 +470,24 @@ class RustFairAgent:
         self._k_dets = int(k_dets)
         self._seed = int(seed)
         self._threads = int(threads)
+        # --- SIMS-SPLIT (phase-asymmetric sims budget; None/None = byte-identical).
+        # Same contract as FairHeuristicPriorAgent's sims_tile/sims_meeple: the named
+        # phase's PIMC decisions run each world at that budget, None inherits `sims`.
+        # Implemented as a PER-CALL `sims_override` on FairAgentRs.choose_action —
+        # stateless on the Rust side (the constructed SearchConfigRs is never
+        # mutated), so it cannot desync the mirror protocol or leak across
+        # `reset()`/games. Phase detection uses the PYTHON board handed to
+        # choose_action (`board.state.phase`) — the same phase notion the python
+        # agent uses — and `check_sync` has already hard-asserted that board equals
+        # the mirror before the override is applied.
+        if sims_tile is not None and int(sims_tile) < 1:
+            raise ValueError(f"sims_tile must be >= 1 (or None), got {sims_tile}")
+        if sims_meeple is not None and int(sims_meeple) < 1:
+            raise ValueError(f"sims_meeple must be >= 1 (or None), got {sims_meeple}")
+        self._sims_tile = None if sims_tile is None else int(sims_tile)
+        self._sims_meeple = None if sims_meeple is None else int(sims_meeple)
+        self.sims_tile = self._sims_tile       # public alias (manifest read-off)
+        self.sims_meeple = self._sims_meeple   # public alias (manifest read-off)
         self._reconcile = reconcile_enabled(reconcile)
         # Does the MIRROR run the retail pre-placement? `start_game` needs this
         # to reconstruct the pre-setup draw order (see _draw_order_for_mirror);
@@ -608,9 +628,21 @@ class RustFairAgent:
         # `_check_sync` stays for `advance(board_after=...)`, which is the caller's
         # opt-in per-ply audit and IS the expensive one (a repr per applied action).
         self.check_sync(board, "choose_action")
+        # SIMS-SPLIT: resolve THIS decision's per-world budget from the python
+        # board's phase (the sync assert one line up has proven board == mirror).
+        # None (both knobs unset, or the set knob not naming this phase) is the
+        # constructed budget — the pre-knob call, byte for byte.
+        sims_override = None
+        if self._sims_tile is not None or self._sims_meeple is not None:
+            from wingedsheep.carcassonne.objects.game_phase import GamePhase
+
+            sims_override = (self._sims_tile
+                             if board.state.phase == GamePhase.TILES
+                             else self._sims_meeple)
         solver_before = float(self._rs.stats()["solver_secs"])
         t0 = time.perf_counter()
-        action = int(self._rs.choose_action(None if move_idx is None else int(move_idx)))
+        action = int(self._rs.choose_action(
+            None if move_idx is None else int(move_idx), sims_override))
         dt = time.perf_counter() - t0
         self.total_secs += dt
         m = self._rs.last_move()
@@ -773,6 +805,11 @@ class RustFairAgent:
             "min_pooled_visits": float(s["min_pooled_visits"]),
             "reconcile": bool(self._reconcile),
             "plies_advanced": int(self._plies),
+            # SIMS-SPLIT — stamped ONLY when a knob is set, so a knobs-unset
+            # stats dict is byte-identical to the pre-feature one.
+            **({"sims_tile": self._sims_tile, "sims_meeple": self._sims_meeple}
+               if (self._sims_tile is not None or self._sims_meeple is not None)
+               else {}),
         }
 
     def __repr__(self) -> str:

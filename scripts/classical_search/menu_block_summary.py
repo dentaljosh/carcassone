@@ -47,6 +47,16 @@ def main():
                           "under `walled` on purpose, to match the ORIGINAL n=400 cell's epoch so "
                           "the two are poolable; fixed_v1 would be the wrong gate for that cell, "
                           "not the right default."))
+    ap.add_argument("--expect-cand-leaf-hash", default=None,
+                    help=("the CANDIDATE leaf hash this cell is REQUIRED to have run under, "
+                          "computed from the cell's knob spec BEFORE game 1 (added 2026-08-12 "
+                          "for the denial screen). This is the gate that catches the campaign's "
+                          "worst failure mode: a knob the loaded native build does not "
+                          "implement runs a candidate arm that IS the champion, completes "
+                          "cleanly and reads as a beautiful, meaningless null. If the manifest's "
+                          "cand_leaf_hash equals the champion's, or differs from the expected "
+                          "value, the cell is UNREADABLE, not merely suspicious. Omitted -> "
+                          "unchanged behaviour for every pre-existing caller."))
     a = ap.parse_args()
 
     out = {"label": a.label, "dir": a.dir, "adjudicated": False,
@@ -88,7 +98,17 @@ def main():
             "rules_profile": _g(m, "rules_profile", "name"),
             "r9_env_ok": _g(m, "rules_profile", "r9_env_ok"),
             "cand_leaf_hash": _g(m, "config", "cand_leaf_hash"),
-            "opp_leaf_hash": _g(m, "config", "opp_leaf_hash"),
+            # Two harnesses, two names for the same field: eval_fair_puct writes
+            # `opp_leaf_hash`, eval_puct_priors (the 2750 ablation instrument) writes
+            # `champ_leaf_hash`. Reading only the first silently made the opponent-side
+            # gate VACUOUS on every ablation-class cell (it recorded null and passed).
+            # Fall back, and record which name supplied the value.
+            "opp_leaf_hash": (_g(m, "config", "opp_leaf_hash")
+                              if _g(m, "config", "opp_leaf_hash") is not None
+                              else _g(m, "config", "champ_leaf_hash")),
+            "opp_leaf_hash_field": ("opp_leaf_hash"
+                                    if _g(m, "config", "opp_leaf_hash") is not None
+                                    else "champ_leaf_hash"),
             "cand_leaf_json": _g(m, "config", "cand_leaf_json"),
             "cand_curve_drift_allowed": _g(m, "config", "cand_curve_drift_allowed"),
             "cand_k_dets": _g(m, "config", "champion", "k_dets"),
@@ -114,6 +134,16 @@ def main():
             gates.append(f"r9_env_ok is {w['r9_env_ok']!r}, not true")
         if w["opp_leaf_hash"] not in (None, CHAMP_LEAF_HASH):
             gates.append(f"opponent leaf hash {w['opp_leaf_hash']!r} != {CHAMP_LEAF_HASH}")
+        if a.expect_cand_leaf_hash:
+            out["expected_cand_leaf_hash"] = a.expect_cand_leaf_hash
+            if w["cand_leaf_hash"] != a.expect_cand_leaf_hash:
+                gates.append(
+                    f"candidate leaf hash {w['cand_leaf_hash']!r} != expected "
+                    f"{a.expect_cand_leaf_hash!r}"
+                    + (" -- IT IS THE CHAMPION'S HASH: the candidate arm ran the UNMODIFIED "
+                       "champion leaf, i.e. the knob never reached the leaf. This cell's null "
+                       "is an artifact, not a measurement."
+                       if w["cand_leaf_hash"] == CHAMP_LEAF_HASH else ""))
         out["wiring_gate_failures"] = gates
         out["wiring_gates_clean"] = not gates
         if gates:

@@ -624,6 +624,21 @@ class FairHeuristicPriorAgent:
                                 ``sims``; a positive screen needs an equal-WALL-CLOCK
                                 confirm. Mutually exclusive with ``oracle_prior_mult``.
 
+    sims_tile / sims_meeple     SIMS-SPLIT (phase-asymmetric sims budget, 2026-08-12;
+                                default None/None = byte-for-byte the deployed champion).
+                                Per-world sims for TILES / MEEPLES decisions respectively;
+                                None inherits ``sims``. Only the per-world search budget
+                                of the named phase moves — determinization draws, seeds,
+                                pooled merge order, pooled-Q, the forced-move
+                                short-circuit and the exact-K latch are untouched.
+                                Mutually exclusive with ``parallel_workers`` (the spawn
+                                pool bakes one sims into its initargs), ``intra_reuse``
+                                (carried trees were built at the tile budget) and
+                                ``oracle_prior_mult`` (its pre-search budget is defined
+                                against a single production sims); each is rejected
+                                loudly. The play-time knob for docs/LEVER_INDEX.md §5
+                                "phase-asymmetric sims split".
+
     parallel_workers            k-PARALLEL INFERENCE (G6 stage 1, 2026-07-28). None
                                 (default) = the SEQUENTIAL k-loop, byte-for-byte the
                                 deployed champion — the Android/Chaquopy bridge, which
@@ -679,7 +694,9 @@ class FairHeuristicPriorAgent:
                  oracle_prior_eps_coef: float = 1e-3,
                  meeple_dedup: bool | None = None,
                  intra_reuse: bool | None = None,
-                 parallel_workers: int | None = None):
+                 parallel_workers: int | None = None,
+                 sims_tile: int | None = None,
+                 sims_meeple: int | None = None):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -743,6 +760,44 @@ class FairHeuristicPriorAgent:
                     "within-turn carry retains LIVE trees between two decisions, and a "
                     "tree that lives in a worker process cannot be re-rooted by the "
                     "parent. Run one or the other.")
+        # --- SIMS-SPLIT (phase-asymmetric sims budget, 2026-08-12; default None/None =
+        # byte-for-byte the deployed champion). When set, a PIMC decision in the named
+        # phase searches each of its k_dets worlds at THAT budget instead of `sims`:
+        # `sims_tile` binds TILES decisions, `sims_meeple` binds MEEPLES decisions,
+        # None inherits `sims`. NOTHING else moves — the determinization RNG stream,
+        # per-world seeds, pooled merge order, pooled-Q rule, forced-move short-circuit
+        # and the exact-K latch are untouched (the latch fires on TILES turn-atomically
+        # and solver decisions consume no sims). See docs/LEVER_INDEX.md §5
+        # "phase-asymmetric sims split".
+        if sims_tile is not None and int(sims_tile) < 1:
+            raise ValueError(f"sims_tile must be >= 1 (or None), got {sims_tile}")
+        if sims_meeple is not None and int(sims_meeple) < 1:
+            raise ValueError(f"sims_meeple must be >= 1 (or None), got {sims_meeple}")
+        if sims_tile is not None or sims_meeple is not None:
+            if parallel_workers is not None:
+                raise ValueError(
+                    "sims_tile/sims_meeple and parallel_workers are mutually exclusive: "
+                    "the spawn pool bakes ONE per-world sims into its worker initargs "
+                    "at pool construction, so a per-decision budget cannot reach the "
+                    "workers. Run the split candidate sequential (eval farms are "
+                    "game-parallel anyway; the spawn split is a single-game latency "
+                    "lever).")
+            if intra_carry.resolve(intra_reuse):
+                raise ValueError(
+                    "sims_tile/sims_meeple and intra_reuse are mutually exclusive: the "
+                    "within-turn carry re-uses NeuralMCTS trees CONSTRUCTED at the tile "
+                    "decision's budget for the meeple decision, so the meeple budget "
+                    "could not be honoured. Run one or the other.")
+            if oracle_prior_mult is not None:
+                raise ValueError(
+                    "sims_tile/sims_meeple and oracle_prior_mult are mutually "
+                    "exclusive: the oracle probe's pre-search budget is defined as "
+                    "mult x the production sims and has not been specified (or "
+                    "tested) under a per-phase budget. Run one or the other.")
+        self._sims_tile = None if sims_tile is None else int(sims_tile)
+        self._sims_meeple = None if sims_meeple is None else int(sims_meeple)
+        self.sims_tile = self._sims_tile       # public alias (manifest read-off)
+        self.sims_meeple = self._sims_meeple   # public alias (manifest read-off)
         self._parallel_workers = None if parallel_workers is None else int(parallel_workers)
         self.parallel_workers = self._parallel_workers   # public alias (manifest read-off)
         self._pool = None
@@ -872,6 +927,18 @@ class FairHeuristicPriorAgent:
     def det_search_seed(self, move_idx: int, det_idx: int) -> int:
         return self.det_seed_base(move_idx) + 100 + det_idx
 
+    # --- SIMS-SPLIT: the per-decision budget --------------------------------
+    def _sims_for(self, board: Board) -> int:
+        """This decision's per-world sims budget. With both knobs None this
+        RETURNS ``self._sims`` unconditionally — the pre-knob path, byte for
+        byte. Phase notion = the agent's own (``board.state.phase``, the same
+        field the exact-K latch triggers on)."""
+        if self._sims_tile is None and self._sims_meeple is None:
+            return self._sims
+        if board.state.phase == GamePhase.TILES:
+            return self._sims if self._sims_tile is None else self._sims_tile
+        return self._sims if self._sims_meeple is None else self._sims_meeple
+
     # --- the fair PIMC move -------------------------------------------------
     def _pimc_move(self, board: Board, move_idx: int) -> int:
         self.heur_moves += 1
@@ -945,7 +1012,7 @@ class FairHeuristicPriorAgent:
             b = FairHeuristicMCTSAgent.reshuffled_determinization(board, det_rng)
             m, stats, telem = search_one_world(
                 self._game, self._evaluator, b, root_key,
-                sims=self._sims, c_puct=self._c_puct, seed=base + 100 + i,
+                sims=self._sims_for(board), c_puct=self._c_puct, seed=base + 100 + i,
                 batch_size=self._batch_size, batch_evaluator=self._batch_evaluator,
                 virtual_loss=self._virtual_loss, meeple_dedup=self._meeple_dedup,
                 oracle_prior_mult=self._oracle_prior_mult,

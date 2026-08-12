@@ -625,6 +625,7 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                         oracle_prior_mult=_UNSET, oracle_prior_eps_coef=_UNSET,
                         meeple_dedup=_UNSET, intra_reuse=_UNSET,
                         parallel_workers=_UNSET,
+                        sims_tile=_UNSET, sims_meeple=_UNSET,
                         backend: str = "python", rust_threads: int | None = None):
     """Construct the fair-play PIMC champion (FairHeuristicPriorAgent). Only kwargs the
     caller actually sets are forwarded, so any left at ``_UNSET`` fall through to the
@@ -700,6 +701,11 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
             sims=sims, k_dets=k_dets, seed=seed, exact_endgame=exact_endgame,
             exact_max_k=exact_max_k, min_pooled_visits=min_pooled_visits,
             exact_budget=exact_budget,
+            # SIMS-SPLIT (2026-08-12): implemented on BOTH backends (a stateless
+            # per-call sims override on the Rust side), so it is deliberately NOT
+            # in _py_only above. Absent-when-unset keeps the constructor call
+            # byte-identical to the pre-knob one.
+            sims_tile=sims_tile, sims_meeple=sims_meeple,
         ).items() if v is not _UNSET}
         if "sims" not in rs_kw or "k_dets" not in rs_kw:
             raise ValueError(
@@ -744,6 +750,7 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
         oracle_prior_eps_coef=oracle_prior_eps_coef,
         meeple_dedup=meeple_dedup, intra_reuse=intra_reuse,
         parallel_workers=parallel_workers,
+        sims_tile=sims_tile, sims_meeple=sims_meeple,
     ).items() if v is not _UNSET}
     return FairHeuristicPriorAgent(game, cfg, **kw)
 
