@@ -1,0 +1,10 @@
+[denial-deploy 2026-08-12_13:15:25] rev identity OK (575d3033e55c5a596cbbdf40f03b4ec37047d379)
+[denial-deploy 2026-08-12_13:15:25] GATE D0: cell json leaf hash = effeca41772e3e78 (expected effeca41772e3e78)
+[denial-deploy 2026-08-12_13:15:25] GATE P: local denial capability probe PASS
+[denial-deploy 2026-08-12_13:15:26] GATE P: laptop denial capability probe PASS, candidate hash agrees (effeca41772e3e78)
+[denial-deploy 2026-08-12_13:15:26] claimed band 124000000000 (sentinel /home/doctor/projects/carcassone/measurement/denial_screen_20260811/BAND_DEPLOY)
+[denial-deploy 2026-08-12_13:15:26] local launcher pid 986129
+[denial-deploy 2026-08-12_13:15:56] two-box check local_busy=14 laptop_busy=22 laptop_claims_on_cell=22 ok=1
+[denial-deploy 2026-08-12_14:34:22] local launcher exited rc=0
+[denial-deploy 2026-08-12_14:34:22] records 800/800
+[denial-deploy 2026-08-12_14:34:22] === COMPLETE -> /home/doctor/projects/carcassone/measurement/denial_screen_20260811/verdicts/DEPLOY_CONFIRM.json (band 124000000000). Nothing promoted. ===

@@ -1,0 +1,3 @@
+124000000000
+TARGETED-DENIAL DEPLOY-BUDGET CONFIRM: 1 cell n=800 deck-paired, cand = champion leaf + denial dose 1.0/size_min 5/open_max 3 (effeca41772e3e78) vs the unmodified champion (a36d2e15a3b3d71d), BOTH arms FAIR PIMC k8x1376=11008 (eval_fair_puct.py, NOT the 2750 ablation instrument), fixed_v1+R9, rust, exact-K 2.
+claimed 2026-08-12

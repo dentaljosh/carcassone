@@ -1,0 +1,137 @@
+[menu-fair primary Doctor] 2026-08-12_13:15:26 clock-skew guard OK (1s)
+[menu-fair primary Doctor] 2026-08-12_13:15:26 START sub=denial_d1_s5_o3_deploy11008 n=800 band=124000000000 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/denial_screen_20260811/cells/denial_d1_s5_o3_deploy_fixed_v1_vs_fairchamp11008.json split=none/none
+[leaf-override] WARNING: targeted denial set (denial_dose=1.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=effeca41772e3e78 frozen_config_hash=573a8ad2c96d664b (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafeffeca41]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 800 to play, 14 workers, out=/mnt/c/carc-shared/denial_deploy_20260812/denial_d1_s5_o3_deploy11008
+  10/800 played (19.1s/game, ~251 min left)
+  20/800 played (18.9s/game, ~246 min left)
+  30/800 played (16.2s/game, ~208 min left)
+  40/800 played (15.2s/game, ~192 min left)
+  50/800 played (15.0s/game, ~188 min left)
+  60/800 played (14.5s/game, ~178 min left)
+  70/800 played (14.4s/game, ~176 min left)
+  80/800 played (14.2s/game, ~170 min left)
+  90/800 played (13.7s/game, ~162 min left)
+  100/800 played (13.8s/game, ~161 min left)
+  110/800 played (13.7s/game, ~157 min left)
+  120/800 played (13.8s/game, ~156 min left)
+  130/800 played (13.8s/game, ~154 min left)
+  140/800 played (13.5s/game, ~148 min left)
+  150/800 played (13.5s/game, ~147 min left)
+  160/800 played (13.5s/game, ~144 min left)
+  170/800 played (13.3s/game, ~140 min left)
+  180/800 played (13.5s/game, ~139 min left)
+  190/800 played (13.5s/game, ~137 min left)
+  200/800 played (13.4s/game, ~134 min left)
+  210/800 played (13.5s/game, ~133 min left)
+  220/800 played (13.4s/game, ~130 min left)
+  230/800 played (13.5s/game, ~128 min left)
+  240/800 played (13.5s/game, ~126 min left)
+  250/800 played (13.4s/game, ~123 min left)
+  260/800 played (13.4s/game, ~120 min left)
+  270/800 played (13.5s/game, ~119 min left)
+  280/800 played (13.6s/game, ~118 min left)
+  290/800 played (13.6s/game, ~116 min left)
+  300/800 played (13.4s/game, ~111 min left)
+  310/800 played (13.4s/game, ~110 min left)
+  320/800 played (13.5s/game, ~108 min left)
+  330/800 played (13.4s/game, ~105 min left)
+  340/800 played (13.4s/game, ~103 min left)
+  350/800 played (13.4s/game, ~100 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 794   candidate: 404W / 11D / 379L   winrate 0.516 (z=+0.89)
+avg score diff (candidate - opponent): -0.06
+ELO: +10.9  (+/- 12.3 1sigma)
+PAIRED: 396 decks   mean seat-balanced margin +0.01   z = +0.02
+prefix ms/move: candidate 1467  opponent 1542  (ratio 0.95x)
+fair endgame: candidate latched 794/794 games, 1.08s solver/game, timeouts=0
+fair endgame: opponent  latched 794/794 games, 0.99s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=794 (1σ≈±12); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/denial_deploy_20260812/denial_d1_s5_o3_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-12_14:33:23 harness pass 1 rc=0 records=794/800
+[leaf-override] WARNING: targeted denial set (denial_dose=1.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=effeca41772e3e78 frozen_config_hash=573a8ad2c96d664b (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafeffeca41]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 798 cached, 2 to play, 14 workers, out=/mnt/c/carc-shared/denial_deploy_20260812/denial_d1_s5_o3_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 798   candidate: 407W / 11D / 380L   winrate 0.517 (z=+0.96)
+avg score diff (candidate - opponent): -0.01
+ELO: +11.8  (+/- 12.3 1sigma)
+PAIRED: 398 decks   mean seat-balanced margin -0.05   z = -0.07
+prefix ms/move: candidate 1467  opponent 1540  (ratio 0.95x)
+fair endgame: candidate latched 798/798 games, 1.08s solver/game, timeouts=0
+fair endgame: opponent  latched 798/798 games, 0.99s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=798 (1σ≈±12); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/denial_deploy_20260812/denial_d1_s5_o3_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-12_14:33:45 harness pass 2 rc=0 records=798/800
+[leaf-override] WARNING: targeted denial set (denial_dose=1.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=effeca41772e3e78 frozen_config_hash=573a8ad2c96d664b (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafeffeca41]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 799 cached, 1 to play, 14 workers, out=/mnt/c/carc-shared/denial_deploy_20260812/denial_d1_s5_o3_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 799   candidate: 408W / 11D / 380L   winrate 0.518 (z=+0.99)
+avg score diff (candidate - opponent): +0.01
+ELO: +12.2  (+/- 12.3 1sigma)
+PAIRED: 399 decks   mean seat-balanced margin -0.01   z = -0.02
+prefix ms/move: candidate 1466  opponent 1540  (ratio 0.95x)
+fair endgame: candidate latched 799/799 games, 1.07s solver/game, timeouts=0
+fair endgame: opponent  latched 799/799 games, 0.99s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=799 (1σ≈±12); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/denial_deploy_20260812/denial_d1_s5_o3_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-12_14:34:07 harness pass 3 rc=0 records=799/800
+[menu-fair primary Doctor] 2026-08-12_14:34:22 END sub=denial_d1_s5_o3_deploy11008 records=800/800 in 4736s after 3 pass(es)
+{
+  "label": "denial_d1_s5_o3_deploy11008_n800_b124000000000",
+  "dir": "/mnt/c/carc-shared/denial_deploy_20260812/denial_d1_s5_o3_deploy11008",
+  "adjudicated": false,
+  "expected_rules_profile": "fixed_v1",
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 800,
+  "n": 800,
+  "n_paired": 400,
+  "W": 408,
+  "D": 11,
+  "L": 381,
+  "elo": 11.730406253688674,
+  "elo_sig_1sigma": 12.290704862409688,
+  "paired_z": -0.12661089605330167,
+  "paired_mean_margin": -0.08375,
+  "champ_prefix_ms_per_move": 1466.5112025522967,
+  "wiring": {
+    "code_rev": "7437bc9-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "effeca41772e3e78",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "opp_leaf_hash_field": "opp_leaf_hash",
+    "cand_leaf_json": "/home/doctor/projects/carcassone/measurement/denial_screen_20260811/cells/denial_d1_s5_o3_deploy_fixed_v1_vs_fairchamp11008.json",
+    "cand_curve_drift_allowed": true,
+    "cand_k_dets": 8,
+    "cand_sims_per_det": 1376,
+    "cand_total_sims": 11008,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "opp_total_sims": 11008,
+    "band_seed_start": 124000000000,
+    "n_decks": 400,
+    "paired": true
+  },
+  "expected_cand_leaf_hash": "effeca41772e3e78",
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true,
+  "topup_triggered": false,
+  "topup_note": "PRE-REGISTERED trigger only (1.5 <= |margin z| < 2.0 => extend item 3 to n=1600 on FRESH decks of band 1.19e11, seeds 119000000400..119000000799). The chain does NOT run it: the +1.5 h spend is Joshua's call (plan section 6.6)."
+}
