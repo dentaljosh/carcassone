@@ -1,9 +1,14 @@
 # RUNBOOK — overnight chain 2026-08-12 (D1 targeted-denial · S1 sims-split)
 
-> **STATUS: ⚠️ BUILT, NOT LAUNCHED. No games played, no band claimed, nothing promoted.**
-> Infrastructure only. The chain claims its bands and writes its registry rows *at launch*,
-> one per block; `governance/PRODUCTION.yaml` is never touched, by this doc or by any script
-> it describes.
+> **STATUS: LAUNCHED AND COMPLETED 2026-08-12. Six-touch closed out 2026-08-12.**
+> The chain ran both blocks to completion — **D1** (2 denial cells, band **1.21e11**, both
+> resolved negative at the 2750 ablation instrument; the dose-1.0 cell's pre-registered
+> top-up subsequently fired and pooled to n=400, margin z **−2.293**) and **S1** (sims-split
+> screen, band **1.22e11**, bounded null, margin z **−1.037**). Both bands are now **retired
+> decision-influenced**. Extracts in `verdicts/`. The chain claimed its bands and wrote its
+> registry rows *at launch*, one per block; `governance/PRODUCTION.yaml` was never touched,
+> by this doc or by any script it describes. **Nothing promoted.** The runbook's own
+> post-mortem of the FALSE `BLOCKED_D1` (the two-box cell-table gate) stands as written.
 
 Driver: [`denial_simsplit_chain.sh`](../../scripts/classical_search/denial_simsplit_chain.sh) ·
 watchdog: [`denial_simsplit_watchdog.sh`](../../scripts/classical_search/denial_simsplit_watchdog.sh) ·

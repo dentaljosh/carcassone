@@ -1,10 +1,33 @@
 # SIMS-SPLIT **ALLOCATION** A/B at 1.5× BUDGET — PRE-REGISTRATION
 
-> **STATUS: PRE-REGISTERED 2026-08-12, BEFORE GAME 1.** Written and committed before the
-> band was claimed and before any game was played. `governance/PRODUCTION.yaml` is untouched
-> on every branch of this document. **No promotion, no `results.csv` row, no claim-registry
-> row, no adjudication** is performed by the run or by this file — the orchestrating session
-> reads the extracts and closes out.
+> **STATUS: RAN AND CLOSED 2026-08-12 — pre-registered branch `R4b: BOUNDED NULL` fired.
+> Six-touch closed out 2026-08-12.** Written and committed before the band was claimed and
+> before any game was played. Band **1.23e11** (now retired decision-influenced; the reserved
+> R3 top-up seeds `+400..+799` were never drawn). Both cells 800/800, **wiring gate W9
+> verified from the manifests before any number was read** (cell A carries
+> `config.sims_split` with `effective_sims_tile` 2752 / `effective_sims_meeple` 1376 /
+> `per_turn_total_sims` 33024; cell B carries `sims_split: null`).
+>
+> - **A** (split t2752/m1376, 1.5× total): W376/D15/L409, elo **−14.340 ± 12.294**, margin
+>   **+0.055**, z **+0.075**.
+> - **B** (uniform 2064, matched total): W385/D16/L399, elo **−6.081 ± 12.286**, margin
+>   **−0.165**, z **−0.251**.
+> - **PRIMARY STATISTIC, the A−B CRN-paired contrast: +0.220 pts/deck, se 0.885, z +0.248**
+>   ⇒ **no tile-allocation effect larger than ±1.77 pts/deck ≈ ±31 elo at 2σ at 1.5×
+>   budget.** "Tiles don't want more search" is a **FORBIDDEN reading** — the bound is what
+>   was measured.
+> - ⚠️ **METHODOLOGICAL FINDING, record it prominently: CRN bought only 9.9% of the contrast
+>   variance** — se(A−B) 0.885 vs 0.983 if the cells were independent — so **A−B resolved
+>   WORSE than either cell's own margin**, the opposite of the design's intent. **Future
+>   A-vs-B-at-matched-budget designs must be powered as if the cells were independent.**
+> - Observation, **not** a result: cell B is a pure 1.5× budget increase and reads
+>   −6.081 ± 12.286, so CL-068's ≈ +7 elo free-compute term is **neither confirmed nor
+>   contradicted** (inside 1σ).
+> - `results.csv` `simsplit_alloc_a_split_t2752_m1376_fixed_v1_vs_champ11008_n800_b123e9`
+>   and `simsplit_alloc_b_uniform2064_fixed_v1_vs_champ11008_n800_b123e9`.
+>
+> **Nothing is deployable at 1.5× budget; `governance/PRODUCTION.yaml` is untouched on every
+> branch of this document.**
 
 Funded by Joshua 2026-08-12. Two cells, one shared fresh band, CRN.
 

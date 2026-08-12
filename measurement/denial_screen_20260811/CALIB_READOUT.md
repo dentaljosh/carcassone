@@ -5,6 +5,15 @@
 > owed. `governance/PRODUCTION.yaml` untouched. The selection rule was committed in
 > [CALIB_READ_RULE.md](CALIB_READ_RULE.md) (`e2af769`) **before any arm's flip rate was
 > read** — the numbers below were produced against a fixed rule, not the other way round.
+>
+> **Six-touch closed out 2026-08-12** as part of the denial campaign. The doses/thresholds
+> selected here (`{1.0, 4.0}`, `size_min` 5, `open_max` 3) went on to the D1 screen, where
+> **both** cells resolved negative at the 2750 ablation instrument — and the dose-1.0 kill
+> then **failed to transfer** to the deploy budget (claim **CL-079**;
+> [PREREG_DEPLOY_CONFIRM.md](PREREG_DEPLOY_CONFIRM.md)). This calibration's own standing
+> finding: the **production-spec thresholds (8, 2) read a 4.45% flip rate — BELOW the
+> resolvable floor**, and the ladder rose **~5× A→C**, which **refutes the
+> constant-offset-cancellation hypothesis**.
 
 ## 1. What ran
 

@@ -1,12 +1,17 @@
 # SIMS-SPLIT PRE-GATE CENSUS — per-decision-type pick stability vs budget, PRE-REGISTRATION
 
-> **STATUS: PRE-REGISTERED 2026-08-11 — the full census has NOT run.** This file is written
-> BEFORE the 898-root run, for orchestrator review; only a 20-root smoke (0 games, ~6 s)
-> has executed, to verify the pipeline, CRN and determinism — no branch below was read
-> against it. `governance/PRODUCTION.yaml` is untouched on every branch of this document.
-> **ZERO games are played, no deck band is consumed, no `results.csv` row is owed** (nothing
-> is played; the close-out artifact is a readout doc in this directory + the LEVER_INDEX
-> row status change).
+> **STATUS: CLOSED — the census RAN 2026-08-11 (late) and fired pre-registered branch `U`
+> (PARK-WITH-DECISION). Six-touch closed out 2026-08-12.** This file was written and committed
+> BEFORE the 898-root run, for orchestrator review; only a 20-root smoke (0 games, ~6 s) had
+> executed at that point, to verify the pipeline, CRN and determinism — no branch below was
+> read against it. **0 games played, no deck band consumed, no `results.csv` row owed**
+> (nothing was played — precedent: the adaptive-k census and the budget-headroom bound).
+> **Verdict in one line: the free-lunch premise is REFUTED** (the bar was `M344 ≤ 5%`; actual
+> **13.07%**), while the **comparative asymmetry survives** — tiles vs meeples raw z **5.30**
+> at 344 sims and **2.86** at 688, direction unanimous across all four gap strata, but ONLY
+> the direction: the lowest-gap bin does not clear 2σ at 344. Secondary read: **71% of meeple
+> flips are near-ties.** Readout: [READOUT.md](READOUT.md).
+> `governance/PRODUCTION.yaml` is untouched on every branch of this document.
 
 Pre-gate for the **phase-asymmetric sims split** lever
 ([docs/LEVER_INDEX.md](../../docs/LEVER_INDEX.md) §5 row *"phase-asymmetric sims split (tile

@@ -5,6 +5,10 @@
 > `governance/PRODUCTION.yaml` untouched. Pre-registration:
 > [PREREG.md](PREREG.md) (committed before the run; only a 20-root smoke preceded it).
 > Instrument: [`simsplit_census.py`](../../scripts/measurement_infra/simsplit_census.py).
+> **Six-touch closed out 2026-08-12**; the downstream game screen this census motivated is the
+> S1 cell (`results.csv` `simsplit_s1_t2408_m344_fixed_v1_vs_champ11008_n200_b122e9`, a bounded
+> null at ~±35 elo) plus the tile-allocation A/B
+> ([`measurement/simsplit_alloc_20260812/`](../simsplit_alloc_20260812/PREREG.md)).
 
 ## 1. Instrument gate G0 — PASS
 

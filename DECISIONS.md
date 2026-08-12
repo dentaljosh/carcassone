@@ -5228,3 +5228,255 @@ from it remains open.**
 
 **Reversal cost:** none — a query over an already-banked extraction; re-running costs nothing.
 **Phase:** measurement-first
+
+## 2026-08-12 — The two-lever campaign RAN AND CLOSED, six-touch: targeted denial is **harmful at quarter budget and UNRESOLVED at deploy budget**, the sims-split axis is a **bounded null** on every artifact, and the most valuable thing either produced is a claim about **our instrument** (CL-079)
+
+**Context.** Joshua funded engineering plus an overnight chain on the two levers left on the
+post-campaign shortlist — **targeted denial** (a competitive-strategy leaf term) and the
+**phase-asymmetric sims split** (tile vs meeple budget within a turn). Five measurement artifacts
+ran between 2026-08-11 late and 2026-08-12, plus an E4 ingest. This entry closes out all six.
+**Nothing was promoted. `governance/PRODUCTION.yaml` was not touched on any branch of any of them,
+and the champion does not move.**
+
+---
+
+### A. Sims-split pre-gate census — pre-registered branch `U` (PARK-WITH-DECISION). 0 games.
+
+Before spending a single game on the split, a 898-root census measured how often the champion's
+*chosen move* changes when the per-world sims budget is cut, **separately for tile decisions and
+meeple decisions**, at matched decision difficulty. The pre-registration
+([`measurement/simsplit_census_20260811/PREREG.md`](measurement/simsplit_census_20260811/PREREG.md))
+was committed before the run with only a 20-root pipeline smoke behind it.
+
+**The free-lunch premise is REFUTED.** S1's absolute bar was `M344 ≤ 5%` with CI95-upper ≤ 7%;
+the actual meeple flip rate at a **4× cut** is **13.07%**, CI95 [10.10%, 16.73%] — roughly one
+meeple decision in eight changes. There is no free budget lying in the meeple phase.
+
+**The comparative asymmetry survives, but only as a direction.** Tiles are hungrier than meeples at
+every rung — raw z **5.30** at 344 sims, **2.86** at 688 — and the direction is unanimous across all
+four gap-matched strata. **But only the direction:** the lowest-gap bin does not clear 2σ at 344.
+Secondary read, and the reason the lever is a *trade* rather than a saving: **71% of all meeple
+flips (37/52) sit in the near-tied `[0, 0.02)` gap bin**, and the meeple flip rate is nearly FLAT
+across an 8× budget range (14.07 → 13.07 → 11.56%) while the tile rate falls steeply.
+
+**No `results.csv` row is owed** — 0 games were played (the established disposition for this class,
+per the adaptive-k census and the budget-headroom bound). No deck band was consumed. The census's
+product is its readout plus the `docs/LEVER_INDEX.md` row.
+
+---
+
+### B. Targeted-denial dose screen (D1) — **both cells RESOLVED NEGATIVE at the 2750 ablation instrument**
+
+Two cells on band **1.21e11** (now retired), CRN-shared decks, at the 2750 ablation instrument
+(`eval_puct_priors.py --cand-sims 2750` both sides), rust both sides, `fixed_v1` +
+`CARCASSONNE_FIX_R9=1`, candidate-side-only denial term vs the intact champion leaf
+`a36d2e15a3b3d71d`. Doses and thresholds were **not** chosen after looking: a read-rule
+([`CALIB_READ_RULE.md`](measurement/denial_screen_20260811/CALIB_READ_RULE.md), commit `e2af769`)
+was committed while all three calibration arms were still running and before any arm's flip rate
+was read; it fired branch `FUND-SMALLEST` ⇒ doses {1.0, 4.0}, `size_min` 5, `open_max` 3.
+
+- **dose 4.0** (cand leaf `451b61ccfa10b29e`), n=200: **W40/D4/L156, elo −230.163 ± 30.158, margin
+  −11.75 pts/deck, margin z −11.005.** Resolved negative, decisively — this one needs no bound.
+- **dose 1.0** (cand leaf `effeca41772e3e78`): the n=200 half read margin z **−1.586**, inside the
+  pre-registered 1.5 ≤ |z| < 2.0 window, so the authorized top-up ran on **fresh decks of the same
+  band** (seeds `121000000100..121000000199`; the first half used `..000..099`). **POOLED n=400:
+  W181/D3/L216, elo −30.479 ± 17.439, margin −1.570 pts/deck, PRIMARY STATISTIC margin z −2.293** ⇒
+  resolved negative.
+
+**And the thing worth naming: the effect did NOT shrink.** Halves −1.625 / −1.515, between-half
+difference +0.11 (se 1.3727, **z +0.080**) — statistically indistinguishable. This is the **first
+lean in the 2026-08 campaign that HELD on extension**, in explicit contrast to the four
+winner's-curse instances (c=3 "+47 elo", intra-reuse k4×688, phase β=+0.3, `farm_growth_off`),
+every one of which regressed at larger n. Pooling licence: same band, same cell, same instrument,
+identical manifest knobs; the only code_rev delta across halves (`20ca5b1..efef3fa`) touches
+`android/tools/adb_connect.sh` + its test + `android/README.md` and nothing under `src/`, `rust/`,
+`engine/` or the harness. `ms_ratio` cand/opp 0.9130 and 0.7773 — the candidate is **cheaper** in
+both cells, so neither loss is a time artifact.
+
+**Calibration finding carried forward:** the **production-spec thresholds (8, 2) read a 4.45% flip
+rate — below the resolvable floor**, and the ladder rose **~5× from arm A to arm C**, which
+**refutes the constant-offset-cancellation hypothesis** (the term is not a constant that the search
+would difference away).
+
+---
+
+### C. Denial DEPLOY-BUDGET confirm — pre-registered branch `C2`: **the kill DOES NOT TRANSFER**
+
+The screen killed denial at ~¼ of the budget we actually play at. The pre-registration
+([`PREREG_DEPLOY_CONFIRM.md`](measurement/denial_screen_20260811/PREREG_DEPLOY_CONFIRM.md),
+committed before the band was claimed and before game 1) named the instrument change as *the entire
+point*: this project has twice paid for the lesson that a leaf knob's value depends on the search
+that consumes it — **curve125** was NULL under random-expansion UCT and a WIN under PUCT+priors
+(CL-051), and **`meeple_k`** was killed cheap and later worth **+179 elo**.
+
+One cell, band **1.24e11** (retired), **the same candidate leaf `effeca41772e3e78`** vs the
+unmodified champion, **both arms at the deploy budget k8×1376 = 11008** through the fair PIMC
+harness, n=800 deck-paired, 800/800 complete, all wiring gates clean:
+
+> **W408/D11/L381, elo +11.730 ± 12.291, deck-paired margin −0.0838 pts/deck, PRIMARY STATISTIC
+> margin z −0.1266, `ms_ratio` cand/opp 0.9522.**
+
+**Branch `C2` fired: the ablation-instrument kill does not transfer.** ⚠️ **This is a BOUNDED NULL
+in both directions — resolution ±1.323 pts/deck ≈ ±23.2 elo at 2σ. It is NOT a deploy-budget kill
+and NOT a deploy-budget win, and `docs/LEVER_INDEX.md` may not claim either.** The screen's −1.570
+pts/deck sits outside this cell's own 2σ interval. The two cells are **not poolable on any branch**
+(different instrument *and* different band; the screen is a prior, never a summand). Reserved
+top-up seeds `+400..+799` were never drawn.
+
+**The honest one-line summary of the lever: harmful at quarter budget, unresolved at deploy
+budget — targeted denial is neither adopted nor killed at the budget we play at.**
+
+**⇒ CL-079 minted (Provisional, `measurement`, confidence medium):** *2750-ablation-instrument
+verdicts do not reliably transfer to the deploy budget.* This is a testable proposition about **our
+instrument**, and it is worth more than either lever: it puts an explicit "bounded **at that
+instrument**, transfer UNMEASURED" caveat on every leaf-knob null we hold only at 2750 — **CL-074**'s
+component table and **CL-078**'s meeple-scale axis are the two live ones (a pointer clause was added
+to CL-078's `assumptions`; **no number, status or verdict of CL-078 changes**).
+
+**Honesty rider recorded inside CL-079's `counterevidence`, because it is the kind of thing this
+project has been burned by.** The gloss "the screen's −1.570 sits ~2.2σ outside the deploy cell's
+estimate" treats the screen value as a **fixed point** and divides by the deploy cell's se alone
+(1.4863 / 0.6615 = 2.25). The proper **two-sample** contrast carries both ses — se(diff) =
+√(0.6615² + 0.6846²) = 0.952 ⇒ **z ≈ 1.56** — and the two cells sit on **different bands**, where
+CL-068's amendment measures 1.8–2.2× over-dispersion, deflating it to **≈0.7–0.9σ**. So the
+cross-instrument *disagreement* is **not itself established at 2σ**. What **is** established, and
+what branch `C2` actually rested on, is each cell's **own within-band deck-paired margin z** — the
+robust class: the 2750 cell resolved (−2.293), the 11008 cell did not (−0.127), and the screen's
+point estimate lies outside the deploy cell's 2σ bound. The claim is therefore *"transfer is
+undemonstrated and the one direct test failed to reproduce"*, **not** *"the two instruments provably
+disagree"*. CL-079's falsifier is concrete: two further knobs that resolved at 2750 (|z| ≥ 2),
+re-run at 11008 with n ≥ 800 each on its **own** fresh band — both reproducing sign at |z| ≥ 2 with
+margins within 1σ of their screens **refutes** CL-079; one further non-transfer **strengthens** it.
+More n on the denial cells themselves does not count.
+
+---
+
+### D. Sims-split screen (S1) — a **bounded null**, plus a cost correction the authorization owed
+
+Band **1.22e11** (retired). Candidate = the champion with per-phase sims `--sims-tile 2408 /
+--sims-meeple 344` at a **fixed** per-turn total (2 × 1376); opponent = the unmodified champion;
+both arms k8×1376 = 11008, leaf `a36d2e15a3b3d71d` **on both sides** (an allocation contrast, not a
+leaf contrast), `fixed_v1`+R9, rust, fair PIMC. Authorized by hand via the `S1_AUTHORIZED` go-file
+— the split knob's byte-identity gate is a **human attestation**; the chain verified only that the
+flags exist on both boxes.
+
+> **W89/D7/L104, elo −26.107 ± 24.637, deck-paired margin −1.435 pts/deck, margin z −1.037.**
+
+n=200 is a screen (~±35 elo at 2σ), so the reading is **"no phase-asymmetric allocation effect
+larger than ~±35 elo at fixed per-turn sims"** — never "the split does nothing".
+
+**Cost correction, measured from the records at close-out and owed: SAME SIMS IS NOT SAME TIME.**
+The split arm ran **1.0888× the opponent's wall clock** — paired delta **+11.063 s/game, se 1.135,
+z 9.75** over 200 games (prefix-only ms/move 1949.0 vs 1786.1 = 1.0912×) — because **per-sim cost
+is higher in the tile phase**, so moving sims from meeples to tiles moves them to *more expensive*
+sims. **This corrects the S1 authorization's claim that no equal-wall-clock caveat was owed.** At
+CL-068's ≈+12 elo/doubling calibration the ~9% overspend is worth only ≈**+1.6 elo** — immaterial
+to the verdict, and it does not change it — but the caveat is **recorded, not waived**.
+
+---
+
+### E. Tile-allocation A/B at 1.5× budget — pre-registered branch `R4b`: **BOUNDED NULL**
+
+The census said tiles are hungrier than meeples; S1 said moving budget at a *fixed* total buys
+nothing measurable. E asks the cleaner question: **given more budget, do tiles specifically want
+it?** Two cells on **one shared band 1.23e11** (retired) with CRN over 400 decks, n=800 each,
+`fixed_v1`+R9, rust, exact-K 2, champion leaf on both sides of both cells, opponent = the unmodified
+champion k8×1376:
+
+- **A** — split `--sims-tile 2752 / --sims-meeple 1376` (per-turn 8×(2752+1376) = 33024):
+  **elo −14.340 ± 12.294, margin +0.055, z +0.075**
+- **B** — uniform `--sims 2064`, no split (per-turn 8×(2064+2064) = 33024, **identical total**):
+  **elo −6.081 ± 12.286, margin −0.165, z −0.251**
+- **PRIMARY STATISTIC, the A−B CRN-paired contrast: +0.220 pts/deck, se 0.885, z +0.248.**
+
+Cell B is a **control, not padding**: CL-068 hands *both* cells ≈+7 elo of free compute at 1.5×, so
+"tiles specifically want more search" requires **A > B**, never merely A > 0. **Branch `R4b`:
+BOUNDED NULL — no tile-allocation effect larger than ±1.77 pts/deck ≈ ±31 elo at 2σ at 1.5×
+budget.** *"Tiles don't want more search" is a forbidden reading* — the bound is what was measured.
+
+**Wiring gate W9 was verified from the manifests before any number was read:** cell A carries
+`config.sims_split` with `effective_sims_tile` 2752 / `effective_sims_meeple` 1376 /
+`per_turn_total_sims` 33024, and cell B carries `sims_split: null`. A silently-default-off cell A
+would **be** cell B, and A−B would have been a guaranteed meaningless null.
+
+**⚠️ METHODOLOGICAL FINDING, and it outlives the lever: CRN bought only 9.9% of the contrast
+variance.** se(A−B) = **0.885** against **0.983** for independent cells. The shared band therefore
+resolved the A−B contrast **worse than either cell resolved its own margin** (±31 elo vs ~±24.6
+elo) — the opposite of what the design was bought for. **Future A-vs-B-at-matched-budget designs
+must be powered as if the cells were independent; do not budget a CRN variance reduction on a
+cell-vs-cell contrast.** This does **not** touch *within-cell* deck pairing (candidate vs opponent
+over the same deck, both seatings) — that remains the robust class. The finding is filed on the
+`deck-seed banding + deck PAIRING (CRN)` row of `docs/LEVER_INDEX.md`, which is where a future
+reader will look.
+
+**Observation, not a result:** cell B is a pure 1.5× budget increase against the champion and reads
+−6.081 ± 12.286, so **CL-068's ≈+7 elo free-compute term is neither confirmed nor contradicted** —
+it sits inside 1σ. Recorded as an observation precisely so it is not later cited as evidence.
+
+Reserved R3 top-up seeds `+400..+799` were never drawn. Nothing is deployable at 1.5× budget and
+nothing was proposed for `governance/PRODUCTION.yaml` on any branch.
+
+---
+
+### F. E4 update — record **14–13**, and **the farm anomaly did not replicate**
+
+Eight new phone archives (2026-08-10 → 08-12) were pulled, committed as raw data ahead of any
+conclusion (`96a5337`), ingested (`2cada08`) and EV-loss graded (`7437bc9`); the analysis lives in
+[`measurement/e4_games/E4_UPDATE_20260812.md`](measurement/e4_games/E4_UPDATE_20260812.md). This
+entry records only what the close-out owes STATUS and the roadmap.
+
+Joshua went **5–3** in the new batch. Overall record **14–13**; the `fixed_v1` epoch is now **n=23,
+W13/L10, margin +10.043 ± 5.627 (z +1.78)**, and the trend **halved to +1.215 ± 0.827 (z +1.47)**.
+
+**The headline is a negative result about our most striking positive.** The standing **>3σ farm
+anomaly did not replicate**: the new 8 games read paired farm margin **+1.500 ± 3.929 (z +0.38)**
+against the first 15's **+11.400 ± 3.588 (z +3.18)**. The champion's farm points per seat against
+him **recovered 14.00 → 21.375** against a corpus norm of 20.5, and it was zeroed **0-of-8** after
+**4-of-15**. The pooled epoch figure (+7.957, z +2.80) is now **carried entirely by the first
+half** and must be cited that way.
+
+The **grade-vs-outcome inversion held 11 of 11** — but he is out-graded by essentially the same
+factor in **losses (5.32×)** as in **wins (5.00×)**, so it is a property of the whole stream, not of
+his wins. **The ratio has been retired as a headline**: its rise is entirely the **denominator
+halving**, and the champion is a fixed program graded by a same-budget copy of itself — its ΔQ is
+the instrument's own noise floor, not a measure of his play. 26/26 archives replay bit-exact; no new
+duplicate seeds (the on-device seedfix is behaviourally confirmed); **`assists` is still absent from
+all 26 archives ⇒ E4 remains an assisted-human reference with the assist level unstamped.**
+
+---
+
+**Consequences (the six touches).** `experiments/results.csv` — six new rows
+(`denial_d4_s5o3_*_b121e9`, `denial_d1_s5o3_*_n400pooled_b121e9`, `denial_d1_s5o3_deploy_*_b124e9`,
+`simsplit_s1_t2408_m344_*_b122e9`, `simsplit_alloc_{a_split_t2752_m1376,b_uniform2064}_*_b123e9`);
+**no row for the census (0 games)**. `governance/BAND_REGISTRY.csv` — bands **1.21e11 / 1.22e11 /
+1.23e11 / 1.24e11 all flipped to `retired` / `decision_influenced=yes`** with their outcomes
+written into the notes; **the 1.21e11 row's seed-range text was WRONG and is corrected** (it said
+`band..band+99`, but the authorized top-up consumed `band+100..199`, so the consumed range is
+`+0..+199` — the 1.19e11 row is the precedent it should have followed, reserving the top-up range up
+front), and 1.23e11 / 1.24e11 now say explicitly that their `+400..+799` top-up reservations were
+**released unused**. `governance/CLAIM_REGISTRY.csv` — **CL-079 minted**; CL-078 gains a pointer
+clause only. `docs/LEVER_INDEX.md` — the "leaf ideas from the competitive-strategy literature",
+"phase-asymmetric sims split" (§5), "asymmetric opponent cap" and "deck-seed banding + deck PAIRING
+(CRN)" rows all updated. Status banners stamped on all five prereg/readout docs plus the night-chain
+runbook. `governance/PRODUCTION.yaml` **untouched**.
+
+**Tooling fix landed in the same sitting.** `scripts/classical_search/menu_block_summary.py`
+reported `ms_ratio_cand_over_opp: null` for **every** `eval_fair_puct` cell, because it looked for
+`cand_prefix_ms_per_move` while that harness emits **`champ_prefix_ms_per_move` (the CANDIDATE)**
+and **`rung_ms_per_move` (the OPPONENT)** — the ablation harness `eval_puct_priors.py` is the one
+that emits `cand_prefix_*`, and `champ_prefix_*` means the **opposite side** in the two. This
+silently dropped the cost figure from every fair-PIMC verdict extract this project has produced. The
+extractor now detects the convention, carries `rung_ms_per_move`, emits `ms_ratio_source`, and
+carries a convention-aware caveat; `tests/test_menu_block_summary.py` gains five cases including a
+regression test that fails against the old code and a literal real-data case. Verified end-to-end on
+the deploy cell: **0.9522** where it previously read `null`.
+
+**What is NOT concluded.** Neither lever is dead. Denial is **unresolved at deploy budget** and the
+sims-split axis is bounded, not refuted — at ±31 elo (allocation at 1.5×) and ~±35 elo (fixed-total
+screen). Neither re-opens on more n at the same design; both need a mechanism argument or a sharper
+instrument.
+
+**Reversal cost:** none — no code path, config or checkpoint changed; the denial term and the
+sims-split knob both stay **built and default-off**, byte-identical when off and gated by
+`tests/test_denial_term.py` / `tests/test_simsplit_knob.py`.
+**Phase:** measurement-first

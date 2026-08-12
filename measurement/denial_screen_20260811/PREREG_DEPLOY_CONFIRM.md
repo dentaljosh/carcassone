@@ -1,9 +1,22 @@
 # TARGETED-DENIAL — **DEPLOY-BUDGET CONFIRM**, PRE-REGISTRATION
 
-> **STATUS: PRE-REGISTERED 2026-08-12, BEFORE GAME 1.** Committed before the band was claimed
-> and before any game was played. `governance/PRODUCTION.yaml` is untouched on every branch.
-> **No promotion, no `results.csv` row, no claim-registry row, no adjudication** by the run or
-> by this file — the orchestrating session reads the extract and closes out.
+> **STATUS: RAN AND CLOSED 2026-08-12 — pre-registered branch `C2` fired: the
+> ablation-instrument kill DOES NOT TRANSFER to the deploy budget. Six-touch closed out
+> 2026-08-12.** This document was **committed before the band was claimed and before game 1**
+> — that provenance is unchanged. Band **1.24e11** (now retired decision-influenced; the
+> reserved top-up seeds `+400..+799` were never drawn).
+>
+> n=800 deck-paired (400 decks × 2 seats), all wiring gates clean, 800/800 complete:
+> **W408/D11/L381, elo +11.730 ± 12.291, deck-paired margin −0.0838 pts/deck, PRIMARY
+> STATISTIC margin z −0.1266, ms_ratio cand/opp 0.9522** (the candidate is ~4.8% CHEAPER per
+> move, so nothing is bought with time).
+>
+> ⚠️ **This is a BOUNDED NULL in both directions — resolution ±1.323 pts/deck ≈ ±23.2 elo at
+> 2σ — NOT a deploy-budget kill and NOT a deploy-budget win.** The screen's −1.570 pts/deck
+> sits outside this cell's own 2σ interval. **NOT pooled with the D1 cells on any branch.**
+> Claim **CL-079** (Provisional) was minted on this cell. `results.csv`
+> `denial_d1_s5o3_deploy_fixed_v1_vs_champ11008_n800_b124e9`. **Nothing promoted;
+> `governance/PRODUCTION.yaml` is untouched on every branch.**
 
 Funded by Joshua 2026-08-12. **One cell. No ladder.**
 

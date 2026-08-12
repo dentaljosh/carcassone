@@ -1,9 +1,29 @@
-# TARGETED-DENIAL DOSE SCREEN — PRE-REGISTRATION (DRAFT)
+# TARGETED-DENIAL DOSE SCREEN — PRE-REGISTRATION (the D1 screen of record; the "DRAFT" in the filename is historical — this document was authorized and executed unchanged)
 
-> **STATUS: 📝 DRAFT — BUILT, NOT AUTHORIZED, NO BAND CLAIMED, NO GAMES PLAYED.**
-> The orchestrator reviews this draft; Joshua authorizes any launch. **TODO (launcher,
-> not this document): claim ONE fresh band in `governance/BAND_REGISTRY.csv` before
-> game 1** — this draft deliberately claims none.
+> **STATUS: AUTHORIZED, RAN AND CLOSED 2026-08-12. Six-touch closed out 2026-08-12.**
+> Band **1.21e11** (now retired decision-influenced). Two cells at the 2750 ablation
+> instrument, CRN-shared, `fixed_v1` + R9, rust, candidate-side-only denial term vs the
+> intact champion leaf `a36d2e15a3b3d71d`:
+>
+> - **dose 4.0** (`451b61ccfa10b29e`), n=200: W40/D4/L156, elo **−230.163 ± 30.158**,
+>   deck-paired margin **−11.75** pts/deck, **margin z −11.005** ⇒ **RESOLVED NEGATIVE,
+>   decisively** (no bound needed).
+> - **dose 1.0** (`effeca41772e3e78`): the n=200 read gave margin z **−1.586**, inside the
+>   pre-registered `1.5 ≤ |z| < 2.0` window, so the authorized top-up ran on FRESH decks of
+>   the same band (seeds `121000000100..121000000199`; the first half used `..000..099`).
+>   **POOLED n=400**: W181/D3/L216, elo **−30.479 ± 17.439**, margin **−1.570** pts/deck,
+>   **margin z −2.293** ⇒ **RESOLVED NEGATIVE**. **The effect did NOT shrink** — halves
+>   −1.625 / −1.515, between-half z **+0.080** — the first lean in this campaign that HELD
+>   on extension, against four winner's-curse instances that all regressed.
+> - ⚠️ **SCOPE LIMIT, MANDATORY:** this kill is **at the 2750 ablation instrument**
+>   (~¼ of deploy budget) and it **DOES NOT TRANSFER** — the deploy-budget confirm
+>   (band 1.24e11) read margin z **−0.127**, pre-registered branch **C2**. The two are
+>   **not poolable on any branch**. Honest lever summary: **harmful at quarter budget,
+>   unresolved at deploy budget** — targeted denial is neither adopted nor killed at the
+>   budget we play at. See [PREREG_DEPLOY_CONFIRM.md](PREREG_DEPLOY_CONFIRM.md) and claim
+>   **CL-079**.
+> - `results.csv` rows `denial_d4_s5o3_fixed_v1_vs_puctchamp2750_k2_n200_b121e9`,
+>   `denial_d1_s5o3_fixed_v1_vs_puctchamp2750_k2_n400pooled_b121e9`. **Nothing promoted.**
 >
 > Term build: `src/carcassonne_ai/flat_leaf.flat_denial_term` + the Rust
 > `carc_core::leaf::denial_term` (2026-08-11; LEVER_INDEX "targeted denial",
