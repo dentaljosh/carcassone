@@ -1,0 +1,111 @@
+{
+  "kind": "simsplit_pregate_census",
+  "lever": "phase-asymmetric sims split (tile vs meeple budget within a turn) \u2014 docs/LEVER_INDEX.md",
+  "prereg": "measurement/simsplit_census_20260811/PREREG.md",
+  "roots_source": "/mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl",
+  "n_roots_censused": 898,
+  "n_failures": 0,
+  "sample": {
+    "n": "all",
+    "sample_seed": 20260811,
+    "stratified_on": "phase (decision type)"
+  },
+  "world_draw": {
+    "semantics": "fair_agent.FairHeuristicMCTSAgent.reshuffled_determinization (canonical sort of the UNSEEN deck + rng.shuffle; next_tile untouched)",
+    "seed_lineage": "adaptive_k_census.world_seed(deck_seed, ply, salt) -> agent seed; det_rng = Random(agent.det_seed_base(0)+1); worlds drawn ONCE, reused at every rung (CRN)",
+    "salt": 20260811,
+    "salt_note": "disjoint from the adaptive-k census (20260728) and the CL-070 tag/probe salts (9000/9001)",
+    "limitation": "distributionally-equivalent redraw, not the literal in-game worlds (the bank records no per-game agent seed)"
+  },
+  "search": {
+    "rungs_sims_per_world": [
+      172,
+      344,
+      688,
+      1376
+    ],
+    "ref_rung": 1376,
+    "k_dets": 8,
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "note": "reference rung = PRODUCTION per-world budget; the ladder is the SAME k worlds searched at each rung (only sims differ)"
+  },
+  "latch_band": {
+    "exact_max_k": 2,
+    "rule": "TURN-ATOMIC: TILES k<=K solver-owned; MEEPLES k+1<=K (its turn's tile decision latched; engine pre-draws next tile during MEEPLES). Blanket k<=K also recorded per row for adaptive-k joinability."
+  },
+  "rules_epoch_note": "bank is walled-era self-play (pre-fixed_v1); replay matches the generating rules (checksum-enforced). The sims contrast is within-root, so the epoch offsets the position distribution, not the contrast.",
+  "phase_cuts_k_remaining": {
+    "early": [
+      48,
+      1000000000
+    ],
+    "mid": [
+      24,
+      48
+    ],
+    "late": [
+      -1,
+      24
+    ]
+  },
+  "gap_bins": [
+    [
+      0.0,
+      0.02
+    ],
+    [
+      0.02,
+      0.05
+    ],
+    [
+      0.05,
+      0.1
+    ],
+    [
+      0.1,
+      "inf"
+    ]
+  ],
+  "execution": {
+    "backend": "rust",
+    "backend_resolution": "resolved at launch by rust_world_search.resolve_backend (escape hatch: CARC_PROBE_FORCE_PYTHON=1)",
+    "carc_rs_version": "0.1.0",
+    "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "tile_data_source_sha256": "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c",
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800",
+    "rust_threads": 1,
+    "threads_note": "per-world search_single is SINGLE-THREADED; these probes are game-parallel farms, so rust_threads applies only to the whole-agent parity check",
+    "seam": "ONE determinized world's search (fair_agent.search_one_world -> MirrorState.search_single). Determinization draw, pooling (_merge_root_stats) and decision rule (pooled_q_argmax) stay in Python and are the SAME function objects on both backends.",
+    "gap_status": {
+      "gap1_search_seed": "CLOSED \u2014 measurement/rustport_p6/GAP1_SEED_INVARIANCE.json; the per-world seed det_seed_base+100+i is inert",
+      "gap2_reuse_tree": "inert \u2014 every per-world search is fresh-tree on both backends",
+      "gap3_evaluator_injection": "enforced \u2014 search_config_rs raises on any python-only search variant"
+    },
+    "determinism_control": "every 1 roots \u2014 python: different-seed re-search (adaptive-k control); rust: same-call repeat (run-to-run determinism; carc_rs has no search seed, seed-invariance proven in measurement/rustport_p6/GAP1_SEED_INVARIANCE.json)"
+  },
+  "env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "src_root": "/home/doctor/projects/carcassone/src",
+  "fair_agent_file": "/home/doctor/projects/carcassone/src/carcassonne_ai/fair_agent.py",
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "workers": 14,
+  "wall_secs": 205.2,
+  "rows_file": "measurement/simsplit_census_20260811/rows_main.jsonl",
+  "generated": "2026-08-11T23:57:16"
+}
