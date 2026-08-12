@@ -180,16 +180,22 @@ class RustWorldSearcher:
     def unseen_deck(self) -> list:
         return list(self._ms.unseen_deck())
 
-    def search_world(self, det_board) -> list:
+    def search_world(self, det_board, *, scfg=None) -> list:
         """ONE determinized world's search.  Returns `root_stats_list` shape.
 
         `det_board` is whatever `FairHeuristicMCTSAgent.reshuffled_determinization`
         produced: same placed board, same `next_tile`, permuted unseen deck.  Only the
         deck is read off it — the mirror supplies the position, which is what makes the
         `check_sync` above load-bearing.
+
+        ``scfg`` (optional, keyword-only, ADDITIVE 2026-08-11 for the sims-split
+        census): a per-call ``SearchConfigRs`` override, so ONE seated mirror can
+        serve a LADDER of sim budgets on the same worlds without re-replaying the
+        prefix per rung.  ``None`` (every pre-existing caller) is byte-identical
+        to before this parameter existed — the constructor's config is used.
         """
         self._ms.set_unseen_deck([t.description for t in det_board.state.deck])
-        res = self._ms.search_single(self._scfg)
+        res = self._ms.search_single(self._scfg if scfg is None else scfg)
         self.searches += 1
         return [(int(a), int(n), _f64(w)) for a, n, w in res["pooled_stats"]]
 
