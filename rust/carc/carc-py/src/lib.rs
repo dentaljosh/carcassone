@@ -1594,22 +1594,45 @@ impl PyFairAgent {
     ///
     /// `move_idx` defaults to the agent's own counter (which always advances);
     /// pass it explicitly when a harness owns the move timeline.
-    #[pyo3(signature = (move_idx=None))]
-    fn choose_action(&mut self, py: Python<'_>, move_idx: Option<i64>) -> PyResult<i32> {
+    ///
+    /// `sims_override` (default None = the constructed budget, byte-identical)
+    /// is a PER-CALL per-world sims budget for THIS decision's PIMC search —
+    /// the sims-split (`sims_tile`/`sims_meeple`) seam. Stateless: the agent's
+    /// config is never mutated (`stats()["sims_per_det"]` keeps naming the
+    /// constructed budget; `last_move()["sims_used"]` names what this decision
+    /// ran), and it cannot touch the mirror, the latch or the determinization
+    /// RNG — see `FairAgent::choose_action_with_sims`.
+    #[pyo3(signature = (move_idx=None, sims_override=None))]
+    fn choose_action(
+        &mut self,
+        py: Python<'_>,
+        move_idx: Option<i64>,
+        sims_override: Option<usize>,
+    ) -> PyResult<i32> {
+        if sims_override == Some(0) {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "sims_override must be >= 1 (or None for the constructed budget)",
+            ));
+        }
         let game = match self.game.as_ref() {
             None => return Err(no_game()),
             Some(g) => g,
         };
         let agent = &mut self.agent;
-        py.allow_threads(|| agent.choose_action(game, move_idx))
+        py.allow_threads(|| agent.choose_action_with_sims(game, move_idx, sims_override))
             .map_err(fair_err)
     }
 
     /// `choose_action` followed by `advance(action)` — the driver's inner loop,
     /// one FFI hop per ply.
-    #[pyo3(signature = (move_idx=None))]
-    fn choose_and_advance(&mut self, py: Python<'_>, move_idx: Option<i64>) -> PyResult<i32> {
-        let a = self.choose_action(py, move_idx)?;
+    #[pyo3(signature = (move_idx=None, sims_override=None))]
+    fn choose_and_advance(
+        &mut self,
+        py: Python<'_>,
+        move_idx: Option<i64>,
+        sims_override: Option<usize>,
+    ) -> PyResult<i32> {
+        let a = self.choose_action(py, move_idx, sims_override)?;
         self.advance(a)?;
         Ok(a)
     }
@@ -1732,6 +1755,7 @@ impl PyFairAgent {
         d.set_item("solver_optimal", m.solver_optimal.clone())?;
         d.set_item("secs", m.secs)?;
         d.set_item("k_remaining", m.k_remaining)?;
+        d.set_item("sims_used", m.sims_used)?;
         d.set_item(
             "pooled",
             m.pooled
