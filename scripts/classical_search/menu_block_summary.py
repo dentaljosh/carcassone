@@ -14,6 +14,27 @@ Wiring fields are carried alongside every number for a standing reason: a cell's
 not readable until its manifest proves the knobs were applied. `rules_profile`, `r9_env_ok`
 and the per-side leaf hashes are the gates that catch a silently-dropped knob (the
 clairvoyant-rust-mirror failure mode).
+
+⚠️ TWO HARNESSES, TWO ms/move NAMING CONVENTIONS (verified by reading the emitters, 2026-08-12
+-- the standing rule is "read the emitter before you trust a field NAME"):
+
+  * `scripts/classical_search/eval_puct_priors.py` (the 2750 ablation instrument), emitter at
+    `_summary` ~line 1325:  `cand_prefix_ms_per_move`  == CANDIDATE
+                            `champ_prefix_ms_per_move` == OPPONENT (the champion arm)
+    -> ratio = cand_prefix / champ_prefix.
+  * `scripts/classical_search/eval_fair_puct.py` (the FAIR PIMC harness), emitter at `_summary`
+    ~line 1990:             `champ_prefix_ms_per_move` == CANDIDATE (this harness names the
+                                                          candidate arm "champ")
+                            `rung_ms_per_move`         == OPPONENT
+    and it emits NO `cand_prefix_ms_per_move` at all.
+    -> ratio = champ_prefix / rung.
+
+So `champ_prefix_ms_per_move` means OPPOSITE SIDES in the two harnesses, and the harness is
+identified by WHICH OTHER FIELD is present. Reading only the ablation pair silently produced a
+null `ms_ratio_cand_over_opp` on EVERY fair-PIMC cell (fixed 2026-08-12); `ms_ratio_source`
+now records which convention fired so a future reader never re-derives this.
+Corroborating: tests/test_fair_puct_opponent.py, tests/test_bare_net_opponent.py,
+measurement/distill_strong_20260723/eqtime_netprior_probe.sh lines 17-18.
 """
 import argparse
 import json
@@ -74,20 +95,43 @@ def main():
         s = json.load(open(sp))
         for k in ("n", "n_paired", "W", "D", "L", "elo", "elo_sig_1sigma", "paired_z",
                   "paired_mean_margin", "paired_se_margin", "wr",
-                  "cand_prefix_ms_per_move", "champ_prefix_ms_per_move"):
+                  "cand_prefix_ms_per_move", "champ_prefix_ms_per_move",
+                  "rung_ms_per_move"):
             if k in s:
                 out[k] = s[k]
-        # ⚠️ FIELD-NAME TRAP, recorded because it has bitten three times: in this harness
-        # `champ_prefix_*` is the CANDIDATE side's cost (the harness names the candidate
-        # "champ"). Read the emitter before trusting the name.
-        cm, chm = s.get("cand_prefix_ms_per_move"), s.get("champ_prefix_ms_per_move")
-        if cm and chm:
-            out["ms_ratio_cand_over_opp"] = cm / chm
-            out["ms_ratio_caveat"] = (
-                "Ratio only. NEVER quote an absolute ms/move from a shared-tenancy run; a "
-                "ratio of two arms sharing one process pool is first-order insensitive to "
-                "contention, an absolute is not. Also: `champ_prefix_*` is the CANDIDATE's "
-                "cost in this harness -- read the emitter, not the field name.")
+        # ⚠️ FIELD-NAME TRAP (see the module docstring for the full table). `champ_prefix_*`
+        # names OPPOSITE SIDES in the two harnesses, so the convention must be DETECTED from
+        # which other field is present -- never assumed:
+        #   cand_prefix_* present -> eval_puct_priors: cand=cand_prefix, opp=champ_prefix
+        #   else rung_* present   -> eval_fair_puct:   cand=champ_prefix, opp=rung
+        # Reading only the first pair made the ratio null on every fair-PIMC cell.
+        _SHARED = ("Ratio only. NEVER quote an absolute ms/move from a shared-tenancy run; a "
+                   "ratio of two arms sharing one process pool is first-order insensitive to "
+                   "contention, an absolute is not.")
+        cm = s.get("cand_prefix_ms_per_move")
+        chm = s.get("champ_prefix_ms_per_move")
+        rm = s.get("rung_ms_per_move")
+        cand_ms = opp_ms = None
+        if cm is not None:
+            # eval_puct_priors (the 2750 ablation instrument).
+            cand_ms, opp_ms = cm, chm
+            source = "eval_puct_priors (cand_prefix/champ_prefix)"
+            caveat = (_SHARED + " Convention: this is the eval_puct_priors ablation harness -- "
+                      "`cand_prefix_*` is the CANDIDATE's cost and `champ_prefix_*` is the "
+                      "OPPONENT's (champion arm). Read the emitter, not the field name.")
+        elif rm is not None:
+            # eval_fair_puct (the FAIR PIMC harness), which names the candidate arm "champ".
+            cand_ms, opp_ms = chm, rm
+            source = "eval_fair_puct (champ_prefix/rung)"
+            caveat = (_SHARED + " Convention: this is the eval_fair_puct FAIR harness -- "
+                      "`champ_prefix_*` is the CANDIDATE's cost and `rung_ms_per_move` is the "
+                      "OPPONENT's. Read the emitter, not the field name.")
+        # Same truthiness guard as before (excludes None and 0 -> no divide-by-zero), just
+        # applied to the resolved candidate/opponent pair instead of the ablation pair.
+        if cand_ms and opp_ms:
+            out["ms_ratio_cand_over_opp"] = cand_ms / opp_ms
+            out["ms_ratio_source"] = source
+            out["ms_ratio_caveat"] = caveat
     else:
         out["summary_missing"] = sp
 
