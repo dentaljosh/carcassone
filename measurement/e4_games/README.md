@@ -5,11 +5,27 @@ schema `carcassonne-android-archive/v1`: lossless `(deck_seed, actions)` per the
 root_replay contract, plus result summary, per-move AI latencies, and provenance
 (champion id, leaf hash, effective budget).
 
-> ⛔ **2026-08-12: the ledger below is STALE and the pull is BLOCKED.** Joshua reports more
-> wins since 2026-08-10, but the phone rejects this host's adb client certificate
-> (`SSLV3_ALERT_CERTIFICATE_UNKNOWN`) — the wireless-debugging pairing is gone and must be
-> redone with a 6-digit code on the device. Diagnosis, unblock steps, and an independent
-> re-verification of every number below: [E4_UPDATE_20260812.md](E4_UPDATE_20260812.md).
+> ✅ **2026-08-12: 8 NEW ARCHIVES INGESTED (2026-08-10 09:16 → 08-12 01:17).** The pull block
+> earlier today is resolved (Joshua re-paired the phone). Full readout, integrity checks and
+> statistics: **[E4_UPDATE_20260812.md](E4_UPDATE_20260812.md)**. Headline moves:
+> - **Overall record 14–13** (26 archives = 14 W / 12 L, + 1 pre-archival unrecorded loss).
+> - **`fixed_v1` epoch: n=23, W13/L10, margin +10.043 ± 5.627 (z +1.78)** — new batch alone
+>   5–3, +11.750 ± 8.212.
+> - ⚠️ **The farm anomaly DID NOT REPLICATE.** Paired farm margin +11.400 ± 3.588 (z +3.18) on
+>   the first 15 → **+1.500 ± 3.929 (z +0.38)** on the new 8; the champion's farm points snapped
+>   back from 14.0 to **21.4** pts/seat (its own corpus norm is 20.5) and it was zeroed in 0 of
+>   8 (was 4 of 15). The pooled epoch figure (+7.957 ± 2.839) is now carried by the first half.
+> - **Trend:** OLS slope on the full epoch **+1.215 pts/game (se 0.827, z +1.47)** — the prior
+>   +2.58 read *halved* on new data. Not a learning rate.
+> - Integrity: **26/26 replay exactly**, one duplicate `deck_seed` (the known 523563 pair, all
+>   8 new seeds distinct ⇒ the on-device seedfix is behaviourally confirmed), and **`assists`
+>   is still ABSENT in all 26** — E4 stays an assisted-human reference with the assist level
+>   unstamped. EV-loss grading of the new 8 is **partial and resumable** (see the readout).
+> - ⚠️ The phone no longer holds the two oldest archives; **this directory is the archive of
+>   record**, the device is not a complete mirror.
+>
+> The per-game table further down covers archives through 2026-08-10 only; games 16–23 are
+> tabulated in the readout.
 
 **⚠️ Grading context is EPOCH-DEPENDENT — read the archive, not this sentence.** Archives
 from **before the 2026-08-01 app build** were played at the **k4×688 mobile carve-out**
