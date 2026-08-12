@@ -1,0 +1,41 @@
+S1 (sims-split screen) AUTHORIZED 2026-08-12 ~02:00 by the orchestrator.
+
+WHAT IS AUTHORIZED
+  candidate = production champion with per-phase sims (sims_tile 2408 / sims_meeple 344)
+  opponent  = the unmodified production champion (k8 x 1376 = 11008 both arms)
+  fixed per-turn total: 2408 + 344 = 2752 = 2 x 1376, i.e. the SAME total work per turn.
+  n=200 deck-paired, fixed_v1 + R9, rust, exact-K<=2, fresh band claimed at block start.
+
+WHY THE SPLIT IS SIZED AGGRESSIVELY (meeple -> 344, a quarter budget)
+  From the 2026-08-11 census (measurement/simsplit_census_20260811/READOUT.md):
+  the MEEPLE pick-flip curve is nearly FLAT across an 8x budget range
+  (14.07 / 13.07 / 11.56 % at 172 / 344 / 688 vs the 1376 reference) while the TILE curve
+  falls steeply (35.21 / 27.71 / 18.54 %). 71% of meeple flips sit in the near-tied
+  [0,0.02) gap bin and above gap 0.05 the meeple search essentially stops changing its
+  mind (5 flips / 225 roots). So the marginal meeple sim is re-rolling near-ties, not
+  converging, and the marginal tile sim is not.
+
+THE PRECONDITIONS I SET, AND THE EVIDENCE THEY ARE MET
+  (1) byte-identity of the knob when unset, ON THE MERGED TREE (not just pre-merge):
+      tests/test_simsplit_knob.py 17 passed against the merged tree + merged wheel --
+      a FULL game (so the exact-K latch is inside the claim), both backends,
+      144 moves / 129 searched decisions / 1902 pooled (N,W) comparisons identical,
+      python compared via float.hex(), rust via raw f64 bits.
+  (2) tests/test_denial_term.py + tests/golden: 213 passed, 0 skipped, on the same tree
+      (counted by outcome character, because pytest -q emits no summary when redirected --
+      an earlier run reported "17 passed" while SILENTLY SKIPPING the whole denial module
+      for a missing Cython .so, and a skip reads as green in any summary that doesn't count).
+  (3) the merged carc_rs wheel carries BOTH denial_dose and sims_override (introspected,
+      not assumed), installed and verified on local AND laptop.
+
+WHAT IS NOT ESTABLISHED, AND TRAVELS WITH ANY RESULT
+  Python<->rust parity WITH the knobs SET was verified at REDUCED sims (k2 x 24/8 over
+  2 full games), NOT at production budget. The building agent stated this plainly rather
+  than letting it pass as production-verified. The byte-identity claim above is the
+  unset-knob path; the set-knob path is verified for agreement, not at deploy budget.
+
+WHAT THIS IS NOT
+  Not a promotion, not a PRODUCTION.yaml change, and not a discharge of the census's
+  branch U. The census REFUTED the free-lunch premise (M344 = 13.07% vs a <=5% bar);
+  this screen prices the TRADE that survives it. At n=200 the resolution is ~+/-35 elo
+  at 2 sigma, so a null here is a BOUNDED null and must be written up as such.

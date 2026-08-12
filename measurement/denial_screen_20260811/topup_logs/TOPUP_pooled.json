@@ -1,0 +1,70 @@
+{
+  "label": "d1_denial_d1_s5_o3_POOLED_n400_b121000000000_plus_100",
+  "dir": "/mnt/c/carc-shared/denial_topup_20260812/d1_denial_d1_s5_o3_POOLED",
+  "adjudicated": false,
+  "expected_rules_profile": "fixed_v1",
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out. POOLED EXTRACT: arithmetic only, no branch adjudicated, no governance touch.",
+  "records_on_disk": 400,
+  "n": 400,
+  "n_paired": 200,
+  "W": 181,
+  "D": 3,
+  "L": 216,
+  "elo": -30.478556999265027,
+  "elo_sig_1sigma": 17.438664934651026,
+  "paired_z": -2.2932381029028903,
+  "paired_mean_margin": -1.57,
+  "cand_prefix_ms_per_move": 486.93868232224395,
+  "champ_prefix_ms_per_move": 533.3455948972565,
+  "ms_ratio_cand_over_opp": 0.9129890393414566,
+  "ms_ratio_caveat": "Ratio only. NEVER quote an absolute ms/move from a shared-tenancy run; a ratio of two arms sharing one process pool is first-order insensitive to contention, an absolute is not. Also: `champ_prefix_*` is the CANDIDATE's cost in this harness -- read the emitter, not the field name.",
+  "wiring": {
+    "code_rev": "efef3fa9b-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "effeca41772e3e78",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "opp_leaf_hash_field": "champ_leaf_hash",
+    "cand_leaf_json": "{\"denial_dose\": 1.0, \"denial_size_min\": 5.0, \"denial_open_max\": 3}",
+    "cand_curve_drift_allowed": null,
+    "cand_k_dets": null,
+    "cand_sims_per_det": null,
+    "cand_total_sims": null,
+    "opp_k_dets": null,
+    "opp_sims_per_det": null,
+    "opp_total_sims": null,
+    "band_seed_start": null,
+    "n_decks": null,
+    "paired": true
+  },
+  "expected_cand_leaf_hash": "effeca41772e3e78",
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true,
+  "pooling_provenance": {
+    "half_A": {
+      "dir": "/mnt/c/carc-shared/night_chain_20260812/d1_denial_d1_s5_o3",
+      "seeds": "120000000000..121000000099",
+      "n": 200,
+      "decks": 100,
+      "code_rev": "20ca5b187-dirty"
+    },
+    "half_B": {
+      "dir": "/mnt/c/carc-shared/denial_topup_20260812/d1_denial_d1_s5_o3_topup",
+      "seeds": "121000000100..121000000199",
+      "n": 200,
+      "decks": 100,
+      "code_rev": "efef3fa9b-dirty"
+    },
+    "seed_overlap": 0,
+    "deck_hash_overlap": 0,
+    "pooling_licence": "SAME band (121000000000), SAME cell, SAME instrument. Manifest knobs identical between halves except code_rev and per-writer bookkeeping; the code_rev delta 20ca5b1..efef3fa touches ONLY android/tools/adb_connect.sh + its test + android/README.md - nothing under src/, rust/, engine/ or the harness. leaf_env identical. Cross-band pooling is forbidden in this project and is NOT what this is.",
+    "between_half_difference_margin": {
+      "value": 0.11,
+      "se": 1.3727,
+      "z": 0.08,
+      "read": "halves statistically indistinguishable - the effect REPLICATED, it did not shrink"
+    },
+    "MANIFEST_CAVEAT": "This POOLED dir manifest.json is a COPY of half_B (the top-up) manifest, so its n / seed_start / exp_id fields describe half_B only. Every KNOB field (leaf hashes, sims, exact_k, rules_profile, leaf_env) is identical across both halves and is therefore valid for the pool. Wiring gates above were additionally run against half_B directly (TOPUP_newhalf.json) and half_A was gated last night (BLOCK_D1_*.json).",
+    "built_by": "scratchpad pool_topup.py (hardlinks; source dirs untouched, read-only)"
+  }
+}

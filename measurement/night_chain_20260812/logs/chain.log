@@ -1,0 +1,79 @@
+[chain 2026-08-12_01:22:42] === DENIAL / SIMS-SPLIT CHAIN START (dry_run=0) ===
+[chain 2026-08-12_01:22:42] D1 prereg: measurement/denial_screen_20260811/PREREG_DRAFT.md | S1 pre-gate: measurement/simsplit_census_20260811/PREREG.md
+[chain 2026-08-12_01:22:42] local rev 7702a2b24cc64e4ebdc6c49798a91bbba569e205 | W_LOCAL=30 W_LAPTOP=22 | D1_N=200 S1_N=200
+[chain 2026-08-12_01:22:42] D1 params: doses=[1.0,4.0] size_min=5 open_max=3
+[chain 2026-08-12_01:22:42] S1 go-file ABSENT (/home/doctor/projects/carcassone/measurement/night_chain_20260812/S1_AUTHORIZED) - S1 will SKIP unless it appears before block S1 starts.
+[chain 2026-08-12_01:22:42] parameters persisted to /home/doctor/projects/carcassone/measurement/night_chain_20260812/PARAMS.env (the watchdog sources this on restart)
+[chain 2026-08-12_01:22:43] laptop rev c3e23b9adb2098450547cc841bd287688a1cdb1d (busy python 0)
+[chain 2026-08-12_01:22:43] !!! BLOCK PREFLIGHT BLOCKED: laptop is at rev c3e23b9adb2098450547cc841bd287688a1cdb1d but local is at 7702a2b24cc64e4ebdc6c49798a91bbba569e205. Stale remote code is a CONTAMINATION class, not an inconvenience. Bundle-sync the laptop and relaunch: git bundle create /mnt/c/carc-shared/sync/night2.bundle <branch> (local) then git fetch /mnt/carc-shared/sync/night2.bundle <branch> && git reset --hard FETCH_HEAD (laptop, inside a PIPED script with cd on line 1).
+[chain 2026-08-12_01:22:43] chain STOPPED. Nothing further launches. Marker: /home/doctor/projects/carcassone/measurement/night_chain_20260812/BLOCKED_PREFLIGHT
+[chain 2026-08-12_01:23:45] === DENIAL / SIMS-SPLIT CHAIN START (dry_run=0) ===
+[chain 2026-08-12_01:23:45] D1 prereg: measurement/denial_screen_20260811/PREREG_DRAFT.md | S1 pre-gate: measurement/simsplit_census_20260811/PREREG.md
+[chain 2026-08-12_01:23:45] local rev 7702a2b24cc64e4ebdc6c49798a91bbba569e205 | W_LOCAL=30 W_LAPTOP=22 | D1_N=200 S1_N=200
+[chain 2026-08-12_01:23:45] D1 params: doses=[1.0,4.0] size_min=5 open_max=3
+[chain 2026-08-12_01:23:45] S1 go-file ABSENT (/home/doctor/projects/carcassone/measurement/night_chain_20260812/S1_AUTHORIZED) - S1 will SKIP unless it appears before block S1 starts.
+[chain 2026-08-12_01:23:45] parameters persisted to /home/doctor/projects/carcassone/measurement/night_chain_20260812/PARAMS.env (the watchdog sources this on restart)
+[chain 2026-08-12_01:23:45] laptop rev 7702a2b24cc64e4ebdc6c49798a91bbba569e205 (busy python 0)
+[chain 2026-08-12_01:23:46] laptop is quiet - block may start
+[chain 2026-08-12_01:23:46] --- BLOCK D1: targeted-denial dose screen, n=200/cell, instrument=eval_puct_priors@2750 ---
+[chain 2026-08-12_01:23:46] D1: local capability probe PASS -> /mnt/c/carc-shared/night_chain_20260812/d1_cells.tsv
+[chain 2026-08-12_01:23:46] !!! BLOCK D1 BLOCKED: the local and laptop capability probes produced DIFFERENT cell tables (candidate leaf hashes disagree). The two boxes are not computing the same candidate leaf; a mixed-rev cell is contamination, not a slow cell. Diff: /mnt/c/carc-shared/night_chain_20260812/d1_cells.tsv vs /mnt/carc-shared/night_chain_20260812/d1_cells.tsv
+[chain 2026-08-12_01:23:46] chain STOPPED. Nothing further launches. Marker: /home/doctor/projects/carcassone/measurement/night_chain_20260812/BLOCKED_D1
+[chain 2026-08-12_01:34:13] === DENIAL / SIMS-SPLIT CHAIN START (dry_run=0) ===
+[chain 2026-08-12_01:34:13] D1 prereg: measurement/denial_screen_20260811/PREREG_DRAFT.md | S1 pre-gate: measurement/simsplit_census_20260811/PREREG.md
+[chain 2026-08-12_01:34:13] local rev 20ca5b187f0e3f0488d28ece8529d63b6d88c171 | W_LOCAL=30 W_LAPTOP=22 | D1_N=200 S1_N=200
+[chain 2026-08-12_01:34:13] D1 params: doses=[1.0,4.0] size_min=5 open_max=3
+[chain 2026-08-12_01:34:13] S1 go-file ABSENT (/home/doctor/projects/carcassone/measurement/night_chain_20260812/S1_AUTHORIZED) - S1 will SKIP unless it appears before block S1 starts.
+[chain 2026-08-12_01:34:13] parameters persisted to /home/doctor/projects/carcassone/measurement/night_chain_20260812/PARAMS.env (the watchdog sources this on restart)
+[chain 2026-08-12_01:34:14] laptop rev 20ca5b187f0e3f0488d28ece8529d63b6d88c171 (busy python 0)
+[chain 2026-08-12_01:34:15] laptop is quiet - block may start
+[chain 2026-08-12_01:34:15] --- BLOCK D1: targeted-denial dose screen, n=200/cell, instrument=eval_puct_priors@2750 ---
+[chain 2026-08-12_01:34:15] D1: local capability probe PASS -> /mnt/c/carc-shared/night_chain_20260812/d1_cells.local.tsv
+[chain 2026-08-12_01:34:15] D1: laptop capability probe PASS, cell tables identical on both boxes (two distinct files compared)
+[chain 2026-08-12_01:34:15] D1: claimed band 121000000000 (registry row written; sentinel /home/doctor/projects/carcassone/measurement/night_chain_20260812/BAND_D1)
+[chain 2026-08-12_01:34:15] BLOCK D1: local launcher pid 742781; laptop joiner launch backgrounded
+[chain 2026-08-12_01:34:15] verify[D1]: baseline records=0; waiting up to 900s for workers on BOTH boxes
+[chain 2026-08-12_01:34:37] verify[D1]: busy python -> local=31 laptop=22 | laptop claims on this cell=22 (laptop rev=20ca5b187f0e3f0488d28ece8529d63b6d88c171)
+[chain 2026-08-12_01:34:37] verify[D1]: waiting up to 2400s for the record count to grow past 0
+[chain 2026-08-12_01:35:37] verify[D1]: PASS - records 0 -> 22, local=31 laptop=22 busy workers
+[chain 2026-08-12_01:50:43] BLOCK D1: local launcher exited rc=0
+[chain 2026-08-12_01:50:43] BLOCK D1: cell d1_denial_d1_s5_o3 records 200/200
+[chain 2026-08-12_01:50:43] BLOCK D1: cell d1_denial_d4_s5_o3 records 200/200
+[chain 2026-08-12_01:50:43] BLOCK D1 COMPLETE -> /home/doctor/projects/carcassone/measurement/night_chain_20260812/verdicts/BLOCK_D1_*.json (band 121000000000)
+[chain 2026-08-12_01:50:43] --- BLOCK S1: sims-split screen (go-file present) ---
+[chain 2026-08-12_01:50:43] !!! BLOCK S1 BLOCKED: the S1 go-file exists but SIMS_TILE/SIMS_MEEPLE are unset. REQUIRED parameters, no defaults. This is a BLOCK, not a skip: an authorized-but-unparameterized S1 must never be silently passed over.
+[chain 2026-08-12_01:50:43] chain STOPPED. Nothing further launches. Marker: /home/doctor/projects/carcassone/measurement/night_chain_20260812/BLOCKED_S1
+[chain 2026-08-12_01:52:48] === DENIAL / SIMS-SPLIT CHAIN START (dry_run=0) ===
+[chain 2026-08-12_01:52:48] D1 prereg: measurement/denial_screen_20260811/PREREG_DRAFT.md | S1 pre-gate: measurement/simsplit_census_20260811/PREREG.md
+[chain 2026-08-12_01:52:48] local rev efef3fa9b74e9b99802d0a758437e90692516218 | W_LOCAL=30 W_LAPTOP=22 | D1_N=200 S1_N=200
+[chain 2026-08-12_01:52:48] D1 params: doses=[1.0,4.0] size_min=5 open_max=3
+[chain 2026-08-12_01:52:48] S1 go-file PRESENT (/home/doctor/projects/carcassone/measurement/night_chain_20260812/S1_AUTHORIZED): S1 (sims-split screen) AUTHORIZED 2026-08-12 ~02:00 by the orchestrator.  WHAT IS AUTHORIZED 
+[chain 2026-08-12_01:52:48] S1 params: sims_tile=2408 sims_meeple=344 (fixed per-turn total 2x1376)
+[chain 2026-08-12_01:52:48] parameters persisted to /home/doctor/projects/carcassone/measurement/night_chain_20260812/PARAMS.env (the watchdog sources this on restart)
+[chain 2026-08-12_01:52:49] laptop rev 20ca5b187f0e3f0488d28ece8529d63b6d88c171 (busy python 0)
+[chain 2026-08-12_01:52:49] !!! BLOCK PREFLIGHT BLOCKED: laptop is at rev 20ca5b187f0e3f0488d28ece8529d63b6d88c171 but local is at efef3fa9b74e9b99802d0a758437e90692516218. Stale remote code is a CONTAMINATION class, not an inconvenience. Bundle-sync the laptop and relaunch: git bundle create /mnt/c/carc-shared/sync/night2.bundle <branch> (local) then git fetch /mnt/carc-shared/sync/night2.bundle <branch> && git reset --hard FETCH_HEAD (laptop, inside a PIPED script with cd on line 1).
+[chain 2026-08-12_01:52:49] chain STOPPED. Nothing further launches. Marker: /home/doctor/projects/carcassone/measurement/night_chain_20260812/BLOCKED_PREFLIGHT
+[chain 2026-08-12_01:53:47] === DENIAL / SIMS-SPLIT CHAIN START (dry_run=0) ===
+[chain 2026-08-12_01:53:47] D1 prereg: measurement/denial_screen_20260811/PREREG_DRAFT.md | S1 pre-gate: measurement/simsplit_census_20260811/PREREG.md
+[chain 2026-08-12_01:53:47] local rev efef3fa9b74e9b99802d0a758437e90692516218 | W_LOCAL=30 W_LAPTOP=22 | D1_N=200 S1_N=200
+[chain 2026-08-12_01:53:47] D1 params: doses=[1.0,4.0] size_min=5 open_max=3
+[chain 2026-08-12_01:53:47] S1 go-file PRESENT (/home/doctor/projects/carcassone/measurement/night_chain_20260812/S1_AUTHORIZED): S1 (sims-split screen) AUTHORIZED 2026-08-12 ~02:00 by the orchestrator.  WHAT IS AUTHORIZED 
+[chain 2026-08-12_01:53:47] S1 params: sims_tile=2408 sims_meeple=344 (fixed per-turn total 2x1376)
+[chain 2026-08-12_01:53:47] parameters persisted to /home/doctor/projects/carcassone/measurement/night_chain_20260812/PARAMS.env (the watchdog sources this on restart)
+[chain 2026-08-12_01:53:47] laptop rev efef3fa9b74e9b99802d0a758437e90692516218 (busy python 0)
+[chain 2026-08-12_01:53:47] BLOCK D1 already DONE - skipping
+[chain 2026-08-12_01:53:47] --- BLOCK S1: sims-split screen (go-file present) ---
+[chain 2026-08-12_01:53:48] S1: capability probes PASS on both boxes (flags present, split sums to 2x1376)
+[chain 2026-08-12_01:53:48] laptop is quiet - block may start
+[chain 2026-08-12_01:53:48] S1: claimed band 122000000000 (registry row written; sentinel /home/doctor/projects/carcassone/measurement/night_chain_20260812/BAND_S1)
+[chain 2026-08-12_01:53:48] BLOCK S1: local launcher pid 796116; laptop joiner launch backgrounded
+[chain 2026-08-12_01:53:48] verify[S1]: baseline records=0; waiting up to 900s for workers on BOTH boxes
+[chain 2026-08-12_01:54:10] verify[S1]: busy python -> local=30 laptop=22 | laptop claims on this cell=22 (laptop rev=efef3fa9b74e9b99802d0a758437e90692516218)
+[chain 2026-08-12_01:54:10] verify[S1]: waiting up to 3600s for the record count to grow past 0
+[chain 2026-08-12_01:57:10] verify[S1]: PASS - records 0 -> 2, local=30 laptop=22 busy workers
+[chain 2026-08-12_02:12:26] BLOCK S1: local launcher exited rc=0
+[chain 2026-08-12_02:12:26] BLOCK S1: records 200/200
+[chain 2026-08-12_02:12:26] BLOCK S1 COMPLETE -> /home/doctor/projects/carcassone/measurement/night_chain_20260812/verdicts/BLOCK_S1.json (band 122000000000)
+[chain 2026-08-12_02:12:26] === CHAIN FINISHED (D1/S1) ===
+[chain 2026-08-12_02:12:26] Nothing was promoted. governance/PRODUCTION.yaml untouched. No verdict was adjudicated.
+[chain 2026-08-12_02:12:26] Per-block extracts: /home/doctor/projects/carcassone/measurement/night_chain_20260812/verdicts/ - the orchestrating session reads and closes out.

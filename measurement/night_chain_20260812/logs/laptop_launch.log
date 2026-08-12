@@ -1,0 +1,4 @@
+laptop D1 launched pid 2123
+[laptop-launch 2026-08-12_01:34:16] _laptop_D1.sh ssh rc=0 (124 == launched-and-detached)
+laptop S1 launched pid 2768
+[laptop-launch 2026-08-12_01:53:49] _laptop_S1.sh ssh rc=0 (124 == launched-and-detached)

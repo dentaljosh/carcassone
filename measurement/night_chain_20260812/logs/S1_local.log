@@ -1,0 +1,72 @@
+[menu-fair primary Doctor] 2026-08-12_01:53:48 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-12_01:53:48 START sub=s1_simsplit n=200 band=122000000000 W=30 cand=k8x1376 opp=k8x1376 drift=0 cand_json=none split=2408/344
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+[sims-split] CANDIDATE searches TILES at k8x2408 and MEEPLES at k8x344 (per-turn total 22016 vs symmetric 22016); opponent untouched.
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 200 to play, 30 workers, out=/mnt/c/carc-shared/night_chain_20260812/s1_simsplit
+  10/200 played (24.0s/game, ~76 min left)
+  20/200 played (13.3s/game, ~40 min left)
+  30/200 played (11.9s/game, ~34 min left)
+  40/200 played (13.1s/game, ~35 min left)
+  50/200 played (11.5s/game, ~29 min left)
+  60/200 played (11.7s/game, ~27 min left)
+  70/200 played (11.7s/game, ~25 min left)
+  80/200 played (11.1s/game, ~22 min left)
+  90/200 played (10.7s/game, ~20 min left)
+  100/200 played (10.6s/game, ~18 min left)
+  110/200 played (10.1s/game, ~15 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 200   candidate: 89W / 7D / 104L   winrate 0.463 (z=-1.06)
+avg score diff (candidate - opponent): -1.44
+ELO: -26.1  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin -1.44   z = -1.04
+prefix ms/move: candidate 1949  opponent 1786  (ratio 1.09x)
+fair endgame: candidate latched 200/200 games, 1.22s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 1.29s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/night_chain_20260812/s1_simsplit/summary.json
+[menu-fair primary Doctor] 2026-08-12_02:12:26 harness pass 1 rc=0 records=200/200
+[menu-fair primary Doctor] 2026-08-12_02:12:26 END sub=s1_simsplit records=200/200 in 1118s after 1 pass(es)
+{
+  "label": "s1_simsplit_t2408_m344_n200_b122000000000",
+  "dir": "/mnt/c/carc-shared/night_chain_20260812/s1_simsplit",
+  "adjudicated": false,
+  "expected_rules_profile": "fixed_v1",
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 200,
+  "n": 200,
+  "n_paired": 100,
+  "W": 89,
+  "D": 7,
+  "L": 104,
+  "elo": -26.106692605036592,
+  "elo_sig_1sigma": 24.636794555006716,
+  "paired_z": -1.0370736029834455,
+  "paired_mean_margin": -1.435,
+  "champ_prefix_ms_per_move": 1948.9747624918414,
+  "wiring": {
+    "code_rev": "efef3fa9b-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "a36d2e15a3b3d71d",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "opp_leaf_hash_field": "opp_leaf_hash",
+    "cand_leaf_json": null,
+    "cand_curve_drift_allowed": false,
+    "cand_k_dets": 8,
+    "cand_sims_per_det": 1376,
+    "cand_total_sims": 11008,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "opp_total_sims": 11008,
+    "band_seed_start": 122000000000,
+    "n_decks": 100,
+    "paired": true
+  },
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true
+}

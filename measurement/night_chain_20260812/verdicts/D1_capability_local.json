@@ -1,0 +1,87 @@
+{
+  "capability": "denial",
+  "checks": [
+    {
+      "check": "py_leafconfig_fields",
+      "ok": true,
+      "detail": "LeafConfig.denial_dose/_size_min/_open_max present"
+    },
+    {
+      "check": "py_flat_denial_term",
+      "ok": true,
+      "detail": "flat_leaf.flat_denial_term present"
+    },
+    {
+      "check": "env_is_champion_leaf",
+      "ok": true,
+      "detail": "DEFAULT_CONFIG hash a36d2e15a3b3d71d (want a36d2e15a3b3d71d)"
+    },
+    {
+      "check": "cand_hash_moves[d1_denial_d1_s5_o3]",
+      "ok": true,
+      "detail": "candidate leaf hash effeca41772e3e78 != champion a36d2e15a3b3d71d"
+    },
+    {
+      "check": "cand_hash_unique[d1_denial_d1_s5_o3]",
+      "ok": true,
+      "detail": "effeca41772e3e78 not already used by -"
+    },
+    {
+      "check": "cand_hash_moves[d1_denial_d4_s5_o3]",
+      "ok": true,
+      "detail": "candidate leaf hash 451b61ccfa10b29e != champion a36d2e15a3b3d71d"
+    },
+    {
+      "check": "cand_hash_unique[d1_denial_d4_s5_o3]",
+      "ok": true,
+      "detail": "451b61ccfa10b29e not already used by -"
+    },
+    {
+      "check": "carc_rs_accepts_denial_kwargs",
+      "ok": true,
+      "detail": "carc_rs.LeafConfigRs built with denial kwargs"
+    },
+    {
+      "check": "carc_rs_exposes_denial_term",
+      "ok": true,
+      "detail": "leaf_terms keys: ['base', 'bonus_opp', 'bonus_opp_raw', 'bonus_self', 'bonus_self_raw', 'denial_term', 'flip_term', 'meeple_term', 'return_term', 'score', 'value']"
+    },
+    {
+      "check": "carc_rs_denial_changes_leaf",
+      "ok": true,
+      "detail": "55 of 288 sampled leaf values MOVE at dose 1.0 (0 would mean accepted-and-ignored == a silently default-off candidate)"
+    },
+    {
+      "check": "carc_rs_identity_control",
+      "ok": true,
+      "detail": "0 champion-vs-champion mismatches (must be 0)"
+    }
+  ],
+  "cells": [
+    {
+      "tag": "d1_denial_d1_s5_o3",
+      "dose": 1.0,
+      "size_min": 5.0,
+      "open_max": 3,
+      "cand_leaf_json": "{\"denial_dose\": 1.0, \"denial_size_min\": 5.0, \"denial_open_max\": 3}",
+      "cand_leaf_hash": "effeca41772e3e78"
+    },
+    {
+      "tag": "d1_denial_d4_s5_o3",
+      "dose": 4.0,
+      "size_min": 5.0,
+      "open_max": 3,
+      "cand_leaf_json": "{\"denial_dose\": 4.0, \"denial_size_min\": 5.0, \"denial_open_max\": 3}",
+      "cand_leaf_hash": "451b61ccfa10b29e"
+    }
+  ],
+  "ok": true,
+  "champ_leaf_hash": "a36d2e15a3b3d71d",
+  "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+  "functional": {
+    "values_moved": 55,
+    "values_same": 233,
+    "identity_control_breaks": 0
+  },
+  "cells_out": "/mnt/c/carc-shared/night_chain_20260812/d1_cells.local.tsv"
+}
