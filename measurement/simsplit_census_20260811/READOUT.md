@@ -67,6 +67,47 @@ converged at production budget** (18.5% / 11.6% of picks still move when halved)
 comfortably with CL-060's +49.85 elo for 4× total budget, and it is the reason the N2
 "both-saturated" branch — which would have owed a CL-060 tension caveat — never fired.
 
+## 4b. The gap-stratified read — the meeple flips are overwhelmingly COIN-FLIPS
+
+This is the pre-registered secondary statistic (PREREG §1 strata, §4.2 "flip rate ≠ regret …
+the gap strata are the guard") used exactly as designed — **not** a post-hoc re-slice. It is
+still a secondary read: **branch `U` stands on the primary statistic and is not revised by
+this section.**
+
+Flip rate at the 344 rung, by reference top-2 Q gap:
+
+| gap bin | TILES | MEEPLES |
+|---|---|---|
+| `[0, 0.02)` | 47.9% (67/140) | **37.0%** (37/100) |
+| `[0.02, 0.05)` | 39.5% (32/81) | 13.7% (10/73) |
+| `[0.05, 0.1)` | 23.1% (21/91) | **2.1%** (2/94) |
+| `[0.1, ∞)` | 7.8% (13/167) | **2.3%** (3/131) |
+
+**71% of all meeple flips (37/52) sit in the near-tied `[0,0.02)` bin**, and above a gap of
+0.05 the meeple search essentially stops changing its mind — 5 flips in 225 roots. The tile
+search, by contrast, flips across **every** stratum, including 13 flips at gap > 0.1: it
+changes picks it had previously scored as *clear*.
+
+**Why this matters for the shape of the curve.** The meeple flip rate is nearly flat across
+an 8× budget range (14.07 → 13.07 → 11.56%) while the tile rate falls steeply
+(35.21 → 27.71 → 18.54%). A flat flip rate across 8× is the signature of decisions whose top
+two options are close enough that the pick is near-arbitrary at any budget — the marginal
+meeple sim is buying re-rolls of a coin, not convergence. A steep rate is the signature of a
+search still genuinely converging.
+
+⚠️ **What this does NOT license.** Flip rate weighted by gap is still not regret in points,
+and "the search had a small Q gap" is not proof the two moves are equal in EV — the leaf
+could be mis-pricing both (that is the entire premise of the neighbouring denial lever). The
+honest statement is: **the unweighted primary statistic counts coin-flips as if they were
+losses, so it is an upper bound on the cost of a meeple budget cut, and the gap strata say
+the true cost is concentrated where the search itself is close to indifferent.** Pricing the
+flips in points needs the EV-loss grader, which is out of scope here.
+
+⇒ Practical consequence: the S1 bar was stated on the unweighted rate, so it failed
+correctly and honestly — but the trade the screen must price is **better than the raw 13.07%
+implies**, and the reallocation ladder should be sized aggressively (meeple → 344), because
+the marginal meeple sim demonstrably buys the least where the search is least decided.
+
 ## 5. Standing limits (carried from PREREG §4)
 
 1. No re-budgeting measured: the trade is unpriced, only the saturation signal is.
