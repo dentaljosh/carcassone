@@ -5480,3 +5480,33 @@ instrument.
 sims-split knob both stay **built and default-off**, byte-identical when off and gated by
 `tests/test_denial_term.py` / `tests/test_simsplit_knob.py`.
 **Phase:** measurement-first
+
+## 2026-08-12 (evening) — The HUMAN-EDGE PROGRAM is funded: three levers minted (E4 loss-mode autopsy · tile near-tie pre-gate · human-strategy scripted opponent) plus a pro-strategy web scan, all keyed off "i'm beating the agent"
+
+**Context.** Same-day sequel to the campaign closure above. Joshua: *"we need ideas. i'm beating the
+agent"* — the fixed_v1 E4 lean is +10.043 ± 5.627 pts/game (z +1.78, n=23; a lean, not a powered
+fact; anchor nonstationary, assist level unstamped). With every named axis measured shut (block
+above + the 2026-08-09/10 closures), the only un-mined mechanism source is the anchor's own play —
+and the grade-vs-outcome inversion (11/11) proves the champion's own grader cannot see his edge, so
+the program runs exclusively on INDEPENDENT rulers.
+
+**Options considered:** (a) run CL-079's falsifier next — deferred, still on the table; (b) more n
+on denial / sims-split — rejected, both entries' own close-outs say mechanism-or-sharper-instrument,
+not n; (c) the human-edge program — **chosen** (Joshua verbatim: *"lets try 1-3. put subagents on
+them"*, plus *"what about searching online to see what pros are saying?"* which funded the scan).
+
+**Set in motion (all 2026-08-12 evening):** three LEVER_INDEX rows minted (`80c72a1`); the
+pro-strategy scan DELIVERED and committed ([docs/research/PRO_STRATEGY_SCAN_2026-08-12.md](docs/research/PRO_STRATEGY_SCAN_2026-08-12.md) —
+headline: 4-source external endorsement of the never-tried "penalize large open cities", and F6's
+genuinely unexamined axis, score-differential/win-probability conditioning; BGG/CC/WikiCarpedia
+bot-blocked, "The Book of Carcassonne" the named manual lead); the E4 full-corpus autopsy
+(`measurement/e4_autopsy_20260812/`) and the tile near-tie pricing
+(`measurement/tiletie_pricing_20260812/`) both in flight as design+extraction, their scoring runs
+priced but NOT launched (box choice = Joshua); the autopsy census carries per-ply tags adjudicating
+scan hypotheses F2/F3/F6/F7/F9 in one run; the Joshua-bot step is gated on the anchor interview
+(questions delivered in-session, answers pending). Roadmap NOW block + LEVER_INDEX cross-refs in
+`680f9cc`.
+
+**Reversal cost:** none — 0-game oracle instruments (no band claimed, no `results.csv` rows owed),
+no source/engine/config change (new files only), `governance/PRODUCTION.yaml` untouched.
+**Phase:** measurement-first
