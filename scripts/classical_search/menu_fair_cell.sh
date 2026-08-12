@@ -34,6 +34,13 @@
 #   --drift                   pass --allow-cand-curve-drift (required with a hash-moving knob)
 #   --k-dets N --sims N       CANDIDATE budget           (default 8 / 1376 = the deploy champion)
 #   --opp-k-dets N --opp-sims N   OPPONENT budget        (default: symmetric with the candidate)
+#   --sims-tile N --sims-meeple N  CANDIDATE per-phase sims split (added 2026-08-12 for the
+#                             sims-split screen, block S1). PASSED THROUGH ONLY WHEN SET, so
+#                             every pre-existing caller is byte-identical to before — and a
+#                             harness that does not define the flags fails LOUDLY (unknown
+#                             argument) instead of quietly running an unsplit candidate.
+#                             The chain probes `eval_fair_puct.py --help` for both flags and
+#                             SKIPS its block if they are absent; it never passes them blind.
 #   --max-iter N              resume-loop cap (default 60)
 #   --dry-run                 print the resolved harness command and exit
 set -u
@@ -46,7 +53,7 @@ PY="${MENU_PY:-/home/doctor/projects/carcassone/.venv/bin/python}"
 HARNESS=$REPO/scripts/classical_search/eval_fair_puct.py
 
 SUB=""; N=""; BAND=""; CANDJSON=""; DRIFT=0; DRYRUN=0; MAXITER=60
-KDETS=8; SIMS=1376; OPPK=""; OPPS=""; K=2
+KDETS=8; SIMS=1376; OPPK=""; OPPS=""; K=2; STILE=""; SMEEPLE=""
 CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits; PROFILE=fixed_v1; BACKEND=rust
 
 case "$BOX_TAG" in
@@ -67,6 +74,8 @@ while [ $# -gt 0 ]; do
     --sims)           SIMS="${2:?}"; shift 2 ;;
     --opp-k-dets)     OPPK="${2:?}"; shift 2 ;;
     --opp-sims)       OPPS="${2:?}"; shift 2 ;;
+    --sims-tile)      STILE="${2:?}"; shift 2 ;;
+    --sims-meeple)    SMEEPLE="${2:?}"; shift 2 ;;
     --exact-k)        K="${2:?}"; shift 2 ;;
     --max-iter)       MAXITER="${2:?}"; shift 2 ;;
     --dry-run)        DRYRUN=1; shift ;;
@@ -108,6 +117,9 @@ args=(--info fair --opponent fair-champion --backend "$BACKEND"
       --no-results-csv)
 [ -n "$OPPK" ]     && args+=(--opp-k-dets "$OPPK")
 [ -n "$OPPS" ]     && args+=(--opp-sims "$OPPS")
+# Per-phase split: candidate side only, appended ONLY when set (see the header note).
+[ -n "$STILE" ]    && args+=(--sims-tile "$STILE")
+[ -n "$SMEEPLE" ]  && args+=(--sims-meeple "$SMEEPLE")
 [ -n "$CANDJSON" ] && args+=(--cand-leaf-json "$CANDJSON")
 [ "$DRIFT" = 1 ]   && args+=(--allow-cand-curve-drift)
 
@@ -145,7 +157,7 @@ clean_stale_claims() {
   done
 }
 
-echo "$tag $(ts) START sub=$SUB n=$N band=$BAND W=$WORKERS cand=k${KDETS}x${SIMS} opp=k${OPPK:-$KDETS}x${OPPS:-$SIMS} drift=$DRIFT cand_json=${CANDJSON:-none}"
+echo "$tag $(ts) START sub=$SUB n=$N band=$BAND W=$WORKERS cand=k${KDETS}x${SIMS} opp=k${OPPK:-$KDETS}x${OPPS:-$SIMS} drift=$DRIFT cand_json=${CANDJSON:-none} split=${STILE:-none}/${SMEEPLE:-none}"
 clean_stale_claims "$dir" 10
 t0=$(date +%s); iter=0
 while [ "$(count_records "$dir")" -lt "$N" ] && [ "$iter" -lt "$MAXITER" ]; do
