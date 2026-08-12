@@ -10,6 +10,16 @@ Corpus context: [E4_UPDATE_20260812.md](../e4_games/E4_UPDATE_20260812.md).
 Extraction census: [CENSUS.md](CENSUS.md) · [CENSUS.json](CENSUS.json) ·
 sample + power: [SAMPLE.json](SAMPLE.json).
 
+> **AMENDMENT 1 (2026-08-12, orchestrator review, PRE-SCORING — nothing had been scored
+> when this was applied).** Count reconciliation only, no design change. The prose carried
+> two draft remnants that disagreed with the committed sample files (`positions.jsonl` and
+> the per-epoch splits, which are authoritative): (a) "372 / 322-of-372" in §8 and the
+> backend note — the sample is **371 total, 321 `fixed_v1`**; (b) the §6 epoch row read
+> "321 / 32 / 18" with MDEs derived from those counts — the true split is
+> **321 / 36 / 14**, and the walled / app_aug2 MDEs rescale 1.57 → **1.49** and
+> 2.10 → **2.39** (same k = 0.50·√321 constant). All four spots corrected in place; this
+> note is the record that they changed and why.
+
 ---
 
 ## 1. The question
@@ -342,7 +352,7 @@ preserves every secondary marginal by construction:
 | **F2** champion steals (True / False) | 47 / 324 | 1.30 / 0.49 |
 | **F2** he steals (True / False) | 38 / 333 | 1.44 / 0.49 |
 | bucket noise / inacc / blunder | 222 / 83 / 66 | 0.60 / 0.98 / 1.09 |
-| epoch fixed_v1 / walled / app_aug2 | 321 / 32 / 18 | 0.50 / 1.57 / 2.10 |
+| epoch fixed_v1 / walled / app_aug2 | 321 / 36 / 14 | 0.50 / 1.49 / 2.39 |
 
 **F3 (`own_reserve` / `opp_reserve`) is continuous**, so it is read as a regression of Δ on
 the reserve counts over all 371 positions rather than as a cell, and is not sized here.
@@ -420,7 +430,7 @@ mismatch instead of leaving it a prose claim.
 > `game_kwargs()` is non-empty cannot be mirrored) and the driver **drops every epoch to
 > python if any epoch is blocked** — never a per-epoch backend split, because that would
 > make the epochs different instruments and read rule 4's per-epoch reads incomparable.
-> `walled` alone (`game_kwargs() == {}`) could run rust; it is 32 of 372 positions and is
+> `walled` alone (`game_kwargs() == {}`) could run rust; it is 36 of 371 positions and is
 > deliberately not special-cased.
 >
 > This also puts the run on the **same engine as the farm-war discriminator**, which never
@@ -442,14 +452,14 @@ or the run will "resume" straight past the very positions that failed.
    non-significant negative mean is not evidence the champion's picks are better; it is
    absence of resolution. (The farm-war readout is explicit that its branch 4 was not a
    refutation.)
-3. **Cluster-robust SE on `game_label`** is the primary interval — 372 positions over 26
+3. **Cluster-robust SE on `game_label`** is the primary interval — 371 positions over 26
    games is ~14 per cluster and the design effect is not negligible. The naive SE is
    reported alongside, never instead.
 4. **No pooling across rules epochs when the signs disagree.** Inherited verbatim from the
    farm-war prereg, and it bound there: its epochs disagreed in sign in both strata
    (`_pooling_licensed: false`) and the positive pooled number was carried entirely by two
    legacy epochs, the larger `fixed_v1` epoch leaning the other way. Report the per-epoch
-   split first. `fixed_v1` is the epoch he plays now and is 322 of 372 positions.
+   split first. `fixed_v1` is the epoch he plays now and is 321 of 371 positions.
 5. **Selection on ΔQ biases Δ toward 0.** Even unselected on bucket, the population is
    conditioned on the champion having disagreed at all, so regression to the mean pushes
    Δ toward 0 on re-scoring. This makes a positive result **harder**, so a null is softer
@@ -502,7 +512,7 @@ deliverable is the **map**, not a winner.
   self-preference in the judge**, larger than the oracle pilot's +0.74. That is a statement
   about the *instrument* and it gates every future in-family claim, including this run's.
   The Tier-1 sign check is what separates this branch from a real localized defect.
-- **Everything |z| < 2** ⇒ **no conviction anywhere at n = 372.** Report the map with CIs;
+- **Everything |z| < 2** ⇒ **no conviction anywhere at n = 371.** Report the map with CIs;
   promote nothing. The default next step is **more E4 games**, not more compute — the same
   conclusion the farm-war run reached, and the one the 8 new games then vindicated.
 
@@ -645,7 +655,7 @@ at-HEAD identity-gate verdict.
 | [`CENSUS.json`](CENSUS.json) / [`CENSUS.md`](CENSUS.md) | the disagreement census (RAN) |
 | [`SAMPLE.json`](SAMPLE.json) | per-stratum sizing + power (RAN) |
 | `plies_{fixed_v1,walled,app_aug2}.jsonl` | every tagged disagreement ply (RAN) |
-| `positions.jsonl` + `positions_<epoch>.jsonl` | the 372 sampled positions (RAN) |
+| `positions.jsonl` + `positions_<epoch>.jsonl` | the 371 sampled positions (RAN) |
 | `PREFLIGHT_GATE_AT_HEAD.json` | rust identity gate re-verified at HEAD |
 | [`SMOKE.json`](SMOKE.json) | the priced smoke |
 | `scripts/analyzer/autopsy_extract.py` | extraction / census / sampling |
