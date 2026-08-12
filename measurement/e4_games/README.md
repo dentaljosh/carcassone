@@ -20,7 +20,13 @@ root_replay contract, plus result summary, per-move AI latencies, and provenance
 > - Integrity: **26/26 replay exactly**, one duplicate `deck_seed` (the known 523563 pair, all
 >   8 new seeds distinct ⇒ the on-device seedfix is behaviourally confirmed), and **`assists`
 >   is still ABSENT in all 26** — E4 stays an assisted-human reference with the assist level
->   unstamped. EV-loss grading of the new 8 is **partial and resumable** (see the readout).
+>   unstamped.
+> - **EV-loss: all 8 graded, 8/8 acceptance gates PASS, 8/8 replay-verified.** The
+>   grade-vs-outcome inversion held **5 more times (8 of 8 wins in the epoch; 11 of 11 graded
+>   games overall)** — but he is out-graded by the *same* ~5× factor in his losses, so it is a
+>   property of the stream, not of his wins. ⚠️ The human/champion **ratio is retired as a
+>   headline**: its 2.90× → 5.12× rise is entirely the champion-seat denominator halving
+>   (instrument noise floor); human ΔQ is flat at 0.055 → 0.054.
 > - ⚠️ The phone no longer holds the two oldest archives; **this directory is the archive of
 >   record**, the device is not a complete mirror.
 >
