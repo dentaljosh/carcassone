@@ -1,0 +1,1329 @@
+{
+ "schema": "carcassonne-denial-e4-replay/v1/rollup",
+ "n_games": 18,
+ "n_graded_plies": 1079,
+ "flip_rate": {
+  "d1": 0.04448563484708063,
+  "d4": 0.082483781278962
+ },
+ "flips_total": {
+  "d1": 48,
+  "d4": 89
+ },
+ "champ_agrees_archive_rate": 0.7312326227988879,
+ "by_game": [
+  {
+   "archive": "1785205383_867966.json",
+   "profile": "walled",
+   "n_graded": 64,
+   "flips": {
+    "d1": 7,
+    "d4": 9
+   },
+   "recorded_scores": [
+    111,
+    113
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 38,
+      "phase": "tiles",
+      "k_remaining": 52,
+      "champ_pick": 1456,
+      "pick_d1": 1457
+     },
+     {
+      "ply": 39,
+      "phase": "meeples",
+      "k_remaining": 52,
+      "champ_pick": 2501,
+      "pick_d1": 2502
+     },
+     {
+      "ply": 63,
+      "phase": "meeples",
+      "k_remaining": 40,
+      "champ_pick": 2501,
+      "pick_d1": 2504
+     },
+     {
+      "ply": 94,
+      "phase": "tiles",
+      "k_remaining": 24,
+      "champ_pick": 1128,
+      "pick_d1": 1072
+     },
+     {
+      "ply": 98,
+      "phase": "tiles",
+      "k_remaining": 22,
+      "champ_pick": 1554,
+      "pick_d1": 1430
+     },
+     {
+      "ply": 102,
+      "phase": "tiles",
+      "k_remaining": 20,
+      "champ_pick": 1431,
+      "pick_d1": 966
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 18,
+      "champ_pick": 1169,
+      "pick_d1": 1371
+     }
+    ],
+    "d4": [
+     {
+      "ply": 38,
+      "phase": "tiles",
+      "k_remaining": 52,
+      "champ_pick": 1456,
+      "pick_d4": 1457
+     },
+     {
+      "ply": 46,
+      "phase": "tiles",
+      "k_remaining": 48,
+      "champ_pick": 954,
+      "pick_d4": 941
+     },
+     {
+      "ply": 74,
+      "phase": "tiles",
+      "k_remaining": 34,
+      "champ_pick": 1537,
+      "pick_d4": 1554
+     },
+     {
+      "ply": 90,
+      "phase": "tiles",
+      "k_remaining": 26,
+      "champ_pick": 940,
+      "pick_d4": 1553
+     },
+     {
+      "ply": 94,
+      "phase": "tiles",
+      "k_remaining": 24,
+      "champ_pick": 1128,
+      "pick_d4": 841
+     },
+     {
+      "ply": 98,
+      "phase": "tiles",
+      "k_remaining": 22,
+      "champ_pick": 1554,
+      "pick_d4": 962
+     },
+     {
+      "ply": 102,
+      "phase": "tiles",
+      "k_remaining": 20,
+      "champ_pick": 1431,
+      "pick_d4": 1553
+     },
+     {
+      "ply": 103,
+      "phase": "meeples",
+      "k_remaining": 20,
+      "champ_pick": 2508,
+      "pick_d4": 2510
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 18,
+      "champ_pick": 1169,
+      "pick_d4": 973
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1785466497_161583.json",
+   "profile": "walled",
+   "n_graded": 62,
+   "flips": {
+    "d1": 1,
+    "d4": 1
+   },
+   "recorded_scores": [
+    73,
+    108
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 18,
+      "champ_pick": 1235,
+      "pick_d1": 1432
+     }
+    ],
+    "d4": [
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 18,
+      "champ_pick": 1235,
+      "pick_d4": 1433
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1785975832_66810.json",
+   "profile": "app_aug2",
+   "n_graded": 62,
+   "flips": {
+    "d1": 2,
+    "d4": 4
+   },
+   "recorded_scores": [
+    98,
+    78
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 58,
+      "phase": "tiles",
+      "k_remaining": 41,
+      "champ_pick": 1061,
+      "pick_d1": 1172
+     },
+     {
+      "ply": 83,
+      "phase": "meeples",
+      "k_remaining": 29,
+      "champ_pick": 2502,
+      "pick_d1": 2503
+     }
+    ],
+    "d4": [
+     {
+      "ply": 54,
+      "phase": "tiles",
+      "k_remaining": 43,
+      "champ_pick": 1065,
+      "pick_d4": 1168
+     },
+     {
+      "ply": 58,
+      "phase": "tiles",
+      "k_remaining": 41,
+      "champ_pick": 1061,
+      "pick_d4": 1069
+     },
+     {
+      "ply": 78,
+      "phase": "tiles",
+      "k_remaining": 31,
+      "champ_pick": 1071,
+      "pick_d4": 1070
+     },
+     {
+      "ply": 86,
+      "phase": "tiles",
+      "k_remaining": 27,
+      "champ_pick": 1648,
+      "pick_d4": 1071
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1785982194_705585.json",
+   "profile": "fixed_v1",
+   "n_graded": 53,
+   "flips": {
+    "d1": 5,
+    "d4": 12
+   },
+   "recorded_scores": [
+    80,
+    87
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 78,
+      "phase": "tiles",
+      "k_remaining": 31,
+      "champ_pick": 938,
+      "pick_d1": 843
+     },
+     {
+      "ply": 82,
+      "phase": "tiles",
+      "k_remaining": 29,
+      "champ_pick": 1645,
+      "pick_d1": 1232
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 744,
+      "pick_d1": 1032
+     },
+     {
+      "ply": 110,
+      "phase": "tiles",
+      "k_remaining": 15,
+      "champ_pick": 1232,
+      "pick_d1": 553
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1569,
+      "pick_d1": 648
+     }
+    ],
+    "d4": [
+     {
+      "ply": 62,
+      "phase": "tiles",
+      "k_remaining": 39,
+      "champ_pick": 940,
+      "pick_d4": 849
+     },
+     {
+      "ply": 66,
+      "phase": "tiles",
+      "k_remaining": 37,
+      "champ_pick": 941,
+      "pick_d4": 955
+     },
+     {
+      "ply": 74,
+      "phase": "tiles",
+      "k_remaining": 33,
+      "champ_pick": 937,
+      "pick_d4": 645
+     },
+     {
+      "ply": 78,
+      "phase": "tiles",
+      "k_remaining": 31,
+      "champ_pick": 938,
+      "pick_d4": 1439
+     },
+     {
+      "ply": 82,
+      "phase": "tiles",
+      "k_remaining": 29,
+      "champ_pick": 1645,
+      "pick_d4": 1432
+     },
+     {
+      "ply": 102,
+      "phase": "tiles",
+      "k_remaining": 19,
+      "champ_pick": 646,
+      "pick_d4": 1433
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 744,
+      "pick_d4": 1756
+     },
+     {
+      "ply": 110,
+      "phase": "tiles",
+      "k_remaining": 15,
+      "champ_pick": 1232,
+      "pick_d4": 856
+     },
+     {
+      "ply": 114,
+      "phase": "tiles",
+      "k_remaining": 13,
+      "champ_pick": 1170,
+      "pick_d4": 1634
+     },
+     {
+      "ply": 118,
+      "phase": "tiles",
+      "k_remaining": 11,
+      "champ_pick": 546,
+      "pick_d4": 1131
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1569,
+      "pick_d4": 652
+     },
+     {
+      "ply": 126,
+      "phase": "tiles",
+      "k_remaining": 7,
+      "champ_pick": 540,
+      "pick_d4": 653
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1785984310_1698417952.json",
+   "profile": "fixed_v1",
+   "n_graded": 63,
+   "flips": {
+    "d1": 7,
+    "d4": 8
+   },
+   "recorded_scores": [
+    101,
+    107
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 94,
+      "phase": "tiles",
+      "k_remaining": 23,
+      "champ_pick": 1363,
+      "pick_d1": 1362
+     },
+     {
+      "ply": 114,
+      "phase": "tiles",
+      "k_remaining": 13,
+      "champ_pick": 1225,
+      "pick_d1": 744
+     },
+     {
+      "ply": 118,
+      "phase": "tiles",
+      "k_remaining": 11,
+      "champ_pick": 1464,
+      "pick_d1": 653
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1033,
+      "pick_d1": 746
+     },
+     {
+      "ply": 126,
+      "phase": "tiles",
+      "k_remaining": 7,
+      "champ_pick": 847,
+      "pick_d1": 648
+     },
+     {
+      "ply": 130,
+      "phase": "tiles",
+      "k_remaining": 5,
+      "champ_pick": 650,
+      "pick_d1": 1632
+     },
+     {
+      "ply": 134,
+      "phase": "tiles",
+      "k_remaining": 3,
+      "champ_pick": 1038,
+      "pick_d1": 1068
+     }
+    ],
+    "d4": [
+     {
+      "ply": 94,
+      "phase": "tiles",
+      "k_remaining": 23,
+      "champ_pick": 1363,
+      "pick_d4": 1035
+     },
+     {
+      "ply": 98,
+      "phase": "tiles",
+      "k_remaining": 21,
+      "champ_pick": 1035,
+      "pick_d4": 1230
+     },
+     {
+      "ply": 102,
+      "phase": "tiles",
+      "k_remaining": 19,
+      "champ_pick": 1448,
+      "pick_d4": 1652
+     },
+     {
+      "ply": 110,
+      "phase": "tiles",
+      "k_remaining": 15,
+      "champ_pick": 653,
+      "pick_d4": 1743
+     },
+     {
+      "ply": 114,
+      "phase": "tiles",
+      "k_remaining": 13,
+      "champ_pick": 1225,
+      "pick_d4": 744
+     },
+     {
+      "ply": 118,
+      "phase": "tiles",
+      "k_remaining": 11,
+      "champ_pick": 1464,
+      "pick_d4": 1272
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1033,
+      "pick_d4": 1740
+     },
+     {
+      "ply": 126,
+      "phase": "tiles",
+      "k_remaining": 7,
+      "champ_pick": 847,
+      "pick_d4": 648
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1785986044_1911511187.json",
+   "profile": "fixed_v1",
+   "n_graded": 64,
+   "flips": {
+    "d1": 3,
+    "d4": 10
+   },
+   "recorded_scores": [
+    109,
+    65
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 35,
+      "phase": "meeples",
+      "k_remaining": 53,
+      "champ_pick": 2510,
+      "pick_d1": 2507
+     },
+     {
+      "ply": 90,
+      "phase": "tiles",
+      "k_remaining": 25,
+      "champ_pick": 1070,
+      "pick_d1": 1069
+     },
+     {
+      "ply": 102,
+      "phase": "tiles",
+      "k_remaining": 19,
+      "champ_pick": 1468,
+      "pick_d1": 1660
+     }
+    ],
+    "d4": [
+     {
+      "ply": 34,
+      "phase": "tiles",
+      "k_remaining": 53,
+      "champ_pick": 1037,
+      "pick_d4": 1061
+     },
+     {
+      "ply": 38,
+      "phase": "tiles",
+      "k_remaining": 51,
+      "champ_pick": 1033,
+      "pick_d4": 937
+     },
+     {
+      "ply": 42,
+      "phase": "tiles",
+      "k_remaining": 49,
+      "champ_pick": 1341,
+      "pick_d4": 1361
+     },
+     {
+      "ply": 46,
+      "phase": "tiles",
+      "k_remaining": 47,
+      "champ_pick": 1031,
+      "pick_d4": 1236
+     },
+     {
+      "ply": 50,
+      "phase": "tiles",
+      "k_remaining": 45,
+      "champ_pick": 928,
+      "pick_d4": 945
+     },
+     {
+      "ply": 90,
+      "phase": "tiles",
+      "k_remaining": 25,
+      "champ_pick": 1070,
+      "pick_d4": 1172
+     },
+     {
+      "ply": 102,
+      "phase": "tiles",
+      "k_remaining": 19,
+      "champ_pick": 1468,
+      "pick_d4": 1172
+     },
+     {
+      "ply": 103,
+      "phase": "meeples",
+      "k_remaining": 19,
+      "champ_pick": 2501,
+      "pick_d4": 2510
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 1172,
+      "pick_d4": 973
+     },
+     {
+      "ply": 110,
+      "phase": "tiles",
+      "k_remaining": 15,
+      "champ_pick": 1748,
+      "pick_d4": 948
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786045035_338139.json",
+   "profile": "fixed_v1",
+   "n_graded": 56,
+   "flips": {
+    "d1": 0,
+    "d4": 0
+   },
+   "recorded_scores": [
+    105,
+    115
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [],
+    "d4": []
+   }
+  },
+  {
+   "archive": "1786074812_935815.json",
+   "profile": "fixed_v1",
+   "n_graded": 55,
+   "flips": {
+    "d1": 5,
+    "d4": 13
+   },
+   "recorded_scores": [
+    90,
+    104
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 46,
+      "phase": "tiles",
+      "k_remaining": 47,
+      "champ_pick": 1161,
+      "pick_d1": 1162
+     },
+     {
+      "ply": 74,
+      "phase": "tiles",
+      "k_remaining": 33,
+      "champ_pick": 967,
+      "pick_d1": 1164
+     },
+     {
+      "ply": 78,
+      "phase": "tiles",
+      "k_remaining": 31,
+      "champ_pick": 1466,
+      "pick_d1": 1657
+     },
+     {
+      "ply": 82,
+      "phase": "tiles",
+      "k_remaining": 29,
+      "champ_pick": 937,
+      "pick_d1": 1364
+     },
+     {
+      "ply": 86,
+      "phase": "tiles",
+      "k_remaining": 27,
+      "champ_pick": 1365,
+      "pick_d1": 1165
+     }
+    ],
+    "d4": [
+     {
+      "ply": 46,
+      "phase": "tiles",
+      "k_remaining": 47,
+      "champ_pick": 1161,
+      "pick_d4": 1162
+     },
+     {
+      "ply": 55,
+      "phase": "meeples",
+      "k_remaining": 43,
+      "champ_pick": 2502,
+      "pick_d4": 2510
+     },
+     {
+      "ply": 74,
+      "phase": "tiles",
+      "k_remaining": 33,
+      "champ_pick": 967,
+      "pick_d4": 966
+     },
+     {
+      "ply": 82,
+      "phase": "tiles",
+      "k_remaining": 29,
+      "champ_pick": 937,
+      "pick_d4": 1333
+     },
+     {
+      "ply": 86,
+      "phase": "tiles",
+      "k_remaining": 27,
+      "champ_pick": 1365,
+      "pick_d4": 1165
+     },
+     {
+      "ply": 94,
+      "phase": "tiles",
+      "k_remaining": 23,
+      "champ_pick": 942,
+      "pick_d4": 1429
+     },
+     {
+      "ply": 102,
+      "phase": "tiles",
+      "k_remaining": 19,
+      "champ_pick": 932,
+      "pick_d4": 1760
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 750,
+      "pick_d4": 835
+     },
+     {
+      "ply": 114,
+      "phase": "tiles",
+      "k_remaining": 13,
+      "champ_pick": 1571,
+      "pick_d4": 1468
+     },
+     {
+      "ply": 118,
+      "phase": "tiles",
+      "k_remaining": 11,
+      "champ_pick": 1070,
+      "pick_d4": 1468
+     },
+     {
+      "ply": 119,
+      "phase": "meeples",
+      "k_remaining": 11,
+      "champ_pick": 2510,
+      "pick_d4": 2502
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1848,
+      "pick_d4": 1071
+     },
+     {
+      "ply": 126,
+      "phase": "tiles",
+      "k_remaining": 7,
+      "champ_pick": 1265,
+      "pick_d4": 1573
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786076853_2116173857.json",
+   "profile": "fixed_v1",
+   "n_graded": 58,
+   "flips": {
+    "d1": 0,
+    "d4": 1
+   },
+   "recorded_scores": [
+    90,
+    87
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [],
+    "d4": [
+     {
+      "ply": 54,
+      "phase": "tiles",
+      "k_remaining": 43,
+      "champ_pick": 1440,
+      "pick_d4": 1052
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786113542_627623.json",
+   "profile": "fixed_v1",
+   "n_graded": 63,
+   "flips": {
+    "d1": 0,
+    "d4": 0
+   },
+   "recorded_scores": [
+    116,
+    78
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [],
+    "d4": []
+   }
+  },
+  {
+   "archive": "1786116818_134510.json",
+   "profile": "fixed_v1",
+   "n_graded": 65,
+   "flips": {
+    "d1": 0,
+    "d4": 1
+   },
+   "recorded_scores": [
+    76,
+    104
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [],
+    "d4": [
+     {
+      "ply": 134,
+      "phase": "tiles",
+      "k_remaining": 3,
+      "champ_pick": 1564,
+      "pick_d4": 1475
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786118143_1621601234.json",
+   "profile": "fixed_v1",
+   "n_graded": 56,
+   "flips": {
+    "d1": 3,
+    "d4": 3
+   },
+   "recorded_scores": [
+    74,
+    71
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 75,
+      "phase": "tiles",
+      "k_remaining": 32,
+      "champ_pick": 844,
+      "pick_d1": 1440
+     },
+     {
+      "ply": 111,
+      "phase": "tiles",
+      "k_remaining": 14,
+      "champ_pick": 1637,
+      "pick_d1": 1467
+     },
+     {
+      "ply": 132,
+      "phase": "meeples",
+      "k_remaining": 4,
+      "champ_pick": 2504,
+      "pick_d1": 2503
+     }
+    ],
+    "d4": [
+     {
+      "ply": 75,
+      "phase": "tiles",
+      "k_remaining": 32,
+      "champ_pick": 844,
+      "pick_d4": 1343
+     },
+     {
+      "ply": 111,
+      "phase": "tiles",
+      "k_remaining": 14,
+      "champ_pick": 1637,
+      "pick_d4": 1467
+     },
+     {
+      "ply": 132,
+      "phase": "meeples",
+      "k_remaining": 4,
+      "champ_pick": 2504,
+      "pick_d4": 2503
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786142936_703591.json",
+   "profile": "fixed_v1",
+   "n_graded": 57,
+   "flips": {
+    "d1": 1,
+    "d4": 1
+   },
+   "recorded_scores": [
+    74,
+    112
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 123,
+      "phase": "meeples",
+      "k_remaining": 9,
+      "champ_pick": 2508,
+      "pick_d1": 2510
+     }
+    ],
+    "d4": [
+     {
+      "ply": 123,
+      "phase": "meeples",
+      "k_remaining": 9,
+      "champ_pick": 2508,
+      "pick_d4": 2510
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786242001_49628.json",
+   "profile": "fixed_v1",
+   "n_graded": 62,
+   "flips": {
+    "d1": 3,
+    "d4": 3
+   },
+   "recorded_scores": [
+    86,
+    95
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 99,
+      "phase": "meeples",
+      "k_remaining": 21,
+      "champ_pick": 2503,
+      "pick_d1": 2504
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 1753,
+      "pick_d1": 1660
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1848,
+      "pick_d1": 1952
+     }
+    ],
+    "d4": [
+     {
+      "ply": 99,
+      "phase": "meeples",
+      "k_remaining": 21,
+      "champ_pick": 2503,
+      "pick_d4": 2504
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 1753,
+      "pick_d4": 1660
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1848,
+      "pick_d4": 1952
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786243458_1382293676.json",
+   "profile": "fixed_v1",
+   "n_graded": 63,
+   "flips": {
+    "d1": 1,
+    "d4": 4
+   },
+   "recorded_scores": [
+    97,
+    75
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 847,
+      "pick_d1": 1666
+     }
+    ],
+    "d4": [
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 847,
+      "pick_d4": 1666
+     },
+     {
+      "ply": 122,
+      "phase": "tiles",
+      "k_remaining": 9,
+      "champ_pick": 1079,
+      "pick_d4": 740
+     },
+     {
+      "ply": 126,
+      "phase": "tiles",
+      "k_remaining": 7,
+      "champ_pick": 1650,
+      "pick_d4": 1376
+     },
+     {
+      "ply": 130,
+      "phase": "tiles",
+      "k_remaining": 5,
+      "champ_pick": 1154,
+      "pick_d4": 1149
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786325073_523563.json",
+   "profile": "fixed_v1",
+   "n_graded": 63,
+   "flips": {
+    "d1": 7,
+    "d4": 15
+   },
+   "recorded_scores": [
+    140,
+    84
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 63,
+      "phase": "meeples",
+      "k_remaining": 39,
+      "champ_pick": 2501,
+      "pick_d1": 2510
+     },
+     {
+      "ply": 86,
+      "phase": "tiles",
+      "k_remaining": 27,
+      "champ_pick": 1340,
+      "pick_d1": 1024
+     },
+     {
+      "ply": 90,
+      "phase": "tiles",
+      "k_remaining": 25,
+      "champ_pick": 1233,
+      "pick_d1": 832
+     },
+     {
+      "ply": 94,
+      "phase": "tiles",
+      "k_remaining": 23,
+      "champ_pick": 1333,
+      "pick_d1": 829
+     },
+     {
+      "ply": 110,
+      "phase": "tiles",
+      "k_remaining": 15,
+      "champ_pick": 828,
+      "pick_d1": 641
+     },
+     {
+      "ply": 111,
+      "phase": "meeples",
+      "k_remaining": 15,
+      "champ_pick": 2510,
+      "pick_d1": 2503
+     },
+     {
+      "ply": 114,
+      "phase": "tiles",
+      "k_remaining": 13,
+      "champ_pick": 1573,
+      "pick_d1": 1758
+     }
+    ],
+    "d4": [
+     {
+      "ply": 63,
+      "phase": "meeples",
+      "k_remaining": 39,
+      "champ_pick": 2501,
+      "pick_d4": 2510
+     },
+     {
+      "ply": 67,
+      "phase": "meeples",
+      "k_remaining": 37,
+      "champ_pick": 2502,
+      "pick_d4": 2510
+     },
+     {
+      "ply": 70,
+      "phase": "tiles",
+      "k_remaining": 35,
+      "champ_pick": 1034,
+      "pick_d4": 831
+     },
+     {
+      "ply": 74,
+      "phase": "tiles",
+      "k_remaining": 33,
+      "champ_pick": 930,
+      "pick_d4": 1129
+     },
+     {
+      "ply": 78,
+      "phase": "tiles",
+      "k_remaining": 31,
+      "champ_pick": 1129,
+      "pick_d4": 1232
+     },
+     {
+      "ply": 82,
+      "phase": "tiles",
+      "k_remaining": 29,
+      "champ_pick": 1669,
+      "pick_d4": 828
+     },
+     {
+      "ply": 86,
+      "phase": "tiles",
+      "k_remaining": 27,
+      "champ_pick": 1340,
+      "pick_d4": 1228
+     },
+     {
+      "ply": 90,
+      "phase": "tiles",
+      "k_remaining": 25,
+      "champ_pick": 1233,
+      "pick_d4": 749
+     },
+     {
+      "ply": 94,
+      "phase": "tiles",
+      "k_remaining": 23,
+      "champ_pick": 1333,
+      "pick_d4": 1332
+     },
+     {
+      "ply": 98,
+      "phase": "tiles",
+      "k_remaining": 21,
+      "champ_pick": 936,
+      "pick_d4": 740
+     },
+     {
+      "ply": 106,
+      "phase": "tiles",
+      "k_remaining": 17,
+      "champ_pick": 828,
+      "pick_d4": 925
+     },
+     {
+      "ply": 110,
+      "phase": "tiles",
+      "k_remaining": 15,
+      "champ_pick": 828,
+      "pick_d4": 633
+     },
+     {
+      "ply": 111,
+      "phase": "meeples",
+      "k_remaining": 15,
+      "champ_pick": 2510,
+      "pick_d4": 2501
+     },
+     {
+      "ply": 114,
+      "phase": "tiles",
+      "k_remaining": 13,
+      "champ_pick": 1573,
+      "pick_d4": 853
+     },
+     {
+      "ply": 118,
+      "phase": "tiles",
+      "k_remaining": 11,
+      "champ_pick": 1342,
+      "pick_d4": 728
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786329790_523563.json",
+   "profile": "fixed_v1",
+   "n_graded": 57,
+   "flips": {
+    "d1": 2,
+    "d4": 3
+   },
+   "recorded_scores": [
+    115,
+    86
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 55,
+      "phase": "meeples",
+      "k_remaining": 43,
+      "champ_pick": 2506,
+      "pick_d1": 2507
+     },
+     {
+      "ply": 70,
+      "phase": "tiles",
+      "k_remaining": 35,
+      "champ_pick": 1166,
+      "pick_d1": 1428
+     }
+    ],
+    "d4": [
+     {
+      "ply": 55,
+      "phase": "meeples",
+      "k_remaining": 43,
+      "champ_pick": 2506,
+      "pick_d4": 2510
+     },
+     {
+      "ply": 62,
+      "phase": "tiles",
+      "k_remaining": 39,
+      "champ_pick": 1066,
+      "pick_d4": 858
+     },
+     {
+      "ply": 70,
+      "phase": "tiles",
+      "k_remaining": 35,
+      "champ_pick": 1166,
+      "pick_d4": 1746
+     }
+    ]
+   }
+  },
+  {
+   "archive": "1786337185_638286.json",
+   "profile": "fixed_v1",
+   "n_graded": 56,
+   "flips": {
+    "d1": 1,
+    "d4": 1
+   },
+   "recorded_scores": [
+    125,
+    71
+   ],
+   "human_player": 0,
+   "flip_plies": {
+    "d1": [
+     {
+      "ply": 50,
+      "phase": "tiles",
+      "k_remaining": 45,
+      "champ_pick": 1034,
+      "pick_d1": 1145
+     }
+    ],
+    "d4": [
+     {
+      "ply": 50,
+      "phase": "tiles",
+      "k_remaining": 45,
+      "champ_pick": 1034,
+      "pick_d4": 1145
+     }
+    ]
+   }
+  }
+ ]
+}

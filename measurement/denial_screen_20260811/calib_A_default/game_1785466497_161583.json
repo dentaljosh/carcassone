@@ -1,0 +1,65 @@
+{
+ "schema": "carcassonne-denial-e4-replay/v1",
+ "archive": "1785466497_161583.json",
+ "deck_seed": 161583,
+ "rules_profile": "walled",
+ "human_player": 0,
+ "champion_seat": 1,
+ "recorded_scores": [
+  73,
+  108
+ ],
+ "replayed_scores": [
+  73,
+  108
+ ],
+ "replay_scores_match": true,
+ "budget": {
+  "sims_per_det": 688,
+  "k_dets": 4,
+  "source": "archive"
+ },
+ "seed": 12345,
+ "doses": [
+  1.0,
+  4.0
+ ],
+ "denial_size_min": 8.0,
+ "denial_open_max": 2,
+ "leaf_hash_production": "a36d2e15a3b3d71d",
+ "n_plies_total": 144,
+ "n_graded": 62,
+ "n_searched_this_run": 62,
+ "champ_agrees_archive": 45,
+ "flips": {
+  "d1": 1,
+  "d4": 1
+ },
+ "flip_plies": {
+  "d1": [
+   {
+    "ply": 106,
+    "phase": "tiles",
+    "k_remaining": 18,
+    "champ_pick": 1235,
+    "pick_d1": 1432
+   }
+  ],
+  "d4": [
+   {
+    "ply": 106,
+    "phase": "tiles",
+    "k_remaining": 18,
+    "champ_pick": 1235,
+    "pick_d4": 1433
+   }
+  ]
+ },
+ "mean_secs_per_graded_ply": 0.704,
+ "env": {
+  "CARCASSONNE_FIX_R9": "0",
+  "r9_env_expected": false,
+  "r9_env_observed": false
+ },
+ "wall_secs": 43.7
+}
