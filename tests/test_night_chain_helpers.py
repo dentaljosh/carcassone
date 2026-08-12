@@ -11,6 +11,9 @@ or imports carc_rs):
   scripts/classical_search/menu_block_summary.py
       the 2026-08-12 additions: --expect-cand-leaf-hash and the champ_leaf_hash fallback
       (the gate that catches a candidate arm which silently ran the champion leaf)
+  scripts/classical_search/chain_compare_cell_tables.py
+      the two-box candidate-leaf agreement gate, plus source-level regression guards on
+      denial_simsplit_chain.sh for the 2026-08-12 BLOCKED_D1 post-mortem
 
 The value of these tests is narrow and specific: every one of them guards a failure mode
 that produces a CLEAN-LOOKING WRONG NUMBER rather than a crash.
@@ -19,6 +22,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -30,9 +34,11 @@ CS = REPO / "scripts" / "classical_search"
 sys.path.insert(0, str(CS))
 
 import chain_capability_probe as probe          # noqa: E402
+import chain_compare_cell_tables as cellcmp     # noqa: E402
 import claim_next_band as claimer               # noqa: E402
 
 CHAMP = "a36d2e15a3b3d71d"
+CHAIN_SH = CS / "denial_simsplit_chain.sh"
 
 
 # --------------------------------------------------------------------------- #
@@ -217,3 +223,178 @@ def test_hash_gate_is_opt_in(tmp_path):
     got = _summarize(cell, tmp_path / "o.json", None)
     assert got["wiring_gates_clean"] is True           # unchanged for pre-existing callers
     assert "expected_cand_leaf_hash" not in got
+
+
+# --------------------------------------------------------------------------- #
+# chain_compare_cell_tables — the two-box candidate-leaf agreement gate        #
+#                                                                             #
+# Post-mortem of the 2026-08-12 BLOCKED_D1 false positive. The old gate was    #
+#   diff -q $SHARE/d1_cells.tsv $LSHARE/d1_cells.tsv                           #
+# run on the LOCAL box, and it was broken twice over:                          #
+#   (a) $LSHARE is the LAPTOP's mount prefix — an empty stub locally — so diff #
+#       exited 2 on a missing file and the chain reported "hashes disagree"    #
+#       about a table it had never read. It could never pass.                  #
+#   (b) worse, both prefixes name ONE physical file on the CIFS store, so once #
+#       (a) was fixed the gate would compare a file to ITSELF and pass         #
+#       unconditionally — vacuous exactly when it mattered.                    #
+# Every test below pins one of those two, or the real disagreement the gate    #
+# exists to catch.                                                             #
+# --------------------------------------------------------------------------- #
+ROW_A = "d1_denial_d1_s5_o3\t{\"denial_dose\": 1.0}\teffeca41772e3e78\n"
+ROW_B = "d1_denial_d4_s5_o3\t{\"denial_dose\": 4.0}\t451b61ccfa10b29e\n"
+
+
+def _table(p: Path, text: str) -> Path:
+    p.write_text(text)
+    return p
+
+
+def test_cells_gate_passes_on_two_distinct_agreeing_files(tmp_path):
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A + ROW_B)
+    b = _table(tmp_path / "d1_cells.laptop.tsv", ROW_A + ROW_B)
+    rc, msg = cellcmp.compare_cell_tables(a, b)
+    assert rc == cellcmp.RC_OK
+    assert "2 cell(s) agree" in msg and "distinct files" in msg
+
+
+def test_cells_gate_refuses_a_same_file_comparison(tmp_path):
+    """THE root cause. One physical file under two names must NEVER read as agreement."""
+    a = _table(tmp_path / "d1_cells.tsv", ROW_A + ROW_B)
+    b = tmp_path / "laptop_view_of_the_same_file.tsv"
+    os.link(a, b)                                  # what $SHARE/x vs $LSHARE/x really is
+    rc, msg = cellcmp.compare_cell_tables(a, b)
+    assert rc == cellcmp.RC_SAME_FILE
+    assert "SAME PHYSICAL FILE" in msg
+    # and it must not be rescuable by the contents happening to match
+    assert rc != cellcmp.RC_OK
+
+
+def test_cells_gate_blocks_when_the_remote_table_is_absent(tmp_path):
+    """A laptop probe that never ran / never persisted is a BLOCK, not a pass."""
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A)
+    rc, msg = cellcmp.compare_cell_tables(a, tmp_path / "d1_cells.laptop.tsv")
+    assert rc == cellcmp.RC_REMOTE_MISSING
+    assert "MISSING or EMPTY" in msg
+    # an empty file is the same story, not a different one
+    rc2, _ = cellcmp.compare_cell_tables(a, _table(tmp_path / "empty.tsv", ""))
+    assert rc2 == cellcmp.RC_REMOTE_MISSING
+
+
+def test_cells_gate_blocks_a_stale_remote_table(tmp_path):
+    """A table left over from an EARLIER run is not this run's second opinion."""
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A)
+    b = _table(tmp_path / "d1_cells.laptop.tsv", ROW_A)
+    os.utime(b, (1_000_000, 1_000_000))
+    rc, msg = cellcmp.compare_cell_tables(a, b, newer_than=2_000_000)
+    assert rc == cellcmp.RC_REMOTE_STALE and "STALE" in msg
+    assert cellcmp.compare_cell_tables(a, b, newer_than=500_000)[0] == cellcmp.RC_OK
+
+
+def test_cells_gate_catches_a_genuine_candidate_leaf_disagreement(tmp_path):
+    """The contamination the gate exists for: two boxes, two different candidate leaves."""
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A + ROW_B)
+    other = ROW_B.replace("451b61ccfa10b29e", "deadbeefdeadbeef")
+    b = _table(tmp_path / "d1_cells.laptop.tsv", ROW_A + other)
+    rc, msg = cellcmp.compare_cell_tables(a, b)
+    assert rc == cellcmp.RC_DIFFER
+    assert "d1_denial_d4_s5_o3" in msg and "deadbeefdeadbeef" in msg
+    assert "451b61ccfa10b29e" in msg              # names BOTH sides, no hand re-derivation
+
+
+def test_cells_gate_catches_a_cell_present_on_only_one_box(tmp_path):
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A + ROW_B)
+    b = _table(tmp_path / "d1_cells.laptop.tsv", ROW_A)
+    rc, msg = cellcmp.compare_cell_tables(a, b)
+    assert rc == cellcmp.RC_DIFFER and "ABSENT on laptop" in msg
+
+
+def test_cells_gate_is_not_flaky_on_crlf_or_a_missing_trailing_newline(tmp_path):
+    """Transport noise across the share must not fake a contamination BLOCK."""
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A + ROW_B)
+    b = _table(tmp_path / "d1_cells.laptop.tsv",
+               (ROW_A + ROW_B).replace("\n", "\r\n").rstrip("\r\n"))
+    assert cellcmp.compare_cell_tables(a, b)[0] == cellcmp.RC_OK
+
+
+def test_cells_gate_refuses_a_malformed_table_rather_than_calling_it_agreement(tmp_path):
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A)
+    b = _table(tmp_path / "d1_cells.laptop.tsv", "d1_denial_d1_s5_o3\tonly-two-fields\n")
+    assert cellcmp.compare_cell_tables(a, b)[0] == cellcmp.RC_REMOTE_BAD
+    c = _table(tmp_path / "bad_local.tsv", "junk\n")
+    assert cellcmp.compare_cell_tables(c, b)[0] == cellcmp.RC_LOCAL_BAD
+
+
+def test_cells_gate_cli_exit_codes_match_the_library(tmp_path):
+    a = _table(tmp_path / "d1_cells.local.tsv", ROW_A)
+    b = _table(tmp_path / "d1_cells.laptop.tsv", ROW_A.replace("effeca", "aaaaaa"))
+    r = subprocess.run([sys.executable, str(CS / "chain_compare_cell_tables.py"),
+                        "--local", str(a), "--remote", str(b)],
+                       capture_output=True, text=True)
+    assert r.returncode == cellcmp.RC_DIFFER
+    assert "[cells-gate] FAIL" in r.stderr
+    b.write_text(ROW_A)
+    r = subprocess.run([sys.executable, str(CS / "chain_compare_cell_tables.py"),
+                        "--local", str(a), "--remote", str(b)],
+                       capture_output=True, text=True)
+    assert r.returncode == 0 and "[cells-gate] PASS" in r.stdout
+
+
+# --------------------------------------------------------------------------- #
+# source-level regression guards on the chain itself                           #
+# --------------------------------------------------------------------------- #
+def test_chain_compares_two_box_distinct_basenames_under_the_local_prefix():
+    """Both halves of the 2026-08-12 bug, pinned in the shell source.
+
+    The comparison runs on the LOCAL box, so every path it is handed must carry the LOCAL
+    mount prefix ($OUT), and the two probe outputs must have DIFFERENT basenames or the
+    comparison is of one file with itself.
+    """
+    src = CHAIN_SH.read_text()
+    assert "CELLS_PROBE_LOCAL=$OUT/d1_cells.local.tsv" in src
+    assert "CELLS_PROBE_LAPTOP_HERE=$OUT/d1_cells.laptop.tsv" in src      # LOCAL prefix
+    assert "CELLS_PROBE_LAPTOP_REMOTE=$LOUT/d1_cells.laptop.tsv" in src   # laptop writes
+    # the gate is handed the LOCAL-prefix path, never the $LOUT one
+    assert '--remote "$CELLS_PROBE_LAPTOP_HERE"' in src
+    assert "$CELLS_PROBE_LAPTOP_REMOTE" not in src.split("--remote")[1][:400]
+    # the dead byte-diff on the laptop prefix must not come back
+    assert 'diff -q "$CELLS_TSV_LOCAL" "$CELLS_TSV_LAPTOP"' not in src
+
+
+def _laptop_probe_heredoc() -> str:
+    src = CHAIN_SH.read_text()
+    body = src.split('cat > "$LOGS/_laptop_D1_probe.sh" <<EOF', 1)[1].lstrip("\n")
+    return body.split("\nEOF\n", 1)[0]
+
+
+def test_laptop_probe_script_exports_the_canonical_champion_leaf_env():
+    """Without these the laptop hashes curve100, not the champion — every candidate hash it
+    derives would belong to a different leaf dialect and the agreement gate would block on a
+    difference that is really a missing export."""
+    h = _laptop_probe_heredoc()
+    for need in ("CARCASSONNE_V29_MEEPLE_CURVE=-10,-5,-1.25,0,2.5,3.75,5,6.25",
+                 "CARCASSONNE_V25_CAP=8", "CARCASSONNE_V25_OPP_CAP=8",
+                 "CARCASSONNE_V25_MEEPLE_K=2.0", "CARCASSONNE_USE_FLAT_LEAF=1",
+                 "CARCASSONNE_FIX_R9=1"):
+        assert need in h, f"laptop probe script lost {need}"
+    assert h.splitlines()[0].startswith("cd /home/doctor/projects/carcassone")  # cd on line 1
+
+
+def test_laptop_probe_persists_its_own_verdict_json():
+    """The laptop's evidence must survive as a verdict, not only as a log line."""
+    h = _laptop_probe_heredoc()
+    assert "--json-out $LAPTOP_JSON_REMOTE" in h
+    assert "--cells-out $CELLS_PROBE_LAPTOP_REMOTE" in h
+    src = CHAIN_SH.read_text()
+    assert 'cp -f "$LAPTOP_JSON_HERE" "$DIR/verdicts/D1_capability_laptop.json"' in src
+    assert "left NO verdict JSON" in src            # missing JSON is a hard BLOCK
+
+
+def test_chain_promotes_the_canonical_cells_table_only_after_the_gate():
+    """A run that blocks must leave no d1_cells.tsv for a launcher to pick up."""
+    src = CHAIN_SH.read_text()
+    gate = src.index("$CELLCMP")
+    promote = src.index('cp -f "$CELLS_PROBE_LOCAL" "$CELLS_TSV_LOCAL"')
+    launch = src.index('cat > "$LOGS/_laptop_D1.sh"')
+    assert gate < promote < launch
+    # nothing writes the canonical table before the promotion
+    assert '--cells-out "$CELLS_TSV_LOCAL"' not in src

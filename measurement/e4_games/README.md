@@ -5,6 +5,12 @@ schema `carcassonne-android-archive/v1`: lossless `(deck_seed, actions)` per the
 root_replay contract, plus result summary, per-move AI latencies, and provenance
 (champion id, leaf hash, effective budget).
 
+> ⛔ **2026-08-12: the ledger below is STALE and the pull is BLOCKED.** Joshua reports more
+> wins since 2026-08-10, but the phone rejects this host's adb client certificate
+> (`SSLV3_ALERT_CERTIFICATE_UNKNOWN`) — the wireless-debugging pairing is gone and must be
+> redone with a 6-digit code on the device. Diagnosis, unblock steps, and an independent
+> re-verification of every number below: [E4_UPDATE_20260812.md](E4_UPDATE_20260812.md).
+
 **⚠️ Grading context is EPOCH-DEPENDENT — read the archive, not this sentence.** Archives
 from **before the 2026-08-01 app build** were played at the **k4×688 mobile carve-out**
 (~50 elo below the champion of record) and grade against that budget. Archives from the

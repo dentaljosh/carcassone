@@ -78,6 +78,7 @@ DRY=0
 [ "${1:-}" = "--dry-run" ] && DRY=1
 
 PROBE=$REPO/scripts/classical_search/chain_capability_probe.py
+CELLCMP=$REPO/scripts/classical_search/chain_compare_cell_tables.py
 CLAIM=$REPO/scripts/classical_search/claim_next_band.py
 SUMMARY=$REPO/scripts/classical_search/menu_block_summary.py
 FAIRHARNESS=$REPO/scripts/classical_search/eval_fair_puct.py
@@ -275,17 +276,33 @@ fi
 if [ -f "$DIR/DONE_D1" ]; then
   log "BLOCK D1 already DONE - skipping"
 else
+  # The CANONICAL table both launchers read, written only AFTER the two-box gate passes.
   CELLS_TSV_LOCAL=$OUT/d1_cells.tsv
   CELLS_TSV_LAPTOP=$LOUT/d1_cells.tsv
+  # ⚠️ Gate artifacts must have BOX-DISTINCT BASENAMES. $OUT/x and $LOUT/x are the SAME
+  # physical file (one CIFS store, two mount prefixes), so if both probes write "the same"
+  # filename the second write overwrites the first and the agreement gate compares a file to
+  # ITSELF - passing unconditionally, including when the boxes genuinely disagree. Distinct
+  # basenames make that vacuity structurally impossible; chain_compare_cell_tables.py
+  # re-checks dev+ino anyway so a future "tidy" cannot quietly restore it.
+  CELLS_PROBE_LOCAL=$OUT/d1_cells.local.tsv          # written by the local probe
+  CELLS_PROBE_LAPTOP_REMOTE=$LOUT/d1_cells.laptop.tsv # written by the laptop probe (its prefix)
+  CELLS_PROBE_LAPTOP_HERE=$OUT/d1_cells.laptop.tsv    # SAME file, LOCAL prefix - what we read
+  LAPTOP_JSON_REMOTE=$LOUT/D1_capability_laptop.json
+  LAPTOP_JSON_HERE=$OUT/D1_capability_laptop.json
   PROBE_ARGS=(--require denial --doses "$DENIAL_DOSES" --size-min "$DENIAL_SIZE_MIN"
               --open-max "$DENIAL_OPEN_MAX" --max-cells 4)
 
   if [ "$DRY" = 1 ]; then
     log "--- [dry-run] BLOCK D1 ---"
     echo "[dry-run] capability probe (LOCAL, runtime):"
-    echo "[dry-run]   $PY $PROBE ${PROBE_ARGS[*]} --cells-out $CELLS_TSV_LOCAL --json-out $DIR/verdicts/D1_capability_local.json"
+    echo "[dry-run]   $PY $PROBE ${PROBE_ARGS[*]} --cells-out $CELLS_PROBE_LOCAL --json-out $DIR/verdicts/D1_capability_local.json"
     echo "[dry-run] capability probe (LAPTOP, runtime, piped script with cd on line 1):"
-    echo "[dry-run]   ssh $LAPTOP 'bash -s' < $LOGS/_laptop_D1_probe.sh   # same probe, --cells-out $CELLS_TSV_LAPTOP"
+    echo "[dry-run]   ssh $LAPTOP 'bash -s' < $LOGS/_laptop_D1_probe.sh   # same probe, --cells-out $CELLS_PROBE_LAPTOP_REMOTE --json-out $LAPTOP_JSON_REMOTE"
+    echo "[dry-run] two-box agreement gate (BOTH paths carry the LOCAL prefix - this process"
+    echo "[dry-run] reads them from THIS box; box-distinct basenames keep it non-vacuous):"
+    echo "[dry-run]   $PY $CELLCMP --local $CELLS_PROBE_LOCAL --remote $CELLS_PROBE_LAPTOP_HERE --remote-label laptop --newer-than <probe-start-epoch>"
+    echo "[dry-run] then the agreed table is promoted: cp $CELLS_PROBE_LOCAL $CELLS_TSV_LOCAL"
     echo "[dry-run] band claim (idempotent, sentinel $DIR/BAND_D1):"
     $PY "$CLAIM" --label "D1 dry-run" --notes "-" --evidence "-" \
         --sentinel "$DIR/BAND_D1" --registry "$REGISTRY" --dry-run 2>&1 | sed 's/^/[dry-run]   /'
@@ -322,14 +339,23 @@ else
     log "--- BLOCK D1: targeted-denial dose screen, n=$D1_N/cell, instrument=eval_puct_priors@$D1_SIMS ---"
 
     # (1) CAPABILITY, LOCAL. Refuses on a carc_rs that predates the denial term.
-    if ! $PY "$PROBE" "${PROBE_ARGS[@]}" --cells-out "$CELLS_TSV_LOCAL" \
+    if ! $PY "$PROBE" "${PROBE_ARGS[@]}" --cells-out "$CELLS_PROBE_LOCAL" \
             --json-out "$DIR/verdicts/D1_capability_local.json" >> "$LOGS/D1_probe.log" 2>&1; then
       blocked D1 "LOCAL capability probe FAILED - see $DIR/verdicts/D1_capability_local.json and $LOGS/D1_probe.log. The loaded carc_rs almost certainly predates the targeted-denial term; rebuild and install the combined wheel (maturin develop --release) on this box. Refusing to run: a default-off candidate arm produces a beautiful, meaningless null."
     fi
-    log "D1: local capability probe PASS -> $CELLS_TSV_LOCAL"
+    log "D1: local capability probe PASS -> $CELLS_PROBE_LOCAL"
 
     # (2) CAPABILITY, LAPTOP. It plays ~40% of the games; a stale wheel THERE contaminates
     # the same cell dir with default-off games that are indistinguishable at read time.
+    # Delete this run's laptop artifacts FIRST and record the epoch: a table left behind by
+    # an earlier run must never be mistaken for this run's second opinion.
+    rm -f "$CELLS_PROBE_LAPTOP_HERE" "$LAPTOP_JSON_HERE"
+    LAPTOP_PROBE_T0=$(date +%s)
+    # ⚠️ The canonical champion-leaf env MUST be exported inside this remote script. The
+    # probe resolves DEFAULT_CONFIG from the environment at import time; without these the
+    # laptop hashes curve100 (84c1c7f313dbf876) instead of the champion a36d2e15a3b3d71d and
+    # every candidate hash it derives belongs to a different leaf dialect. Keep in sync with
+    # the exports at the top of this file.
     cat > "$LOGS/_laptop_D1_probe.sh" <<EOF
 cd /home/doctor/projects/carcassone || exit 1
 export CARCASSONNE_V25_CAP=8 CARCASSONNE_V25_OPP_CAP=8 CARCASSONNE_V25_DROP_THREE_OPEN=0
@@ -337,24 +363,44 @@ export CARCASSONNE_V29_MEEPLE_CURVE=-10,-5,-1.25,0,2.5,3.75,5,6.25 CARCASSONNE_V
 export CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_REPR=1 CARCASSONNE_USE_CY_LEAF=1 CARCASSONNE_V25_VALUE_BLEND=0
 export CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export CARCASSONNE_FIX_R9=1
+mkdir -p $LOUT
 /home/doctor/projects/carcassone/.venv/bin/python \\
   /home/doctor/projects/carcassone/scripts/classical_search/chain_capability_probe.py \\
   --require denial --doses "$DENIAL_DOSES" --size-min $DENIAL_SIZE_MIN \\
-  --open-max $DENIAL_OPEN_MAX --max-cells 4 --cells-out $CELLS_TSV_LAPTOP
+  --open-max $DENIAL_OPEN_MAX --max-cells 4 \\
+  --cells-out $CELLS_PROBE_LAPTOP_REMOTE --json-out $LAPTOP_JSON_REMOTE
 EOF
     laptop_run "$LOGS/_laptop_D1_probe.sh" 900 > "$LOGS/D1_probe_laptop.log" 2>&1
     lrc=$?
     if [ "$lrc" -ne 0 ]; then
       blocked D1 "LAPTOP capability probe FAILED (rc=$lrc) - see $LOGS/D1_probe_laptop.log. The laptop's carc_rs is very likely the pre-denial wheel. It plays a large share of every cell and its games are INDISTINGUISHABLE from the local box's at read time, so a stale wheel there silently dilutes the candidate arm toward the champion. Rebuild+install on the laptop, then re-run this chain."
     fi
-    # Same doses must yield the same candidate hashes on both boxes, or the two boxes are
-    # not computing the same candidate leaf (different leaf era / env / dialect).
-    if ! diff -q "$CELLS_TSV_LOCAL" "$CELLS_TSV_LAPTOP" >/dev/null 2>&1; then
-      blocked D1 "the local and laptop capability probes produced DIFFERENT cell tables (candidate leaf hashes disagree). The two boxes are not computing the same candidate leaf; a mixed-rev cell is contamination, not a slow cell. Diff: $CELLS_TSV_LOCAL vs $CELLS_TSV_LAPTOP"
+    # Durable laptop evidence next to the local verdict (the probe's own JSON, not just a log).
+    if [ -f "$LAPTOP_JSON_HERE" ]; then
+      cp -f "$LAPTOP_JSON_HERE" "$DIR/verdicts/D1_capability_laptop.json"
+    else
+      blocked D1 "the LAPTOP capability probe exited 0 but left NO verdict JSON at $LAPTOP_JSON_REMOTE (read here as $LAPTOP_JSON_HERE). A probe that cannot persist its own result is not evidence that the laptop is capable - see $LOGS/D1_probe_laptop.log."
     fi
-    log "D1: laptop capability probe PASS, cell tables identical on both boxes"
 
-    # (3) BAND — claimed HERE, after the gates, immediately before game 1.
+    # (3) TWO-BOX AGREEMENT. Same doses must yield the same candidate hashes on both boxes,
+    # or the two boxes are not computing the same candidate leaf (different leaf era / env /
+    # dialect). BOTH paths below carry the LOCAL prefix because THIS process reads them from
+    # the local box - the pre-fix gate spelled the laptop side with the LAPTOP prefix
+    # (/mnt/carc-shared, an empty stub here), so diff exited 2 on a missing file and the
+    # chain reported "hashes disagree" about a table it had never read.
+    if ! $PY "$CELLCMP" --local "$CELLS_PROBE_LOCAL" --remote "$CELLS_PROBE_LAPTOP_HERE" \
+            --remote-label laptop --newer-than "$LAPTOP_PROBE_T0" \
+            >> "$LOGS/D1_probe.log" 2>&1; then
+      blocked D1 "two-box candidate-leaf agreement gate FAILED - see the [cells-gate] line at the end of $LOGS/D1_probe.log for the exact reason (missing/stale laptop table, a vacuous same-file comparison, or genuinely disagreeing candidate leaf hashes). Local table: $CELLS_PROBE_LOCAL | laptop table: $CELLS_PROBE_LAPTOP_REMOTE (read here as $CELLS_PROBE_LAPTOP_HERE)."
+    fi
+    log "D1: laptop capability probe PASS, cell tables identical on both boxes (two distinct files compared)"
+
+    # (4) PROMOTE the agreed table to the canonical name both launchers read. Nothing writes
+    # $CELLS_TSV_LOCAL before this point, so a run that blocks above leaves no table for a
+    # launcher to pick up.
+    cp -f "$CELLS_PROBE_LOCAL" "$CELLS_TSV_LOCAL"
+
+    # (5) BAND — claimed HERE, after the gates, immediately before game 1.
     D1_CELL_LIST=$(cut -f1 "$CELLS_TSV_LOCAL" | tr '\n' ' ')
     D1_NOTES="Seeds <band>..<band+$((D1_N/2-1))> ($((D1_N/2)) decks x 2 seats, CRN-shared by all cells). Doses/thresholds chosen from the 2026-08-11 offline calibration: doses=[$DENIAL_DOSES] size_min=$DENIAL_SIZE_MIN open_max=$DENIAL_OPEN_MAX. Cells: $D1_CELL_LIST. Candidate = champion leaf + targeted denial injected CANDIDATE-SIDE ONLY via --cand-leaf-json; opponent = the intact champion a36d2e15a3b3d71d. Both sides fixed_v1 + CARCASSONNE_FIX_R9=1, rust, 2750 ablation instrument. Capability probe (knob exists / accepted by the loaded carc_rs / CHANGES the leaf value) PASSED ON BOTH BOXES before game 1; per-cell expected cand_leaf_hash re-checked against each manifest at read time. Screen resolution ~+/-35 elo at 2 sigma - a null here is a BOUNDED null. Registered before game 1. FLIP TO retired AT CLOSE-OUT."
     D1_BAND=$($PY "$CLAIM" --label "D1 - TARGETED-DENIAL DOSE SCREEN: $(wc -l < "$CELLS_TSV_LOCAL") cells x n=$D1_N deck-paired vs the intact champion leaf, at the 2750 ablation instrument (eval_puct_priors.py --cand-sims $D1_SIMS both sides), rust both sides, fixed_v1+R9. ALL CELLS SHARE THIS BAND with CRN." \
@@ -365,7 +411,7 @@ EOF
     esac
     log "D1: claimed band $D1_BAND (registry row written; sentinel $DIR/BAND_D1)"
 
-    # (4) LAUNCH. Laptop first (backgrounded CALL), then local in this shell's background.
+    # (6) LAUNCH. Laptop first (backgrounded CALL), then local in this shell's background.
     cat > "$LOGS/_laptop_D1.sh" <<EOF
 cd /home/doctor/projects/carcassone || exit 1
 mkdir -p $LOUT
@@ -386,7 +432,7 @@ EOF
     D1_RC=$?; CUR_PID=""
     log "BLOCK D1: local launcher exited rc=$D1_RC"
 
-    # (5) READ-TIME GATES + extracts. Note the hash gate: it is the second, independent
+    # (7) READ-TIME GATES + extracts. Note the hash gate: it is the second, independent
     # check that the knob reached the leaf (the probe was the first, before game 1).
     D1_FAIL=0
     while IFS=$'\t' read -r cell cjson chash; do
