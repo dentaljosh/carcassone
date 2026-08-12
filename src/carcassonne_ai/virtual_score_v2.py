@@ -227,6 +227,37 @@ class LeafConfig:
     # defaults, so 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
     v29_phase_beta: float = 0.0
     v29_phase_norm: float = 1.0
+    # --- TARGETED DENIAL on near-complete large opponent cities (candidate-only,
+    # BACKLOG 2026-05-16 item 3 / LEVER_INDEX "targeted denial", building 2026-08-11) ---
+    # Hypothesis: the leaf under-fears the CONJUNCTION of large AND near-complete
+    # opponent cities — the capped opponent-anticipation term (`opp_bonus_cap`) can
+    # never express more than `opp_bonus_cap` points of fear, so the champion won't
+    # spend a tile to block where a strong human would. For each OPPONENT-STRICT-
+    # MAJORITY incomplete city with (anticipated completed value `city_root_delta`
+    # >= denial_size_min) AND (near-complete: 0 < open edges <= denial_open_max),
+    # the leaf subtracts `denial_dose * (delta - denial_size_min + 1)` ON TOP of the
+    # existing anticipation, EXPLICITLY NOT subject to `opp_bonus_cap` — escaping
+    # the cap for near-complete features is the entire point of the term (see
+    # flat_leaf.flat_denial_term). Tied cities never fire (both majority-score);
+    # own cities never fire from the evaluating player's POV.
+    #   denial_dose:     float, 0.0 (default) == term fully off == today's leaf,
+    #                    via an early branch (never an add of 0.0).
+    #   denial_size_min: anticipated-completed-value threshold, points.
+    #   denial_open_max: max distinct open (empty-adjacent) cells to count as
+    #                    "near-complete" (same open_n the closure schedule keys on).
+    # ⚠️ FLAT PATH ONLY. `flat_leaf.py` and the Rust leaf implement it; the object
+    # (engine) path FAILS LOUD below, and `flat_leaf_cy.pyx` deliberately does NOT
+    # implement it (the F7b pattern: candidate cells run `--backend rust`, where no
+    # Python leaf is computed), so a SET dose routes off the cy fast path to the
+    # bit-exact pure-Python flat leaf.
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg
+    # recipe (snapshot._frozen_config_hash + its mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE at their
+    # defaults, so 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
+    # A candidate that SETS a dose shifts the hash (it is a different leaf — intended).
+    denial_dose: float = 0.0
+    denial_size_min: float = 8.0
+    denial_open_max: int = 2
 
 
 def _config_from_env() -> LeafConfig:
@@ -278,6 +309,11 @@ def _config_from_env() -> LeafConfig:
         # unmodified champion expression (early branch, not a multiply by 1.0).
         v29_phase_beta=float(os.environ.get("CARCASSONNE_V29_PHASE_BETA", "0.0")),
         v29_phase_norm=float(os.environ.get("CARCASSONNE_V29_PHASE_NORM", "1.0")),
+        # Targeted denial — default 0.0 == term fully off == unchanged production
+        # DEFAULT_CONFIG (the phase-beta pattern: env-buildable candidate knob).
+        denial_dose=float(os.environ.get("CARCASSONNE_DENIAL_DOSE", "0.0")),
+        denial_size_min=float(os.environ.get("CARCASSONNE_DENIAL_SIZE_MIN", "8.0")),
+        denial_open_max=int(os.environ.get("CARCASSONNE_DENIAL_OPEN_MAX", "2")),
     )
 
 
@@ -734,6 +770,14 @@ def virtual_score_v2(
         raise NotImplementedError(
             "LeafConfig.farm_base_off / farm_growth_off (F7b) require the flat leaf "
             "path (set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
+        )
+    if getattr(cfg, "denial_dose", 0.0) != 0.0:
+        # Targeted denial is flat-path ONLY (see LeafConfig.denial_dose) — fail
+        # loudly rather than silently scoring WITHOUT the denial term here, which
+        # would read as "denial is worth nothing" instead of "denial never ran".
+        raise NotImplementedError(
+            "LeafConfig.denial_dose (targeted denial) requires the flat leaf path "
+            "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
         )
     if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
         # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC

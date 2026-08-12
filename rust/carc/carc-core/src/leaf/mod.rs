@@ -145,6 +145,20 @@ pub struct LeafConfig {
     /// k-distribution (`scripts/classical_search/compute_phase_norm.py`). Supplied by
     /// the caller: the leaf must stay a pure function of `(state, cfg)`.
     pub v29_phase_norm: f64,
+    /// Targeted denial on near-complete large opponent cities
+    /// (`virtual_score_v2.LeafConfig.denial_dose`; BACKLOG 2026-05-16 item 3).
+    /// `0.0` (default) == term fully off == the champion leaf, bit-for-bit (early
+    /// branch, never a subtract of 0.0). A nonzero dose subtracts
+    /// `dose * Σ (delta - denial_size_min + 1)` over every OPPONENT-strict-majority
+    /// incomplete city with `0 < open_n <= denial_open_max` and
+    /// `city_root_delta >= denial_size_min` — deliberately NOT subject to
+    /// `opp_bonus_cap` (escaping that cap for near-complete large opponent cities
+    /// is the point of the term; see [`denial_term`]).
+    pub denial_dose: f64,
+    /// `LeafConfig.denial_size_min` — anticipated-completed-value threshold (points).
+    pub denial_size_min: f64,
+    /// `LeafConfig.denial_open_max` — max distinct open cells to count as near-complete.
+    pub denial_open_max: i32,
 }
 
 /// `flat_leaf._PHASE_K0` — mid-deck, frozen by the prereg.
@@ -190,6 +204,9 @@ impl LeafConfig {
             farm_growth_off: false,
             v29_phase_beta: 0.0,
             v29_phase_norm: 1.0,
+            denial_dose: 0.0,
+            denial_size_min: 8.0,
+            denial_open_max: 2,
         }
     }
 
@@ -808,6 +825,75 @@ pub fn farm_flip_term(state: &GameState, player: usize, d: &Decomp) -> f64 {
 }
 
 // ---------------------------------------------------------------------------
+// Targeted denial (BACKLOG 2026-05-16 item 3; building 2026-08-11)
+// ---------------------------------------------------------------------------
+
+/// `flat_leaf.flat_denial_term` — the RAW denial magnitude `T >= 0` from
+/// `player`'s POV; the leaf subtracts `cfg.denial_dose * T`.
+///
+/// A city component qualifies iff ALL of: opponent STRICT weighted-meeple
+/// majority (`counts[opp] > counts[player]`, big meeple = 2 — tied / own /
+/// unmeepled never fire), incomplete with `0 < open_n <= denial_open_max`
+/// (`open_n == 0` is the D16 unclosable board-edge city), and
+/// `city_root_delta >= denial_size_min` (the anticipated completed value the
+/// closure bonus already prices). Each contributes
+/// `delta - denial_size_min + 1.0` (left-associative, matching Python's
+/// `float(delta) - size_min + 1.0`); the sum is `fsum`-reduced so iteration
+/// order is irrelevant.
+///
+/// ⚠️ EXPLICITLY NOT SUBJECT TO `opp_bonus_cap`: escaping the opponent-
+/// anticipation cap for the (large AND near-complete) conjunction is the entire
+/// point of the term. It is applied as a separate uncapped subtraction in
+/// [`leaf_terms_with`], on top of the existing (capped) anticipation.
+pub fn denial_term(state: &GameState, player: usize, d: &Decomp, cfg: &LeafConfig) -> f64 {
+    let opp = 1 - player;
+    // city root -> per-player weighted meeple counts, first-touch order
+    let mut city_counts: Vec<(u32, [i64; 2])> = Vec::new();
+    for pl in 0..2 {
+        for mp in &state.placed_meeples[pl] {
+            let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
+            let tile = tiles::tile(state.get_tile(r, c).expect("meeple on an empty cell"));
+            if tile.get_type(side) != Some(TerrainType::City) {
+                continue;
+            }
+            let root = match d.city_side_root(r, c, side) {
+                Some(x) => x,
+                None => continue,
+            };
+            let w = meeple_weight(mp.meeple_type);
+            match city_counts.iter_mut().find(|e| e.0 == root) {
+                Some(e) => e.1[pl] += w,
+                None => {
+                    let mut cnt = [0i64; 2];
+                    cnt[pl] += w;
+                    city_counts.push((root, cnt));
+                }
+            }
+        }
+    }
+    let mut contribs: Vec<f64> = Vec::new();
+    for &(root, cnt) in &city_counts {
+        if cnt[opp] <= cnt[player] {
+            continue; // opponent STRICT majority only
+        }
+        let r = root as usize;
+        if d.city_root_finished[r] {
+            continue;
+        }
+        let open_n = d.city_root_open_n[r] as i32;
+        if open_n <= 0 || open_n > cfg.denial_open_max {
+            continue; // unclosable, or not near-complete
+        }
+        let delta = d.city_root_delta[r] as f64;
+        if delta < cfg.denial_size_min {
+            continue; // not large
+        }
+        contribs.push(delta - cfg.denial_size_min + 1.0);
+    }
+    fsum(&contribs)
+}
+
+// ---------------------------------------------------------------------------
 // The leaf
 // ---------------------------------------------------------------------------
 
@@ -819,6 +905,9 @@ pub struct LeafTerms {
     pub bonus_opp_raw: f64,
     pub bonus_self: f64,
     pub bonus_opp: f64,
+    /// The RAW targeted-denial magnitude `T` (the leaf subtracts `dose * T`);
+    /// `0.0` whenever `denial_dose == 0.0` (the term is never computed then).
+    pub denial_term: f64,
     pub meeple_term: f64,
     pub return_term: f64,
     pub flip_term: f64,
@@ -871,6 +960,18 @@ pub fn leaf_terms_with(
     // `score = base + bonus_self - bonus_opp` — left-associative, exactly as written.
     let mut score = base as f64 + bonus_self - bonus_opp;
 
+    // Targeted denial: an UNCAPPED extra subtraction on top of the (capped)
+    // opponent anticipation — deliberately NOT routed through `soft_capped` /
+    // `opp_bonus_cap` (see `denial_term`). dose == 0.0 (default/champion) takes
+    // an early branch — never a subtract of 0.0 — so default traffic is
+    // bit-identical, not merely equal. Mirrors `flat_leaf.flat_virtual_score_v2`:
+    // applied BEFORE the meeple/curve term, in the same fixed order.
+    let mut den_term = 0.0;
+    if cfg.denial_dose != 0.0 {
+        den_term = denial_term(state, player, d, cfg);
+        score -= cfg.denial_dose * den_term;
+    }
+
     let meeple_term = match &cfg.v29_meeple_curve {
         Some(curve) => {
             // Part C: beta == 0.0 (default/champion) takes the UNMODIFIED expression
@@ -915,6 +1016,7 @@ pub fn leaf_terms_with(
         bonus_opp_raw,
         bonus_self,
         bonus_opp,
+        denial_term: den_term,
         meeple_term,
         return_term: r_term,
         flip_term: f_term,

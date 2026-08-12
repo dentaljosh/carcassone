@@ -37,9 +37,12 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 # Mirror in alphabeta_agent._leaf_hash + tests/test_t3_optuna's inline recipe.
 # F7b farm knockouts (2026-08-02) postdate a36d2e15 too, so they follow the F6 rule.
 # The Part C phase multiplier (2026-08-09) postdates it as well — same rule.
+# Targeted denial (2026-08-11) likewise — same rule.
 _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
                                  "farm_base_off": False, "farm_growth_off": False,
-                                 "v29_phase_beta": 0.0, "v29_phase_norm": 1.0}
+                                 "v29_phase_beta": 0.0, "v29_phase_norm": 1.0,
+                                 "denial_dose": 0.0, "denial_size_min": 8.0,
+                                 "denial_open_max": 2}
 
 
 def _leaf_dict(cfg) -> dict:
@@ -179,5 +182,17 @@ def _assert_cy_float_path(cfg) -> None:
               f"{getattr(cfg, 'farm_base_off', False)}, farm_growth_off="
               f"{getattr(cfg, 'farm_growth_off', False)}) — the candidate leaf leaves the "
               "Cython fast path for the pure-Python flat leaf (bit-exact, ~12.5x slower "
+              "per leaf). Intended only with --backend rust, where no Python leaf runs.",
+              file=_sys.stderr)
+    # Targeted denial: the SECOND knob family with deliberately no cy implementation
+    # (the F7b pattern — candidate cells run `--backend rust`, where no Python leaf is
+    # computed). A set dose leaves the cy fast path for the bit-exact pure-Python flat
+    # leaf (scripts/rustport/reconcile_leaf.py --configs denial); that is a SPEED fact,
+    # not a correctness one, so this WARNS instead of raising (see the F7b clause).
+    if getattr(cfg, "denial_dose", 0.0) != 0.0:
+        import sys as _sys
+        print("[leaf-override] WARNING: targeted denial set (denial_dose="
+              f"{getattr(cfg, 'denial_dose', 0.0)}) — the candidate leaf leaves the "
+              "Cython fast path for the pure-Python flat leaf (bit-exact, much slower "
               "per leaf). Intended only with --backend rust, where no Python leaf runs.",
               file=_sys.stderr)

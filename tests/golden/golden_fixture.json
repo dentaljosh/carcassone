@@ -2637,11 +2637,11 @@
  "meta": {
   "canonical_bonus_sum": true,
   "cfg_hashes": {
-   "v27": "6b4f4a230568c798",
-   "v28": "0c84c12ec0eef237",
-   "v29": "f18ecfa0d6386f5b"
+   "v27": "f8b411c24542591f",
+   "v28": "c5915aa6fb6cec22",
+   "v29": "c9149c8107e8c23a"
   },
-  "current_v29_hash": "f18ecfa0d6386f5b",
+  "current_v29_hash": "c9149c8107e8c23a",
   "documented_v29_hash": "7fc930b82801cb43",
   "env": {
    "CARCASSONNE_USE_CY_REPR": "1",

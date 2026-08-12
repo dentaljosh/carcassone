@@ -115,6 +115,9 @@ impl PyLeafConfig {
         farm_growth_off = false,
         v29_phase_beta = 0.0,
         v29_phase_norm = 1.0,
+        denial_dose = 0.0,
+        denial_size_min = 8.0,
+        denial_open_max = 2,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -134,6 +137,9 @@ impl PyLeafConfig {
         farm_growth_off: bool,
         v29_phase_beta: f64,
         v29_phase_norm: f64,
+        denial_dose: f64,
+        denial_size_min: f64,
+        denial_open_max: i32,
     ) -> Self {
         PyLeafConfig {
             inner: leaf::LeafConfig {
@@ -153,6 +159,9 @@ impl PyLeafConfig {
                 farm_growth_off,
                 v29_phase_beta,
                 v29_phase_norm,
+                denial_dose,
+                denial_size_min,
+                denial_open_max,
             },
         }
     }
@@ -519,6 +528,7 @@ impl PyMirrorState {
         d.set_item("bonus_opp_raw", t.bonus_opp_raw)?;
         d.set_item("bonus_self", t.bonus_self)?;
         d.set_item("bonus_opp", t.bonus_opp)?;
+        d.set_item("denial_term", t.denial_term)?;
         d.set_item("meeple_term", t.meeple_term)?;
         d.set_item("return_term", t.return_term)?;
         d.set_item("flip_term", t.flip_term)?;
