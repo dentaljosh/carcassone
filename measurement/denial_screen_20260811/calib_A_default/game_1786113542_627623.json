@@ -1,0 +1,49 @@
+{
+ "schema": "carcassonne-denial-e4-replay/v1",
+ "archive": "1786113542_627623.json",
+ "deck_seed": 627623,
+ "rules_profile": "fixed_v1",
+ "human_player": 0,
+ "champion_seat": 1,
+ "recorded_scores": [
+  116,
+  78
+ ],
+ "replayed_scores": [
+  116,
+  78
+ ],
+ "replay_scores_match": true,
+ "budget": {
+  "sims_per_det": 1376,
+  "k_dets": 8,
+  "source": "archive"
+ },
+ "seed": 12345,
+ "doses": [
+  1.0,
+  4.0
+ ],
+ "denial_size_min": 8.0,
+ "denial_open_max": 2,
+ "leaf_hash_production": "a36d2e15a3b3d71d",
+ "n_plies_total": 141,
+ "n_graded": 63,
+ "n_searched_this_run": 63,
+ "champ_agrees_archive": 52,
+ "flips": {
+  "d1": 0,
+  "d4": 0
+ },
+ "flip_plies": {
+  "d1": [],
+  "d4": []
+ },
+ "mean_secs_per_graded_ply": 3.854,
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "wall_secs": 242.9
+}
