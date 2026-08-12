@@ -91,8 +91,39 @@ meaningless null**. So before game 1, on **both boxes**, the probe requires:
    stays bit-identical on every sampled value. (5) and (6) are what separate "accepted" from
    "accepted and ignored".
 
-Both boxes' cell tables must be **byte-identical** or the chain blocks: differing hashes mean
-the two boxes are not computing the same candidate leaf, and their games land in the same dir.
+Both boxes' cell tables must **agree** or the chain blocks: differing hashes mean the two
+boxes are not computing the same candidate leaf, and their games land in the same dir.
+
+### 4a. Post-mortem — the 2026-08-12 01:23 `BLOCKED_D1` was a FALSE positive
+
+Both probes had in fact PASSED with identical hashes. The gate itself was broken twice over,
+and the fix (commit `afc28c5`, `scripts/classical_search/chain_compare_cell_tables.py`) is
+worth understanding because the second half is the dangerous one:
+
+1. **It could never pass.** The chain ran `diff -q $SHARE/d1_cells.tsv $LSHARE/d1_cells.tsv`
+   *on the local box*. `$LSHARE` (`/mnt/carc-shared`) is the **laptop's** mount prefix; on the
+   local box that path is an empty stub directory. `diff` exited 2 on a missing file, the
+   `2>&1` swallowed *"No such file or directory"*, and the chain reported "candidate leaf
+   hashes disagree" about a table it had never read.
+2. **It would have been vacuous if it could.** `$SHARE/x` and `$LSHARE/x` are **one physical
+   file** on the CIFS store (verified: identical md5, and a marker written locally is visible
+   from the laptop). Both probes wrote that single path — the laptop's write just overwrote
+   the local box's — so a prefix-corrected `diff` would have compared the file to **itself**
+   and passed unconditionally, including when the boxes genuinely disagreed.
+
+The gate now: each box writes a **box-distinct basename** (`d1_cells.local.tsv` /
+`d1_cells.laptop.tsv`), both are read under the **local** prefix, and
+`chain_compare_cell_tables.py` hard-blocks with a distinct message on a missing/empty remote
+table, a **stale** remote table (deleted before the probe, freshness enforced by mtime), the
+two paths sharing a `dev+ino`, a malformed table, or a real hash disagreement (naming both
+sides). It compares **parsed rows**, so CRLF / trailing-newline noise cannot fake a block. The
+laptop probe now also persists `verdicts/D1_capability_laptop.json`, and a probe that exits 0
+without one is a hard block. The canonical `d1_cells.tsv` the launchers read is written only
+**after** the gate passes, so a blocked run leaves no table for a launcher to pick up.
+
+**Generalisable trap:** any command that names both mount prefixes runs on exactly one box, so
+at most one of those paths is real. Cross-box file comparisons must bring the remote artifact
+*under the local prefix* and give it a *different basename*.
 
 Second, independent check at read time: each cell's extract is produced with
 `menu_block_summary.py --expect-cand-leaf-hash`, which fails the wiring gate — and stamps
