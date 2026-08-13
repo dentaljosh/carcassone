@@ -1,0 +1,47 @@
+2026-08-13 13:37:51
+laptop leg refused or failed to launch
+see /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/logs/dispatch_laptop.log
+
+=======================================================================
+*** SUPERSEDED 2026-08-13 13:47 — THE LAPTOP LEG IS RUNNING. ***
+=======================================================================
+
+This marker records the FIRST dispatch attempt only. Do not read it as the
+state of the cell. See LAPTOP_REJOIN_20260813.md for the full timeline.
+
+Why the first attempt refused (rc=6): the launcher's sync guard found the
+laptop tree dirty and would not `git reset --hard` over it. That guard was
+RIGHT to fire — the dirt was untracked run artifacts belonging to other
+sessions (e4_autopsy results, mining logs), plus a hand-written copy of the
+dose-0.25 cell JSON left by the wheel-rebuild work earlier the same day.
+
+Resolution (by hand, not by relaxing the guard):
+  1. Removed ONLY the laptop's untracked cell JSON — byte-identical to the
+     now-committed one (md5 f375ac6e2ba50919426f221bcf4f2429 on both boxes).
+  2. Synced with `git fetch <bundle> && git merge --ff-only FETCH_HEAD`,
+     which cannot touch unrelated untracked files. Laptop HEAD advanced
+     a86c11d8 -> 217f0cdb, matching local exactly.
+  3. Dispatched from a COPY of dispatch/laptop_leg.sh with only the sync
+     block replaced by a HEAD assertion + a tracked-modified check. Every
+     launcher env-canon export, gate, and eval flag left byte-identical.
+
+The chain script itself was NOT edited — it was mid-execution running the
+local leg, and bash reads scripts incrementally.
+
+Laptop gates on the re-dispatch, all PASS, identical to local:
+  champion  a36d2e15a3b3d71d
+  candidate 15948beccf3472d3
+  trap      92ac0da996e1b37b   (reproduced on-box, not asserted)
+  resolved_jrules_dose 0.25    jrules_mask 31
+  G3 reconcile PASS · G4 probe PASS · O0 PASS
+  share resolved by sentinel to /mnt/carc-shared (rejected /mnt/c/carc-shared,
+  1 entry = the laptop's own C:)
+
+Confirmed running at 13:48: 18 eval_fair_puct workers on the laptop, load
+16.09, and both hosts claiming into the one shared-claim cell
+(menu-helper-laptop-wsl 43 claims, menu-primary-Doctor 52 claims).
+
+⚠️ CLOSE-OUT NOTE: the cell was played on BOTH boxes (local W14 + laptop
+W16), not local-only. Worker counts and any absolute ms/move or games/h
+figure must reflect that. The deck-paired margin is unaffected by worker
+count; ms_ratio is a within-cell ratio and is likewise unaffected.
