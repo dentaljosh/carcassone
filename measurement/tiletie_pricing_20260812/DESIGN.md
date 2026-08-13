@@ -1,7 +1,16 @@
 # TILE-TIE PRICING — PRE-REGISTRATION
 
-**Status: 🔚 STAGE A RAN AND CLOSED 2026-08-13 — pre-registered BRANCH 4, INCONCLUSIVE. Stage B
-is NOT funded.** All 340 planned Stage-A positions scored (0 partial, 0 absent; CRN witness clean
+> ⚠️ **SUPERSEDED IN ONE CLAUSE, 2026-08-13 10:01 local: STAGE B *IS* FUNDED AND IS RUNNING.**
+> The owner funded it the same morning Stage A closed. Read
+> **[STAGE_B_ADDENDUM.md](STAGE_B_ADDENDUM.md)** with this banner: §7.3's two gating conditions
+> both fired (branch 4, `elo(CI_hi)` +58.8 ≥ +17), the rust-arm-only composition is honoured,
+> and the extension takes **all 393 positions the deduped self-play supply still holds** ⇒
+> **pooled n = 733, not the 896 the sizing wants** (the supply, not the budget, is the binding
+> constraint). **The analysis pools Stage A + Stage B into ONE estimate.** Nothing else below
+> changes: same instrument, judge, M, cap J, estimators and read-rules.
+
+**Status: 🔚 STAGE A RAN AND CLOSED 2026-08-13 — pre-registered BRANCH 4, INCONCLUSIVE. ~~Stage B
+is NOT funded.~~ (Stage B WAS funded hours later — see the banner above.)** All 340 planned Stage-A positions scored (0 partial, 0 absent; CRN witness clean
 on every integrity check). **The leaf's ties are not real ties** — S1a σ²_arm **+0.5111 pts²**
 (zeros added), CI [+0.1218, +0.9265], **z +2.49** — but the champion's 11,008-sim search already
 recovers most of that: S2 headroom_J4 **+0.2283 pts/ply, z +2.26**, whose ×1.40-extrapolated
