@@ -1,0 +1,118 @@
+{
+ "_readme": "Work queue consumed by scripts/scheduler/work_queue.sh. DATA, not logic - add/reorder items here, never in the shell. Format + how-to: scripts/scheduler/README.md. Validate after editing: python3 scripts/scheduler/queue_lib.py validate",
+ "_authored": "2026-08-13",
+
+ "boxes": {
+  "local": {
+   "host": "local",
+   "label": "5900XT 16C/32T (this box)",
+   "occupant_label": "tile-tie Stage B",
+   "occupant_markers": [
+    "measurement/tiletie_pricing_20260812/DONE_STAGEB",
+    "measurement/tiletie_pricing_20260812/FAILED_STAGEB"
+   ],
+   "census_patterns": [
+    "/home/doctor/projects/carcassone/.venv/bin/python",
+    "/home/doctor/projects/carcassone/rust/.*/target/release"
+   ],
+   "allow_idle_release": true,
+   "idle_release_secs": 2700,
+   "workers_schedule": [
+    {"before_hhmm": "11:00", "w": 30},
+    {"w": 14}
+   ],
+   "marker_dir_local": "measurement/scheduler_20260813/markers",
+   "bundle_sync": false,
+   "_note": "Owner grant 2026-08-13: W30 until 11:00 local, W14 after. idle_release_secs=2700 covers the case where Stage B is never funded (its DESIGN gates it on an open owner ruling) - the box is then released with a loud log after 45 clean minutes."
+  },
+
+  "laptop": {
+   "host": "laptop-wsl",
+   "label": "laptop WSL, 24 cores / ~11 GB",
+   "occupant_label": "opencity deploy cell 2",
+   "occupant_markers": [
+    "/mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY",
+    "/mnt/c/carc-shared/opencity_deploy_20260813/markers/FAILED_opencity_A_*"
+   ],
+   "census_patterns": [
+    "/home/doctor/projects/carcassone/.venv/bin/python",
+    "/home/doctor/projects/carcassone/rust/.*/target/release"
+   ],
+   "allow_idle_release": false,
+   "workers_schedule": [{"w": 22}],
+   "marker_dir_local": "/mnt/c/carc-shared/scheduler_20260813/markers",
+   "marker_dir_remote": "/mnt/carc-shared/scheduler_20260813/markers",
+   "bundle_sync": true,
+   "mem_max": "8G",
+   "share_local": "/mnt/c/carc-shared",
+   "share_remote": "/mnt/carc-shared",
+   "_note": "allow_idle_release is FALSE by owner instruction: never use the laptop before its DONE marker exists. Markers live on the SHARE so the local scheduler can poll them without an ssh per tick."
+  }
+ },
+
+ "items": [
+  {
+   "id": "window_truncation_census",
+   "priority": 10,
+   "box": "local",
+   "dir": "measurement/window_truncation_20260813",
+   "launch_cmd": [
+    "measurement/window_truncation_20260813/RUN_CMD.sh",
+    "measurement/window_truncation_20260813/run_census.sh",
+    "measurement/window_truncation_20260813/launch.sh",
+    "scripts/measurement_infra/launch_window_truncation_census.sh"
+   ],
+   "plays_games": false,
+   "prereg": null,
+   "band": null,
+   "done_if_exists": [
+    "measurement/window_truncation_20260813/READOUT.md",
+    "measurement/window_truncation_20260813/DONE_CENSUS"
+   ],
+   "log": "measurement/window_truncation_20260813/logs/scheduler_run.log",
+   "note": "Full window-truncation census over banked roots. Read-only, no games, no band needed. HIGHEST PRIORITY: suspected DEFECT inside the production champion's search (the action-window wall), and it is cheap. Instrument: scripts/measurement_infra/window_truncation_census.py."
+  },
+
+  {
+   "id": "j13_pregate",
+   "priority": 20,
+   "box": "local",
+   "dir": "measurement/j13_pregate_20260813",
+   "launch_cmd": [
+    "measurement/j13_pregate_20260813/RUN_CMD.sh",
+    "measurement/j13_pregate_20260813/run_pregate.sh",
+    "measurement/j13_pregate_20260813/launch.sh"
+   ],
+   "plays_games": false,
+   "prereg": null,
+   "band": null,
+   "done_if_exists": [
+    "measurement/j13_pregate_20260813/READOUT.md",
+    "measurement/j13_pregate_20260813/READOUT_PREGATE.md",
+    "measurement/j13_pregate_20260813/DONE_PREGATE"
+   ],
+   "log": "measurement/j13_pregate_20260813/logs/scheduler_run.log",
+   "note": "J13 unclaimed-features pre-gate. May well have RUN itself while being built - done_if_exists makes the scheduler notice its READOUT and skip rather than re-run."
+  },
+
+  {
+   "id": "jrules_on_search",
+   "priority": 30,
+   "box": "any",
+   "prefer_box": "laptop",
+   "dir": "measurement/jrules_on_search_20260813",
+   "launch_cmd": [
+    "measurement/jrules_on_search_20260813/RUN_CMD.sh",
+    "measurement/jrules_on_search_20260813/launch.sh"
+   ],
+   "plays_games": true,
+   "prereg": "measurement/jrules_on_search_20260813/PREREG.md",
+   "band": null,
+   "merge_probe_paths": ["measurement/jrules_on_search_20260813/DESIGN.md"],
+   "merge_note": "built in a git worktree and may additionally need a rust wheel rebuild (maturin) before it can run - NOT auto-dispatchable. Merge at a quiet window, rebuild the wheel, claim a band in governance/BAND_REGISTRY.csv and land the PREREG, then this row becomes dispatchable with no scheduler change.",
+   "done_if_exists": ["measurement/jrules_on_search_20260813/READOUT.md"],
+   "log": "measurement/jrules_on_search_20260813/logs/scheduler_run.log",
+   "note": "J-rules-on-champion-search eval. PLAYS GAMES -> hard-gated on prereg + a claimed band already on disk. The scheduler never claims a band and never merges a worktree; it emits the notice and moves on."
+  }
+ ]
+}
