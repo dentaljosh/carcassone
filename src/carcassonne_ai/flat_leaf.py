@@ -1324,8 +1324,20 @@ def _jr_j1(decomp, city_counts, pl: int, other: int, late_frac: float) -> float:
     ``0 - B -> B - B``, i.e. **+B for the sneak**, which is the rule's intent. The
     side effect is that it also credits owning a large open city outright — which
     is J6's anchor logic ("keep a big city as mine even if there is no plan to
-    close it"), and is the diametric opposite of the pro-guide-endorsed
-    ``opencity_dose`` term. See DESIGN.md §"J1 vs open-city discipline"."""
+    close it").
+
+    ⚠️ **OPPOSITE SIGN TO ``opencity_dose`` ON THE SAME OBJECT, BY DECISION.** That
+    term SUBTRACTS a penalty for a large open city you hold; this one ADDS a bonus.
+    They are simultaneously loadable and would partially cancel — **never run both
+    in one cell.** The opposition is not an oversight: the penalise direction went
+    straight to the deploy budget and lost decisively (CL-080, arm A, band 1.27e11,
+    n=800/cell: dose 0.5 margin z −5.863 / −53.8 elo, dose 2.0 z −19.384 / −190.3
+    elo, both cost-neutral), so J1's direction is at least NOT CONTRADICTED. It is
+    also NOT SUPPORTED — no cell has ever measured J1, and CL-080's scope limit is
+    binding (arm A at two doses only; "the open-cities idea is dead" is a forbidden
+    reading). ⚠️ CL-080's leading mechanism is the DOUBLE-COUNT hypothesis, which is
+    about STATICNESS, not sign — it applies to a static bonus here just as much.
+    Full treatment: measurement/jrules_on_search_20260813/DESIGN.md §3.6."""
     contribs: list = []
     bonus = _JR_J1_JOIN_BONUS * (1.0 + _JR_J1_LATE_EXTRA * late_frac)
     for root, cnt in city_counts.items():
@@ -1574,6 +1586,15 @@ def flat_jrules_term(state, player: int, decomp: Decomp, cfg, base=None) -> floa
     opponent must already be there" predicate to survive symmetrization — see their
     docstrings; that is the single largest fidelity deviation in this encoding and
     DESIGN.md §3 states it in full.
+
+    ⚠️ **THE SYMMETRIC FORM IS THE RULING OF RECORD (owner, 2026-08-13; DESIGN.md
+    §12 Q1).** There is no ``jrules_symmetric`` knob and adding one is a NEW TERM, not
+    a rung: because the leaf is evaluated from the MOVER's POV, an own-side-only
+    variant would make the search's internal OPPONENT MODEL play the anchor's strategy
+    too — opponent modelling rather than evaluation, a materially stronger and
+    different claim that needs its own prereg, its own cell and its own fresh band at
+    the deploy budget. ``denial_dose`` breaks antisymmetry today; that is a wart, not a
+    precedent to copy.
 
     RULES COVERED: J1, J2c, J5+J13, J6, J8, with J4 as the urgency multiplier on
     J1/J2c/J6-road-join/J8. RULES NOT COVERED and why: J2-approach (subsumed by

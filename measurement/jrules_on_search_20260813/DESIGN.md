@@ -3,8 +3,13 @@
 > **STATUS: 🔨 BUILT-NOT-RUN 2026-08-13 — code only, DEFAULT-OFF.**
 > **0 games · 0 evals · 0 calibration · no band claimed · no `results.csv` row · no
 > claim minted · [`governance/PRODUCTION.yaml`](../../governance/PRODUCTION.yaml)
-> untouched.** Nothing in this document is a strength statement, and no number below
-> came from a game. The Rust mirror compiles but the `carc_rs` wheel has **not** been
+> untouched.** Nothing in this document is a strength statement, and the only numbers
+> below that came from games are CL-080's (§3.6, §7, §10) — a *different* lever's,
+> quoted as evidence, not as a result of this one.
+>
+> **Owner ruling 2026-08-13: keep the ANTISYMMETRIC form** (the default as built; no
+> code change). Reasoning + the asymmetric variant as a named, unexercised option:
+> **§12 Q1**. The deliberate J1 ↔ `opencity_dose` sign opposition: **§3.6**. The Rust mirror compiles but the `carc_rs` wheel has **not** been
 > rebuilt on any box, so no cell can run yet (§11 gate G3).
 
 Parent verdict: [`../joshuabot_20260812/CONFIRM_VERDICT.md`](../joshuabot_20260812/CONFIRM_VERDICT.md)
@@ -46,7 +51,7 @@ surface of record for every rule that fits it at all.
 
 | # | interview quote (compressed) | class | surface | status |
 |---|---|---|---|---|
-| **J1** | "he tends to build large cities that probably wont close … i will attempt to sneak a meeple in, sometimes late" | value | **A — leaf** | ✅ built · `_jr_j1` |
+| **J1** | "he tends to build large cities that probably wont close … i will attempt to sneak a meeple in, sometimes late" | value | **A — leaf** | ✅ built · `_jr_j1` · ⚠️ opposite sign to `opencity_dose` — **§3.6** |
 | **J2c** | "if i see a farm is valuable, i will try to tie it or steal from him" + "i started to count the cities … and surrender a farm" | value | **A — leaf** | ✅ built (partial) · `_jr_j2` |
 | **J2a** | "…this requires planning 2–4 tiles in advance, so i look at remaining tiles" | **planning** | **NEITHER** | ❌ **not expressible — §3.1** |
 | **J3** | "i try to keep at least 1 meeple in my hand" | policy | **already in the champion leaf** | ⛔ nothing to add — §3.2 |
@@ -114,9 +119,12 @@ sneak** — the rule's intent, recovered. Applied to:
 stealing one. For J1 that is J6's own anchor logic ("keep a big city as mine even if
 there is no plan to close it") and is internally consistent with the interview — but it
 is **diametrically opposed** to the pro-guide-endorsed `opencity_dose` term, which
-*penalizes* exactly the same object. That tension is real and is one of the more
-interesting things this cell could discriminate; it is not a bug, and it must not be
-quietly resolved in either direction after the fact.
+*penalizes* exactly the same object. That opposition is deliberate and is documented in
+full, with its evidence, in **§3.6**.
+
+**Ruling of record (owner, 2026-08-13): keep the antisymmetric form.** The asymmetric
+alternative is recorded as a named, unexercised option with its funding conditions —
+**§12 Q1**.
 
 ### 3.1 J2's "planning 2–4 tiles in advance" — deliberately NOT expressed
 
@@ -169,6 +177,54 @@ interacts with the search's own move ordering, and mixing it into the primary co
 would make a null unattributable between "the strategy is worthless" and "the filter
 threw away good moves". If the primary cell is run and read, these are a clean
 follow-on cell on their own band. **Not built.**
+
+### 3.6 ⚠️ J1 and `opencity_dose` pull OPPOSITE WAYS on the same object — by decision
+
+A reader who meets both terms must know this is deliberate, not an oversight:
+
+| | `opencity_dose` (`flat_opencity_term`) | **J1** (`_jr_j1`) |
+|---|---|---|
+| the object | a large, still-open city you hold | the same object |
+| the reading | **liability** — completion probability falls and steal/merge exposure rises per open edge (PRO_STRATEGY_SCAN §F1, four independent guide sites) | **asset** — "keep a big city as mine even if there is no plan to close it… i will attempt to sneak a meeple in" (the anchor, J1 + J6) |
+| the sign | leaf **subtracts** | leaf **adds** |
+
+They are simultaneously loadable and would partially cancel. **Do not run them in one
+cell.** Nothing in this design licenses a combined arm.
+
+**The empirical situation, as of 2026-08-13 (CL-080).** The *penalise* direction was
+taken straight to the deploy budget and lost decisively at arm A
+(`opencity_size_min` 4 tiles / `edge_min` 2 / symmetric), band 1.27e11, n=800
+deck-paired per cell, both arms fair PIMC k8×1376:
+
+| dose | deck-paired margin | **margin z** | elo | ms_ratio |
+|---|---|---|---|---|
+| 0.5 | −4.06 pts/deck | **−5.863** | −53.845 ± 12.432 | 1.0110 |
+| 2.0 | −14.061 pts/deck | **−19.384** | −190.270 ± 14.172 | 1.0135 |
+
+Cost-neutral in both cells, so the loss was not bought with time; both fired the
+pre-registered N2 NEGATIVE branch, which closes the lever **for arm A**.
+
+**What that does and does not license here.** It means the guides' advice is what lost
+at the budget we play at, so **J1's opposite direction is not contradicted by
+evidence** — which is the third leg of the §12 Q1 ruling. It is *not* support for J1:
+**no cell has ever measured J1**, and CL-080's own scope limit is binding — it covers
+arm A at two doses only, not the term's shape, not arm B or arm C (6 tiles / 3 edges,
+the predicate *closest* to the guides' actual "avoid three open edges", calibrated and
+never funded), not the own-side-only variant. **"The open-cities idea is dead" is a
+forbidden reading**, and repeating it here would be the same error in the other
+direction.
+
+**Two riders that cut AGAINST J1, recorded here so §10 is not quietly softened:**
+
+* CL-080's leading mechanism is the **double-count hypothesis** — the search already
+  prices open-city exposure through the closure schedule, so a *static* leaf term on
+  that object distorts. That argument is about **staticness, not sign**: a static leaf
+  *bonus* on the same object is exposed to it just as much as a static penalty.
+* CL-080's own counterevidence (1) notes the open-city term is **uncapped** — a product
+  of two linear excesses, up to 21 leaf points on one city at dose 1.0 — so part of the
+  −190 may be a scale blow-up rather than a statement about the mechanism. J1 is
+  structurally milder (a bounded per-city bonus, ≤ 6.0 at dose 1.0, no product term),
+  but the *bundle* still means |T| ≈ 3.0 (§6), so this is a difference of degree.
 
 ---
 
@@ -306,6 +362,17 @@ pick-flip rate clears **10%** (Wilson-95 lower bound reported alongside). If **n
 not express at deploy depth" as the finding and stop. A dose above 2.0 is no longer
 "the champion's leaf plus his strategy", it is a different evaluator.
 
+⚠️ **The flip-rate → outcome mapping now has one real anchor, and it is sobering
+(CL-080, §3.6).** The open-city term's funded arms flipped **10.09%** and **18.89%** of
+champion picks and then cost **−53.8** and **−190.3 elo** at the deploy budget. So a
+flip rate that clears the funding bar buys *resolvability*, not safety: at this budget a
+term that expresses at ~10% is quite capable of costing 50+ elo. Read forward, two
+consequences: (i) the ladder's low rung matters more than its high rung — **prefer the
+smallest clearing dose, and do not reach for 2.0 merely because it expresses more**;
+(ii) if the J-rules bundle's search flip rate at dose 1.0 lands materially above ~20%,
+that is a reason to add a **0.25 rung** to the ladder before funding, not a reason to
+feel confident.
+
 ---
 
 ## 8. Eval design
@@ -405,7 +472,13 @@ local W14 + laptop W22. **⚠️ Two multipliers on top, both unmeasured:**
 every hand-crafted leaf term this project has tried has come back null or harmful:
 CL-055 (Term R, meeple-return liquidity), CL-063 (F6 soft caps), CL-074, CL-078,
 CL-079 (targeted denial — harmful at 2750, bounded-null at deploy), and the farm-growth
-rows. There is also a specific mechanism argument *against* the bundle: the interview's
+rows — and now **CL-080**, the strongest datapoint yet: the open-city term, the one
+externally endorsed by four independent strategy guides, was taken straight to the
+deploy budget and lost **−53.8 elo at dose 0.5 and −190.3 at dose 2.0**, cost-neutral,
+both far past 2σ. **The most-endorsed hand-crafted leaf term in the program's history
+is also its largest resolved negative.** Nothing about the J-rules bundle earns a softer
+prior than that; if anything §3.6's double-count rider says the opposite.
+There is also a specific mechanism argument *against* the bundle: the interview's
 own J12 records the champion already performing targeted denial **emergently, through
 search**, and the denial leaf term measured harmful — the consistent read being that a
 static leaf bonus for something the search already finds double-counts and distorts.
@@ -425,9 +498,9 @@ and points the search for it at what he *cannot* articulate.
 |---|---|---|
 | **G1** | worktree merged to the main tree at a quiet window | ⛔ |
 | **G2** | `pytest tests/test_jrules_term.py` green **in the main tree** (the 2 Rust skips must become passes after G3; the 2 cy tests need the built `.so`) | partial — 38/40 here |
-| **G3** | `carc_rs` wheel rebuilt on every box that will run a cell **and** `reconcile_leaf.py --configs jrules --corpus golden` = **0 mismatches** | ⛔ **not run** |
+| **G3** | `carc_rs` wheel rebuilt on every box that will run a cell **and** `reconcile_leaf.py --configs jrules --corpus golden` = **0 mismatches** | ⛔ **not run — but de-risked.** The main tree's wheel was rebuilt and installed 2026-08-13 for the open-city term, so the toolchain path is **proven**, not speculative. This term still needs **its own** rebuild after the worktree merge (the installed wheel predates `jrules_dose` — observed fail-closed `TypeError`) plus its own reconcile. Effort, not uncertainty. |
 | **G4** | `chain_capability_probe.py --require jrules` mode added and PASSING on the run box (the "accepted and ignored" trap: a cell that quietly runs champion-vs-champion produces a beautiful, meaningless null) | ⛔ not built |
-| **G5** | `jrules` arm added to the E4-replay flip instrument; ladder run; read-rule §7 applied | ⛔ not built |
+| **G5** | `jrules` arm added to the E4-replay flip instrument; ladder run; read-rule §7 applied | ⛔ **not built — the binding blocker.** Untouched by the open-city work: `opencity_e4_replay.py` takes `--arm N:S:E:D` and needs a `name:dose:mask` sibling. Until this runs there is no defensible dose, and §7's CL-080 anchor says an arbitrary dose is exactly how a term costs 50–190 elo. |
 | **G6** | fresh band registered in `governance/BAND_REGISTRY.csv` | ⛔ |
 | **G7** | one benched cell for `ms_ratio` before fleet sizing | ⛔ |
 
@@ -435,14 +508,38 @@ and points the search for it at what he *cannot* articulate.
 
 ## 12. Open design questions
 
-1. **Is the symmetrized J1/J2/J6 still "his strategy"?** §3.0 changed three predicates
-   from *steal-only* to *hold-a-share*. It preserves the gradient on the transitions he
-   describes, but it also credits building the same objects — and J1 then points the
-   opposite way from the pro-endorsed open-city term. An asymmetric variant
-   (`denial_dose`-style, own-side-only) is the alternative; it is faithful to the words
-   but makes the search's internal opponent model *also* play the J-rules, since the
-   leaf is evaluated from the mover's POV at every node. **Worth an explicit owner
-   decision before the cell is funded**; it is a different term, not a rung.
+1. ~~**Is the symmetrized J1/J2/J6 still "his strategy"?**~~
+   **✅ RESOLVED 2026-08-13 (owner ruling): KEEP THE ANTISYMMETRIC FORM** — the default
+   as built. No code change. Three reasons, recorded so a future reader sees *why*:
+
+   1. **Antisymmetry is a contract, not a preference.** `V(s,p) = −V(s,1−p)` is what
+      everything downstream assumes — the search evaluates the leaf from the mover's POV
+      at every node and negates on backup. `denial_dose` already breaks it; that is **a
+      wart, not a precedent to copy**.
+   2. **The asymmetric variant is a materially STRONGER AND DIFFERENT CLAIM.** Because
+      the leaf is evaluated from the mover's POV, an own-side-only term makes the
+      search's *internal opponent model* play the anchor's strategy too. That is
+      **opponent modelling, not evaluation** — a separate hypothesis that deserves its
+      own pre-registration, not a ride inside a bundle test where a null would be
+      unattributable between "the strategy is worthless" and "the opponent model is
+      wrong".
+   3. **The evidence now runs J1's way, not the guides'.** See §3.6 / CL-080.
+
+   The cost of the ruling is unchanged and stands as stated in §3.0: three predicates
+   read *hold-a-share* rather than *steal-only*, so they also credit building the
+   objects. That is the accepted price of a coherent zero-sum value function.
+
+   **Named, unexercised option — the asymmetric (own-side-only) variant.** Not built,
+   not scheduled, deliberately not lost. It would be `jrules_symmetric = False`, i.e.
+   `T = j(self)` with no opponent subtraction, in the shape `opencity_symmetric=False`
+   and `denial_dose` already use. **What would fund it:** its own pre-registration
+   (written before any number is read), its own cell, its own fresh band, at the deploy
+   budget k8×1376 with n ≥ 800 deck-paired and margin z primary — i.e. the same bar as
+   the primary cell, never a rung on the primary cell's ladder and never pooled with it.
+   **What it would test that this design cannot:** whether modelling the opponent as
+   *also* playing the anchor's strategy changes play, separately from whether the
+   strategy is any good. Sensible only *after* the symmetric cell has been read; running
+   both at once would leave a null unattributable.
 2. **Should J8 be dropped from the bundle?** At 3% firing it contributes almost nothing
    and dilutes attribution. Keeping it costs nothing; the argument for dropping it is
    that "the bundle" should mean rules that actually bite.
