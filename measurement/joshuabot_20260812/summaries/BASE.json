@@ -1,0 +1,28 @@
+{
+ "variant_ids": [
+  "current+j7w1"
+ ],
+ "n_records": 300,
+ "n_scored": 300,
+ "wins": 33,
+ "draws": 3,
+ "losses": 264,
+ "win_rate": 0.115,
+ "n_paired_decks": 150,
+ "paired_margin_mean": -23.333333333333332,
+ "paired_margin_sem": 1.0727524933580745,
+ "paired_margin_z": -21.750901049217966,
+ "mean_margin_unpaired": -23.333333333333332,
+ "rule_fires_total": {
+  "f_end_deploy": 9,
+  "f_j10_early_farm_block": 4148,
+  "f_j3_reserve_floor": 4891,
+  "j1_majority_steal": 1775,
+  "j2_farm_attack": 17215,
+  "j5_dump": 704,
+  "j6_anchor_roads": 19232,
+  "j7_close_vs_farm": 17379,
+  "j8_overcommit": 1140
+ },
+ "note": "EXTRACT ONLY. No verdict, no adjudication, no promotion. Read against measurement/joshuabot_20260812/TOURNAMENT_PREREG.md sections 4-5."
+}

@@ -1,0 +1,28 @@
+[joshuabot-h2h] variant=early+j7w1 profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=1 workers=1 done=0 todo=1 manifest=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/probe/probe_EARLY.jsonl.manifest.json
+[1/1] deck=125900000014 joshua_seat=0 scores=[74, 99] margin=-25 joshua=87.6ms/mv champ=2229.7ms/mv
+
+[joshuabot-h2h] DONE 1 games in 2.7 min
+{
+ "variant_ids": [
+  "early+j7w1"
+ ],
+ "n_records": 1,
+ "n_scored": 1,
+ "wins": 0,
+ "draws": 0,
+ "losses": 1,
+ "win_rate": 0.0,
+ "n_paired_decks": 0,
+ "paired_margin_mean": null,
+ "paired_margin_sem": null,
+ "paired_margin_z": null,
+ "mean_margin_unpaired": -25.0,
+ "rule_fires_total": {
+  "f_end_deploy": 1,
+  "f_j3_reserve_floor": 21,
+  "j2_farm_attack": 34,
+  "j5_dump": 2,
+  "j6_anchor_roads": 64,
+  "j7_close_vs_farm": 43
+ }
+}

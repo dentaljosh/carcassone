@@ -1,0 +1,50 @@
+{
+ "ALLTOG": {
+  "f_j10_early_farm_block": 15,
+  "f_j3_reserve_floor": 18,
+  "j2_farm_attack": 63,
+  "j5_dump": 3,
+  "j6_anchor_roads": 65
+ },
+ "EARLY": {
+  "f_end_deploy": 1,
+  "f_j3_reserve_floor": 21,
+  "j2_farm_attack": 34,
+  "j5_dump": 2,
+  "j6_anchor_roads": 64,
+  "j7_close_vs_farm": 43
+ },
+ "J7ZERO": {
+  "f_j10_early_farm_block": 16,
+  "f_j3_reserve_floor": 16,
+  "j1_majority_steal": 33,
+  "j2_farm_attack": 64,
+  "j5_dump": 5,
+  "j6_anchor_roads": 62
+ },
+ "J8EX": {
+  "f_j10_early_farm_block": 13,
+  "f_j3_reserve_floor": 19,
+  "j2_farm_attack": 64,
+  "j5_dump": 5,
+  "j6_anchor_roads": 62,
+  "j7_close_vs_farm": 64
+ },
+ "J9ON": {
+  "f_j10_early_farm_block": 15,
+  "f_j3_reserve_floor": 15,
+  "f_j9_cloister_caution": 2,
+  "j2_farm_attack": 62,
+  "j5_dump": 5,
+  "j6_anchor_roads": 60,
+  "j7_close_vs_farm": 62
+ },
+ "BASE(bench)": {
+  "f_j10_early_farm_block": 16,
+  "f_j3_reserve_floor": 18,
+  "j1_majority_steal": 43,
+  "j2_farm_attack": 65,
+  "j6_anchor_roads": 63,
+  "j7_close_vs_farm": 65
+ }
+}

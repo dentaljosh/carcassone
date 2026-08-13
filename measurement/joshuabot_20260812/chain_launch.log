@@ -1,0 +1,44 @@
+[jbchain 2026-08-13_03:28:57] START band=125000000000 decks/cell=150 profile=fixed_v1 cells='BASE J7ZERO EARLY J8EX J9ON ALLTOG'
+[jbchain 2026-08-13_03:28:57] repo HEAD=eb38429
+[jbchain 2026-08-13_03:28:57] GATE 1 PASS — flag surface matches the assumed form.
+[jbchain 2026-08-13_03:28:57] BENCH: 1 game(s), BASE variant, seed_base=125900000000 (disjoint from cells)
+[jbchain 2026-08-13_03:30:22] BENCH: s/game=84.82 (wave wall 85 s, 1 game(s), W=1)
+GATE2 OK {"rules_profile": "fixed_v1", "champion_id": "puct_priors_v29_bmild_cap8", "total_sims_of_record": 11008, "k_dets_of_record": 8, "leaf_hash": "edfb58ac774c90a9", "ms_per_move_champ": 1149.1, "ms_per_move_joshua": 58.9}
+[jbchain 2026-08-13_03:30:22] GATE 2 PASS — fixed_v1 + rust + verified champion at the PRODUCTION.yaml budget.
+AXES OK   {"got": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}, "want": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}}
+[jbchain 2026-08-13_03:30:23] GATE 3: 1-game axis probes running concurrently for J7ZERO EARLY J8EX J9ON ALLTOG
+AXES OK   {"got": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}, "want": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}}
+AXES OK   {"got": {"preset": "early", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}, "want": {"preset": "early", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}}
+AXES OK   {"got": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": false}, "want": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": false}}
+AXES OK   {"got": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": true}, "want": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": true}}
+AXES OK   {"got": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": true}, "want": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": true}}
+[jbchain 2026-08-13_03:33:05] GATE 3 PASS — every cell's flags land on the bot's resolved params.
+[jbchain 2026-08-13_03:33:05] PROBE-FIRES ALLTOG: {"f_j10_early_farm_block": 15, "f_j3_reserve_floor": 18, "j2_farm_attack": 63, "j5_dump": 3, "j6_anchor_roads": 65}
+[jbchain 2026-08-13_03:33:05] PROBE-FIRES EARLY: {"f_end_deploy": 1, "f_j3_reserve_floor": 21, "j2_farm_attack": 34, "j5_dump": 2, "j6_anchor_roads": 64, "j7_close_vs_farm": 43}
+[jbchain 2026-08-13_03:33:05] PROBE-FIRES J7ZERO: {"f_j10_early_farm_block": 16, "f_j3_reserve_floor": 16, "j1_majority_steal": 33, "j2_farm_attack": 64, "j5_dump": 5, "j6_anchor_roads": 62}
+[jbchain 2026-08-13_03:33:05] PROBE-FIRES J8EX: {"f_j10_early_farm_block": 13, "f_j3_reserve_floor": 19, "j2_farm_attack": 64, "j5_dump": 5, "j6_anchor_roads": 62, "j7_close_vs_farm": 64}
+[jbchain 2026-08-13_03:33:05] PROBE-FIRES J9ON: {"f_j10_early_farm_block": 15, "f_j3_reserve_floor": 15, "f_j9_cloister_caution": 2, "j2_farm_attack": 62, "j5_dump": 5, "j6_anchor_roads": 60, "j7_close_vs_farm": 62}
+[jbchain 2026-08-13_03:33:05] PROBE-FIRES BASE(bench): {"f_j10_early_farm_block": 16, "f_j3_reserve_floor": 18, "j1_majority_steal": 43, "j2_farm_attack": 65, "j6_anchor_roads": 63, "j7_close_vs_farm": 65}
+[jbchain 2026-08-13_03:33:05] PLAN: 300 games/cell; est 23 min at W30, 35 min at W14; W30 window has 447 min left
+[jbchain 2026-08-13_03:33:05] PLAN: KEEP='BASE J7ZERO EARLY J8EX J9ON ALLTOG'  DEFER=''
+[jbchain 2026-08-13_03:33:05] CELL BASE: START W=30 est=23 min (window 447 min left) seeds 125000000000..125000000149 out=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/BASE.jsonl
+[jbchain 2026-08-13_04:01:57] CELL BASE: driver rc=0 records=300/300 wall=28 min
+AXES OK   {"got": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}, "want": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}}
+[jbchain 2026-08-13_04:01:57] CELL BASE extract: {"n_scored": 300, "win_rate": 0.115, "n_paired_decks": 150, "paired_margin_mean": -23.333333333333332, "paired_margin_sem": 1.0727524933580745, "paired_margin_z": -21.750901049217966}
+[jbchain 2026-08-13_04:01:57] CELL BASE: DONE
+[jbchain 2026-08-13_04:01:57] CELL J7ZERO: START W=30 est=23 min (window 419 min left) seeds 125000000000..125000000149 out=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/J7ZERO.jsonl
+[jbchain 2026-08-13_04:30:11] CELL J7ZERO: driver rc=0 records=300/300 wall=28 min
+AXES OK   {"got": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}, "want": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}}
+[jbchain 2026-08-13_04:30:11] CELL J7ZERO extract: {"n_scored": 300, "win_rate": 0.16166666666666665, "n_paired_decks": 150, "paired_margin_mean": -17.993333333333332, "paired_margin_sem": 0.9620772021404773, "paired_margin_z": -18.702587789525484}
+[jbchain 2026-08-13_04:30:11] CELL J7ZERO: DONE
+[jbchain 2026-08-13_04:30:11] CELL EARLY: START W=30 est=23 min (window 390 min left) seeds 125000000000..125000000149 out=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/EARLY.jsonl
+[jbchain 2026-08-13_04:59:55] CELL EARLY: driver rc=0 records=300/300 wall=29 min
+AXES OK   {"got": {"preset": "early", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}, "want": {"preset": "early", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": false}}
+[jbchain 2026-08-13_04:59:55] CELL EARLY extract: {"n_scored": 300, "win_rate": 0.08666666666666667, "n_paired_decks": 150, "paired_margin_mean": -29.14, "paired_margin_sem": 1.1560861226753418, "paired_margin_z": -25.20573461479327}
+[jbchain 2026-08-13_04:59:55] CELL EARLY: DONE
+[jbchain 2026-08-13_04:59:55] CELL J8EX: START W=30 est=23 min (window 361 min left) seeds 125000000000..125000000149 out=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/J8EX.jsonl
+[jbchain 2026-08-13_05:28:55] CELL J8EX: driver rc=0 records=300/300 wall=29 min
+AXES OK   {"got": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": false}, "want": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": false}}
+[jbchain 2026-08-13_05:28:55] CELL J8EX extract: {"n_scored": 300, "win_rate": 0.115, "n_paired_decks": 150, "paired_margin_mean": -23.333333333333332, "paired_margin_sem": 1.0727524933580745, "paired_margin_z": -21.750901049217966}
+[jbchain 2026-08-13_05:28:55] CELL J8EX: DONE
+[jbchain 2026-08-13_05:28:55] CELL J9ON: START W=30 est=23 min (window 332 min left) seeds 125000000000..125000000149 out=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/J9ON.jsonl

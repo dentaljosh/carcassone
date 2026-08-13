@@ -1,0 +1,28 @@
+[joshuabot-h2h] variant=current+j7w1 profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=1 workers=1 done=0 todo=1 manifest=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/bench/bench_base.jsonl.manifest.json
+[1/1] deck=125900000000 joshua_seat=0 scores=[99, 113] margin=-14 joshua=58.9ms/mv champ=1149.1ms/mv
+
+[joshuabot-h2h] DONE 1 games in 1.4 min
+{
+ "variant_ids": [
+  "current+j7w1"
+ ],
+ "n_records": 1,
+ "n_scored": 1,
+ "wins": 0,
+ "draws": 0,
+ "losses": 1,
+ "win_rate": 0.0,
+ "n_paired_decks": 0,
+ "paired_margin_mean": null,
+ "paired_margin_sem": null,
+ "paired_margin_z": null,
+ "mean_margin_unpaired": -14.0,
+ "rule_fires_total": {
+  "f_j10_early_farm_block": 16,
+  "f_j3_reserve_floor": 18,
+  "j1_majority_steal": 43,
+  "j2_farm_attack": 65,
+  "j6_anchor_roads": 63,
+  "j7_close_vs_farm": 65
+ }
+}

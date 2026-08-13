@@ -1,0 +1,7 @@
+planned_at=2026-08-13_03:33:05
+s_per_game_bench=84.82  (contention constants: W30 x1.6, W14 x1.15 — PLANNING CONSTANTS, not measurements)
+est_min_per_cell_W30=23   est_min_per_cell_W14=35
+window_min_left=447
+priority_order=BASE J7ZERO EARLY J8EX J9ON ALLTOG
+KEEP=BASE J7ZERO EARLY J8EX J9ON ALLTOG
+DEFER=

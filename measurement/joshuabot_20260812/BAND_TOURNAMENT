@@ -1,0 +1,9 @@
+band_seed_start=125000000000
+cell_seed_range=125000000000..125000000149  (150 decks x 2 seats per cell)
+bench_probe_seed_base=125900000000   # disjoint from the cell decks, inside the band label
+confirm_band=126000000000           # RESERVED, separate authorized launch
+cells=BASE J7ZERO EARLY J8EX J9ON ALLTOG
+profile=fixed_v1
+prereg=measurement/joshuabot_20260812/TOURNAMENT_PREREG.md
+registry=governance/BAND_REGISTRY.csv (rows 1.25e11 screen / 1.26e11 confirm)
+started=2026-08-13_03:28:57
