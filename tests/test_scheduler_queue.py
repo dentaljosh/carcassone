@@ -15,6 +15,7 @@ rules are pinned:
 from __future__ import annotations
 
 import csv
+import os
 import json
 import re
 import subprocess
@@ -488,6 +489,46 @@ def test_scheduler_sources_never_write_governance():
 def test_shell_scripts_parse():
     for f in ("work_queue.sh", "work_queue_watchdog.sh"):
         subprocess.run(["bash", "-n", str(SDIR / f)], check=True)
+
+
+def test_dispatched_children_do_not_inherit_the_lock_fd(tmp_path):
+    """Regression, found by a live smoke on 2026-08-13.
+
+    work_queue.sh holds an flock on fd 9 for single-instance safety. A dispatched
+    job inherits open fds, so without an explicit `9>&-` the JOB holds the lock for
+    its entire (multi-hour) lifetime -- and if the chain then died, the watchdog's
+    relaunch would exit "lock held by another work_queue.sh" and the queue would be
+    silently dead with boxes idling. This runs the real script end to end and
+    asserts the lock is free the instant the tick returns, while the job still runs.
+    """
+    run = tmp_path / "run"
+    (run / "markers").mkdir(parents=True)
+    (tmp_path / "OCC_DONE").touch()
+    job = tmp_path / "slow.sh"
+    job.write_text("#!/usr/bin/env bash\nsleep 20\n")
+    job.chmod(0o755)
+    q = {"boxes": {"local": {
+            "host": "local", "occupant_label": "smoke",
+            "occupant_markers": [str(tmp_path / "OCC_DONE")],
+            "census_patterns": ["no" + "SuchProcessPatternZZ"],  # split: avoid self-match
+            "allow_idle_release": False,
+            "workers_schedule": [{"w": 4}],
+            "marker_dir_local": str(run / "markers")}},
+         "items": [{"id": "slow", "priority": 1, "box": "local",
+                    "launch_cmd": [str(job)], "log": str(run / "slow.log")}]}
+    qp = tmp_path / "q.json"
+    qp.write_text(json.dumps(q))
+
+    env = {**os.environ, "SCHED_ONCE": "1", "SCHED_RUN_DIR": str(run), "SCHED_QUEUE": str(qp)}
+    subprocess.run(["bash", str(SDIR / "work_queue.sh")], env=env, check=True, timeout=180)
+
+    lock = run / "logs" / "scheduler.lock"
+    assert lock.exists(), "the tick must have created its lock file"
+    got = subprocess.run(["flock", "-n", str(lock), "true"])
+    assert got.returncode == 0, "a dispatched job is still holding the scheduler's flock fd"
+    state = json.loads((run / "state.json").read_text())
+    assert state["items"]["slow"]["status"] == ql.DISPATCHED
+    subprocess.run(["pkill", "-f", str(job)], check=False)
 
 
 def test_dispatch_never_targets_a_busy_box_under_random_census(root):

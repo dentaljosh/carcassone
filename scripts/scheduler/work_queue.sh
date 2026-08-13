@@ -40,7 +40,10 @@ set -u
 
 REPO=/home/doctor/projects/carcassone
 SDIR="$REPO/scripts/scheduler"
-RUN="$REPO/measurement/scheduler_20260813"
+# SCHED_RUN_DIR exists so the dispatch path can be smoke-tested against a scratch
+# state/lock/marker tree without touching the live queue's state.json. Production
+# always uses the default.
+RUN="${SCHED_RUN_DIR:-$REPO/measurement/scheduler_20260813}"
 LOGS="$RUN/logs"
 LOG="$LOGS/scheduler.log"
 STATE="$RUN/state.json"
@@ -73,32 +76,36 @@ fi
 # ---- census helpers ----------------------------------------------------------
 # A marker can lie (a watchdog may have relaunched something), so every dispatch
 # is gated on a live process census of the target box, not on markers alone.
+box_names() {
+  "$PY" - "$QUEUE" <<'PYEOF'
+import json, sys
+print(" ".join(json.load(open(sys.argv[1]))["boxes"]))
+PYEOF
+}
+
 census_patterns() {  # $1 = box name -> one regex per line
   "$PY" - "$QUEUE" "$1" <<'PYEOF'
 import json, sys
-q = json.load(open(sys.argv[1]))
-pats = q["boxes"][sys.argv[2]].get("census_patterns")
-if not pats:
-    p = q["boxes"][sys.argv[2]].get("census_pattern")
-    pats = [p] if p else []
+b = json.load(open(sys.argv[1]))["boxes"][sys.argv[2]]
+pats = b.get("census_patterns") or ([b["census_pattern"]] if b.get("census_pattern") else [])
 print("\n".join(pats))
 PYEOF
 }
 
-count_local_census() {
+count_local_census() {  # $1 = box name
   local pids="" p
   while IFS= read -r p; do
     [ -z "$p" ] && continue
     pids="$pids $(pgrep -f "$p" 2>/dev/null || true)"
-  done < <(census_patterns local)
+  done < <(census_patterns "$1")
   # drop our own pid/ppid defensively (pgrep -f can match a wrapper argv)
   echo "$pids" | tr ' ' '\n' | sed '/^$/d' \
     | grep -vx -e "$$" -e "$PPID" 2>/dev/null | sort -u | wc -l
 }
 
-count_laptop_census() {
-  local host out probe="$RUN/dispatch/_census_laptop.sh"
-  host=$(jqbox laptop host)
+count_remote_census() {  # $1 = box name
+  local host out probe="$RUN/dispatch/_census_$1.sh"
+  host=$(jqbox "$1" host)
   # House rule: pipe a real script to ssh; the inline `ssh h "cd x && y"` form gets
   # the cd stripped in transit. No cd is needed here, but the piped form is the rule.
   { echo 'pids=""'
@@ -106,7 +113,7 @@ count_laptop_census() {
     echo '  [ -z "$p" ] && continue'
     echo '  pids="$pids $(pgrep -f "$p" 2>/dev/null || true)"'
     echo 'done <<PATS'
-    census_patterns laptop
+    census_patterns "$1"
     echo 'PATS'
     echo 'echo "$pids" | tr " " "\n" | sed "/^$/d" | sort -u | wc -l'
   } >"$probe"
@@ -115,6 +122,16 @@ count_laptop_census() {
     ''|*[!0-9]*) echo "-1" ;;   # unreachable / garbage -> fail closed, box stays busy
     *)           echo "$out" ;;
   esac
+}
+
+census_all() {  # -> "local=0,laptop=25" over whatever boxes the queue declares
+  local b arg="" n
+  for b in $(box_names); do
+    if [ "$(jqbox "$b" host)" = "local" ]; then n=$(count_local_census "$b")
+    else                                       n=$(count_remote_census "$b"); fi
+    arg="${arg:+$arg,}$b=$n"
+  done
+  echo "$arg"
 }
 
 # ---- dispatch: local ---------------------------------------------------------
@@ -140,52 +157,57 @@ fi
 echo "=== scheduler dispatch $id EXIT rc=\$rc \$(date -Is) ===" >>"$joblog"
 EOF
   chmod +x "$wrap"
-  setsid nohup nice -n 19 bash "$wrap" >>"$LOGS/${id}_wrapper.log" 2>&1 </dev/null &
+  # 9>&- is LOAD-BEARING: without it the dispatched job inherits our flock fd and
+  # holds the single-instance lock for the job's whole lifetime, so if the chain
+  # ever died mid-job the watchdog's relaunch would exit with "lock held by another
+  # work_queue.sh" and the queue would be silently dead. Caught by a live smoke
+  # 2026-08-13; pinned by test_dispatched_children_do_not_inherit_the_lock_fd.
+  setsid nohup nice -n 19 bash "$wrap" >>"$LOGS/${id}_wrapper.log" 2>&1 </dev/null 9>&- &
   echo $!
 }
 
-# ---- dispatch: laptop --------------------------------------------------------
+# ---- dispatch: remote box (laptop) -------------------------------------------------------
 # Bundle-sync first (remotes cannot reach github; stale code = contaminated cell),
 # then pipe a real script with `cd` on line 1, then run under a memory-capped
 # systemd scope (the laptop VM is ~11 GB and an uncapped guest is the documented
 # WSL teardown mechanism).
-dispatch_laptop() {
-  local id="$1" cmd="$2" w="$3" joblog="$4" mdir_local="$5" mdir_remote="$6"
+dispatch_remote() {
+  local id="$1" cmd="$2" w="$3" joblog="$4" mdir_local="$5" mdir_remote="$6" box="$7"
   local host share_local share_remote memmax rel branch remote_head bundle bpath ahead
-  host=$(       jqbox laptop host)
-  share_local=$(jqbox laptop share_local)
-  share_remote=$(jqbox laptop share_remote)
-  memmax=$(     jqbox laptop mem_max)
+  host=$(        jqbox "$box" host)
+  share_local=$( jqbox "$box" share_local)
+  share_remote=$(jqbox "$box" share_remote)
+  memmax=$(      jqbox "$box" mem_max)
   rel="${cmd#"$REPO"/}"
   branch=$(git -C "$REPO" rev-parse --abbrev-ref HEAD)
 
   mkdir -p "$mdir_local" "$share_local/bundles" "$share_local/scheduler_20260813/dispatch"
   rm -f "$mdir_local/DONE_$id" "$mdir_local/FAILED_$id"
 
-  # --- bundle sync, incremental when the laptop already has our history --------
+  # --- bundle sync, incremental when the remote already has our history --------
   remote_head=$(timeout 60 ssh -o BatchMode=yes -o ConnectTimeout=15 "$host" \
                   "git -C $REPO rev-parse HEAD" 2>/dev/null | tr -d '\r\n ')
   bundle=""
   if [ -n "$remote_head" ] && git -C "$REPO" cat-file -e "${remote_head}^{commit}" 2>/dev/null; then
     ahead=$(git -C "$REPO" rev-list --count "${remote_head}..${branch}" 2>/dev/null || echo 0)
     if [ "${ahead:-0}" -eq 0 ]; then
-      say "  laptop already at $remote_head (0 commits behind $branch) - no bundle needed"
+      say "  $box already at $remote_head (0 commits behind $branch) - no bundle needed"
     else
       bundle="sched_${id}_$(date +%Y%m%d_%H%M%S).bundle"
       bpath="$share_local/bundles/$bundle"
       if ! git -C "$REPO" bundle create "$bpath" "^$remote_head" "$branch" >>"$LOG" 2>&1; then
         say "  incremental bundle failed - falling back to a full bundle"
         git -C "$REPO" bundle create "$bpath" "$branch" >>"$LOG" 2>&1 || {
-          say "  BUNDLE FAILED - refusing to dispatch $id to the laptop with stale code"; return 1; }
+          say "  BUNDLE FAILED - refusing to dispatch $id to $box with stale code"; return 1; }
       fi
-      say "  bundle $bundle ($ahead commit(s) ahead of the laptop)"
+      say "  bundle $bundle ($ahead commit(s) ahead of $box)"
     fi
   else
     bundle="sched_${id}_$(date +%Y%m%d_%H%M%S).bundle"
     bpath="$share_local/bundles/$bundle"
     git -C "$REPO" bundle create "$bpath" "$branch" >>"$LOG" 2>&1 || {
-      say "  BUNDLE FAILED - refusing to dispatch $id to the laptop with stale code"; return 1; }
-    say "  full bundle $bundle (laptop HEAD unknown or not in our history)"
+      say "  BUNDLE FAILED - refusing to dispatch $id to $box with stale code"; return 1; }
+    say "  full bundle $bundle ($box HEAD unknown or not in our history)"
   fi
 
   # --- inner wrapper, staged on the share (both boxes see it) -----------------
@@ -193,9 +215,9 @@ dispatch_laptop() {
   local innerR="$share_remote/scheduler_20260813/dispatch/${id}_run.sh"
   cat >"$innerL" <<EOF
 #!/usr/bin/env bash
-# GENERATED by work_queue.sh on $(date -Is) for queue item '$id' (laptop).
+# GENERATED by work_queue.sh on $(date -Is) for queue item '$id' (remote box $box).
 cd $REPO || exit 9
-export SCHED_W=$w SCHED_BOX=laptop SCHED_JOB_ID=$id SCHED_LOG=$joblog
+export SCHED_W=$w SCHED_BOX=$box SCHED_JOB_ID=$id SCHED_LOG=$joblog
 mkdir -p "\$(dirname "$joblog")" "$mdir_remote"
 echo "=== scheduler dispatch $id W=$w \$(date -Is) ===" >>"$joblog"
 nice -n 19 bash "$rel" "$w" >>"$joblog" 2>&1
@@ -252,11 +274,10 @@ PYEOF
 
 # ---- one tick ----------------------------------------------------------------
 tick() {
-  local cl clap decision n
-  cl=$(count_local_census)
-  clap=$(count_laptop_census)
+  local census decision
+  census=$(census_all)
   decision=$("$PY" "$SDIR/queue_lib.py" tick --queue "$QUEUE" --state "$STATE" \
-               --census "local=$cl,laptop=$clap" 2>>"$LOG")
+               --census "$census" 2>>"$LOG")
   if [ -z "$decision" ]; then
     say "TICK ERROR: queue_lib.py tick produced no output (see $LOG)"
     return 0
@@ -285,10 +306,10 @@ PYEOF
   case "$joblog" in /*) ;; *) joblog="$REPO/$joblog" ;; esac
 
   say "DISPATCHING $item -> $box W=$w cmd=$cmd"
-  if [ "$box" = "laptop" ]; then
-    pid=$(dispatch_laptop "$item" "$cmd" "$w" "$joblog" "$mdirL" "$mdirR")
-  else
+  if [ "$(jqbox "$box" host)" = "local" ]; then
     pid=$(dispatch_local "$item" "$cmd" "$w" "$joblog" "$mdirL")
+  else
+    pid=$(dispatch_remote "$item" "$cmd" "$w" "$joblog" "$mdirL" "$mdirR" "$box")
   fi
   if [ -z "$pid" ]; then
     say "DISPATCH FAILED for $item on $box"
@@ -300,12 +321,15 @@ PYEOF
     --item "$item" --event dispatched --box "$box" --pid "$pid" \
     --detail "W=$w cmd=$cmd log=$joblog"
   say "DISPATCHED $item on $box (pid/handle $pid), log $joblog"
-  # verify parallelism a moment later (house reflex) -- logged, not enforced
-  ( sleep 60
-    if [ "$box" = "local" ]; then
-      say "  parallelism check $item: $(count_local_census) live process(es) on local"
+  # verify parallelism a moment later (house reflex) -- logged, not enforced.
+  # `exec 9>&-` for the same reason as the dispatch above: this subshell outlives
+  # the tick and must not sit on the single-instance lock.
+  ( exec 9>&-
+    sleep 60
+    if [ "$(jqbox "$box" host)" = "local" ]; then
+      say "  parallelism check $item: $(count_local_census "$box") live process(es) on $box"
     else
-      say "  parallelism check $item: $(count_laptop_census) live process(es) on laptop"
+      say "  parallelism check $item: $(count_remote_census "$box") live process(es) on $box"
     fi ) &
 }
 

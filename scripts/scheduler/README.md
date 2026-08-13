@@ -140,7 +140,12 @@ bash -n scripts/scheduler/work_queue.sh scripts/scheduler/work_queue_watchdog.sh
 ```
 
 Env overrides: `SCHED_QUEUE`, `SCHED_POLL_SECS` (300), `SCHED_MAX_HOURS` (72, then it exits and
-the watchdog starts a fresh one), `SCHED_PY` (`python3`), `SCHED_ONCE`.
+the watchdog starts a fresh one), `SCHED_PY` (`python3`), `SCHED_ONCE`, `SCHED_RUN_DIR` (state
+/ lock / marker tree — only for smoke-testing the dispatch path off to one side).
+
+⚠️ A `SCHED_ONCE` smoke run shares the chain's process name, so the cron watchdog can read
+"chain alive" while the real chain is down. Don't leave a smoke running unattended, and check
+`pgrep -af 'scheduler/work_queue\.sh'` if the watchdog log looks too quiet.
 
 ## Remote launch mechanics (laptop)
 
