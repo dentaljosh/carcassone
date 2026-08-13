@@ -1,0 +1,299 @@
+[joshuabot-h2h] variant=current+j7w0 profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=400 workers=30 done=0 todo=800 manifest=measurement/joshuabot_20260812/confirm/J7ZERO_confirm.jsonl.manifest.json
+[1/800] deck=126000000011 joshua_seat=1 scores=[83, 80] margin=-3 joshua=97.9ms/mv champ=1308.8ms/mv
+[2/800] deck=126000000006 joshua_seat=0 scores=[74, 58] margin=+16 joshua=122.3ms/mv champ=1536.1ms/mv
+[3/800] deck=126000000003 joshua_seat=1 scores=[106, 77] margin=-29 joshua=100.7ms/mv champ=1583.9ms/mv
+[4/800] deck=126000000001 joshua_seat=0 scores=[76, 103] margin=-27 joshua=89.2ms/mv champ=1686.2ms/mv
+[5/800] deck=126000000009 joshua_seat=1 scores=[97, 80] margin=-17 joshua=120.7ms/mv champ=1822.5ms/mv
+[6/800] deck=126000000004 joshua_seat=1 scores=[95, 91] margin=-4 joshua=84.8ms/mv champ=1901.0ms/mv
+[7/800] deck=126000000001 joshua_seat=1 scores=[86, 89] margin=+3 joshua=87.0ms/mv champ=1925.2ms/mv
+[8/800] deck=126000000003 joshua_seat=0 scores=[107, 112] margin=-5 joshua=84.5ms/mv champ=2008.5ms/mv
+[9/800] deck=126000000014 joshua_seat=0 scores=[93, 88] margin=+5 joshua=98.4ms/mv champ=2021.6ms/mv
+[10/800] deck=126000000008 joshua_seat=1 scores=[82, 75] margin=-7 joshua=110.0ms/mv champ=2023.7ms/mv
+[11/800] deck=126000000006 joshua_seat=1 scores=[103, 72] margin=-31 joshua=115.3ms/mv champ=2070.1ms/mv
+[12/800] deck=126000000009 joshua_seat=0 scores=[91, 100] margin=-9 joshua=122.8ms/mv champ=2122.8ms/mv
+[13/800] deck=126000000005 joshua_seat=0 scores=[91, 92] margin=-1 joshua=93.7ms/mv champ=2167.3ms/mv
+[14/800] deck=126000000005 joshua_seat=1 scores=[96, 72] margin=-24 joshua=107.0ms/mv champ=2159.9ms/mv
+[15/800] deck=126000000014 joshua_seat=1 scores=[109, 83] margin=-26 joshua=95.8ms/mv champ=2177.6ms/mv
+[16/800] deck=126000000012 joshua_seat=1 scores=[124, 118] margin=-6 joshua=101.1ms/mv champ=2232.8ms/mv
+[17/800] deck=126000000007 joshua_seat=1 scores=[113, 78] margin=-35 joshua=92.9ms/mv champ=2251.6ms/mv
+[18/800] deck=126000000013 joshua_seat=0 scores=[87, 89] margin=-2 joshua=132.9ms/mv champ=2301.4ms/mv
+[19/800] deck=126000000004 joshua_seat=0 scores=[116, 134] margin=-18 joshua=98.2ms/mv champ=2395.4ms/mv
+[20/800] deck=126000000002 joshua_seat=0 scores=[79, 114] margin=-35 joshua=102.3ms/mv champ=2396.2ms/mv
+[21/800] deck=126000000012 joshua_seat=0 scores=[100, 132] margin=-32 joshua=108.4ms/mv champ=2401.2ms/mv
+[22/800] deck=126000000007 joshua_seat=0 scores=[119, 112] margin=+7 joshua=131.6ms/mv champ=2420.6ms/mv
+[23/800] deck=126000000002 joshua_seat=1 scores=[105, 74] margin=-31 joshua=117.5ms/mv champ=2396.0ms/mv
+[24/800] deck=126000000010 joshua_seat=0 scores=[77, 93] margin=-16 joshua=110.9ms/mv champ=2470.6ms/mv
+[25/800] deck=126000000000 joshua_seat=0 scores=[71, 73] margin=-2 joshua=134.3ms/mv champ=2486.8ms/mv
+[26/800] deck=126000000000 joshua_seat=1 scores=[106, 93] margin=-13 joshua=103.8ms/mv champ=2488.4ms/mv
+[27/800] deck=126000000008 joshua_seat=0 scores=[63, 120] margin=-57 joshua=110.1ms/mv champ=2605.0ms/mv
+[28/800] deck=126000000011 joshua_seat=0 scores=[88, 82] margin=+6 joshua=138.1ms/mv champ=2591.5ms/mv
+[29/800] deck=126000000010 joshua_seat=1 scores=[113, 69] margin=-44 joshua=137.4ms/mv champ=3109.7ms/mv
+[30/800] deck=126000000013 joshua_seat=1 scores=[89, 59] margin=-30 joshua=137.0ms/mv champ=3218.5ms/mv
+[31/800] deck=126000000016 joshua_seat=0 scores=[95, 86] margin=+9 joshua=96.7ms/mv champ=1672.1ms/mv
+[32/800] deck=126000000015 joshua_seat=1 scores=[103, 92] margin=-11 joshua=95.7ms/mv champ=2223.2ms/mv
+[33/800] deck=126000000016 joshua_seat=1 scores=[89, 86] margin=-3 joshua=105.8ms/mv champ=2147.0ms/mv
+[34/800] deck=126000000015 joshua_seat=0 scores=[82, 95] margin=-13 joshua=123.3ms/mv champ=2623.2ms/mv
+[35/800] deck=126000000018 joshua_seat=1 scores=[91, 89] margin=-2 joshua=112.4ms/mv champ=1946.9ms/mv
+[36/800] deck=126000000019 joshua_seat=0 scores=[101, 114] margin=-13 joshua=101.7ms/mv champ=1996.6ms/mv
+[37/800] deck=126000000021 joshua_seat=0 scores=[87, 75] margin=+12 joshua=106.4ms/mv champ=1922.8ms/mv
+[38/800] deck=126000000017 joshua_seat=0 scores=[73, 117] margin=-44 joshua=117.5ms/mv champ=2222.1ms/mv
+[39/800] deck=126000000019 joshua_seat=1 scores=[118, 94] margin=-24 joshua=93.9ms/mv champ=2127.5ms/mv
+[40/800] deck=126000000027 joshua_seat=1 scores=[98, 82] margin=-16 joshua=95.0ms/mv champ=1681.2ms/mv
+[41/800] deck=126000000022 joshua_seat=1 scores=[90, 96] margin=+6 joshua=127.6ms/mv champ=1940.8ms/mv
+[42/800] deck=126000000022 joshua_seat=0 scores=[97, 104] margin=-7 joshua=106.8ms/mv champ=2136.6ms/mv
+[43/800] deck=126000000017 joshua_seat=1 scores=[111, 73] margin=-38 joshua=103.5ms/mv champ=2389.5ms/mv
+[44/800] deck=126000000026 joshua_seat=0 scores=[93, 124] margin=-31 joshua=80.7ms/mv champ=2002.1ms/mv
+[45/800] deck=126000000021 joshua_seat=1 scores=[111, 92] margin=-19 joshua=102.3ms/mv champ=2213.1ms/mv
+[46/800] deck=126000000020 joshua_seat=0 scores=[75, 110] margin=-35 joshua=102.0ms/mv champ=2428.4ms/mv
+[47/800] deck=126000000026 joshua_seat=1 scores=[91, 99] margin=+8 joshua=116.7ms/mv champ=2021.5ms/mv
+[48/800] deck=126000000023 joshua_seat=0 scores=[76, 106] margin=-30 joshua=97.6ms/mv champ=2333.8ms/mv
+[49/800] deck=126000000023 joshua_seat=1 scores=[112, 87] margin=-25 joshua=115.8ms/mv champ=2381.5ms/mv
+[50/800] deck=126000000018 joshua_seat=0 scores=[73, 87] margin=-14 joshua=130.5ms/mv champ=2819.2ms/mv
+[51/800] deck=126000000025 joshua_seat=1 scores=[100, 69] margin=-31 joshua=126.6ms/mv champ=2344.9ms/mv
+[52/800] deck=126000000025 joshua_seat=0 scores=[93, 87] margin=+6 joshua=108.8ms/mv champ=2472.1ms/mv
+[53/800] deck=126000000029 joshua_seat=0 scores=[88, 67] margin=+21 joshua=117.1ms/mv champ=1658.7ms/mv
+[54/800] deck=126000000028 joshua_seat=1 scores=[86, 58] margin=-28 joshua=109.3ms/mv champ=2323.4ms/mv
+[55/800] deck=126000000024 joshua_seat=0 scores=[65, 121] margin=-56 joshua=117.9ms/mv champ=2633.3ms/mv
+[56/800] deck=126000000027 joshua_seat=0 scores=[91, 91] margin=+0 joshua=137.0ms/mv champ=2507.1ms/mv
+[57/800] deck=126000000020 joshua_seat=1 scores=[96, 95] margin=-1 joshua=118.6ms/mv champ=2888.5ms/mv
+[58/800] deck=126000000024 joshua_seat=1 scores=[109, 77] margin=-32 joshua=135.2ms/mv champ=2681.7ms/mv
+[59/800] deck=126000000028 joshua_seat=0 scores=[75, 88] margin=-13 joshua=163.3ms/mv champ=2642.0ms/mv
+[60/800] deck=126000000029 joshua_seat=1 scores=[98, 84] margin=-14 joshua=98.3ms/mv champ=2210.7ms/mv
+[61/800] deck=126000000030 joshua_seat=0 scores=[54, 116] margin=-62 joshua=98.1ms/mv champ=2449.0ms/mv
+[62/800] deck=126000000035 joshua_seat=0 scores=[105, 75] margin=+30 joshua=91.5ms/mv champ=1595.0ms/mv
+[63/800] deck=126000000032 joshua_seat=1 scores=[108, 103] margin=-5 joshua=99.2ms/mv champ=2044.0ms/mv
+[64/800] deck=126000000032 joshua_seat=0 scores=[87, 99] margin=-12 joshua=112.2ms/mv champ=2151.2ms/mv
+[65/800] deck=126000000041 joshua_seat=1 scores=[88, 94] margin=+6 joshua=94.0ms/mv champ=1384.5ms/mv
+[66/800] deck=126000000035 joshua_seat=1 scores=[99, 116] margin=+17 joshua=113.6ms/mv champ=2057.6ms/mv
+[67/800] deck=126000000036 joshua_seat=0 scores=[87, 99] margin=-12 joshua=108.3ms/mv champ=2159.9ms/mv
+[68/800] deck=126000000033 joshua_seat=0 scores=[74, 117] margin=-43 joshua=116.6ms/mv champ=2480.5ms/mv
+[69/800] deck=126000000034 joshua_seat=0 scores=[97, 130] margin=-33 joshua=95.2ms/mv champ=2377.7ms/mv
+[70/800] deck=126000000040 joshua_seat=0 scores=[91, 77] margin=+14 joshua=143.4ms/mv champ=1748.4ms/mv
+[71/800] deck=126000000033 joshua_seat=1 scores=[111, 91] margin=-20 joshua=104.7ms/mv champ=2534.4ms/mv
+[72/800] deck=126000000037 joshua_seat=1 scores=[106, 60] margin=-46 joshua=95.1ms/mv champ=2122.5ms/mv
+[73/800] deck=126000000030 joshua_seat=1 scores=[98, 77] margin=-21 joshua=141.5ms/mv champ=2830.5ms/mv
+[74/800] deck=126000000036 joshua_seat=1 scores=[97, 104] margin=+7 joshua=107.6ms/mv champ=2237.0ms/mv
+[75/800] deck=126000000038 joshua_seat=1 scores=[86, 88] margin=+2 joshua=104.9ms/mv champ=2108.9ms/mv
+[76/800] deck=126000000031 joshua_seat=0 scores=[89, 114] margin=-25 joshua=128.2ms/mv champ=2911.4ms/mv
+[77/800] deck=126000000034 joshua_seat=1 scores=[107, 76] margin=-31 joshua=112.4ms/mv champ=2489.2ms/mv
+[78/800] deck=126000000031 joshua_seat=1 scores=[92, 68] margin=-24 joshua=142.0ms/mv champ=2916.0ms/mv
+[79/800] deck=126000000039 joshua_seat=1 scores=[125, 70] margin=-55 joshua=95.9ms/mv champ=2248.8ms/mv
+[80/800] deck=126000000038 joshua_seat=0 scores=[90, 99] margin=-9 joshua=114.4ms/mv champ=2599.9ms/mv
+[81/800] deck=126000000040 joshua_seat=1 scores=[112, 76] margin=-36 joshua=133.4ms/mv champ=2261.5ms/mv
+[82/800] deck=126000000044 joshua_seat=0 scores=[79, 88] margin=-9 joshua=107.6ms/mv champ=2007.9ms/mv
+[83/800] deck=126000000041 joshua_seat=0 scores=[68, 90] margin=-22 joshua=119.7ms/mv champ=2439.6ms/mv
+[84/800] deck=126000000046 joshua_seat=1 scores=[65, 93] margin=+28 joshua=89.3ms/mv champ=1177.3ms/mv
+[85/800] deck=126000000037 joshua_seat=0 scores=[80, 91] margin=-11 joshua=150.3ms/mv champ=2929.1ms/mv
+[86/800] deck=126000000039 joshua_seat=0 scores=[73, 88] margin=-15 joshua=133.3ms/mv champ=2710.0ms/mv
+[87/800] deck=126000000043 joshua_seat=1 scores=[87, 82] margin=-5 joshua=89.9ms/mv champ=2324.2ms/mv
+[88/800] deck=126000000042 joshua_seat=0 scores=[70, 112] margin=-42 joshua=103.9ms/mv champ=2566.8ms/mv
+[89/800] deck=126000000045 joshua_seat=0 scores=[81, 87] margin=-6 joshua=117.7ms/mv champ=1764.5ms/mv
+[90/800] deck=126000000045 joshua_seat=1 scores=[78, 81] margin=+3 joshua=109.6ms/mv champ=1655.5ms/mv
+[91/800] deck=126000000043 joshua_seat=0 scores=[72, 117] margin=-45 joshua=125.6ms/mv champ=2612.7ms/mv
+[92/800] deck=126000000044 joshua_seat=1 scores=[106, 71] margin=-35 joshua=107.4ms/mv champ=2246.8ms/mv
+[93/800] deck=126000000042 joshua_seat=1 scores=[87, 80] margin=-7 joshua=143.1ms/mv champ=3002.5ms/mv
+[94/800] deck=126000000046 joshua_seat=0 scores=[102, 76] margin=+26 joshua=124.4ms/mv champ=1948.4ms/mv
+[95/800] deck=126000000047 joshua_seat=0 scores=[90, 94] margin=-4 joshua=120.8ms/mv champ=1744.0ms/mv
+[96/800] deck=126000000049 joshua_seat=1 scores=[95, 109] margin=+14 joshua=118.2ms/mv champ=1567.6ms/mv
+[97/800] deck=126000000049 joshua_seat=0 scores=[71, 89] margin=-18 joshua=108.2ms/mv champ=1800.8ms/mv
+[98/800] deck=126000000054 joshua_seat=0 scores=[100, 84] margin=+16 joshua=105.8ms/mv champ=1472.5ms/mv
+[99/800] deck=126000000054 joshua_seat=1 scores=[92, 92] margin=+0 joshua=106.0ms/mv champ=1681.9ms/mv
+[100/800] deck=126000000048 joshua_seat=1 scores=[102, 68] margin=-34 joshua=129.0ms/mv champ=2268.0ms/mv
+[101/800] deck=126000000055 joshua_seat=0 scores=[84, 104] margin=-20 joshua=109.5ms/mv champ=1693.6ms/mv
+[102/800] deck=126000000050 joshua_seat=0 scores=[79, 123] margin=-44 joshua=92.8ms/mv champ=2191.0ms/mv
+[103/800] deck=126000000055 joshua_seat=1 scores=[82, 67] margin=-15 joshua=114.7ms/mv champ=1586.8ms/mv
+[104/800] deck=126000000048 joshua_seat=0 scores=[82, 88] margin=-6 joshua=89.0ms/mv champ=2446.3ms/mv
+[105/800] deck=126000000052 joshua_seat=0 scores=[75, 81] margin=-6 joshua=107.0ms/mv champ=2459.4ms/mv
+[106/800] deck=126000000053 joshua_seat=1 scores=[105, 83] margin=-22 joshua=97.4ms/mv champ=2330.0ms/mv
+[107/800] deck=126000000053 joshua_seat=0 scores=[91, 123] margin=-32 joshua=125.6ms/mv champ=2496.2ms/mv
+[108/800] deck=126000000051 joshua_seat=1 scores=[133, 103] margin=-30 joshua=112.6ms/mv champ=2533.0ms/mv
+[109/800] deck=126000000052 joshua_seat=1 scores=[134, 65] margin=-69 joshua=111.4ms/mv champ=2506.7ms/mv
+[110/800] deck=126000000050 joshua_seat=1 scores=[113, 78] margin=-35 joshua=125.8ms/mv champ=2601.2ms/mv
+[111/800] deck=126000000061 joshua_seat=1 scores=[76, 95] margin=+19 joshua=92.4ms/mv champ=1233.9ms/mv
+[112/800] deck=126000000051 joshua_seat=0 scores=[65, 118] margin=-53 joshua=114.5ms/mv champ=2800.5ms/mv
+[113/800] deck=126000000047 joshua_seat=1 scores=[108, 61] margin=-47 joshua=120.7ms/mv champ=3049.8ms/mv
+[114/800] deck=126000000059 joshua_seat=1 scores=[97, 96] margin=-1 joshua=100.9ms/mv champ=2099.4ms/mv
+[115/800] deck=126000000056 joshua_seat=0 scores=[83, 115] margin=-32 joshua=118.0ms/mv champ=2549.3ms/mv
+[116/800] deck=126000000059 joshua_seat=0 scores=[97, 107] margin=-10 joshua=110.4ms/mv champ=2341.4ms/mv
+[117/800] deck=126000000058 joshua_seat=1 scores=[104, 75] margin=-29 joshua=97.3ms/mv champ=2385.7ms/mv
+[118/800] deck=126000000058 joshua_seat=0 scores=[106, 90] margin=+16 joshua=132.9ms/mv champ=2567.0ms/mv
+[119/800] deck=126000000057 joshua_seat=0 scores=[117, 127] margin=-10 joshua=114.4ms/mv champ=2687.2ms/mv
+[120/800] deck=126000000062 joshua_seat=1 scores=[84, 72] margin=-12 joshua=113.7ms/mv champ=1722.1ms/mv
+[121/800] deck=126000000057 joshua_seat=1 scores=[120, 89] margin=-31 joshua=107.0ms/mv champ=2617.8ms/mv
+[122/800] deck=126000000061 joshua_seat=0 scores=[92, 108] margin=-16 joshua=127.5ms/mv champ=2115.8ms/mv
+[123/800] deck=126000000056 joshua_seat=1 scores=[110, 67] margin=-43 joshua=110.4ms/mv champ=2796.8ms/mv
+[124/800] deck=126000000062 joshua_seat=0 scores=[84, 86] margin=-2 joshua=98.4ms/mv champ=2108.2ms/mv
+[125/800] deck=126000000060 joshua_seat=1 scores=[125, 83] margin=-42 joshua=112.9ms/mv champ=2509.6ms/mv
+[126/800] deck=126000000060 joshua_seat=0 scores=[81, 90] margin=-9 joshua=135.0ms/mv champ=2684.6ms/mv
+[127/800] deck=126000000064 joshua_seat=0 scores=[98, 76] margin=+22 joshua=128.8ms/mv champ=1479.1ms/mv
+[128/800] deck=126000000063 joshua_seat=0 scores=[76, 93] margin=-17 joshua=91.8ms/mv champ=2057.9ms/mv
+[129/800] deck=126000000064 joshua_seat=1 scores=[77, 84] margin=+7 joshua=89.7ms/mv champ=1544.1ms/mv
+[130/800] deck=126000000065 joshua_seat=0 scores=[68, 83] margin=-15 joshua=111.4ms/mv champ=1746.8ms/mv
+[131/800] deck=126000000063 joshua_seat=1 scores=[122, 91] margin=-31 joshua=116.8ms/mv champ=2224.6ms/mv
+[132/800] deck=126000000069 joshua_seat=0 scores=[105, 90] margin=+15 joshua=117.3ms/mv champ=1579.3ms/mv
+[133/800] deck=126000000066 joshua_seat=1 scores=[104, 69] margin=-35 joshua=97.6ms/mv champ=2038.1ms/mv
+[134/800] deck=126000000071 joshua_seat=0 scores=[71, 89] margin=-18 joshua=94.3ms/mv champ=1589.2ms/mv
+[135/800] deck=126000000066 joshua_seat=0 scores=[84, 88] margin=-4 joshua=127.6ms/mv champ=2327.1ms/mv
+[136/800] deck=126000000071 joshua_seat=1 scores=[75, 82] margin=+7 joshua=99.9ms/mv champ=1470.9ms/mv
+[137/800] deck=126000000065 joshua_seat=1 scores=[115, 83] margin=-32 joshua=107.2ms/mv champ=2415.4ms/mv
+[138/800] deck=126000000068 joshua_seat=1 scores=[97, 69] margin=-28 joshua=99.3ms/mv champ=2103.9ms/mv
+[139/800] deck=126000000069 joshua_seat=1 scores=[114, 85] margin=-29 joshua=118.9ms/mv champ=2025.8ms/mv
+[140/800] deck=126000000073 joshua_seat=0 scores=[106, 86] margin=+20 joshua=95.0ms/mv champ=1595.7ms/mv
+[141/800] deck=126000000067 joshua_seat=0 scores=[90, 96] margin=-6 joshua=110.3ms/mv champ=2536.5ms/mv
+[142/800] deck=126000000067 joshua_seat=1 scores=[109, 72] margin=-37 joshua=119.7ms/mv champ=2453.1ms/mv
+[143/800] deck=126000000068 joshua_seat=0 scores=[77, 95] margin=-18 joshua=109.2ms/mv champ=2538.8ms/mv
+[144/800] deck=126000000072 joshua_seat=1 scores=[95, 93] margin=-2 joshua=114.9ms/mv champ=1952.2ms/mv
+[145/800] deck=126000000070 joshua_seat=1 scores=[116, 74] margin=-42 joshua=98.6ms/mv champ=2460.3ms/mv
+[146/800] deck=126000000077 joshua_seat=1 scores=[93, 63] margin=-30 joshua=98.1ms/mv champ=1644.8ms/mv
+[147/800] deck=126000000070 joshua_seat=0 scores=[105, 102] margin=+3 joshua=107.8ms/mv champ=2777.7ms/mv
+[148/800] deck=126000000076 joshua_seat=0 scores=[74, 84] margin=-10 joshua=108.1ms/mv champ=2027.5ms/mv
+[149/800] deck=126000000072 joshua_seat=0 scores=[75, 106] margin=-31 joshua=98.6ms/mv champ=2458.6ms/mv
+[150/800] deck=126000000078 joshua_seat=0 scores=[70, 100] margin=-30 joshua=104.8ms/mv champ=2082.6ms/mv
+[151/800] deck=126000000073 joshua_seat=1 scores=[128, 108] margin=-20 joshua=116.1ms/mv champ=2407.9ms/mv
+[152/800] deck=126000000079 joshua_seat=1 scores=[106, 85] margin=-21 joshua=91.3ms/mv champ=1808.2ms/mv
+[153/800] deck=126000000077 joshua_seat=0 scores=[80, 96] margin=-16 joshua=101.5ms/mv champ=2418.4ms/mv
+[154/800] deck=126000000081 joshua_seat=1 scores=[82, 102] margin=+20 joshua=102.5ms/mv champ=1542.1ms/mv
+[155/800] deck=126000000078 joshua_seat=1 scores=[90, 78] margin=-12 joshua=111.1ms/mv champ=2259.7ms/mv
+[156/800] deck=126000000080 joshua_seat=0 scores=[81, 90] margin=-9 joshua=101.8ms/mv champ=2002.7ms/mv
+[157/800] deck=126000000074 joshua_seat=1 scores=[105, 85] margin=-20 joshua=119.1ms/mv champ=2750.5ms/mv
+[158/800] deck=126000000075 joshua_seat=0 scores=[69, 130] margin=-61 joshua=133.0ms/mv champ=2786.5ms/mv
+[159/800] deck=126000000079 joshua_seat=0 scores=[81, 97] margin=-16 joshua=119.9ms/mv champ=2477.7ms/mv
+[160/800] deck=126000000075 joshua_seat=1 scores=[103, 79] margin=-24 joshua=117.7ms/mv champ=2709.4ms/mv
+[161/800] deck=126000000076 joshua_seat=1 scores=[101, 85] margin=-16 joshua=116.1ms/mv champ=2640.3ms/mv
+[162/800] deck=126000000074 joshua_seat=0 scores=[67, 86] margin=-19 joshua=139.9ms/mv champ=3144.0ms/mv
+[163/800] deck=126000000084 joshua_seat=0 scores=[88, 79] margin=+9 joshua=114.4ms/mv champ=1815.4ms/mv
+[164/800] deck=126000000081 joshua_seat=0 scores=[87, 86] margin=+1 joshua=96.7ms/mv champ=2337.8ms/mv
+[165/800] deck=126000000080 joshua_seat=1 scores=[101, 65] margin=-36 joshua=113.5ms/mv champ=2485.2ms/mv
+[166/800] deck=126000000090 joshua_seat=1 scores=[56, 102] margin=+46 joshua=95.8ms/mv champ=895.9ms/mv
+[167/800] deck=126000000082 joshua_seat=1 scores=[102, 92] margin=-10 joshua=86.2ms/mv champ=2148.8ms/mv
+[168/800] deck=126000000082 joshua_seat=0 scores=[96, 131] margin=-35 joshua=95.2ms/mv champ=2256.7ms/mv
+[169/800] deck=126000000086 joshua_seat=1 scores=[67, 64] margin=-3 joshua=100.5ms/mv champ=1575.4ms/mv
+[170/800] deck=126000000083 joshua_seat=0 scores=[61, 128] margin=-67 joshua=101.2ms/mv champ=2320.7ms/mv
+[171/800] deck=126000000087 joshua_seat=0 scores=[70, 90] margin=-20 joshua=115.0ms/mv champ=1702.8ms/mv
+[172/800] deck=126000000086 joshua_seat=0 scores=[76, 108] margin=-32 joshua=102.0ms/mv champ=2086.4ms/mv
+[173/800] deck=126000000085 joshua_seat=1 scores=[118, 91] margin=-27 joshua=104.3ms/mv champ=2094.0ms/mv
+[174/800] deck=126000000085 joshua_seat=0 scores=[91, 103] margin=-12 joshua=109.8ms/mv champ=2247.0ms/mv
+[175/800] deck=126000000089 joshua_seat=1 scores=[77, 63] margin=-14 joshua=97.9ms/mv champ=1432.7ms/mv
+[176/800] deck=126000000083 joshua_seat=1 scores=[92, 95] margin=+3 joshua=108.2ms/mv champ=2545.9ms/mv
+[177/800] deck=126000000089 joshua_seat=0 scores=[99, 100] margin=-1 joshua=106.3ms/mv champ=2126.2ms/mv
+[178/800] deck=126000000091 joshua_seat=1 scores=[73, 84] margin=+11 joshua=110.7ms/mv champ=1558.7ms/mv
+[179/800] deck=126000000087 joshua_seat=1 scores=[89, 95] margin=+6 joshua=103.6ms/mv champ=2333.4ms/mv
+[180/800] deck=126000000088 joshua_seat=1 scores=[104, 70] margin=-34 joshua=101.7ms/mv champ=2299.0ms/mv
+[181/800] deck=126000000084 joshua_seat=1 scores=[109, 69] margin=-40 joshua=136.4ms/mv champ=3008.1ms/mv
+[182/800] deck=126000000096 joshua_seat=0 scores=[81, 77] margin=+4 joshua=91.5ms/mv champ=1394.8ms/mv
+[183/800] deck=126000000093 joshua_seat=0 scores=[97, 86] margin=+11 joshua=104.3ms/mv champ=1824.1ms/mv
+[184/800] deck=126000000088 joshua_seat=0 scores=[74, 112] margin=-38 joshua=122.3ms/mv champ=2689.7ms/mv
+[185/800] deck=126000000092 joshua_seat=1 scores=[109, 84] margin=-25 joshua=98.3ms/mv champ=1955.6ms/mv
+[186/800] deck=126000000092 joshua_seat=0 scores=[74, 100] margin=-26 joshua=111.1ms/mv champ=2198.0ms/mv
+[187/800] deck=126000000091 joshua_seat=0 scores=[99, 117] margin=-18 joshua=109.0ms/mv champ=2496.5ms/mv
+[188/800] deck=126000000097 joshua_seat=0 scores=[86, 87] margin=-1 joshua=98.4ms/mv champ=1737.8ms/mv
+[189/800] deck=126000000095 joshua_seat=0 scores=[75, 96] margin=-21 joshua=124.4ms/mv champ=2260.7ms/mv
+[190/800] deck=126000000090 joshua_seat=0 scores=[90, 103] margin=-13 joshua=134.2ms/mv champ=2935.8ms/mv
+[191/800] deck=126000000099 joshua_seat=1 scores=[115, 82] margin=-33 joshua=84.4ms/mv champ=1764.1ms/mv
+[192/800] deck=126000000093 joshua_seat=1 scores=[105, 96] margin=-9 joshua=100.7ms/mv champ=2537.4ms/mv
+[193/800] deck=126000000097 joshua_seat=1 scores=[117, 89] margin=-28 joshua=93.9ms/mv champ=1960.6ms/mv
+[194/800] deck=126000000094 joshua_seat=0 scores=[68, 98] margin=-30 joshua=113.6ms/mv champ=2557.0ms/mv
+[195/800] deck=126000000099 joshua_seat=0 scores=[89, 91] margin=-2 joshua=109.3ms/mv champ=2001.5ms/mv
+[196/800] deck=126000000095 joshua_seat=1 scores=[98, 82] margin=-16 joshua=105.8ms/mv champ=2375.3ms/mv
+[197/800] deck=126000000094 joshua_seat=1 scores=[115, 88] margin=-27 joshua=133.7ms/mv champ=2648.7ms/mv
+[198/800] deck=126000000098 joshua_seat=0 scores=[78, 97] margin=-19 joshua=102.4ms/mv champ=2397.6ms/mv
+[199/800] deck=126000000100 joshua_seat=0 scores=[98, 114] margin=-16 joshua=121.5ms/mv champ=2193.1ms/mv
+[200/800] deck=126000000096 joshua_seat=1 scores=[117, 102] margin=-15 joshua=160.2ms/mv champ=2591.0ms/mv
+[201/800] deck=126000000103 joshua_seat=1 scores=[120, 101] margin=-19 joshua=83.6ms/mv champ=1692.5ms/mv
+[202/800] deck=126000000098 joshua_seat=1 scores=[97, 83] margin=-14 joshua=126.2ms/mv champ=2634.1ms/mv
+[203/800] deck=126000000100 joshua_seat=1 scores=[122, 122] margin=+0 joshua=116.8ms/mv champ=2298.9ms/mv
+[204/800] deck=126000000102 joshua_seat=1 scores=[113, 75] margin=-38 joshua=100.8ms/mv champ=2260.6ms/mv
+[205/800] deck=126000000105 joshua_seat=1 scores=[106, 89] margin=-17 joshua=92.1ms/mv champ=1671.3ms/mv
+[206/800] deck=126000000102 joshua_seat=0 scores=[52, 91] margin=-39 joshua=109.6ms/mv champ=2682.8ms/mv
+[207/800] deck=126000000101 joshua_seat=0 scores=[72, 103] margin=-31 joshua=136.5ms/mv champ=2766.9ms/mv
+[208/800] deck=126000000107 joshua_seat=1 scores=[103, 91] margin=-12 joshua=103.2ms/mv champ=1708.2ms/mv
+[209/800] deck=126000000103 joshua_seat=0 scores=[86, 120] margin=-34 joshua=104.3ms/mv champ=2384.0ms/mv
+[210/800] deck=126000000104 joshua_seat=1 scores=[87, 86] margin=-1 joshua=84.1ms/mv champ=2156.1ms/mv
+[211/800] deck=126000000104 joshua_seat=0 scores=[71, 115] margin=-44 joshua=109.0ms/mv champ=2445.7ms/mv
+[212/800] deck=126000000101 joshua_seat=1 scores=[110, 112] margin=+2 joshua=106.9ms/mv champ=2888.3ms/mv
+[213/800] deck=126000000110 joshua_seat=1 scores=[78, 77] margin=-1 joshua=97.5ms/mv champ=1601.5ms/mv
+[214/800] deck=126000000107 joshua_seat=0 scores=[98, 100] margin=-2 joshua=110.3ms/mv champ=2318.3ms/mv
+[215/800] deck=126000000106 joshua_seat=0 scores=[85, 111] margin=-26 joshua=123.5ms/mv champ=2466.3ms/mv
+[216/800] deck=126000000111 joshua_seat=0 scores=[86, 88] margin=-2 joshua=93.0ms/mv champ=1700.8ms/mv
+[217/800] deck=126000000105 joshua_seat=0 scores=[67, 108] margin=-41 joshua=123.9ms/mv champ=2698.4ms/mv
+[218/800] deck=126000000106 joshua_seat=1 scores=[112, 78] margin=-34 joshua=109.4ms/mv champ=2504.5ms/mv
+[219/800] deck=126000000109 joshua_seat=1 scores=[118, 75] margin=-43 joshua=86.2ms/mv champ=1907.2ms/mv
+[220/800] deck=126000000114 joshua_seat=1 scores=[77, 102] margin=+25 joshua=101.0ms/mv champ=1338.6ms/mv
+[221/800] deck=126000000108 joshua_seat=1 scores=[84, 77] margin=-7 joshua=120.7ms/mv champ=2152.5ms/mv
+[222/800] deck=126000000114 joshua_seat=0 scores=[68, 87] margin=-19 joshua=113.3ms/mv champ=1582.2ms/mv
+[223/800] deck=126000000115 joshua_seat=1 scores=[86, 93] margin=+7 joshua=87.0ms/mv champ=1390.9ms/mv
+[224/800] deck=126000000112 joshua_seat=0 scores=[72, 100] margin=-28 joshua=126.8ms/mv champ=2270.0ms/mv
+[225/800] deck=126000000110 joshua_seat=0 scores=[92, 95] margin=-3 joshua=91.8ms/mv champ=2404.2ms/mv
+[226/800] deck=126000000111 joshua_seat=1 scores=[126, 70] margin=-56 joshua=109.6ms/mv champ=2367.0ms/mv
+[227/800] deck=126000000108 joshua_seat=0 scores=[86, 103] margin=-17 joshua=132.1ms/mv champ=2787.7ms/mv
+[228/800] deck=126000000118 joshua_seat=1 scores=[71, 85] margin=+14 joshua=92.7ms/mv champ=1241.5ms/mv
+[229/800] deck=126000000115 joshua_seat=0 scores=[71, 90] margin=-19 joshua=107.9ms/mv champ=1903.3ms/mv
+[230/800] deck=126000000113 joshua_seat=0 scores=[72, 94] margin=-22 joshua=123.7ms/mv champ=2459.7ms/mv
+[231/800] deck=126000000109 joshua_seat=0 scores=[105, 101] margin=+4 joshua=129.7ms/mv champ=2889.5ms/mv
+[232/800] deck=126000000116 joshua_seat=0 scores=[87, 90] margin=-3 joshua=112.9ms/mv champ=1935.6ms/mv
+[233/800] deck=126000000116 joshua_seat=1 scores=[104, 82] margin=-22 joshua=101.8ms/mv champ=2029.8ms/mv
+[234/800] deck=126000000113 joshua_seat=1 scores=[83, 64] margin=-19 joshua=120.8ms/mv champ=2531.5ms/mv
+[235/800] deck=126000000112 joshua_seat=1 scores=[102, 56] margin=-46 joshua=124.1ms/mv champ=2862.9ms/mv
+[236/800] deck=126000000124 joshua_seat=0 scores=[89, 74] margin=+15 joshua=113.1ms/mv champ=1189.8ms/mv
+[237/800] deck=126000000117 joshua_seat=0 scores=[95, 134] margin=-39 joshua=106.9ms/mv champ=2510.7ms/mv
+[238/800] deck=126000000122 joshua_seat=1 scores=[95, 72] margin=-23 joshua=102.2ms/mv champ=1703.5ms/mv
+[239/800] deck=126000000119 joshua_seat=1 scores=[88, 79] margin=-9 joshua=120.4ms/mv champ=2162.1ms/mv
+[240/800] deck=126000000123 joshua_seat=1 scores=[83, 78] margin=-5 joshua=93.5ms/mv champ=1654.3ms/mv
+[241/800] deck=126000000118 joshua_seat=0 scores=[55, 100] margin=-45 joshua=110.2ms/mv champ=2439.0ms/mv
+[242/800] deck=126000000120 joshua_seat=1 scores=[112, 85] margin=-27 joshua=94.2ms/mv champ=2197.4ms/mv
+[243/800] deck=126000000120 joshua_seat=0 scores=[73, 96] margin=-23 joshua=112.8ms/mv champ=2275.2ms/mv
+[244/800] deck=126000000125 joshua_seat=1 scores=[98, 93] margin=-5 joshua=104.4ms/mv champ=1544.9ms/mv
+[245/800] deck=126000000121 joshua_seat=0 scores=[100, 98] margin=+2 joshua=105.0ms/mv champ=2065.4ms/mv
+[246/800] deck=126000000117 joshua_seat=1 scores=[108, 75] margin=-33 joshua=150.9ms/mv champ=2688.5ms/mv
+[247/800] deck=126000000124 joshua_seat=1 scores=[117, 75] margin=-42 joshua=104.0ms/mv champ=1999.0ms/mv
+[248/800] deck=126000000119 joshua_seat=0 scores=[74, 114] margin=-40 joshua=119.9ms/mv champ=2869.2ms/mv
+[249/800] deck=126000000127 joshua_seat=0 scores=[72, 91] margin=-19 joshua=104.9ms/mv champ=1863.4ms/mv
+[250/800] deck=126000000128 joshua_seat=1 scores=[128, 62] margin=-66 joshua=86.1ms/mv champ=1704.7ms/mv
+[251/800] deck=126000000125 joshua_seat=0 scores=[68, 118] margin=-50 joshua=98.7ms/mv champ=2369.2ms/mv
+[252/800] deck=126000000123 joshua_seat=0 scores=[88, 81] margin=+7 joshua=114.5ms/mv champ=2617.7ms/mv
+[253/800] deck=126000000126 joshua_seat=0 scores=[84, 103] margin=-19 joshua=111.4ms/mv champ=2392.3ms/mv
+[254/800] deck=126000000122 joshua_seat=0 scores=[58, 77] margin=-19 joshua=137.2ms/mv champ=2845.0ms/mv
+[255/800] deck=126000000121 joshua_seat=1 scores=[105, 59] margin=-46 joshua=117.7ms/mv champ=2806.6ms/mv
+[256/800] deck=126000000128 joshua_seat=0 scores=[92, 109] margin=-17 joshua=102.7ms/mv champ=2114.4ms/mv
+[257/800] deck=126000000126 joshua_seat=1 scores=[89, 89] margin=+0 joshua=110.9ms/mv champ=2290.5ms/mv
+[258/800] deck=126000000127 joshua_seat=1 scores=[115, 80] margin=-35 joshua=115.0ms/mv champ=2248.3ms/mv
+[259/800] deck=126000000129 joshua_seat=1 scores=[125, 87] margin=-38 joshua=89.5ms/mv champ=2058.3ms/mv
+[260/800] deck=126000000130 joshua_seat=0 scores=[89, 122] margin=-33 joshua=92.0ms/mv champ=2125.7ms/mv
+[261/800] deck=126000000137 joshua_seat=0 scores=[78, 63] margin=+15 joshua=88.4ms/mv champ=1040.3ms/mv
+[262/800] deck=126000000131 joshua_seat=1 scores=[90, 71] margin=-19 joshua=107.7ms/mv champ=2004.5ms/mv
+[263/800] deck=126000000130 joshua_seat=1 scores=[95, 91] margin=-4 joshua=113.0ms/mv champ=2298.8ms/mv
+[264/800] deck=126000000136 joshua_seat=0 scores=[74, 108] margin=-34 joshua=88.0ms/mv champ=1551.0ms/mv
+[265/800] deck=126000000132 joshua_seat=0 scores=[106, 109] margin=-3 joshua=97.9ms/mv champ=2318.1ms/mv
+[266/800] deck=126000000129 joshua_seat=0 scores=[79, 83] margin=-4 joshua=134.5ms/mv champ=2835.3ms/mv
+[267/800] deck=126000000138 joshua_seat=0 scores=[77, 72] margin=+5 joshua=87.9ms/mv champ=1383.5ms/mv
+[268/800] deck=126000000136 joshua_seat=1 scores=[98, 90] margin=-8 joshua=91.7ms/mv champ=1759.1ms/mv
+[269/800] deck=126000000131 joshua_seat=0 scores=[109, 111] margin=-2 joshua=105.1ms/mv champ=2585.7ms/mv
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/joshuabot/h2h.py", line 213, in _play_cell
+    rec = PH.play_game(game, int(deck_seed), agents, labels, config)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/human_anchor/play_harness.py", line 233, in play_game
+    a = int(agent.choose_action(board))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/src/carcassonne_ai/rust_agent.py", line 657, in choose_action
+    action = int(self._rs.choose_action(
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: PUCT reached a node with no valid actions (Python IndexError)
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/doctor/projects/carcassone/scripts/joshuabot/h2h.py", line 466, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/joshuabot/h2h.py", line 446, in main
+    for rec in pool.imap_unordered(_play_cell, cells):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 873, in next
+    raise value
+RuntimeError: PUCT reached a node with no valid actions (Python IndexError)

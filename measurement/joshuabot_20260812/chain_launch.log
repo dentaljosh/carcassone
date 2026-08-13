@@ -42,3 +42,13 @@ AXES OK   {"got": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floo
 [jbchain 2026-08-13_05:28:55] CELL J8EX extract: {"n_scored": 300, "win_rate": 0.115, "n_paired_decks": 150, "paired_margin_mean": -23.333333333333332, "paired_margin_sem": 1.0727524933580745, "paired_margin_z": -21.750901049217966}
 [jbchain 2026-08-13_05:28:55] CELL J8EX: DONE
 [jbchain 2026-08-13_05:28:55] CELL J9ON: START W=30 est=23 min (window 332 min left) seeds 125000000000..125000000149 out=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/J9ON.jsonl
+[jbchain 2026-08-13_05:57:48] CELL J9ON: driver rc=0 records=300/300 wall=28 min
+AXES OK   {"got": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": true}, "want": {"preset": "current", "j7_weight": 1.0, "j8_break_reserve_floor": false, "j9_avoid_cloisters": true}}
+[jbchain 2026-08-13_05:57:48] CELL J9ON extract: {"n_scored": 300, "win_rate": 0.09333333333333334, "n_paired_decks": 150, "paired_margin_mean": -25.476666666666667, "paired_margin_sem": 0.9782801951352614, "paired_margin_z": -26.042300348464224}
+[jbchain 2026-08-13_05:57:48] CELL J9ON: DONE
+[jbchain 2026-08-13_05:57:48] CELL ALLTOG: START W=30 est=23 min (window 303 min left) seeds 125000000000..125000000149 out=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/ALLTOG.jsonl
+[jbchain 2026-08-13_06:26:22] CELL ALLTOG: driver rc=0 records=300/300 wall=28 min
+AXES OK   {"got": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": true}, "want": {"preset": "current", "j7_weight": 0.0, "j8_break_reserve_floor": true, "j9_avoid_cloisters": true}}
+[jbchain 2026-08-13_06:26:22] CELL ALLTOG extract: {"n_scored": 300, "win_rate": 0.12833333333333333, "n_paired_decks": 150, "paired_margin_mean": -20.4, "paired_margin_sem": 0.9543377947028034, "paired_margin_z": -21.376078903333067}
+[jbchain 2026-08-13_06:26:22] CELL ALLTOG: DONE
+[jbchain 2026-08-13_06:26:22] TOURNAMENT CHAIN FINISHED — wrote /home/doctor/projects/carcassone/measurement/joshuabot_20260812/DONE_TOURNAMENT

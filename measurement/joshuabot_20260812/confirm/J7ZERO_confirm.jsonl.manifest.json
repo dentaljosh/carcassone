@@ -1,21 +1,21 @@
 {
  "schema": "carcassonne-joshuabot-h2h/v1/manifest",
  "experiment": "joshuabot_h2h",
- "variant_id": "current+j7w1+j9avoid0.55s6",
+ "variant_id": "current+j7w0",
  "joshua_manifest": {
   "agent": "joshua_bot",
   "preset": "current",
-  "variant_id": "current+j7w1+j9avoid0.55s6",
+  "variant_id": "current+j7w0",
   "deterministic": true,
   "axes": {
-   "j7_weight": 1.0,
+   "j7_weight": 0.0,
    "j8_break_reserve_floor": false,
-   "j9_avoid_cloisters": true
+   "j9_avoid_cloisters": false
   },
   "overrides": {
-   "j7_weight": 1.0,
+   "j7_weight": 0.0,
    "j8_break_reserve_floor": false,
-   "j9_avoid_cloisters": true
+   "j9_avoid_cloisters": false
   },
   "params": {
    "name": "current",
@@ -48,7 +48,7 @@
    "j6_road_skeptic_max_len": 3,
    "j6_road_claim_penalty": 1.5,
    "j6_road_anchor_allowance": 1,
-   "j7_weight": 1.0,
+   "j7_weight": 0.0,
    "j7_points_per_field": 3.0,
    "j8_pivotal_swing": 12.0,
    "j8_overcommit_bonus": 3.0,
@@ -56,7 +56,7 @@
    "j8_max_city_meeples": 2,
    "j8_max_farm_meeples": 3,
    "j8_break_reserve_floor": false,
-   "j9_avoid_cloisters": true,
+   "j9_avoid_cloisters": false,
    "j9_cloister_block_frac": 0.55,
    "j9_min_surrounding": 6,
    "early_farm_block_frac": 0.55,
@@ -66,67 +66,38 @@
  },
  "preset": "current",
  "overrides": {
-  "j7_weight": 1.0,
+  "j7_weight": 0.0,
   "j8_break_reserve_floor": false,
-  "j9_avoid_cloisters": true
+  "j9_avoid_cloisters": false
  },
  "rules_profile": "fixed_v1",
  "profile_env": {
   "CARCASSONNE_FIX_R9": "1",
   "r9_env_expected": true
  },
- "seed_base": 125000000000,
- "decks": 150,
+ "seed_base": 126000000000,
+ "decks": 400,
  "sims_override": null,
  "k_dets_override": null,
  "workers": 30,
  "rust_threads": 1,
  "argv": [
-  "/home/doctor/projects/carcassone/scripts/joshuabot/h2h.py",
+  "scripts/joshuabot/h2h.py",
   "--decks",
-  "150",
+  "400",
   "--seed-base",
-  "125000000000",
+  "126000000000",
+  "--preset",
+  "current",
+  "--j7-weight",
+  "0.0",
   "--profile",
   "fixed_v1",
   "--workers",
   "30",
-  "--limit",
-  "0",
   "--out",
-  "/home/doctor/projects/carcassone/measurement/joshuabot_20260812/cells/J9ON.jsonl",
-  "--resume",
-  "--preset",
-  "current",
-  "--j9-avoid-cloisters"
+  "measurement/joshuabot_20260812/confirm/J7ZERO_confirm.jsonl",
+  "--resume"
  ],
- "utc": 1786613335.8535328,
- "summary": {
-  "variant_ids": [
-   "current+j7w1+j9avoid0.55s6"
-  ],
-  "n_records": 300,
-  "n_scored": 300,
-  "wins": 28,
-  "draws": 0,
-  "losses": 272,
-  "win_rate": 0.09333333333333334,
-  "n_paired_decks": 150,
-  "paired_margin_mean": -25.476666666666667,
-  "paired_margin_sem": 0.9782801951352614,
-  "paired_margin_z": -26.042300348464224,
-  "mean_margin_unpaired": -25.476666666666667,
-  "rule_fires_total": {
-   "f_end_deploy": 12,
-   "f_j10_early_farm_block": 4242,
-   "f_j3_reserve_floor": 4481,
-   "f_j9_cloister_caution": 337,
-   "j1_majority_steal": 1642,
-   "j2_farm_attack": 17170,
-   "j5_dump": 687,
-   "j6_anchor_roads": 19233,
-   "j7_close_vs_farm": 17239,
-   "j8_overcommit": 977
-  }
- }
+ "utc": 1786624300.2032177
 }

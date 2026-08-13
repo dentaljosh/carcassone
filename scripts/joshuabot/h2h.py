@@ -168,13 +168,68 @@ def _worker_init(profile: str, rust_threads: int, sims, k_dets, preset: str,
     ex = resolve_execution("rust", rust_threads=rust_threads)
     if not ex.is_rust:                        # the one thing that must not degrade
         raise RuntimeError(f"backend did not resolve to rust: {ex.describe()}")
+    from carcassonne_ai.joshua_bot import JoshuaBot
+    # The variant a FAILED cell must still be able to name (a failed record with
+    # no `joshua_variant_id` would make `variants_in` blind to it and let a
+    # later --resume of a DIFFERENT variant append into the same file).
+    variant_id = JoshuaBot(None, preset=preset, overrides=dict(overrides or {})).variant_id
     _W.update(profile=profile, prof=prof, execution=dict(ex),
               factory_kwargs=ex.factory_kwargs(), sims=sims, k_dets=k_dets,
-              preset=preset, overrides=dict(overrides or {}),
+              preset=preset, overrides=dict(overrides or {}), variant_id=variant_id,
               play_harness=play_harness, env_resolved=env_preamble.RESOLVED)
 
 
+def failed_record(cell: tuple, exc: BaseException, t0: float) -> dict:
+    """The record a cell that RAISED leaves behind.
+
+    ⚠️ House lesson (capoff, DECISIONS 2026-07-31): a game that dies
+    deterministically and leaves ZERO records is the dangerous pattern — the loss
+    is invisible, and it can be candidate-correlated (capoff's 16 missing games
+    were exactly the ones its own style drove into the 25x25 window wall). So a
+    raise is DATA: it is written to the same JSONL, with the seed, the seat and
+    the exception text, and it is counted in the summary. It carries no
+    ``winner``/``margin``, so every statistic in :func:`summarize` skips it by
+    construction and no half-game can leak into the paired margin."""
+    import traceback
+    deck_seed, joshua_seat = int(cell[0]), int(cell[1])
+    return {
+        "schema": SCHEMA + "/failed",
+        "failed": True,
+        "deck_seed": deck_seed,
+        "joshua_seat": joshua_seat,
+        "champ_seat": 1 - joshua_seat,
+        "joshua_preset": _W.get("preset"),
+        "joshua_variant_id": _W.get("variant_id"),
+        "joshua_overrides": dict(_W.get("overrides") or {}),
+        "champion_seed": champion_seed(deck_seed, joshua_seat),
+        "rules_profile": _W.get("profile"),
+        "winner": None,                       # keeps it out of every statistic
+        "exc_type": type(exc).__name__,
+        "exc": str(exc)[:2000],
+        "traceback": "".join(traceback.format_exception(exc))[-4000:],
+        "finished_at": time.time(),
+        "cell_secs": round(time.time() - t0, 2),
+    }
+
+
 def _play_cell(cell: tuple) -> dict:
+    """One (deck_seed, joshua_seat) game, GUARDED.
+
+    A raise here used to kill ``imap_unordered`` and therefore the whole pool
+    (2026-08-13: the J7ZERO confirm died at 269/800 on a rust
+    ``NoLegalActionsAtInterior``). One pathological deck must cost one deck, not
+    the run — so anything short of an operator interrupt becomes a failed record
+    and the pool carries on."""
+    t0 = time.time()
+    try:
+        return _play_cell_inner(cell)
+    except (KeyboardInterrupt, SystemExit):    # operator/parent shutdown: propagate
+        raise
+    except BaseException as exc:               # noqa: BLE001 — incl. pyo3 PanicException
+        return failed_record(cell, exc, t0)
+
+
+def _play_cell_inner(cell: tuple) -> dict:
     """One (deck_seed, joshua_seat) game. Returns the JSONL record."""
     deck_seed, joshua_seat = cell
     PH = _W["play_harness"]
@@ -263,7 +318,31 @@ def _play_cell(cell: tuple) -> dict:
 # --------------------------------------------------------------------------- #
 # driver                                                                       #
 # --------------------------------------------------------------------------- #
+def read_records(out_path: Path) -> list[dict]:
+    """Every well-formed JSONL record in an output file (a torn last line from a
+    dirty crash is skipped, not fatal)."""
+    out: list[dict] = []
+    if not out_path.exists():
+        return out
+    for line in out_path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out
+
+
 def load_done(out_path: Path) -> set[tuple[int, int]]:
+    """Every cell already ON DISK — scored OR failed.
+
+    A failed cell counts as done because these failures are DECK-DETERMINISTIC
+    (same deck, same seeds, same two deterministic players ⇒ the same raise), so
+    a plain --resume would otherwise re-burn a full game-time per pathological
+    cell forever. ``--retry-failed`` re-opens them for a code fix that claims to
+    have made them playable."""
     done: set[tuple[int, int]] = set()
     if out_path.exists():
         for line in out_path.read_text().splitlines():
@@ -277,6 +356,23 @@ def load_done(out_path: Path) -> set[tuple[int, int]]:
             if "deck_seed" in d and "joshua_seat" in d:
                 done.add((int(d["deck_seed"]), int(d["joshua_seat"])))
     return done
+
+
+def load_failed(out_path: Path) -> set[tuple[int, int]]:
+    """The cells already on disk as FAILED records."""
+    failed: set[tuple[int, int]] = set()
+    if out_path.exists():
+        for line in out_path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if d.get("failed") and "deck_seed" in d and "joshua_seat" in d:
+                failed.add((int(d["deck_seed"]), int(d["joshua_seat"])))
+    return failed
 
 
 def variants_in(out_path: Path) -> set[str]:
@@ -315,8 +411,14 @@ def summarize(records: list[dict]) -> dict:
 
     Paired = per deck, the mean of ``joshua - champion`` over the two seatings;
     only decks with BOTH seatings scored contribute. This is the number a verdict
-    should be read off — never the unpaired mean."""
+    should be read off — never the unpaired mean.
+
+    FAILED cells (``failed: true``, no ``winner``) are excluded from every
+    statistic and reported separately as ``n_failed`` / ``failure_rate`` /
+    ``failed_cells``. A reader must never have to infer an exclusion from a
+    record count that does not add up — the count is stated."""
     ok = [r for r in records if r.get("winner")]
+    bad = [r for r in records if r.get("failed")]
     wins = sum(1 for r in ok if r["winner"] == "joshua")
     draws = sum(1 for r in ok if r["winner"] == "draw")
     by_deck: dict[int, dict[int, list[int]]] = {}
@@ -338,6 +440,15 @@ def summarize(records: list[dict]) -> dict:
         "variant_ids": sorted({str(r["joshua_variant_id"]) for r in records
                                if r.get("joshua_variant_id")}),
         "n_records": len(records), "n_scored": n,
+        # ⚠️ THE EXCLUSION LINE. Read it before the margin.
+        "n_failed": len(bad),
+        "failure_rate": (len(bad) / len(records)) if records else None,
+        "failed_cells": [{"deck_seed": int(r["deck_seed"]),
+                          "joshua_seat": int(r["joshua_seat"]),
+                          "exc_type": r.get("exc_type"),
+                          "exc": r.get("exc")} for r in bad],
+        "failed_by_seat": {"0": sum(1 for r in bad if int(r["joshua_seat"]) == 0),
+                           "1": sum(1 for r in bad if int(r["joshua_seat"]) == 1)},
         "wins": wins, "draws": draws, "losses": n - wins - draws,
         "win_rate": (wins + 0.5 * draws) / n if n else None,
         "n_paired_decks": len(paired),
@@ -348,6 +459,28 @@ def summarize(records: list[dict]) -> dict:
                                  if n else None),
         "rule_fires_total": dict(sorted(fires.items())),
     }
+
+
+def close_out(run_manifest: dict, man_path: Path, out_path: Path,
+              n_failed_this_leg: int) -> dict:
+    """Print the summary, shout the exclusion line, and close the manifest.
+
+    The summary is over the WHOLE output file, not just this leg — a ``--resume``
+    must not hide failures banked by an earlier leg."""
+    summary = summarize(read_records(out_path))
+    print(json.dumps(summary, indent=1))
+    if summary["n_failed"]:
+        print(f"\n⚠️ [joshuabot-h2h] {summary['n_failed']} FAILED CELL(S) = "
+              f"{100.0 * (summary['failure_rate'] or 0.0):.2f}% of "
+              f"{summary['n_records']} records — these are EXCLUSIONS, not zeros, "
+              f"and a paired deck with one dead seat is dropped ENTIRELY. by seat "
+              f"{summary['failed_by_seat']}. Cells: "
+              f"{[(c['deck_seed'], c['joshua_seat']) for c in summary['failed_cells']]}",
+              flush=True)
+    run_manifest["summary"] = summary            # the manifest closes the loop
+    run_manifest["n_failed_this_leg"] = int(n_failed_this_leg)
+    man_path.write_text(json.dumps(run_manifest, indent=1))
+    return summary
 
 
 def main(argv=None) -> int:
@@ -385,6 +518,10 @@ def main(argv=None) -> int:
     ap.add_argument("--k-dets", type=int, default=None, help="SMOKE ONLY: override k_dets")
     ap.add_argument("--out", required=True)
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--retry-failed", action="store_true",
+                    help="on --resume, re-attempt cells already on disk as FAILED "
+                         "records. Default off: these failures are deck-deterministic, "
+                         "so a retry just re-burns a game-time. Use after a code fix.")
     ap.add_argument("--limit", type=int, default=0, help="stop after N cells (bench)")
     args = ap.parse_args(argv)
 
@@ -393,6 +530,9 @@ def main(argv=None) -> int:
     seeds = [args.seed_base + i for i in range(max(1, args.decks))]
     overrides = build_overrides(args)
     done = load_done(out_path) if args.resume else set()
+    prior_failed = load_failed(out_path)
+    if args.retry_failed:
+        done -= prior_failed
     # ⚠️ A --resume that CHANGES the variant would silently mix two players into
     # one file, and the paired margin would be a blend of both. Refuse.
     prior = variants_in(out_path)
@@ -429,15 +569,21 @@ def main(argv=None) -> int:
 
     print(f"[joshuabot-h2h] variant={variant} profile={args.profile} {env} "
           f"decks={len(seeds)} workers={args.workers} done={len(done)} "
+          f"prior_failed={len(prior_failed)} retry_failed={args.retry_failed} "
           f"todo={len(cells)} manifest={man_path}", flush=True)
     if not cells:
         print("[joshuabot-h2h] nothing to do — exiting 0", flush=True)
+        # ⚠️ still close the manifest out: the write above REPLACED the previous
+        # manifest, and a no-op --resume must not be the thing that erases the
+        # summary — least of all its exclusion count.
+        close_out(run_manifest, man_path, out_path, 0)
         return 0
 
     import multiprocessing as mp
     ctx = mp.get_context("spawn")
     t0 = time.time()
     records: list[dict] = []
+    n_failed = 0
     with out_path.open("a") as fh:
         with ctx.Pool(processes=max(1, min(args.workers, len(cells))),
                       initializer=_worker_init,
@@ -448,17 +594,23 @@ def main(argv=None) -> int:
                 fh.flush()
                 os.fsync(fh.fileno())          # per-GAME checkpoint (dirty-reboot safe)
                 records.append(rec)
+                if rec.get("failed"):
+                    n_failed += 1
+                    print(f"[{len(records)}/{len(cells)}] ⚠️ FAILED CELL "
+                          f"deck={rec['deck_seed']} joshua_seat={rec['joshua_seat']} "
+                          f"{rec['exc_type']}: {rec['exc']} "
+                          f"({n_failed} failed so far — the pool CONTINUES; the cell "
+                          f"is an EXCLUSION, see the summary)", flush=True)
+                    continue
                 print(f"[{len(records)}/{len(cells)}] deck={rec['deck_seed']} "
                       f"joshua_seat={rec['joshua_seat']} scores={rec['scores']} "
                       f"margin={rec['margin_joshua_minus_champ']:+d} "
                       f"joshua={rec['ms_per_move_joshua']}ms/mv "
                       f"champ={rec['ms_per_move_champ']}ms/mv", flush=True)
 
-    print(f"\n[joshuabot-h2h] DONE {len(records)} games in {(time.time()-t0)/60:.1f} min")
-    summary = summarize(records)
-    print(json.dumps(summary, indent=1))
-    run_manifest["summary"] = summary            # the manifest closes the loop
-    man_path.write_text(json.dumps(run_manifest, indent=1))
+    print(f"\n[joshuabot-h2h] DONE {len(records)} cells in {(time.time()-t0)/60:.1f} min "
+          f"({n_failed} FAILED)")
+    close_out(run_manifest, man_path, out_path, n_failed)
     return 0
 
 

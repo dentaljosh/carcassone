@@ -1,0 +1,311 @@
+{
+ "trace": [
+  {
+   "ply": 0,
+   "phase": "tiles",
+   "tiles_placed": 2,
+   "tiles_remaining": 70,
+   "window": {
+    "origin_row": 6,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 10,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    18,
+    18
+   ],
+   "board_extent_cols": [
+    14,
+    15
+   ],
+   "scores": [
+    0,
+    0
+   ]
+  },
+  {
+   "ply": 10,
+   "phase": "tiles",
+   "tiles_placed": 12,
+   "tiles_remaining": 60,
+   "window": {
+    "origin_row": 6,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 16,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    17,
+    20
+   ],
+   "board_extent_cols": [
+    10,
+    16
+   ],
+   "scores": [
+    2,
+    4
+   ]
+  },
+  {
+   "ply": 20,
+   "phase": "tiles",
+   "tiles_placed": 22,
+   "tiles_remaining": 50,
+   "window": {
+    "origin_row": 6,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 20,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    15,
+    21
+   ],
+   "board_extent_cols": [
+    10,
+    17
+   ],
+   "scores": [
+    14,
+    8
+   ]
+  },
+  {
+   "ply": 30,
+   "phase": "tiles",
+   "tiles_placed": 32,
+   "tiles_remaining": 40,
+   "window": {
+    "origin_row": 6,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 21,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    13,
+    21
+   ],
+   "board_extent_cols": [
+    10,
+    18
+   ],
+   "scores": [
+    17,
+    16
+   ]
+  },
+  {
+   "ply": 40,
+   "phase": "tiles",
+   "tiles_placed": 42,
+   "tiles_remaining": 30,
+   "window": {
+    "origin_row": 6,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 32,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    10,
+    21
+   ],
+   "board_extent_cols": [
+    10,
+    18
+   ],
+   "scores": [
+    20,
+    16
+   ]
+  },
+  {
+   "ply": 50,
+   "phase": "tiles",
+   "tiles_placed": 52,
+   "tiles_remaining": 20,
+   "window": {
+    "origin_row": 6,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 64,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    8,
+    23
+   ],
+   "board_extent_cols": [
+    10,
+    18
+   ],
+   "scores": [
+    28,
+    41
+   ]
+  },
+  {
+   "ply": 56,
+   "phase": "tiles",
+   "tiles_placed": 58,
+   "tiles_remaining": 14,
+   "window": {
+    "origin_row": 5,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 53,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    7,
+    23
+   ],
+   "board_extent_cols": [
+    10,
+    18
+   ],
+   "scores": [
+    28,
+    50
+   ]
+  },
+  {
+   "ply": 57,
+   "phase": "meeples",
+   "tiles_placed": 59,
+   "tiles_remaining": 13,
+   "window": {
+    "origin_row": 5,
+    "origin_col": 2,
+    "size": 25
+   },
+   "n_legal_total": 6,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    7,
+    23
+   ],
+   "board_extent_cols": [
+    10,
+    18
+   ],
+   "scores": [
+    28,
+    50
+   ]
+  },
+  {
+   "ply": 58,
+   "phase": "tiles",
+   "tiles_placed": 60,
+   "tiles_remaining": 12,
+   "window": {
+    "origin_row": 5,
+    "origin_col": 3,
+    "size": 25
+   },
+   "n_legal_total": 74,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    7,
+    23
+   ],
+   "board_extent_cols": [
+    10,
+    18
+   ],
+   "scores": [
+    40,
+    54
+   ]
+  },
+  {
+   "ply": 59,
+   "phase": "meeples",
+   "tiles_placed": 61,
+   "tiles_remaining": 11,
+   "window": {
+    "origin_row": 5,
+    "origin_col": 3,
+    "size": 25
+   },
+   "n_legal_total": 5,
+   "n_legal_outside_window": 0,
+   "n_placed_tiles_outside_window": 0,
+   "board_extent_rows": [
+    6,
+    23
+   ],
+   "board_extent_cols": [
+    10,
+    18
+   ],
+   "scores": [
+    40,
+    54
+   ]
+  }
+ ],
+ "at_failure": {
+  "ply": 59,
+  "phase": "meeples",
+  "tiles_placed": 61,
+  "tiles_remaining": 11,
+  "window": {
+   "origin_row": 5,
+   "origin_col": 3,
+   "size": 25
+  },
+  "n_legal_total": 5,
+  "n_legal_outside_window": 0,
+  "n_placed_tiles_outside_window": 0,
+  "board_extent_rows": [
+   6,
+   23
+  ],
+  "board_extent_cols": [
+   10,
+   18
+  ],
+  "scores": [
+   40,
+   54
+  ]
+ },
+ "exc": "RuntimeError: PUCT reached a node with no valid actions (Python IndexError)",
+ "guard_returned_failed_record": true,
+ "guard_record_keys": [
+  "cell_secs",
+  "champ_seat",
+  "champion_seed",
+  "deck_seed",
+  "exc",
+  "exc_type",
+  "failed",
+  "finished_at",
+  "joshua_overrides",
+  "joshua_preset",
+  "joshua_seat",
+  "joshua_variant_id",
+  "rules_profile",
+  "schema",
+  "traceback",
+  "winner"
+ ],
+ "secs": 77.9
+}

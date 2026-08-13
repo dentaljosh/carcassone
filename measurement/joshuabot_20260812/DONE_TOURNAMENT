@@ -1,0 +1,9 @@
+DONE 2026-08-13_06:26:22
+band=125000000000 decks/cell=150 games/cell=300 profile=fixed_v1
+bench_s_per_game=84.82
+cells_run=BASE J7ZERO EARLY J8EX J9ON ALLTOG
+cells_deferred=none
+cells_incomplete=none
+extracts=/home/doctor/projects/carcassone/measurement/joshuabot_20260812/summaries   (EXTRACTS ONLY — no verdict, no promotion; read against the prereg)
+NEXT: the orchestrator adjudicates per TOURNAMENT_PREREG.md sections 5-6. The CONFIRM
+      (n=400 decks on the FRESH band 126000000000) is a SEPARATE authorized launch.

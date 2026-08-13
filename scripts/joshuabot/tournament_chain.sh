@@ -242,7 +242,8 @@ s = summarize(recs)
 s["note"] = ("EXTRACT ONLY. No verdict, no adjudication, no promotion. Read against "
              "measurement/joshuabot_20260812/TOURNAMENT_PREREG.md sections 4-5.")
 json.dump(s, open(sys.argv[2], "w"), indent=1)
-print(json.dumps({k: s[k] for k in ("n_scored", "win_rate", "n_paired_decks",
+print(json.dumps({k: s[k] for k in ("n_scored", "n_failed", "failure_rate",
+                                    "win_rate", "n_paired_decks",
                                     "paired_margin_mean", "paired_margin_sem",
                                     "paired_margin_z") if k in s}))
 PYEOF

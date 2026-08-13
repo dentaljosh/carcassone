@@ -8,27 +8,33 @@ harness change, which is the integration claim the whole instrument rests on.
 """
 from __future__ import annotations
 
-import importlib.util
+import importlib
 import json
+import os
 import random
 import sys
+import time
 from pathlib import Path
 
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 HUMAN_ANCHOR = REPO / "scripts" / "human_anchor"
+JOSHUABOT = REPO / "scripts" / "joshuabot"
 
 
 def _load_h2h():
-    """Import the driver by path — ``scripts/joshuabot`` is not a package."""
-    if str(REPO / "scripts") not in sys.path:
-        sys.path.insert(0, str(REPO / "scripts"))
-    spec = importlib.util.spec_from_file_location(
-        "joshuabot_h2h", REPO / "scripts" / "joshuabot" / "h2h.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    """Import the driver as the top-level module ``h2h``.
+
+    ⚠️ NOT ``spec_from_file_location`` under a synthetic name: the resilience
+    test below runs the REAL spawn pool, and ``multiprocessing`` pickles
+    ``_play_cell`` by ``__module__`` + ``__qualname__``. A synthetic module name
+    is unimportable in the child, so the driver must be reachable by a name that
+    is on ``sys.path`` (which spawn transfers to the child)."""
+    for p in (str(REPO / "scripts"), str(JOSHUABOT)):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    return importlib.import_module("h2h")
 
 
 H2H = _load_h2h()
@@ -152,6 +158,216 @@ class TestSummarize:
     def test_sign_convention_is_joshua_minus_champion(self):
         assert H2H.summarize([_rec(1, 0, -6), _rec(1, 1, -6)])[
             "paired_margin_mean"] == pytest.approx(-6.0)
+
+
+# --------------------------------------------------------------------------- #
+# resilience: ONE pathological deck must cost ONE deck, not the run             #
+# --------------------------------------------------------------------------- #
+# 2026-08-13: the J7ZERO confirm died at 269/800 when the champion's rust search
+# raised `NoLegalActionsAtInterior` on deck 126000000135 seat 0 — one cell killed
+# the whole pool. The house lesson (capoff, DECISIONS 2026-07-31) is that a game
+# which dies deterministically and leaves ZERO records is the dangerous pattern,
+# because the loss is invisible AND can be candidate-correlated. These tests pin
+# the catch path: the raise becomes a record, the pool finishes, the summary
+# counts the exclusion.
+
+#: the cell the stub worker below blows up on (module-level so the SPAWN child,
+#: which re-imports this module, sees the same choice).
+_STUB_FAIL_CELL = (10_001, 1)
+
+#: the driver refuses to append a different variant to an existing file, so the
+#: stub must stamp the SAME ``variant_id`` the real probe resolves. The parent
+#: puts it here; spawn children inherit the environment.
+_STUB_VARIANT_ENV = "H2H_STUB_VARIANT"
+
+
+def _stub_ok_record(cell) -> dict:
+    deck_seed, seat = int(cell[0]), int(cell[1])
+    scores = [40, 30] if seat == 0 else [30, 40]
+    return {"schema": H2H.SCHEMA, "deck_seed": deck_seed, "joshua_seat": seat,
+            "champ_seat": 1 - seat, "scores": scores,
+            "margin_joshua_minus_champ": scores[seat] - scores[1 - seat],
+            "winner": "joshua",
+            "joshua_variant_id": os.environ[_STUB_VARIANT_ENV],
+            "joshua_rule_fires": {"j1_majority_steal": 1},
+            "ms_per_move_joshua": 1.0, "ms_per_move_champ": 2.0,
+            "n_moves": 3, "cell_secs": 0.01, "finished_at": time.time()}
+
+
+def _stub_worker_init(profile, rust_threads, sims, k_dets, preset, overrides):
+    """A stand-in for :func:`h2h._worker_init` with the SAME signature (it is
+    handed the driver's real ``initargs``). Runs INSIDE the spawn child: it fills
+    ``_W`` with what ``failed_record`` reads and swaps the game for a stub that
+    explodes on exactly one cell. No engine, no champion, no game loop."""
+    import h2h as _h
+
+    _h._W.update(profile=profile, preset=preset, overrides=dict(overrides or {}),
+                 variant_id=os.environ[_STUB_VARIANT_ENV])
+
+    def _inner(cell):
+        if (int(cell[0]), int(cell[1])) == _STUB_FAIL_CELL:
+            raise RuntimeError("stub: PUCT reached a node with no valid actions")
+        return _stub_ok_record(cell)
+
+    _h._play_cell_inner = _inner
+
+
+class TestFailedCellGuard:
+    """The in-process half: ``_play_cell`` never lets a game's raise escape."""
+
+    @pytest.fixture(autouse=True)
+    def _worker_state(self, monkeypatch):
+        monkeypatch.setitem(H2H._W, "preset", "current")
+        monkeypatch.setitem(H2H._W, "profile", "fixed_v1")
+        monkeypatch.setitem(H2H._W, "variant_id", "current+j7w0")
+        monkeypatch.setitem(H2H._W, "overrides", {"j7_weight": 0.0})
+
+    def test_a_raise_becomes_a_failed_record(self, monkeypatch):
+        def boom(cell):
+            raise RuntimeError("PUCT reached a node with no valid actions")
+
+        monkeypatch.setattr(H2H, "_play_cell_inner", boom)
+        rec = H2H._play_cell((126_000_000_135, 0))
+        assert rec["failed"] is True
+        assert rec["schema"].endswith("/failed")
+        assert (rec["deck_seed"], rec["joshua_seat"]) == (126_000_000_135, 0)
+        assert rec["champ_seat"] == 1
+        assert rec["exc_type"] == "RuntimeError"
+        assert "no valid actions" in rec["exc"]
+        assert "boom" in rec["traceback"]            # the raise site is preserved
+        assert rec["champion_seed"] == H2H.champion_seed(126_000_000_135, 0)
+        # the fields every statistic keys on are ABSENT/None, so nothing can
+        # silently read a failed cell as a 0-margin draw
+        assert rec["winner"] is None
+        assert "margin_joshua_minus_champ" not in rec
+        assert rec["joshua_variant_id"] == "current+j7w0"   # the guard names it
+        json.dumps(rec)                                     # JSONL-serialisable
+
+    def test_the_record_survives_a_non_Exception_failure(self, monkeypatch):
+        """pyo3 panics arrive as BaseException subclasses, not Exception."""
+        class Panic(BaseException):
+            pass
+
+        def boom(cell):
+            raise Panic("rust panicked")
+
+        monkeypatch.setattr(H2H, "_play_cell_inner", boom)
+        assert H2H._play_cell((5, 1))["exc_type"] == "Panic"
+
+    @pytest.mark.parametrize("exc", [KeyboardInterrupt, SystemExit])
+    def test_an_operator_interrupt_still_propagates(self, monkeypatch, exc):
+        def boom(cell):
+            raise exc()
+
+        monkeypatch.setattr(H2H, "_play_cell_inner", boom)
+        with pytest.raises(exc):
+            H2H._play_cell((5, 1))
+
+
+def _failed(seed, seat, variant="current+j7w1"):
+    return {"schema": H2H.SCHEMA + "/failed", "failed": True, "deck_seed": seed,
+            "joshua_seat": seat, "winner": None, "joshua_variant_id": variant,
+            "exc_type": "RuntimeError", "exc": "no valid actions"}
+
+
+class TestFailuresAreCounted:
+    def test_summary_states_the_exclusion(self):
+        s = H2H.summarize([_rec(1, 0, +2), _rec(1, 1, -2), _failed(2, 0)])
+        assert s["n_records"] == 3 and s["n_scored"] == 2
+        assert s["n_failed"] == 1
+        assert s["failure_rate"] == pytest.approx(1 / 3)
+        assert s["failed_cells"] == [{"deck_seed": 2, "joshua_seat": 0,
+                                      "exc_type": "RuntimeError",
+                                      "exc": "no valid actions"}]
+        assert s["failed_by_seat"] == {"0": 1, "1": 0}
+
+    def test_a_failed_cell_is_in_no_statistic(self):
+        s = H2H.summarize([_rec(1, 0, +2), _rec(1, 1, -2), _failed(2, 0)])
+        assert s["wins"] + s["draws"] + s["losses"] == 2
+        assert s["n_paired_decks"] == 1                    # only deck 1 is paired
+        assert s["paired_margin_mean"] == pytest.approx(0.0)
+
+    def test_a_half_dead_deck_never_enters_the_paired_margin(self):
+        """The seat that DID finish must not leak in as an unpaired half-deck."""
+        s = H2H.summarize([_rec(9, 0, +30), _failed(9, 1)])
+        assert s["n_paired_decks"] == 0 and s["paired_margin_mean"] is None
+
+    def test_no_failures_reports_a_zero_rate_not_a_missing_key(self):
+        s = H2H.summarize([_rec(1, 0, +2), _rec(1, 1, -2)])
+        assert s["n_failed"] == 0 and s["failure_rate"] == 0.0
+
+    def test_the_variant_guard_still_sees_a_failed_cell(self, tmp_path):
+        p = tmp_path / "out.jsonl"
+        p.write_text(json.dumps(_failed(2, 0, variant="current+j7w0")) + "\n")
+        assert H2H.variants_in(p) == {"current+j7w0"}
+
+
+class TestFailedResumeContract:
+    def test_a_failed_cell_counts_as_done(self, tmp_path):
+        p = tmp_path / "out.jsonl"
+        p.write_text(json.dumps(_rec(1, 0, +1)) + "\n"
+                     + json.dumps(_failed(1, 1)) + "\n")
+        assert H2H.load_done(p) == {(1, 0), (1, 1)}
+        assert H2H.load_failed(p) == {(1, 1)}
+
+    def test_retry_failed_reopens_exactly_the_failed_cells(self, tmp_path):
+        p = tmp_path / "out.jsonl"
+        p.write_text(json.dumps(_rec(1, 0, +1)) + "\n"
+                     + json.dumps(_failed(1, 1)) + "\n")
+        done = H2H.load_done(p) - H2H.load_failed(p)
+        assert H2H.build_cells([1], done) == [(1, 1)]
+
+    def test_read_records_skips_a_torn_tail(self, tmp_path):
+        p = tmp_path / "out.jsonl"
+        p.write_text(json.dumps(_rec(1, 0, +1)) + "\n" + '{"deck_seed": 2, "josh')
+        assert len(H2H.read_records(p)) == 1
+
+
+class TestPoolSurvivesAFailedCell:
+    """The end-to-end claim, through the REAL spawn pool and the REAL driver."""
+
+    @pytest.fixture(autouse=True)
+    def _stub_pool(self, monkeypatch):
+        from carcassonne_ai.joshua_bot import JoshuaBot
+
+        variant = JoshuaBot(None, preset="current",
+                            overrides=H2H.build_overrides(_Args())).variant_id
+        monkeypatch.setenv(_STUB_VARIANT_ENV, variant)
+        monkeypatch.setattr(H2H, "_worker_init", _stub_worker_init)
+        monkeypatch.setattr(H2H, "export_profile_env", lambda profile: {"stub": True})
+
+    def test_the_run_completes_and_the_summary_counts_the_failure(
+            self, tmp_path, monkeypatch):
+        out = tmp_path / "stub.jsonl"
+        rc = H2H.main(["--decks", "3", "--seed-base", "10000",
+                       "--workers", "2", "--out", str(out)])
+        assert rc == 0                                    # the pool did NOT die
+
+        recs = H2H.read_records(out)
+        assert len(recs) == 6                             # 3 decks x 2 seats, all present
+        bad = [r for r in recs if r.get("failed")]
+        assert len(bad) == 1
+        assert (bad[0]["deck_seed"], bad[0]["joshua_seat"]) == _STUB_FAIL_CELL
+        assert "no valid actions" in bad[0]["exc"]
+
+        man = json.loads((tmp_path / "stub.jsonl.manifest.json").read_text())
+        assert man["summary"]["n_failed"] == 1            # a reader cannot miss it
+        assert man["summary"]["n_scored"] == 5
+        assert man["summary"]["failure_rate"] == pytest.approx(1 / 6)
+        assert man["n_failed_this_leg"] == 1
+        # the broken pair is dropped from the paired statistic, the others survive
+        assert man["summary"]["n_paired_decks"] == 2
+
+    def test_a_resume_skips_the_failed_cell_and_still_reports_it(
+            self, tmp_path, monkeypatch):
+        out = tmp_path / "stub.jsonl"
+        argv = ["--decks", "3", "--seed-base", "10000", "--workers", "2",
+                "--out", str(out)]
+        assert H2H.main(argv) == 0
+        assert H2H.main(argv + ["--resume"]) == 0         # nothing left to do
+        assert len(H2H.read_records(out)) == 6            # no cell replayed
+        man = json.loads((tmp_path / "stub.jsonl.manifest.json").read_text())
+        assert man["summary"]["n_failed"] == 1            # still stated after resume
 
 
 class TestPlayHarnessIntegration:
