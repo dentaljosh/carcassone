@@ -93,6 +93,13 @@ positions are CL-070 *disagreements* (mid/late-skewed, i.e. cheap). A `walled`/r
 outstanding item before the rust arm's ETA is a commitment. Do not read `9.85 / 1.65` as the
 backend speedup; the identity gate measures that at 9.41–9.48× on matched positions.
 
+✅ **DONE 2026-08-12 — that `walled`/rust smoke RAN; see [DESIGN.md §0.B](DESIGN.md).**
+5 self-play positions × 2 legs (rust, production knobs) + a deliberately-early 3-position leg:
+`c_rust` = **1.4755** worker-s/playout phase-weighted to the Stage A mix (pooled 1.2313;
+early 1.7533 · mid 1.9007 · late 0.7850) — the 1.65 reference was ~12% high. The wall-based
+figure was **3.2470**, i.e. **2.64×** inflated: this file's "cost from Σ `elapsed_secs`" rule
+matters *more* on rust than on python. Manifest: `SMOKE_RUST_MANIFEST.json`.
+
 ---
 
 ## 4. The nuisance parameter — sd (and ONLY sd)

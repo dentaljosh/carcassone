@@ -11,6 +11,119 @@ Lever row: `docs/LEVER_INDEX.md` → *"tile near-tie tie-break term · the 55% t
 
 ---
 
+## 0. PRE-SCORING AMENDMENT — 2026-08-12, applied BEFORE any position is scored
+
+**Nothing here is a result.** Two items had to land before the run could be launched: §6
+threat 3's dedupe (*"the ONE outstanding build item"*) and §7.4's un-measured `c_rust`
+(*"a `walled`/rust smoke is the outstanding item before the rust arm's ETA is a
+commitment"*). Both are now done. **No `headroom`, no `sigma2_arm`, no mean delta has been
+read from anything** — the smokes below report *cost* and the CRN witness only, the same
+discipline [SMOKE.md §4](SMOKE.md) applied to the python smoke. The read-rules in §4 are
+untouched.
+
+### 0.A The transposition dedupe is ARMED — realized saving **−26.2% positions / −32.2% arm-playouts**
+
+`transposition_census.py` now emits the grouping itself (`bp_rid` = `build_positions.rid_for`,
+plus `action_groups` / `repr_actions`), and `build_positions.py --afterstate-map` consumes it:
+arms are deduped by successor board key **before** the cap `J`, and positions whose whole tie
+set is one board are **not built**. Maps cover **1,427 / 1,427** qualifying positions across
+all three profiles, **0 unresolved** (`census/afterstate_map_{fixed_v1,app_aug2,walled}.json`).
+
+| | before (the 2026-08-12 19:47 plan) | after | Δ |
+|---|---|---|---|
+| positions built | 1,427 | **1,053** | **−374 (−26.2%)** — §6 predicted ~26% |
+| arm-playouts (incl. champion arms) | 185,536 | **125,760** | **−32.2%** |
+| tie-set arm-playouts (like-for-like) | 177,984 | **120,192** | **−32.5%** |
+| mean arms / position | 3.03 | 2.87 | |
+| positions bitten by the cap `J`=4 | 271 | 179 | |
+| positions losing ≥1 duplicate arm | — | 188 | |
+
+Dropped by stratum: **e4 115 · selfplay 259**. They are **not lost**: every one is written to
+`positions/DROPPED_ALL_TRANSPOSITION.json` and **the analyser MUST add them back as exact
+zeros** — that is what makes `headroom_all` (§6) estimable rather than merely definable.
+⚠️ **New, and a sensitivity the analyser must run:** on **72 of the 374** the *played* action
+lies **outside** the tie set. A different chain value implies a different tile afterstate, so
+for those rows the analytic zero covers **the tie-set arms only**, not the played-vs-tie-set
+contrast. They are flagged per-row in that file.
+
+Guard rails, so this cannot silently un-arm: `build_positions` **requires** a map (explicit
+`--no-dedupe` to build the pre-dedupe plan), and `run_tiletie.py`'s preflight **refuses to
+launch** any plan whose `afterstate_dedupe.applied` is not `True`. Tests **52 → 66**, all green.
+
+### 0.B `c_rust` is MEASURED, and it is **phase-weighted 1.4755** (the 1.65 reference was ~10% high)
+
+A `walled` / **rust** / **selfplay** smoke at production knobs (M=32, `--oracle-sims 100`,
+salt `tiletie-v1`, `clair-puct`), 5 positions × 2 legs = **10 records / 640 playouts, 5/5 ok,
+`crn_verified_all`, CRN cross-leg witness PASS 5/5**, preflight PASS including the rust
+identity gate **re-verified at HEAD** (8 positions, 376 field checks, 0 mismatches) →
+`SMOKE_RUST_MANIFEST.json`, `GATE_BACKEND_RECHECK_RUSTSMOKE.json`.
+
+```
+c_rust (Σ elapsed_secs / playouts) = 788.0 / 640 = 1.2313 worker-s/playout
+c_rust (wall x W / playouts)       = 3.2470          <- 2.64x too high, do NOT use
+```
+
+⚠️ **The §7.4 wall-vs-sum warning replicates on rust and is BIGGER there** (2.64× vs the
+python smoke's 1.9×), because rust's per-position spread is wider relative to its mean.
+
+⚠️ **That pooled 1.2313 is NOT the number to cost from either**, and the reason is §7.4's own
+phase caveat: the smoke's 5 positions were **3 late + 2 mid**, while the Stage A rust arm is
+**39.6% early / 27.5% mid / 32.9% late** by playout. So a second, deliberately **early**
+3-position rust leg was run (ply 8 / 22 / 36, on self-play positions **outside** the Stage A
+sample, so nothing in the scored set is peeked at). Measured, per phase:
+
+| phase | records | Σ elapsed_secs | **`c_rust`** |
+|---|---|---|---|
+| early (ply 8–36) | 3 | 336.6 | **1.7533** |
+| mid (ply 53–55) | 4 | 486.6 | **1.9007** |
+| late (ply 112–118) | 6 | 301.5 | **0.7850** |
+| pooled (all 13) | 13 | 1,124.6 | 1.3518 |
+| ⭐ **weighted to the Stage A rust phase mix** | | | **1.4755** |
+
+⇒ **`c_rust` = 1.4755 worker-s/playout** is the commitment figure; **1.65 was ~11.8% high**
+for this mix. Two facts worth carrying: rust's phase spread is only **2.4×** (1.90 → 0.785),
+*not* python's 9.3× — the clairvoyant playout length that dominates the python cost is not
+what dominates the rust cost; and **mid is the most expensive bucket, not early**, which
+inverts the python smoke's ordering. `c_python = 9.85` is unchanged (§7.4, measured).
+
+⚠️ Both smokes ran at **W ≤ 8 on a quiet box**; a W=14 run has more DRAM contention, so every
+figure below is an **optimistic** floor, not a ceiling. The python `c` additionally ran beside
+another job and is an upper bound. Neither is re-measured at W=14 — that would cost more than
+it buys.
+
+### 0.C Stage A, re-priced — **2.37 h at local W14** (was 2.72 h)
+
+Stage A is built and integrity-checked at `positions_stageA/` (its own
+`POSITIONS_PLAN.json` / `ARMS.json` / `DROPPED_ALL_TRANSPOSITION.json`), seed `20260812`:
+**340 positions = 280 selfplay/`walled` (rust) + 60 e4** (53 `fixed_v1` · 4 `walled` ·
+3 `app_aug2`), **40,192 arm-playouts = 33,472 rust + 6,720 python**.
+
+| Stage A component | worker-h | **W = 14 (local)** |
+|---|---|---|
+| power arm — selfplay / RUST (33,472 playouts × 1.4755) | 13.72 | **0.98 h** |
+| relevance arm — e4 / PYTHON (6,720 × 9.85) | 18.39 | **1.31 h** |
+| champion-pick pass, self-play arm only (280 × 13.7552 s) | 1.07 | 0.08 h |
+| **★ Stage A TOTAL, one box** | **33.18** | **≈ 2.37 h** |
+
+*(At the old `c_rust` = 1.65 the same plan is 34.80 worker-h / 2.49 h — the dedupe, not the
+firmed `c`, is what moved this number.)* The full deduped supply (1,053 positions) would be
+**158.3 worker-h ⇒ 11.3 h at W14**, which is why Stage A is the funding decision and Stage B
+is bought only on the rust arm.
+
+⛔ **The two-box split figure (§7.4's "≈1.2 h wall") is UNAVAILABLE TONIGHT** — the laptop is
+occupied by an unrelated run. Recorded for the record only: at W=22 the same total is
+**1.51 h**, and a python→laptop / rust→local split would land near **1.3 h** wall. **Do not
+plan on it tonight.**
+
+⚠️ **Launch the two arms as SEPARATE full-box invocations** (`run_tiletie.py --only-profiles
+walled` then `--only-profiles fixed_v1 app_aug2`). One mixed launch splits the pool with
+`split_workers`, which apportions by position **count** — and after §2.0 a python position
+costs ~8× a rust one, so the python legs (17% of the lines, ~55% of the worker-seconds) get
+~2 of 14 workers and become a ~7 h long pole. §7.4's table has always priced the two arms
+separately and summed them; this makes the launcher able to honour that.
+
+---
+
 ## 1. The question
 
 The production leaf (`a36d2e15a3b3d71d`, the hand-tuned classical heuristic) **cannot
@@ -486,11 +599,14 @@ statement is materially weaker here, and the reason is specific to tie sets:**
      transposition pass does not cover). *The JCZ 55.1% is uncorrected too, so the
      census-vs-JCZ comparison in §1.1 remains apples-to-apples at the raw level.*
 
-   🔧 **This is the ONE outstanding build item.** `build_positions.py` does not yet dedupe arms
-   or drop all-transposition positions; `transposition_census.py` computes exactly the needed
-   per-position `n_distinct_afterstates`, so wiring it in is a join on `(stratum, game_label,
-   ply)`. **It must land before the run is launched** — not because the estimate would be wrong
-   without it (the zeros are real), but because ~26% of the budget would buy known-zero rows.
+   ✅ **ARMED 2026-08-12 — see [§0.A](#0a-the-transposition-dedupe-is-armed--realized-saving-262-positions--322-arm-playouts).**
+   `build_positions.py --afterstate-map` now dedupes arms by successor board key and drops
+   all-transposition positions (written to `positions/DROPPED_ALL_TRANSPOSITION.json` as the
+   analytic zeros they are); `run_tiletie.py`'s preflight refuses a plan built without it.
+   Realized: **1,427 → 1,053 positions (−26.2%), 185,536 → 125,760 arm-playouts (−32.2%)** —
+   the ~26% prediction below held. *(Was: "the ONE outstanding build item … it must land
+   before the run is launched — not because the estimate would be wrong without it (the zeros
+   are real), but because ~26% of the budget would buy known-zero rows.")*
 4. **"Exact tie" is a lattice property, not an indifference proof.** The leaf lands on a coarse
    value lattice; an exact tie means *"the leaf has no resolution below its lattice step here"*.
    That is precisely the blindness of interest, but the claim language must say **that** and not
@@ -618,7 +734,7 @@ Per-position worker-seconds `= (A_bar − 1) × 2 × M × c`. The built plan giv
 
 | backend | `c` (worker-s/playout) | source |
 |---|---|---|
-| **rust** (`walled` self-play only) | **1.65** *(reference)* | budget-headroom run: 9,600 playouts / 15,840 worker-s, on CL-070 *disagreement* positions |
+| ~~**rust**~~ ⇒ **SUPERSEDED by [§0.B](#0b-c_rust-is-measured-and-it-is-phase-weighted-14755-the-165-reference-was-10-high): `c_rust` = 1.4755 (measured, phase-weighted)** | ~~1.65~~ *(reference)* | budget-headroom run: 9,600 playouts / 15,840 worker-s, on CL-070 *disagreement* positions |
 | **python** (`fixed_v1` E4) | **9.85** *(measured)* | ⭐ **this smoke**: Σ per-position `elapsed_secs` = 3,152.6 worker-s / 320 playouts, 5/5 ok, `crn_verified_all` true |
 
 ⚠️ **Measure worker-seconds as `Σ elapsed_secs`, not `wall × W`.** The naive wall-based figure
@@ -645,6 +761,10 @@ its own stratum below, and the rust arm's `c` should be re-measured by a `walled
 the rust ETA is treated as a commitment.
 
 Per position (130.0 playouts): **rust ≈ 214.5 worker-s · python ≈ 1,281 worker-s.**
+
+⚠️ **The whole table below is PRE-DEDUPE and pre-`c_rust`. [§0.C](#0c-stage-a-re-priced--237-h-at-local-w14-was-272-h)
+is the priced-and-built figure of record (Stage A = 2.37 h at W14 over 340 positions);
+the rows here are kept as the derivation and for the arms this run does not buy.**
 
 | stage | stratum / backend | n | worker-h | **W = 14 (local)** | **W = 22 (laptop)** |
 |---|---|---|---|---|---|
@@ -706,12 +826,16 @@ on any branch.
 |---|---|
 | `scripts/tiletie/chain_census.py` | chain enumeration + tie extraction — a copy of `mine_disagreements.chain_values`/`argmax_chain`, **proven bit-identical in pytest against the original on 3 real bank roots** |
 | `scripts/tiletie/run_census.py` | census driver — one subprocess per rules profile (R9 is import-latched) |
-| `scripts/tiletie/build_positions.py` | census rows → per-(profile, leg) `--positions-jsonl` + `ARMS.json` + `POSITIONS_PLAN.json` |
+| `scripts/tiletie/build_positions.py` | census rows → per-(profile, leg) `--positions-jsonl` + `ARMS.json` + `POSITIONS_PLAN.json` + `DROPPED_ALL_TRANSPOSITION.json`. **`--afterstate-map` (required, §0.A)** dedupes arms and drops all-transposition positions; `--n-e4` / `--n-selfplay` build the §7.3 Stage A allocation |
+| `scripts/tiletie/transposition_census.py` | the transposition measurement **and** the dedupe join input (`bp_rid` / `action_groups` / `repr_actions`) — one process per rules profile, R9 is import-latched |
 | `scripts/tiletie/champ_picks.py` | the self-play champion-pick pass (`k8×1376`, `reseat`-based) + the free CL-070 `k4×2752` cross-check. **Not needed for Stage A** (§7.4) |
 | `scripts/tiletie/run_tiletie.py` | the scoring launcher — preflight (gate at HEAD, leaf hash, git-clean, plan integrity), per-(judge, profile, leg) subprocesses, `--yes` gate, `--smoke`, the CRN cross-leg witness |
-| `tests/test_tiletie_census.py` (11) · `tests/test_tiletie_positions.py` (38) | coverage — **49 tests, all green** |
+| `tests/test_tiletie_census.py` (11) · `tests/test_tiletie_positions.py` (55) | coverage — **66 tests, all green** (+14 for §0.A/§0.C: dedupe, dedupe-before-cap, the all-transposition drop + its dropped index, stale-map refusal, champion-arm transposition mapping, the preflight guard, the per-stratum Stage A allocation, `--only-profiles`, the smoke stratum filter) |
+| `measurement/tiletie_pricing_20260812/census/afterstate_map_*.json` | the dedupe join input, one per rules profile (1,427/1,427 rows, 0 unresolved) |
 | `measurement/tiletie_pricing_20260812/census/` | census artifacts + [CENSUS.md](census/CENSUS.md) |
-| `measurement/tiletie_pricing_20260812/positions/` | the built plan: 12 leg files, `ARMS.json`, `POSITIONS_PLAN.json` |
+| `measurement/tiletie_pricing_20260812/positions/` | the built full-supply plan, **deduped**: 11 leg files, `ARMS.json`, `POSITIONS_PLAN.json`, `DROPPED_ALL_TRANSPOSITION.json` (374 analytic-zero rows) |
+| `measurement/tiletie_pricing_20260812/positions_stageA/` | **the Stage A plan actually priced in §0.C** — 340 positions (280 selfplay/rust + 60 e4), 10 leg files |
+| `measurement/tiletie_pricing_20260812/SMOKE_RUST_MANIFEST.json` | the `walled`/rust/self-play smoke behind §0.B's `c_rust` (+ `GATE_BACKEND_RECHECK_RUSTSMOKE.json`, the gate re-verified at HEAD) |
 | `measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK.json` | the rust identity gate **re-verified at HEAD: PASS, 8 positions, 376 field checks, 0 mismatches** (a new path — the committed `measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json` is never overwritten) |
 | `measurement/tiletie_pricing_20260812/SMOKE_MANIFEST.json` | the 5-position production-knob smoke and the measured `c` |
 

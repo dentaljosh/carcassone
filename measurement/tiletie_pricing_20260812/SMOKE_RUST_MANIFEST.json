@@ -1,0 +1,227 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie --smoke",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_RUSTSMOKE.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "8",
+          "--out",
+          "measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_RUSTSMOKE.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n  57014       01:44  0.1 python\n  57501       01:15  0.8 python\n  57504       01:14  0.0 python\n  57505       01:14 99.8 python\n  57506       01:14 99.9 python\n  57507       01:14 99.9 python\n  57508       01:14 99.9 python\n  57509       01:14 99.9 python\n  57510       01:14 99.8 python\n  57511       01:14 99.8 python\n  57512       01:14 99.8 python\n  57513       01:14 99.8 python\n  57514       01:14 99.9 python\n  57515       01:14 99.9 python",
+        "loadavg": "14.04 5.41 2.09 16/780 58156"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "3ef376e",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 10,
+        "plan_path": "measurement/tiletie_pricing_20260812/positions_stageA/POSITIONS_PLAN.json",
+        "arms_path": "measurement/tiletie_pricing_20260812/positions_stageA/ARMS.json"
+      }
+    }
+  },
+  "profile": "walled",
+  "positions_selected": {
+    "rids": [
+      "tt_sp_28000000000_p118",
+      "tt_sp_28000000002_p55",
+      "tt_sp_28000000007_p53",
+      "tt_sp_28000000009_p112",
+      "tt_sp_28000000010_p114"
+    ],
+    "n_eligible": 146,
+    "note": null,
+    "synthesized": false
+  },
+  "legs": {
+    "1": {
+      "rc": 0,
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/smoke/clair-puct/walled/leg1",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/smoke_leg1.log",
+      "n": 5,
+      "cmd": [
+        "/home/doctor/projects/carcassone/.venv/bin/python",
+        "/home/doctor/projects/carcassone/scripts/measurement_infra/oracle_score_pilot.py",
+        "--positions-jsonl",
+        "measurement/tiletie_pricing_20260812/positions_stageA/smoke/smoke_walled_leg1.jsonl",
+        "--rules-profile",
+        "walled",
+        "--oracle-policy",
+        "clair-puct",
+        "--m",
+        "32",
+        "--oracle-sims",
+        "100",
+        "--world-seed-salt",
+        "tiletie-v1",
+        "--workers",
+        "8",
+        "--n",
+        "5",
+        "--out-root",
+        "/mnt/c/carc-shared/tiletie_pricing_20260812",
+        "--out-subdir",
+        "smoke/clair-puct/walled/leg1",
+        "--backend",
+        "rust",
+        "--resume"
+      ]
+    },
+    "2": {
+      "rc": 0,
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/smoke/clair-puct/walled/leg2",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/smoke_leg2.log",
+      "n": 5,
+      "cmd": [
+        "/home/doctor/projects/carcassone/.venv/bin/python",
+        "/home/doctor/projects/carcassone/scripts/measurement_infra/oracle_score_pilot.py",
+        "--positions-jsonl",
+        "measurement/tiletie_pricing_20260812/positions_stageA/smoke/smoke_walled_leg2.jsonl",
+        "--rules-profile",
+        "walled",
+        "--oracle-policy",
+        "clair-puct",
+        "--m",
+        "32",
+        "--oracle-sims",
+        "100",
+        "--world-seed-salt",
+        "tiletie-v1",
+        "--workers",
+        "8",
+        "--n",
+        "5",
+        "--out-root",
+        "/mnt/c/carc-shared/tiletie_pricing_20260812",
+        "--out-subdir",
+        "smoke/clair-puct/walled/leg2",
+        "--backend",
+        "rust",
+        "--resume"
+      ]
+    }
+  },
+  "wall_secs": 259.8,
+  "workers": 8,
+  "n_positions": 5,
+  "n_legs": 2,
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "backend": "rust",
+  "stratum": "selfplay",
+  "n_playouts": 640,
+  "elapsed_secs_sum": 788.028,
+  "elapsed_secs_by_position": {
+    "tt_sp_28000000000_p118": {
+      "leg1": 55.406,
+      "leg2": 43.088
+    },
+    "tt_sp_28000000002_p55": {
+      "leg1": 143.391,
+      "leg2": 115.743
+    },
+    "tt_sp_28000000007_p53": {
+      "leg1": 126.585,
+      "leg2": 100.854
+    },
+    "tt_sp_28000000009_p112": {
+      "leg1": 51.11,
+      "leg2": 38.963
+    },
+    "tt_sp_28000000010_p114": {
+      "leg1": 64.051,
+      "leg2": 48.837
+    }
+  },
+  "c_worker_secs_per_playout": 1.23129375,
+  "c_worker_secs_per_playout_wall_based": 3.247018900513649,
+  "c_note": "cost from c_worker_secs_per_playout (\u03a3 elapsed_secs / playouts); the wall-based figure is inflated by the slowest position (DESIGN \u00a77.4)",
+  "worker_secs_per_position": 415.6184192657471,
+  "worker_secs_per_playout": 3.247018900513649,
+  "eta": {
+    "W=14": {
+      "wall_secs": 3809.972457142857,
+      "wall_hours": 1.0583256825396825
+    },
+    "W=22": {
+      "wall_secs": 2424.527927272727,
+      "wall_hours": 0.6734799797979798
+    }
+  },
+  "crn_cross_leg_identical": true,
+  "crn_cross_leg_checked_rids": [
+    "tt_sp_28000000000_p118",
+    "tt_sp_28000000002_p55",
+    "tt_sp_28000000007_p53",
+    "tt_sp_28000000009_p112",
+    "tt_sp_28000000010_p114"
+  ],
+  "crn_cross_leg_detail": {
+    "ok": true,
+    "legs_checked": [
+      1,
+      2
+    ],
+    "rids_checked": [
+      "tt_sp_28000000000_p118",
+      "tt_sp_28000000002_p55",
+      "tt_sp_28000000007_p53",
+      "tt_sp_28000000009_p112",
+      "tt_sp_28000000010_p114"
+    ],
+    "per_rid": {
+      "tt_sp_28000000000_p118": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_28000000002_p55": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_28000000007_p53": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_28000000009_p112": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_28000000010_p114": {
+        "ok": true,
+        "problems": []
+      }
+    },
+    "n_rids": 5,
+    "n_ok": 5
+  }
+}

@@ -45,6 +45,26 @@ OSP = pytest.importorskip("oracle_score_pilot")
 # --------------------------------------------------------------------------- #
 # fixtures / helpers                                                            #
 # --------------------------------------------------------------------------- #
+def _amap(*entries) -> dict:
+    """An afterstate map (DESIGN §6 threat 3) as `load_afterstate_maps` returns
+    it: rid -> action groups. `entries` are `(rid, [[a, a'], [b], ...])`."""
+    out = {}
+    for rid, groups in entries:
+        groups = sorted((sorted(g) for g in groups), key=lambda g: g[0])
+        out[rid] = {"action_groups": groups, "repr_actions": [g[0] for g in groups],
+                    "n_distinct_afterstates": len(groups),
+                    "all_transposition": len(groups) == 1,
+                    "source_path": "<test>"}
+    return out
+
+
+def _identity_amap(rows) -> dict:
+    """Every tied action its own afterstate -- i.e. dedupe is a no-op. Lets the
+    pre-dedupe expectations stay meaningful now that a map is mandatory."""
+    return _amap(*[(BP.rid_for(r), [[a] for a in r["tie_actions_exact"]])
+                   for r in rows])
+
+
 def _row(**kw) -> dict:
     base = {
         "stratum": "e4", "source": "e4", "rules_profile": "fixed_v1",
@@ -143,6 +163,216 @@ def test_two_e4_archives_sharing_a_deck_seed_get_distinct_rids():
 
 
 # --------------------------------------------------------------------------- #
+# 1b. AFTERSTATE DEDUPE — DESIGN §6 threat 3                                    #
+#                                                                               #
+# Measured, not hypothetical: ~24% (E4) / ~28% (self-play) of exact tie sets     #
+# reach ONE board, and ~37-41% carry at least one duplicate arm. A duplicate     #
+# arm's delta is 0 BY IDENTITY -- it costs a full leg and carries no             #
+# information; an all-transposition position is a known-zero row.                #
+# --------------------------------------------------------------------------- #
+def test_arms_deduped_by_successor_board_key():
+    """Two tied actions reaching the SAME board collapse to ONE arm, and the
+    survivor is the group's lowest action so arm[0] cannot move."""
+    row = _row(tie_actions_exact=[3, 5, 7, 9], argmax_action=3, tie_size_exact=4)
+    entry = _amap((BP.rid_for(row), [[3, 7], [5, 9]]))[BP.rid_for(row)]
+
+    plain = BP.build_tie_arms(row, cap_j=4)
+    assert plain["arms"] == [3, 5, 7, 9]          # pre-dedupe: 4 arms, 3 legs
+
+    out = BP.build_tie_arms(row, cap_j=4, afterstate=entry)
+    assert out["arms"] == [3, 5]                   # deduped: 2 arms, 1 leg
+    assert out["arms"][0] == 3 == int(row["argmax_action"])
+    assert out["dedupe_dropped_actions"] == [7, 9]
+    assert out["n_distinct_afterstates"] == 2
+    assert out["all_transposition"] is False
+    assert out["repr_of"] == {3: 3, 7: 3, 5: 5, 9: 5}
+
+
+def test_dedupe_happens_before_the_cap_so_J_buys_distinct_boards():
+    """DESIGN §2.2 amendment: dedupe FIRST, then cap. An 8-way tie collapsing to
+    3 boards must be scored uncapped at J=4, not capped down from 8."""
+    row = _row(tie_actions_exact=[1, 2, 3, 4, 5, 6, 7, 8], argmax_action=1,
+              tie_size_exact=8)
+    entry = _amap((BP.rid_for(row),
+                   [[1, 2, 3], [4, 5], [6, 7, 8]]))[BP.rid_for(row)]
+
+    assert BP.build_tie_arms(row, cap_j=4)["capped"] is True     # pre-dedupe: capped
+    out = BP.build_tie_arms(row, cap_j=4, afterstate=entry)
+    assert out["arms"] == [1, 4, 6]
+    assert out["capped"] is False                                 # 3 <= J=4
+    assert out["dropped_actions"] == []
+
+
+def test_all_transposition_tie_set_is_flagged():
+    row = _row(tie_actions_exact=[5, 7], argmax_action=5)
+    entry = _amap((BP.rid_for(row), [[5, 7]]))[BP.rid_for(row)]
+    out = BP.build_tie_arms(row, cap_j=4, afterstate=entry)
+    assert out["all_transposition"] is True
+    assert out["n_distinct_afterstates"] == 1
+    assert out["arms"] == [5]
+
+
+def test_stale_afterstate_map_fails_loudly():
+    """A map whose grouped actions are not exactly the row's tie set is stale
+    (different census / different cap). Deduping against it would mis-attribute
+    arms, so it must raise -- same discipline as the arm[0] assertion."""
+    row = _row(tie_actions_exact=[5, 7], argmax_action=5)
+    stale = _amap((BP.rid_for(row), [[5, 7, 11]]))[BP.rid_for(row)]
+    with pytest.raises(ValueError, match="stale afterstate map"):
+        BP.build_tie_arms(row, cap_j=4, afterstate=stale)
+
+
+def test_champion_pick_that_transposes_onto_an_arm_is_not_a_second_arm():
+    """The champion played action 7; 7 reaches the same board as arm 3. Scoring
+    it as its own arm would buy a leg whose delta is 0 by identity."""
+    row = _row(tie_actions_exact=[3, 5, 7], argmax_action=3, action_played=7,
+              tie_size_exact=3)
+    tie = BP.build_tie_arms(row, cap_j=4,
+                            afterstate=_amap((BP.rid_for(row),
+                                              [[3, 7], [5]]))[BP.rid_for(row)])
+    champ = BP.resolve_champion_arm(row, tie["arms"], {}, allow_missing=False,
+                                    repr_of=tie["repr_of"])
+    assert champ["arms"] == [3, 5]                 # NOT [3, 5, 7]
+    assert champ["champ_action"] == 7               # provenance preserved
+    assert champ["champ_arm_action"] == 3           # the arm actually scored
+    assert champ["champ_arm_index"] == 0
+    assert champ["champ_outside_tieset"] is False
+
+
+def test_load_afterstate_maps_merges_profiles_and_catches_a_stale_file(tmp_path):
+    def _write(p, rows):
+        Path(p).write_text(json.dumps({"summary": {}, "rows": rows}))
+
+    a = tmp_path / "afterstate_map_fixed_v1.json"
+    b = tmp_path / "afterstate_map_walled.json"
+    _write(a, [{"bp_rid": "r1", "action_groups": [[1, 2], [3]],
+                "n_distinct_afterstates": 2, "all_transposition": False}])
+    _write(b, [{"bp_rid": "r2", "action_groups": [[9]],
+                "n_distinct_afterstates": 1, "all_transposition": True}])
+    m = BP.load_afterstate_maps([a, b])
+    assert set(m) == {"r1", "r2"}
+    assert m["r1"]["repr_actions"] == [1, 3]
+    assert m["r2"]["all_transposition"] is True
+
+    c = tmp_path / "afterstate_map_stale.json"
+    _write(c, [{"bp_rid": "r1", "action_groups": [[1], [2], [3]],
+                "n_distinct_afterstates": 3, "all_transposition": False}])
+    with pytest.raises(ValueError, match="conflict"):
+        BP.load_afterstate_maps([a, c])
+
+
+def test_build_requires_an_afterstate_map(tmp_path):
+    with pytest.raises(ValueError, match="threat 3"):
+        BP.build([_row()], out_dir=tmp_path / "p", champ_picks={}, cap_j=4, n=0,
+                 sample_seed=1, playout_secs=1.65, e4_dir=tmp_path,
+                 bank_roots_path=tmp_path / "b.jsonl",
+                 champ_games_path=tmp_path / "c.jsonl",
+                 allow_missing_champ_picks=True)
+
+
+def test_build_fails_loudly_when_the_map_does_not_cover_a_position(tmp_path):
+    with pytest.raises(KeyError, match="does not cover"):
+        BP.build([_row()], out_dir=tmp_path / "p", champ_picks={}, cap_j=4, n=0,
+                 sample_seed=1, playout_secs=1.65, e4_dir=tmp_path,
+                 bank_roots_path=tmp_path / "b.jsonl",
+                 champ_games_path=tmp_path / "c.jsonl",
+                 allow_missing_champ_picks=True,
+                 afterstate_map=_amap(("some_other_rid", [[1], [2]])))
+
+
+@pytest.fixture()
+def _e4_only_dirs(tmp_path):
+    e4_dir = tmp_path / "e4_games"
+    e4_dir.mkdir()
+    (e4_dir / "g1.json").write_text(json.dumps({"actions": list(range(30))}))
+    (e4_dir / "g2.json").write_text(json.dumps({"actions": list(range(30))}))
+    return {"e4_dir": e4_dir, "bank": tmp_path / "roots.jsonl",
+            "champ_games": tmp_path / "champ_games.jsonl"}
+
+
+def test_all_transposition_positions_are_dropped_from_the_build(tmp_path, _e4_only_dirs):
+    """The whole point of arming this: an all-transposition position is a
+    known-zero row, so it must not be built (no leg, no ARMS entry) -- but it
+    must be RECORDED, because the analyser adds it back as an exact zero."""
+    keep = _row(game_label="g1", ply=2, tie_actions_exact=[5, 7], argmax_action=5,
+                action_played=5)
+    drop = _row(game_label="g2", ply=4, tie_actions_exact=[11, 13, 15],
+                argmax_action=11, tie_size_exact=3, action_played=11)
+    amap = {**_amap((BP.rid_for(keep), [[5], [7]])),
+            **_amap((BP.rid_for(drop), [[11, 13, 15]]))}
+
+    out_dir = tmp_path / "positions"
+    plan = BP.build([keep, drop], out_dir=out_dir, champ_picks={}, cap_j=4, n=0,
+                    sample_seed=20260812, playout_secs=1.65,
+                    e4_dir=_e4_only_dirs["e4_dir"],
+                    bank_roots_path=_e4_only_dirs["bank"],
+                    champ_games_path=_e4_only_dirs["champ_games"],
+                    allow_missing_champ_picks=True, afterstate_map=amap)
+
+    assert plan["n_positions"] == 1
+    arms = json.loads((out_dir / "ARMS.json").read_text())
+    assert set(arms) == {BP.rid_for(keep)}
+    for f in out_dir.glob("positions_*_leg*.jsonl"):
+        for line in f.read_text().splitlines():
+            assert json.loads(line)["rid"] != BP.rid_for(drop)
+
+    ded = plan["afterstate_dedupe"]
+    assert ded["applied"] is True
+    assert ded["n_qualifying_before_drop"] == 2
+    assert ded["n_dropped_all_transposition"] == 1
+    assert ded["n_dropped_by_stratum"] == {"e4": 1}
+
+    dropped = json.loads((out_dir / "DROPPED_ALL_TRANSPOSITION.json").read_text())
+    assert dropped["n"] == 1
+    assert dropped["rows"][0]["rid"] == BP.rid_for(drop)
+    assert dropped["rows"][0]["n_distinct_afterstates"] == 1
+    assert dropped["rows"][0]["action_played_outside_tieset"] is False
+
+
+def test_plan_records_the_before_after_saving(tmp_path, _e4_only_dirs):
+    """The §6 saving must be auditable from the plan alone: tie-set arm-playouts
+    before vs after, over the full qualifying supply."""
+    keep = _row(game_label="g1", ply=2, tie_actions_exact=[5, 7, 9],
+                argmax_action=5, tie_size_exact=3, action_played=5)
+    drop = _row(game_label="g2", ply=4, tie_actions_exact=[11, 13],
+                argmax_action=11, action_played=11)
+    amap = {**_amap((BP.rid_for(keep), [[5, 9], [7]])),
+            **_amap((BP.rid_for(drop), [[11, 13]]))}
+    plan = BP.build([keep, drop], out_dir=tmp_path / "positions", champ_picks={},
+                    cap_j=4, n=0, sample_seed=20260812, playout_secs=1.65,
+                    e4_dir=_e4_only_dirs["e4_dir"],
+                    bank_roots_path=_e4_only_dirs["bank"],
+                    champ_games_path=_e4_only_dirs["champ_games"],
+                    allow_missing_champ_picks=True, afterstate_map=amap)
+    ded = plan["afterstate_dedupe"]
+    # before: keep 2 legs + drop 1 leg = 3 legs x 2 arms x M=32 = 192 playouts
+    # after : keep 1 leg (9 transposes onto 5), drop not built  =  64 playouts
+    assert ded["tieset_arm_playouts_full_supply_before"] == 192
+    assert ded["tieset_arm_playouts_full_supply_after"] == 64
+    assert ded["savings_pct_full_supply"] == pytest.approx(100 * (1 - 64 / 192))
+    assert ded["n_positions_with_arm_dedupe"] == 1
+
+
+def test_explicit_per_stratum_allocation_for_stage_a():
+    """DESIGN §7.3 Stage A is 280 selfplay + 60 e4 -- the e4-first `--n` split
+    would hand the whole budget to e4 (supply 495 > 340)."""
+    rows = ([_row(game_label=f"g{i}", ply=i) for i in range(100)] +
+            [_row(stratum="selfplay", source="bank", rules_profile="walled",
+                  game_label=None, deck_seed=1000 + i, ply=i) for i in range(400)])
+    take = BP.stratified_sample(rows, 0, 20260812, n_e4=60, n_selfplay=280)
+    assert sum(1 for r in take if r["stratum"] == "e4") == 60
+    assert sum(1 for r in take if r["stratum"] == "selfplay") == 280
+    # deterministic
+    assert [BP.rid_for(r) for r in take] == [
+        BP.rid_for(r) for r in
+        BP.stratified_sample(rows, 0, 20260812, n_e4=60, n_selfplay=280)]
+    # the old e4-first behaviour is untouched when no explicit split is given
+    plain = BP.stratified_sample(rows, 340, 20260812)
+    assert sum(1 for r in plain if r["stratum"] == "e4") == 100
+    assert sum(1 for r in plain if r["stratum"] == "selfplay") == 240
+
+
+# --------------------------------------------------------------------------- #
 # 2-4. full-pipeline: rid stability, uniqueness, round-trip                     #
 # --------------------------------------------------------------------------- #
 @pytest.fixture()
@@ -173,8 +403,11 @@ def built_positions(tmp_path):
         [row_a, row_b], out_dir=out_dir, champ_picks={rid_b: {"champ_action": 99}},
         cap_j=4, n=0, sample_seed=20260812, playout_secs=1.65, e4_dir=e4_dir,
         bank_roots_path=bank_path, champ_games_path=champ_games_path,
-        allow_missing_champ_picks=False)
-    return {"out_dir": out_dir, "plan": plan, "row_a": row_a, "row_b": row_b}
+        allow_missing_champ_picks=False,
+        afterstate_map=_identity_amap([row_a, row_b]))
+    return {"out_dir": out_dir, "plan": plan, "row_a": row_a, "row_b": row_b,
+            "e4_dir": e4_dir, "bank_path": bank_path,
+            "champ_games_path": champ_games_path}
 
 
 def test_rid_stable_across_legs(built_positions):
@@ -357,6 +590,27 @@ def test_check_positions_passes_on_a_well_formed_plan(built_positions):
         argparse.Namespace(positions_dir=str(built_positions["out_dir"])))
     assert report["ok"] is True
     assert report["n_leg_files"] == 4
+
+
+def test_check_positions_refuses_a_plan_built_without_the_dedupe(built_positions):
+    """DESIGN §6 threat 3 says the dedupe MUST land before launch (~26% of the
+    budget would otherwise buy rows whose delta is 0 by identity). A plan that
+    does not carry `afterstate_dedupe.applied == True` is refused."""
+    out_dir = built_positions["out_dir"]
+    plan_path = out_dir / "POSITIONS_PLAN.json"
+    plan = json.loads(plan_path.read_text())
+    assert plan["afterstate_dedupe"]["applied"] is True     # the built plan is armed
+
+    plan["afterstate_dedupe"]["applied"] = False
+    plan_path.write_text(json.dumps(plan))
+    report = RT.check_positions(argparse.Namespace(positions_dir=str(out_dir)))
+    assert report["ok"] is False
+    assert any("threat-3" in p for p in report["problems"])
+
+    del plan["afterstate_dedupe"]                            # a pre-dedupe plan
+    plan_path.write_text(json.dumps(plan))
+    report = RT.check_positions(argparse.Namespace(positions_dir=str(out_dir)))
+    assert report["ok"] is False
 
 
 def test_preflight_refuses_when_gate_fails(monkeypatch, built_positions, tmp_path):
@@ -578,6 +832,43 @@ def test_select_smoke_positions_is_profile_aware(tmp_path):
     # genuinely want every profile).
     assert len(RT.select_smoke_positions(tmp_path, profile=None, min_arms=3,
                                          n=5)["rids"]) == 3
+
+
+def test_only_profiles_selects_one_arm_and_refuses_an_empty_match():
+    """DESIGN §7.4 prices the RUST arm and the PYTHON arm separately, each with
+    the whole box. One mixed launch cannot do that: `split_workers` apportions
+    by position COUNT, and a python leg costs ~8x a rust leg per playout."""
+    plan = {"files": {"walled/leg1": {"path": "w1", "n": 284},
+                      "walled/leg2": {"path": "w2", "n": 150},
+                      "fixed_v1/leg1": {"path": "f1", "n": 53},
+                      "app_aug2/leg1": {"path": "a1", "n": 3}}}
+    assert set(RT.select_files(plan, None)) == set(plan["files"])
+    assert set(RT.select_files(plan, ["walled"])) == {"walled/leg1", "walled/leg2"}
+    assert set(RT.select_files(plan, ["fixed_v1", "app_aug2"])) == {
+        "fixed_v1/leg1", "app_aug2/leg1"}
+    with pytest.raises(SystemExit, match="matches no leg file"):
+        RT.select_files(plan, ["nope"])
+
+
+def test_select_smoke_positions_is_stratum_aware(tmp_path):
+    """`walled` carries BOTH strata (2 E4 games + the self-play bank) and cost
+    varies ~9x with the position mix, so a smoke pricing the Stage A RUST arm
+    must draw from `selfplay` -- the rids that sort first are E4."""
+    arms = {
+        "tt_e4_aaa_p1": {"arms": [1, 2, 3], "rules_profile": "walled",
+                         "stratum": "e4"},
+        "tt_sp_111_p9": {"arms": [1, 2, 3], "rules_profile": "walled",
+                         "stratum": "selfplay"},
+        "tt_sp_222_p9": {"arms": [1, 2, 3], "rules_profile": "walled",
+                         "stratum": "selfplay"},
+    }
+    (tmp_path / "ARMS.json").write_text(json.dumps(arms))
+    sel = RT.select_smoke_positions(tmp_path, profile="walled", stratum="selfplay",
+                                    min_arms=3, n=5)
+    assert sel["rids"] == ["tt_sp_111_p9", "tt_sp_222_p9"]
+    # unfiltered keeps the old behaviour
+    assert len(RT.select_smoke_positions(tmp_path, profile="walled",
+                                         min_arms=3, n=5)["rids"]) == 3
 
 
 def test_backend_is_resolved_per_profile_not_per_judge():

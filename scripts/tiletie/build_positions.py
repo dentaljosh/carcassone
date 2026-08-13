@@ -23,6 +23,31 @@ no instrument change, no wrapper. This is the whole mechanism; it costs
 `2*(A_p-1)` arm-playouts per world instead of the minimal `A_p`, and it is what
 lets the analyser treat every arm at a position as fully cross-arm CRN-paired.
 
+AFTERSTATE DEDUPE (DESIGN §6 threat 3, adopted into §2.2 -- ARMED 2026-08-12)
+------------------------------------------------------------------------------
+Two tied tile placements can reach the SAME board (rotationally symmetric tiles
+etc.). Measured over the whole tied population by
+`scripts/tiletie/transposition_census.py`: ~24% (E4) / ~28% (self-play) of exact
+tie sets collapse to ONE board, and ~37-41% carry at least one duplicate arm. A
+duplicate arm's oracle delta is exactly 0 *by identity*, not by equivalence of
+value -- it buys nothing and costs a full leg. So, before the cap `J`:
+
+  * arms are DEDUPLICATED by successor board key (the lowest action of each
+    transposition group survives, so `arms[0]` -- the leaf's tie-break of record
+    -- can never move), and
+  * positions whose ENTIRE tied set is one board are NOT BUILT at all. Their
+    headroom contribution is analytically 0 with zero variance, so they belong
+    in the population average as exact zeros, not in the compute budget. They
+    are written to `DROPPED_ALL_TRANSPOSITION.json` so the analyser can add them
+    back as the exact zeros they are (`headroom_all` vs
+    `headroom_discriminable`, DESIGN §6).
+
+The grouping is a JOIN, computed by `transposition_census.py --out` (which emits
+`bp_rid` = this module's own `rid_for`, plus `action_groups` / `repr_actions`)
+and passed here as `--afterstate-map`. It is REQUIRED: building without it needs
+an explicit `--no-dedupe`, and `run_tiletie.py`'s preflight refuses to launch a
+plan whose `afterstate_dedupe.applied` is not True.
+
 ARM CONSTRUCTION (DESIGN §2.2), per qualifying position, in this exact order
 ------------------------------------------------------------------------------
   1. `arms[0]` = the leaf's own tie-break of record = `min(tie_actions_exact)`.
@@ -30,6 +55,8 @@ ARM CONSTRUCTION (DESIGN §2.2), per qualifying position, in this exact order
      soft check. A mismatch means the census and this module's tie-break
      convention disagree, and scoring on top of that would silently
      mis-attribute the reference arm, so it FAILS LOUDLY.
+  1b. the tie set is DEDUPED by successor board key (above) -- BEFORE the cap,
+     so the cap spends its `J` slots on distinct boards only.
   2. the remaining exact-tie members, ascending, capped at `--cap-j` (keeping
      `arms[0]` plus up to `J-1` more). Beyond the cap, members are dropped by a
      SEEDED uniform draw — never index truncation, which would correlate the
@@ -116,6 +143,8 @@ DESIGN_DOC = "measurement/tiletie_pricing_20260812/DESIGN.md"
 DEFAULT_CENSUS_ROWS = REPO / "measurement/tiletie_pricing_20260812/census/rows.jsonl"
 DEFAULT_OUT_DIR = REPO / "measurement/tiletie_pricing_20260812/positions"
 DEFAULT_E4_DIR = REPO / "measurement/e4_games"
+#: where `transposition_census.py --out` drops its per-profile afterstate maps
+DEFAULT_AFTERSTATE_MAP_DIR = REPO / "measurement/tiletie_pricing_20260812/census"
 DEFAULT_CHAMP_GAMES = REPO / "measurement/champ_action_logs/champ_games.jsonl"
 
 
@@ -238,13 +267,80 @@ CAP_SEED_DATE = 20260812
 
 
 # --------------------------------------------------------------------------- #
+# afterstate dedupe — DESIGN §6 threat 3 (the JOIN input)                       #
+# --------------------------------------------------------------------------- #
+def load_afterstate_maps(paths) -> dict:
+    """`bp_rid` -> {"action_groups", "repr_actions", "n_distinct_afterstates",
+    "all_transposition"}, merged over one or more `transposition_census.py --out`
+    files (one per rules profile -- R9 is import-latched, so a profile cannot
+    share a process and the map is necessarily written in pieces).
+
+    A rid appearing twice with DIFFERENT groupings is a hard error: the two
+    profiles would disagree about the same board, which can only mean a stale
+    file."""
+    out: dict = {}
+    for path in ([paths] if isinstance(paths, (str, Path)) else list(paths)):
+        data = json.loads(Path(path).read_text())
+        for r in data["rows"]:
+            rid = r["bp_rid"]
+            groups = [sorted(int(a) for a in g) for g in r["action_groups"]]
+            groups.sort(key=lambda g: g[0])
+            entry = {"action_groups": groups,
+                     "repr_actions": [g[0] for g in groups],
+                     "n_distinct_afterstates": int(r["n_distinct_afterstates"]),
+                     "all_transposition": bool(r["all_transposition"]),
+                     "source_path": str(path)}
+            prev = out.get(rid)
+            if prev is not None and prev["action_groups"] != entry["action_groups"]:
+                raise ValueError(
+                    f"afterstate map conflict for rid={rid!r}: {prev['source_path']} "
+                    f"says {prev['action_groups']} but {path} says "
+                    f"{entry['action_groups']} -- one of them is stale")
+            out[rid] = entry
+    return out
+
+
+def dedupe_tie_actions(tie_actions: list, entry: dict) -> dict:
+    """Collapse a tie set to one action per distinct successor board.
+
+    Returns {"kept": [...ascending...], "dropped": [...], "repr_of": {action:
+    representative}, "n_distinct": int, "all_transposition": bool}.
+
+    The map is VALIDATED against the row: its grouped actions must be exactly
+    the row's `tie_actions_exact`. A mismatch means the map was built from a
+    different census (or a different cap), and silently deduping against it
+    would mis-attribute arms -- so it FAILS LOUDLY, in the house style of
+    `build_tie_arms`'s own arm[0] assertion."""
+    groups = [sorted(int(a) for a in g) for g in entry["action_groups"]]
+    groups.sort(key=lambda g: g[0])
+    flat = sorted(a for g in groups for a in g)
+    want = sorted(int(a) for a in tie_actions)
+    if flat != want:
+        raise ValueError(
+            f"stale afterstate map: it groups {flat} but the census row's "
+            f"tie_actions_exact is {want} -- rebuild the map with "
+            "scripts/tiletie/transposition_census.py against THIS rows.jsonl")
+    kept = [g[0] for g in groups]
+    repr_of = {a: g[0] for g in groups for a in g}
+    return {"kept": kept, "dropped": sorted(set(want) - set(kept)),
+            "repr_of": repr_of, "n_distinct": len(kept),
+            "all_transposition": len(kept) == 1}
+
+
+# --------------------------------------------------------------------------- #
 # arm construction — DESIGN §2.2 steps 1-2 (reference + capped candidates)      #
 # --------------------------------------------------------------------------- #
-def build_tie_arms(row: dict, cap_j: int) -> dict:
-    """Steps 1-2. Returns {"arms": [...], "capped": bool, "dropped_actions": [...]}.
+def build_tie_arms(row: dict, cap_j: int, afterstate: dict | None = None) -> dict:
+    """Steps 1(+1b)-2. Returns {"arms": [...], "capped": bool,
+    "dropped_actions": [...], "dedupe_dropped_actions": [...],
+    "n_distinct_afterstates": int|None, "all_transposition": bool,
+    "repr_of": {action: representative}}.
 
     `arms[0]` is asserted == `row["argmax_action"]` -- FAILS LOUDLY on
-    disagreement (see module docstring)."""
+    disagreement (see module docstring). With `afterstate` given (DESIGN §6
+    threat 3) the tie set is deduped by successor board key BEFORE the cap;
+    the lowest action of each transposition group survives, so `arms[0]` is
+    invariant under dedupe by construction."""
     tie_actions = sorted(int(a) for a in row["tie_actions_exact"])
     if len(tie_actions) < 2:
         raise ValueError(
@@ -260,6 +356,19 @@ def build_tie_arms(row: dict, cap_j: int) -> dict:
             "leaf's own tie-break convention disagrees with the census; refusing "
             "to build arms on top of that.")
 
+    dedupe_dropped: list = []
+    n_distinct = None
+    all_transposition = False
+    repr_of: dict = {}
+    if afterstate is not None:
+        ded = dedupe_tie_actions(tie_actions, afterstate)
+        tie_actions = ded["kept"]
+        dedupe_dropped = ded["dropped"]
+        n_distinct = ded["n_distinct"]
+        all_transposition = ded["all_transposition"]
+        repr_of = ded["repr_of"]
+        assert tie_actions[0] == ref, "dedupe moved arm[0] -- impossible by min()"
+
     rid = rid_for(row)
     candidates = list(tie_actions[1:])       # already ascending, ref excluded
     capped, dropped = False, []
@@ -271,7 +380,10 @@ def build_tie_arms(row: dict, cap_j: int) -> dict:
         dropped = sorted(set(candidates) - set(kept))
         candidates = kept
         capped = True
-    return {"arms": [ref] + candidates, "capped": capped, "dropped_actions": dropped}
+    return {"arms": [ref] + candidates, "capped": capped, "dropped_actions": dropped,
+            "dedupe_dropped_actions": dedupe_dropped,
+            "n_distinct_afterstates": n_distinct,
+            "all_transposition": all_transposition, "repr_of": repr_of}
 
 
 # --------------------------------------------------------------------------- #
@@ -289,15 +401,23 @@ def load_champ_picks(path) -> dict:
 
 
 def resolve_champion_arm(row: dict, arms: list, champ_picks: dict, *,
-                         allow_missing: bool) -> dict:
+                         allow_missing: bool, repr_of: dict | None = None) -> dict:
     """Step 3. Returns {"arms": [...] (possibly +1), "champ_action",
-    "champ_arm_index", "champ_outside_tieset", "champ_pick_missing"}.
+    "champ_arm_index", "champ_outside_tieset", "champ_pick_missing",
+    "champ_arm_action"}.
 
     E4: `action_played` is free (from the archive). Selfplay: looked up in
     `champ_picks` (champ_picks.py's output, keyed by rid) -- REQUIRED unless
     `allow_missing=True`, in which case a position with no resolved pick is
     still built (its tie-set legs are still scoreable) but carries no champion
-    arm at all (`champ_pick_missing=True`), per DESIGN §2.3."""
+    arm at all (`champ_pick_missing=True`), per DESIGN §2.3.
+
+    `repr_of` (the dedupe grouping, DESIGN §6 threat 3) maps a tied action to
+    its transposition representative. When the champion's pick is a duplicate of
+    an arm already present it must NOT be appended as a second arm: the two
+    reach the same board, so the extra leg would be a known-zero row. The played
+    action is still recorded verbatim as `champ_action` (provenance);
+    `champ_arm_action` is the arm actually scored."""
     stratum = row["stratum"]
     rid = rid_for(row)
     if stratum == "e4":
@@ -315,6 +435,7 @@ def resolve_champion_arm(row: dict, arms: list, champ_picks: dict, *,
         if missing:
             if allow_missing:
                 return {"arms": list(arms), "champ_action": None,
+                       "champ_arm_action": None,
                        "champ_arm_index": None, "champ_outside_tieset": False,
                        "champ_pick_missing": True,
                        "champ_pick_error": (rec or {}).get("error")}
@@ -327,14 +448,19 @@ def resolve_champion_arm(row: dict, arms: list, champ_picks: dict, *,
         raise ValueError(f"unknown stratum {stratum!r}")
 
     out_arms = list(arms)
-    if champ_action in out_arms:
-        idx = out_arms.index(champ_action)
+    arm_action = (repr_of or {}).get(champ_action, champ_action)
+    if arm_action in out_arms:
+        idx = out_arms.index(arm_action)
         outside = False
     else:
-        out_arms.append(champ_action)
+        out_arms.append(arm_action)
         idx = len(out_arms) - 1
-        outside = True
-    return {"arms": out_arms, "champ_action": champ_action, "champ_arm_index": idx,
+        # "outside the tie set" is a statement about the TIE SET, not about the
+        # capped arm list: a champion pick that IS a tied member but was dropped
+        # by the cap is still inside the set.
+        outside = champ_action not in (repr_of or {})
+    return {"arms": out_arms, "champ_action": champ_action,
+           "champ_arm_action": arm_action, "champ_arm_index": idx,
            "champ_outside_tieset": outside, "champ_pick_missing": False}
 
 
@@ -417,15 +543,22 @@ def resolve_selfplay_actions(row: dict, bank_roots: dict, champ_games: dict) -> 
 # sampling — DESIGN §7.3: e4 gets every available position first, selfplay      #
 # fills the remainder                                                          #
 # --------------------------------------------------------------------------- #
-def stratified_sample(rows: list, n: int, seed: int) -> list:
-    """`n<=0` => all. Otherwise: e4 takes every available position up to its
-    own census ceiling (a seeded subsample of e4 ONLY if `n` is smaller than
-    the e4 supply itself); the remainder is filled from a seeded selfplay
-    subsample. Deterministic: rows are sorted by `rid` before sampling so the
-    result never depends on file/listing order."""
-    if n is None or int(n) <= 0:
+def stratified_sample(rows: list, n: int, seed: int, *, n_e4=None,
+                      n_selfplay=None) -> list:
+    """`n<=0` and no per-stratum counts => all. Otherwise: e4 takes every
+    available position up to its own census ceiling (a seeded subsample of e4
+    ONLY if `n` is smaller than the e4 supply itself); the remainder is filled
+    from a seeded selfplay subsample. Deterministic: rows are sorted by `rid`
+    before sampling so the result never depends on file/listing order.
+
+    `n_e4` / `n_selfplay` override that e4-first split with an EXPLICIT
+    per-stratum allocation, which is what DESIGN §7.3's Stage A needs: the
+    backend constraint (§2.0) reversed the allocation to
+    "280 selfplay/RUST (power) + 60 e4/PYTHON (relevance)", and the e4-first
+    default would hand a 340-position budget entirely to e4."""
+    explicit = n_e4 is not None or n_selfplay is not None
+    if not explicit and (n is None or int(n) <= 0):
         return list(rows)
-    n = int(n)
     e4 = sorted((r for r in rows if r["stratum"] == "e4"), key=rid_for)
     sp = sorted((r for r in rows if r["stratum"] == "selfplay"), key=rid_for)
     rng = random.Random(int(seed))
@@ -436,6 +569,11 @@ def stratified_sample(rows: list, n: int, seed: int) -> list:
         idx = sorted(rng.sample(range(len(pool)), k))
         return [pool[i] for i in idx]
 
+    if explicit:
+        e4_take = _take(e4, len(e4) if n_e4 is None else max(0, int(n_e4)))
+        sp_take = _take(sp, len(sp) if n_selfplay is None else max(0, int(n_selfplay)))
+        return e4_take + sp_take
+    n = int(n)
     e4_take = _take(e4, n)
     sp_take = _take(sp, max(0, n - len(e4_take)))
     return e4_take + sp_take
@@ -490,7 +628,10 @@ def build_arms_index(positions: list) -> dict:
             "n_legal": p["n_legal"], "n_cand": p["n_cand"],
             "tie_size_exact": p["tie_size_exact"], "gap": p["gap"],
             "capped": p["capped"], "dropped_actions": p["dropped_actions"],
+            "dedupe_dropped_actions": p.get("dedupe_dropped_actions", []),
+            "n_distinct_afterstates": p.get("n_distinct_afterstates"),
             "champ_action": p["champ_action"], "champ_arm_index": p["champ_arm_index"],
+            "champ_arm_action": p.get("champ_arm_action"),
             "champ_outside_tieset": p["champ_outside_tieset"],
             "champ_pick_missing": p.get("champ_pick_missing", False),
             "archive_path": p.get("archive_path"),
@@ -566,26 +707,77 @@ def full_run_eta_secs(plan: dict, playout_secs: float, workers: int) -> dict:
 # --------------------------------------------------------------------------- #
 # driver                                                                        #
 # --------------------------------------------------------------------------- #
+def _tieset_playouts(rows: list, cap_j: int, amap: dict | None,
+                     m_worlds: int = M_WORLDS) -> int:
+    """Arm-playouts implied by the TIE-SET arms alone (champion arm excluded --
+    it is not what dedupe acts on), over `rows`, with `amap=None` meaning "as the
+    pre-dedupe builder would have done it". The honest before/after denominator
+    for the DESIGN §6 threat-3 saving."""
+    total = 0
+    for row in rows:
+        entry = None if amap is None else amap.get(rid_for(row))
+        tie = build_tie_arms(row, cap_j, afterstate=entry)
+        if tie["all_transposition"]:
+            continue                      # not built at all -- an analytic zero
+        total += (len(tie["arms"]) - 1) * 2 * m_worlds
+    return total
+
+
 def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
          sample_seed: int, playout_secs: float, e4_dir: Path, bank_roots_path,
-         champ_games_path, allow_missing_champ_picks: bool) -> dict:
+         champ_games_path, allow_missing_champ_picks: bool,
+         afterstate_map: dict | None = None, require_afterstate_map: bool = True,
+         n_e4=None, n_selfplay=None) -> dict:
     """The whole pipeline, factored out of `main()` so tests can call it without
     going through argparse/stdout. Returns the written `POSITIONS_PLAN.json` dict
-    (also has the side effect of writing the leg files + ARMS.json + the plan)."""
+    (also has the side effect of writing the leg files + ARMS.json + the plan +
+    `DROPPED_ALL_TRANSPOSITION.json`)."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    amap = afterstate_map or None
+    if amap is None and require_afterstate_map:
+        raise ValueError(
+            "no afterstate map: DESIGN §6 threat 3 requires arms to be deduped "
+            "by successor board key and all-transposition positions to be "
+            "dropped before the run is launched. Pass --afterstate-map "
+            "(scripts/tiletie/transposition_census.py --out ...), or "
+            "--no-dedupe to build the pre-dedupe plan deliberately.")
+
     selected = select_positions(rows)
-    sampled = stratified_sample(selected, n, sample_seed)
+
+    # --- DESIGN §6 threat 3: drop the known-zero rows BEFORE sampling, so a
+    # staged `n` buys n SCOREABLE positions and not n-minus-the-transpositions.
+    dropped_rows: list = []
+    kept = selected
+    if amap is not None:
+        missing = [rid_for(r) for r in selected if rid_for(r) not in amap]
+        if missing:
+            raise KeyError(
+                f"afterstate map does not cover {len(missing)} qualifying "
+                f"position(s), e.g. {missing[:5]} -- rebuild the map for every "
+                "rules profile present (transposition_census.py is one process "
+                "per profile; R9 is import-latched)")
+        kept, dropped_rows = [], []
+        for r in selected:
+            (dropped_rows if amap[rid_for(r)]["all_transposition"] else kept).append(r)
+
+    sampled = stratified_sample(kept, n, sample_seed, n_e4=n_e4,
+                                n_selfplay=n_selfplay)
 
     e4_dir = Path(e4_dir)
     bank_roots = champ_games = None
     positions = []
     n_missing_champ = 0
+    n_arm_deduped = 0
     for row in sampled:
-        tie = build_tie_arms(row, cap_j)
+        entry = None if amap is None else amap[rid_for(row)]
+        tie = build_tie_arms(row, cap_j, afterstate=entry)
+        if tie["dedupe_dropped_actions"]:
+            n_arm_deduped += 1
         champ = resolve_champion_arm(row, tie["arms"], champ_picks,
-                                     allow_missing=allow_missing_champ_picks)
+                                     allow_missing=allow_missing_champ_picks,
+                                     repr_of=tie["repr_of"] or None)
         if champ.get("champ_pick_missing"):
             n_missing_champ += 1
         pos = {
@@ -604,6 +796,9 @@ def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
             "champ_arm_index": champ["champ_arm_index"],
             "champ_outside_tieset": champ["champ_outside_tieset"],
             "champ_pick_missing": champ.get("champ_pick_missing", False),
+            "champ_arm_action": champ.get("champ_arm_action"),
+            "dedupe_dropped_actions": tie["dedupe_dropped_actions"],
+            "n_distinct_afterstates": tie["n_distinct_afterstates"],
         }
         if row["stratum"] == "e4":
             pos["archive_path"] = resolve_archive_path(row, e4_dir)
@@ -618,6 +813,37 @@ def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
     arms_index = build_arms_index(positions)
     (out_dir / "ARMS.json").write_text(json.dumps(arms_index, indent=2, sort_keys=True))
 
+    # DESIGN §6 threat 3: the dropped positions are NOT lost -- their headroom
+    # contribution is analytically 0, so the analyser adds them back as exact
+    # zeros (`headroom_all`) instead of paying to score them.
+    dropped_index = [{
+        "rid": rid_for(r), "root_id": root_id_for(r), "stratum": r["stratum"],
+        "source": r["source"], "rules_profile": r["rules_profile"],
+        "game_label": r["game_label"], "deck_seed": int(r["deck_seed"]),
+        "ply": int(r["ply"]), "phase_bucket": r["phase_bucket"],
+        "tercile": r["tercile"], "tie_size_exact": r["tie_size_exact"],
+        "n_distinct_afterstates": 1,
+        # An action played OUTSIDE the tie set has a different chain value,
+        # hence -- chain value being a function of the tile afterstate -- a
+        # different board. For those rows the "analytic zero" holds for the TIE
+        # SET arms only, so the analyser needs the count to run that
+        # sensitivity. (On `e4` the played action IS the champion's own pick,
+        # from the archive; on `selfplay` it is the logged self-play move, and
+        # the champion arm would have come from champ_picks.py.)
+        "action_played": r.get("action_played"),
+        "action_played_outside_tieset": (
+            None if r.get("action_played") is None else
+            int(r["action_played"]) not in [int(a) for a in r["tie_actions_exact"]]),
+    } for r in dropped_rows]
+    (out_dir / "DROPPED_ALL_TRANSPOSITION.json").write_text(json.dumps(
+        {"schema": SCHEMA, "design_doc": DESIGN_DOC,
+         "note": "exact-tie tile plies whose ENTIRE tie set reaches ONE board "
+                 "(DESIGN §6 threat 3). NOT scored: headroom is analytically 0 "
+                 "with zero variance. The analyser MUST include them as exact "
+                 "zeros in headroom_all (and exclude them from "
+                 "headroom_discriminable).",
+         "n": len(dropped_index), "rows": dropped_index}, indent=2, sort_keys=True))
+
     plan = cost_plan(positions, cap_j=cap_j, sample_seed=sample_seed,
                      playout_secs=playout_secs)
     plan["files"] = leg_info["files"]
@@ -625,6 +851,35 @@ def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
     plan["census_qualifying_n"] = len(selected)
     plan["allow_missing_champ_picks"] = bool(allow_missing_champ_picks)
     plan["n_positions_champ_pick_missing"] = n_missing_champ
+
+    n_drop = len(dropped_rows)
+    dedupe: dict = {
+        "applied": amap is not None,
+        "design_ref": "DESIGN.md §6 threat 3 (arms deduped by successor board "
+                      "key; all-transposition positions dropped as analytic zeros)",
+        "n_qualifying_before_drop": len(selected),
+        "n_dropped_all_transposition": n_drop,
+        "dropped_pct": (100.0 * n_drop / len(selected)) if selected else 0.0,
+        "n_dropped_by_stratum": {
+            s: sum(1 for r in dropped_rows if r["stratum"] == s)
+            for s in sorted({r["stratum"] for r in dropped_rows})},
+        "n_dropped_with_action_played_outside_tieset": sum(
+            1 for d in dropped_index if d["action_played_outside_tieset"]),
+        "n_positions_with_arm_dedupe": n_arm_deduped,
+        "dropped_index_path": str(out_dir / "DROPPED_ALL_TRANSPOSITION.json"),
+    }
+    if amap is not None:
+        # honest before/after: TIE-SET arms only, over the FULL qualifying
+        # supply (the champion arm is not what dedupe acts on, and including it
+        # would mix a §2.3 cost into a §6 saving).
+        before = _tieset_playouts(selected, cap_j, None)
+        after = _tieset_playouts(selected, cap_j, amap)
+        dedupe.update({
+            "tieset_arm_playouts_full_supply_before": before,
+            "tieset_arm_playouts_full_supply_after": after,
+            "savings_pct_full_supply": (100.0 * (1 - after / before)) if before else 0.0,
+        })
+    plan["afterstate_dedupe"] = dedupe
     plan["out_dir"] = str(out_dir)
     plan["generated_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     (out_dir / "POSITIONS_PLAN.json").write_text(json.dumps(plan, indent=2, sort_keys=True))
@@ -649,6 +904,21 @@ def main(argv=None) -> int:
     ap.add_argument("--n", type=int, default=0,
                     help="0 = all qualifying positions; else a seeded subsample "
                          "(--sample-seed), e4-first per DESIGN #7.3")
+    ap.add_argument("--n-e4", type=int, default=None,
+                    help="explicit e4 allocation (overrides the e4-first --n "
+                         "split). DESIGN #7.3 Stage A = --n-selfplay 280 "
+                         "--n-e4 60.")
+    ap.add_argument("--n-selfplay", type=int, default=None,
+                    help="explicit selfplay allocation -- see --n-e4.")
+    ap.add_argument("--afterstate-map", nargs="+", default=None,
+                    help="transposition_census.py --out file(s) carrying "
+                         "bp_rid/action_groups. Default: every "
+                         "census/afterstate_map_*.json. REQUIRED (DESIGN #6 "
+                         "threat 3) unless --no-dedupe.")
+    ap.add_argument("--no-dedupe", action="store_true",
+                    help="deliberately build the PRE-dedupe plan (known-zero "
+                         "transposition rows included). run_tiletie.py's "
+                         "preflight REFUSES to launch such a plan.")
     ap.add_argument("--sample-seed", type=int, default=20260812)
     ap.add_argument("--playout-secs", type=float, default=1.65)
     ap.add_argument("--e4-dir", default=str(DEFAULT_E4_DIR))
@@ -664,12 +934,38 @@ def main(argv=None) -> int:
 
     champ_picks = load_champ_picks(args.champ_picks) if args.champ_picks else {}
 
+    amap = None
+    if not args.no_dedupe:
+        paths = args.afterstate_map or sorted(
+            str(p) for p in DEFAULT_AFTERSTATE_MAP_DIR.glob("afterstate_map_*.json"))
+        if not paths:
+            raise SystemExit(
+                f"[build_positions] no afterstate map found under "
+                f"{DEFAULT_AFTERSTATE_MAP_DIR} -- build one per rules profile "
+                "with scripts/tiletie/transposition_census.py --profile <p> "
+                "--out <dir>/afterstate_map_<p>.json (DESIGN #6 threat 3), or "
+                "pass --no-dedupe deliberately.")
+        amap = load_afterstate_maps(paths)
+        print(f"[build_positions] afterstate map: {len(amap)} rid(s) from "
+              f"{len(paths)} file(s): {paths}")
+
     plan = build(rows, out_dir=Path(args.out_dir), champ_picks=champ_picks,
                 cap_j=args.cap_j, n=args.n, sample_seed=args.sample_seed,
                 playout_secs=args.playout_secs, e4_dir=Path(args.e4_dir),
                 bank_roots_path=args.bank_roots, champ_games_path=args.champ_games,
-                allow_missing_champ_picks=args.allow_missing_champ_picks)
+                allow_missing_champ_picks=args.allow_missing_champ_picks,
+                afterstate_map=amap, require_afterstate_map=not args.no_dedupe,
+                n_e4=args.n_e4, n_selfplay=args.n_selfplay)
 
+    ded = plan["afterstate_dedupe"]
+    print(f"[build_positions] afterstate dedupe: applied={ded['applied']} | "
+          f"dropped {ded['n_dropped_all_transposition']}/"
+          f"{ded['n_qualifying_before_drop']} all-transposition positions "
+          f"({ded['dropped_pct']:.1f}%) | arm-deduped "
+          f"{ded['n_positions_with_arm_dedupe']} | tie-set arm-playouts "
+          f"{ded.get('tieset_arm_playouts_full_supply_before')} -> "
+          f"{ded.get('tieset_arm_playouts_full_supply_after')} "
+          f"({ded.get('savings_pct_full_supply', 0.0):.1f}% saved)")
     print(f"[build_positions] {len(rows)} census rows -> {plan['census_qualifying_n']} "
           f"qualifying -> {plan['n_positions']} sampled | e4={plan['n_e4']} "
           f"selfplay={plan['n_selfplay']} | max_arms={plan['max_arms']} "

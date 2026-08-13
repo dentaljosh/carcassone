@@ -238,6 +238,16 @@ def check_positions(args) -> dict:
     plan = json.loads(plan_path.read_text())
     arms = json.loads(arms_path.read_text())
     problems = []
+    # DESIGN §6 threat 3: ~26% of the tie sets are transpositions, i.e. rows
+    # whose delta is 0 BY IDENTITY. Scoring them buys nothing, so a plan built
+    # before the dedupe landed (or with --no-dedupe) must not be launched.
+    dedupe = plan.get("afterstate_dedupe") or {}
+    if dedupe.get("applied") is not True:
+        problems.append(
+            "POSITIONS_PLAN.json was built WITHOUT the DESIGN §6 threat-3 "
+            "afterstate dedupe (afterstate_dedupe.applied is not True) -- "
+            "~26% of its budget would buy known-zero transposition rows. "
+            "Rebuild with scripts/tiletie/build_positions.py --afterstate-map.")
     files = plan.get("files") or {}
     if not files:
         problems.append("POSITIONS_PLAN.json names zero leg files")
@@ -342,16 +352,42 @@ def leg_command(*, positions_path, profile, judge, m, oracle_sims, workers, n,
     return cmd
 
 
+def select_files(plan: dict, only_profiles=None) -> dict:
+    """The plan's leg files, optionally narrowed to `only_profiles`.
+
+    ⚠️ WHY THIS EXISTS. `split_workers` apportions the pool by POSITION COUNT,
+    which is only a good proxy for work when every leg costs the same per
+    position. After the §2.0 backend split they do NOT: a python leg costs ~8x
+    a rust leg per playout (9.85 vs the measured rust `c`). On the Stage A plan
+    the python legs are ~17% of the lines but ~half the worker-seconds, so a
+    count-proportional split starves them and the wall becomes the python leg
+    running nearly alone. DESIGN §7.4 prices the two arms SEPARATELY and sums
+    them ("Stage A TOTAL, one box"), i.e. each arm gets the whole box — so run
+    them as two invocations, `--only-profiles walled` then
+    `--only-profiles fixed_v1 app_aug2`, rather than one mixed launch."""
+    files = plan["files"]
+    if not only_profiles:
+        return dict(files)
+    keep = set(only_profiles)
+    out = {k: v for k, v in files.items() if k.split("/leg")[0] in keep}
+    if not out:
+        raise SystemExit(
+            f"--only-profiles {sorted(keep)} matches no leg file in the plan "
+            f"(present: {sorted({k.split('/leg')[0] for k in files})})")
+    return out
+
+
 def launch_legs(args, plan: dict) -> list:
     """One subprocess per (judge, profile, leg r). Judges sequential, one
     judge's (profile, leg) legs concurrent, proportional worker split."""
     logs_dir = Path(args.logs_dir)
     logs_dir.mkdir(parents=True, exist_ok=True)
-    files = plan["files"]              # {"profile/legR": {"path":.., "n":..}}
+    files = select_files(plan, getattr(args, "only_profiles", None))
 
     results = []
     for judge in args.judges:
         counts = {key: info["n"] for key, info in files.items()}
+        assert counts, "launch_legs called with zero leg files"
         shares = _split_workers(counts, args.workers)
         procs = []
         for key, info in sorted(files.items()):
@@ -483,7 +519,8 @@ def check_crn_cross_leg(records_by_leg: dict) -> dict:
 # --smoke                                                                       #
 # --------------------------------------------------------------------------- #
 def select_smoke_positions(positions_dir: Path, *, profile: str | None = None,
-                           min_arms: int = 3, n: int = 5) -> dict:
+                           stratum: str | None = None, min_arms: int = 3,
+                           n: int = 5) -> dict:
     """Positions with an arm at leg index 2 (`len(arms) >= 3`), so leg1 AND
     leg2 both exist -- the minimum needed to de-risk the CRN claim, not just
     measure throughput.
@@ -495,12 +532,19 @@ def select_smoke_positions(positions_dir: Path, *, profile: str | None = None,
     different profile -- which is exactly what happened on the first two smoke
     attempts (2026-08-12): `app_aug2` and then `fixed_v1` both produced 0-line
     inputs because the alphabetically-first eligible rids are `walled` E4 games.
+
+    `stratum` narrows further. `walled` carries BOTH strata (2 E4 games + the
+    self-play bank), and cost is a function of the position mix (DESIGN §7.4:
+    ~9x across phase), so a smoke that is meant to price the Stage A RUST arm
+    must draw from the stratum that arm actually scores -- `selfplay` -- and not
+    from whichever rids sort first.
     """
     arms = json.loads((Path(positions_dir) / "ARMS.json").read_text())
     eligible = sorted(
         rid for rid, info in arms.items()
         if len(info["arms"]) >= min_arms
-        and (profile is None or info.get("rules_profile") == profile))
+        and (profile is None or info.get("rules_profile") == profile)
+        and (stratum is None or info.get("stratum") == stratum))
     chosen = eligible[:n]
     note = None
     if len(chosen) < n:
@@ -543,7 +587,9 @@ def run_smoke(args, report: dict, plan: dict) -> int:
              "to smoke", file=sys.stderr)
         return 3
 
-    sel = select_smoke_positions(positions_dir, profile=profile, min_arms=3, n=5)
+    sel = select_smoke_positions(positions_dir, profile=profile,
+                                 stratum=getattr(args, "smoke_stratum", None),
+                                 min_arms=3, n=int(getattr(args, "smoke_n", 5) or 5))
     if sel["note"]:
         print(f"[smoke] NOTE: {sel['note']}")
     if not sel["rids"]:
@@ -562,7 +608,9 @@ def run_smoke(args, report: dict, plan: dict) -> int:
     leg_out = {}
     for r, info in sorted(built.items()):
         sub = f"smoke/clair-puct/{profile}/leg{r}"
-        log = logs_dir / f"smoke_leg{r}.log"
+        # profile-scoped: a second smoke on another profile must not overwrite
+        # the log of the one DESIGN/SMOKE.md cites.
+        log = logs_dir / f"smoke_{profile}_leg{r}.log"
         cmd = leg_command(positions_path=info["path"], profile=profile, judge="clair-puct",
                           m=32, oracle_sims=100, workers=args.workers, n=info["n"],
                           out_root=args.out_root, out_subdir=sub,
@@ -590,22 +638,46 @@ def run_smoke(args, report: dict, plan: dict) -> int:
 
     n_positions = len(sel["rids"])
     n_legs = len(leg_out)
+    n_playouts = max(1, n_positions * n_legs * 2 * args.m)
     worker_secs = wall * args.workers
     worker_secs_per_position = worker_secs / max(1, n_positions)
-    worker_secs_per_playout = worker_secs / max(1, n_positions * n_legs * 2 * 32)
+    worker_secs_per_playout = worker_secs / n_playouts
+
+    # ⚠️ THE COST FIGURE OF RECORD (DESIGN §7.4 / SMOKE.md §3): Σ per-position
+    # `elapsed_secs`, NOT wall x W. The pool's wall is set by its SLOWEST
+    # position and these positions differ ~9x by game phase, so the wall-based
+    # number is inflated (measured 1.9x on the python smoke: 18.75 vs 9.85).
+    # Both are printed; only this one is costed from.
+    elapsed_sum = 0.0
+    per_position_secs = {}
+    n_elapsed = 0
+    if ok_launch:
+        for r, info in sorted(leg_out.items()):
+            for rid, rec in load_leg_records(info["out"], sel["rids"]).items():
+                secs = float(rec.get("elapsed_secs") or 0.0)
+                elapsed_sum += secs
+                n_elapsed += 1
+                per_position_secs.setdefault(rid, {})[f"leg{r}"] = secs
+    c_sum = (elapsed_sum / n_playouts) if n_elapsed else None
+    c_cost = c_sum if c_sum else worker_secs_per_playout
+
     eta = {}
     if plan.get("total_arm_playouts") is not None:
         sys.path.insert(0, str(REPO / "scripts" / "tiletie"))
         import build_positions as BP  # noqa: PLC0415
 
         for w in (14, 22):
-            eta[f"W={w}"] = BP.full_run_eta_secs(plan, worker_secs_per_playout, w)
+            eta[f"W={w}"] = BP.full_run_eta_secs(plan, c_cost, w)
 
-    print(f"\n[smoke] positions={n_positions} legs={n_legs} wall_secs={wall:.1f} "
-         f"workers={args.workers} worker_secs/position={worker_secs_per_position:.2f} "
-         f"worker_secs/playout={worker_secs_per_playout:.4f}")
+    print(f"\n[smoke] positions={n_positions} legs={n_legs} playouts={n_playouts} "
+         f"wall_secs={wall:.1f} workers={args.workers}")
+    print(f"[smoke] c (Σ elapsed_secs / playouts) = {c_sum if c_sum is None else round(c_sum, 4)} "
+         f"worker-s/playout   <- COST FROM THIS "
+         f"(Σ elapsed_secs = {elapsed_sum:.1f} over {n_elapsed} records)")
+    print(f"[smoke] c (wall x W / playouts)       = {worker_secs_per_playout:.4f} "
+         f"<- inflated by the slowest position, do NOT cost from this")
     for w, e in sorted(eta.items()):
-        print(f"[smoke] extrapolated full-run ETA at {w}: "
+        print(f"[smoke] extrapolated full-run ETA at {w} (from Σ elapsed_secs): "
              f"{e['wall_hours']:.3f} h ({e['wall_secs']:.0f} s)")
 
     if witness is not None:
@@ -622,6 +694,17 @@ def run_smoke(args, report: dict, plan: dict) -> int:
         "preflight": report, "profile": profile, "positions_selected": sel,
         "legs": leg_out, "wall_secs": round(wall, 1), "workers": args.workers,
         "n_positions": n_positions, "n_legs": n_legs,
+        "m_worlds": args.m, "oracle_sims": args.oracle_sims,
+        "backend": backend_for("clair-puct", profile),
+        "stratum": getattr(args, "smoke_stratum", None),
+        "n_playouts": n_playouts,
+        "elapsed_secs_sum": round(elapsed_sum, 3),
+        "elapsed_secs_by_position": per_position_secs,
+        "c_worker_secs_per_playout": c_sum,
+        "c_worker_secs_per_playout_wall_based": worker_secs_per_playout,
+        "c_note": "cost from c_worker_secs_per_playout (Σ elapsed_secs / playouts); "
+                  "the wall-based figure is inflated by the slowest position "
+                  "(DESIGN §7.4)",
         "worker_secs_per_position": worker_secs_per_position,
         "worker_secs_per_playout": worker_secs_per_playout, "eta": eta,
         "crn_cross_leg_identical": (witness["ok"] if witness else None),
@@ -704,6 +787,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--smoke-profile", default=None,
                     help="rules profile to smoke (default: the first one present "
                          "in POSITIONS_PLAN.json)")
+    ap.add_argument("--smoke-stratum", default=None, choices=["e4", "selfplay"],
+                    help="restrict the smoke to one stratum. Required to price a "
+                         "specific Stage A arm: `walled` carries both strata and "
+                         "cost varies ~9x with the position mix (DESIGN §7.4).")
+    ap.add_argument("--smoke-n", type=int, default=5,
+                    help="number of smoke positions (default 5)")
+    ap.add_argument("--only-profiles", nargs="+", default=None,
+                    help="launch only these rules profiles' legs. Use it to run "
+                         "the RUST arm (`walled`) and the PYTHON arm "
+                         "(`fixed_v1 app_aug2`) as separate full-box "
+                         "invocations -- which is how DESIGN §7.4 prices them. "
+                         "A single mixed launch splits workers by position "
+                         "COUNT and starves the ~8x-costlier python legs.")
     return ap
 
 

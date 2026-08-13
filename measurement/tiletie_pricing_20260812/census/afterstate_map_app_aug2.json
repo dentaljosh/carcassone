@@ -1,0 +1,481 @@
+{
+  "summary": {
+    "profile": "app_aug2",
+    "stratum": null,
+    "n_tied_positions": 14,
+    "n_unresolved": 0,
+    "all_transposition_n": 1,
+    "all_transposition_pct": 7.14,
+    "any_duplicate_pct": 28.57,
+    "mean_tie_size": 3.357,
+    "mean_distinct_afterstates": 2.643,
+    "effective_shrink": 0.7872,
+    "distinct_hist": {
+      "1": 1,
+      "2": 8,
+      "3": 1,
+      "4": 3,
+      "5": 1
+    },
+    "by_phase": {
+      "early": {
+        "n": 7,
+        "all_transposition_pct": 0.0,
+        "mean_tie_size": 4.286,
+        "mean_distinct": 3.0
+      },
+      "mid": {
+        "n": 5,
+        "all_transposition_pct": 20.0,
+        "mean_tie_size": 2.4,
+        "mean_distinct": 2.2
+      },
+      "late": {
+        "n": 2,
+        "all_transposition_pct": 0.0,
+        "mean_tie_size": 2.5,
+        "mean_distinct": 2.5
+      }
+    }
+  },
+  "rows": [
+    {
+      "rid": "e4:1785975832_66810:2",
+      "bp_rid": "tt_e4_1785975832_66810_p2",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 2,
+      "phase_bucket": "early",
+      "tercile": 0,
+      "tie_size_exact": 4,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.5,
+      "action_groups": [
+        [
+          1245,
+          1247
+        ],
+        [
+          1253,
+          1255
+        ]
+      ],
+      "repr_actions": [
+        1245,
+        1253
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:10",
+      "bp_rid": "tt_e4_1785975832_66810_p10",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 10,
+      "phase_bucket": "early",
+      "tercile": 0,
+      "tie_size_exact": 2,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1049
+        ],
+        [
+          1144
+        ]
+      ],
+      "repr_actions": [
+        1049,
+        1144
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:14",
+      "bp_rid": "tt_e4_1785975832_66810_p14",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 14,
+      "phase_bucket": "early",
+      "tercile": 0,
+      "tie_size_exact": 4,
+      "n_distinct_afterstates": 4,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1048
+        ],
+        [
+          1051
+        ],
+        [
+          1156
+        ],
+        [
+          1159
+        ]
+      ],
+      "repr_actions": [
+        1048,
+        1051,
+        1156,
+        1159
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:22",
+      "bp_rid": "tt_e4_1785975832_66810_p22",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 22,
+      "phase_bucket": "early",
+      "tercile": 0,
+      "tie_size_exact": 10,
+      "n_distinct_afterstates": 5,
+      "all_transposition": false,
+      "dup_fraction": 0.5,
+      "action_groups": [
+        [
+          1040,
+          1042
+        ],
+        [
+          1045,
+          1047
+        ],
+        [
+          1136,
+          1138
+        ],
+        [
+          1332,
+          1334
+        ],
+        [
+          1453,
+          1455
+        ]
+      ],
+      "repr_actions": [
+        1040,
+        1045,
+        1136,
+        1332,
+        1453
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:26",
+      "bp_rid": "tt_e4_1785975832_66810_p26",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 26,
+      "phase_bucket": "early",
+      "tercile": 0,
+      "tie_size_exact": 2,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1436
+        ],
+        [
+          1437
+        ]
+      ],
+      "repr_actions": [
+        1436,
+        1437
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:34",
+      "bp_rid": "tt_e4_1785975832_66810_p34",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 34,
+      "phase_bucket": "early",
+      "tercile": 0,
+      "tie_size_exact": 4,
+      "n_distinct_afterstates": 4,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1065
+        ],
+        [
+          1168
+        ],
+        [
+          1170
+        ],
+        [
+          1171
+        ]
+      ],
+      "repr_actions": [
+        1065,
+        1168,
+        1170,
+        1171
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:38",
+      "bp_rid": "tt_e4_1785975832_66810_p38",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 38,
+      "phase_bucket": "early",
+      "tercile": 0,
+      "tie_size_exact": 4,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.5,
+      "action_groups": [
+        [
+          1048,
+          1050
+        ],
+        [
+          1057,
+          1059
+        ]
+      ],
+      "repr_actions": [
+        1048,
+        1057
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:46",
+      "bp_rid": "tt_e4_1785975832_66810_p46",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 46,
+      "phase_bucket": "late",
+      "tercile": 0,
+      "tie_size_exact": 2,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1368
+        ],
+        [
+          1371
+        ]
+      ],
+      "repr_actions": [
+        1368,
+        1371
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:50",
+      "bp_rid": "tt_e4_1785975832_66810_p50",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 50,
+      "phase_bucket": "mid",
+      "tercile": 1,
+      "tie_size_exact": 2,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1061
+        ],
+        [
+          1062
+        ]
+      ],
+      "repr_actions": [
+        1061,
+        1062
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:54",
+      "bp_rid": "tt_e4_1785975832_66810_p54",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 54,
+      "phase_bucket": "mid",
+      "tercile": 1,
+      "tie_size_exact": 4,
+      "n_distinct_afterstates": 4,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1232
+        ],
+        [
+          1427
+        ],
+        [
+          1530
+        ],
+        [
+          1534
+        ]
+      ],
+      "repr_actions": [
+        1232,
+        1427,
+        1530,
+        1534
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:58",
+      "bp_rid": "tt_e4_1785975832_66810_p58",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 58,
+      "phase_bucket": "mid",
+      "tercile": 1,
+      "tie_size_exact": 2,
+      "n_distinct_afterstates": 1,
+      "all_transposition": true,
+      "dup_fraction": 0.5,
+      "action_groups": [
+        [
+          1061,
+          1063
+        ]
+      ],
+      "repr_actions": [
+        1061
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:78",
+      "bp_rid": "tt_e4_1785975832_66810_p78",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 78,
+      "phase_bucket": "mid",
+      "tercile": 1,
+      "tie_size_exact": 2,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1070
+        ],
+        [
+          1071
+        ]
+      ],
+      "repr_actions": [
+        1070,
+        1071
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:90",
+      "bp_rid": "tt_e4_1785975832_66810_p90",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 90,
+      "phase_bucket": "mid",
+      "tercile": 1,
+      "tie_size_exact": 2,
+      "n_distinct_afterstates": 2,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1427
+        ],
+        [
+          1530
+        ]
+      ],
+      "repr_actions": [
+        1427,
+        1530
+      ]
+    },
+    {
+      "rid": "e4:1785975832_66810:122",
+      "bp_rid": "tt_e4_1785975832_66810_p122",
+      "stratum": "e4",
+      "source": "e4_games",
+      "rules_profile": "app_aug2",
+      "game_label": "1785975832_66810",
+      "deck_seed": 66810,
+      "ply": 122,
+      "phase_bucket": "late",
+      "tercile": 2,
+      "tie_size_exact": 3,
+      "n_distinct_afterstates": 3,
+      "all_transposition": false,
+      "dup_fraction": 0.0,
+      "action_groups": [
+        [
+          1737
+        ],
+        [
+          1738
+        ],
+        [
+          1739
+        ]
+      ],
+      "repr_actions": [
+        1737,
+        1738,
+        1739
+      ]
+    }
+  ]
+}

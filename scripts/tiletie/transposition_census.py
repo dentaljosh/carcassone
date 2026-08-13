@@ -23,6 +23,20 @@ discriminate and the "tie" is correct by construction.
 ⚠️ Keyed on the TILE successor, before the meeple decision, because the tie is
 scored on the outer chain value and the oracle's arms are tile actions.
 
+DOUBLE DUTY (added 2026-08-12, DESIGN §6 threat 3): besides the census summary
+this script emits, per row, the ACTION GROUPING itself --
+
+  action_groups   [[a, a', ...], ...]  tied actions bucketed by successor board
+                                       key, each bucket ascending, buckets
+                                       ordered by their own minimum action
+  repr_actions    [min(g) for g in action_groups]  -- the deduped arm set
+  bp_rid          `build_positions.rid_for(row)`, so the join is on the SAME
+                  identifier the position builder uses (never re-derived)
+
+-- which is what `build_positions.py --afterstate-map` consumes to DEDUPE arms
+by successor board key and to DROP all-transposition positions (known-zero
+rows). The summary is unchanged; the grouping is additive.
+
 Usage (one profile per process -- CARCASSONNE_FIX_R9 is import-latched):
     python scripts/tiletie/transposition_census.py --profile fixed_v1 --stratum e4
     python scripts/tiletie/transposition_census.py --profile walled  --stratum selfplay
@@ -39,6 +53,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts" / "tiletie"))
 sys.path.insert(0, str(REPO / "scripts" / "measurement_infra"))
 
+import build_positions as BP  # noqa: E402  (stdlib-only import chain -- safe here)
 import chain_census as CC  # noqa: E402
 
 
@@ -106,18 +121,28 @@ def main(argv=None) -> int:
         if game.string_representation(board) != r["checksum"]:
             n_bad += 1
             continue
-        keys = set()
-        for act in r["tie_actions_exact"]:
-            s1, _ = game.get_next_state(board, int(act))
-            keys.add(game.string_representation(s1))
+        by_key: dict = {}
+        for act in sorted(int(a) for a in r["tie_actions_exact"]):
+            s1, _ = game.get_next_state(board, act)
+            by_key.setdefault(game.string_representation(s1), []).append(act)
+        # buckets ascending by their own minimum action, each bucket ascending:
+        # `repr_actions[0]` is then the global min == the leaf's tie-break of
+        # record, so deduping can never move arm[0] (build_positions asserts it).
+        groups = sorted((sorted(v) for v in by_key.values()), key=lambda g: g[0])
+        keys = by_key
         out.append({
             "rid": f"{r['stratum']}:{r['game_label']}:{r['ply']}",
+            "bp_rid": BP.rid_for(r),
             "stratum": r["stratum"], "source": r["source"],
+            "rules_profile": r["rules_profile"], "game_label": r["game_label"],
+            "deck_seed": int(r["deck_seed"]), "ply": int(r["ply"]),
             "phase_bucket": r["phase_bucket"], "tercile": r["tercile"],
             "tie_size_exact": r["tie_size_exact"],
             "n_distinct_afterstates": len(keys),
             "all_transposition": len(keys) == 1,
             "dup_fraction": 1.0 - len(keys) / max(1, r["tie_size_exact"]),
+            "action_groups": groups,
+            "repr_actions": [g[0] for g in groups],
         })
 
     n = len(out)
