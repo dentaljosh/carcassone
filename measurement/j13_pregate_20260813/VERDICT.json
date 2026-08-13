@@ -1,0 +1,2205 @@
+{
+ "schema": "carcassonne-analyzer-j13-pregate/v1",
+ "generated": "2026-08-13",
+ "corpus": "measurement/e4_games",
+ "n_archives": 26,
+ "profiles": {
+  "walled": 2,
+  "app_aug2": 1,
+  "fixed_v1": 23
+ },
+ "integrity": {
+  "replay_scores_match_all": true,
+  "attribution_reconciles_all": true,
+  "n_games": 26
+ },
+ "epochs": {
+  "app_aug2": {
+   "n_games": 1,
+   "stats": {
+    "n_games": 1,
+    "pooled": {
+     "human": {
+      "tile_plies": 36,
+      "touches": 147,
+      "buildup_plies": 36,
+      "buildup_plies_structural": 28,
+      "kind_counts": {
+       "buildup": 96,
+       "claim_now": 14,
+       "own_growth": 24,
+       "feed_claimed": 4,
+       "contested": 9
+      },
+      "kind_counts_structural": {
+       "buildup": 54,
+       "claim_now": 12,
+       "own_growth": 20,
+       "feed_claimed": 2,
+       "contested": 1
+      },
+      "buildup_by_terrain": {
+       "city": 14,
+       "road": 16,
+       "cloister": 24,
+       "farm": 42
+      },
+      "fate_claim": {
+       "self": 8,
+       "opp": 9,
+       "both": 11,
+       "none": 68
+      },
+      "fate_claim_structural": {
+       "self": 8,
+       "opp": 8,
+       "both": 0,
+       "none": 38
+      },
+      "fate_points": {
+       "self": 19,
+       "opp": 9,
+       "both": 0,
+       "none": 68
+      },
+      "fate_by_terrain": {
+       "city": {
+        "self": 7,
+        "opp": 3,
+        "both": 0,
+        "none": 4
+       },
+       "road": {
+        "self": 1,
+        "opp": 5,
+        "both": 0,
+        "none": 10
+       },
+       "cloister": {
+        "self": 0,
+        "opp": 0,
+        "both": 0,
+        "none": 24
+       },
+       "farm": {
+        "self": 0,
+        "opp": 1,
+        "both": 11,
+        "none": 30
+       }
+      },
+      "unclaimed_value_added": 95,
+      "unclaimed_value_added_structural": 83,
+      "fed_value_added": -1,
+      "credit_self": 17.62857142857143,
+      "credit_opp": 11.5625,
+      "credit_self_structural": 13.700000000000001,
+      "credit_opp_structural": 11.0,
+      "rates": {
+       "buildup_ply_share": 1.0,
+       "buildup_ply_share_structural": 0.7777777777777778,
+       "conversion_self": 0.08333333333333333,
+       "feed_opp": 0.09375,
+       "contested_both": 0.11458333333333333,
+       "never_claimed": 0.7083333333333334,
+       "conversion_self_structural": 0.14814814814814814,
+       "feed_opp_structural": 0.14814814814814814,
+       "never_claimed_structural": 0.7037037037037037,
+       "points_per_buildup_touch_self": 0.1836309523809524,
+       "points_per_buildup_touch_opp": 0.12044270833333333,
+       "net_points_per_buildup_touch": 0.06318824404761907,
+       "points_per_buildup_touch_self_structural": 0.2537037037037037,
+       "points_per_buildup_touch_opp_structural": 0.2037037037037037,
+       "net_points_per_buildup_touch_structural": 0.05000000000000002,
+       "feed_claimed_share": 0.027210884353741496,
+       "feed_claimed_share_structural": 0.02247191011235955
+      }
+     },
+     "champion": {
+      "tile_plies": 35,
+      "touches": 141,
+      "buildup_plies": 32,
+      "buildup_plies_structural": 26,
+      "kind_counts": {
+       "buildup": 96,
+       "claim_now": 17,
+       "own_growth": 19,
+       "feed_claimed": 2,
+       "contested": 7
+      },
+      "kind_counts_structural": {
+       "buildup": 50,
+       "claim_now": 14,
+       "own_growth": 9,
+       "feed_claimed": 2,
+       "contested": 0
+      },
+      "buildup_by_terrain": {
+       "city": 8,
+       "road": 26,
+       "cloister": 16,
+       "farm": 46
+      },
+      "fate_claim": {
+       "self": 15,
+       "opp": 5,
+       "both": 9,
+       "none": 67
+      },
+      "fate_claim_structural": {
+       "self": 13,
+       "opp": 5,
+       "both": 1,
+       "none": 31
+      },
+      "fate_points": {
+       "self": 15,
+       "opp": 13,
+       "both": 1,
+       "none": 67
+      },
+      "fate_by_terrain": {
+       "city": {
+        "self": 2,
+        "opp": 4,
+        "both": 1,
+        "none": 1
+       },
+       "road": {
+        "self": 11,
+        "opp": 1,
+        "both": 0,
+        "none": 14
+       },
+       "cloister": {
+        "self": 0,
+        "opp": 0,
+        "both": 0,
+        "none": 16
+       },
+       "farm": {
+        "self": 2,
+        "opp": 0,
+        "both": 8,
+        "none": 36
+       }
+      },
+      "unclaimed_value_added": 66,
+      "unclaimed_value_added_structural": 63,
+      "fed_value_added": 2,
+      "credit_self": 17.34722222222222,
+      "credit_opp": 10.979365079365078,
+      "credit_self_structural": 16.22222222222222,
+      "credit_opp_structural": 8.122222222222222,
+      "rates": {
+       "buildup_ply_share": 0.9142857142857143,
+       "buildup_ply_share_structural": 0.7428571428571429,
+       "conversion_self": 0.15625,
+       "feed_opp": 0.052083333333333336,
+       "contested_both": 0.09375,
+       "never_claimed": 0.6979166666666666,
+       "conversion_self_structural": 0.26,
+       "feed_opp_structural": 0.1,
+       "never_claimed_structural": 0.62,
+       "points_per_buildup_touch_self": 0.18070023148148148,
+       "points_per_buildup_touch_opp": 0.11436838624338623,
+       "net_points_per_buildup_touch": 0.06633184523809525,
+       "points_per_buildup_touch_self_structural": 0.3244444444444444,
+       "points_per_buildup_touch_opp_structural": 0.16244444444444445,
+       "net_points_per_buildup_touch_structural": 0.162,
+       "feed_claimed_share": 0.014184397163120567,
+       "feed_claimed_share_structural": 0.02666666666666667
+      }
+     }
+    },
+    "per_game": {
+     "human": {
+      "buildup_ply_share": {
+       "n": 1,
+       "mean": 1.0,
+       "sem": null
+      },
+      "buildup_ply_share_structural": {
+       "n": 1,
+       "mean": 0.7777777777777778,
+       "sem": null
+      },
+      "conversion_self": {
+       "n": 1,
+       "mean": 0.08333333333333333,
+       "sem": null
+      },
+      "feed_opp": {
+       "n": 1,
+       "mean": 0.09375,
+       "sem": null
+      },
+      "never_claimed": {
+       "n": 1,
+       "mean": 0.7083333333333334,
+       "sem": null
+      },
+      "conversion_self_structural": {
+       "n": 1,
+       "mean": 0.14814814814814814,
+       "sem": null
+      },
+      "feed_opp_structural": {
+       "n": 1,
+       "mean": 0.14814814814814814,
+       "sem": null
+      },
+      "points_per_buildup_touch_self": {
+       "n": 1,
+       "mean": 0.1836309523809524,
+       "sem": null
+      },
+      "points_per_buildup_touch_opp": {
+       "n": 1,
+       "mean": 0.12044270833333333,
+       "sem": null
+      },
+      "net_points_per_buildup_touch": {
+       "n": 1,
+       "mean": 0.06318824404761907,
+       "sem": null
+      },
+      "points_per_buildup_touch_self_structural": {
+       "n": 1,
+       "mean": 0.2537037037037037,
+       "sem": null
+      },
+      "points_per_buildup_touch_opp_structural": {
+       "n": 1,
+       "mean": 0.2037037037037037,
+       "sem": null
+      },
+      "net_points_per_buildup_touch_structural": {
+       "n": 1,
+       "mean": 0.05000000000000002,
+       "sem": null
+      },
+      "feed_claimed_share": {
+       "n": 1,
+       "mean": 0.027210884353741496,
+       "sem": null
+      },
+      "unclaimed_value_added_per_ply": {
+       "n": 1,
+       "mean": 2.638888888888889,
+       "sem": null
+      },
+      "unclaimed_value_added_per_ply_structural": {
+       "n": 1,
+       "mean": 2.3055555555555554,
+       "sem": null
+      }
+     },
+     "champion": {
+      "buildup_ply_share": {
+       "n": 1,
+       "mean": 0.9142857142857143,
+       "sem": null
+      },
+      "buildup_ply_share_structural": {
+       "n": 1,
+       "mean": 0.7428571428571429,
+       "sem": null
+      },
+      "conversion_self": {
+       "n": 1,
+       "mean": 0.15625,
+       "sem": null
+      },
+      "feed_opp": {
+       "n": 1,
+       "mean": 0.052083333333333336,
+       "sem": null
+      },
+      "never_claimed": {
+       "n": 1,
+       "mean": 0.6979166666666666,
+       "sem": null
+      },
+      "conversion_self_structural": {
+       "n": 1,
+       "mean": 0.26,
+       "sem": null
+      },
+      "feed_opp_structural": {
+       "n": 1,
+       "mean": 0.1,
+       "sem": null
+      },
+      "points_per_buildup_touch_self": {
+       "n": 1,
+       "mean": 0.18070023148148148,
+       "sem": null
+      },
+      "points_per_buildup_touch_opp": {
+       "n": 1,
+       "mean": 0.11436838624338623,
+       "sem": null
+      },
+      "net_points_per_buildup_touch": {
+       "n": 1,
+       "mean": 0.06633184523809525,
+       "sem": null
+      },
+      "points_per_buildup_touch_self_structural": {
+       "n": 1,
+       "mean": 0.3244444444444444,
+       "sem": null
+      },
+      "points_per_buildup_touch_opp_structural": {
+       "n": 1,
+       "mean": 0.16244444444444445,
+       "sem": null
+      },
+      "net_points_per_buildup_touch_structural": {
+       "n": 1,
+       "mean": 0.162,
+       "sem": null
+      },
+      "feed_claimed_share": {
+       "n": 1,
+       "mean": 0.014184397163120567,
+       "sem": null
+      },
+      "unclaimed_value_added_per_ply": {
+       "n": 1,
+       "mean": 1.8857142857142857,
+       "sem": null
+      },
+      "unclaimed_value_added_per_ply_structural": {
+       "n": 1,
+       "mean": 1.8,
+       "sem": null
+      }
+     }
+    },
+    "paired_human_minus_champion": {
+     "buildup_ply_share": {
+      "n": 1,
+      "mean": 0.08571428571428574,
+      "sem": null,
+      "z": null
+     },
+     "buildup_ply_share_structural": {
+      "n": 1,
+      "mean": 0.03492063492063491,
+      "sem": null,
+      "z": null
+     },
+     "conversion_self": {
+      "n": 1,
+      "mean": -0.07291666666666667,
+      "sem": null,
+      "z": null
+     },
+     "feed_opp": {
+      "n": 1,
+      "mean": 0.041666666666666664,
+      "sem": null,
+      "z": null
+     },
+     "never_claimed": {
+      "n": 1,
+      "mean": 0.01041666666666674,
+      "sem": null,
+      "z": null
+     },
+     "conversion_self_structural": {
+      "n": 1,
+      "mean": -0.11185185185185187,
+      "sem": null,
+      "z": null
+     },
+     "feed_opp_structural": {
+      "n": 1,
+      "mean": 0.048148148148148134,
+      "sem": null,
+      "z": null
+     },
+     "points_per_buildup_touch_self": {
+      "n": 1,
+      "mean": 0.002930720899470912,
+      "sem": null,
+      "z": null
+     },
+     "points_per_buildup_touch_opp": {
+      "n": 1,
+      "mean": 0.0060743220899470984,
+      "sem": null,
+      "z": null
+     },
+     "net_points_per_buildup_touch": {
+      "n": 1,
+      "mean": -0.0031436011904761862,
+      "sem": null,
+      "z": null
+     },
+     "points_per_buildup_touch_self_structural": {
+      "n": 1,
+      "mean": -0.07074074074074072,
+      "sem": null,
+      "z": null
+     },
+     "points_per_buildup_touch_opp_structural": {
+      "n": 1,
+      "mean": 0.041259259259259246,
+      "sem": null,
+      "z": null
+     },
+     "net_points_per_buildup_touch_structural": {
+      "n": 1,
+      "mean": -0.11199999999999999,
+      "sem": null,
+      "z": null
+     },
+     "feed_claimed_share": {
+      "n": 1,
+      "mean": 0.013026487190620929,
+      "sem": null,
+      "z": null
+     },
+     "unclaimed_value_added_per_ply": {
+      "n": 1,
+      "mean": 0.7531746031746032,
+      "sem": null,
+      "z": null
+     },
+     "unclaimed_value_added_per_ply_structural": {
+      "n": 1,
+      "mean": 0.5055555555555553,
+      "sem": null,
+      "z": null
+     }
+    },
+    "feature_base_rates": {
+     "n_features": 83,
+     "by_terrain": {
+      "city": 17,
+      "road": 26,
+      "cloister": 14,
+      "farm": 26
+     },
+     "ever_claimed": 27,
+     "never_claimed": 56,
+     "never_claimed_by_terrain": {
+      "city": 5,
+      "road": 16,
+      "cloister": 11,
+      "farm": 24
+     },
+     "points_total": 176,
+     "points_through_unclaimed_buildup": 57.51765873015873,
+     "value_left_on_never_claimed": 119,
+     "claim_rate": 0.3253012048192771,
+     "points_share_through_unclaimed_buildup": 0.32680487914862916,
+     "tiles_before_first_claim": {
+      "n": 27,
+      "mean": 2.111111111111111,
+      "median": 1,
+      "share_zero": 0.25925925925925924,
+      "share_ge2": 0.3333333333333333,
+      "p90": 4
+     }
+    },
+    "claim_race": {
+     "n": 25,
+     "builder_won": 12,
+     "tie": 10,
+     "builder_lost": 3,
+     "n_struct": 24,
+     "builder_won_struct": 11,
+     "tie_struct": 10,
+     "builder_lost_struct": 3,
+     "builder_won_share_decided": 0.8,
+     "builder_won_share_decided_structural": 0.7857142857142857,
+     "n_decided": 15,
+     "n_decided_structural": 14,
+     "z_vs_half": 2.32379000772445,
+     "z_vs_half_structural": 2.138089935299395
+    }
+   }
+  },
+  "fixed_v1": {
+   "n_games": 23,
+   "stats": {
+    "n_games": 23,
+    "pooled": {
+     "human": {
+      "tile_plies": 826,
+      "touches": 3360,
+      "buildup_plies": 794,
+      "buildup_plies_structural": 707,
+      "kind_counts": {
+       "buildup": 2211,
+       "claim_now": 359,
+       "own_growth": 385,
+       "feed_claimed": 154,
+       "contested": 251
+      },
+      "kind_counts_structural": {
+       "buildup": 1291,
+       "claim_now": 268,
+       "own_growth": 256,
+       "feed_claimed": 55,
+       "contested": 59
+      },
+      "buildup_by_terrain": {
+       "city": 204,
+       "road": 553,
+       "cloister": 534,
+       "farm": 920
+      },
+      "fate_claim": {
+       "self": 197,
+       "opp": 204,
+       "both": 215,
+       "none": 1595
+      },
+      "fate_claim_structural": {
+       "self": 142,
+       "opp": 159,
+       "both": 37,
+       "none": 953
+      },
+      "fate_points": {
+       "self": 320,
+       "opp": 210,
+       "both": 83,
+       "none": 1598
+      },
+      "fate_by_terrain": {
+       "city": {
+        "self": 62,
+        "opp": 52,
+        "both": 12,
+        "none": 78
+       },
+       "road": {
+        "self": 80,
+        "opp": 107,
+        "both": 25,
+        "none": 341
+       },
+       "cloister": {
+        "self": 0,
+        "opp": 0,
+        "both": 0,
+        "none": 534
+       },
+       "farm": {
+        "self": 55,
+        "opp": 45,
+        "both": 178,
+        "none": 642
+       }
+      },
+      "unclaimed_value_added": 2015,
+      "unclaimed_value_added_structural": 1799,
+      "fed_value_added": 57,
+      "credit_self": 345.8610649680115,
+      "credit_opp": 313.7759474443685,
+      "credit_self_structural": 240.32205343675932,
+      "credit_opp_structural": 243.86892551892552,
+      "rates": {
+       "buildup_ply_share": 0.9612590799031477,
+       "buildup_ply_share_structural": 0.8559322033898306,
+       "conversion_self": 0.08909995477159656,
+       "feed_opp": 0.09226594301221167,
+       "contested_both": 0.09724106739032112,
+       "never_claimed": 0.7213930348258707,
+       "conversion_self_structural": 0.10999225406661503,
+       "feed_opp_structural": 0.12316034082106894,
+       "never_claimed_structural": 0.7381874515879163,
+       "points_per_buildup_touch_self": 0.1564274377964774,
+       "points_per_buildup_touch_opp": 0.14191585139953347,
+       "net_points_per_buildup_touch": 0.014511586396943901,
+       "points_per_buildup_touch_self_structural": 0.18615186168610326,
+       "points_per_buildup_touch_opp_structural": 0.18889924517345122,
+       "net_points_per_buildup_touch_structural": -0.0027473834873479497,
+       "feed_claimed_share": 0.04583333333333333,
+       "feed_claimed_share_structural": 0.02851218247796786
+      }
+     },
+     "champion": {
+      "tile_plies": 805,
+      "touches": 3176,
+      "buildup_plies": 760,
+      "buildup_plies_structural": 632,
+      "kind_counts": {
+       "buildup": 1968,
+       "claim_now": 378,
+       "own_growth": 525,
+       "feed_claimed": 106,
+       "contested": 199
+      },
+      "kind_counts_structural": {
+       "buildup": 1103,
+       "claim_now": 298,
+       "own_growth": 331,
+       "feed_claimed": 29,
+       "contested": 32
+      },
+      "buildup_by_terrain": {
+       "city": 263,
+       "road": 437,
+       "cloister": 403,
+       "farm": 865
+      },
+      "fate_claim": {
+       "self": 211,
+       "opp": 163,
+       "both": 179,
+       "none": 1415
+      },
+      "fate_claim_structural": {
+       "self": 166,
+       "opp": 126,
+       "both": 25,
+       "none": 786
+      },
+      "fate_points": {
+       "self": 214,
+       "opp": 275,
+       "both": 60,
+       "none": 1419
+      },
+      "fate_by_terrain": {
+       "city": {
+        "self": 58,
+        "opp": 63,
+        "both": 16,
+        "none": 126
+       },
+       "road": {
+        "self": 108,
+        "opp": 63,
+        "both": 9,
+        "none": 257
+       },
+       "cloister": {
+        "self": 0,
+        "opp": 0,
+        "both": 0,
+        "none": 403
+       },
+       "farm": {
+        "self": 45,
+        "opp": 37,
+        "both": 154,
+        "none": 629
+       }
+      },
+      "unclaimed_value_added": 1643,
+      "unclaimed_value_added_structural": 1478,
+      "fed_value_added": 14,
+      "credit_self": 307.4721987807514,
+      "credit_opp": 309.70883514277716,
+      "credit_self_structural": 253.4465811965812,
+      "credit_opp_structural": 224.01597895568483,
+      "rates": {
+       "buildup_ply_share": 0.9440993788819876,
+       "buildup_ply_share_structural": 0.7850931677018633,
+       "conversion_self": 0.10721544715447154,
+       "feed_opp": 0.08282520325203252,
+       "contested_both": 0.09095528455284553,
+       "never_claimed": 0.7190040650406504,
+       "conversion_self_structural": 0.15049864007252947,
+       "feed_opp_structural": 0.11423390752493201,
+       "never_claimed_structural": 0.7126019945602902,
+       "points_per_buildup_touch_self": 0.15623587336420294,
+       "points_per_buildup_touch_opp": 0.15737237558067946,
+       "net_points_per_buildup_touch": -0.0011365022164765055,
+       "points_per_buildup_touch_self_structural": 0.22977931205492402,
+       "points_per_buildup_touch_opp_structural": 0.2030969890804033,
+       "net_points_per_buildup_touch_structural": 0.02668232297452074,
+       "feed_claimed_share": 0.033375314861460954,
+       "feed_claimed_share_structural": 0.016174010039040714
+      }
+     }
+    },
+    "per_game": {
+     "human": {
+      "buildup_ply_share": {
+       "n": 23,
+       "mean": 0.9613526570048309,
+       "sd": 0.04330866498285285,
+       "sem": 0.009030480902493716
+      },
+      "buildup_ply_share_structural": {
+       "n": 23,
+       "mean": 0.8560731538992409,
+       "sd": 0.08270726435154545,
+       "sem": 0.01724565676452609
+      },
+      "conversion_self": {
+       "n": 23,
+       "mean": 0.0906213280435111,
+       "sd": 0.06323200178013082,
+       "sem": 0.013184783800839886
+      },
+      "feed_opp": {
+       "n": 23,
+       "mean": 0.09371508394063281,
+       "sd": 0.04289949415951819,
+       "sem": 0.008945162888016837
+      },
+      "never_claimed": {
+       "n": 23,
+       "mean": 0.7176084777465068,
+       "sd": 0.07281583406848989,
+       "sem": 0.015183150974868354
+      },
+      "conversion_self_structural": {
+       "n": 23,
+       "mean": 0.11493077926220074,
+       "sd": 0.06935420062393527,
+       "sem": 0.014461350505496674
+      },
+      "feed_opp_structural": {
+       "n": 23,
+       "mean": 0.12132191745141087,
+       "sd": 0.06082725995367174,
+       "sem": 0.012683360467937232
+      },
+      "points_per_buildup_touch_self": {
+       "n": 23,
+       "mean": 0.15910328312763056,
+       "sd": 0.0638443740483637,
+       "sem": 0.013312472245535268
+      },
+      "points_per_buildup_touch_opp": {
+       "n": 23,
+       "mean": 0.14290052825305946,
+       "sd": 0.059177343840070964,
+       "sem": 0.01233932917626644
+      },
+      "net_points_per_buildup_touch": {
+       "n": 23,
+       "mean": 0.016202754874571113,
+       "sd": 0.09756807384029997,
+       "sem": 0.020344349747487556
+      },
+      "points_per_buildup_touch_self_structural": {
+       "n": 23,
+       "mean": 0.19495339242056395,
+       "sd": 0.10113949769098818,
+       "sem": 0.021089043099063266
+      },
+      "points_per_buildup_touch_opp_structural": {
+       "n": 23,
+       "mean": 0.1877236289708729,
+       "sd": 0.08622648843184896,
+       "sem": 0.017979465711566122
+      },
+      "net_points_per_buildup_touch_structural": {
+       "n": 23,
+       "mean": 0.007229763449691049,
+       "sd": 0.1459311948699213,
+       "sem": 0.030428757590950435
+      },
+      "feed_claimed_share": {
+       "n": 23,
+       "mean": 0.04632417842619343,
+       "sd": 0.0258655787841896,
+       "sem": 0.005393346004432399
+      },
+      "unclaimed_value_added_per_ply": {
+       "n": 23,
+       "mean": 2.440269151138716,
+       "sd": 0.3818129422534289,
+       "sem": 0.07961350193338146
+      },
+      "unclaimed_value_added_per_ply_structural": {
+       "n": 23,
+       "mean": 2.1787784679089026,
+       "sd": 0.3763648910852719,
+       "sem": 0.07847750473630023
+      }
+     },
+     "champion": {
+      "buildup_ply_share": {
+       "n": 23,
+       "mean": 0.9440993788819876,
+       "sd": 0.05202986217585277,
+       "sem": 0.010848976225068299
+      },
+      "buildup_ply_share_structural": {
+       "n": 23,
+       "mean": 0.7850931677018633,
+       "sd": 0.06083498481888535,
+       "sem": 0.012684971213680918
+      },
+      "conversion_self": {
+       "n": 23,
+       "mean": 0.10756414572274083,
+       "sd": 0.04374756796533119,
+       "sem": 0.009121998500713088
+      },
+      "feed_opp": {
+       "n": 23,
+       "mean": 0.08263794344762791,
+       "sd": 0.042893804043686735,
+       "sem": 0.008943976416848324
+      },
+      "never_claimed": {
+       "n": 23,
+       "mean": 0.7187546553030321,
+       "sd": 0.05873694166627344,
+       "sem": 0.012247498975047589
+      },
+      "conversion_self_structural": {
+       "n": 23,
+       "mean": 0.1524936731040946,
+       "sd": 0.07067304830270137,
+       "sem": 0.01473634925646512
+      },
+      "feed_opp_structural": {
+       "n": 23,
+       "mean": 0.11329277492799397,
+       "sd": 0.05641854459492943,
+       "sem": 0.011764079768164654
+      },
+      "points_per_buildup_touch_self": {
+       "n": 23,
+       "mean": 0.15727359308437752,
+       "sd": 0.045531891627848535,
+       "sem": 0.009494055703691067
+      },
+      "points_per_buildup_touch_opp": {
+       "n": 23,
+       "mean": 0.15768388716120152,
+       "sd": 0.04890367530602236,
+       "sem": 0.01019712120167269
+      },
+      "net_points_per_buildup_touch": {
+       "n": 23,
+       "mean": -0.00041029407682401445,
+       "sd": 0.07356732564051699,
+       "sem": 0.015339847799678414
+      },
+      "points_per_buildup_touch_self_structural": {
+       "n": 23,
+       "mean": 0.23311765064599618,
+       "sd": 0.09669617720609293,
+       "sem": 0.020162546731687537
+      },
+      "points_per_buildup_touch_opp_structural": {
+       "n": 23,
+       "mean": 0.20166638544222473,
+       "sd": 0.0847222012072876,
+       "sem": 0.01766580014236317
+      },
+      "net_points_per_buildup_touch_structural": {
+       "n": 23,
+       "mean": 0.03145126520377148,
+       "sd": 0.14574153414844906,
+       "sem": 0.030389210596743012
+      },
+      "feed_claimed_share": {
+       "n": 23,
+       "mean": 0.03332223020259662,
+       "sd": 0.0245302016543846,
+       "sem": 0.005114900624665891
+      },
+      "unclaimed_value_added_per_ply": {
+       "n": 23,
+       "mean": 2.040993788819876,
+       "sd": 0.22870549427955714,
+       "sem": 0.04768839213133552
+      },
+      "unclaimed_value_added_per_ply_structural": {
+       "n": 23,
+       "mean": 1.8360248447204968,
+       "sd": 0.20133458087191114,
+       "sem": 0.041981162159933284
+      }
+     }
+    },
+    "paired_human_minus_champion": {
+     "buildup_ply_share": {
+      "n": 23,
+      "mean": 0.01725327812284334,
+      "sd": 0.048887751218528834,
+      "sem": 0.010193800799899583,
+      "z": 1.6925265130757998
+     },
+     "buildup_ply_share_structural": {
+      "n": 23,
+      "mean": 0.07097998619737747,
+      "sd": 0.09955374272447418,
+      "sem": 0.020758390331382503,
+      "z": 3.4193396050593594
+     },
+     "conversion_self": {
+      "n": 23,
+      "mean": -0.016942817679229723,
+      "sd": 0.07790908499999732,
+      "sem": 0.016245167208497276,
+      "z": -1.0429451086454518
+     },
+     "feed_opp": {
+      "n": 23,
+      "mean": 0.01107714049300491,
+      "sd": 0.0561265854943626,
+      "sem": 0.01170320208738133,
+      "z": 0.9465051026460993
+     },
+     "never_claimed": {
+      "n": 23,
+      "mean": -0.0011461775565253277,
+      "sd": 0.07100018932974374,
+      "sem": 0.014804562876032889,
+      "z": -0.07742056054764541
+     },
+     "conversion_self_structural": {
+      "n": 23,
+      "mean": -0.037562893841893846,
+      "sd": 0.09892833645271537,
+      "sem": 0.0206279841090791,
+      "z": -1.82096775153909
+     },
+     "feed_opp_structural": {
+      "n": 23,
+      "mean": 0.008029142523416912,
+      "sd": 0.07209927160769719,
+      "sem": 0.015033737373220868,
+      "z": 0.534074949168593
+     },
+     "points_per_buildup_touch_self": {
+      "n": 23,
+      "mean": 0.0018296900432530458,
+      "sd": 0.08713688726709502,
+      "sem": 0.0181692969912557,
+      "z": 0.10070230257855418
+     },
+     "points_per_buildup_touch_opp": {
+      "n": 23,
+      "mean": -0.01478335890814208,
+      "sd": 0.06871679825272349,
+      "sem": 0.014328442923544859,
+      "z": -1.031749157045508
+     },
+     "net_points_per_buildup_touch": {
+      "n": 23,
+      "mean": 0.016613048951395128,
+      "sd": 0.12331617355022402,
+      "sem": 0.025713199671585505,
+      "z": 0.6460903023964558
+     },
+     "points_per_buildup_touch_self_structural": {
+      "n": 23,
+      "mean": -0.03816425822543225,
+      "sd": 0.15453968452757638,
+      "sem": 0.03222375176783277,
+      "z": -1.184351794303777
+     },
+     "points_per_buildup_touch_opp_structural": {
+      "n": 23,
+      "mean": -0.013942756471351824,
+      "sd": 0.11251517775505072,
+      "sem": 0.023461036362122017,
+      "z": -0.5942941418334992
+     },
+     "net_points_per_buildup_touch_structural": {
+      "n": 23,
+      "mean": -0.024221501754080423,
+      "sd": 0.21564976869149508,
+      "sem": 0.04496608516025081,
+      "z": -0.5386615638821897
+     },
+     "feed_claimed_share": {
+      "n": 23,
+      "mean": 0.013001948223596805,
+      "sd": 0.03474163151800201,
+      "sem": 0.007244130939362991,
+      "z": 1.7948251256678867
+     },
+     "unclaimed_value_added_per_ply": {
+      "n": 23,
+      "mean": 0.3992753623188406,
+      "sd": 0.47768931462093994,
+      "sem": 0.09960510753951093,
+      "z": 4.00858321608114
+     },
+     "unclaimed_value_added_per_ply_structural": {
+      "n": 23,
+      "mean": 0.3427536231884058,
+      "sd": 0.4625760820040993,
+      "sem": 0.09645378069590213,
+      "z": 3.553553014879051
+     }
+    },
+    "feature_base_rates": {
+     "n_features": 1958,
+     "by_terrain": {
+      "city": 415,
+      "road": 603,
+      "cloister": 322,
+      "farm": 618
+     },
+     "ever_claimed": 590,
+     "never_claimed": 1368,
+     "never_claimed_by_terrain": {
+      "city": 157,
+      "road": 403,
+      "cloister": 257,
+      "farm": 551
+     },
+     "points_total": 4413,
+     "points_through_unclaimed_buildup": 1276.818046335908,
+     "value_left_on_never_claimed": 2917,
+     "claim_rate": 0.30132788559754853,
+     "points_share_through_unclaimed_buildup": 0.2893310778010216,
+     "tiles_before_first_claim": {
+      "n": 590,
+      "mean": 1.9813559322033898,
+      "median": 1.0,
+      "share_zero": 0.24915254237288137,
+      "share_ge2": 0.3677966101694915,
+      "p90": 4
+     }
+    },
+    "claim_race": {
+     "n": 530,
+     "builder_won": 184,
+     "tie": 179,
+     "builder_lost": 167,
+     "n_struct": 489,
+     "builder_won_struct": 167,
+     "tie_struct": 171,
+     "builder_lost_struct": 151,
+     "builder_won_share_decided": 0.5242165242165242,
+     "builder_won_share_decided_structural": 0.5251572327044025,
+     "n_decided": 351,
+     "n_decided_structural": 318,
+     "z_vs_half": 0.9073928715621605,
+     "z_vs_half_structural": 0.8972354465472709
+    }
+   }
+  },
+  "walled": {
+   "n_games": 2,
+   "stats": {
+    "n_games": 2,
+    "pooled": {
+     "human": {
+      "tile_plies": 72,
+      "touches": 289,
+      "buildup_plies": 71,
+      "buildup_plies_structural": 66,
+      "kind_counts": {
+       "buildup": 194,
+       "claim_now": 31,
+       "own_growth": 28,
+       "feed_claimed": 12,
+       "contested": 24
+      },
+      "kind_counts_structural": {
+       "buildup": 112,
+       "claim_now": 21,
+       "own_growth": 16,
+       "feed_claimed": 6,
+       "contested": 5
+      },
+      "buildup_by_terrain": {
+       "city": 21,
+       "road": 51,
+       "cloister": 40,
+       "farm": 82
+      },
+      "fate_claim": {
+       "self": 27,
+       "opp": 42,
+       "both": 9,
+       "none": 116
+      },
+      "fate_claim_structural": {
+       "self": 13,
+       "opp": 29,
+       "both": 0,
+       "none": 70
+      },
+      "fate_points": {
+       "self": 35,
+       "opp": 42,
+       "both": 1,
+       "none": 116
+      },
+      "fate_by_terrain": {
+       "city": {
+        "self": 5,
+        "opp": 13,
+        "both": 0,
+        "none": 3
+       },
+       "road": {
+        "self": 8,
+        "opp": 16,
+        "both": 0,
+        "none": 27
+       },
+       "cloister": {
+        "self": 0,
+        "opp": 0,
+        "both": 0,
+        "none": 40
+       },
+       "farm": {
+        "self": 14,
+        "opp": 13,
+        "both": 9,
+        "none": 46
+       }
+      },
+      "unclaimed_value_added": 159,
+      "unclaimed_value_added_structural": 144,
+      "fed_value_added": 9,
+      "credit_self": 31.329299685821425,
+      "credit_opp": 47.233333333333334,
+      "credit_self_structural": 20.974358974358974,
+      "credit_opp_structural": 41.13333333333333,
+      "rates": {
+       "buildup_ply_share": 0.9861111111111112,
+       "buildup_ply_share_structural": 0.9166666666666666,
+       "conversion_self": 0.13917525773195877,
+       "feed_opp": 0.21649484536082475,
+       "contested_both": 0.04639175257731959,
+       "never_claimed": 0.5979381443298969,
+       "conversion_self_structural": 0.11607142857142858,
+       "feed_opp_structural": 0.25892857142857145,
+       "never_claimed_structural": 0.625,
+       "points_per_buildup_touch_self": 0.16149123549392488,
+       "points_per_buildup_touch_opp": 0.24347079037800687,
+       "net_points_per_buildup_touch": -0.08197955488408201,
+       "points_per_buildup_touch_self_structural": 0.18727106227106227,
+       "points_per_buildup_touch_opp_structural": 0.36726190476190473,
+       "net_points_per_buildup_touch_structural": -0.1799908424908425,
+       "feed_claimed_share": 0.04152249134948097,
+       "feed_claimed_share_structural": 0.0375
+      }
+     },
+     "champion": {
+      "tile_plies": 72,
+      "touches": 286,
+      "buildup_plies": 65,
+      "buildup_plies_structural": 52,
+      "kind_counts": {
+       "buildup": 154,
+       "claim_now": 41,
+       "own_growth": 60,
+       "feed_claimed": 9,
+       "contested": 22
+      },
+      "kind_counts_structural": {
+       "buildup": 87,
+       "claim_now": 34,
+       "own_growth": 42,
+       "feed_claimed": 0,
+       "contested": 1
+      },
+      "buildup_by_terrain": {
+       "city": 19,
+       "road": 33,
+       "cloister": 35,
+       "farm": 67
+      },
+      "fate_claim": {
+       "self": 16,
+       "opp": 20,
+       "both": 16,
+       "none": 102
+      },
+      "fate_claim_structural": {
+       "self": 13,
+       "opp": 11,
+       "both": 2,
+       "none": 61
+      },
+      "fate_points": {
+       "self": 16,
+       "opp": 32,
+       "both": 4,
+       "none": 102
+      },
+      "fate_by_terrain": {
+       "city": {
+        "self": 6,
+        "opp": 7,
+        "both": 2,
+        "none": 4
+       },
+       "road": {
+        "self": 7,
+        "opp": 4,
+        "both": 0,
+        "none": 22
+       },
+       "cloister": {
+        "self": 0,
+        "opp": 0,
+        "both": 0,
+        "none": 35
+       },
+       "farm": {
+        "self": 3,
+        "opp": 9,
+        "both": 14,
+        "none": 41
+       }
+      },
+      "unclaimed_value_added": 138,
+      "unclaimed_value_added_structural": 123,
+      "fed_value_added": 3,
+      "credit_self": 25.633333333333333,
+      "credit_opp": 29.40151008411878,
+      "credit_self_structural": 23.333333333333332,
+      "credit_opp_structural": 19.435897435897438,
+      "rates": {
+       "buildup_ply_share": 0.9027777777777778,
+       "buildup_ply_share_structural": 0.7222222222222222,
+       "conversion_self": 0.1038961038961039,
+       "feed_opp": 0.12987012987012986,
+       "contested_both": 0.1038961038961039,
+       "never_claimed": 0.6623376623376623,
+       "conversion_self_structural": 0.14942528735632185,
+       "feed_opp_structural": 0.12643678160919541,
+       "never_claimed_structural": 0.7011494252873564,
+       "points_per_buildup_touch_self": 0.16645021645021646,
+       "points_per_buildup_touch_opp": 0.19091889665012193,
+       "net_points_per_buildup_touch": -0.024468680199905498,
+       "points_per_buildup_touch_self_structural": 0.2681992337164751,
+       "points_per_buildup_touch_opp_structural": 0.22340111995284412,
+       "net_points_per_buildup_touch_structural": 0.04479811376363097,
+       "feed_claimed_share": 0.03146853146853147,
+       "feed_claimed_share_structural": 0.0
+      }
+     }
+    },
+    "per_game": {
+     "human": {
+      "buildup_ply_share": {
+       "n": 2,
+       "mean": 0.9861111111111112,
+       "sd": 0.019641855032959663,
+       "sem": 0.013888888888888895
+      },
+      "buildup_ply_share_structural": {
+       "n": 2,
+       "mean": 0.9166666666666666,
+       "sd": 0.039283710065919325,
+       "sem": 0.02777777777777779
+      },
+      "conversion_self": {
+       "n": 2,
+       "mean": 0.14376072041166382,
+       "sd": 0.06989198673391904,
+       "sem": 0.04942109777015437
+      },
+      "feed_opp": {
+       "n": 2,
+       "mean": 0.217409948542024,
+       "sd": 0.013948075443645437,
+       "sem": 0.00986277873070325
+      },
+      "never_claimed": {
+       "n": 2,
+       "mean": 0.5944468267581475,
+       "sd": 0.05321494000782124,
+       "sem": 0.037628644939965705
+      },
+      "conversion_self_structural": {
+       "n": 2,
+       "mean": 0.12154150197628459,
+       "sd": 0.04332077117941299,
+       "sem": 0.030632411067193676
+      },
+      "feed_opp_structural": {
+       "n": 2,
+       "mean": 0.2559288537549407,
+       "sd": 0.023756551937097428,
+       "sem": 0.016798418972332002
+      },
+      "points_per_buildup_touch_self": {
+       "n": 2,
+       "mean": 0.1644616571498703,
+       "sd": 0.04527540304500688,
+       "sem": 0.032014544514078425
+      },
+      "points_per_buildup_touch_opp": {
+       "n": 2,
+       "mean": 0.23833261863922242,
+       "sd": 0.07831642215585995,
+       "sem": 0.05537807318467694
+      },
+      "net_points_per_buildup_touch": {
+       "n": 2,
+       "mean": -0.07387096148935213,
+       "sd": 0.12359182520086683,
+       "sem": 0.08739261769875536
+      },
+      "points_per_buildup_touch_self_structural": {
+       "n": 2,
+       "mean": 0.19943582987061248,
+       "sd": 0.09634004420544394,
+       "sem": 0.06812269855748115
+      },
+      "points_per_buildup_touch_opp_structural": {
+       "n": 2,
+       "mean": 0.35114185331576636,
+       "sd": 0.12766429413517336,
+       "sem": 0.09027228809837506
+      },
+      "net_points_per_buildup_touch_structural": {
+       "n": 2,
+       "mean": -0.1517060234451539,
+       "sd": 0.22400433834061734,
+       "sem": 0.15839498665585625
+      },
+      "feed_claimed_share": {
+       "n": 2,
+       "mean": 0.04125816993464052,
+       "sd": 0.006354717804781061,
+       "sem": 0.00449346405228758
+      },
+      "unclaimed_value_added_per_ply": {
+       "n": 2,
+       "mean": 2.2083333333333335,
+       "sd": 0.56961379595583,
+       "sem": 0.40277777777777773
+      },
+      "unclaimed_value_added_per_ply_structural": {
+       "n": 2,
+       "mean": 2.0,
+       "sd": 0.510688230856951,
+       "sem": 0.3611111111111111
+      }
+     },
+     "champion": {
+      "buildup_ply_share": {
+       "n": 2,
+       "mean": 0.9027777777777778,
+       "sd": 0.09820927516479823,
+       "sem": 0.0694444444444444
+      },
+      "buildup_ply_share_structural": {
+       "n": 2,
+       "mean": 0.7222222222222222,
+       "sd": 0.11785113019775798,
+       "sem": 0.08333333333333337
+      },
+      "conversion_self": {
+       "n": 2,
+       "mean": 0.09611063094209162,
+       "sd": 0.07064956258009066,
+       "sem": 0.04995678478824545
+      },
+      "feed_opp": {
+       "n": 2,
+       "mean": 0.12480553154710458,
+       "sd": 0.045958885000197375,
+       "sem": 0.03249783923941226
+      },
+      "never_claimed": {
+       "n": 2,
+       "mean": 0.6746758859118409,
+       "sd": 0.11196366664941701,
+       "sem": 0.07917026793431285
+      },
+      "conversion_self_structural": {
+       "n": 2,
+       "mean": 0.13318534961154274,
+       "sd": 0.10516349464927567,
+       "sem": 0.07436182019977802
+      },
+      "feed_opp_structural": {
+       "n": 2,
+       "mean": 0.11958934517203107,
+       "sd": 0.044341324236448314,
+       "sem": 0.03135405105438401
+      },
+      "points_per_buildup_touch_self": {
+       "n": 2,
+       "mean": 0.15610774992797466,
+       "sd": 0.0938530953882577,
+       "sem": 0.0663641601843849
+      },
+      "points_per_buildup_touch_opp": {
+       "n": 2,
+       "mean": 0.18292197462202348,
+       "sd": 0.07256836503183586,
+       "sem": 0.05131358301363186
+      },
+      "net_points_per_buildup_touch": {
+       "n": 2,
+       "mean": -0.026814224694048823,
+       "sd": 0.021284730356421845,
+       "sem": 0.015050577170753046
+      },
+      "points_per_buildup_touch_self_structural": {
+       "n": 2,
+       "mean": 0.24824269330373658,
+       "sd": 0.12923076208144818,
+       "sem": 0.09137994820569735
+      },
+      "points_per_buildup_touch_opp_structural": {
+       "n": 2,
+       "mean": 0.2044452033353254,
+       "sd": 0.12275111315740174,
+       "sem": 0.086798144511796
+      },
+      "net_points_per_buildup_touch_structural": {
+       "n": 2,
+       "mean": 0.043797489968411166,
+       "sd": 0.006479648924046457,
+       "sem": 0.004581803693901366
+      },
+      "feed_claimed_share": {
+       "n": 2,
+       "mean": 0.03441455696202532,
+       "sd": 0.03971881444956082,
+       "sem": 0.02808544303797468
+      },
+      "unclaimed_value_added_per_ply": {
+       "n": 2,
+       "mean": 1.9166666666666667,
+       "sd": 0.23570226039551595,
+       "sem": 0.16666666666666674
+      },
+      "unclaimed_value_added_per_ply_structural": {
+       "n": 2,
+       "mean": 1.7083333333333335,
+       "sd": 0.29462782549439487,
+       "sem": 0.20833333333333337
+      }
+     }
+    },
+    "paired_human_minus_champion": {
+     "buildup_ply_share": {
+      "n": 2,
+      "mean": 0.08333333333333331,
+      "sd": 0.11785113019775789,
+      "sem": 0.0833333333333333,
+      "z": 1.0000000000000002
+     },
+     "buildup_ply_share_structural": {
+      "n": 2,
+      "mean": 0.19444444444444442,
+      "sd": 0.1571348402636773,
+      "sem": 0.11111111111111116,
+      "z": 1.7499999999999991
+     },
+     "conversion_self": {
+      "n": 2,
+      "mean": 0.04765008946957219,
+      "sd": 0.0007575758461716226,
+      "sem": 0.0005356870180910911,
+      "z": 88.95136126197764
+     },
+     "feed_opp": {
+      "n": 2,
+      "mean": 0.09260441699491943,
+      "sd": 0.032010809556551945,
+      "sem": 0.022635060508709018,
+      "z": 4.091193701880724
+     },
+     "never_claimed": {
+      "n": 2,
+      "mean": -0.0802290591536935,
+      "sd": 0.05874872664159578,
+      "sem": 0.04154162299434716,
+      "z": -1.9312933239178158
+     },
+     "conversion_self_structural": {
+      "n": 2,
+      "mean": -0.011643847635258144,
+      "sd": 0.06184272346986267,
+      "sem": 0.04372940913258435,
+      "z": -0.2662704085471371
+     },
+     "feed_opp_structural": {
+      "n": 2,
+      "mean": 0.1363395085829096,
+      "sd": 0.06809787617354572,
+      "sem": 0.048152470026716,
+      "z": 2.8314125632032083
+     },
+     "points_per_buildup_touch_self": {
+      "n": 2,
+      "mean": 0.008353907221895641,
+      "sd": 0.04857769234325082,
+      "sem": 0.034349615670306484,
+      "z": 0.24320234910567498
+     },
+     "points_per_buildup_touch_opp": {
+      "n": 2,
+      "mean": 0.055410644017198946,
+      "sd": 0.1508847871876958,
+      "sem": 0.1066916561983088,
+      "z": 0.5193531152446135
+     },
+     "net_points_per_buildup_touch": {
+      "n": 2,
+      "mean": -0.0470567367953033,
+      "sd": 0.10230709484444497,
+      "sem": 0.0723420405280023,
+      "z": -0.6504756632775444
+     },
+     "points_per_buildup_touch_self_structural": {
+      "n": 2,
+      "mean": -0.04880686343312411,
+      "sd": 0.03289071787600424,
+      "sem": 0.023257249648216197,
+      "z": -2.0985655729445867
+     },
+     "points_per_buildup_touch_opp_structural": {
+      "n": 2,
+      "mean": 0.14669664998044096,
+      "sd": 0.2504154072925751,
+      "sem": 0.17707043261017108,
+      "z": 0.8284649662736215
+     },
+     "net_points_per_buildup_touch_structural": {
+      "n": 2,
+      "mean": -0.19550351341356506,
+      "sd": 0.21752468941657085,
+      "sem": 0.15381318296195487,
+      "z": -1.27104523584251
+     },
+     "feed_claimed_share": {
+      "n": 2,
+      "mean": 0.006843612972615206,
+      "sd": 0.03336409664477976,
+      "sem": 0.023591978985687104,
+      "z": 0.2900821917808219
+     },
+     "unclaimed_value_added_per_ply": {
+      "n": 2,
+      "mean": 0.29166666666666663,
+      "sd": 0.805316056351346,
+      "sem": 0.5694444444444445,
+      "z": 0.5121951219512194
+     },
+     "unclaimed_value_added_per_ply_structural": {
+      "n": 2,
+      "mean": 0.29166666666666663,
+      "sd": 0.805316056351346,
+      "sem": 0.5694444444444445,
+      "z": 0.5121951219512194
+     }
+    },
+    "feature_base_rates": {
+     "n_features": 149,
+     "by_terrain": {
+      "city": 33,
+      "road": 47,
+      "cloister": 28,
+      "farm": 41
+     },
+     "ever_claimed": 60,
+     "never_claimed": 89,
+     "never_claimed_by_terrain": {
+      "city": 7,
+      "road": 26,
+      "cloister": 23,
+      "farm": 33
+     },
+     "points_total": 405,
+     "points_through_unclaimed_buildup": 133.59747643660688,
+     "value_left_on_never_claimed": 214,
+     "claim_rate": 0.40268456375838924,
+     "points_share_through_unclaimed_buildup": 0.3298703121891528,
+     "tiles_before_first_claim": {
+      "n": 60,
+      "mean": 2.1666666666666665,
+      "median": 1.0,
+      "share_zero": 0.2,
+      "share_ge2": 0.4,
+      "p90": 5
+     }
+    },
+    "claim_race": {
+     "n": 55,
+     "builder_won": 15,
+     "tie": 16,
+     "builder_lost": 24,
+     "n_struct": 50,
+     "builder_won_struct": 13,
+     "tie_struct": 15,
+     "builder_lost_struct": 22,
+     "builder_won_share_decided": 0.38461538461538464,
+     "builder_won_share_decided_structural": 0.37142857142857144,
+     "n_decided": 39,
+     "n_decided_structural": 35,
+     "z_vs_half": -1.4411533842457842,
+     "z_vs_half_structural": -1.52127765851133
+    }
+   }
+  }
+ },
+ "pooled_all_epochs": {
+  "n_games": 26,
+  "pooled": {
+   "human": {
+    "tile_plies": 934,
+    "touches": 3796,
+    "buildup_plies": 901,
+    "buildup_plies_structural": 801,
+    "kind_counts": {
+     "buildup": 2501,
+     "claim_now": 404,
+     "own_growth": 437,
+     "feed_claimed": 170,
+     "contested": 284
+    },
+    "kind_counts_structural": {
+     "buildup": 1457,
+     "claim_now": 301,
+     "own_growth": 292,
+     "feed_claimed": 63,
+     "contested": 65
+    },
+    "buildup_by_terrain": {
+     "city": 239,
+     "road": 620,
+     "cloister": 598,
+     "farm": 1044
+    },
+    "fate_claim": {
+     "self": 232,
+     "opp": 255,
+     "both": 235,
+     "none": 1779
+    },
+    "fate_claim_structural": {
+     "self": 163,
+     "opp": 196,
+     "both": 37,
+     "none": 1061
+    },
+    "fate_points": {
+     "self": 374,
+     "opp": 261,
+     "both": 84,
+     "none": 1782
+    },
+    "fate_by_terrain": {
+     "city": {
+      "self": 74,
+      "opp": 68,
+      "both": 12,
+      "none": 85
+     },
+     "road": {
+      "self": 89,
+      "opp": 128,
+      "both": 25,
+      "none": 378
+     },
+     "cloister": {
+      "self": 0,
+      "opp": 0,
+      "both": 0,
+      "none": 598
+     },
+     "farm": {
+      "self": 69,
+      "opp": 59,
+      "both": 198,
+      "none": 718
+     }
+    },
+    "unclaimed_value_added": 2269,
+    "unclaimed_value_added_structural": 2026,
+    "fed_value_added": 65,
+    "credit_self": 394.8189360824043,
+    "credit_opp": 372.5717807777018,
+    "credit_self_structural": 274.9964124111183,
+    "credit_opp_structural": 296.0022588522589,
+    "rates": {
+     "buildup_ply_share": 0.9646680942184154,
+     "buildup_ply_share_structural": 0.8576017130620985,
+     "conversion_self": 0.09276289484206318,
+     "feed_opp": 0.10195921631347461,
+     "contested_both": 0.0939624150339864,
+     "never_claimed": 0.7113154738104758,
+     "conversion_self_structural": 0.11187371310912834,
+     "feed_opp_structural": 0.13452299245024021,
+     "never_claimed_structural": 0.7282086479066575,
+     "points_per_buildup_touch_self": 0.15786442866149714,
+     "points_per_buildup_touch_opp": 0.14896912466121623,
+     "net_points_per_buildup_touch": 0.008895304000280895,
+     "points_per_buildup_touch_self_structural": 0.18874153219706127,
+     "points_per_buildup_touch_opp_structural": 0.2031587226165126,
+     "net_points_per_buildup_touch_structural": -0.014417190419451331,
+     "feed_claimed_share": 0.044783983140147525,
+     "feed_claimed_share_structural": 0.028925619834710745
+    }
+   },
+   "champion": {
+    "tile_plies": 912,
+    "touches": 3603,
+    "buildup_plies": 857,
+    "buildup_plies_structural": 710,
+    "kind_counts": {
+     "buildup": 2218,
+     "claim_now": 436,
+     "own_growth": 604,
+     "feed_claimed": 117,
+     "contested": 228
+    },
+    "kind_counts_structural": {
+     "buildup": 1240,
+     "claim_now": 346,
+     "own_growth": 382,
+     "feed_claimed": 31,
+     "contested": 33
+    },
+    "buildup_by_terrain": {
+     "city": 290,
+     "road": 496,
+     "cloister": 454,
+     "farm": 978
+    },
+    "fate_claim": {
+     "self": 242,
+     "opp": 188,
+     "both": 204,
+     "none": 1584
+    },
+    "fate_claim_structural": {
+     "self": 192,
+     "opp": 142,
+     "both": 28,
+     "none": 878
+    },
+    "fate_points": {
+     "self": 245,
+     "opp": 320,
+     "both": 65,
+     "none": 1588
+    },
+    "fate_by_terrain": {
+     "city": {
+      "self": 66,
+      "opp": 74,
+      "both": 19,
+      "none": 131
+     },
+     "road": {
+      "self": 126,
+      "opp": 68,
+      "both": 9,
+      "none": 293
+     },
+     "cloister": {
+      "self": 0,
+      "opp": 0,
+      "both": 0,
+      "none": 454
+     },
+     "farm": {
+      "self": 50,
+      "opp": 46,
+      "both": 176,
+      "none": 706
+     }
+    },
+    "unclaimed_value_added": 1847,
+    "unclaimed_value_added_structural": 1664,
+    "fed_value_added": 19,
+    "credit_self": 350.45275433630695,
+    "credit_opp": 350.089710306261,
+    "credit_self_structural": 293.0021367521368,
+    "credit_opp_structural": 251.5740986138045,
+    "rates": {
+     "buildup_ply_share": 0.9396929824561403,
+     "buildup_ply_share_structural": 0.7785087719298246,
+     "conversion_self": 0.109107303877367,
+     "feed_opp": 0.08476104598737602,
+     "contested_both": 0.09197475202885483,
+     "never_claimed": 0.7141568981064021,
+     "conversion_self_structural": 0.15483870967741936,
+     "feed_opp_structural": 0.11451612903225807,
+     "never_claimed_structural": 0.7080645161290322,
+     "points_per_buildup_touch_self": 0.15800394695054415,
+     "points_per_buildup_touch_opp": 0.1578402661434901,
+     "net_points_per_buildup_touch": 0.0001636808070540827,
+     "points_per_buildup_touch_self_structural": 0.23629204576785223,
+     "points_per_buildup_touch_opp_structural": 0.20288233759177782,
+     "net_points_per_buildup_touch_structural": 0.03340970817607442,
+     "feed_claimed_share": 0.0324729392173189,
+     "feed_claimed_share_structural": 0.015255905511811024
+    }
+   }
+  },
+  "per_game": {
+   "human": {
+    "buildup_ply_share": {
+     "n": 26,
+     "mean": 0.9647435897435896,
+     "sd": 0.04198595613798158,
+     "sem": 0.008234123447862264
+    },
+    "buildup_ply_share_structural": {
+     "n": 26,
+     "mean": 0.8577228327228327,
+     "sd": 0.08134779176232186,
+     "sem": 0.015953614522452367
+    },
+    "conversion_self": {
+     "n": 26,
+     "mean": 0.09442866612143909,
+     "sd": 0.06266450235834846,
+     "sem": 0.01228952001287692
+    },
+    "feed_opp": {
+     "n": 26,
+     "mean": 0.10323141645071551,
+     "sd": 0.05250861989077897,
+     "sem": 0.010297787594419548
+    },
+    "never_claimed": {
+     "n": 26,
+     "mean": 0.7077777682699724,
+     "sd": 0.07678279333995144,
+     "sem": 0.015058344674945176
+    },
+    "conversion_self_structural": {
+     "n": 26,
+     "mean": 0.11671688750505133,
+     "sd": 0.06597110111069115,
+     "sem": 0.01293799738063911
+    },
+    "feed_opp_structural": {
+     "n": 26,
+     "mean": 0.13270807527078768,
+     "sd": 0.06798539191757955,
+     "sem": 0.013333032308730435
+    },
+    "points_per_buildup_touch_self": {
+     "n": 26,
+     "mean": 0.16045883763908447,
+     "sd": 0.06077348350823516,
+     "sem": 0.011918660704519246
+    },
+    "points_per_buildup_touch_opp": {
+     "n": 26,
+     "mean": 0.14937769597815945,
+     "sd": 0.06349950037215189,
+     "sem": 0.012453276596192109
+    },
+    "net_points_per_buildup_touch": {
+     "n": 26,
+     "mean": 0.011081141660925017,
+     "sd": 0.09847979670222745,
+     "sem": 0.01931347711843493
+    },
+    "points_per_buildup_touch_self_structural": {
+     "n": 26,
+     "mean": 0.19755782265838073,
+     "sd": 0.097496499230687,
+     "sem": 0.01912063661862527
+    },
+    "points_per_buildup_touch_opp_structural": {
+     "n": 26,
+     "mean": 0.20090887987174283,
+     "sd": 0.095710941018802,
+     "sem": 0.018770459843046136
+    },
+    "net_points_per_buildup_touch_structural": {
+     "n": 26,
+     "mean": -0.003351057213362064,
+     "sd": 0.15074849352797434,
+     "sem": 0.02956421192860988
+    },
+    "feed_claimed_share": {
+     "n": 26,
+     "mean": 0.04519935877021043,
+     "sd": 0.024611178988854145,
+     "sem": 0.004826649304488156
+    },
+    "unclaimed_value_added_per_ply": {
+     "n": 26,
+     "mean": 2.430067155067155,
+     "sd": 0.38345673697553717,
+     "sem": 0.07520205324834155
+    },
+    "unclaimed_value_added_per_ply_structural": {
+     "n": 26,
+     "mean": 2.1699023199023197,
+     "sd": 0.3717559216200976,
+     "sem": 0.07290733456286722
+    }
+   },
+   "champion": {
+    "buildup_ply_share": {
+     "n": 26,
+     "mean": 0.9397741147741148,
+     "sd": 0.054043983712473306,
+     "sem": 0.010598897213161233
+    },
+    "buildup_ply_share_structural": {
+     "n": 26,
+     "mean": 0.7786324786324786,
+     "sd": 0.06447099424831482,
+     "sem": 0.012643802220495595
+    },
+    "conversion_self": {
+     "n": 26,
+     "mean": 0.108555638981047,
+     "sd": 0.0445884168965891,
+     "sem": 0.008744507993689157
+    },
+    "feed_opp": {
+     "n": 26,
+     "mean": 0.08470642675857633,
+     "sd": 0.043344247801060304,
+     "sem": 0.00850050635921568
+    },
+    "never_claimed": {
+     "n": 26,
+     "mean": 0.7145625196330803,
+     "sd": 0.0607617179357121,
+     "sem": 0.011916353285908335
+    },
+    "conversion_self_structural": {
+     "n": 26,
+     "mean": 0.15514327617758697,
+     "sd": 0.07295560786526863,
+     "sem": 0.014307771851193385
+    },
+    "feed_opp_structural": {
+     "n": 26,
+     "mean": 0.11326586591107399,
+     "sd": 0.053758449940507116,
+     "sem": 0.010542899433351795
+    },
+    "points_per_buildup_touch_self": {
+     "n": 26,
+     "mean": 0.15808493739531204,
+     "sd": 0.04688376410926787,
+     "sem": 0.009194662617839919
+    },
+    "points_per_buildup_touch_opp": {
+     "n": 26,
+     "mean": 0.1579592976998103,
+     "sd": 0.04940804723971268,
+     "sem": 0.009689715269377272
+    },
+    "net_points_per_buildup_touch": {
+     "n": 26,
+     "mean": 0.0001256396955017413,
+     "sd": 0.07081292283257143,
+     "sem": 0.013887556743762377
+    },
+    "points_per_buildup_touch_self_structural": {
+     "n": 26,
+     "mean": 0.2377936844580704,
+     "sd": 0.09604863860876668,
+     "sem": 0.018836687789235487
+    },
+    "points_per_buildup_touch_opp_structural": {
+     "n": 26,
+     "mean": 0.2003716044725486,
+     "sd": 0.08354418770830536,
+     "sem": 0.01638436320661183
+    },
+    "net_points_per_buildup_touch_structural": {
+     "n": 26,
+     "mean": 0.03742207998552178,
+     "sd": 0.13910513797147878,
+     "sem": 0.027280762036830268
+    },
+    "feed_claimed_share": {
+     "n": 26,
+     "mean": 0.03267018483641899,
+     "sd": 0.02463594969842311,
+     "sem": 0.004831507240313451
+    },
+    "unclaimed_value_added_per_ply": {
+     "n": 26,
+     "mean": 2.0254578754578754,
+     "sd": 0.22405737970821094,
+     "sem": 0.04394126735756291
+    },
+    "unclaimed_value_added_per_ply_structural": {
+     "n": 26,
+     "mean": 1.8248168498168498,
+     "sd": 0.20092097822444543,
+     "sem": 0.039403845717561475
+    }
+   }
+  },
+  "paired_human_minus_champion": {
+   "buildup_ply_share": {
+    "n": 26,
+    "mean": 0.02496947496947497,
+    "sd": 0.05597898985401467,
+    "sem": 0.010978383139108976,
+    "z": 2.2744218937417715
+   },
+   "buildup_ply_share_structural": {
+    "n": 26,
+    "mean": 0.07909035409035406,
+    "sd": 0.10446228011646055,
+    "sem": 0.020486738644162613,
+    "z": 3.8605634339407002
+   },
+   "conversion_self": {
+    "n": 26,
+    "mean": -0.01412697285960792,
+    "sd": 0.07610732974636684,
+    "sem": 0.014925875365544815,
+    "z": -0.9464753331800494
+   },
+   "feed_opp": {
+    "n": 26,
+    "mean": 0.01852498969213917,
+    "sd": 0.057659633003080045,
+    "sem": 0.011307984378050143,
+    "z": 1.6382220803291796
+   },
+   "never_claimed": {
+    "n": 26,
+    "mean": -0.006784751363107799,
+    "sd": 0.07104062968752205,
+    "sem": 0.013932213732099763,
+    "z": -0.4869830088434374
+   },
+   "conversion_self_structural": {
+    "n": 26,
+    "mean": -0.038426388672535644,
+    "sd": 0.09507418703457818,
+    "sem": 0.01864558211262632,
+    "z": -2.060884366088751
+   },
+   "feed_opp_structural": {
+    "n": 26,
+    "mean": 0.019442209359713705,
+    "sd": 0.07749837526771343,
+    "sem": 0.015198681836992587,
+    "z": 1.2792036551744015
+   },
+   "points_per_buildup_touch_self": {
+    "n": 26,
+    "mean": 0.002373900243772394,
+    "sd": 0.0823361042789357,
+    "sem": 0.016147438553519366,
+    "z": 0.14701404411011046
+   },
+   "points_per_buildup_touch_opp": {
+    "n": 26,
+    "mean": -0.00858160172165088,
+    "sd": 0.0737399797460715,
+    "sem": 0.014461599832967511,
+    "z": -0.5934061114101468
+   },
+   "net_points_per_buildup_touch": {
+    "n": 26,
+    "mean": 0.010955501965423275,
+    "sd": 0.11877438727748613,
+    "sem": 0.023293573786266477,
+    "z": 0.4703229339536755
+   },
+   "points_per_buildup_touch_self_structural": {
+    "n": 26,
+    "mean": -0.04023586179968964,
+    "sd": 0.14528224758951302,
+    "sem": 0.02849219290144405,
+    "z": -1.4121714653156932
+   },
+   "points_per_buildup_touch_opp_structural": {
+    "n": 26,
+    "mean": 0.0005372753991941995,
+    "sd": 0.12496821309738558,
+    "sem": 0.02450828296778425,
+    "z": 0.021922196667161036
+   },
+   "net_points_per_buildup_touch_structural": {
+    "n": 26,
+    "mean": -0.040773137198883834,
+    "sd": 0.21257284285348227,
+    "sem": 0.041688964375761486,
+    "z": -0.9780319038721401
+   },
+   "feed_claimed_share": {
+    "n": 26,
+    "mean": 0.012529173933791455,
+    "sd": 0.033308727661783374,
+    "sem": 0.006532378935399277,
+    "z": 1.9180108897074626
+   },
+   "unclaimed_value_added_per_ply": {
+    "n": 26,
+    "mean": 0.4046092796092796,
+    "sd": 0.4823407076831403,
+    "sem": 0.09459479541063406,
+    "z": 4.277289018416701
+   },
+   "unclaimed_value_added_per_ply_structural": {
+    "n": 26,
+    "mean": 0.3450854700854701,
+    "sd": 0.4642241999260325,
+    "sem": 0.09104185592710916,
+    "z": 3.7904046064455876
+   }
+  },
+  "feature_base_rates": {
+   "n_features": 2190,
+   "by_terrain": {
+    "city": 465,
+    "road": 676,
+    "cloister": 364,
+    "farm": 685
+   },
+   "ever_claimed": 677,
+   "never_claimed": 1513,
+   "never_claimed_by_terrain": {
+    "city": 169,
+    "road": 445,
+    "cloister": 291,
+    "farm": 608
+   },
+   "points_total": 4994,
+   "points_through_unclaimed_buildup": 1467.9331815026735,
+   "value_left_on_never_claimed": 3250,
+   "claim_rate": 0.3091324200913242,
+   "points_share_through_unclaimed_buildup": 0.29393936353677885,
+   "tiles_before_first_claim": {
+    "n": 677,
+    "mean": 2.0029542097488924,
+    "median": 1,
+    "share_zero": 0.24519940915805022,
+    "share_ge2": 0.36927621861152143,
+    "p90": 4
+   }
+  },
+  "claim_race": {
+   "n": 610,
+   "builder_won": 211,
+   "tie": 205,
+   "builder_lost": 194,
+   "n_struct": 563,
+   "builder_won_struct": 191,
+   "tie_struct": 196,
+   "builder_lost_struct": 176,
+   "builder_won_share_decided": 0.5209876543209877,
+   "builder_won_share_decided_structural": 0.5204359673024523,
+   "n_decided": 405,
+   "n_decided_structural": 367,
+   "z_vs_half": 0.8447367914999205,
+   "z_vs_half_structural": 0.7829936264578209
+  }
+ },
+ "caveats": [
+  "descriptive only: 0 games played, no results.csv row, no band, no claim id",
+  "outcome-conditioned selection: buildup->claim conversion CANNOT be read causally",
+  "one human, 26 games, 3 rules epochs; headline is the fixed_v1 epoch (n=23)",
+  "buildup is classified by the CONTEMPORANEOUS component's claim state; fate is the FINAL merged feature"
+ ]
+}
