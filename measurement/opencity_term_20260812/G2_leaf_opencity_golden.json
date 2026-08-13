@@ -1,0 +1,136 @@
+{
+  "gate": "G2/leaf",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "3ef376e-dirty",
+    "utc": "2026-08-13T02:27:01Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/tmp/claude-1000/-home-doctor-projects-carcassone/b2ef0f0c-c7c7-4ee1-9f16-3674106c41cb/scratchpad/rswheel/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "corpus": [
+      "golden"
+    ],
+    "configs": "opencity",
+    "limit": null,
+    "stride": 8,
+    "workers": 4,
+    "bench": 0,
+    "bench_repeats": 200,
+    "out": "/home/doctor/projects/carcassone/.claude/worktrees/agent-ab064d6a0511aa6e1/measurement/opencity_term_20260812/G2_leaf_opencity_golden.json"
+  },
+  "leaf_of_record": {
+    "leaf": "v2_9_2_Bmild_cap8_curve125",
+    "leaf_hash": "a36d2e15a3b3d71d",
+    "curve125": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ],
+    "bonus_cap": 8.0,
+    "opp_bonus_cap": 8.0,
+    "closure_p": {
+      "1": 0.5,
+      "2": 0.2,
+      "3": 0.05
+    },
+    "source": "governance/PRODUCTION.yaml champion.leaf_config"
+  },
+  "configs": [
+    "opencity-d0-identity",
+    "opencity-d0.5",
+    "opencity-d1.0",
+    "opencity-d1.0-asym",
+    "opencity-d2.0-s6-e3",
+    "prod-curve125",
+    "v27",
+    "v28",
+    "v29"
+  ],
+  "legs": [
+    "carcassonne_ai.flat_leaf (USE_CY_LEAF=False)",
+    "carcassonne_ai.flat_leaf_cy (direct)",
+    "carc_rs.MirrorState.leaf_value{,_float}"
+  ],
+  "checks_per_position": [
+    "flat_base_score x4 routes",
+    "leaf int (py|cy|rust)",
+    "leaf float bit-exact (py|cy|rust)"
+  ],
+  "per_corpus": {
+    "golden": {
+      "positions": 1737,
+      "plies": 1725,
+      "values_compared": 76428,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 6948,
+        "v27": 6948,
+        "v28": 6948,
+        "v29": 6948,
+        "opencity-d0-identity": 6948,
+        "opencity-d0.5": 6948,
+        "opencity-d1.0": 6948,
+        "opencity-d2.0-s6-e3": 6948,
+        "opencity-d1.0-asym": 6948
+      },
+      "mismatches": 0
+    },
+    "golden_disk": {
+      "positions": 56,
+      "plies": 1725,
+      "values_compared": 0,
+      "disk_values_compared": 448,
+      "by_config": {
+        "v27": 112,
+        "v28": 112,
+        "v29": 112
+      },
+      "mismatches": 0
+    }
+  },
+  "cy_unsupported_configs": [
+    "opencity-d0.5",
+    "opencity-d1.0",
+    "opencity-d1.0-asym",
+    "opencity-d2.0-s6-e3"
+  ],
+  "knockout_bites": {
+    "opencity-d0.5": {
+      "values_compared": 3474,
+      "values_changed_vs_champion": 762,
+      "frac_changed": 0.2193
+    },
+    "opencity-d1.0": {
+      "values_compared": 3474,
+      "values_changed_vs_champion": 762,
+      "frac_changed": 0.2193
+    },
+    "opencity-d2.0-s6-e3": {
+      "values_compared": 3474,
+      "values_changed_vs_champion": 0,
+      "frac_changed": 0.0
+    },
+    "opencity-d1.0-asym": {
+      "values_compared": 3474,
+      "values_changed_vs_champion": 521,
+      "frac_changed": 0.15
+    }
+  },
+  "total_values_compared": 76876,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "wallclock_s": 10.451424386001236
+}

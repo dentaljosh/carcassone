@@ -93,6 +93,11 @@ def leaf_score_float(state, player: int, cfg) -> float:
     # byte-identical). Calls the SHARED flat_leaf helper, does not re-implement.
     if getattr(cfg, "denial_dose", 0.0) != 0.0:
         score -= cfg.denial_dose * flat_leaf.flat_denial_term(state, player, decomp, cfg)
+    # Open-city discipline — signed, uncapped, dose-gated early branch applied AFTER
+    # denial in the same fixed order as flat_virtual_score_v2 (dose 0.0 == champion,
+    # byte-identical). Calls the SHARED flat_leaf helper, does not re-implement.
+    if getattr(cfg, "opencity_dose", 0.0) != 0.0:
+        score -= cfg.opencity_dose * flat_leaf.flat_opencity_term(state, player, decomp, cfg)
     curve = cfg.v29_meeple_curve
     if curve is not None:
         # Part C phase multiplier: beta == 0.0 (default/champion) keeps the

@@ -1078,6 +1078,108 @@ def flat_denial_term(state, player: int, decomp: Decomp, cfg) -> float:
     return math.fsum(contribs)
 
 
+def flat_opencity_term(state, player: int, decomp: Decomp, cfg) -> float:
+    """OPEN-CITY DISCIPLINE — penalize LARGE cities that are still WIDE OPEN
+    (BACKLOG 2026-05-16; LEVER_INDEX "penalize large open cities"; the flagged
+    NEVER-TRIED leaf term, externally endorsed by
+    docs/research/PRO_STRATEGY_SCAN_2026-08-12.md §F1; spec
+    measurement/opencity_term_20260812/TERM_SPEC.md, building 2026-08-12).
+
+    Returns the SIGNED differential ``T`` from `player`'s POV; the leaf subtracts
+    ``cfg.opencity_dose * T``. ``T`` is ``pen(player) - pen(opp)`` when
+    ``cfg.opencity_symmetric`` (the default — the leaf stays antisymmetric, so
+    ``T`` may be NEGATIVE when the opponent is the more overextended builder), or
+    ``pen(player)`` alone when it is False (own-side-only ablation, which breaks
+    antisymmetry exactly the way ``denial_dose`` already does).
+
+    ``pen(pl) >= 0`` sums, over every city component where ALL of:
+
+      * ``pl`` HOLDS A STRICT MAJORITY — weighted meeple counts (big meeple = 2,
+        the `_final_scores` semantics) with ``counts[pl] > counts[other]``. This
+        is the builder-discipline scope: the term prices *the exploitable object
+        you built*, never the opponent's (static opponent-side denial is the
+        adjacent lever that measured harmful at the 2750 instrument and
+        bounded-null at deploy — CL-079 — and the champion's SEARCH already
+        finds denial emergently). A TIED city never fires (nobody "owns" the
+        overextension); an unmeepled city never fires (no committed stake).
+      * INCOMPLETE AND CLOSABLE: ``0 < open_n`` (`city_root_open_n`, the same
+        distinct-empty-adjacent-cell count the closure schedule keys on; the D16
+        ``open_n == 0`` board-edge city can never close, and a city you cannot
+        finish is a *scoring* problem the base term already prices, not an
+        exposure problem).
+      * WIDE: ``open_n >= cfg.opencity_edge_min`` — the guides' converged rule
+        ("prefer one open edge, tolerate two, avoid three") is the default 2.
+      * LARGE: ``tiles >= cfg.opencity_size_min``, where ``tiles`` is the count of
+        DISTINCT TILES the component spans (``len(city_root_coords[root])``).
+        ⚠️ TILES, not points — deliberately NOT `city_root_delta` (denial's axis).
+        The F1 mechanism is that the marginal tile earns the same 2 points in a
+        big city as in a small one while adding all of the completion and
+        steal/merge risk, so the exposure scales with the object's EXTENT.
+
+    Each qualifying city contributes
+    ``(tiles - opencity_size_min + 1) * (open_n - opencity_edge_min + 1)`` —
+    linear escalation on both axes, exactly 1.0 at the joint threshold corner.
+    Per-side contributions are fsum-reduced (order-independent), mirrored
+    bit-exactly by the Rust `carc_core::leaf::opencity_term`.
+
+    ⚠️ The term ADJUSTS, it never REPLACES: the closure-anticipation credit the
+    same city earns through `flat_closure_bonus` is untouched, and this
+    subtraction is applied separately (and uncapped) on top of it — the two are
+    deliberately independent so a dose sweep moves only the risk price."""
+    board = state.board
+    city_counts: dict = {}   # city root -> [w_p0, w_p1] weighted meeple counts
+    for pl in (0, 1):
+        for mp in state.placed_meeples[pl]:
+            cws = mp.coordinate_with_side
+            r = cws.coordinate.row
+            c = cws.coordinate.column
+            side = cws.side
+            if board[r][c].get_type(side) != TerrainType.CITY:
+                continue
+            root = decomp.city_side_root.get((r, c, side))
+            if root is None:
+                continue
+            ent = city_counts.get(root)
+            if ent is None:
+                ent = [0, 0]
+                city_counts[root] = ent
+            ent[pl] += _meeple_weight(mp.meeple_type)
+    size_min = cfg.opencity_size_min
+    edge_min = cfg.opencity_edge_min
+    contribs: list = [[], []]            # per-player penalty contributions
+    for root, cnt in city_counts.items():
+        if cnt[0] > cnt[1]:
+            owner = 0
+        elif cnt[1] > cnt[0]:
+            owner = 1
+        else:
+            continue                     # tied -> nobody owns the overextension
+        if decomp.city_root_finished[root]:
+            continue
+        open_n = decomp.city_root_open_n[root]
+        if open_n <= 0 or open_n < edge_min:   # unclosable, or not wide
+            continue
+        tiles = len(decomp.city_root_coords[root])
+        if tiles < size_min:             # not large
+            continue
+        contribs[owner].append(
+            (float(tiles) - size_min + 1.0) * (float(open_n) - float(edge_min) + 1.0))
+    pen_self = math.fsum(contribs[player])
+    if not cfg.opencity_symmetric:
+        return pen_self
+    return pen_self - math.fsum(contribs[1 - player])
+
+
+def _opencity_off(cfg) -> bool:
+    """True iff open-city discipline is OFF (dose 0.0) — then the cy route is
+    bit-exact. Like the F7b knockouts and the denial term there is deliberately NO
+    cy implementation (candidate cells run `--backend rust`, where no Python leaf
+    is computed at all), so a SET dose ALWAYS leaves the cy fast path for the pure-
+    Python flat leaf: bit-exact (scripts/rustport/reconcile_leaf.py `--configs
+    opencity` against Rust) but far slower per leaf."""
+    return getattr(cfg, "opencity_dose", 0.0) == 0.0
+
+
 def _denial_off(cfg) -> bool:
     """True iff the targeted-denial term is OFF (dose 0.0) — then the cy route is
     bit-exact. Like the F7b knockouts there is deliberately NO cy implementation
@@ -1169,7 +1271,8 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
                 and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
                 and _farm_knockout_off(cfg)
-                and _denial_off(cfg)):
+                and _denial_off(cfg)
+                and _opencity_off(cfg)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
@@ -1191,6 +1294,14 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     # byte-identical, not merely equal.
     if getattr(cfg, "denial_dose", 0.0) != 0.0:
         score -= cfg.denial_dose * flat_denial_term(state, player, decomp, cfg)
+    # Open-city discipline: a SIGNED, uncapped subtraction applied AFTER denial (two
+    # separate gated statements in this fixed order — float addition is
+    # non-associative, so a fused expression would break 3-way bit-exactness). It
+    # ADJUSTS the city terms, never replaces them. dose == 0.0 (default/champion)
+    # takes an early branch — never a subtract of 0.0 — so default traffic is
+    # byte-identical, not merely equal.
+    if getattr(cfg, "opencity_dose", 0.0) != 0.0:
+        score -= cfg.opencity_dose * flat_opencity_term(state, player, decomp, cfg)
     if curve is not None:
         # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term
         # (== leaf_v29._meeple_curve_term; the object path adds it in apply_v29).
@@ -1264,7 +1375,8 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                 and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
                 and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
                 and _farm_knockout_off(cfg)
-                and _denial_off(cfg)):
+                and _denial_off(cfg)
+                and _opencity_off(cfg)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
     if state.players != 2:
@@ -1282,6 +1394,10 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
     # Targeted denial — uncapped, dose-gated early branch (see the int sibling).
     if getattr(cfg, "denial_dose", 0.0) != 0.0:
         score -= cfg.denial_dose * flat_denial_term(state, player, decomp, cfg)
+    # Open-city discipline — signed, uncapped, dose-gated early branch, applied
+    # AFTER denial in this fixed order (see the int sibling).
+    if getattr(cfg, "opencity_dose", 0.0) != 0.0:
+        score -= cfg.opencity_dose * flat_opencity_term(state, player, decomp, cfg)
     if curve is not None:
         if cfg.v29_phase_beta == 0.0:   # Part C: early branch == byte-identical default
             score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])

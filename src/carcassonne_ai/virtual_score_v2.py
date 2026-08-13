@@ -258,6 +258,60 @@ class LeafConfig:
     denial_dose: float = 0.0
     denial_size_min: float = 8.0
     denial_open_max: int = 2
+    # --- OPEN-CITY DISCIPLINE — penalize the ACTING PLAYER'S OWN large open cities
+    # (candidate-only; BACKLOG 2026-05-16 / LEVER_INDEX "penalize large open cities" —
+    # the flagged NEVER-TRIED leaf term, externally endorsed 2026-08-12 by four
+    # independent strategy guides, docs/research/PRO_STRATEGY_SCAN_2026-08-12.md §F1;
+    # spec measurement/opencity_term_20260812/TERM_SPEC.md, building 2026-08-12) -------
+    # Mechanism (F1): city scoring gives NO per-tile size bonus (2/tile + 2/shield
+    # whether the city is 2 tiles or 12) while completion probability FALLS and
+    # steal/merge exposure RISES with every open edge. The champion's leaf prices a
+    # city's anticipated value (`closure_p[open_n] * city_root_delta`) but never its
+    # RISK, so a big wide-open city reads as an asset when a strong human reads it as
+    # a liability. For each city where the side holds a STRICT weighted-meeple
+    # majority, is INCOMPLETE, has `0 < open_n` open cells with `open_n >=
+    # opencity_edge_min`, and spans `tiles >= opencity_size_min` DISTINCT TILES, the
+    # penalty is
+    #     (tiles - opencity_size_min + 1) * (open_n - opencity_edge_min + 1)
+    # (linear escalation on BOTH axes; exactly 1 at the joint threshold corner). The
+    # leaf subtracts `opencity_dose * T`, where T is the SIGNED differential
+    # `pen(self) - pen(opp)` (symmetric, the default) or `pen(self)` alone
+    # (asymmetric). ⚠️ The penalty ADJUSTS the existing city terms, it never replaces
+    # them: the closure-anticipation credit for the same city is untouched.
+    #   opencity_dose:      float, 0.0 (default) == term fully off == today's leaf,
+    #                       via an early branch (never a subtract of 0.0).
+    #   opencity_size_min:  city SIZE threshold in DISTINCT TILES. ⚠️ NOT the same
+    #                       units as `denial_size_min`, which is in POINTS
+    #                       (`city_root_delta`). Tiles is the F1 axis: the marginal
+    #                       tile of a big city earns the same 2 points as the
+    #                       marginal tile of a small one while adding all the risk,
+    #                       so the mechanism is about the OBJECT's extent, not its
+    #                       value.
+    #   opencity_edge_min:  minimum distinct open (empty-adjacent) cells for the
+    #                       penalty to fire — the same `open_n` the closure schedule
+    #                       keys on. Default 2 encodes the guides' converged rule
+    #                       ("prefer one open edge, tolerate two, avoid three"):
+    #                       1-open never fires, 2-open weighs 1, 3-open weighs 2.
+    #   opencity_symmetric: True (default) -> T = pen(self) - pen(opp), which keeps
+    #                       the leaf ANTISYMMETRIC (`V(s,p) == -V(s,1-p)`) the way
+    #                       every other structural term is. False -> T = pen(self)
+    #                       only, an own-side-only penalty that breaks antisymmetry
+    #                       (the way `denial_dose` already does) — kept as an
+    #                       explicit ablation, not a default.
+    # ⚠️ FLAT PATH ONLY. `flat_leaf.py` and the Rust leaf implement it; the object
+    # (engine) path FAILS LOUD below, and `flat_leaf_cy.pyx` deliberately does NOT
+    # implement it (the F7b/denial pattern: candidate cells run `--backend rust`,
+    # where no Python leaf is computed), so a SET dose routes off the cy fast path to
+    # the bit-exact pure-Python flat leaf.
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg
+    # recipe (snapshot._frozen_config_hash + its mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE at their
+    # defaults, so 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
+    # A candidate that SETS a dose shifts the hash (it is a different leaf — intended).
+    opencity_dose: float = 0.0
+    opencity_size_min: float = 4.0
+    opencity_edge_min: int = 2
+    opencity_symmetric: bool = True
 
 
 def _config_from_env() -> LeafConfig:
@@ -314,6 +368,12 @@ def _config_from_env() -> LeafConfig:
         denial_dose=float(os.environ.get("CARCASSONNE_DENIAL_DOSE", "0.0")),
         denial_size_min=float(os.environ.get("CARCASSONNE_DENIAL_SIZE_MIN", "8.0")),
         denial_open_max=int(os.environ.get("CARCASSONNE_DENIAL_OPEN_MAX", "2")),
+        # Open-city discipline — default 0.0 == term fully off == unchanged production
+        # DEFAULT_CONFIG (the phase-beta / denial pattern: env-buildable candidate knob).
+        opencity_dose=float(os.environ.get("CARCASSONNE_OPENCITY_DOSE", "0.0")),
+        opencity_size_min=float(os.environ.get("CARCASSONNE_OPENCITY_SIZE_MIN", "4.0")),
+        opencity_edge_min=int(os.environ.get("CARCASSONNE_OPENCITY_EDGE_MIN", "2")),
+        opencity_symmetric=(os.environ.get("CARCASSONNE_OPENCITY_SYMMETRIC", "1") == "1"),
     )
 
 
@@ -778,6 +838,14 @@ def virtual_score_v2(
         raise NotImplementedError(
             "LeafConfig.denial_dose (targeted denial) requires the flat leaf path "
             "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
+        )
+    if getattr(cfg, "opencity_dose", 0.0) != 0.0:
+        # Open-city discipline is flat-path ONLY (see LeafConfig.opencity_dose) —
+        # fail loudly rather than silently scoring WITHOUT the penalty here, which
+        # would read as "the term is worth nothing" instead of "the term never ran".
+        raise NotImplementedError(
+            "LeafConfig.opencity_dose (open-city discipline) requires the flat leaf "
+            "path (set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
         )
     if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
         # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC

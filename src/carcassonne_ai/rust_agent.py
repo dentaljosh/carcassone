@@ -108,6 +108,18 @@ def leaf_config_rs(leaf_cfg):
             denial_size_min=float(leaf_cfg.denial_size_min),
             denial_open_max=int(leaf_cfg.denial_open_max),
         )
+    # Open-city discipline: same conditional-keyword rule as targeted denial above —
+    # a carc_rs build predating the term keeps serving every default-off (champion)
+    # config unchanged, while a NONZERO dose against the stale build raises TypeError
+    # (fail-closed loud, never a silently-intact leaf).
+    opencity = {}
+    if float(getattr(leaf_cfg, "opencity_dose", 0.0)) != 0.0:
+        opencity = dict(
+            opencity_dose=float(leaf_cfg.opencity_dose),
+            opencity_size_min=float(leaf_cfg.opencity_size_min),
+            opencity_edge_min=int(leaf_cfg.opencity_edge_min),
+            opencity_symmetric=bool(leaf_cfg.opencity_symmetric),
+        )
     return carc_rs.LeafConfigRs(
         sorted((int(k), float(v)) for k, v in leaf_cfg.closure_p.items()),
         float(leaf_cfg.bonus_cap),
@@ -126,6 +138,7 @@ def leaf_config_rs(leaf_cfg):
         float(getattr(leaf_cfg, "v29_phase_beta", 0.0)),
         float(getattr(leaf_cfg, "v29_phase_norm", 1.0)),
         **denial,
+        **opencity,
     )
 
 
