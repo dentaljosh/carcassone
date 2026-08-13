@@ -76,6 +76,11 @@ autopsy census `../e4_autopsy_20260812/CENSUS.md`.
 > an open city is worth half as many points and it locks up the meeple. so its smart to
 > sacrifice the 1 or 2 points the tile adds to my score.
 
+### Addendum (same session, follow-up)
+
+> what about something else for unclaimed features. if you suspect you have a high chance
+> of claiming later, even if you can't now. makes sense to build it up
+
 ---
 
 ## 2. Structured extraction — strategy elements → mechanisms
@@ -94,6 +99,7 @@ autopsy census `../e4_autopsy_20260812/CENSUS.md`.
 | J10 | went less farm-aggressive early-game after the first few games; counts cities late and surrenders low-value farms | **anchor shift** — see §4 | E4_UPDATE §6 farm-anomaly collapse | version the bot: "early-epoch Joshua" (farm-aggressive) vs "current" |
 | J11 | champion's late new farms close 2–3 cities around them and surprise him | (champion strength — defensive info) | item-1 farm-norm replay | — |
 | J12 | champion adds tiles to HIS city to prevent closing (halves value + locks meeple) — he rates it smart | (champion behavior) — **emergent denial via search** | the denial LEAF term measured harmful/null — see §4 | — |
+| J13 | build up unclaimed features you have a high chance of claiming LATER, even if you can't claim now | **prospective-claim-weighted unclaimed-feature value** — the leaf prices unclaimed features at ZERO for everyone (verified: owner-gated credit only) | J5 is the same signed weight's defensive side; the tile-tie ≈53% blind class (buildup moves change ~no current term) | credit unclaimed V(f) × (P_self(claim) − P_opp(claim)); P from remaining extension tiles (legal multiset) + both reserves |
 
 ## 3. Owner policy — assists are IN-SCOPE for the E4 reference (captured verbatim)
 
