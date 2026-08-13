@@ -5580,7 +5580,11 @@ was already met. ⚠️ **Correction to the overnight STATUS line:** the prelimi
 said n ≈ 872 — that figure came from `readout_stageA_partial_walled/` (n = 284) and is superseded;
 **896 is the number of record**, and the partial read-out is now banner-marked DO-NOT-CITE.
 
-**⚠️ OPEN — an owner ruling is owed (Joshua), recorded here so it cannot be lost.** The
+**⚠️ ~~OPEN~~ → ✅ RULED SAME DAY 2026-08-13 — see the "TWO POST-HOC OWNER RULINGS" entry at the
+end of this file. Outcome: the defect is CONFIRMED and fixed PROSPECTIVELY ONLY (§4.4-A, banner
+`⚠️ PROSPECTIVE ONLY — DOES NOT APPLY TO THE 2026-08-13 RUNS`). The finished runs STAND AS
+ADJUDICATED — Stage A = branch 4, pooled A+B = branch 4; nothing re-read, nothing re-labelled, and
+the substantive finding is label-independent. The paragraph is left as written for the record.** The
 pre-registration's **§4.4 branch 3 is logically unreachable**: its condition is
 `sigma2_arm CI excludes 0 AND elo(headroom_CI_hi) < +17`, whose second conjunct **is branch 1's
 entire condition**, so under the stated first-match-wins precedence branch 3 can never fire. This is
@@ -5618,6 +5622,14 @@ nothing promoted, `governance/PRODUCTION.yaml` untouched.
 **Phase:** measurement-first
 
 ## 2026-08-13 — E4 full-corpus loss-mode autopsy: NO CONVICTION ANYWHERE. All five strata lean the human's way, none resolves, and the prescribed next step is ~16 more E4 GAMES — not more compute
+
+> ⚠️ **AMENDED SAME DAY BY THE POST-HOC OWNER RULINGS ENTRY (end of this file, 2026-08-13).** The
+> heading's **"~16 more E4 GAMES" is SUPERSEDED → ⭐ ≈ +55 (range +55…+284)**. The +16 was an
+> *expected-z = 2* (**50%-power**) figure with a normal critical value; recomputed at 80% power with
+> a `t` critical value on the same realized clustered statistics it is +55, and +284 at half the
+> observed effect. **Everything else in this entry stands unchanged — no result was re-read or
+> re-labelled**; the clustered reading was affirmed primary, so DEG is *genuinely unresolved*, not
+> "just missed." The heading is left as originally written so history stays legible.
 
 **Context.** *"we need ideas. i'm beating the agent."* Over the `fixed_v1` epoch the production
 champion (PIMC k8×1376 = 11,008 sims/move, leaf hash `a36d2e15a3b3d71d`, exact-K2 endgame, rust) is
@@ -5700,7 +5712,10 @@ games.** FARM needs ~90 (+67); CITY/ROAD/CLOISTER are hundreds to thousands and 
 **Games are the binding resource, not compute** — re-scoring the same corpus harder cannot fix this,
 which is exactly what §8 pre-registered.
 
-**⚠️ OPEN — an owner ruling is owed (Joshua), recorded here so it cannot be lost.** The
+**⚠️ ~~OPEN~~ → ✅ RULED SAME DAY 2026-08-13 — see the "TWO POST-HOC OWNER RULINGS" entry at the
+end of this file. Outcome: the CLUSTERED reading is primary ⇒ DEG is GENUINELY UNRESOLVED, not
+"just missed"; nothing was re-read; and the "+16 games" below is superseded by ≈ +55 (range
++55…+284). The paragraph is left as written for the record.** The
 pre-registration is internally inconsistent about which SE binds: **§6 sized every stratum off an
 assumed naive sd = 4.445 pts with no design effect priced in** (and that sd was itself back-derived
 from the farm-war run's *cluster-robust* se, `0.970·√21`), **while §8 read rule 3 makes the
@@ -5870,4 +5885,127 @@ is a byte-identical no-op; the champion leaf `a36d2e15a3b3d71d` is unchanged and
 so nothing has to be un-shipped. Reversing the *verdict's scope* costs one fresh band and one
 pre-registered deploy-budget cell (~800 games ≈ one laptop-night at W22) on arm C or a capped form.
 Reversing the arm-A numbers themselves is not on offer at any n — they are resolved.
+**Phase:** measurement-first (Phase 4 era; strength levers, classical champion).
+
+## 2026-08-13 — TWO POST-HOC OWNER RULINGS (tile-tie branch 3 · autopsy power/interval): both applied as PAPERWORK ONLY, NO FINISHED RESULT RE-READ — and the autopsy's re-open bar is recomputed from ~16 games to **≈ +55** (range +55…+284)
+
+**Context.** Joshua ruled on the two items the 2026-08-13 close-out left open ("i'll take your
+recs"). Both rulings are recorded here as **dated, post-hoc, and explicitly non-retroactive**.
+Neither one re-reads, re-scores or re-labels any finished result. That constraint is the whole
+point: re-reading a concluded run under a rule rewritten *after* seeing the number is the forking
+path behind this project's four confirmed winner's-curse instances (the it16 crest, `intrareuse`
++40.1 → +16.2, the β = +0.3 sign flip to −8.7 at 4× n, and the tile-tie run's own naive range
++2.87 vs honest cross-fit +0.53). A malformed decision rule is worth fixing; it is never worth
+re-adjudicating a banked number with.
+
+### RULING 1 — tile-tie prereg §4.4 branch 3 is malformed. Fixed PROSPECTIVELY ONLY.
+
+**The defect.** `measurement/tiletie_pricing_20260812/DESIGN.md` §4.4's table is
+**first-match-wins**, and branch 3's condition is
+`sigma2_arm CI excludes 0 AND elo(headroom_CI_hi) < +17` — whose **second conjunct is branch 1's
+entire condition**. Branch 1 therefore always fires first and **branch 3 is logically
+unreachable**. It was meant to express the narrower reading *"the leaf is blind but the search
+already compensates"*. The analyser caught this at read time, honoured the literal precedence
+rather than silently re-ordering a pre-registered rule, and emitted `branch_3_condition_also_met`
+(= `False`, alongside `spread_ci_excludes_zero` = `True`) plus interpretation **I4**. That was the
+correct handling and is why this is a paperwork fix.
+
+**(a) THE FINISHED RUNS STAND AS ADJUDICATED — nothing is re-read.** Stage A = **branch 4**.
+Pooled A+B (`readout_POOLED/`) = **branch 4**. No result is re-labelled under the amended table,
+and none ever may be.
+
+**(b) The table is repaired for successors only.** `DESIGN.md` gains **§4.4-A AMENDMENT 2**,
+carrying a `⚠️ PROSPECTIVE ONLY — DOES NOT APPLY TO THE 2026-08-13 RUNS` banner. Precedence
+becomes **3′ → 1′ → 2 → 4**, and — the actual fix — the conditions are rewritten to be **mutually
+exclusive by construction, not merely ordered**: 3′ = `S ∧ H<17`, 1′ = `¬S ∧ H<17` (the exact
+complement on the spread conjunct), 2 = `L>17` (disjoint, since `L>17 ⇒ H>17`), 4 = the
+complement. Exactly one branch matches every possible read and **the match no longer depends on
+the ordering**; precedence is now presentation, not semantics. The amendment binds any successor
+(a Stage C, or any re-use of this decision map) **only if that successor pre-registers it before
+scoring**, and requires the successor to re-verify the exclusivity property in its own prereg
+text.
+
+**⭐ The substantive finding is label-independent and did not move one digit.** Pooled spread is
+real (**S1a σ²_arm z +4.26**), the headroom is real and positive (**S2 z +3.43**, **+34.5 elo,
+CI [+14.7, +54.7]**), and its **width is unresolved** against the ±17-elo bar. Branch 3 firing or
+not firing changes nothing about what was reported. **Stage B's re-open bar is unchanged and is
+still the supply constraint** (pooled n = 733 of the 896 the ±17-elo sizing wants), not the
+branch label.
+
+### RULING 2 — the autopsy's power/interval inconsistency: the CLUSTERED reading is primary, and the games figure is recomputed
+
+**The defect.** `measurement/e4_autopsy_20260812/DESIGN.md` §6 sized the sample on a **naive sd
+(4.445 pts)** with **no design effect priced in** — and that sd was itself back-derived from the
+farm-war run's *cluster-robust* se, so the sizing double-discounted the very clustering it came
+from — while **§8 read rule 3 (binding)** makes the cluster-robust SE on `game_label` the primary
+interval. **DEG sits exactly in that gap: naive z 2.00 vs cluster z 1.54, design effect 1.69.**
+
+**⚖️ RULING: the CLUSTERED reading is primary.** It is the binding pre-registered rule *and* the
+statistically correct one — plies within one game share a deck, a board and an opponent and are
+not independent draws. ⇒ **DEG is GENUINELY UNRESOLVED, NOT "just missed."** The naive z 2.00
+stays reported (read rule 3 requires it) and may never be quoted as the verdict. §6's sizing
+arithmetic is marked **wrong in method for any successor**: a design whose primary interval is
+cluster-robust must size on a cluster-robust se, in the **cluster** unit. **No published result
+changes** — the run-level branch stays `NO_CONVICTION_ANYWHERE`, every Δ/se/CI/z stands, DEG stays
+NO CONVICTION.
+
+**🔢 THE RE-OPEN SIZING, RECOMPUTED — "~16 more E4 games" is SUPERSEDED.**
+
+⚠️ **Correction to the framing this ruling was requested under, flagged because the artifact wins:**
+the published **+16 was NOT computed off the naive sd.** `VERDICT.json`'s `shortfall_factor` is
+`(2 / z_cluster)² = 1.68835` **exactly**, and `READOUT.md` §9 states the `1/G` assumption in
+prose — so the figure was **already cluster-derived**. The real defects are different, and worse:
+it is an **expected-z = 2** sizing, i.e. **50% power** — a coin flip on whether the realized z ever
+clears the bar — computed with a **normal critical value** where the cluster-robust se is estimated
+from only `G−1 = 22` degrees of freedom.
+
+**Method (stated so it can be checked).** Sampling unit = **GAMES**, because the design effect
+1.688 > 1 means extra plies from the *same* games buy less than `1/n` and a cluster-robust se falls
+like `1/√G`: `se(G′) = 0.54063 · √(23/G′)`. Require `Δ / se(G′) ≥ t₀.₉₇₅,G′₋₁ + z_power`, two-sided
+α = 0.05 per read rule 1. **Assumptions:** new games exchangeable with the 23 realized ones (same
+opponent, same `fixed_v1` epoch, same champion build), same ~3.04 DEG plies/game, and — the fragile
+one — the observed point estimate taken at face value. **Realized inputs, nothing re-derived:**
+Δ = **+0.83214** pts/ply · cluster se **0.54063** · **G = 23** clusters · n = **70** plies ·
+z = **1.5392** · deff **1.688**.
+
+| sizing convention | games total | **more games** |
+|---|---:|---:|
+| expected-z ≥ 2, normal crit — **what the published "+16" used** | 39 | **+16** |
+| expected-z ≥ 2, `t` crit (50% power, corrected) | 40 | +17 |
+| **80% power, `t` crit, at the OBSERVED Δ = 0.832** ⭐ | **78** | **+55** |
+| 80% power, `t` crit, at **HALF** the observed Δ = 0.416 | 307 | **+284** |
+
+⭐ **FIGURE OF RECORD: ≈ +55 more E4 games (≈ 78 total in the `fixed_v1` epoch)** — ≈ **2.5 weeks**
+at the realized ~3.3 games/day (23 games over 2026-08-05 → 08-12), yielding ≈ 167 more DEG plies.
+**That is 3.4× the published +16, and it is said plainly because that is the point of the ruling.**
+
+⚠️ **AND IT IS EFFECT-SIZE-CONDITIONAL AND FRAGILE.** Δ = 0.832 is the **largest of five strata** —
+precisely the winner's-curse shape this project has been burned by four times. **At half the
+observed effect the requirement is +284 games**, ~5× more and out of reach on any realistic play
+schedule. **Quote the range +55…+284**, whose lower end is the optimistic anchor, not the estimate.
+Same recompute for the other strata (80% power, `t`, own observed Δ): **FARM +155 · CITY +799 ·
+ROAD +2001 · CLOISTER +9325** ⇒ **DEG is the only cell even arguably reachable by playing more
+games**, which is itself the useful product. **Not priced into any figure above, and all three push
+it up:** multiplicity across five strata (a z = 2 bar on the max of five is not 2σ evidence), read
+rule 5's selection bias toward 0, and §7's in-family judge.
+
+### What was explicitly NOT done
+
+- **No finished result was re-read, re-scored or re-labelled** on either ruling.
+- Tile-tie: Stage A and pooled A+B both stay **branch 4**; the amended table is prospective-only.
+- Autopsy: run-level branch `NO_CONVICTION_ANYWHERE` unchanged; every stratum keeps its published
+  Δ, se, CI, z and read string; DEG stays **NO CONVICTION**.
+- `VERDICT.json` was **not** mutated — the recompute is an **additive** `post_hoc_owner_ruling_2026_08_13`
+  block, and `resolution_requirement.additional_games = 16` is left in place, unmodified, for the record.
+- `READOUT.md` §9's generated table is left intact with a superseded-banner above the section's
+  numbers (the file is machine-generated; the banner is flagged as the only hand-written text in it).
+- The DECISIONS entry of 2026-08-13 that first published "+16" is **annotated, not rewritten** —
+  history stays legible.
+
+**Governance:** paperwork only. **0 games, no `experiments/results.csv` row, no band, no claim id
+minted, `governance/PRODUCTION.yaml` untouched.** Files touched: both `DESIGN.md`s (amendments),
+`READOUT.md`, `VERDICT.json` (additive block), `STATUS.md`, `docs/LEVER_INDEX.md`,
+`docs/PROGRAM_ROADMAP_2026-07-07.md`, `docs/INDEX.md`, this file.
+**Reversal cost:** nil — nothing was spent and nothing was promoted. Reversing ruling 2's figure
+costs one re-run of the arithmetic against `VERDICT.json`.
 **Phase:** measurement-first (Phase 4 era; strength levers, classical champion).

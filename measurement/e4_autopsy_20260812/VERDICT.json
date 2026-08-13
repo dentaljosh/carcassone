@@ -1823,5 +1823,77 @@
         }
       }
     ]
+  },
+  "post_hoc_owner_ruling_2026_08_13": {
+    "applied_utc_date": "2026-08-13",
+    "nature": "POST-SCORING, NON-RETROACTIVE. Additive block only. NO computed field in this file was modified, removed or recomputed; every Delta, se, CI, z, branch and read string above stands exactly as the analyser emitted it.",
+    "ruling_1_which_se_binds": "AFFIRMED: the cluster-robust SE on game_label is PRIMARY (DESIGN section 8 read rule 3 - the binding pre-registered rule, and the statistically correct one: plies within one game share a deck, board and opponent and are not independent). DEG is GENUINELY UNRESOLVED at cluster z 1.5392, NOT 'just missed'. The naive z 2.0000 is reported as read rule 3 requires and must never be quoted as the verdict. DESIGN section 6's naive-sd sizing (4.445 pts, no design effect priced in) is marked wrong in METHOD for any successor design; it did not affect any published result here.",
+    "ruling_2_reopen_sizing_superseded": {
+      "supersedes": "primary_strata.*.resolution_requirement.additional_games / games_needed_if_1_over_G (left in place, unmodified, for the record)",
+      "why_the_old_figure_is_wrong": "It solves 'expected z >= 2' with a NORMAL critical value. That is a 50%-POWER design - a coin flip on whether the realized z clears the bar - and it uses a normal critical value where the cluster-robust se is estimated from only G-1 = 22 degrees of freedom. NOTE FOR THE RECORD: contrary to a widely-repeated summary, the published figure was NOT computed off the naive sd - shortfall_factor equals (2/z_cluster)^2 exactly, so it was already cluster-derived. The defect is the power convention and the critical value, not the SE.",
+      "method": "Sampling unit = GAMES (design effect 1.688 > 1, so extra plies from the SAME games buy less than 1/n). se(G') = se_cluster_game * sqrt(G/G'). Require Delta / se(G') >= t_{0.975, G'-1} + z_{power}. Two-sided alpha 0.05 per read rule 1.",
+      "assumptions": [
+        "new games exchangeable with the 23 realized ones (same opponent, same fixed_v1 rules epoch, same champion build)",
+        "same ~3.043 DEG plies per game",
+        "the observed point estimate is taken at face value - this is the fragile assumption"
+      ],
+      "realized_inputs": {
+        "stratum": "DEG",
+        "delta_pts": 0.8321428571428572,
+        "se_cluster_game": 0.5406294625642815,
+        "n_game_clusters": 23,
+        "n_plies": 70,
+        "deg_plies_per_game": 3.0434782608695654,
+        "z_cluster": 1.5392110766510703,
+        "design_effect": 1.6882376272879114
+      },
+      "figures": {
+        "published_expected_z2_normal_50pct_power": {
+          "games_total": 39,
+          "additional_games": 16
+        },
+        "expected_z2_t_crit_50pct_power": {
+          "games_total": 40,
+          "additional_games": 17
+        },
+        "power80_t_crit_observed_effect": {
+          "games_total": 78,
+          "additional_games": 55,
+          "is_figure_of_record": true
+        },
+        "power80_t_crit_half_observed_effect": {
+          "games_total": 307,
+          "additional_games": 284
+        }
+      },
+      "figure_of_record": "~ +55 more E4 games (~78 total in the fixed_v1 epoch), ~2.5 weeks at the realized ~3.3 games/day, yielding ~167 more DEG plies.",
+      "fragility": "EFFECT-SIZE-CONDITIONAL. Delta = 0.832 is the LARGEST of five strata - the winner's-curse shape, of which this project has four confirmed instances. If the true effect is half the observed, the requirement is +284 games (~5x). Quote the RANGE +55..+284; the lower end is the optimistic anchor, not the estimate.",
+      "not_priced_in_and_all_push_it_up": [
+        "multiplicity across the five primary strata (a z=2 bar on the max of five is not 2-sigma evidence)",
+        "read rule 5: selection on champion-disagreement biases Delta toward 0",
+        "section 7: the primary judge shares the leaf under test"
+      ],
+      "other_strata_power80_t_observed_additional_games": {
+        "FARM": 155,
+        "CITY": 799,
+        "ROAD": 2001,
+        "CLOISTER": 9325
+      },
+      "other_strata_power80_t_half_effect_additional_games": {
+        "FARM": 682,
+        "CITY": 3260,
+        "ROAD": 8062,
+        "CLOISTER": 37357
+      },
+      "interpretation": "DEG is the ONLY cell even arguably reachable by playing more games. That is itself the useful product of this sizing."
+    },
+    "what_was_explicitly_NOT_done": [
+      "no finished result was re-read",
+      "no stratum was re-labelled",
+      "the run-level branch NO_CONVICTION_ANYWHERE is unchanged",
+      "DEG remains NO CONVICTION",
+      "no results.csv row, no band, no claim id, PRODUCTION.yaml untouched"
+    ],
+    "see": "measurement/e4_autopsy_20260812/DESIGN.md section 6-A; DECISIONS.md 2026-08-13 (post-hoc owner rulings entry)"
   }
 }

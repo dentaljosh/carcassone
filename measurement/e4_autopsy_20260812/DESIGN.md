@@ -17,11 +17,19 @@ did NOT corroborate). All nine pre-registered mechanism contrasts null (none quo
 F7 `null` **by design**. ⚠️ `commit_direction=spend` reads **+1.858, z 3.94, n = 28** — the run's
 largest number — but **§8 read rule 7 pre-declares that cell weak and forbids promoting it in
 either direction**; it is quoted with that label or not at all. **Prescribed next step, quantified:
-~16 more E4 GAMES (games, not plies — the design effect exceeds 1), not more compute.**
-⚠️ **AN OWNER RULING IS OPEN on this document:** **§6 sized power off a naive sd
-(4.445 pts, itself back-derived from the farm-war run's *cluster-robust* se) with no design effect
-priced in, while §8 read rule 3 binds the interval to game-clustering** — and DEG's verdict turns
-on exactly that gap (naive z **2.00** vs cluster z **1.54**). The analyser applied read rule 3 (the
+~~~16 more E4 GAMES~~ → ⭐ ≈ +55 MORE E4 GAMES (≈78 total), range +55…+284** (games, not plies —
+the design effect exceeds 1), **not more compute** — see **§6-A** below.
+✅ **THE OWNER RULING ON THIS DOCUMENT IS CLOSED — RULED 2026-08-13 (post-scoring,
+non-retroactive, §6-A).** §6 sized power off a naive sd (4.445 pts, itself back-derived from the
+farm-war run's *cluster-robust* se) with no design effect priced in, while §8 read rule 3 binds the
+interval to game-clustering — and DEG's verdict turns on exactly that gap (naive z **2.00** vs
+cluster z **1.54**, design effect 1.69). **Ruling: the CLUSTERED reading is primary** (it is the
+binding rule and the correct one — plies within a game are not independent) ⇒ **DEG is GENUINELY
+UNRESOLVED, not "just missed."** **No result is re-read or re-labelled**; the run-level branch,
+every Δ/se/CI/z and DEG's NO CONVICTION all stand. The only thing that moved is the forward
+sizing: the old **+16** was an *expected-z = 2* (i.e. **50% power**) figure with a normal critical
+value; recomputed at **80% power with a `t` critical value on the realized clustered statistics**
+it is **+55**, and **+284 at half the observed effect**. The analyser applied read rule 3 (the
 stricter, pre-registered-as-primary reading) and reports both.
 **Authoritative numbers: [READOUT.md](READOUT.md) / [VERDICT.json](VERDICT.json).**
 Governance: measurement only, **0 games ⇒ no `experiments/results.csv` row, no band claim, no
@@ -379,6 +387,79 @@ preserves every secondary marginal by construction:
 
 **F3 (`own_reserve` / `opp_reserve`) is continuous**, so it is read as a regression of Δ on
 the reserve counts over all 371 positions rather than as a cell, and is not sized here.
+
+### 6-A. AMENDMENT 2 — the clustered reading is affirmed primary; the re-open sizing is recomputed ⚠️ POST-SCORING, NON-RETROACTIVE
+
+> ⚠️ **Dated 2026-08-13, applied AFTER the run scored, after `VERDICT.json` was written and
+> after the readout was adjudicated. It is NOT retroactive. NO FINISHED RESULT IS RE-READ AND
+> NONE IS RE-LABELLED** — the run-level branch stays `NO_CONVICTION_ANYWHERE`, every stratum
+> keeps its published Δ, se, CI and z, and DEG stays **NO CONVICTION**. What changes is
+> (a) which SE the *design* should have sized on, stated for the record, and (b) the
+> **forward-looking re-open sizing**, which is a planning number, not a result.
+
+**The inconsistency, owner-ruled.** §6 sized `n` on a **naive sd of 4.445 pts** with **no
+design effect priced in** — and that sd was itself back-derived from the farm-war run's
+*cluster-robust* se, so the sizing double-discounted the clustering it was built from. Meanwhile
+**§8 read rule 3 (binding) makes the cluster-robust SE on `game_label` the primary interval.**
+`DEG` sits exactly in that gap: **naive z 2.00 vs cluster z 1.54, design effect 1.69.**
+
+**⚖️ RULING: the CLUSTERED reading is primary.** It is the binding pre-registered rule *and* it
+is the statistically correct one — plies within one game share a deck, a board, an opponent
+model and an opponent, so they are not independent draws. **DEG is GENUINELY UNRESOLVED, not
+"just missed."** The naive z 2.00 is reported (as read rule 3 requires) and must never be quoted
+as the verdict. §6's sizing arithmetic is hereby marked **wrong in method for any successor**:
+a design whose primary interval is cluster-robust must size on a cluster-robust se, in the
+**cluster** unit.
+
+**🔢 THE RE-OPEN SIZING, RECOMPUTED FROM REALIZED CLUSTERED STATISTICS.**
+The published *"~16 more E4 games"* is **superseded**. Recompute, stated method-first:
+
+*Realized inputs (from [VERDICT.json](VERDICT.json) `primary_strata.DEG`, nothing re-derived):*
+Δ = **+0.83214** pts/ply · cluster-robust se = **0.54063** · **G = 23** game clusters ·
+n = **70** DEG plies (**3.04 DEG plies/game**) · z = **1.5392** · design effect **1.688**.
+
+*Assumptions, explicit:*
+1. **The sampling unit is GAMES, not plies.** With the between-game component real (deff 1.69),
+   extra plies from the *same* games buy less than `1/n`; a cluster-robust se falls like
+   `1/√G`. So `se(G′) = 0.54063 · √(23/G′)`.
+2. New games are **exchangeable** with the 23 realized ones — same opponent, same `fixed_v1`
+   rules epoch, same champion build, same ~3.04 DEG plies/game.
+3. Two-sided α = 0.05, per §8 read rule 1.
+4. **The critical value is `t` on `G′−1` df, not 1.96.** The cluster-robust se is estimated
+   from a handful of clusters (23 now); the normal approximation is anti-conservative there.
+5. **Power is stated, not assumed away.** "Size so the *expected* z equals 2" is a **50%-power**
+   design — a coin flip on whether the realized z clears the bar. Planning uses **80%**:
+   require `Δ / se(G′) ≥ t₀.₉₇₅,G′₋₁ + z₀.₈₀`.
+
+*Results:*
+
+| sizing convention | games needed (total) | **more games** |
+|---|---:|---:|
+| expected‑z ≥ 2, normal crit — **what the published "+16" used** | 39 | **+16** |
+| expected‑z ≥ 2, `t` crit (50% power, corrected) | 40 | +17 |
+| **80% power, `t` crit, at the OBSERVED Δ = 0.832** ⭐ | **78** | **+55** |
+| 80% power, `t` crit, at **HALF** the observed Δ = 0.416 | 307 | **+284** |
+
+⭐ **THE FIGURE OF RECORD IS ≈ +55 MORE E4 GAMES (≈ 78 total in the `fixed_v1` epoch), not
++16.** At the realized E4 play rate (23 `fixed_v1` games over 2026‑08‑05 → 08‑12, ≈ 3.3/day)
+that is **≈ 2.5 weeks of continuous play**, and it yields ≈ 167 more DEG plies.
+
+**⚠️ AND THAT FIGURE IS EFFECT-SIZE-CONDITIONAL AND FRAGILE.** It takes a z = 1.54 point
+estimate at face value. Δ = 0.832 is the **largest of five strata** and is therefore the exact
+shape of a winner's-curse crest — this project has four confirmed instances (the it16 crest,
+`intrareuse` +40.1 → +16.2, the β = +0.3 sign flip to −8.7 at 4× n, the tile-tie naive range
++2.87 vs cross-fit +0.53). **If the true effect is half the observed, the requirement is +284
+games — ~5× more, and out of reach on any realistic play schedule.** The honest reading is a
+**range, +55 to +284**, whose lower end is the optimistic anchor, not the estimate. The same
+recompute for the other strata (80% power, `t` crit, at each cell's own observed Δ):
+**FARM +155 · CITY +799 · ROAD +2001 · CLOISTER +9325** — i.e. **DEG is the only cell that is
+even arguably reachable by playing more games**, which is itself the useful product of this
+sizing.
+
+**⚠️ NOT priced into any figure above, and it pushes all of them UP:** multiplicity across the
+five primary strata (a z = 2 bar on the max of five is not 2σ evidence), read rule 5's selection
+bias toward 0, and §7's in-family judge. **None of this changes any published number.** It
+changes what "fund the re-open" costs.
 
 ---
 

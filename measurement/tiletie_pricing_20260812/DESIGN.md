@@ -20,9 +20,14 @@ diagnostic of the same S2 statistic reads **z +1.78**, so the 2σ crossing is fr
 ⚠️ **The design's paranoia was vindicated:** the naive range statistic reads **+2.87** against the
 honest cross-fit **+0.53** — **5.4× winner's-curse inflation**. Realized per-position sd **1.8423**,
 cluster-robust se **0.1010** at n = 340 over 247 roots ⇒ **a ±17-elo bound needs n ≈ 896** (the
-Stage B decision, now arithmetic). ⚠️ **AN OWNER RULING IS OPEN on §4.4 branch 3** — it is
-logically unreachable (see interpretation **I4** in the read-out); the analyser honoured the literal
-precedence and emitted `branch_3_condition_also_met` rather than re-order a pre-registered rule.
+Stage B decision, now arithmetic). ✅ **THE OWNER RULING ON §4.4 BRANCH 3 IS CLOSED — RULED
+2026-08-13 (post-scoring, PROSPECTIVE ONLY, see **§4.4-A**).**
+Branch 3 was indeed logically unreachable (its second conjunct is branch 1's whole condition under
+first-match-wins; interpretation **I4** in the read-out). **Ruling: the finished runs STAND AS
+ADJUDICATED — Stage A = branch 4, pooled A+B = branch 4; nothing is re-read and nothing is
+re-labelled.** The table is repaired **for successors only**. The analyser honoured the literal
+precedence and emitted `branch_3_condition_also_met` rather than re-order a pre-registered rule —
+that was the correct handling.
 **Authoritative numbers: [readout_stageA_FINAL/VERDICT.md](readout_stageA_FINAL/VERDICT.md)** /
 `VERDICT.json`. ⚠️ [readout_stageA_partial_walled/](readout_stageA_partial_walled/) is a
 **SUPERSEDED preliminary** (walled/rust arm only, n=284) — do not cite it.
@@ -503,6 +508,67 @@ pilot's own design-effect lesson was 628 records over 385 roots). Bootstrap CIs 
 **Stratum rule (from farm-war, verbatim in spirit):** the **pooled** estimate is primary;
 `e4` and `selfplay` are reported separately and **are not pooled if they disagree in sign**.
 Per-stratum reads are expected to be underpowered on their own and are labelled as such.
+
+---
+
+### 4.4-A AMENDMENT 2 — branch 3 repaired. ⚠️ **PROSPECTIVE ONLY — DOES NOT APPLY TO THE 2026-08-13 RUNS**
+
+> ⚠️ **PROSPECTIVE ONLY — DOES NOT APPLY TO THE 2026-08-13 RUNS.**
+> **Dated 2026-08-13, applied POST-SCORING, after Stage A, after Stage B, and after the
+> pooled read-out had been written and adjudicated. It is NOT retroactive and it re-labels
+> NOTHING.** Stage A stands adjudicated as **branch 4**; pooled A+B
+> ([readout_POOLED/](readout_POOLED/)) stands adjudicated as **branch 4**. No finished result
+> is re-read under this amended table, and no finished result may ever be. Re-reading a
+> concluded run under a rule rewritten *after* seeing the number is the forking path behind
+> this project's four winner's-curse instances (the it16 crest, `intrareuse` +40.1 → +16.2,
+> the β = +0.3 sign flip, and this very run's own naive-range +2.87 vs cross-fit +0.53).
+> The amended table binds **only** a successor design — a Stage C, or any re-use of this
+> decision map on a different corpus — and only if that successor pre-registers it *before*
+> scoring.
+
+**The defect (owner-ruled 2026-08-13).** §4.4's table is **first-match-wins**, and branch 3's
+condition as written is
+
+```
+sigma2_arm CI excludes 0   AND   elo(headroom_CI_hi) < +17
+```
+
+whose **second conjunct is branch 1's entire condition**. Under strict precedence branch 1
+always fires first, so **branch 3 is logically unreachable** — it can never be the match. The
+analyser detected this at read time, honoured the literal precedence rather than silently
+re-ordering a pre-registered rule, and emitted `branch_3_condition_also_met` plus interpretation
+**I4** so the reader could see both. That was the correct handling and it is what makes this a
+paperwork fix rather than a result revision.
+
+**What branch 3 was *meant* to say:** *the leaf is blind but the search already compensates* —
+i.e. real value spread exists inside leaf-tied sets, **and** the residual regret the search
+leaves behind is bounded below the decision threshold. That is a strictly *narrower* statement
+than branch 1's, so it must come **first** and must **exclude** the plain-closure case.
+
+**Amended table (prospective).** Precedence **3′ → 1′ → 2 → 4, first match wins**, and the
+conditions are now written to be **mutually exclusive by construction**, not merely ordered:
+
+| # | condition | mutually-exclusive because | read |
+|---|---|---|---|
+| **3′** | `sigma2_arm CI excludes 0` **AND** `elo(headroom_CI_hi) < +17` | requires spread to **convict** | **THE LEAF IS BLIND BUT THE SEARCH IS NOT.** Real spread inside leaf-tied sets, and the deploy-budget search's residual regret is bounded under the ±17-elo bar. Closes the **desktop** term; opens only the strictly narrower low-budget question (priors, the mobile `k4×688` profile) where **S2b** is the relevant statistic. Does **not** license a desktop leaf change. |
+| **1′** | `sigma2_arm CI does NOT exclude 0` **AND** `elo(headroom_CI_hi) < +17` | requires spread to **fail to convict** — the exact complement of 3′'s first conjunct | **CLOSED WITH A BOUND.** As §4.4 branch 1, unchanged in consequence: a perfect oracle tie-break over the leaf's exact-tie sets is worth < +17 elo at deploy budget; the axis closes at the project's own 1σ resolution. Ships the bound in pts/tied tile ply **and** elo with the §4.3 bracket. Does not license *"ties don't matter"*. |
+| **2** | `elo(headroom_CI_lo) > +17` | disjoint from 3′/1′: `CI_lo > +17` ⇒ `CI_hi > +17`, so neither `CI_hi < +17` condition can hold | **HEADROOM IS REAL AND RESOLVED.** Unchanged from §4.4 branch 2, including its riders (mine *which* feature separates `a⁺` from arm 0 before building; **CL-065** forbids the learned route; **CL-078** demands the term beat an optimally-scaled leaf). |
+| **4** | otherwise — i.e. `CI_lo ≤ +17 ≤ CI_hi` | the residual case: the interval straddles the threshold | **INCONCLUSIVE.** Unchanged from §4.4 branch 4, including the obligation to publish the realized sd and the **n required** for a ±17-elo bound so the extension decision is arithmetic. |
+
+**Exhaustiveness and exclusivity, stated so the table cannot silently shadow a branch again.**
+Let `H = elo(headroom_CI_hi)`, `L = elo(headroom_CI_lo)`, `S = [sigma2_arm CI excludes 0]`.
+The four conditions are `(S ∧ H<17)`, `(¬S ∧ H<17)`, `(L>17)`, and the negation of the union.
+The first two partition `H<17` on `S`; the third requires `L>17` hence `H>17`, disjoint from
+both; the fourth is the complement. **Exactly one branch matches every possible read, and the
+match does not depend on the ordering** — precedence is now a presentation convenience, not a
+semantic. **Any successor design that edits this table must re-verify that property in the
+prereg text itself.**
+
+**Rider, binding on any successor:** the amended labels change *what a read is called*, never
+*what was measured*. The 2026-08-13 substantive finding is label-independent and stands exactly
+as reported — pooled spread is real (**z +4.26**), the headroom is real and positive
+(**z +3.43**, **+34.5 elo, CI [+14.7, +54.7]**), and its **width is unresolved** against the
+±17-elo bar. Branch 3 firing or not firing would not have moved one digit of that.
 
 ### 4.5 The epsilon band (secondary)
 
