@@ -1,8 +1,31 @@
 # E4 autopsy — where do Joshua's points come from? PRE-REGISTRATION
 
-**Status: DESIGN + EXTRACTION COMPLETE 2026-08-12. Written and committed BEFORE any
-scoring cell runs. NOTHING HAS BEEN SCORED. No strength verdict is expressed or implied
-by this document.**
+**Status: 🔚 RAN AND CLOSED 2026-08-13 — run-level branch `NO_CONVICTION_ANYWHERE`. This
+document is the pre-registration; it was written and committed BEFORE any scoring cell ran.**
+**Scope of what ran: the `fixed_v1` epoch ONLY** — 321 of the 371 pre-registered positions × 2
+judges (walled 36 / app_aug2 14 NOT scored, so §8 read-rule 4's per-epoch split could not be
+exercised). Primary `clair-puct` **320 ok / 1 failed** (`1786511848_634689_p61`,
+`WindowOverflowError` — the bounded ~0.33–0.5% 25×25-window family), secondary `tier1-greedy`
+**321 ok**, one out-of-sample smoke record found and excluded, CRN verified on every scored
+position. **No cell convicts.** Per-stratum Δ (pts/ply, cluster-robust on `game_label`):
+**DEG +0.832 (z 1.54) · FARM +0.581 (1.01) · CITY +0.188 (0.47) · ROAD +0.077 (0.29) ·
+CLOISTER +0.063 (0.13)** — **all five signs positive, none resolves**; every line is a BOUND, not
+a refutation (read rule 2), and read rule 5 + the in-family judge (§7) make this null **softer
+than it looks**. Tier-1 out-of-family: **PARTIAL** (306 paired, 62.1% sign agreement, p 2.8e-05,
+but the secondary judge's own aggregate sign is NEGATIVE — the same rate as the farm-war run that
+did NOT corroborate). All nine pre-registered mechanism contrasts null (none quotable at |z| ≥ 3);
+F7 `null` **by design**. ⚠️ `commit_direction=spend` reads **+1.858, z 3.94, n = 28** — the run's
+largest number — but **§8 read rule 7 pre-declares that cell weak and forbids promoting it in
+either direction**; it is quoted with that label or not at all. **Prescribed next step, quantified:
+~16 more E4 GAMES (games, not plies — the design effect exceeds 1), not more compute.**
+⚠️ **AN OWNER RULING IS OPEN on this document:** **§6 sized power off a naive sd
+(4.445 pts, itself back-derived from the farm-war run's *cluster-robust* se) with no design effect
+priced in, while §8 read rule 3 binds the interval to game-clustering** — and DEG's verdict turns
+on exactly that gap (naive z **2.00** vs cluster z **1.54**). The analyser applied read rule 3 (the
+stricter, pre-registered-as-primary reading) and reports both.
+**Authoritative numbers: [READOUT.md](READOUT.md) / [VERDICT.json](VERDICT.json).**
+Governance: measurement only, **0 games ⇒ no `experiments/results.csv` row, no band claim, no
+claim id minted**; `governance/PRODUCTION.yaml` untouched. → DECISIONS 2026-08-13.
 
 Cloned pattern: [FARMWAR_PREREG.md](../analyzer_evloss_20260805/FARMWAR_PREREG.md) /
 [FARMWAR_READOUT.md](../analyzer_evloss_20260805/FARMWAR_READOUT.md).

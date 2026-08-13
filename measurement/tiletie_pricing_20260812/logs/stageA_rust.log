@@ -1,0 +1,46 @@
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_stageA_rust.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '14', '--out', 'measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_stageA_rust.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 6.52 5.82 4.16 3/750 80517
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+  57501       19:11  0.1 python
+  57504       19:11  0.0 python
+  57505       19:11 16.6 python
+  57508       19:11 16.7 python
+  57512       19:11 16.6 python
+  59240       16:03  0.3 python
+  59246       16:01  0.3 python
+  59247       16:01  0.0 python
+  59248       16:01  0.0 python
+  59259       16:00  0.0 python
+  59267       16:00  0.0 python
+  59268       15:59  0.0 python
+  59269       15:59  0.0 python
+  59270       15:59  0.0 python
+[preflight] git_clean: PASS
+    git_rev: e2b1ea9
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 11
+    plan_path: measurement/tiletie_pricing_20260812/positions_stageA/POSITIONS_PLAN.json
+    arms_path: measurement/tiletie_pricing_20260812/positions_stageA/ARMS.json
+
+[run_tiletie] plan: n_positions=340 (e4=60 selfplay=280) max_arms=5 mean_arms=3.04 cap_j=4 capped=66
+[run_tiletie] total_arm_playouts=44288 oracle_worker_secs=73075.2 champ_pick_secs=3851.5
+[run_tiletie] ETA at W=14: 1.526 h (5495 s)
+[run_tiletie] ETA at W=22: 0.971 h (3497 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (R9=0, W=7, n=284) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (R9=0, W=4, n=180) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (R9=0, W=2, n=97) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (R9=0, W=1, n=26) -> leg_clair-puct_walled_leg4.log

@@ -1,3 +1,7 @@
+[build_positions] afterstate map: 1427 rid(s) from 3 file(s): ['/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/census/afterstate_map_app_aug2.json', '/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/census/afterstate_map_fixed_v1.json', '/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/census/afterstate_map_walled.json']
+[build_positions] afterstate dedupe: applied=True | dropped 374/1427 all-transposition positions (26.2%) | arm-deduped 54 | tie-set arm-playouts 177984 -> 120192 (32.5% saved)
+[build_positions] 2607 census rows -> 1427 qualifying -> 340 sampled | e4=60 selfplay=280 | max_arms=5 mean_arms=3.04 | capped=66 | champ_pick_missing=0
+[build_positions] 11 leg files -> measurement/tiletie_pricing_20260812/positions_stageA
 {
   "afterstate_dedupe": {
     "applied": true,

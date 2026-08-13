@@ -1,0 +1,145 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "git_rev": "e2b1ea9",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_stageA_rust.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "14",
+          "--out",
+          "measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_stageA_rust.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n  57501       19:11  0.1 python\n  57504       19:11  0.0 python\n  57505       19:11 16.6 python\n  57508       19:11 16.7 python\n  57512       19:11 16.6 python\n  59240       16:03  0.3 python\n  59246       16:01  0.3 python\n  59247       16:01  0.0 python\n  59248       16:01  0.0 python\n  59259       16:00  0.0 python\n  59267       16:00  0.0 python\n  59268       15:59  0.0 python\n  59269       15:59  0.0 python\n  59270       15:59  0.0 python",
+        "loadavg": "6.52 5.82 4.16 3/750 80517"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "e2b1ea9",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 11,
+        "plan_path": "measurement/tiletie_pricing_20260812/positions_stageA/POSITIONS_PLAN.json",
+        "arms_path": "measurement/tiletie_pricing_20260812/positions_stageA/ARMS.json"
+      }
+    }
+  },
+  "r9_by_profile": {
+    "walled": "0"
+  },
+  "judges": [
+    "clair-puct"
+  ],
+  "judge_backend": {
+    "clair-puct": "rust"
+  },
+  "world_seed_salt": "tiletie-v1",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "workers": 14,
+  "resume": true,
+  "positions_plan_path": "measurement/tiletie_pricing_20260812/positions_stageA/POSITIONS_PLAN.json",
+  "arms_path": "measurement/tiletie_pricing_20260812/positions_stageA/ARMS.json",
+  "positions_plan_sha256": "f3a65ad801ae719f4f725a00fc650f5d88b444699f549cbd333554e756c17641",
+  "arms_sha256": "542a7f8ee9b3cc0383c0c9963f6058d217c13342ad630c37808b0835ae9b20f8",
+  "legs": [
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 1,
+      "rc": 0,
+      "n": 284,
+      "workers": 7,
+      "positions_path": "measurement/tiletie_pricing_20260812/positions_stageA/positions_walled_leg1.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg1",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/leg_clair-puct_walled_leg1.log",
+      "wall_secs": 4347.2,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 2,
+      "rc": 0,
+      "n": 180,
+      "workers": 4,
+      "positions_path": "measurement/tiletie_pricing_20260812/positions_stageA/positions_walled_leg2.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg2",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/leg_clair-puct_walled_leg2.log",
+      "wall_secs": 4622.9,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 3,
+      "rc": 0,
+      "n": 97,
+      "workers": 2,
+      "positions_path": "measurement/tiletie_pricing_20260812/positions_stageA/positions_walled_leg3.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg3",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/leg_clair-puct_walled_leg3.log",
+      "wall_secs": 4680.6,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 4,
+      "rc": 0,
+      "n": 26,
+      "workers": 1,
+      "positions_path": "measurement/tiletie_pricing_20260812/positions_stageA/positions_walled_leg4.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg4",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/leg_clair-puct_walled_leg4.log",
+      "wall_secs": 4680.6,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    }
+  ],
+  "error": null,
+  "finished_utc": "2026-08-13T04:04:23Z"
+}

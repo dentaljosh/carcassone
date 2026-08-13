@@ -1,0 +1,50 @@
+[pilot] population=4 positions | n=4 | M=32 | policy=clair-puct | oracle_sims=100 | W=1
+[pilot] out -> /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/fixed_v1/leg4
+[pilot] resume: 0 already done, 4 to go
+[1/4] tt_e4_1785986044_1911511187_p90 ok delta=+3.750 crn=True 873.421s
+[2/4] tt_e4_1786113542_627623_p111 ok delta=-1.250 crn=True 531.703s
+[3/4] tt_e4_1786142936_703591_p22 ok delta=-2.969 crn=True 1545.379s
+[4/4] tt_e4_1786503336_446661_p10 ok delta=-4.406 crn=True 1577.433s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 4,
+  "m_worlds": 32,
+  "sd_delta_positions": 3.554907845734776,
+  "mean_delta_pts": -1.21875,
+  "se_mean_delta": 1.777453922867388,
+  "z_pilot_observed": -0.6856717827227347,
+  "mean_within_position_var": 254.4732862903226,
+  "var_between_positions_est": 4.685079595094085,
+  "sd_delta_projected_by_m": {
+    "8": 6.041046298563222,
+    "16": 4.5375830557951495,
+    "32": 3.554907845734776,
+    "64": 2.942995870432097
+  },
+  "median_crn_var_reduction": 2.2045129654255318,
+  "n_positions_perfect_pairing": 0,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.3205476741384976,
+    "N=4_at_M=32": 0.03938217418715194,
+    "N=4_at_M=8": 0.023174793418368114,
+    "N=4_at_M=16": 0.03085342973969364,
+    "N=4_at_M=64": 0.047570573036327404
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 4,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 4,
+  "wall_secs": 4528.0,
+  "manifest": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/fixed_v1/leg4/manifest.json"
+}

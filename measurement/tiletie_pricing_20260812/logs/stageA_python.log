@@ -1,0 +1,36 @@
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_stageA_python.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '14', '--out', 'measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK_stageA_python.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.65 6.34 9.98 1/693 108518
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+ 108386       01:24  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 6148388
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 11
+    plan_path: measurement/tiletie_pricing_20260812/positions_stageA/POSITIONS_PLAN.json
+    arms_path: measurement/tiletie_pricing_20260812/positions_stageA/ARMS.json
+
+[run_tiletie] plan: n_positions=340 (e4=60 selfplay=280) max_arms=5 mean_arms=3.04 cap_j=4 capped=66
+[run_tiletie] total_arm_playouts=44288 oracle_worker_secs=73075.2 champ_pick_secs=3851.5
+[run_tiletie] ETA at W=14: 1.526 h (5495 s)
+[run_tiletie] ETA at W=22: 0.971 h (3497 s)
+[run_tiletie] ===== launch clair-puct/app_aug2/leg1 (R9=0, W=1, n=3) -> leg_clair-puct_app_aug2_leg1.log
+[run_tiletie] ===== launch clair-puct/app_aug2/leg2 (R9=0, W=1, n=2) -> leg_clair-puct_app_aug2_leg2.log
+[run_tiletie] ===== launch clair-puct/app_aug2/leg3 (R9=0, W=1, n=2) -> leg_clair-puct_app_aug2_leg3.log
+[run_tiletie] ===== launch clair-puct/fixed_v1/leg1 (R9=1, W=7, n=53) -> leg_clair-puct_fixed_v1_leg1.log
+[run_tiletie] ===== launch clair-puct/fixed_v1/leg2 (R9=1, W=3, n=27) -> leg_clair-puct_fixed_v1_leg2.log
+[run_tiletie] ===== launch clair-puct/fixed_v1/leg3 (R9=1, W=1, n=14) -> leg_clair-puct_fixed_v1_leg3.log
+[run_tiletie] ===== launch clair-puct/fixed_v1/leg4 (R9=1, W=1, n=4) -> leg_clair-puct_fixed_v1_leg4.log

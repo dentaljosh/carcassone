@@ -79,6 +79,12 @@ measurement/leaf_residual_mining_20260721/records_primary.jsonl
 measurement/leaf_residual_mining_20260721/records_replication.jsonl
 measurement/leaf_residual_mining_20260721/freepass_k3champ.jsonl
 
+# Tile-tie pricing (2026-08-12): the champion-pick pass writes one raw search
+# record per position (932 files, 3.8M). The DIGEST champ_picks.jsonl and the
+# manifest ARE tracked as provenance; the raw per-position records are not —
+# same convention as the clair-puct scoring records, which live on the share.
+measurement/tiletie_pricing_20260812/champ_picks/records/
+
 # Android app (android/): machine-local SDK path + Gradle/AGP build output.
 # The Gradle WRAPPER (gradlew, gradle/wrapper/**) stays tracked on purpose.
 # app/build/python is the sync_python.py target — generated from src/, never edited.

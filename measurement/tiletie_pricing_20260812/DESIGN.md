@@ -1,10 +1,31 @@
 # TILE-TIE PRICING — PRE-REGISTRATION
 
-**Status: PRE-REGISTERED 2026-08-12, written and committed BEFORE any position is scored.**
-The CENSUS (leaf evaluations only, no search, no oracle) HAS run — see
-[CENSUS.md](census/CENSUS.md); it is a *sizing and replication* instrument and carries no
-strength verdict. The SCORING run below is **DESIGNED, BUILT and PRICED ONLY — NOT LAUNCHED.**
-The box and the funding decision belong to Joshua.
+**Status: 🔚 STAGE A RAN AND CLOSED 2026-08-13 — pre-registered BRANCH 4, INCONCLUSIVE. Stage B
+is NOT funded.** All 340 planned Stage-A positions scored (0 partial, 0 absent; CRN witness clean
+on every integrity check). **The leaf's ties are not real ties** — S1a σ²_arm **+0.5111 pts²**
+(zeros added), CI [+0.1218, +0.9265], **z +2.49** — but the champion's 11,008-sim search already
+recovers most of that: S2 headroom_J4 **+0.2283 pts/ply, z +2.26**, whose ×1.40-extrapolated
+headline **+0.3196 pts/tied tile ply ⇒ +31.2 elo, CI [+3.9, +58.8]** straddles the ±17-elo
+decision threshold in both directions. ⚠️ **Suggestive, not resolved:** the `parity_swap`
+diagnostic of the same S2 statistic reads **z +1.78**, so the 2σ crossing is fragile.
+⚠️ **The design's paranoia was vindicated:** the naive range statistic reads **+2.87** against the
+honest cross-fit **+0.53** — **5.4× winner's-curse inflation**. Realized per-position sd **1.8423**,
+cluster-robust se **0.1010** at n = 340 over 247 roots ⇒ **a ±17-elo bound needs n ≈ 896** (the
+Stage B decision, now arithmetic). ⚠️ **AN OWNER RULING IS OPEN on §4.4 branch 3** — it is
+logically unreachable (see interpretation **I4** in the read-out); the analyser honoured the literal
+precedence and emitted `branch_3_condition_also_met` rather than re-order a pre-registered rule.
+**Authoritative numbers: [readout_stageA_FINAL/VERDICT.md](readout_stageA_FINAL/VERDICT.md)** /
+`VERDICT.json`. ⚠️ [readout_stageA_partial_walled/](readout_stageA_partial_walled/) is a
+**SUPERSEDED preliminary** (walled/rust arm only, n=284) — do not cite it.
+Governance: measurement only, **0 games ⇒ no `experiments/results.csv` row, no band claim, no
+claim id minted** (§8 mints only on branch 1/2/3); `governance/PRODUCTION.yaml` untouched.
+→ DECISIONS 2026-08-13.
+
+*(Original pre-registration banner, for the record: **PRE-REGISTERED 2026-08-12, written and
+committed BEFORE any position is scored.** The CENSUS (leaf evaluations only, no search, no
+oracle) HAS run — see [CENSUS.md](census/CENSUS.md); it is a *sizing and replication* instrument
+and carries no strength verdict. The SCORING run below was **DESIGNED, BUILT and PRICED ONLY —
+NOT LAUNCHED**; the box and the funding decision belonged to Joshua.)*
 
 Lever row: `docs/LEVER_INDEX.md` → *"tile near-tie tie-break term · the 55% tile-tie blind spot
 · `tiletie_pricing_20260812`"*.

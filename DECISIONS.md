@@ -5510,3 +5510,217 @@ scan hypotheses F2/F3/F6/F7/F9 in one run; the Joshua-bot step is gated on the a
 **Reversal cost:** none — 0-game oracle instruments (no band claimed, no `results.csv` rows owed),
 no source/engine/config change (new files only), `governance/PRODUCTION.yaml` untouched.
 **Phase:** measurement-first
+
+## 2026-08-13 — Tile near-tie pricing, Stage A: the leaf's ties are NOT real ties (σ²_arm z +2.49), but the champion's search already recovers most of the spread — pre-registered BRANCH 4, INCONCLUSIVE, and Stage B is now arithmetic (n ≈ 896)
+
+**Context.** The production leaf cannot discriminate the top TILE placement on a majority of plies —
+the JCZ-mining dry run put it at 55.1% exact top-2 ties, and this run's own census replicates it
+**HIGHER: 66.0% [64.1, 67.8] over n = 2,607 champion tile plies** (`fixed_v1` E4 stratum 66.2%),
+with tied sets averaging **8.55 arms**. A tie-break-only leaf term — active solely where the leaf is
+exactly silent — is a mechanism class no existing kill covers (CL-078 closed the *scale* axis;
+CL-065 kills a *learned* tie-breaker representation-independently, so only a hand-crafted term is
+even fundable). But the prior lean was negative, so the pre-gate came first: price the real value
+SPREAD inside leaf-tied candidate sets, and the 11,008-sim search's tie-break REGRET against
+oracle-best-in-set. Pre-registration: [measurement/tiletie_pricing_20260812/DESIGN.md](measurement/tiletie_pricing_20260812/DESIGN.md)
+(+ its §0 pre-scoring amendment, which armed an afterstate dedupe worth −26.2% positions /
+−32.2% arm-playouts and turned whole-set transpositions into *analytic zeros* rather than dropped
+rows). Authoritative read-out: [readout_stageA_FINAL/VERDICT.md](measurement/tiletie_pricing_20260812/readout_stageA_FINAL/VERDICT.md).
+
+**Options considered:** (a) build the tie-break term and measure it in games — rejected, the prior
+lean was negative and a game cell costs ~50× the pre-gate; (b) run the full 1,053-position supply —
+rejected, Stage A's 340 buys the ±35-elo bound and the ±17 decision needed a realized sd first;
+(c) the staged oracle-CRN pre-gate — **chosen**, bound-producing on either branch.
+
+**What ran.** **340 / 340 planned Stage-A positions scored** over 247 roots (0 partial, 0 absent;
+strata e4 60 / selfplay 280; profiles walled 284 / `fixed_v1` 53 / app_aug2 3). Every §2.1 integrity
+check reads **0** — `values_a_drift`, `seed_drift`, `crn_unverified`, `checksum_failed`,
+`arm_index_mismatch`, `zero_distinct_afterstates` — so the CRN witness holds and the run is not
+voided. Bootstrap 20,000 reps resampling **roots**, cluster-robust throughout.
+
+**What was found.**
+
+- **The leaf's ties are not real ties.** S1a σ²_arm, zeros added back at their population share,
+  **+0.5111 pts², CI [+0.1218, +0.9265], z +2.49** (discriminable-only +0.7004, z +2.50). The
+  cross-fit gap S1b agrees: **+0.3924 pts, z +2.52**. There is genuine value spread among candidates
+  the production leaf scores *identically*.
+- **The search already recovers most of it.** S2 headroom_J4 (champion pick vs oracle-best-in-set)
+  **+0.2283 pts/ply, se 0.1010, CI [+0.0284, +0.4268], z +2.26**; the ×1.40 full-set extrapolation
+  gives the headline **+0.3196 pts/tied tile ply ⇒ +31.24 elo, CI [+3.88, +58.81]** (÷3.2
+  non-additivity; the range-consistent low-end divisor 5.23 gives +19.08).
+- **Pre-registered §4.4 BRANCH 4 — INCONCLUSIVE.** The elo CI straddles the ±17-elo decision
+  threshold in **both** directions: CI-hi +58.81 ≥ +17 fails the branch-1 close, CI-lo +3.88 ≤ +17
+  fails the branch-2 fund. Strata agree in sign (e4 +0.337 / selfplay +0.205), so the pooled estimate
+  is primary per §4.4.
+- **Phase structure.** Early is **flat** (S1a +0.0244, z +0.07; S2 z +0.55); all the spread is mid
+  (S1a +0.7468, z +2.14) and late (S1a +1.0074, z +3.07). Late carries the **largest** leaf blindness
+  and reads the largest S2b leaf regret (+0.4602, z +3.16).
+- ⚠️ **Suggestive, not resolved.** The `parity_swap` diagnostic of the same S2 statistic — the same
+  data, the other half of the pre-registered selection/evaluation split — reads **z +1.78**. The 2σ
+  crossing is fragile, and no sentence in this project may quote the +2.26 without it.
+- ⭐ **The design's paranoia was vindicated, and this is the durable methodological product.** The
+  naive range statistic reads **+2.8666** against the honest cross-fit **+0.5347** — a **5.4×
+  winner's-curse inflation**. A naive best-of-K design would have "found" a huge effect here. (The
+  naive rows are printed in the read-out **only** so the correction is auditable; they are never
+  results.)
+
+**What is NOT concluded.** Not that a tie-break term works — nothing is funded, built or promoted.
+Not that it fails — branch 4 is *absence of resolution*, never a refutation. Not that the true spread
+is +0.51: the judge is `clair-puct`, which uses **the leaf under test at its own leaves**, so
+systematic leaf blindness makes this an UNDER-estimate (§5's mandatory scope sentence); the
+out-of-family Tier-1 sign leg was pre-registered as purchasable only if the primary branch-1-closed,
+and it did not, so it was not bought. Not that the ×1.40 headline is a measurement — it is an
+**extrapolation** through the S1a spread estimate, applied globally exactly as written so the J = 4
+cap cannot manufacture a closure (realized capped fraction 19.4%; the assumption-free uncapped-only
+block reads +0.2968 ⇒ +29.00 elo, CI [−0.14, +57.85]). And the ÷3.2 pts→elo divisor is **n = 1**,
+calibrated at the top of the ladder, quoted with a ±1.6× bracket.
+
+**The Stage B decision is now arithmetic.** Realized per-position sd **1.8423**, cluster-robust se
+**0.1010** at n = 340 over 247 roots ⇒ a **±17-elo bound needs n ≈ 896**; ±35 elo needed n ≈ 213 and
+was already met. ⚠️ **Correction to the overnight STATUS line:** the preliminary walled-arm read
+said n ≈ 872 — that figure came from `readout_stageA_partial_walled/` (n = 284) and is superseded;
+**896 is the number of record**, and the partial read-out is now banner-marked DO-NOT-CITE.
+
+**⚠️ OPEN — an owner ruling is owed (Joshua), recorded here so it cannot be lost.** The
+pre-registration's **§4.4 branch 3 is logically unreachable**: its condition is
+`sigma2_arm CI excludes 0 AND elo(headroom_CI_hi) < +17`, whose second conjunct **is branch 1's
+entire condition**, so under the stated first-match-wins precedence branch 3 can never fire. This is
+an internal inconsistency in the prereg, not a judgement call, and last night's data is exactly the
+case that exposes it (spread convicts, headroom does not close). The analyser honoured the literal
+precedence and emitted `branch_3_condition_also_met` (= `False`, with `spread_ci_excludes_zero` =
+`True`) alongside interpretation **I4**, rather than silently re-ordering a pre-registered rule.
+**Rule on it before any Stage B is designed.** No agent may resolve it.
+
+**Consequences (the six touches).** `experiments/results.csv` — **NO row: 0 head-to-head games
+played.** This is an oracle/replay instrument, and it follows the standing house precedent (farm-war
+discriminator, JCZ disagreement mining, adaptive-k census, E4 deck baseline, budget-headroom bound,
+sims-split census, lever-menu items 1 and 6 — none of which took a row). `governance/BAND_REGISTRY.csv`
+— **no band claimed and none owed** (0 games; the only bands live this session are 1.25e11/1.26e11
+Joshua-bot and 1.27e11 opencity, which belong to other runs). `governance/CLAIM_REGISTRY.csv` —
+**no claim minted**, per the prereg's own §8 (a claim id is minted only on branch 1, 2 or 3) and
+consistent with the item-1/item-6 precedent for characterization measurements. No existing claim's
+falsifier is touched: **CL-073** (outcome prediction ≠ move discrimination) is *thematically* adjacent
+and gains a factual complement — the leaf's discrimination is good where it speaks and **silent on
+66% of tile plies where measurable spread exists** — but CL-073's reopen bar is about a *learned*
+ranker reaching τ within ~2× of curve125 on the solver ruler, which nothing here approaches;
+**CL-065** likewise stands untouched, and it is precisely why any tie-break term must be hand-crafted.
+Status banner stamped on `DESIGN.md`; `readout_stageA_partial_walled/VERDICT.md` marked SUPERSEDED.
+STATUS top block + roadmap NOW block + the `docs/LEVER_INDEX.md` "tile near-tie tie-break term" row
+all updated. `governance/PRODUCTION.yaml` **untouched**.
+
+**One census figure to carry with care.** The "genuine-blindness ≈53%" number quoted overnight comes
+from the DESIGN's own §7 arithmetic (66.2% × (1 − 0.199)) using a **planning-time** 19.9% whole-set-
+transposition estimate. The **realized** dedupe is larger — 374 / 1,427 = **26.2%** pooled (e4 23.2%,
+selfplay 27.8%) — so the same arithmetic on realized counts gives **≈49%**. Quote **≈49–53%**, or
+quote the two inputs; do not re-quote 53% as if it were measured.
+
+**Reversal cost:** none — 0-game oracle instrument, no source/engine/config change, no checkpoint,
+nothing promoted, `governance/PRODUCTION.yaml` untouched.
+**Phase:** measurement-first
+
+## 2026-08-13 — E4 full-corpus loss-mode autopsy: NO CONVICTION ANYWHERE. All five strata lean the human's way, none resolves, and the prescribed next step is ~16 more E4 GAMES — not more compute
+
+**Context.** *"we need ideas. i'm beating the agent."* Over the `fixed_v1` epoch the production
+champion (PIMC k8×1376 = 11,008 sims/move, leaf hash `a36d2e15a3b3d71d`, exact-K2 endgame, rust) is
+losing to Joshua on his phone: **n = 23 games, W13/L10, paired margin +10.043 ± 5.627 pts (z +1.78)**.
+The grade-vs-outcome inversion (26/26 archives) proves the champion's own grader cannot see his edge,
+so grading him with the leaf under suspicion is circular — an **independent ruler** is the only
+admissible instrument. This run generalizes the farm-war discriminator from farm-hypothesis-*testing*
+to **discovery** over the whole corpus, and adds back the **DEG** stratum (champion-leaf-indifferent
+plies, 35.4% of the 779-ply disagreement census, ~90% tile placements) that the farm-war run silently
+dropped. Pre-registration: [measurement/e4_autopsy_20260812/DESIGN.md](measurement/e4_autopsy_20260812/DESIGN.md)
+(+ AMENDMENT 1, a pre-scoring count reconciliation). Read-out:
+[READOUT.md](measurement/e4_autopsy_20260812/READOUT.md) / `VERDICT.json`.
+
+**Options considered:** (a) keep grading E4 games with the champion's own EV-loss grader — rejected
+as circular, which is the whole premise; (b) score the full 371-position sample across all three
+rules epochs — **not** what ran: the rust clairvoyant cannot mirror E4 rules profiles, so both legs
+went python-backed (~9.4× slower) and the run was scoped to the epoch he actually plays;
+(c) drop the Tier-1 leg to halve the cost — explicitly declined, it is the only out-of-family check
+in the design.
+
+**What ran.** The **`fixed_v1` epoch ONLY** — 321 of the 371 pre-registered positions × 2 judges =
+642 scoring cells, over **23 game clusters**. Primary `clair-puct` (in-family, M = 32 worlds):
+**320 ok, 1 failed** (`1786511848_634689_p61`, `WindowOverflowError` — all 4 legal actions outside
+the 25×25 action window; the bounded ~0.33–0.5%/game house edge case, independent of which arm was
+played), 0 missing. Secondary `tier1-greedy` (out-of-family, SIGN ONLY): **321 ok, 0 failed.** One
+**out-of-sample smoke record** was found in the out-root under the same salt and excluded from every
+statistic. CRN verified on every scored position, both judges. walled (36) and app_aug2 (14) were
+**not** scored, so read rule 4's no-pooling-across-epochs is moot — but the **scope restriction is
+not**: nothing here speaks to the two legacy epochs.
+
+**What was found — run-level branch `NO_CONVICTION_ANYWHERE`.** Δ = V(played) − V(best), pts/ply,
+Joshua's seat, cluster-robust on `game_label` (read rule 3):
+
+| stratum | n | Δ (pts/ply) | z (cluster) | 95% CI | bound |
+|---|---:|---:|---:|---|---|
+| DEG | 70 | **+0.832** | **1.54** (naive 2.00) | −0.227 .. +1.892 | ≤ 1.892 |
+| FARM | 71 | +0.581 | 1.01 | −0.543 .. +1.705 | ≤ 1.705 |
+| CITY | 67 | +0.188 | 0.47 | −0.596 .. +0.971 | ≤ 0.971 |
+| ROAD | 60 | +0.077 | 0.29 | −0.440 .. +0.594 | ≤ 0.594 |
+| CLOISTER | 52 | +0.063 | 0.13 | −0.868 .. +0.994 | ≤ 0.994 |
+| *(pooled, diagnostic only)* | 320 | +0.375 | 1.59 (naive 1.92) | −0.087 .. +0.837 | ≤ 0.837 |
+
+**All five signs are positive and none resolves.** DEG — the cell this design was built for, where
+the production leaf is indifferent by construction (|ΔL_full| ≤ 1e-9) and only the SEARCH separates
+the arms — is the largest suspect on both |Δ| and |z|, and its point estimate sits **below its own
+realized 2σ MDE (1.081)**: the design could not have convicted it at this effect size even if it is
+real. Tier-1 out-of-family: **PARTIAL** — 306 paired positions, **190/306 = 62.1% sign agreement,
+p 2.8e-05**, but the secondary judge's **own aggregate sign is NEGATIVE**, so it does not corroborate
+the *direction*; and 62.1% is essentially the farm-war run's 61.9%, which the design pre-registered as
+**not** corroboration (the 2026-07-28 precedent's 80% at p 0.0012 was). Per-stratum, only CITY
+corroborates (73.8%, p 0.0002) — and CITY's own Δ is +0.188, i.e. corroborating the sign of a
+near-zero effect, which the read-out flags as uninformative. All **nine** pre-registered mechanism
+contrasts are null: none reaches |z| ≥ 3, the F9/F2 convergent-sign gate fails (all four share a sign
+but not all four reach |z| ≥ 2), and **F7 is `null` BY DESIGN** — `ev_loss.grade_pass` reads an
+already-pooled root, so cross-world spread cannot be recovered offline at any effort. The multiplicity
+ledger is explicit: 41 exploratory contrasts, ~1.87 expected at |z| ≥ 2 and 0.111 at |z| ≥ 3, observed
+4 and 1, on overlapping re-slicings of the same 320 positions.
+
+⚠️ **The run's largest number is pre-declared weak and must never travel without that label.**
+`commit_direction = spend` (he commits a meeple where the champion holds) reads **Δ +1.858, z 3.94,
+n = 28**, CI [+0.933, +2.783]. DESIGN §8 **read rule 7 names `commit spend` by name, before any
+scoring, as underpowered by construction — "reported with its CI, never promoted, in either
+direction."** It is a hypothesis for a targeted follow-up and nothing else. (Same class, weaker:
+`F9_reinforce_losing_contest_played=True` +0.900 z 2.79; `CITY/meeple` +0.896 z 2.13; `F6 level`
++0.565 z 2.02.)
+
+**What is NOT concluded.** Not that the champion's evaluation is sound — read rule 2 makes every line
+above a **BOUND, not a refutation**, and the tightest bound in the whole map is still ±0.594 pts/ply
+(ROAD). Not that there is no human edge: read rule 5 (the population is conditioned on the champion
+having disagreed at all, which regresses Δ toward 0) and §7 (the primary judge **shares the leaf under
+test**, so a null through it is WEAK by construction and cannot distinguish "no effect" from "effect
+hidden by the shared leaf") both make this null **softer than it looks**. Not anything about strength
+— read rule 9: Δ prices one ply against one alternative under a shallow continuation, and says where
+the evaluator *misprices*, not who is stronger. Not anything about the walled or app_aug2 epochs.
+
+**The prescribed next step, quantified.** Taking each cell's own point estimate at face value and
+respecting the realized design effect (DEG 1.69 — the between-game component is real, so extra plies
+from the *same* games buy less than 1/n): **DEG resolves at |z| = 2 on ~39 games, i.e. ~16 MORE E4
+games.** FARM needs ~90 (+67); CITY/ROAD/CLOISTER are hundreds to thousands and are not worth buying.
+**Games are the binding resource, not compute** — re-scoring the same corpus harder cannot fix this,
+which is exactly what §8 pre-registered.
+
+**⚠️ OPEN — an owner ruling is owed (Joshua), recorded here so it cannot be lost.** The
+pre-registration is internally inconsistent about which SE binds: **§6 sized every stratum off an
+assumed naive sd = 4.445 pts with no design effect priced in** (and that sd was itself back-derived
+from the farm-war run's *cluster-robust* se, `0.970·√21`), **while §8 read rule 3 makes the
+`game_label` cluster-robust interval the primary one.** DEG's verdict turns on exactly that gap:
+**naive z 2.00 versus cluster z 1.54.** The analyser applied read rule 3 — the stricter reading, and
+the one pre-registered as primary — and reports both z's side by side rather than choosing silently.
+**Rule on it before funding the +16 games**, because it sets whether DEG is "just missed" or "at
+half the required n." No agent may resolve it.
+
+**Consequences (the six touches).** `experiments/results.csv` — **NO row: 0 head-to-head games
+played** (an oracle/replay grading instrument over already-banked archives), per the same house
+precedent listed in the tile-tie entry above. `governance/BAND_REGISTRY.csv` — **no band claimed and
+none owed.** `governance/CLAIM_REGISTRY.csv` — **no claim minted**; `VERDICT.json` sets
+`governance.mints_claim_id = false` on every stratum branch and at run level, and a
+`NO_CONVICTION_ANYWHERE` map is a characterization, not a testable proposition (the item-1 precedent,
+2026-08-10). No existing claim's falsifier is touched. Status banner stamped on `DESIGN.md` —
+**it still read "NOTHING HAS BEEN SCORED", which is exactly the stale-banner leak the six-touch
+checklist exists to catch.** STATUS top block + roadmap NOW block + the `docs/LEVER_INDEX.md` "E4
+full-corpus loss-mode autopsy" row all updated. `governance/PRODUCTION.yaml` **untouched**.
+
+**Reversal cost:** none — 0-game oracle instrument, no source/engine/config change, no checkpoint,
+nothing promoted.
+**Phase:** measurement-first

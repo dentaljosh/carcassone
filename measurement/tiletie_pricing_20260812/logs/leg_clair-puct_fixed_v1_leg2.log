@@ -1,0 +1,73 @@
+[pilot] population=27 positions | n=27 | M=32 | policy=clair-puct | oracle_sims=100 | W=3
+[pilot] out -> /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/fixed_v1/leg2
+[pilot] resume: 0 already done, 27 to go
+[1/27] tt_e4_1785986044_1911511187_p90 ok delta=+0.781 crn=True 853.04s
+[2/27] tt_e4_1785986044_1911511187_p74 ok delta=-2.406 crn=True 1014.505s
+[3/27] tt_e4_1786045035_338139_p34 ok delta=-0.312 crn=True 1477.287s
+[4/27] tt_e4_1786045035_338139_p42 ok delta=+1.375 crn=True 1339.055s
+[5/27] tt_e4_1786045035_338139_p50 ok delta=-1.969 crn=True 1282.945s
+[6/27] tt_e4_1786045035_338139_p58 ok delta=-0.312 crn=True 1156.504s
+[7/27] tt_e4_1786113542_627623_p111 ok delta=+1.219 crn=True 525.17s
+[8/27] tt_e4_1786074812_935815_p46 ok delta=-1.906 crn=True 1368.44s
+[9/27] tt_e4_1786076853_2116173857_p30 ok delta=-2.406 crn=True 1520.003s
+[10/27] tt_e4_1786113542_627623_p83 ok delta=-4.562 crn=True 870.573s
+[11/27] tt_e4_1786118143_1621601234_p115 ok delta=-0.594 crn=True 493.534s
+[12/27] tt_e4_1786118143_1621601234_p139 ok delta=+0.000 crn=True 23.087s
+[13/27] tt_e4_1786118143_1621601234_p119 ok delta=-0.219 crn=True 418.926s
+[14/27] tt_e4_1786116818_134510_p42 ok delta=+0.094 crn=True 1333.447s
+[15/27] tt_e4_1786142936_703591_p58 ok delta=-2.094 crn=True 1043.905s
+[16/27] tt_e4_1786142936_703591_p22 ok delta=+0.250 crn=True 1387.453s
+[17/27] tt_e4_1786243458_1382293676_p54 ok delta=-3.625 crn=True 1204.624s
+[18/27] tt_e4_1786325073_523563_p94 ok delta=+0.438 crn=True 704.376s
+[19/27] tt_e4_1786329790_523563_p94 ok delta=-0.344 crn=True 647.812s
+[20/27] tt_e4_1786417055_68387_p130 ok delta=-0.938 crn=True 275.326s
+[21/27] tt_e4_1786337185_638286_p50 ok delta=-0.406 crn=True 1230.194s
+[22/27] tt_e4_1786417055_68387_p54 ok delta=-3.031 crn=True 1151.824s
+[23/27] tt_e4_1786417055_68387_p34 ok delta=-4.688 crn=True 1292.297s
+[24/27] tt_e4_1786501074_943197_p134 ok delta=-3.031 crn=True 194.038s
+[25/27] tt_e4_1786418867_411846845_p82 ok delta=+0.406 crn=True 792.333s
+[26/27] tt_e4_1786501074_943197_p34 ok delta=-0.500 crn=True 1133.709s
+[27/27] tt_e4_1786503336_446661_p10 ok delta=-5.844 crn=True 1213.244s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 27,
+  "m_worlds": 32,
+  "sd_delta_positions": 1.9008925638167427,
+  "mean_delta_pts": -1.2824074074074074,
+  "se_mean_delta": 0.36582694447338476,
+  "z_pilot_observed": -3.5055028799299044,
+  "mean_within_position_var": 174.70818399044205,
+  "var_between_positions_est": 0.0,
+  "sd_delta_projected_by_m": {
+    "8": 4.673170551007662,
+    "16": 3.3044305862587926,
+    "32": 2.336585275503831,
+    "64": 1.6522152931293963
+  },
+  "median_crn_var_reduction": 1.5814531638444578,
+  "n_positions_perfect_pairing": 1,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.5994644113073798,
+    "N=27_at_M=32": 0.15566762035296747,
+    "N=27_at_M=8": 0.07783381017648373,
+    "N=27_at_M=16": 0.11007362996275633,
+    "N=27_at_M=64": 0.22014725992551265
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 27,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 27,
+  "wall_secs": 9031.4,
+  "manifest": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/fixed_v1/leg2/manifest.json"
+}

@@ -1,6 +1,14 @@
 # TILE-TIE PRICING — READ-OUT
 
-**Status: PRELIMINARY — Stage A walled/rust arm ONLY (E4 python arm still scoring) — COMPLETE for the scope declared below.**
+**Status: ⛔ SUPERSEDED 2026-08-13 — DO NOT CITE. This is the preliminary walled/rust-arm-only
+read (n=284 of the planned 340, E4 python arm still scoring at the time). The authoritative Stage-A
+numbers are [`readout_stageA_FINAL/VERDICT.md`](../readout_stageA_FINAL/VERDICT.md) (n=340, all
+arms).** The verdict did not change on completion (pre-registered **branch 4, INCONCLUSIVE** in
+both), but every number here is superseded — notably the sizing figure: this read says a ±17-elo
+bound needs **n ≈ 872**, the FINAL says **n ≈ 896**, and the FINAL is the one to quote.
+Kept on disk only as the record of what was known mid-run.
+
+*(Original banner: PRELIMINARY — Stage A walled/rust arm ONLY (E4 python arm still scoring) — COMPLETE for the scope declared below.)*
 
 Pre-registration: [DESIGN.md](../DESIGN.md) — every estimator below is §4, implemented before any record was read. Generated `2026-08-13T04:47:02Z`.
 
