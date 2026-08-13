@@ -1,16 +1,27 @@
 # J-RULES ON SEARCH — design of record
 
-> **STATUS: 🔨 BUILT-NOT-RUN 2026-08-13 — code only, DEFAULT-OFF.**
-> **0 games · 0 evals · 0 calibration · no band claimed · no `results.csv` row · no
-> claim minted · [`governance/PRODUCTION.yaml`](../../governance/PRODUCTION.yaml)
-> untouched.** Nothing in this document is a strength statement, and the only numbers
-> below that came from games are CL-080's (§3.6, §7, §10) — a *different* lever's,
-> quoted as evidence, not as a result of this one.
+> **STATUS: 🔧 BUILT + CALIBRATED, NOT RUN — 2026-08-13. Code merged, DEFAULT-OFF.**
+> **0 games · 0 evals · no band claimed · no `results.csv` row · no claim minted · no
+> deploy pre-registration written ·
+> [`governance/PRODUCTION.yaml`](../../governance/PRODUCTION.yaml) untouched.**
+> Nothing in this document is a strength statement. The only numbers below that came
+> from games are CL-080's (§3.6, §7, §10) — a *different* lever's, quoted as evidence,
+> not as a result of this one. **The calibration is a replay/flip-rate instrument: it
+> plays no games and says nothing about elo.**
+>
+> **Gate state: G1 ✅ merged · G2 ✅ 39/1 · G3 ✅ reconcile 0/83824 (local box only) ·
+> G4 ✅ probe · G5 ✅ CALIBRATED — `FUND-SMALLEST` names `jrules_dose = 0.25` ·
+> G6 ⛔ band (owner's call) · G7 🟡 priced at the leaf (≈1.14×).** Launching still
+> needs G6 + a deploy pre-registration, both deliberately **not** done here.
+>
+> ⚠️ **The named dose is the smallest the pre-registered ladder can name — it is NOT a
+> gentle dose.** It flips **23.65%** of champion picks, ~2.3× the open-city rung that
+> cost **−53.8 elo** (§7). The rule authorises no rung below 0.25; going lower is a
+> *new* calibration, not an extension. Read §10 before funding.
 >
 > **Owner ruling 2026-08-13: keep the ANTISYMMETRIC form** (the default as built; no
 > code change). Reasoning + the asymmetric variant as a named, unexercised option:
-> **§12 Q1**. The deliberate J1 ↔ `opencity_dose` sign opposition: **§3.6**. The Rust mirror compiles but the `carc_rs` wheel has **not** been
-> rebuilt on any box, so no cell can run yet (§11 gate G3).
+> **§12 Q1**. The deliberate J1 ↔ `opencity_dose` sign opposition: **§3.6**.
 
 Parent verdict: [`../joshuabot_20260812/CONFIRM_VERDICT.md`](../joshuabot_20260812/CONFIRM_VERDICT.md)
 §"The design fix this run earns" · primary data:
@@ -362,6 +373,44 @@ pick-flip rate clears **10%** (Wilson-95 lower bound reported alongside). If **n
 not express at deploy depth" as the finding and stop. A dose above 2.0 is no longer
 "the champion's leaf plus his strategy", it is a different evaluator.
 
+### ✅ RESULT — the ladder was measured 2026-08-13 (0 games)
+
+26 archives, **1,556 champion plies per rung**, CRN, replay checksum clean 26/26,
+23 `fixed_v1` / 2 `walled` / 1 `app_aug2`; the champion reproduced the archived move on
+72.8% of plies. ⭐ **91.9% of graded plies were replayed at the DEPLOY budget
+k8×1376 = 11008** (24 archives; only the 2 `walled` archives ran at k4×688 = 2752,
+8.1% of plies) — so **CL-079's "2750 verdicts don't transfer to 11008" caveat does not
+bite this calibration**, which is a materially stronger footing than the denial-era
+flip work had.
+
+| rung | flip rate | flips / n | Wilson-95 |
+|---|---|---|---|
+| **0.25 (NAMED)** | **23.65%** | 368 / 1556 | 21.61 – 25.83% |
+| 0.5 | 30.46% | 474 / 1556 | 28.23 – 32.80% |
+| 1.0 | 38.88% | 605 / 1556 | 36.49 – 41.33% |
+| 2.0 | 46.47% | 723 / 1556 | 44.00 – 48.95% |
+
+**Branches fired, mechanically, in order:** `FINER-RUNG` (f(1.0) = 38.88% strictly above
+the pre-committed 20% trigger ⇒ add the 0.25 rung, fund nothing yet) → **`FUND-SMALLEST`
+⇒ `jrules_dose = 0.25`, `jrules_mask = 31`, one cell, `marginal = false`.**
+
+⚠️ **The named dose is the floor of the authorised ladder, not a safe dose.** Every rung
+— including the smallest the rule may name — expresses *harder* than either open-city arm
+that lost: 23.65% vs the **10.09% that cost −53.8 elo**, and dose 1.0's 38.88% is ~2× the
+**18.89% that cost −190.3**. §3.1 of the read-rule permits no rung below 0.25 (a `d0p125`
+is a new calibration, not an extension), so **"is 0.25 still too hot?" is a question this
+ladder cannot answer and the owner should weigh before funding.** The §6 depth-1 greedy
+proxy (25.0% at dose 1.0) **understated** the true search flip rate by ~1.6×, i.e. it was
+not the upper bound §7 assumed it might be.
+
+⚠️ **Instrument defect found and worked around, disclosed rather than silently fixed:**
+read-rule §3.1 says the finer rung is "an added `--arm` over the same output directory",
+but resume is **per-ply**, so a late-added arm would have rolled up as **0.00% — a silent
+null**. The rule was **not** edited after the fact; instead the instrument now *refuses*
+that path, the 0.25 rung was measured in a fresh directory, and `merge_calib_dirs.py`
+proves the two runs searched identical worlds by diffing the champion's own pick
+ply-by-ply (**1,556 / 1,556 identical**; it `SystemExit`s on any disagreement).
+
 ⚠️ **The flip-rate → outcome mapping now has one real anchor, and it is sobering
 (CL-080, §3.6).** The open-city term's funded arms flipped **10.09%** and **18.89%** of
 champion picks and then cost **−53.8** and **−190.3 elo** at the deploy budget. So a
@@ -516,8 +565,8 @@ and points the search for it at what he *cannot* articulate.
 | **G1** | worktree merged to the main tree at a quiet window | ✅ **DONE 2026-08-13** — merged into `android-app`; the only conflict was `docs/LEVER_INDEX.md` (resolved keeping **all** rows from both sides: 221 HEAD rows + the 1 new J-rules row = 222; the J13 row kept HEAD's newer post-pre-gate text). `doc_lint` 0 errors. |
 | **G2** | `pytest tests/test_jrules_term.py` green **in the main tree** (the 2 Rust skips must become passes after G3; the 2 cy tests need the built `.so`) | ✅ **39 passed / 1 skipped** in the main tree (was 38/2). ⚠️ **The remaining skip is STRUCTURAL, not staleness** — `test_rust_parity_spot_check` skips on "no direct `carc_rs` leaf entry point exposed in this build" (`carc_rs` exposes no `leaf_value_float[_py]`). ⇒ **`reconcile_leaf.py` is the ONLY Rust-parity evidence this term has**, which promotes G3 from a nicety to the sole guard on §12 Q5's inferred root-enumeration mapping. |
 | **G3** | `carc_rs` wheel rebuilt on every box that will run a cell **and** `reconcile_leaf.py --configs jrules --corpus golden` = **0 mismatches** | ✅ **DONE on the LOCAL box 2026-08-13** — wheel rebuilt (`maturin build --release`, 5.17 s warm) + force-reinstalled; `reconcile_leaf.py --configs jrules --corpus golden --workers 8` = **83824 values compared, 0 mismatches, 7.1 s** ([`G2_leaf_jrules_golden.json`](../rustport_p2/G2_leaf_jrules_golden.json)). All 6 cells ran (`d0-identity`, `d0.5`, `d1.0`, `d1.0-j1only`, `d1.0-noj5`, `d2.0`), 6948 values each. **The term bites:** d0.5/d1.0/d2.0 move **95.34%** of leaf values vs the champion; `j1only` moves **10.36%** (J1 is rare, per §6); the `d0-identity` moved-mask control moves **nothing**. Champion fingerprints recompute **UNCHANGED** in both dialects: `a36d2e15a3b3d71d` (ab + c5), `158f17ff76adaa02`, `6dfffd57051690f2`. Neighbours undisturbed (open-city + denial + frozen-substrates + v29-flat-curve = 50 passed; v29-phase-multiplier 14 passed). ⚠️ **Still owed on the LAPTOP** if a cell runs there — the gate is per-box. |
-| **G4** | `chain_capability_probe.py --require jrules` mode added and PASSING on the run box (the "accepted and ignored" trap: a cell that quietly runs champion-vs-champion produces a beautiful, meaningless null) | ⛔ not built |
-| **G5** | `jrules` arm added to the E4-replay flip instrument; ladder run; read-rule §7 applied | ⛔ **not built — the binding blocker.** Untouched by the open-city work: `opencity_e4_replay.py` takes `--arm N:S:E:D` and needs a `name:dose:mask` sibling. Until this runs there is no defensible dose, and §7's CL-080 anchor says an arbitrary dose is exactly how a term costs 50–190 elo. |
+| **G4** | `chain_capability_probe.py --require jrules` mode added and PASSING on the run box (the "accepted and ignored" trap: a cell that quietly runs champion-vs-champion produces a beautiful, meaningless null) | ✅ **DONE 2026-08-13** — mirrors the open-city mode, incl. its **dose-0 bit-exactness control on BOTH leaves**. Here the analogue of open-city's moved threshold is the **mask**: `{dose 0.0, mask 27}` (`JR_ALL` minus `JR_J5`). ⭐ **That control is load-bearing and the report says why in situ:** a moved-mask dose-0 leaf hashes to `92ac0da996e1b37b`, **not** the champion's `a36d2e15a3b3d71d`, so the `cand_hash_moves` gate would happily pass an accidentally-zeroed dose — only a **value** comparison catches it. Verified under the launcher env canon: **exit 0, 20/20 checks**; all three §9 pre-registered hashes reproduce; rust 280/288 values move at dose 0.5; `identity_control_breaks` 0; `rs_dose0_breaks` 0/288; `py_dose0_breaks` 0/288. Without the canon: **exit 7**. `tests/test_jrules_probe.py` **31 passed**, incl. a simulated stale-wheel shim asserting rc 7 at the seam (on a rebuilt box the real stale path is unreachable, so nothing else tests that guard). |
+| **G5** | `jrules` arm added to the E4-replay flip instrument; ladder run; read-rule §7 applied | ✅ **DONE 2026-08-13 — the binding blocker is cleared.** Instrument [`jrules_e4_replay.py`](../../scripts/classical_search/jrules_e4_replay.py) (`--arm name:dose:mask`), a **sibling** of the open-city script rather than a refactor of it, so the flip rate is the **same statistic** as CL-080's. Read-rule [`CALIB_READ_RULE.md`](CALIB_READ_RULE.md) + mechanical applier `make_calib_readout.py` were **committed before any rate was read** (`bf0f94cf`, `552c7fe0`). Readout: [`CALIB_READOUT.md`](CALIB_READOUT.md). **26 archives · 1,556 champion plies/rung · replay checksum 26/26 · leaf hashes distinct · no candidate hash equals the champion's.** ⭐ **Two branches fired, in order: `FINER-RUNG`** (f(1.0) = 38.88% > the 20% trigger ⇒ the pre-committed 0.25 rung measured *before* anything was funded) **then `FUND-SMALLEST` ⇒ named dose `jrules_dose = 0.25`, `jrules_mask = 31`, leaf hash `15948beccf3472d3`, exactly one cell, not `marginal`** (Wilson-95 LB 21.61% clears the 10% bar outright). Tests: 56 + 28 + 7, and the open-city instrument's own 46 still pass unchanged. |
 | **G6** | fresh band registered in `governance/BAND_REGISTRY.csv` | ⛔ **owner's call** — not claimed by this pass, deliberately. |
 | **G7** | one benched cell for `ms_ratio` before fleet sizing | 🟡 **PRICED AT THE LEAF, not yet at the cell.** Rust per-leaf cost over 24 realistic-depth positions × 200 repeats (9600 leaf evals/leg, local box), champion = 7.55 µs/leaf: **jrules d0.5 = 1.140× · d1.0 = 1.124× · d2.0 = 1.130×** (dose-independent, as expected — the term computes whatever the dose), `noj5` = 1.082× (so J5's cloister pass is ≈4 pp of the ≈13 pp), `d0-identity` = 1.004× (the gate short-circuits). **Calibration to a real `ms_ratio`:** the same bench prices open-city at **1.008×** (d0.5) / **1.021×** (d2.0-s6-e3) per leaf, and CL-080's *measured* cell `ms_ratio` for those arms was **1.0110 / 1.0135** — i.e. the leaf multiplier transfers to wall-clock roughly **1:1**. ⇒ **predicted cell `ms_ratio` ≈ 1.12–1.14.** ⚠️ **This cell will NOT be cost-neutral**, unlike both CL-080 arms — so "the loss was not bought with time" is *not* available as a reading here, and the O-gate block must read the real `ms_ratio` off `menu_block_summary` on the first block rather than assume parity. |
 
