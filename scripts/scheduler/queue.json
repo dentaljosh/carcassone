@@ -108,20 +108,24 @@
       "dir": "measurement/jrules_on_search_20260813",
       "launch_cmd": [
         "measurement/jrules_on_search_20260813/RUN_CMD.sh",
+        "measurement/jrules_on_search_20260813/run_deploy_jrules_d0p25.sh",
         "measurement/jrules_on_search_20260813/launch.sh"
       ],
       "plays_games": true,
-      "prereg": "measurement/jrules_on_search_20260813/PREREG.md",
-      "band": null,
+      "prereg": "measurement/jrules_on_search_20260813/DEPLOY_PREREG.md",
+      "band": "128000000000",
       "merge_probe_paths": [
         "measurement/jrules_on_search_20260813/DESIGN.md"
       ],
-      "merge_note": "built in a git worktree and may additionally need a rust wheel rebuild (maturin) before it can run - NOT auto-dispatchable. Merge at a quiet window, rebuild the wheel, claim a band in governance/BAND_REGISTRY.csv and land the PREREG, then this row becomes dispatchable with no scheduler change.",
+      "merge_note": "SATISFIED 2026-08-13 - merged to android-app, carc_rs wheel rebuilt on BOTH boxes (RUSTUP_TOOLCHAIN=1.96.0, see docs/CLUSTER_OPS.md), band 1.28e11 claimed in governance/BAND_REGISTRY.csv, DEPLOY_PREREG.md landed (f5b962f), and the cell was LAUNCHED BY HAND 2026-08-13 13:37. Kept only as the record of what unblocked the row; nothing here blocks it now.",
       "done_if_exists": [
+        "measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008",
+        "measurement/jrules_on_search_20260813/FAILED_jrules_d0p25_deploy11008",
+        "measurement/jrules_on_search_20260813/CHAIN_STARTED",
         "measurement/jrules_on_search_20260813/READOUT.md"
       ],
       "log": "measurement/jrules_on_search_20260813/logs/scheduler_run.log",
-      "note": "J-rules-on-champion-search eval. PLAYS GAMES -> hard-gated on prereg + a claimed band already on disk. The scheduler never claims a band and never merges a worktree; it emits the notice and moves on."
+      "note": "J-rules-on-champion-search eval, band 1.28e11, one cell n=800 deck-paired at the deploy budget k8x1376. PLAYS GAMES -> hard-gated on prereg + a claimed band already on disk. The scheduler never claims a band and never merges a worktree; it emits the notice and moves on. *** THE ROW EXISTS NOW ONLY AS A NO-RE-RUN GUARD: the cell was launched by hand on 2026-08-13 and its own chain (run_deploy_jrules_d0p25.sh) owns it. done_if_exists therefore lists FOUR files, not just the completion marker: DONE_ (cell complete), FAILED_ (the <90% VOID path - a VOIDed cell must be READ by a human, never silently re-run on the same band), CHAIN_STARTED (written at chain launch, so the scheduler cannot dispatch a SECOND chain onto a free box while the first is still playing), and READOUT.md. Re-running any of those states would spend band seeds twice or add unplanned workers mid-cell."
     }
   ]
 }
