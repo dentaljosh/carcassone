@@ -31,6 +31,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import subprocess
 import sys
 from pathlib import Path
 
@@ -293,6 +294,101 @@ def test_summarize_rates(tmp_path):
     assert s["iso_control_n"] == 1 and s["iso_control_violations"] == 0
     assert s["n_skipped_forced"] == 1
     assert s["dropped_hist"] == {"0": 196, "2": 4}
+
+
+# --------------------------------------------------------------------------- #
+# H. RUN_CMD.sh's share probe — the 2026-08-13 laptop regression                #
+# --------------------------------------------------------------------------- #
+# The first probe took the first candidate that merely EXISTED, and on the laptop
+# BOTH candidates exist: /mnt/c/carc-shared is a 9p drvfs mount of the laptop's own
+# (empty) C:\, while the real CIFS share is at /mnt/carc-shared. The job resolved
+# the local path on the remote box and died rc=13 in one second.
+#
+# These drive the REAL script (`WTC_PROBE_ONLY=1`), not a copy of the logic, with
+# tmpdirs standing in for each mount layout. The unit test that let the bug through
+# is the one that only ever saw the LOCAL layout — so the layouts are parametrised.
+RUN_CMD = REPO / "measurement" / "window_truncation_20260813" / "RUN_CMD.sh"
+SENTINEL = "classical_search/move_agreement_k4_b28e9/roots.jsonl"
+
+
+def _mount(base: Path, name: str, *, with_sentinel: bool, entries: int = 1) -> Path:
+    """A stand-in mount point. `with_sentinel=False` still creates a NON-EMPTY dir —
+    the whole point is that it is indistinguishable from the real share by `[ -d ]`."""
+    m = base / name
+    (m / "some_other_dir").mkdir(parents=True)
+    for i in range(entries):
+        (m / f"decoy_{i}").write_text("x")
+    if with_sentinel:
+        s = m / SENTINEL
+        s.parent.mkdir(parents=True, exist_ok=True)
+        s.write_text('{"deck_seed": 1, "ply": 0, "actions": []}\n')
+    return m
+
+
+def _probe(candidates) -> tuple[int, str]:
+    env = dict(os.environ)
+    env["WTC_PROBE_ONLY"] = "1"
+    env["WTC_SHARE_CANDIDATES"] = " ".join(str(c) for c in candidates)
+    p = subprocess.run(["bash", str(RUN_CMD)], env=env, capture_output=True, text=True)
+    return p.returncode, p.stdout + p.stderr
+
+
+def test_run_cmd_exists_and_is_executable():
+    assert RUN_CMD.is_file()
+    assert os.access(RUN_CMD, os.X_OK), "the scheduler resolves launch_cmd by X_OK"
+    assert subprocess.run(["bash", "-n", str(RUN_CMD)]).returncode == 0
+
+
+def test_share_probe_local_layout(tmp_path):
+    """Local box: the first candidate IS the share."""
+    real = _mount(tmp_path, "mnt_c_carc_shared", with_sentinel=True)
+    absent = tmp_path / "does_not_exist"
+    rc, out = _probe([real, absent])
+    assert rc == 0, out
+    assert f"SHARE={real}" in out
+
+
+def test_share_probe_laptop_layout_is_the_regression(tmp_path):
+    """⚠️ THE BUG. Both candidates exist; only the SECOND is the real share.
+
+    A directory-existence probe picks the first and reads an empty mount."""
+    decoy = _mount(tmp_path, "mnt_c_carc_shared", with_sentinel=False)   # laptop's own C:\
+    real = _mount(tmp_path, "mnt_carc_shared", with_sentinel=True, entries=9)
+    rc, out = _probe([decoy, real])
+    assert rc == 0, out
+    assert f"SHARE={real}" in out
+    assert f"SHARE={decoy}" not in out
+    assert "REJECTED" in out and "no sentinel" in out
+
+
+def test_share_probe_fails_loudly_when_nothing_carries_the_sentinel(tmp_path):
+    """No fallback, ever: a hardcoded default is how a job reads the wrong mount."""
+    a = _mount(tmp_path, "a", with_sentinel=False)
+    b = _mount(tmp_path, "b", with_sentinel=False)
+    rc, out = _probe([a, b])
+    assert rc != 0
+    assert "FATAL" in out
+    assert "Refusing to guess a default" in out
+    assert "SHARE=" not in out           # must not emit a resolution it does not have
+
+
+def test_share_probe_rejects_a_missing_and_a_non_directory_candidate(tmp_path):
+    notdir = tmp_path / "a_file"
+    notdir.write_text("not a mount")
+    real = _mount(tmp_path, "real", with_sentinel=True)
+    rc, out = _probe([tmp_path / "nope", notdir, real])
+    assert rc == 0, out
+    assert f"SHARE={real}" in out
+    assert "not a directory" in out
+
+
+def test_share_probe_first_match_wins_when_both_are_real(tmp_path):
+    a = _mount(tmp_path, "a", with_sentinel=True)
+    b = _mount(tmp_path, "b", with_sentinel=True)
+    rc, out = _probe([a, b])
+    assert rc == 0, out
+    assert f"SHARE={a}" in out
+    assert "first match wins" in out
 
 
 # --------------------------------------------------------------------------- #

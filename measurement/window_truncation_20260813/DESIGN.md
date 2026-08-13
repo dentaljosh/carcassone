@@ -433,7 +433,15 @@ What the script guarantees, and why each one matters here:
   the script must never background its own work.
 - **Box-agnostic.** Bundle-sync, the `cd`-on-line-1 remote pipe and the memory-capped
   scope are the scheduler's job, not this script's; the only genuine box difference it
-  handles itself is the share mount (`/mnt/c/carc-shared` vs `/mnt/carc-shared`).
+  handles itself is the share mount — and it resolves that **by content, never by
+  directory existence and never by a default**. The first laptop dispatch
+  (2026-08-13 11:21) died `rc=13` in one second because both candidate paths *exist*
+  on the laptop and they are different filesystems: `/mnt/c/carc-shared` is a 9p
+  `drvfs` mount of the laptop's **own** `C:\` (1 entry, no data) while the real CIFS
+  share `//192.168.0.195/carc-shared` is at `/mnt/carc-shared` (369 entries). `[ -d ]`
+  cannot tell them apart. The probe now requires a **sentinel** — the CL-070 roots
+  file leg A is about to read — under a candidate before accepting it, logs every
+  rejection with its reason, and exits 10 if none resolves.
 - **Resume-able at ROOT granularity.** Rows stream to `rows.jsonl` (fsync'd per root)
   and every leg runs with `--resume`; a leg with a `DONE_LEG_*` marker is skipped
   outright, so re-running is always safe.

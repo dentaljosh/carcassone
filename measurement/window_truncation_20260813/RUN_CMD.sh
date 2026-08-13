@@ -72,12 +72,54 @@ say() { echo "[$(date -Is)] $*"; }
 # --------------------------------------------------------------------------- #
 # share mount — THE one genuine box difference (CLUSTER_OPS invariant)         #
 # --------------------------------------------------------------------------- #
+# ⚠️ RESOLVE BY CONTENT, NEVER BY DIRECTORY EXISTENCE, AND NEVER BY A DEFAULT.
+#
+# The 2026-08-13 11:21 laptop dispatch died rc=13 because the first version of
+# this probe accepted the first candidate that merely EXISTED. On the laptop BOTH
+# paths exist and they are different filesystems:
+#
+#   /mnt/c/carc-shared   9p   drvfs of the LAPTOP'S OWN C:\  -> 1 entry, no data
+#   /mnt/carc-shared     cifs //192.168.0.195/carc-shared    -> 369 entries, the share
+#
+# So "is it a directory" cannot tell them apart; only content can. The probe now
+# demands a SENTINEL — the very file leg A is going to read — under each
+# candidate, logs every candidate it rejected and why, and FAILS LOUDLY if none
+# resolves. There is deliberately no fallback: a hardcoded default is exactly how
+# a job ends up reading an empty directory on the wrong box.
+#
+# Overridable for tests: WTC_SHARE_CANDIDATES (space-separated), WTC_SHARE_SENTINEL.
+# WTC_PROBE_ONLY=1 prints the resolved share and exits — that is what the test
+# drives, so the test exercises THIS code rather than a copy of it.
+SHARE_CANDIDATES="${WTC_SHARE_CANDIDATES:-/mnt/c/carc-shared /mnt/carc-shared}"   # allow-path
+SHARE_SENTINEL="${WTC_SHARE_SENTINEL:-classical_search/move_agreement_k4_b28e9/roots.jsonl}"
+
 SHARE=""
-for cand in /mnt/c/carc-shared /mnt/carc-shared; do   # allow-path
-  [ -d "$cand" ] && { SHARE="$cand"; break; }
+for cand in $SHARE_CANDIDATES; do
+  if [ ! -d "$cand" ]; then
+    say "  share candidate $cand: REJECTED (not a directory)"
+  elif [ ! -f "$cand/$SHARE_SENTINEL" ]; then
+    say "  share candidate $cand: REJECTED (exists, but no sentinel $SHARE_SENTINEL —" \
+        "$(ls -A "$cand" 2>/dev/null | wc -l | tr -d ' ') entries; wrong mount for this box)"
+  elif [ -z "$SHARE" ]; then
+    SHARE="$cand"
+    say "  share candidate $cand: ACCEPTED (sentinel present)"
+  else
+    say "  share candidate $cand: also has the sentinel; keeping $SHARE (first match wins)"
+  fi
 done
-[ -n "$SHARE" ] || { say "FATAL: no share mount found (/mnt/c/carc-shared or /mnt/carc-shared)"; exit 10; }  # allow-path
-BANK="$SHARE/classical_search/move_agreement_k4_b28e9/roots.jsonl"
+if [ -z "$SHARE" ]; then
+  say "FATAL: no share mount carries the sentinel '$SHARE_SENTINEL'."
+  say "       candidates tried: $SHARE_CANDIDATES"
+  say "       This is either a mount problem on box '$BOX' or the CL-070 root bank is"
+  say "       genuinely absent from the share. Refusing to guess a default."
+  exit 10
+fi
+BANK="$SHARE/$SHARE_SENTINEL"
+
+if [ "${WTC_PROBE_ONLY:-0}" = "1" ]; then
+  echo "SHARE=$SHARE"
+  exit 0
+fi
 
 # --------------------------------------------------------------------------- #
 # pre-flight — fail loudly and distinctly, before any compute                  #
