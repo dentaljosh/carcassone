@@ -312,6 +312,44 @@ class LeafConfig:
     opencity_size_min: float = 4.0
     opencity_edge_min: int = 2
     opencity_symmetric: bool = True
+    # --- J-RULES ON SEARCH — the 2026-08-12 anchor interview as a leaf bundle
+    # (candidate-only; measurement/jrules_on_search_20260813/DESIGN.md, building
+    # 2026-08-13) ---------------------------------------------------------------
+    # The 2026-08-13 Joshua-bot tournament measured the owner's self-described
+    # strategy (J1..J9) as a SCRIPTED opponent and it lost to the champion by
+    # -16.0 pts/deck at z -24.4 — weaker than JCloisterZone's shallow AI (-6.5).
+    # That number is CONFOUNDED: the bot applied the J-rules on a ONE-PLY GREEDY
+    # base while the champion ran 11008-sim PIMC, so depth swamped strategy and no
+    # amount of n separates them (measurement/joshuabot_20260812/CONFIRM_VERDICT.md
+    # §"The design fix this run earns"). This knob is that fix: the same rules,
+    # expressed as an additive term on the champion's OWN leaf, so the candidate and
+    # the opponent differ in STRATEGY ONLY.
+    # The term is a SIGNED, antisymmetric differential T (see
+    # flat_leaf.flat_jrules_term) and the leaf **ADDS** `jrules_dose * T` — note the
+    # sign: unlike denial_dose / opencity_dose (penalties, subtracted) this bundle is
+    # a BONUS potential.
+    #   jrules_dose: float, 0.0 (default) == bundle fully off == today's leaf, via an
+    #                early branch (never an add of 0.0). THE single calibration axis:
+    #                1.0 == the interview's own point magnitudes.
+    #   jrules_mask: rule bitmask for ablations (flat_leaf.JR_J1 | JR_J2 | JR_J5 |
+    #                JR_J6 | JR_J8; default JR_ALL == 31). Inert while the dose is
+    #                0.0. The per-rule PARAMETERS are frozen constants in flat_leaf
+    #                (copied from joshua_bot.PRESETS["current"], the epoch the
+    #                tournament selected at z +3.68) — deliberately NOT 28 more
+    #                LeafConfig fields; this experiment calibrates one scalar, it does
+    #                not re-tune the interview.
+    # ⚠️ FLAT PATH ONLY. `flat_leaf.py` and the Rust leaf implement it; the object
+    # (engine) path FAILS LOUD below, and `flat_leaf_cy.pyx` deliberately does NOT
+    # implement it (the F7b/denial/open-city pattern: candidate cells run
+    # `--backend rust`, where no Python leaf is computed), so a SET dose routes off
+    # the cy fast path to the bit-exact pure-Python flat leaf.
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg
+    # recipe (snapshot._frozen_config_hash + its mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE at their
+    # defaults, so 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
+    # A candidate that SETS a dose shifts the hash (it is a different leaf — intended).
+    jrules_dose: float = 0.0
+    jrules_mask: int = 31
 
 
 def _config_from_env() -> LeafConfig:
@@ -374,6 +412,10 @@ def _config_from_env() -> LeafConfig:
         opencity_size_min=float(os.environ.get("CARCASSONNE_OPENCITY_SIZE_MIN", "4.0")),
         opencity_edge_min=int(os.environ.get("CARCASSONNE_OPENCITY_EDGE_MIN", "2")),
         opencity_symmetric=(os.environ.get("CARCASSONNE_OPENCITY_SYMMETRIC", "1") == "1"),
+        # J-rules on search — default 0.0 == bundle fully off == unchanged production
+        # DEFAULT_CONFIG (the phase-beta / denial / open-city pattern).
+        jrules_dose=float(os.environ.get("CARCASSONNE_JRULES_DOSE", "0.0")),
+        jrules_mask=int(os.environ.get("CARCASSONNE_JRULES_MASK", "31")),
     )
 
 
@@ -846,6 +888,16 @@ def virtual_score_v2(
         raise NotImplementedError(
             "LeafConfig.opencity_dose (open-city discipline) requires the flat leaf "
             "path (set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
+        )
+    if getattr(cfg, "jrules_dose", 0.0) != 0.0:
+        # The J-rules bundle is flat-path ONLY (see LeafConfig.jrules_dose) — fail
+        # loudly rather than silently scoring WITHOUT the J-terms here, which would
+        # read as "the anchor's strategy is worth nothing" instead of "the strategy
+        # never ran". That is precisely the misreading this whole build exists to
+        # prevent.
+        raise NotImplementedError(
+            "LeafConfig.jrules_dose (J-rules on search) requires the flat leaf path "
+            "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
         )
     if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
         # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC

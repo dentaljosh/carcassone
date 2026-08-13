@@ -176,6 +176,19 @@ pub struct LeafConfig {
     /// `LeafConfig.opencity_symmetric` — `true` (default) makes `T = pen(self) -
     /// pen(opp)`, keeping the leaf antisymmetric; `false` makes `T = pen(self)`.
     pub opencity_symmetric: bool,
+    /// J-rules on search — the 2026-08-12 anchor interview's self-described strategy
+    /// as ONE signed leaf term (`virtual_score_v2.LeafConfig.jrules_dose`, spec
+    /// `measurement/jrules_on_search_20260813/DESIGN.md`). `0.0` (default) == bundle
+    /// fully off == the champion leaf, bit-for-bit (early branch, never an add of
+    /// 0.0). A nonzero dose **ADDS** `dose * T` — ⚠️ NOTE THE SIGN: `denial_dose`
+    /// and `opencity_dose` are penalties and are SUBTRACTED; this bundle is a BONUS
+    /// potential (the J-rules say what to seek, not only what to fear). `T` is the
+    /// SIGNED differential built by [`jrules_term`].
+    pub jrules_dose: f64,
+    /// `LeafConfig.jrules_mask` — rule bitmask for ablations
+    /// ([`JR_J1`] | [`JR_J2`] | [`JR_J5`] | [`JR_J6`] | [`JR_J8`] == [`JR_ALL`] == 31,
+    /// the default and the primary cell).
+    pub jrules_mask: i64,
 }
 
 /// `flat_leaf._PHASE_K0` — mid-deck, frozen by the prereg.
@@ -228,6 +241,8 @@ impl LeafConfig {
             opencity_size_min: 4.0,
             opencity_edge_min: 2,
             opencity_symmetric: true,
+            jrules_dose: 0.0,
+            jrules_mask: JR_ALL,
         }
     }
 
@@ -998,6 +1013,507 @@ pub fn opencity_term(state: &GameState, player: usize, d: &Decomp, cfg: &LeafCon
 }
 
 // ---------------------------------------------------------------------------
+// J-RULES ON SEARCH — the anchor's self-described strategy, as ONE leaf term
+// (`measurement/jrules_on_search_20260813/DESIGN.md`; building 2026-08-13).
+// A function-for-function mirror of the `flat_leaf.py` block of the same name;
+// the Python names are `_jr_*` / `flat_jrules_term`.
+// ---------------------------------------------------------------------------
+
+/// `flat_leaf._JR_K0` — `k_remaining` at the FIRST decision of a 2-player
+/// Base+Farmers game (71 undrawn + 1 in hand). `joshua_bot` latches this per game
+/// (`Clock.k0`); the leaf must stay a pure function of `(state, cfg)`, so it is
+/// FROZEN here exactly as Python freezes it.
+pub const JR_K0: f64 = 72.0;
+
+/// `flat_leaf.JR_J1` — large-open-city share premium ("sneak a meeple in").
+pub const JR_J1: i64 = 1;
+/// `flat_leaf.JR_J2` — farm value discipline (realized steal + low-value surrender).
+pub const JR_J2: i64 = 2;
+/// `flat_leaf.JR_J5` — signed unclaimed-feature value (J5 + J13).
+pub const JR_J5: i64 = 4;
+/// `flat_leaf.JR_J6` — anchor structure + road policy.
+pub const JR_J6: i64 = 8;
+/// `flat_leaf.JR_J8` — pivotal-feature overcommit.
+pub const JR_J8: i64 = 16;
+/// `flat_leaf.JR_ALL` — the default [`LeafConfig::jrules_mask`] (31).
+pub const JR_ALL: i64 = JR_J1 | JR_J2 | JR_J5 | JR_J6 | JR_J8;
+
+// --- the FROZEN `current`-preset parameter block ---------------------------
+// Copied constant-for-constant from the Python block, which copied it from
+// `joshua_bot.PRESETS["current"]`. Deliberately NOT config fields: the
+// experiment's calibration axis is the single scalar `jrules_dose`.
+const JR_J1_MIN_CITY_TILES: i64 = 5;
+const JR_J1_MIN_OPEN_EDGES: usize = 2;
+const JR_J1_JOIN_BONUS: f64 = 3.0;
+const JR_J1_LATE_EXTRA: f64 = 1.0;
+const JR_J4_MIN_URGENCY: f64 = 0.35;
+/// Python `_JR_J4_FULL_RESERVE = 4`; only ever read as `float(...)`.
+const JR_J4_FULL_RESERVE: f64 = 4.0;
+const JR_J2_STEAL_W: f64 = 1.0;
+const JR_J2_MIN_FARM_VALUE: f64 = 3.0;
+const JR_J2_LOW_FARM_PENALTY: f64 = 2.0;
+const JR_J2_UNFINISHED_CITY_W: f64 = 1.0;
+const JR_J2_CITY_COUNT_FROM_K: usize = 36;
+const JR_J2_CITY_CLOSE_OPEN_MAX: usize = 2;
+const JR_J5_WEIGHT: f64 = 0.5;
+const JR_J5_VALUE_FLOOR: f64 = 4.0;
+const JR_J5_RESERVE_NORM: f64 = 2.0;
+const JR_J6_ANCHOR_BONUS: f64 = 2.0;
+const JR_J6_ANCHOR_CITY_MIN: i64 = 3;
+const JR_J6_ANCHOR_ROAD_MIN: i64 = 2;
+const JR_J6_ROAD_JOIN_MIN_LEN: i64 = 4;
+const JR_J6_ROAD_JOIN_BONUS: f64 = 2.0;
+const JR_J6_ROAD_SKEPTIC_MAX_LEN: i64 = 3;
+const JR_J6_ROAD_CLAIM_PENALTY: f64 = 1.5;
+const JR_J6_ROAD_ANCHOR_ALLOWANCE: i64 = 1;
+const JR_J8_PIVOTAL_SWING: f64 = 12.0;
+const JR_J8_OVERCOMMIT_BONUS: f64 = 3.0;
+const JR_J8_VALUE_NORM: f64 = 10.0;
+const JR_J8_MAX_CITY_MEEPLES: i64 = 2;
+const JR_J8_MAX_FARM_MEEPLES: i64 = 3;
+
+/// The `(root, [w0, w1])` association list that stands in for Python's dict.
+/// Only ever consumed by `fsum`-reduced loops and by order-independent
+/// booleans/counters, so first-touch order is not observable in the result.
+type JrCounts = Vec<(u32, [i64; 2])>;
+
+#[inline]
+fn jr_bump(v: &mut JrCounts, root: u32, player: usize, w: i64) {
+    for e in v.iter_mut() {
+        if e.0 == root {
+            e.1[player] += w;
+            return;
+        }
+    }
+    let mut cnt = [0i64; 2];
+    cnt[player] += w;
+    v.push((root, cnt));
+}
+
+#[inline]
+fn jr_has_root(v: &JrCounts, root: u32) -> bool {
+    v.iter().any(|e| e.0 == root)
+}
+
+/// `flat_leaf._jr_counts` — weighted meeple counts per component plus the
+/// CLAIMED-cloister cell set. Attribution mirrors [`final_scores`] exactly
+/// (terrain of the meeple's own side; farmers via `farm_pos0_root`).
+fn jr_counts(state: &GameState, d: &Decomp) -> (JrCounts, JrCounts, JrCounts, Vec<(i32, i32)>) {
+    let mut city: JrCounts = Vec::new();
+    let mut road: JrCounts = Vec::new();
+    let mut farm: JrCounts = Vec::new();
+    let mut cloister: Vec<(i32, i32)> = Vec::new();
+    for pl in 0..2 {
+        for mp in &state.placed_meeples[pl] {
+            let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
+            // Python: `tile = board[r][c]; if tile is None: continue`.
+            let tid = match state.get_tile(r, c) {
+                Some(t) => t,
+                None => continue,
+            };
+            let terrain = tiles::tile(tid).get_type(side);
+            let w = meeple_weight(mp.meeple_type);
+            if terrain == Some(TerrainType::City) {
+                if let Some(root) = d.city_side_root(r, c, side) {
+                    jr_bump(&mut city, root, pl, w);
+                }
+            } else if terrain == Some(TerrainType::Road) {
+                if let Some(root) = d.road_side_root(r, c, side) {
+                    jr_bump(&mut road, root, pl, w);
+                }
+            } else if terrain == Some(TerrainType::Chapel) || terrain == Some(TerrainType::Flowers)
+            {
+                if !cloister.contains(&(r, c)) {
+                    cloister.push((r, c)); // Python: a `set`; membership only
+                }
+            } else if mp.meeple_type == MeepleType::Farmer
+                || mp.meeple_type == MeepleType::BigFarmer
+            {
+                if let Some(root) = d.farm_pos0_root(r, c, side) {
+                    jr_bump(&mut farm, root, pl, w);
+                }
+            }
+        }
+    }
+    (city, road, farm, cloister)
+}
+
+/// `flat_leaf._jr_urgency` — J4, a multiplier in `[JR_J4_MIN_URGENCY, 1.0]` read
+/// off the OTHER side's meeple reserve (which is what keeps the assembled
+/// differential antisymmetric under a seat swap).
+#[inline]
+fn jr_urgency(opp_reserve: i32) -> f64 {
+    let mut frac = opp_reserve as f64 / JR_J4_FULL_RESERVE;
+    if frac > 1.0 {
+        frac = 1.0;
+    }
+    JR_J4_MIN_URGENCY + (1.0 - JR_J4_MIN_URGENCY) * frac
+}
+
+/// `flat_leaf._jr_late_frac` — 0.0 at the first decision, 1.0 at the last tile.
+#[inline]
+fn jr_late_frac(k: usize) -> f64 {
+    let f = 1.0 - (k as f64 / JR_K0);
+    if f < 0.0 {
+        return 0.0;
+    }
+    if f > 1.0 {
+        1.0
+    } else {
+        f
+    }
+}
+
+/// `min(1.0, x)` with CPython's `min` semantics (`x if x < 1.0 else 1.0`).
+#[inline]
+fn jr_min1(x: f64) -> f64 {
+    if x < 1.0 {
+        x
+    } else {
+        1.0
+    }
+}
+
+/// `flat_leaf._jr_j1` — credit for holding a SHARE of a large, still-open city.
+/// (The bot's `cnt[other] >= 1` join requirement is dropped: it self-cancels
+/// under symmetrization — see the Python docstring.)
+fn jr_j1(d: &Decomp, city_counts: &JrCounts, pl: usize, other: usize, late_frac: f64) -> f64 {
+    let mut contribs: Vec<f64> = Vec::new();
+    let bonus = JR_J1_JOIN_BONUS * (1.0 + JR_J1_LATE_EXTRA * late_frac);
+    for &(root, cnt) in city_counts {
+        let r = root as usize;
+        if d.city_root_finished[r] {
+            continue;
+        }
+        if cnt[pl] < 1 || cnt[pl] < cnt[other] {
+            continue; // no share of this city
+        }
+        if d.city_root_tiles[r] < JR_J1_MIN_CITY_TILES {
+            continue; // not "on the bigger side"
+        }
+        if d.city_root_open_n[r] < JR_J1_MIN_OPEN_EDGES {
+            continue; // not "probably wont close"
+        }
+        contribs.push(bonus);
+    }
+    fsum(&contribs)
+}
+
+/// `flat_leaf._jr_farm_potential` — 3 points per adjacent city that is not
+/// finished yet but is plausibly closable (FINISHED ones are already paid by
+/// `flat_base_score`).
+fn jr_farm_potential(d: &Decomp, root: u32, k: usize) -> f64 {
+    if k > JR_J2_CITY_COUNT_FROM_K {
+        return 0.0;
+    }
+    let mut n: i64 = 0;
+    for croot in d.farm_adj_city_roots(root) {
+        let cr = croot as usize;
+        if d.city_root_finished[cr] {
+            continue;
+        }
+        if d.city_root_open_n[cr] <= JR_J2_CITY_CLOSE_OPEN_MAX {
+            n += 1;
+        }
+    }
+    3.0 * n as f64 * JR_J2_UNFINISHED_CITY_W
+}
+
+/// `flat_leaf._jr_j2` — J2c realized steal + J10 surrender charge. (Same
+/// symmetrization deviation as J1: the bot's `cnt[other] >= 1` is dropped.)
+fn jr_j2(d: &Decomp, farm_counts: &JrCounts, pl: usize, other: usize, k: usize) -> f64 {
+    let mut contribs: Vec<f64> = Vec::new();
+    for &(root, cnt) in farm_counts {
+        if cnt[pl] < 1 {
+            continue;
+        }
+        let pot = jr_farm_potential(d, root, k);
+        let value = 3.0 * d.farm_root_finished_cities[root as usize] as f64 + pot;
+        if cnt[pl] >= cnt[other] && value >= JR_J2_MIN_FARM_VALUE {
+            contribs.push(JR_J2_STEAL_W * pot);
+        }
+        if value < JR_J2_MIN_FARM_VALUE {
+            contribs.push(-JR_J2_LOW_FARM_PENALTY * cnt[pl] as f64);
+        }
+    }
+    fsum(&contribs)
+}
+
+/// `flat_leaf._jr_unclaimed_value` — total value on features NOBODY has a meeple
+/// on, counting only the excess over [`JR_J5_VALUE_FLOOR`]. Seat-free by
+/// construction (a property of the BOARD), which is what lets J5/J13 be one
+/// signed term.
+///
+/// The Python iterates `decomp.city_root_coords` / `road_root_coords`, whose keys
+/// are exactly the distinct component roots. Here the roots are recovered from
+/// the label vectors: `label_components_into` writes `labels[x] = find(x)`, and a
+/// root `r` satisfies `parent[r] == r`, hence `labels[r] == r`.
+fn jr_unclaimed_value(
+    state: &GameState,
+    d: &Decomp,
+    city_counts: &JrCounts,
+    road_counts: &JrCounts,
+    cloister_owned: &[(i32, i32)],
+) -> f64 {
+    let mut contribs: Vec<f64> = Vec::new();
+    for nid in 0..d.city_labels.len() {
+        if d.city_labels[nid] != nid as u32 {
+            continue; // not a component root
+        }
+        if jr_has_root(city_counts, nid as u32) {
+            continue;
+        }
+        let delta = d.city_root_delta[nid] as f64;
+        let v = if d.city_root_finished[nid] {
+            2.0 * delta
+        } else {
+            delta
+        };
+        if v > JR_J5_VALUE_FLOOR {
+            contribs.push(v - JR_J5_VALUE_FLOOR);
+        }
+    }
+    for nid in 0..d.road_labels.len() {
+        if d.road_labels[nid] != nid as u32 {
+            continue; // not a component root
+        }
+        if jr_has_root(road_counts, nid as u32) {
+            continue;
+        }
+        // `road_root_tiles[root] == len(decomp.road_root_coords[root])`.
+        let v = d.road_root_tiles[nid] as f64;
+        if v > JR_J5_VALUE_FLOOR {
+            contribs.push(v - JR_J5_VALUE_FLOOR);
+        }
+    }
+    // Python scans `state.placed_coords`; `d.placed` is the same cell set (only
+    // fsum-reduced below, so the order can never reach the leaf value).
+    for &(r, c) in &d.placed {
+        if cloister_owned.contains(&(r, c)) {
+            continue;
+        }
+        let tid = match state.get_tile(r, c) {
+            Some(t) => t,
+            None => continue,
+        };
+        let terrain = tiles::tile(tid).get_type(tiles::Side::Center);
+        if terrain != Some(TerrainType::Chapel) && terrain != Some(TerrainType::Flowers) {
+            continue;
+        }
+        let v = cloister_points(state, r, c) as f64;
+        if v > JR_J5_VALUE_FLOOR {
+            contribs.push(v - JR_J5_VALUE_FLOOR);
+        }
+    }
+    fsum(&contribs)
+}
+
+/// `flat_leaf._jr_claim_edge` — J13's `P_self(claim) - P_opp(claim)`, proxied by
+/// the meeple-reserve differential and clipped to `[-1, 1]`.
+#[inline]
+fn jr_claim_edge(state: &GameState, player: usize, opp: usize) -> f64 {
+    let e = (state.meeples[player] - state.meeples[opp]) as f64 / JR_J5_RESERVE_NORM;
+    if e > 1.0 {
+        return 1.0;
+    }
+    if e < -1.0 {
+        -1.0
+    } else {
+        e
+    }
+}
+
+/// `flat_leaf._jr_j6_anchor` — J6 (a)+(c): a bonus for holding one unfinished
+/// city anchor and one unfinished road anchor, less a charge on every SOLO short
+/// road claim past the one anchor road. NOT urgency-multiplied.
+fn jr_j6_anchor(
+    d: &Decomp,
+    city_counts: &JrCounts,
+    road_counts: &JrCounts,
+    pl: usize,
+    other: usize,
+) -> f64 {
+    let mut has_city = false;
+    for &(root, cnt) in city_counts {
+        let r = root as usize;
+        if d.city_root_finished[r] || cnt[pl] <= cnt[other] {
+            continue;
+        }
+        if d.city_root_tiles[r] >= JR_J6_ANCHOR_CITY_MIN {
+            has_city = true;
+            break;
+        }
+    }
+    let mut has_road = false;
+    let mut n_short_solo: i64 = 0;
+    for &(root, cnt) in road_counts {
+        let r = root as usize;
+        if d.road_root_finished[r] {
+            continue;
+        }
+        let length = d.road_root_tiles[r];
+        if cnt[pl] > cnt[other] {
+            if length >= JR_J6_ANCHOR_ROAD_MIN {
+                has_road = true;
+            }
+            if cnt[other] == 0 && length <= JR_J6_ROAD_SKEPTIC_MAX_LEN {
+                n_short_solo += 1;
+            }
+        }
+    }
+    let mut excess = n_short_solo - JR_J6_ROAD_ANCHOR_ALLOWANCE;
+    if excess < 0 {
+        excess = 0;
+    }
+    JR_J6_ANCHOR_BONUS * (i64::from(has_city) + i64::from(has_road)) as f64
+        - JR_J6_ROAD_CLAIM_PENALTY * excess as f64
+}
+
+/// `flat_leaf._jr_j6_road_join` — credit for holding a share of a long unfinished
+/// road (same symmetrization deviation as J1).
+fn jr_j6_road_join(d: &Decomp, road_counts: &JrCounts, pl: usize, other: usize) -> f64 {
+    let mut contribs: Vec<f64> = Vec::new();
+    for &(root, cnt) in road_counts {
+        let r = root as usize;
+        if d.road_root_finished[r] {
+            continue;
+        }
+        if cnt[pl] < 1 || cnt[pl] < cnt[other] {
+            continue;
+        }
+        if d.road_root_tiles[r] < JR_J6_ROAD_JOIN_MIN_LEN {
+            continue;
+        }
+        contribs.push(JR_J6_ROAD_JOIN_BONUS);
+    }
+    fsum(&contribs)
+}
+
+/// `flat_leaf._jr_j8` — pivotal-feature overcommit. `abs_margin` is `|base|` AT
+/// THE LEAF (the bot reads the decision root's margin; a leaf has no root).
+fn jr_j8(
+    d: &Decomp,
+    city_counts: &JrCounts,
+    farm_counts: &JrCounts,
+    pl: usize,
+    other: usize,
+    k: usize,
+    abs_margin: f64,
+) -> f64 {
+    let mut contribs: Vec<f64> = Vec::new();
+    for &(root, cnt) in city_counts {
+        let r = root as usize;
+        if d.city_root_finished[r] {
+            continue;
+        }
+        if d.city_root_open_n[r] < 1 {
+            continue; // he can no longer get in
+        }
+        let value = d.city_root_delta[r] as f64;
+        let swing = 2.0 * value;
+        if swing < JR_J8_PIVOTAL_SWING || swing < abs_margin {
+            continue;
+        }
+        if cnt[pl] - cnt[other] < 2 || cnt[pl] > JR_J8_MAX_CITY_MEEPLES {
+            continue;
+        }
+        contribs.push(JR_J8_OVERCOMMIT_BONUS * jr_min1(value / JR_J8_VALUE_NORM));
+    }
+    if k >= 1 {
+        for &(root, cnt) in farm_counts {
+            let value = 3.0 * d.farm_root_finished_cities[root as usize] as f64
+                + jr_farm_potential(d, root, k);
+            let swing = 2.0 * value;
+            if swing < JR_J8_PIVOTAL_SWING || swing < abs_margin {
+                continue;
+            }
+            if cnt[pl] - cnt[other] < 2 || cnt[pl] > JR_J8_MAX_FARM_MEEPLES {
+                continue;
+            }
+            contribs.push(JR_J8_OVERCOMMIT_BONUS * jr_min1(value / JR_J8_VALUE_NORM));
+        }
+    }
+    fsum(&contribs)
+}
+
+/// `flat_leaf.flat_jrules_term` — the SIGNED J-rules differential `T` from
+/// `player`'s POV; the leaf **ADDS** `cfg.jrules_dose * T`.
+///
+/// ⚠️ NOTE THE SIGN. [`denial_term`] and [`opencity_term`] are penalties and the
+/// leaf SUBTRACTS them; this bundle is a BONUS potential and the leaf ADDS it.
+///
+/// ANTISYMMETRY IS THE DESIGN CONSTRAINT: the search evaluates the leaf from the
+/// MOVER's POV and negates on backup, so every sub-rule is assembled as
+/// `urg(pl) * j(pl) - urg(other) * j(other)`, which negates exactly under a seat
+/// swap. `parts` is built rule-by-rule in the fixed order J1, J2, J5, J6-anchor,
+/// J6-road-join, J8 (J6 pushes TWO parts) and `fsum`-reduced — a function of the
+/// multiset, so the association-list iteration order inside each rule cannot
+/// reach the value.
+///
+/// `base` is `flat_base_score`'s value (the leaf passes the one it already
+/// computed, cast to `f64`). Only J8 reads it, as `|base|`, which is seat-free.
+pub fn jrules_term(
+    state: &GameState,
+    player: usize,
+    d: &Decomp,
+    cfg: &LeafConfig,
+    base: f64,
+) -> f64 {
+    let mask = cfg.jrules_mask;
+    let opp = 1 - player;
+    let (city_counts, road_counts, farm_counts, cloister_owned) = jr_counts(state, d);
+    // `_k_remaining(state)` — identical to `phase_mult`'s definition of record.
+    let k = state.deck_len() + usize::from(state.next_tile.is_some());
+    let mut parts: Vec<f64> = Vec::new();
+    if mask & JR_J1 != 0 {
+        let late = jr_late_frac(k);
+        let u_self = jr_urgency(state.meeples[opp]);
+        let u_opp = jr_urgency(state.meeples[player]);
+        parts.push(
+            u_self * jr_j1(d, &city_counts, player, opp, late)
+                - u_opp * jr_j1(d, &city_counts, opp, player, late),
+        );
+    }
+    if mask & JR_J2 != 0 {
+        let u_self = jr_urgency(state.meeples[opp]);
+        let u_opp = jr_urgency(state.meeples[player]);
+        parts.push(
+            u_self * jr_j2(d, &farm_counts, player, opp, k)
+                - u_opp * jr_j2(d, &farm_counts, opp, player, k),
+        );
+    }
+    if mask & JR_J5 != 0 {
+        // J5 + J13 are ONE signed term and are already a differential, so they are
+        // NOT run through the per-side frame and are NOT urgency-multiplied — the
+        // claim edge IS the reserve conditioning J4 would otherwise supply.
+        let u = jr_unclaimed_value(state, d, &city_counts, &road_counts, &cloister_owned);
+        parts.push(JR_J5_WEIGHT * u * jr_claim_edge(state, player, opp));
+    }
+    if mask & JR_J6 != 0 {
+        let u_self = jr_urgency(state.meeples[opp]);
+        let u_opp = jr_urgency(state.meeples[player]);
+        parts.push(
+            jr_j6_anchor(d, &city_counts, &road_counts, player, opp)
+                - jr_j6_anchor(d, &city_counts, &road_counts, opp, player),
+        );
+        parts.push(
+            u_self * jr_j6_road_join(d, &road_counts, player, opp)
+                - u_opp * jr_j6_road_join(d, &road_counts, opp, player),
+        );
+    }
+    if mask & JR_J8 != 0 {
+        let abs_margin = base.abs();
+        let u_self = jr_urgency(state.meeples[opp]);
+        let u_opp = jr_urgency(state.meeples[player]);
+        parts.push(
+            u_self * jr_j8(d, &city_counts, &farm_counts, player, opp, k, abs_margin)
+                - u_opp * jr_j8(d, &city_counts, &farm_counts, opp, player, k, abs_margin),
+        );
+    }
+    fsum(&parts)
+}
+
+// ---------------------------------------------------------------------------
 // The leaf
 // ---------------------------------------------------------------------------
 
@@ -1015,6 +1531,10 @@ pub struct LeafTerms {
     /// The SIGNED open-city differential `T` (the leaf subtracts `dose * T`; it may
     /// be negative). `0.0` whenever `opencity_dose == 0.0` (never computed then).
     pub opencity_term: f64,
+    /// The SIGNED J-rules differential `T` (the leaf **ADDS** `dose * T` — note the
+    /// sign; it may be negative). `0.0` whenever `jrules_dose == 0.0` (never
+    /// computed then).
+    pub jrules_term: f64,
     pub meeple_term: f64,
     pub return_term: f64,
     pub flip_term: f64,
@@ -1092,6 +1612,20 @@ pub fn leaf_terms_with(
         score -= cfg.opencity_dose * oc_term;
     }
 
+    // J-rules on search: a SIGNED, uncapped **ADDITION** (⚠️ note the sign — this
+    // bundle is a BONUS potential, not a penalty like denial/open-city), applied
+    // AFTER open-city as a third separate gated statement in this fixed order
+    // (float addition is non-associative, so a fused expression would break
+    // bit-exactness against Python). dose == 0.0 (default/champion) takes an early
+    // branch — never an add of 0.0 — so default traffic is bit-identical, not
+    // merely equal. Mirrors `flat_leaf.flat_virtual_score_v2`, which passes the
+    // `base` it already computed.
+    let mut jr_term = 0.0;
+    if cfg.jrules_dose != 0.0 {
+        jr_term = jrules_term(state, player, d, cfg, base as f64);
+        score += cfg.jrules_dose * jr_term;
+    }
+
     let meeple_term = match &cfg.v29_meeple_curve {
         Some(curve) => {
             // Part C: beta == 0.0 (default/champion) takes the UNMODIFIED expression
@@ -1138,6 +1672,7 @@ pub fn leaf_terms_with(
         bonus_opp,
         denial_term: den_term,
         opencity_term: oc_term,
+        jrules_term: jr_term,
         meeple_term,
         return_term: r_term,
         flip_term: f_term,

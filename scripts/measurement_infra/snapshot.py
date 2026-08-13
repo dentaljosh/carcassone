@@ -134,6 +134,10 @@ _FROZEN_HASH_DEFAULT_OFF = {
     "opencity_size_min": 4.0,
     "opencity_edge_min": 2,
     "opencity_symmetric": True,
+    # J-rules on search (measurement/jrules_on_search_20260813, 2026-08-13):
+    # default-off candidate-only knobs. Excluded on the same grounds as F6/F7b/Part C.
+    "jrules_dose": 0.0,
+    "jrules_mask": 31,
 }
 
 

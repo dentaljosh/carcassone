@@ -1170,6 +1170,475 @@ def flat_opencity_term(state, player: int, decomp: Decomp, cfg) -> float:
     return pen_self - math.fsum(contribs[1 - player])
 
 
+# --------------------------------------------------------------------------- #
+# J-RULES ON SEARCH — the anchor's self-described strategy, as ONE leaf term    #
+# (measurement/jrules_on_search_20260813/DESIGN.md, building 2026-08-13)        #
+# --------------------------------------------------------------------------- #
+#: `k_remaining` at the FIRST decision of a 2-player Base+Farmers game (71 undrawn
+#: + 1 in hand; verified against `Game().get_init_board()`). ``joshua_bot`` latches
+#: this per game (`Clock.k0`); the leaf MUST stay a pure function of (state, cfg)
+#: for hashing and py/rust reconciliation, so it is FROZEN here instead.
+_JR_K0 = 72.0
+
+#: rule bits for ``LeafConfig.jrules_mask`` (ablation surface; the primary cell
+#: runs JR_ALL). Kept as ints — the Rust mirror reads the same bit values.
+JR_J1 = 1      # J1  large-open-city share premium ("sneak a meeple in")
+JR_J2 = 2      # J2c farm value discipline (realized steal + low-value surrender)
+JR_J5 = 4      # J5+J13 signed unclaimed-feature value
+JR_J6 = 8      # J6  anchor structure + road policy
+JR_J8 = 16     # J8  pivotal-feature overcommit
+JR_ALL = JR_J1 | JR_J2 | JR_J5 | JR_J6 | JR_J8
+
+# --- the FROZEN `current`-preset parameter block ---------------------------- #
+# Every constant below is copied from ``joshua_bot.PRESETS["current"]`` (the epoch
+# the 2026-08-12 tournament selected at z +3.68). They are deliberately NOT
+# LeafConfig fields: 28 more knobs would be 28 more plumbing surfaces through the
+# env, the Rust LeafConfigRs, the leaf hash and the reconcile gate, and this
+# experiment's calibration axis is the single scalar `jrules_dose`, not a re-tune
+# of the interview. `tests/test_jrules_term.py::test_constants_match_joshua_bot`
+# pins them against the bot so the two encodings can never silently drift.
+_JR_J1_MIN_CITY_TILES = 5
+_JR_J1_MIN_OPEN_EDGES = 2
+_JR_J1_JOIN_BONUS = 3.0
+_JR_J1_LATE_EXTRA = 1.0
+_JR_J4_MIN_URGENCY = 0.35
+_JR_J4_FULL_RESERVE = 4
+_JR_J2_STEAL_W = 1.0
+_JR_J2_MIN_FARM_VALUE = 3.0
+_JR_J2_LOW_FARM_PENALTY = 2.0
+_JR_J2_UNFINISHED_CITY_W = 1.0
+_JR_J2_CITY_COUNT_FROM_K = 36
+_JR_J2_CITY_CLOSE_OPEN_MAX = 2
+_JR_J5_WEIGHT = 0.5
+_JR_J5_VALUE_FLOOR = 4.0
+#: NEW (no bot counterpart): the reserve differential at which the J13 claim-edge
+#: saturates. J5 and J13 are the two signs of ONE term (interview §2 row J13:
+#: "credit unclaimed V(f) x (P_self(claim) - P_opp(claim))"); this is the cheapest
+#: fair-information proxy for that probability differential.
+_JR_J5_RESERVE_NORM = 2.0
+_JR_J6_ANCHOR_BONUS = 2.0
+_JR_J6_ANCHOR_CITY_MIN = 3
+_JR_J6_ANCHOR_ROAD_MIN = 2
+_JR_J6_ROAD_JOIN_MIN_LEN = 4
+_JR_J6_ROAD_JOIN_BONUS = 2.0
+_JR_J6_ROAD_SKEPTIC_MAX_LEN = 3
+_JR_J6_ROAD_CLAIM_PENALTY = 1.5
+_JR_J6_ROAD_ANCHOR_ALLOWANCE = 1
+_JR_J8_PIVOTAL_SWING = 12.0
+_JR_J8_OVERCOMMIT_BONUS = 3.0
+_JR_J8_VALUE_NORM = 10.0
+_JR_J8_MAX_CITY_MEEPLES = 2
+_JR_J8_MAX_FARM_MEEPLES = 3
+
+_JR_CLOISTER_TERRAIN = (TerrainType.CHAPEL, TerrainType.FLOWERS)
+
+
+def _jr_counts(state, decomp):
+    """Weighted meeple counts per component + the CLAIMED-cloister cell set.
+
+    Attribution mirrors ``_final_scores`` exactly (terrain of the meeple's own
+    side; FARMER/BIG_FARMER -> ``farm_pos0_root``), which is the same rule
+    ``joshua_bot.analyze`` follows, so "who has the majority" here is the same
+    question the scorer answers."""
+    board = state.board
+    city: dict = {}
+    road: dict = {}
+    farm: dict = {}
+    cloister: set = set()
+    for pl in (0, 1):
+        for mp in state.placed_meeples[pl]:
+            cws = mp.coordinate_with_side
+            r = cws.coordinate.row
+            c = cws.coordinate.column
+            side = cws.side
+            tile = board[r][c]
+            if tile is None:
+                continue
+            terrain = tile.get_type(side)
+            w = _meeple_weight(mp.meeple_type)
+            if terrain == TerrainType.CITY:
+                root = decomp.city_side_root.get((r, c, side))
+                if root is not None:
+                    ent = city.get(root)
+                    if ent is None:
+                        ent = [0, 0]
+                        city[root] = ent
+                    ent[pl] += w
+            elif terrain == TerrainType.ROAD:
+                root = decomp.road_side_root.get((r, c, side))
+                if root is not None:
+                    ent = road.get(root)
+                    if ent is None:
+                        ent = [0, 0]
+                        road[root] = ent
+                    ent[pl] += w
+            elif terrain == TerrainType.CHAPEL or terrain == TerrainType.FLOWERS:
+                cloister.add((r, c))
+            elif (mp.meeple_type == MeepleType.FARMER
+                  or mp.meeple_type == MeepleType.BIG_FARMER):
+                root = decomp.farm_pos0_root.get((r, c, side))
+                if root is not None:
+                    ent = farm.get(root)
+                    if ent is None:
+                        ent = [0, 0]
+                        farm[root] = ent
+                    ent[pl] += w
+    return city, road, farm, cloister
+
+
+def _jr_urgency(opp_reserve: int) -> float:
+    """J4 — "if i see he is out of meeple, i am more okay with leaving something
+    juicy unclaimed". A multiplier in ``[_JR_J4_MIN_URGENCY, 1.0]`` on every
+    CONTEST/CLAIM sub-term (J1, J2c, J6-road-join, J8), exactly as
+    ``joshua_bot.j4_urgency``. Note it reads the OTHER side's reserve, so under a
+    seat swap the two multipliers exchange — which is what keeps the assembled
+    differential antisymmetric."""
+    frac = opp_reserve / float(_JR_J4_FULL_RESERVE)
+    if frac > 1.0:
+        frac = 1.0
+    return _JR_J4_MIN_URGENCY + (1.0 - _JR_J4_MIN_URGENCY) * frac
+
+
+def _jr_late_frac(k: int) -> float:
+    """0.0 at the first decision, 1.0 at the last tile (``joshua_bot.Clock.late_frac``
+    with the frozen ``_JR_K0`` standing in for the latched per-game ``k0``)."""
+    f = 1.0 - (k / _JR_K0)
+    if f < 0.0:
+        return 0.0
+    return 1.0 if f > 1.0 else f
+
+
+def _jr_j1(decomp, city_counts, pl: int, other: int, late_frac: float) -> float:
+    """J1 — "i notice he tends to build large cities that probably wont close. if
+    they are getting on the bigger side, i will attempt to sneak a meeple in,
+    sometimes late in hte game."
+
+    ⚠️ DELIBERATE DEVIATION from ``joshua_bot.j1_majority_steal``, forced by
+    symmetrization. The bot requires ``cnt[other] >= 1`` ("it must be a JOIN into
+    HIS city"). In a SIGNED differential that predicate is self-cancelling: before
+    the join (he alone) neither side fires; after the join (1-1 tie) BOTH sides
+    fire and the difference is again zero, so the term would carry no gradient at
+    all — it would never pay for the join it exists to buy. Dropping the
+    opponent-presence requirement makes this "credit for HOLDING A SHARE of a large
+    still-open city", whose differential across exactly that transition is
+    ``0 - B -> B - B``, i.e. **+B for the sneak**, which is the rule's intent. The
+    side effect is that it also credits owning a large open city outright — which
+    is J6's anchor logic ("keep a big city as mine even if there is no plan to
+    close it"), and is the diametric opposite of the pro-guide-endorsed
+    ``opencity_dose`` term. See DESIGN.md §"J1 vs open-city discipline"."""
+    contribs: list = []
+    bonus = _JR_J1_JOIN_BONUS * (1.0 + _JR_J1_LATE_EXTRA * late_frac)
+    for root, cnt in city_counts.items():
+        if decomp.city_root_finished[root]:
+            continue
+        if cnt[pl] < 1 or cnt[pl] < cnt[other]:
+            continue                                   # no share of this city
+        if len(decomp.city_root_coords[root]) < _JR_J1_MIN_CITY_TILES:
+            continue                                   # not "on the bigger side"
+        if decomp.city_root_open_n[root] < _JR_J1_MIN_OPEN_EDGES:
+            continue                                   # not "probably wont close"
+        contribs.append(bonus)
+    return math.fsum(contribs)
+
+
+def _jr_farm_potential(decomp, root, k: int) -> float:
+    """== ``joshua_bot.farm_potential_value``: 3 points for each adjacent city that
+    is not finished yet but is plausibly closable. The FINISHED adjacent cities are
+    deliberately excluded — ``flat_base_score`` already pays those, and counting
+    them here would double-count. J10's "current" epoch only counts the unclosed
+    ones from ``_JR_J2_CITY_COUNT_FROM_K`` tiles remaining onward."""
+    if k > _JR_J2_CITY_COUNT_FROM_K:
+        return 0.0
+    n = 0
+    for croot in decomp.farm_root_adj_city_roots.get(root, ()):
+        if decomp.city_root_finished[croot]:
+            continue
+        if decomp.city_root_open_n[croot] <= _JR_J2_CITY_CLOSE_OPEN_MAX:
+            n += 1
+    return 3.0 * n * _JR_J2_UNFINISHED_CITY_W
+
+
+def _jr_j2(decomp, farm_counts, pl: int, other: int, k: int) -> float:
+    """J2c (the value half of J2) — "if i see a farm is valuable, i will try to tie
+    it or steal from him", plus J10-"current"'s surrender bar ("some games the
+    farms really aren't worth much... so i started to count the cities, especially
+    late in game, and surrender a farm").
+
+    Two pieces, both pure state functions:
+      * REALIZED STEAL: this side holds tie-or-better on a field that clears the
+        value bar -> credit its UNFINISHED-city potential (the part the naive count
+        cannot see; the FINISHED adjacent cities are already paid by
+        ``flat_base_score``, so crediting them here would double-count).
+        ⚠️ SAME SYMMETRIZATION DEVIATION AS J1: the bot additionally requires
+        ``cnt[other] >= 1`` ("tie it or steal from HIM"). In a signed differential
+        that predicate is inert — before the steal neither side fires (the thief has
+        no farmer yet), after it both fire and cancel — so the term would never pay
+        for the steal it exists to buy. Dropped, leaving "credit for holding
+        tie-or-better on a valuable field", whose differential across exactly that
+        transition is ``0 - pot -> pot - pot``, i.e. **+pot for the steal**.
+      * SURRENDER CHARGE: a farmer sitting on a field worth less than the bar is
+        charged, per weighted meeple.
+
+    ⚠️ J2's APPROACH/REACH half ("planning 2-4 tiles in advance, so i look at
+    remaining tiles") is NOT here and is not implemented anywhere — see DESIGN.md
+    §"Rules we could not express": it needs bag composition and an entry-cell board
+    scan outside the Decomp contract, and, more importantly, multi-tile planning is
+    precisely what the 11008-sim search already does natively. Encoding it as a
+    static leaf term would double-count depth — the exact confound this build
+    exists to remove."""
+    contribs: list = []
+    for root, cnt in farm_counts.items():
+        if cnt[pl] < 1:
+            continue
+        pot = _jr_farm_potential(decomp, root, k)
+        value = 3.0 * decomp.farm_root_finished_cities.get(root, 0) + pot
+        if cnt[pl] >= cnt[other] and value >= _JR_J2_MIN_FARM_VALUE:
+            contribs.append(_JR_J2_STEAL_W * pot)
+        if value < _JR_J2_MIN_FARM_VALUE:
+            contribs.append(-_JR_J2_LOW_FARM_PENALTY * cnt[pl])
+    return math.fsum(contribs)
+
+
+def _jr_unclaimed_value(state, decomp, city_counts, road_counts, cloister_owned) -> float:
+    """Total value sitting on features NOBODY has a meeple on, counting only the
+    excess over ``_JR_J5_VALUE_FLOOR`` ("already worth more than a few points").
+    Cities, roads and cloisters — seat-free by construction (this is a property of
+    the BOARD, not of a player), which is what lets J5/J13 be expressed as one
+    signed term."""
+    contribs: list = []
+    board = state.board
+    H = len(board)
+    W = len(board[0]) if H else 0
+    for root, coords in decomp.city_root_coords.items():
+        if root in city_counts:
+            continue
+        delta = float(decomp.city_root_delta[root])
+        v = 2.0 * delta if decomp.city_root_finished[root] else delta
+        if v > _JR_J5_VALUE_FLOOR:
+            contribs.append(v - _JR_J5_VALUE_FLOOR)
+    for root, coords in decomp.road_root_coords.items():
+        if root in road_counts:
+            continue
+        v = float(len(coords))
+        if v > _JR_J5_VALUE_FLOOR:
+            contribs.append(v - _JR_J5_VALUE_FLOOR)
+    # `placed_coords` is a set of engine Coordinate objects; only fsum-reduced
+    # below, so its (hash) iteration order can never reach the leaf value.
+    for coord in getattr(state, "placed_coords", ()):
+        r = coord.row
+        c = coord.column
+        if (r, c) in cloister_owned:
+            continue
+        tile = board[r][c]
+        if tile is None or tile.get_type(Side.CENTER) not in _JR_CLOISTER_TERRAIN:
+            continue
+        v = float(_cloister_points(r, c, board, H, W))
+        if v > _JR_J5_VALUE_FLOOR:
+            contribs.append(v - _JR_J5_VALUE_FLOOR)
+    return math.fsum(contribs)
+
+
+def _jr_claim_edge(state, player: int, opp: int) -> float:
+    """J13's ``P_self(claim) - P_opp(claim)``, proxied by the meeple-reserve
+    differential and clipped to [-1, 1]. Antisymmetric by construction."""
+    e = (state.meeples[player] - state.meeples[opp]) / _JR_J5_RESERVE_NORM
+    if e > 1.0:
+        return 1.0
+    return -1.0 if e < -1.0 else e
+
+
+def _jr_j6_anchor(decomp, city_counts, road_counts, pl: int, other: int) -> float:
+    """J6 (a) + (c) — "i learned from him to keep a big city and road as mine, even
+    if there is no plan to close it... but i'm generally less bullish on roads than
+    him." A bonus for holding one unfinished city anchor and one unfinished road
+    anchor; a charge on every SOLO short road claim past the one anchor road.
+    NOT urgency-multiplied (the bot doesn't multiply these either)."""
+    has_city = False
+    for root, cnt in city_counts.items():
+        if decomp.city_root_finished[root] or cnt[pl] <= cnt[other]:
+            continue
+        if len(decomp.city_root_coords[root]) >= _JR_J6_ANCHOR_CITY_MIN:
+            has_city = True
+            break
+    has_road = False
+    n_short_solo = 0
+    for root, cnt in road_counts.items():
+        if decomp.road_root_finished[root]:
+            continue
+        length = len(decomp.road_root_coords[root])
+        if cnt[pl] > cnt[other]:
+            if length >= _JR_J6_ANCHOR_ROAD_MIN:
+                has_road = True
+            if cnt[other] == 0 and length <= _JR_J6_ROAD_SKEPTIC_MAX_LEN:
+                n_short_solo += 1
+    excess = n_short_solo - _JR_J6_ROAD_ANCHOR_ALLOWANCE
+    if excess < 0:
+        excess = 0
+    return (_JR_J6_ANCHOR_BONUS * float(int(has_city) + int(has_road))
+            - _JR_J6_ROAD_CLAIM_PENALTY * float(excess))
+
+
+def _jr_j6_road_join(decomp, road_counts, pl: int, other: int) -> float:
+    """J6 (b) — "sometimes i see his road is getting long and thats my signal to
+    tie it up." Same symmetrization deviation as J1: the bot's ``cnt[other] >= 1``
+    join requirement is dropped (it would self-cancel), leaving "credit for holding
+    a share of a long unfinished road"."""
+    contribs: list = []
+    for root, cnt in road_counts.items():
+        if decomp.road_root_finished[root]:
+            continue
+        if cnt[pl] < 1 or cnt[pl] < cnt[other]:
+            continue
+        if len(decomp.road_root_coords[root]) < _JR_J6_ROAD_JOIN_MIN_LEN:
+            continue
+        contribs.append(_JR_J6_ROAD_JOIN_BONUS)
+    return math.fsum(contribs)
+
+
+def _jr_j8(decomp, city_counts, farm_counts, pl: int, other: int, k: int,
+           abs_margin: float) -> float:
+    """J8 — "sometimes it takes 2 meeple to secure a city. sometimes 3 for a single
+    farm... you can sometimes see that the game will turn on a single large
+    feature, and in those cases, you have to take chances."
+
+    A feature is PIVOTAL when its swing (2x its value) clears ``_JR_J8_PIVOTAL_SWING``
+    AND is big enough to flip the current margin. On a pivotal, still-contestable
+    feature the side is paid for holding a >=2-weighted-meeple lead, which the naive
+    count values at exactly zero.
+
+    ⚠️ TWO DELIBERATE DEVIATIONS from ``joshua_bot``:
+      * the bot reads ``|margin|`` from the decision ROOT; a leaf has no root, so
+        this reads the margin AT THE LEAF (``|flat_base_score|``). A potential
+        cannot see a root, and the leaf's own margin is the natural analogue.
+      * the bot gates the farm branch on ``farm_entry_cells >= 1`` ("he can still
+        get in"); the Decomp has no farm-side analogue of ``city_root_open_n``, so
+        the gate becomes ``k >= 1`` (tiles remain). Strictly more permissive.
+
+    The 2026-08-12 tournament found J8-as-encoded INERT (it was a *filter
+    exemption*, pre-empted by F-J3's skip-when-empty rule); `J8EX_INERT_FINDING.md`
+    concluded "J8 should arguably be a SCORE term rather than a filter exemption".
+    This is that score term."""
+    contribs: list = []
+    for root, cnt in city_counts.items():
+        if decomp.city_root_finished[root]:
+            continue
+        if decomp.city_root_open_n[root] < 1:
+            continue                                   # he can no longer get in
+        value = float(decomp.city_root_delta[root])
+        swing = 2.0 * value
+        if swing < _JR_J8_PIVOTAL_SWING or swing < abs_margin:
+            continue
+        if cnt[pl] - cnt[other] < 2 or cnt[pl] > _JR_J8_MAX_CITY_MEEPLES:
+            continue
+        contribs.append(_JR_J8_OVERCOMMIT_BONUS * min(1.0, value / _JR_J8_VALUE_NORM))
+    if k >= 1:
+        for root, cnt in farm_counts.items():
+            value = (3.0 * decomp.farm_root_finished_cities.get(root, 0)
+                     + _jr_farm_potential(decomp, root, k))
+            swing = 2.0 * value
+            if swing < _JR_J8_PIVOTAL_SWING or swing < abs_margin:
+                continue
+            if cnt[pl] - cnt[other] < 2 or cnt[pl] > _JR_J8_MAX_FARM_MEEPLES:
+                continue
+            contribs.append(_JR_J8_OVERCOMMIT_BONUS * min(1.0, value / _JR_J8_VALUE_NORM))
+    return math.fsum(contribs)
+
+
+def flat_jrules_term(state, player: int, decomp: Decomp, cfg, base=None) -> float:
+    """J-RULES ON SEARCH — the 2026-08-12 anchor interview's strategy expressed as a
+    SIGNED leaf differential ``T`` from `player`'s POV; the leaf **ADDS**
+    ``cfg.jrules_dose * T``.
+
+    ⚠️ NOTE THE SIGN. ``denial_dose`` and ``opencity_dose`` are PENALTIES and the
+    leaf SUBTRACTS them; this bundle is a BONUS potential (the J-rules say what to
+    seek, not only what to fear) and the leaf ADDS it. The Rust mirror
+    (`carc_core::leaf::jrules_term`) uses the same sign.
+
+    WHY IT EXISTS. The 2026-08-13 Joshua-bot tournament measured these rules on a
+    ONE-PLY GREEDY base and lost to the champion by -16.0 pts/deck (z -24.4),
+    *weaker than JCloisterZone's shallow AI at -6.5*
+    (`measurement/joshuabot_20260812/CONFIRM_VERDICT.md`). That result cannot
+    separate STRATEGY from DEPTH and no amount of n fixes it. Putting the same
+    rules on the champion's own leaf makes strategy the ONLY difference between the
+    two arms.
+
+    ANTISYMMETRY IS THE DESIGN CONSTRAINT. The Rust/Python search evaluates the leaf
+    from the MOVER's POV at every node and negates on backup
+    (`search/mod.rs`: `let mover = g.state.current_player`), so a term that is not
+    antisymmetric is not a coherent zero-sum value function — the value backed up
+    at a node stops being the negation of what the other seat sees. Every sub-rule
+    is therefore assembled as ``urg(pl) * j(pl) - urg(other) * j(other)``, which
+    negates exactly under a seat swap; ``T(s, p) == -T(s, 1-p)`` is pinned on a
+    random-play corpus by `tests/test_jrules_term.py::test_antisymmetry_on_the_corpus`.
+    THREE rules (J1, J2's realized steal, J6's road join) had to DROP the bot's "the
+    opponent must already be there" predicate to survive symmetrization — see their
+    docstrings; that is the single largest fidelity deviation in this encoding and
+    DESIGN.md §3 states it in full.
+
+    RULES COVERED: J1, J2c, J5+J13, J6, J8, with J4 as the urgency multiplier on
+    J1/J2c/J6-road-join/J8. RULES NOT COVERED and why: J2-approach (subsumed by
+    search depth), J3 (already in the champion leaf as ``v29_meeple_curve``), J7
+    (tournament-calibrated best weight is 0.0 == the absent term), J9 (tournament:
+    no conviction, negative point estimate), J10's early-farmer block and J3's hard
+    floor (both POLICY filters, not value statements — a separate root-filter cell).
+    Full table: measurement/jrules_on_search_20260813/DESIGN.md §2.
+
+    ``base`` is ``flat_base_score(state, player, decomp)``; the leaf passes the value
+    it already computed. Only J8 reads it (as ``|base|``, which is seat-free)."""
+    mask = int(getattr(cfg, "jrules_mask", JR_ALL))
+    opp = 1 - player
+    city_counts, road_counts, farm_counts, cloister_owned = _jr_counts(state, decomp)
+    k = _k_remaining(state)
+    parts: list = []
+    if mask & JR_J1:
+        late = _jr_late_frac(k)
+        u_self = _jr_urgency(state.meeples[opp])
+        u_opp = _jr_urgency(state.meeples[player])
+        parts.append(u_self * _jr_j1(decomp, city_counts, player, opp, late)
+                     - u_opp * _jr_j1(decomp, city_counts, opp, player, late))
+    if mask & JR_J2:
+        u_self = _jr_urgency(state.meeples[opp])
+        u_opp = _jr_urgency(state.meeples[player])
+        parts.append(u_self * _jr_j2(decomp, farm_counts, player, opp, k)
+                     - u_opp * _jr_j2(decomp, farm_counts, opp, player, k))
+    if mask & JR_J5:
+        # J5 + J13 are ONE signed term and are already a differential, so they are
+        # NOT run through the per-side frame and are NOT urgency-multiplied — the
+        # claim edge IS the reserve conditioning J4 would otherwise supply, and
+        # applying both would price the same reserve fact twice.
+        u = _jr_unclaimed_value(state, decomp, city_counts, road_counts, cloister_owned)
+        parts.append(_JR_J5_WEIGHT * u * _jr_claim_edge(state, player, opp))
+    if mask & JR_J6:
+        u_self = _jr_urgency(state.meeples[opp])
+        u_opp = _jr_urgency(state.meeples[player])
+        parts.append(_jr_j6_anchor(decomp, city_counts, road_counts, player, opp)
+                     - _jr_j6_anchor(decomp, city_counts, road_counts, opp, player))
+        parts.append(u_self * _jr_j6_road_join(decomp, road_counts, player, opp)
+                     - u_opp * _jr_j6_road_join(decomp, road_counts, opp, player))
+    if mask & JR_J8:
+        if base is None:
+            base = flat_base_score(state, player, decomp)
+        abs_margin = abs(float(base))
+        u_self = _jr_urgency(state.meeples[opp])
+        u_opp = _jr_urgency(state.meeples[player])
+        parts.append(u_self * _jr_j8(decomp, city_counts, farm_counts, player, opp,
+                                     k, abs_margin)
+                     - u_opp * _jr_j8(decomp, city_counts, farm_counts, opp, player,
+                                      k, abs_margin))
+    return math.fsum(parts)
+
+
+def _jrules_off(cfg) -> bool:
+    """True iff the J-rules bundle is OFF (dose 0.0) — then the cy route is
+    bit-exact. Like the F7b knockouts, the denial term and the open-city term there
+    is deliberately NO cy implementation (candidate cells run `--backend rust`,
+    where no Python leaf is computed at all), so a SET dose ALWAYS leaves the cy
+    fast path for the pure-Python flat leaf: bit-exact
+    (scripts/rustport/reconcile_leaf.py `--configs jrules` against Rust) but far
+    slower per leaf."""
+    return getattr(cfg, "jrules_dose", 0.0) == 0.0
+
+
 def _opencity_off(cfg) -> bool:
     """True iff open-city discipline is OFF (dose 0.0) — then the cy route is
     bit-exact. Like the F7b knockouts and the denial term there is deliberately NO
@@ -1272,7 +1741,8 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
                 and _farm_knockout_off(cfg)
                 and _denial_off(cfg)
-                and _opencity_off(cfg)):
+                and _opencity_off(cfg)
+                and _jrules_off(cfg)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
@@ -1302,6 +1772,14 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     # byte-identical, not merely equal.
     if getattr(cfg, "opencity_dose", 0.0) != 0.0:
         score -= cfg.opencity_dose * flat_opencity_term(state, player, decomp, cfg)
+    # J-rules on search: a SIGNED, uncapped **addition** (note the sign — this bundle
+    # is a BONUS potential, not a penalty like denial/open-city), applied AFTER
+    # open-city as a third separate gated statement in this fixed order (float
+    # addition is non-associative, so a fused expression would break 3-way
+    # bit-exactness). dose == 0.0 (default/champion) takes an early branch — never
+    # an add of 0.0 — so default traffic is byte-identical, not merely equal.
+    if getattr(cfg, "jrules_dose", 0.0) != 0.0:
+        score += cfg.jrules_dose * flat_jrules_term(state, player, decomp, cfg, base)
     if curve is not None:
         # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term
         # (== leaf_v29._meeple_curve_term; the object path adds it in apply_v29).
@@ -1376,7 +1854,8 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                 and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
                 and _farm_knockout_off(cfg)
                 and _denial_off(cfg)
-                and _opencity_off(cfg)):
+                and _opencity_off(cfg)
+                and _jrules_off(cfg)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
     if state.players != 2:
@@ -1398,6 +1877,10 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
     # AFTER denial in this fixed order (see the int sibling).
     if getattr(cfg, "opencity_dose", 0.0) != 0.0:
         score -= cfg.opencity_dose * flat_opencity_term(state, player, decomp, cfg)
+    # J-rules on search — signed, uncapped, dose-gated early branch, ADDED (not
+    # subtracted) after open-city in this fixed order (see the int sibling).
+    if getattr(cfg, "jrules_dose", 0.0) != 0.0:
+        score += cfg.jrules_dose * flat_jrules_term(state, player, decomp, cfg, base)
     if curve is not None:
         if cfg.v29_phase_beta == 0.0:   # Part C: early branch == byte-identical default
             score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])

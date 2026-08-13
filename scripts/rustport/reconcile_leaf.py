@@ -61,9 +61,14 @@ exactly — the dose gates the whole term). `opencity` = `core` plus five
 `opencity_edge_min` / `opencity_symmetric`, LEVER_INDEX "penalize large open
 cities", spec `measurement/opencity_term_20260812/TERM_SPEC.md`, building
 2026-08-12) including a dose=0 identity control with MOVED thresholds and one
-asymmetric (`opencity_symmetric=False`) cell.
+asymmetric (`opencity_symmetric=False`) cell. `jrules` = `core` plus six
+**J-rules-on-search** cells (`jrules_dose` / `jrules_mask`, spec
+`measurement/jrules_on_search_20260813/DESIGN.md`, building 2026-08-13) including a
+dose=0 identity control with a MOVED mask and two mask ablations — `j1only` (the
+cheapest single rule) and `noj5` (drops the only rule that scans unclaimed features,
+so a `d1.0` vs `noj5` disagreement localises a divergence to that scan).
 
-⚠️ The `farmoff`, `denial-d*` and `opencity-d*` configs are the families compared on **two** legs, not three:
+⚠️ The `farmoff`, `denial-d*`, `opencity-d*` and `jrules-d*` configs are the families compared on **two** legs, not three:
 `flat_leaf_cy.pyx` deliberately does not implement them (roadmap F7b — the ablation
 cells run `--backend rust`, so no Python leaf is computed in-cell, and the exact-K
 tail scores the TRUE final score with farms intact by design). For those configs the
@@ -142,7 +147,9 @@ _CURVE125 = (-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25)   # governance/PRODU
 CY_UNSUPPORTED = frozenset({"farmbaseoff", "farmgrowthoff", "farmbothoff",
                             "denial-d0.5", "denial-d1.0", "denial-d2.0-s6-o3",
                             "opencity-d0.5", "opencity-d1.0", "opencity-d2.0-s6-e3",
-                            "opencity-d1.0-asym"})
+                            "opencity-d1.0-asym",
+                            "jrules-d0.5", "jrules-d1.0", "jrules-d1.0-j1only",
+                            "jrules-d1.0-noj5", "jrules-d2.0"})
 
 
 def _cfgs(which: str) -> dict[str, LeafConfig]:
@@ -222,6 +229,28 @@ def _cfgs(which: str) -> dict[str, LeafConfig]:
                                               opencity_edge_min=3),
             "opencity-d1.0-asym": LeafConfig(**prodo, opencity_dose=1.0,
                                              opencity_symmetric=False),
+        })
+        return core
+    if which == "jrules":
+        # J-rules on search (LeafConfig.jrules_dose / jrules_mask; spec
+        # measurement/jrules_on_search_20260813/DESIGN.md). Built on the champion leaf
+        # so the ONLY difference from `prod-curve125` is the J-rules bundle.
+        # `jrules-d0-identity` is the IDENTITY control — dose 0.0 with the mask MOVED
+        # must reproduce `prod-curve125` exactly on every leg (the dose gates the whole
+        # bundle). The mask cells exercise the per-rule branches separately, which is
+        # what localises a py/rust divergence to ONE rule instead of to "the bundle":
+        # `j1only` isolates the cheapest rule, `noj5` drops the only rule that scans
+        # unclaimed features (cities + roads + the cloister board pass), so a
+        # d1.0 vs noj5 disagreement pins the divergence inside that scan.
+        prodj = dict(closure_p=dict(_CLOSURE), bonus_cap=8.0, opp_bonus_cap=8.0,
+                     meeple_k=2.0, v29_meeple_curve=_CURVE125)
+        core.update({
+            "jrules-d0-identity": LeafConfig(**prodj, jrules_dose=0.0, jrules_mask=1),
+            "jrules-d0.5": LeafConfig(**prodj, jrules_dose=0.5),
+            "jrules-d1.0": LeafConfig(**prodj, jrules_dose=1.0),
+            "jrules-d1.0-j1only": LeafConfig(**prodj, jrules_dose=1.0, jrules_mask=1),
+            "jrules-d1.0-noj5": LeafConfig(**prodj, jrules_dose=1.0, jrules_mask=27),
+            "jrules-d2.0": LeafConfig(**prodj, jrules_dose=2.0),
         })
         return core
     if which == "farmoff":
@@ -308,6 +337,9 @@ def _to_rs(cfg: LeafConfig):
         float(getattr(cfg, "opencity_size_min", 4.0)),
         int(getattr(cfg, "opencity_edge_min", 2)),
         bool(getattr(cfg, "opencity_symmetric", True)),
+        # J-rules on search — likewise passed unconditionally (same rationale).
+        float(getattr(cfg, "jrules_dose", 0.0)),
+        int(getattr(cfg, "jrules_mask", 31)),
     )
 
 
@@ -686,7 +718,8 @@ def main(argv=None) -> int:
     ap.add_argument("--corpus", action="append", default=None,
                     choices=CORPORA + ["all"])
     ap.add_argument("--configs", default="all",
-                    choices=["core", "all", "farmoff", "phase", "denial", "opencity"])
+                    choices=["core", "all", "farmoff", "phase", "denial", "opencity",
+                             "jrules"])
     ap.add_argument("--limit", type=int, default=None,
                     help="cap records per corpus (screening only)")
     ap.add_argument("--stride", type=int, default=8,
@@ -765,7 +798,7 @@ def main(argv=None) -> int:
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     tag = "_".join(corpora) if len(corpora) < len(CORPORA) else "all"
-    if args.configs in ("farmoff", "phase", "denial", "opencity"):   # never overwrite the standing G2 artifact
+    if args.configs in ("farmoff", "phase", "denial", "opencity", "jrules"):   # never overwrite the standing G2 artifact
         tag = f"{args.configs}_{tag}"
     out = Path(args.out) if args.out else OUTDIR / f"G2_leaf_{tag}.json"
     out.write_text(json.dumps(payload, indent=2, default=str))
