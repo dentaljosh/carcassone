@@ -1,0 +1,101 @@
+{
+  "capability": "jrules",
+  "checks": [
+    {
+      "check": "py_leafconfig_fields",
+      "ok": true,
+      "detail": "LeafConfig.jrules_dose/_mask present"
+    },
+    {
+      "check": "py_flat_jrules_term",
+      "ok": true,
+      "detail": "flat_leaf.flat_jrules_term present"
+    },
+    {
+      "check": "py_rule_bits_unmoved",
+      "ok": true,
+      "detail": "flat_leaf.JR_ALL=31 (want 31), JR_J5=4 (want 4)"
+    },
+    {
+      "check": "env_is_champion_leaf",
+      "ok": true,
+      "detail": "DEFAULT_CONFIG hash a36d2e15a3b3d71d (want a36d2e15a3b3d71d)"
+    },
+    {
+      "check": "cand_hash_moves[jr_d0p25_m31]",
+      "ok": true,
+      "detail": "candidate leaf hash 15948beccf3472d3 != champion a36d2e15a3b3d71d"
+    },
+    {
+      "check": "cand_hash_unique[jr_d0p25_m31]",
+      "ok": true,
+      "detail": "15948beccf3472d3 not already used by -"
+    },
+    {
+      "check": "carc_rs_accepts_jrules_kwargs",
+      "ok": true,
+      "detail": "carc_rs.LeafConfigRs built with jrules kwargs"
+    },
+    {
+      "check": "carc_rs_exposes_jrules_term",
+      "ok": true,
+      "detail": "leaf_terms keys: ['base', 'bonus_opp', 'bonus_opp_raw', 'bonus_self', 'bonus_self_raw', 'denial_term', 'flip_term', 'jrules_term', 'meeple_term', 'opencity_term', 'return_term', 'score', 'value']"
+    },
+    {
+      "check": "carc_rs_jrules_changes_leaf",
+      "ok": true,
+      "detail": "280 of 288 sampled leaf values MOVE at dose 0.25 (mask=31); 0 would mean accepted-and-ignored == a silently default-off candidate, OR a mask whose rules never fire (DESIGN \u00a76 measured J8 alone at 3%)"
+    },
+    {
+      "check": "carc_rs_identity_control",
+      "ok": true,
+      "detail": "0 champion-vs-champion mismatches (must be 0)"
+    },
+    {
+      "check": "carc_rs_dose0_bit_exact",
+      "ok": true,
+      "detail": "288/288 sampled RUST leaf values are bit-identical to the champion's at {'jrules_dose': 0.0, 'jrules_mask': 27} (the dose gate holds with the mask moved). leaf_hash(dose-0 + MOVED mask) = 92ac0da996e1b37b != champion a36d2e15a3b3d71d: _LEAF_HASH_EXCLUDE_IF_DEFAULT drops a field only while it holds its DEFAULT value, so the moved mask stays in the hashed dict even though the dose gate makes the leaf VALUES bit-identical. Consequence for the chain: a cell whose dose was accidentally zeroed would still PASS `cand_hash_moves` -- the hash gate cannot catch it, and `parse_doses`' refusal of dose 0.0 is the gate that does."
+    },
+    {
+      "check": "py_dose0_bit_exact",
+      "ok": true,
+      "detail": "288/288 sampled PYTHON leaf values are bit-identical (.hex()) to the champion's at {'jrules_dose': 0.0, 'jrules_mask': 27}"
+    },
+    {
+      "check": "py_jrules_changes_leaf",
+      "ok": true,
+      "detail": "280 of 288 sampled PYTHON leaf values MOVE at dose 0.25 (same caveat as the rust check: a mask whose rules never fire can legitimately read zero)"
+    }
+  ],
+  "cells": [
+    {
+      "tag": "jr_d0p25_m31",
+      "dose": 0.25,
+      "mask": 31,
+      "cand_leaf_json": "{\"jrules_dose\": 0.25, \"jrules_mask\": 31}",
+      "cand_leaf_hash": "15948beccf3472d3",
+      "preregistered_hash": null
+    }
+  ],
+  "ok": true,
+  "champ_leaf_hash": "a36d2e15a3b3d71d",
+  "dose0_identity": {
+    "cand_leaf_json": "{\"jrules_dose\": 0.0, \"jrules_mask\": 27}",
+    "leaf_hash": "92ac0da996e1b37b",
+    "hash_equals_champion": false,
+    "note": "leaf_hash(dose-0 + MOVED mask) = 92ac0da996e1b37b != champion a36d2e15a3b3d71d: _LEAF_HASH_EXCLUDE_IF_DEFAULT drops a field only while it holds its DEFAULT value, so the moved mask stays in the hashed dict even though the dose gate makes the leaf VALUES bit-identical. Consequence for the chain: a cell whose dose was accidentally zeroed would still PASS `cand_hash_moves` -- the hash gate cannot catch it, and `parse_doses`' refusal of dose 0.0 is the gate that does."
+  },
+  "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+  "functional": {
+    "values_moved": 280,
+    "values_same": 8,
+    "identity_control_breaks": 0,
+    "rs_dose0_values_compared": 288,
+    "rs_dose0_breaks": 0,
+    "py_dose0_values_compared": 288,
+    "py_dose0_breaks": 0,
+    "py_values_moved": 280,
+    "py_values_same": 8
+  },
+  "doses_source": "--doses"
+}

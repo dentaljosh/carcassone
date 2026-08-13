@@ -1,0 +1,90 @@
+{
+  "gate": "O0 (per-box leaf gate)",
+  "cell_json": "/home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/cells/jrules_d0p25_deploy_fixed_v1_vs_fairchamp11008.json",
+  "host": "Doctor",
+  "all_gates_pass": true,
+  "champion_leaf_hash": "a36d2e15a3b3d71d",
+  "cand_leaf_hash": "15948beccf3472d3",
+  "moved_hash_trap_hash": "92ac0da996e1b37b",
+  "resolved_jrules_dose": 0.25,
+  "resolved_jrules_mask": 31,
+  "cell_json_content": {
+    "jrules_dose": 0.25,
+    "v29_meeple_curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ]
+  },
+  "gates": [
+    {
+      "gate": "O0a_env_canon_is_champion",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d",
+      "why": "DEFAULT_CONFIG must resolve to the champion IN THIS PROCESS. If it does not, the env canon was mangled and every other hash below is meaningless."
+    },
+    {
+      "gate": "O0b_cand_leaf_hash_is_preregistered",
+      "ok": true,
+      "observed": "15948beccf3472d3",
+      "why": "DEPLOY_PREREG.md section 3 and branch N0 commit to this exact hash."
+    },
+    {
+      "gate": "O0c_cand_hash_moves_off_champion",
+      "ok": true,
+      "observed": "15948beccf3472d3",
+      "why": "NECESSARY BUT NOT SUFFICIENT \u2014 see O0e. Kept because a candidate that equals the champion is a different (and equally fatal) failure."
+    },
+    {
+      "gate": "O0d_cell_json_content_verbatim",
+      "ok": true,
+      "observed": {
+        "jrules_dose": 0.25,
+        "v29_meeple_curve": [
+          -10.0,
+          -5.0,
+          -1.25,
+          0.0,
+          2.5,
+          3.75,
+          5.0,
+          6.25
+        ]
+      },
+      "why": "DEPLOY_PREREG.md section 3 registers the cell BY CONTENT: curve125 verbatim (a no-op, proved not assumed) and nothing else. Any other content is a different cell and voids the pre-registration."
+    },
+    {
+      "gate": "O0e_resolved_dose_is_LIVE",
+      "ok": true,
+      "observed": 0.25,
+      "why": "THE MOVED-HASH TRAP, AND THE GATE THAT DEFEATS IT. A {dose 0.0, mask 27} leaf hashes AWAY from the champion yet computes the champion's leaf, so it passes O0c while running champion-vs-champion. Only the RESOLVED DOSE VALUE proves the term is live."
+    },
+    {
+      "gate": "O0f_mask_holds_default_31",
+      "ok": true,
+      "observed": 31,
+      "why": "N0: the absent key must resolve to 31 (JR_ALL = J1|J2|J5|J6|J8)."
+    },
+    {
+      "gate": "O0g_no_jrules_mask_key_in_cell_json",
+      "ok": true,
+      "observed": [
+        "jrules_dose",
+        "v29_meeple_curve"
+      ],
+      "why": "N0 / DESIGN O4': the key is omitted so a mask typo cannot silently ablate rules."
+    },
+    {
+      "gate": "O0h_trap_hash_reproduces_on_this_box",
+      "ok": true,
+      "observed": "92ac0da996e1b37b",
+      "why": "The trap is REPRODUCED, not assumed. This proves the {dose 0, mask 27} leaf really does hash away from the champion on THIS box \u2014 i.e. that O0e is load-bearing here."
+    }
+  ],
+  "note": "WIRING ONLY \u2014 contains no strength statistic by design."
+}
