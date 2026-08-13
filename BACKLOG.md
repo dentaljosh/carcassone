@@ -942,3 +942,19 @@ committed measurement artifact deserves its own decision (immutability vs correc
 **Fix when actioned:** prefer making the grader stamp repo-relative `archive_path` on all
 FUTURE gradings (+ a regression test) and leave the historical artifact as-is — the fallback
 already handles it; a re-stamp of the one artifact is the alternative if consumers multiply.
+
+## 2026-08-12 — App assist features: tile-bag peek · virtual-score menu · occasional undo (owner-endorsed, NOT priority)
+
+Joshua's stated policy (verbatim in
+[ANCHOR_INTERVIEW_2026-08-12 §3](measurement/e4_games/ANCHOR_INTERVIEW_2026-08-12.md)): the
+E4 reference human may use anything "a good human is certainly doing" — bag counting is
+pro-standard so a peek is legitimate ("its mechanical"), a virtual-score menu likewise, and
+an occasional undo covers genuine misclicks ("brainfarts"), which focused strong players
+make less often anyway. **Why deferred, his words: "these aren't priority now because i'm
+beating him even without these."**
+
+When actioned: land the `assists` stamp in the archive schema FIRST (per-game record of
+which assists were available/used — the E4 stream is assisted-by-design and the stamp is
+what keeps epochs interpretable), then per feature: bag peek = read-only remaining-tile
+multiset view; score menu = per-seat virtual_score decomposition; undo = bounded, with an
+`undos` count stamped per game.
