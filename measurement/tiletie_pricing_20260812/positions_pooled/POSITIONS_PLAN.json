@@ -1,0 +1,123 @@
+{
+  "afterstate_dedupe": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+    "dropped_index_path": "measurement/tiletie_pricing_20260812/positions_stageA/DROPPED_ALL_TRANSPOSITION.json",
+    "dropped_pct": 26.20882971268395,
+    "n_dropped_all_transposition": 374,
+    "n_dropped_by_stratum": {
+      "e4": 115,
+      "selfplay": 259
+    },
+    "n_dropped_with_action_played_outside_tieset": 72,
+    "n_positions_with_arm_dedupe": 54,
+    "n_qualifying_before_drop": 1427,
+    "savings_pct_full_supply": 32.47033441208198,
+    "tieset_arm_playouts_full_supply_after": 120192,
+    "tieset_arm_playouts_full_supply_before": 177984
+  },
+  "allow_missing_champ_picks": true,
+  "cap_j": 4,
+  "census_qualifying_n": 1427,
+  "census_rows_n": 2607,
+  "champ_pick_secs": 0.0,
+  "counts_by_profile_leg": {
+    "app_aug2/leg1": 3,
+    "app_aug2/leg2": 2,
+    "app_aug2/leg3": 2,
+    "fixed_v1/leg1": 53,
+    "fixed_v1/leg2": 27,
+    "fixed_v1/leg3": 14,
+    "fixed_v1/leg4": 4,
+    "walled/leg1": 677,
+    "walled/leg2": 409,
+    "walled/leg3": 216,
+    "walled/leg4": 61
+  },
+  "counts_by_stratum": {
+    "e4": 60,
+    "selfplay": 673
+  },
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "eta_by_workers": {
+    "W=14": {
+      "wall_hours": 2.982416761904762,
+      "wall_secs": 10736.700342857144
+    },
+    "W=30": {
+      "wall_hours": 1.391794488888889,
+      "wall_secs": 5010.4601600000005
+    }
+  },
+  "files": {
+    "app_aug2/leg1": {
+      "n": 3,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_app_aug2_leg1.jsonl"
+    },
+    "app_aug2/leg2": {
+      "n": 2,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_app_aug2_leg2.jsonl"
+    },
+    "app_aug2/leg3": {
+      "n": 2,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_app_aug2_leg3.jsonl"
+    },
+    "fixed_v1/leg1": {
+      "n": 53,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg1.jsonl"
+    },
+    "fixed_v1/leg2": {
+      "n": 27,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg2.jsonl"
+    },
+    "fixed_v1/leg3": {
+      "n": 14,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg3.jsonl"
+    },
+    "fixed_v1/leg4": {
+      "n": 4,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg4.jsonl"
+    },
+    "walled/leg1": {
+      "n": 677,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg1.jsonl"
+    },
+    "walled/leg2": {
+      "n": 409,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg2.jsonl"
+    },
+    "walled/leg3": {
+      "n": 216,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg3.jsonl"
+    },
+    "walled/leg4": {
+      "n": 61,
+      "path": "measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg4.jsonl"
+    }
+  },
+  "formula": "DESIGN.md #7.1: oracle_worker_secs = n_positions*(A_bar-1)*2*M*c (summed per-position here, algebraically identical); champ_pick_secs = n_selfplay*t_champ; wall_hours = (oracle_worker_secs+champ_pick_secs)/(3600*W)",
+  "m_worlds": 32,
+  "max_arms": 5,
+  "mean_arms": 3.0027285129604366,
+  "n_e4": 60,
+  "n_positions": 733,
+  "n_positions_capped": 133,
+  "n_positions_champ_pick_missing": 0,
+  "n_selfplay": 673,
+  "oracle_worker_secs": 150313.8048,
+  "out_dir": "measurement/tiletie_pricing_20260812/positions_pooled",
+  "playout_secs": 1.5999,
+  "sample_seed": 20260812,
+  "schema": "carcassonne-tiletie-positions/v1",
+  "stage_b_cell": {
+    "cumulative": true,
+    "n_stage_a": 340,
+    "n_stage_b_here": 393,
+    "n_stage_b_total": 393,
+    "note": "CUMULATIVE plan: Stage A + Stage B chunks up to this cell. Already-scored rids are skipped by oracle_score_pilot --resume; they are present so run_tiletie's verify_leg_records sees the exact rid set of the shared records root. The analysis pools every cell into ONE estimate (DESIGN \u00a77.3).",
+    "playout_secs_source": "REALIZED Stage A rust arm: sum(elapsed_secs)/playouts over the walled leg records"
+  },
+  "t_champ_secs": 0.0,
+  "total_arm_playouts": 93952,
+  "total_worker_secs": 150313.8048
+}

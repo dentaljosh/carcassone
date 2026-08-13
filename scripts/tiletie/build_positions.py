@@ -723,11 +723,29 @@ def _tieset_playouts(rows: list, cap_j: int, amap: dict | None,
     return total
 
 
+def load_exclude_rids(path) -> set:
+    """A newline-delimited rid list (blank lines and `#` comments ignored).
+
+    DESIGN §7.3's Stage B is an EXTENSION, not a re-draw: the new positions must
+    be DISJOINT from the ones the earlier stage already scored, and the union of
+    the two draws must still be a uniform subset of the supply. Two-phase
+    sampling without replacement gives exactly that, so the mechanism is
+    "remove what stage A took, then apply the SAME seeded sampling rule to the
+    remainder" -- never a fresh draw over the whole supply (which would
+    re-sample scored positions and silently re-weight the pooled corpus)."""
+    rids = set()
+    for ln in Path(path).read_text().splitlines():
+        ln = ln.split("#", 1)[0].strip()
+        if ln:
+            rids.add(ln)
+    return rids
+
+
 def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
          sample_seed: int, playout_secs: float, e4_dir: Path, bank_roots_path,
          champ_games_path, allow_missing_champ_picks: bool,
          afterstate_map: dict | None = None, require_afterstate_map: bool = True,
-         n_e4=None, n_selfplay=None) -> dict:
+         n_e4=None, n_selfplay=None, exclude_rids=None) -> dict:
     """The whole pipeline, factored out of `main()` so tests can call it without
     going through argparse/stdout. Returns the written `POSITIONS_PLAN.json` dict
     (also has the side effect of writing the leg files + ARMS.json + the plan +
@@ -761,6 +779,20 @@ def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
         kept, dropped_rows = [], []
         for r in selected:
             (dropped_rows if amap[rid_for(r)]["all_transposition"] else kept).append(r)
+
+    # --- DESIGN §7.3 Stage B: remove the positions an earlier stage already
+    # scored BEFORE sampling, so the new draw is disjoint by construction and
+    # the pooled corpus is a two-phase without-replacement sample of the same
+    # supply. Applied to `kept` only: `selected` / `dropped_rows` stay at their
+    # full-population values, because the all-transposition analytic zeros are a
+    # POPULATION rate (the analyser scales by them) and must not be re-scoped by
+    # which stage is being built.
+    n_excluded = 0
+    if exclude_rids:
+        exclude_rids = set(exclude_rids)
+        before = len(kept)
+        kept = [r for r in kept if rid_for(r) not in exclude_rids]
+        n_excluded = before - len(kept)
 
     sampled = stratified_sample(kept, n, sample_seed, n_e4=n_e4,
                                 n_selfplay=n_selfplay)
@@ -851,6 +883,15 @@ def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
     plan["census_qualifying_n"] = len(selected)
     plan["allow_missing_champ_picks"] = bool(allow_missing_champ_picks)
     plan["n_positions_champ_pick_missing"] = n_missing_champ
+    plan["exclude_rids"] = {
+        "applied": bool(exclude_rids),
+        "n_requested": len(exclude_rids) if exclude_rids else 0,
+        "n_removed_from_supply": n_excluded,
+        "n_supply_after_exclusion": len(kept),
+        "design_ref": "DESIGN.md §7.3 (Stage B is an extension of the same "
+                      "records directory, not a re-draw: the new positions are "
+                      "disjoint from the earlier stage by construction)",
+    }
 
     n_drop = len(dropped_rows)
     dedupe: dict = {
@@ -919,6 +960,12 @@ def main(argv=None) -> int:
                     help="deliberately build the PRE-dedupe plan (known-zero "
                          "transposition rows included). run_tiletie.py's "
                          "preflight REFUSES to launch such a plan.")
+    ap.add_argument("--exclude-rids", default=None,
+                    help="newline-delimited rid list to REMOVE from the supply "
+                         "before sampling (DESIGN #7.3 Stage B: the extension "
+                         "must be disjoint from what Stage A already scored). "
+                         "The all-transposition analytic zeros are NOT rescoped "
+                         "by this -- they stay at their full-population values.")
     ap.add_argument("--sample-seed", type=int, default=20260812)
     ap.add_argument("--playout-secs", type=float, default=1.65)
     ap.add_argument("--e4-dir", default=str(DEFAULT_E4_DIR))
@@ -955,8 +1002,15 @@ def main(argv=None) -> int:
                 bank_roots_path=args.bank_roots, champ_games_path=args.champ_games,
                 allow_missing_champ_picks=args.allow_missing_champ_picks,
                 afterstate_map=amap, require_afterstate_map=not args.no_dedupe,
-                n_e4=args.n_e4, n_selfplay=args.n_selfplay)
+                n_e4=args.n_e4, n_selfplay=args.n_selfplay,
+                exclude_rids=(load_exclude_rids(args.exclude_rids)
+                              if args.exclude_rids else None))
 
+    exc = plan["exclude_rids"]
+    if exc["applied"]:
+        print(f"[build_positions] exclude-rids: {exc['n_requested']} requested | "
+              f"{exc['n_removed_from_supply']} removed from the deduped supply | "
+              f"{exc['n_supply_after_exclusion']} positions remain samplable")
     ded = plan["afterstate_dedupe"]
     print(f"[build_positions] afterstate dedupe: applied={ded['applied']} | "
           f"dropped {ded['n_dropped_all_transposition']}/"

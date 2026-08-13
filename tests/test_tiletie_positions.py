@@ -372,6 +372,47 @@ def test_explicit_per_stratum_allocation_for_stage_a():
     assert sum(1 for r in plain if r["stratum"] == "selfplay") == 240
 
 
+def test_exclude_rids_makes_stage_b_disjoint_and_keeps_the_zeros_population_wide(tmp_path):
+    """DESIGN §7.3 Stage B is an EXTENSION, not a re-draw: the new draw must be
+    disjoint from what Stage A scored, and the all-transposition analytic zeros
+    must stay at their FULL-POPULATION values (the analyser scales by that rate;
+    re-scoping it per stage would double-count when the stages are pooled)."""
+    rows = [_row(stratum="selfplay", source="bank", rules_profile="walled",
+                 game_label=None, deck_seed=1000 + i, ply=i,
+                 tie_actions_exact=[2, 4], argmax_action=2, tie_size_exact=2,
+                 action_played=4) for i in range(10)]
+    amap = _identity_amap(rows)
+    kw = dict(champ_picks={}, cap_j=4, n=0, sample_seed=20260812, playout_secs=1.65,
+              e4_dir=tmp_path / "e4", bank_roots_path=tmp_path / "b.jsonl",
+              champ_games_path=tmp_path / "c.jsonl", allow_missing_champ_picks=True,
+              afterstate_map=amap)
+    (tmp_path / "e4").mkdir()
+    (tmp_path / "b.jsonl").write_text("".join(
+        json.dumps({"deck_seed": 1000 + i, "ply": i, "actions": list(range(20)),
+                    "checksum": _row()["checksum"]}) + "\n" for i in range(10)))
+    (tmp_path / "c.jsonl").write_text("")
+
+    stage_a = BP.build(rows, out_dir=tmp_path / "A", n_selfplay=4, n_e4=0, **kw)
+    a_rids = set(json.loads((tmp_path / "A" / "ARMS.json").read_text()))
+    assert len(a_rids) == 4
+
+    excl = tmp_path / "rids.txt"
+    excl.write_text("# stage A\n" + "\n".join(sorted(a_rids)) + "\n\n")
+    stage_b = BP.build(rows, out_dir=tmp_path / "B", n_e4=0,
+                       exclude_rids=BP.load_exclude_rids(excl), **kw)
+    b_rids = set(json.loads((tmp_path / "B" / "ARMS.json").read_text()))
+
+    assert not (a_rids & b_rids), "Stage B must be disjoint from Stage A"
+    assert a_rids | b_rids == set(BP.rid_for(r) for r in rows), "union must be the supply"
+    assert stage_b["exclude_rids"]["n_removed_from_supply"] == 4
+    assert stage_b["exclude_rids"]["n_supply_after_exclusion"] == 6
+    assert stage_b["n_positions"] == 6
+    # population-wide, NOT re-scoped by the exclusion
+    assert (stage_b["afterstate_dedupe"]["n_qualifying_before_drop"]
+            == stage_a["afterstate_dedupe"]["n_qualifying_before_drop"] == 10)
+    assert stage_a["exclude_rids"]["applied"] is False
+
+
 # --------------------------------------------------------------------------- #
 # 2-4. full-pipeline: rid stability, uniqueness, round-trip                     #
 # --------------------------------------------------------------------------- #

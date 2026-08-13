@@ -1,0 +1,5 @@
+# Stage B execution cells are DERIVED artifacts (cumulative copies of Stage A + the
+# Stage B chunks, ~20MB of duplicated jsonl). Regenerate in one command:
+#   scripts/tiletie/make_stageb_cells.py --stage-a positions_stageA --stage-b positions_stageB \
+#     --out-dir positions_stageB/cells --pooled-dir positions_pooled --cells 4
+cells/
