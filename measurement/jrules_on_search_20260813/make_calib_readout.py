@@ -264,6 +264,40 @@ def to_md(r: dict, summary: dict) -> str:
     A(f"champion reproduced the archived move on "
       f"{ig['champ_agrees_archive_rate']:.1%} of graded plies.")
     A("")
+    if cell_name(FINER_DOSE) in cells:
+        proof = summary.get("crn_proof") or {}
+        A("### 1b. How the dose-0.25 rung came to be measured (§3.1 fired first)")
+        A("")
+        A("The ladder was run in two passes, and the second was **mandated by the rule, not")
+        A("chosen after the fact**:")
+        A("")
+        A("1. The pre-registered ladder `{0.5, 1.0, 2.0}` ran first. Reading it through this")
+        A(f"   same rule-applier fired **`FINER-RUNG`**: `f(1.0)` = "
+          f"{v.get('f_at_dose_1', 0.0):.2%} is strictly above §3.1's 20% trigger, so the")
+        A("   pre-committed dose-0.25 rung had to be measured **before anything could be")
+        A("   funded**. Nothing was funded on that first reading.")
+        A(f"2. The 0.25 rung was then measured on the same corpus, seed and budget"
+          + (f" and merged ({' + '.join(summary.get('merged_from', []))})." if
+             summary.get("merged_from") else "."))
+        A("")
+        A("⚠️ **One mechanism deviation, disclosed rather than buried.** §3.1 says to add the")
+        A("rung as \"an added `--arm` over the same output directory\". **That mechanism is")
+        A("unsound**: the instrument's resume is per-PLY, not per-arm, so an already-graded")
+        A("ply is never re-searched and a late-added arm would carry no pick on any of them —")
+        A("rolling up as **0.00%**, a perfect silent null wearing the shape of a real")
+        A("measurement. The instrument now refuses that (`missing_arms_in_resume`). The rung")
+        A("was therefore measured in a **fresh output directory** with the champion arm")
+        A("re-run identically, and merged by")
+        A("[`merge_calib_dirs.py`](merge_calib_dirs.py), which **proves** the two runs")
+        A("searched the same determinized worlds instead of asserting it: it diffs the")
+        A(f"champion's own pick ply-by-ply and requires every one to agree — "
+          f"**{proof.get('champ_picks_compared', 0):,} champion picks identical across "
+          f"{proof.get('archives', 0)} archives** — plus the graded-ply set, phase,")
+        A("`k_remaining`, `n_legal`, `action_played`, deck seed, rules profile, budget and")
+        A("replay checksum. The *substance* of §3.1 (same corpus, same seed, same budget, one")
+        A("added rung, measured before funding) is preserved exactly; only the plumbing")
+        A("differs, and **no rule text was edited**.")
+        A("")
     A("## 2. The ladder")
     A("")
     A("| rung | `jrules_dose` | flip rate | flips / n | Wilson-95 | clears 10% bar? |")
@@ -358,7 +392,8 @@ def to_md(r: dict, summary: dict) -> str:
     A("|---|---|---|---|---|")
     for n in order:
         c = cells[n]
-        A(f"| `{n}` | {c['dose']:g} | {c['mask']} | {'|'.join(c['rules'] or [])} | "
+        # NB `+`-joined, not `|`-joined: a pipe inside a markdown table cell splits it.
+        A(f"| `{n}` | {c['dose']:g} | {c['mask']} | {' + '.join(c['rules'] or [])} | "
           f"`{c['leaf_hash']}` |")
     A("")
     A(f"All distinct: {ig['leaf_hashes_distinct']}. None equals the champion")

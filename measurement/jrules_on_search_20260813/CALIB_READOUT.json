@@ -1,0 +1,159 @@
+{
+ "schema": "carcassonne-jrules-calib-readout/v1",
+ "cells": {
+  "d0p5": {
+   "dose": 0.5,
+   "mask": 31,
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "46a7652670123027",
+   "flips": 474,
+   "n": 1556,
+   "flip_rate": 0.3046272493573265,
+   "wilson95": [
+    0.28226306975512033,
+    0.32795372723931676
+   ],
+   "wilson95_half_width": 0.022845328742098214,
+   "phase_split": {
+    "tiles": 319,
+    "meeples": 155,
+    "other": {},
+    "tile_share": 0.6729957805907173
+   }
+  },
+  "d1p0": {
+   "dose": 1.0,
+   "mask": 31,
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a87fb6801b81d588",
+   "flips": 605,
+   "n": 1556,
+   "flip_rate": 0.38881748071979433,
+   "wilson95": [
+    0.3648980527281725,
+    0.4132845324035302
+   ],
+   "wilson95_half_width": 0.024193239837678848,
+   "phase_split": {
+    "tiles": 413,
+    "meeples": 192,
+    "other": {},
+    "tile_share": 0.6826446280991736
+   }
+  },
+  "d2p0": {
+   "dose": 2.0,
+   "mask": 31,
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "56db6c2247dee55f",
+   "flips": 723,
+   "n": 1556,
+   "flip_rate": 0.4646529562982005,
+   "wilson95": [
+    0.43998901462983186,
+    0.4894909979842933
+   ],
+   "wilson95_half_width": 0.024750991677230716,
+   "phase_split": {
+    "tiles": 515,
+    "meeples": 208,
+    "other": {},
+    "tile_share": 0.7123098201936376
+   }
+  },
+  "d0p25": {
+   "dose": 0.25,
+   "mask": 31,
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "15948beccf3472d3",
+   "flips": 368,
+   "n": 1556,
+   "flip_rate": 0.2365038560411311,
+   "wilson95": [
+    0.21605503482239846,
+    0.2582505137556253
+   ],
+   "wilson95_half_width": 0.02109773946661342,
+   "phase_split": {
+    "tiles": 253,
+    "meeples": 115,
+    "other": {},
+    "tile_share": 0.6875
+   }
+  }
+ },
+ "verdict": {
+  "read_rule_commit": "bf0f94cf",
+  "bar": 0.1,
+  "bar_statistic": "point estimate (CALIB_READ_RULE \u00a72; Wilson-95 LB reported only)",
+  "finer_rung_trigger": 0.2,
+  "finer_rung_present": true,
+  "f_at_dose_1": 0.38881748071979433,
+  "cells_at_or_above_bar": [
+   "d0p25",
+   "d0p5",
+   "d1p0",
+   "d2p0"
+  ],
+  "branch": "FUND-SMALLEST",
+  "fundable": true,
+  "chosen_cell": "d0p25",
+  "chosen_dose": 0.25,
+  "funded_cells": [
+   "d0p25"
+  ],
+  "marginal": false,
+  "why": "\u00a73.2 fires: 4 rung(s) reach f >= 10% on the point estimate. The SMALLEST such dose is 0.25 (f = 23.65%, 368/1556), so that is the named dose and EXACTLY ONE cell is funded. Larger rungs are not funded however much better they express: per CL-080 (open-city flipped 10.09% -> \u221253.8 elo and 18.89% -> \u2212190.3 elo at the deploy budget) clearing the bar buys RESOLVABILITY, NOT SAFETY, and a bigger flip rate is a bigger risk."
+ },
+ "integrity": {
+  "ladder_is_preregistered": true,
+  "required_cells": [
+   "d0p5",
+   "d1p0",
+   "d2p0"
+  ],
+  "observed_cells": [
+   "d0p25",
+   "d0p5",
+   "d1p0",
+   "d2p0"
+  ],
+  "masks_all_jr_all": true,
+  "all_replay_scores_match": true,
+  "replay_scores_mismatch_archives": [],
+  "n_games": 26,
+  "n_graded_plies": 1556,
+  "rules_profile_histogram": {
+   "walled": 2,
+   "app_aug2": 1,
+   "fixed_v1": 23
+  },
+  "champ_agrees_archive_rate": 0.7281491002570694,
+  "leaf_hashes_distinct": true,
+  "no_cand_hash_equals_champion": true
+ }
+}

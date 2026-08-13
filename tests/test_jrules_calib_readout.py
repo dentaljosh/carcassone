@@ -254,3 +254,24 @@ def test_markdown_of_a_no_expression_ladder_forbids_inflating_the_dose():
     assert "NO-EXPRESSION" in md
     assert "Dose > 2.0 is forbidden" in md
     assert "No dose is named" in md
+
+
+def test_markdown_documents_the_finer_rung_history_and_the_crn_proof():
+    """When the 0.25 rung is present, the readout must say WHY it exists and HOW."""
+    s = _summary({0.25: 0.11, 0.5: 0.15, 1.0: 0.28, 2.0: 0.40})
+    s["merged_from"] = ["calib", "calib_d0p25"]
+    s["crn_proof"] = {"archives": 26, "plies_compared": 1556,
+                      "champ_picks_compared": 1556}
+    md = mk.to_md(mk.build(s), s)
+    assert "1b." in md and "FINER-RUNG" in md
+    assert "1,556 champion picks identical" in md
+    assert "no rule text was edited" in md.lower()
+
+
+def test_markdown_rules_column_does_not_break_the_table():
+    """`J1|J2|...` inside a markdown cell would split it into extra columns."""
+    s = _summary({0.5: 0.13, 1.0: 0.18, 2.0: 0.19})
+    md = mk.to_md(mk.build(s), s)
+    row = [ln for ln in md.splitlines() if ln.startswith("| `d0p5` |") and "J1" in ln][0]
+    assert row.count("|") == 6          # 5 columns + the trailing pipe
+    assert "J1 + J2" in row

@@ -1,0 +1,214 @@
+[jrules_e4] 26 archives, 0 already done, 26 to grade; workers=10 arms=['d0p25:0.25:31']
+  [1786501074_943197] ply 15/142 graded=8 6s
+  [1786503336_446661] ply 15/142 graded=8 6s
+  [1786337185_638286] ply 15/142 graded=8 6s
+  [1786367787_389099] ply 15/142 graded=8 6s
+  [1786417055_68387] ply 15/142 graded=8 6s
+  [1786418867_411846845] ply 15/142 graded=8 7s
+  [1786511848_634689] ply 15/142 graded=8 7s
+  [1786329790_523563] ply 15/142 graded=8 7s
+  [1786454767_166575] ply 15/142 graded=8 7s
+  [1786403231_207028] ply 18/142 graded=8 7s
+  [1786367787_389099] ply 31/142 graded=16 17s
+  [1786503336_446661] ply 31/142 graded=16 17s
+  [1786418867_411846845] ply 31/142 graded=16 18s
+  [1786329790_523563] ply 31/142 graded=16 18s
+  [1786337185_638286] ply 31/142 graded=16 18s
+  [1786501074_943197] ply 31/142 graded=16 18s
+  [1786454767_166575] ply 31/142 graded=16 19s
+  [1786417055_68387] ply 31/142 graded=16 19s
+  [1786511848_634689] ply 31/142 graded=16 19s
+  [1786403231_207028] ply 34/142 graded=16 22s
+  [1786418867_411846845] ply 47/142 graded=24 31s
+  [1786329790_523563] ply 50/142 graded=24 32s
+  [1786367787_389099] ply 50/142 graded=24 32s
+  [1786337185_638286] ply 47/142 graded=24 34s
+  [1786417055_68387] ply 51/142 graded=24 35s
+  [1786454767_166575] ply 54/142 graded=24 35s
+  [1786503336_446661] ply 47/142 graded=24 35s
+  [1786501074_943197] ply 47/142 graded=24 35s
+  [1786511848_634689] ply 47/142 graded=24 36s
+  [1786403231_207028] ply 50/142 graded=24 40s
+  [1786418867_411846845] ply 63/142 graded=32 50s
+  [1786367787_389099] ply 66/142 graded=32 54s
+  [1786329790_523563] ply 66/142 graded=32 54s
+  [1786337185_638286] ply 66/142 graded=32 57s
+  [1786454767_166575] ply 78/142 graded=32 57s
+  [1786417055_68387] ply 67/142 graded=32 58s
+  [1786501074_943197] ply 63/142 graded=32 58s
+  [1786511848_634689] ply 66/142 graded=32 58s
+  [1786403231_207028] ply 66/142 graded=32 60s
+  [1786503336_446661] ply 63/142 graded=32 61s
+  [1786418867_411846845] ply 79/142 graded=40 73s
+  [1786511848_634689] ply 95/142 graded=40 78s
+  [1786501074_943197] ply 79/142 graded=40 79s
+  [1786367787_389099] ply 83/142 graded=40 82s
+  [1786403231_207028] ply 86/142 graded=40 83s
+  [1786337185_638286] ply 83/142 graded=40 84s
+  [1786329790_523563] ply 82/142 graded=40 84s
+  [1786417055_68387] ply 86/142 graded=40 85s
+  [1786454767_166575] ply 94/142 graded=40 88s
+  [1786503336_446661] ply 79/142 graded=40 92s
+  [1786418867_411846845] ply 95/142 graded=48 98s
+  [1786511848_634689] ply 118/142 graded=48 105s
+  [1786501074_943197] ply 95/142 graded=48 105s
+  [1786337185_638286] ply 110/142 graded=48 108s
+  [1786329790_523563] ply 98/142 graded=48 115s
+  [1786417055_68387] ply 102/142 graded=48 117s
+  [1786454767_166575] ply 110/142 graded=48 122s
+  [1786403231_207028] ply 102/142 graded=48 122s
+  [1786418867_411846845] ply 126/142 graded=56 122s
+  [1786367787_389099] ply 99/142 graded=48 122s
+  [1786503336_446661] ply 95/142 graded=48 129s
+  [1786337185_638286] ply 134/142 graded=56 132s
+[jrules_e4] 1786337185_638286: profile=fixed_v1 graded=56 flips={'d0p25': 12} agree_archive=40/56 mean_secs_per_graded_ply=2.349 (131.6s)
+  [1786329790_523563] ply 130/142 graded=56 134s
+[jrules_e4] 1786329790_523563: profile=fixed_v1 graded=57 flips={'d0p25': 17} agree_archive=40/57 mean_secs_per_graded_ply=2.394 (136.5s)
+  [1786325073_523563] ply 15/142 graded=8 7s
+  [1786501074_943197] ply 114/142 graded=56 141s
+  [1786511848_634689] ply 134/142 graded=56 144s
+[jrules_e4] 1786511848_634689: profile=fixed_v1 graded=56 flips={'d0p25': 14} agree_archive=39/56 mean_secs_per_graded_ply=2.563 (143.6s)
+  [1786243458_1382293676] ply 15/142 graded=8 7s
+[jrules_e4] 1786418867_411846845: profile=fixed_v1 graded=60 flips={'d0p25': 10} agree_archive=42/60 mean_secs_per_graded_ply=2.448 (147.0s)
+  [1786325073_523563] ply 31/142 graded=16 19s
+  [1786242001_49628] ply 15/142 graded=8 7s
+  [1786417055_68387] ply 118/142 graded=56 152s
+  [1786142936_703591] ply 15/142 graded=8 6s
+  [1786243458_1382293676] ply 31/142 graded=16 19s
+  [1786454767_166575] ply 134/142 graded=56 157s
+[jrules_e4] 1786454767_166575: profile=fixed_v1 graded=56 flips={'d0p25': 12} agree_archive=42/56 mean_secs_per_graded_ply=2.803 (157.1s)
+  [1786367787_389099] ply 126/142 graded=56 159s
+  [1786403231_207028] ply 122/142 graded=56 160s
+  [1786503336_446661] ply 118/142 graded=56 162s
+  [1786242001_49628] ply 31/142 graded=16 18s
+  [1786118143_1621601234] ply 16/141 graded=8 7s
+  [1786142936_703591] ply 31/142 graded=16 18s
+  [1786325073_523563] ply 50/142 graded=24 34s
+[jrules_e4] 1786367787_389099: profile=fixed_v1 graded=58 flips={'d0p25': 21} agree_archive=43/58 mean_secs_per_graded_ply=2.87 (166.5s)
+[jrules_e4] 1786403231_207028: profile=fixed_v1 graded=59 flips={'d0p25': 9} agree_archive=45/59 mean_secs_per_graded_ply=2.911 (171.8s)
+  [1786116818_134510] ply 18/142 graded=8 7s
+  [1786243458_1382293676] ply 47/142 graded=24 38s
+  [1786242001_49628] ply 47/142 graded=24 32s
+[jrules_e4] 1786501074_943197: profile=fixed_v1 graded=63 flips={'d0p25': 15} agree_archive=41/63 mean_secs_per_graded_ply=2.796 (176.2s)
+  [1786118143_1621601234] ply 32/141 graded=16 19s
+[jrules_e4] 1786503336_446661: profile=fixed_v1 graded=60 flips={'d0p25': 16} agree_archive=42/60 mean_secs_per_graded_ply=2.963 (177.9s)
+  [1786113542_627623] ply 15/141 graded=8 7s
+  [1786142936_703591] ply 47/142 graded=24 32s
+  [1786076853_2116173857] ply 15/142 graded=8 6s
+  [1786074812_935815] ply 15/142 graded=8 6s
+  [1786116818_134510] ply 34/142 graded=16 18s
+  [1786113542_627623] ply 31/141 graded=16 18s
+  [1786325073_523563] ply 67/142 graded=32 58s
+  [1786242001_49628] ply 66/142 graded=32 47s
+  [1786076853_2116173857] ply 31/142 graded=16 17s
+  [1786118143_1621601234] ply 48/141 graded=24 36s
+  [1786417055_68387] ply 134/142 graded=64 194s
+  [1786074812_935815] ply 31/142 graded=16 18s
+  [1786243458_1382293676] ply 63/142 graded=32 60s
+  [1786142936_703591] ply 63/142 graded=32 50s
+[jrules_e4] 1786417055_68387: profile=fixed_v1 graded=65 flips={'d0p25': 12} agree_archive=50/65 mean_secs_per_graded_ply=3.063 (199.2s)
+  [1786116818_134510] ply 50/142 graded=24 33s
+  [1786045035_338139] ply 15/142 graded=8 7s
+  [1786113542_627623] ply 47/141 graded=24 35s
+  [1786076853_2116173857] ply 51/142 graded=24 34s
+  [1786074812_935815] ply 47/142 graded=24 37s
+  [1786118143_1621601234] ply 64/141 graded=32 58s
+  [1786045035_338139] ply 31/142 graded=16 18s
+  [1786116818_134510] ply 66/142 graded=32 51s
+  [1786242001_49628] ply 82/142 graded=40 75s
+  [1786243458_1382293676] ply 79/142 graded=40 85s
+  [1786142936_703591] ply 90/142 graded=40 78s
+  [1786325073_523563] ply 83/142 graded=40 94s
+  [1786113542_627623] ply 64/141 graded=32 56s
+  [1786076853_2116173857] ply 67/142 graded=32 55s
+  [1786045035_338139] ply 47/142 graded=24 33s
+  [1786118143_1621601234] ply 95/141 graded=40 82s
+  [1786074812_935815] ply 63/142 graded=32 62s
+  [1786116818_134510] ply 82/142 graded=40 75s
+  [1786242001_49628] ply 98/142 graded=48 101s
+  [1786243458_1382293676] ply 98/142 graded=48 114s
+  [1786045035_338139] ply 63/142 graded=32 53s
+  [1786113542_627623] ply 80/141 graded=40 83s
+  [1786076853_2116173857] ply 83/142 graded=40 80s
+  [1786142936_703591] ply 115/142 graded=48 111s
+  [1786325073_523563] ply 99/142 graded=48 134s
+  [1786074812_935815] ply 94/142 graded=40 88s
+  [1786116818_134510] ply 99/142 graded=48 103s
+  [1786242001_49628] ply 123/142 graded=56 130s
+  [1786118143_1621601234] ply 116/141 graded=48 118s
+  [1786045035_338139] ply 79/142 graded=40 79s
+  [1786243458_1382293676] ply 114/142 graded=56 149s
+  [1786113542_627623] ply 96/141 graded=48 115s
+  [1786076853_2116173857] ply 102/142 graded=48 111s
+  [1786142936_703591] ply 131/142 graded=56 142s
+[jrules_e4] 1786142936_703591: profile=fixed_v1 graded=57 flips={'d0p25': 17} agree_archive=43/57 mean_secs_per_graded_ply=2.536 (144.7s)
+[jrules_e4] 1786242001_49628: profile=fixed_v1 graded=62 flips={'d0p25': 15} agree_archive=45/62 mean_secs_per_graded_ply=2.462 (152.8s)
+  [1786074812_935815] ply 114/142 graded=48 119s
+  [1785986044_1911511187] ply 15/142 graded=8 7s
+  [1785984310_1698417952] ply 18/142 graded=8 8s
+  [1786325073_523563] ply 115/142 graded=56 177s
+  [1786116818_134510] ply 118/142 graded=56 142s
+  [1785986044_1911511187] ply 34/142 graded=16 18s
+  [1786045035_338139] ply 103/142 graded=48 111s
+[jrules_e4] 1786243458_1382293676: profile=fixed_v1 graded=63 flips={'d0p25': 19} agree_archive=45/63 mean_secs_per_graded_ply=2.795 (176.2s)
+  [1786113542_627623] ply 115/141 graded=56 144s
+  [1785984310_1698417952] ply 34/142 graded=16 21s
+  [1785982194_705585] ply 15/142 graded=8 7s
+  [1786118143_1621601234] ply 132/141 graded=56 165s
+[jrules_e4] 1786118143_1621601234: profile=fixed_v1 graded=56 flips={'d0p25': 14} agree_archive=35/56 mean_secs_per_graded_ply=2.949 (165.2s)
+  [1785986044_1911511187] ply 50/142 graded=24 31s
+  [1786076853_2116173857] ply 126/142 graded=56 148s
+  [1785975832_66810] ply 15/142 graded=8 7s
+[jrules_e4] 1786074812_935815: profile=fixed_v1 graded=55 flips={'d0p25': 10} agree_archive=46/55 mean_secs_per_graded_ply=2.784 (153.2s)
+  [1785982194_705585] ply 34/142 graded=16 18s
+[jrules_e4] 1786076853_2116173857: profile=fixed_v1 graded=58 flips={'d0p25': 15} agree_archive=46/58 mean_secs_per_graded_ply=2.673 (155.1s)
+  [1785466497_161583] ply 15/144 graded=8 2s
+  [1785205383_867966] ply 15/144 graded=8 2s
+  [1785984310_1698417952] ply 50/142 graded=24 37s
+  [1785205383_867966] ply 31/144 graded=16 4s
+  [1785466497_161583] ply 38/144 graded=16 5s
+  [1786116818_134510] ply 134/142 graded=64 172s
+  [1785205383_867966] ply 47/144 graded=24 7s
+  [1785466497_161583] ply 54/144 graded=24 9s
+  [1786045035_338139] ply 134/142 graded=56 141s
+[jrules_e4] 1786045035_338139: profile=fixed_v1 graded=56 flips={'d0p25': 13} agree_archive=35/56 mean_secs_per_graded_ply=2.524 (141.4s)
+[jrules_e4] 1786325073_523563: profile=fixed_v1 graded=63 flips={'d0p25': 10} agree_archive=49/63 mean_secs_per_graded_ply=3.319 (209.2s)
+  [1785975832_66810] ply 31/142 graded=16 18s
+[jrules_e4] 1786116818_134510: profile=fixed_v1 graded=65 flips={'d0p25': 14} agree_archive=48/65 mean_secs_per_graded_ply=2.704 (175.9s)
+  [1785986044_1911511187] ply 66/142 graded=32 51s
+  [1785205383_867966] ply 63/144 graded=32 11s
+  [1785466497_161583] ply 70/144 graded=32 13s
+  [1785982194_705585] ply 50/142 graded=24 34s
+  [1785205383_867966] ply 79/144 graded=40 17s
+  [1785466497_161583] ply 90/144 graded=40 19s
+  [1785984310_1698417952] ply 66/142 graded=32 55s
+  [1785205383_867966] ply 95/144 graded=48 22s
+  [1785466497_161583] ply 107/144 graded=48 26s
+  [1785975832_66810] ply 50/142 graded=24 35s
+  [1785205383_867966] ply 114/144 graded=56 28s
+[jrules_e4] 1786113542_627623: profile=fixed_v1 graded=63 flips={'d0p25': 13} agree_archive=52/63 mean_secs_per_graded_ply=3.022 (190.5s)
+  [1785466497_161583] ply 123/144 graded=56 31s
+  [1785986044_1911511187] ply 82/142 graded=40 74s
+[jrules_e4] 1785466497_161583: profile=walled graded=62 flips={'d0p25': 19} agree_archive=45/62 mean_secs_per_graded_ply=0.559 (34.8s)
+  [1785982194_705585] ply 66/142 graded=32 55s
+  [1785205383_867966] ply 135/144 graded=64 39s
+[jrules_e4] 1785205383_867966: profile=walled graded=64 flips={'d0p25': 12} agree_archive=47/64 mean_secs_per_graded_ply=0.616 (39.5s)
+  [1785984310_1698417952] ply 83/142 graded=40 80s
+  [1785975832_66810] ply 66/142 graded=32 55s
+  [1785982194_705585] ply 90/142 graded=40 77s
+  [1785986044_1911511187] ply 98/142 graded=48 103s
+  [1785975832_66810] ply 82/142 graded=40 77s
+  [1785984310_1698417952] ply 99/142 graded=48 106s
+  [1785982194_705585] ply 118/142 graded=48 102s
+  [1785975832_66810] ply 98/142 graded=48 103s
+  [1785986044_1911511187] ply 114/142 graded=56 137s
+[jrules_e4] 1785982194_705585: profile=fixed_v1 graded=53 flips={'d0p25': 12} agree_archive=36/53 mean_secs_per_graded_ply=2.265 (120.1s)
+  [1785984310_1698417952] ply 115/142 graded=56 138s
+  [1785975832_66810] ply 123/142 graded=56 131s
+  [1785986044_1911511187] ply 134/142 graded=64 165s
+[jrules_e4] 1785986044_1911511187: profile=fixed_v1 graded=64 flips={'d0p25': 18} agree_archive=46/64 mean_secs_per_graded_ply=2.582 (165.4s)
+[jrules_e4] 1785984310_1698417952: profile=fixed_v1 graded=63 flips={'d0p25': 15} agree_archive=52/63 mean_secs_per_graded_ply=2.657 (167.5s)
+[jrules_e4] 1785975832_66810: profile=app_aug2 graded=62 flips={'d0p25': 14} agree_archive=39/62 mean_secs_per_graded_ply=2.51 (155.7s)
+[jrules_e4]    d0p25: flips   368/1556  =  23.65% [21.61%, 25.83%]  tiles/meeples 253/115
+[jrules_e4] rollup: 26 games, 1556 graded plies, profiles={'walled': 2, 'app_aug2': 1, 'fixed_v1': 23}, masks=[31], all_replay_scores_match=True -> measurement/jrules_on_search_20260813/calib_d0p25/SUMMARY.json
+[jrules_e4] NOTE: a flip is not an improvement, and per DESIGN §7/CL-080 a BIGGER flip rate is a bigger risk, not a bigger prize. No elo, no band, no governance write — read against CALIB_READ_RULE §3, nothing else.
