@@ -1,0 +1,142 @@
+{
+  "schema": "carcassonne-window-truncation-census/v1-summary",
+  "n_rows": 40,
+  "n_ok": 40,
+  "n_skipped_forced": 0,
+  "n_skipped_solver_region": 0,
+  "n_censused_roots": 40,
+  "roots_with_root_truncation": 0,
+  "root_truncation_rate": 0.0,
+  "nodes_censused": 396872,
+  "nodes_truncated": 0,
+  "node_truncation_rate": 0.0,
+  "nodes_empty_mask": 0,
+  "empty_mask_rate": 0.0,
+  "visits_total": 2144073,
+  "visits_through_truncated": 0,
+  "visit_weighted_truncation_rate": 0.0,
+  "roots_with_any_search_truncation": 0,
+  "root_incidence_rate": 0.0,
+  "dropped_hist": {
+    "0": 396872
+  },
+  "by_depth": {
+    "1": [
+      4184,
+      0,
+      0
+    ],
+    "2": [
+      19331,
+      0,
+      0
+    ],
+    "3": [
+      68778,
+      0,
+      0
+    ],
+    "4": [
+      88445,
+      0,
+      0
+    ],
+    "5": [
+      91549,
+      0,
+      0
+    ],
+    "6": [
+      60204,
+      0,
+      0
+    ],
+    "7": [
+      34040,
+      0,
+      0
+    ],
+    "8": [
+      17346,
+      0,
+      0
+    ],
+    "9": [
+      7057,
+      0,
+      0
+    ],
+    "10": [
+      3362,
+      0,
+      0
+    ],
+    "11": [
+      1619,
+      0,
+      0
+    ],
+    "12": [
+      373,
+      0,
+      0
+    ],
+    "13": [
+      567,
+      0,
+      0
+    ],
+    "14": [
+      16,
+      0,
+      0
+    ],
+    "15": [
+      1,
+      0,
+      0
+    ]
+  },
+  "by_node_phase": {
+    "meeples": [
+      242884,
+      0,
+      0
+    ],
+    "tiles": [
+      153988,
+      0,
+      0
+    ]
+  },
+  "by_k_bucket": {
+    "early": [
+      113865,
+      0,
+      0
+    ],
+    "late": [
+      138292,
+      0,
+      0
+    ],
+    "mid": [
+      144715,
+      0,
+      0
+    ]
+  },
+  "n_pick_comparable": 40,
+  "n_pick_changed": 0,
+  "pick_change_rate": 0.0,
+  "iso_control_n": 40,
+  "iso_control_violations": 0,
+  "digest_gate_fail": 0,
+  "encode_collisions": 0,
+  "world_errors": 0,
+  "n_error_rows": 0,
+  "secs_total": 433.9,
+  "secs_per_root": 10.847,
+  "wall_secs": 114.5,
+  "workers": 4
+}
