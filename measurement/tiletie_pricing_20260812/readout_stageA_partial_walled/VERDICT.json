@@ -1,0 +1,2974 @@
+{
+ "schema": "carcassonne-tiletie-readout/v1",
+ "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+ "design_doc_relpath": "../DESIGN.md",
+ "generated_utc": "2026-08-13T04:47:02Z",
+ "status_banner": "PRELIMINARY \u2014 Stage A walled/rust arm ONLY (E4 python arm still scoring) \u2014 COMPLETE for the scope declared below.",
+ "args": {
+  "records_root": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct",
+  "plan_dir": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_stageA",
+  "full_supply_plan": null,
+  "census_summary": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/census/summary.json",
+  "out_dir": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/readout_stageA_partial_walled",
+  "only_profiles": [
+   "walled"
+  ],
+  "only_strata": null,
+  "bootstrap": 20000,
+  "seed": 20260812,
+  "parity_base": 1,
+  "sigma_game": 20.4,
+  "include_partial_arms": false,
+  "label": "PRELIMINARY \u2014 Stage A walled/rust arm ONLY (E4 python arm still scoring)"
+ },
+ "plan_dir": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_stageA",
+ "completion": {
+  "planned_positions": 284,
+  "scored_complete": 284,
+  "scored_partial": 0,
+  "absent": 0,
+  "by_stratum": {
+   "e4": {
+    "planned": 4,
+    "complete": 4
+   },
+   "selfplay": {
+    "planned": 280,
+    "complete": 280
+   }
+  },
+  "by_profile": {
+   "walled": {
+    "planned": 284,
+    "complete": 284
+   }
+  },
+  "partial_rids": [],
+  "absent_rids": [],
+  "n_analysed": 284,
+  "missing_legs_by_profile_leg": {},
+  "missing_statement": "COMPLETE for the profiles in scope \u2014 every planned leg record is present. \u26a0\ufe0f SCOPE RESTRICTED to profiles ['walled']: the other arms of the plan are NOT in this read-out at all.",
+  "partial": false,
+  "records_not_ok": [],
+  "present_by_profile_leg": {
+   "walled/leg1": 284,
+   "walled/leg2": 180,
+   "walled/leg3": 97,
+   "walled/leg4": 26
+  }
+ },
+ "integrity": {
+  "values_a_drift": [],
+  "seed_drift": [],
+  "crn_unverified": [],
+  "checksum_failed": [],
+  "arm_index_mismatch": [],
+  "zero_distinct_afterstates": []
+ },
+ "zero_rates": {
+  "by_stratum": {
+   "e4": {
+    "n_built": 380,
+    "n_dropped": 115,
+    "n_dropped_inside_tieset": 91,
+    "n_qualifying": 495,
+    "p_all": 0.23232323232323232,
+    "p_strict": 0.18383838383838383,
+    "scale_all": 0.7676767676767677,
+    "scale_strict": 0.8161616161616162
+   },
+   "selfplay": {
+    "n_built": 673,
+    "n_dropped": 259,
+    "n_dropped_inside_tieset": 211,
+    "n_qualifying": 932,
+    "p_all": 0.2778969957081545,
+    "p_strict": 0.22639484978540772,
+    "scale_all": 0.7221030042918455,
+    "scale_strict": 0.7736051502145923
+   }
+  },
+  "source": "per-stratum, from the full-supply plan /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/POSITIONS_PLAN.json + the dropped index"
+ },
+ "capped_fraction": 0.2007042253521127,
+ "constants": {
+  "cap_J": 4,
+  "fullset_extrapolation": 1.4,
+  "order_statistics_a_n": {
+   "2": 0.56,
+   "4": 1.03,
+   "8.55": 1.44
+  },
+  "tied_tile_plies_per_game": 22.96,
+  "non_additivity": 3.2,
+  "non_additivity_low_end": 5.23,
+  "sigma_game_used": 20.4,
+  "kelo_reference": 97.5,
+  "elo_close_bar": 17.0,
+  "elo_reopen_bar": 35.0,
+  "z_conviction_bar": 2.0,
+  "bootstrap_reps": 20000,
+  "bootstrap_seed": 20260812
+ },
+ "interpretations": [
+  {
+   "id": "I1-parity-base",
+   "where": "\u00a74.1 'even j = SELECTION half, odd j = EVALUATION half'",
+   "ambiguity": "\u00a74 notation declares worlds j = 1..M (ONE-based), so 'even j' is read as the one-based even labels, i.e. ZERO-based indices 1,3,5,... Nothing in DESIGN restates the base at the split.",
+   "resolution": "Implemented one-based-literal (default --parity-base 1). The choice cannot change validity -- both halves are exchangeable and E[G]=E[R]=0 under the null either way -- only the realized draw. The swapped split is computed and reported as `parity_swap` so the reader can see it is not a lever."
+  },
+  {
+   "id": "I2-zero-addback-weighting",
+   "where": "\u00a70.A / \u00a76 'the analyser MUST add them back as exact zeros'",
+   "ambiguity": "DROPPED_ALL_TRANSPOSITION.json holds 374 rows over the FULL 1,427-position supply, but Stage A scores a 340-position SAMPLE of the 1,053 built. Literally concatenating 374 zero rows onto 340 scored rows would mis-weight the mixture by ~3x.",
+   "resolution": "The zeros enter as their POPULATION SHARE, per stratum, not as literal rows: mean over (discriminable + analytic zeros) = (1 - p_drop) * mean(discriminable) exactly, because the zeros have zero value AND zero variance and their count is known. Applied as a per-position multiplier inside the bootstrap, so the CI scales exactly too. This reproduces DESIGN \u00a76's own `headroom_all = 0.74 * headroom_discriminable`."
+  },
+  {
+   "id": "I3-the-72-outside-tieset",
+   "where": "\u00a70.A '72 of the 374 have the played action OUTSIDE the tie set'",
+   "ambiguity": "For those rows the analytic zero covers the TIE-SET ARMS only, so it is a valid zero for the spread statistics and for S2b (arm 0 is inside the set) but NOT necessarily for S2 (champion vs tie set).",
+   "resolution": "Two zero-rates are carried. Spread (S1a/S1b) and S2b use ALL 374 rows as zeros. S2 (headroom) reports a headline using all 374 AND a per-row sensitivity `zeros_strict` that counts only the 302 rows whose played action is inside the tie set, leaving the 72 imputed at the discriminable mean. `zeros_strict` is the LARGER magnitude, i.e. the conservative-against-closure direction. It is a sensitivity row, never the headline."
+  },
+  {
+   "id": "I4-branch-3-unreachable",
+   "where": "\u00a74.4 'branch precedence 1 -> 2 -> 3 -> 4, first match wins'",
+   "ambiguity": "Branch 3's condition is `sigma2_arm CI excludes 0 AND elo(headroom_CI_hi) < +17`. Its second conjunct IS branch 1's whole condition, so under strict first-match precedence branch 3 can NEVER fire. This is an internal inconsistency in the pre-registration, not a judgement call.",
+   "resolution": "Precedence is honoured EXACTLY as written (branch 1 fires), and the verdict additionally carries `branch_3_condition_also_met` plus this note. The reader gets both the literal pre-registered branch and the fact that the more specific reading ('the leaf is blind but the search is not') also holds. No silent re-ordering."
+  },
+  {
+   "id": "I5-pooled-weighting",
+   "where": "\u00a74.4 'the pooled estimate is primary'",
+   "ambiguity": "DESIGN does not say whether 'pooled' is position-weighted over the SAMPLE or re-weighted to the population. Stage A's sample (280 selfplay / 60 e4) is deliberately NOT proportional to supply (932 / 495).",
+   "resolution": "Pooled = the unweighted mean over all scored positions (the farm-war reading, and what 'pooled' means everywhere else in this project). Per-stratum reads are always emitted beside it, and \u00a74.4's no-pooling-on-sign-disagreement rule is enforced mechanically."
+  },
+  {
+   "id": "I6-fullset-extrapolation-scope",
+   "where": "\u00a74.6 'the full-set ceiling is ~= 1.40x the J=4 measured headroom'",
+   "ambiguity": "The 1.40x is derived from mean K = 8.55 vs J = 4, but is stated as a GLOBAL multiplier. Positions that were never capped (K <= 4) need no extrapolation at all -- best-of-J IS best-of-K there.",
+   "resolution": "Applied GLOBALLY exactly as written (so the cap cannot manufacture a closure), and the realized capped fraction is reported beside it so the reader can see how conservative that is. \u00a74.6's own assumption-free check -- branch arithmetic on the UNCAPPED subset alone -- is emitted as a separate block."
+  }
+ ],
+ "results": {
+  "blocks": {
+   "pooled": {
+    "n_positions": 284,
+    "n_positions_with_champ_arm": 284,
+    "n_roots": 224,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.7568943567317886,
+     "se_cluster": 0.30096465238756276,
+     "boot_mean": 0.7565545839769772,
+     "boot_lo": 0.18081507854800594,
+     "boot_hi": 1.3689887274736805,
+     "se_boot": 0.30250385235230537,
+     "z": 2.514894525743539,
+     "sd_positions": 4.986983172224061,
+     "frac_boot_le_0": 0.00455
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.549273747335945,
+     "se_cluster": 0.21799937215210055,
+     "boot_mean": 0.5489942346868883,
+     "boot_lo": 0.13151625222000057,
+     "boot_hi": 0.9917271610244602,
+     "se_boot": 0.2191122881868987,
+     "z": 2.5196116021504444,
+     "sd_positions": 3.607672507197627,
+     "frac_boot_le_0": 0.00455
+    },
+    "S1b_gap_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.511443661971831,
+     "se_cluster": 0.21504192034158542,
+     "boot_mean": 0.511695181624523,
+     "boot_lo": 0.09276315789473684,
+     "boot_hi": 0.9299528301886792,
+     "se_boot": 0.21516096273652008,
+     "z": 2.3783440045523374,
+     "sd_positions": 3.6095466863952748,
+     "frac_boot_le_0": 0.0078
+    },
+    "S1b_gap_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.3709297442515892,
+     "se_cluster": 0.1556799840784257,
+     "boot_mean": 0.3710885167263891,
+     "boot_lo": 0.06859362866675947,
+     "boot_hi": 0.6732522457140847,
+     "se_boot": 0.15575944369260508,
+     "z": 2.3826424857849986,
+     "sd_positions": 2.610268467179361,
+     "frac_boot_le_0": 0.0078
+    },
+    "S1b_gap_parity_swap": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.643705985915493,
+     "se_cluster": 0.2114607012222642,
+     "boot_mean": 0.6421503445700382,
+     "boot_lo": 0.22460247349823323,
+     "boot_hi": 1.067726480836237,
+     "se_boot": 0.2132343618094388,
+     "z": 3.044092742503961,
+     "sd_positions": 3.588593454196878,
+     "frac_boot_le_0": 0.00095
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.27596830985915494,
+     "se_cluster": 0.15096787692917257,
+     "boot_mean": 0.27535062193937404,
+     "boot_lo": -0.016652249134948095,
+     "boot_hi": 0.5726407284768212,
+     "se_boot": 0.15000692904018087,
+     "z": 1.8279935803073326,
+     "sd_positions": 2.6050504232111806,
+     "frac_boot_le_0": 0.03255
+    },
+    "S2_headroom_J4_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.19909701576607516,
+     "se_cluster": 0.10904227796627232,
+     "boot_mean": 0.19864596109109245,
+     "boot_lo": -0.011996164579291445,
+     "boot_hi": 0.4129400708156997,
+     "se_boot": 0.1083448921484657,
+     "z": 1.8258699238441949,
+     "sd_positions": 1.8816225765564565,
+     "frac_boot_le_0": 0.03265
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.2133219282530925,
+     "se_cluster": 0.11681549025536034,
+     "boot_mean": 0.21283939370800625,
+     "boot_lo": -0.012908299065161584,
+     "boot_hi": 0.44250903259570196,
+     "se_boot": 0.1160688436708966,
+     "z": 1.8261441850457307,
+     "sd_positions": 2.0157528585962066,
+     "frac_boot_le_0": 0.0326
+    },
+    "S2_headroom_parity_swap": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.22733274647887325,
+     "se_cluster": 0.1693404838852248,
+     "boot_mean": 0.2247920124369151,
+     "boot_lo": -0.11171602787456446,
+     "boot_hi": 0.5578125,
+     "se_boot": 0.16956885800957353,
+     "z": 1.3424595304271973,
+     "sd_positions": 2.986113427836627,
+     "frac_boot_le_0": 0.0931
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.30721830985915494,
+     "se_cluster": 0.16373814885492838,
+     "boot_mean": 0.30811925337092605,
+     "boot_lo": -0.012242268041237113,
+     "boot_hi": 0.628964552238806,
+     "se_boot": 0.1634898089256379,
+     "z": 1.876278142922879,
+     "sd_positions": 2.851542351218776,
+     "frac_boot_le_0": 0.02935
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.22254532513828362,
+     "se_cluster": 0.11840224866381432,
+     "boot_mean": 0.22318228777460716,
+     "boot_lo": -0.008191491091169201,
+     "boot_hi": 0.4552388505318157,
+     "se_boot": 0.11821744710292355,
+     "z": 1.8795700896709164,
+     "sd_positions": 2.063443704055537,
+     "frac_boot_le_0": 0.0292
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 284,
+      "n_roots": 224,
+      "mean": 2.9250660211267605,
+      "se_cluster": 0.13659949791355858,
+      "boot_mean": 2.92523817841856,
+      "boot_lo": 2.660261824324324,
+      "boot_hi": 3.205401490066225,
+      "se_boot": 0.1381100543810828,
+      "z": 21.413446358183318,
+      "sd_positions": 2.2920452851208104,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 284,
+      "n_roots": 224,
+      "mean": 1.4445422535211268,
+      "se_cluster": 0.11312223868124424,
+      "boot_mean": 1.443628840662995,
+      "boot_lo": 1.228448275862069,
+      "boot_hi": 1.6708617747440273,
+      "se_boot": 0.1126443029847432,
+      "z": 12.76974598771473,
+      "sd_positions": 1.9518001933278832,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 284,
+      "n_roots": 224,
+      "mean": 1.543794014084507,
+      "se_cluster": 0.11531557624312119,
+      "boot_mean": 1.544045363264233,
+      "boot_lo": 1.3178023465703972,
+      "boot_hi": 1.778771551724138,
+      "se_boot": 0.11640888358569726,
+      "z": 13.387558423414612,
+      "sd_positions": 1.8625453542985646,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "stratum:e4": {
+    "n_positions": 4,
+    "n_positions_with_champ_arm": 4,
+    "n_roots": 2,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 4.234501008064516,
+     "se_cluster": 3.3991725470430114,
+     "boot_mean": 3.0913592804939523,
+     "boot_lo": -2.5638440860215055,
+     "boot_hi": 6.500616039426524,
+     "se_boot": 3.4074664162051245,
+     "z": 1.245744647987396,
+     "sd_positions": 6.776362809882201,
+     "frac_boot_le_0": 0.25165
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 3.2507280465949826,
+     "se_cluster": 2.6094657936895844,
+     "boot_mean": 2.3731647001771745,
+     "boot_lo": -1.9682035407841862,
+     "boot_hi": 4.990371909054705,
+     "se_boot": 2.615832804359489,
+     "z": 1.2457446479873961,
+     "sd_positions": 5.202056298495427,
+     "frac_boot_le_0": 0.25165
+    },
+    "S1b_gap_discriminable": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 2.515625,
+     "se_cluster": 2.4765625,
+     "boot_mean": 1.68275703125,
+     "boot_lo": -2.4375,
+     "boot_hi": 4.166666666666667,
+     "se_boot": 2.4826052310065996,
+     "z": 1.0157728706624605,
+     "sd_positions": 4.560751662737916,
+     "frac_boot_le_0": 0.25165
+    },
+    "S1b_gap_all": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 1.931186868686869,
+     "se_cluster": 1.901199494949495,
+     "boot_mean": 1.2918134785353534,
+     "boot_lo": -1.8712121212121213,
+     "boot_hi": 3.198653198653199,
+     "se_boot": 1.905838359156581,
+     "z": 1.0157728706624607,
+     "sd_positions": 3.501183094627087,
+     "frac_boot_le_0": 0.25165
+    },
+    "S1b_gap_parity_swap": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 4.5625,
+     "se_cluster": 3.84375,
+     "boot_mean": 3.269846875,
+     "boot_lo": -3.125,
+     "boot_hi": 7.125,
+     "se_boot": 3.8531286235181277,
+     "z": 1.1869918699186992,
+     "sd_positions": 5.470803186004775,
+     "frac_boot_le_0": 0.25165
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": -0.28125,
+     "se_cluster": 1.078125,
+     "boot_mean": -0.6438234375,
+     "boot_lo": -2.4375,
+     "boot_hi": 0.4375,
+     "se_boot": 1.0807555895233774,
+     "z": -0.2608695652173913,
+     "sd_positions": 1.5649980031936144,
+     "frac_boot_le_0": 0.7495
+    },
+    "S2_headroom_J4_all": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": -0.21590909090909094,
+     "se_cluster": 0.8276515151515151,
+     "boot_mean": -0.4942482954545455,
+     "boot_lo": -1.8712121212121213,
+     "boot_hi": 0.33585858585858586,
+     "se_boot": 0.8296709576139057,
+     "z": -0.26086956521739135,
+     "sd_positions": 1.2014126085122696,
+     "frac_boot_le_0": 0.7495
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": -0.22954545454545455,
+     "se_cluster": 0.8799242424242425,
+     "boot_mean": -0.5254639772727273,
+     "boot_lo": -1.9893939393939395,
+     "boot_hi": 0.3570707070707071,
+     "se_boot": 0.8820712286211,
+     "z": -0.2608695652173913,
+     "sd_positions": 1.2772912995762025,
+     "frac_boot_le_0": 0.7495
+    },
+    "S2_headroom_parity_swap": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 0.3125,
+     "se_cluster": 0.15625,
+     "boot_mean": 0.259953125,
+     "boot_lo": 0.0,
+     "boot_hi": 0.4166666666666667,
+     "se_boot": 0.1566312448584605,
+     "z": 2.0,
+     "sd_positions": 5.370395314437601,
+     "frac_boot_le_0": 0.25165
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 1.09375,
+     "se_cluster": 1.734375,
+     "boot_mean": 0.5104796875,
+     "boot_lo": -2.375,
+     "boot_hi": 2.25,
+     "se_boot": 1.7386068179289116,
+     "z": 0.6306306306306306,
+     "sd_positions": 4.866044123995041,
+     "frac_boot_le_0": 0.25165
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 4,
+     "n_roots": 2,
+     "mean": 0.8396464646464646,
+     "se_cluster": 1.331439393939394,
+     "boot_mean": 0.39188339646464637,
+     "boot_lo": -1.8232323232323233,
+     "boot_hi": 1.7272727272727273,
+     "se_boot": 1.3346880622484574,
+     "z": 0.6306306306306306,
+     "sd_positions": 3.735549024481042,
+     "frac_boot_le_0": 0.25165
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 4,
+      "n_roots": 2,
+      "mean": 5.5859375,
+      "se_cluster": 1.57421875,
+      "boot_mean": 5.056527734375,
+      "boot_lo": 2.4375,
+      "boot_hi": 6.635416666666667,
+      "se_boot": 1.5780597919489896,
+      "z": 3.5483870967741935,
+      "sd_positions": 3.1640657150189426,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 4,
+      "n_roots": 2,
+      "mean": 1.453125,
+      "se_cluster": 0.0546875,
+      "boot_mean": 1.47151640625,
+      "boot_lo": 1.4166666666666667,
+      "boot_hi": 1.5625,
+      "se_boot": 0.054820935700461156,
+      "z": 26.571428571428573,
+      "sd_positions": 2.00479568264865,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 4,
+      "n_roots": 2,
+      "mean": 2.8046875,
+      "se_cluster": 1.02734375,
+      "boot_mean": 2.459191796875,
+      "boot_lo": 0.75,
+      "boot_hi": 3.4895833333333335,
+      "se_boot": 1.0298504349443776,
+      "z": 2.7300380228136882,
+      "sd_positions": 1.8985285900643336,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "stratum:selfplay": {
+    "n_positions": 280,
+    "n_positions_with_champ_arm": 280,
+    "n_roots": 222,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.7072142617127497,
+     "se_cluster": 0.29864938302572924,
+     "boot_mean": 0.7103614044919172,
+     "boot_lo": 0.145711200055549,
+     "boot_hi": 1.3161635710539132,
+     "se_boot": 0.2987071411896202,
+     "z": 2.368041931135755,
+     "sd_positions": 4.955496201441733,
+     "frac_boot_le_0": 0.00605
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.510681543060816,
+     "se_cluster": 0.21565561671278516,
+     "boot_mean": 0.5129541043165882,
+     "boot_lo": 0.10521849531908202,
+     "boot_hi": 0.9504056687975146,
+     "se_boot": 0.21569732405645323,
+     "z": 2.3680419311357555,
+     "sd_positions": 3.578378694817904,
+     "frac_boot_le_0": 0.00605
+    },
+    "S1b_gap_discriminable": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.4828125,
+     "se_cluster": 0.2141841259495731,
+     "boot_mean": 0.48382288437219395,
+     "boot_lo": 0.07002737226277372,
+     "boot_hi": 0.9032473309608541,
+     "se_boot": 0.21398891159120445,
+     "z": 2.2541936656578927,
+     "sd_positions": 3.596324414892936,
+     "frac_boot_le_0": 0.0117
+    },
+    "S1b_gap_all": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.34864035675965666,
+     "se_cluster": 0.15466300081980974,
+     "boot_mean": 0.34936995835030743,
+     "boot_lo": 0.050566975893612386,
+     "boot_hi": 0.6522376113054236,
+     "se_boot": 0.15452203594515085,
+     "z": 2.254193665657893,
+     "sd_positions": 2.5969166644023023,
+     "frac_boot_le_0": 0.01165
+    },
+    "S1b_gap_parity_swap": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.5877232142857143,
+     "se_cluster": 0.20228280273031496,
+     "boot_mean": 0.588694623796411,
+     "boot_lo": 0.19372775800711745,
+     "boot_hi": 0.9875,
+     "se_boot": 0.20245953745684184,
+     "z": 2.905453189064577,
+     "sd_positions": 3.538006878106775,
+     "frac_boot_le_0": 0.00185
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.2839285714285714,
+     "se_cluster": 0.15282072108451966,
+     "boot_mean": 0.28368769746154376,
+     "boot_lo": -0.013091216216216216,
+     "boot_hi": 0.5859090909090909,
+     "se_boot": 0.1525022841167651,
+     "z": 1.8579193280441382,
+     "sd_positions": 2.617772215989769,
+     "frac_boot_le_0": 0.0313
+    },
+    "S2_headroom_J4_all": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.20502567443286326,
+     "se_cluster": 0.11035230181317782,
+     "boot_mean": 0.2048517386176169,
+     "boot_lo": -0.009453206559563842,
+     "boot_hi": 0.4230867147873585,
+     "se_boot": 0.1101223575220847,
+     "z": 1.8579193280441382,
+     "sd_positions": 1.8903011817179343,
+     "frac_boot_le_0": 0.03125
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.21964860515021462,
+     "se_cluster": 0.11822289689049215,
+     "boot_mean": 0.21946226380876943,
+     "boot_lo": -0.010127432287437656,
+     "boot_hi": 0.45326229028482246,
+     "se_boot": 0.11797655241221851,
+     "z": 1.8579193280441384,
+     "sd_positions": 2.025122068378352,
+     "frac_boot_le_0": 0.0312
+    },
+    "S2_headroom_parity_swap": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.22611607142857143,
+     "se_cluster": 0.17175168969951318,
+     "boot_mean": 0.22564831248251302,
+     "boot_lo": -0.11315055762081784,
+     "boot_hi": 0.5575361010830325,
+     "se_boot": 0.1713995381529016,
+     "z": 1.3165289484148368,
+     "sd_positions": 2.9554168161644587,
+     "frac_boot_le_0": 0.092
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.29598214285714286,
+     "se_cluster": 0.16443240742652376,
+     "boot_mean": 0.2965143524312814,
+     "boot_lo": -0.02871024734982332,
+     "boot_hi": 0.6164172535211268,
+     "se_boot": 0.16424562680991087,
+     "z": 1.8000231675097367,
+     "sd_positions": 2.8256449163382804,
+     "frac_boot_le_0": 0.03555
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 280,
+     "n_roots": 222,
+     "mean": 0.21372959457388105,
+     "se_cluster": 0.11873713540563358,
+     "boot_mean": 0.2141139047062794,
+     "boot_lo": -0.02073175586526943,
+     "boot_hi": 0.44511675066493384,
+     "se_boot": 0.11860226056123392,
+     "z": 1.8000231675097367,
+     "sd_positions": 2.0404066831498526,
+     "frac_boot_le_0": 0.03555
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 280,
+      "n_roots": 222,
+      "mean": 2.8870535714285714,
+      "se_cluster": 0.13259620728698443,
+      "boot_mean": 2.8879489929646445,
+      "boot_lo": 2.633212457337884,
+      "boot_hi": 3.151690391459075,
+      "se_boot": 0.13197448530533903,
+      "z": 21.77327414184616,
+      "sd_positions": 2.2623401078743393,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 280,
+      "n_roots": 222,
+      "mean": 1.4444196428571427,
+      "se_cluster": 0.11473974320610357,
+      "boot_mean": 1.4441120527363707,
+      "boot_lo": 1.2269981412639406,
+      "boot_hi": 1.6724290780141844,
+      "se_boot": 0.11341796940629384,
+      "z": 12.588660236606726,
+      "sd_positions": 1.9547180075497588,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 280,
+      "n_roots": 222,
+      "mean": 1.52578125,
+      "se_cluster": 0.11500230391273454,
+      "boot_mean": 1.5260306737705918,
+      "boot_lo": 1.3074261992619927,
+      "boot_hi": 1.7549460431654675,
+      "se_boot": 0.11451270282651066,
+      "z": 13.267397244126393,
+      "sd_positions": 1.8592833918805398,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "profile:walled": {
+    "n_positions": 284,
+    "n_positions_with_champ_arm": 284,
+    "n_roots": 224,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.7568943567317886,
+     "se_cluster": 0.30096465238756276,
+     "boot_mean": 0.7565545839769772,
+     "boot_lo": 0.18081507854800594,
+     "boot_hi": 1.3689887274736805,
+     "se_boot": 0.30250385235230537,
+     "z": 2.514894525743539,
+     "sd_positions": 4.986983172224061,
+     "frac_boot_le_0": 0.00455
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.549273747335945,
+     "se_cluster": 0.21799937215210055,
+     "boot_mean": 0.5489942346868883,
+     "boot_lo": 0.13151625222000057,
+     "boot_hi": 0.9917271610244602,
+     "se_boot": 0.2191122881868987,
+     "z": 2.5196116021504444,
+     "sd_positions": 3.607672507197627,
+     "frac_boot_le_0": 0.00455
+    },
+    "S1b_gap_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.511443661971831,
+     "se_cluster": 0.21504192034158542,
+     "boot_mean": 0.511695181624523,
+     "boot_lo": 0.09276315789473684,
+     "boot_hi": 0.9299528301886792,
+     "se_boot": 0.21516096273652008,
+     "z": 2.3783440045523374,
+     "sd_positions": 3.6095466863952748,
+     "frac_boot_le_0": 0.0078
+    },
+    "S1b_gap_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.3709297442515892,
+     "se_cluster": 0.1556799840784257,
+     "boot_mean": 0.3710885167263891,
+     "boot_lo": 0.06859362866675947,
+     "boot_hi": 0.6732522457140847,
+     "se_boot": 0.15575944369260508,
+     "z": 2.3826424857849986,
+     "sd_positions": 2.610268467179361,
+     "frac_boot_le_0": 0.0078
+    },
+    "S1b_gap_parity_swap": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.643705985915493,
+     "se_cluster": 0.2114607012222642,
+     "boot_mean": 0.6421503445700382,
+     "boot_lo": 0.22460247349823323,
+     "boot_hi": 1.067726480836237,
+     "se_boot": 0.2132343618094388,
+     "z": 3.044092742503961,
+     "sd_positions": 3.588593454196878,
+     "frac_boot_le_0": 0.00095
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.27596830985915494,
+     "se_cluster": 0.15096787692917257,
+     "boot_mean": 0.27535062193937404,
+     "boot_lo": -0.016652249134948095,
+     "boot_hi": 0.5726407284768212,
+     "se_boot": 0.15000692904018087,
+     "z": 1.8279935803073326,
+     "sd_positions": 2.6050504232111806,
+     "frac_boot_le_0": 0.03255
+    },
+    "S2_headroom_J4_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.19909701576607516,
+     "se_cluster": 0.10904227796627232,
+     "boot_mean": 0.19864596109109245,
+     "boot_lo": -0.011996164579291445,
+     "boot_hi": 0.4129400708156997,
+     "se_boot": 0.1083448921484657,
+     "z": 1.8258699238441949,
+     "sd_positions": 1.8816225765564565,
+     "frac_boot_le_0": 0.03265
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.2133219282530925,
+     "se_cluster": 0.11681549025536034,
+     "boot_mean": 0.21283939370800625,
+     "boot_lo": -0.012908299065161584,
+     "boot_hi": 0.44250903259570196,
+     "se_boot": 0.1160688436708966,
+     "z": 1.8261441850457307,
+     "sd_positions": 2.0157528585962066,
+     "frac_boot_le_0": 0.0326
+    },
+    "S2_headroom_parity_swap": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.22733274647887325,
+     "se_cluster": 0.1693404838852248,
+     "boot_mean": 0.2247920124369151,
+     "boot_lo": -0.11171602787456446,
+     "boot_hi": 0.5578125,
+     "se_boot": 0.16956885800957353,
+     "z": 1.3424595304271973,
+     "sd_positions": 2.986113427836627,
+     "frac_boot_le_0": 0.0931
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.30721830985915494,
+     "se_cluster": 0.16373814885492838,
+     "boot_mean": 0.30811925337092605,
+     "boot_lo": -0.012242268041237113,
+     "boot_hi": 0.628964552238806,
+     "se_boot": 0.1634898089256379,
+     "z": 1.876278142922879,
+     "sd_positions": 2.851542351218776,
+     "frac_boot_le_0": 0.02935
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 284,
+     "n_roots": 224,
+     "mean": 0.22254532513828362,
+     "se_cluster": 0.11840224866381432,
+     "boot_mean": 0.22318228777460716,
+     "boot_lo": -0.008191491091169201,
+     "boot_hi": 0.4552388505318157,
+     "se_boot": 0.11821744710292355,
+     "z": 1.8795700896709164,
+     "sd_positions": 2.063443704055537,
+     "frac_boot_le_0": 0.0292
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 284,
+      "n_roots": 224,
+      "mean": 2.9250660211267605,
+      "se_cluster": 0.13659949791355858,
+      "boot_mean": 2.92523817841856,
+      "boot_lo": 2.660261824324324,
+      "boot_hi": 3.205401490066225,
+      "se_boot": 0.1381100543810828,
+      "z": 21.413446358183318,
+      "sd_positions": 2.2920452851208104,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 284,
+      "n_roots": 224,
+      "mean": 1.4445422535211268,
+      "se_cluster": 0.11312223868124424,
+      "boot_mean": 1.443628840662995,
+      "boot_lo": 1.228448275862069,
+      "boot_hi": 1.6708617747440273,
+      "se_boot": 0.1126443029847432,
+      "z": 12.76974598771473,
+      "sd_positions": 1.9518001933278832,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 284,
+      "n_roots": 224,
+      "mean": 1.543794014084507,
+      "se_cluster": 0.11531557624312119,
+      "boot_mean": 1.544045363264233,
+      "boot_lo": 1.3178023465703972,
+      "boot_hi": 1.778771551724138,
+      "se_boot": 0.11640888358569726,
+      "z": 13.387558423414612,
+      "sd_positions": 1.8625453542985646,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "phase:early": {
+    "n_positions": 122,
+    "n_positions_with_champ_arm": 122,
+    "n_roots": 107,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": -0.01660910232681115,
+     "se_cluster": 0.4797710002228703,
+     "boot_mean": -0.019837855213458693,
+     "boot_lo": -0.917385319112036,
+     "boot_hi": 0.9324834789426523,
+     "se_boot": 0.47302901099621536,
+     "z": -0.03461881255660648,
+     "sd_positions": 5.03252838617334,
+     "frac_boot_le_0": 0.5216
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": -0.005666199180756548,
+     "se_cluster": 0.3490267878347655,
+     "boot_mean": -0.008252058815418037,
+     "boot_lo": -0.6616085394717378,
+     "boot_hi": 0.6836354941535538,
+     "se_boot": 0.343992763186712,
+     "z": -0.01623428166046387,
+     "sd_positions": 3.65015613008823,
+     "frac_boot_le_0": 0.51445
+    },
+    "S1b_gap_discriminable": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": -0.11629098360655737,
+     "se_cluster": 0.37744128651863024,
+     "boot_mean": -0.12367736786402397,
+     "boot_lo": -0.8698347107438017,
+     "boot_hi": 0.6100206611570248,
+     "se_boot": 0.3742674680164889,
+     "z": -0.3081035057907406,
+     "sd_positions": 3.9833582953654667,
+     "frac_boot_le_0": 0.62535
+    },
+    "S1b_gap_all": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": -0.0802151670436867,
+     "se_cluster": 0.2739555916881554,
+     "boot_mean": -0.08571251459826883,
+     "boot_lo": -0.6276683151801494,
+     "boot_hi": 0.4458755168368232,
+     "se_boot": 0.27156389096018524,
+     "z": -0.2928035399802896,
+     "sd_positions": 2.885045667881038,
+     "frac_boot_le_0": 0.6197
+    },
+    "S1b_gap_parity_swap": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": -0.010245901639344262,
+     "se_cluster": 0.3986822596615136,
+     "boot_mean": -0.016527888440563902,
+     "boot_lo": -0.7865853658536586,
+     "boot_hi": 0.7594246031746031,
+     "se_boot": 0.39208464951753025,
+     "z": -0.02569941699448369,
+     "sd_positions": 4.054337482051968,
+     "frac_boot_le_0": 0.51685
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": 0.09221311475409837,
+     "se_cluster": 0.23932660750807097,
+     "boot_mean": 0.09004891246623441,
+     "boot_lo": -0.3719758064516129,
+     "boot_hi": 0.5576550387596899,
+     "se_boot": 0.23683671637464082,
+     "z": 0.3853023937214695,
+     "sd_positions": 2.6420297300943862,
+     "frac_boot_le_0": 0.3516
+    },
+    "S2_headroom_J4_all": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": 0.06616711733176414,
+     "se_cluster": 0.1729175666125935,
+     "boot_mean": 0.06458557643836375,
+     "boot_lo": -0.26967435706405474,
+     "boot_hi": 0.4022240418643174,
+     "se_boot": 0.17110917114555338,
+     "z": 0.38265121715485223,
+     "sd_positions": 1.90895905789761,
+     "frac_boot_le_0": 0.352
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": 0.07094411406330954,
+     "se_cluster": 0.18523646626419146,
+     "boot_mean": 0.06925235440874641,
+     "boot_lo": -0.2888474031980304,
+     "boot_hi": 0.4309116406897071,
+     "se_boot": 0.18330053354994078,
+     "z": 0.38299215858569813,
+     "sd_positions": 2.0449496022521654,
+     "frac_boot_le_0": 0.3519
+    },
+    "S2_headroom_parity_swap": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": -0.33350409836065575,
+     "se_cluster": 0.29448104219533616,
+     "boot_mean": -0.33586643341321876,
+     "boot_lo": -0.9104166666666667,
+     "boot_hi": 0.24261811023622049,
+     "se_boot": 0.2939606123011079,
+     "z": -1.132514663335899,
+     "sd_positions": 3.3353638528614535,
+     "frac_boot_le_0": 0.87385
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": 0.07223360655737705,
+     "se_cluster": 0.28706491367941517,
+     "boot_mean": 0.06496078279470743,
+     "boot_lo": -0.5046487603305785,
+     "boot_hi": 0.6259920634920635,
+     "se_boot": 0.28639002724566426,
+     "z": 0.25162812700281867,
+     "sd_positions": 3.1903297325535154,
+     "frac_boot_le_0": 0.4071
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 122,
+     "n_roots": 107,
+     "mean": 0.05379440934533542,
+     "se_cluster": 0.20784329133971374,
+     "boot_mean": 0.048453559326281835,
+     "boot_lo": -0.3642635895581993,
+     "boot_hi": 0.45495400976048733,
+     "se_boot": 0.20731973223673733,
+     "z": 0.2588219662929127,
+     "sd_positions": 2.312924140670092,
+     "frac_boot_le_0": 0.4036
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 122,
+      "n_roots": 107,
+      "mean": 3.2725409836065573,
+      "se_cluster": 0.21879518066198073,
+      "boot_mean": 3.2709550686611126,
+      "boot_lo": 2.861328125,
+      "boot_hi": 3.708165322580645,
+      "se_boot": 0.21585146294861812,
+      "z": 14.957098112057343,
+      "sd_positions": 2.2859567454586966,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 122,
+      "n_roots": 107,
+      "mean": 1.5883709016393444,
+      "se_cluster": 0.18893553269339236,
+      "boot_mean": 1.5879492680161083,
+      "boot_lo": 1.236220472440945,
+      "boot_hi": 1.969234496124031,
+      "se_boot": 0.1881273541346039,
+      "z": 8.406946427684296,
+      "sd_positions": 2.0834836522933315,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 122,
+      "n_roots": 107,
+      "mean": 1.6472848360655739,
+      "se_cluster": 0.18484501584938964,
+      "boot_mean": 1.6441985611688632,
+      "boot_lo": 1.29369918699187,
+      "boot_hi": 2.016826923076923,
+      "se_boot": 0.18443859545517582,
+      "z": 8.911708159920144,
+      "sd_positions": 1.9662271464512202,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "phase:mid": {
+    "n_positions": 79,
+    "n_positions_with_champ_arm": 79,
+    "n_roots": 72,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 1.2630252994419493,
+     "se_cluster": 0.5514291137702377,
+     "boot_mean": 1.2589190500236382,
+     "boot_lo": 0.2522122929380993,
+     "boot_hi": 2.382142557123656,
+     "se_boot": 0.5481870418047694,
+     "z": 2.2904581348749935,
+     "sd_positions": 5.0172019528039185,
+     "frac_boot_le_0": 0.0065
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.9120343632236393,
+     "se_cluster": 0.3981886197074786,
+     "boot_mean": 0.9090692281823052,
+     "boot_lo": 0.1821232544499366,
+     "boot_hi": 1.720152297150451,
+     "se_boot": 0.3958475098010835,
+     "z": 2.290458134874993,
+     "sd_positions": 3.622936603258623,
+     "frac_boot_le_0": 0.0065
+    },
+    "S1b_gap_discriminable": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.814873417721519,
+     "se_cluster": 0.4317647958174944,
+     "boot_mean": 0.8132909958548756,
+     "boot_lo": -0.027597402597402596,
+     "boot_hi": 1.6578947368421053,
+     "se_boot": 0.43015395901179626,
+     "z": 1.887308612501987,
+     "sd_positions": 3.9392477175122345,
+     "frac_boot_le_0": 0.0291
+    },
+    "S1b_gap_all": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.5884225430542729,
+     "se_cluster": 0.31177865620726797,
+     "boot_mean": 0.5872798714703126,
+     "boot_lo": -0.019928167326235945,
+     "boot_hi": 1.1971707702733227,
+     "se_boot": 0.3106154661104494,
+     "z": 1.887308612501987,
+     "sd_positions": 2.8445426114653793,
+     "frac_boot_le_0": 0.02905
+    },
+    "S1b_gap_parity_swap": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.9984177215189873,
+     "se_cluster": 0.40334925090478035,
+     "boot_mean": 0.9954273920051382,
+     "boot_lo": 0.21022727272727273,
+     "boot_hi": 1.7995426829268293,
+     "se_boot": 0.40197223308282626,
+     "z": 2.475318149914418,
+     "sd_positions": 3.8219981344760403,
+     "frac_boot_le_0": 0.00605
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.627373417721519,
+     "se_cluster": 0.37352331862959304,
+     "boot_mean": 0.628962789614661,
+     "boot_lo": -0.09453125,
+     "boot_hi": 1.3674698795180722,
+     "se_boot": 0.37208984275778856,
+     "z": 1.6796097765014188,
+     "sd_positions": 3.3803442231679357,
+     "frac_boot_le_0": 0.044
+    },
+    "S2_headroom_J4_all": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.4530282297495518,
+     "se_cluster": 0.2697223105554894,
+     "boot_mean": 0.4541759199685267,
+     "boot_lo": -0.06826129962446349,
+     "boot_hi": 0.987454108278608,
+     "se_boot": 0.2686871933218795,
+     "z": 1.6796097765014188,
+     "sd_positions": 2.440956719090151,
+     "frac_boot_le_0": 0.04395
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.4853393070570978,
+     "se_cluster": 0.28895956301709935,
+     "boot_mean": 0.4865688533392388,
+     "boot_lo": -0.07312986185622322,
+     "boot_hi": 1.057881741558509,
+     "se_boot": 0.2878506186999631,
+     "z": 1.6796097765014186,
+     "sd_positions": 2.6150517005408607,
+     "frac_boot_le_0": 0.04395
+    },
+    "S2_headroom_parity_swap": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.7278481012658228,
+     "se_cluster": 0.37647470431439256,
+     "boot_mean": 0.7210367773267582,
+     "boot_lo": -0.01661392405063291,
+     "boot_hi": 1.4647435897435896,
+     "se_boot": 0.37617333036056405,
+     "z": 1.9333253812930806,
+     "sd_positions": 3.3168518518921215,
+     "frac_boot_le_0": 0.02745
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.3299050632911392,
+     "se_cluster": 0.3263817557883196,
+     "boot_mean": 0.32864188357377994,
+     "boot_lo": -0.30574324324324326,
+     "boot_hi": 0.9703525641025641,
+     "se_boot": 0.32488703202493957,
+     "z": 1.010795050398297,
+     "sd_positions": 2.992611372599177,
+     "frac_boot_le_0": 0.15435
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 79,
+     "n_roots": 72,
+     "mean": 0.23822543733362306,
+     "se_cluster": 0.23568124640079305,
+     "boot_mean": 0.2373132914647574,
+     "boot_lo": -0.22077811448787843,
+     "boot_hi": 0.700694501760757,
+     "se_boot": 0.2346019018806699,
+     "z": 1.010795050398297,
+     "sd_positions": 2.1609736628318092,
+     "frac_boot_le_0": 0.1543
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 79,
+      "n_roots": 72,
+      "mean": 3.317642405063291,
+      "se_cluster": 0.2772081393167174,
+      "boot_mean": 3.3148127703718258,
+      "boot_lo": 2.788671875,
+      "boot_hi": 3.8757621951219514,
+      "se_boot": 0.27698872214181175,
+      "z": 11.968055531272839,
+      "sd_positions": 2.4291772687513977,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 79,
+      "n_roots": 72,
+      "mean": 1.8473101265822784,
+      "se_cluster": 0.260659428890306,
+      "boot_mean": 1.8445844972875283,
+      "boot_lo": 1.360759493670886,
+      "boot_hi": 2.3753810975609757,
+      "se_boot": 0.25892111750805397,
+      "z": 7.087064275582706,
+      "sd_positions": 2.268862283445668,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 79,
+      "n_roots": 72,
+      "mean": 1.7412974683544304,
+      "se_cluster": 0.2211429187654975,
+      "boot_mean": 1.7391406900798785,
+      "boot_lo": 1.3173076923076923,
+      "boot_hi": 2.19453125,
+      "se_boot": 0.22165644938303541,
+      "z": 7.874081965070391,
+      "sd_positions": 1.8483816817605252,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "phase:late": {
+    "n_positions": 83,
+    "n_positions_with_champ_arm": 83,
+    "n_roots": 80,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 1.412112158310662,
+     "se_cluster": 0.5270858475375384,
+     "boot_mean": 1.4162682328108605,
+     "boot_lo": 0.5177860636092759,
+     "boot_hi": 2.578715734103279,
+     "se_boot": 0.5292433157652465,
+     "z": 2.679093291743321,
+     "sd_positions": 4.790003240569529,
+     "frac_boot_le_0": 0.0
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 1.0196904319131712,
+     "se_cluster": 0.3806102740265701,
+     "boot_mean": 1.0226915457958254,
+     "boot_lo": 0.37389487211270667,
+     "boot_hi": 1.8620983788106293,
+     "se_boot": 0.38216818831546234,
+     "z": 2.679093291743321,
+     "sd_positions": 3.4588757305829323,
+     "frac_boot_le_0": 0.0
+    },
+    "S1b_gap_discriminable": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 1.1453313253012047,
+     "se_cluster": 0.26297802323791686,
+     "boot_mean": 1.1477670944935794,
+     "boot_lo": 0.6618975903614458,
+     "boot_hi": 1.6837349397590362,
+     "se_boot": 0.26170344726165906,
+     "z": 4.355235890814423,
+     "sd_positions": 2.3894001113111187,
+     "frac_boot_le_0": 0.0
+    },
+    "S1b_gap_all": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 0.827047190909561,
+     "se_cluster": 0.18989722064283052,
+     "boot_mean": 0.828806067161136,
+     "boot_lo": 0.47795823853353325,
+     "boot_hi": 1.2158300584311494,
+     "se_boot": 0.18897684550117658,
+     "z": 4.3552358908144235,
+     "sd_positions": 1.725392998833029,
+     "frac_boot_le_0": 0.0
+    },
+    "S1b_gap_parity_swap": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 1.2673192771084338,
+     "se_cluster": 0.24831693237936953,
+     "boot_mean": 1.2715580208066029,
+     "boot_lo": 0.8132621951219512,
+     "boot_hi": 1.7660060975609757,
+     "se_boot": 0.2454038447335254,
+     "z": 5.103636167558118,
+     "sd_positions": 2.2678264273849997,
+     "frac_boot_le_0": 0.0
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 0.21159638554216867,
+     "se_cluster": 0.1577058787858907,
+     "boot_mean": 0.21141934600924675,
+     "boot_lo": -0.0911144578313253,
+     "boot_hi": 0.5220588235294118,
+     "se_boot": 0.1565097282486099,
+     "z": 1.3417152687722085,
+     "sd_positions": 1.441531704552723,
+     "frac_boot_le_0": 0.0869
+    },
+    "S2_headroom_J4_all": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 0.15279438569729561,
+     "se_cluster": 0.11387988886577732,
+     "boot_mean": 0.15266654491869427,
+     "boot_lo": -0.06579402373442267,
+     "boot_hi": 0.3769802448876546,
+     "se_boot": 0.11301614496922151,
+     "z": 1.341715268772208,
+     "sd_positions": 1.0409343746394664,
+     "frac_boot_le_0": 0.08645
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 0.1636920536222142,
+     "se_cluster": 0.12200208004788328,
+     "boot_mean": 0.1635550949277542,
+     "boot_lo": -0.07048661383732355,
+     "boot_hi": 0.40386739459732396,
+     "se_boot": 0.12107673183181088,
+     "z": 1.3417152687722085,
+     "sd_positions": 1.1151763508396064,
+     "frac_boot_le_0": 0.0864
+    },
+    "S2_headroom_parity_swap": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 0.5753012048192772,
+     "se_cluster": 0.1916257410433852,
+     "boot_mean": 0.5754995278284681,
+     "boot_lo": 0.21682098765432098,
+     "boot_hi": 0.9583333333333334,
+     "se_boot": 0.18949640521151906,
+     "z": 3.002212550812918,
+     "sd_positions": 1.7497756562467237,
+     "frac_boot_le_0": 0.0006
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 0.6310240963855421,
+     "se_cluster": 0.22870559209114533,
+     "boot_mean": 0.6323905967347385,
+     "boot_lo": 0.21310240963855423,
+     "boot_hi": 1.1056547619047619,
+     "se_boot": 0.2278171077182421,
+     "z": 2.7591109190459235,
+     "sd_positions": 2.082351216984229,
+     "frac_boot_le_0": 0.0009
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 83,
+     "n_roots": 80,
+     "mean": 0.45566439578054707,
+     "se_cluster": 0.16514899514736137,
+     "boot_mean": 0.4566511497880677,
+     "boot_lo": 0.15388189022183152,
+     "boot_hi": 0.7983966252810136,
+     "se_boot": 0.1645074179124216,
+     "z": 2.759110919045924,
+     "sd_positions": 1.503672069775092,
+     "frac_boot_le_0": 0.0009
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 83,
+      "n_roots": 80,
+      "mean": 2.0406626506024095,
+      "se_cluster": 0.21243177298608687,
+      "boot_mean": 2.044223037871283,
+      "boot_lo": 1.6521084337349397,
+      "boot_hi": 2.4826807228915664,
+      "se_boot": 0.21192283180068336,
+      "z": 9.606202602922595,
+      "sd_positions": 1.9201731567441238,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 83,
+      "n_roots": 80,
+      "mean": 0.8497740963855421,
+      "se_cluster": 0.12680248659189186,
+      "boot_mean": 0.8498635125882147,
+      "boot_lo": 0.6153273809523809,
+      "boot_hi": 1.103658536585366,
+      "se_boot": 0.12563524634602116,
+      "z": 6.701557037445978,
+      "sd_positions": 1.1402930087279088,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 83,
+      "n_roots": 80,
+      "mean": 1.2036897590361446,
+      "se_cluster": 0.18768542399657795,
+      "boot_mean": 1.2052771798916615,
+      "boot_lo": 0.860316265060241,
+      "boot_hi": 1.5983796296296295,
+      "se_boot": 0.18785626509738237,
+      "z": 6.413336387049915,
+      "sd_positions": 1.6873966872576922,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "uncapped_only": {
+    "n_positions": 227,
+    "n_positions_with_champ_arm": 227,
+    "n_roots": 187,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.5943853322912226,
+     "se_cluster": 0.33515316363780406,
+     "boot_mean": 0.5931035678935799,
+     "boot_lo": -0.046097515758249864,
+     "boot_hi": 1.2745196783503234,
+     "se_boot": 0.3361599338908727,
+     "z": 1.7734737331424015,
+     "sd_positions": 5.075063941587564,
+     "frac_boot_le_0": 0.0356
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.43084141958115163,
+     "se_cluster": 0.24231456310520194,
+     "boot_mean": 0.4298945761745405,
+     "boot_lo": -0.03231332126910197,
+     "boot_hi": 0.9235131556908613,
+     "se_boot": 0.24305364206828833,
+     "z": 1.7780252827565297,
+     "sd_positions": 3.6699353029978985,
+     "frac_boot_le_0": 0.03545
+    },
+    "S1b_gap_discriminable": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.5181718061674009,
+     "se_cluster": 0.23159640955912797,
+     "boot_mean": 0.5201029471518103,
+     "boot_lo": 0.06761853448275862,
+     "boot_hi": 0.9730046948356808,
+     "se_boot": 0.23121442316998184,
+     "z": 2.237391361782353,
+     "sd_positions": 3.5896651240266015,
+     "frac_boot_le_0": 0.01345
+    },
+    "S1b_gap_all": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.37451220971603694,
+     "se_cluster": 0.1673159741647968,
+     "boot_mean": 0.37589702334789654,
+     "boot_lo": 0.04891414789337675,
+     "boot_hi": 0.70354301336061,
+     "se_boot": 0.16704226557564436,
+     "z": 2.2383529820479877,
+     "sd_positions": 2.5930770529728138,
+     "frac_boot_le_0": 0.0134
+    },
+    "S1b_gap_parity_swap": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.6517070484581498,
+     "se_cluster": 0.22559130594862503,
+     "boot_mean": 0.651469750078381,
+     "boot_lo": 0.20814732142857142,
+     "boot_hi": 1.094313063063063,
+     "se_boot": 0.22637565627115128,
+     "z": 2.8888837081627874,
+     "sd_positions": 3.5911640625565813,
+     "frac_boot_le_0": 0.00205
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.26018722466960353,
+     "se_cluster": 0.15735162462228683,
+     "boot_mean": 0.26003987017976454,
+     "boot_lo": -0.04722222222222222,
+     "boot_hi": 0.5658482142857143,
+     "se_boot": 0.15596323896911746,
+     "z": 1.6535401226022763,
+     "sd_positions": 2.4929136610014697,
+     "frac_boot_le_0": 0.04795
+    },
+    "S2_headroom_J4_all": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.1873926107609532,
+     "se_cluster": 0.11366312122355646,
+     "boot_mean": 0.18728373623616698,
+     "boot_lo": -0.03462589660836769,
+     "boot_hi": 0.40845697520020946,
+     "se_boot": 0.1126611112314097,
+     "z": 1.6486667684620688,
+     "sd_positions": 1.800687366934731,
+     "frac_boot_le_0": 0.04855
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.20082521056741626,
+     "se_cluster": 0.12176435697470782,
+     "boot_mean": 0.20070891046183192,
+     "boot_lo": -0.037029075627519836,
+     "boot_hi": 0.43765377571407427,
+     "se_boot": 0.12069080482114253,
+     "z": 1.6492938948392797,
+     "sd_positions": 1.929039760428117,
+     "frac_boot_le_0": 0.04855
+    },
+    "S2_headroom_parity_swap": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.1203193832599119,
+     "se_cluster": 0.16919724773651768,
+     "boot_mean": 0.11938021945949627,
+     "boot_lo": -0.21349557522123894,
+     "boot_hi": 0.4452433628318584,
+     "se_boot": 0.16932143938118668,
+     "z": 0.7111190333738714,
+     "sd_positions": 2.7112035016594085,
+     "frac_boot_le_0": 0.2411
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.35875550660792954,
+     "se_cluster": 0.18420312850254048,
+     "boot_mean": 0.36066873158328033,
+     "boot_lo": 0.0008152173913043478,
+     "boot_hi": 0.7256787330316742,
+     "se_boot": 0.1851380829704433,
+     "z": 1.9476081080945469,
+     "sd_positions": 2.8592950270449786,
+     "frac_boot_le_0": 0.02485
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 227,
+     "n_roots": 187,
+     "mean": 0.25831810642967074,
+     "se_cluster": 0.13305677671703547,
+     "boot_mean": 0.2596995366493571,
+     "boot_lo": 0.0001180722837631574,
+     "boot_hi": 0.5234478708387711,
+     "se_boot": 0.13373885895460688,
+     "z": 1.9414126270247898,
+     "sd_positions": 2.0655854146123263,
+     "frac_boot_le_0": 0.025
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 227,
+      "n_roots": 187,
+      "mean": 2.7676211453744495,
+      "se_cluster": 0.14420072285902003,
+      "boot_mean": 2.7674786444154806,
+      "boot_lo": 2.4909957627118646,
+      "boot_hi": 3.0599072052401746,
+      "se_boot": 0.14465597309621717,
+      "z": 19.192838222317757,
+      "sd_positions": 2.2118174911440005,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 227,
+      "n_roots": 187,
+      "mean": 1.3024504405286343,
+      "se_cluster": 0.11339373178374494,
+      "boot_mean": 1.3011906489291272,
+      "boot_lo": 1.082142857142857,
+      "boot_hi": 1.5276898734177216,
+      "se_boot": 0.11358534512106552,
+      "z": 11.486088516890502,
+      "sd_positions": 1.795945344626267,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 227,
+      "n_roots": 187,
+      "mean": 1.5094988986784141,
+      "se_cluster": 0.12650914286303125,
+      "boot_mean": 1.5090831089461247,
+      "boot_lo": 1.2649147727272727,
+      "boot_hi": 1.763563829787234,
+      "se_boot": 0.12749784930121796,
+      "z": 11.931935230268031,
+      "sd_positions": 1.8708287239117811,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   },
+   "capped_only": {
+    "n_positions": 57,
+    "n_positions_with_champ_arm": 57,
+    "n_roots": 55,
+    "S1a_sigma2_arm_discriminable": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 1.4040794189775514,
+     "se_cluster": 0.6136947936591526,
+     "boot_mean": 1.4053762485627157,
+     "boot_lo": 0.32787008713385235,
+     "boot_hi": 2.7131237030748916,
+     "se_boot": 0.6120110309372415,
+     "z": 2.287911570189041,
+     "sd_positions": 4.604778481645528,
+     "frac_boot_le_0": 0.00295
+    },
+    "S1a_sigma2_arm_all": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 1.02092529821907,
+     "se_cluster": 0.44474268599395916,
+     "boot_mean": 1.0218278589574277,
+     "boot_lo": 0.23995177717417038,
+     "boot_hi": 1.9672596872900345,
+     "se_boot": 0.4435679038942392,
+     "z": 2.295541512812955,
+     "sd_positions": 3.3370276137030896,
+     "frac_boot_le_0": 0.00285
+    },
+    "S1b_gap_discriminable": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.48464912280701755,
+     "se_cluster": 0.5109076509868895,
+     "boot_mean": 0.48409659962754303,
+     "boot_lo": -0.5107758620689655,
+     "boot_hi": 1.4762931034482758,
+     "se_boot": 0.5073390496977882,
+     "z": 0.9486041594226472,
+     "sd_positions": 3.7199743014244255,
+     "frac_boot_le_0": 0.17365
+    },
+    "S1b_gap_all": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.35666273266510445,
+     "se_cluster": 0.37084968470254775,
+     "boot_mean": 0.3562315038173637,
+     "boot_lo": -0.36515436012485364,
+     "boot_hi": 1.076144430552107,
+     "se_boot": 0.3682773783604736,
+     "z": 0.96174473749702,
+     "sd_positions": 2.701095731619833,
+     "frac_boot_le_0": 0.16975
+    },
+    "S1b_gap_parity_swap": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.6118421052631579,
+     "se_cluster": 0.48020603644583987,
+     "boot_mean": 0.6083503437753225,
+     "boot_lo": -0.31919642857142855,
+     "boot_hi": 1.5571120689655173,
+     "se_boot": 0.4802259200192765,
+     "z": 1.2741241442769007,
+     "sd_positions": 3.6100124445248194,
+     "frac_boot_le_0": 0.10285
+    },
+    "S2_headroom_J4_discriminable": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.33881578947368424,
+     "se_cluster": 0.42396244445881137,
+     "boot_mean": 0.3435485774603017,
+     "boot_lo": -0.4564732142857143,
+     "boot_hi": 1.1830357142857142,
+     "se_boot": 0.41656448085931536,
+     "z": 0.7991646286174783,
+     "sd_positions": 3.0347215800035263,
+     "frac_boot_le_0": 0.2042
+    },
+    "S2_headroom_J4_all": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.24570929534787678,
+     "se_cluster": 0.30619216708304675,
+     "boot_mean": 0.24912180163588427,
+     "boot_lo": -0.3288147608828939,
+     "boot_hi": 0.8550795620018393,
+     "se_boot": 0.3008562407911909,
+     "z": 0.8024676061724154,
+     "sd_positions": 2.191738572047107,
+     "frac_boot_le_0": 0.20295
+    },
+    "S2_headroom_J4_all_zeros_strict": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.2630895583346453,
+     "se_cluster": 0.32802377496810076,
+     "boot_mean": 0.26674614797880736,
+     "boot_lo": -0.35226663090128774,
+     "boot_hi": 0.9160659200643778,
+     "se_boot": 0.3223064324610393,
+     "z": 0.8020441760973878,
+     "sd_positions": 2.3480078965875437,
+     "frac_boot_le_0": 0.20305
+    },
+    "S2_headroom_parity_swap": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.6535087719298246,
+     "se_cluster": 0.515147240764924,
+     "boot_mean": 0.6486492264539491,
+     "boot_lo": -0.33181818181818185,
+     "boot_hi": 1.6774553571428572,
+     "se_boot": 0.5125111753132797,
+     "z": 1.2685863772840023,
+     "sd_positions": 3.894322328370253,
+     "frac_boot_le_0": 0.10145
+    },
+    "S2b_headroom_leaf_discriminable": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.10197368421052631,
+     "se_cluster": 0.3754980909369856,
+     "boot_mean": 0.09998389326181198,
+     "boot_lo": -0.6328125,
+     "boot_hi": 0.8325892857142857,
+     "se_boot": 0.37262284019451797,
+     "z": 0.2715691149216497,
+     "sd_positions": 2.8362251201783732,
+     "frac_boot_le_0": 0.3944
+    },
+    "S2b_headroom_leaf_all": {
+     "n": 57,
+     "n_roots": 55,
+     "mean": 0.08008179262696995,
+     "se_cluster": 0.2736382824452367,
+     "boot_mean": 0.07861391177075716,
+     "boot_lo": -0.45365996583076174,
+     "boot_hi": 0.6124970429094856,
+     "se_boot": 0.2715383284818753,
+     "z": 0.29265566174205443,
+     "sd_positions": 2.0669537695834723,
+     "frac_boot_le_0": 0.38585
+    },
+    "NAIVE_never_quote": {
+     "note": "\u00a74.1 declares the naive range INADMISSIBLE as a headline (biased ~+0.8 sigma under the null even at K=2); \u00a74.2 allows it printed ONLY so the winner's-curse correction is auditable.",
+     "gap_naive": {
+      "n": 57,
+      "n_roots": 55,
+      "mean": 3.5520833333333335,
+      "se_cluster": 0.33368105252335234,
+      "boot_mean": 3.5523959326377335,
+      "boot_lo": 2.9126059322033897,
+      "boot_hi": 4.223214285714286,
+      "se_boot": 0.3325622919865564,
+      "z": 10.645145435954127,
+      "sd_positions": 2.5109507187327993,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_champ_naive": {
+      "n": 57,
+      "n_roots": 55,
+      "mean": 2.0104166666666665,
+      "se_cluster": 0.3209442872771398,
+      "boot_mean": 2.0117931957666975,
+      "boot_lo": 1.41875,
+      "boot_hi": 2.6651785714285716,
+      "se_boot": 0.31601301957167155,
+      "z": 6.26406746081336,
+      "sd_positions": 2.41392945869336,
+      "frac_boot_le_0": 0.0
+     },
+     "headroom_leaf_naive": {
+      "n": 57,
+      "n_roots": 55,
+      "mean": 1.6803728070175439,
+      "se_cluster": 0.24249567315734005,
+      "boot_mean": 1.6793115311150593,
+      "boot_lo": 1.2275219298245614,
+      "boot_hi": 2.166843220338983,
+      "se_boot": 0.2410836639408139,
+      "z": 6.9294960406458745,
+      "sd_positions": 1.8391477209729068,
+      "frac_boot_le_0": 0.0
+     }
+    }
+   }
+  },
+  "composites": {
+   "pooled": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.2787358220725052,
+      "boot_lo": -0.01679463041100802,
+      "boot_hi": 0.5781160991419796,
+      "se_cluster": 0.15265918915278123,
+      "se_boot": 0.15168284900785198
+     },
+     "bound": {
+      "label": "pooled/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.2787358220725052,
+       "ci95_lo": -0.01679463041100802,
+       "ci95_hi": 0.5781160991419796
+      },
+      "elo": {
+       "point": 27.232467463510385,
+       "ci95_lo": -1.6374941776296517,
+       "ci95_hi": 56.86900282296258
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 16.640987662993755,
+       "ci95_lo": -1.001903842180468,
+       "ci95_hi": 34.602065034439654
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 56.86900282296258,
+       "22.2": 52.18518358371212
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8258699238441949
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.2986506995543295,
+      "boot_lo": -0.018071618691226216,
+      "boot_hi": 0.6195126456339827,
+      "se_cluster": 0.16354168635750446,
+      "se_boot": 0.1624963811392552
+     },
+     "bound": {
+      "label": "pooled/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.2986506995543295,
+       "ci95_lo": -0.018071618691226216,
+       "ci95_hi": 0.6195126456339827
+      },
+      "elo": {
+       "point": 29.187008537610744,
+       "ci95_lo": -1.762003941178832,
+       "ci95_hi": 61.02252292945324
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 17.831957873932534,
+       "ci95_lo": -1.0780845830170096,
+       "ci95_hi": 37.09801626598127
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 61.02252292945324,
+       "22.2": 55.98474423531077
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8261441850457307
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.3863556338028169,
+      "boot_lo": -0.023313148788927332,
+      "boot_hi": 0.8016970198675497,
+      "se_cluster": 0.21135502770084158,
+      "se_boot": 0.2100097006562532
+     },
+     "bound": {
+      "label": "pooled/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.3863556338028169,
+       "ci95_lo": -0.023313148788927332,
+       "ci95_hi": 0.8016970198675497
+      },
+      "elo": {
+       "point": 37.81846088606816,
+       "ci95_lo": -2.2730721949614825,
+       "ci95_hi": 79.52608572296432
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 23.082345664837224,
+       "ci95_lo": -1.390777456054413,
+       "ci95_hi": 48.13162884687624
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 79.52608572296432,
+       "22.2": 72.87835407211718
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8279935803073326
+    }
+   },
+   "stratum:e4": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": -0.3022727272727273,
+      "boot_lo": -2.6196969696969696,
+      "boot_hi": 0.4702020202020202,
+      "se_cluster": 1.1587121212121212,
+      "se_boot": 1.161539340659468
+     },
+     "bound": {
+      "label": "stratum:e4/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": -0.3022727272727273,
+       "ci95_lo": -2.6196969696969696,
+       "ci95_hi": 0.4702020202020202
+      },
+      "elo": {
+       "point": -29.54268618343573,
+       "ci95_lo": -326.54364391545346,
+       "ci95_hi": 46.11374176296037
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": -18.048610330917285,
+       "ci95_lo": -168.32027981109255,
+       "ci95_hi": 28.11157401769403
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 46.11374176296037,
+       "22.2": 42.33600259240353
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": -0.26086956521739135
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": -0.32136363636363635,
+      "boot_lo": -2.785151515151515,
+      "boot_hi": 0.4998989898989899,
+      "se_cluster": 1.2318939393939394,
+      "se_boot": 1.23489972006954
+     },
+     "bound": {
+      "label": "stratum:e4/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": -0.32136363636363635,
+       "ci95_lo": -2.785151515151515,
+       "ci95_hi": 0.4998989898989899
+      },
+      "elo": {
+       "point": -31.418423576713074,
+       "ci95_lo": -364.616720669138,
+       "ci95_hi": 49.06388595510766
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": -19.19077340657002,
+       "ci95_lo": -180.90124349175477,
+       "ci95_hi": 29.89555587514146
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 49.06388595510766,
+       "22.2": 45.039003726758885
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": -0.2608695652173913
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": -0.39375,
+      "boot_lo": -3.4124999999999996,
+      "boot_hi": 0.6124999999999999,
+      "se_cluster": 1.509375,
+      "se_boot": 1.5130578253327283
+     },
+     "bound": {
+      "label": "stratum:e4/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": -0.39375,
+       "ci95_lo": -3.4124999999999996,
+       "ci95_hi": 0.6124999999999999
+      },
+      "elo": {
+       "point": -38.54815716588599,
+       "ci95_lo": -665.9309069428457,
+       "ci95_hi": 60.31772545591767
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": -23.525451831570805,
+       "ci95_lo": -233.28910609701046,
+       "ci95_hi": 36.6749363984885
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 60.31772545591767,
+       "22.2": 55.340181782450436
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": -0.2608695652173913
+    }
+   },
+   "stratum:selfplay": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.28703594420600853,
+      "boot_lo": -0.013234489183389379,
+      "boot_hi": 0.5923214007023019,
+      "se_cluster": 0.15449322253844894,
+      "se_boot": 0.15417130053091857
+     },
+     "bound": {
+      "label": "stratum:selfplay/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.28703594420600853,
+       "ci95_lo": -0.013234489183389379,
+       "ci95_hi": 0.5923214007023019
+      },
+      "elo": {
+       "point": 28.046864935200716,
+       "ci95_lo": -1.2903730318266857,
+       "ci95_hi": 58.292417735638494
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 17.137311101655005,
+       "ci95_lo": -0.7895185131539695,
+       "ci95_hi": 35.458141335496954
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 58.292417735638494,
+       "22.2": 53.48756931978382
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8579193280441382
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.30750804721030045,
+      "boot_lo": -0.014178405202412717,
+      "boot_hi": 0.6345672063987514,
+      "se_cluster": 0.165512055646689,
+      "se_boot": 0.1651671733771059
+     },
+     "bound": {
+      "label": "stratum:selfplay/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.30750804721030045,
+       "ci95_lo": -0.014178405202412717,
+       "ci95_hi": 0.6345672063987514
+      },
+      "elo": {
+       "point": 30.05689607745691,
+       "ci95_lo": -1.382406519915363,
+       "ci95_hi": 62.53725188995969
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 18.361787079470915,
+       "ci95_lo": -0.8458291125361225,
+       "ci95_hi": 38.00664483748008
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 62.53725188995969,
+       "22.2": 57.36977120828546
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8579193280441384
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.39749999999999996,
+      "boot_lo": -0.018327702702702703,
+      "boot_hi": 0.8202727272727273,
+      "se_cluster": 0.21394900951832752,
+      "se_boot": 0.21350319776347115
+     },
+     "bound": {
+      "label": "stratum:selfplay/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.39749999999999996,
+       "ci95_lo": -0.018327702702702703,
+       "ci95_hi": 0.8202727272727273
+      },
+      "elo": {
+       "point": 38.91834649657475,
+       "ci95_lo": -1.786972868827742,
+       "ci95_hi": 81.43616129969178
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 23.750199075206414,
+       "ci95_lo": -1.0933616890388738,
+       "ci95_hi": 49.26169532412237
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 81.43616129969178,
+       "22.2": 74.61876609989858
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8579193280441382
+    }
+   },
+   "profile:walled": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.2787358220725052,
+      "boot_lo": -0.01679463041100802,
+      "boot_hi": 0.5781160991419796,
+      "se_cluster": 0.15265918915278123,
+      "se_boot": 0.15168284900785198
+     },
+     "bound": {
+      "label": "profile:walled/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.2787358220725052,
+       "ci95_lo": -0.01679463041100802,
+       "ci95_hi": 0.5781160991419796
+      },
+      "elo": {
+       "point": 27.232467463510385,
+       "ci95_lo": -1.6374941776296517,
+       "ci95_hi": 56.86900282296258
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 16.640987662993755,
+       "ci95_lo": -1.001903842180468,
+       "ci95_hi": 34.602065034439654
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 56.86900282296258,
+       "22.2": 52.18518358371212
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8258699238441949
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.2986506995543295,
+      "boot_lo": -0.018071618691226216,
+      "boot_hi": 0.6195126456339827,
+      "se_cluster": 0.16354168635750446,
+      "se_boot": 0.1624963811392552
+     },
+     "bound": {
+      "label": "profile:walled/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.2986506995543295,
+       "ci95_lo": -0.018071618691226216,
+       "ci95_hi": 0.6195126456339827
+      },
+      "elo": {
+       "point": 29.187008537610744,
+       "ci95_lo": -1.762003941178832,
+       "ci95_hi": 61.02252292945324
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 17.831957873932534,
+       "ci95_lo": -1.0780845830170096,
+       "ci95_hi": 37.09801626598127
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 61.02252292945324,
+       "22.2": 55.98474423531077
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8261441850457307
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.3863556338028169,
+      "boot_lo": -0.023313148788927332,
+      "boot_hi": 0.8016970198675497,
+      "se_cluster": 0.21135502770084158,
+      "se_boot": 0.2100097006562532
+     },
+     "bound": {
+      "label": "profile:walled/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.3863556338028169,
+       "ci95_lo": -0.023313148788927332,
+       "ci95_hi": 0.8016970198675497
+      },
+      "elo": {
+       "point": 37.81846088606816,
+       "ci95_lo": -2.2730721949614825,
+       "ci95_hi": 79.52608572296432
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 23.082345664837224,
+       "ci95_lo": -1.390777456054413,
+       "ci95_hi": 48.13162884687624
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 79.52608572296432,
+       "22.2": 72.87835407211718
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.8279935803073326
+    }
+   },
+   "phase:early": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.09263396426446979,
+      "boot_lo": -0.37754409988967663,
+      "boot_hi": 0.5631136586100444,
+      "se_cluster": 0.24208459325763088,
+      "se_boot": 0.23955283960377471
+     },
+     "bound": {
+      "label": "phase:early/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.09263396426446979,
+       "ci95_lo": -0.37754409988967663,
+       "ci95_hi": 0.5631136586100444
+      },
+      "elo": {
+       "point": 9.033877669840743,
+       "ci95_lo": -36.94934783012528,
+       "ci95_hi": 55.367762819667746
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 5.526641134197118,
+       "ci95_lo": -22.554413730700798,
+       "ci95_hi": 33.6984037415022
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 55.367762819667746,
+       "22.2": 50.81129162407575
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 0.38265121715485223
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.09932175968863335,
+      "boot_lo": -0.4043863644772425,
+      "boot_hi": 0.6032762969655899,
+      "se_cluster": 0.259331052769868,
+      "se_boot": 0.25662074696991705
+     },
+     "bound": {
+      "label": "phase:early/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.09932175968863335,
+       "ci95_lo": -0.4043863644772425,
+       "ci95_hi": 0.6032762969655899
+      },
+      "elo": {
+       "point": 9.68641352122524,
+       "ci95_lo": -39.59837866610478,
+       "ci95_hi": 59.39145518208125
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 5.925716920267644,
+       "ci95_lo": -24.16296861783315,
+       "ci95_hi": 36.11862599623434
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 59.39145518208125,
+       "22.2": 54.4929656023323
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 0.38299215858569813
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.1290983606557377,
+      "boot_lo": -0.520766129032258,
+      "boot_hi": 0.7807170542635659,
+      "se_cluster": 0.33505725051129936,
+      "se_boot": 0.3315714029244971
+     },
+     "bound": {
+      "label": "phase:early/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.1290983606557377,
+       "ci95_lo": -0.520766129032258,
+       "ci95_hi": 0.7807170542635659
+      },
+      "elo": {
+       "point": 12.592644402686357,
+       "ci95_lo": -51.14104843997412,
+       "ci95_hi": 77.37444967637235
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 7.702758142769545,
+       "ci95_lo": -31.150040393099744,
+       "ci95_hi": 46.856512084193184
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 77.37444967637235,
+       "22.2": 70.91700092893886
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 0.3853023937214695
+    }
+   },
+   "phase:mid": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.6342395216493725,
+      "boot_lo": -0.09556581947424889,
+      "boot_hi": 1.3824357515900512,
+      "se_cluster": 0.37761123477768516,
+      "se_boot": 0.3761620706506313
+     },
+     "bound": {
+      "label": "phase:mid/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.6342395216493725,
+       "ci95_lo": -0.09556581947424889,
+       "ci95_hi": 1.3824357515900512
+      },
+      "elo": {
+       "point": 62.50425672700604,
+       "ci95_lo": -9.319934021762748,
+       "ci95_hi": 142.2351329139746
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 37.986861725223,
+       "ci95_lo": -5.701589667706446,
+       "ci95_hi": 84.07412099642909
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 142.2351329139746,
+       "22.2": 129.54667398881176
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.6796097765014188
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.6794750298799369,
+      "boot_lo": -0.1023818065987125,
+      "boot_hi": 1.4810344381819123,
+      "se_cluster": 0.4045433882239391,
+      "se_boot": 0.4029908661799483
+     },
+     "bound": {
+      "label": "phase:mid/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.6794750298799369,
+       "ci95_lo": -0.1023818065987125,
+       "ci95_hi": 1.4810344381819123
+      },
+      "elo": {
+       "point": 67.0699393256223,
+       "ci95_lo": -9.985008304978338,
+       "ci95_hi": 153.70074672237345
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 40.720216736003565,
+       "ci95_lo": -6.10832194807526,
+       "ci95_hi": 90.33466935737025
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 153.70074672237345,
+       "22.2": 139.7759098561241
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.6796097765014186
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.8783227848101265,
+      "boot_lo": -0.13234374999999998,
+      "boot_hi": 1.914457831325301,
+      "se_cluster": 0.5229326460814302,
+      "se_boot": 0.5209257798609039
+     },
+     "bound": {
+      "label": "phase:mid/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.8783227848101265,
+       "ci95_lo": -0.13234374999999998,
+       "ci95_hi": 1.914457831325301
+      },
+      "elo": {
+       "point": 87.43710728361515,
+       "ci95_lo": -12.909497360942387,
+       "ci95_hi": 208.5599427461371
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 52.800008225590766,
+       "ci95_lo": -7.89646279599504,
+       "ci95_hi": 118.61183646215301
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 208.5599427461371,
+       "22.2": 187.9378311629997
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.6796097765014188
+    }
+   },
+   "phase:late": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.21391213997621386,
+      "boot_lo": -0.09211163322819173,
+      "boot_hi": 0.5277723428427163,
+      "se_cluster": 0.15943184441208824,
+      "se_boot": 0.1582226029569101
+     },
+     "bound": {
+      "label": "phase:late/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.21391213997621386,
+       "ci95_lo": -0.09211163322819173,
+       "ci95_hi": 0.5277723428427163
+      },
+      "elo": {
+       "point": 20.881611840920833,
+       "ci95_lo": -8.98291597503771,
+       "ci95_hi": 51.839270390124106
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 12.766893343342797,
+       "ci95_lo": -5.495473094672638,
+       "ci95_hi": 31.571417988283024
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 51.839270390124106,
+       "22.2": 47.58095645815244
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.341715268772208
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.22916887507109987,
+      "boot_lo": -0.09868125937225296,
+      "boot_hi": 0.5654143524362535,
+      "se_cluster": 0.17080291206703657,
+      "se_boot": 0.16950742456453521
+     },
+     "bound": {
+      "label": "phase:late/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.22916887507109987,
+       "ci95_lo": -0.09868125937225296,
+       "ci95_hi": 0.5654143524362535
+      },
+      "elo": {
+       "point": 22.374922823525644,
+       "ci95_lo": -9.623916287017144,
+       "ci95_hi": 55.5978505231841
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 13.67836909445534,
+       "ci95_lo": -5.8874961663089564,
+       "ci95_hi": 33.836954586485504
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 55.5978505231841,
+       "22.2": 51.02188087395114
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.3417152687722085
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.29623493975903614,
+      "boot_lo": -0.1275602409638554,
+      "boot_hi": 0.7308823529411764,
+      "se_cluster": 0.22078823030024697,
+      "se_boot": 0.21911361954805383
+     },
+     "bound": {
+      "label": "phase:late/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.29623493975903614,
+       "ci95_lo": -0.1275602409638554,
+       "ci95_hi": 0.7308823529411764
+      },
+      "elo": {
+       "point": 28.94981854754138,
+       "ci95_lo": -12.442482469670903,
+       "ci95_hi": 72.28656789721676
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 17.687466334540595,
+       "ci95_lo": -7.610955447041666,
+       "ci95_hi": 43.832625724273385
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 72.28656789721676,
+       "22.2": 66.27568359412041
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.3417152687722085
+    }
+   },
+   "uncapped_only": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.2623496550653345,
+      "boot_lo": -0.04847625525171477,
+      "boot_hi": 0.5718397652802932,
+      "se_cluster": 0.15912836971297903,
+      "se_boot": 0.15772555572397357
+     },
+     "bound": {
+      "label": "uncapped_only/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.2623496550653345,
+       "ci95_lo": -0.04847625525171477,
+       "ci95_hi": 0.5718397652802932
+      },
+      "elo": {
+       "point": 25.625545288592335,
+       "ci95_lo": -4.726742613887873,
+       "ci95_hi": 56.24069981938135
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 15.661339267088467,
+       "ci95_lo": -2.8919679834872496,
+       "ci95_hi": 34.22395846875498
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 56.24069981938135,
+       "22.2": 51.61021544397462
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.6486667684620688
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.2811552947943827,
+      "boot_lo": -0.051840705878527765,
+      "boot_hi": 0.6127152859997039,
+      "se_cluster": 0.17047009976459093,
+      "se_boot": 0.16896712674959952
+     },
+     "bound": {
+      "label": "uncapped_only/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.2811552947943827,
+       "ci95_lo": -0.051840705878527765,
+       "ci95_hi": 0.6127152859997039
+      },
+      "elo": {
+       "point": 27.469831830006274,
+       "ci95_lo": -5.054842700619672,
+       "ci95_hi": 60.3393551751356
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 16.785658077290424,
+       "ci95_lo": -3.0926926629532363,
+       "ci95_hi": 36.687923197886434
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 60.3393551751356,
+       "22.2": 55.35996400417036
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.6492938948392797
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.36426211453744495,
+      "boot_lo": -0.0661111111111111,
+      "boot_hi": 0.7921874999999999,
+      "se_cluster": 0.22029227447120153,
+      "se_boot": 0.21834853455676442
+     },
+     "bound": {
+      "label": "uncapped_only/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.36426211453744495,
+       "ci95_lo": -0.0661111111111111,
+       "ci95_hi": 0.7921874999999999
+      },
+      "elo": {
+       "point": 35.64016470705662,
+       "ci95_lo": -6.446595040250597,
+       "ci95_hi": 78.55008718859395
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 21.758836054936033,
+       "ci95_lo": -3.944096193852728,
+       "ci95_hi": 47.553503251537286
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 78.55008718859395,
+       "22.2": 71.98877788161273
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 1.6535401226022763
+    }
+   },
+   "capped_only": {
+    "headline": {
+     "source_statistic": "S2_headroom_J4_all",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.3439930134870275,
+      "boot_lo": -0.46034066523605144,
+      "boot_hi": 1.197111386802575,
+      "se_cluster": 0.42866903391626543,
+      "se_boot": 0.4211987371076672
+     },
+     "bound": {
+      "label": "capped_only/headline",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.3439930134870275,
+       "ci95_lo": -0.46034066523605144,
+       "ci95_hi": 1.197111386802575
+      },
+      "elo": {
+       "point": 33.64420280466513,
+       "ci95_lo": -45.13557989518831,
+       "ci95_hi": 121.43325963013206
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 20.545173380720158,
+       "ci95_lo": -27.519505814087157,
+       "ci95_hi": 72.44697723970526
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 121.43325963013206,
+       "22.2": 110.87130850008766
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 0.8024676061724154
+    },
+    "zeros_strict": {
+     "source_statistic": "S2_headroom_J4_all_zeros_strict",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.3683253816685034,
+      "boot_lo": -0.4931732832618028,
+      "boot_hi": 1.2824922880901288,
+      "se_cluster": 0.45923328495534105,
+      "se_boot": 0.45122900544545497
+     },
+     "bound": {
+      "label": "capped_only/zeros_strict",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.3683253816685034,
+       "ci95_lo": -0.4931732832618028,
+       "ci95_hi": 1.2824922880901288
+      },
+      "elo": {
+       "point": 36.04056540019631,
+       "ci95_lo": -48.39514261915825,
+       "ci95_hi": 130.90521822338837
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 22.00219712662533,
+       "ci95_lo": -29.49138903382082,
+       "ci95_hi": 77.7823626597141
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 130.90521822338837,
+       "22.2": 119.39251373559601
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 0.8020441760973878
+    },
+    "discriminable": {
+     "source_statistic": "S2_headroom_J4_discriminable",
+     "fullset_extrapolation_factor": 1.4,
+     "extrapolation_label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.6): headroom_fullset ~= 1.40 x headroom_J4, via the S1a spread estimate and the order statistics a_n = {'2': 0.56, '4': 1.03, '8.55': 1.44}. \u00a74.4's branch thresholds are applied to this extrapolated figure so the cap cannot manufacture a closure.",
+     "pts": {
+      "mean": 0.4743421052631579,
+      "boot_lo": -0.6390625,
+      "boot_hi": 1.6562499999999998,
+      "se_cluster": 0.5935474222423359,
+      "se_boot": 0.5831902732030415
+     },
+     "bound": {
+      "label": "capped_only/discriminable",
+      "sigma_game": 20.4,
+      "pts_per_tied_tile_ply": {
+       "point": 0.4743421052631579,
+       "ci95_lo": -0.6390625,
+       "ci95_hi": 1.6562499999999998
+      },
+      "elo": {
+       "point": 46.52461853319726,
+       "ci95_lo": -62.9900039852259,
+       "ci95_hi": 174.90089289284475
+      },
+      "elo_low_end_divisor_5.23": {
+       "point": 28.360189922837687,
+       "ci95_lo": -38.27806130553292,
+       "ci95_hi": 101.60614125892383
+      },
+      "elo_sigma_sensitivity": {
+       "20.4": 174.90089289284475,
+       "22.2": 158.55245365479215
+      },
+      "kelo_linear_check": 97.5,
+      "caveat": "\u00a74.3 inherited verbatim: NON_ADDITIVITY = 3.2 is n = 1 and is calibrated at the TOP of the budget ladder; the memo's range-consistent low-end divisor is 5.23. The divisor enters LINEARLY, so this bound is quoted with a ~1.6x bracket, never as a point. The linear-phi step degrades above ~1 sigma."
+     },
+     "z": 0.7991646286174783
+    }
+   }
+  },
+  "branch": 4,
+  "branch_3_condition_also_met": false,
+  "spread_ci_excludes_zero": true,
+  "sizing": {
+   "realized_sd_positions_pts": 1.8816225765564565,
+   "realized_se_cluster_pts": 0.10904227796627232,
+   "realized_se_composite_pts": 0.15265918915278123,
+   "n_realized": 284,
+   "n_roots_realized": 224,
+   "pts_2se_needed_for_17elo": 0.17421936644479927,
+   "pts_2se_needed_for_35elo": 0.357763736859026,
+   "n_required_17elo": 872.2307106572578,
+   "n_required_35elo": 206.8386038952407,
+   "note": "n scales the realized CLUSTER-ROBUST se (design effect included), not the naive per-position sd. \u00a77.2's own table (sd 3.0 -> n 1,185 for +-17 elo) is the planning-time analogue."
+  },
+  "pooling_rule": {
+   "stratum_means_pts": {
+    "e4": -0.21590909090909094,
+    "selfplay": 0.20502567443286326
+   },
+   "stratum_n": {
+    "e4": 4,
+    "selfplay": 280
+   },
+   "stratum_z": {
+    "e4": -0.26086956521739135,
+    "selfplay": 1.8579193280441382
+   },
+   "sign_disagreement": true,
+   "underpowered_strata_n_lt_30": {
+    "e4": 4
+   },
+   "verdict": "\u00a74.4 FORBIDS pooling: the strata disagree in sign. Read them separately. \u26a0\ufe0f BUT the sign flip involves stratum(s) ['e4'] at n = {'e4': 4} -- far below any resolving n. The rule is applied mechanically as pre-registered; the flip is NOT evidence of a real stratum difference at this n."
+  },
+  "eps_band": {
+   "available": true,
+   "tie_rate_by_eps": {
+    "0.0": 0.6597621787495205,
+    "0.05": 0.6655159186804757,
+    "0.2": 0.6904487917146145,
+    "0.5": 0.7230533179900268,
+    "1.0": 0.7990026850786345
+   },
+   "r0": 0.6597621787495205,
+   "label": "EXTRAPOLATION, NOT A MEASUREMENT (\u00a74.5): the scored run scores the EXACT-tie set only; the eps bands are a census result used to say how far the exact bound stretches.",
+   "elo_ci_hi_stretched": {
+    "0.0": 56.869002822962585,
+    "0.05": 57.3649534289768,
+    "0.2": 59.51407272170503,
+    "0.5": 62.324459489118865,
+    "1.0": 68.87100748850644
+   }
+  },
+  "read_rules": {
+   "z_conviction_bar": 2.0,
+   "S1a_z": 2.5196116021504444,
+   "S2_z": 1.8258699238441949,
+   "S1a_has_conviction": true,
+   "S2_has_conviction": false,
+   "rule": "|z| < 2 is NO CONVICTION -- report the interval, promote nothing. A null MUST ship the explicit pts/ply AND elo bound above; 'ties don't matter' is never an acceptable read-out (\u00a71)."
+  },
+  "sigma_game": 20.4
+ },
+ "governance": "Measurement only (\u00a78): PRODUCTION.yaml untouched, NO results.csv row (0 games), no band claim. A claim id is minted only on branch 1/2/3 and never off a PARTIAL corpus."
+}
