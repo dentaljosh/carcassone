@@ -1,0 +1,145 @@
+[pilot] population=383 positions | n=383 | M=32 | policy=clair-puct | oracle_sims=100 | W=15
+[pilot] out -> /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg1
+[pilot] resume: 284 already done, 99 to go
+[1/99] tt_sp_28000000053_p122 ok delta=-0.281 crn=True 63.881s
+[2/99] tt_sp_28000000020_p96 ok delta=-1.125 crn=True 105.921s
+[3/99] tt_sp_28000000001_p102 ok delta=+1.438 crn=True 112.684s
+[4/99] tt_sp_28000000050_p72 ok delta=+0.406 crn=True 129.828s
+[5/99] tt_sp_28000000013_p86 ok delta=+0.781 crn=True 150.38s
+[6/99] tt_sp_28000000029_p90 ok delta=-1.562 crn=True 155.343s
+[7/99] tt_sp_28000000036_p66 ok delta=-1.094 crn=True 155.679s
+[8/99] tt_sp_28000000038_p48 ok delta=-0.281 crn=True 182.384s
+[9/99] tt_sp_28000000009_p48 ok delta=+1.875 crn=True 182.883s
+[10/99] tt_sp_28000000062_p89 ok delta=-0.875 crn=True 127.997s
+[11/99] tt_sp_28000000083_p126 ok delta=+0.719 crn=True 43.366s
+[12/99] tt_sp_28000000035_p26 ok delta=+0.031 crn=True 200.434s
+[13/99] tt_sp_28000000052_p20 ok delta=+3.250 crn=True 202.787s
+[14/99] tt_sp_28000000019_p30 ok delta=+4.375 crn=True 208.273s
+[15/99] tt_sp_28000000044_p14 ok delta=+1.000 crn=True 210.882s
+[16/99] tt_sp_28000000013_p2 ok delta=-1.406 crn=True 212.112s
+[17/99] tt_sp_28000000004_p2 ok delta=+0.125 crn=True 215.086s
+[18/99] tt_sp_28000000116_p140 ok delta=+0.000 crn=True 7.15s
+[19/99] tt_sp_28000000062_p95 ok delta=+2.281 crn=True 126.515s
+[20/99] tt_sp_28000000099_p120 ok delta=-0.125 crn=True 58.947s
+[21/99] tt_sp_28000000136_p126 ok delta=-0.344 crn=True 27.828s
+[22/99] tt_sp_28000000090_p116 ok delta=+1.938 crn=True 61.69s
+[23/99] tt_sp_28000000070_p64 ok delta=-2.438 crn=True 167.691s
+[24/99] tt_sp_28000000155_p116 ok delta=+0.688 crn=True 77.629s
+[25/99] tt_sp_28000000071_p10 ok delta=-0.469 crn=True 206.811s
+[26/99] tt_sp_28000000082_p58 ok delta=-1.719 crn=True 181.911s
+[27/99] tt_sp_28000000111_p68 ok delta=+5.000 crn=True 152.214s
+[28/99] tt_sp_28000000082_p10 ok delta=-1.812 crn=True 211.449s
+[29/99] tt_sp_28000000100_p86 ok delta=-0.656 crn=True 172.065s
+[30/99] tt_sp_28000000172_p112 ok delta=+4.469 crn=True 59.474s
+[31/99] tt_sp_28000000129_p54 ok delta=-4.750 crn=True 180.785s
+[32/99] tt_sp_28000000134_p44 ok delta=-7.375 crn=True 190.513s
+[33/99] tt_sp_28000000102_p10 ok delta=-0.812 crn=True 211.601s
+[34/99] tt_sp_28000000110_p10 ok delta=+2.531 crn=True 214.396s
+[35/99] tt_sp_28000000147_p52 ok delta=+5.031 crn=True 178.434s
+[36/99] tt_sp_28000000129_p8 ok delta=-4.031 crn=True 225.293s
+[37/99] tt_sp_28000000145_p32 ok delta=-0.844 crn=True 205.483s
+[38/99] tt_sp_28000000190_p106 ok delta=-0.594 crn=True 84.706s
+[39/99] tt_sp_28000000156_p14 ok delta=+0.406 crn=True 217.352s
+[40/99] tt_sp_28000000164_p56 ok delta=+1.750 crn=True 194.649s
+[41/99] tt_sp_28000000203_p106 ok delta=+3.531 crn=True 114.005s
+[42/99] tt_sp_28000000183_p63 ok delta=-5.219 crn=True 175.072s
+[43/99] tt_sp_28000000192_p74 ok delta=-0.406 crn=True 173.686s
+[44/99] tt_sp_28000000221_p98 ok delta=+1.719 crn=True 144.618s
+[45/99] tt_sp_28000000226_p92 ok delta=+1.438 crn=True 148.81s
+[46/99] tt_sp_28000000175_p6 ok delta=+0.844 crn=True 230.174s
+[47/99] tt_sp_28000000196_p42 ok delta=-1.688 crn=True 195.328s
+[48/99] tt_sp_28000000188_p4 ok delta=+2.156 crn=True 224.309s
+[49/99] tt_sp_28000000231_p84 ok delta=+3.312 crn=True 150.022s
+[50/99] tt_sp_28000000240_p48 ok delta=+6.344 crn=True 181.396s
+[51/99] tt_sp_28000000225_p6 ok delta=+0.438 crn=True 212.966s
+[52/99] tt_sp_28000000249_p72 ok delta=-1.781 crn=True 153.778s
+[53/99] tt_sp_28000000276_p116 ok delta=+0.688 crn=True 64.079s
+[54/99] tt_sp_28000000231_p20 ok delta=+1.625 crn=True 223.177s
+[55/99] tt_sp_28000000270_p78 ok delta=+1.188 crn=True 112.779s
+[56/99] tt_sp_28000000245_p52 ok delta=-3.250 crn=True 209.3s
+[57/99] tt_sp_28000000240_p6 ok delta=-2.031 crn=True 226.492s
+[58/99] tt_sp_28000000260_p62 ok delta=+1.000 crn=True 180.484s
+[59/99] tt_sp_28000000307_p116 ok delta=-0.250 crn=True 61.702s
+[60/99] tt_sp_28000000262_p26 ok delta=+0.750 crn=True 196.075s
+[61/99] tt_sp_28000000295_p108 ok delta=+1.438 crn=True 105.329s
+[62/99] tt_sp_28000000281_p70 ok delta=-0.750 crn=True 163.545s
+[63/99] tt_sp_28000000266_p26 ok delta=+8.531 crn=True 207.94s
+[64/99] tt_sp_28000000279_p12 ok delta=-5.125 crn=True 191.74s
+[65/99] tt_sp_28000000273_p44 ok delta=+1.219 crn=True 205.551s
+[66/99] tt_sp_28000000361_p142 ok delta=+0.000 crn=True 2.082s
+[67/99] tt_sp_28000000350_p106 ok delta=-0.656 crn=True 63.227s
+[68/99] tt_sp_28000000302_p46 ok delta=+0.781 crn=True 178.033s
+[69/99] tt_sp_28000000287_p4 ok delta=+0.531 crn=True 221.297s
+[70/99] tt_sp_28000000306_p56 ok delta=+2.594 crn=True 183.016s
+[71/99] tt_sp_28000000332_p100 ok delta=+0.344 crn=True 129.783s
+[72/99] tt_sp_28000000315_p68 ok delta=-3.969 crn=True 175.049s
+[73/99] tt_sp_28000000350_p84 ok delta=+0.781 crn=True 119.317s
+[74/99] tt_sp_28000000329_p74 ok delta=-5.688 crn=True 192.101s
+[75/99] tt_sp_28000000316_p44 ok delta=+1.250 crn=True 199.938s
+[76/99] tt_sp_28000000347_p46 ok delta=-0.375 crn=True 172.741s
+[77/99] tt_sp_28000000401_p140 ok delta=+0.000 crn=True 4.346s
+[78/99] tt_sp_28000000381_p112 ok delta=-1.750 crn=True 64.6s
+[79/99] tt_sp_28000000331_p26 ok delta=-1.875 crn=True 228.214s
+[80/99] tt_sp_28000000385_p112 ok delta=+0.094 crn=True 91.906s
+[81/99] tt_sp_28000000422_p142 ok delta=+0.000 crn=True 2.748s
+[82/99] tt_sp_28000000374_p52 ok delta=+3.938 crn=True 181.923s
+[83/99] tt_sp_28000000370_p34 ok delta=+0.438 crn=True 188.387s
+[84/99] tt_sp_28000000380_p80 ok delta=+3.469 crn=True 157.275s
+[85/99] tt_sp_28000000356_p4 ok delta=+3.438 crn=True 214.84s
+[86/99] tt_sp_28000000353_p22 ok delta=-4.406 crn=True 223.363s
+[87/99] tt_sp_28000000392_p70 ok delta=+0.031 crn=True 156.411s
+[88/99] tt_sp_28000000399_p74 ok delta=-0.156 crn=True 129.924s
+[89/99] tt_sp_28000000375_p14 ok delta=-4.188 crn=True 214.905s
+[90/99] tt_sp_28000000406_p92 ok delta=+0.250 crn=True 135.759s
+[91/99] tt_sp_28000000394_p10 ok delta=+1.062 crn=True 201.627s
+[92/99] tt_sp_28000000435_p110 ok delta=-0.344 crn=True 75.355s
+[93/99] tt_sp_28000000419_p60 ok delta=+0.375 crn=True 164.589s
+[94/99] tt_sp_28000000408_p28 ok delta=-0.094 crn=True 176.708s
+[95/99] tt_sp_28000000429_p54 ok delta=+1.406 crn=True 144.544s
+[96/99] tt_sp_28000000403_p2 ok delta=-2.469 crn=True 188.686s
+[97/99] tt_sp_28000000425_p12 ok delta=+1.500 crn=True 173.355s
+[98/99] tt_sp_28000000449_p34 ok delta=+4.219 crn=True 132.285s
+[99/99] tt_sp_28000000440_p12 ok delta=-0.719 crn=True 154.781s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 383,
+  "m_worlds": 32,
+  "sd_delta_positions": 2.593715158303161,
+  "mean_delta_pts": 0.14784595300261097,
+  "se_mean_delta": 0.1325326534709903,
+  "z_pilot_observed": 1.115543597223552,
+  "mean_within_position_var": 179.7640760549145,
+  "var_between_positions_est": 1.109730945695512,
+  "sd_delta_projected_by_m": {
+    "8": 4.855948975489737,
+    "16": 3.513543183045808,
+    "32": 2.593715158303161,
+    "64": 1.9795314177990586
+  },
+  "median_crn_var_reduction": 1.5225227050888446,
+  "n_positions_perfect_pairing": 13,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.43933792732755794,
+    "N=383_at_M=32": 0.5281717234713188,
+    "N=383_at_M=8": 0.2821131383936141,
+    "N=383_at_M=16": 0.38989900905874375,
+    "N=383_at_M=64": 0.6920461039602078
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 383,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 383,
+  "wall_secs": 1115.1,
+  "manifest": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg1/manifest.json"
+}

@@ -1,0 +1,100 @@
+[pilot] population=409 positions | n=409 | M=32 | policy=clair-puct | oracle_sims=100 | W=4
+[pilot] out -> /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg2
+[pilot] resume: 355 already done, 54 to go
+[1/54] tt_sp_28000000016_p126 ok delta=+0.031 crn=True 15.18s
+[2/54] tt_sp_28000000027_p94 ok delta=-1.500 crn=True 87.028s
+[3/54] tt_sp_28000000004_p58 ok delta=-1.906 crn=True 135.93s
+[4/54] tt_sp_28000000009_p6 ok delta=+3.688 crn=True 141.668s
+[5/54] tt_sp_28000000015_p8 ok delta=+4.250 crn=True 145.801s
+[6/54] tt_sp_28000000036_p134 ok delta=-0.062 crn=True 10.895s
+[7/54] tt_sp_28000000032_p44 ok delta=+1.719 crn=True 115.04s
+[8/54] tt_sp_28000000033_p71 ok delta=-1.188 crn=True 105.635s
+[9/54] tt_sp_28000000058_p124 ok delta=-1.219 crn=True 25.778s
+[10/54] tt_sp_28000000050_p46 ok delta=+0.531 crn=True 116.975s
+[11/54] tt_sp_28000000041_p10 ok delta=+2.031 crn=True 148.487s
+[12/54] tt_sp_28000000078_p116 ok delta=-0.812 crn=True 38.042s
+[13/54] tt_sp_28000000062_p51 ok delta=+3.312 crn=True 137.631s
+[14/54] tt_sp_28000000069_p4 ok delta=+5.969 crn=True 148.773s
+[15/54] tt_sp_28000000088_p102 ok delta=-2.625 crn=True 59.556s
+[16/54] tt_sp_28000000074_p36 ok delta=+3.688 crn=True 127.66s
+[17/54] tt_sp_28000000108_p118 ok delta=-1.281 crn=True 47.337s
+[18/54] tt_sp_28000000094_p58 ok delta=+0.938 crn=True 106.536s
+[19/54] tt_sp_28000000090_p22 ok delta=-8.625 crn=True 138.178s
+[20/54] tt_sp_28000000109_p2 ok delta=+2.125 crn=True 145.393s
+[21/54] tt_sp_28000000133_p112 ok delta=+18.000 crn=True 61.0s
+[22/54] tt_sp_28000000125_p36 ok delta=+1.625 crn=True 123.594s
+[23/54] tt_sp_28000000134_p32 ok delta=+2.156 crn=True 138.156s
+[24/54] tt_sp_28000000162_p64 ok delta=+0.719 crn=True 99.281s
+[25/54] tt_sp_28000000147_p44 ok delta=+2.750 crn=True 119.656s
+[26/54] tt_sp_28000000142_p16 ok delta=+2.594 crn=True 142.253s
+[27/54] tt_sp_28000000201_p121 ok delta=+1.031 crn=True 37.284s
+[28/54] tt_sp_28000000234_p124 ok delta=+0.594 crn=True 45.039s
+[29/54] tt_sp_28000000220_p86 ok delta=+3.062 crn=True 109.276s
+[30/54] tt_sp_28000000258_p132 ok delta=-1.062 crn=True 13.526s
+[31/54] tt_sp_28000000247_p80 ok delta=+1.250 crn=True 106.146s
+[32/54] tt_sp_28000000230_p26 ok delta=+0.250 crn=True 146.406s
+[33/54] tt_sp_28000000250_p4 ok delta=+3.812 crn=True 149.085s
+[34/54] tt_sp_28000000288_p106 ok delta=-3.406 crn=True 60.748s
+[35/54] tt_sp_28000000278_p42 ok delta=-1.344 crn=True 101.726s
+[36/54] tt_sp_28000000305_p138 ok delta=-2.469 crn=True 11.183s
+[37/54] tt_sp_28000000269_p20 ok delta=+1.344 crn=True 140.957s
+[38/54] tt_sp_28000000342_p111 ok delta=+1.531 crn=True 45.083s
+[39/54] tt_sp_28000000300_p78 ok delta=+3.531 crn=True 85.994s
+[40/54] tt_sp_28000000298_p42 ok delta=-0.969 crn=True 120.367s
+[41/54] tt_sp_28000000361_p108 ok delta=+0.875 crn=True 66.359s
+[42/54] tt_sp_28000000352_p6 ok delta=-1.406 crn=True 140.818s
+[43/54] tt_sp_28000000384_p131 ok delta=-2.312 crn=True 22.394s
+[44/54] tt_sp_28000000370_p28 ok delta=+0.938 crn=True 127.643s
+[45/54] tt_sp_28000000378_p97 ok delta=+3.625 crn=True 86.888s
+[46/54] tt_sp_28000000373_p61 ok delta=-1.344 crn=True 118.975s
+[47/54] tt_sp_28000000398_p134 ok delta=+1.844 crn=True 18.997s
+[48/54] tt_sp_28000000391_p90 ok delta=-1.375 crn=True 89.201s
+[49/54] tt_sp_28000000388_p6 ok delta=+0.344 crn=True 136.573s
+[50/54] tt_sp_28000000403_p62 ok delta=-2.688 crn=True 113.114s
+[51/54] tt_sp_28000000420_p110 ok delta=-4.906 crn=True 51.184s
+[52/54] tt_sp_28000000430_p133 ok delta=+0.094 crn=True 15.785s
+[53/54] tt_sp_28000000407_p38 ok delta=+6.750 crn=True 129.785s
+[54/54] tt_sp_28000000426_p34 ok delta=-2.375 crn=True 119.823s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 409,
+  "m_worlds": 32,
+  "sd_delta_positions": 2.795350109804633,
+  "mean_delta_pts": 0.05913814180929095,
+  "se_mean_delta": 0.13822116712900942,
+  "z_pilot_observed": 0.4278515587565114,
+  "mean_within_position_var": 173.24764374161998,
+  "var_between_positions_est": 2.399993369459149,
+  "sd_delta_projected_by_m": {
+    "8": 4.9046864157825265,
+    "16": 3.6370277842367935,
+    "32": 2.795350109804633,
+    "64": 2.259864554109817
+  },
+  "median_crn_var_reduction": 1.443594001567887,
+  "n_positions_perfect_pairing": 18,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.407647484917952,
+    "N=409_at_M=32": 0.5064347339410407,
+    "N=409_at_M=8": 0.2886346382055302,
+    "N=409_at_M=16": 0.38923606667691035,
+    "N=409_at_M=64": 0.6264368307190922
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 409,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 409,
+  "wall_secs": 1348.3,
+  "manifest": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg2/manifest.json"
+}

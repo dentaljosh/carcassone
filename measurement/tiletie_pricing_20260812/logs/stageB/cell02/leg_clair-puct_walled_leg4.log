@@ -1,0 +1,55 @@
+[pilot] population=45 positions | n=45 | M=32 | policy=clair-puct | oracle_sims=100 | W=1
+[pilot] out -> /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg4
+[pilot] resume: 36 already done, 9 to go
+[1/9] tt_sp_28000000021_p34 ok delta=+0.188 crn=True 196.587s
+[2/9] tt_sp_28000000036_p18 ok delta=+4.875 crn=True 208.911s
+[3/9] tt_sp_28000000244_p128 ok delta=+1.312 crn=True 36.618s
+[4/9] tt_sp_28000000261_p75 ok delta=+1.594 crn=True 148.633s
+[5/9] tt_sp_28000000300_p140 ok delta=+1.000 crn=True 6.424s
+[6/9] tt_sp_28000000312_p137 ok delta=+0.000 crn=True 16.337s
+[7/9] tt_sp_28000000323_p22 ok delta=+0.594 crn=True 205.55s
+[8/9] tt_sp_28000000333_p2 ok delta=+1.906 crn=True 161.872s
+[9/9] tt_sp_28000000351_p24 ok delta=+1.844 crn=True 120.833s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 45,
+  "m_worlds": 32,
+  "sd_delta_positions": 2.5322711963010915,
+  "mean_delta_pts": 0.37569444444444444,
+  "se_mean_delta": 0.37748870215959696,
+  "z_pilot_observed": 0.9952468571777443,
+  "mean_within_position_var": 157.62085573476702,
+  "var_between_positions_est": 1.4867456699046917,
+  "sd_delta_projected_by_m": {
+    "8": 4.603189398314018,
+    "16": 3.367201976913121,
+    "32": 2.5322711963010915,
+    "64": 1.987352897892175
+  },
+  "median_crn_var_reduction": 1.5783343439403126,
+  "n_positions_perfect_pairing": 3,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.4499981847882176,
+    "N=45_at_M=32": 0.18543601331518786,
+    "N=45_at_M=8": 0.10201063537532129,
+    "N=45_at_M=16": 0.13945533368492424,
+    "N=45_at_M=64": 0.2362812743388431
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 45,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 45,
+  "wall_secs": 1102.1,
+  "manifest": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct/walled/leg4/manifest.json"
+}

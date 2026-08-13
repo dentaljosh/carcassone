@@ -1,0 +1,33 @@
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/manifests_stageB/GATE_BACKEND_RECHECK_stageB_cell01.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/manifests_stageB/GATE_BACKEND_RECHECK_stageB_cell01.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.32 2.01 2.54 1/685 286592
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+ 286013       01:24  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 7159170d
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 11
+    plan_path: /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_stageB/cells/cell01/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_stageB/cells/cell01/ARMS.json
+
+[run_tiletie] plan: n_positions=439 (e4=60 selfplay=379) max_arms=5 mean_arms=3.04 cap_j=4 capped=89
+[run_tiletie] total_arm_playouts=57408 oracle_worker_secs=91847.1 champ_pick_secs=0.0
+[run_tiletie] ETA at W=14: 1.822 h (6561 s)
+[run_tiletie] ETA at W=30: 0.850 h (3062 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (R9=0, W=15, n=383) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (R9=0, W=9, n=239) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (R9=0, W=5, n=134) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (R9=0, W=1, n=36) -> leg_clair-puct_walled_leg4.log

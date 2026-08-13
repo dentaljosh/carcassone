@@ -1,0 +1,23 @@
+[ttB 2026-08-13_10:01:31] ===== STAGE B chain starting. cells: cell01
+cell02
+cell03
+cell04
+[ttB 2026-08-13_10:01:31] grant: W_HI=30 while the window is open AND the cell fits before 11:00; else W_LO=14
+[ttB 2026-08-13_10:01:31] realized-rate constants: 207.6s/new-position, eff=0.917, W_HI slowdown x1.6
+[ttB 2026-08-13_10:01:32] cell01: new_positions=99 cumulative=99 | est 20min@W30 27min@W14| W_HI window has 59min left => W=30
+[ttB 2026-08-13_10:25:39] cell01: run_tiletie rc=0 wall=24min — log /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/stageB/cell01.log
+verify ok: 4 legs, all rc=0, no missing/extra records
+[ttB 2026-08-13_10:25:39] cell01: OK — wrote /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB_cell01
+[ttB 2026-08-13_10:25:39] cell02: new_positions=98 cumulative=197 | est 20min@W30 27min@W14| W_HI window has 35min left => W=30
+[ttB 2026-08-13_10:45:23] cell02: run_tiletie rc=0 wall=19min — log /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/stageB/cell02.log
+verify ok: 4 legs, all rc=0, no missing/extra records
+[ttB 2026-08-13_10:45:23] cell02: OK — wrote /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB_cell02
+[ttB 2026-08-13_10:45:23] cell03: new_positions=98 cumulative=295 | est 20min@W30 27min@W14| W_HI window has 15min left => W=14
+[ttB 2026-08-13_11:11:24] cell03: run_tiletie rc=0 wall=26min — log /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/stageB/cell03.log
+verify ok: 4 legs, all rc=0, no missing/extra records
+[ttB 2026-08-13_11:11:24] cell03: OK — wrote /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB_cell03
+[ttB 2026-08-13_11:11:24] cell04: new_positions=98 cumulative=393 | est 20min@W30 27min@W14| W_HI window has 0min left => W=14
+[ttB 2026-08-13_11:36:38] cell04: run_tiletie rc=0 wall=25min — log /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/stageB/cell04.log
+verify ok: 4 legs, all rc=0, no missing/extra records
+[ttB 2026-08-13_11:36:38] cell04: OK — wrote /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB_cell04
+[ttB 2026-08-13_11:36:38] ===== STAGE B COMPLETE — wrote /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB

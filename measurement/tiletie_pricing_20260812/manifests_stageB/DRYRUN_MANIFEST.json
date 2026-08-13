@@ -1,0 +1,74 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "git_rev": "8e1b82cc",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "measurement/tiletie_pricing_20260812/manifests_stageB/DRYRUN_GATE.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "30",
+          "--out",
+          "measurement/tiletie_pricing_20260812/manifests_stageB/DRYRUN_GATE.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n 283788       01:24  0.1 python",
+        "loadavg": "3.15 1.38 2.53 1/707 284614"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "8e1b82cc",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 11,
+        "plan_path": "measurement/tiletie_pricing_20260812/positions_stageB/cells/cell01/POSITIONS_PLAN.json",
+        "arms_path": "measurement/tiletie_pricing_20260812/positions_stageB/cells/cell01/ARMS.json"
+      }
+    }
+  },
+  "r9_by_profile": {},
+  "judges": [
+    "clair-puct"
+  ],
+  "judge_backend": {
+    "clair-puct": "rust"
+  },
+  "world_seed_salt": "tiletie-v1",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "workers": 30,
+  "resume": true,
+  "positions_plan_path": "measurement/tiletie_pricing_20260812/positions_stageB/cells/cell01/POSITIONS_PLAN.json",
+  "arms_path": "measurement/tiletie_pricing_20260812/positions_stageB/cells/cell01/ARMS.json",
+  "positions_plan_sha256": "1eace41957318e1a38fdbd5f981d8ce5f4767a923b03323058b4e68bae784f8a",
+  "arms_sha256": "6be55c2f0ccf62e0d56d1137e96b50f99aa2d88ce6cd8863df6f5e324d2b393a",
+  "legs": [],
+  "error": null,
+  "finished_utc": "2026-08-13T13:59:57Z"
+}

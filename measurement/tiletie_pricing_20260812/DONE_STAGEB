@@ -1,0 +1,6 @@
+DONE 2026-08-13_11:36:38
+stage=B  arm=selfplay/walled/rust  new_positions=393  pooled_positions=733
+pooled plan dir (analyser input): /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled
+records root: /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct
+NOT adjudicated: analyze_tiletie.py has NOT been run. DESIGN §7.3 pools Stage A +
+Stage B into ONE estimate; see STAGE_B_ADDENDUM.md.

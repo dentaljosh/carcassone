@@ -1,10 +1,19 @@
 # TILE-TIE PRICING — STAGE B ADDENDUM
 
-**Status: 🟡 STAGE B LAUNCHED 2026-08-13 10:01 local (owner-authorized, "yes please").**
-Rust/`walled` self-play arm only, **+393 new positions** (every one that the deduped supply
-still holds), **pooled n = 733**. Nothing here is a result: no record has been read, the
-analyser has **not** been run, and this document changes **no** read-rule in
-[DESIGN.md](DESIGN.md). Markers: `DONE_STAGEB` / `FAILED_STAGEB`.
+**Status: ✅ STAGE B SCORED 2026-08-13 10:01 → 11:36 local (1 h 35 min, owner-authorized,
+"yes please"). NOT ADJUDICATED.** Rust/`walled` self-play arm only, **+393 new positions**
+(every one that the deduped supply still holds), **pooled n = 733**. All 4 cells clean:
+`rc=0` on every leg, **0 missing / 0 extra** records, and over the **1,468** pooled records
+`ok = 1468/1468`, `crn_verified = 1468/1468`, `checksum_ok` never false. Every leg of the
+pooled plan matches its record set exactly (677/409/216/61 walled + 98 e4).
+
+Nothing here is a result: **no `delta`, no mean, no headroom has been read from any record**,
+the analyser has **not** been run, and this document changes **no** read-rule in
+[DESIGN.md](DESIGN.md). Markers: `DONE_STAGEB` (+ `DONE_STAGEB_cell01…04`) / `FAILED_STAGEB`.
+
+**Next step is the OWNER's:** one pooled run of
+`scripts/tiletie/analyze_tiletie.py --records-root /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct --plan-dir measurement/tiletie_pricing_20260812/positions_pooled`
+— read §4 below before reading its output.
 
 ⚠️ **DESIGN.md's Stage-A close-out banner still says "Stage B is NOT funded."** That was
 true when it was written (2026-08-13 ~08:00) and is now stale: the owner funded Stage B the
