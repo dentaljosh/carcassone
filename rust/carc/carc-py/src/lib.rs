@@ -122,6 +122,8 @@ impl PyLeafConfig {
         opencity_size_min = 4.0,
         opencity_edge_min = 2,
         opencity_symmetric = true,
+        jrules_dose = 0.0,
+        jrules_mask = 31,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -148,6 +150,8 @@ impl PyLeafConfig {
         opencity_size_min: f64,
         opencity_edge_min: i32,
         opencity_symmetric: bool,
+        jrules_dose: f64,
+        jrules_mask: i64,
     ) -> Self {
         PyLeafConfig {
             inner: leaf::LeafConfig {
@@ -174,6 +178,8 @@ impl PyLeafConfig {
                 opencity_size_min,
                 opencity_edge_min,
                 opencity_symmetric,
+                jrules_dose,
+                jrules_mask,
             },
         }
     }
@@ -542,6 +548,7 @@ impl PyMirrorState {
         d.set_item("bonus_opp", t.bonus_opp)?;
         d.set_item("denial_term", t.denial_term)?;
         d.set_item("opencity_term", t.opencity_term)?;
+        d.set_item("jrules_term", t.jrules_term)?;
         d.set_item("meeple_term", t.meeple_term)?;
         d.set_item("return_term", t.return_term)?;
         d.set_item("flip_term", t.flip_term)?;

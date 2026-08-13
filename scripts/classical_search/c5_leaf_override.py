@@ -39,13 +39,15 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 # The Part C phase multiplier (2026-08-09) postdates it as well — same rule.
 # Targeted denial (2026-08-11) likewise — same rule.
 # Open-city discipline (2026-08-12) likewise — same rule.
+# The J-rules bundle (2026-08-13) likewise — same rule.
 _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
                                  "farm_base_off": False, "farm_growth_off": False,
                                  "v29_phase_beta": 0.0, "v29_phase_norm": 1.0,
                                  "denial_dose": 0.0, "denial_size_min": 8.0,
                                  "denial_open_max": 2,
                                  "opencity_dose": 0.0, "opencity_size_min": 4.0,
-                                 "opencity_edge_min": 2, "opencity_symmetric": True}
+                                 "opencity_edge_min": 2, "opencity_symmetric": True,
+                                 "jrules_dose": 0.0, "jrules_mask": 31}
 
 
 def _leaf_dict(cfg) -> dict:

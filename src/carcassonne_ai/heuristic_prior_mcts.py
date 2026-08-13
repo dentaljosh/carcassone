@@ -98,6 +98,11 @@ def leaf_score_float(state, player: int, cfg) -> float:
     # byte-identical). Calls the SHARED flat_leaf helper, does not re-implement.
     if getattr(cfg, "opencity_dose", 0.0) != 0.0:
         score -= cfg.opencity_dose * flat_leaf.flat_opencity_term(state, player, decomp, cfg)
+    # J-rules on search — signed, uncapped, dose-gated early branch, ADDED (not
+    # subtracted: this bundle is a BONUS potential) after open-city in the same fixed
+    # order as flat_virtual_score_v2. Calls the SHARED flat_leaf helper.
+    if getattr(cfg, "jrules_dose", 0.0) != 0.0:
+        score += cfg.jrules_dose * flat_leaf.flat_jrules_term(state, player, decomp, cfg, base)
     curve = cfg.v29_meeple_curve
     if curve is not None:
         # Part C phase multiplier: beta == 0.0 (default/champion) keeps the

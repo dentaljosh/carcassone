@@ -120,6 +120,17 @@ def leaf_config_rs(leaf_cfg):
             opencity_edge_min=int(leaf_cfg.opencity_edge_min),
             opencity_symmetric=bool(leaf_cfg.opencity_symmetric),
         )
+    # J-rules on search: same conditional-keyword rule as targeted denial / open-city
+    # above — a carc_rs build predating the bundle keeps serving every default-off
+    # (champion) config unchanged, while a NONZERO dose against the stale build raises
+    # TypeError (fail-closed loud, never a silently-J-rule-free leaf, which would read
+    # as "the anchor's strategy is worth nothing" instead of "it never ran").
+    jrules = {}
+    if float(getattr(leaf_cfg, "jrules_dose", 0.0)) != 0.0:
+        jrules = dict(
+            jrules_dose=float(leaf_cfg.jrules_dose),
+            jrules_mask=int(leaf_cfg.jrules_mask),
+        )
     return carc_rs.LeafConfigRs(
         sorted((int(k), float(v)) for k, v in leaf_cfg.closure_p.items()),
         float(leaf_cfg.bonus_cap),
@@ -139,6 +150,7 @@ def leaf_config_rs(leaf_cfg):
         float(getattr(leaf_cfg, "v29_phase_norm", 1.0)),
         **denial,
         **opencity,
+        **jrules,
     )
 
 
