@@ -1,0 +1,196 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie --smoke",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "8",
+          "--out",
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n  41177       01:23  0.1 python",
+        "loadavg": "3.06 1.39 1.43 1/659 41345"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "341c128",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 12,
+        "plan_path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/POSITIONS_PLAN.json",
+        "arms_path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/ARMS.json"
+      }
+    }
+  },
+  "profile": "fixed_v1",
+  "positions_selected": {
+    "rids": [
+      "tt_e4_1785982194_705585_p10",
+      "tt_e4_1785982194_705585_p106",
+      "tt_e4_1785982194_705585_p114",
+      "tt_e4_1785982194_705585_p134",
+      "tt_e4_1785982194_705585_p34"
+    ],
+    "n_eligible": 279,
+    "note": null,
+    "synthesized": false
+  },
+  "legs": {
+    "1": {
+      "rc": 0,
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/smoke/clair-puct/fixed_v1/leg1",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/smoke_leg1.log",
+      "n": 5,
+      "cmd": [
+        "/home/doctor/projects/carcassone/.venv/bin/python",
+        "/home/doctor/projects/carcassone/scripts/measurement_infra/oracle_score_pilot.py",
+        "--positions-jsonl",
+        "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/smoke/smoke_fixed_v1_leg1.jsonl",
+        "--rules-profile",
+        "fixed_v1",
+        "--oracle-policy",
+        "clair-puct",
+        "--m",
+        "32",
+        "--oracle-sims",
+        "100",
+        "--world-seed-salt",
+        "tiletie-v1",
+        "--workers",
+        "8",
+        "--n",
+        "5",
+        "--out-root",
+        "/mnt/c/carc-shared/tiletie_pricing_20260812",
+        "--out-subdir",
+        "smoke/clair-puct/fixed_v1/leg1",
+        "--backend",
+        "python",
+        "--resume"
+      ]
+    },
+    "2": {
+      "rc": 0,
+      "out": "/mnt/c/carc-shared/tiletie_pricing_20260812/smoke/clair-puct/fixed_v1/leg2",
+      "log": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/logs/smoke_leg2.log",
+      "n": 5,
+      "cmd": [
+        "/home/doctor/projects/carcassone/.venv/bin/python",
+        "/home/doctor/projects/carcassone/scripts/measurement_infra/oracle_score_pilot.py",
+        "--positions-jsonl",
+        "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/smoke/smoke_fixed_v1_leg2.jsonl",
+        "--rules-profile",
+        "fixed_v1",
+        "--oracle-policy",
+        "clair-puct",
+        "--m",
+        "32",
+        "--oracle-sims",
+        "100",
+        "--world-seed-salt",
+        "tiletie-v1",
+        "--workers",
+        "8",
+        "--n",
+        "5",
+        "--out-root",
+        "/mnt/c/carc-shared/tiletie_pricing_20260812",
+        "--out-subdir",
+        "smoke/clair-puct/fixed_v1/leg2",
+        "--backend",
+        "python",
+        "--resume"
+      ]
+    }
+  },
+  "wall_secs": 1158.8,
+  "workers": 8,
+  "n_positions": 5,
+  "n_legs": 2,
+  "worker_secs_per_position": 1854.0937366485596,
+  "worker_secs_per_playout": 14.485107317566872,
+  "eta": {
+    "W=14": {
+      "wall_secs": 192880.62269086338,
+      "wall_hours": 53.57795074746205
+    },
+    "W=22": {
+      "wall_secs": 122742.21443964033,
+      "wall_hours": 34.09505956656676
+    }
+  },
+  "crn_cross_leg_identical": true,
+  "crn_cross_leg_checked_rids": [
+    "tt_e4_1785982194_705585_p10",
+    "tt_e4_1785982194_705585_p106",
+    "tt_e4_1785982194_705585_p114",
+    "tt_e4_1785982194_705585_p134",
+    "tt_e4_1785982194_705585_p34"
+  ],
+  "crn_cross_leg_detail": {
+    "ok": true,
+    "legs_checked": [
+      1,
+      2
+    ],
+    "rids_checked": [
+      "tt_e4_1785982194_705585_p10",
+      "tt_e4_1785982194_705585_p106",
+      "tt_e4_1785982194_705585_p114",
+      "tt_e4_1785982194_705585_p134",
+      "tt_e4_1785982194_705585_p34"
+    ],
+    "per_rid": {
+      "tt_e4_1785982194_705585_p10": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_e4_1785982194_705585_p106": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_e4_1785982194_705585_p114": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_e4_1785982194_705585_p134": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_e4_1785982194_705585_p34": {
+        "ok": true,
+        "problems": []
+      }
+    },
+    "n_rids": 5,
+    "n_ok": 5
+  }
+}

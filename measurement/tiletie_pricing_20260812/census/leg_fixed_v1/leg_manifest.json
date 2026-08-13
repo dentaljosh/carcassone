@@ -1,0 +1,349 @@
+{
+  "schema": "carcassonne-tiletie-census/v1-leg",
+  "profile": "fixed_v1",
+  "r9_env_var": "CARCASSONNE_FIX_R9",
+  "r9_env_expected": true,
+  "r9_env_observed": true,
+  "r9_env_ok": true,
+  "env_resolved": {
+    "CARCASSONNE_FIX_R9": "1",
+    "r9_env_expected": true,
+    "leaf_env": {
+      "CARCASSONNE_V25_CAP": "8",
+      "CARCASSONNE_V25_OPP_CAP": "8",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+      "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+      "CARCASSONNE_V25_MEEPLE_K": "2.0",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CUDA_VISIBLE_DEVICES": "",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "leaf_hashes": {
+    "harness_leaf_hash": "a36d2e15a3b3d71d",
+    "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+    "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "leaf_hash_of_record": "a36d2e15a3b3d71d",
+  "leaf_hash_assert_ok": true,
+  "n_rows": 805,
+  "workers": 1,
+  "e4": {
+    "n_games": 23,
+    "n_rows": 805,
+    "replay_scores_checked": 23,
+    "replay_scores_match_count": 23,
+    "per_game": [
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785982194_705585.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          80,
+          87
+        ],
+        "final_scores": [
+          80,
+          87
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785984310_1698417952.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          101,
+          107
+        ],
+        "final_scores": [
+          101,
+          107
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785986044_1911511187.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          109,
+          65
+        ],
+        "final_scores": [
+          109,
+          65
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786045035_338139.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          105,
+          115
+        ],
+        "final_scores": [
+          105,
+          115
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786074812_935815.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          90,
+          104
+        ],
+        "final_scores": [
+          90,
+          104
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786076853_2116173857.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          90,
+          87
+        ],
+        "final_scores": [
+          90,
+          87
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786113542_627623.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          116,
+          78
+        ],
+        "final_scores": [
+          116,
+          78
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786116818_134510.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          76,
+          104
+        ],
+        "final_scores": [
+          76,
+          104
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786118143_1621601234.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          74,
+          71
+        ],
+        "final_scores": [
+          74,
+          71
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786142936_703591.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          74,
+          112
+        ],
+        "final_scores": [
+          74,
+          112
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786242001_49628.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          86,
+          95
+        ],
+        "final_scores": [
+          86,
+          95
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786243458_1382293676.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          97,
+          75
+        ],
+        "final_scores": [
+          97,
+          75
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786325073_523563.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          140,
+          84
+        ],
+        "final_scores": [
+          140,
+          84
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786329790_523563.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          115,
+          86
+        ],
+        "final_scores": [
+          115,
+          86
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786337185_638286.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          125,
+          71
+        ],
+        "final_scores": [
+          125,
+          71
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786367787_389099.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          78,
+          90
+        ],
+        "final_scores": [
+          78,
+          90
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786403231_207028.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          103,
+          106
+        ],
+        "final_scores": [
+          103,
+          106
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786417055_68387.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          81,
+          93
+        ],
+        "final_scores": [
+          81,
+          93
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786418867_411846845.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          119,
+          105
+        ],
+        "final_scores": [
+          119,
+          105
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786454767_166575.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          118,
+          108
+        ],
+        "final_scores": [
+          118,
+          108
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786501074_943197.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          111,
+          93
+        ],
+        "final_scores": [
+          111,
+          93
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786503336_446661.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          102,
+          83
+        ],
+        "final_scores": [
+          102,
+          83
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786511848_634689.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          132,
+          72
+        ],
+        "final_scores": [
+          132,
+          72
+        ],
+        "replay_scores_match": true
+      }
+    ]
+  },
+  "bank": {},
+  "champ_games": {},
+  "wall_secs": {
+    "e4": 13.5,
+    "bank": 0.0,
+    "champ_games": 0.0,
+    "total": 13.7
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "schema": "carcassonne-tiletie-census/v1-leg",
+  "profile": "walled",
+  "r9_env_var": "CARCASSONNE_FIX_R9",
+  "r9_env_expected": false,
+  "r9_env_observed": false,
+  "r9_env_ok": true,
+  "env_resolved": {
+    "CARCASSONNE_FIX_R9": "0",
+    "r9_env_expected": false,
+    "leaf_env": {
+      "CARCASSONNE_V25_CAP": "8",
+      "CARCASSONNE_V25_OPP_CAP": "8",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+      "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+      "CARCASSONNE_V25_MEEPLE_K": "2.0",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CUDA_VISIBLE_DEVICES": "",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "leaf_hashes": {
+    "harness_leaf_hash": "a36d2e15a3b3d71d",
+    "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+    "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "leaf_hash_of_record": "a36d2e15a3b3d71d",
+  "leaf_hash_assert_ok": true,
+  "n_rows": 1767,
+  "workers": 6,
+  "e4": {
+    "n_games": 2,
+    "n_rows": 72,
+    "replay_scores_checked": 2,
+    "replay_scores_match_count": 2,
+    "per_game": [
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785205383_867966.json",
+        "n_qualifying": 36,
+        "recorded_scores": [
+          111,
+          113
+        ],
+        "final_scores": [
+          111,
+          113
+        ],
+        "replay_scores_match": true
+      },
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785466497_161583.json",
+        "n_qualifying": 36,
+        "recorded_scores": [
+          73,
+          108
+        ],
+        "final_scores": [
+          73,
+          108
+        ],
+        "replay_scores_match": true
+      }
+    ]
+  },
+  "bank": {
+    "path": "/mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl",
+    "n_lines_total": 898,
+    "n_tiles_phase_total": 495,
+    "limit_bank": null,
+    "n_censused": 495
+  },
+  "champ_games": {
+    "path": "/home/doctor/projects/carcassone/measurement/champ_action_logs/champ_games.jsonl",
+    "n_games_source": 449,
+    "n_qualifying_plies_total": 31827,
+    "n_deduped_against_bank": 495,
+    "n_eligible_after_dedupe": 31332,
+    "target_n": 1200,
+    "n_sampled": 1200,
+    "n_games_sampled_from": 432,
+    "n_censused": 1200,
+    "sample_seed": 20260812,
+    "max_per_game": 4
+  },
+  "wall_secs": {
+    "e4": 1.4,
+    "bank": 2.5,
+    "champ_games": 7.6,
+    "total": 11.8
+  }
+}

@@ -1,0 +1,648 @@
+{
+  "schema": "carcassonne-tiletie-census/v1-manifest",
+  "goal": "leaf top-2 tie census at TILE decisions -- leaf evaluations only, no search, no oracle scoring",
+  "leaf_hash_of_record": "a36d2e15a3b3d71d",
+  "leaf_hash_assert_ok": true,
+  "git_rev": "83023d6",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "n_rows_total": 2607,
+  "n_by_group": {
+    "e4|e4_games|app_aug2": 35,
+    "e4|e4_games|fixed_v1": 805,
+    "e4|e4_games|walled": 72,
+    "selfplay|bank|walled": 495,
+    "selfplay|champ_games|walled": 1200
+  },
+  "e4_profile_counts": {
+    "walled": 2,
+    "app_aug2": 1,
+    "fixed_v1": 23
+  },
+  "leg_task_count_estimate": {
+    "walled": 1697,
+    "app_aug2": 1,
+    "fixed_v1": 23
+  },
+  "worker_split": {
+    "app_aug2": 1,
+    "fixed_v1": 1,
+    "walled": 6
+  },
+  "workers_total": 8,
+  "sample_seed": 20260812,
+  "n_champgames_target": 1200,
+  "max_per_game": 4,
+  "limit_e4_games": null,
+  "limit_bank": null,
+  "source_paths": {
+    "e4_dir": "/home/doctor/projects/carcassone/measurement/e4_games",
+    "bank_path": "/mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl",
+    "champgames_path": "/home/doctor/projects/carcassone/measurement/champ_action_logs/champ_games.jsonl"
+  },
+  "per_profile_r9": {
+    "app_aug2": {
+      "expected": false,
+      "observed": false,
+      "ok": true
+    },
+    "fixed_v1": {
+      "expected": true,
+      "observed": true,
+      "ok": true
+    },
+    "walled": {
+      "expected": false,
+      "observed": false,
+      "ok": true
+    }
+  },
+  "per_leg_env_resolved": {
+    "app_aug2": {
+      "CARCASSONNE_FIX_R9": "0",
+      "r9_env_expected": false,
+      "leaf_env": {
+        "CARCASSONNE_V25_CAP": "8",
+        "CARCASSONNE_V25_OPP_CAP": "8",
+        "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+        "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+        "CARCASSONNE_V25_MEEPLE_K": "2.0",
+        "CARCASSONNE_USE_FLAT_LEAF": "1",
+        "CARCASSONNE_USE_CY_REPR": "1",
+        "CARCASSONNE_V25_VALUE_BLEND": "0",
+        "CUDA_VISIBLE_DEVICES": "",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      }
+    },
+    "fixed_v1": {
+      "CARCASSONNE_FIX_R9": "1",
+      "r9_env_expected": true,
+      "leaf_env": {
+        "CARCASSONNE_V25_CAP": "8",
+        "CARCASSONNE_V25_OPP_CAP": "8",
+        "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+        "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+        "CARCASSONNE_V25_MEEPLE_K": "2.0",
+        "CARCASSONNE_USE_FLAT_LEAF": "1",
+        "CARCASSONNE_USE_CY_REPR": "1",
+        "CARCASSONNE_V25_VALUE_BLEND": "0",
+        "CUDA_VISIBLE_DEVICES": "",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      }
+    },
+    "walled": {
+      "CARCASSONNE_FIX_R9": "0",
+      "r9_env_expected": false,
+      "leaf_env": {
+        "CARCASSONNE_V25_CAP": "8",
+        "CARCASSONNE_V25_OPP_CAP": "8",
+        "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+        "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+        "CARCASSONNE_V25_MEEPLE_K": "2.0",
+        "CARCASSONNE_USE_FLAT_LEAF": "1",
+        "CARCASSONNE_USE_CY_REPR": "1",
+        "CARCASSONNE_V25_VALUE_BLEND": "0",
+        "CUDA_VISIBLE_DEVICES": "",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      }
+    }
+  },
+  "legs": [
+    {
+      "profile": "app_aug2",
+      "rc": 0,
+      "wall_secs": 0.8,
+      "leg_out": "measurement/tiletie_pricing_20260812/census/leg_app_aug2",
+      "log": "measurement/tiletie_pricing_20260812/census/leg_app_aug2/leg.log"
+    },
+    {
+      "profile": "fixed_v1",
+      "rc": 0,
+      "wall_secs": 13.7,
+      "leg_out": "measurement/tiletie_pricing_20260812/census/leg_fixed_v1",
+      "log": "measurement/tiletie_pricing_20260812/census/leg_fixed_v1/leg.log"
+    },
+    {
+      "profile": "walled",
+      "rc": 0,
+      "wall_secs": 13.7,
+      "leg_out": "measurement/tiletie_pricing_20260812/census/leg_walled",
+      "log": "measurement/tiletie_pricing_20260812/census/leg_walled/leg.log"
+    }
+  ],
+  "failures": [],
+  "wall_secs_total": 13.8,
+  "mean_secs_per_ply": 0.019166896816263906,
+  "contention_note": "the census ran alongside an unrelated multi-worker oracle_score_pilot smoke (6-8 workers, fixed_v1/clair-puct + tier1-greedy probes) on the same 32-thread box, so the wall-clock and seconds/ply figures below are CONTENDED -- they are an upper bound on cost, not a clean throughput measurement. The tie RATES and tied-set SIZES are unaffected by contention (they are deterministic leaf arithmetic evaluated once per row); only the timing numbers are.",
+  "per_leg_manifests": {
+    "app_aug2": {
+      "schema": "carcassonne-tiletie-census/v1-leg",
+      "profile": "app_aug2",
+      "r9_env_var": "CARCASSONNE_FIX_R9",
+      "r9_env_expected": false,
+      "r9_env_observed": false,
+      "r9_env_ok": true,
+      "env_resolved": {
+        "CARCASSONNE_FIX_R9": "0",
+        "r9_env_expected": false,
+        "leaf_env": {
+          "CARCASSONNE_V25_CAP": "8",
+          "CARCASSONNE_V25_OPP_CAP": "8",
+          "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+          "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+          "CARCASSONNE_V25_MEEPLE_K": "2.0",
+          "CARCASSONNE_USE_FLAT_LEAF": "1",
+          "CARCASSONNE_USE_CY_REPR": "1",
+          "CARCASSONNE_V25_VALUE_BLEND": "0",
+          "CUDA_VISIBLE_DEVICES": "",
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1"
+        }
+      },
+      "leaf_hashes": {
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+        "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+      },
+      "leaf_hash_of_record": "a36d2e15a3b3d71d",
+      "leaf_hash_assert_ok": true,
+      "n_rows": 35,
+      "workers": 1,
+      "e4": {
+        "n_games": 1,
+        "n_rows": 35,
+        "replay_scores_checked": 1,
+        "replay_scores_match_count": 1,
+        "per_game": [
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785975832_66810.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              98,
+              78
+            ],
+            "final_scores": [
+              98,
+              78
+            ],
+            "replay_scores_match": true
+          }
+        ]
+      },
+      "bank": {},
+      "champ_games": {},
+      "wall_secs": {
+        "e4": 0.6,
+        "bank": 0.0,
+        "champ_games": 0.0,
+        "total": 0.8
+      }
+    },
+    "fixed_v1": {
+      "schema": "carcassonne-tiletie-census/v1-leg",
+      "profile": "fixed_v1",
+      "r9_env_var": "CARCASSONNE_FIX_R9",
+      "r9_env_expected": true,
+      "r9_env_observed": true,
+      "r9_env_ok": true,
+      "env_resolved": {
+        "CARCASSONNE_FIX_R9": "1",
+        "r9_env_expected": true,
+        "leaf_env": {
+          "CARCASSONNE_V25_CAP": "8",
+          "CARCASSONNE_V25_OPP_CAP": "8",
+          "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+          "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+          "CARCASSONNE_V25_MEEPLE_K": "2.0",
+          "CARCASSONNE_USE_FLAT_LEAF": "1",
+          "CARCASSONNE_USE_CY_REPR": "1",
+          "CARCASSONNE_V25_VALUE_BLEND": "0",
+          "CUDA_VISIBLE_DEVICES": "",
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1"
+        }
+      },
+      "leaf_hashes": {
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+        "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+      },
+      "leaf_hash_of_record": "a36d2e15a3b3d71d",
+      "leaf_hash_assert_ok": true,
+      "n_rows": 805,
+      "workers": 1,
+      "e4": {
+        "n_games": 23,
+        "n_rows": 805,
+        "replay_scores_checked": 23,
+        "replay_scores_match_count": 23,
+        "per_game": [
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785982194_705585.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              80,
+              87
+            ],
+            "final_scores": [
+              80,
+              87
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785984310_1698417952.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              101,
+              107
+            ],
+            "final_scores": [
+              101,
+              107
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785986044_1911511187.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              109,
+              65
+            ],
+            "final_scores": [
+              109,
+              65
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786045035_338139.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              105,
+              115
+            ],
+            "final_scores": [
+              105,
+              115
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786074812_935815.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              90,
+              104
+            ],
+            "final_scores": [
+              90,
+              104
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786076853_2116173857.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              90,
+              87
+            ],
+            "final_scores": [
+              90,
+              87
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786113542_627623.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              116,
+              78
+            ],
+            "final_scores": [
+              116,
+              78
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786116818_134510.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              76,
+              104
+            ],
+            "final_scores": [
+              76,
+              104
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786118143_1621601234.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              74,
+              71
+            ],
+            "final_scores": [
+              74,
+              71
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786142936_703591.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              74,
+              112
+            ],
+            "final_scores": [
+              74,
+              112
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786242001_49628.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              86,
+              95
+            ],
+            "final_scores": [
+              86,
+              95
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786243458_1382293676.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              97,
+              75
+            ],
+            "final_scores": [
+              97,
+              75
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786325073_523563.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              140,
+              84
+            ],
+            "final_scores": [
+              140,
+              84
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786329790_523563.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              115,
+              86
+            ],
+            "final_scores": [
+              115,
+              86
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786337185_638286.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              125,
+              71
+            ],
+            "final_scores": [
+              125,
+              71
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786367787_389099.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              78,
+              90
+            ],
+            "final_scores": [
+              78,
+              90
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786403231_207028.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              103,
+              106
+            ],
+            "final_scores": [
+              103,
+              106
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786417055_68387.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              81,
+              93
+            ],
+            "final_scores": [
+              81,
+              93
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786418867_411846845.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              119,
+              105
+            ],
+            "final_scores": [
+              119,
+              105
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786454767_166575.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              118,
+              108
+            ],
+            "final_scores": [
+              118,
+              108
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786501074_943197.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              111,
+              93
+            ],
+            "final_scores": [
+              111,
+              93
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786503336_446661.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              102,
+              83
+            ],
+            "final_scores": [
+              102,
+              83
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1786511848_634689.json",
+            "n_qualifying": 35,
+            "recorded_scores": [
+              132,
+              72
+            ],
+            "final_scores": [
+              132,
+              72
+            ],
+            "replay_scores_match": true
+          }
+        ]
+      },
+      "bank": {},
+      "champ_games": {},
+      "wall_secs": {
+        "e4": 13.5,
+        "bank": 0.0,
+        "champ_games": 0.0,
+        "total": 13.7
+      }
+    },
+    "walled": {
+      "schema": "carcassonne-tiletie-census/v1-leg",
+      "profile": "walled",
+      "r9_env_var": "CARCASSONNE_FIX_R9",
+      "r9_env_expected": false,
+      "r9_env_observed": false,
+      "r9_env_ok": true,
+      "env_resolved": {
+        "CARCASSONNE_FIX_R9": "0",
+        "r9_env_expected": false,
+        "leaf_env": {
+          "CARCASSONNE_V25_CAP": "8",
+          "CARCASSONNE_V25_OPP_CAP": "8",
+          "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+          "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+          "CARCASSONNE_V25_MEEPLE_K": "2.0",
+          "CARCASSONNE_USE_FLAT_LEAF": "1",
+          "CARCASSONNE_USE_CY_REPR": "1",
+          "CARCASSONNE_V25_VALUE_BLEND": "0",
+          "CUDA_VISIBLE_DEVICES": "",
+          "OMP_NUM_THREADS": "1",
+          "MKL_NUM_THREADS": "1"
+        }
+      },
+      "leaf_hashes": {
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+        "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+      },
+      "leaf_hash_of_record": "a36d2e15a3b3d71d",
+      "leaf_hash_assert_ok": true,
+      "n_rows": 1767,
+      "workers": 6,
+      "e4": {
+        "n_games": 2,
+        "n_rows": 72,
+        "replay_scores_checked": 2,
+        "replay_scores_match_count": 2,
+        "per_game": [
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785205383_867966.json",
+            "n_qualifying": 36,
+            "recorded_scores": [
+              111,
+              113
+            ],
+            "final_scores": [
+              111,
+              113
+            ],
+            "replay_scores_match": true
+          },
+          {
+            "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785466497_161583.json",
+            "n_qualifying": 36,
+            "recorded_scores": [
+              73,
+              108
+            ],
+            "final_scores": [
+              73,
+              108
+            ],
+            "replay_scores_match": true
+          }
+        ]
+      },
+      "bank": {
+        "path": "/mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl",
+        "n_lines_total": 898,
+        "n_tiles_phase_total": 495,
+        "limit_bank": null,
+        "n_censused": 495
+      },
+      "champ_games": {
+        "path": "/home/doctor/projects/carcassone/measurement/champ_action_logs/champ_games.jsonl",
+        "n_games_source": 449,
+        "n_qualifying_plies_total": 31827,
+        "n_deduped_against_bank": 495,
+        "n_eligible_after_dedupe": 31332,
+        "target_n": 1200,
+        "n_sampled": 1200,
+        "n_games_sampled_from": 432,
+        "n_censused": 1200,
+        "sample_seed": 20260812,
+        "max_per_game": 4
+      },
+      "wall_secs": {
+        "e4": 1.4,
+        "bank": 2.5,
+        "champ_games": 7.6,
+        "total": 11.8
+      }
+    }
+  },
+  "finished_utc": "2026-08-12T23:43:30Z"
+}

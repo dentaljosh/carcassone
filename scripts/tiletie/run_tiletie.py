@@ -1,0 +1,749 @@
+#!/usr/bin/env python3
+"""TILE-TIE PRICING — the scoring launcher (DESIGN.md §2, §5, §7.4; house pattern:
+`scripts/analyzer/run_farmwar.py`).
+
+PREREGISTRATION STATUS: this launcher is DESIGNED, BUILT and PRICED ONLY, per
+`measurement/tiletie_pricing_20260812/DESIGN.md` line 6 ("NOT LAUNCHED. The box
+and the funding decision belong to Joshua."). `--yes` is the one flag that turns
+a dry plan into a real launch; everything else runs whether or not `--yes` is
+given, INCLUDING the preflight gate re-verification and the ETA arithmetic, so
+the run can be priced without being started.
+
+PLAIN SCRIPT (see `build_positions.py`'s module docstring for why): works
+whether or not `scripts/tiletie/__init__.py` exists.
+
+PREFLIGHT — refuses to launch on ANY failure (all checks always run and are all
+printed, not short-circuited, so one `--dry`/no-`--yes` invocation reports every
+problem at once):
+  1. re-verify the rust identity gate AT HEAD (`gate_oracle_pilot_backend.py`),
+     writing to a FRESH path -- NEVER the committed
+     `measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json`.
+  2. the production leaf hash (`a36d2e15a3b3d71d`) resolves and verifies.
+  3. a process census (`ps` + `/proc/loadavg`) -- printed, informational only,
+     never itself a refusal (the standing "census before any cluster launch"
+     rule, not a pass/fail gate).
+  4. `git rev-parse` + refuse if `git status --porcelain` shows modifications
+     under `src/carcassonne_ai/` or `engine/` (mixed-rev protection -- the
+     worktree-isolation rule).
+  5. every positions file named in `POSITIONS_PLAN.json` exists, its line count
+     matches the plan, and every rid in it appears in `ARMS.json`.
+
+LEGS. One `oracle_score_pilot.py` subprocess per (judge, rules_profile, leg
+index r) -- `CARCASSONNE_FIX_R9` exported per profile (import-latched), thread
+envs pinned to 1, `--world-seed-salt` FIXED ONCE for the whole run (this is what
+makes every arm of a position and both judges share the same CRN worlds -- see
+`build_positions.py`'s module docstring and DESIGN §2.1). `clair-puct` runs
+`--backend rust`; `tier1-greedy` (out of scope for the rust gate) runs
+`--backend python`. Judges run sequentially (primary first); profiles+legs of
+one judge run CONCURRENTLY with a proportional worker split
+(`run_farmwar.split_workers`, imported -- not re-implemented). `--n` is ALWAYS
+passed explicitly as the leg's own line count (`oracle_score_pilot` defaults
+`--n` to 20 and would silently subsample otherwise, and a DIFFERENT subsample
+per leg would destroy the cross-leg CRN pairing this whole design rests on).
+
+⚠️ DESIGN §5 restricts `tier1-greedy` to a seeded n=80 SIGN-ONLY subset run
+AFTER the primary, and only if the primary is not already branch-1-closed at
+Stage A -- that gating is an ANALYSIS-STAGE decision this launcher does not
+make for you (it has no verdict to gate on; it only prices and runs whatever
+positions files exist). `--judges` therefore defaults to `clair-puct` alone;
+pass `--judges clair-puct tier1-greedy` explicitly once that gate is cleared,
+against a `tier1-greedy`-scoped n=80 positions subset built separately.
+
+`--smoke`: 5 positions (or however many multi-leg positions exist, whichever is
+fewer), production knobs otherwise unchanged (M=32, oracle-sims=100, backend
+rust, clair-puct only), run over >=2 legs so it can prove -- not merely
+assume -- DESIGN §2.1's CRN claim: every leg of a position, scored by a
+SEPARATE `oracle_score_pilot` invocation but under the SAME rid, must produce
+BIT-IDENTICAL `values_a` (raw f64 bit patterns), identical world_seeds /
+playout_seeds, identical `afterstate_deck_hash_a`, and `crn_verified=True` in
+every leg. See `check_crn_cross_leg` -- a reusable, pure function so it can be
+unit-tested against synthetic records and re-applied by the post-run analyser.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import struct
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[1]
+
+for _p in (str(HERE),):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+SCHEMA = "carcassonne-tiletie-run/v1"
+DESIGN_DOC = "measurement/tiletie_pricing_20260812/DESIGN.md"
+
+PILOT = REPO / "scripts" / "measurement_infra" / "oracle_score_pilot.py"
+GATE_SCRIPT = REPO / "scripts" / "rustport" / "gate_oracle_pilot_backend.py"
+#: ⚠️ NEVER write here -- the budget-headroom run's 20-position record is
+#: committed and load-bearing for other harnesses' provenance.
+COMMITTED_GATE = REPO / "measurement" / "rustport_p6" / "GATE_ORACLE_PILOT_BACKEND.json"
+
+PRICING_ROOT = REPO / "measurement" / "tiletie_pricing_20260812"
+DEFAULT_POSITIONS_DIR = PRICING_ROOT / "positions"
+DEFAULT_LOGS_DIR = PRICING_ROOT / "logs"
+DEFAULT_GATE_RECHECK_OUT = PRICING_ROOT / "GATE_BACKEND_RECHECK.json"
+DEFAULT_MANIFEST = PRICING_ROOT / "RUN_MANIFEST.json"
+DEFAULT_SMOKE_MANIFEST = PRICING_ROOT / "SMOKE_MANIFEST.json"
+
+EXPECTED_LEAF_HASH = "a36d2e15a3b3d71d"
+
+#: Fixed once for the whole run -- distinct from every other harness's own salt
+#: (farm-war's is "farmwar-v1", the pilot's own default is "oracle-pilot-v1") so
+#: records can never collide across harnesses.
+WORLD_SEED_SALT = "tiletie-v1"
+
+JUDGE_BACKEND = {"clair-puct": "rust", "tier1-greedy": "python"}
+
+#: Rules profiles the RUST clairvoyant continuation can actually mirror.
+#:
+#: ⚠️ DISCOVERED BY THE 2026-08-12 SMOKE, not by reading: on `fixed_v1` every
+#: position fails with
+#:   "the clairvoyant Rust ruler cannot mirror ['start_row/start_col',
+#:    'fixed_start_tile', 'cloister_scan_fix', 'draw_rule']:
+#:    RustCarryClairvoyantAgent seeds MirrorState.from_deck() with no
+#:    geometry/rules config (unlike the fair RustFairAgent, which forwards
+#:    them), so it would run the engine-default rules against a game that does
+#:    not. Build this ruler with backend='python' until the forwarding lands."
+#: The harness FAILS LOUD rather than silently grading under the wrong rules —
+#: which is the correct behaviour and is why this was caught in a 5-position
+#: smoke instead of in a 6-hour run.
+#:
+#: Consequence: only `walled` (whose `game_kwargs()` is `{}` by construction —
+#: the engine of record) may use rust. Every other profile runs python, at
+#: roughly 7-9x the cost (the committed identity gate measures the rust speedup
+#: at 9.41-9.48x). This is also why `run_farmwar.py` never passes `--backend`
+#: at all: its E4 epochs could not have used rust either.
+RUST_OK_PROFILES = frozenset({"walled"})
+
+
+def backend_for(judge: str, profile: str) -> str:
+    """Backend for one (judge, profile) leg. Rust requires BOTH a rust-gated
+    judge AND a profile the rust mirror can represent."""
+    want = JUDGE_BACKEND[judge]
+    if want == "rust" and profile not in RUST_OK_PROFILES:
+        return "python"
+    return want
+
+
+# --------------------------------------------------------------------------- #
+# preflight checks -- each one small, pure-ish, and independently                #
+# monkeypatchable so tests never run a real gate/pilot/git/champion               #
+# --------------------------------------------------------------------------- #
+def check_gate(args) -> dict:
+    """Re-verify the rust identity gate AT HEAD. NEVER writes to the committed
+    gate path -- refuses outright if `--gate-out` is ever pointed at it."""
+    out_path = Path(args.gate_out)
+    if out_path.resolve() == COMMITTED_GATE.resolve():
+        return {"ok": False, "problems": [f"--gate-out must never be the committed "
+                                          f"gate {COMMITTED_GATE}"]}
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [sys.executable, str(GATE_SCRIPT), "--positions", "8", "--m", "2",
+          "--workers", str(max(1, int(args.workers))), "--out", str(out_path)]
+    proc = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True)
+    if not out_path.is_file():
+        return {"ok": False, "problems": [f"gate did not write {out_path} "
+                                          f"(rc={proc.returncode})"],
+                "cmd": cmd, "returncode": proc.returncode,
+                "stdout_tail": proc.stdout[-2000:], "stderr_tail": proc.stderr[-2000:]}
+    data = json.loads(out_path.read_text())
+    ok = data.get("verdict") == "PASS" and data.get("mismatches") == []
+    return {"ok": ok, "verdict": data.get("verdict"), "mismatches": data.get("mismatches"),
+           "positions": data.get("positions"), "field_checks": data.get("field_checks"),
+           "path": str(out_path), "cmd": cmd, "returncode": proc.returncode}
+
+
+def check_leaf_hash() -> dict:
+    """Assert the production leaf hash resolves to the champion of record."""
+    _apply_canon_env()
+    sys.path.insert(0, str(REPO / "src"))
+    try:
+        from carcassonne_ai import champion_factory as CF  # noqa: PLC0415
+
+        cfg = CF.production_leaf_cfg()
+        CF.verify_leaf(cfg)
+        manifest = CF.resolved_manifest("clairvoyant", verify=True)
+        got = (manifest.get("leaf_hashes") or {}).get("harness_leaf_hash")
+        ok = got == EXPECTED_LEAF_HASH
+        return {"ok": ok, "harness_leaf_hash": got, "expected": EXPECTED_LEAF_HASH}
+    except Exception as exc:                                      # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+_CANON_ENV = {
+    "CARCASSONNE_V25_CAP": "8", "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0", "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1", "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1", "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1", "VECLIB_MAXIMUM_THREADS": "1",
+}
+
+
+def _apply_canon_env() -> None:
+    """Byte-identical to `oracle_score_pilot._CANON_ENV` -- MUST run before any
+    `carcassonne_ai` import (DEFAULT_CONFIG is import-frozen)."""
+    for k, v in _CANON_ENV.items():
+        os.environ.setdefault(k, v)
+
+
+def check_process_census() -> dict:
+    """Standing rule: census what's already running before any cluster launch.
+    Informational ONLY -- never gates the launch by itself."""
+    out = {"ok": True}
+    try:
+        ps = subprocess.run(["ps", "-o", "pid,etime,%cpu,comm", "-C", "python",
+                             "--sort=-etime"], capture_output=True, text=True)
+        out["ps_head"] = "\n".join(ps.stdout.splitlines()[:15])
+    except Exception as exc:                                      # noqa: BLE001
+        out["ps_error"] = f"{type(exc).__name__}: {exc}"
+    try:
+        out["loadavg"] = Path("/proc/loadavg").read_text().strip()
+    except Exception as exc:                                      # noqa: BLE001
+        out["loadavg_error"] = f"{type(exc).__name__}: {exc}"
+    return out
+
+
+def check_git_clean(args) -> dict:
+    """Mixed-rev protection: refuse if src/engine are dirty in the main tree."""
+    rev = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--short", "HEAD"],
+                         capture_output=True, text=True).stdout.strip()
+    status = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain"],
+                            capture_output=True, text=True).stdout.splitlines()
+    # porcelain v1: 2-char status + 1 space + path, always column 3.
+    dirty = [ln for ln in status if ln[3:].startswith(("src/carcassonne_ai/", "engine/"))]
+    return {"ok": not dirty, "git_rev": rev, "dirty_paths": dirty}
+
+
+def check_positions(args) -> dict:
+    """Every positions file the plan names exists, its line count matches, and
+    every rid in it appears in ARMS.json."""
+    pos_dir = Path(args.positions_dir)
+    plan_path = pos_dir / "POSITIONS_PLAN.json"
+    arms_path = pos_dir / "ARMS.json"
+    if not plan_path.is_file():
+        return {"ok": False, "problems": [f"missing {plan_path}"]}
+    if not arms_path.is_file():
+        return {"ok": False, "problems": [f"missing {arms_path}"]}
+    plan = json.loads(plan_path.read_text())
+    arms = json.loads(arms_path.read_text())
+    problems = []
+    files = plan.get("files") or {}
+    if not files:
+        problems.append("POSITIONS_PLAN.json names zero leg files")
+    for key, info in sorted(files.items()):
+        p = Path(info["path"])
+        if not p.is_file():
+            problems.append(f"missing positions file for leg {key}: {p}")
+            continue
+        lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
+        if len(lines) != info["n"]:
+            problems.append(f"{p}: line count {len(lines)} != plan n={info['n']} "
+                            f"for leg {key}")
+        for ln in lines:
+            rid = json.loads(ln)["rid"]
+            if rid not in arms:
+                problems.append(f"{p}: rid {rid!r} missing from ARMS.json")
+    return {"ok": not problems, "problems": problems, "n_leg_files": len(files),
+           "plan_path": str(plan_path), "arms_path": str(arms_path)}
+
+
+def preflight(args) -> dict:
+    """Run every check (never short-circuits), print nothing itself -- see
+    `print_preflight`. `ok` is False if ANY gating check fails; the process
+    census is informational and never gates."""
+    checks = {
+        "gate": check_gate(args),
+        "leaf_hash": check_leaf_hash(),
+        "process_census": check_process_census(),
+        "git_clean": check_git_clean(args),
+        "positions": check_positions(args),
+    }
+    ok = all(c.get("ok", False) for name, c in checks.items() if name != "process_census")
+    return {"ok": ok, "checks": checks}
+
+
+def print_preflight(report: dict) -> None:
+    for name, c in report["checks"].items():
+        if name == "process_census":
+            print(f"[preflight] process census (informational):")
+            print(f"  loadavg: {c.get('loadavg', c.get('loadavg_error'))}")
+            print(f"  ps (top 15 by etime):\n{c.get('ps_head', c.get('ps_error', ''))}")
+            continue
+        status = "PASS" if c.get("ok") else "FAIL"
+        print(f"[preflight] {name}: {status}")
+        for k, v in c.items():
+            if k == "ok":
+                continue
+            print(f"    {k}: {v}")
+
+
+# --------------------------------------------------------------------------- #
+# ETA printing (DESIGN §7.1, re-using build_positions' own arithmetic)          #
+# --------------------------------------------------------------------------- #
+def print_eta(plan: dict) -> None:
+    print(f"[run_tiletie] plan: n_positions={plan['n_positions']} "
+         f"(e4={plan['n_e4']} selfplay={plan['n_selfplay']}) max_arms="
+         f"{plan['max_arms']} mean_arms={plan['mean_arms']:.2f} "
+         f"cap_j={plan['cap_j']} capped={plan['n_positions_capped']}")
+    print(f"[run_tiletie] total_arm_playouts={plan['total_arm_playouts']} "
+         f"oracle_worker_secs={plan['oracle_worker_secs']:.1f} "
+         f"champ_pick_secs={plan['champ_pick_secs']:.1f}")
+    for w, eta in sorted(plan["eta_by_workers"].items()):
+        print(f"[run_tiletie] ETA at {w}: {eta['wall_hours']:.3f} h "
+             f"({eta['wall_secs']:.0f} s)")
+
+
+# --------------------------------------------------------------------------- #
+# legs                                                                          #
+# --------------------------------------------------------------------------- #
+def _split_workers(counts: dict, total: int) -> dict:
+    """`run_farmwar.split_workers`, imported not re-implemented (house pattern:
+    proportional shares, largest-remainder apportionment, never more workers
+    than a leg has positions)."""
+    sys.path.insert(0, str(REPO / "scripts" / "analyzer"))
+    import run_farmwar as RFW  # noqa: PLC0415
+
+    return RFW.split_workers(counts, total)
+
+
+def _r9_for(profile: str) -> str:
+    from carcassonne_ai import rules_profile  # noqa: PLC0415
+
+    return "1" if rules_profile.resolve(profile).r9_env_expected else "0"
+
+
+def leg_command(*, positions_path, profile, judge, m, oracle_sims, workers, n,
+                out_root, out_subdir, resume) -> list:
+    cmd = [sys.executable, str(PILOT),
+          "--positions-jsonl", str(positions_path),
+          "--rules-profile", str(profile),
+          "--oracle-policy", str(judge),
+          "--m", str(int(m)),
+          "--oracle-sims", str(int(oracle_sims)),
+          "--world-seed-salt", WORLD_SEED_SALT,
+          "--workers", str(int(workers)),
+          "--n", str(int(n)),                # ALWAYS explicit -- see module docstring
+          "--out-root", str(out_root),
+          "--out-subdir", str(out_subdir),
+          "--backend", backend_for(judge, profile)]
+    if resume:
+        cmd.append("--resume")
+    return cmd
+
+
+def launch_legs(args, plan: dict) -> list:
+    """One subprocess per (judge, profile, leg r). Judges sequential, one
+    judge's (profile, leg) legs concurrent, proportional worker split."""
+    logs_dir = Path(args.logs_dir)
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    files = plan["files"]              # {"profile/legR": {"path":.., "n":..}}
+
+    results = []
+    for judge in args.judges:
+        counts = {key: info["n"] for key, info in files.items()}
+        shares = _split_workers(counts, args.workers)
+        procs = []
+        for key, info in sorted(files.items()):
+            profile, leg_tag = key.split("/leg")
+            sub = f"{judge}/{profile}/leg{leg_tag}"
+            env = dict(os.environ)
+            env["CARCASSONNE_FIX_R9"] = _r9_for(profile)
+            env.setdefault("OPENBLAS_NUM_THREADS", "1")
+            env.setdefault("OMP_NUM_THREADS", "1")
+            env.setdefault("MKL_NUM_THREADS", "1")
+            log = logs_dir / f"leg_{judge}_{profile}_leg{leg_tag}.log"
+            cmd = leg_command(positions_path=info["path"], profile=profile, judge=judge,
+                              m=args.m, oracle_sims=args.oracle_sims,
+                              workers=shares[key], n=info["n"], out_root=args.out_root,
+                              out_subdir=sub, resume=args.resume)
+            print(f"[run_tiletie] ===== launch {sub} (R9={env['CARCASSONNE_FIX_R9']}, "
+                 f"W={shares[key]}, n={info['n']}) -> {log.name}", flush=True)
+            fh = log.open("w")
+            procs.append((judge, profile, leg_tag, key, sub, info, time.time(), fh,
+                         subprocess.Popen(cmd, cwd=str(REPO), env=env,
+                                          stdout=fh, stderr=subprocess.STDOUT)))
+        for judge_, profile, leg_tag, key, sub, info, t0, fh, pr in procs:
+            rc = pr.wait()
+            fh.close()
+            results.append({"judge": judge_, "profile": profile, "leg": int(leg_tag),
+                            "rc": rc, "n": info["n"], "workers": shares[key],
+                            "positions_path": info["path"],
+                            "out": f"{args.out_root}/{sub}",
+                            "log": str(logs_dir / f"leg_{judge_}_{profile}_leg{leg_tag}.log"),
+                            "wall_secs": round(time.time() - t0, 1)})
+        if any(r["rc"] != 0 for r in results if r["judge"] == judge):
+            print(f"[run_tiletie] a {judge} leg failed -- STOPPING before the next judge",
+                 file=sys.stderr)
+            break
+    return results
+
+
+def verify_leg_records(leg: dict) -> dict:
+    """Assert a leg produced records/ for EXACTLY the rids in its input."""
+    rids_in = set()
+    for ln in Path(leg["positions_path"]).read_text().splitlines():
+        if ln.strip():
+            rids_in.add(json.loads(ln)["rid"])
+    records_dir = Path(leg["out"]) / "records"
+    rids_out = ({p.stem for p in records_dir.glob("*.json")}
+               if records_dir.is_dir() else set())
+    missing = sorted(rids_in - rids_out)
+    extra = sorted(rids_out - rids_in)
+    return {"ok": not missing and not extra, "missing": missing, "extra": extra}
+
+
+# --------------------------------------------------------------------------- #
+# CRN cross-leg witness -- DESIGN §2.1's whole claim, checked not assumed        #
+# (reusable: called by --smoke here, and re-appliable by the post-run analyser) #
+# --------------------------------------------------------------------------- #
+def _f64_bits(x) -> int:
+    """Raw f64 bit pattern -- the rustport gate's own comparison currency
+    (`gate_oracle_pilot_backend.canon`). NEVER `==`/approx on the float itself."""
+    return struct.unpack("<Q", struct.pack("<d", float(x)))[0]
+
+
+def load_leg_records(out_dir, rids) -> dict:
+    """rid -> the pilot's own `records/<rid>.json` record, for one leg's out-dir."""
+    recs = {}
+    for rid in rids:
+        p = Path(out_dir) / "records" / f"{rid}.json"
+        if not p.is_file():
+            raise FileNotFoundError(f"no record for rid={rid!r} at {p}")
+        recs[rid] = json.loads(p.read_text())
+    return recs
+
+
+def check_crn_cross_leg(records_by_leg: dict) -> dict:
+    """DESIGN §2.1's CRN claim, CHECKED, not assumed: because the world/playout
+    seeds are `sha256(tag|rid|j|salt)` -- keyed on rid+salt, never on the arms --
+    every leg of one position (scored by a SEPARATE `oracle_score_pilot`
+    invocation, but under the SAME rid) must see the SAME M CRN worlds. That
+    means, across every leg of a position:
+      1. `values_a` is BIT-IDENTICAL (raw f64 bit patterns, never `==`/approx)
+      2. `world_seeds` and `playout_seeds` are identical
+      3. `afterstate_deck_hash_a` is identical
+      4. `crn_verified` is True in every leg
+
+    `records_by_leg`: {leg_index: {rid: record_dict}} -- one `records/<rid>.json`
+    each, loaded by `load_leg_records`. All legs must share the exact same rid
+    set (asserted -- a differing set means the smoke/run built its legs wrong,
+    which is a harder failure than a CRN mismatch and is reported as such).
+
+    Returns {"ok": bool, "legs_checked": [...], "rids_checked": [...],
+    "n_rids": int, "n_ok": int, "per_rid": {rid: {"ok": bool, "problems": [...]}}}.
+    """
+    legs = sorted(records_by_leg)
+    if len(legs) < 2:
+        raise ValueError("check_crn_cross_leg needs >= 2 legs to compare")
+    rid_sets = [frozenset(records_by_leg[leg]) for leg in legs]
+    if len(set(rid_sets)) != 1:
+        raise ValueError(f"legs do not share the same rid set: "
+                         f"{dict(zip(legs, (sorted(s) for s in rid_sets)))}")
+    rids = sorted(rid_sets[0])
+
+    per_rid = {}
+    base_leg = legs[0]
+    for rid in rids:
+        problems = []
+        base = records_by_leg[base_leg][rid]
+        if not base.get("crn_verified"):
+            problems.append(f"leg{base_leg}: crn_verified is not True")
+        base_bits = [_f64_bits(v) for v in base["values_a"]]
+        for leg in legs[1:]:
+            rec = records_by_leg[leg][rid]
+            if not rec.get("crn_verified"):
+                problems.append(f"leg{leg}: crn_verified is not True")
+            bits = [_f64_bits(v) for v in rec["values_a"]]
+            if bits != base_bits:
+                problems.append(f"leg{leg}: values_a raw-f64-bit MISMATCH vs leg{base_leg}")
+            if rec.get("world_seeds") != base.get("world_seeds"):
+                problems.append(f"leg{leg}: world_seeds differ vs leg{base_leg}")
+            if rec.get("playout_seeds") != base.get("playout_seeds"):
+                problems.append(f"leg{leg}: playout_seeds differ vs leg{base_leg}")
+            if rec.get("afterstate_deck_hash_a") != base.get("afterstate_deck_hash_a"):
+                problems.append(f"leg{leg}: afterstate_deck_hash_a differs vs leg{base_leg}")
+        per_rid[rid] = {"ok": not problems, "problems": problems}
+    ok = all(v["ok"] for v in per_rid.values())
+    return {"ok": ok, "legs_checked": legs, "rids_checked": rids, "per_rid": per_rid,
+           "n_rids": len(rids), "n_ok": sum(1 for v in per_rid.values() if v["ok"])}
+
+
+# --------------------------------------------------------------------------- #
+# --smoke                                                                       #
+# --------------------------------------------------------------------------- #
+def select_smoke_positions(positions_dir: Path, *, profile: str | None = None,
+                           min_arms: int = 3, n: int = 5) -> dict:
+    """Positions with an arm at leg index 2 (`len(arms) >= 3`), so leg1 AND
+    leg2 both exist -- the minimum needed to de-risk the CRN claim, not just
+    measure throughput.
+
+    ⚠️ MUST be filtered to `profile`. The leg files are written PER RULES
+    PROFILE (R9 is import-latched, so a profile cannot share a process), but
+    `ARMS.json` is global. Selecting the globally-first rids and then filtering
+    one profile's leg file yields an EMPTY smoke whenever those rids belong to a
+    different profile -- which is exactly what happened on the first two smoke
+    attempts (2026-08-12): `app_aug2` and then `fixed_v1` both produced 0-line
+    inputs because the alphabetically-first eligible rids are `walled` E4 games.
+    """
+    arms = json.loads((Path(positions_dir) / "ARMS.json").read_text())
+    eligible = sorted(
+        rid for rid, info in arms.items()
+        if len(info["arms"]) >= min_arms
+        and (profile is None or info.get("rules_profile") == profile))
+    chosen = eligible[:n]
+    note = None
+    if len(chosen) < n:
+        note = (f"only {len(chosen)} position(s) with >= {min_arms} arms available "
+               f"(wanted {n}); using all of them" if chosen else
+               f"NO positions with >= {min_arms} arms available -- cannot smoke the "
+               "CRN cross-leg witness for real")
+    return {"rids": chosen, "n_eligible": len(eligible), "note": note,
+           "synthesized": len(chosen) < n}
+
+
+def build_smoke_positions(positions_dir: Path, rids: list, profile: str,
+                          legs=(1, 2)) -> dict:
+    """Filter the already-built leg files down to the smoke's chosen rids."""
+    out = {}
+    for r in legs:
+        src = Path(positions_dir) / f"positions_{profile}_leg{r}.jsonl"
+        if not src.is_file():
+            raise FileNotFoundError(f"no leg{r} positions file for profile "
+                                    f"{profile!r}: {src}")
+        chosen = [json.loads(ln) for ln in src.read_text().splitlines()
+                 if ln.strip() and json.loads(ln)["rid"] in rids]
+        out_path = Path(positions_dir) / "smoke" / f"smoke_{profile}_leg{r}.jsonl"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text("".join(json.dumps(x) + "\n" for x in chosen))
+        out[r] = {"path": str(out_path), "n": len(chosen),
+                 "rids": sorted(x["rid"] for x in chosen)}
+    return out
+
+
+def run_smoke(args, report: dict, plan: dict) -> int:
+    """5 positions (or fewer, if that many multi-leg positions don't exist),
+    production knobs, clair-puct only, run over >= 2 legs, then the CRN
+    cross-leg witness. Exits non-zero on FAIL."""
+    positions_dir = Path(args.positions_dir)
+    profiles_present = sorted({k.split("/leg")[0] for k in plan.get("files", {})})
+    profile = args.smoke_profile or (profiles_present[0] if profiles_present else None)
+    if profile is None:
+        print("[smoke] no rules profile present in POSITIONS_PLAN.json -- nothing "
+             "to smoke", file=sys.stderr)
+        return 3
+
+    sel = select_smoke_positions(positions_dir, profile=profile, min_arms=3, n=5)
+    if sel["note"]:
+        print(f"[smoke] NOTE: {sel['note']}")
+    if not sel["rids"]:
+        return 3
+    built = build_smoke_positions(positions_dir, sel["rids"], profile, legs=(1, 2))
+
+    t0 = time.time()
+    logs_dir = Path(args.logs_dir)
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ)
+    env["CARCASSONNE_FIX_R9"] = _r9_for(profile)
+    env.setdefault("OPENBLAS_NUM_THREADS", "1")
+    env.setdefault("OMP_NUM_THREADS", "1")
+    env.setdefault("MKL_NUM_THREADS", "1")
+
+    leg_out = {}
+    for r, info in sorted(built.items()):
+        sub = f"smoke/clair-puct/{profile}/leg{r}"
+        log = logs_dir / f"smoke_leg{r}.log"
+        cmd = leg_command(positions_path=info["path"], profile=profile, judge="clair-puct",
+                          m=32, oracle_sims=100, workers=args.workers, n=info["n"],
+                          out_root=args.out_root, out_subdir=sub,
+                          # Honour --resume/--no-resume. The smoke is NOT cheap on the
+                          # python backend (measured ~20 min per leg at 5 workers on
+                          # fixed_v1, SMOKE.md #3), and an interrupted smoke that has to
+                          # redo completed positions is how a 40-minute job becomes an
+                          # 80-minute one. Per-position records are written via tmp +
+                          # os.replace by the pilot, so resuming is safe.
+                          resume=bool(getattr(args, "resume", True)))
+        fh = log.open("w")
+        rc = subprocess.run(cmd, cwd=str(REPO), env=env, stdout=fh,
+                            stderr=subprocess.STDOUT).returncode
+        fh.close()
+        leg_out[r] = {"rc": rc, "out": f"{args.out_root}/{sub}", "log": str(log),
+                     "n": info["n"], "cmd": cmd}
+    wall = time.time() - t0
+
+    ok_launch = all(leg["rc"] == 0 for leg in leg_out.values())
+    witness = None
+    if ok_launch:
+        records_by_leg = {r: load_leg_records(info["out"], sel["rids"])
+                          for r, info in leg_out.items()}
+        witness = check_crn_cross_leg(records_by_leg)
+
+    n_positions = len(sel["rids"])
+    n_legs = len(leg_out)
+    worker_secs = wall * args.workers
+    worker_secs_per_position = worker_secs / max(1, n_positions)
+    worker_secs_per_playout = worker_secs / max(1, n_positions * n_legs * 2 * 32)
+    eta = {}
+    if plan.get("total_arm_playouts") is not None:
+        sys.path.insert(0, str(REPO / "scripts" / "tiletie"))
+        import build_positions as BP  # noqa: PLC0415
+
+        for w in (14, 22):
+            eta[f"W={w}"] = BP.full_run_eta_secs(plan, worker_secs_per_playout, w)
+
+    print(f"\n[smoke] positions={n_positions} legs={n_legs} wall_secs={wall:.1f} "
+         f"workers={args.workers} worker_secs/position={worker_secs_per_position:.2f} "
+         f"worker_secs/playout={worker_secs_per_playout:.4f}")
+    for w, e in sorted(eta.items()):
+        print(f"[smoke] extrapolated full-run ETA at {w}: "
+             f"{e['wall_hours']:.3f} h ({e['wall_secs']:.0f} s)")
+
+    if witness is not None:
+        print(f"\nCRN CROSS-LEG WITNESS: {'PASS' if witness['ok'] else 'FAIL'} "
+             f"({witness['n_ok']}/{witness['n_rids']} rids)")
+        for rid, v in witness["per_rid"].items():
+            if not v["ok"]:
+                print(f"  FAIL {rid}: {v['problems']}")
+    else:
+        print("\nCRN CROSS-LEG WITNESS: NOT RUN (a leg subprocess failed)")
+
+    manifest = {
+        "schema": SCHEMA, "driver": "run_tiletie --smoke", "design_doc": DESIGN_DOC,
+        "preflight": report, "profile": profile, "positions_selected": sel,
+        "legs": leg_out, "wall_secs": round(wall, 1), "workers": args.workers,
+        "n_positions": n_positions, "n_legs": n_legs,
+        "worker_secs_per_position": worker_secs_per_position,
+        "worker_secs_per_playout": worker_secs_per_playout, "eta": eta,
+        "crn_cross_leg_identical": (witness["ok"] if witness else None),
+        "crn_cross_leg_checked_rids": (witness["rids_checked"] if witness else []),
+        "crn_cross_leg_detail": witness,
+    }
+    Path(args.smoke_manifest).write_text(json.dumps(manifest, indent=2))
+    print(f"[smoke] manifest -> {args.smoke_manifest}")
+
+    if not ok_launch:
+        return 1
+    return 0 if witness["ok"] else 1
+
+
+# --------------------------------------------------------------------------- #
+# manifest.json (written even on failure)                                       #
+# --------------------------------------------------------------------------- #
+def _sha256_file(path) -> str | None:
+    p = Path(path)
+    if not p.is_file():
+        return None
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def write_manifest(args, report: dict | None, legs: list, path: Path, *,
+                   error: str | None = None) -> dict:
+    plan_path = Path(args.positions_dir) / "POSITIONS_PLAN.json"
+    arms_path = Path(args.positions_dir) / "ARMS.json"
+    manifest = {
+        "schema": SCHEMA, "driver": "run_tiletie", "design_doc": DESIGN_DOC,
+        "git_rev": ((report or {}).get("checks", {}).get("git_clean") or {}).get("git_rev"),
+        "python": sys.executable,
+        "preflight": report,
+        "r9_by_profile": {p: _r9_for(p) for p in
+                          sorted({leg["profile"] for leg in legs})} if legs else {},
+        "judges": list(args.judges), "judge_backend": {j: JUDGE_BACKEND[j]
+                                                       for j in args.judges},
+        "world_seed_salt": WORLD_SEED_SALT, "m_worlds": args.m,
+        "oracle_sims": args.oracle_sims, "workers": args.workers,
+        "resume": bool(args.resume),
+        "positions_plan_path": str(plan_path), "arms_path": str(arms_path),
+        "positions_plan_sha256": _sha256_file(plan_path),
+        "arms_sha256": _sha256_file(arms_path),
+        "legs": legs,
+        "error": error,
+        "finished_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(manifest, indent=2))
+    return manifest
+
+
+# --------------------------------------------------------------------------- #
+# CLI                                                                           #
+# --------------------------------------------------------------------------- #
+def build_arg_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--positions-dir", default=str(DEFAULT_POSITIONS_DIR))
+    ap.add_argument("--out-root", default="/mnt/c/carc-shared/tiletie_pricing_20260812")
+    ap.add_argument("--logs-dir", default=str(DEFAULT_LOGS_DIR))
+    ap.add_argument("--gate-out", default=str(DEFAULT_GATE_RECHECK_OUT))
+    ap.add_argument("--manifest-out", default=str(DEFAULT_MANIFEST))
+    ap.add_argument("--smoke-manifest", default=str(DEFAULT_SMOKE_MANIFEST))
+    ap.add_argument("--judges", nargs="+", default=["clair-puct"],
+                    choices=sorted(JUDGE_BACKEND),
+                    help="default clair-puct ONLY -- see module docstring for why "
+                         "tier1-greedy is not on by default")
+    ap.add_argument("--m", type=int, default=32)
+    ap.add_argument("--oracle-sims", type=int, default=100)
+    ap.add_argument("--workers", type=int, default=14)
+    ap.add_argument("--resume", action="store_true", default=True)
+    ap.add_argument("--no-resume", dest="resume", action="store_false")
+    ap.add_argument("--yes", action="store_true",
+                    help="required to actually launch legs; without it the plan "
+                         "and ETA are printed and the process exits 0 with "
+                         "nothing launched")
+    ap.add_argument("--smoke", action="store_true",
+                    help="5-position production-knob smoke incl. the CRN "
+                         "cross-leg witness; clair-puct only")
+    ap.add_argument("--smoke-profile", default=None,
+                    help="rules profile to smoke (default: the first one present "
+                         "in POSITIONS_PLAN.json)")
+    return ap
+
+
+def main(argv=None) -> int:
+    args = build_arg_parser().parse_args(argv)
+    manifest_path = Path(args.manifest_out)
+    report = None
+    try:
+        report = preflight(args)
+        print_preflight(report)
+        if not report["ok"]:
+            print("\n[run_tiletie] PREFLIGHT FAILED -- refusing to launch.",
+                 file=sys.stderr)
+            write_manifest(args, report, [], manifest_path, error="preflight_failed")
+            return 2
+
+        plan = json.loads((Path(args.positions_dir) / "POSITIONS_PLAN.json").read_text())
+        print()
+        print_eta(plan)
+
+        if args.smoke:
+            return run_smoke(args, report, plan)
+
+        if not args.yes:
+            print("\n[run_tiletie] --yes not given: plan printed, NOT launching. "
+                 "exit 0.")
+            write_manifest(args, report, [], manifest_path)
+            return 0
+
+        legs = launch_legs(args, plan)
+        for leg in legs:
+            leg["records_verified"] = verify_leg_records(leg)
+        write_manifest(args, report, legs, manifest_path)
+        ok = bool(legs) and all(
+            leg["rc"] == 0 and leg["records_verified"]["ok"] for leg in legs)
+        return 0 if ok else 1
+    except Exception as exc:                                       # noqa: BLE001
+        write_manifest(args, report, [], manifest_path, error=f"{type(exc).__name__}: {exc}")
+        raise
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

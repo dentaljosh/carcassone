@@ -1,0 +1,74 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "git_rev": "341c128",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "8",
+          "--out",
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/GATE_BACKEND_RECHECK.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n  40120       01:24  0.1 python",
+        "loadavg": "2.84 1.53 1.91 1/674 40319"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "341c128",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 12,
+        "plan_path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/POSITIONS_PLAN.json",
+        "arms_path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/ARMS.json"
+      }
+    }
+  },
+  "r9_by_profile": {},
+  "judges": [
+    "clair-puct"
+  ],
+  "judge_backend": {
+    "clair-puct": "rust"
+  },
+  "world_seed_salt": "tiletie-v1",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "workers": 8,
+  "resume": true,
+  "positions_plan_path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/POSITIONS_PLAN.json",
+  "arms_path": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions/ARMS.json",
+  "positions_plan_sha256": "baee6c42fed9c8a0a55bbb49d7515be19356dda28918e45569b198af7f8186b0",
+  "arms_sha256": "42c04522edc176ab3adb6288dfadf1090eed70b4f572ae05af7f2d50bb1b91da",
+  "legs": [],
+  "error": "TypeError: leg_command() missing 2 required keyword-only arguments: 'out_root' and 'out_subdir'",
+  "finished_utc": "2026-08-13T00:42:40Z"
+}

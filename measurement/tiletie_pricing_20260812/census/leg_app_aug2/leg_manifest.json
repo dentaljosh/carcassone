@@ -1,0 +1,63 @@
+{
+  "schema": "carcassonne-tiletie-census/v1-leg",
+  "profile": "app_aug2",
+  "r9_env_var": "CARCASSONNE_FIX_R9",
+  "r9_env_expected": false,
+  "r9_env_observed": false,
+  "r9_env_ok": true,
+  "env_resolved": {
+    "CARCASSONNE_FIX_R9": "0",
+    "r9_env_expected": false,
+    "leaf_env": {
+      "CARCASSONNE_V25_CAP": "8",
+      "CARCASSONNE_V25_OPP_CAP": "8",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+      "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+      "CARCASSONNE_V25_MEEPLE_K": "2.0",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CUDA_VISIBLE_DEVICES": "",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "leaf_hashes": {
+    "harness_leaf_hash": "a36d2e15a3b3d71d",
+    "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+    "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "leaf_hash_of_record": "a36d2e15a3b3d71d",
+  "leaf_hash_assert_ok": true,
+  "n_rows": 35,
+  "workers": 1,
+  "e4": {
+    "n_games": 1,
+    "n_rows": 35,
+    "replay_scores_checked": 1,
+    "replay_scores_match_count": 1,
+    "per_game": [
+      {
+        "path": "/home/doctor/projects/carcassone/measurement/e4_games/1785975832_66810.json",
+        "n_qualifying": 35,
+        "recorded_scores": [
+          98,
+          78
+        ],
+        "final_scores": [
+          98,
+          78
+        ],
+        "replay_scores_match": true
+      }
+    ]
+  },
+  "bank": {},
+  "champ_games": {},
+  "wall_secs": {
+    "e4": 0.6,
+    "bank": 0.0,
+    "champ_games": 0.0,
+    "total": 0.8
+  }
+}
