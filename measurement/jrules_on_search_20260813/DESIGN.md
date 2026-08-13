@@ -451,7 +451,20 @@ setsid nohup systemd-run --user --scope -p MemoryMax=8G \
 **Price.** House reference: a Joshua-bot-vs-champion game cost **84.82 s** (`BENCH.json`,
 local box) with only *one* arm searching at 11008. Both arms searching ⇒ ≈**170 s/game**
 ⇒ n=800 ≈ **37.8 pool-hours**, i.e. ≈ **1.7 h at W22** on one box, ≈ **1.1 h** split
-local W14 + laptop W22. **⚠️ Two multipliers on top, both unmeasured:**
+local W14 + laptop W22.
+
+> **⚠️ REPRICED 2026-08-13 — the first multiplier is now MEASURED (G7).** The J-rules
+> candidate arm costs **≈1.14× per rust leaf** (bench in the G7 row above), and the
+> open-city calibration says leaf-cost excess transfers to wall-clock ≈1:1. Charging it
+> to the candidate arm only: **≈85 + 85×1.14 ≈ 182 s/game** ⇒ n=800 ≈ **40.4
+> pool-hours** ⇒ ≈ **1.8 h at W22** on one box, ≈ **1.1 h** split local W14 + laptop W22.
+> The split figure barely moves; the single-box figure moves ~7%. **The dominant
+> remaining uncertainty is not the multiplier — it is the 84.82 s house reference
+> itself**, which came from a *Joshua-bot* game, not a champion-vs-champion one. Read
+> the real `ms_ratio` and s/game off `menu_block_summary` after the first block and
+> re-size before committing the fleet.
+
+**⚠️ Two multipliers on top — the first is now measured (above), the second still gated on G3:**
 
 * the J-rules term adds a per-leaf cost the other terms don't have — a full meeple
   attribution pass **plus** a scan over every city/road root **plus** a cloister pass over
@@ -492,17 +505,21 @@ and points the search for it at what he *cannot* articulate.
 
 ---
 
-## 11. Launch-blocking gates (none of these are done)
+## 11. Launch-blocking gates
+
+> **Updated 2026-08-13 (main tree): G1/G2/G3 CLEARED, G7 priced at the leaf.**
+> G4/G5 tracked separately; G6 (band) is the owner's call and remains ⛔. Still
+> **0 games, no band, no claim, no `results.csv` row, `PRODUCTION.yaml` untouched.**
 
 | # | gate | state |
 |---|---|---|
-| **G1** | worktree merged to the main tree at a quiet window | ⛔ |
-| **G2** | `pytest tests/test_jrules_term.py` green **in the main tree** (the 2 Rust skips must become passes after G3; the 2 cy tests need the built `.so`) | partial — 38/40 here |
-| **G3** | `carc_rs` wheel rebuilt on every box that will run a cell **and** `reconcile_leaf.py --configs jrules --corpus golden` = **0 mismatches** | ⛔ **not run — but de-risked.** The main tree's wheel was rebuilt and installed 2026-08-13 for the open-city term, so the toolchain path is **proven**, not speculative. This term still needs **its own** rebuild after the worktree merge (the installed wheel predates `jrules_dose` — observed fail-closed `TypeError`) plus its own reconcile. Effort, not uncertainty. |
+| **G1** | worktree merged to the main tree at a quiet window | ✅ **DONE 2026-08-13** — merged into `android-app`; the only conflict was `docs/LEVER_INDEX.md` (resolved keeping **all** rows from both sides: 221 HEAD rows + the 1 new J-rules row = 222; the J13 row kept HEAD's newer post-pre-gate text). `doc_lint` 0 errors. |
+| **G2** | `pytest tests/test_jrules_term.py` green **in the main tree** (the 2 Rust skips must become passes after G3; the 2 cy tests need the built `.so`) | ✅ **39 passed / 1 skipped** in the main tree (was 38/2). ⚠️ **The remaining skip is STRUCTURAL, not staleness** — `test_rust_parity_spot_check` skips on "no direct `carc_rs` leaf entry point exposed in this build" (`carc_rs` exposes no `leaf_value_float[_py]`). ⇒ **`reconcile_leaf.py` is the ONLY Rust-parity evidence this term has**, which promotes G3 from a nicety to the sole guard on §12 Q5's inferred root-enumeration mapping. |
+| **G3** | `carc_rs` wheel rebuilt on every box that will run a cell **and** `reconcile_leaf.py --configs jrules --corpus golden` = **0 mismatches** | ✅ **DONE on the LOCAL box 2026-08-13** — wheel rebuilt (`maturin build --release`, 5.17 s warm) + force-reinstalled; `reconcile_leaf.py --configs jrules --corpus golden --workers 8` = **83824 values compared, 0 mismatches, 7.1 s** ([`G2_leaf_jrules_golden.json`](../rustport_p2/G2_leaf_jrules_golden.json)). All 6 cells ran (`d0-identity`, `d0.5`, `d1.0`, `d1.0-j1only`, `d1.0-noj5`, `d2.0`), 6948 values each. **The term bites:** d0.5/d1.0/d2.0 move **95.34%** of leaf values vs the champion; `j1only` moves **10.36%** (J1 is rare, per §6); the `d0-identity` moved-mask control moves **nothing**. Champion fingerprints recompute **UNCHANGED** in both dialects: `a36d2e15a3b3d71d` (ab + c5), `158f17ff76adaa02`, `6dfffd57051690f2`. Neighbours undisturbed (open-city + denial + frozen-substrates + v29-flat-curve = 50 passed; v29-phase-multiplier 14 passed). ⚠️ **Still owed on the LAPTOP** if a cell runs there — the gate is per-box. |
 | **G4** | `chain_capability_probe.py --require jrules` mode added and PASSING on the run box (the "accepted and ignored" trap: a cell that quietly runs champion-vs-champion produces a beautiful, meaningless null) | ⛔ not built |
 | **G5** | `jrules` arm added to the E4-replay flip instrument; ladder run; read-rule §7 applied | ⛔ **not built — the binding blocker.** Untouched by the open-city work: `opencity_e4_replay.py` takes `--arm N:S:E:D` and needs a `name:dose:mask` sibling. Until this runs there is no defensible dose, and §7's CL-080 anchor says an arbitrary dose is exactly how a term costs 50–190 elo. |
-| **G6** | fresh band registered in `governance/BAND_REGISTRY.csv` | ⛔ |
-| **G7** | one benched cell for `ms_ratio` before fleet sizing | ⛔ |
+| **G6** | fresh band registered in `governance/BAND_REGISTRY.csv` | ⛔ **owner's call** — not claimed by this pass, deliberately. |
+| **G7** | one benched cell for `ms_ratio` before fleet sizing | 🟡 **PRICED AT THE LEAF, not yet at the cell.** Rust per-leaf cost over 24 realistic-depth positions × 200 repeats (9600 leaf evals/leg, local box), champion = 7.55 µs/leaf: **jrules d0.5 = 1.140× · d1.0 = 1.124× · d2.0 = 1.130×** (dose-independent, as expected — the term computes whatever the dose), `noj5` = 1.082× (so J5's cloister pass is ≈4 pp of the ≈13 pp), `d0-identity` = 1.004× (the gate short-circuits). **Calibration to a real `ms_ratio`:** the same bench prices open-city at **1.008×** (d0.5) / **1.021×** (d2.0-s6-e3) per leaf, and CL-080's *measured* cell `ms_ratio` for those arms was **1.0110 / 1.0135** — i.e. the leaf multiplier transfers to wall-clock roughly **1:1**. ⇒ **predicted cell `ms_ratio` ≈ 1.12–1.14.** ⚠️ **This cell will NOT be cost-neutral**, unlike both CL-080 arms — so "the loss was not bought with time" is *not* available as a reading here, and the O-gate block must read the real `ms_ratio` off `menu_block_summary` on the first block rather than assume parity. |
 
 ---
 
