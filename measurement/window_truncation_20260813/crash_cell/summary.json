@@ -1,0 +1,111 @@
+{
+  "schema": "carcassonne-window-truncation-census/v1-summary",
+  "n_rows": 1,
+  "n_ok": 1,
+  "n_skipped_forced": 0,
+  "n_skipped_solver_region": 0,
+  "n_censused_roots": 1,
+  "roots_with_root_truncation": 0,
+  "root_truncation_rate": 0.0,
+  "nodes_censused": 10003,
+  "nodes_truncated": 382,
+  "node_truncation_rate": 0.03818854343696891,
+  "nodes_empty_mask": 6,
+  "empty_mask_rate": 0.0005998200539838049,
+  "visits_total": 42509,
+  "visits_through_truncated": 2647,
+  "visit_weighted_truncation_rate": 0.062269166529440825,
+  "roots_with_any_search_truncation": 1,
+  "root_incidence_rate": 1.0,
+  "dropped_hist": {
+    "0": 9621,
+    "1": 218,
+    "2": 144,
+    "3": 8,
+    "4": 12
+  },
+  "by_depth": {
+    "1": [
+      40,
+      0,
+      0
+    ],
+    "2": [
+      2058,
+      0,
+      0
+    ],
+    "3": [
+      3381,
+      44,
+      100
+    ],
+    "4": [
+      548,
+      0,
+      0
+    ],
+    "5": [
+      487,
+      112,
+      154
+    ],
+    "6": [
+      2082,
+      0,
+      0
+    ],
+    "7": [
+      908,
+      121,
+      160
+    ],
+    "8": [
+      87,
+      0,
+      0
+    ],
+    "9": [
+      105,
+      105,
+      164
+    ],
+    "10": [
+      307,
+      0,
+      0
+    ]
+  },
+  "by_node_phase": {
+    "meeples": [
+      5617,
+      0,
+      0
+    ],
+    "tiles": [
+      4386,
+      382,
+      578
+    ]
+  },
+  "by_k_bucket": {
+    "late": [
+      10003,
+      382,
+      578
+    ]
+  },
+  "n_pick_comparable": 1,
+  "n_pick_changed": 1,
+  "pick_change_rate": 1.0,
+  "iso_control_n": 0,
+  "iso_control_violations": 0,
+  "digest_gate_fail": 0,
+  "encode_collisions": 0,
+  "world_errors": 1,
+  "n_error_rows": 0,
+  "secs_total": 7.8,
+  "secs_per_root": 7.77,
+  "wall_secs": 7.8,
+  "workers": 1
+}

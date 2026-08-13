@@ -1,0 +1,16 @@
+[cell] deck=126000000135 joshua_seat=0 champ_seat=1 champion_seed=9400540 profile=fixed_v1 variant=current+j7w0
+  ply  10  champ_decisions=4 (1s)
+  ply  20  champ_decisions=10 (4s)
+  ply  30  champ_decisions=14 (7s)
+  ply  40  champ_decisions=20 (12s)
+  ply  50  champ_decisions=24 (15s)
+  ply  60  champ_decisions=30 (22s)
+  ply  70  champ_decisions=34 (28s)
+  ply  80  champ_decisions=40 (38s)
+  ply  90  champ_decisions=44 (41s)
+  ply 100  champ_decisions=50 (51s)
+  ply 110  champ_decisions=54 (61s)
+
+[RAISED] ply=119 seat=1 is_champion=True champ_move_idx=59
+  RuntimeError: PUCT reached a node with no valid actions (Python IndexError)
+[out] measurement/window_truncation_20260813/crash_root.jsonl

@@ -1,7 +1,11 @@
 # Window-truncation census — DESIGN + PRE-REGISTERED READ
 
-**Status: BUILT + PILOTED 2026-08-13. Full census NOT YET RUN — this document is
-written BEFORE it, and the thresholds in §6 are pre-registered.**
+**Status: BUILT + GROUND-TRUTH VALIDATED + PILOTED 2026-08-13. Full census NOT YET
+RUN — this document is written BEFORE it, and the thresholds in §6 are
+pre-registered.**
+
+**⭐ The instrument reproduces the production crash (§5.1). The pilots' zeros are
+therefore a measurement, not a blind spot.**
 
 | | |
 |---|---|
@@ -9,6 +13,8 @@ written BEFORE it, and the thresholds in §6 are pre-registered.**
 | Tests | [`tests/test_window_truncation_census.py`](../../tests/test_window_truncation_census.py) — 12 tests, green |
 | Pilot A (`walled`) | [`pilot/summary.json`](pilot/summary.json) — 40 roots, **396,872 nodes, 0 truncated** |
 | Pilot B (`fixed_v1`) | [`pilot_fixed_v1/summary.json`](pilot_fixed_v1/summary.json) — 40 roots, **357,320 nodes, 0 truncated** |
+| **Ground truth** | [`crash_cell/summary.json`](crash_cell/summary.json) — the 2026-08-13 production crash root, **382/10,003 nodes truncated, 6 empty-mask, crash reproduced** |
+| Root reconstruction | [`scripts/measurement_infra/reconstruct_crash_root.py`](../../scripts/measurement_infra/reconstruct_crash_root.py) → [`crash_root.jsonl`](crash_root.jsonl) |
 | Provoked by | [`measurement/joshuabot_20260812/CONFIRM_EXCLUSIONS.md`](../joshuabot_20260812/CONFIRM_EXCLUSIONS.md) |
 | Prior art | [`docs/LEVER_INDEX.md`](../../docs/LEVER_INDEX.md) rows *"widen the action window"* (J4) and *"full-board / no-crop representation rework"* (declined) |
 
@@ -205,6 +211,69 @@ per decision, champion `puct_priors_v29_bmild_cap8`, leaf `a36d2e15a3b3d71d`.
   geometries (start row 6 vs 18), and the crash was observed under `fixed_v1`; a
   rate from one is not a rate for the other.
 
+### 5.1 GROUND TRUTH — the production crash reproduces inside the instrument ✅
+
+A census that has only ever reported zero on real roots is worth nothing until it is
+shown to fire on a root that is *known* to break. So it was run on the one root that
+demonstrably did: the 2026-08-13 J7ZERO confirm crash, deck `126000000135`,
+`joshua_seat 0` / champion on seat 1, `champion_seed 9400540`, `fixed_v1`.
+
+**Recovering the root.** Nothing on disk carried the action prefix, so
+`reconstruct_crash_root.py` replays the cell exactly as `h2h._play_cell_inner` does
+(same profile, same variant `current+j7w0`, same `champion_seed()` derivation, a
+verbatim copy of `play_harness.play_game`'s loop) and records the applied actions.
+It raised at **79.5 s** — matching the original cell's 78 s.
+
+> **The "ply 59" in the crash diagnostic is NOT the global ply.** It is the
+> **champion's own decision counter**. The raise is at **global ply 119**, which is
+> the champion's **`move_idx = 59`**. This matters materially: the determinization
+> stream is seeded from `det_seed_base(seed, move_idx)`, so feeding ply 119 as
+> `move_idx` would have drawn eight *different* worlds and the crash would not have
+> reproduced. The census now reads a `move_idx` field off the root
+> (`--move-idx` overrides), and its absence falls back to ply — valid for a RATE,
+> invalid for reproducing a NAMED decision. **The pilots in §5 used the ply
+> fallback; that is sound for a rate and is recorded in their manifests.**
+
+**Result — everything fires, and the numbers corroborate the original diagnostic
+independently:**
+
+| | |
+|---|---|
+| root: phase / `k_remaining` / window | meeples / 12 / `(5, 3, 25)` — **identical to `window_diag_126000000135s0.json`** |
+| root legal / root out-of-window | **5 / 0** — identical to the diagnostic; the played position is healthy |
+| expanded nodes censused (8 worlds) | 10,003 |
+| **nodes with ≥1 dropped legal action** | **382 (3.82%)**, 578 actions dropped, up to 4 per node |
+| visit-weighted truncation rate | **6.23%** |
+| **nodes with an EMPTY mask (the crash case)** | **6** — and the trace's own `va:[]` count is 6. Independent agreement. |
+| **world search that RAISED** | **world 3, `NoLegalActionsAtInterior`** — the production crash, caught and recorded rather than aborting |
+| digest gate / encode collisions | 0 / 0 |
+
+**The empty-mask nodes, exactly.** All 6 are in world 3, at **depth 3**, TILES phase,
+`k_remaining = 10`, with `n_total = 4` and `n_overflow = 4` — i.e. the engine offered
+exactly four legal moves, the **four rotations of a single placement at engine
+coordinate (4, 15)**, and the window `(5, 3, 25)` covers rows 5–29. The placement is
+**one row above the window**. Every one passes the four legality assertions
+(`dropped_all_legal: true`, `wide_n_total == narrow_n_total == 4`,
+`wide_n_overflow == 0`, `n_extra_in_narrow == 0`).
+
+**Rate rises with depth, as the mechanism predicts.** Truncation is confined to
+TILES-phase nodes (382/4,386; meeples 0/5,617), and among those the rate climbs with
+depth: **d3 1.3% → d5 23.0% → d7 13.3% → d9 100% (105/105)**.
+
+**The pick changes, and not by a tie-break.** Under the overflow-free window the
+champion's pooled-Q pick moves from a NORMAL meeple on TOP (`2501`) to **meeple-Pass**
+(`20174`). Given the isomorphism (§4) that difference is attributable to truncation
+and to nothing else.
+
+⚠️ **This cell is SELECTED on having crashed. Its 3.82% node rate and its 1/1 pick
+change are conditional on that selection and MUST NOT be pooled into the census
+rates.** Its role is validation, not estimation.
+
+**⇒ The instrument detects the phenomenon when it is present, at the production
+budget, on the real rules epoch, down to the individual dropped coordinate. The
+754,192-node zeros in §5 are a measurement of absence, not an absence of
+measurement.**
+
 **What the pilot does already establish**, and it is not nothing: 754,192
 search-internal nodes at the production budget, 0 dropped legal actions. That is
 **2.5× the entire prior window-audit evidence base** (0/299k, played distribution,
@@ -247,12 +316,24 @@ license a kill.
 
 ### P3 (INDEPENDENT, reliability) — `empty_mask_rate`, `world_errors`
 
-**≥ 1 empty-mask node, or ≥ 1 `NoLegalActionsAtInterior` raise, anywhere in the full
-census ⇒ the minimal fail-loud fix ships regardless of P1 and P2.** The cost of this
-face is not elo, it is a lost tournament game and a hand-written exclusions dossier
-(2026-08-13 cost exactly that: 1 of 800 cells, plus the audit). Its base rate is
-plausibly ~10⁻⁹ per node, which no affordable census can bound — so the trigger is
-**occurrence**, not rate.
+**Trigger: ≥ 1 empty-mask node, or ≥ 1 `NoLegalActionsAtInterior` raise. The cost of
+this face is not elo — it is a lost tournament game and a hand-written exclusions
+dossier — so the trigger is OCCURRENCE, not rate.** Its base rate is plausibly
+~10⁻⁹ per node, which no affordable census could bound anyway.
+
+> ### ⚠️ P3 HAS ALREADY FIRED. It is not conditional on this census.
+>
+> A real `SearchError::NoLegalActionsAtInterior` raise happened **in production**
+> on 2026-08-13, inside the champion's own `choose_action`, on cell
+> `(deck 126000000135, joshua_seat 0)` of the J7ZERO confirm — reproducibly, three
+> times ([CONFIRM_EXCLUSIONS §1](../joshuabot_20260812/CONFIRM_EXCLUSIONS.md)). It
+> killed `imap_unordered` and took the confirm leg down at 269/800, and it cost one
+> excluded cell plus the audit that wrote that dossier.
+>
+> **⇒ The minimal fail-loud fix (§7 F-c) is licensed NOW, by this pre-registered
+> trigger, whatever P1 and P2 turn out to be.** The census does not decide it and
+> cannot un-decide it. What the census is still for is P1 — whether the *silent*
+> face costs strength, i.e. whether F-a (widen) is owed on top of F-c.
 
 ### Reporting rules (also pre-registered)
 
@@ -299,7 +380,7 @@ F9 recentring work (`centered18` → `fixed_v1`) moved the **start tile** to red
 Pilot B is a `fixed_v1` census and finds the same zero — consistent with recentring
 being orthogonal to this defect rather than a fix for it.
 
-**F-c — fail loudly (the minimum, and the P3 trigger's answer).** Make the Rust
+**F-c — fail loudly (the minimum, and ALREADY LICENSED — see §6-P3).** Make the Rust
 `legal_mask` surface `n_overflow > 0` instead of swallowing it, matching Python's
 `WindowOverflowError`. This fixes nothing; it converts a silent strength leak into a
 visible error. It is the natural completion of **`wall_sentinel`** (F9 W4,
@@ -362,26 +443,31 @@ CARCASSONNE_FIX_R9=1 nohup nice -n 19 .venv/bin/python -u \
 is worth a 4× coarser node count (it does not affect P1, which comes from the
 searches, not the replay).
 
-### 8.1 The one cell worth running FIRST — ground truth
+### 8.1 The gate cell — DONE, and it passed ✅
 
-Everything above is a rate over roots that did **not** crash. The single highest-value
-cell is the root that **did**: `deck_seed 126000000135`, JoshuaBot seat 0, champion
-seed **9400540**, `fixed_v1`, the ply-59 meeple decision. It reproduces
-deterministically (three times, per CONFIRM_EXCLUSIONS §1). Replaying that cell
-through the JoshuaBot harness to recover its action prefix, then feeding it as a
-one-line roots file with
+The full census was gated on reproducing the production crash inside the instrument
+first. **It reproduces** — §5.1. Reproduced with:
 
+```bash
+CARCASSONNE_FIX_R9=1 .venv/bin/python -u \
+  scripts/measurement_infra/reconstruct_crash_root.py \
+  --deck-seed 126000000135 --joshua-seat 0 --j7-weight 0.0 --profile fixed_v1 \
+  --out measurement/window_truncation_20260813/crash_root.jsonl        # 79.5 s
+
+CARCASSONNE_FIX_R9=1 .venv/bin/python -u \
+  scripts/measurement_infra/window_truncation_census.py \
+  --roots measurement/window_truncation_20260813/crash_root.jsonl \
+  --rules-profile fixed_v1 --n 1 --workers 1 --sample head \
+  --agent-seed-mode fixed --agent-seed 9400540 \
+  --max-examples 256 --verify-all-truncated \
+  --out-dir measurement/window_truncation_20260813/crash_cell            # 7.8 s
 ```
---roots <one_root.jsonl> --rules-profile fixed_v1 --n 1 --workers 1 \
---agent-seed-mode fixed --agent-seed 9400540 --max-examples 256 --verify-all-truncated
-```
 
-must reproduce a non-zero `n_nodes_empty_mask` (or a caught `world_errors` entry with
-`NoLegalActionsAtInterior`). **If it does not, the instrument — not the champion — is
-what needs fixing**, and no number in the full census should be believed until that
-is resolved. `--agent-seed-mode fixed` exists for exactly this: the census's
-`production` seed formula is the JCZ-match one, and the JoshuaBot harness seeds
-differently, so the cell's own champion seed must be passed by hand.
+`--agent-seed-mode fixed` is required: the census's `production` seed formula is the
+JCZ-match one (`SEED_BASE 9_100_000`, `+seat*4`), while `h2h.champion_seed` uses
+`SEED_BASE 9_400_000, +seat*2`. The root's own `move_idx: 59` is read off the file.
+
+**The census legs in §8 are now unblocked.**
 
 ---
 

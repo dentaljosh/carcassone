@@ -387,9 +387,23 @@ def census_root(root: dict, opt) -> dict:
     fa.start_game_from_seed(str(deck_seed))
     for a in seat.narrow_prefix():          # the agent lives in the window under test
         fa.advance(a)
-    fa.set_move_idx(ply)
-    worlds = fa.determinizations(ply)
-    rec["det_seed_base"] = int(fa.det_seed_base(ply))
+    # ⚠️ move_idx is the AGENT's own decision counter, NOT the ply. The
+    # determinization stream is seeded from det_seed_base(seed, move_idx), so a
+    # root that wants to reproduce a SPECIFIC decision (the 2026-08-13 crash cell)
+    # must carry the champion's counter; `scripts/measurement_infra/
+    # reconstruct_crash_root.py` records it. Absent it, ply is used -- fine for a
+    # RATE over roots (any determinization draw is a valid sample of the same
+    # distribution) but NOT for reproducing a named decision.
+    mi = getattr(opt, "move_idx_override", None)
+    if mi is None:
+        mi = root.get("move_idx")
+    mi = ply if mi is None else int(mi)
+    rec["move_idx"] = mi
+    rec["move_idx_source"] = ("override" if getattr(opt, "move_idx_override", None) is not None
+                              else "root" if root.get("move_idx") is not None else "ply")
+    fa.set_move_idx(mi)
+    worlds = fa.determinizations(mi)
+    rec["det_seed_base"] = int(fa.det_seed_base(mi))
 
     # --- accumulators --------------------------------------------------------
     nodes = 0
@@ -805,6 +819,9 @@ def main(argv=None) -> int:
     ap.add_argument("--verify-all-truncated", action="store_true",
                     help="run the legal-vs-illegal proof on EVERY truncated node, not "
                          "just the recorded examples (slow)")
+    ap.add_argument("--move-idx", type=int, default=None,
+                    help="force the agent's decision counter (single-root reproduction "
+                         "of a NAMED decision; roots may carry their own `move_idx`)")
     ap.add_argument("--agent-seed", type=int, default=101)
     ap.add_argument("--agent-seed-mode", choices=("production", "fixed"), default="production")
     ap.add_argument("--trace-dir", default="")
@@ -848,6 +865,7 @@ def main(argv=None) -> int:
         verify_dropped_are_legal=not a.no_verify_dropped_are_legal,
         verify_all_truncated=bool(a.verify_all_truncated),
         agent_seed=int(a.agent_seed), agent_seed_mode=a.agent_seed_mode,
+        move_idx_override=a.move_idx,
         trace_dir=trace_dir, trace_path="",
     )
 
@@ -870,6 +888,10 @@ def main(argv=None) -> int:
         "narrow_window": a.narrow_window, "wide_window": a.wide_window,
         "wide_leg": not a.no_wide,
         "replay_fraction": a.replay_fraction,
+        "move_idx_override": a.move_idx,
+        "move_idx_note": ("move_idx is the AGENT's decision counter, not the ply; roots "
+                          "without a `move_idx` field fall back to ply, which samples a "
+                          "VALID determinization draw but not a NAMED decision's one"),
         "env": {k: os.environ.get(k, "") for k in env_preamble.PROD_ENV},
         "workers": a.workers,
         "note": ("READ-ONLY instrument: no engine/src/rust modification. Truncation is "
