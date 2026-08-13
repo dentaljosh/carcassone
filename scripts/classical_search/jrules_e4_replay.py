@@ -272,6 +272,27 @@ def parse_arms(specs) -> tuple:
     return tuple(arms)
 
 
+def missing_arms_in_resume(done_records, arms) -> list:
+    """Arms that the ALREADY-GRADED plies carry no pick for — the late-added-arm trap.
+
+    ⚠️ RESUME IS PER-PLY, NOT PER-ARM: an already-graded ply is never re-searched, so
+    ADDING an `--arm` to an existing out-dir would leave the new arm with no pick on any
+    resumed ply and it would roll up as **0.00%** — a perfect silent null wearing the shape
+    of a real measurement, which is exactly what this instrument exists to prevent.
+    (CALIB_READ_RULE §3.1's "added --arm over the same output directory" is unsound for
+    that reason; measure a late-added rung in a FRESH out-dir, where the champion arm is
+    re-run identically under the same seed/budget so the statistic is unchanged, and merge
+    with `measurement/jrules_on_search_20260813/merge_calib_dirs.py`, which proves CRN
+    identity by diffing the champion's own pick ply-by-ply.)
+
+    An EMPTY resume set is not a violation — that is a fresh directory."""
+    records = list(done_records)
+    if not records:
+        return []
+    seen = {k[len("pick_"):] for r in records for k in r if str(k).startswith("pick_")}
+    return sorted({a.name for a in arms} - seen)
+
+
 def wilson_ci(k: int, n: int, z: float = Z95) -> tuple:
     """Wilson score interval for a binomial proportion — (lo, hi), clamped [0,1].
 
@@ -586,6 +607,16 @@ def grade_archive(archive_path: Path, out_dir: Path, *, arms,
             if line.strip():
                 r = json.loads(line)
                 done_plies[int(r["ply"])] = r
+    missing = missing_arms_in_resume(done_plies.values(), arms)
+    if missing:
+        raise SystemExit(
+            f"[jrules_e4] {stem}: {ply_path.name} already holds graded plies that carry NO "
+            f"pick for arm(s) {missing}. Resume is per-PLY, so those plies would never be "
+            "searched for the new arm and it would roll up as a 0.00% flip rate — a silent "
+            "null. Run the new arm in a FRESH --out-dir (same corpus/seed/budget = same "
+            "statistic; the champion arm is re-run there and its picks can be diffed "
+            "ply-by-ply against this directory to prove CRN identity), or delete this "
+            "directory and re-grade every arm together.")
 
     exact_max_k = int(fair_agent.EXACT_MAX_K)
     recs = list(done_plies.values())

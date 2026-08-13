@@ -484,3 +484,30 @@ def test_rollup_reports_every_mask_actually_used(tmp_path):
     roll = jr.rollup(tmp_path)
     assert roll["jrules_masks"] == [8, 31]
     assert roll["arm_knobs"]["d1p0"]["rules"] == ["J6"]
+
+
+# --------------------------------------------------------------------------- #
+# the late-added-arm resume guard                                              #
+# --------------------------------------------------------------------------- #
+def test_resume_guard_passes_when_every_arm_has_picks():
+    arms = jr.parse_arms(jr.DEFAULT_ARM_SPECS)
+    recs = [{"ply": 0, "champ_pick": 3, "pick_d0p5": 3, "pick_d1p0": 4, "pick_d2p0": 4}]
+    assert jr.missing_arms_in_resume(recs, arms) == []
+
+
+def test_resume_guard_flags_a_late_added_arm():
+    """The 0.00% silent null: a rung added to an existing out-dir is never searched."""
+    arms = jr.parse_arms([*jr.DEFAULT_ARM_SPECS, jr.FINER_RUNG_ARM_SPEC])
+    recs = [{"ply": 0, "champ_pick": 3, "pick_d0p5": 3, "pick_d1p0": 4, "pick_d2p0": 4},
+            {"ply": 2, "champ_pick": 9, "pick_d0p5": 9, "pick_d1p0": 9, "pick_d2p0": 1}]
+    assert jr.missing_arms_in_resume(recs, arms) == ["d0p25"]
+
+
+def test_resume_guard_is_silent_on_a_fresh_directory():
+    assert jr.missing_arms_in_resume([], jr.parse_arms(jr.DEFAULT_ARM_SPECS)) == []
+
+
+def test_resume_guard_flags_every_missing_arm():
+    arms = jr.parse_arms(["a:0.1", "b:0.2", "c:0.3"])
+    recs = [{"ply": 0, "champ_pick": 1, "pick_b": 1}]
+    assert jr.missing_arms_in_resume(recs, arms) == ["a", "c"]
