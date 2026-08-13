@@ -958,3 +958,19 @@ which assists were available/used — the E4 stream is assisted-by-design and th
 what keeps epochs interpretable), then per feature: bag peek = read-only remaining-tile
 multiset view; score menu = per-seat virtual_score decomposition; undo = bounded, with an
 `undos` count stamped per game.
+
+## 2026-08-12 — combined-pytest import-order flake: 11 failures in `test_c5_leaf_ab` / `test_c5_fair_leaf_ab` / `test_fair_cand_curve_drift` (pre-existing, NOT a regression)
+
+Found by the opencity-term build agent's test runs: an 11-file combined pytest session fails
+11 tests across those three files while **each file passes alone (41/41)** — and a pristine
+main-tree control under a champion-leaf env reproduces **all 11 identically**, so it is not
+the new term. Cause: the known `DEFAULT_CONFIG` import-time freeze race between sibling test
+modules (one module's import-time leaf-config snapshot leaks into the next's expectations).
+
+**Why deferred:** cosmetic in CI practice (suites are usually run per-file/chunked after the
+2026-08-09 suite-segmentation lesson), and mid-campaign was not the time to refactor test
+fixtures. **Until fixed: do NOT read combined-batch failures in these three files as
+regressions — re-run the file alone before believing it.**
+**Fix when actioned:** fixture-scope the leaf-config freeze (reset between modules) or mark
+the three modules for isolated execution; add a regression test that runs two of them in one
+session.
