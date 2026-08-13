@@ -8,6 +8,20 @@
 > not the other way round.
 >
 > **Fundable cells: A_d0p5, A_d2p0.**
+>
+> **WHAT THE FUNDED PAIR BOUGHT (added at close-out 2026-08-13; nothing below was edited).**
+> Both cells ran at deploy budget (fair PIMC k8×1376 = 11008 both arms, band 1.27e11, n=800
+> deck-paired each, gates clean) and **both fired pre-registered branch `N2 NEGATIVE`**:
+> `A_d0p5` margin **−4.06 pts/deck, z −5.86**, elo **−53.85 ± 12.43**; `A_d2p0` margin
+> **−14.06 pts/deck, z −19.38**, elo **−190.27 ± 14.17**. **Expressiveness predicted the
+> magnitude, not the sign** — the 10.09 %-flip cell moved play a little and lost a little, the
+> 18.89 %-flip cell moved play more and lost much more, exactly as §5 item 1 warned ("a changed
+> pick is not a better pick"). ⚠️ **The on-the-bar caveat of §3 was written to protect a NULL
+> reading and never had to be used**: the cell resolved at z −5.86, so "funded at the edge of
+> the floor" cost nothing here, and the untaken `B_d0p5` alternative stays untested. ⚠️ **Scope:
+> arm A only** — **arms B and C are priced by NOTHING**, and arm C (6/3) is the predicate
+> closest to the source guides' actual advice. See [DEPLOY_PREREG.md](DEPLOY_PREREG.md),
+> claim **CL-080**, DECISIONS 2026-08-13.
 
 ## 1. What ran
 

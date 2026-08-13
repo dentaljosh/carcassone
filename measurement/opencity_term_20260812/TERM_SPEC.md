@@ -1,13 +1,32 @@
 # OPEN-CITY DISCIPLINE — a leaf term that penalizes the builder's own large open cities
 
-> **STATUS: BUILT, DEFAULT-OFF, NOT RUN (2026-08-12).** Code + tests + reconcile gate only —
-> **zero games, zero evals, zero calibration, no deck band claimed, no elo statistic anywhere
-> in this document.** `LeafConfig.opencity_dose` defaults to `0.0`, which is a byte-identical
-> no-op: the champion leaf of record (`a36d2e15a3b3d71d`, `governance/PRODUCTION.yaml`) is
-> untouched and `governance/PRODUCTION.yaml` was not edited. This document is the *design of
-> record* for the term and the *proposed* measurement path; nothing in it is authorized to
-> run. The next step is the calibration in §7, whose read-rule must be committed **before**
-> its numbers are read.
+> **STATUS: RAN AND CLOSED 2026-08-13 — ARM A IS A RESOLVED NEGATIVE AT DEPLOY BUDGET, AT BOTH
+> FUNDED DOSES.** Two cells on band 1.27e11 (retired), **n = 800 deck-paired each**, fair PIMC
+> **k8×1376 = 11008 on BOTH arms**, `fixed_v1` + R9, rust, exact-K 2; candidate = the champion
+> leaf + this term at **arm A** (`opencity_size_min` 4 TILES / `opencity_edge_min` 2 /
+> `opencity_symmetric` True), opponent = the **unmodified** champion `a36d2e15a3b3d71d`.
+> **dose 0.5** (`c128083fb485d20d`): paired margin **−4.06 pts/deck, z −5.86**, elo
+> **−53.85 ± 12.43**, `ms_ratio` **1.011**. **dose 2.0** (`2cf0b7507e6a0921`): **−14.06
+> pts/deck, z −19.38**, elo **−190.27 ± 14.17**, `ms_ratio` **1.013**. Wiring gates O0–O12
+> clean and 800/800 records on both cells; the two cells share **no** decks and are **never**
+> pooled. Both fired pre-registered branch **`N2 NEGATIVE`**
+> ([DEPLOY_PREREG.md](DEPLOY_PREREG.md) §5) ⇒ **the lever closes for arm A**, and the
+> **double-count / horizon caveat of §9 below is now the leading explanation** — written as a
+> caveat *before* the games, and the games agreed with it.
+>
+> ⚠️ **SCOPE — BINDING.** This is a resolved negative **for those two doses on arm A only**:
+> **not** for the term's shape, **not** for arm B (3 tiles / 2 edges), **not** for **arm C
+> (6 tiles / 3 edges — the predicate closest to the source guides' own advice, "avoid three
+> open edges")**, and **not** for the `opencity_symmetric=False` own-side-only variant of §3.
+> B and C were calibrated and **never funded**. **"The open-cities idea is dead" is a
+> FORBIDDEN reading of this document.**
+>
+> Claim **CL-080** · `results.csv` `opencity_A_d0p5_deploy_fixed_v1_vs_champ11008_n800_b127e9`
+> + `opencity_A_d2p0_deploy_fixed_v1_vs_champ11008_n800_b127e9` · DECISIONS 2026-08-13 ·
+> extracts `verdicts/EXTRACT_A_d0p5.json` + `verdicts/EXTRACT_A_d2p0.json`.
+> `LeafConfig.opencity_dose` still defaults to `0.0` (a byte-identical no-op) and
+> `governance/PRODUCTION.yaml` is **untouched — nothing promoted, the champion leaf is
+> unchanged.** Everything below this banner is the design of record as built, unedited.
 
 **Lever identity (for the grep that finds this later):** "penalize large open cities" ·
 "open-city discipline" · `LeafConfig.opencity_dose` / `opencity_size_min` /

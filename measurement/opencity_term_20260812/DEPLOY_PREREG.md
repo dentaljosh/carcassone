@@ -1,9 +1,39 @@
 # OPEN-CITY DISCIPLINE — **DEPLOY-BUDGET** CELLS, PRE-REGISTRATION
 
-> **STATUS: WRITTEN BEFORE THE BAND WAS CLAIMED AND BEFORE GAME 1 (2026-08-13).**
+> **STATUS: WRITTEN BEFORE THE BAND WAS CLAIMED AND BEFORE GAME 1 (2026-08-13). RAN AND READ
+> 2026-08-13 — BOTH CELLS FIRED BRANCH `N2 NEGATIVE`; CLOSED OUT (six touches).**
 > Two cells, no ladder beyond the two calibrated doses. `governance/PRODUCTION.yaml` is
 > untouched on every branch, no `results.csv` row is owed until close-out, and the launching
 > session adjudicates nothing.
+>
+> **OUTCOME (read per §4, gates first, per cell).** `A_d0p5` — 800/800, gates O1–O12 all pass,
+> paired margin **−4.06 pts/deck**, **z −5.86** (se 0.693), elo **−53.85 ± 12.43**, W333/D11/L456,
+> `ms_ratio` **1.011**. `A_d2p0` — 800/800, gates all pass, paired margin **−14.06 pts/deck**,
+> **z −19.38** (se 0.725), elo **−190.27 ± 14.17**, W193/D15/L592, `ms_ratio` **1.013**. Both
+> `|z| ≥ 2.0` with a negative sign ⇒ **§5 branch `N2` on each cell, read independently and never
+> pooled** (§4 rule 4). Per N2's own text, *"If **both** doses read N2 the lever closes for arm A"* —
+> **both did.** The cost cross-check is clean (`ms_ratio` inside the ~0.9–1.1 flag band on both
+> cells, so the loss is not bought with time), and elo agrees in sign with the primary statistic
+> on both cells.
+>
+> **Dose-response is reported as §4 rule 5 requires — an OBSERVATION, not a statistic:** a 4×
+> dose multiplies the harm ~3.5× (margin −4.06 → −14.06; elo −53.9 → −190.3), the two signs
+> agree, and **no slope was fitted and none may be quoted.**
+>
+> ⚠️ **SCOPE, unchanged from §6:** arm A only, at these two doses. Nothing here prices arm B
+> (3/2), **arm C (6/3 — the predicate closest to the source guides' "avoid three open edges";
+> calibrated, never funded)**, the `opencity_symmetric=False` variant, a points-based size axis,
+> or a per-city cap. **"The open-cities idea is dead" is a FORBIDDEN reading.** The §1
+> on-the-bar caveat for `A_d0p5` (10.09 % flip vs a 10 % bar, CI 8.69–11.69 % straddling it) was
+> written to protect a *null* reading and is **not load-bearing here** — the cell resolved, and
+> a cell funded at the edge of the expressiveness floor resolving at z −5.86 argues the floor
+> was, if anything, conservative.
+>
+> Close-out: `results.csv` `opencity_A_d0p5_deploy_fixed_v1_vs_champ11008_n800_b127e9` +
+> `opencity_A_d2p0_deploy_fixed_v1_vs_champ11008_n800_b127e9` · band 1.27e11 **retired**
+> (`decision_influenced = yes`) · claim **CL-080** · DECISIONS 2026-08-13 · extracts
+> `verdicts/EXTRACT_A_d0p5.json`, `verdicts/EXTRACT_A_d2p0.json`, gate markers
+> `/mnt/c/carc-shared/opencity_deploy_20260813/markers/GATES_*.json`. Nothing promoted.
 
 Design of record: [`TERM_SPEC.md`](TERM_SPEC.md) §5 (parameters) + §8 (what the eval must be).
 Cell selection: [`CALIB_READ_RULE.md`](CALIB_READ_RULE.md) (committed `6148388`, **before any

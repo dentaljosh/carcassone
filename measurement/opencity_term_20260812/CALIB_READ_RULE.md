@@ -11,6 +11,21 @@
 > **0 games. No deck band. No elo statistic anywhere in this document.** Nothing here
 > licenses a strength claim, and `governance/PRODUCTION.yaml` is untouched on every branch.
 >
+> **DOWNSTREAM OUTCOME (added at close-out 2026-08-13, banner only — no rule below was
+> touched):** branch **`FUND-SMALLEST`** fired and funded `A_d0p5` + `A_d2p0`
+> ([CALIB_READOUT.md](CALIB_READOUT.md)); both cells then ran at deploy budget and both fired
+> **`N2 NEGATIVE`** (margin z **−5.86** / **−19.38**, elo **−53.85 ± 12.43** / **−190.27 ±
+> 14.17**) ⇒ **the lever closes for ARM A ONLY** — arms **B (3/2)** and **C (6/3, the predicate
+> closest to the source guides' "avoid three open edges")** were calibrated here and **never
+> funded**, and nothing about them is decided. See [DEPLOY_PREREG.md](DEPLOY_PREREG.md) §5 N2
+> and DECISIONS 2026-08-13. **The rule's own §3.1 alternative reading is now on the record as
+> untaken and untested:** read on the CI lower bound the rule would have selected `B_d0p5`, a
+> *looser* predicate; that cell was never played, so this document's selection is the one thing
+> the deploy cells cannot retro-validate. ⚠️ **The instrument lesson of §4b outlives the arm:**
+> arm C read **0.0 %** bite on the golden corpus and **0/288** on the capability probe yet
+> **3.60 %** on real human games — an offline gate corpus can lack the structures real play
+> contains, so a 0 % corpus reading is not evidence a predicate is inert.
+>
 > Direct parent, cloned deliberately rather than re-derived:
 > [denial CALIB_READ_RULE](../denial_screen_20260811/CALIB_READ_RULE.md) +
 > [its READOUT](../denial_screen_20260811/CALIB_READOUT.md). Term build + parameter table:

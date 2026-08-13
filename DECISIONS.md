@@ -5724,3 +5724,150 @@ full-corpus loss-mode autopsy" row all updated. `governance/PRODUCTION.yaml` **u
 **Reversal cost:** none — 0-game oracle instrument, no source/engine/config change, no checkpoint,
 nothing promoted.
 **Phase:** measurement-first
+
+## 2026-08-13 — Open-city discipline RAN AND CLOSED at the deploy budget: branch **N2 NEGATIVE** on BOTH funded doses. The term is **harmful on arm A** — and that is the whole of what it says; arms B and C were calibrated and never funded
+
+**Context.** [PRO_STRATEGY_SCAN F1](docs/research/PRO_STRATEGY_SCAN_2026-08-12.md) was the scan's
+#2-ranked finding and **the only one in it with unanimous convergence** — four independent,
+non-affiliated guide sites (tilelord, boostyourplay, elusivemeeple, meeplemountain) arriving at the
+same mechanism without citing each other: city scoring has **no per-tile-size bonus** (2 pts/tile
+either way) while completion probability falls and steal/merge exposure rises with every extra open
+edge ⇒ *"prefer starting shapes with one open edge, tolerate two, avoid three."*
+[docs/LEVER_INDEX.md](docs/LEVER_INDEX.md) "genuinely untried" item 7 had carried **"penalize large
+open cities" as NEVER-TRIED** since [BACKLOG.md](BACKLOG.md) 2026-05-16 — a named, never-measured
+leaf term that had just acquired external endorsement, which is a rare combination in a program
+where every named axis is measured shut. The mechanism gap is real and was verified in the code
+before any of this ran: the v2.9 leaf is monotone **increasing** in city size through both
+`closure_p[open_n] × city_root_delta` and `flat_base_score`, and monotone in **nothing** that
+measures exposure. Design of record + build (flag-gated, default-off, py+rust, byte-identical
+knob-off over 76,876 golden values, 25 tests):
+[measurement/opencity_term_20260812/TERM_SPEC.md](measurement/opencity_term_20260812/TERM_SPEC.md).
+
+**Options considered.** (a) **A 2750-ablation screen first, deploy only if it survives** — rejected
+on **CL-079**, minted the day before on the targeted-denial pair: a 2750 verdict does not reliably
+transfer to the budget we play at (denial read margin z −2.293 at 2750 and z −0.127 at 11008), so a
+cheap screen buys a number about the instrument, not about play. The prereg pre-committed that a
+2750 screen is **not a substitute** and none was run. (b) **Fund all three threshold arms at both
+doses** (six deploy cells ≈ 4,800 games ≈ several box-days on one laptop) — rejected as
+unaffordable against a lever with a negative prior (the adjacent denial term had just failed).
+(c) **Offline flip-rate calibration under a read-rule committed before any arm's number exists, then
+two deploy-budget cells on the arm it funds** — **chosen**, and it is the denial template cloned
+rather than re-derived.
+
+**What ran — calibration (0 games).** Six cells (three threshold arms × two doses, `symmetric` held
+True) replayed the **26 banked E4 human-vs-champion archives**, re-running the production search at
+every champion decision ply under CRN and recording whether the **pick changes**; 1,556 graded
+champion plies per cell; **26/26 archives `replay_scores_match: true`**, each replayed at its own
+rules epoch and budget. Branch **`FUND-SMALLEST`** fired
+([CALIB_READ_RULE.md](measurement/opencity_term_20260812/CALIB_READ_RULE.md) `6148388` →
+[CALIB_READOUT.md](measurement/opencity_term_20260812/CALIB_READOUT.md)) and funded exactly **arm A
+(4 tiles / 2 edges) at doses 0.5 and 2.0** — flip rates **10.09 %** (157/1556) and **18.89 %**
+(294/1556). Arm B (3/2) read 13.56 / 23.65 %, arm C (6/3) read 3.60 / 5.85 %; **neither was funded.**
+
+**What ran — the two deploy-budget cells.** Pre-registered before the band was claimed and before
+game 1 ([DEPLOY_PREREG.md](measurement/opencity_term_20260812/DEPLOY_PREREG.md): gates O0–O12,
+read-rules, branch map N0–N4). Band **1.27e11**, **n = 800 deck-paired each** (400 decks × 2 seats,
+**disjoint seed ranges — the two cells share no deck and are never pooled**), fair PIMC
+**k8×1376 = 11008 on BOTH arms** (`eval_fair_puct.py --info fair --opponent fair-champion`),
+`fixed_v1` + `CARCASSONNE_FIX_R9=1`, rust, exact-K 2. Candidate = the champion leaf
+`a36d2e15a3b3d71d` **plus** the term, injected candidate-side only; opponent = the **unmodified**
+champion. Laptop-only at W22, sequential (the local box was running the Joshua-bot tournament).
+**800/800 records and all 13 wiring gates clean on both cells** — including **O3, the *resolved*
+`opencity_dose` read from the manifest**, which is the gate that proves the dose is live: a moved
+`cand_leaf_hash` does **not**, because `_LEAF_HASH_EXCLUDE_IF_DEFAULT` keeps moved thresholds in the
+hashed dict even at dose 0.
+
+**What was found.**
+
+- **`A_d0p5` (dose 0.5, `c128083fb485d20d`)** — W333/D11/L456, **deck-paired margin −4.06 pts/deck,
+  primary statistic z −5.86** (se 0.693), elo **−53.85 ± 12.43**, `ms_ratio` **1.011**.
+- **`A_d2p0` (dose 2.0, `2cf0b7507e6a0921`)** — W193/D15/L592, **margin −14.06 pts/deck, z −19.38**
+  (se 0.725), elo **−190.27 ± 14.17**, `ms_ratio` **1.013**.
+- **Both fired pre-registered branch `N2 NEGATIVE`** (`|z| ≥ 2.0`, negative sign), read
+  independently per cell, gates before numbers. N2's own text: *"If **both** doses read N2 the lever
+  closes for arm A."* Both did. ⭐ These are **resolved negatives, not bounded nulls** — the house's
+  usual product from a leaf-knob cell is a ±20–35 elo bound, and this is ~3σ and ~10σ past the bar
+  on the robust statistic, with elo agreeing in sign in both cells.
+- **The loss is not bought with time.** Both `ms_ratio`s sit inside the ~0.9–1.1 flag band, so the
+  candidate is neither cheaper nor materially more expensive per move — this is a strength effect,
+  not a budget artifact.
+- **Dose-response — an OBSERVATION, not a statistic.** 4× the dose gives ~3.5× the harm (−4.06 →
+  −14.06 pts/deck; −53.9 → −190.3 elo), same sign, both resolved. Read rule 5 of the prereg says
+  exactly this in advance: *"**Dose-response is an OBSERVATION, not a statistic.** If the two signs
+  agree, say so as a qualitative remark with both CIs shown; do not fit a slope."* **No slope was
+  fitted and none may be quoted.** It corroborates direction; it adds no significance.
+- **The mechanism was named before the games and the games agreed with it.** TERM_SPEC §9's
+  double-count / horizon caveat — *the search already prices exposure through the closure schedule,
+  so a static leaf penalty double-counts and distorts* — is now the leading explanation, and it is
+  the **second** time this campaign that a term pricing something the search already finds
+  emergently has come back negative (J12/denial being the first).
+
+**⚠️ What is NOT concluded — binding on every downstream reader.**
+
+1. **The open-cities idea is not dead.** The prereg licenses a resolved negative *for those two
+   doses on **arm A** only*. **Arms B (3/2) and C (6/3) are priced by nothing.**
+2. **Arm C is the arm the literature actually endorses** — `edge_min = 3` is the guides' own "avoid
+   three open edges" — and it was **not declined on evidence**: its calibration bite (3.60 % / 5.85 %
+   flip) sat near or below the 10 % resolvable floor, so funding it needs a *re-calibrated dose
+   ladder*, not a re-run.
+3. **Not the term's shape.** The tested form is an **uncapped product** of two linear excesses; a
+   10-tile 4-open city contributes 21 leaf points at dose 1.0 (TERM_SPEC §9 open question 3), so part
+   of the harm may be a scale/blow-up artifact rather than a verdict on the mechanism. A capped or
+   additive form is untested.
+4. **Not the `opencity_symmetric=False` own-side-only variant** (TERM_SPEC §3), which the prereg had
+   held in reserve for the *positive* branch.
+5. **Nothing about the human heuristic.** The guides advise a human choosing which city to grow; this
+   measures a static penalty inside an 11,008-sim PIMC that already prices exposure. The negative is
+   as much evidence about our search's existing pricing as about the advice.
+6. **No transfer.** One band, one budget, one harness (CL-051's consumer-binding lesson); and per
+   CL-079 nothing here may be read onto the 2750 ablation instrument, in either direction.
+7. **Nothing promoted.** `governance/PRODUCTION.yaml` untouched; the term ships default-off.
+
+**The on-the-bar selection, recorded honestly.** `A_d0p5` was funded at **10.09 % against a 10 %
+bar**, with a Wilson-95 interval (**8.69–11.69 %**) that **straddles** the bar; read on the lower
+bound the same rule would have chosen **`B_d0p5`**, a *looser* predicate at the same dose. That was
+written into CALIB_READOUT §3 **at calibration time, not after**. It was a caveat armed to forbid
+reading a *null* in that cell as "the term does not express" — and it never had to be used, because
+the cell resolved at z −5.86. The untaken `B_d0p5` remains untested.
+
+**⭐ The instrument lesson that outlives the arm.** Arm C fired on **0.0 %** of golden-corpus leaf
+values and on **0 of 288** capability-probe values (on *both* the rust and the python leaf) — and
+then bit **3.60 %** of real champion plies in games against a human. The reconciliation is that the
+golden corpus and the probe's scripted playouts simply do not contain 6-tile cities with 3 open
+edges, while real play does. **A predicate reading 0.0 % on an offline gate corpus is not thereby
+inert, and a capability probe cannot gate an arm whose bite it cannot reproduce.** That is a
+standing caveat on every offline gate this program runs, not a fact about open cities.
+
+**Claim minted: CL-080 (Established, high)** — *the open-city term is harmful at deploy budget on
+arm A at both funded doses* — scoped in its own `claim` field to arm A, with counterevidence
+recording the uncapped-shape confound and the unfunded arms, and a **falsifier that is exactly arm C
+at a re-calibrated dose** (or the asymmetric or capped form) at deploy budget, n ≥ 800, fresh band,
+pre-registered. Mostly-nulls registries earn little from another bound; a *resolved* negative at the
+budget of record, replicated across two doses on disjoint decks with a monotone dose-response, is a
+proposition worth being able to cite and worth being able to kill. **CL-079 is touched but not
+changed:** this lever went **straight to the deploy budget with no 2750 screen at all**, which is
+CL-079's own recommended practice, so the instance is recorded on that row — while noting it is
+**not** a transfer datapoint and does **not** discharge CL-079's falsifier, since no 2750 arm of this
+term exists to compare against.
+
+**Consequences (the six touches).** `experiments/results.csv` — **two rows owed and written**
+(`opencity_A_d0p5_deploy_fixed_v1_vs_champ11008_n800_b127e9`,
+`opencity_A_d2p0_deploy_fixed_v1_vs_champ11008_n800_b127e9`): unlike this session's 0-game oracle
+instruments, these are **1,600 real head-to-head games against the production champion**. This
+DECISIONS entry. Status banners stamped on `TERM_SPEC.md` (which still read "BUILT … NOT RUN"),
+`DEPLOY_PREREG.md`, `CALIB_READ_RULE.md` and `CALIB_READOUT.md`.
+`governance/BAND_REGISTRY.csv` — band **1.27e11 `claimed` → `retired`, `decision_influenced = yes`**
+(it adjudicated a lever ⇒ it leaves confirmatory use), with the reserved headroom
+`+800..+1599` **released unused** (no top-up was ever licensed). `governance/CLAIM_REGISTRY.csv` —
+**CL-080 minted**, CL-079 annotated. STATUS top block updated in place; roadmap NOW block and the
+three `docs/LEVER_INDEX.md` touch-points (the "open-city discipline" row, the
+"leaf ideas from the competitive-strategy literature" row whose **"penalize large open cities remains
+NEVER-TRIED" clause is now FALSE for arm A**, and "genuinely untried" item 7) all corrected — with
+arms B/C explicitly preserved as never-tried in each.
+
+**Reversal cost:** ~nil to reverse the *code* — the term ships **default-off** (`opencity_dose = 0.0`
+is a byte-identical no-op; the champion leaf `a36d2e15a3b3d71d` is unchanged and was never touched),
+so nothing has to be un-shipped. Reversing the *verdict's scope* costs one fresh band and one
+pre-registered deploy-budget cell (~800 games ≈ one laptop-night at W22) on arm C or a capped form.
+Reversing the arm-A numbers themselves is not on offer at any n — they are resolved.
+**Phase:** measurement-first (Phase 4 era; strength levers, classical champion).
