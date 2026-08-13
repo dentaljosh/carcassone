@@ -38,11 +38,14 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 # F7b farm knockouts (2026-08-02) postdate a36d2e15 too, so they follow the F6 rule.
 # The Part C phase multiplier (2026-08-09) postdates it as well — same rule.
 # Targeted denial (2026-08-11) likewise — same rule.
+# Open-city discipline (2026-08-12) likewise — same rule.
 _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
                                  "farm_base_off": False, "farm_growth_off": False,
                                  "v29_phase_beta": 0.0, "v29_phase_norm": 1.0,
                                  "denial_dose": 0.0, "denial_size_min": 8.0,
-                                 "denial_open_max": 2}
+                                 "denial_open_max": 2,
+                                 "opencity_dose": 0.0, "opencity_size_min": 4.0,
+                                 "opencity_edge_min": 2, "opencity_symmetric": True}
 
 
 def _leaf_dict(cfg) -> dict:
@@ -193,6 +196,27 @@ def _assert_cy_float_path(cfg) -> None:
         import sys as _sys
         print("[leaf-override] WARNING: targeted denial set (denial_dose="
               f"{getattr(cfg, 'denial_dose', 0.0)}) — the candidate leaf leaves the "
+              "Cython fast path for the pure-Python flat leaf (bit-exact, much slower "
+              "per leaf). Intended only with --backend rust, where no Python leaf runs.",
+              file=_sys.stderr)
+    # Open-city discipline: the THIRD knob family with deliberately no cy implementation
+    # (the F7b/denial pattern — candidate cells run `--backend rust`). A set dose leaves
+    # the cy fast path for the bit-exact pure-Python flat leaf (scripts/rustport/
+    # reconcile_leaf.py --configs opencity); a SPEED fact, not a correctness one, so this
+    # WARNS instead of raising (see the F7b clause). Threshold sanity IS fatal: a sub-1
+    # edge_min or size_min would define a DIFFERENT term than the pre-registered one
+    # (open_n == 0 is the D16 unclosable board-edge city, which the term never prices).
+    if getattr(cfg, "opencity_dose", 0.0) != 0.0:
+        import sys as _sys
+        if int(getattr(cfg, "opencity_edge_min", 2)) < 1:
+            raise ValueError("--cand-leaf-json: opencity_edge_min must be >= 1 "
+                             "(open_n == 0 is the unclosable board-edge city, which the "
+                             "open-city term never prices)")
+        if float(getattr(cfg, "opencity_size_min", 4.0)) < 1.0:
+            raise ValueError("--cand-leaf-json: opencity_size_min must be >= 1 "
+                             "(a city component always spans at least one tile)")
+        print("[leaf-override] WARNING: open-city discipline set (opencity_dose="
+              f"{getattr(cfg, 'opencity_dose', 0.0)}) — the candidate leaf leaves the "
               "Cython fast path for the pure-Python flat leaf (bit-exact, much slower "
               "per leaf). Intended only with --backend rust, where no Python leaf runs.",
               file=_sys.stderr)

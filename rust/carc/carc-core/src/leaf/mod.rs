@@ -159,6 +159,23 @@ pub struct LeafConfig {
     pub denial_size_min: f64,
     /// `LeafConfig.denial_open_max` — max distinct open cells to count as near-complete.
     pub denial_open_max: i32,
+    /// Open-city discipline — penalize the acting side's OWN large open cities
+    /// (`virtual_score_v2.LeafConfig.opencity_dose`; BACKLOG 2026-05-16, LEVER_INDEX
+    /// "penalize large open cities", spec
+    /// `measurement/opencity_term_20260812/TERM_SPEC.md`). `0.0` (default) == term
+    /// fully off == the champion leaf, bit-for-bit (early branch, never a subtract of
+    /// 0.0). A nonzero dose subtracts `dose * T` where `T` is the SIGNED differential
+    /// built by [`opencity_term`].
+    pub opencity_dose: f64,
+    /// `LeafConfig.opencity_size_min` — city-size threshold in DISTINCT TILES.
+    /// ⚠️ NOT the same units as `denial_size_min` (points / `city_root_delta`).
+    pub opencity_size_min: f64,
+    /// `LeafConfig.opencity_edge_min` — minimum distinct open cells for the penalty
+    /// to fire (default 2 == the guides' "prefer one, tolerate two, avoid three").
+    pub opencity_edge_min: i32,
+    /// `LeafConfig.opencity_symmetric` — `true` (default) makes `T = pen(self) -
+    /// pen(opp)`, keeping the leaf antisymmetric; `false` makes `T = pen(self)`.
+    pub opencity_symmetric: bool,
 }
 
 /// `flat_leaf._PHASE_K0` — mid-deck, frozen by the prereg.
@@ -207,6 +224,10 @@ impl LeafConfig {
             denial_dose: 0.0,
             denial_size_min: 8.0,
             denial_open_max: 2,
+            opencity_dose: 0.0,
+            opencity_size_min: 4.0,
+            opencity_edge_min: 2,
+            opencity_symmetric: true,
         }
     }
 
@@ -894,6 +915,89 @@ pub fn denial_term(state: &GameState, player: usize, d: &Decomp, cfg: &LeafConfi
 }
 
 // ---------------------------------------------------------------------------
+// Open-city discipline (BACKLOG 2026-05-16 / PRO_STRATEGY_SCAN §F1; building 2026-08-12)
+// ---------------------------------------------------------------------------
+
+/// `flat_leaf.flat_opencity_term` — the SIGNED open-city differential `T` from
+/// `player`'s POV; the leaf subtracts `cfg.opencity_dose * T`.
+///
+/// `T = pen(player) - pen(opp)` when `cfg.opencity_symmetric` (the default — so
+/// `T` may be NEGATIVE when the opponent is the more overextended builder and the
+/// leaf stays antisymmetric), else `pen(player)` alone.
+///
+/// `pen(pl) >= 0` sums, over every city component where `pl` holds a STRICT
+/// weighted-meeple majority (big meeple = 2 — tied / unmeepled never fire; the
+/// scope is deliberately the BUILDER's own object, never the opponent's, see the
+/// spec), which is incomplete with `0 < open_n` and `open_n >= opencity_edge_min`,
+/// and which spans `city_root_tiles >= opencity_size_min` DISTINCT TILES (tiles,
+/// NOT `city_root_delta` points — denial's axis), the contribution
+/// `(tiles - opencity_size_min + 1.0) * (open_n - opencity_edge_min + 1.0)`
+/// (left-associative inside each factor, matching Python's
+/// `(float(tiles) - size_min + 1.0) * (float(open_n) - float(edge_min) + 1.0)`).
+/// Each side's sum is `fsum`-reduced so iteration order is irrelevant.
+///
+/// ⚠️ The penalty ADJUSTS the existing city terms, never replaces them: the
+/// closure-anticipation credit for the same city is untouched, and this is applied
+/// as a separate uncapped subtraction in [`leaf_terms_with`].
+pub fn opencity_term(state: &GameState, player: usize, d: &Decomp, cfg: &LeafConfig) -> f64 {
+    // city root -> per-player weighted meeple counts, first-touch order
+    let mut city_counts: Vec<(u32, [i64; 2])> = Vec::new();
+    for pl in 0..2 {
+        for mp in &state.placed_meeples[pl] {
+            let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
+            let tile = tiles::tile(state.get_tile(r, c).expect("meeple on an empty cell"));
+            if tile.get_type(side) != Some(TerrainType::City) {
+                continue;
+            }
+            let root = match d.city_side_root(r, c, side) {
+                Some(x) => x,
+                None => continue,
+            };
+            let w = meeple_weight(mp.meeple_type);
+            match city_counts.iter_mut().find(|e| e.0 == root) {
+                Some(e) => e.1[pl] += w,
+                None => {
+                    let mut cnt = [0i64; 2];
+                    cnt[pl] += w;
+                    city_counts.push((root, cnt));
+                }
+            }
+        }
+    }
+    let mut contribs: [Vec<f64>; 2] = [Vec::new(), Vec::new()];
+    for &(root, cnt) in &city_counts {
+        let owner = if cnt[0] > cnt[1] {
+            0usize
+        } else if cnt[1] > cnt[0] {
+            1usize
+        } else {
+            continue; // tied -> nobody owns the overextension
+        };
+        let r = root as usize;
+        if d.city_root_finished[r] {
+            continue;
+        }
+        let open_n = d.city_root_open_n[r] as i32;
+        if open_n <= 0 || open_n < cfg.opencity_edge_min {
+            continue; // unclosable, or not wide
+        }
+        let n_tiles = d.city_root_tiles[r];
+        if (n_tiles as f64) < cfg.opencity_size_min {
+            continue; // not large
+        }
+        contribs[owner].push(
+            (n_tiles as f64 - cfg.opencity_size_min + 1.0)
+                * (open_n as f64 - cfg.opencity_edge_min as f64 + 1.0),
+        );
+    }
+    let pen_self = fsum(&contribs[player]);
+    if !cfg.opencity_symmetric {
+        return pen_self;
+    }
+    pen_self - fsum(&contribs[1 - player])
+}
+
+// ---------------------------------------------------------------------------
 // The leaf
 // ---------------------------------------------------------------------------
 
@@ -908,6 +1012,9 @@ pub struct LeafTerms {
     /// The RAW targeted-denial magnitude `T` (the leaf subtracts `dose * T`);
     /// `0.0` whenever `denial_dose == 0.0` (the term is never computed then).
     pub denial_term: f64,
+    /// The SIGNED open-city differential `T` (the leaf subtracts `dose * T`; it may
+    /// be negative). `0.0` whenever `opencity_dose == 0.0` (never computed then).
+    pub opencity_term: f64,
     pub meeple_term: f64,
     pub return_term: f64,
     pub flip_term: f64,
@@ -972,6 +1079,19 @@ pub fn leaf_terms_with(
         score -= cfg.denial_dose * den_term;
     }
 
+    // Open-city discipline: a SIGNED, uncapped subtraction applied AFTER denial —
+    // two separate gated statements in this fixed order (float addition is
+    // non-associative, so a fused expression would break bit-exactness against
+    // Python). It ADJUSTS the city terms, never replaces them. dose == 0.0
+    // (default/champion) takes an early branch — never a subtract of 0.0 — so
+    // default traffic is bit-identical, not merely equal. Mirrors
+    // `flat_leaf.flat_virtual_score_v2`.
+    let mut oc_term = 0.0;
+    if cfg.opencity_dose != 0.0 {
+        oc_term = opencity_term(state, player, d, cfg);
+        score -= cfg.opencity_dose * oc_term;
+    }
+
     let meeple_term = match &cfg.v29_meeple_curve {
         Some(curve) => {
             // Part C: beta == 0.0 (default/champion) takes the UNMODIFIED expression
@@ -1017,6 +1137,7 @@ pub fn leaf_terms_with(
         bonus_self,
         bonus_opp,
         denial_term: den_term,
+        opencity_term: oc_term,
         meeple_term,
         return_term: r_term,
         flip_term: f_term,

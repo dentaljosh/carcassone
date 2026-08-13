@@ -56,9 +56,14 @@ including a beta=0 identity control and two betas large enough to exercise the
 `core` plus four **targeted-denial** cells (`denial_dose` / `denial_size_min` /
 `denial_open_max`, LEVER_INDEX "targeted denial", building 2026-08-11) including
 a dose=0 identity control with MOVED thresholds (must reproduce `prod-curve125`
-exactly — the dose gates the whole term).
+exactly — the dose gates the whole term). `opencity` = `core` plus five
+**open-city-discipline** cells (`opencity_dose` / `opencity_size_min` /
+`opencity_edge_min` / `opencity_symmetric`, LEVER_INDEX "penalize large open
+cities", spec `measurement/opencity_term_20260812/TERM_SPEC.md`, building
+2026-08-12) including a dose=0 identity control with MOVED thresholds and one
+asymmetric (`opencity_symmetric=False`) cell.
 
-⚠️ The `farmoff` and `denial-d*` configs are the families compared on **two** legs, not three:
+⚠️ The `farmoff`, `denial-d*` and `opencity-d*` configs are the families compared on **two** legs, not three:
 `flat_leaf_cy.pyx` deliberately does not implement them (roadmap F7b — the ablation
 cells run `--backend rust`, so no Python leaf is computed in-cell, and the exact-K
 tail scores the TRUE final score with farms intact by design). For those configs the
@@ -127,14 +132,17 @@ _CURVE_V29 = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0)
 _CURVE125 = (-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25)   # governance/PRODUCTION.yaml
 
 
-# F7b farm-knockout + targeted-denial configs. These are the TWO knob families the
-# Cython leaf deliberately does not implement (roadmap F7b / the denial build
-# 2026-08-11: the candidate cells run `--backend rust`, where no Python leaf is
-# computed at all), so for these the gate runs TWO legs — pure-Python flat vs Rust —
-# and asserts separately that the DISPATCHER refuses the cy fast path for them
-# (tests/test_f7b_farm_knockout.py / tests/test_denial_term.py).
+# F7b farm-knockout + targeted-denial + open-city configs. These are the THREE knob
+# families the Cython leaf deliberately does not implement (roadmap F7b / the denial
+# build 2026-08-11 / the open-city build 2026-08-12: the candidate cells run
+# `--backend rust`, where no Python leaf is computed at all), so for these the gate
+# runs TWO legs — pure-Python flat vs Rust — and asserts separately that the
+# DISPATCHER refuses the cy fast path for them (tests/test_f7b_farm_knockout.py /
+# tests/test_denial_term.py / tests/test_opencity_term.py).
 CY_UNSUPPORTED = frozenset({"farmbaseoff", "farmgrowthoff", "farmbothoff",
-                            "denial-d0.5", "denial-d1.0", "denial-d2.0-s6-o3"})
+                            "denial-d0.5", "denial-d1.0", "denial-d2.0-s6-o3",
+                            "opencity-d0.5", "opencity-d1.0", "opencity-d2.0-s6-e3",
+                            "opencity-d1.0-asym"})
 
 
 def _cfgs(which: str) -> dict[str, LeafConfig]:
@@ -188,6 +196,32 @@ def _cfgs(which: str) -> dict[str, LeafConfig]:
             "denial-d1.0": LeafConfig(**prodd, denial_dose=1.0),
             "denial-d2.0-s6-o3": LeafConfig(**prodd, denial_dose=2.0,
                                             denial_size_min=6.0, denial_open_max=3),
+        })
+        return core
+    if which == "opencity":
+        # Open-city discipline (LeafConfig.opencity_dose/_size_min/_edge_min/
+        # _symmetric). Built on the champion leaf so the ONLY difference from
+        # `prod-curve125` is the open-city penalty. `opencity-d0-identity` is the
+        # IDENTITY control — dose 0.0 with the thresholds MOVED and symmetry FLIPPED
+        # must reproduce `prod-curve125` exactly on every leg (the dose gates the
+        # whole term; the other three knobs are inert while it is 0.0). The
+        # d0.5/d1.0 cells are the screen doses at the default (4 tiles, 2 edges)
+        # knobs; the d2.0 cell moves BOTH thresholds; the asym cell exercises the
+        # own-side-only (antisymmetry-breaking) branch.
+        prodo = dict(closure_p=dict(_CLOSURE), bonus_cap=8.0, opp_bonus_cap=8.0,
+                     meeple_k=2.0, v29_meeple_curve=_CURVE125)
+        core.update({
+            "opencity-d0-identity": LeafConfig(**prodo, opencity_dose=0.0,
+                                               opencity_size_min=2.0,
+                                               opencity_edge_min=1,
+                                               opencity_symmetric=False),
+            "opencity-d0.5": LeafConfig(**prodo, opencity_dose=0.5),
+            "opencity-d1.0": LeafConfig(**prodo, opencity_dose=1.0),
+            "opencity-d2.0-s6-e3": LeafConfig(**prodo, opencity_dose=2.0,
+                                              opencity_size_min=6.0,
+                                              opencity_edge_min=3),
+            "opencity-d1.0-asym": LeafConfig(**prodo, opencity_dose=1.0,
+                                             opencity_symmetric=False),
         })
         return core
     if which == "farmoff":
@@ -269,6 +303,11 @@ def _to_rs(cfg: LeafConfig):
         float(getattr(cfg, "denial_dose", 0.0)),
         float(getattr(cfg, "denial_size_min", 8.0)),
         int(getattr(cfg, "denial_open_max", 2)),
+        # Open-city discipline — likewise passed unconditionally (same rationale).
+        float(getattr(cfg, "opencity_dose", 0.0)),
+        float(getattr(cfg, "opencity_size_min", 4.0)),
+        int(getattr(cfg, "opencity_edge_min", 2)),
+        bool(getattr(cfg, "opencity_symmetric", True)),
     )
 
 
@@ -647,7 +686,7 @@ def main(argv=None) -> int:
     ap.add_argument("--corpus", action="append", default=None,
                     choices=CORPORA + ["all"])
     ap.add_argument("--configs", default="all",
-                    choices=["core", "all", "farmoff", "phase", "denial"])
+                    choices=["core", "all", "farmoff", "phase", "denial", "opencity"])
     ap.add_argument("--limit", type=int, default=None,
                     help="cap records per corpus (screening only)")
     ap.add_argument("--stride", type=int, default=8,
@@ -726,7 +765,7 @@ def main(argv=None) -> int:
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     tag = "_".join(corpora) if len(corpora) < len(CORPORA) else "all"
-    if args.configs in ("farmoff", "phase", "denial"):   # never overwrite the standing G2 artifact
+    if args.configs in ("farmoff", "phase", "denial", "opencity"):   # never overwrite the standing G2 artifact
         tag = f"{args.configs}_{tag}"
     out = Path(args.out) if args.out else OUTDIR / f"G2_leaf_{tag}.json"
     out.write_text(json.dumps(payload, indent=2, default=str))

@@ -128,6 +128,12 @@ _FROZEN_HASH_DEFAULT_OFF = {
     "denial_dose": 0.0,
     "denial_size_min": 8.0,
     "denial_open_max": 2,
+    # Open-city discipline (BACKLOG 2026-05-16 / PRO_STRATEGY_SCAN §F1, 2026-08-12):
+    # default-off candidate-only knobs. Excluded on the same grounds as F6/F7b/Part C.
+    "opencity_dose": 0.0,
+    "opencity_size_min": 4.0,
+    "opencity_edge_min": 2,
+    "opencity_symmetric": True,
 }
 
 

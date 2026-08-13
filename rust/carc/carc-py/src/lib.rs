@@ -118,6 +118,10 @@ impl PyLeafConfig {
         denial_dose = 0.0,
         denial_size_min = 8.0,
         denial_open_max = 2,
+        opencity_dose = 0.0,
+        opencity_size_min = 4.0,
+        opencity_edge_min = 2,
+        opencity_symmetric = true,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -140,6 +144,10 @@ impl PyLeafConfig {
         denial_dose: f64,
         denial_size_min: f64,
         denial_open_max: i32,
+        opencity_dose: f64,
+        opencity_size_min: f64,
+        opencity_edge_min: i32,
+        opencity_symmetric: bool,
     ) -> Self {
         PyLeafConfig {
             inner: leaf::LeafConfig {
@@ -162,6 +170,10 @@ impl PyLeafConfig {
                 denial_dose,
                 denial_size_min,
                 denial_open_max,
+                opencity_dose,
+                opencity_size_min,
+                opencity_edge_min,
+                opencity_symmetric,
             },
         }
     }
@@ -529,6 +541,7 @@ impl PyMirrorState {
         d.set_item("bonus_self", t.bonus_self)?;
         d.set_item("bonus_opp", t.bonus_opp)?;
         d.set_item("denial_term", t.denial_term)?;
+        d.set_item("opencity_term", t.opencity_term)?;
         d.set_item("meeple_term", t.meeple_term)?;
         d.set_item("return_term", t.return_term)?;
         d.set_item("flip_term", t.flip_term)?;
