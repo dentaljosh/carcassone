@@ -11,9 +11,17 @@ Nothing here is a result: **no `delta`, no mean, no headroom has been read from 
 the analyser has **not** been run, and this document changes **no** read-rule in
 [DESIGN.md](DESIGN.md). Markers: `DONE_STAGEB` (+ `DONE_STAGEB_cell01…04`) / `FAILED_STAGEB`.
 
-**Next step is the OWNER's:** one pooled run of
-`scripts/tiletie/analyze_tiletie.py --records-root /mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct --plan-dir measurement/tiletie_pricing_20260812/positions_pooled`
-— read §4 below before reading its output.
+⚠️ **A pooled read-out ALREADY EXISTS and was NOT produced by this run's operator.** A
+separate session ran the analyser **25 s** after `DONE_STAGEB` landed and committed
+[`readout_POOLED/`](readout_POOLED/VERDICT.md) as `04b93e46`. Provenance checked, not
+assumed: it read the intended inputs (`--plan-dir positions_pooled`, `--records-root
+/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct`) at the pre-registered knobs
+(bootstrap 20,000, seed 20260812, `parity_base 1`, `σ_game 20.4`), on the **complete**
+corpus (`scored_complete 733/733`, `scored_partial 0`, `absent 0`) with **every integrity
+counter zero**. It is a valid pooled read; it is simply not the owner's own. `results.branch`
+= **4** for the second time. **§4.1 below was written before any of it was read — it governs
+that outcome, and it was not amended afterwards** (see the git history: this file's §4.1 is
+unchanged since `dd9df671`, committed at 10:0x, before the first Stage B record existed).
 
 ⚠️ **DESIGN.md's Stage-A close-out banner still says "Stage B is NOT funded."** That was
 true when it was written (2026-08-13 ~08:00) and is now stale: the owner funded Stage B the
