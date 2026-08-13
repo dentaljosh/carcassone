@@ -826,6 +826,10 @@ def main(argv=None) -> int:
     ap.add_argument("--agent-seed-mode", choices=("production", "fixed"), default="production")
     ap.add_argument("--trace-dir", default="")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--resume", action="store_true",
+                    help="append to an existing rows.jsonl and skip roots already in it "
+                         "(rows are streamed as they complete, so a killed run resumes "
+                         "at root granularity)")
     a = ap.parse_args(argv)
 
     out = Path(a.out_dir)
@@ -848,14 +852,34 @@ def main(argv=None) -> int:
         geom["draw_rule"] = str(gk["draw_rule"])
 
     if a.roots_format == "e4":
-        roots = load_e4_roots(a.roots, prof.name, per_game=a.e4_plies_per_game,
-                              sample_seed=a.sample_seed)
+        roots_all = load_e4_roots(a.roots, prof.name, per_game=a.e4_plies_per_game,
+                                  sample_seed=a.sample_seed)
     else:
-        roots = [json.loads(l) for l in open(a.roots) if l.strip()]
+        roots_all = [json.loads(l) for l in open(a.roots) if l.strip()]
+    roots = list(roots_all)
     if a.n and a.n < len(roots):
         if a.sample == "random":
             random.Random(a.sample_seed).shuffle(roots)
         roots = roots[:a.n]
+
+    # --- resume: rows are streamed, so a killed run restarts at root granularity
+    rows_path = out / "rows.jsonl"
+    done_rows: list = []
+    if a.resume and rows_path.exists():
+        for line in rows_path.read_text().splitlines():
+            if line.strip():
+                try:
+                    done_rows.append(json.loads(line))
+                except json.JSONDecodeError:      # a torn last line from a hard kill
+                    break
+        done_rids = {r.get("rid") for r in done_rows}
+        before = len(roots)
+        roots = [r for r in roots
+                 if (r.get("rid") or f"s{r.get('deck_seed')}_p{r.get('ply')}") not in done_rids]
+        print(f"[resume] {len(done_rows)} row(s) already on disk; "
+              f"{len(roots)}/{before} root(s) left", flush=True)
+    elif rows_path.exists():
+        rows_path.unlink()
 
     opt_d = dict(
         k_dets=a.k_dets, sims=a.sims, geom=geom, wide=not a.no_wide,
@@ -900,31 +924,39 @@ def main(argv=None) -> int:
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
-    rows = []
+    new_rows: list = []
     t0 = time.time()
-    if a.workers <= 1:
-        _init(opt_d)
-        for i, r in enumerate(roots):
-            rows.append(_cell(r))
-            print(f"[{i + 1}/{len(roots)}] {rows[-1].get('rid')} "
-                  f"trunc={rows[-1].get('n_nodes_truncated')}/{rows[-1].get('n_nodes_censused')} "
-                  f"{rows[-1].get('secs')}s", flush=True)
-    else:
-        import multiprocessing as mp
-        ctx = mp.get_context("spawn")
-        with ctx.Pool(a.workers, initializer=_init, initargs=(opt_d,)) as pool:
-            for i, r in enumerate(pool.imap_unordered(_cell, roots, chunksize=1)):
-                rows.append(r)
-                print(f"[{i + 1}/{len(roots)}] {r.get('rid')} "
-                      f"trunc={r.get('n_nodes_truncated')}/{r.get('n_nodes_censused')} "
-                      f"{r.get('secs')}s", flush=True)
+    fh = open(rows_path, "a" if a.resume else "w")
 
-    with open(out / "rows.jsonl", "w") as fh:
-        for r in rows:
-            fh.write(json.dumps(r) + "\n")
+    def _emit(i, r):
+        new_rows.append(r)
+        fh.write(json.dumps(r) + "\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+        print(f"[{i + 1}/{len(roots)}] {r.get('rid')} "
+              f"trunc={r.get('n_nodes_truncated')}/{r.get('n_nodes_censused')} "
+              f"{r.get('secs')}s", flush=True)
+
+    try:
+        if a.workers <= 1:
+            _init(opt_d)
+            for i, r in enumerate(roots):
+                _emit(i, _cell(r))
+        else:
+            import multiprocessing as mp
+            ctx = mp.get_context("spawn")
+            with ctx.Pool(a.workers, initializer=_init, initargs=(opt_d,)) as pool:
+                for i, r in enumerate(pool.imap_unordered(_cell, roots, chunksize=1)):
+                    _emit(i, r)
+    finally:
+        fh.close()
+
+    rows = done_rows + new_rows
     summ = summarize(rows)
     summ["wall_secs"] = round(time.time() - t0, 1)
     summ["workers"] = a.workers
+    summ["n_rows_resumed"] = len(done_rows)
+    summ["n_rows_new"] = len(new_rows)
     (out / "summary.json").write_text(json.dumps(summ, indent=2))
     print(json.dumps(summ, indent=2))
 

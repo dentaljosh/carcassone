@@ -413,35 +413,38 @@ truncation events per champion-game**; leg B ≤ 2.2 × 10⁻⁷ ⇒ **≤ 0.17 
 That is the point of running it — the pilot's ≤ 6/game is not a useful bound, and
 ≤ 0.2/game is.
 
-**Ready-to-launch (the two legs MUST be separate processes — `CARCASSONNE_FIX_R9`
-is import-latched in a Rust `OnceLock`):**
+**The launcher is [`RUN_CMD.sh`](RUN_CMD.sh)** — the scheduler's dispatch target for
+queue item `window_truncation_census` (`scripts/scheduler/queue.json`). It is the
+single source of the launch commands; do not re-type them from prose.
 
 ```bash
-cd /home/doctor/projects/carcassone
-
-# --- leg A: walled, the CL-070 bank (all 898 roots) ---
-nohup nice -n 19 .venv/bin/python -u \
-  scripts/measurement_infra/window_truncation_census.py \
-  --roots /mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl \
-  --rules-profile walled \
-  --out-dir measurement/window_truncation_20260813/census_walled \
-  --workers 8 --tag census_walled_n898 \
-  > measurement/window_truncation_20260813/census_walled.log 2>&1 &
-
-# --- leg B: fixed_v1, every champion decision ply in the E4 archives ---
-CARCASSONNE_FIX_R9=1 nohup nice -n 19 .venv/bin/python -u \
-  scripts/measurement_infra/window_truncation_census.py \
-  --roots-format e4 --roots measurement/e4_games \
-  --rules-profile fixed_v1 \
-  --out-dir measurement/window_truncation_20260813/census_fixed_v1 \
-  --workers 8 --tag census_fixedv1_n1548 \
-  > measurement/window_truncation_20260813/census_fixed_v1.log 2>&1 &
+bash measurement/window_truncation_20260813/RUN_CMD.sh <W>     # or let the queue dispatch it
+WTC_SMOKE=1 bash measurement/window_truncation_20260813/RUN_CMD.sh   # 2 roots/leg, no markers
 ```
 
-`--n 0` (the default) means all roots. Drop `--workers` to 4 if the box is shared;
-`--replay-fraction 0.25` cuts the replay quarter of the cost if more roots per hour
-is worth a 4× coarser node count (it does not affect P1, which comes from the
-searches, not the replay).
+What the script guarantees, and why each one matters here:
+
+- **Two legs, two PROCESSES, sequential.** `CARCASSONNE_FIX_R9` is latched at import
+  (Rust registry `OnceLock` + `base_deck`'s import-time farm derivation), so one
+  process cannot run both rules epochs. Each leg's manifest stamps `r9_env_ok`.
+- **Foreground / synchronous.** The scheduler has *already* detached the job
+  (`setsid`+`nohup` locally, `systemd-run --user --scope -p MemoryMax=8G` remotely)
+  and derives its `DONE_`/`FAILED_<id>` markers **from this script's exit code** — so
+  the script must never background its own work.
+- **Box-agnostic.** Bundle-sync, the `cd`-on-line-1 remote pipe and the memory-capped
+  scope are the scheduler's job, not this script's; the only genuine box difference it
+  handles itself is the share mount (`/mnt/c/carc-shared` vs `/mnt/carc-shared`).
+- **Resume-able at ROOT granularity.** Rows stream to `rows.jsonl` (fsync'd per root)
+  and every leg runs with `--resume`; a leg with a `DONE_LEG_*` marker is skipped
+  outright, so re-running is always safe.
+- **Own completion evidence**, independent of scheduler state: `DONE_CENSUS` /
+  `FAILED_CENSUS` + `RUN_MANIFEST.json` in this directory.
+- **It does not adjudicate itself.** It writes `CENSUS_RESULT.md` — the arithmetic
+  plus a mechanical application of §6's bands — and leaves `READOUT.md` to a human.
+
+Knobs if the box is tight: `WTC_N=<n>` caps roots per leg; `--replay-fraction 0.25`
+(edit the leg args) cuts the replay quarter of the cost at a 4× coarser node count
+and does **not** affect P1, which comes from the searches rather than the replay.
 
 ### 8.1 The gate cell — DONE, and it passed ✅
 
