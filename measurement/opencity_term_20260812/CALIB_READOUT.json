@@ -1,0 +1,190 @@
+{
+ "schema": "carcassonne-opencity-calib-readout/v1",
+ "cells": {
+  "A_d0p5": {
+   "arm": "A",
+   "dose": 0.5,
+   "size_min": 4.0,
+   "edge_min": 2,
+   "symmetric": true,
+   "leaf_hash": "c128083fb485d20d",
+   "flips": 157,
+   "n": 1556,
+   "flip_rate": 0.10089974293059126,
+   "wilson95": [
+    0.08690323578268498,
+    0.11686199755134609
+   ],
+   "wilson95_half_width": 0.014979380884330554,
+   "phase_split": {
+    "tiles": 114,
+    "meeples": 43,
+    "other": {},
+    "tile_share": 0.7261146496815286
+   }
+  },
+  "A_d2p0": {
+   "arm": "A",
+   "dose": 2.0,
+   "size_min": 4.0,
+   "edge_min": 2,
+   "symmetric": true,
+   "leaf_hash": "2cf0b7507e6a0921",
+   "flips": 294,
+   "n": 1556,
+   "flip_rate": 0.18894601542416453,
+   "wilson95": [
+    0.1702701427729842,
+    0.209153968231317
+   ],
+   "wilson95_half_width": 0.0194419127291664,
+   "phase_split": {
+    "tiles": 222,
+    "meeples": 72,
+    "other": {},
+    "tile_share": 0.7551020408163265
+   }
+  },
+  "B_d0p5": {
+   "arm": "B",
+   "dose": 0.5,
+   "size_min": 3.0,
+   "edge_min": 2,
+   "symmetric": true,
+   "leaf_hash": "520c3f4cfe6a7792",
+   "flips": 211,
+   "n": 1556,
+   "flip_rate": 0.13560411311053985,
+   "wilson95": [
+    0.11948755209622883,
+    0.153515487034843
+   ],
+   "wilson95_half_width": 0.017013967469307084,
+   "phase_split": {
+    "tiles": 150,
+    "meeples": 61,
+    "other": {},
+    "tile_share": 0.7109004739336493
+   }
+  },
+  "B_d2p0": {
+   "arm": "B",
+   "dose": 2.0,
+   "size_min": 3.0,
+   "edge_min": 2,
+   "symmetric": true,
+   "leaf_hash": "b9d3fcb9ad14a527",
+   "flips": 368,
+   "n": 1556,
+   "flip_rate": 0.2365038560411311,
+   "wilson95": [
+    0.21605503482239846,
+    0.2582505137556253
+   ],
+   "wilson95_half_width": 0.02109773946661342,
+   "phase_split": {
+    "tiles": 260,
+    "meeples": 108,
+    "other": {},
+    "tile_share": 0.7065217391304348
+   }
+  },
+  "C_d0p5": {
+   "arm": "C",
+   "dose": 0.5,
+   "size_min": 6.0,
+   "edge_min": 3,
+   "symmetric": true,
+   "leaf_hash": "3adfbf1bd306b4a6",
+   "flips": 56,
+   "n": 1556,
+   "flip_rate": 0.03598971722365039,
+   "wilson95": [
+    0.027818548255535494,
+    0.04644634460625263
+   ],
+   "wilson95_half_width": 0.009313898175358569,
+   "phase_split": {
+    "tiles": 46,
+    "meeples": 10,
+    "other": {},
+    "tile_share": 0.8214285714285714
+   }
+  },
+  "C_d2p0": {
+   "arm": "C",
+   "dose": 2.0,
+   "size_min": 6.0,
+   "edge_min": 3,
+   "symmetric": true,
+   "leaf_hash": "bb34bcc045a6368e",
+   "flips": 91,
+   "n": 1556,
+   "flip_rate": 0.05848329048843188,
+   "wilson95": [
+    0.04787501615788178,
+    0.07126623231309943
+   ],
+   "wilson95_half_width": 0.011695608077608825,
+   "phase_split": {
+    "tiles": 73,
+    "meeples": 18,
+    "other": {},
+    "tile_share": 0.8021978021978022
+   }
+  }
+ },
+ "verdict": {
+  "read_rule_commit": "6148388",
+  "bar": 0.1,
+  "floor": 0.05,
+  "cells_at_or_above_bar": [
+   "A_d0p5",
+   "A_d2p0",
+   "B_d0p5",
+   "B_d2p0"
+  ],
+  "cells_in_marginal_band": [
+   "C_d2p0"
+  ],
+  "branch": "FUND-SMALLEST",
+  "fundable": true,
+  "chosen_cell": "A_d0p5",
+  "funded_cells": [
+   "A_d0p5",
+   "A_d2p0"
+  ],
+  "why": "\u00a73.1 fires: 4 cell(s) reach f >= 0.10. Among them the smallest dose is 0.5; among cells at that dose the tightest predicate that still clears the bar is (size_min=4 TILES, edge_min=2). Dose is minimised first because T is a PRODUCT of two excesses (TERM_SPEC \u00a75: bracket downward), so an equal dose perturbs the leaf's global scale more than for denial."
+ },
+ "integrity": {
+  "ladder_is_preregistered": true,
+  "expected_cells": [
+   "A_d0p5",
+   "A_d2p0",
+   "B_d0p5",
+   "B_d2p0",
+   "C_d0p5",
+   "C_d2p0"
+  ],
+  "observed_cells": [
+   "A_d0p5",
+   "A_d2p0",
+   "B_d0p5",
+   "B_d2p0",
+   "C_d0p5",
+   "C_d2p0"
+  ],
+  "all_replay_scores_match": true,
+  "replay_scores_mismatch_archives": [],
+  "n_games": 26,
+  "n_graded_plies": 1556,
+  "rules_profile_histogram": {
+   "walled": 2,
+   "app_aug2": 1,
+   "fixed_v1": 23
+  },
+  "champ_agrees_archive_rate": 0.7281491002570694,
+  "leaf_hashes_distinct": true,
+  "no_cand_hash_equals_champion": true
+ }
+}

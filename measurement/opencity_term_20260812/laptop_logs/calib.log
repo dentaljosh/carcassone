@@ -1,0 +1,219 @@
+[opencity_e4] 26 archives, 0 already done, 26 to grade; workers=13 symmetric=True arms=['A_d0p5:4:2:0.5', 'A_d2p0:4:2:2', 'B_d0p5:3:2:0.5', 'B_d2p0:3:2:2', 'C_d0p5:6:3:0.5', 'C_d2p0:6:3:2']
+  [1786501074_943197] ply 15/142 graded=8 19s
+  [1786503336_446661] ply 15/142 graded=8 20s
+  [1786337185_638286] ply 15/142 graded=8 20s
+  [1786367787_389099] ply 15/142 graded=8 20s
+  [1786417055_68387] ply 15/142 graded=8 21s
+  [1786243458_1382293676] ply 15/142 graded=8 21s
+  [1786418867_411846845] ply 15/142 graded=8 21s
+  [1786511848_634689] ply 15/142 graded=8 22s
+  [1786325073_523563] ply 15/142 graded=8 22s
+  [1786242001_49628] ply 15/142 graded=8 22s
+  [1786329790_523563] ply 15/142 graded=8 22s
+  [1786454767_166575] ply 15/142 graded=8 23s
+  [1786403231_207028] ply 18/142 graded=8 26s
+  [1786367787_389099] ply 31/142 graded=16 55s
+  [1786503336_446661] ply 31/142 graded=16 56s
+  [1786417055_68387] ply 31/142 graded=16 59s
+  [1786329790_523563] ply 31/142 graded=16 59s
+  [1786418867_411846845] ply 31/142 graded=16 59s
+  [1786501074_943197] ply 31/142 graded=16 60s
+  [1786242001_49628] ply 31/142 graded=16 61s
+  [1786337185_638286] ply 31/142 graded=16 63s
+  [1786325073_523563] ply 31/142 graded=16 63s
+  [1786243458_1382293676] ply 31/142 graded=16 64s
+  [1786454767_166575] ply 31/142 graded=16 65s
+  [1786511848_634689] ply 31/142 graded=16 65s
+  [1786403231_207028] ply 34/142 graded=16 76s
+  [1786367787_389099] ply 50/142 graded=24 107s
+  [1786329790_523563] ply 50/142 graded=24 108s
+  [1786418867_411846845] ply 47/142 graded=24 110s
+  [1786501074_943197] ply 47/142 graded=24 112s
+  [1786503336_446661] ply 47/142 graded=24 114s
+  [1786242001_49628] ply 47/142 graded=24 115s
+  [1786417055_68387] ply 51/142 graded=24 117s
+  [1786337185_638286] ply 47/142 graded=24 120s
+  [1786325073_523563] ply 50/142 graded=24 120s
+  [1786454767_166575] ply 54/142 graded=24 121s
+  [1786511848_634689] ply 47/142 graded=24 128s
+  [1786243458_1382293676] ply 47/142 graded=24 132s
+  [1786403231_207028] ply 50/142 graded=24 138s
+  [1786242001_49628] ply 66/142 graded=32 172s
+  [1786418867_411846845] ply 63/142 graded=32 175s
+  [1786501074_943197] ply 63/142 graded=32 180s
+  [1786367787_389099] ply 66/142 graded=32 182s
+  [1786329790_523563] ply 66/142 graded=32 189s
+  [1786417055_68387] ply 67/142 graded=32 192s
+  [1786503336_446661] ply 63/142 graded=32 193s
+  [1786454767_166575] ply 78/142 graded=32 198s
+  [1786337185_638286] ply 66/142 graded=32 199s
+  [1786511848_634689] ply 66/142 graded=32 201s
+  [1786403231_207028] ply 66/142 graded=32 207s
+  [1786325073_523563] ply 67/142 graded=32 211s
+  [1786243458_1382293676] ply 63/142 graded=32 217s
+  [1786418867_411846845] ply 79/142 graded=40 249s
+  [1786501074_943197] ply 79/142 graded=40 264s
+  [1786242001_49628] ply 82/142 graded=40 267s
+  [1786367787_389099] ply 83/142 graded=40 273s
+  [1786511848_634689] ply 95/142 graded=40 276s
+  [1786417055_68387] ply 86/142 graded=40 285s
+  [1786403231_207028] ply 86/142 graded=40 285s
+  [1786337185_638286] ply 83/142 graded=40 290s
+  [1786329790_523563] ply 82/142 graded=40 292s
+  [1786503336_446661] ply 79/142 graded=40 294s
+  [1786454767_166575] ply 94/142 graded=40 305s
+  [1786243458_1382293676] ply 79/142 graded=40 306s
+  [1786418867_411846845] ply 95/142 graded=48 335s
+  [1786325073_523563] ply 83/142 graded=40 336s
+  [1786242001_49628] ply 98/142 graded=48 365s
+  [1786511848_634689] ply 118/142 graded=48 369s
+  [1786501074_943197] ply 95/142 graded=48 373s
+  [1786337185_638286] ply 110/142 graded=48 375s
+  [1786329790_523563] ply 98/142 graded=48 403s
+  [1786417055_68387] ply 102/142 graded=48 405s
+  [1786367787_389099] ply 99/142 graded=48 408s
+  [1786243458_1382293676] ply 98/142 graded=48 410s
+  [1786503336_446661] ply 95/142 graded=48 411s
+  [1786454767_166575] ply 110/142 graded=48 422s
+  [1786403231_207028] ply 102/142 graded=48 429s
+  [1786418867_411846845] ply 126/142 graded=56 432s
+  [1786337185_638286] ply 134/142 graded=56 458s
+[opencity_e4] 1786337185_638286: profile=fixed_v1 graded=56 flips={'A_d0p5': 7, 'A_d2p0': 11, 'B_d0p5': 11, 'B_d2p0': 11, 'C_d0p5': 0, 'C_d2p0': 1} agree_archive=40/56 mean_secs_per_graded_ply=8.175 (457.9s)
+  [1786242001_49628] ply 123/142 graded=56 467s
+  [1786329790_523563] ply 130/142 graded=56 472s
+  [1786325073_523563] ply 99/142 graded=48 473s
+[opencity_e4] 1786329790_523563: profile=fixed_v1 graded=57 flips={'A_d0p5': 4, 'A_d2p0': 7, 'B_d0p5': 6, 'B_d2p0': 12, 'C_d0p5': 1, 'C_d2p0': 0} agree_archive=40/57 mean_secs_per_graded_ply=8.41 (479.4s)
+  [1786142936_703591] ply 15/142 graded=8 25s
+  [1786118143_1621601234] ply 16/141 graded=8 24s
+  [1786511848_634689] ply 134/142 graded=56 505s
+[opencity_e4] 1786511848_634689: profile=fixed_v1 graded=56 flips={'A_d0p5': 6, 'A_d2p0': 10, 'B_d0p5': 7, 'B_d2p0': 10, 'C_d0p5': 3, 'C_d2p0': 4} agree_archive=39/56 mean_secs_per_graded_ply=9.013 (504.8s)
+  [1786501074_943197] ply 114/142 graded=56 508s
+[opencity_e4] 1786418867_411846845: profile=fixed_v1 graded=60 flips={'A_d0p5': 1, 'A_d2p0': 7, 'B_d0p5': 3, 'B_d2p0': 11, 'C_d0p5': 1, 'C_d2p0': 1} agree_archive=42/60 mean_secs_per_graded_ply=8.614 (517.0s)
+  [1786503336_446661] ply 118/142 graded=56 519s
+  [1786142936_703591] ply 31/142 graded=16 70s
+  [1786116818_134510] ply 18/142 graded=8 25s
+  [1786367787_389099] ply 126/142 graded=56 533s
+  [1786243458_1382293676] ply 114/142 graded=56 534s
+  [1786417055_68387] ply 118/142 graded=56 537s
+  [1786113542_627623] ply 15/141 graded=8 25s
+  [1786118143_1621601234] ply 32/141 graded=16 65s
+  [1786454767_166575] ply 134/142 graded=56 546s
+[opencity_e4] 1786454767_166575: profile=fixed_v1 graded=56 flips={'A_d0p5': 0, 'A_d2p0': 2, 'B_d0p5': 5, 'B_d2p0': 6, 'C_d0p5': 0, 'C_d2p0': 0} agree_archive=42/56 mean_secs_per_graded_ply=9.74 (545.5s)
+[opencity_e4] 1786242001_49628: profile=fixed_v1 graded=62 flips={'A_d0p5': 8, 'A_d2p0': 12, 'B_d0p5': 11, 'B_d2p0': 18, 'C_d0p5': 2, 'C_d2p0': 4} agree_archive=45/62 mean_secs_per_graded_ply=9.001 (558.2s)
+  [1786403231_207028] ply 122/142 graded=56 560s
+[opencity_e4] 1786367787_389099: profile=fixed_v1 graded=58 flips={'A_d0p5': 10, 'A_d2p0': 15, 'B_d0p5': 9, 'B_d2p0': 15, 'C_d0p5': 1, 'C_d2p0': 1} agree_archive=43/58 mean_secs_per_graded_ply=9.66 (560.4s)
+[opencity_e4] 1786503336_446661: profile=fixed_v1 graded=60 flips={'A_d0p5': 12, 'A_d2p0': 14, 'B_d0p5': 13, 'B_d2p0': 19, 'C_d0p5': 3, 'C_d2p0': 6} agree_archive=42/60 mean_secs_per_graded_ply=9.471 (568.3s)
+  [1786076853_2116173857] ply 15/142 graded=8 25s
+  [1786116818_134510] ply 34/142 graded=16 65s
+  [1786074812_935815] ply 15/142 graded=8 23s
+  [1786142936_703591] ply 47/142 graded=24 124s
+  [1786113542_627623] ply 31/141 graded=16 67s
+  [1786045035_338139] ply 15/142 graded=8 25s
+  [1785986044_1911511187] ply 15/142 graded=8 23s
+  [1786118143_1621601234] ply 48/141 graded=24 128s
+  [1786076853_2116173857] ply 31/142 graded=16 66s
+[opencity_e4] 1786501074_943197: profile=fixed_v1 graded=63 flips={'A_d0p5': 23, 'A_d2p0': 33, 'B_d0p5': 25, 'B_d2p0': 35, 'C_d0p5': 20, 'C_d2p0': 28} agree_archive=41/63 mean_secs_per_graded_ply=9.793 (617.0s)
+[opencity_e4] 1786403231_207028: profile=fixed_v1 graded=59 flips={'A_d0p5': 7, 'A_d2p0': 12, 'B_d0p5': 6, 'B_d2p0': 13, 'C_d0p5': 1, 'C_d2p0': 2} agree_archive=45/59 mean_secs_per_graded_ply=10.478 (618.3s)
+  [1786325073_523563] ply 115/142 graded=56 621s
+[opencity_e4] 1786243458_1382293676: profile=fixed_v1 graded=63 flips={'A_d0p5': 4, 'A_d2p0': 11, 'B_d0p5': 9, 'B_d2p0': 15, 'C_d0p5': 0, 'C_d2p0': 3} agree_archive=45/63 mean_secs_per_graded_ply=9.882 (622.6s)
+  [1786074812_935815] ply 31/142 graded=16 65s
+  [1786045035_338139] ply 31/142 graded=16 64s
+  [1786116818_134510] ply 50/142 graded=24 122s
+  [1785986044_1911511187] ply 34/142 graded=16 63s
+  [1786113542_627623] ply 47/141 graded=24 126s
+  [1785984310_1698417952] ply 18/142 graded=8 27s
+  [1785982194_705585] ply 15/142 graded=8 26s
+  [1786142936_703591] ply 63/142 graded=32 188s
+  [1785975832_66810] ply 15/142 graded=8 24s
+  [1786076853_2116173857] ply 51/142 graded=24 124s
+  [1785986044_1911511187] ply 50/142 graded=24 106s
+  [1786045035_338139] ply 47/142 graded=24 119s
+  [1785982194_705585] ply 34/142 graded=16 64s
+  [1786118143_1621601234] ply 64/141 graded=32 204s
+  [1785975832_66810] ply 31/142 graded=16 62s
+  [1786074812_935815] ply 47/142 graded=24 127s
+  [1786116818_134510] ply 66/142 graded=32 186s
+  [1785984310_1698417952] ply 34/142 graded=16 74s
+  [1786417055_68387] ply 134/142 graded=64 702s
+  [1786113542_627623] ply 64/141 graded=32 200s
+[opencity_e4] 1786325073_523563: profile=fixed_v1 graded=63 flips={'A_d0p5': 6, 'A_d2p0': 17, 'B_d0p5': 7, 'B_d2p0': 18, 'C_d0p5': 1, 'C_d2p0': 3} agree_archive=49/63 mean_secs_per_graded_ply=11.436 (720.5s)
+[opencity_e4] 1786417055_68387: profile=fixed_v1 graded=65 flips={'A_d0p5': 11, 'A_d2p0': 18, 'B_d0p5': 13, 'B_d2p0': 19, 'C_d0p5': 7, 'C_d2p0': 14} agree_archive=50/65 mean_secs_per_graded_ply=11.085 (720.6s)
+  [1785205383_867966] ply 15/144 graded=8 5s
+  [1785466497_161583] ply 15/144 graded=8 5s
+  [1785205383_867966] ply 31/144 graded=16 13s
+  [1785466497_161583] ply 38/144 graded=16 15s
+  [1786142936_703591] ply 90/142 graded=40 280s
+  [1785975832_66810] ply 50/142 graded=24 118s
+  [1785205383_867966] ply 47/144 graded=24 24s
+  [1785986044_1911511187] ply 66/142 graded=32 177s
+  [1785982194_705585] ply 50/142 graded=24 127s
+  [1786076853_2116173857] ply 67/142 graded=32 200s
+  [1785984310_1698417952] ply 50/142 graded=24 130s
+  [1785466497_161583] ply 54/144 graded=24 28s
+  [1786045035_338139] ply 63/142 graded=32 192s
+  [1785205383_867966] ply 63/144 graded=32 41s
+  [1785466497_161583] ply 70/144 graded=32 46s
+  [1786118143_1621601234] ply 95/141 graded=40 291s
+  [1786116818_134510] ply 82/142 graded=40 268s
+  [1786074812_935815] ply 63/142 graded=32 216s
+  [1785205383_867966] ply 79/144 graded=40 59s
+  [1785466497_161583] ply 90/144 graded=40 65s
+  [1785205383_867966] ply 95/144 graded=48 78s
+  [1786113542_627623] ply 80/141 graded=40 294s
+  [1785466497_161583] ply 107/144 graded=48 91s
+  [1785984310_1698417952] ply 66/142 graded=32 200s
+  [1785975832_66810] ply 66/142 graded=32 195s
+  [1785982194_705585] ply 66/142 graded=32 201s
+  [1785205383_867966] ply 114/144 graded=56 101s
+  [1785466497_161583] ply 123/144 graded=56 108s
+  [1785986044_1911511187] ply 82/142 graded=40 260s
+  [1786076853_2116173857] ply 83/142 graded=40 286s
+[opencity_e4] 1785466497_161583: profile=walled graded=62 flips={'A_d0p5': 1, 'A_d2p0': 11, 'B_d0p5': 6, 'B_d2p0': 12, 'C_d0p5': 0, 'C_d2p0': 0} agree_archive=45/62 mean_secs_per_graded_ply=1.961 (121.7s)
+  [1786045035_338139] ply 79/142 graded=40 284s
+  [1786142936_703591] ply 115/142 graded=48 396s
+  [1786074812_935815] ply 94/142 graded=40 303s
+  [1785205383_867966] ply 135/144 graded=64 142s
+[opencity_e4] 1785205383_867966: profile=walled graded=64 flips={'A_d0p5': 4, 'A_d2p0': 9, 'B_d0p5': 4, 'B_d2p0': 10, 'C_d0p5': 1, 'C_d2p0': 2} agree_archive=47/64 mean_secs_per_graded_ply=2.217 (142.0s)
+  [1786116818_134510] ply 99/142 graded=48 370s
+  [1786118143_1621601234] ply 116/141 graded=48 412s
+  [1785975832_66810] ply 82/142 graded=40 270s
+  [1785982194_705585] ply 90/142 graded=40 279s
+  [1785984310_1698417952] ply 83/142 graded=40 284s
+  [1786113542_627623] ply 96/141 graded=48 399s
+  [1786076853_2116173857] ply 102/142 graded=48 384s
+  [1785986044_1911511187] ply 98/142 graded=48 362s
+  [1786045035_338139] ply 103/142 graded=48 385s
+  [1786142936_703591] ply 131/142 graded=56 495s
+  [1786074812_935815] ply 114/142 graded=48 401s
+[opencity_e4] 1786142936_703591: profile=fixed_v1 graded=57 flips={'A_d0p5': 4, 'A_d2p0': 8, 'B_d0p5': 4, 'B_d2p0': 9, 'C_d0p5': 0, 'C_d2p0': 1} agree_archive=43/57 mean_secs_per_graded_ply=8.848 (504.4s)
+  [1785982194_705585] ply 118/142 graded=48 358s
+  [1785975832_66810] ply 98/142 graded=48 359s
+  [1785984310_1698417952] ply 99/142 graded=48 370s
+  [1786116818_134510] ply 118/142 graded=56 489s
+  [1786113542_627623] ply 115/141 graded=56 490s
+  [1786118143_1621601234] ply 132/141 graded=56 545s
+[opencity_e4] 1786118143_1621601234: profile=fixed_v1 graded=56 flips={'A_d0p5': 11, 'A_d2p0': 15, 'B_d0p5': 11, 'B_d2p0': 20, 'C_d0p5': 0, 'C_d2p0': 2} agree_archive=35/56 mean_secs_per_graded_ply=9.737 (545.3s)
+  [1786045035_338139] ply 134/142 graded=56 468s
+[opencity_e4] 1786045035_338139: profile=fixed_v1 graded=56 flips={'A_d0p5': 0, 'A_d2p0': 2, 'B_d0p5': 2, 'B_d2p0': 6, 'C_d0p5': 0, 'C_d2p0': 0} agree_archive=35/56 mean_secs_per_graded_ply=8.357 (468.1s)
+  [1786076853_2116173857] ply 126/142 graded=56 490s
+[opencity_e4] 1785982194_705585: profile=fixed_v1 graded=53 flips={'A_d0p5': 4, 'A_d2p0': 4, 'B_d0p5': 7, 'B_d2p0': 9, 'C_d0p5': 1, 'C_d2p0': 2} agree_archive=36/53 mean_secs_per_graded_ply=7.905 (419.0s)
+  [1785986044_1911511187] ply 114/142 graded=56 473s
+[opencity_e4] 1786074812_935815: profile=fixed_v1 graded=55 flips={'A_d0p5': 6, 'A_d2p0': 14, 'B_d0p5': 8, 'B_d2p0': 13, 'C_d0p5': 1, 'C_d2p0': 1} agree_archive=46/55 mean_secs_per_graded_ply=9.012 (495.7s)
+[opencity_e4] 1786076853_2116173857: profile=fixed_v1 graded=58 flips={'A_d0p5': 2, 'A_d2p0': 6, 'B_d0p5': 3, 'B_d2p0': 8, 'C_d0p5': 0, 'C_d2p0': 0} agree_archive=46/58 mean_secs_per_graded_ply=8.772 (508.8s)
+  [1785975832_66810] ply 123/142 graded=56 445s
+  [1786116818_134510] ply 134/142 graded=64 567s
+[opencity_e4] 1786116818_134510: profile=fixed_v1 graded=65 flips={'A_d0p5': 2, 'A_d2p0': 9, 'B_d0p5': 10, 'B_d2p0': 12, 'C_d0p5': 2, 'C_d2p0': 2} agree_archive=48/65 mean_secs_per_graded_ply=8.928 (580.4s)
+  [1785984310_1698417952] ply 115/142 graded=56 468s
+  [1785986044_1911511187] ply 134/142 graded=64 551s
+[opencity_e4] 1785986044_1911511187: profile=fixed_v1 graded=64 flips={'A_d0p5': 5, 'A_d2p0': 9, 'B_d0p5': 8, 'B_d2p0': 19, 'C_d0p5': 3, 'C_d2p0': 3} agree_archive=46/64 mean_secs_per_graded_ply=8.608 (551.0s)
+[opencity_e4] 1786113542_627623: profile=fixed_v1 graded=63 flips={'A_d0p5': 5, 'A_d2p0': 9, 'B_d0p5': 6, 'B_d2p0': 10, 'C_d0p5': 0, 'C_d2p0': 0} agree_archive=52/63 mean_secs_per_graded_ply=9.61 (605.5s)
+[opencity_e4] 1785975832_66810: profile=app_aug2 graded=62 flips={'A_d0p5': 4, 'A_d2p0': 12, 'B_d0p5': 6, 'B_d2p0': 17, 'C_d0p5': 4, 'C_d2p0': 3} agree_archive=39/62 mean_secs_per_graded_ply=8.178 (507.1s)
+[opencity_e4] 1785984310_1698417952: profile=fixed_v1 graded=63 flips={'A_d0p5': 10, 'A_d2p0': 17, 'B_d0p5': 11, 'B_d2p0': 21, 'C_d0p5': 4, 'C_d2p0': 8} agree_archive=52/63 mean_secs_per_graded_ply=8.559 (539.3s)
+[opencity_e4]   A_d0p5: flips   157/1556  =  10.09% [ 8.69%, 11.69%]  tiles/meeples 114/43
+[opencity_e4]   A_d2p0: flips   294/1556  =  18.89% [17.03%, 20.92%]  tiles/meeples 222/72
+[opencity_e4]   B_d0p5: flips   211/1556  =  13.56% [11.95%, 15.35%]  tiles/meeples 150/61
+[opencity_e4]   B_d2p0: flips   368/1556  =  23.65% [21.61%, 25.83%]  tiles/meeples 260/108
+[opencity_e4]   C_d0p5: flips    56/1556  =   3.60% [ 2.78%,  4.64%]  tiles/meeples 46/10
+[opencity_e4]   C_d2p0: flips    91/1556  =   5.85% [ 4.79%,  7.13%]  tiles/meeples 73/18
+[opencity_e4] rollup: 26 games, 1556 graded plies, profiles={'walled': 2, 'app_aug2': 1, 'fixed_v1': 23}, all_replay_scores_match=True -> measurement/opencity_term_20260812/calib/SUMMARY.json
+[opencity_e4] NOTE: a flip is not an improvement. No elo, no band, no governance write — read against CALIB_READ_RULE §3, nothing else.

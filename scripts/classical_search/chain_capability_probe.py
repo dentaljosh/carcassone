@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""CAPABILITY PROBE for the denial / sims-split overnight chain.
+"""CAPABILITY PROBE for the denial / open-city / sims-split overnight chains.
 
 Spec: `measurement/night_chain_20260812/RUNBOOK.md`; the chain that calls this is
-`scripts/classical_search/denial_simsplit_chain.sh`.
+`scripts/classical_search/denial_simsplit_chain.sh`. The open-city mode's spec is
+`measurement/opencity_term_20260812/TERM_SPEC.md` §6 (its manual wheel step) + §7, and
+`measurement/opencity_term_20260812/CALIB_READ_RULE.md` §4 names this probe a **launch
+blocker, not a nicety**.
 
 THE ONE SAFETY PROPERTY THIS FILE OWNS
 --------------------------------------
@@ -17,12 +20,23 @@ So: every knob is probed for **three** things, and any miss is a hard non-zero e
 
   1. the knob EXISTS on the Python side (dataclass field / harness CLI flag);
   2. the knob is ACCEPTED by the loaded native build (`carc_rs.LeafConfigRs` kwargs --
-     `rust_agent.leaf_config_rs` forwards denial kwargs ONLY when the dose is nonzero,
-     precisely so a stale build raises `TypeError` instead of serving a default-off leaf);
+     `rust_agent.leaf_config_rs` forwards denial/open-city kwargs ONLY when the dose is
+     nonzero, precisely so a stale build raises `TypeError` instead of serving a
+     default-off leaf);
   3. the knob CHANGES THE NUMBER. (1) and (2) are structure; only (3) excludes
      "accepted and ignored". For denial we play a few short scripted games through the
      rust mirror and require that at least one leaf value MOVES at the requested dose,
      while the dose-0.0 identity control stays bit-identical on every sampled value.
+
+`--require opencity` runs the same three, on BOTH leaves, plus a fourth the denial mode
+does not have:
+
+  4. dose 0.0 with the thresholds deliberately MOVED off their defaults is BIT-EXACT with
+     the champion -- TERM_SPEC §6's `opencity-d0-identity` cell -- on the rust leaf AND on
+     the python leaf. This is the control for the opposite failure: a threshold knob that
+     leaks into the leaf while the dose gate is closed would make every rung of a dose
+     ladder a mixture of a dose effect and a threshold effect, and no arm of the §7
+     calibration could be read.
 
 `--require simsplit` can do (1) and the fixed-total arithmetic, but NOT (3): pick
 equality under a re-split budget is a game-level property and this probe plays no games.
@@ -36,6 +50,11 @@ Usage (the chain's two calls):
       --cells-out /mnt/c/carc-shared/night_chain_20260812/d1_cells.tsv --json-out ...
   chain_capability_probe.py --require simsplit --harness scripts/classical_search/eval_fair_puct.py \
       --sims-tile 2064 --sims-meeple 688 --sims 1376 --json-out ...
+
+and the open-city arms of `CALIB_READ_RULE.md` §1 (A=4/2, B=3/2, C=6/3; symmetric held True):
+
+  chain_capability_probe.py --require opencity --doses 0.5,2.0 --size-min 4 --edge-min 2 \
+      --cells-out .../oc_cells_A.tsv --json-out ...
 
 ⚠️ The CALLER must export the champion leaf env before invoking this (the launcher env
 canon). `DEFAULT_CONFIG` is resolved at `virtual_score_v2` import time, so the probe
@@ -59,6 +78,19 @@ CHAMP_LEAF_HASH = "a36d2e15a3b3d71d"
 PROBE_SEEDS = ("880011", "880012", "880013")
 PROBE_MAX_PLIES = 150
 PROBE_EVERY = 3
+
+# The four open-city knobs (measurement/opencity_term_20260812/TERM_SPEC.md §5). NOTE the
+# units trap: `opencity_size_min` is in DISTINCT TILES, while denial's `denial_size_min` is
+# in city POINTS. Same-looking flag, different axis -- do not carry a value across.
+OPENCITY_KNOBS = ("opencity_dose", "opencity_size_min", "opencity_edge_min",
+                  "opencity_symmetric")
+
+# TERM_SPEC §6's `opencity-d0-identity` cell: the dose is OFF but every other knob is
+# deliberately MOVED off its default. `opencity_dose` gates the whole term, so this MUST be
+# bit-identical to the champion on both leaves. If it is not, the gate leaks and every rung
+# of a dose ladder is a mixture of a dose effect and a threshold effect.
+OPENCITY_D0_IDENTITY = {"opencity_dose": 0.0, "opencity_size_min": 2.0,
+                        "opencity_edge_min": 1, "opencity_symmetric": False}
 
 
 # --------------------------------------------------------------------------- #
@@ -123,6 +155,44 @@ def cand_leaf_spec(dose: float, size_min: float, open_max: int) -> dict:
     return {"denial_dose": float(dose),
             "denial_size_min": float(size_min),
             "denial_open_max": int(open_max)}
+
+
+def opencity_cell_tag(dose: float, size_min: float, edge_min: int, symmetric: bool,
+                      prefix: str = "oc") -> str:
+    """Stable per-cell directory / exp-id stem for an OPEN-CITY cell.
+
+    Deliberately unlike `cell_tag`'s `_s<..>_o<..>`: the size axis here is TILES (`t`), the
+    openness axis is a MINIMUM (`e`), and the symmetry flag is part of the leaf, so all
+    three ride in the tag. Two cells can then never share a directory -- including the pair
+    that differs only in `opencity_symmetric`, which is a DIFFERENT TERM (TERM_SPEC §3), not
+    a rung on the same ladder."""
+    return (f"{prefix}_d{_num_tag(dose)}_t{_num_tag(size_min)}_e{_num_tag(edge_min)}"
+            f"_{'sym' if symmetric else 'asym'}")
+
+
+def opencity_cand_leaf_spec(dose: float, size_min: float, edge_min: int,
+                            symmetric: bool) -> dict:
+    """The `--cand-leaf-json` object for one open-city cell (replace-fields on
+    DEFAULT_CONFIG). ALL FOUR knobs are always written, even at their built defaults, so
+    the cell JSON on disk is self-describing rather than implying a default -- the same
+    rule `cand_leaf_spec` states for denial.
+
+    Refuses the thresholds `c5_leaf_override._assert_cy_float_path` refuses, here rather
+    than 40 minutes into a cell: `edge_min < 1` would make `open_n >= edge_min` price EVERY
+    incomplete city (a different term, TERM_SPEC §5), and `size_min < 1` is not a city."""
+    if int(edge_min) < 1:
+        raise ValueError(
+            f"opencity_edge_min must be >= 1 (got {edge_min}); below 1 the predicate "
+            f"`open_n >= edge_min` fires on every incomplete city, which is a DIFFERENT "
+            f"term rather than a rung on this ladder (TERM_SPEC §5). c5_leaf_override "
+            f"raises on it too, so such a cell could never run anyway.")
+    if float(size_min) < 1.0:
+        raise ValueError(f"opencity_size_min must be >= 1 distinct TILE (got {size_min}); "
+                         f"c5_leaf_override raises on it too.")
+    return {"opencity_dose": float(dose),
+            "opencity_size_min": float(size_min),
+            "opencity_edge_min": int(edge_min),
+            "opencity_symmetric": bool(symmetric)}
 
 
 def check_split_total(sims_tile: int, sims_meeple: int, sims: int) -> tuple[bool, str]:
@@ -280,6 +350,219 @@ def probe_denial(doses, size_min, open_max, runtime: bool) -> dict:
     return r
 
 
+def probe_opencity(doses, size_min, edge_min, symmetric, runtime: bool) -> dict:
+    """The denial probe's structure, applied to the four open-city knobs, plus the dose-0
+    bit-exactness control that denial has no analogue for (see the module docstring, (4))."""
+    r = {"capability": "opencity", "checks": [], "cells": [], "ok": False}
+
+    def chk(name, ok, detail=""):
+        r["checks"].append({"check": name, "ok": bool(ok), "detail": detail})
+        return bool(ok)
+
+    default_cfg, leaf_hash, load_cand = _import_leaf_bits()
+
+    # --- (1) the Python side carries the knob at all -------------------------------
+    has_fields = all(hasattr(default_cfg, f) for f in OPENCITY_KNOBS)
+    ok = chk("py_leafconfig_fields", has_fields,
+             "LeafConfig.opencity_dose/_size_min/_edge_min/_symmetric present"
+             if has_fields else
+             f"LeafConfig is missing {[f for f in OPENCITY_KNOBS if not hasattr(default_cfg, f)]}"
+             f" -- this tree predates the term")
+    try:
+        from carcassonne_ai import flat_leaf
+        ok &= chk("py_flat_opencity_term", hasattr(flat_leaf, "flat_opencity_term"),
+                  "flat_leaf.flat_opencity_term present")
+    except Exception as e:                                            # pragma: no cover
+        ok &= chk("py_flat_opencity_term", False, f"import failed: {e!r}")
+
+    # --- (2) the caller's env canon really is the champion -------------------------
+    champ_hash = leaf_hash(default_cfg)
+    r["champ_leaf_hash"] = champ_hash
+    ok &= chk("env_is_champion_leaf", champ_hash == CHAMP_LEAF_HASH,
+              f"DEFAULT_CONFIG hash {champ_hash} (want {CHAMP_LEAF_HASH})")
+
+    # --- (3) per-cell specs + hashes; every one must MOVE off the champion ---------
+    seen = {}
+    for d in doses:
+        spec = opencity_cand_leaf_spec(d, size_min, edge_min, symmetric)
+        cfg = load_cand(json.dumps(spec))
+        h = leaf_hash(cfg)
+        tag = opencity_cell_tag(d, size_min, edge_min, symmetric)
+        r["cells"].append({"tag": tag, "dose": d, "size_min": float(size_min),
+                           "edge_min": int(edge_min), "symmetric": bool(symmetric),
+                           "cand_leaf_json": json.dumps(spec), "cand_leaf_hash": h})
+        ok &= chk(f"cand_hash_moves[{tag}]", h != champ_hash,
+                  f"candidate leaf hash {h} != champion {champ_hash}")
+        ok &= chk(f"cand_hash_unique[{tag}]", h not in seen,
+                  f"{h} not already used by {seen.get(h, '-')}")
+        seen[h] = tag
+
+    # --- the dose-0 identity control's HASH: observed, never assumed ---------------
+    # `_LEAF_HASH_EXCLUDE_IF_DEFAULT` carries all four open-city fields, but it drops a
+    # field only while that field holds its DEFAULT value. This cell moves three of them,
+    # so whether it hashes AS the champion is an empirical question -- recorded here as a
+    # report field, not gated: the GATE is the bit-exactness of the leaf VALUES below.
+    d0_cfg = load_cand(json.dumps(OPENCITY_D0_IDENTITY))
+    d0_hash = leaf_hash(d0_cfg)
+    d0_hash_eq = (d0_hash == champ_hash)
+    d0_note = (
+        f"leaf_hash(dose-0 + MOVED thresholds) == champion ({champ_hash}): all four knobs "
+        f"are excluded-if-default AND the moved ones evidently do not survive into the "
+        f"hashed dict."
+        if d0_hash_eq else
+        f"leaf_hash(dose-0 + MOVED thresholds) = {d0_hash} != champion {champ_hash}: "
+        f"_LEAF_HASH_EXCLUDE_IF_DEFAULT drops a field only while it holds its DEFAULT "
+        f"value, so the three MOVED thresholds stay in the hashed dict even though the "
+        f"dose gate makes the leaf VALUES bit-identical. Consequence for the chain: a cell "
+        f"whose dose was accidentally zeroed would still PASS `cand_hash_moves` -- the hash "
+        f"gate cannot catch it, and `parse_doses`' refusal of dose 0.0 is the gate that "
+        f"does.")
+    r["dose0_identity"] = {"cand_leaf_json": json.dumps(OPENCITY_D0_IDENTITY),
+                           "leaf_hash": d0_hash, "hash_equals_champion": d0_hash_eq,
+                           "note": d0_note}
+
+    if not runtime:
+        r["runtime_probe"] = "SKIPPED (--no-runtime-probe: dry-run mode)"
+        r["ok"] = ok
+        return r
+
+    # --- (4) the LOADED native build accepts the kwargs ----------------------------
+    # Same fail-closed seam as denial: rust_agent.leaf_config_rs forwards the open-city
+    # kwargs only for a nonzero dose, so a pre-open-city wheel raises TypeError HERE
+    # instead of quietly serving the champion leaf to the candidate arm. CALIB_READ_RULE
+    # §4 calls this the launch blocker; TERM_SPEC §6's manual step is the fix.
+    try:
+        import carc_rs
+        from carcassonne_ai.rust_agent import leaf_config_rs
+        r["carc_rs_path"] = getattr(carc_rs, "__file__", "?")
+        probe_cfg = load_cand(json.dumps(
+            opencity_cand_leaf_spec(doses[0], size_min, edge_min, symmetric)))
+        rs_cand = leaf_config_rs(probe_cfg)
+        rs_champ = leaf_config_rs(default_cfg)
+        rs_d0 = leaf_config_rs(d0_cfg)      # dose 0.0 -> no kwargs forwarded, any build
+        ok &= chk("carc_rs_accepts_opencity_kwargs", True,
+                  "carc_rs.LeafConfigRs built with opencity kwargs")
+    except TypeError as e:
+        r["ok"] = False
+        chk("carc_rs_accepts_opencity_kwargs", False,
+            f"the LOADED carc_rs build PREDATES the open-city term ({e}). Rebuild + install "
+            f"the combined wheel on this box (maturin develop --release) before this block "
+            f"runs. Refusing: a default-off candidate arm produces a meaningless null.")
+        return r
+    except Exception as e:                                            # pragma: no cover
+        r["ok"] = False
+        chk("carc_rs_accepts_opencity_kwargs", False, f"probe failed: {e!r}")
+        return r
+
+    # --- (5) the term is WIRED INTO THE LEAF, not merely accepted -------------------
+    try:
+        st = carc_rs.MirrorState.from_seed(PROBE_SEEDS[0])
+        terms = st.leaf_terms(0, rs_champ)
+        ok &= chk("carc_rs_exposes_opencity_term", "opencity_term" in terms,
+                  f"leaf_terms keys: {sorted(terms)}")
+    except Exception as e:                                            # pragma: no cover
+        ok &= chk("carc_rs_exposes_opencity_term", False, f"{e!r}")
+
+    # --- (6) + (7) the rust leaf: dose MOVES it, dose 0 does NOT --------------------
+    # TERM_SPEC §6 measured the golden-corpus bite at 21.9% for the spec thresholds
+    # (4 tiles / 2 edges) and 0.0% at 6 tiles / 3 edges -- the tight arm can legitimately
+    # fail this check, and that is a fact about the arm, not a bug to be papered over.
+    moved = same = 0
+    identity_breaks = 0
+    d0_seen = d0_breaks = 0
+    try:
+        rs_identity = leaf_config_rs(default_cfg)     # dose stays 0 -> no kwargs forwarded
+        for seed in PROBE_SEEDS:
+            st = carc_rs.MirrorState.from_seed(seed)
+            for ply in range(PROBE_MAX_PLIES):
+                if st.is_terminal():
+                    break
+                if ply % PROBE_EVERY == 0:
+                    for p in (0, 1):
+                        a = st.leaf_value_float(p, rs_champ)
+                        b = st.leaf_value_float(p, rs_cand)
+                        c = st.leaf_value_float(p, rs_identity)
+                        z = st.leaf_value_float(p, rs_d0)
+                        moved += int(a != b)
+                        same += int(a == b)
+                        identity_breaks += int(a != c)
+                        d0_breaks += int(a.hex() != z.hex())
+                        d0_seen += 1
+                acts = st.legal_actions()
+                if not acts:
+                    break
+                st.advance(acts[(ply * 7 + 3) % len(acts)])
+    except Exception as e:                                            # pragma: no cover
+        ok &= chk("carc_rs_opencity_changes_leaf", False, f"playout probe failed: {e!r}")
+    else:
+        r["functional"] = {"values_moved": moved, "values_same": same,
+                           "identity_control_breaks": identity_breaks,
+                           "rs_dose0_values_compared": d0_seen, "rs_dose0_breaks": d0_breaks}
+        ok &= chk("carc_rs_opencity_changes_leaf", moved > 0,
+                  f"{moved} of {moved + same} sampled leaf values MOVE at dose {doses[0]} "
+                  f"(size_min={size_min} TILES, edge_min={edge_min}, symmetric={symmetric}); "
+                  f"0 would mean accepted-and-ignored == a silently default-off candidate, "
+                  f"OR a predicate this arm's thresholds never satisfy (TERM_SPEC §6 "
+                  f"measured 0.0% bite at 6 tiles / 3 edges)")
+        ok &= chk("carc_rs_identity_control", identity_breaks == 0,
+                  f"{identity_breaks} champion-vs-champion mismatches (must be 0)")
+        ok &= chk("carc_rs_dose0_bit_exact", d0_breaks == 0 and d0_seen > 0,
+                  f"{d0_seen - d0_breaks}/{d0_seen} sampled RUST leaf values are bit-identical "
+                  f"to the champion's at {OPENCITY_D0_IDENTITY} (the dose gate holds with the "
+                  f"thresholds moved). {d0_note}")
+
+    # --- (7b) the PYTHON leaf: same two properties, on its own scripted playouts ----
+    # The chain's cells run --backend rust, but the python leaf is the reference the
+    # reconcile gate calls bit-exact, and c5_leaf_override builds the candidate LeafConfig
+    # through it -- so a python-side gate leak would be invisible to (6)/(7) above.
+    py_seen = py_breaks = 0
+    py_moved = py_same = 0
+    try:
+        import random as _random
+
+        import numpy as _np
+        from carcassonne_ai import flat_leaf as _fl
+        from carcassonne_ai.game_wrapper import Game as _Game
+        cand_cfg = load_cand(json.dumps(
+            opencity_cand_leaf_spec(doses[0], size_min, edge_min, symmetric)))
+        for seed in PROBE_SEEDS:
+            _random.seed(int(seed))
+            g = _Game(enable_legal_moves_cache=True)
+            bd = g.get_init_board()
+            for ply in range(PROBE_MAX_PLIES):
+                if g.get_game_ended(bd, 0) != 0.0:
+                    break
+                if ply % PROBE_EVERY == 0:
+                    for p in (0, 1):
+                        ref = _fl.flat_virtual_score_v2_float(bd.state, p, default_cfg)
+                        z = _fl.flat_virtual_score_v2_float(bd.state, p, d0_cfg)
+                        b = _fl.flat_virtual_score_v2_float(bd.state, p, cand_cfg)
+                        py_breaks += int(ref.hex() != z.hex())
+                        py_seen += 1
+                        py_moved += int(ref.hex() != b.hex())
+                        py_same += int(ref.hex() == b.hex())
+                legal = _np.flatnonzero(g.get_valid_moves(bd))
+                if not len(legal):
+                    break
+                bd, _ = g.get_next_state(bd, int(legal[(ply * 7 + 3) % len(legal)]))
+    except Exception as e:                                            # pragma: no cover
+        ok &= chk("py_dose0_bit_exact", False, f"python playout probe failed: {e!r}")
+    else:
+        r.setdefault("functional", {}).update(
+            {"py_dose0_values_compared": py_seen, "py_dose0_breaks": py_breaks,
+             "py_values_moved": py_moved, "py_values_same": py_same})
+        ok &= chk("py_dose0_bit_exact", py_breaks == 0 and py_seen > 0,
+                  f"{py_seen - py_breaks}/{py_seen} sampled PYTHON leaf values are "
+                  f"bit-identical (.hex()) to the champion's at {OPENCITY_D0_IDENTITY}")
+        ok &= chk("py_opencity_changes_leaf", py_moved > 0,
+                  f"{py_moved} of {py_moved + py_same} sampled PYTHON leaf values MOVE at "
+                  f"dose {doses[0]} (same caveat as the rust check: a tight arm can "
+                  f"legitimately never fire)")
+
+    r["ok"] = bool(ok)
+    return r
+
+
 def probe_simsplit(harness: str, sims_tile, sims_meeple, sims, allow_unequal: bool,
                    runtime: bool) -> dict:
     r = {"capability": "simsplit", "checks": [], "ok": False, "harness": harness}
@@ -327,10 +610,19 @@ def probe_simsplit(harness: str, sims_tile, sims_meeple, sims, allow_unequal: bo
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--require", choices=("denial", "simsplit"), required=True)
-    ap.add_argument("--doses", default=None, help="denial: comma list, REQUIRED, no default")
-    ap.add_argument("--size-min", type=float, default=None)
-    ap.add_argument("--open-max", type=int, default=None)
+    ap.add_argument("--require", choices=("denial", "opencity", "simsplit"), required=True)
+    ap.add_argument("--doses", default=None,
+                    help="denial/opencity: comma list, REQUIRED, no default")
+    ap.add_argument("--size-min", type=float, default=None,
+                    help="denial: min city POINTS. opencity: min DISTINCT TILES -- different "
+                         "axis, do not carry a value across")
+    ap.add_argument("--open-max", type=int, default=None, help="denial only")
+    ap.add_argument("--edge-min", type=int, default=None,
+                    help="opencity only: min open_n for the penalty to fire; must be >= 1")
+    ap.add_argument("--asymmetric", action="store_true",
+                    help="opencity only: T = pen(self) instead of pen(self) - pen(opp). OFF by "
+                         "default => opencity_symmetric=True, which CALIB_READ_RULE §1 holds "
+                         "in every arm (flipping it is a different term, not a rung)")
     ap.add_argument("--max-cells", type=int, default=4)
     ap.add_argument("--harness", default=None)
     ap.add_argument("--sims-tile", type=int, default=None)
@@ -354,6 +646,15 @@ def main() -> int:
                                  "no default (DENIAL_SIZE_MIN / DENIAL_OPEN_MAX)")
             doses = parse_doses(a.doses, a.max_cells)
             rep = probe_denial(doses, a.size_min, a.open_max, runtime)
+        elif a.require == "opencity":
+            if a.size_min is None or a.edge_min is None:
+                raise ValueError("--size-min (DISTINCT TILES) and --edge-min are REQUIRED for "
+                                 "opencity and have no default: the arm is chosen by Joshua "
+                                 "from CALIB_READ_RULE §1 (A=4/2, B=3/2, C=6/3), and a "
+                                 "defaulted threshold would silently measure a cell nobody "
+                                 "pre-registered")
+            doses = parse_doses(a.doses, a.max_cells)
+            rep = probe_opencity(doses, a.size_min, a.edge_min, not a.asymmetric, runtime)
         else:
             if not a.harness:
                 raise ValueError("--harness is required for the simsplit probe")

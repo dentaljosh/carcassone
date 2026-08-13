@@ -1,0 +1,10 @@
+[oc-calib 2026-08-13_04:56:00] ABORT: rev mismatch: local 7b49e2dee7b48f0fd65eca24689092bcd00ba168 vs laptop f8d14ca7f1fb83b32819bca80cccecfb8a3d3481 — bundle-sync first
+[oc-calib 2026-08-13_04:56:40] GATE G1: source-tree identity OK (src+engine+rust: 369e61cc2deb5023ee712aaf7e017fa870524dce 5da1acc14f1022fb2a87fa261e5f4a364c25989c cad4650c85c78544e84890128b201115df5cb83c )
+[oc-calib 2026-08-13_04:56:40] GATE G1: HEADs recorded — local 7b49e2dee, laptop f8d14ca7f (differ in non-source paths only; verified above)
+[oc-calib 2026-08-13_04:56:42] GATE G2: script sha256 agree — instrument e37647862172efde probe d074cc1646688040
+arm A (size_min=4 edge_min=2) probe rc=0
+arm B (size_min=3 edge_min=2) probe rc=0
+arm C (size_min=6 edge_min=3) probe rc=7
+[oc-calib 2026-08-13_04:56:44] GATE G3: laptop opencity capability probe PASS on arms A and B (arm C reported, not gated)
+calibration launched detached at W=13 (MemoryMax=8G)
+[oc-calib 2026-08-13_04:56:45] LAUNCHED at W=13. Verify parallelism now:  ssh laptop-wsl 'pgrep -fc opencity_e4_replay'

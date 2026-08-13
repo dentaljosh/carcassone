@@ -1,0 +1,113 @@
+=== installing rust toolchain (minimal profile) ===
+info: downloading installer
+warn: It looks like you have an existing rustup settings file at:
+warn: /home/doctor/.rustup/settings.toml
+warn: Rustup will install the default toolchain as specified in the settings file,
+warn: instead of the one inferred from the default host triple.
+info: profile set to minimal
+info: default host triple is x86_64-unknown-linux-gnu
+info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+info: downloading 3 components
+info: default toolchain set to stable-x86_64-unknown-linux-gnu
+
+  stable-x86_64-unknown-linux-gnu installed - rustc 1.97.1 (8bab26f4f 2026-07-14)
+
+
+Rust is installed now. Great!
+
+To get started you need Cargo's bin directory ($HOME/.cargo/bin) in your PATH
+environment variable. This has not been done automatically.
+
+To configure your current shell, you need to source
+the corresponding env file under $HOME/.cargo.
+
+This is usually done by running one of the following (note the leading DOT):
+. "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+source "$HOME/.cargo/env.fish"  # For fish
+source "~/.cargo/env.nu"  # For nushell
+source "$HOME/.cargo/env.tcsh"  # For tcsh
+. "$HOME/.cargo/env.ps1"        # For pwsh
+source "$HOME/.cargo/env.xsh"   # For xonsh
+cargo 1.97.1 (c980f4866 2026-06-30)
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+=== installing maturin into the venv ===
+Collecting maturin
+  Downloading maturin-1.14.1-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl.metadata (16 kB)
+Downloading maturin-1.14.1-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl (10.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.6/10.6 MB 15.7 MB/s  0:00:00
+Installing collected packages: maturin
+Successfully installed maturin-1.14.1
+
+[notice] A new release of pip is available: 26.1.2 -> 26.2.1
+[notice] To update, run: /home/doctor/projects/carcassone/.venv/bin/python3 -m pip install --upgrade pip
+maturin 1.14.1
+=== maturin build --release ===
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded autocfg v1.5.1
+  Downloaded heck v0.5.0
+  Downloaded cfg-if v1.0.4
+  Downloaded memoffset v0.9.1
+  Downloaded pyo3-build-config v0.23.5
+  Downloaded unindent v0.2.4
+  Downloaded pyo3-macros v0.23.5
+  Downloaded quote v1.0.47
+  Downloaded rustversion v1.0.23
+  Downloaded target-lexicon v0.12.16
+  Downloaded indoc v2.0.7
+  Downloaded once_cell v1.21.4
+  Downloaded unicode-ident v1.0.24
+  Downloaded proc-macro2 v1.0.107
+  Downloaded pyo3-ffi v0.23.5
+  Downloaded pyo3-macros-backend v0.23.5
+  Downloaded portable-atomic v1.14.0
+  Downloaded syn v2.0.119
+  Downloaded libc v0.2.189
+  Downloaded pyo3 v0.23.5
+🐍 Found CPython 3.14 at /home/doctor/projects/carcassone/.venv/bin/python
+🔗 Found pyo3 bindings with abi3-py3.12 support
+📡 Using build options features from pyproject.toml
+   Compiling target-lexicon v0.12.16
+   Compiling once_cell v1.21.4
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling autocfg v1.5.1
+   Compiling libc v0.2.189
+   Compiling heck v0.5.0
+   Compiling indoc v2.0.7
+   Compiling memoffset v0.9.1
+   Compiling unindent v0.2.4
+   Compiling cfg-if v1.0.4
+   Compiling carc-core v0.1.0 (/home/doctor/projects/carcassone/rust/carc/carc-core)
+   Compiling pyo3-build-config v0.23.5
+   Compiling syn v2.0.119
+   Compiling pyo3-macros-backend v0.23.5
+   Compiling pyo3-ffi v0.23.5
+   Compiling pyo3 v0.23.5
+   Compiling pyo3-macros v0.23.5
+   Compiling carc-py v0.1.0 (/home/doctor/projects/carcassone/rust/carc/carc-py)
+    Finished `release` profile [optimized] target(s) in 6.63s
+📦 Built wheel for abi3 Python ≥ 3.12 to /home/doctor/carc_wheels/carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64.whl
+=== built wheel: /home/doctor/carc_wheels/carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64.whl ===
+89f6c8991438eda9f5070107eabb5838b7867f7f11229cd13b295b7daf20e73c  /home/doctor/carc_wheels/carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64.whl
+Processing /home/doctor/carc_wheels/carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64.whl
+Installing collected packages: carc-rs
+  Attempting uninstall: carc-rs
+    Found existing installation: carc-rs 0.1.0
+    Uninstalling carc-rs-0.1.0:
+      Successfully uninstalled carc-rs-0.1.0
+Successfully installed carc-rs-0.1.0
+
+[notice] A new release of pip is available: 26.1.2 -> 26.2.1
+[notice] To update, run: /home/doctor/projects/carcassone/.venv/bin/python3 -m pip install --upgrade pip
+=== verify import + opencity knobs ===
+carc_rs: /home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py
+so: /home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/carc_rs.abi3.so sha256 98703e040afbe183d1608d4252121f3b76c7187e89f5cf043f25881906b42776
+OPENCITY KWARGS ACCEPTED
+leaf_terms carries opencity_term; keys: ['base', 'bonus_opp', 'bonus_opp_raw', 'bonus_self', 'bonus_self_raw', 'denial_term', 'flip_term', 'meeple_term', 'opencity_term', 'return_term', 'score', 'value']
+=== pytest tests/test_opencity_term.py ===
+.........................                                                [100%]
+=== pytest neighbours (denial + frozen substrates) ===
+.....................                                                    [100%]
