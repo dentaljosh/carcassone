@@ -1,8 +1,9 @@
 # CONFIRM exclusions — J7ZERO, band 1.26e11 (`fixed_v1`)
 
-**Status: LIVE — written 2026-08-13 while the confirm leg was still running; the
-realized-rate block is stamped with the count at the time of writing and MUST be
-re-read off the run's `manifest.json` before any readout quotes it.**
+**Status: FINAL for the exclusion question — the confirm leg completed
+2026-08-13 09:20 (`DONE_CONFIRM`, 800/800 records). §3 carries the run's own
+numbers, read off `confirm/J7ZERO_confirm.jsonl.manifest.json`. This note makes
+NO verdict statement: the margin is not adjudicated here.**
 
 Scope: the tournament CONFIRM cell of `TOURNAMENT_PREREG.md` §5 rule 4 —
 `--preset current --j7-weight 0.0` (`variant_id current+j7w0`), 400 decks × 2
@@ -104,32 +105,37 @@ capoff post-mortem fed. It is *not* fixed here; it is *recorded* here.
 
 ## 3. Realized rate
 
-**As of 2026-08-13 08:31 (leg relaunched, run in flight):**
+**FINAL — the completed leg, straight off `summary` in
+`confirm/J7ZERO_confirm.jsonl.manifest.json`:**
 
 | quantity | value |
 |---|---|
-| cells attempted so far (269 first leg + 30 replayed + 1 failing) | 299 |
-| failed cells | **1** |
-| realized rate so far | **0.33 %** (1 / 299) |
-| by seat | seat 0: 1 · seat 1: 0 |
-| paired decks lost | 1 (deck `126000000135` contributes **0** paired decks, not 1) |
+| `n_records` (cells attempted) | **800** |
+| `n_scored` | **799** |
+| `n_failed` | **1** |
+| `failure_rate` | **0.00125 = 0.125 %** |
+| `failed_by_seat` | seat 0: **1** · seat 1: **0** |
+| `n_paired_decks` | **399** of 400 (deck `126000000135` contributes **0**, not 1) |
+
+So the confirm is **n = 399 paired decks / 799 scored games, not 400 / 800**, and
+that is the n any readout must quote.
 
 House reference figures for the same family: **0.5 %** of games
-(`WALL_LEGALITY` ×2 / 400, JCZ match 2026-08-09) and the original design
-contract "revisit if the rate exceeds **0.5 %** in real self-play data"
-(DECISIONS 2026-04-28, line 2654). 0.33 % is **below** both.
+(`WALL_LEGALITY` ×2 / 400, JCZ match 2026-08-09) and the original design contract
+"revisit if the rate exceeds **0.5 %** in real self-play data" (DECISIONS
+2026-04-28, line 2654). **0.125 % is 4× below both** — the trigger in §5 did not
+fire on rate.
 
-The guard is **confirmed live**: on the resumed leg the same cell came up at
-`[11/531]`, printed
+Neither pre-stated failure condition fired, but read §5 for what "did not fire"
+is and is not worth: 1 event on seat 0 is **not** evidence of seat-neutrality,
+only the absence of evidence against it.
+
+The guard is **confirmed live in production, not just in tests**: on the resumed
+leg the same cell came up at `[11/531]`, printed
 `⚠️ FAILED CELL deck=126000000135 joshua_seat=0 RuntimeError: PUCT reached a node
 with no valid actions`, landed its `failed: true` record in the JSONL, and the
-pool carried straight on.
-
-⚠️ **Final numbers are the run's, not this table's.** When the leg finishes, read
-`confirm/J7ZERO_confirm.jsonl.manifest.json` → `summary.n_failed`,
-`summary.failure_rate`, `summary.failed_by_seat`, `summary.failed_cells`. The
-driver now writes a failed record per dead cell and prints the exclusion line;
-the count in the manifest is authoritative over the paragraph above.
+pool ran on to 531/531. The leg that crashed had cost 531 games and left zero
+trace of the offending cell; this one cost one deck and named it.
 
 ## 4. Why the exclusion is outcome-INDEPENDENT
 

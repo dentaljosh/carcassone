@@ -99,5 +99,46 @@
   "measurement/joshuabot_20260812/confirm/J7ZERO_confirm.jsonl",
   "--resume"
  ],
- "utc": 1786624300.2032177
+ "utc": 1786624300.2032177,
+ "summary": {
+  "variant_ids": [
+   "current+j7w0"
+  ],
+  "n_records": 800,
+  "n_scored": 799,
+  "n_failed": 1,
+  "failure_rate": 0.00125,
+  "failed_cells": [
+   {
+    "deck_seed": 126000000135,
+    "joshua_seat": 0,
+    "exc_type": "RuntimeError",
+    "exc": "PUCT reached a node with no valid actions (Python IndexError)"
+   }
+  ],
+  "failed_by_seat": {
+   "0": 1,
+   "1": 0
+  },
+  "wins": 159,
+  "draws": 8,
+  "losses": 632,
+  "win_rate": 0.20400500625782228,
+  "n_paired_decks": 399,
+  "paired_margin_mean": -16.036340852130326,
+  "paired_margin_sem": 0.656590119185906,
+  "paired_margin_z": -24.42367069430391,
+  "mean_margin_unpaired": -16.051314142678347,
+  "rule_fires_total": {
+   "f_end_deploy": 57,
+   "f_j10_early_farm_block": 11090,
+   "f_j3_reserve_floor": 12346,
+   "j1_majority_steal": 4837,
+   "j2_farm_attack": 46091,
+   "j5_dump": 1884,
+   "j6_anchor_roads": 51276,
+   "j8_overcommit": 2690
+  }
+ },
+ "n_failed_this_leg": 1
 }
