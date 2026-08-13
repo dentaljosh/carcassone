@@ -86,10 +86,19 @@ for this mix. Two facts worth carrying: rust's phase spread is only **2.4×** (1
 what dominates the rust cost; and **mid is the most expensive bucket, not early**, which
 inverts the python smoke's ordering. `c_python = 9.85` is unchanged (§7.4, measured).
 
-⚠️ Both smokes ran at **W ≤ 8 on a quiet box**; a W=14 run has more DRAM contention, so every
-figure below is an **optimistic** floor, not a ceiling. The python `c` additionally ran beside
-another job and is an upper bound. Neither is re-measured at W=14 — that would cost more than
-it buys.
+⚠️ **Two contamination facts, both stated rather than papered over** (the standing rule is that
+a throughput farm beside a timing bench contaminates the bench):
+
+1. **A co-tenant was on the box for the whole rust smoke** — another agent's 2-worker
+   `scripts/rustport/reconcile_leaf.py` (~20% CPU each, from a separate worktree), found in the
+   post-run census, not the pre-run one. It is small next to the smoke's 5–8 workers on a
+   16C/32T box, but it is **not zero**, so both `c_rust` figures are **upper bounds** — the
+   quiet-box value is lower and the ETA is conservative in the right direction. Same status as
+   the python smoke's own caveat (§7.4), so the two `c`s are at least caveated alike.
+2. Both smokes ran at **W ≤ 8**; a W=14 run has more DRAM contention, which pushes the other
+   way. Neither is re-measured at W=14 — that would cost more than it buys.
+
+⇒ Treat `c_rust` = 1.4755 as a **priced commitment with a soft ±, not a calibrated constant.**
 
 ### 0.C Stage A, re-priced — **2.37 h at local W14** (was 2.72 h)
 
