@@ -1,6 +1,27 @@
 # Joshua-bot — the scripted owner-strategy opponent (J1–J8)
 
-**STATUS: BUILT 2026-08-12, NOT YET RUN. Variant-tournament axes added 2026-08-12
+> ## 🔚 STATUS: BUILT 2026-08-12 · **RUN AND ADJUDICATED 2026-08-13** · closed out six-touch
+>
+> The variant tournament executed and is **spent**: 6-cell screen n=300 (band 1.25e11) →
+> J7ZERO confirm n=800 (sealed band 1.26e11). Verdict of record:
+> [CONFIRM_VERDICT.md](CONFIRM_VERDICT.md). **The bot is not an anti-champion instrument** —
+> confirm margin **−16.036 pts/deck, z −24.42**, wr 0.204. ⚠️ **Confounded by search depth:**
+> J1–J9 sit on a **one-ply greedy** base, and JCZ's `LegacyAiPlayer` — a *stronger* shallow
+> player — loses to the same champion by only **−6.50**, so Joshua-bot is weaker than JCZ's AI
+> and this prices the **encoding on a greedy base**, not the strategy.
+>
+> **Three of §7's open questions are now answered empirically** (the run's real product):
+> **Q1 `j7_weight` → 0.0** (+5.34 pts/deck, z +3.71) · **Q6 preset → `current`** (+5.81,
+> z +3.68) · **Q2 J9 → no conviction, stays OFF** (−2.14, z −1.47). ⛔ **Q3 J8 reserve-floor
+> exemption → EXACTLY INERT: it changes zero chosen moves**
+> ([J8EX_INERT_FINDING.md](J8EX_INERT_FINDING.md)) — J8 is **untested, not refuted**, and
+> **this file's "8–28×/game" build figure counted the PREDICATE firing, not chosen moves
+> changing; it must never be cited as a behavioural-change rate.**
+>
+> Follow-up this earned (built, 0 games): the J-rules as a leaf term on the champion's **own**
+> search — `docs/LEVER_INDEX.md` row *"J-rules on search"*.
+
+**STATUS AT BUILD TIME: BUILT 2026-08-12, NOT YET RUN. Variant-tournament axes added 2026-08-12
 (owner: "test these and see what wins empirically") — J9 encoded (default OFF), and
 J7's weight / the J3-vs-J8 conflict / J9 are CLI flags rather than decisions (§7).**
 Instrument only — **no strength claim, no claim id, `governance/PRODUCTION.yaml`
@@ -263,6 +284,19 @@ nobody has funded a sweep for — flagged as such.
 
 Cross with `--preset {current,early}` for the full grid. Any other knob is sweepable via
 `--override key=value` without a new flag.
+
+> ⛔ **CORRECTED 2026-08-13 BY MEASUREMENT — THE PARAGRAPH BELOW IS WRONG AND IS KEPT ONLY
+> AS THE PROVENANCE OF A RETRACTED FIGURE.** Against the **champion**, cell `J8EX`
+> reproduced cell `BASE` **bit-for-bit** — same win rate, same margin (−23.3333), same sem,
+> same z, and **0 of 300 games differing in margin** over 300/300 common `(deck_seed, seat)`
+> keys. The exemption **changed zero chosen moves.** It is *not* a plumbing failure (four
+> checks) — F-J3 is skipped when it would empty the candidate set, so pivotal overcommits are
+> already legal without the flag. **The "8–28" below counted the PREDICATE firing
+> (`rule_fires`), not the chosen move changing, and/or was measured against `RuleBasedPlayer`
+> whose game shapes differ from the champion's. DO NOT CITE IT AS A BEHAVIOURAL-CHANGE RATE.**
+> ⇒ Q8 is **untested, not refuted**; reaching the intent ("you have to take chances on the
+> pivotal feature") probably needs J8 as a *score* term, not a filter exemption.
+> → [J8EX_INERT_FINDING.md](J8EX_INERT_FINDING.md).
 
 ⚠️ **Q8 is not a small axis — it changes how often J8 runs at all.** Measured over full
 `current`-preset games vs `RuleBasedPlayer`: with the flag OFF, `j8_overcommit` fired on

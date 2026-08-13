@@ -6009,3 +6009,249 @@ minted, `governance/PRODUCTION.yaml` untouched.** Files touched: both `DESIGN.md
 **Reversal cost:** nil — nothing was spent and nothing was promoted. Reversing ruling 2's figure
 costs one re-run of the arithmetic against `VERDICT.json`.
 **Phase:** measurement-first (Phase 4 era; strength levers, classical champion).
+
+## 2026-08-13 — The JOSHUA-BOT VARIANT TOURNAMENT RAN AND CLOSED (six-touch): the anti-champion **instrument** claim is **NOT BOUGHT, with power** (−16.04 pts/deck, z −24.42) — but the run **cannot separate strategy from depth**, and its real product is the **calibration**
+
+**Context.** The human-edge program's lever 3 ("encode the exploit"): the E4 anchor beats the
+champion on his phone but the ledger is unpowerable at ~1 game/day, so his *self-described*
+strategy (the 2026-08-12 anchor interview, J1–J12) was encoded as a deterministic,
+fair-information-only scripted opponent and pointed at the champion at scale. The prize named in
+the prereg: if the scripted exploit reproduces even part of the E4 lean (+10.0 ± 5.6 pts/game,
+n=23, z +1.78) the program gains its **first powered, reproducible anti-champion instrument**,
+and every subsequent leaf/search fix gates on it instead of on the slow human stream.
+Pre-registration: [`measurement/joshuabot_20260812/TOURNAMENT_PREREG.md`](measurement/joshuabot_20260812/TOURNAMENT_PREREG.md)
+(committed `61483880`, **before game 1 and before any variant's margin was read**) — 6-cell
+screen at n=300/cell on band 1.25e11, top cell by margin to an n=800 confirm on the **fresh
+sealed** band 1.26e11, primary statistic = the deck-paired margin z, and the standing read-rule
+that **a sub-2σ axis defaults to interview fidelity — noise never overrides the anchor's
+self-report.**
+
+**What ran.** 2,600 real head-to-head games against the production champion (1,800 screen + 799
+scored confirm), fair PIMC **k8×1376 = 11008** rust + exact-K≤2 (leaf `a36d2e15a3b3d71d`),
+`fixed_v1` + `CARCASSONNE_FIX_R9=1`, deck-paired (each deck both seatings), one variant per file.
+The bot itself is a **one-ply greedy** base carrying J1–J9.
+
+**Screen (band 1.25e11, 150 decks × 2 seats per cell, all six cells on the SAME decks).** Margins
+in pts/deck, bot side: `EARLY` −29.14 (z −25.21) · `J9ON` −25.48 (z −26.04) · `BASE` −23.33
+(z −21.75) · `J8EX` −23.33 (z −21.75) · `ALLTOG` −20.40 (z −21.38) · **`J7ZERO` −17.99 (z −18.70),
+top cell ⇒ selected for the confirm.**
+
+**Confirm (band 1.26e11, sealed, 400 decks × 2 seats).** 800 records, 800 unique cells, 0 missing,
+0 extra, single `variant_id`. **1 failed game** ⇒ **n_scored 799, 399 paired decks**, failure rate
+**0.125 %** — 4× below the 0.5 % house reference; neither pre-stated validity trigger fired.
+**Win rate (bot) 0.2040 · paired margin −16.036 pts/deck · sem 0.657 · margin z −24.42.** The
+screen cell for the same variant read −17.99 ± 0.96, so the confirm sits **+1.96 above** it
+(z +1.68 on the difference) — consistent, and the movement is in the **favourable** direction:
+**no winner's-curse regression to report** (notable, after four instances this program).
+
+⭐ **ADJUDICATION — the pre-registered claim is NOT bought, and it is refused WITH POWER, not with
+an underpowered null.** Question (a) INSTRUMENT: **NO.** No variant reproduces the human's lean;
+the scripted anchor strategy on a greedy base is not an anti-champion instrument, and structural
+blocker #1 remains undented by this route.
+
+⚠️ **WHAT THIS DOES NOT ESTABLISH: that the anchor's strategy is worthless. The result is
+confounded by SEARCH DEPTH and the confound is LARGE.** The bot applies J1–J9 on a **one-ply
+greedy** base; the champion runs 11,008-sim PIMC + exact endgame. The project's own calibration
+for that gap is on file: JCloisterZone's `LegacyAiPlayer` — a one-turn BFS + one static
+evaluator, i.e. a *stronger* shallow player than our greedy base — loses to the same champion by
+only **−6.50 pts/deck at wr 0.345** (`results.csv` `jcz_legacyai_vs_champ_fixed_v1_r9_n400`). So
+Joshua-bot at **−16.04 / wr 0.204 is WEAKER than JCZ's AI.** This run prices the
+**encoding-on-a-greedy-base**, and says nothing clean about the *strategy*. **No amount of n fixes
+that** — it is a design property, not a power problem. The design fix it earns (named here, funded
+separately): run the J-rules as a **leaf/policy modifier on the champion's own search** at the
+champion's own budget, so strategy is the only difference. That is the `J-rules on search` row on
+[LEVER_INDEX](docs/LEVER_INDEX.md), built (0 games) the same day.
+
+⭐ **Question (b) CALIBRATION — ANSWERED, and this is the run's real product.** Within a shared
+shallow base the axis contrasts are clean and within-band deck-matched (the robust class):
+- **`j7_weight` 0 > 1** — +5.34 pts/deck, **z +3.71** ⇒ owner open question 1 answered: *count his
+  farm points once, not twice.*
+- **preset `current` > `early`** — +5.81 pts/deck, **z +3.68** ⇒ owner open question 6 answered:
+  `current` is the reference preset.
+- **J8 reserve-floor exemption INERT** — *exactly* zero, not statistical (below).
+- **J9 cloister caution — NO CONVICTION** (−2.14, z −1.47) ⇒ under the prereg's read rule it
+  **defaults to interview fidelity, OFF.** ⚠️ J9's timing threshold (0.55) was **borrowed** from
+  J10's farm block, so this tests one *encoding* of the cloister adaptation, not the idea.
+
+⭐ **FINDING THAT MUST SURVIVE #1 — `J8EX` REPRODUCED `BASE` BIT-FOR-BIT, AND THE BUILD REPORT'S
+"8–28×/GAME" FIGURE IS NOT A BEHAVIOURAL-CHANGE RATE.**
+[`J8EX_INERT_FINDING.md`](measurement/joshuabot_20260812/J8EX_INERT_FINDING.md): `win_rate 0.1150`,
+paired margin **−23.3333**, sem 1.0728, z −21.75 — identical to every printed digit, with **0 of
+300 games differing in margin** across 300/300 common `(deck_seed, seat)` keys. **It is not a
+plumbing failure** — four independent checks: the flag reached the driver (`argv` in the cell
+manifest), the variant resolved differently (`current+j7w1+j8brk` vs `current+j7w1`), 300/300
+records stamp `joshua_axes` correctly, and the decision code consults the flag in F-J3.
+**Mechanism:** F-J3 is a hard filter that is **skipped when it would empty the candidate set**, so
+pivotal overcommits are *already legal without the flag*; the exemption only bites in the narrow
+intersection (floor active **AND** a closure/swing exists **AND** a pivotal overcommit outscores
+every surviving one), and across 300 games that intersection **never decided a move.**
+⛔ **The build report's *"`j8_overcommit` fires on 0 chosen moves per game with the floor intact
+and 8–28 with the exemption"* — the figure that motivated reframing the arm as "J8 present vs
+absent" and carried that reframe into the prereg — counted the **PREDICATE** firing (`rule_fires`),
+not the **chosen move** changing (and/or was measured against `RuleBasedPlayer`, whose game shapes
+differ). **DO NOT CITE 8–28 AS A BEHAVIOURAL-CHANGE RATE, anywhere, ever.** Consequences: the J8
+axis contributes nothing to this tournament; `ALLTOG` is partially confounded (it effectively
+measures J7ZERO+J9ON); **J8 is UNTESTED, not refuted** — if "you have to take chances on the
+pivotal feature" is meant to bite, J8 should arguably be a *score* term rather than a filter
+exemption. **New cheap gate this earns:** assert that any two cells differing in an axis produce
+≥1 differing action on a shared seed, run on 1 game *before* the cell — the chain's Gate 1 checked
+the argparse surface, which cannot catch plumbed-but-inert.
+
+⭐ **FINDING THAT MUST SURVIVE #2 — the strategy/depth confound above.** Recorded in its own right
+because the tempting one-line summary ("we encoded his strategy and it lost by 16 points") is a
+**forbidden reading**: it prices a greedy base, and a *better* greedy-class player loses by 6.5.
+
+**The excluded game, and why it does not bias the margin.**
+[`CONFIRM_EXCLUSIONS.md`](measurement/joshuabot_20260812/CONFIRM_EXCLUSIONS.md). Deck
+`126000000135`, `joshua_seat 0`, champion seed `9400540`: the **champion's own** `choose_action`
+raised `SearchError::NoLegalActionsAtInterior` — the bounded 25×25 centroid action-window family —
+**reproducibly, three times**, while the *other seating of the same deck* completes and scores.
+The **played** position was healthy (5 legal actions, **0** outside the window, board extent well
+inside it); the wall is **inside the search**, at a hypothetical PIMC continuation that sprawls
+past the window. The exclusion is outcome-independent: the raise happens *before a move is
+returned* so nothing is scored for anybody; the trigger is a property of the action *encoding* and
+reads no score; both players are deterministic so the excluded set is a function of the seeds, not
+of the realised result; and a deck with one dead seating is dropped from the paired margin
+**entirely**, so the cost is **n, not bias**. ⚠️ Two honest riders travel with it: candidate-
+correlation is **not** excluded (a sibling cell's n is not automatically comparable minus the same
+deck — the capoff shape), and with **one** event on seat 0 there is **no power** to test
+seat-neutrality. Driver change this bought: a cell that raises is now caught, written as a
+`failed: true` record and the pool **continues** (`scripts/joshuabot/h2h.py`, 14 tests) — the leg
+that crashed had cost 531 games and left zero trace of the offending cell; the resumed one cost
+one deck and **named** it. That defect is the subject of its own entry below.
+
+**Governance.** Bands **1.25e11** (screen, 6 cells) and **1.26e11** (confirm) both flip
+**claimed → retired, decision-influenced** (the screen selected the confirm cell; the confirm
+adjudicated). ⚠️ **`governance/BAND_REGISTRY.csv` was NOT edited by this close-out** — another
+session held the file at the time; **the two band rows are owed and are the one outstanding touch
+of this entry.** **No `governance/CLAIM_REGISTRY.csv` row is minted: a non-conviction on an
+instrument question mints no claim.** `governance/PRODUCTION.yaml` untouched; nothing promoted; no
+leaf, search or config knob of the champion was modified anywhere in this campaign.
+**`experiments/results.csv` rows ARE owed here** — unlike the 0-game oracle instruments of the
+same week these are 2,600 real head-to-head games — and 7 were added:
+`joshuabot_screen_{base,j7zero,early,j8ex,j9on,alltog}_*_n300_b125e9` +
+`joshuabot_confirm_j7zero_current_j7w0_fixed_v1_vs_champ11008_n799_b126e9`.
+
+**Files touched:** `experiments/results.csv` (7 rows), `STATUS.md`, `docs/LEVER_INDEX.md`
+("human-strategy scripted opponent" row), `docs/PROGRAM_ROADMAP_2026-07-07.md`,
+`measurement/joshuabot_20260812/TOURNAMENT_PREREG.md` + `SPEC.md` (close-out status banners), this
+file.
+**Reversal cost:** nil — nothing was promoted and no champion artifact moved. The verdict is
+reversible only by a differently-*designed* run (J-rules at depth), not by more n at this design.
+**Phase:** measurement-first (Phase 4 era; classical champion, human-edge program lever 3).
+
+## 2026-08-13 — WINDOW-TRUNCATION CENSUS — ⛔ **STATE RECORD, NOT A CLOSE-OUT AND NOT A VERDICT.** Instrument **BUILT, GROUND-TRUTH VALIDATED, PILOTED; the FULL CENSUS HAS NOT RUN and NOTHING IS ADJUDICATED.** P3 (reliability) **HAS ALREADY FIRED IN PRODUCTION**, so the fail-loud fix is **LICENSED AND UNBUILT**
+
+> ⛔ **READ THIS FIRST. This entry closes nothing.** It exists because two facts are already
+> decision-relevant and would otherwise be lost: (1) the pre-registered **P3 trigger has fired in
+> production**, which licenses the fail-loud fix **today, independently of any census**, and that
+> fix **has not been built**; and (2) the `move_idx`-vs-ply correction below is a live trap for
+> anyone reproducing a named champion decision. **The measurement itself is PENDING** — the queue
+> item `window_truncation_census` is still open and the scheduler correctly still considers it
+> so. **No verdict, no branch fired, no `results.csv` row, no band, no claim, no `DONE_` marker.**
+> ⚠️ **Any number below that is not explicitly a PILOT count is a PRICED PLAN, not a result** —
+> do not cite the full census's projected power as though it had been measured.
+
+**Context.** The Joshua-bot confirm lost a game to a defect nobody had ever measured
+(entry above): `carc-core/src/action_space.rs::encode` returns `None` for a **TILE** placement
+outside the 25×25 centroid window, `game.rs::legal_mask` counts those as `n_overflow` and **drops
+them silently** — where Python's `game_wrapper._compute_mask` raises `WindowOverflowError` at
+exactly that condition. Since 2026-08-01 the **rust backend is the champion's backend of record**,
+so `Game::legal_actions()` can return a strict subset of the engine's own legal move list **with
+no error anywhere**. Every prior number on this family — the JCZ `WALL_LEGALITY` ≈0.5 %/game, the
+2026-07 window audit's **0/299k**, the 2026-07-19 adversarial replay's 2,159 states — is a rate
+over the **played** distribution. The champion is PIMC: it descends into hypothetical
+continuations that no real game reached, and **nothing about a played-position rate constrains a
+search-internal one, in either direction.** The 2026-08-13 crash is the existence proof that the
+two populations differ. → [`measurement/window_truncation_20260813/DESIGN.md`](measurement/window_truncation_20260813/DESIGN.md).
+
+**What exists (all of it read-only — no engine edit, no `src/` edit, no rebuilt extension, no env
+flag; everything off the public pyo3 surface, at the champion's own `search_single` seam).**
+- **The instrument** — `scripts/measurement_infra/window_truncation_census.py`,
+  `tests/test_window_truncation_census.py` (12 tests, green), incl. a **positive control**
+  (`W=15` on a real banked root ⇒ 8 truncated nodes, 2 dropped actions each, all verified
+  `dropped_all_legal`) so it is not unfalsifiable-by-construction.
+- **The exactness argument (§4)** — the search is **isomorphic under a change of window size**
+  (transposition key never mentions the window; action *ordering* is window-invariant; priors are
+  a softmax over `legal` in that order; the tie-break remap preserves order), and **`W=71` is
+  provably overflow-free** on a 35×35 board. So the decision-relevant statistic — *would the root's
+  chosen action change?* — is a **fully controlled A/B**, not a proxy. Measured: `W=71` costs
+  0.150 s vs 0.147 s per world and returns **bit-identical** pooled stats on an untruncated root.
+- **⭐ GROUND TRUTH — the production crash reproduces inside the instrument.** Run on the one root
+  known to break (the J7ZERO confirm cell, deck `126000000135`, `fixed_v1`,
+  `champion_seed 9400540`, root recovered by `reconstruct_crash_root.py`): **10,003 nodes, 382
+  truncated (3.82 %), 578 actions dropped, visit-weighted 6.23 %, 6 empty-mask nodes** (the trace's
+  own `va:[]` count is **6** — independent agreement), and **world 3 RAISED
+  `NoLegalActionsAtInterior`** — the production crash, caught and recorded. All 6 empty-mask nodes
+  are the **four rotations of a single placement at engine coordinate (4, 15)**, one row above a
+  window covering rows 5–29. Rate rises with depth exactly as the mechanism predicts (d3 1.3 % →
+  d5 23.0 % → d7 13.3 % → **d9 100 %**), and is confined to TILES nodes (382/4,386; meeples
+  0/5,617). **Under the overflow-free window the champion's pooled-Q pick MOVES** (NORMAL meeple on
+  TOP → meeple-Pass) — and by the isomorphism that is attributable to truncation and nothing else.
+  ⚠️ **This cell is SELECTED on having crashed; its 3.82 % and its 1/1 pick change MUST NOT be
+  pooled into any census rate.** Its role is validation, not estimation.
+  ⭐ **Correction the reproduction forced, worth its own line: the "ply 59" in the crash diagnostic
+  is NOT the global ply — it is the champion's own decision counter (`move_idx = 59`, global ply
+  119).** The determinization stream is seeded from `det_seed_base(seed, move_idx)`, so feeding the
+  global ply would have drawn eight *different* worlds and the crash would not have reproduced.
+- **Two pilots, n=40 roots each, at the full production budget** (`k_dets 8 × 1376 = 11,008`):
+  **`walled` 396,872 nodes, 0 truncated, 0 empty-mask, 0/40 pick changes, `iso_ok` 40/40** ·
+  **`fixed_v1` 357,320 nodes, 0 truncated, 0 empty-mask, 0/36 pick changes, `iso_ok` 36/36** (+4
+  roots skipped `forced`). Digest gate 0, encode collisions 0, world errors 0 on both.
+
+**⛔ THE FULL CENSUS HAS NOT RUN, AND THIS ENTRY DOES NOT ADJUDICATE IT.** There is no
+`CENSUS_RESULT.md`, no `DONE_CENSUS`, no `RUN_MANIFEST.json`, and no `census_walled` /
+`census_fixed_v1` output directory on disk; the job is queued as
+`window_truncation_census` (priority 10, `prefer_box: laptop`) in `scripts/scheduler/queue.json`
+and its launcher `RUN_CMD.sh` exists, but both boxes were occupied. **What the pilots establish is
+a bound, and it is honestly a weak one.** Arithmetic shown, derived from the two
+`summary.json` files and nothing else — rule of three (0 events in N ⇒ ≤ 3/N at 95 %):
+- `walled`: 0 / **396,872** nodes ⇒ 3/396,872 = **≤ 7.56 × 10⁻⁶ per node**
+- `fixed_v1`: 0 / **357,320** nodes ⇒ 3/357,320 = **≤ 8.40 × 10⁻⁶ per node**
+- a champion seat expands at most 72 decisions × 11,008 = **792,576** nodes per game ⇒
+  792,576 × 7.56 × 10⁻⁶ = **≤ 6.0** and 792,576 × 8.40 × 10⁻⁶ = **≤ 6.7 truncation events per
+  champion-game.**
+
+**≤ ~6 events per game is not a useful bound** — it does not settle the question in either
+direction, which is exactly why the full census is queued rather than waived. **The full census is
+PRICED, NOT RUN** (898 + 1,548 roots, ≈22.7 M nodes, ≈1 h 37 m at W4); DESIGN §8 *projects* it
+would tighten these to ≈ ≤ 0.27 and ≈ ≤ 0.17 events per champion-game. ⚠️ **Those two figures are
+a PLAN, not a measurement — never quote them as a result, and never state a node total larger than
+the 754,192 actually censused.** The legs
+are **never pooled** (different wall geometries; the cross-band humility rule's sibling), and a
+null must be reported with its rule-of-three bound in **events per champion-game**, not as "0 %".
+⭐ What the pilots *do* buy, and it is not nothing: **754,192 search-internal nodes at the
+production budget, 0 dropped legal actions — 2.5× the entire prior window-audit evidence base
+(0/299k), drawn from the population that had never been sampled at all.**
+
+⭐ **P3 HAS ALREADY FIRED, IN PRODUCTION, AND IS NOT CONDITIONAL ON THE CENSUS.** The
+pre-registered reliability trigger (§6-P3) is **OCCURRENCE, not rate** — "the cost of this face is
+not elo, it is a lost tournament game and a hand-written exclusions dossier". A real
+`NoLegalActionsAtInterior` raise happened inside the champion's own `choose_action` on 2026-08-13,
+killed `imap_unordered`, took the confirm leg down at 269/800 and cost one excluded cell plus the
+audit that wrote `CONFIRM_EXCLUSIONS.md`. ⇒ **The minimal fail-loud fix (§7 F-c) — make the Rust
+`legal_mask` surface `n_overflow > 0` instead of swallowing it, matching Python's
+`WindowOverflowError`, ideally as a face-5 counter fed into the existing `wall_sentinel` — is
+LICENSED NOW by that pre-registered trigger, whatever P1 and P2 turn out to be. ⛔ IT HAS NOT BEEN
+BUILT.** It is carried as an open item on the roadmap so it cannot fall through. What the census
+is still *for* is **P1** — whether the *silent* face costs strength, i.e. whether **F-a (widen the
+window inside search only, with an exact remap back to `W=25` indices on the way out)** is owed on
+top of F-c. F-b (recentre) is **not sufficient and the pilots say why**: the window already
+follows the centroid, the crash cell's window was correctly centred, and Pilot B *is* a `fixed_v1`
+census finding the same zero — recentring is orthogonal to this defect. Any of F-a/F-c touches
+`carc-core` ⇒ a rebuild ⇒ the bit-exactness gates, and for F-a a recorded-artifact **epoch**
+decision (every `roots.jsonl`, `champ_games.jsonl`, E4 archive and trace stores `W=25` indices).
+
+**Governance.** **0 games played, no band claimed, no `experiments/results.csv` row, no
+`CLAIM_REGISTRY` row, `governance/PRODUCTION.yaml` untouched.** The no-row call is not a judgement
+made at close-out: DESIGN §6's *pre-registered* reporting rules already say **"No `results.csv` row
+and no claim is minted from the pilot; the full census owns that"**, and it matches how this week's
+other 0-game instruments were treated (the E4 autopsy, tile-tie Stage A, the sims-split census,
+lever-menu items 1 and 6). A `results.csv` row becomes owed if and when the census lands **and**
+something plays games off the back of it.
+**Files touched:** `STATUS.md`, `docs/PROGRAM_ROADMAP_2026-07-07.md`, `docs/LEVER_INDEX.md`
+("widen the action window" row), `measurement/window_truncation_20260813/DESIGN.md` (close-out
+banner), this file. No source file, no governance CSV.
+**Reversal cost:** nil. Nothing was spent beyond ~15 min of single-box pilot time and nothing was
+promoted.
+**Phase:** measurement-first (Phase 4 era; reliability/defect track, classical champion).

@@ -1,6 +1,25 @@
 # JOSHUA-BOT VARIANT TOURNAMENT — PRE-REGISTRATION (screen + confirm)
 
-> **STATUS: WRITTEN 2026-08-12 (late), BEFORE GAME 1 AND BEFORE ANY VARIANT'S MARGIN WAS
+> ## 🔚 EXECUTED AND CLOSED OUT 2026-08-13 — this pre-registration is SPENT
+>
+> All 7 cells ran (6-cell screen n=300 on band 1.25e11 → J7ZERO confirm n=800 on the sealed
+> band 1.26e11). **Adjudication lives in [CONFIRM_VERDICT.md](CONFIRM_VERDICT.md), not here.**
+> One-line result: **the anti-champion instrument claim is NOT bought, and it is refused with
+> power** — confirm margin **−16.036 pts/deck, z −24.42** (799 scored / 399 paired decks, 1
+> excluded game, 0.125 %). ⚠️ **The run cannot separate STRATEGY from DEPTH** (J1–J9 on a
+> one-ply greedy base; JCZ's shallower-but-stronger `LegacyAiPlayer` loses to the same champion
+> by only −6.50), so it prices the encoding-on-a-greedy-base. The **calibration** (question b)
+> is the real product: `j7_weight` 0 > 1 · preset `current` > `early` · **J8 exemption exactly
+> INERT** ([J8EX_INERT_FINDING.md](J8EX_INERT_FINDING.md)) · J9 no conviction.
+> Six-touch close-out: `experiments/results.csv` rows
+> `joshuabot_screen_*_n300_b125e9` ×6 + `joshuabot_confirm_j7zero_*_n799_b126e9` ·
+> DECISIONS 2026-08-13 · `STATUS.md` · `docs/PROGRAM_ROADMAP_2026-07-07.md` ·
+> `docs/LEVER_INDEX.md`. **No `CLAIM_REGISTRY` row** (a non-conviction on an instrument
+> question mints no claim); `governance/PRODUCTION.yaml` untouched. Bands 1.25e11 / 1.26e11
+> are **retired, decision-influenced** — ⚠️ their `governance/BAND_REGISTRY.csv` rows were not
+> flipped by this close-out (the file was held by another session) and remain **owed**.
+>
+> **STATUS AT WRITING: WRITTEN 2026-08-12 (late), BEFORE GAME 1 AND BEFORE ANY VARIANT'S MARGIN WAS
 > READ.** Not yet authorized, not yet launched. Its purpose is to fix the cells, the primary
 > statistic, the read-rules and the band *before* the numbers exist — the forking-path
 > discipline that the denial campaign codified after four winner's-curse instances

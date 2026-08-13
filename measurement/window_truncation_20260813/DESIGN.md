@@ -1,8 +1,26 @@
 # Window-truncation census — DESIGN + PRE-REGISTERED READ
 
-**Status: BUILT + GROUND-TRUTH VALIDATED + PILOTED 2026-08-13. Full census NOT YET
-RUN — this document is written BEFORE it, and the thresholds in §6 are
+**Status: BUILT + GROUND-TRUTH VALIDATED + PILOTED 2026-08-13. ⛔ FULL CENSUS STILL NOT
+RUN as of 2026-08-13 — this document is written BEFORE it, and the thresholds in §6 are
 pre-registered.**
+
+> ⛔ **STATE CHECK 2026-08-13 (re-verified against disk at close-out time — NOTHING HERE IS
+> ADJUDICATED).** No `CENSUS_RESULT.md`, no `READOUT.md`, no `DONE_CENSUS`/`FAILED_CENSUS`,
+> no `RUN_MANIFEST.json`, and no `census_walled/` or `census_fixed_v1/` output directory
+> exist; `logs/` is empty. The queue item `window_truncation_census` is **still open** in
+> `scripts/scheduler/queue.json` and its `done_if_exists` markers are correctly absent — both
+> boxes were occupied. **The only results on disk are the two PILOTS in §5 plus the crash
+> ground-truth cell in §5.1.** ⚠️ **Any per-game bound better than §5's ≤ 6.0 / ≤ 6.7 — including
+> §8's ≈ ≤ 0.27 / ≤ 0.17 — is a PRICED PLAN, not a measurement.** Do not cite §8's projected
+> power as a result, and do not quote a censused-node total larger than the **754,192** actually
+> measured.
+>
+> ⭐ **What IS decided and is not waiting on this census: §6-P3 has already fired in production,
+> so the minimal fail-loud fix (§7 F-c) is LICENSED — and it is STILL UNBUILT.** Carried as an
+> open item on [PROGRAM_ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) NOW item (7).
+> **0 games · no band · no `results.csv` row · no `CLAIM_REGISTRY` row · `PRODUCTION.yaml`
+> untouched** — exactly as §6's reporting rules pre-register. State record (explicitly **not** a
+> close-out): DECISIONS 2026-08-13.
 
 **⭐ The instrument reproduces the production crash (§5.1). The pilots' zeros are
 therefore a measurement, not a blind spot.**
