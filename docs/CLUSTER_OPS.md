@@ -19,6 +19,48 @@ The CIFS share has **different mount paths per box.** Using the wrong one was th
 
 **Rule:** local commands use `/mnt/c/carc-shared`; anything inside an `ssh xeon/laptop` uses `/mnt/carc-shared`. In scripts, resolve a per-box `$SHARE` (the launchers do this via a sed `SHARE_LOCAL`→`SHARE_REMOTE` substitution). The project PreToolUse lint hook (`scripts/hooks/pretooluse_lint.py`) blocks the two unambiguous misuses (local cmd using `/mnt/carc-shared`, or `ssh`-to-remote using `/mnt/c/carc-shared`); add `# allow-path` to override.
 
+## Rust wheel rebuilds — ⚠️ THE TOOLCHAIN PIN DOES NOT APPLY FROM THE REPO ROOT
+
+Same shape of hazard as the mount path above: **the same command on two boxes silently does two different things.** [`rust/carc/rust-toolchain.toml`](../rust/carc/rust-toolchain.toml) pins `channel = "1.96.0"`, but that file lives in `rust/carc/` while `maturin` is invoked **from the repo root** with `-m …/rust/carc/carc-py/Cargo.toml`. **rustup resolves the toolchain from the working directory, not from the manifest** — so from the repo root the pin is never seen and the build falls back to whatever that box calls `stable`.
+
+Proof, on the local box (both lines run today, same repo):
+
+```bash
+cd /home/doctor/projects/carcassone      && rustup show active-toolchain
+#   stable-x86_64-unknown-linux-gnu (default)          <- what maturin actually gets
+cd /home/doctor/projects/carcassone/rust/carc && rustup show active-toolchain
+#   1.96.0-x86_64-unknown-linux-gnu (overridden by '…/rust/carc/rust-toolchain.toml')
+```
+
+**Found 2026-08-13 on the laptop:** its `stable` was **1.97.1** while the local box's `stable` happens to *be* 1.96.0 — i.e. the two boxes were about to build the same `carc_rs` wheel with **different compilers for one deck-paired cell**. Corrected by installing 1.96.0, forcing `RUSTUP_TOOLCHAIN=1.96.0`, cleanly rebuilding `carc-core` + `carc-py`, and re-running every gate and bench against the pinned wheel. **Recorded honestly: no drift was actually observed** — the 1.97.1 wheel also passed reconcile at 83,824 values / 0 mismatches and benched within ~2 s/game. The hazard is a **silent cross-box compiler mismatch inside a single paired cell**, not a known miscomputation.
+
+**Rule — any fresh-box or post-merge `carc_rs` rebuild:**
+
+```bash
+export RUSTUP_TOOLCHAIN=1.96.0          # or invoke maturin from a dir where the pin resolves
+rustc --version                          # 1.96.0 — VERIFY, never assume the pin applied
+nice -n 19 /path/to/.venv/bin/maturin build --release \
+  -m /home/doctor/projects/carcassone/rust/carc/carc-py/Cargo.toml \
+  -i /path/to/.venv/bin/python --out /home/doctor/carc_wheels -j 6
+```
+
+(Bumping the pin itself invalidates the G0 bit-exactness evidence — see the header comment in `rust-toolchain.toml` and [docs/RUSTPORT_BUILD_SPEC_2026-07-31.md](RUSTPORT_BUILD_SPEC_2026-07-31.md).)
+
+**Verification recipe — which toolchain the built wheel ACTUALLY used** (read it off the shipped `.so`, not off the shell that you think built it):
+
+```bash
+SO=$(.venv/bin/python -c "import carc_rs,os,glob;print(glob.glob(os.path.join(os.path.dirname(carc_rs.__file__),'*.so'))[0])")
+strings -a "$SO" | grep -o "rustc version [0-9.]*" | sort -u    # -> rustc version 1.96.0
+```
+
+**Cheap post-build check that the wheel carries the expected terms** (run on EVERY box that plays, per the standing per-box build gate):
+
+```bash
+.venv/bin/python scripts/rustport/reconcile_leaf.py --configs <term> --corpus golden   # expect 0 mismatches
+```
+
+…and confirm the champion leaf fingerprints recompute **unchanged**: `a36d2e15a3b3d71d` (`_leaf_hash`) / `158f17ff76adaa02` (`_frozen_config_hash`, meeple_k=2.0) / `6dfffd57051690f2` (`_frozen_config_hash`, meeple_k=0.0) — the constants live in `src/carcassonne_ai/champion_factory.py`. A moved fingerprint on a *default-off* rebuild means the wheel is not the champion's.
+
 ## Worker counts — ⚠️ GEN W ≠ EVAL W (the distinction that bites)
 
 **The durable rule (never goes stale):** a **GEN (self-play) worker is RAM-heavier than an EVAL worker** — it carries a live `sims` MCTS search tree **plus** the game's accumulated position buffer (~0.9 GB/worker at sims=200). An eval worker just plays/scores. **So the per-box gen W is LOWER than the eval W. Do NOT use the eval worker count for generation — it OOMs.** (This is *why* there are two numbers per box; mixing them up cost a relaunch on 2026-06-23.)
