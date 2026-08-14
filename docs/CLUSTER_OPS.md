@@ -19,6 +19,18 @@ The CIFS share has **different mount paths per box.** Using the wrong one was th
 
 **Rule:** local commands use `/mnt/c/carc-shared`; anything inside an `ssh xeon/laptop` uses `/mnt/carc-shared`. In scripts, resolve a per-box `$SHARE` (the launchers do this via a sed `SHARE_LOCAL`→`SHARE_REMOTE` substitution). The project PreToolUse lint hook (`scripts/hooks/pretooluse_lint.py`) blocks the two unambiguous misuses (local cmd using `/mnt/carc-shared`, or `ssh`-to-remote using `/mnt/c/carc-shared`); add `# allow-path` to override.
 
+> ⚠️ **THE PROBE-FOR-THE-SHARE IDIOM IS UNSAFE ON THE LAPTOP (found 2026-08-14, k-width pre-gate).**
+> Several analysis scripts resolve the share by *probing which path exists*, preferring the
+> local form first — e.g. `scripts/tiletie/term_gate.py::_share()`. **The laptop has its OWN
+> `/mnt/c/…` (that box's Windows drive), so the probe succeeds there and silently resolves to a
+> directory that is NOT the cluster share.** Nothing errors: the glob simply matches zero files
+> and every position drops out of the join. In the k-width run this turned a perfect 522/522
+> search into a `W-0 UNREADABLE` readout with 522 `oracle_problem` counters.
+> **Consequence:** SEARCH/GENERATION phases (which never read the share) are safe anywhere, but
+> any **ANALYSIS phase that reads corpus records off the share must run on the local box**, or
+> the records must be shipped there. When writing such a script, assert the resolved root
+> actually contains records and fail loudly — do not let a wrong-but-existing path pass.
+
 ## Rust wheel rebuilds — ⚠️ THE TOOLCHAIN PIN DOES NOT APPLY FROM THE REPO ROOT
 
 Same shape of hazard as the mount path above: **the same command on two boxes silently does two different things.** [`rust/carc/rust-toolchain.toml`](../rust/carc/rust-toolchain.toml) pins `channel = "1.96.0"`, but that file lives in `rust/carc/` while `maturin` is invoked **from the repo root** with `-m …/rust/carc/carc-py/Cargo.toml`. **rustup resolves the toolchain from the working directory, not from the manifest** — so from the repo root the pin is never seen and the build falls back to whatever that box calls `stable`.

@@ -1,0 +1,206 @@
+{
+  "schema": "carcassonne-kwidth-ladder/v1",
+  "phase": "analyze",
+  "slice": "dev",
+  "read_rule": "measurement/kwidth_ties_20260814/READ_RULE.md",
+  "bars": {
+    "capture_ratio": 0.35,
+    "z": 2.0,
+    "coverage": 0.85,
+    "error_frac": 0.05,
+    "ambig_iso_z": 1.0
+  },
+  "n_slice": 522,
+  "n_rows": 522,
+  "counters": {
+    "oracle_integrity_problems": 0
+  },
+  "denom": {
+    "mean": 0.28030397575059596,
+    "se": 0.07079902915128586,
+    "n": 518
+  },
+  "rungs": {
+    "R0": {
+      "id": "R0",
+      "k_dets": 8,
+      "sims_per_det": 1376,
+      "total_sims": 11008,
+      "class": "base",
+      "n_pairs": 518,
+      "n_base_resolved": 518,
+      "coverage": 0.9923371647509579,
+      "mean_capture": 0.0,
+      "se": 0.0,
+      "z": NaN,
+      "pick_change_rate_arm": 0.0,
+      "pick_change_rate_action": 0.0,
+      "outside_scored_rate": 0.0,
+      "secs_mean": 1.8733390804597703,
+      "secs_median": 1.713,
+      "deploy_multiplier_est": 1.0,
+      "capture_ratio": 0.0,
+      "ratio_ci95_lo": 0.0,
+      "ratio_ci95_hi": 0.0,
+      "bar_excluded": true
+    },
+    "R1": {
+      "id": "R1",
+      "k_dets": 16,
+      "sims_per_det": 1376,
+      "total_sims": 22016,
+      "class": "expansion",
+      "n_pairs": 486,
+      "n_base_resolved": 518,
+      "coverage": 0.9310344827586207,
+      "mean_capture": 0.03185782872103111,
+      "se": 0.04366089413796491,
+      "z": 0.7296650549657305,
+      "pick_change_rate_arm": 0.19958847736625515,
+      "pick_change_rate_action": 0.19958847736625515,
+      "outside_scored_rate": 0.06177606177606178,
+      "secs_mean": 3.5995229885057474,
+      "secs_median": 3.328,
+      "deploy_multiplier_est": 1.33,
+      "capture_ratio": 0.1136545731672997,
+      "ratio_ci95_lo": -0.19787075586915143,
+      "ratio_ci95_hi": 0.4251799022037508,
+      "bar_excluded": false
+    },
+    "R2": {
+      "id": "R2",
+      "k_dets": 32,
+      "sims_per_det": 1376,
+      "total_sims": 44032,
+      "class": "expansion",
+      "n_pairs": 476,
+      "n_base_resolved": 518,
+      "coverage": 0.9118773946360154,
+      "mean_capture": 0.07203481031507412,
+      "se": 0.043086767644109555,
+      "z": 1.6718545914158889,
+      "pick_change_rate_arm": 0.22268907563025211,
+      "pick_change_rate_action": 0.22268907563025211,
+      "outside_scored_rate": 0.08108108108108109,
+      "secs_mean": 7.081298850574713,
+      "secs_median": 6.715,
+      "deploy_multiplier_est": 1.99,
+      "capture_ratio": 0.2569881862081329,
+      "ratio_ci95_lo": -0.05044068652713331,
+      "ratio_ci95_hi": 0.5644170589433991,
+      "bar_excluded": false
+    },
+    "R3": {
+      "id": "R3",
+      "k_dets": 64,
+      "sims_per_det": 1376,
+      "total_sims": 88064,
+      "class": "expansion",
+      "n_pairs": 474,
+      "n_base_resolved": 518,
+      "coverage": 0.9080459770114943,
+      "mean_capture": 0.025186529102116578,
+      "se": 0.049592791312216465,
+      "z": 0.5078667369931291,
+      "pick_change_rate_arm": 0.2679324894514768,
+      "pick_change_rate_action": 0.2679324894514768,
+      "outside_scored_rate": 0.08494208494208494,
+      "secs_mean": 13.92497509578544,
+      "secs_median": 13.058,
+      "deploy_multiplier_est": 3.31,
+      "capture_ratio": 0.08985434129028057,
+      "ratio_ci95_lo": -0.263995732933014,
+      "ratio_ci95_hi": 0.4437044155135751,
+      "bar_excluded": false
+    },
+    "C1": {
+      "id": "C1",
+      "k_dets": 16,
+      "sims_per_det": 688,
+      "total_sims": 11008,
+      "class": "isobudget",
+      "n_pairs": 476,
+      "n_base_resolved": 518,
+      "coverage": 0.9118773946360154,
+      "mean_capture": 0.025978239642521068,
+      "se": 0.05174654710620837,
+      "z": 0.5020284655747453,
+      "pick_change_rate_arm": 0.24369747899159663,
+      "pick_change_rate_action": 0.24369747899159663,
+      "outside_scored_rate": 0.08108108108108109,
+      "secs_mean": 1.8316072796934866,
+      "secs_median": 1.632,
+      "deploy_multiplier_est": 1.0,
+      "capture_ratio": 0.09267881261033392,
+      "ratio_ci95_lo": -0.27653854841811276,
+      "ratio_ci95_hi": 0.46189617363878055,
+      "bar_excluded": false
+    },
+    "C2": {
+      "id": "C2",
+      "k_dets": 32,
+      "sims_per_det": 344,
+      "total_sims": 11008,
+      "class": "isobudget",
+      "n_pairs": 464,
+      "n_base_resolved": 518,
+      "coverage": 0.8888888888888888,
+      "mean_capture": 0.08479437707019694,
+      "se": 0.05884891683619779,
+      "z": 1.4408825451489053,
+      "pick_change_rate_arm": 0.3620689655172414,
+      "pick_change_rate_action": 0.3620689655172414,
+      "outside_scored_rate": 0.10424710424710425,
+      "secs_mean": 1.9296858237547894,
+      "secs_median": 1.712,
+      "deploy_multiplier_est": 1.0,
+      "capture_ratio": 0.3025086492017645,
+      "ratio_ci95_lo": -0.11738490870166936,
+      "ratio_ci95_hi": 0.7224022071051983,
+      "bar_excluded": false
+    }
+  },
+  "two_sigma_resolution": {
+    "R1": {
+      "pts": 0.08732178827592982,
+      "elo": 8.515608208694433,
+      "elo_low_end_divisor": 5.2103147739621765
+    },
+    "R2": {
+      "pts": 0.08617353528821911,
+      "elo": 8.403586772788598,
+      "elo_low_end_divisor": 5.141773933637383
+    },
+    "R3": {
+      "pts": 0.09918558262443293,
+      "elo": 9.673125903454821,
+      "elo_low_end_divisor": 5.918547397907347
+    },
+    "C1": {
+      "pts": 0.10349309421241674,
+      "elo": 10.093449708983366,
+      "elo_low_end_divisor": 6.1757244873320785
+    },
+    "C2": {
+      "pts": 0.11769783367239559,
+      "elo": 11.479753730343157,
+      "elo_low_end_divisor": 7.023941096959485
+    }
+  },
+  "base_agreement_selfplay": {
+    "n": 485,
+    "agree": 485,
+    "rate": 1.0
+  },
+  "base_agreement_vs_vart": {
+    "n": 522,
+    "agree": 522,
+    "missing": 0,
+    "rate": 1.0
+  },
+  "verdict": {
+    "branch": "W-FLAT"
+  },
+  "holdout": "NOT OPENED \u2014 this program has no holdout code path (READ_RULE \u00a71); the 211-position slice stays unburned.",
+  "generated_utc": "2026-08-14T23:23:03Z"
+}
