@@ -1,6 +1,33 @@
 # AMENDMENT 1 — `C_d16p0` IS VOID; THE RE-RUN'S TERMS, FIXED IN ADVANCE
 
-> **STATUS 2026-08-14: WRITTEN BEFORE THE RE-RUN'S BAND IS CLAIMED AND BEFORE ITS GAME 1.**
+> **⚠️ STATUS 2026-08-14 — THE RE-RUN RAN AND IS CLOSED OUT, AND EVERY CLAUSE BELOW WAS
+> HONOURED.** `oc2_C_d16p0_RERUN_deploy11008` on **fresh band 1.31e11** (`+0..+399`),
+> `cand_leaf_hash a4acf6d0925f7606`: 800/800 records, 400/400 decks fully paired, **0 failed
+> games** (the §4.5 re-armed validity trigger is now *readable* rather than inferred, thanks
+> to the merged per-game crash-resilience fix, and it did **not** fire), 0 stranded claims,
+> all 13 wiring gates PASS. **`N2 NEGATIVE` fired:** W216/D14/L570, wr 0.2787, deck-paired
+> margin **−14.8663 pts/deck** (sem 0.9016), **z −16.4892**, elo **−165.15 ± 27.40** (2σ);
+> **`N4` did not fire** (`ms_ratio` 0.9864) ⇒ cost-neutral. Laptop W22.
+>
+> **§2 held:** the cell was read under `DEPLOY_PREREG.md`'s branches **exactly as already
+> written** — not one threshold, sign, statistic or branch condition was changed, and **no
+> top-up was licensed or taken at any z**.
+> ⛔ **§2's residue clause is in force:** this number is **NEVER contrasted with the voided
+> cell's as a statistic** and none was computed — the incident may be described only
+> qualitatively. The unfixable residue (a reader who saw the void's sign cannot un-see it)
+> stands **recorded, not waived**.
+> ✅ **§3's on-the-bar caveat is MOOT because the cell RESOLVED** (z −16.49): the rider
+> existed solely to forbid reading a **null** here as *"the tight predicate does not
+> express"*, so it never had to bind and is **not load-bearing** for this verdict.
+>
+> Band **1.31e11** retired `decision_influenced=yes`; band 1.29e11's C sub-range stays **spent
+> and void**. `results.csv`
+> `opencity_C_d16p0_RERUN_deploy_fixed_v1_vs_champ11008_n800_b131e9`; claim **CL-082**;
+> DECISIONS 2026-08-14. Nothing promoted; `governance/PRODUCTION.yaml` **untouched**.
+> Everything below this banner is the amendment exactly as committed before the re-run's
+> game 1, unedited.
+
+> **STATUS AT WRITING 2026-08-14: WRITTEN BEFORE THE RE-RUN'S BAND IS CLAIMED AND BEFORE ITS GAME 1.**
 > Amends [DEPLOY_PREREG.md](DEPLOY_PREREG.md) for the arm-C cell ONLY. `Acap3_d2p0` and
 > `Asym_d2p0` are untouched by every clause here. Nothing is adjudicated, nothing is promoted,
 > `governance/PRODUCTION.yaml` is untouched.

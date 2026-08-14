@@ -1,5 +1,37 @@
 # J-RULES SURFACE B — the anchor's rules as POLICY PRIORS in the champion's PUCT search
 
+> **⚠️ STATUS 2026-08-14 — CALIBRATED, RUN AND CLOSED (six-touch). §1'S OWN PRE-REGISTERED
+> FAILURE MODE IS WHAT HAPPENED: THE SIMS-WASHOUT NULL.** One deploy-budget cell
+> `jpriors_d0p5_deploy11008`, band **1.30e11**, n=800 deck-paired, dose 0.5 / mask 31 / scope
+> `all` — branch **`N3 NO CONVICTION`** fired at **z −0.0282** (deck-paired margin −0.0175
+> pts/deck, sem 0.6214; W389/D15/L396, wr 0.4956, elo −3.04 ± 24.57 at 2σ). **Realized 2σ
+> bound: ±1.2427 pts/deck / ±24.57 elo.** 13/13 gates PASS, 400/400 decks paired, 0 failed
+> games. **⭐ A CLEAN null — the cost trigger did NOT fire (`ms_ratio` 1.1751 < 1.20), unlike
+> surface A's 1.2116** — so this cell says what surface A's could not.
+>
+> **What §1 predicted and what the cell says.** §1 argued *for* this surface on the
+> double-count mechanism (a prior biases **where** visits go and never moves a backed-up
+> value) and named the honest counter-argument up front: the measured **sims-washout**. The
+> calibration confirmed the boost is live and expressive — **203/1,556 champion picks flipped
+> (13.05 %, Wilson-95 11.46–14.81 %, not marginal)** on real E4 games — and the deploy-budget
+> search then **washed the whole perturbation out**: 11,008 sims of PUCT return the leaf's own
+> verdict and the boosted moves lose the argmax anyway, exactly as §1's "the prior surface is
+> *advisory* in a way a leaf term cannot be" predicts when the advice is not better than the
+> leaf. ⛔ **§1's CL-051 counter-precedent DID NOT REPEAT** — moving the same information from
+> the value surface to the prior surface did **not** change a verdict's sign here. §1's
+> distinction between root-prior gains and every-expansion boosts did not rescue the surface
+> either.
+>
+> ⛔ **NO CLAIM MINTED** (a non-conviction mints none; `CL-081` stays reserved-and-unused).
+> **`|z| < 2` is NEVER "refuted"** — "killed"/"dead"/"does nothing" are FORBIDDEN readings.
+> Binding scope ([DEPLOY_PREREG §7](DEPLOY_PREREG.md)): this prices **this encoding at this
+> dose/mask/scope**, not the strategy and not the anchor's play; the per-rule mask ablations,
+> `scope=own`, J7, J9 and the root filters (J10f / J3's hard floor) are untouched. Band
+> 1.30e11 retired `decision_influenced=yes`; `results.csv`
+> `jpriors_d0p5_deploy_fixed_v1_vs_champ11008_n800_b130e9`; DECISIONS 2026-08-14. Knobs remain
+> **DEFAULT-OFF**; nothing promoted; `governance/PRODUCTION.yaml` **untouched**. Everything
+> below this banner is the design of record as built, unedited.
+
 > **STATUS AT WRITING: 🔧 BUILT + PROVEN DEFAULT-OFF, NOT CALIBRATED, NOT RUN — 2026-08-14.
 > Code on the worktree branch, DEFAULT-OFF everywhere.**
 > **0 games · 0 flip rates read · no band claimed · no `results.csv` row · no claim minted ·

@@ -1,6 +1,34 @@
 # OPEN-CITY ROUND 2 — **DEPLOY-BUDGET** CELLS, PRE-REGISTRATION
 
-> **STATUS: WRITTEN BEFORE ANY BAND WAS CLAIMED AND BEFORE GAME 1 (2026-08-14).**
+> **⚠️ STATUS 2026-08-14 — RAN AND CLOSED (six-touch). ALL THREE CELLS FIRED PRE-REGISTERED
+> BRANCH `N2 NEGATIVE`, ALL THREE COST-NEUTRAL (`N4` did not fire on any of them).** Every
+> cell: 800/800 records, 400/400 decks fully paired, 0 failed games, 0 stranded claims, all
+> 13 wiring gates PASS.
+>
+> | cell | band / seeds | `cand_leaf_hash` | W/D/L · wr | margin ± sem (pts/deck) | **z** | elo (2σ) | `ms_ratio` |
+> |---|---|---|---|---|---|---|---|
+> | `Asym_d2p0` (own-side-only) | 1.29e11 `+800..+1199` | `3f05d72016d0d09c` | 206/14/580 · 0.2662 | **−13.6862** ± 0.7893 | **−17.3392** | −176.10 ± 27.79 | 0.8743 |
+> | `Acap3_d2p0` (per-city cap 3.0) | 1.29e11 `+400..+799` | `687f99980adaeee7` | 312/10/478 · 0.3962 | **−5.2188** ± 0.6775 | **−7.7028** | −73.16 ± 25.11 | 1.0049 |
+> | `C_d16p0` **RE-RUN** (6/3 @ dose 16) | **1.31e11** `+0..+399` | `a4acf6d0925f7606` | 216/14/570 · 0.2787 | **−14.8663** ± 0.9016 | **−16.4892** | −165.15 ± 27.40 | 0.9864 |
+>
+> ⚠️ The arm-C row is the **RE-RUN on fresh band 1.31e11** — the original `C_d16p0` cell on
+> band 1.29e11 `+0..+399` is **VOID**; read
+> [AMENDMENT_1_C_VOID_AND_RERUN.md](AMENDMENT_1_C_VOID_AND_RERUN.md), whose terms were
+> honoured in full (not one threshold, sign, statistic or branch condition changed; no
+> top-up taken at any z). Its number is **never contrasted with the voided cell's as a
+> statistic**, and the on-the-bar rider of §1/§4.8 is **moot because the cell resolved**.
+>
+> With CL-080's arm A that is **four named variants measured harmful at the deploy budget**
+> ⇒ **claim CL-082 minted**; CL-080 annotated (numbers/status unchanged). The §5 licensed
+> sentence binds: *"every calibrated, fundable form measured harmful"* — **arm B (3/2) and
+> every shape never calibrated stay UNPRICED, and "the open-cities idea is dead" is STILL a
+> FORBIDDEN reading.** Bands **1.29e11** and **1.31e11** retired `decision_influenced=yes`;
+> `results.csv` rows `opencity_{Asym_d2p0,Acap3_d2p0}_deploy_fixed_v1_vs_champ11008_n800_b129e9`
+> + `opencity_C_d16p0_RERUN_deploy_fixed_v1_vs_champ11008_n800_b131e9`; DECISIONS 2026-08-14.
+> Nothing promoted; `governance/PRODUCTION.yaml` **untouched**. Everything below this banner
+> is the pre-registration exactly as committed before game 1, unedited.
+
+> **STATUS AT WRITING: WRITTEN BEFORE ANY BAND WAS CLAIMED AND BEFORE GAME 1 (2026-08-14).**
 > Three cells — the calibration's funded set, nothing else. `governance/PRODUCTION.yaml`
 > is untouched on every branch, no `results.csv` row is owed until close-out, and the
 > launching session adjudicates nothing.

@@ -6846,3 +6846,210 @@ counts and diagnoses it, it does not make the position playable. That remains F-
 `governance/PRODUCTION.yaml` untouched. Band 1.29e11's `C` sub-range (+0..+399) is **spent and
 void**; the band's registry row gains its annotation at round close-out.
 **Phase:** measurement-first (human-edge program, round 2).
+
+## 2026-08-14 — OPEN-CITY ROUND 2 RAN AND CLOSED (six-touch): **all three CL-080 falsifiers fired `N2 NEGATIVE`, all cost-neutral** ⇒ the term is harmful at the deploy budget across **all four named variants**. **CL-082 minted.** The cap **halved the harm but did not change the sign**
+
+**What was asked.** CL-080 closed the open-city leaf term *for arm A only*, and named its own
+falsifiers explicitly: **arm C (6 tiles / 3 edges — the predicate the source guides actually
+teach, "avoid three open edges") at a re-calibrated dose**, **the `opencity_symmetric=False`
+own-side-only variant**, and **a per-city-CAPPED form** (its counterevidence (1): the tested
+shape is an *uncapped product* of two linear excesses, so part of the measured harm might be a
+scale artifact rather than a statement about the mechanism). Round 2 was exactly that
+re-funding — build the cap, calibrate all three families on real games under a read-rule
+committed before any flip rate was read, and take the funded set **straight to the deploy
+budget** (no 2750 screen, per **CL-079**, which is that claim's recommended practice).
+
+**What fired: `N2 NEGATIVE` on every cell, and `N4` on none of them.** Each cell n=800
+deck-paired (400 decks × 2 seats), 800/800 records, 400/400 decks fully paired, 0 failed games,
+0 stranded claims, **all 13 wiring gates PASS** — including **O3** (the *resolved*
+`opencity_dose` read from the manifest; a moved `cand_leaf_hash` does **not** prove a live
+dose) and the round-2 form of **O4** (presence-with-exact-values of each cell's own off-default
+knob, absence of every other `opencity_*` knob besides the dose — a stray or missing knob would
+have meant a different arm ran, and voided the cell). Both arms **fair PIMC k8×1376 = 11008**
+(`eval_fair_puct.py --info fair --opponent fair-champion`), `fixed_v1` + `CARCASSONNE_FIX_R9=1`,
+rust both sides, exact-K 2 shared; candidate = the champion leaf `a36d2e15a3b3d71d` **plus** the
+flag-gated term, injected candidate-side only, against the **unmodified** champion.
+
+| cell | band / seeds | `cand_leaf_hash` | W/D/L · wr | margin ± sem | **z** | elo (2σ) | `ms_ratio` |
+|---|---|---|---|---|---|---|---|
+| `Asym_d2p0` — own-side-only | 1.29e11 `+800..+1199` | `3f05d72016d0d09c` | 206/14/580 · 0.2662 | **−13.6862** ± 0.7893 | **−17.3392** | −176.10 ± 27.79 | **0.8743** |
+| `Acap3_d2p0` — per-city cap 3.0 | 1.29e11 `+400..+799` | `687f99980adaeee7` | 312/10/478 · 0.3962 | **−5.2188** ± 0.6775 | **−7.7028** | −73.16 ± 25.11 | **1.0049** |
+| `C_d16p0` **RE-RUN** — 6/3 @ dose 16 | **1.31e11** `+0..+399` | `a4acf6d0925f7606` | 216/14/570 · 0.2787 | **−14.8663** ± 0.9016 | **−16.4892** | −165.15 ± 27.40 | **0.9864** |
+
+⭐ **Resolved negatives, not the house's usual ±20–35 elo bound**, and elo agrees in sign with
+the primary statistic on every cell. ⭐ **All three cost-neutral — the `ms_ratio > 1.20` trigger
+did not fire anywhere, and the asymmetric candidate was actually the *cheaper* side (0.8743)** —
+so "the loss was bought with time" is unavailable on any of them. (That trigger was added to
+this prereg *because of* the surface-A jrules N4 lesson; it earned its place by staying quiet.)
+
+**The arm-C cell is the RE-RUN, and its amendment was honoured in full.** The original
+`C_d16p0` on band 1.29e11 `+0..+399` was **VOID** (this morning's entry above): the failed-game
+validity trigger fired at 14/800 = 1.75 % on a deterministic `WindowTruncationError`, *and* the
+orchestrator broke the cell's blindness while diagnosing it. **`AMENDMENT_1_C_VOID_AND_RERUN.md`
+§2 — the branches are read exactly as already written, no threshold/sign/statistic/branch
+changed, no top-up licensed at any z — held.** ⛔ **Its number is NEVER contrasted with the
+voided cell's as a statistic** (different bands, one of them void; CL-068 + read rule 5) and
+none was computed; the incident is describable only qualitatively. ⚠️ The **unfixable residue**
+stands recorded, not waived: a reader who saw the voided cell's sign cannot un-see it, so the
+re-run's *interpretation* is not fully blind even though its *rules* are. ✅ And the
+**on-the-bar rider is MOOT because the cell resolved** — arm C was funded at 10.41 % flip
+against a 10 % bar with a Wilson-95 (8.99–12.03 %) straddling it, but that rider existed solely
+to forbid reading a **null** as *"the tight predicate does not express"*. At z −16.49 it never
+had to bind.
+
+⭐ **THE CAP HALVED THE HARM BUT DID NOT CHANGE THE SIGN.** −73.16 elo capped here against
+−190.27 elo uncapped on arm A at the same dose 2.0 (CL-080). **`TERM_SPEC` §9's uncapped-product
+explanation was RIGHT ABOUT MAGNITUDE AND WRONG ABOUT DIRECTION** — bounding the term makes it
+hurt less, not help, so the harm is not a blow-up artifact of the unbounded shape.
+⚠️ **THAT COMPARISON IS AN OBSERVATION, NOT A STATISTIC**: different cells, different bands
+(1.29e11 vs 1.27e11), different candidate leaves. **CL-068** forbids the cross-band pool and
+prereg read rule 5 forbids fitting a slope or a cross-family meta-analysis; **no z, no
+difference and no interval was computed on it, and none may be.**
+
+**Mechanism, unchanged and now four-instance.** `TERM_SPEC` §9's **double-count / horizon**
+caveat — the 11,008-sim search already prices closure exposure through its own schedule, so a
+static leaf penalty re-prices what the search does emergently — was written **before round 1's
+games** and now carries four instances. ⚠️ **Honesty item on the asymmetric cell:**
+`opencity_symmetric=False` also **breaks the leaf's antisymmetry contract `V(s,p) = −V(s,1−p)`**
+that the search assumes, so its −176 elo has a *second* available explanation the two symmetric
+cells do not carry, and the design does not separate "the discipline is wrong" from "the
+asymmetry is wrong."
+
+**Governance: CL-082 minted (Established / high), CL-080 annotated.** The new claim is the
+generalization the four variants now support — *open-city discipline is harmful at the deploy
+budget across **all four named variants**: arm A uncapped (CL-080), arm C 6/3 at dose 16, the
+per-city capped form, and the own-side-only asymmetric form; all cost-neutral, all resolved
+negative.* Its falsifier is a **variant not yet named** — a different cap shape, **arm B (3
+tiles / 2 edges)**, or a dose below the expressiveness floor. **CL-080's numbers, status and
+confidence are UNCHANGED**; it gains only a note that its falsifier ladder was *discharged
+without refuting it*. ⚠️ **CL-081 remains reserved-but-unused by the surface-A jrules prereg and
+was deliberately left alone; the new id is CL-082.**
+
+⛔ **SCOPE, BINDING AND NARROWER THAN IT LOOKS.** The licensed sentence was fixed before the
+games by `DEPLOY_PREREG.md` §5: **"every calibrated, fundable form measured harmful"**. **Arm B
+(3/2) was never funded on either round** — and round 1's own on-the-bar note records that on the
+CI lower bound the read-rule would have selected `B_d0p5` — so it is *unmeasured*, not declined
+on evidence. Also unpriced: a different cap value or shape, a per-side cap, a saturating rather
+than clipping form, a points-based size axis, an additive escalation, and any dose below the
+expressiveness floor for its predicate (arm C read only 3.60 %/5.85 % at doses 0.5/2.0, which is
+*why* it was re-dosed to 16 rather than run cheap). **"The open-cities idea is dead" remains a
+FORBIDDEN reading.** And none of this prices the **human** heuristic the guides teach: a person
+choosing which city to grow is not a static penalty inside an 11,008-sim PIMC, so the negative
+is evidence about **our search's existing pricing** as much as about the advice.
+
+**Options considered.** (a) **Read the void cell at 786/391-paired instead of re-running** —
+rejected this morning (doubly compromised: trigger fired *and* blindness broken). (b) **Pool the
+three round-2 cells, or contrast them with CL-080's** — forbidden by design (disjoint decks, no
+cell-vs-cell statistic exists; CL-079 + CL-068). (c) **Fit a dose/shape response across the
+four variants** — refused; read rule 5 forbids it and none was fitted. (d) **Fund arm B now
+that three families have resolved** — declined here as a *funding* question for Joshua, and
+recorded as CL-082's falsifier rather than actioned. (e) **Mint a blanket "open-city is dead"
+kill** — refused; §5's licensed sentence is narrower and binds.
+
+**Six touches:** `results.csv` ×3 (`opencity_Asym_d2p0_deploy_fixed_v1_vs_champ11008_n800_b129e9`,
+`opencity_Acap3_d2p0_deploy_fixed_v1_vs_champ11008_n800_b129e9`,
+`opencity_C_d16p0_RERUN_deploy_fixed_v1_vs_champ11008_n800_b131e9`) · this entry · status
+banners on `DEPLOY_PREREG.md`, `AMENDMENT_1_C_VOID_AND_RERUN.md` and
+`opencity_term_20260812/TERM_SPEC.md` · **CL-082 minted + CL-080 annotated + bands 1.29e11 and
+1.31e11 retired `decision_influenced=yes`** (1.29e11's row records that its consumed range
+`+0..+1199` covers the **void** cell as well as the two valid ones) · STATUS top block ·
+roadmap **R2-2**. Plus the `LEVER_INDEX` open-city rows. Nothing promoted;
+`governance/PRODUCTION.yaml` **untouched**.
+**Phase:** measurement-first (human-edge program, round 2).
+
+## 2026-08-14 — J-RULES SURFACE B (policy priors) RAN AND CLOSED (six-touch): branch **`N3 NO CONVICTION`** at **z −0.03** — the **pre-registered sims-washout**, and a **CLEAN** null (`N4` did not fire). **CL-051's counter-precedent did not repeat.** No claim minted
+
+**What was asked.** Surface A put the anchor's articulated strategy (J1|J2|J5|J6|J8) into the
+champion's leaf as **additive static terms** and lost −2.4912 pts/deck (z −3.8564) — but its
+`ms_ratio` 1.2116 tripped N4, so the adjudicated reading was *"loss, confounded by budget"*, no
+claim was minted, and **its §7 named the policy-prior surface as untouched by every branch**.
+This cell is that surface: the same rules, in the bot's **original** forms, consumed at **every
+node expansion** as PUCT priors — `z_i = (Δleaf_i + dose·T(child))/tau_p` before the prior
+softmax, i.e. a multiplicative renormalized `exp(dose·T/tau_p)` boost — **while every value the
+search backs up stays the unmodified champion's.** The mechanism argument for it was real: the
+double-count that killed CL-080 and surface A is about *static terms re-pricing what the search
+prices emergently*, and **a prior does not have that shape**; CL-051 is the house precedent that
+the prior surface can carry value the leaf surface cannot.
+
+**What fired: `N3 NO CONVICTION`, at the tightest possible end of the band.**
+`jpriors_d0p5_deploy11008`, band **1.30e11** (seeds `+0..+399`), n=800 deck-paired (400 decks ×
+2 seats, all 400 fully paired): **W389/D15/L396, wr 0.4956, PRIMARY STATISTIC deck-paired margin
+−0.0175 pts/deck, sem 0.6214, z −0.0282**, elo **−3.04 ± 24.57** (2σ). **Realized 2σ bound, in
+both units per read rule 2: ±1.2427 pts/deck and ±24.57 elo.** **0 failed games** ⇒ N5 did not
+fire; 0 stranded claims; **13/13 wiring gates PASS**. Both arms fair PIMC **k8×1376 = 11008**,
+`fixed_v1`+R9, rust both sides, exact-K 2 shared. Local box W30.
+
+⭐ **`N4` DID NOT FIRE — `ms_ratio_cand_over_opp` 1.1751, below the 1.20 trigger.** **This is a
+CLEAN null, not confounded by budget**, and that is precisely what surface A could not deliver
+(1.2116). **A clean null is *more* informative than a budget-confounded loss**: nothing about
+this reading has to be discounted.
+
+⚠️ **THE WIRING GATE IS INVERTED ON THIS SURFACE AND ITS PASS IS CORRECT.** The candidate's
+`cand_leaf_hash` **equals** the champion's `a36d2e15a3b3d71d`, because the surface-B knobs are
+`SearchConfig` fields, **not** `LeafConfig` — **no leaf moves**. A *moved* hash would have been
+the **defect** (a leaf change smuggled into a prior cell), which is the exact opposite of every
+leaf-term cell on bands 1.27e11 / 1.28e11 / 1.29e11 / 1.31e11. **Liveness rests entirely on (a)
+the resolved `config.cand_jrules_prior` in the manifest — dose 0.5, mask 31, scope `all` — and
+(b) the `_assert_surface_b_live` positive control, which ran and PASSED on every box that played
+a game, under the launcher env canon, with output captured before game 1.** *A reader who
+verifies only hashes has verified nothing about this cell.*
+
+⭐ **THE READING: THIS IS THE PRE-REGISTERED SIMS-WASHOUT OUTCOME (DESIGN §1), NAMED AS THE
+HONEST FAILURE MODE BEFORE GAME 1.** **11,008 sims of PUCT wash out a 13.05 %-pick-flip
+perturbation entirely.** The boost is *not* inert — the calibration measured **203/1,556**
+champion picks flipped on real E4 games (Wilson-95 11.46–14.81 %, **not** marginal) through this
+same code path — so the search demonstrably looks somewhere else and then **returns the leaf's
+own verdict anyway**, exactly as §1's "a prior is *advisory* in a way a leaf term cannot be"
+predicts when the advice is not better than the leaf. ⛔ **CL-051's counter-precedent DID NOT
+REPEAT**: moving the same information from the value surface to the prior surface did not change
+a verdict's sign here, and §1's distinction between root-prior gains and every-expansion boosts
+did not rescue it either. This is the cleanest instance the program has of **expressiveness ≠
+strength** — clearing the calibration bar bought *resolvability*, not effect.
+
+⛔ **NO CLAIM IS MINTED.** A non-conviction mints none (house precedent: the joshuabot confirm);
+`governance/CLAIM_REGISTRY.csv` gains no row from this band. **`CL-081` — reserved but unused by
+the surface-A prereg — was left untouched and remains available.** ⛔ **`|z| < 2` IS NEVER
+"REFUTED"** (read rule 1): *"killed"*, *"dead"*, *"does nothing"* are **forbidden** readings of
+this cell. What is licensed is the bounded statement above.
+
+⛔ **BINDING SCOPE (`DEPLOY_PREREG` §7 + §9).** This prices **this encoding, at dose 0.5 / mask
+31 / scope `all`, as expansion-time policy priors inside the champion's own search.** It does
+**NOT** refute the anchor's strategy, and says nothing about his actual play (which includes
+everything he cannot articulate). **Untouched by every branch:** the per-rule **mask ablations**
+(mask pinned at 31; each is a fresh multiple comparison and a *new* calibration) · **`scope=own`**
+(opponent-model-free — a different hypothesis needing its own prereg and band, and also the named
+cost fallback at ≈1.069×) · **J7** · **J9** · the **root filters J10f and J3's hard floor**
+(never built) · dose rungs other than the funded floor · and the **static leaf surface**, whose
+route stays open under its own budget-confound downgrade.
+
+⚠️ **No contrast with surface A is a statistic** (§5 read rule 8): *"B did better than A"* may be
+written only as an observation about design — different candidate, different encoding, different
+retired band (1.28e11), CL-068's 1.8–2.2× cross-band σ inflation. None was differenced and none
+was given a z. **No pooling** with the calibration, with surface A, or across bands. **No top-up
+is licensed and no cheaper rung exists** (`FUND-SMALLEST` named the floor; `FINER-RUNG` did not
+fire — `f(1.0) = 0.17095`, not `> 0.20` strictly); extending needs a mechanism argument, a new
+prereg and a fresh band (**CL-079** binding).
+
+**Honesty items carried from the prereg.** The candidate searched with priors the champion's
+`c_puct`/`tau_p` were never swept under, so **no branch may claim the surface was given its best
+configuration**; the `JP_*` constants are frozen copies of `joshua_bot.PRESETS["current"]`, so
+this tested the interview *as the tournament selected it*, not a re-fit; **J8 still reads
+rarely**, so a bundle result is not a J8 result. **Pre-stated prior, recorded before game 1: a
+LOSS or a NULL, with the null the distinctive risk** — recorded so a null could not be
+retro-fitted as "expected". It was not: the prior is on the record, and so is the mechanism
+argument that pointed the other way.
+
+**Options considered.** (a) **Top up to resolve the sign** — refused: no top-up is
+pre-registered, |z| 0.03 is not a lean, and topping up an unresolved cell is the forking-path
+pattern behind four winner's-curse instances this campaign. (b) **Re-run at `scope=own`** — a
+*different hypothesis* (opponent modelling), needing its own prereg and band; recorded as
+untouched, not actioned. (c) **Mint a claim on the clean null** — refused; non-convictions mint
+none, and using `CL-081` would have consumed a deliberately-reserved id. (d) **Read this against
+surface A's −2.49** — refused as a statistic; kept as a design observation only.
+
+**Six touches:** `results.csv` `jpriors_d0p5_deploy_fixed_v1_vs_champ11008_n800_b130e9` · this
+entry · status banners on `DEPLOY_PREREG.md`, `DESIGN.md` and `CALIB_READOUT.md` · **band
+1.30e11 retired `decision_influenced=yes`, NO claim row** · STATUS top block · roadmap **R2-3**.
+Plus the `LEVER_INDEX` surface-B row. Nothing promoted; `governance/PRODUCTION.yaml`
+**untouched**.
+**Phase:** measurement-first (human-edge program, round 2).

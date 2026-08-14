@@ -1,6 +1,43 @@
 # J-RULES SURFACE B — DEPLOY-BUDGET CELL, PRE-REGISTRATION
 
-> **⚠️ STATUS 2026-08-14: THIS IS THE PRE-REGISTRATION OF RECORD. COMMITTED BEFORE GAME 1.**
+> **⚠️ STATUS 2026-08-14 — RAN AND CLOSED (six-touch). BRANCH `N3 NO CONVICTION` FIRED, AND
+> AT |z| = 0.03 IT IS A NULL AT THE VERY TIGHTEST END OF THAT BAND — essentially a perfect
+> tie.** `jpriors_d0p5_deploy11008`, band **1.30e11** (`+0..+399`), n=800 deck-paired:
+> W389/D15/L396, wr 0.4956, **PRIMARY STATISTIC deck-paired margin −0.0175 pts/deck** (sem
+> 0.6214), **z −0.0282**, elo **−3.04 ± 24.57** (2σ). **Realized 2σ bound, both units per read
+> rule 2: ±1.2427 pts/deck and ±24.57 elo.** 400/400 decks fully paired, **0 failed games**
+> (`N5` did not fire), 0 stranded claims, **13/13 wiring gates PASS**.
+>
+> ⭐ **`N4` DID NOT FIRE — `ms_ratio_cand_over_opp` 1.1751, below the 1.20 trigger ⇒ THIS IS A
+> CLEAN NULL, NOT CONFOUNDED BY BUDGET.** Surface A realized 1.2116 and had its loss
+> downgraded; this cell did not, which makes it **more** informative than surface A's, not
+> less.
+> ✅ **The §6 INVERTED gate passed and its pass is correct:** `cand_leaf_hash` **equals** the
+> champion `a36d2e15a3b3d71d` because surface-B knobs are `SearchConfig`, not `LeafConfig` —
+> **no leaf moves**, so a *moved* hash would have been the defect. Liveness rests on the
+> resolved `config.cand_jrules_prior` (dose 0.5 / mask 31 / scope `all`) plus the
+> `_assert_surface_b_live` control, which ran and passed on **every box that played a game**
+> with its output captured before game 1.
+> ⭐ **This is the PRE-REGISTERED SIMS-WASHOUT OUTCOME** named in [DESIGN §1](DESIGN.md)
+> before game 1: **11,008 sims of PUCT wash out a 13.05 %-pick-flip perturbation entirely**
+> (the calibration measured 203/1556 champion picks flipped on real E4 games, Wilson-95
+> 11.46–14.81 %, *not* marginal). **CL-051's counter-precedent did NOT repeat.**
+> ⛔ **NO CLAIM IS MINTED** — a non-conviction mints none (house precedent: the joshuabot
+> confirm); `governance/CLAIM_REGISTRY.csv` gains no row, and **`CL-081` (reserved but unused
+> by the surface-A prereg) is left untouched and available**. **`|z| < 2` is NEVER "refuted"**
+> (§5 read rule 1): *"killed"*, *"dead"* and *"does nothing"* are FORBIDDEN readings.
+> ⛔ **§7 and §9 bind:** this prices **this encoding at dose 0.5 / mask 31 / scope `all`**. It
+> does **not** refute the anchor's strategy or his actual play, and leaves untouched the
+> per-rule mask ablations · `scope=own` · J7 · J9 · the root filters J10f/J3's hard floor · the
+> other dose rungs · and the static leaf surface. **No contrast with surface A is a statistic**
+> (§5 read rule 8).
+>
+> Band **1.30e11** retired `decision_influenced=yes`; `results.csv`
+> `jpriors_d0p5_deploy_fixed_v1_vs_champ11008_n800_b130e9`; DECISIONS 2026-08-14. Nothing
+> promoted; `governance/PRODUCTION.yaml` **untouched**. Everything below this banner is the
+> pre-registration exactly as committed before game 1, unedited.
+
+> **⚠️ STATUS AT WRITING 2026-08-14: THIS IS THE PRE-REGISTRATION OF RECORD. COMMITTED BEFORE GAME 1.**
 > Promoted (`git mv`) from `DEPLOY_PREREG_DRAFT.md`, which was written 2026-08-14 with the
 > build, BEFORE the calibration had produced any flip rate and BEFORE any band was claimed.
 > **Exactly two fields were filled at promotion and nothing else was touched:**

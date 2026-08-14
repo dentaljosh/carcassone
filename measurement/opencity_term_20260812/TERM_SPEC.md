@@ -1,6 +1,49 @@
 # OPEN-CITY DISCIPLINE — a leaf term that penalizes the builder's own large open cities
 
-> **STATUS: RAN AND CLOSED 2026-08-13 — ARM A IS A RESOLVED NEGATIVE AT DEPLOY BUDGET, AT BOTH
+> **⚠️ STATUS 2026-08-14 — ROUND 2 RAN AND THE LEVER IS NOW CLOSED ACROSS ALL FOUR NAMED
+> VARIANTS. THIS SUPERSEDES THE SCOPE PARAGRAPH OF THE 2026-08-13 BANNER BELOW (which is kept
+> verbatim as the round-1 record).** The three CL-080 falsifiers named in that paragraph were
+> funded and run at the deploy budget, and **all three fired `N2 NEGATIVE`, all cost-neutral**
+> ([round-2 prereg](../opencity_round2_20260814/DEPLOY_PREREG.md), n=800 deck-paired each,
+> 800/800 records, 400/400 paired, 0 failed games, 13/13 gates on every cell):
+>
+> - **ARM C — 6 tiles / 3 edges, the source guides' own "avoid three open edges" predicate —
+>   at dose 16.0** (band **1.31e11**, `a4acf6d0925f7606`): margin **−14.8663 pts/deck**,
+>   **z −16.4892**, elo **−165.15 ± 27.40** (2σ), `ms_ratio` 0.9864. *(This is the re-run on a
+>   fresh band; the first arm-C cell is **VOID** —
+>   [AMENDMENT_1](../opencity_round2_20260814/AMENDMENT_1_C_VOID_AND_RERUN.md).)*
+> - **THE PER-CITY CAPPED FORM (§10), `opencity_cap 3.0` on arm A at dose 2.0** (band 1.29e11,
+>   `687f99980adaeee7`): margin **−5.2188**, **z −7.7028**, elo **−73.16 ± 25.11**,
+>   `ms_ratio` 1.0049.
+> - **THE `opencity_symmetric=False` OWN-SIDE-ONLY VARIANT OF §3, dose 2.0** (band 1.29e11,
+>   `3f05d72016d0d09c`): margin **−13.6862**, **z −17.3392**, elo **−176.10 ± 27.79**,
+>   `ms_ratio` 0.8743.
+>
+> ⭐ **§9's uncapped-product open question is ANSWERED IN PART, and the answer is half a
+> vindication: the cap HALVED THE HARM BUT DID NOT CHANGE THE SIGN** (−73.16 elo capped vs
+> −190.27 uncapped, arm A at the same dose 2.0) ⇒ §9 was **right about magnitude, wrong about
+> direction** — bounding the term makes it hurt less, not help. ⚠️ **That comparison is an
+> OBSERVATION, NOT A STATISTIC** (different cells, different bands; CL-068 forbids the
+> cross-band pool, prereg read rule 5 forbids fitting a slope) and no z was computed on it.
+> ⭐ **§9's double-count / horizon caveat now carries four instances** and is the leading
+> explanation across the whole set.
+>
+> ⛔ **SCOPE AFTER ROUND 2 — still narrower than it looks.** The licensed sentence, fixed
+> before the games by the round-2 prereg §5, is **"every calibrated, fundable form measured
+> harmful"**. **ARM B (3 tiles / 2 edges) was NEVER FUNDED on either round and stays
+> UNPRICED**, as do a different cap shape or value, a points-based size axis, an additive
+> escalation, and any dose below the expressiveness floor for its predicate. **"The
+> open-cities idea is dead" is STILL a FORBIDDEN reading of this document.**
+>
+> Claim **CL-082** (Established) minted on the four-variant set; **CL-080 annotated, its
+> numbers/status/confidence unchanged**. `results.csv`
+> `opencity_{Asym_d2p0,Acap3_d2p0}_deploy_fixed_v1_vs_champ11008_n800_b129e9` +
+> `opencity_C_d16p0_RERUN_deploy_fixed_v1_vs_champ11008_n800_b131e9`; bands **1.29e11** and
+> **1.31e11** retired `decision_influenced=yes`; DECISIONS 2026-08-14. `LeafConfig.opencity_dose`
+> and `opencity_cap` still default to a byte-identical no-op; **nothing promoted,
+> `governance/PRODUCTION.yaml` untouched.**
+
+> **STATUS 2026-08-13 (round 1, unedited) — RAN AND CLOSED — ARM A IS A RESOLVED NEGATIVE AT DEPLOY BUDGET, AT BOTH
 > FUNDED DOSES.** Two cells on band 1.27e11 (retired), **n = 800 deck-paired each**, fair PIMC
 > **k8×1376 = 11008 on BOTH arms**, `fixed_v1` + R9, rust, exact-K 2; candidate = the champion
 > leaf + this term at **arm A** (`opencity_size_min` 4 TILES / `opencity_edge_min` 2 /

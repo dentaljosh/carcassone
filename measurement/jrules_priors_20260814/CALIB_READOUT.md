@@ -1,6 +1,22 @@
 # J-RULES SURFACE B — CALIBRATION READ-OUT
 
-> **STATUS 2026-08-14: COMPLETE. 0 GAMES PLAYED.** A mechanical application of
+> **⚠️ STATUS 2026-08-14 — THE CELL THIS READ-OUT FUNDED HAS RUN AND IS CLOSED.** The named
+> dose **0.5** was played as `jpriors_d0p5_deploy11008` on band **1.30e11** (n=800
+> deck-paired) and fired branch **`N3 NO CONVICTION`**: margin **−0.0175 pts/deck**, sem
+> 0.6214, **z −0.0282**, elo −3.04 ± 24.57 (2σ), realized 2σ bound **±1.2427 pts/deck**;
+> `ms_ratio` 1.1751 so the cost trigger did **not** fire ⇒ a **clean** null. **No claim
+> minted.** → [DEPLOY_PREREG.md](DEPLOY_PREREG.md) banner · DECISIONS 2026-08-14 ·
+> `results.csv` `jpriors_d0p5_deploy_fixed_v1_vs_champ11008_n800_b130e9`.
+>
+> ⭐ **THE READ-OUT DID ITS JOB AND THE DISTINCTION IT INSISTED ON HELD: the flip rate is not a
+> result.** A **13.05 %** measured pick-flip rate — the boost demonstrably changes where the
+> champion looks on real games — produced a **z −0.03** strength reading at the deploy budget.
+> Clearing the 10 % bar bought **resolvability, not safety, and not effect**: this is the
+> cleanest instance the program has of *expressiveness ≠ strength*, and it is the
+> pre-registered sims-washout outcome of [DESIGN §1](DESIGN.md). Everything below this banner
+> is the mechanical read-out as produced, unedited.
+
+> **STATUS AT WRITING 2026-08-14: COMPLETE. 0 GAMES PLAYED.** A mechanical application of
 > [CALIB_READ_RULE.md](CALIB_READ_RULE.md) §3, which was committed **before any flip rate
 > existed**. No `experiments/results.csv` row, no band, no claim id, `governance/PRODUCTION.yaml`
 > untouched. Machine-readable source of every number: [`calib/SUMMARY.json`](calib/SUMMARY.json).
