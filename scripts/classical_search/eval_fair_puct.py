@@ -258,6 +258,23 @@ Usage:
   #    net-on-CPU; measure the decision divergence before citing a GPU cell against them:
   #      .venv/bin/python scripts/classical_search/bare_net_gpu_divergence.py \
   #          --opp-net <iter_02.pt> --max-positions 60
+
+CRASH RESILIENCE (2026-08-14, after cell `oc2_C_d16p0_deploy11008`). A game that
+RAISES no longer kills the pass. It is written as a failure record under
+`<out>/failed/seed*_a*.json`, its `--shared-claim` claim is released, and the pool
+carries on; `n_failed` / `failure_rate` / `failed_cells` / `failed_by_seat` land in
+BOTH `summary.json` and `manifest.json`, and a rate above 0.5% of n trips the
+pre-registered validity trigger (shouted at the end of the run, and stamped as
+`validity_trigger_fired`). Failure records live in a SUBDIRECTORY and carry no
+`diff`/`won_by_champ`, so no downstream glob of the cell dir can mistake one for a
+game. A failed game counts as DONE on a later pass (these failures are
+deck-deterministic); `--retry-failed` re-opens them after a code fix, bounded by
+the record's lifetime `attempts` vs `--max-attempts`. A record whose game LATER
+SUCCEEDED is RESOLVED — excluded from `n_failed`/`failure_rate` (the result file
+is the arbiter) but kept on disk and reported under `n_resolved_failures`, so a
+flaky game never voids a clean cell and never loses its diagnosis. Field/flag names mirror
+`scripts/joshuabot/h2h.py` (commit 0102b72d) so the two harnesses stay one
+convention.
 """
 from __future__ import annotations
 
@@ -1575,6 +1592,211 @@ def _save(p: Path, r: GameResult):
     tmp.replace(p)
 
 
+# --------------------------------------------------------------------------- #
+# CRASH RESILIENCE — a per-game failure is DATA, not the end of the pass.       #
+#                                                                              #
+# ⚠️ House lesson, twice learned. (1) capoff / DECISIONS 2026-07-31: a game     #
+# that dies deterministically and leaves ZERO records is the dangerous pattern  #
+# — the loss is invisible and it can be CANDIDATE-CORRELATED (capoff's 16       #
+# missing games were exactly the ones its own style drove into the 25x25 action #
+# window wall). (2) 2026-08-14, cell `oc2_C_d16p0_deploy11008`: ONE game raising #
+# `carc_rs.WindowTruncationError` out of `imap_unordered` killed the WHOLE pass, #
+# and every game in flight lost its `--shared-claim` claim file → 14 of 800     #
+# records lost (1 poisoned + 13 collateral) across 16 retry passes that each    #
+# re-crashed on the identical position.                                        #
+#                                                                              #
+# So a raise becomes a FAILURE RECORD: written to `<out>/failed/`, counted, and #
+# shouted about. Two properties are load-bearing and are what the tests pin:    #
+#   * it can NEVER be mistaken for a game result — it lives in a SUBDIRECTORY   #
+#     (every downstream reader globs the cell dir NON-recursively: `*.json`,    #
+#     `seed*_a*.json`, `*seed*.json`), it carries `failed: true` and NO `diff` / #
+#     `won_by_champ` / `drew` key, and `_try_load` never looks at it;          #
+#   * it is BOUNDED — the record accumulates a lifetime `attempts` count, so a  #
+#     deterministic crash cannot be retried forever (see `--max-attempts`).     #
+# Mirrors `scripts/joshuabot/h2h.py` (commit 0102b72d) field-for-field:         #
+# `failed` / `exc_type` / `exc` / `traceback` / `window_truncation` /           #
+# `window_diag` / `window_root_record` / `n_failed` / `failure_rate` /          #
+# `failed_cells` / `failed_by_seat` / `--retry-failed`. The two harnesses must  #
+# not diverge into two conventions (the `ms_ratio` lesson, commit 56c69022).    #
+# --------------------------------------------------------------------------- #
+FAILED_SCHEMA = "carcassonne-eval-fair-puct/v1/failed"
+
+#: Subdirectory of the cell dir that holds failure records. NOT the cell dir
+#: itself — every downstream reader globs the cell dir non-recursively.
+FAILED_DIRNAME = "failed"
+
+#: Pre-registered validity trigger (house reference): failed games above this
+#: fraction of n ⇒ STOP and investigate before reading the cell's number.
+FAILURE_RATE_TRIGGER = 0.005
+
+
+@dataclass
+class GameFailure:
+    """The in-process handle a worker returns for a game that RAISED. Deliberately
+    NOT a `GameResult`: the driver appends only `GameResult`s to `results`, so a
+    failure can never reach `_summary`'s statistics by construction."""
+    seed: int
+    a_seat: int
+    attempts: int
+    exc_type: str
+    exc: str
+    permanent: bool = False
+    window_truncation: bool = False
+    record: dict | None = None
+
+
+def _failed_dir(out: Path) -> Path:
+    return Path(out) / FAILED_DIRNAME
+
+
+def _failed_path(out: Path, seed: int, a_seat: int) -> Path:
+    return _failed_dir(out) / f"seed{seed:012d}_a{a_seat}.json"
+
+
+def _load_failure(p: Path) -> dict | None:
+    """A failure record, or None. A torn/garbage file is treated as absent (and
+    left alone — unlike `_try_load`, which unlinks: a failure record is evidence)."""
+    try:
+        d = json.load(open(p))
+    except Exception:
+        return None
+    return d if isinstance(d, dict) and d.get("failed") else None
+
+
+def load_failures(out, include_resolved=False) -> dict:
+    """The OUTSTANDING failure records in a cell, keyed by (seed, a_seat).
+
+    ⚠️ RESOLVED failures are excluded by default. A game that failed on one pass
+    and SUCCEEDED on a later ``--retry-failed`` pass leaves both a failure record
+    and a result; counting the stale record would report ``n_failed=1`` on a cell
+    that completed cleanly — and ``failure_rate`` is the input to the PRE-REGISTERED
+    VALIDITY TRIGGER (>0.5% ⇒ stop and investigate), so an overstated rate can void
+    a good cell. The RESULT FILE IS THE ARBITER: a record whose `_result_path`
+    exists is resolved, which is authoritative with no bookkeeping and stays correct
+    even when a --shared-claim PEER on another box played the successful retry.
+
+    The record itself is never deleted — a transiently-failing game is evidence
+    about the window-truncation family, and flaky-vs-deterministic is exactly the
+    distinction worth keeping. Pass ``include_resolved=True`` for the forensic view;
+    every returned record carries a `resolved` bool.
+    """
+    out = Path(out)
+    d = _failed_dir(out)
+    if not d.is_dir():
+        return {}
+    found = {}
+    for p in sorted(d.glob("seed*_a*.json")):
+        rec = _load_failure(p)
+        if rec is None or "seed" not in rec or "a_seat" not in rec:
+            continue
+        seed, a_seat = int(rec["seed"]), int(rec["a_seat"])
+        rec["resolved"] = _result_path(out, seed, a_seat).exists()
+        if rec["resolved"] and not include_resolved:
+            continue
+        found[(seed, a_seat)] = rec
+    return found
+
+
+def _mark_failure_resolved(out: Path, seed: int, a_seat: int) -> None:
+    """Stamp a superseded failure record `resolved: true` after its retry SUCCEEDED.
+
+    Belt-and-braces on top of the read-side rule in :func:`load_failures` (which is
+    what actually decides the counts): this makes the file SELF-DESCRIBING, so a
+    human reading `failed/seed*.json` months later sees that the crash was later
+    played through rather than mistaking it for a live exclusion.
+
+    Costs one `exists()` on the success path and nothing else — a cell that never
+    failed does no work here."""
+    p = _failed_path(out, seed, a_seat)
+    if not p.exists():                          # the overwhelmingly common case
+        return
+    rec = _load_failure(p)
+    if rec is None or rec.get("resolved"):
+        return
+    rec["resolved"] = True
+    rec["resolved_at"] = time.time()
+    rec["resolved_by_host"] = socket.gethostname()
+    try:
+        _save_failure(p, rec)
+    except Exception as e:                      # never let bookkeeping kill a game
+        sys.stderr.write(f"[eval_fair_puct] could not stamp resolved failure {p}: {e}\n")
+
+
+def failed_record(seed: int, a_seat: int, exc: BaseException, t0: float,
+                  attempts: int, max_attempts: int, prior: dict | None = None) -> dict:
+    """The record a game that RAISED leaves behind. Field names mirror
+    `h2h.failed_record` (`failed`/`exc_type`/`exc`/`traceback`/`window_*`)."""
+    import traceback as _tb
+
+    from carcassonne_ai import window_truncation as _WT
+
+    rec = {
+        "schema": FAILED_SCHEMA,
+        "failed": True,
+        # `seed`/`a_seat` are this harness's native cell key; `deck_seed` is the
+        # h2h-side spelling of the same number, carried so a cross-harness reader
+        # (or a census) needs no per-harness special case.
+        "seed": int(seed),
+        "a_seat": int(a_seat),
+        "deck_seed": int(seed),
+        "info": _W.get("info"),
+        "opponent": _W.get("opponent", "h800"),
+        "exact_k": _W.get("exact_k"),
+        "k_dets": _W.get("k_dets"),
+        "sims": _W.get("sims"),
+        "rung_sims": _W.get("rung_sims"),
+        "attempts": int(attempts),
+        "max_attempts": int(max_attempts),
+        # ⚠️ THE TERMINATION GUARANTEE. Once the lifetime attempt budget is spent
+        # the cell is permanently failed and `--retry-failed` will NOT re-open it.
+        "permanent": bool(attempts >= max_attempts),
+        "exc_type": type(exc).__name__,
+        "exc": str(exc)[:2000],
+        "traceback": "".join(_tb.format_exception(exc))[-4000:],
+        "host": socket.gethostname(),
+        "pid": os.getpid(),
+        "finished_at": time.time(),
+        "cell_secs": round(time.time() - t0, 2),
+        "prior_attempts": int((prior or {}).get("attempts", 0)),
+    }
+    # F-c: an exclusion that says WHY (identical to h2h). `window_diag` is the
+    # search's own EMPTY_MASK_DIAG payload — cause / mask counters / window /
+    # depth / dropped coordinates — so a live crash lands census-ready.
+    try:
+        rec["window_truncation"] = _WT.is_window_truncation(exc)
+        rec["window_diag"] = _WT.parse_diag(exc)
+    except Exception:                          # diagnostics must never re-raise
+        rec["window_truncation"] = False
+        rec["window_diag"] = None
+    root = getattr(exc, "window_root_record", None)
+    if root is not None:
+        rec["window_root_record"] = root
+        rec["window_root_path"] = getattr(exc, "window_root_path", None)
+    return rec
+
+
+def _save_failure(p: Path, rec: dict) -> None:
+    """Atomic rename-into-place, exactly like `_save` (a shared-claim peer must
+    never read a half-written record)."""
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_name(f".{p.stem}.{socket.gethostname()}.{os.getpid()}.partial.json")
+    with open(tmp, "w") as fh:
+        json.dump(rec, fh, indent=1, default=str)
+    tmp.replace(p)
+
+
+def _release_claim(p: Path) -> None:
+    """Drop this game's `--shared-claim` claim file. THE fix for the collateral
+    damage: a claim left behind by a dead pass is a claim-without-record, and a
+    resume stalls on it forever until someone hand-cleans (memory:
+    feedback_shared_claim_orphan_stall). A failed game releases its own claim, so
+    the stall can never start."""
+    try:
+        p.with_suffix(".claim").unlink(missing_ok=True)
+    except OSError as e:                        # never let cleanup kill the pass
+        sys.stderr.write(f"[eval_fair_puct] could not release claim for {p}: {e}\n")
+
+
 _W: dict = {}
 
 
@@ -1782,8 +2004,17 @@ def _cfg_from_dict(d, leaf_cfg=None, jrules_prior=None):
                             jrules_prior=jrules_prior)
 
 
-def _play_one(args) -> GameResult | None:
-    out_str, seed, a_seat = args
+def _play_one(args) -> GameResult | GameFailure | None:
+    """One (seed, a_seat) game, GUARDED.
+
+    A raise here used to propagate out of `imap_unordered` and kill the ENTIRE
+    pass — taking every in-flight game's `--shared-claim` claim with it (the
+    2026-08-14 `oc2_C_d16p0_deploy11008` incident: 1 poisoned game, 13 collateral).
+    One pathological deck must cost one deck, not the cell. So anything short of
+    an operator interrupt becomes a `GameFailure` + an on-disk failure record, the
+    claim is released, and the pool carries on."""
+    out_str, seed, a_seat = args[0], args[1], args[2]
+    max_attempts = int(args[3]) if len(args) > 3 else 1
     out = Path(out_str)
     p = _result_path(out, seed, a_seat)
     cached = _try_load(p)
@@ -1792,7 +2023,39 @@ def _play_one(args) -> GameResult | None:
     if _W.get("shared_claim"):
         if not _try_claim(p.with_suffix(".claim"), _W["claim_host"], _W["claim_stale"]):
             return None
+    t_fail = time.time()
+    try:
+        r = _play_one_inner(out, seed, a_seat, p)
+        # A --retry-failed that SUCCEEDED supersedes its old failure record. The
+        # counts are decided read-side (load_failures), but stamp the file so it
+        # says so itself. Kept, never deleted: the diagnosis is evidence.
+        _mark_failure_resolved(out, seed, a_seat)
+        return r
+    except (KeyboardInterrupt, SystemExit):     # operator/parent shutdown: propagate
+        raise
+    except BaseException as exc:                # noqa: BLE001 — incl. pyo3 PanicException
+        prior = _load_failure(_failed_path(out, seed, a_seat))
+        attempts = int((prior or {}).get("attempts", 0)) + 1
+        rec = failed_record(seed, a_seat, exc, t_fail, attempts, max_attempts, prior)
+        try:
+            _save_failure(_failed_path(out, seed, a_seat), rec)
+        except Exception as e:                  # a failed WRITE must still not be fatal
+            sys.stderr.write(f"[eval_fair_puct] could not write failure record "
+                             f"seed={seed} a_seat={a_seat}: {e}\n")
+        finally:
+            # ⚠️ ALWAYS, and always AFTER the record: a stranded claim with no
+            # record is what stalls the next --resume.
+            _release_claim(p)
+        return GameFailure(seed=int(seed), a_seat=int(a_seat), attempts=attempts,
+                           exc_type=rec["exc_type"], exc=rec["exc"],
+                           permanent=bool(rec["permanent"]),
+                           window_truncation=bool(rec.get("window_truncation")),
+                           record=rec)
 
+
+def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
+    """The game itself. UNCHANGED from the pre-guard version — a zero-failure cell
+    is bit-identical, because nothing on this path moved."""
     import random
     random.seed(seed)
     game = Game(enable_legal_moves_cache=True)  # referee / deck driver
@@ -1885,8 +2148,129 @@ def _paired_z(results):
     return mean, z, len(ds)
 
 
+def _failure_block(results, failures, resolved=None) -> dict:
+    """The EXCLUSION block. Key names mirror `h2h.summarize` exactly
+    (`n_failed` / `failure_rate` / `failed_cells` / `failed_by_seat`), and they are
+    ALWAYS present — a zero rate is stated, never inferred from a missing key or
+    from a record count that does not add up.
+
+    `failures` is the list of OUTSTANDING failure records for this cell (from
+    `load_failures`). `resolved` is the list of records whose game later SUCCEEDED:
+    those are NOT failures of this cell — they move no count, and above all they do
+    not inflate `failure_rate`, which gates the pre-registered validity trigger.
+    They are reported under their own keys so the forensic trail (a
+    transiently-failing game is evidence about the window-truncation family) stays
+    discoverable from the summary alone."""
+    bad = list(failures or [])
+    fixed = [r for r in (resolved or []) if r.get("resolved")]
+    n_scored = len(results)
+    n_records = n_scored + len(bad)
+    rate = (len(bad) / n_records) if n_records else 0.0
+    return {
+        # ⚠️ THE EXCLUSION LINE. Read it before the elo.
+        "n_failed": len(bad),
+        "failure_rate": rate,
+        # PRE-REGISTERED VALIDITY TRIGGER: >0.5% failed ⇒ stop and investigate
+        # before reading this cell's number.
+        "failure_rate_trigger": FAILURE_RATE_TRIGGER,
+        "validity_trigger_fired": bool(rate > FAILURE_RATE_TRIGGER),
+        "failed_cells": [{"seed": int(r.get("seed", -1)),
+                          "a_seat": int(r.get("a_seat", -1)),
+                          "attempts": int(r.get("attempts", 0)),
+                          "permanent": bool(r.get("permanent")),
+                          "exc_type": r.get("exc_type"),
+                          "exc": r.get("exc"),
+                          "window_truncation": bool(r.get("window_truncation")),
+                          "window_diag": r.get("window_diag")} for r in bad],
+        "failed_by_seat": {"0": sum(1 for r in bad if int(r.get("a_seat", -1)) == 0),
+                           "1": sum(1 for r in bad if int(r.get("a_seat", -1)) == 1)},
+        # NOT failures of this cell — a crash that a later pass played through.
+        # Counted separately so a flaky game stays visible without voiding the cell.
+        "n_resolved_failures": len(fixed),
+        "resolved_failed_cells": [{"seed": int(r.get("seed", -1)),
+                                   "a_seat": int(r.get("a_seat", -1)),
+                                   "attempts": int(r.get("attempts", 0)),
+                                   "exc_type": r.get("exc_type"),
+                                   "window_truncation": bool(r.get("window_truncation"))}
+                                  for r in fixed],
+    }
+
+
+def _shout_failures(block: dict, n_scored: int, tag="eval_fair_puct") -> None:
+    """Print the exclusion line loudly. A cell must never quietly complete with a
+    high failure rate — this is the operator-visible half of the validity trigger
+    (the machine-readable half is `summary.json` / `manifest.json`)."""
+    if block.get("n_resolved_failures"):
+        # Informational, never a trigger: these games ended up PLAYED.
+        print(f"\n[{tag}] {block['n_resolved_failures']} earlier failure(s) were "
+              f"RESOLVED by a later successful retry — not counted as failures "
+              f"(records kept in <out>/{FAILED_DIRNAME}/ with resolved: true): "
+              f"{[(c['seed'], c['a_seat'], c['exc_type']) for c in block['resolved_failed_cells']]}",
+              flush=True)
+    if not block.get("n_failed"):
+        return
+    pct = 100.0 * (block.get("failure_rate") or 0.0)
+    cells = [(c["seed"], c["a_seat"], c["exc_type"]) for c in block["failed_cells"]]
+    print(f"\n⚠️ [{tag}] {block['n_failed']} FAILED GAME(S) = {pct:.2f}% of "
+          f"{block['n_failed'] + n_scored} attempted — these are EXCLUSIONS, not "
+          f"zeros, and a paired deck with one dead seat drops out of the PAIRED "
+          f"margin entirely. by seat {block['failed_by_seat']}. Records in "
+          f"<out>/{FAILED_DIRNAME}/. Cells: {cells}", flush=True)
+    if block.get("validity_trigger_fired"):
+        print(f"⚠️⚠️ [{tag}] VALIDITY TRIGGER FIRED: failed games "
+              f"{pct:.2f}% > {100.0 * FAILURE_RATE_TRIGGER:.1f}% of n. "
+              f"STOP AND INVESTIGATE BEFORE READING THIS CELL'S NUMBER.", flush=True)
+
+
+def _filter_failed_todo(todo, prior_failures: dict, retry_failed: bool,
+                        max_attempts: int):
+    """Drop (or re-open) the games already on disk as FAILED records.
+
+    Returns ``(todo, reopened, skipped, exhausted)``.
+
+    ⚠️ This is THE termination guarantee, in three lines:
+      * default (no ``--retry-failed``) — a failed game is DONE, exactly as in
+        h2h's ``load_done``. These failures are deck-deterministic, so a plain
+        relaunch would re-burn a full game-time per pathological cell forever;
+        the 2026-08-14 incident did precisely that, 16 times.
+      * ``--retry-failed`` — re-open it (the h2h semantics: after a code fix)…
+      * …but ONLY while its LIFETIME ``attempts`` is under ``--max-attempts``.
+        Past that it is PERMANENT: a wrapper looping ``--retry-failed`` still
+        converges instead of grinding on a deterministic crash.
+    """
+    keep, reopened, skipped, exhausted = [], [], [], []
+    for t in todo:
+        rec = prior_failures.get((t[1], t[2]))
+        if rec is None:
+            keep.append(t)
+        elif not retry_failed:
+            skipped.append(t)
+        elif int(rec.get("attempts", 0)) >= int(max_attempts):
+            exhausted.append(t)
+        else:
+            reopened.append(t)
+            keep.append(t)
+    return keep, reopened, skipped, exhausted
+
+
+def _patch_failure_manifest(out, block: dict, n_failed_this_leg: int) -> None:
+    """Surface the exclusion count in the cell's `manifest.json` (h2h parity:
+    `close_out` closes the run manifest with the same numbers). Top-level keys, so
+    a reader can `jq .n_failed manifest.json` without knowing this harness."""
+    patch_manifest(out, "n_failed", int(block.get("n_failed", 0)))
+    patch_manifest(out, "failure_rate", block.get("failure_rate", 0.0))
+    patch_manifest(out, "n_failed_this_leg", int(n_failed_this_leg))
+    patch_manifest(out, "validity_trigger_fired",
+                   bool(block.get("validity_trigger_fired")))
+    patch_manifest(out, "failed_cells", block.get("failed_cells", []))
+    patch_manifest(out, "failed_by_seat", block.get("failed_by_seat", {"0": 0, "1": 0}))
+    patch_manifest(out, "n_resolved_failures", int(block.get("n_resolved_failures", 0)))
+    patch_manifest(out, "resolved_failed_cells", block.get("resolved_failed_cells", []))
+
+
 def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
-             opp_label=None, opp_k_dets=None, opp_sims=None):
+             opp_label=None, opp_k_dets=None, opp_sims=None, failures=None,
+             resolved=None):
     n = len(results)
     w = sum(1 for r in results if r.won_by_champ)
     d = sum(1 for r in results if r.drew)
@@ -1997,10 +2381,14 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             "candidate_total_sims": k_dets * sims,
             "opp_k_dets": _ok, "opp_sims": _os_, "opp_total_sims": _ok * _os_,
         }
+    # THE EXCLUSION BLOCK — always present (h2h parity: a zero rate is STATED).
+    _fail_block = _failure_block(results, failures, resolved)
+    _shout_failures(_fail_block, n)
     return {
         "info": info, "exact_k": exact_k, "k_dets": k_dets, "sims": sims,
         "total_sims": k_dets * sims, "rung_sims": rung_sims,
         **_asym_block,
+        **_fail_block,
         # `opponent`/`opponent_label` are additive; `diff`-derived stats (winrate/elo/
         # paired_mean_margin) are ALWAYS candidate-minus-opponent, which for the
         # default h800 opponent is exactly the historical champion-minus-rung.
@@ -2531,6 +2919,22 @@ def main(argv=None) -> int:
     ap.add_argument("--allow-selfplay-seeds", action="store_true")
     ap.add_argument("--out-root", type=str, default=None)
     ap.add_argument("--out-subdir", type=str, default=None)
+    ap.add_argument("--retry-failed", action="store_true",
+                    help="re-attempt games already on disk as FAILED records "
+                         "(<out>/failed/). Default OFF: these failures are "
+                         "deck-deterministic (same deck, same seeds, same "
+                         "deterministic players ⇒ the same raise), so a retry just "
+                         "re-burns a game-time — the 2026-08-14 incident re-crashed "
+                         "identically 16 times. Use after a code fix. Same spelling "
+                         "and semantics as scripts/joshuabot/h2h.py --retry-failed, "
+                         "plus a hard bound: a game whose lifetime `attempts` has "
+                         "reached --max-attempts is PERMANENT and is not re-opened.")
+    ap.add_argument("--max-attempts", type=int, default=3,
+                    help="LIFETIME attempt budget per game across all passes "
+                         "(default 3). One attempt per pass; the count is persisted "
+                         "in the failure record, so a --retry-failed loop always "
+                         "terminates instead of grinding on a deterministic crash. "
+                         "Raise it (or delete the record) to force more attempts.")
     ap.add_argument("--shared-claim", action="store_true")
     ap.add_argument("--claim-stale-secs", type=int, default=7200)
     ap.add_argument("--claim-host", type=str, default=socket.gethostname())
@@ -2571,6 +2975,9 @@ def main(argv=None) -> int:
         ap.error("--paired requires an even --n")
     if args.batch_size < 1:
         ap.error("--batch-size must be >= 1")
+    if args.max_attempts < 1:
+        # A budget of 0 would make every game permanently failed before it ran.
+        ap.error("--max-attempts must be >= 1")
     if args.batch_size > 1 and args.info != "fair-netprior":
         # Only the fair-netprior candidate has a batched net-prior evaluator wired.
         # fair/clair have no per-leaf net round-trip; fair-net batches a VALUE net for
@@ -3123,16 +3530,24 @@ def main(argv=None) -> int:
     out = root / sub
     out.mkdir(parents=True, exist_ok=True)
 
-    tasks = [(str(out), seed, a_seat)
+    # The 4th element is the per-cell LIFETIME attempt budget; `_play_one` reads
+    # it positionally and defaults to 1 for a 3-tuple, so every other consumer of
+    # `tasks` (which only ever reads t[1]/t[2]) is untouched.
+    tasks = [(str(out), seed, a_seat, args.max_attempts)
              for seed, a_seat in _build_work(args.seed_start, args.n, args.paired)]
 
     if args.summary_only:
         results = [r for t in tasks if (r := _try_load(_result_path(out, t[1], t[2]))) is not None]
+        _all = load_failures(out, include_resolved=True)
+        _cell = [_all[(t[1], t[2])] for t in tasks if (t[1], t[2]) in _all]
         if results:
             summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
                             args.rung_sims, opponent=args.opponent, opp_label=opp_label,
-                            opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims)
+                            opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims,
+                            failures=[r for r in _cell if not r.get("resolved")],
+                            resolved=[r for r in _cell if r.get("resolved")])
             json.dump(summ, open(out / "summary.json", "w"), indent=2)
+            _patch_failure_manifest(out, summ, 0)
         else:
             print("no cached results yet")
         return 0
@@ -3633,6 +4048,21 @@ def main(argv=None) -> int:
                    config=man_cfg, overwrite=True)
 
     todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
+    # ⚠️ TERMINATION. A cell already on disk as a FAILED record is treated as DONE
+    # (h2h `load_done`): these failures are deck-deterministic — same deck, same
+    # seeds, same deterministic players ⇒ the same raise — so a plain relaunch
+    # would re-burn a full game-time per pathological cell forever (the observed
+    # 16 identical re-crashes). `--retry-failed` re-opens them for a code fix, and
+    # even that is bounded by the record's lifetime `attempts` vs --max-attempts.
+    prior_failures = load_failures(out)
+    if prior_failures:
+        todo, _reopened, _skipped, _exhausted = _filter_failed_todo(
+            todo, prior_failures, args.retry_failed, args.max_attempts)
+        print(f"  [failures] {len(prior_failures)} prior failed game(s) on disk: "
+              f"{len(_reopened)} re-opened by --retry-failed, {len(_skipped)} skipped "
+              f"(default; use --retry-failed after a code fix), {len(_exhausted)} "
+              f"PERMANENT (attempts >= --max-attempts {args.max_attempts}) — records "
+              f"in {out / FAILED_DIRNAME}", flush=True)
     workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
     print(f"fair-puct[{tag}]: info={args.info} n={args.n} paired={args.paired} K={args.exact_k} "
           f"k_dets={args.k_dets} sims={args.sims} | {len(tasks)-len(todo)} cached, "
@@ -3643,6 +4073,7 @@ def main(argv=None) -> int:
     _opp_orch = bool(args.opp_orch_shm_name) and args.opponent in _NET_OPPONENTS
     orch = _cand_orch or _opp_orch
     results = []
+    n_failed_this_leg = 0
     if todo:
         t0 = time.perf_counter()
         if orch:
@@ -3708,6 +4139,19 @@ def main(argv=None) -> int:
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
                     continue
+                if isinstance(r, GameFailure):
+                    # RECORDED, NOT FATAL. The pool CONTINUES; the game is an
+                    # EXCLUSION (record in <out>/failed/, counted in the summary).
+                    n_failed_this_leg += 1
+                    print(f"  ⚠️ FAILED GAME seed={r.seed} a_seat={r.a_seat} "
+                          f"{r.exc_type}: {str(r.exc)[:300]} "
+                          f"(attempt {r.attempts}/{args.max_attempts}"
+                          f"{', PERMANENT' if r.permanent else ''}"
+                          f"{', window_truncation' if r.window_truncation else ''}"
+                          f"; {n_failed_this_leg} failed so far — the pool CONTINUES, "
+                          f"the claim was released, see the summary's n_failed)",
+                          flush=True)
+                    continue
                 results.append(r)
                 done += 1
                 if done % 10 == 0 or done == len(todo):
@@ -3721,14 +4165,32 @@ def main(argv=None) -> int:
             if c:
                 results.append(c)
 
+    # Re-read the failure records from DISK (not just this leg's): a --resume must
+    # never hide failures banked by an earlier leg, and a --shared-claim peer's
+    # failures belong to the cell just as much as ours.
+    _fails_now = load_failures(out, include_resolved=True)
+    _cell_recs = [_fails_now[(t[1], t[2])] for t in tasks if (t[1], t[2]) in _fails_now]
+    # A record whose game later SUCCEEDED is NOT a failure of this cell (the result
+    # file is the arbiter). Counting it would overstate `failure_rate`, which gates
+    # the pre-registered validity trigger.
+    cell_failures = [r for r in _cell_recs if not r.get("resolved")]
+    cell_resolved = [r for r in _cell_recs if r.get("resolved")]
     if not results:
         print("no results")
+        _fb = _failure_block([], cell_failures, cell_resolved)
+        _shout_failures(_fb, 0)
+        _patch_failure_manifest(out, _fb, n_failed_this_leg)
         return 0
     summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
                     args.rung_sims, opponent=args.opponent, opp_label=opp_label,
-                    opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims)
+                    opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims,
+                    failures=cell_failures, resolved=cell_resolved)
     json.dump(summ, open(out / "summary.json", "w"), indent=2)
     print(f"[summary.json] wrote {out/'summary.json'}")
+    # n_failed / failure_rate / failed_cells into manifest.json too (h2h parity:
+    # `close_out` puts the exclusion block in the run manifest). Single-key merges,
+    # so a racing --shared-claim peer can at worst lose its own stamp.
+    _patch_failure_manifest(out, summ, n_failed_this_leg)
     # END timestamp: the manifest's `utc` is written BEFORE the first game, so a cell's
     # wall-clock span was previously unrecoverable. Single-key merge (never a rewrite),
     # so a racing --shared-claim peer can at worst lose its own stamp.
