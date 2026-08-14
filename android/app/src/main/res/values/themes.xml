@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Compose supplies the real theming; this only needs to be a valid
-         Material3 parent so the Activity has a sane window background. -->
+         Material3 parent so the Activity has a sane window background.
+         values-night/themes.xml overrides the parent to the dark Material
+         theme so the window ground matches CarcTheme's system-dark follow. -->
     <style name="Theme.CarcassonneAI" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

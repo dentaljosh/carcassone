@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night-qualified twin of values/themes.xml. Compose supplies the real
+         theming (CarcTheme already follows the system uiMode); this only stops
+         the FRAMEWORK window background being Material.Light white in dark
+         mode — the white flash at cold start before the first Compose frame,
+         and the window ground behind the themed Surface. On the OLED Pixel a
+         dark window ground is the battery-correct default; it never touches
+         the game, bridge, or archive paths. -->
+    <style name="Theme.CarcassonneAI" parent="android:Theme.Material.NoActionBar" />
+</resources>
