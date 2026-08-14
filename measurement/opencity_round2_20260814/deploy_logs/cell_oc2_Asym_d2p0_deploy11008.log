@@ -7,3 +7,4 @@
 [head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
 [backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
 fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leaf3f05d720]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 800 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_Asym_d2p0_deploy11008
+  10/800 played (18.8s/game, ~247 min left)
