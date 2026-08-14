@@ -1,0 +1,43 @@
+[menu-fair primary Doctor] 2026-08-14_09:24:20 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-14_09:24:20 START sub=oc2_C_d16p0_deploy11008 n=800 band=129000000000 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/opencity_round2_20260814/cells/opencity_C_d16p0_deploy_fixed_v1_vs_fairchamp11008.json split=none/none
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 778 cached, 22 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 1842, in _play_one
+    action = rung.move(board)
+             ^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/src/carcassonne_ai/rust_agent.py", line 709, in choose_action
+    action = int(self._rs.choose_action(
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+carc_rs.WindowTruncationError: PUCT reached a node with no valid actions (Python IndexError) [cause=window_truncation n_total=4 n_overflow=4 window=25@(6,4) depth=4 phase=tiles] EMPTY_MASK_DIAG={"cause":"window_truncation","n_total":4,"n_overflow":4,"n_encoded":0,"window_size":25,"window_offset":[6,4,25],"phase":"tiles","player_to_move":0,"k_remaining":10,"tiles_placed":61,"depth":4,"sim_idx":140,"descent_actions":[49,2510,44,2510],"node_digest":"94f64fb6e296fd1b","state_digest":"1d4887105bd6cb85e7ea9b2ca9cda974","board_extent":[6,25,12,19],"dropped":[{"row":5,"col":15,"rot":0},{"row":5,"col":15,"rot":1},{"row":5,"col":15,"rot":2},{"row":5,"col":15,"rot":3}],"n_dropped_listed":4}
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 3741, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 3708, in main
+    for r in pool.imap_unordered(_play_one, todo, chunksize=1):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 873, in next
+    raise value
+carc_rs.WindowTruncationError: PUCT reached a node with no valid actions (Python IndexError) [cause=window_truncation n_total=4 n_overflow=4 window=25@(6,4) depth=4 phase=tiles] EMPTY_MASK_DIAG={"cause":"window_truncation","n_total":4,"n_overflow":4,"n_encoded":0,"window_size":25,"window_offset":[6,4,25],"phase":"tiles","player_to_move":0,"k_remaining":10,"tiles_placed":61,"depth":4,"sim_idx":140,"descent_actions":[49,2510,44,2510],"node_digest":"94f64fb6e296fd1b","state_digest":"1d4887105bd6cb85e7ea9b2ca9cda974","board_extent":[6,25,12,19],"dropped":[{"row":5,"col":15,"rot":0},{"row":5,"col":15,"rot":1},{"row":5,"col":15,"rot":2},{"row":5,"col":15,"rot":3}],"n_dropped_listed":4}
+[menu-fair primary Doctor] 2026-08-14_09:26:17 harness pass 1 rc=1 records=778/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 778 cached, 22 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008

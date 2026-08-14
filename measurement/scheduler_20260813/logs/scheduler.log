@@ -1106,3 +1106,561 @@ launched window_truncation_census detached under a MemoryMax=8G scope
 2026-08-14 01:37:06   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
 2026-08-14 01:37:06   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
 2026-08-14 01:37:06 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 01:42:07   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 01:42:07   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 01:42:07   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 01:42:07   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 01:42:07   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 01:42:07 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 01:47:08   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 01:47:08   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 01:47:08   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 01:47:08   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 01:47:08   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 01:47:08 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 01:52:10   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 01:52:10   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 01:52:10   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 01:52:10   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 01:52:10   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 01:52:10 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 01:57:11   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 01:57:11   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 01:57:11   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 01:57:11   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 01:57:11   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 01:57:11 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:02:12   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:02:12   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:02:12   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:02:12   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:02:12   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:02:12 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:07:13   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:07:13   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:07:13   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:07:13   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:07:13   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:07:13 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:12:14   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:12:14   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:12:14   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:12:14   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:12:14   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:12:15 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:17:16   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:17:16   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:17:16   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:17:16   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:17:16   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:17:16 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:22:17   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:22:17   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:22:17   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:22:17   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:22:17   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:22:17 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:27:18   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:27:18   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:27:18   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:27:18   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:27:18   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:27:18 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:32:19   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:32:19   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:32:19   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:32:19   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:32:19   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:32:19 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:37:20   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:37:20   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:37:20   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:37:20   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:37:20   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:37:21 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:42:22   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:42:22   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:42:22   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:42:22   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:42:22   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:42:22 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:47:23   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:47:23   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:47:23   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:47:23   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:47:23   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:47:23 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:52:24   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:52:24   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:52:24   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:52:24   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:52:24   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:52:24 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 02:57:25   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 02:57:25   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 02:57:25   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 02:57:25   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 02:57:25   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 02:57:25 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:02:27   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:02:27   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:02:27   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:02:27   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:02:27   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:02:27 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:07:28   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:07:28   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:07:28   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:07:28   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:07:28   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:07:28 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:12:29   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:12:29   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:12:29   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:12:29   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:12:29   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:12:29 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:17:30   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:17:30   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:17:30   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:17:30   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:17:30   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:17:30 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:22:31   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:22:31   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:22:31   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:22:31   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:22:31   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:22:31 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:27:33   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:27:33   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:27:33   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:27:33   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:27:33   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:27:33 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:32:34   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:32:34   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:32:34   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:32:34   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:32:34   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:32:34 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:37:35   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:37:35   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:37:35   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:37:35   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:37:35   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:37:35 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:42:36   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:42:36   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:42:36   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:42:36   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:42:36   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:42:36 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:47:38   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:47:38   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:47:38   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:47:38   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:47:38   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:47:38 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:52:39   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:52:39   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:52:39   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:52:39   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:52:39   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:52:39 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 03:57:40   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 03:57:40   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 03:57:40   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 03:57:40   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 03:57:40   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 03:57:40 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:02:41   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 04:02:41   BOX laptop BUSY census guard: 25 live measurement process(es) on laptop
+2026-08-14 04:02:41   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:02:41   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:02:41   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:02:41 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:07:42   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 04:07:42   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:07:42   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:07:42   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:07:42   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:07:42 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:12:43   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 04:12:43   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:12:43   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:12:43   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:12:43   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:12:43 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:17:44   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 04:17:44   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:17:44   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:17:44   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:17:44   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:17:44 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:22:45   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 04:22:45   BOX laptop BUSY census guard: 3 live measurement process(es) on laptop
+2026-08-14 04:22:45   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:22:45   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:22:45   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:22:45 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:27:46   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 04:27:46   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:27:46   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:27:46   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:27:46   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:27:46 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:32:47   BOX local  BUSY census guard: 15 live measurement process(es) on local
+2026-08-14 04:32:47   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:32:47   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:32:47   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:32:47   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:32:47 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:37:47   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 04:37:47   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:37:47   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:37:47   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:37:47   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:37:47 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:42:48   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 04:42:48   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:42:48   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:42:48   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:42:48   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:42:48 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:47:49   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 04:47:49   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:47:49   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:47:49   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:47:49   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:47:49 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:52:50   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 04:52:50   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:52:50   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:52:50   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:52:50   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:52:50 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 04:57:51   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 04:57:51   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 04:57:51   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 04:57:51   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 04:57:51   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 04:57:51 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:02:52   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:02:52   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:02:52   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:02:52   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:02:52   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:02:52 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:07:53   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:07:53   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:07:53   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:07:53   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:07:53   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:07:53 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:12:54   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:12:54   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:12:54   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:12:54   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:12:54   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:12:54 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:17:55   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:17:55   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:17:55   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:17:55   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:17:55   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:17:55 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:22:55   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:22:55   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:22:55   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:22:55   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:22:55   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:22:55 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:27:56   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:27:56   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:27:56   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:27:56   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:27:56   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:27:56 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:32:57   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:32:57   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:32:57   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:32:57   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:32:57   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:32:57 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:37:58   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:37:58   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:37:58   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:37:58   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:37:58   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:37:58 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:42:59   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:42:59   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:42:59   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:42:59   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:42:59   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:42:59 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:48:00   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:48:00   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:48:00   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:48:00   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:48:00   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:48:00 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:53:01   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:53:01   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:53:01   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:53:01   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:53:01   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:53:01 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 05:58:02   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 05:58:02   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 05:58:02   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 05:58:02   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 05:58:02   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 05:58:02 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:03:02   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:03:02   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:03:02   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:03:02   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:03:02   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:03:02 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:08:03   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:08:03   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:08:03   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:08:03   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:08:03   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:08:03 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:13:04   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:13:04   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:13:04   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:13:04   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:13:04   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:13:04 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:18:05   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:18:05   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:18:05   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:18:05   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:18:05   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:18:05 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:23:06   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:23:06   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:23:06   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:23:06   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:23:06   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:23:06 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:28:07   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:28:07   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:28:07   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:28:07   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:28:07   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:28:07 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:33:08   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:33:08   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:33:08   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:33:08   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:33:08   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:33:08 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:38:09   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:38:09   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:38:09   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:38:09   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:38:09   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:38:09 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:43:09   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:43:09   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:43:09   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:43:09   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:43:09   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:43:09 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:48:10   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:48:10   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:48:10   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:48:10   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:48:10   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:48:10 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:53:11   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:53:11   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:53:11   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:53:11   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:53:11   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:53:11 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 06:58:12   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 06:58:12   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 06:58:12   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 06:58:12   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 06:58:12   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 06:58:12 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:03:13   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:03:13   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:03:13   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:03:13   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:03:13   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:03:13 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:08:14   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:08:14   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:08:14   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:08:14   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:08:14   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:08:14 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:13:15   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:13:15   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:13:15   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:13:15   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:13:15   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:13:15 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:18:16   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:18:16   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:18:16   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:18:16   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:18:16   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:18:16 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:23:16   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:23:16   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:23:16   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:23:16   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:23:16   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:23:16 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:28:17   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:28:17   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:28:17   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:28:17   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:28:17   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:28:17 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:33:18   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:33:18   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:33:18   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:33:18   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:33:18   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:33:18 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:38:19   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:38:19   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:38:19   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:38:19   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:38:19   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:38:19 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:43:20   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:43:20   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:43:20   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:43:20   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:43:20   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:43:20 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:48:21   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:48:21   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:48:21   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:48:21   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:48:21   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:48:21 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:53:22   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:53:22   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:53:22   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:53:22   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:53:22   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:53:22 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 07:58:23   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 07:58:23   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 07:58:23   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 07:58:23   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 07:58:23   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 07:58:23 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:03:23   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:03:23   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:03:23   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:03:23   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:03:23   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:03:24 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:08:24   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:08:24   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:08:24   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:08:24   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:08:24   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:08:24 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:13:25   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:13:25   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:13:25   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:13:25   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:13:25   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:13:25 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:18:26   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:18:26   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:18:26   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:18:26   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:18:26   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:18:26 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:23:27   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:23:27   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:23:27   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:23:27   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:23:27   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:23:27 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:28:28   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:28:28   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:28:28   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:28:28   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:28:28   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:28:28 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:33:29   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:33:29   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:33:29   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:33:29   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:33:29   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:33:29 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:38:30   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:38:30   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:38:30   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:38:30   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:38:30   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:38:30 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:43:31   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:43:31   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:43:31   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:43:31   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:43:31   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:43:31 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:48:31   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:48:31   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:48:31   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:48:31   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:48:31   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:48:31 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:53:32   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:53:32   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:53:32   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:53:32   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:53:32   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:53:32 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 08:58:33   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 08:58:33   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 08:58:33   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 08:58:33   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 08:58:33   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 08:58:33 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 09:03:34   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 09:03:34   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 09:03:34   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 09:03:34   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 09:03:34   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 09:03:34 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 09:08:35   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 09:08:35   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 09:08:35   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 09:08:35   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 09:08:35   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 09:08:35 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 09:13:36   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 09:13:36   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 09:13:36   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 09:13:36   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 09:13:36   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 09:13:36 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 09:18:37   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 09:18:37   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 09:18:37   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 09:18:37   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 09:18:37   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 09:18:37 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)
+2026-08-14 09:23:38   BOX local  FREE occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean
+2026-08-14 09:23:38   BOX laptop FREE occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean
+2026-08-14 09:23:38   ITEM p10  window_truncation_census DONE        scheduler DONE marker present (laptop)
+2026-08-14 09:23:38   ITEM p20  j13_pregate            DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md
+2026-08-14 09:23:38   ITEM p30  jrules_on_search       DONE        already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+2026-08-14 09:23:38 queue DRAINED - idling; add items to /home/doctor/projects/carcassone/scripts/scheduler/queue.json (no restart needed)

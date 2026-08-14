@@ -3,3 +3,7 @@
 [oc-r2-deploy 2026-08-14_01:37:32] SKIP oc2_C_d16p0_deploy11008 (CELL_FILTER='Asym' -- this cell runs on the other box)
 [oc-r2-deploy 2026-08-14_01:37:32] SKIP oc2_Acap3_d2p0_deploy11008 (CELL_FILTER='Asym' -- this cell runs on the other box)
 [oc-r2-deploy 2026-08-14_01:37:32] --- cell oc2_Asym_d2p0_deploy11008 seeds 129000000800..129000001199 cand_hash=3f05d72016d0d09c dose=2.0 knobs={"opencity_symmetric": false} ---
+[oc-r2-deploy 2026-08-14_04:33:06] cell oc2_Asym_d2p0_deploy11008 launcher rc=0 records=800/800
+[oc-r2-deploy 2026-08-14_04:33:06] cell oc2_Asym_d2p0_deploy11008 wiring gates: all_gates_pass=True (gate-script rc=0) -> /home/doctor/projects/carcassone/measurement/opencity_round2_20260814/verdicts/GATES_oc2_Asym_d2p0_deploy11008.json
+[oc-r2-deploy 2026-08-14_04:33:07] cell oc2_Asym_d2p0_deploy11008 DONE (800/800) -> /home/doctor/projects/carcassone/measurement/opencity_round2_20260814/DONE_oc2_Asym_d2p0_deploy11008
+[oc-r2-deploy 2026-08-14_04:33:07] === ALL CELLS COMPLETE (band 129000000000, box local). Nothing adjudicated, nothing promoted. ===
