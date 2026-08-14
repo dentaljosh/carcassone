@@ -1,28 +1,18 @@
-# WORKER COUNTS FOR THE NEXT CELL — owner directive, 2026-08-14 ~09:30
+# WORKER COUNTS — standing owner directive
 
-**Joshua, verbatim: "for. the next cell. make sure w22 for laptop and w30 for local".**
+**2026-08-14 ~15:10, Joshua: "the boxes are yours until sunday morning. default to w22 laptop, w30 local."**
+This upgrades the earlier per-cell directive to a STANDING DEFAULT through Sunday morning 2026-08-16.
 
-| box | W for the next cell | how to pass it |
+| box | standing W | how to pass it |
 |---|---|---|
-| laptop | **22** | already the driver's `W_DEFAULT` for `laptop`; pass explicitly anyway |
-| local | **30** | ⚠️ the driver's `W_DEFAULT` for `local` is **14** — W30 MUST be passed as arg 3 |
+| laptop | **22** | driver `W_DEFAULT` for `laptop` already 22; pass explicitly anyway |
+| local | **30** | ⚠️ every driver's `local` default is **14** — W30 MUST be passed as the W arg |
 
-```
-bash run_deploy_opencity_round2.sh laptop <BAND> 22 <CELL_FILTER>
-bash run_deploy_opencity_round2.sh local  <BAND> 30 <CELL_FILTER>
-```
+**Shabbos window:** no owner rulings available from Friday sundown until Saturday night.
+Every cell launched in this window runs under a read-rule/prereg committed BEFORE its first
+number existed; a fired pre-registered branch IS its authorization (standing memory
+`feedback_execute_prereg_triggers`). Nothing is promoted and `governance/PRODUCTION.yaml`
+is not touched on any branch regardless of what fires.
 
-This applies to the **next** cell launched, not to the two cells in flight when the
-directive was given (laptop `Acap3_d2p0` at W22 — already correct; local `C_d16p0`
-top-up at W14 — 22 games, finishing in minutes, not worth a restart).
-
-**Why this file and not an edit to the driver:** both boxes were mid-run executing
-`run_deploy_opencity_round2.sh` when the directive landed, and bash reads a script
-incrementally by byte offset — editing a running script can corrupt its execution.
-The driver's `W_DEFAULT` for `local` should be changed to 30 at the next quiet window;
-until then this file is the record and the W is passed explicitly.
-
-**Measurement note, not an objection:** absolute `ms/move` and `games/h` are
-worker-count-dependent, so throughput figures from a W30 cell are NOT comparable to
-the W14/W22 cells on this band. The deck-paired margin and `ms_ratio` are first-order
-insensitive (both arms share the pool), which is what the primary statistic rests on.
+**Measurement note:** absolute `ms/move` / `games/h` are worker-count-dependent; the
+deck-paired margin and `ms_ratio` are first-order insensitive (both arms share the pool).
