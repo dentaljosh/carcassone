@@ -1,0 +1,3 @@
+131000000000
+OPEN-CITY ROUND 2, ARM C RE-RUN (the voided cell, replayed clean): 1 cell n=800 deck-paired (400 decks x 2 seats), candidate = the champion leaf + the open-city term at ARM C (opencity_size_min 6.0 TILES / opencity_edge_min 3 / opencity_symmetric True) at dose 16.0, cand_leaf_hash a4acf6d0925f7606; opponent = the UNMODIFIED production champion a36d2e15a3b3d71d. BOTH arms FAIR PIMC k8x1376=11008, fixed_v1+R9, rust both sides, exact-K 2. PRIMARY STATISTIC = deck-paired margin z; elo secondary.
+claimed 2026-08-14
