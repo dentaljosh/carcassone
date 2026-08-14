@@ -39,8 +39,14 @@
 //! must not be routed here.
 
 pub mod decomp;
+/// J-RULES AS POLICY PRIORS (surface B) — expansion-time prior modulation for
+/// the search. NOT a leaf term: nothing in it touches [`LeafConfig`], any leaf
+/// value, or any leaf hash. It lives under `leaf` because it shares the
+/// [`Decomp`] and the `jr_*` predicate helpers with surface A.
+pub mod jrules_prior;
 
 pub use decomp::{decompose, decompose_into, Decomp, Scratch};
+pub use jrules_prior::{jr_prior_clock, jrules_prior_term, JrPriorClock};
 
 /// Reusable working set for a hot leaf loop (P3/P4 search rates).
 ///
@@ -86,6 +92,32 @@ impl LeafScratch {
         }
         decompose_into(state, &mut self.decomp, &mut self.scratch);
         Ok(leaf_terms_with(state, player, cfg, &self.decomp)?.value)
+    }
+
+    /// [`Self::leaf_value_float`] / [`Self::leaf_value`] plus the raw
+    /// `flat_base_score` — one decomposition for both, for the J-rules PRIOR
+    /// surface (`jrules_prior`), whose J5/J8 need the naive count of the same
+    /// afterstate the leaf just priced. The leaf component is BIT-IDENTICAL to
+    /// the plain calls (same `leaf_terms_with`, same decomp); the caller may
+    /// then read `self.decomp` (still this state's) for
+    /// [`jrules_prior::jrules_prior_term`].
+    ///
+    /// `quantize_int` mirrors the search's `LeafQuantize`: `true` returns
+    /// `value as f64` (the int leaf widened), `false` the float leaf.
+    pub fn leaf_float_and_base(
+        &mut self,
+        state: &GameState,
+        player: usize,
+        cfg: &LeafConfig,
+        quantize_int: bool,
+    ) -> Result<(f64, f64), LeafError> {
+        if state.players != 2 {
+            return Err(LeafError::NotTwoPlayer);
+        }
+        decompose_into(state, &mut self.decomp, &mut self.scratch);
+        let t = leaf_terms_with(state, player, cfg, &self.decomp)?;
+        let leaf = if quantize_int { t.value as f64 } else { t.score };
+        Ok((leaf, t.base as f64))
     }
 }
 

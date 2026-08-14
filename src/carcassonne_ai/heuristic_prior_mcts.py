@@ -199,6 +199,18 @@ class HeuristicPriorConfig:
     gumbel_c_visit: float = 50.0
     gumbel_c_scale: float = 1.0
     gumbel_retain_g: bool = True
+    # --- J-RULES PRIOR surface B (measurement/jrules_priors_20260814) -------
+    # SEARCH-level knobs, deliberately NOT LeafConfig fields: they move no leaf
+    # hash (the candidate's leaf stays the champion's a36d2e15a3b3d71d), so the
+    # wiring gate for a live term is the RESOLVED dose in the manifest, never a
+    # moved hash. dose 0.0 (default) is the champion, bit-for-bit. Nonzero:
+    # RUST-ONLY — the python search path raises in
+    # make_heuristic_prior_evaluator (fail-loud; a silently prior-free
+    # candidate would read as "the strategy is worth nothing" instead of "it
+    # never ran").
+    jrules_prior_dose: float = 0.0
+    jrules_prior_mask: int = 31
+    jrules_prior_scope: str = "all"
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -215,6 +227,19 @@ class HeuristicPriorConfig:
             )
         if int(self.gumbel_m) < 1:
             raise ValueError(f"gumbel_m must be >= 1; got {self.gumbel_m!r}")
+        # J-rules prior knobs: validated even at dose 0 so a typo never rides.
+        import math as _math
+        if not _math.isfinite(float(self.jrules_prior_dose)):
+            raise ValueError("jrules_prior_dose must be finite")
+        if self.jrules_prior_scope not in ("all", "own"):
+            raise ValueError(
+                f"jrules_prior_scope must be 'all'|'own'; got {self.jrules_prior_scope!r}"
+            )
+        m = int(self.jrules_prior_mask)
+        if m == 0 or m & ~31:
+            raise ValueError(
+                f"jrules_prior_mask must be nonzero and within JR_ALL (31); got {m}"
+            )
 
     def resolved_leaf_cfg(self):
         return self.leaf_cfg if self.leaf_cfg is not None else DEFAULT_CONFIG
@@ -241,6 +266,12 @@ class HeuristicPriorConfig:
             "gumbel_c_visit": self.gumbel_c_visit,
             "gumbel_c_scale": self.gumbel_c_scale,
             "gumbel_retain_g": self.gumbel_retain_g,
+            # RESOLVED J-rules-prior knobs — surface B's wiring gate reads the
+            # dose FROM HERE (a moved leaf hash cannot prove this term live,
+            # because it deliberately moves none).
+            "jrules_prior_dose": float(self.jrules_prior_dose),
+            "jrules_prior_mask": int(self.jrules_prior_mask),
+            "jrules_prior_scope": self.jrules_prior_scope,
             "leaf_cfg": leaf,
         }
 
@@ -255,6 +286,17 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
     mutate the input board and does not touch the legal-move cache), so it is
     safe to share the SAME game with the owning NeuralMCTS.
     """
+    # J-RULES PRIOR surface B is RUST-ONLY. Refusing here (not silently
+    # ignoring) is the same fail-closed rule the leaf bundle's stale-wheel
+    # TypeError implements: a python-search candidate that quietly dropped the
+    # dose would play champion-vs-champion and read as a beautiful,
+    # meaningless null.
+    if float(getattr(cfg, "jrules_prior_dose", 0.0)) != 0.0:
+        raise NotImplementedError(
+            "jrules_prior_dose is set but the python search path has no "
+            "J-rules-prior implementation (surface B is rust-only; "
+            "carc_core::search). Build this agent with backend='rust'."
+        )
     leaf_cfg = cfg.resolved_leaf_cfg()
     tau = float(cfg.tau_p)
     norm = float(cfg.value_norm)

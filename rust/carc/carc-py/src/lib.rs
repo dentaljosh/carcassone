@@ -510,6 +510,66 @@ impl PyMirrorState {
         result_to_dict(py, &r)
     }
 
+    // --- J-RULES PRIOR surface B: the parity probe ------------------------
+
+    /// The J-rules PRIOR clock + per-legal-child term at THIS state's mover —
+    /// the parity surface for `carcassonne_ai.jrules_priors` (the Python
+    /// reference mirror). Floats are returned both as values and as raw f64
+    /// bit patterns so the gate compares bits, not decimal renderings.
+    ///
+    /// This is exactly what `Searcher::evaluate` adds to each child's Δleaf
+    /// (times the dose) before the prior softmax when
+    /// `jrules_prior_dose != 0`.
+    #[pyo3(signature = (mask=31))]
+    fn jrules_prior_probe<'py>(
+        &self,
+        py: Python<'py>,
+        mask: i64,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let g = &self.game;
+        let mover = g.state.current_player;
+        let mut scratch = leaf::LeafScratch::new();
+        leaf::decompose_into(&g.state, &mut scratch.decomp, &mut scratch.scratch);
+        let clock = leaf::jr_prior_clock(&g.state, mover, &scratch.decomp);
+        let legal = g.legal_actions();
+        let mut rows: Vec<(i32, f64, u64, f64)> = Vec::with_capacity(legal.len());
+        for &a in &legal {
+            let mut child = g.clone();
+            child
+                .advance(a)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?;
+            leaf::decompose_into(&child.state, &mut scratch.decomp, &mut scratch.scratch);
+            let base =
+                leaf::flat_base_score_farm(&child.state, mover, &scratch.decomp, false) as f64;
+            let t = leaf::jrules_prior_term(
+                &child.state,
+                mover,
+                &scratch.decomp,
+                mask,
+                &clock,
+                base,
+            );
+            rows.push((a, t, t.to_bits(), base));
+        }
+        let d = PyDict::new(py);
+        d.set_item("mover", mover)?;
+        d.set_item("mask", mask)?;
+        d.set_item("k", clock.k)?;
+        d.set_item("late_frac", clock.late_frac)?;
+        d.set_item("late_frac_bits", clock.late_frac.to_bits())?;
+        d.set_item("bag_farm_frac", clock.bag_farm_frac)?;
+        d.set_item("bag_farm_frac_bits", clock.bag_farm_frac.to_bits())?;
+        d.set_item("urg", clock.urg)?;
+        d.set_item("urg_bits", clock.urg.to_bits())?;
+        d.set_item("opp_reserve", clock.opp_reserve)?;
+        d.set_item("parent_base", clock.parent_base)?;
+        d.set_item("abs_margin", clock.abs_margin)?;
+        d.set_item("parent_unclaimed", clock.parent_unclaimed)?;
+        d.set_item("parent_unclaimed_bits", clock.parent_unclaimed.to_bits())?;
+        d.set_item("children", rows)?;
+        Ok(d)
+    }
+
     // --- P2: the leaf ----------------------------------------------------
 
     /// `flat_leaf.flat_virtual_score_v2(state, player, cfg)`.
@@ -1127,6 +1187,9 @@ impl PySearchConfig {
         c_lcb=1.0,
         exp_fma=true,
         tanh_flavor="glibc_fma",
+        jrules_prior_dose=0.0,
+        jrules_prior_mask=31,
+        jrules_prior_scope="all",
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1142,6 +1205,9 @@ impl PySearchConfig {
         c_lcb: f64,
         exp_fma: bool,
         tanh_flavor: &str,
+        jrules_prior_dose: f64,
+        jrules_prior_mask: i64,
+        jrules_prior_scope: &str,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -1162,6 +1228,30 @@ impl PySearchConfig {
                 )))
             }
         };
+        // J-RULES PRIOR surface B (search-level knobs; NOT LeafConfig fields —
+        // they move no leaf hash). Validated even at dose 0 so a typo'd scope
+        // or an out-of-range mask never rides silently.
+        let jr_scope = match jrules_prior_scope {
+            "all" => search::JrPriorScope::All,
+            "own" => search::JrPriorScope::Own,
+            other => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "jrules_prior_scope must be 'all'|'own'; got {other:?}"
+                )))
+            }
+        };
+        if !jrules_prior_dose.is_finite() {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "jrules_prior_dose must be finite",
+            ));
+        }
+        if jrules_prior_mask & !leaf::JR_ALL != 0 || jrules_prior_mask == 0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "jrules_prior_mask {jrules_prior_mask} invalid: must be nonzero and within \
+                 JR_ALL ({})",
+                leaf::JR_ALL
+            )));
+        }
         Ok(PySearchConfig {
             inner: search::SearchConfig {
                 c_puct,
@@ -1177,8 +1267,26 @@ impl PySearchConfig {
                 tanh_flavor: parse_flavor(tanh_flavor)?,
                 use_leaf_scratch: true,
                 leaf: leaf_cfg.inner.clone(),
+                jrules_prior_dose,
+                jrules_prior_mask,
+                jrules_prior_scope: jr_scope,
             },
         })
+    }
+
+    /// The resolved J-rules-prior knobs — what a manifest must stamp (the
+    /// wiring gate for surface B is the RESOLVED dose, never the leaf hash,
+    /// which this surface deliberately does not move).
+    #[getter]
+    fn jrules_prior(&self) -> (f64, i64, &'static str) {
+        (
+            self.inner.jrules_prior_dose,
+            self.inner.jrules_prior_mask,
+            match self.inner.jrules_prior_scope {
+                search::JrPriorScope::All => "all",
+                search::JrPriorScope::Own => "own",
+            },
+        )
     }
 
     #[getter]
@@ -1195,9 +1303,19 @@ impl PySearchConfig {
 
     fn __repr__(&self) -> String {
         let i = &self.inner;
+        // The J-rules-prior suffix appears ONLY when the dose is live, so every
+        // default-off (champion) repr is byte-identical to the pre-B string.
+        let jr = if i.jrules_prior_dose != 0.0 {
+            format!(
+                ", jrules_prior_dose={}, jrules_prior_mask={}, jrules_prior_scope={:?}",
+                i.jrules_prior_dose, i.jrules_prior_mask, i.jrules_prior_scope
+            )
+        } else {
+            String::new()
+        };
         format!(
             "SearchConfigRs(sims={}, c_puct={}, tau_p={}, value_norm={}, \
-             leaf_quantize={:?}, final_select={:?}, fpu={:?}, exp_fma={}, tanh={:?})",
+             leaf_quantize={:?}, final_select={:?}, fpu={:?}, exp_fma={}, tanh={:?}{})",
             i.simulations,
             i.c_puct,
             i.tau_p,
@@ -1206,7 +1324,8 @@ impl PySearchConfig {
             i.final_select,
             i.fpu_reduction,
             i.exp_fma,
-            i.tanh_flavor
+            i.tanh_flavor,
+            jr
         )
     }
 }
