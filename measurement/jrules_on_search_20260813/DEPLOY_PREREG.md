@@ -1,7 +1,20 @@
 # J-RULES ON SEARCH — **DEPLOY-BUDGET** CELL, PRE-REGISTRATION
 
-> **STATUS: WRITTEN AND COMMITTED BEFORE THE BAND WAS CLAIMED AND BEFORE GAME 1 (2026-08-13).
-> NOT RUN — 0 games, 0 numbers read.**
+> **⚠️ STATUS 2026-08-13 — RAN AND ADJUDICATED. This document is the PRE-REGISTRATION OF RECORD
+> and is unchanged below; the verdict is [VERDICT.md](VERDICT.md).** 800/800 records, all N0
+> gates clean. **N1 fired** (deck-paired margin **−2.4912 pts/deck**, PRIMARY z **−3.8564**,
+> se 0.6460; W354/D14/L432; elo **−33.98 ± 12.34**) **but N4 also fired** (`ms_ratio` **1.2116**
+> > 1.20) ⇒ **N1 DOWNGRADES to "loss, confounded by budget"**. Owner ruling 2026-08-13:
+> **"default" — this prereg as written governs.** **NO claim minted: `CL-081` was reserved here
+> and is left UNUSED and available.** N5 did not fire (0 failed games). §7's scope clause is
+> binding and binds *harder* under the downgrade — **the "encode the strategy as static leaf
+> terms" route is NOT closed.** ⚠️ **§6 N0's "single `variant_id`" clause is UNVERIFIABLE AS
+> WRITTEN** — `eval_fair_puct` emits none; see VERDICT.md. ⚠️ Recorded dissent, **not adopted**:
+> [AMENDMENT_1_N4_DIRECTION.md](AMENDMENT_1_N4_DIRECTION.md). Band 1.28e11 retired,
+> decision-influenced. `governance/PRODUCTION.yaml` untouched.
+
+> **STATUS AT WRITING: WRITTEN AND COMMITTED BEFORE THE BAND WAS CLAIMED AND BEFORE GAME 1
+> (2026-08-13). NOT RUN — 0 games, 0 numbers read.**
 > One cell, one dose, no ladder. The dose was named by a rule committed before any flip rate
 > existed (`bf0f94cf`, `552c7fe0`); the band is claimed in the same commit as this file.
 > [`governance/PRODUCTION.yaml`](../../governance/PRODUCTION.yaml) is untouched on **every**

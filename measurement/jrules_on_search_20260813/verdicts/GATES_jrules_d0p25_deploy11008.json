@@ -1,0 +1,166 @@
+{
+  "cell": "jrules_d0p25_deploy11008",
+  "all_gates_pass": true,
+  "records": "800/800",
+  "gates": [
+    {
+      "gate": "N0a_cand_leaf_hash",
+      "ok": true,
+      "observed": "15948beccf3472d3",
+      "why": ""
+    },
+    {
+      "gate": "N0b_opp_leaf_hash_is_unmodified_champion",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d",
+      "why": ""
+    },
+    {
+      "gate": "N0c_cand_jrules_dose_LIVE",
+      "ok": true,
+      "observed": 0.25,
+      "why": "the RESOLVED dose in the manifest, not the hash, is what proves the term is live"
+    },
+    {
+      "gate": "N0d_no_jrules_mask_key_in_cand_leaf_cfg",
+      "ok": true,
+      "observed": [
+        "jrules_dose"
+      ],
+      "why": "absence => the default 31; a mask typo must not be able to silently ablate rules"
+    },
+    {
+      "gate": "N0e_opponent_leaf_has_no_jrules",
+      "ok": true,
+      "observed": {},
+      "why": ""
+    },
+    {
+      "gate": "N0f_cand_budget_k8x1376_11008",
+      "ok": true,
+      "observed": [
+        8,
+        1376,
+        11008
+      ],
+      "why": ""
+    },
+    {
+      "gate": "N0g_opp_budget_k8x1376_11008",
+      "ok": true,
+      "observed": [
+        8,
+        1376,
+        11008
+      ],
+      "why": ""
+    },
+    {
+      "gate": "N0h_rules_fixed_v1_and_R9",
+      "ok": true,
+      "observed": [
+        "fixed_v1",
+        true,
+        "1"
+      ],
+      "why": ""
+    },
+    {
+      "gate": "N0i_backend_rust_both_sides",
+      "ok": true,
+      "observed": [
+        "rust",
+        [
+          "candidate",
+          "opponent"
+        ]
+      ],
+      "why": "N0 wants rust on BOTH sides; `requested` alone does not say which sides were actually converted, so converted_sides is the field that answers it."
+    },
+    {
+      "gate": "N0j_exact_k2_shared_by_both_arms",
+      "ok": true,
+      "observed": [
+        2,
+        true
+      ],
+      "why": ""
+    },
+    {
+      "gate": "N0k_curve_drift_is_curve125_verbatim",
+      "ok": true,
+      "observed": [
+        true,
+        [
+          -10.0,
+          -5.0,
+          -1.25,
+          0.0,
+          2.5,
+          3.75,
+          5.0,
+          6.25
+        ]
+      ],
+      "why": ""
+    },
+    {
+      "gate": "N0l_band_and_pairing",
+      "ok": true,
+      "observed": [
+        128000000000,
+        400,
+        2,
+        true
+      ],
+      "why": ""
+    },
+    {
+      "gate": "N0m_800_records",
+      "ok": true,
+      "observed": "800/800",
+      "why": ""
+    },
+    {
+      "gate": "N0n_800_unique_deckseed_seat_cells",
+      "ok": true,
+      "observed": 800,
+      "why": ""
+    },
+    {
+      "gate": "N0o_zero_missing",
+      "ok": true,
+      "observed": [],
+      "why": ""
+    },
+    {
+      "gate": "N0p_zero_extra",
+      "ok": true,
+      "observed": {
+        "extra": [],
+        "malformed": []
+      },
+      "why": ""
+    },
+    {
+      "gate": "N0q_single_variant_id__UNVERIFIABLE_AS_WRITTEN",
+      "ok": null,
+      "counted_in_pass_fail": false,
+      "observed": {
+        "distinct_record_knob_tuples": 1,
+        "tuple": [
+          1376,
+          8,
+          2,
+          "fair-champion",
+          "fair",
+          800
+        ],
+        "unreadable_records": [],
+        "surrogate_ok": true
+      },
+      "why": "DEPLOY_PREREG N0 requires 'a single variant_id', but eval_fair_puct emits no variant_id in its manifest or its records (it is a joshuabot/h2h.py field). Surrogate reported: one manifest + all records agreeing on (sims, k_dets, exact_k, opponent, info, rung_sims). RAISE THIS AT READ TIME; do not treat the clause as satisfied merely because this line exists."
+    }
+  ],
+  "note": "WIRING ONLY \u2014 contains no strength statistic by design (DEPLOY_PREREG.md section 5 rule 1: gates before numbers, always). This driver deliberately does NOT run menu_block_summary.py."
+}

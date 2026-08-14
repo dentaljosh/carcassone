@@ -6255,3 +6255,158 @@ banner), this file. No source file, no governance CSV.
 **Reversal cost:** nil. Nothing was spent beyond ~15 min of single-box pilot time and nothing was
 promoted.
 **Phase:** measurement-first (Phase 4 era; reliability/defect track, classical champion).
+
+## 2026-08-13 — J-RULES ON SEARCH RAN AND CLOSED (six-touch): **N1 fired, but N4 fired too ⇒ the adjudicated reading is a LOSS, CONFOUNDED BY BUDGET.** No claim minted, **CL-081 left unused**, and the "encode the anchor's strategy as static leaf terms" route is **NOT closed**
+
+**Context.** The Joshua-bot tournament (closed earlier today) measured the anchor's articulated
+strategy J1–J9 as a **scripted opponent on a one-ply greedy base** and lost by **−16.036
+pts/deck** (z −24.42) — *weaker than JCloisterZone's shallow `LegacyAiPlayer`* (−6.50). That
+priced **encoding + depth**, not strategy, and its `CONFIRM_VERDICT.md` §"The design fix this
+run earns" named exactly one fix: run the same rules **inside the champion's own search**. This
+cell is that fix, funded by
+[`measurement/jrules_on_search_20260813/DEPLOY_PREREG.md`](measurement/jrules_on_search_20260813/DEPLOY_PREREG.md)
+(committed before the band was claimed and before game 1).
+
+**The cell.** Candidate = the champion leaf `a36d2e15a3b3d71d` **plus** the flag-gated `jrules`
+term (J1 | J2 | J5 | J6 | J8 as **additive static leaf terms**) at `jrules_dose 0.25` /
+`jrules_mask 31`, `cand_leaf_hash 15948beccf3472d3`; opponent = the **unmodified** champion.
+**Both arms FAIR PIMC k8×1376 = 11008**, `fixed_v1`+R9, rust both sides, exact-K 2 shared.
+Band **1.28e11**, seeds `128000000000..128000000399`, 400 decks × 2 seats. The dose is the
+**floor of the authorized ladder** (`CALIB_READ_RULE.md` → `FINER-RUNG` then `FUND-SMALLEST`),
+flipping **23.65 %** of champion picks — resolvability, not safety.
+
+**The number.** **n=800, all 400 decks fully paired. W354 / D14 / L432, win rate 0.45125, elo
+−33.983 ± 12.343, PRIMARY STATISTIC deck-paired margin −2.4912 pts/deck, z −3.8564 (se
+0.6460).** Elo agrees in sign. **0 failed games (0/800, 0.000 %)** ⇒ **N5 did not fire**; 0
+solver timeouts on either arm. All N0 wiring gates clean, 800/800 records, 800 unique
+`(deck_seed, seat)` cells, 0 missing, 0 extra.
+
+**⭐ THE ADJUDICATION — two branches fired and the second modifies the first.**
+**N1 fired** (z −3.856 ≤ −2.0). **N4 also fired**: measured `ms_ratio_cand_over_opp` =
+**1.2116 > 1.20**, above even the benched prediction of 1.12–1.14. N4 as pre-registered
+**downgrades N1 from REFUTED to "loss, confounded by budget"**, mints no claim at Refuted, and
+requires the write-up to say so. **Owner ruling 2026-08-13: "default" ⇒ the prereg as written
+governs.** ⇒ **The adjudicated reading is a LOSS, CONFOUNDED BY BUDGET.**
+
+**⛔ NO CLAIM IS MINTED. `CL-081` was *reserved* by the prereg for the Refuted branch and is
+deliberately left UNUSED AND AVAILABLE** — `governance/CLAIM_REGISTRY.csv` is unchanged by this
+cell. `governance/PRODUCTION.yaml` untouched, as on every branch of this design.
+
+**⛔ THE ROUTE IS NOT CLOSED.** N1's closing clause — *"the 'encode the anchor's strategy as
+static leaf terms' route closes"* — is exactly the part the downgrade suspends: a
+budget-confounded loss does not formally close a route. Writing "the route is closed" is a
+forbidden reading. The term nevertheless **remains default-off**; nothing here licenses turning
+it on, and the downgrade removes the word *permanently*, not the default.
+
+**Recorded dissent, NOT adopted.**
+[`AMENDMENT_1_N4_DIRECTION.md`](measurement/jrules_on_search_20260813/AMENDMENT_1_N4_DIRECTION.md),
+written **while blind** (before any strength number existed on disk, and verifiably so — the
+cell's `summary.json` is written at completion and the interim block summary carries no strength
+fields), argues that N4's consequence points at the **wrong branch**: both arms run **identical
+search** (8 × 1376 each side), so the candidate is slower only because its *leaf* costs more,
+not because it is given less search; at fixed sims wall-clock is not a strength variable, so a
+loss at equal sims is a *clean* loss and it is **N2 (a win)** that would have needed the cost
+discount. **The owner did not adopt it.** It moved no threshold, no branch condition and no
+statistic; it stands on the record as a dissent about N4's logic and is **not applied** to this
+adjudication. Its own §3 anticipated the outcome: *"a prereg's authority does not depend on its
+author later liking it, and the conservative reading costs us a claim we might have been
+entitled to rather than granting one we were not."*
+
+**⭐ WHAT THE CELL BOUGHT — the depth confound was most of the tournament's deficit, but not all
+of it.** Same strategy: **−16.0 pts/deck on a one-ply greedy base, −2.49 encoded inside the
+champion's own search at the champion's own budget.** Removing the depth confound **shrank the
+deficit ~6×** ⇒ most of the tournament's deficit was **depth, not strategy**. ⚠️ **But the
+residual is still NEGATIVE, not zero, and it resolves in sign** (z −3.86). *"The depth confound
+explains it all"* is not what this says. ⚠️ **The −16.0 and the −2.49 are NOT pooled,
+contrasted or differenced as a statistic** — different candidates, different bases, different
+(retired) bands; CL-068's cross-band inflation and read rule 5 both forbid it. **The ~6× is an
+observation about design, not a measured effect.**
+
+**Against CL-080 (open-city discipline), the closest comparable:** **−33.98 elo here vs −53.8
+(dose 0.5, z −5.863) and −190.3 (dose 2.0, z −19.384) there — milder, same direction.** Also an
+observation across bands and levers, not a statistic. What it does support is the mechanism the
+two levers share: a **static** leaf term double-counting something the 11008-sim search already
+prices through its own schedule. ⚠️ Note the asymmetry that matters for cost: **both CL-080 arms
+were cost-neutral (1.0110 / 1.0135); this cell is not (1.2116)** — so "the loss was not bought
+with time" is available there and **not** here.
+
+**⚠️ ONE N0 CLAUSE IS UNVERIFIABLE AS WRITTEN AND IS NOT REPORTED AS SATISFIED.** N0 requires "a
+single `variant_id`" — but **`eval_fair_puct` emits no `variant_id`** anywhere, in the manifest
+or the records. It is a `scripts/joshuabot/h2h.py` field that was carried into this prereg from
+the Joshua-bot confirm's integrity line. The surrogate actually checked, and the only thing
+quotable: one manifest plus all 800 records agreeing on
+`(sims, k_dets, exact_k, opponent, info, rung_sims) = (1376, 8, 2, "fair-champion", "fair", 800)`.
+**Lesson for the next prereg: never clone an integrity clause across harnesses without checking
+the emitter** — the same class of error as the `champ_prefix_*` / `cand_prefix_*` field-name trap
+fixed on 2026-08-12.
+
+**⚠️ THE MANIFEST'S OWN PROSE LIES ABOUT THE CELL — three boilerplate labels contradict its own
+numbers** ([`MANIFEST_LABEL_TRAPS.md`](measurement/jrules_on_search_20260813/MANIFEST_LABEL_TRAPS.md),
+recorded **while blind**): `equal_wall_clock_note` quotes 11008-vs-11008 and then calls them
+"ASYMMETRIC … NOT an equal-sims cell"; `cand_curve_drift` says "NOT curve125" while the
+candidate curve and `curve125_reference.curve` are **element-for-element identical**;
+`both_sides_curve125: false` has the same root cause. All three are template strings emitted
+when a code path is *available*, not when it is *exercised*. **This cell is equal-sims and both
+sides are curve125.** Read literally, trap 1 would have appeared to refute AMENDMENT 1's premise
+— the manifest's *numbers* confirm that premise; only its *prose* contradicts it.
+
+**⛔ SCOPE OF REFUTATION (`DEPLOY_PREREG.md` §7) IS BINDING — and binds HARDER under the
+downgrade.** A loss prices **"this strategy, as static leaf terms, at this dose, inside the
+champion's search"**; it does **not** price "this strategy", and it does not price the owner's
+actual play. (1) **The encoding is disclosed-weaker by construction** — the J-rules condition on
+**bag counts, opponent meeple state and game phase**, none of which a static leaf term can see;
+DESIGN §3.1 records **J2's planning clause as never expressed at all**, and DESIGN §3.0 records
+that **J1, J2's steal and J6's road join had to drop the "he must already be there" predicate**
+to stay antisymmetric, so they credit *holding a share* rather than *stealing*. (2) **J1 is not
+vindicated by open-city's failure and open-city is not resurrected by this** — opposite sign,
+**same mechanism**; the double-count argument is about **staticness, not sign**, so both
+directions of "the other one lost, therefore mine wins" are forbidden. **Also untouched by every
+branch:** J8 (~3 % of states — a bundle result is not a J8 result) · the per-rule mask ablations
+(mask pinned at 31; each mask is a fresh multiple comparison and a **new** calibration) · J10f
+and J3's hard floor (root filters, deferred, **not built**) · the asymmetric own-side-only
+variant (`jrules_symmetric = False` — opponent modelling, its own prereg and band) · J7
+(answered by the tournament) · J9 (tournament no-conviction) · the policy-prior surface (B).
+
+**Honesty items carried.** Rust parity for this term rests on **`reconcile_leaf.py` alone**
+(83,824 values, 0 mismatches, 6 cells incl. a dose-0 moved-mask identity control);
+`tests/test_jrules_term.py` is 39 passed / 1 skipped and **the skip is structural, not
+staleness** (`carc_rs` exposes no direct leaf entry point) ⇒ there is **no second independent
+rust-parity check**. `code_rev 217f0cdbe-dirty`: the `-dirty` is real but benign — at launch the
+tree carried **untracked files only**, and every file the cell depends on is committed in
+`217f0cdb`. **No top-up is licensed and none was run**; read-rule §3.1 authorises no rung below
+0.25 (a `d0p125` would be a **new calibration**), and re-running at higher n needs a mechanism
+argument, a new prereg and a fresh band (CL-079 precedent binding). **No pooling** with the 2750
+instrument, the 0-game calibration, the tournament cells, or across bands.
+
+**Execution.** The cell ran on **BOTH boxes** — local W14 + laptop W16 under shared-claim
+work-stealing, the laptop re-joining mid-run after an initial dispatch failure
+([`LAPTOP_REJOIN_20260813.md`](measurement/jrules_on_search_20260813/LAPTOP_REJOIN_20260813.md)).
+The deck-paired margin and `ms_ratio` are first-order insensitive to that; **absolute ms/move
+and games/h are shared-tenancy figures** and must not be compared against a single-box cell.
+
+**Alternatives considered.** (a) **Adopt AMENDMENT 1** and read a clean REFUTED with CL-081
+minted — rejected: the owner ruled "default", and re-reading a concluded run under a rule
+rewritten after seeing the number is the forking path behind this project's four winner's-curse
+instances. (b) **Re-run at a lower dose** — not authorized; 0.25 is the ladder's floor.
+(c) **Top up n** — forbidden without a mechanism argument; n was never the binding constraint
+(the cell resolved at |z| 3.86). (d) **Re-run cost-neutralised** (e.g. handicap the opponent's
+sims to match wall-clock) — a *new* design, a new prereg and a fresh band; named here, not
+funded.
+
+**Close-out (six touches).** `experiments/results.csv` row
+**`jrules_d0p25_deploy_fixed_v1_vs_champ11008_n800_b128e9`** (sign convention: `new_*` = the
+candidate, `old_*` = the unmodified champion, all figures candidate-side — matching the
+`opencity_A_d*_deploy_*` rows of the same harness family). This entry. Status banners on
+`DEPLOY_PREREG.md` and `DESIGN.md`. **`governance/BAND_REGISTRY.csv` band 1.28e11 flipped
+`claimed → retired`, `decision_influenced = yes`**, with the headline numbers and the downgrade
+stamped into its notes. `STATUS.md` top block. Roadmap item (6) closed.
+[`VERDICT.md`](measurement/jrules_on_search_20260813/VERDICT.md) is the verdict of record.
+`python3 scripts/doc_lint.py` → 0 errors.
+
+**Files touched:** `measurement/jrules_on_search_20260813/VERDICT.md` (new),
+`experiments/results.csv`, `DECISIONS.md`, `measurement/jrules_on_search_20260813/DEPLOY_PREREG.md`
++ `DESIGN.md` (banners), `STATUS.md`, `docs/PROGRAM_ROADMAP_2026-07-07.md`,
+`docs/LEVER_INDEX.md`, `governance/BAND_REGISTRY.csv`. **No source file. No
+`governance/CLAIM_REGISTRY.csv` row. `governance/PRODUCTION.yaml` untouched.**
+**Reversal cost:** nil — nothing was promoted and no configuration moved.
+**Phase:** measurement-first (Phase 4 era; human-edge program, classical champion).

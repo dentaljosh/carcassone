@@ -1,0 +1,58 @@
+[menu-fair primary Doctor] 2026-08-13_13:37:51 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-13_13:37:51 START sub=jrules_d0p25_deploy11008 n=800 band=128000000000 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/cells/jrules_d0p25_deploy_fixed_v1_vs_fairchamp11008.json split=none/none
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=15948beccf3472d3 frozen_config_hash=bc0100d90f8207e9 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leaf15948bec]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 800 to play, 14 workers, out=/mnt/c/carc-shared/jrules_deploy_20260813/jrules_d0p25_deploy11008
+  10/800 played (21.2s/game, ~279 min left)
+  20/800 played (20.6s/game, ~267 min left)
+  30/800 played (19.1s/game, ~245 min left)
+  40/800 played (17.4s/game, ~221 min left)
+  50/800 played (17.4s/game, ~217 min left)
+  60/800 played (17.0s/game, ~209 min left)
+  70/800 played (17.0s/game, ~207 min left)
+  80/800 played (16.7s/game, ~200 min left)
+  90/800 played (16.7s/game, ~197 min left)
+  100/800 played (16.4s/game, ~192 min left)
+  110/800 played (16.4s/game, ~189 min left)
+  120/800 played (16.1s/game, ~182 min left)
+  130/800 played (16.2s/game, ~181 min left)
+  140/800 played (16.3s/game, ~179 min left)
+  150/800 played (16.0s/game, ~173 min left)
+  160/800 played (16.2s/game, ~173 min left)
+  170/800 played (16.2s/game, ~170 min left)
+  180/800 played (16.0s/game, ~165 min left)
+  190/800 played (16.0s/game, ~163 min left)
+  200/800 played (15.8s/game, ~158 min left)
+  210/800 played (15.8s/game, ~156 min left)
+  220/800 played (15.8s/game, ~152 min left)
+  230/800 played (15.8s/game, ~150 min left)
+  240/800 played (15.8s/game, ~147 min left)
+  250/800 played (15.7s/game, ~144 min left)
+  260/800 played (15.7s/game, ~141 min left)
+  270/800 played (15.7s/game, ~139 min left)
+  280/800 played (15.6s/game, ~135 min left)
+  290/800 played (15.6s/game, ~133 min left)
+  300/800 played (15.6s/game, ~130 min left)
+  310/800 played (15.6s/game, ~128 min left)
+  320/800 played (15.7s/game, ~125 min left)
+  330/800 played (15.7s/game, ~123 min left)
+  340/800 played (15.6s/game, ~119 min left)
+  350/800 played (15.7s/game, ~118 min left)
+  360/800 played (15.7s/game, ~115 min left)
+  370/800 played (15.8s/game, ~113 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 800   candidate: 354W / 14D / 432L   winrate 0.451 (z=-2.76)
+avg score diff (candidate - opponent): -2.49
+ELO: -34.0  (+/- 12.3 1sigma)
+PAIRED: 400 decks   mean seat-balanced margin -2.49   z = -3.86
+prefix ms/move: candidate 1676  opponent 1384  (ratio 1.21x)
+fair endgame: candidate latched 800/800 games, 1.34s solver/game, timeouts=0
+fair endgame: opponent  latched 800/800 games, 1.46s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=800 (1σ≈±12); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/jrules_deploy_20260813/jrules_d0p25_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-13_15:15:37 harness pass 1 rc=0 records=800/800
+[menu-fair primary Doctor] 2026-08-13_15:15:37 END sub=jrules_d0p25_deploy11008 records=800/800 in 5866s after 1 pass(es)

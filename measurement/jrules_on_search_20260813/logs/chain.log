@@ -1,0 +1,26 @@
+[jrules-d0p25 2026-08-13 13:37:49] === START chain (band 128000000000, n=800, cell jrules_d0p25_deploy11008) ===
+[jrules-d0p25 2026-08-13 13:37:49] host=Doctor repo_head=217f0cdb branch=android-app
+[jrules-d0p25 2026-08-13 13:37:49] local W=14  laptop W=16  do_local=1 do_laptop=1 dry_run=0
+[jrules-d0p25 2026-08-13 13:37:49]   share candidate /mnt/c/carc-shared: ACCEPTED (sentinel present)
+[jrules-d0p25 2026-08-13 13:37:49]   share candidate /mnt/carc-shared: REJECTED (exists, but no sentinel 'BAND_CLAIMS.txt' — 0 entries; wrong mount for this box)
+[jrules-d0p25 2026-08-13 13:37:49] share resolved: /mnt/c/carc-shared   out=/mnt/c/carc-shared/jrules_deploy_20260813/jrules_d0p25_deploy11008
+[jrules-d0p25 2026-08-13 13:37:49] band 128000000000 present in governance/BAND_REGISTRY.csv (read-only check; this chain never writes it)
+[jrules-d0p25 2026-08-13 13:37:49] --- LOCAL gate O0 (leaf hashes under the launcher env canon) ---
+{"all_gates_pass": true, "champion_leaf_hash": "a36d2e15a3b3d71d", "cand_leaf_hash": "15948beccf3472d3", "moved_hash_trap_hash": "92ac0da996e1b37b", "resolved_jrules_dose": 0.25, "resolved_jrules_mask": 31}
+[jrules-d0p25 2026-08-13 13:37:50] LOCAL O0 PASS -> /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/verdicts/O0_local.json
+[jrules-d0p25 2026-08-13 13:37:50] --- LOCAL gate G4 (chain_capability_probe.py --require jrules --doses 0.25) ---
+[jrules-d0p25 2026-08-13 13:37:50] LOCAL G4 PASS -> /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/verdicts/G4_probe_local.json
+[jrules-d0p25 2026-08-13 13:37:50] chain manifest -> /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/CHAIN_MANIFEST.json
+[jrules-d0p25 2026-08-13 13:37:50] --- LAPTOP leg dispatch ---
+[jrules-d0p25 2026-08-13 13:37:51]   bundle jrules_d0p25_20260813_133750.bundle (1 commit(s) ahead of the laptop)
+[jrules-d0p25 2026-08-13 13:37:51]   dispatching: ssh laptop-wsl 'bash -s' < /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/dispatch/laptop_leg.sh
+[jrules-d0p25 2026-08-13 13:37:51]   laptop dispatch rc=6 (log: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/logs/dispatch_laptop.log)
+[jrules-d0p25 2026-08-13 13:37:51] !!! LAPTOP leg NOT started (gate failure, sync failure, or box unreachable).
+[jrules-d0p25 2026-08-13 13:37:51]     This is NOT fatal: the local leg completes the cell alone, just slower.
+[jrules-d0p25 2026-08-13 13:37:51]     Re-join the laptop later (e.g. once its carc_rs wheel is rebuilt) with:
+[jrules-d0p25 2026-08-13 13:37:51]       bash /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/run_deploy_jrules_d0p25.sh --laptop-only
+[jrules-d0p25 2026-08-13 13:37:51] --- LOCAL leg START (W=14, foreground, blocks until 800 records exist on the share) ---
+[jrules-d0p25 2026-08-13 15:15:37] LOCAL leg END rc=0 records=800/800
+[jrules-d0p25 2026-08-13 15:15:39] N0 wiring gates: all_gates_pass=True (gate-script rc=0) -> /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/verdicts/GATES_jrules_d0p25_deploy11008.json
+[jrules-d0p25 2026-08-13 15:15:39] cell jrules_d0p25_deploy11008 DONE (800/800) -> /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008
+[jrules-d0p25 2026-08-13 15:15:39] === CHAIN COMPLETE. Nothing adjudicated, nothing promoted, no results.csv row, no claim row. ===

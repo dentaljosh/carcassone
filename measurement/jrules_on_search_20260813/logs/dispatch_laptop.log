@@ -1,0 +1,23 @@
+LAPTOP SYNC REFUSED: the laptop repo has uncommitted changes and syncing would
+  'git reset --hard' over them. Someone may be mid-rebuild here. Resolve by hand,
+  then re-join with: bash /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/run_deploy_jrules_d0p25.sh --laptop-only
+?? cp3_laptop.log
+?? measurement/denial_screen_20260811/topup_logs/topup_laptop.log
+?? measurement/e4_autopsy_20260812/DONE_AUTOPSY
+?? measurement/e4_autopsy_20260812/RUN_CMD.sh
+?? measurement/e4_autopsy_20260812/RUN_MANIFEST.json
+?? measurement/e4_autopsy_20260812/SAMPLE_fixedv1.json
+?? measurement/e4_autopsy_20260812/logs/leg_clair-puct_fixed_v1.log
+?? measurement/e4_autopsy_20260812/logs/leg_tier1-greedy_fixed_v1.log
+?? measurement/e4_autopsy_20260812/logs/run_laptop.log
+?? measurement/e4_autopsy_20260812/logs/scope.log
+?? measurement/e4_autopsy_20260812/logs/watchdog.lock
+?? measurement/jcz_mining_20260809/mining/RUN_MANIFEST.json
+?? measurement/jcz_mining_20260809/mining/launch_mining.log
+?? measurement/jcz_mining_20260809/mining/launch_mining_laptop_remote.log
+?? measurement/jcz_mining_20260809/mining/leg_clair-puct.log
+?? measurement/jcz_mining_20260809/mining/leg_tier1-greedy.log
+?? measurement/jrules_on_search_20260813/cells/jrules_d0p25_deploy_fixed_v1_vs_fairchamp11008.json
+?? measurement/leaf_ablation_20260730/ABL_PROGRESS_fixed_v1_SMOKE.tsv
+?? measurement/lever_menu_20260810/logs/item6_s3_laptop_remote.log
+?? measurement/opencity_term_20260812/DONE_DEPLOY_OPENCITY

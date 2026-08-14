@@ -1,0 +1,50 @@
+{
+  "schema": "carcassonne-jrules-deploy-chain/manifest/v1",
+  "written": "2026-08-13T13:37:50-04:00",
+  "cell": "jrules_d0p25_deploy11008",
+  "prereg": "measurement/jrules_on_search_20260813/DEPLOY_PREREG.md",
+  "design": "measurement/jrules_on_search_20260813/DESIGN.md",
+  "band_row": "governance/BAND_REGISTRY.csv:128000000000",
+  "launch_host": "Doctor",
+  "git": {"rev": "217f0cdbea312cb8ef2b94a37049fdd045f2bb1c",
+          "short": "217f0cdb",
+          "branch": "android-app",
+          "dirty": true},
+  "candidate": {
+    "cand_leaf_json": "/home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/cells/jrules_d0p25_deploy_fixed_v1_vs_fairchamp11008.json",
+    "cand_leaf_json_sha256": "27d11ea56eaa8e96d6657b3c91ecfb1d1c8e39886c0506e23be239e723604859",
+    "cand_leaf_json_content": {"jrules_dose": 0.25, "v29_meeple_curve": [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]},
+    "expected_cand_leaf_hash": "15948beccf3472d3",
+    "jrules_dose": 0.25,
+    "jrules_mask": 31,
+    "jrules_mask_key_present_in_cell_json": false,
+    "curve_drift_flag": "--allow-cand-curve-drift (curve125 verbatim; a no-op proved by O0)"
+  },
+  "opponent": {"leaf": "UNMODIFIED production champion", "expected_opp_leaf_hash": "a36d2e15a3b3d71d"},
+  "budget": {"k_dets": 8, "sims_per_det": 1376, "total_sims": 11008,
+             "both_arms": true, "exact_k": 2, "exact_k_shared_by_both_arms": true},
+  "search_knobs": {"c_puct": 1.5, "tau_p": 5, "leaf_quantize": "float", "final_select": "visits"},
+  "rules": {"profile": "fixed_v1", "CARCASSONNE_FIX_R9": "1"},
+  "backend": {"requested": "rust", "both_sides": true},
+  "sampling": {"n": 800, "n_decks": 400, "seatings_per_deck": 2, "paired": true,
+               "crn": true, "band_seed_start": 128000000000,
+               "deck_seeds": "128000000000..128000000399"},
+  "harness": "scripts/classical_search/eval_fair_puct.py --info fair --opponent fair-champion, via scripts/classical_search/menu_fair_cell.sh",
+  "work_split": {
+    "mode": "--shared-claim work-stealing on ONE shared output dir (no coordination; either box alone still completes the cell)",
+    "claim_stale_secs": 900,
+    "boxes": [
+      {"box": "local", "role": "primary", "workers": 14, "share": "/mnt/c/carc-shared", "nice": 19, "enabled": true},
+      {"box": "laptop", "ssh": "laptop-wsl", "role": "helper", "workers": 16, "share": "/mnt/carc-shared", "nice": 19, "mem_max": "8G", "enabled": true}
+    ]
+  },
+  "out_dir_local_view": "/mnt/c/carc-shared/jrules_deploy_20260813/jrules_d0p25_deploy11008",
+  "gates": {"O0_local": "verdicts/O0_local.json", "G4_local": "verdicts/G4_probe_local.json",
+            "O0_laptop": "verdicts/O0_laptop.json", "G3_laptop": "verdicts/G3_reconcile_laptop.json",
+            "G4_laptop": "verdicts/G4_probe_laptop.json",
+            "N0_wiring": "verdicts/GATES_jrules_d0p25_deploy11008.json"},
+  "results_csv_row": false, "claim_row": false, "promotes": false,
+  "touches_production_yaml": false, "adjudicates": false,
+  "authoritative_cell_manifest": "/mnt/c/carc-shared/jrules_deploy_20260813/jrules_d0p25_deploy11008/manifest.json",
+  "note": "LAUNCH-SIDE manifest. The prereg N0 gate is read from the eval_fair_puct manifest at authoritative_cell_manifest, NOT from this file. This chain runs games and writes records; reading happens separately, after N0."
+}

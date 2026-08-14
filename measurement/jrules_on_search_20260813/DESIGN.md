@@ -1,6 +1,19 @@
 # J-RULES ON SEARCH — design of record
 
-> **STATUS: 🔧 BUILT + CALIBRATED, NOT RUN — 2026-08-13. Code merged, DEFAULT-OFF.**
+> **⚠️ STATUS 2026-08-13 — THE CELL THIS DESIGN SPECIFIES HAS RUN AND IS ADJUDICATED. This
+> document remains the design of record and is unchanged below; the verdict is
+> [VERDICT.md](VERDICT.md), the prereg is [DEPLOY_PREREG.md](DEPLOY_PREREG.md).** Result:
+> **N1 fired** (deck-paired margin **−2.4912 pts/deck**, PRIMARY z **−3.8564**; elo
+> **−33.98 ± 12.34**; W354/D14/L432, n=800) **but N4 also fired** (`ms_ratio` **1.2116** > 1.20)
+> ⇒ **"loss, confounded by budget"** under the owner's 2026-08-13 "default" ruling. **No claim
+> minted — `CL-081` left unused.** ⚠️ **The route is NOT closed**, and §7's scope clause binds
+> harder under the downgrade: this priced **the encoding** (§3.0/§3.1 disclose it as strictly
+> weaker than the strategy), not the strategy. **G6 ✅ band 1.28e11 (now retired,
+> decision-influenced) · G7 measured at 1.2116, above the ≈1.12–1.14 the leaf bench predicted.**
+> ⚠️ **§12 Q1's asymmetric variant, the mask ablations, J8 and the root filters remain
+> unexercised.** `governance/PRODUCTION.yaml` untouched.
+
+> **STATUS AT WRITING: 🔧 BUILT + CALIBRATED, NOT RUN — 2026-08-13. Code merged, DEFAULT-OFF.**
 > **0 games · 0 evals · no band claimed · no `results.csv` row · no claim minted · no
 > deploy pre-registration written ·
 > [`governance/PRODUCTION.yaml`](../../governance/PRODUCTION.yaml) untouched.**
