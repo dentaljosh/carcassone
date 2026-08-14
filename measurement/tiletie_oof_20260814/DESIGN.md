@@ -15,6 +15,59 @@ evaluated on a ≤20-position cost pilot that is **excluded from the main read**
 
 ---
 
+## 0. PRE-RUN AMENDMENT — 2026-08-14, applied BEFORE the pilot and BEFORE any position is scored
+
+⚠️ **Nothing here is a result. No record exists yet, for either judge, at the
+time of this amendment.** Two implementation facts were found while building
+the instrument; both change *how the plan is laid out on disk*, neither touches
+an estimator, a statistic, a threshold or a branch. [READ_RULE.md](READ_RULE.md)
+is **untouched**.
+
+### 0.A The "any prefix is a uniform subsample" mechanism is CHUNKS, not file order
+
+§6 as originally written relied on writing the positions to disk in a committed
+seeded permutation so that a partially-completed run would still be an unbiased
+sample. **That mechanism does not work**:
+`oracle_score_pilot.load_positions_jsonl` (:437) ends with
+
+```python
+return sorted(out, key=lambda r: (str(r["root_id"]), int(r["salt"]), str(r["rid"])))
+```
+
+— the adapter **discards the file order and sorts by `root_id`**. A run that
+died half-way would therefore have completed the low-`root_id` half, which is
+`e4_*` before `sp_*` — a stratum-biased prefix, exactly what §6 was trying to
+prevent.
+
+**Replacement, pre-committed here:** the committed seeded permutation
+(seed **20260814**, written to `POSITION_ORDER.json` before launch) is cut into
+**4 equal CHUNKS**, and the chunks are launched **strictly sequentially**. Each
+chunk is a uniform random subsample of the dev slice by construction, so any
+number of *completed chunks* is an unbiased read at its realized `n`. The
+`G-N ≥ 250` floor (§7) is two chunks. Each chunk gets its own `--out-root`
+(`run_tiletie.verify_leg_records` demands a records directory hold exactly its
+own leg's rids), and the chunks are merged into one records root by **file
+copy** before analysis; `analyze_tiletie.discover_records` refuses duplicates,
+so a double-counted chunk cannot pass silently.
+
+### 0.B The in-family side is re-analysed through a FILENAME-FILTERED records root
+
+The in-family arm of §4.3's ratio must be recomputed *on the same 502
+positions* by the same function. Pointing `analyze_tiletie --records-root` at
+the pricing run's live records root would make `discover_records` **load every
+holdout record into memory** on its way past — reading holdout oracle values
+even though the plan then discards them. That is a firewall violation in
+substance, and the mining program solved the identical problem by skipping
+record files **by filename** (`mine_oracle_sep.load_oracle_means_slice`:
+`rid = Path(f).stem; if rid not in per_slice: continue`).
+
+**Adopted, same idiom:** the in-family dev records are staged into a separate
+root by **copying only the files whose stem is a main-read rid**. No holdout
+record is ever opened, parsed, or read. `G-HOLDOUT` (§7) asserts it on the
+staged root, and the staging step itself is the enforcement point.
+
+---
+
 ## 1. The question
 
 The tile-tie pricing run's headline residual —
@@ -490,10 +543,13 @@ parameter is needed).
        order that satisfies `H ≤ 8.0`, floor **n ≥ 250**; if even n = 250
        exceeds 8.0 h, launch n = 250 anyway and let the watchdog carry it.
 - **Order:** the main position order is a **seeded random permutation**
-  (seed 20260814) written to disk before launch, so **any prefix is a uniform
-  random subsample of the dev slice** and a partially-completed run is still an
-  unbiased read at its realized n. This is what makes the run safe to leave
-  unattended.
+  (seed 20260814) written to `POSITION_ORDER.json` before launch and cut into
+  **4 sequential chunks** (§0.A), so **any number of completed chunks is a
+  uniform random subsample of the dev slice** and a partially-completed run is
+  still an unbiased read at its realized n. This is what makes the run safe to
+  leave unattended. The `H > 8.0` fallback above is expressed in the same
+  currency: launch the first `ceil(4·8.0/H)` chunks, floor 2 chunks (≥ 250
+  positions).
 
 ---
 
