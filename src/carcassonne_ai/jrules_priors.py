@@ -318,15 +318,17 @@ def _jp_j8(state, decomp, city_counts, farm_counts, me: int,
             v = 1.0
         contribs.append(_JR_J8_OVERCOMMIT_BONUS * v * clock.urg)
     for root, cnt in farm_counts.items():
-        if _jp_farm_entry_cells(state, decomp, root) < 1:
-            continue                               # no longer enterable
+        # Cheap predicates first, the entry-cells scan LAST (mirrors the rust
+        # ordering; a conjunction's value is order-free, its cost is not).
+        if cnt[me] - cnt[opp] < 2 or cnt[me] > _JR_J8_MAX_FARM_MEEPLES:
+            continue
         value = (3.0 * decomp.farm_root_finished_cities.get(root, 0)
                  + _jr_farm_potential(decomp, root, clock.k))
         swing = 2.0 * value
         if swing < _JR_J8_PIVOTAL_SWING or swing < clock.abs_margin:
             continue
-        if cnt[me] - cnt[opp] < 2 or cnt[me] > _JR_J8_MAX_FARM_MEEPLES:
-            continue
+        if _jp_farm_entry_cells(state, decomp, root) < 1:
+            continue                               # no longer enterable
         v = value / _JR_J8_VALUE_NORM
         if v > 1.0:
             v = 1.0

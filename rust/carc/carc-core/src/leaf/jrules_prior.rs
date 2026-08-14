@@ -161,6 +161,23 @@ pub fn jr_prior_clock(parent: &GameState, mover: usize, d: &Decomp) -> JrPriorCl
     }
 }
 
+/// Per-term-call memo of `jp_farm_entry_cells` results (J2a and J8 can both
+/// scan the same root; the scan is the term's most expensive predicate).
+/// Purely a speed device — the underlying function is pure.
+type JpEntryMemo = Vec<(u32, i64)>;
+
+#[inline]
+fn jp_entry_cells_memo(state: &GameState, d: &Decomp, root: u32, memo: &mut JpEntryMemo) -> i64 {
+    for &(r, n) in memo.iter() {
+        if r == root {
+            return n;
+        }
+    }
+    let n = jp_farm_entry_cells(state, d, root);
+    memo.push((root, n));
+    n
+}
+
 /// `joshua_bot.Position.farm_entry_cells` — distinct EMPTY board cells
 /// orthogonally adjacent to the field (the permissive "is there still a way in"
 /// proxy; rotation is free, so any adjacent empty cell counts once).
@@ -191,12 +208,18 @@ fn jp_farm_entry_cells(state: &GameState, d: &Decomp, root: u32) -> i64 {
 
 /// `joshua_bot.j2_reach` — the deck-counted "can I still get in" model.
 /// `1 - (1 - per_turn)^h`; permissive by construction.
-fn jp_j2_reach(state: &GameState, d: &Decomp, root: u32, clock: &JrPriorClock) -> f64 {
+fn jp_j2_reach(
+    state: &GameState,
+    d: &Decomp,
+    root: u32,
+    clock: &JrPriorClock,
+    memo: &mut JpEntryMemo,
+) -> f64 {
     let my_turns = clock.k / 2;
     if my_turns < 1 {
         return 0.0;
     }
-    let cells = jp_farm_entry_cells(state, d, root);
+    let cells = jp_entry_cells_memo(state, d, root, memo);
     if cells == 0 {
         return 0.0;
     }
@@ -251,6 +274,7 @@ fn jp_j2(
     farm_counts: &JrCounts,
     me: usize,
     clock: &JrPriorClock,
+    memo: &mut JpEntryMemo,
 ) -> f64 {
     let opp = 1 - me;
     let mut contribs: Vec<f64> = Vec::new();
@@ -280,7 +304,7 @@ fn jp_j2(
         if value < super::JR_J2_MIN_FARM_VALUE {
             continue;
         }
-        let reach = jp_j2_reach(state, d, root, clock);
+        let reach = jp_j2_reach(state, d, root, clock, memo);
         if reach < JP_J2_REACH_THRESHOLD {
             continue;
         }
@@ -380,6 +404,7 @@ fn jp_j8(
     farm_counts: &JrCounts,
     me: usize,
     clock: &JrPriorClock,
+    memo: &mut JpEntryMemo,
 ) -> f64 {
     let opp = 1 - me;
     let mut contribs: Vec<f64> = Vec::new();
@@ -404,8 +429,13 @@ fn jp_j8(
         );
     }
     for &(root, cnt) in farm_counts {
-        if jp_farm_entry_cells(state, d, root) < 1 {
-            continue; // no longer enterable — the bot's own gate
+        // Pure conjunction — evaluate the CHEAP predicates first and the
+        // O(cells²) entry-cells scan LAST (the bot tests enterability first,
+        // but predicate order cannot change a conjunction's value, only its
+        // cost; a ≥2-meeple farm lead is rare, so this saves the scan on
+        // nearly every farm).
+        if cnt[me] - cnt[opp] < 2 || cnt[me] > super::JR_J8_MAX_FARM_MEEPLES {
+            continue;
         }
         let value = 3.0 * d.farm_root_finished_cities[root as usize] as f64
             + jr_farm_potential(d, root, clock.k);
@@ -413,8 +443,8 @@ fn jp_j8(
         if swing < super::JR_J8_PIVOTAL_SWING || swing < clock.abs_margin {
             continue;
         }
-        if cnt[me] - cnt[opp] < 2 || cnt[me] > super::JR_J8_MAX_FARM_MEEPLES {
-            continue;
+        if jp_entry_cells_memo(state, d, root, memo) < 1 {
+            continue; // no longer enterable — the bot's own gate
         }
         contribs.push(
             super::JR_J8_OVERCOMMIT_BONUS * jr_min1(value / super::JR_J8_VALUE_NORM) * clock.urg,
@@ -446,12 +476,13 @@ pub fn jrules_prior_term(
     child_base: f64,
 ) -> f64 {
     let (city_counts, road_counts, farm_counts, cloister_owned) = jr_counts(state, d);
+    let mut memo: JpEntryMemo = Vec::new();
     let mut parts: Vec<f64> = Vec::new();
     if mask & JR_J1 != 0 {
         parts.push(jp_j1(d, &city_counts, mover, clock));
     }
     if mask & JR_J2 != 0 {
-        parts.push(jp_j2(state, d, &farm_counts, mover, clock));
+        parts.push(jp_j2(state, d, &farm_counts, mover, clock, &mut memo));
     }
     if mask & JR_J5 != 0 {
         parts.push(jp_j5(state, d, &city_counts, &road_counts, &cloister_owned, clock, child_base));
@@ -460,7 +491,7 @@ pub fn jrules_prior_term(
         parts.push(jp_j6(d, &city_counts, &road_counts, mover, clock));
     }
     if mask & JR_J8 != 0 {
-        parts.push(jp_j8(state, d, &city_counts, &farm_counts, mover, clock));
+        parts.push(jp_j8(state, d, &city_counts, &farm_counts, mover, clock, &mut memo));
     }
     fsum(&parts)
 }
