@@ -41,6 +41,11 @@ case "$BOX" in
   *) echo "BOX must be laptop|local, got '$BOX'"; exit 2 ;;
 esac
 W="${3:-${W:-$W_DEFAULT}}"
+# Optional 4th arg: a substring filter on the cell SUB-name, so the three funded cells
+# can be SPLIT ACROSS BOXES instead of run sequentially on one. Purely an execution
+# split -- the cells already own DISJOINT seed offsets (<BAND>+400*i) and are read
+# independently, so which box plays which cell changes no statistic. Empty = all cells.
+CELL_FILTER="${4:-}"
 
 REPO=/home/doctor/projects/carcassone
 PY=$REPO/.venv/bin/python
@@ -73,6 +78,10 @@ log "host=$(hostname) out=$OUT repo_head=$(git -C $REPO rev-parse --short HEAD)"
 
 for spec in "${CELLS[@]}"; do
   SUB=${spec%%:*};        rest=${spec#*:}
+  if [ -n "$CELL_FILTER" ] && [[ "$SUB" != *"$CELL_FILTER"* ]]; then
+    log "SKIP $SUB (CELL_FILTER='$CELL_FILTER' -- this cell runs on the other box)"
+    continue
+  fi
   OFF=${rest%%:*};        rest=${rest#*:}
   CELLJSON=${rest%%:*};   rest=${rest#*:}
   EXPECT_HASH=${rest%%:*}; rest=${rest#*:}
