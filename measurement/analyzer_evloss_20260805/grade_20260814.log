@@ -1,0 +1,81 @@
+[2026-08-14_14:23:22] grading 1786590116_64346
+[ev_loss] 1786590116_64346.json: profile=fixed_v1 budget=k8x1376 (11008/move) seed=12345 cal_seed=777
+  [seed 12345] ply 24/142  10s
+  [seed 12345] ply 48/142  28s
+  [seed 12345] ply 72/142  55s
+  [seed 12345] ply 96/142  78s
+  [seed 12345] ply 120/142  92s
+  [seed 777] ply 24/142  9s
+  [seed 777] ply 48/142  28s
+  [seed 777] ply 72/142  56s
+  [seed 777] ply 96/142  79s
+  [seed 777] ply 120/142  94s
+[ev_loss] wrote /home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/EV_LOSS_1786590116_64346.json / .md
+[ev_loss] ACCEPTANCE GATE PASS: champion mean dQ=0.01292 vs null p95=0.197 (human mean dQ=0.07192)
+[ev_loss] integrity: replay_scores_match=True graded=109 exact=2 forced=31 unrated=0 leaf_ok=True
+[2026-08-14_14:26:53] 1786590116_64346 rc=0
+[2026-08-14_14:26:53] grading 1786591802_1104719504
+[ev_loss] 1786591802_1104719504.json: profile=fixed_v1 budget=k8x1376 (11008/move) seed=12345 cal_seed=777
+  [seed 12345] ply 24/142  9s
+  [seed 12345] ply 48/142  28s
+  [seed 12345] ply 72/142  59s
+  [seed 12345] ply 96/142  80s
+  [seed 12345] ply 120/142  108s
+  [seed 777] ply 24/142  9s
+  [seed 777] ply 48/142  28s
+  [seed 777] ply 72/142  58s
+  [seed 777] ply 96/142  80s
+  [seed 777] ply 120/142  109s
+[ev_loss] wrote /home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/EV_LOSS_1786591802_1104719504.json / .md
+[ev_loss] ACCEPTANCE GATE PASS: champion mean dQ=0.01349 vs null p95=0.1078 (human mean dQ=0.04817)
+[ev_loss] integrity: replay_scores_match=True graded=119 exact=2 forced=19 unrated=2 leaf_ok=True
+[2026-08-14_14:31:13] 1786591802_1104719504 rc=0
+[2026-08-14_14:31:13] grading 1786680851_216289
+[ev_loss] 1786680851_216289.json: profile=fixed_v1 budget=k8x1376 (11008/move) seed=12345 cal_seed=777
+  [seed 12345] ply 24/142  9s
+  [seed 12345] ply 48/142  29s
+  [seed 12345] ply 72/142  51s
+  [seed 12345] ply 96/142  86s
+  [seed 12345] ply 120/142  108s
+  [seed 777] ply 24/142  9s
+  [seed 777] ply 48/142  28s
+  [seed 777] ply 72/142  51s
+  [seed 777] ply 96/142  87s
+  [seed 777] ply 120/142  109s
+[ev_loss] wrote /home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/EV_LOSS_1786680851_216289.json / .md
+[ev_loss] ACCEPTANCE GATE PASS: champion mean dQ=0.03342 vs null p95=0.2177 (human mean dQ=0.06909)
+[ev_loss] integrity: replay_scores_match=True graded=119 exact=3 forced=20 unrated=0 leaf_ok=True
+[2026-08-14_14:35:44] 1786680851_216289 rc=0
+[2026-08-14_14:35:44] grading 1786684476_1793735743
+[ev_loss] 1786684476_1793735743.json: profile=fixed_v1 budget=k8x1376 (11008/move) seed=12345 cal_seed=777
+  [seed 12345] ply 24/142  9s
+  [seed 12345] ply 48/142  22s
+  [seed 12345] ply 72/142  48s
+  [seed 12345] ply 96/142  86s
+  [seed 12345] ply 120/142  107s
+  [seed 777] ply 24/142  8s
+  [seed 777] ply 48/142  22s
+  [seed 777] ply 72/142  48s
+  [seed 777] ply 96/142  86s
+  [seed 777] ply 120/142  106s
+[ev_loss] wrote /home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/EV_LOSS_1786684476_1793735743.json / .md
+[ev_loss] ACCEPTANCE GATE PASS: champion mean dQ=0.01668 vs null p95=0.08668 (human mean dQ=0.05728)
+[ev_loss] integrity: replay_scores_match=True graded=124 exact=3 forced=15 unrated=0 leaf_ok=True
+[2026-08-14_14:40:27] 1786684476_1793735743 rc=0
+[2026-08-14_14:40:27] grading 1786719876_241820
+[ev_loss] 1786719876_241820.json: profile=fixed_v1 budget=k8x1376 (11008/move) seed=12345 cal_seed=777
+  [seed 12345] ply 24/142  10s
+  [seed 12345] ply 48/142  29s
+  [seed 12345] ply 72/142  52s
+  [seed 12345] ply 96/142  83s
+  [seed 12345] ply 120/142  118s
+  [seed 777] ply 24/142  10s
+  [seed 777] ply 48/142  29s
+  [seed 777] ply 72/142  51s
+  [seed 777] ply 96/142  82s
+  [seed 777] ply 120/142  119s
+[ev_loss] wrote /home/doctor/projects/carcassone/measurement/analyzer_evloss_20260805/EV_LOSS_1786719876_241820.json / .md
+[ev_loss] ACCEPTANCE GATE PASS: champion mean dQ=0.03092 vs null p95=0.2641 (human mean dQ=0.07401)
+[ev_loss] integrity: replay_scores_match=True graded=135 exact=4 forced=3 unrated=0 leaf_ok=True
+[2026-08-14_14:46:03] 1786719876_241820 rc=0
+[2026-08-14_14:46:03] === ALL 5 GRADED. Instrument gates first, THEN the inversion count. ===

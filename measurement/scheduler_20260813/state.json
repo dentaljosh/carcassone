@@ -1,5 +1,5 @@
 {
- "updated": "2026-08-14T11:54:12-0400",
+ "updated": "2026-08-14T14:44:57-0400",
  "queue_items": [
   "window_truncation_census",
   "j13_pregate",
@@ -27,10 +27,10 @@
  },
  "boxes": {
   "local": {
-   "census": 0,
+   "census": 1,
    "idle_since": null,
-   "free": true,
-   "reason": "occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean"
+   "free": false,
+   "reason": "census guard: 1 live measurement process(es) on local"
   },
   "laptop": {
    "census": 0,
@@ -40,8 +40,7 @@
   }
  },
  "free_boxes": [
-  "laptop",
-  "local"
+  "laptop"
  ],
  "drained": true,
  "history": [
