@@ -7301,3 +7301,59 @@ and `governance/BAND_REGISTRY.csv` untouched. →
 [READ_RULE](measurement/kwidth_ties_20260814/READ_RULE.md) ·
 [LADDER_READOUT](measurement/kwidth_ties_20260814/LADDER_READOUT.md);
 `scripts/tiletie/kwidth_ladder.py`; `tests/test_kwidth_ladder.py`.
+
+## 2026-08-14 (night) — K-WIDTH AT TIED PLIES — **`W-FLAT`: widening the determinization set does not capture the tile-tie spread either. Depth (the vart) and WIDTH are now both closed, and the +0.252 pts/ply has exactly one surviving explanation: JUDGE ARTIFACT.**
+
+**Context.** The vart's close-out named k-width as the remaining search-side explanation: the
+oracle sees the deck while the search marginalizes over 8 sampled worlds, so the missing
+ingredient might be WHICH WORLDS rather than how deeply each is searched. Read-rule blind
+(`ba47957d`) → instrument + 19 tests (`a20d0f7b`) → run → readout. Same dev slice (522 positions /
+279 roots), same capture statistic, same honest base regret **+0.2803 ± 0.0708** as the vart (as
+it must be). Laptop W22.
+
+**The ladder** — expansion rungs k16/32/64 × 1376, plus **TWO iso-budget controls** (the agent
+added C1 k16×688 alongside the pre-named C2 k32×344, so the attribution axis is bracketed rather
+than settled from one point; all of R0/C1/C2 cost exactly 11,008 sims):
+
+| rung | class | capture | z | ratio |
+|---|---|---|---|---|
+| R1 k16×1376 | expansion | +0.0319 ± 0.0437 | +0.73 | 0.114 |
+| R2 k32×1376 | expansion | +0.0720 ± 0.0431 | +1.67 | 0.257 |
+| R3 k64×1376 | expansion | +0.0252 ± 0.0496 | +0.51 | 0.090 |
+| **C1 k16×688** | **iso-budget** | +0.0260 ± 0.0517 | +0.50 | 0.093 |
+| **C2 k32×344** | **iso-budget** | +0.0848 ± 0.0588 | +1.44 | 0.303 |
+
+Nothing clears ratio ≥ 0.35 ∧ z ≥ +2 ∧ coverage ≥ 0.85 ⇒ **`W-FLAT`**; no attribution branch was
+reachable. ⭐ **The descriptive shape is the tell: the ladder is NOT monotone in budget** — the
+budget-matched C2 carries the largest central of any rung, larger than R3 at **8× the budget**,
+while changing the most picks (36%). That is noise around a small positive, not a mechanism.
+**Wider search moves picks at tied plies without improving them — exactly what deeper search did.**
+
+⚠️ **SCOPE, and it is a funding verdict not an exclusion:** no rung's 95% ratio interval sits
+below the bar (C2's reaches +0.72), so the defensible sentence is *"the k-width axis did not fire
+at a mechanism-sized bar on 522 positions"*, NOT "k-width is worth nothing."
+
+**Integrity:** base picks reproduce the corpus champion picks 485/485 **and the vart's own
+k8×1376 records 522/522 bit-exact across boxes and programs** — an unusually strong cross-program
+witness. The unburned holdout has **no code path in the instrument** and stays unburned for a
+third program.
+
+⚠️ **ORDERING NOTE FOR Q5 (recorded, NOT a rule change — Q5's read-rule was committed blind and
+is NOT touched):** Q5's `C-CONFIRM` branch was written to license a k-width prereg that "must name
+its MECHANISM before it may spend compute." That prereg has now been **run ahead of it and read
+flat**. So if `C-CONFIRM` fires tonight, its licensing clause points at an axis this run already
+closed, and the correct reading of that combination is **"the signal is real but has no known
+route"** — not "go fund k-width." Recorded before Q5's numbers exist.
+
+⭐ **OPS BY-CATCH, real and generalizable:** the first analyze fired `W-0 UNREADABLE` correctly —
+`term_gate._share()` probes `/mnt/c/carc-shared` first and **the laptop has its own `/mnt/c`
+mount**, so the oracle corpus silently resolved to an empty directory and all 522 joins dropped.
+Search never touches the share; only analyze does. Records were intact; the analysis was re-run
+**unchanged** on the local box. A loud precondition guard + a standing warning in
+`docs/CLUSTER_OPS.md` now cover it: **any analysis phase reading share-side corpus records must
+run on the local box.**
+
+**0 games · no band · no claim · no results.csv row · `PRODUCTION.yaml` untouched.** Artifacts
+`measurement/kwidth_ties_20260814/`. Also fixed two doc leaks found en route (the vart had no
+`docs/INDEX.md` row; the roadmap still called its ladder "RUNNING").
+**Phase:** measurement-first (weekend round; queue Q6 resolved).
