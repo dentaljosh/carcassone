@@ -26,7 +26,7 @@
 
 | thread | state | next event |
 |---|---|---|
-| R3-2 root filters (surface C) | build agent running (worktree) | build lands → orchestrator/heartbeat step Q1 |
+| R3-2 root filters (surface C) | 🔚 **CLOSED — `NO-EXPRESSION` fired (9.07% Wilson-hi < 10% bar); merged `97038182`; Q1 RESOLVED, no cell** | none |
 | R3-3 E1 win-objective | build agent running (worktree) | build lands → step Q2 |
 | tie-escalation pre-gate ("the vart") | build+run agent (worktree; runs its ladder on local if free) | read-out lands → step Q3 |
 | h2h stale-failure fix | ✅ merged `d366de4b`-era; done | — |
@@ -34,7 +34,7 @@
 
 ## The queue (execute top-down as gates land; cells are ~2.2–2.9 h each at standing W)
 
-**Q1 — root filters (surface C).** When the build lands: merge worktree at a quiet window →
+**Q1 — root filters (surface C). ✅ RESOLVED 2026-08-14 ~16:20: `NO-EXPRESSION` fired; closed at 0 games; merged. Heartbeat: SKIP this step.** *(original logic kept for the record:)* When the build lands: merge worktree at a quiet window →
 per-box wheel rebuild (pinned rustc 1.96.0) + capability/positive control on EVERY box that
 plays → run its calibration if the agent didn't (0 games, local W30) → apply its
 `CALIB_READ_RULE.md` mechanically. **FUND branch** → claim fresh band, launch the single funded
