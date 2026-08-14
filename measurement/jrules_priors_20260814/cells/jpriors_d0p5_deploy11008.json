@@ -1,0 +1,107 @@
+{
+  "_README": [
+    "J-RULES SURFACE B (POLICY PRIORS) — DEPLOY-BUDGET CELL DESCRIPTOR.",
+    "Prereg of record: measurement/jrules_priors_20260814/DEPLOY_PREREG.md (commit fb6cc09e,",
+    "committed BEFORE game 1). Design: DESIGN.md. Dose named by CALIB_READ_RULE.md §3.2",
+    "FUND-SMALLEST, applied in CALIB_READOUT.md.",
+    "",
+    "⚠️ THIS IS NOT A --cand-leaf-json FILE AND MUST NEVER BE PASSED AS ONE.",
+    "Surface B overrides NO leaf. Its three knobs are SearchConfig fields, delivered on the",
+    "eval_fair_puct command line as --cand-jrules-prior-{dose,mask,scope} (candidate side",
+    "only). This file is the machine-readable CELL SPEC that run_deploy_jrules_priors.sh and",
+    "its wiring-gate script both read, so the launch flags and the gate expectations cannot",
+    "drift apart.",
+    "",
+    "⚠️ THE LIVENESS GATE IS INVERTED. Because the knobs are not LeafConfig fields, NO LEAF",
+    "HASH MOVES on a live-term cell: expect_cand_leaf_hash EQUALS the champion's. A MOVED",
+    "hash is a DEFECT (a leaf change smuggled into a prior cell), the exact opposite of every",
+    "leaf-term cell. Liveness is proven ONLY by (a) the resolved cand_jrules_prior.dose in",
+    "the manifest (gate J4) and (b) the _assert_surface_b_live positive control on the box",
+    "that plays (gate J13)."
+  ],
+
+  "cell": "jpriors_d0p5_deploy11008",
+  "surface": "B — J-rules as PUCT expansion policy priors (carc_core::search, rust-only)",
+  "prereg": "measurement/jrules_priors_20260814/DEPLOY_PREREG.md",
+  "prereg_commit": "fb6cc09e",
+
+  "knob": {
+    "jrules_prior_dose": 0.5,
+    "jrules_prior_mask": 31,
+    "jrules_prior_scope": "all",
+    "side": "candidate only",
+    "cli": ["--cand-jrules-prior-dose", "0.5",
+            "--cand-jrules-prior-mask", "31",
+            "--cand-jrules-prior-scope", "all"]
+  },
+
+  "band": {
+    "band_seed_start": 130000000000,
+    "seed_first": 130000000000,
+    "seed_last": 130000000399,
+    "n_games": 800,
+    "n_decks": 400,
+    "seatings_per_deck": 2,
+    "paired": true,
+    "registry": "governance/BAND_REGISTRY.csv",
+    "sentinel": "measurement/jrules_priors_20260814/BAND_CLAIMED.json"
+  },
+
+  "budget": {
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "total_sims": 11008,
+    "symmetric": true,
+    "note": "BOTH arms at the deploy budget k8x1376 = 11008."
+  },
+
+  "harness": {
+    "script": "scripts/classical_search/eval_fair_puct.py",
+    "info": "fair",
+    "opponent": "fair-champion",
+    "backend": "rust",
+    "rules_profile": "fixed_v1",
+    "r9_env": "CARCASSONNE_FIX_R9=1",
+    "exact_k": 2,
+    "c_puct": 1.5,
+    "tau_p": 5,
+    "leaf_quantize": "float",
+    "final_select": "visits",
+    "cand_leaf_json": null,
+    "allow_cand_curve_drift": false
+  },
+
+  "gate_expectations": {
+    "champion_leaf_hash": "a36d2e15a3b3d71d",
+    "expect_cand_leaf_hash": "a36d2e15a3b3d71d",
+    "expect_cand_leaf_hash_relation": "EQUAL (INVERTED vs every leaf-term cell)",
+    "expect_opp_leaf_hash": "a36d2e15a3b3d71d",
+    "expect_cand_leaf_json": null,
+    "expect_dose": 0.5,
+    "expect_mask": 31,
+    "expect_scope": "all",
+    "expect_records": 800,
+    "expect_unique_deck_seat_pairs": 800,
+    "expect_fully_paired_decks": 400,
+    "record_agreement_keys": ["sims", "k_dets", "exact_k", "opponent", "info", "rung_sims"],
+    "void_below_records": 720
+  },
+
+  "output": {
+    "root": "/mnt/c/carc-shared/jrules_priors_deploy_20260814",
+    "subdir": "jpriors_d0p5_deploy11008",
+    "note": "Fresh root — collides with no existing cell dir (surface A lives in jrules_deploy_20260813)."
+  },
+
+  "calibration": {
+    "readout": "measurement/jrules_priors_20260814/CALIB_READOUT.md",
+    "branch_fired": "FUND-SMALLEST",
+    "flip_rate": 0.13046,
+    "flips_over_graded": "203/1556",
+    "wilson95": [0.1146, 0.1481],
+    "marginal": false,
+    "note": "The flip rate is NOT a result and licenses no reading (prereg §5)."
+  },
+
+  "adjudication": "NONE BY THE LAUNCHING SESSION. Gates only. No menu_block_summary, no strength number, no results.csv row, no claim row, governance/PRODUCTION.yaml untouched."
+}
