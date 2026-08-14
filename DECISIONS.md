@@ -6143,6 +6143,13 @@ reversible only by a differently-*designed* run (J-rules at depth), not by more 
 
 ## 2026-08-13 — WINDOW-TRUNCATION CENSUS — ⛔ **STATE RECORD, NOT A CLOSE-OUT AND NOT A VERDICT.** Instrument **BUILT, GROUND-TRUTH VALIDATED, PILOTED; the FULL CENSUS HAS NOT RUN and NOTHING IS ADJUDICATED.** P3 (reliability) **HAS ALREADY FIRED IN PRODUCTION**, so the fail-loud fix is **LICENSED AND UNBUILT**
 
+> ⛔ **SUPERSEDED THE SAME DAY — 2026-08-13 (late).** The census RAN (three times) and is
+> adjudicated: **P1 = 0.0 ⇒ CURIOSITY ⇒ F-a not owed**, and F-c is **built + merged**. Read the
+> **"WINDOW-TRUNCATION CENSUS RAN AND CLOSED"** entry at the end of this file instead; everything
+> below is preserved as the pre-result state record. (The "HAS NOT RUN" in this heading was
+> honest at the time and wrong in fact — the first run's artifacts existed only in the laptop's
+> own untracked tree.)
+
 > ⛔ **READ THIS FIRST. This entry closes nothing.** It exists because two facts are already
 > decision-relevant and would otherwise be lost: (1) the pre-registered **P3 trigger has fired in
 > production**, which licenses the fail-loud fix **today, independently of any census**, and that
@@ -6504,3 +6511,95 @@ reader will grep) · `docs/INDEX.md` row. `python3 scripts/doc_lint.py` → 0 er
 band. `governance/PRODUCTION.yaml` untouched.**
 **Reversal cost:** nil — documentation only.
 **Phase:** measurement-first (Phase 4 era; rustport P1 gate hygiene).
+
+---
+
+## 2026-08-13 (late) — WINDOW-TRUNCATION CENSUS RAN AND CLOSED (six-touch): pre-registered branch **P1 < 0.5 % ⇒ CURIOSITY** on both legs ⇒ **F-a (widen the action window) is NOT owed on strength grounds** — and the reason the docs denied a finished run for ~10 h is a lesson in its own right
+
+**Decision:** adjudicate the full window-truncation census against the thresholds
+pre-registered in [`measurement/window_truncation_20260813/DESIGN.md`](measurement/window_truncation_20260813/DESIGN.md)
+§6, and close it out. **No lever is pulled.**
+
+**What ran.** The full census over **every** banked root, both rules epochs, at the production
+budget (k8×1376), read-only, **0 games played**. Every figure below is read off
+`census_*/summary.json`, not from prose:
+
+| statistic | `walled` (CL-070 bank) | `fixed_v1` (E4 archives) |
+|---|---|---|
+| roots censused | 883 | 1,320 |
+| expanded nodes censused | 8,701,287 | 13,090,516 |
+| nodes with ≥ 1 dropped LEGAL action (**P2**) | **0** | **0** |
+| empty-mask nodes / world raises (**P3**) | **0 / 0** | **0 / 0** |
+| pick changed at `W=71` (**P1**) | **0 / 883** | **0 / 1,320** |
+| iso null control (n / violations) | 883 / 0 | 1,320 / 0 |
+| digest-gate fails · encode collisions · error rows | 0 · 0 · 0 | 0 · 0 · 0 |
+
+Rule of three (95 %): **≤ 3.45 × 10⁻⁷ per node ⇒ ≤ 0.27 truncation events per champion-game**
+(`walled`) and **≤ 2.29 × 10⁻⁷ ⇒ ≤ 0.18** (`fixed_v1`) — the ≤ 0.2/game bound DESIGN §8 priced
+the run to buy. The two legs are **reported separately and never pooled** (§6 reporting rule;
+different wall geometries).
+
+⭐ **Reproduced THREE times, identical in every count** — same roots, same node totals:
+`8fe24542` laptop W=22 (11:46→11:59, 772 s) · `530368de` local W=24 (21:54→22:05, 695 s — the
+post-F-c, rebuilt-wheel revision) · `c7f8aefe` laptop W=16 (21:56→22:10, 868 s). The instrument
+is deterministic across revision *and* worker count. ⚠️ The third run's `RUN_MANIFEST.json`
+mislabels `box: local`; its `LAUNCH_MANIFEST_laptop.json` and `EXIT_laptop` correctly say laptop
+— a cosmetic bug in the runner's box stamp, recorded so nobody re-derives it later.
+
+**The adjudication (DESIGN §6, applied faithfully).** P1 = 0.0 on both legs ⇒ the
+**`P1 < 0.5 %` ⇒ CURIOSITY (for strength)** band: *"file the finding; do not re-architect the
+window on strength grounds."* The band is entered **at its 95 % upper bound, not just at the
+point estimate** — rule of three on roots gives P1 ≤ 3/883 = **0.34 %** and ≤ 3/1,320 =
+**0.23 %**, both inside < 0.5 % — so the branch is not a vacuous null. Pushing §6's own
+arithmetic (`elo_cost ≈ 1205 · P1 · r`) to those bounds, 5 elo would require `r ≥ 1.22` /
+`1.83` pts per changed move, further outside the program's measured per-disagreement prices than
+the 0.83 the band was written against. **⇒ F-a (widen inside search with an exact remap back to
+`W=25`) is DECLINED on strength grounds** — declined on this evidence, not proven harmless.
+
+- **P2** = 0 over 21,791,803 nodes, so §6's "P2 > 0 while P1 = 0" guard does not fire. ⚠️ It
+  does **not** license "dead": the §5.1 crash cell — a real production root, **selected on
+  having crashed** and therefore never poolable into a rate — reports 382/10,003 nodes truncated.
+  The census bounds the **rate** on the banked distribution; it does not abolish the mechanism.
+- **P3** fired earlier and independently (occurrence trigger, a real
+  `SearchError::NoLegalActionsAtInterior` in production). The census neither strengthens nor
+  weakens it. Its remedy is **F-c**, built and merged the same day.
+- ⚠️ **F-d ("instrument only") is not sufficient by its own wording** — it requires
+  "P1 in the CURIOSITY band *and* P3 never trips", and P3 has tripped. F-c answers P3; F-d
+  covers the remainder.
+
+⚠️ **One pre-registration ambiguity, flagged rather than resolved by convenience.** §6's
+reporting rule says no row is minted "from the pilot; **the full census owns that**", and §9
+lists an `experiments/results.csv` row among the close-out touches — both readable as *the census
+owes a row*. **No row was minted**: the instrument plays **0 games** and has no elo/wr cell, and
+the run's own `RUN_MANIFEST.json` declares `results_csv_row: false`, `band: null`, `claim: null`.
+This paragraph is the record of that choice. If the owner reads §9 as binding, the remedy is one
+row citing the DESIGN file and nothing else changes.
+
+⭐ **Why the docs denied a finished run for ~10 h — worth keeping.** The first full run
+(`8fe24542`, laptop, 11:46) wrote its artifacts **only into the laptop's own tree, untracked**,
+while the scheduler's `state.json` reported `DONE` on every tick. A state-check against the
+*local* tree therefore concluded — honestly, and wrongly — that the census had never run, and
+STATUS, the roadmap and the DESIGN banner were all written from that check ("no output exists",
+"both boxes were occupied", "PILOTS ONLY"). **A run is not landed until its artifacts are in the
+repo of record.** Both laptop runs are now archived in-repo under
+`measurement/window_truncation_20260813/{prior_run_laptop_8fe2454,run_laptop_c7f8aef}/`.
+
+**Options considered.** (a) Adopt F-a anyway on the "silent leak" intuition — **rejected**: it
+inverts the pre-registration, and F-a is a recorded-artifact epoch decision (every `roots.jsonl`,
+`champ_games.jsonl`, E4 archive and trace stores `W=25` indices). (b) Read the null as "the
+defect is dead" — **rejected**: forbidden by §6-P2's guard and contradicted by the crash cell.
+(c) Soften the 0.5 % threshold or leave the run unadjudicated — **rejected**: the thresholds were
+fixed before any number was seen, and a fired branch is self-authorizing. (d) Adjudicate,
+decline F-a, keep F-c, keep the instrument (F-d) — **adopted**.
+
+**Files touched:** `measurement/window_truncation_20260813/DESIGN.md` (status banner + artifact
+table + §6 applied read + §7 F-d stamp + §8/§9 stamps), plus the run's artifacts committed
+(`census_walled/`, `census_fixed_v1/`, `CENSUS_RESULT.md`, `RUN_MANIFEST.json`, markers, logs)
+and the two laptop runs archived; `STATUS.md`; `docs/PROGRAM_ROADMAP_2026-07-07.md` NOW item (7);
+`docs/LEVER_INDEX.md` *"widen the action window"* row; `DECISIONS.md`.
+**0 games. No `experiments/results.csv` row. No `governance/CLAIM_REGISTRY.csv` row. No band.
+`governance/PRODUCTION.yaml` and `governance/BAND_REGISTRY.csv` untouched. No source file
+changed.**
+**Reversal cost:** nil — documentation + artifacts only. Re-opening F-a needs a new P3
+occurrence or a root distribution this census did not cover, not more n on the same bank.
+**Phase:** measurement-first (Phase 4 era; champion search integrity).

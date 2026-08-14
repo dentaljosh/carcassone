@@ -1,0 +1,3 @@
+[2026-08-13T21:54:10-04:00] launch/local: preflight ok - git 530368de715e9771d71af9dd51b2af0e8e2c47bb, wheel /home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py, WindowTruncationError=True, share /mnt/c/carc-shared, W=24
+[2026-08-13T22:05:45-04:00] launch/local: RUN_CMD.sh exited rc=0 after 695s
+[2026-08-13T22:05:45-04:00] launch/local: published to /mnt/c/carc-shared/window_truncation_20260813/local

@@ -1,38 +1,75 @@
 # Window-truncation census — DESIGN + PRE-REGISTERED READ
 
-**Status: BUILT + GROUND-TRUTH VALIDATED + PILOTED 2026-08-13. ⛔ FULL CENSUS STILL NOT
-RUN as of 2026-08-13 — this document is written BEFORE it, and the thresholds in §6 are
-pre-registered.**
+**Status: ✅ RAN AND ADJUDICATED 2026-08-13 (six-touch closed out). Both legs complete over
+ALL banked roots, and REPRODUCED THREE TIMES across three revisions and three worker counts.
+Pre-registered read applied: P1 = 0.0 on both legs ⇒ CURIOSITY band ⇒ F-a (widen) is NOT owed
+on strength grounds. §1–§5 and §8 were written BEFORE the run; §6's thresholds are
+pre-registered and were not touched after any number was seen.**
 
-> ⛔ **STATE CHECK 2026-08-13 (re-verified against disk at close-out time — NOTHING HERE IS
-> ADJUDICATED).** No `CENSUS_RESULT.md`, no `READOUT.md`, no `DONE_CENSUS`/`FAILED_CENSUS`,
-> no `RUN_MANIFEST.json`, and no `census_walled/` or `census_fixed_v1/` output directory
-> exist; `logs/` is empty. The queue item `window_truncation_census` is **still open** in
-> `scripts/scheduler/queue.json` and its `done_if_exists` markers are correctly absent — both
-> boxes were occupied. **The only results on disk are the two PILOTS in §5 plus the crash
-> ground-truth cell in §5.1.** ⚠️ **Any per-game bound better than §5's ≤ 6.0 / ≤ 6.7 — including
-> §8's ≈ ≤ 0.27 / ≤ 0.17 — is a PRICED PLAN, not a measurement.** Do not cite §8's projected
-> power as a result, and do not quote a censused-node total larger than the **754,192** actually
-> measured.
+> ✅ **RESULT 2026-08-13 — every figure read off `census_*/summary.json`, not retyped from prose.**
+> All roots, both rules epochs, at the production budget (k8×1376). Reported **separately and
+> never pooled** (§6 reporting rules — different wall geometries):
 >
-> ⭐ **What IS decided and is not waiting on this census: §6-P3 has already fired in production,
-> so the minimal fail-loud fix (§7 F-c) is LICENSED.** **BUILT 2026-08-13 on branch
-> `worktree-agent-ae0fb92b067cdf922`, NOT YET MERGED** — see §7 F-c for what it does and for
-> the bit-identity evidence. Carried as an
-> open item on [PROGRAM_ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) NOW item (7).
-> **0 games · no band · no `results.csv` row · no `CLAIM_REGISTRY` row · `PRODUCTION.yaml`
-> untouched** — exactly as §6's reporting rules pre-register. State record (explicitly **not** a
-> close-out): DECISIONS 2026-08-13.
+> | statistic | `walled` (CL-070 bank) | `fixed_v1` (E4 archives) |
+> |---|---|---|
+> | roots censused | 883 | 1,320 |
+> | expanded nodes censused | 8,701,287 | 13,090,516 |
+> | nodes with ≥ 1 dropped LEGAL action (**P2**) | **0** | **0** |
+> | empty-mask nodes / world raises (**P3**) | **0 / 0** | **0 / 0** |
+> | pick changed at `W=71` (**P1**) | **0 / 883** | **0 / 1,320** |
+> | iso null control (n / violations) | 883 / 0 | 1,320 / 0 |
+> | digest-gate fails · encode collisions · error rows | 0 · 0 · 0 | 0 · 0 · 0 |
+>
+> Rule of three (95 %): **≤ 3.45 × 10⁻⁷ per node ⇒ ≤ 0.27 truncation events per champion-game**
+> (`walled`), **≤ 2.29 × 10⁻⁷ ⇒ ≤ 0.18 per game** (`fixed_v1`). That is the ≤ 0.2/game bound §8
+> was priced to buy, and it is now a measurement rather than a plan.
+>
+> ⭐ **REPRODUCED THREE TIMES, IDENTICAL IN EVERY COUNT** — the same 883 / 1,320 roots and the
+> same 8,701,287 / 13,090,516 node totals on each run: `8fe24542` laptop W=22 (772 s) ·
+> `530368de` local W=24 (695 s — the post-F-c, rebuilt-wheel revision) · `c7f8aefe` laptop W=16
+> (868 s). The instrument is deterministic across revision *and* worker count. ⚠️ The third
+> run's `RUN_MANIFEST.json` mislabels `box: local`; its `LAUNCH_MANIFEST_laptop.json` and
+> `EXIT_laptop` correctly say laptop — a cosmetic bug in the runner's box stamp.
+>
+> ⚠️ **A ZERO HERE IS "SO FAR UNOBSERVED", NEVER "DEAD".** The §5.1 crash cell — a **real
+> production root, SELECTED on having crashed** and therefore never poolable into a rate —
+> reports 382/10,003 nodes truncated and 6 empty-mask. This census bounds how OFTEN truncation
+> reaches the search on the banked distribution; it does not and cannot show it never happens.
+>
+> ⭐ **Why the docs went stale, and the lesson worth keeping.** The first full run (`8fe24542`,
+> laptop, 11:46→11:59) wrote its artifacts **only into the laptop's own tree, untracked** — while
+> the scheduler's `state.json` said `DONE` on every tick. An honest state-check against the
+> *local* tree therefore concluded, correctly for what it could see and wrongly in fact, that the
+> census had never run, and STATUS/roadmap/this banner were written from that check. **A run is
+> not landed until its artifacts are in the repo of record.** Both laptop runs are archived here
+> under `prior_run_laptop_8fe2454/` and `run_laptop_c7f8aef/`.
+>
+> **0 games · no band · no `CLAIM_REGISTRY` row · `governance/PRODUCTION.yaml` and
+> `BAND_REGISTRY.csv` untouched.** ⚠️ **Deviation from §9, recorded rather than silently skipped:
+> no `experiments/results.csv` row was minted.** §9 lists one among the close-out touches, but the
+> instrument plays **0 games** and has no elo/wr cell to record, and the run's own
+> `RUN_MANIFEST.json` declares `results_csv_row: false`, `band: null`, `claim: null`. Close-out
+> entry: DECISIONS 2026-08-13 (census).
+>
+> ⭐ **What IS decided independently of this census: §6-P3 already fired in production, so the
+> minimal fail-loud fix (§7 F-c) is LICENSED.** **BUILT 2026-08-13 on branch
+> `worktree-agent-ae0fb92b067cdf922`, NOT YET MERGED** — see §7 F-c for what it does and for the
+> bit-identity evidence.
 
-**⭐ The instrument reproduces the production crash (§5.1). The pilots' zeros are
+**⭐ The instrument reproduces the production crash (§5.1). The zeros above are
 therefore a measurement, not a blind spot.**
 
 | | |
 |---|---|
 | Instrument | [`scripts/measurement_infra/window_truncation_census.py`](../../scripts/measurement_infra/window_truncation_census.py) |
 | Tests | [`tests/test_window_truncation_census.py`](../../tests/test_window_truncation_census.py) — 12 tests, green |
-| Pilot A (`walled`) | [`pilot/summary.json`](pilot/summary.json) — 40 roots, **396,872 nodes, 0 truncated** |
-| Pilot B (`fixed_v1`) | [`pilot_fixed_v1/summary.json`](pilot_fixed_v1/summary.json) — 40 roots, **357,320 nodes, 0 truncated** |
+| **CENSUS A (`walled`) ✅** | [`census_walled/summary.json`](census_walled/summary.json) — **883 roots, 8,701,287 nodes, 0 truncated, 0 empty-mask, 0/883 pick changes** |
+| **CENSUS B (`fixed_v1`) ✅** | [`census_fixed_v1/summary.json`](census_fixed_v1/summary.json) — **1,320 roots, 13,090,516 nodes, 0 truncated, 0 empty-mask, 0/1,320 pick changes** |
+| Mechanical result | [`CENSUS_RESULT.md`](CENSUS_RESULT.md) (auto-generated arithmetic + §6 bands applied mechanically) · [`RUN_MANIFEST.json`](RUN_MANIFEST.json) · marker `DONE_CENSUS` |
+| Reproduction 1 (laptop `8fe24542`, W=22) | [`prior_run_laptop_8fe2454/`](prior_run_laptop_8fe2454/) — identical counts |
+| Reproduction 2 (laptop `c7f8aefe`, W=16) | [`run_laptop_c7f8aef/`](run_laptop_c7f8aef/) — identical counts |
+| Pilot A (`walled`, superseded by CENSUS A) | [`pilot/summary.json`](pilot/summary.json) — 40 roots, **396,872 nodes, 0 truncated** |
+| Pilot B (`fixed_v1`, superseded by CENSUS B) | [`pilot_fixed_v1/summary.json`](pilot_fixed_v1/summary.json) — 40 roots, **357,320 nodes, 0 truncated** |
 | **Ground truth** | [`crash_cell/summary.json`](crash_cell/summary.json) — the 2026-08-13 production crash root, **382/10,003 nodes truncated, 6 empty-mask, crash reproduced** |
 | Root reconstruction | [`scripts/measurement_infra/reconstruct_crash_root.py`](../../scripts/measurement_infra/reconstruct_crash_root.py) → [`crash_root.jsonl`](crash_root.jsonl) |
 | Provoked by | [`measurement/joshuabot_20260812/CONFIRM_EXCLUSIONS.md`](../joshuabot_20260812/CONFIRM_EXCLUSIONS.md) |
@@ -364,6 +401,47 @@ dossier — so the trigger is OCCURRENCE, not rate.** Its base rate is plausibly
 - No `results.csv` row and no claim is minted from the pilot; the full census owns
   that.
 
+### ✅ APPLIED READ — 2026-08-13, after the census (nothing above this line was edited after the numbers were seen)
+
+**P1 — the branch that fired, quoted verbatim from §6's table:**
+
+> | **P1 < 0.5%** | **CURIOSITY (for strength)** | Reaching 5 elo would need `r ≥ 0.83 pts` per
+> changed move — larger than any per-disagreement price this program has measured. File the
+> finding; do **not** re-architect the window on strength grounds. §6-P3 still applies
+> independently. |
+
+`pick_change_rate` = **0/883 (`walled`) and 0/1,320 (`fixed_v1`)** ⇒ P1 = 0.0 on both legs. The
+band is entered **at its 95 % upper bound, not merely at the point estimate**: rule of three on
+roots gives P1 ≤ 3/883 = **0.34 %** and ≤ 3/1,320 = **0.23 %**, both strictly inside the < 0.5 %
+band, so the branch is not a vacuous "we saw nothing". Pushing §6's own arithmetic
+(`elo_cost ≈ 1205 · P1 · r`) to those upper bounds, reaching 5 elo would need `r ≥ 1.22` pts
+(`walled`) or `r ≥ 1.83` pts (`fixed_v1`) per changed move — further outside the program's
+measured range than the 0.83 the band was written against.
+
+**⇒ WHAT FOLLOWS: F-a (widen the window inside search) is NOT owed on strength grounds.** The
+finding is filed; the window is **not** re-architected. F-a is *declined on this evidence*, not
+proven harmless — see the P2 note.
+
+**P2** — `node_truncation_rate` = 0 over 21,791,803 censused nodes, so the pre-registered
+"P2 > 0 while P1 = 0" guard does **not** fire. ⚠️ That does **not** upgrade the read to "dead":
+the §5.1 crash cell shows P2 ≫ 0 exists in the population (382/10,003 at one real production
+root), it is simply far rarer than this census can resolve. The honest statement is the bound —
+**≤ 0.27 / ≤ 0.18 truncation events per champion-game**, not "0 %".
+
+**P3** — **fired, and NOT by this census**: 0 empty-mask nodes and 0 world raises here, but the
+trigger is **OCCURRENCE**, and a real `SearchError::NoLegalActionsAtInterior` happened in
+production on 2026-08-13. The census neither strengthens nor weakens that; **F-c was licensed by
+P3 and is now built and merged** (§7). ⚠️ Consequently §7's **F-d ("instrument only") is NOT
+sufficient by its own wording** — it requires "P1 in the CURIOSITY band **and P3 never trips**",
+and P3 has tripped. F-c is the answer to P3; F-d covers the remainder.
+
+**⚠️ Ambiguity in the pre-registration, flagged rather than resolved by convenience.** The
+reporting rule above says no row is minted "from the pilot; the full census owns that", which
+reads as *the census owes a row*, and §9 lists one. But the census plays **0 games** and produces
+no elo/wr cell, and its own `RUN_MANIFEST.json` sets `results_csv_row: false`. **No row was
+minted**, and this paragraph is the record of that choice — not a silent omission. If the owner
+reads §9 as binding, the remedy is one row citing this file, and nothing else changes.
+
 ---
 
 ## 7. What the fix would be (and what it must not break)
@@ -437,13 +515,24 @@ that the Rust search feeds", i.e. this census's statistic made continuous.
 
 **F-d — instrument only.** Keep the window, run this census periodically. Sufficient
 if P1 lands in the CURIOSITY band and P3 never trips.
+✅ **2026-08-13 — this is the standing disposition, with one qualification.** P1 landed in the
+CURIOSITY band (§6 applied read), so no re-architecture; but **P3 has already tripped**, so F-d
+alone was never sufficient — F-c (built + merged) covers that face, and F-d covers the rest.
 
 Any of F-a/F-c touches `carc-core` ⇒ a rebuild ⇒ the bit-exactness gates, and (for
 F-a) a recorded-artifact epoch decision. None of that is in scope here.
 
 ---
 
-## 8. Full-census plan — priced
+## 8. Full-census plan — priced ✅ EXECUTED 2026-08-13
+
+> ✅ **This section was the PLAN; it ran three times and the plan held.** Realized wall-clock,
+> read off the summaries: `walled` 310 s + `fixed_v1` 462 s at W=22 (laptop, `8fe24542`) ·
+> 283 s + 412 s at W=24 (local, `530368de`) · 348 s + 520 s at W=16 (laptop, `c7f8aefe`) — i.e.
+> **~11–15 min for both legs**, comfortably under the W4/W8 pricing below. The projected power
+> was realized exactly: **≤ 0.27 (`walled`) / ≤ 0.18 (`fixed_v1`) truncation events per
+> champion-game**. Results in the banner at the top of this file; §6's applied read adjudicates
+> them.
 
 Mean cost measured on the pilots: **10.85 s/root** (`walled`) and **8.76 s/root**
 (`fixed_v1`) of single-core time, ~73% search and ~25% node replay.
@@ -528,7 +617,7 @@ JCZ-match one (`SEED_BASE 9_100_000`, `+seat*4`), while `h2h.champion_seed` uses
 
 ---
 
-## 9. Close-out obligations when the census lands
+## 9. Close-out obligations when the census lands ✅ DISCHARGED 2026-08-13
 
 Per the six-touch checklist: `experiments/results.csv` row · `DECISIONS.md` index
 line · status banner on this file · `governance/` row if a claim is minted ·
@@ -536,3 +625,9 @@ line · status banner on this file · `governance/` row if a claim is minted ·
 `docs/LEVER_INDEX.md` amendment to the **"widen the action window"** row recording
 the search-internal number, since that row currently rests only on the played-level
 `0/299k`.
+
+✅ **Discharged 2026-08-13:** status banner on this file · DECISIONS 2026-08-13 (census) ·
+STATUS.md top block · [PROGRAM_ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) NOW item (7) ·
+[LEVER_INDEX](../../docs/LEVER_INDEX.md) *"widen the action window"* row (search-internal number
+recorded). **No `experiments/results.csv` row and no `governance/` row** — 0 games, no band, no
+claim; the deviation from this section's own checklist is argued in §6's applied read.

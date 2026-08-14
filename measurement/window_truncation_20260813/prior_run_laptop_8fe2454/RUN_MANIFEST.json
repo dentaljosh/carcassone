@@ -1,0 +1,18 @@
+{
+  "schema": "carcassonne-window-truncation-census/run-manifest/v1",
+  "job_id": "window_truncation_census",
+  "box": "laptop",
+  "workers": 22,
+  "started": "2026-08-13T11:46:12-04:00",
+  "git_rev": "8fe245422",
+  "share": "/mnt/carc-shared",
+  "roots_leg_walled": "/mnt/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl",
+  "roots_leg_fixed_v1": "measurement/e4_games",
+  "n_roots_cap": 0,
+  "design": "measurement/window_truncation_20260813/DESIGN.md",
+  "instrument": "scripts/measurement_infra/window_truncation_census.py",
+  "read_only": true,
+  "plays_games": false,
+  "band": null,
+  "note": "Two rules epochs, SEPARATE PROCESSES (CARCASSONNE_FIX_R9 is import-latched). Resume-able at root granularity. Epochs are reported separately and MUST NOT be pooled."
+}

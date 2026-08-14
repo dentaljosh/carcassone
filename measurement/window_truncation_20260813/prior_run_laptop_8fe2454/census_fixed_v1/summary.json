@@ -1,0 +1,154 @@
+{
+  "schema": "carcassonne-window-truncation-census/v1-summary",
+  "n_rows": 1548,
+  "n_ok": 1548,
+  "n_skipped_forced": 205,
+  "n_skipped_solver_region": 23,
+  "n_censused_roots": 1320,
+  "roots_with_root_truncation": 0,
+  "root_truncation_rate": 0.0,
+  "nodes_censused": 13090516,
+  "nodes_truncated": 0,
+  "node_truncation_rate": 0.0,
+  "nodes_empty_mask": 0,
+  "empty_mask_rate": 0.0,
+  "visits_total": 69195509,
+  "visits_through_truncated": 0,
+  "visit_weighted_truncation_rate": 0.0,
+  "roots_with_any_search_truncation": 0,
+  "root_incidence_rate": 0.0,
+  "dropped_hist": {
+    "0": 13090516
+  },
+  "by_depth": {
+    "1": [
+      160679,
+      0,
+      0
+    ],
+    "2": [
+      737669,
+      0,
+      0
+    ],
+    "3": [
+      2580651,
+      0,
+      0
+    ],
+    "4": [
+      2494200,
+      0,
+      0
+    ],
+    "5": [
+      2977648,
+      0,
+      0
+    ],
+    "6": [
+      2094311,
+      0,
+      0
+    ],
+    "7": [
+      1231211,
+      0,
+      0
+    ],
+    "8": [
+      502442,
+      0,
+      0
+    ],
+    "9": [
+      184165,
+      0,
+      0
+    ],
+    "10": [
+      82004,
+      0,
+      0
+    ],
+    "11": [
+      33539,
+      0,
+      0
+    ],
+    "12": [
+      8798,
+      0,
+      0
+    ],
+    "13": [
+      2200,
+      0,
+      0
+    ],
+    "14": [
+      715,
+      0,
+      0
+    ],
+    "15": [
+      227,
+      0,
+      0
+    ],
+    "16": [
+      54,
+      0,
+      0
+    ],
+    "17": [
+      3,
+      0,
+      0
+    ]
+  },
+  "by_node_phase": {
+    "meeples": [
+      8256490,
+      0,
+      0
+    ],
+    "tiles": [
+      4834026,
+      0,
+      0
+    ]
+  },
+  "by_k_bucket": {
+    "early": [
+      4606032,
+      0,
+      0
+    ],
+    "late": [
+      3723807,
+      0,
+      0
+    ],
+    "mid": [
+      4760677,
+      0,
+      0
+    ]
+  },
+  "n_pick_comparable": 1320,
+  "n_pick_changed": 0,
+  "pick_change_rate": 0.0,
+  "iso_control_n": 1320,
+  "iso_control_violations": 0,
+  "digest_gate_fail": 0,
+  "encode_collisions": 0,
+  "world_errors": 0,
+  "n_error_rows": 0,
+  "secs_total": 10040.5,
+  "secs_per_root": 6.486,
+  "wall_secs": 461.7,
+  "workers": 22,
+  "n_rows_resumed": 0,
+  "n_rows_new": 1548
+}
