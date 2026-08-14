@@ -55,8 +55,10 @@ sketched, not pre-registered. ⚠️ **If and only if a full DEPLOY_PREREG for b
 and was committed blind, launch; otherwise PARK for Joshua** — a control-arm design invented
 during the autonomous window is improvisation, not execution.
 
-**Q4 — box filler, only if both boxes would otherwise idle > 2 h and Q1–Q3 are exhausted:**
-nothing is authorized. Leave idle. (The E4 +55-games bar needs Joshua playing, not compute;
+**Q4 — ⚠️ SUPERSEDED Fri evening (Joshua: "so is nothing worth running over Shabbos?" = the funding ask): TWO overnight 0-game measurements are AUTHORIZED and launched — the two remaining explanations of the tile-tie signal.**
+**Q5 — out-of-family re-pricing of the tie corpus** (local W30): re-score dev-slice tied arms under an out-of-family judge; blind branches CONFIRM (signal real → k-width/search-side licensed) / COLLAPSE (judge artifact → the tile-tie axis closes ENTIRELY incl. Stage-B ±17) / PARTIAL. Heartbeat: restart per its committed launcher if dead; apply its read-rule mechanically on DONE.
+**Q6 — k-width ladder at tied plies** (laptop W22, or local after Q5): k 8→16→32(→64) at 1376/det + the BUDGET-MATCHED control rung k32×344; blind branches fund-consideration / W-FLAT; attribution = worlds vs budget via the control rung. Same heartbeat treatment.
+Beyond Q5/Q6: nothing further is authorized. Leave idle. (The E4 +55-games bar needs Joshua playing, not compute;
 everything else named this week is closed or parked.)
 
 ## Ordering rule when multiple cells are fundable
