@@ -97,7 +97,10 @@ _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.
                                  "denial_open_max": 2,
                                  "opencity_dose": 0.0, "opencity_size_min": 4.0,
                                  "opencity_edge_min": 2, "opencity_symmetric": True,
-                                 "jrules_dose": 0.0, "jrules_mask": 31}
+                                 "jrules_dose": 0.0, "jrules_mask": 31,
+                                 "tiletie_dose": 0.0, "tiletie_w_city": 1.0,
+                                 "tiletie_w_road": 1.0, "tiletie_w_perim": 0.0,
+                                 "tiletie_w_lib": 0.0, "tiletie_norm": 8.0}
 
 
 def _leaf_hash(cfg) -> str:

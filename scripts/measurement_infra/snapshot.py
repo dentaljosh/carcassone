@@ -138,6 +138,14 @@ _FROZEN_HASH_DEFAULT_OFF = {
     # default-off candidate-only knobs. Excluded on the same grounds as F6/F7b/Part C.
     "jrules_dose": 0.0,
     "jrules_mask": 31,
+    # Tile-tie tie-break (measurement/tiletie_term_20260814, 2026-08-14):
+    # default-off candidate-only knobs. Excluded on the same grounds as F6/F7b/Part C.
+    "tiletie_dose": 0.0,
+    "tiletie_w_city": 1.0,
+    "tiletie_w_road": 1.0,
+    "tiletie_w_perim": 0.0,
+    "tiletie_w_lib": 0.0,
+    "tiletie_norm": 8.0,
 }
 
 

@@ -131,6 +131,22 @@ def leaf_config_rs(leaf_cfg):
             jrules_dose=float(leaf_cfg.jrules_dose),
             jrules_mask=int(leaf_cfg.jrules_mask),
         )
+    # Tile-tie tie-break: same conditional-keyword rule as denial / open-city /
+    # jrules above. ⚠️ There is NO rust mirror of this term yet (deliberately
+    # deferred — see measurement/tiletie_term_20260814/DESIGN.md), so TODAY a
+    # NONZERO dose against ANY carc_rs build raises TypeError (fail-closed loud,
+    # never a silently tiebreak-blind leaf). Default-off (champion) configs are
+    # served unchanged. When the mirror lands, this forwarding is already correct.
+    tiletie = {}
+    if float(getattr(leaf_cfg, "tiletie_dose", 0.0)) != 0.0:
+        tiletie = dict(
+            tiletie_dose=float(leaf_cfg.tiletie_dose),
+            tiletie_w_city=float(leaf_cfg.tiletie_w_city),
+            tiletie_w_road=float(leaf_cfg.tiletie_w_road),
+            tiletie_w_perim=float(leaf_cfg.tiletie_w_perim),
+            tiletie_w_lib=float(leaf_cfg.tiletie_w_lib),
+            tiletie_norm=float(leaf_cfg.tiletie_norm),
+        )
     return carc_rs.LeafConfigRs(
         sorted((int(k), float(v)) for k, v in leaf_cfg.closure_p.items()),
         float(leaf_cfg.bonus_cap),
@@ -151,6 +167,7 @@ def leaf_config_rs(leaf_cfg):
         **denial,
         **opencity,
         **jrules,
+        **tiletie,
     )
 
 
