@@ -31,6 +31,7 @@ for _p in (str(REPO / "scripts" / "tiletie"),
         sys.path.insert(0, _p)
 
 import mine_oracle_sep as M  # noqa: E402
+import term_gate2 as G2  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -172,3 +173,89 @@ def test_joins_counts_distinct_root_components():
                         side_root_root, placed))
     assert out["A"] == {"r1", "r2"}
     assert out["B"] == set()
+
+
+# --------------------------------------------------------------------------- #
+# 6. gate 2 — branch matrix + FINAL-slice firewall + cross-fit                 #
+# --------------------------------------------------------------------------- #
+def test_adjudicate_branch_matrix():
+    assert G2.adjudicate(-2.5, None) == "G2-HARMFUL"
+    assert G2.adjudicate(-2.0, None) == "G2-HARMFUL"
+    assert G2.adjudicate(0.0, None) == "G2-SCREEN-FAIL"
+    assert G2.adjudicate(1.99, None) == "G2-SCREEN-FAIL"
+    assert G2.adjudicate(2.0, -0.5) == "G2-FAIL-FINAL"
+    assert G2.adjudicate(2.0, 0.0) == "G2-FAIL-FINAL"
+    assert G2.adjudicate(2.0, 1.2) == "G2-WEAK"
+    assert G2.adjudicate(2.5, 2.4) == "G2-PASS"
+
+
+def test_adjudicate_refuses_missing_final_on_screen_pass():
+    import pytest
+    with pytest.raises(AssertionError):
+        G2.adjudicate(2.5, None)
+
+
+def _gate_toy(n_roots=40, effect=0.0, seed=7):
+    """Toy dev table: `g` picks arm 1 whose capture is N(effect, 1)."""
+    import random
+    rng = random.Random(seed)
+    table = []
+    for i in range(n_roots):
+        cap = effect + rng.gauss(0, 1)
+        table.append({
+            "rid": f"p{i}", "root_id": f"root{i}", "stratum": "selfplay",
+            "phase": "mid", "scale_all": 1.0, "acts": [100, 101],
+            "means": [0.0, cap], "pool": [0, 1], "champ_ix": None,
+            "fx": {100: {"g": 0.0}, 101: {"g": 1.0}},
+        })
+    return table
+
+
+def test_run_gate_screen_fail_never_touches_final():
+    menu = (("g+", ("g", 1.0)),)
+    table = _gate_toy(effect=0.0)
+
+    def loader():
+        raise AssertionError("FINAL slice was opened on a screen fail")
+
+    r = G2.run_gate(table, loader, menu=menu, candidate="g+")
+    assert r["branch"] in ("G2-SCREEN-FAIL", "G2-HARMFUL")
+    assert r["final"] is None
+
+
+def test_run_gate_pass_path_evaluates_final_once():
+    menu = (("g+", ("g", 1.0)),)
+    dev = _gate_toy(effect=3.0)          # huge effect -> screen passes
+    fin = _gate_toy(effect=3.0, seed=11)
+    calls = []
+
+    def loader():
+        calls.append(1)
+        return fin
+
+    r = G2.run_gate(dev, loader, menu=menu, candidate="g+")
+    assert calls == [1]
+    assert r["screen"]["z"] >= 2.0
+    assert r["final"]["candidate"] == "g+"
+    assert r["branch"] == "G2-PASS"
+    # capture arithmetic: mean over positions of means[pick]-means[0]
+    exp = sum(e["means"][1] for e in fin) / len(fin)
+    assert abs(r["final"]["mean"] - exp) < 1e-12
+
+
+def test_crossfit_selection_prefers_frozen_order_on_tie():
+    # two identical candidates -> the first in menu order must be selected
+    menu = (("a+", ("g", 1.0)), ("b+", ("g", 1.0)))
+    table = _gate_toy(effect=3.0)
+    s = G2.crossfit_screen(table, menu=menu)
+    assert set(s["fold_selected"]) == {"a+"}
+
+
+def test_crossfit_constant_feature_captures_zero():
+    menu = (("h+", ("h", 1.0)),)
+    table = _gate_toy(effect=3.0)
+    for e in table:
+        for f in e["fx"].values():
+            f["h"] = 5.0
+    s = G2.crossfit_screen(table, menu=menu)
+    assert s["mean"] == 0.0 and s["heldout_moved_frac"] == 0.0
