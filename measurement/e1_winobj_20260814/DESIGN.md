@@ -211,6 +211,28 @@ biased against it. The prereg therefore names the **paired win-rate z as
 co-primary** with a decision matrix committed before any game (see
 DEPLOY_PREREG). Not drafted further here unless a branch funds it.
 
+## 4b. AMENDMENT (2026-08-14, orchestrator check-in; recorded while the
+## control scan was mid-flight and BEFORE the pre-gate verdict was read)
+
+1. **The positive-control search is BOUNDED**, and the bound is: the fixed
+   449-game self-play bank, ≤ 1 K=3 TILES ply per game, a closeness prefilter
+   (skip when |flat_base_score| > 12 — a game already decided by more than 12
+   exact points cannot flip on 3 tiles), a 4M-node budget per solve
+   (BudgetExceeded ⇒ skip), early-stop at 4 hits. Worst case ≈ 449 replays +
+   2 solves per close game. The scripted-roll mode (--seeds × 3 policies) is
+   likewise bounded by its argument.
+2. **Certificate tolerance**: the control certificate's margin leg is
+   `sgn·(E_m[pick_margin] − E_m[pick_win]) ≥ −TIE` (not ≥ 0): a control of
+   the "margin-TIED within 1e-6, win-differing" shape — which the scan's
+   first hit turned out to be — is a valid (indeed the purest) disagreement,
+   and an exact-zero bound would reject it on float dust.
+3. Noted for honesty: a hard-to-find control is itself evidence for the
+   bounded-tiny branch — consistent with the §2 proposition (controls cannot
+   exist at K≤2 at all and require rare genuine gambles at K=3). The control
+   is a LIVENESS artifact; the read-rule statistic (divergence at SOLVED
+   plies, K≤2) is computed by the pre-gate independently of whether a control
+   is ever found.
+
 ## 5. Integrity
 
 Replay: per-game final scores must equal recorded (`champ_games` 449/449;

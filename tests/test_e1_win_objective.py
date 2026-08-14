@@ -305,7 +305,9 @@ def test_positive_control_objectives_disagree():
             "completed without a control; the positive-control obligation is "
             "UNMET (fail, not skip: a committed empty control file means the "
             "liveness proof is missing, not pending).")
-    h = hits[0]
+    # Prefer the strongest control (largest P(win) gap) so the disagreement
+    # assert can never ride on a tolerance-scale value.
+    h = max(hits, key=lambda x: x.get("delta_win_prob", 0.0))
     assert h["k_remaining"] == 3
 
     random.seed(int(h["deck_seed"]))
@@ -344,4 +346,7 @@ def test_positive_control_objectives_disagree():
     cm = {a: _bits(b) for a, b in rm["child_values"]}
     sgn = 1.0 if rm["to_move"] == 0 else -1.0
     assert sgn * (cw[pick_w] - cw[pick_m]) > S._WIN_TIE
-    assert sgn * (cm[pick_m] - cm[pick_w]) >= 0.0
+    # margin leg within TIE (DESIGN amendment §4b: a margin-TIED,
+    # win-differing control is the purest disagreement — exact-zero would
+    # reject it on float dust)
+    assert sgn * (cm[pick_m] - cm[pick_w]) >= -S._TIE

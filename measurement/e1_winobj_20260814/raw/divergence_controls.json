@@ -1,0 +1,139 @@
+{
+ "scanned_rolls": 150,
+ "note": "bank scan (bounded: 449 games, <=1 K=3 TILES ply each, |leaf|<=12 prefilter, 4M-node budget/solve, early-stop 4 hits) TERMINATED BY HAND after 3 hits were independently re-solved and verified; scanned_rolls is the last logged progress line. Deltas are mover-POV; delta_margin uses MARGIN-MODE child values, delta_win_prob uses WIN-MODE E[outcome]. NOTE the K=3 plies are PRE-latch: the archived champion chose these plies by PIMC search, not the solver - the control is about the solver's two objectives, hypothetically applied.",
+ "hits": [
+  {
+   "source": "selfplay_bank",
+   "deck_seed": 28000000071,
+   "ply": 138,
+   "k_remaining": 3,
+   "to_move": 1,
+   "banked_diff": 26,
+   "pick_margin": 652,
+   "pick_win": 939,
+   "delta_win_prob": 0.25,
+   "delta_margin": -0.0,
+   "margin_optimal": [
+    652,
+    655,
+    656,
+    659,
+    760,
+    761,
+    929,
+    930,
+    932,
+    935,
+    936,
+    939,
+    943,
+    960,
+    965,
+    966,
+    1024,
+    1025,
+    1070,
+    1071,
+    1128,
+    1131,
+    1133,
+    1134,
+    1138,
+    1239,
+    1472,
+    1733,
+    1734,
+    1845,
+    1846
+   ],
+   "win_optimal": [
+    939,
+    1134
+   ],
+   "margin_value": 4.0,
+   "win_value": 0.75,
+   "win_margin_component": 4.0,
+   "vals": {
+    "939": {
+     "Em": 4.0,
+     "Ew": 0.75,
+     "Em_winmode": 4.0
+    },
+    "652": {
+     "Em": 4.0,
+     "Ew": 1.0,
+     "Em_winmode": 4.0
+    }
+   },
+   "provenance": "re-solved (verify_hits_mp) after the bank scan logged the hit; rust production solver, budget 4M"
+  },
+  {
+   "source": "selfplay_bank",
+   "deck_seed": 28000000083,
+   "ply": 138,
+   "k_remaining": 3,
+   "to_move": 1,
+   "banked_diff": 4,
+   "pick_margin": 1371,
+   "pick_win": 1660,
+   "delta_win_prob": -0.0,
+   "delta_margin": 7.0,
+   "margin_optimal": [
+    1371
+   ],
+   "win_optimal": [
+    1660
+   ],
+   "margin_value": -14.5,
+   "win_value": 0.0,
+   "win_margin_component": -7.5,
+   "vals": {
+    "1371": {
+     "Em": -14.5,
+     "Ew": 0.0,
+     "Em_winmode": -5.0
+    },
+    "1660": {
+     "Em": -7.5,
+     "Ew": 0.0,
+     "Em_winmode": -7.5
+    }
+   },
+   "provenance": "re-solved (verify_hits_mp) after the bank scan logged the hit; rust production solver, budget 4M"
+  },
+  {
+   "source": "selfplay_bank",
+   "deck_seed": 28000000186,
+   "ply": 138,
+   "k_remaining": 3,
+   "to_move": 1,
+   "banked_diff": -22,
+   "pick_margin": 869,
+   "pick_win": 1533,
+   "delta_win_prob": 0.5,
+   "delta_margin": 7.0,
+   "margin_optimal": [
+    869
+   ],
+   "win_optimal": [
+    1533
+   ],
+   "margin_value": -9.0,
+   "win_value": 0.0,
+   "win_margin_component": -2.0,
+   "vals": {
+    "1533": {
+     "Em": -2.0,
+     "Ew": 0.0,
+     "Em_winmode": -2.0
+    },
+    "869": {
+     "Em": -9.0,
+     "Ew": 0.5,
+     "Em_winmode": -9.0
+    }
+   },
+   "provenance": "re-solved (verify_hits_mp) after the bank scan logged the hit; rust production solver, budget 4M"
+  }
+ ]
+}

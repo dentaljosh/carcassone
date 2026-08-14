@@ -1,5 +1,11 @@
 # E1 WIN-OBJECTIVE EXACT-K — DEPLOY-BUDGET CELL, PRE-REGISTRATION (DRAFT)
 
+> **🔚 CLOSED 2026-08-14 WITHOUT PROMOTION — pre-registered branch `K` fired
+> (divergence 0/1,858, CI95 ≤ 0.161%; [READOUT](READOUT.md)): the cell is NOT
+> owed and this draft is never promoted.** Kept as the record of the co-primary
+> design (margin z + paired win-rate z with a committed decision matrix) for
+> any future re-open under a changed premise. 0 games were played.
+
 > **⚠️ STATUS AT WRITING 2026-08-14: DRAFT, WRITTEN WITH THE BUILD, BEFORE THE
 > PRE-GATE PRODUCED ANY NUMBER.** This cell is bought **only if the pre-gate's
 > read-rule (DESIGN §4, committed first) fires branch F or F+** (divergence

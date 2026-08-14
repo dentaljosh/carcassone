@@ -64,17 +64,34 @@ FLAG_BAR = 0.10
 _WHEEL_DIR = None                    # set in workers via initializer
 
 
-def _init_worker(wheel_dir):
+def _init_worker(wheel_dir, profile_name):
+    """SPAWN-context initializer. R9 is env-LATCHED at first import (python
+    `base_deck` AND the rust wheel's OnceLock), so the profile's R9 expectation
+    must be exported BEFORE any heavy import — which is exactly why each
+    profile group gets its own spawn pool: a fork child would inherit the
+    parent's (walled) latch and the in-worker guard would fail closed (it did,
+    on the first run — that failure is what this initializer fixes)."""
     global _WHEEL_DIR
     _WHEEL_DIR = wheel_dir
     if wheel_dir:
         sys.path.insert(0, wheel_dir)
+    for _p in (str(REPO / "src"), str(REPO / "engine")):
+        if _p not in sys.path:
+            sys.path.insert(0, _p)
+    from carcassonne_ai import rules_profile   # cheap: no engine import
+    prof = rules_profile.resolve(profile_name)
+    os.environ[rules_profile.R9_ENV_VAR] = "1" if prof.r9_env_expected else "0"
+    rules_profile.activate(profile_name)
 
 
-def _resolve_profile_name(archive: dict) -> str:
-    """E4 rules-profile resolution, ev_loss.py convention: an explicit
-    `rules_profile` stamp wins; an archive with NO stamp is from a
-    pre-fixed_v1 build => `walled`."""
+def _resolve_profile_name(archive: dict) -> str | None:
+    """E4 rules-profile resolution: an explicit `rules_profile` stamp wins.
+    An UNSTAMPED archive returns None — meaning "resolve empirically by
+    replay" (`_probe_walled`): the ev_loss heuristic 'no stamp => walled' is
+    NOT safe here (measured: archive 1785975832_66810 carries no stamp but
+    only replays bit-exact under fixed_v1 — a fixed_v1-build game saved
+    before stamping). A 144-action bit-exact final-score replay is a far
+    stronger discriminator than the stamp's absence."""
     from carcassonne_ai import rules_profile
 
     stamped = archive.get("rules_profile")
@@ -84,7 +101,31 @@ def _resolve_profile_name(archive: dict) -> str:
                 f"archive stamps rules_profile={stamped!r} not in the registry "
                 f"({rules_profile.known()}) — failing closed")
         return str(stamped)
-    return "walled"
+    return None
+
+
+def _probe_walled(rec):
+    """Does this archive replay bit-exact under `walled`? Runs in the walled
+    spawn pool. Fast-fails on the first illegal action."""
+    import random
+
+    import numpy as np
+
+    from carcassonne_ai import rules_profile
+    from carcassonne_ai.game_wrapper import Game
+
+    prof = rules_profile.active()
+    assert prof.name == "walled"
+    random.seed(int(rec["deck_seed"]))
+    game = Game(enable_legal_moves_cache=True, **prof.game_kwargs())
+    board = game.get_init_board()
+    for a in rec["actions"]:
+        legal = np.flatnonzero(game.get_valid_moves(board))
+        if int(a) not in set(int(x) for x in legal):
+            return rec["_file"], False
+        board, _ = game.get_next_state(board, int(a))
+    final = [int(x) for x in board.state.scores]
+    return rec["_file"], final == [int(x) for x in rec["scores"]]
 
 
 def _grade_game(task):
@@ -105,11 +146,15 @@ def _grade_game(task):
     assert (_WHEEL_DIR is None) or carc_rs.__file__.startswith(_WHEEL_DIR), \
         f"stale carc_rs resolved: {carc_rs.__file__} (wanted {_WHEEL_DIR})"
 
-    prof = rules_profile.activate(profile_name)
+    prof = rules_profile.active()
+    if prof.name != profile_name:
+        raise AssertionError(
+            f"worker profile {prof.name!r} != task profile {profile_name!r} — "
+            "a task leaked across profile pools, STOP")
     if rules_profile.r9_env_on() != prof.r9_env_expected:
         raise AssertionError(
-            f"R9 env latched wrong for profile {profile_name} — run this corpus "
-            "group in a fresh worker pool")
+            f"R9 env latched wrong for profile {profile_name} — the spawn "
+            "initializer did not run first, STOP")
 
     deck_seed = int(rec["deck_seed"])
     actions = [int(a) for a in rec["actions"]]
@@ -244,22 +289,40 @@ def main(argv=None):
     sys.path.insert(0, str(REPO / "src"))
     from carcassonne_ai import rules_profile  # noqa: F401  (import check only)
     e4_by_prof = {}
+    unstamped = []
     for rec in e4:
-        e4_by_prof.setdefault(_resolve_profile_name(rec), []).append(rec)
+        prof = _resolve_profile_name(rec)
+        if prof is None:
+            unstamped.append(rec)
+        else:
+            e4_by_prof.setdefault(prof, []).append(rec)
+
+    ctx = mp.get_context("spawn")
+    # Empirical resolution for unstamped archives: probe under walled in a
+    # walled spawn pool; a non-reproducing archive goes to fixed_v1, where the
+    # grading pass's own integrity assert must then reproduce it bit-exact
+    # (so a two-profile-ambiguous or no-profile archive still fails closed).
+    if unstamped:
+        with ctx.Pool(min(args.workers, len(unstamped)), initializer=_init_worker,
+                      initargs=(args.wheel_dir, "walled")) as pool:
+            for fname, is_walled in pool.map(_probe_walled, unstamped):
+                rec = next(r for r in unstamped if r["_file"] == fname)
+                dest = "walled" if is_walled else "fixed_v1"
+                e4_by_prof.setdefault(dest, []).append(rec)
+                print(f"  [profile] unstamped {fname} -> {dest} (replay-verified)",
+                      flush=True)
 
     results = []
-    task_groups = [[("selfplay", r, "walled", args.budget) for r in selfplay]]
+    # ONE spawn pool PER PROFILE GROUP: R9 is latched at first import in both
+    # engines, so profile isolation is process isolation (see _init_worker).
+    groups = [("walled", [("selfplay", r, "walled", args.budget) for r in selfplay])]
     for prof, recs in sorted(e4_by_prof.items()):
-        task_groups.append([("e4", r, prof, recs and prof and args.budget or args.budget)
-                            for r in recs])
-        # (keep it simple: budget is the same for every group)
-        task_groups[-1] = [("e4", r, prof, args.budget) for r in recs]
-
-    for tasks in task_groups:
+        groups.append((prof, [("e4", r, prof, args.budget) for r in recs]))
+    for prof, tasks in groups:
         if not tasks:
             continue
-        with mp.Pool(args.workers, initializer=_init_worker,
-                     initargs=(args.wheel_dir,)) as pool:
+        with ctx.Pool(args.workers, initializer=_init_worker,
+                      initargs=(args.wheel_dir, prof)) as pool:
             for out in pool.imap_unordered(_grade_game, tasks, chunksize=1):
                 results.append(out)
                 if len(results) % 50 == 0:
