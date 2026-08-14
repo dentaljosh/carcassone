@@ -7184,3 +7184,43 @@ cheap follow-up; NOT funded here.
 untouched.** Deploy-cost sketch (mult ~1.33×/2×/4×; matched-wall-clock uniform control arm)
 preserved in DESIGN §6, never promoted. Artifacts `measurement/tieescalation_20260814/`.
 **Phase:** measurement-first (weekend round; queue Q3 resolved).
+
+## 2026-08-14 — E1 (WIN-PROBABILITY ENDGAME OBJECTIVE) — **BUILT, PROVEN, AND CLOSED ON PRE-REGISTERED BRANCH K AT 0 GAMES: divergence 0/1,858 solved plies (CI95 ≤ 0.161 %) — and the reason is a THEOREM, not a sample.** Track E's E1 queue slot is discharged
+
+**Context.** F6 established the solver maximizes MARGIN, not win (`endgame/mod.rs`); E1 was the
+queued switch. Weekend round (Joshua: "get agents working on 1-3"). Read-rule committed blind
+`d85cbd40` → build `34e98361` → wiring `19599cd7` → close-out `acdafb28`; merged 2026-08-14 evening
+(one union-conflict with surface C's parallel additions in `eval_fair_puct.py`, resolved; all
+suites green on the rebuilt wheel).
+
+**The objective (smallest semantic change that flips it):** node value = `(w, m)`, `w` =
+E[outcome] at 1/0.5/0 (draws are real — the ledger has a 55-55), `m` = E[margin] under the
+win-first policy; decision nodes lexicographic (win first, margin tie-break) so play stays
+deterministic and no information is discarded. Solver/search-side everywhere — **the leaf hash
+never moves** (surface-B inverted-liveness convention); clairvoyant+win refused loudly (it would
+be a live-looking no-op); old wheels fail loudly on a "win" request. Margin path structurally
+untouched; frozen golden suite + champion fingerprints green; 16 py + 6 rust tests; cost ratio
+1.0041 (moot).
+
+⭐ **THE LOAD-BEARING FINDING (DESIGN §2, a theorem):** at the deployed `exact_max_k = 2`, every
+chance bag is a singleton ⇒ the marginalized solve is deterministic minimax ⇒ **win-max ≡
+margin-max at every ply the champion hands to the solver.** Divergence requires K ≥ 3 — i.e.
+DEPTH, which is closed (CL-076/F13) and is not re-proposed. This CORRECTS F6 §0's framing: the
+(c) corner is real in principle and **vacuous at the production K**. The empirical pre-gate
+confirms the theorem where theory meets data: **0 divergent plies in 1,858** exact-solved plies
+over the full banked corpora (449 self-play + 31 E4, **480/480 bit-exact replays**; archived
+champion action = margin pick 1,858/1,858). ⭐ By-catch: an unsafe "no stamp ⇒ walled" epoch
+heuristic was found and fixed — unstamped archive 66810 is a fixed_v1-build game, now resolved
+**by replay**, not by assumption.
+
+**Positive controls:** 3 pinned real-game K=3 positions where the objectives provably disagree
+(best: a certain-win-by-2 vs gamble-half-the-win-probability-for-+7 — exactly the queued
+mechanism), recomputed by both modes in tests. So the switch is LIVE and the null is structural,
+not a wiring artifact.
+
+**Decision.** Branch K: bounded-tiny, **no deploy cell owed**. `DEPLOY_PREREG_DRAFT` (with its
+win-rate-z co-primary precedence design — the one cell in the program where margin-only reading
+would be structurally biased) retained unpromoted for the only re-open conditions: a production
+K ≥ 3 (itself closed) or a new draw source inside the latch. No band, no claim, no results row
+(0-game precedent). **`PRODUCTION.yaml` untouched.**
+**Phase:** measurement-first (weekend round; queue Q2 resolved — the weekend queue is now EMPTY).
