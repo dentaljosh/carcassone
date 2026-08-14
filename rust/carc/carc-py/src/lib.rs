@@ -1211,9 +1211,28 @@ impl PySearchConfig {
     }
 }
 
+pyo3::create_exception!(
+    carc_rs,
+    WindowTruncationError,
+    pyo3::exceptions::PyRuntimeError,
+    "F-c: the search reached a node whose entire legal move list fell OUTSIDE \
+     the action window (`measurement/window_truncation_20260813/DESIGN.md` §6-P3). \
+     A subclass of `RuntimeError`, so every existing `except RuntimeError` / \
+     `except BaseException` guard keeps working; the TYPE is what distinguishes a \
+     truncation-caused empty action set from any other cause. The message carries \
+     `EMPTY_MASK_DIAG={json}` — read it with \
+     `carcassonne_ai.window_truncation.parse_diag`."
+);
+
 fn search_err(e: search::SearchError) -> PyErr {
     match e {
         search::SearchError::Leaf(le) => leaf_err(le),
+        // F-c: truncation gets its own EXCEPTION TYPE; the other empty-mask
+        // causes stay `RuntimeError` but still carry the diagnosis, so the two
+        // can never be confused for one another in a dossier.
+        search::SearchError::EmptyMaskAtInterior(ref d) if d.is_truncation() => {
+            WindowTruncationError::new_err(e.to_string())
+        }
         other => pyo3::exceptions::PyRuntimeError::new_err(other.to_string()),
     }
 }
@@ -1897,6 +1916,8 @@ fn no_game() -> PyErr {
 #[pymodule]
 fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", carc_core::VERSION)?;
+    m.add("WindowTruncationError", m.py().get_type::<WindowTruncationError>())?;
+    m.add("EMPTY_MASK_DIAG_MARKER", search::EMPTY_MASK_DIAG_MARKER)?;
     m.add_function(wrap_pyfunction!(shuffle_indices, m)?)?;
     m.add_function(wrap_pyfunction!(seed_words, m)?)?;
     m.add_function(wrap_pyfunction!(genrand_uint32_stream, m)?)?;

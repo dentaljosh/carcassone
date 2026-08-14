@@ -191,8 +191,10 @@ def failed_record(cell: tuple, exc: BaseException, t0: float) -> dict:
     ``winner``/``margin``, so every statistic in :func:`summarize` skips it by
     construction and no half-game can leak into the paired margin."""
     import traceback
+
+    from carcassonne_ai import window_truncation as _WT
     deck_seed, joshua_seat = int(cell[0]), int(cell[1])
-    return {
+    rec = {
         "schema": SCHEMA + "/failed",
         "failed": True,
         "deck_seed": deck_seed,
@@ -210,6 +212,18 @@ def failed_record(cell: tuple, exc: BaseException, t0: float) -> dict:
         "finished_at": time.time(),
         "cell_secs": round(time.time() - t0, 2),
     }
+    # F-c: an exclusion that says WHY. Before this, the 2026-08-13 dossier had
+    # only the exception text and had to reconstruct the root by replaying the
+    # whole cell. `window_diag` is the search's own payload (cause / mask
+    # counters / window / depth / dropped coordinates) and `window_root_record`
+    # is the census-ready root `play_harness` already wrote to the sink.
+    rec["window_truncation"] = _WT.is_window_truncation(exc)
+    rec["window_diag"] = _WT.parse_diag(exc)
+    root = getattr(exc, "window_root_record", None)
+    if root is not None:
+        rec["window_root_record"] = root
+        rec["window_root_path"] = getattr(exc, "window_root_path", None)
+    return rec
 
 
 def _play_cell(cell: tuple) -> dict:

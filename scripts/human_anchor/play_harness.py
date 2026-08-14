@@ -210,6 +210,7 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
     choose_action(board)->int + the telemetry attrs). Returns a game record
     {manifest, moves, result}. Never records a peek at the true deck."""
     from carcassonne_ai import mirror_protocol as MP
+    from carcassonne_ai import window_truncation as _WT
 
     random.seed(int(deck_seed))          # fixes the engine shuffle (root_replay contract)
     board = game.get_init_board()
@@ -230,7 +231,26 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
         legal = C.legal_action_ids(game, board)
         before = _snapshot(agent)
         t0 = time.perf_counter()
-        a = int(agent.choose_action(board))
+        # F-c (`measurement/window_truncation_20260813/DESIGN.md` §7). This loop is
+        # the ONLY place that holds everything an action-window crash needs to be
+        # reconstructed — the deck seed, the applied-action prefix and the GLOBAL
+        # ply — and it used to throw all three away on the way up to
+        # `h2h._play_cell`, which is why the 2026-08-13 crash needed a full replay
+        # (`reconstruct_crash_root.py`) to recover its root. The context manager
+        # is inert unless the search raises an empty-mask error, and it ALWAYS
+        # re-raises. `move_idx` is read off the AGENT (its own decision counter),
+        # never from `move_idx` below — that one is the global ply.
+        with _WT.capture(deck_seed=deck_seed, ply=len(moves),
+                         actions=[m["action"] for m in moves],
+                         player_to_move=seat, agent=agent,
+                         raiser_is_champion=MP.is_mirrored(agent),
+                         rules_profile=(config.get("rules_profile")
+                                        or config.get("profile")),
+                         champion_seed=getattr(agent, "_seed", None),
+                         checksum=game.string_representation(board),
+                         seats=dict(agent_labels),
+                         extra={"agent_label": agent_labels.get(seat)}):
+            a = int(agent.choose_action(board))
         ms = (time.perf_counter() - t0) * 1000.0
         after = _snapshot(agent)
         if len(legal) == 1:

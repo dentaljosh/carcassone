@@ -61,10 +61,13 @@ mod fxhash;
 /// session unused.
 pub mod session;
 pub mod trace;
+/// F-c: the empty-action-mask diagnostic.  ERROR PATH ONLY — see the module doc.
+pub mod window_diag;
 
 pub use fxhash::FxBuildHasher;
 pub use session::{Reroot, SearchSession};
 pub use trace::{JsonlTrace, TraceSink};
+pub use window_diag::{DroppedPlacement, EmptyMaskCause, EmptyMaskDiag};
 
 pub type NodeId = u32;
 
@@ -137,12 +140,29 @@ impl Default for SearchConfig {
     }
 }
 
+/// The token that separates the human sentence from the machine payload in an
+/// [`SearchError::EmptyMaskAtInterior`] message.  A RECORDED CONTRACT:
+/// `carcassonne_ai.window_truncation.parse_diag` splits on exactly this.
+pub const EMPTY_MASK_DIAG_MARKER: &str = "EMPTY_MASK_DIAG=";
+
 #[derive(Debug)]
 pub enum SearchError {
     Leaf(LeafError),
     Engine(String),
     /// `node.valid_actions[0]` on an empty list — the Python raises `IndexError`.
+    ///
+    /// Raised by [`Searcher::select_child_puct`], which sees only the node and
+    /// so cannot say WHY the list is empty.  [`Searcher::simulate`] upgrades it
+    /// to [`SearchError::EmptyMaskAtInterior`] on the way out, where the game
+    /// state at the node is still in hand.  It therefore no longer escapes the
+    /// search — the variant is kept so the bare (diagnosis-free) case remains
+    /// representable.
     NoLegalActionsAtInterior,
+    /// F-c (DESIGN §7): the same event, DIAGNOSED — carries the mask counters,
+    /// the window, the descent that reached the node and the dropped placements,
+    /// and says whether the window truncated the move list or something else did
+    /// (`diag.cause`).
+    EmptyMaskAtInterior(Box<EmptyMaskDiag>),
     /// `next(iter(root.children))` on an empty dict — the Python raises.
     NoRootChildren,
 }
@@ -161,6 +181,25 @@ impl std::fmt::Display for SearchError {
             SearchError::NoLegalActionsAtInterior => {
                 write!(f, "PUCT reached a node with no valid actions (Python IndexError)")
             }
+            // The leading clause is byte-identical to the bare variant above, on
+            // purpose: `h2h.failed_record`, CONFIRM_EXCLUSIONS and every existing
+            // grep key off that sentence.  Everything after it is additive.
+            SearchError::EmptyMaskAtInterior(d) => write!(
+                f,
+                "PUCT reached a node with no valid actions (Python IndexError) \
+                 [cause={} n_total={} n_overflow={} window={}@({},{}) depth={} phase={}] \
+                 {}{}",
+                d.cause.value(),
+                d.n_total,
+                d.n_overflow,
+                d.window_size,
+                d.origin_row,
+                d.origin_col,
+                d.depth,
+                d.phase,
+                EMPTY_MASK_DIAG_MARKER,
+                d.to_json()
+            ),
             SearchError::NoRootChildren => {
                 write!(f, "root has no children (Python StopIteration)")
             }
@@ -613,7 +652,19 @@ impl<'a> Searcher<'a> {
         let mut node = root;
 
         while self.tree.get(node).expanded && !self.tree.get(node).is_terminal {
-            let action = self.select_child_puct(node)?;
+            // F-c (DESIGN §7).  The Ok arm is the pre-fix `?` verbatim — the only
+            // change is that the ERROR arm now stops to say why, while `g` (the
+            // state AT this node) is still in hand.  Nothing here runs unless the
+            // search is already dead, so the no-fire path is untouched.
+            let action = match self.select_child_puct(node) {
+                Ok(a) => a,
+                Err(SearchError::NoLegalActionsAtInterior) => {
+                    return Err(SearchError::EmptyMaskAtInterior(Box::new(
+                        EmptyMaskDiag::collect(&g, &acts, sim_idx),
+                    )));
+                }
+                Err(e) => return Err(e),
+            };
             g.advance(action).map_err(SearchError::Engine)?;
             acts.push(action);
             let existing = self.tree.get(node).children.get(&action).copied();
