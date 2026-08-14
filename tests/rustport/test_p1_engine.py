@@ -29,14 +29,31 @@ carc_rs = pytest.importorskip("carc_rs", reason="build with `maturin develop --r
 # MUST precede every `carcassonne_ai` import below: `reconcile_engine` imports
 # `prod_leaf_env`, which REFUSES to load once `carcassonne_ai` is in sys.modules
 # (it shapes the leaf knobs that `virtual_score_v2.DEFAULT_CONFIG` freezes at ITS
-# import).  Without this line the module imports `carcassonne_ai.action_space`
-# first and `import reconcile_engine` then raises, which is a collection ERROR —
-# measured 2026-08-13 at 530368de, for this file AND the other five
-# `tests/rustport/` modules, under `pytest tests/` as well as standalone.  The
-# same one-line fix applies to each of them; only this file is in scope here.
-# It is also what makes the R9 re-exec at the bottom of this file work, since
-# that runs this module as a script.  Sets exactly the env `reconcile_engine`
-# would have set anyway, only early enough to be honoured.
+# import).  Without this line THIS module imported `carcassonne_ai.action_space`
+# first and `import reconcile_engine` then raised, which is a collection ERROR —
+# measured 2026-08-13 at 530368de, standalone as well as under `pytest tests/`.
+#
+# ⚠️ This file was the ONLY `tests/rustport/` module with that ordering bug, and
+# this line is NOT owed to any of the others (verified 2026-08-13, correcting an
+# earlier version of this comment that claimed it was).  `test_p2_leaf`,
+# `test_p3_search`, `test_p5_flags`, `test_lockstep_fuzz` and
+# `test_cloister_scan_fix_parity` never `import prod_leaf_env` themselves
+# (`grep -c` = 0 in all five) and do not need to: each imports its GATE SCRIPT
+# first — `reconcile_leaf` / `trace_search` / `even_shift_property` /
+# `lockstep_fuzz` — and those import `prod_leaf_env` at their own module level,
+# so the freeze is already won before `carcassonne_ai` is reached.  All five
+# collect and pass standalone, both before and after this fix.
+#
+# The SESSION-level failure was a different thing with the same symptom:
+# COLLECTION ORDER.  `tests/android/` sorts before `tests/rustport/` and imports
+# `carcassonne_ai` (via `android_bridge`), so by the time any rustport module is
+# imported the freeze race is already lost no matter what that module does.
+# That is handled once, for the whole session, in `tests/conftest.py` — see the
+# `prod_leaf_env` block at the top of it.  Do not "fix" the other five here.
+#
+# This line is also what makes the R9 re-exec at the bottom of this file work,
+# since that runs this module as a script.  Sets exactly the env
+# `reconcile_engine` would have set anyway, only early enough to be honoured.
 import prod_leaf_env  # noqa: E402,F401
 
 import numpy as np  # noqa: E402
