@@ -70,6 +70,67 @@ if _session_collects_rustport():
         del _saved_sys_path
 
 
+# ---------------------------------------------------------------------------
+# Window-overflow audit latch (the `CARCASSONNE_WINDOW_AUDIT` ordering race)
+# ---------------------------------------------------------------------------
+# Same failure shape as the block above, different flag. Three rustport modules
+# set `os.environ["CARCASSONNE_WINDOW_AUDIT"] = "1"` at import with the comment
+# "must precede game_wrapper import" — and standalone that is true and works.
+# Under a whole-tree run it is too late: `tests/android/` has already imported
+# `game_wrapper`, which latched `_WINDOW_AUDIT` from the env AT ITS import, so
+# the assignment lands after the latch and the audit stays OFF. The lockstep
+# drivers then read zero audit records where they require exactly one per ply
+# (`lockstep_fuzz.fail("window_audit_records", ply, len(audit), 1)`), so 26
+# tests across those three modules fail on a flag, not on a divergence
+# (measured 2026-08-13: 30 failures in `pytest tests/android tests/golden
+# tests/release tests/rustport`, 4 with the audit on).
+#
+# Deliberately NOT fixed by presetting the env var for the whole session, even
+# though that is the smaller diff. `_WINDOW_AUDIT` is read INSIDE
+# `_compute_mask` on every legal-mask computation, and when on it appends a
+# record to a module-global list AND calls `_count_out_of_window_tiles` (a scan
+# over placed tiles). Only the lockstep drivers drain that list; every other
+# test in the suite would append to it forever. A session-wide preset therefore
+# buys an unbounded list and a per-mask cost across the entire suite, on a box
+# with a documented pytest-memory history — for the benefit of three modules.
+#
+# `_WINDOW_AUDIT` is a module global read at CALL time (only its initial value
+# comes from the env), and the sibling `_WINDOW_STRICT` is already documented as
+# "tests monkeypatch `game_wrapper._WINDOW_STRICT`". So the narrow fix is to
+# monkeypatch the global for exactly the modules that ask for it, which is both
+# import-order-proof AND auto-restored per test. The modules keep their
+# `os.environ` assignment: it is still correct standalone, and it is what any
+# subprocess they spawn inherits.
+#
+# The audit is read-only instrumentation — it never touches the mask, the raise
+# condition, or any leaf/eval semantic (game_wrapper.py, "Window-overflow audit"
+# block) — so this changes nothing for the tests it covers except making the
+# records they already expect actually appear.
+_WINDOW_AUDIT_MODULES = frozenset({
+    "test_lockstep_fuzz",
+    "test_p5_flags",
+    "test_cloister_scan_fix_parity",
+})
+
+
+@pytest.fixture(autouse=True)
+def _window_audit_latch(request, monkeypatch):
+    """Force `game_wrapper._WINDOW_AUDIT` on for the modules whose drivers
+    require the per-decision audit records, regardless of import order.
+
+    Deliberately NOT a yield-fixture: this runs for every test in the suite, and
+    a generator fixture with an early `return` raises `StopIteration` in pytest.
+    The restore is monkeypatch's; the post-test drain is a finalizer.
+    """
+    if request.module.__name__.rsplit(".", 1)[-1] not in _WINDOW_AUDIT_MODULES:
+        return
+    from carcassonne_ai import game_wrapper as gw
+
+    monkeypatch.setattr(gw, "_WINDOW_AUDIT", True, raising=True)
+    gw.drain_window_audit()      # no records from a previous test leak in
+    request.addfinalizer(gw.drain_window_audit)   # and none leak out
+
+
 def pytest_configure(config):
     if os.environ.get("CARC_TEST_COMPACT_LEAF") == "1":
         from carcassonne_ai import virtual_score as _vs
