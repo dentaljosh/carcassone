@@ -107,3 +107,12 @@ scripts/m5_bench/MANIFEST.json
 # F9/A3: worktree-local shadow of the carc_rs extension, so a build here can
 # never reach the shared venv while a live eval farm is importing from it.
 .rsshadow/
+
+# Tile-tie OUT-OF-FAMILY re-pricing (2026-08-14): the per-leg positions jsonl are
+# ~9M of duplicated board checksums and are MECHANICALLY REPRODUCIBLE from the
+# committed permutation seed (20260814) + the pricing corpus:
+#   scripts/tiletie/build_oof_plan.py --source-dir <pricing positions_pooled>
+# The provenance that is NOT reproducible from a seed -- POSITIONS_PLAN.json,
+# ARMS.json, PILOT_RIDS.json, POSITION_ORDER.json, PLAN_SUMMARY.json -- stays TRACKED.
+measurement/tiletie_oof_20260814/positions_*/*.jsonl
+measurement/tiletie_oof_20260814/positions_chunk*/

@@ -1,0 +1,38 @@
+{
+ "schema": "carcassonne-tiletie-oof-pilot/v1",
+ "design_doc": "measurement/tiletie_oof_20260814/DESIGN.md",
+ "scope": "DESIGN §6 COST PILOT. Reads ONLY wall/elapsed/integrity. No value, no mean, no sd, no delta was read from any record. The 20 pilot positions are EXCLUDED from the main read (G-PILOT).",
+ "n_positions": 20,
+ "n_legs_records": 43,
+ "playouts": 2752,
+ "judge": "tier1-greedy",
+ "backend": "python",
+ "m": 32,
+ "world_seed_salt": "tiletie-v1",
+ "workers": 20,
+ "integrity": {
+  "records": 43,
+  "ok": 43,
+  "crn_verified": 43,
+  "world_seed_identical_to_primary": 43,
+  "playout_seed_identical_to_primary": 43,
+  "arm_identical_to_primary": 43,
+  "note": "⭐ The CRN cross-judge pairing is CONFIRMED: on all 43 legs the out-of-family judge's world_seeds and playout_seeds are BIT-IDENTICAL to the in-family clair-puct record for the same rid, and pick_a/pick_b match. Both judges therefore score the same 32 deck completions, arm for arm. This is DESIGN §3.1, verified rather than assumed."
+ },
+ "cost": {
+  "sum_elapsed_secs": 5994.7,
+  "c_tier1_worker_s_per_playout": 2.1783,
+  "median_record_secs": 152.6,
+  "max_record_secs": 187.2,
+  "pre_pilot_transplant": 5.2599,
+  "realized_over_transplant": 0.414,
+  "note": "The DESIGN §2.4 transplant (autopsy 0.534x x pricing c_python 9.85 = 5.26) was 2.4x HIGH for this corpus -- as flagged, it came from a fixed_v1 E4 probe while this corpus is 94% walled self-play with a different phase mix. ⚠️ Measured on a box carrying the pilot's own ~26 workers, so it is an UPPER bound on a quiet box; the ETA is conservative in the right direction."
+ },
+ "mechanical_rule": {
+  "rule_1_abort": "n_failed > 0 OR any crn_verified false OR any world-seed mismatch => ABORT. NOT TRIGGERED (0 / 0 / 0).",
+  "rule_2_launch_shape": "H = 66112 x c / (3600 x 30) = 1.333 wall-hours at W30. H <= 8.0 => LAUNCH THE FULL 502-POSITION MAIN READ (all 4 chunks).",
+  "H_wall_hours_at_W30": 1.333,
+  "worker_hours": 40.0,
+  "decision": "LAUNCH FULL 502 / 4 CHUNKS"
+ }
+}
