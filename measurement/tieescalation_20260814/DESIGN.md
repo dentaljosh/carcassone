@@ -1,5 +1,15 @@
 # TIE-TRIGGERED SEARCH ESCALATION ("the vart") — PRE-GATE DESIGN
 
+> **OUTCOME STAMP (post-hoc, 2026-08-14): the ladder ran and fired
+> [READ_RULE.md](READ_RULE.md) branch `E-FLAT` —
+> [LADDER_READOUT.md](LADDER_READOUT.md): no escalation rung captures the
+> base-rung oracle regret (2× z −0.26 · 4× z +1.00 · 10× z +0.84 vs the
+> committed ratio ≥0.35 ∧ z ≥ +2 bar; 10× also failed coverage 0.799 < 0.85).
+> Deeper same-shape search MOVES picks at tied plies (18/24/31% pick-change)
+> but does not IMPROVE them — the §2 weakness (the top-of-ladder price
+> collapse applying at tied plies too) is what the data shows. The 30% holdout
+> was NEVER opened and stays unburned. The axis closes per the read-rule.**
+
 > **STATUS AT WRITING: DESIGN, COMMITTED BEFORE ANY LADDER SEARCH RAN.** The
 > read-rule ([READ_RULE.md](READ_RULE.md)) and the instrument
 > (`scripts/tiletie/escalation_ladder.py`, `tests/test_tieescalation.py`) are

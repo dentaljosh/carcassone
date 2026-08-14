@@ -1,5 +1,10 @@
 # TIE-TRIGGERED SEARCH ESCALATION — READ-RULE (committed BEFORE the ladder ran)
 
+> **ADJUDICATED 2026-08-14 — branch `E-FLAT`
+> ([LADDER_READOUT.md](LADDER_READOUT.md)): no rung cleared the committed
+> bars; the holdout slice was never opened and stays unburned. THIS READ-RULE
+> IS SPENT; any future escalation design needs a fresh one.**
+
 > **STATUS AT WRITING: COMMITTED BEFORE ANY LADDER SEARCH OR CAPTURE NUMBER
 > EXISTED ANYWHERE.** The instrument (`scripts/tiletie/escalation_ladder.py`)
 > is committed alongside; `LADDER_READOUT.*` does not exist at the time of

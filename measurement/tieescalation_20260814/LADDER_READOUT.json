@@ -1,0 +1,97 @@
+{
+  "schema": "carcassonne-tieescalation-ladder/v1",
+  "phase": "analyze",
+  "slice": "dev",
+  "read_rule": "measurement/tieescalation_20260814/READ_RULE.md",
+  "bars": {
+    "capture_ratio": 0.35,
+    "z": 2.0,
+    "coverage": 0.85,
+    "error_frac": 0.05
+  },
+  "n_slice": 522,
+  "n_rows": 522,
+  "counters": {
+    "oracle_integrity_problems": 0
+  },
+  "denom": {
+    "mean": 0.28030397575059596,
+    "se": 0.07079902915128586,
+    "n": 518
+  },
+  "rungs": {
+    "1376": {
+      "rung": 1376,
+      "n_pairs": 518,
+      "n_base_resolved": 518,
+      "coverage": 0.9923371647509579,
+      "mean_capture": 0.0,
+      "se": 0.0,
+      "z": NaN,
+      "pick_change_rate_arm": 0.0,
+      "pick_change_rate_action": 0.0,
+      "outside_scored_rate": 0.0,
+      "secs_mean": 2.6254463601532567,
+      "secs_median": 2.35,
+      "capture_ratio": 0.0,
+      "deploy_multiplier_est": 1.0
+    },
+    "2752": {
+      "rung": 2752,
+      "n_pairs": 471,
+      "n_base_resolved": 518,
+      "coverage": 0.9022988505747126,
+      "mean_capture": -0.009443274326555604,
+      "se": 0.03623809594125299,
+      "z": -0.2605896938366869,
+      "pick_change_rate_arm": 0.18259023354564755,
+      "pick_change_rate_action": 0.18259023354564755,
+      "outside_scored_rate": 0.09073359073359073,
+      "secs_mean": 5.057557471264368,
+      "secs_median": 4.839,
+      "capture_ratio": -0.03368940558644761,
+      "deploy_multiplier_est": 1.33
+    },
+    "5504": {
+      "rung": 5504,
+      "n_pairs": 443,
+      "n_base_resolved": 518,
+      "coverage": 0.8486590038314177,
+      "mean_capture": 0.0494105446436776,
+      "se": 0.04950434356304267,
+      "z": 0.9981052385990006,
+      "pick_change_rate_arm": 0.24153498871331827,
+      "pick_change_rate_action": 0.24153498871331827,
+      "outside_scored_rate": 0.14478764478764478,
+      "secs_mean": 10.238674329501915,
+      "secs_median": 9.44,
+      "capture_ratio": 0.17627486200067766,
+      "deploy_multiplier_est": 1.99
+    },
+    "13760": {
+      "rung": 13760,
+      "n_pairs": 417,
+      "n_base_resolved": 518,
+      "coverage": 0.7988505747126436,
+      "mean_capture": 0.05021825870685946,
+      "se": 0.059849575241771306,
+      "z": 0.8390746050242679,
+      "pick_change_rate_arm": 0.3117505995203837,
+      "pick_change_rate_action": 0.3117505995203837,
+      "outside_scored_rate": 0.19498069498069498,
+      "secs_mean": 25.920337164750958,
+      "secs_median": 24.907,
+      "capture_ratio": 0.17915642677698512,
+      "deploy_multiplier_est": 3.97
+    }
+  },
+  "base_agreement_selfplay": {
+    "n": 485,
+    "agree": 485,
+    "rate": 1.0
+  },
+  "verdict": {
+    "branch": "E-FLAT"
+  },
+  "generated_utc": "2026-08-14T20:28:28Z"
+}
