@@ -40,6 +40,7 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 # Targeted denial (2026-08-11) likewise — same rule.
 # Open-city discipline (2026-08-12) likewise — same rule.
 # The J-rules bundle (2026-08-13) likewise — same rule.
+# The tile-tie tie-break (2026-08-14) likewise — same rule.
 _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
                                  "farm_base_off": False, "farm_growth_off": False,
                                  "v29_phase_beta": 0.0, "v29_phase_norm": 1.0,
@@ -47,7 +48,10 @@ _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.
                                  "denial_open_max": 2,
                                  "opencity_dose": 0.0, "opencity_size_min": 4.0,
                                  "opencity_edge_min": 2, "opencity_symmetric": True,
-                                 "jrules_dose": 0.0, "jrules_mask": 31}
+                                 "jrules_dose": 0.0, "jrules_mask": 31,
+                                 "tiletie_dose": 0.0, "tiletie_w_city": 1.0,
+                                 "tiletie_w_road": 1.0, "tiletie_w_perim": 0.0,
+                                 "tiletie_w_lib": 0.0, "tiletie_norm": 8.0}
 
 
 def _leaf_dict(cfg) -> dict:
@@ -221,4 +225,18 @@ def _assert_cy_float_path(cfg) -> None:
               f"{getattr(cfg, 'opencity_dose', 0.0)}) — the candidate leaf leaves the "
               "Cython fast path for the pure-Python flat leaf (bit-exact, much slower "
               "per leaf). Intended only with --backend rust, where no Python leaf runs.",
+              file=_sys.stderr)
+    # Tile-tie tie-break: the same no-cy pattern, PLUS a hard warning that (unlike
+    # denial/open-city/jrules) there is NO rust mirror yet — a nonzero dose with
+    # --backend rust raises TypeError in rust_agent.leaf_config_rs (fail-closed).
+    # Sanity IS fatal: norm must be positive (t = raw / norm inside the bounded map).
+    if getattr(cfg, "tiletie_dose", 0.0) != 0.0:
+        import sys as _sys
+        if float(getattr(cfg, "tiletie_norm", 8.0)) <= 0.0:
+            raise ValueError("--cand-leaf-json: tiletie_norm must be > 0 "
+                             "(it scales the bounded map t/(1+|t|))")
+        print("[leaf-override] WARNING: tile-tie tie-break set (tiletie_dose="
+              f"{getattr(cfg, 'tiletie_dose', 0.0)}) — the candidate leaf leaves the "
+              "Cython fast path for the pure-Python flat leaf; NO rust mirror exists "
+              "yet, so --backend rust FAILS CLOSED (TypeError) on this config.",
               file=_sys.stderr)

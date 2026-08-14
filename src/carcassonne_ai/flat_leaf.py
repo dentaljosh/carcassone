@@ -1649,6 +1649,170 @@ def flat_jrules_term(state, player: int, decomp: Decomp, cfg, base=None) -> floa
     return math.fsum(parts)
 
 
+# --------------------------------------------------------------------------- #
+# TILE-TIE TIE-BREAK — a bounded micro-term that discriminates only where the   #
+# leaf is (near-)silent (measurement/tiletie_term_20260814/DESIGN.md,           #
+# building 2026-08-14)                                                          #
+# --------------------------------------------------------------------------- #
+
+def _tiletie_wallin(state, decomp, side_root, root_positions, root_finished,
+                    root_open_n, terrain) -> list:
+    """Per-player closure-cell constrainedness of CLAIMED unfinished open
+    components of one terrain (city or road).
+
+    For each component with a strict weighted-meeple majority owner (BIG=2, the
+    ``flat_opencity_term`` / ``_final_scores`` semantics), unfinished and
+    closable (``open_n > 0``): sum over the component's distinct open cells e —
+    the empty in-bounds cells across its open edges, the same derivation as
+    ``decompose``'s ``*_root_emptyadj`` — of ``occ4(e) - 1``, where ``occ4`` is
+    the count of occupied in-bounds orthogonal neighbours of e (>= 1 by
+    construction, so a lone frontier cell contributes 0 and every additional
+    wall around a closure cell contributes 1).
+
+    Returns ``[wall_p0, wall_p1]`` as plain floats (ints promoted)."""
+    board = state.board
+    H = len(board)
+    W = len(board[0]) if H else 0
+    counts: dict = {}   # root -> [w_p0, w_p1]
+    for pl in (0, 1):
+        for mp in state.placed_meeples[pl]:
+            cws = mp.coordinate_with_side
+            r = cws.coordinate.row
+            c = cws.coordinate.column
+            side = cws.side
+            if board[r][c].get_type(side) != terrain:
+                continue
+            root = side_root.get((r, c, side))
+            if root is None:
+                continue
+            ent = counts.get(root)
+            if ent is None:
+                ent = [0, 0]
+                counts[root] = ent
+            ent[pl] += _meeple_weight(mp.meeple_type)
+    wall = [0.0, 0.0]
+    for root, cnt in counts.items():
+        if cnt[0] > cnt[1]:
+            owner = 0
+        elif cnt[1] > cnt[0]:
+            owner = 1
+        else:
+            continue                     # tied -> nobody owns the component
+        if root_finished[root]:
+            continue
+        if root_open_n[root] <= 0:
+            continue                     # unclosable (D16 board-edge object)
+        open_cells: set = set()
+        for (r, c, side) in root_positions[root]:
+            step = _OPP.get(_SIDE_IX[side])
+            if step is None:
+                continue                 # CENTER etc. never crosses a border
+            nr, nc = r + step[0], c + step[1]
+            if 0 <= nr < H and 0 <= nc < W and board[nr][nc] is None:
+                open_cells.add((nr, nc))
+        total = 0
+        for (er, ec) in open_cells:
+            occ = 0
+            if er > 0 and board[er - 1][ec] is not None:
+                occ += 1
+            if er + 1 < H and board[er + 1][ec] is not None:
+                occ += 1
+            if ec > 0 and board[er][ec - 1] is not None:
+                occ += 1
+            if ec + 1 < W and board[er][ec + 1] is not None:
+                occ += 1
+            total += occ - 1
+        wall[owner] += float(total)
+    return wall
+
+
+def flat_tiletie_term(state, player: int, decomp: Decomp, cfg) -> float:
+    """The tile-tie tie-break term T, bounded in (-1, 1). The leaf ADDS
+    ``cfg.tiletie_dose * T`` (see flat_virtual_score_v2). Dose 0.0 == the term
+    never runs (early branch in the callers — this function is not consulted).
+
+    Motivation (measurement/tiletie_pricing_20260812, pooled n=733): the
+    production leaf exactly ties the top TILE placement on ~66% of champion tile
+    plies, the tied sets carry real value spread (S1a z +4.26), and the
+    champion's 11008-sim search leaves +0.252 pts/tied ply of it on the table
+    (z +3.43). CL-065 forbids a learned tie-breaker, so T is hand-crafted
+    geometry:
+
+        raw = w_city  * (wall_city(opp)  - wall_city(self))
+            + w_road  * (wall_road(opp)  - wall_road(self))
+            + w_perim * F_perim          # sum of occ4 over state.open_positions
+            + w_lib   * F_lib            # len(state.open_positions)
+        T   = t / (1 + |t|),  t = raw / tiletie_norm
+
+    * ``wall_*`` — closure-geometry guard (see ``_tiletie_wallin``): don't brick
+      up the cells your own claimed features still need to close; do constrain
+      the opponent's. The leaf's ``closure_p[open_n]`` counts open cells but is
+      blind to how fillable they are — inside an exact tie set every existing
+      leaf term is equal across arms by definition, so this is new signal.
+    * ``F_perim`` / ``F_lib`` — board-frontier shape terms. ⚠️ Both are
+      PLAYER-INDEPENDENT, so a nonzero ``w_perim`` / ``w_lib`` breaks leaf
+      antisymmetry (the ``denial_dose`` wart, disclosed the same way). The
+      default weights (city 1, road 1, perim 0, lib 0) keep T antisymmetric.
+    * The bounded map ``t/(1+|t|)`` is strictly monotone — within-tie ORDERING
+      never depends on ``tiletie_norm`` or the dose — and uses only exactly-
+      representable float ops (no libm tanh), for the future rust mirror.
+    * |T| < 1 makes ``tiletie_dose`` a hard cap on the leaf perturbation: any
+      dose below the leaf's own value-lattice step (census: non-tie top-2 gap
+      p5 = 0.15) reorders exact and hairline ties ONLY.
+
+    Determinism: contributions are ``fsum``-reduced; the wallin sets/dicts are
+    iterated only through order-independent reductions (sums)."""
+    parts: list = []
+    w_city = getattr(cfg, "tiletie_w_city", 1.0)
+    w_road = getattr(cfg, "tiletie_w_road", 1.0)
+    if w_city != 0.0:
+        wc = _tiletie_wallin(state, decomp, decomp.city_side_root,
+                             decomp.city_root_positions, decomp.city_root_finished,
+                             decomp.city_root_open_n, TerrainType.CITY)
+        parts.append(w_city * (wc[1 - player] - wc[player]))
+    if w_road != 0.0:
+        wr = _tiletie_wallin(state, decomp, decomp.road_side_root,
+                             decomp.road_root_positions, decomp.road_root_finished,
+                             decomp.road_root_open_n, TerrainType.ROAD)
+        parts.append(w_road * (wr[1 - player] - wr[player]))
+    w_perim = getattr(cfg, "tiletie_w_perim", 0.0)
+    w_lib = getattr(cfg, "tiletie_w_lib", 0.0)
+    if w_perim != 0.0 or w_lib != 0.0:
+        board = state.board
+        H = len(board)
+        W = len(board[0]) if H else 0
+        perim = 0
+        n_open = 0
+        for pos in state.open_positions:
+            er, ec = pos.row, pos.column
+            n_open += 1
+            if w_perim != 0.0:
+                if er > 0 and board[er - 1][ec] is not None:
+                    perim += 1
+                if er + 1 < H and board[er + 1][ec] is not None:
+                    perim += 1
+                if ec > 0 and board[er][ec - 1] is not None:
+                    perim += 1
+                if ec + 1 < W and board[er][ec + 1] is not None:
+                    perim += 1
+        if w_perim != 0.0:
+            parts.append(w_perim * float(perim))
+        if w_lib != 0.0:
+            parts.append(w_lib * float(n_open))
+    t = math.fsum(parts) / getattr(cfg, "tiletie_norm", 8.0)
+    return t / (1.0 + abs(t))
+
+
+def _tiletie_off(cfg) -> bool:
+    """True iff the tile-tie tie-break is OFF (dose 0.0) — then the cy route is
+    bit-exact. Like the F7b knockouts, denial, open-city and jrules there is
+    deliberately NO cy implementation, so a SET dose ALWAYS leaves the cy fast
+    path for the pure-Python flat leaf. ⚠️ There is also NO rust implementation
+    yet — a SET dose through rust_agent.leaf_config_rs raises TypeError
+    (fail-closed) until the mirror lands."""
+    return getattr(cfg, "tiletie_dose", 0.0) == 0.0
+
+
 def _jrules_off(cfg) -> bool:
     """True iff the J-rules bundle is OFF (dose 0.0) — then the cy route is
     bit-exact. Like the F7b knockouts, the denial term and the open-city term there
@@ -1763,7 +1927,8 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 and _farm_knockout_off(cfg)
                 and _denial_off(cfg)
                 and _opencity_off(cfg)
-                and _jrules_off(cfg)):
+                and _jrules_off(cfg)
+                and _tiletie_off(cfg)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
@@ -1801,6 +1966,13 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     # an add of 0.0 — so default traffic is byte-identical, not merely equal.
     if getattr(cfg, "jrules_dose", 0.0) != 0.0:
         score += cfg.jrules_dose * flat_jrules_term(state, player, decomp, cfg, base)
+    # Tile-tie tie-break: a SIGNED, bounded (|T| < 1) micro-**addition** applied
+    # AFTER jrules as a fourth separate gated statement in this fixed order (float
+    # addition is non-associative, so a fused expression would break bit-exactness
+    # gating). dose == 0.0 (default/champion) takes an early branch — never an add
+    # of 0.0 — so default traffic is byte-identical, not merely equal.
+    if getattr(cfg, "tiletie_dose", 0.0) != 0.0:
+        score += cfg.tiletie_dose * flat_tiletie_term(state, player, decomp, cfg)
     if curve is not None:
         # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term
         # (== leaf_v29._meeple_curve_term; the object path adds it in apply_v29).
@@ -1876,7 +2048,8 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                 and _farm_knockout_off(cfg)
                 and _denial_off(cfg)
                 and _opencity_off(cfg)
-                and _jrules_off(cfg)):
+                and _jrules_off(cfg)
+                and _tiletie_off(cfg)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
     if state.players != 2:
@@ -1902,6 +2075,10 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
     # subtracted) after open-city in this fixed order (see the int sibling).
     if getattr(cfg, "jrules_dose", 0.0) != 0.0:
         score += cfg.jrules_dose * flat_jrules_term(state, player, decomp, cfg, base)
+    # Tile-tie tie-break — bounded, dose-gated early branch, ADDED after jrules
+    # in this fixed order (see the int sibling).
+    if getattr(cfg, "tiletie_dose", 0.0) != 0.0:
+        score += cfg.tiletie_dose * flat_tiletie_term(state, player, decomp, cfg)
     if curve is not None:
         if cfg.v29_phase_beta == 0.0:   # Part C: early branch == byte-identical default
             score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])

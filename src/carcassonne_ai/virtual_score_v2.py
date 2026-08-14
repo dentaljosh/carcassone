@@ -350,6 +350,45 @@ class LeafConfig:
     # A candidate that SETS a dose shifts the hash (it is a different leaf — intended).
     jrules_dose: float = 0.0
     jrules_mask: int = 31
+    # --- TILE-TIE TIE-BREAK — a bounded micro-term that discriminates ONLY where
+    # the leaf is (near-)silent (candidate-only; measurement/tiletie_term_20260814/
+    # DESIGN.md, building 2026-08-14) -------------------------------------------
+    # The pooled tile-tie pricing run (measurement/tiletie_pricing_20260812/
+    # readout_POOLED/, n=733, branch 4) measured REAL value spread inside the
+    # leaf's exact-tie tile sets (S1a z +4.26) and headroom the 11008-sim search
+    # does not recover (S2 +0.252 pts/tied ply, z +3.43). CL-065 forbids a LEARNED
+    # tie-breaker, so this is a hand-crafted geometry term: T is a signed, bounded
+    # (|T| < 1) function of closure-cell constrainedness and board-frontier shape
+    # (see flat_leaf.flat_tiletie_term), and the leaf **ADDS** `tiletie_dose * T`.
+    # The dose is a MICRO-dose by design: with |T| < 1, any dose below the leaf's
+    # own value-lattice step (non-tie top-2 gap p5 = 0.15; census) reorders exact
+    # and hairline ties ONLY — non-tied preferences are untouched, which is what
+    # keeps this term out of the CL-080/jrules failure class (their doses moved
+    # non-tied picks).
+    #   tiletie_dose:    float, 0.0 (default) == term fully off == today's leaf,
+    #                    via an early branch (never an add of 0.0).
+    #   tiletie_w_city / tiletie_w_road / tiletie_w_perim / tiletie_w_lib:
+    #                    signed feature weights (the gate's menu axes). Inert
+    #                    while the dose is 0.0.
+    #   tiletie_norm:    scale inside the bounded map T = t/(1+|t|), t = raw/norm.
+    #                    Monotone, so within-tie ORDERING never depends on it.
+    # ⚠️ FLAT PATH ONLY. `flat_leaf.py` implements it; the object (engine) path
+    # FAILS LOUD below, and `flat_leaf_cy.pyx` deliberately does NOT implement it
+    # (the F7b/denial/open-city/jrules pattern), so a SET dose routes off the cy
+    # fast path to the bit-exact pure-Python flat leaf. ⚠️ NO RUST MIRROR YET —
+    # rust_agent.leaf_config_rs forwards the knobs as conditional kwargs, so any
+    # current `carc_rs` raises TypeError on a nonzero dose (fail-closed).
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg
+    # recipe (snapshot._frozen_config_hash + its mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE at their
+    # defaults, so 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
+    # A candidate that SETS a dose shifts the hash (it is a different leaf — intended).
+    tiletie_dose: float = 0.0
+    tiletie_w_city: float = 1.0
+    tiletie_w_road: float = 1.0
+    tiletie_w_perim: float = 0.0
+    tiletie_w_lib: float = 0.0
+    tiletie_norm: float = 8.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -416,6 +455,14 @@ def _config_from_env() -> LeafConfig:
         # DEFAULT_CONFIG (the phase-beta / denial / open-city pattern).
         jrules_dose=float(os.environ.get("CARCASSONNE_JRULES_DOSE", "0.0")),
         jrules_mask=int(os.environ.get("CARCASSONNE_JRULES_MASK", "31")),
+        # Tile-tie tie-break — default 0.0 == term fully off == unchanged production
+        # DEFAULT_CONFIG (the phase-beta / denial / open-city / jrules pattern).
+        tiletie_dose=float(os.environ.get("CARCASSONNE_TILETIE_DOSE", "0.0")),
+        tiletie_w_city=float(os.environ.get("CARCASSONNE_TILETIE_W_CITY", "1.0")),
+        tiletie_w_road=float(os.environ.get("CARCASSONNE_TILETIE_W_ROAD", "1.0")),
+        tiletie_w_perim=float(os.environ.get("CARCASSONNE_TILETIE_W_PERIM", "0.0")),
+        tiletie_w_lib=float(os.environ.get("CARCASSONNE_TILETIE_W_LIB", "0.0")),
+        tiletie_norm=float(os.environ.get("CARCASSONNE_TILETIE_NORM", "8.0")),
     )
 
 
@@ -897,6 +944,13 @@ def virtual_score_v2(
         # prevent.
         raise NotImplementedError(
             "LeafConfig.jrules_dose (J-rules on search) requires the flat leaf path "
+            "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
+        )
+    if getattr(cfg, "tiletie_dose", 0.0) != 0.0:
+        # The tile-tie tie-break is flat-path ONLY (see LeafConfig.tiletie_dose) —
+        # fail loudly rather than silently serving a tiebreak-blind object leaf.
+        raise NotImplementedError(
+            "LeafConfig.tiletie_dose (tile-tie tie-break) requires the flat leaf path "
             "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
         )
     if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
