@@ -7110,3 +7110,42 @@ roadmap R2-1b · attempt-1 DESIGN §7.2 executed-note. **No results.csv row, no 
 (0-game precedent); `governance/PRODUCTION.yaml` untouched.** Instruments
 `scripts/tiletie/mine_oracle_sep.py` + `term_gate2.py`; tests `tests/test_tiletie_mining.py`.
 **Phase:** measurement-first (human-edge program, round 2).
+
+## 2026-08-14 — SURFACE C (J-rules as ROOT FILTERS) — **BUILT, PROVEN, CALIBRATED, AND STOPPED BY ITS OWN PRE-COMMITTED RULE: `NO-EXPRESSION` fired — no deploy cell is bought.** The encoding triptych is complete at zero additional game cost
+
+**Context.** The last untested encoding surface for the anchor's articulated strategy (surface A =
+static leaf terms, loss confounded by budget; surface B = PUCT priors, clean sims-washout null).
+A filter is a CONSTRAINT, not a preference — it cannot be washed out by more search, which was the
+mechanism argument for trying it after B's null. Funded in the weekend round (Joshua: "get agents
+working on 1-3"). Worktree `worktree-agent-a05e912776f02b921`; read-rule committed at `82f3fa96`
+**before any rate existed**; calibration `55e5409b`.
+
+**The build (merged, default-off, ~free).** `jrules_root_filter` binds at the champion of
+record's real root (`carc_core::fair::FairAgent::pimc_move`), after the forced-move short-circuit
+and provably RNG-inert, restricting every world's ROOT expansion via `search_with_root_allow`;
+meeple-phase roots only (bot fidelity), root-only never in-tree, exact/forced untouched.
+Per-filter `min_keep` never-empty guard with yield accounting. F-c golden gate re-hashes 208 real
+searches to the recorded digest; champion leaf hash unchanged AND equal on the live-mask config
+(SearchConfig-side knobs — the inverted-liveness convention); `reconcile_leaf` 83,824/0; stale
+wheel fail-closed (TypeError verified live); cost **1.0024×** full-agent A/B. 39 py + 6 rust tests.
+
+**The calibration (31 E4 archives / 1,855 graded champion plies, 93.2 % at deploy budget, replay
+checksums 31/31, guard-yields 0/1,855 on every arm):** exclusion ladder j10 3.72 % · j3 2.80 % ·
+current(mask 11) 6.52 % · all(mask 15) 7.76 %, Wilson-95 upper bound of the LARGEST mask **9.07 %
+< the 10 % bar** ⇒ **`NO-EXPRESSION` fired decisively** (SAFETY struck nothing; FUND-SMALLEST
+found no arm in the 10–25 % window). The filters are live (F-J10 bit 384 plies, F-J3 235) — they
+just rarely remove the champion's own pick.
+
+**The finding, stated the way it should be quoted:** ⭐ **the champion at deploy depth already
+plays inside the anchor's hard rules on ~93 % of decisions.** The anchor's articulated
+CONSTRAINTS are nearly a subset of the champion's emergent play — so whatever the human edge is
+(17–10–1 and climbing, inversion 31/31-era), **it is not expressible as his stated rules**: not as
+evaluation (A), not as advice (B), not as constraint (C). The remaining hypotheses live outside
+the interview: the un-articulated parts of his play (the E4/DEG route — games, not compute) and
+axes no encoding of stated rules can reach.
+
+**Decision.** No cell, no band, no claim (0-game precedent). `DEPLOY_PREREG_DRAFT` retained,
+never promoted, per its own banner. Any revival (weaker masks, `j8brk`, per-game k0) is a NEW
+calibration under its own committed rule. Artifacts `measurement/jrules_filters_20260814/`.
+**`PRODUCTION.yaml` untouched; nothing promoted.**
+**Phase:** measurement-first (human-edge program, weekend round).

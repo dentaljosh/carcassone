@@ -1,5 +1,5 @@
 {
- "updated": "2026-08-14T15:55:10-0400",
+ "updated": "2026-08-14T16:05:12-0400",
  "queue_items": [
   "window_truncation_census",
   "j13_pregate",
@@ -27,10 +27,10 @@
  },
  "boxes": {
   "local": {
-   "census": 14,
+   "census": 24,
    "idle_since": null,
    "free": false,
-   "reason": "census guard: 14 live measurement process(es) on local"
+   "reason": "census guard: 24 live measurement process(es) on local"
   },
   "laptop": {
    "census": 0,
