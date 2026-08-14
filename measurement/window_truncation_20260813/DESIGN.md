@@ -45,11 +45,15 @@ pre-registered and were not touched after any number was seen.**
 > under `prior_run_laptop_8fe2454/` and `run_laptop_c7f8aef/`.
 >
 > **0 games · no band · no `CLAIM_REGISTRY` row · `governance/PRODUCTION.yaml` and
-> `BAND_REGISTRY.csv` untouched.** ⚠️ **Deviation from §9, recorded rather than silently skipped:
-> no `experiments/results.csv` row was minted.** §9 lists one among the close-out touches, but the
-> instrument plays **0 games** and has no elo/wr cell to record, and the run's own
-> `RUN_MANIFEST.json` declares `results_csv_row: false`, `band: null`, `claim: null`. Close-out
-> entry: DECISIONS 2026-08-13 (census).
+> `BAND_REGISTRY.csv` untouched.** ✅ **The §9 `experiments/results.csv` row IS MINTED** —
+> `window_truncation_census_search_internal_0games_walled_and_fixed_v1` (added 2026-08-13). It is a
+> **0-game row**: `n=0`, `W`/`L`/`D`/`elo`/`sigma`/`avg_diff` deliberately blank, both legs stated
+> separately and never pooled, so it cannot be mistaken for a strength cell. ⚠️ The earlier
+> close-out (`066669d6`, `40f1d408`) omitted it on a misreading of §6's reporting rule — that rule
+> scopes the exemption to the **pilot** ("from the pilot; the full census owns that") — and the
+> owner reversed the omission the same day; **pre-registration governs.** The run manifests'
+> `results_csv_row: false` is superseded by the row and left as-is on disk as the launch-time
+> record. Close-out entry: DECISIONS 2026-08-13 (census).
 >
 > ⭐ **Decided independently of this census: §6-P3 already fired in production, so the minimal
 > fail-loud fix (§7 F-c) was LICENSED — and it is now ✅ BUILT AND MERGED 2026-08-13** (feature
@@ -437,12 +441,19 @@ P3 and is now built and merged** (§7). ⚠️ Consequently §7's **F-d ("instru
 sufficient by its own wording** — it requires "P1 in the CURIOSITY band **and P3 never trips**",
 and P3 has tripped. F-c is the answer to P3; F-d covers the remainder.
 
-**⚠️ Ambiguity in the pre-registration, flagged rather than resolved by convenience.** The
-reporting rule above says no row is minted "from the pilot; the full census owns that", which
-reads as *the census owes a row*, and §9 lists one. But the census plays **0 games** and produces
-no elo/wr cell, and its own `RUN_MANIFEST.json` sets `results_csv_row: false`. **No row was
-minted**, and this paragraph is the record of that choice — not a silent omission. If the owner
-reads §9 as binding, the remedy is one row citing this file, and nothing else changes.
+**⚠️ Ambiguity in the pre-registration — RESOLVED 2026-08-13 IN FAVOUR OF THE PRE-REGISTRATION.**
+The reporting rule above says no row is minted "from the pilot; the full census owns that", which
+reads as *the census owes a row*, and §9 lists one. The first close-out (`066669d6`, `40f1d408`)
+read it the other way and minted **no** row, arguing that the census plays 0 games, produces no
+elo/wr cell, and sets `results_csv_row: false` in its own `RUN_MANIFEST.json`. **That reading was
+wrong and the owner reversed it the same day: §6's exemption is scoped to the *pilot*, §9 lists
+the row for the full census, and pre-registration governs.** ✅ The row is now minted —
+`window_truncation_census_search_internal_0games_walled_and_fixed_v1` in
+[`experiments/results.csv`](../../experiments/results.csv), a **0-game row** (`n=0`; `W`/`L`/`D`/
+`elo`/`sigma`/`avg_diff` blank; both legs reported separately and never pooled; cites this file
+and [`CENSUS_RESULT.md`](CENSUS_RESULT.md)). Nothing else changed: still 0 games, no band, no
+claim, no `governance/` row. The manifests' `results_csv_row: false` is a launch-time record and
+is superseded by the row, not edited.
 
 ---
 
@@ -652,5 +663,11 @@ the search-internal number, since that row currently rests only on the played-le
 ✅ **Discharged 2026-08-13:** status banner on this file · DECISIONS 2026-08-13 (census) ·
 STATUS.md top block · [PROGRAM_ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) NOW item (7) ·
 [LEVER_INDEX](../../docs/LEVER_INDEX.md) *"widen the action window"* row (search-internal number
-recorded). **No `experiments/results.csv` row and no `governance/` row** — 0 games, no band, no
-claim; the deviation from this section's own checklist is argued in §6's applied read.
+recorded) · ✅ **[`experiments/results.csv`](../../experiments/results.csv) row
+`window_truncation_census_search_internal_0games_walled_and_fixed_v1`** — minted 2026-08-13 as a
+**0-game row** (`n=0`; `W`/`L`/`D`/`elo`/`sigma`/`avg_diff` blank; per-leg counts, the
+rule-of-three bounds and the fired branch in the note; both legs never pooled), so this
+section's checklist is now discharged in full. **No `governance/` row** — 0 games, no band, no
+claim. ⚠️ The first close-out omitted the `results.csv` row and argued the omission in §6's
+applied read; that misreading (§6 exempts the *pilot*, not the census) was reversed the same day
+and §6 now records the resolution.

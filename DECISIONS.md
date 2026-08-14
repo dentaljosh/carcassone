@@ -6255,8 +6255,17 @@ decision (every `roots.jsonl`, `champ_games.jsonl`, E4 archive and trace stores 
 made at close-out: DESIGN §6's *pre-registered* reporting rules already say **"No `results.csv` row
 and no claim is minted from the pilot; the full census owns that"**, and it matches how this week's
 other 0-game instruments were treated (the E4 autopsy, tile-tie Stage A, the sims-split census,
-lever-menu items 1 and 6). A `results.csv` row becomes owed if and when the census lands **and**
-something plays games off the back of it.
+lever-menu items 1 and 6).
+
+> ⚠️ **CORRECTED 2026-08-13 (later the same day) — this paragraph's last sentence was WRONG and is
+> struck.** It read *"A `results.csv` row becomes owed if and when the census lands **and**
+> something plays games off the back of it."* The "and something plays games" condition was
+> invented here; it is nowhere in the pre-registration. §6 exempts the **pilot** only ("the full
+> census owns that") and §9 lists an `experiments/results.csv` row among the *census's* close-out
+> touches, so **landing the census is the whole trigger.** The census landed, and the row is
+> minted: `window_truncation_census_search_internal_0games_walled_and_fixed_v1` — a **0-game row**
+> (`n=0`; `W`/`L`/`D`/`elo`/`sigma`/`avg_diff` blank). See the 2026-08-13 (late) census entry.
+> Everything else in this paragraph stands: it correctly describes the **pilot-era** state.
 **Files touched:** `STATUS.md`, `docs/PROGRAM_ROADMAP_2026-07-07.md`, `docs/LEVER_INDEX.md`
 ("widen the action window" row), `measurement/window_truncation_20260813/DESIGN.md` (close-out
 banner), this file. No source file, no governance CSV.
@@ -6567,13 +6576,19 @@ the 0.83 the band was written against. **⇒ F-a (widen inside search with an ex
   "P1 in the CURIOSITY band *and* P3 never trips", and P3 has tripped. F-c answers P3; F-d
   covers the remainder.
 
-⚠️ **One pre-registration ambiguity, flagged rather than resolved by convenience.** §6's
-reporting rule says no row is minted "from the pilot; **the full census owns that**", and §9
+⚠️ **One pre-registration ambiguity — RESOLVED THE SAME DAY IN FAVOUR OF THE PRE-REGISTRATION.**
+§6's reporting rule says no row is minted "from the pilot; **the full census owns that**", and §9
 lists an `experiments/results.csv` row among the close-out touches — both readable as *the census
-owes a row*. **No row was minted**: the instrument plays **0 games** and has no elo/wr cell, and
-the run's own `RUN_MANIFEST.json` declares `results_csv_row: false`, `band: null`, `claim: null`.
-This paragraph is the record of that choice. If the owner reads §9 as binding, the remedy is one
-row citing the DESIGN file and nothing else changes.
+owes a row*. This close-out first minted **no row**, on the argument that the instrument plays
+**0 games**, has no elo/wr cell, and declares `results_csv_row: false` in its own
+`RUN_MANIFEST.json`. **That reading was wrong and the owner reversed it on 2026-08-13:** §6
+exempts the *pilot*, §9 lists the row for the *full census*, and pre-registration governs. ✅ The
+row is minted — `window_truncation_census_search_internal_0games_walled_and_fixed_v1` in
+`experiments/results.csv`, a **0-game row** (`n=0`; `W`/`L`/`D`/`elo`/`sigma`/`avg_diff` blank;
+per-leg counts, rule-of-three bounds and the fired branch in the note; the two legs never pooled;
+cites `DESIGN.md` and `CENSUS_RESULT.md`), so it cannot be misread as a strength cell. Nothing
+else changed: still 0 games, no band, no claim, no `governance/` row. The manifests'
+`results_csv_row: false` is a launch-time record, superseded by the row and left as-is on disk.
 
 ⭐ **Why the docs denied a finished run for ~10 h — worth keeping.** The first full run
 (`8fe24542`, laptop, 11:46) wrote its artifacts **only into the laptop's own tree, untracked**,
@@ -6596,8 +6611,11 @@ decline F-a, keep F-c, keep the instrument (F-d) — **adopted**.
 table + §6 applied read + §7 F-d stamp + §8/§9 stamps), plus the run's artifacts committed
 (`census_walled/`, `census_fixed_v1/`, `CENSUS_RESULT.md`, `RUN_MANIFEST.json`, markers, logs)
 and the two laptop runs archived; `STATUS.md`; `docs/PROGRAM_ROADMAP_2026-07-07.md` NOW item (7);
-`docs/LEVER_INDEX.md` *"widen the action window"* row; `DECISIONS.md`.
-**0 games. No `experiments/results.csv` row. No `governance/CLAIM_REGISTRY.csv` row. No band.
+`docs/LEVER_INDEX.md` *"widen the action window"* row; `DECISIONS.md`; and (2026-08-13, on the
+reversal above) the `experiments/results.csv` row
+`window_truncation_census_search_internal_0games_walled_and_fixed_v1`.
+**0 games. ✅ One `experiments/results.csv` row — a 0-game row carrying no elo, no win rate, no
+band and no claim. No `governance/CLAIM_REGISTRY.csv` row. No band.
 `governance/PRODUCTION.yaml` and `governance/BAND_REGISTRY.csv` untouched. No source file
 changed.**
 **Reversal cost:** nil — documentation + artifacts only. Re-opening F-a needs a new P3
