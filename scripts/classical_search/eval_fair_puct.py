@@ -269,7 +269,10 @@ pre-registered validity trigger (shouted at the end of the run, and stamped as
 `diff`/`won_by_champ`, so no downstream glob of the cell dir can mistake one for a
 game. A failed game counts as DONE on a later pass (these failures are
 deck-deterministic); `--retry-failed` re-opens them after a code fix, bounded by
-the record's lifetime `attempts` vs `--max-attempts`. Field/flag names mirror
+the record's lifetime `attempts` vs `--max-attempts`. A record whose game LATER
+SUCCEEDED is RESOLVED — excluded from `n_failed`/`failure_rate` (the result file
+is the arbiter) but kept on disk and reported under `n_resolved_failures`, so a
+flaky game never voids a clean cell and never loses its diagnosis. Field/flag names mirror
 `scripts/joshuabot/h2h.py` (commit 0102b72d) so the two harnesses stay one
 convention.
 """
@@ -1660,17 +1663,63 @@ def _load_failure(p: Path) -> dict | None:
     return d if isinstance(d, dict) and d.get("failed") else None
 
 
-def load_failures(out) -> dict:
-    """Every failure record in a cell, keyed by (seed, a_seat)."""
-    d = _failed_dir(Path(out))
+def load_failures(out, include_resolved=False) -> dict:
+    """The OUTSTANDING failure records in a cell, keyed by (seed, a_seat).
+
+    ⚠️ RESOLVED failures are excluded by default. A game that failed on one pass
+    and SUCCEEDED on a later ``--retry-failed`` pass leaves both a failure record
+    and a result; counting the stale record would report ``n_failed=1`` on a cell
+    that completed cleanly — and ``failure_rate`` is the input to the PRE-REGISTERED
+    VALIDITY TRIGGER (>0.5% ⇒ stop and investigate), so an overstated rate can void
+    a good cell. The RESULT FILE IS THE ARBITER: a record whose `_result_path`
+    exists is resolved, which is authoritative with no bookkeeping and stays correct
+    even when a --shared-claim PEER on another box played the successful retry.
+
+    The record itself is never deleted — a transiently-failing game is evidence
+    about the window-truncation family, and flaky-vs-deterministic is exactly the
+    distinction worth keeping. Pass ``include_resolved=True`` for the forensic view;
+    every returned record carries a `resolved` bool.
+    """
+    out = Path(out)
+    d = _failed_dir(out)
     if not d.is_dir():
         return {}
     found = {}
     for p in sorted(d.glob("seed*_a*.json")):
         rec = _load_failure(p)
-        if rec is not None and "seed" in rec and "a_seat" in rec:
-            found[(int(rec["seed"]), int(rec["a_seat"]))] = rec
+        if rec is None or "seed" not in rec or "a_seat" not in rec:
+            continue
+        seed, a_seat = int(rec["seed"]), int(rec["a_seat"])
+        rec["resolved"] = _result_path(out, seed, a_seat).exists()
+        if rec["resolved"] and not include_resolved:
+            continue
+        found[(seed, a_seat)] = rec
     return found
+
+
+def _mark_failure_resolved(out: Path, seed: int, a_seat: int) -> None:
+    """Stamp a superseded failure record `resolved: true` after its retry SUCCEEDED.
+
+    Belt-and-braces on top of the read-side rule in :func:`load_failures` (which is
+    what actually decides the counts): this makes the file SELF-DESCRIBING, so a
+    human reading `failed/seed*.json` months later sees that the crash was later
+    played through rather than mistaking it for a live exclusion.
+
+    Costs one `exists()` on the success path and nothing else — a cell that never
+    failed does no work here."""
+    p = _failed_path(out, seed, a_seat)
+    if not p.exists():                          # the overwhelmingly common case
+        return
+    rec = _load_failure(p)
+    if rec is None or rec.get("resolved"):
+        return
+    rec["resolved"] = True
+    rec["resolved_at"] = time.time()
+    rec["resolved_by_host"] = socket.gethostname()
+    try:
+        _save_failure(p, rec)
+    except Exception as e:                      # never let bookkeeping kill a game
+        sys.stderr.write(f"[eval_fair_puct] could not stamp resolved failure {p}: {e}\n")
 
 
 def failed_record(seed: int, a_seat: int, exc: BaseException, t0: float,
@@ -1976,7 +2025,12 @@ def _play_one(args) -> GameResult | GameFailure | None:
             return None
     t_fail = time.time()
     try:
-        return _play_one_inner(out, seed, a_seat, p)
+        r = _play_one_inner(out, seed, a_seat, p)
+        # A --retry-failed that SUCCEEDED supersedes its old failure record. The
+        # counts are decided read-side (load_failures), but stamp the file so it
+        # says so itself. Kept, never deleted: the diagnosis is evidence.
+        _mark_failure_resolved(out, seed, a_seat)
+        return r
     except (KeyboardInterrupt, SystemExit):     # operator/parent shutdown: propagate
         raise
     except BaseException as exc:                # noqa: BLE001 — incl. pyo3 PanicException
@@ -2094,14 +2148,21 @@ def _paired_z(results):
     return mean, z, len(ds)
 
 
-def _failure_block(results, failures) -> dict:
+def _failure_block(results, failures, resolved=None) -> dict:
     """The EXCLUSION block. Key names mirror `h2h.summarize` exactly
     (`n_failed` / `failure_rate` / `failed_cells` / `failed_by_seat`), and they are
     ALWAYS present — a zero rate is stated, never inferred from a missing key or
     from a record count that does not add up.
 
-    `failures` is the list of failure records for THIS cell (from `load_failures`)."""
+    `failures` is the list of OUTSTANDING failure records for this cell (from
+    `load_failures`). `resolved` is the list of records whose game later SUCCEEDED:
+    those are NOT failures of this cell — they move no count, and above all they do
+    not inflate `failure_rate`, which gates the pre-registered validity trigger.
+    They are reported under their own keys so the forensic trail (a
+    transiently-failing game is evidence about the window-truncation family) stays
+    discoverable from the summary alone."""
     bad = list(failures or [])
+    fixed = [r for r in (resolved or []) if r.get("resolved")]
     n_scored = len(results)
     n_records = n_scored + len(bad)
     rate = (len(bad) / n_records) if n_records else 0.0
@@ -2123,6 +2184,15 @@ def _failure_block(results, failures) -> dict:
                           "window_diag": r.get("window_diag")} for r in bad],
         "failed_by_seat": {"0": sum(1 for r in bad if int(r.get("a_seat", -1)) == 0),
                            "1": sum(1 for r in bad if int(r.get("a_seat", -1)) == 1)},
+        # NOT failures of this cell — a crash that a later pass played through.
+        # Counted separately so a flaky game stays visible without voiding the cell.
+        "n_resolved_failures": len(fixed),
+        "resolved_failed_cells": [{"seed": int(r.get("seed", -1)),
+                                   "a_seat": int(r.get("a_seat", -1)),
+                                   "attempts": int(r.get("attempts", 0)),
+                                   "exc_type": r.get("exc_type"),
+                                   "window_truncation": bool(r.get("window_truncation"))}
+                                  for r in fixed],
     }
 
 
@@ -2130,6 +2200,13 @@ def _shout_failures(block: dict, n_scored: int, tag="eval_fair_puct") -> None:
     """Print the exclusion line loudly. A cell must never quietly complete with a
     high failure rate — this is the operator-visible half of the validity trigger
     (the machine-readable half is `summary.json` / `manifest.json`)."""
+    if block.get("n_resolved_failures"):
+        # Informational, never a trigger: these games ended up PLAYED.
+        print(f"\n[{tag}] {block['n_resolved_failures']} earlier failure(s) were "
+              f"RESOLVED by a later successful retry — not counted as failures "
+              f"(records kept in <out>/{FAILED_DIRNAME}/ with resolved: true): "
+              f"{[(c['seed'], c['a_seat'], c['exc_type']) for c in block['resolved_failed_cells']]}",
+              flush=True)
     if not block.get("n_failed"):
         return
     pct = 100.0 * (block.get("failure_rate") or 0.0)
@@ -2187,10 +2264,13 @@ def _patch_failure_manifest(out, block: dict, n_failed_this_leg: int) -> None:
                    bool(block.get("validity_trigger_fired")))
     patch_manifest(out, "failed_cells", block.get("failed_cells", []))
     patch_manifest(out, "failed_by_seat", block.get("failed_by_seat", {"0": 0, "1": 0}))
+    patch_manifest(out, "n_resolved_failures", int(block.get("n_resolved_failures", 0)))
+    patch_manifest(out, "resolved_failed_cells", block.get("resolved_failed_cells", []))
 
 
 def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
-             opp_label=None, opp_k_dets=None, opp_sims=None, failures=None):
+             opp_label=None, opp_k_dets=None, opp_sims=None, failures=None,
+             resolved=None):
     n = len(results)
     w = sum(1 for r in results if r.won_by_champ)
     d = sum(1 for r in results if r.drew)
@@ -2302,7 +2382,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             "opp_k_dets": _ok, "opp_sims": _os_, "opp_total_sims": _ok * _os_,
         }
     # THE EXCLUSION BLOCK — always present (h2h parity: a zero rate is STATED).
-    _fail_block = _failure_block(results, failures)
+    _fail_block = _failure_block(results, failures, resolved)
     _shout_failures(_fail_block, n)
     return {
         "info": info, "exact_k": exact_k, "k_dets": k_dets, "sims": sims,
@@ -3458,13 +3538,14 @@ def main(argv=None) -> int:
 
     if args.summary_only:
         results = [r for t in tasks if (r := _try_load(_result_path(out, t[1], t[2]))) is not None]
-        _fails = load_failures(out)
+        _all = load_failures(out, include_resolved=True)
+        _cell = [_all[(t[1], t[2])] for t in tasks if (t[1], t[2]) in _all]
         if results:
             summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
                             args.rung_sims, opponent=args.opponent, opp_label=opp_label,
                             opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims,
-                            failures=[_fails[(t[1], t[2])] for t in tasks
-                                      if (t[1], t[2]) in _fails])
+                            failures=[r for r in _cell if not r.get("resolved")],
+                            resolved=[r for r in _cell if r.get("resolved")])
             json.dump(summ, open(out / "summary.json", "w"), indent=2)
             _patch_failure_manifest(out, summ, 0)
         else:
@@ -4087,18 +4168,23 @@ def main(argv=None) -> int:
     # Re-read the failure records from DISK (not just this leg's): a --resume must
     # never hide failures banked by an earlier leg, and a --shared-claim peer's
     # failures belong to the cell just as much as ours.
-    _fails_now = load_failures(out)
-    cell_failures = [_fails_now[(t[1], t[2])] for t in tasks if (t[1], t[2]) in _fails_now]
+    _fails_now = load_failures(out, include_resolved=True)
+    _cell_recs = [_fails_now[(t[1], t[2])] for t in tasks if (t[1], t[2]) in _fails_now]
+    # A record whose game later SUCCEEDED is NOT a failure of this cell (the result
+    # file is the arbiter). Counting it would overstate `failure_rate`, which gates
+    # the pre-registered validity trigger.
+    cell_failures = [r for r in _cell_recs if not r.get("resolved")]
+    cell_resolved = [r for r in _cell_recs if r.get("resolved")]
     if not results:
         print("no results")
-        _fb = _failure_block([], cell_failures)
+        _fb = _failure_block([], cell_failures, cell_resolved)
         _shout_failures(_fb, 0)
         _patch_failure_manifest(out, _fb, n_failed_this_leg)
         return 0
     summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
                     args.rung_sims, opponent=args.opponent, opp_label=opp_label,
                     opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims,
-                    failures=cell_failures)
+                    failures=cell_failures, resolved=cell_resolved)
     json.dump(summ, open(out / "summary.json", "w"), indent=2)
     print(f"[summary.json] wrote {out/'summary.json'}")
     # n_failed / failure_rate / failed_cells into manifest.json too (h2h parity:

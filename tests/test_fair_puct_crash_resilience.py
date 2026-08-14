@@ -284,6 +284,116 @@ class TestItReachesTheManifest:
         assert man["validity_trigger_fired"] is False
 
 
+class TestAResolvedFailureIsNotAFailure:
+    """fail -> --retry-failed -> SUCCEED must leave a cell reporting n_failed == 0.
+
+    The stale record would otherwise inflate `failure_rate`, which is the input to
+    the PRE-REGISTERED VALIDITY TRIGGER (>0.5% ⇒ stop and investigate) — an
+    overstated rate can void a cell that actually completed cleanly."""
+
+    def _fail_then_succeed(self, out, monkeypatch, seed=101, a_seat=0):
+        monkeypatch.setattr(efp, "_play_one_inner", _boom())
+        efp._play_one((str(out), seed, a_seat, 3))          # pass 1: crash
+        assert efp._failed_path(out, seed, a_seat).exists()
+
+        def _ok(o, s, a, p):                                 # pass 2: retry works
+            r = _result(s, a)
+            efp._save(p, r)
+            return r
+        monkeypatch.setattr(efp, "_play_one_inner", _ok)
+        return efp._play_one((str(out), seed, a_seat, 3))
+
+    def test_the_retry_returns_a_real_result(self, worker, monkeypatch):
+        r = self._fail_then_succeed(worker, monkeypatch)
+        assert isinstance(r, efp.GameResult) and r.diff == 10
+
+    def test_the_record_is_stamped_resolved_not_deleted(self, worker, monkeypatch):
+        self._fail_then_succeed(worker, monkeypatch)
+        p = efp._failed_path(worker, 101, 0)
+        assert p.exists(), "the forensic trail must survive — never deleted"
+        rec = json.loads(p.read_text())
+        assert rec["resolved"] is True and "resolved_at" in rec
+        # the diagnosis itself is intact
+        assert rec["window_diag"] == {"cause": "window_truncation"}
+        assert rec["exc_type"] == "RuntimeError" and rec["traceback"]
+
+    def test_load_failures_excludes_it_by_default(self, worker, monkeypatch):
+        self._fail_then_succeed(worker, monkeypatch)
+        assert efp.load_failures(worker) == {}
+        assert (101, 0) in efp.load_failures(worker, include_resolved=True)
+
+    def test_the_summary_reports_zero_failures(self, worker, monkeypatch):
+        self._fail_then_succeed(worker, monkeypatch)
+        recs = list(efp.load_failures(worker, include_resolved=True).values())
+        summ = efp._summary([_result(101, 0)], "fair", 4, 8, 1376, 800,
+                            failures=[r for r in recs if not r.get("resolved")],
+                            resolved=[r for r in recs if r.get("resolved")])
+        assert summ["n_failed"] == 0
+        assert summ["failure_rate"] == 0.0
+        assert summ["failed_cells"] == []
+        assert summ["validity_trigger_fired"] is False
+        # …but the flaky game is still discoverable from the summary alone
+        assert summ["n_resolved_failures"] == 1
+        assert summ["resolved_failed_cells"][0]["seed"] == 101
+        assert summ["resolved_failed_cells"][0]["window_truncation"] is True
+
+    def test_the_manifest_reports_zero_failures(self, worker, monkeypatch):
+        self._fail_then_succeed(worker, monkeypatch)
+        (worker / "manifest.json").write_text(json.dumps({"kind": "eval_fair_puct"}))
+        recs = list(efp.load_failures(worker, include_resolved=True).values())
+        block = efp._failure_block([_result(101, 0)],
+                                   [r for r in recs if not r.get("resolved")],
+                                   [r for r in recs if r.get("resolved")])
+        efp._patch_failure_manifest(worker, block, n_failed_this_leg=0)
+        man = json.loads((worker / "manifest.json").read_text())
+        assert man["n_failed"] == 0 and man["failure_rate"] == 0.0
+        assert man["validity_trigger_fired"] is False
+        assert man["n_resolved_failures"] == 1
+
+    def test_a_resolved_failure_cannot_trip_the_validity_trigger(self, worker,
+                                                                 monkeypatch):
+        """The exact regression: one resolved failure in an 800-game cell must not
+        read as 0.125% — it must read as 0.00%."""
+        self._fail_then_succeed(worker, monkeypatch)
+        recs = list(efp.load_failures(worker, include_resolved=True).values())
+        block = efp._failure_block([_result(i) for i in range(800)],
+                                   [r for r in recs if not r.get("resolved")],
+                                   [r for r in recs if r.get("resolved")])
+        assert block["n_failed"] == 0 and block["failure_rate"] == 0.0
+
+    def test_an_unresolved_failure_still_counts(self, worker, monkeypatch):
+        """Guard the guard: the exclusion must not swallow a REAL failure."""
+        monkeypatch.setattr(efp, "_play_one_inner", _boom())
+        efp._play_one((str(worker), 102, 1, 3))
+        recs = list(efp.load_failures(worker).values())
+        assert len(recs) == 1 and recs[0]["resolved"] is False
+        assert efp._failure_block([_result()], recs)["n_failed"] == 1
+
+    def test_the_resolved_note_is_printed_but_trips_nothing(self, worker,
+                                                            monkeypatch, capsys):
+        self._fail_then_succeed(worker, monkeypatch)
+        recs = list(efp.load_failures(worker, include_resolved=True).values())
+        block = efp._failure_block([_result(101, 0)], [], recs)
+        efp._shout_failures(block, 1)
+        out = capsys.readouterr().out
+        assert "RESOLVED by a later successful retry" in out
+        assert "VALIDITY TRIGGER FIRED" not in out
+        assert "FAILED GAME(S)" not in out
+
+    def test_a_peers_result_resolves_our_record(self, worker, monkeypatch):
+        """--shared-claim: another box may have played the successful retry, so the
+        RESULT FILE is the arbiter — no bookkeeping of ours is required."""
+        monkeypatch.setattr(efp, "_play_one_inner", _boom())
+        efp._play_one((str(worker), 103, 0, 3))
+        assert list(efp.load_failures(worker)) == [(103, 0)]
+        efp._save(efp._result_path(worker, 103, 0), _result(103, 0))   # the peer
+        assert efp.load_failures(worker) == {}
+
+    def test_marking_is_idempotent_and_cheap_when_clean(self, worker):
+        efp._mark_failure_resolved(worker, 104, 0)          # no record: no-op
+        assert not (worker / efp.FAILED_DIRNAME).exists()
+
+
 class TestLoadFailures:
     def test_it_reads_back_what_the_worker_wrote(self, worker, monkeypatch):
         monkeypatch.setattr(efp, "_play_one_inner", _boom())
