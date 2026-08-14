@@ -648,7 +648,7 @@ impl PyMirrorState {
     /// comparison must run both sides at the same cap.  The solve runs under
     /// `allow_threads`, so a Python-side pool is free to fan out.
     #[pyo3(signature = (mode="clairvoyant", budget=4_000_000, alphabeta=false,
-                        tt_cap=0, chance_drop="type"))]
+                        tt_cap=0, chance_drop="type", objective="margin"))]
     fn solve_endgame<'py>(
         &self,
         py: Python<'py>,
@@ -657,6 +657,7 @@ impl PyMirrorState {
         alphabeta: bool,
         tt_cap: usize,
         chance_drop: &str,
+        objective: &str,
     ) -> PyResult<Option<Bound<'py, PyDict>>> {
         let m = endgame::Mode::parse(mode).map_err(pyo3::exceptions::PyValueError::new_err)?;
         let cfg = endgame::Config {
@@ -664,6 +665,10 @@ impl PyMirrorState {
             tt_cap,
             alphabeta,
             chance_drop: parse_chance_drop(chance_drop)?,
+            // E1: "margin" = the untouched incumbent; "win" is marginalized-only
+            // (the core rejects clairvoyant+win loudly).
+            objective: fair::solver::Objective::parse(objective)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?,
         };
         let game = &self.game;
         let t0 = std::time::Instant::now();
@@ -690,6 +695,17 @@ impl PyMirrorState {
         d.set_item("nodes", res.nodes)?;
         d.set_item("tt_entries", res.tt_entries)?;
         d.set_item("wall_ms", wall_ms)?;
+        // E1 win-objective payload (`None`/`[]` under objective="margin").
+        d.set_item("objective", cfg.objective.value())?;
+        d.set_item("win_value", res.win_value)?;
+        d.set_item("win_value_bits", res.win_value.map(|v| v.to_bits()))?;
+        d.set_item(
+            "child_win_values",
+            res.child_win_values
+                .iter()
+                .map(|&(a, v)| (a, v.to_bits()))
+                .collect::<Vec<_>>(),
+        )?;
         Ok(Some(d))
     }
 
@@ -1653,6 +1669,7 @@ impl PyFairAgent {
         exact_budget = 2_000_000,
         tt_cap = 0,
         chance_drop = "type",
+        exact_objective = "margin",
         threads = 1,
         window_size = 25,
         start_rule = None,
@@ -1672,6 +1689,7 @@ impl PyFairAgent {
         exact_budget: u64,
         tt_cap: usize,
         chance_drop: &str,
+        exact_objective: &str,
         threads: usize,
         window_size: i32,
         start_rule: Option<&str>,
@@ -1716,6 +1734,11 @@ impl PyFairAgent {
                 budget: exact_budget,
                 tt_cap,
                 chance_drop: parse_chance_drop(chance_drop)?,
+                // E1 (surface-B convention): a SOLVER/search-side knob, never
+                // LeafConfig — the leaf hash must not move.  "margin" is the
+                // untouched incumbent code path.
+                objective: fair::solver::Objective::parse(exact_objective)
+                    .map_err(pyo3::exceptions::PyValueError::new_err)?,
             },
             threads,
         };
@@ -1815,11 +1838,12 @@ impl PyFairAgent {
     /// Returns `None` on `BudgetExceeded` (what the agent sees), else a dict
     /// with `value_bits` / `optimal_actions` / `child_values` (raw bits) /
     /// `nodes` / `to_move`.
-    #[pyo3(signature = (budget=None))]
+    #[pyo3(signature = (budget=None, objective=None))]
     fn solve_marginalized<'py>(
         &self,
         py: Python<'py>,
         budget: Option<u64>,
+        objective: Option<&str>,
     ) -> PyResult<Option<Bound<'py, PyDict>>> {
         let game = match self.game.as_ref() {
             None => return Err(no_game()),
@@ -1828,6 +1852,12 @@ impl PyFairAgent {
         let mut cfg = self.agent.cfg.solver.clone();
         if let Some(b) = budget {
             cfg.budget = b;
+        }
+        // E1: per-call objective override (None = the agent's constructed
+        // objective) — the both-objectives-one-position instrument seam.
+        if let Some(o) = objective {
+            cfg.objective = fair::solver::Objective::parse(o)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?;
         }
         let res = py.allow_threads(|| fair::solver::solve_marginalized(game, &cfg));
         let res = match res {
@@ -1850,6 +1880,18 @@ impl PyFairAgent {
                 .collect::<Vec<_>>(),
         )?;
         d.set_item("nodes", res.nodes)?;
+        // E1 win-objective payload (`None`/`[]` in margin mode — the liveness
+        // discriminator the parity/positive-control tests read).
+        d.set_item("objective", cfg.objective.value())?;
+        d.set_item("win_value", res.win_value)?;
+        d.set_item("win_value_bits", res.win_value.map(|v| v.to_bits()))?;
+        d.set_item(
+            "child_win_values",
+            res.child_win_values
+                .iter()
+                .map(|&(a, v)| (a, v.to_bits()))
+                .collect::<Vec<_>>(),
+        )?;
         Ok(Some(d))
     }
 
@@ -1905,6 +1947,9 @@ impl PyFairAgent {
         d.set_item("seed", a.cfg.seed)?;
         d.set_item("exact_max_k", a.cfg.exact_max_k)?;
         d.set_item("exact_budget", a.cfg.solver.budget)?;
+        // E1: the RESOLVED objective — the manifest liveness surface (the leaf
+        // hash deliberately does not move on this knob, surface-B style).
+        d.set_item("exact_objective", a.cfg.solver.objective.value())?;
         d.set_item("min_pooled_visits", a.cfg.min_pooled_visits)?;
         d.set_item("last_move", self.last_move(py)?)?;
         Ok(d)

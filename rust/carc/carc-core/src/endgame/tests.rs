@@ -153,8 +153,7 @@ fn marginalized_agrees_with_the_fair_solver() {
                     // The Python default for a bare `solve()` call; the fair
                     // agent ships 2_000_000, which only matters if it trips.
                     budget: 4_000_000,
-                    tt_cap: 0,
-                    chance_drop: ChanceDrop::Type,
+                    ..fair::SolverConfig::default()
                 },
             )
             .unwrap();
@@ -185,8 +184,7 @@ fn marginalized_agrees_with_the_fair_solver_at_k3() {
             &g,
             &fair::SolverConfig {
                 budget: 4_000_000,
-                tt_cap: 0,
-                chance_drop: ChanceDrop::Type,
+                ..fair::SolverConfig::default()
             },
         )
         .unwrap();
@@ -209,6 +207,46 @@ fn alphabeta_is_refused_for_the_marginalized_mode() {
         },
     );
     assert!(matches!(e, Err(SolveError::Engine(_))));
+}
+
+/// E1: the win objective is marginalized-only here (clairvoyant margin-max is
+/// already win-optimal — outcome is a monotone transform of a deterministic
+/// margin), and the marginalized win solve DELEGATES to the shipped fair
+/// solver, so the two must agree field for field.
+#[test]
+fn win_objective_clairvoyant_is_refused_and_marginalized_delegates() {
+    let g = endgame("11", 2);
+    let win_cfg = Config {
+        objective: Objective::Win,
+        ..Config::default()
+    };
+    let e = solve(&g, Mode::Clairvoyant, &win_cfg);
+    assert!(matches!(e, Err(SolveError::Engine(_))));
+
+    for seed in ["11", "17"] {
+        for k in [2usize, 3] {
+            let g = endgame(seed, k);
+            let mine = solve(&g, Mode::Marginalized, &win_cfg).unwrap();
+            let theirs = fair::solver::solve_marginalized(
+                &g,
+                &fair::SolverConfig {
+                    budget: 4_000_000,
+                    objective: Objective::Win,
+                    ..fair::SolverConfig::default()
+                },
+            )
+            .unwrap();
+            assert_eq!(bits(mine.value), bits(theirs.value), "seed {seed} k{k}");
+            assert_eq!(mine.optimal_actions, theirs.optimal_actions, "seed {seed} k{k}");
+            assert_eq!(mine.nodes, theirs.nodes, "seed {seed} k{k}");
+            assert_eq!(
+                mine.win_value.map(bits),
+                theirs.win_value.map(bits),
+                "seed {seed} k{k}"
+            );
+            assert_eq!(mine.child_win_values.len(), theirs.child_win_values.len());
+        }
+    }
 }
 
 /// A tiny budget raises `BudgetExceeded` on both paths.

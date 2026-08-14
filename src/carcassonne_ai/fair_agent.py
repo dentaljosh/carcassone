@@ -696,7 +696,8 @@ class FairHeuristicPriorAgent:
                  intra_reuse: bool | None = None,
                  parallel_workers: int | None = None,
                  sims_tile: int | None = None,
-                 sims_meeple: int | None = None):
+                 sims_meeple: int | None = None,
+                 exact_objective: str = "margin"):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -821,6 +822,18 @@ class FairHeuristicPriorAgent:
         self._exact_endgame = bool(exact_endgame)
         self._exact_max_k = int(exact_max_k)
         self._exact_budget = int(exact_budget)
+        # E1 (measurement/e1_winobj_20260814/DESIGN.md): the exact solver's
+        # objective. "margin" (default) = the untouched incumbent code path;
+        # "win" = lexicographic (E[outcome], E[margin]) — SOLVER-side knob, the
+        # leaf hash does not move (surface-B liveness convention: read the
+        # resolved `exact_objective`, never a leaf hash). At exact_max_k<=2 the
+        # two provably coincide (DESIGN §2); the knob exists so the objective
+        # is testable and priced.
+        if exact_objective not in ("margin", "win"):
+            raise ValueError(
+                f"exact_objective must be 'margin'|'win', got {exact_objective!r}")
+        self._exact_objective = str(exact_objective)
+        self.exact_objective = self._exact_objective   # public alias (manifest read-off)
         # LATENCY: within-search leaf batching (default 1 = the byte-identical champion
         # path). batch_size>1 makes each per-determinization NeuralMCTS collect that many
         # leaves under VIRTUAL LOSS and evaluate them in ONE `batch_evaluator` call
@@ -1264,8 +1277,12 @@ class FairHeuristicPriorAgent:
         S = _import_solver()
         t0 = time.perf_counter()
         try:
+            # E1: `objective` is only passed when non-default, so the incumbent
+            # call is byte-for-byte the pre-knob one.
+            _obj_kw = ({} if self._exact_objective == "margin"
+                       else {"objective": self._exact_objective})
             res = S.solve(self._game, board, mode="marginalized",
-                          budget=self._exact_budget, alphabeta=False)
+                          budget=self._exact_budget, alphabeta=False, **_obj_kw)
         except S.BudgetExceeded:
             self.solver_secs += time.perf_counter() - t0
             self.n_timeouts += 1
