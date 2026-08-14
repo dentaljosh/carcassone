@@ -235,6 +235,18 @@ def search_config_rs(cfg, sims: int):
             jrules_prior_mask=int(getattr(cfg, "jrules_prior_mask", 31)),
             jrules_prior_scope=str(getattr(cfg, "jrules_prior_scope", "all")),
         )
+    # J-RULES ROOT FILTER surface C: same conditional-keyword rule. A carc_rs
+    # build predating surface C keeps serving every default-off (champion)
+    # config unchanged, while a NONZERO mask against the stale build raises
+    # TypeError (fail-closed loud, never a silently filter-free search, which
+    # would read as "the anchor's hard rules change nothing" instead of "they
+    # never ran").
+    jrules_filter = {}
+    if int(getattr(cfg, "jrules_filter_mask", 0)) != 0:
+        jrules_filter = dict(
+            jrules_filter_mask=int(cfg.jrules_filter_mask),
+            jrules_filter_min_keep=int(getattr(cfg, "jrules_filter_min_keep", 1)),
+        )
     # ⚠️ `resolved_leaf_cfg()`, NOT `cfg.leaf_cfg` (fixed 2026-08-02). `leaf_cfg=None`
     # is the SENTINEL for "the env-built DEFAULT_CONFIG", and it is what every caller
     # that relies on the leaf env rather than an explicit override passes — including
@@ -256,6 +268,7 @@ def search_config_rs(cfg, sims: int):
         True,
         "glibc_fma",
         **jrules_prior,
+        **jrules_filter,
     )
 
 

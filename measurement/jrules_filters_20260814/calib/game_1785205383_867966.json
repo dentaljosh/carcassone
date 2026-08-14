@@ -1,0 +1,299 @@
+{
+ "schema": "carcassonne-jrules-filter-e4-replay/v1",
+ "archive": "1785205383_867966.json",
+ "deck_seed": 867966,
+ "rules_profile": "walled",
+ "human_player": 0,
+ "champion_seat": 1,
+ "recorded_scores": [
+  111,
+  113
+ ],
+ "replayed_scores": [
+  111,
+  113
+ ],
+ "replay_scores_match": true,
+ "partial": false,
+ "budget": {
+  "sims_per_det": 688,
+  "k_dets": 4,
+  "total_per_decision": 2752,
+  "source": "archive"
+ },
+ "seed": 12345,
+ "surface": "root_filter",
+ "arms": [
+  {
+   "name": "j10",
+   "mask": 2,
+   "min_keep": 1,
+   "filters": [
+    "f_j10"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "j3",
+   "mask": 8,
+   "min_keep": 1,
+   "filters": [
+    "f_j3"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "current",
+   "mask": 11,
+   "min_keep": 1,
+   "filters": [
+    "f_end",
+    "f_j10",
+    "f_j3"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "all",
+   "mask": 15,
+   "min_keep": 1,
+   "filters": [
+    "f_end",
+    "f_j10",
+    "f_j9",
+    "f_j3"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  }
+ ],
+ "leaf_hash_production": "a36d2e15a3b3d71d",
+ "n_plies_total": 144,
+ "n_graded": 64,
+ "n_searched_this_run": 64,
+ "champ_agrees_archive": 47,
+ "exclusions": {
+  "j10": 1,
+  "j3": 2,
+  "current": 3,
+  "all": 6
+ },
+ "yields": {
+  "j10": 0,
+  "j3": 0,
+  "current": 0,
+  "all": 0
+ },
+ "applicable": {
+  "j10": 30,
+  "j3": 30,
+  "current": 30,
+  "all": 30
+ },
+ "filter_fires": {
+  "j10": {
+   "f_end": 0,
+   "f_j10": 10,
+   "f_j9": 0,
+   "f_j3": 0
+  },
+  "j3": {
+   "f_end": 0,
+   "f_j10": 0,
+   "f_j9": 0,
+   "f_j3": 8
+  },
+  "current": {
+   "f_end": 0,
+   "f_j10": 10,
+   "f_j9": 0,
+   "f_j3": 8
+  },
+  "all": {
+   "f_end": 0,
+   "f_j10": 10,
+   "f_j9": 3,
+   "f_j3": 8
+  }
+ },
+ "exclusion_plies": {
+  "j10": [
+   {
+    "ply": 51,
+    "phase": "meeples",
+    "k_remaining": 46,
+    "champ_pick": 2508,
+    "dropped_j10": [
+     2508
+    ],
+    "fires_j10": [
+     "f_j10"
+    ]
+   }
+  ],
+  "j3": [
+   {
+    "ply": 103,
+    "phase": "meeples",
+    "k_remaining": 20,
+    "champ_pick": 2508,
+    "dropped_j3": [
+     2501,
+     2503,
+     2504,
+     2508,
+     2509
+    ],
+    "fires_j3": [
+     "f_j3"
+    ]
+   },
+   {
+    "ply": 119,
+    "phase": "meeples",
+    "k_remaining": 12,
+    "champ_pick": 2506,
+    "dropped_j3": [
+     2502,
+     2504,
+     2506
+    ],
+    "fires_j3": [
+     "f_j3"
+    ]
+   }
+  ],
+  "current": [
+   {
+    "ply": 51,
+    "phase": "meeples",
+    "k_remaining": 46,
+    "champ_pick": 2508,
+    "dropped_current": [
+     2508
+    ],
+    "fires_current": [
+     "f_j10"
+    ]
+   },
+   {
+    "ply": 103,
+    "phase": "meeples",
+    "k_remaining": 20,
+    "champ_pick": 2508,
+    "dropped_current": [
+     2501,
+     2503,
+     2504,
+     2508,
+     2509
+    ],
+    "fires_current": [
+     "f_j3"
+    ]
+   },
+   {
+    "ply": 119,
+    "phase": "meeples",
+    "k_remaining": 12,
+    "champ_pick": 2506,
+    "dropped_current": [
+     2502,
+     2504,
+     2506
+    ],
+    "fires_current": [
+     "f_j3"
+    ]
+   }
+  ],
+  "all": [
+   {
+    "ply": 7,
+    "phase": "meeples",
+    "k_remaining": 68,
+    "champ_pick": 2505,
+    "dropped_all": [
+     2505,
+     2506
+    ],
+    "fires_all": [
+     "f_j10",
+     "f_j9"
+    ]
+   },
+   {
+    "ply": 19,
+    "phase": "meeples",
+    "k_remaining": 62,
+    "champ_pick": 2505,
+    "dropped_all": [
+     2505
+    ],
+    "fires_all": [
+     "f_j9"
+    ]
+   },
+   {
+    "ply": 51,
+    "phase": "meeples",
+    "k_remaining": 46,
+    "champ_pick": 2508,
+    "dropped_all": [
+     2508
+    ],
+    "fires_all": [
+     "f_j10"
+    ]
+   },
+   {
+    "ply": 55,
+    "phase": "meeples",
+    "k_remaining": 44,
+    "champ_pick": 2505,
+    "dropped_all": [
+     2505
+    ],
+    "fires_all": [
+     "f_j9"
+    ]
+   },
+   {
+    "ply": 103,
+    "phase": "meeples",
+    "k_remaining": 20,
+    "champ_pick": 2508,
+    "dropped_all": [
+     2501,
+     2503,
+     2504,
+     2508,
+     2509
+    ],
+    "fires_all": [
+     "f_j3"
+    ]
+   },
+   {
+    "ply": 119,
+    "phase": "meeples",
+    "k_remaining": 12,
+    "champ_pick": 2506,
+    "dropped_all": [
+     2502,
+     2504,
+     2506
+    ],
+    "fires_all": [
+     "f_j3"
+    ]
+   }
+  ]
+ },
+ "mean_secs_per_graded_ply": 0.372,
+ "env": {
+  "CARCASSONNE_FIX_R9": "0",
+  "r9_env_expected": false,
+  "r9_env_observed": false
+ },
+ "wall_secs": 23.9
+}

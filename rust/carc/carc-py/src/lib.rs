@@ -573,6 +573,23 @@ impl PyMirrorState {
         Ok(d)
     }
 
+    // --- J-RULES ROOT FILTER surface C: the parity probe ------------------
+
+    /// The bot's hard filters (F-END/F-J10/F-J9/F-J3) evaluated on THIS state's
+    /// root legal set — the parity surface for `carcassonne_ai.jrules_filter`
+    /// (the Python reference mirror). Pure: the mirror is untouched and no RNG
+    /// is consumed. This is exactly what `FairAgent::pimc_move` applies before
+    /// its world searches when `jrules_filter_mask != 0`.
+    #[pyo3(signature = (mask, min_keep=1))]
+    fn jrules_filter_probe<'py>(
+        &self,
+        py: Python<'py>,
+        mask: i64,
+        min_keep: usize,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        jf_probe_dict(py, &self.game, mask, min_keep)
+    }
+
     // --- P2: the leaf ----------------------------------------------------
 
     /// `flat_leaf.flat_virtual_score_v2(state, player, cfg)`.
@@ -1193,6 +1210,8 @@ impl PySearchConfig {
         jrules_prior_dose=0.0,
         jrules_prior_mask=31,
         jrules_prior_scope="all",
+        jrules_filter_mask=0,
+        jrules_filter_min_keep=1,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1211,6 +1230,8 @@ impl PySearchConfig {
         jrules_prior_dose: f64,
         jrules_prior_mask: i64,
         jrules_prior_scope: &str,
+        jrules_filter_mask: i64,
+        jrules_filter_min_keep: usize,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -1255,6 +1276,22 @@ impl PySearchConfig {
                 leaf::JR_ALL
             )));
         }
+        // J-RULES ROOT FILTER surface C (search-level knobs; NOT LeafConfig
+        // fields — they move no leaf hash). Validated even at mask 0 so a
+        // typo'd min_keep never rides. ⚠️ Unlike the prior surface, mask 0 is
+        // VALID here — it IS the off state (a filter has no dose knob).
+        if jrules_filter_mask & !fair::JF_ALL != 0 || jrules_filter_mask < 0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "jrules_filter_mask {jrules_filter_mask} invalid: must be within JF_ALL \
+                 ({} == F-END|F-J10|F-J9|F-J3; 0 == OFF)",
+                fair::JF_ALL
+            )));
+        }
+        if jrules_filter_min_keep < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "jrules_filter_min_keep must be >= 1 (1 == the bot's own never-empty rule)",
+            ));
+        }
         Ok(PySearchConfig {
             inner: search::SearchConfig {
                 c_puct,
@@ -1273,6 +1310,8 @@ impl PySearchConfig {
                 jrules_prior_dose,
                 jrules_prior_mask,
                 jrules_prior_scope: jr_scope,
+                jrules_filter_mask,
+                jrules_filter_min_keep,
             },
         })
     }
@@ -1289,6 +1328,18 @@ impl PySearchConfig {
                 search::JrPriorScope::All => "all",
                 search::JrPriorScope::Own => "own",
             },
+        )
+    }
+
+    /// The resolved J-rules ROOT-FILTER knobs (surface C) — what a manifest
+    /// must stamp: `(mask, min_keep)`. Like surface B, no leaf hash moves, so
+    /// a moved-hash gate cannot prove the filter live; the manifest's resolved
+    /// mask + the agent's `jf_dropped_total` are the wiring gates.
+    #[getter]
+    fn jrules_filter(&self) -> (i64, usize) {
+        (
+            self.inner.jrules_filter_mask,
+            self.inner.jrules_filter_min_keep,
         )
     }
 
@@ -1316,6 +1367,15 @@ impl PySearchConfig {
         } else {
             String::new()
         };
+        // The surface-C suffix likewise appears ONLY when the filter is live.
+        let jf = if i.jrules_filter_mask != 0 {
+            format!(
+                ", jrules_filter_mask={}, jrules_filter_min_keep={}",
+                i.jrules_filter_mask, i.jrules_filter_min_keep
+            )
+        } else {
+            String::new()
+        };
         format!(
             "SearchConfigRs(sims={}, c_puct={}, tau_p={}, value_norm={}, \
              leaf_quantize={:?}, final_select={:?}, fpu={:?}, exp_fma={}, tanh={:?}{})",
@@ -1328,7 +1388,7 @@ impl PySearchConfig {
             i.fpu_reduction,
             i.exp_fma,
             i.tanh_flavor,
-            jr
+            format!("{jr}{jf}")
         )
     }
 }
@@ -1630,6 +1690,44 @@ fn parse_chance_drop(s: &str) -> PyResult<fair::ChanceDrop> {
 /// threads → pooled merge) runs under `allow_threads`, which is the entire
 /// point on Chaquopy: the GIL forbids Python world-threads, so the k-parallel
 /// win has to happen below the FFI boundary.
+/// Shared body of the two `jrules_filter_probe` bindings (surface C): run the
+/// pure root filter on `game` and dict the outcome, per-filter maps keyed by
+/// [`fair::JF_FILTER_NAMES`].
+fn jf_probe_dict<'py>(
+    py: Python<'py>,
+    game: &Game,
+    mask: i64,
+    min_keep: usize,
+) -> PyResult<Bound<'py, PyDict>> {
+    let fo = fair::jrules_root_filter(game, mask, min_keep)
+        .map_err(pyo3::exceptions::PyValueError::new_err)?;
+    let d = PyDict::new(py);
+    d.set_item("mask", mask)?;
+    d.set_item("min_keep", min_keep)?;
+    d.set_item("phase", game.state.phase.value())?;
+    d.set_item("applicable", fo.applicable)?;
+    d.set_item("legal", game.legal_actions())?;
+    d.set_item("kept", fo.kept.clone())?;
+    d.set_item("dropped", fo.dropped.clone())?;
+    d.set_item(
+        "fires",
+        fair::JF_FILTER_NAMES
+            .iter()
+            .zip(fo.fires.iter())
+            .map(|(n, &v)| (*n, v))
+            .collect::<Vec<_>>(),
+    )?;
+    d.set_item(
+        "yields",
+        fair::JF_FILTER_NAMES
+            .iter()
+            .zip(fo.yields.iter())
+            .map(|(n, &v)| (*n, v))
+            .collect::<Vec<_>>(),
+    )?;
+    Ok(d)
+}
+
 #[pyclass(name = "FairAgentRs")]
 struct PyFairAgent {
     agent: fair::FairAgent,
@@ -1871,6 +1969,26 @@ impl PyFairAgent {
         Ok(out)
     }
 
+    /// J-RULES ROOT FILTER surface C — evaluate the bot's hard filters on the
+    /// CURRENT mirror position (pure; consumes no RNG; the agent is untouched).
+    /// The calibration instrument's per-ply read: which root actions would a
+    /// live `jrules_filter_mask` drop HERE, and did any never-empty guard
+    /// yield. Returns `applicable` / `legal` / `kept` / `dropped` /
+    /// `fires` / `yields` (per-filter dicts keyed f_end/f_j10/f_j9/f_j3).
+    #[pyo3(signature = (mask, min_keep=1))]
+    fn jrules_filter_probe<'py>(
+        &self,
+        py: Python<'py>,
+        mask: i64,
+        min_keep: usize,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let game = match self.game.as_ref() {
+            None => return Err(no_game()),
+            Some(g) => g,
+        };
+        jf_probe_dict(py, game, mask, min_keep)
+    }
+
     fn det_seed_base(&self, move_idx: i64) -> i64 {
         fair::det_seed_base(self.agent.cfg.seed, move_idx)
     }
@@ -1899,6 +2017,29 @@ impl PyFairAgent {
             "last_pooled_visits",
             a.last_pooled_visits.clone(),
         )?;
+        // Surface C (J-rules root filter) cumulative counters — all-zero when
+        // `jrules_filter_mask == 0` (the champion). Keys are ALWAYS present so
+        // a manifest diff between arms is a value diff, never a shape diff.
+        d.set_item(
+            "jf_fires",
+            fair::JF_FILTER_NAMES
+                .iter()
+                .zip(a.jf_fires.iter())
+                .map(|(n, &v)| (*n, v))
+                .collect::<Vec<_>>(),
+        )?;
+        d.set_item(
+            "jf_yields",
+            fair::JF_FILTER_NAMES
+                .iter()
+                .zip(a.jf_yields.iter())
+                .map(|(n, &v)| (*n, v))
+                .collect::<Vec<_>>(),
+        )?;
+        d.set_item("jf_dropped_total", a.jf_dropped_total)?;
+        d.set_item("jf_applicable_moves", a.jf_applicable_moves)?;
+        d.set_item("jrules_filter_mask", a.cfg.search.jrules_filter_mask)?;
+        d.set_item("jrules_filter_min_keep", a.cfg.search.jrules_filter_min_keep)?;
         d.set_item("k_dets", a.cfg.k_dets)?;
         d.set_item("sims_per_det", a.cfg.search.simulations)?;
         d.set_item("threads", a.cfg.threads)?;
@@ -1927,6 +2068,9 @@ impl PyFairAgent {
         d.set_item("secs", m.secs)?;
         d.set_item("k_remaining", m.k_remaining)?;
         d.set_item("sims_used", m.sims_used)?;
+        d.set_item("jf_dropped", m.jf_dropped.clone())?;
+        d.set_item("jf_fires", m.jf_fires.to_vec())?;
+        d.set_item("jf_yields", m.jf_yields.to_vec())?;
         d.set_item(
             "pooled",
             m.pooled

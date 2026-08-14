@@ -981,7 +981,7 @@ def _make_bare_net_opponent(net, rep, seed, leaf_cfg=None, handles=None):
 
 
 def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
-                     leaf_cfg=None, jrules_prior=None):
+                     leaf_cfg=None, jrules_prior=None, jrules_filter=None):
     # leaf_cfg=None -> env DEFAULT_CONFIG (byte-identical to the pre-C5 path); a
     # non-None value is the --cand-leaf-json CANDIDATE override for the FAIR agent
     # ONLY (the h800 rung always keeps DEFAULT_CONFIG — see _RungPrefix callers).
@@ -993,11 +993,21 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
     # SEARCH knobs, not leaf fields: the candidate's leaf hash stays the
     # champion's, so the wiring gate for a live term is the RESOLVED dose this
     # config carries into the manifest (as_manifest / cand_jrules_prior).
+    # jrules_filter: J-RULES ROOT FILTER surface C (CANDIDATE side only,
+    # rust-only) — None constructs the config with the dataclass defaults,
+    # byte-identical to the pre-C path; a dict {mask, min_keep} is the
+    # --cand-jrules-filter-* override. Like surface B these are SEARCH knobs,
+    # not leaf fields: no leaf hash moves, so the wiring gates are the RESOLVED
+    # cand_jrules_filter.mask in the manifest plus the per-game jf_dropped
+    # counters (the filter must fire at least once across the cell).
     jr = {}
     if jrules_prior is not None:
         jr = dict(jrules_prior_dose=float(jrules_prior["dose"]),
                   jrules_prior_mask=int(jrules_prior["mask"]),
                   jrules_prior_scope=str(jrules_prior["scope"]))
+    if jrules_filter is not None:
+        jr.update(jrules_filter_mask=int(jrules_filter["mask"]),
+                  jrules_filter_min_keep=int(jrules_filter["min_keep"]))
     return HeuristicPriorConfig(
         c_puct=c_puct, tau_p=tau_p, leaf_quantize=leaf_quantize,
         final_select=final_select, value_norm=value_norm,
@@ -1556,6 +1566,13 @@ class GameResult:
     oracle_mainsearch_secs: float = 0.0
     oracle_presearch_leaf_calls: int = 0
     oracle_mainsearch_leaf_calls: int = 0
+    # J-RULES ROOT FILTER surface C (CANDIDATE side): the per-game liveness
+    # telemetry — {"dropped_total", "applicable_moves", "fires", "yields"}
+    # read off FairAgentRs.stats() at game end. None for every non-filter cell
+    # (legacy schema byte-identical). The prereg's positive control sums
+    # dropped_total over the cell's records: a live-mask cell where that sum
+    # is 0 never fired the filter and MUST NOT be read as a null.
+    cand_jf: dict | None = None
 
 
 # Track-F Gate A oracle-prior cost fields — OMITTED from the serialized per-game JSON for
@@ -1808,11 +1825,14 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
                  netprior_backend=None, backend="python", rust_threads=None,
-                 simsplit=None, cand_jrules_prior=None):
+                 simsplit=None, cand_jrules_prior=None, cand_jrules_filter=None):
     _W["info"] = info
     # J-RULES PRIOR surface B (CANDIDATE side ONLY, rust-only; None = OFF =
     # byte-identical). A dict {dose, mask, scope} resolved once in main().
     _W["cand_jrules_prior"] = cand_jrules_prior
+    # J-RULES ROOT FILTER surface C (CANDIDATE side ONLY, rust-only; None =
+    # OFF = byte-identical). A dict {mask, min_keep} resolved once in main().
+    _W["cand_jrules_filter"] = cand_jrules_filter
     # ENGINE (rustport P6). Resolved ONCE in main() and passed as a literal, never as
     # "auto" — a worker that re-resolved the YAML could disagree with the manifest.
     _W["backend"] = backend
@@ -1996,12 +2016,14 @@ def _args_simsplit(args):
     return (args.sims_tile, args.sims_meeple)
 
 
-def _cfg_from_dict(d, leaf_cfg=None, jrules_prior=None):
-    # `jrules_prior` reaches ONLY the candidate construction site in _play_one;
-    # the opponent/rung builders never pass it (None == pre-B byte-identical).
+def _cfg_from_dict(d, leaf_cfg=None, jrules_prior=None, jrules_filter=None):
+    # `jrules_prior`/`jrules_filter` reach ONLY the candidate construction site
+    # in _play_one; the opponent/rung builders never pass them (None ==
+    # pre-B/pre-C byte-identical).
     return _build_champ_cfg(d["c_puct"], d["tau_p"], d["leaf_quantize"],
                             d["final_select"], d["value_norm"], leaf_cfg,
-                            jrules_prior=jrules_prior)
+                            jrules_prior=jrules_prior,
+                            jrules_filter=jrules_filter)
 
 
 def _play_one(args) -> GameResult | GameFailure | None:
@@ -2063,7 +2085,8 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
     dh = deck_hash(board)
 
     cfg = _cfg_from_dict(_W["champ_cfg_dict"], _W.get("cand_leaf_cfg"),
-                         jrules_prior=_W.get("cand_jrules_prior"))
+                         jrules_prior=_W.get("cand_jrules_prior"),
+                         jrules_filter=_W.get("cand_jrules_filter"))
     champ = _make_champion(_W["info"], cfg, _W["sims"], _W["k_dets"], _W["exact_k"],
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
@@ -2123,6 +2146,7 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
         champ_timeouts=champ.n_timeouts,
         rung_moves=rung_moves, rung_secs=round(rung_secs, 3),
         latch_k=champ.latch_k,
+        cand_jf=_cand_jf_telemetry(champ),
         opponent=_W.get("opponent", "h800"), **_opp_stats(rung),
         # Track-F Gate A: candidate oracle cost telemetry (empty {} for non-oracle cells,
         # so the fields stay at their dataclass-default zeros and _save omits them).
@@ -2133,6 +2157,27 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
 
 
 # --------------------------------------------------------------------------- #
+def _cand_jf_telemetry(champ) -> dict | None:
+    """Surface-C per-game liveness read (CANDIDATE side). None unless the
+    worker was armed with cand_jrules_filter AND the champion is the rust fair
+    agent (the only host of the filter); a filter-armed cell whose candidate is
+    NOT a RustFairAgent is a wiring bug and raises rather than stamping None."""
+    if _W.get("cand_jrules_filter") is None:
+        return None
+    rs = getattr(champ, "_rs", None)
+    if rs is None:
+        raise RuntimeError(
+            "cand_jrules_filter is armed but the candidate has no FairAgentRs "
+            "(surface C is rust-only) — the filter cannot have run")
+    s = rs.stats()
+    return {
+        "dropped_total": int(s["jf_dropped_total"]),
+        "applicable_moves": int(s["jf_applicable_moves"]),
+        "fires": {str(k): int(v) for k, v in s["jf_fires"]},
+        "yields": {str(k): int(v) for k, v in s["jf_yields"]},
+    }
+
+
 def _paired_z(results):
     """Paired z on per-deck seat-balanced margin (= eval_puct_priors._paired_z)."""
     by_seed = {}
@@ -2415,7 +2460,7 @@ def _build_work(seed_start, n, paired):
 
 # --------------------------------------------------------------------------- #
 def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
-           opp_label=None, cand_jrules_prior=None) -> int:
+           opp_label=None, cand_jrules_prior=None, cand_jrules_filter=None) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
     and print an elo/z summary. Exits 0 on success.
@@ -2429,10 +2474,16 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     exercise those."""
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
                            args.final_select, args.value_norm, cand_leaf_cfg,
-                           jrules_prior=cand_jrules_prior)
+                           jrules_prior=cand_jrules_prior,
+                           jrules_filter=cand_jrules_filter)
     if cand_jrules_prior is not None:
         print(f"[smoke] J-RULES PRIOR surface B LIVE on the candidate: "
               f"{cand_jrules_prior} (leaf hash does NOT move — check the dose)")
+    if cand_jrules_filter is not None:
+        print(f"[smoke] J-RULES ROOT FILTER surface C LIVE on the candidate: "
+              f"{cand_jrules_filter} (leaf hash does NOT move — the wiring "
+              f"gates are the manifest's cand_jrules_filter.mask and the "
+              f"per-game jf_dropped counters)")
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
                       "final_select": args.final_select, "value_norm": args.value_norm}
@@ -2911,6 +2962,24 @@ def main(argv=None) -> int:
                          "only root-player nodes (the opponent-model-free ablation; "
                          "measured cheaper, ~1.07x vs ~1.15x). Only read when the dose "
                          "is nonzero.")
+    ap.add_argument("--cand-jrules-filter-mask", type=int, default=0,
+                    help="J-RULES ROOT FILTER surface C (measurement/"
+                         "jrules_filters_20260814): apply the anchor's HARD FILTERS "
+                         "to the CANDIDATE's ROOT legal set before its PIMC searches "
+                         "(bits 1=F-END, 2=F-J10, 4=F-J9, 8=F-J3; 11 == the bot's "
+                         "`current` stack). MEEPLE-phase roots only; root only, never "
+                         "in-tree; each filter yields rather than leave < min-keep "
+                         "candidates. 0 (default) = OFF = byte-identical. The leaf "
+                         "hash does NOT move — the manifest's cand_jrules_filter.mask "
+                         "+ the per-game jf_dropped counters are the wiring gates. "
+                         "RUST-ONLY: a nonzero mask hard-exits unless the resolved "
+                         "backend is rust, and a stale carc_rs wheel raises TypeError "
+                         "(fail-closed).")
+    ap.add_argument("--cand-jrules-filter-min-keep", type=int, default=1,
+                    help="surface-C never-empty guard: a filter that would leave "
+                         "fewer than this many root candidates is SKIPPED for that "
+                         "ply (the yield is counted per game). Default 1 == the "
+                         "bot's own rule. Only read when the mask is nonzero.")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
     ap.add_argument("--paired", action="store_true")
@@ -3364,6 +3433,28 @@ def main(argv=None) -> int:
                                       None, jrules_prior=_cand_jrules_prior)
         from carcassonne_ai.rust_agent import search_config_rs as _sc_rs
         _sc_rs(_probe_cfg, 8)  # TypeError here == rebuild the wheel on THIS box
+    # J-RULES ROOT FILTER surface C: same resolve-once / fail-fast pattern.
+    _cand_jrules_filter = None
+    if int(args.cand_jrules_filter_mask) != 0:
+        if _backend != "rust":
+            ap.error(f"--cand-jrules-filter-mask {args.cand_jrules_filter_mask} is "
+                     f"RUST-ONLY (surface C lives in carc_core::fair); resolved "
+                     f"backend is {_backend!r}. The python search path would "
+                     "fail-loud in every worker — refusing up front instead.")
+        if args.info != "fair":
+            ap.error("--cand-jrules-filter-mask applies to the FAIR candidate "
+                     f"(--info fair; the filter binds in the fair agent's PIMC "
+                     f"root); got --info {args.info}")
+        _cand_jrules_filter = dict(mask=int(args.cand_jrules_filter_mask),
+                                   min_keep=int(args.cand_jrules_filter_min_keep))
+        # Construct once so a bad mask/min_keep dies at launch (__post_init__
+        # validates) and a stale carc_rs wheel dies HERE with the fail-closed
+        # TypeError rather than 30 s into the first worker.
+        _probe_cfg_c = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
+                                        args.final_select, args.value_norm,
+                                        None, jrules_filter=_cand_jrules_filter)
+        from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_c
+        _sc_rs_c(_probe_cfg_c, 8)  # TypeError == rebuild the wheel on THIS box
     if args.rust_threads is not None and _backend != "rust":
         ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
     if args.rust_threads is not None and args.info == "clair":
@@ -3432,6 +3523,7 @@ def main(argv=None) -> int:
                      "run verify_sighted_orch_parity.py + an --orch-shm-name n=20 eval instead")
         return _smoke(args, cand_leaf_cfg, opp_leaf_cfg=opp_leaf_cfg, opp_rep=opp_rep,
                       cand_jrules_prior=_cand_jrules_prior,
+                      cand_jrules_filter=_cand_jrules_filter,
                       opp_label=opp_label)
 
     if args.info in ("fair-net", "fair-netprior") and not args.net:
@@ -3485,7 +3577,8 @@ def main(argv=None) -> int:
 
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
                            args.final_select, args.value_norm, cand_leaf_cfg,
-                           jrules_prior=_cand_jrules_prior)
+                           jrules_prior=_cand_jrules_prior,
+                           jrules_filter=_cand_jrules_filter)
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
                       "final_select": args.final_select, "value_norm": args.value_norm}
@@ -3771,6 +3864,10 @@ def main(argv=None) -> int:
         # the champion's on a live-term cell), so a moved-hash check proves
         # nothing here. A reader must check cand_jrules_prior.dose directly.
         "cand_jrules_prior": _cand_jrules_prior,
+        # J-RULES ROOT FILTER surface C (CANDIDATE side; None = OFF). Same
+        # inverted-hash situation as surface B: no leaf hash moves, so THIS
+        # resolved dict + the per-game jf_dropped counters are the wiring gates.
+        "cand_jrules_filter": _cand_jrules_filter,
         # rung_leaf_* is the env DEFAULT_CONFIG. For --opponent h800 it IS the opponent's
         # leaf (the ruler). For a head-to-head no agent uses it — it is recorded anyway as
         # the PROOF that the in-process curve125 injection did not move DEFAULT_CONFIG.
@@ -4119,7 +4216,7 @@ def main(argv=None) -> int:
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
-                          _simsplit, _cand_jrules_prior))
+                          _simsplit, _cand_jrules_prior, _cand_jrules_filter))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -4133,7 +4230,7 @@ def main(argv=None) -> int:
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
-                          _simsplit, _cand_jrules_prior))
+                          _simsplit, _cand_jrules_prior, _cand_jrules_filter))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

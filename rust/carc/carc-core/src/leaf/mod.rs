@@ -1121,7 +1121,7 @@ const JR_J8_MAX_FARM_MEEPLES: i64 = 3;
 /// The `(root, [w0, w1])` association list that stands in for Python's dict.
 /// Only ever consumed by `fsum`-reduced loops and by order-independent
 /// booleans/counters, so first-touch order is not observable in the result.
-type JrCounts = Vec<(u32, [i64; 2])>;
+pub(crate) type JrCounts = Vec<(u32, [i64; 2])>;
 
 #[inline]
 fn jr_bump(v: &mut JrCounts, root: u32, player: usize, w: i64) {
@@ -1144,7 +1144,10 @@ fn jr_has_root(v: &JrCounts, root: u32) -> bool {
 /// `flat_leaf._jr_counts` — weighted meeple counts per component plus the
 /// CLAIMED-cloister cell set. Attribution mirrors [`final_scores`] exactly
 /// (terrain of the meeple's own side; farmers via `farm_pos0_root`).
-fn jr_counts(state: &GameState, d: &Decomp) -> (JrCounts, JrCounts, JrCounts, Vec<(i32, i32)>) {
+pub(crate) fn jr_counts(
+    state: &GameState,
+    d: &Decomp,
+) -> (JrCounts, JrCounts, JrCounts, Vec<(i32, i32)>) {
     let mut city: JrCounts = Vec::new();
     let mut road: JrCounts = Vec::new();
     let mut farm: JrCounts = Vec::new();
