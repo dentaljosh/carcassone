@@ -6705,3 +6705,46 @@ it". (d) Build the typed error on the dead-search arm with bit-identity gates �
 **Reversal cost:** low — revert `3af12bc0` and rebuild both boxes; nothing depends on the new
 exception type except the census join.
 **Phase:** measurement-first (Phase 4 era; champion search integrity).
+
+## 2026-08-14 — F6 (win-prob / score-diff conditioning of the classical decision rule) — **KILLED FREE at the 0-game pre-gate: branch K, 0/673 binding positions (CI95 ≤ 0.55%)** — and the scan's "genuinely unexamined" tag was PARTLY WRONG
+
+**Context.** The 2026-08-12 pro-strategy scan's F6 named the leaf's margin-EV objective (no
+score-differential / win-probability conditioning) a genuinely unexamined axis. Funded 2026-08-14
+("have agents work on all those except e4") as a DESIGN + FREE-INSTRUMENT round only — 0 games,
+subagent on a worktree branch, read-rule committed before any number (`aff9a7e7` → instrument
+`13586209` → readout `479d990b`).
+
+**Prior-art correction (DESIGN.md §0, grep evidence).** The *static* win-prob transform of the
+leaf was already **dead twice**: the `v210_winshape_*` wave (tanh(margin/T), T=12 and T=4 — the
+n4 screen's +18.3/z1.05 failed fresh-band replication at −27.9; DECISIONS 2026-07-05
+"WIN-SHAPING AXIS DEAD") and the C4 `value_norm` sweep (15 optimal, both wings negative).
+The winshape screen's positive lean was in the BEHIND bucket — F6's exact mechanism appeared and
+died in replication. Option B (`score_diff`/`wl` *training targets* for a learned value head) is a
+**different, also-closed** axis (CL-039/042/073) — do-not-conflate note now on the LEVER_INDEX row.
+What was genuinely open: (a) state-conditioned risk posture, (b) phase/score-dependent squash,
+(c) the endgame objective.
+
+**Fact established en route:** the exact-K solver maximizes **MARGIN, not win**
+(`rust/carc/carc-core/src/endgame/mod.rs:13-20`). The win-objective switch is already queued as
+roadmap **Track E, E1** — corner (c) is unfunded-with-a-queue-slot, not unexamined; the pre-gate
+deliberately does not adjudicate the last-2-tiles regime.
+
+**Pre-gate verdict (branch K, kill-free bar < 5% binding).** Binding = margin-near-tied arms
+(ε=0.25 pts) differing in P(win) by ≥ 0.02, P(win) from a banked/prospective-decomposed logistic
+fit on the 449-game champion self-play corpus. **0/673 positions binding; max ΔP anywhere 0.0104;
+holds at every sensitivity cell.** Mechanism is structural: among margin-near-tied tile arms the
+banked/prospective composition differs in only 12/673 positions (p90 = 0.0 pts) — the
+"safe −5 vs volatile −5" choice essentially never occurs at close tile decisions, so a
+conditioning term has **no exposure**. Secondary (recorded, moot): prospective points convert to
+wins at ~0.85× banked (β₂/β₁ 0.848 [0.713, 1.002] — leans real, unresolved). Integrity: 449/449
+replays bit-match recorded scores, 673/673 bank checksums, leaf `a36d2e15a3b3d71d`, 22.3 s wall.
+
+**Decision.** Forms (a)/(b) **MEASURED-AND-KILLED-FREE** (LEVER_INDEX row carries the re-open
+bars: a meeple-decision near-tie census, a variance feature beyond the banked/prospective split,
+or E4 human calibration at sufficient n). Form (c) keeps its E1 queue slot on its own merits.
+**No game cell is owed.** Artifacts: `measurement/f6_winprob_20260814/` (DESIGN, READOUT,
+VERDICT.json, raw/), `scripts/analyzer/f6_winprob_pregate.py`, 14 tests. Merged from
+`worktree-agent-aba1baeccdf1c3149`.
+**No `experiments/results.csv` row, no band, no claim id (0-game precedent: farm-war, adaptive-k
+census, j13 pre-gate). `PRODUCTION.yaml` / `BAND_REGISTRY.csv` untouched.**
+**Phase:** measurement-first (human-edge program, round 2).
