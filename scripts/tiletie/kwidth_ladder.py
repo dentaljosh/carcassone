@@ -482,7 +482,34 @@ def adjudicate(stats_by_id: dict, counters: dict, n_slice: int,
 # --------------------------------------------------------------------------- #
 # analyze driver                                                               #
 # --------------------------------------------------------------------------- #
+def assert_oracle_corpus_reachable() -> None:
+    """FAIL LOUDLY if the CRN oracle corpus is not actually reachable.
+
+    ⚠️ REAL HAZARD, hit on 2026-08-14: `term_gate._share()` prefers
+    `/mnt/c/carc-shared` over `/mnt/carc-shared`, and the LAPTOP has its own
+    (unrelated, near-empty) `/mnt/c/carc-shared` — so on that box RECORDS_ROOT
+    silently resolves to a directory with no oracle records, every position
+    joins to nothing, and the run reads as W-0 UNREADABLE with 522
+    `oracle_problem` counters. The search phase never touches the share, so
+    only ANALYZE is affected. Analyze on a box where the real share resolves
+    (the local box), or ship the records there. This check turns a confusing
+    all-positions-dropped readout into a one-line diagnosis."""
+    import glob as _glob
+    root = Path(TG.RECORDS_ROOT)
+    n = len(_glob.glob(f"{TG.RECORDS_ROOT}/*/*/records/*.json")) if root.is_dir() else 0
+    if n == 0:
+        raise SystemExit(
+            f"REFUSING to analyze: the CRN oracle corpus is unreachable at "
+            f"{TG.RECORDS_ROOT} (is_dir={root.is_dir()}, matched files={n}).\n"
+            f"This is almost certainly the share-precedence hazard: "
+            f"term_gate._share() prefers /mnt/c/carc-shared, which on the "
+            f"laptop is that box's OWN Windows drive, not the cluster share "
+            f"(/mnt/carc-shared). Run --analyze on the local box, or ship the "
+            f"records there. NOTHING is wrong with the search records.")
+
+
 def cmd_analyze(rungs) -> dict:
+    assert_oracle_corpus_reachable()
     t = build_table(rungs)
     rows = t["rows"]
     stats = {r[0]: rung_stats(rows, r[0]) for r in rungs}
@@ -504,10 +531,17 @@ def cmd_analyze(rungs) -> dict:
         "n_slice": t["n_slice"], "n_rows": len(rows),
         "counters": t["counters"],
         "denom": dn,
-        "rungs": {i: {**s, "capture_ratio":
-                      (s["mean_capture"] / dn["mean"])
-                      if dn["mean"] == dn["mean"] and dn["mean"] > 0
-                      else float("nan")}
+        "rungs": {i: {**s,
+                      "capture_ratio": _ratio(s["mean_capture"], dn["mean"]),
+                      # 95% bounds ON THE RATIO — the honesty columns: a rung
+                      # that does not FIRE at the bar has not EXCLUDED an
+                      # effect at the bar unless its upper bound sits below it.
+                      "ratio_ci95_lo": _ratio(s["mean_capture"] - 2.0 * s["se"],
+                                              dn["mean"]),
+                      "ratio_ci95_hi": _ratio(s["mean_capture"] + 2.0 * s["se"],
+                                              dn["mean"]),
+                      "bar_excluded": (_ratio(s["mean_capture"] + 2.0 * s["se"],
+                                              dn["mean"]) < BAR_CAPTURE_RATIO)}
                   for i, s in stats.items()},
         "two_sigma_resolution": two_sigma,
         "base_agreement_selfplay": base_agreement(rows),
@@ -523,6 +557,12 @@ def cmd_analyze(rungs) -> dict:
           + (f", named rung {verdict.get('named_rung')}"
              if "named_rung" in verdict else ""))
     return out
+
+
+def _ratio(x, denom):
+    if x != x or denom != denom or denom <= 0:
+        return float("nan")
+    return x / denom
 
 
 def _fmt(x, nd=4):
@@ -559,29 +599,44 @@ def _write_md(r: dict, path: Path) -> None:
         f"- holdout: {r['holdout']}",
         "",
         "| rung | k × sims/det (total) | class | capture [pts/ply] | se | z | "
-        "capture ratio | coverage | pick-change (arm) | outside-scored | "
-        "median s/pos | deploy mult |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "capture ratio | ratio 95% CI | coverage | pick-change (arm) | "
+        "outside-scored | median s/pos | deploy mult |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     order = [x[0] for x in RUNGS if x[0] in r["rungs"]]
     for i in order:
         s = r["rungs"][i]
         cfg = f"{s['k_dets']} × {s['sims_per_det']} ({s['total_sims']:,})"
         if i == BASE_ID:
-            L.append(f"| **{i}** | {cfg} | base | — | — | — | — | "
+            L.append(f"| **{i}** | {cfg} | base | — | — | — | — | — | "
                      f"{s['coverage']:.3f} | — | — | {s['secs_median']:.1f} | 1.00 |")
             continue
         star = "**" if s["class"] == "isobudget" else ""
         L.append(
             f"| {star}{i}{star} | {cfg} | {s['class']} | "
             f"{_fmt(s['mean_capture'])} | {_fmt(s['se'])} | {_fmt(s['z'], 2)} | "
-            f"{_fmt(s['capture_ratio'], 3)} | {s['coverage']:.3f} | "
+            f"{_fmt(s['capture_ratio'], 3)} | "
+            f"[{_fmt(s['ratio_ci95_lo'], 2)}, {_fmt(s['ratio_ci95_hi'], 2)}] | "
+            f"{s['coverage']:.3f} | "
             f"{s['pick_change_rate_arm']:.3f} | {s['outside_scored_rate']:.3f} | "
             f"{s['secs_median']:.1f} | {s['deploy_multiplier_est']:.2f} |")
     v = r["verdict"]
     L += ["", f"## Verdict: **{v['branch']}**", ""]
     if v["branch"] == "W-FLAT":
         L += ["Mandatory sentence (READ_RULE §6): *" + FLAT_SENTENCE + "*", ""]
+        excl = [i for i in order if i != BASE_ID
+                and r["rungs"][i].get("bar_excluded")]
+        notx = [i for i in order if i != BASE_ID
+                and not r["rungs"][i].get("bar_excluded")]
+        L += ["⚠️ **SCOPE OF THE FLAT — a rung that did not FIRE has not "
+              "EXCLUDED the bar.** W-FLAT is a *funding* verdict: no rung "
+              "cleared ratio ≥ 0.35 ∧ z ≥ +2 ∧ coverage ≥ 0.85. It is NOT an "
+              "exclusion of a bar-sized effect except where the 95% upper "
+              f"bound on the ratio sits below 0.35 — true for `{excl}`, NOT "
+              f"true for `{notx}`, whose intervals still admit capture at or "
+              "above the bar. The honest claim is *\"the k-width axis did not "
+              "fire at a mechanism-sized bar on 522 dev positions\"*, not "
+              "*\"k-width is worth nothing\"*.", ""]
     if "attribution" in v:
         L += [f"**Attribution: {v['attribution']}** — named rung "
               f"`{v.get('named_rung')}`; iso-budget rungs clearing: "

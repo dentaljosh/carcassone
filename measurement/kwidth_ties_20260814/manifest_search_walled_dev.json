@@ -1,0 +1,56 @@
+{
+  "schema": "carcassonne-kwidth-ladder/v1",
+  "phase": "search",
+  "profile": "walled",
+  "slice": "dev",
+  "rungs": [
+    {
+      "id": "R0",
+      "k_dets": 8,
+      "sims_per_det": 1376,
+      "total_sims": 11008,
+      "class": "base"
+    },
+    {
+      "id": "R1",
+      "k_dets": 16,
+      "sims_per_det": 1376,
+      "total_sims": 22016,
+      "class": "expansion"
+    },
+    {
+      "id": "R2",
+      "k_dets": 32,
+      "sims_per_det": 1376,
+      "total_sims": 44032,
+      "class": "expansion"
+    },
+    {
+      "id": "R3",
+      "k_dets": 64,
+      "sims_per_det": 1376,
+      "total_sims": 88064,
+      "class": "expansion"
+    },
+    {
+      "id": "C1",
+      "k_dets": 16,
+      "sims_per_det": 688,
+      "total_sims": 11008,
+      "class": "isobudget"
+    },
+    {
+      "id": "C2",
+      "k_dets": 32,
+      "sims_per_det": 344,
+      "total_sims": 11008,
+      "class": "isobudget"
+    }
+  ],
+  "workers": 22,
+  "n_slice_rids": 489,
+  "n_searched": 489,
+  "n_error": 0,
+  "wall_secs": 694.1,
+  "started_utc": "2026-08-14T23:18:30Z"
+}
