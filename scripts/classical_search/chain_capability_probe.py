@@ -209,7 +209,7 @@ def cand_leaf_spec(dose: float, size_min: float, open_max: int) -> dict:
 
 
 def opencity_cell_tag(dose: float, size_min: float, edge_min: int, symmetric: bool,
-                      prefix: str = "oc") -> str:
+                      cap: float = 0.0, prefix: str = "oc") -> str:
     """Stable per-cell directory / exp-id stem for an OPEN-CITY cell.
 
     Deliberately unlike `cell_tag`'s `_s<..>_o<..>`: the size axis here is TILES (`t`), the
@@ -218,11 +218,12 @@ def opencity_cell_tag(dose: float, size_min: float, edge_min: int, symmetric: bo
     that differs only in `opencity_symmetric`, which is a DIFFERENT TERM (TERM_SPEC §3), not
     a rung on the same ladder."""
     return (f"{prefix}_d{_num_tag(dose)}_t{_num_tag(size_min)}_e{_num_tag(edge_min)}"
-            f"_{'sym' if symmetric else 'asym'}")
+            f"_{'sym' if symmetric else 'asym'}"
+            + (f"_c{_num_tag(cap)}" if float(cap) > 0.0 else ""))
 
 
 def opencity_cand_leaf_spec(dose: float, size_min: float, edge_min: int,
-                            symmetric: bool) -> dict:
+                            symmetric: bool, cap: float = 0.0) -> dict:
     """The `--cand-leaf-json` object for one open-city cell (replace-fields on
     DEFAULT_CONFIG). ALL FOUR knobs are always written, even at their built defaults, so
     the cell JSON on disk is self-describing rather than implying a default -- the same
@@ -240,10 +241,15 @@ def opencity_cand_leaf_spec(dose: float, size_min: float, edge_min: int,
     if float(size_min) < 1.0:
         raise ValueError(f"opencity_size_min must be >= 1 distinct TILE (got {size_min}); "
                          f"c5_leaf_override raises on it too.")
+    if float(cap) < 0.0:
+        raise ValueError(f"opencity_cap must be >= 0 (got {cap}); 0.0 == uncapped, a "
+                         f"negative per-city cap is undefined. c5_leaf_override raises "
+                         f"on it too.")
     return {"opencity_dose": float(dose),
             "opencity_size_min": float(size_min),
             "opencity_edge_min": int(edge_min),
-            "opencity_symmetric": bool(symmetric)}
+            "opencity_symmetric": bool(symmetric),
+            "opencity_cap": float(cap)}
 
 
 def jrules_cell_tag(dose: float, mask: int, prefix: str = "jr") -> str:
@@ -439,10 +445,15 @@ def probe_denial(doses, size_min, open_max, runtime: bool) -> dict:
     return r
 
 
-def probe_opencity(doses, size_min, edge_min, symmetric, runtime: bool) -> dict:
-    """The denial probe's structure, applied to the four open-city knobs, plus the dose-0
-    bit-exactness control that denial has no analogue for (see the module docstring, (4))."""
-    r = {"capability": "opencity", "checks": [], "cells": [], "ok": False}
+def probe_opencity(doses, size_min, edge_min, symmetric, runtime: bool,
+                   cap: float = 0.0) -> dict:
+    """The denial probe's structure, applied to the four open-city knobs (plus the fifth,
+    `opencity_cap`, 2026-08-14 — a nonzero --cap exercises the cap-capable kwarg seam, so
+    a cap-stale wheel fails HERE instead of serving an uncapped leaf to a capped cell),
+    plus the dose-0 bit-exactness control that denial has no analogue for (see the module
+    docstring, (4))."""
+    r = {"capability": "opencity", "checks": [], "cells": [], "ok": False,
+         "opencity_cap": float(cap)}
 
     def chk(name, ok, detail=""):
         r["checks"].append({"check": name, "ok": bool(ok), "detail": detail})
@@ -473,12 +484,13 @@ def probe_opencity(doses, size_min, edge_min, symmetric, runtime: bool) -> dict:
     # --- (3) per-cell specs + hashes; every one must MOVE off the champion ---------
     seen = {}
     for d in doses:
-        spec = opencity_cand_leaf_spec(d, size_min, edge_min, symmetric)
+        spec = opencity_cand_leaf_spec(d, size_min, edge_min, symmetric, cap)
         cfg = load_cand(json.dumps(spec))
         h = leaf_hash(cfg)
-        tag = opencity_cell_tag(d, size_min, edge_min, symmetric)
+        tag = opencity_cell_tag(d, size_min, edge_min, symmetric, cap)
         r["cells"].append({"tag": tag, "dose": d, "size_min": float(size_min),
                            "edge_min": int(edge_min), "symmetric": bool(symmetric),
+                           "cap": float(cap),
                            "cand_leaf_json": json.dumps(spec), "cand_leaf_hash": h})
         ok &= chk(f"cand_hash_moves[{tag}]", h != champ_hash,
                   f"candidate leaf hash {h} != champion {champ_hash}")
@@ -525,7 +537,7 @@ def probe_opencity(doses, size_min, edge_min, symmetric, runtime: bool) -> dict:
         from carcassonne_ai.rust_agent import leaf_config_rs
         r["carc_rs_path"] = getattr(carc_rs, "__file__", "?")
         probe_cfg = load_cand(json.dumps(
-            opencity_cand_leaf_spec(doses[0], size_min, edge_min, symmetric)))
+            opencity_cand_leaf_spec(doses[0], size_min, edge_min, symmetric, cap)))
         rs_cand = leaf_config_rs(probe_cfg)
         rs_champ = leaf_config_rs(default_cfg)
         rs_d0 = leaf_config_rs(d0_cfg)      # dose 0.0 -> no kwargs forwarded, any build
@@ -613,7 +625,7 @@ def probe_opencity(doses, size_min, edge_min, symmetric, runtime: bool) -> dict:
         from carcassonne_ai import flat_leaf as _fl
         from carcassonne_ai.game_wrapper import Game as _Game
         cand_cfg = load_cand(json.dumps(
-            opencity_cand_leaf_spec(doses[0], size_min, edge_min, symmetric)))
+            opencity_cand_leaf_spec(doses[0], size_min, edge_min, symmetric, cap)))
         for seed in PROBE_SEEDS:
             _random.seed(int(seed))
             g = _Game(enable_legal_moves_cache=True)
@@ -938,6 +950,12 @@ def main() -> int:
     ap.add_argument("--open-max", type=int, default=None, help="denial only")
     ap.add_argument("--edge-min", type=int, default=None,
                     help="opencity only: min open_n for the penalty to fire; must be >= 1")
+    ap.add_argument("--cap", type=float, default=0.0,
+                    help="opencity only: opencity_cap (per-city cap on the raw product, "
+                         "2026-08-14). 0.0 == uncapped == the CL-080-era term. A nonzero "
+                         "value makes the probe exercise the cap-capable kwarg seam, so a "
+                         "cap-stale carc_rs wheel fails the probe instead of silently "
+                         "serving an UNCAPPED leaf to a capped cell.")
     ap.add_argument("--asymmetric", action="store_true",
                     help="opencity only: T = pen(self) instead of pen(self) - pen(opp). OFF by "
                          "default => opencity_symmetric=True, which CALIB_READ_RULE §1 holds "
@@ -977,7 +995,8 @@ def main() -> int:
                                  "defaulted threshold would silently measure a cell nobody "
                                  "pre-registered")
             doses = parse_doses(a.doses, a.max_cells)
-            rep = probe_opencity(doses, a.size_min, a.edge_min, not a.asymmetric, runtime)
+            rep = probe_opencity(doses, a.size_min, a.edge_min, not a.asymmetric, runtime,
+                                 cap=a.cap)
         elif a.require == "jrules":
             # The ONE mode with a defaulted dose list, and only because DESIGN §7 wrote the
             # ladder down (with its FUND-SMALLEST read-rule) before any number was read.

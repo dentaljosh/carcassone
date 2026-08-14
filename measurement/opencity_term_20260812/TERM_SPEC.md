@@ -476,3 +476,71 @@ be resolved by looking at outcome data):**
 - `governance/CLAIM_REGISTRY.csv` CL-079 — 2750 verdicts do not reliably transfer
 - `governance/PRODUCTION.yaml` — the champion leaf + `fair_deploy` budget of record
 - `tests/test_opencity_term.py`, `scripts/rustport/reconcile_leaf.py --configs opencity`
+
+---
+
+## 10. ADDENDUM 2026-08-14 — `opencity_cap`, the per-city cap (round 2)
+
+> **Everything above this section is the CL-080-era design of record, unedited.** This
+> section is the round-2 extension: it adds the fifth knob §9 item 3 named, built as one
+> of CL-080's own falsifiers (the tested arm-A form was an **uncapped product** — a
+> 10-tile 4-open city was 21 leaf points at dose 1.0 — and §9's double-count/horizon
+> caveat is the leading explanation of the monotone harm). Round-2 calibration, read-rule
+> and prereg live in `measurement/opencity_round2_20260814/`.
+
+**The knob.** `LeafConfig.opencity_cap` (float, default **`0.0`**, env
+`CARCASSONNE_OPENCITY_CAP`): when `> 0.0`, each qualifying city's contribution becomes
+`min(raw, opencity_cap)` — applied **PER CITY, before the fsum**, in the term's own units
+(before the dose multiply), so the cap can never be reallocated across cities. `0.0` ==
+**uncapped** == the cap branch is never taken == **bit-exact with the CL-080-era term at
+the same dose**. At `cap 1.0` the term degenerates to a **count of qualifying cities per
+side** — §9 item 3's "all-or-nothing switch" form, the maximum mechanistic distance from
+the uncapped product CL-080 killed. Negative caps are invalid (`c5_leaf_override` and
+`chain_capability_probe.opencity_cand_leaf_spec` both raise). Antisymmetry is untouched
+(the cap is inside `pen(·)`; `T(p) = −T(1−p)` still holds when symmetric).
+
+**Plumbing (mirrors the four knobs of §6 exactly):** `flat_leaf.flat_opencity_term` +
+`carc_core::leaf::opencity_term` (identical branch structure — an explicit compare, not
+`f64::min`) · `LeafConfigRs` signature slot between `opencity_symmetric` and
+`jrules_dose` · `rust_agent.leaf_config_rs` forwards it **NESTED-conditionally** (only
+when the dose is nonzero AND the cap is nonzero — an opencity-capable but cap-stale wheel
+keeps serving every uncapped cell unchanged and raises `TypeError` on a capped one,
+fail-closed: a silently-uncapped leaf would re-run CL-080's arm, not the candidate) ·
+excluded-while-default from `_leaf_hash` / `_frozen_config_hash` at all 7 sites ·
+`reconcile_leaf --configs opencity` gains two capped cells (`opencity-d1.0-cap1`,
+`opencity-d2.0-cap3`) · `chain_capability_probe --require opencity --cap <c>` exercises
+the cap seam · `opencity_e4_replay` arms take a 5th field `NAME:SIZE:EDGE:DOSE[:CAP]`.
+Still no Cython implementation (same §6 decision; the cells run `--backend rust`).
+
+**Off-state + bit-exactness proof — status: PASS (2026-08-14).**
+
+- 3-way reconcile `--configs opencity --corpus golden`: **90,772 values compared, 0
+  mismatches, verdict PASS** (up from §6's 76,876 — the two capped cells add ~13.9k
+  values), incl. the frozen on-disk `golden_disk` leg and the `opencity-d0-identity`
+  cell reproducing `prod-curve125` exactly.
+- Champion fingerprints recompute unchanged across the fifth field:
+  `_leaf_hash(CHAMP) == a36d2e15a3b3d71d`, `158f17ff76adaa02` / `6dfffd57051690f2`
+  (`test_cap_champion_hashes_unchanged_and_capped_leaf_is_new`,
+  `test_champion_leaf_hashes_unchanged`, `test_frozen_recipe_hashes_unchanged`).
+- **Default-cap == the CL-080-era term at the same dose, bit-for-bit**:
+  `test_cap_uncapped_default_is_bit_identical` asserts `.hex()` equality of the
+  pre-round float leaf (and int equality) for cap `0.0` AND for a never-binding cap
+  (`1e18`) against the uncapped config, over the random-play corpus; a live-dose
+  config's hash is unchanged by `opencity_cap=0.0`
+  (`_leaf_hash(A_d0p5 + cap 0.0) == c128083fb485d20d`'s dialect equality is pinned as
+  `_leaf_hash(dc.replace(O_HALF, opencity_cap=0.0)) == _leaf_hash(O_HALF)`).
+- Rust == Python bit-exactly with the cap ON (`test_rust_parity_spot_check_capped`,
+  ≥100 `.hex()`-equal comparisons incl. a capped-asymmetric cell, plus the reconcile
+  above); `chain_capability_probe --require opencity --doses 2.0 --size-min 4
+  --edge-min 2 --cap 1` **PASS** (82/288 python values move, identity + dose-0 controls
+  0 breaks on both leaves).
+- `tests/test_opencity_term.py` grows 25 → **33** (8 cap tests: default/env, hash
+  stability, per-city-before-fsum semantics incl. the count degenerate form and the
+  opponent side, bit-identity, antisymmetry + exact `−dose·T` movement, the negative-cap
+  guard, nested-conditional forwarding, capped rust parity).
+
+⚠️ **The wheel-rebuild rule of §6 applies with more force, not less:** every box needs a
+**cap-capable** `carc_rs` rebuilt + `--require opencity --cap` probed before any capped
+cell runs. The nested-conditional seam means a box that passed the CL-080-era probe still
+serves capped cells a `TypeError` — and a launcher that swallowed it would produce a
+champion-vs-champion null.

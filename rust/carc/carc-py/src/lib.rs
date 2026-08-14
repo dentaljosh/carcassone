@@ -122,6 +122,7 @@ impl PyLeafConfig {
         opencity_size_min = 4.0,
         opencity_edge_min = 2,
         opencity_symmetric = true,
+        opencity_cap = 0.0,
         jrules_dose = 0.0,
         jrules_mask = 31,
     ))]
@@ -150,6 +151,7 @@ impl PyLeafConfig {
         opencity_size_min: f64,
         opencity_edge_min: i32,
         opencity_symmetric: bool,
+        opencity_cap: f64,
         jrules_dose: f64,
         jrules_mask: i64,
     ) -> Self {
@@ -178,6 +180,7 @@ impl PyLeafConfig {
                 opencity_size_min,
                 opencity_edge_min,
                 opencity_symmetric,
+                opencity_cap,
                 jrules_dose,
                 jrules_mask,
             },

@@ -176,6 +176,14 @@ pub struct LeafConfig {
     /// `LeafConfig.opencity_symmetric` — `true` (default) makes `T = pen(self) -
     /// pen(opp)`, keeping the leaf antisymmetric; `false` makes `T = pen(self)`.
     pub opencity_symmetric: bool,
+    /// `LeafConfig.opencity_cap` (added 2026-08-14, the round-2 falsifier of
+    /// CL-080's uncapped-product form) — PER-CITY cap on the raw product
+    /// contribution, in the term's own units (before the dose multiply). `0.0`
+    /// (default) == UNCAPPED == the cap branch is never taken, bit-exact with the
+    /// CL-080-era term at the same dose. `> 0.0` -> each qualifying city
+    /// contributes `min(raw, cap)`; at cap 1.0 the term degenerates to a count of
+    /// qualifying cities per side.
+    pub opencity_cap: f64,
     /// J-rules on search — the 2026-08-12 anchor interview's self-described strategy
     /// as ONE signed leaf term (`virtual_score_v2.LeafConfig.jrules_dose`, spec
     /// `measurement/jrules_on_search_20260813/DESIGN.md`). `0.0` (default) == bundle
@@ -241,6 +249,7 @@ impl LeafConfig {
             opencity_size_min: 4.0,
             opencity_edge_min: 2,
             opencity_symmetric: true,
+            opencity_cap: 0.0,
             jrules_dose: 0.0,
             jrules_mask: JR_ALL,
         }
@@ -1000,10 +1009,15 @@ pub fn opencity_term(state: &GameState, player: usize, d: &Decomp, cfg: &LeafCon
         if (n_tiles as f64) < cfg.opencity_size_min {
             continue; // not large
         }
-        contribs[owner].push(
-            (n_tiles as f64 - cfg.opencity_size_min + 1.0)
-                * (open_n as f64 - cfg.opencity_edge_min as f64 + 1.0),
-        );
+        let mut contrib = (n_tiles as f64 - cfg.opencity_size_min + 1.0)
+            * (open_n as f64 - cfg.opencity_edge_min as f64 + 1.0);
+        // per-city cap (0.0 == uncapped: branch never taken) — mirrors the Python
+        // `if cap > 0.0 and contrib > cap` exactly (an explicit compare, not f64::min,
+        // so the branch structure is identical on both sides).
+        if cfg.opencity_cap > 0.0 && contrib > cfg.opencity_cap {
+            contrib = cfg.opencity_cap;
+        }
+        contribs[owner].push(contrib);
     }
     let pen_self = fsum(&contribs[player]);
     if !cfg.opencity_symmetric {

@@ -1,0 +1,69 @@
+{
+ "updated": "2026-08-14T01:22:03-0400",
+ "queue_items": [
+  "window_truncation_census",
+  "j13_pregate",
+  "jrules_on_search"
+ ],
+ "items": {
+  "window_truncation_census": {
+   "status": "DONE",
+   "reason": "scheduler DONE marker present (laptop)",
+   "box": "laptop",
+   "pid": "remote",
+   "dispatched_at": "2026-08-13T11:46:12-0400",
+   "launch_detail": "W=22 cmd=/home/doctor/projects/carcassone/measurement/window_truncation_20260813/RUN_CMD.sh log=/home/doctor/projects/carcassone/measurement/window_truncation_20260813/logs/scheduler_run.log"
+  },
+  "j13_pregate": {
+   "status": "DONE",
+   "reason": "already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/j13_pregate_20260813/READOUT.md",
+   "box": "local"
+  },
+  "jrules_on_search": {
+   "status": "DONE",
+   "reason": "already complete, own evidence on disk: /home/doctor/projects/carcassone/measurement/jrules_on_search_20260813/DONE_jrules_d0p25_deploy11008",
+   "box": "any"
+  }
+ },
+ "boxes": {
+  "local": {
+   "census": 0,
+   "idle_since": null,
+   "free": true,
+   "reason": "occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean"
+  },
+  "laptop": {
+   "census": 0,
+   "idle_since": null,
+   "free": true,
+   "reason": "occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean"
+  }
+ },
+ "free_boxes": [
+  "laptop",
+  "local"
+ ],
+ "drained": true,
+ "history": [
+  {
+   "ts": "2026-08-13T11:21:42-0400",
+   "event": "dispatch_selected",
+   "detail": "window_truncation_census -> laptop"
+  },
+  {
+   "ts": "2026-08-13T11:21:44-0400",
+   "event": "dispatched",
+   "detail": "window_truncation_census on laptop: W=22 cmd=/home/doctor/projects/carcassone/measurement/window_truncation_20260813/RUN_CMD.sh log=/home/doctor/projects/carcassone/measurement/window_truncation_20260813/logs/scheduler_run.log"
+  },
+  {
+   "ts": "2026-08-13T11:46:11-0400",
+   "event": "dispatch_selected",
+   "detail": "window_truncation_census -> laptop"
+  },
+  {
+   "ts": "2026-08-13T11:46:12-0400",
+   "event": "dispatched",
+   "detail": "window_truncation_census on laptop: W=22 cmd=/home/doctor/projects/carcassone/measurement/window_truncation_20260813/RUN_CMD.sh log=/home/doctor/projects/carcassone/measurement/window_truncation_20260813/logs/scheduler_run.log"
+  }
+ ]
+}

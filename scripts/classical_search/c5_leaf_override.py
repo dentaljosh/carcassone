@@ -48,6 +48,7 @@ _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.
                                  "denial_open_max": 2,
                                  "opencity_dose": 0.0, "opencity_size_min": 4.0,
                                  "opencity_edge_min": 2, "opencity_symmetric": True,
+                                 "opencity_cap": 0.0,
                                  "jrules_dose": 0.0, "jrules_mask": 31,
                                  "tiletie_dose": 0.0, "tiletie_w_city": 1.0,
                                  "tiletie_w_road": 1.0, "tiletie_w_perim": 0.0,
@@ -221,6 +222,9 @@ def _assert_cy_float_path(cfg) -> None:
         if float(getattr(cfg, "opencity_size_min", 4.0)) < 1.0:
             raise ValueError("--cand-leaf-json: opencity_size_min must be >= 1 "
                              "(a city component always spans at least one tile)")
+        if float(getattr(cfg, "opencity_cap", 0.0)) < 0.0:
+            raise ValueError("--cand-leaf-json: opencity_cap must be >= 0 "
+                             "(0.0 == uncapped; a negative per-city cap is undefined)")
         print("[leaf-override] WARNING: open-city discipline set (opencity_dose="
               f"{getattr(cfg, 'opencity_dose', 0.0)}) — the candidate leaf leaves the "
               "Cython fast path for the pure-Python flat leaf (bit-exact, much slower "

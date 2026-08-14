@@ -1,0 +1,202 @@
+{
+  "cells": {
+    "C_d4p0": {
+      "f": 0.07776349614395887,
+      "ci": [
+        0.06547297587298033,
+        0.09213372026302354
+      ],
+      "flips": 121,
+      "n": 1556,
+      "hash": "cce11e4d05f0d86e",
+      "phase_split": {
+        "tiles": 93,
+        "meeples": 28,
+        "other": {},
+        "tile_share": 0.768595041322314
+      },
+      "run": "sym"
+    },
+    "C_d8p0": {
+      "f": 0.09254498714652956,
+      "ci": [
+        0.07913221359592783,
+        0.1079646590832601
+      ],
+      "flips": 144,
+      "n": 1556,
+      "hash": "d52332443bc35fcf",
+      "phase_split": {
+        "tiles": 109,
+        "meeples": 35,
+        "other": {},
+        "tile_share": 0.7569444444444444
+      },
+      "run": "sym"
+    },
+    "C_d16p0": {
+      "f": 0.10411311053984576,
+      "ci": [
+        0.08990065486408792,
+        0.12027548641411358
+      ],
+      "flips": 162,
+      "n": 1556,
+      "hash": "a4acf6d0925f7606",
+      "phase_split": {
+        "tiles": 116,
+        "meeples": 46,
+        "other": {},
+        "tile_share": 0.7160493827160493
+      },
+      "run": "sym"
+    },
+    "Acap1_d0p5": {
+      "f": 0.04113110539845758,
+      "ci": [
+        0.032341230698792224,
+        0.0521811148736686
+      ],
+      "flips": 64,
+      "n": 1556,
+      "hash": "d3ac9cc459f6d8d7",
+      "phase_split": {
+        "tiles": 51,
+        "meeples": 13,
+        "other": {},
+        "tile_share": 0.796875
+      },
+      "run": "sym"
+    },
+    "Acap1_d2p0": {
+      "f": 0.09061696658097686,
+      "ci": [
+        0.07734375877670195,
+        0.10590656913598369
+      ],
+      "flips": 141,
+      "n": 1556,
+      "hash": "a292f2cb05e45a22",
+      "phase_split": {
+        "tiles": 96,
+        "meeples": 45,
+        "other": {},
+        "tile_share": 0.6808510638297872
+      },
+      "run": "sym"
+    },
+    "Acap3_d2p0": {
+      "f": 0.14203084832904883,
+      "ci": [
+        0.1255665345609183,
+        0.16025832045849445
+      ],
+      "flips": 221,
+      "n": 1556,
+      "hash": "687f99980adaeee7",
+      "phase_split": {
+        "tiles": 159,
+        "meeples": 62,
+        "other": {},
+        "tile_share": 0.7194570135746606
+      },
+      "run": "sym"
+    },
+    "Asym_d0p5": {
+      "f": 0.08933161953727506,
+      "ci": [
+        0.07615252462323878,
+        0.10453344011177869
+      ],
+      "flips": 139,
+      "n": 1556,
+      "hash": "6cfd4e4575aba1bc",
+      "phase_split": {
+        "tiles": 110,
+        "meeples": 29,
+        "other": {},
+        "tile_share": 0.7913669064748201
+      },
+      "run": "asym"
+    },
+    "Asym_d2p0": {
+      "f": 0.16709511568123395,
+      "ci": [
+        0.14938337046902128,
+        0.18644656651492092
+      ],
+      "flips": 260,
+      "n": 1556,
+      "hash": "3f05d72016d0d09c",
+      "phase_split": {
+        "tiles": 197,
+        "meeples": 63,
+        "other": {},
+        "tile_share": 0.7576923076923077
+      },
+      "run": "asym"
+    }
+  },
+  "read_rule_commit": "9a2abcd5",
+  "per_family": {
+    "C": {
+      "order": [
+        "C_d4p0",
+        "C_d8p0",
+        "C_d16p0"
+      ],
+      "branch": "FUND-SMALLEST",
+      "cell": "C_d16p0",
+      "notes": []
+    },
+    "ACAP": {
+      "order": [
+        "Acap1_d0p5",
+        "Acap1_d2p0",
+        "Acap3_d2p0"
+      ],
+      "branch": "FUND-SMALLEST",
+      "cell": "Acap3_d2p0",
+      "notes": []
+    },
+    "ASYM": {
+      "order": [
+        "Asym_d0p5",
+        "Asym_d2p0"
+      ],
+      "branch": "FUND-SMALLEST",
+      "cell": "Asym_d2p0",
+      "notes": []
+    }
+  },
+  "funded": [
+    "C_d16p0",
+    "Acap3_d2p0",
+    "Asym_d2p0"
+  ],
+  "marginal_funded": [],
+  "on_the_bar": [
+    {
+      "cell": "C_d16p0",
+      "bar": 0.1,
+      "f": 0.10411311053984576,
+      "wilson95": [
+        0.08990065486408792,
+        0.12027548641411358
+      ],
+      "ci_straddles_bar": true,
+      "selection_on_ci_lower_bound_would_be": null,
+      "consequence": "if this cell lands null, 'the term does not express' is NOT an available reading \u2014 it was funded at the edge of the floor (the A_d0p5 precedent)."
+    }
+  ],
+  "prediction_a": {
+    "prediction": "family C crosses 10% between doses 8 and 16",
+    "observed": {
+      "C_d4p0": 0.07776349614395887,
+      "C_d8p0": 0.09254498714652956,
+      "C_d16p0": 0.10411311053984576
+    },
+    "held": true
+  },
+  "prediction_b_violations": []
+}

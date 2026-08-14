@@ -120,6 +120,13 @@ def leaf_config_rs(leaf_cfg):
             opencity_edge_min=int(leaf_cfg.opencity_edge_min),
             opencity_symmetric=bool(leaf_cfg.opencity_symmetric),
         )
+        # opencity_cap (2026-08-14) is NESTED-conditional: an opencity-capable but
+        # cap-stale carc_rs build keeps serving every UNCAPPED cell unchanged, while
+        # a nonzero cap against the stale build raises TypeError (fail-closed loud,
+        # never a silently-uncapped leaf — which would re-run CL-080's arm, not the
+        # capped candidate).
+        if float(getattr(leaf_cfg, "opencity_cap", 0.0)) != 0.0:
+            opencity["opencity_cap"] = float(leaf_cfg.opencity_cap)
     # J-rules on search: same conditional-keyword rule as targeted denial / open-city
     # above — a carc_rs build predating the bundle keeps serving every default-off
     # (champion) config unchanged, while a NONZERO dose against the stale build raises

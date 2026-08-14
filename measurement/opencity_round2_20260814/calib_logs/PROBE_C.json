@@ -1,0 +1,98 @@
+{
+  "capability": "opencity",
+  "checks": [
+    {
+      "check": "py_leafconfig_fields",
+      "ok": true,
+      "detail": "LeafConfig.opencity_dose/_size_min/_edge_min/_symmetric present"
+    },
+    {
+      "check": "py_flat_opencity_term",
+      "ok": true,
+      "detail": "flat_leaf.flat_opencity_term present"
+    },
+    {
+      "check": "env_is_champion_leaf",
+      "ok": true,
+      "detail": "DEFAULT_CONFIG hash a36d2e15a3b3d71d (want a36d2e15a3b3d71d)"
+    },
+    {
+      "check": "cand_hash_moves[oc_d4_t6_e3_sym]",
+      "ok": true,
+      "detail": "candidate leaf hash cce11e4d05f0d86e != champion a36d2e15a3b3d71d"
+    },
+    {
+      "check": "cand_hash_unique[oc_d4_t6_e3_sym]",
+      "ok": true,
+      "detail": "cce11e4d05f0d86e not already used by -"
+    },
+    {
+      "check": "carc_rs_accepts_opencity_kwargs",
+      "ok": true,
+      "detail": "carc_rs.LeafConfigRs built with opencity kwargs"
+    },
+    {
+      "check": "carc_rs_exposes_opencity_term",
+      "ok": true,
+      "detail": "leaf_terms keys: ['base', 'bonus_opp', 'bonus_opp_raw', 'bonus_self', 'bonus_self_raw', 'denial_term', 'flip_term', 'jrules_term', 'meeple_term', 'opencity_term', 'return_term', 'score', 'value']"
+    },
+    {
+      "check": "carc_rs_opencity_changes_leaf",
+      "ok": false,
+      "detail": "0 of 288 sampled leaf values MOVE at dose 4.0 (size_min=6.0 TILES, edge_min=3, symmetric=True); 0 would mean accepted-and-ignored == a silently default-off candidate, OR a predicate this arm's thresholds never satisfy (TERM_SPEC \u00a76 measured 0.0% bite at 6 tiles / 3 edges)"
+    },
+    {
+      "check": "carc_rs_identity_control",
+      "ok": true,
+      "detail": "0 champion-vs-champion mismatches (must be 0)"
+    },
+    {
+      "check": "carc_rs_dose0_bit_exact",
+      "ok": true,
+      "detail": "288/288 sampled RUST leaf values are bit-identical to the champion's at {'opencity_dose': 0.0, 'opencity_size_min': 2.0, 'opencity_edge_min': 1, 'opencity_symmetric': False} (the dose gate holds with the thresholds moved). leaf_hash(dose-0 + MOVED thresholds) = eaf6bea637cce74e != champion a36d2e15a3b3d71d: _LEAF_HASH_EXCLUDE_IF_DEFAULT drops a field only while it holds its DEFAULT value, so the three MOVED thresholds stay in the hashed dict even though the dose gate makes the leaf VALUES bit-identical. Consequence for the chain: a cell whose dose was accidentally zeroed would still PASS `cand_hash_moves` -- the hash gate cannot catch it, and `parse_doses`' refusal of dose 0.0 is the gate that does."
+    },
+    {
+      "check": "py_dose0_bit_exact",
+      "ok": true,
+      "detail": "288/288 sampled PYTHON leaf values are bit-identical (.hex()) to the champion's at {'opencity_dose': 0.0, 'opencity_size_min': 2.0, 'opencity_edge_min': 1, 'opencity_symmetric': False}"
+    },
+    {
+      "check": "py_opencity_changes_leaf",
+      "ok": false,
+      "detail": "0 of 288 sampled PYTHON leaf values MOVE at dose 4.0 (same caveat as the rust check: a tight arm can legitimately never fire)"
+    }
+  ],
+  "cells": [
+    {
+      "tag": "oc_d4_t6_e3_sym",
+      "dose": 4.0,
+      "size_min": 6.0,
+      "edge_min": 3,
+      "symmetric": true,
+      "cap": 0.0,
+      "cand_leaf_json": "{\"opencity_dose\": 4.0, \"opencity_size_min\": 6.0, \"opencity_edge_min\": 3, \"opencity_symmetric\": true, \"opencity_cap\": 0.0}",
+      "cand_leaf_hash": "cce11e4d05f0d86e"
+    }
+  ],
+  "ok": false,
+  "opencity_cap": 0.0,
+  "champ_leaf_hash": "a36d2e15a3b3d71d",
+  "dose0_identity": {
+    "cand_leaf_json": "{\"opencity_dose\": 0.0, \"opencity_size_min\": 2.0, \"opencity_edge_min\": 1, \"opencity_symmetric\": false}",
+    "leaf_hash": "eaf6bea637cce74e",
+    "hash_equals_champion": false,
+    "note": "leaf_hash(dose-0 + MOVED thresholds) = eaf6bea637cce74e != champion a36d2e15a3b3d71d: _LEAF_HASH_EXCLUDE_IF_DEFAULT drops a field only while it holds its DEFAULT value, so the three MOVED thresholds stay in the hashed dict even though the dose gate makes the leaf VALUES bit-identical. Consequence for the chain: a cell whose dose was accidentally zeroed would still PASS `cand_hash_moves` -- the hash gate cannot catch it, and `parse_doses`' refusal of dose 0.0 is the gate that does."
+  },
+  "carc_rs_path": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/site/carc_rs/__init__.py",
+  "functional": {
+    "values_moved": 0,
+    "values_same": 288,
+    "identity_control_breaks": 0,
+    "rs_dose0_values_compared": 288,
+    "rs_dose0_breaks": 0,
+    "py_dose0_values_compared": 288,
+    "py_dose0_breaks": 0,
+    "py_values_moved": 0,
+    "py_values_same": 288
+  }
+}

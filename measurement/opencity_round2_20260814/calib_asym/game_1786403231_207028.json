@@ -1,0 +1,124 @@
+{
+ "schema": "carcassonne-opencity-e4-replay/v1",
+ "archive": "1786403231_207028.json",
+ "deck_seed": 207028,
+ "rules_profile": "fixed_v1",
+ "human_player": 0,
+ "champion_seat": 1,
+ "recorded_scores": [
+  103,
+  106
+ ],
+ "replayed_scores": [
+  103,
+  106
+ ],
+ "replay_scores_match": true,
+ "partial": false,
+ "budget": {
+  "sims_per_det": 1376,
+  "k_dets": 8,
+  "total_per_decision": 11008,
+  "source": "archive"
+ },
+ "seed": 12345,
+ "opencity_symmetric": false,
+ "arms": [
+  {
+   "name": "Asym_d0p5",
+   "size_min": 4.0,
+   "edge_min": 2,
+   "dose": 0.5,
+   "cap": 0.0,
+   "symmetric": false,
+   "leaf_hash": "6cfd4e4575aba1bc"
+  },
+  {
+   "name": "Asym_d2p0",
+   "size_min": 4.0,
+   "edge_min": 2,
+   "dose": 2.0,
+   "cap": 0.0,
+   "symmetric": false,
+   "leaf_hash": "3f05d72016d0d09c"
+  }
+ ],
+ "leaf_hash_production": "a36d2e15a3b3d71d",
+ "n_plies_total": 142,
+ "n_graded": 59,
+ "n_searched_this_run": 59,
+ "champ_agrees_archive": 45,
+ "flips": {
+  "Asym_d0p5": 1,
+  "Asym_d2p0": 7
+ },
+ "flip_plies": {
+  "Asym_d0p5": [
+   {
+    "ply": 130,
+    "phase": "tiles",
+    "k_remaining": 5,
+    "champ_pick": 861,
+    "pick_Asym_d0p5": 863
+   }
+  ],
+  "Asym_d2p0": [
+   {
+    "ply": 26,
+    "phase": "tiles",
+    "k_remaining": 57,
+    "champ_pick": 1365,
+    "pick_Asym_d2p0": 1148
+   },
+   {
+    "ply": 47,
+    "phase": "meeples",
+    "k_remaining": 47,
+    "champ_pick": 2502,
+    "pick_Asym_d2p0": 2501
+   },
+   {
+    "ply": 55,
+    "phase": "meeples",
+    "k_remaining": 43,
+    "champ_pick": 2506,
+    "pick_Asym_d2p0": 2504
+   },
+   {
+    "ply": 98,
+    "phase": "tiles",
+    "k_remaining": 21,
+    "champ_pick": 1534,
+    "pick_Asym_d2p0": 1234
+   },
+   {
+    "ply": 114,
+    "phase": "tiles",
+    "k_remaining": 13,
+    "champ_pick": 1563,
+    "pick_Asym_d2p0": 1542
+   },
+   {
+    "ply": 126,
+    "phase": "tiles",
+    "k_remaining": 7,
+    "champ_pick": 1649,
+    "pick_Asym_d2p0": 1546
+   },
+   {
+    "ply": 130,
+    "phase": "tiles",
+    "k_remaining": 5,
+    "champ_pick": 861,
+    "pick_Asym_d2p0": 1272
+   }
+  ]
+ },
+ "mean_secs_per_graded_ply": 4.853,
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "wall_secs": 286.4
+}
