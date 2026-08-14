@@ -85,7 +85,7 @@ discriminator, exactly as `test_p1_engine._archive_profile` does it):
 
 | replayed under | archives with a farmer that resolves to `None`/no tile | `count_final_scores` crashes | final scores match the phone's own record |
 |---|---|---|---|
-| **default (`walled`)** — what the gate does | **15 of 26** | **15 of 26** (12 inside `count_final_scores`; 3 earlier still, in `find_farm_by_coordinate` on a `None` tile) | **2 of 26** (only the 2 genuinely-`walled` archives) |
+| **default (`walled`)** — what the gate does | **15 of 26** | **15 of 26** (12 measured inside `count_final_scores`; the other 3 die one frame earlier, in `find_farm_by_coordinate` on a `None` tile — which is the call `count_final_scores` makes at `points_collector.py:307`) | **2 of 26** (only the 2 genuinely-`walled` archives) |
 | **the archive's own profile** | **0 of 26** | **0 of 26** | **26 of 26** |
 
 Under the correct profile every archive reproduces the phone's recorded final scores exactly
