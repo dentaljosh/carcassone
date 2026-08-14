@@ -1,5 +1,5 @@
 {
- "updated": "2026-08-14T11:39:09-0400",
+ "updated": "2026-08-14T11:54:12-0400",
  "queue_items": [
   "window_truncation_census",
   "j13_pregate",
@@ -33,13 +33,14 @@
    "reason": "occupant 'tile-tie Stage B' finished (marker /home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/DONE_STAGEB), census clean"
   },
   "laptop": {
-   "census": 25,
+   "census": 0,
    "idle_since": null,
-   "free": false,
-   "reason": "census guard: 25 live measurement process(es) on laptop"
+   "free": true,
+   "reason": "occupant 'opencity deploy cell 2' finished (marker /mnt/c/carc-shared/opencity_deploy_20260813/markers/DONE_DEPLOY_OPENCITY), census clean"
   }
  },
  "free_boxes": [
+  "laptop",
   "local"
  ],
  "drained": true,
