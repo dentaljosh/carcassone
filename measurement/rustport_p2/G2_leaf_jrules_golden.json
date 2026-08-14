@@ -7,8 +7,8 @@
     "machine": "x86_64",
     "python": "3.12.3",
     "python_impl": "CPython",
-    "git_rev": "3722bf29-dirty",
-    "utc": "2026-08-13T16:04:07Z",
+    "git_rev": "3af12bc0-dirty",
+    "utc": "2026-08-14T00:54:59Z",
     "numpy": "2.4.4",
     "carc_rs": "0.1.0",
     "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
@@ -21,7 +21,7 @@
     "configs": "jrules",
     "limit": null,
     "stride": 8,
-    "workers": 8,
+    "workers": 12,
     "bench": 0,
     "bench_repeats": 200,
     "out": null
@@ -140,5 +140,5 @@
   "total_values_compared": 83824,
   "mismatch_count": 0,
   "mismatches": [],
-  "wallclock_s": 7.1227222029992845
+  "wallclock_s": 4.2596212470089085
 }
