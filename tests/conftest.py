@@ -5,8 +5,69 @@ runtime code)."""
 import dataclasses as dc
 import os
 import sys
+from pathlib import Path
 
 import pytest
+
+
+# ---------------------------------------------------------------------------
+# rustport import-order contract (the `prod_leaf_env` race)
+# ---------------------------------------------------------------------------
+# The `scripts/rustport/` gate scripts the parity suite drives — reconcile_engine
+# / reconcile_leaf / trace_search / lockstep_fuzz — each `import prod_leaf_env`,
+# which REFUSES to load once `carcassonne_ai` is already in sys.modules (it
+# shapes the leaf knobs that virtual_score_v2.DEFAULT_CONFIG freezes at ITS
+# import).
+#
+# In a whole-tree run that guard trips on collection ORDER: `tests/android/`
+# sorts before `tests/rustport/` and imports `carcassonne_ai` (via
+# `android_bridge`) long before rustport is reached, so six rustport modules
+# raise RuntimeError while being imported —
+#     test_p1_engine  test_p2_leaf  test_p3_search
+#     test_p5_flags   test_lockstep_fuzz  test_cloister_scan_fix_parity
+# — and because a COLLECTION error aborts the session, `pytest tests/` was
+# running ZERO tests, not merely skipping rustport (measured 2026-08-13).
+#
+# The frozen shape is not actually wrong. `android_bridge` applies the same
+# production env, so the DEFAULT_CONFIG a whole-tree run freezes is BYTE-
+# IDENTICAL to the one `prod_leaf_env` produces (verified field-by-field
+# 2026-08-13, incl. v29_meeple_curve = curve125). The guard is tripping on its
+# PROXY — "did I get imported first" — not on the invariant it protects. So the
+# fix is to let this conftest legitimately WIN that race: it is imported before
+# any test module, so applying the shape here both satisfies the guard and makes
+# the session-global leaf shape DETERMINISTIC instead of a side effect of
+# `android` happening to sort before `rustport`.
+#
+# Deliberately NOT a skip/xfail/tolerance change: nothing is relaxed, and the
+# rustport modules keep their own `import prod_leaf_env` (a no-op once it is in
+# sys.modules).
+#
+# Scoped to sessions that actually collect tests/rustport, so a standalone
+# `pytest tests/test_v29_variants.py` keeps the bare no-env default it asserts.
+# sys.path is snapshotted/restored — only the import itself needs scripts/rustport.
+def _session_collects_rustport() -> bool:
+    rustport = (Path(__file__).parent / "rustport").resolve()
+    paths = []
+    for arg in sys.argv[1:]:
+        if arg.startswith("-"):
+            continue
+        p = Path(arg.split("::")[0])
+        if p.exists():
+            paths.append(p.resolve())
+    if not paths:
+        return True  # bare `pytest` / `pytest -k ...` collects the whole tree
+    return any(p == rustport or rustport in p.parents or p in rustport.parents
+               for p in paths)
+
+
+if _session_collects_rustport():
+    _saved_sys_path = list(sys.path)
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "rustport"))
+    try:
+        import prod_leaf_env  # noqa: F401  (must precede every carcassonne_ai import)
+    finally:
+        sys.path[:] = _saved_sys_path
+        del _saved_sys_path
 
 
 def pytest_configure(config):
