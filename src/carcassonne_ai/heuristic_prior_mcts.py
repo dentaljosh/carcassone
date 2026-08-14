@@ -216,6 +216,20 @@ class HeuristicPriorConfig:
     jrules_prior_dose: float = 0.0
     jrules_prior_mask: int = 31
     jrules_prior_scope: str = "all"
+    # --- J-RULES ROOT FILTER surface C (measurement/jrules_filters_20260814) --
+    # SEARCH-level knobs like surface B — they move NO leaf hash (the
+    # candidate's leaf stays the champion's), so the wiring gate for a live
+    # filter is the RESOLVED mask in the manifest plus the agent's
+    # jf_dropped_total positive control. mask 0 (default) is the champion,
+    # bit-for-bit — ⚠️ unlike jrules_prior_mask, mask 0 is VALID here: a filter
+    # has no dose, so the mask IS the on/off knob. Bits: 1=F-END, 2=F-J10,
+    # 4=F-J9, 8=F-J3; 11 == the bot's `current` stack (END|J10|J3).
+    # min_keep is the never-empty guard: a filter that would leave fewer than
+    # this many root candidates YIELDS (is skipped for that ply, counted).
+    # Nonzero mask: RUST-ONLY — the python search path raises in
+    # make_heuristic_prior_evaluator (fail-loud, same rule as surface B).
+    jrules_filter_mask: int = 0
+    jrules_filter_min_keep: int = 1
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -244,6 +258,18 @@ class HeuristicPriorConfig:
         if m == 0 or m & ~31:
             raise ValueError(
                 f"jrules_prior_mask must be nonzero and within JR_ALL (31); got {m}"
+            )
+        # Surface-C knobs: validated even at mask 0 so a typo never rides.
+        fm = int(self.jrules_filter_mask)
+        if fm < 0 or fm & ~15:
+            raise ValueError(
+                f"jrules_filter_mask must be within JF_ALL (15 == "
+                f"F-END|F-J10|F-J9|F-J3; 0 == OFF); got {fm}"
+            )
+        if int(self.jrules_filter_min_keep) < 1:
+            raise ValueError(
+                f"jrules_filter_min_keep must be >= 1 (1 == the bot's own "
+                f"never-empty rule); got {self.jrules_filter_min_keep!r}"
             )
 
     def resolved_leaf_cfg(self):
@@ -277,6 +303,10 @@ class HeuristicPriorConfig:
             "jrules_prior_dose": float(self.jrules_prior_dose),
             "jrules_prior_mask": int(self.jrules_prior_mask),
             "jrules_prior_scope": self.jrules_prior_scope,
+            # RESOLVED surface-C knobs — the root filter's wiring gate reads
+            # the mask FROM HERE (like surface B, no leaf hash moves).
+            "jrules_filter_mask": int(self.jrules_filter_mask),
+            "jrules_filter_min_keep": int(self.jrules_filter_min_keep),
             "leaf_cfg": leaf,
         }
 
@@ -301,6 +331,15 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
             "jrules_prior_dose is set but the python search path has no "
             "J-rules-prior implementation (surface B is rust-only; "
             "carc_core::search). Build this agent with backend='rust'."
+        )
+    # Surface C is likewise RUST-ONLY (the filter binds in
+    # carc_core::fair::FairAgent::pimc_move, the production root).
+    if int(getattr(cfg, "jrules_filter_mask", 0)) != 0:
+        raise NotImplementedError(
+            "jrules_filter_mask is set but the python search path has no "
+            "J-rules root-filter implementation (surface C is rust-only; "
+            "carc_core::fair::jrules_filter). Build this agent with "
+            "backend='rust'."
         )
     leaf_cfg = cfg.resolved_leaf_cfg()
     tau = float(cfg.tau_p)

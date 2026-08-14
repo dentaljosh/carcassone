@@ -150,6 +150,25 @@ pub struct SearchConfig {
     pub jrules_prior_mask: i64,
     /// See [`JrPriorScope`]. Only read when the dose is nonzero.
     pub jrules_prior_scope: JrPriorScope,
+    /// J-RULES ROOT FILTER surface C
+    /// (`measurement/jrules_filters_20260814/DESIGN.md`). `0` (default == the
+    /// champion) NEVER touches the filter code — the mask-0 path is the
+    /// pre-change code, byte-for-byte. Nonzero: the fair agent applies the
+    /// bot's hard filters (`fair::jrules_filter`, bits F-END|F-J10|F-J9|F-J3)
+    /// to the ROOT legal-action set BEFORE the PIMC world searches run; the
+    /// searches then expand only the surviving root candidates. ROOT ONLY —
+    /// interior nodes are never filtered. NOT a [`LeafConfig`] field: no leaf
+    /// hash moves, so a moved-hash gate cannot prove it live; the manifest's
+    /// resolved mask + the per-cell drop counter are the wiring gates.
+    /// ⚠️ Read by [`crate::fair::FairAgent`], NOT by the single-world
+    /// [`Searcher`] itself (a bare `search_single` ignores it — the filter is
+    /// an AGENT-level, once-per-move intervention).
+    pub jrules_filter_mask: i64,
+    /// Never-empty guard for the root filter: a filter that would leave fewer
+    /// than this many root candidates YIELDS (is skipped for that ply, and the
+    /// yield is counted). Default 1 == `joshua_bot`'s own "skip if it would
+    /// empty the set". Only read when `jrules_filter_mask != 0`.
+    pub jrules_filter_min_keep: usize,
 }
 
 impl Default for SearchConfig {
@@ -171,6 +190,8 @@ impl Default for SearchConfig {
             jrules_prior_dose: 0.0,
             jrules_prior_mask: leaf::JR_ALL,
             jrules_prior_scope: JrPriorScope::All,
+            jrules_filter_mask: 0,
+            jrules_filter_min_keep: 1,
         }
     }
 }
@@ -381,6 +402,13 @@ pub struct Searcher<'a> {
     /// read ONLY by the J-rules prior surface under
     /// [`JrPriorScope::Own`]. `None` until a search starts.
     root_player: Option<usize>,
+    /// J-RULES ROOT FILTER surface C: when set (only ever by
+    /// [`Searcher::search_with_root_allow`], only ever by the fair agent), the
+    /// ROOT node's legal-action set is restricted to this list BEFORE the prior
+    /// softmax — the dropped actions are, to this search, illegal at the root.
+    /// Interior nodes are NEVER touched. `None` (the default and the champion)
+    /// is the pre-change code path, byte-for-byte.
+    root_allow: Option<Vec<i32>>,
     trace: Option<&'a mut dyn TraceSink>,
 }
 
@@ -392,6 +420,7 @@ impl<'a> Searcher<'a> {
             leaf_evals: 0,
             scratch: LeafScratch::new(),
             root_player: None,
+            root_allow: None,
             trace: None,
         }
     }
@@ -403,6 +432,7 @@ impl<'a> Searcher<'a> {
             leaf_evals: 0,
             scratch: LeafScratch::new(),
             root_player: None,
+            root_allow: None,
             trace: Some(trace),
         }
     }
@@ -466,10 +496,37 @@ impl<'a> Searcher<'a> {
 
     /// `heuristic_prior_mcts.make_heuristic_prior_evaluator`'s closure:
     /// returns `(legal, priors_over_legal_f32, value)`.
-    fn evaluate(&mut self, g: &Game) -> Result<(Vec<i32>, Vec<f32>, f64), SearchError> {
+    ///
+    /// `at_root` is true ONLY for the root expansion driven by
+    /// [`Searcher::search`] — it gates the J-rules ROOT-FILTER restriction
+    /// (surface C), which must never reach an interior node. With
+    /// `root_allow == None` (the default and the champion) the flag is inert
+    /// and this is the pre-change code, byte-for-byte.
+    fn evaluate(
+        &mut self,
+        g: &Game,
+        at_root: bool,
+    ) -> Result<(Vec<i32>, Vec<f32>, f64), SearchError> {
         let mover = g.state.current_player;
         let leaf_parent = self.leaf_at(g, mover)?;
-        let legal = g.legal_actions();
+        let mut legal = g.legal_actions();
+        if at_root {
+            if let Some(allow) = &self.root_allow {
+                // Surface C: the dropped root actions are, to this search,
+                // illegal — the prior softmax renormalizes over the survivors
+                // and no simulation can ever visit a dropped action.
+                legal.retain(|a| allow.contains(a));
+                if legal.is_empty() {
+                    // The fair agent's never-empty guard makes this unreachable;
+                    // if it ever fires, something upstream broke — fail loud.
+                    return Err(SearchError::Engine(
+                        "jrules root filter emptied the root candidate set \
+                         (the fair agent's min_keep guard should have yielded)"
+                            .into(),
+                    ));
+                }
+            }
+        }
 
         // J-RULES PRIOR surface B: dose 0.0 (the default, the champion) takes
         // the pre-change loop verbatim — this whole block is behind the dose
@@ -557,7 +614,17 @@ impl<'a> Searcher<'a> {
     ///
     /// `via_f32` reproduces the ROOT-ONLY `float32` round-trip that
     /// `_eval_boards` puts the value through (`np.array(values, float32)`).
-    fn expand(&mut self, id: NodeId, g: &Game, via_f32: bool) -> Result<(), SearchError> {
+    /// `at_root` (true only from [`Searcher::search`]'s root expansion) gates
+    /// the surface-C root-filter restriction in [`Searcher::evaluate`]; it is
+    /// carried separately from `via_f32` (which happens to coincide) so the
+    /// two root-only behaviours cannot silently drift apart.
+    fn expand(
+        &mut self,
+        id: NodeId,
+        g: &Game,
+        via_f32: bool,
+        at_root: bool,
+    ) -> Result<(), SearchError> {
         if self.tree.get(id).expanded {
             return Ok(());
         }
@@ -569,7 +636,7 @@ impl<'a> Searcher<'a> {
             self.trace_expand(id);
             return Ok(());
         }
-        let (legal, priors_f32, value_raw) = self.evaluate(g)?;
+        let (legal, priors_f32, value_raw) = self.evaluate(g, at_root)?;
 
         if legal.is_empty() {
             let n = self.tree.get_mut(id);
@@ -762,7 +829,7 @@ impl<'a> Searcher<'a> {
                 None => {
                     let child = self.create_or_get(&g);
                     if !self.tree.get(child).expanded {
-                        self.expand(child, &g, false)?;
+                        self.expand(child, &g, false, false)?;
                     }
                     self.link_child(node, action, child);
                     path.push(child);
@@ -798,12 +865,27 @@ impl<'a> Searcher<'a> {
         let root = self.create_or_get(root_game);
         if !self.tree.get(root).expanded && !self.tree.get(root).is_terminal {
             // `_eval_boards` -> float32 values array -> `float(values_b[0])`.
-            self.expand(root, root_game, true)?;
+            self.expand(root, root_game, true, true)?;
         }
         for i in 0..self.cfg.simulations {
             self.simulate(root_game, root, i)?;
         }
         self.finish(root)
+    }
+
+    /// [`Searcher::search`] with a ROOT-only action allowlist — the J-rules
+    /// ROOT-FILTER (surface C) entry point, used ONLY by
+    /// [`crate::fair::FairAgent::pimc_move`]. `None` is byte-for-byte
+    /// [`Searcher::search`] (the same code path, not a parallel one).
+    pub fn search_with_root_allow(
+        &mut self,
+        root_game: &Game,
+        root_allow: Option<&[i32]>,
+    ) -> Result<SearchResult, SearchError> {
+        self.root_allow = root_allow.map(|a| a.to_vec());
+        let r = self.search(root_game);
+        self.root_allow = None;
+        r
     }
 
     fn finish(&mut self, root: NodeId) -> Result<SearchResult, SearchError> {

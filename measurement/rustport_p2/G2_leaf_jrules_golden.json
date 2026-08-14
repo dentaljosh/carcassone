@@ -7,11 +7,11 @@
     "machine": "x86_64",
     "python": "3.12.3",
     "python_impl": "CPython",
-    "git_rev": "3af12bc0-dirty",
-    "utc": "2026-08-14T00:54:59Z",
+    "git_rev": "e0ad707a-dirty",
+    "utc": "2026-08-14T19:46:44Z",
     "numpy": "2.4.4",
     "carc_rs": "0.1.0",
-    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "carc_rs_file": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/jf_wheel/carc_rs/__init__.py",
     "libc": "glibc 2.39"
   },
   "args": {
@@ -140,5 +140,5 @@
   "total_values_compared": 83824,
   "mismatch_count": 0,
   "mismatches": [],
-  "wallclock_s": 4.2596212470089085
+  "wallclock_s": 4.313099796010647
 }

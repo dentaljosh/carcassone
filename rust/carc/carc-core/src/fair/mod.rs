@@ -39,6 +39,7 @@
 //! rest of the game, `min(optimal_actions)`.  A `BudgetExceeded` solve falls back
 //! to the fair PIMC move for THAT decision only; the agent stays latched.
 
+pub mod jrules_filter;
 pub mod solver;
 
 use std::collections::HashMap;
@@ -49,6 +50,10 @@ use crate::game::Game;
 use crate::search::{self, SearchConfig, SearchError};
 use crate::tiles;
 
+pub use jrules_filter::{
+    jrules_root_filter, FilterOutcome, JF_ALL, JF_CURRENT, JF_END, JF_FILTER_NAMES, JF_J10,
+    JF_J3, JF_J9,
+};
 pub use solver::{ChanceDrop, SolveError, SolveResult, SolverConfig};
 
 /// `fair_agent.DEFAULT_MIN_POOLED_VISITS`.
@@ -244,6 +249,13 @@ pub struct MoveInfo {
     /// `cfg.search.simulations` unless a per-call override was passed — the
     /// sims-split knob's per-move evidence surface.
     pub sims_used: usize,
+    /// Surface C: root actions the J-rules filter removed at THIS decision
+    /// (empty when the mask is 0, the phase is TILES, or nothing fired).
+    pub jf_dropped: Vec<i32>,
+    /// Surface C, per filter `[F-END, F-J10, F-J9, F-J3]`: really bit here.
+    pub jf_fires: [bool; 4],
+    /// Surface C, per filter: the never-empty guard blocked a real bite here.
+    pub jf_yields: [bool; 4],
 }
 
 /// `FairHeuristicPriorAgent`.
@@ -264,6 +276,18 @@ pub struct FairAgent {
     /// decision, else `dict(agg_n)`.
     pub last_pooled_visits: Vec<(i32, f64)>,
     pub last_move: MoveInfo,
+    /// Surface C cumulative counters, `[F-END, F-J10, F-J9, F-J3]`: decisions
+    /// where the filter really bit. All-zero whenever
+    /// `cfg.search.jrules_filter_mask == 0` (the champion).
+    pub jf_fires: [u64; 4],
+    /// Surface C: decisions where the never-empty guard blocked a real bite.
+    pub jf_yields: [u64; 4],
+    /// Surface C: total root actions removed across the game — the cell-level
+    /// positive control (a live-mask game with 0 here never fired the filter).
+    pub jf_dropped_total: u64,
+    /// Surface C: PIMC decisions on which the filter was APPLICABLE (meeple
+    /// phase, >1 legal, mask nonzero) — the yield/fire rates' denominator.
+    pub jf_applicable_moves: u64,
 }
 
 impl FairAgent {
@@ -282,6 +306,10 @@ impl FairAgent {
             forced_moves: 0,
             last_pooled_visits: Vec::new(),
             last_move: MoveInfo::default(),
+            jf_fires: [0; 4],
+            jf_yields: [0; 4],
+            jf_dropped_total: 0,
+            jf_applicable_moves: 0,
         }
     }
 
@@ -393,6 +421,44 @@ impl FairAgent {
             info.forced = true;
             return Ok(legal[0]);
         }
+        // J-RULES ROOT FILTER surface C — mask 0 (the default, the champion)
+        // never calls into the filter module at all, so default traffic is
+        // bit-identical, not merely equal. Nonzero: the bot's hard filters run
+        // ONCE on the TRUE root (fair information only, no RNG consumed —
+        // placement before the det_rng construction below is therefore
+        // inert), and the surviving candidate set restricts every world
+        // search's ROOT expansion. The never-empty guard lives inside
+        // `jrules_root_filter` (min_keep); a filter that would leave fewer
+        // than min_keep candidates yields for this ply and the yield is
+        // counted.
+        let mut root_allow: Option<Vec<i32>> = None;
+        if self.cfg.search.jrules_filter_mask != 0 {
+            let fo = jrules_filter::jrules_root_filter(
+                g,
+                self.cfg.search.jrules_filter_mask,
+                self.cfg.search.jrules_filter_min_keep,
+            )
+            .map_err(FairError::Engine)?;
+            if fo.applicable {
+                self.jf_applicable_moves += 1;
+            }
+            for i in 0..4 {
+                if fo.fires[i] {
+                    self.jf_fires[i] += 1;
+                }
+                if fo.yields[i] {
+                    self.jf_yields[i] += 1;
+                }
+            }
+            self.jf_dropped_total += fo.dropped.len() as u64;
+            info.jf_dropped = fo.dropped.clone();
+            info.jf_fires = fo.fires;
+            info.jf_yields = fo.yields;
+            if !fo.dropped.is_empty() {
+                root_allow = Some(fo.kept);
+            }
+        }
+
         let base = det_seed_base(self.cfg.seed, move_idx);
         let mut det_rng = MT19937::from_py_int_seed_i64(base + 1);
 
@@ -415,7 +481,7 @@ impl FairAgent {
         });
         let scfg = scfg_owned.as_ref().unwrap_or(&self.cfg.search);
         info.sims_used = scfg.simulations;
-        let stats = search_worlds(&worlds, scfg, self.cfg.threads)?;
+        let stats = search_worlds(&worlds, scfg, self.cfg.threads, root_allow.as_deref())?;
 
         // (3) merge — a sequential fold in world order, AFTER every join.
         let mut pool = Pool::default();
@@ -424,9 +490,13 @@ impl FairAgent {
         }
 
         if pool.is_empty() {
-            // pathological: nothing visited
+            // pathological: nothing visited. Fall back inside the FILTERED set
+            // when a root filter is live (legal[0] could be a dropped action).
             self.last_pooled_visits = Vec::new();
-            return Ok(legal[0]);
+            return Ok(match &root_allow {
+                Some(kept) => kept[0],
+                None => legal[0],
+            });
         }
         self.last_pooled_visits = pool.order.iter().map(|&a| (a, pool.n[&a])).collect();
         info.pooled = pool
@@ -444,10 +514,14 @@ impl FairAgent {
 /// The only thing threads change is when work happens: results are written into
 /// disjoint slots and never combined here, so the caller's sequential fold sees
 /// the identical sequence of `f64` additions at every thread count.
+/// `root_allow` (surface C, `None` = the champion, byte-for-byte): a ROOT-only
+/// action allowlist applied identically to every world — see
+/// [`search::Searcher::search_with_root_allow`].
 pub fn search_worlds(
     worlds: &[Game],
     cfg: &SearchConfig,
     threads: usize,
+    root_allow: Option<&[i32]>,
 ) -> Result<Vec<Vec<(i32, i64, f64)>>, FairError> {
     let k = worlds.len();
     let mut out: Vec<Result<Vec<(i32, i64, f64)>, SearchError>> = Vec::with_capacity(k);
@@ -458,18 +532,24 @@ pub fn search_worlds(
     if k == 0 {
         return Ok(Vec::new());
     }
+    let one = |g: &Game| -> Result<Vec<(i32, i64, f64)>, SearchError> {
+        search::Searcher::new(cfg)
+            .search_with_root_allow(g, root_allow)
+            .map(|r| r.pooled_stats)
+    };
     if n_workers == 1 {
         for (i, g) in worlds.iter().enumerate() {
-            out[i] = search::search_single(g, cfg).map(|r| r.pooled_stats);
+            out[i] = one(g);
         }
     } else {
         // ceil(k / workers) contiguous worlds per worker — the Python chunking.
         let per = k.div_ceil(n_workers);
+        let one = &one;
         std::thread::scope(|s| {
             for (win, wout) in worlds.chunks(per).zip(out.chunks_mut(per)) {
                 s.spawn(move || {
                     for (g, o) in win.iter().zip(wout.iter_mut()) {
-                        *o = search::search_single(g, cfg).map(|r| r.pooled_stats);
+                        *o = one(g);
                     }
                 });
             }
@@ -648,6 +728,77 @@ mod tests {
                 (y.0, y.1.to_bits(), y.2.to_bits())
             );
         }
+    }
+
+    /// Surface C, the dose-0 analogue: mask 0 with a MOVED min_keep must be
+    /// byte-identical to the plain default agent — the OFF path may not even
+    /// read the min_keep knob.
+    #[test]
+    fn jrules_filter_mask0_with_moved_min_keep_is_bit_identical() {
+        let g = midgame("28000000000", 41); // meeples-phase root (41 plies)
+        let mut base = FairAgent::new(cfg(4, 48, 2));
+        let mut c = cfg(4, 48, 2);
+        c.search.jrules_filter_mask = 0;
+        c.search.jrules_filter_min_keep = 7; // deliberately moved
+        let mut moved = FairAgent::new(c);
+        let a1 = base.choose_action(&g, Some(5)).unwrap();
+        let a2 = moved.choose_action(&g, Some(5)).unwrap();
+        assert_eq!(a1, a2);
+        assert_eq!(base.last_move.pooled.len(), moved.last_move.pooled.len());
+        for (x, y) in base.last_move.pooled.iter().zip(moved.last_move.pooled.iter()) {
+            assert_eq!(
+                (x.0, x.1.to_bits(), x.2.to_bits()),
+                (y.0, y.1.to_bits(), y.2.to_bits()),
+                "mask-0 surface C changed a pooled float"
+            );
+        }
+        assert_eq!(moved.jf_dropped_total, 0);
+        assert_eq!(moved.jf_applicable_moves, 0);
+    }
+
+    /// Surface C live: on a meeple root where the filter drops something, every
+    /// pooled action must be in the KEPT set, the chosen action must be kept,
+    /// and the counters must record the drop.
+    #[test]
+    fn jrules_filter_restricts_the_pimc_root() {
+        // Find a meeple root with >1 legal where the current-stack filter bites.
+        let mut found = false;
+        for seed in ["7", "1234", "99", "28000000000", "555", "31337"] {
+            let mut g = Game::from_seed(seed);
+            for _ in 0..400 {
+                if g.state.phase == crate::engine::Phase::Meeples && g.legal_actions().len() > 1
+                {
+                    let fo =
+                        jrules_filter::jrules_root_filter(&g, jrules_filter::JF_CURRENT, 1)
+                            .unwrap();
+                    if !fo.dropped.is_empty() {
+                        let mut c = cfg(4, 48, 1);
+                        c.search.jrules_filter_mask = jrules_filter::JF_CURRENT;
+                        let mut a = FairAgent::new(c);
+                        let act = a.choose_action(&g, Some(3)).unwrap();
+                        assert!(fo.kept.contains(&act), "chosen action was filtered out");
+                        for &(pa, _, _) in &a.last_move.pooled {
+                            assert!(
+                                fo.kept.contains(&pa),
+                                "pooled action {pa} is outside the kept set"
+                            );
+                        }
+                        assert_eq!(a.last_move.jf_dropped, fo.dropped);
+                        assert_eq!(a.jf_dropped_total, fo.dropped.len() as u64);
+                        assert_eq!(a.jf_applicable_moves, 1);
+                        assert!(a.jf_fires.iter().any(|&n| n > 0));
+                        found = true;
+                        break;
+                    }
+                }
+                let la = g.legal_actions();
+                g.advance(la[la.len() / 2]).unwrap();
+            }
+            if found {
+                break;
+            }
+        }
+        assert!(found, "no meeple root where JF_CURRENT bites was found");
     }
 
     #[test]
