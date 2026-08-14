@@ -10,9 +10,13 @@
 #    A FAILED_CENSUS / EXIT_* with rc!=0 is the failure counterpart and also stands the
 #    watchdog down for that box - a human decides.
 #
-# ⚠️ COLD-START GUARD: a box is only ever restarted if CHAIN_STARTED_<box> exists, i.e. the
-#    owner has already launched it once. The watchdog can therefore be armed BEFORE launch
-#    without ever cold-starting a run nobody asked for.
+# ⚠️ COLD-START GUARD: a box is only ever restarted if CHAIN_STARTED_<box> exists IN THIS
+#    (local) tree, i.e. the owner has already launched that box once. The watchdog can
+#    therefore be armed BEFORE launch without ever cold-starting a run nobody asked for.
+#    ⚠️ CHAIN_STARTED_laptop is written HERE, by whoever dispatches the laptop -- the
+#    laptop's own launcher writes its copy into the LAPTOP's tree, which this box cannot
+#    see. Dispatching the laptop without dropping that marker leaves the laptop unwatched
+#    (it fails safe: no marker => no restart, and the log says so on every tick).
 #
 # Restart is SAFE: RUN_CMD.sh runs every leg with --resume, rows.jsonl is fsync'd per root,
 # and a leg with a DONE_LEG_* marker is skipped outright. A restart resumes at root
