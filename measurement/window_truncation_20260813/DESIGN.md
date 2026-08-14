@@ -16,7 +16,9 @@ pre-registered.**
 > measured.
 >
 > ⭐ **What IS decided and is not waiting on this census: §6-P3 has already fired in production,
-> so the minimal fail-loud fix (§7 F-c) is LICENSED — and it is STILL UNBUILT.** Carried as an
+> so the minimal fail-loud fix (§7 F-c) is LICENSED.** **BUILT 2026-08-13 on branch
+> `worktree-agent-ae0fb92b067cdf922`, NOT YET MERGED** — see §7 F-c for what it does and for
+> the bit-identity evidence. Carried as an
 > open item on [PROGRAM_ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) NOW item (7).
 > **0 games · no band · no `results.csv` row · no `CLAIM_REGISTRY` row · `PRODUCTION.yaml`
 > untouched** — exactly as §6's reporting rules pre-register. State record (explicitly **not** a
@@ -398,10 +400,36 @@ F9 recentring work (`centered18` → `fixed_v1`) moved the **start tile** to red
 Pilot B is a `fixed_v1` census and finds the same zero — consistent with recentring
 being orthogonal to this defect rather than a fix for it.
 
-**F-c — fail loudly (the minimum, and ALREADY LICENSED — see §6-P3).** Make the Rust
-`legal_mask` surface `n_overflow > 0` instead of swallowing it, matching Python's
-`WindowOverflowError`. This fixes nothing; it converts a silent strength leak into a
-visible error. It is the natural completion of **`wall_sentinel`** (F9 W4,
+**F-c — fail loudly (the minimum, and ALREADY LICENSED — see §6-P3).** **BUILT 2026-08-13,
+UNMERGED** (branch `worktree-agent-ae0fb92b067cdf922`). This fixes nothing; it converts a
+silent strength leak into a visible error.
+
+> **As built** — the diagnosis is attached where the search DIES, not where the mask is
+> built: `legal_mask` is untouched (it is the hot path), and the only edit to live code is
+> the `Err(..)` arm of `simulate`'s existing `select_child_puct(node)?`, which now upgrades
+> the bare `NoLegalActionsAtInterior` to `EmptyMaskAtInterior(diag)` while the game state at
+> the node is still in hand (`carc-core/src/search/window_diag.rs`). The payload carries the
+> mask counters, the window, the phase, the descent that reached the node, the node digest
+> and the dropped placements in engine coordinates — and a **cause**:
+> `window_truncation` | `no_engine_actions` | `mask_not_empty`. Truncation gets its own
+> Python exception TYPE (`carc_rs.WindowTruncationError`, a `RuntimeError` **subclass**, and
+> the historical message text is preserved verbatim as the leading clause so every existing
+> grep and guard still matches). `carcassonne_ai.window_truncation` joins on what the search
+> cannot know — deck seed, seat, GLOBAL ply — and writes a record in the schema
+> `reconstruct_crash_root.py` emits and this census consumes; `play_harness.play_game` is the
+> capture point because it is the only place holding all three. `move_idx` is read off the
+> AGENT and is never defaulted from the ply (§5.1's trap), and a caller that cannot supply it
+> records `move_idx: null` rather than substituting.
+>
+> **Bit-identity evidence** (the no-fire path): the three champion leaf fingerprints
+> unchanged, and 208 real production searches (2 rules geometries × 4 decks × 26 plies at 400
+> sims — chosen action, every root child's `(action, N, W-bits)`, deduped + pooled stats, root
+> priors, node counts, leaf-eval counts) hash **byte-identically** across a pre-fix and a
+> post-fix wheel built from the same tree on the pinned 1.96.0 toolchain. Gated continuously
+> by `tests/test_window_truncation_failloud.py` (21 tests) against a golden digest recorded
+> from the PRE-fix wheel. **No strength claim, no band, no `results.csv` row.**
+
+It is the natural completion of **`wall_sentinel`** (F9 W4,
 `src/carcassonne_ai/wall_sentinel.py`), which already counts the five border faces —
 including face 5, `WindowOverflowError` — but only on the **played** path and only in
 the Python engine. The clean version of F-c is "give `wall_sentinel` a face-5 counter
