@@ -6748,3 +6748,47 @@ VERDICT.json, raw/), `scripts/analyzer/f6_winprob_pregate.py`, 14 tests. Merged 
 **No `experiments/results.csv` row, no band, no claim id (0-game precedent: farm-war, adaptive-k
 census, j13 pre-gate). `PRODUCTION.yaml` / `BAND_REGISTRY.csv` untouched.**
 **Phase:** measurement-first (human-edge program, round 2).
+
+## 2026-08-14 — TILE-TIE TIE-BREAK TERM (round 2, R2-1) — **BUILT, OFFLINE-GATED, AND THE FREE GATE FAILED: `G-FAIL`, held-out capture −0.0546 ± 0.0300 pts/tied ply (z −1.82, leaning HARMFUL) against a measured +0.234 ceiling.** 0 games spent; no deploy prereg licensed
+
+**Context.** The pooled tile-tie pricing (branch 4, +34.5 elo CI [+14.7, +54.7] headroom, width
+unresolved) is the only positive strength signal of the 08-12/13 round. Funded 2026-08-14 as a
+build + FREE offline discrimination gate (the CL-073 shape prescribed by the j13 pre-gate: within-
+tied-set ordering vs the deep ruler BEFORE any game). Subagent on worktree branch
+`worktree-agent-a9a0496ed7ac3f9be`; git history proves the order: read-rule `8ffd7463` →
+implementation `2d6a8e45` → gate run `4161c5a5`.
+
+**The term** (`flat_leaf.flat_tiletie_term`): hand-crafted (CL-065-compliant) bounded micro-term
+`T = t/(1+|t|)` over four geometry features invisible to the leaf inside exact-tie sets
+(closure-cell constrainedness of claimed unfinished cities/roads opp−self, frontier
+constrainedness, frontier size). Flag-gated `LeafConfig.tiletie_dose`, default 0.0 = byte-identical
+early branch; designed as a sub-lattice micro-dose (|dose·T| < 0.02 < the census's non-tie gap p5
+0.15) so it can never move non-tied picks — deliberately outside the CL-080/jrules static-term
+failure class. All three champion fingerprints runtime-verified unchanged; off-state bit-identical.
+
+**Gate (pre-committed read-rule):** PRIMARY = 5-fold root-clustered cross-fit HELD-OUT captured
+headroom vs the incumbent lowest-index convention on the free pricing corpus (733 positions / 399
+roots, every deduped tied arm CRN-deep-scored); PASS bar z ≥ +2.0; 10-variant menu.
+**Result `G-FAIL`:** held-out −0.0546 ± 0.0300 pts/tied ply, CI [−0.114, +0.004] — no conviction,
+leaning harmful. Best variant in-sample +0.0196 = 8.4% of ceiling (z +0.57); fold selections
+sign-flip (noise signature). G0 integrity clean (733/733, 0 checksum errors). The gate was powered
+to convict a term capturing ~26% of the ceiling — nothing convicted. ⭐ **The winner's-curse
+machinery earned its keep again: +0.02 in-sample became −0.05 held-out.**
+
+**Reading, binding.** **These four geometry features do not explain the oracle spread. The +0.252
+pts/ply headroom measurement itself STANDS, unexplained — the failure's scope is this menu, not
+the axis.** Leaf-cost ratio ≈1.082 median (under the 1.20 trigger; moot). **No deploy prereg
+drafted** — the read-rule licenses one only on G-PASS; the unlicensed cell shape is recorded
+for the record in DESIGN §6 with its two still-owed launch gates (rust mirror + E4 flip-rate
+calibration). **Rust port deliberately deferred, fail-closed** (`leaf_config_rs` TypeErrors on any
+nonzero dose) — nothing owed now. **Re-open route (DESIGN §7): mine what separates the oracle-best
+arm from arm0 FIRST, then hand-craft** (this attempt ran the reverse order), fresh read-rule per
+menu, cap on corpus reuse.
+
+**Artifacts:** `measurement/tiletie_term_20260814/{GATE_READ_RULE,DESIGN,GATE_READOUT}.md` +
+`.json` + `features_*.jsonl`, `scripts/tiletie/term_gate.py`, `tests/test_tiletie_term.py` (15
+green; opencity/denial/frozen/v29curve/jrules/t3_optuna suites green), LEVER_INDEX row updated by
+the build. Merged 2026-08-14.
+**No `experiments/results.csv` row, no band, no claim (0-game precedent). `PRODUCTION.yaml` /
+`BAND_REGISTRY.csv` untouched.**
+**Phase:** measurement-first (human-edge program, round 2).
