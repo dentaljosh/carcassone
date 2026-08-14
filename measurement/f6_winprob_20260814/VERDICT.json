@@ -1,0 +1,157 @@
+{
+ "schema": "carcassonne-f6-winprob-pregate/v1",
+ "design": "measurement/f6_winprob_20260814/DESIGN.md",
+ "git_rev": "13586209",
+ "wall_secs": 22.3,
+ "integrity": {
+  "n_games": 449,
+  "replay_scores_match": 449,
+  "n_positions": 673,
+  "checksum_ok": 673,
+  "n_cal_rows": 64656,
+  "leaf_hash": "a36d2e15a3b3d71d",
+  "rules_profile": "walled",
+  "champ_picks_joined": 673
+ },
+ "models": {
+  "early": {
+   "m1": [
+    1.7373197668733388e-18,
+    0.04416634082696084
+   ],
+   "m2": [
+    -4.259970112134228e-18,
+    0.043010893775111206,
+    0.04718690052098981
+   ],
+   "n": 32328
+  },
+  "mid": {
+   "m1": [
+    1.6361324582591512e-17,
+    0.07394016825413549
+   ],
+   "m2": [
+    7.459371009663248e-18,
+    0.07732753864607263,
+    0.06011712049834456
+   ],
+   "n": 21552
+  },
+  "late": {
+   "m1": [
+    -1.640844092888074e-18,
+    0.14483897258278997
+   ],
+   "m2": [
+    -5.859372145074589e-18,
+    0.14660331348813693,
+    0.13458336777055288
+   ],
+   "n": 10776
+  }
+ },
+ "beta_ratio": {
+  "per_bucket": {
+   "late": {
+    "beta_banked": 0.14660331348813693,
+    "beta_prosp": 0.13458336777055288,
+    "ratio": 0.9180104089628458,
+    "ratio_ci95": [
+     0.8013560564194555,
+     1.0503839114588982
+    ],
+    "n": 10776
+   },
+   "mid": {
+    "beta_banked": 0.07732753864607263,
+    "beta_prosp": 0.06011712049834456,
+    "ratio": 0.7774348123700151,
+    "ratio_ci95": [
+     0.580592103179787,
+     1.00046001530968
+    ],
+    "n": 21552
+   },
+   "early": {
+    "beta_banked": 0.043010893775111206,
+    "beta_prosp": 0.04718690052098981,
+    "ratio": 1.0970918383541033,
+    "ratio_ci95": [
+     0.6653280406352498,
+     1.7529578705463718
+    ],
+    "n": 32328
+   }
+  },
+  "pooled_mid_late": 0.8477226106664304,
+  "pooled_ci95": [
+   0.7132467299730619,
+   1.0022822105497906
+  ]
+ },
+ "binding": {
+  "m2": {
+   "primary": {
+    "eps_margin": 0.25,
+    "dp_bar": 0.02,
+    "n_scoreable": 673,
+    "n_binding": 0,
+    "binding_rate": 0.0,
+    "dp_mean": 7.169024122419078e-05,
+    "dp_max": 0.010356258870124035
+   },
+   "dp_sens": {
+    "eps_margin": 0.25,
+    "dp_bar": 0.05,
+    "n_scoreable": 673,
+    "n_binding": 0,
+    "binding_rate": 0.0,
+    "dp_mean": 7.169024122419078e-05,
+    "dp_max": 0.010356258870124035
+   },
+   "eps_sens": {
+    "eps_margin": 1.0,
+    "dp_bar": 0.02,
+    "n_scoreable": 673,
+    "n_binding": 0,
+    "binding_rate": 0.0,
+    "dp_mean": 7.169024122419078e-05,
+    "dp_max": 0.010356258870124035
+   },
+   "both_sens": {
+    "eps_margin": 1.0,
+    "dp_bar": 0.05,
+    "n_scoreable": 673,
+    "n_binding": 0,
+    "binding_rate": 0.0,
+    "dp_mean": 7.169024122419078e-05,
+    "dp_max": 0.010356258870124035
+   }
+  },
+  "m1_honesty_primary": {
+   "n_scoreable": 673,
+   "n_binding": 0,
+   "binding_rate": 0.0,
+   "dp_mean": 0.0,
+   "dp_max": 0.0
+  },
+  "binding_rate_ci95": [
+   0.0,
+   0.005526101414243933
+  ]
+ },
+ "champion_posture": {
+  "n": 0,
+  "champ_lower": 0,
+  "champ_lower_rate": null,
+  "mean_sacrifice": null
+ },
+ "read_rule": {
+  "binding_rate_kill": 0.05,
+  "dp_bar": 0.02,
+  "eps_margin": 0.25,
+  "champ_n_min": 20
+ },
+ "branch": "K"
+}
