@@ -1,13 +1,18 @@
-# J-RULES SURFACE B — DEPLOY-BUDGET CELL, PRE-REGISTRATION **DRAFT**
+# J-RULES SURFACE B — DEPLOY-BUDGET CELL, PRE-REGISTRATION
 
-> **⚠️ STATUS: DRAFT — NOT THE PREREG OF RECORD YET.** Written 2026-08-14 with the build,
-> BEFORE the calibration has produced any flip rate and BEFORE any band is claimed. Two
-> fields are deliberately placeholders — the **dose** (named only by
-> [`CALIB_READ_RULE.md`](CALIB_READ_RULE.md) §3.2 `FUND-SMALLEST`, after the ladder is read)
-> and the **band** (`CLAIMED-BY-ORCHESTRATOR`; the owner claims a fresh band in
-> `governance/BAND_REGISTRY.csv` in the same commit that promotes this draft). The launching
-> session fills exactly those two fields, changes nothing else, and commits the result as
-> `DEPLOY_PREREG.md` before game 1. Any other edit voids the pre-registration.
+> **⚠️ STATUS 2026-08-14: THIS IS THE PRE-REGISTRATION OF RECORD. COMMITTED BEFORE GAME 1.**
+> Promoted (`git mv`) from `DEPLOY_PREREG_DRAFT.md`, which was written 2026-08-14 with the
+> build, BEFORE the calibration had produced any flip rate and BEFORE any band was claimed.
+> **Exactly two fields were filled at promotion and nothing else was touched:**
+> 1. the **dose** — `0.5` — named mechanically by [`CALIB_READ_RULE.md`](CALIB_READ_RULE.md)
+>    §3.2 `FUND-SMALLEST`, applied in [`CALIB_READOUT.md`](CALIB_READOUT.md) (the read-rule was
+>    committed before any flip rate existed);
+> 2. the **band** — `130000000000` — claimed in `governance/BAND_REGISTRY.csv`
+>    (sentinel [`BAND_CLAIMED.json`](BAND_CLAIMED.json)).
+>
+> No threshold, no branch, no statistic, no gate was changed. The cell's name was fixed from
+> the funded dose as §3 already provided for. `git log --follow` on this path is the audit
+> trail; any other edit voids the pre-registration.
 >
 > **0 games · 0 numbers read · `governance/PRODUCTION.yaml` untouched on every branch · no
 > `results.csv` / claim row until close-out · the launching session adjudicates nothing.**
@@ -40,13 +45,21 @@ ladder {0.5, 1.0, 2.0} + pre-committed 0.25 FINER-RUNG, `FUND-SMALLEST` at the 1
 point-estimate bar, `NO-EXPRESSION` = stop, no cell. The named rung's flip rate rides here
 verbatim, with `marginal` if its Wilson-95 lower bound is under 10%.
 
+**FILLED AT PROMOTION** from [`CALIB_READOUT.md`](CALIB_READOUT.md) (1,556 graded champion
+plies per arm, 26 archives, `all_replay_scores_match: true`): FINER-RUNG did **not** fire
+(`f(1.0) = 0.17095`, not `> 0.20` strictly); **`FUND-SMALLEST` fired** and names
+**dose `0.5`**, whose flip rate rides here verbatim: **`f = 13.05 %` (203/1556), Wilson-95
+[11.46 %, 14.81 %]**. The lower bound `0.1146 ≥ 0.10`, so this cell is **NOT `marginal`** and
+no marginal caveat rides into this prereg. ⚠️ The flip rate is **not a result** (§5) and
+clearing the bar buys resolvability, not safety.
+
 ## 3. The cell
 
 Exactly **one** cell.
 
-| | `jpriors_dXXX_deploy11008` *(name fixed at promotion from the funded dose)* |
+| | `jpriors_d0p5_deploy11008` *(name fixed at promotion from the funded dose)* |
 |---|---|
-| candidate | the production champion — **UNMODIFIED LEAF `a36d2e15a3b3d71d`** — with `jrules_prior_dose` **`<NAMED-BY-CALIBRATION>`**, `jrules_prior_mask` **31**, `jrules_prior_scope` **`all`** |
+| candidate | the production champion — **UNMODIFIED LEAF `a36d2e15a3b3d71d`** — with `jrules_prior_dose` **`0.5`**, `jrules_prior_mask` **31**, `jrules_prior_scope` **`all`** |
 | opponent | the **UNMODIFIED** production champion (no leaf override, no prior knobs) |
 | harness | `scripts/classical_search/eval_fair_puct.py --info fair --opponent fair-champion` (FAIR PIMC) via `menu_fair_cell.sh` |
 | budget | **k8 × 1376 = 11008 on BOTH arms** (`--k-dets 8 --sims 1376 --opp-k-dets 8 --opp-sims 1376`) |
@@ -54,10 +67,10 @@ Exactly **one** cell.
 | rules | `--rules-profile fixed_v1` + `CARCASSONNE_FIX_R9=1` |
 | endgame | `--exact-k 2`, shared |
 | search knobs | `--c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits` |
-| the knob | `--cand-jrules-prior-dose <dose>` (candidate side ONLY; no `--cand-leaf-json` at all — ⚠️ this cell overrides NO leaf) |
+| the knob | `--cand-jrules-prior-dose 0.5` (candidate side ONLY; no `--cand-leaf-json` at all — ⚠️ this cell overrides NO leaf) |
 | run flags | `--paired --shared-claim --no-results-csv`, `nice -n 19`, detached |
 | **n** | **800 deck-paired = 400 decks × 2 seats**, CRN |
-| band | **`<CLAIMED-BY-ORCHESTRATOR>`** — fresh, claimed in `governance/BAND_REGISTRY.csv` in the promotion commit (1.25e11–1.28e11 are retired, decision-influenced) |
+| band | **`130000000000`** (seeds `130000000000..130000000399`) — fresh, claimed in `governance/BAND_REGISTRY.csv`, sentinel [`BAND_CLAIMED.json`](BAND_CLAIMED.json) (1.25e11–1.28e11 are retired, decision-influenced) |
 | **primary statistic** | **deck-paired margin in pts/deck, with its z.** Elo secondary, reported, never promoted |
 
 ## 4. PRE-STATED PRIOR — recorded before any number

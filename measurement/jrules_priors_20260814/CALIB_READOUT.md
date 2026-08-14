@@ -70,7 +70,7 @@ counter-precedent where a lever null on one surface was a win on the prior surfa
 
 ## 6. What is owed before game 1
 
-Promote [`DEPLOY_PREREG_DRAFT.md`](DEPLOY_PREREG_DRAFT.md) filling **dose 0.5** and the band;
+Promote [`DEPLOY_PREREG.md`](DEPLOY_PREREG.md) filling **dose 0.5** and the band;
 claim a **fresh band**; per-box wheel + the `_assert_surface_b_live` control **on the box that
 plays**; then n=800 deck-paired, fair PIMC k8×1376 both arms, `fixed_v1`+R9, rust, exact-K 2,
 margin z primary, all 13 wiring gates — ⚠️ **with the liveness gate INVERTED for this surface: the

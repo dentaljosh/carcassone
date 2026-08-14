@@ -110,7 +110,7 @@ most once; a `d0p125` is a NEW calibration.
 
 **Else if any rung has `f ≥ 0.10`:** fund **exactly one** deploy cell, at the **SMALLEST dose
 whose `f ≥ 0.10`**. Smallest dose, not largest `f`; a non-monotone ladder is read as
-measured. The funded cell inherits [`DEPLOY_PREREG_DRAFT.md`](DEPLOY_PREREG_DRAFT.md) in
+measured. The funded cell inherits [`DEPLOY_PREREG.md`](DEPLOY_PREREG.md) in
 full: k8×1376 both arms, rust, `fixed_v1`+R9, exact-K 2, n=800 deck-paired, margin z primary,
 fresh band claimed before game 1, all 13 wiring gates. If the named rung's Wilson-95 lower
 bound is below 0.10, `marginal` rides into the prereg. A second cell is Joshua's separate,
