@@ -6792,3 +6792,57 @@ the build. Merged 2026-08-14.
 **No `experiments/results.csv` row, no band, no claim (0-game precedent). `PRODUCTION.yaml` /
 `BAND_REGISTRY.csv` untouched.**
 **Phase:** measurement-first (human-edge program, round 2).
+
+## 2026-08-14 — OPEN-CITY ROUND 2, CELL `C_d16p0` IS **VOID** (owner ruling): a deterministic `WindowTruncationError` tripped the failed-game validity trigger (1.75 % vs the 0.5 % house reference) AND the orchestrator broke the cell's blindness while diagnosing it. **F-a stays UNFUNDED; the fix is per-game crash resilience, not a wider window.**
+
+**What happened.** Cell `oc2_C_d16p0_deploy11008` (band 1.29e11, arm C 6/3 at dose 16) finished
+its first pass 778/800 and a blind completion attempt brought it only to **786/800**. The 14
+missing records were **the same (deck,seat) cells both times** — not random worker death.
+
+**Root cause, diagnosable ONLY because of F-c (built 2026-08-13, one day earlier).** A single
+game deterministically raises `carc_rs.WindowTruncationError` at an identical position on every
+attempt (**one** distinct `state_digest 1d4887105bd6cb85e7ea9b2ca9cda974` across all 16 harness
+passes; `node_digest 94f64fb6e296fd1b`, depth 4, `sim_idx` 140). Payload: all **4** legal tile
+placements (row 5, col 15 × 4 rotations) fall outside the 25×25 window at `window=25@(6,4)` with
+`board_extent [6,25,12,19]` ⇒ `n_total=4 n_overflow=4 n_encoded=0` ⇒ empty mask. **Before F-c this
+would have been a silent, unattributable pool death.** ⭐ **The census's own caveat is vindicated
+with a live production instance: "0 is not dead — the census bounds the RATE, it does not abolish
+the mechanism."** The census's ≤ 0.27/game bound is a *banked-roots* figure and is not contradicted
+by one crash in one cell.
+
+**The amplifier (the real defect).** `eval_fair_puct.py` consumed games via
+`pool.imap_unordered`, so ONE game's exception tore down the WHOLE pass and every in-flight game
+lost its `--shared-claim` claim ⇒ **1 poisoned game + 13 collateral casualties**, and the
+contiguous-looking stranded block (seeds …214–222). `scripts/joshuabot/h2h.py` had already fixed
+exactly this on 2026-08-13 (`0102b72d`); the fair-PIMC harness never got it.
+
+**Owner ruling (2026-08-14), two questions.** **(1) `C_d16p0` = VOID for confirmatory use** and
+re-run on a **fresh band** once the resilience fix lands — chosen over reading it at 786/391-paired
+because the number is **doubly compromised**: the pre-registered validity trigger fired (**14/800 =
+1.75 %**, 3.5× the 0.5 % house reference) *and* ⚠️ **THE ORCHESTRATOR SAW THE CELL'S STRENGTH LINE
+WHILE GREPPING THE CRASH LOG** — disclosed at the time, unintentional, and recorded here because
+blindness once broken cannot be restored and every later choice about this cell is post-hoc. The
+exclusion is also **NOT outcome-independent**: the poisoned game is excluded for a *structural*
+property of its board (an elongated board overflowing the window), unlike the joshuabot confirm's
+outcome-independent single drop. **(2) F-a (widen the action window inside search) stays UNFUNDED**
+— the census's P1 = CURIOSITY still holds on **strength** grounds; the cost here was **reliability**,
+which per-game resilience fixes far more cheaply than re-architecting the search hot path.
+
+**The fix, built (worktree `worktree-agent-a1e5dddb01337d3d7`, `8c00b8f1`, NOT yet merged — a
+shared eval script, and `Acap3_d2p0` is live).** `_play_one` becomes a guard around an untouched
+`_play_one_inner`; a failure writes a record to a **`failed/` SUBDIRECTORY** (every downstream
+reader globs the cell dir non-recursively, so a failure can never be read as a result), releases
+the claim in a `finally`, and the pass continues. h2h parity on field/flag names
+(`n_failed`, `failure_rate`, `failed_cells`, `--retry-failed`). **Bounded retry** via
+`--max-attempts` (default 3, lifetime budget persisted per record) so the 16-identical-re-crash
+loop cannot recur. Bit-identity proven on a zero-failure cell (every non-timing field and every
+strength statistic identical); injected-crash A/B: **1 of 4 records + 3 orphan claims → 3 of 4
+records + 0 orphan claims**, `validity_trigger_fired: true`. 37 new tests.
+⚠️ **Would have saved all 13 collateral games; the 1 poisoned game is still lost** — the guard
+counts and diagnoses it, it does not make the position playable. That remains F-c's domain.
+
+**State of the round at this entry:** `Asym_d2p0` **800/800 clean, gates pass**; `Acap3_d2p0`
+**live and healthy**; `C_d16p0` **VOID**. Nothing adjudicated, nothing promoted,
+`governance/PRODUCTION.yaml` untouched. Band 1.29e11's `C` sub-range (+0..+399) is **spent and
+void**; the band's registry row gains its annotation at round close-out.
+**Phase:** measurement-first (human-edge program, round 2).

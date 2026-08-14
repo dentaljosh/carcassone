@@ -1,3 +1,10 @@
 [oc-r2-deploy 2026-08-14_09:24:20] === START box=local band=129000000000 W=14 n=800 per cell, SEQUENTIAL ===
 [oc-r2-deploy 2026-08-14_09:24:20] host=Doctor out=/mnt/c/carc-shared/opencity_round2_deploy_20260814 repo_head=cf80ae8c
 [oc-r2-deploy 2026-08-14_09:24:20] --- cell oc2_C_d16p0_deploy11008 seeds 129000000000..129000000399 cand_hash=a4acf6d0925f7606 dose=16.0 knobs={"opencity_size_min": 6.0, "opencity_edge_min": 3} ---
+[oc-r2-deploy 2026-08-14_09:55:02] cell oc2_C_d16p0_deploy11008 launcher rc=0 records=786/800
+[oc-r2-deploy 2026-08-14_09:55:02] cell oc2_C_d16p0_deploy11008 wiring gates: all_gates_pass=True (gate-script rc=0) -> /home/doctor/projects/carcassone/measurement/opencity_round2_20260814/verdicts/GATES_oc2_C_d16p0_deploy11008.json
+[oc-r2-deploy 2026-08-14_09:55:02] cell oc2_C_d16p0_deploy11008 DONE (786/800) -> /home/doctor/projects/carcassone/measurement/opencity_round2_20260814/DONE_oc2_C_d16p0_deploy11008
+[oc-r2-deploy 2026-08-14_09:55:02] cell oc2_C_d16p0_deploy11008 INCOMPLETE but >=90% - the 90% VOID rule applies at read time
+[oc-r2-deploy 2026-08-14_09:55:02] SKIP oc2_Acap3_d2p0_deploy11008 (CELL_FILTER='d16p0' -- this cell runs on the other box)
+[oc-r2-deploy 2026-08-14_09:55:02] SKIP oc2_Asym_d2p0_deploy11008 (CELL_FILTER='d16p0' -- this cell runs on the other box)
+[oc-r2-deploy 2026-08-14_09:55:02] === ALL CELLS COMPLETE (band 129000000000, box local). Nothing adjudicated, nothing promoted. ===

@@ -1,0 +1,9 @@
+2026-08-14_09:55:02
+records 786/800
+band_seed_start 129000000000
+cand_leaf_hash_expected a4acf6d0925f7606
+opencity_dose_expected 16.0
+arm_knobs_expected {"opencity_size_min": 6.0, "opencity_edge_min": 3}
+workers 14 (box local only)
+wiring_gates_all_pass True
+NOT ADJUDICATED - read DEPLOY_PREREG.md gates O1-O12 before any number.

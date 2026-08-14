@@ -41,3 +41,1092 @@ carc_rs.WindowTruncationError: PUCT reached a node with no valid actions (Python
 [head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
 [backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
 fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 778 cached, 22 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:29:52 harness pass 2 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:30:14 harness pass 3 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:30:36 harness pass 4 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:30:58 harness pass 5 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:31:20 harness pass 6 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:31:42 harness pass 7 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:32:04 harness pass 8 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:32:26 harness pass 9 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:32:48 harness pass 10 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:33:10 harness pass 11 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:33:31 harness pass 12 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:33:53 harness pass 13 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:34:15 harness pass 14 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:34:37 harness pass 15 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 1842, in _play_one
+    action = rung.move(board)
+             ^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/src/carcassonne_ai/rust_agent.py", line 709, in choose_action
+    action = int(self._rs.choose_action(
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+carc_rs.WindowTruncationError: PUCT reached a node with no valid actions (Python IndexError) [cause=window_truncation n_total=4 n_overflow=4 window=25@(6,4) depth=4 phase=tiles] EMPTY_MASK_DIAG={"cause":"window_truncation","n_total":4,"n_overflow":4,"n_encoded":0,"window_size":25,"window_offset":[6,4,25],"phase":"tiles","player_to_move":0,"k_remaining":10,"tiles_placed":61,"depth":4,"sim_idx":140,"descent_actions":[49,2510,44,2510],"node_digest":"94f64fb6e296fd1b","state_digest":"1d4887105bd6cb85e7ea9b2ca9cda974","board_extent":[6,25,12,19],"dropped":[{"row":5,"col":15,"rot":0},{"row":5,"col":15,"rot":1},{"row":5,"col":15,"rot":2},{"row":5,"col":15,"rot":3}],"n_dropped_listed":4}
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 3741, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 3708, in main
+    for r in pool.imap_unordered(_play_one, todo, chunksize=1):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 873, in next
+    raise value
+carc_rs.WindowTruncationError: PUCT reached a node with no valid actions (Python IndexError) [cause=window_truncation n_total=4 n_overflow=4 window=25@(6,4) depth=4 phase=tiles] EMPTY_MASK_DIAG={"cause":"window_truncation","n_total":4,"n_overflow":4,"n_encoded":0,"window_size":25,"window_offset":[6,4,25],"phase":"tiles","player_to_move":0,"k_remaining":10,"tiles_placed":61,"depth":4,"sim_idx":140,"descent_actions":[49,2510,44,2510],"node_digest":"94f64fb6e296fd1b","state_digest":"1d4887105bd6cb85e7ea9b2ca9cda974","board_extent":[6,25,12,19],"dropped":[{"row":5,"col":15,"rot":0},{"row":5,"col":15,"rot":1},{"row":5,"col":15,"rot":2},{"row":5,"col":15,"rot":3}],"n_dropped_listed":4}
+[menu-fair primary Doctor] 2026-08-14_09:36:50 harness pass 16 rc=1 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:37:12 harness pass 17 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:37:34 harness pass 18 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:37:56 harness pass 19 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:38:18 harness pass 20 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:38:40 harness pass 21 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:39:01 harness pass 22 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:39:24 harness pass 23 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:39:46 harness pass 24 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:40:07 harness pass 25 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:40:29 harness pass 26 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:40:51 harness pass 27 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:41:13 harness pass 28 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:41:35 harness pass 29 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:41:56 harness pass 30 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:42:18 harness pass 31 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:42:40 harness pass 32 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:43:02 harness pass 33 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:43:24 harness pass 34 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:43:45 harness pass 35 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:44:07 harness pass 36 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:44:29 harness pass 37 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:44:51 harness pass 38 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:45:13 harness pass 39 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 1842, in _play_one
+    action = rung.move(board)
+             ^^^^^^^^^^^^^^^^
+  File "/home/doctor/projects/carcassone/src/carcassonne_ai/rust_agent.py", line 709, in choose_action
+    action = int(self._rs.choose_action(
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+carc_rs.WindowTruncationError: PUCT reached a node with no valid actions (Python IndexError) [cause=window_truncation n_total=4 n_overflow=4 window=25@(6,4) depth=4 phase=tiles] EMPTY_MASK_DIAG={"cause":"window_truncation","n_total":4,"n_overflow":4,"n_encoded":0,"window_size":25,"window_offset":[6,4,25],"phase":"tiles","player_to_move":0,"k_remaining":10,"tiles_placed":61,"depth":4,"sim_idx":140,"descent_actions":[49,2510,44,2510],"node_digest":"94f64fb6e296fd1b","state_digest":"1d4887105bd6cb85e7ea9b2ca9cda974","board_extent":[6,25,12,19],"dropped":[{"row":5,"col":15,"rot":0},{"row":5,"col":15,"rot":1},{"row":5,"col":15,"rot":2},{"row":5,"col":15,"rot":3}],"n_dropped_listed":4}
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 3741, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py", line 3708, in main
+    for r in pool.imap_unordered(_play_one, todo, chunksize=1):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 873, in next
+    raise value
+carc_rs.WindowTruncationError: PUCT reached a node with no valid actions (Python IndexError) [cause=window_truncation n_total=4 n_overflow=4 window=25@(6,4) depth=4 phase=tiles] EMPTY_MASK_DIAG={"cause":"window_truncation","n_total":4,"n_overflow":4,"n_encoded":0,"window_size":25,"window_offset":[6,4,25],"phase":"tiles","player_to_move":0,"k_remaining":10,"tiles_placed":61,"depth":4,"sim_idx":140,"descent_actions":[49,2510,44,2510],"node_digest":"94f64fb6e296fd1b","state_digest":"1d4887105bd6cb85e7ea9b2ca9cda974","board_extent":[6,25,12,19],"dropped":[{"row":5,"col":15,"rot":0},{"row":5,"col":15,"rot":1},{"row":5,"col":15,"rot":2},{"row":5,"col":15,"rot":3}],"n_dropped_listed":4}
+[menu-fair primary Doctor] 2026-08-14_09:47:29 harness pass 40 rc=1 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:47:51 harness pass 41 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:48:13 harness pass 42 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:48:35 harness pass 43 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:48:57 harness pass 44 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:49:19 harness pass 45 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:49:40 harness pass 46 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:50:02 harness pass 47 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:50:24 harness pass 48 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:50:46 harness pass 49 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:51:08 harness pass 50 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:51:30 harness pass 51 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:51:51 harness pass 52 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:52:13 harness pass 53 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:52:35 harness pass 54 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:52:57 harness pass 55 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:53:19 harness pass 56 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:53:41 harness pass 57 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:54:02 harness pass 58 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:54:24 harness pass 59 rc=0 records=786/800
+[leaf-override] WARNING: open-city discipline set (opencity_dose=16.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=a4acf6d0925f7606 frozen_config_hash=435f6f056a13b3c4 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa4acf6d0]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 786 cached, 14 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 786   candidate: 222W / 12D / 552L   winrate 0.290 (z=-11.77)
+avg score diff (candidate - opponent): -16.64
+ELO: -155.5  (+/- 13.7 1sigma)
+PAIRED: 391 decks   mean seat-balanced margin -16.60   z = -17.93
+prefix ms/move: candidate 1683  opponent 1717  (ratio 0.98x)
+fair endgame: candidate latched 786/786 games, 1.57s solver/game, timeouts=0
+fair endgame: opponent  latched 786/786 games, 1.35s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_C_d16p0_deploy11008/summary.json
+[menu-fair primary Doctor] 2026-08-14_09:54:46 harness pass 60 rc=0 records=786/800
+[menu-fair primary Doctor] 2026-08-14_09:55:02 END sub=oc2_C_d16p0_deploy11008 records=786/800 in 1841s after 60 pass(es)
+[menu-fair primary Doctor] 2026-08-14_09:55:02 INCOMPLETE (786/800 = 98%) - the 90% VOID rule applies at read time

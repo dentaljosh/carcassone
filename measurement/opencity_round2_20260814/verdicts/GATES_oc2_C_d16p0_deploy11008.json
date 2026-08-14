@@ -1,0 +1,114 @@
+{
+  "cell": "oc2_C_d16p0_deploy11008",
+  "all_gates_pass": true,
+  "records": "786/800",
+  "gates": [
+    {
+      "gate": "O1_cand_leaf_hash",
+      "ok": true,
+      "observed": "a4acf6d0925f7606"
+    },
+    {
+      "gate": "O1b_cand_hash_is_not_champion",
+      "ok": true,
+      "observed": "a4acf6d0925f7606"
+    },
+    {
+      "gate": "O2_opp_leaf_hash",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "gate": "O3_cand_opencity_dose_LIVE",
+      "ok": true,
+      "observed": 16.0
+    },
+    {
+      "gate": "O4_arm_knobs_exact",
+      "ok": true,
+      "observed": {
+        "expected": {
+          "opencity_size_min": 6.0,
+          "opencity_edge_min": 3
+        },
+        "observed": {
+          "opencity_size_min": 6.0,
+          "opencity_edge_min": 3
+        }
+      }
+    },
+    {
+      "gate": "O5_opponent_leaf_intact",
+      "ok": true,
+      "observed": {}
+    },
+    {
+      "gate": "O6_rules_profile_fixed_v1_R9",
+      "ok": true,
+      "observed": [
+        "fixed_v1",
+        true,
+        "1"
+      ]
+    },
+    {
+      "gate": "O7_cand_budget_8x1376_11008",
+      "ok": true,
+      "observed": [
+        8,
+        1376,
+        11008
+      ]
+    },
+    {
+      "gate": "O8_opp_budget_8x1376_11008",
+      "ok": true,
+      "observed": [
+        8,
+        1376,
+        11008
+      ]
+    },
+    {
+      "gate": "O9_curve_drift_is_curve125",
+      "ok": true,
+      "observed": [
+        true,
+        [
+          -10.0,
+          -5.0,
+          -1.25,
+          0.0,
+          2.5,
+          3.75,
+          5.0,
+          6.25
+        ]
+      ]
+    },
+    {
+      "gate": "O10_band_and_pairing",
+      "ok": true,
+      "observed": [
+        129000000000,
+        400,
+        2
+      ]
+    },
+    {
+      "gate": "O11_rust_exactk2_shared",
+      "ok": true,
+      "observed": [
+        "rust",
+        2,
+        true
+      ]
+    },
+    {
+      "gate": "O12_completion_ge_90pct",
+      "ok": true,
+      "observed": "786/800"
+    }
+  ],
+  "note": "WIRING ONLY -- contains no strength statistic by design (DEPLOY_PREREG.md section 4)."
+}
