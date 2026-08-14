@@ -51,10 +51,12 @@ pre-registered and were not touched after any number was seen.**
 > `RUN_MANIFEST.json` declares `results_csv_row: false`, `band: null`, `claim: null`. Close-out
 > entry: DECISIONS 2026-08-13 (census).
 >
-> ⭐ **What IS decided independently of this census: §6-P3 already fired in production, so the
-> minimal fail-loud fix (§7 F-c) is LICENSED.** **BUILT 2026-08-13 on branch
-> `worktree-agent-ae0fb92b067cdf922`, NOT YET MERGED** — see §7 F-c for what it does and for the
-> bit-identity evidence.
+> ⭐ **Decided independently of this census: §6-P3 already fired in production, so the minimal
+> fail-loud fix (§7 F-c) was LICENSED — and it is now ✅ BUILT AND MERGED 2026-08-13** (feature
+> `0c33f8bc`, merge `3af12bc0`, LEVER_INDEX row `a384fd5e`). **It fixes nothing** — it converts a
+> silent, unattributable crash into a typed, reconstructable one. See §7 F-c for what it does,
+> for the deliberate deviation from this section's own prescription, and for the bit-identity
+> evidence.
 
 **⭐ The instrument reproduces the production crash (§5.1). The zeros above are
 therefore a measurement, not a blind spot.**
@@ -478,9 +480,30 @@ F9 recentring work (`centered18` → `fixed_v1`) moved the **start tile** to red
 Pilot B is a `fixed_v1` census and finds the same zero — consistent with recentring
 being orthogonal to this defect rather than a fix for it.
 
-**F-c — fail loudly (the minimum, and ALREADY LICENSED — see §6-P3).** **BUILT 2026-08-13,
-UNMERGED** (branch `worktree-agent-ae0fb92b067cdf922`). This fixes nothing; it converts a
-silent strength leak into a visible error.
+**F-c — fail loudly (the minimum, and ALREADY LICENSED — see §6-P3).** ✅ **BUILT AND MERGED
+2026-08-13** — feature `0c33f8bc`, merge `3af12bc0`, LEVER_INDEX row `a384fd5e`. This fixes
+nothing; it converts a silent strength leak into a visible error.
+
+> ⚠️ **DELIBERATE DEVIATION FROM THIS SECTION AS WRITTEN, recorded because it matters.** The
+> prescription above (and in the roadmap) was *"make `legal_mask` surface `n_overflow > 0`
+> instead of swallowing it"*. **As built it does NOT touch `legal_mask`** — verified: commit
+> `0c33f8bc` does not modify `carc-core/src/game.rs` at all. Two reasons. (1) Taken literally it
+> would fire on the **silent P2 face** — the one §6 calls "real but so far harmless" — turning
+> latent games into crashes, i.e. a behaviour change dressed as a diagnostic. (2) `legal_mask` is
+> the search hot path, and every bit-identity guarantee below rests on not going near it. The
+> diagnosis is attached instead at the `Err(..)` arm of `select_child_puct` inside
+> `Searcher::simulate`, where the search is **already dead** and the game state at the node is
+> still in hand. **Raise point, frequency and message prefix are unchanged; only the payload is
+> new.** The clean end-state named above — a face-5 counter on `wall_sentinel` fed by the Rust
+> search — remains the future shape, and this is not it.
+
+> ⛔ **PER-BOX FOOTGUN.** The change is in `carc-core`, so **every box that plays needs a rebuilt
+> `carc_rs`**, and `tests/test_window_truncation_failloud.py` `skipif`s off at **module level**
+> when `carc_rs.WindowTruncationError` is absent — **a green suite on an un-rebuilt box proves
+> nothing.** Verify by reading the toolchain out of the shipped `.so`, not off the shell.
+> Both boxes were rebuilt on 2026-08-13 (rustc **1.96.0**; the laptop's rebuilt wheel is
+> witnessed on disk by `run_laptop_c7f8aef/LAUNCH_MANIFEST_laptop.json`
+> → `wheel_has_WindowTruncationError: true`), and the suite runs **21 passed / 0 skipped** on each.
 
 > **As built** — the diagnosis is attached where the search DIES, not where the mask is
 > built: `legal_mask` is untouched (it is the hot path), and the only edit to live code is

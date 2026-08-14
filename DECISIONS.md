@@ -6603,3 +6603,87 @@ changed.**
 **Reversal cost:** nil — documentation + artifacts only. Re-opening F-a needs a new P3
 occurrence or a root distribution this census did not cover, not more n on the same bank.
 **Phase:** measurement-first (Phase 4 era; champion search integrity).
+
+---
+
+## 2026-08-13 — F-c (fail loud on a truncation-emptied action window) BUILT AND MERGED — **and it FIXES NOTHING**: a silent, unattributable crash becomes a typed, reconstructable one. Deliberate deviation from DESIGN §7 as written: **`legal_mask` is NOT touched**
+
+**Decision:** build and merge the minimal fail-loud diagnostic licensed by the
+[DESIGN §6-P3](measurement/window_truncation_20260813/DESIGN.md) **occurrence** trigger, which
+fired in production on 2026-08-13 (a real `SearchError::NoLegalActionsAtInterior` inside the
+champion's own `choose_action`, deck 126000000135 seat 0, killing the Joshua-bot confirm leg at
+269/800). Feature `0c33f8bc`, merge `3af12bc0`, LEVER_INDEX row `a384fd5e`.
+
+⛔ **State plainly what this is NOT.** It repairs no defect and buys no strength. The silent
+truncation face is still there; F-c only guarantees that when it *kills a search* the crash
+arrives typed, attributed and reconstructable instead of as a bare `RuntimeError` that costs a
+hand-written exclusions dossier. **No claim, no band, no `results.csv` row, no strength
+measurement, `governance/PRODUCTION.yaml` untouched.**
+
+**What it is.** `SearchError::EmptyMaskAtInterior` carrying a **cause**
+(`window_truncation` | `no_engine_actions` | `mask_not_empty` — the field the old message could
+not supply) plus mask counters, window, phase, k_remaining, depth/descent, node digest and the
+dropped placements in engine coordinates; surfaced to Python as
+**`carc_rs.WindowTruncationError`, a `RuntimeError` SUBCLASS** whose message preserves the
+historical text verbatim as its leading clause, so `h2h._play_cell` and every existing guard,
+grep and dossier key still match. `src/carcassonne_ai/window_truncation.py` joins what the search
+cannot know — deck seed, seat, global ply — and emits the schema `reconstruct_crash_root.py`
+produces and `window_truncation_census.py` consumes, so a live crash lands as a census root with
+no archaeology. Capture points: `scripts/human_anchor/play_harness.py` and
+`scripts/joshuabot/h2h.py`.
+
+⚠️ **DELIBERATE DEVIATION FROM THE SPEC, recorded rather than quietly absorbed.** DESIGN §7 and
+the roadmap both prescribed *"make rust `legal_mask` surface `n_overflow > 0` instead of swallowing
+it"*. **As built it does not change `legal_mask` at all** — verified: `0c33f8bc` does not modify
+`carc-core/src/game.rs`. Two reasons. (1) The literal version fires on the **silent P2 face**,
+the one §6 explicitly calls "real but so far harmless" — it would convert latent games into
+crashes, a behaviour change dressed as a diagnostic. (2) `legal_mask` is the search hot path and
+every bit-identity guarantee rests on not going near it. The diagnosis attaches instead at the
+`Err(..)` arm of `select_child_puct(node)?` in `Searcher::simulate`, where the search is
+**already dead** and the game state at the node is still in hand. **Raise point, frequency and
+message prefix are unchanged; only the payload is new.** The clean end-state named in §7 — a
+face-5 counter on `wall_sentinel` (F9 W4) fed by the Rust search — remains future work.
+
+**Bit-identity evidence (the no-fire path).** 208 real production searches — 2 rules geometries ×
+4 decks × 26 plies at 400 sims, recording the chosen action, every root child's `(action, N,
+W-bits)`, deduped/pooled stats, root priors, node counts and leaf-eval counts — hash
+**byte-identically** across pre-fix and post-fix wheels built from the same tree on the pinned
+1.96.0 toolchain: `6cd80a92ad2dd7b55d9fd0a2c77252b654f3c5de3492d59131973ba1a73f3d89` over 736,607
+leaf evals / 75,886 nodes. The three champion leaf fingerprints (`a36d2e15a3b3d71d`,
+`158f17ff76adaa02`, `6dfffd57051690f2`) are unchanged. Gated continuously by
+`tests/test_window_truncation_failloud.py` (21 tests) against a golden digest recorded from the
+**pre**-fix wheel.
+
+⛔ **PER-BOX FOOTGUN, worth keeping in the docs.** The change is in `carc-core`, so **every box
+that plays needs a rebuilt `carc_rs`** — and that test file `skipif`s off at **module level** when
+`carc_rs.WindowTruncationError` is absent, so **a green suite on an un-rebuilt box proves
+nothing**. Read the toolchain out of the shipped `.so`, not off the shell (`RUSTUP_TOOLCHAIN=1.96.0`
+— the pin lives in `rust/carc/` but maturin runs from the repo root, so rustup silently falls back
+to `stable`). Both boxes were rebuilt 2026-08-13; verified at close-out that the local `.so`
+carries 1.96.0 and the suite runs **21 passed / 0 skipped**, and the laptop's rebuilt wheel is
+witnessed on disk by
+`measurement/window_truncation_20260813/run_laptop_c7f8aef/LAUNCH_MANIFEST_laptop.json`
+(`wheel_has_WindowTruncationError: true`).
+
+**Relation to the census.** Independent. F-c answers **P3** (occurrence), which fired before and
+outside the census; the census answered **P1**, and its CURIOSITY reading declines **F-a**
+(widening) on strength grounds — see the census close-out entry above. ⚠️ DESIGN §7's **F-d
+("instrument only") is therefore not sufficient by its own wording** ("P1 in the CURIOSITY band
+*and* P3 never trips"): F-c covers the tripped face, F-d covers the rest.
+
+**Options considered.** (a) Change `legal_mask` as specified — **rejected**, see the deviation
+above. (b) Raise a bare error with a better message — **rejected**: the cause field and the
+census-schema record are the entire point; a message cannot be re-consumed by the instrument.
+(c) Wait for the census before building — **rejected**: P3 is an occurrence trigger that had
+already fired, and the pre-registration says the census "does not decide it and cannot un-decide
+it". (d) Build the typed error on the dead-search arm with bit-identity gates — **adopted**.
+
+**Files touched (by this close-out):** `STATUS.md`, `docs/PROGRAM_ROADMAP_2026-07-07.md` NOW item
+(7), `measurement/window_truncation_20260813/DESIGN.md` §7 + banner, `DECISIONS.md`. The
+`docs/LEVER_INDEX.md` F-c row was already correct (`a384fd5e`). Source landed earlier under
+`0c33f8bc`/`3af12bc0`.
+**No `experiments/results.csv` row. No `governance/CLAIM_REGISTRY.csv` row. No band.
+`governance/PRODUCTION.yaml` and `governance/BAND_REGISTRY.csv` untouched.**
+**Reversal cost:** low — revert `3af12bc0` and rebuild both boxes; nothing depends on the new
+exception type except the census join.
+**Phase:** measurement-first (Phase 4 era; champion search integrity).
