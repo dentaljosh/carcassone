@@ -1,0 +1,147 @@
+{
+ "schema": "carcassonne-tiletie-term-gate/v1",
+ "read_rule": "measurement/tiletie_term_20260814/GATE_READ_RULE.md",
+ "seed": 20260814,
+ "n_folds": 5,
+ "bootstrap_reps": 10000,
+ "g0": {
+  "n_positions": 733,
+  "n_problems": 0,
+  "problems": [],
+  "n_checksum_errors": 0,
+  "n_excluded_pool_lt2": 0,
+  "excluded_pool_lt2": []
+ },
+ "branch": "G-FAIL (no conviction)",
+ "primary": {
+  "statistic": "5-fold root-clustered cross-fit pooled held-out capture_all (pts per tied tile ply, all-plies scale)",
+  "mean": -0.05455681198287024,
+  "se_cluster": 0.029953294815459185,
+  "z": -1.8213960206712532,
+  "ci95_boot": [
+   -0.11369051276031317,
+   0.0038361875227826896
+  ],
+  "n": 733,
+  "n_roots": 399,
+  "fold_selected_variants": [
+   "city+",
+   "road-",
+   "cityroad+",
+   "cityroad-",
+   "perim-"
+  ],
+  "heldout_moved_frac": 0.1446111869031378,
+  "elo_extrapolated": -5.319722998256437,
+  "elo_ci95_boot": [
+   -11.088626274712691,
+   0.37402970436354627
+  ],
+  "elo_note": "\u00a74.3-chain extrapolation, \u00b11.6\u00d7 divisor bracket applies (NON_ADDITIVITY 3.2 is n=1; low-end divisor 5.23)",
+  "realized_2sigma_bound_pts": 0.05990658963091837,
+  "realized_2sigma_bound_elo": 5.8414627802492225
+ },
+ "ceiling_context": {
+  "S2b_leaf_regret_all": 0.234,
+  "S2b_leaf_regret_discriminable": 0.3236,
+  "note": "pricing readout: no term can capture more in expectation"
+ },
+ "secondary": {
+  "fixed_variant": {
+   "variant": "cityroad+",
+   "mean": 0.019632824077745883,
+   "se_cluster": 0.03446028360813436,
+   "z": 0.569723229820185,
+   "note": "no selection -> unbiased on the full corpus"
+  },
+  "naive_best_of_menu": {
+   "variant": "cityroad+",
+   "mean": 0.019632824077745883,
+   "se_cluster": 0.03446028360813436,
+   "z": 0.569723229820185,
+   "note": "audit only, in-sample best-of-menu, never a result"
+  },
+  "capture_vs_champ": {
+   "mean": -0.06187110804394411,
+   "se_cluster": 0.060331203131854236,
+   "z": -1.0255241870234943
+  },
+  "by_phase": {
+   "early": {
+    "n": 300,
+    "mean": -0.0786862771130475,
+    "se": 0.05041187990284645,
+    "z": -1.5608677411890082
+   },
+   "mid": {
+    "n": 224,
+    "mean": -0.007099254781490564,
+    "se": 0.05942229105349532,
+    "z": -0.11947123975915724
+   },
+   "late": {
+    "n": 209,
+    "mean": -0.07078481807883132,
+    "se": 0.0450911517772209,
+    "z": -1.5698161454946535
+   }
+  },
+  "by_stratum": {
+   "e4": {
+    "n": 60,
+    "mean": -0.2291035353535354,
+    "se": 0.12334512082275478,
+    "z": -1.8574187112172356
+   },
+   "selfplay": {
+    "n": 673,
+    "mean": -0.03899543991416309,
+    "se": 0.030547936579197563,
+    "z": -1.2765326984709693
+   }
+  },
+  "per_variant": {
+   "city+": {
+    "mean_all": 0.010660663837610244,
+    "moved_frac": 0.14051841746248295
+   },
+   "city-": {
+    "mean_all": -0.019979139468181868,
+    "moved_frac": 0.1446111869031378
+   },
+   "road+": {
+    "mean_all": 0.008849018527261856,
+    "moved_frac": 0.07094133697135062
+   },
+   "road-": {
+    "mean_all": 0.009468649487958768,
+    "moved_frac": 0.08458390177353342
+   },
+   "cityroad+": {
+    "mean_all": 0.019632824077745883,
+    "moved_frac": 0.19099590723055934
+   },
+   "cityroad-": {
+    "mean_all": -0.0023853816002863933,
+    "moved_frac": 0.20600272851296045
+   },
+   "perim+": {
+    "mean_all": -0.03067243557322873,
+    "moved_frac": 0.12824010914051842
+   },
+   "perim-": {
+    "mean_all": 0.01341115034967537,
+    "moved_frac": 0.1296043656207367
+   },
+   "lib+": {
+    "mean_all": -0.024453417745039646,
+    "moved_frac": 0.2305593451568895
+   },
+   "lib-": {
+    "mean_all": -0.002360667130408596,
+    "moved_frac": 0.2592087312414734
+   }
+  },
+  "full_corpus_selected_variant": "cityroad+"
+ }
+}
