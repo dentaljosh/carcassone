@@ -1,6 +1,6 @@
 # BGA research-permission email — draft of record (2026-08-14, rev 2)
 
-> Sent-status: DRAFTED for Joshua to send. **Rev 2: Joshua has NO BGA account** — the draft
+> Sent-status: ✅ **SENT by Joshua 2026-08-14 (evening), via the BGA support form.** Reply latency unknown; the answer gates route (a) — bounded export / authorized programmatic access. Route (b) (manual: create account, open one WTCOC table, hand-transcribe one game to validate the BGA→fixed_v1 converter) is independent of the reply and remains available any time. **Rev 2: Joshua has NO BGA account** — the draft
 > now says so honestly and offers to create one (free or premium) under whatever terms BGA
 > prefers. Note for the plan of record: an account is required for ANY replay viewing
 > (login-only), so route (b)'s manual transcription needs one created regardless of this
