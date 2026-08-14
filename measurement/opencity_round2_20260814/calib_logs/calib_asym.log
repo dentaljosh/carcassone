@@ -1,0 +1,215 @@
+[opencity_e4] 26 archives, 0 already done, 26 to grade; workers=12 symmetric=False arms=['Asym_d0p5:4:2:0.5', 'Asym_d2p0:4:2:2']
+  [1786501074_943197] ply 15/142 graded=8 9s
+  [1786503336_446661] ply 15/142 graded=8 10s
+  [1786367787_389099] ply 15/142 graded=8 10s
+  [1786337185_638286] ply 15/142 graded=8 10s
+  [1786418867_411846845] ply 15/142 graded=8 10s
+  [1786243458_1382293676] ply 15/142 graded=8 11s
+  [1786511848_634689] ply 15/142 graded=8 11s
+  [1786417055_68387] ply 15/142 graded=8 11s
+  [1786325073_523563] ply 15/142 graded=8 11s
+  [1786329790_523563] ply 15/142 graded=8 11s
+  [1786454767_166575] ply 15/142 graded=8 11s
+  [1786403231_207028] ply 18/142 graded=8 12s
+  [1786367787_389099] ply 31/142 graded=16 26s
+  [1786418867_411846845] ply 31/142 graded=16 27s
+  [1786503336_446661] ply 31/142 graded=16 27s
+  [1786501074_943197] ply 31/142 graded=16 28s
+  [1786325073_523563] ply 31/142 graded=16 29s
+  [1786329790_523563] ply 31/142 graded=16 29s
+  [1786337185_638286] ply 31/142 graded=16 29s
+  [1786417055_68387] ply 31/142 graded=16 30s
+  [1786243458_1382293676] ply 31/142 graded=16 30s
+  [1786454767_166575] ply 31/142 graded=16 30s
+  [1786511848_634689] ply 31/142 graded=16 31s
+  [1786403231_207028] ply 34/142 graded=16 34s
+  [1786418867_411846845] ply 47/142 graded=24 50s
+  [1786367787_389099] ply 50/142 graded=24 51s
+  [1786329790_523563] ply 50/142 graded=24 52s
+  [1786501074_943197] ply 47/142 graded=24 52s
+  [1786503336_446661] ply 47/142 graded=24 53s
+  [1786337185_638286] ply 47/142 graded=24 54s
+  [1786325073_523563] ply 50/142 graded=24 54s
+  [1786417055_68387] ply 51/142 graded=24 55s
+  [1786454767_166575] ply 54/142 graded=24 58s
+  [1786511848_634689] ply 47/142 graded=24 58s
+  [1786243458_1382293676] ply 47/142 graded=24 61s
+  [1786403231_207028] ply 50/142 graded=24 63s
+  [1786418867_411846845] ply 63/142 graded=32 78s
+  [1786501074_943197] ply 63/142 graded=32 80s
+  [1786367787_389099] ply 66/142 graded=32 84s
+  [1786329790_523563] ply 66/142 graded=32 86s
+  [1786503336_446661] ply 63/142 graded=32 87s
+  [1786417055_68387] ply 67/142 graded=32 88s
+  [1786325073_523563] ply 67/142 graded=32 88s
+  [1786337185_638286] ply 66/142 graded=32 88s
+  [1786511848_634689] ply 66/142 graded=32 91s
+  [1786454767_166575] ply 78/142 graded=32 94s
+  [1786403231_207028] ply 66/142 graded=32 95s
+  [1786243458_1382293676] ply 63/142 graded=32 98s
+  [1786501074_943197] ply 79/142 graded=40 109s
+  [1786418867_411846845] ply 79/142 graded=40 112s
+  [1786511848_634689] ply 95/142 graded=40 122s
+  [1786367787_389099] ply 83/142 graded=40 127s
+  [1786417055_68387] ply 86/142 graded=40 130s
+  [1786403231_207028] ply 86/142 graded=40 131s
+  [1786337185_638286] ply 83/142 graded=40 132s
+  [1786503336_446661] ply 79/142 graded=40 134s
+  [1786329790_523563] ply 82/142 graded=40 134s
+  [1786325073_523563] ply 83/142 graded=40 138s
+  [1786243458_1382293676] ply 79/142 graded=40 139s
+  [1786454767_166575] ply 94/142 graded=40 144s
+  [1786501074_943197] ply 95/142 graded=48 148s
+  [1786418867_411846845] ply 95/142 graded=48 154s
+  [1786511848_634689] ply 118/142 graded=48 167s
+  [1786337185_638286] ply 110/142 graded=48 172s
+  [1786243458_1382293676] ply 98/142 graded=48 185s
+  [1786417055_68387] ply 102/142 graded=48 186s
+  [1786329790_523563] ply 98/142 graded=48 186s
+  [1786367787_389099] ply 99/142 graded=48 189s
+  [1786503336_446661] ply 95/142 graded=48 190s
+  [1786325073_523563] ply 99/142 graded=48 194s
+  [1786418867_411846845] ply 126/142 graded=56 198s
+  [1786454767_166575] ply 110/142 graded=48 200s
+  [1786501074_943197] ply 114/142 graded=56 200s
+  [1786403231_207028] ply 102/142 graded=48 203s
+  [1786337185_638286] ply 134/142 graded=56 213s
+[opencity_e4] 1786337185_638286: profile=fixed_v1 graded=56 flips={'Asym_d0p5': 3, 'Asym_d2p0': 10} agree_archive=40/56 mean_secs_per_graded_ply=3.798 (212.8s)
+  [1786329790_523563] ply 130/142 graded=56 221s
+  [1786242001_49628] ply 15/142 graded=8 11s
+[opencity_e4] 1786329790_523563: profile=fixed_v1 graded=57 flips={'Asym_d0p5': 2, 'Asym_d2p0': 8} agree_archive=40/57 mean_secs_per_graded_ply=3.934 (224.3s)
+  [1786511848_634689] ply 134/142 graded=56 234s
+[opencity_e4] 1786511848_634689: profile=fixed_v1 graded=56 flips={'Asym_d0p5': 4, 'Asym_d2p0': 8} agree_archive=39/56 mean_secs_per_graded_ply=4.174 (233.8s)
+  [1786142936_703591] ply 15/142 graded=8 11s
+[opencity_e4] 1786418867_411846845: profile=fixed_v1 graded=60 flips={'Asym_d0p5': 3, 'Asym_d2p0': 7} agree_archive=42/60 mean_secs_per_graded_ply=4.005 (240.4s)
+  [1786243458_1382293676] ply 114/142 graded=56 242s
+  [1786242001_49628] ply 31/142 graded=16 29s
+  [1786503336_446661] ply 118/142 graded=56 243s
+  [1786118143_1621601234] ply 16/141 graded=8 11s
+[opencity_e4] 1786501074_943197: profile=fixed_v1 graded=63 flips={'Asym_d0p5': 24, 'Asym_d2p0': 29} agree_archive=41/63 mean_secs_per_graded_ply=3.907 (246.3s)
+  [1786367787_389099] ply 126/142 graded=56 248s
+  [1786417055_68387] ply 118/142 graded=56 248s
+  [1786116818_134510] ply 18/142 graded=8 11s
+  [1786142936_703591] ply 31/142 graded=16 30s
+  [1786113542_627623] ply 15/141 graded=8 11s
+  [1786325073_523563] ply 115/142 graded=56 258s
+[opencity_e4] 1786367787_389099: profile=fixed_v1 graded=58 flips={'Asym_d0p5': 9, 'Asym_d2p0': 23} agree_archive=43/58 mean_secs_per_graded_ply=4.479 (259.8s)
+  [1786454767_166575] ply 134/142 graded=56 260s
+[opencity_e4] 1786454767_166575: profile=fixed_v1 graded=56 flips={'Asym_d0p5': 0, 'Asym_d2p0': 0} agree_archive=42/56 mean_secs_per_graded_ply=4.643 (260.1s)
+[opencity_e4] 1786503336_446661: profile=fixed_v1 graded=60 flips={'Asym_d0p5': 10, 'Asym_d2p0': 14} agree_archive=42/60 mean_secs_per_graded_ply=4.379 (262.8s)
+  [1786118143_1621601234] ply 32/141 graded=16 30s
+  [1786242001_49628] ply 47/142 graded=24 52s
+  [1786403231_207028] ply 122/142 graded=56 267s
+  [1786116818_134510] ply 34/142 graded=16 30s
+  [1786076853_2116173857] ply 15/142 graded=8 11s
+  [1786074812_935815] ply 15/142 graded=8 10s
+  [1786045035_338139] ply 15/142 graded=8 11s
+  [1786113542_627623] ply 31/141 graded=16 31s
+  [1786142936_703591] ply 47/142 graded=24 55s
+[opencity_e4] 1786243458_1382293676: profile=fixed_v1 graded=63 flips={'Asym_d0p5': 7, 'Asym_d2p0': 10} agree_archive=45/63 mean_secs_per_graded_ply=4.523 (285.1s)
+[opencity_e4] 1786403231_207028: profile=fixed_v1 graded=59 flips={'Asym_d0p5': 1, 'Asym_d2p0': 7} agree_archive=45/59 mean_secs_per_graded_ply=4.853 (286.4s)
+  [1786076853_2116173857] ply 31/142 graded=16 29s
+  [1786074812_935815] ply 31/142 graded=16 30s
+  [1786242001_49628] ply 66/142 graded=32 78s
+  [1786118143_1621601234] ply 48/141 graded=24 58s
+  [1786045035_338139] ply 31/142 graded=16 30s
+  [1786116818_134510] ply 50/142 graded=24 55s
+  [1785986044_1911511187] ply 15/142 graded=8 11s
+  [1785984310_1698417952] ply 18/142 graded=8 12s
+  [1786113542_627623] ply 47/141 graded=24 58s
+[opencity_e4] 1786325073_523563: profile=fixed_v1 graded=63 flips={'Asym_d0p5': 9, 'Asym_d2p0': 17} agree_archive=49/63 mean_secs_per_graded_ply=4.896 (308.5s)
+  [1786142936_703591] ply 63/142 graded=32 84s
+  [1785986044_1911511187] ply 34/142 graded=16 29s
+  [1786076853_2116173857] ply 51/142 graded=24 55s
+  [1785984310_1698417952] ply 34/142 graded=16 32s
+  [1786045035_338139] ply 47/142 graded=24 56s
+  [1785982194_705585] ply 15/142 graded=8 11s
+  [1786074812_935815] ply 47/142 graded=24 59s
+  [1786417055_68387] ply 134/142 graded=64 323s
+  [1786116818_134510] ply 66/142 graded=32 85s
+  [1786118143_1621601234] ply 64/141 graded=32 94s
+[opencity_e4] 1786417055_68387: profile=fixed_v1 graded=65 flips={'Asym_d0p5': 16, 'Asym_d2p0': 22} agree_archive=50/65 mean_secs_per_graded_ply=5.089 (330.9s)
+  [1785986044_1911511187] ply 50/142 graded=24 50s
+  [1785982194_705585] ply 34/142 graded=16 28s
+  [1786242001_49628] ply 82/142 graded=40 124s
+  [1786113542_627623] ply 64/141 graded=32 95s
+  [1785975832_66810] ply 15/142 graded=8 11s
+  [1785984310_1698417952] ply 50/142 graded=24 56s
+  [1786076853_2116173857] ply 67/142 graded=32 89s
+  [1786142936_703591] ply 90/142 graded=40 128s
+  [1786045035_338139] ply 63/142 graded=32 90s
+  [1785975832_66810] ply 31/142 graded=16 29s
+  [1786074812_935815] ply 63/142 graded=32 101s
+  [1785982194_705585] ply 50/142 graded=24 54s
+  [1786116818_134510] ply 82/142 graded=40 124s
+  [1786118143_1621601234] ply 95/141 graded=40 134s
+  [1785986044_1911511187] ply 66/142 graded=32 83s
+  [1785984310_1698417952] ply 66/142 graded=32 85s
+  [1786242001_49628] ply 98/142 graded=48 168s
+  [1786113542_627623] ply 80/141 graded=40 138s
+  [1785975832_66810] ply 50/142 graded=24 55s
+  [1786076853_2116173857] ply 83/142 graded=40 130s
+  [1786045035_338139] ply 79/142 graded=40 131s
+  [1785982194_705585] ply 66/142 graded=32 90s
+  [1786074812_935815] ply 94/142 graded=40 143s
+  [1786142936_703591] ply 115/142 graded=48 181s
+  [1785986044_1911511187] ply 82/142 graded=40 121s
+  [1785984310_1698417952] ply 83/142 graded=40 124s
+  [1786116818_134510] ply 99/142 graded=48 172s
+  [1785975832_66810] ply 66/142 graded=32 88s
+  [1786242001_49628] ply 123/142 graded=56 212s
+  [1786118143_1621601234] ply 116/141 graded=48 193s
+  [1785982194_705585] ply 90/142 graded=40 129s
+  [1786113542_627623] ply 96/141 graded=48 192s
+  [1786076853_2116173857] ply 102/142 graded=48 182s
+  [1786045035_338139] ply 103/142 graded=48 185s
+  [1786074812_935815] ply 114/142 graded=48 190s
+  [1785984310_1698417952] ply 99/142 graded=48 166s
+  [1785986044_1911511187] ply 98/142 graded=48 169s
+  [1785975832_66810] ply 82/142 graded=40 126s
+  [1786142936_703591] ply 131/142 graded=56 233s
+[opencity_e4] 1786242001_49628: profile=fixed_v1 graded=62 flips={'Asym_d0p5': 7, 'Asym_d2p0': 9} agree_archive=45/62 mean_secs_per_graded_ply=3.964 (245.9s)
+  [1785466497_161583] ply 15/144 graded=8 2s
+[opencity_e4] 1786142936_703591: profile=fixed_v1 graded=57 flips={'Asym_d0p5': 5, 'Asym_d2p0': 7} agree_archive=43/57 mean_secs_per_graded_ply=4.178 (238.3s)
+  [1785205383_867966] ply 15/144 graded=8 2s
+  [1785466497_161583] ply 38/144 graded=16 7s
+  [1785205383_867966] ply 31/144 graded=16 6s
+  [1785466497_161583] ply 54/144 graded=24 13s
+  [1785205383_867966] ply 47/144 graded=24 11s
+  [1786116818_134510] ply 118/142 graded=56 237s
+  [1785982194_705585] ply 118/142 graded=48 172s
+  [1785205383_867966] ply 63/144 graded=32 18s
+  [1785466497_161583] ply 70/144 graded=32 22s
+  [1786113542_627623] ply 115/141 graded=56 242s
+  [1785205383_867966] ply 79/144 graded=40 27s
+  [1785466497_161583] ply 90/144 graded=40 32s
+  [1786118143_1621601234] ply 132/141 graded=56 260s
+[opencity_e4] 1786118143_1621601234: profile=fixed_v1 graded=56 flips={'Asym_d0p5': 4, 'Asym_d2p0': 13} agree_archive=35/56 mean_secs_per_graded_ply=4.649 (260.4s)
+  [1786045035_338139] ply 134/142 graded=56 233s
+[opencity_e4] 1786045035_338139: profile=fixed_v1 graded=56 flips={'Asym_d0p5': 0, 'Asym_d2p0': 1} agree_archive=35/56 mean_secs_per_graded_ply=4.168 (233.5s)
+  [1785205383_867966] ply 95/144 graded=48 35s
+[opencity_e4] 1786074812_935815: profile=fixed_v1 graded=55 flips={'Asym_d0p5': 5, 'Asym_d2p0': 12} agree_archive=46/55 mean_secs_per_graded_ply=4.371 (240.5s)
+  [1786076853_2116173857] ply 126/142 graded=56 242s
+  [1785466497_161583] ply 107/144 graded=48 42s
+  [1785975832_66810] ply 98/142 graded=48 173s
+  [1785984310_1698417952] ply 115/142 graded=56 221s
+  [1785205383_867966] ply 114/144 graded=56 45s
+  [1785466497_161583] ply 123/144 graded=56 50s
+  [1785986044_1911511187] ply 114/142 graded=56 227s
+[opencity_e4] 1786076853_2116173857: profile=fixed_v1 graded=58 flips={'Asym_d0p5': 1, 'Asym_d2p0': 2} agree_archive=46/58 mean_secs_per_graded_ply=4.372 (253.7s)
+[opencity_e4] 1785982194_705585: profile=fixed_v1 graded=53 flips={'Asym_d0p5': 4, 'Asym_d2p0': 5} agree_archive=36/53 mean_secs_per_graded_ply=3.873 (205.3s)
+[opencity_e4] 1785466497_161583: profile=walled graded=62 flips={'Asym_d0p5': 1, 'Asym_d2p0': 5} agree_archive=45/62 mean_secs_per_graded_ply=0.898 (55.7s)
+  [1786116818_134510] ply 134/142 graded=64 281s
+  [1785205383_867966] ply 135/144 graded=64 63s
+[opencity_e4] 1785205383_867966: profile=walled graded=64 flips={'Asym_d0p5': 2, 'Asym_d2p0': 11} agree_archive=47/64 mean_secs_per_graded_ply=0.977 (62.6s)
+[opencity_e4] 1786116818_134510: profile=fixed_v1 graded=65 flips={'Asym_d0p5': 2, 'Asym_d2p0': 4} agree_archive=48/65 mean_secs_per_graded_ply=4.431 (288.1s)
+  [1785975832_66810] ply 123/142 graded=56 217s
+[opencity_e4] 1785984310_1698417952: profile=fixed_v1 graded=63 flips={'Asym_d0p5': 9, 'Asym_d2p0': 18} agree_archive=52/63 mean_secs_per_graded_ply=4.209 (265.2s)
+[opencity_e4] 1786113542_627623: profile=fixed_v1 graded=63 flips={'Asym_d0p5': 2, 'Asym_d2p0': 5} agree_archive=52/63 mean_secs_per_graded_ply=4.914 (309.7s)
+  [1785986044_1911511187] ply 134/142 graded=64 271s
+[opencity_e4] 1785986044_1911511187: profile=fixed_v1 graded=64 flips={'Asym_d0p5': 3, 'Asym_d2p0': 4} agree_archive=46/64 mean_secs_per_graded_ply=4.235 (271.1s)
+[opencity_e4] 1785975832_66810: profile=app_aug2 graded=62 flips={'Asym_d0p5': 6, 'Asym_d2p0': 9} agree_archive=39/62 mean_secs_per_graded_ply=4.012 (248.8s)
+[opencity_e4] Asym_d0p5: flips   139/1556  =   8.93% [ 7.62%, 10.45%]  tiles/meeples 110/29
+[opencity_e4] Asym_d2p0: flips   260/1556  =  16.71% [14.94%, 18.64%]  tiles/meeples 197/63
+[opencity_e4] rollup: 26 games, 1556 graded plies, profiles={'walled': 2, 'app_aug2': 1, 'fixed_v1': 23}, all_replay_scores_match=True -> /home/doctor/projects/carcassone/.claude/worktrees/agent-ad3210c3ce658cdc9/measurement/opencity_round2_20260814/calib_asym/SUMMARY.json
+[opencity_e4] NOTE: a flip is not an improvement. No elo, no band, no governance write — read against CALIB_READ_RULE §3, nothing else.

@@ -1,0 +1,277 @@
+{
+ "schema": "carcassonne-opencity-e4-replay/v1",
+ "archive": "1786142936_703591.json",
+ "deck_seed": 703591,
+ "rules_profile": "fixed_v1",
+ "human_player": 0,
+ "champion_seat": 1,
+ "recorded_scores": [
+  74,
+  112
+ ],
+ "replayed_scores": [
+  74,
+  112
+ ],
+ "replay_scores_match": true,
+ "partial": false,
+ "budget": {
+  "sims_per_det": 1376,
+  "k_dets": 8,
+  "total_per_decision": 11008,
+  "source": "archive"
+ },
+ "seed": 12345,
+ "opencity_symmetric": true,
+ "arms": [
+  {
+   "name": "C_d4p0",
+   "size_min": 6.0,
+   "edge_min": 3,
+   "dose": 4.0,
+   "cap": 0.0,
+   "symmetric": true,
+   "leaf_hash": "cce11e4d05f0d86e"
+  },
+  {
+   "name": "C_d8p0",
+   "size_min": 6.0,
+   "edge_min": 3,
+   "dose": 8.0,
+   "cap": 0.0,
+   "symmetric": true,
+   "leaf_hash": "d52332443bc35fcf"
+  },
+  {
+   "name": "C_d16p0",
+   "size_min": 6.0,
+   "edge_min": 3,
+   "dose": 16.0,
+   "cap": 0.0,
+   "symmetric": true,
+   "leaf_hash": "a4acf6d0925f7606"
+  },
+  {
+   "name": "Acap1_d0p5",
+   "size_min": 4.0,
+   "edge_min": 2,
+   "dose": 0.5,
+   "cap": 1.0,
+   "symmetric": true,
+   "leaf_hash": "d3ac9cc459f6d8d7"
+  },
+  {
+   "name": "Acap1_d2p0",
+   "size_min": 4.0,
+   "edge_min": 2,
+   "dose": 2.0,
+   "cap": 1.0,
+   "symmetric": true,
+   "leaf_hash": "a292f2cb05e45a22"
+  },
+  {
+   "name": "Acap3_d2p0",
+   "size_min": 4.0,
+   "edge_min": 2,
+   "dose": 2.0,
+   "cap": 3.0,
+   "symmetric": true,
+   "leaf_hash": "687f99980adaeee7"
+  }
+ ],
+ "leaf_hash_production": "a36d2e15a3b3d71d",
+ "n_plies_total": 142,
+ "n_graded": 57,
+ "n_searched_this_run": 57,
+ "champ_agrees_archive": 43,
+ "flips": {
+  "C_d4p0": 2,
+  "C_d8p0": 5,
+  "C_d16p0": 6,
+  "Acap1_d0p5": 3,
+  "Acap1_d2p0": 3,
+  "Acap3_d2p0": 4
+ },
+ "flip_plies": {
+  "C_d4p0": [
+   {
+    "ply": 78,
+    "phase": "tiles",
+    "k_remaining": 31,
+    "champ_pick": 952,
+    "pick_C_d4p0": 855
+   },
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1428,
+    "pick_C_d4p0": 936
+   }
+  ],
+  "C_d8p0": [
+   {
+    "ply": 78,
+    "phase": "tiles",
+    "k_remaining": 31,
+    "champ_pick": 952,
+    "pick_C_d8p0": 855
+   },
+   {
+    "ply": 86,
+    "phase": "tiles",
+    "k_remaining": 27,
+    "champ_pick": 854,
+    "pick_C_d8p0": 1328
+   },
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1428,
+    "pick_C_d8p0": 1434
+   },
+   {
+    "ply": 94,
+    "phase": "tiles",
+    "k_remaining": 23,
+    "champ_pick": 1469,
+    "pick_C_d8p0": 1324
+   },
+   {
+    "ply": 98,
+    "phase": "tiles",
+    "k_remaining": 21,
+    "champ_pick": 1569,
+    "pick_C_d8p0": 1325
+   }
+  ],
+  "C_d16p0": [
+   {
+    "ply": 67,
+    "phase": "meeples",
+    "k_remaining": 37,
+    "champ_pick": 2501,
+    "pick_C_d16p0": 2504
+   },
+   {
+    "ply": 78,
+    "phase": "tiles",
+    "k_remaining": 31,
+    "champ_pick": 952,
+    "pick_C_d16p0": 757
+   },
+   {
+    "ply": 86,
+    "phase": "tiles",
+    "k_remaining": 27,
+    "champ_pick": 854,
+    "pick_C_d16p0": 1328
+   },
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1428,
+    "pick_C_d16p0": 1434
+   },
+   {
+    "ply": 94,
+    "phase": "tiles",
+    "k_remaining": 23,
+    "champ_pick": 1469,
+    "pick_C_d16p0": 1324
+   },
+   {
+    "ply": 98,
+    "phase": "tiles",
+    "k_remaining": 21,
+    "champ_pick": 1569,
+    "pick_C_d16p0": 1325
+   }
+  ],
+  "Acap1_d0p5": [
+   {
+    "ply": 62,
+    "phase": "tiles",
+    "k_remaining": 39,
+    "champ_pick": 1230,
+    "pick_Acap1_d0p5": 1228
+   },
+   {
+    "ply": 66,
+    "phase": "tiles",
+    "k_remaining": 37,
+    "champ_pick": 1224,
+    "pick_Acap1_d0p5": 944
+   },
+   {
+    "ply": 67,
+    "phase": "meeples",
+    "k_remaining": 37,
+    "champ_pick": 2501,
+    "pick_Acap1_d0p5": 2503
+   }
+  ],
+  "Acap1_d2p0": [
+   {
+    "ply": 62,
+    "phase": "tiles",
+    "k_remaining": 39,
+    "champ_pick": 1230,
+    "pick_Acap1_d2p0": 1228
+   },
+   {
+    "ply": 66,
+    "phase": "tiles",
+    "k_remaining": 37,
+    "champ_pick": 1224,
+    "pick_Acap1_d2p0": 944
+   },
+   {
+    "ply": 67,
+    "phase": "meeples",
+    "k_remaining": 37,
+    "champ_pick": 2501,
+    "pick_Acap1_d2p0": 2510
+   }
+  ],
+  "Acap3_d2p0": [
+   {
+    "ply": 62,
+    "phase": "tiles",
+    "k_remaining": 39,
+    "champ_pick": 1230,
+    "pick_Acap3_d2p0": 945
+   },
+   {
+    "ply": 66,
+    "phase": "tiles",
+    "k_remaining": 37,
+    "champ_pick": 1224,
+    "pick_Acap3_d2p0": 944
+   },
+   {
+    "ply": 67,
+    "phase": "meeples",
+    "k_remaining": 37,
+    "champ_pick": 2501,
+    "pick_Acap3_d2p0": 2510
+   },
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1428,
+    "pick_Acap3_d2p0": 1431
+   }
+  ]
+ },
+ "mean_secs_per_graded_ply": 9.982,
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "wall_secs": 569.1
+}

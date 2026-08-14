@@ -1,0 +1,7 @@
+arm-C wiring OK (bite on scripted playouts: 0/288 rust, 0/288 python — REPORTED, not gated; round-1 4b)
+[oc-r2-calib 2026-08-14_00:47:14] capability probes PASS (cap seam gated; arm C wiring gated, bite reported). A probe pass is NOT bite (read-rule §1 / round-1 §4b).
+[oc-r2-calib 2026-08-14_00:47:14] run 1 (symmetric, 6 arms) starting at W=12 -> /home/doctor/projects/carcassone/.claude/worktrees/agent-ad3210c3ce658cdc9/measurement/opencity_round2_20260814/calib
+[oc-r2-calib 2026-08-14_01:10:35] run 1 complete
+[oc-r2-calib 2026-08-14_01:10:35] run 2 (asymmetric, 2 arms) starting at W=12 -> /home/doctor/projects/carcassone/.claude/worktrees/agent-ad3210c3ce658cdc9/measurement/opencity_round2_20260814/calib_asym
+[oc-r2-calib 2026-08-14_01:20:15] run 2 complete
+[oc-r2-calib 2026-08-14_01:20:15] === ROUND-2 CALIBRATION COMPLETE. Read per CALIB_READ_RULE.md §3; write CALIB_READOUT.md. ===

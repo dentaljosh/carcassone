@@ -58,11 +58,15 @@ log() { echo "[oc-r2-deploy $(ts)] $*"; }
 # expected_offdefault_knobs_json = the opencity_* knobs (BESIDES the dose) that sit OFF
 # their defaults in this cell and therefore MUST appear in the manifest's cand_leaf_cfg
 # with exactly these values; every other opencity_* knob MUST be absent (gate O4).
-# FUNDED CELLS — filled from CALIB_READOUT.md (mechanical read against read-rule
-# 9a2abcd5) in the commit that lands WITH the readout, never before it.
+# FUNDED CELLS — from CALIB_READOUT.md (mechanical read against read-rule 9a2abcd5,
+# branch FUND-SMALLEST in all three families; C_d16p0 is an ON-THE-BAR selection,
+# 10.41% vs the 10% bar with the Wilson-95 straddling it — recorded there, binding at
+# read time per DEPLOY_PREREG §4.8):
 CELLS=(
+  "oc2_C_d16p0_deploy11008:0:$DIR/cells/opencity_C_d16p0_deploy_fixed_v1_vs_fairchamp11008.json:a4acf6d0925f7606:16.0:{\"opencity_size_min\": 6.0, \"opencity_edge_min\": 3}"
+  "oc2_Acap3_d2p0_deploy11008:400:$DIR/cells/opencity_Acap3_d2p0_deploy_fixed_v1_vs_fairchamp11008.json:687f99980adaeee7:2.0:{\"opencity_cap\": 3.0}"
+  "oc2_Asym_d2p0_deploy11008:800:$DIR/cells/opencity_Asym_d2p0_deploy_fixed_v1_vs_fairchamp11008.json:3f05d72016d0d09c:2.0:{\"opencity_symmetric\": false}"
 )
-[ "${#CELLS[@]}" -gt 0 ] || { echo "CELLS is empty — the calibration readout has not funded cells yet (or this rev predates it)"; exit 3; }
 
 log "=== START box=$BOX band=$BAND W=$W n=$N per cell, SEQUENTIAL ==="
 log "host=$(hostname) out=$OUT repo_head=$(git -C $REPO rev-parse --short HEAD)"
