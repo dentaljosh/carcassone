@@ -164,3 +164,53 @@
   [1786337185_638286] ply 134/142 graded=56 412s
 [jp_e4] 1786337185_638286: profile=fixed_v1 graded=56 flips={'d0p5': 8, 'd1p0': 10, 'd2p0': 10} agree_archive=40/56 mean_secs_per_graded_ply=7.363 (412.5s)
   [1786242001_49628] ply 123/142 graded=56 415s
+  [1786325073_523563] ply 99/142 graded=48 429s
+  [1785975832_66810] ply 123/142 graded=56 436s
+  [1786329790_523563] ply 130/142 graded=56 437s
+[jp_e4] 1786329790_523563: profile=fixed_v1 graded=57 flips={'d0p5': 12, 'd1p0': 15, 'd2p0': 17} agree_archive=40/57 mean_secs_per_graded_ply=7.8 (444.7s)
+  [1785986044_1911511187] ply 114/142 graded=56 446s
+  [1786113542_627623] ply 115/141 graded=56 447s
+  [1786116818_134510] ply 118/142 graded=56 447s
+  [1786045035_338139] ply 134/142 graded=56 451s
+[jp_e4] 1786045035_338139: profile=fixed_v1 graded=56 flips={'d0p5': 7, 'd1p0': 10, 'd2p0': 15} agree_archive=35/56 mean_secs_per_graded_ply=8.052 (451.0s)
+  [1786511848_634689] ply 134/142 graded=56 452s
+[jp_e4] 1786511848_634689: profile=fixed_v1 graded=56 flips={'d0p5': 5, 'd1p0': 11, 'd2p0': 11} agree_archive=39/56 mean_secs_per_graded_ply=8.066 (451.8s)
+  [1785984310_1698417952] ply 115/142 graded=56 452s
+  [1786142936_703591] ply 131/142 graded=56 454s
+  [1786501074_943197] ply 114/142 graded=56 455s
+[jp_e4] 1786418867_411846845: profile=fixed_v1 graded=60 flips={'d0p5': 8, 'd1p0': 9, 'd2p0': 14} agree_archive=42/60 mean_secs_per_graded_ply=7.7 (462.1s)
+[jp_e4] 1786142936_703591: profile=fixed_v1 graded=57 flips={'d0p5': 11, 'd1p0': 14, 'd2p0': 14} agree_archive=43/57 mean_secs_per_graded_ply=8.112 (462.5s)
+[jp_e4] 1786074812_935815: profile=fixed_v1 graded=55 flips={'d0p5': 7, 'd1p0': 5, 'd2p0': 8} agree_archive=46/55 mean_secs_per_graded_ply=8.506 (467.9s)
+  [1786076853_2116173857] ply 126/142 graded=56 471s
+  [1786243458_1382293676] ply 114/142 graded=56 472s
+  [1786417055_68387] ply 118/142 graded=56 477s
+[jp_e4] 1786242001_49628: profile=fixed_v1 graded=62 flips={'d0p5': 15, 'd1p0': 18, 'd2p0': 16} agree_archive=45/62 mean_secs_per_graded_ply=7.717 (478.6s)
+  [1786503336_446661] ply 118/142 graded=56 480s
+  [1786454767_166575] ply 134/142 graded=56 485s
+[jp_e4] 1786454767_166575: profile=fixed_v1 graded=56 flips={'d0p5': 6, 'd1p0': 10, 'd2p0': 12} agree_archive=42/56 mean_secs_per_graded_ply=8.654 (484.8s)
+  [1786118143_1621601234] ply 132/141 graded=56 486s
+[jp_e4] 1786118143_1621601234: profile=fixed_v1 graded=56 flips={'d0p5': 9, 'd1p0': 12, 'd2p0': 13} agree_archive=35/56 mean_secs_per_graded_ply=8.674 (485.9s)
+[jp_e4] 1786076853_2116173857: profile=fixed_v1 graded=58 flips={'d0p5': 8, 'd1p0': 9, 'd2p0': 12} agree_archive=46/58 mean_secs_per_graded_ply=8.437 (489.4s)
+  [1786367787_389099] ply 126/142 graded=56 496s
+[jp_e4] 1785975832_66810: profile=app_aug2 graded=62 flips={'d0p5': 5, 'd1p0': 6, 'd2p0': 14} agree_archive=39/62 mean_secs_per_graded_ply=8.162 (506.2s)
+[jp_e4] 1786367787_389099: profile=fixed_v1 graded=58 flips={'d0p5': 12, 'd1p0': 11, 'd2p0': 14} agree_archive=43/58 mean_secs_per_graded_ply=8.85 (513.4s)
+[jp_e4] 1786503336_446661: profile=fixed_v1 graded=60 flips={'d0p5': 7, 'd1p0': 8, 'd2p0': 15} agree_archive=42/60 mean_secs_per_graded_ply=8.589 (515.5s)
+  [1786116818_134510] ply 134/142 graded=64 516s
+  [1786403231_207028] ply 122/142 graded=56 519s
+  [1785986044_1911511187] ply 134/142 graded=64 523s
+[jp_e4] 1785986044_1911511187: profile=fixed_v1 graded=64 flips={'d0p5': 8, 'd1p0': 9, 'd2p0': 17} agree_archive=46/64 mean_secs_per_graded_ply=8.169 (522.9s)
+[jp_e4] 1786116818_134510: profile=fixed_v1 graded=65 flips={'d0p5': 8, 'd1p0': 11, 'd2p0': 18} agree_archive=48/65 mean_secs_per_graded_ply=8.112 (527.4s)
+[jp_e4] 1785984310_1698417952: profile=fixed_v1 graded=63 flips={'d0p5': 5, 'd1p0': 11, 'd2p0': 16} agree_archive=52/63 mean_secs_per_graded_ply=8.378 (528.0s)
+[jp_e4] 1786243458_1382293676: profile=fixed_v1 graded=63 flips={'d0p5': 6, 'd1p0': 9, 'd2p0': 12} agree_archive=45/63 mean_secs_per_graded_ply=8.43 (531.2s)
+  [1786325073_523563] ply 115/142 graded=56 536s
+[jp_e4] 1786501074_943197: profile=fixed_v1 graded=63 flips={'d0p5': 10, 'd1p0': 14, 'd2p0': 17} agree_archive=41/63 mean_secs_per_graded_ply=8.56 (539.4s)
+[jp_e4] 1786403231_207028: profile=fixed_v1 graded=59 flips={'d0p5': 6, 'd1p0': 10, 'd2p0': 14} agree_archive=45/59 mean_secs_per_graded_ply=9.25 (545.9s)
+[jp_e4] 1786113542_627623: profile=fixed_v1 graded=63 flips={'d0p5': 4, 'd1p0': 4, 'd2p0': 10} agree_archive=52/63 mean_secs_per_graded_ply=8.749 (551.3s)
+  [1786417055_68387] ply 134/142 graded=64 573s
+[jp_e4] 1786417055_68387: profile=fixed_v1 graded=65 flips={'d0p5': 11, 'd1p0': 17, 'd2p0': 21} agree_archive=50/65 mean_secs_per_graded_ply=8.964 (582.8s)
+[jp_e4] 1786325073_523563: profile=fixed_v1 graded=63 flips={'d0p5': 1, 'd1p0': 7, 'd2p0': 9} agree_archive=49/63 mean_secs_per_graded_ply=9.473 (596.9s)
+[jp_e4]     d0p5: flips   203/1556  =  13.05% [11.46%, 14.81%]  tiles/meeples 141/62
+[jp_e4]     d1p0: flips   266/1556  =  17.10% [15.31%, 19.05%]  tiles/meeples 196/70
+[jp_e4]     d2p0: flips   353/1556  =  22.69% [20.67%, 24.83%]  tiles/meeples 251/102
+[jp_e4] rollup: 26 games, 1556 graded plies, profiles={'walled': 2, 'app_aug2': 1, 'fixed_v1': 23}, masks=[31], all_replay_scores_match=True -> measurement/jrules_priors_20260814/calib/SUMMARY.json
+[jp_e4] NOTE: a flip is not an improvement, and per DESIGN §7/CL-080 a BIGGER flip rate is a bigger risk, not a bigger prize. No elo, no band, no governance write — read against CALIB_READ_RULE §3, nothing else.

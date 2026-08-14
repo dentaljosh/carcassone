@@ -974,3 +974,32 @@ regressions — re-run the file alone before believing it.**
 **Fix when actioned:** fixture-scope the leaf-config freeze (reset between modules) or mark
 the three modules for isolated execution; add a regression test that runs two of them in one
 session.
+
+## 2026-08-14 — `test_puct_choose_action_never_mutates_caller_board` is OVER-STRICT, not a bug (triaged, deferred)
+
+`tests/test_fair_puct_agent.py::test_puct_choose_action_never_mutates_caller_board` **FAILS, and
+has failed for at least days** — reproduced identically at `83023d68` (08-12), `a86c11d8` (08-13),
+`319b75c4` and today. **It is NOT caused by the 2026-08-14 merges** (tile-tie term / opencity cap /
+jrules priors), which is what prompted the triage, since those merges touched
+`heuristic_prior_mcts.py` and `rust_agent.py`.
+
+**Triage result: the assertion is wrong, the agent is fine.** The test asserts
+`pickle.dumps(board.state) == pre`. Measured on the failing case:
+- every game-semantic field is **identical** (`deck`, `next_tile`, `scores`, `meeples`, `board`,
+  `current_player`, `placed_meeples`)
+- `board.state.__dict__ == pre.__dict__` is **`True`** — full semantic equality
+- `__dict__` key ORDER is identical
+- only the **serialized bytes** differ
+
+Byte-level pickle equality is strictly stronger than state equality: equal `set`/`dict` containers
+can serialize to different bytes (iteration order), so `pickle.dumps` is not a valid proxy for
+"was the caller's board mutated". **Independent corroboration that no semantic mutation occurs:**
+the replay gates reproduce recorded scores bit-exactly with this same agent — 449/449 self-play
+replays (F6 pre-gate, 2026-08-14) and 26/26 E4 archives (rustport P1 replay gate, 2026-08-13) —
+which a corrupted caller board would break.
+
+**Deferred fix (not urgent, no measurement depends on it):** replace the byte comparison with a
+semantic one (compare `__dict__`, or a canonical digest of the game-semantic fields), so the test
+asserts the contract its own name states. Until then it is a **known RED test** and must not be
+cited as evidence of caller-board mutation. Found while reviewing the `eval_fair_puct` crash-
+resilience fix; surfaced by that agent's broader test sweep.
