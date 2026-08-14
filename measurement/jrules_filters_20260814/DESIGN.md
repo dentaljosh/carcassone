@@ -249,8 +249,8 @@ measured on the local 5900XT (idle box), production geometry:
 
 ## 9. Deploy cell — DRAFT prereg
 
-[`DEPLOY_PREREG.md`](DEPLOY_PREREG.md) — cloned from surface B's adjudicated
-prereg: n=800 deck-paired (400 decks × 2 seats), fair PIMC k8×1376 = 11008
+[`DEPLOY_PREREG_DRAFT.md`](DEPLOY_PREREG_DRAFT.md) — cloned from surface B's
+adjudicated prereg: n=800 deck-paired (400 decks × 2 seats), fair PIMC k8×1376 = 11008
 BOTH arms, rust both sides, `fixed_v1` + R9, exact-K 2 shared, margin z
 primary, N0–N5 branch map with the `ms_ratio` 1.20 N4 trigger, **band =
 `CLAIMED-BY-ORCHESTRATOR` placeholder**, workers laptop W22 / local W30, and
