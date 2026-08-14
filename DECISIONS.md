@@ -7149,3 +7149,38 @@ never promoted, per its own banner. Any revival (weaker masks, `j8brk`, per-game
 calibration under its own committed rule. Artifacts `measurement/jrules_filters_20260814/`.
 **`PRODUCTION.yaml` untouched; nothing promoted.**
 **Phase:** measurement-first (human-edge program, weekend round).
+
+## 2026-08-14 — TIE-TRIGGERED SEARCH ESCALATION ("the vart", Joshua: "if theres a tie at search 11k, search like 10x in those cases?") — **PRE-GATE RAN AND `E-FLAT` FIRED: even 10× search at tied plies captures ≤18 % of the regret (z ≤ +1.0) and SATURATES between 4× and 10×. The axis closes at 0 games; the holdout stays unburned.**
+
+**Context.** The search-side successor to the closed tile-tie leaf route. Mechanism hypothesis:
+residual search value concentrates at tied plies while the uniform tail is dead — with the clean
+attribution property that a win could not be generic compute (the tail above ~5504 is priced ≈ +7
+elo, bracket spans zero). The DESIGN pre-stated the symmetric risk: the same top-of-ladder price
+collapse might hold at tied plies too. **It does.**
+
+**Read-rule blind at `64a61f32`** (fund = SMALLEST rung with capture ≥ 0.35 of honest base regret
+AND z ≥ +2 AND coverage ≥ 0.85; one-shot unburned-holdout confirm on dev-pass; E-FLAT /
+E-HARMFUL / E-0 pre-committed). **Dev ladder, 522 positions / 279 roots, k8 fixed so every rung
+searches identical determinized worlds**, picks joined to the corpus's M=32 CRN arm scores;
+honest base regret +0.2803 ± 0.0708 pts/ply; integrity perfect (0 join problems, and fresh
+base-rung picks reproduced the corpus champion picks **485/485** — the free bit-exactness witness).
+
+**Result:** 2× capture −0.0094 (z −0.26) · 4× +0.0494 (z +1.00, ratio 0.18) · 10× +0.0502
+(z +0.84, ratio 0.18, coverage 0.799 also fails the bar). Picks MOVE with depth (18 %→31 %,
+increasingly leaving the tied set) but do not IMPROVE — the budget-headroom price collapse
+applies at tied plies too; the concentration hypothesis is **refuted**. The 4×/10× centrals
+≈ +5 elo through the ÷3.2 chain, consistent with uniform escalation's ≈ +7.
+
+**The operative sentence (LEVER_INDEX row "tie-triggered search escalation"):** *neither static
+afterstate functions (two failed menus + the 38 % reach bound) nor deeper same-shape search
+expresses the +0.252 pts/ply oracle spread* — the remaining explanations are **the oracle's
+in-family bias** (clair-puct shares the leaf under test; every route that should capture real
+headroom has come back flat, which is the signature of chasing a partly-invented number) **or the
+k-width/determinization axis** (the oracle sees the deck; the search marginalizes 8 worlds; no
+per-world depth fixes which worlds). An out-of-family re-pricing of a corpus slice is the named
+cheap follow-up; NOT funded here.
+
+**0 games · no band · no claim · no results.csv row (0-game precedent) · `PRODUCTION.yaml`
+untouched.** Deploy-cost sketch (mult ~1.33×/2×/4×; matched-wall-clock uniform control arm)
+preserved in DESIGN §6, never promoted. Artifacts `measurement/tieescalation_20260814/`.
+**Phase:** measurement-first (weekend round; queue Q3 resolved).

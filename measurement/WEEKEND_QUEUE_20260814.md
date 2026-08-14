@@ -28,7 +28,7 @@
 |---|---|---|
 | R3-2 root filters (surface C) | 🔚 **CLOSED — `NO-EXPRESSION` fired (9.07% Wilson-hi < 10% bar); merged `97038182`; Q1 RESOLVED, no cell** | none |
 | R3-3 E1 win-objective | build agent running (worktree) | build lands → step Q2 |
-| tie-escalation pre-gate ("the vart") | build+run agent (worktree; runs its ladder on local if free) | read-out lands → step Q3 |
+| tie-escalation pre-gate ("the vart") | 🔚 **CLOSED — `E-FLAT`; merged; Q3 RESOLVED, no cell** | none |
 | h2h stale-failure fix | ✅ merged `d366de4b`-era; done | — |
 | tile-tie leaf route (R3-1) | 🔚 closed (G2-SCREEN-FAIL + reach bound) | none — do not reopen |
 
@@ -47,7 +47,7 @@ apply its read-rule. **Divergence < ~1%** → bounded-tiny, close free, no cell.
 claim fresh band, launch the cell (⚠️ its prereg carries paired WIN-RATE as named co-primary —
 that is pre-registered, not optional). 
 
-**Q3 — tie-escalation.** The pre-gate agent's read-rule governs. **FLAT** → the axis closes
+**Q3 — tie-escalation. ✅ RESOLVED 2026-08-14 ~16:35: `E-FLAT` fired; axis closed at 0 games; merged. Heartbeat: SKIP.** *(original logic kept for the record:)* The pre-gate agent's read-rule governs. **FLAT** → the axis closes
 (record: neither static functions nor deeper same-shape search expresses the oracle spread).
 **DEV-PASS + holdout confirm** → this becomes the highest-value pending cell BUT its deploy
 design needs the uniform-escalation CONTROL arm at matched wall-clock (2 cells) and was only
