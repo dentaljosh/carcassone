@@ -372,9 +372,20 @@ def load_done(out_path: Path) -> set[tuple[int, int]]:
     return done
 
 
-def load_failed(out_path: Path) -> set[tuple[int, int]]:
-    """The cells already on disk as FAILED records."""
+def load_failed(out_path: Path, include_resolved: bool = False) -> set[tuple[int, int]]:
+    """The cells already on disk as OUTSTANDING failed records.
+
+    ⚠️ RESOLVED failures are excluded by default. A cell that failed on one pass
+    and SUCCEEDED on a later ``--retry-failed`` pass has BOTH records in the
+    stream (the JSONL is append-only; nothing rewrites the old line) — THE
+    SUCCESS RECORD IS THE ARBITER, exactly as in
+    ``scripts/classical_search/eval_fair_puct.load_failures`` (commit 2f5d0929),
+    where the arbiter is the result FILE. Excluding resolved cells here means a
+    second ``--retry-failed`` pass cannot re-open a cell that already completed
+    and append a duplicate success record. Pass ``include_resolved=True`` for
+    the forensic view (every cell that EVER failed)."""
     failed: set[tuple[int, int]] = set()
+    succeeded: set[tuple[int, int]] = set()
     if out_path.exists():
         for line in out_path.read_text().splitlines():
             line = line.strip()
@@ -384,9 +395,14 @@ def load_failed(out_path: Path) -> set[tuple[int, int]]:
                 d = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if d.get("failed") and "deck_seed" in d and "joshua_seat" in d:
-                failed.add((int(d["deck_seed"]), int(d["joshua_seat"])))
-    return failed
+            if "deck_seed" not in d or "joshua_seat" not in d:
+                continue
+            key = (int(d["deck_seed"]), int(d["joshua_seat"]))
+            if d.get("failed"):
+                failed.add(key)
+            elif d.get("winner"):
+                succeeded.add(key)
+    return failed if include_resolved else failed - succeeded
 
 
 def variants_in(out_path: Path) -> set[str]:
@@ -430,9 +446,29 @@ def summarize(records: list[dict]) -> dict:
     FAILED cells (``failed: true``, no ``winner``) are excluded from every
     statistic and reported separately as ``n_failed`` / ``failure_rate`` /
     ``failed_cells``. A reader must never have to infer an exclusion from a
-    record count that does not add up — the count is stated."""
+    record count that does not add up — the count is stated
+    (``n_records == n_scored + n_failed + n_resolved_failures``).
+
+    ⚠️ A RESOLVED failure is not a failure. A cell that failed on one pass and
+    SUCCEEDED on a later ``--retry-failed`` pass has BOTH records in the stream —
+    the success record is the arbiter (mirrors
+    ``scripts/classical_search/eval_fair_puct.py``, commit 2f5d0929, where the
+    arbiter is the result file). Counting the stale record would report
+    ``n_failed=1`` on a cell that completed cleanly — and ``failure_rate`` is the
+    input to the PRE-REGISTERED VALIDITY TRIGGER (>0.5% ⇒ stop and investigate),
+    so an overstated rate can void a good cell. The failure record is never
+    deleted: its forensics are reported under ``n_resolved_failures`` /
+    ``resolved_failed_cells``, so a flaky game stays visible without voiding
+    the cell."""
     ok = [r for r in records if r.get("winner")]
-    bad = [r for r in records if r.get("failed")]
+    ok_keys = {(int(r["deck_seed"]), int(r["joshua_seat"])) for r in ok}
+    allbad = [r for r in records if r.get("failed")]
+    # THE SUCCESS RECORD IS THE ARBITER: a failure record whose cell has a
+    # success record in the same stream is RESOLVED, not a failure of this run.
+    bad = [r for r in allbad
+           if (int(r["deck_seed"]), int(r["joshua_seat"])) not in ok_keys]
+    fixed = [r for r in allbad
+             if (int(r["deck_seed"]), int(r["joshua_seat"])) in ok_keys]
     wins = sum(1 for r in ok if r["winner"] == "joshua")
     draws = sum(1 for r in ok if r["winner"] == "draw")
     by_deck: dict[int, dict[int, list[int]]] = {}
@@ -450,19 +486,33 @@ def summarize(records: list[dict]) -> dict:
     for r in records:
         for k, v in (r.get("joshua_rule_fires") or {}).items():
             fires[k] = fires.get(k, 0) + int(v)
+    # the failure_rate denominator excludes resolved records (they are neither a
+    # scored game nor a failure of this run); on a zero-failure run it is exactly
+    # len(records), so nothing changes there.
+    n_live = len(records) - len(fixed)
     return {
         "variant_ids": sorted({str(r["joshua_variant_id"]) for r in records
                                if r.get("joshua_variant_id")}),
         "n_records": len(records), "n_scored": n,
         # ⚠️ THE EXCLUSION LINE. Read it before the margin.
         "n_failed": len(bad),
-        "failure_rate": (len(bad) / len(records)) if records else None,
+        "failure_rate": (len(bad) / n_live) if n_live else None,
         "failed_cells": [{"deck_seed": int(r["deck_seed"]),
                           "joshua_seat": int(r["joshua_seat"]),
                           "exc_type": r.get("exc_type"),
                           "exc": r.get("exc")} for r in bad],
         "failed_by_seat": {"0": sum(1 for r in bad if int(r["joshua_seat"]) == 0),
                            "1": sum(1 for r in bad if int(r["joshua_seat"]) == 1)},
+        # NOT failures of this run — a crash that a later --retry-failed pass
+        # played through. Counted separately (never in `failure_rate`, which
+        # gates the pre-registered validity trigger) so a flaky game stays
+        # visible without voiding the cell. Mirrors eval_fair_puct's
+        # `n_resolved_failures` / `resolved_failed_cells`.
+        "n_resolved_failures": len(fixed),
+        "resolved_failed_cells": [{"deck_seed": int(r["deck_seed"]),
+                                   "joshua_seat": int(r["joshua_seat"]),
+                                   "exc_type": r.get("exc_type"),
+                                   "exc": r.get("exc")} for r in fixed],
         "wins": wins, "draws": draws, "losses": n - wins - draws,
         "win_rate": (wins + 0.5 * draws) / n if n else None,
         "n_paired_decks": len(paired),
@@ -483,6 +533,14 @@ def close_out(run_manifest: dict, man_path: Path, out_path: Path,
     must not hide failures banked by an earlier leg."""
     summary = summarize(read_records(out_path))
     print(json.dumps(summary, indent=1))
+    if summary["n_resolved_failures"]:
+        # Informational, never a trigger: these games ended up PLAYED. The failed
+        # records stay in the JSONL (append-only) purely as forensics.
+        print(f"\n[joshuabot-h2h] {summary['n_resolved_failures']} earlier failure(s) "
+              f"were RESOLVED by a later successful retry — not counted as failures "
+              f"(the failed records stay in the JSONL for forensics): "
+              f"{[(c['deck_seed'], c['joshua_seat'], c['exc_type']) for c in summary['resolved_failed_cells']]}",
+              flush=True)
     if summary["n_failed"]:
         print(f"\n⚠️ [joshuabot-h2h] {summary['n_failed']} FAILED CELL(S) = "
               f"{100.0 * (summary['failure_rate'] or 0.0):.2f}% of "
@@ -535,7 +593,9 @@ def main(argv=None) -> int:
     ap.add_argument("--retry-failed", action="store_true",
                     help="on --resume, re-attempt cells already on disk as FAILED "
                          "records. Default off: these failures are deck-deterministic, "
-                         "so a retry just re-burns a game-time. Use after a code fix.")
+                         "so a retry just re-burns a game-time. Use after a code fix. "
+                         "A cell whose retry already SUCCEEDED is resolved and is "
+                         "never re-opened.")
     ap.add_argument("--limit", type=int, default=0, help="stop after N cells (bench)")
     args = ap.parse_args(argv)
 

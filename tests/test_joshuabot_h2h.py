@@ -180,6 +180,10 @@ _STUB_FAIL_CELL = (10_001, 1)
 #: puts it here; spawn children inherit the environment.
 _STUB_VARIANT_ENV = "H2H_STUB_VARIANT"
 
+#: when set, the stub's pathological cell plays through — "the code fix" that a
+#: ``--retry-failed`` pass claims happened. Spawn children inherit the environment.
+_STUB_HEALED_ENV = "H2H_STUB_HEALED"
+
 
 def _stub_ok_record(cell) -> dict:
     deck_seed, seat = int(cell[0]), int(cell[1])
@@ -205,7 +209,8 @@ def _stub_worker_init(profile, rust_threads, sims, k_dets, preset, overrides):
                  variant_id=os.environ[_STUB_VARIANT_ENV])
 
     def _inner(cell):
-        if (int(cell[0]), int(cell[1])) == _STUB_FAIL_CELL:
+        if ((int(cell[0]), int(cell[1])) == _STUB_FAIL_CELL
+                and not os.environ.get(_STUB_HEALED_ENV)):
             raise RuntimeError("stub: PUCT reached a node with no valid actions")
         return _stub_ok_record(cell)
 
@@ -323,6 +328,89 @@ class TestFailedResumeContract:
         assert len(H2H.read_records(p)) == 1
 
 
+class TestResolvedFailures:
+    """A failure that a later ``--retry-failed`` pass PLAYED THROUGH is not a
+    failure. After a successful retry the JSONL holds BOTH the failed record and
+    the success record for the same cell — the SUCCESS RECORD IS THE ARBITER
+    (mirrors ``eval_fair_puct``'s resolved-failure fix, commit 2f5d0929, where the
+    arbiter is the result file). ``failure_rate`` gates the pre-registered
+    validity trigger (>0.5% ⇒ stop and investigate), so it must mean what it
+    says: an overstated rate can void a cleanly-completed cell."""
+
+    def test_fail_retry_succeed_zeroes_the_failure_count(self):
+        s = H2H.summarize([_rec(1, 0, +2), _failed(1, 1), _rec(1, 1, -2)])
+        assert s["n_failed"] == 0
+        assert s["failure_rate"] == 0.0
+        assert s["failed_cells"] == []
+        assert s["failed_by_seat"] == {"0": 0, "1": 0}
+
+    def test_the_forensic_record_is_still_discoverable(self):
+        s = H2H.summarize([_rec(1, 0, +2), _failed(1, 1), _rec(1, 1, -2)])
+        assert s["n_resolved_failures"] == 1
+        assert s["resolved_failed_cells"] == [{"deck_seed": 1, "joshua_seat": 1,
+                                               "exc_type": "RuntimeError",
+                                               "exc": "no valid actions"}]
+
+    def test_an_unresolved_failure_still_counts(self):
+        s = H2H.summarize([_rec(1, 0, +2), _failed(1, 1), _rec(1, 1, -2),
+                           _failed(2, 0)])
+        assert s["n_failed"] == 1
+        assert s["failed_cells"][0]["deck_seed"] == 2
+        # the resolved record is in NEITHER side of the rate: 1 failure over
+        # 2 scored + 1 failed
+        assert s["failure_rate"] == pytest.approx(1 / 3)
+        assert s["n_resolved_failures"] == 1
+
+    def test_resolution_restores_the_paired_deck(self):
+        """The success record is a full game: the deck pairs up again and the
+        margin statistics are exactly those of a never-failed run."""
+        s = H2H.summarize([_rec(1, 0, +10), _failed(1, 1), _rec(1, 1, -4)])
+        assert s["n_paired_decks"] == 1
+        assert s["paired_margin_mean"] == pytest.approx(3.0)
+
+    def test_zero_failure_output_unchanged_apart_from_resolved_keys(self):
+        """house convention (test_no_failures_reports_a_zero_rate_not_a_missing_key):
+        the resolved counts are ALWAYS emitted — a zero is stated. Everything
+        else is byte-identical to the pre-fix summary, pinned in full."""
+        s = H2H.summarize([_rec(1, 0, +2), _rec(1, 1, -2)])
+        assert s.pop("n_resolved_failures") == 0
+        assert s.pop("resolved_failed_cells") == []
+        assert s == {
+            "variant_ids": ["current+j7w1"],
+            "n_records": 2, "n_scored": 2,
+            "n_failed": 0, "failure_rate": 0.0,
+            "failed_cells": [], "failed_by_seat": {"0": 0, "1": 0},
+            "wins": 1, "draws": 0, "losses": 1,
+            "win_rate": 0.5,
+            "n_paired_decks": 1,
+            "paired_margin_mean": 0.0,
+            "paired_margin_sem": None,
+            "paired_margin_z": None,
+            "mean_margin_unpaired": 0.0,
+            "rule_fires_total": {"j1_majority_steal": 2},
+        }
+
+    def test_load_failed_excludes_resolved_by_default(self, tmp_path):
+        p = tmp_path / "out.jsonl"
+        p.write_text(json.dumps(_failed(1, 1)) + "\n"
+                     + json.dumps(_rec(1, 1, -2)) + "\n"
+                     + json.dumps(_failed(2, 0)) + "\n")
+        assert H2H.load_failed(p) == {(2, 0)}
+        assert H2H.load_failed(p, include_resolved=True) == {(1, 1), (2, 0)}
+
+    def test_retry_failed_does_not_reopen_a_resolved_cell(self, tmp_path):
+        """the driver-level consequence: ``done -= load_failed(...)`` must not
+        re-open (and duplicate) a cell whose retry already succeeded."""
+        p = tmp_path / "out.jsonl"
+        p.write_text(json.dumps(_rec(1, 0, +2)) + "\n"
+                     + json.dumps(_failed(1, 1)) + "\n"
+                     + json.dumps(_rec(1, 1, -2)) + "\n"
+                     + json.dumps(_rec(2, 1, +1)) + "\n"
+                     + json.dumps(_failed(2, 0)) + "\n")
+        done = H2H.load_done(p) - H2H.load_failed(p)
+        assert H2H.build_cells([1, 2], done) == [(2, 0)]
+
+
 class TestPoolSurvivesAFailedCell:
     """The end-to-end claim, through the REAL spawn pool and the REAL driver."""
 
@@ -368,6 +456,31 @@ class TestPoolSurvivesAFailedCell:
         assert len(H2H.read_records(out)) == 6            # no cell replayed
         man = json.loads((tmp_path / "stub.jsonl.manifest.json").read_text())
         assert man["summary"]["n_failed"] == 1            # still stated after resume
+
+    def test_a_successful_retry_resolves_the_failure_end_to_end(
+            self, tmp_path, monkeypatch):
+        """fail -> --retry-failed -> SUCCEED, through the real spawn pool and the
+        real driver: the cell completes, the failure count zeroes, the forensic
+        record survives, and a THIRD --retry-failed pass re-opens nothing."""
+        out = tmp_path / "stub.jsonl"
+        argv = ["--decks", "3", "--seed-base", "10000", "--workers", "2",
+                "--out", str(out)]
+        assert H2H.main(argv) == 0                        # leg 1: one cell fails
+        monkeypatch.setenv(_STUB_HEALED_ENV, "1")         # "the code fix"
+        assert H2H.main(argv + ["--resume", "--retry-failed"]) == 0
+        recs = H2H.read_records(out)
+        assert len(recs) == 7                 # 6 games + the KEPT failure record
+        man = json.loads((tmp_path / "stub.jsonl.manifest.json").read_text())
+        assert man["summary"]["n_scored"] == 6
+        assert man["summary"]["n_failed"] == 0            # a resolved failure is
+        assert man["summary"]["failure_rate"] == 0.0      # NOT a failure
+        assert man["summary"]["n_resolved_failures"] == 1
+        assert (man["summary"]["resolved_failed_cells"][0]["deck_seed"]
+                == _STUB_FAIL_CELL[0])
+        assert man["summary"]["n_paired_decks"] == 3      # the healed pair is back
+        # a third --retry-failed pass must NOT re-open the resolved cell
+        assert H2H.main(argv + ["--resume", "--retry-failed"]) == 0
+        assert len(H2H.read_records(out)) == 7            # no duplicate appended
 
 
 class TestPlayHarnessIntegration:
