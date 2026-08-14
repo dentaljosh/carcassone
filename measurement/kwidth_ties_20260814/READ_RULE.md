@@ -1,5 +1,17 @@
 # k-WIDTH / DETERMINIZATION AT TIED PLIES — READ-RULE (committed BEFORE the ladder ran)
 
+> **ADJUDICATED 2026-08-14 — branch `W-FLAT`
+> ([LADDER_READOUT.md](LADDER_READOUT.md)): no rung cleared the committed
+> bars, so no attribution branch was reachable; the holdout was never opened
+> and stays unburned. THIS READ-RULE IS SPENT; any future k-width design needs
+> a fresh one.** (One first-pass `W-0 UNREADABLE` fired on the laptop from a
+> share-path resolution fault — `term_gate._share()` prefers
+> `/mnt/c/carc-shared`, which on that box is its OWN Windows drive — dropping
+> all 522 oracle joins. The E-0-class branch did exactly its job. The search
+> records were intact and untouched; the analysis was re-run unchanged on the
+> local box, where the same records produced `W-FLAT`. No bar, statistic or
+> record was altered.)
+
 > **STATUS AT WRITING: COMMITTED BEFORE ANY LADDER SEARCH OR CAPTURE NUMBER
 > EXISTED ANYWHERE.** `LADDER_READOUT.*` and `records/` do not exist at the
 > time of this commit; the instrument (`scripts/tiletie/kwidth_ladder.py`) is

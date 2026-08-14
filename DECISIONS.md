@@ -7224,3 +7224,80 @@ would be structurally biased) retained unpromoted for the only re-open condition
 K ≥ 3 (itself closed) or a new draw source inside the latch. No band, no claim, no results row
 (0-game precedent). **`PRODUCTION.yaml` untouched.**
 **Phase:** measurement-first (weekend round; queue Q2 resolved — the weekend queue is now EMPTY).
+
+## 2026-08-14 — k-WIDTH / DETERMINIZATION AT TIED PLIES ("the wart") — **PRE-GATE RAN AND `W-FLAT` FIRED: wider determinization captures ≤30 % of the tie regret at every rung (z ≤ +1.67), at 8× the budget AND at the champion's own budget. The last named explanation of the tile-tie signal closes at 0 games; the holdout stays unburned.**
+
+**Context.** The vart (same day) closed `E-FLAT` on the DEPTH axis and its own close-out named
+**k-width / determinization** as the remaining search-side explanation of the pricing corpus's
+**+0.252 pts/tied ply, z +3.43** headroom. The hypothesis: the oracle SEES the deck while the
+champion marginalizes over only 8 sampled worlds, so at leaf-tied plies — where the arms are by
+construction indistinguishable to the static evaluator and the pooled decision rests entirely on
+what the k futures contain — the missing ingredient may be **WHICH WORLDS, not how deeply each is
+searched**.
+
+**Design (blind).** DESIGN + READ_RULE committed at `ba47957d`, the instrument at `a20d0f7b`,
+both before any search. Ladder scales **k at FIXED 1376 sims/det** — R1 k16 (22,016) · R2 k32
+(44,032) · R3 k64 (88,064) — plus the load-bearing feature: **two ISO-BUDGET controls that buy
+worlds by SELLING depth at the champion's own 11,008 sims — C1 k16×688 and C2 k32×344, deploy
+multiplier exactly 1.00×**. That completes the 2×2 the vart half-filled (more budget via depth =
+flat; more budget via width = R1–R3; **same budget, more width = C1/C2**). The read-rule made the
+iso-budget rungs decide ATTRIBUTION: `W-FUND-WORLDS` required one of them to clear, and
+`W-BUDGET-ONLY` was pre-declared to fund nothing.
+
+**Result (dev slice, 522 positions / 279 roots, 0 search errors, 0 oracle-join problems).** Graded
+vs the parity-split honest base regret **+0.2803 ± 0.0708 pts/ply** — identical to the vart's, as
+it must be (same base picks, same estimator).
+
+| rung | k × sims/det | capture | z | ratio | coverage | pick-change |
+|---|---|---|---|---|---|---|
+| R1 | 16 × 1376 | +0.0319 ± 0.0437 | +0.73 | 0.114 | 0.931 | 0.200 |
+| R2 | 32 × 1376 | +0.0720 ± 0.0431 | +1.67 | 0.257 | 0.912 | 0.223 |
+| R3 | 64 × 1376 | +0.0252 ± 0.0496 | +0.51 | 0.090 | 0.908 | 0.268 |
+| **C1** | **16 × 688** | +0.0260 ± 0.0517 | +0.50 | 0.093 | 0.912 | 0.244 |
+| **C2** | **32 × 344** | +0.0848 ± 0.0588 | +1.44 | 0.303 | 0.889 | 0.362 |
+
+No rung clears the committed bars (ratio ≥ 0.35 ∧ z ≥ +2 ∧ coverage ≥ 0.85) ⇒ **`W-FLAT`**.
+
+⭐ **The ladder is NOT MONOTONE IN BUDGET.** The budget-matched C2 carries the **largest central of
+any rung** — bigger than R3 at **8× the budget** — and changes the **most picks (36 %** vs
+20/22/27 %). That is the signature of noise around a small positive, not of a budget mechanism, and
+it is why the attribution question never became answerable: **nothing fired to attribute**. As in
+the vart, wider search **MOVES picks at tied plies without IMPROVING them**.
+
+⚠️ **SCOPE — a funding verdict, NOT an exclusion.** No rung's 95 % ratio interval sits below the
+bar (C2's reaches +0.72). The honest claim is *"the k-width axis did not fire at a mechanism-sized
+bar on 522 dev positions"*, **not** *"k-width is worth nothing"*. Realized 2σ resolution
+0.087–0.118 pts/ply ≈ **+8.4…+11.5 elo** (÷3.2 chain).
+
+**Prior confronted.** The `phase-adaptive k schedule` row died 2026-07-28 on a flat
+pooled-pick-change census — but that census measured **ON AVERAGE over all live decisions**; this
+run conditioned on **leaf-tied plies**, which it did not. Conditioning on the class where the
+signal supposedly lives still reads flat, which strengthens rather than merely repeats the earlier
+finding.
+
+**Integrity.** 522/522 analyzed; base picks reproduce the corpus champ picks **485/485** *and* **the
+vart's own k8×1376 records 522/522 bit-exact** across boxes and programs. Free CRN property
+exploited: `det_seed_base` is independent of BOTH k and sims, so at fixed sims/det the k16/32/64
+runs contain the base's 8 worlds as an exact **prefix** — pick changes attribute to the ADDED
+worlds alone. ⚠️ The 30 %-root holdout was **NEVER opened** — the instrument has **no holdout code
+path** — and stays unburned for a third consecutive program.
+
+⭐ **Operative statement of the tile-tie axis after this run: neither static afterstate functions
+(two failed menus + the 38 % reach bound), nor deeper same-shape search (the vart), nor wider
+determinization at ANY budget expresses the +0.252 pts/ply. The leading remaining explanation is a
+JUDGE ARTIFACT — the in-family `clair-puct` oracle's own bias — which only the out-of-family
+re-pricing (Q5) can settle.**
+
+**Ops by-catch (real, and it bit).** `term_gate._share()` prefers `/mnt/c/carc-shared`, which on the
+**laptop** is that box's OWN Windows drive, not the cluster share (`/mnt/carc-shared`). The first
+analyze there silently dropped all 522 oracle joins and read `W-0 UNREADABLE` — the E-0-class
+branch doing exactly its job. Search never touches the share; only analyze does. Records were
+intact; the analysis was re-run **unchanged** on the local box and produced `W-FLAT`. The
+instrument now fails loudly with a one-line diagnosis instead of dropping every position.
+
+**Governance.** 0 games; no `results.csv` row, no band, no claim id; `governance/PRODUCTION.yaml`
+and `governance/BAND_REGISTRY.csv` untouched. →
+[DESIGN](measurement/kwidth_ties_20260814/DESIGN.md) ·
+[READ_RULE](measurement/kwidth_ties_20260814/READ_RULE.md) ·
+[LADDER_READOUT](measurement/kwidth_ties_20260814/LADDER_READOUT.md);
+`scripts/tiletie/kwidth_ladder.py`; `tests/test_kwidth_ladder.py`.

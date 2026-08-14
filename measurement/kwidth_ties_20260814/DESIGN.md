@@ -1,5 +1,20 @@
 # k-WIDTH / DETERMINIZATION AT TIED PLIES ("the wart") — PRE-GATE DESIGN
 
+> **OUTCOME STAMP (post-hoc, 2026-08-14): the ladder ran and fired
+> [READ_RULE.md](READ_RULE.md) branch `W-FLAT` —
+> [LADDER_READOUT.md](LADDER_READOUT.md): no rung clears the committed bars
+> (ratio ≥ 0.35 ∧ z ≥ +2 ∧ coverage ≥ 0.85). Expansion R1/R2/R3 read
+> +0.114 / +0.257 / +0.090 of the base regret at z +0.73 / +1.67 / +0.51; the
+> **ISO-BUDGET** controls C1/C2 read +0.093 / +0.303 at z +0.50 / +1.44. The
+> ladder is **not monotone in budget** — the budget-matched C2 carries the
+> largest central of any rung, larger than R3 at 8× the budget, and changes
+> the most picks (36%) — the signature of noise around a small positive
+> rather than of a budget mechanism. §2's stated weakness is what the data
+> shows: extra worlds MOVE picks at tied plies without IMPROVING them, just
+> as extra depth did. ⚠️ Scope: a funding verdict, NOT an exclusion — no
+> rung's 95% ratio interval sits below the bar. The 30% holdout was NEVER
+> opened and stays unburned. The axis closes per the read-rule.**
+
 > **STATUS AT WRITING: DESIGN, COMMITTED BEFORE ANY LADDER SEARCH RAN.** The
 > read-rule ([READ_RULE.md](READ_RULE.md)) is committed in the same commit; the
 > instrument (`scripts/tiletie/kwidth_ladder.py`, `tests/test_kwidth_ladder.py`)
