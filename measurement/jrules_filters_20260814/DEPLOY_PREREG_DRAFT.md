@@ -1,5 +1,14 @@
 # J-RULES SURFACE C — DEPLOY-BUDGET CELL, PRE-REGISTRATION **(DRAFT)**
 
+> **⚠️ STATUS 2026-08-14 — NEVER PROMOTED, BY THE RULE'S OWN BRANCH.** The
+> calibration ran the same day ([`CALIB_READOUT.md`](CALIB_READOUT.md)) and
+> **`NO-EXPRESSION` fired**: every pre-registered mask reads an exclusion rate
+> of 2.80–7.76%, below the committed 10% resolvability bar (the largest mask's
+> Wilson-95 upper bound is 9.07%). Per the banner above, a NO-EXPRESSION
+> outcome means **no promotion ever happens and no cell is bought** — this
+> draft is retained as the record of what WOULD have run. No band was claimed;
+> nothing below was filled.
+
 > **⚠️ STATUS AT WRITING 2026-08-14: DRAFT. NOT the pre-registration of record until
 > promoted.** Written with the build, BEFORE the calibration had produced any exclusion
 > rate and BEFORE any band was claimed. **Exactly two fields are open and are filled at

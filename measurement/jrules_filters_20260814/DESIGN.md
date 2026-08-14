@@ -1,5 +1,24 @@
 # J-RULES SURFACE C — the anchor's HARD FILTERS as ROOT FILTERS on the champion's fair-PIMC root
 
+> **⚠️ STATUS 2026-08-14 — CALIBRATED AND STOPPED BY THE PRE-COMMITTED RULE:
+> [`CALIB_READ_RULE.md`](CALIB_READ_RULE.md) §3.3 `NO-EXPRESSION` FIRED.
+> NO CELL IS BOUGHT; NO BAND IS SPENT; THE PREREG DRAFT IS NEVER PROMOTED.**
+> Full ladder over **31 archives / 1,855 graded champion plies (93.2% at the
+> deploy budget 11008)**, replay checksums 31/31 clean, yields 0/1,855 on every
+> arm: exclusion rates `j10` **3.72%** · `j3` **2.80%** · `current` **6.52%** ·
+> `all` **7.76%** — every arm below the 10% resolvability bar, the largest
+> mask's Wilson-95 UPPER bound (9.07%) included. **The recorded answer: the
+> champion at deploy depth already plays inside the anchor's hard rules on
+> ~93% of decisions — the constraint surface cannot be priced at n=800.** The
+> filters are live (F-J10 bit 384×, F-J3 235×), they just rarely remove the
+> champion's own pick. This completes the encoding triptych without a third
+> cell: A (evaluation) = loss confounded by budget · B (advice) = clean
+> sims-washout null · C (constraint) = NO-EXPRESSION. **No claim minted;
+> knobs stay DEFAULT-OFF; `governance/PRODUCTION.yaml` /
+> `BAND_REGISTRY.csv` / `results.csv` untouched.** Details + forbidden
+> readings: [`CALIB_READOUT.md`](CALIB_READOUT.md). Everything below this
+> banner is the design as built, unedited.
+
 > **STATUS AT WRITING: 🔧 BUILT + PROVEN DEFAULT-OFF — 2026-08-14. Code on the
 > worktree branch, DEFAULT-OFF everywhere.**
 > **0 games · no band claimed · no `results.csv` row · no claim minted ·
