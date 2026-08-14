@@ -1,0 +1,5 @@
+[oc-r2-deploy 2026-08-14_01:37:32] === START box=local band=129000000000 W=14 n=800 per cell, SEQUENTIAL ===
+[oc-r2-deploy 2026-08-14_01:37:32] host=Doctor out=/mnt/c/carc-shared/opencity_round2_deploy_20260814 repo_head=35b92355
+[oc-r2-deploy 2026-08-14_01:37:32] SKIP oc2_C_d16p0_deploy11008 (CELL_FILTER='Asym' -- this cell runs on the other box)
+[oc-r2-deploy 2026-08-14_01:37:32] SKIP oc2_Acap3_d2p0_deploy11008 (CELL_FILTER='Asym' -- this cell runs on the other box)
+[oc-r2-deploy 2026-08-14_01:37:32] --- cell oc2_Asym_d2p0_deploy11008 seeds 129000000800..129000001199 cand_hash=3f05d72016d0d09c dose=2.0 knobs={"opencity_symmetric": false} ---

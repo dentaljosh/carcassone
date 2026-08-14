@@ -1,0 +1,9 @@
+[menu-fair primary Doctor] 2026-08-14_01:37:32 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-14_01:37:32 START sub=oc2_Asym_d2p0_deploy11008 n=800 band=129000000800 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/opencity_round2_20260814/cells/opencity_Asym_d2p0_deploy_fixed_v1_vs_fairchamp11008.json split=none/none
+[leaf-override] WARNING: open-city discipline set (opencity_dose=2.0) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, much slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=3f05d72016d0d09c frozen_config_hash=7d169226eff16131 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leaf3f05d720]: info=fair n=800 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 800 to play, 14 workers, out=/mnt/c/carc-shared/opencity_round2_deploy_20260814/oc2_Asym_d2p0_deploy11008
