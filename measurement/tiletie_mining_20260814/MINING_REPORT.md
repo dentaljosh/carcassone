@@ -1,5 +1,11 @@
 # TILE-TIE ORACLE-SEPARATION MINING — what separates the oracle-best arm from the incumbent pick
 
+> **OUTCOME STAMP (post-hoc, 2026-08-14): the §4 gate ran and FAILED AT THE
+> SCREEN — [GATE2_READOUT.md](GATE2_READOUT.md) `G2-SCREEN-FAIL`, dev
+> cross-fit +0.0027 ± 0.0420 (z +0.06); the FINAL slice was never opened and
+> stays unburned.** Second failed menu on the real +0.234 ceiling; Finding 1's
+> bound is now the operative statement of this axis.
+
 > **STATUS: EXPLORATORY, COMPLETE 2026-08-14. ⚠️ EVERY NUMBER IN THIS FILE IS
 > SELECTION-BIASED OR IN-SAMPLE BY CONSTRUCTION — view A conditions on
 > oracle-vs-incumbent disagreement, view B is single-feature shopping on the

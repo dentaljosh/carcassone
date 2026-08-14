@@ -198,7 +198,15 @@ this is licensed by anything in this directory.**
    *descriptively* (the per-position afterstates are replayable) and only then
    hand-craft — the reverse of what this menu did (name plausible geometry,
    test it). This gate's failure is evidence the plausible-geometry direction
-   is the wrong order.
+   is the wrong order. **→ EXECUTED 2026-08-14
+   ([../tiletie_mining_20260814/MINING_REPORT.md](../tiletie_mining_20260814/MINING_REPORT.md)):
+   the mining found the tie sets structurally homogeneous (~38% of the oracle
+   spread unreachable by ANY static function of a 38-descriptor afterstate
+   space; 30% of pools fully indistinguishable), and the mined 3-candidate
+   gate 2 failed at its dev screen (`G2-SCREEN-FAIL`, z +0.06) with the
+   30%-root holdout slice deliberately left unburned. Two failed menus + the
+   reach bound now point at deck/lookahead-dependent tactics, not cheap
+   afterstate geometry.**
 3. **More supply**: the pooled run was supply-capped at 733 (the sizing wanted
    896 for the pricing question; the gate's own resolution ±0.06 pts was ample
    for THIS menu, so supply was not the binding constraint here — the features

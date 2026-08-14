@@ -1,5 +1,10 @@
 # TILE-TIE GATE 2 — READ-RULE (mined candidates, holdout-confirmed)
 
+> **ADJUDICATED 2026-08-14 — branch `G2-SCREEN-FAIL`
+> ([GATE2_READOUT.md](GATE2_READOUT.md), z_dev +0.06): the FINAL slice was
+> never opened and stays unburned. THIS READ-RULE IS SPENT for this menu; any
+> future menu needs a fresh one.**
+
 > **STATUS AT WRITING: COMMITTED BEFORE THE GATE IS RUN — no candidate-vs-oracle
 > cross-fit or FINAL-slice statistic has been computed anywhere at the time of
 > this commit.** The mining report ([MINING_REPORT.md](MINING_REPORT.md),
