@@ -120,6 +120,7 @@
 | [FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md](FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md) | Flat-leaf throughput bench + deploy | VERDICT: DEPLOY |
 | [COMPACT_LEAF_REWRITE_PLAN_2026-06-09.md](COMPACT_LEAF_REWRITE_PLAN_2026-06-09.md) · [ASBUILT](COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md) | Compact-leaf attempt (`USE_COMPACT_LEAF`) | EXECUTED then SUPERSEDED by flat leaf — stays OFF |
 | [XEON_DIRECT_SSH_2026-06-04.md](XEON_DIRECT_SSH_2026-06-04.md) | `ssh xeon-wsl` direct-WSL access | **HISTORICAL — the box is RETIRED** (left the cluster 2026-07-17; revival probe 2026-08-02 said RE-RETIRE: per-thread parity + AVX-512 = a fourth libm impl that fails G0). Recipe still valid if ever revived |
+| [../measurement/rustport_p1/P1_ORDER_GATE_DEFECT_2026-08-13.md](../measurement/rustport_p1/P1_ORDER_GATE_DEFECT_2026-08-13.md) | **Open defect — the P1 `count_final_scores` order-invariance gate crashes.** Root-caused to CORPUS DRIFT in the gate harness (E4 phone archives replayed under the default `walled` profile instead of their own), NOT an engine scoring bug and NOT a Rust divergence. Consequence: the order-irrelevance premise under the Rust port's deterministic set-drain order has not been re-checked since 2026-08-02, and one suite test is red | ⛔ **RECORDED 2026-08-13, NOT FIXED** |
 | [../android/README.md](../android/README.md) | **Android app** (side project 2026-07-27): on-device champion via Chaquopy — build/install/assets/difficulty/archive format | LIVE — SHIPPED to Joshua's Pixel (1.7 s/move full budget) |
 
 ## Governance spine

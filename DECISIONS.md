@@ -11,6 +11,7 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 > Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [STATUS.md](STATUS.md) (live state; the 06-02 correction plan is an executed historical artifact).
 
 **2026-06 — correction era (current)**
+- 2026-08-13 (late) (**P1 ORDER-INVARIANCE GATE IS RED — DEFECT REPORT, ROOT-CAUSED, DELIBERATELY NOT FIXED; and the handed-down framing "a genuine Python-side engine bug" is WRONG.** `scripts/rustport/property_count_final_scores_order.py` crashes standalone at `engine/.../farm_util.py:214` (`AttributeError: 'NoneType' object has no attribute 'farmer_connections_with_coordinate'`), taking `test_p1_engine.py::test_count_final_scores_is_order_invariant_smoke` red with it. `count_final_scores` **does** filter to `FARMER`/`BIG_FARMER` first, so a real farmer really fails to resolve to a farm — but the state is **manufactured by the harness**: `load_corpus` replays every E4 phone archive with **no `game_kwargs`**, i.e. under the default `walled` profile, while 24 of the 26 archives are `app_aug2`/`fixed_v1`; `root_replay.replay_actions`'s own docstring names the requirement. **A/B over all 26 archives: under `walled` 15 crash and only 2 reproduce the phone's recorded scores; under each archive's OWN profile 0 crash and 26/26 reproduce the phone's scores exactly.** `champ` (40 positions) and `golden` (12) are clean. **Regression bracket:** GREEN 2026-08-02 at 28,140 comparisons (`ORDER-IRRELEVANT`) → first non-`walled` archive lands 2026-08-05 (`1bc2b1a2`) → red ever since. The 2026-05-29 `find_farm`/`TRT→BRR` fix is **not** implicated. ⚠️ **Live consequence: the order-irrelevance premise under `carc-core`'s deterministic set-drain order is STALE — not refuted, and not "never answered" — it just predates 24 of the 26 archives.** Secondary hygiene finding: `FarmUtil.find_farm_by_coordinate`'s implicit `return None` fall-through is dereferenced unguarded by two callers; fail-loud fix recommended, changes no legally-reachable outcome. **No source file changed, no `results.csv` row, no band, no claim, `PRODUCTION.yaml` untouched.** → [P1_ORDER_GATE_DEFECT](measurement/rustport_p1/P1_ORDER_GATE_DEFECT_2026-08-13.md); roadmap F15; LEVER_INDEX §8.)
 - 2026-08-11 (late) (**SIMS-SPLIT PRE-GATE CENSUS RAN → branch `U` (park-with-decision): the FREE LUNCH IS REFUTED, the ASYMMETRY IS REAL, and the lever survives only as a TRADE.** The phase-asymmetric sims split (LEVER_INDEX §5, NEVER-TRIED) claimed the meeple search's budget is partly wasted — it chooses among 3–4 actions while eating 58% of turn time, vs 17–30 actions for the tile decision. 0-game census on the 898-root CL-070 bank, k8 worlds drawn once and re-searched at per-world rungs {172, 344, 688, 1376} under CRN (only sims differ), rust backend, ~4 min at W14. **Instrument gate G0 PASS: 898/898 replay-checksum-clean, 878/878 determinism controls bit-identical, 0 failures**; 878 live after the turn-atomic latch exclusion (480 TILES / 398 MEEPLES). **Pooled pick-flip rate vs the 1376 reference — TILES 18.54 / 27.71 / 35.21% at 688 / 344 / 172, MEEPLES 11.56 / 13.07 / 14.07%.** **S1 did NOT fire on its confound-immune half:** the absolute bar was `M344 ≤ 5%` (CI95-upper ≤ 7%) and the reading is **13.07%, CI95 [10.10, 16.73]** — missed ~2.6× ⇒ **there is no wasted meeple budget to reclaim; a 4× meeple cut changes one meeple decision in eight.** N1 (no-asymmetry) also did not fire — raw contrast **z 5.30 at 344 / 2.86 at 688**; N2 (both-saturated) did not fire — both 688 rates sit far above its ≤2% bar. ⇒ **branch `U`.** **What survives is the comparative claim, and it is not the action-count artifact:** within the pre-registered reference-gap strata the tile flip rate exceeds the meeple rate in **all four bins at every rung** (direction unanimous); bin z's at 344 are 1.67 / 3.59 / 4.32 / 2.09 (at 172: 3.23 / 4.32 / 5.04 / 2.42) — ⚠️ **only the DIRECTION is unanimous; the lowest-gap bin does not clear 2σ at 344, so quote the bins, never "significant in every stratum"** (an earlier verbal summary in-session quoted the 172-rung z's against the 344-rung bars and was corrected). **Consequence for the lever: reframed from free lunch to trade** — reallocating meeple→tile pays ~13% of meeple picks to buy tile budget 1376 → ~2400 at fixed per-turn total, and **the census provably cannot price that trade** (PREREG §4.1: the ladder only descends; flip rate is not regret). Only a deck-paired game screen can. **Secondary, and it corroborates a live claim from an opponent-free instrument: NEITHER search is converged at production** (halving still moves 18.5% of tile / 11.6% of meeple picks), which sits with CL-060's +49.85 elo for 4× budget and is why the N2 branch — which would have owed a CL-060 tension caveat — never fired. **0 games, no band consumed, no `results.csv` row owed** (nothing was played; same disposition as the adaptive-k census and the budget-headroom bound), no CL id minted, `governance/PRODUCTION.yaml` untouched. → [READOUT](measurement/simsplit_census_20260811/READOUT.md), [PREREG](measurement/simsplit_census_20260811/PREREG.md); instrument `scripts/measurement_infra/simsplit_census.py` (+20 tests).)
 - 2026-08-09 overnight (**THE "WHERE DOES HEADROOM LIVE" TRIPLE — two of three answers landed, both closures.** (1) **SEARCH TAIL MEASURED SHUT**: the oracle-price cell at the extrapolation point (150/150, CRN, rust 9.48×-verified) read **+0.0673 pts/disagreement vs +0.7375 one rung below — price ratio 0.091**; pre-registered branch 2 fired POWERED (the "bound stands" prediction +0.511 would have read z 2.5; the CI's upper bound sits below it) ⇒ the geometric headroom bound above deploy collapses **+54 → ≈+7.1 elo** [−35,+49]. Mechanism: above ~5504 sims the search *moves but does not improve* — the r₄>1 rate anomaly is real but the *price* collapsed. (2) **CURVE-SHAPE PROBE PARKED**: 4 cells n=400 fair k8×1376 fixed_v1 (band 1.10e11 retired): identity −21.7±17.4 (gate pass, instrument zero) / flattop −1.7 (the Wave-2 Bflattop tie replicates) / broadlow −47.2 (vs C0: −25.5, z~−1.0) / hoard +2.6 ⇒ **A4_UNRESOLVABLE — no cell clears 2σ vs the identity zero; the 3.9-box-day sweep is NOT funded on a sub-2σ signal.** Instrument defect caught pre-launch by its own gate design: a manifest-path lookup returned None and fired a false INSTRUMENT-BROKEN; fixed so missing evidence reads PROVENANCE-UNREADABLE, never burns a band (`5aeae98`). (3) **PHASE ARM**: seam 549c0d1 verified 3/4 gates (hash exact; golden 194/0; reconcile 0/3,325,532 knob-off + 0/3,199,556 knob-ON, py==cy==rust bit-exact; e4 corpus excluded — its 7 fixed_v1 archives PANIC the rust engine via a geometry-blind loader, pre-existing, BACKLOG'd `1028046`) but the full-suite gate was UNKNOWN ⇒ merge blocked pending the suite-vs-clean-checkout comparison; the 06:51 dirty reboot (4th this week) killed the gate mid-suite AND wiped the seam wheel from /tmp, producing a FALSE PHASE_ARM_BLOCKED (verdict MISSING, suite never ran) — marker cleared with cause logged, wheel path made durable + rebuild-if-absent, chain relaunched. Ops lesson: **artifacts a resumable chain depends on must not live in the session scratchpad.** By-catch same night: JCZ harness built + smoke n=20 (separate entry). Everything measurement-only; PRODUCTION.yaml untouched.)
 - 2026-08-09 (evening) (**THE §7 TIGHTENER RAN THE SAME DAY AND SUPERSEDED THE MORNING'S BOUND — pre-registered BRANCH 2 fired, POWERED: the price of a top-of-ladder disagreement is +0.0673, not the assumed 0.511, so the +54 elo headroom bound collapses to ≈ +7 elo with a bracket that spans zero.** `oracle_score_pilot.py` UNCHANGED on the adjacent pair 5504-vs-11008 (`--level-a 1376 --level-b 2752 --n 150 --m 32 --oracle-sims 100 --workers 16 --backend rust`, default clair-puct judge, M=32 CRN); population 474, **150/150 ok, 0 failed, `crn_verified_all`, 126 roots, 990.1 s at W16**; rust licensed by the committed identity gate `measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json` and **re-verified at HEAD pre-launch (8 positions / 376 field checks / 0 mismatches, 9.48×)** ⇒ same ruler. **Mean +0.0673 pts/disagreement, cluster-robust se 0.2041, z +0.330, p 0.742; bootstrap 95% CI [−0.3300, +0.4668], P(≤0) 0.365, deff 1.204; price ratio 0.091 vs the +0.7375 composite.** Powered, not null-by-weakness: the P-constant prediction 0.511 would have read **z = 2.5** at the realized se and sits **above** the CI. **Re-stated bound (same chain, only P replaced; the assumed 0.51125 reproduces the published +54.1 elo): H = +0.5652 pts/game ≈ +7.1 elo (σ 22.2) / +7.7 (σ 20.4), bracket ≈ [−35, +49].** 🔑 **The decay moved from the RATE into the PRICE** — Δ₅ > Δ₄ is real, but essentially all of the composite's value came from the 2752→5504 half; **above 5504 the deeper pick MOVES but does not IMPROVE.** Geometric family stands; constant price does not. **No `results.csv` row — deliberately, not an oversight** (no opponent, no elo, no W/L/D; the schema has no slot); no CL id, `governance/PRODUCTION.yaml` untouched, no band involved. → [MEMO §9](measurement/budget_headroom_bound_20260809/MEMO.md); LEVER_INDEX "budget-headroom decay bound"; roadmap.)
@@ -6410,3 +6411,96 @@ stamped into its notes. `STATUS.md` top block. Roadmap item (6) closed.
 `governance/CLAIM_REGISTRY.csv` row. `governance/PRODUCTION.yaml` untouched.**
 **Reversal cost:** nil — nothing was promoted and no configuration moved.
 **Phase:** measurement-first (Phase 4 era; human-edge program, classical champion).
+
+## 2026-08-13 (late) — P1 ORDER-INVARIANCE GATE IS RED — ⛔ **DEFECT REPORT, NOT A CLOSE-OUT AND NOT A MEASUREMENT. ROOT-CAUSED, DELIBERATELY NOT FIXED.** The crash is **corpus drift in the gate harness**, **not** an engine scoring bug and **not** a Rust divergence — but the order-irrelevance premise under the Rust port's deterministic set-drain order is now **STALE**
+
+> ⛔ **READ THIS FIRST — the headline is NOT "the engine is broken".** An investigation handed to
+> this session as "a genuine Python-side engine bug" is not one. The crash is real and reproduces
+> on demand, but the state it crashes on is **unreachable in legal play**: it is manufactured by
+> the gate harness replaying human phone archives under the **wrong rules profile**. **No source
+> file was changed.** No `results.csv` row, no band, no CL id, `governance/PRODUCTION.yaml`
+> untouched. ⚠️ **The one durable, decision-relevant fact:** the property this gate exists to
+> check has not been re-checked since **2026-08-02**, so `carc-core`'s drain-order choice rests
+> on evidence that predates 24 of the 26 archives now in the corpus.
+
+**Context.** `scripts/rustport/property_count_final_scores_order.py` exists because
+`PointsCollector.count_final_scores` drains each player's meeples out of a **`set`** with
+`.pop()`; `MeeplePosition.__hash__` bottoms out in `hash(<enum member>)`, i.e. object identity, so
+the drain order is not stable across processes and the Rust port cannot reproduce it. The port
+therefore picked *some* deterministic order — sound **only if** the order is outcome-irrelevant.
+The script measures that rather than assuming it, and `tests/rustport/test_p1_engine.py::test_count_final_scores_is_order_invariant_smoke`
+runs a smoke-sized version of it in the suite.
+
+**The defect, verified at HEAD `5f3dbaf5`.** The script crashes standalone, on its **first**
+qualifying position, even with terminal-ply-only sampling (`--plies-per-game 1`):
+`AttributeError: 'NoneType' object has no attribute 'farmer_connections_with_coordinate'` at
+`engine/wingedsheep/carcassonne/utils/farm_util.py:214` (`FarmUtil.find_meeples`), and on other
+seeds `'NoneType' object has no attribute 'farms'` at `farm_util.py:23`
+(`find_farm_by_coordinate`, on a coordinate holding no tile). `count_final_scores` **does**
+correctly filter to `FARMER`/`BIG_FARMER` before the lookup (`points_collector.py:306-307`), so a
+genuine farmer really is failing to resolve to a farm.
+
+**Root cause — and it is NOT the engine.** `root_replay.replay_actions` takes a `game_kwargs`
+argument and its own docstring names the requirement: archives from a **non-`walled`** epoch (the
+E4 phone games — `app_aug2`, `fixed_v1`) must thread `RulesProfile.game_kwargs()` through.
+`load_corpus` calls `replay_actions(deck_seed, actions, ply)` with **no** `game_kwargs` for all
+three corpora, so every E4 archive is replayed under `walled`; the start-tile/grid geometry
+differs, the recorded action integers decode to different placements, and the reconstructed board
+is unrelated to the game the phone played. **A/B over all 26 archives in `measurement/e4_games/`,
+profile resolved per-archive via the project's own discriminator (`analyzer/ev_loss.resolve_profile_name`,
+exactly as `test_p1_engine._archive_profile` does it): under `walled`, 15/26 crash and only 2/26
+reproduce the phone's recorded final scores; under each archive's OWN profile, 0/26 crash and
+26/26 reproduce the phone's scores exactly.** The `champ` (40 positions) and `golden` (12) corpora
+— which have no epoch problem — yielded zero offenders.
+
+**It is a regression, and the bracket is tight.** 2026-07-30: the first two E4 archives land,
+both `walled`. 2026-07-31/08-02: the gate runs **GREEN** — `1407 positions × 20 orders = 28,140
+comparisons, 16,629 meeples, 0 outcome mismatches, 0 residual-list-order differences`
+(`measurement/rustport_p1/count_final_scores_order.log`), plus a smoke-sized rerun writing
+`verdict: ORDER-IRRELEVANT` (`P1_p1_count_final_scores_order.json`, `utc 2026-08-02T05:52:18Z`).
+2026-08-05: the first non-`walled` archive lands (`1785975832_66810.json`, `app_aug2`, `1bc2b1a2`);
+23 more follow through 08-12. Every run since dies on that corpus. ⚠️ **The 2026-05-29
+`find_farm` / `opposite_farmer_side` (`TRT→BRR`) fix is NOT implicated** — it predates the last
+green run of this very gate by two months, and `find_farm`'s start-independence is not in question.
+
+**Secondary finding (real, but hygiene, not correctness).** `FarmUtil.find_farm_by_coordinate`
+has an **implicit `return None`** fall-through, and both `count_final_scores` and
+`FarmUtil.find_meeples` dereference the result unguarded; it also reads `tile.farms` without the
+`tile is None` check its sibling `farm_for_position` already has. Under the house **"fail loudly"**
+norm this is worth fixing — an invalid state should not surface as an `AttributeError` fifteen
+frames deep — but it is **not** a scoring bug (no legally-reachable state produced a `None` farm
+in any scan run here) and fixing it would **not** make the gate pass.
+
+**Decision.** RECORD, do not fix. The corpus fix touches a gate script whose output is a port
+premise, and the engine guard touches the vendored engine; both are the owner's call. What is
+recorded is the verified evidence plus the fix options, so neither has to be rediscovered.
+
+**Verified vs inferred** is stated explicitly in §4 of the doc. Verified: the crash and both
+tracebacks; the `FARMER` filter; the terminal-ply reproduction; offenders exclusive to `e4`; the
+26-archive A/B; that `load_corpus` passes no `game_kwargs`; the 2026-08-02 green run and the
+2026-08-05 corpus landing; the red test. Inferred: the specific geometry→decode chain by which
+the wrong profile corrupts the board (the corruption is proven, the chain is a reading of
+`game_kwargs()`), and that no legally-reachable state can produce a `None` farm (none found, not
+proven). **Explicitly NOT known: order-independence at the CURRENT corpus. It is stale, not
+known-good — and not "never answered" either.**
+
+**Alternatives considered.** (a) Fix the corpus loader here — declined: it changes the input to a
+gate whose verdict licenses a Rust design choice, and the R9 import-latch makes a single-process
+mixed-epoch sweep non-trivial. (b) Run the property in a scratch harness with correct profiles to
+answer the order question now — declined: it would produce a verdict-shaped artifact outside the
+gate, with no manifest and no governance, which is exactly the "results discipline" failure mode
+this project has already paid for. (c) Skip the `e4` corpus or `try/except` the crash to green the
+test — **rejected**: it would destroy the gate's only human-played positions while looking fixed.
+
+**Close-out (touches that apply).** Defect doc
+`measurement/rustport_p1/P1_ORDER_GATE_DEFECT_2026-08-13.md` (new) · this entry + its index line ·
+`docs/PROGRAM_ROADMAP_2026-07-07.md` F15 · `docs/LEVER_INDEX.md` §8 row (BUGFIX/HYGIENE — the
+indexed intervention is the *premise*, "is the drain order verified", which is a thing a future
+reader will grep) · `docs/INDEX.md` row. `python3 scripts/doc_lint.py` → 0 errors.
+
+**Files touched:** `measurement/rustport_p1/P1_ORDER_GATE_DEFECT_2026-08-13.md` (new),
+`DECISIONS.md`, `docs/PROGRAM_ROADMAP_2026-07-07.md`, `docs/LEVER_INDEX.md`, `docs/INDEX.md`.
+**No source file. No `experiments/results.csv` row. No `governance/CLAIM_REGISTRY.csv` row. No
+band. `governance/PRODUCTION.yaml` untouched.**
+**Reversal cost:** nil — documentation only.
+**Phase:** measurement-first (Phase 4 era; rustport P1 gate hygiene).
