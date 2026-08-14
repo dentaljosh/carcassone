@@ -697,10 +697,29 @@ def view_c(table):
     return out
 
 
+#: derived (composite) features, computed by the analyzer from the stored
+#: per-arm features. As exploratory as everything else here.
+DERIVED = {
+    # "toward his meeples, away from mine" (the coherent view-A theme)
+    "cmp_meeplediff": lambda f: ((f["dist_own_meeple"] or 0)
+                                 - (f["dist_opp_meeple"] or 0)),
+}
+
+
+def augment_derived(table):
+    for e in table:
+        for f in e["fx"].values():
+            for name, fn in DERIVED.items():
+                f[name] = fn(f)
+
+
 def cmd_analyze() -> int:
+    global FEATURE_NAMES
     table, problems, excluded_pool = build_table("dev")
     hold = load_holdout_roots()
     assert not any(e["root_id"] in hold for e in table)
+    augment_derived(table)
+    FEATURE_NAMES = FEATURE_NAMES + tuple(DERIVED)
 
     a = view_a(table)
     b = view_b(table)
@@ -710,15 +729,57 @@ def cmd_analyze() -> int:
     for ph in ("early", "mid", "late"):
         sub = [e for e in table if e["phase"] == ph]
         if sub:
-            by_phase[ph] = {"n": len(sub), "view_a": view_a(sub)}
+            by_phase[ph] = {"n": len(sub), "view_a": view_a(sub),
+                            "view_b": view_b(sub)}
 
-    # S2b on the dev slice (context: the ceiling the mining plays for)
-    caps, clusters = [], []
+    # S2b on the dev slice (context: the ceiling the mining plays for).
+    # HONEST ceiling = the pricing run's per-position parity-split
+    # `headroom_leaf` (selection on even worlds, evaluation on odd), which is
+    # winner's-curse-free. The full-M argmax version is emitted only as
+    # `naive` — E[max of noisy means] > max of true means, so it is inflated
+    # (the same inflation makes view A's "oracle-best arm" identity noisy:
+    # that attenuates feature diffs toward 0, it cannot fake signal).
+    per_all = TG.load_per_position()
+    caps, caps_naive, clusters = [], [], []
     for e in table:
+        row = per_all[e["rid"]]
+        caps.append(row["headroom_leaf"] * e["scale_all"])
         best = max(e["pool"], key=lambda i: (e["means"][i], -i))
-        caps.append((e["means"][best] - e["means"][0]) * e["scale_all"])
+        caps_naive.append((e["means"][best] - e["means"][0]) * e["scale_all"])
         clusters.append(e["root_id"])
     ceiling = _summ(caps, clusters)
+    ceiling_naive = _summ(caps_naive, clusters)
+    ceiling_naive["note"] = ("winner's-curse-inflated (argmax of full-M means "
+                             "evaluated on the same means); audit only")
+
+    # ---- feature-space reach (EXPLORATORY upper bound) -------------------- #
+    # Any deterministic pick rule over these descriptors is constant on arms
+    # with identical feature vectors (ties -> lowest index). The best it can
+    # possibly do per position is the best lowest-index-representative over
+    # the feature-equivalence classes. Computed with the same naive full-M
+    # argmax as ceiling_naive, so reach/naive is the meaningful ratio (both
+    # curse-inflated the same way); n_indist = positions where the whole pool
+    # collapses to ONE class (no rule can move at all).
+    reach_caps, n_indist = [], 0
+    for e in table:
+        classes = {}
+        for i in e["pool"]:
+            key = tuple(sorted((k, v) for k, v in
+                               e["fx"][int(e["acts"][i])].items()
+                               if k != "action"))
+            if key not in classes or i < classes[key]:
+                classes[key] = i
+        reps = sorted(classes.values())
+        if len(reps) < 2:
+            n_indist += 1
+        best_rep = max(reps, key=lambda i: (e["means"][i], -i))
+        reach_caps.append((e["means"][best_rep] - e["means"][0])
+                          * e["scale_all"])
+    reach = _summ(reach_caps, clusters)
+    reach["n_pools_fully_indistinguishable"] = n_indist
+    reach["note"] = ("naive (curse-inflated) like ceiling_naive; the ratio "
+                     "reach/naive bounds ANY deterministic static rule over "
+                     "the mined descriptor space")
 
     result = {
         "schema": "carcassonne-tiletie-mining/v1",
@@ -731,6 +792,8 @@ def cmd_analyze() -> int:
         "n_problems": len(problems), "problems": problems[:10],
         "n_excluded_pool_lt2": len(excluded_pool),
         "dev_ceiling_S2b_all_scale": ceiling,
+        "dev_ceiling_S2b_naive_all_scale": ceiling_naive,
+        "feature_space_reach_naive_all_scale": reach,
         "view_a_best_vs_incumbent": a,
         "view_b_single_feature_capture": b,
         "view_c_within_set_correlation": c,
