@@ -83,6 +83,23 @@ pub enum FinalSelect {
     Lcb,
 }
 
+/// J-RULES PRIOR surface B (`measurement/jrules_priors_20260814/DESIGN.md`):
+/// which expansions get the prior boost when `jrules_prior_dose != 0.0`.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum JrPriorScope {
+    /// Every expanded node, from that node's MOVER's own POV — the structural
+    /// analogue of the house priors themselves (every node's softmax already
+    /// prefers the mover's leaf-improving moves) and of the static bundle's
+    /// antisymmetric form (both in-tree players "play the strategy"). The
+    /// default and the pre-registered primary.
+    All,
+    /// Only nodes where the ROOT player is to move — the internal opponent
+    /// model stays the unmodified champion. A named ablation (the prior-surface
+    /// analogue of the static cell's `jrules_symmetric = False` open question);
+    /// needs its own prereg, never a rung of the primary cell's ladder.
+    Own,
+}
+
 /// `HeuristicPriorConfig.leaf_quantize`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LeafQuantize {
@@ -118,6 +135,21 @@ pub struct SearchConfig {
     /// are bit-identical either way.
     pub use_leaf_scratch: bool,
     pub leaf: LeafConfig,
+    /// J-RULES PRIOR surface B. `0.0` (default == the champion) NEVER touches
+    /// the prior pipeline — the dose-0 code path is the pre-change code,
+    /// byte-for-byte, so default traffic is bit-identical, not merely equal.
+    /// Nonzero: each legal child's Δleaf gets `dose * jrules_prior_term(child)`
+    /// added BEFORE the prior softmax (⇒ a multiplicative, renormalized
+    /// `exp(dose·T/tau_p)` boost on that child's prior). The LEAF VALUE the
+    /// search backs up is untouched on every path — this knob is not part of
+    /// [`LeafConfig`] and moves no leaf hash, so a moved-hash gate cannot prove
+    /// it live; the manifest's resolved dose is the wiring gate.
+    pub jrules_prior_dose: f64,
+    /// Per-rule ablation mask over `leaf::{JR_J1,JR_J2,JR_J5,JR_J6,JR_J8}`
+    /// (default 31 == the bundle). Only read when the dose is nonzero.
+    pub jrules_prior_mask: i64,
+    /// See [`JrPriorScope`]. Only read when the dose is nonzero.
+    pub jrules_prior_scope: JrPriorScope,
 }
 
 impl Default for SearchConfig {
@@ -136,6 +168,9 @@ impl Default for SearchConfig {
             tanh_flavor: LibmFlavor::GlibcFma,
             use_leaf_scratch: true,
             leaf: LeafConfig::curve125(),
+            jrules_prior_dose: 0.0,
+            jrules_prior_mask: leaf::JR_ALL,
+            jrules_prior_scope: JrPriorScope::All,
         }
     }
 }
@@ -342,6 +377,10 @@ pub struct Searcher<'a> {
     /// lever (~27 KB of buffer churn per leaf call, at tens of leaf calls per
     /// node expansion).
     scratch: LeafScratch,
+    /// The seat this search() call is FOR — latched at [`Searcher::search`],
+    /// read ONLY by the J-rules prior surface under
+    /// [`JrPriorScope::Own`]. `None` until a search starts.
+    root_player: Option<usize>,
     trace: Option<&'a mut dyn TraceSink>,
 }
 
@@ -352,6 +391,7 @@ impl<'a> Searcher<'a> {
             tree: Tree::default(),
             leaf_evals: 0,
             scratch: LeafScratch::new(),
+            root_player: None,
             trace: None,
         }
     }
@@ -362,6 +402,7 @@ impl<'a> Searcher<'a> {
             tree: Tree::default(),
             leaf_evals: 0,
             scratch: LeafScratch::new(),
+            root_player: None,
             trace: Some(trace),
         }
     }
@@ -430,12 +471,57 @@ impl<'a> Searcher<'a> {
         let leaf_parent = self.leaf_at(g, mover)?;
         let legal = g.legal_actions();
 
+        // J-RULES PRIOR surface B: dose 0.0 (the default, the champion) takes
+        // the pre-change loop verbatim — this whole block is behind the dose
+        // test, so default traffic is bit-identical, not merely equal. Nonzero:
+        // the clock is read ONCE from THIS node (the bot's own fair-information
+        // rule — blind to what a lookahead draws), and each child's Δleaf gets
+        // `dose * jrules_prior_term(child)` added before the softmax. Only the
+        // PRIORS move; `leaf_parent`, `value` and everything backed up do not.
+        let jr_on = self.cfg.jrules_prior_dose != 0.0
+            && match self.cfg.jrules_prior_scope {
+                JrPriorScope::All => true,
+                JrPriorScope::Own => self.root_player == Some(mover),
+            };
+        let jr_clock = if jr_on {
+            // Re-decompose the PARENT (the child loop overwrites the scratch
+            // decomp per child) — one extra decomposition per expansion.
+            leaf::decompose_into(&g.state, &mut self.scratch.decomp, &mut self.scratch.scratch);
+            Some(leaf::jr_prior_clock(&g.state, mover, &self.scratch.decomp))
+        } else {
+            None
+        };
+
         // deltas[i] = leaf(child_i, mover) - leaf_parent, in `legal` order.
         let mut deltas: Vec<f64> = Vec::with_capacity(legal.len());
         for &a in &legal {
             let mut child = g.clone();
             child.advance(a).map_err(SearchError::Engine)?;
-            deltas.push(self.leaf_at(&child, mover)? - leaf_parent);
+            match &jr_clock {
+                None => deltas.push(self.leaf_at(&child, mover)? - leaf_parent),
+                Some(clock) => {
+                    // One decomposition serves the leaf AND the prior term.
+                    // The leaf component is the same `leaf_terms_with` the
+                    // plain path funnels through — bit-identical by
+                    // construction; only the prior-softmax input moves.
+                    self.leaf_evals += 1;
+                    let (leaf_v, base) = self.scratch.leaf_float_and_base(
+                        &child.state,
+                        mover,
+                        &self.cfg.leaf,
+                        self.cfg.leaf_quantize == LeafQuantize::Int,
+                    )?;
+                    let t = leaf::jrules_prior_term(
+                        &child.state,
+                        mover,
+                        &self.scratch.decomp,
+                        self.cfg.jrules_prior_mask,
+                        clock,
+                        base,
+                    );
+                    deltas.push(leaf_v - leaf_parent + self.cfg.jrules_prior_dose * t);
+                }
+            }
         }
 
         let value = self.tanh(leaf_parent / self.cfg.value_norm);
@@ -706,6 +792,9 @@ impl<'a> Searcher<'a> {
     /// `NeuralMCTS.search` + `HeuristicPriorAgent.best_action` on a fresh tree
     /// (`reuse_tree=False` ⇒ `clear()` before every move).
     pub fn search(&mut self, root_game: &Game) -> Result<SearchResult, SearchError> {
+        // Latched per search() call (covers the session's search_carry too,
+        // which drives this same entry point). Only JrPriorScope::Own reads it.
+        self.root_player = Some(root_game.state.current_player);
         let root = self.create_or_get(root_game);
         if !self.tree.get(root).expanded && !self.tree.get(root).is_terminal {
             // `_eval_boards` -> float32 values array -> `float(values_b[0])`.
@@ -1044,6 +1133,138 @@ mod tests {
         let t_on = t2.elapsed().as_secs_f64() / reps as f64;
         println!("search {sims} sims: alloc-leaf {:.0} sims/s, scratch-leaf {:.0} sims/s, \
                   speedup {:.3}x", sims as f64 / t_off, sims as f64 / t_on, t_off / t_on);
+    }
+
+    fn midgame(seed: &str, plies: usize) -> Game {
+        let mut g = Game::from_seed(seed);
+        for _ in 0..plies {
+            let legal = g.legal_actions();
+            g.advance(legal[legal.len() / 2]).unwrap();
+        }
+        g
+    }
+
+    fn assert_same_search(a: &SearchResult, b: &SearchResult) {
+        assert_eq!(a.chosen_action, b.chosen_action);
+        assert_eq!(a.node_count, b.node_count);
+        assert_eq!(a.leaf_evals, b.leaf_evals);
+        assert_eq!(a.root_w.to_bits(), b.root_w.to_bits());
+        assert_eq!(a.root_leaf_value.to_bits(), b.root_leaf_value.to_bits());
+        assert_eq!(a.root_children.len(), b.root_children.len());
+        for (x, y) in a.root_children.iter().zip(b.root_children.iter()) {
+            assert_eq!((x.0, x.1, x.2.to_bits()), (y.0, y.1, y.2.to_bits()));
+        }
+        assert_eq!(a.root_priors.len(), b.root_priors.len());
+        for (x, y) in a.root_priors.iter().zip(b.root_priors.iter()) {
+            assert_eq!((x.0, x.1.to_bits()), (y.0, y.1.to_bits()));
+        }
+    }
+
+    /// Surface B's own gate: dose 0.0 — even with a MOVED mask and scope — is
+    /// the champion, byte-for-byte (the dose test short-circuits before either
+    /// is read). This is the analogue of the static bundle's dose-0 moved-mask
+    /// identity control, and the reason a zeroed dose cannot hide behind a
+    /// "config differs" check.
+    #[test]
+    fn jrules_prior_dose0_with_moved_mask_is_bit_identical() {
+        // Ply 30 is a WIDE root (22 legal) where dose 1.0 is known to move
+        // priors — so identity here is not vacuous.
+        let g = midgame("28000000000", 30);
+        let base = search_single(&g, &small_cfg(256)).unwrap();
+        let moved = search_single(
+            &g,
+            &SearchConfig {
+                jrules_prior_dose: 0.0,
+                jrules_prior_mask: 27, // JR_ALL minus JR_J5 — deliberately moved
+                jrules_prior_scope: JrPriorScope::Own,
+                ..small_cfg(256)
+            },
+        )
+        .unwrap();
+        assert_same_search(&base, &moved);
+    }
+
+    /// A nonzero dose must move PRIORS only: the root's backed-up value surface
+    /// (leaf_value of the root node) is bit-identical, while the prior vector
+    /// differs somewhere across a handful of positions. Also pins that the
+    /// boost is renormalized (priors still sum to ~1).
+    #[test]
+    fn jrules_prior_dose_moves_priors_not_the_root_leaf_value() {
+        let mut any_prior_moved = false;
+        // Walk each game forward and probe the first few WIDE roots (a forced
+        // root has one uniform prior and can prove nothing either way).
+        for seed in ["28000000000", "42", "7"] {
+            let mut g = Game::from_seed(seed);
+            let mut probed = 0;
+            for _ply in 0..80 {
+                let legal = g.legal_actions();
+                if legal.is_empty() {
+                    break;
+                }
+                if _ply >= 30 && legal.len() >= 6 && probed < 3 {
+                    probed += 1;
+                    let off = search_single(&g, &small_cfg(64)).unwrap();
+                    let on = search_single(
+                        &g,
+                        &SearchConfig {
+                            jrules_prior_dose: 1.0,
+                            ..small_cfg(64)
+                        },
+                    )
+                    .unwrap();
+                    // The value the root backs up is computed from leaf_parent
+                    // alone — the prior surface must not have touched it.
+                    assert_eq!(off.root_leaf_value.to_bits(), on.root_leaf_value.to_bits());
+                    let s: f64 = on.root_priors.iter().map(|&(_, p)| p).sum();
+                    assert!((s - 1.0).abs() < 1e-6, "priors not renormalized: sum {s}");
+                    if off
+                        .root_priors
+                        .iter()
+                        .zip(on.root_priors.iter())
+                        .any(|(x, y)| x.1.to_bits() != y.1.to_bits())
+                    {
+                        any_prior_moved = true;
+                    }
+                }
+                let a = legal[legal.len() / 2];
+                g.advance(a).unwrap();
+            }
+        }
+        assert!(
+            any_prior_moved,
+            "dose 1.0 moved no prior on any probe position — the term is dead-wired"
+        );
+    }
+
+    /// Scope=Own at the root applies (root player IS the mover there), so the
+    /// root priors move; the difference vs scope=All lives at opponent
+    /// interior nodes, observable as a (possibly) different tree size — here we
+    /// pin only the contract that Own != dead: root priors move exactly as All's
+    /// do at the root.
+    #[test]
+    fn jrules_prior_scope_own_still_boosts_the_root() {
+        let g = midgame("28000000000", 30); // wide root (22 legal)
+        let all = search_single(
+            &g,
+            &SearchConfig {
+                jrules_prior_dose: 1.0,
+                ..small_cfg(16)
+            },
+        )
+        .unwrap();
+        let own = search_single(
+            &g,
+            &SearchConfig {
+                jrules_prior_dose: 1.0,
+                jrules_prior_scope: JrPriorScope::Own,
+                ..small_cfg(16)
+            },
+        )
+        .unwrap();
+        // The ROOT expansion is mover==root_player under both scopes: identical.
+        for (x, y) in all.root_priors.iter().zip(own.root_priors.iter()) {
+            assert_eq!((x.0, x.1.to_bits()), (y.0, y.1.to_bits()));
+        }
     }
 
     #[test]

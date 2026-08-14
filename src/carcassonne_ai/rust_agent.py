@@ -220,6 +220,21 @@ def search_config_rs(cfg, sims: int):
             "Rust backend, which implements no Gumbel root. They would be silently "
             "dropped; build this agent with backend='python'.")
 
+    # J-RULES PRIOR surface B (search-level knobs, NOT leaf fields): forwarded
+    # as KEYWORDS, and ONLY when the dose is set — the same conditional-keyword
+    # rule as the denial/open-city/jrules LEAF knobs in `leaf_config_rs` above.
+    # A `carc_rs` build predating surface B keeps serving every default-off
+    # (champion) config unchanged, while a NONZERO dose against the stale build
+    # raises TypeError (fail-closed loud, never a silently prior-free search,
+    # which would read as "the anchor's strategy is worth nothing" instead of
+    # "it never ran").
+    jrules_prior = {}
+    if float(getattr(cfg, "jrules_prior_dose", 0.0)) != 0.0:
+        jrules_prior = dict(
+            jrules_prior_dose=float(cfg.jrules_prior_dose),
+            jrules_prior_mask=int(getattr(cfg, "jrules_prior_mask", 31)),
+            jrules_prior_scope=str(getattr(cfg, "jrules_prior_scope", "all")),
+        )
     # ⚠️ `resolved_leaf_cfg()`, NOT `cfg.leaf_cfg` (fixed 2026-08-02). `leaf_cfg=None`
     # is the SENTINEL for "the env-built DEFAULT_CONFIG", and it is what every caller
     # that relies on the leaf env rather than an explicit override passes — including
@@ -240,6 +255,7 @@ def search_config_rs(cfg, sims: int):
         float(getattr(cfg, "c_lcb", 1.0)),
         True,
         "glibc_fma",
+        **jrules_prior,
     )
 
 

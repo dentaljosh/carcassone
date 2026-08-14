@@ -964,14 +964,28 @@ def _make_bare_net_opponent(net, rep, seed, leaf_cfg=None, handles=None):
 
 
 def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
-                     leaf_cfg=None):
+                     leaf_cfg=None, jrules_prior=None):
     # leaf_cfg=None -> env DEFAULT_CONFIG (byte-identical to the pre-C5 path); a
     # non-None value is the --cand-leaf-json CANDIDATE override for the FAIR agent
     # ONLY (the h800 rung always keeps DEFAULT_CONFIG — see _RungPrefix callers).
+    #
+    # jrules_prior: J-RULES PRIOR surface B (CANDIDATE side only, rust-only) —
+    # None (every historical run, and every opponent/rung build) constructs the
+    # config with the dataclass defaults, byte-identical to the pre-B path; a
+    # dict {dose, mask, scope} is the --cand-jrules-prior-* override. These are
+    # SEARCH knobs, not leaf fields: the candidate's leaf hash stays the
+    # champion's, so the wiring gate for a live term is the RESOLVED dose this
+    # config carries into the manifest (as_manifest / cand_jrules_prior).
+    jr = {}
+    if jrules_prior is not None:
+        jr = dict(jrules_prior_dose=float(jrules_prior["dose"]),
+                  jrules_prior_mask=int(jrules_prior["mask"]),
+                  jrules_prior_scope=str(jrules_prior["scope"]))
     return HeuristicPriorConfig(
         c_puct=c_puct, tau_p=tau_p, leaf_quantize=leaf_quantize,
         final_select=final_select, value_norm=value_norm,
         leaf_cfg=(leaf_cfg if leaf_cfg is not None else DEFAULT_CONFIG),
+        **jr,
     )
 
 
@@ -1572,8 +1586,11 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
                  netprior_backend=None, backend="python", rust_threads=None,
-                 simsplit=None):
+                 simsplit=None, cand_jrules_prior=None):
     _W["info"] = info
+    # J-RULES PRIOR surface B (CANDIDATE side ONLY, rust-only; None = OFF =
+    # byte-identical). A dict {dose, mask, scope} resolved once in main().
+    _W["cand_jrules_prior"] = cand_jrules_prior
     # ENGINE (rustport P6). Resolved ONCE in main() and passed as a literal, never as
     # "auto" — a worker that re-resolved the YAML could disagree with the manifest.
     _W["backend"] = backend
@@ -1757,9 +1774,12 @@ def _args_simsplit(args):
     return (args.sims_tile, args.sims_meeple)
 
 
-def _cfg_from_dict(d, leaf_cfg=None):
+def _cfg_from_dict(d, leaf_cfg=None, jrules_prior=None):
+    # `jrules_prior` reaches ONLY the candidate construction site in _play_one;
+    # the opponent/rung builders never pass it (None == pre-B byte-identical).
     return _build_champ_cfg(d["c_puct"], d["tau_p"], d["leaf_quantize"],
-                            d["final_select"], d["value_norm"], leaf_cfg)
+                            d["final_select"], d["value_norm"], leaf_cfg,
+                            jrules_prior=jrules_prior)
 
 
 def _play_one(args) -> GameResult | None:
@@ -1779,7 +1799,8 @@ def _play_one(args) -> GameResult | None:
     board = game.get_init_board()
     dh = deck_hash(board)
 
-    cfg = _cfg_from_dict(_W["champ_cfg_dict"], _W.get("cand_leaf_cfg"))
+    cfg = _cfg_from_dict(_W["champ_cfg_dict"], _W.get("cand_leaf_cfg"),
+                         jrules_prior=_W.get("cand_jrules_prior"))
     champ = _make_champion(_W["info"], cfg, _W["sims"], _W["k_dets"], _W["exact_k"],
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
@@ -2006,7 +2027,7 @@ def _build_work(seed_start, n, paired):
 
 # --------------------------------------------------------------------------- #
 def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
-           opp_label=None) -> int:
+           opp_label=None, cand_jrules_prior=None) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
     and print an elo/z summary. Exits 0 on success.
@@ -2019,7 +2040,11 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     worker rep-passing or SHM slot sizing. Drive a small real `--workers 2` run to
     exercise those."""
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
-                           args.final_select, args.value_norm, cand_leaf_cfg)
+                           args.final_select, args.value_norm, cand_leaf_cfg,
+                           jrules_prior=cand_jrules_prior)
+    if cand_jrules_prior is not None:
+        print(f"[smoke] J-RULES PRIOR surface B LIVE on the candidate: "
+              f"{cand_jrules_prior} (leaf hash does NOT move — check the dose)")
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
                       "final_select": args.final_select, "value_norm": args.value_norm}
@@ -2480,6 +2505,24 @@ def main(argv=None) -> int:
                          "on the Cython float leaf (object-forcing terms are rejected). Shares the "
                          "parser/guard with eval_puct_priors.py (c5_leaf_override.py). "
                          "e.g. curve125: '{\"v29_meeple_curve\": [-10,-5,-1.25,0,2.5,3.75,5,6.25]}'.")
+    ap.add_argument("--cand-jrules-prior-dose", type=float, default=0.0,
+                    help="J-RULES PRIOR surface B (measurement/jrules_priors_20260814): "
+                         "boost the CANDIDATE search's expansion priors by the anchor's "
+                         "J-rules — each legal child's dleaf gets dose*T(child) added "
+                         "BEFORE the prior softmax (leaf values untouched; the leaf hash "
+                         "does NOT move, so the manifest's cand_jrules_prior.dose is the "
+                         "wiring gate). 0.0 (default) = OFF = byte-identical. RUST-ONLY: "
+                         "a nonzero dose hard-exits unless the resolved backend is rust, "
+                         "and a stale carc_rs wheel raises TypeError (fail-closed).")
+    ap.add_argument("--cand-jrules-prior-mask", type=int, default=31,
+                    help="surface-B per-rule ablation mask (JR_J1|J2|J5|J6|J8 == 31, the "
+                         "default bundle). Only read when the dose is nonzero.")
+    ap.add_argument("--cand-jrules-prior-scope", choices=("all", "own"), default="all",
+                    help="surface-B scope: 'all' = every expansion, mover POV (the "
+                         "primary; the structural analogue of the house priors); 'own' = "
+                         "only root-player nodes (the opponent-model-free ablation; "
+                         "measured cheaper, ~1.07x vs ~1.15x). Only read when the dose "
+                         "is nonzero.")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
     ap.add_argument("--paired", action="store_true")
@@ -2889,6 +2932,31 @@ def main(argv=None) -> int:
     if _backend == "rust" and args.info not in ("fair", "clair"):
         ap.error(f"--backend rust reaches --info fair|clair only; got --info {args.info} "
                  "(carc_rs has no net evaluator)")
+    # J-RULES PRIOR surface B: resolve the CANDIDATE-ONLY knobs once, fail fast.
+    # None == OFF == every historical run, byte-identical. The resolved dict is
+    # what the workers consume AND what the manifest stamps (the wiring gate is
+    # the RESOLVED dose — this surface deliberately moves no leaf hash).
+    _cand_jrules_prior = None
+    if float(args.cand_jrules_prior_dose) != 0.0:
+        if _backend != "rust":
+            ap.error(f"--cand-jrules-prior-dose {args.cand_jrules_prior_dose} is "
+                     f"RUST-ONLY (surface B lives in carc_core::search); resolved "
+                     f"backend is {_backend!r}. The python search path would "
+                     "fail-loud in every worker — refusing up front instead.")
+        if args.info != "fair":
+            ap.error("--cand-jrules-prior-dose applies to the FAIR candidate "
+                     f"(--info fair); got --info {args.info}")
+        _cand_jrules_prior = dict(dose=float(args.cand_jrules_prior_dose),
+                                  mask=int(args.cand_jrules_prior_mask),
+                                  scope=str(args.cand_jrules_prior_scope))
+        # Construct once here so a bad mask/scope dies at launch, not in a worker
+        # (HeuristicPriorConfig.__post_init__ validates), and so a stale carc_rs
+        # wheel dies HERE with the fail-closed TypeError rather than 30 s in.
+        _probe_cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
+                                      args.final_select, args.value_norm,
+                                      None, jrules_prior=_cand_jrules_prior)
+        from carcassonne_ai.rust_agent import search_config_rs as _sc_rs
+        _sc_rs(_probe_cfg, 8)  # TypeError here == rebuild the wheel on THIS box
     if args.rust_threads is not None and _backend != "rust":
         ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
     if args.rust_threads is not None and args.info == "clair":
@@ -2956,6 +3024,7 @@ def main(argv=None) -> int:
             ap.error("--smoke does not drive the orch path (single-process CPU only); "
                      "run verify_sighted_orch_parity.py + an --orch-shm-name n=20 eval instead")
         return _smoke(args, cand_leaf_cfg, opp_leaf_cfg=opp_leaf_cfg, opp_rep=opp_rep,
+                      cand_jrules_prior=_cand_jrules_prior,
                       opp_label=opp_label)
 
     if args.info in ("fair-net", "fair-netprior") and not args.net:
@@ -3008,7 +3077,8 @@ def main(argv=None) -> int:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
 
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
-                           args.final_select, args.value_norm, cand_leaf_cfg)
+                           args.final_select, args.value_norm, cand_leaf_cfg,
+                           jrules_prior=_cand_jrules_prior)
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
                       "final_select": args.final_select, "value_norm": args.value_norm}
@@ -3280,6 +3350,12 @@ def main(argv=None) -> int:
         "cand_leaf_json": args.cand_leaf_json,
         "cand_leaf_cfg": _leaf_dict(leaf_cfg),
         "cand_leaf_hash": _leaf_hash(leaf_cfg),
+        # J-RULES PRIOR surface B (CANDIDATE side only; None == OFF == every
+        # historical cell). ⚠️ THE WIRING GATE FOR A LIVE TERM IS THIS RESOLVED
+        # DICT — surface B moves NO leaf hash (cand_leaf_hash above can EQUAL
+        # the champion's on a live-term cell), so a moved-hash check proves
+        # nothing here. A reader must check cand_jrules_prior.dose directly.
+        "cand_jrules_prior": _cand_jrules_prior,
         # rung_leaf_* is the env DEFAULT_CONFIG. For --opponent h800 it IS the opponent's
         # leaf (the ruler). For a head-to-head no agent uses it — it is recorded anyway as
         # the PROOF that the in-process curve125 injection did not move DEFAULT_CONFIG.
@@ -3612,7 +3688,7 @@ def main(argv=None) -> int:
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
-                          _simsplit))
+                          _simsplit, _cand_jrules_prior))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -3626,7 +3702,7 @@ def main(argv=None) -> int:
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
-                          _simsplit))
+                          _simsplit, _cand_jrules_prior))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
