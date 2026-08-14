@@ -1122,6 +1122,15 @@ def flat_opencity_term(state, player: int, decomp: Decomp, cfg) -> float:
     Per-side contributions are fsum-reduced (order-independent), mirrored
     bit-exactly by the Rust `carc_core::leaf::opencity_term`.
 
+    ``opencity_cap`` (added 2026-08-14, the round-2 falsifier of CL-080's
+    uncapped-product form): when ``> 0.0``, each qualifying city's contribution
+    is capped PER CITY at ``opencity_cap`` (in the term's own units, before the
+    dose multiply) — ``min(raw, cap)``, applied before the fsum so the cap can
+    never be reallocated across cities. ``0.0`` (default) == uncapped == the
+    cap branch is NEVER taken, so the term is bit-exact with the CL-080-era
+    build at the same dose. At cap 1.0 the term degenerates to a count of
+    qualifying cities per side (TERM_SPEC §9 item 3's "all-or-nothing switch").
+
     ⚠️ The term ADJUSTS, it never REPLACES: the closure-anticipation credit the
     same city earns through `flat_closure_bonus` is untouched, and this
     subtraction is applied separately (and uncapped) on top of it — the two are
@@ -1146,6 +1155,7 @@ def flat_opencity_term(state, player: int, decomp: Decomp, cfg) -> float:
             ent[pl] += _meeple_weight(mp.meeple_type)
     size_min = cfg.opencity_size_min
     edge_min = cfg.opencity_edge_min
+    cap = getattr(cfg, "opencity_cap", 0.0)
     contribs: list = [[], []]            # per-player penalty contributions
     for root, cnt in city_counts.items():
         if cnt[0] > cnt[1]:
@@ -1162,8 +1172,10 @@ def flat_opencity_term(state, player: int, decomp: Decomp, cfg) -> float:
         tiles = len(decomp.city_root_coords[root])
         if tiles < size_min:             # not large
             continue
-        contribs[owner].append(
-            (float(tiles) - size_min + 1.0) * (float(open_n) - float(edge_min) + 1.0))
+        contrib = (float(tiles) - size_min + 1.0) * (float(open_n) - float(edge_min) + 1.0)
+        if cap > 0.0 and contrib > cap:  # per-city cap (0.0 == uncapped: branch never taken)
+            contrib = cap
+        contribs[owner].append(contrib)
     pen_self = math.fsum(contribs[player])
     if not cfg.opencity_symmetric:
         return pen_self

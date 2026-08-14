@@ -97,6 +97,7 @@ _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.
                                  "denial_open_max": 2,
                                  "opencity_dose": 0.0, "opencity_size_min": 4.0,
                                  "opencity_edge_min": 2, "opencity_symmetric": True,
+                                 "opencity_cap": 0.0,
                                  "jrules_dose": 0.0, "jrules_mask": 31}
 
 

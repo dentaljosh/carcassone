@@ -498,3 +498,196 @@ def test_rust_leaf_terms_exposes_opencity():
     d = flat_leaf.decompose(b.state)
     assert (ms.leaf_terms(0, leaf_config_rs(O_LOOSE))["opencity_term"]
             == pytest.approx(flat_leaf.flat_opencity_term(b.state, 0, d, O_LOOSE)))
+
+
+# --------------------------------------------------------------------------- #
+# 8. opencity_cap — the round-2 PER-CITY cap (added 2026-08-14).               #
+# CL-080 closed arm A on an UNCAPPED product (a 10-tile 4-open city was 21     #
+# leaf points at dose 1.0 — TERM_SPEC §9 item 3), and the capped form is one   #
+# of CL-080's own named falsifiers. Contracts:                                 #
+#   (a) DEFAULT IS UNCAPPED AND BIT-EXACT with the CL-080-era term at the same #
+#       dose (cap 0.0 never takes the branch; a huge cap composes to identity);#
+#   (b) the champion's fingerprints stay unchanged across the fifth field;     #
+#   (c) the cap binds PER CITY, before the fsum — never reallocated across     #
+#       cities — and cap 1.0 degenerates to a count of qualifying cities;      #
+#   (d) antisymmetry survives the cap; the leaf still moves by exactly         #
+#       `-dose * T`;                                                           #
+#   (e) rust == python bit-exactly with the cap ON, and leaf_config_rs         #
+#       forwards `opencity_cap` NESTED-conditionally (an opencity-capable but  #
+#       cap-stale wheel keeps serving uncapped cells; a nonzero cap raises     #
+#       TypeError there rather than silently serving the CL-080 arm).          #
+# --------------------------------------------------------------------------- #
+O_CAP1 = dc.replace(O_LOOSE, opencity_cap=1.0)     # count-of-cities degenerate form
+O_CAP2 = dc.replace(O_ONE, opencity_cap=2.0)
+O_CAPBIG = dc.replace(O_LOOSE, opencity_cap=1e18)  # never binds -> must equal O_LOOSE
+
+
+def test_cap_default_off_and_env(monkeypatch):
+    assert DEFAULT_CONFIG.opencity_cap == 0.0
+    monkeypatch.setenv("CARCASSONNE_OPENCITY_CAP", "2.5")
+    assert _config_from_env().opencity_cap == 2.5
+    monkeypatch.delenv("CARCASSONNE_OPENCITY_CAP")
+    assert _config_from_env().opencity_cap == 0.0
+
+
+def test_cap_champion_hashes_unchanged_and_capped_leaf_is_new():
+    from carcassonne_ai.alphabeta_agent import _leaf_hash
+
+    # (b) the fifth field at its default moves NO fingerprint
+    assert _leaf_hash(CHAMP) == "a36d2e15a3b3d71d"
+    assert _leaf_hash(dc.replace(CHAMP, opencity_cap=0.0)) == "a36d2e15a3b3d71d"
+    # a live-dose cell keeps its CL-080-era hash while the cap is default...
+    assert _leaf_hash(dc.replace(O_HALF, opencity_cap=0.0)) == _leaf_hash(O_HALF)
+    # ...and a SET cap is a NEW leaf at the same dose
+    assert _leaf_hash(O_CAP2) != _leaf_hash(O_ONE)
+    assert _leaf_hash(O_CAP1) != _leaf_hash(O_LOOSE)
+
+
+def test_cap_binds_per_city_before_the_fsum():
+    # one city, raw (7-4+1)*(4-2+1) = 12 -> capped at 2
+    st, d = _mk({7: (False, 4, 7)}, [(0, 7, N)])
+    assert flat_leaf.flat_opencity_term(st, 0, d, O_CAP2) == pytest.approx(2.0)
+    # (c) PER CITY: raws 6 and 1 with cap 2 -> 2 + 1 = 3 (not min(7, 2))
+    st, d = _mk({1: (False, 3, 6), 2: (False, 2, 4)}, [(0, 1, N), (0, 2, N)])
+    assert flat_leaf.flat_opencity_term(st, 0, d, O_CAP2) == pytest.approx(3.0)
+    # a non-binding cap changes nothing (raw 1.0 <= cap 2.0)
+    st, d = _mk({7: (False, 2, 4)}, [(0, 7, N)])
+    assert flat_leaf.flat_opencity_term(st, 0, d, O_CAP2) == pytest.approx(1.0)
+    # cap 1.0 == count of qualifying cities (the all-or-nothing switch form)
+    st, d = _mk({1: (False, 3, 6), 2: (False, 2, 4), 3: (False, 4, 9)},
+                [(0, 1, N), (0, 2, N), (0, 3, N)])
+    assert flat_leaf.flat_opencity_term(
+        st, 0, d, dc.replace(O_ONE, opencity_cap=1.0)) == pytest.approx(3.0)
+    # the cap applies to the OPPONENT's side of the differential too
+    st, d = _mk({1: (False, 4, 7)}, [(1, 1, N)])
+    assert flat_leaf.flat_opencity_term(st, 0, d, O_CAP2) == pytest.approx(-2.0)
+
+
+def test_cap_uncapped_default_is_bit_identical(states):
+    """(a) cap 0.0 == the CL-080-era term bit-for-bit at the same dose, and a
+    never-binding cap composes to the identity — on both leaf paths."""
+    for st in states:
+        for p in (0, 1):
+            ref_f = flat_leaf.flat_virtual_score_v2_float(st, p, O_LOOSE)
+            cap0 = dc.replace(O_LOOSE, opencity_cap=0.0)
+            assert flat_leaf.flat_virtual_score_v2_float(st, p, cap0).hex() == ref_f.hex()
+            assert flat_leaf.flat_virtual_score_v2_float(st, p, O_CAPBIG).hex() == ref_f.hex()
+            assert (flat_leaf.flat_virtual_score_v2(st, p, O_CAPBIG)
+                    == flat_leaf.flat_virtual_score_v2(st, p, O_LOOSE))
+
+
+def test_cap_antisymmetry_and_exact_dose_move(states):
+    """(d) T(p) == -T(1-p) with the cap on; the leaf still moves by -dose*T."""
+    fired = capped_differs = 0
+    for st in states:
+        d = flat_leaf.decompose(st)
+        for p in (0, 1):
+            ref = flat_leaf.flat_virtual_score_v2_float(st, p, CHAMP)
+            for cfg in (O_CAP1, O_CAP2):
+                t0 = flat_leaf.flat_opencity_term(st, 0, d, cfg)
+                t1 = flat_leaf.flat_opencity_term(st, 1, d, cfg)
+                assert t0 == pytest.approx(-t1, abs=1e-12)
+                t = t0 if p == 0 else t1
+                got = flat_leaf.flat_virtual_score_v2_float(st, p, cfg)
+                assert got == pytest.approx(ref - cfg.opencity_dose * t, abs=1e-9)
+                if t:
+                    fired += 1
+            # the cap must actually BIND somewhere on the corpus, else this file
+            # would be proving identities about an inert knob
+            raw = flat_leaf.flat_opencity_term(st, p, d, O_LOOSE)
+            cap1 = flat_leaf.flat_opencity_term(st, p, d, O_CAP1)
+            if raw != cap1:
+                capped_differs += 1
+    assert fired > 0, "capped open-city term never fired on the corpus"
+    assert capped_differs > 0, "cap 1.0 never bound on the corpus — inert fixture set"
+
+
+def test_cap_guard_rejects_negative():
+    import sys
+    from pathlib import Path
+
+    p = str(Path(__file__).resolve().parents[1] / "scripts" / "classical_search")
+    if p not in sys.path:
+        sys.path.insert(0, p)
+    import c5_leaf_override as ovr
+
+    cfg = ovr._load_cand_leaf_cfg(
+        '{"opencity_dose": 1.0, "opencity_cap": -1.0,'
+        ' "v29_meeple_curve": [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]}')
+    with pytest.raises(ValueError, match="opencity_cap"):
+        ovr._assert_cy_float_path(cfg)
+
+
+def _rs_supports_opencity_cap(carc_rs) -> bool:
+    try:
+        carc_rs.LeafConfigRs([(1, 0.5)], 8.0, 8.0, opencity_dose=1.0,
+                             opencity_cap=1.0)
+        return True
+    except TypeError:
+        return False
+
+
+def test_leaf_config_rs_forwards_cap_nested_conditionally():
+    """(e) `opencity_cap` rides only when nonzero: an UNCAPPED cell builds on any
+    opencity-capable wheel (no cap kwarg passed), and a CAPPED cell either forwards
+    (cap-capable build) or raises TypeError (cap-stale build — fail-closed loud,
+    never a silently-UNCAPPED leaf, which would re-run CL-080's arm)."""
+    carc_rs = pytest.importorskip("carc_rs")
+    if not _rs_supports_opencity(carc_rs):
+        pytest.skip("carc_rs build predates the open-city term (rebuild the wheel)")
+    from carcassonne_ai.rust_agent import leaf_config_rs
+
+    leaf_config_rs(O_LOOSE)     # uncapped nonzero dose -> no cap kwarg -> any opencity build
+    if _rs_supports_opencity_cap(carc_rs):
+        r = repr(leaf_config_rs(O_CAP2))
+        assert "opencity_cap: 2.0" in r, r
+        assert "opencity_dose: 1.0" in r, r
+    else:
+        with pytest.raises(TypeError):
+            leaf_config_rs(O_CAP2)
+
+
+def test_rust_parity_spot_check_capped():
+    """py == rust bit-exactly with the CAP ON along one replayed game (the
+    full-corpus version is `reconcile_leaf.py --configs opencity`, which carries
+    the two capped cells)."""
+    carc_rs = pytest.importorskip("carc_rs")
+    if not _rs_supports_opencity_cap(carc_rs):
+        pytest.skip("carc_rs build predates opencity_cap (rebuild the wheel)")
+    from carcassonne_ai.rust_agent import leaf_config_rs
+
+    cfgs = {"cap1": O_CAP1, "cap2": O_CAP2,
+            "capasym": dc.replace(O_ASYM, opencity_cap=1.0)}
+    rcfgs = {name: leaf_config_rs(cfg) for name, cfg in cfgs.items()}
+
+    import random as _r
+
+    # The engine's deck shuffle consumes the GLOBAL random stream, and sibling
+    # modules build their corpora off it (test_jrules_term's J8-fires check is
+    # corpus-sensitive at ~3% fire rate) — so this ADDED test must be
+    # state-neutral or it silently reshuffles every module collected after it.
+    _saved_state = _r.getstate()
+    g2 = Game(enable_legal_moves_cache=True)
+    _r.seed(4242)
+    b = g2.get_init_board()
+    ms = carc_rs.MirrorState.from_seed("4242")
+    rng = random.Random(1)
+    checked = 0
+    for ply in range(130):
+        if g2.get_game_ended(b, 0) != 0.0:
+            break
+        if ply >= 16 and ply % 5 == 0:
+            for name, cfg in cfgs.items():
+                for p in (0, 1):
+                    py_f = flat_leaf.flat_virtual_score_v2_float(b.state, p, cfg)
+                    rs_f = ms.leaf_value_float(p, rcfgs[name])
+                    assert py_f.hex() == rs_f.hex(), (name, ply, p, py_f, rs_f)
+                    assert (flat_leaf.flat_virtual_score_v2(b.state, p, cfg)
+                            == ms.leaf_value(p, rcfgs[name]))
+                    checked += 2
+        legal = np.flatnonzero(g2.get_valid_moves(b))
+        a = int(rng.choice(legal.tolist()))
+        b, _ = g2.get_next_state(b, a)
+        ms.advance(a)
+    _r.setstate(_saved_state)
+    assert checked >= 100, f"only {checked} capped comparisons"

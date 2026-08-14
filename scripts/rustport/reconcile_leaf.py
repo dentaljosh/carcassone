@@ -56,12 +56,14 @@ including a beta=0 identity control and two betas large enough to exercise the
 `core` plus four **targeted-denial** cells (`denial_dose` / `denial_size_min` /
 `denial_open_max`, LEVER_INDEX "targeted denial", building 2026-08-11) including
 a dose=0 identity control with MOVED thresholds (must reproduce `prod-curve125`
-exactly — the dose gates the whole term). `opencity` = `core` plus five
+exactly — the dose gates the whole term). `opencity` = `core` plus seven
 **open-city-discipline** cells (`opencity_dose` / `opencity_size_min` /
-`opencity_edge_min` / `opencity_symmetric`, LEVER_INDEX "penalize large open
-cities", spec `measurement/opencity_term_20260812/TERM_SPEC.md`, building
-2026-08-12) including a dose=0 identity control with MOVED thresholds and one
-asymmetric (`opencity_symmetric=False`) cell. `jrules` = `core` plus six
+`opencity_edge_min` / `opencity_symmetric` / `opencity_cap`, LEVER_INDEX
+"penalize large open cities", spec
+`measurement/opencity_term_20260812/TERM_SPEC.md`, building 2026-08-12; the
+`opencity_cap` cells added 2026-08-14 for the round-2 capped form) including a
+dose=0 identity control with MOVED thresholds, one asymmetric
+(`opencity_symmetric=False`) cell and two per-city-capped cells. `jrules` = `core` plus six
 **J-rules-on-search** cells (`jrules_dose` / `jrules_mask`, spec
 `measurement/jrules_on_search_20260813/DESIGN.md`, building 2026-08-13) including a
 dose=0 identity control with a MOVED mask and two mask ablations — `j1only` (the
@@ -148,6 +150,7 @@ CY_UNSUPPORTED = frozenset({"farmbaseoff", "farmgrowthoff", "farmbothoff",
                             "denial-d0.5", "denial-d1.0", "denial-d2.0-s6-o3",
                             "opencity-d0.5", "opencity-d1.0", "opencity-d2.0-s6-e3",
                             "opencity-d1.0-asym",
+                            "opencity-d1.0-cap1", "opencity-d2.0-cap3",
                             "jrules-d0.5", "jrules-d1.0", "jrules-d1.0-j1only",
                             "jrules-d1.0-noj5", "jrules-d2.0"})
 
@@ -229,6 +232,18 @@ def _cfgs(which: str) -> dict[str, LeafConfig]:
                                               opencity_edge_min=3),
             "opencity-d1.0-asym": LeafConfig(**prodo, opencity_dose=1.0,
                                              opencity_symmetric=False),
+            # opencity_cap cells (2026-08-14, the round-2 capped form): per-city
+            # cap on the raw product BEFORE the dose multiply. cap=1.0 is the
+            # count-of-qualifying-cities degenerate form (max distance from the
+            # CL-080 uncapped product); cap=3.0 at the moved-thresholds dose-2.0
+            # cell exercises cap+threshold interaction. LOOSE thresholds on the
+            # cap1 cell so the cap actually binds on random-corpus states.
+            "opencity-d1.0-cap1": LeafConfig(**prodo, opencity_dose=1.0,
+                                             opencity_size_min=2.0,
+                                             opencity_edge_min=1,
+                                             opencity_cap=1.0),
+            "opencity-d2.0-cap3": LeafConfig(**prodo, opencity_dose=2.0,
+                                             opencity_cap=3.0),
         })
         return core
     if which == "jrules":
@@ -333,10 +348,13 @@ def _to_rs(cfg: LeafConfig):
         float(getattr(cfg, "denial_size_min", 8.0)),
         int(getattr(cfg, "denial_open_max", 2)),
         # Open-city discipline — likewise passed unconditionally (same rationale).
+        # ⚠️ POSITIONAL: opencity_cap sits between opencity_symmetric and jrules_dose
+        # in the LeafConfigRs signature; keep this order in lockstep with carc-py.
         float(getattr(cfg, "opencity_dose", 0.0)),
         float(getattr(cfg, "opencity_size_min", 4.0)),
         int(getattr(cfg, "opencity_edge_min", 2)),
         bool(getattr(cfg, "opencity_symmetric", True)),
+        float(getattr(cfg, "opencity_cap", 0.0)),
         # J-rules on search — likewise passed unconditionally (same rationale).
         float(getattr(cfg, "jrules_dose", 0.0)),
         int(getattr(cfg, "jrules_mask", 31)),

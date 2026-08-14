@@ -4,7 +4,7 @@ rate that gates whether a strength screen is bought at all.
 
     scripts/classical_search/opencity_e4_replay.py \
         -o measurement/opencity_term_20260812/calib \
-        [--arm NAME:SIZE_MIN:EDGE_MIN:DOSE ...] [--workers 6] \
+        [--arm NAME:SIZE_MIN:EDGE_MIN:DOSE[:CAP] ...] [--workers 6] \
         [--limit-games 1] [--limit-plies 0] [--archive-dir measurement/e4_games]
 
 Sibling of `scripts/classical_search/denial_e4_replay.py` (the template of
@@ -135,14 +135,22 @@ class Arm:
     size_min: float
     edge_min: int
     dose: float
+    #: PER-CITY cap on the raw product contribution (`LeafConfig.opencity_cap`,
+    #: added 2026-08-14 for the round-2 capped form). 0.0 == uncapped == the
+    #: CL-080-era term bit-exactly. Unlike `opencity_symmetric` this IS a per-arm
+    #: field: a capped arm and an uncapped arm are different cells on the same
+    #: ladder shape, and the cap rides in the 5th `--arm` field.
+    cap: float = 0.0
 
     def spec(self) -> str:
         """The `--arm` string that round-trips back to this Arm."""
-        return f"{self.name}:{self.size_min:g}:{self.edge_min:d}:{self.dose:g}"
+        base = f"{self.name}:{self.size_min:g}:{self.edge_min:d}:{self.dose:g}"
+        return base + (f":{self.cap:g}" if self.cap > 0.0 else "")
 
     def as_dict(self) -> dict:
         return {"name": self.name, "size_min": float(self.size_min),
-                "edge_min": int(self.edge_min), "dose": float(self.dose)}
+                "edge_min": int(self.edge_min), "dose": float(self.dose),
+                "cap": float(self.cap)}
 
 
 def parse_arm(spec: str) -> Arm:
@@ -158,11 +166,12 @@ def parse_arm(spec: str) -> Arm:
     if not raw:
         raise ValueError("--arm is empty; expected NAME:SIZE_MIN:EDGE_MIN:DOSE")
     parts = raw.split(":")
-    if len(parts) != 4:
+    if len(parts) not in (4, 5):
         raise ValueError(
-            f"--arm {spec!r}: expected exactly 4 colon-separated fields "
-            f"NAME:SIZE_MIN:EDGE_MIN:DOSE, got {len(parts)}")
-    name, s_raw, e_raw, d_raw = (p.strip() for p in parts)
+            f"--arm {spec!r}: expected 4 or 5 colon-separated fields "
+            f"NAME:SIZE_MIN:EDGE_MIN:DOSE[:CAP], got {len(parts)}")
+    name, s_raw, e_raw, d_raw = (p.strip() for p in parts[:4])
+    c_raw = parts[4].strip() if len(parts) == 5 else "0"
 
     if not name:
         raise ValueError(f"--arm {spec!r}: NAME is empty")
@@ -209,7 +218,21 @@ def parse_arm(spec: str) -> Arm:
             "identical), and the champion already runs as the reference arm on every "
             "ply, so a dose-0 candidate would read a guaranteed perfect null")
 
-    return Arm(name=name, size_min=size_min, edge_min=edge_min, dose=dose)
+    try:
+        cap = float(c_raw)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"--arm {spec!r}: CAP {c_raw!r} is not a number (opencity_cap is a "
+            "per-city cap on the raw product; 0 == uncapped)") from None
+    if not math.isfinite(cap):
+        raise ValueError(f"--arm {spec!r}: CAP {c_raw!r} is not finite")
+    if cap < 0.0:
+        raise ValueError(
+            f"--arm {spec!r}: CAP must be >= 0, got {cap:g} — 0 is the explicit "
+            "uncapped (CL-080-era) form; a negative per-city cap is undefined "
+            "(c5_leaf_override raises on it too)")
+
+    return Arm(name=name, size_min=size_min, edge_min=edge_min, dose=dose, cap=cap)
 
 
 def parse_arms(specs) -> tuple:
@@ -227,13 +250,13 @@ def parse_arms(specs) -> tuple:
                 f"duplicate arm NAME {arm.name!r}: {by_name[arm.name].spec()!r} and "
                 f"{arm.spec()!r} — names key every flip column in the rollup, so they "
                 "must be unique")
-        knobs = (arm.size_min, arm.edge_min, arm.dose)
+        knobs = (arm.size_min, arm.edge_min, arm.dose, arm.cap)
         if knobs in by_knobs:
             raise ValueError(
                 f"arm {arm.name!r} duplicates the knobs of {by_knobs[knobs].name!r} "
                 f"(size_min={arm.size_min:g}, edge_min={arm.edge_min}, "
-                f"dose={arm.dose:g}) — two names for one cell would double its search "
-                "cost and read as two independent measurements")
+                f"dose={arm.dose:g}, cap={arm.cap:g}) — two names for one cell would "
+                "double its search cost and read as two independent measurements")
         by_name[arm.name] = arm
         by_knobs[knobs] = arm
         arms.append(arm)
@@ -323,7 +346,7 @@ def rollup_from_summaries(summaries) -> dict:
     for s in summaries:
         for a in s.get("arms", []):
             knobs.setdefault(a["name"], {k: a.get(k) for k in
-                                         ("size_min", "edge_min", "dose",
+                                         ("size_min", "edge_min", "dose", "cap",
                                           "symmetric", "leaf_hash")})
 
     return {
@@ -452,7 +475,8 @@ def _make_arms(game, spec, ex, seed, sims, k_dets, arms, symmetric):
                             opencity_dose=float(arm.dose),
                             opencity_size_min=float(arm.size_min),
                             opencity_edge_min=int(arm.edge_min),
-                            opencity_symmetric=bool(symmetric))
+                            opencity_symmetric=bool(symmetric),
+                            opencity_cap=float(arm.cap))
         h = _leaf_hash_of(leaf_a)
         # THE silent-null guard: a candidate that hashes to the champion is a
         # champion-vs-champion cell that reads as a perfect null.
@@ -672,8 +696,10 @@ def main(argv=None):
                          "orchestrator spawns one subprocess per archive so each "
                          "gets a fresh R9 import latch)")
     ap.add_argument("-o", "--out-dir", required=True)
-    ap.add_argument("--arm", action="append", default=None, metavar="N:S:E:D",
-                    help="repeatable calibration cell NAME:SIZE_MIN:EDGE_MIN:DOSE; "
+    ap.add_argument("--arm", action="append", default=None, metavar="N:S:E:D[:C]",
+                    help="repeatable calibration cell NAME:SIZE_MIN:EDGE_MIN:DOSE[:CAP] "
+                         "(CAP = opencity_cap, per-city cap on the raw product; omitted "
+                         "or 0 == uncapped, the CL-080-era form); "
                          f"default = the pre-registered ladder {list(DEFAULT_ARM_SPECS)}")
     ap.add_argument("--asymmetric", action="store_true",
                     help="run ALL arms with opencity_symmetric=False (own-side-only "

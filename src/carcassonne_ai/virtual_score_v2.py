@@ -312,6 +312,22 @@ class LeafConfig:
     opencity_size_min: float = 4.0
     opencity_edge_min: int = 2
     opencity_symmetric: bool = True
+    #   opencity_cap:       PER-CITY cap on the raw product contribution, in the
+    #                       term's own units (BEFORE the dose multiply). 0.0
+    #                       (default) == UNCAPPED == bit-exact with the CL-080-era
+    #                       term at the same dose (the cap branch is never taken).
+    #                       > 0.0 -> each qualifying city contributes
+    #                       min(raw, opencity_cap); at cap 1.0 the term degenerates
+    #                       to a COUNT of qualifying cities per side (the
+    #                       "all-or-nothing switch" form TERM_SPEC §9 item 3 named).
+    #                       Added 2026-08-14 (round-2 falsifier of CL-080: the
+    #                       tested arm-A form was an UNCAPPED product — a 10-tile
+    #                       4-open city was 21 leaf points at dose 1.0 — and §9's
+    #                       double-count/horizon caveat is the leading explanation
+    #                       of the monotone harm). Negative values are invalid
+    #                       (c5_leaf_override raises). Same exclude-while-default
+    #                       hashing rule as the four knobs above.
+    opencity_cap: float = 0.0
     # --- J-RULES ON SEARCH — the 2026-08-12 anchor interview as a leaf bundle
     # (candidate-only; measurement/jrules_on_search_20260813/DESIGN.md, building
     # 2026-08-13) ---------------------------------------------------------------
@@ -412,6 +428,7 @@ def _config_from_env() -> LeafConfig:
         opencity_size_min=float(os.environ.get("CARCASSONNE_OPENCITY_SIZE_MIN", "4.0")),
         opencity_edge_min=int(os.environ.get("CARCASSONNE_OPENCITY_EDGE_MIN", "2")),
         opencity_symmetric=(os.environ.get("CARCASSONNE_OPENCITY_SYMMETRIC", "1") == "1"),
+        opencity_cap=float(os.environ.get("CARCASSONNE_OPENCITY_CAP", "0.0")),
         # J-rules on search — default 0.0 == bundle fully off == unchanged production
         # DEFAULT_CONFIG (the phase-beta / denial / open-city pattern).
         jrules_dose=float(os.environ.get("CARCASSONNE_JRULES_DOSE", "0.0")),
