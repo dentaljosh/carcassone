@@ -1,0 +1,18 @@
+{
+  "schema": "carcassonne-tieescalation-ladder/v1",
+  "phase": "search",
+  "profile": "fixed_v1",
+  "slice": "dev",
+  "rungs": [
+    1376,
+    2752,
+    5504,
+    13760
+  ],
+  "workers": 22,
+  "n_slice_rids": 30,
+  "n_searched": 30,
+  "n_error": 0,
+  "wall_secs": 81.6,
+  "started_utc": "2026-08-14T20:28:04Z"
+}
