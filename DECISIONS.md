@@ -7053,3 +7053,60 @@ entry · status banners on `DEPLOY_PREREG.md`, `DESIGN.md` and `CALIB_READOUT.md
 Plus the `LEVER_INDEX` surface-B row. Nothing promoted; `governance/PRODUCTION.yaml`
 **untouched**.
 **Phase:** measurement-first (human-edge program, round 2).
+
+## 2026-08-14 — TILE-TIE ATTEMPT 2 (R2-1b, the DESIGN §7.2 MINED route) — **mining found the tie sets structurally homogeneous, the mined 3-candidate gate FAILED AT ITS DEV SCREEN (`G2-SCREEN-FAIL`, z +0.06), and the pre-firewalled 30%-root holdout was NEVER OPENED — it stays unburned.** Two failed menus on a real +0.234 ceiling now bound the axis
+
+**Decision.** Execute the spent gate's own §7.2 re-open prescription in the stated order — mine
+what separates the oracle-best arm from the incumbent FIRST, then hand-craft — under a
+corpus-reuse firewall committed before any statistic: `HOLDOUT_ROOTS.json` (120/399 roots =
+211/733 positions, seed 2026081402, commit `a2f05436`) whose oracle records the mining never
+parses (skipped by FILENAME, analyzer-asserted). Then gate exactly 3 mined candidates under a
+fresh read-rule (`93db1117`, before any cross-fit number) where the dev cross-fit is a SCREEN
+ONLY (the mining shopped the dev labels — stated in the rule itself) and conviction is reserved
+for a one-shot FINAL-slice read of the single pre-named candidate `dist_own_meeple+`, fired only
+on a screen pass.
+
+**What the mining found (EXPLORATORY by construction, 522 dev positions / 279 roots,
+`measurement/tiletie_mining_20260814/MINING_REPORT.md`).** (1) **A bound, not a feature:** the
+oracle-best and incumbent afterstates are identical on nearly every structural dimension
+(ownership/closure/farm-contest deltas differ on 0–1.6% of disagreement rows); **157/522 pools
+are fully indistinguishable across all 38 mined descriptors**, and ANY deterministic rule over
+the whole descriptor space reaches at most **62%** of the (naive) prize even selected in-sample
+per position. (2) The only |z| ≥ 2 pick rules are **harmful** directions (`occ4-` −0.0794
+z −2.67, `f_perim+` −2.50) whose reverses capture ~nothing — the exploitable ordering sits at
+the BOTTOM of the tie set, unusable by an argmax tie-break. (3) Best positives weak and
+phase-incoherent: `dist_own_meeple+` +0.0532 (z +1.34, in-sample), `dist_centroid-` +0.0476
+(z +1.04).
+
+**Gate result (`GATE2_READOUT.md`).** Screen: 5-fold root-clustered cross-fit held-out
+**+0.0027 ± 0.0420, z +0.06** — the folds flip between `dist_centroid-` and `dist_own_meeple+`
+(selection noise), and the in-sample +0.053 evaporates held-out, the same winner's-curse motion
+as attempt 1. Branch **`G2-SCREEN-FAIL`** ⇒ the FINAL slice was not evaluated; the holdout
+remains available to any future attempt. Cost predictor 1.0146 (moot). Integrity: dev 0
+problems, 0 pool<2 exclusions; 16 instrument tests green.
+
+**Interpretation, binding scope.** This closes *mined-static-afterstate menus on the dev slice
+of this corpus through the in-family ruler* — it does NOT close the axis; the pricing headroom
+(+0.252 pts/ply, z +3.43) stands. But two independent menu families (guessed geometry, mined
+geometry) have now failed on the same real signal, and the mining's reach bound shows ~38% of
+the oracle spread is invisible to a rich afterstate descriptor space *in principle* — together
+these push the residual explanation toward **deck/lookahead-dependent tactics that no cheap
+static function of the afterstate can price**. Any further tile-tie spend should be argued
+search-side (e.g. tie-aware widening/exploration at tied roots), not as another leaf-term menu;
+the ~1–2-pass corpus-shopping cap of attempt 1's §7.1 is now exhausted except for the unburned
+holdout, which should be reserved for a mechanism-argued candidate with real out-of-sample
+teeth.
+
+**Options considered.** (a) Skip the gate and report mining only — refused: the route's whole
+point was to test the mined candidates, and the screen protects the holdout at zero corpus
+cost. (b) Burn the holdout regardless of screen ("we're here anyway") — refused: the read-rule
+forbids it and the screen's z +0.06 makes the expected information ~nil. (c) A wider mined menu
+(10+ candidates like attempt 1) — refused: shopping cap; 3 mechanism-argued candidates were the
+honest maximum. (d) Declare the axis dead — forbidden reading; the ceiling stands.
+
+**Touches:** this entry · MINING_REPORT + GATE2_READ_RULE outcome stamps · LEVER_INDEX tile-tie
+row (attempt-2 append) · docs/INDEX.md rows for both tiletie_term and tiletie_mining dirs ·
+roadmap R2-1b · attempt-1 DESIGN §7.2 executed-note. **No results.csv row, no band, no claim id
+(0-game precedent); `governance/PRODUCTION.yaml` untouched.** Instruments
+`scripts/tiletie/mine_oracle_sep.py` + `term_gate2.py`; tests `tests/test_tiletie_mining.py`.
+**Phase:** measurement-first (human-edge program, round 2).
