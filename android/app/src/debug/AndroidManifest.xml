@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DEBUG-ONLY manifest overlay: merged into debug builds, absent from release.
+     Everything here exists solely for BenchService (the battery A/B bench):
+     a foreground service so the workload survives with the screen off, a
+     partial wakelock to keep the CPU up, and exported=true so the host driver
+     can `am start-foreground-service` it over adb without root. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <service
+            android:name=".BenchService"
+            android:exported="true"
+            android:foregroundServiceType="dataSync" />
+    </application>
+
+</manifest>

@@ -303,6 +303,12 @@ On-device, the **Debug console** (Home → Debug console) is the M0 harness: it 
 bridge directly and prints per-move latency, which is how the difficulty estimates above
 were sized.
 
+**Battery A/B bench (debug builds only):** [`tools/BATTERY_BENCH.md`](tools/BATTERY_BENCH.md)
+— measures joules/move across `rust_threads` arms via the debug-sourceset `BenchService`
++ `tools/battery_bench.sh`, gated on a move-hash witness that the arms did identical work.
+Additive and debug-gated: release builds contain none of it, and it never touches
+`files/games/` or the autosave.
+
 ---
 
 ## 7. Layout
@@ -325,7 +331,10 @@ android/
     ArchiveStore.kt      files/games/ — one file per finished game
   app/src/main/python/android_bridge.py    the ONLY hand-written Python here
   app/src/main/res/                        icon vectors, strings, theme
+  app/src/debug/        BenchService.kt + carc_bench.py — the battery A/B bench
+                        (debug-only; see tools/BATTERY_BENCH.md)
   tools/                sync_python.py · prepare_assets.py · smoke_selfplay.py
+                        battery_bench.sh · battery_bench_lib.py · BATTERY_BENCH.md
 ```
 
 The launcher icon is a vector adaptive icon (`res/drawable/ic_launcher_{foreground,
