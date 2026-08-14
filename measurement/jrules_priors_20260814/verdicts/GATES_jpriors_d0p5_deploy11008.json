@@ -1,0 +1,173 @@
+{
+  "cell": "jpriors_d0p5_deploy11008",
+  "prereg": "measurement/jrules_priors_20260814/DEPLOY_PREREG.md",
+  "all_gates_pass": true,
+  "records": "800/800",
+  "gates": [
+    {
+      "gate": "J1_INVERTED_cand_leaf_hash_EQUALS_champion",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d",
+      "note": "EQUALITY GATE. A MOVED hash is a DEFECT on this surface, not evidence of a live term."
+    },
+    {
+      "gate": "J2_opp_leaf_hash_EQUALS_champion",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "gate": "J3_cand_leaf_json_is_null",
+      "ok": true,
+      "observed": null
+    },
+    {
+      "gate": "J4_LIVENESS_cand_jrules_prior_dose",
+      "ok": true,
+      "observed": {
+        "cand_jrules_prior": {
+          "dose": 0.5,
+          "mask": 31,
+          "scope": "all"
+        },
+        "expected_dose": 0.5
+      },
+      "note": "THE liveness gate. No hash on this surface can substitute for it (see also J13)."
+    },
+    {
+      "gate": "J5_cand_jrules_prior_mask",
+      "ok": true,
+      "observed": 31
+    },
+    {
+      "gate": "J6_cand_jrules_prior_scope",
+      "ok": true,
+      "observed": "all"
+    },
+    {
+      "gate": "J7_no_jrules_on_cand_leaf_or_anywhere_on_opponent",
+      "ok": true,
+      "observed": {
+        "cand_leaf_cfg": {},
+        "opp_leaf_cfg": {},
+        "other_config": {}
+      }
+    },
+    {
+      "gate": "J8_both_budgets_8x1376_11008",
+      "ok": true,
+      "observed": {
+        "champion": [
+          8,
+          1376,
+          11008
+        ],
+        "opponent": [
+          8,
+          1376,
+          11008
+        ]
+      }
+    },
+    {
+      "gate": "J9_rules_fixed_v1_R9",
+      "ok": true,
+      "observed": {
+        "name": "fixed_v1",
+        "r9_env_expected": true,
+        "r9_env_observed": true,
+        "r9_env_ok": true,
+        "leaf_env.CARCASSONNE_FIX_R9": "1"
+      }
+    },
+    {
+      "gate": "J10_backend_rust",
+      "ok": true,
+      "observed": {
+        "requested": "rust",
+        "name": "rust",
+        "converted_sides": [
+          "candidate",
+          "opponent"
+        ]
+      }
+    },
+    {
+      "gate": "J11_records_800_unique_pairs_400_decks_fully_paired",
+      "ok": true,
+      "observed": {
+        "records": 800,
+        "unique_pairs": 800,
+        "missing": 0,
+        "extra": 0,
+        "dup_keys": 0,
+        "unreadable": [],
+        "fully_paired_decks": 400,
+        "band": [
+          130000000000,
+          130000000399
+        ]
+      }
+    },
+    {
+      "gate": "J12_one_manifest_and_records_agree",
+      "ok": true,
+      "observed": {
+        "n_manifests": 1,
+        "distinct_identity_tuples": 1,
+        "keys": [
+          "sims",
+          "k_dets",
+          "exact_k",
+          "opponent",
+          "info",
+          "rung_sims"
+        ],
+        "tuples": [
+          [
+            1376,
+            8,
+            2,
+            "fair-champion",
+            "fair",
+            800
+          ]
+        ]
+      }
+    },
+    {
+      "gate": "J13_positive_control_passed_before_game1",
+      "ok": true,
+      "observed": {
+        "preflight": "PREFLIGHT_jpriors_d0p5_deploy11008_Doctor_FIRST.json",
+        "all_preflight_pass": true,
+        "P1": "PASSED: dose 1.0 moved the expansion priors on the pinned control root (deck seed 28000000000, 30 plies) and left the root leaf value bits intact",
+        "predates_first_record": true,
+        "host": "Doctor"
+      },
+      "note": "_assert_surface_b_live. Without this a zeroed dose grades a perfect champion-vs-champion null wearing the shape of a real cell."
+    }
+  ],
+  "observed_not_gated": {
+    "n_failed": 0,
+    "failure_rate": 0.0,
+    "failed_by_seat": {
+      "0": 0,
+      "1": 0
+    },
+    "N5_trigger_0p5pct_exceeded": false,
+    "band_seed_start": 130000000000,
+    "n_decks": 400,
+    "seatings_per_deck": 2,
+    "cand_curve_drift_allowed": false,
+    "endgame": {
+      "exact_k": 2,
+      "shared_by_both_arms": true
+    },
+    "code_rev": "64651bda-dirty",
+    "host": "Doctor",
+    "box": "local",
+    "workers": 30,
+    "elapsed_s": 8077
+  },
+  "note": "WIRING ONLY -- contains no strength statistic by design (DEPLOY_PREREG.md \u00a76 N0). \u26a0\ufe0f J1 is an EQUALITY gate: surface B moves no leaf hash, so a MOVED candidate hash is a DEFECT, not evidence."
+}

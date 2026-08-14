@@ -1,0 +1,47 @@
+{
+  "kind": "jrules_surface_b_preflight",
+  "host": "Doctor",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "expected": {
+    "dose": 0.5,
+    "mask": 31,
+    "scope": "all",
+    "champion_leaf_hash": "a36d2e15a3b3d71d"
+  },
+  "all_preflight_pass": true,
+  "checks": [
+    {
+      "check": "W1_wheel_has_jrules_prior_probe",
+      "ok": true,
+      "observed": {
+        "carc_rs": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py"
+      }
+    },
+    {
+      "check": "W2_SearchConfigRs_accepts_prior_kwargs",
+      "ok": true,
+      "observed": "dose=0.5 mask=31 scope=all"
+    },
+    {
+      "check": "W3_production_champion_leaf_hash_of_record",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "check": "W4_INVERTED_leaf_hash_UNMOVED_equals_champion",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "check": "W5_search_config_rs_forwards_at_funded_dose",
+      "ok": true,
+      "observed": "SearchConfigRs(sims=8, c_puct=1.5, tau_p=5, value_norm=15, leaf_quantize=Float, final_select=Visits, fpu=None, exp_fma=true, tanh=GlibcFma, jrules_prior_dose=0.5, jrules_prior_mask=31, jrules_prior_scope=All)"
+    },
+    {
+      "check": "P1_assert_surface_b_live",
+      "ok": true,
+      "observed": "PASSED: dose 1.0 moved the expansion priors on the pinned control root (deck seed 28000000000, 30 plies) and left the root leaf value bits intact"
+    }
+  ],
+  "note": "WIRING ONLY. No game played, no strength number read. Gate 13 of measurement/jrules_priors_20260814/DEPLOY_PREREG.md."
+}

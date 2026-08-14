@@ -1,0 +1,59 @@
+[jp-b-deploy 2026-08-14_12:07:25] === START box=local band=130000000000 W=30 n=800 cell=jpriors_d0p5_deploy11008 ===
+[jp-b-deploy 2026-08-14_12:07:25] host=Doctor out=/mnt/c/carc-shared/jrules_priors_deploy_20260814/jpriors_d0p5_deploy11008 repo_head=64651bda
+[jp-b-deploy 2026-08-14_12:07:25] knob: --cand-jrules-prior-dose 0.5 --cand-jrules-prior-mask 31 --cand-jrules-prior-scope all (CANDIDATE side only; NO --cand-leaf-json)
+[jp-b-deploy 2026-08-14_12:07:25] --- PRE-FLIGHT (wheel + _assert_surface_b_live positive control) on Doctor ---
+{
+  "kind": "jrules_surface_b_preflight",
+  "host": "Doctor",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "expected": {
+    "dose": 0.5,
+    "mask": 31,
+    "scope": "all",
+    "champion_leaf_hash": "a36d2e15a3b3d71d"
+  },
+  "all_preflight_pass": true,
+  "checks": [
+    {
+      "check": "W1_wheel_has_jrules_prior_probe",
+      "ok": true,
+      "observed": {
+        "carc_rs": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py"
+      }
+    },
+    {
+      "check": "W2_SearchConfigRs_accepts_prior_kwargs",
+      "ok": true,
+      "observed": "dose=0.5 mask=31 scope=all"
+    },
+    {
+      "check": "W3_production_champion_leaf_hash_of_record",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "check": "W4_INVERTED_leaf_hash_UNMOVED_equals_champion",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "check": "W5_search_config_rs_forwards_at_funded_dose",
+      "ok": true,
+      "observed": "SearchConfigRs(sims=8, c_puct=1.5, tau_p=5, value_norm=15, leaf_quantize=Float, final_select=Visits, fpu=None, exp_fma=true, tanh=GlibcFma, jrules_prior_dose=0.5, jrules_prior_mask=31, jrules_prior_scope=All)"
+    },
+    {
+      "check": "P1_assert_surface_b_live",
+      "ok": true,
+      "observed": "PASSED: dose 1.0 moved the expansion priors on the pinned control root (deck seed 28000000000, 30 plies) and left the root leaf value bits intact"
+    }
+  ],
+  "note": "WIRING ONLY. No game played, no strength number read. Gate 13 of measurement/jrules_priors_20260814/DEPLOY_PREREG.md."
+}
+[jp-b-deploy 2026-08-14_12:07:25] PRE-FLIGHT PASS on Doctor (all_preflight_pass=true) -> /home/doctor/projects/carcassone/measurement/jrules_priors_20260814/verdicts/PREFLIGHT_jpriors_d0p5_deploy11008_Doctor_1786723645.json ; first-attempt copy /home/doctor/projects/carcassone/measurement/jrules_priors_20260814/verdicts/PREFLIGHT_jpriors_d0p5_deploy11008_Doctor_FIRST.json
+[jp-b-deploy 2026-08-14_12:07:25] clock-skew guard OK (0s)
+[jp-b-deploy 2026-08-14_12:07:25] harness argv: /home/doctor/projects/carcassone/.venv/bin/python -u /home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py --info fair --opponent fair-champion --backend rust --k-dets 8 --sims 1376 --opp-k-dets 8 --opp-sims 1376 --exact-k 2 --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits --n 800 --paired --seed-start 130000000000 --rules-profile fixed_v1 --workers 30 --out-root /mnt/c/carc-shared/jrules_priors_deploy_20260814 --out-subdir jpriors_d0p5_deploy11008 --shared-claim --claim-host jpriors-primary-Doctor --claim-stale-secs 900 --no-results-csv --cand-jrules-prior-dose 0.5 --cand-jrules-prior-mask 31 --cand-jrules-prior-scope all
+[jp-b-deploy 2026-08-14_14:22:01] harness pass 1 rc=0 records=800/800
+[jp-b-deploy 2026-08-14_14:22:02] cell jpriors_d0p5_deploy11008 END records=800/800 in 8077s after 1 pass(es)
+[jp-b-deploy 2026-08-14_14:22:06] cell jpriors_d0p5_deploy11008 wiring gates: all_gates_pass=True (gate-script rc=0) -> /home/doctor/projects/carcassone/measurement/jrules_priors_20260814/verdicts/GATES_jpriors_d0p5_deploy11008.json
+[jp-b-deploy 2026-08-14_14:22:06] cell jpriors_d0p5_deploy11008 DONE (800/800) -> /home/doctor/projects/carcassone/measurement/jrules_priors_20260814/DONE_jpriors_d0p5_deploy11008
+[jp-b-deploy 2026-08-14_14:22:06] === CELL COMPLETE (band 130000000000, box local). Nothing adjudicated, nothing promoted. ===
