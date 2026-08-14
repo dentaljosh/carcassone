@@ -54,7 +54,7 @@
 
 use std::collections::HashMap;
 
-use crate::fair::solver::{ChanceDrop, SolveError, TIE};
+use crate::fair::solver::{ChanceDrop, Objective, SolveError, TIE};
 use crate::game::Game;
 use crate::sha256::sha256_bytes;
 use crate::tiles;
@@ -105,6 +105,18 @@ pub struct Config {
     /// Clairvoyant only; the Python `assert` rejects it for marginalized.
     pub alphabeta: bool,
     pub chance_drop: ChanceDrop,
+    /// E1 objective (default [`Objective::Margin`] = the untouched incumbent).
+    ///
+    /// `Win` is MARGINALIZED-ONLY, and its marginalized solve DELEGATES to
+    /// [`crate::fair::solver::solve_marginalized`] — the changed semantics get
+    /// exactly ONE implementation, per this module's own anti-drift rule
+    /// (`ChanceDrop`/`TIE` are reused the same way; two transcriptions of a
+    /// new backup would be exactly the drift the parity tests exist to
+    /// prevent).  `Clairvoyant + Win` is REJECTED: a clairvoyant future is
+    /// deterministic, `outcome` is a monotone transform of the deterministic
+    /// margin, so margin-max is already win-optimal — a clairvoyant "win mode"
+    /// would be a live-looking no-op flag.
+    pub objective: Objective,
 }
 
 impl Default for Config {
@@ -114,6 +126,7 @@ impl Default for Config {
             tt_cap: 0,
             alphabeta: false,
             chance_drop: ChanceDrop::Type,
+            objective: Objective::Margin,
         }
     }
 }
@@ -133,6 +146,11 @@ pub struct SolveResult {
     /// Transposition-table entries retained at the end of the solve — the
     /// memory figure.  (The table only grows, so this IS the peak.)
     pub tt_entries: usize,
+    /// E1 win mode only: `E[outcome]` of the optimum (`None` under
+    /// [`Objective::Margin`]).
+    pub win_value: Option<f64>,
+    /// E1 win mode only: per-child `E[outcome]`, ascending (empty otherwise).
+    pub child_win_values: Vec<(i32, f64)>,
 }
 
 impl SolveResult {
@@ -454,6 +472,36 @@ pub fn solve(g: &Game, mode: Mode, cfg: &Config) -> Result<SolveResult, SolveErr
             "alpha-beta is clairvoyant-only (chance nodes break minimax cutoffs)".to_string(),
         ));
     }
+    if cfg.objective == Objective::Win {
+        if mode == Mode::Clairvoyant {
+            return Err(SolveError::Engine(
+                "objective='win' is marginalized-only: a clairvoyant future is \
+                 deterministic and outcome is a monotone transform of the deterministic \
+                 margin, so margin-max is already win-optimal there"
+                    .to_string(),
+            ));
+        }
+        // Delegate to the SHIPPED fair solver (single implementation of the
+        // win semantics; see `Config::objective`).
+        let fcfg = crate::fair::solver::SolverConfig {
+            budget: cfg.budget,
+            tt_cap: cfg.tt_cap,
+            chance_drop: cfg.chance_drop,
+            objective: Objective::Win,
+        };
+        let r = crate::fair::solver::solve_marginalized(g, &fcfg)?;
+        return Ok(SolveResult {
+            mode,
+            value: r.value,
+            to_move: r.to_move,
+            optimal_actions: r.optimal_actions,
+            child_values: r.child_values,
+            nodes: r.nodes,
+            tt_entries: r.tt_entries,
+            win_value: r.win_value,
+            child_win_values: r.child_win_values,
+        });
+    }
     let mut s = Solver::new(cfg, mode);
     let to_move = g.state.current_player;
     let was_meeples = g.state.phase == crate::engine::Phase::Meeples;
@@ -501,6 +549,8 @@ pub fn solve(g: &Game, mode: Mode, cfg: &Config) -> Result<SolveResult, SolveErr
         child_values,
         nodes: s.nodes,
         tt_entries: s.tt_entries(),
+        win_value: None,
+        child_win_values: Vec::new(),
     })
 }
 

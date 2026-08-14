@@ -1115,8 +1115,17 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    meeple_dedup=None, intra_reuse=None,
                    coreml_model=None, net_backend=None,
                    backend="python", rust_threads=None,
-                   simsplit=None):
+                   simsplit=None, exact_objective=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
+
+    ``exact_objective`` (E1, CANDIDATE side only; None = OFF = "margin" =
+    byte-identical) switches the exact-K solver's objective to the lexicographic
+    (E[outcome], E[margin]) WIN objective — measurement/e1_winobj_20260814/
+    DESIGN.md. RUST BACKEND ONLY here: on the python backend the exact endgame
+    is owned by the SHARED ``_MarginalizedHandoff`` wrapper (both arms), where a
+    candidate-only objective has no seat — wiring it there would silently
+    change the OPPONENT's endgame too, so it fails loudly instead.
+    ``_make_opponent`` never forwards it.
 
     ``backend`` (2026-08-02) selects the ENGINE for the ``fair`` arm: ``"python"``
     (default, byte-identical to every row already in experiments/results.csv),
@@ -1166,6 +1175,15 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
 
     info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
     backend = _resolve_backend(backend)
+    if exact_objective is not None and exact_objective != "margin":
+        if info != "fair" or backend != "rust":
+            raise SystemExit(
+                f"--cand-exact-objective {exact_objective} is a --info fair "
+                f"--backend rust (candidate) knob; got --info {info} --backend "
+                f"{backend}. On the python backend the exact endgame lives in "
+                "the SHARED _MarginalizedHandoff (both arms), so a candidate-"
+                "only objective cannot be wired there without touching the "
+                "opponent; the deploy shape is rust.")
     if simsplit is not None and info != "fair":
         raise SystemExit(
             f"--sims-tile/--sims-meeple is a --info fair (candidate) knob; got "
@@ -1211,6 +1229,10 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
             backend="rust", rust_threads=rust_threads,
             **({} if meeple_dedup is None else dict(meeple_dedup=bool(meeple_dedup))),
             **({} if intra_reuse is None else dict(intra_reuse=bool(intra_reuse))),
+            # E1: absent-when-OFF, so a knob-less call is byte-identical to the
+            # pre-knob one (and keeps working against a pre-E1 wheel).
+            **({} if exact_objective in (None, "margin")
+               else dict(exact_objective=str(exact_objective))),
             **_split_kw)
     if info == "fair":
         # F1: route through the champion factory (single construction point). Byte-
@@ -1825,7 +1847,8 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
                  netprior_backend=None, backend="python", rust_threads=None,
-                 simsplit=None, cand_jrules_prior=None, cand_jrules_filter=None):
+                 simsplit=None, cand_jrules_prior=None, cand_jrules_filter=None,
+                 cand_exact_objective=None):
     _W["info"] = info
     # J-RULES PRIOR surface B (CANDIDATE side ONLY, rust-only; None = OFF =
     # byte-identical). A dict {dose, mask, scope} resolved once in main().
@@ -1833,6 +1856,9 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     # J-RULES ROOT FILTER surface C (CANDIDATE side ONLY, rust-only; None =
     # OFF = byte-identical). A dict {mask, min_keep} resolved once in main().
     _W["cand_jrules_filter"] = cand_jrules_filter
+    # E1 exact-K WIN objective (CANDIDATE side ONLY, rust-only; None = OFF =
+    # margin = byte-identical). Resolved once in main().
+    _W["cand_exact_objective"] = cand_exact_objective
     # ENGINE (rustport P6). Resolved ONCE in main() and passed as a literal, never as
     # "auto" — a worker that re-resolved the YAML could disagree with the manifest.
     _W["backend"] = backend
@@ -2101,7 +2127,8 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
                            intra_reuse=_W.get("intra_reuse"),
                            backend=_W.get("backend", "python"),
                            rust_threads=_W.get("rust_threads"),
-                           simsplit=_W.get("simsplit"))
+                           simsplit=_W.get("simsplit"),
+                           exact_objective=_W.get("cand_exact_objective"))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
@@ -2589,7 +2616,11 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                net_backend=getattr(args, "net_backend", None),
                                backend=args.backend,
                                rust_threads=args.rust_threads,
-                               simsplit=_args_simsplit(args))
+                               simsplit=_args_simsplit(args),
+                               exact_objective=(None if str(getattr(
+                                   args, "cand_exact_objective", "margin"))
+                                   == "margin"
+                                   else str(args.cand_exact_objective)))
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
@@ -2980,6 +3011,21 @@ def main(argv=None) -> int:
                          "fewer than this many root candidates is SKIPPED for that "
                          "ply (the yield is counted per game). Default 1 == the "
                          "bot's own rule. Only read when the mask is nonzero.")
+    ap.add_argument("--cand-exact-objective", choices=("margin", "win"),
+                    default="margin",
+                    help="E1 exact-K solver objective for the CANDIDATE "
+                         "(measurement/e1_winobj_20260814): 'margin' (default) = "
+                         "the incumbent, byte-identical; 'win' = lexicographic "
+                         "(E[outcome], E[margin]) — win first, margin tiebreak. "
+                         "SOLVER-side: the leaf hash does NOT move, so the "
+                         "manifest's cand_exact_objective is the wiring gate "
+                         "(surface-B inverted-liveness convention; the pinned "
+                         "K=3 positive control in tests/test_e1_win_objective.py "
+                         "is the disagreement proof). RUST backend + --info fair "
+                         "only; a stale carc_rs wheel fails CLOSED at launch. "
+                         "⚠️ At the deployed exact-K 2 the objectives provably "
+                         "coincide (DESIGN §2) — this knob exists to price the "
+                         "objective, not to claim a K=2 effect.")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
     ap.add_argument("--paired", action="store_true")
@@ -3455,6 +3501,39 @@ def main(argv=None) -> int:
                                         None, jrules_filter=_cand_jrules_filter)
         from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_c
         _sc_rs_c(_probe_cfg_c, 8)  # TypeError == rebuild the wheel on THIS box
+    # E1 exact-K WIN objective: resolve the CANDIDATE-ONLY knob once, fail fast.
+    # None == OFF == "margin" == every historical run, byte-identical. Stamped
+    # into the manifest as `cand_exact_objective` (the wiring gate — this
+    # surface deliberately moves no leaf hash; the disagreement proof is the
+    # pinned K=3 positive control in tests/test_e1_win_objective.py).
+    _cand_exact_objective = None
+    if str(args.cand_exact_objective) != "margin":
+        if _backend != "rust":
+            ap.error(f"--cand-exact-objective {args.cand_exact_objective} is "
+                     f"RUST-ONLY (the python backend's exact endgame is the "
+                     f"SHARED _MarginalizedHandoff — both arms); resolved "
+                     f"backend is {_backend!r}.")
+        if args.info != "fair":
+            ap.error("--cand-exact-objective applies to the FAIR candidate "
+                     f"(--info fair); got --info {args.info}")
+        _cand_exact_objective = str(args.cand_exact_objective)
+        # Launch-time liveness probe: construct a throwaway rust agent at the
+        # requested objective so a stale (pre-E1) carc_rs wheel dies HERE with
+        # the rebuild instruction, and the RESOLVED objective is read back off
+        # the agent's own stats() — never assumed from the flag.
+        from carcassonne_ai import champion_factory as _cfac
+        _probe_agent = _cfac.build_fair_champion(
+            Game(enable_legal_moves_cache=True), sims=1, k_dets=1, seed=0,
+            exact_objective=_cand_exact_objective, backend="rust")
+        _resolved = _probe_agent.manifest_stats()["exact_objective"] \
+            if hasattr(_probe_agent, "manifest_stats") else \
+            _probe_agent.exact_objective
+        assert _resolved == _cand_exact_objective, \
+            f"resolved exact_objective {_resolved!r} != requested"
+        del _probe_agent
+        print(f"[E1] CANDIDATE exact-K objective = {_cand_exact_objective} "
+              f"(resolved; leaf hash does NOT move — the manifest field is the "
+              f"wiring gate)", flush=True)
     if args.rust_threads is not None and _backend != "rust":
         ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
     if args.rust_threads is not None and args.info == "clair":
@@ -3868,6 +3947,12 @@ def main(argv=None) -> int:
         # inverted-hash situation as surface B: no leaf hash moves, so THIS
         # resolved dict + the per-game jf_dropped counters are the wiring gates.
         "cand_jrules_filter": _cand_jrules_filter,
+        # E1 exact-K WIN objective (CANDIDATE side only; None == OFF == margin ==
+        # every historical cell). Same inverted-liveness convention as surface B:
+        # the leaf hash does NOT move on this knob, so THIS resolved field is the
+        # wiring gate; the disagreement proof is the pinned K=3 positive control
+        # (tests/test_e1_win_objective.py::test_positive_control_objectives_disagree).
+        "cand_exact_objective": _cand_exact_objective,
         # rung_leaf_* is the env DEFAULT_CONFIG. For --opponent h800 it IS the opponent's
         # leaf (the ruler). For a head-to-head no agent uses it — it is recorded anyway as
         # the PROOF that the in-process curve125 injection did not move DEFAULT_CONFIG.
@@ -4216,7 +4301,8 @@ def main(argv=None) -> int:
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
-                          _simsplit, _cand_jrules_prior, _cand_jrules_filter))
+                          _simsplit, _cand_jrules_prior, _cand_jrules_filter,
+                          _cand_exact_objective))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -4230,7 +4316,8 @@ def main(argv=None) -> int:
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
-                          _simsplit, _cand_jrules_prior, _cand_jrules_filter))
+                          _simsplit, _cand_jrules_prior, _cand_jrules_filter,
+                          _cand_exact_objective))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

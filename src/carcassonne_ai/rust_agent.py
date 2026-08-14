@@ -537,7 +537,8 @@ class RustFairAgent:
                  draw_rule: str | None = None,
                  reconcile: bool | None = None,
                  sims_tile: int | None = None,
-                 sims_meeple: int | None = None):
+                 sims_meeple: int | None = None,
+                 exact_objective: str = "margin"):
         import carc_rs
 
         from . import fair_agent as _fa
@@ -580,37 +581,62 @@ class RustFairAgent:
         self._exact_budget = int(
             _fa.DEFAULT_EXACT_BUDGET if exact_budget is None else exact_budget)
         self._exact_endgame = bool(exact_endgame)
+        # E1: the exact solver's objective (SOLVER-side; the leaf hash does not
+        # move — surface-B liveness convention). The FFI kwarg is only passed
+        # when non-default, so (a) the default construction is byte-for-byte
+        # the pre-knob FFI call and (b) an OLD carc_rs wheel keeps working at
+        # "margin" — while a "win" request on an old wheel fails LOUDLY below
+        # (TypeError from the binding) instead of silently playing margin.
+        # ⚠️ Per-box footgun: carc_rs is a BUILT wheel; rebuild it on every box
+        # before any run that passes exact_objective="win".
+        if exact_objective not in ("margin", "win"):
+            raise ValueError(
+                f"exact_objective must be 'margin'|'win', got {exact_objective!r}")
+        self._exact_objective = str(exact_objective)
+        self.exact_objective = self._exact_objective   # public alias (manifest read-off)
 
-        self._rs = carc_rs.FairAgentRs(
-            search_config_rs(cfg, self._sims),
-            k_dets=self._k_dets,
-            seed=self._seed,
-            min_pooled_visits=self._min_pooled_visits,
-            exact_endgame=self._exact_endgame,
-            exact_max_k=self._exact_max_k,
-            exact_budget=self._exact_budget,
-            tt_cap=0,
-            chance_drop="type",
-            threads=self._threads,
-            window_size=int(window_size),
-            start_rule=start_rule,
-            start_row=start_row,
-            start_col=start_col,
-            # F9/A2, threaded at the A2+A3 compose merge (2026-08-03) for the
-            # SAME reason A3 gives below: the A2 branch closed this hole for
-            # `draw_rule` only, so a `--backend rust` A2 cell would have run the
-            # DRIFTING scan on the Rust side while Python ran the fix. `None`
-            # == False == the engine of record, so the default path is untouched.
-            cloister_scan_fix=cloister_scan_fix,
-            # F9/A3. `None` == "engine" == the engine of record, so the default
-            # path is untouched. It MUST be threaded rather than left to the
-            # Rust default: `start_game` hands over the deck and the Rust side
-            # then rolls the game forward on its OWN engine, so a mirror on the
-            # other draw rule would place different tiles from the first
-            # unplaceable draw onward — and `state_digest` (which does not hash
-            # the deck) would only catch it once the boards had already parted.
-            draw_rule=draw_rule,
-        )
+        try:
+            _obj_kw = ({} if self._exact_objective == "margin"
+                       else {"exact_objective": self._exact_objective})
+            self._rs = carc_rs.FairAgentRs(
+                search_config_rs(cfg, self._sims),
+                k_dets=self._k_dets,
+                seed=self._seed,
+                min_pooled_visits=self._min_pooled_visits,
+                exact_endgame=self._exact_endgame,
+                exact_max_k=self._exact_max_k,
+                exact_budget=self._exact_budget,
+                tt_cap=0,
+                chance_drop="type",
+                threads=self._threads,
+                **_obj_kw,
+                window_size=int(window_size),
+                start_rule=start_rule,
+                start_row=start_row,
+                start_col=start_col,
+                # F9/A2, threaded at the A2+A3 compose merge (2026-08-03) for the
+                # SAME reason A3 gives below: the A2 branch closed this hole for
+                # `draw_rule` only, so a `--backend rust` A2 cell would have run the
+                # DRIFTING scan on the Rust side while Python ran the fix. `None`
+                # == False == the engine of record, so the default path is untouched.
+                cloister_scan_fix=cloister_scan_fix,
+                # F9/A3. `None` == "engine" == the engine of record, so the default
+                # path is untouched. It MUST be threaded rather than left to the
+                # Rust default: `start_game` hands over the deck and the Rust side
+                # then rolls the game forward on its OWN engine, so a mirror on the
+                # other draw rule would place different tiles from the first
+                # unplaceable draw onward — and `state_digest` (which does not hash
+                # the deck) would only catch it once the boards had already parted.
+                draw_rule=draw_rule,
+            )
+        except TypeError as e:
+            if "exact_objective" in str(e):
+                raise RuntimeError(
+                    "this carc_rs wheel predates the E1 exact_objective knob — "
+                    "rebuild the wheel on THIS box (per-box footgun: carc_rs is a "
+                    "built artifact) before running exact_objective="
+                    f"{self._exact_objective!r}") from e
+            raise
         self._started = False
         self._plies = 0
         # The harness-wrapper clock (`_MarginalizedHandoff`), computed here.
@@ -888,6 +914,12 @@ class RustFairAgent:
             **({"sims_tile": self._sims_tile, "sims_meeple": self._sims_meeple}
                if (self._sims_tile is not None or self._sims_meeple is not None)
                else {}),
+            # E1 — stamped ONLY when non-default (same convention as above);
+            # the RESOLVED value from the rust side when the wheel carries it,
+            # so a manifest can never quote a knob the FFI silently dropped.
+            **({"exact_objective": str(s.get("exact_objective",
+                                            self._exact_objective))}
+               if self._exact_objective != "margin" else {}),
         }
 
     def __repr__(self) -> str:

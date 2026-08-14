@@ -42,6 +42,30 @@ _TILES = GamePhase.TILES
 _MEEPLES = GamePhase.MEEPLES
 _TIE = 1e-6  # float tolerance for optimal-set membership in the marginalized mode
 
+# E1 (measurement/e1_winobj_20260814/DESIGN.md §1): tolerance on the WIN
+# component of the lexicographic (w, m) value — w is an expectation of
+# {0, 0.5, 1} over rational bag probabilities, so mathematically-equal w's can
+# differ by float-order noise; without a tolerance the margin tiebreak would be
+# decided by that noise instead of by margin.
+_WIN_TIE = 1e-9
+
+
+def _outcome(m: float) -> float:
+    """The terminal WIN lattice, P0 POV: win > draw > loss, draw = half a win
+    (the lattice the eval harness scores W/D/L on). `m` is an exact integral
+    score differential at terminals, so the comparisons are exact."""
+    return 1.0 if m > 0 else (0.5 if m == 0 else 0.0)
+
+
+def _lex_better(x: tuple, v: tuple, maximize: bool) -> bool:
+    """Lexicographic (w, m) comparison with _WIN_TIE on the win component.
+    True when `x` is strictly better than `v` for the mover; the caller only
+    replaces on strict improvement (keep-first scan, Python max/min shape)."""
+    dw = x[0] - v[0]
+    if maximize:
+        return dw > _WIN_TIE or (abs(dw) <= _WIN_TIE and x[1] > v[1])
+    return dw < -_WIN_TIE or (abs(dw) <= _WIN_TIE and x[1] < v[1])
+
 # Alpha-beta TT bound flags (clairvoyant pruning path only).
 _EXACT, _LOWER, _UPPER = 0, 1, 2
 
@@ -53,12 +77,21 @@ class BudgetExceeded(Exception):
 @dataclass
 class SolveResult:
     mode: str
-    value: float                       # V* (P0-perspective score diff under optimal play)
+    value: float                       # V* (P0-perspective score diff under optimal play;
+                                       # under objective="win": the MARGIN component of the
+                                       # lexicographic optimum, i.e. E[margin] under the
+                                       # win-first policy)
     to_move: int                       # player to move at the root
     optimal_actions: list[int]         # actions achieving V* (mover's best)
     child_values: dict[int, float]     # exact value of every legal root action
     nodes: int
     completed: bool                    # False if budget hit (then fields are partial)
+    # E1 win objective only (None/None under objective="margin" — the liveness
+    # discriminator; additive with defaults so every existing constructor and
+    # caller is untouched):
+    win_value: float | None = None                 # E[outcome] of the optimum
+    child_win_values: dict | None = None           # per-action E[outcome]
+    objective: str = "margin"
 
 
 def tile_key(tile) -> str:
@@ -135,6 +168,9 @@ class _Solver:
         self.alphabeta = alphabeta
         self.nodes = 0
         self.tt: dict = {}
+        # E1 win mode's (w, m) table. Exactly one of tt/tt_win is used per
+        # solve; tt_cap applies to whichever it is.
+        self.tt_win: dict = {}
         # Optional TT entry cap (memory bound). 0/unset = unlimited. When the table
         # is full we FREEZE it: new keys are not inserted (so the dict stops growing
         # -> bounded RSS), but existing keys may still be updated (no growth) and are
@@ -211,6 +247,62 @@ class _Solver:
             exp += (len(tiles) / total) * self._value(child)
         return exp
 
+    # ---- E1 win-objective mirror of _value/_chance -------------------------
+    # A PARALLEL pair, not a parameterization of the margin pair: the margin
+    # path must stay untouched code (flag-off bit-identity is structural).
+    # Node value is the pair (w, m): w = E[outcome] (win 1 / draw 0.5 / loss 0,
+    # P0 POV), m = E[margin] under the win-first policy. Decision nodes compare
+    # lexicographically (w first within _WIN_TIE, then m); chance nodes take
+    # component-wise expectations with the SAME grouping and accumulation order
+    # as _chance. See measurement/e1_winobj_20260814/DESIGN.md §1.
+
+    def _put_win(self, key, val) -> None:
+        if key in self.tt_win or not self.tt_cap or len(self.tt_win) < self.tt_cap:
+            self.tt_win[key] = val
+
+    def _value_win(self, board: Board) -> tuple:
+        if _terminal(board):
+            m = float(flat_base_score(board.state, 0))
+            return (_outcome(m), m)
+        key = self._key(board)
+        cached = self.tt_win.get(key)
+        if cached is not None:
+            return cached
+        self._tick()
+        mover = board.state.current_player
+        was_meeples = (board.state.phase == _MEEPLES)
+        vals = []
+        for a in _legal(self.game, board):
+            nb, _ = self.game.get_next_state(board, int(a))
+            if not _terminal(nb) and _drew_a_tile(board, nb, was_meeples):
+                vals.append(self._chance_win(nb))
+            else:
+                vals.append(self._value_win(nb))
+        v = vals[0]
+        for x in vals[1:]:
+            if _lex_better(x, v, mover == 0):
+                v = x
+        self._put_win(key, v)
+        return v
+
+    def _chance_win(self, nb: Board) -> tuple:
+        bag = [nb.state.next_tile] + list(nb.state.deck)
+        total = len(bag)
+        groups: dict[str, list] = {}
+        for t in bag:
+            groups.setdefault(tile_key(t), []).append(t)
+        ew = 0.0
+        em = 0.0
+        for tiles in groups.values():
+            rep = tiles[0]
+            remaining = [t for t in bag if t is not rep]
+            child = _clone_with_tile(nb, rep, remaining)
+            w, m = self._value_win(child)
+            p = len(tiles) / total
+            ew += p * w
+            em += p * m
+        return (ew, em)
+
     def _value_ab(self, board: Board, alpha: float, beta: float) -> float:
         """Exact alpha-beta minimax for the clairvoyant mode. Returns V* of the
         subtree when called with a full window (alpha=-inf, beta=+inf); inside a
@@ -271,18 +363,63 @@ class _Solver:
 
 
 def solve(game: Game, board: Board, mode: str = "marginalized",
-          budget: int = 4_000_000, alphabeta: bool = False) -> SolveResult:
+          budget: int = 4_000_000, alphabeta: bool = False,
+          objective: str = "margin") -> SolveResult:
     """Solve the position. Evaluates EVERY legal root action exactly (no
     cross-action pruning at the root) so regret can be scored for any move.
 
     `alphabeta` (clairvoyant only) prunes inside each root child's subtree —
     every child is solved with a FULL window (-inf, +inf) so its returned value
     is exact (cross-sibling narrowing would only bound the suboptimal moves,
-    which the regret harness still needs). Exact-equal to the no-prune path."""
+    which the regret harness still needs). Exact-equal to the no-prune path.
+
+    `objective` (E1, measurement/e1_winobj_20260814/DESIGN.md): "margin"
+    (default — the untouched incumbent code path, bit-identical) or "win" —
+    node value is the lexicographic pair (E[outcome], E[margin]) with the
+    margin breaking outcome ties (win > draw > loss, draw = half a win).
+    MARGINALIZED-ONLY: a clairvoyant future is deterministic and outcome is a
+    monotone transform of the deterministic margin, so margin-max is already
+    win-optimal there — a clairvoyant "win mode" would be a live-looking no-op
+    flag, hence the loud assert. At the deployed exact_max_k=2 the two
+    objectives PROVABLY coincide (every chance bag is a singleton; DESIGN §2);
+    divergence requires K>=3."""
+    assert objective in ("margin", "win"), f"objective must be margin|win, got {objective!r}"
+    assert not (objective == "win" and mode != "marginalized"), \
+        "objective='win' is marginalized-only (clairvoyant margin-max is already win-optimal)"
     s = _Solver(game, mode, budget, alphabeta=alphabeta)
     to_move = board.state.current_player
     was_meeples = (board.state.phase == _MEEPLES)
     legal = _legal(game, board)
+
+    if objective == "win":
+        pairs: dict[int, tuple] = {}
+        for a in legal:
+            a = int(a)
+            nb, _ = game.get_next_state(board, a)
+            if _terminal(nb):
+                m = float(flat_base_score(nb.state, 0))
+                pairs[a] = (_outcome(m), m)
+            elif _drew_a_tile(board, nb, was_meeples):
+                pairs[a] = s._chance_win(nb)
+            else:
+                pairs[a] = s._value_win(nb)
+        if not pairs:
+            raise ValueError("no legal actions at root")
+        vstar = next(iter(pairs.values()))
+        for x in pairs.values():
+            if _lex_better(x, vstar, to_move == 0):
+                vstar = x
+        # the lexicographic tie set: win-tied (_WIN_TIE) AND margin-tied (_TIE)
+        optimal = [a for a, v in pairs.items()
+                   if abs(v[0] - vstar[0]) <= _WIN_TIE and abs(v[1] - vstar[1]) <= _TIE]
+        return SolveResult(mode=mode, value=float(vstar[1]), to_move=to_move,
+                           optimal_actions=optimal,
+                           child_values={a: float(v[1]) for a, v in pairs.items()},
+                           nodes=s.nodes, completed=True,
+                           win_value=float(vstar[0]),
+                           child_win_values={a: float(v[0]) for a, v in pairs.items()},
+                           objective="win")
+
     child_values: dict[int, float] = {}
     for a in legal:
         a = int(a)

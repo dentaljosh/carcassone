@@ -1,0 +1,40 @@
+{
+ "schema": "carcassonne-e1-winobj-pregate/v1",
+ "git_head": "19599cd77f76bf80d7bffb5e9de15fa6c391a9f9",
+ "selfplay_games": 449,
+ "selfplay_replayed_ok": 449,
+ "e4_games": 31,
+ "e4_replayed_ok": 31,
+ "e4_by_profile": {
+  "fixed_v1": 29,
+  "walled": 2
+ },
+ "solved_plies": 1858,
+ "budget_exceeded_plies": 0,
+ "exact_max_k": 2,
+ "budget": 2000000,
+ "wall_secs": 258.3,
+ "divergence_rate": 0.0,
+ "n_diverged": 0,
+ "divergence_ci95_upper": 0.0016146393972012918,
+ "set_divergence_rate": 0.0,
+ "archived_matches_margin_rate": 1.0,
+ "cost": {
+  "t_margin_total_s": 978.359,
+  "t_win_total_s": 982.401,
+  "ratio_total": 1.0041,
+  "ratio_median": 0.988,
+  "ratio_p90": 1.1802,
+  "t_margin_median_ms": 21.903,
+  "t_win_median_ms": 21.279,
+  "t_margin_p90_ms": 1483.063,
+  "t_win_p90_ms": 1499.174
+ },
+ "read_rule": {
+  "kill_bar": 0.01,
+  "flag_bar": 0.1,
+  "branch_fired": "K"
+ },
+ "divergent_plies": [],
+ "selection_effect_label": "realized outcomes on divergent plies condition on the archived (margin-policy) continuation; descriptive only, not causal"
+}
