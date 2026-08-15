@@ -1,0 +1,100 @@
+{
+ "schema": "carcassonne-tiletie-oof-plan/v1",
+ "label": "pilot",
+ "design_doc": "measurement/tiletie_oof_20260814/DESIGN.md",
+ "read_rule": "measurement/tiletie_oof_20260814/READ_RULE.md",
+ "afterstate_dedupe": {
+  "applied": true,
+  "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+  "dropped_index_path": "measurement/tiletie_pricing_20260812/positions_stageA/DROPPED_ALL_TRANSPOSITION.json",
+  "dropped_pct": 26.20882971268395,
+  "n_dropped_all_transposition": 374,
+  "n_dropped_by_stratum": {
+   "e4": 115,
+   "selfplay": 259
+  },
+  "n_dropped_with_action_played_outside_tieset": 72,
+  "n_positions_with_arm_dedupe": 54,
+  "n_qualifying_before_drop": 1427,
+  "savings_pct_full_supply": 32.47033441208198,
+  "tieset_arm_playouts_full_supply_after": 120192,
+  "tieset_arm_playouts_full_supply_before": 177984
+ },
+ "cap_j": 4,
+ "m_worlds": 32,
+ "max_arms": 5,
+ "judge": "tier1-greedy",
+ "world_seed_salt": "tiletie-v1",
+ "permutation_seed": 20260814,
+ "source_plan_dir": "measurement/tiletie_pricing_20260812/positions_pooled",
+ "n_positions": 20,
+ "n_roots": 20,
+ "n_e4": 2,
+ "n_selfplay": 18,
+ "n_positions_capped": 5,
+ "mean_arms": 3.15,
+ "champ_pick_secs": 0.0,
+ "playout_secs": 5.2599,
+ "oracle_worker_secs": 14475.2448,
+ "eta_by_workers": {
+  "14": {
+   "wall_secs": 1033.9460571428572,
+   "wall_hours": 0.2872072380952381
+  },
+  "30": {
+   "wall_secs": 482.50816000000003,
+   "wall_hours": 0.13403004444444444
+  }
+ },
+ "counts_by_stratum": {
+  "e4": 2,
+  "selfplay": 18
+ },
+ "counts_by_profile_leg": {
+  "fixed_v1/leg1": 2,
+  "fixed_v1/leg2": 1,
+  "fixed_v1/leg3": 1,
+  "fixed_v1/leg4": 1,
+  "walled/leg1": 18,
+  "walled/leg2": 11,
+  "walled/leg3": 8,
+  "walled/leg4": 1
+ },
+ "total_legs": 43,
+ "total_arm_playouts": 2752,
+ "files": {
+  "fixed_v1/leg1": {
+   "n": 2,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_fixed_v1_leg1.jsonl"
+  },
+  "fixed_v1/leg2": {
+   "n": 1,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_fixed_v1_leg2.jsonl"
+  },
+  "fixed_v1/leg3": {
+   "n": 1,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_fixed_v1_leg3.jsonl"
+  },
+  "fixed_v1/leg4": {
+   "n": 1,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_fixed_v1_leg4.jsonl"
+  },
+  "walled/leg1": {
+   "n": 18,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_walled_leg1.jsonl"
+  },
+  "walled/leg2": {
+   "n": 11,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_walled_leg2.jsonl"
+  },
+  "walled/leg3": {
+   "n": 8,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_walled_leg3.jsonl"
+  },
+  "walled/leg4": {
+   "n": 1,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot/positions_walled_leg4.jsonl"
+  }
+ },
+ "out_dir": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_pilot"
+}

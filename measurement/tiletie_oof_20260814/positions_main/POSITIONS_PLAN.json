@@ -1,0 +1,115 @@
+{
+ "schema": "carcassonne-tiletie-oof-plan/v1",
+ "label": "main",
+ "design_doc": "measurement/tiletie_oof_20260814/DESIGN.md",
+ "read_rule": "measurement/tiletie_oof_20260814/READ_RULE.md",
+ "afterstate_dedupe": {
+  "applied": true,
+  "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+  "dropped_index_path": "measurement/tiletie_pricing_20260812/positions_stageA/DROPPED_ALL_TRANSPOSITION.json",
+  "dropped_pct": 26.20882971268395,
+  "n_dropped_all_transposition": 374,
+  "n_dropped_by_stratum": {
+   "e4": 115,
+   "selfplay": 259
+  },
+  "n_dropped_with_action_played_outside_tieset": 72,
+  "n_positions_with_arm_dedupe": 54,
+  "n_qualifying_before_drop": 1427,
+  "savings_pct_full_supply": 32.47033441208198,
+  "tieset_arm_playouts_full_supply_after": 120192,
+  "tieset_arm_playouts_full_supply_before": 177984
+ },
+ "cap_j": 4,
+ "m_worlds": 32,
+ "max_arms": 5,
+ "judge": "tier1-greedy",
+ "world_seed_salt": "tiletie-v1",
+ "permutation_seed": 20260814,
+ "source_plan_dir": "measurement/tiletie_pricing_20260812/positions_pooled",
+ "n_positions": 502,
+ "n_roots": 277,
+ "n_e4": 35,
+ "n_selfplay": 467,
+ "n_positions_capped": 94,
+ "mean_arms": 3.057768924302789,
+ "champ_pick_secs": 0.0,
+ "playout_secs": 5.2599,
+ "oracle_worker_secs": 347742.5088,
+ "eta_by_workers": {
+  "14": {
+   "wall_secs": 24838.75062857143,
+   "wall_hours": 6.899652952380952
+  },
+  "30": {
+   "wall_secs": 11591.41696,
+   "wall_hours": 3.2198380444444443
+  }
+ },
+ "counts_by_stratum": {
+  "e4": 35,
+  "selfplay": 467
+ },
+ "counts_by_profile_leg": {
+  "app_aug2/leg1": 3,
+  "app_aug2/leg2": 2,
+  "app_aug2/leg3": 2,
+  "fixed_v1/leg1": 28,
+  "fixed_v1/leg2": 17,
+  "fixed_v1/leg3": 7,
+  "fixed_v1/leg4": 2,
+  "walled/leg1": 471,
+  "walled/leg2": 299,
+  "walled/leg3": 159,
+  "walled/leg4": 43
+ },
+ "total_legs": 1033,
+ "total_arm_playouts": 66112,
+ "files": {
+  "app_aug2/leg1": {
+   "n": 3,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_app_aug2_leg1.jsonl"
+  },
+  "app_aug2/leg2": {
+   "n": 2,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_app_aug2_leg2.jsonl"
+  },
+  "app_aug2/leg3": {
+   "n": 2,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_app_aug2_leg3.jsonl"
+  },
+  "fixed_v1/leg1": {
+   "n": 28,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_fixed_v1_leg1.jsonl"
+  },
+  "fixed_v1/leg2": {
+   "n": 17,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_fixed_v1_leg2.jsonl"
+  },
+  "fixed_v1/leg3": {
+   "n": 7,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_fixed_v1_leg3.jsonl"
+  },
+  "fixed_v1/leg4": {
+   "n": 2,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_fixed_v1_leg4.jsonl"
+  },
+  "walled/leg1": {
+   "n": 471,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_walled_leg1.jsonl"
+  },
+  "walled/leg2": {
+   "n": 299,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_walled_leg2.jsonl"
+  },
+  "walled/leg3": {
+   "n": 159,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_walled_leg3.jsonl"
+  },
+  "walled/leg4": {
+   "n": 43,
+   "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main/positions_walled_leg4.jsonl"
+  }
+ },
+ "out_dir": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_main"
+}

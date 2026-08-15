@@ -1,0 +1,28 @@
+{
+ "schema": "carcassonne-tiletie-oof-plan/v1",
+ "seed": 20260814,
+ "n": 20,
+ "note": "DESIGN \u00a76 cost pilot -- EXCLUDED from the main read. Tail of the single committed permutation of the 522-position dev slice.",
+ "rids": [
+  "tt_sp_28000000303_p16",
+  "tt_sp_28000000273_p44",
+  "tt_sp_28000000041_p78",
+  "tt_sp_28000000064_p90",
+  "tt_e4_1785986044_1911511187_p90",
+  "tt_sp_28000000394_p10",
+  "tt_sp_28000000449_p40",
+  "tt_sp_28000000020_p96",
+  "tt_sp_28000000053_p126",
+  "tt_sp_28000000001_p104",
+  "tt_sp_28000000225_p6",
+  "tt_sp_28000000104_p36",
+  "tt_sp_28000000057_p11",
+  "tt_sp_28000000067_p72",
+  "tt_sp_28000000383_p134",
+  "tt_sp_28000000014_p18",
+  "tt_sp_28000000447_p36",
+  "tt_sp_28000000316_p44",
+  "tt_e4_1786501074_943197_p6",
+  "tt_sp_28000000298_p42"
+ ]
+}
