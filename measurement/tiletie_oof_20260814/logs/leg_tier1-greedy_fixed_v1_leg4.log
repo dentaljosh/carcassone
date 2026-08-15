@@ -1,7 +1,7 @@
 [pilot] population=1 positions | n=1 | M=32 | policy=tier1-greedy | oracle_sims=100 | W=1
-[pilot] out -> /mnt/c/carc-shared/tiletie_oof_20260814/pilot/tier1-greedy/fixed_v1/leg4
+[pilot] out -> /mnt/c/carc-shared/tiletie_oof_20260814/chunk3/tier1-greedy/fixed_v1/leg4
 [pilot] resume: 0 already done, 1 to go
-[1/1] tt_e4_1785986044_1911511187_p90 ok delta=+4.375 crn=True 137.269s
+[1/1] tt_e4_1786113542_627623_p111 ok delta=-0.219 crn=True 77.928s
 
 === ORACLE-SCORE PILOT SUMMARY ===
 {
@@ -13,6 +13,6 @@
   "n_failed": 0,
   "crn_verified_all": true,
   "population_disagreements": 1,
-  "wall_secs": 137.3,
-  "manifest": "/mnt/c/carc-shared/tiletie_oof_20260814/pilot/tier1-greedy/fixed_v1/leg4/manifest.json"
+  "wall_secs": 78.0,
+  "manifest": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk3/tier1-greedy/fixed_v1/leg4/manifest.json"
 }

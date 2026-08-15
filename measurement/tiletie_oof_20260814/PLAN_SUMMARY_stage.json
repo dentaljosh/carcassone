@@ -1,0 +1,43 @@
+{
+ "schema": "carcassonne-tiletie-oof-plan/v1",
+ "dev_positions": 522,
+ "dev_roots": 279,
+ "pilot_n": 20,
+ "main_n": 502,
+ "chunks": [
+  {
+   "name": "chunk1",
+   "n": 125,
+   "legs": 252,
+   "playouts": 16128
+  },
+  {
+   "name": "chunk2",
+   "n": 126,
+   "legs": 259,
+   "playouts": 16576
+  },
+  {
+   "name": "chunk3",
+   "n": 125,
+   "legs": 264,
+   "playouts": 16896
+  },
+  {
+   "name": "chunk4",
+   "n": 126,
+   "legs": 258,
+   "playouts": 16512
+  }
+ ],
+ "main_legs": 1033,
+ "main_playouts": 66112,
+ "pilot_legs": 43,
+ "pilot_playouts": 2752,
+ "if_staging": {
+  "src_root": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct",
+  "dst_root": "/mnt/c/carc-shared/tiletie_oof_20260814/if_dev/clair-puct",
+  "copied": 1033,
+  "skipped_not_in_slice": 435
+ }
+}

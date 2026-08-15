@@ -1,2 +1,162 @@
 [main] 2026-08-14T19:24:36-04:00 chunks=4 workers=30
 [main] ===== chunk1 start 2026-08-14T19:24:36-04:00
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk1.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk1.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.50 6.73 5.08 1/871 808543
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+ 807487       01:24  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 416fa874
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 11
+    plan_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk1/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk1/ARMS.json
+
+[run_tiletie] plan: n_positions=125 (e4=11 selfplay=114) max_arms=5 mean_arms=3.02 cap_j=4 capped=20
+[run_tiletie] total_arm_playouts=16128 oracle_worker_secs=84831.7 champ_pick_secs=0.0
+[run_tiletie] ETA at 14: 1.683 h (6059 s)
+[run_tiletie] ETA at 30: 0.785 h (2828 s)
+[run_tiletie] ===== launch tier1-greedy/app_aug2/leg1 (R9=0, W=1, n=1) -> leg_tier1-greedy_app_aug2_leg1.log
+[run_tiletie] ===== launch tier1-greedy/app_aug2/leg2 (R9=0, W=1, n=1) -> leg_tier1-greedy_app_aug2_leg2.log
+[run_tiletie] ===== launch tier1-greedy/app_aug2/leg3 (R9=0, W=1, n=1) -> leg_tier1-greedy_app_aug2_leg3.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg1 (R9=1, W=1, n=9) -> leg_tier1-greedy_fixed_v1_leg1.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg2 (R9=1, W=1, n=7) -> leg_tier1-greedy_fixed_v1_leg2.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg3 (R9=1, W=1, n=3) -> leg_tier1-greedy_fixed_v1_leg3.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg4 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg4.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg1 (R9=0, W=13, n=115) -> leg_tier1-greedy_walled_leg1.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg2 (R9=0, W=8, n=70) -> leg_tier1-greedy_walled_leg2.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg3 (R9=0, W=4, n=39) -> leg_tier1-greedy_walled_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg4 (R9=0, W=1, n=5) -> leg_tier1-greedy_walled_leg4.log
+[main] ===== chunk1 rc=0 2026-08-14T19:52:16-04:00
+[main] ===== chunk2 start 2026-08-14T19:52:16-04:00
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk2.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk2.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 5.66 17.17 20.31 1/892 819260
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+ 818743       01:27  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 416fa874
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 10
+    plan_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/ARMS.json
+
+[run_tiletie] plan: n_positions=126 (e4=8 selfplay=118) max_arms=5 mean_arms=3.06 cap_j=4 capped=27
+[run_tiletie] total_arm_playouts=16576 oracle_worker_secs=87188.1 champ_pick_secs=0.0
+[run_tiletie] ETA at 14: 1.730 h (6228 s)
+[run_tiletie] ETA at 30: 0.807 h (2906 s)
+[run_tiletie] ===== launch tier1-greedy/app_aug2/leg1 (R9=0, W=1, n=2) -> leg_tier1-greedy_app_aug2_leg1.log
+[run_tiletie] ===== launch tier1-greedy/app_aug2/leg2 (R9=0, W=1, n=1) -> leg_tier1-greedy_app_aug2_leg2.log
+[run_tiletie] ===== launch tier1-greedy/app_aug2/leg3 (R9=0, W=1, n=1) -> leg_tier1-greedy_app_aug2_leg3.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg1 (R9=1, W=1, n=6) -> leg_tier1-greedy_fixed_v1_leg1.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg2 (R9=1, W=1, n=3) -> leg_tier1-greedy_fixed_v1_leg2.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg3 (R9=1, W=1, n=2) -> leg_tier1-greedy_fixed_v1_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg1 (R9=0, W=13, n=118) -> leg_tier1-greedy_walled_leg1.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg2 (R9=0, W=8, n=70) -> leg_tier1-greedy_walled_leg2.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg3 (R9=0, W=4, n=42) -> leg_tier1-greedy_walled_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg4 (R9=0, W=1, n=14) -> leg_tier1-greedy_walled_leg4.log
+[main] ===== chunk2 rc=0 2026-08-14T20:29:51-04:00
+[main] ===== chunk3 start 2026-08-14T20:29:51-04:00
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk3.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk3.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.87 6.02 15.13 1/843 830047
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+ 829532       01:25  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 416fa874
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 8
+    plan_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk3/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk3/ARMS.json
+
+[run_tiletie] plan: n_positions=125 (e4=5 selfplay=120) max_arms=5 mean_arms=3.11 cap_j=4 capped=25
+[run_tiletie] total_arm_playouts=16896 oracle_worker_secs=88871.3 champ_pick_secs=0.0
+[run_tiletie] ETA at 14: 1.763 h (6348 s)
+[run_tiletie] ETA at 30: 0.823 h (2962 s)
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg1 (R9=1, W=1, n=2) -> leg_tier1-greedy_fixed_v1_leg1.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg2 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg2.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg3 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg3.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg4 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg4.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg1 (R9=0, W=13, n=123) -> leg_tier1-greedy_walled_leg1.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg2 (R9=0, W=9, n=84) -> leg_tier1-greedy_walled_leg2.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg3 (R9=0, W=4, n=40) -> leg_tier1-greedy_walled_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg4 (R9=0, W=1, n=12) -> leg_tier1-greedy_walled_leg4.log
+[main] ===== chunk3 rc=0 2026-08-14T21:04:15-04:00
+[main] ===== chunk4 start 2026-08-14T21:04:15-04:00
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk4.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk4.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.80 8.76 17.16 1/820 838326
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+ 838017       01:25  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 416fa874
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 7
+    plan_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk4/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk4/ARMS.json
+
+[run_tiletie] plan: n_positions=126 (e4=11 selfplay=115) max_arms=5 mean_arms=3.05 cap_j=4 capped=22
+[run_tiletie] total_arm_playouts=16512 oracle_worker_secs=86851.5 champ_pick_secs=0.0
+[run_tiletie] ETA at 14: 1.723 h (6204 s)
+[run_tiletie] ETA at 30: 0.804 h (2895 s)
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg1 (R9=1, W=1, n=11) -> leg_tier1-greedy_fixed_v1_leg1.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg2 (R9=1, W=1, n=6) -> leg_tier1-greedy_fixed_v1_leg2.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg3 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg1 (R9=0, W=13, n=115) -> leg_tier1-greedy_walled_leg1.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg2 (R9=0, W=9, n=75) -> leg_tier1-greedy_walled_leg2.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg3 (R9=0, W=4, n=38) -> leg_tier1-greedy_walled_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg4 (R9=0, W=1, n=12) -> leg_tier1-greedy_walled_leg4.log
+[main] ===== chunk4 rc=0 2026-08-14T21:35:09-04:00
+[main] ALL CHUNKS DONE 2026-08-14T21:35:09-04:00

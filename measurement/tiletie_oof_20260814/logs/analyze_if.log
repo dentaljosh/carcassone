@@ -378,3 +378,8 @@ Other pre-stated threats that travel with every number here: chain-granularity o
 ## 8. Governance
 
 Measurement only (§8): `governance/PRODUCTION.yaml` untouched, **no `experiments/results.csv` row** (0 games played), no band claim. A claim id is minted only on branch 1, 2 or 3 — and never off a PARTIAL corpus.
+
+
+[wrote] /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/readout_if/VERDICT.json
+[wrote] /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/readout_if/VERDICT.md
+[wrote] /home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/readout_if/per_position.jsonl

@@ -1,0 +1,99 @@
+# TILE-TIE OUT-OF-FAMILY RE-PRICING — READ-OUT
+
+**Branch: `C-CONFIRM`** — adjudicated mechanically by [READ_RULE.md](READ_RULE.md), committed before any number existed.
+
+- in-family judge: clair-puct (production curve125 leaf, leaf hash a36d2e15a3b3d71d, PUCT @ 100 clairvoyant sims)
+- out-of-family judge: tier1-greedy (RuleBasedPlayer, v1 OBJECT leaf virtual_score_inplace, 1-ply argmax, no search, python-only)
+- n = **502** positions / 277 roots (100.0% of the planned 502); M = 32 CRN worlds, salt `tiletie-v1`, **shared bit-for-bit with the primary**
+
+## 1. The two pre-registered statistics, both judges, same positions
+
+| statistic | IN-FAMILY `clair-puct` | z | OUT-OF-FAMILY `tier1-greedy` | z | OOF/IF |
+|---|---|---|---|---|---|
+| `S1a_sigma2_arm_discriminable` | +0.8555 [+0.4488, +1.2927] | +3.99 | +4.2208 [+2.9197, +5.6606] | +5.99 | +4.934 |
+| `S1a_sigma2_arm_all` ⭐ | +0.6185 [+0.3242, +0.9359] | +3.98 | +3.0720 [+2.1281, +4.1150] | +6.01 | +4.967 |
+| `S1b_gap_G_discriminable` | +0.6742 [+0.3452, +0.9992] | +4.05 | +1.6469 [+1.1882, +2.1143] | +6.97 | +2.443 |
+| `S1b_gap_G_all` | +0.4884 [+0.2483, +0.7251] | +4.02 | +1.1984 [+0.8643, +1.5395] | +6.97 | +2.454 |
+| `S2_headroom_discriminable` | +0.4526 [+0.2136, +0.6936] | +3.69 | +0.8207 [+0.4453, +1.2020] | +4.30 | +1.813 |
+| `S2_headroom_all` ⭐ | +0.3277 [+0.1545, +0.5033] | +3.68 | +0.5987 [+0.3263, +0.8761] | +4.32 | +1.827 |
+| `S2_headroom_all_zeros_strict` | +0.3510 [+0.1655, +0.5389] | +3.69 | +0.6406 [+0.3490, +0.9374] | +4.31 | +1.825 |
+| `S2b_leaf_regret_discriminable` | +0.2846 [+0.0388, +0.5350] | +2.26 | +0.9473 [+0.5799, +1.3241] | +4.97 | +3.329 |
+| `S2b_leaf_regret_all` | +0.2050 [+0.0266, +0.3863] | +2.24 | +0.6867 [+0.4201, +0.9601] | +4.97 | +3.349 |
+| `S1b_gap_G_parity_swap` *(diagnostic)* | +0.5110 [+0.2917, +0.7337] | +4.56 | +1.1510 [+0.7890, +1.5059] | +6.25 | +2.253 |
+| `S2_headroom_parity_swap` *(diagnostic)* | +0.2917 [+0.1213, +0.4613] | +3.35 | +0.5050 [+0.2011, +0.8028] | +3.24 | +1.731 |
+| `NAIVE_range_AUDIT_ONLY` *(audit only, never quoted)* | +2.0942 [+1.9505, +2.2407] | +28.46 | +3.1852 [+2.9458, +3.4337] | +25.43 | +1.521 |
+| `NAIVE_champ_regret_AUDIT_ONLY` *(audit only, never quoted)* | +1.1084 [+0.9912, +1.2277] | +18.17 | +1.5888 [+1.3762, +1.8081] | +14.46 | +1.433 |
+
+⚠️ S1b carries its pricing §4.1 sentence: `G` is a *downward-biased estimate of the true range and an unbiased test of the null*. The naive rows exist only so the winner's-curse correction is auditable and are **never results**.
+
+## 2. The retention ratio R (READ_RULE §2)
+
+- `H_IF`  = **+0.3277** pts/tied tile ply (se +0.0889, z +3.68)
+- `H_OOF` = **+0.5987** pts/tied tile ply (se +0.1387, z +4.32); parity-swap z +3.24
+- **`R = H_OOF / H_IF` = +1.827**, paired-root-bootstrap 95% CI **[+0.913, +3.995]** (median +1.835, +20000 finite reps)
+- `R_norm` (noise-normalised companion) = **+0.820**  [S1a_OOF +3.0720 / S1a_IF +0.6185 = +4.967]
+- bar = **0.50** (half the in-family headroom ≈ the project's ±17-elo resolution bar)
+- bootstrap reps whose DENOMINATOR crossed 0: **+0.0001** — a material rate would make the ratio percentile interval bimodal and is reported so it cannot hide.
+
+Elo through the identical ÷3.2 chain (×1.40 full-set extrapolation applied to both, so it cancels out of R): IF **+44.98** · OOF **+83.28**. x1.40 full-set extrapolation and the /3.2 chain applied IDENTICALLY to both judges, so they cancel out of R. Every pricing §4.3 caveat is inherited verbatim: NON_ADDITIVITY=3.2 is n=1 with a /5.23 low-end bracket (a +-1.6x bracket, not a point).
+
+## 3. `G-CAL` — the blind-ruler control (DESIGN §4.5)
+
+- selected the top 0.75 quantile of |primary selection-half arm delta| ⇒ **260** legs over 143 roots (of 1033 paired legs; threshold +3.6250)
+- sign-aligned out-of-family evaluation-half mean = **+1.0575** pts, se +0.4456, **z +2.37** vs bar +2.0 ⇒ **PASS**
+- selection on the PRIMARY's selection-half worlds, evaluation on the OUT-OF-FAMILY judge's DISJOINT evaluation-half worlds.
+
+## 4. The pricing §5 sign check (E4 autopsy taxonomy, unchanged)
+
+- 113/198 = **+0.571** sign agreement, exact two-sided binomial **p 0.0547**; primary aggregate sign +1, out-of-family aggregate sign +1
+- **NO CORROBORATION -- sign agreement is not distinguishable from chance**
+- benchmarks: 80% at p 0.0012 = corroboration (2026-07-28 precedent); 61.9% at p 0.38 = NOT corroboration (farm-war). The E4 autopsy's own Tier-1 leg: 62.1% at p 2.8e-05 with the secondary's aggregate sign NEGATIVE => PARTIAL.
+
+## 5. Integrity
+
+- `arm_mismatch`: **0**
+- `checksum_failed`: **0**
+- `compared_legs`: **1033**
+- `crn_unverified`: **0**
+- `playout_seed_mismatch`: **0**
+- `world_seed_mismatch`: **0**
+- holdout leak: **0** · pilot leak: **0**
+- `in_family` analyze_tiletie §2.1 witnesses: arm_index_mismatch 0 · checksum_failed 0 · crn_unverified 0 · seed_drift 0 · values_a_drift 0 · zero_distinct_afterstates 0
+- `out_of_family` analyze_tiletie §2.1 witnesses: arm_index_mismatch 0 · checksum_failed 0 · crn_unverified 0 · seed_drift 0 · values_a_drift 0 · zero_distinct_afterstates 0
+
+| precondition | result |
+|---|---|
+| `G-CRN` | PASS |
+| `G-ARM` | PASS |
+| `G-VA` | PASS |
+| `G-HOLDOUT` | PASS |
+| `G-PILOT` | PASS |
+| `G-N` | PASS |
+| `G-DENOM` | PASS |
+
+## 6. Resolution and sizing
+
+- realized out-of-family per-position sd = +3.1168 pts
+- realized 2σ resolution = +0.2775 pts = +38.03 elo
+- R half-width = +1.541; n for R to ±0.25 ≈ 19070
+
+## 7. Cuts (emitted beside the pooled read, NEVER adjudicated on)
+
+| cut | n | H_IF | z_IF | H_OOF | z_OOF | R |
+|---|---|---|---|---|---|---|
+| capped_only | 94 | +0.1682 | +0.85 | +0.6755 | +1.94 | +4.016 |
+| phase:early | 189 | +0.3685 | +2.32 | +0.4129 | +1.51 | +1.120 |
+| phase:late | 147 | +0.3915 | +3.61 | +0.5184 | +3.52 | +1.324 |
+| phase:mid | 166 | +0.2248 | +1.33 | +0.8814 | +3.56 | +3.920 |
+| profile:app_aug2 | 3 | +0.9116 | nan | +2.7508 | nan | +3.018 |
+| profile:fixed_v1 | 28 | +0.2073 | +0.43 | +1.0881 | +1.57 | +5.248 |
+| profile:walled | 471 | +0.3311 | +3.65 | +0.5559 | +3.92 | +1.679 |
+| stratum:e4 | 35 | +0.2193 | +0.56 | +1.4627 | +2.32 | +6.669 |
+| stratum:selfplay | 467 | +0.3358 | +3.68 | +0.5339 | +3.79 | +1.590 |
+| uncapped_only | 408 | +0.3645 | +3.67 | +0.5810 | +3.72 | +1.594 |
+
+Per-stratum / per-profile / per-phase reads are underpowered on their own and are labelled as such; **no branch is adjudicated on a cut**.
+
+## 8. Governance
+
+Measurement only. 0 games. No experiments/results.csv row, no band, no governance/BAND_REGISTRY.csv entry, no claim id, governance/PRODUCTION.yaml untouched -- on EVERY branch. The holdout (120 roots / 211 positions) was never read.

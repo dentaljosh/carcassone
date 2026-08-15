@@ -1,0 +1,249 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "git_rev": "416fa874",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk2.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "30",
+          "--out",
+          "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/GATE_BACKEND_RECHECK_chunk2.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n 818743       01:27  0.1 python",
+        "loadavg": "5.66 17.17 20.31 1/892 819260"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "416fa874",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 10,
+        "plan_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/POSITIONS_PLAN.json",
+        "arms_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/ARMS.json"
+      }
+    }
+  },
+  "r9_by_profile": {
+    "app_aug2": "0",
+    "fixed_v1": "1",
+    "walled": "0"
+  },
+  "judges": [
+    "tier1-greedy"
+  ],
+  "judge_backend": {
+    "tier1-greedy": "python"
+  },
+  "world_seed_salt": "tiletie-v1",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "workers": 30,
+  "resume": true,
+  "positions_plan_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/POSITIONS_PLAN.json",
+  "arms_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/ARMS.json",
+  "positions_plan_sha256": "e631878226047c8b790fe577213b211c72cd312b11a850e84a1ab0c0c10d1c27",
+  "arms_sha256": "e75528f9f49c65ede4973413f65f3be5b72baebda8da4f8690026b8446620fdd",
+  "legs": [
+    {
+      "judge": "tier1-greedy",
+      "profile": "app_aug2",
+      "leg": 1,
+      "rc": 0,
+      "n": 2,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_app_aug2_leg1.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/app_aug2/leg1",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_app_aug2_leg1.log",
+      "wall_secs": 497.7,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "app_aug2",
+      "leg": 2,
+      "rc": 0,
+      "n": 1,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_app_aug2_leg2.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/app_aug2/leg2",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_app_aug2_leg2.log",
+      "wall_secs": 497.7,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "app_aug2",
+      "leg": 3,
+      "rc": 0,
+      "n": 1,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_app_aug2_leg3.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/app_aug2/leg3",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_app_aug2_leg3.log",
+      "wall_secs": 497.7,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "fixed_v1",
+      "leg": 1,
+      "rc": 0,
+      "n": 6,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_fixed_v1_leg1.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/fixed_v1/leg1",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_fixed_v1_leg1.log",
+      "wall_secs": 1265.0,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "fixed_v1",
+      "leg": 2,
+      "rc": 0,
+      "n": 3,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_fixed_v1_leg2.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/fixed_v1/leg2",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_fixed_v1_leg2.log",
+      "wall_secs": 1265.0,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "fixed_v1",
+      "leg": 3,
+      "rc": 0,
+      "n": 2,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_fixed_v1_leg3.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/fixed_v1/leg3",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_fixed_v1_leg3.log",
+      "wall_secs": 1265.0,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "walled",
+      "leg": 1,
+      "rc": 0,
+      "n": 118,
+      "workers": 13,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_walled_leg1.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/walled/leg1",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_walled_leg1.log",
+      "wall_secs": 1711.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "walled",
+      "leg": 2,
+      "rc": 0,
+      "n": 70,
+      "workers": 8,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_walled_leg2.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/walled/leg2",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_walled_leg2.log",
+      "wall_secs": 1711.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "walled",
+      "leg": 3,
+      "rc": 0,
+      "n": 42,
+      "workers": 4,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_walled_leg3.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/walled/leg3",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_walled_leg3.log",
+      "wall_secs": 1809.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "tier1-greedy",
+      "profile": "walled",
+      "leg": 4,
+      "rc": 0,
+      "n": 14,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/positions_chunk2/positions_walled_leg4.jsonl",
+      "out": "/mnt/c/carc-shared/tiletie_oof_20260814/chunk2/tier1-greedy/walled/leg4",
+      "log": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1badefaaed4b6d69/measurement/tiletie_oof_20260814/logs/leg_tier1-greedy_walled_leg4.log",
+      "wall_secs": 2166.3,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    }
+  ],
+  "error": null,
+  "finished_utc": "2026-08-15T00:29:51Z"
+}
