@@ -1,5 +1,13 @@
 # TILE-TIE OUT-OF-FAMILY RE-PRICING — READ-RULE
 
+> **ADJUDICATED 2026-08-14 — branch `C-CONFIRM` ([READOUT.md](READOUT.md)).**
+> All four conjuncts held (`z_OOF +4.32 ≥ 2`, `R +1.827 ≥ 0.50`,
+> `R_norm +0.820 ≥ 0.50`, `z_swap_OOF +3.24 > 0`) and all seven §3
+> preconditions passed. The holdout was never opened and stays unburned.
+> **THIS READ-RULE IS SPENT; any successor out-of-family design needs a fresh
+> one.** The §4.1 exclusivity/exhaustiveness property is machine-verified by
+> `tests/test_tiletie_oof.py` over a 432-combination sweep.
+
 > **STATUS AT WRITING: COMMITTED BEFORE ANY OUT-OF-FAMILY NUMBER EXISTS
 > ANYWHERE — before the instrument, before the cost pilot, before the run.**
 > `READOUT.md`, `READOUT.json`, `PILOT.json` do not exist at the time of this

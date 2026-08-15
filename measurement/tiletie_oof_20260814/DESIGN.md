@@ -1,5 +1,20 @@
 # TILE-TIE OUT-OF-FAMILY RE-PRICING — DESIGN
 
+> **OUTCOME STAMP (post-hoc, 2026-08-14): the run completed and fired
+> [READ_RULE.md](READ_RULE.md) branch `C-CONFIRM` —
+> [READOUT.md](READOUT.md). 502/502 dev positions, 1033/1033 leg records,
+> every integrity counter 0. The out-of-family `tier1-greedy` judge sees the
+> headroom and sees MORE of it, not less: `H_IF +0.3277` (z +3.68) vs
+> `H_OOF +0.5987` (z +4.32), `R = 1.827` CI [0.913, 3.995], `R_norm 0.820`,
+> parity-swap z +3.24, `G-CAL` PASS (z +2.37). **The +0.252 pts/tied-ply
+> headroom is NOT substantially a judge artifact.** ⚠️ The §5 per-position
+> sign check reads 57.1% at p 0.0547 (NO CORROBORATION by the autopsy
+> taxonomy) even though both aggregate signs are +1 — the out-of-family judge
+> is ~2× noisier per position, so its per-position signs are weak while its
+> mean is well estimated. The 30% holdout was NEVER opened and stays unburned.
+> Licenses (does NOT fund) one fresh mechanism-named prereg on the
+> k-width/determinization-at-ties axis; nothing else.**
+
 > **STATUS AT WRITING: DESIGN, COMMITTED BEFORE ANY OUT-OF-FAMILY NUMBER EXISTS
 > ANYWHERE.** The read-rule ([READ_RULE.md](READ_RULE.md)) is committed in the
 > same commit as this file, and both are committed **before** the instrument,
