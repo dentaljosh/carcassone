@@ -7358,3 +7358,52 @@ run on the local box.**
 `measurement/kwidth_ties_20260814/`. Also fixed two doc leaks found en route (the vart had no
 `docs/INDEX.md` row; the roadmap still called its ladder "RUNNING").
 **Phase:** measurement-first (weekend round; queue Q6 resolved).
+
+## 2026-08-14 (night) — OUT-OF-FAMILY RE-PRICING — **`C-CONFIRM`: THE TILE-TIE HEADROOM IS REAL. The independent judge sees MORE of it, not less (S2 ×1.83, R = 1.827, CI [+0.913, +3.995]).** Joint with the same night's `W-FLAT`: **real, and with no known route.**
+
+**Why it mattered.** Four routes had come back flat (two static menus + the 38% reach bound;
+depth = the vart `E-FLAT`; width = `W-FLAT`), which is the signature of a number the ruler
+invented. The pricing judge (`clair-puct`) shares the leaf under test — pricing DESIGN §5 flagged
+it. This was the instrument that could kill the program's only positive signal for free.
+
+**Judge, forced not chosen:** `tier1-greedy` (`RuleBasedPlayer` → the **v1 OBJECT leaf**, 1-ply
+argmax, no search) is the only implemented policy sharing **neither leaf nor search**.
+`h6400_v2.9` is disqualified as the SAME leaf family (v2.9 Bmild_cap8 differing only
+CURVE100↔CURVE125 — one tuned constant inherits the systematic blindness); `rodv2_iter02` is
+CL-070-ceilinged and not a policy. Cost measured, not assumed (`c_tier1` 2.18 worker-s/playout =
+0.41× the transplanted figure) ⇒ the **whole 502-position dev slice** at 1.33 h W30 instead of the
+briefed 150–250 (at n≈200 the leg could have excluded nothing).
+
+⭐ **The decisive design property: both judges scored BIT-IDENTICAL CRN worlds** (same salt, same
+M=32, same arms; verified on all 1,033 legs) ⇒ the retention ratio is **paired**, which is the only
+reason it resolves at this supply.
+
+| statistic (502 positions, same unmodified estimator) | in-family `clair-puct` | OOF `tier1-greedy` | ratio |
+|---|---|---|---|
+| S1a σ²_arm | +0.6185 (z +3.98) | **+3.0720 (z +6.01)** | 4.97× |
+| **S2 headroom** | +0.3277 (z +3.68) | **+0.5987 (z +4.32)** | **1.83×** |
+| S2 parity-swap | +0.2917 (z +3.35) | +0.5050 (z +3.24) | 1.73× |
+
+`R_norm` 0.820; **`G-CAL` PASSED at z +2.37** — the blind-ruler control that gates COLLAPSE only,
+so a false collapse was genuinely reachable and did not happen. All seven preconditions PASS,
+every integrity counter 0, 29 tests incl. a 432-combination machine proof the branch table is
+exclusive and exhaustive. Holdout never read (0 leaks).
+
+⚠️ **Mandatory reporting, never a branch input: the per-position sign check reads 57.1 % at
+p 0.0547 = NO CORROBORATION** by the autopsy taxonomy, even though both aggregate signs are +1 —
+the OOF judge is ~2× noisier per position (sd 3.12 vs 1.53), so its per-position signs are weak
+while its mean is well estimated. ⚠️ A greedy continuation is a **different estimand**, not a
+noisier one; the OOF **+83 elo is NOT a deploy-elo claim**, and §6.5's regression-to-the-mean makes
+a positive through a second independent instrument **conservative**.
+
+⛔ **CORRECTION TO THE AGENT'S OWN CLOSING SENTENCE (it was written from stale state):** it says
+"only the k-width axis (= the un-run Q6) survives". **Q6 RAN the same night and read `W-FLAT`**
+(DECISIONS above). The orchestrator recorded this ordering hazard **before Q5's numbers existed**.
+**The correct joint reading: the headroom is REAL and has NO KNOWN ROUTE** — static functions
+(×2 + reach bound), depth, and width are all closed against it. `C-CONFIRM` licenses one
+mechanism-named prereg and **funds nothing**; the k-width prereg it would have licensed has
+already been run and read flat, so **no new prereg is licensed by default.**
+
+**0 games · no band · no claim · `PRODUCTION.yaml` untouched.** Artifacts
+`measurement/tiletie_oof_20260814/`.
+**Phase:** measurement-first (weekend round; Q5 resolved — the queue is now genuinely empty).
