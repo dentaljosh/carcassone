@@ -11,6 +11,7 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 > Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [STATUS.md](STATUS.md) (live state; the 06-02 correction plan is an executed historical artifact).
 
 **2026-06 — correction era (current)**
+- 2026-08-16 (**TERMINAL-GROUNDED TIE ARBITRATION RAN AND CLOSED — pre-registered branch `P-PARTIAL`. The first tile-tie capture route ever to CLEAR the mechanism bar, and it is STILL not funded, because the one conjunct it failed is the BLIND holdout.** The single mechanism-named prereg `C-CONFIRM` licensed, funded by Joshua 2026-08-16 ("get an agent on it"), Stage 1 OFFLINE. **Mechanism, named before compute:** every judge that SEES the +0.252 headroom prices tied arms by continuation TO TERMINAL, while the champion's fair-PIMC estimator never touches terminal information (curve125 leaf at a truncated frontier) — and `E-FLAT`/`W-FLAT` both reported the same signature, *"moves picks at tied plies without IMPROVING them"*, which is what a converged-but-biased frontier looks like. So: at a tied ply, arbitrate by CRN-paired `tier1-greedy` playouts to terminal, cross-fit argmax over the world-mean. **Non-circular by construction** — the arm is chosen by `tier1-greedy` on the SELECTION worlds and priced by `clair-puct` on the DISJOINT evaluation worlds, so selection and evaluation share neither judge nor world. **No existing kill binds it:** not depth (`E-FLAT`), not width-through-the-same-leaf (`W-FLAT` — whose own re-open bar names *"a mechanism that is neither static-leaf, nor depth, nor width"*), not a static afterstate function so the mining's 38% reach bound has no purchase (that bound is over *deterministic functions of the afterstate*; this is a stochastic rollout estimator), and **nothing is learned** — zero free parameters, so CL-065/CL-073 do not apply. **Graded at the IDENTICAL bar and in the IDENTICAL currency as the two kills it succeeds** (ratio ≥ 0.35 ∧ z ≥ +2; denominator the ladders' own published +0.2803). **Result, pooled n=733 (dev 522 + holdout 211/211), 1468/1468 legs: `arb = +0.2065` pts/tied ply (z +3.75), `F = arb/ora = 0.811` CI [0.450, 1.320], `F_fixed = 0.737` CI [0.347, 1.125]** — vs `E-FLAT` 0.00/0.18/0.18 and `W-FLAT` 0.11/0.26/0.09/0.09/0.30, none of which ever cleared 0.35 or z +2. The §4.5 sign check **CORROBORATES** (55.7% over 548 pick-change positions, exact p 0.0091) — the first corroborating sign check in this chain (the OOF leg read NO CORROBORATION at 57.1%/p 0.0547). ⛔ **`C_z` fired and `RBAR` fired; `C_h` — the blind never-opened-holdout sign-consistency conjunct — did NOT: `arb_holdout = −0.0051` (z −0.05) against `arb_dev = +0.2920` (z +4.43), a ≈0.30 pt split that is itself ≈2.5σ. ⇒ `P-PARTIAL`: nothing closes, nothing is licensed, NO Stage-2 game prereg is funded.** The branch is taken verbatim. ⚠️ **Two facts that must never be quoted apart from that verdict.** (a) The holdout's OWN in-family headroom is weak — `ora_holdout = +0.1370`, **z +1.19** — so there was little there to capture; the `C_h` failure is materially a low-signal-slice story and is **not** a demonstrated refutation of the mechanism. (b) **DESIGN §7.3's named threat FIRED:** `arb` under an uninformative arbiter is `mean-over-arms − champ`, not 0, and the free random-arm control `C-RND` reads **+0.1296 on dev but −0.2682 (z −2.32) on the holdout** — i.e. the champion's own tie-break sits BELOW arm-average on dev and ABOVE it on the holdout, a 0.40 pt swing in the *baseline*. Net of that level, `arb − rnd` is **+0.2630 (z +2.14) on the holdout** and +0.1913 (z +3.11) pooled. `arb − rnd` was pre-registered as a companion precisely for this and is **never a branch input**. ⭐ **Free by-catch on never-opened data:** the OOF retention ratio replicates in DIRECTION — `R_holdout = H_ARB/H_IF = +2.72` (vs `C-CONFIRM`'s +1.827), `H_ARB_holdout +0.3727` z +2.49 — but CI [−22.2, +30.0] with 11.6% of bootstrap reps crossing zero in the denominator, so the direction replicates and the magnitude does not. ⚠️ **Declared deviation, argued in DESIGN §4.4 before any number: the branch input is the POOLED 733 read, not the 211-position holdout alone**, because the power arithmetic showed n=211 cannot convict even a 100% capture; the holdout enters only as `C_h`. Pooling with dev is legitimate because the arbiter has **zero free parameters** and no arbitration statistic had ever been computed on any part of the corpus — dev was as blind to *this estimator* as the holdout was. ⚠️ §4.4's power projection was **conservative by ≈1.5×** (realized per-position sd 1.582 vs a projected 1.74–3.09; realized 2σ resolution ±0.110 pts = ±0.393 in `F_fixed` units), so `A-CAPTURE` was genuinely reachable — **the binding constraint was the blind slice, not power.** ⚠️ **THE HOLDOUT IS NOW SPENT** (211 positions / 120 roots) after surviving `G2-SCREEN-FAIL`, `E-FLAT`, `W-FLAT` and `C-CONFIRM` unburned. ⚠️ Deployability was never claimed: the honest arbiter shape costs ~100–200× the champion's per-move budget (measured `c_tier1` 2.12→2.52 worker-s/playout × 32 worlds × A arms vs 1.551 s/move on the phone); Stage 1 was a value-of-information test. **Integrity: all seven preconditions PASS, every counter 0, `crn_cross_mismatch` 0 across all 1,468 legs, and `G-REPRO` 43/43 — the new pipeline BIT-REPRODUCES the adjudicated 2026-08-14 OOF records, a control that run could not have had.** **Blind order proven by git: DESIGN+READ_RULE (`bd93b6c6`) → instrument + 52 tests incl. a 1,250-point branch-table exclusivity sweep (`771565ad`) → cost pilot (`ffdb4c16`) → holdout scoring → readout.** **Re-open bar: `F_fixed` needs n ≈ 924 to resolve to ±0.35 and the deduped supply is 733 and now burned ⇒ a successor needs a NEW corpus (new roots, fresh CRN worlds), a fresh read-rule, and an argument for why the dev/holdout split is slice heterogeneity rather than the mechanism.** 0 games; `experiments/results.csv`, `governance/BAND_REGISTRY.csv` and `governance/PRODUCTION.yaml` untouched; no band, no claim id minted. → [DESIGN](measurement/tiearb_20260816/DESIGN.md) · [READ_RULE](measurement/tiearb_20260816/READ_RULE.md) · [READOUT](measurement/tiearb_20260816/READOUT.md); LEVER_INDEX "terminal-grounded tie arbitration".)
 - 2026-08-14 (overnight) (**THE TILE-TIE HEADROOM IS NOT A JUDGE ARTIFACT — out-of-family re-pricing ran and fired pre-registered branch `C-CONFIRM`.** Three capture routes had already read flat on the +0.252 pts/tied-ply residual (two leaf menus + the 38% reach bound, then `E-FLAT` deeper search), which is the signature of a number the **ruler** partly invented — and the pricing DESIGN §5 had **pre-registered exactly this check (`tier1-greedy`, n=80, SIGN ONLY) and never bought it**, because §5 made it purchasable only on a branch-1 close. This run discharges it. **Judge choice is forced, not chosen:** `oracle_score_pilot.ORACLE_POLICIES` has exactly TWO members, and `tier1-greedy` (`RuleBasedPlayer`, the **v1 OBJECT leaf** `virtual_score_inplace`, 1-ply argmax, no search, python-only) is the only implemented judge sharing neither the leaf nor the search with the object under test. **`h6400_v2.9` is disqualified twice over** — it is the *same leaf family* (its CURVE100 vs the production CURVE125 is one tuned constant in `champion_factory.py`), so it inherits the very systematic blindness §5 warns about, and it is not implemented as a policy; **`rodv2_iter02` likewise** (not a policy; the CL-070 ceiling mis-signs a +50-elo contrast, so it cannot arbitrate ≈+34). ⭐ **The property that made the question decidable at the available supply: same salt `tiletie-v1`, same M=32, same arms ⇒ both judges score BIT-IDENTICAL CRN worlds** — verified on all 1033 legs (`world_seeds`, `playout_seeds` and arms match the primary exactly) — so the retention ratio is *paired* and its root bootstrap prices the cross-judge correlation automatically. Scope: the **502-position / 277-root dev slice** (the whole of it — §5.1's power arithmetic showed n≈200 could exclude nothing); the 30%-root holdout was **never read**. **Result: the out-of-family judge sees MORE headroom, not less.** Same unmodified `analyze_tiletie` estimators on the same positions: S2 headroom (all) **IF +0.3277 (z +3.68) vs OOF +0.5987 (z +4.32)**, **`R = H_OOF/H_IF` = +1.827, paired-root-bootstrap CI [+0.913, +3.995]**, noise-normalised **`R_norm` = 0.820** (bar 0.50), parity-swap z +3.24; S1a spread ratio **4.97×**. The free `G-CAL` cross-judge cross-parity blind-ruler control — which gates COLLAPSE only, so a false-collapse was genuinely reachable — **PASSED at z +2.37**. All seven preconditions PASS; every integrity counter 0. ⚠️ **The one tension, reported and not buried: the §5 per-position SIGN check reads 57.1% at p 0.0547 = NO CORROBORATION by the E4-autopsy taxonomy, even though BOTH aggregate signs are +1** — the out-of-family judge is ~2× noisier per position (sd 3.12 vs 1.53), so per-position signs are weak while the MEAN is well estimated; the sign check is mandatory reporting, never a branch input. ⚠️ **Mandatory scope: a greedy continuation is a DIFFERENT ESTIMAND, not merely a noisier one** — the OOF elo figure (+83) is *not* a deploy-elo claim, and §6.5's regression-to-the-mean threat means a positive through a second independent instrument is **conservative**. **Consequence: the in-family-bias explanation of the +0.252 is REFUTED; the tile-tie axis does NOT close, and of the two explanations the escalation row left standing only the k-width / determinization axis survives.** Licenses (does NOT fund) ONE fresh prereg on that axis, which must name its MECHANISM before spending compute — three capture routes have read flat and "try harder on the same axis" is not a mechanism; ⛔ does not license a leaf term (CL-065 + two dead menus + the reach bound), a game, a band or a deploy. The ±17-elo Stage-B question stays OPEN (n ≈ 1023). The corpus-reuse cap does not bind: this re-runs PRE-REGISTERED estimators on NEW playouts and selects no hypothesis. **Blind order proven by git history: DESIGN+READ_RULE (`2d5f65f3`) → layout-only §0 amendment (`1abf3127`) → instrument + cost pilot (`6c59028e`) → 29 tests incl. a 432-combination machine-verified branch-table exhaustiveness sweep (`416fa874`) → readout (`9d206edc`).** 0 games; `experiments/results.csv`, `governance/BAND_REGISTRY.csv` and `governance/PRODUCTION.yaml` untouched; no band, no claim id minted. → [DESIGN](measurement/tiletie_oof_20260814/DESIGN.md) · [READ_RULE](measurement/tiletie_oof_20260814/READ_RULE.md) · [READOUT](measurement/tiletie_oof_20260814/READOUT.md); LEVER_INDEX "out-of-family re-pricing of the tile-tie headroom".)
 - 2026-08-13 (late) (**P1 ORDER-INVARIANCE GATE IS RED — DEFECT REPORT, ROOT-CAUSED, DELIBERATELY NOT FIXED; and the handed-down framing "a genuine Python-side engine bug" is WRONG.** `scripts/rustport/property_count_final_scores_order.py` crashes standalone at `engine/.../farm_util.py:214` (`AttributeError: 'NoneType' object has no attribute 'farmer_connections_with_coordinate'`), taking `test_p1_engine.py::test_count_final_scores_is_order_invariant_smoke` red with it. `count_final_scores` **does** filter to `FARMER`/`BIG_FARMER` first, so a real farmer really fails to resolve to a farm — but the state is **manufactured by the harness**: `load_corpus` replays every E4 phone archive with **no `game_kwargs`**, i.e. under the default `walled` profile, while 24 of the 26 archives are `app_aug2`/`fixed_v1`; `root_replay.replay_actions`'s own docstring names the requirement. **A/B over all 26 archives: under `walled` 15 crash and only 2 reproduce the phone's recorded scores; under each archive's OWN profile 0 crash and 26/26 reproduce the phone's scores exactly.** `champ` (40 positions) and `golden` (12) are clean. **Regression bracket:** GREEN 2026-08-02 at 28,140 comparisons (`ORDER-IRRELEVANT`) → first non-`walled` archive lands 2026-08-05 (`1bc2b1a2`) → red ever since. The 2026-05-29 `find_farm`/`TRT→BRR` fix is **not** implicated. ⚠️ **Live consequence: the order-irrelevance premise under `carc-core`'s deterministic set-drain order is STALE — not refuted, and not "never answered" — it just predates 24 of the 26 archives.** Secondary hygiene finding: `FarmUtil.find_farm_by_coordinate`'s implicit `return None` fall-through is dereferenced unguarded by two callers; fail-loud fix recommended, changes no legally-reachable outcome. **No source file changed, no `results.csv` row, no band, no claim, `PRODUCTION.yaml` untouched.** → [P1_ORDER_GATE_DEFECT](measurement/rustport_p1/P1_ORDER_GATE_DEFECT_2026-08-13.md); roadmap F15; LEVER_INDEX §8.)
 - 2026-08-11 (late) (**SIMS-SPLIT PRE-GATE CENSUS RAN → branch `U` (park-with-decision): the FREE LUNCH IS REFUTED, the ASYMMETRY IS REAL, and the lever survives only as a TRADE.** The phase-asymmetric sims split (LEVER_INDEX §5, NEVER-TRIED) claimed the meeple search's budget is partly wasted — it chooses among 3–4 actions while eating 58% of turn time, vs 17–30 actions for the tile decision. 0-game census on the 898-root CL-070 bank, k8 worlds drawn once and re-searched at per-world rungs {172, 344, 688, 1376} under CRN (only sims differ), rust backend, ~4 min at W14. **Instrument gate G0 PASS: 898/898 replay-checksum-clean, 878/878 determinism controls bit-identical, 0 failures**; 878 live after the turn-atomic latch exclusion (480 TILES / 398 MEEPLES). **Pooled pick-flip rate vs the 1376 reference — TILES 18.54 / 27.71 / 35.21% at 688 / 344 / 172, MEEPLES 11.56 / 13.07 / 14.07%.** **S1 did NOT fire on its confound-immune half:** the absolute bar was `M344 ≤ 5%` (CI95-upper ≤ 7%) and the reading is **13.07%, CI95 [10.10, 16.73]** — missed ~2.6× ⇒ **there is no wasted meeple budget to reclaim; a 4× meeple cut changes one meeple decision in eight.** N1 (no-asymmetry) also did not fire — raw contrast **z 5.30 at 344 / 2.86 at 688**; N2 (both-saturated) did not fire — both 688 rates sit far above its ≤2% bar. ⇒ **branch `U`.** **What survives is the comparative claim, and it is not the action-count artifact:** within the pre-registered reference-gap strata the tile flip rate exceeds the meeple rate in **all four bins at every rung** (direction unanimous); bin z's at 344 are 1.67 / 3.59 / 4.32 / 2.09 (at 172: 3.23 / 4.32 / 5.04 / 2.42) — ⚠️ **only the DIRECTION is unanimous; the lowest-gap bin does not clear 2σ at 344, so quote the bins, never "significant in every stratum"** (an earlier verbal summary in-session quoted the 172-rung z's against the 344-rung bars and was corrected). **Consequence for the lever: reframed from free lunch to trade** — reallocating meeple→tile pays ~13% of meeple picks to buy tile budget 1376 → ~2400 at fixed per-turn total, and **the census provably cannot price that trade** (PREREG §4.1: the ladder only descends; flip rate is not regret). Only a deck-paired game screen can. **Secondary, and it corroborates a live claim from an opponent-free instrument: NEITHER search is converged at production** (halving still moves 18.5% of tile / 11.6% of meeple picks), which sits with CL-060's +49.85 elo for 4× budget and is why the N2 branch — which would have owed a CL-060 tension caveat — never fired. **0 games, no band consumed, no `results.csv` row owed** (nothing was played; same disposition as the adaptive-k census and the budget-headroom bound), no CL id minted, `governance/PRODUCTION.yaml` untouched. → [READOUT](measurement/simsplit_census_20260811/READOUT.md), [PREREG](measurement/simsplit_census_20260811/PREREG.md); instrument `scripts/measurement_infra/simsplit_census.py` (+20 tests).)
@@ -7434,3 +7435,185 @@ brightness, baseline-subtracted.
 
 **Deploy note:** the phone picks up the flip at the next apk build+install (the bundle syncs
 from the repo at build — never hand-copy).
+
+---
+
+## 2026-08-16 — TERMINAL-GROUNDED TIE ARBITRATION (Stage 1, offline) — **`P-PARTIAL`: the first tile-tie capture route ever to CLEAR the mechanism bar, and it is STILL not funded — the one conjunct it failed is the BLIND holdout.** The holdout is now spent
+
+**Context.** The 2026-08-14 out-of-family re-pricing fired `C-CONFIRM` — the +0.252 pts/tied-ply
+tile-tie headroom is **real**, not a judge artifact (an independent judge sees it **1.83×** larger).
+That verdict licensed, and did **not** fund, *exactly one* thing: a fresh pre-registration on the
+k-width / determinization-at-ties axis **that names its MECHANISM before it may spend compute**.
+Joshua funded it 2026-08-16. This entry closes it, six-touch.
+
+### The mechanism, named before any compute
+
+**Terminal-grounded tie arbitration.** Every instrument that *sees* the headroom prices the tied
+arms by **continuation to terminal** — `clair-puct` (100-sim clairvoyant PUCT played out on a known
+deck) and `tier1-greedy` (a full greedy continuation) both return the final-score margin at
+terminal. The champion's own estimator never touches terminal information: fair PIMC, k=8 × 1376
+sims/det, every node scored by the **curve125 static leaf at a truncated frontier**. And the two
+search-side kills reported the *same* signature — `E-FLAT` and `W-FLAT` both wrote that more
+compute **"moves picks at tied plies without IMPROVING them"**, which is precisely what a
+*converged-but-biased* frontier estimate looks like.
+
+⇒ Hypothesis: at a leaf-tied ply, break the tie by **CRN-paired playouts to terminal**
+(`tier1-greedy`, one full continuation per arm × determinization), selected by **cross-fit argmax
+over the world-mean**.
+
+**Non-circularity is structural, not asserted.** The arm is chosen by `tier1-greedy` on the
+**selection** worlds and priced by `clair-puct` on the **disjoint evaluation** worlds — selection
+and evaluation share neither the judge nor the world. (Pricing on all 32 worlds would leak a
+winner's curse through the shared deck draw, since the two judges' values at the same world are
+correlated; that is why the cross-fit is not optional here even though the E-FLAT/W-FLAT ladders,
+whose selector is a search that never touches the oracle values, could legitimately price on all M.)
+
+**Why no existing kill binds it** — stated in DESIGN §2.2 as a checkable claim:
+
+| kill | why it does not bind |
+|---|---|
+| `E-FLAT` (2×/4×/10× sims) | adds PUCT sims *per determinization*; every added node is still scored by the curve125 leaf at a truncated frontier. The arbiter adds **no sims** — it replaces the frontier estimate with the terminal margin. |
+| `W-FLAT` (k16/32/64 + two iso-budget controls) | folds **more worlds through the same leaf-truncated search**. Its own re-open bar names the survivor verbatim: *"a mechanism that is neither static-leaf, nor depth, nor width."* |
+| the two dead menus + the **38% reach bound** | the bound is over **deterministic functions of the afterstate descriptor space**. The arbiter is not a state function of the afterstate at all — it is a function of (afterstate × sampled deck completions × a continuation policy), stochastic in the deck draw. |
+| CL-065 / CL-073 | **nothing is learned; zero free parameters.** CL-073's prediction≠discrimination is a statement about learned regressors; the arbiter discriminates by playing the moves out. |
+
+### What ran
+
+- **Corpus:** the pooled 733-position / 399-root pricing corpus — DEV 522 (both judges' records
+  already on disk) **plus the 211-position / 120-root HOLDOUT**, whose `tier1-greedy` records this
+  run produced (392 legs, 25,088 arm-playouts). ⚠️ **This run SPENDS the holdout**, unburned through
+  four prior programmes.
+- **CRN is forced, not chosen:** the in-family holdout records already exist at salt `tiletie-v1`,
+  M=32, so the arbiter scores the *identical* 32 deck completions arm-for-arm. Verified:
+  `crn_cross_mismatch` **0 across all 1,468 legs**.
+- **Instrument:** `run_tiletie.py --judges tier1-greedy` and `oracle_score_pilot.py`, both
+  **unmodified**; new additive code `scripts/tiletie/{build_tiearb_plan,analyze_tiearb}.py`, which
+  imports every estimator (`parity_indices`, `crossfit_regret`, `cluster_robust`, `bootstrap_roots`,
+  `aggregate`, `zero_rates`, `pts_to_elo`) from `analyze_tiletie` unmodified. `tests/test_tiearb.py`
+  = 52 tests including a **1,250-point machine sweep of the branch table** proving exclusivity and
+  exhaustiveness, plus 224 precondition points proving `U-UNREADABLE` pre-empts.
+- **Cost pilot (DEV only, reads no strength number):** the OOF run's own 20 pilot rids, re-scored.
+  43/43 ok · 43/43 `crn_verified` · 43/43 world+playout seeds bit-identical to the pricing records ·
+  ⭐ **`G-REPRO` 43/43 — the new plan builder and launch BIT-REPRODUCE the adjudicated 2026-08-14 OOF
+  records** (sha256 over values+seeds), a control that run could not have had. `c_tier1` 2.1236
+  worker-s/playout ⇒ `H = 0.493` wall-h at W30 ⇒ the §5 mechanical rule launched all 4 chunks.
+
+### The verdict — pre-registered branch `P-PARTIAL`
+
+| quantity | pooled (n=733) | dev (n=522) | **holdout (n=211)** |
+|---|---|---|---|
+| `arb` (arbitration gain, IF-priced) | **+0.2065** (z **+3.75**) | +0.2920 (z +4.43) | **−0.0051 (z −0.05)** |
+| `ora` (the headroom) | +0.2545 (z +4.26) | +0.3020 (z +4.32) | +0.1370 (**z +1.19**) |
+| `F = arb/ora` | **0.811** CI [0.450, 1.320] | 0.967 | — |
+| `F_fixed = arb/0.2803` | **0.737** CI [0.347, 1.125] | — | — |
+| `C-RND` (random-arm null level) | +0.0151 (z +0.25) | **+0.1296** | **−0.2682 (z −2.32)** |
+| `arb − rnd` | +0.1913 (z +3.11) | +0.1624 (z +2.30) | **+0.2630 (z +2.14)** |
+
+- **`C_z` FIRED** (z_arb +3.75 ≥ +2.0) and **`RBAR` FIRED** (F 0.811 ≥ 0.35 ∧ F_fixed 0.737 ≥ 0.35,
+  `G-BOOT` 0.0000 not fired). Both bars are **E-FLAT's and W-FLAT's own committed fund bar,
+  verbatim** — and in that identical currency those two read 0.00/0.18/0.18 and
+  0.11/0.26/0.09/0.09/0.30, **none of which ever cleared 0.35 or z +2.** This is the first route on
+  the axis that did.
+- The §4.5 sign check **CORROBORATES**: 305/548 = **55.7%**, exact two-sided binomial **p 0.0091**,
+  aggregate sign +1. Also a first — the OOF leg read NO CORROBORATION (57.1%, p 0.0547). Mandatory
+  reporting, never a branch input.
+- ⛔ **`C_h` FAILED.** The blind, never-opened holdout reads `arb_holdout = −0.0051` against
+  `arb_dev = +0.2920` — a ≈0.30 pt split which is itself ≈2.5σ.
+  ⇒ `¬A-CAPTURE ∧ ANY_R` ⇒ **`P-PARTIAL`: nothing closes, nothing is licensed, no Stage-2 game
+  prereg is funded.** The branch is taken verbatim; the whole point of a blind conjunct is that it
+  binds when it is inconvenient.
+
+### ⚠️ Two facts that must never be quoted apart from the verdict
+
+1. **The holdout had little to capture.** Its own in-family headroom is `ora_holdout = +0.1370`
+   at **z +1.19** — not convicted on that slice. So `C_h`'s failure is materially a *low-signal
+   slice* story and is **not** a demonstrated refutation of the mechanism. (This is the same
+   cross-slice over-dispersion CLAUDE.md already prices at 1.8–2.2× for cross-band contrasts.)
+2. **DESIGN §7.3's named threat FIRED.** `arb` under an *uninformative* arbiter is
+   `mean-over-arms − champ`, not 0, and the free random-arm control shows that baseline swinging by
+   **0.40 pts between the slices**: `C-RND` is +0.1296 on dev but **−0.2682 (z −2.32)** on the
+   holdout — i.e. **the champion's own tie-break sits BELOW arm-average on dev and ABOVE it on the
+   holdout.** Net of that level the mechanism is positive on *both* slices: `arb − rnd` = +0.2630
+   (z +2.14) holdout, +0.1913 (z +3.11) pooled. `arb − rnd` was pre-registered as a companion for
+   exactly this reason and is **never a branch input**. It does not change the branch; it changes
+   what a successor should measure.
+
+### Free by-catch on never-opened data
+
+- **`R_holdout = H_ARB/H_IF = +2.72`** (vs `C-CONFIRM`'s +1.827 on dev), `H_ARB_holdout = +0.3727`
+  at z +2.49 — the out-of-family retention ratio **replicates in DIRECTION on positions no programme
+  had ever opened**. ⚠️ CI [−22.2, +30.0] with **11.6%** of bootstrap reps crossing zero in the
+  denominator ⇒ **quote the direction, never the magnitude.** Adjudicates nothing (the OOF read-rule
+  is spent).
+- `PICKCHG`: the arbiter changes the champion's pick on **76.3%** of positions and agrees with the
+  oracle's own argmax on only **25.4%** — so it is a genuinely different selector, not a proxy for
+  the oracle.
+
+### Declared deviations, flagged not buried
+
+- **The branch input is the POOLED 733 read, not the holdout alone.** DESIGN §4.4's power arithmetic,
+  written before any number, showed n=211 could not convict even a 100% capture (2σ resolution
+  0.86–1.52 in `F_fixed` units); the holdout therefore enters only as `C_h`. The funding brief named
+  the holdout as the main read and *also* instructed that the DESIGN say so if the holdout were too
+  small — so the deviation is licensed by the brief and is stated in DESIGN §4.4, READ_RULE §1 and
+  the read-out banner. Pooling with dev is legitimate because the arbiter has **zero free
+  parameters** and **no arbitration statistic had ever been computed on any part of the corpus** —
+  dev was as blind to *this estimator* as the holdout was.
+- **The power projection was conservative by ≈1.5×** (realized per-position sd **1.582** vs a
+  projected 1.74–3.09; realized 2σ resolution **±0.110 pts = ±0.393 in `F_fixed`**). So
+  `A-CAPTURE` was genuinely reachable and **the binding constraint was the blind slice, not power**.
+- **Wall-clock: ETA 0.49 h at W30, actual ≈ 1.33 h** (2.7×). Cause is not the cost model — realized
+  `c_tier1` on the holdout was 2.52 vs the pilot's 2.12 worker-s/playout — it is that `run_tiletie`
+  splits the 30 workers across 8 legs *by position count*, so each chunk ends on a W=1 tail. No value
+  depends on wall-clock; recorded so the next tiletie ETA is not 2.7× optimistic again.
+- DESIGN §0 (layout-only, committed pre-pilot, pre-number): 0.A per-chunk record roots then merge;
+  0.B `G-ARMSET`'s denominator stated (strictly tighter); 0.C the sign check's "aggregate signs"
+  disambiguated for a one-statistic run; 0.D no filename firewall, because this run spends the
+  holdout. No estimator, threshold, bar or branch touched; READ_RULE.md byte-unchanged.
+
+### Integrity, and the blind ordering
+
+All seven §3 preconditions **PASS**; every per-judge witness 0 (`values_a_drift`, `seed_drift`,
+`crn_unverified`, `checksum_failed`, `arm_index_mismatch`, `zero_distinct_afterstates`);
+`compared_legs` 1,468 with `crn_cross_mismatch` / `seed_cross_mismatch` / `arm_cross_mismatch` all
+**0**; `G-REPRO` 43/43; 733/733 positions analysed, holdout 211/211 = 100% of plan; 0 excluded for
+any reason.
+
+**Blind order proven by git history:** DESIGN + READ_RULE (`bd93b6c6`, no instrument existed) →
+instrument + 52 tests (`771565ad`) → cost pilot (`ffdb4c16`, DEV only, holdout untouched) → holdout
+scoring → read-out. `RUN_PROVENANCE.json` carries both hashes; each `RUN_MANIFEST_chunk*.json`
+carries `git_rev` and a `git_clean` preflight.
+
+### What this licenses, and the re-open bar
+
+**Nothing.** `P-PARTIAL` licenses nothing by its own text, and this read-rule is spent.
+
+**Re-open bar (recorded so a successor cannot be cheap):** `F_fixed` needs **n ≈ 924** positions to
+resolve to ±0.35 at the realized dispersion; the total deduped supply is **733 and now burned**.
+⇒ a successor needs **(1) a NEW corpus** — new roots, fresh CRN worlds, not this one — **(2) a fresh
+read-rule**, and **(3) an argument for why the dev/holdout split is slice heterogeneity rather than
+the mechanism** (the `C-RND` swing is the obvious candidate and the obvious thing to pre-register
+against). ⚠️ And a successor still owes the cost question this Stage 1 deliberately did not answer:
+the honest arbiter shape costs **~100–200× the champion's per-move budget** (32 worlds × A arms ×
+~2.1–2.5 worker-s per full continuation, against 1.551 s/move on the phone), so any Stage-2 must
+name a budget-matched form and carry a matched-wall-clock control arm.
+
+**Operative statement of the tile-tie axis after this run:** the headroom is real (`C-CONFIRM`), it
+is not expressible as a static afterstate function (two menus + the 38% reach bound), not by deeper
+same-shape search (`E-FLAT`), and not by wider determinization through the same leaf (`W-FLAT`) —
+and **terminal-grounded arbitration is the first route to clear the mechanism bar on the pooled
+corpus while failing to reproduce on the blind slice.** That is a *sharper* open question than the
+axis has ever had, and it is still not a funded one.
+
+**Governance.** 0 games. No `experiments/results.csv` row (nothing was played — the same disposition
+as `tiletie_oof`, `E-FLAT` and `W-FLAT`), no band, no `governance/BAND_REGISTRY.csv` entry, no claim
+id minted, `governance/PRODUCTION.yaml` untouched. Six touches: results.csv (**none owed, stated**) ·
+this entry + its index line · outcome stamps on `DESIGN.md` and `READ_RULE.md` · `docs/LEVER_INDEX.md`
+row opened in-progress at start and flipped at close · `STATUS.md` top block · the roadmap NOW block.
+
+**Files:** `measurement/tiearb_20260816/` ([DESIGN](measurement/tiearb_20260816/DESIGN.md) ·
+[READ_RULE](measurement/tiearb_20260816/READ_RULE.md) ·
+[READOUT](measurement/tiearb_20260816/READOUT.md) · `READOUT.json` · `per_position.jsonl` ·
+`PILOT.json` · `RUN_PROVENANCE.json` · `POSITION_ORDER.json` · `PLAN_SUMMARY.json`) ·
+`scripts/tiletie/{build_tiearb_plan,analyze_tiearb}.py` · `tests/test_tiearb.py` · records on the
+share at `/mnt/c/carc-shared/tiearb_20260816/`.

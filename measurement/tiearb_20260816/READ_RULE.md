@@ -1,5 +1,15 @@
 # TERMINAL-GROUNDED TIE ARBITRATION — READ-RULE (Stage 1, offline)
 
+> **ADJUDICATED 2026-08-16 — branch `P-PARTIAL` ([READOUT.md](READOUT.md)).**
+> All seven §3 preconditions passed. `C_z` (z_arb +3.75 ≥ +2.0) fired and `RBAR`
+> (F 0.811 ≥ 0.35 ∧ F_fixed 0.737 ≥ 0.35, `G-BOOT` not fired) fired; **`C_h`
+> failed — `arb_holdout = −0.0051`.** ⇒ `¬A-CAPTURE ∧ ANY_R` ⇒ `P-PARTIAL`.
+> **Nothing closes, nothing is licensed, no Stage-2 is funded.** The `n` that
+> would resolve `F_fixed` to ±0.35 at the realized dispersion is **≈ 924**
+> positions against a total deduped supply of **733**; the holdout is now spent,
+> so that supply cannot grow on this corpus.
+> **THIS READ-RULE IS SPENT; any successor design needs a fresh one.**
+
 > **STATUS AT WRITING: COMMITTED BEFORE ANY ARBITRATION NUMBER EXISTS ANYWHERE —
 > before the instrument, before the cost pilot, before one holdout position is
 > scored.** `READOUT.md`, `READOUT.json` and `PILOT.json` do not exist at the

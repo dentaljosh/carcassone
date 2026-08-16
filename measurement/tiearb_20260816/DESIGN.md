@@ -1,5 +1,33 @@
 # TERMINAL-GROUNDED TIE ARBITRATION — DESIGN (Stage 1, offline)
 
+> **OUTCOME STAMP (post-hoc, 2026-08-16): the run completed and fired
+> [READ_RULE.md](READ_RULE.md) branch `P-PARTIAL` — [READOUT.md](READOUT.md).
+> 733/733 positions (dev 522 + holdout 211/211), 1468/1468 legs, every §3
+> precondition PASS and every integrity counter 0 (incl. `G-REPRO` 43/43 and
+> `crn_cross_mismatch` 0 across all 1,468 legs).**
+> **Pooled: `arb = +0.2065` pts/tied ply (z +3.75), `F = 0.811` CI [0.450, 1.320],
+> `F_fixed = 0.737` CI [0.347, 1.125]** — i.e. `C_z` ✅ and `RBAR` ✅ both fired at
+> the identical bar E-FLAT and W-FLAT failed, and the §4.5 sign check
+> **CORROBORATES** (55.7%, p 0.0091), the first corroborating sign check in this
+> chain. **⛔ The single conjunct that failed is `C_h`, the BLIND holdout
+> sign-consistency check: `arb_holdout = −0.0051` (z −0.05) against
+> `arb_dev = +0.2920` (z +4.43)** — a dev-vs-holdout split of ≈0.30 pts, itself
+> ≈2.5σ. **Nothing closes and nothing is licensed. No Stage-2 is funded.**
+> ⚠️ Two facts that must travel together with that: (a) the holdout's OWN
+> in-family headroom is weak (`ora_holdout = +0.1370`, z +1.19) so there was
+> little there to capture, and (b) the §7.3 threat FIRED — the random-arm control
+> `C-RND` is `+0.1296` on dev but `−0.2682` (z −2.32) on the holdout, i.e. the
+> champion's own tie-break is *above* arm-average on the holdout and *below* it on
+> dev, and the mechanism net of that level, `arb − rnd`, is `+0.2630` (z +2.14) on
+> the holdout and `+0.1913` (z +3.11) pooled. The pre-registered branch input is
+> `arb`, not `arb − rnd`, and the branch is taken verbatim.
+> **The holdout is SPENT.** 0 games, no band, no `results.csv` row, no claim id;
+> `PRODUCTION.yaml` and `BAND_REGISTRY.csv` untouched.
+> ⚠️ §4.4's power projection was **conservative by ≈1.5×** (realized per-position
+> sd 1.582 vs the projected 1.74–3.09 bracket; realized 2σ resolution ±0.110 pts
+> = ±0.393 in `F_fixed` units), so `A-CAPTURE` was genuinely reachable and the
+> binding constraint was the blind slice, not power.
+
 > **STATUS AT WRITING: DESIGN, COMMITTED BEFORE ANY ARBITRATION NUMBER EXISTS
 > ANYWHERE.** [READ_RULE.md](READ_RULE.md) is committed in the **same commit** as
 > this file, and both are committed **before** the instrument

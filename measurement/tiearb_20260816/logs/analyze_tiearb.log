@@ -1,0 +1,233 @@
+# TERMINAL-GROUNDED TIE ARBITRATION — READ-OUT (Stage 1, offline)
+
+**Branch: `P-PARTIAL` — PRESENT AT THE MECHANISM BAR BUT NOT CONVICTED — UNRESOLVED.** — adjudicated mechanically by [READ_RULE.md](READ_RULE.md), committed before any number existed.
+
+At least one ratio reading clears 0.35 but the conjunction fails (the z bar, or the two ratio readings straddle, or the blind holdout leans negative). NOTHING CLOSES AND NOTHING IS LICENSED — in particular this does NOT close the mechanism and does NOT fund a Stage-2.
+
+**Conjunct(s) that failed:** C_h (arb_holdout >= 0.0 — the blind holdout leans negative).
+
+- IF judge: clair-puct (production curve125 leaf, leaf hash a36d2e15a3b3d71d, PUCT @ 100 clairvoyant sims, played to terminal on a known deck)
+- ARB judge: tier1-greedy (RuleBasedPlayer, v1 OBJECT leaf virtual_score_inplace, 1-ply argmax, no search, python-only, played to terminal)
+- n = **733** positions / 399 roots (dev 522 · holdout 211 = 100.0% of the planned 211); M = [32] CRN worlds, salt `tiletie-v1`, **bit-identical between the two judges**
+
+> ⚠️ **THE BRANCH INPUT IS THE POOLED n = 733 READ, NOT THE HOLDOUT ALONE** — a **declared deviation from the funding brief** (DESIGN §4.4: n = 211 cannot convict even a 100% capture). The holdout enters `A-CAPTURE` only as the blind sign-consistency conjunct `C_h`.
+
+> ⚠️ **THIS RUN SPENDS THE HOLDOUT**, on every branch. It is burned and is no longer an unburned reserve.
+
+## 1. The primary statistics — pooled / DEV / HOLDOUT, both scalings
+
+- **`arb` = +0.2065** pts/tied tile ply (se +0.0551, **z +3.75**), boot CI [+0.0973, +0.3152]
+- **`ora` = +0.2545** pts/tied tile ply (se +0.0598, z +4.26), boot CI [+0.1391, +0.3731]
+- **`F  = arb/ora` = +0.811**, paired-root-bootstrap 95% CI **[+0.450, +1.320]** (median +0.814, +20000 finite reps)
+- **`F_fixed = arb/0.2803` = +0.737**, CI **[+0.347, +1.125]** — the cross-programme currency E-FLAT (0.00/0.18/0.18) and W-FLAT (0.11/0.26/0.09/0.09/0.30) were graded in. The denominator is the fixed published +0.2803 ± 0.0708 pts/ply with **no holdout noise**.
+- `G-BOOT` (fraction of reps with denominator ≤ 0) = **+0.0000** vs bar 0.05 ⇒ **not fired**
+- `arb_holdout` (the blind sign-consistency conjunct `C_h`) = **-0.0051**
+- bars: ratio **0.35**, z **+2.0** — *not new constants*: both are E-FLAT's and W-FLAT's own committed fund bar, verbatim.
+
+⚠️ Declared difference inherited from DESIGN §4.2: the ladders' numerators are full-M mean differences (their selector is independent of the oracle values); ours is a cross-fit half-M difference — unbiased for the same estimand, **noisier**, never *larger* in expectation.
+
+### pooled  (n = 733 positions, 399 roots)
+
+| statistic | n | mean | se (cluster) | 95% CI (boot) | z |
+|---|---|---|---|---|---|
+| `arb` — all (`scale_all`) | 733 | +0.2065 | +0.0551 | [+0.0973, +0.3152] | +3.75 |
+| `arb` — discriminable | 733 | +0.2844 | +0.0760 | [+0.1341, +0.4345] | +3.74 |
+| `ora` — all (`scale_all`) | 733 | +0.2545 | +0.0598 | [+0.1391, +0.3731] | +4.26 |
+| `ora` — discriminable | 733 | +0.3501 | +0.0824 | [+0.1908, +0.5134] | +4.25 |
+| `rnd` — all (`scale_all`) | 733 | +0.0151 | +0.0599 | [-0.1026, +0.1313] | +0.25 |
+| `rnd` — discriminable | 733 | +0.0199 | +0.0826 | [-0.1427, +0.1804] | +0.24 |
+| `arb_minus_rnd` — all (`scale_all`) | 733 | +0.1913 | +0.0615 | [+0.0712, +0.3158] | +3.11 |
+| `arb_minus_rnd` — discriminable | 733 | +0.2645 | +0.0848 | [+0.0993, +0.4356] | +3.12 |
+| `arm0` — all (`scale_all`) | 733 | +0.2138 | +0.0605 | [+0.0948, +0.3346] | +3.53 |
+| `arm0` — discriminable | 733 | +0.2958 | +0.0835 | [+0.1318, +0.4626] | +3.54 |
+| `sec` — all (`scale_all`) | 733 | +0.5276 | +0.0981 | [+0.3371, +0.7202] | +5.38 |
+| `sec` — discriminable | 733 | +0.7240 | +0.1351 | [+0.4615, +0.9901] | +5.36 |
+| `h_arb` — all (`scale_all`) | 733 | +0.5276 | +0.0981 | [+0.3371, +0.7202] | +5.38 |
+| `h_arb` — discriminable | 733 | +0.7240 | +0.1351 | [+0.4615, +0.9901] | +5.36 |
+| `arb_parity_base1` — all (`scale_all`) | 733 | +0.2731 | +0.0777 | [+0.1232, +0.4266] | +3.51 |
+| `arb_parity_base1` — discriminable | 733 | +0.3764 | +0.1074 | [+0.1689, +0.5882] | +3.50 |
+| `ora_parity_base1` — all (`scale_all`) | 733 | +0.2519 | +0.0735 | [+0.1082, +0.3953] | +3.43 |
+| `ora_parity_base1` — discriminable | 733 | +0.3465 | +0.1013 | [+0.1480, +0.5446] | +3.42 |
+
+### dev  (n = 522 positions, 279 roots)
+
+| statistic | n | mean | se (cluster) | 95% CI (boot) | z |
+|---|---|---|---|---|---|
+| `arb` — all (`scale_all`) | 522 | +0.2920 | +0.0659 | [+0.1628, +0.4208] | +4.43 |
+| `arb` — discriminable | 522 | +0.4030 | +0.0910 | [+0.2244, +0.5807] | +4.43 |
+| `ora` — all (`scale_all`) | 522 | +0.3020 | +0.0699 | [+0.1640, +0.4401] | +4.32 |
+| `ora` — discriminable | 522 | +0.4167 | +0.0963 | [+0.2267, +0.6070] | +4.33 |
+| `rnd` — all (`scale_all`) | 522 | +0.1296 | +0.0676 | [-0.0025, +0.2608] | +1.92 |
+| `rnd` — discriminable | 522 | +0.1772 | +0.0933 | [-0.0051, +0.3585] | +1.90 |
+| `arb_minus_rnd` — all (`scale_all`) | 522 | +0.1624 | +0.0705 | [+0.0242, +0.3017] | +2.30 |
+| `arb_minus_rnd` — discriminable | 522 | +0.2258 | +0.0972 | [+0.0353, +0.4177] | +2.32 |
+| `arm0` — all (`scale_all`) | 522 | +0.2038 | +0.0694 | [+0.0673, +0.3400] | +2.94 |
+| `arm0` — discriminable | 522 | +0.2819 | +0.0959 | [+0.0934, +0.4704] | +2.94 |
+| `sec` — all (`scale_all`) | 522 | +0.5902 | +0.1238 | [+0.3541, +0.8303] | +4.77 |
+| `sec` — discriminable | 522 | +0.8114 | +0.1706 | [+0.4865, +1.1420] | +4.76 |
+| `h_arb` — all (`scale_all`) | 522 | +0.5902 | +0.1238 | [+0.3541, +0.8303] | +4.77 |
+| `h_arb` — discriminable | 522 | +0.8114 | +0.1706 | [+0.4865, +1.1420] | +4.76 |
+| `arb_parity_base1` — all (`scale_all`) | 522 | +0.3987 | +0.0933 | [+0.2193, +0.5800] | +4.28 |
+| `arb_parity_base1` — discriminable | 522 | +0.5497 | +0.1290 | [+0.3021, +0.8008] | +4.26 |
+| `ora_parity_base1` — all (`scale_all`) | 522 | +0.3195 | +0.0866 | [+0.1499, +0.4915] | +3.69 |
+| `ora_parity_base1` — discriminable | 522 | +0.4412 | +0.1194 | [+0.2081, +0.6789] | +3.70 |
+
+### holdout  (n = 211 positions, 120 roots)
+
+| statistic | n | mean | se (cluster) | 95% CI (boot) | z |
+|---|---|---|---|---|---|
+| `arb` — all (`scale_all`) | 211 | -0.0051 | +0.0970 | [-0.1961, +0.1814] | -0.05 |
+| `arb` — discriminable | 211 | -0.0089 | +0.1331 | [-0.2704, +0.2462] | -0.07 |
+| `ora` — all (`scale_all`) | 211 | +0.1370 | +0.1147 | [-0.0871, +0.3611] | +1.19 |
+| `ora` — discriminable | 211 | +0.1854 | +0.1579 | [-0.1229, +0.4936] | +1.17 |
+| `rnd` — all (`scale_all`) | 211 | -0.2682 | +0.1155 | [-0.5033, -0.0539] | -2.32 |
+| `rnd` — discriminable | 211 | -0.3692 | +0.1594 | [-0.6930, -0.0741] | -2.32 |
+| `arb_minus_rnd` — all (`scale_all`) | 211 | +0.2630 | +0.1229 | [+0.0301, +0.5097] | +2.14 |
+| `arb_minus_rnd` — discriminable | 211 | +0.3603 | +0.1696 | [+0.0391, +0.7018] | +2.12 |
+| `arm0` — all (`scale_all`) | 211 | +0.2385 | +0.1213 | [+0.0071, +0.4811] | +1.97 |
+| `arm0` — discriminable | 211 | +0.3303 | +0.1670 | [+0.0121, +0.6641] | +1.98 |
+| `sec` — all (`scale_all`) | 211 | +0.3727 | +0.1499 | [+0.0779, +0.6607] | +2.49 |
+| `sec` — discriminable | 211 | +0.5078 | +0.2064 | [+0.1023, +0.9037] | +2.46 |
+| `h_arb` — all (`scale_all`) | 211 | +0.3727 | +0.1499 | [+0.0779, +0.6607] | +2.49 |
+| `h_arb` — discriminable | 211 | +0.5078 | +0.2064 | [+0.1023, +0.9037] | +2.46 |
+| `arb_parity_base1` — all (`scale_all`) | 211 | -0.0376 | +0.1357 | [-0.3030, +0.2279] | -0.28 |
+| `arb_parity_base1` — discriminable | 211 | -0.0524 | +0.1873 | [-0.4189, +0.3140] | -0.28 |
+| `ora_parity_base1` — all (`scale_all`) | 211 | +0.0846 | +0.1389 | [-0.1873, +0.3503] | +0.61 |
+| `ora_parity_base1` — discriminable | 211 | +0.1123 | +0.1915 | [-0.2627, +0.4790] | +0.59 |
+
+## 2. The single-fold `parity_base=1` readings (the `I1` diagnostic)
+
+| slice | `arb` symmetrized | `arb` parity_base=1 | `ora` symmetrized | `ora` parity_base=1 |
+|---|---|---|---|---|
+| pooled | +0.2065 | +0.2731 | +0.2545 | +0.2519 |
+| dev | +0.2920 | +0.3987 | +0.3020 | +0.3195 |
+| holdout | -0.0051 | -0.0376 | +0.1370 | +0.0846 |
+
+Both headline statistics are **symmetrized over the two parity folds** (`escalation_ladder.honest_regret`'s convention), so the pricing run's `I1` parity-base ambiguity cannot be a lever.
+
+## 3. Mandatory companions (DESIGN §4.3) — reported, never a branch input
+
+| companion | n | mean | se | 95% CI | z |
+|---|---|---|---|---|---|
+| `C-RND` — random-arm arbiter (the NULL LEVEL) | 733 | +0.0151 | +0.0599 | [-0.1026, +0.1313] | +0.25 |
+| **`arb − rnd`** — the mechanism net of the null level | 733 | +0.1913 | +0.0615 | [+0.0712, +0.3158] | +3.11 |
+| `C-ARM0` — arm-0 comparator (`headroom_leaf` currency) | 733 | +0.2138 | +0.0605 | [+0.0948, +0.3346] | +3.53 |
+| `SEC-ARB` ⚠️ AUDIT-ONLY, CIRCULAR | 733 | +0.5276 | +0.0981 | [+0.3371, +0.7202] | +5.38 |
+
+⚠️ **`SEC-ARB` is CIRCULAR by construction**: it is the arbiter's picks priced by `tier1-greedy` *itself*, i.e. the ARB judge's own cross-fit headroom, so its capture fraction against that headroom is **exactly 1**. It is reported in pts with its `z` and is **never a branch input**.
+
+**DESIGN §7.3 threat, mandatory when it applies:** `arb` under an *uninformative* arbiter is `mean-over-arms − champ`, not 0. If `C-RND` is materially positive, part of `arb` is not the mechanism — hence `arb − rnd` = **+0.1913** is printed beside it. Reported, never adjudicated on.
+
+## 4. `R_holdout` and `H_IF_holdout` — the free out-of-sample replication
+
+- **`R_holdout = H_ARB/H_IF` (holdout only) = +2.720**, paired-root-boot 95% CI **[-22.188, +30.048]** (median +2.137; reps with denominator ≤ 0: +0.1163)
+- `H_ARB` (holdout) = +0.3727 (se +0.1499, z +2.49) · `H_IF` (holdout) = +0.1370 (se +0.1147, **z +1.19**)
+- The OOF run's retention ratio recomputed on positions it never opened — a FREE out-of-sample replication of C-CONFIRM (R = 1.827, CI [+0.913, +3.995]). Reported; ADJUDICATES NOTHING (the OOF read-rule is spent).
+
+**`H_IF_holdout`** is the in-family headroom on the 211 realized holdout positions (of 211 planned) that no programme had ever opened — a free out-of-sample confirmation of the +0.252 itself. Reported; **adjudicates nothing.**
+
+## 5. `PICKCHG` — the E-FLAT / W-FLAT diagnostic
+
+- fraction of positions where `a_arb ≠ champ` (either fold): **+0.763** (fold 1 +0.588 · fold 2 +0.596)
+- fraction where the arbiter and the oracle select the SAME arm in both folds (`a_arb = a_ora`): **+0.254**
+- coverage = **1.0** — 1.0 BY CONSTRUCTION — the arbiter selects only from the scored arm set. Reported as a witness, not a conjunct.
+- the E-FLAT / W-FLAT diagnostic — 'moves picks at tied plies without IMPROVING them' is read off this beside `arb`.
+
+## 6. The §4.5 sign check (E4 autopsy taxonomy, unchanged)
+
+- over the **559** positions where the arbiter changes the champion's pick in at least one fold: 305/548 = **+0.557** with `arb[p] > 0`, exact two-sided binomial **p 0.0091**
+- aggregate sign (pooled headline `mean(arb)` = +0.2065): **+1** · per-position majority sign +1 · mean over the pick-change positions +0.2707
+- **CORROBORATES**
+- benchmarks: 80% at p 0.0012 = corroboration (2026-07-28 precedent); 61.9% at p 0.38 = NOT corroboration (farm-war). The E4 autopsy's own Tier-1 leg: 62.1% at p 2.8e-05 with the aggregate sign NEGATIVE => PARTIAL.
+- Mandatory on every branch; NEVER a branch input (the OOF precedent: 57.1% at p 0.0547 = NO CORROBORATION while the mean convicted at z +4.32).
+
+## 7. The §4.3 bound chain — pts and elo, with the ±1.6× bracket
+
+| term | pts/tied tile ply (×1.40 full-set) | 95% CI | elo (÷3.2) | elo 95% CI | elo (÷5.23 low-end) |
+|---|---|---|---|---|---|
+| `arb` | +0.2890 | [+0.1363, +0.4413] | +28.24 | [+13.29, +43.25] | +17.26 |
+| `ora` | +0.3563 | [+0.1947, +0.5223] | +34.86 | [+19.00, +51.30] | +21.28 |
+
+**σ_game sensitivity** on `arb`'s CI-hi: σ=20.4 → +43.25 elo · σ=22.2 → +39.71 elo. elo scales as 1/σ_game, so the SMALLER σ is the larger, conservative-against-closure bound.
+
+⚠️ ×1.40 full-set extrapolation and the ÷3.2 chain applied IDENTICALLY to numerator and denominator, so they CANCEL OUT OF F. Every §4.3 caveat inherited verbatim: NON_ADDITIVITY=3.2 is n=1 with a ÷5.23 low-end bracket — a ±1.6× bracket, not a point. The linear-φ step degrades above ~1σ.
+
+## 8. Realized `n`, roots and composition of what completed
+
+- planned positions in the corpus: **733** · analysed: **733** over 399 roots
+- HOLDOUT: **211 / 211** = **100.0%** of the planned holdout finished · DEV: **522**
+- excluded and counted: {'absent_if': 0, 'absent_arb': 0, 'armset_mismatch': 0, 'partial': 0, 'champ_arm_absent': 0} (`G-ARMSET` mismatch fraction +0.0000; denominator = positions where BOTH judges had at least one scored leg, i.e. analysed + armset-mismatched.)
+
+| slice | n | roots | stratum | profile | phase | capped |
+|---|---|---|---|---|---|---|
+| pooled | 733 | 399 | {'e4': 60, 'selfplay': 673} | {'walled': 677, 'app_aug2': 3, 'fixed_v1': 53} | {'early': 300, 'late': 209, 'mid': 224} | 133 |
+| dev | 522 | 279 | {'e4': 37, 'selfplay': 485} | {'walled': 489, 'app_aug2': 3, 'fixed_v1': 30} | {'early': 201, 'mid': 170, 'late': 151} | 99 |
+| holdout | 211 | 120 | {'e4': 23, 'selfplay': 188} | {'fixed_v1': 23, 'walled': 188} | {'late': 58, 'mid': 54, 'early': 99} | 34 |
+
+## 9. Cost and the process census
+
+- realized `c_tier1` on the holdout legs (from the records' own `elapsed_secs`): **+2.5197** worker-s/playout (392 legs, 25088 playouts, Σ +63214.4 s)
+- from `RUN_MANIFEST_chunk*.json`: n/a worker-s/playout (source ['RUN_MANIFEST_chunk1.json', 'RUN_MANIFEST_chunk2.json', 'RUN_MANIFEST_chunk3.json', 'RUN_MANIFEST_chunk4.json'])
+- co-tenant found by the process census: **none recorded** — DESIGN §7.8: no value depends on wall-clock.
+
+## 10. Every §3 gate and every DESIGN §6 integrity counter
+
+| precondition | result |
+|---|---|
+| `G-CRN` | PASS |
+| `G-ARM` | PASS |
+| `G-VA` | PASS |
+| `G-SLICE` | PASS |
+| `G-ARMSET` | PASS |
+| `G-N` | PASS |
+| `G-DENOM` | PASS |
+
+**Per-judge `analyze_tiletie` §2.1 witnesses:**
+
+- `if`: arm_index_mismatch 0 · checksum_failed 0 · crn_unverified 0 · seed_drift 0 · values_a_drift 0 · zero_distinct_afterstates 0
+- `arb`: arm_index_mismatch 0 · checksum_failed 0 · crn_unverified 0 · seed_drift 0 · values_a_drift 0 · zero_distinct_afterstates 0
+
+**Cross-judge CRN witness (`G-CRN`)** — the ARB record's `world_seeds` / `playout_seeds` must be **bit-identical** to the `clair-puct` record for the same rid+leg, and `pick_a`/`pick_b` must match:
+
+- `compared_legs`: **1468**
+- `crn_cross_mismatch`: **0**
+- `seed_cross_mismatch`: **0**
+- `arm_cross_mismatch`: **0**
+
+- `G-REPRO` (the 43/43 bit-reproduction of the OOF pilot records, a PRE-LAUNCH abort): **{'records': 43, 'ok': 43, 'n_failed': 0, 'crn_verified': 43, 'checksum_ok': 43, 'world_seed_identical_to_primary': 43, 'playout_seed_identical_to_primary': 43, 'arm_identical_to_primary': 43, 'missing_primary_counterpart': [], 'G_REPRO_bit_identical_to_oof': 43, 'G_REPRO_expected': 43, 'G_REPRO_missing_counterpart': [], 'note': 'G-REPRO compares a sha256 over (values_a, values_b, world_seeds, playout_seeds) against the 2026-08-14 OOF pilot records for the same rid+leg. Only the COUNT is reported.'}**
+- `G-LEAF` (harness leaf hash `a36d2e15a3b3d71d`) is likewise a pre-launch abort, witnessed by `GATE_BACKEND_RECHECK_*.json`, not by this analyser.
+
+## 11. Realized resolution and the `n` that would resolve `F_fixed`
+
+- realized per-position sd of `arb` = +1.5819 pts (DESIGN §4.4 projected 1.74–3.09)
+- realized **2σ resolution = +0.1101 pts** = +15.04 elo = **+0.393** in `F_fixed` units
+- `n` that would resolve `F_fixed` to ±0.35 at the realized dispersion: **≈ 924** positions, against a total deduped supply of **733**
+- DESIGN §4.4 projected ≈2,200 positions to resolve F_fixed to ±0.35 against a total deduped supply of 733. n scales the realized CLUSTER-ROBUST se (design effect included).
+
+## 12. Cuts — emitted beside the pooled read, ⚠️ UNDERPOWERED, NEVER adjudicated on
+
+| cut | n | roots | `arb` | z | `ora` | z | `F` | `F_fixed` |
+|---|---|---|---|---|---|---|---|---|
+| capped_only | 133 | 119 | +0.3101 | +2.14 | +0.2691 | +1.79 | +1.152 | +1.106 |
+| phase:early | 300 | 229 | +0.1148 | +1.07 | +0.0880 | +0.87 | +1.303 | +0.409 |
+| phase:late | 209 | 178 | +0.1843 | +2.48 | +0.3687 | +4.99 | +0.500 | +0.657 |
+| phase:mid | 224 | 188 | +0.3500 | +3.54 | +0.3710 | +2.96 | +0.943 | +1.249 |
+| profile:app_aug2 | 3 | 1 | +0.5358 | nan | +0.3519 | nan | +1.523 | +1.911 |
+| profile:fixed_v1 | 53 | 22 | +0.2150 | +1.08 | +0.3712 | +1.55 | +0.579 | +0.767 |
+| profile:walled | 677 | 376 | +0.2043 | +3.55 | +0.2450 | +3.95 | +0.834 | +0.729 |
+| stratum:e4 | 60 | 25 | +0.2179 | +1.21 | +0.3463 | +1.63 | +0.629 | +0.777 |
+| stratum:selfplay | 673 | 374 | +0.2054 | +3.55 | +0.2463 | +3.95 | +0.834 | +0.733 |
+| uncapped_only | 600 | 349 | +0.1835 | +3.15 | +0.2513 | +3.90 | +0.730 | +0.655 |
+
+Per-stratum / per-profile / per-phase / capped reads are **underpowered on their own and are labelled as such**; **no branch is ever adjudicated on a cut** (DESIGN §4.3). The 94% `walled` self-play / 6% E4 rules-epoch confound of pricing §6.6 is inherited unchanged.
+
+## Governance
+
+Measurement only. 0 games on EVERY branch. No experiments/results.csv row, no band, no governance/BAND_REGISTRY.csv entry, no claim id minted, governance/PRODUCTION.yaml untouched. ⚠️ THIS RUN SPENDS THE HOLDOUT (120 roots / 211 positions): it is burned and is no longer an unburned reserve, on every branch.
+
+**DESIGN §7.1, which travels with every number above:** the arbiter and the pricing judge are *both terminal-grounded*. A positive here is evidence that terminal grounding at ties is worth points **as measured by a terminal-grounded ruler** — it is **NOT yet evidence of deploy elo**. DESIGN §7.2: positions were selected on a *leaf* property, so regression to the mean cuts **toward the null** — a positive read is conservative.
+
+
+[wrote] /home/doctor/projects/carcassone/measurement/tiearb_20260816/READOUT.json
+[wrote] /home/doctor/projects/carcassone/measurement/tiearb_20260816/READOUT.md
+[wrote] /home/doctor/projects/carcassone/measurement/tiearb_20260816/per_position.jsonl
