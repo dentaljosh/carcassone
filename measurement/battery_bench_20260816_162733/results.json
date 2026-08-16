@@ -1,0 +1,44 @@
+{
+ "schema": "carc-battery-bench-report/v1",
+ "move_hash": "d844c5b36bcb07c9774d2ac5aefa2f04814b8ff87c8526fcad093a9defb07e63",
+ "hash_identical_across_runs": true,
+ "sign_convention": "current_now negative on discharge (normalized)",
+ "n_samples": 88,
+ "baseline_watts": 1.00926710025721,
+ "workload": {
+  "n_moves": 24,
+  "seed": 424242,
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "total_sims": 11008,
+  "rules_profile": "fixed_v1",
+  "backend": "rust"
+ },
+ "arms": {
+  "4": {
+   "runs": [
+    {
+     "tag": "t4_r1",
+     "joules": 34.71867872504246,
+     "j_per_move": 1.4466116135434357,
+     "watts_mean": 0.7189620775531675,
+     "s_per_move": 2.0027,
+     "window_s": 48.29,
+     "j_per_move_net": -0.584117897765759
+    }
+   ],
+   "j_per_move_mean": 1.4466116135434357,
+   "j_per_move_sd": NaN,
+   "s_per_move_mean": 2.0027,
+   "s_per_move_sd": NaN,
+   "watts_mean_mean": 0.7189620775531675,
+   "watts_mean_sd": NaN,
+   "j_per_move_net_mean": -0.584117897765759,
+   "j_per_move_net_sd": NaN,
+   "n_reps": 1
+  }
+ },
+ "runs_order": [
+  "t4_r1"
+ ]
+}

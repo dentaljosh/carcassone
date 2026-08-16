@@ -76,8 +76,11 @@ done
 # ---------------------------------------------------------------------------
 "$HERE/adb_connect.sh" --quiet || die 3 "adb_connect.sh failed (see its exit-code contract; is wireless debugging on?)"
 
-ashell() { "$ADB" shell "$@"; }
-runas()  { "$ADB" shell run-as "$PKG" "$@"; }
+# </dev/null: adb shell forwards local stdin, so a bare call inside a
+# `... | while read` loop EATS the rest of the piped plan -- that silently
+# truncated the 2026-08-16 session to 1 of 9 runs.
+ashell() { "$ADB" shell "$@" </dev/null; }
+runas()  { "$ADB" shell run-as "$PKG" "$@" </dev/null; }
 dev_now_ms() { ashell 'date +%s%3N' | tr -d '\r'; }
 
 # ---------------------------------------------------------------------------
@@ -87,9 +90,23 @@ say "== preconditions =="
 
 # The app, as a DEBUG build (run-as only works on debuggable packages).
 runas id >/dev/null 2>&1 || die 3 "run-as $PKG failed -- is the DEBUG apk installed?"
-ashell dumpsys package "$PKG" 2>/dev/null | grep -q "BenchService" \
-  || die 3 "BenchService not in the installed manifest -- installed apk predates the bench? (adb install -r app/build/outputs/apk/debug/app-debug.apk)"
-say "app: debug build with BenchService present"
+# `dumpsys package` stopped listing intent-filter-less services on newer
+# Android (seen 2026-08-16 on the SDK-37 preview), so a missing grep hit is
+# NOT proof the service is absent -- fall back to proving the installed apk
+# is byte-identical to the local debug build (which ships BenchService).
+if ashell dumpsys package "$PKG" 2>/dev/null | grep -q "BenchService"; then
+  say "app: debug build with BenchService present"
+else
+  LOCAL_APK="$REPO/android/app/build/outputs/apk/debug/app-debug.apk"
+  APK_PATH="$(ashell pm path "$PKG" 2>/dev/null | tr -d '\r' | sed -n 's/^package://p' | head -n1)"
+  { [ -f "$LOCAL_APK" ] && [ -n "$APK_PATH" ]; } \
+    || die 3 "BenchService not listed by dumpsys and cannot fall back (need local $LOCAL_APK + pm path) -- adb install -r the local debug apk"
+  MD5_DEV="$(ashell md5sum "$APK_PATH" | tr -d '\r' | cut -d' ' -f1)"
+  MD5_LOC="$(md5sum "$LOCAL_APK" | cut -d' ' -f1)"
+  [ "$MD5_DEV" = "$MD5_LOC" ] \
+    || die 3 "installed apk != local debug build (md5 $MD5_DEV vs $MD5_LOC) -- adb install -r app/build/outputs/apk/debug/app-debug.apk"
+  say "app: dumpsys probe unavailable on this OS; installed apk md5-matches the local debug build (BenchService ships in it)"
+fi
 
 # UNPLUGGED, or the battery numbers measure the charger, not the workload.
 BATT="$(ashell dumpsys battery | tr -d '\r')"
@@ -159,12 +176,38 @@ mkdir -p "$OUT/runs" "$OUT/traces"
 say ""
 say "== session ($OUT) =="
 
-# Screen off = the measurement condition (the workload is headless; the wakelock
-# in BenchService keeps the CPU up).
-if ashell dumpsys power | grep -qE 'mWakefulness=Awake'; then
-  say "screen is on -- turning it off for the measurement"
-  ashell input keyevent KEYCODE_SLEEP
-fi
+# The FGS-launch behavior above is OS-build-dependent (this phone rides a
+# preview channel) -- record the build so results can be conditioned on it.
+ashell getprop ro.build.fingerprint | tr -d '\r' > "$OUT/device_build.txt"
+
+# Production-faithful scheduling: in-app play runs in the TOP-APP cpuset (all
+# 8 cores). With the screen off, Android caps a shell-started FGS to the
+# background cpuset (little cores 0-3 only; verified 2026-08-16 on SDK 37 --
+# it voided a session: slower moves, sub-idle power readings). So the debug
+# black BenchActivity is held in FRONT, screen ON at minimum brightness, for
+# the WHOLE session -- baseline included, so the net column subtracts the
+# screen+idle draw and gross J/move is disclosed as screen-inclusive.
+BRIGHT_MODE="$(ashell settings get system screen_brightness_mode | tr -d '\r')"
+BRIGHT_VAL="$(ashell settings get system screen_brightness | tr -d '\r')"
+restore_phone() {
+  ashell settings put system screen_brightness_mode "${BRIGHT_MODE:-1}" 2>/dev/null
+  ashell settings put system screen_brightness "${BRIGHT_VAL:-60}" 2>/dev/null
+  ashell am force-stop "$PKG" 2>/dev/null
+  ashell input keyevent KEYCODE_SLEEP 2>/dev/null
+}
+ashell settings put system screen_brightness_mode 0
+ashell settings put system screen_brightness 1
+ashell input keyevent KEYCODE_WAKEUP
+ashell cmd deviceidle tempwhitelist -d 600000 "$PKG" >/dev/null 2>&1 || true
+ashell am start -n "$PKG/.BenchActivity" | tr -d '\r' | grep -qi error \
+  && { restore_phone; die 3 "could not start BenchActivity"; }
+sleep 3
+APP_PID="$(ashell pidof "$PKG" | tr -d '\r')"
+[ -n "$APP_PID" ] || { restore_phone; die 3 "app process not running after BenchActivity start"; }
+CPUSET="$(ashell cat "/proc/$APP_PID/cpuset" | tr -d '\r')"
+[ "$CPUSET" = "/top-app" ] \
+  || { restore_phone; die 3 "app cpuset is '$CPUSET', not /top-app -- bench would not measure production scheduling"; }
+say "scheduling: BenchActivity in front, screen on (min brightness), cpuset=/top-app"
 
 # batterystats cross-check: reset now, dump at the end. (Resets the device-wide
 # battery-usage UI history -- acceptable on a dev phone; remove if not.)
@@ -176,7 +219,7 @@ SAMPLES="$OUT/samples.csv"
 ashell "while true; do echo \"\$(date +%s%3N) \$(cat $BATT_SYS/current_now) \$(cat $BATT_SYS/voltage_now)\"; sleep 1; done" \
   > "$SAMPLES" &
 SAMPLER_PID=$!
-cleanup() { kill "$SAMPLER_PID" 2>/dev/null; wait "$SAMPLER_PID" 2>/dev/null; }
+cleanup() { kill "$SAMPLER_PID" 2>/dev/null; wait "$SAMPLER_PID" 2>/dev/null; restore_phone; }
 trap cleanup EXIT
 sleep 3
 [ -s "$SAMPLES" ] || die 3 "sampler produced no data"
@@ -197,7 +240,13 @@ fi
 # 3. the interleaved runs
 # ---------------------------------------------------------------------------
 run_one() { # $1=arm $2=tag
-  local arm="$1" tag="$2" t_launch elapsed=0 trace_pid=""
+  local arm="$1" tag="$2" t_launch elapsed=0 trace_pid="" pid cs
+  # Re-verify the scheduling class every run -- a screen-off event mid-session
+  # would silently demote the process to the little-core cpuset and make the
+  # arms heterogeneous.
+  pid="$(ashell pidof "$PKG" | tr -d '\r')"
+  cs="$(ashell cat "/proc/$pid/cpuset" 2>/dev/null | tr -d '\r')"
+  [ "$cs" = "/top-app" ] || { warn "$tag: app cpuset '$cs' != /top-app (screen off? activity gone?)"; return 1; }
   if [ "$PERFETTO" -eq 1 ]; then
     cat > "$OUT/traces/power.pbtxt" <<'EOF'
 buffers { size_kb: 16384 fill_policy: RING_BUFFER }
@@ -210,6 +259,11 @@ EOF
     trace_pid=$!
   fi
   say "launching $tag (rust_threads=$arm)..."
+  # Android 17 (SDK-37 preview) rejects FGS starts originating from the adb
+  # shell (background-launch restriction). A temp power-allowlist entry is the
+  # documented exemption (verified working 2026-08-16); the OS clamps shell
+  # grants to ~5 min regardless of -d, so re-arm before EVERY launch.
+  ashell cmd deviceidle tempwhitelist -d 600000 "$PKG" >/dev/null 2>&1 || true
   ashell am start-foreground-service -n "$SVC" \
     --ei n_moves "$MOVES" --ei rust_threads "$arm" --ei seed "$SEED" --es tag "$tag" \
     | tr -d '\r' | grep -qi error && { warn "am start failed for $tag"; return 1; }
@@ -245,6 +299,11 @@ done
 if [ -s "$OUT/failed_runs" ]; then
   die 4 "run(s) failed/timed out: $(tr '\n' ' ' < "$OUT/failed_runs") -- see $OUT/runs/"
 fi
+# A truncated loop (e.g. anything eating the plan pipe) must not reach the
+# report step looking like a complete session.
+DONE_RUNS="$(ls "$OUT/runs" 2>/dev/null | grep -c '\.json$' || true)"
+[ "$DONE_RUNS" -eq "$N_RUNS" ] \
+  || die 4 "expected $N_RUNS runs but only $DONE_RUNS completed -- see $OUT/runs/"
 
 # ---------------------------------------------------------------------------
 # 4. wrap up: stop sampler, batterystats artifact, gate + report

@@ -35,6 +35,37 @@ android/tools/battery_bench.sh
 
 Watch progress in a second terminal (optional): `adb logcat -s CarcBench`.
 
+**Measurement condition (REVISED 2026-08-16 — screen ON, top-app):** the
+session holds the debug-only black `BenchActivity` in front at minimum
+brightness for the whole session, because that pins the app in the **top-app
+cpuset (all 8 cores) — the same scheduling class as real in-app play**. The
+original screen-off design measured a different machine: with the screen off,
+a shell-started FGS runs in the `/background` cpuset (little cores 0-3 only;
+verified on the SDK-37 preview — moves ran 2.00 s vs the in-app 1.551 s, and
+measured power sat below idle). Consequences: gross J/move now includes the
+screen at min brightness; the idle baseline is measured in the same
+screen-on/top-app condition, so the **net column is the marginal search
+energy** — the number the thread-count decision wants. The driver verifies
+`/proc/<pid>/cpuset == /top-app` before the session and before every run, and
+restores brightness/screen state afterward.
+
+**Android 17+ launch notes (same day, same preview build):** (1) newer Android
+rejects FGS starts from the adb shell ("Background start not allowed …
+pkg=com.android.shell") when the app is not foregrounded; the script arms a
+temporary power-allowlist entry (`cmd deviceidle tempwhitelist`, re-armed
+per launch — the OS clamps shell grants to ~5 min) and the BenchActivity
+foregrounding independently satisfies the restriction. (2) `dumpsys package`
+stopped listing intent-filter-less services, so the precondition probe falls
+back to md5-matching the installed apk against the local debug build. (3)
+`adb pull` of `/data/misc/perfetto-traces/` fails on this build — `--perfetto`
+traces record but don't land; treat the flag as broken here. The artifact dir
+records `device_build.txt` (`ro.build.fingerprint`) so results can be
+conditioned on the OS build — this phone rides a preview channel that will
+change under us. (4) adb-shell-eats-stdin: `ashell`/`runas` are stdin-guarded
+(`</dev/null`) so calls inside `… | while read` loops can't swallow the run
+plan (that truncated a session to 1 of 9 runs), and a run-count gate refuses
+to report a truncated session.
+
 **Expected duration** with defaults: 9 runs. At ~1.55 s/move × 24 moves the
 4-thread runs are ~40 s; fewer threads are slower (that is half of what is being
 measured) — budget ~40–150 s/run + 60 s cooldown each ≈ **20–30 min** total.
@@ -66,8 +97,10 @@ floor) and the comparison is void.
   sanity-checked as µA/µV; a device reporting mV fails loudly instead of being
   1000× wrong.
 - **Gross vs net:** J/move integrates the whole workload window (fuel gauge =
-  whole-phone draw, screen off). The `net` column subtracts the measured idle
-  baseline; both are honest, quote which one you mean.
+  whole-phone draw, screen ON at min brightness per the top-app condition
+  above). The `net` column subtracts the idle baseline measured in the same
+  condition — net is the marginal search energy and the decision-relevant
+  number; both are honest, quote which one you mean.
 - **Fuel-gauge sampling is tier 1.** If the device advertises perfetto's
   `android.power` data source (ODPM power rails; detected at runtime —
   `--perfetto`), a per-run trace is saved as a finer-grained artifact, not

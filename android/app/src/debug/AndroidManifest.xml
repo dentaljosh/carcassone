@@ -16,6 +16,15 @@
             android:name=".BenchService"
             android:exported="true"
             android:foregroundServiceType="dataSync" />
+        <!-- Black keep-screen-on trampoline that pins the process in the
+             top-app cpuset during the bench (see BenchActivity kdoc). -->
+        <activity
+            android:name=".BenchActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
     </application>
 
 </manifest>
