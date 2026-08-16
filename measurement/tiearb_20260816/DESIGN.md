@@ -12,6 +12,45 @@
 
 ---
 
+## 0. PRE-RUN AMENDMENT — 2026-08-16, applied BEFORE the pilot and BEFORE any position is scored
+
+⚠️ **Nothing here is a result. No arbitration number exists, for either judge, at
+the time of this amendment.** Three implementation facts were found while
+building the instrument. All three change *how the run is laid out on disk* or
+*how a witness is counted*; **none touches an estimator, a statistic, a
+threshold, a bar or a branch.** [READ_RULE.md](READ_RULE.md) is **untouched**.
+
+- **0.A — records land per chunk, then merge.** §8 names
+  `/mnt/c/carc-shared/tiearb_20260816/tier1-greedy/<profile>/leg<r>/`, but §5's
+  mandated 4-chunk shape forces one `--out-root` per chunk:
+  `run_tiletie.verify_leg_records` demands a records directory hold exactly its
+  own chunk's rids. The OOF §0.A precedent is adopted verbatim —
+  `chunk<k>/tier1-greedy/…`, merged by **file copy** into
+  `merged/tier1-greedy/…` before analysis, with a duplicate guard, and
+  `discover_records` refuses duplicates so a double-merged chunk cannot pass
+  silently.
+- **0.B — `G-ARMSET`'s denominator is stated.** READ_RULE §3 says *"more than 5%
+  of analysed positions"*, but an arm-set-mismatched position is by definition
+  **not** analysed, so the literal denominator excludes the numerator's own
+  members. The instrument uses `analysed + armset_mismatched` — the set on which
+  the comparison was possible — and prints that note beside the fraction. This
+  can only make the gate **stricter**, never looser.
+- **0.C — the sign check's "aggregate signs match" is disambiguated.** DESIGN
+  §4.5 inherits the OOF wording, which was plural because that run had two
+  judges. Here there is one headline statistic, so the taxonomy is read as
+  *per-position majority direction* vs *the sign of the pooled `mean(arb)`* —
+  the reading under which the E4 autopsy's own Tier-1 example (62.1%, aggregate
+  NEGATIVE ⇒ `PARTIAL`) reproduces. All three quantities are emitted so any
+  other reading is recomputable without re-running. **The sign check is not a
+  branch input under any reading.**
+- **0.D — no filename firewall, by design.** The OOF run staged in-family
+  records by filename so no holdout record was ever opened. **This run spends the
+  holdout**, so there is nothing to firewall on the in-family side; `G-SLICE`
+  enforces slice *labels* instead, and it is asserted at plan build, at launch,
+  and at analysis.
+
+---
+
 ## 1. What this is, and the licence it spends
 
 The 2026-08-14 out-of-family re-pricing
