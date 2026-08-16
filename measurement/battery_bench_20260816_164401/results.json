@@ -1,0 +1,150 @@
+{
+ "schema": "carc-battery-bench-report/v1",
+ "move_hash": "d844c5b36bcb07c9774d2ac5aefa2f04814b8ff87c8526fcad093a9defb07e63",
+ "hash_identical_across_runs": true,
+ "sign_convention": "current_now negative on discharge (normalized)",
+ "n_samples": 571,
+ "baseline_watts": 1.044785030792542,
+ "workload": {
+  "n_moves": 24,
+  "seed": 424242,
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "total_sims": 11008,
+  "rules_profile": "fixed_v1",
+  "backend": "rust"
+ },
+ "arms": {
+  "1": {
+   "runs": [
+    {
+     "tag": "t1_r1",
+     "joules": 74.59426241542991,
+     "j_per_move": 3.1080942673095797,
+     "watts_mean": 6.7177829985077375,
+     "s_per_move": 0.4618,
+     "window_s": 11.104,
+     "j_per_move_net": 2.624707059729564
+    },
+    {
+     "tag": "t1_r2",
+     "joules": 74.05328135814925,
+     "j_per_move": 3.0855533899228855,
+     "watts_mean": 6.687734250713379,
+     "s_per_move": 0.4605,
+     "window_s": 11.073,
+     "j_per_move_net": 2.6035156963409762
+    },
+    {
+     "tag": "t1_r3",
+     "joules": 72.6457555671674,
+     "j_per_move": 3.0269064819653084,
+     "watts_mean": 6.543483657644334,
+     "s_per_move": 0.4617,
+     "window_s": 11.102,
+     "j_per_move_net": 2.543606339804525
+    }
+   ],
+   "j_per_move_mean": 3.0735180463992577,
+   "j_per_move_sd": 0.041910634003503956,
+   "s_per_move_mean": 0.4613333333333333,
+   "s_per_move_sd": 0.0007234178138070077,
+   "watts_mean_mean": 6.64966696895515,
+   "watts_mean_sd": 0.09317673267344981,
+   "j_per_move_net_mean": 2.5906096986250216,
+   "j_per_move_net_sd": 0.04206251628080596,
+   "n_reps": 3
+  },
+  "2": {
+   "runs": [
+    {
+     "tag": "t2_r1",
+     "joules": 41.75576911854101,
+     "j_per_move": 1.739823713272542,
+     "watts_mean": 4.908978264582767,
+     "s_per_move": 0.3497,
+     "window_s": 8.506,
+     "j_per_move_net": 1.3695344852758187
+    },
+    {
+     "tag": "t2_r2",
+     "joules": 36.31519939927716,
+     "j_per_move": 1.513133308303215,
+     "watts_mean": 4.285990723389255,
+     "s_per_move": 0.3486,
+     "window_s": 8.473,
+     "j_per_move_net": 1.1442806597238313
+    },
+    {
+     "tag": "t2_r3",
+     "joules": 62.77632297151655,
+     "j_per_move": 2.6156801238131897,
+     "watts_mean": 7.2657781217033035,
+     "s_per_move": 0.3555,
+     "window_s": 8.64,
+     "j_per_move_net": 2.2395575127278744
+    }
+   ],
+   "j_per_move_mean": 1.9562123817963155,
+   "j_per_move_sd": 0.5822545937963179,
+   "s_per_move_mean": 0.35126666666666667,
+   "s_per_move_sd": 0.003707200201409844,
+   "watts_mean_mean": 5.486915703225108,
+   "watts_mean_sd": 1.5717162584341215,
+   "j_per_move_net_mean": 1.5844575525758415,
+   "j_per_move_net_sd": 0.57840452092359,
+   "n_reps": 3
+  },
+  "4": {
+   "runs": [
+    {
+     "tag": "t4_r1",
+     "joules": 86.55280026335977,
+     "j_per_move": 3.6063666776399903,
+     "watts_mean": 7.685384502163005,
+     "s_per_move": 0.4648,
+     "window_s": 11.262,
+     "j_per_move_net": 3.1161013019405903
+    },
+    {
+     "tag": "t4_r2",
+     "joules": 104.39478781125916,
+     "j_per_move": 4.3497828254691315,
+     "watts_mean": 9.309326539259779,
+     "s_per_move": 0.463,
+     "window_s": 11.214,
+     "j_per_move_net": 3.8616070198313164
+    },
+    {
+     "tag": "t4_r3",
+     "joules": 82.43866935047457,
+     "j_per_move": 3.4349445562697736,
+     "watts_mean": 7.305801962998455,
+     "s_per_move": 0.4659,
+     "window_s": 11.284,
+     "j_per_move_net": 2.943721460958814
+    }
+   ],
+   "j_per_move_mean": 3.7970313531262985,
+   "j_per_move_sd": 0.4863096015468373,
+   "s_per_move_mean": 0.46456666666666663,
+   "s_per_move_sd": 0.0014640127503998284,
+   "watts_mean_mean": 8.100171001473747,
+   "watts_mean_sd": 1.064219696269818,
+   "j_per_move_net_mean": 3.3071432609102405,
+   "j_per_move_net_sd": 0.4878537151256436,
+   "n_reps": 3
+  }
+ },
+ "runs_order": [
+  "t1_r1",
+  "t1_r2",
+  "t1_r3",
+  "t2_r1",
+  "t2_r2",
+  "t2_r3",
+  "t4_r1",
+  "t4_r2",
+  "t4_r3"
+ ]
+}

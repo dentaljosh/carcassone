@@ -147,8 +147,18 @@ fi
 say "perfetto android.power: $([ "$POWER_DS" -eq 1 ] && echo available || echo absent)$([ "$PERFETTO" -eq 1 ] && echo ' (tracing ON)' || echo '')"
 
 # No bench result files from a previous session to confuse the poller.
+# NB: the whole remote command must travel as ONE arg -- word-split args get
+# re-joined by adb and `sh -c` then sees only `rm` (a silent no-op that let a
+# stale t4_r1.json impersonate a completed run on 2026-08-16).
 STALE="$(runas ls files/bench 2>/dev/null | tr -d '\r' | grep -c '\.json$' || true)"
-[ "${STALE:-0}" -gt 0 ] && { warn "clearing $STALE stale result file(s) from files/bench/"; [ "$DRYRUN" -eq 1 ] || runas sh -c 'rm -f files/bench/*.json'; }
+if [ "${STALE:-0}" -gt 0 ]; then
+  warn "clearing $STALE stale result file(s) from files/bench/"
+  if [ "$DRYRUN" -eq 0 ]; then
+    ashell "run-as $PKG sh -c 'rm -f files/bench/*.json'"
+    LEFT="$(runas ls files/bench 2>/dev/null | tr -d '\r' | grep -c '\.json$' || true)"
+    [ "${LEFT:-0}" -eq 0 ] || die 3 "failed to clear stale bench files ($LEFT remain) -- results would be contaminated"
+  fi
+fi
 
 # The plan.
 say ""
@@ -264,6 +274,8 @@ EOF
   # documented exemption (verified working 2026-08-16); the OS clamps shell
   # grants to ~5 min regardless of -d, so re-arm before EVERY launch.
   ashell cmd deviceidle tempwhitelist -d 600000 "$PKG" >/dev/null 2>&1 || true
+  # A tag's result file must not predate its launch (see stale-clear NB above).
+  ashell "run-as $PKG sh -c 'rm -f files/bench/$tag.json'"
   ashell am start-foreground-service -n "$SVC" \
     --ei n_moves "$MOVES" --ei rust_threads "$arm" --ei seed "$SEED" --es tag "$tag" \
     | tr -d '\r' | grep -qi error && { warn "am start failed for $tag"; return 1; }
