@@ -1,0 +1,17 @@
+{
+ "schema": "carcassonne-tiearb-provenance/v1",
+ "note": "Blind ordering, proven by git. The read-rule and design were committed BEFORE the instrument, and the instrument BEFORE the pilot; no holdout position was scored and no arbitration number existed at either commit.",
+ "prereg_commit": "bd93b6c6",
+ "prereg_files": [
+  "measurement/tiearb_20260816/DESIGN.md",
+  "measurement/tiearb_20260816/READ_RULE.md"
+ ],
+ "instrument_commit": "771565ad",
+ "instrument_files": [
+  "scripts/tiletie/build_tiearb_plan.py",
+  "scripts/tiletie/analyze_tiearb.py",
+  "tests/test_tiearb.py"
+ ],
+ "pilot_slice": "DEV (the 2026-08-14 OOF run's own 20 pilot rids); holdout untouched at pilot time",
+ "holdout_launch_authorised_by": "DESIGN \u00a75 mechanical rule, evaluated in PILOT.json (no owner call)"
+}

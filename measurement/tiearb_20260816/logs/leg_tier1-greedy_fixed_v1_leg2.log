@@ -1,0 +1,18 @@
+[pilot] population=1 positions | n=1 | M=32 | policy=tier1-greedy | oracle_sims=100 | W=1
+[pilot] out -> /mnt/c/carc-shared/tiearb_20260816/pilot/tier1-greedy/fixed_v1/leg2
+[pilot] resume: 0 already done, 1 to go
+[1/1] tt_e4_1785986044_1911511187_p90 ok delta=+0.781 crn=True 127.404s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 1,
+  "error": "need >= 2 completed positions",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "tier1-greedy",
+  "n_attempted": 1,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 1,
+  "wall_secs": 127.5,
+  "manifest": "/mnt/c/carc-shared/tiearb_20260816/pilot/tier1-greedy/fixed_v1/leg2/manifest.json"
+}

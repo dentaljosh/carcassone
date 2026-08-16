@@ -1,0 +1,96 @@
+{
+ "schema": "carcassonne-tiearb-plan/v1",
+ "label": "chunk1",
+ "design_doc": "measurement/tiearb_20260816/DESIGN.md",
+ "read_rule": "measurement/tiearb_20260816/READ_RULE.md",
+ "afterstate_dedupe": {
+  "applied": true,
+  "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+  "dropped_index_path": "measurement/tiletie_pricing_20260812/positions_stageA/DROPPED_ALL_TRANSPOSITION.json",
+  "dropped_pct": 26.20882971268395,
+  "n_dropped_all_transposition": 374,
+  "n_dropped_by_stratum": {
+   "e4": 115,
+   "selfplay": 259
+  },
+  "n_dropped_with_action_played_outside_tieset": 72,
+  "n_positions_with_arm_dedupe": 54,
+  "n_qualifying_before_drop": 1427,
+  "savings_pct_full_supply": 32.47033441208198,
+  "tieset_arm_playouts_full_supply_after": 120192,
+  "tieset_arm_playouts_full_supply_before": 177984
+ },
+ "cap_j": 4,
+ "m_worlds": 32,
+ "max_arms": 5,
+ "judge": "tier1-greedy",
+ "world_seed_salt": "tiletie-v1",
+ "permutation_seed": 20260816,
+ "source_plan_dir": "measurement/tiletie_pricing_20260812/positions_pooled",
+ "slice": "holdout",
+ "n_positions": 52,
+ "n_roots": 46,
+ "n_e4": 5,
+ "n_selfplay": 47,
+ "n_positions_capped": 12,
+ "mean_arms": 2.980769230769231,
+ "champ_pick_secs": 0.0,
+ "playout_secs": 2.1783,
+ "oracle_worker_secs": 14359.3536,
+ "eta_by_workers": {
+  "20": {
+   "wall_secs": 717.96768,
+   "wall_hours": 0.19943546666666667
+  },
+  "30": {
+   "wall_secs": 478.64512,
+   "wall_hours": 0.1329569777777778
+  }
+ },
+ "counts_by_stratum": {
+  "e4": 5,
+  "selfplay": 47
+ },
+ "counts_by_profile_leg": {
+  "fixed_v1/leg1": 5,
+  "fixed_v1/leg2": 4,
+  "fixed_v1/leg3": 1,
+  "walled/leg1": 47,
+  "walled/leg2": 25,
+  "walled/leg3": 16,
+  "walled/leg4": 5
+ },
+ "total_legs": 103,
+ "total_arm_playouts": 6592,
+ "files": {
+  "fixed_v1/leg1": {
+   "n": 5,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1/positions_fixed_v1_leg1.jsonl"
+  },
+  "fixed_v1/leg2": {
+   "n": 4,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1/positions_fixed_v1_leg2.jsonl"
+  },
+  "fixed_v1/leg3": {
+   "n": 1,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1/positions_fixed_v1_leg3.jsonl"
+  },
+  "walled/leg1": {
+   "n": 47,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1/positions_walled_leg1.jsonl"
+  },
+  "walled/leg2": {
+   "n": 25,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1/positions_walled_leg2.jsonl"
+  },
+  "walled/leg3": {
+   "n": 16,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1/positions_walled_leg3.jsonl"
+  },
+  "walled/leg4": {
+   "n": 5,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1/positions_walled_leg4.jsonl"
+  }
+ },
+ "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1"
+}

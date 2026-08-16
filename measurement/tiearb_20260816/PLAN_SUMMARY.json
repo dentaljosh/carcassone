@@ -1,0 +1,217 @@
+{
+ "schema": "carcassonne-tiearb-plan/v1",
+ "design_doc": "measurement/tiearb_20260816/DESIGN.md",
+ "read_rule": "measurement/tiearb_20260816/READ_RULE.md",
+ "permutation_seed": 20260816,
+ "c_tier1_worker_s_per_playout": 2.1783,
+ "c_tier1_provenance": "MEASURED by the 2026-08-14 OOF cost pilot on this judge and this corpus (PILOT.json cost.c_tier1_worker_s_per_playout). It sizes the ETA ONLY.",
+ "holdout_positions": 211,
+ "holdout_roots": 120,
+ "pilot_n": 20,
+ "dirs": {
+  "holdout": {
+   "n_positions": 211,
+   "n_roots": 120,
+   "legs": 392,
+   "playouts": 25088,
+   "counts_by_stratum": {
+    "e4": 23,
+    "selfplay": 188
+   },
+   "counts_by_profile_leg": {
+    "fixed_v1/leg1": 23,
+    "fixed_v1/leg2": 9,
+    "fixed_v1/leg3": 6,
+    "fixed_v1/leg4": 1,
+    "walled/leg1": 188,
+    "walled/leg2": 99,
+    "walled/leg3": 49,
+    "walled/leg4": 17
+   },
+   "eta": {
+    "playouts": 25088,
+    "worker_hours": 15.180330666666668,
+    "wall_hours_at_W30": 0.5060110222222223,
+    "wall_minutes_at_W30": 30.360661333333336
+   },
+   "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_holdout"
+  },
+  "chunk1": {
+   "n_positions": 52,
+   "n_roots": 46,
+   "legs": 103,
+   "playouts": 6592,
+   "counts_by_stratum": {
+    "e4": 5,
+    "selfplay": 47
+   },
+   "counts_by_profile_leg": {
+    "fixed_v1/leg1": 5,
+    "fixed_v1/leg2": 4,
+    "fixed_v1/leg3": 1,
+    "walled/leg1": 47,
+    "walled/leg2": 25,
+    "walled/leg3": 16,
+    "walled/leg4": 5
+   },
+   "eta": {
+    "playouts": 6592,
+    "worker_hours": 3.9887093333333334,
+    "wall_hours_at_W30": 0.1329569777777778,
+    "wall_minutes_at_W30": 7.977418666666667
+   },
+   "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk1"
+  },
+  "chunk2": {
+   "n_positions": 53,
+   "n_roots": 45,
+   "legs": 97,
+   "playouts": 6208,
+   "counts_by_stratum": {
+    "e4": 5,
+    "selfplay": 48
+   },
+   "counts_by_profile_leg": {
+    "fixed_v1/leg1": 5,
+    "fixed_v1/leg2": 1,
+    "fixed_v1/leg3": 1,
+    "walled/leg1": 48,
+    "walled/leg2": 23,
+    "walled/leg3": 12,
+    "walled/leg4": 7
+   },
+   "eta": {
+    "playouts": 6208,
+    "worker_hours": 3.7563573333333338,
+    "wall_hours_at_W30": 0.12521191111111113,
+    "wall_minutes_at_W30": 7.5127146666666675
+   },
+   "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk2"
+  },
+  "chunk3": {
+   "n_positions": 53,
+   "n_roots": 43,
+   "legs": 93,
+   "playouts": 5952,
+   "counts_by_stratum": {
+    "e4": 6,
+    "selfplay": 47
+   },
+   "counts_by_profile_leg": {
+    "fixed_v1/leg1": 6,
+    "fixed_v1/leg2": 1,
+    "fixed_v1/leg3": 1,
+    "walled/leg1": 47,
+    "walled/leg2": 23,
+    "walled/leg3": 11,
+    "walled/leg4": 4
+   },
+   "eta": {
+    "playouts": 5952,
+    "worker_hours": 3.601456,
+    "wall_hours_at_W30": 0.12004853333333335,
+    "wall_minutes_at_W30": 7.202912
+   },
+   "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk3"
+  },
+  "chunk4": {
+   "n_positions": 53,
+   "n_roots": 47,
+   "legs": 99,
+   "playouts": 6336,
+   "counts_by_stratum": {
+    "e4": 7,
+    "selfplay": 46
+   },
+   "counts_by_profile_leg": {
+    "fixed_v1/leg1": 7,
+    "fixed_v1/leg2": 3,
+    "fixed_v1/leg3": 3,
+    "fixed_v1/leg4": 1,
+    "walled/leg1": 46,
+    "walled/leg2": 28,
+    "walled/leg3": 10,
+    "walled/leg4": 1
+   },
+   "eta": {
+    "playouts": 6336,
+    "worker_hours": 3.833808,
+    "wall_hours_at_W30": 0.1277936,
+    "wall_minutes_at_W30": 7.667616
+   },
+   "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_chunk4"
+  },
+  "pilot": {
+   "n_positions": 20,
+   "n_roots": 20,
+   "legs": 43,
+   "playouts": 2752,
+   "counts_by_stratum": {
+    "e4": 2,
+    "selfplay": 18
+   },
+   "counts_by_profile_leg": {
+    "fixed_v1/leg1": 2,
+    "fixed_v1/leg2": 1,
+    "fixed_v1/leg3": 1,
+    "fixed_v1/leg4": 1,
+    "walled/leg1": 18,
+    "walled/leg2": 11,
+    "walled/leg3": 8,
+    "walled/leg4": 1
+   },
+   "eta": {
+    "playouts": 2752,
+    "worker_hours": 1.6651893333333334,
+    "wall_hours_at_W30": 0.05550631111111111,
+    "wall_minutes_at_W30": 3.330378666666667
+   },
+   "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_pilot"
+  }
+ },
+ "chunks": [
+  {
+   "name": "chunk1",
+   "n": 52,
+   "legs": 103,
+   "playouts": 6592
+  },
+  {
+   "name": "chunk2",
+   "n": 53,
+   "legs": 97,
+   "playouts": 6208
+  },
+  {
+   "name": "chunk3",
+   "n": 53,
+   "legs": 93,
+   "playouts": 5952
+  },
+  {
+   "name": "chunk4",
+   "n": 53,
+   "legs": 99,
+   "playouts": 6336
+  }
+ ],
+ "totals": {
+  "holdout_legs": 392,
+  "holdout_playouts": 25088,
+  "holdout_eta": {
+   "playouts": 25088,
+   "worker_hours": 15.180330666666668,
+   "wall_hours_at_W30": 0.5060110222222223,
+   "wall_minutes_at_W30": 30.360661333333336
+  },
+  "pilot_legs": 43,
+  "pilot_playouts": 2752,
+  "pilot_eta": {
+   "playouts": 2752,
+   "worker_hours": 1.6651893333333334,
+   "wall_hours_at_W20": 0.08325946666666667,
+   "wall_minutes_at_W20": 4.995568
+  }
+ },
+ "governance": "\u26a0\ufe0f THIS PLAN SPENDS THE HOLDOUT (DESIGN \u00a73.1). Measurement only, 0 games on every branch."
+}

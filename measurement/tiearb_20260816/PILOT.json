@@ -1,0 +1,43 @@
+{
+ "schema": "carcassonne-tiearb-pilot/v1",
+ "design_doc": "measurement/tiearb_20260816/DESIGN.md",
+ "scope": "DESIGN \u00a75 COST PILOT. Reads ONLY wall/elapsed/integrity and the G-REPRO bit-reproduction COUNT. No value, no mean, no sd, no delta was read from any record. The 20 pilot positions are DEV and enter no read as pilot artefacts.",
+ "n_legs_records": 43,
+ "playouts": 2752,
+ "judge": "tier1-greedy",
+ "backend": "python",
+ "m": 32,
+ "world_seed_salt": "tiletie-v1",
+ "workers": 20,
+ "integrity": {
+  "records": 43,
+  "ok": 43,
+  "n_failed": 0,
+  "crn_verified": 43,
+  "checksum_ok": 43,
+  "world_seed_identical_to_primary": 43,
+  "playout_seed_identical_to_primary": 43,
+  "arm_identical_to_primary": 43,
+  "missing_primary_counterpart": [],
+  "G_REPRO_bit_identical_to_oof": 43,
+  "G_REPRO_expected": 43,
+  "G_REPRO_missing_counterpart": [],
+  "note": "G-REPRO compares a sha256 over (values_a, values_b, world_seeds, playout_seeds) against the 2026-08-14 OOF pilot records for the same rid+leg. Only the COUNT is reported."
+ },
+ "cost": {
+  "sum_elapsed_secs": 5844.3,
+  "c_tier1_worker_s_per_playout": 2.1236,
+  "median_record_secs": 147.3,
+  "max_record_secs": 181.9,
+  "oof_pilot_c": 2.1783,
+  "realized_over_oof_pilot": 0.975
+ },
+ "mechanical_rule": {
+  "rule_1_abort": "NOT TRIGGERED (0 failed / 0 crn / 0 seed / G-REPRO clean).",
+  "rule_2_launch_shape": "H = 25088 x c / (3600 x 30) = 0.493 wall-hours at W30.",
+  "H_wall_hours_at_W30": 0.4933,
+  "worker_hours": 14.8,
+  "chunks_to_launch": 4,
+  "decision": "LAUNCH ALL 4 CHUNKS (full 211-position holdout)"
+ }
+}
