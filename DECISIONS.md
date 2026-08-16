@@ -7407,3 +7407,30 @@ already been run and read flat, so **no new prereg is licensed by default.**
 **0 games · no band · no claim · `PRODUCTION.yaml` untouched.** Artifacts
 `measurement/tiletie_oof_20260814/`.
 **Phase:** measurement-first (weekend round; Q5 resolved — the queue is now genuinely empty).
+
+## 2026-08-16 — Mobile `rust_threads` 4→2: battery A/B verdict adopted (owner: "flip it")
+
+The Sunday on-device battery A/B (`android/tools/battery_bench.sh`, artifacts
+`measurement/battery_bench_20260816_164401/`, 9/9 runs, **identity gate PASS** — one
+move_hash across all arms) read **t2 DOMINANT over t4 on both axes**: 0.351 ± 0.004 vs
+0.465 ± 0.001 s/move AND 1.96 ± 0.58 vs 3.80 ± 0.49 J/move gross (net-of-baseline 1.58
+vs 3.31; t2-vs-t4 energy z ≈ 4). t1 read 0.461 s/move / 3.07 J/move — so the optimum is
+interior at 2, not monotone. Since play is bit-identical at any thread count (G4; re-proved
+per-session by the bench's hash gate), the flip is pure energy+latency with **zero strength
+surface** — no band, no elo claim, no prereg needed. `deploy_profiles.mobile.rust_threads: 2`
+in `governance/PRODUCTION.yaml`; `measured_s_per_move: 1.551` annotated as a t4-era upper
+bound (t2 midgame latency unmeasured — the bench sampled opening-phase moves, where t2 ran
+25% faster).
+
+**Measurement integrity trail (why the first two sessions are not the verdict):** session 1
+VOID — Android 17 preview ran the shell-started FGS in the `/background` cpuset (little cores
+0–3; sub-idle power readings exposed it) AND an adb-stdin bug truncated the plan to 1 of 9
+runs. Session 2 killed mid-flight — a silently no-op'd stale-file clear let session 1's
+`t4_r1.json` impersonate a completed run (caught by its 4-decimal-identical s/move). Fixes
+(BenchActivity top-app pinning + per-run cpuset gate, stdin guards, verified stale clear,
+per-tag pre-launch delete, run-count gate) are in commits `3593cc73`/`b5fd5427`; the doc is
+`android/tools/BATTERY_BENCH.md`. Verdict session ran top-app-verified with screen on at min
+brightness, baseline-subtracted.
+
+**Deploy note:** the phone picks up the flip at the next apk build+install (the bundle syncs
+from the repo at build — never hand-copy).

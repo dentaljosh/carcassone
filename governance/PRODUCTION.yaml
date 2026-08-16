@@ -241,12 +241,20 @@ champion:
         total_sims: 11008
         backend: rust                   # carc_rs, the rustport core (P4 bit-exact / P6 G6 / P7 G7). LOAD-BEARING:
                                         # the budget above is payable ONLY on this backend. See the note.
-        rust_threads: 4                 # the k worlds split across 4 OS threads INSIDE one GIL-released
-                                        # choose_action call. G4 proved threads {1,4,8} bit-identical.
+        rust_threads: 2                 # FLIPPED 4->2 2026-08-16 (owner: "flip it"): the on-device battery A/B
+                                        # (measurement/battery_bench_20260816_164401, identity gate PASS) showed
+                                        # t2 DOMINATES t4 -- 0.351 vs 0.465 s/move AND 1.96 vs 3.80 J/move
+                                        # (~4 sigma) on opening-phase moves. Play is bit-identical at any thread
+                                        # count (G4 {1,4,8}; the bench's move-hash gate re-proved it), so the
+                                        # flip is pure energy+latency. The k worlds split across OS threads
+                                        # INSIDE one GIL-released choose_action call.
         parallel_workers: null          # still null and always will be: Chaquopy has no multiprocessing. The
                                         # parallelism here is Rust threads inside ONE call — a different
                                         # mechanism, which is exactly why the unpin condition could be met.
-        measured_s_per_move: 1.551      # Pixel 9 Pro (caiman), threads=4, 20 replayed midgame roots: median
+        measured_s_per_move: 1.551      # ⚠️ measured at threads=4 (pre-flip); t2 midgame latency not yet
+                                        # measured -- opening-phase bench read t2 25% FASTER than t4, so treat
+                                        # 1.551 as an upper bound until re-measured.
+                                        # Pixel 9 Pro (caiman), threads=4, 20 replayed midgame roots: median
                                         # 1.551, mean 1.5154, p90 1.6552, max 1.7056. Thermal 1.007x over 68.7 s
                                         # of continuous full-budget search (fixed-position soak, 50 repeats).
                                         # RAW: measurement/rustport_p7/device/p7/bench_k8x1376.json (authoritative
