@@ -330,7 +330,8 @@ def production_leaf_cfg(spec: ProductionSpec | None = None):
     return dc.replace(DEFAULT_CONFIG, v29_meeple_curve=tuple(spec.curve))
 
 
-def production_prior_cfg(spec: ProductionSpec | None = None, leaf_cfg=None):
+def production_prior_cfg(spec: ProductionSpec | None = None, leaf_cfg=None, *,
+                         tiearb: dict | None = None):
     """The champion HeuristicPriorConfig (c1.5/tau5/float/visits/vn15) with the curve125
     leaf. reuse_tree rides from the YAML (True) but is INERT in fair deploy (the fair
     agent runs fresh per-determinization trees and never reads it)."""
@@ -339,6 +340,22 @@ def production_prior_cfg(spec: ProductionSpec | None = None, leaf_cfg=None):
     spec = spec or load_production_spec()
     if leaf_cfg is None:
         leaf_cfg = production_leaf_cfg(spec)
+    # tiearb: THE TIE ARBITER (rust-only, fair-only) —
+    # measurement/tiearb2_stage2_20260817. `None` OR a dict with `enabled=False`
+    # passes NO tiearb keyword at all, so the config is constructed with the
+    # dataclass defaults, i.e. the champion byte-for-byte — the same
+    # inverted-liveness discipline `eval_fair_puct._build_champ_cfg` applies to
+    # the J-rules surfaces. A dict {enabled, B, J, mode, salt, eps} arms it.
+    # These are SEARCH knobs, not leaf fields: NO leaf hash moves, so the wiring
+    # gate is the RESOLVED `cand_tiearb` dict stamped on the manifest
+    # (READ_RULE G-J4) plus the per-game firing telemetry the harness reads off
+    # `FairAgentRs.stats()`.
+    ta = {}
+    if tiearb is not None and bool(tiearb.get("enabled")):
+        ta.update(tiearb_enabled=True,
+                  tiearb_b=int(tiearb["B"]), tiearb_j=int(tiearb["J"]),
+                  tiearb_mode=str(tiearb["mode"]), tiearb_salt=str(tiearb["salt"]),
+                  tiearb_eps=float(tiearb["eps"]))
     return HeuristicPriorConfig(
         c_puct=spec.c_puct,
         tau_p=spec.tau_p,
@@ -347,6 +364,7 @@ def production_prior_cfg(spec: ProductionSpec | None = None, leaf_cfg=None):
         value_norm=spec.value_norm,
         leaf_cfg=leaf_cfg,
         reuse_tree=spec.reuse_tree,
+        **ta,
     )
 
 
@@ -971,7 +989,8 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
                              exact_budget: int | None = None,
                              parallel_workers: int | None = None,
                              backend: str = "auto",
-                             rust_threads: int | None = None):
+                             rust_threads: int | None = None,
+                             tiearb: dict | None = None):
     """Instantiate the production champion named by governance/PRODUCTION.yaml and attach
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
@@ -1033,6 +1052,28 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     sequential fold); G4 proved the merge bit-identical at threads {1, 4, 8}, so it is a
     latency lever exactly like ``parallel_workers``.
 
+    ``tiearb`` arms THE TIE ARBITER on this champion (None, or a dict with
+    ``enabled=False``, is the champion byte-for-byte — no keyword reaches the config,
+    no key reaches the manifest, so every hash computed from it is identical to before
+    this kwarg existed). An ENABLED dict is ``{enabled, B, J, mode, salt, eps}`` and
+    re-decides an exactly-tied TILE ply with terminal-grounded ``tier1-greedy``
+    playouts (measurement/tiearb2_stage2_20260817). It existed only behind
+    ``eval_fair_puct``'s ``--cand-tiearb-*`` flags, which build their own
+    ``HeuristicPriorConfig`` — so no out-of-lineage harness reaching the champion
+    through THIS entry point (the JCloisterZone match driver) could arm it, and the
+    two-cell plain-vs-arbiter design was unreachable.
+
+    RUST-ONLY and FAIR-ONLY, and it RAISES rather than silently doing nothing on
+    either violation (the same rule as ``exact_budget``/``parallel_workers`` on
+    ``mode="clairvoyant"``): the arbiter binds at the ``pooled_q_argmax`` root hook in
+    ``carc_core::fair::FairAgent`` and NOTHING implements it on the python search path,
+    so a silently arbiter-free "candidate" would play champion-vs-champion and grade a
+    perfect null wearing the shape of a real cell — the J13 failure mode this surface
+    is built to refuse. ⚠️ The leaf hash does NOT move (these are search knobs, not
+    leaf fields), so the wiring gates are the RESOLVED ``manifest["cand_tiearb"]``
+    dict (READ_RULE G-J4) and the per-game firing telemetry off ``FairAgentRs.stats()``
+    — an arbiter that never fired is U-UNREADABLE, not a null.
+
     ⚠️ WHY "auto" IS NOW THE DEFAULT (flipped 2026-08-03; Joshua approved). Since
     2026-08-01 the YAML has named ``backend: rust`` as the champion's execution backend
     of record, but this default stayed ``"python"`` because ``RustFairAgent`` is NOT a
@@ -1063,7 +1104,10 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     if game is None:
         game = Game(enable_legal_moves_cache=True)
     leaf_cfg = production_leaf_cfg(spec)
-    cfg = production_prior_cfg(spec, leaf_cfg)
+    # A malformed/out-of-range arbiter dict dies HERE, in HeuristicPriorConfig's
+    # __post_init__ (mode/B/J/eps/salt), before anything is constructed.
+    _tiearb_on = bool(tiearb) and bool(tiearb.get("enabled"))
+    cfg = production_prior_cfg(spec, leaf_cfg, tiearb=tiearb)
     # ⚠️ ORDER (2026-08-03). Everything MODE- and KWARG-dependent resolves BEFORE the
     # engine, and the manifest is built LAST of the three, because "auto" is now the
     # default: the resolution has to see what the caller asked for, a mode/kwarg error
@@ -1082,6 +1126,10 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
         raise ValueError(
             "exact_budget is a FAIR-mode feature (only the PIMC agent runs the endgame "
             f"solver); got mode={mode!r}")
+    if _tiearb_on and mode != "fair":
+        raise ValueError(
+            "tiearb is a FAIR-mode feature (the tie arbiter binds at the fair PIMC "
+            f"agent's pooled_q_argmax root hook); got mode={mode!r}")
 
     # ⚠️ RESOLVED values, not the raw kwargs (REVIEW 2026-08-02 #5 / ROUND2 F-1).
     # `None` is the INHERIT-FROM-PROCESS sentinel for meeple_dedup and intra_reuse, so
@@ -1127,6 +1175,18 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     if rust_threads is not None and backend != "rust":
         raise ValueError(
             f"rust_threads is a backend='rust' knob; got backend={backend!r}")
+    # THE TIE ARBITER is RUST-ONLY, and it is checked against the RESOLVED backend
+    # (the same lesson as the meeple_dedup/intra_reuse guard above: the raw kwarg is
+    # not what plays). It is the mirror image of the python-only set — those DEMOTE
+    # "auto" to python, while this one cannot be honoured anywhere but rust, so a
+    # python backend is refused rather than quietly dropping the surface. A silently
+    # arbiter-free champion would grade a champion-vs-champion null wearing the shape
+    # of a real cell (the J13 failure mode).
+    if _tiearb_on and backend != "rust":
+        raise ValueError(
+            "tiearb is RUST-ONLY (the arbiter binds at the pooled_q_argmax root hook "
+            "in carc_core::fair::FairAgent; the python search path raises "
+            f"NotImplementedError on it); resolved backend is {backend!r}")
 
     manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
                                  backend=backend)
@@ -1294,6 +1354,24 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
                      "in the same world order",
             "note": "BEHAVIOR-IDENTICAL (rustport G4 proved threads {1,4,8} "
                     "bit-identical). A single-GAME latency lever.",
+        }
+
+    # THE TIE ARBITER: stamped ONLY when it resolves ON, on the same no-hash-drift
+    # terms as every kwarg above — a champion built without it (or with an
+    # `enabled=False` dict) carries a manifest byte-identical to the pre-kwarg one,
+    # `search.config_hash` included. The KEY and the SHAPE are `cand_tiearb` /
+    # {enabled, B, J, mode, salt, eps} on purpose: that is exactly what
+    # eval_fair_puct stamps and what READ_RULE `G-J4` reads, and a gate that has to
+    # learn a second spelling is a gate that eventually reads the wrong cell. ⚠️ This
+    # stamp is THE wiring gate on the config side, because the arbiter deliberately
+    # moves no leaf hash — the liveness half is the per-game firing telemetry.
+    if _tiearb_on:
+        manifest = dict(manifest)
+        manifest["cand_tiearb"] = {
+            "enabled": True,
+            "B": int(tiearb["B"]), "J": int(tiearb["J"]),
+            "mode": str(tiearb["mode"]), "salt": str(tiearb["salt"]),
+            "eps": float(tiearb["eps"]),
         }
 
     agent.manifest = manifest

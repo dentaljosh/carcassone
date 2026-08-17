@@ -102,7 +102,7 @@ def analyze(records: list[dict]) -> dict:
         vals = [r[key] for r in records if r.get(key) is not None]
         return st.mean(vals) if vals else None
 
-    return {
+    out = {
         "n_records": len(records), "n_scored": n, "voids": dict(voids),
         "wins": wins, "draws": draws, "losses": losses,
         "win_rate": wr,
@@ -120,6 +120,70 @@ def analyze(records: list[dict]) -> dict:
         "ms_per_move_champ": _m("ms_per_move_champ"),
         "ms_per_move_jcz": _m("ms_per_move_jcz"),
         "wall_secs_per_game": _m("wall_secs"),
+    }
+    ta = tiearb_block(records)
+    if ta is not None:
+        out["tiearb"] = ta
+    return out
+
+
+def tiearb_block(records: list[dict]) -> dict | None:
+    """THE FIRING LEDGER for a tie-arbiter cell, or ``None`` when no game carries the
+    telemetry — a legacy archive's readout is then byte-identical to before.
+
+    Mirrors ``eval_fair_puct``'s cell-level block, and it is not a courtesy statistic:
+    ⚠️ READ_RULE `G-FIRE` VOIDS the cell when ``phi < 1.0``. A surface that never fired
+    grades a champion-vs-champion null wearing the shape of a real match, so this block
+    is printed next to the win rate, never in a footnote — exactly like the divergence
+    ledger above it.
+
+    ``phi`` = fired tile plies PER GAME. ``phi_effective`` discounts it by the FAIL-SOFT
+    error rate, because a ply that errored fell back to the champion's own pick: it was
+    counted as fired but did not arbitrate, and only the effective figure states how
+    much of the cell's play the surface actually touched. ⚠️ Games are counted over ALL
+    records that carry telemetry, VOIDS INCLUDED — the arbiter ran in a voided game
+    too, and dropping those would flatter ``phi``.
+    """
+    ta = [r["champ_tiearb"] for r in records if r.get("champ_tiearb")]
+    if not ta:
+        return None
+    games = len(ta)
+    fired = sum(int(t["fired_plies"]) for t in ta)
+    tile = sum(int(t["tile_plies"]) for t in ta)
+    chg = sum(int(t["pickchanges"]) for t in ta)
+    arms = sum(int(t["arms_total"]) for t in ta)
+    playouts = sum(int(t["playouts_total"]) for t in ta)
+    secs = sum(float(t["secs"]) for t in ta)
+    errs = sum(int(t.get("errors") or 0) for t in ta)
+    partial = sum(int(t.get("partial_argmax") or 0) for t in ta)
+    err_rate = errs / max(1, fired + errs)
+    phi = fired / max(1, games)
+    return {
+        "tiearb_games": games,
+        "tiearb_fired_plies_total": fired,
+        "tiearb_tile_plies_total": tile,
+        "phi": phi,
+        "error_rate_on_fired": err_rate,
+        "phi_effective": phi * (1.0 - err_rate),
+        "fire_rate_on_tile_plies": fired / max(1, tile),
+        "pickchanges_total": chg,
+        "pickchange_rate": chg / max(1, fired),
+        "mean_arms": arms / max(1, fired),
+        "playouts_total": playouts,
+        "secs_total": secs,
+        "secs_per_game": secs / max(1, games),
+        "errors_total": errs,
+        "first_error": next((t.get("first_error") for t in ta
+                             if t.get("first_error")), None),
+        # READ_RULE §0.F `G-PLY`. Expected 0; ABSENT or NON-ZERO voids the cell, so it
+        # is emitted unconditionally on every arbiter cell.
+        "partial_argmax_total": partial,
+        "max_plies": sorted({int(t.get("max_plies") or 0) for t in ta}),
+        "modes": sorted({str(t["mode"]) for t in ta}),
+        "B": sorted({int(t["B"]) for t in ta}),
+        "J": sorted({int(t["J"]) for t in ta}),
+        "G_FIRE_floor": 1.0,
+        "G_FIRE_fired": bool(phi < 1.0),
     }
 
 
@@ -159,6 +223,29 @@ def main(argv=None) -> int:
     print(f"timing            champ {f(a['ms_per_move_champ'], 0)} ms/move   "
           f"JCZ {f(a['ms_per_move_jcz'], 1)} ms/move   "
           f"{f(a['wall_secs_per_game'], 1)} s/game")
+    t = a.get("tiearb")
+    if t:
+        print(f"TIE ARBITER       {t['tiearb_games']} games  mode(s) "
+              f"{'/'.join(t['modes'])} B={t['B']} J={t['J']}")
+        print(f"  phi             {f(t['phi'])} fired tile plies/game "
+              f"(effective {f(t['phi_effective'])}; "
+              f"{t['tiearb_fired_plies_total']}/{t['tiearb_tile_plies_total']} of "
+              f"tile plies)")
+        print(f"  pick-change     {f(t['pickchange_rate'], 3)} "
+              f"({t['pickchanges_total']} of {t['tiearb_fired_plies_total']})   "
+              f"mean arms {f(t['mean_arms'])}   {f(t['secs_per_game'], 1)} s/game")
+        if t["errors_total"]:
+            print(f"  !! FAIL-SOFT    {t['errors_total']} arbiter errors "
+                  f"(rate on fired {f(t['error_rate_on_fired'], 4)}; fell back to the "
+                  f"champion's pick; first: {str(t['first_error'])[:120]})")
+        if t["partial_argmax_total"]:
+            print(f"  ** G-PLY        {t['partial_argmax_total']} plies took an "
+                  "argmax over FEWER than B completed worlds — the CRN pairing across "
+                  "arms is broken and this cell is U-UNREADABLE (READ_RULE 0.F).")
+        if t["G_FIRE_fired"]:
+            print("  ** G-FIRE       phi < 1.0 — THE ARBITRATION SURFACE IS "
+                  "EFFECTIVELY INERT AND THIS CELL IS U-UNREADABLE (READ_RULE 3). "
+                  "Do NOT read it as a null.")
     return 0
 
 
