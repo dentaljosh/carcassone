@@ -147,9 +147,11 @@ The champion config itself does not move. What moves is a knob **beside** it.
   `cand_leaf_hash` must **equal** the champion's `a36d2e15a3b3d71d`. A *difference*
   here is an abort, not a finding. Same k8×1376 = 11,008, same exact-K 2, same
   `c_puct` 1.5, same `tau_p` 5.0.
-- **`J4` — the resolved knob is in the manifest**: `config.cand_tiearb` resolves to a
-  full dict (`enabled`, `B`, `J`, `mode` ∈ {`argmax`,`random`}, `salt`, `eps`) in
+- **`J4` — the resolved knob is in the manifest**: **top-level `cand_tiearb`** resolves
+  to a full dict (`enabled`, `B`, `J`, `mode` ∈ {`argmax`,`random`}, `salt`, `eps`) in
   `manifest.json`, so what ran is readable off disk and not inferred from a flag.
+  (Top level, **not** `config.cand_tiearb` — corrected by READ_RULE §0.C.2 before the
+  band claim, to match every shipped sibling knob.)
 - **`J13` — a TWO-SIDED positive control, passed on THIS box before game 1, per host**
   (`PREFLIGHT_*_${HOST}_FIRST.json`). The arbitration surface must be shown to be
   **live**:

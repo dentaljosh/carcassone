@@ -11,6 +11,83 @@
 > the harness emits. **No owner call adjudicates any outcome.** It is spent on this
 > mechanism and this band; any successor needs a fresh one of each.
 
+## 0. PRE-RUN AMENDMENT — applied BEFORE the band claim and BEFORE one game is played
+
+> **Amended 2026-08-17, after `b2faa238` and before `claim_next_band.py` was run.**
+> At the time of this amendment: **no band is claimed, no game has been played, no
+> `summary.json` or `manifest.json` exists for either cell, and no statistic of any
+> kind exists anywhere.** The amendment is therefore made under the house pre-run
+> amendment discipline, on the `measurement/tiearb2_20260816/DESIGN.md` §0.A
+> precedent, and **this text is the audit trail** — the defect is stated verbatim
+> before it is resolved.
+>
+> ⚠️ **It was found by the instrument's own exhaustiveness sweep
+> (`tests/test_tiearb2_stage2.py`, 77 tests, commit `3bd1ff7d`), NOT by looking at a
+> number.** No number existed to look at. The adjudicator had already implemented the
+> committed text **verbatim** and stamped `STAGE2_G_N_INCONSISTENCY` on every branch,
+> which is the correct behaviour for an instrument facing an incoherent rule.
+
+### 0.A The defect, stated verbatim before it is resolved
+
+§3's `G-N` precondition, as committed at `b2faa238`, reads:
+
+> | `G-N` | `n_common < 600`, **or** either cell completed fewer than 640 of its 800 paired games |
+
+and §2 defines:
+
+> | `n_common` | decks completed in **both** cells (the denominator of `D`) |
+
+**These are incoherent.** `n_common` is denominated in **decks**, but `600` was written
+as though it were **games**. `eval_fair_puct.py:3924` computes
+`"n_decks": (args.n // 2 if args.paired else args.n)`, so the design's
+`--paired --n 800` yields **400 decks per cell — a hard ceiling.** A floor of
+`n_common ≥ 600` decks is therefore **unreachable by construction**, and `G-N` would
+fire on a *perfectly complete* run, voiding the cell unconditionally. The second clause
+cannot rescue it: 640 completed games is 320 decks, which is also below 600.
+
+⇒ **Left unamended, this read-rule can only ever return `U-UNREADABLE`.** That is not a
+conservative failure mode; it is a rule that cannot be run.
+
+### 0.B The resolution, and why it is the direction §1/§6 already implied
+
+The surviving clause — *"fewer than 640 of its 800 paired games"* — is an **80%
+completion bar**, and it is the clause that was written in the correct units. The
+deck-side floor is set to its **exact analogue**: **80% of the 400 decks a paired
+n = 800 cell can produce**, i.e. **`n_common ≥ 320` decks**. `640` games *is* `320`
+decks, so after the amendment the two clauses agree at 80% instead of contradicting
+each other, and the deck clause remains **independently binding** (two cells could each
+complete ≥ 640 games while overlapping on fewer than 320 *common* decks, which would
+silently weaken `D`).
+
+**`G-N` as amended:**
+
+> `n_common < 320` **(decks)**, **or** either cell completed fewer than **640** of its
+> **800** paired **games**
+
+⚠️ **No bar that adjudicates a finding is touched.** `+2.0`, `+1.0` and `1.20` are
+unchanged, every branch condition in §4 is unchanged, and the amendment strictly
+*restores* the possibility of a readable run rather than making any branch easier to
+reach. The 80% figure is not a new constant — it is the committed 640/800 clause
+re-expressed in the units §2 defined.
+
+### 0.C Two further corrections, both report-only in the original
+
+Found in the same sweep; neither can change a branch.
+
+1. **§2's bar sentence did not name the `+1.0` threshold** that §4's
+   `G-PRESENT` / `G-FLAT` split uses. It is now named. ⚠️ Stated plainly so it cannot
+   be mistaken for a smuggled bar: **`+1.0` chooses between two branches that both
+   license NOTHING** (`G-PRESENT` and `G-FLAT` are alike non-licensing), so it cannot
+   change what this run permits — it selects a *label* and the mandatory rider that
+   travels with it. The two bars that gate a licence remain `+2.0` and `1.20`.
+2. **The knob's manifest location** was written as `config.cand_tiearb` in §3 `G-J4`
+   and DESIGN §4, but **every shipped sibling knob resolves at manifest TOP level**.
+   Corrected to top-level **`cand_tiearb`**, to match the siblings. The analyser reads
+   **both** spellings and reports which it found, so this is hygiene rather than a
+   trap; `G-J4` still aborts if the resolved dict is absent or wrong under either.
+
+---
+
 ## 1. Scope
 
 - Two cells, **`ARB`** and **`RND`** (DESIGN §1), **n = 800 deck-paired games each**,
@@ -38,9 +115,12 @@
 | `phi_x` | realized tied tile plies per game at which the arbiter fired, per cell |
 | `n_common` | decks completed in **both** cells (the denominator of `D`) |
 
-**The bars are `+2.0` (z) and `1.20` (the N4 cost trigger).** Neither is a new constant:
-`+2.0` is Stage 1's, Stage 1b's, `E-FLAT`'s and `W-FLAT`'s verbatim; `1.20` is the house
-N4 trigger currency, the same bar Phase A's `rho_wall` was graded at.
+**The bars are `+2.0` (z) and `1.20` (the N4 cost trigger)**, plus **`+1.0`**, the
+`G-PRESENT` / `G-FLAT` presentation split (§0.C.1). Neither adjudicating bar is a new
+constant: `+2.0` is Stage 1's, Stage 1b's, `E-FLAT`'s and `W-FLAT`'s verbatim; `1.20` is
+the house N4 trigger currency, the same bar Phase A's `rho_wall` was graded at.
+⚠️ **`+1.0` is not an adjudicating bar** — both branches it separates license nothing,
+so it selects a label and its mandatory rider, never a permission.
 
 ## 3. Preconditions — checked FIRST, and they void the run
 
@@ -49,11 +129,11 @@ N4 trigger currency, the same bar Phase A's `rho_wall` was graded at.
 | id | condition |
 |---|---|
 | `G-J1` | either cell's resolved `cand_leaf_hash` **differs** from the champion's `a36d2e15a3b3d71d`. ⚠️ **Inverted gate: a difference is an ABORT, not a finding** |
-| `G-J4` | `config.cand_tiearb` is absent or unresolved in either `manifest.json`, or its `mode` is not `argmax` for `ARB` and `random` for `RND`, or its `B` ≠ 16 or `J` ≠ 4 |
+| `G-J4` | **top-level `cand_tiearb`** (§0.C.2) is absent or unresolved in either `manifest.json`, or its `mode` is not `argmax` for `ARB` and `random` for `RND`, or its `B` ≠ 16 or `J` ≠ 4 |
 | `G-J13` | the **two-sided** positive control did not pass on **each** host before that host's game 1 (`PREFLIGHT_*_${HOST}_FIRST.json`): the arbiter must **change the pick** at a constructed tied ply **and** leave `root_leaf_value_bits` **unchanged** |
 | `G-FIRE` | `phi_arb < 1.0` **or** `phi_rnd < 1.0` — the surface is inert and the cell would grade a champion-vs-champion null wearing the shape of a real cell |
 | `G-BAND` | band `132000000000` was not claimed before game 1, or the two cells did not run on the same band and the same decks |
-| `G-N` | `n_common < 600`, **or** either cell completed fewer than 640 of its 800 paired games |
+| `G-N` | **(AMENDED §0.B)** `n_common < 320` **decks**, **or** either cell completed fewer than **640** of its **800** paired **games**. ⚠️ The text committed at `b2faa238` read `n_common < 600`, which is unreachable: a paired `n = 800` cell yields at most **400** decks (`eval_fair_puct.py:3924`) |
 | `G-TOOL` | the two boxes did not run the same rust toolchain / the same `carc_rs` build, or a cell mixed builds |
 | `G-STAT` | `z_arb`, `z_rnd` or `z_D` is `NaN` or absent |
 
