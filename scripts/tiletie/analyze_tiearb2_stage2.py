@@ -73,7 +73,9 @@ SCHEMA = "carcassonne-tiearb2-stage2-readout/v1"
 READ_RULE_AMENDMENT = ("READ_RULE.md §0 — §0.A-C (PRE-RUN AMENDMENT) commit 6c281f9e; "
                        "§0.D (OWNER RULING, N4 downgrade waived) commit a81b8c72; "
                        "§0.E (PRE-LAUNCH ACCEPTANCES: arbiter FAILS SOFT, G-FIRE binds "
-                       "on phi_effective; G-TOOL witness corrected) commit c36055a7")
+                       "on phi_effective; G-TOOL witness corrected) commit c36055a7; "
+                       "§0.F (G-PLY, the ply-granularity witness) commit ef07768c; "
+                       "§0.G (THE COST MODEL MISSED, NOT THE ARBITER) commit edd3deab")
 
 # ---- READ_RULE §2 committed bars — NOT new numbers -------------------------- #
 Z_BAR = 2.0             # "+2.0 is Stage 1's, Stage 1b's, E-FLAT's and W-FLAT's verbatim"
@@ -98,7 +100,8 @@ N_COMMON_FLOOR = 320                           # G-N, AMENDED §0.B — 80% of t
 CELL_GAMES_PLANNED = 800                       # G-N
 CELL_GAMES_FLOOR = 640                         # G-N — the same 80% bar, in games
 
-ALL_GATES = ("G-J1", "G-J4", "G-J13", "G-FIRE", "G-BAND", "G-N", "G-TOOL", "G-STAT")
+ALL_GATES = ("G-J1", "G-J4", "G-J13", "G-FIRE", "G-BAND", "G-N", "G-TOOL", "G-STAT",
+             "G-PLY")      # ADDED §0.F — the witness for §0.E.1 condition 1
 CELLS = ("ARB", "RND")
 
 # ---- DESIGN §2.1 / §3 — the firing-rate prior and its funnel ---------------- #
@@ -115,6 +118,68 @@ RHO_PHONE_16 = 5.520              # ⚠️ NOT SOLVED — the phone currency was
                                   #    under 1.20 above B = 2; Phase A stamped it
                                   #    *reported, unadjudicated*
 MS_RATIO_EXPECTED = 1.1985        # DESIGN §5, committed BEFORE the measurement
+                                  # ⚠️ WITHDRAWN as a prediction of in-cell ms_ratio
+                                  #    by §0.G — wrong CURRENCY, see COST_MODEL_MISS.
+
+# ---- READ_RULE §0.G — the cost model missed by ~2x, recorded BEFORE any cell --- #
+#: Smoke figures (laptop W22, 22 games/cell, throwaway band 900000100000, production
+#: knobs), recorded before the real cells and before any strength number exists.
+COST_MODEL_MISS = {
+    "headline": "THE COST MODEL MISSED, NOT THE ARBITER.",
+    "source": ("READ_RULE §0.G, from the SMOKE — laptop W22, 22 games/cell, throwaway "
+               "band 900000100000, production knobs. Band 132000000000 unclaimed and no "
+               "strength number of any kind existed when this was recorded, so the "
+               "framing cannot have been reconstructed after margins existed."),
+    "table": {"predicted_ms_ratio": MS_RATIO_EXPECTED,
+              "realized_ms_ratio_smoke": {"ARB": 2.42, "RND": 2.33}},
+    "numerator": {
+        "verdict": "ACCURATE WITHIN 12% — the arbiter cost what Phase A said it would",
+        "predicted_worker_s_per_fired_ply": 8.561,
+        "formula": "Ā × B × c_tier1_rust = 3.0022 × 16 × 0.178232",
+        "realized_worker_s_per_fired_ply": 9.57,
+        "error_pct": 11.8},
+    "denominator": {
+        "verdict": "A CATEGORY ERROR — the wrong CURRENCY",
+        "design_5_divided_by": ("t_champ = 13.7552 s/move — a SEQUENTIAL, single-box, "
+                                "UNCONTENDED measurement"),
+        "in_cell_divides_by": ("the opponent's per-move wall under W-WAY CONTENTION, "
+                               "≈ 1.7 s/move"),
+        "apart_by": "≈ 8×",
+        "withdrawn": ("DESIGN §5's sentence equating `rho_wall` with the in-cell "
+                      "`ms_ratio` is WITHDRAWN. They are not the same currency.")},
+    "reconciliation": {
+        "formula": "1 + (9.57 × phi / 72) / 1.7",
+        "at_phi_17_05": 2.33, "at_phi_17_95": 2.40,
+        "realized": {"ARB": 2.42, "RND": 2.33},
+        "note": ("the cell-to-cell assignment inverts within noise at n = 22 games; the "
+                 "LEVEL is what reconciles, and it does. The residual after correcting "
+                 "the denominator is the +11.8% numerator error and the realized phi "
+                 "being 74–78% of the 22.96 prior — both already reported.")},
+    "no_retune": ("⛔ No re-tuning of B, the trigger, or the playout is implied or "
+                  "permitted — §0.D's anti-gaming clause stands."),
+    "no_branch_moves": ("No branch moves: `ms_ratio` was never a branch input (§4.2) and "
+                        "§0.D waived its consequence. ⭐ But the MEASUREMENT was always "
+                        "mandatory precisely so a wrong cost model would become visible, "
+                        "and it did — THIS IS THAT MECHANISM WORKING, NOT FAILING."),
+    "phase_a_not_invalidated": (
+        "⚠️ Phase A's `rho_wall` is NOT invalidated. It is a correct statement in its own "
+        "SEQUENTIAL currency, and B_affordable = 16 was graded on that currency against "
+        "the N4 bar as the programme has always defined it. What is now known is that "
+        "`rho_wall` and in-cell `ms_ratio` MUST NEVER AGAIN BE EQUATED, and any future "
+        "design quoting one as a prediction of the other is repeating this error."),
+    "deploy_relevant": (
+        "⚠️ DEPLOY-RELEVANT, AND IT MUST NOT BE BURIED: the honest realized figure for a "
+        "deployed arbiter under contention is ≈ 2.3–2.4× the champion's per-move wall, "
+        "NOT ≈ 1.2×. The owner ruling (§0.D) stands and governs this cell's READING — but "
+        "the owner is entitled to know the number is ≈ 2.4×, not ≈ 1.2×, when the "
+        "production-flip decision is put to him."),
+    "rho_phone_is_a_third_currency": (
+        "`rho_phone` is untouched and still NOT SOLVED (5.520 at B = 16) — and it is a "
+        "THIRD currency again, so it may NOT be inferred from either figure above."),
+    "not_an_arbiter_defect": (
+        "This is a COST-MODEL miss and must never be presented as an arbiter defect: the "
+        "numerator — the arbiter's own cost — was right within 12%."),
+}
 
 # ---- DESIGN §6 — the offline bound chain and this cell's power -------------- #
 OFFLINE_ELO = 18.09
@@ -731,6 +796,54 @@ def gate_stat(z_arb, z_rnd, z_D) -> tuple:
     return (not bad), {"observed": obs, "nan_or_absent": bad}
 
 
+def gate_ply(cells: dict) -> tuple:
+    """`G-PLY` (ADDED §0.F) — `tiearb_partial_argmax_total` is ABSENT, or NON-ZERO,
+    in either cell.
+
+    The runtime witness for §0.E.1 condition 1: the fail-soft fallback is taken at
+    PLY granularity, so if any world or arm errors the WHOLE ply reverts to the
+    champion's own `pooled_q_argmax` pick and the arbiter NEVER argmaxes over a
+    partial world set. A partial world set breaks the CRN pairing across arms,
+    which is the entire basis of the `ARB`-vs-`RND` comparison — so a non-zero
+    count voids the cell's central comparison whatever the margins say.
+
+    ⚠️ ABSENT IS A FAILURE, NOT A PASS. The harness emits the key
+    UNCONDITIONALLY (`eval_fair_puct` ~line 2595), so its absence means the cell
+    was not instrumented for this at all: unknown, not zero. Same posture as
+    §0.E's absent-error-rate rule and `G-STAT`'s absent-z rule.
+
+    ⚠️ THE SUMMARY KEY IS THE WITNESS. The per-game `cand_tiearb.partial_argmax`
+    sum is computed and REPORTED as a cross-check, but it is deliberately NOT a
+    fallback: letting it stand in for an absent summary key would convert "the
+    cell was never instrumented" into a pass, which is the exact softening this
+    gate exists to refuse.
+    """
+    obs, ok = {}, True
+    for c in CELLS:
+        cell = cells.get(c) or {}
+        total = (cell.get("summary") or {}).get("tiearb_partial_argmax_total")
+        recon = cell.get("partial_argmax_from_records")
+        good = isinstance(total, (int, float)) and total == total and total == 0
+        obs[c] = {"tiearb_partial_argmax_total": total,
+                  "from_records_cross_check": recon,
+                  "agrees_with_records": (None if (total is None or recon is None)
+                                          else total == recon),
+                  "ok": bool(good),
+                  "why": ("PASS — every argmax was taken over all B = 16 completed "
+                          "worlds" if good else
+                          "FAIL — ABSENT (unknown, not zero: the harness emits this key "
+                          "unconditionally, so its absence means the cell was not "
+                          "instrumented)" if total is None else
+                          f"FAIL — {total} argmax(es) taken over a PARTIAL world set; "
+                          "the CRN pairing across arms was broken during play")}
+        ok &= good
+    return bool(ok), {
+        "cells": obs,
+        "witness": "summary.json::tiearb_partial_argmax_total (both cells)",
+        "condition": "READ_RULE §0.E.1 condition 1 (ply granularity), witnessed per §0.F",
+        "records_sum_is_a_cross_check_not_a_fallback": True}
+
+
 def evaluate_preconditions(cells: dict, preflights: list, band_claim: dict,
                            expect_hosts, n_common, z_arb, z_rnd, z_D) -> tuple:
     """§3, in the committed order. Returns `({gate: bool}, {gate: detail})`."""
@@ -750,7 +863,8 @@ def evaluate_preconditions(cells: dict, preflights: list, band_claim: dict,
              ("G-BAND", gate_band(cells, band_claim)),
              ("G-N", gate_n(n_common, n_arb, n_rnd)),
              ("G-TOOL", gate_tool(cells, preflights)),
-             ("G-STAT", gate_stat(z_arb, z_rnd, z_D)))
+             ("G-STAT", gate_stat(z_arb, z_rnd, z_D)),
+             ("G-PLY", gate_ply(cells)))
     return {k: v[0] for k, v in order}, {k: v[1] for k, v in order}
 
 
@@ -863,7 +977,11 @@ def cost_rider(ms_ratio_arb, ms_ratio_rnd, waived=True) -> dict:
                 "why": ("evidence about the COST MODEL, and its value does not depend on "
                         "whether the bar is enforced — it is the only way a wrong cost "
                         "model becomes visible. DESIGN §5 pre-registered ≈1.1985 before "
-                        "the measurement.")},
+                        "the measurement."),
+                # ⚠️ §0.G: the ≈1.1985 prediction is WITHDRAWN as a prediction of
+                # in-cell ms_ratio — wrong currency. The realized level is ≈2.3-2.4x.
+                "prediction_withdrawn_by": "READ_RULE §0.G (commit edd3deab)",
+                "cost_model_miss": COST_MODEL_MISS},
             "N4_FIRED": fired,
             # the CONSEQUENCE, waived by §0.D
             "downgrade_waived": bool(waived),
@@ -947,6 +1065,8 @@ def load_cell(name: str, summary_path, manifest_path, records_dir=None) -> dict:
         "ms_ratio": ms_ratio,
         "phi": _phi,
         "arbiter_errors": arbiter_errors(records, summary, _phi),
+        # §0.F cross-check ONLY — never a fallback for the summary witness
+        "partial_argmax_from_records": _partial_argmax_from_records(records),
         "seat_balance": _seat_balance(records),
         # a WITNESS, never a branch input: our own recomputation of the cell's z
         # from the records, so a summary/records mismatch is visible.
@@ -1009,6 +1129,16 @@ def arbiter_errors(records: list, summary: dict, phi=None) -> dict:
                        "NOT REPORTED by this cell"),
             "branch_reachability": ("Never a branch input EXCEPT through G-FIRE's "
                                     "phi_effective floor (§0.E.1 cond. 2 and 4).")}
+
+
+def _partial_argmax_from_records(records: list):
+    """Sum of per-game `cand_tiearb.partial_argmax`. A CROSS-CHECK on the summary
+    witness `G-PLY` reads, never a substitute for it (see `gate_ply`). `None` when
+    no record carries the field."""
+    vals = [(r.get("cand_tiearb") or {}).get("partial_argmax")
+            for r in records if isinstance(r.get("cand_tiearb"), dict)]
+    vals = [int(v) for v in vals if v is not None]
+    return sum(vals) if vals else None
 
 
 def _seat_balance(records: list) -> dict:
@@ -1141,6 +1271,8 @@ def build_readout(args) -> dict:
                           "registry": "governance/BAND_REGISTRY.csv",
                           "claim": band_claim,
                           "deck_range_common": [d["deck_seed_min"], d["deck_seed_max"]]},
+        # ⭐ §0.G — MANDATORY, first-class, never a footnote
+        "cost_model_miss": COST_MODEL_MISS,
         "read_rule_amendment": READ_RULE_AMENDMENT,
         "read_rule_amendment_note": AMENDMENT_NOTE,
         "presentation_split_note": Z_PRESENT_BAR_NOTE,
@@ -1208,7 +1340,8 @@ def _cell_block(c: dict) -> dict:
         "cell", "n_games", "n_records_on_disk", "n_decks_seat_balanced", "n_paired",
         "M", "z", "elo", "elo_sig_1sigma", "wr", "wr_z", "W", "D_draws", "L",
         "n_failed", "failure_rate", "champ_prefix_ms_per_move", "rung_ms_per_move",
-        "ms_ratio", "phi", "arbiter_errors", "seat_balance", "recomputed",
+        "ms_ratio", "phi", "arbiter_errors", "partial_argmax_from_records",
+        "seat_balance", "recomputed",
         "summary_path", "manifest_path")}
 
 
@@ -1401,6 +1534,44 @@ def render(v: dict) -> str:
     L.append(c["field_name_trap"])
     L.append("")
     L.append(c["rider"])
+
+    # --- §0.G -- FIRST-CLASS, mandatory, never a footnote --------------------- #
+    cm = v["cost_model_miss"]
+    L.append("")
+    L.append(f"### ⭐ §0.G — {cm['headline']}")
+    L.append("")
+    L.append(f"_{cm['source']}_")
+    L.append("")
+    L.append("| quantity | DESIGN §5 predicted | realized (smoke) |")
+    L.append("|---|---|---|")
+    for _c in CELLS:
+        L.append(f"| `ms_ratio` (`{_c}`) | **≈ {cm['table']['predicted_ms_ratio']}** | "
+                 f"**≈ {cm['table']['realized_ms_ratio_smoke'][_c]}** |")
+    L.append("")
+    L.append("**The decomposition — it EXONERATES the arbiter: the NUMERATOR model was "
+             "right and the DENOMINATOR was a category error.**")
+    L.append("")
+    _n, _d, _r = cm["numerator"], cm["denominator"], cm["reconciliation"]
+    L.append(f"- **Numerator — {_n['verdict']}.** `{_n['formula']}` = "
+             f"**{_n['predicted_worker_s_per_fired_ply']}** worker-s per fired ply; "
+             f"realized **{_n['realized_worker_s_per_fired_ply']}** "
+             f"(**+{_n['error_pct']}%**).")
+    L.append(f"- **Denominator — {_d['verdict']}.** DESIGN §5 divided by "
+             f"{_d['design_5_divided_by']}, while the in-cell `ms_ratio` divides by "
+             f"{_d['in_cell_divides_by']} — {_d['apart_by']} apart. {_d['withdrawn']}")
+    L.append(f"- **The reconciliation closes.** `{_r['formula']}` gives "
+             f"**{_r['at_phi_17_05']}** at `phi` = 17.05 and **{_r['at_phi_17_95']}** at "
+             f"`phi` = 17.95, against realized **{_r['realized']['ARB']} / "
+             f"{_r['realized']['RND']}**. {_r['note']}")
+    L.append("")
+    L.append(f"⇒ **{cm['headline']}** {cm['no_retune']}")
+    L.append("")
+    L.append(f"- {cm['no_branch_moves']}")
+    L.append(f"- {cm['phase_a_not_invalidated']}")
+    L.append(f"- {cm['deploy_relevant']}")
+    L.append(f"- {cm['rho_phone_is_a_third_currency']}")
+    L.append(f"- {cm['not_an_arbiter_defect']}")
+    L.append("")
     if c["waiver_note"]:
         L.append("")
         L.append(c["waiver_note"])

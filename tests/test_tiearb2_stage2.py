@@ -76,7 +76,7 @@ def test_bars_are_the_committed_constants():
     assert S2.N_COMMON_FLOOR == 320          # AMENDED §0.B (was an unreachable 600)
     assert S2.CELL_GAMES_PLANNED == 800 and S2.CELL_GAMES_FLOOR == 640
     assert S2.ALL_GATES == ("G-J1", "G-J4", "G-J13", "G-FIRE", "G-BAND", "G-N",
-                            "G-TOOL", "G-STAT")
+                            "G-TOOL", "G-STAT", "G-PLY")
 
 
 def test_phase_a_cost_facts_match_COST_REMEASURE_on_disk():
@@ -455,15 +455,21 @@ def _manifest(cell, *, leaf_hash=CHAMP_HASH, tiearb=None, band=BAND, n=800,
 
 
 def _cells(*, arb_over=None, rnd_over=None, n_games=800, phi=(20.0, 20.0),
-           err=(0.0, 0.0), decks=None):
+           err=(0.0, 0.0), partial=(0, 0), decks=None, summary_over=None):
     """`err` = `tiearb_error_rate_on_fired` per cell. G-FIRE binds on
-    `phi_effective = phi x (1 - err)` since §0.E.1 cond. 2."""
+    `phi_effective = phi x (1 - err)` since §0.E.1 cond. 2.
+    `partial` = `tiearb_partial_argmax_total` per cell (G-PLY, §0.F)."""
     decks = decks if decks is not None else list(range(BAND, BAND + 400))
     out = {}
     for i, c in enumerate(("ARB", "RND")):
         m = _manifest(c)
         m.update((arb_over if c == "ARB" else rnd_over) or {})
+        summ = {"tiearb_partial_argmax_total": partial[i]}
+        summ.update((summary_over or {}).get(c) or {})
         out[c] = {"cell": c, "manifest": m, "n_games": n_games, "phi": phi[i],
+                  "summary": summ,
+                  "partial_argmax_from_records": summ.get(
+                      "tiearb_partial_argmax_total"),
                   "arbiter_errors": {"tiearb_error_rate_on_fired": err[i],
                                      "phi_effective": S2.phi_effective(phi[i], err[i])},
                   "deck_seeds": list(decks)}
@@ -785,7 +791,9 @@ def test_G_N_deck_clause_stays_INDEPENDENTLY_BINDING():
 _READ_RULE_REVS = ("b2faa238",      # the original, committed before the instrument
                    "6c281f9e",      # §0.A-C  PRE-RUN AMENDMENT (G-N, +1.0, knob name)
                    "a81b8c72",      # §0.D    OWNER RULING (N4 downgrade waived)
-                   "c36055a7")      # §0.E    PRE-LAUNCH ACCEPTANCES (fail-soft, G-TOOL)
+                   "c36055a7",      # §0.E    PRE-LAUNCH ACCEPTANCES (fail-soft, G-TOOL)
+                   "ef07768c",      # §0.F    G-PLY, the ply-granularity witness
+                   "edd3deab")      # §0.G    the cost model missed, not the arbiter
 
 #: THREE INDEPENDENT BOUNDARY CHOICES for "§4", drawn by two different sessions.
 #: All three showing equality is better evidence than any one of them, and the
@@ -1083,6 +1091,7 @@ def test_every_gate_is_individually_sufficient_to_void_the_run():
         "G-N": dict(n_common=319),
         "G-TOOL": dict(cells=_cells(rnd_over={"rust_toolchain": "1.0.0"})),
         "G-STAT": dict(z_D=NAN),
+        "G-PLY": dict(cells=_cells(partial=(1, 0))),
     }
     assert set(breakers) == set(S2.ALL_GATES)
     for gate, kw in breakers.items():
@@ -1229,7 +1238,8 @@ def test_N4_is_never_a_branch_input():
 # =========================================================================== #
 def _write_cell(root, name, mode, *, n_decks=400, margin=0.0, phi=20.0,
                 z_override=None, champ_ms=1200.0, rung_ms=1000.0, elo=12.0,
-                seed=1, drop_last_seat=0, err_rate=0.0,
+                seed=1, drop_last_seat=0, err_rate=0.0, partial_argmax=0,
+                drop_partial_key=False,
                 first_error="WindowTruncationError at ply 41", **man_over):
     """A synthetic cell dir: per-game records + summary.json + manifest.json."""
     d = root / name
@@ -1247,7 +1257,7 @@ def _write_cell(root, name, mode, *, n_decks=400, margin=0.0, phi=20.0,
                 continue                       # a half-played deck (partial run)
             diff = margin + rng.gauss(0.0, 6.0)
             recs.append({"seed": s, "a_seat": a_seat, "diff": diff,
-                         "cand_tiearb": {"fires": phi}})
+                         "cand_tiearb": {"fires": phi, "partial_argmax": 0}})
     for r in recs:
         (d / f"seed{r['seed']:012d}_a{r['a_seat']}.json").write_text(json.dumps(r))
     by_deck = S2.per_deck_balanced(recs)
@@ -1262,7 +1272,11 @@ def _write_cell(root, name, mode, *, n_decks=400, margin=0.0, phi=20.0,
                # §0.E.1 cond. 3 -- the fail-soft arbiter error fields
                "tiearb_errors_total": int(round(err_rate * phi * n_decks)),
                "tiearb_error_rate_on_fired": err_rate,
-               "tiearb_first_error": (first_error if err_rate else None)}
+               "tiearb_first_error": (first_error if err_rate else None),
+               # §0.F -- emitted UNCONDITIONALLY by the harness
+               "tiearb_partial_argmax_total": partial_argmax}
+    if drop_partial_key:                      # an UNINSTRUMENTED cell
+        summary.pop("tiearb_partial_argmax_total")
     (d / "summary.json").write_text(json.dumps(summary))
     man = _manifest(name.split("_")[0].upper() if name.upper() in ("ARB", "RND")
                     else ("ARB" if mode == "argmax" else "RND"))
@@ -2186,3 +2200,157 @@ def test_end_to_end_a_modest_fail_soft_rate_is_reported_and_does_NOT_void(tmp_pa
     assert ae["DILUTION_STATEMENT_REQUIRED"] is False
     md = (out / "READOUT.md").read_text()
     assert "0.02000" in md and "19.600" in md
+
+
+# =========================================================================== #
+# J. §0.F `G-PLY` and §0.G the cost-model miss
+# =========================================================================== #
+def test_G_PLY_gates_on_the_REAL_emitted_key_name():
+    """§0.F: the runtime witness is `summary.json::tiearb_partial_argmax_total`,
+    emitted UNCONDITIONALLY for both cells (`eval_fair_puct` ~line 2595)."""
+    pre, det = _all_pre(cells=_cells(partial=(0, 0)))
+    assert pre["G-PLY"] is True
+    assert det["G-PLY"]["cells"]["ARB"]["tiearb_partial_argmax_total"] == 0
+    assert "tiearb_partial_argmax_total" in det["G-PLY"]["witness"]
+    # the key really is what the harness writes
+    src = (REPO / "scripts/classical_search/eval_fair_puct.py").read_text()
+    assert '"tiearb_partial_argmax_total": _partial,' in src
+    assert '"partial_argmax": int(s.get("tiearb_partial_argmax") or 0),' in src
+
+
+@pytest.mark.parametrize("partial", [(1, 0), (0, 1), (7, 3), (None, 0), (0, None)])
+def test_G_PLY_voids_on_ABSENT_or_NON_ZERO_in_EITHER_cell(partial):
+    """§0.F: absent is unknown-not-zero and fails; non-zero means an argmax was
+    taken over a partial world set, i.e. the CRN pairing across arms was BROKEN
+    during play, so the central comparison is void whatever the margins say."""
+    pre, det = _all_pre(cells=_cells(partial=partial))
+    assert pre["G-PLY"] is False
+    assert all(v for k, v in pre.items() if k != "G-PLY")
+    bad = "ARB" if partial[0] != 0 else "RND"
+    why = det["G-PLY"]["cells"][bad]["why"]
+    assert why.startswith("FAIL")
+    assert ("ABSENT (unknown, not zero" in why) if partial[bad == "RND"] is None \
+        else ("CRN pairing across arms was broken" in why)
+    # ... and it pre-empts a would-be G-CONFIRMED
+    got = S2.decide_branch(9.0, 0.0, 9.0, 9.0, pre)
+    assert got["branch"] == "U-UNREADABLE" and got["failed_preconditions"] == ["G-PLY"]
+
+
+def test_G_PLY_records_sum_is_a_CROSS_CHECK_and_NEVER_a_fallback():
+    """⚠️ Letting the per-game sum stand in for an absent summary key would turn
+    'the cell was never instrumented' into a PASS -- the exact softening this gate
+    exists to refuse."""
+    cells = _cells(partial=(None, 0))
+    cells["ARB"]["partial_argmax_from_records"] = 0     # records say clean...
+    pre, det = _all_pre(cells=cells)
+    assert pre["G-PLY"] is False                        # ... the gate still VOIDS
+    assert det["G-PLY"]["records_sum_is_a_cross_check_not_a_fallback"] is True
+    assert det["G-PLY"]["cells"]["ARB"]["from_records_cross_check"] == 0
+    # a DISAGREEMENT between the two is surfaced rather than silently preferred
+    cells = _cells(partial=(0, 0))
+    cells["ARB"]["partial_argmax_from_records"] = 4
+    _, det = _all_pre(cells=cells)
+    assert det["G-PLY"]["cells"]["ARB"]["agrees_with_records"] is False
+
+
+def test_G_PLY_rationale_is_recorded_in_the_gate():
+    import inspect
+    doc = inspect.getdoc(S2.gate_ply)
+    assert "ABSENT IS A FAILURE, NOT A PASS" in doc
+    assert "THE SUMMARY KEY IS THE WITNESS" in doc
+    assert "CRN pairing" in doc and "pooled_q_argmax" in doc
+
+
+def test_the_tiearb_max_plies_SEAM_does_not_disturb_G_J4s_key_set():
+    """The builder's testability seam lives on `SearchConfig`, deliberately
+    OUTSIDE the `cand_tiearb` dict. G-J4 compares mode/B/J only, so a manifest
+    carrying the seam must still pass -- and one missing a REAL key must not."""
+    cfg = _tiearb("argmax")
+    cfg["tiearb_max_plies"] = 400                    # the seam, if it ever leaked in
+    pre, _ = _all_pre(cells=_cells(arb_over={"cand_tiearb": cfg}))
+    assert pre["G-J4"] is True
+    for drop in ("mode", "B", "J"):
+        c2 = _tiearb("argmax")
+        c2.pop(drop)
+        assert _all_pre(cells=_cells(arb_over={"cand_tiearb": c2}))[0]["G-J4"] is False
+
+
+def test_the_0_G_cost_model_miss_is_carried_with_every_number_it_bears_on():
+    """§0.G's table, decomposition and reconciliation, exactly as committed."""
+    cm = S2.COST_MODEL_MISS
+    assert cm["headline"] == "THE COST MODEL MISSED, NOT THE ARBITER."
+    assert cm["table"]["predicted_ms_ratio"] == 1.1985
+    assert cm["table"]["realized_ms_ratio_smoke"] == {"ARB": 2.42, "RND": 2.33}
+    # numerator: right within 12%
+    n = cm["numerator"]
+    assert n["predicted_worker_s_per_fired_ply"] == pytest.approx(
+        3.0022 * 16 * 0.178232, abs=5e-3)
+    assert n["realized_worker_s_per_fired_ply"] == 9.57
+    assert n["error_pct"] == pytest.approx(
+        100 * (9.57 - 8.561) / 8.561, abs=0.2)
+    # denominator: a CURRENCY error, and §5's equating sentence is WITHDRAWN
+    d = cm["denominator"]
+    assert "CATEGORY ERROR" in d["verdict"] and "CURRENCY" in d["verdict"]
+    assert "13.7552" in d["design_5_divided_by"] and "UNCONTENDED" in d[
+        "design_5_divided_by"]
+    assert "CONTENTION" in d["in_cell_divides_by"] and "1.7" in d["in_cell_divides_by"]
+    assert "WITHDRAWN" in d["withdrawn"]
+    # the reconciliation closes, and it is arithmetic we can re-run
+    r = cm["reconciliation"]
+    for phi, want in ((17.05, r["at_phi_17_05"]), (17.95, r["at_phi_17_95"])):
+        assert 1 + (9.57 * phi / 72) / 1.7 == pytest.approx(want, abs=0.02)
+    assert "the LEVEL is what reconciles" in r["note"]
+    assert "inverts within noise" in r["note"]
+
+
+def test_the_0_G_block_carries_the_four_things_that_are_easy_to_soften():
+    cm = S2.COST_MODEL_MISS
+    # 1. Phase A is NOT invalidated -- correct in its own sequential currency
+    assert "NOT invalidated" in cm["phase_a_not_invalidated"]
+    assert "MUST NEVER AGAIN BE EQUATED" in cm["phase_a_not_invalidated"]
+    assert "B_affordable = 16 was graded on that currency" in cm[
+        "phase_a_not_invalidated"]
+    # 2. the deploy-relevant magnitude, at its TRUE size, for the owner's decision
+    assert "2.3–2.4×" in cm["deploy_relevant"] and "NOT ≈ 1.2×" in cm["deploy_relevant"]
+    assert "MUST NOT BE BURIED" in cm["deploy_relevant"]
+    assert "production-flip decision is put to him" in cm["deploy_relevant"]
+    # 3. rho_phone is a THIRD currency, still unsolved, not inferable
+    assert "THIRD currency" in cm["rho_phone_is_a_third_currency"]
+    assert "NOT SOLVED" in cm["rho_phone_is_a_third_currency"]
+    assert "5.520" in cm["rho_phone_is_a_third_currency"]
+    # 4. never an arbiter defect, and no re-tune is licensed
+    assert "never be presented as an arbiter defect" in cm["not_an_arbiter_defect"]
+    assert "No re-tuning of B" in cm["no_retune"] and "anti-gaming" in cm["no_retune"]
+    # ... and the mandatory-measurement point: this is the mechanism WORKING
+    assert "MECHANISM WORKING, NOT FAILING" in cm["no_branch_moves"]
+
+
+def test_the_readout_CANNOT_omit_the_0_G_block(tmp_path):
+    """Same shape as the G-TOOL docstring test: §0.G is mandatory as a FIRST-CLASS
+    item on every branch, so `render` must emit it structurally, not optionally."""
+    import inspect
+    src = inspect.getsource(S2.render)
+    assert 'v["cost_model_miss"]' in src
+    # emitted UNCONDITIONALLY -- no `if` guards the §0.G heading
+    head = src.split('### ⭐ §0.G')[0].rsplit("\n", 3)[-3:]
+    assert not any(ln.strip().startswith("if ") for ln in head), head
+    root = _e2e_world(tmp_path, arb={"n_decks": 400}, rnd={"n_decks": 400})
+    out = tmp_path / "out"
+    S2.main(_e2e_argv(root, out))
+    v = json.loads((out / "READOUT.json").read_text())
+    md = (out / "READOUT.md").read_text()
+    assert v["cost_model_miss"] == S2.COST_MODEL_MISS
+    assert v["branch"] != "U-UNREADABLE"        # a PASSING branch prints it too
+    for must in ("THE COST MODEL MISSED, NOT THE ARBITER.",
+                 "2.42", "2.33", "1.1985", "8.561", "9.57", "+11.8%",
+                 "13.7552", "UNCONTENDED", "CONTENTION", "WITHDRAWN",
+                 "1 + (9.57 × phi / 72) / 1.7",
+                 "NOT invalidated", "MUST NEVER AGAIN BE EQUATED",
+                 "2.3–2.4×", "NOT ≈ 1.2×", "MUST NOT BE BURIED",
+                 "THIRD currency", "5.520",
+                 "never be presented as an arbiter defect",
+                 "MECHANISM WORKING, NOT FAILING"):
+        assert must in md, must
+    # it is a HEADED section, not a footnote buried under the cost bullets
+    assert "### ⭐ §0.G" in md
+    assert md.index("### ⭐ §0.G") < md.index("## §4.3 (5)")
