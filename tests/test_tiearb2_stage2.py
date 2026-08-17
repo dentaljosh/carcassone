@@ -1,8 +1,28 @@
-"""Contract tests for the Stage-2 PHASE B adjudicator
-(scripts/tiletie/analyze_tiearb2_stage2.py; measurement/tiearb2_stage2_20260817/).
+"""tiearb2 STAGE 2 PHASE B — the instrument's tests.
 
-Pure plan/stat surgery -- no engine import, no search, no share writes, no game
-played. Every fixture is synthetic and lives under tmp_path.
+TWO instruments are pinned here, in one file because READ_RULE §4.1 names this
+path:
+
+  * sections A-G — the ADJUDICATOR (`scripts/tiletie/analyze_tiearb2_stage2.py`).
+    Pure plan/stat surgery: no engine import, no search, no share writes, no game
+    played. Every fixture is synthetic and lives under tmp_path.
+  * section H — the RUST ARBITER KNOB (`carc_core::tiearb`, the `carc_rs` wheel):
+    predicate parity with the corpus definition of record, and the byte-identical
+    default path. Skipped, never failed, when the wheel is absent.
+
+⚠️ NOTHING HERE PLAYS A CELL, READS A STRENGTH NUMBER, OR ADJUDICATES ANYTHING.
+
+⚠️ This suite tracks the AMENDED read-rule: `READ_RULE.md` §0 (PRE-RUN AMENDMENT,
+commit `6c281f9e`), applied before the band claim and before game 1, with no band
+claimed and no `summary.json` / `manifest.json` in existence. It set `G-N`'s deck
+floor to **320** — the exact 80% analogue of the committed 640/800 games clause,
+because the original 600 was unreachable (a paired n = 800 cell yields at most 400
+decks) and so fired on a PERFECTLY COMPLETE run — named the `+1.0` PRESENTATION
+split in §2, and corrected the knob to top-level `cand_tiearb`. **No adjudicating
+bar moved**: `+2.0`, `+1.0` and `1.20` are unchanged and every §4 branch condition
+is unchanged, which
+`test_the_amendment_moved_no_adjudicating_bar_and_no_branch_condition` pins against
+the pre-amendment text at `b2faa238`.
 
 ⭐ The centrepiece is section D, and it is the artefact READ_RULE §4.1 promises by
 name: "This is verified by a machine sweep over the branch-condition truth table in
@@ -51,7 +71,7 @@ def test_bars_are_the_committed_constants():
     assert S2.MODE_BY_CELL == {"ARB": "argmax", "RND": "random"}
     assert S2.PHI_FLOOR == 1.0
     assert S2.BAND_EXPECTED == BAND
-    assert S2.N_COMMON_FLOOR == 600
+    assert S2.N_COMMON_FLOOR == 320          # AMENDED §0.B (was an unreachable 600)
     assert S2.CELL_GAMES_PLANNED == 800 and S2.CELL_GAMES_FLOOR == 640
     assert S2.ALL_GATES == ("G-J1", "G-J4", "G-J13", "G-FIRE", "G-BAND", "G-N",
                             "G-TOOL", "G-STAT")
@@ -425,7 +445,8 @@ def _tiearb(mode, B=16, J=4):
 def _manifest(cell, *, leaf_hash=CHAMP_HASH, tiearb=None, band=BAND, n=800,
               toolchain="1.96.0", build="carc_rs-0.1.0+abc123"):
     cfg = _tiearb(S2.MODE_BY_CELL[cell]) if tiearb is None else tiearb
-    return {"cand_leaf_hash": leaf_hash, "config": {"cand_tiearb": cfg},
+    # §0.C.2: the knob resolves at manifest TOP LEVEL, like every shipped sibling.
+    return {"cand_leaf_hash": leaf_hash, "cand_tiearb": cfg,
             "band_seed_start": band, "seed_start": band, "n": n, "paired": True,
             "rust_toolchain": toolchain, "carc_rs_build": build,
             "mixed_builds": False}
@@ -466,7 +487,7 @@ def _all_pre(**kw):
     return S2.evaluate_preconditions(
         cells, pf, kw.pop("band_claim", None) or _band_claim(),
         kw.pop("expect_hosts", ("local", "laptop")),
-        kw.pop("n_common", 600), kw.pop("z_arb", 1.0), kw.pop("z_rnd", 0.5),
+        kw.pop("n_common", 400), kw.pop("z_arb", 1.0), kw.pop("z_rnd", 0.5),
         kw.pop("z_D", 0.7))
 
 
@@ -491,11 +512,10 @@ def test_G_J1_is_an_INVERTED_gate_a_DIFFERENT_hash_aborts(cell):
 
 @pytest.mark.parametrize("cell", ["ARB", "RND"])
 @pytest.mark.parametrize("bad", [
-    {"config": {}},                                        # absent
-    {"config": {"cand_tiearb": None}},                     # unresolved
-    {"config": {"cand_tiearb": "argmax"}},                 # not a resolved dict
-    {"config": {"cand_tiearb": _tiearb("argmax", B=8)}},   # wrong B
-    {"config": {"cand_tiearb": _tiearb("argmax", J=2)}},   # wrong J
+    {"cand_tiearb": None},                     # absent / unresolved
+    {"cand_tiearb": "argmax"},                 # not a resolved dict
+    {"cand_tiearb": _tiearb("argmax", B=8)},   # wrong B
+    {"cand_tiearb": _tiearb("argmax", J=2)},   # wrong J
 ])
 def test_G_J4_absent_unresolved_or_wrong_B_or_J(cell, bad):
     pre, det = _all_pre(cells=_cells(**{f"{cell.lower()}_over": bad}))
@@ -504,10 +524,19 @@ def test_G_J4_absent_unresolved_or_wrong_B_or_J(cell, bad):
     assert all(v for k, v in pre.items() if k != "G-J4")
 
 
+def test_G_J4_a_manifest_carrying_the_knob_NOWHERE_aborts():
+    cells = _cells()
+    cells["ARB"]["manifest"].pop("cand_tiearb")
+    pre, det = _all_pre(cells=cells)
+    assert pre["G-J4"] is False
+    assert det["G-J4"]["ARB"]["resolved_at"] is None
+    assert det["G-J4"]["ARB"]["cand_tiearb"] is None
+
+
 def test_G_J4_mode_must_be_argmax_for_ARB_and_random_for_RND():
     """A swapped pair is the failure that would grade the CONTROL as the candidate."""
-    swapped = _cells(arb_over={"config": {"cand_tiearb": _tiearb("random")}},
-                     rnd_over={"config": {"cand_tiearb": _tiearb("argmax")}})
+    swapped = _cells(arb_over={"cand_tiearb": _tiearb("random")},
+                     rnd_over={"cand_tiearb": _tiearb("argmax")})
     pre, det = _all_pre(cells=swapped)
     assert pre["G-J4"] is False
     assert det["G-J4"]["ARB"]["expected_mode"] == "argmax"
@@ -515,20 +544,24 @@ def test_G_J4_mode_must_be_argmax_for_ARB_and_random_for_RND():
     assert det["G-J4"]["ARB"]["ok"] is False and det["G-J4"]["RND"]["ok"] is False
 
 
-def test_G_J4_accepts_the_top_level_spelling_and_REPORTS_where_it_found_it():
-    """READ_RULE §3 and DESIGN §4 both spell it `config.cand_tiearb`; every shipped
-    sibling knob resolves at manifest TOP LEVEL. Both are read, and the read-out
-    says which -- so the knob is never taken from an unnamed place silently."""
-    cells = _cells()
+def test_G_J4_reads_TOP_LEVEL_by_default_and_REPORTS_where_it_found_it():
+    """§0.C.2: the knob is top-level `cand_tiearb`, matching every shipped sibling
+    (`eval_fair_puct.py:3945`). The pre-amendment `config.cand_tiearb` spelling is
+    still ACCEPTED and the read-out says which it found -- so the knob is never
+    taken from an unnamed place silently."""
+    _, det = _all_pre(cells=_cells())
+    assert det["G-J4"]["ARB"]["resolved_at"] == "cand_tiearb"      # the amended name
+    legacy = _cells()
     for c in ("ARB", "RND"):
-        cells[c]["manifest"].pop("config")
-        cells[c]["manifest"]["cand_tiearb"] = _tiearb(S2.MODE_BY_CELL[c])
-    pre, det = _all_pre(cells=cells)
+        legacy[c]["manifest"].pop("cand_tiearb")
+        legacy[c]["manifest"]["config"] = {"cand_tiearb": _tiearb(S2.MODE_BY_CELL[c])}
+    pre, det2 = _all_pre(cells=legacy)
     assert pre["G-J4"] is True
-    assert det["G-J4"]["ARB"]["resolved_at"] == "cand_tiearb"
-    cells2 = _cells()
-    _, det2 = _all_pre(cells=cells2)
     assert det2["G-J4"]["ARB"]["resolved_at"] == "config.cand_tiearb"
+    # ... and the legacy spelling is still GATED, not merely tolerated
+    legacy["RND"]["manifest"]["config"] = {"cand_tiearb": _tiearb("argmax")}
+    pre, _ = _all_pre(cells=legacy)
+    assert pre["G-J4"] is False
 
 
 @pytest.mark.parametrize("side", ["pos", "neg"])
@@ -606,45 +639,81 @@ def test_G_BAND_unclaimed_wrong_band_or_a_different_deck_range():
 
 
 @pytest.mark.parametrize("n_common,n_games,fails", [
-    (600, 800, False),      # AT both thresholds -> passes
-    (599, 800, True),       # n_common < 600
-    (600, 640, False),      # AT the per-cell floor
-    (600, 639, True),       # a cell short of 640 of its 800
+    (320, 800, False),      # AT the amended deck floor -> passes
+    (319, 800, True),       # n_common < 320
+    (320, 640, False),      # AT both floors -> passes (640 games IS 320 decks)
+    (320, 639, True),       # a cell short of 640 of its 800
     (None, 800, True),
-    (600, None, True),
+    (320, None, True),
 ])
 def test_G_N_at_its_two_thresholds(n_common, n_games, fails):
-    """§3 G-N: 'n_common < 600, OR either cell completed fewer than 640 of its 800
-    paired games.' Implemented EXACTLY as committed -- see the inconsistency test."""
+    """§3 G-N AS AMENDED (§0.B): 'n_common < 320 decks, OR either cell completed
+    fewer than 640 of its 800 paired games.' Both clauses are the same 80% bar."""
     pre, det = _all_pre(cells=_cells(n_games=n_games), n_common=n_common)
     assert pre["G-N"] is (not fails)
-    assert det["G-N"]["n_common_floor"] == 600
+    assert det["G-N"]["n_common_floor"] == 320
     assert det["G-N"]["cell_games_floor"] == 640
     assert det["G-N"]["n_common_units"] == "DECKS (READ_RULE §2)"
+    assert det["G-N"]["read_rule_amendment"] == S2.READ_RULE_AMENDMENT
 
 
 def test_G_N_is_short_on_ONE_cell_only_and_still_voids():
     cells = _cells()
     cells["RND"]["n_games"] = 500
-    pre, _ = _all_pre(cells=cells, n_common=600)
+    pre, _ = _all_pre(cells=cells, n_common=320)
     assert pre["G-N"] is False
 
 
-def test_G_N_committed_text_inconsistency_is_REPORTED_and_NOT_silently_resolved():
-    """⚠️ GOVERNANCE. `n_common` is DECKS (§2) and each cell is 800 deck-paired
-    GAMES = 400 decks (§1/§6, `--paired --n 800`), so `n_common <= 400 < 600` and
-    the committed G-N floor is UNSATISFIABLE. The instrument must implement the
-    committed text and SAY SO -- never rescale the bar to make the run readable."""
-    # the realistic maximum for the committed cell size
-    pre, det = _all_pre(cells=_cells(n_games=800), n_common=400)
+def test_G_N_PASSES_on_a_COMPLETE_run_which_is_what_the_pre_amendment_text_broke():
+    """⭐ THE case the committed text at `b2faa238` could not express. A perfectly
+    complete cell -- 800/800 games and all 400/400 decks common -- must PASS G-N.
+    Under the old 600-DECK floor it FAILED, so the read-rule could only ever return
+    U-UNREADABLE. This is the regression test for the amendment."""
+    pre, _ = _all_pre(cells=_cells(n_games=800), n_common=400)
+    assert pre["G-N"] is True
+    assert pre == {g: True for g in S2.ALL_GATES}       # nothing else broke either
+    # 400 decks is the CEILING for a paired n=800 cell (eval_fair_puct.py:3924),
+    # so the pre-amendment 600 was unreachable by construction.
+    assert 400 == 800 // 2
+    assert S2.N_COMMON_FLOOR <= 400
+
+
+def test_G_N_deck_clause_stays_INDEPENDENTLY_BINDING():
+    """§0.B: 'two cells could each complete >= 640 games while overlapping on fewer
+    than 320 COMMON decks, which would silently weaken D.' That must still void."""
+    pre, det = _all_pre(cells=_cells(n_games=800), n_common=319)
     assert pre["G-N"] is False
-    assert "STAGE2_G_N_INCONSISTENCY" in S2.G_N_INCONSISTENCY
-    assert det["G-N"]["inconsistency"] == S2.G_N_INCONSISTENCY
-    # the bar was NOT quietly softened to something a 400-deck cell could clear
-    assert S2.N_COMMON_FLOOR == 600
-    # and the second clause cannot rescue it either: 640 games = 320 decks
-    pre, _ = _all_pre(cells=_cells(n_games=640), n_common=320)
-    assert pre["G-N"] is False
+    assert det["G-N"]["n_games"] == {"ARB": 800, "RND": 800}   # both cells COMPLETE
+    assert det["G-N"]["n_common"] == 319                       # yet the overlap is short
+    assert "independently_binding" in " ".join(det["G-N"])
+
+
+def test_the_amendment_moved_no_adjudicating_bar_and_no_branch_condition():
+    """⚠️ GOVERNANCE. §0 amended a PRECONDITION and two report-only spellings. The
+    bars that gate a licence, and every §4 branch condition, must be identical to
+    the pre-amendment text at `b2faa238`."""
+    import subprocess
+    old = subprocess.run(
+        ["git", "show", "b2faa238:measurement/tiearb2_stage2_20260817/READ_RULE.md"],
+        cwd=REPO, capture_output=True, text=True, check=True).stdout
+    new = (REPO / "measurement/tiearb2_stage2_20260817/READ_RULE.md").read_text()
+    # §4's branch table -- byte-identical across the amendment
+    def _s4(doc):
+        return doc.split("## 4. Branches", 1)[1].split("### 4.1", 1)[0]
+    assert _s4(old) == _s4(new), "§4's branch conditions MOVED -- that is not an amendment"
+    # the adjudicating bars are unchanged in the instrument
+    assert (S2.Z_BAR, S2.Z_PRESENT_BAR, S2.MS_RATIO_BAR) == (2.0, 1.0, 1.20)
+    # ... and the amendment is STAMPED, so a reader knows which text was adjudicated
+    assert "6c281f9e" in S2.READ_RULE_AMENDMENT
+    assert "NO ADJUDICATING BAR MOVED" in S2.AMENDMENT_NOTE.upper()
+    # §0.C.1: +1.0 selects a LABEL, never a permission
+    assert "NOT an adjudicating bar" in S2.Z_PRESENT_BAR_NOTE
+    # the two branches +1.0 separates are ALIKE NON-LICENSING -- neither text
+    # licenses anything, while the two that +2.0 gates both do.
+    for br in ("G-PRESENT", "G-FLAT"):
+        assert "LICENSES" not in " ".join(S2.BRANCH_TEXT[br]).upper(), br
+    for br in ("G-CONFIRMED", "G-DEPLOYS"):
+        assert "LICENSES" in " ".join(S2.BRANCH_TEXT[br]).upper(), br
 
 
 def test_G_TOOL_mixed_or_absent_builds():
@@ -675,12 +744,12 @@ def test_every_gate_is_individually_sufficient_to_void_the_run():
     """Each §3 precondition, alone, pre-empts every other branch."""
     breakers = {
         "G-J1": dict(cells=_cells(arb_over={"cand_leaf_hash": "0" * 16})),
-        "G-J4": dict(cells=_cells(arb_over={"config": {}})),
+        "G-J4": dict(cells=_cells(arb_over={"cand_tiearb": None})),
         "G-J13": dict(preflights=[_preflight("local", pos=False),
                                   _preflight("laptop")]),
         "G-FIRE": dict(cells=_cells(phi=(0.5, 20.0))),
         "G-BAND": dict(band_claim=_band_claim(claimed=False)),
-        "G-N": dict(n_common=599),
+        "G-N": dict(n_common=319),
         "G-TOOL": dict(cells=_cells(rnd_over={"rust_toolchain": "1.0.0"})),
         "G-STAT": dict(z_D=NAN),
     }
@@ -759,7 +828,7 @@ def _write_cell(root, name, mode, *, n_decks=400, margin=0.0, phi=20.0,
     (d / "summary.json").write_text(json.dumps(summary))
     man = _manifest(name.split("_")[0].upper() if name.upper() in ("ARB", "RND")
                     else ("ARB" if mode == "argmax" else "RND"))
-    man["config"]["cand_tiearb"]["mode"] = mode
+    man["cand_tiearb"]["mode"] = mode
     man.update(man_over)
     (d / "manifest.json").write_text(json.dumps(man))
     return d
@@ -799,11 +868,15 @@ def test_end_to_end_writes_both_artefacts_and_every_4_3_item(tmp_path, capsys):
     v = json.loads((out / "READOUT.json").read_text())
     md = (out / "READOUT.md").read_text()
 
-    # the run is short by the COMMITTED G-N floor, so it must read UNREADABLE ...
-    assert v["branch"] == "U-UNREADABLE"
-    assert v["failed_preconditions"] == ["G-N"]
-    # ... and the reason must be visible, not inferred
-    assert "STAGE2_G_N_INCONSISTENCY" in md
+    # ⭐ the COMMITTED shape -- 800/800 games, 400/400 common decks -- is READABLE
+    # under the amended G-N. (Under the pre-amendment 600-deck floor this exact
+    # fixture read U-UNREADABLE, which is the defect §0 fixed.)
+    assert v["failed_preconditions"] == []
+    assert v["branch"] in ("G-ANOMALY", "G-CONFIRMED", "G-DEPLOYS", "G-CLOCK",
+                           "G-PRESENT", "G-FLAT")
+    # the text adjudicated is stamped, and stated up top
+    assert v["read_rule_amendment"] == S2.READ_RULE_AMENDMENT
+    assert "6c281f9e" in md and "No adjudicating bar moved." in md
 
     # §4.3 (1) both cells
     for c in ("ARB", "RND"):
@@ -834,7 +907,7 @@ def test_end_to_end_writes_both_artefacts_and_every_4_3_item(tmp_path, capsys):
         assert f"`{g}`" in md
     assert "pick_changed=True" in md and "root_leaf_value_bits_unchanged=True" in md
     assert "local" in md and "laptop" in md
-    # §4.3 (6) both verbatim carries, on this (non-passing) branch too
+    # §4.3 (6) both verbatim carries, on EVERY branch
     assert "NO CORROBORATION" in md and "511/1033" in md
     assert "both terminal-grounded" in md
     # §4.3 (7) Phase-A cost, including rho_phone NOT SOLVED
@@ -876,17 +949,15 @@ def test_end_to_end_ignores_the_failed_subdirectory(tmp_path):
 
 
 def test_readable_branch_when_the_committed_G_N_floor_is_met(tmp_path, monkeypatch):
-    """The branch machinery on a run that clears every gate. The G-N floor is
-    reachable only by building a 700-deck cell -- which is NOT the committed
-    800-GAME shape (that is the inconsistency this suite reports); the fixture is
-    deliberately oversized so the §4 half of the instrument is exercised at all."""
-    root = _e2e_world(tmp_path, arb={"n_decks": 700, "margin": 2.5},
-                      rnd={"n_decks": 700, "margin": 0.0})
+    """The branch machinery on a run that clears every gate, at the COMMITTED
+    shape: 400 decks x 2 seats = 800 paired games per cell, all 400 common."""
+    root = _e2e_world(tmp_path, arb={"n_decks": 400, "margin": 2.5},
+                      rnd={"n_decks": 400, "margin": 0.0})
     out = tmp_path / "out"
     assert S2.main(_e2e_argv(root, out)) == 0
     v = json.loads((out / "READOUT.json").read_text())
     assert v["failed_preconditions"] == []
-    assert v["D_block"]["n_common_decks"] == 700
+    assert v["D_block"]["n_common_decks"] == 400
     assert v["branch"] in ("G-CONFIRMED", "G-DEPLOYS", "G-CLOCK",
                            "G-PRESENT", "G-FLAT", "G-ANOMALY")
     assert v["p_q_r"]["p"] is not None
@@ -899,8 +970,8 @@ def test_readable_branch_when_the_committed_G_N_floor_is_met(tmp_path, monkeypat
 def test_cost_confounded_prefixes_the_branch_sentence(tmp_path):
     """§4.2: above the bar the read-out 'downgrades the against-champion reading to
     COST-CONFOUNDED and says so IN THE BRANCH SENTENCE'."""
-    root = _e2e_world(tmp_path, arb={"n_decks": 700, "champ_ms": 1500.0},
-                      rnd={"n_decks": 700})
+    root = _e2e_world(tmp_path, arb={"n_decks": 400, "champ_ms": 1500.0},
+                      rnd={"n_decks": 400})
     out = tmp_path / "out"
     S2.main(_e2e_argv(root, out))
     v = json.loads((out / "READOUT.json").read_text())
@@ -911,9 +982,9 @@ def test_cost_confounded_prefixes_the_branch_sentence(tmp_path):
 
 def test_G_FLAT_carries_both_mandatory_riders_and_the_scope_sentence(tmp_path):
     root = _e2e_world(tmp_path,
-                      arb={"n_decks": 700, "margin": 0.0, "z_override": 0.2,
+                      arb={"n_decks": 400, "margin": 0.0, "z_override": 0.2,
                            "elo": 1.0},
-                      rnd={"n_decks": 700, "margin": 0.0, "z_override": 0.1})
+                      rnd={"n_decks": 400, "margin": 0.0, "z_override": 0.1})
     out = tmp_path / "out"
     S2.main(_e2e_argv(root, out))
     v = json.loads((out / "READOUT.json").read_text())
@@ -947,8 +1018,8 @@ def test_z_arb_and_z_rnd_are_READ_off_summary_never_recomputed(tmp_path):
     doctored summary must drive the branch, with our recomputation kept beside it
     as a WITNESS only."""
     root = _e2e_world(tmp_path,
-                      arb={"n_decks": 700, "margin": 0.0, "z_override": 9.99},
-                      rnd={"n_decks": 700, "margin": 0.0})
+                      arb={"n_decks": 400, "margin": 0.0, "z_override": 9.99},
+                      rnd={"n_decks": 400, "margin": 0.0})
     out = tmp_path / "out"
     S2.main(_e2e_argv(root, out))
     v = json.loads((out / "READOUT.json").read_text())
@@ -990,3 +1061,492 @@ def test_expect_host_is_required_so_the_J13_roster_is_never_inferred():
                        "--rnd-summary", "c", "--rnd-manifest", "d",
                        "--expect-host", "local"])
     assert a.expect_host == ["local"]
+
+
+# =========================================================================== #
+# H. THE RUST ARBITER KNOB -- `carc_core::tiearb`, via the `carc_rs` wheel.
+#
+# Authored by the instrument-build session; merged here (with its own section
+# numbering flattened into this file's) after the two sessions collided on this
+# path. Two things are pinned, both named in the pre-registration:
+#
+#   1. **The predicate is the CORPUS predicate.** `carc_core::tiearb::chain_values`
+#      / `detect_tie` must agree BIT-FOR-BIT with `scripts/tiletie/chain_census.py`
+#      (`chain_values` at line 168, `tie_report` at line 216), which is the
+#      definition of record. A drifted predicate would fire on a different
+#      population than the one the offline 22.96/game funnel describes.
+#   2. **The default path is byte-identical** (DESIGN §4, the surface-C
+#      `root_allow` precedent). With `tiearb_enabled=False` the candidate must be
+#      the champion, bit for bit, whatever the other five knobs carry.
+#
+# ⚠️ The wheel guard is per-test, NOT module-level: sections A-G are the artefact
+# READ_RULE §4.1 names by file and must never be skipped by a missing/stale wheel.
+# =========================================================================== #
+SALT = "tiearb2-deploy-v1"
+
+try:                                                        # noqa: SIM105
+    import carc_rs
+except Exception:                                           # pragma: no cover
+    carc_rs = None
+
+requires_rs = pytest.mark.skipif(
+    carc_rs is None or not hasattr(getattr(carc_rs, "MirrorState", None),
+                                   "tiearb_probe"),
+    reason="carc_rs wheel absent or predates the tiearb knob")
+
+# --------------------------------------------------------------------------- #
+# 1. predicate parity with the corpus definition of record                     #
+# --------------------------------------------------------------------------- #
+def _py_chain_values(game, board, seat, leaf):
+    """`chain_census.chain_values`, inlined (that module needs a rules-profile
+    env export at import time, which a test process must not latch)."""
+    import numpy as np
+
+    out = []
+    for a in (int(x) for x in np.flatnonzero(game.get_valid_moves(board))):
+        s1, _ = game.get_next_state(board, a)
+        if int(s1.state.current_player) == int(seat):
+            legal2 = [int(x) for x in np.flatnonzero(game.get_valid_moves(s1))]
+            if legal2:
+                best_v, best_m = None, None
+                for m in legal2:                # ascending -> lowest index wins ties
+                    s2, _ = game.get_next_state(s1, m)
+                    v = leaf(s2.state)
+                    if best_v is None or v > best_v:
+                        best_v, best_m = v, m
+                out.append((a, best_v, best_m))
+                continue
+        out.append((a, leaf(s1.state), None))
+    return out
+
+
+def _py_tie_actions(values):
+    """`chain_census.tie_report`'s `tie_actions_exact` (eps = 0)."""
+    top1 = max(v for _a, v, _m in values)
+    return sorted(int(a) for a, v, _m in values if v == top1)
+
+
+@pytest.fixture(scope="module")
+def _env():
+    from carcassonne_ai import flat_leaf
+    from carcassonne_ai.game_wrapper import Game
+    from carcassonne_ai.rust_agent import leaf_config_rs
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    return Game, flat_leaf, DEFAULT_CONFIG, leaf_config_rs(DEFAULT_CONFIG)
+
+
+@requires_rs
+def test_chain_values_are_bit_identical_to_the_corpus_definition(_env):
+    """`carc_core::tiearb::chain_values` == `chain_census.chain_values`, on the
+    RAW f64 bits, at every TILE ply of a pinned game."""
+    import random
+    import struct
+
+    Game, flat_leaf, cfg, rcfg = _env
+
+    def _f(bits):
+        return struct.unpack("<d", struct.pack("<Q", bits))[0]
+
+    # `MirrorState.from_seed(s)` IS `random.seed(s); Game().get_init_board()` —
+    # the deck comes off the GLOBAL rng, so the seed must be set here or the two
+    # legs walk different games (and the first divergence looks like a predicate
+    # bug rather than a fixture bug).
+    random.seed(28000000000)
+    game = Game(enable_legal_moves_cache=False)
+    board = game.get_init_board()
+    ms = carc_rs.MirrorState.from_seed("28000000000")
+    compared = 0
+    tile_plies = 0
+    for ply in range(120):
+        if game.get_game_ended(board, 0) != 0:
+            break
+        probe = ms.tiearb_probe(rcfg, -1, 4, 0.0, SALT, ply)
+        if probe["phase_tiles"] and probe["n_legal"] >= 2:
+            tile_plies += 1
+            seat = int(board.state.current_player)
+            assert probe["seat"] == seat
+            bag = bool(getattr(cfg, "bag_close", False))
+
+            def leaf(st, _s=seat, _c=cfg, _b=bag):
+                return float(flat_leaf.flat_virtual_score_v2_float(st, _s, _c, _b))
+
+            py = _py_chain_values(game, board, seat, leaf)
+            rs = probe["chain_values"]
+            assert [a for a, _v, _m in py] == [a for a, _v, _m in rs], f"ply {ply}"
+            for (pa, pv, pm), (ra, rvbits, rm) in zip(py, rs):
+                assert pa == ra
+                assert float(pv).hex() == float(_f(rvbits)).hex(), (
+                    f"ply {ply} action {pa}: chain value differs")
+                assert pm == rm, f"ply {ply} action {pa}: meeple continuation differs"
+                compared += 1
+            # ...and the exact-tie predicate itself
+            py_tie = _py_tie_actions(py)
+            if len(py_tie) >= 2:
+                assert probe.get("tie_actions") == py_tie, f"ply {ply}"
+            else:
+                assert not probe.get("fired"), f"ply {ply}: fired without a python tie"
+        a = int(ms.legal_actions()[len(ms.legal_actions()) // 2])
+        board, _ = game.get_next_state(board, a)
+        ms.advance(a)
+    assert tile_plies >= 20, f"only {tile_plies} tile plies compared"
+    assert compared >= 200, f"only {compared} chain values compared"
+
+
+@requires_rs
+def test_the_trigger_fires_often_enough_to_be_worth_deploying(_env):
+    """A sanity floor, NOT a measurement: the offline prior is 22.96 tied tile
+    plies/game (65.98% of tile plies), so a pinned line must fire on a large
+    fraction of its tile plies. This catches a predicate that silently never
+    fires — the `G-FIRE` failure mode, caught in CI instead of after 800 games."""
+    _Game, _fl, _cfg, rcfg = _env
+    ms = carc_rs.MirrorState.from_seed("28000000000")
+    tile, fired = 0, 0
+    for ply in range(120):
+        if ms.is_terminal():
+            break
+        p = ms.tiearb_probe(rcfg, -1, 4, 0.0, SALT, ply)
+        if p["phase_tiles"] and p["n_legal"] >= 2:
+            tile += 1
+            fired += bool(p.get("fired"))
+        ms.advance(ms.legal_actions()[len(ms.legal_actions()) // 2])
+    assert tile >= 20
+    assert fired >= 5, f"the trigger fired on {fired}/{tile} tile plies"
+
+
+@requires_rs
+def test_eps_zero_is_exact_equality_not_a_tolerance(_env):
+    """DESIGN §2: `eps = 0`, f64 EQUALITY. A positive eps must admit strictly
+    more members — proof the knob is wired and that 0 is not a stand-in."""
+    _Game, _fl, _cfg, rcfg = _env
+    ms = carc_rs.MirrorState.from_seed("28000000000")
+    widened = 0
+    for ply in range(80):
+        if ms.is_terminal():
+            break
+        exact = ms.tiearb_probe(rcfg, -1, 4, 0.0, SALT, ply)
+        loose = ms.tiearb_probe(rcfg, -1, 4, 1.0, SALT, ply)
+        if exact["phase_tiles"] and exact["n_legal"] >= 2:
+            e = set(exact.get("tie_actions") or [])
+            l_ = set(loose.get("tie_actions") or [])
+            assert e <= l_, f"ply {ply}: eps=1.0 lost a member eps=0 had"
+            widened += len(l_) > len(e)
+        ms.advance(ms.legal_actions()[len(ms.legal_actions()) // 2])
+    assert widened > 0, "eps never widened the set — the parameter is not wired"
+
+
+# --------------------------------------------------------------------------- #
+# 2. the default path is byte-identical                                        #
+# --------------------------------------------------------------------------- #
+def _search_cfg(**kw):
+    from carcassonne_ai.rust_agent import leaf_config_rs
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    return carc_rs.SearchConfigRs(leaf_config_rs(DEFAULT_CONFIG), 48, 1.5, 5.0, 15.0, **kw)
+
+
+@requires_rs
+def test_disabled_knob_leaves_the_repr_and_the_resolved_dict_at_the_champion():
+    base = _search_cfg()
+    moved = _search_cfg(tiearb_enabled=False, tiearb_b=3, tiearb_j=9,
+                        tiearb_mode="random", tiearb_salt="not-the-salt", tiearb_eps=2.5)
+    assert repr(base) == repr(moved), "a disabled knob leaked into the repr"
+    assert "tiearb" not in repr(base)
+    assert base.tiearb == {"enabled": False, "B": 16, "J": 4, "mode": "argmax",
+                           "salt": SALT, "eps": 0.0}
+    on = _search_cfg(tiearb_enabled=True, tiearb_b=16, tiearb_j=4, tiearb_mode="random")
+    assert on.tiearb == {"enabled": True, "B": 16, "J": 4, "mode": "random",
+                         "salt": SALT, "eps": 0.0}
+    assert "tiearb_enabled=true" in repr(on)
+
+
+@requires_rs
+def test_disabled_knob_is_bit_identical_at_the_agent():
+    """The dose-0 analogue: same action, same pooled floats, zero counters."""
+    def agent(**kw):
+        return carc_rs.FairAgentRs(_search_cfg(**kw), 4, 101, threads=1,
+                                   exact_endgame=False)
+
+    a = agent()
+    b = agent(tiearb_enabled=False, tiearb_b=2, tiearb_j=8, tiearb_mode="random",
+              tiearb_salt="x", tiearb_eps=7.0)
+    for ag in (a, b):
+        ag.start_game_from_seed("28000000000")
+        for _ in range(30):
+            ag.advance(ag.legal_actions()[len(ag.legal_actions()) // 2])
+    x = a.choose_action()
+    y = b.choose_action()
+    assert x == y
+    sa, sb = a.stats(), b.stats()
+    assert sa["last_move"]["pooled"] == sb["last_move"]["pooled"]
+    assert sb["tiearb_fired_plies"] == 0
+    assert sb["tiearb_tile_plies"] == 0
+    assert sb["tiearb_playouts_total"] == 0
+    assert sb["tiearb_secs"] == 0.0
+
+
+@requires_rs
+def test_the_resolved_knob_keys_are_always_present_in_stats():
+    """`G-J4` reads a RESOLVED dict; the stats keys must be present on BOTH
+    cells so an ARB/RND diff is a value diff, never a shape diff."""
+    ag = carc_rs.FairAgentRs(_search_cfg(), 2, 7, threads=1)
+    s = ag.stats()
+    for k in ("tiearb_enabled", "tiearb_b", "tiearb_j", "tiearb_mode", "tiearb_salt",
+              "tiearb_eps", "tiearb_tile_plies", "tiearb_fired_plies",
+              "tiearb_pickchanges", "tiearb_arms_total", "tiearb_playouts_total",
+              "tiearb_secs"):
+        assert k in s, k
+    for k in ("tiearb_fired", "tiearb_arms", "tiearb_champ_pick", "tiearb_pickchange",
+              "tiearb_playouts", "tiearb_secs"):
+        assert k in s["last_move"], k
+
+
+@requires_rs
+def test_a_bad_mode_or_a_zero_B_is_refused_even_when_disabled():
+    with pytest.raises(ValueError):
+        _search_cfg(tiearb_mode="Argmax")
+    with pytest.raises(ValueError):
+        _search_cfg(tiearb_b=0)
+    with pytest.raises(ValueError):
+        _search_cfg(tiearb_j=0)
+    with pytest.raises(ValueError):
+        _search_cfg(tiearb_eps=-1.0)
+    with pytest.raises(ValueError):
+        _search_cfg(tiearb_enabled=True, tiearb_salt="")
+
+
+@requires_rs
+def test_the_python_search_path_refuses_an_enabled_arbiter():
+    """Fail-closed: a python-backend candidate must RAISE rather than silently
+    play champion-vs-champion (the J13 failure mode)."""
+    import dataclasses as dc
+
+    from carcassonne_ai.game_wrapper import Game
+    from carcassonne_ai.heuristic_prior_mcts import (HeuristicPriorConfig,
+                                                     make_heuristic_prior_evaluator)
+    cfg = dc.replace(HeuristicPriorConfig(), tiearb_enabled=True)
+    assert cfg.as_manifest()["tiearb_enabled"] is True
+    assert cfg.as_manifest()["tiearb_b"] == 16
+    with pytest.raises(NotImplementedError):
+        make_heuristic_prior_evaluator(Game(enable_legal_moves_cache=False), cfg)
+
+
+@requires_rs
+def test_the_config_validates_its_knobs_even_when_disabled():
+    import dataclasses as dc
+
+    from carcassonne_ai.heuristic_prior_mcts import HeuristicPriorConfig
+
+    for bad in (dict(tiearb_mode="ARGMAX"), dict(tiearb_b=0), dict(tiearb_j=0),
+                dict(tiearb_eps=-0.5), dict(tiearb_enabled=True, tiearb_salt="")):
+        with pytest.raises(ValueError):
+            dc.replace(HeuristicPriorConfig(), **bad)
+
+
+# =========================================================================== #
+# I. A THIRD, INDEPENDENT TRANSCRIPTION of READ_RULE §3-§4 -- authored by the
+# instrument-build session, kept because two independent transcriptions that
+# AGREE are stronger evidence than either alone. It is written from the document
+# and imports NOTHING from the harness; it must never be used to grade a cell.
+#
+# ⚠️ AMENDED with the file: §0.B's deck floor (600 -> 320) is applied here too,
+# and `_peer_clean`'s n_common is set to a REACHABLE 400 (a paired n = 800 cell
+# tops out at 400 decks). Nothing else in it was touched.
+#
+# `test_the_three_transcriptions_agree_on_the_whole_grid` is the payoff.
+# =========================================================================== #
+#
+# ⚠️ This is a transcription of `measurement/tiearb2_stage2_20260817/READ_RULE.md`
+# §3-§4, written from the document and importing NOTHING from the harness. Its
+# job is to prove the table is TOTAL and EXCLUSIVE, per §4.1. It must never be
+# used to grade a cell.
+_PEER_Z = 2.0
+_PEER_PRESENT = 1.0
+_PEER_N4 = 1.20
+
+
+def _peer_gates(g: dict) -> str | None:
+    """§3, in the document's order. Returns the failing gate id or None."""
+    champ = "a36d2e15a3b3d71d"
+    if g["cand_leaf_hash_arb"] != champ or g["cand_leaf_hash_rnd"] != champ:
+        return "G-J1"
+    for cell, mode in (("arb", "argmax"), ("rnd", "random")):
+        t = g.get(f"cand_tiearb_{cell}")
+        if not t or t.get("mode") != mode or t.get("B") != 16 or t.get("J") != 4:
+            return "G-J4"
+    if not g["j13_two_sided_per_host"]:
+        return "G-J13"
+    if g["phi_arb"] < 1.0 or g["phi_rnd"] < 1.0:
+        return "G-FIRE"
+    if not g["band_claimed_before_game1"] or not g["same_band_same_decks"]:
+        return "G-BAND"
+    if g["n_common"] < 320 or g["n_arb"] < 640 or g["n_rnd"] < 640:
+        return "G-N"
+    if not g["same_toolchain_same_build"]:
+        return "G-TOOL"
+    for k in ("z_arb", "z_rnd", "z_D"):
+        v = g.get(k)
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return "G-STAT"
+    return None
+
+
+def _peer_branch(g: dict) -> str:
+    """§3 first, then `G-ANOMALY`, then the five."""
+    if _peer_gates(g) is not None:
+        return "U-UNREADABLE"
+    if g["z_rnd"] >= _PEER_Z:
+        return "G-ANOMALY"
+    p = g["z_arb"] >= _PEER_Z
+    q = g["D"] >= 0
+    r = g["z_D"] >= _PEER_Z
+    if p and q and r:
+        return "G-CONFIRMED"
+    if p and q and not r:
+        return "G-DEPLOYS"
+    if p and not q:
+        return "G-CLOCK"
+    if g["z_arb"] >= _PEER_PRESENT or g["z_D"] >= _PEER_PRESENT:
+        return "G-PRESENT"
+    return "G-FLAT"
+
+
+def _peer_clean(**over) -> dict:
+    g = {
+        "cand_leaf_hash_arb": "a36d2e15a3b3d71d",
+        "cand_leaf_hash_rnd": "a36d2e15a3b3d71d",
+        "cand_tiearb_arb": {"enabled": True, "B": 16, "J": 4, "mode": "argmax",
+                            "salt": SALT, "eps": 0.0},
+        "cand_tiearb_rnd": {"enabled": True, "B": 16, "J": 4, "mode": "random",
+                            "salt": SALT, "eps": 0.0},
+        "j13_two_sided_per_host": True,
+        "phi_arb": 20.0, "phi_rnd": 20.0,
+        "band_claimed_before_game1": True, "same_band_same_decks": True,
+        "n_common": 400, "n_arb": 800, "n_rnd": 800,
+        "same_toolchain_same_build": True,
+        "z_arb": 0.0, "z_rnd": 0.0, "z_D": 0.0, "D": 0.0,
+        "ms_ratio_arb": 1.1985, "ms_ratio_rnd": 1.1985,
+    }
+    g.update(over)
+    return g
+
+
+def test_every_precondition_voids_the_run():
+    assert _peer_branch(_peer_clean()) != "U-UNREADABLE"
+    cases = {
+        "G-J1": dict(cand_leaf_hash_arb="deadbeefdeadbeef"),
+        "G-J4": dict(cand_tiearb_rnd={"enabled": True, "B": 16, "J": 4,
+                                      "mode": "argmax", "salt": SALT, "eps": 0.0}),
+        "G-J13": dict(j13_two_sided_per_host=False),
+        "G-FIRE": dict(phi_arb=0.9),
+        "G-BAND": dict(same_band_same_decks=False),
+        "G-N": dict(n_common=319),
+        "G-TOOL": dict(same_toolchain_same_build=False),
+        "G-STAT": dict(z_D=float("nan")),
+    }
+    for gate, over in cases.items():
+        g = _peer_clean(**over)
+        assert _peer_gates(g) == gate, gate
+        assert _peer_branch(g) == "U-UNREADABLE", gate
+    # B != 16 and J != 4 are G-J4 too, and a MISSING dict is the worst case.
+    for bad in ({"enabled": True, "B": 8, "J": 4, "mode": "argmax"},
+                {"enabled": True, "B": 16, "J": 2, "mode": "argmax"},
+                None):
+        assert _peer_gates(_peer_clean(cand_tiearb_arb=bad)) == "G-J4"
+    # phi below the floor voids EITHER cell.
+    assert _peer_branch(_peer_clean(phi_rnd=0.0)) == "U-UNREADABLE"
+
+
+def test_the_branch_table_is_total_and_exclusive():
+    """§4.1's machine sweep. Exactly one branch on every combination of the
+    quantities the table reads, NaN included."""
+    zs = [-3.0, -1.0, 0.0, 0.5, 1.0, 1.5, 1.99, 2.0, 3.0, float("nan")]
+    ds = [-1.0, -0.001, 0.0, 0.001, 1.0]
+    known = {"U-UNREADABLE", "G-ANOMALY", "G-CONFIRMED", "G-DEPLOYS", "G-CLOCK",
+             "G-PRESENT", "G-FLAT"}
+    seen = set()
+    n = 0
+    for za in zs:
+        for zr in zs:
+            for zd in zs:
+                for d in ds:
+                    b = _peer_branch(_peer_clean(z_arb=za, z_rnd=zr, z_D=zd, D=d))
+                    assert b in known
+                    seen.add(b)
+                    n += 1
+                    # a NaN anywhere in the three z's is caught by G-STAT BEFORE
+                    # any comparison is taken (§4.1)
+                    if any(isinstance(v, float) and math.isnan(v)
+                           for v in (za, zr, zd)):
+                        assert b == "U-UNREADABLE", (za, zr, zd, d)
+    assert n == len(zs) ** 3 * len(ds)
+    assert seen == known, sorted(known - seen)
+
+
+def test_r_implies_q_so_the_p_and_not_q_and_r_cell_is_vacuous():
+    """§4.1: `z_D >= +2` requires `D > 0`, so `p ∧ ¬q ∧ r` cannot occur in a
+    real read; `G-CLOCK` is defined total in `r` so the table stays total."""
+    # The construction is only reachable by feeding an INCONSISTENT (D, z_D):
+    # the table still returns exactly one branch, and it is G-CLOCK.
+    assert _peer_branch(_peer_clean(z_arb=3.0, z_rnd=0.0, D=-1.0, z_D=3.0)) == "G-CLOCK"
+    assert _peer_branch(_peer_clean(z_arb=3.0, z_rnd=0.0, D=-1.0, z_D=0.0)) == "G-CLOCK"
+
+
+def test_the_named_branches_read_the_way_the_document_says():
+    assert _peer_branch(_peer_clean(z_arb=3.0, z_rnd=2.5, D=1.0, z_D=3.0)) == "G-ANOMALY"
+    assert _peer_branch(_peer_clean(z_arb=3.0, z_rnd=0.0, D=1.0, z_D=3.0)) == "G-CONFIRMED"
+    assert _peer_branch(_peer_clean(z_arb=3.0, z_rnd=0.0, D=1.0, z_D=1.5)) == "G-DEPLOYS"
+    assert _peer_branch(_peer_clean(z_arb=3.0, z_rnd=0.0, D=-0.1, z_D=1.0)) == "G-CLOCK"
+    assert _peer_branch(_peer_clean(z_arb=1.5, z_rnd=0.0, D=1.0, z_D=0.0)) == "G-PRESENT"
+    assert _peer_branch(_peer_clean(z_arb=0.0, z_rnd=0.0, D=1.0, z_D=1.2)) == "G-PRESENT"
+    assert _peer_branch(_peer_clean(z_arb=0.5, z_rnd=0.0, D=1.0, z_D=0.5)) == "G-FLAT"
+    # the bars are INCLUSIVE, exactly at +2.0 / +1.0
+    assert _peer_branch(_peer_clean(z_arb=2.0, z_rnd=0.0, D=0.0, z_D=2.0)) == "G-CONFIRMED"
+    assert _peer_branch(_peer_clean(z_arb=1.0, z_rnd=0.0, D=1.0, z_D=0.0)) == "G-PRESENT"
+    assert _peer_branch(_peer_clean(z_arb=0.999, z_rnd=0.0, D=1.0, z_D=0.999)) == "G-FLAT"
+
+
+def test_the_PEER_N4_cost_rider_is_never_a_branch_input():
+    """§4.2: `ms_ratio` DOWNGRADES the reading; it must move no branch."""
+    for r in (0.5, 1.05, 1.1985, 1.20, 5.0):
+        assert _peer_branch(_peer_clean(z_arb=3.0, z_rnd=0.0, D=1.0, z_D=3.0,
+                              ms_ratio_arb=r, ms_ratio_rnd=r)) == "G-CONFIRMED"
+
+
+def test_the_three_transcriptions_agree_on_the_whole_grid():
+    """⭐ THE PAYOFF for keeping both transcriptions. Three independently written
+    readings of READ_RULE §4 -- section D's `_reference_branch` (independent
+    booleans, proving EXACTLY ONE fires), section I's `_peer_branch` (an if/elif
+    chain written by the instrument-build session), and the shipped
+    `S2.decide_branch` -- must return the SAME branch on every cell of the dense
+    grid, NaN included. Two transcriptions agreeing is evidence; three is a
+    contract.
+
+    ⚠️ The two transcriptions differ in where they place `G-STAT`: section I runs
+    §3 itself and returns `U-UNREADABLE` on a NaN z, while section D sweeps §4 with
+    the gates already green. That is the READ_RULE's own routing (§4.1: a NaN is
+    caught by `G-STAT` in §3 BEFORE a comparison), so the NaN cells are compared
+    against `U-UNREADABLE` and the finite cells against the branch.
+    """
+    n_finite = n_nan = 0
+    for z_arb, z_rnd, z_D, D in itertools.product(_ZS, _ZS, _ZS, _DS):
+        peer = _peer_branch(_peer_clean(z_arb=z_arb, z_rnd=z_rnd, z_D=z_D, D=D))
+        nan_z = [v for v in (z_arb, z_rnd, z_D) if v != v]
+        if nan_z:
+            # §3 routes it; section D's grid runs with the gates forced green
+            assert peer == "U-UNREADABLE", (z_arb, z_rnd, z_D, D)
+            gate_ok, _ = S2.gate_stat(z_arb, z_rnd, z_D)
+            assert gate_ok is False
+            assert S2.decide_branch(z_arb, z_rnd, z_D, D,
+                                    _pre(**{"G-STAT": False}))["branch"] == (
+                "U-UNREADABLE")
+            n_nan += 1
+            continue
+        fired, *_ = _reference_branch(z_arb, z_rnd, z_D, D)
+        mine = S2.decide_branch(z_arb, z_rnd, z_D, D, _pre())["branch"]
+        assert len(fired) == 1
+        assert fired[0] == mine == peer, (z_arb, z_rnd, z_D, D, fired, mine, peer)
+        n_finite += 1
+    assert n_finite == 8 ** 3 * len(_DS) == 3072
+    assert n_nan == (9 ** 3 - 8 ** 3) * len(_DS) == 1302
+    assert n_finite + n_nan == 4374

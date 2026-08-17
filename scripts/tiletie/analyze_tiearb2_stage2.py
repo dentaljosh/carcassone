@@ -31,17 +31,17 @@ therefore candidate-over-opponent. A read-out that swaps them inverts the cost v
 is reported. `G-N` still voids below the committed thresholds — a partial run is
 READ, then declared `U-UNREADABLE` if it is short. Nothing is extrapolated.
 
-⚠️ COMMITTED-TEXT INCONSISTENCY, REPORTED AND *NOT* RESOLVED HERE. READ_RULE §3's
-`G-N` reads `n_common < 600` where §2 defines `n_common` as **decks** completed in
-both cells, while §1/§6 fix the cell size at **800 deck-paired GAMES** = 400 decks
-(`--paired --n 800`; `_build_work` plays each of `n // 2` deck seeds twice, and
-`BAND_CLAIMED.json`'s house wording for the identical shape is "n=800 deck-paired
-(400 decks x 2 seats)"). `n_common` therefore cannot exceed 400, so the 600-deck
-floor is unsatisfiable and `G-N` voids the run unconditionally. This adjudicator
-implements the committed text EXACTLY as written — it does not rescale the bar, does
-not reinterpret `n_common` as games, and does not soften the conjunct. It prints
-`STAGE2_G_N_INCONSISTENCY` prominently on every branch. Resolving it is an owner
-decision on a committed pre-registration, not this instrument's call.
+⚠️ THIS ADJUDICATES THE **AMENDED** TEXT. `READ_RULE.md` §0 is a PRE-RUN AMENDMENT
+(commit `6c281f9e`, made before the band claim and before game 1, with no band
+claimed and no `summary.json` / `manifest.json` in existence). It fixes `G-N`'s
+deck floor — the text committed at `b2faa238` read `n_common < 600`, which is
+unreachable because a paired `n = 800` cell yields at most 400 decks
+(`eval_fair_puct.py:3924`, `"n_decks": (args.n // 2 if args.paired else args.n)`),
+so `G-N` would have fired on a PERFECTLY COMPLETE run — and names the `+1.0`
+presentation split and the knob's top-level manifest location. **No adjudicating
+bar moved**: `+2.0`, `+1.0` and `1.20` are unchanged and every §4 branch condition
+is unchanged. `READ_RULE_AMENDMENT` is stamped in the read-out so a reader can see
+which text was adjudicated against.
 
 This computes NO estimator that already exists: the paired statistic is
 `eval_fair_puct._paired_z`'s arithmetic, mirrored (§2 requires the same convention),
@@ -68,10 +68,17 @@ DESIGN_DOC = "measurement/tiearb2_stage2_20260817/DESIGN.md"
 READ_RULE = "measurement/tiearb2_stage2_20260817/READ_RULE.md"
 SCHEMA = "carcassonne-tiearb2-stage2-readout/v1"
 
+#: Which text was adjudicated against. READ_RULE §0 is a PRE-RUN AMENDMENT applied
+#: before the band claim and before game 1; it moved NO adjudicating bar.
+READ_RULE_AMENDMENT = "READ_RULE.md §0 (PRE-RUN AMENDMENT), commit 6c281f9e"
+
 # ---- READ_RULE §2 committed bars — NOT new numbers -------------------------- #
 Z_BAR = 2.0             # "+2.0 is Stage 1's, Stage 1b's, E-FLAT's and W-FLAT's verbatim"
-Z_PRESENT_BAR = 1.0     # §4's G-PRESENT bar (⚠️ used by the table; §2's "the bars are"
-                        #    sentence names only +2.0 and 1.20 — see AMBIGUITIES below)
+Z_PRESENT_BAR = 1.0     # §2 (as amended, §0.C.1) — the G-PRESENT / G-FLAT PRESENTATION
+                        #    split. ⚠️ NOT an adjudicating bar: both branches it
+                        #    separates license NOTHING, so it selects a label and the
+                        #    mandatory rider that travels with it, never a permission.
+                        #    The two bars that gate a licence are +2.0 and 1.20.
 MS_RATIO_BAR = 1.20     # §4.2 — the house N4 trigger currency
 MS_RATIO_NEUTRAL = 1.05 # §4.2 — "≤ 1.05 restores a fully cost-neutral reading"
 
@@ -83,9 +90,10 @@ SALT_EXPECTED = "tiearb2-deploy-v1"            # DESIGN §2 (reported; G-J4 name
 MODE_BY_CELL = {"ARB": "argmax", "RND": "random"}
 PHI_FLOOR = 1.0                                # G-FIRE
 BAND_EXPECTED = 132000000000                   # G-BAND
-N_COMMON_FLOOR = 600                           # G-N  (⚠️ see the inconsistency above)
+N_COMMON_FLOOR = 320                           # G-N, AMENDED §0.B — 80% of the 400 decks
+                                               #   a paired n = 800 cell can produce
 CELL_GAMES_PLANNED = 800                       # G-N
-CELL_GAMES_FLOOR = 640                         # G-N
+CELL_GAMES_FLOOR = 640                         # G-N — the same 80% bar, in games
 
 ALL_GATES = ("G-J1", "G-J4", "G-J13", "G-FIRE", "G-BAND", "G-N", "G-TOOL", "G-STAT")
 CELLS = ("ARB", "RND")
@@ -201,27 +209,27 @@ N4_RIDER = (
     "ms_ratio ≤ 1.05 restores a fully cost-neutral reading."
 )
 
-#: The committed-text problem this instrument REPORTS and does not resolve.
-G_N_INCONSISTENCY = (
-    "⚠️ STAGE2_G_N_INCONSISTENCY — REPORTED, NOT RESOLVED. READ_RULE §3's `G-N` reads "
-    "`n_common < 600`, and §2 defines `n_common` as the DECKS completed in both cells. "
-    "§1 and §6 fix each cell at 800 deck-paired GAMES, which under `--paired --n 800` is "
-    "400 deck seeds played twice (`_build_work`: `for i in range(n // 2)` -> seats 0 and "
-    "1; the house wording for the identical shape is 'n=800 deck-paired (400 decks x 2 "
-    "seats)'). `n_common` therefore CANNOT exceed 400 < 600, so the deck floor is "
-    "unsatisfiable and G-N voids the run unconditionally — and it does so even at the "
-    "run's own second G-N clause (640/800 games = 320 decks). This adjudicator implements "
-    "the committed text EXACTLY: it does not rescale the bar, does not reinterpret "
-    "`n_common` as games, and does not soften the conjunct. Resolving it is an owner "
-    "decision on a committed pre-registration."
+#: READ_RULE §0 — what the pre-run amendment changed, stamped on every read-out so a
+#: reader can see which text was adjudicated against.
+AMENDMENT_NOTE = (
+    "This read-out adjudicates the AMENDED read-rule: READ_RULE.md §0 (PRE-RUN "
+    "AMENDMENT), commit 6c281f9e, applied BEFORE the band claim and BEFORE game 1, with "
+    "no band claimed and no summary.json / manifest.json in existence. §0.B set G-N's "
+    "deck floor to n_common >= 320 — the exact 80% analogue of the committed 640/800 "
+    "games clause, because a paired n = 800 cell yields at most 400 decks "
+    "(eval_fair_puct.py:3924), which made the original 600-deck floor unreachable on a "
+    "PERFECTLY COMPLETE run. §0.C.1 named the +1.0 presentation split in §2; §0.C.2 "
+    "corrected the knob's manifest location to top-level `cand_tiearb`. ⚠️ NO "
+    "ADJUDICATING BAR MOVED: +2.0, +1.0 and 1.20 are unchanged and every §4 branch "
+    "condition is unchanged."
 )
 
-#: Lesser observation, also reported and not resolved.
+#: §0.C.1, carried so the presentation split can never be read as a licence bar.
 Z_PRESENT_BAR_NOTE = (
-    "⚠️ NOTE (reported, not resolved): READ_RULE §2 declares 'The bars are +2.0 (z) and "
-    "1.20 (the N4 cost trigger)', but §4's `G-PRESENT` / `G-FLAT` split turns on a THIRD "
-    "bar, +1.0, which §2's sentence does not name. The branch table's +1.0 is taken as "
-    "committed and is implemented verbatim; the §2 sentence is simply not exhaustive."
+    "+1.0 is NOT an adjudicating bar (READ_RULE §2 as amended, §0.C.1): the two branches "
+    "it separates — G-PRESENT and G-FLAT — are alike NON-LICENSING, so it selects a "
+    "LABEL and the mandatory rider that travels with it, never a permission. The two "
+    "bars that gate a licence remain +2.0 and 1.20."
 )
 
 BRANCH_TEXT = {
@@ -358,18 +366,19 @@ def n_to_reach(n, z, target=Z_BAR):
 # a test can fail exactly one at a time.                                        #
 # --------------------------------------------------------------------------- #
 def _tiearb_cfg(manifest: dict):
-    """The resolved `config.cand_tiearb` knob.
+    """The resolved top-level `cand_tiearb` knob.
 
-    READ_RULE §3 `G-J4` and DESIGN §4 `J4` both spell it `config.cand_tiearb`,
-    while every shipped sibling knob (`cand_jrules_prior`, `cand_jrules_filter`,
-    `cand_exact_objective`) resolves at manifest TOP LEVEL. Both spellings are
-    accepted and the one that was found is REPORTED, so the read-out never
+    READ_RULE §3 `G-J4` as amended (§0.C.2) spells it **top-level `cand_tiearb`**,
+    matching every shipped sibling knob (`cand_jrules_prior`,
+    `cand_jrules_filter`, `cand_exact_objective` — all at manifest top level,
+    `eval_fair_puct.py:3945`). The pre-amendment `config.cand_tiearb` spelling is
+    still ACCEPTED and the one that was found is REPORTED, so the read-out never
     silently reads a knob from a place the pre-registration did not name. A dict
     is required: any other type is 'unresolved' and fails the gate.
     """
-    for where, cfg in (("config.cand_tiearb",
-                        (manifest.get("config") or {}).get("cand_tiearb")),
-                       ("cand_tiearb", manifest.get("cand_tiearb"))):
+    for where, cfg in (("cand_tiearb", manifest.get("cand_tiearb")),
+                       ("config.cand_tiearb",
+                        (manifest.get("config") or {}).get("cand_tiearb"))):
         if cfg is not None:
             return (cfg if isinstance(cfg, dict) else None), where
     return None, None
@@ -486,12 +495,14 @@ def gate_band(cells: dict, band_claim: dict, expected_band=BAND_EXPECTED) -> tup
 
 
 def gate_n(n_common, n_arb, n_rnd) -> tuple:
-    """`G-N` — `n_common < 600`, OR either cell completed fewer than 640 of its 800
-    paired games.
+    """`G-N` AS AMENDED (§0.B) — `n_common < 320` **decks**, OR either cell completed
+    fewer than 640 of its 800 paired **games**.
 
-    ⚠️ Implemented EXACTLY as committed. See `G_N_INCONSISTENCY`: `n_common` is
-    defined in DECKS and cannot exceed 400 for an 800-GAME paired cell, so this
-    gate is unsatisfiable as written. That is REPORTED, not repaired.
+    Both clauses are the SAME 80% completion bar in their own units (640 games IS
+    320 decks), which is why they now agree instead of contradicting. The deck
+    clause stays INDEPENDENTLY BINDING: two cells can each clear 640 games while
+    overlapping on fewer than 320 COMMON decks, which would silently weaken `D`,
+    and that must still void.
     """
     try:
         nc_ok = n_common is not None and n_common >= N_COMMON_FLOOR
@@ -503,7 +514,11 @@ def gate_n(n_common, n_arb, n_rnd) -> tuple:
         "n_common_units": "DECKS (READ_RULE §2)",
         "n_games": {"ARB": n_arb, "RND": n_rnd},
         "cell_games_floor": CELL_GAMES_FLOOR, "cell_games_planned": CELL_GAMES_PLANNED,
-        "inconsistency": G_N_INCONSISTENCY}
+        "both_clauses_are_the_same_80pct_bar": "640 games IS 320 decks",
+        "deck_clause_independently_binding": (
+            "two cells can each clear 640 games while overlapping on fewer than 320 "
+            "COMMON decks — that weakens D and still voids"),
+        "read_rule_amendment": READ_RULE_AMENDMENT}
 
 
 def gate_tool(cells: dict, preflights: list) -> tuple:
@@ -858,7 +873,9 @@ def build_readout(args) -> dict:
                           "registry": "governance/BAND_REGISTRY.csv",
                           "claim": band_claim,
                           "deck_range_common": [d["deck_seed_min"], d["deck_seed_max"]]},
-        "ambiguities_reported_not_resolved": [G_N_INCONSISTENCY, Z_PRESENT_BAR_NOTE],
+        "read_rule_amendment": READ_RULE_AMENDMENT,
+        "read_rule_amendment_note": AMENDMENT_NOTE,
+        "presentation_split_note": Z_PRESENT_BAR_NOTE,
         "what_no_branch_does": [
             "No branch edits governance/PRODUCTION.yaml. A pass licenses a "
             "production-flip DECISION for the owner and nothing more.",
@@ -944,6 +961,10 @@ def render(v: dict) -> str:
     L.append("")
     L.append(f"> Adjudicates `{READ_RULE}` mechanically. "
              f"No owner call adjudicates any outcome.")
+    L.append(">")
+    L.append(f"> Text adjudicated: **{v['read_rule_amendment']}** — a PRE-RUN "
+             "amendment, applied before the band claim and before game 1. "
+             "**No adjudicating bar moved.**")
     L.append("")
     L.append(f"## BRANCH: `{v['branch']}`")
     L.append("")
@@ -1147,10 +1168,11 @@ def render(v: dict) -> str:
              f"{pr['n_common_decks']} decks")
     L.append(f"- {pr['note']}")
     L.append("")
-    L.append("## Ambiguities in the committed text — REPORTED, NOT RESOLVED")
+    L.append("## Which text was adjudicated")
     L.append("")
-    for note in v["ambiguities_reported_not_resolved"]:
-        L.append(f"- {note}")
+    L.append(f"- **{v['read_rule_amendment']}**")
+    L.append(f"- {v['read_rule_amendment_note']}")
+    L.append(f"- {v['presentation_split_note']}")
     L.append("")
     L.append("## What no branch does (READ_RULE §5)")
     L.append("")
