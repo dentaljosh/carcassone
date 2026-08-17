@@ -1,0 +1,106 @@
+{
+ "schema": "carcassonne-tiearb2-pilot/v1",
+ "design_doc": "measurement/tiearb2_20260816/DESIGN.md",
+ "scope": "DESIGN \u00a710 COST/INTEGRITY PILOT on SPENT-corpus positions. Reads ONLY wall/elapsed/integrity and the G-REPRO bit-reproduction COUNT. No value, mean, sd or delta was read from any record; the leg summary.json files were never opened. Its only outputs are the abort decision and c_tier1, which fixes B* by the cost-only rule of DESIGN \u00a77.2.",
+ "judge": "tier1-greedy",
+ "backend": "python",
+ "world_seed_salt": "tiletie-v1",
+ "m": 32,
+ "n_legs_records": 43,
+ "playouts": 2752,
+ "integrity": {
+  "records": 43,
+  "ok": 43,
+  "n_failed": 0,
+  "crn_verified": 43,
+  "checksum_ok": 43,
+  "world_seed_identical_to_primary": 43,
+  "playout_seed_identical_to_primary": 43,
+  "arm_identical_to_primary": 43,
+  "G_REPRO_bit_identical": 43,
+  "G_REPRO_expected": 43,
+  "G_REPRO_reference_records_found_on_disk": 43,
+  "G_REPRO_expected_matches_disk": true,
+  "G_REPRO_missing_counterpart": [],
+  "cross_judge_witness": {
+   "if_root": "/mnt/c/carc-shared/tiletie_pricing_20260812/clair-puct",
+   "evaluated": true,
+   "world_seed_identical_to_clair_puct": 43,
+   "playout_seed_identical_to_clair_puct": 43,
+   "arm_identical_to_clair_puct": 43,
+   "missing_counterpart": [],
+   "why": "DESIGN \u00a74.5 -- world_seed(rid, j, salt) is keyed on the rid and the salt and NEVER on the judge, so a tier1-greedy leg and the clair-puct record for the same rid+leg must carry bit-identical seed lists. A same-judge reproduction check cannot show that; this one can."
+  },
+  "note": "G-REPRO compares a sha256 over (values_a, values_b, world_seeds, playout_seeds) against the adjudicated 2026-08-14 OOF pilot records for the same rid+leg. ONLY THE COUNT is reported -- a digest is not a value and is not invertible. `G_REPRO_expected` is the COMMITTED constant 43 (the realized OOF leg count, verified on disk), never len(new): grading against len(new) would let a truncated pilot satisfy the gate trivially. `G_REPRO_reference_records_found_on_disk` reports what was actually found, so a drift is visible rather than assumed away."
+ },
+ "cost": {
+  "sum_elapsed_secs": 7505.74,
+  "c_tier1_worker_s_per_playout": 2.7274,
+  "median_record_secs": 182.29,
+  "max_record_secs": 241.85,
+  "stage1_pilot_c": 2.1236,
+  "oof_pilot_c": 2.1783
+ },
+ "b_star": {
+  "rule": "B* = max{B in {1,2,4,8,16} : rho_wall(B) <= 1.20}, else 1. rho_wall(B) = A_bar * B * c_tier1 / 13.7552. COST ONLY \u2014 no arbitration, headroom or pricing statistic enters it.",
+  "A_bar": 3.002222222222222,
+  "c_tier1_worker_s_per_playout": 2.7274,
+  "t_champ_secs": 13.7552,
+  "rho_bar": 1.2,
+  "ladder": {
+   "1": {
+    "playouts_per_tied_ply": 3.0022,
+    "worker_secs_per_tied_ply": 8.1883,
+    "rho_wall": 0.5953,
+    "rho_amortized": 0.1898,
+    "rho_phone": 5.2793,
+    "deployable": true
+   },
+   "2": {
+    "playouts_per_tied_ply": 6.0044,
+    "worker_secs_per_tied_ply": 16.3765,
+    "rho_wall": 1.1906,
+    "rho_amortized": 0.3797,
+    "rho_phone": 10.5587,
+    "deployable": true
+   },
+   "4": {
+    "playouts_per_tied_ply": 12.0089,
+    "worker_secs_per_tied_ply": 32.753,
+    "rho_wall": 2.3811,
+    "rho_amortized": 0.7593,
+    "rho_phone": 21.1174,
+    "deployable": false
+   },
+   "8": {
+    "playouts_per_tied_ply": 24.0178,
+    "worker_secs_per_tied_ply": 65.5061,
+    "rho_wall": 4.7623,
+    "rho_amortized": 1.5186,
+    "rho_phone": 42.2347,
+    "deployable": false
+   },
+   "16": {
+    "playouts_per_tied_ply": 48.0356,
+    "worker_secs_per_tied_ply": 131.0122,
+    "rho_wall": 9.5246,
+    "rho_amortized": 3.0373,
+    "rho_phone": 84.4695,
+    "deployable": false
+   }
+  },
+  "any_deployable": true,
+  "B_star": 2,
+  "rho_wall_bstar": 1.1906,
+  "DEPLOY": true
+ },
+ "B_star": 2,
+ "rho_wall_bstar": 1.1906,
+ "c_tier1_worker_s_per_playout": 2.7274,
+ "A_bar": 3.002222222222222,
+ "abort": {
+  "rule": "DESIGN \u00a710: n_failed>0 OR any crn_verified false OR any seed/arm mismatch OR G-REPRO short of expected => ABORT; the fresh corpus is not scored.",
+  "triggered": false,
+  "reasons": []
+ }
+}
