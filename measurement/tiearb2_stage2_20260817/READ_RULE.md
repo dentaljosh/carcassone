@@ -337,6 +337,72 @@ divergence between them would mean. **That is deliberate and it stands.**
 ⇒ **Both numbers are printed; neither grades the other.** If a future design wants that
 comparison adjudicated, it must pre-register the bar **before** its own smoke.
 
+### 0.I ⚠️ POST-HOC ANNOTATION — written AFTER the cells ran and AFTER the statistics were visible
+
+> **This section is categorically different from §0.A–§0.H, all of which were written
+> before the band claim and before game 1. This one is not.** It changes **no gate, no
+> bar, and no branch condition** — §4 remains byte-identical — and it exists because two
+> things must be on the record and neither may be quietly folded into the read-out.
+
+#### 0.I.1 A claim of mine in §0.E.1 was TOO STRONG, and the run proved it
+
+§0.E.1 justified accepting fail-soft partly on the ground that it is *"symmetric across
+`ARB` and `RND` **by construction**"*. **That phrasing is wrong and is withdrawn.** The
+correct statement:
+
+> The arbiter is **deterministic given the position**, so the two cells fail
+> **identically wherever they are in the same position**. Once they diverge on a pick
+> they are on **different boards** and can therefore fail at **different rates**.
+> Symmetry is an empirical near-fact to be **measured**, never an entitlement.
+
+**The data made the point:** the fail-soft path fired **once in the whole programme** —
+in `RND`, not `ARB` — so the realized asymmetry is exactly the thing "by construction"
+would have denied could happen. Realized: **1 error in 14,292 fired plies (7.0e-5)**,
+`n_failed` **0 on both sides**. ⇒ the effect on `D` is **negligible and measured**, and
+the read-out must say it that way and **never** say "immune by construction".
+
+**The acceptance itself still stands** — the reasoning that carried it was the
+*candidate-correlated exclusion* argument (propagating would have killed the game and
+biased the exclusion toward one arm), and that is untouched. Only the strength of the
+symmetry justification changes. ⭐ **And the acceptance was vindicated by an actual
+occurrence:** without the fallback, deck 132000000340 seat 1 would have raised out of
+the arbiter into a `GameFailure` and left a **candidate-side-only exclusion** — the
+`capoff` pattern. Instead the ply reverted to the champion's own `pooled_q_argmax` pick
+and the game completed. **Cost: one ply's arbitration out of ~14k, instead of one deck
+out of 800.** `G-PLY` also held in production — `tiearb_partial_argmax_total` = **0
+across all 28,350 fired plies**, including the ply that errored.
+
+#### 0.I.2 BLINDNESS DISCLOSURE — the first adjudication fired `U-UNREADABLE`, and I have seen the statistics
+
+The first run of the adjudicator fired **`U-UNREADABLE`** on `G-J1`, `G-BAND` and
+`G-TOOL`. **§4.3 mandates the full companion table on EVERY branch, including
+`U-UNREADABLE`**, so that run printed the strength statistics and **the orchestrator has
+seen them.** This was required by the read-rule, not a lapse — but the consequence is
+real and is recorded here rather than discovered later:
+
+> ⚠️ **The orchestrator is no longer a blind party to this adjudication.** Any
+> instrument change made from this point is made by someone who knows the result.
+
+**Mitigations, all three applied:**
+
+1. **The orchestrator did not touch the adjudicator.** The diagnosis was handed to the
+   instrument author, who **has not seen the statistics**, with structural facts only —
+   no margins, no `z`, no elo, no direction.
+2. **The rule is not amended.** Only the instrument may change, every change must be
+   justified as a *faithful implementation of the already-committed sentence* (the
+   `G-TOOL` sentinel precedent), absent-witness-fails stays absolute, and §4 stays
+   byte-identical.
+3. **`U-UNREADABLE` was explicitly left available as the correct final answer** for the
+   one gate whose failure may be substantive (`G-TOOL`: the cells' manifests and the
+   preflights disagree on `carc_rs_build`), with instructions not to steer away from it.
+
+**The two plumbing findings, stated so a reader can check them independently:** `G-J1`
+read `null` while the manifest carries `config.cand_leaf_hash = a36d2e15a3b3d71d`, and
+`G-BAND` read `null` while the manifest carries `config.band_seed_start = 132000000000`
+— in both cells. The witnesses were **present and correct**; the gate looked only at the
+top level. Those are lookup defects in the instrument, not properties of the run, and
+they are checkable on disk by anyone.
+
 ---
 
 ## 1. Scope
