@@ -53,6 +53,63 @@ flip decision. It does not take it and does not gate it.
 
 ---
 
+## §0.F — PRE-LAUNCH AMENDMENT (2026-08-17). NO BAR MOVES.
+
+Made with the band **UNCLAIMED**, **no game played**, and **no statistic of any kind in
+existence**. The blind ordering is intact: this amendment cannot have been written to fit a
+result, because no result exists. **No adjudicating bar moves and §4 is left BYTE-IDENTICAL.**
+
+### §0.F.1 — TWO BOXES (owner ruling), and the two gates it adds
+
+Owner directive, verbatim: **"make sure its both boxes, w22 and w30 respectively"**. Execution
+model in DESIGN §0.1. Two gates are **ADDED** to §3. Both are **tightenings** — they can only turn
+a readable run unreadable, never the reverse:
+
+* **`G-SPLIT`** — the deck→host assignment is **IDENTICAL across both cells**, verified from the
+  records. **Rationale (DESIGN §0.1.2):** `D` is deck-paired, so if a deck ran on different boxes
+  in the two cells, every per-box difference (the JVM packaging differs `24.04.2` vs `26.04.2`;
+  `W` and hence contention differ; RAM differs) lands *inside* the paired difference and is
+  arithmetically indistinguishable from the arbiter's effect. With the split identical, all of it
+  cancels. VOIDS on any deck whose host differs between cells, or on an absent host stamp.
+* **`G-COVER`** — the union of the per-box ranges covers **all `DECKS` decks × 2 seatings exactly
+  once per cell**: no gap, no duplicate, no deck outside the band. VOIDS otherwise.
+
+### §0.F.2 — TWO GATES WERE UNSATISFIABLE BY CONSTRUCTION. Fixed BEFORE launch, not after.
+
+Stage 2 lost an adjudication to three gates that could not pass on a healthy run, and had to fix
+them *after* the statistics had been printed. The §3.1 structural test was applied again here
+against the actual harness, **before** the band was claimed, and it caught two of the same class.
+Fixing them now costs nothing and preserves blindness completely.
+
+* **`G-PLY` was unsatisfiable.** §3 said the ply witness must be "present for **both** cells", but
+  Stage-2 §0.F's witness is `tiearb_partial_argmax_total`, which CELL A **cannot** carry — and
+  `G-ARB` positively **forbids** a `champ_tiearb` key on CELL A. The two committed sentences
+  contradicted each other and every healthy run would have voided.
+  **AMENDED READING:** both cells must carry the harness's own ply accounting
+  (`moves_by_seat`/`moves` + `n_actions`); **CELL B must additionally** carry the arbiter ply
+  witness with `partial_argmax` **present on every game** and `partial_argmax_total == 0`
+  (Stage-2 §0.F verbatim: **absent is unknown-not-zero and FAILS**; non-zero FAILS). Strictly
+  fail-closed on the side that can carry it.
+* **`G-LEAF`'s witness name was `eval_fair_puct`'s spelling.** §3 names `cand_leaf_hash`;
+  `scripts/jcz_match/match.py` writes the same quantity at
+  `champion_manifest.leaf_hashes.harness_leaf_hash` and has **no** `cand_leaf_hash` at all.
+  **AMENDED READING:** read top level → `config.*` → the harness-native address, and **report
+  which resolved**. **ABSENT AT EVERY ADDRESS STILL FAILS**; a present-but-different hash still
+  fails. This implements the committed *proposition* ("the arbiter moves no leaf") rather than a
+  spelling borrowed from a different harness.
+
+⭐ **The structural test, answered for every §3 gate including the two new ones, recorded before
+any outcome is known: would this gate fail on EVERY healthy run of this launcher? ANSWER: NO.**
+
+### §0.F.3 — instrument-fix discipline, restated and now binding on a SECOND session
+
+The §4 rule stands: if a defect is found **after** a first adjudication, the session writing the
+fix must be one that has **not** seen the strength statistics, and every fix must be decidable
+from gate inputs alone. The fixes in §0.F.2 were made **before any run existed**, so no session
+was ever non-blind — which is the outcome that discipline exists to produce.
+
+---
+
 ## §1 — THE STATISTIC, NAMED BEFORE IT EXISTS
 
 **PRIMARY — `D`, and its `z_D`:**
@@ -96,16 +153,18 @@ here as the shipped behaviour rather than re-discovered).
 | id | proposition | VOIDS on |
 |---|---|---|
 | `G-BAND` | both cells carry the SAME band; band was claimed BEFORE game 1 (sentinel timestamp precedes the first record); record-derived deck sets agree with the declared band | any mismatch |
-| `G-LEAF` | `cand_leaf_hash` == `a36d2e15a3b3d71d` on BOTH cells | difference or absence |
+| `G-LEAF` | the champion leaf hash == `a36d2e15a3b3d71d` on BOTH cells, read top level → `config.*` → `champion_manifest.leaf_hashes.harness_leaf_hash`, reporting which resolved (**§0.F.2**) | difference, or absence at EVERY address |
+| `G-SPLIT` | **(added §0.F.1)** the deck→host assignment is IDENTICAL across both cells | any deck whose host differs between cells; an absent host stamp |
+| `G-COVER` | **(added §0.F.1)** the union of per-box ranges covers all `DECKS` decks × 2 seatings EXACTLY ONCE per cell | any gap, duplicate, or out-of-band deck |
 | `G-ARB` | CELL B resolves `champ_tiearb` == `{"enabled":true,"B":16,"J":4,"mode":"argmax","salt":"tiearb2-deploy-v1","eps":0.0}` **AND CELL A carries NO `champ_tiearb` key** | any other rung; a key present on CELL A |
 | `G-FIRE` | CELL B `phi_effective` ≥ **1.0** fired tied tile plies per game, where `phi_effective = phi × (1 − error_rate_on_fired)` | below floor |
-| `G-J13` | the TWO-SIDED arbiter positive control passed on the launching box at the launch commit: **pick CHANGED** and **root leaf value bits UNCHANGED**, recorded in `verdicts/PREFLIGHT_<host>_FIRST.json` before that host's game 1 | either side failing, or absent |
+| `G-J13` | **PER-HOST (§0.F.1).** The TWO-SIDED arbiter positive control passed on **EVERY host that played** — **pick CHANGED** and **root leaf value bits UNCHANGED** — recorded in `verdicts/PREFLIGHT_<host>_FIRST.json`, generated AFTER any wheel build on that host and BEFORE that host's game 1. Expected hosts: `Doctor`, `laptop-wsl` | either side failing on any host; a host that played with no pre-flight |
 | `G-RULES` | BOTH cells stamp `rules_profile == "fixed_v1"` and `r9_env == "1"` | anything else |
 | `G-DIVERGE` | **REAL divergence count == 0** in BOTH cells, and `final_agree` on ≥ 99% of scored games in BOTH cells | any REAL divergence |
-| `G-JCZ` | JCZ provenance identical across cells and equal to DESIGN §7.1 (rev `29a1561…`, jar sha256 `4dc5439d…`, `LegacyAiPlayer`, `basic:2`, ai class `com.jcloisterzone.ai.AiEngine`) | any difference |
-| `G-TOOL` | same-box `carc_rs_binary_sha` equal across both cells; and `git diff --name-only <preflight_commit>..<manifest_commit> -- rust/ src/ engine/ scripts/` is EMPTY or the range is degenerate | a NON-EMPTY or UNRESOLVED wheel-relevant diff |
+| `G-JCZ` | **PER-HOST (§0.F.1).** JCZ provenance identical across cells AND across hosts, and equal to DESIGN §7.1 (rev `29a1561…`, jar sha256 `4dc5439d…` verified ON EACH HOST, `LegacyAiPlayer`, `basic:2`, ai class `com.jcloisterzone.ai.AiEngine`, 10 shim classes). ⚠️ The JVM *packaging* differs by host (`24.04.2` vs `26.04.2`, same OpenJDK 17.0.19) — **REPORTED, and it cannot touch `D` because `G-SPLIT` holds the deck→host map identical across cells** | any difference in the pinned artifacts on any host |
+| `G-TOOL` | **CROSS-BOX** in the Stage-2 corrected shape (manifests compared with each other, pre-flights with each other — never a pre-flight against a manifest); PLUS same-box `carc_rs_binary_sha` equal across both cells; PLUS `git diff --name-only <preflight_commit>..<manifest_commit> -- rust/ src/ engine/ scripts/` EMPTY or the range degenerate | a NON-EMPTY or UNRESOLVED wheel-relevant diff; mixed builds across boxes |
 | `G-N` | `n_common` ≥ **320 decks** AND each cell has ≥ **640 games** scored | either floor |
-| `G-PLY` | the ply-granularity witness (Stage-2 §0.F) is present for both cells | absent |
+| `G-PLY` | **(amended §0.F.2)** BOTH cells carry the harness ply accounting (`moves_by_seat`/`moves` + `n_actions`); **CELL B additionally** carries `partial_argmax` on EVERY game with `partial_argmax_total == 0` | absent accounting on either cell; absent `partial_argmax` on CELL B (unknown ≠ zero); non-zero `partial_argmax` |
 
 **`G-CLOCK-REPORT` is NOT in this table.** `ms_ratio` and every cost figure are reported on every
 branch and can void nothing (§0.A).

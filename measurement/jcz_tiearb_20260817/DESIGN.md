@@ -23,6 +23,96 @@
 | what it does NOT license | a `PRODUCTION.yaml` flip · an on-device deploy (`rho_phone` = 5.520 at B = 16, still unsolved) · a leaf term · a second arbiter rung · any change to B, J, the tie predicate, or the playout |
 | inherited constraints | the Stage-2 **anti-gaming clause** (`READ_RULE.md` §0.D) binds here verbatim: permission to spend clock is never licence to reshape the arbiter to look cheaper |
 
+### §0.1 — PRE-LAUNCH AMENDMENT (2026-08-17): TWO BOXES, by OWNER RULING
+
+> **Owner directive, verbatim (2026-08-17):**
+> **"make sure its both boxes, w22 and w30 respectively"**
+>
+> Given in answer to the single-box deviation this design originally recorded at §6.3.
+> **It OVERRIDES that deviation.** The ruling was made with the band UNCLAIMED and NO game
+> played, so **the blind ordering is intact and no adjudicating bar moves.**
+
+**The JVM gap is solved, not worked around.** §6.3's original reason for going single-box was
+that the laptop had no JVM and no `Engine.jar`. Resolved before launch:
+
+| step | result |
+|---|---|
+| `openjdk-17-jre-headless` via apt | installed; `/usr/bin/java` = OpenJDK **17.0.19**, verified running in a **NON-INTERACTIVE ssh shell** (the Stage-2 "rustup not on PATH" trap class — the launcher uses the absolute `$JAVA_BIN`, never PATH) |
+| `Engine.jar` staged via the share | sha256 **`4dc5439d…1190` — equals the pin, verified ON THE LAPTOP** (`G-JCZ` is a per-host gate) |
+| AI shim classes | **COPIED, not rebuilt** (10 `.class` files, byte-identical bytecode on both hosts). This is *stronger* provenance than two independent `javac` runs — a JDK on the laptop would have produced a second, unverified binary |
+| shim loads on the laptop | ✅ `com.jcloisterzone.ai.AiEngine` starts and dies on stdin EOF — the healthy signature |
+
+⚠️ **Disclosed per-host difference:** the JVM *packaging* differs (`17.0.19+10-1-24.04.2-Ubuntu`
+locally, `+10-1-26.04.2-Ubuntu` on the laptop) — same OpenJDK 17.0.19, different distro base. The
+pinned artifacts (jar, classes) are byte-identical; only the runtime build differs. §0.1.2 makes
+this incapable of touching `D`.
+
+#### §0.1.1 — the execution model: a STATIC deck split
+
+`scripts/jcz_match/match.py` has **no `--shared-claim`** (checked). So each box takes a **disjoint,
+contiguous** deck range through `--seed-base` / `--decks`, with `--champ-seat both` on each, so the
+union covers all 400 decks × 2 seatings **exactly once per cell**. A merge step verifies exactly
+that, and `G-COVER` gates it from the records.
+
+**The deck-paired statistics are unaffected by WHERE a game ran, provided coverage is exact** —
+`D` is computed per deck from that deck's two cells, and a deck's identity does not depend on
+which box played it.
+
+#### §0.1.2 — ⭐ THE SPLIT IS IDENTICAL ACROSS CELLS, AND IT IS LOAD-BEARING
+
+The previous sentence is true **only** if a given deck runs on the **same box in both cells**.
+`D` sums `margin_B(d) − margin_A(d)`. If deck `d` ran on the laptop in CELL A and locally in
+CELL B, then every per-box difference — the JVM packaging above, the different `W` and hence
+different contention, different RAM pressure — lands **inside the paired difference** and is
+arithmetically indistinguishable from the arbiter's effect.
+
+With the split identical across cells, every per-box effect is **common to both terms and cancels
+exactly**. This is not left to the launcher behaving well: **`G-SPLIT`** (READ_RULE §3) verifies
+from the records that the deck→host assignment is identical across the two cells, and voids if it
+is not.
+
+#### §0.1.3 — the split ratio comes from the SMOKE, not from W
+
+The boxes are not equal-throughput (30 vs 22 workers, different cores, 41 GB vs 11 GB). Splitting
+by `W` alone would leave one box idle at the tail. The smoke measures per-box **s/game** at the
+production `W` on each box, and `DECKS_LOCAL` / `DECKS_LAPTOP` are set from that ratio before
+game 1. Provisional values in `WORKERS.conf` are marked as such.
+
+#### §0.1.4 — ⚠️ THE LAPTOP MEMORY RISK, NAMED BEFORE THE SMOKE
+
+The laptop has **11 GB** and `W22` means 22 python+rust workers **and** 22 JVMs. A WSL guest that
+balloons past its `.wslconfig` cap is **torn down by Windows**, killing the leg
+(`reference_wsl2_host_memory_teardown`). Two mitigations, applied **identically on both boxes and
+both cells** so neither can become a box or a cell confound:
+
+1. `_JAVA_OPTIONS="-Xmx256m -Xss1m -XX:+UseSerialGC -XX:TieredStopAtLevel=1"` — caps each heap and
+   stops default G1 from spawning per-core GC threads (22 JVMs × N GC threads is a thread
+   explosion on a 24T box). The JVM's "Picked up" banner goes to **stderr**, so it cannot corrupt
+   JCZ's **stdout** line-JSON protocol. Heap size and GC policy cannot change `LegacyRanking`'s
+   deterministic arithmetic, so JCZ's play is untouched.
+2. The smoke **measures** per-worker RSS at the production `W` on each box before the long run
+   commits.
+
+**If the smoke shows W22 does not fit in 11 GB, that is REPORTED TO THE OWNER, not silently
+reduced.** W22 is an owner-set value and this agent does not overrule it.
+
+#### §0.1.5 — the per-host gate roster
+
+`G-J13` (the two-sided arbiter positive control), `G-JCZ` (jar sha + shim + AI class), and the
+toolchain witness are **per-host**: each box writes its own
+`verdicts/PREFLIGHT_<host>_FIRST.json` **after** any wheel build on that box and **before** its
+own game 1. `G-TOOL` returns to its Stage-2 **cross-box** form in the corrected shape — manifests
+compared with each other, pre-flights compared with each other — plus the same-box
+`carc_rs_binary_sha` witness. The laptop is **bundle-synced to the launch commit** first
+(`reference_offline_git_bundle_sync`), and both boxes run rust toolchain `1.96.0`.
+
+#### §0.1.6 — revised ETA
+
+Two boxes at 52 combined workers against §6.2's 291,360 worker-s ⇒ **≈1.6 h** if the laptop keeps
+pace per worker. It will not exactly — 11 GB and 24T against 41 GB and 32T — so the honest
+planning figure is **≈2 h**, and the per-box figure is restated from the smoke before launch
+rather than extrapolated (`feedback_eta_before_launch`).
+
 ---
 
 ## 1. THE QUESTION
@@ -270,11 +360,13 @@ program; the harness spawns one JVM per worker. Enabling the laptop needs a `sud
 openjdk-17-jdk`, an scp of the pinned jar, and a `javac` of the AI shim — ≈20–30 min of setup plus
 a second build to certify.
 
-**DECIDED: single box (local), and the decision is recorded as a simplification, not only a
-concession.** A one-box run collapses the Stage-2 cross-box build-identity gate (`G-TOOL`) into a
-strictly stronger **same-box binary-sha** witness, and removes the pre-flight/manifest commit-range
-class that produced Stage 2's three post-hoc instrument fixes. Wall-clock cost of the decision:
-≈3.4 h instead of ≈2 h.
+~~**DECIDED: single box (local)**~~ — ⛔ **OVERRIDDEN BY OWNER RULING, see [§0.1](#01--pre-launch-amendment-2026-08-17-two-boxes-by-owner-ruling).**
+Verbatim: *"make sure its both boxes, w22 and w30 respectively"*. The JVM gap described above was
+solved (apt JRE + share-staged jar verified against the pin + copied shim classes), not routed
+around. **This section is retained as the audit trail of what was true before the ruling; §0.1 is
+the operative text.** Two consequences of the original single-box decision that the ruling
+reverses: `G-TOOL` returns to its Stage-2 **cross-box** form (in the corrected shape), and the
+pre-flight becomes **per-host**. Revised ETA ≈2 h (§0.1.6).
 
 ---
 
