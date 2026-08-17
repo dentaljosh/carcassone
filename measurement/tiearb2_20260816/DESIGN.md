@@ -17,6 +17,35 @@
 
 ---
 
+## 0.A — PRE-RUN AMENDMENT, applied BEFORE the pilot and BEFORE any position is scored
+
+⚠️ **Nothing here is a result. No arbitration, headroom or pricing number exists,
+for either judge, on either corpus, at the time of this amendment.** One
+implementation fact was found while wiring the launch. It changes *how the run is
+laid out on disk*; it touches **no estimator, no statistic, no threshold, no bar and
+no branch**. [READ_RULE.md](READ_RULE.md) is **untouched**. (This is the Stage-1
+§0 precedent, applied in the same way and for the same reason.)
+
+- **0.A.1 — the CRN salt stays `tiletie-v1`; §4.5's `tiearb2-v1` is withdrawn.**
+  `WORLD_SEED_SALT = "tiletie-v1"` is a **hardcoded module constant** in
+  `scripts/tiletie/run_tiletie.py` (L102), injected into every leg command — it is
+  **not** a CLI flag. Exposing it would mean editing a shared script while runs are
+  live, which the worktree-isolation rule forbids (spawn respawns and each new
+  `--shared-claim` cell re-import from disk).
+  **This costs nothing, because world freshness was never carried by the salt.**
+  `world_seed(rid, j, salt) = sha256("world" | rid | j | salt)` is keyed on the
+  **`rid`**, and this corpus's rids (`tt_sp_281000000xx_p<ply>`) cannot collide
+  with the spent corpus's (`tt_sp_280000000xx_p<ply>`) — the deck-seed bands are
+  disjoint by construction (§4.2) and `G-DISJOINT` proves it at three levels
+  (§4.4). ⇒ **every world of the fresh corpus is an independent draw regardless of
+  the salt**, and §4.5's fresh salt was belt-and-braces only.
+  **Two consequences, both benign:** (i) the pilot's `G-REPRO` control and the main
+  run now share one salt, so there is no salt juggling and no chance of a
+  cross-salt mix-up; (ii) `M = 32` and the prefix-stability property (§5.2) are
+  unaffected — they are properties of the seed *function*, not of the salt value.
+
+---
+
 ## 0. Owner authorization
 
 2026-08-16, verbatim:
@@ -192,15 +221,19 @@ Counts only are recorded, in `DISJOINTNESS.json`; no value is read.
 `world_seeds[j] = sha256("world"|rid|j|salt)`, `playout_seeds[j] = sha256("playout"|rid|j|salt)`
 — keyed on `rid` and the salt, never on the arms and never on the judge.
 
-- **Salt: `tiearb2-v1`** (fresh). The rids are new, so the worlds would be fresh
-  under any salt; a fresh salt makes it unconditional.
+- **Salt: `tiletie-v1`** — ⚠️ **amended by §0.A.1**; the originally-written
+  `tiearb2-v1` is withdrawn because the salt is a hardcoded constant in
+  `run_tiletie.py` and exposing it would mean editing a shared script while runs are
+  live. **The rids are new, so the worlds are fresh under any salt** — freshness is
+  carried by the `rid`, not by the salt — so this costs nothing.
 - **`M = 32`, and it must NOT be raised** — the OOF §3.2 argument, inherited: the
   cross-fit selects on M/2 and evaluates on M/2, so a larger M makes the selection
   less noisy and the estimand **larger**. Locked at 32 by comparability with Stage 1
   and with the ladders, not by cost.
-- The pilot's `G-REPRO` control (§10) runs on **spent-corpus** positions at the
-  **old** salt `tiletie-v1`, because bit-reproduction against the adjudicated OOF
-  records is the whole point of it. The two salts never mix.
+- The pilot's `G-REPRO` control (§10) runs on **spent-corpus** positions, whose
+  bit-reproduction against the adjudicated OOF records is the whole point of it.
+  Under §0.A.1 it shares the run's salt, so there is **one salt for everything** and
+  no cross-salt mix-up is possible.
 
 ---
 
@@ -566,7 +599,7 @@ and it does not license a game outside the one Stage-2 prereg the READ_RULE name
 | knob | value | why it is not a choice |
 |---|---|---|
 | `--m` | **32** | §4.5 — raising it inflates the estimand |
-| `--world-seed-salt` | **`tiearb2-v1`** | §4.5 (pilot only: `tiletie-v1`, for `G-REPRO`) |
+| `--world-seed-salt` | **`tiletie-v1`** | §0.A.1 — a hardcoded constant in `run_tiletie.py`, not a flag; freshness is carried by the `rid`, not the salt |
 | `--oracle-sims` | 100 (inert for `tier1-greedy`) | manifest comparability |
 | `--backend` | `rust` for `clair-puct` (available: profile is `walled`), `python` for `tier1-greedy` | forced by the harness |
 | arms / dedupe / cap `J = 4` / reference arm | as built by `build_positions.py` | the same builder that built the spent corpus |
