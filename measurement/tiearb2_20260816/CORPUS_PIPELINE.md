@@ -1,8 +1,11 @@
 # CORPUS_PIPELINE — tiearb2_20260816 corpus assembly
 
-**Status: BUILT / NOT YET RUN** (2026-08-16). Driver written, unit-tested and
-end-to-end smoke-validated on a 2-game slice; the real input (850 fresh
-self-play games) does not exist yet.
+**Status: RUN / CORPUS ASSEMBLED, G-DISJOINT PASSED** (2026-08-16). All six
+phases executed on the real 850-game input. The first pass failed G-DISJOINT on
+layer (c) only (board transposition); phase 5b was added and the plan rebuilt
+with the existing instrument — **no plan file was hand-edited**. Realized corpus:
+**1350 positions / 724 roots**, all three gate layers at intersection 0. See
+[phase 5b](#phase-5b--board-digest-exclusions-added-2026-08-16-after-a-layer-c-gate-failure).
 
 **This document describes CORPUS ASSEMBLY (mining) only.** No phase here
 computes a strength, headroom or arbitration statistic. Nothing on this page is
@@ -10,8 +13,10 @@ a measurement, and no phase writes an `experiments/results.csv` row.
 
 Driver: [`scripts/tiletie/build_tiearb2_corpus.sh`](../../scripts/tiletie/build_tiearb2_corpus.sh)
 · support lib: [`scripts/tiletie/tiearb2_corpus_lib.py`](../../scripts/tiletie/tiearb2_corpus_lib.py)
+· phase-5b emitter: [`scripts/tiletie/emit_digest_exclusions.py`](../../scripts/tiletie/emit_digest_exclusions.py)
 · gate: [`scripts/tiletie/gate_disjoint.py`](../../scripts/tiletie/gate_disjoint.py)
-· tests: [`tests/test_tiearb2_corpus.py`](../../tests/test_tiearb2_corpus.py)
+· tests: [`tests/test_tiearb2_corpus.py`](../../tests/test_tiearb2_corpus.py),
+[`tests/test_tiearb2_digest_exclusions.py`](../../tests/test_tiearb2_digest_exclusions.py)
 
 The driver **never self-launches**. It is resumable: every phase is skipped when
 its own output already exists (delete that output to force a re-run), and it
@@ -185,26 +190,36 @@ nice -n 19 .venv/bin/python -u scripts/tiletie/build_positions.py \
   --cap-j          4 \
   --n              1400 \
   --afterstate-map measurement/tiearb2_20260816/corpus/census/afterstate_map_walled.json \
-  --exclude-rids   measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_spent733.txt \
+  --exclude-rids   measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_all.txt \
   --sample-seed    20260816 \
   --e4-dir         measurement/tiearb2_20260816/corpus/_empty_e4 \
   --champ-games    measurement/tiearb2_20260816/corpus/champ_games_tiearb2.jsonl
 ```
 
+The driver factors this into a `build_positions_into <out-dir> <exclude-file>`
+shell function, because phase 5b runs the **same** invocation against a throwaway
+probe directory — the two can then differ only in the exclusion list.
+
 - **`--n 1400`** is the *target*: `stratified_sample` returns the whole supply
   when supply < n, so this is "1400 or everything available", not a floor.
+  Realized supply is 1355, so **all of it is taken** and no seeded subsample
+  runs; the driver asserts `n_positions == n_supply_after_exclusion` to prove it.
 - **`--afterstate-map` is passed explicitly.** Its default globs
   `measurement/tiletie_pricing_20260812/census/afterstate_map_*.json` — relying
   on the default would dedupe the fresh corpus against the **spent** map.
-- **`--exclude-rids`** carries the complete 733-rid list of the spent corpus,
-  generated from that corpus's own `ARMS.json` **keys** (which *are* its rid
-  list — never re-derived from the leg files). This is **defence in depth**: the
-  two corpora are root-disjoint by band, so the expected outcome is
-  `exclude_rids.n_removed_from_supply == 0`, and the driver prints a loud warning
-  if it is not.
+- **`--exclude-rids`** carries `EXCLUDE_RIDS_all.txt` = the spent corpus's 733
+  rids **+** the phase-5b board-digest exclusions (§5b below), 738 in total.
+  - The **733** come from the spent corpus's own `ARMS.json` **keys** (which *are*
+    its rid list — never re-derived from the leg files). Those are **defence in
+    depth**: the two corpora are root-disjoint by band, so the expected — and
+    realized — outcome is that they remove **0** positions. The driver asserts
+    that against the phase-5b probe plan, so a non-zero value STOPS the run
+    instead of merely warning.
+  - The **5** are the layer-(c) exclusions, and they *do* remove 5 positions.
 - The driver then **asserts `afterstate_dedupe.applied == true`** on the emitted
   plan — `run_tiletie.py`'s preflight refuses to launch a plan without it, and
-  failing here is cheaper than failing at launch.
+  failing here is cheaper than failing at launch — plus the closing arithmetic
+  `probe supply (1355) − digest exclusions (5) == final supply (1350)`.
 - The corpus ships its **own** `POSITIONS_PLAN.json` and
   `DROPPED_ALL_TRANSPOSITION.json` in its own `positions/` directory. The
   `scale_all` factors the analysers apply are derived from these and are
@@ -215,6 +230,103 @@ nice -n 19 .venv/bin/python -u scripts/tiletie/build_positions.py \
 `n_dropped_all_transposition = 1`, `exclude_rids.n_requested = 733`,
 `n_removed_from_supply = 0`, legs 1–4 + `ARMS.json` +
 `DROPPED_ALL_TRANSPOSITION.json` + `POSITIONS_PLAN.json` all written.
+
+## Phase 5b — BOARD-DIGEST EXCLUSIONS (added 2026-08-16, after a layer-c gate failure)
+
+```
+# 1. throwaway PROBE build — the SPENT RID LIST ALONE
+nice -n 19 .venv/bin/python -u scripts/tiletie/build_positions.py \
+  --out-dir      measurement/tiearb2_20260816/corpus/_probe_positions \
+  --exclude-rids measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_spent733.txt \
+  ...                                    # every other flag identical to phase 5
+
+# 2. the layer-(c) exclusion list, off the probe's realized board census
+nice -n 19 .venv/bin/python -u scripts/tiletie/emit_digest_exclusions.py \
+  --new-dir   measurement/tiearb2_20260816/corpus/_probe_positions \
+  --spent-dir measurement/tiletie_pricing_20260812/positions_pooled \
+  --out       measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_digest.txt \
+  --report    measurement/tiearb2_20260816/DIGEST_EXCLUSIONS.json
+
+# 3. concatenate -> the list phase 5 actually consumes
+cat EXCLUDE_RIDS_spent733.txt EXCLUDE_RIDS_digest.txt > EXCLUDE_RIDS_all.txt
+```
+
+### Why EXCLUSION, not regeneration, is the right response to a layer-c-only failure
+
+On 2026-08-16 the first assembled corpus (1355 positions / 725 roots) **failed**
+G-DISJOINT on layer (c) alone:
+
+| layer | spent | new | intersection | reading |
+|---|---|---|---|---|
+| a `root_id` (the GAME) | 399 | 725 | **0** | the two corpora share no game |
+| b `rid` (the POSITION) | 733 | 1355 | **0** | they share no (game, ply) |
+| c `sha256(checksum)` (the BOARD) | 733 | 1353 | **3** | 3 shared boards — *and* 1353 distinct digests from 1355 lines, i.e. 2 duplicate boards **inside** the fresh corpus |
+
+The gate's printed remedy — *"rebuild the corpus from a clean deck-seed band"* —
+is the **wrong** remedy for this failure mode, for three reasons:
+
+1. **Layers (a) and (b) positively exclude band contamination.** A dirty band
+   shows up first as a shared `root_id`; both identity layers that can see a
+   band leak read exactly 0. Whatever layer (c) caught, it did not arrive
+   through the deck seeds.
+2. **Board transposition is intrinsic to Carcassonne, so no band is "clean" in
+   this sense.** Different games reach bit-identical boards, overwhelmingly in
+   the opening where only a few tiles are down — every one of the 5 offending
+   positions here is at **ply 2**. A fresh band would show its own handful of
+   digest collisions against the spent corpus, and so would the band after that.
+   Regeneration does not converge on 0; it re-rolls the same intrinsic rate.
+3. **The cost ratio is absurd.** Regeneration is a ~4.4 h self-play run to avoid
+   **5 positions out of 1355 (0.37 %)**.
+
+Excluding is also the *statistically* correct move: DESIGN §7.3's mechanism is
+"remove what the earlier stage took, then apply the SAME seeded sampling rule to
+the remainder", which is exactly two-phase sampling without replacement. Dropping
+5 rids from the supply *before* sampling is that mechanism, not a new draw.
+
+### The two rules
+
+| rule | what it drops | why |
+|---|---|---|
+| (a) spent overlap | every fresh rid whose `sha256(checksum)` appears anywhere in the spent digest set | the spent corpus already scored that board; re-scoring it re-imports the winner's curse this corpus exists to escape |
+| (b) internal dupes | within the fresh corpus, all but the **lexicographically smallest** rid per digest | matches the spent corpus's own construction — 733 rids / 733 distinct checksums, i.e. **one rid per board** |
+
+The two sets are unioned (they can intersect; the report carries
+`n_excluded_by_both_rules` so the three counts are unambiguous either way). After
+both rules the fresh digests are internally distinct **and** disjoint from the
+spent set, so layer (c) is 0 **by construction** — not by luck of the next band.
+
+### ⚠️ Why the list comes from a PROBE build, never from the final corpus
+
+`emit_digest_exclusions.py` reads a **realized** `positions_*_leg1.jsonl` board
+census, so it cannot be pointed at the corpus it is about to fix: a corpus built
+*with* these exclusions has no overlap left, the tool would emit an **empty**
+list, and feeding that back into a rebuild would restore the offending positions
+and fail the gate again. The driver therefore always derives it from a throwaway
+probe built with the **spent rid list alone**, and keys the whole of phase 5b on
+`EXCLUDE_RIDS_all.txt` already existing — so the pipeline stays reproducible
+end-to-end from scratch, with no hand-edited plan anywhere.
+
+`DIGEST_EXCLUSIONS.json` reports **counts only** — no rid, checksum or digest
+value — matching `gate_disjoint.py`'s disclosure policy, so the fresh corpus's
+audit trail cannot itself leak spent-corpus identities. The `.txt` necessarily
+names rids: it is an **input** to `build_positions.py`, not a report.
+
+### Realized (2026-08-16)
+
+| quantity | value |
+|---|---|
+| rule (a) spent-overlap rids | **3** |
+| rule (b) internal-duplicate rids | **2** (2 digest groups, 0 in both rules) |
+| total excluded | **5** — `sha256` of the sorted list `089993df94d4ac4a…` |
+| `EXCLUDE_RIDS_all.txt` | 733 + 5 = **738** rids |
+| probe supply → final supply | 1355 → **1350** (`n_removed_from_supply = 5`) |
+| spent-733 list's own effect | **0** removed (bands disjoint, as designed) |
+| final corpus | **1350 positions / 724 roots**, `afterstate_dedupe.applied = true` |
+
+*Independently re-derived* after the rebuild: a from-scratch probe rebuilt in a
+scratch directory is byte-identical to `_probe_positions/positions_walled_leg1.jsonl`,
+re-emits the same 5 rids and the same list `sha256`, and the final corpus is
+exactly `probe supply − those 5 rids`.
 
 ## Phase 6 — G-DISJOINT gate (always runs)
 
@@ -252,6 +364,26 @@ the **spent** band produced `a_root_id intersection = 2` while `b_rid` and
 `c_position_digest` were both 0 — i.e. layer (a) caught a real contamination
 that a rid-only or board-only check would have waved straight through.
 
+### Realized verdict (2026-08-16, after the phase-5b rebuild)
+
+| layer | identity | spent | new | intersection |
+|---|---|---|---|---|
+| a | `root_id` | 399 | 724 | **0** |
+| b | `rid` | 733 | 1350 | **0** |
+| c | `sha256(checksum)` | 733 | 1350 | **0** |
+
+`n_layers_violated: 0`, `passed: true`. Layer (c)'s `n_new == n_new_leg_lines
+== 1350`, i.e. the corpus now carries one rid per board with no internal
+duplicates — the same shape as the spent corpus.
+`sha256(new rid list) = cab69086455fa43a…` (the pre-5b 1355-position list was
+`ac88d1fb6488ce64…`; the two fingerprints are how a later reader tells the
+rebuilt corpus from the one that failed).
+
+⚠️ **The gate's failure banner still says "rebuild from a clean deck-seed band".**
+That advice is right for layers (a)/(b) and **wrong for a layer-(c)-only
+failure** — see phase 5b above. `gate_disjoint.py` was deliberately left
+unmodified (it is the frozen instrument); read its banner with that caveat.
+
 ---
 
 ## Verification performed (2026-08-16, before any real input existed)
@@ -266,3 +398,20 @@ that a rid-only or board-only check would have waved straight through.
   corpus (8 census rows → 5 qualifying → 1 transposition drop → 4 positions),
   `rc=0` at every phase, gate correctly `rc=1` on the deliberately overlapping
   input.
+
+## Verification performed (2026-08-16, phase 5b)
+
+- `pytest tests/test_tiearb2.py tests/test_tiearb2_corpus.py tests/test_tiearb.py
+  tests/test_tiearb2_digest_exclusions.py -q` → **151 passed** (18 new).
+- The new tests cover both rules on synthetic fixtures (including a rule-(a) case
+  the real gate confirms layers a/b cannot see), the smallest-rid tie-break and
+  its independence from file order, the two rules overlapping, the counts-only
+  disclosure policy (asserted by searching the report for every rid, checksum and
+  digest), **idempotence** (twice over the same input; and a no-op over an
+  already-excluded corpus), that the emitter's digest is byte-for-byte
+  `gate_disjoint`'s, and that excluding the emitted rids really drives layer (c)
+  to 0.
+- `bash -n` clean on the edited driver.
+- Post-rebuild, independently re-derived outside the driver: a from-scratch probe
+  build is byte-identical to `_probe_positions`, re-emits the identical 5-rid list
+  and `sha256`, and `final corpus == probe supply − those 5 rids` exactly.
