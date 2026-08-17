@@ -72,6 +72,15 @@ def _toolchain() -> dict:
         "code_rev": run("git", "-C", REPO, "rev-parse", "HEAD"),
         "code_rev_short": run("git", "-C", REPO, "rev-parse", "--short", "HEAD"),
         "dirty": bool(run("git", "-C", REPO, "status", "--porcelain")),
+        # ⚠️ The load-bearing half. A dirty tree is normal here (measurement logs
+        # and artifacts churn constantly, and a concurrent session shares this
+        # working tree), so `dirty` alone says nothing a reader can use. What
+        # matters is whether any CODE path is dirty — that is what would make
+        # `code_rev` a lie about what actually ran.
+        "dirty_code_paths": [
+            ln for ln in run("git", "-C", REPO, "status", "--porcelain", "--",
+                             "src/", "rust/", "scripts/", "engine/").splitlines()
+            if ln.strip()],
     }
 
 
@@ -152,6 +161,19 @@ def main() -> int:
     #     the same commit and the same rustc), so a content-hash EQUALITY gate
     #     would fail every healthy 2-box run. The binary hash is emitted too, as
     #     BOX-LOCAL evidence, and must not be compared across boxes.
+    _tcinfo = _toolchain()
+    # 15th check: `code_rev_dirty = True` must carry the extra fact that NO CODE
+    # PATH is dirty. Without it the provenance reads "dirty, and you have to
+    # trust the dirt is harmless"; with it, `code_rev` is a true statement about
+    # the code that ran. The dirty-path list it saw is recorded either way.
+    chk("TOOL_no_code_path_is_dirty",
+        not _tcinfo["dirty_code_paths"],
+        {"dirty_code_paths": _tcinfo["dirty_code_paths"][:20],
+         "n_dirty_code_paths": len(_tcinfo["dirty_code_paths"]),
+         "tree_dirty_at_all": _tcinfo["dirty"],
+         "scope": ["src/", "rust/", "scripts/", "engine/"],
+         "note": "a dirty MEASUREMENT path is normal and is not gated; a dirty "
+                 "CODE path means code_rev does not describe what ran"})
     _tc = os.environ.get("RUSTUP_TOOLCHAIN") or prov.get("rust_toolchain")
     _bid = prov.get("carc_rs_build") or ""
     _bad = ("<unavailable", "unhashed", "nobinary", "unknown", "rustcunpinned")
@@ -205,7 +227,7 @@ def main() -> int:
         "python": sys.executable,
         "expected": {"B": EXPECT_B, "J": EXPECT_J, "salt": EXPECT_SALT,
                      "eps": EXPECT_EPS, "champion_leaf_hash": CHAMP_LEAF_HASH},
-        "toolchain": _toolchain(),
+        "toolchain": _tcinfo,
         "backend_provenance": prov,
         # `G-TOOL` witnesses, hoisted to the TOP LEVEL of this verdict so the
         # cross-box comparison never has to reach into a nested block. ⚠️

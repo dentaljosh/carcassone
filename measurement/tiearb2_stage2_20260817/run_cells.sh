@@ -152,6 +152,15 @@ if [ "$pfrc" -ne 0 ]; then
   exit 13
 fi
 [ -f "$PF_FIRST" ] || cp "$PF_NOW" "$PF_FIRST"
+# ⚠️ PUBLISH IT TO THE SHARE. `G-TOOL`'s authoritative cross-box comparison is
+# the TWO hosts' PREFLIGHT_*_FIRST.json read side by side — under --shared-claim
+# the second box writes no manifest, so a manifest's `mixed_builds` is only the
+# writer's own observation. A preflight that stays on the box that produced it
+# is, for gate purposes, a preflight that did not happen.
+mkdir -p "$OUT/verdicts"
+cp -f "$PF_FIRST" "$OUT/verdicts/PREFLIGHT_${HOST}_FIRST.json" 2>/dev/null \
+  && log "published preflight -> $OUT/verdicts/PREFLIGHT_${HOST}_FIRST.json" \
+  || log "WARNING: could not publish the preflight to the share — G-TOOL's cross-box comparison will be UNEVALUABLE"
 log "PRE-FLIGHT PASS on $HOST -> $PF_NOW ; first-attempt copy $PF_FIRST"
 
 # ==========================================================================
