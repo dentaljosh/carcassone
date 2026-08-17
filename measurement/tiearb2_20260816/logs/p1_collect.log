@@ -1,0 +1,2 @@
+wrote 850 games to /home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/champ_games_tiearb2.jsonl (plies min/med/max = 141/144/144)
+round-trip verify: 10 ok / 0 bad (of 10 replayed)

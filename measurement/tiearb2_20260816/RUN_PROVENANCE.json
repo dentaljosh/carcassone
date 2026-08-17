@@ -1,0 +1,138 @@
+{
+ "schema": "carcassonne-tiearb2-provenance/v1",
+ "run_id": "tiearb2_20260816",
+ "design_doc": "measurement/tiearb2_20260816/DESIGN.md",
+ "read_rule": "measurement/tiearb2_20260816/READ_RULE.md",
+ "note": "BLIND ORDERING, PROVEN BY GIT. The design and the read-rule were committed together BEFORE the instrument, and the instrument BEFORE the cost pilot and before one position of the fresh corpus was scored. Only corpus SUBSTRATE precedes the prereg commit, which the funding brief permits, restricted to selection metadata.",
+ "committed_ordering": [
+  {
+   "label": "prereg",
+   "commit": "b46e7199",
+   "files": [
+    "measurement/tiearb2_20260816/DESIGN.md",
+    "measurement/tiearb2_20260816/READ_RULE.md"
+   ],
+   "note": "DESIGN + READ_RULE committed in ONE commit, before the instrument, before the cost pilot, and before one position of the fresh corpus was scored by either judge.",
+   "resolved": true,
+   "subject": "tiearb2 BLIND ORDERING: DESIGN + READ_RULE committed before the instrument, the pilot, and any statistic",
+   "committed_utc": "2026-08-16T15:55:35-04:00",
+   "files_present_in_commit": {
+    "measurement/tiearb2_20260816/DESIGN.md": true,
+    "measurement/tiearb2_20260816/READ_RULE.md": true
+   }
+  },
+  {
+   "label": "corpus_driver",
+   "commit": "3dbaa8bf",
+   "files": [
+    "scripts/tiletie/build_tiearb2_corpus.sh",
+    "scripts/tiletie/tiearb2_corpus_lib.py",
+    "scripts/tiletie/gate_disjoint.py"
+   ],
+   "note": "corpus-assembly driver + the three-layer G-DISJOINT gate (build only).",
+   "resolved": true,
+   "subject": "tiearb2: corpus-assembly driver + three-layer G-DISJOINT gate (build only)",
+   "committed_utc": "2026-08-16T16:02:52-04:00",
+   "files_present_in_commit": {
+    "scripts/tiletie/build_tiearb2_corpus.sh": true,
+    "scripts/tiletie/tiearb2_corpus_lib.py": true,
+    "scripts/tiletie/gate_disjoint.py": true
+   }
+  },
+  {
+   "label": "instrument",
+   "commit": "504ddad1",
+   "files": [
+    "scripts/tiletie/split_tiearb2.py",
+    "scripts/tiletie/analyze_tiearb2.py",
+    "tests/test_tiearb2.py"
+   ],
+   "note": "the Stage-1b instrument (split + analyser + tests), committed AFTER the read-rule was frozen.",
+   "resolved": true,
+   "subject": "tiearb2: the Stage-1b INSTRUMENT (split + analyser + 53 tests), read-rule frozen first",
+   "committed_utc": "2026-08-16T16:16:17-04:00",
+   "files_present_in_commit": {
+    "scripts/tiletie/split_tiearb2.py": true,
+    "scripts/tiletie/analyze_tiearb2.py": true,
+    "tests/test_tiearb2.py": true
+   }
+  },
+  {
+   "label": "substrate",
+   "commit": "fccd8cb5",
+   "files": [
+    "measurement/tiearb2_20260816/run_gen.sh",
+    "measurement/tiearb2_20260816/WORKERS.conf"
+   ],
+   "note": "run dir + WORKERS.conf + the fresh self-play generation launch. CORPUS SUBSTRATE ONLY \u2014 0 strength games, no band, no claim id.",
+   "resolved": true,
+   "subject": "tiearb2: run dir + WORKERS.conf + fresh self-play generation launched (CORPUS SUBSTRATE ONLY)",
+   "committed_utc": "2026-08-16T15:46:43-04:00",
+   "files_present_in_commit": {
+    "measurement/tiearb2_20260816/run_gen.sh": true,
+    "measurement/tiearb2_20260816/WORKERS.conf": true
+   }
+  }
+ ],
+ "head_at_run_time": {
+  "rev": "a5bbf8d2d64a9557272a6c64ff65584fb11ef2cd",
+  "short": "a5bbf8d2",
+  "subject": "tiearb2: main scoring RUNNING on both boxes -- parallelism verified",
+  "committed_utc": "2026-08-16T20:38:53-04:00",
+  "describe": "a5bbf8d2-dirty",
+  "branch": "android-app"
+ },
+ "working_tree": {
+  "n_modified_total": 32,
+  "modified_under_watched_paths": {
+   "src/carcassonne_ai/": [],
+   "engine/": [],
+   "scripts/tiletie/": [],
+   "scripts/measurement_infra/": []
+  },
+  "clean_under_src_and_engine": true,
+  "note": "run_tiletie.py's own preflight REFUSES to launch when src/carcassonne_ai/ or engine/ is modified (mixed-rev protection, the worktree-isolation rule)."
+ },
+ "generation_leaf": {
+  "path": "/mnt/c/carc-shared/tiearb2_20260816/gen/manifest.json",
+  "present": true,
+  "resolved_leaf_hash_runtime": "6dfffd57051690f2",
+  "found_at": [
+   "$.config.teacher.resolved_leaf_hash_runtime"
+  ],
+  "expected": "6dfffd57051690f2",
+  "matches_design_4_2": true,
+  "leaf": null,
+  "leaf_env": {
+   "CARCASSONNE_V25_CAP": "8",
+   "CARCASSONNE_V25_OPP_CAP": "8"
+  },
+  "rules_profile": {
+   "name": "walled",
+   "grid_rule": "engine6",
+   "start_row": 6,
+   "start_col": 15,
+   "board_rows": 35,
+   "board_cols": 35,
+   "start_rule": "engine",
+   "window_size": 25,
+   "cloister_scan": "drifting",
+   "unplaceable_tile": "next_player",
+   "note": "the engine of record \u2014 every elo ever measured is a walled number",
+   "r9_env_expected": false,
+   "fixed_start_tile": false,
+   "recentred": false,
+   "r9_env_var": "CARCASSONNE_FIX_R9",
+   "r9_env_observed": false,
+   "r9_env_ok": true
+  },
+  "code_rev": "504ddad1-dirty",
+  "generated_utc": "2026-08-16T23:01:18+00:00",
+  "host": "Doctor",
+  "note": "DESIGN \u00a74.2 pins the generation leaf at 6dfffd57051690f2. A mismatch means the fresh games were not generated with the champion leaf of record and the corpus is not comparable."
+ },
+ "harness_leaf_hash_expected": "a36d2e15a3b3d71d",
+ "pilot_slice": "SPENT \u2014 the 2026-08-14 OOF run's own cost-pilot rids, already burned for inference. The fresh corpus is untouched at pilot time (DESIGN \u00a710).",
+ "main_launch_authorised_by": "the DESIGN \u00a710 mechanical rule, evaluated in PILOT.json. No owner call.",
+ "governance": "Measurement only. 0 strength games on every branch. No experiments/results.csv row, no band, no governance/BAND_REGISTRY.csv entry, no claim id, governance/PRODUCTION.yaml untouched."
+}

@@ -1,5 +1,39 @@
 # TERMINAL-GROUNDED TIE ARBITRATION — DESIGN (Stage 1b, the funded successor)
 
+> **OUTCOME STAMP (post-hoc, 2026-08-17): the run completed and fired
+> [READ_RULE.md](READ_RULE.md) branch `A-COSTLY` — [READOUT.md](READOUT.md).**
+> **n = 1,350 / 724 roots (S1 690 · S2 660), 2,703 legs per judge, every §3
+> precondition PASS and every integrity counter 0** (`crn_cross_mismatch` 0 on all
+> 2,703 legs; `G-REPRO` 43/43; `G-DISJOINT` 0/0/0 on all three layers).
+> **arm `H` (honest, B = 16) PASSES EVERY CONJUNCT: `arb = +0.1441` pts/tied ply
+> (z +3.01), `F = 0.800` CI [0.369, 1.442], `F_fixed = 0.514` CI [0.180, 0.852]**,
+> sign check **CORROBORATES** (54.2%, p 0.00934), bound chain **+18.09 elo**
+> CI [+6.32, +30.04]. **⛔ arm `C` (cheap, B\* = 2) FAILS `C_z`, `RBAR` and
+> `C_split`: `arb = +0.0322` (z +0.65), `F_fixed = 0.115`**, sign check **NO
+> CORROBORATION**. `DEPLOY` is **true** (`rho_wall(B*) = 1.191 ≤ 1.20`), so this is
+> not a cost-gated variant — **a budget-legal arbiter exists and it does not
+> capture.**
+> ⭐ **The cost axis is now the binding constraint, as a MECHANISM statement:** the
+> capture is bought by WORLD BREADTH, and `arb_H − arb_C = +0.1119 ± 0.0382`
+> **paired** (z +2.93) with `AGREE_HC = 0.317` — the deployable budget sits at B=2
+> and the signal needs ~B=16, an **~8× gap**.
+> ⭐ **§5.4's three structural fixes all read DORMANT, which is the point:**
+> `D_rnd = 0.0815` vs Stage 1's 0.3978 (**4.9× reduction**) ⇒ `BASELINE_DRIFTED`
+> **False** ⇒ **the escape clause was NOT used for any slice or arm**; both slices
+> **INFORMATIVE**; and arm H is non-negative on **both** slices (S1 +0.2089 z +3.23 ·
+> S2 +0.0763 z +1.08) ⇒ **`C_split` passed on its own terms with no hatch.** No bar
+> moved anywhere in this design.
+> ⚠️ Stage 1 **REPLICATES**: `arb` +0.2065 → +0.1441, difference −0.0624, se 0.0730,
+> **z −0.86** (a CROSS-CORPUS contrast, cross-band humility applies).
+> ⚠️ **§6's sd projection was 8.7% optimistic** (realized 1.7197 vs 1.5819), so
+> realized 2σ resolution is **0.341** in `F_fixed` units against the 0.35 bar rather
+> than the projected 0.302 — it clears, and the margin above the `G-N` floor is what
+> absorbed it (`n` for ±0.35 at realized dispersion ≈ 1,285; 1,350 was built).
+> **Licenses (does NOT fund) exactly one Stage-2 game-cell prereg that MUST solve
+> cost on its own terms and MAY NOT assume the B\*=2 arm.** 0 strength games, no band,
+> no `results.csv` row, no claim id; `PRODUCTION.yaml` and `BAND_REGISTRY.csv`
+> untouched. ⚠️ **THIS READ-RULE IS SPENT AND THE 1,350-POSITION CORPUS IS BURNED.**
+
 > **STATUS AT WRITING: DESIGN, COMMITTED BEFORE ANY ARBITRATION, HEADROOM OR
 > PRICING NUMBER EXISTS ANYWHERE ON THE SUCCESSOR CORPUS.**
 > [READ_RULE.md](READ_RULE.md) is committed in the **same commit** as this file,

@@ -1,0 +1,7 @@
+[G-DISJOINT] a_root_id            spent=   399 new=   724 intersection=     0
+[G-DISJOINT] b_rid                spent=   733 new=  1350 intersection=     0
+[G-DISJOINT] c_position_digest    spent=   733 new=  1350 intersection=     0
+[G-DISJOINT] sha256(spent rid list) = 656d32624f9aa313937407ac4799c804b8a3ec546a36f892bdbb2d956f8e8687
+[G-DISJOINT] sha256(new   rid list) = cab69086455fa43a46bad972682ccf4c61c77bf0575f29b3c555e16f9cc3f3e6
+[G-DISJOINT] -> /home/doctor/projects/carcassone/measurement/tiearb2_20260816/DISJOINTNESS.json
+[G-DISJOINT] PASS — all three intersections are empty.

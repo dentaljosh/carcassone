@@ -1,5 +1,19 @@
 # TERMINAL-GROUNDED TIE ARBITRATION — READ-RULE (Stage 1b, the funded successor)
 
+> **ADJUDICATED 2026-08-17 — branch `A-COSTLY` ([READOUT.md](READOUT.md)).**
+> All seven §3 preconditions passed. For arm **`H`** (honest, B = 16) `C_z`
+> (z +3.01 ≥ +2.0), `RBAR` (`F_fixed` 0.514 ∧ `F` 0.800, `G-BOOT` not fired) and
+> `C_split` (both slices INFORMATIVE and non-negative) **all fired ⇒ `PASS(H)`**.
+> For arm **`C`** (cheap, B\* = 2) `C_z` (z +0.65), `RBAR` (`F_fixed` 0.115) and
+> `C_split` (S2 `arb_C` −0.0322, and `BASELINE_DRIFTED` false so no escape was
+> available) **all failed ⇒ `¬PASS(C)`**. `DEPLOY` = true (`rho_wall(B*)` 1.191 ≤
+> 1.20). ⇒ `p` true, `q = PASS(C) ∧ DEPLOY` false ⇒ **(T,F) ⇒ `A-COSTLY`**.
+> Licenses exactly one Stage-2 game-cell prereg that **must solve cost on its own
+> terms and may not assume the B\*=2 arm**, and which must carry arm `C`'s **NO
+> CORROBORATION** sign-check verdict verbatim.
+> **THIS READ-RULE IS SPENT; the 1,350-position corpus is BURNED; any successor
+> design needs a fresh one of each.**
+
 > **STATUS AT WRITING: COMMITTED BEFORE ANY ARBITRATION, HEADROOM OR PRICING
 > NUMBER EXISTS ANYWHERE ON THE SUCCESSOR CORPUS** — before the instrument
 > (`scripts/tiletie/analyze_tiearb2.py`), before the cost pilot, before one

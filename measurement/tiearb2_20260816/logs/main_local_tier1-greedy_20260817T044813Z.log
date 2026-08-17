@@ -1,0 +1,56 @@
+[main] 2026-08-17T00:48:13-04:00 box=local judge=tier1-greedy W=30 chunks='4'
+[main] share-run=/mnt/c/carc-shared/tiearb2_20260816  log=/home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs/main_local_tier1-greedy_20260817T044813Z.log
+[main] G-DISJOINT: passed
+[main] PILOT.json: B* = 2, rho_wall(B*) = 1.1906, c_tier1 = 2.7274
+[main] chunk4: 338 rids match POSITION_ORDER, 4 leg file(s)
+[main] POSITION_ORDER.json verified (seed 20260816, n=1350, sizes=[337, 338, 337, 338])
+[main] ---- process census ----
+    PID     ELAPSED %CPU COMMAND
+[main] no python
+1.19 9.55 20.24 1/882 1227050
+[main] ===== chunk 4 -> /mnt/c/carc-shared/tiearb2_20260816/main/chunk4
+[main] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk4 --judges tier1-greedy --m 32 --oracle-sims 100 --workers 30 --out-root /mnt/c/carc-shared/tiearb2_20260816/main/chunk4 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_tier1-greedy_chunk4.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/RUN_MANIFEST_tier1-greedy_chunk4.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_tier1-greedy_chunk4.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_tier1-greedy_chunk4.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.34 8.43 18.97 1/888 1227208
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+1227052       01:23  0.1 python
+[preflight] git_clean: PASS
+    git_rev: a5bbf8d2
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 4
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk4/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk4/ARMS.json
+
+[run_tiletie] plan: n_positions=338 (e4=0 selfplay=338) max_arms=5 mean_arms=3.00 cap_j=4 capped=66
+[run_tiletie] total_arm_playouts=43328 oracle_worker_secs=94381.4 champ_pick_secs=0.0
+[run_tiletie] ETA at 20: 1.311 h (4719 s)
+[run_tiletie] ETA at 30: 0.874 h (3146 s)
+[run_tiletie] ===== launch tier1-greedy/walled/leg1 (R9=0, W=15, n=338) -> leg_tier1-greedy_walled_leg1.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg2 (R9=0, W=9, n=201) -> leg_tier1-greedy_walled_leg2.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg3 (R9=0, W=5, n=112) -> leg_tier1-greedy_walled_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg4 (R9=0, W=1, n=26) -> leg_tier1-greedy_walled_leg4.log
+[main] chunk4 rc=0 2026-08-17T01:58:14-04:00
+[main] DUPLICATE (not overwritten): walled/leg1/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg1/summary.json
+[main] DUPLICATE (not overwritten): walled/leg2/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg2/summary.json
+[main] DUPLICATE (not overwritten): walled/leg3/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg3/summary.json
+[main] DUPLICATE (not overwritten): walled/leg4/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg4/summary.json
+[main] merge: copied=677 duplicates=8 -> /mnt/c/carc-shared/tiearb2_20260816/main/merged/tier1-greedy
+[main] FATAL: 8 duplicate record(s) — a chunk was merged twice.

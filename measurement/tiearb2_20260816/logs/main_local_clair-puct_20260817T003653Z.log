@@ -1,0 +1,187 @@
+[main] 2026-08-16T20:36:53-04:00 box=local judge=clair-puct W=30 chunks='1 2 3 4'
+[main] share-run=/mnt/c/carc-shared/tiearb2_20260816  log=/home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs/main_local_clair-puct_20260817T003653Z.log
+[main] G-DISJOINT: passed
+[main] PILOT.json: B* = 2, rho_wall(B*) = 1.1906, c_tier1 = 2.7274
+[main] chunk1: 337 rids match POSITION_ORDER, 4 leg file(s)
+[main] chunk2: 338 rids match POSITION_ORDER, 4 leg file(s)
+[main] chunk3: 337 rids match POSITION_ORDER, 4 leg file(s)
+[main] chunk4: 338 rids match POSITION_ORDER, 4 leg file(s)
+[main] POSITION_ORDER.json verified (seed 20260816, n=1350, sizes=[337, 338, 337, 338])
+[main] ---- process census ----
+    PID     ELAPSED %CPU COMMAND
+[main] no python
+12.32 8.80 10.16 1/822 1178491
+[main] ===== chunk 1 -> /mnt/c/carc-shared/tiearb2_20260816/main/chunk1
+[main] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk1 --judges clair-puct --m 32 --oracle-sims 100 --workers 30 --out-root /mnt/c/carc-shared/tiearb2_20260816/main/chunk1 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk1.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/RUN_MANIFEST_clair-puct_chunk1.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk1.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk1.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 6.10 7.82 9.70 1/859 1178920
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+1178493       01:25  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 18c6f248
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 4
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk1/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk1/ARMS.json
+
+[run_tiletie] plan: n_positions=337 (e4=0 selfplay=337) max_arms=5 mean_arms=2.96 cap_j=4 capped=54
+[run_tiletie] total_arm_playouts=42368 oracle_worker_secs=92290.2 champ_pick_secs=0.0
+[run_tiletie] ETA at 20: 1.282 h (4615 s)
+[run_tiletie] ETA at 30: 0.855 h (3076 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (R9=0, W=15, n=337) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (R9=0, W=9, n=191) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (R9=0, W=5, n=104) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (R9=0, W=1, n=30) -> leg_clair-puct_walled_leg4.log
+[main] chunk1 rc=0 2026-08-16T21:43:12-04:00
+[main] ===== chunk 2 -> /mnt/c/carc-shared/tiearb2_20260816/main/chunk2
+[main] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk2 --judges clair-puct --m 32 --oracle-sims 100 --workers 30 --out-root /mnt/c/carc-shared/tiearb2_20260816/main/chunk2 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk2.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/RUN_MANIFEST_clair-puct_chunk2.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk2.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk2.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.35 4.56 14.25 1/921 1188764
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+1188624       01:26  0.1 python
+[preflight] git_clean: PASS
+    git_rev: a5bbf8d2
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 4
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk2/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk2/ARMS.json
+
+[run_tiletie] plan: n_positions=338 (e4=0 selfplay=338) max_arms=5 mean_arms=3.09 cap_j=4 capped=65
+[run_tiletie] total_arm_playouts=45184 oracle_worker_secs=98424.3 champ_pick_secs=0.0
+[run_tiletie] ETA at 20: 1.367 h (4921 s)
+[run_tiletie] ETA at 30: 0.911 h (3281 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (R9=0, W=14, n=338) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (R9=0, W=9, n=212) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (R9=0, W=5, n=120) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (R9=0, W=2, n=36) -> leg_clair-puct_walled_leg4.log
+[main] chunk2 rc=0 2026-08-16T22:46:04-04:00
+[main] ===== chunk 3 -> /mnt/c/carc-shared/tiearb2_20260816/main/chunk3
+[main] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk3 --judges clair-puct --m 32 --oracle-sims 100 --workers 30 --out-root /mnt/c/carc-shared/tiearb2_20260816/main/chunk3 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk3.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/RUN_MANIFEST_clair-puct_chunk3.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk3.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk3.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 5.38 17.19 24.20 1/939 1197835
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+1196363       01:28  0.1 python
+[preflight] git_clean: PASS
+    git_rev: a5bbf8d2
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 4
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk3/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk3/ARMS.json
+
+[run_tiletie] plan: n_positions=337 (e4=0 selfplay=337) max_arms=5 mean_arms=2.95 cap_j=4 capped=59
+[run_tiletie] total_arm_playouts=42112 oracle_worker_secs=91732.6 champ_pick_secs=0.0
+[run_tiletie] ETA at 20: 1.274 h (4587 s)
+[run_tiletie] ETA at 30: 0.849 h (3058 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (R9=0, W=15, n=337) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (R9=0, W=8, n=188) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (R9=0, W=5, n=112) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (R9=0, W=2, n=21) -> leg_clair-puct_walled_leg4.log
+[main] chunk3 rc=0 2026-08-16T23:46:49-04:00
+[main] ===== chunk 4 -> /mnt/c/carc-shared/tiearb2_20260816/main/chunk4
+[main] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk4 --judges clair-puct --m 32 --oracle-sims 100 --workers 30 --out-root /mnt/c/carc-shared/tiearb2_20260816/main/chunk4 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk4.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb2_20260816/RUN_MANIFEST_clair-puct_chunk4.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk4.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk4.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 4.05 14.06 22.22 1/883 1211659
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+1211497       01:28  0.1 python
+[preflight] git_clean: PASS
+    git_rev: a5bbf8d2
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 4
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk4/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk4/ARMS.json
+
+[run_tiletie] plan: n_positions=338 (e4=0 selfplay=338) max_arms=5 mean_arms=3.00 cap_j=4 capped=66
+[run_tiletie] total_arm_playouts=43328 oracle_worker_secs=94381.4 champ_pick_secs=0.0
+[run_tiletie] ETA at 20: 1.311 h (4719 s)
+[run_tiletie] ETA at 30: 0.874 h (3146 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (R9=0, W=15, n=338) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (R9=0, W=9, n=201) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (R9=0, W=5, n=112) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (R9=0, W=1, n=26) -> leg_clair-puct_walled_leg4.log
+[main] chunk4 rc=0 2026-08-17T00:46:55-04:00
+[main] DUPLICATE (not overwritten): walled/leg1/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg2/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg3/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg4/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg1/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg1/summary.json
+[main] DUPLICATE (not overwritten): walled/leg2/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg2/summary.json
+[main] DUPLICATE (not overwritten): walled/leg3/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg3/summary.json
+[main] DUPLICATE (not overwritten): walled/leg4/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg4/summary.json
+[main] DUPLICATE (not overwritten): walled/leg1/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg1/summary.json
+[main] DUPLICATE (not overwritten): walled/leg2/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg2/summary.json
+[main] DUPLICATE (not overwritten): walled/leg3/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg3/summary.json
+[main] DUPLICATE (not overwritten): walled/leg4/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg4/summary.json
+[main] DUPLICATE (not overwritten): walled/leg1/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg1/summary.json
+[main] DUPLICATE (not overwritten): walled/leg2/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg2/summary.json
+[main] DUPLICATE (not overwritten): walled/leg3/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg3/summary.json
+[main] DUPLICATE (not overwritten): walled/leg4/manifest.json
+[main] DUPLICATE (not overwritten): walled/leg4/summary.json
+[main] merge: copied=2707 duplicates=28 -> /mnt/c/carc-shared/tiearb2_20260816/main/merged/clair-puct
+[main] FATAL: 28 duplicate record(s) — a chunk was merged twice.

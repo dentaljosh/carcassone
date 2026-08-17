@@ -1,0 +1,384 @@
+[pilot] population=338 positions | n=338 | M=32 | policy=tier1-greedy | oracle_sims=100 | W=15
+[pilot] out -> /mnt/c/carc-shared/tiearb2_20260816/main/chunk4/tier1-greedy/walled/leg1
+[pilot] resume: 0 already done, 338 to go
+[1/338] tt_sp_28100000042_p126 ok delta=-0.656 crn=True 38.028s
+[2/338] tt_sp_28100000023_p120 ok delta=-3.812 crn=True 68.572s
+[3/338] tt_sp_28100000008_p120 ok delta=+1.656 crn=True 94.805s
+[4/338] tt_sp_28100000014_p86 ok delta=-8.094 crn=True 151.342s
+[5/338] tt_sp_28100000047_p80 ok delta=-6.375 crn=True 120.775s
+[6/338] tt_sp_28100000000_p89 ok delta=-2.781 crn=True 161.991s
+[7/338] tt_sp_28100000034_p80 ok delta=-1.094 crn=True 175.053s
+[8/338] tt_sp_28100000011_p25 ok delta=-0.094 crn=True 176.099s
+[9/338] tt_sp_28100000060_p132 ok delta=-3.250 crn=True 32.114s
+[10/338] tt_sp_28100000041_p26 ok delta=-0.281 crn=True 201.146s
+[11/338] tt_sp_28100000035_p56 ok delta=-1.188 crn=True 205.427s
+[12/338] tt_sp_28100000017_p56 ok delta=-4.062 crn=True 210.157s
+[13/338] tt_sp_28100000066_p128 ok delta=-0.344 crn=True 43.997s
+[14/338] tt_sp_28100000000_p56 ok delta=-2.625 crn=True 220.204s
+[15/338] tt_sp_28100000049_p86 ok delta=+5.062 crn=True 156.813s
+[16/338] tt_sp_28100000026_p22 ok delta=-5.562 crn=True 234.477s
+[17/338] tt_sp_28100000039_p18 ok delta=+4.500 crn=True 235.753s
+[18/338] tt_sp_28100000026_p6 ok delta=-0.906 crn=True 239.141s
+[19/338] tt_sp_28100000067_p132 ok delta=+0.094 crn=True 49.91s
+[20/338] tt_sp_28100000003_p26 ok delta=+1.875 crn=True 249.28s
+[21/338] tt_sp_28100000081_p122 ok delta=-0.875 crn=True 67.129s
+[22/338] tt_sp_28100000051_p2 ok delta=+7.031 crn=True 231.569s
+[23/338] tt_sp_28100000090_p104 ok delta=-0.094 crn=True 102.323s
+[24/338] tt_sp_28100000062_p42 ok delta=-0.906 crn=True 193.704s
+[25/338] tt_sp_28100000055_p2 ok delta=+4.375 crn=True 217.996s
+[26/338] tt_sp_28100000095_p118 ok delta=-0.062 crn=True 80.916s
+[27/338] tt_sp_28100000064_p22 ok delta=+0.344 crn=True 228.88s
+[28/338] tt_sp_28100000089_p74 ok delta=-7.125 crn=True 176.144s
+[29/338] tt_sp_28100000070_p66 ok delta=+3.094 crn=True 216.856s
+[30/338] tt_sp_28100000069_p17 ok delta=+13.406 crn=True 227.933s
+[31/338] tt_sp_28100000078_p56 ok delta=+0.375 crn=True 219.362s
+[32/338] tt_sp_28100000070_p16 ok delta=+9.812 crn=True 235.77s
+[33/338] tt_sp_28100000074_p2 ok delta=-2.500 crn=True 222.523s
+[34/338] tt_sp_28100000085_p70 ok delta=-5.188 crn=True 208.028s
+[35/338] tt_sp_28100000086_p10 ok delta=-5.000 crn=True 206.9s
+[36/338] tt_sp_28100000085_p64 ok delta=+7.906 crn=True 215.066s
+[37/338] tt_sp_28100000110_p126 ok delta=+0.469 crn=True 38.617s
+[38/338] tt_sp_28100000110_p116 ok delta=+0.812 crn=True 64.041s
+[39/338] tt_sp_28100000147_p138 ok delta=+0.000 crn=True 15.44s
+[40/338] tt_sp_28100000109_p96 ok delta=+3.250 crn=True 122.869s
+[41/338] tt_sp_28100000140_p104 ok delta=+0.875 crn=True 82.37s
+[42/338] tt_sp_28100000114_p88 ok delta=-4.875 crn=True 107.309s
+[43/338] tt_sp_28100000099_p44 ok delta=+5.062 crn=True 235.382s
+[44/338] tt_sp_28100000099_p48 ok delta=+3.750 crn=True 221.194s
+[45/338] tt_sp_28100000153_p116 ok delta=+0.062 crn=True 76.616s
+[46/338] tt_sp_28100000104_p34 ok delta=-3.719 crn=True 229.377s
+[47/338] tt_sp_28100000133_p78 ok delta=+4.188 crn=True 147.664s
+[48/338] tt_sp_28100000121_p94 ok delta=-1.562 crn=True 160.06s
+[49/338] tt_sp_28100000106_p38 ok delta=+1.156 crn=True 239.891s
+[50/338] tt_sp_28100000116_p54 ok delta=-0.062 crn=True 194.782s
+[51/338] tt_sp_28100000112_p2 ok delta=-1.188 crn=True 209.996s
+[52/338] tt_sp_28100000129_p58 ok delta=+1.781 crn=True 203.637s
+[53/338] tt_sp_28100000111_p10 ok delta=+0.781 crn=True 221.463s
+[54/338] tt_sp_28100000153_p98 ok delta=-0.188 crn=True 114.005s
+[55/338] tt_sp_28100000153_p78 ok delta=+1.469 crn=True 149.867s
+[56/338] tt_sp_28100000145_p34 ok delta=-0.844 crn=True 227.025s
+[57/338] tt_sp_28100000181_p126 ok delta=+3.500 crn=True 50.825s
+[58/338] tt_sp_28100000150_p16 ok delta=-3.062 crn=True 222.807s
+[59/338] tt_sp_28100000171_p102 ok delta=+1.000 crn=True 129.577s
+[60/338] tt_sp_28100000163_p86 ok delta=-6.281 crn=True 151.651s
+[61/338] tt_sp_28100000189_p122 ok delta=-0.250 crn=True 53.199s
+[62/338] tt_sp_28100000171_p90 ok delta=+1.469 crn=True 148.105s
+[63/338] tt_sp_28100000158_p4 ok delta=-7.469 crn=True 205.155s
+[64/338] tt_sp_28100000159_p14 ok delta=+0.844 crn=True 215.084s
+[65/338] tt_sp_28100000175_p96 ok delta=-3.406 crn=True 165.524s
+[66/338] tt_sp_28100000195_p114 ok delta=-0.062 crn=True 96.265s
+[67/338] tt_sp_28100000164_p38 ok delta=+7.938 crn=True 236.134s
+[68/338] tt_sp_28100000174_p32 ok delta=-5.656 crn=True 205.766s
+[69/338] tt_sp_28100000172_p6 ok delta=-5.750 crn=True 235.03s
+[70/338] tt_sp_28100000204_p130 ok delta=+1.031 crn=True 42.887s
+[71/338] tt_sp_28100000189_p68 ok delta=-2.000 crn=True 156.611s
+[72/338] tt_sp_28100000174_p4 ok delta=-0.094 crn=True 223.207s
+[73/338] tt_sp_28100000211_p130 ok delta=+0.062 crn=True 41.381s
+[74/338] tt_sp_28100000183_p43 ok delta=+5.312 crn=True 202.193s
+[75/338] tt_sp_28100000195_p98 ok delta=-2.500 crn=True 114.479s
+[76/338] tt_sp_28100000190_p78 ok delta=-1.375 crn=True 184.192s
+[77/338] tt_sp_28100000187_p6 ok delta=+0.500 crn=True 241.863s
+[78/338] tt_sp_28100000231_p118 ok delta=-3.094 crn=True 74.02s
+[79/338] tt_sp_28100000190_p40 ok delta=+1.844 crn=True 232.745s
+[80/338] tt_sp_28100000196_p82 ok delta=+2.281 crn=True 169.943s
+[81/338] tt_sp_28100000196_p76 ok delta=+0.594 crn=True 192.461s
+[82/338] tt_sp_28100000195_p30 ok delta=+3.156 crn=True 229.537s
+[83/338] tt_sp_28100000248_p130 ok delta=+0.281 crn=True 43.957s
+[84/338] tt_sp_28100000223_p50 ok delta=+0.125 crn=True 186.767s
+[85/338] tt_sp_28100000250_p104 ok delta=-1.531 crn=True 86.467s
+[86/338] tt_sp_28100000227_p64 ok delta=+1.406 crn=True 192.847s
+[87/338] tt_sp_28100000213_p6 ok delta=-4.656 crn=True 218.723s
+[88/338] tt_sp_28100000204_p28 ok delta=+4.562 crn=True 241.407s
+[89/338] tt_sp_28100000215_p18 ok delta=+1.094 crn=True 227.117s
+[90/338] tt_sp_28100000270_p136 ok delta=+1.000 crn=True 26.358s
+[91/338] tt_sp_28100000226_p6 ok delta=-1.906 crn=True 230.63s
+[92/338] tt_sp_28100000260_p126 ok delta=+4.188 crn=True 54.874s
+[93/338] tt_sp_28100000219_p8 ok delta=-7.188 crn=True 243.307s
+[94/338] tt_sp_28100000234_p74 ok delta=-0.375 crn=True 193.006s
+[95/338] tt_sp_28100000285_p142 ok delta=+0.000 crn=True 2.734s
+[96/338] tt_sp_28100000235_p87 ok delta=+9.375 crn=True 166.769s
+[97/338] tt_sp_28100000235_p61 ok delta=+3.250 crn=True 183.515s
+[98/338] tt_sp_28100000248_p86 ok delta=-0.156 crn=True 149.821s
+[99/338] tt_sp_28100000254_p104 ok delta=-0.344 crn=True 136.331s
+[100/338] tt_sp_28100000231_p24 ok delta=-1.500 crn=True 255.145s
+[101/338] tt_sp_28100000261_p118 ok delta=+0.188 crn=True 84.74s
+[102/338] tt_sp_28100000275_p119 ok delta=+0.250 crn=True 66.516s
+[103/338] tt_sp_28100000249_p38 ok delta=+9.562 crn=True 223.54s
+[104/338] tt_sp_28100000294_p114 ok delta=+0.531 crn=True 83.471s
+[105/338] tt_sp_28100000268_p70 ok delta=+4.031 crn=True 162.262s
+[106/338] tt_sp_28100000291_p97 ok delta=+0.406 crn=True 114.943s
+[107/338] tt_sp_28100000285_p98 ok delta=+0.062 crn=True 131.351s
+[108/338] tt_sp_28100000275_p65 ok delta=+0.688 crn=True 147.9s
+[109/338] tt_sp_28100000304_p138 ok delta=+0.000 crn=True 8.182s
+[110/338] tt_sp_28100000268_p10 ok delta=-1.781 crn=True 228.559s
+[111/338] tt_sp_28100000277_p80 ok delta=-3.000 crn=True 191.796s
+[112/338] tt_sp_28100000288_p54 ok delta=+1.000 crn=True 203.147s
+[113/338] tt_sp_28100000293_p49 ok delta=+3.344 crn=True 201.462s
+[114/338] tt_sp_28100000287_p34 ok delta=+3.906 crn=True 220.949s
+[115/338] tt_sp_28100000280_p30 ok delta=-9.125 crn=True 227.177s
+[116/338] tt_sp_28100000316_p136 ok delta=-0.062 crn=True 19.292s
+[117/338] tt_sp_28100000306_p104 ok delta=-0.250 crn=True 101.052s
+[118/338] tt_sp_28100000279_p56 ok delta=-2.406 crn=True 251.205s
+[119/338] tt_sp_28100000294_p40 ok delta=-3.562 crn=True 215.232s
+[120/338] tt_sp_28100000291_p17 ok delta=+4.781 crn=True 247.207s
+[121/338] tt_sp_28100000297_p72 ok delta=+0.562 crn=True 204.772s
+[122/338] tt_sp_28100000307_p118 ok delta=-5.969 crn=True 106.168s
+[123/338] tt_sp_28100000321_p108 ok delta=+1.750 crn=True 77.796s
+[124/338] tt_sp_28100000300_p38 ok delta=-3.281 crn=True 207.889s
+[125/338] tt_sp_28100000316_p106 ok delta=-1.156 crn=True 115.771s
+[126/338] tt_sp_28100000299_p38 ok delta=+0.188 crn=True 231.602s
+[127/338] tt_sp_28100000309_p82 ok delta=+0.188 crn=True 167.291s
+[128/338] tt_sp_28100000312_p68 ok delta=-1.062 crn=True 161.506s
+[129/338] tt_sp_28100000301_p54 ok delta=+3.750 crn=True 239.846s
+[130/338] tt_sp_28100000303_p32 ok delta=-7.094 crn=True 251.162s
+[131/338] tt_sp_28100000314_p60 ok delta=-2.250 crn=True 185.115s
+[132/338] tt_sp_28100000319_p8 ok delta=+1.250 crn=True 202.384s
+[133/338] tt_sp_28100000326_p12 ok delta=+0.875 crn=True 213.556s
+[134/338] tt_sp_28100000317_p6 ok delta=+3.812 crn=True 229.581s
+[135/338] tt_sp_28100000327_p68 ok delta=+2.406 crn=True 186.591s
+[136/338] tt_sp_28100000345_p98 ok delta=+2.062 crn=True 141.609s
+[137/338] tt_sp_28100000321_p22 ok delta=-3.125 crn=True 237.478s
+[138/338] tt_sp_28100000326_p52 ok delta=+1.281 crn=True 216.733s
+[139/338] tt_sp_28100000377_p137 ok delta=-1.250 crn=True 14.06s
+[140/338] tt_sp_28100000358_p66 ok delta=-3.875 crn=True 165.872s
+[141/338] tt_sp_28100000335_p52 ok delta=+3.188 crn=True 223.956s
+[142/338] tt_sp_28100000330_p16 ok delta=+0.562 crn=True 243.456s
+[143/338] tt_sp_28100000364_p72 ok delta=+2.406 crn=True 165.608s
+[144/338] tt_sp_28100000350_p20 ok delta=+0.344 crn=True 231.773s
+[145/338] tt_sp_28100000365_p110 ok delta=+0.969 crn=True 112.201s
+[146/338] tt_sp_28100000346_p2 ok delta=+8.469 crn=True 241.208s
+[147/338] tt_sp_28100000351_p34 ok delta=-0.344 crn=True 221.305s
+[148/338] tt_sp_28100000364_p90 ok delta=+3.094 crn=True 157.946s
+[149/338] tt_sp_28100000363_p30 ok delta=-3.719 crn=True 236.266s
+[150/338] tt_sp_28100000377_p95 ok delta=-0.031 crn=True 105.819s
+[151/338] tt_sp_28100000378_p92 ok delta=+0.688 crn=True 157.924s
+[152/338] tt_sp_28100000365_p10 ok delta=+3.531 crn=True 235.356s
+[153/338] tt_sp_28100000369_p22 ok delta=-6.625 crn=True 229.553s
+[154/338] tt_sp_28100000399_p102 ok delta=+1.094 crn=True 127.957s
+[155/338] tt_sp_28100000371_p12 ok delta=+1.938 crn=True 258.015s
+[156/338] tt_sp_28100000372_p44 ok delta=-1.219 crn=True 252.625s
+[157/338] tt_sp_28100000389_p52 ok delta=-5.250 crn=True 174.69s
+[158/338] tt_sp_28100000423_p142 ok delta=+0.000 crn=True 2.571s
+[159/338] tt_sp_28100000389_p94 ok delta=+0.969 crn=True 176.144s
+[160/338] tt_sp_28100000380_p56 ok delta=+2.000 crn=True 198.539s
+[161/338] tt_sp_28100000407_p88 ok delta=-1.562 crn=True 163.407s
+[162/338] tt_sp_28100000402_p36 ok delta=+7.594 crn=True 200.235s
+[163/338] tt_sp_28100000393_p54 ok delta=-4.062 crn=True 206.254s
+[164/338] tt_sp_28100000390_p20 ok delta=+0.406 crn=True 216.857s
+[165/338] tt_sp_28100000403_p58 ok delta=-2.781 crn=True 196.618s
+[166/338] tt_sp_28100000418_p112 ok delta=+0.906 crn=True 99.807s
+[167/338] tt_sp_28100000413_p108 ok delta=+1.219 crn=True 117.3s
+[168/338] tt_sp_28100000434_p120 ok delta=-1.781 crn=True 72.272s
+[169/338] tt_sp_28100000406_p12 ok delta=-10.312 crn=True 234.094s
+[170/338] tt_sp_28100000428_p100 ok delta=-6.844 crn=True 114.121s
+[171/338] tt_sp_28100000438_p108 ok delta=-0.094 crn=True 93.363s
+[172/338] tt_sp_28100000422_p80 ok delta=-6.969 crn=True 162.38s
+[173/338] tt_sp_28100000425_p88 ok delta=-0.156 crn=True 168.289s
+[174/338] tt_sp_28100000417_p6 ok delta=-2.188 crn=True 224.852s
+[175/338] tt_sp_28100000420_p52 ok delta=-0.438 crn=True 222.144s
+[176/338] tt_sp_28100000423_p38 ok delta=-5.594 crn=True 235.351s
+[177/338] tt_sp_28100000435_p22 ok delta=+0.688 crn=True 233.011s
+[178/338] tt_sp_28100000446_p32 ok delta=-8.375 crn=True 209.653s
+[179/338] tt_sp_28100000459_p92 ok delta=-0.719 crn=True 142.487s
+[180/338] tt_sp_28100000438_p18 ok delta=-0.125 crn=True 230.938s
+[181/338] tt_sp_28100000445_p26 ok delta=-8.250 crn=True 233.02s
+[182/338] tt_sp_28100000437_p16 ok delta=+5.438 crn=True 248.063s
+[183/338] tt_sp_28100000440_p24 ok delta=+6.469 crn=True 253.452s
+[184/338] tt_sp_28100000460_p98 ok delta=-0.625 crn=True 156.93s
+[185/338] tt_sp_28100000449_p6 ok delta=+3.750 crn=True 234.183s
+[186/338] tt_sp_28100000450_p36 ok delta=-4.656 crn=True 222.004s
+[187/338] tt_sp_28100000450_p40 ok delta=-0.406 crn=True 222.583s
+[188/338] tt_sp_28100000465_p96 ok delta=-1.719 crn=True 107.504s
+[189/338] tt_sp_28100000464_p53 ok delta=-2.625 crn=True 184.186s
+[190/338] tt_sp_28100000465_p60 ok delta=-0.219 crn=True 173.539s
+[191/338] tt_sp_28100000491_p128 ok delta=+0.062 crn=True 37.22s
+[192/338] tt_sp_28100000476_p104 ok delta=-0.156 crn=True 117.935s
+[193/338] tt_sp_28100000462_p26 ok delta=-1.281 crn=True 244.117s
+[194/338] tt_sp_28100000488_p118 ok delta=-1.156 crn=True 83.477s
+[195/338] tt_sp_28100000478_p82 ok delta=-0.375 crn=True 134.443s
+[196/338] tt_sp_28100000476_p88 ok delta=-0.156 crn=True 158.072s
+[197/338] tt_sp_28100000472_p66 ok delta=+3.344 crn=True 171.928s
+[198/338] tt_sp_28100000500_p122 ok delta=-0.188 crn=True 63.621s
+[199/338] tt_sp_28100000488_p100 ok delta=-0.188 crn=True 138.971s
+[200/338] tt_sp_28100000487_p94 ok delta=-1.594 crn=True 164.477s
+[201/338] tt_sp_28100000483_p80 ok delta=+2.125 crn=True 185.699s
+[202/338] tt_sp_28100000468_p16 ok delta=+7.469 crn=True 228.966s
+[203/338] tt_sp_28100000475_p10 ok delta=+10.094 crn=True 236.907s
+[204/338] tt_sp_28100000484_p70 ok delta=-0.031 crn=True 211.313s
+[205/338] tt_sp_28100000467_p28 ok delta=+7.125 crn=True 261.118s
+[206/338] tt_sp_28100000517_p110 ok delta=-0.250 crn=True 98.055s
+[207/338] tt_sp_28100000515_p94 ok delta=+1.219 crn=True 136.317s
+[208/338] tt_sp_28100000529_p112 ok delta=+1.812 crn=True 99.046s
+[209/338] tt_sp_28100000489_p14 ok delta=+5.906 crn=True 240.086s
+[210/338] tt_sp_28100000513_p56 ok delta=+3.781 crn=True 216.732s
+[211/338] tt_sp_28100000517_p70 ok delta=+1.281 crn=True 179.025s
+[212/338] tt_sp_28100000514_p69 ok delta=-3.281 crn=True 228.854s
+[213/338] tt_sp_28100000524_p52 ok delta=+16.594 crn=True 169.617s
+[214/338] tt_sp_28100000553_p140 ok delta=+0.000 crn=True 5.32s
+[215/338] tt_sp_28100000518_p42 ok delta=+5.406 crn=True 227.463s
+[216/338] tt_sp_28100000545_p120 ok delta=+10.719 crn=True 79.215s
+[217/338] tt_sp_28100000519_p32 ok delta=-7.344 crn=True 238.749s
+[218/338] tt_sp_28100000530_p32 ok delta=+14.406 crn=True 217.554s
+[219/338] tt_sp_28100000539_p82 ok delta=+6.000 crn=True 170.1s
+[220/338] tt_sp_28100000529_p24 ok delta=+7.719 crn=True 237.872s
+[221/338] tt_sp_28100000530_p8 ok delta=+4.781 crn=True 222.374s
+[222/338] tt_sp_28100000536_p20 ok delta=+0.719 crn=True 213.124s
+[223/338] tt_sp_28100000541_p68 ok delta=-4.375 crn=True 157.916s
+[224/338] tt_sp_28100000534_p22 ok delta=+3.000 crn=True 251.657s
+[225/338] tt_sp_28100000537_p38 ok delta=-3.281 crn=True 252.566s
+[226/338] tt_sp_28100000581_p118 ok delta=+3.500 crn=True 67.782s
+[227/338] tt_sp_28100000569_p102 ok delta=-0.938 crn=True 128.948s
+[228/338] tt_sp_28100000552_p68 ok delta=+0.594 crn=True 180.922s
+[229/338] tt_sp_28100000541_p8 ok delta=+5.031 crn=True 235.935s
+[230/338] tt_sp_28100000552_p46 ok delta=+0.844 crn=True 216.386s
+[231/338] tt_sp_28100000595_p126 ok delta=+0.375 crn=True 56.052s
+[232/338] tt_sp_28100000565_p3 ok delta=-2.312 crn=True 216.589s
+[233/338] tt_sp_28100000606_p132 ok delta=+0.062 crn=True 33.567s
+[234/338] tt_sp_28100000570_p50 ok delta=-2.844 crn=True 201.159s
+[235/338] tt_sp_28100000597_p110 ok delta=-3.906 crn=True 113.485s
+[236/338] tt_sp_28100000583_p62 ok delta=-1.500 crn=True 191.718s
+[237/338] tt_sp_28100000588_p90 ok delta=+0.938 crn=True 184.556s
+[238/338] tt_sp_28100000589_p60 ok delta=+3.062 crn=True 187.354s
+[239/338] tt_sp_28100000570_p8 ok delta=-1.562 crn=True 233.658s
+[240/338] tt_sp_28100000629_p140 ok delta=+0.000 crn=True 9.172s
+[241/338] tt_sp_28100000572_p2 ok delta=-2.719 crn=True 226.134s
+[242/338] tt_sp_28100000588_p52 ok delta=-4.531 crn=True 213.508s
+[243/338] tt_sp_28100000599_p92 ok delta=-2.781 crn=True 123.532s
+[244/338] tt_sp_28100000593_p4 ok delta=-4.500 crn=True 218.788s
+[245/338] tt_sp_28100000625_p114 ok delta=-0.031 crn=True 76.846s
+[246/338] tt_sp_28100000595_p10 ok delta=-5.438 crn=True 227.463s
+[247/338] tt_sp_28100000641_p138 ok delta=+0.000 crn=True 14.635s
+[248/338] tt_sp_28100000599_p12 ok delta=-0.531 crn=True 215.823s
+[249/338] tt_sp_28100000638_p117 ok delta=-2.469 crn=True 79.527s
+[250/338] tt_sp_28100000600_p2 ok delta=+5.594 crn=True 200.899s
+[251/338] tt_sp_28100000619_p90 ok delta=-1.281 crn=True 128.869s
+[252/338] tt_sp_28100000618_p30 ok delta=-18.062 crn=True 209.889s
+[253/338] tt_sp_28100000614_p12 ok delta=-4.750 crn=True 233.154s
+[254/338] tt_sp_28100000619_p58 ok delta=+0.500 crn=True 197.092s
+[255/338] tt_sp_28100000648_p124 ok delta=+0.281 crn=True 66.403s
+[256/338] tt_sp_28100000647_p124 ok delta=-1.188 crn=True 71.328s
+[257/338] tt_sp_28100000646_p108 ok delta=-10.344 crn=True 92.27s
+[258/338] tt_sp_28100000639_p86 ok delta=+1.344 crn=True 147.716s
+[259/338] tt_sp_28100000621_p14 ok delta=-12.438 crn=True 236.566s
+[260/338] tt_sp_28100000629_p6 ok delta=-4.625 crn=True 226.454s
+[261/338] tt_sp_28100000640_p80 ok delta=-4.062 crn=True 162.029s
+[262/338] tt_sp_28100000632_p32 ok delta=-0.844 crn=True 235.546s
+[263/338] tt_sp_28100000677_p126 ok delta=-0.094 crn=True 46.989s
+[264/338] tt_sp_28100000637_p4 ok delta=+2.531 crn=True 238.337s
+[265/338] tt_sp_28100000682_p132 ok delta=+1.625 crn=True 37.538s
+[266/338] tt_sp_28100000637_p22 ok delta=-5.938 crn=True 265.894s
+[267/338] tt_sp_28100000686_p131 ok delta=+0.000 crn=True 26.356s
+[268/338] tt_sp_28100000641_p46 ok delta=-2.625 crn=True 232.75s
+[269/338] tt_sp_28100000681_p104 ok delta=+0.406 crn=True 104.954s
+[270/338] tt_sp_28100000649_p10 ok delta=+8.844 crn=True 222.777s
+[271/338] tt_sp_28100000663_p80 ok delta=-2.312 crn=True 178.864s
+[272/338] tt_sp_28100000693_p136 ok delta=+0.031 crn=True 24.919s
+[273/338] tt_sp_28100000666_p74 ok delta=+0.500 crn=True 180.114s
+[274/338] tt_sp_28100000666_p64 ok delta=-9.906 crn=True 205.417s
+[275/338] tt_sp_28100000649_p28 ok delta=+5.594 crn=True 224.199s
+[276/338] tt_sp_28100000674_p41 ok delta=+2.344 crn=True 216.854s
+[277/338] tt_sp_28100000676_p44 ok delta=+1.938 crn=True 216.076s
+[278/338] tt_sp_28100000690_p102 ok delta=+1.000 crn=True 131.066s
+[279/338] tt_sp_28100000681_p48 ok delta=-0.312 crn=True 198.979s
+[280/338] tt_sp_28100000688_p74 ok delta=+6.312 crn=True 177.013s
+[281/338] tt_sp_28100000700_p106 ok delta=+1.031 crn=True 135.925s
+[282/338] tt_sp_28100000685_p4 ok delta=+7.281 crn=True 232.002s
+[283/338] tt_sp_28100000684_p34 ok delta=+2.625 crn=True 238.472s
+[284/338] tt_sp_28100000705_p88 ok delta=+0.625 crn=True 151.626s
+[285/338] tt_sp_28100000694_p68 ok delta=+4.844 crn=True 186.725s
+[286/338] tt_sp_28100000692_p2 ok delta=+9.125 crn=True 235.072s
+[287/338] tt_sp_28100000707_p82 ok delta=-0.562 crn=True 175.881s
+[288/338] tt_sp_28100000696_p16 ok delta=+2.188 crn=True 210.6s
+[289/338] tt_sp_28100000709_p88 ok delta=-1.281 crn=True 167.551s
+[290/338] tt_sp_28100000719_p102 ok delta=+0.000 crn=True 136.02s
+[291/338] tt_sp_28100000737_p126 ok delta=+8.562 crn=True 61.926s
+[292/338] tt_sp_28100000724_p100 ok delta=+2.781 crn=True 127.339s
+[293/338] tt_sp_28100000754_p132 ok delta=-0.156 crn=True 29.723s
+[294/338] tt_sp_28100000717_p53 ok delta=-0.938 crn=True 202.562s
+[295/338] tt_sp_28100000707_p44 ok delta=+7.938 crn=True 255.887s
+[296/338] tt_sp_28100000716_p56 ok delta=-1.781 crn=True 210.53s
+[297/338] tt_sp_28100000744_p116 ok delta=-2.688 crn=True 100.358s
+[298/338] tt_sp_28100000716_p26 ok delta=-4.250 crn=True 228.517s
+[299/338] tt_sp_28100000739_p78 ok delta=+3.375 crn=True 153.37s
+[300/338] tt_sp_28100000726_p50 ok delta=+2.031 crn=True 209.096s
+[301/338] tt_sp_28100000766_p110 ok delta=-6.781 crn=True 80.142s
+[302/338] tt_sp_28100000734_p56 ok delta=-0.344 crn=True 219.597s
+[303/338] tt_sp_28100000760_p72 ok delta=-0.438 crn=True 122.38s
+[304/338] tt_sp_28100000727_p18 ok delta=+3.125 crn=True 237.176s
+[305/338] tt_sp_28100000753_p82 ok delta=+0.531 crn=True 205.797s
+[306/338] tt_sp_28100000753_p84 ok delta=-0.344 crn=True 206.046s
+[307/338] tt_sp_28100000752_p70 ok delta=+3.125 crn=True 212.237s
+[308/338] tt_sp_28100000771_p100 ok delta=+0.281 crn=True 143.907s
+[309/338] tt_sp_28100000760_p18 ok delta=+3.562 crn=True 200.346s
+[310/338] tt_sp_28100000754_p40 ok delta=-0.688 crn=True 212.533s
+[311/338] tt_sp_28100000791_p98 ok delta=-1.812 crn=True 113.039s
+[312/338] tt_sp_28100000786_p38 ok delta=+10.750 crn=True 216.303s
+[313/338] tt_sp_28100000762_p46 ok delta=+5.969 crn=True 228.231s
+[314/338] tt_sp_28100000814_p122 ok delta=-0.219 crn=True 82.766s
+[315/338] tt_sp_28100000782_p24 ok delta=+1.750 crn=True 237.354s
+[316/338] tt_sp_28100000812_p108 ok delta=-1.375 crn=True 109.092s
+[317/338] tt_sp_28100000809_p70 ok delta=+0.562 crn=True 147.321s
+[318/338] tt_sp_28100000796_p64 ok delta=+4.406 crn=True 186.915s
+[319/338] tt_sp_28100000825_p128 ok delta=-1.875 crn=True 33.72s
+[320/338] tt_sp_28100000798_p32 ok delta=+1.250 crn=True 185.258s
+[321/338] tt_sp_28100000838_p140 ok delta=+0.000 crn=True 11.254s
+[322/338] tt_sp_28100000824_p120 ok delta=+0.062 crn=True 51.003s
+[323/338] tt_sp_28100000815_p92 ok delta=+0.188 crn=True 126.344s
+[324/338] tt_sp_28100000812_p10 ok delta=+6.094 crn=True 194.372s
+[325/338] tt_sp_28100000807_p22 ok delta=-2.812 crn=True 214.247s
+[326/338] tt_sp_28100000813_p42 ok delta=-2.719 crn=True 172.222s
+[327/338] tt_sp_28100000814_p2 ok delta=+7.031 crn=True 171.2s
+[328/338] tt_sp_28100000819_p2 ok delta=+2.250 crn=True 168.786s
+[329/338] tt_sp_28100000829_p96 ok delta=-0.219 crn=True 97.047s
+[330/338] tt_sp_28100000827_p84 ok delta=-1.281 crn=True 106.642s
+[331/338] tt_sp_28100000819_p8 ok delta=+0.688 crn=True 184.83s
+[332/338] tt_sp_28100000838_p76 ok delta=+4.406 crn=True 113.877s
+[333/338] tt_sp_28100000834_p58 ok delta=-3.562 crn=True 126.36s
+[334/338] tt_sp_28100000843_p76 ok delta=-2.594 crn=True 117.283s
+[335/338] tt_sp_28100000823_p10 ok delta=-1.031 crn=True 171.029s
+[336/338] tt_sp_28100000831_p8 ok delta=-3.156 crn=True 151.377s
+[337/338] tt_sp_28100000841_p46 ok delta=+0.562 crn=True 138.272s
+[338/338] tt_sp_28100000848_p26 ok delta=-5.781 crn=True 137.04s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 338,
+  "m_worlds": 32,
+  "sd_delta_positions": 4.153277169615769,
+  "mean_delta_pts": 0.17252218934911243,
+  "se_mean_delta": 0.22590849621404469,
+  "z_pilot_observed": 0.7636817217607009,
+  "mean_within_position_var": 320.4040072055736,
+  "var_between_positions_est": 7.237086022477397,
+  "sd_delta_projected_by_m": {
+    "8": 6.876597045281488,
+    "16": 5.2213347405453465,
+    "32": 4.153277169615769,
+    "64": 3.4990568207824926
+  },
+  "median_crn_var_reduction": 1.7424219325387198,
+  "n_positions_perfect_pairing": 9,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.2743658550080344,
+    "N=338_at_M=32": 0.3098599706213622,
+    "N=338_at_M=8": 0.18714697593667665,
+    "N=338_at_M=16": 0.24647612262168458,
+    "N=338_at_M=64": 0.36779463943421187
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "tier1-greedy",
+  "n_attempted": 338,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 338,
+  "wall_secs": 3826.9,
+  "manifest": "/mnt/c/carc-shared/tiearb2_20260816/main/chunk4/tier1-greedy/walled/leg1/manifest.json"
+}

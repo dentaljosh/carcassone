@@ -95,14 +95,35 @@ def gen_leaf_block(path: Path) -> dict:
                 "note": "the generation manifest was not found; the leaf hash of the "
                         "fresh self-play games could not be verified."}
     d = json.loads(path.read_text())
-    leaf_env = d.get("leaf_env") or {}
-    got = leaf_env.get("resolved_leaf_hash_runtime")
+    # ⚠️ The hash lives at `config.teacher.resolved_leaf_hash_runtime`, NOT under
+    # `leaf_env` (which carries only the CARCASSONNE_V25_* cap env vars). Verified
+    # against the real manifest; the recursive search below is belt-and-braces so
+    # a future manifest layout change is reported rather than silently read as
+    # None -- a None here would make `matches_design_4_2` False and look like a
+    # leaf mismatch when it is really a schema drift.
+    found = []
+
+    def _walk(o, path_str="$"):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if k == "resolved_leaf_hash_runtime":
+                    found.append((path_str + "." + k, v))
+                _walk(v, path_str + "." + k)
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                _walk(v, f"{path_str}[{i}]")
+
+    _walk(d)
+    got = found[0][1] if found else None
+    teacher = (d.get("config") or {}).get("teacher") or {}
     return {
         "path": str(path), "present": True,
         "resolved_leaf_hash_runtime": got,
+        "found_at": [p for p, _ in found],
         "expected": EXPECTED_GEN_LEAF_HASH,
         "matches_design_4_2": bool(got == EXPECTED_GEN_LEAF_HASH),
-        "leaf": leaf_env.get("leaf"),
+        "leaf": teacher.get("leaf") or teacher.get("leaf_label"),
+        "leaf_env": d.get("leaf_env"),
         "rules_profile": d.get("rules_profile"),
         "code_rev": d.get("code_rev"),
         "generated_utc": d.get("utc"),

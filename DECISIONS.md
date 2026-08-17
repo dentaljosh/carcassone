@@ -7617,3 +7617,180 @@ row opened in-progress at start and flipped at close · `STATUS.md` top block ·
 `PILOT.json` · `RUN_PROVENANCE.json` · `POSITION_ORDER.json` · `PLAN_SUMMARY.json`) ·
 `scripts/tiletie/{build_tiearb_plan,analyze_tiearb}.py` · `tests/test_tiearb.py` · records on the
 share at `/mnt/c/carc-shared/tiearb_20260816/`.
+
+---
+
+## 2026-08-17 — TERMINAL-GROUNDED TIE ARBITRATION (Stage 1b, the funded successor) — **`A-COSTLY`: the mechanism CAPTURES on a fresh, powered, root-disjoint corpus — and the budget-legal shape of it DOES NOT.** The strongest reading this axis has ever produced, and it licenses exactly one Stage-2 game-cell prereg that must solve cost first
+
+**Owner authorization, verbatim (2026-08-16):** *"fund. both boxes. laptop w22, local
+w14 for now, but make it easy to bump to w30 later. get an agent on it"* — later
+bumped in-run to `W_LOCAL=30` (*"didnt we bench that its optimal w is above 30?"*).
+Worker counts live in ONE file, `measurement/tiearb2_20260816/WORKERS.conf`.
+
+**Successor to** the 2026-08-16 Stage 1 (`P-PARTIAL`), whose read-rule, holdout and
+733-position corpus were all spent. The recorded re-open bar named four
+requirements; all four were delivered and are answered in `DESIGN.md` §3.
+
+### The verdict
+
+Pre-registered branch **`A-COSTLY`** fired, mechanically, from a read-rule committed
+**before the instrument, before the pilot, and before one fresh position was scored**
+(`b46e7199`).
+
+- **arm `H` (honest, selection budget B = 16) — PASSES EVERY CONJUNCT.**
+  `arb = +0.1441` pts/tied ply (se 0.0479, **z +3.01**), `F = arb/ora = 0.800`
+  CI [0.369, 1.442], `F_fixed = arb/0.2803 = 0.514` CI [0.180, 0.852], `G-BOOT` not
+  fired. Sign check **CORROBORATES** (54.2%, p 0.00934). Bound chain **+18.09 elo**
+  CI [+6.32, +30.04] (÷3.2; ÷5.23 low-end +11.06).
+- **arm `C` (cheap, B = B\* = 2) — FAILS.** `arb = +0.0322` (**z +0.65**),
+  `F = 0.179`, `F_fixed = 0.115`. Failed conjuncts: **`C_z`, `RBAR`, `C_split`**.
+  Sign check **NO CORROBORATION** (49.5%, p 0.756).
+- `DEPLOY` **= True** (`rho_wall(B*) = 1.191 ≤ 1.20`), so the branch is `A-COSTLY`,
+  not a cost-gated variant: **a budget-legal arbiter exists and it does not capture.**
+
+⇒ `p = PASS(H)` true, `q = PASS(C) ∧ DEPLOY` false ⇒ **(T,F) ⇒ `A-COSTLY`**.
+
+### ⭐ The finding that matters most — the cost axis is now the binding constraint, and it is a MECHANISM statement, not a budget complaint
+
+The B-ladder is free (prefix-stable CRN world seeds make every rung a sub-read of
+records already paid for — **0 extra worker-seconds**):
+
+| B | `arb` | z | `F_fixed` | `rho_wall` | ≤1.20? |
+|---|---|---|---|---|---|
+| 1 | +0.0094 | +0.20 | +0.034 | 0.595 | ✅ |
+| **2** | +0.0322 | +0.65 | +0.115 | **1.191** | ✅ **arm C** |
+| 4 | +0.0920 | +1.93 | +0.328 | 2.381 | ❌ |
+| 8 | +0.0826 | +1.76 | +0.295 | 4.762 | ❌ |
+| **16** | **+0.1441** | **+3.01** | **+0.514** | 9.525 | ❌ **arm H** |
+
+**The capture is bought by WORLD BREADTH, and the deployable budget cannot buy
+enough of it.** `arb_H − arb_C = +0.1119 ± 0.0382` **paired** within position
+(z **+2.93**) — the two arms share records, folds and pricing, so that is the se OF
+THE DIFFERENCE, and the gap is real, not a level artefact. `AGREE_HC = 0.317`: the
+2-world and 16-world arbiters pick the same arm only 32% of the time. The cost bar
+sits at B=2 and the signal needs ~B=16 ⇒ **an ~8× gap between what deploys and what
+works.** ⚠️ The ladder is non-monotonic in the middle (B=4 +0.0920 > B=8 +0.0826) —
+adjacent rungs are within noise of each other, so read the LADDER's slope, never a
+single rung.
+
+### ⭐ Re-open requirement (c) — the Stage-1 dev/holdout discrepancy — is ANSWERED, and the fix demonstrably worked
+
+Stage 1 failed its blind conjunct on what the published numbers showed to be a
+**champion-baseline level shift**, not a mechanism failure (`rnd` moved +0.3978
+between slices, MORE than `arb`'s +0.2971; `arb − rnd` was flat at z −0.71). The
+successor attacked it structurally: a **symmetric stratified half-split** (18 cells,
+phase × arm-count × champ_is_arm0), an **informativeness guard**, and a
+**baseline-drift gate input**. The result:
+
+- **`D_rnd = |rnd_S1 − rnd_S2| = +0.0815`** against Stage 1's **+0.3978** — a
+  **4.9× reduction**, and below the 0.20 bar ⇒ `BASELINE_DRIFTED` **False**.
+- ⇒ **the escape clause was NOT USED, for any slice or any arm.**
+- **Both slices INFORMATIVE** (`z(ora_S1) +2.31`, `z(ora_S2) +2.62`), so the guard
+  never had to excuse anything either.
+- Arm H is **non-negative on BOTH slices** — S1 `+0.2089` (z +3.23), S2 `+0.0763`
+  (z +1.08) — so **`C_split` passed on its own terms with no hatch of any kind.**
+
+⇒ **The two mechanisms added to make the conjunct robust were both dormant when the
+verdict landed.** That is the strongest possible answer to the "you weakened the bar
+after failing it" objection: no bar moved (ratio 0.35 ∧ z +2.0 ∧ the +0.2803
+denominator are E-FLAT's, W-FLAT's and Stage 1's verbatim), and the additions did
+nothing.
+
+⚠️ Note the champion baseline **flipped sign** between corpora: `rnd` is **−0.1270**
+(z −2.59) here vs +0.1296 on Stage-1 dev — i.e. on this corpus the champion's own
+tie-break is ABOVE arm-average. `arb_H − rnd = +0.2711` (z **+5.63**). Reported as
+the pre-registered companion; **never a branch input**, and the branch was taken on
+`arb` verbatim.
+
+### Cross-corpus replication of Stage 1
+
+`arb` +0.2065 (spent) → **+0.1441** (fresh); difference −0.0624, se 0.0730, **z −0.86**
+⇒ **statistically indistinguishable — Stage 1 REPLICATES.** `F_fixed` 0.737 → 0.514.
+⚠️ A CROSS-CORPUS contrast, subject to the CLAUDE.md cross-band ~1.5–2× humility rule;
+reported beside Stage 1, never a re-adjudication of it.
+
+### Corpus, and the disjointness that makes "fresh" mean something
+
+850 NEW champion self-play games (band 28100000000+, `walled`, k4×688, leaf
+`6dfffd57051690f2`, generation config matched verbatim to the spent corpus's own
+manifest) ⇒ **n = 1,350 positions / 724 roots** (S1 690 · S2 660), `mean_arms` 3.0022.
+**`G-DISJOINT` PASSES all three layers 0/0/0** — `root_id`, `rid`, and
+`sha256(position checksum)`.
+
+⚠️ **The digest layer EARNED ITS PLACE on first use.** It initially fired: 3 of 1,353
+boards overlapped the spent corpus while layers a and b were both 0. Diagnosis:
+**board transposition — all 5 offending positions are at ply 2**, textbook opening
+transposition, invisible to any rid- or root-check. The gate's own printed remedy
+("rebuild from a clean deck-seed band") is **wrong for a layer-c-only failure** and
+was deliberately not followed: no band is free of transposition. The 3 + 2 internal
+duplicates were excluded through the same tested builder (`--exclude-rids`, never a
+hand-edited plan) and the gate re-run to 0/0/0. → `DESIGN.md` §0.A.2.
+
+### Power — the corpus resolved the bar it was graded at
+
+`G-N` floor 1,040; realized **1,350**. Realized per-position sd 1.7197 (DESIGN §6
+projected 1.5819), so realized **2σ resolution = 0.341 in `F_fixed` units** against
+the **0.35** bar — it clears, but by less than the projected 0.302. `n` that would
+resolve `F_fixed` to ±0.35 at the realized dispersion is **≈1,285**, and 1,350 was
+built. ⚠️ Recorded as a live lesson: the §6 sd projection was **8.7% optimistic**, and
+the margin above the floor is what absorbed it.
+
+### Integrity — every gate, on 2,703 legs per judge
+
+All seven §3 preconditions **PASS** (`G-CRN`, `G-ARM`, `G-VA`, `G-ARMSET`, `G-SPLIT`,
+`G-N`, `G-DENOM`). `compared_legs` **2,703**, `crn_cross_mismatch` **0**,
+`seed_cross_mismatch` **0**, `arm_cross_mismatch` **0**; every per-judge witness 0.
+`G-REPRO` **43/43** bit-identical to the adjudicated OOF records, with the expected
+count taken as a **committed constant cross-checked against disk** (grading against
+`len(new)` would let a truncated pilot pass trivially). The pilot's **cross-judge
+witness** additionally proved 43/43 world AND playout seeds bit-identical to the
+`clair-puct` records — the property `G-CRN` rests on, which a same-judge
+reproduction cannot show. `G-SPLIT` `balance_ok` True, 18 cells, byte-identical
+re-derivation.
+
+### What is licensed — and what is NOT
+
+**`A-COSTLY` licenses (does NOT fund) exactly one thing: a fresh Stage-2
+pre-registration of a deck-paired GAME cell.** Per READ_RULE §4 that prereg **MUST
+solve cost on its own terms and MAY NOT assume the `B* = 2` arm** — this run measured
+that arm and it does not capture. It must also (a) carry a matched-wall-clock control
+arm; (b) carry DESIGN §12.1 verbatim (*both judges are terminal-grounded, so this is
+not yet a deploy-elo claim*); (c) carry arm `C`'s **NO CORROBORATION** sign-check
+verdict verbatim; (d) re-derive cost against a **rust** continuation rather than
+inheriting `rho_wall`'s python upper bound.
+
+⛔ It does **not** license a game outside that prereg, a band, a deploy, a
+`PRODUCTION.yaml` change, a leaf term (CL-065 + two dead menus + the 38% reach bound
+stand), or a claim id. **It is Joshua-gated: nothing is funded by this verdict.**
+
+### Governance
+
+**0 strength games on every branch** — the 850 self-play games are corpus SUBSTRATE.
+No `experiments/results.csv` row (mirroring Stage 1's and the OOF run's disposition
+for a 0-game analysis: nothing was played, so nothing is owed), no band, no
+`governance/BAND_REGISTRY.csv` entry, **no claim id minted**,
+`governance/PRODUCTION.yaml` untouched.
+⚠️ **THIS READ-RULE IS SPENT** and **the 1,350-position corpus is BURNED** — both, on
+every branch. A successor needs a new corpus AND a new read-rule, exactly as this run
+needed one after Stage 1.
+
+**Blind ordering proven by git:** `b46e7199` (DESIGN + READ_RULE) → `3dbaa8bf`
+(corpus driver) → `504ddad1` (instrument + tests) → `8b14bcbe` (cost pilot, `B*`
+frozen from cost alone) → scoring → this read-out.
+
+**Declared amendments** (both recorded before any statistic existed, both touching
+only how the run is laid out on disk — no estimator, statistic, threshold, bar or
+branch; `READ_RULE.md` untouched throughout): **§0.A.1** the CRN salt stays
+`tiletie-v1` (`WORLD_SEED_SALT` is a module constant in `run_tiletie.py`; world
+freshness is carried by the root-disjoint `rid`s, and `G-CRN` independently proved
+the two judges' seeds bit-identical); **§0.A.2** the 5 digest-contaminated positions
+are excluded rather than the corpus regenerated.
+
+**Artifacts:** `measurement/tiearb2_20260816/` ([DESIGN](measurement/tiearb2_20260816/DESIGN.md) ·
+[READ_RULE](measurement/tiearb2_20260816/READ_RULE.md) ·
+[READOUT](measurement/tiearb2_20260816/READOUT.md) · `READOUT.json` ·
+`per_position.jsonl` · `PILOT.json` · `SPLIT.json` · `DISJOINTNESS.json` ·
+`DIGEST_EXCLUSIONS.json` · `POSITION_ORDER.json` · `PROGRESS.md` ·
+`CORPUS_PIPELINE.md` · `WORKERS.conf` · `ALLOCATION.conf`) ·
+`scripts/tiletie/{build_tiearb2_corpus.sh,tiearb2_corpus_lib.py,gate_disjoint.py,emit_digest_exclusions.py,split_tiearb2.py,analyze_tiearb2.py}` ·
+`tests/test_tiearb2*.py` · records on the share at `/mnt/c/carc-shared/tiearb2_20260816/`.

@@ -1,0 +1,145 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "git_rev": "18c6f248",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk1.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "30",
+          "--out",
+          "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_clair-puct_chunk1.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n1178493       01:25  0.1 python",
+        "loadavg": "6.10 7.82 9.70 1/859 1178920"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "18c6f248",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 4,
+        "plan_path": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk1/POSITIONS_PLAN.json",
+        "arms_path": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk1/ARMS.json"
+      }
+    }
+  },
+  "r9_by_profile": {
+    "walled": "0"
+  },
+  "judges": [
+    "clair-puct"
+  ],
+  "judge_backend": {
+    "clair-puct": "rust"
+  },
+  "world_seed_salt": "tiletie-v1",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "workers": 30,
+  "resume": true,
+  "positions_plan_path": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk1/POSITIONS_PLAN.json",
+  "arms_path": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/positions_chunk1/ARMS.json",
+  "positions_plan_sha256": "62d8f4ab447a424493aa1d6b90d42c9f720147b9d5e45c3dacef1d64fb5d21da",
+  "arms_sha256": "d91a46eaeb7cfd681a7a562b86657c7c35a3cac6e7c569b4da1415491b8c3729",
+  "legs": [
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 1,
+      "rc": 0,
+      "n": 337,
+      "workers": 15,
+      "positions_path": "measurement/tiearb2_20260816/positions_chunk1/positions_walled_leg1.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb2_20260816/main/chunk1/clair-puct/walled/leg1",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs/leg_clair-puct_walled_leg1.log",
+      "wall_secs": 3437.0,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 2,
+      "rc": 0,
+      "n": 191,
+      "workers": 9,
+      "positions_path": "measurement/tiearb2_20260816/positions_chunk1/positions_walled_leg2.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb2_20260816/main/chunk1/clair-puct/walled/leg2",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs/leg_clair-puct_walled_leg2.log",
+      "wall_secs": 3437.0,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 3,
+      "rc": 0,
+      "n": 104,
+      "workers": 5,
+      "positions_path": "measurement/tiearb2_20260816/positions_chunk1/positions_walled_leg3.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb2_20260816/main/chunk1/clair-puct/walled/leg3",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs/leg_clair-puct_walled_leg3.log",
+      "wall_secs": 3437.0,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 4,
+      "rc": 0,
+      "n": 30,
+      "workers": 1,
+      "positions_path": "measurement/tiearb2_20260816/positions_chunk1/positions_walled_leg4.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb2_20260816/main/chunk1/clair-puct/walled/leg4",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs/leg_clair-puct_walled_leg4.log",
+      "wall_secs": 3895.6,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    }
+  ],
+  "error": null,
+  "finished_utc": "2026-08-17T01:43:12Z"
+}

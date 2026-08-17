@@ -1,0 +1,41 @@
+[pilot] positions=/home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_pilot
+[pilot] out-root =/mnt/c/carc-shared/tiearb2_20260816/pilot
+[pilot] workers  =30  (WORKERS.conf)
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_pilot.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb2_20260816/GATE_BACKEND_RECHECK_pilot.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.12 4.22 12.14 3/854 1161884
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+1160486       01:23  0.1 python
+[preflight] git_clean: PASS
+    git_rev: adb08f3c
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 8
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_pilot/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_20260816/positions_pilot/ARMS.json
+
+[run_tiletie] plan: n_positions=20 (e4=2 selfplay=18) max_arms=5 mean_arms=3.15 cap_j=4 capped=5
+[run_tiletie] total_arm_playouts=2752 oracle_worker_secs=5994.7 champ_pick_secs=0.0
+[run_tiletie] ETA at 20: 0.083 h (300 s)
+[run_tiletie] ETA at 30: 0.056 h (200 s)
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg1 (R9=1, W=1, n=2) -> leg_tier1-greedy_fixed_v1_leg1.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg2 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg2.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg3 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg3.log
+[run_tiletie] ===== launch tier1-greedy/fixed_v1/leg4 (R9=1, W=1, n=1) -> leg_tier1-greedy_fixed_v1_leg4.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg1 (R9=0, W=12, n=18) -> leg_tier1-greedy_walled_leg1.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg2 (R9=0, W=8, n=11) -> leg_tier1-greedy_walled_leg2.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg3 (R9=0, W=5, n=8) -> leg_tier1-greedy_walled_leg3.log
+[run_tiletie] ===== launch tier1-greedy/walled/leg4 (R9=0, W=1, n=1) -> leg_tier1-greedy_walled_leg4.log
+[pilot] run_tiletie rc=0

@@ -1,0 +1,9 @@
+[plan] afterstate_dedupe.applied = True
+[plan] n_dropped_all_transposition = 454
+[plan] exclude_rids.n_requested = 738
+[plan] exclude_rids.n_removed_from_supply = 5
+[plan] n_supply_after_exclusion = 1350
+[plan] n_positions = 1350
+[probe] n_removed_from_supply = 0 | supply = 1355
+[digest] n_spent_overlap = 3 | n_internal_dupes = 2 | n_total_excluded = 5
+[plan] OK: 1355 probe supply - 5 digest exclusion(s) = 1350 positions

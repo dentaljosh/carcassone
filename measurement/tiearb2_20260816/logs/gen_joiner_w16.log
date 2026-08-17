@@ -1,0 +1,9 @@
+gen_fair_distill: games=850 k_dets=4 sims=688 (budget=2752) exact_endgame=True exact_max_k=2 sighted=False batch_size=1 rep=78ch/10sc leaf_hash=6dfffd57051690f2 net_mode=net-free (champion) | 605 cached, 245 to play, 16 workers, out=/mnt/c/carc-shared/tiearb2_20260816/gen
+  10/245 games (101.3s/game, 1440 rows [1400 policy / 40 value-only], ~397 min left)
+  20/245 games (88.9s/game, 2878 rows [2798 policy / 80 value-only], ~333 min left)
+  30/245 games (69.0s/game, 4318 rows [4198 policy / 120 value-only], ~247 min left)
+  40/245 games (68.3s/game, 5758 rows [5598 policy / 160 value-only], ~233 min left)
+  50/245 games (66.5s/game, 7198 rows [6998 policy / 200 value-only], ~216 min left)
+  60/245 games (61.6s/game, 8635 rows [8395 policy / 240 value-only], ~190 min left)
+[done] 64 games, 9211 rows (8955 policy / 256 value-only), 0 skipped (3891.1s). shards in /mnt/c/carc-shared/tiearb2_20260816/gen
+[sentinel] 849 games | any-event 700 | aborted 0 | drops row<0 3053 row>max 0 col<0 0 col>max 0 | row-wrap 3053 col-last 0 row-last 0 | overflow 0 | cloister deferrals 241 monk-pins 0 | rel rows [-6,12] cols [-13,11]

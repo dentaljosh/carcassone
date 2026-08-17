@@ -1,0 +1,199 @@
+{
+  "gate": "rustport A3/B1 \u2014 oracle_score_pilot python vs rust continuation",
+  "why": "the pilot is a RULER (+0.7375 pts/disagreement, cluster-robust z +2.97); a converted ruler is a NEW ruler unless the conversion is provably a no-op ON THE RECORD.",
+  "seam": "the CONTINUATION AGENT only (build_continuation_agent -> champion_factory.build_clairvoyant_champion(backend=...) -> rust_agent.RustCarryClairvoyantAgent over carc_rs.PersistentSearcher). World sampling, CRN seed derivation, replay, the determinization draw and the terminal-score read are the SAME code on both legs.",
+  "gap2": "CLOSED \u2014 the rust continuation is a PERSISTING-TREE search (best_action carries), not MirrorState.search_single. Evidence: GAP2_ORACLE_CONTINUATION_TREE.json (the problem), GATE_GAP2_PERSISTENT.json (the fix, three-way).",
+  "surface": "every record field except ['elapsed_secs'], floats canonicalised to raw f64 bit patterns \u2014 per-world terminal margins (values_a/values_b), ply counts, the afterstate deck-hash / board-key CRN witnesses, and the whole position_delta block",
+  "knobs": {
+    "m_worlds": 2,
+    "oracle_sims": 100,
+    "max_plies": 400,
+    "oracle_policy": "clair-puct"
+  },
+  "positions": 8,
+  "field_checks": 376,
+  "mismatches": [],
+  "python_secs": 378.5,
+  "rust_secs": 41.0,
+  "speedup": 9.23,
+  "verdict": "PASS",
+  "scope": "the clair-puct continuation at these knobs on this revision. tier1-greedy is out of scope (no Rust RuleBasedPlayer \u2014 the harness refuses it). Says nothing about Gap 3 (evaluator injection) or the snapshot/UCT family, which remain OPEN.",
+  "rows": [
+    {
+      "rid": "s28000000008_p124_r2",
+      "source": "bank",
+      "deck_seed": 28000000008,
+      "ply": 124,
+      "m": 2,
+      "fields": 47,
+      "delta": 1.5,
+      "values_a": [
+        2.0,
+        -1.0
+      ],
+      "values_b": [
+        2.0,
+        2.0
+      ],
+      "crn_verified": true,
+      "python_secs": 22.51,
+      "rust_secs": 2.07,
+      "speedup": 10.85,
+      "identical": true
+    },
+    {
+      "rid": "s28000000002_p115_r2",
+      "source": "bank",
+      "deck_seed": 28000000002,
+      "ply": 115,
+      "m": 2,
+      "fields": 47,
+      "delta": 0.0,
+      "values_a": [
+        -14.0,
+        -11.0
+      ],
+      "values_b": [
+        -14.0,
+        -11.0
+      ],
+      "crn_verified": true,
+      "python_secs": 23.63,
+      "rust_secs": 2.46,
+      "speedup": 9.6,
+      "identical": true
+    },
+    {
+      "rid": "s28000000001_p102_r2",
+      "source": "bank",
+      "deck_seed": 28000000001,
+      "ply": 102,
+      "m": 2,
+      "fields": 47,
+      "delta": -9.0,
+      "values_a": [
+        4.0,
+        3.0
+      ],
+      "values_b": [
+        -1.0,
+        -10.0
+      ],
+      "crn_verified": true,
+      "python_secs": 32.35,
+      "rust_secs": 4.17,
+      "speedup": 7.75,
+      "identical": true
+    },
+    {
+      "rid": "s28000000020_p96_r1",
+      "source": "bank",
+      "deck_seed": 28000000020,
+      "ply": 96,
+      "m": 2,
+      "fields": 47,
+      "delta": 0.0,
+      "values_a": [
+        -3.0,
+        -28.0
+      ],
+      "values_b": [
+        -3.0,
+        -28.0
+      ],
+      "crn_verified": true,
+      "python_secs": 35.7,
+      "rust_secs": 3.68,
+      "speedup": 9.71,
+      "identical": true
+    },
+    {
+      "rid": "s28000000005_p91_r3",
+      "source": "bank",
+      "deck_seed": 28000000005,
+      "ply": 91,
+      "m": 2,
+      "fields": 47,
+      "delta": -7.5,
+      "values_a": [
+        3.0,
+        -5.0
+      ],
+      "values_b": [
+        -8.0,
+        -9.0
+      ],
+      "crn_verified": true,
+      "python_secs": 53.14,
+      "rust_secs": 5.08,
+      "speedup": 10.45,
+      "identical": true
+    },
+    {
+      "rid": "s28000000019_p35_r2",
+      "source": "bank",
+      "deck_seed": 28000000019,
+      "ply": 35,
+      "m": 2,
+      "fields": 47,
+      "delta": 0.0,
+      "values_a": [
+        -35.0,
+        11.0
+      ],
+      "values_b": [
+        -35.0,
+        11.0
+      ],
+      "crn_verified": true,
+      "python_secs": 62.68,
+      "rust_secs": 6.82,
+      "speedup": 9.19,
+      "identical": true
+    },
+    {
+      "rid": "s28000000009_p47_r1",
+      "source": "bank",
+      "deck_seed": 28000000009,
+      "ply": 47,
+      "m": 2,
+      "fields": 47,
+      "delta": 0.0,
+      "values_a": [
+        3.0,
+        6.0
+      ],
+      "values_b": [
+        3.0,
+        6.0
+      ],
+      "crn_verified": true,
+      "python_secs": 70.08,
+      "rust_secs": 9.13,
+      "speedup": 7.68,
+      "identical": true
+    },
+    {
+      "rid": "s28000000011_p24_r3",
+      "source": "bank",
+      "deck_seed": 28000000011,
+      "ply": 24,
+      "m": 2,
+      "fields": 47,
+      "delta": -0.5,
+      "values_a": [
+        -3.0,
+        2.0
+      ],
+      "values_b": [
+        9.0,
+        -11.0
+      ],
+      "crn_verified": true,
+      "python_secs": 78.39,
+      "rust_secs": 7.59,
+      "speedup": 10.33,
+      "identical": true
+    }
+  ]
+}

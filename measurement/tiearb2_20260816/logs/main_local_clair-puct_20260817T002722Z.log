@@ -1,0 +1,23 @@
+[main] 2026-08-16T20:27:22-04:00 box=local judge=clair-puct W=30 chunks='1 2 3 4'
+[main] share-run=/mnt/c/carc-shared/tiearb2_20260816  log=/home/doctor/projects/carcassone/measurement/tiearb2_20260816/logs/main_local_clair-puct_20260817T002722Z.log
+[main] G-DISJOINT: passed
+[main] PILOT.json: B* = 2, rho_wall(B*) = 1.1906, c_tier1 = 2.7274
+[main] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/measurement/tiearb2_20260816/stage_plans.py main --chunks 4 --verify
+Traceback (most recent call last):
+  File "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/stage_plans.py", line 352, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/stage_plans.py", line 348, in main
+    return a.fn(a)
+           ^^^^^^^
+  File "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/stage_plans.py", line 267, in cmd_main
+    n = sum(1 for ln in p.read_text().splitlines() if ln.strip())
+                        ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'measurement/tiearb2_20260816/positions_chunk1/positions_walled_leg1.jsonl'
+[main] FATAL: POSITION_ORDER.json / chunk verification failed — DO NOT LAUNCH.
