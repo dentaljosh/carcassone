@@ -221,7 +221,19 @@ being priced.
 **Advance arithmetic, committed before the cell runs.** Phase A's
 `rho_amortized(16)` = **0.1985** ⇒ the expected in-cell
 `ms_ratio` ≈ **1.1985** at the offline firing rate — **just under the 1.20 bar, and this
-design says so before the measurement rather than after.** Consequences, pre-registered:
+design says so before the measurement rather than after.**
+
+> ⛔ **THIS PREDICTION WAS WRONG BY ~2× AND THE SENTENCE EQUATING `rho_wall` WITH THE
+> IN-CELL `ms_ratio` IS WITHDRAWN — see READ_RULE §0.G**, recorded from the smoke before
+> the real cells and before any strength number. Realized ≈ **2.42 / 2.33**. The
+> **numerator** model was right within 12% (8.561 predicted vs 9.57 realized worker-s per
+> fired ply); the **denominator** was a category error — `t_champ` = 13.7552 s/move is a
+> **sequential, uncontended** measurement, while the in-cell ratio divides by the
+> opponent's per-move wall **under W-way contention** (≈ 1.7 s/move, ≈ 8× apart).
+> **The cost model missed, not the arbiter.** The prediction is left in place above,
+> unedited, because a withdrawn prediction that is quietly deleted teaches nothing.
+
+Consequences, pre-registered:
 
 - The N4 trigger is expected to be **close**. It is a **downgrade trigger, never a
   branch input** for the mechanism question, because `ARB` and `RND` are cost-matched to

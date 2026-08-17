@@ -256,6 +256,64 @@ comparison is void whatever the margins say.
 ⚠️ This is a **witness for an already-committed condition**, not a new condition:
 §0.E.1's condition 1 is unchanged and this only makes it checkable. §4 is untouched.
 
+### 0.G ⚠️ THE COST MODEL MISSED BY ~2× — recorded BEFORE the real cells and BEFORE any strength number
+
+> **Recorded 2026-08-17 from the SMOKE (laptop W22, 22 games/cell, throwaway band
+> 900000100000, production knobs).** Band 132000000000 unclaimed; no strength number of
+> any kind exists. **This framing must not be reconstructed after margins exist.**
+
+**Prediction vs realized:**
+
+| quantity | DESIGN §5 predicted | realized (smoke) |
+|---|---|---|
+| `ms_ratio` (`ARB`) | **≈ 1.1985** | **≈ 2.42** |
+| `ms_ratio` (`RND`) | **≈ 1.1985** | **≈ 2.33** |
+
+**⭐ The decomposition, and it exonerates the arbiter: the NUMERATOR model was right and
+the DENOMINATOR was a category error.**
+
+- **Numerator — accurate within 12%.** Predicted `Ā × B × c_tier1_rust` =
+  3.0022 × 16 × 0.178232 = **8.561** worker-s per fired ply; realized **9.57**
+  (**+11.8%**). **The arbiter cost almost exactly what Phase A said it would cost.**
+- **Denominator — the wrong currency.** §5 divided by `t_champ` = **13.7552 s/move**,
+  which is a **SEQUENTIAL, single-box, uncontended** measurement. The in-cell `ms_ratio`
+  divides by the **opponent's per-move wall under W-way contention**, ≈ **1.7 s/move** —
+  a different measurement condition by ≈ 8×. **§5 equated `rho_wall` with the in-cell
+  `ms_ratio`. They are not the same currency, and that sentence is WITHDRAWN.**
+- **The reconciliation closes.** Recomputing forward with the correct denominator,
+  `1 + (9.57 × phi / 72) / 1.7`, gives **2.33** at `phi` = 17.05 and **2.40** at
+  `phi` = 17.95, against realized **2.42 / 2.33**. (The cell-to-cell assignment inverts
+  within noise at n = 22 games; the *level* is what reconciles, and it does.) The
+  residual after correcting the denominator is the +11.8% numerator error and the
+  realized `phi` being **74–78% of the 22.96 prior** — both already reported.
+
+⇒ **THE COST MODEL MISSED, NOT THE ARBITER.** No re-tuning of `B`, the trigger, or the
+playout is implied or permitted (§0.D's anti-gaming clause stands).
+
+**What this does and does not touch:**
+
+- **No branch moves.** `ms_ratio` was never a branch input (§4.2), and §0.D waived its
+  consequence. The adjudication is unaffected — but the *measurement* was always
+  mandatory precisely so a wrong cost model would become visible, and it did. This is
+  that mechanism working, not failing.
+- **Phase A's `rho_wall` is NOT invalidated.** It is a correct statement in its own
+  sequential currency, and `B_affordable` = 16 was graded on that currency against the
+  N4 bar as the programme has always defined it. What is now known is that **`rho_wall`
+  and in-cell `ms_ratio` must never again be equated**, and any future design that
+  quotes one as a prediction of the other is repeating this error.
+- ⚠️ **DEPLOY-RELEVANT, AND IT MUST NOT BE BURIED:** the honest realized figure for a
+  deployed arbiter under contention is **≈ 2.3–2.4× the champion's per-move wall**, not
+  ≈ 1.2×. The owner ruling ("*we can afford some wallclock during play… dont let that be
+  the constraint right now*") stands and governs this cell's reading — but the owner is
+  entitled to know the number is **≈ 2.4×, not ≈ 1.2×**, when the production-flip
+  decision is put to him. The read-out MUST state it at that magnitude.
+- **`rho_phone` is untouched and still NOT solved** (5.520 at `B` = 16) — and note it is
+  a **third** currency again, so it may not be inferred from either figure above.
+
+**Mandatory in the read-out:** this table, the decomposition, the reconciliation, and the
+sentence *"the cost model missed, not the arbiter"* — printed as a first-class item, not
+a footnote, and **never** presented as an arbiter defect.
+
 ---
 
 ## 1. Scope
