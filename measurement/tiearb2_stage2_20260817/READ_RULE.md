@@ -86,6 +86,65 @@ Found in the same sweep; neither can change a branch.
    **both** spellings and reports which it found, so this is hygiene rather than a
    trap; `G-J4` still aborts if the resolved dict is absent or wrong under either.
 
+### 0.D OWNER RULING — the N4 downgrade is WAIVED for this cell's reading
+
+> **Ruled 2026-08-17, BEFORE the band claim and BEFORE any game.** At the time of this
+> amendment: no band claimed, no `manifest.json`/`summary.json`, **no `ms_ratio` and no
+> statistic of any kind in existence.** The ruling is therefore made blind to every
+> number it affects.
+
+**Owner, verbatim:**
+
+> "we can afford some wallclock during play, especially if its not every tile draw.
+> dont let that be the constraint right now"
+
+**What this changes — exactly one thing.** §4.2's instruction to *"downgrade the
+against-champion reading to COST-CONFOUNDED"* when `ms_ratio > 1.20` is **WAIVED for
+this cell**. `G-CONFIRMED` / `G-DEPLOYS` / `G-CLOCK` may be read at face value against
+the champion regardless of the realized `ms_ratio`.
+
+**What this does NOT change:**
+
+- **`ms_ratio` is still measured and still reported on every branch**, for both cells,
+  per §4.3(4), **with the field-name trap named**.
+- **DESIGN §5's prediction of ≈1.1985 stays pre-registered**, and the read-out must
+  print **prediction vs realized** — the comparison is evidence about the cost model
+  regardless of whether the bar is enforced, and it is the only way a wrong cost model
+  becomes visible.
+- **The `≤ 1.05` cost-neutral annotation is retained** and must be printed if it holds.
+- **`D` / `z_D` are untouched.** They were already cost-immune *by construction* —
+  `ARB` and `RND` burn the same playouts on the same worlds at the same plies — and this
+  ruling extends that same spirit to the champion-comparison reading.
+- ⭐ **NO BRANCH CONDITION MOVES.** §4.2 already states, in the committed text, that
+  `ms_ratio` is *"a **downgrade trigger**, not a conjunct"* and *"**NEVER a branch
+  input**"*. Waiving a rider that was never a branch input cannot change which branch
+  fires on any read.
+
+**⚠️ §4 is deliberately left BYTE-IDENTICAL by this amendment.** The waiver lives here
+in §0.D and **overrides §4.2 by amendment** rather than by editing it, precisely so the
+instrument's mechanical old-vs-new byte-equality proof over the §4 branch section
+continues to hold and can be re-run as evidence that no bar moved. **The rule text does
+not change; the instrument implements the override.** A reader must therefore read §0
+before §4 — which is why §0 sits at the top of this document.
+
+**⛔ ANTI-GAMING CLAUSE, binding.** This ruling is permission to *spend* clock, **never**
+licence to *reshape the arbiter to look cheaper*. Nothing may be shaved to duck under
+1.20:
+
+- **`B` stays 16** — the evidenced rung, and it may **not** be expanded beyond 16 either;
+- **the tie predicate is not narrowed** — it fires at tied tile plies only, as designed,
+  which at ~23 per game is exactly the *"not every tile draw"* the ruling points at;
+- **no playout truncation for cost reasons** — truncation remains closed on the
+  frontier-blindness argument (PHASE_A.md §5), and cost is now explicitly not a reason
+  to revisit it.
+
+**Scope limits, unchanged by this ruling:**
+
+- **`rho_phone` is NOT reopened.** 5.520 at `B` = 16; on-device remains a separate
+  future question and §5's prohibition on licensing a phone deploy stands.
+- **Tournament-clock legality bookkeeping is untouched** — Track G continues to record
+  the numbers; this ruling governs *this cell's reading*, not that ledger.
+
 ---
 
 ## 1. Scope

@@ -42,6 +42,29 @@ discharged by Phase A, (a)–(c) are discharged here.
 shares the property under test; nothing here does. The estimand changes from "worth
 points under a terminal-grounded ruler" to **"wins games against the champion"**.
 
+### 0.3 Owner ruling on wall-clock — 2026-08-17, before the band claim, before any game
+
+**Owner, verbatim:**
+
+> "we can afford some wallclock during play, especially if its not every tile draw.
+> dont let that be the constraint right now"
+
+⇒ **The N4 `> 1.20` downgrade is WAIVED for this cell's reading** (READ_RULE §0.D).
+`ms_ratio` is still measured and reported on every branch, and §5's ≈1.1985 prediction
+stays pre-registered so **prediction vs realized** is printed — a wrong cost model
+should stay visible even when the bar is not enforced.
+
+⚠️ **This is permission to spend clock, not licence to reshape the arbiter to look
+cheaper.** `B` stays **16** (the evidenced rung, and not expanded beyond it), the tie
+predicate is not narrowed, and truncation stays closed — cost is now explicitly *not* a
+reason to revisit it. The ruling does **not** reopen `rho_phone` (on-device remains a
+separate future question) and does **not** touch the tournament-clock legality
+bookkeeping, which Track G continues to record.
+
+The design's own answer to "not every tile draw" is §2's trigger: the arbiter fires at
+**tied tile plies only**, ~23 per game against ~72 champion moves — which is precisely
+the shape the ruling points at.
+
 ## 1. The two cells, and why the control is what condition (a) asks for
 
 **Condition (a) requires a matched-wall-clock control arm.** The naive form — give the
@@ -189,9 +212,15 @@ design says so before the measurement rather than after.** Consequences, pre-reg
   branch input** for the mechanism question, because `ARB` and `RND` are cost-matched to
   each other by construction — the *mechanism* statistic `M_arb − M_rnd` is immune to
   it. N4 governs only what may be said about `M_arb` **against the champion**.
-- If `ms_ratio` exceeds 1.20 in either cell, the read-out **downgrades the against-champion
-  reading to cost-confounded** and says so in the branch sentence. It does not void the
-  mechanism contrast.
+- ⚠️ **AMENDED by the §0.3 owner ruling (READ_RULE §0.D): the `> 1.20` downgrade is
+  WAIVED for this cell.** The against-champion reading is taken at face value whatever
+  `ms_ratio` lands at. **`ms_ratio` is still measured and reported**, and the read-out
+  prints **prediction (≈1.1985) vs realized** — because the value of that comparison is
+  evidence about the cost model, which does not depend on whether the bar is enforced.
+  The `≤ 1.05` cost-neutral annotation is still printed if it holds.
+- Because `ms_ratio` was **never a branch input** (it is a rider), waiving it moves **no
+  branch condition** — which the instrument proves mechanically by byte-comparing the
+  §4 branch section old-vs-new.
 - `phi` below the prior lowers `ms_ratio` proportionally; the two move together and both
   are reported.
 
