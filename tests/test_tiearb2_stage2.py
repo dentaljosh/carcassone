@@ -689,18 +689,47 @@ def test_G_N_deck_clause_stays_INDEPENDENTLY_BINDING():
 
 
 def test_the_amendment_moved_no_adjudicating_bar_and_no_branch_condition():
-    """⚠️ GOVERNANCE. §0 amended a PRECONDITION and two report-only spellings. The
-    bars that gate a licence, and every §4 branch condition, must be identical to
-    the pre-amendment text at `b2faa238`."""
+    """⚠️ GOVERNANCE, and it now covers TWO amendments. §0.A-C amended a
+    PRECONDITION and two report-only spellings; §0.D waived a rider that was never
+    a branch input. Both were written to leave §4 BYTE-IDENTICAL -- the overrides
+    live in §0 -- so this proof runs against the ORIGINAL text at `b2faa238` and
+    must still pass."""
     import subprocess
     old = subprocess.run(
         ["git", "show", "b2faa238:measurement/tiearb2_stage2_20260817/READ_RULE.md"],
         cwd=REPO, capture_output=True, text=True, check=True).stdout
     new = (REPO / "measurement/tiearb2_stage2_20260817/READ_RULE.md").read_text()
-    # §4's branch table -- byte-identical across the amendment
-    def _s4(doc):
+
+    # §4 -- byte-identical across BOTH amendments, on either natural boundary.
+    def _conds(doc):        # the branch CONDITIONS alone
         return doc.split("## 4. Branches", 1)[1].split("### 4.1", 1)[0]
-    assert _s4(old) == _s4(new), "§4's branch conditions MOVED -- that is not an amendment"
+
+    def _whole(doc):        # §4 entire, incl. 4.1 exclusivity / 4.2 N4 / 4.3 companion
+        return doc.split("## 4. Branches", 1)[1].split("## 5.", 1)[0]
+
+    assert _conds(old) == _conds(new), "§4's branch conditions MOVED -- not an amendment"
+    assert _whole(old) == _whole(new), "§4 MOVED somewhere below the table"
+    # lengths pinned so a byte drift is loud rather than silently re-equal
+    assert len(_conds(new).encode()) == 4965
+    assert len(_whole(new).encode()) == 8206
+    # §0.D is present, and it is an OVERRIDE rather than an edit
+    assert "0.D" in new and "a81b8c72" in S2.READ_RULE_AMENDMENT
+    # ⭐ the structural reason the waiver cannot move a branch: `ms_ratio` appears
+    # in no CONDITION -- not in the p/q/r definitions, and not in the condition
+    # COLUMN of the branch table. It appears only in READ text (what to REPORT) and
+    # in §4.2 below the table. That is what "never a branch input" means textually.
+    # both fenced blocks: G-ANOMALY, then the p / q / r definitions
+    defs = "\n".join(_conds(new).split("```")[1::2])
+    assert "ms_ratio" not in defs
+    assert "z_arb" in defs and "z_rnd" in defs and "z_D" in defs and "D ≥ 0" in defs
+    conditions = [ln.split("|")[2] for ln in _conds(new).splitlines()
+                  if ln.startswith("|") and len(ln.split("|")) > 3]
+    assert len(conditions) >= 7                        # header, separator, 6 branches
+    for col in conditions:
+        assert "ms_ratio" not in col, col
+    # ... while it IS present in the read text and in §4.2, which is where §0.D bites
+    assert "ms_ratio" in _conds(new)                   # in READ text only
+    assert "ms_ratio" in _whole(new)
     # the adjudicating bars are unchanged in the instrument
     assert (S2.Z_BAR, S2.Z_PRESENT_BAR, S2.MS_RATIO_BAR) == (2.0, 1.0, 1.20)
     # ... and the amendment is STAMPED, so a reader knows which text was adjudicated
@@ -729,6 +758,44 @@ def test_G_TOOL_mixed_or_absent_builds():
     pre, _ = _all_pre(preflights=[_preflight("local"),
                                   _preflight("laptop", build="carc_rs-0.1.0+OTHER")])
     assert pre["G-TOOL"] is False
+
+
+def test_G_TOOL_refuses_the_harness_provenance_FAILURE_SENTINEL():
+    """⚠️ `eval_fair_puct` writes `carc_rs_build = "<unavailable: ...>"` and
+    `mixed_builds = None` when its provenance block RAISES (~line 4498). A pure
+    equality gate PASSES that: both cells carry the SAME sentinel, so it reads as
+    one distinct build. Unknown provenance is not agreement -- it must FAIL."""
+    for over in ({"carc_rs_build": "<unavailable: ImportError>"},
+                 {"rust_toolchain": ""},
+                 {"mixed_builds": None}):          # provenance RAISED, not clean
+        pre, _ = _all_pre(cells=_cells(arb_over=over, rnd_over=dict(over)))
+        assert pre["G-TOOL"] is False, over
+    # the same sentinel on a PREFLIGHT is refused too
+    pre, _ = _all_pre(preflights=[_preflight("local", build="<unavailable: OSError>"),
+                                  _preflight("laptop", build="<unavailable: OSError>")])
+    assert pre["G-TOOL"] is False
+
+
+def test_G_TOOL_names_the_WEAK_build_witness_when_only_the_cargo_version_exists():
+    """`carc_rs_version` is the CARGO version and does not move between builds --
+    it cannot tell a fresh wheel from a stale one. It is accepted as a fallback and
+    REPORTED as weak, never silently treated as the content hash."""
+    cells = _cells()
+    for c in ("ARB", "RND"):
+        cells[c]["manifest"].pop("carc_rs_build")
+        cells[c]["manifest"]["carc_rs_version"] = "0.1.0"
+    pf = []
+    for h in ("local", "laptop"):
+        d = _preflight(h)
+        d.pop("carc_rs_build")
+        d["carc_rs_version"] = "0.1.0"
+        pf.append(d)
+    pre, det = _all_pre(cells=cells, preflights=pf)
+    assert pre["G-TOOL"] is True
+    assert "WEAK" in det["G-TOOL"]["stamps"]["ARB"]["build_witness"]
+    # ... whereas the content hash is named as the witness of record
+    _, det2 = _all_pre(cells=_cells())
+    assert "content hash" in det2["G-TOOL"]["stamps"]["ARB"]["build_witness"]
 
 
 @pytest.mark.parametrize("zs", [(NAN, 0.5, 0.7), (1.0, NAN, 0.7), (1.0, 0.5, NAN),
@@ -767,6 +834,8 @@ def test_every_gate_is_individually_sufficient_to_void_the_run():
 # F. §4.2 -- the N4 cost rider: a DOWNGRADE trigger, NEVER a branch input
 # =========================================================================== #
 def test_N4_fires_strictly_ABOVE_1_20_and_names_the_field_name_trap():
+    """⚠️ `N4_FIRED` is the MEASUREMENT and §0.D did not waive it — it is still
+    computed and reported exactly as before. Only the CONSEQUENCE is waived."""
     assert S2.cost_rider(1.20, 1.20)["N4_FIRED"] is False        # AT the bar: no
     assert S2.cost_rider(1.2000001, 1.0)["N4_FIRED"] is True
     assert S2.cost_rider(1.0, 1.21)["N4_FIRED"] is True
@@ -778,6 +847,106 @@ def test_N4_fires_strictly_ABOVE_1_20_and_names_the_field_name_trap():
     assert "champ_prefix_ms_per_move` IS THE CANDIDATE SIDE" in trap
     assert "2361/2371/2389" in trap
     assert S2.cost_rider(1.0, 1.0)["expected_from_design_5"] == 1.1985
+
+
+def _same(x, y):
+    """Equality with NaN == NaN, so a NaN `ms_ratio` does not read as a difference."""
+    if isinstance(x, float) and isinstance(y, float) and x != x and y != y:
+        return True
+    if isinstance(x, dict) and isinstance(y, dict):
+        return set(x) == set(y) and all(_same(x[k], y[k]) for k in x)
+    return x == y
+
+
+def test_the_0_D_waiver_suppresses_the_CONSEQUENCE_and_nothing_else():
+    """READ_RULE §0.D (OWNER RULING, commit a81b8c72): the §4.2 downgrade is waived
+    for this cell. The measurement, the trap, the prediction-vs-realized comparison
+    and the cost-neutral annotation all survive."""
+    on = S2.cost_rider(5.0, 5.0, waived=True)        # the ruling (the default)
+    off = S2.cost_rider(5.0, 5.0, waived=False)
+    assert S2.cost_rider(5.0, 5.0)["downgrade_waived"] is True      # DEFAULTS to it
+    assert on["N4_FIRED"] is off["N4_FIRED"] is True               # still measured
+    assert on["cost_confounded"] is False and off["cost_confounded"] is True
+    assert on["n4_downgrade_waived_by"] == S2.N4_WAIVER_BY
+    assert "a81b8c72" in on["n4_downgrade_waived_by"]
+    assert off["n4_downgrade_waived_by"] is None
+    assert on["owner_ruling_verbatim"] == S2.N4_WAIVER_OWNER_VERBATIM
+    # the measurement-side payload is IDENTICAL under the waiver
+    for k in ("ms_ratio_arb", "ms_ratio_rnd", "bar", "neutral_bar",
+              "expected_from_design_5", "prediction_vs_realized", "N4_FIRED",
+              "cost_neutral", "field_name_trap", "rider", "ms_ratio_missing"):
+        assert _same(on[k], off[k]), k
+
+
+def test_the_owner_ruling_is_carried_verbatim_from_the_READ_RULE():
+    doc = (REPO / "measurement/tiearb2_stage2_20260817/READ_RULE.md").read_text()
+    assert S2.N4_WAIVER_OWNER_VERBATIM.split(". ")[0] in doc.replace("\n", " ")
+    # the anti-gaming clause is binding and must travel with the waiver
+    note = S2.N4_WAIVER_NOTE
+    assert "ANTI-GAMING" in note
+    assert "B stays 16" in note and "not narrowed" in note and "truncation" in note
+    assert "rho_phone is NOT reopened" in note
+    # WAIVED the consequence, NOT the measurement -- said in so many words
+    assert "WAIVED: the consequence" in note and "NOT WAIVED: the measurement" in note
+
+
+def test_prediction_vs_realized_is_a_first_class_field_not_a_footnote():
+    c = S2.cost_rider(1.30, 1.10)
+    pvr = c["prediction_vs_realized"]
+    assert pvr["predicted"] == 1.1985
+    assert pvr["realized"] == {"ARB": 1.30, "RND": 1.10}
+    assert pvr["delta"]["ARB"] == pytest.approx(1.30 - 1.1985)
+    assert pvr["delta"]["RND"] == pytest.approx(1.10 - 1.1985)
+    assert "cost model" in pvr["why"]
+    # ... and it survives an absent reading rather than crashing
+    assert S2.cost_rider(None, NAN)["prediction_vs_realized"]["delta"] == {
+        "ARB": None, "RND": None}
+
+
+def test_an_ABSENT_ms_ratio_is_still_a_DEFECT_because_only_the_consequence_was_waived():
+    """§4.3(4) makes the measurement mandatory on EVERY branch; §0.D waived the
+    consequence. So a cell that reports no cost is a defect in the read-out."""
+    assert S2.cost_rider(1.0, 1.0)["MEASUREMENT_DEFECT"] is False
+    for bad in ((None, 1.0), (1.0, NAN), (None, None)):
+        c = S2.cost_rider(*bad)
+        assert c["MEASUREMENT_DEFECT"] is True
+        assert c["ms_ratio_missing"]
+    assert S2.cost_rider(None, 1.0)["ms_ratio_missing"] == ["ARB"]
+    assert S2.cost_rider(1.0, NAN)["ms_ratio_missing"] == ["RND"]
+
+
+def test_the_waiver_changes_NO_branch_on_a_grid_straddling_both_cost_bars():
+    """⭐ THE MECHANICAL STATEMENT OF §0.D's structural claim: 'waiving a rider that
+    was never a branch input cannot change which branch fires on any read.'
+
+    For every (branch-input, ms_ratio) pair the branch is IDENTICAL with the waiver
+    on and off -- only the annotation differs. `decide_branch` is not even handed
+    `ms_ratio`, so this is belt-and-braces on top of
+    `test_N4_is_never_a_branch_input`, which pins that structurally."""
+    ratios = (0.5, 1.0, 1.05, 1.0500001, 1.1985, 1.20, 1.2000001, 1.5, 5.0, NAN, None)
+    n = 0
+    differed_on_annotation = 0
+    for z_arb, z_rnd, z_D, D in itertools.product(_ZS, _ZS, _ZS, _DS):
+        branch = S2.decide_branch(z_arb, z_rnd, z_D, D, _pre())["branch"]
+        for m_arb in ratios:
+            for m_rnd in (1.0, 5.0):
+                on = S2.cost_rider(m_arb, m_rnd, waived=True)
+                off = S2.cost_rider(m_arb, m_rnd, waived=False)
+                # the branch does not move -- not with the waiver, not without it,
+                # not for any ms_ratio
+                assert S2.decide_branch(z_arb, z_rnd, z_D, D,
+                                        _pre())["branch"] == branch
+                # ... and the ONLY field that differs is the consequence
+                # (NaN-aware: a NaN ms_ratio is EQUAL to itself for this purpose)
+                diffs = {k for k in on if not _same(on[k], off[k])}
+                assert diffs <= {"cost_confounded", "downgrade_waived",
+                                 "n4_downgrade_waived_by", "owner_ruling_verbatim",
+                                 "waiver_note"}, diffs
+                if "cost_confounded" in diffs:
+                    differed_on_annotation += 1
+                n += 1
+    assert n == 4374 * len(ratios) * 2
+    assert differed_on_annotation > 0, "the grid never straddled the bar"
 
 
 def test_N4_is_never_a_branch_input():
@@ -967,17 +1136,52 @@ def test_readable_branch_when_the_committed_G_N_floor_is_met(tmp_path, monkeypat
     assert "NO CORROBORATION" in md          # §4.3(6) on a PASSING branch too
 
 
-def test_cost_confounded_prefixes_the_branch_sentence(tmp_path):
-    """§4.2: above the bar the read-out 'downgrades the against-champion reading to
-    COST-CONFOUNDED and says so IN THE BRANCH SENTENCE'."""
+def test_end_to_end_a_ratio_over_the_bar_is_reported_but_NOT_downgraded(tmp_path):
+    """§0.D end to end: `ms_ratio` 1.50 > 1.20 is MEASURED, REPORTED, and read AT
+    FACE VALUE -- the branch sentence carries no COST-CONFOUNDED prefix."""
     root = _e2e_world(tmp_path, arb={"n_decks": 400, "champ_ms": 1500.0},
                       rnd={"n_decks": 400})
     out = tmp_path / "out"
     S2.main(_e2e_argv(root, out))
     v = json.loads((out / "READOUT.json").read_text())
-    assert v["cost_N4"]["N4_FIRED"] is True
-    assert v["branch_headline"].startswith("[COST-CONFOUNDED — ms_ratio > 1.20]")
-    assert "COST-CONFOUNDED" in (out / "READOUT.md").read_text()
+    md = (out / "READOUT.md").read_text()
+    assert v["cost_N4"]["ms_ratio_arb"] == pytest.approx(1.5)
+    assert v["cost_N4"]["N4_FIRED"] is True                  # still MEASURED
+    assert v["cost_N4"]["cost_confounded"] is False          # consequence WAIVED
+    assert not v["branch_headline"].startswith("[COST-CONFOUNDED")
+    assert v["cost_N4"]["n4_downgrade_waived_by"] == S2.N4_WAIVER_BY
+    assert "a81b8c72" in md
+    assert "WAIVED" in md and "AT FACE VALUE" in md
+    # the owner's words, and the binding anti-gaming clause, travel with it
+    assert "dont let that be the constraint right now" in md
+    assert "ANTI-GAMING" in md and "B stays 16" in md
+    # ⭐ prediction vs realized is a first-class line
+    assert "PREDICTION vs REALIZED" in md and "1.1985" in md
+    assert "Δ +0.3015" in md                                  # 1.50 - 1.1985
+
+
+def test_end_to_end_a_cost_neutral_run_says_so(tmp_path):
+    """§0.D retains the <= 1.05 annotation."""
+    root = _e2e_world(tmp_path, arb={"n_decks": 400, "champ_ms": 1000.0},
+                      rnd={"n_decks": 400, "champ_ms": 1020.0})
+    out = tmp_path / "out"
+    S2.main(_e2e_argv(root, out))
+    v = json.loads((out / "READOUT.json").read_text())
+    assert v["cost_N4"]["cost_neutral"] is True
+    assert "COST-NEUTRAL" in (out / "READOUT.md").read_text()
+
+
+def test_end_to_end_an_absent_ms_ratio_is_shouted_about(tmp_path):
+    """The measurement was NOT waived -- a cell with no cost number is a defect."""
+    root = _e2e_world(tmp_path, arb={"n_decks": 400, "rung_ms": 0.0},
+                      rnd={"n_decks": 400})
+    out = tmp_path / "out"
+    S2.main(_e2e_argv(root, out))
+    v = json.loads((out / "READOUT.json").read_text())
+    assert v["cost_N4"]["MEASUREMENT_DEFECT"] is True
+    assert v["cost_N4"]["ms_ratio_missing"] == ["ARB"]
+    md = (out / "READOUT.md").read_text()
+    assert "DEFECT" in md and "waived the CONSEQUENCE, not the MEASUREMENT" in md
 
 
 def test_G_FLAT_carries_both_mandatory_riders_and_the_scope_sentence(tmp_path):

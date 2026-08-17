@@ -70,7 +70,8 @@ SCHEMA = "carcassonne-tiearb2-stage2-readout/v1"
 
 #: Which text was adjudicated against. READ_RULE §0 is a PRE-RUN AMENDMENT applied
 #: before the band claim and before game 1; it moved NO adjudicating bar.
-READ_RULE_AMENDMENT = "READ_RULE.md §0 (PRE-RUN AMENDMENT), commit 6c281f9e"
+READ_RULE_AMENDMENT = ("READ_RULE.md §0 — §0.A-C (PRE-RUN AMENDMENT) commit 6c281f9e; "
+                       "§0.D (OWNER RULING, N4 downgrade waived) commit a81b8c72")
 
 # ---- READ_RULE §2 committed bars — NOT new numbers -------------------------- #
 Z_BAR = 2.0             # "+2.0 is Stage 1's, Stage 1b's, E-FLAT's and W-FLAT's verbatim"
@@ -200,13 +201,39 @@ N4_FIELD_NAME_TRAP = (
 )
 
 N4_RIDER = (
-    "§4.2: `ms_ratio` is a DOWNGRADE TRIGGER, never a branch input. Above 1.20 in either "
-    "cell the against-champion reading is downgraded to COST-CONFOUNDED and said so IN "
-    "THE BRANCH SENTENCE. It does NOT touch the mechanism contrast D / z_D: ARB and RND "
-    "are cost-matched to each other by construction, so D is immune to a budget confound. "
-    "DESIGN §5 predicts ms_ratio ≈ 1.1985 — just under the bar — and says so BEFORE the "
-    "measurement, so a reading either side of 1.20 was anticipated and is not a surprise; "
-    "ms_ratio ≤ 1.05 restores a fully cost-neutral reading."
+    "§4.2: `ms_ratio` is a DOWNGRADE TRIGGER, never a branch input. It does NOT touch "
+    "the mechanism contrast D / z_D: ARB and RND are cost-matched to each other by "
+    "construction, so D is immune to a budget confound. DESIGN §5 predicts ms_ratio ≈ "
+    "1.1985 — just under the bar — and says so BEFORE the measurement, so a reading "
+    "either side of 1.20 was anticipated and is not a surprise; ms_ratio ≤ 1.05 is a "
+    "fully cost-neutral reading."
+)
+
+#: READ_RULE §0.D — the OWNER RULING, ruled before the band claim and before any game,
+#: blind to every number it affects. It waives §4.2's DOWNGRADE, not the MEASUREMENT.
+N4_WAIVER_BY = "READ_RULE.md §0.D (OWNER RULING), commit a81b8c72"
+N4_WAIVER_OWNER_VERBATIM = (
+    "we can afford some wallclock during play, especially if its not every tile draw. "
+    "dont let that be the constraint right now"
+)
+N4_WAIVER_NOTE = (
+    "⚠️ THE §4.2 DOWNGRADE IS WAIVED FOR THIS CELL (READ_RULE §0.D, an OWNER RULING made "
+    "BEFORE the band claim and BEFORE any game, with no ms_ratio and no statistic of any "
+    "kind in existence — blind to every number it affects). G-CONFIRMED / G-DEPLOYS / "
+    "G-CLOCK are read AT FACE VALUE against the champion whatever ms_ratio lands at. "
+    "WAIVED: the consequence. NOT WAIVED: the measurement — ms_ratio is still measured "
+    "and reported for both cells on every branch, with the field-name trap named, and "
+    "DESIGN §5's prediction (≈1.1985) is still printed against the realized value, "
+    "because that comparison is the only way a wrong cost model becomes visible and its "
+    "value does not depend on whether the bar is enforced. NO BRANCH CONDITION MOVES: "
+    "§4.2's committed text already calls ms_ratio 'a downgrade trigger, not a conjunct' "
+    "and 'NEVER a branch input', so waiving it cannot change which branch fires. §4 is "
+    "left BYTE-IDENTICAL by the amendment — the override lives in §0.D — so the "
+    "instrument's old-vs-new byte-equality proof over §4 still holds and is re-run as "
+    "evidence. ⛔ ANTI-GAMING (binding): permission to SPEND clock, never licence to "
+    "reshape the arbiter to look cheaper — B stays 16 (and may not be expanded), the tie "
+    "predicate is not narrowed, and no playout truncation for cost reasons. rho_phone is "
+    "NOT reopened (5.520 at B = 16) and no branch licenses an on-device deploy."
 )
 
 #: READ_RULE §0 — what the pre-run amendment changed, stamped on every read-out so a
@@ -219,9 +246,13 @@ AMENDMENT_NOTE = (
     "games clause, because a paired n = 800 cell yields at most 400 decks "
     "(eval_fair_puct.py:3924), which made the original 600-deck floor unreachable on a "
     "PERFECTLY COMPLETE run. §0.C.1 named the +1.0 presentation split in §2; §0.C.2 "
-    "corrected the knob's manifest location to top-level `cand_tiearb`. ⚠️ NO "
-    "ADJUDICATING BAR MOVED: +2.0, +1.0 and 1.20 are unchanged and every §4 branch "
-    "condition is unchanged."
+    "corrected the knob's manifest location to top-level `cand_tiearb`. §0.D (OWNER "
+    "RULING, commit a81b8c72, also before the band claim and before any game and blind "
+    "to every number it affects) WAIVES §4.2's COST-CONFOUNDED downgrade for this cell — "
+    "the consequence, never the measurement. ⚠️ NO ADJUDICATING BAR MOVED: +2.0, +1.0 "
+    "and 1.20 are unchanged and every §4 branch condition is unchanged — §4 is left "
+    "BYTE-IDENTICAL by BOTH amendments, which is why the byte-equality proof against "
+    "b2faa238 still runs and now covers two of them."
 )
 
 #: §0.C.1, carried so the presentation split can never be read as a licence bar.
@@ -524,15 +555,32 @@ def gate_n(n_common, n_arb, n_rnd) -> tuple:
 def gate_tool(cells: dict, preflights: list) -> tuple:
     """`G-TOOL` — the two boxes ran the same rust toolchain / the same `carc_rs`
     build, and no cell mixed builds. Fail-closed on an absent stamp."""
+    def _bad(x):
+        """An absent stamp, or the harness's own provenance-failure sentinel
+        (`"<unavailable: ...>"`, `eval_fair_puct` ~line 4498). ⚠️ Without this the
+        sentinel PASSES the gate: both cells carry the SAME sentinel string, so a
+        pure equality check sees one distinct build and calls it agreement."""
+        return x is None or (isinstance(x, str)
+                             and (not x.strip() or x.startswith("<unavailable")))
+
     stamps, ok = {}, True
     seen = set()
     for c in CELLS:
         m = (cells.get(c) or {}).get("manifest", {})
         tc = m.get("rust_toolchain")
+        # ⚠️ `carc_rs_version` is the CARGO version and does NOT move between
+        # builds — it cannot tell a fresh wheel from a stale one. `carc_rs_build`
+        # is the content hash and is the witness of record; the version is only a
+        # fallback, and it is reported as a weaker one.
         rs = m.get("carc_rs_build", m.get("carc_rs_version"))
         mixed = m.get("mixed_builds")
-        stamps[c] = {"rust_toolchain": tc, "carc_rs_build": rs, "mixed_builds": mixed}
-        if tc is None or rs is None or bool(mixed):
+        stamps[c] = {"rust_toolchain": tc, "carc_rs_build": rs, "mixed_builds": mixed,
+                     "build_witness": ("carc_rs_build (content hash)"
+                                       if m.get("carc_rs_build") is not None else
+                                       "carc_rs_version (WEAK — cargo version does not "
+                                       "move between builds)")}
+        # `mixed_builds is None` means the provenance block RAISED — unknown, not clean.
+        if _bad(tc) or _bad(rs) or mixed is None or bool(mixed):
             ok = False
         seen.add((tc, rs))
     for doc in preflights:
@@ -540,12 +588,18 @@ def gate_tool(cells: dict, preflights: list) -> tuple:
         rs = doc.get("carc_rs_build", doc.get("carc_rs_version"))
         stamps[f"preflight:{doc.get('host')}"] = {"rust_toolchain": tc,
                                                   "carc_rs_build": rs}
-        if tc is None or rs is None:
+        if _bad(tc) or _bad(rs):
             ok = False
         seen.add((tc, rs))
     if len(seen) != 1:
         ok = False
-    return bool(ok), {"stamps": stamps, "distinct_builds": len(seen)}
+    return bool(ok), {
+        "stamps": stamps, "distinct_builds": len(seen),
+        "cross_box_note": (
+            "under --shared-claim a second box writes NO manifest, so the "
+            "authoritative cross-box comparison is the PREFLIGHT_*_${HOST}_FIRST.json "
+            "witnesses against each other — they are folded into the same equality "
+            "set here (eval_fair_puct ~line 4484)")}
 
 
 def gate_stat(z_arb, z_rnd, z_D) -> tuple:
@@ -648,9 +702,16 @@ def _failed_conjuncts(p, q, r) -> list:
     return out
 
 
-def cost_rider(ms_ratio_arb, ms_ratio_rnd) -> dict:
+def cost_rider(ms_ratio_arb, ms_ratio_rnd, waived=True) -> dict:
     """§4.2 — a DOWNGRADE TRIGGER, never a branch input, and it never touches
-    `D` / `z_D` (ARB and RND are cost-matched to each other by construction)."""
+    `D` / `z_D` (ARB and RND are cost-matched to each other by construction).
+
+    ⚠️ `waived` implements READ_RULE §0.D's OWNER RULING: the DOWNGRADE is waived
+    for this cell, the MEASUREMENT is not. `N4_FIRED` is therefore still computed
+    and reported exactly as before — only `cost_confounded` (the consequence) is
+    suppressed. Defaults to the ruling. This function CANNOT move a branch either
+    way: `decide_branch` never sees it (asserted in `tests/`).
+    """
     def gt(x):
         try:
             return bool(x == x and x > MS_RATIO_BAR)
@@ -664,14 +725,35 @@ def cost_rider(ms_ratio_arb, ms_ratio_rnd) -> dict:
             return False
 
     fired = gt(ms_ratio_arb) or gt(ms_ratio_rnd)
+    # ⚠️ §4.3(4) makes the MEASUREMENT mandatory on every branch. §0.D waived the
+    # consequence, not the measurement — so an ABSENT ms_ratio is a DEFECT in the
+    # read-out and is shouted about, on every branch, waiver or no waiver.
+    missing = [c for c, v in (("ARB", ms_ratio_arb), ("RND", ms_ratio_rnd))
+               if v is None or v != v]
     return {"ms_ratio_arb": ms_ratio_arb, "ms_ratio_rnd": ms_ratio_rnd,
             "bar": MS_RATIO_BAR, "neutral_bar": MS_RATIO_NEUTRAL,
             "expected_from_design_5": MS_RATIO_EXPECTED,
+            "prediction_vs_realized": {
+                "predicted": MS_RATIO_EXPECTED,
+                "realized": {"ARB": ms_ratio_arb, "RND": ms_ratio_rnd},
+                "delta": {c: (None if (v is None or v != v) else v - MS_RATIO_EXPECTED)
+                          for c, v in (("ARB", ms_ratio_arb), ("RND", ms_ratio_rnd))},
+                "why": ("evidence about the COST MODEL, and its value does not depend on "
+                        "whether the bar is enforced — it is the only way a wrong cost "
+                        "model becomes visible. DESIGN §5 pre-registered ≈1.1985 before "
+                        "the measurement.")},
             "N4_FIRED": fired,
-            "cost_confounded": fired,
+            # the CONSEQUENCE, waived by §0.D
+            "downgrade_waived": bool(waived),
+            "n4_downgrade_waived_by": (N4_WAIVER_BY if waived else None),
+            "owner_ruling_verbatim": (N4_WAIVER_OWNER_VERBATIM if waived else None),
+            "cost_confounded": bool(fired and not waived),
             "cost_neutral": bool(le_neutral(ms_ratio_arb) and le_neutral(ms_ratio_rnd)),
+            "ms_ratio_missing": missing,
+            "MEASUREMENT_DEFECT": bool(missing),
             "applies_to": "the AGAINST-CHAMPION reading only — D / z_D are immune",
-            "field_name_trap": N4_FIELD_NAME_TRAP, "rider": N4_RIDER}
+            "field_name_trap": N4_FIELD_NAME_TRAP, "rider": N4_RIDER,
+            "waiver_note": (N4_WAIVER_NOTE if waived else None)}
 
 
 # --------------------------------------------------------------------------- #
@@ -908,9 +990,13 @@ def build_readout(args) -> dict:
                 "NOT APPLICABLE: the 95% upper bound on E_arb is not below +6.32 elo."),
             "tension_rider": G_FLAT_TENSION_RIDER,
         }
-    if cost["cost_confounded"] and branch["branch"] not in ("U-UNREADABLE",):
+    # §4.2's downgrade — applied ONLY if §0.D's waiver is off. Under the ruling it
+    # never fires, and the branch sentence is read at face value. This is a
+    # PRESENTATION prefix either way: `branch` itself is untouched, always.
+    if cost["cost_confounded"] and branch["branch"] != "U-UNREADABLE":
         readout["branch_headline"] = (
             "[COST-CONFOUNDED — ms_ratio > 1.20] " + readout["branch_headline"])
+    assert readout["branch"] == branch["branch"], "the cost rider moved a branch"
     return readout
 
 
@@ -1066,13 +1152,32 @@ def render(v: dict) -> str:
     c = v["cost_N4"]
     L.append("## §4.3 (4) — `ms_ratio` for both cells, with the field-name trap named")
     L.append("")
+    pvr = c["prediction_vs_realized"]
     L.append(f"- `ms_ratio_arb` = {_f(c['ms_ratio_arb'], '.4f')} · `ms_ratio_rnd` = "
-             f"{_f(c['ms_ratio_rnd'], '.4f')} (bar {c['bar']}; "
-             f"cost-neutral at ≤ {c['neutral_bar']}; DESIGN §5 predicted "
-             f"≈ {c['expected_from_design_5']} BEFORE the measurement)")
+             f"{_f(c['ms_ratio_rnd'], '.4f')} (bar {c['bar']})")
+    # ⭐ a FIRST-CLASS line, not a footnote (§0.D): the cost model on trial.
+    L.append(f"- ⭐ **PREDICTION vs REALIZED — DESIGN §5 predicted "
+             f"≈ {pvr['predicted']} BEFORE the measurement; realized ARB "
+             f"{_f(pvr['realized']['ARB'], '.4f')} (Δ {_f(pvr['delta']['ARB'], '+.4f')}), "
+             f"RND {_f(pvr['realized']['RND'], '.4f')} "
+             f"(Δ {_f(pvr['delta']['RND'], '+.4f')}).** {pvr['why']}")
+    if c["cost_neutral"]:
+        L.append(f"- **COST-NEUTRAL: both cells are ≤ {c['neutral_bar']}.**")
+    if c["MEASUREMENT_DEFECT"]:
+        L.append(f"- 🛑 **DEFECT — `ms_ratio` IS ABSENT for {c['ms_ratio_missing']}.** "
+                 "§4.3(4) makes the measurement mandatory on every branch, and §0.D "
+                 "waived the CONSEQUENCE, not the MEASUREMENT. This read-out is "
+                 "incomplete until the cell reports its cost.")
     L.append(f"- **N4 FIRED: {c['N4_FIRED']}** — "
-             + ("the against-champion reading is DOWNGRADED TO COST-CONFOUNDED"
-                if c["N4_FIRED"] else "the against-champion reading is not downgraded"))
+             + ("but the §4.2 DOWNGRADE IS WAIVED (§0.D); the against-champion reading "
+                "stands AT FACE VALUE"
+                if (c["N4_FIRED"] and c["downgrade_waived"]) else
+                "the against-champion reading is DOWNGRADED TO COST-CONFOUNDED"
+                if c["N4_FIRED"] else
+                "the against-champion reading is not downgraded"))
+    if c["downgrade_waived"]:
+        L.append(f"- waiver authorised by **{c['n4_downgrade_waived_by']}** — owner, "
+                 f"verbatim: *\"{c['owner_ruling_verbatim']}\"*")
     L.append(f"- ARB `champ_prefix_ms_per_move` (CANDIDATE) "
              f"{_f(a['champ_prefix_ms_per_move'], '.1f')} / `rung_ms_per_move` "
              f"(OPPONENT) {_f(a['rung_ms_per_move'], '.1f')}; RND "
@@ -1082,6 +1187,9 @@ def render(v: dict) -> str:
     L.append(c["field_name_trap"])
     L.append("")
     L.append(c["rider"])
+    if c["waiver_note"]:
+        L.append("")
+        L.append(c["waiver_note"])
     L.append("")
 
     # --- §4.3 (5) gates ------------------------------------------------------ #
