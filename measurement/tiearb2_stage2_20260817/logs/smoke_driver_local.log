@@ -1,0 +1,24 @@
+[smoke 2026-08-17_12:38:43] === SMOKE box=local host=Doctor band=900000000000 n=30 W=30 ===
+[smoke 2026-08-17_12:38:43] --- census BEFORE (a timing bench is an EXCLUSIVE tenant) ---
+    PID     ELAPSED %CPU COMMAND
+1391905       21:42  0.1 python
+1391906       21:41  0.0 python
+1396698       17:13  0.0 python
+1396699       17:13  0.0 python
+1396702       17:12  0.0 python
+1396703       17:12  0.0 python
+1396704       17:11  0.0 python
+0.55 1.35 4.58 1/959 1406681
+[smoke 2026-08-17_12:47:38] cell tiearb_ARB_B16J4_deploy11008 (mode=argmax) rc=0 wall=534s records=30/30
+[smoke 2026-08-17_12:56:48] cell tiearb_RND_B16J4_deploy11008 (mode=random) rc=0 wall=550s records=30/30
+[smoke 2026-08-17_12:56:48] --- census AFTER ---
+    PID     ELAPSED %CPU COMMAND
+1396711       35:15  0.0 python
+1396712       35:14  0.0 python
+1396713       35:14  0.0 python
+1396716       35:13  0.0 python
+1396719       35:13  0.0 python
+1396720       35:12  0.0 python
+1396721       35:12  0.0 python
+10.25 21.88 18.97 1/953 1414437
+[smoke 2026-08-17_12:56:48] === SMOKE DONE on Doctor -> /mnt/c/carc-shared/tiearb2_stage2_20260817_SMOKE ===

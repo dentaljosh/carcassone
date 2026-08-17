@@ -1,0 +1,21 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 16, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=30 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 30 to play, 30 workers, out=/mnt/c/carc-shared/tiearb2_stage2_20260817_SMOKE/tiearb_ARB_B16J4_deploy11008_Doctor
+  10/30 played (43.5s/game, ~14 min left)
+  20/30 played (23.2s/game, ~4 min left)
+  30/30 played (17.8s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 30   candidate: 20W / 0D / 10L   winrate 0.667 (z=+1.83)
+avg score diff (candidate - opponent): +4.17
+ELO: +120.4  (+/- 67.3 1sigma)
+PAIRED: 15 decks   mean seat-balanced margin +4.17   z = +1.05
+prefix ms/move: candidate 4525  opponent 1983  (ratio 2.28x)
+fair endgame: candidate latched 30/30 games, 1.06s solver/game, timeouts=0
+fair endgame: opponent  latched 30/30 games, 0.50s solver/game, timeouts=0
+tie-arbiter: 30 games, mode(s) argmax — phi 17.13 fired tile plies/game (offline prior 22.96; 514/1034 of tile plies), pick-change 0.591, mean arms 3.27, 26864 playouts, 177.8s/game
+[summary.json] wrote /mnt/c/carc-shared/tiearb2_stage2_20260817_SMOKE/tiearb_ARB_B16J4_deploy11008_Doctor/summary.json

@@ -1,0 +1,385 @@
+{
+  "kind": "tiearb2_stage2_phase_b_smoke",
+  "\u26a0\ufe0f": "NOT A CELL. Throwaway band, no results.csv row, no band claim, no strength statistic. Its ONLY jobs are the ETA and the first look at the realized firing rate and cost.",
+  "throwaway_band": 900000000000,
+  "cell_band_untouched": 132000000000,
+  "production_knobs": {
+    "k_dets": 8,
+    "sims": 1376,
+    "total_sims": 11008,
+    "exact_k": 2,
+    "backend": "rust",
+    "rules_profile": "fixed_v1 + R9",
+    "paired": true,
+    "B": 16,
+    "J": 4,
+    "eps": 0.0,
+    "salt": "tiearb2-deploy-v1",
+    "only_difference_from_the_cell": "the game count"
+  },
+  "cells": {
+    "ARB": {
+      "local": {
+        "dir": "/mnt/c/carc-shared/tiearb2_stage2_20260817_SMOKE/tiearb_ARB_B16J4_deploy11008_Doctor",
+        "host": "Doctor",
+        "n_games": 30,
+        "wall_secs": 534,
+        "secs_per_game": 17.8,
+        "champ_prefix_ms_per_move_IS_THE_CANDIDATE": 4525.474396135266,
+        "rung_ms_per_move_IS_THE_OPPONENT": 1982.8892114175137,
+        "ms_ratio_cand_over_opp": 2.2822628566828134,
+        "tiearb_phi": 17.133333333333333,
+        "tiearb_fired_plies_total": 514,
+        "tiearb_tile_plies_total": 1034,
+        "tiearb_fire_rate_on_tile_plies": 0.49709864603481624,
+        "tiearb_pickchange_rate": 0.5914396887159533,
+        "tiearb_mean_arms": 3.2665369649805447,
+        "tiearb_playouts_total": 26864,
+        "tiearb_secs_per_game": 177.83309451006664,
+        "tiearb_games": 30,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null,
+        "tiearb_partial_argmax_total": 0,
+        "tiearb_modes": [
+          "argmax"
+        ],
+        "resolved_cand_tiearb_top_level": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "resolved_cand_tiearb_under_config": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "cand_leaf_hash": "a36d2e15a3b3d71d",
+        "rust_toolchain": "1.96.0",
+        "carc_rs_build": "carc_rs-0.1.0+02819e20f2af+rustc1.96.0",
+        "carc_rs_binary_sha": "a4318fd59d9d8349",
+        "n_failed": 0
+      },
+      "laptop": {
+        "dir": "/mnt/c/carc-shared/tiearb2_stage2_20260817_SMOKE/tiearb_ARB_B16J4_deploy11008_laptop-wsl",
+        "host": "laptop-wsl",
+        "n_games": 22,
+        "wall_secs": 480,
+        "secs_per_game": 21.818181818181817,
+        "champ_prefix_ms_per_move_IS_THE_CANDIDATE": 4236.353096179183,
+        "rung_ms_per_move_IS_THE_OPPONENT": 1663.380764163373,
+        "ms_ratio_cand_over_opp": 2.5468330447538463,
+        "tiearb_phi": 18.0,
+        "tiearb_fired_plies_total": 396,
+        "tiearb_tile_plies_total": 759,
+        "tiearb_fire_rate_on_tile_plies": 0.5217391304347826,
+        "tiearb_pickchange_rate": 0.5959595959595959,
+        "tiearb_mean_arms": 3.224747474747475,
+        "tiearb_playouts_total": 20432,
+        "tiearb_secs_per_game": 172.37208028045455,
+        "tiearb_games": 22,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null,
+        "tiearb_partial_argmax_total": 0,
+        "tiearb_modes": [
+          "argmax"
+        ],
+        "resolved_cand_tiearb_top_level": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "resolved_cand_tiearb_under_config": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "cand_leaf_hash": "a36d2e15a3b3d71d",
+        "rust_toolchain": "1.96.0",
+        "carc_rs_build": "carc_rs-0.1.0+02819e20f2af+rustc1.96.0",
+        "carc_rs_binary_sha": "8ae0b98427debb2e",
+        "n_failed": 0
+      }
+    },
+    "RND": {
+      "local": {
+        "dir": "/mnt/c/carc-shared/tiearb2_stage2_20260817_SMOKE/tiearb_RND_B16J4_deploy11008_Doctor",
+        "host": "Doctor",
+        "n_games": 30,
+        "wall_secs": 550,
+        "secs_per_game": 18.333333333333332,
+        "champ_prefix_ms_per_move_IS_THE_CANDIDATE": 4649.748673420164,
+        "rung_ms_per_move_IS_THE_OPPONENT": 1983.2577519379843,
+        "ms_ratio_cand_over_opp": 2.344500440689849,
+        "tiearb_phi": 18.8,
+        "tiearb_fired_plies_total": 564,
+        "tiearb_tile_plies_total": 1035,
+        "tiearb_fire_rate_on_tile_plies": 0.5449275362318841,
+        "tiearb_pickchange_rate": 0.6613475177304965,
+        "tiearb_mean_arms": 3.24822695035461,
+        "tiearb_playouts_total": 29312,
+        "tiearb_secs_per_game": 189.8057654054,
+        "tiearb_games": 30,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null,
+        "tiearb_partial_argmax_total": 0,
+        "tiearb_modes": [
+          "random"
+        ],
+        "resolved_cand_tiearb_top_level": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "resolved_cand_tiearb_under_config": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "cand_leaf_hash": "a36d2e15a3b3d71d",
+        "rust_toolchain": "1.96.0",
+        "carc_rs_build": "carc_rs-0.1.0+d06d12f12437+rustc1.96.0",
+        "carc_rs_binary_sha": "a4318fd59d9d8349",
+        "n_failed": 0
+      },
+      "laptop": {
+        "dir": "/mnt/c/carc-shared/tiearb2_stage2_20260817_SMOKE/tiearb_RND_B16J4_deploy11008_laptop-wsl",
+        "host": "laptop-wsl",
+        "n_games": 22,
+        "wall_secs": 487,
+        "secs_per_game": 22.136363636363637,
+        "champ_prefix_ms_per_move_IS_THE_CANDIDATE": 4120.45256916996,
+        "rung_ms_per_move_IS_THE_OPPONENT": 1676.7793148880105,
+        "ms_ratio_cand_over_opp": 2.4573612833750627,
+        "tiearb_phi": 18.045454545454547,
+        "tiearb_fired_plies_total": 397,
+        "tiearb_tile_plies_total": 759,
+        "tiearb_fire_rate_on_tile_plies": 0.5230566534914362,
+        "tiearb_pickchange_rate": 0.6498740554156172,
+        "tiearb_mean_arms": 3.3727959697733,
+        "tiearb_playouts_total": 21424,
+        "tiearb_secs_per_game": 170.96749341431817,
+        "tiearb_games": 22,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null,
+        "tiearb_partial_argmax_total": 0,
+        "tiearb_modes": [
+          "random"
+        ],
+        "resolved_cand_tiearb_top_level": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "resolved_cand_tiearb_under_config": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "cand_leaf_hash": "a36d2e15a3b3d71d",
+        "rust_toolchain": "1.96.0",
+        "carc_rs_build": "carc_rs-0.1.0+02819e20f2af+rustc1.96.0",
+        "carc_rs_binary_sha": "8ae0b98427debb2e",
+        "n_failed": 0
+      }
+    }
+  },
+  "phi_reference": {
+    "offline_prior": 22.96,
+    "funnel": {
+      "exact_tie_rate_on_tile_plies": 0.6598,
+      "deduped_scoreable": 0.404
+    },
+    "G_FIRE_floor_per_game": 1.0,
+    "design_2_1_mismatches_verbatim": [
+      "(i) The corpus predicate was evaluated on a REPLAYED board at the champion's seat. At runtime it is evaluated inside a live search on the candidate's seat. The board distribution is the same population; the *evaluation context* is not identical.",
+      "(ii) The corpus `champ_picks` came from a FRESH search. CL-070 established that **reseeding alone flips picks**. => the offline firing rate **estimates** the runtime rate; it does not equal it."
+    ]
+  },
+  "cost_reference": {
+    "design_5_predicted_ms_ratio": 1.1985,
+    "N4_trigger": 1.2,
+    "cost_neutral_restored_at_or_below": 1.05,
+    "field_name_trap": "champ_prefix_ms_per_move IS THE CANDIDATE SIDE in eval_fair_puct (live lines 2361/2371/2389); rung_ms_per_move is the opponent. Swapping them inverts the cost verdict.",
+    "N4_is_a_downgrade_trigger_never_a_branch_input": true
+  },
+  "eta_for_the_real_cells": {
+    "ARB": {
+      "per_box": {
+        "local": {
+          "games": 30,
+          "wall_secs": 534,
+          "secs_per_game_wallclock": 17.8,
+          "games_per_sec": 0.056179775280898875,
+          "worker_secs_per_game": 534.0,
+          "workers": 30,
+          "full_occupancy": true,
+          "note": null
+        },
+        "laptop": {
+          "games": 22,
+          "wall_secs": 480,
+          "secs_per_game_wallclock": 21.8,
+          "games_per_sec": 0.04583333333333333,
+          "worker_secs_per_game": 480.0,
+          "workers": 22,
+          "full_occupancy": true,
+          "note": null
+        }
+      },
+      "combined_games_per_sec": 0.10201310861423221,
+      "cell_n": 800,
+      "eta_secs": 7842.1294171638365,
+      "eta_hours": 2.18
+    },
+    "RND": {
+      "per_box": {
+        "local": {
+          "games": 30,
+          "wall_secs": 550,
+          "secs_per_game_wallclock": 18.3,
+          "games_per_sec": 0.05454545454545454,
+          "worker_secs_per_game": 550.0,
+          "workers": 30,
+          "full_occupancy": true,
+          "note": null
+        },
+        "laptop": {
+          "games": 22,
+          "wall_secs": 487,
+          "secs_per_game_wallclock": 22.1,
+          "games_per_sec": 0.045174537987679675,
+          "worker_secs_per_game": 487.0,
+          "workers": 22,
+          "full_occupancy": true,
+          "note": null
+        }
+      },
+      "combined_games_per_sec": 0.09971999253313421,
+      "cell_n": 800,
+      "eta_secs": 8022.4634968176715,
+      "eta_hours": 2.23
+    },
+    "BOTH_CELLS": {
+      "eta_secs": 15864.592913981509,
+      "eta_hours": 4.41,
+      "note": "the driver runs ARB then RND on each box, so the two cells' wall-clocks ADD; both boxes work each cell concurrently under --shared-claim.",
+      "all_inputs_at_full_occupancy": true
+    }
+  },
+  "headline": {
+    "ARB": {
+      "phi": [
+        17.133333333333333,
+        18.0
+      ],
+      "phi_offline_prior": 22.96,
+      "ms_ratio": [
+        2.2822628566828134,
+        2.5468330447538463
+      ],
+      "ms_ratio_predicted": 1.1985,
+      "pickchange_rate": [
+        0.5914396887159533,
+        0.5959595959595959
+      ],
+      "mean_arms": [
+        3.2665369649805447,
+        3.224747474747475
+      ],
+      "mean_arms_corpus_Abar": 3.0022,
+      "secs_per_game_wallclock": [
+        17.8,
+        21.818181818181817
+      ],
+      "arbiter_secs_per_game": [
+        177.83309451006664,
+        172.37208028045455
+      ],
+      "errors_total": [
+        0,
+        0
+      ],
+      "partial_argmax_total": [
+        0,
+        0
+      ],
+      "n_failed": [
+        0,
+        0
+      ],
+      "boxes": [
+        "Doctor",
+        "laptop-wsl"
+      ]
+    },
+    "RND": {
+      "phi": [
+        18.8,
+        18.045454545454547
+      ],
+      "phi_offline_prior": 22.96,
+      "ms_ratio": [
+        2.344500440689849,
+        2.4573612833750627
+      ],
+      "ms_ratio_predicted": 1.1985,
+      "pickchange_rate": [
+        0.6613475177304965,
+        0.6498740554156172
+      ],
+      "mean_arms": [
+        3.24822695035461,
+        3.3727959697733
+      ],
+      "mean_arms_corpus_Abar": 3.0022,
+      "secs_per_game_wallclock": [
+        18.333333333333332,
+        22.136363636363637
+      ],
+      "arbiter_secs_per_game": [
+        189.8057654054,
+        170.96749341431817
+      ],
+      "errors_total": [
+        0,
+        0
+      ],
+      "partial_argmax_total": [
+        0,
+        0
+      ],
+      "n_failed": [
+        0,
+        0
+      ],
+      "boxes": [
+        "Doctor",
+        "laptop-wsl"
+      ]
+    }
+  }
+}

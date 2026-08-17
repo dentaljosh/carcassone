@@ -81,6 +81,10 @@ def read_cell(root: Path, sub: str, host: str) -> dict | None:
         "tiearb_playouts_total": summ.get("tiearb_playouts_total"),
         "tiearb_secs_per_game": summ.get("tiearb_secs_per_game"),
         "tiearb_games": summ.get("tiearb_games"),
+        "tiearb_errors_total": summ.get("tiearb_errors_total"),
+        "tiearb_first_error": summ.get("tiearb_first_error"),
+        # READ_RULE §0.F `G-PLY`: 0 by construction, emitted so it is witnessed.
+        "tiearb_partial_argmax_total": summ.get("tiearb_partial_argmax_total"),
         "tiearb_modes": summ.get("tiearb_modes"),
         "resolved_cand_tiearb_top_level": man.get("cand_tiearb"),
         "resolved_cand_tiearb_under_config": (man.get("config") or {}).get("cand_tiearb"),
@@ -190,6 +194,31 @@ def main() -> int:
             "N4_is_a_downgrade_trigger_never_a_branch_input": True,
         },
         "eta_for_the_real_cells": eta,
+        # The four numbers a launch decision actually reads, per cell, pooled
+        # over the boxes. ⚠️ `ms_ratio` is reported against DESIGN §5's advance
+        # prediction and the N4 trigger, but the owner ruling (READ_RULE §0.D)
+        # WAIVED the >1.20 downgrade for this cell — the MEASUREMENT is still
+        # required, because a wrong cost model must stay visible even when the
+        # bar is not enforced.
+        "headline": {
+            label: {
+                "phi": [c["tiearb_phi"] for c in per_box.values() if c],
+                "phi_offline_prior": PHI_OFFLINE_PRIOR,
+                "ms_ratio": [c["ms_ratio_cand_over_opp"] for c in per_box.values() if c],
+                "ms_ratio_predicted": MS_RATIO_PREDICTED,
+                "pickchange_rate": [c["tiearb_pickchange_rate"] for c in per_box.values() if c],
+                "mean_arms": [c["tiearb_mean_arms"] for c in per_box.values() if c],
+                "mean_arms_corpus_Abar": 3.0022,
+                "secs_per_game_wallclock": [c["secs_per_game"] for c in per_box.values() if c],
+                "arbiter_secs_per_game": [c["tiearb_secs_per_game"] for c in per_box.values() if c],
+                "errors_total": [c.get("tiearb_errors_total") for c in per_box.values() if c],
+                "partial_argmax_total": [c.get("tiearb_partial_argmax_total")
+                                         for c in per_box.values() if c],
+                "n_failed": [c["n_failed"] for c in per_box.values() if c],
+                "boxes": [c["host"] for c in per_box.values() if c],
+            }
+            for label, per_box in cells.items()
+        },
     }
     Path(a.out).write_text(json.dumps(out, indent=2))
     print(json.dumps(out["eta_for_the_real_cells"], indent=2))
