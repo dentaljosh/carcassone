@@ -981,7 +981,8 @@ def _make_bare_net_opponent(net, rep, seed, leaf_cfg=None, handles=None):
 
 
 def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
-                     leaf_cfg=None, jrules_prior=None, jrules_filter=None):
+                     leaf_cfg=None, jrules_prior=None, jrules_filter=None,
+                     tiearb=None):
     # leaf_cfg=None -> env DEFAULT_CONFIG (byte-identical to the pre-C5 path); a
     # non-None value is the --cand-leaf-json CANDIDATE override for the FAIR agent
     # ONLY (the h800 rung always keeps DEFAULT_CONFIG — see _RungPrefix callers).
@@ -1008,6 +1009,20 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
     if jrules_filter is not None:
         jr.update(jrules_filter_mask=int(jrules_filter["mask"]),
                   jrules_filter_min_keep=int(jrules_filter["min_keep"]))
+    # tiearb: THE TIE ARBITER (CANDIDATE side only, rust-only) —
+    # measurement/tiearb2_stage2_20260817. `None` OR a dict with
+    # `enabled=False` constructs the config with the dataclass defaults, i.e.
+    # the champion byte-for-byte. A dict {enabled, B, J, mode, salt, eps} is the
+    # --cand-tiearb-* override. Same inverted-liveness situation as surfaces B
+    # and C — no leaf hash moves — so the wiring gates are the RESOLVED
+    # `config.cand_tiearb` dict in the manifest (READ_RULE G-J4), the per-cell
+    # firing rate `phi` in summary.json (G-FIRE), and the TWO-SIDED J13
+    # positive control run on each box before its game 1.
+    if tiearb is not None and bool(tiearb.get("enabled")):
+        jr.update(tiearb_enabled=True,
+                  tiearb_b=int(tiearb["B"]), tiearb_j=int(tiearb["J"]),
+                  tiearb_mode=str(tiearb["mode"]), tiearb_salt=str(tiearb["salt"]),
+                  tiearb_eps=float(tiearb["eps"]))
     return HeuristicPriorConfig(
         c_puct=c_puct, tau_p=tau_p, leaf_quantize=leaf_quantize,
         final_select=final_select, value_norm=value_norm,
@@ -1595,6 +1610,14 @@ class GameResult:
     # dropped_total over the cell's records: a live-mask cell where that sum
     # is 0 never fired the filter and MUST NOT be read as a null.
     cand_jf: dict | None = None
+    # TIE ARBITER (CANDIDATE side): the per-game liveness telemetry —
+    # {"tile_plies", "fired_plies", "pickchanges", "arms_total",
+    #  "playouts_total", "secs", "mode", "B", "J"} read off FairAgentRs.stats()
+    # at game end. None for every non-arbiter cell (legacy schema
+    # byte-identical). ⚠️ `fired_plies` summed over the cell is the numerator of
+    # READ_RULE §2's `phi`: a cell whose sum is 0 never fired the surface and
+    # `G-FIRE` VOIDS it — it must NOT be read as a null.
+    cand_tiearb: dict | None = None
 
 
 # Track-F Gate A oracle-prior cost fields — OMITTED from the serialized per-game JSON for
@@ -1848,7 +1871,7 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
                  netprior_backend=None, backend="python", rust_threads=None,
                  simsplit=None, cand_jrules_prior=None, cand_jrules_filter=None,
-                 cand_exact_objective=None):
+                 cand_exact_objective=None, cand_tiearb=None):
     _W["info"] = info
     # J-RULES PRIOR surface B (CANDIDATE side ONLY, rust-only; None = OFF =
     # byte-identical). A dict {dose, mask, scope} resolved once in main().
@@ -1856,6 +1879,10 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     # J-RULES ROOT FILTER surface C (CANDIDATE side ONLY, rust-only; None =
     # OFF = byte-identical). A dict {mask, min_keep} resolved once in main().
     _W["cand_jrules_filter"] = cand_jrules_filter
+    # THE TIE ARBITER (CANDIDATE side ONLY, rust-only). A RESOLVED dict
+    # {enabled, B, J, mode, salt, eps} from main(); `enabled=False` (or None) is
+    # OFF and byte-identical to every historical cell.
+    _W["cand_tiearb"] = cand_tiearb
     # E1 exact-K WIN objective (CANDIDATE side ONLY, rust-only; None = OFF =
     # margin = byte-identical). Resolved once in main().
     _W["cand_exact_objective"] = cand_exact_objective
@@ -2042,14 +2069,16 @@ def _args_simsplit(args):
     return (args.sims_tile, args.sims_meeple)
 
 
-def _cfg_from_dict(d, leaf_cfg=None, jrules_prior=None, jrules_filter=None):
-    # `jrules_prior`/`jrules_filter` reach ONLY the candidate construction site
-    # in _play_one; the opponent/rung builders never pass them (None ==
-    # pre-B/pre-C byte-identical).
+def _cfg_from_dict(d, leaf_cfg=None, jrules_prior=None, jrules_filter=None,
+                   tiearb=None):
+    # `jrules_prior`/`jrules_filter`/`tiearb` reach ONLY the candidate
+    # construction site in _play_one; the opponent/rung builders never pass them
+    # (None == pre-B/pre-C/pre-arbiter byte-identical).
     return _build_champ_cfg(d["c_puct"], d["tau_p"], d["leaf_quantize"],
                             d["final_select"], d["value_norm"], leaf_cfg,
                             jrules_prior=jrules_prior,
-                            jrules_filter=jrules_filter)
+                            jrules_filter=jrules_filter,
+                            tiearb=tiearb)
 
 
 def _play_one(args) -> GameResult | GameFailure | None:
@@ -2112,7 +2141,8 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
 
     cfg = _cfg_from_dict(_W["champ_cfg_dict"], _W.get("cand_leaf_cfg"),
                          jrules_prior=_W.get("cand_jrules_prior"),
-                         jrules_filter=_W.get("cand_jrules_filter"))
+                         jrules_filter=_W.get("cand_jrules_filter"),
+                         tiearb=_W.get("cand_tiearb"))
     champ = _make_champion(_W["info"], cfg, _W["sims"], _W["k_dets"], _W["exact_k"],
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
@@ -2174,6 +2204,7 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
         rung_moves=rung_moves, rung_secs=round(rung_secs, 3),
         latch_k=champ.latch_k,
         cand_jf=_cand_jf_telemetry(champ),
+        cand_tiearb=_cand_tiearb_telemetry(champ),
         opponent=_W.get("opponent", "h800"), **_opp_stats(rung),
         # Track-F Gate A: candidate oracle cost telemetry (empty {} for non-oracle cells,
         # so the fields stay at their dataclass-default zeros and _save omits them).
@@ -2202,6 +2233,49 @@ def _cand_jf_telemetry(champ) -> dict | None:
         "applicable_moves": int(s["jf_applicable_moves"]),
         "fires": {str(k): int(v) for k, v in s["jf_fires"]},
         "yields": {str(k): int(v) for k, v in s["jf_yields"]},
+    }
+
+
+def _cand_tiearb_telemetry(champ) -> dict | None:
+    """TIE-ARBITER per-game liveness read (CANDIDATE side). None unless the
+    worker was armed with an ENABLED cand_tiearb; an armed cell whose candidate
+    is NOT a RustFairAgent is a wiring bug and raises rather than stamping None
+    (the arbiter is rust-only, and a silent None would grade a
+    champion-vs-champion null wearing the shape of a real cell — the J13
+    lesson).
+
+    `fired_plies` is the numerator of READ_RULE §2's `phi`; `pickchanges` is the
+    §4.3 companion. `secs` is the arbiter's own share of the candidate's clock,
+    reported so the N4 `ms_ratio` can be attributed rather than inferred."""
+    t = _W.get("cand_tiearb")
+    if not t or not bool(t.get("enabled")):
+        return None
+    rs = getattr(champ, "_rs", None)
+    if rs is None:
+        raise RuntimeError(
+            "cand_tiearb is armed but the candidate has no FairAgentRs (the tie "
+            "arbiter is rust-only) — it cannot have run")
+    s = rs.stats()
+    if not bool(s.get("tiearb_enabled")):
+        raise RuntimeError(
+            "cand_tiearb is armed but FairAgentRs.stats() reports "
+            "tiearb_enabled=False — the knob was dropped between main() and the "
+            "rust config (a STALE carc_rs wheel is the usual cause)")
+    return {
+        "tile_plies": int(s["tiearb_tile_plies"]),
+        # `fires` and `fired_plies` are THE SAME NUMBER under two names, on
+        # purpose: the adjudicator's `G-FIRE` reads `cand_tiearb.fires`
+        # fail-closed (an absent witness is a FAIL), while `fired_plies` is the
+        # name this harness's own summary block aggregates. Emitting one and not
+        # the other would void a perfectly good cell on a key spelling.
+        "fires": int(s["tiearb_fired_plies"]),
+        "fired_plies": int(s["tiearb_fired_plies"]),
+        "pickchanges": int(s["tiearb_pickchanges"]),
+        "arms_total": int(s["tiearb_arms_total"]),
+        "playouts_total": int(s["tiearb_playouts_total"]),
+        "secs": float(s["tiearb_secs"]),
+        "mode": str(s["tiearb_mode"]),
+        "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
     }
 
 
@@ -2453,6 +2527,53 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             "candidate_total_sims": k_dets * sims,
             "opp_k_dets": _ok, "opp_sims": _os_, "opp_total_sims": _ok * _os_,
         }
+    # TIE ARBITER (tiearb2 Stage 2 Phase B) cell-level firing block. Empty {}
+    # for every non-arbiter cell, so a legacy summary.json is byte-identical.
+    # ⚠️ READ_RULE `G-FIRE` VOIDS the cell when `tiearb_phi < 1.0`: a surface
+    # that never fires grades a champion-vs-champion null wearing the shape of a
+    # real cell. `phi` = fired tile plies PER GAME; the offline prior is 22.96
+    # (E4 census n=26; funnel 65.98% exact-tie rate on tile plies, 40.4% deduped
+    # scoreable) and DESIGN §2.1 pre-registers that the offline rate ESTIMATES,
+    # and does not equal, the runtime rate.
+    tiearb_summary = {}
+    _ta = [r for r in results if getattr(r, "cand_tiearb", None)]
+    if _ta:
+        _fired = sum(int(r.cand_tiearb["fired_plies"]) for r in _ta)
+        _tile = sum(int(r.cand_tiearb["tile_plies"]) for r in _ta)
+        _chg = sum(int(r.cand_tiearb["pickchanges"]) for r in _ta)
+        _arms = sum(int(r.cand_tiearb["arms_total"]) for r in _ta)
+        _pl = sum(int(r.cand_tiearb["playouts_total"]) for r in _ta)
+        _sec = sum(float(r.cand_tiearb["secs"]) for r in _ta)
+        _modes = sorted({str(r.cand_tiearb["mode"]) for r in _ta})
+        tiearb_summary = {
+            "tiearb_games": len(_ta),
+            "tiearb_fired_plies_total": _fired,
+            "tiearb_tile_plies_total": _tile,
+            "tiearb_phi": _fired / max(1, len(_ta)),
+            "tiearb_fire_rate_on_tile_plies": _fired / max(1, _tile),
+            "tiearb_pickchanges_total": _chg,
+            "tiearb_pickchange_rate": _chg / max(1, _fired),
+            "tiearb_mean_arms": _arms / max(1, _fired),
+            "tiearb_playouts_total": _pl,
+            "tiearb_secs_total": _sec,
+            "tiearb_secs_per_game": _sec / max(1, len(_ta)),
+            "tiearb_modes": _modes,
+            "tiearb_B": sorted({int(r.cand_tiearb["B"]) for r in _ta}),
+            "tiearb_J": sorted({int(r.cand_tiearb["J"]) for r in _ta}),
+            "tiearb_phi_offline_prior": 22.96,
+            "tiearb_G_FIRE_floor": 1.0,
+            "tiearb_G_FIRE_fired": bool(_fired / max(1, len(_ta)) < 1.0),
+        }
+        print(f"tie-arbiter: {len(_ta)} games, mode(s) {'/'.join(_modes)} — "
+              f"phi {tiearb_summary['tiearb_phi']:.2f} fired tile plies/game "
+              f"(offline prior 22.96; {_fired}/{_tile} of tile plies), "
+              f"pick-change {tiearb_summary['tiearb_pickchange_rate']:.3f}, "
+              f"mean arms {tiearb_summary['tiearb_mean_arms']:.2f}, "
+              f"{_pl} playouts, {tiearb_summary['tiearb_secs_per_game']:.1f}s/game")
+        if tiearb_summary["tiearb_G_FIRE_fired"]:
+            print("  ⛔ G-FIRE: phi < 1.0 — THE ARBITRATION SURFACE IS EFFECTIVELY "
+                  "INERT AND THIS CELL IS U-UNREADABLE (READ_RULE §3). Do NOT read "
+                  "it as a null.")
     # THE EXCLUSION BLOCK — always present (h2h parity: a zero rate is STATED).
     _fail_block = _failure_block(results, failures, resolved)
     _shout_failures(_fail_block, n)
@@ -2472,6 +2593,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         "champ_latched_games": champ_latched, "solver_secs_per_game": solver_pergame,
         "champ_timeouts": sum(r.champ_timeouts for r in results),
         **oracle_summary,
+        **tiearb_summary,
     }
 
 
@@ -2487,7 +2609,8 @@ def _build_work(seed_start, n, paired):
 
 # --------------------------------------------------------------------------- #
 def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
-           opp_label=None, cand_jrules_prior=None, cand_jrules_filter=None) -> int:
+           opp_label=None, cand_jrules_prior=None, cand_jrules_filter=None,
+           cand_tiearb=None) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
     and print an elo/z summary. Exits 0 on success.
@@ -2502,7 +2625,13 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
                            args.final_select, args.value_norm, cand_leaf_cfg,
                            jrules_prior=cand_jrules_prior,
-                           jrules_filter=cand_jrules_filter)
+                           jrules_filter=cand_jrules_filter,
+                           tiearb=cand_tiearb)
+    if cand_tiearb is not None and cand_tiearb.get("enabled"):
+        print(f"[smoke] TIE ARBITER LIVE on the candidate: {cand_tiearb} "
+              f"(leaf hash does NOT move — the wiring gates are the manifest's "
+              f"cand_tiearb dict, summary.json's tiearb_phi, and the two-sided "
+              f"J13 positive control)")
     if cand_jrules_prior is not None:
         print(f"[smoke] J-RULES PRIOR surface B LIVE on the candidate: "
               f"{cand_jrules_prior} (leaf hash does NOT move — check the dose)")
@@ -3011,6 +3140,41 @@ def main(argv=None) -> int:
                          "fewer than this many root candidates is SKIPPED for that "
                          "ply (the yield is counted per game). Default 1 == the "
                          "bot's own rule. Only read when the mask is nonzero.")
+    # --- THE TIE ARBITER (measurement/tiearb2_stage2_20260817) ---------------
+    ap.add_argument("--cand-tiearb-enabled", action="store_true",
+                    help="CANDIDATE side only, RUST-ONLY: re-decide an exactly-tied "
+                         "TILE ply with terminal-grounded `tier1-greedy` playouts "
+                         "(tiearb2 Stage 2 Phase B). The trigger is the CORPUS "
+                         "predicate (chain_census.py): TILES phase, own seat, "
+                         "n_legal>=2, and >=2 legal tile actions sharing the top "
+                         "OUTER CHAIN value at EXACT f64 equality. ⚠️ The leaf hash "
+                         "does NOT move, so the wiring gates are the manifest's "
+                         "resolved config.cand_tiearb dict (G-J4), summary.json's "
+                         "tiearb_phi (G-FIRE), and the TWO-SIDED J13 positive "
+                         "control run on each box before its game 1.")
+    ap.add_argument("--cand-tiearb-b", type=int, default=16,
+                    help="B: CRN determinizations per fired ply, SHARED by every arm "
+                         "(16 = the funded rung; rho_wall(16)=0.6224 at the Phase-A "
+                         "rust cost). READ_RULE G-J4 voids the run at B != 16.")
+    ap.add_argument("--cand-tiearb-j", type=int, default=4,
+                    help="J: the cap on the afterstate-deduped tie set, applied by a "
+                         "SEEDED DRAW (never index truncation); the champion's own "
+                         "pooled_q_argmax pick is appended when the cap excluded it. "
+                         "READ_RULE G-J4 voids the run at J != 4.")
+    ap.add_argument("--cand-tiearb-mode", choices=("argmax", "random"), default="argmax",
+                    help="argmax = the ARB cell (take the world-mean argmax). "
+                         "random = the RND cell: run the IDENTICAL playouts, DISCARD "
+                         "the values, and return a seeded draw over the same arm set "
+                         "— the matched-wall-clock control (DESIGN §1), and the "
+                         "mechanism statistic is D = M_arb - M_rnd.")
+    ap.add_argument("--cand-tiearb-salt", type=str, default="tiearb2-deploy-v1",
+                    help="World/selection seed salt. The salt of record is "
+                         "'tiearb2-deploy-v1'; a different salt is a different "
+                         "experiment.")
+    ap.add_argument("--cand-tiearb-eps", type=float, default=0.0,
+                    help="Tie membership tolerance on the outer chain value. 0.0 is "
+                         "the COMMITTED setting — exact f64 equality, NOT a "
+                         "tolerance (DESIGN §2).")
     ap.add_argument("--cand-exact-objective", choices=("margin", "win"),
                     default="margin",
                     help="E1 exact-K solver objective for the CANDIDATE "
@@ -3501,6 +3665,43 @@ def main(argv=None) -> int:
                                         None, jrules_filter=_cand_jrules_filter)
         from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_c
         _sc_rs_c(_probe_cfg_c, 8)  # TypeError == rebuild the wheel on THIS box
+    # THE TIE ARBITER: same resolve-once / fail-fast pattern. ⚠️ UNLIKE the two
+    # J-rules surfaces this dict is ALWAYS built, even when the arbiter is OFF,
+    # because READ_RULE `G-J4` aborts the run when `config.cand_tiearb` is
+    # ABSENT or unresolved — an off cell must still say so on disk, in full.
+    _cand_tiearb = dict(enabled=bool(args.cand_tiearb_enabled),
+                        B=int(args.cand_tiearb_b), J=int(args.cand_tiearb_j),
+                        mode=str(args.cand_tiearb_mode),
+                        salt=str(args.cand_tiearb_salt),
+                        eps=float(args.cand_tiearb_eps))
+    if _cand_tiearb["enabled"]:
+        if _backend != "rust":
+            ap.error("--cand-tiearb-enabled is RUST-ONLY (the arbiter binds at the "
+                     "pooled_q_argmax root hook in carc_core::fair::FairAgent); "
+                     f"resolved backend is {_backend!r}. The python search path "
+                     "would fail-loud in every worker — refusing up front instead.")
+        if args.info != "fair":
+            ap.error("--cand-tiearb-enabled applies to the FAIR candidate "
+                     "(--info fair; the arbiter binds in the fair agent's PIMC "
+                     f"root); got --info {args.info}")
+        # Construct once so a bad mode/B/J dies at launch (__post_init__
+        # validates) and a STALE carc_rs wheel dies HERE with the fail-closed
+        # TypeError rather than 30 s into the first worker. A silently
+        # arbiter-free candidate would grade a perfect champion-vs-champion null
+        # wearing the shape of a real cell — the J13 failure mode.
+        _probe_cfg_t = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
+                                        args.final_select, args.value_norm,
+                                        None, tiearb=_cand_tiearb)
+        from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_t
+        _probe_sc_t = _sc_rs_t(_probe_cfg_t, 8)  # TypeError == rebuild the wheel
+        _resolved_t = dict(_probe_sc_t.tiearb)
+        if _resolved_t != _cand_tiearb:
+            ap.error(f"the resolved rust tiearb knob {_resolved_t} does not match "
+                     f"the requested {_cand_tiearb} — refusing to launch (a "
+                     "mismatch here is exactly what G-J4 exists to catch)")
+        print(f"[tiearb] TIE ARBITER LIVE on the candidate: {_cand_tiearb} "
+              f"(leaf hash does NOT move; gates = manifest cand_tiearb + "
+              f"summary tiearb_phi + the two-sided J13 control)", flush=True)
     # E1 exact-K WIN objective: resolve the CANDIDATE-ONLY knob once, fail fast.
     # None == OFF == "margin" == every historical run, byte-identical. Stamped
     # into the manifest as `cand_exact_objective` (the wiring gate — this
@@ -3603,6 +3804,7 @@ def main(argv=None) -> int:
         return _smoke(args, cand_leaf_cfg, opp_leaf_cfg=opp_leaf_cfg, opp_rep=opp_rep,
                       cand_jrules_prior=_cand_jrules_prior,
                       cand_jrules_filter=_cand_jrules_filter,
+                      cand_tiearb=_cand_tiearb,
                       opp_label=opp_label)
 
     if args.info in ("fair-net", "fair-netprior") and not args.net:
@@ -3657,7 +3859,8 @@ def main(argv=None) -> int:
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
                            args.final_select, args.value_norm, cand_leaf_cfg,
                            jrules_prior=_cand_jrules_prior,
-                           jrules_filter=_cand_jrules_filter)
+                           jrules_filter=_cand_jrules_filter,
+                           tiearb=_cand_tiearb)
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
                       "final_select": args.final_select, "value_norm": args.value_norm}
@@ -3947,6 +4150,15 @@ def main(argv=None) -> int:
         # inverted-hash situation as surface B: no leaf hash moves, so THIS
         # resolved dict + the per-game jf_dropped counters are the wiring gates.
         "cand_jrules_filter": _cand_jrules_filter,
+        # THE TIE ARBITER (CANDIDATE side). ⚠️ ALWAYS a full RESOLVED dict —
+        # never None, never a bare flag — because READ_RULE `G-J4` ABORTS THE
+        # WHOLE RUN if `config.cand_tiearb` is absent or unresolved, or if its
+        # `mode` is wrong for the cell, or `B != 16` / `J != 4`. Same inverted
+        # situation as surfaces B/C: NO leaf hash moves, so `cand_leaf_hash`
+        # EQUALS the champion's on a live cell and a moved-hash check proves
+        # nothing. The other two gates are summary.json's `tiearb_phi`
+        # (`G-FIRE`) and the per-host two-sided J13 positive control.
+        "cand_tiearb": _cand_tiearb,
         # E1 exact-K WIN objective (CANDIDATE side only; None == OFF == margin ==
         # every historical cell). Same inverted-liveness convention as surface B:
         # the leaf hash does NOT move on this knob, so THIS resolved field is the
@@ -4228,6 +4440,43 @@ def main(argv=None) -> int:
         man_cfg["champion"]["intra_turn_reuse"] = intra_block
     write_manifest(out, kind="eval_fair_puct", game=game_tag(Game()),
                    config=man_cfg, overwrite=True)
+    # THE TIE ARBITER's resolved knob, ALSO stamped at manifest TOP LEVEL.
+    # ⚠️ Deliberate belt-and-braces, and the reason is a real discrepancy in the
+    # pre-registration: DESIGN §4 / READ_RULE §3 `G-J4` originally read
+    # `config.cand_tiearb`, and READ_RULE §0.C.2 (commit 6c281f9e) "corrected"
+    # it to top-level `cand_tiearb` on the ground that the sibling
+    # `cand_jrules_prior` resolves at top level. That ground is FACTUALLY WRONG:
+    # every one of those siblings goes into `man_cfg`, which this call passes as
+    # `config=`, so on disk they are ALL at `manifest["config"][...]` (see
+    # `run_manifest.write_manifest`). Rather than argue the point after a
+    # 2-box n=800 run, the knob is written to BOTH addresses, identically —
+    # `G-J4` then passes under either reading and the analyser's
+    # "reads-both-spellings" hygiene note stays true. `patch_manifest` is a
+    # single-key merge, so a racing --shared-claim peer cannot corrupt the
+    # provenance block.
+    patch_manifest(out, "cand_tiearb", _cand_tiearb)
+    # READ_RULE `G-TOOL` witnesses, at manifest TOP LEVEL and fail-closed by
+    # name: the two boxes must have run the SAME rust toolchain and the SAME
+    # `carc_rs` build, and no cell may have mixed builds. ⚠️ `carc_rs_version`
+    # is the CARGO version and does NOT move between builds — it cannot tell a
+    # fresh wheel from a stale one — so `carc_rs_build` is a CONTENT hash of the
+    # installed extension (`rust_agent.carc_rs_build_id`). `mixed_builds` is this
+    # writer's own observation only: with `--shared-claim` a second box writes no
+    # manifest, so the authoritative cross-box comparison is
+    # `PREFLIGHT_*_${HOST}_FIRST.json` against each other, and the adjudicator
+    # does it there.
+    try:
+        from carcassonne_ai.rust_agent import backend_provenance as _bp
+        _prov = _bp()
+        patch_manifest(out, "rust_toolchain",
+                       _prov.get("rust_toolchain") or os.environ.get("RUSTUP_TOOLCHAIN"))
+        patch_manifest(out, "carc_rs_build", _prov.get("carc_rs_build"))
+        patch_manifest(out, "carc_rs_version", _prov.get("carc_rs_version"))
+        patch_manifest(out, "mixed_builds", False)
+    except Exception as _e:                 # noqa: BLE001  — provenance never kills a run
+        patch_manifest(out, "rust_toolchain", os.environ.get("RUSTUP_TOOLCHAIN"))
+        patch_manifest(out, "carc_rs_build", f"<unavailable: {type(_e).__name__}>")
+        patch_manifest(out, "mixed_builds", None)
 
     todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
     # ⚠️ TERMINATION. A cell already on disk as a FAILED record is treated as DONE
@@ -4302,7 +4551,7 @@ def main(argv=None) -> int:
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
-                          _cand_exact_objective))
+                          _cand_exact_objective, _cand_tiearb))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -4317,7 +4566,7 @@ def main(argv=None) -> int:
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
-                          _cand_exact_objective))
+                          _cand_exact_objective, _cand_tiearb))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
