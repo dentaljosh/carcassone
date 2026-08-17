@@ -314,6 +314,29 @@ playout is implied or permitted (§0.D's anti-gaming clause stands).
 sentence *"the cost model missed, not the arbiter"* — printed as a first-class item, not
 a footnote, and **never** presented as an arbiter defect.
 
+### 0.H The real cells' `ms_ratio` is NOT graded against the smoke — a decision, not an omission
+
+> Recorded before the band claim and before game 1.
+
+The read-out prints the §0.G smoke figure (≈2.42 / 2.33) **and** the realized in-cell
+`ms_ratio` **separately, and does not compare them.** No committed text says what a
+divergence between them would mean. **That is deliberate and it stands.**
+
+- **No bar may be invented here.** A threshold written now would be written *after* a
+  smoke number exists — the exact pattern blind ordering exists to prevent. The
+  discipline that made §0.G honest is the same discipline that forbids §0.H inventing a
+  companion bar for it.
+- **It could not change anything anyway.** `ms_ratio` is not a branch input (§4.2), and
+  §0.D waived its consequence, so a smoke-vs-cell comparison would be machinery that
+  cannot move a verdict — pure added surface, zero decision value.
+- **The descriptive route is already open and sufficient.** §0.G's decomposition —
+  numerator, denominator, `phi` — applies to the real cells as prose. A reader who wants
+  the comparison can make it from numbers the read-out already prints; what they may not
+  get is an adjudicated verdict on it, because none was pre-registered.
+
+⇒ **Both numbers are printed; neither grades the other.** If a future design wants that
+comparison adjudicated, it must pre-register the bar **before** its own smoke.
+
 ---
 
 ## 1. Scope
