@@ -131,6 +131,21 @@ the judge Stage 1b adjudicated), margin from the candidate's seat, mean over the
 worlds. `ARB` takes the argmax; `RND` discards the values and draws an arm from the
 seeded RNG.
 
+### 2.0 The arbiter fails soft (accepted pre-launch — READ_RULE §0.E.1)
+
+A `tier1-greedy` continuation can hit the engine's window refusal or the ply ceiling
+deep inside a world. The arbiter does **not** propagate: it falls back to the champion's
+own `pooled_q_argmax` pick **at ply granularity** and counts the event. Propagating
+would kill the game, and the resulting exclusion would be **candidate-correlated** — the
+`capoff` pattern, a far worse failure than a diluted effect. The bias runs **toward the
+champion**, so a positive read is understated, and it is **symmetric across `ARB` and
+`RND`** by construction, so `D` is diluted by it but never biased by it.
+
+⚠️ **Ply granularity is load-bearing**: if any world or arm errors, the *whole ply*
+reverts. An argmax over a partial world set would silently break the CRN pairing across
+arms, which is the entire basis of the comparison. `G-FIRE` binds on
+`phi_effective = phi × (1 − error_rate_on_fired)`.
+
 ### 2.1 Two runtime-vs-corpus mismatches, pre-registered because they are real
 
 Named here so no read-out can present them as discoveries:

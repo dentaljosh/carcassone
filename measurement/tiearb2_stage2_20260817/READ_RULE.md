@@ -145,6 +145,81 @@ licence to *reshape the arbiter to look cheaper*. Nothing may be shaved to duck 
 - **Tournament-clock legality bookkeeping is untouched** — Track G continues to record
   the numbers; this ruling governs *this cell's reading*, not that ledger.
 
+### 0.E PRE-LAUNCH ACCEPTANCES — the arbiter FAILS SOFT, and the `G-TOOL` witness is corrected
+
+> **Recorded 2026-08-17, BEFORE the band claim and BEFORE game 1.** No band claimed, no
+> `summary.json`, no strength number in existence. Both preflights pass 14/14 with both
+> sides of `J13` true per host; the production-knob smoke is running.
+
+#### 0.E.1 The arbiter fails soft — ACCEPTED, with four conditions
+
+**The behaviour.** A `tier1-greedy` continuation can hit the engine's window refusal or
+the ply ceiling deep inside a world. Rather than propagate, the arbiter **falls back to
+the champion's own `pooled_q_argmax` pick** at that ply and **counts the event**
+(`tiearb_errors_total`, `tiearb_error_rate_on_fired`, `tiearb_first_error` in
+`summary.json`; `cand_tiearb.errors` per game).
+
+**This is a deviation from "the arbiter always arbitrates" and it is ACCEPTED**, because
+the alternative is worse and the direction of its bias is known:
+
+- **Propagating would kill the GAME**, and the resulting exclusion would be
+  **candidate-correlated** — the `capoff` pattern. A biased exclusion is a far more
+  dangerous failure than a diluted effect.
+- **The bias runs toward the champion**, i.e. **conservative against the candidate**: a
+  failed arbitration reverts that ply to exactly the champion's behaviour, so the effect
+  shrinks toward the null. A positive read is therefore *understated*, not inflated.
+- **It is symmetric across `ARB` and `RND` by construction** — both cells run the same
+  playouts and fall back by the same rule — so the mechanism contrast `D` is diluted by
+  it, never biased by it.
+
+**Conditions of acceptance, binding:**
+
+1. ⭐ **Ply granularity, not world or arm granularity.** If *any* world or *any* arm
+   errors at a ply, **the whole ply reverts to the champion's pick.** The arbiter must
+   **never** take an argmax over a partial world set: the CRN pairing across arms is the
+   entire basis of the comparison, and a mean over a subset of worlds silently breaks
+   it. A partial-world argmax would be a defect, not a degradation.
+2. **`G-FIRE` binds on the EFFECTIVE rate** (see the amended §3 row): the floor applies
+   to `phi_effective = phi × (1 − error_rate_on_fired)`, per cell. This is a faithful
+   reading of `G-FIRE`'s committed purpose — it exists to refuse an **inert** surface,
+   and a surface that fires but always errors is inert. An arbiter that triggers 23
+   times a game and falls back 23 times is a champion-vs-champion null wearing the shape
+   of a real cell, which is the exact thing `G-FIRE` was written to catch.
+3. **Mandatory reporting, in addition to §4.3** (recorded here rather than in §4 so the
+   §4 branch text stays byte-identical): the read-out MUST print, per cell,
+   `tiearb_errors_total`, `tiearb_error_rate_on_fired`, `tiearb_first_error`,
+   `phi_effective` beside `phi`, and — if `error_rate_on_fired > 0.05` — an explicit
+   statement that **the measured effect is diluted by that factor and a null is
+   correspondingly weaker evidence.**
+4. **Never a branch input** except through condition 2's `G-FIRE` floor.
+
+#### 0.E.2 `G-TOOL`'s witness — corrected, and my earlier instruction was WRONG
+
+I previously asked for a **binary content hash** in preference to `carc_rs_version`.
+**That was incorrect and would have failed closed on a perfectly correct run:** the `.so`
+is **not reproducible cross-machine** — the same commit and toolchain produced different
+binary shas on the two boxes. Corrected:
+
+- **The authoritative witness is `carc_rs_build`** =
+  `carc_rs-<version>+<full-commit[:12]>+rustc<toolchain>` — measured **identical** on
+  both boxes (`carc_rs-0.1.0+bd94aed5d3ee+rustc1.96.0`).
+- **`carc_rs_binary_sha` is a box-local "rebuilt here" witness only** and must never be
+  compared across boxes.
+- **The authoritative cross-box comparison is the two `PREFLIGHT_*_${HOST}_FIRST.json`
+  files**, not the manifests: under `--shared-claim` the second box writes **no
+  manifest**, so `mixed_builds` on a manifest is the *writer's own observation* and
+  cannot see the other box.
+- ⚠️ **Measured trap:** `git rev-parse --short` length is **per-box** (`core.abbrev`), so
+  the build id must slice the **full** commit to a fixed 12 characters. A per-box
+  abbreviation would make two identical builds read as different.
+
+**`G-TOOL`'s refusal of the sentinel stands unchanged** — unknown provenance is not
+agreement. Two *legitimate* sentinel paths were found and fixed **in the driver, not the
+gate** (`RUSTUP_TOOLCHAIN` unset ⇒ `+rustcunpinned`, now exported from `WORKERS.conf`;
+and a non-interactive ssh on the laptop with no `rustup` on `PATH` ⇒ maturin died ⇒ a
+**stale wheel**, now fixed by sourcing `~/.cargo/env` and asserting `rustc --version`
+before building). That is the correct resolution and the gate was not relaxed.
+
 ---
 
 ## 1. Scope
@@ -190,7 +265,7 @@ so it selects a label and its mandatory rider, never a permission.
 | `G-J1` | either cell's resolved `cand_leaf_hash` **differs** from the champion's `a36d2e15a3b3d71d`. ⚠️ **Inverted gate: a difference is an ABORT, not a finding** |
 | `G-J4` | **top-level `cand_tiearb`** (§0.C.2) is absent or unresolved in either `manifest.json`, or its `mode` is not `argmax` for `ARB` and `random` for `RND`, or its `B` ≠ 16 or `J` ≠ 4 |
 | `G-J13` | the **two-sided** positive control did not pass on **each** host before that host's game 1 (`PREFLIGHT_*_${HOST}_FIRST.json`): the arbiter must **change the pick** at a constructed tied ply **and** leave `root_leaf_value_bits` **unchanged** |
-| `G-FIRE` | `phi_arb < 1.0` **or** `phi_rnd < 1.0` — the surface is inert and the cell would grade a champion-vs-champion null wearing the shape of a real cell |
+| `G-FIRE` | **(AMENDED §0.E.1)** `phi_effective < 1.0` in either cell, where `phi_effective = phi × (1 − error_rate_on_fired)` — the surface is inert and the cell would grade a champion-vs-champion null wearing the shape of a real cell. ⚠️ The effective rate is the binding one because the arbiter **fails soft**: a ply whose arbitration errored reverts to the champion's pick and is therefore not arbitrated at all |
 | `G-BAND` | band `132000000000` was not claimed before game 1, or the two cells did not run on the same band and the same decks |
 | `G-N` | **(AMENDED §0.B)** `n_common < 320` **decks**, **or** either cell completed fewer than **640** of its **800** paired **games**. ⚠️ The text committed at `b2faa238` read `n_common < 600`, which is unreachable: a paired `n = 800` cell yields at most **400** decks (`eval_fair_puct.py:3924`) |
 | `G-TOOL` | the two boxes did not run the same rust toolchain / the same `carc_rs` build, or a cell mixed builds |
