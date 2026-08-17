@@ -445,13 +445,14 @@ def _tiearb(mode, B=16, J=4):
 
 
 def _manifest(cell, *, leaf_hash=CHAMP_HASH, tiearb=None, band=BAND, n=800,
-              toolchain="1.96.0", build="carc_rs-0.1.0+abc123"):
+              toolchain="1.96.0", build="carc_rs-0.1.0+bd94aed5d3ee+rustc1.96.0",
+              binary_sha="wheel-sha-local"):
     cfg = _tiearb(S2.MODE_BY_CELL[cell]) if tiearb is None else tiearb
     # §0.C.2: the knob resolves at manifest TOP LEVEL, like every shipped sibling.
     return {"cand_leaf_hash": leaf_hash, "cand_tiearb": cfg,
             "band_seed_start": band, "seed_start": band, "n": n, "paired": True,
             "rust_toolchain": toolchain, "carc_rs_build": build,
-            "mixed_builds": False}
+            "carc_rs_binary_sha": binary_sha, "mixed_builds": False}
 
 
 def _cells(*, arb_over=None, rnd_over=None, n_games=800, phi=(20.0, 20.0),
@@ -477,12 +478,14 @@ def _cells(*, arb_over=None, rnd_over=None, n_games=800, phi=(20.0, 20.0),
 
 
 def _preflight(host, *, pos=True, neg=True, allpass=True,
-               toolchain="1.96.0", build="carc_rs-0.1.0+abc123"):
+               toolchain="1.96.0", build="carc_rs-0.1.0+bd94aed5d3ee+rustc1.96.0",
+               binary_sha="wheel-sha-local"):
     return {"kind": "tiearb2_stage2_preflight", "host": host,
             "all_preflight_pass": allpass, "first_on_host": True,
             "two_sided": {"pick_changed": pos,
                           "root_leaf_value_bits_unchanged": neg},
             "rust_toolchain": toolchain, "carc_rs_build": build,
+            "carc_rs_binary_sha": binary_sha,
             "_path": f"PREFLIGHT_tiearb2_{host}_FIRST.json"}
 
 
@@ -516,7 +519,7 @@ def test_G_J1_is_an_INVERTED_gate_a_DIFFERENT_hash_aborts(cell):
     pre, det = _all_pre(cells=_cells(**{f"{cell.lower()}_over": over}))
     assert pre["G-J1"] is False
     assert det["G-J1"]["expected_equal"] == CHAMP_HASH
-    assert det["G-J1"]["observed"][cell] == "deadbeefdeadbeef"
+    assert det["G-J1"]["observed"][cell]["cand_leaf_hash"] == "deadbeefdeadbeef"
     assert all(v for k, v in pre.items() if k != "G-J1")
     got = S2.decide_branch(9.0, 0.0, 9.0, 9.0, pre)
     assert got["branch"] == "U-UNREADABLE" and got["failed_preconditions"] == ["G-J1"]
@@ -793,7 +796,9 @@ _READ_RULE_REVS = ("b2faa238",      # the original, committed before the instrum
                    "a81b8c72",      # §0.D    OWNER RULING (N4 downgrade waived)
                    "c36055a7",      # §0.E    PRE-LAUNCH ACCEPTANCES (fail-soft, G-TOOL)
                    "ef07768c",      # §0.F    G-PLY, the ply-granularity witness
-                   "edd3deab")      # §0.G    the cost model missed, not the arbiter
+                   "edd3deab",      # §0.G    the cost model missed, not the arbiter
+                   "d39c8a03",      # §0.H    ms_ratio NOT graded against the smoke
+                   "369ac884")      # §0.I    POST-HOC annotation + blindness disclosure
 
 #: THREE INDEPENDENT BOUNDARY CHOICES for "§4", drawn by two different sessions.
 #: All three showing equality is better evidence than any one of them, and the
@@ -907,8 +912,9 @@ def test_section_4_is_identical_across_all_revisions_on_three_boundary_choices()
 
 
 def test_G_TOOL_mixed_or_absent_builds():
-    pre, det = _all_pre(cells=_cells(rnd_over={"carc_rs_build": "carc_rs-0.1.0+OTHER"}))
-    assert pre["G-TOOL"] is False and det["G-TOOL"]["distinct_builds"] == 2
+    pre, det = _all_pre(cells=_cells(rnd_over={"carc_rs_build": "carc_rs-0.1.0+ffffffffffff+rustc1.96.0"}))
+    assert pre["G-TOOL"] is False
+    assert det["G-TOOL"]["distinct_builds_manifests"] == 2
     pre, _ = _all_pre(cells=_cells(rnd_over={"rust_toolchain": "1.95.0"}))
     assert pre["G-TOOL"] is False
     pre, _ = _all_pre(cells=_cells(arb_over={"mixed_builds": True}))
@@ -917,7 +923,7 @@ def test_G_TOOL_mixed_or_absent_builds():
     assert pre["G-TOOL"] is False
     # a host that ran a different wheel is a mixed build too
     pre, _ = _all_pre(preflights=[_preflight("local"),
-                                  _preflight("laptop", build="carc_rs-0.1.0+OTHER")])
+                                  _preflight("laptop", build="carc_rs-0.1.0+ffffffffffff+rustc1.96.0")])
     assert pre["G-TOOL"] is False
 
 
@@ -957,7 +963,7 @@ def test_G_TOOL_NEVER_compares_carc_rs_binary_sha_across_boxes():
     pf[1]["carc_rs_binary_sha"] = "ec140ac0c0583d53"
     pre, det = _all_pre(cells=cells, preflights=pf)
     assert pre["G-TOOL"] is True, "a per-box binary sha must NOT void a healthy 2-box run"
-    assert det["G-TOOL"]["distinct_builds"] == 1
+    assert det["G-TOOL"]["distinct_builds_manifests"] == 1
     # ... and it IS reported, per box, labelled box-local
     assert det["G-TOOL"]["stamps"]["ARB"]["carc_rs_binary_sha_BOX_LOCAL"] == (
         "73aa20102ab98e2f")
@@ -973,26 +979,29 @@ def test_G_TOOL_NEVER_compares_carc_rs_binary_sha_across_boxes():
                 and isinstance(getattr(b[0], "value", None), ast.Constant)
                 and isinstance(b[0].value.value, str)):
             b.pop(0)
-    # every READ of the field -- i.e. every `<mapping>.get("carc_rs_binary_sha")`
+    # ⭐ THE INVARIANT: the field may be READ freely (it is reported per box, and
+    # the SAME-BOX continuity check compares a host's pre-flight against that same
+    # host's own manifest -- a within-box comparison, which is what the field is
+    # FOR). What it must NEVER do is enter the CROSS-BOX equality tuple.
+    witness = next(n for n in ast.walk(tree)
+                   if isinstance(n, ast.FunctionDef) and n.name == "_witness")
+    assert "carc_rs_binary_sha" not in ast.unparse(witness)
+    # ... and it is never added to either cross-box equality SET
+    for target in ("seen_manifest.add", "seen_preflight.add"):
+        for call in (n for n in ast.walk(tree) if isinstance(n, ast.Call)):
+            if ast.unparse(call).startswith(target):
+                assert "carc_rs_binary_sha" not in ast.unparse(call), target
+    # the per-box REPORT sites stay tagged box-local
     reads = [n for n in ast.walk(tree)
              if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
              and n.func.attr == "get" and n.args
              and isinstance(n.args[0], ast.Constant)
              and n.args[0].value == "carc_rs_binary_sha"]
-    assert len(reads) == 2, "expected exactly the two per-box REPORT reads"
-    # ... and each one is stored under a key that MARKS it box-local
-    stored_under = []
-    for d in (n for n in ast.walk(tree) if isinstance(n, ast.Dict)):
-        for k, val in zip(d.keys, d.values):
-            if any(r in ast.walk(val) for r in reads):
-                stored_under.append(ast.unparse(k))
-    assert len(stored_under) == 2, stored_under
-    for key in stored_under:
-        assert "_BOX_LOCAL" in key, key
-    # and the cross-box witness tuple does not mention it at all
-    witness = next(n for n in ast.walk(tree)
-                   if isinstance(n, ast.FunctionDef) and n.name == "_witness")
-    assert "carc_rs_binary_sha" not in ast.unparse(witness)
+    assert reads, "the field must still be READ"
+    tagged = [ast.unparse(k) for d in ast.walk(tree) if isinstance(d, ast.Dict)
+              for k, val in zip(d.keys, d.values)
+              if any(r in ast.walk(val) for r in reads)]
+    assert sum("_BOX_LOCAL" in k for k in tagged) == 2, tagged
 
 
 def test_G_TOOL_witness_is_the_cross_box_BUILD_ID_not_a_content_hash():
@@ -2354,3 +2363,235 @@ def test_the_readout_CANNOT_omit_the_0_G_block(tmp_path):
     # it is a HEADED section, not a footnote buried under the cost bullets
     assert "### ⭐ §0.G" in md
     assert md.index("### ⭐ §0.G") < md.index("## §4.3 (5)")
+
+
+# =========================================================================== #
+# K. THE THREE POST-RUN INSTRUMENT FIXES — regression tests, both directions
+#
+# The first adjudication of the real cells fired U-UNREADABLE on G-J1, G-BAND and
+# G-TOOL. All three were INSTRUMENT defects, fixed as faithful implementations of
+# the committed sentences; no bar moved and §4 was not touched. These are the
+# tests that would have caught each miss.
+# =========================================================================== #
+def _nested(manifest: dict, *keys) -> dict:
+    """Move `keys` from top level into `config`, as `write_manifest` really does."""
+    m = dict(manifest)
+    cfg = dict(m.get("config") or {})
+    for k in keys:
+        if k in m:
+            cfg[k] = m.pop(k)
+    m["config"] = cfg
+    return m
+
+
+def test_G_J1_reads_the_witness_NESTED_under_config_and_reports_where():
+    """⭐ THE REAL MISS. `write_manifest` puts the run config under `config=`, so
+    `cand_leaf_hash` lives at `config.cand_leaf_hash` -- measured on both real
+    cells. A gate that reads only the top level is asking 'was this written by
+    patch_manifest?', not the question §3 asks."""
+    cells = _cells()
+    for c in ("ARB", "RND"):
+        cells[c]["manifest"] = _nested(cells[c]["manifest"], "cand_leaf_hash")
+        assert "cand_leaf_hash" not in cells[c]["manifest"]          # only nested
+    pre, det = _all_pre(cells=cells)
+    assert pre["G-J1"] is True
+    assert det["G-J1"]["observed"]["ARB"]["resolved_at"] == "config.cand_leaf_hash"
+    # top level still resolves, and REPORTS the other address
+    _, det2 = _all_pre(cells=_cells())
+    assert det2["G-J1"]["observed"]["ARB"]["resolved_at"] == "cand_leaf_hash"
+    # ⚠️ THE OTHER DIRECTION: genuinely absent at BOTH levels still FAILS
+    gone = _cells()
+    gone["ARB"]["manifest"].pop("cand_leaf_hash")
+    pre, det = _all_pre(cells=gone)
+    assert pre["G-J1"] is False
+    assert det["G-J1"]["observed"]["ARB"] == {"cand_leaf_hash": None,
+                                              "resolved_at": None}
+    # ... and a NESTED-but-WRONG hash still aborts (inverted gate intact)
+    bad = _cells()
+    for c in ("ARB", "RND"):
+        bad[c]["manifest"] = _nested(bad[c]["manifest"], "cand_leaf_hash")
+    bad["RND"]["manifest"]["config"]["cand_leaf_hash"] = "deadbeefdeadbeef"
+    assert _all_pre(cells=bad)[0]["G-J1"] is False
+
+
+def test_G_BAND_reads_the_band_witness_NESTED_under_config():
+    """Same class: `band_seed_start` / `seed_start` / `n` are all under `config`
+    on the real cells."""
+    cells = _cells()
+    for c in ("ARB", "RND"):
+        cells[c]["manifest"] = _nested(cells[c]["manifest"],
+                                       "band_seed_start", "seed_start", "n")
+    pre, det = _all_pre(cells=cells)
+    assert pre["G-BAND"] is True
+    assert det["G-BAND"]["band_seed_start"] == {"ARB": BAND, "RND": BAND}
+    assert det["G-BAND"]["band_seed_start_resolved_at"]["ARB"] == "config.band_seed_start"
+    assert det["G-BAND"]["same_launch_deck_range"] is True
+    # ⚠️ absent at BOTH levels still FAILS
+    gone = _cells()
+    for c in ("ARB", "RND"):
+        gone[c]["manifest"] = _nested(gone[c]["manifest"], "band_seed_start",
+                                      "seed_start", "n")
+        gone[c]["manifest"]["config"].pop("band_seed_start")
+        gone[c]["manifest"]["config"].pop("seed_start")
+    assert _all_pre(cells=gone)[0]["G-BAND"] is False
+    # ... and a NESTED WRONG band still fails
+    wrong = _cells()
+    for c in ("ARB", "RND"):
+        wrong[c]["manifest"] = _nested(wrong[c]["manifest"], "band_seed_start",
+                                       "seed_start", "n")
+    wrong["RND"]["manifest"]["config"]["band_seed_start"] = 88000000000
+    assert _all_pre(cells=wrong)[0]["G-BAND"] is False
+
+
+def test_the_build_id_carries_the_COMMIT_and_it_is_repo_HEAD_at_CALL_TIME():
+    """⭐ THE G-TOOL DIAGNOSIS, pinned against the real source. Both sides call the
+    SAME function, so a preflight-vs-manifest difference is a HEAD move, not two
+    methods and not two wheels."""
+    assert S2._commit_of_build_id("carc_rs-0.1.0+46537745023c+rustc1.96.0") == (
+        "46537745023c")
+    assert S2._commit_of_build_id("carc_rs-0.1.0+c48216460325+rustc1.96.0") == (
+        "c48216460325")
+    for junk in ("<unavailable: X>", "carc_rs-0.1.0+unknown+rustc1.96.0", None, 7):
+        assert S2._commit_of_build_id(junk) is None
+    ra = (REPO / "src/carcassonne_ai/rust_agent.py").read_text()
+    # the id is built from `git rev-parse HEAD`, NOT from the wheel
+    assert '"rev-parse", "HEAD"' in ra
+    assert 'f"carc_rs-{carc_rs.__version__}+{rev}+rustc{tc}"' in ra
+    # and BOTH producers go through backend_provenance()
+    assert "backend_provenance" in (
+        REPO / "measurement/tiearb2_stage2_20260817/preflight_tiearb.py").read_text()
+    assert "backend_provenance as _bp" in (
+        REPO / "scripts/classical_search/eval_fair_puct.py").read_text()
+
+
+def test_G_TOOL_passes_on_the_CROSS_BOX_proposition_when_only_HEAD_moved():
+    """§3 is a CROSS-BOX proposition. Manifests agreeing with each other and
+    preflights agreeing with each other IS a pass on its own terms; the
+    preflight-vs-manifest delta is a different proposition, reported separately."""
+    cells = _cells(arb_over={"carc_rs_build": "carc_rs-0.1.0+46537745023c+rustc1.96.0"},
+                   rnd_over={"carc_rs_build": "carc_rs-0.1.0+46537745023c+rustc1.96.0"})
+    pf = [_preflight("local", build="carc_rs-0.1.0+c48216460325+rustc1.96.0"),
+          _preflight("laptop", build="carc_rs-0.1.0+c48216460325+rustc1.96.0")]
+    pre, det = _all_pre(cells=cells, preflights=pf)
+    d = det["G-TOOL"]["preflight_vs_manifest_delta"]
+    assert d["differs"] is True
+    assert d["preflight_commits"] == ["c48216460325"]
+    assert d["manifest_commits"] == ["46537745023c"]
+    # the REAL range over the REAL repo: empty => the pre-flight describes what ran
+    assert d["evidence"]["empty"] is True, d["evidence"]
+    assert d["evidence"]["command"].startswith(
+        "git diff --name-only c48216460325..46537745023c --")
+    assert pre["G-TOOL"] is True
+    assert det["G-TOOL"]["cross_box_preflight_agreement"] is True
+    assert det["G-TOOL"]["distinct_builds_manifests"] == 1
+    assert det["G-TOOL"]["distinct_builds_preflights"] == 1
+
+
+def test_a_NON_EMPTY_wheel_relevant_diff_is_DISPOSITIVE_and_voids():
+    """⚠️ THE ONE DIRECTION THAT IS NOT NEGOTIABLE: if a wheel-relevant path
+    changed across the range, the J13 positive control does not describe what ran
+    and U-UNREADABLE STANDS."""
+    # a range that really does touch wheel-relevant paths, taken from this repo
+    import subprocess
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO,
+                          capture_output=True, text=True, check=True).stdout.strip()[:12]
+    old = subprocess.run(["git", "rev-list", "-1", "--all", "--", "rust/"], cwd=REPO,
+                         capture_output=True, text=True, check=True).stdout.strip()[:12]
+    prev = subprocess.run(["git", "rev-parse", f"{old}~1"], cwd=REPO,
+                          capture_output=True, text=True, check=True).stdout.strip()[:12]
+    d = S2.wheel_relevant_diff(prev, head)
+    assert d["empty"] is False, d
+    assert "NON-EMPTY" in d["reason"]
+    cells = _cells(arb_over={"carc_rs_build": f"carc_rs-0.1.0+{head}+rustc1.96.0"},
+                   rnd_over={"carc_rs_build": f"carc_rs-0.1.0+{head}+rustc1.96.0"})
+    pf = [_preflight("local", build=f"carc_rs-0.1.0+{prev}+rustc1.96.0"),
+          _preflight("laptop", build=f"carc_rs-0.1.0+{prev}+rustc1.96.0")]
+    pre, det = _all_pre(cells=cells, preflights=pf)
+    assert pre["G-TOOL"] is False
+    assert det["G-TOOL"]["preflight_vs_manifest_delta"]["evidence"]["empty"] is False
+
+
+def test_an_UNRESOLVED_diff_fails_closed_and_is_never_read_as_empty():
+    d = S2.wheel_relevant_diff("0" * 12, "1" * 12)
+    assert d["empty"] is None                       # git cannot resolve those revs
+    assert "fails closed" in d["reason"]
+    cells = _cells(arb_over={"carc_rs_build": "carc_rs-0.1.0+111111111111+rustc1.96.0"},
+                   rnd_over={"carc_rs_build": "carc_rs-0.1.0+111111111111+rustc1.96.0"})
+    pf = [_preflight("local", build="carc_rs-0.1.0+000000000000+rustc1.96.0"),
+          _preflight("laptop", build="carc_rs-0.1.0+000000000000+rustc1.96.0")]
+    assert _all_pre(cells=cells, preflights=pf)[0]["G-TOOL"] is False
+
+
+def test_same_box_wheel_continuity_matches_a_manifest_to_its_own_preflight():
+    """The property the dropped build-id comparison SEEMED to protect, witnessed
+    properly: `carc_rs_binary_sha`, compared SAME-BOX."""
+    cells = _cells(arb_over={"carc_rs_binary_sha": "8ae0b98427debb2e"},
+                   rnd_over={"carc_rs_binary_sha": "8ae0b98427debb2e"})
+    pf = [_preflight("Doctor", binary_sha="a4318fd59d9d8349"),
+          _preflight("laptop-wsl", binary_sha="8ae0b98427debb2e")]
+    pre, det = _all_pre(cells=cells, preflights=pf, expect_hosts=("Doctor", "laptop-wsl"))
+    cont = det["G-TOOL"]["same_box_wheel_continuity"]
+    assert cont["laptop-wsl"]["matching_manifest_cells"] == ["ARB", "RND"]
+    assert "MATCHED" in cont["laptop-wsl"]["status"]
+    # the box that wrote NO manifest is reported, not failed (--shared-claim)
+    assert cont["Doctor"]["matching_manifest_cells"] is None
+    assert "NO MANIFEST FROM THIS BOX" in cont["Doctor"]["status"]
+    assert pre["G-TOOL"] is True
+    # ⚠️ but a manifest whose wheel matches NO pre-flight IS a contradiction
+    orphaned = _cells(arb_over={"carc_rs_binary_sha": "never-validated"},
+                      rnd_over={"carc_rs_binary_sha": "never-validated"})
+    pre, det = _all_pre(cells=orphaned, preflights=pf,
+                        expect_hosts=("Doctor", "laptop-wsl"))
+    assert pre["G-TOOL"] is False
+    assert det["G-TOOL"]["manifest_wheels_matching_no_preflight"] == ["never-validated"]
+
+
+def test_the_G_TOOL_structural_test_and_its_answer_are_recorded_in_the_gate():
+    """The ruling's question -- 'would this gate fail on every healthy run of this
+    launcher?' -- and its recorded answer must live in the instrument, not only in
+    a message."""
+    import inspect
+    doc = inspect.getdoc(S2.gate_tool)
+    assert "FALSE POSITIVE BY CONSTRUCTION" in doc
+    assert "AT CALL TIME" in doc and "SAME function" in doc
+    assert "does not ask whether the repo was quiescent" in doc
+    assert "STRONGER than the build id" in doc
+    # the launcher really does rebuild by design, and never regenerates the preflight
+    lb = (REPO / "measurement/tiearb2_stage2_20260817/launch_both.sh").read_text()
+    assert "wheel rebuild" in lb and "bundle" in lb
+    assert "preflight" not in lb.lower(), (
+        "if the launcher ever regenerates the pre-flight, the delta stops being "
+        "structural and this reasoning must be revisited")
+
+
+def test_the_DISCLOSURE_is_first_class_and_cannot_be_softened(tmp_path):
+    """The audit trail is mandatory on EVERY branch and must precede the verdict --
+    no reader may reach the branch without passing it."""
+    import inspect
+    src = inspect.getsource(S2.render)
+    assert 'v["adjudication_disclosure"]' in src
+    head = src.split("## ⚠️ DISCLOSURE")[0].rsplit("\n", 4)[-4:]
+    assert not any(ln.strip().startswith("if ") for ln in head), head
+    root = _e2e_world(tmp_path, arb={"n_decks": 400}, rnd={"n_decks": 400})
+    out = tmp_path / "out"
+    S2.main(_e2e_argv(root, out))
+    md = (out / "READOUT.md").read_text()
+    v = json.loads((out / "READOUT.json").read_text())
+    assert v["adjudication_disclosure"] == S2.ADJUDICATION_DISCLOSURE
+    # it comes BEFORE the branch, and before §0.G
+    assert md.index("## ⚠️ DISCLOSURE") < md.index("## BRANCH:")
+    assert md.index("## ⚠️ DISCLOSURE") < md.index("### ⭐ §0.G")
+    for must in ("fired U-UNREADABLE on THREE §3 preconditions",
+                 "G-J1", "G-BAND", "G-TOOL",
+                 "NON-BLIND at fix time", "was BLIND",
+                 "Structural test", "ANSWER: YES",
+                 "Faithful-implementation justification",
+                 "taken VERBATIM", "fully acceptable outcome",
+                 "no driver was edited",
+                 "command:", "output:", "verdict:"):
+        assert must in md, must
+    # every one of the three gates carries a justification, not just a fix
+    assert md.count("Faithful-implementation justification") == 3
+    assert len(S2.ADJUDICATION_DISCLOSURE["fixes"]) == 3
+    assert {f["gate"] for f in S2.ADJUDICATION_DISCLOSURE["fixes"]} == {
+        "G-J1", "G-BAND", "G-TOOL"}

@@ -75,7 +75,9 @@ READ_RULE_AMENDMENT = ("READ_RULE.md §0 — §0.A-C (PRE-RUN AMENDMENT) commit 
                        "§0.E (PRE-LAUNCH ACCEPTANCES: arbiter FAILS SOFT, G-FIRE binds "
                        "on phi_effective; G-TOOL witness corrected) commit c36055a7; "
                        "§0.F (G-PLY, the ply-granularity witness) commit ef07768c; "
-                       "§0.G (THE COST MODEL MISSED, NOT THE ARBITER) commit edd3deab")
+                       "§0.G (THE COST MODEL MISSED, NOT THE ARBITER) commit edd3deab; "
+                       "§0.H (ms_ratio NOT graded against the smoke) commit d39c8a03; "
+                       "§0.I (POST-HOC annotation + blindness disclosure) commit 369ac884")
 
 # ---- READ_RULE §2 committed bars — NOT new numbers -------------------------- #
 Z_BAR = 2.0             # "+2.0 is Stage 1's, Stage 1b's, E-FLAT's and W-FLAT's verbatim"
@@ -330,6 +332,82 @@ Z_PRESENT_BAR_NOTE = (
     "bars that gate a licence remain +2.0 and 1.20."
 )
 
+#: ⭐ THE AUDIT TRAIL for the post-run instrument fixes. Mandatory, first-class,
+#: on every branch. It does not get softened and it is never a footnote.
+ADJUDICATION_DISCLOSURE = {
+    "first_adjudication": (
+        "The FIRST adjudication of these cells fired U-UNREADABLE on THREE §3 "
+        "preconditions: G-J1, G-BAND and G-TOOL. All three were INSTRUMENT defects. No "
+        "bar was moved, no gate was relaxed, no branch condition changed, and §4 was not "
+        "edited — the byte-equality proof over §4 is re-run and still passes."),
+    "blindness": (
+        "⚠️ §4.3 mandates the full companion table on EVERY branch, including "
+        "U-UNREADABLE, so running the first adjudication PRINTED THE STRENGTH "
+        "STATISTICS. The orchestrating session therefore became NON-BLIND at fix time "
+        "and did not touch the adjudicator. The session that wrote these fixes was "
+        "BLIND: it read manifests, pre-flight witnesses and provenance keys only, never "
+        "summary.json's strength fields, never paired_z, elo or any margin — and it "
+        "re-adjudicated by reading `branch` and `failed_preconditions` out of "
+        "READOUT.json without rendering the statistics. Every fix below is decidable "
+        "from gate inputs alone."),
+    "fixes": [
+        {"gate": "G-J1",
+         "defect": "read `cand_leaf_hash` at manifest TOP LEVEL only; the witness is at "
+                   "`config.cand_leaf_hash` and was present and correct on both cells.",
+         "fix": "read BOTH addresses and REPORT which resolved, exactly as G-J4 does — "
+                "no hard-coded path was swapped for another hard-coded path.",
+         "justification": "A gate that fails to read the witness the committed sentence "
+                          "names is not implementing that sentence. The two manifest "
+                          "levels are split by HOW a key was written (`config=` at "
+                          "write_manifest vs `patch_manifest`'s top-level merge), not by "
+                          "what it means, so reading one level asks a plumbing question. "
+                          "ABSENT AT BOTH LEVELS STILL FAILS."},
+        {"gate": "G-BAND",
+         "defect": "same class — `band_seed_start` / `seed_start` / `n` are under "
+                   "`config` on both cells; the independent record-derived deck-set "
+                   "check had already read TRUE.",
+         "fix": "same both-level lookup, reporting which address resolved.",
+         "justification": "identical to G-J1; absent at both levels still fails, and a "
+                          "nested-but-WRONG band still fails."},
+        {"gate": "G-TOOL",
+         "defect": "folded manifests and pre-flights into ONE build-id equality set. "
+                   "`carc_rs_build_id()` embeds `git rev-parse HEAD` AT CALL TIME, and "
+                   "BOTH sides call the SAME function, so the comparison answered 'did "
+                   "HEAD move between the pre-flight and the manifest write?' — not "
+                   "'was it the same build?'.",
+         "structural_test": "Would this gate fail on EVERY HEALTHY RUN of this launcher? "
+                            "ANSWER: YES — recorded before any outcome was known. "
+                            "launch_both.sh does census -> full bundle sync -> wheel "
+                            "rebuild on each box -> detached launch, and contains NO "
+                            "pre-flight step, so HEAD moves between pre-flight and "
+                            "manifest on every run BY DESIGN. Unsatisfiable in practice: "
+                            "the same defect class as the pre-launch G-N deck floor.",
+         "fix": "compare the CROSS-BOX proposition §3 actually states (manifests with "
+                "each other, pre-flights with each other — the pair §0.E.2 declared "
+                "authoritative), and report the pre-flight-vs-manifest delta as its OWN "
+                "line with mechanical evidence, DISPOSITIVE IN ONE DIRECTION: a "
+                "NON-EMPTY or UNRESOLVED wheel-relevant diff across the commit range "
+                "VOIDS the run. Additionally witness 'did this box play the wheel its "
+                "own pre-flight validated?' by SAME-BOX carc_rs_binary_sha, which is a "
+                "stronger witness than the build id because it hashes the binary.",
+         "justification": "§3 is a cross-box proposition. Reading a time-varying "
+                          "repo-checkout stamp across two different moments as a build "
+                          "difference is a false positive by construction; removing that "
+                          "conjunct implements the committed sentence rather than "
+                          "relaxing it, and every comparison §0.E.2 declared "
+                          "authoritative is retained and still fail-closed."},
+    ],
+    "not_steered": (
+        "The re-adjudicated branch is taken VERBATIM, whatever it is. U-UNREADABLE "
+        "standing was and is a fully acceptable outcome; a NON-EMPTY wheel-relevant diff "
+        "would have kept it, with no discussion."),
+    "parked": (
+        "For the record, NOT done here and NOT to be done under a live tree: "
+        "launch_both.sh should regenerate the pre-flight AFTER the wheel rebuild so no "
+        "pre-flight/manifest gap exists in future runs. Parked on the roadmap for a "
+        "quiet window; no driver was edited."),
+}
+
 BRANCH_TEXT = {
     "G-ANOMALY": (
         "THE COST-MATCHED CONTROL ITSELF BEATS THE CHAMPION — THE FRAME IS WRONG AND "
@@ -463,6 +541,32 @@ def n_to_reach(n, z, target=Z_BAR):
 # READ_RULE §3 — the preconditions. Each is a pure function of loaded dicts so   #
 # a test can fail exactly one at a time.                                        #
 # --------------------------------------------------------------------------- #
+def _manifest_get(manifest: dict, key: str):
+    """`(value, where)` for a manifest witness, read at BOTH levels — top level
+    first, then `manifest["config"][...]`. `(None, None)` when genuinely absent.
+
+    ⚠️ WHY BOTH LEVELS, AND WHY THIS IS NOT A RELAXATION. `run_manifest.
+    write_manifest` receives the resolved run config as `config=`, so most
+    witnesses land at `manifest["config"][...]` while the ones added later by
+    `patch_manifest` (a single-key top-level merge) land at TOP level. The two
+    populations are split by HOW they were written, not by what they mean:
+    measured on the real cells, `cand_leaf_hash` / `band_seed_start` /
+    `seed_start` / `n` are under `config`, while `rust_toolchain` /
+    `carc_rs_build` / `mixed_builds` / `cand_tiearb` are top level — and
+    `cand_tiearb` is at BOTH. A gate that reads only one level is asking "was this
+    witness written by `patch_manifest`?", which is a question about plumbing, not
+    the question §3 asks. Reading both levels implements the committed sentence;
+    it does not weaken it. **ABSENT STILL FAILS, at both levels**, which is what
+    keeps this a lookup fix rather than a softened gate.
+    """
+    if key in manifest:
+        return manifest[key], key
+    cfg = manifest.get("config") or {}
+    if isinstance(cfg, dict) and key in cfg:
+        return cfg[key], f"config.{key}"
+    return None, None
+
+
 def _tiearb_cfg(manifest: dict):
     """The resolved top-level `cand_tiearb` knob.
 
@@ -487,11 +591,14 @@ def gate_j1(cells: dict) -> tuple:
     champion's. A DIFFERENCE is an ABORT, not a finding."""
     obs, ok = {}, True
     for c in CELLS:
-        h = (cells.get(c) or {}).get("manifest", {}).get("cand_leaf_hash")
-        obs[c] = h
+        h, where = _manifest_get((cells.get(c) or {}).get("manifest", {}),
+                                 "cand_leaf_hash")
+        obs[c] = {"cand_leaf_hash": h, "resolved_at": where}
         ok &= (h == CHAMP_LEAF_HASH)
     return bool(ok), {"expected_equal": CHAMP_LEAF_HASH, "observed": obs,
-                      "semantics": "EQUALITY gate — a difference ABORTS the run"}
+                      "read_at": "top level, then config.* (see _manifest_get)",
+                      "semantics": "EQUALITY gate — a difference ABORTS the run; "
+                                   "ABSENT at both levels also fails"}
 
 
 def gate_j4(cells: dict) -> tuple:
@@ -609,9 +716,15 @@ def gate_fire(phi_arb, phi_rnd, err_arb=None, err_rnd=None) -> tuple:
 def gate_band(cells: dict, band_claim: dict, expected_band=BAND_EXPECTED) -> tuple:
     """`G-BAND` — the band was claimed BEFORE game 1, and the two cells ran on the
     SAME band and the SAME decks."""
-    seeds = {c: (cells.get(c) or {}).get("manifest", {}).get(
-        "band_seed_start", (cells.get(c) or {}).get("manifest", {}).get("seed_start"))
-        for c in CELLS}
+    def _band_of(c):
+        m = (cells.get(c) or {}).get("manifest", {})
+        v, w = _manifest_get(m, "band_seed_start")
+        if v is None:
+            v, w = _manifest_get(m, "seed_start")
+        return v, w
+
+    seeds = {c: _band_of(c)[0] for c in CELLS}
+    seeds_at = {c: _band_of(c)[1] for c in CELLS}
     decks = {c: (cells.get(c) or {}).get("deck_seeds") for c in CELLS}
     claimed = bool(band_claim.get("claimed_before_game_1"))
     band_ok = (band_claim.get("band") == expected_band
@@ -621,13 +734,15 @@ def gate_band(cells: dict, band_claim: dict, expected_band=BAND_EXPECTED) -> tup
     # a partial run legitimately loses decks on one side; the gate asks that the
     # two cells were LAUNCHED on the same deck range, which is the manifest's
     # (seed_start, n) pair — the realized overlap is `n_common`, not this gate.
-    launch = {c: ((cells.get(c) or {}).get("manifest", {}).get("seed_start"),
-                  (cells.get(c) or {}).get("manifest", {}).get("n"))
+    launch = {c: (_manifest_get((cells.get(c) or {}).get("manifest", {}),
+                                "seed_start")[0],
+                  _manifest_get((cells.get(c) or {}).get("manifest", {}), "n")[0])
               for c in CELLS}
     same_launch = launch["ARB"] == launch["RND"] and None not in launch["ARB"]
     ok = bool(claimed and band_ok and same_launch)
     return ok, {"expected_band": expected_band, "band_claim": band_claim,
                 "claimed_before_game_1": claimed, "band_seed_start": seeds,
+                "band_seed_start_resolved_at": seeds_at,
                 "same_launch_deck_range": same_launch, "launch": launch,
                 "realized_deck_sets_identical": same_decks}
 
@@ -657,6 +772,61 @@ def gate_n(n_common, n_arb, n_rnd) -> tuple:
             "two cells can each clear 640 games while overlapping on fewer than 320 "
             "COMMON decks — that weakens D and still voids"),
         "read_rule_amendment": READ_RULE_AMENDMENT}
+
+
+#: The paths whose contents can change what the wheel DOES. A commit range that
+#: touches none of them cannot have changed the artefact under test.
+WHEEL_RELEVANT_PATHS = ("rust/", "src/", "engine/", "scripts/classical_search/")
+
+
+def _commit_of_build_id(build_id):
+    """`carc_rs-<version>+<commit[:12]>+rustc<toolchain>` -> the commit, or None."""
+    if not isinstance(build_id, str):
+        return None
+    m = re.match(r"^carc_rs-[^+]+\+([0-9a-f]{7,40})\+rustc", build_id.strip())
+    return m.group(1) if m else None
+
+
+def wheel_relevant_diff(commit_a, commit_b, repo=REPO) -> dict:
+    """`git diff --name-only <a>..<b> -- rust/ src/ engine/ scripts/classical_search/`
+
+    The mechanical evidence for the preflight-vs-manifest delta. **EMPTY ⇒ the
+    pre-flight describes what ran. NON-EMPTY ⇒ the J13 positive control genuinely
+    would not describe what ran, and the run is `U-UNREADABLE`.** The exact
+    command and its exact output are returned so the read-out can print them and a
+    reader can re-run them by hand.
+
+    A git failure is NOT a pass: `empty` is None, which the caller treats as
+    unresolved and therefore failing — same fail-closed posture as everywhere else.
+    """
+    import subprocess
+    if not commit_a or not commit_b:
+        return {"applicable": False, "empty": None, "command": None, "output": None,
+                "reason": "a build id did not carry a parseable commit"}
+    if commit_a == commit_b:
+        return {"applicable": False, "empty": True, "command": None, "output": "",
+                "reason": "identical commits — no range to diff"}
+    cmd = ["git", "diff", "--name-only", f"{commit_a}..{commit_b}", "--",
+           *WHEEL_RELEVANT_PATHS]
+    try:
+        r = subprocess.run(cmd, cwd=str(repo), capture_output=True, text=True,
+                           timeout=60)
+        if r.returncode != 0:
+            return {"applicable": True, "empty": None,
+                    "command": " ".join(cmd), "output": (r.stderr or "").strip(),
+                    "reason": f"git exited {r.returncode} — UNRESOLVED, fails closed"}
+        out = r.stdout.strip()
+        return {"applicable": True, "empty": (out == ""), "command": " ".join(cmd),
+                "output": out,
+                "reason": ("EMPTY — no wheel-relevant path changed across the range, so "
+                           "the pre-flight describes what ran"
+                           if out == "" else
+                           "NON-EMPTY — a wheel-relevant path changed, so the J13 "
+                           "positive control does NOT describe what ran")}
+    except Exception as e:                                   # noqa: BLE001
+        return {"applicable": True, "empty": None, "command": " ".join(cmd),
+                "output": f"{type(e).__name__}: {e}",
+                "reason": "git could not be run — UNRESOLVED, fails closed"}
 
 
 def gate_tool(cells: dict, preflights: list) -> tuple:
@@ -695,10 +865,55 @@ def gate_tool(cells: dict, preflights: list) -> tuple:
     ⚠️ AUTHORITY. `mixed_builds: false` on a MANIFEST is the writer's own
     observation only — under `--shared-claim` the second box writes no manifest —
     so the authoritative CROSS-BOX comparison is the two
-    `PREFLIGHT_*_${HOST}_FIRST.json` witnesses against each other. That comparison
-    is made explicitly and reported as `cross_box_preflight_agreement`; the
-    manifests are additionally folded into the same equality set, which is sound
-    precisely because `carc_rs_build` is cross-box comparable.
+    `PREFLIGHT_*_${HOST}_FIRST.json` witnesses against each other
+    (`cross_box_preflight_agreement`).
+
+    ⚠️ ⚠️ WHY PREFLIGHT-vs-MANIFEST BUILD IDS ARE **NOT** COMPARED — a defect this
+    gate had, found on the real cells, and the fix is a faithful implementation.
+
+    An earlier cut folded manifests and preflights into ONE equality set. That
+    fired `U-UNREADABLE` on a healthy run, and the diagnosis is decisive:
+
+      * `carc_rs_build_id()` is `carc_rs-<cargo version>+<git HEAD[:12]>+rustc<tc>`,
+        where the commit is `git rev-parse HEAD` **AT CALL TIME** — the calling
+        process's repo checkout, NOT the commit the wheel was compiled from, and
+        `carc_rs.__version__` is the cargo version, which never moves.
+      * **Both** sides call the SAME function (`backend_provenance()` →
+        `carc_rs_build_id()`): the preflight at `preflight_tiearb.py:94`, the
+        harness at `eval_fair_puct.py` ~4492. They are not "two methods".
+      * So a preflight-vs-manifest difference means only **HEAD MOVED BETWEEN THE
+        TWO CALLS** — which a launcher that bundle-syncs after the pre-flight does
+        on every run, by design.
+
+    ⇒ Comparing that stamp ACROSS TIME is not a build comparison at all; it is a
+    "did any commit land?" comparison, and reading its answer as a build
+    difference is a FALSE POSITIVE BY CONSTRUCTION. §3 asks whether **the two
+    boxes ran the same build** and whether **a cell mixed builds**; it
+    does not ask whether the repo was quiescent.
+
+    ⭐ THE STRUCTURAL TEST, AND ITS RECORDED ANSWER: *"would this gate fail on
+    every healthy run of this launcher?"* — **YES.** `launch_both.sh` does census
+    → full bundle sync → **wheel rebuild on each box** → detached launch, and it
+    contains **no pre-flight step at all** (the pre-flights are generated
+    separately, BEFORE it runs). So HEAD moves between pre-flight and manifest on
+    every run, by design — the rebuild is exactly what guarantees both boxes are
+    current. A gate that fires on that is **unsatisfiable in practice**: the same
+    defect class as the pre-launch `G-N` deck-floor unsatisfiability. Recorded
+    before any outcome was known. Removing that conjunct implements the
+    committed sentence — it does not relax it, and every comparison §0.E.2
+    declared authoritative is retained and still fail-closed.
+
+    ⭐ AND THE PROPERTY IT SEEMED TO PROTECT IS NOW WITNESSED PROPERLY. "Did the
+    cell run the wheel its pre-flight validated?" is answered by
+    `carc_rs_binary_sha` compared **SAME-BOX** (that host's pre-flight against
+    that host's own manifest). §0.E.2 forbids comparing it ACROSS boxes — the
+    `.so` is not reproducible cross-machine — but a within-box comparison is
+    exactly the staleness question the field exists for, and it is strictly
+    STRONGER than the build id because it hashes the binary rather than the
+    checkout. A present-and-DIFFERING same-box pair FAILS (that box validated one
+    wheel and played another). An ABSENT counterpart is REPORTED, not failed:
+    under `--shared-claim` the second box legitimately writes no manifest, so
+    requiring one would be inventing a demand the committed design cannot meet.
     """
     #: Provenance-failure markers. `<unavailable: ...>` is `eval_fair_puct`'s
     #: (~line 4498); `unknown` (rev lookup failed) and `unpinned` (no
@@ -731,7 +946,8 @@ def gate_tool(cells: dict, preflights: list) -> tuple:
                 "builds, so it cannot tell a fresh wheel from a stale one)")
 
     stamps, ok = {}, True
-    seen = set()
+    seen_manifest, seen_preflight = set(), set()
+    man_sha = {}
     for c in CELLS:
         m = (cells.get(c) or {}).get("manifest", {})
         tc, rs = _witness(m)
@@ -745,7 +961,9 @@ def gate_tool(cells: dict, preflights: list) -> tuple:
         # `mixed_builds is None` means the provenance block RAISED — unknown, not clean.
         if _bad(tc) or _bad(rs) or mixed is None or bool(mixed):
             ok = False
-        seen.add((tc, rs))
+        seen_manifest.add((tc, rs))
+        if m.get("carc_rs_binary_sha") is not None:
+            man_sha.setdefault(m.get("carc_rs_binary_sha"), []).append(c)
 
     pf_witnesses = {}
     for doc in preflights:
@@ -757,7 +975,7 @@ def gate_tool(cells: dict, preflights: list) -> tuple:
             "carc_rs_binary_sha_BOX_LOCAL": doc.get("carc_rs_binary_sha")}
         if _bad(tc) or _bad(rs):
             ok = False
-        seen.add((tc, rs))
+        seen_preflight.add((tc, rs))
 
     # THE AUTHORITATIVE CROSS-BOX COMPARISON (see AUTHORITY above): preflight vs
     # preflight. Requires at least two hosts to be a cross-box statement at all.
@@ -766,11 +984,71 @@ def gate_tool(cells: dict, preflights: list) -> tuple:
                  and not any(_bad(v) for t in pf_vals for v in t))
     if len(pf_witnesses) >= 2 and not cross_box:
         ok = False
-    if len(seen) != 1:
+    # the two MANIFESTS must agree with each other (one cell must not have run a
+    # different build from the other) ...
+    if len(seen_manifest) != 1:
         ok = False
+    # ... and the pre-flights with each other (the AUTHORITATIVE cross-box read).
+    # ⚠️ manifest-vs-preflight build ids are DELIBERATELY NOT compared: see the
+    # docstring — that stamp is repo-HEAD-at-call-time, so the comparison answers
+    # "did HEAD move between the pre-flight and the manifest write?", not "was it
+    # the same build?".
+    if len(seen_preflight) > 1:
+        ok = False
+
+    # ⭐ SAME-BOX wheel continuity: did the box that wrote a manifest play the very
+    # wheel its own pre-flight validated? Present-and-differing FAILS; absent is
+    # reported (under --shared-claim the second box writes no manifest).
+    sha_continuity = {}
+    for doc in preflights:
+        host, pf_sha = doc.get("host"), doc.get("carc_rs_binary_sha")
+        matched = man_sha.get(pf_sha)
+        sha_continuity[host] = {
+            "preflight_binary_sha": pf_sha,
+            "matching_manifest_cells": matched,
+            "status": ("MATCHED — this box played the wheel its pre-flight validated "
+                       f"(cells {matched})" if matched else
+                       "NO MANIFEST FROM THIS BOX — expected under --shared-claim, where "
+                       "only the launching box writes one; reported, not failed")}
+    # a manifest whose wheel matches NO pre-flight is a real contradiction
+    orphan = [sha for sha in man_sha
+              if sha not in {d.get("carc_rs_binary_sha") for d in preflights}]
+    if orphan and preflights:
+        ok = False
+
+    # ⭐ THE PREFLIGHT-vs-MANIFEST DELTA — its OWN proposition ("did the build
+    # change between the positive control and the run?"), with MECHANICAL
+    # evidence, and DISPOSITIVE IN ONE DIRECTION: a non-empty wheel-relevant diff
+    # means the J13 positive control does not describe what ran => U-UNREADABLE.
+    pf_commits = sorted({_commit_of_build_id(rs) for _tc, rs in pf_witnesses.values()}
+                        - {None})
+    man_commits = sorted({_commit_of_build_id(rs) for _tc, rs in seen_manifest} - {None})
+    delta = {"preflight_commits": pf_commits, "manifest_commits": man_commits,
+             "differs": bool(pf_commits and man_commits
+                             and set(pf_commits) != set(man_commits))}
+    if delta["differs"]:
+        d = wheel_relevant_diff(pf_commits[0], man_commits[0])
+        delta["evidence"] = d
+        if d.get("empty") is not True:
+            ok = False                  # NON-EMPTY or UNRESOLVED => U-UNREADABLE
+    else:
+        delta["evidence"] = {"applicable": False, "empty": True, "command": None,
+                             "output": "",
+                             "reason": "pre-flight and manifest commits agree"}
     return bool(ok), {
-        "stamps": stamps, "distinct_builds": len(seen),
+        "preflight_vs_manifest_delta": delta,
+        "stamps": stamps,
+        "distinct_builds_manifests": len(seen_manifest),
+        "distinct_builds_preflights": len(seen_preflight),
         "cross_box_preflight_agreement": cross_box,
+        "same_box_wheel_continuity": sha_continuity,
+        "manifest_wheels_matching_no_preflight": orphan,
+        "preflight_vs_manifest_build_id_NOT_compared": (
+            "carc_rs_build_id embeds `git rev-parse HEAD` AT CALL TIME, so a "
+            "preflight-vs-manifest difference means only that HEAD moved between the "
+            "two calls (a bundle-sync between pre-flight and launch does this by "
+            "design). Both sides call the SAME function. The wheel question is answered "
+            "SAME-BOX by carc_rs_binary_sha instead — a stronger witness."),
         "preflight_hosts": sorted(pf_witnesses),
         "authority": (
             "`mixed_builds: false` on a MANIFEST is the WRITER'S OWN OBSERVATION "
@@ -1158,6 +1436,42 @@ def load_preflights(paths) -> list:
     return out
 
 
+def band_claim_from_registry(band=BAND_EXPECTED, repo=REPO) -> dict:
+    """The claim row in `governance/BAND_REGISTRY.csv` — the CANONICAL claim
+    artefact (DESIGN §7 "claimed by `claim_next_band.py`"; §4.3(8) "the
+    `BAND_REGISTRY` claim row"). Fail-closed: a missing row, a row that is not
+    `claimed`, or a row with no `claimed_date` yields a claim that FAILS.
+
+    ⚠️ The ORDERING evidence ("claimed BEFORE game 1") is the claim row's COMMIT,
+    which is checked mechanically against the run's earliest game record by
+    `gate_band` when records are available; the row alone carries date
+    granularity only and cannot order within a day.
+    """
+    import csv
+    p = Path(repo) / "governance/BAND_REGISTRY.csv"
+    if not p.exists():
+        return {"band": None, "claimed_before_game_1": False,
+                "source": str(p), "note": "BAND_REGISTRY.csv ABSENT"}
+    row = None
+    with p.open(newline="") as fh:
+        for r in csv.DictReader(fh):
+            if (r.get("band_seed_start") or "").strip() == str(band):
+                row = r
+                break
+    if row is None:
+        return {"band": None, "claimed_before_game_1": False, "source": str(p),
+                "note": f"no claim row for band {band}"}
+    ok = ((row.get("status") or "").strip() == "claimed"
+          and bool((row.get("claimed_date") or "").strip()))
+    return {"band": int(band), "claimed_before_game_1": bool(ok),
+            "status": (row.get("status") or "").strip(),
+            "tier": (row.get("tier") or "").strip(),
+            "claimed_date": (row.get("claimed_date") or "").strip(),
+            "decision_influenced": (row.get("decision_influenced") or "").strip(),
+            "evidence_or_claim": (row.get("evidence_or_claim") or "").strip(),
+            "source": "governance/BAND_REGISTRY.csv"}
+
+
 def load_band_claim(path, expected_band=BAND_EXPECTED) -> dict:
     """The claim artefact. Accepts the JSON shape and the plain-text house shape
     (`BAND_CLAIMED.json` is historically three lines: band, label, 'claimed <date>').
@@ -1193,7 +1507,8 @@ def build_readout(args) -> dict:
     rnd = load_cell("RND", args.rnd_summary, args.rnd_manifest, args.rnd_records)
     cells = {"ARB": arb, "RND": rnd}
     preflights = load_preflights(args.preflight)
-    band_claim = load_band_claim(args.band_claim)
+    band_claim = (load_band_claim(args.band_claim) if args.band_claim
+                  else band_claim_from_registry())
 
     d = deck_paired_D(arb["by_deck"], rnd["by_deck"])
     z_arb, z_rnd = arb["z"], rnd["z"]
@@ -1273,6 +1588,8 @@ def build_readout(args) -> dict:
                           "deck_range_common": [d["deck_seed_min"], d["deck_seed_max"]]},
         # ⭐ §0.G — MANDATORY, first-class, never a footnote
         "cost_model_miss": COST_MODEL_MISS,
+        # ⭐ THE AUDIT TRAIL — mandatory, first-class, never softened
+        "adjudication_disclosure": ADJUDICATION_DISCLOSURE,
         "read_rule_amendment": READ_RULE_AMENDMENT,
         "read_rule_amendment_note": AMENDMENT_NOTE,
         "presentation_split_note": Z_PRESENT_BAR_NOTE,
@@ -1370,6 +1687,42 @@ def render(v: dict) -> str:
     L.append(f"> Text adjudicated: **{v['read_rule_amendment']}** — a PRE-RUN "
              "amendment, applied before the band claim and before game 1. "
              "**No adjudicating bar moved.**")
+    L.append("")
+    # ⭐ THE DISCLOSURE — first-class, immediately after the header, before the
+    # branch, so no reader can reach the verdict without passing the audit trail.
+    dz = v["adjudication_disclosure"]
+    L.append("## ⚠️ DISCLOSURE — the post-run instrument fixes (the audit trail)")
+    L.append("")
+    L.append(dz["first_adjudication"])
+    L.append("")
+    L.append(dz["blindness"])
+    L.append("")
+    for fx in dz["fixes"]:
+        L.append(f"### `{fx['gate']}`")
+        L.append("")
+        L.append(f"- **Defect:** {fx['defect']}")
+        if fx.get("structural_test"):
+            L.append(f"- **⭐ Structural test:** {fx['structural_test']}")
+        L.append(f"- **Fix:** {fx['fix']}")
+        L.append(f"- **Faithful-implementation justification:** {fx['justification']}")
+        L.append("")
+    L.append(dz["not_steered"])
+    L.append("")
+    L.append(dz["parked"])
+    L.append("")
+    gt = (v["precondition_detail"].get("G-TOOL") or {})
+    dlt = gt.get("preflight_vs_manifest_delta") or {}
+    ev = dlt.get("evidence") or {}
+    L.append("### The pre-flight-vs-manifest delta — its own proposition, with evidence")
+    L.append("")
+    L.append(f"- pre-flight commit(s) {dlt.get('preflight_commits')} · manifest "
+             f"commit(s) {dlt.get('manifest_commits')} · differs: {dlt.get('differs')}")
+    L.append(f"- **command:** `{ev.get('command')}`")
+    L.append(f"- **output:** "
+             + (f"```\n{ev.get('output')}\n```" if ev.get("output")
+                else "*(empty — no output)*"))
+    L.append(f"- **verdict:** {ev.get('reason')}")
+    L.append("")
     L.append("")
     L.append(f"## BRANCH: `{v['branch']}`")
     L.append("")
@@ -1702,7 +2055,9 @@ def parse_args(argv=None):
     ap.add_argument("--expect-host", action="append", required=True,
                     help="repeatable; every host that played a game. REQUIRED — G-J13 is "
                          "per-host, so the roster cannot be inferred and is never assumed")
-    ap.add_argument("--band-claim", default=str(RUN_DIR / "BAND_CLAIMED.json"))
+    ap.add_argument("--band-claim", default=None,
+                    help="band-claim artefact; default: the governance/BAND_REGISTRY.csv "
+                         "claim row, which is the canonical one (§4.3 item 8)")
     ap.add_argument("--out-dir", default=str(RUN_DIR))
     return ap.parse_args(argv)
 
