@@ -106,7 +106,38 @@ compared with each other, pre-flights compared with each other — plus the same
 `carc_rs_binary_sha` witness. The laptop is **bundle-synced to the launch commit** first
 (`reference_offline_git_bundle_sync`), and both boxes run rust toolchain `1.96.0`.
 
-#### §0.1.6 — revised ETA
+#### §0.1.6 — ⛔ THE MERGE STEP IS MANDATORY AND ORDERED BEFORE ADJUDICATION
+
+Two-box execution writes **per-host shards** (`<cell>.<host>.jsonl` + `<cell>.<host>.hostmap.json`).
+**`adjudicate.py` reads only the MERGED `<cell>.jsonl` and `<cell>.hostmap.json`** — it does not
+discover shards. Adjudicating before merging would silently grade a **half-run**, and `G-COVER` /
+`G-N` would fire on volume in a way that looks like a data problem rather than a missing step.
+
+**The post-DONE sequence, in order — all four `DONE_<cell>_<host>` markers must exist first:**
+
+```bash
+cd /home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817
+./merge_cells.sh jcz_CHAMP_deploy11008        # -> <cell>.jsonl + <cell>.hostmap.json, verifies G-COVER
+./merge_cells.sh jcz_ARB_B16J4_deploy11008
+# cheap pre-adjudication check: the two ENV pre-flights must agree on carc_rs_build
+#   (that IS §0.F.2b conjunct 1 post-§0.F.2c; the binary SHAs will and must differ across hosts)
+python3 -c "import json;print([json.load(open(f'verdicts/PREFLIGHT_{h}_ENV.json'))['carc_rs_build'] for h in ('Doctor','laptop-wsl')])"
+/home/doctor/projects/carcassone/.venv/bin/python adjudicate.py \
+    --cell-a jcz_CHAMP_deploy11008.jsonl \
+    --cell-b jcz_ARB_B16J4_deploy11008.jsonl \
+    --json READOUT.json | tee READOUT.md
+```
+
+`merge_cells.sh` also emits `SPLIT_CHECK.json` (a convenience comparison of the two hostmaps);
+`G-SPLIT` gates the same proposition independently inside the adjudicator, so the convenience
+check can never substitute for the gate.
+
+⚠️ Minor, recorded and deliberately not fixed: `preflight.sh`'s `run()` keeps only the **first
+line** of `java -version`, so the JVM packaging string may be truncated in the ENV witness.
+**Nothing branches on it** — `G-JCZ` reports the JVM string and never fails on it (§0.F.1) — so
+this is cosmetic.
+
+#### §0.1.7 — revised ETA
 
 Two boxes at 52 combined workers against §6.2's 291,360 worker-s ⇒ **≈1.6 h** if the laptop keeps
 pace per worker. It will not exactly — 11 GB and 24T against 41 GB and 32T — so the honest
@@ -366,7 +397,7 @@ solved (apt JRE + share-staged jar verified against the pin + copied shim classe
 around. **This section is retained as the audit trail of what was true before the ruling; §0.1 is
 the operative text.** Two consequences of the original single-box decision that the ruling
 reverses: `G-TOOL` returns to its Stage-2 **cross-box** form (in the corrected shape), and the
-pre-flight becomes **per-host**. Revised ETA ≈2 h (§0.1.6).
+pre-flight becomes **per-host**. Revised ETA ≈2 h (§0.1.7).
 
 ---
 

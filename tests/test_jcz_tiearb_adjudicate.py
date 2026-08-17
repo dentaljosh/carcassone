@@ -12,6 +12,15 @@ absolute result above all — is printed on `U-UNREADABLE` too.
 The healthy fixture is deliberately built to satisfy every gate: 320 decks × 2
 seatings × 2 cells (the `G-N` floor), one band, one binary sha, a degenerate
 commit range, and a two-sided pre-flight.
+
+⭐ **The healthy fixture is TWO-BOX (READ_RULE §0.F.1, owner ruling "make sure its
+both boxes, w22 and w30 respectively").** Both cells carry the SAME deck→host
+split across `Doctor` and `laptop-wsl`, each host has its own
+`PREFLIGHT_<host>_FIRST.json` (`G-J13`) and `PREFLIGHT_<host>_ENV.json` (`G-JCZ`
+per-host jar sha, `G-TOOL` cross-host build identity), and the two hosts carry
+DIFFERENT JVM packaging strings — which must be REPORTED and must NOT fail
+anything, because `G-SPLIT` is what makes the runtime difference incapable of
+touching `D`.
 """
 from __future__ import annotations
 
@@ -37,15 +46,38 @@ _spec.loader.exec_module(adj)
 BAND = 133_000_000_000
 LEAF = "a36d2e15a3b3d71d"
 COMMIT = "0123456789abcdef0123456789abcdef01234567"
+OTHER_COMMIT = "89abcdef0123456789abcdef0123456789abcdef"
 BINSHA = "a4318fd59d9d8349"
+BUILD_ID = f"carc_rs-0.1.0+{COMMIT[:12]}+rustc1.96.0"
 N_DECKS = adj.N_COMMON_FLOOR              # 320 — the G-N deck floor, exactly
 FUTURE = time.time() + 3600.0             # every record finishes AFTER the sentinel
+
+# §0.F.1 — the two boxes. `Doctor` is the 5900XT box (W30), `laptop-wsl` the
+# laptop (W22); READ_RULE `G-J13` names exactly this pair as EXPECTED.
+HOST_LOCAL = "Doctor"
+HOST_LAPTOP = "laptop-wsl"
+# ⚠️ The disclosed per-host difference (DESIGN §0.1): SAME OpenJDK 17.0.19, a
+# different distro base. REPORTED, never a branch input.
+JAVA_LOCAL = ('openjdk version "17.0.19" 2026-01-20 / OpenJDK Runtime Environment '
+              '(build 17.0.19+10-1-24.04.2-Ubuntu)')
+JAVA_LAPTOP = ('openjdk version "17.0.19" 2026-01-20 / OpenJDK Runtime Environment '
+               '(build 17.0.19+10-1-26.04.2-Ubuntu)')
+
+
+def default_split(i: int, n: int) -> str:
+    """The static, contiguous deck split of DESIGN §0.1.1: the first 60% of the
+    range on the local box, the tail on the laptop."""
+    return HOST_LOCAL if i < (n * 3) // 5 else HOST_LAPTOP
 
 
 def manifest(*, cell_b: bool, leaf=LEAF, rules="fixed_v1", r9="1",
              jcz_rev=None, binsha=BINSHA, commit=COMMIT, tiearb_on_a=False) -> dict:
     """A minimal manifest carrying every witness the §3 gates read, at the
-    addresses `scripts/jcz_match/match.py` actually writes them to."""
+    addresses `scripts/jcz_match/match.py` actually writes them to.
+
+    `binsha=None` omits `carc_rs_binary_sha` entirely — which is what the REAL
+    harness does (READ_RULE §0.F.2b: `match.py` never stamps it), and the case
+    `G-TOOL` must still pass on."""
     m = {
         "schema": "carcassonne-jcz-match/v1",
         "our_git_rev": commit,
@@ -58,11 +90,12 @@ def manifest(*, cell_b: bool, leaf=LEAF, rules="fixed_v1", r9="1",
         "rules_profile": rules,
         "r9_env": r9,
         "rules_manifest": {"name": rules, "r9_env_ok": True},
-        "carc_rs_binary_sha": binsha,
         "cand_leaf_hash": leaf,
         "champion_manifest": {"leaf_hashes": {"harness_leaf_hash": leaf},
                               "code_commit": commit},
     }
+    if binsha is not None:
+        m["carc_rs_binary_sha"] = binsha
     if cell_b or tiearb_on_a:
         m["champ_tiearb"] = {"enabled": True, "B": 16, "J": 4, "mode": "argmax",
                              "salt": "tiearb2-deploy-v1", "eps": 0.0}
@@ -70,12 +103,12 @@ def manifest(*, cell_b: bool, leaf=LEAF, rules="fixed_v1", r9="1",
 
 
 def record(*, deck, seat, margin, cell_b, fired=5, errors=0, real=None,
-           counts=None, final_agree=True, **mkw) -> dict:
+           counts=None, final_agree=True, host=None, replicate=0, **mkw) -> dict:
     margin = int(margin)
     winner = "champ" if margin > 0 else ("jcz" if margin < 0 else "draw")
     r = {
         "schema": "carcassonne-jcz-match/v1",
-        "deck_seed": deck, "champ_seat": seat,
+        "deck_seed": deck, "champ_seat": seat, "replicate": replicate,
         "margin_champ_minus_jcz": margin,
         "champ_score": 70 + margin, "jcz_score": 70,
         "winner": winner, "final_agree": final_agree, "replay_ok": True,
@@ -94,22 +127,36 @@ def record(*, deck, seat, margin, cell_b, fired=5, errors=0, real=None,
             "pickchanges": 2, "arms_total": 4 * fired, "playouts_total": 64 * fired,
             "secs": 9.57 * fired, "errors": errors, "first_error": None,
             "partial_argmax": 0, "max_plies": 40, "mode": "argmax", "B": 16, "J": 4}
+    if host is not None:
+        r["host"] = host          # the record-stamp SOURCE G-SPLIT also accepts
     return r
 
 
 def write_cells(tmp_path: Path, *, diffs, n_decks=N_DECKS, band=BAND,
-                a_kw=None, b_kw=None, a_rec=None, b_rec=None):
-    """Write CELL A / CELL B archives.
+                a_kw=None, b_kw=None, a_rec=None, b_rec=None,
+                hostmap=True, a_split=None, b_split=None, deck_seed_of=None):
+    """Write CELL A / CELL B archives **and their `<cell>.hostmap.json` sidecars**.
 
     `diffs` is a callable `deck_index -> (a_margin, b_margin)`; both seatings of a
     deck get the same margin, so the per-deck paired observation IS that margin and
     `D` is exactly `mean(b - a)` over decks — hand-checkable.
+
+    `a_split` / `b_split` are `(deck_index, n_decks) -> host`; they default to the
+    SAME contiguous split on both cells, which is what `G-SPLIT` requires. The two
+    sidecars are deliberately written in the TWO different accepted shapes (CELL A
+    the `{deck_seed: host}` map, CELL B the inverted `{host: [deck_seed]}` one) so
+    both parses are exercised on the healthy path.
     """
     a_path, b_path = tmp_path / "cell_a.jsonl", tmp_path / "cell_b.jsonl"
+    a_split = a_split or default_split
+    b_split = b_split or a_split
+    seed_of = deck_seed_of or (lambda i: band + i)
     for path, is_b in ((a_path, False), (b_path, True)):
-        lines = []
+        split = b_split if is_b else a_split
+        lines, hmap = [], {}
         for i in range(n_decks):
             ma, mb = diffs(i)
+            hmap[seed_of(i)] = split(i, n_decks)
             for seat in (0, 1):
                 kw = dict((b_kw or {}) if is_b else (a_kw or {}))
                 extra = dict((b_rec or {}) if is_b else (a_rec or {}))
@@ -117,26 +164,63 @@ def write_cells(tmp_path: Path, *, diffs, n_decks=N_DECKS, band=BAND,
                     extra = {}
                 extra.pop("_first_only", None)
                 lines.append(json.dumps(record(
-                    deck=band + i, seat=seat, margin=(mb if is_b else ma),
+                    deck=seed_of(i), seat=seat, margin=(mb if is_b else ma),
                     cell_b=is_b, **kw, **extra)))
         path.write_text("\n".join(lines) + "\n")
+        if hostmap:
+            side = path.with_suffix(".hostmap.json")
+            if is_b:                       # the INVERTED shape, host -> [deck_seed]
+                inv: dict = {}
+                for d, h in hmap.items():
+                    inv.setdefault(h, []).append(d)
+                side.write_text(json.dumps(inv))
+            else:                          # the deck_seed -> host shape
+                side.write_text(json.dumps({str(d): h for d, h in hmap.items()}))
     return a_path, b_path
 
 
 def write_support(tmp_path: Path, *, band=BAND, commit=COMMIT, binsha=BINSHA,
-                  pick_changed=True, bits_unchanged=True):
-    """The band sentinel + the `verdicts/PREFLIGHT_<host>_FIRST.json` witness."""
+                  pick_changed=True, bits_unchanged=True,
+                  hosts=(HOST_LOCAL, HOST_LAPTOP), build_id=BUILD_ID,
+                  env_overrides=None, first_overrides=None):
+    """The band sentinel + the PER-HOST `verdicts/PREFLIGHT_<host>_FIRST.json`
+    (`G-J13`) and `verdicts/PREFLIGHT_<host>_ENV.json` (`G-JCZ` per-host jar sha,
+    `G-TOOL` cross-host build identity) witnesses.
+
+    The two hosts get DIFFERENT JVM packaging strings on purpose (DESIGN §0.1's
+    disclosed difference) and the SAME jar sha, build id and binary sha.
+    """
     sentinel = tmp_path / "BAND_CLAIM.txt"
     sentinel.write_text(f"{band}\nJCZ out-of-lineage pricing\nclaimed 2026-08-17\n")
     verdicts = tmp_path / "verdicts"
     verdicts.mkdir(exist_ok=True)
-    (verdicts / "PREFLIGHT_testbox_FIRST.json").write_text(json.dumps({
-        "kind": "jcz_tiearb_preflight", "host": "testbox",
-        "toolchain": {"code_rev": commit}, "carc_rs_binary_sha": binsha,
-        "all_preflight_pass": True,
-        "two_sided": {"pick_changed": pick_changed,
-                      "root_leaf_value_bits_unchanged": bits_unchanged},
-    }))
+    java = {HOST_LOCAL: JAVA_LOCAL, HOST_LAPTOP: JAVA_LAPTOP}
+    for h in hosts:
+        first = {
+            "kind": "jcz_tiearb_preflight", "host": h,
+            "toolchain": {"code_rev": commit}, "carc_rs_binary_sha": binsha,
+            "all_preflight_pass": True,
+            "two_sided": {"pick_changed": pick_changed,
+                          "root_leaf_value_bits_unchanged": bits_unchanged},
+        }
+        first.update((first_overrides or {}).get(h, {}))
+        (verdicts / f"PREFLIGHT_{h}_FIRST.json").write_text(json.dumps(first))
+        env = {
+            "witness": "G-TOOL", "label": "FIRST", "host": h,
+            "git_head": commit, "git_dirty_code_paths": [],
+            "carc_rs_binary_sha": binsha, "carc_rs_build_id": build_id,
+            "carc_rs_version": "0.1.0", "rustc": "rustc 1.96.0",
+            "java": java.get(h, JAVA_LOCAL),
+            "jcz_jar": adj.WORKERS_CONF_FALLBACK["JCZ_JAR"],
+            "jcz_jar_sha256": adj.WORKERS_CONF_FALLBACK["JCZ_JAR_SHA256"],
+            "jcz_jar_sha256_expected": adj.WORKERS_CONF_FALLBACK["JCZ_JAR_SHA256"],
+            "jcz_jar_sha256_match": True,
+            "jcz_rev": adj.WORKERS_CONF_FALLBACK["JCZ_REV"],
+            "jcz_ai_class": adj.WORKERS_CONF_FALLBACK["JCZ_AI_CLASS"],
+            "jcz_tiles": adj.WORKERS_CONF_FALLBACK["JCZ_TILES"],
+        }
+        env.update((env_overrides or {}).get(h, {}))
+        (verdicts / f"PREFLIGHT_{h}_ENV.json").write_text(json.dumps(env))
     return sentinel, verdicts
 
 
@@ -395,12 +479,15 @@ def test_G_JCZ_fails_on_a_different_jcz_revision(tmp_path, capsys):
 
 
 def test_G_TOOL_fails_when_the_binary_sha_differs_across_cells(tmp_path, capsys):
+    """The manifest `carc_rs_binary_sha` BINDS WHEN PRESENT (§0.F.2b) — and it is
+    compared WITHIN a host across the two cells, never across boxes."""
     a, b = write_cells(tmp_path, diffs=_flat, b_kw={"binsha": "ffffffffffffffff"})
     s, v = write_support(tmp_path)
     out, _ = run(tmp_path, a, b, s, v, capsys)
     assert out["failed_preconditions"] == ["G-TOOL"]
-    det = out["precondition_detail"]["G-TOOL"]["same_box_binary_sha"]
-    assert det["equal_across_cells"] is False
+    det = out["precondition_detail"]["G-TOOL"]["manifest_binary_sha_when_present"]
+    assert det["ok"] is False
+    assert all(h["equal_across_cells"] is False for h in det["per_host"].values())
 
 
 def test_G_TOOL_passes_on_a_degenerate_commit_range(tmp_path, capsys):
@@ -474,6 +561,311 @@ def test_missing_archive_is_U_UNREADABLE_and_still_exits_zero(tmp_path, capsys):
     out, stdout = run(tmp_path, a, tmp_path / "does_not_exist.jsonl", s, v, capsys)
     assert out["branch"] == "U-UNREADABLE"
     assert "CELL A" in stdout
+
+
+# --------------------------------------------------------------------------- #
+# TWO BOXES (READ_RULE §0.F.1) — G-SPLIT, G-COVER, and the per-host gates        #
+# --------------------------------------------------------------------------- #
+def test_two_box_healthy_fixture_passes_every_gate(tmp_path, capsys):
+    """⭐ The §3.1 structural control for the two-box amendment: both cells carry
+    the SAME hostmap across TWO hosts, each host has its own pre-flight, and the
+    two hosts run DIFFERENT JVM packaging — and every gate passes."""
+    a, b, s, v = healthy(tmp_path, _flat)
+    out, stdout = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"] == {g: True for g in adj.ALL_GATES}, \
+        out["failed_preconditions"]
+    assert out["branch"] == "J-CONFIRMED"
+    # both boxes are visible in the read-out, with their own game counts
+    tb = out["two_box"]
+    assert tb["hosts_played"] == sorted([HOST_LOCAL, HOST_LAPTOP])
+    for cell in tb["per_cell"].values():
+        per_host = cell["per_host"]
+        assert set(per_host) == {HOST_LOCAL, HOST_LAPTOP}
+        assert sum(h["n_games"] for h in per_host.values()) == N_DECKS * 2
+        assert per_host[HOST_LOCAL]["n_decks"] == (N_DECKS * 3) // 5
+    # the split is identical across the cells — which is the whole point
+    split = out["precondition_detail"]["G-SPLIT"]
+    assert split["mismatched_decks"]["n_total"] == 0
+    assert split["decks_with_no_host_in_either_cell"]["n_total"] == 0
+    assert "TWO-BOX block" in stdout and HOST_LAPTOP in stdout
+
+
+def test_G_SPLIT_fails_when_one_deck_changed_hosts_between_cells(tmp_path, capsys):
+    """DESIGN §0.1.2: a deck that ran on a different box in the two cells puts every
+    per-box difference INSIDE the paired difference. The offending seed is NAMED."""
+    moved = 3
+
+    def b_split(i, n):
+        return HOST_LAPTOP if i == moved else default_split(i, n)
+
+    a, b = write_cells(tmp_path, diffs=_flat, b_split=b_split)
+    s, v = write_support(tmp_path)
+    out, stdout = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-SPLIT"]
+    det = out["precondition_detail"]["G-SPLIT"]
+    assert det["mismatched_decks"]["n_total"] == 1
+    assert det["mismatched_decks"]["listed"][0]["deck_seed"] == BAND + moved
+    assert det["mismatched_decks"]["listed"][0]["cell_a_host"] == HOST_LOCAL
+    assert det["mismatched_decks"]["listed"][0]["cell_b_host"] == HOST_LAPTOP
+    assert str(BAND + moved) in stdout          # the seed is named in the read-out
+
+
+def test_G_SPLIT_fails_closed_when_the_hostmap_is_absent(tmp_path, capsys):
+    """ABSENT AT EVERY SOURCE FAILS: no sidecar and no record host stamp means the
+    split is UNVERIFIABLE, which is exactly the confound the gate exists to catch."""
+    a, b = write_cells(tmp_path, diffs=_flat, hostmap=False)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-SPLIT"]
+    det = out["precondition_detail"]["G-SPLIT"]
+    assert det["per_cell"][out["cell_a"]]["host_source_resolved"] is None
+    assert det["decks_with_no_host_in_either_cell"]["n_total"] == N_DECKS
+
+
+def test_G_SPLIT_accepts_the_record_host_stamp_as_a_source(tmp_path, capsys):
+    """The second accepted source, and `host_source_resolved` must say so."""
+    a, b = write_cells(tmp_path, diffs=_flat, hostmap=False, n_decks=N_DECKS,
+                       a_rec={"host": HOST_LOCAL}, b_rec={"host": HOST_LOCAL})
+    s, v = write_support(tmp_path, hosts=(HOST_LOCAL,))
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-SPLIT"] is True
+    assert (out["precondition_detail"]["G-SPLIT"]["per_cell"][out["cell_a"]]
+            ["host_source_resolved"] == "records")
+
+
+def test_G_SPLIT_fails_on_an_unparseable_hostmap(tmp_path, capsys):
+    a, b = write_cells(tmp_path, diffs=_flat)
+    a.with_suffix(".hostmap.json").write_text("{not json")
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert "G-SPLIT" in out["failed_preconditions"]
+    assert out["precondition_detail"]["G-SPLIT"]["unparseable_hostmap"]
+
+
+def test_G_COVER_fails_on_a_duplicate_deck_seat_replicate(tmp_path, capsys):
+    """A cell that played the same `(deck_seed, champ_seat, replicate)` twice would
+    double-count it."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    lines = a.read_text().splitlines()
+    a.write_text("\n".join(lines + [lines[0]]) + "\n")     # the SAME game, twice
+    s, v = write_support(tmp_path)
+    out, stdout = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-COVER"]
+    dups = (out["precondition_detail"]["G-COVER"]["per_cell"][out["cell_a"]]
+            ["duplicate_deck_seat_replicate"])
+    assert dups["n_total"] == 1
+    assert dups["listed"][0]["deck_seed"] == BAND and dups["listed"][0]["n"] == 2
+    assert "G-COVER" in stdout
+
+
+def test_G_COVER_fails_on_an_out_of_band_seed(tmp_path, capsys):
+    """A seed outside `[band, band + DECKS − 1]` is not in any per-box range."""
+    stray = 5_000
+
+    def seed_of(i):
+        return BAND + (stray if i == 7 else i)
+
+    a, b = write_cells(tmp_path, diffs=_flat, deck_seed_of=seed_of)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert "G-COVER" in out["failed_preconditions"]
+    oob = (out["precondition_detail"]["G-COVER"]["per_cell"][out["cell_a"]]
+           ["out_of_band_deck_seeds"])
+    assert oob["n_total"] == 1 and oob["listed"] == [BAND + stray]
+
+
+def test_G_COVER_fails_when_a_deck_has_only_one_seating(tmp_path, capsys):
+    """321 decks so that dropping one seating still leaves `n_common` = 320: the run
+    is BIG ENOUGH (`G-N` passes) and fails purely on COVERAGE SHAPE."""
+    a, b = write_cells(tmp_path, diffs=_flat, n_decks=N_DECKS + 1)
+    lines = a.read_text().splitlines()
+    a.write_text("\n".join(lines[:-1]) + "\n")             # drop one seating
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-COVER"]
+    det = (out["precondition_detail"]["G-COVER"]["per_cell"][out["cell_a"]]
+           ["decks_without_both_seatings"])
+    assert det["n_total"] == 1
+    assert det["listed"][0]["deck_seed"] == BAND + N_DECKS
+    assert det["listed"][0]["seatings_present"] == [0]
+
+
+def test_G_COVER_passes_on_a_SHORT_but_well_shaped_run(tmp_path, capsys):
+    """⭐ THE `G-N` RECONCILIATION, asserted: a run that is merely SHORT fails `G-N`
+    on VOLUME and PASSES `G-COVER`, which owns SHAPE. The alternative reading —
+    'covers all DECKS decks' literally — would repeal `G-N`'s committed 80% floor
+    and void every healthy-but-short run."""
+    a, b = write_cells(tmp_path, diffs=_flat, n_decks=8)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-COVER"] is True
+    assert out["failed_preconditions"] == ["G-N"]
+
+
+def test_G_J13_fails_when_a_host_that_played_has_no_preflight(tmp_path, capsys):
+    """PER-HOST (§0.F.1): the roster is DERIVED from the hostmap, so a laptop that
+    played without a control voids even though the local box's control passed."""
+    a, b, s, v = healthy(tmp_path, _flat)
+    (v / f"PREFLIGHT_{HOST_LAPTOP}_FIRST.json").unlink()
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-J13"]
+    det = out["precondition_detail"]["G-J13"]
+    assert det["hosts_that_played_with_NO_preflight"] == [HOST_LAPTOP]
+    assert det["hosts_that_played"] == sorted([HOST_LOCAL, HOST_LAPTOP])
+    assert det["hosts_expected"] == [HOST_LOCAL, HOST_LAPTOP]
+
+
+def test_G_JCZ_passes_with_differing_JVM_packaging_but_one_jar_sha(tmp_path, capsys):
+    """⭐ The disclosed per-host difference: SAME OpenJDK 17.0.19, different distro
+    base. It is REPORTED and it fails NOTHING — the pinned artifacts are the jar and
+    the classes, and `G-SPLIT` is what makes the runtime difference incapable of
+    touching `D`."""
+    a, b, s, v = healthy(tmp_path, _flat)
+    out, stdout = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-JCZ"] is True
+    det = out["precondition_detail"]["G-JCZ"]
+    assert det["jvm_packaging_differs_across_hosts"] is True
+    assert det["jar_sha_identical_across_hosts"] is True
+    assert det["jvm_version_by_host_REPORTED"][HOST_LOCAL] == JAVA_LOCAL
+    assert det["jvm_version_by_host_REPORTED"][HOST_LAPTOP] == JAVA_LAPTOP
+    # ...and the difference is REPORTED in the printed read-out, with the reason
+    assert "24.04.2" in stdout and "26.04.2" in stdout
+    assert "NEVER a branch input" in stdout or "NEVER A BRANCH INPUT" in stdout
+    assert "G-SPLIT" in stdout
+
+
+def test_G_JCZ_fails_on_a_per_host_jar_sha_mismatch(tmp_path, capsys):
+    """The jar is verified ON EACH HOST — a swapped jar on the laptop voids."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    s, v = write_support(tmp_path, env_overrides={
+        HOST_LAPTOP: {"jcz_jar_sha256": "f" * 64, "jcz_jar_sha256_match": False}})
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-JCZ"]
+    det = out["precondition_detail"]["G-JCZ"]
+    assert det["per_host"][HOST_LAPTOP]["ok"] is False
+    assert det["per_host"][HOST_LOCAL]["ok"] is True
+    assert det["jar_sha_identical_across_hosts"] is False
+
+
+def test_G_TOOL_fails_on_mixed_carc_rs_builds_across_boxes(tmp_path, capsys):
+    """§0.F.2b conjunct 1: pre-flights compared with PRE-FLIGHTS. Two boxes that
+    built different wheels void the run."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    s, v = write_support(tmp_path, env_overrides={
+        HOST_LAPTOP: {"carc_rs_build_id": f"carc_rs-0.1.0+{COMMIT[:12]}+rustc1.95.0"}})
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-TOOL"]
+    det = out["precondition_detail"]["G-TOOL"]["cross_host_build_identity"]
+    assert det["build_id_equal_across_hosts"] is False
+    assert set(det["preflight_build_id_by_host"]) == {HOST_LOCAL, HOST_LAPTOP}
+
+
+def test_G_TOOL_fails_on_a_mixed_binary_sha_across_boxes(tmp_path, capsys):
+    a, b = write_cells(tmp_path, diffs=_flat)
+    s, v = write_support(tmp_path,
+                         env_overrides={HOST_LAPTOP: {"carc_rs_binary_sha": "f" * 16}})
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-TOOL"]
+    assert (out["precondition_detail"]["G-TOOL"]["cross_host_build_identity"]
+            ["binary_sha_equal_across_hosts"] is False)
+
+
+def test_G_TOOL_passes_when_the_manifest_has_NO_binary_sha(tmp_path, capsys):
+    """⭐ READ_RULE §0.F.2b, the third unsatisfiable conjunct: `match.py` NEVER
+    stamps `carc_rs_binary_sha`, so a gate requiring it from the manifest would fail
+    on EVERY healthy run. With both pre-flights agreeing, this MUST pass."""
+    a, b = write_cells(tmp_path, diffs=_flat,
+                       a_kw={"binsha": None}, b_kw={"binsha": None})
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-TOOL"] is True, out["precondition_detail"]["G-TOOL"]
+    det = out["precondition_detail"]["G-TOOL"]
+    assert det["manifest_binary_sha_when_present"]["present"] is False
+    assert det["cross_host_build_identity"]["witness_present"] is True
+    assert det["any_build_witness_present"] is True
+    assert out["branch"] == "J-CONFIRMED"
+
+
+def test_G_TOOL_fails_when_no_build_witness_exists_anywhere(tmp_path, capsys):
+    """ABSENT AT EVERY SOURCE INCLUDING THE PRE-FLIGHTS STILL FAILS."""
+    a, b = write_cells(tmp_path, diffs=_flat,
+                       a_kw={"binsha": None}, b_kw={"binsha": None})
+    s, v = write_support(tmp_path, build_id=None,
+                         env_overrides={h: {"carc_rs_binary_sha": None,
+                                            "carc_rs_build_id": None}
+                                        for h in (HOST_LOCAL, HOST_LAPTOP)},
+                         first_overrides={h: {"carc_rs_binary_sha": None}
+                                          for h in (HOST_LOCAL, HOST_LAPTOP)})
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-TOOL"]
+    assert (out["precondition_detail"]["G-TOOL"]["any_build_witness_present"]
+            is False)
+
+
+def test_G_TOOL_fails_when_our_git_rev_differs_across_cells(tmp_path, capsys):
+    """§0.F.2b conjunct 2: cross-CELL code identity."""
+    a, b = write_cells(tmp_path, diffs=_flat, b_kw={"commit": OTHER_COMMIT})
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-TOOL"]
+    det = out["precondition_detail"]["G-TOOL"]["cross_cell_code_identity"]
+    assert det["equal_across_cells"] is False
+    assert det["observed"][out["cell_b"]]["value"] == OTHER_COMMIT
+
+
+def test_G_TOOL_fails_on_a_mixed_rev_cell(tmp_path, capsys):
+    """Half of CELL B's records at a different rev — a mixed-rev cell VOIDS even
+    though every record agrees with SOME rev."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    lines = []
+    for i, line in enumerate(b.read_text().splitlines()):
+        r = json.loads(line)
+        if i % 2:
+            r["manifest"]["our_git_rev"] = OTHER_COMMIT
+            r["manifest"]["champion_manifest"]["code_commit"] = OTHER_COMMIT
+        lines.append(json.dumps(r))
+    b.write_text("\n".join(lines) + "\n")
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-TOOL"]
+    det = out["precondition_detail"]["G-TOOL"]["cross_cell_code_identity"]
+    assert det["observed"][out["cell_b"]]["consistent_across_records"] is False
+
+
+def test_hostmap_shapes_all_parse_to_the_same_map():
+    """The launcher merges per-box shards; every accepted shape must land on the
+    SAME `{deck_seed: host}` map, and an unrecognised one must ERROR, not guess."""
+    want = {10: "Doctor", 11: "Doctor", 12: "laptop-wsl"}
+    for doc in ({"10": "Doctor", "11": "Doctor", "12": "laptop-wsl"},
+                {"hostmap": {"10": "Doctor", "11": "Doctor", "12": "laptop-wsl"}},
+                {"Doctor": [10, 11], "laptop-wsl": [12]},
+                {"shards": [{"host": "Doctor", "decks": [10, 11]},
+                            {"host": "laptop-wsl", "decks": [12]}]}):
+        got, meta = adj.parse_hostmap_doc(doc)
+        assert got == want, doc
+        assert meta["error"] is None and meta["shape"]
+    bad, meta = adj.parse_hostmap_doc({"decks": 4})
+    assert bad == {} and meta["error"]
+    dup, meta = adj.parse_hostmap_doc({"Doctor": [10], "laptop-wsl": [10]})
+    assert meta["conflicts"] and meta["conflicts"][0]["deck_seed"] == 10
+    # `merge_cells.sh`'s CONFLICT sentinel is NOT a host — it is the merge step
+    # saying the deck's host is undetermined, and it must fail closed.
+    got, meta = adj.parse_hostmap_doc(
+        {"hostmap": {"10": "Doctor", "11": "CONFLICT:Doctor|laptop-wsl"}})
+    assert got == {10: "Doctor"}
+    assert meta["conflicts"] and meta["conflicts"][0]["deck_seed"] == 11
+
+
+def test_G_SPLIT_fails_on_a_merge_step_CONFLICT_sentinel(tmp_path, capsys):
+    a, b = write_cells(tmp_path, diffs=_flat)
+    side = a.with_suffix(".hostmap.json")
+    doc = json.loads(side.read_text())
+    doc[str(BAND + 2)] = f"CONFLICT:{HOST_LOCAL}|{HOST_LAPTOP}"
+    side.write_text(json.dumps({"witness": "G-SPLIT input", "hostmap": doc}))
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-SPLIT"]
+    assert out["precondition_detail"]["G-SPLIT"]["intra_cell_host_conflicts"]
 
 
 # --------------------------------------------------------------------------- #

@@ -114,11 +114,12 @@ catch.
 **AMENDED READING — the same proposition, witnessed by artifacts that exist.** `G-TOOL` asserts
 *"both boxes and both cells ran the same wheel"*. It is now discharged by three conjuncts:
 
-1. **cross-HOST build identity** — the `carc_rs` build id **and** binary sha256 recorded in each
-   host's `verdicts/PREFLIGHT_<host>_ENV.json` are equal across hosts. This is the Stage-2
-   corrected shape: **pre-flights compared with pre-flights**, never a pre-flight against a
-   manifest (`carc_rs_build_id()` embeds `git rev-parse HEAD` at call time, so that cross-comparison
+1. **cross-HOST build identity** — the `carc_rs` **build id** recorded in each host's
+   `verdicts/PREFLIGHT_<host>_ENV.json` is equal across hosts. This is the Stage-2 corrected
+   shape: **pre-flights compared with pre-flights**, never a pre-flight against a manifest
+   (`carc_rs_build_id()` embeds `git rev-parse HEAD` at call time, so that cross-comparison
    answers *"did HEAD move between two moments?"* and is a false positive by construction).
+   **See §0.F.2c — this conjunct binds on the build id, NOT on the binary sha.**
 2. **cross-CELL code identity** — `our_git_rev` (falling back to `champion_manifest.code_commit`)
    is equal across CELL A and CELL B, and consistent within each cell (no mixed-rev cell).
 3. **the commit-range conjunct, unchanged** — `git diff --name-only <preflight>..<manifest> --
@@ -133,6 +134,39 @@ preserved exactly.
 📌 Parked, not done (it would mean editing a driver under a live tree): `match.py` should stamp
 `carc_rs_binary_sha` into its manifest, so a future run's build witness travels with the data
 instead of with the pre-flight. Roadmap item, not a launch blocker.
+
+### §0.F.2c — a FOURTH unsatisfiable conjunct: the `.so` IS NOT REPRODUCIBLE ACROSS MACHINES
+
+§0.F.2b conjunct 1, **as first committed**, required `carc_rs_binary_sha` to be **equal across
+hosts**. **That is physically impossible and it was already measured** — before this design
+existed, on **this same pair of boxes**. Amended now, blind: band unclaimed, no game played, no
+cell statistic in existence.
+
+**The evidence, three independent records, all pre-dating this run:**
+
+| source | record |
+|---|---|
+| `measurement/tiearb2_stage2_20260817/preflight_tiearb.py:160` | measured **`73aa20102ab98e2f`** (local) vs **`ec140ac0c0583d53`** (laptop) at *identical source and rustc 1.96.0* |
+| `measurement/tiearb2_stage2_20260817/READOUT.json:351` (`binary_sha_note`) | *"`carc_rs_binary_sha` is BOX-LOCAL staleness evidence and is **NEVER compared across boxes**: the `.so` is not reproducible across machines"* |
+| Stage 2's own live pre-flights | `PREFLIGHT_Doctor_FIRST.json` **`a4318fd59d9d8349`** vs `PREFLIGHT_laptop-wsl_FIRST.json` **`8ae0b98427debb2e`** — at the **SAME** `carc_rs_build` = `carc_rs-0.1.0+c48216460325+rustc1.96.0` |
+
+That third row is the decisive one: **same commit, same toolchain, same build id, different binary
+sha.** A cross-host equality conjunct on the sha would therefore have voided **every healthy
+two-box run** — the fourth instance of the same defect class, and the only one caught from prior
+*data* rather than from reading the harness.
+
+**AMENDED READING — each witness binds where it is meaningful:**
+
+* **ACROSS HOSTS:** bind on **`carc_rs_build`** — the build id (`carc_rs-<version>+<commit>+<toolchain>`).
+  It is machine-independent by construction and is exactly the proposition "both boxes ran the same
+  source at the same toolchain". Inequality VOIDS.
+* **WITHIN A HOST:** bind on **`carc_rs_binary_sha`**, compared across the two cells for that host
+  (host attributed via the hostmap). This is its true meaning — a **rebuilt-here / staleness**
+  witness that catches a wheel changing under one box mid-run. Inequality VOIDS.
+
+**Fail-closed direction preserved exactly: absent at every source still fails.** The gate is not
+weakened — it is split into the two comparisons that are each physically meaningful, replacing one
+comparison that could never pass.
 
 ### §0.F.3 — instrument-fix discipline, restated and now binding on a SECOND session
 
@@ -195,7 +229,7 @@ here as the shipped behaviour rather than re-discovered).
 | `G-RULES` | BOTH cells stamp `rules_profile == "fixed_v1"` and `r9_env == "1"` | anything else |
 | `G-DIVERGE` | **REAL divergence count == 0** in BOTH cells, and `final_agree` on ≥ 99% of scored games in BOTH cells | any REAL divergence |
 | `G-JCZ` | **PER-HOST (§0.F.1).** JCZ provenance identical across cells AND across hosts, and equal to DESIGN §7.1 (rev `29a1561…`, jar sha256 `4dc5439d…` verified ON EACH HOST, `LegacyAiPlayer`, `basic:2`, ai class `com.jcloisterzone.ai.AiEngine`, 10 shim classes). ⚠️ The JVM *packaging* differs by host (`24.04.2` vs `26.04.2`, same OpenJDK 17.0.19) — **REPORTED, and it cannot touch `D` because `G-SPLIT` holds the deck→host map identical across cells** | any difference in the pinned artifacts on any host |
-| `G-TOOL` | **(amended §0.F.2b)** three conjuncts: (1) cross-HOST — `carc_rs` build id + binary sha equal across hosts, read from each `PREFLIGHT_<host>_ENV.json` (pre-flights compared with pre-flights, NEVER against a manifest); (2) cross-CELL — `our_git_rev` / `champion_manifest.code_commit` equal across cells and consistent within each; (3) `git diff --name-only <preflight>..<manifest> -- rust/ src/ engine/ scripts/` EMPTY or degenerate. Manifest `carc_rs_binary_sha` binds WHEN PRESENT (this harness does not write it) | a NON-EMPTY or UNRESOLVED wheel-relevant diff; mixed builds across hosts; mixed revs across cells; absent at EVERY source |
+| `G-TOOL` | **(amended §0.F.2b + §0.F.2c)** four conjuncts: (1) cross-HOST — **`carc_rs_build` (the build id)** equal across hosts, read from each `PREFLIGHT_<host>_ENV.json` (pre-flights vs pre-flights, NEVER against a manifest); (1b) within-HOST — **`carc_rs_binary_sha`** equal across the two cells for that host (host via the hostmap), the rebuilt-here/staleness witness. ⛔ **The sha is NEVER compared across hosts — the `.so` is not machine-reproducible, measured (§0.F.2c)**; (2) cross-CELL — `our_git_rev` / `champion_manifest.code_commit` equal across cells and consistent within each; (3) `git diff --name-only <preflight>..<manifest> -- rust/ src/ engine/ scripts/` EMPTY or degenerate | a NON-EMPTY or UNRESOLVED wheel-relevant diff; differing build ids across hosts; a sha that moved within a host between cells; mixed revs across cells; absent at EVERY source |
 | `G-N` | `n_common` ≥ **320 decks** AND each cell has ≥ **640 games** scored | either floor |
 | `G-PLY` | **(amended §0.F.2)** BOTH cells carry the harness ply accounting (`moves_by_seat`/`moves` + `n_actions`); **CELL B additionally** carries `partial_argmax` on EVERY game with `partial_argmax_total == 0` | absent accounting on either cell; absent `partial_argmax` on CELL B (unknown ≠ zero); non-zero `partial_argmax` |
 

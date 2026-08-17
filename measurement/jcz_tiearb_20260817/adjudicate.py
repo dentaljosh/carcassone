@@ -40,6 +40,15 @@ Three properties this file is deliberately built around
   where `scripts/jcz_match/match.py` actually writes it — and `resolved_at` names
   the address that answered. Absent at every address still fails; present-but-wrong
   still fails.
+* **TWO BOXES (READ_RULE §0.F.1, owner ruling).** The run is split across `Doctor`
+  (W30) and `laptop-wsl` (W22) by a STATIC contiguous deck split, so two gates are
+  added and three become PER-HOST. `G-SPLIT` verifies from the records that the
+  deck→host assignment is IDENTICAL across the two cells — load-bearing, not
+  tidiness: `D` is deck-paired, so a deck that changed boxes puts every per-box
+  difference (JVM packaging, `W` and hence contention, RAM) INSIDE the paired
+  difference where it is arithmetically indistinguishable from the arbiter's effect.
+  `G-COVER` verifies the coverage shape. `G-J13` / `G-JCZ` / `G-TOOL` are read per
+  host, and the hosts that PLAYED are DERIVED from the records, never hard-coded.
 * **`G-TOOL` must not be unsatisfiable by construction** (READ_RULE §3.1). Stage 2
   lost an adjudication to a gate that fired on every healthy run
   (`measurement/tiearb2_stage2_20260817/READOUT.md`, the DISCLOSURE section). Here
@@ -92,6 +101,13 @@ WORKERS_CONF_FALLBACK = {
     "EXACT_K": "2",
     "DECKS": "400",
     "N_GAMES": "800",
+    # §0.F.1 TWO BOXES (owner ruling). Reported in §4.3's two-box block; the gates
+    # derive the hosts that PLAYED from the records, never from these literals.
+    "W_LOCAL": "30",
+    "W_LAPTOP": "22",
+    "DECKS_LOCAL": "240",
+    "DECKS_LAPTOP": "160",
+    "LAPTOP_HOST": "laptop-wsl",
     "BAND_SENTINEL": str(HERE / "BAND_CLAIM.txt"),
     "RULES_PROFILE": "fixed_v1",
     "FIX_R9": "1",
@@ -173,8 +189,23 @@ Z_WITNESS_TOL = 1e-9   # §1 — the recomputation is a WITNESS; this is the "be
 #: `git diff --name-only <preflight_commit>..<manifest_commit> -- rust/ src/ engine/ scripts/`
 WHEEL_RELEVANT_PATHS = ("rust/", "src/", "engine/", "scripts/")
 
-ALL_GATES = ("G-BAND", "G-LEAF", "G-ARB", "G-FIRE", "G-J13", "G-RULES", "G-DIVERGE",
-             "G-JCZ", "G-TOOL", "G-N", "G-PLY", "G-WITNESS")
+#: §0.F.1 / §3 `G-J13` — "Expected hosts: `Doctor`, `laptop-wsl`". REPORTED against,
+#: never hard-coded INTO the gate: the set of hosts that PLAYED is derived from the
+#: records (the hostmap), because a host that played and was not expected is exactly
+#: the thing this must be able to see rather than assume away. The laptop half is
+#: taken from `WORKERS.conf::LAPTOP_HOST` when that parses.
+EXPECTED_HOSTS = ("Doctor", "laptop-wsl")
+
+#: §0.F.1 `G-SPLIT` — the sidecar the launcher writes NEXT TO each cell's jsonl,
+#: merged from the per-box shards: a `{deck_seed: host}` map.
+HOSTMAP_SUFFIX = ".hostmap.json"
+
+#: Offending-seed lists are CAPPED in the read-out (the full count is always given —
+#: a truncated list must never be mistakable for the whole ledger).
+MAX_LISTED_SEEDS = 20
+
+ALL_GATES = ("G-BAND", "G-LEAF", "G-SPLIT", "G-COVER", "G-ARB", "G-FIRE", "G-J13",
+             "G-RULES", "G-DIVERGE", "G-JCZ", "G-TOOL", "G-N", "G-PLY", "G-WITNESS")
 
 #: DESIGN §4.1/§4.2 — the power arithmetic, committed before any number existed.
 POWER = {
@@ -543,6 +574,256 @@ def _find_key_anywhere(obj, key: str, path="", skip=("moves", "actions", "replay
 
 
 # =========================================================================== #
+# §0.F.1 — THE DECK→HOST MAP. The witness `G-SPLIT` and `G-COVER` are read from. #
+# =========================================================================== #
+def _coerce_seed(k):
+    """A deck seed out of a JSON object key (they are always strings)."""
+    try:
+        return int(str(k).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _strip_conflict_markers(m: dict, meta: dict) -> dict:
+    """`merge_cells.sh` writes a deck claimed by two shards as the sentinel value
+    `CONFLICT:<a>|<b>` rather than dropping it. That is NOT a host: it is the merge
+    step SAYING the deck's host is undetermined, so it becomes a `conflict` here —
+    fail-closed, exactly like an absent stamp — instead of being adjudicated as a
+    box literally called `CONFLICT:…`."""
+    out = {}
+    for d, h in m.items():
+        if isinstance(h, str) and h.upper().startswith("CONFLICT"):
+            meta["conflicts"].append({"deck_seed": d, "hosts": [h],
+                                      "where": "merge step marked the deck CONFLICT"})
+        else:
+            out[d] = h
+    return out
+
+
+def parse_hostmap_doc(doc) -> tuple:
+    """`(map, meta)` — `{deck_seed: host}` out of the sidecar's parsed JSON.
+
+    The launcher MERGES per-box shards into one sidecar, so several shapes are
+    accepted and the one that answered is REPORTED (`shape`):
+
+    * `{"133000000000": "Doctor", ...}`                  — the deck→host map itself
+    * `{"hostmap": {...}}` / `{"decks": {...}}`          — the same, wrapped
+    * `{"Doctor": [133000000000, ...], "laptop-wsl": [...]}`  — the INVERTED map,
+      which is the natural shape of "this box took this contiguous range"
+    * `{"shards": [{"host": "Doctor", "decks": [...]}, ...]}` — the unmerged shards
+
+    Anything else is an ERROR, not a guess: `G-SPLIT` VOIDS on an unparseable
+    hostmap, because a split that cannot be READ is exactly the unverifiable split
+    the gate exists to catch. A deck claimed by two different hosts inside ONE
+    sidecar is a `conflict` — also fatal, for the same reason.
+    """
+    meta = {"shape": None, "error": None, "conflicts": []}
+    if isinstance(doc, dict):
+        for wrapper in ("hostmap", "host_map", "decks", "deck_hosts"):
+            if wrapper in doc and isinstance(doc[wrapper], (dict, list)):
+                inner, m = parse_hostmap_doc(doc[wrapper])
+                m["shape"] = f"{wrapper}.{m['shape']}" if m["shape"] else wrapper
+                return inner, m
+        if "shards" in doc and isinstance(doc["shards"], list):
+            out: dict = {}
+            for sh in doc["shards"]:
+                if not isinstance(sh, dict):
+                    meta["error"] = "a shard entry is not an object"
+                    return {}, meta
+                host = sh.get("host") or sh.get("hostname")
+                seeds = sh.get("decks") or sh.get("deck_seeds") or sh.get("seeds") or []
+                if not isinstance(host, str) or not isinstance(seeds, list):
+                    meta["error"] = "a shard entry lacks host/decks"
+                    return {}, meta
+                for s in seeds:
+                    d = _coerce_seed(s)
+                    if d is None:
+                        meta["error"] = f"shard deck seed {s!r} is not an integer"
+                        return {}, meta
+                    if d in out and out[d] != host:
+                        meta["conflicts"].append({"deck_seed": d,
+                                                  "hosts": sorted({out[d], host})})
+                    out[d] = host
+            meta["shape"] = "shards"
+            return _strip_conflict_markers(out, meta), meta
+        vals = list(doc.values())
+        if vals and all(isinstance(v, str) for v in vals):
+            out = {}
+            for k, v in doc.items():
+                d = _coerce_seed(k)
+                if d is None:
+                    meta["error"] = f"key {k!r} is not a deck seed"
+                    return {}, meta
+                out[d] = v
+            meta["shape"] = "deck_seed -> host"
+            return _strip_conflict_markers(out, meta), meta
+        if vals and all(isinstance(v, list) for v in vals):
+            out = {}
+            for host, seeds in doc.items():
+                for s in seeds:
+                    d = _coerce_seed(s)
+                    if d is None:
+                        meta["error"] = f"deck seed {s!r} is not an integer"
+                        return {}, meta
+                    if d in out and out[d] != host:
+                        meta["conflicts"].append({"deck_seed": d,
+                                                  "hosts": sorted({out[d], host})})
+                    out[d] = host
+            meta["shape"] = "host -> [deck_seed] (INVERTED)"
+            return _strip_conflict_markers(out, meta), meta
+        if not vals:
+            meta["error"] = "hostmap is EMPTY"
+            return {}, meta
+    meta["error"] = f"unrecognised hostmap shape ({type(doc).__name__})"
+    return {}, meta
+
+
+def hostmap_candidates(cell_path: Path, cell_name: str, run_dir: Path,
+                       override=None) -> list:
+    """Where the sidecar is looked for, in order: an explicit `--cell-*-hostmap`,
+    then `<cell>.hostmap.json` NEXT TO the jsonl (the committed location), then
+    `<run_dir>/<cell_name>.hostmap.json`."""
+    out = []
+    if override:
+        out.append(Path(override))
+    try:
+        out.append(cell_path.with_suffix(HOSTMAP_SUFFIX))
+    except ValueError:                                       # pragma: no cover
+        pass
+    out.append(cell_path.parent / f"{cell_path.name}{HOSTMAP_SUFFIX}")
+    out.append(Path(run_dir) / f"{cell_name}{HOSTMAP_SUFFIX}")
+    seen, uniq = set(), []
+    for p in out:
+        if str(p) not in seen:
+            seen.add(str(p))
+            uniq.append(p)
+    return uniq
+
+
+def load_hostmap(paths: list) -> dict:
+    """The FIRST candidate that EXISTS is the sidecar, and if it does not parse the
+    gate VOIDS — the next candidate is NOT tried, because silently falling through
+    from a broken sidecar to a stale one is how an unverifiable split would slip
+    past `G-SPLIT`."""
+    out = {"searched": [str(p) for p in paths], "path": None, "exists": False,
+           "parsed": None, "map": {}, "shape": None, "error": None, "conflicts": []}
+    for p in paths:
+        if not p.exists():
+            continue
+        out["path"], out["exists"] = str(p), True
+        try:
+            doc = json.loads(p.read_text())
+        except (OSError, json.JSONDecodeError) as e:                 # noqa: BLE001
+            out["parsed"] = False
+            out["error"] = f"{type(e).__name__}: {e}"
+            return out
+        m, meta = parse_hostmap_doc(doc)
+        out["map"], out["shape"] = m, meta["shape"]
+        out["conflicts"] = meta["conflicts"]
+        out["error"] = meta["error"]
+        out["parsed"] = meta["error"] is None
+        return out
+    out["error"] = ("no `<cell>.hostmap.json` sidecar at any candidate path — the "
+                    "record `host`/`hostname` field is the only remaining source")
+    return out
+
+
+def _record_host(r: dict):
+    """A host stamp ON THE RECORD, accepted as a source in its own right (§0.F.1:
+    'accept also a `host`/`hostname` field on the records themselves')."""
+    for key in ("host", "hostname"):
+        v = r.get(key)
+        if isinstance(v, str) and v:
+            return v
+    m = r.get("manifest") or {}
+    for addr in ("host", "hostname", "config.host", "config.hostname"):
+        v, hit = _get_path(m, addr)
+        if hit and isinstance(v, str) and v:
+            return v
+    return None
+
+
+def resolve_cell_hosts(cell: dict, hostmap: dict) -> dict:
+    """`{deck_seed: host}` for ONE cell, merged sidecar-first then records, with the
+    source that answered REPORTED per the §0.F.1 requirement.
+
+    Fail-closed shape: a deck whose sidecar host and record host DISAGREE, or whose
+    two seatings carry DIFFERENT record hosts, is a `conflict` — its host is not
+    determined, which is an absent host stamp by another name and `G-SPLIT` VOIDS
+    on it.
+    """
+    from_records: dict = {}
+    rec_conflicts: list = []
+    for r in cell["scored"]:
+        try:
+            d = int(r["deck_seed"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        h = _record_host(r)
+        if h is None:
+            continue
+        if d in from_records and from_records[d] != h:
+            rec_conflicts.append({"deck_seed": d,
+                                  "hosts": sorted({from_records[d], h}),
+                                  "where": "two records of the same deck"})
+        from_records[d] = h
+
+    merged: dict = {}
+    source: dict = {}
+    conflicts = list(hostmap.get("conflicts") or []) + rec_conflicts
+    for d, h in (hostmap.get("map") or {}).items():
+        merged[d], source[d] = h, "hostmap"
+    for d, h in from_records.items():
+        if d in merged:
+            if merged[d] != h:
+                conflicts.append({"deck_seed": d, "hosts": sorted({merged[d], h}),
+                                  "where": "sidecar vs record host stamp"})
+            continue
+        merged[d], source[d] = h, "records"
+    srcs = sorted(set(source.values()))
+    return {"map": merged,
+            "resolved_by": ("+".join(srcs) if srcs else None),
+            "n_from_hostmap": sum(1 for s in source.values() if s == "hostmap"),
+            "n_from_records": sum(1 for s in source.values() if s == "records"),
+            "hostmap": {k: v for k, v in hostmap.items() if k != "map"},
+            "hosts": dict(sorted(Counter(merged.values()).items())),
+            "conflicts": conflicts,
+            # a sidecar that FAILED to parse is always an error; a sidecar that is
+            # merely ABSENT is only an error if the records did not fill in for it.
+            "error": (hostmap.get("error")
+                      if (not merged or hostmap.get("parsed") is False) else None)}
+
+
+def host_of(hostres: dict, deck) -> str:
+    return (hostres.get("map") or {}).get(deck)
+
+
+def per_host_stats(cell: dict, hostres: dict) -> dict:
+    """Per-host game counts, deck range and OUR-side `ms_per_move` for one cell —
+    §4.3's two-box block. Reported, never a branch input."""
+    out: dict = {}
+    for r in cell["scored"]:
+        try:
+            d = int(r["deck_seed"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        h = host_of(hostres, d) or "UNMAPPED"
+        b = out.setdefault(h, {"n_games": 0, "decks": set(), "ms": [], "wall": []})
+        b["n_games"] += 1
+        b["decks"].add(d)
+        if isinstance(r.get("ms_per_move_champ"), (int, float)):
+            b["ms"].append(float(r["ms_per_move_champ"]))
+        if isinstance(r.get("wall_secs"), (int, float)):
+            b["wall"].append(float(r["wall_secs"]))
+    return {h: {"n_games": b["n_games"], "n_decks": len(b["decks"]),
+                "deck_seed_min": min(b["decks"]) if b["decks"] else None,
+                "deck_seed_max": max(b["decks"]) if b["decks"] else None,
+                "ms_per_move_champ_OURS": (st.mean(b["ms"]) if b["ms"] else None),
+                "worker_s_per_game": (st.mean(b["wall"]) if b["wall"] else None)}
+            for h, b in sorted(out.items())}
+
+
+# =========================================================================== #
 # Loading — reuse `scripts/jcz_match/analyze.py`, never re-invent its pairing.  #
 # =========================================================================== #
 def _import_jcz_analyze(repo: Path):
@@ -864,7 +1145,14 @@ def gate_leaf(cells: dict, expected: str) -> tuple:
     """`G-LEAF` — `cand_leaf_hash == a36d2e15a3b3d71d` on BOTH cells. VOIDS on
     "difference or absence".
 
-    ⚠️ AMBIGUITY, DECLARED: READ_RULE names the witness `cand_leaf_hash`, which is
+    ⭐ **THIS IS NOW THE COMMITTED TEXT (READ_RULE §0.F.2, pre-launch).** The reading
+    below was written here first as a declared ambiguity; the read-rule's §3 row now
+    names it verbatim — "read top level → `config.*` → the harness-native address,
+    and REPORT which resolved; ABSENT AT EVERY ADDRESS STILL FAILS" — so this
+    docstring is the implementation of a committed sentence, not an interpretation of
+    one. The reasoning is retained because it is why the sentence says what it says.
+
+    ⚠️ READ_RULE names the witness `cand_leaf_hash`, which is
     `eval_fair_puct`'s spelling. `scripts/jcz_match/match.py` stamps the same
     quantity at `champion_manifest.leaf_hashes.harness_leaf_hash` (verified against
     the 2026-08-09 archive). Both spellings are looked up, top level then `config.*`
@@ -888,6 +1176,158 @@ def gate_leaf(cells: dict, expected: str) -> tuple:
                       "semantics": "EQUALITY gate — difference OR absence VOIDS; the "
                                    "hash must also be consistent across every record "
                                    "of the cell (a mixed-rev cell fails)"}
+
+
+def _cap(seq, n=MAX_LISTED_SEEDS) -> dict:
+    """A CAPPED list plus the FULL count — a truncated ledger must never be
+    mistakable for the whole one."""
+    seq = list(seq)
+    return {"n_total": len(seq), "listed": seq[:n],
+            "truncated": len(seq) > n, "list_cap": n}
+
+
+def gate_split(cells: dict, a_name: str, b_name: str, hostres: dict) -> tuple:
+    """`G-SPLIT` (ADDED §0.F.1) — "the deck→host assignment is IDENTICAL across both
+    cells". VOIDS on "any deck whose host differs between cells; an absent host
+    stamp".
+
+    ⭐ WHY THIS IS LOAD-BEARING AND NOT TIDINESS (DESIGN §0.1.2, encoded here so the
+    gate carries its own reason): `D` is DECK-PAIRED — deck `d` contributes
+    `margin_B(d) − margin_A(d)`. If `d` ran on the laptop in CELL A and locally in
+    CELL B, then every per-box difference — the JVM packaging (`24.04.2` vs
+    `26.04.2`), the different `W` and hence different contention, the different RAM
+    pressure — lands INSIDE that paired difference and is **arithmetically
+    indistinguishable from the arbiter's effect**. With the split identical, every
+    per-box effect is common to both terms and CANCELS EXACTLY. That cancellation is
+    what makes the disclosed per-host JVM difference incapable of touching `D`, and
+    it is why `G-JCZ` REPORTS the JVM packaging instead of failing on it.
+
+    Sources for the host of a deck, in order, with the one that answered REPORTED:
+    the `<cell>.hostmap.json` sidecar the launcher writes next to each cell's jsonl
+    (merged from the per-box shards), then a `host`/`hostname` field on the records
+    themselves. **ABSENT AT EVERY SOURCE FAILS** — an unverifiable split is exactly
+    the confound this gate exists to catch, so it is never passed by omission.
+
+    The comparison set is the decks `D` is actually taken over (the seat-balanced
+    decks common to both cells): those are the decks whose per-box effects could
+    enter the paired difference.
+    """
+    A, B = hostres[a_name], hostres[b_name]
+    common = sorted(set(cells[a_name]["by_deck"]) & set(cells[b_name]["by_deck"]))
+    mismatched, missing = [], []
+    for d in common:
+        ha, hb = A["map"].get(d), B["map"].get(d)
+        if ha is None or hb is None:
+            missing.append({"deck_seed": d, "cell_a_host": ha, "cell_b_host": hb})
+        elif ha != hb:
+            mismatched.append({"deck_seed": d, "cell_a_host": ha, "cell_b_host": hb})
+    parse_errors = {n: hostres[n]["hostmap"].get("error") for n in (a_name, b_name)
+                    if hostres[n]["hostmap"].get("parsed") is False}
+    conflicts = {n: hostres[n]["conflicts"] for n in (a_name, b_name)
+                 if hostres[n]["conflicts"]}
+    resolved = bool(A["map"]) and bool(B["map"])
+    ok = bool(resolved and common and not mismatched and not missing
+              and not parse_errors and not conflicts)
+    return ok, {
+        "n_common_decks_compared": len(common),
+        "mismatched_decks": _cap(mismatched),
+        "decks_with_no_host_in_either_cell": _cap(missing),
+        "unparseable_hostmap": parse_errors or None,
+        "intra_cell_host_conflicts": conflicts or None,
+        "per_cell": {n: {"host_source_resolved": hostres[n]["resolved_by"],
+                         "n_decks_from_hostmap": hostres[n]["n_from_hostmap"],
+                         "n_decks_from_record_stamps": hostres[n]["n_from_records"],
+                         "hostmap": hostres[n]["hostmap"],
+                         "decks_per_host": hostres[n]["hosts"]}
+                     for n in (a_name, b_name)},
+        "hosts_seen": sorted(set(A["hosts"]) | set(B["hosts"])),
+        "semantics": (
+            "FAIL-CLOSED. ABSENT AT EVERY SOURCE FAILS: the sidecar "
+            "`<cell>.hostmap.json` is read first, then a `host`/`hostname` field on "
+            "the records; a deck with no host in either cell, a deck whose host "
+            "DIFFERS between the cells, an unparseable sidecar, or a deck claimed by "
+            "two hosts inside one cell all VOID. Rationale: D is deck-paired, so a "
+            "deck that changed boxes puts every per-box difference INSIDE the paired "
+            "difference, arithmetically indistinguishable from the arbiter's effect "
+            "(DESIGN §0.1.2)."),
+    }
+
+
+def gate_cover(cells: dict, decks_per_cell: int) -> tuple:
+    """`G-COVER` (ADDED §0.F.1) — "the union of the per-box ranges covers all `DECKS`
+    decks × 2 seatings EXACTLY ONCE per cell". VOIDS on "any gap, duplicate, or
+    out-of-band deck".
+
+    ⚠️ AMBIGUITY, DECLARED — THE `G-N` RECONCILIATION. `G-N` deliberately allows an
+    80% floor (320 of 400 decks, 640 of 800 games), i.e. a PARTIAL run is readable.
+    Read literally, "covers all `DECKS` decks" would make every partial run VOID and
+    would delete `G-N`'s floor entirely — one committed sentence silently repealing
+    another, and a gate that fails on a healthy-but-short run. **The reading
+    implemented, so the two rules stand together:**
+
+      * evaluated over what the cell CLAIMS to cover, i.e. its scored records;
+      * **NO DUPLICATE** `(deck_seed, champ_seat, replicate)` in a cell — a cell that
+        played the same game twice would double-count it;
+      * **NO OUT-OF-BAND deck** — every seed inside `[band, band + DECKS − 1]` for
+        that cell's OWN record-derived band (the SENTINEL comparison is `G-BAND`'s
+        job; using it here too would double-charge one defect to two gates);
+      * **BOTH SEATINGS for every deck present** — the per-box ranges are contiguous
+        and each box runs `--champ-seat both`, so a deck with one seating means a box
+        range was cut mid-deck, which is the coverage defect this gate names.
+
+    A run that is merely SHORT therefore fails `G-N` on VOLUME — the gate that owns
+    volume — and passes `G-COVER`, which owns SHAPE. Nothing is softened: every
+    "exactly once" clause that a partial run can still satisfy is enforced verbatim.
+    """
+    per_cell, ok = {}, True
+    for name, c in cells.items():
+        recs = c["scored"]
+        cells_seen: Counter = Counter()
+        seats: dict = {}
+        for r in recs:
+            try:
+                d, s = int(r["deck_seed"]), int(r["champ_seat"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            rep = r.get("replicate", 0)
+            try:
+                rep = int(rep)
+            except (TypeError, ValueError):
+                pass
+            cells_seen[(d, s, rep)] += 1
+            seats.setdefault(d, set()).add(s)
+        dups = [{"deck_seed": k[0], "champ_seat": k[1], "replicate": k[2], "n": n}
+                for k, n in sorted(cells_seen.items()) if n > 1]
+        seeds = sorted(seats)
+        derived = (seeds[0] // 1_000_000_000) * 1_000_000_000 if seeds else None
+        hi = derived + decks_per_cell - 1 if derived is not None else None
+        oob = [d for d in seeds if derived is None or not (derived <= d <= hi)]
+        unbalanced = [{"deck_seed": d, "seatings_present": sorted(s)}
+                      for d, s in sorted(seats.items()) if s != {0, 1}]
+        good = bool(recs) and not dups and not oob and not unbalanced
+        per_cell[name] = {
+            "n_scored": len(recs), "n_decks": len(seeds),
+            "band_derived_from_records": derived,
+            "band_window": [derived, hi],
+            "duplicate_deck_seat_replicate": _cap(dups),
+            "out_of_band_deck_seeds": _cap(oob),
+            "decks_without_both_seatings": _cap(unbalanced),
+            "n_games_if_complete": decks_per_cell * 2,
+            "ok": bool(good)}
+        ok &= good
+    return bool(ok), {
+        "per_cell": per_cell, "decks_declared": decks_per_cell,
+        "seatings_per_deck_required": 2,
+        "reconciliation_with_G_N": (
+            "G-N owns VOLUME (its committed 80% floor: n_common >= 320 decks, >= 640 "
+            "games/cell) and G-COVER owns SHAPE. G-COVER is therefore evaluated over "
+            "what the cell CLAIMS to cover: no duplicate (deck_seed, champ_seat, "
+            "replicate), no seed outside the cell's own record-derived band window, "
+            "and BOTH seatings present for every deck that is present. A partial run "
+            "fails G-N on volume rather than G-COVER on absence — the alternative "
+            "reading would repeal G-N's floor and void every healthy-but-short run "
+            "(READ_RULE §3.1's defect class)."),
+    }
 
 
 def _arb_dicts(records, key="champ_tiearb") -> list:
@@ -1021,22 +1461,54 @@ def gate_fire(telem: dict) -> tuple:
         "offline_prior_phi": 22.96, "stage2_realized_phi": 17.573}
 
 
-def load_preflights(verdicts_dir: Path) -> list:
-    """`verdicts/PREFLIGHT_<host>_FIRST.json` — the FIRST pre-flight on each host,
-    which is the one §3 `G-J13` names (it must precede that host's game 1)."""
+def _load_verdict_docs(verdicts_dir: Path, label: str) -> list:
+    """`verdicts/PREFLIGHT_<host>_<LABEL>.json` for every host, with the host taken
+    from the FILENAME (the file's own `host` field only fills in if the name does
+    not parse) — the filename is what makes this a PER-HOST roster."""
     out = []
     if not verdicts_dir.exists():
         return out
-    for p in sorted(verdicts_dir.glob("PREFLIGHT_*_FIRST.json")):
+    for p in sorted(verdicts_dir.glob(f"PREFLIGHT_*_{label}.json")):
         try:
             doc = json.loads(p.read_text())
+            if not isinstance(doc, dict):
+                doc = {"_parse_error": "not a JSON object"}
         except Exception as e:                                       # noqa: BLE001
             doc = {"_parse_error": f"{type(e).__name__}: {e}"}
         doc["_path"] = str(p)
-        m = re.match(r"PREFLIGHT_(.+)_FIRST\.json$", p.name)
-        doc.setdefault("host", m.group(1) if m else p.name)
+        m = re.match(rf"PREFLIGHT_(.+)_{label}\.json$", p.name)
+        if m:
+            doc["host"] = m.group(1)
+        else:
+            doc.setdefault("host", p.name)
         out.append(doc)
     return out
+
+
+def load_preflights(verdicts_dir: Path) -> list:
+    """`verdicts/PREFLIGHT_<host>_FIRST.json` — the FIRST pre-flight on each host,
+    which is the one §3 `G-J13` names (it must precede that host's game 1)."""
+    return _load_verdict_docs(verdicts_dir, "FIRST")
+
+
+def load_preflight_envs(verdicts_dir: Path) -> list:
+    """`verdicts/PREFLIGHT_<host>_ENV.json` — the per-host ENVIRONMENT witness:
+    the `carc_rs` build id + binary sha (`G-TOOL` conjunct 1, §0.F.2b), the jar
+    sha256 verified ON THAT HOST (`G-JCZ`, per-host), and the JVM version string
+    (REPORTED by `G-JCZ`, never a branch input)."""
+    return _load_verdict_docs(verdicts_dir, "ENV")
+
+
+def _match_host(host: str, roster: dict) -> tuple:
+    """`(key, how)` — an exact hit in `roster`, else a case-insensitive one.
+    `hostname` casing is not guaranteed stable across a WSL rebuild, and a VOID on
+    a healthy run because one witness said `Doctor` and another `doctor` is exactly
+    the §3.1 defect class; the relaxation is REPORTED wherever it is used."""
+    if host in roster:
+        return host, "exact"
+    low = {str(k).lower(): k for k in roster}
+    k = low.get(str(host).lower())
+    return (k, "case-insensitive") if k is not None else (None, None)
 
 
 def _j13_sides(doc: dict) -> tuple:
@@ -1056,20 +1528,30 @@ def _j13_sides(doc: dict) -> tuple:
     return pos, neg
 
 
-def gate_j13(preflights: list, verdicts_dir: Path) -> tuple:
-    """`G-J13` — the TWO-SIDED arbiter positive control passed on the launching box
-    at the launch commit: **pick CHANGED** and **root leaf value bits UNCHANGED**,
-    recorded in `verdicts/PREFLIGHT_<host>_FIRST.json` before that host's game 1.
-    VOIDS on "either side failing, or absent".
+def gate_j13(preflights: list, verdicts_dir: Path, hosts_played=(),
+             expected_hosts=EXPECTED_HOSTS) -> tuple:
+    """`G-J13` — **PER-HOST (§0.F.1).** "The TWO-SIDED arbiter positive control
+    passed on EVERY host that played — pick CHANGED and root leaf value bits
+    UNCHANGED — recorded in `verdicts/PREFLIGHT_<host>_FIRST.json`, generated AFTER
+    any wheel build on that host and BEFORE that host's game 1." VOIDS on "either
+    side failing on any host; a host that played with no pre-flight".
 
-    Fail-closed: no pre-flight file at all fails; a file that does not carry BOTH
-    booleans fails; `all_preflight_pass` is required when the file carries it.
-    Without this a zeroed dose grades a perfect null wearing the shape of a real
-    cell. DESIGN §6.3 makes this a SINGLE-BOX run, so one host is expected — but
-    every `*_FIRST.json` present must pass, because a second host that ran a failing
-    control would have contributed games.
+    Two fail-closed clauses:
+
+    * **EVERY host that PLAYED has a pre-flight.** The roster of hosts that played is
+      DERIVED from the records (the `G-SPLIT` hostmap), never hard-coded — a host
+      that played and was not expected is precisely the thing this has to be able to
+      SEE. `EXPECTED_HOSTS` (`Doctor`, `laptop-wsl`) is REPORTED against and is
+      advisory: an unexpected host that played still needs a passing control, and an
+      expected host that did not play needs nothing.
+    * **Every pre-flight present PASSES**, both sides. A file that does not carry
+      both booleans fails; `all_preflight_pass` is required when the file carries it.
+      Without this control a zeroed dose grades a perfect champion-vs-champion null
+      wearing the shape of a real cell, and no leaf-hash gate on this surface could
+      detect it.
     """
-    by_host, ok = {}, bool(preflights)
+    by_host = {}
+    ok = bool(preflights)
     for doc in preflights:
         pos, neg = _j13_sides(doc)
         aps = doc.get("all_preflight_pass")
@@ -1079,11 +1561,36 @@ def gate_j13(preflights: list, verdicts_dir: Path) -> tuple:
             "all_preflight_pass": aps, "path": doc.get("_path"),
             "parse_error": doc.get("_parse_error"), "ok": bool(good)}
         ok &= bool(good)
-    return bool(ok), {"verdicts_dir": str(verdicts_dir), "hosts": by_host,
-                      "n_preflights": len(preflights),
-                      "semantics": "TWO-SIDED: pick CHANGED **and** "
-                                   "root_leaf_value_bits UNCHANGED; absent on either "
-                                   "side, or no pre-flight at all, VOIDS"}
+
+    played = sorted({h for h in hosts_played if h})
+    matched, missing, relaxed = {}, [], []
+    for h in played:
+        key, how = _match_host(h, by_host)
+        if key is None:
+            missing.append(h)
+        else:
+            matched[h] = key
+            if how != "exact":
+                relaxed.append({"host_that_played": h, "preflight_host": key})
+    ok = bool(ok and not missing)
+    return bool(ok), {
+        "verdicts_dir": str(verdicts_dir), "hosts": by_host,
+        "n_preflights": len(preflights),
+        "hosts_that_played": played,
+        "hosts_that_played_with_NO_preflight": missing,
+        "hosts_expected": list(expected_hosts),
+        "expected_hosts_that_did_not_play": [h for h in expected_hosts
+                                             if h not in played],
+        "hosts_that_played_and_were_not_expected": [h for h in played
+                                                    if h not in expected_hosts],
+        "preflight_host_name_matched_case_insensitively": relaxed or None,
+        "host_roster_source": ("derived from the G-SPLIT hostmap/record host stamps; "
+                               "EXPECTED_HOSTS is REPORTED against, never hard-coded "
+                               "into the gate"),
+        "semantics": "PER-HOST and TWO-SIDED: pick CHANGED **and** "
+                     "root_leaf_value_bits UNCHANGED on EVERY host that played; a "
+                     "host that played with no pre-flight VOIDS; absent on either "
+                     "side, or no pre-flight at all, VOIDS"}
 
 
 def gate_rules(cells: dict, profile: str, r9: str) -> tuple:
@@ -1155,10 +1662,24 @@ def gate_diverge(cells: dict) -> tuple:
                       "note": BENIGN_NOTE}
 
 
-def gate_jcz(cells: dict, conf: dict) -> tuple:
-    """`G-JCZ` — JCZ provenance identical across cells and equal to DESIGN §7.1
-    (rev `29a1561…`, jar sha256 `4dc5439d…`, `LegacyAiPlayer`, `basic:2`, ai class
-    `com.jcloisterzone.ai.AiEngine`). VOIDS on "any difference".
+JVM_PACKAGING_NOTE = (
+    "⚠️ THE JVM *PACKAGING* DIFFERS BY HOST — `17.0.19+10-1-24.04.2-Ubuntu` locally "
+    "vs `+10-1-26.04.2-Ubuntu` on the laptop, the SAME OpenJDK 17.0.19 on a "
+    "different distro base (DESIGN §0.1). It is **REPORTED HERE AND IS NEVER A "
+    "BRANCH INPUT**: the PINNED artifacts are the jar (sha256, verified on each "
+    "host) and the shim CLASSES (copied, not rebuilt — byte-identical bytecode on "
+    "both hosts), and both are gated. The runtime difference cannot touch `D` "
+    "because `G-SPLIT` holds the deck→host map IDENTICAL across the two cells, so "
+    "every per-box effect is common to both terms of `margin_B(d) − margin_A(d)` "
+    "and cancels exactly (DESIGN §0.1.2).")
+
+
+def gate_jcz(cells: dict, conf: dict, envs=(), hosts_played=()) -> tuple:
+    """`G-JCZ` — **PER-HOST (§0.F.1).** JCZ provenance identical across cells AND
+    across hosts, and equal to DESIGN §7.1 (rev `29a1561…`, jar sha256 `4dc5439d…`
+    verified ON EACH HOST, `LegacyAiPlayer`, `basic:2`, ai class
+    `com.jcloisterzone.ai.AiEngine`). VOIDS on "any difference in the pinned
+    artifacts on any host".
 
     The jar hash is stamped as `jcz_jar_sha256_16` (the first 16 hex chars) by
     `match.py`; the full-length pin from WORKERS.conf is compared by PREFIX, and the
@@ -1167,6 +1688,21 @@ def gate_jcz(cells: dict, conf: dict) -> tuple:
     empty when nothing overrides it (DESIGN §7.1: "configurability NONE"), so an
     EMPTY `jcz_ai_config` witnesses it and a NON-EMPTY one that does not name
     `LegacyAiPlayer` FAILS.
+
+    **PER-HOST conjunct.** Each host's `verdicts/PREFLIGHT_<host>_ENV.json` carries
+    the jar sha256 it computed ON THAT BOX, plus `jcz_rev` / `jcz_ai_class` /
+    `jcz_tiles` and the JVM version string. Every one of those that is PRESENT is
+    checked against the pin and a DIFFERENCE VOIDS.
+
+    ⚠️ AMBIGUITY, DECLARED: an ABSENT per-host ENV witness is REPORTED, not failed.
+    The committed sentence conditions on the artifacts ("any difference in the
+    pinned artifacts on any host") and the read-rule's own instruction is to read the
+    per-host sha "if the pre-flight ENV json carries" one; the "a host ran with no
+    pre-flight" failure is `G-J13`'s, and charging one defect to two gates would just
+    obscure which one fired. Present-but-different fails here, always.
+
+    ⚠️ The JVM *packaging* string differs by host BY DESIGN and is REPORTED, never a
+    branch input — see `JVM_PACKAGING_NOTE`, printed with the read-out.
     """
     want = {"jcz_git_rev": conf["JCZ_REV"], "jcz_ai_class": conf["JCZ_AI_CLASS"],
             "tile_set": conf["JCZ_TILES"]}
@@ -1211,11 +1747,60 @@ def gate_jcz(cells: dict, conf: dict) -> tuple:
                            if k != "jcz_jar_path_reported"}, sort_keys=True,
                           default=str)
     identical = len({_sig(n) for n in obs}) == 1
-    return bool(ok and identical), {"expected": {**want,
-                                                 "jcz_jar_sha256": conf["JCZ_JAR_SHA256"],
-                                                 "ai_player": "LegacyAiPlayer"},
-                                    "observed": obs,
-                                    "identical_across_cells": identical}
+
+    # ---- PER-HOST (§0.F.1): the jar sha verified ON EACH HOST, plus the pinned
+    # rev / ai class / tile set as that host's own pre-flight recorded them.
+    per_host, host_ok = {}, True
+    for doc in envs:
+        h = doc.get("host")
+        checks, good = {}, True
+        for key, exp in (("jcz_jar_sha256", conf["JCZ_JAR_SHA256"]),
+                         ("jcz_rev", conf["JCZ_REV"]),
+                         ("jcz_ai_class", conf["JCZ_AI_CLASS"]),
+                         ("jcz_tiles", conf["JCZ_TILES"])):
+            got = doc.get(key)
+            if got is None:
+                checks[key] = {"observed": None, "expected": exp, "ok": None,
+                               "note": "ABSENT — REPORTED, not binding (see docstring)"}
+                continue
+            hit = (str(got) == exp) if key != "jcz_jar_sha256" else (
+                isinstance(got, str) and len(got) >= 8 and exp.startswith(got))
+            checks[key] = {"observed": got, "expected": exp, "ok": bool(hit)}
+            good &= bool(hit)
+        m = doc.get("jcz_jar_sha256_match")
+        if m is not None:
+            checks["jcz_jar_sha256_match_selfreport"] = {"observed": m,
+                                                         "ok": bool(m)}
+            good &= bool(m)
+        per_host[h] = {
+            "checks": checks, "path": doc.get("_path"),
+            "parse_error": doc.get("_parse_error"),
+            "jvm_version_string_REPORTED_NEVER_A_BRANCH_INPUT": doc.get("java"),
+            "ok": bool(good)}
+        host_ok &= bool(good)
+
+    played = sorted({h for h in hosts_played if h})
+    hosts_without_env = [h for h in played if _match_host(h, per_host)[0] is None]
+    jvm = {h: v["jvm_version_string_REPORTED_NEVER_A_BRANCH_INPUT"]
+           for h, v in per_host.items()}
+    jar_by_host = {h: (v["checks"].get("jcz_jar_sha256") or {}).get("observed")
+                   for h, v in per_host.items()}
+    jar_identical_across_hosts = len({str(x) for x in jar_by_host.values()}) <= 1
+
+    return bool(ok and identical and host_ok), {
+        "expected": {**want, "jcz_jar_sha256": conf["JCZ_JAR_SHA256"],
+                     "ai_player": "LegacyAiPlayer"},
+        "observed": obs,
+        "identical_across_cells": identical,
+        "per_host": per_host,
+        "per_host_ok": bool(host_ok),
+        "hosts_that_played": played,
+        "hosts_that_played_with_no_ENV_witness": hosts_without_env,
+        "jar_sha_by_host": jar_by_host,
+        "jar_sha_identical_across_hosts": jar_identical_across_hosts,
+        "jvm_version_by_host_REPORTED": jvm,
+        "jvm_packaging_differs_across_hosts": len({str(x) for x in jvm.values()}) > 1,
+        "jvm_packaging_note": JVM_PACKAGING_NOTE}
 
 
 def _commit_of(value):
@@ -1279,76 +1864,185 @@ def wheel_relevant_diff(commit_a, commit_b, repo: Path) -> dict:
             "preflight_commit": commit_a, "manifest_commit": commit_b}
 
 
-def gate_tool(cells: dict, preflights: list, repo: Path) -> tuple:
-    """`G-TOOL` — same-box `carc_rs_binary_sha` equal across both cells; AND
-    `git diff --name-only <preflight_commit>..<manifest_commit> -- rust/ src/
-    engine/ scripts/` is EMPTY or the range is degenerate. VOIDS on "a NON-EMPTY or
-    UNRESOLVED wheel-relevant diff".
+def _preflight_build_witness(preflights: list, envs: list) -> dict:
+    """`{host: {build_id, binary_sha, git_head, source}}` — the PRE-FLIGHT side of
+    `G-TOOL` conjunct 1, ENV witness first (that is the file the read-rule names),
+    the `_FIRST` verdict filling in whatever it also carries."""
+    out: dict = {}
+    for docs, label in ((envs, "ENV"), (preflights, "FIRST")):
+        for d in docs:
+            h = d.get("host")
+            b = out.setdefault(h, {"build_id": None, "binary_sha": None,
+                                   "git_head": None, "rustc": None, "sources": []})
+            prov = d.get("backend_provenance") or {}
+            vals = {
+                "build_id": (d.get("carc_rs_build_id") or d.get("carc_rs_build")
+                             or prov.get("carc_rs_build")),
+                "binary_sha": (d.get("carc_rs_binary_sha")
+                               or prov.get("carc_rs_binary_sha")),
+                "git_head": (d.get("git_head")
+                             or (d.get("toolchain") or {}).get("code_rev")),
+                "rustc": d.get("rustc") or (d.get("toolchain") or {}).get("rustc"),
+            }
+            for k, v in vals.items():
+                if b[k] is None and v is not None:
+                    b[k] = v
+            b["sources"].append(label)
+    return out
 
-    Two conjuncts, both fail-closed:
 
-    * **binary sha.** DESIGN §6.3 makes this a SINGLE-BOX run, which collapses
-      Stage 2's cross-box build-identity problem into the strictly stronger
-      same-box CONTENT hash. It must be PRESENT on both cells (absent is fail) and
-      EQUAL. Where a pre-flight also carries it, it must match — that is the
-      "did this box play the wheel its own pre-flight validated?" witness; an
-      ABSENT pre-flight sha is reported, not failed.
-      ⚠️ The `.so` is NOT reproducible across machines, so this hash is NEVER
-      compared across BOXES — only across the two cells of the one box.
-    * **the commit range**, reported as its own line with command and output, and
-      dispositive in one direction only (see `wheel_relevant_diff`).
+def gate_tool(cells: dict, preflights: list, repo: Path, envs=(), hostres=None,
+              hosts_played=()) -> tuple:
+    """`G-TOOL` — **(amended §0.F.2b)** three conjuncts, all fail-closed:
+
+    1. **CROSS-HOST build identity** — the `carc_rs` build id AND binary sha256
+       recorded in each host's `verdicts/PREFLIGHT_<host>_ENV.json` are EQUAL across
+       hosts. **Pre-flights are compared with pre-flights ONLY, never a pre-flight
+       against a manifest**: `carc_rs_build_id()` embeds `git rev-parse HEAD` at
+       CALL TIME, so that cross-comparison answers "did HEAD move between the two
+       moments?" and is a false positive by construction (the Stage-2 corrected
+       shape). MIXED BUILDS ACROSS BOXES FAIL.
+    2. **CROSS-CELL code identity** — `our_git_rev` (falling back to
+       `champion_manifest.code_commit`) equal across CELL A and CELL B, and
+       CONSISTENT within each cell (a mixed-rev cell fails).
+    3. **The commit range, unchanged** — `git diff --name-only
+       <preflight>..<manifest> -- rust/ src/ engine/ scripts/` EMPTY or the range
+       DEGENERATE. NON-EMPTY or UNRESOLVED VOIDS. This is the ONE place a pre-flight
+       commit legitimately meets a manifest commit, because the question it asks IS
+       "did HEAD move between those two moments" — which is exactly what a healthy
+       launcher's ordering (pre-flight AFTER the wheel build, BEFORE the detached
+       launch) answers "no" to.
+
+    ⚠️ §0.F.2b, DECLARED: `scripts/jcz_match/match.py` **does not stamp
+    `carc_rs_binary_sha`** anywhere, so requiring it from the manifest was a third
+    conjunct unsatisfiable by construction. The manifest sha still **BINDS WHEN
+    PRESENT** — compared WITHIN a host across the two cells, because the `.so` is not
+    reproducible across machines and a cross-box comparison of it would be the same
+    defect in a new place. **ABSENT AT EVERY SOURCE — manifest AND pre-flights —
+    STILL FAILS.**
     """
-    obs, sha_ok = {}, True
-    shas = set()
-    for name, c in cells.items():
-        w = resolve_witness(c["records"], "carc_rs_binary_sha",
-                            extra=("backend.carc_rs_binary_sha",
-                                   "champion_manifest.backend.carc_rs_binary_sha",
-                                   "backend_provenance.carc_rs_binary_sha"))
-        obs[name] = {"carc_rs_binary_sha": w["value"], "resolved_at": w["resolved_at"],
-                     "consistent_across_records": w["consistent"]}
-        sha_ok &= bool(w["value"]) and w["consistent"]
-        shas.add(json.dumps(w["value"], default=str))
-    equal = len(shas) == 1 and sha_ok
-    pf_sha = {d.get("host"): d.get("carc_rs_binary_sha")
-              or (d.get("backend_provenance") or {}).get("carc_rs_binary_sha")
-              for d in preflights}
-    cell_sha = json.loads(next(iter(shas))) if len(shas) == 1 else None
-    pf_match = {h: (None if s is None else s == cell_sha) for h, s in pf_sha.items()}
-    pf_ok = all(v is not False for v in pf_match.values())
+    hostres = hostres or {}
 
-    pf_commit = None
-    for d in preflights:
-        pf_commit = (_commit_of((d.get("toolchain") or {}).get("code_rev"))
-                     or _commit_of(d.get("carc_rs_build"))
-                     or _commit_of((d.get("backend_provenance") or {})
-                                   .get("carc_rs_build")))
-        if pf_commit:
+    # ---- conjunct 1: pre-flight vs pre-flight, across hosts ------------------ #
+    pf = _preflight_build_witness(preflights, envs)
+    build_ids = {h: b["build_id"] for h, b in pf.items() if b["build_id"] is not None}
+    pf_shas = {h: b["binary_sha"] for h, b in pf.items()
+               if b["binary_sha"] is not None}
+    build_id_equal = len(set(build_ids.values())) <= 1
+    pf_sha_equal = len(set(pf_shas.values())) <= 1
+    have_pf_witness = bool(build_ids or pf_shas)
+    cross_host_ok = bool(build_id_equal and pf_sha_equal)
+
+    # ---- conjunct 2: cross-CELL code identity -------------------------------- #
+    code_rev, code_ok = {}, True
+    for name, c in cells.items():
+        w = resolve_witness(c["records"], addresses=(
+            "our_git_rev", "config.our_git_rev", "champion_manifest.code_commit"))
+        code_rev[name] = {"value": w["value"], "resolved_at": w["resolved_at"],
+                          "consistent_across_records": w["consistent"],
+                          "distinct": w["distinct"]}
+        code_ok &= bool(w["value"]) and w["consistent"]
+    revs = {json.dumps(v["value"], default=str) for v in code_rev.values()}
+    code_equal = bool(code_ok and len(revs) == 1)
+
+    # ---- the manifest binary sha: BINDS WHEN PRESENT, within a host ---------- #
+    man_sha: dict = {}
+    for name, c in cells.items():
+        by_host: dict = {}
+        for r in c["scored"] or c["records"]:
+            m = r.get("manifest") or {}
+            v = None
+            for addr in ("carc_rs_binary_sha", "config.carc_rs_binary_sha",
+                         "backend.carc_rs_binary_sha",
+                         "champion_manifest.backend.carc_rs_binary_sha",
+                         "backend_provenance.carc_rs_binary_sha"):
+                got, hit = _get_path(m, addr)
+                if hit and got is not None:
+                    v = got
+                    break
+            if v is None:
+                continue
+            try:
+                h = host_of(hostres.get(name) or {}, int(r["deck_seed"])) or "UNMAPPED"
+            except (KeyError, TypeError, ValueError):
+                h = "UNMAPPED"
+            by_host.setdefault(h, set()).add(json.dumps(v, default=str))
+        man_sha[name] = {h: sorted(vs) for h, vs in sorted(by_host.items())}
+    hosts_with_man_sha = sorted({h for cell in man_sha.values() for h in cell})
+    man_sha_ok = True
+    man_sha_detail = {}
+    for h in hosts_with_man_sha:
+        vals = {n: man_sha[n].get(h) for n in man_sha}
+        present = [v for v in vals.values() if v]
+        mixed_in_cell = any(len(v) > 1 for v in present)
+        equal_across_cells = len({json.dumps(v) for v in present}) <= 1
+        good = (not mixed_in_cell) and equal_across_cells
+        man_sha_detail[h] = {"per_cell": vals, "mixed_within_a_cell": mixed_in_cell,
+                             "equal_across_cells": equal_across_cells, "ok": good}
+        man_sha_ok &= good
+    have_manifest_witness = bool(hosts_with_man_sha)
+
+    # ---- conjunct 3: the commit range ---------------------------------------- #
+    man_commit, man_at = None, None
+    for name, v in code_rev.items():
+        cm = _commit_of(v["value"])
+        if cm:
+            man_commit, man_at = cm, v["resolved_at"]
             break
-    man_commit = None
-    man_at = None
-    for c in cells.values():
-        for addrs in (("our_git_rev", "config.our_git_rev"),
-                      ("champion_manifest.code_commit",),
-                      ("carc_rs_build", "champion_manifest.backend.carc_rs_build")):
-            w = resolve_witness(c["records"], addresses=addrs)
+    if man_commit is None:
+        for c in cells.values():
+            w = resolve_witness(c["records"], addresses=(
+                "carc_rs_build", "champion_manifest.backend.carc_rs_build"))
             cm = _commit_of(w["value"])
             if cm:
                 man_commit, man_at = cm, w["resolved_at"]
                 break
-        if man_commit:
-            break
-    diff = wheel_relevant_diff(pf_commit, man_commit, repo)
+    ranges = {}
+    for h in sorted(pf):
+        pfc = _commit_of(pf[h]["git_head"]) or _commit_of(pf[h]["build_id"])
+        ranges[h] = wheel_relevant_diff(pfc, man_commit, repo)
+    if not ranges:
+        ranges["<no pre-flight>"] = wheel_relevant_diff(None, man_commit, repo)
+    failing = [r for r in ranges.values() if r.get("empty") is not True]
+    primary = failing[0] if failing else next(iter(ranges.values()))
+    range_ok = not failing
 
-    ok = bool(equal and pf_ok and diff.get("empty") is True)
-    return ok, {"same_box_binary_sha": {"observed": obs, "equal_across_cells": equal,
-                                        "preflight_binary_sha": pf_sha,
-                                        "preflight_matches_cells": pf_match,
-                                        "preflight_conjunct_ok": pf_ok},
-                "commit_range": {**diff, "manifest_commit_resolved_at": man_at},
-                "wheel_relevant_paths": list(WHEEL_RELEVANT_PATHS),
-                "semantics": "NON-EMPTY or UNRESOLVED diff VOIDS; EMPTY or a "
-                             "DEGENERATE range PASSES (READ_RULE §3.1)"}
+    ok = bool(cross_host_ok and code_equal and man_sha_ok and range_ok
+              and (have_pf_witness or have_manifest_witness))
+    return ok, {
+        "cross_host_build_identity": {
+            "preflight_build_id_by_host": build_ids,
+            "preflight_binary_sha_by_host": pf_shas,
+            "build_id_equal_across_hosts": build_id_equal,
+            "binary_sha_equal_across_hosts": pf_sha_equal,
+            "witness_present": have_pf_witness,
+            "ok": cross_host_ok,
+            "semantics": "PRE-FLIGHTS COMPARED WITH PRE-FLIGHTS ONLY — never against "
+                         "a manifest (carc_rs_build_id() embeds `git rev-parse HEAD` "
+                         "at call time, so that comparison is a false positive by "
+                         "construction). MIXED BUILDS ACROSS BOXES FAIL."},
+        "cross_cell_code_identity": {
+            "observed": code_rev, "equal_across_cells": code_equal,
+            "ok": code_equal,
+            "semantics": "`our_git_rev` → `champion_manifest.code_commit`, equal "
+                         "across cells AND consistent within each (a mixed-rev cell "
+                         "fails)"},
+        "manifest_binary_sha_when_present": {
+            "by_cell_and_host": man_sha, "per_host": man_sha_detail,
+            "present": have_manifest_witness, "ok": man_sha_ok,
+            "semantics": "§0.F.2b: this harness does NOT write `carc_rs_binary_sha`, "
+                         "so it BINDS ONLY WHEN PRESENT — and then WITHIN a host "
+                         "across the two cells, because the .so is not reproducible "
+                         "across machines"},
+        "any_build_witness_present": bool(have_pf_witness or have_manifest_witness),
+        "commit_range": {**primary, "manifest_commit_resolved_at": man_at},
+        "commit_range_by_preflight_host": ranges,
+        "hosts_that_played": sorted({h for h in hosts_played if h}),
+        "wheel_relevant_paths": list(WHEEL_RELEVANT_PATHS),
+        "semantics": "THREE CONJUNCTS (§0.F.2b): cross-HOST build identity from the "
+                     "pre-flights; cross-CELL code identity from the manifests; and "
+                     "the commit range (NON-EMPTY or UNRESOLVED VOIDS, EMPTY or "
+                     "DEGENERATE PASSES). ABSENT AT EVERY SOURCE STILL FAILS."}
 
 
 def gate_n(n_common, n_a, n_b) -> tuple:
@@ -1371,10 +2065,18 @@ def gate_n(n_common, n_a, n_b) -> tuple:
 
 
 def gate_ply(cells: dict, a_name: str, b_name: str, telem: dict) -> tuple:
-    """`G-PLY` — "the ply-granularity witness (Stage-2 §0.F) is present for both
-    cells". VOIDS on "absent".
+    """`G-PLY` — **(amended §0.F.2)** "BOTH cells carry the harness ply accounting
+    (`moves_by_seat`/`moves` + `n_actions`); CELL B additionally carries
+    `partial_argmax` on EVERY game with `partial_argmax_total == 0`." VOIDS on
+    "absent accounting on either cell; absent `partial_argmax` on CELL B (unknown ≠
+    zero); non-zero `partial_argmax`".
 
-    ⚠️ THE BIGGEST AMBIGUITY IN THIS FILE, DECLARED IN FULL. Stage-2 §0.F's witness
+    ⭐ **THAT IS NOW THE COMMITTED TEXT.** The reading below was written here first as
+    a declared ambiguity and READ_RULE §0.F.2 adopted it verbatim, pre-launch,
+    because the original §3 sentence was UNSATISFIABLE BY CONSTRUCTION. The reasoning
+    is retained because it is why the committed sentence says what it says.
+
+    Stage-2 §0.F's witness
     is `tiearb_partial_argmax_total` — "absent is unknown-not-zero and fails;
     non-zero means an argmax was taken over a partial world set, i.e. the CRN
     pairing across arms was broken during play". **CELL A HAS NO ARBITER**, so it
@@ -1549,6 +2251,20 @@ def build_readout(args) -> dict:
     cells = {a_name: load_cell(Path(args.cell_a), mod),
              b_name: load_cell(Path(args.cell_b), mod)}
 
+    # ---- §0.F.1 TWO BOXES: the deck→host map, the witness G-SPLIT/G-COVER and the
+    # per-host halves of G-J13 / G-JCZ / G-TOOL are all read from.
+    hostmaps = {
+        a_name: load_hostmap(hostmap_candidates(Path(args.cell_a), a_name, run_dir,
+                                                args.cell_a_hostmap)),
+        b_name: load_hostmap(hostmap_candidates(Path(args.cell_b), b_name, run_dir,
+                                                args.cell_b_hostmap)),
+    }
+    hostres = {n: resolve_cell_hosts(cells[n], hostmaps[n]) for n in (a_name, b_name)}
+    hosts_played = sorted({h for n in (a_name, b_name)
+                           for h in hostres[n]["hosts"]})
+    expected_hosts = tuple(dict.fromkeys(
+        [EXPECTED_HOSTS[0], conf.get("LAPTOP_HOST") or EXPECTED_HOSTS[1]]))
+
     Dblock = deck_paired_D(cells[a_name]["by_deck"], cells[b_name]["by_deck"])
     wit = recompute_z_D_witness(cells[a_name]["scored"], cells[b_name]["scored"])
     telem = telemetry(cells[b_name]["scored"])
@@ -1559,6 +2275,7 @@ def build_readout(args) -> dict:
         decks_per_cell = 400
     claim = load_band_claim(band_path)
     preflights = load_preflights(verdicts)
+    envs = load_preflight_envs(verdicts)
     rung = {"enabled": True, "B": int(conf.get("TIEARB_B") or 16),
             "J": int(conf.get("TIEARB_J") or 4),
             "mode": conf.get("TIEARB_MODE") or "argmax",
@@ -1569,13 +2286,15 @@ def build_readout(args) -> dict:
     for gid, (ok, realized) in {
         "G-BAND": gate_band(cells, claim, decks_per_cell),
         "G-LEAF": gate_leaf(cells, conf["CHAMP_LEAF_HASH"]),
+        "G-SPLIT": gate_split(cells, a_name, b_name, hostres),
+        "G-COVER": gate_cover(cells, decks_per_cell),
         "G-ARB": gate_arb(cells, a_name, b_name, rung),
         "G-FIRE": gate_fire(telem),
-        "G-J13": gate_j13(preflights, verdicts),
+        "G-J13": gate_j13(preflights, verdicts, hosts_played, expected_hosts),
         "G-RULES": gate_rules(cells, conf["RULES_PROFILE"], str(conf["FIX_R9"])),
         "G-DIVERGE": gate_diverge(cells),
-        "G-JCZ": gate_jcz(cells, conf),
-        "G-TOOL": gate_tool(cells, preflights, repo),
+        "G-JCZ": gate_jcz(cells, conf, envs, hosts_played),
+        "G-TOOL": gate_tool(cells, preflights, repo, envs, hostres, hosts_played),
         "G-N": gate_n(Dblock["n_common"], cells[a_name]["summary"].get("n_scored"),
                       cells[b_name]["summary"].get("n_scored")),
         "G-PLY": gate_ply(cells, a_name, b_name, telem),
@@ -1621,6 +2340,34 @@ def build_readout(args) -> dict:
                         "gate": gates["G-WITNESS"]["realized"]},
         "cells": {a_name: _cell_block(a_name, cells[a_name]),
                   b_name: _cell_block(b_name, cells[b_name])},
+        "two_box": {
+            "hosts_played": hosts_played,
+            "hosts_expected": list(expected_hosts),
+            "workers": {"W_LOCAL": conf.get("W_LOCAL"),
+                        "W_LAPTOP": conf.get("W_LAPTOP"),
+                        "DECKS_LOCAL": conf.get("DECKS_LOCAL"),
+                        "DECKS_LAPTOP": conf.get("DECKS_LAPTOP"),
+                        "LAPTOP_HOST": conf.get("LAPTOP_HOST")},
+            "per_cell": {n: {"host_source_resolved": hostres[n]["resolved_by"],
+                             "hostmap": hostres[n]["hostmap"],
+                             "decks_per_host": hostres[n]["hosts"],
+                             "per_host": per_host_stats(cells[n], hostres[n])}
+                         for n in (a_name, b_name)},
+            "jvm_version_by_host_REPORTED": (
+                gates["G-JCZ"]["realized"].get("jvm_version_by_host_REPORTED")),
+            "jvm_packaging_note": JVM_PACKAGING_NOTE,
+            "G-SPLIT": {"PASS": gates["G-SPLIT"]["PASS"],
+                        "realized": gates["G-SPLIT"]["realized"]},
+            "G-COVER": {"PASS": gates["G-COVER"]["PASS"],
+                        "realized": gates["G-COVER"]["realized"]},
+            "why_the_split_must_be_identical": (
+                "DESIGN §0.1.2: `D` is deck-paired, so a deck that ran on different "
+                "boxes in the two cells puts every per-box difference (JVM packaging, "
+                "W and hence contention, RAM) INSIDE `margin_B(d) − margin_A(d)`, "
+                "arithmetically indistinguishable from the arbiter's effect. With the "
+                "split identical, every per-box effect is common to both terms and "
+                "CANCELS EXACTLY."),
+        },
         "arbiter_telemetry": telem,
         "preconditions": {g: gates[g]["PASS"] for g in ALL_GATES},
         "precondition_detail": {g: gates[g]["realized"] for g in ALL_GATES},
@@ -1767,6 +2514,78 @@ def render(v: dict) -> str:
         ap(f"| {r[0]} | {r[1]} | {r[2]} |")
     ap("")
 
+    # ---- item 1b — THE TWO-BOX BLOCK (§0.F.1, DESIGN §0.1) ---------------- #
+    tb = v["two_box"]
+    ap("## §4.3 item 1b — the TWO-BOX block (owner ruling §0.F.1: "
+       "\"make sure its both boxes, w22 and w30 respectively\")")
+    ap("")
+    ap(f"- hosts that PLAYED (derived from the records): "
+       f"`{'`, `'.join(tb['hosts_played']) or '(none resolved)'}` · expected: "
+       f"`{'`, `'.join(tb['hosts_expected'])}`")
+    w_ = tb["workers"]
+    ap(f"- WORKERS.conf: `W_LOCAL={w_.get('W_LOCAL')}` · "
+       f"`W_LAPTOP={w_.get('W_LAPTOP')}` · `DECKS_LOCAL={w_.get('DECKS_LOCAL')}` · "
+       f"`DECKS_LAPTOP={w_.get('DECKS_LAPTOP')}` · "
+       f"`LAPTOP_HOST={w_.get('LAPTOP_HOST')}`")
+    ap("")
+    ap("| cell | host | deck range played | n games | n decks | "
+       "`ms_per_move_champ` (OURS) | worker-s/game |")
+    ap("|---|---|---|---|---|---|---|")
+    for cname in (a, b):
+        blk = tb["per_cell"][cname]
+        if not blk["per_host"]:
+            ap(f"| `{cname}` | (no host resolved) | — | — | — | — | — |")
+        for h, st_ in blk["per_host"].items():
+            ap(f"| `{cname}` | `{h}` | "
+               f"{st_['deck_seed_min']}..{st_['deck_seed_max']} | "
+               f"{st_['n_games']} | {st_['n_decks']} | "
+               f"{_f(st_['ms_per_move_champ_OURS'], 1)} ms | "
+               f"{_f(st_['worker_s_per_game'], 1)} |")
+    ap("")
+    for cname in (a, b):
+        blk = tb["per_cell"][cname]
+        ap(f"- `{cname}` deck→host source: **{blk['host_source_resolved'] or 'NONE'}** "
+           f"(sidecar `{(blk['hostmap'] or {}).get('path')}`, parsed="
+           f"{(blk['hostmap'] or {}).get('parsed')}, shape="
+           f"{(blk['hostmap'] or {}).get('shape')}) · decks per host: "
+           f"{blk['decks_per_host']}")
+    ap("")
+    sp = tb["G-SPLIT"]
+    spr = sp["realized"]
+    ap(f"- **`G-SPLIT` {'✅ PASS' if sp['PASS'] else '❌ **FAIL**'}** — deck→host "
+       f"assignment IDENTICAL across both cells over "
+       f"{spr['n_common_decks_compared']} common decks · mismatched decks: "
+       f"{spr['mismatched_decks']['n_total']} "
+       f"{spr['mismatched_decks']['listed'] if spr['mismatched_decks']['n_total'] else ''} "
+       f"· decks with NO host in either cell: "
+       f"{spr['decks_with_no_host_in_either_cell']['n_total']} "
+       f"{spr['decks_with_no_host_in_either_cell']['listed'] if spr['decks_with_no_host_in_either_cell']['n_total'] else ''}"
+       + (f" · unparseable hostmap: {spr['unparseable_hostmap']}"
+          if spr.get("unparseable_hostmap") else "")
+       + (f" · intra-cell host conflicts: {spr['intra_cell_host_conflicts']}"
+          if spr.get("intra_cell_host_conflicts") else ""))
+    cv = tb["G-COVER"]
+    ap(f"- **`G-COVER` {'✅ PASS' if cv['PASS'] else '❌ **FAIL**'}** — per cell: "
+       + " · ".join(
+           f"`{n}` dups {d['duplicate_deck_seat_replicate']['n_total']}"
+           f"{d['duplicate_deck_seat_replicate']['listed'] if d['duplicate_deck_seat_replicate']['n_total'] else ''}"
+           f", out-of-band {d['out_of_band_deck_seeds']['n_total']}"
+           f"{d['out_of_band_deck_seeds']['listed'] if d['out_of_band_deck_seeds']['n_total'] else ''}"
+           f", decks missing a seating {d['decks_without_both_seatings']['n_total']}"
+           f"{d['decks_without_both_seatings']['listed'] if d['decks_without_both_seatings']['n_total'] else ''}"
+           for n, d in cv["realized"]["per_cell"].items()))
+    ap(f"  - {cv['realized']['reconciliation_with_G_N']}")
+    ap("")
+    ap("| host | JVM version string (REPORTED — NEVER a branch input) |")
+    ap("|---|---|")
+    for h, jv in sorted((tb["jvm_version_by_host_REPORTED"] or {}).items()):
+        ap(f"| `{h}` | {jv or '(absent)'} |")
+    ap("")
+    ap(tb["jvm_packaging_note"])
+    ap("")
+    ap(tb["why_the_split_must_be_identical"])
+    ap("")
+
     # ---- item 2 --------------------------------------------------------- #
     d = v["D_block"]
     ap("## §4.3 item 2 — `D`, its se, `z_D`, `n_common`, the diagnostic, and the "
@@ -1856,8 +2675,33 @@ def render(v: dict) -> str:
         ap(f"| `{g}` | {'✅' if v['preconditions'][g] else '❌ **FAIL**'} | "
            f"{det[:600]}{'…' if len(det) > 600 else ''} |")
     ap("")
-    tool = v["precondition_detail"]["G-TOOL"]["commit_range"]
-    ap("### `G-TOOL` — the commit-range delta, on its own line")
+    gt = v["precondition_detail"]["G-TOOL"]
+    tool = gt["commit_range"]
+    ap("### `G-TOOL` — the three conjuncts (§0.F.2b)")
+    ap("")
+    ap(f"1. CROSS-HOST build identity (pre-flights vs pre-flights ONLY): build id by "
+       f"host {gt['cross_host_build_identity']['preflight_build_id_by_host']} · "
+       f"binary sha by host "
+       f"{gt['cross_host_build_identity']['preflight_binary_sha_by_host']} · "
+       f"equal: build id "
+       f"{gt['cross_host_build_identity']['build_id_equal_across_hosts']}, sha "
+       f"{gt['cross_host_build_identity']['binary_sha_equal_across_hosts']} — "
+       f"**MIXED BUILDS ACROSS BOXES FAIL**")
+    ap(f"2. CROSS-CELL code identity (`our_git_rev` → "
+       f"`champion_manifest.code_commit`): equal across cells = "
+       f"{gt['cross_cell_code_identity']['equal_across_cells']} · "
+       + " · ".join(f"`{n}` = {o['value']} (at `{o['resolved_at']}`, consistent="
+                    f"{o['consistent_across_records']})"
+                    for n, o in gt["cross_cell_code_identity"]["observed"].items()))
+    ap(f"3. the commit range — below. Manifest `carc_rs_binary_sha` binds WHEN "
+       f"PRESENT (this harness does not write it): present="
+       f"{gt['manifest_binary_sha_when_present']['present']}, ok="
+       f"{gt['manifest_binary_sha_when_present']['ok']}, per host "
+       f"{gt['manifest_binary_sha_when_present']['per_host']}. Any build witness "
+       f"present at all: {gt['any_build_witness_present']} "
+       f"(ABSENT AT EVERY SOURCE STILL FAILS).")
+    ap("")
+    ap("#### the commit-range delta, on its own line")
     ap("")
     ap(f"- pre-flight commit `{tool.get('preflight_commit')}` .. manifest commit "
        f"`{tool.get('manifest_commit')}`")
@@ -1965,6 +2809,11 @@ def parse_args(argv=None):
                     help="override <run-dir>/verdicts (G-J13 pre-flights)")
     ap.add_argument("--band-claim", default=None,
                     help="override WORKERS.conf::BAND_SENTINEL")
+    ap.add_argument("--cell-a-hostmap", default=None,
+                    help="override the CELL A `<cell>.hostmap.json` sidecar "
+                         "(G-SPLIT's deck→host witness; default: next to the jsonl)")
+    ap.add_argument("--cell-b-hostmap", default=None,
+                    help="override the CELL B `<cell>.hostmap.json` sidecar")
     ap.add_argument("--workers-conf", default=str(HERE / "WORKERS.conf"),
                     help="the constants file, PARSED (not re-typed)")
     ap.add_argument("--repo", default=str(REPO_DEFAULT),
