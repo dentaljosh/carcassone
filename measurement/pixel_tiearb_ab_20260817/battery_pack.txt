@@ -1,0 +1,3 @@
+charge_full_uah=4545000
+voltage_now_uv=3735078
+battery_joules=61113.3

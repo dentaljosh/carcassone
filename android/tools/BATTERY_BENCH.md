@@ -1,4 +1,4 @@
-# Battery A/B bench — energy per move across `rust_threads` arms
+# Battery A/B bench — energy per move across `rust_threads` (and tie-arbiter) arms
 
 One-sitting (~30 min) measurement of **joules/move** for the on-device champion at
 `rust_threads` ∈ {4, 2, 1}, using the debug-only `BenchService` +
@@ -87,6 +87,54 @@ Above the table the report states the identity gate result; a hash mismatch
 **aborts before any energy number is computed** (exit 5) — that would mean the
 arms did different work (mixed builds, or a run silently degraded to the Python
 floor) and the comparison is void.
+
+## The tie-arbiter axis (added 2026-08-17)
+
+An arm may be spelled `THREADS:TIEARB_B` instead of a bare thread count, which
+arms the **tie arbiter** (`rust/carc/carc-core/src/tiearb.rs`, tiearb2 Stage 2)
+at `B` CRN worlds with the mode/salt/eps of record. `B` absent or `0` is the
+champion as deployed — no arbiter keyword reaches the rust config at all, so the
+control arm is byte-identical to what this bench measured before the axis
+existed.
+
+```bash
+# champion vs champion+arbiter(B=16) vs champion+arbiter(B=2), all at rust_threads=2
+android/tools/battery_bench.sh --arms "2 2:16 2:2" --reps 3 --moves 48
+```
+
+⚠️ **The identity gate had to be earned, not weakened.** The arbiter changes the
+returned action at tied plies *by design*, so free-running armed and unarmed arms
+would diverge and the move-hash gate would — correctly — abort. Instead every arm
+drives the **champion trajectory**: `carc_bench` reads
+`last_move()["tiearb_champ_pick"]` and applies *that*, so the armed arm performs
+all the arbitration work (tie detection, the CRN world set, the `B × arms`
+tier-1 playouts) at exactly the positions the champion line visits, and only the
+action fed back into the game comes from the champion. The gate therefore keeps
+its full strength across this axis, and per-move energy is comparable position
+for position. **This prices arbitration; it says nothing about what the
+arbiter's picks are worth** — that is a game-cell question, not a bench one.
+
+Liveness is asserted, not assumed: `carc_bench._BenchSession._assert_tiearb`
+reads the RESOLVED knobs back off `FairAgentRs.stats()` and compares them
+field-by-field to the arm's request, and a run whose armed arbiter fired on zero
+tile plies is reported `ok: false`. A stale `carc_rs` wheel would otherwise play
+a perfectly ordinary champion and report "the arbiter costs ~nothing" — the J13
+failure mode.
+
+The report gains a **tie-arbiter cost block**: fires/tile plies, mean arms,
+seconds per fired ply by two independent routes (the rust agent's own
+`tiearb_secs` clock and the arm-to-arm subtraction), ΔJ per fired ply, per-game
+projections at the desktop-measured `phi`, %battery/game, and **`rho_phone`
+measured** against the 1.551 s/move denominator that
+`measurement/tiearb2_stage2_20260817/PHASE_A.md` §1 used for its 5.520
+prediction.
+
+⚠️ **A bench run covers only the first `--moves` moves of a game**, which are
+cheaper than the game average (small board, trivial meeple plies) and tie more
+often. So the session's own control `s/move` runs well below 1.551, and the
+firing rate per tile ply runs above the whole-game `phi` — which is exactly why
+`rho_phone_measured` divides by the 1.551 of record and the session-relative
+figure is reported beside it rather than instead of it.
 
 ## Interpretation caveats
 

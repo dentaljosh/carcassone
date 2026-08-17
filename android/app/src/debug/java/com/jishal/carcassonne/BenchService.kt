@@ -55,6 +55,14 @@ class BenchService : Service() {
         val threads = intent?.getIntExtra("rust_threads", -1) ?: -1
         val seed = intent?.getIntExtra("seed", 424242) ?: 424242
         val tag = intent?.getStringExtra("tag") ?: "bench_${threads}t_${System.currentTimeMillis()}"
+        // TIE ARBITER arm (tiearb2 Stage 2). 0 (the default) == the champion as
+        // deployed: `carc_bench` passes NO arbiter keyword to the rust config at
+        // all. mode/salt/eps are omitted here on purpose so the arm defaults to
+        // the settings of record spelled once, in `carc_bench`.
+        val tiearbB = intent?.getIntExtra("tiearb_b", 0) ?: 0
+        val tiearbJ = intent?.getIntExtra("tiearb_j", 4) ?: 4
+        val tiearbMode = intent?.getStringExtra("tiearb_mode")
+        val tiearbSalt = intent?.getStringExtra("tiearb_salt")
         if (threads < 1) {
             Log.e(TAG, "missing/bad --ei rust_threads (got $threads); not starting")
             stopSelf()
@@ -67,14 +75,21 @@ class BenchService : Service() {
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "carc:bench")
             .apply { acquire(WAKELOCK_TIMEOUT_MS) }
 
-        Log.i(TAG, "START tag=$tag n_moves=$nMoves rust_threads=$threads seed=$seed")
+        Log.i(TAG, "START tag=$tag n_moves=$nMoves rust_threads=$threads seed=$seed " +
+            "tiearb_b=$tiearbB tiearb_j=$tiearbJ")
         Thread({
             try {
                 // CarcApplication.onCreate already started Chaquopy.
                 val py = Python.getInstance()
                 val outDir = File(filesDir, BENCH_DIR).absolutePath
+                // Positional through `k_dets` (null/null = the YAML champion
+                // budget, as the on-device service always benches), then the
+                // arbiter arm. Chaquopy maps Kotlin null -> Python None.
                 val result = py.getModule("carc_bench")
-                    .callAttr("run_bench", nMoves, threads, seed, outDir, tag)
+                    .callAttr(
+                        "run_bench", nMoves, threads, seed, outDir, tag,
+                        null, null, tiearbB, tiearbJ, tiearbMode, tiearbSalt,
+                    )
                     .toString()
                 // One parseable completion line; the driver polls for the file,
                 // logcat is the human-readable trail.

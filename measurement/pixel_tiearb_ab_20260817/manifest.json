@@ -1,0 +1,69 @@
+{
+  "schema": "carc-pixel-tiearb-ab/v1",
+  "what": "On-device A/B of the tiearb2 TIE ARBITER on the Pixel 9 Pro: champion-as-deployed vs champion+arbiter, measuring seconds and joules per move and per FIRED ply. Replaces the desktop-derived rho_phone bound (5.520 at B=16, measurement/tiearb2_stage2_20260817/PHASE_A.md §1) with measured phone numbers.",
+  "owner_authorization": "2026-08-17, verbatim: \"in the meantime. let's also get some AB testing on pixel. 100.64.4.100:34993\"",
+  "measurement_only": true,
+  "governance": {
+    "production_yaml_touched": false,
+    "band_claimed": false,
+    "results_csv_row": false,
+    "strength_games": 0,
+    "note": "This is a COST measurement. It prices arbitration work along the champion trajectory and licenses nothing about strength or deploy."
+  },
+  "design": {
+    "shape": "(a) FIXED-POSITION / CHAMPION-TRAJECTORY REPLAY",
+    "why": "The arbiter changes the returned action at tied plies by design, so free-running arms would diverge and the move-hash identity gate would (correctly) abort. Instead every arm applies last_move()['tiearb_champ_pick'] -- the champion's own pooled_q_argmax pick -- so the armed arm performs ALL arbitration work (tie detection, CRN world set, B x arms tier-1 playouts) at exactly the positions the champion line visits, while the trajectory stays identical across arms. The identity gate therefore keeps its FULL strength on this axis rather than being downgraded.",
+    "identity_gate": "move_hash over {schema, rules_profile, replay, k_dets, sims_per_det, full applied-action trace}. Unchanged in strength; `replay` added so a future change of replay policy invalidates cross-session comparisons.",
+    "not_measured": "What the arbiter's PICKS are worth. That is the Stage-2 Phase-B game cell, not this bench."
+  },
+  "arms": [
+    {"tag_prefix": "t2", "rust_threads": 2, "tiearb": null, "role": "control -- champion as deployed (PRODUCTION.yaml deploy_profiles.mobile)"},
+    {"tag_prefix": "t2b16", "rust_threads": 2, "tiearb": {"enabled": true, "B": 16, "J": 4, "mode": "argmax", "salt": "tiearb2-deploy-v1", "eps": 0.0}, "role": "the G-CONFIRMED config"},
+    {"tag_prefix": "t2b2", "rust_threads": 2, "tiearb": {"enabled": true, "B": 2, "J": 4, "mode": "argmax", "salt": "tiearb2-deploy-v1", "eps": 0.0}, "role": "the rung PHASE_A called the only phone-affordable one (rho_phone(2) = 0.690 predicted)"}
+  ],
+  "schedule": {"reps": 3, "interleave": "ABCABCABC", "moves_per_run": 48, "seed": 424242, "cooldown_s": 45, "baseline_s": 60, "timeout_s": 900},
+  "workload_knobs": {
+    "source": "governance/PRODUCTION.yaml deploy_profiles.mobile, resolved by android_bridge._Session exactly as the app does; ONLY rust_threads and the tiearb_* SearchConfig fields are overridden by the bench",
+    "budget": "k8x1376 (YAML champion budget; sims/k_dets not overridden)",
+    "rules_profile": "fixed_v1",
+    "backend": "rust (carc_rs); the bench refuses to measure the python fallback",
+    "rust_threads": 2,
+    "leaf": "resolved via champion_factory.production_leaf_cfg + leaf_config_rs (no preset)"
+  },
+  "liveness_gates": {
+    "j13_equivalent": "carc_bench._BenchSession._assert_tiearb reads the RESOLVED arbiter block back off FairAgentRs.stats() and compares field-by-field to the arm's request; a mismatch raises. An armed run that fires on 0 tile plies is reported ok:false. Both exist because a stale carc_rs wheel would otherwise play an ordinary champion and report 'the arbiter is free'.",
+    "control_arm": "asserted tiearb_enabled == False -- no arbiter keyword reaches the rust config at all",
+    "preflight": "scratchpad/preflight (n=20, B=16): tiearb_enabled=True B=16 J=4 argmax salt=tiearb2-deploy-v1 eps=0.0, 6 fired / 10 tile plies, 4 pickchanges, 0 errors, 0 partial_argmax, 7.176 s/fired ply"
+  },
+  "measurement_condition": {
+    "screen": "ON at minimum brightness, debug BenchActivity held in front for the WHOLE session (baseline included)",
+    "cpuset": "/top-app, verified before the session and before every run",
+    "power": "unplugged, verified; fuel-gauge current_now/voltage_now sampled at ~1 Hz on the device clock, trapezoid-integrated over each run's window",
+    "battery_level_at_start_pct": 30,
+    "battery_pack_joules": 61113.3,
+    "note": "gross J/move includes the screen; the net column subtracts an idle baseline measured in the SAME screen-on/top-app condition"
+  },
+  "projection_constants": {
+    "phi_per_game": 17.573,
+    "phi_source": "measurement/tiearb2_stage2_20260817/READOUT.md §4.3 phi_arb (desktop, whole games)",
+    "moves_per_game": 72,
+    "t_phone_of_record_s": 1.551,
+    "t_phone_source": "PHASE_A.md §1 rho_phone denominator -- the shipped phone champion's WHOLE-GAME s/move",
+    "caveat": "A 48-move run samples the OPENING, which is both cheaper per move and tie-richer than the game average. rho_phone_measured therefore divides by 1.551 (comparable to the 5.520 prediction); the session-control-relative figure is reported beside it, never instead of it."
+  },
+  "safety": {
+    "install": "adb install -r of the debug apk only; never uninstall/pm clear",
+    "e4_archive": "files/games/ untouched (6 games before and after); carc_bench refuses an out_dir named 'games'",
+    "current_game": "none in progress at session start (no files/current_game.json); MainActivity never launched -- BenchActivity only",
+    "deleted_on_device": "files/bench/*.json only (the bench's own outputs)"
+  },
+  "artifacts": {
+    "results.md": "human-readable table + tie-arbiter cost block",
+    "results.json": "full report incl. per-arm stats and the tiearb_cost block",
+    "runs/*.json": "per-run device results (move_hash, per-move ms, per-decision arbiter seconds, cumulative arbiter telemetry)",
+    "samples.csv": "<device_epoch_ms> <current_now_uA> <voltage_now_uV>",
+    "device_build.txt": "ro.build.fingerprint (this phone rides an Android preview channel)",
+    "battery_pack.txt": "charge_full / voltage_now / derived pack joules",
+    "batterystats.txt": "coarse per-package cross-check only"
+  }
+}

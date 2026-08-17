@@ -17,7 +17,15 @@
 #                    [--cooldown 60] [--baseline 60] [--timeout 900]
 #                    [--out DIR] [--perfetto] [--dry-run]
 #
-#   --arms      space/comma list of rust_threads arms   (default "4 2 1")
+#   --arms      space/comma list of arms, each THREADS or THREADS:TIEARB_B
+#               (default "4 2 1"). A bare number is the champion as deployed at
+#               that thread count; ":B" arms the TIE ARBITER at B CRN worlds
+#               (mode/salt/eps = the settings of record). Every arm plays the
+#               CHAMPION TRAJECTORY -- the arbiter's pick-changes are computed,
+#               priced and then NOT applied -- so the move-hash identity gate
+#               below stays valid across the arbiter axis too. See
+#               app/src/debug/python/carc_bench.py's module docstring.
+#   --tiearb-j  arm cap J for armed arms                (default 4)
 #   --reps      interleaved cycles over the arm list    (default 3)
 #   --moves     champion moves per run                  (default 24)
 #   --seed      deck+agent seed (same for EVERY run --
@@ -45,7 +53,7 @@ SVC="$PKG/.BenchService"
 BATT_SYS="/sys/class/power_supply/battery"
 
 ARMS="4 2 1"; REPS=3; MOVES=24; SEED=424242; COOLDOWN=60; BASELINE=60
-TIMEOUT=900; OUT=""; PERFETTO=0; DRYRUN=0
+TIMEOUT=900; OUT=""; PERFETTO=0; DRYRUN=0; TIEARB_J=4
 
 say()  { printf '%s\n' "$*"; }
 warn() { printf 'battery_bench: %s\n' "$*" >&2; }
@@ -54,6 +62,7 @@ die()  { warn "$2"; exit "$1"; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --arms)     ARMS="${2//,/ }"; shift 2 ;;
+    --tiearb-j) TIEARB_J="$2"; shift 2 ;;
     --reps)     REPS="$2"; shift 2 ;;
     --moves)    MOVES="$2"; shift 2 ;;
     --seed)     SEED="$2"; shift 2 ;;
@@ -63,7 +72,7 @@ while [ $# -gt 0 ]; do
     --out)      OUT="$2"; shift 2 ;;
     --perfetto) PERFETTO=1; shift ;;
     --dry-run)  DRYRUN=1; shift ;;
-    --help|-h)  sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --help|-h)  sed -n '2,52p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die 2 "unknown argument: $1 (--help for usage)" ;;
   esac
 done
@@ -166,8 +175,8 @@ say "== plan =="
 PLAN="$("$PY" "$HERE/battery_bench_lib.py" schedule --arms "$ARMS" --reps "$REPS")" \
   || die 2 "bad --arms/--reps"
 N_RUNS="$(printf '%s\n' "$PLAN" | wc -l)"
-printf '%s\n' "$PLAN" | while read -r rep arm tag; do
-  say "  run $tag: rust_threads=$arm moves=$MOVES seed=$SEED (rep $rep)"
+printf '%s\n' "$PLAN" | while read -r rep arm tb tag; do
+  say "  run $tag: rust_threads=$arm tiearb_B=$tb moves=$MOVES seed=$SEED (rep $rep)"
 done
 EST=$(( N_RUNS * (MOVES * 4 + COOLDOWN) + BASELINE ))
 say "runs: $N_RUNS interleaved, cooldown ${COOLDOWN}s, baseline ${BASELINE}s -- rough ceiling ~$((EST / 60)) min"
@@ -189,6 +198,19 @@ say "== session ($OUT) =="
 # The FGS-launch behavior above is OS-build-dependent (this phone rides a
 # preview channel) -- record the build so results can be conditioned on it.
 ashell getprop ro.build.fingerprint | tr -d '\r' > "$OUT/device_build.txt"
+
+# Pack energy, for the "% battery per game" projection. charge_full is in µAh on
+# this kernel (same family as current_now); J = Ah x 3600 x V. Best-effort: an
+# unreadable node just drops the % columns, it never fails the session.
+CHG_FULL="$(ashell cat $BATT_SYS/charge_full 2>/dev/null | tr -d '\r')"
+BATT_J=""
+case "$CHG_FULL" in
+  ''|*[!0-9]*) warn "charge_full unreadable ('$CHG_FULL') -- %battery/game columns will be omitted" ;;
+  *) BATT_J="$(awk -v q="$CHG_FULL" -v v="$VOLT" 'BEGIN{printf "%.1f", (q/1e6)*3600*(v/1e6)}')"
+     say "battery pack: charge_full=${CHG_FULL} uAh at ${VOLT} uV -> ${BATT_J} J" ;;
+esac
+printf 'charge_full_uah=%s\nvoltage_now_uv=%s\nbattery_joules=%s\n' \
+  "$CHG_FULL" "$VOLT" "$BATT_J" > "$OUT/battery_pack.txt"
 
 # Production-faithful scheduling: in-app play runs in the TOP-APP cpuset (all
 # 8 cores). With the screen off, Android caps a shell-started FGS to the
@@ -226,10 +248,23 @@ ashell dumpsys batterystats --reset >/dev/null 2>&1 || warn "batterystats --rese
 # ~1 Hz sampler: ONE persistent adb shell, device-clock timestamps (the same
 # clock the bench result windows use, so no host/device skew enters the math).
 SAMPLES="$OUT/samples.csv"
-ashell "while true; do echo \"\$(date +%s%3N) \$(cat $BATT_SYS/current_now) \$(cat $BATT_SYS/voltage_now)\"; sleep 1; done" \
-  > "$SAMPLES" &
+# ⚠️ adb is invoked DIRECTLY here, not through `ashell` (2026-08-17). `ashell`
+# is a shell FUNCTION, so `ashell ... &` backgrounds a SUBSHELL and `$!` is the
+# subshell's pid -- killing it left the real `adb shell` orphaned, still
+# sampling, still holding the driver's inherited STDERR open, so the whole
+# pipeline hung after the report had already been written. Its stderr also goes
+# to a file for the same reason: nothing this loop owns may hold the caller's
+# pipe open.
+"$ADB" shell "while true; do echo \"\$(date +%s%3N) \$(cat $BATT_SYS/current_now) \$(cat $BATT_SYS/voltage_now)\"; sleep 1; done" \
+  </dev/null > "$SAMPLES" 2> "$OUT/sampler.err" &
 SAMPLER_PID=$!
-cleanup() { kill "$SAMPLER_PID" 2>/dev/null; wait "$SAMPLER_PID" 2>/dev/null; restore_phone; }
+cleanup() {
+  kill "$SAMPLER_PID" 2>/dev/null
+  wait "$SAMPLER_PID" 2>/dev/null
+  # Prove it: a survivor would keep appending to samples.csv and hold fds.
+  kill -0 "$SAMPLER_PID" 2>/dev/null && { kill -9 "$SAMPLER_PID" 2>/dev/null; wait "$SAMPLER_PID" 2>/dev/null; }
+  restore_phone
+}
 trap cleanup EXIT
 sleep 3
 [ -s "$SAMPLES" ] || die 3 "sampler produced no data"
@@ -244,13 +279,16 @@ if [ "$BASELINE" -gt 0 ]; then
   sleep "$BASELINE"
   B1="$(dev_now_ms)"
   BASE_ARG="--baseline $B0:$B1"
+  # On disk too, so `report` can be re-run later against the SAME idle window
+  # (it lands ~1% off if the window has to be guessed from the sample file).
+  printf '%s:%s\n' "$B0" "$B1" > "$OUT/baseline_window_ms.txt"
 fi
 
 # ---------------------------------------------------------------------------
 # 3. the interleaved runs
 # ---------------------------------------------------------------------------
-run_one() { # $1=arm $2=tag
-  local arm="$1" tag="$2" t_launch elapsed=0 trace_pid="" pid cs
+run_one() { # $1=threads $2=tiearb_B $3=tag
+  local arm="$1" tb="$2" tag="$3" t_launch elapsed=0 trace_pid="" pid cs
   # Re-verify the scheduling class every run -- a screen-off event mid-session
   # would silently demote the process to the little-core cpuset and make the
   # arms heterogeneous.
@@ -268,7 +306,7 @@ EOF
     ashell "perfetto --txt -c /data/local/tmp/carc_power.pbtxt -o /data/misc/perfetto-traces/carc_$tag.pftrace" &
     trace_pid=$!
   fi
-  say "launching $tag (rust_threads=$arm)..."
+  say "launching $tag (rust_threads=$arm, tiearb_B=$tb)..."
   # Android 17 (SDK-37 preview) rejects FGS starts originating from the adb
   # shell (background-launch restriction). A temp power-allowlist entry is the
   # documented exemption (verified working 2026-08-16); the OS clamps shell
@@ -276,8 +314,12 @@ EOF
   ashell cmd deviceidle tempwhitelist -d 600000 "$PKG" >/dev/null 2>&1 || true
   # A tag's result file must not predate its launch (see stale-clear NB above).
   ashell "run-as $PKG sh -c 'rm -f files/bench/$tag.json'"
+  # tiearb_b=0 is the champion as deployed: carc_bench passes NO arbiter keyword
+  # to the rust config at all, so the control arm is byte-identical to the
+  # pre-arbiter bench.
   ashell am start-foreground-service -n "$SVC" \
     --ei n_moves "$MOVES" --ei rust_threads "$arm" --ei seed "$SEED" --es tag "$tag" \
+    --ei tiearb_b "$tb" --ei tiearb_j "$TIEARB_J" \
     | tr -d '\r' | grep -qi error && { warn "am start failed for $tag"; return 1; }
   t_launch=$(date +%s)
   while :; do
@@ -299,14 +341,14 @@ EOF
 }
 
 FIRST=1
-printf '%s\n' "$PLAN" | while read -r rep arm tag; do
+printf '%s\n' "$PLAN" | while read -r rep arm tb tag; do
   if [ "$FIRST" -eq 1 ]; then
     FIRST=0
   else
     say "cooldown ${COOLDOWN}s..."
     sleep "$COOLDOWN"
   fi
-  run_one "$arm" "$tag" || echo "$tag" >> "$OUT/failed_runs"
+  run_one "$arm" "$tb" "$tag" || echo "$tag" >> "$OUT/failed_runs"
 done
 if [ -s "$OUT/failed_runs" ]; then
   die 4 "run(s) failed/timed out: $(tr '\n' ' ' < "$OUT/failed_runs") -- see $OUT/runs/"
@@ -327,8 +369,10 @@ ashell dumpsys batterystats "$PKG" > "$OUT/batterystats.txt" 2>/dev/null \
 say ""
 say "== identity gate + energy report =="
 # shellcheck disable=SC2086
+BATT_ARG=""
+[ -n "$BATT_J" ] && BATT_ARG="--battery-joules $BATT_J"
 if ! "$PY" "$HERE/battery_bench_lib.py" report \
-      --runs-dir "$OUT/runs" --samples "$SAMPLES" $BASE_ARG --out-dir "$OUT"; then
+      --runs-dir "$OUT/runs" --samples "$SAMPLES" $BASE_ARG $BATT_ARG --out-dir "$OUT"; then
   die 5 "identity gate ABORT or report failure -- see message above; artifacts kept in $OUT"
 fi
 say ""

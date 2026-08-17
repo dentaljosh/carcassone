@@ -7956,3 +7956,96 @@ confirmatory use.
 `governance/BAND_REGISTRY.csv` 132000000000 (retired, decision_influenced=yes) ·
 blind order `b2faa238` → `3bd1ff7d` → `6c281f9e` → `a81b8c72` → `c36055a7` → `ef07768c` →
 `edd3deab` → `d39c8a03` → `46537745` (band claim) → `369ac884` → `ea75eda0`.
+
+---
+
+## 2026-08-17 (evening) — PIXEL TIE-ARBITER A/B: **`rho_phone` MEASURED at last — 5.976 at B=16 against the 5.520 desktop prediction (8.3% OPTIMISTIC); 0.742 at B=2**
+
+Owner, verbatim: *"in the meantime. let's also get some AB testing on pixel.
+100.64.4.100:34993"*. Purpose: the pending Phase-B flip decision was to be put to Joshua
+carrying **`rho_phone` = 5.520 — predicted, unadjudicated, "the phone currency was never
+solved"**. It is solved now, on the phone, with production knobs.
+
+**⛔ COST ONLY. 0 strength games, no band, no `results.csv` row, no claim id,
+`governance/PRODUCTION.yaml` UNTOUCHED.** This replaces one unmeasured number in a decision
+the owner still owns; it licenses nothing.
+
+**The design problem, and why the identity gate survived intact.** The battery bench's
+load-bearing guard is a move-hash identity gate — every arm must report the same digest over
+the applied-action trace or no energy number prints. The arbiter **changes the returned
+action at tied plies by design**, so free-running arms would diverge and that gate would
+(correctly) abort. Rather than downgrade it, every arm now drives the **CHAMPION
+TRAJECTORY**: the rust agent already records `last_move()["tiearb_champ_pick"]` (it is the
+pick-change baseline), so the armed arm does all the arbitration work — tie detection, the
+CRN world set, the `B × arms` tier-1 playouts — at exactly the positions the champion line
+visits, and only the action fed back into the game comes from the champion. **Gate PASS on
+all 9 runs** (`ece55328277e4af5…`), which is itself a finding: the arbiter does not perturb
+the champion's own search (CRN-seeded off salt + state digest + ply, dedicated
+`tiearb_scratch`, agent RNG untouched).
+
+**The on-device J13 equivalent, which was not optional here.** The desktop `carc_rs` in the
+venv **predates the arbiter**, so no desktop test could have caught a stale phone wheel — and
+a zeroed knob would have reported "the arbiter is nearly free". So `_assert_tiearb` reads the
+**RESOLVED** knobs back off `FairAgentRs.stats()` and compares field-by-field, the control arm
+is asserted `enabled=False`, and an armed run that fires on 0 tile plies is `ok: false`. All
+passed and the arbiter demonstrably bit: **39 fired / 81 tile plies (0.481)**, **30
+pick-changes at B=16**, **`tiearb_errors` = 0**, **`tiearb_partial_argmax` = 0** over 6 armed
+runs.
+
+Pixel 9 Pro, `rust_threads: 2`, k8×1376, `fixed_v1`, rust; 48 moves/run × 3 interleaved reps,
+seed 424242, unplugged, screen on at min brightness, `/top-app` verified per run (30% → 23%).
+
+| arm | J/move ± sd | s/move ± sd | net J/move |
+|---|---|---|---|
+| champion as deployed | 3.177 ± 0.576 | 0.526 ± 0.032 | 2.269 |
+| + arbiter B=2 | 3.992 ± 0.295 | 0.853 ± 0.009 | 2.536 |
+| + arbiter B=16 (`G-CONFIRMED` config) | 14.741 ± 3.992 | 3.045 ± 0.250 | 9.551 |
+
+| B | s/fired ply (arb clock / Δ arms) | ΔJ/fired ply | **`rho_phone` MEASURED** | predicted | added s/game | added J/game | added %batt/game | game wall-clock |
+|---|---|---|---|---|---|---|---|---|
+| 2 | 1.151 / 1.205 | 3.01 | **0.742** | 0.690 | 20.2 | 52.9 | 0.09 | 1.181× |
+| 16 | 9.269 / 9.298 | 42.70 | **5.976** | 5.520 | 162.9 | 750.4 | 1.23 | 2.459× |
+
+**The number the owner feels:** at B=16 a tied move goes **1.55 s → 10.8 s** — a ~7× pause on
+~27% of moves. At B=2, **1.55 s → 2.7 s**.
+
+**Why the desktop prediction nearly worked, and why it was still 8% cheap.** The two clocks —
+the arbiter's internal `tiearb_secs` and the arm-to-arm subtraction — **agree to 0.3%**, and
+cost is **linear in `B` to 0.7%** (9.269/1.151 = 8.056 across an 8× rung ratio), so the
+per-playout constant is well determined: `c_phone` = **0.1883** s/playout at B=16, **0.1870**
+at B=2. That is **2.01× the desktop's uncontended `c_tier1_rust`** (0.093769 at W=1) and
+**1.06× its contended W=30 figure** (0.178232). `arbitrate_decision` is **single-threaded**
+(no rayon), so on the phone it runs on ONE core — and one Pixel core costs almost exactly what
+one *contended* desktop worker-second cost, which is the figure PHASE_A happened to use. The
+residual miss is ~2.5% from `mean_arms` landing at **3.077** vs the assumed `Ā` = 3.0022, and
+~6% from the core itself. **The cost model's shape was right; its constant was ~8% cheap.**
+
+**The bias runs AGAINST the arbiter — read these as CEILINGS.** A tier-1 playout runs to
+terminal, so a tied ply at move 10 is priced over ~130 remaining plies and one at move 130
+over a handful: benching the first 48 moves measures the **most expensive** arbitration in the
+game. The opening also ties more (0.271 fires/decision ⇒ implied `phi` ≈ 19.5 vs the desktop
+whole-game 17.573 used in the projections). Correspondingly, the session control read 0.526
+s/move because it sampled the opening — `rho_phone` therefore divides by the **1.551 of
+record** (which is what makes it comparable to 5.520), never by the session control; and
+`baseline %batt/game` = 0.37% is a **lower** bound. n = 3 reps/arm resolves arms differing by
+100s of percent, not a few percent.
+
+**Against the standing bar** (`rho_phone ≤ 1.20`, the house N4 currency applied to the phone):
+**B=2 clears at 0.742; B=16 does not, at 5.976.** The same qualitative split PHASE_A
+predicted, now measured. B=16 is the rung that CAPTURES (`G-CONFIRMED`); B=2 is the rung that
+is affordable. **That tension is the owner's to resolve — no branch here licenses an
+on-device deploy.**
+
+**Instrument changes** (`android/tools/battery_bench{.sh,_lib.py,.md}`,
+`android/app/src/debug/{python/carc_bench.py,java/.../BenchService.kt}`, 22 tests in
+`tests/android/test_battery_bench_lib.py`): arms generalize from `THREADS` to
+`THREADS[:TIEARB_B]` (a bare number is byte-identical to the old behaviour — no arbiter
+keyword reaches the rust config); the report gains a tie-arbiter cost block. Two pre-existing
+bugs fixed en route: the ~1 Hz sampler was backgrounded through a **shell function**, so `$!`
+was the subshell and `kill` orphaned the real `adb shell`, which kept the driver's inherited
+stderr open and **hung the pipeline after the report had already been written**; and the idle
+baseline window was not recorded, so re-running `report` had to guess it (landed 1.2% off on
+`baseline_watts` — every Δ column is baseline-independent, so only `net` was ever at risk).
+
+→ `measurement/pixel_tiearb_ab_20260817/` (`READOUT.md` · `results.{md,json}` ·
+`manifest.json` · `runs/` · `samples.csv` · `device_build.txt` · `battery_pack.txt`)

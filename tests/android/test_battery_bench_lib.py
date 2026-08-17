@@ -55,6 +55,37 @@ def test_schedule_rejects_bad_input():
 
 
 # --------------------------------------------------------------------------- #
+# arm specs (the tie-arbiter axis)
+# --------------------------------------------------------------------------- #
+def test_parse_arm_threads_and_tiearb_b():
+    assert L.parse_arm("2") == (2, 0)
+    assert L.parse_arm(4) == (4, 0)
+    assert L.parse_arm("2:16") == (2, 16)
+    assert L.parse_arm(" 2:0 ") == (2, 0)
+    for bad in ("0", "2:-1", "x", "2:y", ""):
+        with pytest.raises(ValueError):
+            L.parse_arm(bad)
+
+
+def test_arm_tag_unarmed_spelling_is_unchanged():
+    # The pre-arbiter bench's tags must survive byte-for-byte, or a thread-count
+    # session's artifacts silently change names.
+    assert L.arm_tag(2, 0, 1) == "t2_r1"
+    assert L.arm_tag(2, 16, 3) == "t2b16_r3"
+
+
+def test_arm_schedule_interleaves_and_rejects_duplicates():
+    plan = L.arm_schedule(["2", "2:16", "2:4"], 2)
+    assert [t for _, _, _, t in plan] == [
+        "t2_r1", "t2b16_r1", "t2b4_r1", "t2_r2", "t2b16_r2", "t2b4_r2"]
+    assert [b for _, _, b, _ in plan] == [0, 16, 4, 0, 16, 4]
+    with pytest.raises(ValueError):
+        L.arm_schedule(["2", "2:0"], 1)          # same arm, two spellings
+    with pytest.raises(ValueError):
+        L.arm_schedule([], 1)
+
+
+# --------------------------------------------------------------------------- #
 # samples: parsing, sign, units
 # --------------------------------------------------------------------------- #
 def _lines(rows):
@@ -168,15 +199,88 @@ def test_build_report_happy_path_math():
     samples = _lines([(t * 1000, -500000, 4000000) for t in range(65)])
     report, md = L.build_report(runs, samples, baseline=(0, 8000))
     arms = report["arms"]
-    assert arms[4]["j_per_move_mean"] == pytest.approx(2.0)
-    assert arms[1]["j_per_move_mean"] == pytest.approx(4.0)
-    assert math.isnan(arms[4]["j_per_move_sd"])          # n=1 rep
+    assert arms["4"]["j_per_move_mean"] == pytest.approx(2.0)
+    assert arms["1"]["j_per_move_mean"] == pytest.approx(4.0)
+    assert math.isnan(arms["4"]["j_per_move_sd"])        # n=1 rep
     assert report["baseline_watts"] == pytest.approx(2.0)
     # Net column: baseline exactly cancels a constant-power workload.
-    assert arms[4]["j_per_move_net_mean"] == pytest.approx(0.0, abs=1e-9)
+    assert arms["4"]["j_per_move_net_mean"] == pytest.approx(0.0, abs=1e-9)
     assert report["hash_identical_across_runs"] is True
     assert "| rust_threads |" in md and "PASS" in md
     assert report["sign_convention"].startswith("current_now negative")
+    # A thread-count-only session emits no arbiter block and no arbiter columns.
+    assert report["tiearb_cost"] is None
+    assert "tiearb B" not in md
+
+
+# --------------------------------------------------------------------------- #
+# the tie-arbiter cost block
+# --------------------------------------------------------------------------- #
+def _arb_run(tag, *, b, secs, fired, tile_plies, t0, t1, s_per_move, n=10):
+    r = _run(tag, "h", rust_threads=2, t_start_ms=t0, t_end_ms=t1,
+             n_moves=n, s_per_move_mean=s_per_move)
+    if b:
+        r["tiearb"] = {"enabled": True, "B": b, "J": 4, "mode": "argmax",
+                       "salt": "tiearb2-deploy-v1", "eps": 0.0}
+        r["tiearb_telemetry"] = {
+            "tiearb_tile_plies": tile_plies, "tiearb_fired_plies": fired,
+            "tiearb_pickchanges": 1, "tiearb_arms_total": 3 * fired,
+            "tiearb_playouts_total": b * 3 * fired, "tiearb_secs": secs,
+            "tiearb_errors": 0, "tiearb_partial_argmax": 0,
+            "tiearb_first_error": None}
+    return r
+
+
+def test_tiearb_block_prices_the_arbiter_against_its_own_control():
+    # Control: 10 moves in 10 s at 1 s/move, 2 W -> 2 J/move.
+    # Armed:   10 moves in 30 s at 3 s/move, 2 W -> 6 J/move, 2 fired plies
+    #          costing 20 s of arbiter clock (10 s each).
+    runs = [
+        _arb_run("t2_r1", b=0, secs=0, fired=0, tile_plies=0,
+                 t0=10_000, t1=20_000, s_per_move=1.0),
+        _arb_run("t2b16_r1", b=16, secs=20.0, fired=2, tile_plies=5,
+                 t0=40_000, t1=70_000, s_per_move=3.0),
+    ]
+    samples = _lines([(t * 1000, -500000, 4000000) for t in range(75)])
+    report, md = L.build_report(runs, samples, baseline=None,
+                               battery_joules=50_000.0)
+    blk = report["tiearb_cost"]
+    rec = blk["arms"]["2b16"]
+    assert rec["control"] == "2" and rec["n_fired_total"] == 2
+    # The arbiter's own clock: 20 s over 2 fired plies.
+    assert rec["arb_s_per_fired_ply"] == pytest.approx(10.0)
+    # The subtraction route must agree: +2 s/move over 10 moves = 20 s / 2 fires.
+    assert rec["delta_s_per_fired_ply"] == pytest.approx(10.0)
+    # ...and it does for energy too: +4 J/move x 10 moves / 2 fires.
+    assert rec["delta_j_per_fired_ply"] == pytest.approx(20.0)
+    # rho_phone is against the SESSION's own control s/move, not a constant.
+    assert rec["rho_phone_measured"] == pytest.approx(10.0 / L.T_PHONE_OF_RECORD)
+    assert rec["rho_phone_vs_session_control"] == pytest.approx(10.0)
+    # Per-game projection at the desktop phi, 72 champion decisions/game.
+    assert rec["added_s_per_game"] == pytest.approx(L.PHI_PER_GAME * 10.0)
+    assert rec["baseline_s_per_game_session"] == pytest.approx(72.0)
+    assert rec["baseline_s_per_game_of_record"] == pytest.approx(72 * L.T_PHONE_OF_RECORD)
+    assert rec["added_j_per_game"] == pytest.approx(L.PHI_PER_GAME * 20.0)
+    assert rec["baseline_battery_pct_per_game"] == pytest.approx(
+        100.0 * 72 * 2.0 / 50_000.0)
+    assert rec["fire_rate_per_tile_ply"] == pytest.approx(0.4)
+    assert "rho_phone MEASURED" in md and "tiearb B" in md
+
+
+def test_tiearb_block_is_none_without_an_armed_arm():
+    runs = [_arb_run("t2_r1", b=0, secs=0, fired=0, tile_plies=0,
+                     t0=0, t1=10_000, s_per_move=1.0)]
+    samples = _lines([(t * 1000, -500000, 4000000) for t in range(15)])
+    report, _ = L.build_report(runs, samples, None)
+    assert report["tiearb_cost"] is None
+
+
+def test_tiearb_block_flags_a_missing_control_arm():
+    runs = [_arb_run("t2b16_r1", b=16, secs=20.0, fired=2, tile_plies=5,
+                     t0=0, t1=30_000, s_per_move=3.0)]
+    samples = _lines([(t * 1000, -500000, 4000000) for t in range(35)])
+    report, _ = L.build_report(runs, samples, None)
+    assert "no unarmed control arm" in report["tiearb_cost"]["arms"]["2b16"]["error"]
 
 
 # --------------------------------------------------------------------------- #
