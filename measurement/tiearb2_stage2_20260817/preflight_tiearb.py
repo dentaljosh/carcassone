@@ -142,6 +142,29 @@ def main() -> int:
         chk("W3_W5_production_path", False,
             f"{type(e).__name__}: {e}\n{traceback.format_exc(limit=3)}")
 
+    # --- TOOL: the G-TOOL stamps must be REAL on this box, and the check has to
+    #     happen HERE. With the adjudicator's G-TOOL hardened to refuse the
+    #     "<unavailable: ...>" sentinel, a provenance break that survives to the
+    #     end voids the cell AFTER 800 games. Fail it before game 1 instead.
+    #     ⚠️ `carc_rs_build` is version+commit+toolchain, NOT the binary hash, and
+    #     that is deliberate: the compiled `.so` is not reproducible across
+    #     machines (measured 73aa20102ab98e2f local vs ec140ac0c0583d53 laptop at
+    #     the same commit and the same rustc), so a content-hash EQUALITY gate
+    #     would fail every healthy 2-box run. The binary hash is emitted too, as
+    #     BOX-LOCAL evidence, and must not be compared across boxes.
+    _tc = os.environ.get("RUSTUP_TOOLCHAIN") or prov.get("rust_toolchain")
+    _bid = prov.get("carc_rs_build") or ""
+    _bad = ("<unavailable", "unhashed", "nobinary", "unknown", "rustcunpinned")
+    chk("TOOL_rust_toolchain_is_pinned_and_real",
+        bool(_tc) and not any(b in str(_tc) for b in _bad), _tc,
+        )
+    chk("TOOL_carc_rs_build_is_real_not_a_sentinel",
+        bool(_bid) and not any(b in _bid for b in _bad), _bid)
+    chk("TOOL_carc_rs_binary_sha_is_real",
+        bool(prov.get("carc_rs_binary_sha"))
+        and prov["carc_rs_binary_sha"] not in ("unhashed", "nobinary"),
+        prov.get("carc_rs_binary_sha"))
+
     # --- J13: THE TWO-SIDED POSITIVE CONTROL. The only liveness proof available
     #     on this surface, and BOTH sides are required.
     witness = None
@@ -200,6 +223,7 @@ def main() -> int:
         # was rebuilt; `carc_rs_build` is the field that compares.
         "carc_rs_binary_sha": prov.get("carc_rs_binary_sha"),
         "code_rev_dirty": prov.get("code_rev_dirty"),
+        "mixed_builds": False,
         "all_preflight_pass": bool(ok_all),
         "checks": checks,
         "two_sided": two_sided,

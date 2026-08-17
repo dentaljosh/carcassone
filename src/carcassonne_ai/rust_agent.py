@@ -370,13 +370,26 @@ def carc_rs_build_id() -> str:
     from .run_manifest import code_rev
 
     tc = os.environ.get("RUSTUP_TOOLCHAIN") or "unpinned"
-    # ⚠️ The bare commit, NOT `code_rev()`'s "-dirty" suffix. Two boxes at the
-    # same commit can differ in WHICH uncommitted files they carry (a live tree
-    # with a concurrent session's work in it), and a `G-TOOL` equality gate would
-    # then fail on a run whose COMPILED code is identical. Dirtiness is real
-    # provenance and is reported — as its own field, where it cannot void a gate
-    # it is not evidence about.
-    rev = code_rev().replace("-dirty", "")
+    # ⚠️ The FULL commit, sliced to a FIXED 12 — not `code_rev()`'s output.
+    # `code_rev()` uses `git rev-parse --short`, whose length is `core.abbrev`
+    # and therefore PER BOX: measured 2026-08-17, the same commit rendered
+    # `cf51bf17` locally and `cf51bf176b` on the laptop. A `G-TOOL` equality gate
+    # would have failed on identical code because the two boxes abbreviate
+    # differently. The "-dirty" suffix is dropped for the same class of reason:
+    # two boxes at the same commit can carry different uncommitted files (a live
+    # tree with a concurrent session in it), and dirtiness must not void a gate
+    # it is not evidence about — it is reported as its own field instead.
+    rev = "unknown"
+    try:
+        import subprocess
+        from pathlib import Path as _P
+        out = subprocess.run(
+            ["git", "-C", str(_P(__file__).resolve().parents[2]), "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=5)
+        if out.returncode == 0 and out.stdout.strip():
+            rev = out.stdout.strip()[:12]
+    except Exception:                                       # noqa: BLE001
+        rev = code_rev().replace("-dirty", "")
     return f"carc_rs-{carc_rs.__version__}+{rev}+rustc{tc}"
 
 
