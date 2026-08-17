@@ -170,6 +170,79 @@ he may bump to.**
   1,040 floor**. Phases 1–4 are untouched.
   ⚠️ Recorded as a **corpus-assembly decision taken before any statistic exists**;
   it reads board IDENTITY only, never a value.
+- **[t9] 20:16 EDT — CORPUS FINAL. `G-DISJOINT` PASSES 0/0/0.** The §0.A.2
+  exclusions were applied through the same tested builder (`build_positions.py
+  --exclude-rids`, 733 + 5 = 738 distinct): `n_removed_from_supply 5`,
+  **n = 1,350 / 724 roots**, `mean_arms 3.0022`, `total_arm_playouts 172,992`,
+  `afterstate_dedupe.applied true`. Gate re-run: `a_root_id` 0 · `b_rid` 0 ·
+  `c_position_digest` 0, `n_layers_violated 0`. ⭐ Diagnostic that settles the
+  cause: **all 5 offending positions are at ply 2** — textbook opening
+  transposition, so no fresh deck-seed band could have avoided them and
+  regeneration would have been pure waste. n=1,350 is **30% above the 1,040 floor**
+  (2σ on `F_fixed` = 0.307 vs the 0.35 bar).
+- **[t9] SPLIT carved:** 18 cells, `balance_ok true`, every cell ±1 root,
+  **S1 690 / S2 660 positions**; `--verify` re-derives byte-identically (the
+  `G-SPLIT` witness). **CHUNKS:** one committed seeded permutation (20260816) cut
+  into **[337, 338, 337, 338]** = 2,703 legs / 172,992 playouts, identical rid sets
+  for both judges.
+- **[t10] 20:24 EDT — COST PILOT PASSED, `B* = 2` FROZEN FROM COST ALONE.**
+  43/43 on every witness, abort **not** triggered: `n_failed 0`, `crn_verified 43`,
+  `checksum_ok 43`, seed/arm identity 43/43/43, **`G-REPRO` 43/43 bit-identical** to
+  the adjudicated 2026-08-14 OOF records. ⭐ **Cross-judge witness: 43/43 world AND
+  playout seeds bit-identical to the `clair-puct` pricing records** — `world_seed`
+  is keyed on rid+salt and never on the judge, so this is the check the `G-CRN`
+  cross-judge join actually rests on, and a same-judge reproduction cannot show it.
+  Cost: `A_bar 3.0022`, **`c_tier1 = 2.7274`** worker-s/playout ⇒
+  `rho_wall`: B=1 **0.5953** ✅ · B=2 **1.1906** ✅ · B=4 2.3811 ❌ · B=8 4.7623 ❌ ·
+  B=16 9.5246 ❌ ⇒ **`B* = 2`, `DEPLOY` true** — **exactly what DESIGN §7.2 predicted
+  in advance**, so the cheap arm was not fitted to anything.
+  ⚠️ **TWO CAVEATS THE READ-OUT MUST CARRY.** (i) **B\*=2 clears the bar by 0.8%**:
+  `rho_wall(2) ≤ 1.20` needs `c_tier1 ≤ 2.7489` and we measured 2.7274 — a slightly
+  slower pilot would have forced `B*=1`. The `DEPLOY` conjunct is on a knife edge and
+  must never be quoted as comfortable. (ii) `c_tier1` is **28% above Stage 1's
+  2.1236**, measured under **W30** contention vs Stage 1's W20; a *deployed* arbiter
+  fires on one move with the box to itself, so this **overstates** deployable cost —
+  the conservative direction, consistent with §7.1's declared python-vs-cython bias.
+  At Stage 1's `c` the same B=2 reads `rho_wall 0.927`. It is +9.1% vs
+  `ALLOCATION.conf`'s 2.5 assumption, **inside** the ±25% revisit band ⇒ the static
+  chunk allocation stands.
+- **[t11] ⚠️ BOTH BOXES ABORTED AT FIRST LAUNCH — and the abort was CORRECT.**
+  `run_main.sh`'s pre-launch check called `stage_plans.py main --verify`, which
+  re-derives the permutation from the **source corpus**. It failed on both boxes for
+  two different reasons: the **laptop** has no `corpus/positions` (65 MB,
+  deliberately not synced — only the chunk plans are), and **locally** the call used
+  stage_plans' *relative* default paths and resolved them against the wrong cwd.
+  **Nothing was scored on a bad plan**; the gate did its job.
+  **Fix:** a self-contained check over synced artefacts only — each chunk dir's
+  `ARMS.json` key set must equal `POSITION_ORDER`'s slice for that chunk, leg files
+  must exist, and the recorded `sha256_order` must reproduce. That is precisely the
+  property the cross-judge CRN join depends on, and it needs no source corpus. The
+  full byte-identity re-derivation still runs locally in `run_analysis.sh`.
+  (The digest formula was **verified against the recorded value, not assumed** —
+  `stage_plans.py` hashes one rid per line *with* a trailing newline.)
+  Verified before relaunch: **all four chunks match exactly, 0 missing / 0 extra.**
+- **[t12] 20:29 EDT — MAIN SCORING LAUNCHED, both boxes, detached (`setsid nohup`).**
+  Per `ALLOCATION.conf`, with the ETA recomputed at the pilot's realized
+  `c_tier1 = 2.7274` (clair-puct at the assumed 1.60, unmeasured this run):
+
+  | box | W | legs | worker-h | ETA |
+  |---|---|---|---|---|
+  | **local** | 30 | `clair-puct` chunks 1–4 | 76.9 | ≈2.6 h |
+  | **local** (chained) | 30 | `tier1-greedy` chunk 4 | 32.8 | ≈1.1 h |
+  | **laptop** | 22 | `tier1-greedy` chunks 1–3 | 98.3 | ≈4.5 h |
+  | | | **total 208 worker-h** | | **makespan ≈ 4.5 h** |
+
+  Local runs as ONE detached process (`run_local_chain.sh`), chained with `;` not
+  `&&` so a partial clair-puct failure cannot silently cancel the tier1 leg.
+  **DONE-MARKER CONVENTION** (all in this run dir, detectable from the share-adjacent
+  repo): `DONE_<judge>_CHUNK<k>` per completed chunk · `DONE_<judge>_<box>` per
+  completed box-leg · `DONE_LOCAL_SHIFT` when the local chain finishes ·
+  `DONE_ANALYSIS` at the end. Records accumulate under
+  `<share>/tiearb2_20260816/main/chunk<k>/<judge>/…/records/` and are merged by file
+  copy into `main/merged/<judge>/` with a duplicate guard.
+  ⚠️ **Every completed-chunk prefix is a uniform random subsample** of the committed
+  permutation, so a partial run is still an unbiased read at its realized `n` —
+  subject to `G-N` (≥1,040 pooled, ≥400 per slice).
 - **[t3] Six-touch, in-progress leg:** `docs/LEVER_INDEX.md` row 217 amended with the
   successor (in flight), `STATUS.md` top block replaced (the `P-PARTIAL` block moved
   to frozen history), `docs/PROGRAM_ROADMAP_2026-07-07.md` NOW block replaced.

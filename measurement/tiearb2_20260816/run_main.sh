@@ -49,6 +49,15 @@ fi
 [ -n "${CHUNKS// /}" ] || { echo "[main] no chunks allocated to ($BOX,$JUDGE) — nothing to do"; exit 0; }
 
 PY="$REPO/.venv/bin/python"
+
+# ⚠️ MUST run from the REPO ROOT. `POSITIONS_PLAN.json` stores its leg paths
+# REPO-RELATIVE (e.g. "measurement/tiearb2_20260816/positions_chunk2/positions_walled_leg1.jsonl"),
+# and run_tiletie's preflight resolves them against the CURRENT WORKING DIRECTORY.
+# Without this cd, every chunk dies at `[preflight] positions: FAIL — missing
+# positions file`, which is exactly what killed the 20:29 launch on BOTH boxes.
+# (run_pilot.sh has always had this cd, which is why the pilot ran clean.)
+cd "$REPO" || { echo "[main] FATAL: cannot cd to repo root '$REPO'" >&2; exit 1; }
+
 LOGS="$HERE/logs"
 mkdir -p "$LOGS"
 export CARC_SRC_ROOT="$REPO/src"
