@@ -22,6 +22,9 @@ pub mod leaf;
 pub mod repr_key;
 pub mod search;
 pub mod sha256;
+/// The `tier1-greedy` continuation playout — the tiearb2 arbiter's cost core.
+/// Purely additive (Stage 2 Phase A); nothing pre-existing routes through it.
+pub mod tier1;
 pub mod tiles;
 
 /// Crate version, surfaced through the Python module for provenance stamping.

@@ -10,6 +10,7 @@ use carc_core::fair;
 use carc_core::game::{deck_from_descriptions, deck_from_seed, Game, GameConfig};
 use carc_core::leaf;
 use carc_core::search;
+use carc_core::tier1;
 use carc_core::tiles;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
@@ -909,6 +910,156 @@ fn deck_descriptions_from_seed(deck_seed: &str) -> Vec<String> {
         .into_iter()
         .map(|b| tiles::tile(tiles::tile_id(b, 0)).description.to_string())
         .collect()
+}
+
+// --------------------------------------------------------------------------
+// Stage 2 Phase A — the `tier1-greedy` continuation, WHOLE-LEG.
+// --------------------------------------------------------------------------
+
+/// One position-record's worth of `tier1-greedy` playouts, computed entirely in
+/// Rust — no Python runs per ply.  The twin is
+/// `scripts/measurement_infra/oracle_score_pilot.py::_process` under
+/// `--oracle-policy tier1-greedy`.
+///
+/// `deck_seed` is the DECIMAL STRING of the Python int (the crate's house wire
+/// format for a seed, since `random.seed` accepts unbounded ints);
+/// `prefix_actions[:ply]` is replayed onto `Game(deck_seed)` exactly as
+/// `root_replay.replay_actions` does under the `walled` profile (whose
+/// `game_kwargs()` is `{}`, i.e. the default `GameConfig`).
+///
+/// Per world `j`: ONE `reshuffled_determinization` from
+/// `random.Random(world_seeds[j])`, SHARED by both picks (the CRN); then a
+/// playout per pick, each with a FRESH `RuleBasedPlayer(playout_seeds[j])`.
+///
+/// Returns `(values_a, values_b, plies_a, plies_b)`.
+///
+/// `legal_mask_cache` (default `True`) reproduces `game_wrapper.Game._legal_cache`
+/// — ONE memo per record, INCLUDING its key collisions. It is required for
+/// bit-identity with the banked judge; see `carc_core::tier1`'s module docs.
+/// Pass `False` for the honest, recomputed-every-ply mask.
+#[pyfunction]
+#[pyo3(signature = (deck_seed, prefix_actions, ply, pick_a, pick_b, root_player,
+                    world_seeds, playout_seeds, max_plies = 400,
+                    legal_mask_cache = true))]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn tier1_leg(
+    deck_seed: &str,
+    prefix_actions: Vec<i32>,
+    ply: usize,
+    pick_a: i32,
+    pick_b: i32,
+    root_player: usize,
+    world_seeds: Vec<i64>,
+    playout_seeds: Vec<i64>,
+    max_plies: usize,
+    legal_mask_cache: bool,
+) -> PyResult<(Vec<f64>, Vec<f64>, Vec<usize>, Vec<usize>, (u64, u64, usize))> {
+    if ply > prefix_actions.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "ply {ply} exceeds the {} supplied actions",
+            prefix_actions.len()
+        )));
+    }
+    let out = tier1::tier1_leg(
+        deck_seed,
+        &prefix_actions[..ply],
+        pick_a,
+        pick_b,
+        root_player,
+        &world_seeds,
+        &playout_seeds,
+        max_plies,
+        legal_mask_cache,
+    )
+    .map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
+    Ok((
+        out.values_a,
+        out.values_b,
+        out.plies_a,
+        out.plies_b,
+        out.cache_stats,
+    ))
+}
+
+/// ONE `tier1-greedy` playout with its full action trace — the divergence
+/// localisation tool behind `G-BITEXACT`.  Behaviourally identical to the arm
+/// `tier1_leg` runs; it just keeps the receipts.
+///
+/// Returns `(actions, margin, plies, probe)` where `probe` is
+/// `(legal, candidates, scores, player)` at `probe_ply` (or `None` if
+/// `probe_ply < 0` or the playout ended first).  `candidates`/`scores` are
+/// EMPTY on either no-RNG-draw early return (Rule 1 forced move, or a
+/// single-candidate `_best_by_virtual_score`).
+#[pyfunction]
+#[pyo3(signature = (deck_seed, prefix_actions, ply, pick, root_player, world_seed,
+                    playout_seed, max_plies = 400, probe_ply = -1,
+                    legal_mask_cache = false))]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
+fn tier1_playout_trace(
+    deck_seed: &str,
+    prefix_actions: Vec<i32>,
+    ply: usize,
+    pick: i32,
+    root_player: usize,
+    world_seed: i64,
+    playout_seed: i64,
+    max_plies: usize,
+    probe_ply: i64,
+    legal_mask_cache: bool,
+) -> PyResult<(
+    Vec<i32>,
+    f64,
+    usize,
+    Option<(Vec<i32>, Vec<i32>, Vec<i64>, usize)>,
+)> {
+    if ply > prefix_actions.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "ply {ply} exceeds the {} supplied actions",
+            prefix_actions.len()
+        )));
+    }
+    let world = tier1::tier1_world(deck_seed, &prefix_actions[..ply], world_seed)
+        .map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
+    let mut cache = if legal_mask_cache {
+        Some(tier1::LegalMaskCache::new())
+    } else {
+        None
+    };
+    let t = tier1::tier1_playout_trace(
+        &world,
+        pick,
+        root_player,
+        playout_seed,
+        max_plies,
+        probe_ply,
+        cache.as_mut(),
+    )
+    .map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
+    let probe = t
+        .probe
+        .map(|d| (d.legal, d.candidates, d.scores, d.player));
+    Ok((t.actions, t.margin, t.plies, probe))
+}
+
+/// The determinized world's unseen deck for one `(record, world)` — so a probe
+/// can prove the Python and Rust worlds are the same before blaming the policy.
+#[pyfunction]
+#[pyo3(signature = (deck_seed, prefix_actions, ply, world_seed))]
+fn tier1_world_deck(
+    deck_seed: &str,
+    prefix_actions: Vec<i32>,
+    ply: usize,
+    world_seed: i64,
+) -> PyResult<Vec<String>> {
+    if ply > prefix_actions.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "ply {ply} exceeds the {} supplied actions",
+            prefix_actions.len()
+        )));
+    }
+    let world = tier1::tier1_world(deck_seed, &prefix_actions[..ply], world_seed)
+        .map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
+    Ok(world.unseen_deck().into_iter().map(|s| s.to_string()).collect())
 }
 
 /// `(source_sha256, semantic_digest)` compiled into `tiles/generated.rs` — the
@@ -2266,6 +2417,10 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("DEFAULT_START_ROW", carc_core::game::DEFAULT_START_ROW)?;
     m.add("DEFAULT_START_COL", carc_core::game::DEFAULT_START_COL)?;
     m.add_function(wrap_pyfunction!(deck_descriptions_from_seed, m)?)?;
+    // Stage 2 Phase A — the whole-leg `tier1-greedy` continuation.
+    m.add_function(wrap_pyfunction!(tier1_leg, m)?)?;
+    m.add_function(wrap_pyfunction!(tier1_playout_trace, m)?)?;
+    m.add_function(wrap_pyfunction!(tier1_world_deck, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digest_r9, m)?)?;
     m.add_function(wrap_pyfunction!(r9_enabled, m)?)?;
