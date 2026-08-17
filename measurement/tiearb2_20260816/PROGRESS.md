@@ -243,6 +243,38 @@ he may bump to.**
   ⚠️ **Every completed-chunk prefix is a uniform random subsample** of the committed
   permutation, so a partial run is still an unbiased read at its realized `n` —
   subject to `G-N` (≥1,040 pooled, ≥400 per slice).
+- **[t13] ⚠️ SECOND LAUNCH ABORT — `run_main.sh` never `cd`'d to the repo root.**
+  The 20:29 launch died on BOTH boxes at run_tiletie's own preflight
+  (`[preflight] positions: FAIL — missing positions file for leg walled/leg1`)
+  even though every leg file is present. Cause: `POSITIONS_PLAN.json` stores leg
+  paths **repo-relative**, and the preflight resolves them against the **current
+  working directory**. `run_pilot.sh` has always carried `cd "$REPO"` — which is
+  precisely why the pilot ran clean and the main run did not.
+  **Fixed** by `cd "$REPO"` before any leg launches; verified `positions: PASS`.
+  ✅ **NOTHING WAS CONTAMINATED:** the preflight is a hard abort, so **0 records**
+  were written on either box (verified on the share) and **0 DONE stamps** laid
+  down. Cost was wall-clock only (~8 min).
+  ⚠️ **Two standing traps both fired during the stop, and both are worth re-reading:**
+  (i) `pkill -f <pattern>` **self-killed**, because the invoking command contained
+  the literal pattern — every subsequent kill was done by **exact pid**;
+  (ii) killing the launcher shells did **NOT** reap the mp spawn workers (9 orphans
+  survived on local), so they were TERM'd then KILL'd by exact pid. **Both boxes
+  were verified at 0 python processes before relaunch.**
+- **[t14] 20:37 EDT — MAIN SCORING RUNNING, BOTH BOXES, PARALLELISM VERIFIED.**
+
+  | box | W | leg | `positions:` | scorers seen | loadavg |
+  |---|---|---|---|---|---|
+  | local | 30 | `clair-puct` chunk 1 → 4, then `tier1-greedy` chunk 4 | **PASS** | **36** | 7.86 |
+  | laptop | 22 | `tier1-greedy` chunks 1 → 3 | **PASS** | **26** | 8.56 |
+
+  Both detached with `setsid nohup … & disown`. ETA (at the pilot's realized
+  `c_tier1 = 2.7274`; clair-puct at the assumed 1.60, unmeasured this run):
+  **local ≈ 3.6 h · laptop ≈ 4.5 h ⇒ makespan ≈ 4.5 h**, i.e. finishing ≈ 01:05 EDT.
+  **DONE-MARKER CONVENTION** (all in this run dir): `DONE_<judge>_CHUNK<k>` per
+  chunk · `DONE_<judge>_<box>` per box-leg · `DONE_LOCAL_SHIFT` when the local
+  chain ends · `DONE_ANALYSIS` last. Records land under
+  `<share>/tiearb2_20260816/main/chunk<k>/<judge>/…/records/` and merge by file copy
+  into `main/merged/<judge>/` with a duplicate guard.
 - **[t3] Six-touch, in-progress leg:** `docs/LEVER_INDEX.md` row 217 amended with the
   successor (in flight), `STATUS.md` top block replaced (the `P-PARTIAL` block moved
   to frozen history), `docs/PROGRAM_ROADMAP_2026-07-07.md` NOW block replaced.
