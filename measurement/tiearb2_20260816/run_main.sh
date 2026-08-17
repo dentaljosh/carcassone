@@ -108,9 +108,51 @@ PYEOF
 # (3) POSITION_ORDER.json — re-derived and compared BYTE FOR BYTE, so the two
 #     boxes cannot drift apart on chunk membership. Both judges must score the
 #     identical rid set per chunk or the cross-judge CRN join (G-CRN) breaks.
-CMD_VERIFY=(nice -n "$NICE" "$PY" "$HERE/stage_plans.py" main --chunks "$N_CHUNKS" --verify)
-printf '[main] EXACT:'; printf ' %q' "${CMD_VERIFY[@]}"; echo
-"${CMD_VERIFY[@]}" || { echo "[main] FATAL: POSITION_ORDER.json / chunk verification failed — DO NOT LAUNCH." >&2; exit 1; }
+#     ⚠️ This check is SELF-CONTAINED on purpose. The obvious implementation —
+#     `stage_plans.py main --verify` — re-derives the permutation from the SOURCE
+#     corpus, which (a) lives only on the local box (`corpus/positions` is 65 MB and
+#     is deliberately not synced) and (b) resolves its defaults RELATIVE to the repo
+#     cwd, so it failed on BOTH boxes for two different reasons. What actually has
+#     to hold before launch is narrower and is checkable from synced artefacts
+#     alone: each chunk dir I am about to score must contain exactly the rids
+#     POSITION_ORDER.json assigns to it. That is the property the cross-judge CRN
+#     join depends on. (The full byte-identity re-derivation is still run on the
+#     local box by run_analysis.sh, where the source corpus exists.)
+"$PY" - "$HERE" "$CHUNKS" <<'PYEOF' || { echo "[main] FATAL: POSITION_ORDER.json / chunk verification failed — DO NOT LAUNCH." >&2; exit 1; }
+import hashlib, json, sys
+from pathlib import Path
+here, chunks = Path(sys.argv[1]), [int(x) for x in sys.argv[2].split()]
+doc = json.loads((here / "POSITION_ORDER.json").read_text())
+order, sizes = doc["order"], doc["chunk_sizes"]
+if len(order) != doc["n"] or sum(sizes) != doc["n"]:
+    sys.exit(f"[main] POSITION_ORDER.json inconsistent: n={doc['n']} order={len(order)} sizes={sum(sizes)}")
+
+# stage_plans.py writes the order file as one rid per line WITH a trailing
+# newline, and hashes exactly those bytes. Reproduce that, trailing "\n" included.
+digest = hashlib.sha256(("\n".join(order) + "\n").encode()).hexdigest()
+if doc.get("sha256_order") and digest != doc["sha256_order"]:
+    sys.exit(f"[main] POSITION_ORDER.json order digest MISMATCH — the committed permutation changed")
+bounds, off = [], 0
+for s in sizes:
+    bounds.append((off, off + s)); off += s
+for k in chunks:
+    lo, hi = bounds[k - 1]
+    expect = set(order[lo:hi])
+    d = here / f"positions_chunk{k}"
+    arms = d / "ARMS.json"
+    if not arms.is_file():
+        sys.exit(f"[main] chunk{k}: {arms} missing")
+    got = set(json.loads(arms.read_text()))
+    if got != expect:
+        sys.exit(f"[main] chunk{k}: rid set != POSITION_ORDER slice "
+                 f"(dir={len(got)} expected={len(expect)} "
+                 f"missing={len(expect - got)} extra={len(got - expect)})")
+    legs = sorted(d.glob("positions_*_leg*.jsonl"))
+    if not legs:
+        sys.exit(f"[main] chunk{k}: no leg files in {d}")
+    print(f"[main] chunk{k}: {len(got)} rids match POSITION_ORDER, {len(legs)} leg file(s)")
+print(f"[main] POSITION_ORDER.json verified (seed {doc['seed']}, n={doc['n']}, sizes={sizes})")
+PYEOF
 
 echo "[main] ---- process census ----"
 ps -o pid,etime,%cpu,comm -C python --sort=-etime 2>/dev/null | head -5 || echo "[main] no python"
