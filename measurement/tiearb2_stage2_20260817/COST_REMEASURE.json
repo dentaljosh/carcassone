@@ -1,0 +1,234 @@
+{
+  "artifact": "COST_REMEASURE",
+  "design": "measurement/tiearb2_stage2_20260817/PHASE_A.md#4",
+  "generated_utc": "2026-08-17T14:52:20Z",
+  "gate": {
+    "G-BITEXACT": "PASS",
+    "artifact": "measurement/tiearb2_stage2_20260817/BITEXACT.json",
+    "note": "no cost number is quoted unless G-BITEXACT passed; it did, 15360/15360 value-bit-identical."
+  },
+  "currency": "worker-seconds per playout = sum(per-record wall inside a worker) / (n_records * 2 * m) -- analyze_tiearb2.cost_block::c_from_elapsed_secs",
+  "legal_mask_cache": true,
+  "sample": {
+    "source": "the committed G-BITEXACT sample (seed 20260817, 15 per chunk x leg)",
+    "n_records": 240
+  },
+  "constants_carried": {
+    "mean_arms_A_bar": 3.0022,
+    "t_champ": 13.7552,
+    "t_phone": 1.551,
+    "rho_bar": 1.2,
+    "amortize_22.96_over_72": 0.3188888888888889,
+    "c_python_pilot": 2.7274,
+    "c_python_realized": 2.2004
+  },
+  "conditions": {
+    "w1": {
+      "workers": 1,
+      "n_records": 240,
+      "m": 32,
+      "n_playouts": 15360,
+      "sum_elapsed_secs": 1440.2958811940625,
+      "c_worker_s_per_playout": 0.09376926309857178,
+      "wall_secs": 1440.2988743782043,
+      "wall_times_workers": 1440.2988743782043,
+      "c_from_wall_times_workers": 0.09376945796733101,
+      "per_record_wall": {
+        "mean": 6.001232838308594,
+        "p50": 6.334273551998194,
+        "p90": 8.600723870040383,
+        "min": 0.005945891025476158,
+        "max": 16.89045723498566
+      }
+    },
+    "w_hi": {
+      "workers": 30,
+      "n_records": 240,
+      "m": 32,
+      "n_playouts": 15360,
+      "sum_elapsed_secs": 2737.6484889441635,
+      "c_worker_s_per_playout": 0.17823232349896898,
+      "wall_secs": 99.0383288860321,
+      "wall_times_workers": 2971.149866580963,
+      "c_from_wall_times_workers": 0.19343423610553145,
+      "per_record_wall": {
+        "mean": 11.406868703934014,
+        "p50": 11.913578394043725,
+        "p90": 16.288013899989892,
+        "min": 0.009898421005345881,
+        "max": 32.59306632098742
+      }
+    }
+  },
+  "cache_off_sensitivity": {
+    "workers": 30,
+    "n_records": 240,
+    "m": 32,
+    "n_playouts": 15360,
+    "sum_elapsed_secs": 2747.2507667791797,
+    "c_worker_s_per_playout": 0.1788574717955195,
+    "wall_secs": 99.559086561203,
+    "wall_times_workers": 2986.77259683609,
+    "c_from_wall_times_workers": 0.19445134093984962,
+    "per_record_wall": {
+      "mean": 11.446878194913248,
+      "p50": 11.974597021995578,
+      "p90": 16.372745833999943,
+      "min": 0.010722826002165675,
+      "max": 32.68215872900328
+    }
+  },
+  "c_tier1_rust_w1": 0.09376926309857178,
+  "c_tier1_rust_w30": 0.17823232349896898,
+  "speedup_vs_python": {
+    "w30_vs_pilot_2.7274": 15.302499268690603,
+    "w30_vs_realized_2.2004": 12.345684311368633,
+    "w1_vs_pilot_2.7274": 29.086290217860753,
+    "w1_vs_realized_2.2004": 23.46611167976124
+  },
+  "ladder_primary_w30": {
+    "rungs": {
+      "1": {
+        "rho_wall": 0.038900857974337316,
+        "rho_amortized": 0.0124050513762609,
+        "rho_phone": 0.3449961841448128,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.0094,
+          "z": 0.2,
+          "F": 0.052,
+          "F_fixed": 0.034
+        }
+      },
+      "2": {
+        "rho_wall": 0.07780171594867463,
+        "rho_amortized": 0.0248101027525218,
+        "rho_phone": 0.6899923682896256,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.0322,
+          "z": 0.65,
+          "F": 0.179,
+          "F_fixed": 0.115
+        }
+      },
+      "4": {
+        "rho_wall": 0.15560343189734926,
+        "rho_amortized": 0.0496202055050436,
+        "rho_phone": 1.3799847365792512,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.092,
+          "z": 1.93,
+          "F": 0.511,
+          "F_fixed": 0.328
+        }
+      },
+      "8": {
+        "rho_wall": 0.31120686379469853,
+        "rho_amortized": 0.0992404110100872,
+        "rho_phone": 2.7599694731585025,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.0826,
+          "z": 1.76,
+          "F": 0.459,
+          "F_fixed": 0.295
+        }
+      },
+      "16": {
+        "rho_wall": 0.6224137275893971,
+        "rho_amortized": 0.1984808220201744,
+        "rho_phone": 5.519938946317005,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.1441,
+          "z": 3.01,
+          "F": 0.8,
+          "F_fixed": 0.514
+        }
+      }
+    },
+    "B_affordable": 16
+  },
+  "ladder_sensitivity_w1": {
+    "rungs": {
+      "1": {
+        "rho_wall": 0.02046601152106347,
+        "rho_amortized": 0.006526383673939129,
+        "rho_phone": 0.18150488824921485,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.0094,
+          "z": 0.2,
+          "F": 0.052,
+          "F_fixed": 0.034
+        }
+      },
+      "2": {
+        "rho_wall": 0.04093202304212694,
+        "rho_amortized": 0.013052767347878257,
+        "rho_phone": 0.3630097764984297,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.0322,
+          "z": 0.65,
+          "F": 0.179,
+          "F_fixed": 0.115
+        }
+      },
+      "4": {
+        "rho_wall": 0.08186404608425388,
+        "rho_amortized": 0.026105534695756515,
+        "rho_phone": 0.7260195529968594,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.092,
+          "z": 1.93,
+          "F": 0.511,
+          "F_fixed": 0.328
+        }
+      },
+      "8": {
+        "rho_wall": 0.16372809216850776,
+        "rho_amortized": 0.05221106939151303,
+        "rho_phone": 1.4520391059937188,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.0826,
+          "z": 1.76,
+          "F": 0.459,
+          "F_fixed": 0.295
+        }
+      },
+      "16": {
+        "rho_wall": 0.3274561843370155,
+        "rho_amortized": 0.10442213878302606,
+        "rho_phone": 2.9040782119874375,
+        "affordable_wall_le_1.20": true,
+        "carried_capture": {
+          "arb": 0.1441,
+          "z": 3.01,
+          "F": 0.8,
+          "F_fixed": 0.514
+        }
+      }
+    },
+    "B_affordable": 16
+  },
+  "capture_column_note": "arb / z / F / F_fixed are Stage 1b's PUBLISHED, already-adjudicated values, carried verbatim. Phase A recomputes NO strength statistic; the Stage-1b read-rule is SPENT and its corpus BURNED.",
+  "census_before": {
+    "utc": "2026-08-17T14:24:58Z",
+    "python_procs": "PID     ELAPSED %CPU COMMAND\n1317184       00:00 60.0 python",
+    "loadavg": "0.01 0.20 1.32 1/899 1317190",
+    "n_python_procs": 1
+  },
+  "census_after": {
+    "utc": "2026-08-17T14:52:20Z",
+    "python_procs": "PID     ELAPSED %CPU COMMAND\n1317184       27:21 87.7 python",
+    "loadavg": "24.28 13.77 6.22 1/932 1322507",
+    "n_python_procs": 1
+  },
+  "carc_rs_version": "0.1.0",
+  "git_rev": "05ed019c678b8fda8ffeeb0692ac3fb9bf643193"
+}
