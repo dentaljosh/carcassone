@@ -378,13 +378,91 @@ def build_manifest(*, jar: Path, tiles: Path, ai_class: str, ai_config: dict,
 
 
 # --------------------------------------------------------------------------- #
+# the tie arbiter (OUR side)                                                    #
+# --------------------------------------------------------------------------- #
+def _resolve_tiearb(args) -> dict | None:
+    """The ``--champ-tiearb-*`` flags -> the dict ``make_production_champion`` takes,
+    or ``None`` when the arbiter was not armed.
+
+    ⚠️ ``None``, not a dict with ``enabled=False``, on the unarmed leg — deliberately
+    UNLIKE ``eval_fair_puct``, whose READ_RULE `G-J4` demands an explicit off-record in
+    every summary.json. This harness's archive is a per-GAME jsonl with a frozen schema
+    (measurement/jcz_match_20260809/confirm.jsonl), so an unarmed run must produce a
+    record byte-identical to the pre-arbiter one — CELL A of the two-cell design is the
+    plain champion, and it is only a control if nothing about it moved.
+    """
+    if not bool(getattr(args, "champ_tiearb_enabled", False)):
+        return None
+    return {"enabled": True,
+            "B": int(args.champ_tiearb_b), "J": int(args.champ_tiearb_j),
+            "mode": str(args.champ_tiearb_mode), "salt": str(args.champ_tiearb_salt),
+            "eps": float(args.champ_tiearb_eps)}
+
+
+def _champ_tiearb_telemetry(champ, tiearb) -> dict | None:
+    """TIE-ARBITER per-game liveness read (OUR side). ``None`` unless this game was
+    armed with an ENABLED ``tiearb``; an armed game whose champion is NOT a
+    ``RustFairAgent`` is a wiring bug and RAISES rather than stamping ``None`` (the
+    arbiter is rust-only, and a silent ``None`` would grade a champion-vs-champion
+    null wearing the shape of a real cell — the J13 lesson).
+
+    Field-for-field the same read as ``eval_fair_puct._cand_tiearb_telemetry``, so the
+    two harnesses' cells are comparable without a translation table. ``fired_plies`` is
+    the numerator of READ_RULE §2's ``phi``; ``pickchanges`` is the §4.3 companion;
+    ``secs`` is the arbiter's own share of our clock, reported so the ms/move in this
+    record can be ATTRIBUTED rather than inferred.
+    """
+    if not tiearb or not bool(tiearb.get("enabled")):
+        return None
+    rs = getattr(champ, "_rs", None)
+    if rs is None:
+        raise RuntimeError(
+            "champ_tiearb is armed but the champion has no FairAgentRs (the tie "
+            "arbiter is rust-only) — it cannot have run")
+    s = rs.stats()
+    if not bool(s.get("tiearb_enabled")):
+        raise RuntimeError(
+            "champ_tiearb is armed but FairAgentRs.stats() reports "
+            "tiearb_enabled=False — the knob was dropped between main() and the "
+            "rust config (a STALE carc_rs wheel is the usual cause)")
+    return {
+        "tile_plies": int(s["tiearb_tile_plies"]),
+        # `fires` and `fired_plies` are THE SAME NUMBER under two names, on purpose:
+        # the adjudicator's `G-FIRE` reads `fires` fail-closed (an absent witness is a
+        # FAIL) while `fired_plies` is what the summary blocks aggregate. Emitting one
+        # and not the other would void a perfectly good cell on a key spelling.
+        "fires": int(s["tiearb_fired_plies"]),
+        "fired_plies": int(s["tiearb_fired_plies"]),
+        "pickchanges": int(s["tiearb_pickchanges"]),
+        "arms_total": int(s["tiearb_arms_total"]),
+        "playouts_total": int(s["tiearb_playouts_total"]),
+        "secs": float(s["tiearb_secs"]),
+        # FAIL-SOFT counter: a tier1 continuation can hit the engine's window refusal
+        # or the ply ceiling deep in a determinized world, which falls back to the
+        # champion's own pick rather than killing the GAME. Nonzero is REPORTABLE, not
+        # fatal, and it must never be invisible.
+        "errors": int(s.get("tiearb_errors") or 0),
+        "first_error": s.get("tiearb_first_error"),
+        # READ_RULE §0.F `G-PLY`: plies that took an argmax over FEWER than B completed
+        # worlds. 0 by construction (a playout failure aborts the WHOLE ply, because a
+        # partial world set breaks the CRN pairing across arms).
+        # ⚠️ Non-zero OR ABSENT => U-UNREADABLE (absent is unknown-not-zero).
+        "partial_argmax": int(s.get("tiearb_partial_argmax") or 0),
+        "max_plies": int(s.get("tiearb_max_plies") or 0),
+        "mode": str(s["tiearb_mode"]),
+        "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # one match                                                                    #
 # --------------------------------------------------------------------------- #
 def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
                    sims=None, k_dets=None, jar=None, tiles=None, ai_classes=None,
                    ai_class: str = "com.jcloisterzone.ai.AiEngine",
                    ai_config: dict | None = None, execution=None,
-                   verify_replay: bool = True, max_plies: int = 400) -> dict:
+                   verify_replay: bool = True, max_plies: int = 400,
+                   tiearb: dict | None = None) -> dict:
     """Play ONE champion-vs-JCZ-AI game. Returns the archive record.
 
     Lockstep, per ply: compare the legal sets, act on whichever side owns the move,
@@ -431,8 +509,11 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
     if execution is None:
         from carcassonne_ai.mirror_protocol import resolve_execution
         execution = resolve_execution("rust", rust_threads=1)
+    # `tiearb=None` (CELL A, and every pre-arbiter run) passes no arbiter keyword
+    # through the factory at all, so the champion — and its manifest, hashes included
+    # — is byte-identical to before this plumbing existed.
     champ = make_production_champion("fair", game=game, seed=seed, sims=sims,
-                                     k_dets=k_dets, verify=True,
+                                     k_dets=k_dets, verify=True, tiearb=tiearb,
                                      **execution.factory_kwargs())
     agents = {champ_seat: champ}
     MP.seat(agents, board)                       # mirror: seated once, on the INITIAL board
@@ -796,6 +877,13 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
         "moves": move_log,
         "finished_at": time.time(),
     }
+    # THE TIE ARBITER's per-game liveness witness — added ONLY on an armed game, so an
+    # unarmed record carries no `champ_tiearb` key at all and the frozen archive schema
+    # (measurement/jcz_match_20260809/confirm.jsonl) still parses unchanged. A `null`
+    # here would be a schema change AND an ambiguity (absent vs. off vs. never-ran).
+    _ta = _champ_tiearb_telemetry(champ, tiearb)
+    if _ta is not None:
+        rec["champ_tiearb"] = _ta
     if verify_replay:
         # THE REPLAY GATE, run on every game: the archived ints must reproduce this
         # exact game through our engine alone.
@@ -830,7 +918,7 @@ _W: dict = {}
 
 
 def _worker_init(rust_threads: int, sims, k_dets, jar, tiles, ai_classes, ai_class,
-                 ai_config) -> None:
+                 ai_config, tiearb=None) -> None:
     """Spawn-worker bootstrap: env FIRST, then the production leaf, then the engine."""
     export_profile_env(PROFILE)
     for p in (str(HUMAN_ANCHOR), str(JCZ_ORACLE), str(HERE)):
@@ -844,8 +932,27 @@ def _worker_init(rust_threads: int, sims, k_dets, jar, tiles, ai_classes, ai_cla
     ex = resolve_execution("rust", rust_threads=rust_threads)
     if not ex.is_rust:
         raise RuntimeError(f"backend did not resolve to rust: {ex.describe()}")
+    if tiearb and tiearb.get("enabled"):
+        # FAIL FAST, once per worker, BEFORE game 1 — not 20 minutes into it. The
+        # parent cannot do this probe: it must not import carcassonne_ai (the R9 env
+        # latches into a Rust OnceLock at engine import, which is the whole reason this
+        # bootstrap exists), so the earliest honest place is here. A carc_rs wheel
+        # predating the arbiter raises TypeError on the keyword and kills the pool,
+        # rather than serving a silently arbiter-free champion — which would read as
+        # "terminal grounding at ties is worth nothing against JCZ" instead of "it
+        # never ran" (the J13 failure mode).
+        from carcassonne_ai.champion_factory import production_prior_cfg
+        from carcassonne_ai.rust_agent import search_config_rs
+
+        resolved = dict(search_config_rs(production_prior_cfg(tiearb=tiearb), 8).tiearb)
+        if resolved != dict(tiearb):
+            raise RuntimeError(
+                f"the resolved rust tiearb knob {resolved} does not match the "
+                f"requested {dict(tiearb)} — refusing to play (a mismatch here is "
+                "exactly what READ_RULE G-J4 exists to catch)")
     _W.update(execution=ex, sims=sims, k_dets=k_dets, jar=jar, tiles=tiles,
-              ai_classes=ai_classes, ai_class=ai_class, ai_config=ai_config)
+              ai_classes=ai_classes, ai_class=ai_class, ai_config=ai_config,
+              tiearb=tiearb)
 
 
 def _play_cell(cell: tuple) -> dict:
@@ -855,7 +962,7 @@ def _play_cell(cell: tuple) -> dict:
                               sims=_W["sims"], k_dets=_W["k_dets"], jar=_W["jar"],
                               tiles=_W["tiles"], ai_classes=_W["ai_classes"],
                               ai_class=_W["ai_class"], ai_config=_W["ai_config"],
-                              execution=_W["execution"])
+                              execution=_W["execution"], tiearb=_W.get("tiearb"))
     except Exception as e:                     # noqa: BLE001 — a cell never kills the fleet
         return {"schema": SCHEMA, "deck_seed": int(deck_seed),
                 "champ_seat": int(champ_seat), "replicate": int(replicate),
@@ -986,6 +1093,41 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--limit", type=int, default=0, help="stop after N cells")
+    # --- THE TIE ARBITER, on OUR side (measurement/tiearb2_stage2_20260817) -----
+    # Named `--champ-tiearb-*` because in THIS harness our side is the "champ"; the
+    # knobs and their defaults are otherwise eval_fair_puct's `--cand-tiearb-*`
+    # verbatim, so the two-cell design here is the same surface graded out of
+    # lineage: CELL A = plain champion vs JCZ, CELL B = champion+arbiter vs JCZ.
+    ap.add_argument("--champ-tiearb-enabled", action="store_true",
+                    help="OUR side only, RUST-ONLY: re-decide an exactly-tied TILE "
+                         "ply with terminal-grounded `tier1-greedy` playouts. The "
+                         "trigger is the CORPUS predicate: TILES phase, own seat, "
+                         "n_legal>=2, and >=2 legal tile actions sharing the top "
+                         "OUTER CHAIN value at EXACT f64 equality. ⚠️ The leaf hash "
+                         "does NOT move, so the wiring gates are the record's "
+                         "manifest.champion_manifest.cand_tiearb dict (G-J4) and the "
+                         "per-game champ_tiearb firing telemetry (G-FIRE).")
+    ap.add_argument("--champ-tiearb-b", type=int, default=16,
+                    help="B: CRN determinizations per fired ply, SHARED by every arm "
+                         "(16 = the funded rung). READ_RULE G-J4 voids at B != 16.")
+    ap.add_argument("--champ-tiearb-j", type=int, default=4,
+                    help="J: the cap on the afterstate-deduped tie set, applied by a "
+                         "SEEDED DRAW (never index truncation); the champion's own "
+                         "pooled_q_argmax pick is appended when the cap excluded it. "
+                         "READ_RULE G-J4 voids at J != 4.")
+    ap.add_argument("--champ-tiearb-mode", choices=("argmax", "random"),
+                    default="argmax",
+                    help="argmax = the ARB cell (take the world-mean argmax). "
+                         "random = the RND cell: run the IDENTICAL playouts, DISCARD "
+                         "the values, and return a seeded draw over the same arm set "
+                         "— the matched-wall-clock control.")
+    ap.add_argument("--champ-tiearb-salt", type=str, default="tiearb2-deploy-v1",
+                    help="World/selection seed salt. The salt of record is "
+                         "'tiearb2-deploy-v1'; a different salt is a different "
+                         "experiment.")
+    ap.add_argument("--champ-tiearb-eps", type=float, default=0.0,
+                    help="Tie membership tolerance on the outer chain value. 0.0 is "
+                         "the COMMITTED setting — exact f64 equality, NOT a tolerance.")
     args = ap.parse_args(argv)
 
     # The AI build is launched as `java -cp <Engine.jar>:<ai_classes> <ai_class>` —
@@ -1012,10 +1154,18 @@ def main(argv=None) -> int:
     if args.limit:
         cells = cells[: args.limit]
 
+    tiearb = _resolve_tiearb(args)
+
     env = export_profile_env(PROFILE)           # inherited by every spawn worker
     print(f"[jcz-match] profile={PROFILE} {env} decks={len(seeds)} "
           f"seats={champ_seats} repeats={args.repeats} workers={args.workers} "
           f"done={len(done)} todo={len(cells)}", flush=True)
+    if tiearb is not None:
+        # The rust-wheel probe runs in each worker's `_worker_init` (the parent must
+        # not import carcassonne_ai — the R9 env latches at engine import).
+        print(f"[jcz-match] TIE ARBITER LIVE on OUR side: {tiearb} (leaf hash does "
+              "NOT move; gates = the record's manifest cand_tiearb + the per-game "
+              "champ_tiearb firing telemetry)", flush=True)
     if not cells:
         print("[jcz-match] nothing to do — exiting 0", flush=True)
         return 0
@@ -1029,7 +1179,7 @@ def main(argv=None) -> int:
                       initializer=_worker_init,
                       initargs=(args.rust_threads, args.sims, args.k_dets, args.jar,
                                 args.tiles, ai_classes, args.ai_class,
-                                json.loads(args.ai_config))) as pool:
+                                json.loads(args.ai_config), tiearb)) as pool:
             for rec in pool.imap_unordered(_play_cell, cells):
                 fh.write(json.dumps(rec) + "\n")
                 fh.flush()
