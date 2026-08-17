@@ -256,6 +256,21 @@ pub struct MoveInfo {
     pub jf_fires: [bool; 4],
     /// Surface C, per filter: the never-empty guard blocked a real bite here.
     pub jf_yields: [bool; 4],
+    /// TIE ARBITER: the trigger fired at this decision (all-false / empty when
+    /// `tiearb_enabled` is off — the knob-off path never even looks).
+    pub tiearb_fired: bool,
+    /// The arm set actually arbitrated (`arms[0]` = the leaf tie-break of
+    /// record; the champion's own pick appended if the cap excluded it).
+    pub tiearb_arms: Vec<i32>,
+    /// The champion's own `pooled_q_argmax` pick at this decision — what the
+    /// arbiter overrode, or agreed with.
+    pub tiearb_champ_pick: i32,
+    /// The returned action differs from `tiearb_champ_pick`.
+    pub tiearb_pickchange: bool,
+    /// `arms x B` playouts spent here.
+    pub tiearb_playouts: usize,
+    /// Wall-clock the arbiter added to this decision.
+    pub tiearb_secs: f64,
 }
 
 /// `FairHeuristicPriorAgent`.
@@ -288,6 +303,29 @@ pub struct FairAgent {
     /// Surface C: PIMC decisions on which the filter was APPLICABLE (meeple
     /// phase, >1 legal, mask nonzero) — the yield/fire rates' denominator.
     pub jf_applicable_moves: u64,
+    /// The arbiter's leaf scratch — reused across decisions so the detector is
+    /// allocation-lean (`Sum_a (1 + n_meeple(a))` leaf calls per tile ply).
+    /// Untouched, and never even read, when the knob is off.
+    tiearb_scratch: crate::leaf::LeafScratch,
+    // --- TIE ARBITER (tiearb2 Stage 2 Phase B) cumulative counters. All zero
+    // whenever `cfg.search.tiearb_enabled` is false (the champion). These are
+    // the READ_RULE §2 `phi` numerator/denominator and the §4.3 pick-change
+    // witness; nothing else on this surface can prove the knob live.
+    /// PIMC TILE decisions with >= 2 legal actions — the plies at which the
+    /// trigger was even evaluated (`phi`'s cheap denominator).
+    pub tiearb_tile_plies: u64,
+    /// Decisions where the trigger FIRED and the arbiter ran (`phi`'s
+    /// numerator; `G-FIRE` voids the cell below 1.0 per game).
+    pub tiearb_fired_plies: u64,
+    /// Fired decisions where the returned action differs from the champion's
+    /// own `pooled_q_argmax` pick.
+    pub tiearb_pickchanges: u64,
+    /// Total arms arbitrated (the runtime analogue of the corpus `Ā` = 3.0022).
+    pub tiearb_arms_total: u64,
+    /// Total `tier1-greedy` playouts spent by the arbiter.
+    pub tiearb_playouts_total: u64,
+    /// Total wall-clock the arbiter added (the in-cell half of `ms_ratio`).
+    pub tiearb_secs: f64,
 }
 
 impl FairAgent {
@@ -310,6 +348,13 @@ impl FairAgent {
             jf_yields: [0; 4],
             jf_dropped_total: 0,
             jf_applicable_moves: 0,
+            tiearb_scratch: crate::leaf::LeafScratch::new(),
+            tiearb_tile_plies: 0,
+            tiearb_fired_plies: 0,
+            tiearb_pickchanges: 0,
+            tiearb_arms_total: 0,
+            tiearb_playouts_total: 0,
+            tiearb_secs: 0.0,
         }
     }
 
@@ -504,7 +549,70 @@ impl FairAgent {
             .iter()
             .map(|&a| (a, pool.n[&a], pool.w[&a]))
             .collect();
-        Ok(pooled_q_argmax(&pool, self.cfg.min_pooled_visits).expect("pool is non-empty"))
+        let champ_pick =
+            pooled_q_argmax(&pool, self.cfg.min_pooled_visits).expect("pool is non-empty");
+
+        // TIE ARBITRATION (tiearb2 Stage 2 Phase B) — the root hook, placed
+        // AFTER `pooled_q_argmax` because the champion's own pick is an INPUT
+        // (it is appended to the arm set when the cap excluded it, and it is
+        // the pick-change baseline). `tiearb_enabled == false` (the default,
+        // the champion) returns here without touching `crate::tiearb` at all,
+        // so the default path is byte-identical, not merely equal — the
+        // surface-C `root_allow` invariant.
+        if !self.cfg.search.tiearb_enabled {
+            return Ok(champ_pick);
+        }
+        self.tiearb_arbitrate(g, move_idx, info, champ_pick)
+    }
+
+    /// The arbitration half of [`Self::pimc_move`], split out so the knob-off
+    /// path above is a single branch. Reached ONLY when the knob is on.
+    fn tiearb_arbitrate(
+        &mut self,
+        g: &Game,
+        move_idx: i64,
+        info: &mut MoveInfo,
+        champ_pick: i32,
+    ) -> Result<i32, FairError> {
+        info.tiearb_champ_pick = champ_pick;
+        if g.state.phase == Phase::Tiles {
+            self.tiearb_tile_plies += 1;
+        }
+        let t0 = std::time::Instant::now();
+        let s = &self.cfg.search;
+        let outcome = crate::tiearb::arbitrate_decision(
+            g,
+            champ_pick,
+            &s.leaf,
+            s.tiearb_b,
+            s.tiearb_j,
+            &s.tiearb_salt,
+            s.tiearb_eps,
+            move_idx,
+            s.tiearb_mode,
+            &mut self.tiearb_scratch,
+        )
+        .map_err(FairError::Engine)?;
+        let dt = t0.elapsed().as_secs_f64();
+        self.tiearb_secs += dt;
+        info.tiearb_secs = dt;
+        match outcome {
+            None => Ok(champ_pick),
+            Some((arms, out)) => {
+                self.tiearb_fired_plies += 1;
+                self.tiearb_arms_total += arms.arms.len() as u64;
+                self.tiearb_playouts_total += out.n_playouts as u64;
+                let changed = out.chosen != champ_pick;
+                if changed {
+                    self.tiearb_pickchanges += 1;
+                }
+                info.tiearb_fired = true;
+                info.tiearb_arms = arms.arms;
+                info.tiearb_pickchange = changed;
+                info.tiearb_playouts = out.n_playouts;
+                Ok(out.chosen)
+            }
+        }
     }
 }
 
@@ -799,6 +907,102 @@ mod tests {
             }
         }
         assert!(found, "no meeple root where JF_CURRENT bites was found");
+    }
+
+    /// TIE ARBITER dose-0 analogue: `tiearb_enabled = false` with every OTHER
+    /// tiearb knob deliberately moved must be BYTE-identical to the plain
+    /// default agent — the OFF path may not even read the knobs.
+    #[test]
+    fn tiearb_disabled_with_moved_knobs_is_bit_identical() {
+        let g = midgame("28000000000", 40);
+        let mut base = FairAgent::new(cfg(4, 48, 2));
+        let mut c = cfg(4, 48, 2);
+        c.search.tiearb_enabled = false;
+        c.search.tiearb_b = 3; // deliberately moved
+        c.search.tiearb_j = 7;
+        c.search.tiearb_mode = crate::tiearb::TiearbMode::Random;
+        c.search.tiearb_salt = String::from("not-the-salt-of-record");
+        c.search.tiearb_eps = 9.5;
+        let mut moved = FairAgent::new(c);
+        let a1 = base.choose_action(&g, Some(5)).unwrap();
+        let a2 = moved.choose_action(&g, Some(5)).unwrap();
+        assert_eq!(a1, a2);
+        assert_eq!(base.last_move.pooled.len(), moved.last_move.pooled.len());
+        for (x, y) in base.last_move.pooled.iter().zip(moved.last_move.pooled.iter()) {
+            assert_eq!(
+                (x.0, x.1.to_bits(), x.2.to_bits()),
+                (y.0, y.1.to_bits(), y.2.to_bits()),
+                "a disabled tiearb knob changed a pooled float"
+            );
+        }
+        assert_eq!(moved.tiearb_fired_plies, 0);
+        assert_eq!(moved.tiearb_tile_plies, 0);
+        assert_eq!(moved.tiearb_playouts_total, 0);
+        assert_eq!(moved.tiearb_secs, 0.0);
+        assert!(!moved.last_move.tiearb_fired);
+    }
+
+    /// The arbiter is LIVE at the agent root: on a game where the trigger
+    /// fires, the counters move, the arms are a real set, and the returned
+    /// action is one of them. (Whether it CHANGES the pick is the J13
+    /// positive control's job — it needs a hunt across plies.)
+    #[test]
+    fn tiearb_enabled_fires_and_returns_an_arm() {
+        let mut c = cfg(2, 16, 1);
+        c.search.tiearb_enabled = true;
+        c.search.tiearb_b = 2; // cheap: this is a wiring test, not the cell
+        c.exact_endgame = false;
+        let mut a = FairAgent::new(c);
+        let mut g = Game::from_seed("28000000000");
+        let mut fired = 0u64;
+        for _ in 0..40 {
+            if g.is_terminal() {
+                break;
+            }
+            let act = a.choose_action(&g, None).unwrap();
+            if a.last_move.tiearb_fired {
+                fired += 1;
+                assert!(a.last_move.tiearb_arms.len() >= 2);
+                assert!(
+                    a.last_move.tiearb_arms.contains(&act),
+                    "the returned action is not in the arm set"
+                );
+                assert_eq!(
+                    a.last_move.tiearb_pickchange,
+                    act != a.last_move.tiearb_champ_pick
+                );
+                assert!(a.last_move.tiearb_playouts >= 2 * 2);
+            }
+            g.advance(act).unwrap();
+        }
+        assert!(fired > 0, "the trigger never fired in 40 plies");
+        assert_eq!(a.tiearb_fired_plies, fired);
+        assert!(a.tiearb_tile_plies >= fired);
+        assert!(a.tiearb_arms_total >= 2 * fired);
+        assert!(a.tiearb_secs > 0.0);
+    }
+
+    /// `random` mode must spend the SAME playouts as `argmax` on the same
+    /// decisions — the matched-wall-clock control's whole basis.
+    #[test]
+    fn tiearb_random_mode_spends_the_same_playouts() {
+        let mk = |mode| {
+            let mut c = cfg(2, 16, 1);
+            c.search.tiearb_enabled = true;
+            c.search.tiearb_b = 2;
+            c.search.tiearb_mode = mode;
+            c.exact_endgame = false;
+            FairAgent::new(c)
+        };
+        let mut arb = mk(crate::tiearb::TiearbMode::Argmax);
+        let mut rnd = mk(crate::tiearb::TiearbMode::Random);
+        let g = midgame("28000000000", 40);
+        let _ = arb.choose_action(&g, Some(11)).unwrap();
+        let _ = rnd.choose_action(&g, Some(11)).unwrap();
+        assert!(arb.last_move.tiearb_fired || !rnd.last_move.tiearb_fired);
+        assert_eq!(arb.last_move.tiearb_fired, rnd.last_move.tiearb_fired);
+        assert_eq!(arb.last_move.tiearb_arms, rnd.last_move.tiearb_arms);
+        assert_eq!(arb.tiearb_playouts_total, rnd.tiearb_playouts_total);
     }
 
     #[test]

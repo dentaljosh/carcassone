@@ -1343,6 +1343,53 @@ def test_the_config_validates_its_knobs_even_when_disabled():
             dc.replace(HeuristicPriorConfig(), **bad)
 
 
+@requires_rs
+def test_the_arms_are_deduped_by_successor_board_and_capped_at_J(_env):
+    """The corpus arm construction, in order: dedupe by SUCCESSOR BOARD first,
+    then cap at `J` by a seeded draw. So an all-transposition tie can never
+    present 8 "different" arms that are one board — the `tiletie_pricing`
+    threat-3 finding, where 2 of 5 scored E4 positions had
+    `distinct_afterstates == 0` and a zero delta meant the harness did nothing
+    rather than that the leaf was blind."""
+    _Game, _fl, _cfg, rcfg = _env
+    ms = carc_rs.MirrorState.from_seed("28000000000")
+    saw_dedupe, saw_cap = False, False
+    for ply in range(120):
+        if ms.is_terminal():
+            break
+        p = ms.tiearb_probe(rcfg, -1, 4, 0.0, SALT, ply)
+        if p.get("fired"):
+            tie, arms = p["tie_actions"], p["arms"]
+            assert len(arms) <= 4, "J = 4 with no champion pick to append"
+            assert arms[0] == min(tie), "arm[0] is the leaf tie-break of record"
+            assert set(arms) <= set(tie)
+            assert p["n_distinct_afterstates"] <= len(tie)
+            saw_dedupe |= p["n_distinct_afterstates"] < len(tie)
+            saw_cap |= bool(p["capped"])
+        ms.advance(ms.legal_actions()[len(ms.legal_actions()) // 2])
+    assert saw_dedupe, "no transposing tie set was seen — the dedupe is untested"
+    assert saw_cap, "the J cap never bit — the seeded draw is untested"
+
+
+@requires_rs
+def test_the_two_sided_liveness_assert_passes_on_this_box():
+    """`G-J13` in CI. A cheap `B` so the suite stays fast; the per-box pre-flight
+    (`measurement/tiearb2_stage2_20260817/preflight_tiearb.py`) runs the SAME
+    assert at the funded `B = 16` before game 1, and the driver refuses to play
+    if it fails."""
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "scripts", "classical_search"))
+    from tiearb_live import _assert_surface_tiearb_live
+
+    w = _assert_surface_tiearb_live(b=4, j=4, sims=48, k_dets=2, max_fired=8)
+    assert w["positive_side"]["arbiter_pick"] != w["positive_side"]["champ_pick"]
+    assert w["negative_side"]["root_leaf_value_bits"] > 0
+    assert w["resolved_on"]["enabled"] is True and w["resolved_off"]["enabled"] is False
+
+
 # =========================================================================== #
 # I. A THIRD, INDEPENDENT TRANSCRIPTION of READ_RULE §3-§4 -- authored by the
 # instrument-build session, kept because two independent transcriptions that

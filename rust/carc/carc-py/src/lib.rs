@@ -591,6 +591,82 @@ impl PyMirrorState {
         jf_probe_dict(py, &self.game, mask, min_keep)
     }
 
+    // --- TIE ARBITER (tiearb2 Stage 2 Phase B): the detector probe ---------
+
+    /// The runtime OUTER-CHAIN tie predicate + arm set on THIS state, WITHOUT
+    /// running any playout — the cheap half of the surface, exposed so a
+    /// pre-flight / census can read the trigger off a position without paying
+    /// `arms x B` `tier1-greedy` continuations.
+    ///
+    /// The definition of record is `scripts/tiletie/chain_census.py:168,216`
+    /// (`chain_values` / `tie_report`) plus `build_positions.build_tie_arms`;
+    /// this is `carc_core::tiearb`'s port of it. Pure: the mirror is untouched
+    /// and no RNG stream of the agent is consumed.
+    ///
+    /// `champ_pick < 0` means "no champion pick to append" (a census read); a
+    /// non-negative value is appended to the arms exactly as the deployed
+    /// arbiter appends the `pooled_q_argmax` pick the cap excluded.
+    #[pyo3(signature = (cfg, champ_pick=-1, j=4, eps=0.0,
+                        salt=carc_core::tiearb::TIEARB_SALT_OF_RECORD, ply=0))]
+    fn tiearb_probe<'py>(
+        &self,
+        py: Python<'py>,
+        cfg: &PyLeafConfig,
+        champ_pick: i32,
+        j: usize,
+        eps: f64,
+        salt: &str,
+        ply: i64,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        use carc_core::tiearb;
+        let g = &self.game;
+        let seat = g.state.current_player;
+        let d = PyDict::new(py);
+        d.set_item("seat", seat)?;
+        d.set_item("phase_tiles", g.state.phase == carc_core::engine::Phase::Tiles)?;
+        d.set_item("n_legal", g.legal_actions().len())?;
+        d.set_item("state_digest", g.state_digest())?;
+        if g.state.phase != carc_core::engine::Phase::Tiles || g.legal_actions().len() < 2 {
+            d.set_item("fired", false)?;
+            return Ok(d);
+        }
+        let mut scratch = leaf::LeafScratch::new();
+        let vals = tiearb::chain_values(g, seat, &cfg.inner, &mut scratch)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        d.set_item(
+            "chain_values",
+            vals.iter()
+                .map(|c| (c.action, c.value.to_bits(), c.meeple))
+                .collect::<Vec<_>>(),
+        )?;
+        match tiearb::detect_tie(&vals, eps) {
+            None => {
+                d.set_item("fired", false)?;
+            }
+            Some(det) => {
+                d.set_item("tie_actions", det.tie_actions.clone())?;
+                d.set_item("top1_bits", det.top1.to_bits())?;
+                let arms = tiearb::build_arms(
+                    g,
+                    &det.tie_actions,
+                    j,
+                    if champ_pick < 0 { None } else { Some(champ_pick) },
+                    salt,
+                    &g.state_digest(),
+                    ply,
+                )
+                .map_err(pyo3::exceptions::PyValueError::new_err)?;
+                d.set_item("fired", arms.arms.len() >= 2)?;
+                d.set_item("arms", arms.arms.clone())?;
+                d.set_item("n_distinct_afterstates", arms.n_distinct_afterstates)?;
+                d.set_item("all_transposition", arms.all_transposition)?;
+                d.set_item("capped", arms.capped)?;
+                d.set_item("champ_appended", arms.champ_appended)?;
+            }
+        }
+        Ok(d)
+    }
+
     // --- P2: the leaf ----------------------------------------------------
 
     /// `flat_leaf.flat_virtual_score_v2(state, player, cfg)`.
@@ -1379,6 +1455,12 @@ impl PySearchConfig {
         jrules_prior_scope="all",
         jrules_filter_mask=0,
         jrules_filter_min_keep=1,
+        tiearb_enabled=false,
+        tiearb_b=16,
+        tiearb_j=4,
+        tiearb_mode="argmax",
+        tiearb_salt=carc_core::tiearb::TIEARB_SALT_OF_RECORD,
+        tiearb_eps=0.0,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1399,6 +1481,12 @@ impl PySearchConfig {
         jrules_prior_scope: &str,
         jrules_filter_mask: i64,
         jrules_filter_min_keep: usize,
+        tiearb_enabled: bool,
+        tiearb_b: usize,
+        tiearb_j: usize,
+        tiearb_mode: &str,
+        tiearb_salt: &str,
+        tiearb_eps: f64,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -1459,6 +1547,35 @@ impl PySearchConfig {
                 "jrules_filter_min_keep must be >= 1 (1 == the bot's own never-empty rule)",
             ));
         }
+        // TIE ARBITER (tiearb2 Stage 2 Phase B). Validated even when DISABLED so
+        // a typo'd mode or a zeroed B never rides silently — the same rule the
+        // two J-rules surfaces follow. ⚠️ `enabled=false` is the champion and is
+        // byte-identical regardless of what the other five carry.
+        let tmode = carc_core::tiearb::TiearbMode::parse(tiearb_mode)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        if tiearb_b < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "tiearb_b (CRN worlds) must be >= 1; got {tiearb_b}"
+            )));
+        }
+        if tiearb_j < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "tiearb_j (arm cap) must be >= 1; got {tiearb_j}"
+            )));
+        }
+        if !tiearb_eps.is_finite() || tiearb_eps < 0.0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "tiearb_eps must be finite and >= 0 (0.0 == exact f64 equality, the \
+                 committed setting); got {tiearb_eps}"
+            )));
+        }
+        if tiearb_enabled && tiearb_salt.is_empty() {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "tiearb_salt must be non-empty when the arbiter is enabled (the salt \
+                 of record is 'tiearb2-deploy-v1'; a different salt is a different \
+                 experiment)",
+            ));
+        }
         Ok(PySearchConfig {
             inner: search::SearchConfig {
                 c_puct,
@@ -1479,6 +1596,12 @@ impl PySearchConfig {
                 jrules_prior_scope: jr_scope,
                 jrules_filter_mask,
                 jrules_filter_min_keep,
+                tiearb_enabled,
+                tiearb_b,
+                tiearb_j,
+                tiearb_mode: tmode,
+                tiearb_salt: tiearb_salt.to_string(),
+                tiearb_eps,
             },
         })
     }
@@ -1508,6 +1631,25 @@ impl PySearchConfig {
             self.inner.jrules_filter_mask,
             self.inner.jrules_filter_min_keep,
         )
+    }
+
+    /// The RESOLVED tie-arbiter knobs (tiearb2 Stage 2 Phase B) as the exact
+    /// dict `manifest.json::config.cand_tiearb` must carry — READ_RULE `G-J4`
+    /// aborts the whole run if it is absent, unresolved, or wrong for the cell.
+    /// Like the two J-rules surfaces this moves NO leaf hash, so a moved-hash
+    /// gate cannot prove it live; this dict plus the two-sided J13 positive
+    /// control are the wiring gates.
+    #[getter]
+    fn tiearb<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let i = &self.inner;
+        let d = PyDict::new(py);
+        d.set_item("enabled", i.tiearb_enabled)?;
+        d.set_item("B", i.tiearb_b)?;
+        d.set_item("J", i.tiearb_j)?;
+        d.set_item("mode", i.tiearb_mode.value())?;
+        d.set_item("salt", i.tiearb_salt.clone())?;
+        d.set_item("eps", i.tiearb_eps)?;
+        Ok(d)
     }
 
     #[getter]
@@ -1543,6 +1685,22 @@ impl PySearchConfig {
         } else {
             String::new()
         };
+        // Same rule for the tie arbiter: the suffix appears ONLY when it is
+        // enabled, so every champion repr is byte-identical to the pre-Phase-B
+        // string.
+        let ta = if i.tiearb_enabled {
+            format!(
+                ", tiearb_enabled=true, tiearb_b={}, tiearb_j={}, tiearb_mode={}, \
+                 tiearb_salt={}, tiearb_eps={}",
+                i.tiearb_b,
+                i.tiearb_j,
+                i.tiearb_mode.value(),
+                i.tiearb_salt,
+                i.tiearb_eps
+            )
+        } else {
+            String::new()
+        };
         format!(
             "SearchConfigRs(sims={}, c_puct={}, tau_p={}, value_norm={}, \
              leaf_quantize={:?}, final_select={:?}, fpu={:?}, exp_fma={}, tanh={:?}{})",
@@ -1555,7 +1713,7 @@ impl PySearchConfig {
             i.fpu_reduction,
             i.exp_fma,
             i.tanh_flavor,
-            format!("{jr}{jf}")
+            format!("{jr}{jf}{ta}")
         )
     }
 }
@@ -2233,6 +2391,25 @@ impl PyFairAgent {
         d.set_item("jf_applicable_moves", a.jf_applicable_moves)?;
         d.set_item("jrules_filter_mask", a.cfg.search.jrules_filter_mask)?;
         d.set_item("jrules_filter_min_keep", a.cfg.search.jrules_filter_min_keep)?;
+        // TIE ARBITER (tiearb2 Stage 2 Phase B) cumulative counters. Keys are
+        // ALWAYS present (the surface-C convention) so a manifest/summary diff
+        // between the ARB and RND cells is a VALUE diff, never a shape diff.
+        // All-zero whenever `tiearb_enabled` is false — the champion.
+        // ⚠️ `tiearb_fired_plies` is the numerator of READ_RULE §2's `phi`; a
+        // cell whose sum is 0 never fired the surface and MUST NOT be read as
+        // a null (`G-FIRE` voids it below 1.0 per game).
+        d.set_item("tiearb_enabled", a.cfg.search.tiearb_enabled)?;
+        d.set_item("tiearb_b", a.cfg.search.tiearb_b)?;
+        d.set_item("tiearb_j", a.cfg.search.tiearb_j)?;
+        d.set_item("tiearb_mode", a.cfg.search.tiearb_mode.value())?;
+        d.set_item("tiearb_salt", a.cfg.search.tiearb_salt.clone())?;
+        d.set_item("tiearb_eps", a.cfg.search.tiearb_eps)?;
+        d.set_item("tiearb_tile_plies", a.tiearb_tile_plies)?;
+        d.set_item("tiearb_fired_plies", a.tiearb_fired_plies)?;
+        d.set_item("tiearb_pickchanges", a.tiearb_pickchanges)?;
+        d.set_item("tiearb_arms_total", a.tiearb_arms_total)?;
+        d.set_item("tiearb_playouts_total", a.tiearb_playouts_total)?;
+        d.set_item("tiearb_secs", a.tiearb_secs)?;
         d.set_item("k_dets", a.cfg.k_dets)?;
         d.set_item("sims_per_det", a.cfg.search.simulations)?;
         d.set_item("threads", a.cfg.threads)?;
@@ -2267,6 +2444,15 @@ impl PyFairAgent {
         d.set_item("jf_dropped", m.jf_dropped.clone())?;
         d.set_item("jf_fires", m.jf_fires.to_vec())?;
         d.set_item("jf_yields", m.jf_yields.to_vec())?;
+        // TIE ARBITER per-decision record. `tiearb_champ_pick` is the
+        // champion's own `pooled_q_argmax` pick — the pick-change baseline, and
+        // meaningful only on a decision where `tiearb_fired` is true.
+        d.set_item("tiearb_fired", m.tiearb_fired)?;
+        d.set_item("tiearb_arms", m.tiearb_arms.clone())?;
+        d.set_item("tiearb_champ_pick", m.tiearb_champ_pick)?;
+        d.set_item("tiearb_pickchange", m.tiearb_pickchange)?;
+        d.set_item("tiearb_playouts", m.tiearb_playouts)?;
+        d.set_item("tiearb_secs", m.tiearb_secs)?;
         d.set_item(
             "pooled",
             m.pooled

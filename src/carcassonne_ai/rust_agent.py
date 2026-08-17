@@ -247,6 +247,23 @@ def search_config_rs(cfg, sims: int):
             jrules_filter_mask=int(cfg.jrules_filter_mask),
             jrules_filter_min_keep=int(getattr(cfg, "jrules_filter_min_keep", 1)),
         )
+    # TIE ARBITER (tiearb2 Stage 2 Phase B): same conditional-keyword rule. A
+    # carc_rs build predating the arbiter keeps serving every default-off
+    # (champion) config unchanged, while an ENABLED arbiter against the stale
+    # build raises TypeError — fail-closed loud, never a silently arbiter-free
+    # candidate, which would read as "terminal grounding at ties is worth
+    # nothing in games" instead of "it never ran". That is exactly the J13
+    # failure mode this surface is built to refuse.
+    tiearb = {}
+    if bool(getattr(cfg, "tiearb_enabled", False)):
+        tiearb = dict(
+            tiearb_enabled=True,
+            tiearb_b=int(getattr(cfg, "tiearb_b", 16)),
+            tiearb_j=int(getattr(cfg, "tiearb_j", 4)),
+            tiearb_mode=str(getattr(cfg, "tiearb_mode", "argmax")),
+            tiearb_salt=str(getattr(cfg, "tiearb_salt", "tiearb2-deploy-v1")),
+            tiearb_eps=float(getattr(cfg, "tiearb_eps", 0.0)),
+        )
     # ⚠️ `resolved_leaf_cfg()`, NOT `cfg.leaf_cfg` (fixed 2026-08-02). `leaf_cfg=None`
     # is the SENTINEL for "the env-built DEFAULT_CONFIG", and it is what every caller
     # that relies on the leaf env rather than an explicit override passes — including
@@ -269,6 +286,7 @@ def search_config_rs(cfg, sims: int):
         "glibc_fma",
         **jrules_prior,
         **jrules_filter,
+        **tiearb,
     )
 
 
@@ -295,6 +313,39 @@ def leaf_value_panel_rs(leaf_cfg) -> dict:
     return out
 
 
+def carc_rs_build_id() -> str:
+    """A content identity for the INSTALLED `carc_rs` binary — the `G-TOOL`
+    witness (`measurement/tiearb2_stage2_20260817/READ_RULE.md` §3).
+
+    `carc_rs.__version__` is the Cargo version and does NOT move between builds,
+    so it cannot tell a fresh wheel from a stale one; two boxes can report the
+    same version while running different code, which is exactly the "mixed
+    builds" failure `G-TOOL` exists to catch. This hashes the compiled extension
+    itself: `carc_rs-<version>+<sha256[:16] of the .so>`.
+
+    Falls back to `carc_rs-<version>+unhashed` rather than raising — a
+    provenance helper must never be the thing that kills a run.
+    """
+    import hashlib
+    from pathlib import Path
+
+    import carc_rs
+
+    try:
+        pkg = Path(carc_rs.__file__).parent
+        blobs = sorted(p for p in pkg.iterdir()
+                       if p.suffix in (".so", ".pyd", ".dylib"))
+        if not blobs:
+            return f"carc_rs-{carc_rs.__version__}+nobinary"
+        h = hashlib.sha256()
+        for b in blobs:
+            h.update(b.name.encode())
+            h.update(b.read_bytes())
+        return f"carc_rs-{carc_rs.__version__}+{h.hexdigest()[:16]}"
+    except Exception:                                       # noqa: BLE001
+        return f"carc_rs-{carc_rs.__version__}+unhashed"
+
+
 def backend_provenance() -> dict:
     """Which carc_rs build is executing — the Rust half of the fingerprint guard."""
     import carc_rs
@@ -303,6 +354,11 @@ def backend_provenance() -> dict:
     return {
         "carc_rs_version": str(carc_rs.__version__),
         "carc_rs_path": str(carc_rs.__file__),
+        # A CONTENT identity, unlike the Cargo version above: two boxes on
+        # different builds report the same `carc_rs_version` but different
+        # `carc_rs_build`. This is the `G-TOOL` mixed-build witness.
+        "carc_rs_build": carc_rs_build_id(),
+        "rust_toolchain": os.environ.get("RUSTUP_TOOLCHAIN"),
         "tile_data_source_sha256": tiles_src,
         "tile_data_semantic_digest": tiles_sem,
     }

@@ -169,6 +169,28 @@ pub struct SearchConfig {
     /// yield is counted). Default 1 == `joshua_bot`'s own "skip if it would
     /// empty the set". Only read when `jrules_filter_mask != 0`.
     pub jrules_filter_min_keep: usize,
+    /// TIE ARBITRATION surface (`measurement/tiearb2_stage2_20260817/DESIGN.md`).
+    /// `false` (default == the champion) NEVER touches [`crate::tiearb`] — the
+    /// disabled path is the pre-change code, byte for byte, exactly as
+    /// `jrules_filter_mask == 0` is. Enabled: after the pooled PUCT argmax,
+    /// [`crate::fair::FairAgent`] re-decides an exactly-tied TILE ply by
+    /// `tier1-greedy` playouts over `tiearb_b` CRN determinizations.
+    /// ⚠️ Read by [`crate::fair::FairAgent`], NOT by the single-world
+    /// [`Searcher`]: the arbiter is an AGENT-level, once-per-move intervention
+    /// and it moves NO leaf hash and NO search byte — the manifest's resolved
+    /// `cand_tiearb` dict plus the two-sided J13 positive control are the only
+    /// wiring gates that can prove it live.
+    pub tiearb_enabled: bool,
+    /// `B` — CRN determinizations per fired ply, SHARED by every arm.
+    pub tiearb_b: usize,
+    /// `J` — the cap on the deduped tie set, applied by a seeded draw.
+    pub tiearb_j: usize,
+    pub tiearb_mode: crate::tiearb::TiearbMode,
+    /// The seed salt of record, `tiearb2-deploy-v1`.
+    pub tiearb_salt: String,
+    /// Tie membership tolerance. **0.0 is the committed setting** — exact f64
+    /// equality, not a tolerance (DESIGN §2).
+    pub tiearb_eps: f64,
 }
 
 impl Default for SearchConfig {
@@ -192,6 +214,12 @@ impl Default for SearchConfig {
             jrules_prior_scope: JrPriorScope::All,
             jrules_filter_mask: 0,
             jrules_filter_min_keep: 1,
+            tiearb_enabled: false,
+            tiearb_b: 16,
+            tiearb_j: 4,
+            tiearb_mode: crate::tiearb::TiearbMode::Argmax,
+            tiearb_salt: String::from(crate::tiearb::TIEARB_SALT_OF_RECORD),
+            tiearb_eps: 0.0,
         }
     }
 }

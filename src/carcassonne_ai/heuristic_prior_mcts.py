@@ -230,6 +230,26 @@ class HeuristicPriorConfig:
     # make_heuristic_prior_evaluator (fail-loud, same rule as surface B).
     jrules_filter_mask: int = 0
     jrules_filter_min_keep: int = 1
+    # --- TIE ARBITER (measurement/tiearb2_stage2_20260817) -------------------
+    # SEARCH-level knobs like the two J-rules surfaces — they move NO leaf hash
+    # (the candidate's leaf stays the champion's a36d2e15a3b3d71d), so the
+    # wiring gate for a live arbiter is the RESOLVED `cand_tiearb` dict in the
+    # manifest (READ_RULE G-J4) plus the TWO-SIDED J13 positive control, never a
+    # moved hash. `tiearb_enabled=False` (default) is the champion, bit-for-bit
+    # — ⚠️ and the other five knobs are then INERT, exactly as jrules_filter's
+    # min_keep is inert at mask 0.
+    # B = CRN determinizations per fired ply (16 = the funded rung);
+    # J = the arm cap (4); mode = "argmax" (ARB) | "random" (the matched-
+    # wall-clock control RND); eps = 0.0 = EXACT f64 equality on the outer
+    # chain value, which is the committed predicate, NOT a tolerance.
+    # Enabled: RUST-ONLY — the python search path raises in
+    # make_heuristic_prior_evaluator (fail-loud, same rule as surfaces B/C).
+    tiearb_enabled: bool = False
+    tiearb_b: int = 16
+    tiearb_j: int = 4
+    tiearb_mode: str = "argmax"
+    tiearb_salt: str = "tiearb2-deploy-v1"
+    tiearb_eps: float = 0.0
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -271,6 +291,25 @@ class HeuristicPriorConfig:
                 f"jrules_filter_min_keep must be >= 1 (1 == the bot's own "
                 f"never-empty rule); got {self.jrules_filter_min_keep!r}"
             )
+        # Tie-arbiter knobs: validated even when DISABLED so a typo never rides.
+        if self.tiearb_mode not in ("argmax", "random"):
+            raise ValueError(
+                f"tiearb_mode must be 'argmax'|'random'; got {self.tiearb_mode!r}"
+            )
+        if int(self.tiearb_b) < 1:
+            raise ValueError(f"tiearb_b must be >= 1; got {self.tiearb_b!r}")
+        if int(self.tiearb_j) < 1:
+            raise ValueError(f"tiearb_j must be >= 1; got {self.tiearb_j!r}")
+        if not _math.isfinite(float(self.tiearb_eps)) or float(self.tiearb_eps) < 0.0:
+            raise ValueError(
+                f"tiearb_eps must be finite and >= 0 (0.0 == exact f64 equality, "
+                f"the committed predicate); got {self.tiearb_eps!r}"
+            )
+        if self.tiearb_enabled and not str(self.tiearb_salt):
+            raise ValueError(
+                "tiearb_salt must be non-empty when the arbiter is enabled "
+                "(the salt of record is 'tiearb2-deploy-v1')"
+            )
 
     def resolved_leaf_cfg(self):
         return self.leaf_cfg if self.leaf_cfg is not None else DEFAULT_CONFIG
@@ -307,6 +346,14 @@ class HeuristicPriorConfig:
             # the mask FROM HERE (like surface B, no leaf hash moves).
             "jrules_filter_mask": int(self.jrules_filter_mask),
             "jrules_filter_min_keep": int(self.jrules_filter_min_keep),
+            # RESOLVED tie-arbiter knobs — READ_RULE G-J4 reads the cell's
+            # `config.cand_tiearb` dict, which eval_fair_puct stamps from these.
+            "tiearb_enabled": bool(self.tiearb_enabled),
+            "tiearb_b": int(self.tiearb_b),
+            "tiearb_j": int(self.tiearb_j),
+            "tiearb_mode": str(self.tiearb_mode),
+            "tiearb_salt": str(self.tiearb_salt),
+            "tiearb_eps": float(self.tiearb_eps),
             "leaf_cfg": leaf,
         }
 
@@ -339,6 +386,18 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
             "jrules_filter_mask is set but the python search path has no "
             "J-rules root-filter implementation (surface C is rust-only; "
             "carc_core::fair::jrules_filter). Build this agent with "
+            "backend='rust'."
+        )
+    # The TIE ARBITER is likewise RUST-ONLY (it binds at the
+    # `pooled_q_argmax` root hook in carc_core::fair::FairAgent::pimc_move).
+    # Refusing here is the fail-closed rule: a python-search candidate that
+    # quietly dropped the knob would play champion-vs-champion and grade a
+    # perfect, meaningless null wearing the shape of a real cell.
+    if bool(getattr(cfg, "tiearb_enabled", False)):
+        raise NotImplementedError(
+            "tiearb_enabled is set but the python search path has no tie-arbiter "
+            "implementation (it is rust-only; carc_core::tiearb + "
+            "carc_core::fair::FairAgent::pimc_move). Build this agent with "
             "backend='rust'."
         )
     leaf_cfg = cfg.resolved_leaf_cfg()
