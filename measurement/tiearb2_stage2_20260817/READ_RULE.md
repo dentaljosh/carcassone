@@ -1,5 +1,24 @@
 # STAGE 2 — PHASE B: THE DECK-PAIRED GAME CELL (READ-RULE)
 
+> **⭐ ADJUDICATED 2026-08-17 — branch `G-CONFIRMED` ([READOUT.md](READOUT.md)).** All
+> nine §3 preconditions PASS. `z_arb` +4.445 ≥ +2.0, `D` +7.4988 ≥ 0, `z_D` +8.036 ≥ +2.0,
+> and `z_rnd` −6.669 so `G-ANOMALY` did not fire ⇒ `p ∧ q ∧ r` ⇒ **`G-CONFIRMED`**, taken
+> verbatim. **Licenses exactly one thing: a production-flip DECISION for the owner** —
+> which must carry the realized **≈2.3–2.4× contended per-move cost** and the **unsolved
+> `rho_phone` 5.520**. ⛔ No `PRODUCTION.yaml` flip, no leaf term, no on-device deploy, no
+> second cell.
+>
+> ⚠️ **The secondary statistic does NOT itself convict** — elo +23.92 with 95% CI
+> [−0.21, +48.06] and winrate z **+1.94**. The pre-registered PRIMARY is the deck-paired
+> margin (§2), and it convicts at +4.445; the win-rate reading does not. Never quote
+> +23.92 without that.
+>
+> ⚠️ **`D` is dominated by the CONTROL LOSING, not by `ARB` winning big** (`RND` −60.09
+> elo). Cite the two cells together, never `D` alone.
+>
+> ⚠️ **THIS READ-RULE IS SPENT and band 132000000000 is RETIRED from confirmatory use.**
+> Any successor needs a fresh one of each.
+
 > **STATUS AT WRITING: COMMITTED BEFORE THE INSTRUMENT AND BEFORE ONE GAME EXISTS.**
 > No rust arbitration knob, no runtime tie-detector, no positive control, no band
 > claim, no `summary.json`, no `manifest.json` for any cell of this run exists at the

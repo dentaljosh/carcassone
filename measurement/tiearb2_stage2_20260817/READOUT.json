@@ -1,0 +1,634 @@
+{
+  "schema": "carcassonne-tiearb2-stage2-readout/v1",
+  "design": "measurement/tiearb2_stage2_20260817/DESIGN.md",
+  "read_rule": "measurement/tiearb2_stage2_20260817/READ_RULE.md",
+  "band": 132000000000,
+  "branch": "G-CONFIRMED",
+  "branch_headline": "\u2b50 TERMINAL-GROUNDED TIE ARBITRATION WINS GAMES AGAINST THE CHAMPION, AND IT IS THE MECHANISM RATHER THAN THE CLOCK.",
+  "read": "The candidate convicts at 2\u03c3 on a fresh band, its wall-clock-matched control does not, and the two are RESOLVED against each other at 2\u03c3. This is the first deploy-elo evidence on this axis and the only reading that discharges DESIGN \u00a712.1's caveat. LICENSES (does NOT do) exactly one thing: a production-flip DECISION for the owner. \u26d4 It does not flip PRODUCTION.yaml, does not license a leaf term (CL-065 + two dead menus + the 38% reach bound stand), does not license an on-device deploy (rho_phone = 5.520 at B = 16 \u2014 the phone currency was never solved), and does not license a second cell.",
+  "failed_preconditions": [],
+  "failed_conjuncts": [],
+  "p_q_r": {
+    "p": true,
+    "q": true,
+    "r": true,
+    "G_ANOMALY": false,
+    "PRESENT": true
+  },
+  "cells": {
+    "ARB": {
+      "cell": "ARB",
+      "n_games": 800,
+      "n_records_on_disk": 800,
+      "n_decks_seat_balanced": 400,
+      "n_paired": 400,
+      "M": 3.07,
+      "z": 4.445372594625194,
+      "elo": 23.923936791951956,
+      "elo_sig_1sigma": 12.312836087788227,
+      "wr": 0.534375,
+      "wr_z": 1.9445436482630083,
+      "W": 421,
+      "D_draws": 13,
+      "L": 366,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "champ_prefix_ms_per_move": 4383.556459650967,
+      "rung_ms_per_move": 1808.229479674502,
+      "ms_ratio": 2.4242257461923735,
+      "phi": 17.5725,
+      "arbiter_errors": {
+        "tiearb_errors_total": 0,
+        "tiearb_error_rate_on_fired": 0.0,
+        "tiearb_first_error": null,
+        "phi": 17.5725,
+        "phi_effective": 17.5725,
+        "dilution_statement_bar": 0.05,
+        "DILUTION_STATEMENT_REQUIRED": false,
+        "dilution_statement": null,
+        "status": "no fail-soft arbiter errors",
+        "branch_reachability": "Never a branch input EXCEPT through G-FIRE's phi_effective floor (\u00a70.E.1 cond. 2 and 4)."
+      },
+      "partial_argmax_from_records": 0,
+      "seat_balance": {
+        "a_seat_0": 400,
+        "a_seat_1": 400,
+        "balanced": true
+      },
+      "recomputed": {
+        "M": 3.07,
+        "se": 0.6906057781774855,
+        "z": 4.445372594625194,
+        "n": 400
+      },
+      "summary_path": "/mnt/c/carc-shared/tiearb2_stage2_20260817/tiearb_ARB_B16J4_deploy11008/summary.json",
+      "manifest_path": "/mnt/c/carc-shared/tiearb2_stage2_20260817/tiearb_ARB_B16J4_deploy11008/manifest.json"
+    },
+    "RND": {
+      "cell": "RND",
+      "n_games": 800,
+      "n_records_on_disk": 800,
+      "n_decks_seat_balanced": 400,
+      "n_paired": 400,
+      "M": -4.42875,
+      "z": -6.668940989778436,
+      "elo": -60.09042499320208,
+      "elo_sig_1sigma": 12.46788340151361,
+      "wr": 0.414375,
+      "wr_z": -4.843681451127851,
+      "W": 321,
+      "D_draws": 21,
+      "L": 458,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "champ_prefix_ms_per_move": 4458.5391766027615,
+      "rung_ms_per_move": 1845.2057448350852,
+      "ms_ratio": 2.41628294789492,
+      "phi": 17.865,
+      "arbiter_errors": {
+        "tiearb_errors_total": 1,
+        "tiearb_error_rate_on_fired": 6.996431819771916e-05,
+        "tiearb_first_error": "All 4 legal actions fall outside the 25x25 window centered at (3, 4)",
+        "phi": 17.865,
+        "phi_effective": 17.863750087455397,
+        "dilution_statement_bar": 0.05,
+        "DILUTION_STATEMENT_REQUIRED": false,
+        "dilution_statement": null,
+        "status": "fail-soft errors present",
+        "branch_reachability": "Never a branch input EXCEPT through G-FIRE's phi_effective floor (\u00a70.E.1 cond. 2 and 4)."
+      },
+      "partial_argmax_from_records": 0,
+      "seat_balance": {
+        "a_seat_0": 400,
+        "a_seat_1": 400,
+        "balanced": true
+      },
+      "recomputed": {
+        "M": -4.42875,
+        "se": 0.6640859480970063,
+        "z": -6.668940989778436,
+        "n": 400
+      },
+      "summary_path": "/mnt/c/carc-shared/tiearb2_stage2_20260817/tiearb_RND_B16J4_deploy11008/summary.json",
+      "manifest_path": "/mnt/c/carc-shared/tiearb2_stage2_20260817/tiearb_RND_B16J4_deploy11008/manifest.json"
+    }
+  },
+  "D_block": {
+    "D": 7.49875,
+    "se_D": 0.9331534557744559,
+    "z_D": 8.035923731082935,
+    "n_common": 400,
+    "n_common_decks": 400,
+    "M_arb_on_common": 3.07,
+    "M_rnd_on_common": -4.42875,
+    "deck_seed_min": 132000000000,
+    "deck_seed_max": 132000000399,
+    "naive_M_difference": 7.498749999999999,
+    "n_to_resolve_D_2sigma": 25,
+    "units": "DECKS (a paired statistic; each deck is 2 games)"
+  },
+  "n_to_convict_z_arb_2sigma": 81,
+  "preconditions": {
+    "G-J1": true,
+    "G-J4": true,
+    "G-J13": true,
+    "G-FIRE": true,
+    "G-BAND": true,
+    "G-N": true,
+    "G-TOOL": true,
+    "G-STAT": true,
+    "G-PLY": true
+  },
+  "precondition_detail": {
+    "G-J1": {
+      "expected_equal": "a36d2e15a3b3d71d",
+      "observed": {
+        "ARB": {
+          "cand_leaf_hash": "a36d2e15a3b3d71d",
+          "resolved_at": "config.cand_leaf_hash"
+        },
+        "RND": {
+          "cand_leaf_hash": "a36d2e15a3b3d71d",
+          "resolved_at": "config.cand_leaf_hash"
+        }
+      },
+      "read_at": "top level, then config.* (see _manifest_get)",
+      "semantics": "EQUALITY gate \u2014 a difference ABORTS the run; ABSENT at both levels also fails"
+    },
+    "G-J4": {
+      "ARB": {
+        "resolved_at": "cand_tiearb",
+        "cand_tiearb": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "expected_mode": "argmax",
+        "expected_B": 16,
+        "expected_J": 4,
+        "ok": true
+      },
+      "RND": {
+        "resolved_at": "cand_tiearb",
+        "cand_tiearb": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "expected_mode": "random",
+        "expected_B": 16,
+        "expected_J": 4,
+        "ok": true
+      }
+    },
+    "G-J13": {
+      "hosts": {
+        "Doctor": {
+          "all_preflight_pass": true,
+          "pick_changed": true,
+          "root_leaf_value_bits_unchanged": true,
+          "first_on_host": true,
+          "path": "measurement/tiearb2_stage2_20260817/verdicts/PREFLIGHT_Doctor_FIRST.json",
+          "ok": true
+        },
+        "laptop-wsl": {
+          "all_preflight_pass": true,
+          "pick_changed": true,
+          "root_leaf_value_bits_unchanged": true,
+          "first_on_host": true,
+          "path": "measurement/tiearb2_stage2_20260817/verdicts/PREFLIGHT_laptop-wsl_FIRST.json",
+          "ok": true
+        }
+      },
+      "expected_hosts": [
+        "Doctor",
+        "laptop-wsl"
+      ],
+      "missing_hosts": [],
+      "semantics": "TWO-SIDED: pick CHANGED and root_leaf_value_bits UNCHANGED, per host, before that host's game 1"
+    },
+    "G-FIRE": {
+      "phi_arb": 17.5725,
+      "phi_rnd": 17.865,
+      "error_rate_on_fired": {
+        "ARB": 0.0,
+        "RND": 6.996431819771916e-05
+      },
+      "phi_effective": {
+        "ARB": 17.5725,
+        "RND": 17.863750087455397
+      },
+      "binds_on": "phi_effective (AMENDED \u00a70.E.1 cond. 2)",
+      "floor": 1.0,
+      "prior": 22.96,
+      "formula": "phi_effective = phi x (1 - error_rate_on_fired)"
+    },
+    "G-BAND": {
+      "expected_band": 132000000000,
+      "band_claim": {
+        "band": 132000000000,
+        "claimed_before_game_1": true,
+        "raw": "132000000000\nTIE-ARBITRATION STAGE 2 PHASE B: two deck-paired cells on ONE band and ONE deck set -- ARB (arbiter mode=argmax, B=16, J=4, salt tiearb2-deploy-v1) and RND (identical playouts/worlds/plies/arm set, values DISCARDED, arm drawn by seeded RNG = the matched-wall-clock control of A-DEPLOYABLE condition (a)). Candidate = the production champion + the tie arbiter; opponent = the UNMODIFIED production champion. BOTH arms FAIR PIMC k8x1376=11008, exact-K 2, rust both sides. cand_leaf_hash MUST EQUAL a36d2e15a3b3d71d (INVERTED gate). PRIMARY STATISTIC = deck-paired margin z per cell; D = M_arb - M_rnd is the mechanism net of clock and is a CONJUNCT.\nclaimed 2026-08-17",
+        "source": "measurement/tiearb2_stage2_20260817/BAND_CLAIM.json",
+        "expected_band": 132000000000
+      },
+      "claimed_before_game_1": true,
+      "band_seed_start": {
+        "ARB": 132000000000,
+        "RND": 132000000000
+      },
+      "band_seed_start_resolved_at": {
+        "ARB": "config.band_seed_start",
+        "RND": "config.band_seed_start"
+      },
+      "same_launch_deck_range": true,
+      "launch": {
+        "ARB": [
+          132000000000,
+          800
+        ],
+        "RND": [
+          132000000000,
+          800
+        ]
+      },
+      "realized_deck_sets_identical": true
+    },
+    "G-N": {
+      "n_common": 400,
+      "n_common_floor": 320,
+      "n_common_units": "DECKS (READ_RULE \u00a72)",
+      "n_games": {
+        "ARB": 800,
+        "RND": 800
+      },
+      "cell_games_floor": 640,
+      "cell_games_planned": 800,
+      "both_clauses_are_the_same_80pct_bar": "640 games IS 320 decks",
+      "deck_clause_independently_binding": "two cells can each clear 640 games while overlapping on fewer than 320 COMMON decks \u2014 that weakens D and still voids",
+      "read_rule_amendment": "READ_RULE.md \u00a70 \u2014 \u00a70.A-C (PRE-RUN AMENDMENT) commit 6c281f9e; \u00a70.D (OWNER RULING, N4 downgrade waived) commit a81b8c72; \u00a70.E (PRE-LAUNCH ACCEPTANCES: arbiter FAILS SOFT, G-FIRE binds on phi_effective; G-TOOL witness corrected) commit c36055a7; \u00a70.F (G-PLY, the ply-granularity witness) commit ef07768c; \u00a70.G (THE COST MODEL MISSED, NOT THE ARBITER) commit edd3deab; \u00a70.H (ms_ratio NOT graded against the smoke) commit d39c8a03; \u00a70.I (POST-HOC annotation + blindness disclosure) commit 369ac884"
+    },
+    "G-TOOL": {
+      "preflight_vs_manifest_delta": {
+        "preflight_commits": [
+          "c48216460325"
+        ],
+        "manifest_commits": [
+          "46537745023c"
+        ],
+        "differs": true,
+        "evidence": {
+          "applicable": true,
+          "empty": true,
+          "command": "git diff --name-only c48216460325..46537745023c -- rust/ src/ engine/ scripts/classical_search/",
+          "output": "",
+          "reason": "EMPTY \u2014 no wheel-relevant path changed across the range, so the pre-flight describes what ran"
+        }
+      },
+      "stamps": {
+        "ARB": {
+          "rust_toolchain": "1.96.0",
+          "carc_rs_build": "carc_rs-0.1.0+46537745023c+rustc1.96.0",
+          "mixed_builds": false,
+          "build_witness": "carc_rs_build (cargo version + commit[:12] + rustc \u2014 CROSS-BOX COMPARABLE, NOT a content hash)",
+          "carc_rs_binary_sha_BOX_LOCAL": "8ae0b98427debb2e",
+          "code_rev": "4653774502-dirty",
+          "code_rev_dirty": null
+        },
+        "RND": {
+          "rust_toolchain": "1.96.0",
+          "carc_rs_build": "carc_rs-0.1.0+46537745023c+rustc1.96.0",
+          "mixed_builds": false,
+          "build_witness": "carc_rs_build (cargo version + commit[:12] + rustc \u2014 CROSS-BOX COMPARABLE, NOT a content hash)",
+          "carc_rs_binary_sha_BOX_LOCAL": "8ae0b98427debb2e",
+          "code_rev": "4653774502-dirty",
+          "code_rev_dirty": null
+        },
+        "preflight:Doctor": {
+          "rust_toolchain": "1.96.0",
+          "carc_rs_build": "carc_rs-0.1.0+c48216460325+rustc1.96.0",
+          "build_witness": "carc_rs_build (cargo version + commit[:12] + rustc \u2014 CROSS-BOX COMPARABLE, NOT a content hash)",
+          "carc_rs_binary_sha_BOX_LOCAL": "a4318fd59d9d8349"
+        },
+        "preflight:laptop-wsl": {
+          "rust_toolchain": "1.96.0",
+          "carc_rs_build": "carc_rs-0.1.0+c48216460325+rustc1.96.0",
+          "build_witness": "carc_rs_build (cargo version + commit[:12] + rustc \u2014 CROSS-BOX COMPARABLE, NOT a content hash)",
+          "carc_rs_binary_sha_BOX_LOCAL": "8ae0b98427debb2e"
+        }
+      },
+      "distinct_builds_manifests": 1,
+      "distinct_builds_preflights": 1,
+      "cross_box_preflight_agreement": true,
+      "same_box_wheel_continuity": {
+        "Doctor": {
+          "preflight_binary_sha": "a4318fd59d9d8349",
+          "matching_manifest_cells": null,
+          "status": "NO MANIFEST FROM THIS BOX \u2014 expected under --shared-claim, where only the launching box writes one; reported, not failed"
+        },
+        "laptop-wsl": {
+          "preflight_binary_sha": "8ae0b98427debb2e",
+          "matching_manifest_cells": [
+            "ARB",
+            "RND"
+          ],
+          "status": "MATCHED \u2014 this box played the wheel its pre-flight validated (cells ['ARB', 'RND'])"
+        }
+      },
+      "manifest_wheels_matching_no_preflight": [],
+      "preflight_vs_manifest_build_id_NOT_compared": "carc_rs_build_id embeds `git rev-parse HEAD` AT CALL TIME, so a preflight-vs-manifest difference means only that HEAD moved between the two calls (a bundle-sync between pre-flight and launch does this by design). Both sides call the SAME function. The wheel question is answered SAME-BOX by carc_rs_binary_sha instead \u2014 a stronger witness.",
+      "preflight_hosts": [
+        "Doctor",
+        "laptop-wsl"
+      ],
+      "authority": "`mixed_builds: false` on a MANIFEST is the WRITER'S OWN OBSERVATION only \u2014 under --shared-claim the second box writes no manifest \u2014 so the authoritative cross-box comparison is the two PREFLIGHT_*_${HOST}_FIRST.json witnesses against each other.",
+      "binary_sha_note": "carc_rs_binary_sha is BOX-LOCAL staleness evidence and is NEVER compared across boxes: the .so is not reproducible across machines (measured 2026-08-17, same commit + rustc 1.96.0: local 73aa20102ab98e2f vs laptop ec140ac0c0583d53). The cross-box witness is carc_rs_build."
+    },
+    "G-STAT": {
+      "observed": {
+        "z_arb": 4.445372594625194,
+        "z_rnd": -6.668940989778436,
+        "z_D": 8.035923731082935
+      },
+      "nan_or_absent": []
+    },
+    "G-PLY": {
+      "cells": {
+        "ARB": {
+          "tiearb_partial_argmax_total": 0,
+          "from_records_cross_check": 0,
+          "agrees_with_records": true,
+          "ok": true,
+          "why": "PASS \u2014 every argmax was taken over all B = 16 completed worlds"
+        },
+        "RND": {
+          "tiearb_partial_argmax_total": 0,
+          "from_records_cross_check": 0,
+          "agrees_with_records": true,
+          "ok": true,
+          "why": "PASS \u2014 every argmax was taken over all B = 16 completed worlds"
+        }
+      },
+      "witness": "summary.json::tiearb_partial_argmax_total (both cells)",
+      "condition": "READ_RULE \u00a70.E.1 condition 1 (ply granularity), witnessed per \u00a70.F",
+      "records_sum_is_a_cross_check_not_a_fallback": true
+    }
+  },
+  "cost_N4": {
+    "ms_ratio_arb": 2.4242257461923735,
+    "ms_ratio_rnd": 2.41628294789492,
+    "bar": 1.2,
+    "neutral_bar": 1.05,
+    "expected_from_design_5": 1.1985,
+    "prediction_vs_realized": {
+      "predicted": 1.1985,
+      "realized": {
+        "ARB": 2.4242257461923735,
+        "RND": 2.41628294789492
+      },
+      "delta": {
+        "ARB": 1.2257257461923736,
+        "RND": 1.2177829478949203
+      },
+      "why": "evidence about the COST MODEL, and its value does not depend on whether the bar is enforced \u2014 it is the only way a wrong cost model becomes visible. DESIGN \u00a75 pre-registered \u22481.1985 before the measurement.",
+      "prediction_withdrawn_by": "READ_RULE \u00a70.G (commit edd3deab)",
+      "cost_model_miss": {
+        "headline": "THE COST MODEL MISSED, NOT THE ARBITER.",
+        "source": "READ_RULE \u00a70.G, from the SMOKE \u2014 laptop W22, 22 games/cell, throwaway band 900000100000, production knobs. Band 132000000000 unclaimed and no strength number of any kind existed when this was recorded, so the framing cannot have been reconstructed after margins existed.",
+        "table": {
+          "predicted_ms_ratio": 1.1985,
+          "realized_ms_ratio_smoke": {
+            "ARB": 2.42,
+            "RND": 2.33
+          }
+        },
+        "numerator": {
+          "verdict": "ACCURATE WITHIN 12% \u2014 the arbiter cost what Phase A said it would",
+          "predicted_worker_s_per_fired_ply": 8.561,
+          "formula": "\u0100 \u00d7 B \u00d7 c_tier1_rust = 3.0022 \u00d7 16 \u00d7 0.178232",
+          "realized_worker_s_per_fired_ply": 9.57,
+          "error_pct": 11.8
+        },
+        "denominator": {
+          "verdict": "A CATEGORY ERROR \u2014 the wrong CURRENCY",
+          "design_5_divided_by": "t_champ = 13.7552 s/move \u2014 a SEQUENTIAL, single-box, UNCONTENDED measurement",
+          "in_cell_divides_by": "the opponent's per-move wall under W-WAY CONTENTION, \u2248 1.7 s/move",
+          "apart_by": "\u2248 8\u00d7",
+          "withdrawn": "DESIGN \u00a75's sentence equating `rho_wall` with the in-cell `ms_ratio` is WITHDRAWN. They are not the same currency."
+        },
+        "reconciliation": {
+          "formula": "1 + (9.57 \u00d7 phi / 72) / 1.7",
+          "at_phi_17_05": 2.33,
+          "at_phi_17_95": 2.4,
+          "realized": {
+            "ARB": 2.42,
+            "RND": 2.33
+          },
+          "note": "the cell-to-cell assignment inverts within noise at n = 22 games; the LEVEL is what reconciles, and it does. The residual after correcting the denominator is the +11.8% numerator error and the realized phi being 74\u201378% of the 22.96 prior \u2014 both already reported."
+        },
+        "no_retune": "\u26d4 No re-tuning of B, the trigger, or the playout is implied or permitted \u2014 \u00a70.D's anti-gaming clause stands.",
+        "no_branch_moves": "No branch moves: `ms_ratio` was never a branch input (\u00a74.2) and \u00a70.D waived its consequence. \u2b50 But the MEASUREMENT was always mandatory precisely so a wrong cost model would become visible, and it did \u2014 THIS IS THAT MECHANISM WORKING, NOT FAILING.",
+        "phase_a_not_invalidated": "\u26a0\ufe0f Phase A's `rho_wall` is NOT invalidated. It is a correct statement in its own SEQUENTIAL currency, and B_affordable = 16 was graded on that currency against the N4 bar as the programme has always defined it. What is now known is that `rho_wall` and in-cell `ms_ratio` MUST NEVER AGAIN BE EQUATED, and any future design quoting one as a prediction of the other is repeating this error.",
+        "deploy_relevant": "\u26a0\ufe0f DEPLOY-RELEVANT, AND IT MUST NOT BE BURIED: the honest realized figure for a deployed arbiter under contention is \u2248 2.3\u20132.4\u00d7 the champion's per-move wall, NOT \u2248 1.2\u00d7. The owner ruling (\u00a70.D) stands and governs this cell's READING \u2014 but the owner is entitled to know the number is \u2248 2.4\u00d7, not \u2248 1.2\u00d7, when the production-flip decision is put to him.",
+        "rho_phone_is_a_third_currency": "`rho_phone` is untouched and still NOT SOLVED (5.520 at B = 16) \u2014 and it is a THIRD currency again, so it may NOT be inferred from either figure above.",
+        "not_an_arbiter_defect": "This is a COST-MODEL miss and must never be presented as an arbiter defect: the numerator \u2014 the arbiter's own cost \u2014 was right within 12%."
+      }
+    },
+    "N4_FIRED": true,
+    "downgrade_waived": true,
+    "n4_downgrade_waived_by": "READ_RULE.md \u00a70.D (OWNER RULING), commit a81b8c72",
+    "owner_ruling_verbatim": "we can afford some wallclock during play, especially if its not every tile draw. dont let that be the constraint right now",
+    "cost_confounded": false,
+    "cost_neutral": false,
+    "ms_ratio_missing": [],
+    "MEASUREMENT_DEFECT": false,
+    "applies_to": "the AGAINST-CHAMPION reading only \u2014 D / z_D are immune",
+    "field_name_trap": "\u26a0\ufe0f THE FIELD-NAME TRAP: `champ_prefix_ms_per_move` IS THE CANDIDATE SIDE in `eval_fair_puct` (confirmed at live lines 2361/2371/2389), the opposite of `eval_puct_priors`. `ms_ratio = champ_prefix_ms_per_move / rung_ms_per_move` is candidate-over-opponent. A read-out that swaps them INVERTS the verdict.",
+    "rider": "\u00a74.2: `ms_ratio` is a DOWNGRADE TRIGGER, never a branch input. It does NOT touch the mechanism contrast D / z_D: ARB and RND are cost-matched to each other by construction, so D is immune to a budget confound. DESIGN \u00a75 predicts ms_ratio \u2248 1.1985 \u2014 just under the bar \u2014 and says so BEFORE the measurement, so a reading either side of 1.20 was anticipated and is not a surprise; ms_ratio \u2264 1.05 is a fully cost-neutral reading.",
+    "waiver_note": "\u26a0\ufe0f THE \u00a74.2 DOWNGRADE IS WAIVED FOR THIS CELL (READ_RULE \u00a70.D, an OWNER RULING made BEFORE the band claim and BEFORE any game, with no ms_ratio and no statistic of any kind in existence \u2014 blind to every number it affects). G-CONFIRMED / G-DEPLOYS / G-CLOCK are read AT FACE VALUE against the champion whatever ms_ratio lands at. WAIVED: the consequence. NOT WAIVED: the measurement \u2014 ms_ratio is still measured and reported for both cells on every branch, with the field-name trap named, and DESIGN \u00a75's prediction (\u22481.1985) is still printed against the realized value, because that comparison is the only way a wrong cost model becomes visible and its value does not depend on whether the bar is enforced. NO BRANCH CONDITION MOVES: \u00a74.2's committed text already calls ms_ratio 'a downgrade trigger, not a conjunct' and 'NEVER a branch input', so waiving it cannot change which branch fires. \u00a74 is left BYTE-IDENTICAL by the amendment \u2014 the override lives in \u00a70.D \u2014 so the instrument's old-vs-new byte-equality proof over \u00a74 still holds and is re-run as evidence. \u26d4 ANTI-GAMING (binding): permission to SPEND clock, never licence to reshape the arbiter to look cheaper \u2014 B stays 16 (and may not be expanded), the tie predicate is not narrowed, and no playout truncation for cost reasons. rho_phone is NOT reopened (5.520 at B = 16) and no branch licenses an on-device deploy."
+  },
+  "phi_block": {
+    "phi_arb": 17.5725,
+    "phi_rnd": 17.865,
+    "phi_effective": {
+      "ARB": 17.5725,
+      "RND": 17.863750087455397
+    },
+    "offline_prior": 22.96,
+    "funnel": {
+      "exact_tie_rate_on_tile_plies_pct": 65.98,
+      "deduped_scoreable_pct": 40.4
+    },
+    "design_2_1_mismatch_i": "**(i) The corpus predicate was evaluated on a REPLAYED board at the champion's seat.**\nAt runtime it is evaluated inside a live search on the candidate's seat. The board\ndistribution is the same population; the *evaluation context* is not identical.",
+    "design_2_1_mismatch_ii": "**(ii) The corpus `champ_picks` came from a FRESH search.** CL-070 established that\n**reseeding alone flips picks**. \u21d2 the offline firing rate **estimates** the runtime\nrate; it does not equal it.",
+    "design_2_1_conclusion": "\u21d2 **The offline 22.96 tied tile plies/game (E4 census, n = 26) is a prior, not a\nprediction.** The realized rate is measured in-cell and reported; \u00a73 states what it may\nand may not do to a branch.",
+    "arbiter_errors": {
+      "ARB": {
+        "tiearb_errors_total": 0,
+        "tiearb_error_rate_on_fired": 0.0,
+        "tiearb_first_error": null,
+        "phi": 17.5725,
+        "phi_effective": 17.5725,
+        "dilution_statement_bar": 0.05,
+        "DILUTION_STATEMENT_REQUIRED": false,
+        "dilution_statement": null,
+        "status": "no fail-soft arbiter errors",
+        "branch_reachability": "Never a branch input EXCEPT through G-FIRE's phi_effective floor (\u00a70.E.1 cond. 2 and 4)."
+      },
+      "RND": {
+        "tiearb_errors_total": 1,
+        "tiearb_error_rate_on_fired": 6.996431819771916e-05,
+        "tiearb_first_error": "All 4 legal actions fall outside the 25x25 window centered at (3, 4)",
+        "phi": 17.865,
+        "phi_effective": 17.863750087455397,
+        "dilution_statement_bar": 0.05,
+        "DILUTION_STATEMENT_REQUIRED": false,
+        "dilution_statement": null,
+        "status": "fail-soft errors present",
+        "branch_reachability": "Never a branch input EXCEPT through G-FIRE's phi_effective floor (\u00a70.E.1 cond. 2 and 4)."
+      }
+    },
+    "low_phi_note": "DESIGN \u00a73: a phi materially below the prior (say < 10) shrinks the effect proportionally \u2014 the offline elo bound is PER TIED PLY scaled by the rate, so a low phi makes a null LESS informative, not more."
+  },
+  "phase_a_cost_facts": {
+    "c_tier1_rust_worker_s_per_playout": 0.178232,
+    "speedup_vs_pilot": 15.3,
+    "rho_wall_16": 0.6224,
+    "rho_amortized_16": 0.1985,
+    "rho_phone_16": 5.52,
+    "rho_phone_16_status": "NOT SOLVED \u2014 the phone currency was never brought under 1.20 above B = 2; Phase A stamped it *reported, unadjudicated*. NO BRANCH LICENSES AN ON-DEVICE DEPLOY.",
+    "source": "measurement/tiearb2_stage2_20260817/COST_REMEASURE.json"
+  },
+  "carried_verbatim": {
+    "condition_b_design_12_1": "\u2b50 **The arbiter and the pricing judge are both terminal-grounded.** They differ in\npolicy (`RuleBasedPlayer` 1-ply argmax vs 100-sim clairvoyant PUCT) and are\nindependent in the leaf, but they **share the property under test**. \u21d2 **a positive\nhere is evidence that terminal grounding at ties is worth points *as measured by a\nterminal-grounded ruler*, which is the estimand \u2014 it is NOT yet evidence of deploy\nelo.** This is why a pass licenses only a game-cell prereg, and why that prereg must\nbe graded on games.",
+    "condition_c_no_corroboration": "**arm `C`** \u2014 over the **1050** positions where the arbiter changes the champion's\npick in at least one fold: 511/1033 = **+0.495** with `arb[p] > 0`, exact two-sided\nbinomial **p 0.756**; aggregate sign **+1**, per-position majority -1, mean over the\npick-change positions +0.0414 \u21d2 **NO CORROBORATION -- sign agreement is not\ndistinguishable from chance**"
+  },
+  "power": {
+    "offline_elo": 18.09,
+    "offline_ci": [
+      6.32,
+      30.04
+    ],
+    "offline_low_bracket_div_5_23": 11.06,
+    "cell_1sigma_elo": 8.5,
+    "cell_2sigma_elo": 17.0,
+    "E_arb_95_upper": 48.05709552401688
+  },
+  "stage1b_carried": {
+    "arb_H_pts_per_tied_ply": 0.1441,
+    "z": 3.01,
+    "note": "PUBLISHED and already adjudicated; NEVER a branch input here."
+  },
+  "band_registry": {
+    "band_seed_start": 132000000000,
+    "registry": "governance/BAND_REGISTRY.csv",
+    "claim": {
+      "band": 132000000000,
+      "claimed_before_game_1": true,
+      "raw": "132000000000\nTIE-ARBITRATION STAGE 2 PHASE B: two deck-paired cells on ONE band and ONE deck set -- ARB (arbiter mode=argmax, B=16, J=4, salt tiearb2-deploy-v1) and RND (identical playouts/worlds/plies/arm set, values DISCARDED, arm drawn by seeded RNG = the matched-wall-clock control of A-DEPLOYABLE condition (a)). Candidate = the production champion + the tie arbiter; opponent = the UNMODIFIED production champion. BOTH arms FAIR PIMC k8x1376=11008, exact-K 2, rust both sides. cand_leaf_hash MUST EQUAL a36d2e15a3b3d71d (INVERTED gate). PRIMARY STATISTIC = deck-paired margin z per cell; D = M_arb - M_rnd is the mechanism net of clock and is a CONJUNCT.\nclaimed 2026-08-17",
+      "source": "measurement/tiearb2_stage2_20260817/BAND_CLAIM.json",
+      "expected_band": 132000000000
+    },
+    "deck_range_common": [
+      132000000000,
+      132000000399
+    ]
+  },
+  "cost_model_miss": {
+    "headline": "THE COST MODEL MISSED, NOT THE ARBITER.",
+    "source": "READ_RULE \u00a70.G, from the SMOKE \u2014 laptop W22, 22 games/cell, throwaway band 900000100000, production knobs. Band 132000000000 unclaimed and no strength number of any kind existed when this was recorded, so the framing cannot have been reconstructed after margins existed.",
+    "table": {
+      "predicted_ms_ratio": 1.1985,
+      "realized_ms_ratio_smoke": {
+        "ARB": 2.42,
+        "RND": 2.33
+      }
+    },
+    "numerator": {
+      "verdict": "ACCURATE WITHIN 12% \u2014 the arbiter cost what Phase A said it would",
+      "predicted_worker_s_per_fired_ply": 8.561,
+      "formula": "\u0100 \u00d7 B \u00d7 c_tier1_rust = 3.0022 \u00d7 16 \u00d7 0.178232",
+      "realized_worker_s_per_fired_ply": 9.57,
+      "error_pct": 11.8
+    },
+    "denominator": {
+      "verdict": "A CATEGORY ERROR \u2014 the wrong CURRENCY",
+      "design_5_divided_by": "t_champ = 13.7552 s/move \u2014 a SEQUENTIAL, single-box, UNCONTENDED measurement",
+      "in_cell_divides_by": "the opponent's per-move wall under W-WAY CONTENTION, \u2248 1.7 s/move",
+      "apart_by": "\u2248 8\u00d7",
+      "withdrawn": "DESIGN \u00a75's sentence equating `rho_wall` with the in-cell `ms_ratio` is WITHDRAWN. They are not the same currency."
+    },
+    "reconciliation": {
+      "formula": "1 + (9.57 \u00d7 phi / 72) / 1.7",
+      "at_phi_17_05": 2.33,
+      "at_phi_17_95": 2.4,
+      "realized": {
+        "ARB": 2.42,
+        "RND": 2.33
+      },
+      "note": "the cell-to-cell assignment inverts within noise at n = 22 games; the LEVEL is what reconciles, and it does. The residual after correcting the denominator is the +11.8% numerator error and the realized phi being 74\u201378% of the 22.96 prior \u2014 both already reported."
+    },
+    "no_retune": "\u26d4 No re-tuning of B, the trigger, or the playout is implied or permitted \u2014 \u00a70.D's anti-gaming clause stands.",
+    "no_branch_moves": "No branch moves: `ms_ratio` was never a branch input (\u00a74.2) and \u00a70.D waived its consequence. \u2b50 But the MEASUREMENT was always mandatory precisely so a wrong cost model would become visible, and it did \u2014 THIS IS THAT MECHANISM WORKING, NOT FAILING.",
+    "phase_a_not_invalidated": "\u26a0\ufe0f Phase A's `rho_wall` is NOT invalidated. It is a correct statement in its own SEQUENTIAL currency, and B_affordable = 16 was graded on that currency against the N4 bar as the programme has always defined it. What is now known is that `rho_wall` and in-cell `ms_ratio` MUST NEVER AGAIN BE EQUATED, and any future design quoting one as a prediction of the other is repeating this error.",
+    "deploy_relevant": "\u26a0\ufe0f DEPLOY-RELEVANT, AND IT MUST NOT BE BURIED: the honest realized figure for a deployed arbiter under contention is \u2248 2.3\u20132.4\u00d7 the champion's per-move wall, NOT \u2248 1.2\u00d7. The owner ruling (\u00a70.D) stands and governs this cell's READING \u2014 but the owner is entitled to know the number is \u2248 2.4\u00d7, not \u2248 1.2\u00d7, when the production-flip decision is put to him.",
+    "rho_phone_is_a_third_currency": "`rho_phone` is untouched and still NOT SOLVED (5.520 at B = 16) \u2014 and it is a THIRD currency again, so it may NOT be inferred from either figure above.",
+    "not_an_arbiter_defect": "This is a COST-MODEL miss and must never be presented as an arbiter defect: the numerator \u2014 the arbiter's own cost \u2014 was right within 12%."
+  },
+  "adjudication_disclosure": {
+    "first_adjudication": "The FIRST adjudication of these cells fired U-UNREADABLE on THREE \u00a73 preconditions: G-J1, G-BAND and G-TOOL. All three were INSTRUMENT defects. No bar was moved, no gate was relaxed, no branch condition changed, and \u00a74 was not edited \u2014 the byte-equality proof over \u00a74 is re-run and still passes.",
+    "blindness": "\u26a0\ufe0f \u00a74.3 mandates the full companion table on EVERY branch, including U-UNREADABLE, so running the first adjudication PRINTED THE STRENGTH STATISTICS. The orchestrating session therefore became NON-BLIND at fix time and did not touch the adjudicator. The session that wrote these fixes was BLIND: it read manifests, pre-flight witnesses and provenance keys only, never summary.json's strength fields, never paired_z, elo or any margin \u2014 and it re-adjudicated by reading `branch` and `failed_preconditions` out of READOUT.json without rendering the statistics. Every fix below is decidable from gate inputs alone.",
+    "fixes": [
+      {
+        "gate": "G-J1",
+        "defect": "read `cand_leaf_hash` at manifest TOP LEVEL only; the witness is at `config.cand_leaf_hash` and was present and correct on both cells.",
+        "fix": "read BOTH addresses and REPORT which resolved, exactly as G-J4 does \u2014 no hard-coded path was swapped for another hard-coded path.",
+        "justification": "A gate that fails to read the witness the committed sentence names is not implementing that sentence. The two manifest levels are split by HOW a key was written (`config=` at write_manifest vs `patch_manifest`'s top-level merge), not by what it means, so reading one level asks a plumbing question. ABSENT AT BOTH LEVELS STILL FAILS."
+      },
+      {
+        "gate": "G-BAND",
+        "defect": "same class \u2014 `band_seed_start` / `seed_start` / `n` are under `config` on both cells; the independent record-derived deck-set check had already read TRUE.",
+        "fix": "same both-level lookup, reporting which address resolved.",
+        "justification": "identical to G-J1; absent at both levels still fails, and a nested-but-WRONG band still fails."
+      },
+      {
+        "gate": "G-TOOL",
+        "defect": "folded manifests and pre-flights into ONE build-id equality set. `carc_rs_build_id()` embeds `git rev-parse HEAD` AT CALL TIME, and BOTH sides call the SAME function, so the comparison answered 'did HEAD move between the pre-flight and the manifest write?' \u2014 not 'was it the same build?'.",
+        "structural_test": "Would this gate fail on EVERY HEALTHY RUN of this launcher? ANSWER: YES \u2014 recorded before any outcome was known. launch_both.sh does census -> full bundle sync -> wheel rebuild on each box -> detached launch, and contains NO pre-flight step, so HEAD moves between pre-flight and manifest on every run BY DESIGN. Unsatisfiable in practice: the same defect class as the pre-launch G-N deck floor.",
+        "fix": "compare the CROSS-BOX proposition \u00a73 actually states (manifests with each other, pre-flights with each other \u2014 the pair \u00a70.E.2 declared authoritative), and report the pre-flight-vs-manifest delta as its OWN line with mechanical evidence, DISPOSITIVE IN ONE DIRECTION: a NON-EMPTY or UNRESOLVED wheel-relevant diff across the commit range VOIDS the run. Additionally witness 'did this box play the wheel its own pre-flight validated?' by SAME-BOX carc_rs_binary_sha, which is a stronger witness than the build id because it hashes the binary.",
+        "justification": "\u00a73 is a cross-box proposition. Reading a time-varying repo-checkout stamp across two different moments as a build difference is a false positive by construction; removing that conjunct implements the committed sentence rather than relaxing it, and every comparison \u00a70.E.2 declared authoritative is retained and still fail-closed."
+      }
+    ],
+    "not_steered": "The re-adjudicated branch is taken VERBATIM, whatever it is. U-UNREADABLE standing was and is a fully acceptable outcome; a NON-EMPTY wheel-relevant diff would have kept it, with no discussion.",
+    "parked": "For the record, NOT done here and NOT to be done under a live tree: launch_both.sh should regenerate the pre-flight AFTER the wheel rebuild so no pre-flight/manifest gap exists in future runs. Parked on the roadmap for a quiet window; no driver was edited."
+  },
+  "read_rule_amendment": "READ_RULE.md \u00a70 \u2014 \u00a70.A-C (PRE-RUN AMENDMENT) commit 6c281f9e; \u00a70.D (OWNER RULING, N4 downgrade waived) commit a81b8c72; \u00a70.E (PRE-LAUNCH ACCEPTANCES: arbiter FAILS SOFT, G-FIRE binds on phi_effective; G-TOOL witness corrected) commit c36055a7; \u00a70.F (G-PLY, the ply-granularity witness) commit ef07768c; \u00a70.G (THE COST MODEL MISSED, NOT THE ARBITER) commit edd3deab; \u00a70.H (ms_ratio NOT graded against the smoke) commit d39c8a03; \u00a70.I (POST-HOC annotation + blindness disclosure) commit 369ac884",
+  "read_rule_amendment_note": "This read-out adjudicates the AMENDED read-rule: READ_RULE.md \u00a70 (PRE-RUN AMENDMENT), commit 6c281f9e, applied BEFORE the band claim and BEFORE game 1, with no band claimed and no summary.json / manifest.json in existence. \u00a70.B set G-N's deck floor to n_common >= 320 \u2014 the exact 80% analogue of the committed 640/800 games clause, because a paired n = 800 cell yields at most 400 decks (eval_fair_puct.py:3924), which made the original 600-deck floor unreachable on a PERFECTLY COMPLETE run. \u00a70.C.1 named the +1.0 presentation split in \u00a72; \u00a70.C.2 corrected the knob's manifest location to top-level `cand_tiearb`. \u00a70.D (OWNER RULING, commit a81b8c72, also before the band claim and before any game and blind to every number it affects) WAIVES \u00a74.2's COST-CONFOUNDED downgrade for this cell \u2014 the consequence, never the measurement. \u26a0\ufe0f NO ADJUDICATING BAR MOVED: +2.0, +1.0 and 1.20 are unchanged and every \u00a74 branch condition is unchanged \u2014 \u00a74 is left BYTE-IDENTICAL by BOTH amendments, which is why the byte-equality proof against b2faa238 still runs and now covers two of them.",
+  "presentation_split_note": "+1.0 is NOT an adjudicating bar (READ_RULE \u00a72 as amended, \u00a70.C.1): the two branches it separates \u2014 G-PRESENT and G-FLAT \u2014 are alike NON-LICENSING, so it selects a LABEL and the mandatory rider that travels with it, never a permission. The two bars that gate a licence remain +2.0 and 1.20.",
+  "what_no_branch_does": [
+    "No branch edits governance/PRODUCTION.yaml. A pass licenses a production-flip DECISION for the owner and nothing more.",
+    "No branch licenses an on-device / phone deploy (rho_phone(16) = 5.520).",
+    "No branch adds a leaf term, changes the production leaf, or trains anything.",
+    "No branch re-reads, re-labels or re-adjudicates Stage 1, Stage 1b or Phase A.",
+    "No branch licenses a second game cell. This read-rule is SPENT when the read-out lands, on every branch."
+  ],
+  "partial_run": {
+    "planned_games_per_cell": 800,
+    "realized_games": {
+      "ARB": 800,
+      "RND": 800
+    },
+    "realized_decks_seat_balanced": {
+      "ARB": 400,
+      "RND": 400
+    },
+    "n_common_decks": 400,
+    "note": "Every statistic is at the REALIZED n. G-N still voids below the committed thresholds \u2014 a partial run is read, then declared U-UNREADABLE if it is short. Nothing is extrapolated."
+  }
+}

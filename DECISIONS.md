@@ -7863,3 +7863,96 @@ the thing being priced. `governance/PRODUCTION.yaml` untouched; no band, no
 `COST_REMEASURE.json` · `PHASE_B_SURVEY.md`) · `rust/carc/carc-core/src/tier1.rs` ·
 `scripts/tiletie/{verify_tier1_rust,bench_tier1_rust}.py` ·
 commits `55779f1e` → `625a6b95` → `c06d1686` → `e0e5bcca`.
+
+## 2026-08-17 — TIE ARBITRATION **STAGE 2, PHASE B**: the deck-paired game cell fires **`G-CONFIRMED`** — terminal-grounded tie arbitration wins games, and it is the mechanism rather than the clock
+
+**The first deploy-elo evidence this axis has ever produced**, and the only reading that
+discharges Stage 1b's DESIGN §12.1 caveat (*both judges were terminal-grounded, so it was
+not yet a deploy-elo claim*). Two cells, one fresh band (**132000000000**), one deck set,
+n = 800 deck-paired each, 800/800 completed, 0 failed, all **nine** §3 preconditions PASS.
+
+| | `ARB` (argmax) | `RND` (matched-wall-clock control) |
+|---|---|---|
+| deck-paired margin ⭐ **PRIMARY** | **+3.0700** pts/game, **z +4.445** | −4.4287, z −6.669 |
+| elo (secondary) | +23.92, 95% CI [−0.21, +48.06] | −60.09, CI [−84.53, −35.65] |
+| winrate | 0.5344, z **+1.94** | 0.4144, z −4.84 |
+| `ms_ratio` | 2.4242 | 2.4163 |
+
+`D = M_arb − M_rnd` = **+7.4988** pts/game deck-paired, **`z_D` +8.036** ⇒ `p ∧ q ∧ r` ⇒
+`G-CONFIRMED`, taken verbatim.
+
+**Three things that must travel with that verdict and must never be dropped:**
+
+1. ⚠️ **The secondary does NOT convict.** elo +23.92 has a 95% CI whose lower bound is
+   essentially zero, and winrate z is **+1.94 — below 2**. The pre-registered primary
+   (READ_RULE §2) is the deck-paired *margin*, and it convicts at +4.445. The margin
+   convicts; the win-rate does not. **No citation of "+23.92 elo" may drop this.**
+2. ⚠️ **`D` is dominated by the CONTROL LOSING, not by `ARB` winning big.** `RND` reads
+   −60.09 elo: **randomly re-picking among leaf-tied arms is actively and strongly
+   harmful.** That is a substantive finding in its own right — the champion's own
+   tie-break is far better than arm-average, so a leaf-tied set is **not** a set of
+   interchangeable moves. Cite the two cells together, never `D` alone.
+3. ⚠️ **The realized deployed cost is ≈2.3–2.4× the champion's per-move wall, not the
+   ≈1.2× DESIGN §5 predicted.** §0.G decomposes it: the numerator was right within 12%
+   (8.561 predicted vs 9.57 realized worker-s per fired ply — *the arbiter cost what Phase
+   A said it would*), and the denominator was a **sequential-vs-contended category
+   error**. **The cost model missed, not the arbiter.**
+
+**Why the control was designed this way.** Condition (a) asked for a matched-wall-clock
+control. The naive form — give the champion extra sims — changes the champion's config and
+cannot run under the inverted liveness gate. `RND` instead runs the **identical** B = 16
+CRN playouts on the **identical** worlds at the **identical** tied plies over the
+**identical** arm set, discards the values, and picks by seeded RNG. Its compute is not
+merely equal in magnitude, it is *the same compute*, which makes it both the sharpest
+possible clock control and the deploy analogue of Stage 1b's `C-RND`. That design choice
+is what turned a "does it win?" cell into a "*is it the mechanism?*" cell.
+
+**Governance, and the part worth reading twice.** DESIGN + READ_RULE were committed
+**blind** at `b2faa238`, before the instrument and before one game. **Eight §0 pre-run
+amendments** followed, every one before the band claim: `§0.B` fixed a `G-N` deck floor
+that was **unreachable on a perfectly complete run** (found by the instrument's own
+exhaustiveness sweep, not by a number); `§0.D` recorded the owner's wall-clock ruling
+verbatim; `§0.E` accepted fail-soft with four conditions; `§0.F` added `G-PLY` because one
+of those conditions was **unwitnessed by every gate**; `§0.G` recorded the cost-model miss
+from the smoke; `§0.H` declined to invent a bar after seeing a smoke number.
+⭐ **`§4` stayed BYTE-IDENTICAL to `b2faa238` throughout — 8,035 chars / 8,220 UTF-8 bytes
+/ 111 non-ASCII, machine-proved on every revision. No branch condition ever moved.**
+
+**The adjudication took two passes, and the disclosure is the audit trail.** The first
+fired **`U-UNREADABLE`** on `G-J1`, `G-BAND`, `G-TOOL`. All three were **instrument**
+defects: two read the witness at the wrong manifest level (it was present and correct at
+`config.cand_leaf_hash` / `config.band_seed_start`), and `G-TOOL` compared a **time-varying
+repo stamp across two moments** — `carc_rs_build_id()` embeds `git rev-parse HEAD` at call
+time, and `launch_both.sh` rebuilds the wheel by design, so the gate was **unsatisfiable on
+every healthy run of this launcher** (the same defect class as `§0.B`'s `G-N`). Because
+§4.3 mandates the companion table on **every** branch including `U-UNREADABLE`, that run
+printed the statistics and **the orchestrating session became non-blind** — it therefore
+did **not** touch the adjudicator; a **blind** session wrote the fixes from gate inputs
+alone, with `U-UNREADABLE` explicitly left available (a non-empty wheel-relevant diff would
+have kept it; the diff was **empty**, independently re-verified). Recorded in READ_RULE
+`§0.I.2` and as a first-class READOUT section.
+
+**A claim of mine was withdrawn by the data (`§0.I.1`).** §0.E.1 justified fail-soft partly
+as *"symmetric across `ARB` and `RND` **by construction**"*. Too strong: the arbiter is
+deterministic *given the position*, so once the cells diverge on a pick they are on
+different boards and can fail at different rates. **The run proved it** — the fallback
+fired exactly once, in `RND` and not `ARB` (1 in 14,292 fired plies, 7.0e-5), which is
+precisely what "by construction" denies can happen. The acceptance still stands on the
+argument that actually carried it: propagating would have killed the game and left a
+**candidate-correlated** exclusion (the `capoff` pattern). It was vindicated in production —
+one ply's arbitration lost instead of one deck out of 800 — and `G-PLY` held with
+`tiearb_partial_argmax_total` = **0 across all 28,350 fired plies**.
+
+⇒ **WHAT THIS LICENSES: a production-flip DECISION for Joshua, and nothing else.**
+`governance/PRODUCTION.yaml` is **untouched**. The decision must be put to him carrying
+(i) the realized **≈2.3–2.4× contended per-move cost**, and (ii) **`rho_phone` = 5.520 at
+B = 16 — the phone currency was never solved, so no on-device deploy is licensed on any
+branch.** ⛔ No leaf term (CL-065 + two dead menus + the 38% reach bound stand), no second
+cell, no top-up. The read-rule is **SPENT** and band 132000000000 is **RETIRED** from
+confirmatory use.
+
+→ `measurement/tiearb2_stage2_20260817/` (`DESIGN.md` · `READ_RULE.md` · `READOUT.{md,json}`) ·
+`results.csv tiearb2_s2_{ARB,RND}_B16J4_deploy11008_vs_champ11008_n800_b132e9` ·
+`governance/BAND_REGISTRY.csv` 132000000000 (retired, decision_influenced=yes) ·
+blind order `b2faa238` → `3bd1ff7d` → `6c281f9e` → `a81b8c72` → `c36055a7` → `ef07768c` →
+`edd3deab` → `d39c8a03` → `46537745` (band claim) → `369ac884` → `ea75eda0`.

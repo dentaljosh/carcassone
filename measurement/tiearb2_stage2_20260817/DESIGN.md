@@ -1,5 +1,13 @@
 # STAGE 2 — PHASE B: THE DECK-PAIRED GAME CELL (DESIGN)
 
+> **⭐ CLOSED 2026-08-17 — branch `G-CONFIRMED`** ([READ_RULE](READ_RULE.md) ·
+> [READOUT](READOUT.md)). `ARB` +3.0700 pts/game (z **+4.445**), `RND` −4.4287 (z −6.669),
+> `D` **+7.4988** (z **+8.036**), all nine §3 gates PASS, 800/800 both cells, 0 failed.
+> ⚠️ elo +23.92 CI [−0.21, +48.06], winrate z +1.94 — **the margin convicts, the win-rate
+> does not.** ⚠️ §5's `ms_ratio` prediction **missed by ~2×** (realized 2.4242/2.4163) —
+> see §0.G: the cost model missed, not the arbiter. Licenses a production-flip **DECISION
+> for the owner** only; `PRODUCTION.yaml` untouched.
+
 > **STATUS AT WRITING: COMMITTED BEFORE THE INSTRUMENT AND BEFORE ONE GAME IS
 > PLAYED.** No rust arbitration knob exists, no runtime tie-detector exists, no
 > positive control exists, no band is claimed, `summary.json` does not exist for any
