@@ -2274,6 +2274,14 @@ def _cand_tiearb_telemetry(champ) -> dict | None:
         "arms_total": int(s["tiearb_arms_total"]),
         "playouts_total": int(s["tiearb_playouts_total"]),
         "secs": float(s["tiearb_secs"]),
+        # FAIL-SOFT counter. A tier1 continuation can hit the engine's window
+        # refusal or the ply ceiling deep in a determinized world; that falls
+        # back to the champion's own pick rather than killing the GAME (a
+        # candidate-correlated exclusion is invisible in the elo — the capoff
+        # pattern). Nonzero is REPORTABLE, not fatal, and it must never be
+        # invisible.
+        "errors": int(s.get("tiearb_errors") or 0),
+        "first_error": s.get("tiearb_first_error"),
         "mode": str(s["tiearb_mode"]),
         "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
     }
@@ -2544,6 +2552,9 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         _arms = sum(int(r.cand_tiearb["arms_total"]) for r in _ta)
         _pl = sum(int(r.cand_tiearb["playouts_total"]) for r in _ta)
         _sec = sum(float(r.cand_tiearb["secs"]) for r in _ta)
+        _err = sum(int(r.cand_tiearb.get("errors") or 0) for r in _ta)
+        _err1 = next((r.cand_tiearb.get("first_error") for r in _ta
+                      if r.cand_tiearb.get("first_error")), None)
         _modes = sorted({str(r.cand_tiearb["mode"]) for r in _ta})
         tiearb_summary = {
             "tiearb_games": len(_ta),
@@ -2563,13 +2574,21 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             "tiearb_phi_offline_prior": 22.96,
             "tiearb_G_FIRE_floor": 1.0,
             "tiearb_G_FIRE_fired": bool(_fired / max(1, len(_ta)) < 1.0),
+            # Fail-soft arbiter errors: the ply fell back to the champion's own
+            # pick and the game survived. Reported so a nonzero count is on the
+            # record; it is NOT a branch input anywhere.
+            "tiearb_errors_total": _err,
+            "tiearb_error_rate_on_fired": _err / max(1, _fired + _err),
+            "tiearb_first_error": _err1,
         }
         print(f"tie-arbiter: {len(_ta)} games, mode(s) {'/'.join(_modes)} — "
               f"phi {tiearb_summary['tiearb_phi']:.2f} fired tile plies/game "
               f"(offline prior 22.96; {_fired}/{_tile} of tile plies), "
               f"pick-change {tiearb_summary['tiearb_pickchange_rate']:.3f}, "
               f"mean arms {tiearb_summary['tiearb_mean_arms']:.2f}, "
-              f"{_pl} playouts, {tiearb_summary['tiearb_secs_per_game']:.1f}s/game")
+              f"{_pl} playouts, {tiearb_summary['tiearb_secs_per_game']:.1f}s/game"
+              + (f"  ⚠️ {_err} FAIL-SOFT arbiter errors (fell back to the "
+                 f"champion's pick; first: {str(_err1)[:120]})" if _err else ""))
         if tiearb_summary["tiearb_G_FIRE_fired"]:
             print("  ⛔ G-FIRE: phi < 1.0 — THE ARBITRATION SURFACE IS EFFECTIVELY "
                   "INERT AND THIS CELL IS U-UNREADABLE (READ_RULE §3). Do NOT read "

@@ -2410,6 +2410,12 @@ impl PyFairAgent {
         d.set_item("tiearb_arms_total", a.tiearb_arms_total)?;
         d.set_item("tiearb_playouts_total", a.tiearb_playouts_total)?;
         d.set_item("tiearb_secs", a.tiearb_secs)?;
+        // Fail-soft counter: plies where a tier1 continuation errored (window
+        // refusal / ply ceiling in a determinized world) and the champion's own
+        // pick stood. Nonzero is REPORTABLE, not fatal — but it must never be
+        // invisible, so it rides beside the firing rate on every cell.
+        d.set_item("tiearb_errors", a.tiearb_errors)?;
+        d.set_item("tiearb_first_error", a.tiearb_first_error.clone())?;
         d.set_item("k_dets", a.cfg.k_dets)?;
         d.set_item("sims_per_det", a.cfg.search.simulations)?;
         d.set_item("threads", a.cfg.threads)?;

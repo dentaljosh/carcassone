@@ -326,6 +326,15 @@ pub struct FairAgent {
     pub tiearb_playouts_total: u64,
     /// Total wall-clock the arbiter added (the in-cell half of `ms_ratio`).
     pub tiearb_secs: f64,
+    /// Plies where the arbiter ERRORED and the champion's own pick stood. A
+    /// deep `tier1-greedy` continuation in a determinized world can hit the
+    /// engine's window refusal or the ply ceiling; that must not kill the game
+    /// (a candidate-correlated exclusion is invisible in the elo), so it falls
+    /// back and is counted here. Nonzero is REPORTABLE, not fatal.
+    pub tiearb_errors: u64,
+    /// The first such error's message, kept so a nonzero count is diagnosable
+    /// without a re-run.
+    pub tiearb_first_error: Option<String>,
 }
 
 impl FairAgent {
@@ -355,6 +364,8 @@ impl FairAgent {
             tiearb_arms_total: 0,
             tiearb_playouts_total: 0,
             tiearb_secs: 0.0,
+            tiearb_errors: 0,
+            tiearb_first_error: None,
         }
     }
 
@@ -580,7 +591,7 @@ impl FairAgent {
         }
         let t0 = std::time::Instant::now();
         let s = &self.cfg.search;
-        let outcome = crate::tiearb::arbitrate_decision(
+        let result = crate::tiearb::arbitrate_decision(
             g,
             champ_pick,
             &s.leaf,
@@ -591,8 +602,32 @@ impl FairAgent {
             move_idx,
             s.tiearb_mode,
             &mut self.tiearb_scratch,
-        )
-        .map_err(FairError::Engine)?;
+        );
+        // ⚠️ FAIL SOFT, AND COUNT IT. The arbiter introduces a failure mode the
+        // champion does not have: a `tier1-greedy` continuation runs deep into a
+        // DETERMINIZED world and can hit the engine's all-legal-actions-outside-
+        // the-window refusal (the window-truncation family) or the ply ceiling.
+        // Propagating that would kill the GAME, and a game-level exclusion here
+        // would be CANDIDATE-CORRELATED — the capoff pattern, where the missing
+        // games were exactly the ones the candidate's own style drove into the
+        // wall, and the loss is invisible in the elo. So: the champion's own
+        // `pooled_q_argmax` pick stands for that ply, the error is COUNTED, and
+        // the first message is kept. It cannot hide (`tiearb_errors` rides in
+        // `stats()` beside the firing rate), and it is symmetric across the two
+        // cells by construction — `ARB` and `RND` run the identical playouts on
+        // the identical worlds, so they fail on the identical plies and `D` is
+        // unaffected.
+        let outcome = match result {
+            Ok(o) => o,
+            Err(e) => {
+                self.tiearb_errors += 1;
+                if self.tiearb_first_error.is_none() {
+                    self.tiearb_first_error = Some(e);
+                }
+                self.tiearb_secs += t0.elapsed().as_secs_f64();
+                return Ok(champ_pick);
+            }
+        };
         let dt = t0.elapsed().as_secs_f64();
         self.tiearb_secs += dt;
         info.tiearb_secs = dt;
