@@ -335,6 +335,16 @@ pub struct FairAgent {
     /// The first such error's message, kept so a nonzero count is diagnosable
     /// without a re-run.
     pub tiearb_first_error: Option<String>,
+    /// READ_RULE §0.F `G-PLY`: plies where an argmax was taken over FEWER than
+    /// `B` completed worlds. ⚠️ It is **0 by construction** — [`crate::tiearb::
+    /// arbitrate`] propagates the first playout error with `?`, so a partial
+    /// world set never reaches the argmax and the whole ply reverts to the
+    /// champion's own pick instead. This counter exists because *a condition no
+    /// gate can see is not a condition*: a partial-world argmax would silently
+    /// break the CRN pairing across arms, which is the entire basis of the
+    /// ARB-vs-RND comparison, and nothing else in the run would show it.
+    /// **Non-zero (or absent) ⇒ `U-UNREADABLE`.**
+    pub tiearb_partial_argmax: u64,
 }
 
 impl FairAgent {
@@ -366,6 +376,7 @@ impl FairAgent {
             tiearb_secs: 0.0,
             tiearb_errors: 0,
             tiearb_first_error: None,
+            tiearb_partial_argmax: 0,
         }
     }
 
@@ -601,6 +612,7 @@ impl FairAgent {
             s.tiearb_eps,
             move_idx,
             s.tiearb_mode,
+            s.tiearb_max_plies,
             &mut self.tiearb_scratch,
         );
         // ⚠️ FAIL SOFT, AND COUNT IT. The arbiter introduces a failure mode the
@@ -634,6 +646,13 @@ impl FairAgent {
         match outcome {
             None => Ok(champ_pick),
             Some((arms, out)) => {
+                // READ_RULE §0.F `G-PLY`: assert the whole-ply property rather
+                // than assume it. `arbitrate` cannot return Ok with a partial
+                // world set, so this must never fire — which is exactly why it
+                // is worth counting.
+                if out.worlds_completed != self.cfg.search.tiearb_b {
+                    self.tiearb_partial_argmax += 1;
+                }
                 self.tiearb_fired_plies += 1;
                 self.tiearb_arms_total += arms.arms.len() as u64;
                 self.tiearb_playouts_total += out.n_playouts as u64;
@@ -1038,6 +1057,56 @@ mod tests {
         assert_eq!(arb.last_move.tiearb_fired, rnd.last_move.tiearb_fired);
         assert_eq!(arb.last_move.tiearb_arms, rnd.last_move.tiearb_arms);
         assert_eq!(arb.tiearb_playouts_total, rnd.tiearb_playouts_total);
+    }
+
+    /// READ_RULE §0.F `G-PLY`, the implementation witness: a mid-playout
+    /// failure must revert the WHOLE ply to the champion's own
+    /// `pooled_q_argmax` pick — never an argmax over the surviving worlds.
+    /// Constructed by squeezing the ply ceiling so the continuations error.
+    #[test]
+    fn a_playout_failure_reverts_the_whole_ply_and_never_partially_argmaxes() {
+        let g = midgame("28000000000", 40);
+        let mut base = FairAgent::new(cfg(4, 48, 1));
+        let champ = base.choose_action(&g, Some(9)).unwrap();
+
+        let mut c = cfg(4, 48, 1);
+        c.search.tiearb_enabled = true;
+        c.search.tiearb_b = 4;
+        c.search.tiearb_max_plies = 3; // every continuation dies mid-playout
+        c.exact_endgame = false;
+        let mut broken = FairAgent::new(c);
+        let act = broken.choose_action(&g, Some(9)).unwrap();
+
+        assert_eq!(act, champ, "a failed arbitration did not revert to the champion's pick");
+        assert!(broken.tiearb_errors > 0, "the ceiling did not actually break a playout");
+        assert!(!broken.last_move.tiearb_fired, "a failed ply must not count as fired");
+        assert_eq!(broken.tiearb_fired_plies, 0);
+        assert_eq!(broken.tiearb_partial_argmax, 0,
+                   "an argmax was taken over a PARTIAL world set");
+        assert!(broken.tiearb_first_error.is_some());
+    }
+
+    /// ...and on a HEALTHY ply every world completes, so the same counter stays
+    /// 0 for the opposite reason. Both halves are needed: a counter that is 0
+    /// because the arbiter never ran proves nothing.
+    #[test]
+    fn a_healthy_ply_completes_every_world() {
+        let mut c = cfg(2, 16, 1);
+        c.search.tiearb_enabled = true;
+        c.search.tiearb_b = 2;
+        c.exact_endgame = false;
+        let mut a = FairAgent::new(c);
+        let mut g = Game::from_seed("28000000000");
+        for _ in 0..30 {
+            if g.is_terminal() {
+                break;
+            }
+            let act = a.choose_action(&g, None).unwrap();
+            g.advance(act).unwrap();
+        }
+        assert!(a.tiearb_fired_plies > 0, "the arbiter never ran");
+        assert_eq!(a.tiearb_errors, 0);
+        assert_eq!(a.tiearb_partial_argmax, 0);
     }
 
     #[test]

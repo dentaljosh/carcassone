@@ -373,6 +373,12 @@ pub struct ArbOutcome {
     /// under `Random`.
     pub chosen: i32,
     pub n_playouts: usize,
+    /// Worlds whose FULL arm set completed. ⚠️ On an `Ok` return this is ALWAYS
+    /// `B`: [`arbitrate`] propagates the first playout error with `?`, so there
+    /// is no code path that averages over a partial world set. The field exists
+    /// so the caller can ASSERT that rather than assume it (READ_RULE §0.F
+    /// `G-PLY`) — a condition no gate can see is not a condition.
+    pub worlds_completed: usize,
 }
 
 /// DESIGN §2's arbiter: `B` CRN determinizations SHARED by every arm, a
@@ -391,12 +397,14 @@ pub fn arbitrate(
     digest: &str,
     ply: i64,
     mode: TiearbMode,
+    max_plies: usize,
 ) -> Result<ArbOutcome, String> {
     if arms.is_empty() {
         return Err("arbitrate called with an empty arm set".to_string());
     }
     let mut sums = vec![0.0f64; arms.len()];
     let mut n_playouts = 0usize;
+    let mut worlds_completed = 0usize;
     for j in 0..b {
         let js = j.to_string();
         let world_seed = seed_i64(&[salt, digest, &ply.to_string(), &js]);
@@ -407,11 +415,18 @@ pub fn arbitrate(
             // cache = None: the HONEST legal mask. See the module docs — the
             // memo is a python-replay-harness defect and would leak an
             // arm-order side channel into a CRN comparison.
+            // ⚠️ THE `?` IS THE WHOLE-PLY REVERT. A failure in ANY world for ANY
+            // arm propagates out of `arbitrate` immediately, so the caller falls
+            // back to the champion's own `pooled_q_argmax` pick for the ENTIRE
+            // ply. There is deliberately no "average the survivors" path: a
+            // partial world set would break the CRN pairing across arms, which
+            // is the entire basis of the ARB-vs-RND comparison.
             let (margin, _plies) =
-                tier1_playout(&world, a, seat, playout_seed, TIEARB_MAX_PLIES, None)?;
+                tier1_playout(&world, a, seat, playout_seed, max_plies, None)?;
             sums[i] += margin;
             n_playouts += 1;
         }
+        worlds_completed += 1;
     }
     let denom = b.max(1) as f64;
     let means: Vec<f64> = sums.iter().map(|s| s / denom).collect();
@@ -441,6 +456,7 @@ pub fn arbitrate(
         argmax_arm,
         chosen,
         n_playouts,
+        worlds_completed,
     })
 }
 
@@ -461,6 +477,7 @@ pub fn arbitrate_decision(
     eps: f64,
     ply: i64,
     mode: TiearbMode,
+    max_plies: usize,
     scratch: &mut LeafScratch,
 ) -> Result<Option<(ArmSet, ArbOutcome)>, String> {
     if g.state.phase != Phase::Tiles {
@@ -483,7 +500,7 @@ pub fn arbitrate_decision(
         // one of them: there is nothing to arbitrate. Counted as NOT fired.
         return Ok(None);
     }
-    let out = arbitrate(g, seat, &arms.arms, b, salt, &digest, ply, mode)?;
+    let out = arbitrate(g, seat, &arms.arms, b, salt, &digest, ply, mode, max_plies)?;
     Ok(Some((arms, out)))
 }
 
@@ -665,6 +682,7 @@ mod tests {
             "d",
             7,
             TiearbMode::Argmax,
+            TIEARB_MAX_PLIES,
         )
         .unwrap();
         assert_eq!(out.means[0].to_bits(), out.means[1].to_bits());
@@ -680,8 +698,8 @@ mod tests {
         let legal = g.legal_actions();
         let arms = [legal[0], legal[1], legal[2]];
         let seat = g.state.current_player;
-        let a = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Argmax).unwrap();
-        let r = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random).unwrap();
+        let a = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Argmax, TIEARB_MAX_PLIES).unwrap();
+        let r = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random, TIEARB_MAX_PLIES).unwrap();
         assert_eq!(a.n_playouts, r.n_playouts, "the two modes must cost the same");
         for (x, y) in a.means.iter().zip(r.means.iter()) {
             assert_eq!(x.to_bits(), y.to_bits(), "random mode changed the playouts");
@@ -690,12 +708,12 @@ mod tests {
         assert_eq!(a.chosen, a.argmax_arm);
         assert!(arms.contains(&r.chosen));
         // seeded => reproducible
-        let r2 = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random).unwrap();
+        let r2 = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random, TIEARB_MAX_PLIES).unwrap();
         assert_eq!(r.chosen, r2.chosen);
         // ...and it is a real draw: some (digest, ply) picks a non-first arm.
         let mut saw_other = false;
         for ply in 0..24i64 {
-            let x = arbitrate(&g, seat, &arms, 1, "s", "d", ply, TiearbMode::Random).unwrap();
+            let x = arbitrate(&g, seat, &arms, 1, "s", "d", ply, TiearbMode::Random, TIEARB_MAX_PLIES).unwrap();
             if x.chosen != arms[0] {
                 saw_other = true;
                 break;
@@ -737,6 +755,7 @@ mod tests {
             0.0,
             0,
             TiearbMode::Argmax,
+            TIEARB_MAX_PLIES,
             &mut s,
         )
         .unwrap();

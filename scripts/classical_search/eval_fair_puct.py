@@ -2282,6 +2282,15 @@ def _cand_tiearb_telemetry(champ) -> dict | None:
         # invisible.
         "errors": int(s.get("tiearb_errors") or 0),
         "first_error": s.get("tiearb_first_error"),
+        # READ_RULE §0.F `G-PLY`: plies where an argmax was taken over FEWER
+        # than B completed worlds. 0 by construction — a playout failure aborts
+        # the WHOLE ply and reverts to the champion's own pick, because a
+        # partial world set would break the CRN pairing across arms, which is
+        # the entire basis of the ARB-vs-RND comparison. Emitted so that is
+        # WITNESSED in the cells that actually played, not asserted in prose.
+        # ⚠️ Non-zero OR ABSENT => U-UNREADABLE (absent is unknown-not-zero).
+        "partial_argmax": int(s.get("tiearb_partial_argmax") or 0),
+        "max_plies": int(s.get("tiearb_max_plies") or 0),
         "mode": str(s["tiearb_mode"]),
         "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
     }
@@ -2555,6 +2564,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         _err = sum(int(r.cand_tiearb.get("errors") or 0) for r in _ta)
         _err1 = next((r.cand_tiearb.get("first_error") for r in _ta
                       if r.cand_tiearb.get("first_error")), None)
+        _partial = sum(int(r.cand_tiearb.get("partial_argmax") or 0) for r in _ta)
         _modes = sorted({str(r.cand_tiearb["mode"]) for r in _ta})
         tiearb_summary = {
             "tiearb_games": len(_ta),
@@ -2580,6 +2590,11 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             "tiearb_errors_total": _err,
             "tiearb_error_rate_on_fired": _err / max(1, _fired + _err),
             "tiearb_first_error": _err1,
+            # READ_RULE §0.F `G-PLY`. Expected 0; ABSENT or NON-ZERO voids the
+            # cell, so it is emitted unconditionally on every arbiter cell.
+            "tiearb_partial_argmax_total": _partial,
+            "tiearb_max_plies": sorted({int(r.cand_tiearb.get("max_plies") or 0)
+                                        for r in _ta}),
         }
         print(f"tie-arbiter: {len(_ta)} games, mode(s) {'/'.join(_modes)} — "
               f"phi {tiearb_summary['tiearb_phi']:.2f} fired tile plies/game "
@@ -2589,6 +2604,10 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
               f"{_pl} playouts, {tiearb_summary['tiearb_secs_per_game']:.1f}s/game"
               + (f"  ⚠️ {_err} FAIL-SOFT arbiter errors (fell back to the "
                  f"champion's pick; first: {str(_err1)[:120]})" if _err else ""))
+        if _partial:
+            print(f"  ⛔ G-PLY: {_partial} plies took an argmax over FEWER than "
+                  f"B completed worlds — the CRN pairing across arms is broken "
+                  f"and this cell is U-UNREADABLE (READ_RULE §0.F).")
         if tiearb_summary["tiearb_G_FIRE_fired"]:
             print("  ⛔ G-FIRE: phi < 1.0 — THE ARBITRATION SURFACE IS EFFECTIVELY "
                   "INERT AND THIS CELL IS U-UNREADABLE (READ_RULE §3). Do NOT read "

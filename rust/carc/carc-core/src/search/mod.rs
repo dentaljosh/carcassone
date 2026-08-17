@@ -191,6 +191,14 @@ pub struct SearchConfig {
     /// Tie membership tolerance. **0.0 is the committed setting** — exact f64
     /// equality, not a tolerance (DESIGN §2).
     pub tiearb_eps: f64,
+    /// Ply ceiling for the arbiter's `tier1-greedy` continuations. A GUARD, not
+    /// a truncation: a playout that hits it ERRORS (and the whole ply reverts to
+    /// the champion's own pick), it is never scored short — DESIGN's
+    /// terminal-grounding estimand forbids a non-terminal value, and READ_RULE
+    /// §0.D's anti-gaming clause forbids truncating for cost. 400 is the
+    /// default; a full 2-player base game is ~144 plies. Exposed only so a test
+    /// can CONSTRUCT a mid-playout failure and witness the whole-ply revert.
+    pub tiearb_max_plies: usize,
 }
 
 impl Default for SearchConfig {
@@ -220,6 +228,7 @@ impl Default for SearchConfig {
             tiearb_mode: crate::tiearb::TiearbMode::Argmax,
             tiearb_salt: String::from(crate::tiearb::TIEARB_SALT_OF_RECORD),
             tiearb_eps: 0.0,
+            tiearb_max_plies: crate::tiearb::TIEARB_MAX_PLIES,
         }
     }
 }

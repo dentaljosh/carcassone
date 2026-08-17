@@ -1567,6 +1567,7 @@ def test_expect_host_is_required_so_the_J13_roster_is_never_inferred():
 # READ_RULE §4.1 names by file and must never be skipped by a missing/stale wheel.
 # =========================================================================== #
 SALT = "tiearb2-deploy-v1"
+CONTROL_DECK_SEED = "28000000000"
 
 try:                                                        # noqa: SIM105
     import carc_rs
@@ -1853,6 +1854,71 @@ def test_the_arms_are_deduped_by_successor_board_and_capped_at_J(_env):
         ms.advance(ms.legal_actions()[len(ms.legal_actions()) // 2])
     assert saw_dedupe, "no transposing tie set was seen — the dedupe is untested"
     assert saw_cap, "the J cap never bit — the seeded draw is untested"
+
+
+@requires_rs
+def test_a_playout_failure_reverts_the_WHOLE_ply_and_never_partially_argmaxes():
+    """READ_RULE §0.F `G-PLY`, the IMPLEMENTATION witness.
+
+    The arbiter fails soft: a `tier1-greedy` continuation that dies mid-playout
+    (window refusal, ply ceiling) must revert the **whole ply** to the
+    champion's own `pooled_q_argmax` pick. It must NEVER take an argmax over
+    the surviving worlds — a partial world set breaks the CRN pairing across
+    arms, which is the entire basis of the `ARB`-vs-`RND` comparison, and
+    nothing else in a finished run would show it.
+
+    The failure is CONSTRUCTED by squeezing the ply ceiling (`tiearb_max_plies`)
+    so the continuations cannot reach a terminal. Both halves are asserted: the
+    broken agent returns the champion's pick with `tiearb_errors > 0` and
+    `tiearb_partial_argmax == 0`, and a HEALTHY agent on the same line reaches
+    `tiearb_partial_argmax == 0` for the opposite reason — a counter that reads
+    0 because the arbiter never ran would prove nothing.
+    """
+    from carcassonne_ai.rust_agent import leaf_config_rs
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    lc = leaf_config_rs(DEFAULT_CONFIG)
+
+    # Walk to a ply where the trigger actually FIRES — a ceiling that breaks no
+    # playout because the arbiter never ran would prove nothing.
+    ms = carc_rs.MirrorState.from_seed(CONTROL_DECK_SEED)
+    prefix = []
+    for _ in range(200):
+        if ms.tiearb_probe(lc, -1, 4, 0.0, SALT, 9).get("fired"):
+            break
+        a_ = int(ms.legal_actions()[len(ms.legal_actions()) // 2])
+        prefix.append(a_)
+        ms.advance(a_)
+    else:                                                   # pragma: no cover
+        pytest.skip("no firing ply found on the control line")
+
+    def agent(**kw):
+        a = carc_rs.FairAgentRs(
+            carc_rs.SearchConfigRs(lc, 48, 1.5, 5.0, 15.0, **kw),
+            4, 101, threads=1, exact_endgame=False)
+        a.start_game_from_seed(CONTROL_DECK_SEED)
+        for act in prefix:
+            a.advance(act)
+        return a
+
+    champ = agent()
+    x = int(champ.choose_action(9))
+
+    broken = agent(tiearb_enabled=True, tiearb_b=4, tiearb_max_plies=3)
+    y = int(broken.choose_action(9))
+    s = broken.stats()
+    assert y == x, "a failed arbitration did not revert to the champion's pick"
+    assert s["tiearb_errors"] > 0, "the ceiling did not actually break a playout"
+    assert s["tiearb_fired_plies"] == 0, "a failed ply must not count as fired"
+    assert s["tiearb_partial_argmax"] == 0, "an argmax over a PARTIAL world set"
+    assert s["tiearb_first_error"]
+
+    healthy = agent(tiearb_enabled=True, tiearb_b=2)
+    healthy.choose_action(9)
+    hs = healthy.stats()
+    assert hs["tiearb_fired_plies"] > 0, "the healthy control never fired"
+    assert hs["tiearb_errors"] == 0
+    assert hs["tiearb_partial_argmax"] == 0
 
 
 @requires_rs

@@ -1461,6 +1461,7 @@ impl PySearchConfig {
         tiearb_mode="argmax",
         tiearb_salt=carc_core::tiearb::TIEARB_SALT_OF_RECORD,
         tiearb_eps=0.0,
+        tiearb_max_plies=carc_core::tiearb::TIEARB_MAX_PLIES,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1487,6 +1488,7 @@ impl PySearchConfig {
         tiearb_mode: &str,
         tiearb_salt: &str,
         tiearb_eps: f64,
+        tiearb_max_plies: usize,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -1569,6 +1571,13 @@ impl PySearchConfig {
                  committed setting); got {tiearb_eps}"
             )));
         }
+        if tiearb_max_plies < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "tiearb_max_plies must be >= 1 (it is a GUARD, not a truncation: a \
+                 playout that hits it ERRORS and the whole ply reverts to the \
+                 champion's pick)",
+            ));
+        }
         if tiearb_enabled && tiearb_salt.is_empty() {
             return Err(pyo3::exceptions::PyValueError::new_err(
                 "tiearb_salt must be non-empty when the arbiter is enabled (the salt \
@@ -1602,6 +1611,7 @@ impl PySearchConfig {
                 tiearb_mode: tmode,
                 tiearb_salt: tiearb_salt.to_string(),
                 tiearb_eps,
+                tiearb_max_plies,
             },
         })
     }
@@ -2416,6 +2426,11 @@ impl PyFairAgent {
         // invisible, so it rides beside the firing rate on every cell.
         d.set_item("tiearb_errors", a.tiearb_errors)?;
         d.set_item("tiearb_first_error", a.tiearb_first_error.clone())?;
+        // READ_RULE §0.F `G-PLY`: plies where an argmax was taken over fewer
+        // than B completed worlds. 0 by construction; emitted so that is
+        // WITNESSED rather than asserted in prose. Non-zero => U-UNREADABLE.
+        d.set_item("tiearb_partial_argmax", a.tiearb_partial_argmax)?;
+        d.set_item("tiearb_max_plies", a.cfg.search.tiearb_max_plies)?;
         d.set_item("k_dets", a.cfg.k_dets)?;
         d.set_item("sims_per_det", a.cfg.search.simulations)?;
         d.set_item("threads", a.cfg.threads)?;
