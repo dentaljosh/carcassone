@@ -56,7 +56,8 @@ def test_deploy_profiles_and_the_mobile_unpin():
     assert mobile["total_sims"] == desktop["total_sims"]
     assert mobile["backend"] == "rust", \
         "the mobile budget is ONLY payable on the rust core — never unpin one without the other"
-    assert mobile["rust_threads"] == 4, "G7 measured 1.551 s/move at threads=4"
+    assert mobile["rust_threads"] == 2, \
+        "flipped 4->2 on the 2026-08-16 battery A/B (t2 faster AND ~half the energy; owner-approved, 00f8a154)"
     assert mobile["parallel_workers"] is None, "Chaquopy has no multiprocessing, ever"
 
     # Unknown profile -> the champion of record on the SEQUENTIAL PYTHON path, and it
