@@ -220,6 +220,42 @@ and a non-interactive ssh on the laptop with no `rustup` on `PATH` ⇒ maturin d
 **stale wheel**, now fixed by sourcing `~/.cargo/env` and asserting `rustc --version`
 before building). That is the correct resolution and the gate was not relaxed.
 
+### 0.F `G-PLY` — a WITNESS for §0.E.1 condition 1, which was otherwise unverifiable
+
+> **Recorded before the band claim and before game 1.** Band unclaimed, no
+> `summary.json`, no strength number in existence.
+
+§0.E.1 condition 1 requires the fail-soft fallback to be taken at **ply granularity** —
+if any world or arm errors, the whole ply reverts to the champion's pick, and the
+arbiter **never** takes an argmax over a partial world set, because the CRN pairing
+across arms is the entire basis of the comparison.
+
+⚠️ **That condition was UNWITNESSED by every gate in this document.** `G-FIRE` sees error
+*counts* only; nothing in `summary.json` or the manifests records the *granularity* at
+which a fallback was taken. A partial-world argmax would therefore have been **invisible
+to the whole adjudication layer** — a silent break of the comparison's basis, on a
+property I had myself flagged as needing explicit confirmation. A condition no gate can
+see is not a condition; it is a hope.
+
+**Two witnesses are therefore required before launch, at different levels:**
+
+1. **Implementation level** — a test in `tests/test_tiearb2_stage2.py` section H that
+   constructs a mid-playout failure in **one** world and asserts the ply's pick equals
+   the champion's own `pooled_q_argmax` pick, **not** an argmax over the surviving
+   worlds.
+2. **Runtime level** — the arbiter counts any argmax taken over fewer than `B` = 16
+   completed worlds for any arm, and exposes **`tiearb_partial_argmax_total`** in
+   `summary.json` for both cells.
+
+**`G-PLY`, added to §3:** `tiearb_partial_argmax_total` **absent, or non-zero**, in
+either cell ⇒ `U-UNREADABLE`. Absent is a failure, not a pass — an unreported counter is
+unknown, not zero, exactly as §0.E's absent-error-rate rule already establishes. A
+non-zero value means the CRN pairing was broken during play, so the cell's central
+comparison is void whatever the margins say.
+
+⚠️ This is a **witness for an already-committed condition**, not a new condition:
+§0.E.1's condition 1 is unchanged and this only makes it checkable. §4 is untouched.
+
 ---
 
 ## 1. Scope
@@ -270,6 +306,7 @@ so it selects a label and its mandatory rider, never a permission.
 | `G-N` | **(AMENDED §0.B)** `n_common < 320` **decks**, **or** either cell completed fewer than **640** of its **800** paired **games**. ⚠️ The text committed at `b2faa238` read `n_common < 600`, which is unreachable: a paired `n = 800` cell yields at most **400** decks (`eval_fair_puct.py:3924`) |
 | `G-TOOL` | the two boxes did not run the same rust toolchain / the same `carc_rs` build, or a cell mixed builds |
 | `G-STAT` | `z_arb`, `z_rnd` or `z_D` is `NaN` or absent |
+| `G-PLY` | **(ADDED §0.F)** `tiearb_partial_argmax_total` is **absent, or non-zero**, in either cell — absent is unknown-not-zero and fails; non-zero means an argmax was taken over a partial world set, i.e. **the CRN pairing across arms was broken during play**, so the cell's central comparison is void whatever the margins say |
 
 `U-UNREADABLE` = report cost, integrity, firing rates, and whichever gate failed.
 **Nothing closes, nothing is licensed, nothing is re-labelled.**
