@@ -65,7 +65,14 @@ cd $REPO_REMOTE || exit 1
 set -u
 git fetch "$SHARE_REMOTE/bundles/$(basename "$BUNDLE")" '+refs/heads/*:refs/remotes/bundle/*' || exit 6
 git reset --hard $REV || exit 7
+# ⚠️ A NON-INTERACTIVE ssh shell does NOT get rustup on PATH (the profile that
+# adds it is only sourced for login/interactive shells), so a bare
+# \`maturin develop\` dies with "rustc ... is not installed or not in PATH" —
+# observed on this exact box 2026-08-17. Source it explicitly.
+[ -f "\$HOME/.cargo/env" ] && . "\$HOME/.cargo/env"
+export PATH="\$HOME/.cargo/bin:\$PATH"
 export RUSTUP_TOOLCHAIN=$RUST_TOOLCHAIN
+rustc --version || exit 5
 nice -n $NICE $REPO_REMOTE/.venv/bin/maturin develop --release -m rust/carc/carc-py/Cargo.toml || exit 8
 git -C $REPO_REMOTE rev-parse --short HEAD
 $REPO_REMOTE/.venv/bin/python -c 'import carc_rs;print("carc_rs", carc_rs.__version__, hasattr(carc_rs.MirrorState,"tiearb_probe"))'

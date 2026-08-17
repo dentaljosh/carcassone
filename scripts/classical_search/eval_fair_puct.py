@@ -4472,6 +4472,7 @@ def main(argv=None) -> int:
                        _prov.get("rust_toolchain") or os.environ.get("RUSTUP_TOOLCHAIN"))
         patch_manifest(out, "carc_rs_build", _prov.get("carc_rs_build"))
         patch_manifest(out, "carc_rs_version", _prov.get("carc_rs_version"))
+        patch_manifest(out, "carc_rs_binary_sha", _prov.get("carc_rs_binary_sha"))
         patch_manifest(out, "mixed_builds", False)
     except Exception as _e:                 # noqa: BLE001  — provenance never kills a run
         patch_manifest(out, "rust_toolchain", os.environ.get("RUSTUP_TOOLCHAIN"))

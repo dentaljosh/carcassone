@@ -193,6 +193,13 @@ def main() -> int:
                            or prov.get("rust_toolchain")),
         "carc_rs_build": prov.get("carc_rs_build"),
         "carc_rs_version": prov.get("carc_rs_version"),
+        # ⚠️ BOX-LOCAL, and NOT comparable across boxes: two machines compiling
+        # the identical source with the identical toolchain produce different
+        # bytes (measured 2026-08-17, local 73aa2010... vs laptop ec140ac0... at
+        # the same commit and the same rustc 1.96.0). It proves this box's wheel
+        # was rebuilt; `carc_rs_build` is the field that compares.
+        "carc_rs_binary_sha": prov.get("carc_rs_binary_sha"),
+        "code_rev_dirty": prov.get("code_rev_dirty"),
         "all_preflight_pass": bool(ok_all),
         "checks": checks,
         "two_sided": two_sided,

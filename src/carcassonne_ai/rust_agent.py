@@ -313,18 +313,21 @@ def leaf_value_panel_rs(leaf_cfg) -> dict:
     return out
 
 
-def carc_rs_build_id() -> str:
-    """A content identity for the INSTALLED `carc_rs` binary — the `G-TOOL`
-    witness (`measurement/tiearb2_stage2_20260817/READ_RULE.md` §3).
+def _code_rev_reported() -> str:
+    from .run_manifest import code_rev
 
-    `carc_rs.__version__` is the Cargo version and does NOT move between builds,
-    so it cannot tell a fresh wheel from a stale one; two boxes can report the
-    same version while running different code, which is exactly the "mixed
-    builds" failure `G-TOOL` exists to catch. This hashes the compiled extension
-    itself: `carc_rs-<version>+<sha256[:16] of the .so>`.
+    return code_rev()
 
-    Falls back to `carc_rs-<version>+unhashed` rather than raising — a
-    provenance helper must never be the thing that kills a run.
+
+def carc_rs_binary_sha() -> str:
+    """sha256[:16] of the INSTALLED `carc_rs` extension binary.
+
+    ⚠️ **BOX-LOCAL, and NOT comparable across machines.** Two boxes that compile
+    the identical source with the identical toolchain produce different bytes
+    (embedded paths, host CPU feature selection); measured 2026-08-17 —
+    local `73aa20102ab98e2f` vs laptop `ec140ac0c0583d53` at the same commit and
+    the same `rustc 1.96.0`. Use it to prove a wheel was REBUILT on this box (its
+    value moves when the source moves), never to prove two boxes agree.
     """
     import hashlib
     from pathlib import Path
@@ -336,14 +339,45 @@ def carc_rs_build_id() -> str:
         blobs = sorted(p for p in pkg.iterdir()
                        if p.suffix in (".so", ".pyd", ".dylib"))
         if not blobs:
-            return f"carc_rs-{carc_rs.__version__}+nobinary"
+            return "nobinary"
         h = hashlib.sha256()
         for b in blobs:
             h.update(b.name.encode())
             h.update(b.read_bytes())
-        return f"carc_rs-{carc_rs.__version__}+{h.hexdigest()[:16]}"
+        return h.hexdigest()[:16]
     except Exception:                                       # noqa: BLE001
-        return f"carc_rs-{carc_rs.__version__}+unhashed"
+        return "unhashed"
+
+
+def carc_rs_build_id() -> str:
+    """The CROSS-BOX-COMPARABLE build identity — the `G-TOOL` witness
+    (`measurement/tiearb2_stage2_20260817/READ_RULE.md` §3, "the two boxes did
+    not run the same rust toolchain / the same `carc_rs` build").
+
+    `carc_rs-<cargo version>+<repo rev>+rustc<toolchain>`.
+
+    ⚠️ Why NOT the binary hash. A `G-TOOL` gate is an EQUALITY check between two
+    boxes' stamps, and the compiled `.so` is not reproducible across machines
+    (see [`carc_rs_binary_sha`]) — a hash-based id would fail that gate on every
+    healthy 2-box run. The three components here DO move together with the code
+    and the compiler and DO compare across boxes. The box-local staleness
+    question is answered separately, by `carc_rs_binary_sha` plus the per-host
+    positive control, which is the only thing that can prove the installed wheel
+    actually carries the surface under test.
+    """
+    import carc_rs
+
+    from .run_manifest import code_rev
+
+    tc = os.environ.get("RUSTUP_TOOLCHAIN") or "unpinned"
+    # ⚠️ The bare commit, NOT `code_rev()`'s "-dirty" suffix. Two boxes at the
+    # same commit can differ in WHICH uncommitted files they carry (a live tree
+    # with a concurrent session's work in it), and a `G-TOOL` equality gate would
+    # then fail on a run whose COMPILED code is identical. Dirtiness is real
+    # provenance and is reported — as its own field, where it cannot void a gate
+    # it is not evidence about.
+    rev = code_rev().replace("-dirty", "")
+    return f"carc_rs-{carc_rs.__version__}+{rev}+rustc{tc}"
 
 
 def backend_provenance() -> dict:
@@ -354,10 +388,15 @@ def backend_provenance() -> dict:
     return {
         "carc_rs_version": str(carc_rs.__version__),
         "carc_rs_path": str(carc_rs.__file__),
-        # A CONTENT identity, unlike the Cargo version above: two boxes on
-        # different builds report the same `carc_rs_version` but different
-        # `carc_rs_build`. This is the `G-TOOL` mixed-build witness.
+        # The `G-TOOL` mixed-build witness, and it is CROSS-BOX COMPARABLE
+        # (cargo version + repo rev + rustc toolchain) — unlike the Cargo
+        # version alone, which never moves, and unlike the binary hash below,
+        # which is not reproducible across machines.
         "carc_rs_build": carc_rs_build_id(),
+        # BOX-LOCAL staleness evidence. Do NOT compare it across boxes.
+        "carc_rs_binary_sha": carc_rs_binary_sha(),
+        "code_rev": _code_rev_reported(),
+        "code_rev_dirty": _code_rev_reported().endswith("-dirty"),
         "rust_toolchain": os.environ.get("RUSTUP_TOOLCHAIN"),
         "tile_data_source_sha256": tiles_src,
         "tile_data_semantic_digest": tiles_sem,
