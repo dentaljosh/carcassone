@@ -1,0 +1,3 @@
+132000000000
+TIE-ARBITRATION STAGE 2 PHASE B: two deck-paired cells on ONE band and ONE deck set -- ARB (arbiter mode=argmax, B=16, J=4, salt tiearb2-deploy-v1) and RND (identical playouts/worlds/plies/arm set, values DISCARDED, arm drawn by seeded RNG = the matched-wall-clock control of A-DEPLOYABLE condition (a)). Candidate = the production champion + the tie arbiter; opponent = the UNMODIFIED production champion. BOTH arms FAIR PIMC k8x1376=11008, exact-K 2, rust both sides. cand_leaf_hash MUST EQUAL a36d2e15a3b3d71d (INVERTED gate). PRIMARY STATISTIC = deck-paired margin z per cell; D = M_arb - M_rnd is the mechanism net of clock and is a CONJUNCT.
+claimed 2026-08-17
