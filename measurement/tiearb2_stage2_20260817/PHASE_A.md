@@ -1,9 +1,44 @@
 # STAGE 2 — PHASE A: SOLVE COST (rust `tier1-greedy` continuation)
 
-> **STATUS: IN PROGRESS** — engineering + free re-pricing. **No strength statistic
-> is computed on this branch.** Phase B (the deck-paired game cell) is gated on
-> Phase A landing an affordable capturing `B`, and its DESIGN/READ_RULE are
-> committed blind, after this file and after `COST_REMEASURE.json`.
+> **STATUS: ⭐ CLOSED 2026-08-17 — PASS. THE COST WALL IS GONE, AND THE RUNG THAT
+> CAPTURES IS THE ONE THAT IS NOW AFFORDABLE.**
+>
+> - **`G-BITEXACT` PASSES on its committed counts**: `n_legs` **240/240**,
+>   `n_playouts` **15,360/15,360 value-bit-identical**, plies identical 15,360,
+>   seed witness 240/240, **0 mismatches**, and the two sha256 digests over the
+>   little-endian f64 bytes are **equal**
+>   (`0c2e39fe…6b88e80`). → [BITEXACT.json](BITEXACT.json)
+> - **`c_tier1_rust` = 0.178232 worker-s/playout** at the production-like `W = 30`
+>   (0.093769 at `W = 1`) ⇒ **15.30× the pilot `c` 2.7274** and 12.35× the realized
+>   2.2004. **§1 committed a 7.94× requirement for `B = 16` before the port existed;
+>   the port delivered 15.30×.** → [COST_REMEASURE.json](COST_REMEASURE.json)
+> - ⇒ **`B_affordable` = 16.** `rho_wall(16)` = **0.6224**, i.e. the capturing rung
+>   runs at **52% of the 1.20 bar** — *every* rung of the ladder is now affordable,
+>   and **the §5 fallback ladder does not fire.** `rho_amortized(16)` = 0.1985.
+> - ⚠️ **`rho_phone` is NOT solved and is not claimed to be**: 0.345 / 0.690 / 1.380
+>   / 2.760 / **5.520** at `B` = 1/2/4/8/16, so on the shipped phone currency only
+>   `B ≤ 2` is under 1.20. **Reported, unadjudicated** — the N4 bar this programme is
+>   graded at is `rho_wall`, and a phone deploy is a later question, not a Phase-B
+>   blocker.
+>
+> **⇒ Phase B is UNLOCKED**: an affordable capturing `B` exists on disk. Its
+> DESIGN/READ_RULE are committed blind, after this file and after
+> `COST_REMEASURE.json`.
+>
+> ⚠️ **By-catch, and it is a real bug in the python, not in the port.** The first
+> verification run read **57 mismatching legs**. Localisation: `game_wrapper.Game`'s
+> per-record legal-mask memo (`_legal_cache`) is keyed on `string_representation`,
+> whose rotation signature is **not injective for 180°-symmetric tiles** — so the
+> banked judge occasionally served a *colliding* legal mask, and the true-legal-mask
+> port diverged from it. The port reproduces the memo, collisions included
+> (`legal_mask_cache = True`), which is what bit-exactness against the banked records
+> *means*. The underlying non-injective key is parked as its own roadmap item
+> (`05ed019c`); it is **not** fixed here, because fixing it would break exactness
+> against the corpus this gate grades. A cache-off sensitivity run reads
+> `c` = 0.178857 (+0.35%), so the memo is not load-bearing for the cost number.
+>
+> **0 strength games in Phase A.** No `experiments/results.csv` row, no band, no claim
+> id, `governance/PRODUCTION.yaml` untouched.
 
 ## 0. Owner authorization
 

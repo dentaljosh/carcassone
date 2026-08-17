@@ -7794,3 +7794,72 @@ are excluded rather than the corpus regenerated.
 `CORPUS_PIPELINE.md` · `WORKERS.conf` · `ALLOCATION.conf`) ·
 `scripts/tiletie/{build_tiearb2_corpus.sh,tiearb2_corpus_lib.py,gate_disjoint.py,emit_digest_exclusions.py,split_tiearb2.py,analyze_tiearb2.py}` ·
 `tests/test_tiearb2*.py` · records on the share at `/mnt/c/carc-shared/tiearb2_20260816/`.
+
+## 2026-08-17 — TIE ARBITRATION **STAGE 2, PHASE A**: the arbiter's cost core ported to RUST — **`G-BITEXACT` passes 15,360/15,360 and the ~8× cost wall is gone** (`B_affordable` = 16 at `rho_wall` 0.6224)
+
+**Owner authorization, verbatim: *"funded"*** — against the single step `A-COSTLY`
+licensed: ONE Stage-2 deck-paired GAME-cell prereg that **must solve cost on its own
+terms and may NOT assume the `B*` = 2 arm**. Branch `tiearb2-stage2`.
+
+**The decision that mattered, and it was made before any code existed.** Stage 1b left
+a mechanism statement, not a budget complaint: the capture is bought by *world breadth*
+(`arb` +0.0094/+0.0322/+0.0920/+0.0826/+0.1441 at `B` = 1/2/4/8/16), the deployable
+budget sat at `B` = 2, and the signal lives at `B` ≈ 16 — an ~8× gap. Three ways to
+close it were available: a cheaper continuation policy, trigger-gating to fewer tied
+plies, or **making the existing continuation faster without changing it at all**. Only
+the third leaves the adjudicated estimand intact, so it is the one that was funded, and
+`measurement/tiearb2_stage2_20260817/PHASE_A.md` (`55779f1e`) committed **the required
+speedup per rung before the port existed** — `c ≤ 5.4979/B`, i.e. **7.94×** for `B` = 16
+against the pilot `c_tier1` 2.7274 — precisely so the result could not be accused of
+fitting its own target afterwards.
+
+**Result.** `carc_core::tier1` ports `RuleBasedPlayer` (Rule 1 forced-move, Rule 3
+early-farmer filter *before* Rule 2 force-place, the int64 argmax over the v1 OBJECT
+leaf, and the `randbelow` tie-break) plus the whole-leg playout loop; the leg entry
+point is **pure rust**, so no python runs per ply and the number measures the deployable
+shape rather than a lockstep harness.
+
+- **`G-BITEXACT` (a hard abort) PASSES**: `n_legs` 240/240, `n_playouts`
+  **15,360/15,360 value-bit-identical**, plies identical 15,360, seed witness 240/240,
+  **0 mismatches**, both sha256 digests equal. Comparison is on raw f64 **bit patterns**.
+  Count-only reporting with the expected counts as **committed constants**, never
+  `len(new)` — a truncated run fails the gate instead of trivially satisfying it.
+- **`c_tier1_rust` = 0.178232 worker-s/playout** at the production-like `W` = 30
+  (0.093769 at `W` = 1) ⇒ **15.30×** the pilot `c`, 12.35× the realized 2.2004.
+- ⇒ **`B_affordable` = 16.** `rho_wall(16)` = **0.6224** — the *capturing* rung at 52%
+  of the 1.20 N4 bar (it was 9.525). Every rung is affordable, so **the pre-registered
+  fallback ladder does not fire**: no sub-bar `B` = 4 / `B` = 8 rung is needed, and
+  truncation stays closed on the frontier-blindness argument.
+
+**Two things deliberately NOT claimed.** (1) **`rho_phone` is not solved** — 5.520 at
+`B` = 16, only `B` ≤ 2 is phone-legal. Reported and **unadjudicated**: the bar this
+programme is graded at is `rho_wall`, and an on-device deploy is a separate later
+question. (2) **No strength statistic was computed and no game was played.** Stage 1b's
+read-rule is SPENT and its corpus BURNED; the capture column is *carried* as published,
+never recomputed.
+
+**By-catch — a real bug in the python, and the decision was to NOT fix it here.** The
+first verification read 57 mismatching legs. Localisation: `game_wrapper.Game`'s
+per-record legal-mask memo is keyed on `string_representation`, whose rotation signature
+is **not injective for 180°-symmetric tiles**, so the banked judge occasionally served a
+*colliding* legal mask. Options considered: (a) fix the key and re-bank — rejected, it
+would invalidate the 2,703-leg corpus this gate grades against and cost a re-run of
+Stage 1b's scoring; (b) accept "close" — rejected by the design's own hard-abort clause;
+(c) **reproduce the memo including its collisions** (`legal_mask_cache=True`) — chosen,
+because bit-exactness *against banked records* means reproducing the judge that was
+actually run. The non-injective key is parked as its own roadmap row (`05ed019c`) to be
+fixed where it cannot corrupt a published corpus. A cache-off sensitivity run moves `c`
+by **+0.35%**, so the memo is not load-bearing for the cost number.
+
+⇒ **Phase B (the one licensed deck-paired game cell) is UNLOCKED** — an affordable
+capturing `B` exists on disk. It integrates the arbiter as a **rust-side `SearchConfig`
+knob at the `pooled_q_argmax` root hook**; a python-side wrapper was considered and
+**rejected** because it would leave the arbiter's cost out of `prefix_secs` and silently
+defeat the N4 cost trigger, i.e. it would buy a favourable `ms_ratio` by not measuring
+the thing being priced. `governance/PRODUCTION.yaml` untouched; no band, no
+`experiments/results.csv` row, no claim id in Phase A.
+
+→ `measurement/tiearb2_stage2_20260817/` (`PHASE_A.md` · `BITEXACT.json` ·
+`COST_REMEASURE.json` · `PHASE_B_SURVEY.md`) · `rust/carc/carc-core/src/tier1.rs` ·
+`scripts/tiletie/{verify_tier1_rust,bench_tier1_rust}.py` ·
+commits `55779f1e` → `625a6b95` → `c06d1686` → `e0e5bcca`.
