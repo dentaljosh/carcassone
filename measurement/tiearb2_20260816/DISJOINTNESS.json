@@ -1,0 +1,43 @@
+{
+  "disclosure_policy": "COUNTS ONLY \u2014 no rid, root_id, checksum or digest value appears in this report by construction",
+  "gate": "G-DISJOINT",
+  "goal": "the fresh tie-arbitration corpus shares NO game, NO position and NO board with the spent 2026-08-12 corpus",
+  "inputs": {
+    "new_arms": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/positions/ARMS.json",
+    "new_legs": [
+      "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/positions/positions_walled_leg1.jsonl"
+    ],
+    "spent_arms": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/ARMS.json",
+    "spent_legs": [
+      "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_app_aug2_leg1.jsonl",
+      "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg1.jsonl",
+      "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg1.jsonl"
+    ]
+  },
+  "layers": {
+    "a_root_id": {
+      "identity": "root_id (the GAME) from ARMS.json values",
+      "n_intersection": 0,
+      "n_new": 724,
+      "n_spent": 399
+    },
+    "b_rid": {
+      "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+      "n_intersection": 0,
+      "n_new": 1350,
+      "n_spent": 733
+    },
+    "c_position_digest": {
+      "identity": "sha256(checksum) where checksum = game.string_representation(board) at the tied root",
+      "n_intersection": 0,
+      "n_new": 1350,
+      "n_new_leg_lines": 1350,
+      "n_spent": 733,
+      "n_spent_leg_lines": 733
+    }
+  },
+  "n_layers_violated": 0,
+  "passed": true,
+  "sha256_new_rid_list": "cab69086455fa43a46bad972682ccf4c61c77bf0575f29b3c555e16f9cc3f3e6",
+  "sha256_spent_rid_list": "656d32624f9aa313937407ac4799c804b8a3ec546a36f892bdbb2d956f8e8687"
+}

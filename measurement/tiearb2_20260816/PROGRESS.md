@@ -135,6 +135,41 @@ he may bump to.**
   c484dc259f69439a8b40b5f28485fd75c956eebcfba8cef6693ad1b50e97553a`.
   Phase 2 CENSUS running: `E4 archives by profile: {}`, one `walled` leg, all 30
   workers, task estimate 3,400 — parallelism verified by `ps` (34 procs, 96.6% CPU).
+- **[t8] 20:10 EDT — CORPUS BUILT, and `G-DISJOINT` FIRED. The gate did its job.**
+  Phases 1–5 clean in **2m34s** (census 3,400 rows → 1,809 champ-pick candidates →
+  `afterstate_dedupe.applied true`, 454 dropped as whole-set transpositions →
+  **supply 1,355** over **725 roots**). `exclude_rids.n_removed_from_supply = 0`,
+  which is itself the witness that the 733 spent rids could not have collided.
+  Gate result:
+
+  | layer | identity | spent | new | ∩ |
+  |---|---|---|---|---|
+  | a | `root_id` (the GAME) | 399 | 725 | **0** ✅ |
+  | b | `rid` (the (game,ply) POSITION) | 733 | 1,355 | **0** ✅ |
+  | c | `sha256(checksum)` (the BOARD) | 733 | 1,353 | **3** ⛔ |
+
+  ⭐ **This is board TRANSPOSITION, not a band collision** — layers a and b at 0
+  prove the games and positions are disjoint; 3 of 1,353 boards are reachable from
+  a different game *and* a different ply, which is intrinsic to Carcassonne (the
+  spent corpus measured **26.2%** whole-set transpositions *internally*, and this
+  build dropped 454 of its own on the same principle). **Layer c is exactly the
+  layer that exists to catch what a and b cannot**, and it earned its place on its
+  first real use.
+  ⚠️ **The gate's printed remedy — *"rebuild the corpus from a clean deck-seed
+  band"* — is WRONG for a layer-c-only failure** and is not being followed: no band
+  is clean of transposition, so regenerating would cost another 4.4 h and reproduce
+  the same class of overlap. **The correct response is exclusion.**
+  Also surfaced by the same report: `n_new` 1,353 distinct digests from 1,355 leg
+  lines ⇒ **2 within-corpus duplicate boards**. The spent corpus has 733 rids and
+  733 distinct checksums (no internal duplicates), so these are dropped too, to
+  match its construction.
+  ⇒ **Fix: exclude the 3 + 2 = 5 offending rids and re-run phases 5–6 through the
+  same tested builder** (`build_positions.py --exclude-rids`), never by hand-editing
+  a plan. Supply 1,355 < `--n` 1400 means `stratified_sample` takes ALL supply, so
+  the drop is unambiguous: **expected realized n = 1,350**, still **30% above the
+  1,040 floor**. Phases 1–4 are untouched.
+  ⚠️ Recorded as a **corpus-assembly decision taken before any statistic exists**;
+  it reads board IDENTITY only, never a value.
 - **[t3] Six-touch, in-progress leg:** `docs/LEVER_INDEX.md` row 217 amended with the
   successor (in flight), `STATUS.md` top block replaced (the `P-PARTIAL` block moved
   to frozen history), `docs/PROGRAM_ROADMAP_2026-07-07.md` NOW block replaced.

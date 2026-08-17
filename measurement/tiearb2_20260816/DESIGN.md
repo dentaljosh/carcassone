@@ -44,6 +44,34 @@ no branch**. [READ_RULE.md](READ_RULE.md) is **untouched**. (This is the Stage-1
   cross-salt mix-up; (ii) `M = 32` and the prefix-stability property (§5.2) are
   unaffected — they are properties of the seed *function*, not of the salt value.
 
+- **0.A.2 — the 5 digest-contaminated positions are EXCLUDED; the corpus is not
+  regenerated.** On its first real use `G-DISJOINT` (§4.4) failed on **layer c
+  only**: layers a (`root_id`, the game) and b (`rid`, the (game,ply) position)
+  both intersected the spent corpus at **0**, while **3 of 1,353** board digests
+  overlapped. The same report showed **2 within-corpus duplicate boards**
+  (1,353 distinct digests from 1,355 leg lines).
+  **Diagnosis: board TRANSPOSITION, not a band collision.** Layers a and b at 0
+  prove the games and the positions are disjoint; the 3 boards are reachable from a
+  different game *and* a different ply. This is intrinsic to Carcassonne — the spent
+  corpus measured **26.2%** whole-set transpositions *within itself*, and this
+  build's own afterstate dedupe dropped **454** positions on exactly that principle.
+  ⇒ **the gate's printed remedy ("rebuild the corpus from a clean deck-seed band")
+  does not apply to a layer-c-only failure and is deliberately not followed**: no
+  band is free of transposition, so regeneration would cost another 4.4 h and
+  reproduce the same class of overlap.
+  **Response:** the 3 spent-overlapping rids and the 2 internal duplicates (keeping
+  the lexicographically smallest rid per digest, so the corpus matches the spent
+  one's property of 733 rids / 733 distinct checksums) are appended to the
+  `--exclude-rids` list and **phases 5–6 are re-run through the same tested
+  builder** — never by hand-editing a plan. Supply (1,355) is below `--n` (1,400),
+  so `stratified_sample` takes all of it and the drop is unambiguous: realized
+  **n = 1,350**, still **30% above the `G-N` floor of 1,040** (2σ resolution 0.307
+  in `F_fixed` units, unchanged in substance). `G-DISJOINT` must then pass all
+  three layers before anything is scored.
+  ⚠️ **This exclusion reads board IDENTITY only, never a value**, and is taken
+  before any arbitration, headroom or pricing number exists. It touches no
+  estimator, statistic, threshold, bar or branch. `READ_RULE.md` remains untouched.
+
 ---
 
 ## 0. Owner authorization

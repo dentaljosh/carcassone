@@ -1,0 +1,79 @@
+{
+ "schema": "carcassonne-tiearb2-plan/v1",
+ "label": "chunk4",
+ "design_doc": "measurement/tiearb2_20260816/DESIGN.md",
+ "read_rule": "measurement/tiearb2_20260816/READ_RULE.md",
+ "afterstate_dedupe": {
+  "applied": true,
+  "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+  "dropped_index_path": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/positions/DROPPED_ALL_TRANSPOSITION.json",
+  "dropped_pct": 25.09673852957435,
+  "n_dropped_all_transposition": 454,
+  "n_dropped_by_stratum": {
+   "selfplay": 454
+  },
+  "n_dropped_with_action_played_outside_tieset": 77,
+  "n_positions_with_arm_dedupe": 281,
+  "n_qualifying_before_drop": 1809,
+  "savings_pct_full_supply": 32.431686447695284,
+  "tieset_arm_playouts_full_supply_after": 156672,
+  "tieset_arm_playouts_full_supply_before": 231872
+ },
+ "cap_j": 4,
+ "m_worlds": 32,
+ "max_arms": 5,
+ "judge": "tier1-greedy",
+ "world_seed_salt": "tiletie-v1",
+ "permutation_seed": 20260816,
+ "source_plan_dir": "measurement/tiearb2_20260816/corpus/positions",
+ "n_positions": 338,
+ "n_roots": 276,
+ "n_e4": 0,
+ "n_selfplay": 338,
+ "n_positions_capped": 66,
+ "mean_arms": 3.002958579881657,
+ "champ_pick_secs": 0.0,
+ "playout_secs": 2.1783,
+ "oracle_worker_secs": 94381.3824,
+ "eta_by_workers": {
+  "20": {
+   "wall_secs": 4719.06912,
+   "wall_hours": 1.3108525333333334
+  },
+  "30": {
+   "wall_secs": 3146.04608,
+   "wall_hours": 0.8739016888888889
+  }
+ },
+ "counts_by_stratum": {
+  "selfplay": 338
+ },
+ "counts_by_profile_leg": {
+  "walled/leg1": 338,
+  "walled/leg2": 201,
+  "walled/leg3": 112,
+  "walled/leg4": 26
+ },
+ "total_legs": 677,
+ "total_arm_playouts": 43328,
+ "files": {
+  "walled/leg1": {
+   "n": 338,
+   "path": "measurement/tiearb2_20260816/positions_chunk4/positions_walled_leg1.jsonl"
+  },
+  "walled/leg2": {
+   "n": 201,
+   "path": "measurement/tiearb2_20260816/positions_chunk4/positions_walled_leg2.jsonl"
+  },
+  "walled/leg3": {
+   "n": 112,
+   "path": "measurement/tiearb2_20260816/positions_chunk4/positions_walled_leg3.jsonl"
+  },
+  "walled/leg4": {
+   "n": 26,
+   "path": "measurement/tiearb2_20260816/positions_chunk4/positions_walled_leg4.jsonl"
+  }
+ },
+ "out_dir": "measurement/tiearb2_20260816/positions_chunk4",
+ "run_id": "tiearb2_20260816"
+}

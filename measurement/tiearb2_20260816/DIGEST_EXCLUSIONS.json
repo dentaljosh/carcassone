@@ -1,0 +1,35 @@
+{
+  "disclosure_policy": "COUNTS ONLY \u2014 no rid, checksum or digest value appears in this report by construction",
+  "exclude_rids_path": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/digest_reemit.txt",
+  "generated_utc": "2026-08-17T00:20:05Z",
+  "inputs": {
+    "new_dir": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/_probe_positions",
+    "new_legs": [
+      "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/_probe_positions/positions_walled_leg1.jsonl"
+    ],
+    "spent_dir": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled",
+    "spent_legs": [
+      "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_app_aug2_leg1.jsonl",
+      "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg1.jsonl",
+      "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg1.jsonl"
+    ]
+  },
+  "n_excluded_by_both_rules": 0,
+  "n_internal_dupe_digest_groups": 2,
+  "n_internal_dupes": 2,
+  "n_new_distinct_digests": 1353,
+  "n_new_distinct_digests_after_exclusion": 1350,
+  "n_new_distinct_rids": 1355,
+  "n_new_leg_lines": 1355,
+  "n_new_leg_lines_after_exclusion": 1350,
+  "n_spent_distinct_digests": 733,
+  "n_spent_overlap": 3,
+  "n_total_excluded": 5,
+  "purpose": "layer-(c) board-digest exclusions for the tiearb2 corpus (board transposition, not band contamination)",
+  "rules": {
+    "a_spent_overlap": "drop every fresh rid whose sha256(checksum) appears in the spent corpus",
+    "b_internal_dupes": "within the fresh corpus keep the lexicographically smallest rid per digest, drop the rest (the spent corpus has 733 rids / 733 distinct checksums \u2014 one rid per board)"
+  },
+  "sha256_excluded_rid_list": "089993df94d4ac4a4a9934ad95b863547bf5930872a57df62216bc3ec197c341",
+  "tool": "emit_digest_exclusions"
+}
