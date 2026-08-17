@@ -36,11 +36,13 @@ agree with this file; this file is the spec.
 """
 from __future__ import annotations
 
+import ast
 import itertools
 import json
 import math
 import random
 import sys
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -453,13 +455,17 @@ def _manifest(cell, *, leaf_hash=CHAMP_HASH, tiearb=None, band=BAND, n=800,
 
 
 def _cells(*, arb_over=None, rnd_over=None, n_games=800, phi=(20.0, 20.0),
-           decks=None):
+           err=(0.0, 0.0), decks=None):
+    """`err` = `tiearb_error_rate_on_fired` per cell. G-FIRE binds on
+    `phi_effective = phi x (1 - err)` since §0.E.1 cond. 2."""
     decks = decks if decks is not None else list(range(BAND, BAND + 400))
     out = {}
     for i, c in enumerate(("ARB", "RND")):
         m = _manifest(c)
         m.update((arb_over if c == "ARB" else rnd_over) or {})
         out[c] = {"cell": c, "manifest": m, "n_games": n_games, "phi": phi[i],
+                  "arbiter_errors": {"tiearb_error_rate_on_fired": err[i],
+                                     "phi_effective": S2.phi_effective(phi[i], err[i])},
                   "deck_seeds": list(decks)}
     return out
 
@@ -624,6 +630,91 @@ def test_G_FIRE_passes_AT_the_floor_and_phi_is_otherwise_never_a_branch_input():
     assert pre == {g: True for g in S2.ALL_GATES}
 
 
+def test_phi_effective_is_phi_times_one_minus_the_error_rate():
+    """§0.E.1 cond. 2's formula, transcribed from the amended §3 row."""
+    assert S2.phi_effective(20.0, 0.0) == 20.0
+    assert S2.phi_effective(20.0, 0.25) == pytest.approx(15.0)
+    assert S2.phi_effective(23.0, 1.0) == 0.0            # fires, arbitrates NOTHING
+    # UNKNOWN is not zero -- an absent rate is fail-closed, not assumed clean
+    for bad in (None, NAN):
+        assert S2.phi_effective(20.0, bad) is None
+        assert S2.phi_effective(bad, 0.0) is None
+
+
+def test_G_FIRE_BINDS_ON_phi_effective_so_a_fail_soft_arbiter_cannot_slip_through():
+    """⭐ THE HOLE FAIL-SOFT OPENS, and the §0.E.1 cond. 2 amendment that closes it.
+
+    An arbiter that TRIGGERS 23 times a game and FALLS BACK 23 times has a raw
+    `phi` of 23 -- far over the floor -- while arbitrating nothing at all. It is
+    exactly the champion-vs-champion null wearing the shape of a real cell that
+    `G-FIRE` was written to catch, and the raw rate would have let it through."""
+    # raw phi is 20, way over the floor; the effective rate is 0.20 -> VOID
+    pre, det = _all_pre(cells=_cells(phi=(20.0, 20.0), err=(0.99, 0.0)))
+    assert det["G-FIRE"]["phi_arb"] == 20.0              # the RAW rate is fine
+    assert det["G-FIRE"]["phi_effective"]["ARB"] == pytest.approx(0.2)
+    assert pre["G-FIRE"] is False                        # ... the EFFECTIVE one is not
+    assert det["G-FIRE"]["binds_on"].startswith("phi_effective")
+    assert all(v for k, v in pre.items() if k != "G-FIRE")
+    # the pathological case the amendment names: fires 23/game, errors on all of them
+    pre, det = _all_pre(cells=_cells(phi=(23.0, 23.0), err=(1.0, 1.0)))
+    assert det["G-FIRE"]["phi_effective"] == {"ARB": 0.0, "RND": 0.0}
+    assert pre["G-FIRE"] is False
+    # EITHER cell suffices
+    assert _all_pre(cells=_cells(phi=(20.0, 20.0), err=(0.0, 0.99)))[0]["G-FIRE"] is False
+    # exactly AT the floor still passes: 20 x (1 - 0.95) = 1.0
+    pre, _ = _all_pre(cells=_cells(phi=(20.0, 20.0), err=(0.95, 0.95)))
+    assert pre["G-FIRE"] is True
+    # ... and just under does not
+    assert _all_pre(cells=_cells(phi=(20.0, 20.0),
+                                 err=(0.9500001, 0.0)))[0]["G-FIRE"] is False
+
+
+def test_G_FIRE_fails_closed_on_an_ABSENT_error_rate():
+    """An unreported error rate is UNKNOWN, not zero -- it cannot be SHOWN to
+    clear the floor, which is the same posture as an absent phi."""
+    cells = _cells(phi=(20.0, 20.0))
+    cells["ARB"]["arbiter_errors"] = {}
+    pre, det = _all_pre(cells=cells)
+    assert pre["G-FIRE"] is False
+    assert det["G-FIRE"]["phi_effective"]["ARB"] is None
+
+
+def test_the_G_FIRE_amendment_rationale_is_recorded_in_the_gate():
+    """Same shape as gate_tool's: a later reader must be able to see WHY the
+    effective rate is a faithful reading of the committed purpose, not a new bar."""
+    import inspect
+    doc = inspect.getdoc(S2.gate_fire)
+    assert "FAITHFUL READING, NOT A NEW BAR" in doc
+    assert "FAILS SOFT" in doc and "pooled_q_argmax" in doc
+    assert "23 times a game and falls back 23 times" in doc
+    assert "The\n    FLOOR (1.0) is unchanged" in doc or "FLOOR (1.0) is unchanged" in doc
+    assert S2.PHI_FLOOR == 1.0                      # the floor itself did NOT move
+
+
+def test_the_dilution_statement_is_mandatory_above_the_committed_0_05():
+    """§0.E.1 cond. 3: above 0.05 the read-out must state that the effect is
+    DILUTED by that factor and that a null is correspondingly weaker evidence."""
+    assert S2.TIEARB_DILUTION_STATEMENT_BAR == 0.05
+    lo = S2.arbiter_errors([], {"tiearb_error_rate_on_fired": 0.05,
+                                "tiearb_errors_total": 3}, phi=20.0)
+    assert lo["DILUTION_STATEMENT_REQUIRED"] is False        # AT the bar: no
+    assert lo["dilution_statement"] is None
+    hi = S2.arbiter_errors([], {"tiearb_error_rate_on_fired": 0.20,
+                                "tiearb_errors_total": 90,
+                                "tiearb_first_error": "WindowTruncationError"}, phi=20.0)
+    assert hi["DILUTION_STATEMENT_REQUIRED"] is True
+    st = hi["dilution_statement"]
+    assert "DILUTED" in st and "20.0%" in st
+    assert "A NULL IS CORRESPONDINGLY WEAKER EVIDENCE" in st
+    assert "phi_effective = 16.00" in st and "phi = 20.00" in st
+    # the direction-of-bias facts §0.E.1 accepted travel with it
+    assert "symmetric across ARB and RND" in st and "D is\ndiluted".replace("\n", " ") in st
+    assert "TOWARD THE CHAMPION" in st and "understated" in st
+    assert hi["tiearb_first_error"] == "WindowTruncationError"
+    # ... and it is never a branch input except through G-FIRE
+    assert "Never a branch input EXCEPT through G-FIRE" in hi["branch_reachability"]
+
+
 def test_G_BAND_unclaimed_wrong_band_or_a_different_deck_range():
     pre, det = _all_pre(band_claim=_band_claim(claimed=False))
     assert pre["G-BAND"] is False and det["G-BAND"]["claimed_before_game_1"] is False
@@ -693,15 +784,26 @@ def test_G_N_deck_clause_stays_INDEPENDENTLY_BINDING():
 #: endpoint check.
 _READ_RULE_REVS = ("b2faa238",      # the original, committed before the instrument
                    "6c281f9e",      # §0.A-C  PRE-RUN AMENDMENT (G-N, +1.0, knob name)
-                   "a81b8c72")      # §0.D    OWNER RULING (N4 downgrade waived)
+                   "a81b8c72",      # §0.D    OWNER RULING (N4 downgrade waived)
+                   "c36055a7")      # §0.E    PRE-LAUNCH ACCEPTANCES (fail-soft, G-TOOL)
 
 #: THREE INDEPENDENT BOUNDARY CHOICES for "§4", drawn by two different sessions.
 #: All three showing equality is better evidence than any one of them, and the
 #: claim survives any single boundary being drawn slightly wrong.
 #: ⚠️ Sizes are pinned in BOTH units. The 8,035 figure quoted in review is
-#: CHARACTERS; the same slice is 8,220 UTF-8 BYTES. §4 carries 185 non-ASCII
-#: characters (§ ⭐ ≥ ∧ ¬ ⇒ ⚠ ⛔ — and friends), which is the whole of the
-#: difference -- the two readings never disagreed, they were in different units.
+#: CHARACTERS; the same slice is 8,220 UTF-8 BYTES. The two readings never
+#: disagreed -- they were the SAME cut in different units.
+#:
+#: ⚠️ AND THE 185 IS *EXTRA BYTES*, NOT A CHARACTER COUNT. §4 carries **111**
+#: non-ASCII characters whose encodings contribute **185** extra bytes, because
+#: they are not uniformly 2-byte:
+#:     2-byte (+1 each): § x14, ¬ x11, σ x7, × x2, ± x2, ÷ x1
+#:     3-byte (+2 each): ∧ x17, — x15, ≥ x12, ≡ x7, ⇒ x5, ≈ x4, ⚠ x3,
+#:                       U+FE0F x3, → x3, ∨ x2, ⭐ x1, ⛔ x1, ≤ x1
+#: "185 non-ASCII characters" would be a FALSE statement that merely coincides
+#: numerically with the true delta, and it gives the wrong intuition about drift:
+#: swapping — for - moves the delta by 2, not 1, and dropping the ⭐ also moves it
+#: by 2. So the RELATIONSHIP is asserted below, never the folklore.
 _S4_CUTS = {
     #  name                         start                 end                   chars  bytes
     "peer/index (incl. header)": ("## 4. Branches", "## 5. What no branch does", 8035, 8220),
@@ -737,10 +839,21 @@ def test_section_4_is_identical_across_all_revisions_on_three_boundary_choices()
             assert s == base, f"§4 MOVED at {r} under the '{name}' boundary"
             assert len(s) == n_chars, (name, r, "chars", len(s))
             assert len(s.encode()) == n_bytes, (name, r, "bytes", len(s.encode()))
-    # the 185-char/byte gap is entirely non-ASCII -- not a content difference
-    peer = _s4(texts["worktree"], _S4_CUTS["peer/index (incl. header)"][:2], True)
-    assert len(peer.encode()) - len(peer) == 185
-    assert sum(1 for ch in peer if ord(ch) > 127) > 0
+    # ⚠️ THE RELATIONSHIP, not the folklore. All four together make the units
+    # unambiguous: 185 is the EXTRA-BYTE total, and 111 is the character count.
+    # Asserting `non_ascii == 185` would be a FALSE statement that merely
+    # coincides with the true delta.
+    sec4 = _s4(texts["worktree"], _S4_CUTS["peer/index (incl. header)"][:2], True)
+    assert len(sec4) == 8035                                    # characters
+    assert len(sec4.encode("utf-8")) == 8220                    # bytes
+    assert len(sec4.encode("utf-8")) - len(sec4) == 185         # EXTRA bytes
+    assert sum(1 for c in sec4 if ord(c) > 127) == 111          # non-ASCII CHARS
+    # and the extra bytes are the sum of per-char costs, which are NOT uniform:
+    # a 3-byte char contributes 2. That is why 111 != 185, and why swapping a
+    # single "—" for "-" moves the delta by 2 rather than 1.
+    assert sum(len(c.encode("utf-8")) - 1 for c in sec4 if ord(c) > 127) == 185
+    widths = {len(c.encode("utf-8")) for c in sec4 if ord(c) > 127}
+    assert widths == {2, 3}, widths
 
     old, new = texts["b2faa238"], texts["worktree"]
 
@@ -821,6 +934,110 @@ def test_G_TOOL_refuses_the_harness_provenance_FAILURE_SENTINEL():
     pre, _ = _all_pre(preflights=[_preflight("local", build="<unavailable: OSError>"),
                                   _preflight("laptop", build="<unavailable: OSError>")])
     assert pre["G-TOOL"] is False
+
+
+def test_G_TOOL_NEVER_compares_carc_rs_binary_sha_across_boxes():
+    """⚠️ MEASURED ON THE REAL BOXES, 2026-08-17: the compiled `.so` is NOT
+    reproducible across machines — same commit, same `rustc 1.96.0`, local
+    `73aa20102ab98e2f` vs laptop `ec140ac0c0583d53`. A content-hash equality gate
+    would fail EVERY healthy 2-box run. `carc_rs_binary_sha` is BOX-LOCAL
+    staleness evidence: reported per box, never entered into the equality set."""
+    cells = _cells(arb_over={"carc_rs_binary_sha": "73aa20102ab98e2f"},
+                   rnd_over={"carc_rs_binary_sha": "ec140ac0c0583d53"})
+    pf = [_preflight("local"), _preflight("laptop")]
+    pf[0]["carc_rs_binary_sha"] = "73aa20102ab98e2f"
+    pf[1]["carc_rs_binary_sha"] = "ec140ac0c0583d53"
+    pre, det = _all_pre(cells=cells, preflights=pf)
+    assert pre["G-TOOL"] is True, "a per-box binary sha must NOT void a healthy 2-box run"
+    assert det["G-TOOL"]["distinct_builds"] == 1
+    # ... and it IS reported, per box, labelled box-local
+    assert det["G-TOOL"]["stamps"]["ARB"]["carc_rs_binary_sha_BOX_LOCAL"] == (
+        "73aa20102ab98e2f")
+    assert det["G-TOOL"]["stamps"]["preflight:laptop"][
+        "carc_rs_binary_sha_BOX_LOCAL"] == "ec140ac0c0583d53"
+    assert "NEVER compared across boxes" in det["G-TOOL"]["binary_sha_note"]
+    # STRUCTURAL: the gate's source never reads the field into a comparison
+    import inspect
+    tree = ast.parse(textwrap.dedent(inspect.getsource(S2.gate_tool)))
+    for node in ast.walk(tree):                  # strip every docstring
+        b = getattr(node, "body", None)
+        if (isinstance(b, list) and b and isinstance(b[0], ast.Expr)
+                and isinstance(getattr(b[0], "value", None), ast.Constant)
+                and isinstance(b[0].value.value, str)):
+            b.pop(0)
+    # every READ of the field -- i.e. every `<mapping>.get("carc_rs_binary_sha")`
+    reads = [n for n in ast.walk(tree)
+             if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+             and n.func.attr == "get" and n.args
+             and isinstance(n.args[0], ast.Constant)
+             and n.args[0].value == "carc_rs_binary_sha"]
+    assert len(reads) == 2, "expected exactly the two per-box REPORT reads"
+    # ... and each one is stored under a key that MARKS it box-local
+    stored_under = []
+    for d in (n for n in ast.walk(tree) if isinstance(n, ast.Dict)):
+        for k, val in zip(d.keys, d.values):
+            if any(r in ast.walk(val) for r in reads):
+                stored_under.append(ast.unparse(k))
+    assert len(stored_under) == 2, stored_under
+    for key in stored_under:
+        assert "_BOX_LOCAL" in key, key
+    # and the cross-box witness tuple does not mention it at all
+    witness = next(n for n in ast.walk(tree)
+                   if isinstance(n, ast.FunctionDef) and n.name == "_witness")
+    assert "carc_rs_binary_sha" not in ast.unparse(witness)
+
+
+def test_G_TOOL_witness_is_the_cross_box_BUILD_ID_not_a_content_hash():
+    """`carc_rs_build` = `carc_rs-<cargo version>+<commit[:12]>+rustc<toolchain>`
+    (`rust_agent.carc_rs_build_id`). All three components compare across boxes."""
+    import inspect
+    doc = inspect.getdoc(S2.gate_tool)
+    assert "NOT** A CONTENT HASH" in doc or "NOT** a content hash" in doc.replace(
+        "NOT** A CONTENT HASH", "NOT** a content hash")
+    assert "carc_rs-<cargo version>+<full commit[:12]>+rustc<toolchain>" in doc
+    assert "73aa20102ab98e2f" in doc and "ec140ac0c0583d53" in doc
+    assert "core.abbrev" in doc and "cf51bf17" in doc      # the per-box length trap
+    _, det = _all_pre(cells=_cells(
+        arb_over={"carc_rs_build": "carc_rs-0.1.0+bd94aed5d3ee+rustc1.96.0"},
+        rnd_over={"carc_rs_build": "carc_rs-0.1.0+bd94aed5d3ee+rustc1.96.0"}))
+    assert "CROSS-BOX COMPARABLE" in det["G-TOOL"]["stamps"]["ARB"]["build_witness"]
+    assert "NOT a content hash" in det["G-TOOL"]["stamps"]["ARB"]["build_witness"]
+
+
+@pytest.mark.parametrize("bad_id", [
+    "carc_rs-0.1.0+unknown+rustc1.96.0",        # the rev lookup failed
+    "carc_rs-0.1.0+bd94aed5d3ee+rustcunpinned",  # no RUSTUP_TOOLCHAIN
+    "<unavailable: ImportError>",
+    "unhashed", "nobinary",
+])
+def test_G_TOOL_refuses_every_build_id_SENTINEL(bad_id):
+    """`carc_rs_build_id` itself degrades to `unknown` / `rustcunpinned` when the
+    rev lookup or the toolchain pin is missing. Those are unknown provenance, not
+    agreement, even when BOTH boxes render the identical degraded string."""
+    pre, _ = _all_pre(cells=_cells(arb_over={"carc_rs_build": bad_id},
+                                   rnd_over={"carc_rs_build": bad_id}))
+    assert pre["G-TOOL"] is False, bad_id
+
+
+def test_G_TOOL_cross_box_authority_is_PREFLIGHT_vs_PREFLIGHT():
+    """⚠️ `mixed_builds: false` on a MANIFEST is the writer's own observation only
+    — under --shared-claim the second box writes no manifest. The authoritative
+    cross-box comparison is the two PREFLIGHT_*_${HOST}_FIRST.json witnesses."""
+    pre, det = _all_pre()
+    assert pre["G-TOOL"] is True
+    assert det["G-TOOL"]["cross_box_preflight_agreement"] is True
+    assert det["G-TOOL"]["preflight_hosts"] == ["laptop", "local"]
+    assert "WRITER'S OWN OBSERVATION" in det["G-TOOL"]["authority"]
+    # two hosts DISAGREEING voids, even with both manifests claiming mixed_builds=False
+    pf = [_preflight("local"), _preflight("laptop", toolchain="1.95.0")]
+    pre, det = _all_pre(preflights=pf)
+    assert pre["G-TOOL"] is False
+    assert det["G-TOOL"]["cross_box_preflight_agreement"] is False
+    # a SINGLE host is not a cross-box statement at all -- reported as such
+    pre, det = _all_pre(preflights=[_preflight("local")],
+                        expect_hosts=("local",))
+    assert det["G-TOOL"]["cross_box_preflight_agreement"] is False
+    assert det["G-TOOL"]["preflight_hosts"] == ["local"]
 
 
 def test_G_TOOL_names_the_WEAK_build_witness_when_only_the_cargo_version_exists():
@@ -1012,7 +1229,8 @@ def test_N4_is_never_a_branch_input():
 # =========================================================================== #
 def _write_cell(root, name, mode, *, n_decks=400, margin=0.0, phi=20.0,
                 z_override=None, champ_ms=1200.0, rung_ms=1000.0, elo=12.0,
-                seed=1, drop_last_seat=0, **man_over):
+                seed=1, drop_last_seat=0, err_rate=0.0,
+                first_error="WindowTruncationError at ply 41", **man_over):
     """A synthetic cell dir: per-game records + summary.json + manifest.json."""
     d = root / name
     d.mkdir(parents=True, exist_ok=True)
@@ -1040,7 +1258,11 @@ def _write_cell(root, name, mode, *, n_decks=400, margin=0.0, phi=20.0,
                "paired_z": (z if z_override is None else z_override),
                "n_paired": npair, "n_failed": 1, "failure_rate": 1.0 / (len(recs) + 1),
                "champ_prefix_ms_per_move": champ_ms, "rung_ms_per_move": rung_ms,
-               "opponent": "fair-champion"}
+               "opponent": "fair-champion",
+               # §0.E.1 cond. 3 -- the fail-soft arbiter error fields
+               "tiearb_errors_total": int(round(err_rate * phi * n_decks)),
+               "tiearb_error_rate_on_fired": err_rate,
+               "tiearb_first_error": (first_error if err_rate else None)}
     (d / "summary.json").write_text(json.dumps(summary))
     man = _manifest(name.split("_")[0].upper() if name.upper() in ("ARB", "RND")
                     else ("ARB" if mode == "argmax" else "RND"))
@@ -1111,6 +1333,17 @@ def test_end_to_end_writes_both_artefacts_and_every_4_3_item(tmp_path, capsys):
     assert "the `n` that would convict `z_arb` at 2σ" in md
     # §4.3 (3) phi + the offline prior + BOTH §2.1 mismatches verbatim
     assert v["phi_block"]["phi_arb"] == 20.0 and v["phi_block"]["offline_prior"] == 22.96
+    # §0.E.1 cond. 3 -- phi_effective BESIDE phi, and the three error fields per cell
+    assert v["phi_block"]["phi_effective"] == {"ARB": 20.0, "RND": 20.0}
+    assert "phi_effective" in md and "error_rate_on_fired" in md
+    for c in ("ARB", "RND"):
+        ae = v["phi_block"]["arbiter_errors"][c]
+        assert ae["tiearb_errors_total"] == 0
+        assert ae["tiearb_error_rate_on_fired"] == 0.0
+        assert "tiearb_first_error" in ae
+    assert "tiearb_errors_total" in md and "tiearb_first_error" in md
+    assert "CANDIDATE-CORRELATED" in md and "capoff" in md
+    assert "UNDERSTATED" in md and "diluted but never biased" in md
     assert "65.98" in md and "40.4" in md
     assert S2.MISMATCH_I_VERBATIM.splitlines()[0].lstrip("*") in md.replace("> ", "")
     assert "reseeding alone flips picks" in md
@@ -1848,3 +2081,42 @@ def test_the_three_transcriptions_agree_on_the_whole_grid():
     assert n_finite == 8 ** 3 * len(_DS) == 3072
     assert n_nan == (9 ** 3 - 8 ** 3) * len(_DS) == 1302
     assert n_finite + n_nan == 4374
+
+
+def test_end_to_end_a_high_fail_soft_rate_voids_via_G_FIRE(tmp_path):
+    """⭐ §0.E.1 cond. 2, end to end: the cell FIRES plenty (phi 20/game) but
+    falls back on 96% of those plies, so `phi_effective` = 0.8 < 1.0 and G-FIRE
+    voids -- the hole fail-soft opens, closed by the amendment."""
+    root = _e2e_world(tmp_path, arb={"n_decks": 400, "err_rate": 0.96},
+                      rnd={"n_decks": 400})
+    out = tmp_path / "out"
+    assert S2.main(_e2e_argv(root, out)) == 0
+    v = json.loads((out / "READOUT.json").read_text())
+    md = (out / "READOUT.md").read_text()
+    assert v["phi_block"]["phi_arb"] == 20.0                       # RAW rate is fine
+    assert v["phi_block"]["phi_effective"]["ARB"] == pytest.approx(0.8)
+    assert v["branch"] == "U-UNREADABLE"
+    assert v["failed_preconditions"] == ["G-FIRE"]
+    assert v["precondition_detail"]["G-FIRE"]["binds_on"].startswith("phi_effective")
+    # ... and the mandatory dilution statement is printed (rate > 0.05)
+    ae = v["phi_block"]["arbiter_errors"]["ARB"]
+    assert ae["DILUTION_STATEMENT_REQUIRED"] is True
+    assert "A NULL IS CORRESPONDINGLY WEAKER EVIDENCE" in md
+    assert "WindowTruncationError at ply 41" in md                 # first_error
+
+
+def test_end_to_end_a_modest_fail_soft_rate_is_reported_and_does_NOT_void(tmp_path):
+    """Below the floor's reach the cell stays readable: 20 x (1 - 0.02) = 19.6.
+    The rate is still reported, and 0.02 <= 0.05 so no dilution statement."""
+    root = _e2e_world(tmp_path, arb={"n_decks": 400, "err_rate": 0.02},
+                      rnd={"n_decks": 400, "err_rate": 0.02})
+    out = tmp_path / "out"
+    S2.main(_e2e_argv(root, out))
+    v = json.loads((out / "READOUT.json").read_text())
+    assert v["failed_preconditions"] == []
+    assert v["phi_block"]["phi_effective"]["ARB"] == pytest.approx(19.6)
+    ae = v["phi_block"]["arbiter_errors"]["ARB"]
+    assert ae["tiearb_error_rate_on_fired"] == 0.02
+    assert ae["DILUTION_STATEMENT_REQUIRED"] is False
+    md = (out / "READOUT.md").read_text()
+    assert "0.02000" in md and "19.600" in md

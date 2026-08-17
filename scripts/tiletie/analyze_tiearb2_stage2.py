@@ -71,7 +71,9 @@ SCHEMA = "carcassonne-tiearb2-stage2-readout/v1"
 #: Which text was adjudicated against. READ_RULE §0 is a PRE-RUN AMENDMENT applied
 #: before the band claim and before game 1; it moved NO adjudicating bar.
 READ_RULE_AMENDMENT = ("READ_RULE.md §0 — §0.A-C (PRE-RUN AMENDMENT) commit 6c281f9e; "
-                       "§0.D (OWNER RULING, N4 downgrade waived) commit a81b8c72")
+                       "§0.D (OWNER RULING, N4 downgrade waived) commit a81b8c72; "
+                       "§0.E (PRE-LAUNCH ACCEPTANCES: arbiter FAILS SOFT, G-FIRE binds "
+                       "on phi_effective; G-TOOL witness corrected) commit c36055a7")
 
 # ---- READ_RULE §2 committed bars — NOT new numbers -------------------------- #
 Z_BAR = 2.0             # "+2.0 is Stage 1's, Stage 1b's, E-FLAT's and W-FLAT's verbatim"
@@ -490,13 +492,53 @@ def _j13_sides(doc: dict) -> tuple:
     return pos, neg
 
 
-def gate_fire(phi_arb, phi_rnd) -> tuple:
-    """`G-FIRE` — `phi < 1.0` in EITHER cell voids: the arbitration surface is inert
-    and the cell would grade a champion-vs-champion null wearing the shape of a
-    real cell. An ABSENT phi fails (it cannot be shown to clear the floor)."""
-    ok = _ge(phi_arb, PHI_FLOOR) and _ge(phi_rnd, PHI_FLOOR)
-    return bool(ok), {"phi_arb": phi_arb, "phi_rnd": phi_rnd, "floor": PHI_FLOOR,
-                      "prior": PHI_PRIOR}
+def phi_effective(phi, error_rate_on_fired):
+    """`phi_effective = phi × (1 − error_rate_on_fired)` (READ_RULE §0.E.1 cond. 2).
+
+    A ply whose arbitration ERRORED reverted to the champion's own pick and was
+    therefore not arbitrated at all, so it does not count toward the surface being
+    live. An ABSENT error rate is treated as UNKNOWN, not as zero: `None` back,
+    which fails the floor — the same fail-closed posture as an absent `phi`.
+    """
+    try:
+        if phi is None or phi != phi:
+            return None
+        if error_rate_on_fired is None or error_rate_on_fired != error_rate_on_fired:
+            return None
+        return float(phi) * (1.0 - float(error_rate_on_fired))
+    except (TypeError, ValueError):
+        return None
+
+
+def gate_fire(phi_arb, phi_rnd, err_arb=None, err_rnd=None) -> tuple:
+    """`G-FIRE` AS AMENDED (§0.E.1 cond. 2) — `phi_effective < 1.0` in EITHER cell
+    voids, where `phi_effective = phi × (1 − error_rate_on_fired)`.
+
+    ⚠️ WHY THE EFFECTIVE RATE IS A FAITHFUL READING, NOT A NEW BAR — recorded here
+    in the same shape as `gate_tool`'s. `G-FIRE` exists to refuse an **inert**
+    surface: the committed text's own reason is that such a cell "would grade a
+    champion-vs-champion null wearing the shape of a real cell". The arbiter
+    FAILS SOFT — a ply whose `tier1-greedy` continuation hits the window refusal
+    or the ply ceiling reverts to the champion's own `pooled_q_argmax` pick and is
+    counted. An arbiter that triggers 23 times a game and falls back 23 times has
+    a raw `phi` of 23 and arbitrates NOTHING; it is exactly the null the gate was
+    written to catch. Binding on the raw rate would let that cell through. The
+    FLOOR (1.0) is unchanged; only the quantity it is applied to is read as the
+    committed purpose requires.
+
+    An ABSENT `phi` or an ABSENT error rate fails — neither can be SHOWN to clear
+    the floor, and this gate is fail-closed by design.
+    """
+    eff = {"ARB": phi_effective(phi_arb, err_arb),
+           "RND": phi_effective(phi_rnd, err_rnd)}
+    ok = _ge(eff["ARB"], PHI_FLOOR) and _ge(eff["RND"], PHI_FLOOR)
+    return bool(ok), {
+        "phi_arb": phi_arb, "phi_rnd": phi_rnd,
+        "error_rate_on_fired": {"ARB": err_arb, "RND": err_rnd},
+        "phi_effective": eff,
+        "binds_on": "phi_effective (AMENDED §0.E.1 cond. 2)",
+        "floor": PHI_FLOOR, "prior": PHI_PRIOR,
+        "formula": "phi_effective = phi x (1 - error_rate_on_fired)"}
 
 
 def gate_band(cells: dict, band_claim: dict, expected_band=BAND_EXPECTED) -> tuple:
@@ -569,52 +611,112 @@ def gate_tool(cells: dict, preflights: list) -> tuple:
     wheel, and as originally written it failed OPEN in exactly the scenario it was
     built for — when provenance was broken and the build was therefore unknown.
     Unknown provenance is not agreement. No bar moved; no amendment required.
+
+    ⚠️ ⚠️ THE WITNESS IS `carc_rs_build`, AND IT IS **NOT** A CONTENT HASH.
+    `rust_agent.carc_rs_build_id()` returns
+    `carc_rs-<cargo version>+<full commit[:12]>+rustc<toolchain>` — cargo version
+    + repo rev + compiler, all three of which DO compare across boxes. The
+    compiled `.so` is **not reproducible across machines**: measured 2026-08-17 at
+    the same commit and the same `rustc 1.96.0`, local `73aa20102ab98e2f` vs
+    laptop `ec140ac0c0583d53`. **So `carc_rs_binary_sha` MUST NEVER be compared
+    across boxes** — a content-hash equality gate would fail every healthy 2-box
+    run. It is a BOX-LOCAL staleness witness only, reported per box and never
+    entered into the equality set (`tests/` asserts that this function never
+    reads it). Likewise the commit is sliced to a FIXED 12 rather than taken from
+    `code_rev()`, whose length is `core.abbrev` and therefore per-box (measured:
+    `cf51bf17` vs `cf51bf176b` for one commit), and dirtiness is excluded from the
+    id because two boxes at one commit can carry different uncommitted files.
+
+    ⚠️ AUTHORITY. `mixed_builds: false` on a MANIFEST is the writer's own
+    observation only — under `--shared-claim` the second box writes no manifest —
+    so the authoritative CROSS-BOX comparison is the two
+    `PREFLIGHT_*_${HOST}_FIRST.json` witnesses against each other. That comparison
+    is made explicitly and reported as `cross_box_preflight_agreement`; the
+    manifests are additionally folded into the same equality set, which is sound
+    precisely because `carc_rs_build` is cross-box comparable.
     """
+    #: Provenance-failure markers. `<unavailable: ...>` is `eval_fair_puct`'s
+    #: (~line 4498); `unknown` (rev lookup failed) and `unpinned` (no
+    #: RUSTUP_TOOLCHAIN, rendering as `rustcunpinned`) come from
+    #: `carc_rs_build_id` itself; `unhashed`/`nobinary` from `carc_rs_binary_sha`.
+    SENTINELS = ("<unavailable", "unhashed", "nobinary", "unknown", "rustcunpinned")
+
     def _bad(x):
-        """An absent stamp, or the harness's own provenance-failure sentinel
-        (`"<unavailable: ...>"`, `eval_fair_puct` ~line 4498). ⚠️ Without this the
-        sentinel PASSES the gate: both cells carry the SAME sentinel string, so a
-        pure equality check sees one distinct build and calls it agreement."""
-        return x is None or (isinstance(x, str)
-                             and (not x.strip() or x.startswith("<unavailable")))
+        """Absent, empty, or carrying a provenance-failure marker. ⚠️ Without this
+        a sentinel PASSES the gate: both boxes carry the SAME marker, so a pure
+        equality check sees one distinct build and calls it agreement."""
+        if x is None:
+            return True
+        if not isinstance(x, str):
+            return False
+        s = x.strip()
+        return (not s) or any(k in s.lower() for k in SENTINELS)
+
+    def _witness(d: dict) -> tuple:
+        """The cross-box comparable pair. ⚠️ `carc_rs_binary_sha` is deliberately
+        NOT part of this tuple."""
+        return (d.get("rust_toolchain"),
+                d.get("carc_rs_build", d.get("carc_rs_version")))
+
+    def _label(d: dict) -> str:
+        return ("carc_rs_build (cargo version + commit[:12] + rustc — CROSS-BOX "
+                "COMPARABLE, NOT a content hash)"
+                if d.get("carc_rs_build") is not None else
+                "carc_rs_version (WEAK — the cargo version does not move between "
+                "builds, so it cannot tell a fresh wheel from a stale one)")
 
     stamps, ok = {}, True
     seen = set()
     for c in CELLS:
         m = (cells.get(c) or {}).get("manifest", {})
-        tc = m.get("rust_toolchain")
-        # ⚠️ `carc_rs_version` is the CARGO version and does NOT move between
-        # builds — it cannot tell a fresh wheel from a stale one. `carc_rs_build`
-        # is the content hash and is the witness of record; the version is only a
-        # fallback, and it is reported as a weaker one.
-        rs = m.get("carc_rs_build", m.get("carc_rs_version"))
+        tc, rs = _witness(m)
         mixed = m.get("mixed_builds")
         stamps[c] = {"rust_toolchain": tc, "carc_rs_build": rs, "mixed_builds": mixed,
-                     "build_witness": ("carc_rs_build (content hash)"
-                                       if m.get("carc_rs_build") is not None else
-                                       "carc_rs_version (WEAK — cargo version does not "
-                                       "move between builds)")}
+                     "build_witness": _label(m),
+                     # BOX-LOCAL, reported, NEVER compared across boxes
+                     "carc_rs_binary_sha_BOX_LOCAL": m.get("carc_rs_binary_sha"),
+                     "code_rev": m.get("code_rev"),
+                     "code_rev_dirty": m.get("code_rev_dirty")}
         # `mixed_builds is None` means the provenance block RAISED — unknown, not clean.
         if _bad(tc) or _bad(rs) or mixed is None or bool(mixed):
             ok = False
         seen.add((tc, rs))
+
+    pf_witnesses = {}
     for doc in preflights:
-        tc = doc.get("rust_toolchain")
-        rs = doc.get("carc_rs_build", doc.get("carc_rs_version"))
-        stamps[f"preflight:{doc.get('host')}"] = {"rust_toolchain": tc,
-                                                  "carc_rs_build": rs}
+        tc, rs = _witness(doc)
+        host = doc.get("host")
+        pf_witnesses[host] = (tc, rs)
+        stamps[f"preflight:{host}"] = {
+            "rust_toolchain": tc, "carc_rs_build": rs, "build_witness": _label(doc),
+            "carc_rs_binary_sha_BOX_LOCAL": doc.get("carc_rs_binary_sha")}
         if _bad(tc) or _bad(rs):
             ok = False
         seen.add((tc, rs))
+
+    # THE AUTHORITATIVE CROSS-BOX COMPARISON (see AUTHORITY above): preflight vs
+    # preflight. Requires at least two hosts to be a cross-box statement at all.
+    pf_vals = set(pf_witnesses.values())
+    cross_box = (len(pf_vals) == 1 and len(pf_witnesses) >= 2
+                 and not any(_bad(v) for t in pf_vals for v in t))
+    if len(pf_witnesses) >= 2 and not cross_box:
+        ok = False
     if len(seen) != 1:
         ok = False
     return bool(ok), {
         "stamps": stamps, "distinct_builds": len(seen),
-        "cross_box_note": (
-            "under --shared-claim a second box writes NO manifest, so the "
-            "authoritative cross-box comparison is the PREFLIGHT_*_${HOST}_FIRST.json "
-            "witnesses against each other — they are folded into the same equality "
-            "set here (eval_fair_puct ~line 4484)")}
+        "cross_box_preflight_agreement": cross_box,
+        "preflight_hosts": sorted(pf_witnesses),
+        "authority": (
+            "`mixed_builds: false` on a MANIFEST is the WRITER'S OWN OBSERVATION "
+            "only — under --shared-claim the second box writes no manifest — so the "
+            "authoritative cross-box comparison is the two "
+            "PREFLIGHT_*_${HOST}_FIRST.json witnesses against each other."),
+        "binary_sha_note": (
+            "carc_rs_binary_sha is BOX-LOCAL staleness evidence and is NEVER compared "
+            "across boxes: the .so is not reproducible across machines (measured "
+            "2026-08-17, same commit + rustc 1.96.0: local 73aa20102ab98e2f vs laptop "
+            "ec140ac0c0583d53). The cross-box witness is carc_rs_build.")}
 
 
 def gate_stat(z_arb, z_rnd, z_D) -> tuple:
@@ -639,7 +741,12 @@ def evaluate_preconditions(cells: dict, preflights: list, band_claim: dict,
     order = (("G-J1", gate_j1(cells)),
              ("G-J4", gate_j4(cells)),
              ("G-J13", gate_j13(preflights, expect_hosts)),
-             ("G-FIRE", gate_fire(phi_arb, phi_rnd)),
+             ("G-FIRE", gate_fire(
+                 phi_arb, phi_rnd,
+                 ((cells.get("ARB") or {}).get("arbiter_errors")
+                  or {}).get("tiearb_error_rate_on_fired"),
+                 ((cells.get("RND") or {}).get("arbiter_errors")
+                  or {}).get("tiearb_error_rate_on_fired"))),
              ("G-BAND", gate_band(cells, band_claim)),
              ("G-N", gate_n(n_common, n_arb, n_rnd)),
              ("G-TOOL", gate_tool(cells, preflights)),
@@ -815,6 +922,7 @@ def load_cell(name: str, summary_path, manifest_path, records_dir=None) -> dict:
     records = load_records(records_dir if records_dir is not None
                            else Path(summary_path).parent)
     by_deck = per_deck_balanced(records)
+    _phi = cell_phi(records, summary)
     ms_ratio = None
     champ_ms = summary.get("champ_prefix_ms_per_move")   # ⚠️ THE CANDIDATE SIDE
     rung_ms = summary.get("rung_ms_per_move")            # ⚠️ the OPPONENT side
@@ -837,12 +945,70 @@ def load_cell(name: str, summary_path, manifest_path, records_dir=None) -> dict:
         "n_failed": summary.get("n_failed"), "failure_rate": summary.get("failure_rate"),
         "champ_prefix_ms_per_move": champ_ms, "rung_ms_per_move": rung_ms,
         "ms_ratio": ms_ratio,
-        "phi": cell_phi(records, summary),
+        "phi": _phi,
+        "arbiter_errors": arbiter_errors(records, summary, _phi),
         "seat_balance": _seat_balance(records),
         # a WITNESS, never a branch input: our own recomputation of the cell's z
         # from the records, so a summary/records mismatch is visible.
         "recomputed": dict(zip(("M", "se", "z", "n"), paired_stats(by_deck.values()))),
     }
+
+
+#: READ_RULE §0.E.1 cond. 3 — above this rate the read-out must STATE that the
+#: measured effect is DILUTED by that factor and that a null is correspondingly
+#: weaker evidence. It is a REPORTING threshold, not a gate: the error rate
+#: reaches a branch ONLY through `G-FIRE`'s `phi_effective` floor (cond. 4).
+TIEARB_DILUTION_STATEMENT_BAR = 0.05   # committed in §0.E.1 cond. 3
+
+
+def arbiter_errors(records: list, summary: dict, phi=None) -> dict:
+    """The FAIL-SOFT arbiter error block — mandatory per cell on every branch
+    (READ_RULE §0.E.1 cond. 3).
+
+    On a `tier1-greedy` continuation hitting the engine's window refusal or the
+    ply ceiling, the arbiter falls back to the champion's own `pooled_q_argmax`
+    pick at that ply and counts the event — at PLY granularity, never a partial
+    world set (cond. 1). §0.E.1 ACCEPTS this: propagating would kill the game and
+    the exclusion would be CANDIDATE-CORRELATED (the `capoff` pattern), and a
+    biased exclusion is far worse than a diluted effect. The bias runs toward the
+    champion, so a positive is UNDERSTATED; and it is symmetric across `ARB` and
+    `RND` by construction, so `D` is diluted but never biased.
+
+    ⚠️ NEVER A BRANCH INPUT except through `G-FIRE`'s `phi_effective` floor
+    (cond. 2 / cond. 4). The 0.05 figure below is a REPORTING threshold committed
+    in cond. 3, not a gate.
+    """
+    total = summary.get("tiearb_errors_total")
+    rate = summary.get("tiearb_error_rate_on_fired")
+    first = summary.get("tiearb_first_error")
+    if total is None:
+        per_game = [int((r.get("cand_tiearb") or {}).get("errors") or 0)
+                    for r in records if isinstance(r.get("cand_tiearb"), dict)]
+        total = sum(per_game) if per_game else None
+    dilute = bool(rate is not None and rate == rate
+                  and rate > TIEARB_DILUTION_STATEMENT_BAR)
+    eff = phi_effective(phi, rate)
+    return {"tiearb_errors_total": total,
+            "tiearb_error_rate_on_fired": rate,
+            "tiearb_first_error": first,
+            "phi": phi, "phi_effective": eff,
+            "dilution_statement_bar": TIEARB_DILUTION_STATEMENT_BAR,
+            "DILUTION_STATEMENT_REQUIRED": dilute,
+            # §0.E.1 cond. 3 — the mandatory sentence, when it applies
+            "dilution_statement": (
+                f"⚠️ THE MEASURED EFFECT IS DILUTED. {rate:.1%} of fired plies fell back "
+                f"to the champion's own pick, so the mechanism was actually exercised on "
+                f"phi_effective = {eff:.2f} plies/game rather than phi = {phi:.2f}. The "
+                f"effect is shrunk by that factor and A NULL IS CORRESPONDINGLY WEAKER "
+                f"EVIDENCE. The dilution is symmetric across ARB and RND, so D is "
+                f"diluted, not biased; the bias that does exist runs TOWARD THE CHAMPION, "
+                f"so a positive read is understated."
+                if (dilute and eff is not None and phi is not None) else None),
+            "status": ("fail-soft errors present" if (rate or 0) else
+                       "no fail-soft arbiter errors" if rate is not None else
+                       "NOT REPORTED by this cell"),
+            "branch_reachability": ("Never a branch input EXCEPT through G-FIRE's "
+                                    "phi_effective floor (§0.E.1 cond. 2 and 4).")}
 
 
 def _seat_balance(records: list) -> dict:
@@ -929,12 +1095,17 @@ def build_readout(args) -> dict:
         "cost_N4": cost,
         "phi_block": {
             "phi_arb": arb["phi"], "phi_rnd": rnd["phi"],
+            # §0.E.1 cond. 3 — phi_effective BESIDE phi, per cell. This is the
+            # quantity G-FIRE's floor now binds on (cond. 2).
+            "phi_effective": {c: cells[c]["arbiter_errors"]["phi_effective"]
+                              for c in CELLS},
             "offline_prior": PHI_PRIOR,
             "funnel": {"exact_tie_rate_on_tile_plies_pct": PHI_FUNNEL_EXACT_TIE_PCT,
                        "deduped_scoreable_pct": PHI_FUNNEL_DEDUP_PCT},
             "design_2_1_mismatch_i": MISMATCH_I_VERBATIM,
             "design_2_1_mismatch_ii": MISMATCH_II_VERBATIM,
             "design_2_1_conclusion": MISMATCH_CONCLUSION_VERBATIM,
+            "arbiter_errors": {c: (cells[c]["arbiter_errors"]) for c in CELLS},
             "low_phi_note": ("DESIGN §3: a phi materially below the prior (say < 10) "
                              "shrinks the effect proportionally — the offline elo bound "
                              "is PER TIED PLY scaled by the rate, so a low phi makes a "
@@ -1037,7 +1208,7 @@ def _cell_block(c: dict) -> dict:
         "cell", "n_games", "n_records_on_disk", "n_decks_seat_balanced", "n_paired",
         "M", "z", "elo", "elo_sig_1sigma", "wr", "wr_z", "W", "D_draws", "L",
         "n_failed", "failure_rate", "champ_prefix_ms_per_move", "rung_ms_per_move",
-        "ms_ratio", "phi", "seat_balance", "recomputed",
+        "ms_ratio", "phi", "arbiter_errors", "seat_balance", "recomputed",
         "summary_path", "manifest_path")}
 
 
@@ -1146,6 +1317,11 @@ def render(v: dict) -> str:
     L.append("")
     L.append(f"- `phi_arb` = {_f(ph['phi_arb'], '.3f')} · `phi_rnd` = "
              f"{_f(ph['phi_rnd'], '.3f')} tied tile plies/game")
+    L.append(f"- ⭐ **`phi_effective` (the quantity `G-FIRE` binds on, §0.E.1 cond. 2) "
+             f"— ARB {_f(ph['phi_effective']['ARB'], '.3f')} · RND "
+             f"{_f(ph['phi_effective']['RND'], '.3f')}** "
+             "= `phi × (1 − error_rate_on_fired)`; a ply whose arbitration errored "
+             "reverted to the champion's pick and was NOT arbitrated")
     L.append(f"- offline prior **{ph['offline_prior']}** (E4 census, n = 26); funnel: "
              f"{ph['funnel']['exact_tie_rate_on_tile_plies_pct']}% exact-tie rate on tile "
              f"plies, {ph['funnel']['deduped_scoreable_pct']}% deduped scoreable")
@@ -1161,6 +1337,29 @@ def render(v: dict) -> str:
     L.append("> " + ph["design_2_1_conclusion"].replace("\n", "\n> "))
     L.append("")
     L.append(ph["low_phi_note"])
+    L.append("")
+    L.append("**Fail-soft arbiter errors — REPORT-ONLY, on every branch.** On a deep "
+             "playout error the arbiter falls back to the champion's own pick and counts "
+             "it, so the ply is un-arbitrated rather than lost:")
+    L.append("")
+    for _c in CELLS:
+        _ae = ph["arbiter_errors"][_c]
+        L.append(f"- `{_c}`: `tiearb_errors_total` {_ae['tiearb_errors_total']} · "
+                 f"`tiearb_error_rate_on_fired` "
+                 f"{_f(_ae['tiearb_error_rate_on_fired'], '.5f')} · `phi` "
+                 f"{_f(_ae['phi'], '.3f')} → `phi_effective` "
+                 f"{_f(_ae['phi_effective'], '.3f')} — {_ae['status']}")
+        L.append(f"  - `tiearb_first_error`: "
+                 f"{('`' + str(_ae['tiearb_first_error']) + '`') if _ae['tiearb_first_error'] else 'none'}")
+        if _ae["dilution_statement"]:
+            L.append(f"  - {_ae['dilution_statement']}")
+    L.append("")
+    L.append("§0.E.1 ACCEPTS the fail-soft behaviour: propagating would kill the GAME "
+             "and the exclusion would be CANDIDATE-CORRELATED (the `capoff` pattern) — a "
+             "biased exclusion is far worse than a diluted effect. The bias runs TOWARD "
+             "THE CHAMPION, so a positive read is UNDERSTATED, and it is symmetric across "
+             "ARB and RND by construction, so `D` is diluted but never biased. "
+             + ph["arbiter_errors"]["ARB"]["branch_reachability"])
     L.append("")
 
     # --- §4.3 (4) ms_ratio --------------------------------------------------- #
