@@ -554,7 +554,22 @@ def gate_n(n_common, n_arb, n_rnd) -> tuple:
 
 def gate_tool(cells: dict, preflights: list) -> tuple:
     """`G-TOOL` — the two boxes ran the same rust toolchain / the same `carc_rs`
-    build, and no cell mixed builds. Fail-closed on an absent stamp."""
+    build, and no cell mixed builds. Fail-closed on an absent or unknown stamp.
+
+    ⚠️ WHY REFUSING THE PROVENANCE SENTINEL NEEDS NO §0 AMENDMENT — recorded here
+    so a later reader cannot mistake it for a silent bar move. The committed §3
+    text is: *"the two boxes did not run the same rust toolchain / the same
+    `carc_rs` build, or a cell mixed builds"*. A pure string-equality check that
+    accepts `"<unavailable: ...>"` on both sides does **not** implement that
+    sentence — it implements *"the two stamps are equal strings"*, which is a
+    different and much weaker proposition, and one that is trivially satisfied by
+    a pair of identical failure markers. Refusing the sentinel, the empty stamp
+    and `mixed_builds is None` is therefore a FAITHFUL IMPLEMENTATION of the
+    committed text, not a tightening of it: the gate exists to catch a stale
+    wheel, and as originally written it failed OPEN in exactly the scenario it was
+    built for — when provenance was broken and the build was therefore unknown.
+    Unknown provenance is not agreement. No bar moved; no amendment required.
+    """
     def _bad(x):
         """An absent stamp, or the harness's own provenance-failure sentinel
         (`"<unavailable: ...>"`, `eval_fair_puct` ~line 4498). ⚠️ Without this the

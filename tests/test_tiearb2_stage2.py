@@ -688,30 +688,70 @@ def test_G_N_deck_clause_stays_INDEPENDENTLY_BINDING():
     assert "independently_binding" in " ".join(det["G-N"])
 
 
-def test_the_amendment_moved_no_adjudicating_bar_and_no_branch_condition():
+#: The document's every revision. §4 must be identical at ALL of them, not merely
+#: at the endpoints -- an amendment that moved §4 and moved it back would pass an
+#: endpoint check.
+_READ_RULE_REVS = ("b2faa238",      # the original, committed before the instrument
+                   "6c281f9e",      # §0.A-C  PRE-RUN AMENDMENT (G-N, +1.0, knob name)
+                   "a81b8c72")      # §0.D    OWNER RULING (N4 downgrade waived)
+
+#: THREE INDEPENDENT BOUNDARY CHOICES for "§4", drawn by two different sessions.
+#: All three showing equality is better evidence than any one of them, and the
+#: claim survives any single boundary being drawn slightly wrong.
+#: ⚠️ Sizes are pinned in BOTH units. The 8,035 figure quoted in review is
+#: CHARACTERS; the same slice is 8,220 UTF-8 BYTES. §4 carries 185 non-ASCII
+#: characters (§ ⭐ ≥ ∧ ¬ ⇒ ⚠ ⛔ — and friends), which is the whole of the
+#: difference -- the two readings never disagreed, they were in different units.
+_S4_CUTS = {
+    #  name                         start                 end                   chars  bytes
+    "peer/index (incl. header)": ("## 4. Branches", "## 5. What no branch does", 8035, 8220),
+    "conditions only":           ("## 4. Branches", "### 4.1",                   4845, 4965),
+    "whole section 4":           ("## 4. Branches", "## 5.",                     8021, 8206),
+}
+
+
+def _s4(doc, cut, keep_header=False):
+    a = doc.index(cut[0])
+    b = doc.index(cut[1], a + len(cut[0]))
+    return doc[a if keep_header else a + len(cut[0]):b]
+
+
+def test_section_4_is_identical_across_all_revisions_on_three_boundary_choices():
     """⚠️ GOVERNANCE, and it now covers TWO amendments. §0.A-C amended a
     PRECONDITION and two report-only spellings; §0.D waived a rider that was never
-    a branch input. Both were written to leave §4 BYTE-IDENTICAL -- the overrides
-    live in §0 -- so this proof runs against the ORIGINAL text at `b2faa238` and
-    must still pass."""
+    a branch input. BOTH were deliberately written to leave §4 untouched -- the
+    overrides live in §0 -- so §4 must be identical at EVERY revision of the
+    document, under THREE independently chosen boundaries, in BOTH units."""
     import subprocess
-    old = subprocess.run(
-        ["git", "show", "b2faa238:measurement/tiearb2_stage2_20260817/READ_RULE.md"],
+    texts = {r: subprocess.run(
+        ["git", "show", f"{r}:measurement/tiearb2_stage2_20260817/READ_RULE.md"],
         cwd=REPO, capture_output=True, text=True, check=True).stdout
-    new = (REPO / "measurement/tiearb2_stage2_20260817/READ_RULE.md").read_text()
+        for r in _READ_RULE_REVS}
+    texts["worktree"] = (REPO / "measurement/tiearb2_stage2_20260817/"
+                         "READ_RULE.md").read_text()
+    for name, (start, end, n_chars, n_bytes) in _S4_CUTS.items():
+        keep = name.startswith("peer/index")
+        slices = {r: _s4(t, (start, end), keep) for r, t in texts.items()}
+        base = slices["b2faa238"]
+        for r, s in slices.items():
+            assert s == base, f"§4 MOVED at {r} under the '{name}' boundary"
+            assert len(s) == n_chars, (name, r, "chars", len(s))
+            assert len(s.encode()) == n_bytes, (name, r, "bytes", len(s.encode()))
+    # the 185-char/byte gap is entirely non-ASCII -- not a content difference
+    peer = _s4(texts["worktree"], _S4_CUTS["peer/index (incl. header)"][:2], True)
+    assert len(peer.encode()) - len(peer) == 185
+    assert sum(1 for ch in peer if ord(ch) > 127) > 0
 
-    # §4 -- byte-identical across BOTH amendments, on either natural boundary.
+    old, new = texts["b2faa238"], texts["worktree"]
+
     def _conds(doc):        # the branch CONDITIONS alone
-        return doc.split("## 4. Branches", 1)[1].split("### 4.1", 1)[0]
+        return _s4(doc, _S4_CUTS["conditions only"][:2])
 
     def _whole(doc):        # §4 entire, incl. 4.1 exclusivity / 4.2 N4 / 4.3 companion
-        return doc.split("## 4. Branches", 1)[1].split("## 5.", 1)[0]
+        return _s4(doc, _S4_CUTS["whole section 4"][:2])
 
     assert _conds(old) == _conds(new), "§4's branch conditions MOVED -- not an amendment"
     assert _whole(old) == _whole(new), "§4 MOVED somewhere below the table"
-    # lengths pinned so a byte drift is loud rather than silently re-equal
-    assert len(_conds(new).encode()) == 4965
-    assert len(_whole(new).encode()) == 8206
     # §0.D is present, and it is an OVERRIDE rather than an edit
     assert "0.D" in new and "a81b8c72" in S2.READ_RULE_AMENDMENT
     # ⭐ the structural reason the waiver cannot move a branch: `ms_ratio` appears
@@ -770,6 +810,13 @@ def test_G_TOOL_refuses_the_harness_provenance_FAILURE_SENTINEL():
                  {"mixed_builds": None}):          # provenance RAISED, not clean
         pre, _ = _all_pre(cells=_cells(arb_over=over, rnd_over=dict(over)))
         assert pre["G-TOOL"] is False, over
+    # ⚠️ and the justification is RECORDED IN THE GATE, so a later reader cannot
+    # mistake a faithful reading of §3 for a silently tightened bar.
+    import inspect
+    doc = inspect.getdoc(S2.gate_tool)
+    assert "FAITHFUL IMPLEMENTATION" in doc and "not a tightening" in doc
+    assert "failed OPEN" in doc and "Unknown provenance is not agreement" in doc
+    assert "No bar moved; no amendment required." in doc
     # the same sentinel on a PREFLIGHT is refused too
     pre, _ = _all_pre(preflights=[_preflight("local", build="<unavailable: OSError>"),
                                   _preflight("laptop", build="<unavailable: OSError>")])
