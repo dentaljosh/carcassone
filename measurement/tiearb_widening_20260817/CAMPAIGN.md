@@ -26,7 +26,7 @@ orchestrator's reconciliation; the rung plans are the authority on their own des
    blind commit, one read-out**, with `arb(B=16,J≤4)` declared a shared cell.
 2. **Cost figures reconciled**: PLAN_J_gt_4's ~83 worker-h standalone vs PLAN_B_gt_16's
    ~865 worker-h total are not in conflict — the shared-run total is dominated by the
-   **python-era clair-puct pricing judge (~582 wh)** and fresh corpus generation
+   **clair-puct pricing judge (~582 wh — ⚠️ label corrected 2026-08-18: this leg is RUST on walled and has been since 2026-08-02 (`run_tiletie.py` JUDGE_BACKEND + `rustport_p6/GATE_ORACLE_PILOT_BACKEND.json` PASS 940 checks); "python-era" was a mislabel — the 9.4× was captured pre-campaign, no backend speedup remains; committed c_IF=2.35 may be ~1.9× conservative vs the idle-box smoke 1.2313, settled by the pre-run c-remeasure)** and fresh corpus generation
    (~234 wh); the arbiter-side playouts (rust, c=0.178232) are noise. The single
    biggest cost lever is **W1: wire the Phase-A rust ARB judge into
    `scripts/tiletie/run_tiletie.py`** (12.2× on that leg) — instrument work, blocked by
