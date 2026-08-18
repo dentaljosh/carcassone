@@ -180,6 +180,26 @@ for "one gate, per-stratum conjunct, one stratum void". Fixed prospectively and 
 mixing them in one row is what made the void's scope arguable. R5 has one stratum, so this costs
 it nothing; it is written for the next multi-stratum prereg.
 
+### R5-6.1 — the second drafting fix: acceptance audits carry an EXISTENCE-TIME marker
+
+R4 carried **two** texts for what the pre-scoring audit covers — §9 4b's **enumeration** and §8's
+verbatim class fix (*"EVERY address named anywhere in READ_RULE §2/§4/§5"*) — and they disagree
+about addresses written by **scoring-time** emitters. It cost a failed 4b run
+([`ADJUDICATION_R4_GATES.md`](../ADJUDICATION_R4_GATES.md) ruling 4, resolved in the pair's favour
+by §1.5's structural test). Fixed here by construction:
+
+> **Every address in this prereg carries an existence-time marker: `[pre-corpus]`,
+> `[post-corpus]` or `[post-scoring]`. Each acceptance pass audits exactly the markers that can
+> exist at its point in the sequence — statically against a fixture otherwise. No pass may demand
+> an address its own position in the sequence makes impossible, and no address may be audited at
+> neither pass.**
+
+Concretely: a `[post-scoring]` address is audited **statically at the pre-commit pass** (fixture
+schema, presence + type only) and **live at the read-out**, never live pre-scoring. ⚠️ The
+fixture set must cover **every** `[post-scoring]` address — R4's covered the leg manifest and the
+smoke manifest but **not `RUN_MANIFEST`**, which is how `G-SALT`'s primary ended up audited at
+neither pass. A completeness assertion over the marker list, not a hand-maintained fixture list.
+
 ## R5-7. What is CARRIED unchanged
 
 Rung 3's **estimand** (`Δ_ora`, `ora` adjudicates, `arb` rides) · the **branch table**

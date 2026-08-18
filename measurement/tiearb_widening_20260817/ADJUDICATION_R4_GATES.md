@@ -170,6 +170,101 @@ before anyone reaches for the nearest available one.
 
 ---
 
+## RULING 4 — Does §9's 4b enumeration bound the audit's address list? (2026-08-18)
+
+# **YES — the enumeration BOUNDS the live 4b audit. This is a W8 CODE DEFECT, not a pair defect. No amendment.**
+
+The executor's 4b failed on `G-SALT` alone, whose three addresses
+(`RUN_MANIFEST_{S1,S2}::world_seed_salt` and the leg-manifest fallback) are written by
+**scoring-time emitters** (`run_tiletie:929`, `tier1_rust_leg:255/402`, `oracle_score_pilot:731`).
+A pre-scoring 4b can never resolve them **on any healthy run**.
+
+### 4.1 The tension is real and internal to the pair — both texts exist
+
+- **The narrow text**, DESIGN §9 step 4b, enumerates what 4b audits: `CHAMP_GAMES_VERIFY`,
+  `GATE_DISJOINT`, `POSITIONS_PLAN`/`ARMS`, `GATE_DRAW`, `GEN_SMOKE`, the step-7 smoke manifests,
+  and §7's `c` block. **`G-SALT`'s addresses are not in it.**
+- **The broad text**, DESIGN §8 builder-delta 5 — the REVIEW_R2 class fix I adopted **verbatim** —
+  says 4b resolves *"EVERY address … named anywhere in READ_RULE §2/§4/§5 OR in DESIGN §7's
+  `c`-remeasure obligation."* Read alone, **that includes `G-SALT`.**
+
+So the harness did **not** reach past the pair; **it implemented one of the pair's two texts.**
+That is worth stating plainly rather than blaming the builder.
+
+### 4.2 Why the narrow reading governs — three clauses, in order of force
+
+1. ⭐ **§1.5's structural test forbids the broad reading outright.** *"Would this gate fail on a
+   healthy run? If yes, it is an instrument defect, fixed **before** the run, never adjudicated
+   around."* A 4b that demands scoring-time addresses resolve **before scoring** fails on **every**
+   healthy run, without exception. The pair's own doctrine cannot license a reading that is
+   guaranteed to fail a healthy run — that is the exact defect class this campaign has killed
+   five times (`G-CAP`, the four R1 gates, the R4-0.2 vacuity).
+2. ⭐ **§9 4b's own parenthetical already supplies the reconciling principle** — it is not a gap
+   being filled by argument: *"(The remaining `READOUT::widening.*` and `per_position_*.jsonl`
+   addresses are audited by **4a's fixture schema pass**; **they cannot exist before scoring by
+   construction**.)"* `G-SALT`'s addresses are **the same class** — scoring-time by construction —
+   so the pair already routes them to 4a's static pass. The narrow text is also the **more
+   specific** provision, and it addresses **this exact question**; specific governs general.
+3. **The broad text's own stated purpose is satisfied by that routing.** Its rationale is that
+   *"a fallback that is only exercised the day it is needed is unaudited"* — a **coverage**
+   concern. 4a's fixture set covers it: §0.G added a **leg-manifest fixture**
+   (`resolved_config.*`, `preflight.seeds.*`), which is `G-SALT`'s fallback address shape exactly.
+
+⇒ **The one-row scoping fix in W8 is code catching up to spec.** Nothing in the pair changes; no
+post-blind disposition; the JCZ precedent is not triggered, because the pair is not the thing
+that fails a healthy run — the harness is.
+
+⚠️ **One coverage gap the builder should close in the same fix, not later:** 4a's fixture set has a
+**leg-manifest** fixture (covering `G-SALT`'s *fallback*) and a **smoke-manifest** fixture, but
+**no `RUN_MANIFEST` fixture** — so `G-SALT`'s *primary* is, today, audited at **neither** 4a nor
+4b. Add a `RUN_MANIFEST_{S1,S2}` fixture to 4a. Otherwise this ruling trades a false failure for a
+silent hole, which is the worse trade.
+
+### 4.3 Where `G-SALT` IS checked instead
+
+**At read-out, per the gate table's own semantics.** §2's gates are *"evaluated **before any
+branch statistic is read**"* — i.e. at adjudication, which is when `RUN_MANIFEST_{S1,S2}` and the
+leg manifests exist. `G-SALT` keeps its full force there: primary, fallback, `resolved_at`
+printing, and ABSENT-IS-FAIL. **Nothing is weakened; only the moment of the check moves to the
+first moment it can be performed.**
+
+**Partial code confirmation, stated as partial.** `acceptance_widening.py` (W8) is the **only**
+file naming `G-SALT`; and `analyze_tiearb2.py` already performs read-out-time salt realization
+**off the records** (`rec["world_seed_salt"]` → `world_seed_salt_realized`, `:291`, `:1106`), the
+Stage-1b-era cross-check. ⚠️ **What I did NOT verify: that W3's `widening.*` verdict block emits a
+`G-SALT` gate result** at read-out. **Confirm that before the read-out**, do not assume it — a gate
+that moved out of 4b and was never picked up at adjudication would be a gate that stopped existing.
+
+---
+
+## BLESSINGS — two executor judgment calls (2026-08-18)
+
+**1. `GEN_SMOKE.json` copied byte-identically old-RUN → new-RUN: ✅ BLESSED.** This is the
+**`STAGE1B_LADDER` treatment** established in R4-0.5, applied to an artifact with the identical
+property set: it is **cited by the pair** (§R4-5 rests its generation cost basis on that exact
+297.6 measurement), it **existed only under the old `RUN`**, and 4b **addresses it under the new
+`RUN`** — so without the copy the address resolves to nothing and **ABSENT IS FAIL on a healthy
+run**. Conditions, all met and all required: byte-identical, **the old `RUN` is not written to**,
+and provenance recorded. **A copy, not an address carve-out** — the same reasoning as the ladder.
+
+**2. `c_remeasure` recomputing against R4 constants rather than the smoke artifact's embedded
+R3-era fields: ✅ BLESSED, and it would have been a defect to do otherwise.** §0.A defines
+`c_remeasure`'s committed values and **§R4-5 re-based the generation `c` from 990 → 372.0**. A
+field embedded in an older artifact is **a record of what was committed when that artifact was
+written** — it is data, not a commitment. Grading a realized `c` against a superseded constant
+would produce a wrong ratio in both directions: a **spurious HALT** (297.6 vs 990 reads as 0.301,
+inviting a "3× cheaper!" misreading) or, in the other direction, a **missed** one.
+
+**The realized numbers corroborate that the R4 constants were used**, which is the check worth
+recording: `gen ratio 0.800 × 372.0 = 297.6` — exactly the §R4-5 measurement, and *not* what
+grading against 990 would give. All three legs came in **cheaper than committed** (arb 0.781,
+gen 0.800, IF 0.747) and **correctly produced no halt**: §0.A/§7 make the HALT **one-sided**, and
+cheaper is **recorded, never halted**. The IF leg's realized 1.755 worker-s/playout sits between
+the smoke-indicated 1.2313 and the committed 2.35, so the pair's decision to **size on 2.35 and
+report both** was the right conservatism — the envelope was not undershot.
+
+---
+
 ## Summary
 
 | # | question | ruling |
@@ -177,3 +272,5 @@ before anyone reaches for the nearest available one.
 | 1 | May S1 scoring proceed under this prereg as written? | **Was AMBIGUOUS ⇒ NOT LICENSED** on the text. **RESOLVED by blind owner ruling 2026-08-18 ("a and successor"): Reading A governs, S1 proceeds** — subject to the carried `G-REPLICATE` caveat above. |
 | 2 | S2 disposition | **VOID stands.** Rung 3 unmeasured. Scale-dependence recorded as a first-class finding. |
 | 3 | `residual = 1` on S1 | **Not disqualifying** — counted inside the bound, which holds 1 ≤ 7. Report-only, with the pre-registered "determinism defect" label corrected to *resampling*, and the fixed-point fix carried to the successor. |
+| 4 | Does §9's 4b enumeration bound the audit's address list? | **YES — W8 code defect, no amendment.** §1.5 forbids a reading that fails every healthy run; §9 4b's own parenthetical already routes cannot-exist-yet addresses to 4a's fixture pass. `G-SALT` is checked **at read-out**. ⚠️ Add a `RUN_MANIFEST` fixture to 4a in the same fix, or the primary ends up audited nowhere. |
+| — | Two executor judgment calls | **Both BLESSED**: `GEN_SMOKE.json` byte-identical copy (the `STAGE1B_LADDER` treatment); `c_remeasure` against **R4** constants, not the artifact's stale R3-era fields — the `0.800 × 372.0 = 297.6` identity confirms it did. |
