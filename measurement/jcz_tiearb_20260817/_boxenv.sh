@@ -115,6 +115,31 @@ jvm_opts_export() {
   export _JAVA_OPTIONS="$JVM_OPTS"
 }
 
+# =============================================================================
+# freeze_head — THE TOTAL COMMIT FREEZE's one witness (FREEZE.md).
+#
+# `launch.sh` stamps the band-claim-time HEAD into `$FREEZE_HEAD_FILE` on the
+# LOCAL box and publishes a copy to the share; the laptop's launch stanza copies
+# it into its own run dir before its chain starts. Both locations are consulted
+# here, local first, so that:
+#   * the laptop is never blind just because a CIFS copy lagged, and
+#   * a box that somehow has neither gets a DEFINITE empty answer, which the
+#     callers fail closed on, rather than an accidental pass.
+#
+# Echoes the sha on stdout, or nothing. Returns 0 if a sha was found, 1 if not.
+# It compares nothing itself — run_cell.sh ABORTS on a mismatch and watchdog.sh
+# only LOGS one, and keeping the policy at the call sites is deliberate.
+# =============================================================================
+freeze_head() {
+  local f sha
+  for f in "$FREEZE_HEAD_FILE" "$SHARE_RUN/FREEZE_HEAD"; do
+    [ -f "$f" ] || continue
+    sha="$(grep -m1 -oE '^[0-9a-f]{40}' "$f" 2>/dev/null || true)"
+    if [ -n "$sha" ]; then printf '%s\n' "$sha"; return 0; fi
+  done
+  return 1
+}
+
 # The number of JCZ AI shim .class files expected on every host (READ_RULE
 # G-JCZ; DESIGN §0.1 "10 .class files, byte-identical bytecode on both hosts").
 JCZ_SHIM_CLASS_COUNT_EXPECT=10

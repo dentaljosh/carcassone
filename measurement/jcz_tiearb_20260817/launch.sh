@@ -33,7 +33,9 @@
 #      a mixed-rev cell is exactly the thing `G-TOOL` exists to void.
 #   3b. RE-PROBE `--champ-tiearb-*` on the laptop, now HARD.
 #   4. CLAIM THE BAND (idempotent via the sentinel, LOCAL ONLY — the band is then
-#      passed to both boxes). Skipped in --smoke.
+#      passed to both boxes). Skipped in --smoke. ⛔ THE TOTAL COMMIT FREEZE
+#      STARTS HERE, and this step stamps `$RUN_DIR/FREEZE_HEAD` + publishes it to
+#      the share so both boxes can check themselves against it. Read FREEZE.md.
 #   5. PRE-FLIGHT ON BOTH BOXES (`G-J13`, `G-JCZ`, `G-TOOL` are PER-HOST,
 #      READ_RULE §0.F.1). Abort if EITHER fails. Verdicts synced to the share.
 #   6. LAUNCH one detached chain PER BOX: CELL A's sub-range then CELL B's.
@@ -86,7 +88,7 @@ MODE=real
 case "${1:-}" in
   "")        ;;
   --smoke)   MODE=smoke ;;
-  -h|--help) sed -n '2,95p' "$0"; exit 0 ;;
+  -h|--help) sed -n '2,98p' "$0"; exit 0 ;;
   *) echo "usage: launch.sh [--smoke]" >&2; exit 2 ;;
 esac
 
@@ -282,9 +284,44 @@ if [ "$MODE" = "real" ]; then
   log "--- 4. CLAIM THE BAND (local only) ---"
   BAND="$("$HERE/claim_band.sh" | tail -1)"
   case "$BAND" in ''|*[!0-9]*) die "claim_band.sh did not return a numeric band (got '$BAND')" 5 ;; esac
-  log "band = $BAND (sentinel $BAND_SENTINEL)"
+  [ "$BAND" = "$BAND_FLOOR" ] || die "claim_band.sh returned $BAND but BAND_FLOOR is $BAND_FLOOR" 5
+  log "band = $BAND (tag $BAND_TAG, sentinel $BAND_SENTINEL)"
+
+  # =========================================================================
+  # ⛔⛔ THE TOTAL COMMIT FREEZE STARTS *NOW*, AT THE CLAIM. FREEZE.md is the
+  # rule, verbatim; this is where the witness is stamped.
+  #
+  # `scripts/jcz_match/match.py` stamps `our_git_rev` PER RECORD at record-write
+  # time, so ANY commit — docs, measurement/, android/, a README typo — moves
+  # HEAD and splits a cell's records across revisions. `G-TOOL` conjunct 2
+  # requires `our_git_rev` equal across CELL A and CELL B AND consistent within
+  # each cell. The 2026-08-17 run was VOIDED by exactly this: a freeze scoped to
+  # wheel-relevant paths only let two docs-only commits land (DISCLOSURE §3).
+  # The remedy needed no amendment to the gate — only a freeze that is TOTAL.
+  #
+  # The sha is published to the share so the LAPTOP has a witness too: its own
+  # HEAD is set to this same sha by the step-3 bundle sync, so one sha binds both
+  # boxes. `run_cell.sh` ABORTS on a mismatch; `watchdog.sh` only LOGS one.
+  # =========================================================================
+  {
+    echo "$HEAD_BEFORE"
+    echo "# TOTAL COMMIT FREEZE — see measurement/$RUN_ID/FREEZE.md"
+    echo "# stamped at band-claim time: $(ts)"
+    echo "# band $BAND   band_tag $BAND_TAG"
+    echo "# NO COMMIT MAY LAND IN THIS REPOSITORY — none, of any kind, including"
+    echo "# docs, measurement/, android/, and README typos — until ALL FOUR of"
+    echo "# these markers exist:"
+    echo "#   $SHARE_RUN/DONE_${CELL_A}_${HOST}_${BAND_TAG}"
+    echo "#   $SHARE_RUN/DONE_${CELL_B}_${HOST}_${BAND_TAG}"
+    echo "#   $SHARE_RUN/DONE_${CELL_A}_${LAPTOP_HOST}_${BAND_TAG}"
+    echo "#   $SHARE_RUN/DONE_${CELL_B}_${LAPTOP_HOST}_${BAND_TAG}"
+  } > "$FREEZE_HEAD_FILE"
+  cp -f "$FREEZE_HEAD_FILE" "$SHARE_RUN/FREEZE_HEAD" \
+    || die "could not publish FREEZE_HEAD to $SHARE_RUN — the laptop would start with no freeze witness and run_cell.sh would refuse it" 16
+  log "⛔ TOTAL COMMIT FREEZE ARMED at HEAD $HEAD_BEFORE -> $FREEZE_HEAD_FILE (+ share)"
 else
   log "--- 4. CLAIM SKIPPED (smoke uses a throwaway seed base, NOT a claimed band) ---"
+  log "    (no band claimed ⇒ no commit freeze armed; run_cell.sh's freeze check is ADVISORY in smoke mode)"
   BAND="$SMOKE_SEED_BASE"
 fi
 
@@ -406,9 +443,11 @@ gen_chain() {                       # gen_chain <outfile> <seed_base> <n_decks> 
   chmod +x "$out"
 }
 
-CHAIN_LOCAL="$LOGS/_chain_${MODE}_local.sh"
-CHAIN_LAPTOP_SRC="$LOGS/_chain_${MODE}_laptop.sh"
-CHAINLOG_LOCAL="$LOGS/chain_${MODE}_${HOST}.log"
+# ⚠️ band-tagged, like every other artifact: the VOIDED run's `_chain_real_*.sh`
+# and `chain_real_*.log` are on this disk and on the share as the audit trail.
+CHAIN_LOCAL="$LOGS/_chain_${MODE}_${BAND_TAG}_local.sh"
+CHAIN_LAPTOP_SRC="$LOGS/_chain_${MODE}_${BAND_TAG}_laptop.sh"
+CHAINLOG_LOCAL="$LOGS/chain_${MODE}_${BAND_TAG}_${HOST}.log"
 gen_chain "$CHAIN_LOCAL"      "$BASE_LOCAL"  "$N_LOCAL"  "$HOST"
 gen_chain "$CHAIN_LAPTOP_SRC" "$BASE_LAPTOP" "$N_LAPTOP" "$LAPTOP_HOST"
 
@@ -423,20 +462,25 @@ log "chain scripts: $CHAIN_LOCAL  |  $CHAIN_LAPTOP_SRC"
 # repo path is identical on both boxes, but the chain is generated per-run and
 # the share is the only channel that needs no second ssh round-trip.
 mkdir -p "$SHARE_RUN"
-cp -f "$CHAIN_LAPTOP_SRC" "$SHARE_RUN/_chain_${MODE}_laptop.sh"
+cp -f "$CHAIN_LAPTOP_SRC" "$SHARE_RUN/_chain_${MODE}_${BAND_TAG}_laptop.sh"
 
 cat > "$LOGS/_launch_laptop.sh" <<EOF
 cd $REPO_REMOTE || exit 1
 mkdir -p $RUN_DIR/logs
-cp -f $SHARE_REMOTE/$RUN_ID/_chain_${MODE}_laptop.sh $RUN_DIR/logs/_chain_${MODE}_laptop.sh || exit 9
-chmod +x $RUN_DIR/logs/_chain_${MODE}_laptop.sh
-setsid nohup nice -n $NICE bash $RUN_DIR/logs/_chain_${MODE}_laptop.sh \
-  > $RUN_DIR/logs/chain_${MODE}_\$(hostname).log 2>&1 < /dev/null &
+# ⛔ The freeze witness FIRST. run_cell.sh on this box ABORTS (rc 26) without it,
+# so a chain launched before the copy lands would die at cell A with a confusing
+# "FREEZE_HEAD IS ABSENT". It is copied, not fetched lazily, so the failure (if
+# the share is unreadable) happens HERE, visibly, before anything is detached.
+cp -f $SHARE_REMOTE/$RUN_ID/FREEZE_HEAD $RUN_DIR/FREEZE_HEAD || echo "WARN_NO_FREEZE_HEAD=1"
+cp -f $SHARE_REMOTE/$RUN_ID/_chain_${MODE}_${BAND_TAG}_laptop.sh $RUN_DIR/logs/_chain_${MODE}_${BAND_TAG}_laptop.sh || exit 9
+chmod +x $RUN_DIR/logs/_chain_${MODE}_${BAND_TAG}_laptop.sh
+setsid nohup nice -n $NICE bash $RUN_DIR/logs/_chain_${MODE}_${BAND_TAG}_laptop.sh \
+  > $RUN_DIR/logs/chain_${MODE}_${BAND_TAG}_\$(hostname).log 2>&1 < /dev/null &
 CH=\$!
 disown
 echo "LAPTOP_CHAIN_PID=\$CH"
 setsid nohup bash $RUN_DIR/watchdog.sh \$CH $MODE $N_LAPTOP \
-  > $RUN_DIR/logs/watchdog_stdout_\$(hostname).log 2>&1 < /dev/null &
+  > $RUN_DIR/logs/watchdog_stdout_${BAND_TAG}_\$(hostname).log 2>&1 < /dev/null &
 WD=\$!
 disown
 echo "LAPTOP_WATCHDOG_PID=\$WD"
@@ -466,10 +510,10 @@ log "local chain pid = $CHAIN_PID  (log $CHAINLOG_LOCAL)"
 # =============================================================================
 log "--- 7. WATCHDOG (local; the laptop's was armed with its chain) ---"
 setsid nohup bash "$HERE/watchdog.sh" "$CHAIN_PID" "$MODE" "$N_LOCAL" \
-  > "$LOGS/watchdog_stdout_${HOST}.log" 2>&1 < /dev/null &
+  > "$LOGS/watchdog_stdout_${BAND_TAG}_${HOST}.log" 2>&1 < /dev/null &
 WD_PID=$!
 disown
-log "local watchdog pid = $WD_PID  (heartbeat $LOGS/watchdog_${HOST}.log, every 60 s)"
+log "local watchdog pid = $WD_PID  (heartbeat $LOGS/watchdog_${HOST}_${BAND_TAG}.log, every 60 s)"
 
 # ---- collect the laptop launch result --------------------------------------
 wait "$LAPTOP_SSH_PID" 2>/dev/null || true
@@ -479,6 +523,13 @@ LAPTOP_CHAIN_PID="$(sed -n 's/^LAPTOP_CHAIN_PID=//p' "$LAPTOP_LAUNCH_OUT" | tail
 LAPTOP_WD_PID="$(sed -n 's/^LAPTOP_WATCHDOG_PID=//p' "$LAPTOP_LAUNCH_OUT" | tail -1)"
 # ⚠️ rc=124 means `timeout` fired AFTER the launch had already happened. It is
 # LAUNCHED, and it is NEVER retried: a retry stacks a second pool on the box.
+if grep -q '^WARN_NO_FREEZE_HEAD=1' "$LAPTOP_LAUNCH_OUT" 2>/dev/null; then
+  log "!!! the laptop could NOT copy FREEZE_HEAD from the share."
+  log "!!! run_cell.sh on that box will ABORT rc=26 at cell A ('FREEZE_HEAD IS ABSENT')."
+  log "!!! Fix the share copy and relaunch the LAPTOP leg only — the local leg is"
+  log "!!! already running and this script kills nothing:"
+  log "!!!   $SHARE_RUN/FREEZE_HEAD  ->  $LAPTOP_HOST:$FREEZE_HEAD_FILE"
+fi
 if [ "${LAPTOP_SSH_RC:-}" = "124" ]; then
   log "laptop launch returned 124 from timeout — treat as LAUNCHED, do NOT retry"
 elif [ -z "$LAPTOP_CHAIN_PID" ]; then
@@ -499,7 +550,7 @@ PRODUCTION.yaml untouched.
 
   local  ($HOST)        chain pid $CHAIN_PID          watchdog $WD_PID
   laptop ($LAPTOP_HOST) chain pid ${LAPTOP_CHAIN_PID:-<unknown>}  watchdog ${LAPTOP_WD_PID:-<unknown>}
-  band                  $BAND
+  band                  $BAND          band_tag $BAND_TAG (stamped into EVERY artifact)
   split (BOTH cells)    $HOST: base $BASE_LOCAL x $N_LOCAL decks
                         $LAPTOP_HOST: base $BASE_LAPTOP x $N_LAPTOP decks
   workers               $HOST=$([ "$MODE" = "real" ] && echo "$W_LOCAL" || echo "$W_SMOKE_LOCAL") \
@@ -509,37 +560,68 @@ $LAPTOP_HOST=$([ "$MODE" = "real" ] && echo "$W_LAPTOP" || echo "$W_SMOKE_LAPTOP
 
 LOGS
   $CHAINLOG_LOCAL
-  $LOGS/chain_${MODE}_${LAPTOP_HOST}.log          <- on the LAPTOP's disk
-  $LOGS/watchdog_${HOST}.log                      <- 60 s heartbeat, local
-  $LOGS/watchdog_${LAPTOP_HOST}.log               <- 60 s heartbeat, on the LAPTOP's disk
-  ssh $LAPTOP_HOST 'tail -f $RUN_DIR/logs/watchdog_${LAPTOP_HOST}.log'
+  $LOGS/chain_${MODE}_${BAND_TAG}_${LAPTOP_HOST}.log     <- on the LAPTOP's disk
+  $LOGS/watchdog_${HOST}_${BAND_TAG}.log                 <- 60 s heartbeat, local
+  $LOGS/watchdog_${LAPTOP_HOST}_${BAND_TAG}.log          <- 60 s heartbeat, on the LAPTOP's disk
+  ssh $LAPTOP_HOST 'tail -f $RUN_DIR/logs/watchdog_${LAPTOP_HOST}_${BAND_TAG}.log'
 EOF
 if [ "$MODE" = "real" ]; then
 cat <<EOF
-  $LOGS/${CELL_A}.${HOST}.log
-  $LOGS/${CELL_B}.${HOST}.log
+  $LOGS/${CELL_A}.${HOST}.${BAND_TAG}.log
+  $LOGS/${CELL_B}.${HOST}.${BAND_TAG}.log
 
-WATCH FOR THESE MARKERS (four of them — the run is done when ALL FOUR exist)
-  $SHARE_RUN/DONE_${CELL_A}_${HOST}
-  $SHARE_RUN/DONE_${CELL_B}_${HOST}
-  $SHARE_RUN/DONE_${CELL_A}_${LAPTOP_HOST}
-  $SHARE_RUN/DONE_${CELL_B}_${LAPTOP_HOST}
+⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔
+⛔                       TOTAL COMMIT FREEZE IS NOW ON                       ⛔
+⛔                                                                           ⛔
+⛔  From this moment until the FOURTH DONE marker below exists,              ⛔
+⛔  NO COMMIT MAY LAND IN THIS REPOSITORY — none, of any kind,               ⛔
+⛔  including docs, measurement/, android/, and README typos.                ⛔
+⛔                                                                           ⛔
+⛔  match.py stamps our_git_rev PER RECORD at record-write time, so ANY      ⛔
+⛔  commit moves HEAD and splits a cell's records across revisions.          ⛔
+⛔  G-TOOL conjunct 2 voids a mixed-rev cell. The 2026-08-17 run was VOIDED  ⛔
+⛔  by exactly this — a freeze scoped to wheel-relevant paths only let two   ⛔
+⛔  DOCS-ONLY commits land. An empty wheel diff did NOT rescue it.           ⛔
+⛔                                                                           ⛔
+⛔  Rule: measurement/$RUN_ID/FREEZE.md      ⛔
+⛔  Why : measurement/$RUN_ID/DISCLOSURE.md §3  ⛔
+⛔  Head: $HEAD_AFTER  ⛔
+⛔  File: $FREEZE_HEAD_FILE  ⛔
+⛔                                                                           ⛔
+⛔  ETA ~2.5 h. Park your commits; land them all at once afterwards.         ⛔
+⛔  git add / git stash / editing files are FINE — they move no HEAD.        ⛔
+⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔
+
+  Enforcement, three layers:
+    launch.sh    RECORDS the sha (done, above) and printed this banner
+    run_cell.sh  ABORTS rc=26 before each cell if HEAD != FREEZE_HEAD
+    watchdog.sh  LOGS '!!! FREEZE VIOLATION' every 60 s; kills NOTHING
+
+WATCH FOR THESE MARKERS (four of them — the run is done, AND THE FREEZE LIFTS,
+when ALL FOUR exist)
+  $SHARE_RUN/DONE_${CELL_A}_${HOST}_${BAND_TAG}
+  $SHARE_RUN/DONE_${CELL_B}_${HOST}_${BAND_TAG}
+  $SHARE_RUN/DONE_${CELL_A}_${LAPTOP_HOST}_${BAND_TAG}
+  $SHARE_RUN/DONE_${CELL_B}_${LAPTOP_HOST}_${BAND_TAG}
   (the same four also land in $RUN_DIR on each box's own disk)
-  $SHARE_RUN/FAILED_<cell>_<host>         <- on failure, carries the exit code
+  $SHARE_RUN/FAILED_<cell>_<host>_${BAND_TAG}   <- on failure, carries the exit code
+  ⚠️ a FAILED marker does NOT lift the freeze — a resume runs on the same HEAD.
 
 OUTPUT SHARDS (per box — NOT readable on their own)
-  $RUN_DIR/${CELL_A}.${HOST}.jsonl        + $SHARE_RUN/${CELL_A}.${HOST}.jsonl
-  $RUN_DIR/${CELL_B}.${HOST}.jsonl        + $SHARE_RUN/${CELL_B}.${HOST}.jsonl
-  $SHARE_RUN/${CELL_A}.${LAPTOP_HOST}.jsonl
-  $SHARE_RUN/${CELL_B}.${LAPTOP_HOST}.jsonl
-  $SHARE_RUN/<cell>.<host>.hostmap.json   <- the deck->host stamp (G-SPLIT)
+  $RUN_DIR/${CELL_A}.${HOST}.${BAND_TAG}.jsonl   + $SHARE_RUN/${CELL_A}.${HOST}.${BAND_TAG}.jsonl
+  $RUN_DIR/${CELL_B}.${HOST}.${BAND_TAG}.jsonl   + $SHARE_RUN/${CELL_B}.${HOST}.${BAND_TAG}.jsonl
+  $SHARE_RUN/${CELL_A}.${LAPTOP_HOST}.${BAND_TAG}.jsonl
+  $SHARE_RUN/${CELL_B}.${LAPTOP_HOST}.${BAND_TAG}.jsonl
+  $SHARE_RUN/<cell>.<host>.${BAND_TAG}.hostmap.json  <- the deck->host stamp (G-SPLIT)
+  ⚠️ The VOIDED 133000000000 run's UNTAGGED files sit beside these as the audit
+     trail. Nothing here overwrites them; nothing there is read by this run.
 
 ⭐ NEXT STEP WHEN ALL FOUR MARKERS EXIST — DO NOT ADJUDICATE A SHARD:
   $RUN_DIR/merge_cells.sh
-     -> ${CELL_A}.jsonl / ${CELL_B}.jsonl   (the merged cells)
-     -> COVER_<cell>.json                   (G-COVER: exact coverage)
-     -> <cell>.hostmap.json                 (the merged deck->host map)
-     -> SPLIT_CHECK.json                    (G-SPLIT: A's map == B's map)
+     -> ${CELL_A}.${BAND_TAG}.jsonl / ${CELL_B}.${BAND_TAG}.jsonl  (the merged cells)
+     -> COVER_<cell>.${BAND_TAG}.json     (G-COVER: exact coverage)
+     -> <cell>.${BAND_TAG}.hostmap.json   (the merged deck->host map)
+     -> SPLIT_CHECK.${BAND_TAG}.json      (G-SPLIT: A's map == B's map)
   Only then READ_RULE.md §3, then adjudicate.py.
 
 GATE WITNESSES (already written, both hosts)
@@ -550,16 +632,17 @@ GATE WITNESSES (already written, both hosts)
 EOF
 else
 cat <<EOF
-  $LOGS/smoke_${CELL_A}.${HOST}.log
-  $LOGS/smoke_${CELL_B}.${HOST}.log
+  $LOGS/smoke_${CELL_A}.${HOST}.${BAND_TAG}.log
+  $LOGS/smoke_${CELL_B}.${HOST}.${BAND_TAG}.log
 
-SMOKE ARTIFACTS (no band claimed, NO DONE marker for the real cells)
-  $RUN_DIR/smoke_<cell>.${HOST}.jsonl
-  $SHARE_RUN/smoke_<cell>.${LAPTOP_HOST}.jsonl
-  $RUN_DIR/SMOKE_${HOST}.json             <- peaks + s/game for THIS box
-  $SHARE_RUN/SMOKE_${LAPTOP_HOST}.json    <- peaks + s/game for the LAPTOP
-  $RUN_DIR/SMOKE_<host>.samples.csv       <- the 5 s RSS/load sample stream
-  $RUN_DIR/SMOKE_<host>.timing.csv        <- per-cell elapsed / games
+SMOKE ARTIFACTS (no band claimed, no commit freeze, NO DONE marker for the real
+cells; band-tagged anyway so the VOIDED run's smoke files are never overwritten)
+  $RUN_DIR/smoke_<cell>.${HOST}.${BAND_TAG}.jsonl
+  $SHARE_RUN/smoke_<cell>.${LAPTOP_HOST}.${BAND_TAG}.jsonl
+  $RUN_DIR/SMOKE_${HOST}.${BAND_TAG}.json          <- peaks + s/game for THIS box
+  $SHARE_RUN/SMOKE_${LAPTOP_HOST}.${BAND_TAG}.json <- peaks + s/game for the LAPTOP
+  $RUN_DIR/SMOKE_<host>.${BAND_TAG}.samples.csv    <- the 5 s RSS/load sample stream
+  $RUN_DIR/SMOKE_<host>.${BAND_TAG}.timing.csv     <- per-cell elapsed / games
 
 ⭐ READ BOTH SMOKE_<host>.json BEFORE COMMITTING THE LONG RUN:
   1. s_per_game_wall on each box sets DECKS_LOCAL / DECKS_LAPTOP in WORKERS.conf

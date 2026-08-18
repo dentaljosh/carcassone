@@ -31,14 +31,24 @@
 # ADJUDICATES NOTHING. No strength number is read here, no results.csv row is
 # written, no analyzer is run. It plays games and writes a completion marker.
 #
-# PER-BOX OUTPUTS (so the two boxes can never write the same file):
-#   $RUN_DIR/<cell>.<host>.jsonl                  the shard
-#   $SHARE_RUN/<cell>.<host>.jsonl                the shard, published for merge
-#   $SHARE_RUN/<cell>.<host>.hostmap.json         deck_seed -> host   (`G-SPLIT`)
-#   $RUN_DIR/DONE_<cell>_<host>   + on the share  the completion marker
-#   $RUN_DIR/FAILED_<cell>_<host> + on the share  the failure marker
-# `merge_cells.sh` concatenates the shards into `<cell>.jsonl` and verifies
+# PER-BOX, PER-BAND OUTPUTS (so the two boxes can never write the same file, AND
+# this run can never touch the VOIDED first run's artifacts — see FREEZE.md and
+# WORKERS.conf::BAND_TAG. Every name below carries `.$BAND_TAG` / `_$BAND_TAG`):
+#   $RUN_DIR/<cell>.<host>.<tag>.jsonl                  the shard
+#   $SHARE_RUN/<cell>.<host>.<tag>.jsonl                the shard, published for merge
+#   $SHARE_RUN/<cell>.<host>.<tag>.hostmap.json         deck_seed -> host  (`G-SPLIT`)
+#   $RUN_DIR/DONE_<cell>_<host>_<tag>   + on the share  the completion marker
+#   $RUN_DIR/FAILED_<cell>_<host>_<tag> + on the share  the failure marker
+# `merge_cells.sh` concatenates the shards into `<cell>.<tag>.jsonl` and verifies
 # coverage exactly before anything is adjudicated.
+#
+# ⛔ THE TOTAL COMMIT FREEZE IS ENFORCED HERE, AND THIS IS THE LAYER WITH TEETH.
+# Before game 1 this script compares `git rev-parse HEAD` against the band-claim-
+# time sha in `$FREEZE_HEAD_FILE` and ABORTS (rc 26) if they differ, because
+# `match.py` stamps `our_git_rev` PER RECORD at record-write time and `G-TOOL`
+# conjunct 2 forbids a mixed-rev cell. A cell that has already written records
+# under a second rev cannot be un-mixed, so the check must sit ahead of game 1.
+# Read FREEZE.md. The voided 2026-08-17 run died on exactly this.
 #
 # SMOKE MODE (env `SMOKE=1`, driven by `launch.sh --smoke`): the SAME code path
 # on a throwaway seed base, into `smoke_<cell>.<host>.jsonl`, at the smoke worker
@@ -87,6 +97,84 @@ case "$CELL" in
   "$CELL_B") ARB=yes ;;
   *) echo "FATAL: cell must be '$CELL_A' or '$CELL_B', got '$CELL'" >&2; exit 2 ;;
 esac
+
+# =============================================================================
+# ⛔⛔ THE TOTAL COMMIT FREEZE — CHECKED HERE, BEFORE GAME 1, AND IT ABORTS.
+#
+# FREEZE.md, verbatim: from the moment the band is claimed until the fourth
+# DONE_<cell>_<host>_<BAND_TAG> marker exists, NO COMMIT MAY LAND IN THIS
+# REPOSITORY — none, of any kind, including docs, measurement/, android/, and
+# README typos.
+#
+# `scripts/jcz_match/match.py` stamps `our_git_rev` PER RECORD at record-write
+# time, so ANY commit moves HEAD and splits a cell's records across revisions.
+# READ_RULE `G-TOOL` conjunct 2 requires `our_git_rev` to be equal across CELL A
+# and CELL B AND consistent within each cell (no mixed-rev cell) — a requirement
+# that is SATISFIABLE (a run during which nobody commits satisfies it perfectly)
+# and was violated by operator behaviour on 2026-08-17: two docs-only commits
+# landed mid-run and produced 3 distinct revs in one cell and 2 in the other.
+# The empty wheel-relevant diff did NOT rescue it (DISCLOSURE §3.3).
+#
+# WHY *BEFORE GAME 1* AND NOT LATER: records written under a second rev cannot be
+# un-mixed afterwards. Aborting a cell that has not started costs nothing; a cell
+# that starts on a moved HEAD is already void. So this is the one layer that
+# refuses to proceed, and it fails CLOSED — a missing FREEZE_HEAD in real mode is
+# an abort too, because "no witness" and "HEAD is fine" are not the same claim.
+#
+# On a RESUME this is exactly right: the freeze runs from the band claim to the
+# fourth DONE, so a resume must still be on the band-claim-time HEAD.
+# =============================================================================
+# ⚠️ The already-DONE case short-circuits FIRST. A cell whose marker exists replays
+# NOTHING, so it cannot write a record under any rev at all — aborting it after the
+# freeze has legitimately lifted would break the idempotent resume for no safety.
+FREEZE_SHA=""
+if [ "${SMOKE:-0}" != "1" ] && [ -f "$RUN_DIR/DONE_${CELL}_${HOST}_${BAND_TAG}" ]; then
+  echo "[jcz-tiearb] DONE marker present for $CELL on $HOST — freeze check skipped (replays nothing)." >&2
+elif [ "${SMOKE:-0}" = "1" ]; then
+  FREEZE_SHA="$(freeze_head || true)"
+  echo "[jcz-tiearb] SMOKE: freeze check ADVISORY (no band is claimed in smoke mode)." >&2
+  echo "[jcz-tiearb]        FREEZE_HEAD=${FREEZE_SHA:-<absent>} HEAD=$(git -C "$REPO_LOCAL" rev-parse HEAD)" >&2
+else
+  FREEZE_SHA="$(freeze_head || true)"
+  HEAD_NOW="$(git -C "$REPO_LOCAL" rev-parse HEAD 2>/dev/null || true)"
+  if [ -z "$FREEZE_SHA" ]; then
+    {
+      echo "!!! FREEZE_HEAD IS ABSENT on $HOST."
+      echo "!!!   looked in : $FREEZE_HEAD_FILE"
+      echo "!!!   and       : $SHARE_RUN/FREEZE_HEAD"
+      echo "!!! launch.sh writes it at band-claim time and publishes it to the share;"
+      echo "!!! its absence means either this cell was started outside launch.sh, or"
+      echo "!!! the laptop never received it. Either way there is NO witness that HEAD"
+      echo "!!! has not moved, and G-TOOL conjunct 2 cannot be honoured on faith."
+      echo "!!! REFUSING TO PLAY. (FREEZE.md)"
+    } >&2
+    exit 26
+  fi
+  if [ "$HEAD_NOW" != "$FREEZE_SHA" ]; then
+    {
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo "!!! FREEZE VIOLATION — HEAD HAS MOVED. THIS CELL WILL NOT START."
+      echo "!!!   host           $HOST"
+      echo "!!!   cell           $CELL"
+      echo "!!!   FREEZE_HEAD    $FREEZE_SHA   (stamped at band-claim time)"
+      echo "!!!   HEAD now       ${HEAD_NOW:-<unreadable>}"
+      echo "!!!"
+      echo "!!! match.py stamps our_git_rev PER RECORD, so playing now would write"
+      echo "!!! this cell's records under a SECOND revision. G-TOOL conjunct 2 voids"
+      echo "!!! a mixed-rev cell, and a mixed cell cannot be un-mixed after the fact."
+      echo "!!! That is precisely how the 2026-08-17 run was lost (DISCLOSURE §3)."
+      echo "!!!"
+      echo "!!! ⛔ DO NOT 'fix' this by re-stamping FREEZE_HEAD. If NO cell has"
+      echo "!!!    started yet, the clean remedy is: reset the working state so HEAD"
+      echo "!!!    is back at $FREEZE_SHA, or abandon this band and re-launch from"
+      echo "!!!    scratch on a fresh one. If cells HAVE already recorded under the"
+      echo "!!!    old sha, the run is compromised — disclose it, do not paper it."
+      echo "!!! See FREEZE.md and DISCLOSURE.md §3."
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    } >&2
+    exit 26
+  fi
+fi
 
 # =============================================================================
 # CANONICAL LEAF ENV — copied VERBATIM from
@@ -195,8 +283,12 @@ if [ "$SMOKE" = "1" ]; then
   # an RSS that the real CELL B — the expensive one — cannot possibly match. The
   # per-BOX aggregate the brief actually asks for is `SMOKE_<host>.json` below,
   # which spans both cells; only the raw jsonl is split per cell.
-  OUT_JSONL="$RUN_DIR/smoke_${CELL}.${HOST}.jsonl"
-  LOGFILE="$LOGS/smoke_${CELL}.${HOST}.log"
+  # ⚠️ BAND-TAGGED even in smoke mode, and NOT for tidiness: the VOIDED first run
+  # left `smoke_<cell>.<host>.jsonl` in this directory as part of the audit trail,
+  # and an accidental `--smoke` must not overwrite it. The re-run overwrites
+  # nothing the voided run wrote.
+  OUT_JSONL="$RUN_DIR/smoke_${CELL}.${HOST}.${BAND_TAG}.jsonl"
+  LOGFILE="$LOGS/smoke_${CELL}.${HOST}.${BAND_TAG}.log"
   log "SMOKE MODE: decks=$N_DECKS seed_base=$SEED_BASE (THROWAWAY, not a claimed band) W=$W"
   log "SMOKE MODE: no band is claimed, no DONE/FAILED marker for the real cell is written"
 else
@@ -210,19 +302,31 @@ else
     die "refusing to play decks outside the claimed band" 24
   fi
   W="$W_BOX"
-  OUT_JSONL="$RUN_DIR/${CELL}.${HOST}.jsonl"
-  LOGFILE="$LOGS/${CELL}.${HOST}.log"
+  OUT_JSONL="$RUN_DIR/${CELL}.${HOST}.${BAND_TAG}.jsonl"
+  LOGFILE="$LOGS/${CELL}.${HOST}.${BAND_TAG}.log"
   log "sub-range [$SEED_BASE, $SUB_END] inside band [$BAND, $BAND_END] — OK"
+  # ⚠️ The band the sentinel holds must be the band WORKERS.conf tagged the
+  # artifacts for. A `$BAND_TAG` that no longer names `$BAND` would silently
+  # label this run's files with another run's identity — the one thing the tag
+  # exists to prevent.
+  if [ "$BAND" != "$BAND_FLOOR" ]; then
+    log "!!! BAND/TAG MISMATCH: sentinel holds $BAND but WORKERS.conf BAND_FLOOR=$BAND_FLOOR"
+    log "!!! (artifacts would be tagged '$BAND_TAG'). Refusing to mislabel the run."
+    die "resolve WORKERS.conf::BAND_FLOOR/BAND_TAG against $BAND_SENTINEL by hand" 24
+  fi
 fi
 TARGET=$(( N_DECKS * 2 ))          # --champ-seat both ⇒ two games per deck
 
+# ---- EVERY artifact carries $BAND_TAG. See FREEZE.md / WORKERS.conf::BAND_TAG:
+# the VOIDED first run's files sit in this same directory and on this same share
+# as the audit trail, and NOTHING here may collide with them.
 SHARE_JSONL="$SHARE_RUN/$(basename "$OUT_JSONL")"
-DONE_MARKER="$RUN_DIR/DONE_${CELL}_${HOST}"
-FAIL_MARKER="$RUN_DIR/FAILED_${CELL}_${HOST}"
-SHARE_DONE="$SHARE_RUN/DONE_${CELL}_${HOST}"
-SHARE_FAIL="$SHARE_RUN/FAILED_${CELL}_${HOST}"
-HOSTMAP="$RUN_DIR/${CELL}.${HOST}.hostmap.json"
-SHARE_HOSTMAP="$SHARE_RUN/${CELL}.${HOST}.hostmap.json"
+DONE_MARKER="$RUN_DIR/DONE_${CELL}_${HOST}_${BAND_TAG}"
+FAIL_MARKER="$RUN_DIR/FAILED_${CELL}_${HOST}_${BAND_TAG}"
+SHARE_DONE="$SHARE_RUN/DONE_${CELL}_${HOST}_${BAND_TAG}"
+SHARE_FAIL="$SHARE_RUN/FAILED_${CELL}_${HOST}_${BAND_TAG}"
+HOSTMAP="$RUN_DIR/${CELL}.${HOST}.${BAND_TAG}.hostmap.json"
+SHARE_HOSTMAP="$SHARE_RUN/${CELL}.${HOST}.${BAND_TAG}.hostmap.json"
 
 # ---- IDEMPOTENCE: a finished cell ON THIS HOST replays nothing.
 if [ "$SMOKE" != "1" ] && [ -f "$DONE_MARKER" ]; then
@@ -273,6 +377,7 @@ write_hostmap() {
   CELL="$CELL" HOSTNAME_="$HOST" SEED_BASE="$SEED_BASE" N_DECKS="$N_DECKS" \
   BAND_="$BAND" GIT_HEAD="$GIT_HEAD" STATE="$state" GOT="$got" \
   OUT_JSONL="$OUT_JSONL" WW="$W" SMOKE_="$SMOKE" \
+  BAND_TAG_="$BAND_TAG" FREEZE_SHA_="${FREEZE_SHA:-}" \
     "$PY" - > "$HOSTMAP".tmp <<'PYEOF'
 import json, os, sys, datetime
 sb = int(os.environ["SEED_BASE"]); n = int(os.environ["N_DECKS"])
@@ -292,6 +397,10 @@ doc = {
     "workers": int(os.environ["WW"]),
     "shard": os.environ["OUT_JSONL"],
     "git_head": os.environ["GIT_HEAD"],
+    # ⚠️ neither key is a `parse_hostmap_doc` wrapper name ("hostmap", "host_map",
+    # "decks", "deck_hosts"), so adding them cannot change which object G-SPLIT reads.
+    "band_tag": os.environ["BAND_TAG_"],
+    "freeze_head": os.environ["FREEZE_SHA_"] or None,
     "utc": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     # ⚠️ THE KEY MUST BE `hostmap`. `adjudicate.py::parse_hostmap_doc` accepts the
     # wrappers ("hostmap", "host_map", "decks", "deck_hosts") and a BARE
@@ -327,9 +436,11 @@ publish_shard() {
 # Appends one CSV row every 5 s to a per-HOST file that spans BOTH cells, so the
 # peaks in SMOKE_<host>.json are the box's true peaks over the whole smoke.
 # =============================================================================
-SMOKE_CSV="$RUN_DIR/SMOKE_${HOST}.samples.csv"
-SMOKE_TIMING="$RUN_DIR/SMOKE_${HOST}.timing.csv"
-SMOKE_JSON="$RUN_DIR/SMOKE_${HOST}.json"
+# (band-tagged for the same reason as the smoke jsonl: the voided run's
+# SMOKE_<host>.* files are audit-trail artifacts and must not be overwritten.)
+SMOKE_CSV="$RUN_DIR/SMOKE_${HOST}.${BAND_TAG}.samples.csv"
+SMOKE_TIMING="$RUN_DIR/SMOKE_${HOST}.${BAND_TAG}.timing.csv"
+SMOKE_JSON="$RUN_DIR/SMOKE_${HOST}.${BAND_TAG}.json"
 SAMPLER_PID=""
 
 start_sampler() {
@@ -376,6 +487,8 @@ trap 'stop_sampler' EXIT
   echo "[jcz-tiearb] band=$BAND sub_range_base=$SEED_BASE decks=$N_DECKS target_games=$TARGET"
   echo "[jcz-tiearb] workers=$W nice=$NICE  (W resolved from WORKERS.conf by hostname)"
   echo "[jcz-tiearb] repo_head=$GIT_HEAD"
+  echo "[jcz-tiearb] FREEZE_HEAD=${FREEZE_SHA:-<n/a: smoke or already-DONE>}  (TOTAL COMMIT FREEZE, FREEZE.md)"
+  echo "[jcz-tiearb] band_tag=$BAND_TAG  (every artifact of this run carries it)"
   echo "[jcz-tiearb] java=$JAVA_RESOLVED  ($JAVA_VERSION_LINE)"
   echo "[jcz-tiearb] _JAVA_OPTIONS=$_JAVA_OPTIONS"
   echo "[jcz-tiearb] jar=$JCZ_JAR sha256=$JAR_SHA ai_class=$JCZ_AI_CLASS ai_classes=$AI_CLASSES ($SHIM_N classes)"
@@ -543,6 +656,8 @@ if [ "$GOT" -ge "$TARGET" ]; then
     echo "record_count $GOT"
     echo "utc $(ts)"
     echo "git_head $GIT_HEAD"
+    echo "freeze_head ${FREEZE_SHA:-<none>}  <-- TOTAL COMMIT FREEZE (FREEZE.md); equal to git_head above by construction"
+    echo "band_tag $BAND_TAG"
     echo "workers $W"
     echo "elapsed_s $secs"
     echo "passes $iter"
@@ -583,6 +698,8 @@ fi
   echo "elapsed_s $secs"
   echo "utc $(ts)"
   echo "git_head $GIT_HEAD"
+  echo "freeze_head ${FREEZE_SHA:-<none>}"
+  echo "band_tag $BAND_TAG"
   echo "workers $W"
   echo "log $LOGFILE"
   echo "out $OUT_JSONL"

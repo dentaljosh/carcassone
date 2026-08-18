@@ -9,9 +9,18 @@
 # ⭐ WHY THIS SCRIPT EXISTS. The owner ruling (DESIGN §0.1) put the run on TWO
 # boxes, and `scripts/jcz_match/match.py` has no `--shared-claim`, so each box
 # plays a DISJOINT, CONTIGUOUS deck sub-range into its own shard
-# `<cell>.<host>.jsonl`. Nothing downstream can read a half-cell. This script
-# concatenates the shards into `<cell>.jsonl` and PROVES the union is exactly the
-# planned cell — no gap, no duplicate, no out-of-band deck (READ_RULE `G-COVER`).
+# `<cell>.<host>.<BAND_TAG>.jsonl`. Nothing downstream can read a half-cell. This
+# script concatenates the shards into `<cell>.<BAND_TAG>.jsonl` and PROVES the
+# union is exactly the planned cell — no gap, no duplicate, no out-of-band deck
+# (READ_RULE `G-COVER`).
+#
+# ⚠️ EVERY NAME IS BAND-TAGGED, AND THE GLOBS REQUIRE THE TAG. The VOIDED first
+# run's untagged shards, sidecars and merged cells sit in this same directory and
+# on this same share as the audit trail (DISCLOSURE.md). An untagged glob would
+# sweep them into this run's merge and produce a cell that is half one run and
+# half another — silently, since both runs use the same cell names. The tag is
+# the only thing separating them, so it is REQUIRED, not optional, in the pattern.
+# The G-COVER / G-SPLIT verification logic below is UNCHANGED.
 #
 # ⚠️ IT IS NOT THE GATE. `adjudicate.py` gates `G-COVER` and `G-SPLIT`
 # independently from the records; this is the pre-adjudication convenience check
@@ -22,12 +31,18 @@
 # ADJUDICATES NOTHING. It reads no margin, no score and no strength number: it
 # reads `deck_seed` and `champ_seat` and nothing else out of the records.
 #
-# OUTPUTS
-#   $RUN_DIR/<cell>.jsonl            the merged cell (also copied to the share)
-#   $RUN_DIR/<cell>.hostmap.json     deck_seed -> host, merged from the sidecars
-#                                    AND cross-checked against shard membership
-#   $RUN_DIR/COVER_<cell>.json       the per-cell `G-COVER` report
-#   $RUN_DIR/SPLIT_CHECK.json        `G-SPLIT`: CELL A's map vs CELL B's map
+# OUTPUTS (BAND_TAG from WORKERS.conf)
+#   $RUN_DIR/<cell>.<tag>.jsonl          the merged cell (also copied to the share)
+#   $RUN_DIR/<cell>.<tag>.hostmap.json   deck_seed -> host, merged from the sidecars
+#                                        AND cross-checked against shard membership
+#   $RUN_DIR/COVER_<cell>.<tag>.json     the per-cell `G-COVER` report
+#   $RUN_DIR/SPLIT_CHECK.<tag>.json      `G-SPLIT`: CELL A's map vs CELL B's map
+#
+# ⚠️ `<cell>.<tag>.jsonl` + `<cell>.<tag>.hostmap.json` is exactly the pair
+# `adjudicate.py::hostmap_candidates` looks for: it calls
+# `Path(cell).with_suffix(".hostmap.json")`, which replaces the FINAL `.jsonl`
+# and keeps the tag. So the tag needs no adjudicator change — verified by reading
+# it, not assumed.
 #
 # ABORTS (loudly, listing the offending seeds) on:
 #   * a missing shard for a host that has a hostmap sidecar
@@ -49,7 +64,7 @@ CELLS=()
 for a in "$@"; do
   case "$a" in
     --check)   CHECK_ONLY=1 ;;
-    -h|--help) sed -n '2,45p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,62p' "$0"; exit 0 ;;
     "$CELL_A"|"$CELL_B") CELLS+=("$a") ;;
     *) echo "FATAL: unknown argument '$a' (expected --check, $CELL_A or $CELL_B)" >&2; exit 2 ;;
   esac
@@ -69,7 +84,11 @@ die() { log "FATAL: $*"; exit "${2:-1}"; }
 [ -f "$BAND_SENTINEL" ] || die "band sentinel $BAND_SENTINEL is ABSENT — nothing to merge against (G-BAND)" 23
 BAND="$(grep -m1 -E '^[0-9]+$' "$BAND_SENTINEL" || true)"
 case "$BAND" in ''|*[!0-9]*) die "band sentinel $BAND_SENTINEL holds no numeric band" 23 ;; esac
-log "band=$BAND decks=$DECKS  expected per cell: $DECKS decks x 2 seatings = $N_GAMES games"
+log "band=$BAND band_tag=$BAND_TAG decks=$DECKS  expected per cell: $DECKS decks x 2 seatings = $N_GAMES games"
+if [ "$BAND" != "$BAND_FLOOR" ]; then
+  die "sentinel band $BAND != WORKERS.conf BAND_FLOOR $BAND_FLOOR — the artifacts are \
+tagged '$BAND_TAG' for a band this sentinel does not name. Resolve by hand; do NOT merge." 23
+fi
 log "cells: ${CELLS[*]}"
 
 # =============================================================================
@@ -82,15 +101,19 @@ log "cells: ${CELLS[*]}"
 # =============================================================================
 stage_shards() {
   local cell="$1" staged=0
-  # every host that left a sidecar for this cell, from either location
+  # Every host that left a sidecar for this cell AND THIS BAND, from either
+  # location. ⚠️ The `.${BAND_TAG}.` in the glob is load-bearing: the voided run
+  # left `<cell>.<host>.hostmap.json` (untagged) in both places, and an untagged
+  # glob would stage its shards alongside this run's.
   local maps
-  maps="$( { ls "$RUN_DIR/${cell}".*.hostmap.json "$SHARE_RUN/${cell}".*.hostmap.json 2>/dev/null || true; } \
+  maps="$( { ls "$RUN_DIR/${cell}".*."${BAND_TAG}".hostmap.json \
+                "$SHARE_RUN/${cell}".*."${BAND_TAG}".hostmap.json 2>/dev/null || true; } \
            | xargs -r -n1 basename | sort -u )"
-  [ -n "$maps" ] || die "no hostmap sidecars for $cell in $RUN_DIR or $SHARE_RUN — did any box run?" 30
+  [ -n "$maps" ] || die "no '$BAND_TAG' hostmap sidecars for $cell in $RUN_DIR or $SHARE_RUN — did any box run?" 30
   for m in $maps; do
     local host shard local_shard share_shard
-    host="${m#"${cell}".}"; host="${host%.hostmap.json}"
-    shard="${cell}.${host}.jsonl"
+    host="${m#"${cell}".}"; host="${host%.hostmap.json}"; host="${host%".${BAND_TAG}"}"
+    shard="${cell}.${host}.${BAND_TAG}.jsonl"
     local_shard="$RUN_DIR/$shard"
     share_shard="$SHARE_RUN/$shard"
     if [ -s "$local_shard" ]; then
@@ -110,9 +133,9 @@ for cell in "${CELLS[@]}"; do
   SHARDS="$(stage_shards "$cell")"
   echo "$SHARDS" | sed 's/^/    shard: /'
 
-  MERGED="$RUN_DIR/${cell}.jsonl"
-  COVER="$RUN_DIR/COVER_${cell}.json"
-  MAPOUT="$RUN_DIR/${cell}.hostmap.json"
+  MERGED="$RUN_DIR/${cell}.${BAND_TAG}.jsonl"
+  COVER="$RUN_DIR/COVER_${cell}.${BAND_TAG}.json"
+  MAPOUT="$RUN_DIR/${cell}.${BAND_TAG}.hostmap.json"
 
   if [ "$CHECK_ONLY" -eq 0 ]; then
     # `cat` in a stable, sorted-by-name order so the merged file is reproducible.
@@ -136,6 +159,7 @@ for cell in "${CELLS[@]}"; do
   MG_CELL="$cell" MG_BAND="$BAND" MG_DECKS="$DECKS" MG_MERGED="$MERGED" \
   MG_SHARDS="$SHARDS" MG_RUNDIR="$RUN_DIR" MG_SHARE="$SHARE_RUN" \
   MG_MAPOUT="$MAPOUT" MG_COVER="$COVER" MG_CHECKONLY="$CHECK_ONLY" \
+  MG_BANDTAG="$BAND_TAG" \
     "$PY" - <<'PYEOF' || die "G-COVER FAILED for $cell — see the listing above" 32
 import json, os, sys, collections, datetime, glob
 
@@ -146,7 +170,24 @@ merged = os.environ["MG_MERGED"]
 shards = [s for s in os.environ["MG_SHARDS"].split("\n") if s.strip()]
 rundir = os.environ["MG_RUNDIR"]
 share  = os.environ["MG_SHARE"]
+tag    = os.environ["MG_BANDTAG"]
 lo, hi = band, band + decks - 1
+
+def host_of(path):
+    """`<cell>.<host>.<BAND_TAG>.jsonl` -> `<host>`.
+
+    ⚠️ The band tag shifted the host one field left. The old code took
+    `split(".")[-2]`, which now returns the TAG, and every shard would have been
+    attributed to a host called "b134" — collapsing the two hosts into one and
+    making the sidecar/shard cross-check below fail for a reason that has nothing
+    to do with the split. The tag is stripped explicitly, and the untagged shape
+    is still handled so this function cannot silently mis-read an older layout.
+    """
+    parts = os.path.basename(path).split(".")
+    parts = [p for p in parts if p != "jsonl"]
+    if parts and parts[-1] == tag:
+        parts = parts[:-1]
+    return parts[-1] if parts else "UNKNOWN"
 
 # ---- deck -> host, from SHARD MEMBERSHIP (evidence) ----------------------
 derived = {}
@@ -154,7 +195,7 @@ seen = collections.Counter()          # (deck, seat) -> n
 torn = 0
 per_shard = []
 for path in sorted(shards):
-    host = os.path.basename(path).split(".")[-2]
+    host = host_of(path)
     n = 0
     with open(path) as fh:
         for line in fh:
@@ -182,8 +223,11 @@ for path in sorted(shards):
 # ---- deck -> host, from the SIDECARS (declaration) -----------------------
 declared = {}
 sidecar_files = []
+# ⚠️ the `.<tag>.` is REQUIRED in the pattern — the voided run left untagged
+# `<cell>.<host>.hostmap.json` sidecars in both of these directories.
 for base in (rundir, share):
-    sidecar_files += sorted(glob.glob(os.path.join(base, "%s.*.hostmap.json" % cell)))
+    sidecar_files += sorted(glob.glob(
+        os.path.join(base, "%s.*.%s.hostmap.json" % (cell, tag))))
 sidecar_meta = []
 for p in sidecar_files:
     try:
@@ -241,7 +285,7 @@ print("  G-COVER         %s" % ("PASS" if ok else "*** FAIL ***"))
 
 doc = {
     "witness": "G-COVER (pre-adjudication convenience check; adjudicate.py gates it independently)",
-    "cell": cell, "band": band, "decks": decks,
+    "cell": cell, "band": band, "band_tag": tag, "decks": decks,
     "deck_range": [lo, hi], "games_expected": decks * 2,
     "utc": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "merged": merged, "shards": per_shard, "sidecars": sidecar_meta,
@@ -266,7 +310,7 @@ if os.environ["MG_CHECKONLY"] != "1":
     # `declared_by_launcher` is deliberately not a wrapper name.
     mapdoc = {
         "witness": "G-SPLIT input",
-        "cell": cell, "band": band, "deck_range": [lo, hi],
+        "cell": cell, "band": band, "band_tag": tag, "deck_range": [lo, hi],
         "utc": doc["utc"],
         "hostmap": {str(k): derived[k] for k in sorted(derived)},
         "declared_by_launcher": {str(k): declared[k] for k in sorted(declared)},
@@ -312,10 +356,10 @@ if [ "${#CELLS[@]}" -eq 2 ] && [ "$CHECK_ONLY" -eq 0 ]; then
   # explicit, explanatory failure below runs instead of `set -e` killing the
   # script with no message.
   set +e
-  SP_A="$RUN_DIR/${CELL_A}.hostmap.json" \
-  SP_B="$RUN_DIR/${CELL_B}.hostmap.json" \
-  SP_OUT="$RUN_DIR/SPLIT_CHECK.json" \
-  SP_CA="$CELL_A" SP_CB="$CELL_B" \
+  SP_A="$RUN_DIR/${CELL_A}.${BAND_TAG}.hostmap.json" \
+  SP_B="$RUN_DIR/${CELL_B}.${BAND_TAG}.hostmap.json" \
+  SP_OUT="$RUN_DIR/SPLIT_CHECK.${BAND_TAG}.json" \
+  SP_CA="$CELL_A" SP_CB="$CELL_B" SP_TAG="$BAND_TAG" \
     "$PY" - <<'PYEOF'
 import json, os, sys, datetime
 
@@ -344,6 +388,7 @@ doc = {
     "witness": "G-SPLIT (pre-adjudication convenience check; adjudicate.py gates it independently)",
     "utc": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "cell_a": os.environ["SP_CA"], "cell_b": os.environ["SP_CB"],
+    "band_tag": os.environ["SP_TAG"],
     "n_decks_a": len(ma), "n_decks_b": len(mb),
     "hosts_a": a.get("hosts"), "hosts_b": b.get("hosts"),
     "decks_only_in_a": only_a, "decks_only_in_b": only_b,
@@ -361,16 +406,16 @@ sys.exit(0 if identical else 1)
 PYEOF
   spr=$?
   set -e
-  cp -f "$RUN_DIR/SPLIT_CHECK.json" "$SHARE_RUN/" 2>/dev/null || true
+  cp -f "$RUN_DIR/SPLIT_CHECK.${BAND_TAG}.json" "$SHARE_RUN/" 2>/dev/null || true
   if [ "$spr" -ne 0 ]; then
     log "!!! G-SPLIT FAILED — the deck->host assignment DIFFERS between the two cells."
-    log "!!! See $RUN_DIR/SPLIT_CHECK.json. READ_RULE §3 VOIDS the run on this (U-UNREADABLE)."
+    log "!!! See $RUN_DIR/SPLIT_CHECK.${BAND_TAG}.json. READ_RULE §3 VOIDS the run on this (U-UNREADABLE)."
     log "!!! Do NOT 'fix' it by re-labelling: the games were physically played on the"
     log "!!! boxes the records say. The remedy is to REPLAY the mismatched decks so"
     log "!!! that both cells' decks sit on the same box, or to accept U-UNREADABLE."
     exit 33
   fi
-  log "G-SPLIT PASS -> $RUN_DIR/SPLIT_CHECK.json"
+  log "G-SPLIT PASS -> $RUN_DIR/SPLIT_CHECK.${BAND_TAG}.json"
 fi
 
 log "MERGE COMPLETE. NOTHING ADJUDICATED — read READ_RULE.md §3 before any number."

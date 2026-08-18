@@ -39,6 +39,20 @@ REPO=/home/doctor/projects/carcassone
 cd "$REPO" || exit 1
 HERE="$REPO/measurement/tiearb2_stage2_20260817"
 JCZ="$REPO/measurement/jcz_tiearb_20260817"
+# ⚠️ RE-KEYED 2026-08-18 — TWO LATENT BUGS FIXED, both found while the box was quiet.
+#
+# (1) WRONG LOCATION. The MARKERS below used to point at "$JCZ" (the LOCAL run
+#     dir). Only the two `Doctor` markers are ever written there; each box writes
+#     its own markers to ITS OWN disk plus the SHARE, so the two `laptop-wsl`
+#     markers never appear locally. Verified: all four of the voided run's markers
+#     exist at /mnt/c/carc-shared/jcz_tiearb_20260817/, only two locally. This
+#     script would therefore have blocked FOREVER and never fired its gates.
+#     THE SHARE IS THE ONLY LOCATION BOTH BOXES PUBLISH TO.
+# (2) STALE BAND. The 133000000000 run was VOIDED (see the JCZ dir's
+#     DISCLOSURE.md); its markers still exist and would have satisfied a
+#     band-agnostic wait immediately. The re-run tags every artifact `b134`, so
+#     the markers below are band-qualified and cannot be satisfied by the void.
+JCZ_SHARE=/mnt/c/carc-shared/jcz_tiearb_20260817   # allow-path (LOCAL box only; this script never runs over ssh)
 LOGS="$HERE/logs"
 OUT="$HERE/verdicts/deferred_gates"
 PY="$REPO/.venv/bin/python"
@@ -49,10 +63,10 @@ log() { echo "[deferred-gates $(ts)] $*"; }
 
 # The four completion markers the coordinator named, verbatim.
 MARKERS=(
-  "$JCZ/DONE_jcz_CHAMP_deploy11008_Doctor"
-  "$JCZ/DONE_jcz_ARB_B16J4_deploy11008_Doctor"
-  "$JCZ/DONE_jcz_CHAMP_deploy11008_laptop-wsl"
-  "$JCZ/DONE_jcz_ARB_B16J4_deploy11008_laptop-wsl"
+  "$JCZ_SHARE/DONE_jcz_CHAMP_deploy11008_Doctor_b134"
+  "$JCZ_SHARE/DONE_jcz_ARB_B16J4_deploy11008_Doctor_b134"
+  "$JCZ_SHARE/DONE_jcz_CHAMP_deploy11008_laptop-wsl_b134"
+  "$JCZ_SHARE/DONE_jcz_ARB_B16J4_deploy11008_laptop-wsl_b134"
 )
 
 log "=== WAITING for the JCZ cell pair (4 markers) ==="
@@ -74,7 +88,7 @@ log "all 4 JCZ markers present"
 # --- routinely outlive their main). Require two consecutive quiet samples.
 quiet=0
 while [ "$quiet" -lt 2 ]; do
-  n=$(pgrep -cf "eval_fair_puct|gen_fair|run_cell.sh" 2>/dev/null || echo 0)
+  n=$(pgrep -cf "eval_fair_puct|gen_fair|run_cell.sh|jcz_match/match\.py" 2>/dev/null || echo 0)
   la=$(cut -d' ' -f1 /proc/loadavg)
   if [ "$n" -eq 0 ] && [ "${la%.*}" -lt 4 ]; then
     quiet=$((quiet+1))

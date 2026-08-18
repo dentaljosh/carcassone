@@ -324,16 +324,98 @@ def draw_order_for(state, tile_map) -> list[str]:
 # --------------------------------------------------------------------------- #
 # manifest                                                                     #
 # --------------------------------------------------------------------------- #
-def _git_rev(repo: Path) -> str | None:
+def _git_rev_detail(repo: Path) -> tuple[str | None, str | None]:
+    """``(rev, unavailable_reason)`` for a checkout — never raises, never invents.
+
+    ⚠️ A git rev only NAMES A CHECKOUT, and only on a box where that checkout exists.
+    That is precisely how the 2026-08-17 two-box JCZ match was lost (DISCLOSURE §2.1):
+    the laptop was provisioned by copying the sha-verified ``Engine.jar`` + shim
+    classes over the share rather than cloning the JCZ repo — deliberately, because
+    byte-identical bytecode beats a second unverified build — so
+    ``git -C ~/jcz_spike/JCloisterZone rev-parse HEAD`` answered *fatal: not a git
+    repository* and 370 of 800 records per cell stamped ``jcz_git_rev: null`` while
+    running exactly the right artifact. A provenance gate keyed on the rev could never
+    pass on that box.
+
+    So the rev is SECONDARY / best-effort here (see ``jar_sha256`` for the primary
+    witness), and an unavailable one is stamped ``null`` **with the reason**. Never
+    fabricate provenance: no fallback value, no borrowed rev, no omitted key.
+    """
     try:
         out = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
                              capture_output=True, text=True, timeout=20)
-        return out.stdout.strip() or None
-    except Exception:                                        # noqa: BLE001
-        return None
+    except Exception as exc:                                 # noqa: BLE001
+        return None, f"{type(exc).__name__}: {exc}"[:200]
+    rev = out.stdout.strip()
+    if rev:
+        return rev, None
+    first = (out.stderr or "").strip().splitlines()
+    reason = first[0] if first else f"git rev-parse exited {out.returncode}, no output"
+    return None, reason[:200]
+
+
+def _git_rev(repo: Path) -> str | None:
+    """Back-compat wrapper (``our_git_rev``, and any external caller)."""
+    return _git_rev_detail(repo)[0]
+
+
+#: Absolute path -> FULL sha256 hex, computed ONCE per process. A worker plays many
+#: games and the shaded ``Engine.jar`` is ~28 MB, so re-hashing it per game would be
+#: pure waste; spawn workers each get their own module instance, so this dict is
+#: per-worker by construction (``_worker_init`` warms it before game 1).
+_FILE_SHA256_CACHE: dict[str, str] = {}
+
+
+def _sha256_stream(p: Path) -> str:
+    """Full sha256 of a file, read in 1 MiB chunks. RAISES on any read failure."""
+    h = hashlib.sha256()
+    with open(p, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def jar_sha256(jar) -> str:
+    """THE PRIMARY JCZ provenance witness: the full 64-hex sha256 of the jar bytes.
+
+    Why this and not the git rev: a rev names a *checkout* and requires a repository
+    to be present on the box; this hashes **the bytes that actually executed** and is
+    available on any host that can read the jar — including one provisioned by copying
+    the pinned jar over the share (which is the supported way to guarantee identical
+    bytecode across boxes). ``_git_rev_detail`` documents the failure this replaces.
+
+    **RAISES** on a missing or unreadable jar rather than returning ``None``. A jar
+    that cannot be hashed is already a hard error in this driver (``JczEngine``
+    raises ``FileNotFoundError`` on a missing jar; ``JczAiEngine``'s ``require_ai``
+    does the same for the shim), and a silent ``null`` here is exactly the defect this
+    change exists to remove — the run would produce 800 unwitnessed records and only
+    fail at adjudication.
+
+    Cached per process (``_FILE_SHA256_CACHE``), keyed by path string.
+    """
+    key = str(Path(jar))
+    got = _FILE_SHA256_CACHE.get(key)
+    if got is not None:
+        return got
+    p = Path(jar)
+    if not p.is_file():
+        raise FileNotFoundError(
+            f"JCZ Engine.jar not found at {p} — refusing to stamp a null JCZ "
+            "provenance. The jar sha256 is the PRIMARY provenance witness for every "
+            "record; build it with the spike's steps or pass --jar / $JCZ_JAR.")
+    try:
+        got = _sha256_stream(p)
+    except OSError as exc:
+        raise OSError(
+            f"JCZ Engine.jar at {p} could not be read ({exc}) — refusing to stamp a "
+            "null JCZ provenance") from exc
+    _FILE_SHA256_CACHE[key] = got
+    return got
 
 
 def _sha256_file(p: Path) -> str | None:
+    """Best-effort TRUNCATED digest (tiles xml). Unlike ``jar_sha256`` this may
+    return ``None`` — the tiles file is corroborated by the rules profile too."""
     try:
         return hashlib.sha256(Path(p).read_bytes()).hexdigest()[:16]
     except Exception:                                        # noqa: BLE001
@@ -346,13 +428,26 @@ def build_manifest(*, jar: Path, tiles: Path, ai_class: str, ai_config: dict,
     """Everything needed to re-run this game, and everything that could explain it."""
     jar = Path(jar)
     jcz_repo = jar.parents[1] if len(jar.parents) > 1 else jar.parent
+    # PRIMARY witness first, and it may RAISE — a record with no readable jar behind
+    # it is not a record worth writing.
+    jar_sha = jar_sha256(jar)
+    jcz_rev, jcz_rev_reason = _git_rev_detail(jcz_repo)
     return {
         "schema": SCHEMA,
         "our_git_rev": _git_rev(REPO),
-        "jcz_git_rev": _git_rev(jcz_repo),
+        # SECONDARY, best-effort: present-and-null when the box has no JCZ checkout
+        # (a copied-jar provisioning), with the reason beside it. Kept exactly as it
+        # resolved; never substituted.
+        "jcz_git_rev": jcz_rev,
+        "jcz_git_rev_available": jcz_rev is not None,
+        "jcz_git_rev_unavailable_reason": jcz_rev_reason,
         "jcz_repo": str(jcz_repo),
         "jcz_jar": str(jar),
-        "jcz_jar_sha256_16": _sha256_file(jar),
+        # PRIMARY: the full 64-hex hash of the bytes that ran. `_16` is the same value
+        # truncated, retained verbatim for the 2026-08-09 archive readers.
+        "jcz_jar_sha256": jar_sha,
+        "jcz_jar_sha256_16": jar_sha[:16],
+        "jcz_provenance_witness": "jar_sha256",
         "jcz_ai_class": ai_class,
         "jcz_ai_classes_dir": None if ai_classes is None else str(ai_classes),
         "jcz_ai_cmd": list(ai_cmd) if ai_cmd else None,
@@ -929,6 +1024,11 @@ def _worker_init(rust_threads: int, sims, k_dets, jar, tiles, ai_classes, ai_cla
     from carcassonne_ai.mirror_protocol import resolve_execution
 
     rules_profile.activate(PROFILE)
+    # ONCE per worker, before game 1: hash the jar into `_FILE_SHA256_CACHE` so the
+    # per-game manifest stamp is a dict lookup rather than ~28 MB of I/O per game, and
+    # so a jar that is missing/unreadable ON THIS BOX kills the worker here instead of
+    # producing games whose provenance cannot be witnessed.
+    jar_sha256(Path(jar) if jar else _default_jar())
     ex = resolve_execution("rust", rust_threads=rust_threads)
     if not ex.is_rust:
         raise RuntimeError(f"backend did not resolve to rust: {ex.describe()}")
@@ -1145,6 +1245,13 @@ def main(argv=None) -> int:
                  "scripts/jcz_match/build_ai_shim.sh (or pass --ai-classes)")
     os.environ["JCZ_AI_CLASSES"] = ai_classes
 
+    # PREFLIGHT THE JAR, BY CONTENT, in the parent — same reflex as the shim check
+    # above. The sha256 is the PRIMARY provenance witness on every record, so a jar
+    # that cannot be read must fail here (loudly, once, before a single worker forks)
+    # and never as 800 records stamped with a quiet null. `jar_sha256` raises.
+    jar_path = Path(args.jar) if args.jar else _default_jar()
+    jar_sha = jar_sha256(jar_path)
+
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     seeds = [args.seed_base + i for i in range(max(1, args.decks))]
@@ -1160,6 +1267,8 @@ def main(argv=None) -> int:
     print(f"[jcz-match] profile={PROFILE} {env} decks={len(seeds)} "
           f"seats={champ_seats} repeats={args.repeats} workers={args.workers} "
           f"done={len(done)} todo={len(cells)}", flush=True)
+    print(f"[jcz-match] jcz_jar={jar_path} jcz_jar_sha256={jar_sha} "
+          "(PRIMARY provenance witness; git rev is secondary/best-effort)", flush=True)
     if tiearb is not None:
         # The rust-wheel probe runs in each worker's `_worker_init` (the parent must
         # not import carcassonne_ai — the R9 env latches at engine import).
