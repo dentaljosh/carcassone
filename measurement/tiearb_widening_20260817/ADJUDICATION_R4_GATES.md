@@ -124,10 +124,56 @@ named in `PREREG_FAILURE_S2.md` §4.3: iterate probe→carry to a fixed point**,
 
 ---
 
+---
+
+## OWNER RULING — 2026-08-18, made BLIND
+
+> **Verbatim: "a and successor".**
+
+**Reading A governs. S1 proceeds under the R4 pair; S2's void stands; rung 3 gets a successor
+prereg.**
+
+**Blindness, on the record.** The ruling was made **pre-statistic** — nothing scored, no `arb`,
+`ora`, `Δ` or CI in existence for any position of this run, boxes idle — exactly the clean terms
+§1.4 offered. The owner resolved a **drafting gap**, not a result.
+
+**The reasoning adopted.** Reading A as written in §1.1 — conjunct (iii) is *per stratum* and its
+remedy is stratum-scoped in its own words (*"that stratum is VOID"*), S1 satisfied its own bound
+1 ≤ 7, and rung 2's cells are S1-only. Reading B's strongest move — that `G-DISJOINT` carries no
+`{S1,S2}` marker and so gets no separate-evaluation carve-out — is read as a **drafting omission
+rather than a substantive scope decision**, and the evidence for that reading is that
+**every substantive cross-stratum conjunct came back at zero**: `strata_root_overlap = 0`, and all
+seven comparisons zero at the **rid and root** layers, including `s1_vs_s2`. The conjuncts that
+make `G-DISJOINT` a whole-run object all **passed**; the sole violated conjunct is the one the
+text scopes to a single stratum. The taxonomy gap is fixed prospectively in the successor
+(`rung3_r5/DESIGN.md` §R5-6), not retroactively here.
+
+**CARRIED CAVEAT — scoring proceeds THROUGH `G-REPLICATE`, not past it.** `G-REPLICATE` **binds
+BOTH rungs**, is evaluated **on S1**, and **has not yet run** — it needs scoring to exist. This
+ruling licenses S1 scoring; it does **not** pre-clear rung 2. If `G-REPLICATE` fails at the
+read-out, rung 2 is `UNINTERPRETABLE` and no branch fires, exactly as written. "S1's gates passed"
+means its **corpus-stage** gates passed.
+
+**W9 (`D-DRAW`): SKIPPED, ruled moot under Reading A.** It replays **S2 capped plies**, and S2 is
+void — there is nothing left for it to measure here. It **transfers to the successor**.
+⚠️ Consequence, recorded rather than buried: `I7-draw-scope`'s load-bearing conditional — that the
+python and rust afterstate-dedupe keys induce the same partition — stays **UNMEASURED**. That
+costs rung 2 nothing (`I7` is a rung-3 rider by construction, and with rung 3 unmeasured it has
+nothing to ride on), but the successor **inherits the obligation**, not a clean slate.
+
+**One phrase the read-out must NOT reach for.** §2a spells out what to say when `n₂ = 0` — *"the J
+question was **not bought**"* — but that clause is conditioned on the owner's pre-committed floor,
+and **this run bought rung 3 at `n₂ = 1100` and then lost it to a void.** The read-out must
+therefore say the J question was **bought and lost to a stratum void**: not "not bought", not
+"answered", not "inconclusive". The frozen text has no phrase for this case, so it is named here
+before anyone reaches for the nearest available one.
+
+---
+
 ## Summary
 
 | # | question | ruling |
 |---|---|---|
-| 1 | May S1 scoring proceed under this prereg as written? | **AMBIGUOUS ⇒ NOT LICENSED.** Two readings, neither forced; the missing sentence is *what a per-stratum VOID does to the other stratum's readability*. Needs an owner ruling, which is blind and clean to make now. |
+| 1 | May S1 scoring proceed under this prereg as written? | **Was AMBIGUOUS ⇒ NOT LICENSED** on the text. **RESOLVED by blind owner ruling 2026-08-18 ("a and successor"): Reading A governs, S1 proceeds** — subject to the carried `G-REPLICATE` caveat above. |
 | 2 | S2 disposition | **VOID stands.** Rung 3 unmeasured. Scale-dependence recorded as a first-class finding. |
 | 3 | `residual = 1` on S1 | **Not disqualifying** — counted inside the bound, which holds 1 ≤ 7. Report-only, with the pre-registered "determinism defect" label corrected to *resampling*, and the fixed-point fix carried to the successor. |

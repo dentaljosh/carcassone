@@ -91,7 +91,14 @@ different finding, which must surface rather than be absorbed." **It surfaced. T
 
 - **S2 stratum: VOID.** Not excluded-and-continued, not topped up, not re-gated.
 - **Rung 3: UNMEASURED**, awaiting a successor prereg that fixes the bound's *shape* and,
-  probably, the mining predicate.
-- **The extension band's S2 sub-range is spent.** A successor claims fresh seeds.
+  probably, the mining predicate. **Drafted: [`rung3_r5/DESIGN.md`](rung3_r5/DESIGN.md).**
+- ~~**The extension band's S2 sub-range is spent.** A successor claims fresh seeds.~~
+  **CORRECTED 2026-08-18** (this line was over-strict): **what is spent is the R4 S2 *stratum* —
+  the positions built under R4's read rule — not the *substrate*.** The 5,340 games were **never
+  scored**; only structure counts were read; so the same counts-only argument that let R4 retain
+  band 135e9 ([`PREREG_FAILURE.md`](PREREG_FAILURE.md) §3) applies identically here. **The games
+  are RETAINED INPUT to the successor**, which re-mines them under a ply-floor — producing a
+  *different position set* from the same substrate, which is the intended use and is not a re-read
+  of anything spent. See [`rung3_r5/DESIGN.md`](rung3_r5/DESIGN.md) §R5-4.
 - **The scale-dependence finding stands on its own** and should be carried into any future
   offline-corpus design in this programme, not just rung 3's.
