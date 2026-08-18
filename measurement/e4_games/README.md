@@ -5,6 +5,42 @@ schema `carcassonne-android-archive/v1`: lossless `(deck_seed, actions)` per the
 root_replay contract, plus result summary, per-move AI latencies, and provenance
 (champion id, leaf hash, effective budget).
 
+> ✅ **2026-08-17 (CURRENT): 9 NEW ARCHIVES PULLED (2026-08-16 14:27 → 08-17 22:10) + 7 BACKLOG
+> ARCHIVES INGESTED.** Full readout, integrity checks and statistics:
+> **[E4_UPDATE_20260817.md](E4_UPDATE_20260817.md)**. ⚠️ That readout covers **16** games — the
+> seven archives from 2026-08-12 → 08-16 were pulled as raw data (`3d69c5b8`, `b5fd5427`) but
+> never written into this ledger's prose. Headline moves:
+> - **Overall record 26–16–1** (42 archives = 26 W / 15 L / **1 D**, + 1 pre-archival
+>   unrecorded loss).
+> - **`fixed_v1` epoch: n=39, W25/L13/D1, margin +13.846 ± 4.038 (z +3.43)** — new nine alone
+>   6–3 (+16.778 ± 8.79), the seven-game backlog 6–0–1 (+22.571 ± 6.23).
+> - ⚠️ **Read the trend, not the pool: this is a LEVEL SHIFT, not a learning rate.** Epoch
+>   first 19 +6.53 (W9) vs last 20 +20.80 (W16), but the OLS slope *within* the 16 new games is
+>   **−0.119 pts/game (z −0.10)** — flat — and the full-epoch slope has deflated for the second
+>   readout running: +2.58 → +1.215 → **+0.586 (se 0.351, z +1.67)**. The anchor is
+>   NONSTATIONARY (see `ANCHOR_INTERVIEW_2026-08-12.md`); the pooled z prices the human, not
+>   the engine.
+> - ⚠️ **The farm anomaly OSCILLATES — treat it as unresolved.** Block-by-block paired farm
+>   margin **+11.40 → +1.50 → +18.00 (z +5.73) → +7.33**. The 08-12 "did not replicate" call
+>   was correct on its data; it then un-collapsed and re-collapsed. **Do not quote the pooled
+>   +9.615 ± 2.240 (z +4.29) as a stable effect.** Champion farm pts/seat at n=39: **15.62
+>   (se 1.85)** vs a corpus norm of 20.5; zeroed in 7 of 39.
+> - **During play is the component actually trending** (+3.43 → +6.57 → +10.78 across blocks,
+>   monotone, each block individually z ≈ 1). Unfinished features stays his one persistent
+>   deficit (−1.46 pooled, negative in every block).
+> - **First draw in E4 history:** `1786590116_64346`, **55–55**, and the lowest-scoring game on
+>   record (110 combined vs an epoch mean of 190.4). Replays exactly.
+> - Integrity: **16/16 replay exactly**, **all 16 seeds distinct** (corpus-wide the only dup is
+>   still the known pre-fix 523563 pair ⇒ seedfix confirmed a third time), no partials, and
+>   **`assists` is still ABSENT in all 42**.
+> - `rust_threads` went 4 → 2 at 2026-08-16 (battery A/B). **Not a strength boundary** — play is
+>   bit-identical across thread counts; do not split the corpus on this field.
+> - ⏳ **NOT run (deferred-gates job owns the boxes):** F14 per-deck baseline for the 24 unpriced
+>   decks (~48 min at W14 — its "re-run at n~25-30" threshold is now met at n=39), and EV-loss
+>   grading of the 11 ungraded games, epoch 29–39 (~50 min, exclusive tenant).
+>
+> <details><summary>Previous readout — 2026-08-12 (8 archives, epoch n=23)</summary>
+>
 > ✅ **2026-08-12: 8 NEW ARCHIVES INGESTED (2026-08-10 09:16 → 08-12 01:17).** The pull block
 > earlier today is resolved (Joshua re-paired the phone). Full readout, integrity checks and
 > statistics: **[E4_UPDATE_20260812.md](E4_UPDATE_20260812.md)**. Headline moves:
@@ -32,6 +68,15 @@ root_replay contract, plus result summary, per-move AI latencies, and provenance
 >
 > The per-game table further down covers archives through 2026-08-10 only; games 16–23 are
 > tabulated in the readout.
+>
+> </details>
+>
+> ⚠️ **The per-game table and all statistics below this banner are FROZEN AT n=15
+> (2026-08-10).** They are kept for provenance. **Games 16–23 are tabulated in
+> [E4_UPDATE_20260812.md](E4_UPDATE_20260812.md); games 24–39 in
+> [E4_UPDATE_20260817.md](E4_UPDATE_20260817.md)** — which carries the current record, the
+> current trend read, and the current farm figures. Do not quote the n=15 tables below as
+> current.
 
 **⚠️ Grading context is EPOCH-DEPENDENT — read the archive, not this sentence.** Archives
 from **before the 2026-08-01 app build** were played at the **k4×688 mobile carve-out**
