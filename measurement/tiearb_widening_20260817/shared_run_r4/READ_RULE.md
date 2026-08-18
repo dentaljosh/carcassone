@@ -45,8 +45,11 @@ DESIGN R4-2.2**, and the conjunct is written against whatever that choice commit
 | `s1_n ≥ ⌈0.95 × n₁⌉` and `s2_n ≥ ⌈0.95 × n₂⌉`, where **`n₁`/`n₂` are the values committed in `RUN/FLOORS.json` before the extension band is claimed**; mining ceilings honoured (≤4 tied plies/root S1, ≤3 capped plies/root S2); **both counts evaluated AFTER the R4 §2b exclusions** | `READOUT::widening.completion.{s1_n,s2_n,s1_max_per_root,s2_max_per_root}` + `RUN/FLOORS.json::{n1,n2,option_label}` | `RUN/verdicts/per_position_{s1,s2}.jsonl` line counts + `root_id` grouping | **PASSES** — the floors are now sized from measured rates (`r_S1 = 1.574`, `r_S2cap = 0.206`), not from raw row counts |
 
 **`RUN/FLOORS.json` is committed with this pair**, carrying `{n1, n2, option_label, r_s1, r_s2cap,
-games_extension}` — the owner's choice frozen **before** generation, so a floor can never be
-chosen to fit a realized supply. **If `n₂ = 0` (the `S1 ONLY` row), rung 3 does not run**: its
+games_extension_s1, games_extension_s2, sub_ranges}` — the owner's choice frozen **before** the
+extension band is claimed and before one game is generated (DESIGN R4-8b's binding order:
+`c_IF` remeasure → floor choice → `FLOORS.json` → blind commit → band claim). A floor chosen or
+adjusted after supply is known is a floor fitted to the data. It is also the **frozen denominator**
+for §2b(iii)'s exclusion bound. **If `n₂ = 0` (the `S1 ONLY` row), rung 3 does not run**: its
 branch table is not adjudicated, its riders are not printed, and the read-out states that the J
 question was **not bought**, never that it was answered.
 
@@ -61,7 +64,7 @@ committed before any R4 number exists (DESIGN R4-3).
 
 | conjunct (all must hold) | primary address | fallback | on a healthy run |
 |---|---|---|---|
-| **(i)** `passed == true` for the **rid** and **root** layers on **every** comparison — these remain **zero-tolerance**: a shared rid or root is a corpus leak, never a transposition. **(ii)** Digest layer: every collision is recorded and its **R4-side** rid excluded (S1↔S2 collisions exclude the **S2** rid); `n_excluded ≤ ⌈0.005 × qualifying_deduped(stratum)⌉` **and** `n_excluded ≤ 15`, per stratum. **(iii)** Exclusions applied **before** `POSITIONS_PLAN` is frozen, so no excluded rid reaches a leg. **(iv)** `strata_root_overlap == 0`. **(v)** All five comparisons present (three layers on the four ARMS-vs-ARMS; `b_rid` only on `s1s2_vs_exclude_rids`) | `RUN/GATE_DISJOINT.json::{passed, comparisons, strata_root_overlap, digest_exclusions:{<stratum>:{n_excluded, rate, bound_n, bound_frac, rids, void}}}` | **none** — a missing gate file is a FAIL | **PASSES.** Realized rate on band 135e9 was **1/551 = 0.18%**, ≈2.8× inside the bound. ⚠️ Exceeding **either** bound ⇒ that stratum is **VOID**, not excluded-and-continued: at that density, transposition degeneracy is a property of the generator and "fresh corpus" is the wrong description — a different finding, which must surface rather than be absorbed |
+| **(i)** `passed == true` for the **rid** and **root** layers on **every** comparison — these remain **zero-tolerance**: a shared rid or root is a corpus leak, never a transposition. **(ii)** Digest layer: every collision is recorded and resolved by the **total order** `spent ≺ 135e9 ≺ 137e9 ≺ 138e9` — **the later position is excluded**, the earlier never touched; an S1↔S2 collision excludes the **S2** rid regardless of band. **(iii)** `n_excluded ≤ ⌈0.005 × qualifying_deduped(stratum)⌉`, per stratum — **one spelling, this one**; evaluated **once**, at the first `POSITIONS_PLAN` freeze, against the denominator in `RUN/FLOORS.json`. **(iv)** Exclusions applied **before** `POSITIONS_PLAN` is frozen, so no excluded rid reaches a leg. **(v)** `strata_root_overlap == 0`. **(vi)** All **SIX** comparisons present: three layers on the four ARMS-vs-ARMS (`s1_vs_tiletie0812`, `s1_vs_tiearb2_0816`, `s2_vs_tiletie0812`, `s2_vs_tiearb2_0816`), three layers on **`base_vs_extension` per stratum**, and `b_rid` only on `s1s2_vs_exclude_rids` | `RUN/GATE_DISJOINT.json::{passed, comparisons, strata_root_overlap, digest_exclusions:{<stratum>:{n_excluded, rate, bound_n, denominator_source, rids, void}}}` | **none** — a missing gate file is a FAIL | **PASSES.** Realized rate on band 135e9 was **1/551 = 0.181%**, ≈2.8× inside the bound. ⚠️ Without `base_vs_extension` a healthy run's expected **order-1** intra-stratum cross-band collisions would be **invisible and unruled** — R3's contiguous band made them impossible; R4's band structure makes them expected. ⚠️ Exceeding the bound ⇒ that stratum is **VOID**, not excluded-and-continued, and **a VOID is not curable by generating more games** (the denominator is frozen in `FLOORS.json`): at that density, transposition degeneracy is a property of the generator and "fresh corpus" is the wrong description — a different finding, which must surface rather than be absorbed |
 
 **Always printed, on every branch, whether or not any exclusion occurred:** the per-stratum
 collision count, rate, excluded rids, and the bound they were measured against.
@@ -82,8 +85,15 @@ principle — **each file checked against ITS OWN range, floors tabular** — is
 | file | range | its own floor |
 |---|---|---|
 | base | `135000000000` +0…+849 | `n_games_realized ≥ 850` |
-| extension | `137000000000` +0…+(N−1) | `≥ N`, `N` from `RUN/FLOORS.json::games_extension` |
+| extension | `137000000000`, **split by stratum**: S1 `+0…+(g₁−1)`, S2 `+g₁…+(g₁+g₂−1)` | `≥ g₁ + g₂`, with `g₁ = FLOORS.json::games_extension_s1` and `g₂ = …_s2`, **and each sub-range fully populated** |
 | top-up (iff exercised) | `138000000000` +0…+499 | **the increment only — never a run-level floor** |
+
+⚠️ **The extension's stratum split is a conjunct, not documentation (R4.1/B2).** Every extension
+seed must lie in the sub-range of the stratum that mined it. `+games` is a **sum of two disjoint
+requirements**, and mining both strata from one undivided range would fail **§2b(v)
+`strata_root_overlap == 0` on a healthy corpus** — a self-inflicted gate failure. `FLOORS.json`
+carries `games_extension_s1`, `games_extension_s2` and both sub-ranges explicitly; when
+`games_extension_s2 == 0` (the `S1 ONLY` row) there is no S2 sub-range and none may be generated.
 
 `136000000000` is **RELEASED UNUSED** and must appear in **no** file; a seed from it anywhere is a
 FAIL.

@@ -30,7 +30,7 @@
 
 | # | deviation | status |
 |---|---|---|
-| **D1** | two-box scoring layer (chunk / allocation / merge) | **SIGNATURE HELD** pending the delivered code + neutrality report. **TRANSFERS TO R4**, where it is a **first-class instrument choice, not a deviation** (`shared_run_r4/DESIGN.md` R4-4) — this section remains its neutrality proof of record |
+| **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is

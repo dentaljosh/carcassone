@@ -65,19 +65,37 @@ second is mandated by the design's own §6 dedupe.
 
 ### R4-2.1 The measured chain (band 135e9, pre-scoring counts only)
 
+**Measured integers first; factors are back-derived and marked `≈`.** (R4.1/A1: R3's chain printed
+factors that did not multiply to its own terminus — `1,400 × 0.54 × 0.735 = 555.7 ≠ 551`. The
+integers are what was counted; the split between qualification and dedupe is an approximate
+decomposition of the one composite that was actually measured.)
+
 ```
 S1  (--max-per-game 4, 350 games)
-    raw census rows                    1,400
-    x qualification        ~0.54         756
-    x afterstate dedupe    ~0.735        556        <- the dedupe §6 itself mandates
-    REALIZED                             551        =>  r_S1 = 1.574 / game
+    raw census rows                  1,400   MEASURED
+    realized qualifying-deduped        551   MEASURED
+    composite survival              0.3936   MEASURED = 551 / 1,400
+      of which  qualification        ~0.54   ~ approximate decomposition; the two
+                afterstate dedupe   ~0.729   ~ factors are pinned to the composite,
+                                             ~ not independently counted
+    =>  r_S1 = 551 / 350 = 1.574 / game      SIZING CONSTANT
 
 S2  (--max-per-game 3, 500 games)
-    qualifying-deduped tied plies        613        =>  1.226 / game
-    x capped fraction       0.168        103        =>  r_S2cap = 0.206 / game
-                                                       (0.168 agrees with §3's 0.1807 constant;
-                                                        it was the TARGET that contradicted it)
+    raw census rows                  1,500   MEASURED
+    qualifying-deduped tied plies      613   MEASURED  (composite 0.4087)
+    capped                             103   MEASURED  (fraction 103/613 = 0.168)
+    =>  r_S2cap = 103 / 500 = 0.206 / game   SIZING CONSTANT
 ```
+
+⭐ **Ceiling-independence cross-check (R4.1, corroboration).** S1 realizes **39.4%** of its mining
+ceiling (551/1,400 at `--max-per-game 4`); S2 realizes **40.9%** (613/1,500 at 3). Agreement to
+**1.5 pp across different ceilings** is direct evidence that the qualification × dedupe reduction
+is **ceiling-independent** — which is what licenses quoting `r_S1` and `r_S2cap` as rates per game
+rather than as artifacts of one mining depth.
+
+**The capped fraction reconciles:** realized **0.168** against the pre-registered constant
+**0.1807** is **z ≈ 0.84σ** on n=613 — agreement, not a revision. It was R3's *target* that
+contradicted the constant (by ~10×), not the world.
 
 **These two rates — `r_S1 = 1.574` and `r_S2cap = 0.206` qualifying-deduped per game — are the
 sizing constants of record for R4.** They are measured, on this exact configuration, at
@@ -89,14 +107,27 @@ corresponding rate and requires a re-measure, not a re-scale.
 Banked and reusable: **S1 551**, **S2 103**. Additional games
 `= ⌈(n₁−551)/1.574⌉ + ⌈(n₂−103)/0.206⌉`. Cost basis §R4-5.
 
-| option | n₁ | n₂ | **+games** | gen wh | scoring wh | **TOTAL wh** | at smoke `c_IF` | wall h |
-|---|---|---|---|---|---|---|---|---|
-| FULL targets | 1,350 | 1,100 | **5,348** | 552.6 | 929.0 | **1,493** | 1,082 | ≈32 |
-| committed FLOORS | 1,283 | 1,045 | **5,039** | 520.7 | 882.8 | **1,414** | 1,024 | ≈30 |
-| **S2 at 700** (PLAN_J's own floor) | 1,350 | 700 | **3,407** | 352.1 | 819.0 | **1,181** | 819 | ≈26 |
-| S2 at 500 | 1,350 | 500 | **2,436** | 251.7 | 764.0 | **1,025** | 687 | ≈23 |
-| S2 at 400 | 1,350 | 400 | **1,950** | 201.5 | 736.5 | **947** | 621 | ≈21 |
-| **S1 ONLY** (rung 3 dropped) | 1,350 | — | **508** | 52.5 | 626.5 | **684** | 407 | ≈16 |
+| option | n₁ | n₂ | **+games** (S1 / S2) | gen wh | scoring wh | **TOTAL wh**¹ | at smoke `c_IF` | wall h | ⚠️ false-VOID² |
+|---|---|---|---|---|---|---|---|---|---|
+| FULL targets | 1,350 | 1,100 | **5,348** (508 / 4,840) | 552.6 | 929.0 | **1,493** | 1,082 | ≈32 | 0.45% |
+| all-floors³ | 1,283 | 1,045 | **5,039** (466 / 4,573) | 520.7 | 882.8 | **1,414** | 1,024 | ≈30 | 0.34% |
+| **S2 at 700** (PLAN_J's own floor) | 1,350 | 700 | **3,407** (508 / 2,899) | 352.1 | 819.0 | **1,181** | 819 | ≈26 | 0.97% |
+| S2 at 500 | 1,350 | 500 | **2,436** (508 / 1,928) | 251.7 | 764.0 | **1,025** | 687 | ≈23 | 1.38% |
+| S2 at 400 | 1,350 | 400 | **1,950** (508 / 1,442) | 201.5 | 736.5 | **947** | 621 | ≈21 | **3.74%** |
+| **S1 ONLY** (rung 3 dropped) | 1,350 | — | **508** (508 / —) | 52.5 | 626.5 | **684** | 407 | ≈16 | 0.38% (S1) |
+
+¹ **TOTAL is not gen + scoring**: it also carries champ picks (`(n₁+n₂) × 13.755` worker-s) and,
+where rung 3 runs, `D-DRAW`'s 2.0 wh. Both are small; both are in the total.
+² ⭐ **REQUIRED reading before choosing (R4.1/C2).** The R4-3 exclusion bound is
+`⌈0.005 × n⌉`, so it **shrinks with the floor while the collision rate does not**: at S2 = 400 the
+bound is **2** and, at the observed 0.181%/position density (λ = 0.73), the chance of a **spurious
+VOID** — the stratum voided by ordinary transposition luck rather than by any defect — is
+**≈3.7%**, roughly **8× the FULL option's 0.45%**. **The cheapest floor buys both the least power
+and the highest spurious-VOID risk.** Poisson, `P(X > ⌈0.005n⌉)`.
+³ Row renamed from "committed FLOORS" (R4.1/C4): these are **targets**, and a target of
+1,283/1,045 implies `G-COMPLETE` **gate** floors of `⌈0.95·n⌉` = **1,219 / 993**. The FULL row's
+targets imply gate floors 1,283/1,045 — which is why the two rows look confusingly alike and why
+the label was changed.
 
 ⭐ **The decision-relevant fact: rung 2 is nearly free and rung 3 is the entire cost.** The
 B-ladder needs **508** more games; every game beyond that buys capped plies for the J rider,
@@ -110,11 +141,16 @@ rows is choosing how much to pay for rung 3, not for the run.
 
 | N (capped) | resolves corrected **+0.0842** iff | resolves legacy **+0.1382** iff |
 |---|---|---|
-| 1,100 | `sd_Δ ≤ 1.396` — the bracket bar `1.4` (R3's known blind spot) | `≤ 2.292` ✅ whole bracket |
-| 1,045 | `≤ 1.361` | `≤ 2.234` ✅ |
-| 700 | `≤ 1.114` — **only the optimistic half of the bracket** | `≤ 1.828` ✅ |
-| 500 | `≤ 0.941` — essentially the bracket floor only | `≤ 1.545` ✅ |
-| 400 | `≤ 0.842` — **below the bracket: cannot resolve it at any `sd_Δ`** | `≤ 1.382` — **fails at the bracket top** |
+| 1,100 | `sd_Δ ≤ 1.396` — **99.3%** of the bracket; the bar is `1.4` (R3's known blind spot) | `≤ 2.292` ✅ whole bracket |
+| 1,045 | `≤ 1.361` — 92.2% | `≤ 2.234` ✅ |
+| 700 | `≤ 1.114` — **only the optimistic ≈43%** of the bracket | `≤ 1.828` ✅ |
+| 500 | `≤ 0.941` — **8.3%**: essentially the bracket floor only | `≤ 1.545` ✅ |
+| 400 | `≤ 0.842` — **below the bracket: 0%, unresolvable at any `sd_Δ`** | `≤ 1.382` — **fails at the bracket top** |
+
+*(Bracket fractions are `(threshold − 0.9)/0.5` over `sd_Δ ∈ [0.9, 1.4]`. R4.1/C5 quoted N=700 as
+the "30.6th percentile"; this session computes **42.8%** and could not reproduce 30.6% — the
+substantive point, that N=700 is **not** "the optimistic half", stands either way and the text now
+says ≈43%.)*
 
 **No option separates 1.400 from 1.244** (CARRIED §6). Below `N ≈ 700` the rung stops being a
 test of the *corrected* multiplier and becomes a test of the *legacy* one only; at `N = 400` it
@@ -133,12 +169,18 @@ an empirical property that must be *measured*, and it was.
 
 **The rule, fixed here, before any R4 number exists:**
 
-1. **Exclusion, not void, for a trickle.** Any `c_position_digest` collision between an R4
-   position and a position of **either spent corpus** excludes the **R4 (newer) rid**. The
-   banked position is never touched.
-2. **Intra-run collisions too.** An S1↔S2 digest collision excludes the **S2** rid (S1 is the
-   B-ladder's primary; S2 is the rider). Two strata sharing a board would contaminate the
-   independent-replication rider that compares them.
+1. **A TOTAL ORDER decides every collision, so no pair is unruled (R4.1/B1).** Order the corpora
+   **spent Stage-1b/tiletie ≺ 135e9 (base) ≺ 137e9 (extension) ≺ 138e9 (top-up)**; on a collision,
+   **the higher-ordered (later) position is excluded** and the earlier is never touched. This
+   subsumes R3's "exclude the newer rid" and additionally rules the case R4's own band structure
+   created and R3 could not have: **base ↔ extension collisions *within one stratum*.** R3's
+   contiguous band made intra-stratum cross-band collisions impossible; R4's base+extension
+   structure makes them **expected** — at the observed 0.181%/position density the base↔extension
+   count at FULL is **order-1**, so leaving them unruled would have meant an unruled event on a
+   healthy run.
+2. **Intra-run cross-stratum collisions.** An S1↔S2 digest collision excludes the **S2** rid (S1 is
+   the B-ladder's primary; S2 is the rider), regardless of band. Two strata sharing a board would
+   contaminate the independent-replication rider that compares them.
 3. **The exclusion is OUTCOME-INDEPENDENT by construction and that is why it is legitimate.** The
    digest is a function of the board alone, computed at corpus-build time, before any value
    exists. It is the opposite of the 2026-08-14 open-city void, whose exclusion was rejected
@@ -146,14 +188,25 @@ an empirical property that must be *measured*, and it was.
 4. **It happens before the positions are frozen.** Excluded rids never enter `POSITIONS_PLAN`,
    never reach a scoring leg, and **the completion floors are evaluated on the post-exclusion
    count** — so an exclusion can never be used to explain away a shortfall after the fact.
-5. **The hard bound.** Exclusions must satisfy **≤ 0.5% of the stratum's qualifying-deduped
-   positions AND ≤ 15 absolute**. Above **either**, the stratum is **VOID** — not excluded,
-   not disclosed-and-continued.
-6. **Why 0.5%.** The realized rate is **1 / 551 = 0.18%**, so the bar carries ≈2.8× headroom: it
+5. **The hard bound — ONE spelling, in both documents (R4.1/B3):**
+   **`n_excluded ≤ ⌈0.005 × qualifying_deduped(stratum)⌉`**, per stratum. Above it, the stratum is
+   **VOID** — not excluded, not disclosed-and-continued. *(R3 carried "≤0.5% AND ≤15 absolute" here
+   and the `⌈·⌉` form in the READ_RULE — 6 vs 7 at n₁ = 1,350. The `⌈·⌉` form wins, being the
+   binding document's. The "≤15 absolute" conjunct is **deleted as inert**: it can only bind when
+   `0.005n > 15`, i.e. `n > 3,000`, which no option in R4-2.2 reaches.)*
+6. **The bound is evaluated ONCE, and a VOID is not curable by generating more (R4.1/R1).** It is
+   evaluated at the **first `POSITIONS_PLAN` freeze**, against the denominator recorded in
+   `RUN/FLOORS.json` — **not** against the realized corpus size. Otherwise the bound would grow
+   with the corpus and R4-7's threat 1 ("generate more games if supply is short") would double as
+   a way to buy headroom for exclusions after seeing them. **A VOID stratum stays void; the answer
+   is a new prereg, never a bigger corpus.**
+7. **Why 0.5%.** The realized rate is **1 / 551 = 0.181%**, so the bar carries ≈2.8× headroom: it
    passes the observed world comfortably and still fails a world in which transposition
    degeneracy is a *property of the generator* rather than an accident. That second world is a
    different finding — it would mean champion self-play revisits boards at a rate that makes
    "fresh corpus" the wrong description — and it must surface as a VOID, not be absorbed silently.
+   ⚠️ **The bound's tightness is floor-dependent and the cheapest floor is the most fragile:** see
+   R4-2.2's false-VOID column (0.45% at FULL vs **3.74%** at S2 = 400).
 7. **Always reported**, on every branch: the count, the rate, the excluded rids, and the bound
    they were measured against — whether or not any exclusion occurred.
 
@@ -162,11 +215,47 @@ an empirical property that must be *measured*, and it was.
 ## R4-4. (C) Two-box scoring is first-class; the rust-IF question is closed
 
 **The two-box scoring layer (chunk / allocation / merge) is an instrument choice of R4, not a
-deviation.** Its gate-neutrality analysis — the six clauses C1–C6, of which C1/C2/C6 are signed
-from the seed derivation, the per-rid record shape and the join keys, and C3/C4/C5 are discharged
-by the delivered layer — is at [`../DEVIATIONS.md`](../DEVIATIONS.md) §D1 and is **incorporated
-here by reference**. **If any clause of D1 stands unsigned at launch, R4 scores single-box** —
-wall-clock is the cheaper failure; an allocation-dependent value is not.
+deviation.** Its six-clause gate-neutrality analysis is at [`../DEVIATIONS.md`](../DEVIATIONS.md)
+§D1 and is **incorporated here by reference**.
+
+**DELIVERED** at commit **`1670f030`** (builder worktree `agent-acb67fb738d22b57f`; 36 tests):
+`stage_chunks.py` · `ALLOCATION.conf` · `run_scoring.sh` · `merge_legs.py` / `merge_scoring.sh`.
+The neutrality argument, as delivered, in five points — **each mapped to the clause it discharges**:
+
+1. **Seeds name only `(tag, rid, j, salt)`.** `world_seed`/`playout_seed` live in
+   `oracle_score_pilot.py` and are **imported** by `tier1_rust_leg.py`, not re-implemented; the
+   salt is a module constant passed to both drivers; prefix-stability is asserted **fatally at
+   launch**. Not the chunk, not the box, not `M`, not the row index. ⇒ **C1** (already signed;
+   this is its delivered confirmation).
+2. **Chunks are whole-rid sets**; a rid never splits across boxes within a leg; and the merged
+   tree is **byte-identical per rid** to a single-box run, tested end-to-end. ⇒ **C3 SIGNED**, and
+   with (3) it is also the empirical discharge of **C4**.
+3. **`run_tiletie` supports no subsetting**, so the chunk layer **materialises exact rid-subset
+   positions dirs** rather than filtering inside a leg; `verify_leg_records` forces per-chunk
+   out-roots plus a merge; `cap_j`/`salt` are asserted **per chunk at the exact addresses
+   `G-UNCAPPED`/`G-SALT` read**. ⇒ **C4 SIGNED**: a chunk is an ordinary run over fewer rids, so
+   per-record `Game` construction is structurally unchanged from single-box — which is what makes
+   (2)'s byte-identity general rather than a property of the tested set.
+4. **The merge never opens a record.** Bytes are copied; rids come from filenames; each per-leg
+   `summary.json` is copied verbatim per chunk and never parsed. **No computed statistic exists
+   anywhere in this layer** — which is why the merge cannot move a value even in principle. ⇒ **C2**
+   (already signed) and **C6**.
+5. **Allocation is STATIC**, not work-stealing: 8 chunks/stratum, local share 0.651 against a
+   0.645 capacity ideal, strata sequential per CARRIED §9 item 10, two-box wall ≈ **20.2 h**.
+   ⇒ **C5 SIGNED** — static allocation **removes the `--shared-claim` hazard class outright**
+   (no claims ⇒ no stranded `.claim` files, and no clock-drift path by which a fast box silently
+   steals another's work); resume is per-chunk against per-chunk out-roots.
+
+**⇒ All six clauses are now signed.** Provenance is explicit: C3/C4/C5 are signed on the delivered
+code and its forwarded neutrality report (`1670f030`), and the **acceptance check that confirms it
+on the real corpus is `stage_chunks verify`'s re-derivation, run post-corpus** with the 4b address
+audit. **If that re-derivation fails, R4 scores single-box** — wall-clock is the cheaper failure;
+an allocation-dependent value is not.
+
+⚠️ **`ALLOCATION.conf` is sized on the committed `c`.** If the 4b-pre remeasure moves the IF:ARB
+ratio materially, the allocation is revisited **pre-launch**. It is a wall-clock knob and **cannot
+move a value** — it selects which box scores which rid, and (1)–(4) make that choice invisible to
+every output.
 
 **D2 (rust IF judge) is CLOSED AS UNNECESSARY.** The `clair-puct` IF leg has dispatched to rust on
 `walled` since 2026-08-02 (`run_tiletie.py:117` `JUDGE_BACKEND`, `:154` `RUST_OK_PROFILES`; gate
@@ -219,8 +308,26 @@ surprise as headroom.
 |---|---|---|
 | `135000000000` | +0…+849 (850 games) | **RETAINED as valid input** (`PREREG_FAILURE` §3), minus rids excluded by R4-3 |
 | `136000000000` | — | **RELEASED UNUSED.** R3's top-up reservation; released rather than repurposed so "which prereg consumed which band" stays unambiguous |
-| **`137000000000`** | +0…+(N−1), `N` = the owner-chosen row of R4-2.2 | **EXTENSION generation** — claimed at run time, `decision_influenced=no`, notes marking it **OFFLINE CORPUS SUBSTRATE** |
+| **`137000000000`** | **split into two committed sub-ranges, S1 then S2** (below) | **EXTENSION generation** — claimed at run time, `decision_influenced=no`, notes marking it **OFFLINE CORPUS SUBSTRATE** |
 | `138000000000` | +0…+499 | **RESERVED** for the blind top-up clause, not licensed |
+
+⚠️ **The extension band is SPLIT BY STRATUM, and the split is committed (R4.1/B2).** `+games` is a
+**sum of two disjoint requirements**, and `strata_root_overlap == 0` is a gate conjunct — so
+mining both strata from one undivided range (the natural reading of R3's parameterisation) would
+**fail `G-DISJOINT` §2b(iv) on a perfectly healthy corpus**. R3 split band 135e9 at +349/+350
+implicitly; R4 dropped the split when it made the size a parameter. `RUN/FLOORS.json` therefore
+carries **`games_extension_s1` and `games_extension_s2`** and the two explicit sub-ranges:
+
+| option | S1 sub-range | S2 sub-range |
+|---|---|---|
+| FULL | `137e9 +0…+507` | `+508…+5347` |
+| all-floors | `+0…+465` | `+466…+5038` |
+| **S2 at 700** | `+0…+507` | `+508…+3406` |
+| S2 at 500 | `+0…+507` | `+508…+2435` |
+| S2 at 400 | `+0…+507` | `+508…+1949` |
+| S1 ONLY | `+0…+507` | *(none — `games_extension_s2 = 0`)* |
+
+A game seed mined into the wrong stratum is a `G-DISJOINT` failure, not a bookkeeping slip.
 
 **`G-BAND` generalises from two files to N.** Each generated range emits its **own**
 `verify-champgames` file and is checked **against its own range** — `band_ok`, `seed_band`,
@@ -242,17 +349,50 @@ invocation over a widened band. Exact conjunct: `READ_RULE.md` §2.
 3. **Transposition degeneracy may be a generator property**, not an accident — R4-3's bound is
    the detector, and its answer is VOID, not absorption.
 4. **`walled`-only is load-bearing** for the rust IF path (R4-4).
-5. **D1's unsigned clauses** ⇒ single-box, by rule, not by argument.
+5. **The merge layer is a GATE-SUPPORT SURFACE, and it is fail-closed by design.** `G-SALT`,
+   `G-M`, `G-BACKEND` and `G-LEAF` all read `RUN_MANIFEST_*` fields — which, under chunking, must
+   be *merged* from N per-chunk manifests. A naive merge would silently adopt one chunk's value
+   and the gates would read a field no longer true of the whole run. `merge_legs.py` instead
+   **raises** when any gate-addressed field differs across chunks (a **mixed-rev detector** — a
+   chunk scored at a different rev, salt or backend cannot be merged into a manifest that claims
+   uniformity); counters are summed; `workers` is nulled (box-specific, meaningless merged);
+   `resolved_backend_by_leg` is unioned; and **an unclassified differing key raises** rather than
+   defaulting. That last rule is the important one: it fails closed on fields nobody anticipated.
+6. **`stage_chunks verify` is the acceptance check for the whole layer**, re-deriving the chunking
+   post-corpus; a failure sends the run single-box rather than into a diagnosis.
+7. **D1's clauses are all signed (R4-4), but on delivered code, not on a run.** Point 6 is what
+   converts that into evidence about *this* corpus.
 
 ## R4-8. W-code delta (small; everything else carries)
 
 | item | change |
 |---|---|
-| **W5** | `GATE_DISJOINT.json` gains the R4-3 **exclusion** semantics: per-comparison collision lists, the excluded-rid set, the rate, the bound, and `void` vs `excluded` as distinct outcomes |
+| **W5** | `GATE_DISJOINT.json` gains (i) the R4-3 **exclusion** semantics — per-comparison collision lists, the excluded-rid set, the rate, the bound, and `void` vs `excluded` as distinct outcomes; and (ii) **a SIXTH comparison, `base_vs_extension`, per stratum, all three layers** (R4.1/B1) — the intra-stratum cross-band case R3's contiguous band made impossible and R4's band structure makes expected. The total order of R4-3.1 decides which side is excluded |
+| **two-box layer** | **DELIVERED `1670f030`** — `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests (R4-4). No further W-work; its acceptance check is `stage_chunks verify`, post-corpus |
 | **W6** | (i) **run ALL gates and aggregate — never `set -e`-abort on the first failure** (that is why `GATE_DRAW.json` never emitted); (ii) apply R4-3's exclusions **before** freezing `POSITIONS_PLAN`; (iii) size from the R4-2 rates |
 | **W10** | extension-band generation: base + extension (+ optional top-up) as **separate invocations into separate directories**, each with its own `verify-champgames` file (the §0.L pattern, now three-way) |
 | **W3** | `G-BAND`'s N-file form and the exclusion counters surfaced in the verdict block |
 | carried unchanged | W2 · W7 · W8 + fixtures · W9 (`D-DRAW`) · `STAGE1B_LADDER.json` · the 4a/4b harness |
+
+## R4-8b. The order of operations, written down (R4.1/R2)
+
+The floor is an owner parameter, so the order in which it is chosen and frozen is what makes it
+**ungameable**. This sequence is binding:
+
+1. **`c_IF` remeasure** (the 4b-pre judge smokes, idle box) — settles the 1.91× gap **before**
+   anyone chooses a floor, so the choice is made against a real price.
+2. **Owner picks a floor** from R4-2.2, seeing R4-2.3's power ladder and the false-VOID column.
+3. **`RUN/FLOORS.json` is written** — `{n1, n2, option_label, r_s1, r_s2cap, games_extension_s1,
+   games_extension_s2, sub_ranges}`.
+4. **The blind commit**: the R4 pair **and `FLOORS.json`, in ONE commit.**
+5. **Only then is the extension band claimed**, and generation starts.
+
+⚠️ **`FLOORS.json` must exist before the extension band is claimed and before one game is
+generated.** A floor chosen — or adjusted — after supply is known is a floor fitted to the data,
+which is the failure `G-COMPLETE` exists to prevent. It is also the denominator R4-3.6's
+exclusion bound is evaluated against, so it must predate the corpus for that reason too.
+*(Note the ordering interacts with R4-4: `ALLOCATION.conf` is sized on the committed `c`, so step 1
+may also revise the allocation — a wall-clock knob, never a value.)*
 
 ## R4-9. Owner decisions
 

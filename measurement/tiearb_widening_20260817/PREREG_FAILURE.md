@@ -84,6 +84,12 @@ sizes off a spent corpus and declared it *"a COST statistic, no outcome value us
 biases no estimand: `n` is fixed before any value exists and applies symmetrically to every arm,
 stratum and branch. It is declared here so no reader has to discover it.
 
+**And the one supply statistic that IS correlated with effect size was already pre-registered:**
+the capped fraction was a committed constant (**0.1807**, Stage-1b) before this corpus existed;
+the realized **0.168** confirmed it at **0.84σ** and **revised no bar, no prediction and no branch
+condition.** So the single count that could in principle have informed an expectation about
+`Δ_ora` was one the design had already fixed in advance — it was checked, not learned.
+
 **3.5 The one thing that IS spent.** The **pair** — its single-use read rule — is spent by gate
 failure. The **corpus** is not: nothing about these positions was adjudicated, priced or read as
 an outcome. Hence the disposition in the banner: pair `SPENT`, corpus `REUSABLE INPUT`.
