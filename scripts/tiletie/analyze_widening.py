@@ -605,6 +605,88 @@ def band_block(verify_paths) -> dict:
             "resolved_at": "READOUT::widening.gates.band"}
 
 
+WORLD_SEED_SALT_OF_RECORD = "tiletie-v1"
+DEPLOYED_CAP_J_OF_RECORD = 4
+
+
+def salt_gate(run_manifests, plans: dict, arms_by_stratum: dict,
+              leg_manifests=()) -> dict:
+    """`G-SALT` — emitted HERE because it is emitted nowhere else.
+
+    ⚠️ WHY THIS EXISTS. `G-SALT`'s addresses are scoring-time emissions
+    (`RUN_MANIFEST_*::world_seed_salt` is written by `run_tiletie` at leg launch),
+    so the pre-scoring 4b address audit cannot bind them — and the acceptance
+    harness rightly stopped trying. But a gate that leaves the pre-scoring audit
+    and is not picked up at ADJUDICATION is a gate that stopped existing. The
+    analyzer runs after the legs, sees the manifests, and is therefore the place
+    the conjuncts actually bind.
+
+    The three conjuncts, verbatim (READ_RULE §2):
+      * `world_seed_salt == "tiletie-v1"` — a MODULE CONSTANT, not a flag, which
+        is exactly why it is READ from what the run emitted rather than assumed;
+      * `deployed_cap_j == 4`;
+      * `cap_seed` present for EVERY rid.
+    """
+    per, ok = {}, bool(run_manifests or plans)
+    salts_seen = set()
+    for p in run_manifests or ():
+        p = Path(p)
+        tag = "S2" if "_S2" in p.name.upper() else "S1"
+        entry = per.setdefault(tag, {})
+        if not p.is_file():
+            entry.update({"run_manifest": str(p), "present": False,
+                          "salt_ok": False})
+            ok = False
+            continue
+        d = json.loads(p.read_text())
+        salt = d.get("world_seed_salt")
+        salts_seen.add(salt)
+        entry.update({"run_manifest": str(p), "present": True,
+                      "world_seed_salt": salt,
+                      "salt_ok": salt == WORLD_SEED_SALT_OF_RECORD})
+        ok = ok and entry["salt_ok"]
+
+    for tag, plan in sorted((plans or {}).items()):
+        entry = per.setdefault(tag, {})
+        cap_j = plan.get("deployed_cap_j")
+        entry["deployed_cap_j"] = cap_j
+        entry["deployed_cap_j_ok"] = cap_j == DEPLOYED_CAP_J_OF_RECORD
+        arms = (arms_by_stratum or {}).get(tag) or {}
+        missing = [r for r, v in arms.items() if v.get("cap_seed") is None]
+        entry["n_rids"] = len(arms)
+        entry["n_cap_seed_missing"] = len(missing)
+        entry["cap_seed_examples_missing"] = sorted(missing)[:10]
+        entry["cap_seed_ok"] = bool(arms) and not missing
+        ok = ok and entry["deployed_cap_j_ok"] and entry["cap_seed_ok"]
+
+    legs = []
+    for p in leg_manifests or ():
+        p = Path(p)
+        if not p.is_file():
+            continue
+        d = json.loads(p.read_text())
+        legs.append({"path": str(p),
+                     "resolved_config.world_seed_salt":
+                         (d.get("resolved_config") or {}).get("world_seed_salt")})
+    leg_ok = (all(x["resolved_config.world_seed_salt"] == WORLD_SEED_SALT_OF_RECORD
+                  for x in legs) if legs else None)
+
+    return {
+        "ok": bool(ok and (leg_ok is not False)),
+        "expected_world_seed_salt": WORLD_SEED_SALT_OF_RECORD,
+        "expected_deployed_cap_j": DEPLOYED_CAP_J_OF_RECORD,
+        "by_stratum": per,
+        "distinct_salts_seen": sorted(s for s in salts_seen if s is not None),
+        "leg_fallback": {"n_checked": len(legs), "ok": leg_ok, "legs": legs[:20]},
+        "note": "the salt is a MODULE CONSTANT (run_tiletie.WORLD_SEED_SALT), "
+                "not a flag — so the conjunct is that the run RECORDED the "
+                "constant of record, not that a flag was passed. Bound here "
+                "because the pre-scoring address audit cannot reach a "
+                "scoring-time emission.",
+        "resolved_at": "READOUT::widening.gates.salt",
+    }
+
+
 def union_block(corpus_union_path) -> dict:
     """R4-0.5 §3 — the corpus's COMPOSITION, surfaced on the read-out.
 
@@ -1218,6 +1300,12 @@ def parse_args(argv=None):
     ap.add_argument("--champ-games-verify", action="append", default=None,
                     help="CHAMP_GAMES_VERIFY{,_EXT,_TOPUP}.json (repeatable) — "
                          "G-BAND's N-file form (R4 §2c)")
+    ap.add_argument("--run-manifest", action="append", default=None,
+                    help="RUN_MANIFEST_{S1,S2}.json (repeatable) — G-SALT's "
+                         "primary. Scoring-time emissions, so the pre-scoring "
+                         "address audit cannot bind them; the analyzer can")
+    ap.add_argument("--leg-manifest", action="append", default=None,
+                    help="leg manifest(s) for G-SALT's resolved_config fallback")
     ap.add_argument("--corpus-union", default=None,
                     help="RUN/corpus/CORPUS_UNION.json — the retained-vs-fresh "
                          "composition of the corpus (R4-0.5 §3). R4's n is a "
@@ -1357,6 +1445,11 @@ def main(argv=None) -> int:
         import floors as FL                                        # noqa: E402
         floors = FL.load(a.floors)
     completion = completion_block(rows_s1, rows_s2, floors)
+    salt = salt_gate(a.run_manifest or [],
+                     {t_: s["plan"] for t_, s in strata.items()},
+                     {t_: AT.load_plan(s["plan_dir"])["arms"]
+                      for t_, s in strata.items()},
+                     a.leg_manifest or [])
     band = band_block(a.champ_games_verify or [])
     exclusions = exclusions_block(a.gate_disjoint)
     union = union_block(a.corpus_union)
@@ -1372,12 +1465,14 @@ def main(argv=None) -> int:
     (out_dir / "SEALED_G_REPLICATE.json").write_text(
         json.dumps(repl_sealed, indent=2, sort_keys=True))
 
-    gates = {"crn": crn, "uncapped": unc, "arms": arms, "band": band}
+    gates = {"crn": crn, "uncapped": unc, "arms": arms, "band": band,
+             "salt": salt}
     gates_summary = {
         "G-CRN": {"ok": crn["ok"], "resolved_at": crn["resolved_at"]},
         "G-UNCAPPED": {"ok": unc["ok"], "resolved_at": unc["resolved_at"]},
         "G-ARMS": {"ok": arms["ok"], "resolved_at": arms["resolved_at"]},
         "G-BAND": {"ok": band["ok"], "resolved_at": band["resolved_at"]},
+        "G-SALT": {"ok": salt["ok"], "resolved_at": salt["resolved_at"]},
         "G-COMPLETE": {"ok": completion["ok"],
                        "resolved_at": completion["resolved_at"]},
         "G-REPLICATE": {"ok": repl_public["pass"],

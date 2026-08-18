@@ -469,6 +469,10 @@ are not corpus-free: `select_smoke_positions` reads `ARMS.json` /
     (`resolved_config.*`, `preflight.seeds.*`; these exist ONLY on the ARB leg)
   * `SMOKE_MANIFEST_{S1,S2}_{clair-puct,tier1-greedy}.json` — the SMOKE-MANIFEST
     fixture (`c_worker_secs_per_playout`, `crn_cross_leg_identical`)
+  * `RUN_MANIFEST_{S1,S2}.json` — the RUN-MANIFEST fixture. ⚠️ Added when
+    `G-SALT` moved out of the pre-scoring 4b list: its PRIMARY address
+    (`world_seed_salt`) was then audited at NEITHER pass, which would have
+    traded a false failure for a silent hole.
 
 so every spelling those addresses use is still audited BEFORE the pair freezes.
 
@@ -518,6 +522,7 @@ def emit_committed_fixtures(dest=FIXTURE_DIR, *, m_s1=128, m_s2=32,
         legs_out.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(leg, legs_out / "manifest.json")
         for st, mm in (("S1", m_s1), ("S2", m_s2)):
+            make_run_manifest(dest / f"RUN_MANIFEST_{st}.json", stratum=st, m=mm)
             for j in JUDGES:
                 make_smoke_manifest(dest / f"SMOKE_MANIFEST_{st}_{j}.json",
                                     judge=j, stratum=st, m=mm,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""**W8** — the pre-run ACCEPTANCE TEST (DESIGN §9 steps 4a / 4b; rev R2).
+"""**W8** — the ACCEPTANCE TEST (DESIGN §9 steps 4a / 4b-pre / 4b, + post).
 
 Walks a committed address list and, for each address, reports **`resolved` /
 `UNRESOLVED` plus the JSON TYPE of the value — and prints no value, ever.**
@@ -14,9 +14,10 @@ an address at read time. Five gates across the two review rounds named addresses
 no emitter writes — each would have voided a HEALTHY run. This is the mechanical
 form of §1.5's structural test (*would this gate fail on a healthy run?*).
 
-THREE phases, because the artifacts appear at three different times (§0.G
-re-split what R2 called 4a, after the executor found the judge smokes are NOT
-corpus-free — see `book_4b_pre`):
+FOUR phases, because the artifacts appear at four different times. §0.G re-split
+what R2 called 4a (the judge smokes are NOT corpus-free — see `book_4b_pre`), and
+`post` exists because an address whose emitter has not run yet is not one that
+may be waived, only one that binds later (see `book_post_scoring`):
 
   `--mode 4a`      PRE-BLIND-COMMIT, and now GENUINELY corpus-free:
                    (a) `live`    — `GATE_BITEXACT_HEAD.json`, nothing else.
@@ -47,7 +48,15 @@ corpus-free — see `book_4b_pre`):
                    both strata, `GATE_DRAW.json`, `GEN_SMOKE.json` and
                    `RUN_MANIFEST_S1::c_remeasure`.
 
-  `--mode all`     all three.
+  `--mode post`    POST-SCORING — the addresses that cannot exist until a leg
+                   and the analyzer have run: `G-SALT`'s `world_seed_salt`
+                   (`RUN_MANIFEST_*`, written at leg launch; `resolved_config`
+                   on the leg manifests) and the read-out-time gates `G-ARMS`,
+                   `G-COMPLETE`, `G-REPLICATE` and the `READOUT` branch inputs.
+                   ⚠️ An address whose emitter has not run is not one that may
+                   be WAIVED — it is one that binds LATER. This mode is where.
+
+  `--mode all`     all four.
 
 MECHANISM: key presence + JSON type ONLY. No value is computed, printed or
 stored — so running this does not spend the read rule and does not make the
@@ -579,7 +588,12 @@ def book_fixture(R: Path, S: Path) -> list:
         Check(R, f"{V}/READOUT.json",
               ["widening.gates_summary.*.resolved_at",
                "widening.branch.rung2.branch", "widening.branch.rung3.branch",
-               "widening.gates.crn.ok", "widening.gates.crn.witness_kinds"])],
+               "widening.gates.crn.ok", "widening.gates.crn.witness_kinds",
+               # G-SALT's ADJUDICATION-TIME verdict: the gate left the
+               # pre-scoring 4b list, so this is where it is picked up
+               "widening.gates.salt.ok",
+               "widening.gates.salt.expected_world_seed_salt",
+               "widening.gates_summary.G-SALT.ok"])],
         phase="4a-fixture"))
 
     # ---- the TWO fixtures §0.G adds, so moving the judge smokes to 4b-pre --- #
@@ -597,6 +611,25 @@ def book_fixture(R: Path, S: Path) -> list:
              "oracle_score_pilot manifests and carry neither. Auditing the "
              "spellings HERE is what lets §0.G move the live smokes to 4b-pre "
              "without losing pre-commit coverage",
+        phase="4a-fixture"))
+
+    g.append(Gate("RUN-MANIFEST fixture (G-SALT primary / G-M / G-BACKEND / "
+                  "G-LEAF)", [
+        Check(R, "RUN_MANIFEST_S1.json",
+              ["world_seed_salt", "m_worlds", "b_ceiling_from_m", "arb_backend",
+               "resolved_backend_by_leg", "arb_legal_mask_cache", "git_rev",
+               "preflight.checks.leaf_hash.ok",
+               "preflight.checks.leaf_hash.harness_leaf_hash",
+               "preflight.checks.leaf_hash.expected"]),
+        Check(R, "RUN_MANIFEST_S2.json",
+              ["world_seed_salt", "m_worlds", "b_ceiling_from_m", "arb_backend",
+               "resolved_backend_by_leg", "arb_legal_mask_cache"])],
+        note="⚠️ ADDED because G-SALT's PRIMARY (`RUN_MANIFEST::world_seed_salt`) "
+             "was audited at NEITHER pass once G-SALT left 4b: 4a carried only "
+             "the LEG-manifest fallback and the smoke manifest. Scoping the "
+             "false failure out of 4b without this would have traded it for a "
+             "SILENT HOLE — the spelling of a gate's primary address unaudited "
+             "until the day it is read",
         phase="4a-fixture"))
 
     g.append(Gate("SMOKE-MANIFEST fixture (G-CRN smoke half / §7 judge legs)", [
@@ -629,15 +662,27 @@ def book_corpus(R: Path, S: Path) -> list:
              "publishes sha256_of_sorted_seeds",
         phase="4b")]
 
-    g.append(Gate("G-SALT", [
-        Check(R, "RUN_MANIFEST_S1.json", ["world_seed_salt"]),
-        Check(R, "RUN_MANIFEST_S2.json", ["world_seed_salt"]),
+    # ⚠️ G-SALT IS DELIBERATELY NOT HERE — see `book_post_scoring`. Its
+    # `world_seed_salt` addresses are SCORING-TIME emissions (`RUN_MANIFEST_*`
+    # is written by `run_tiletie` at leg launch; `resolved_config` only exists on
+    # a leg manifest), so demanding them at 4b would fail EVERY healthy run —
+    # the same structural defect READ_RULE §1.5 exists to catch, committed by
+    # the harness that enforces it. The pair's §9 step-7 enumeration of 4b names
+    # `CHAMP_GAMES_VERIFY`, `GATE_DISJOINT`, `POSITIONS_PLAN`/`ARMS`,
+    # `GATE_DRAW`, `GEN_SMOKE` and the `c` block — and no salt.
+    #
+    # Its CORPUS-TIME half (`deployed_cap_j`, `cap_seed`) does resolve now, and
+    # lives in files the enumeration already names, so it is audited here under
+    # its own name rather than smuggled into G-SALT's row.
+    g.append(Gate("G-SALT (corpus-time half only)", [
         Check(R, "corpus/positions_s*/POSITIONS_PLAN.json", ["deployed_cap_j"],
               min_files=2),
         Check(R, "corpus/positions_s*/ARMS.json", ["cap_seed"],
               kind="json_per_entry", min_files=2)],
-        [Check(R, LEGS, ["resolved_config.world_seed_salt"])],
-        note="world_seed_salt is a MODULE CONSTANT, not a flag", phase="4b"))
+        note="the salt half of G-SALT binds POST-SCORING (`--mode post`): "
+             "`world_seed_salt` is a MODULE CONSTANT emitted into RUN_MANIFEST "
+             "at leg launch, so it cannot exist before a leg has run",
+        phase="4b"))
 
     g.append(Gate("§7 c-remeasure (generation + realized-vs-committed)", [
         Check(R, "corpus/GEN_SMOKE.json", ["worker_secs_per_game"]),
@@ -670,6 +715,50 @@ def book_corpus(R: Path, S: Path) -> list:
     return g
 
 
+#: Gates whose addresses are READ-OUT-TIME emissions: they exist only after a
+#: scoring leg and the analyzer have run. They are audited on FIXTURES at 4a
+#: (which is what makes their spellings safe before the pair freezes) and on the
+#: REAL tree at `--mode post`.
+READOUT_TIME_GATES = (
+    "G-ARMS", "G-COMPLETE", "G-REPLICATE",
+    "READOUT §4 (rung 2 branch inputs)", "READOUT §5 (rung 3 branch inputs)",
+    "READOUT §7 (report surface)",
+)
+
+
+def book_post_scoring(R: Path, S: Path) -> list:
+    """POST-SCORING — every address that cannot exist until a leg has run.
+
+    ⚠️ This mode is why `G-SALT` is not "optional forever". An address whose
+    emitter has not run yet is not an address that may be waived; it is one that
+    binds LATER. Dropping it from 4b without a mode that binds it afterwards
+    would trade a gate that fails every healthy run for a gate that never runs
+    at all — the same hole, wearing the opposite sign.
+
+    ⚠️ Nothing here is audited by the analyzer: `analyze_widening.py` reads no
+    `world_seed_salt` at all (checked), so if this harness does not bind G-SALT
+    post-scoring, NOTHING does before the read rule's own reader reaches it."""
+    g = [Gate("G-SALT", [
+        Check(R, "RUN_MANIFEST_S1.json", ["world_seed_salt"]),
+        Check(R, "RUN_MANIFEST_S2.json", ["world_seed_salt"]),
+        Check(R, "corpus/positions_s*/POSITIONS_PLAN.json", ["deployed_cap_j"],
+              min_files=2),
+        Check(R, "corpus/positions_s*/ARMS.json", ["cap_seed"],
+              kind="json_per_entry", min_files=2)],
+        [Check(R, LEGS, ["resolved_config.world_seed_salt"])],
+        note="`world_seed_salt` is a MODULE CONSTANT, not a flag — which is "
+             "exactly why it must be READ from what the run emitted rather than "
+             "assumed. Binds here, where its emitters have run",
+        phase="post")]
+
+    # the read-out-time gates, on the REAL tree this time
+    for gate in book_fixture(R, S):
+        if gate.name in READOUT_TIME_GATES:
+            g.append(Gate(gate.name, gate.primary, gate.fallback, gate.note,
+                          phase="post"))
+    return g
+
+
 def address_book(run_dir, share, mode="all") -> list:
     """The LIVE half of the book for `mode` (the fixture half is built
     separately, against a scratch tree, by `build_fixture_tree`)."""
@@ -681,6 +770,8 @@ def address_book(run_dir, share, mode="all") -> list:
         out += book_4b_pre(R, S)
     if mode in ("4b", "all"):
         out += book_corpus(R, S)
+    if mode in ("post", "all"):
+        out += book_post_scoring(R, S)
     return out
 
 
@@ -772,6 +863,8 @@ def build_fixture_tree(scratch) -> Path:
          "--champ-games-verify", str(corpus / "CHAMP_GAMES_VERIFY_EXT.json"),
          "--gate-disjoint", str(run / "GATE_DISJOINT.json"),
          "--corpus-union", str(corpus / "CORPUS_UNION.json"),
+         "--run-manifest", str(run / "RUN_MANIFEST_S1.json"),
+         "--run-manifest", str(run / "RUN_MANIFEST_S2.json"),
          # --d-draw is DELIBERATELY OMITTED: the fixture pass must exercise the
          # `d_draw_ran == false` state, so row 3 of the CLOSED allow_null table
          # is audited on the day it is written and not on the day it is needed.
@@ -822,12 +915,14 @@ def main(argv=None) -> int:
                          "SPENT R3.3 pair and is read-only)")
     ap.add_argument("--share", default="/mnt/c/carc-shared/tiearb_widening_20260817",
                     help="SHARE root holding the per-record leg output")
-    ap.add_argument("--mode", choices=("4a", "4b-pre", "4b", "all"),
+    ap.add_argument("--mode", choices=("4a", "4b-pre", "4b", "post", "all"),
                     default="all",
                     help="4a = fixture schema audit + G-BITEXACT@HEAD "
                          "(pre-blind-commit, genuinely corpus-free); "
                          "4b-pre = the four judge smokes on the FRESH corpus; "
-                         "4b = the corpus artifacts")
+                         "4b = the corpus artifacts; "
+                         "post = POST-SCORING — G-SALT and the read-out-time "
+                         "gates, whose emitters have not run before a leg does")
     ap.add_argument("--no-fixture", action="store_true",
                     help="skip the 4a static schema audit (live addresses only)")
     ap.add_argument("--fixture-dir", default=None,

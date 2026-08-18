@@ -1859,3 +1859,222 @@ def test_census_and_picks_mine_the_extension_not_the_base_band():
     assert "LO=$S1_SEED_LO" not in src and "LO=$S2_SEED_LO" not in src
     assert 'games_path()        { echo "$CORPUS/champ_games_ext_$1.jsonl"; }' in src
     assert "banked_games_path()" in src
+
+
+# --------------------------------------------------------------------------- #
+# G-SALT binds POST-SCORING, not at 4b — an address whose emitter has not run   #
+# is not one that may be waived, only one that binds later                      #
+# --------------------------------------------------------------------------- #
+def _pre_scoring_tree(tmp_path, tree):
+    """The real 4b situation: the corpus exists, NO leg has run. So there are no
+    leg manifests and no `world_seed_salt` anywhere — `run_tiletie` writes it at
+    leg launch.
+
+    Self-sufficient by construction: it emits the corpus-side gate artifacts
+    itself rather than inheriting them from whichever other test happened to run
+    first, so this test cannot pass or fail on ordering."""
+    import shutil
+    root = tmp_path / "prescoring"
+    shutil.copytree(tree["run"], root)
+    refs = {}
+    for name, seed in (("tiletie0812", 101), ("tiearb2_0816", 202)):
+        d = tmp_path / f"ref_{name}"
+        if not d.exists():
+            WF.make_corpus(d, n_positions=5, m=8, seed=seed,
+                           rid_prefix=name[:4], band_lo=999000000000)
+        refs[name] = {"arms": d / "ARMS.json",
+                      "legs": GD.leg_paths(d, GD.SPENT_LEG_GLOB)}
+    excl = tmp_path / "EXCLUDE_RIDS_all.txt"
+    excl.write_text("# none\n")
+    strata = {s.upper(): {
+        "arms": root / "corpus" / f"positions_{s}" / "ARMS.json",
+        "legs": GD.leg_paths(root / "corpus" / f"positions_{s}",
+                             GD.NEW_LEG_GLOB)} for s in ("s1", "s2")}
+    (root / "GATE_DISJOINT.json").write_text(json.dumps(GD.run_r4_gate(
+        strata=strata, refs=refs, floors=FL.build("S2 at 700"),
+        exclude_rids=[excl]), indent=2))
+    (root / "GATE_DRAW.json").write_text(json.dumps(GDR.run_gate(
+        [root / "corpus" / f"positions_{s}" / "ARMS.json"
+         for s in ("s1", "s2")]), indent=2))
+    shutil.rmtree(root / "legs", ignore_errors=True)
+    # RUN_MANIFEST_S1 exists pre-scoring ONLY because c_remeasure.py writes its
+    # block there before the S1 IF leg (§7). It carries no salt yet.
+    (root / "RUN_MANIFEST_S2.json").unlink(missing_ok=True)
+    m1 = json.loads((root / "RUN_MANIFEST_S1.json").read_text())
+    for k in list(m1):
+        if k not in ("c_remeasure", "stub"):
+            m1.pop(k)
+    (root / "RUN_MANIFEST_S1.json").write_text(json.dumps(m1))
+    return root
+
+
+def test_4b_passes_pre_scoring_without_any_salt_address(tmp_path, tree, readout):
+    """4b runs POST-CORPUS, PRE-SCORING. Demanding `world_seed_salt` there would
+    fail EVERY healthy run — the structural defect READ_RULE §1.5 exists to
+    catch, committed by the harness that enforces it."""
+    run = _pre_scoring_tree(tmp_path, tree)
+    smokes = sorted(str(p) for p in run.glob("SMOKE_MANIFEST_*.json"))
+    CR.merge_into_manifest(run / "RUN_MANIFEST_S1.json",
+                           CR.build_block(smokes, run / "corpus" / "GEN_SMOKE.json"))
+    assert "world_seed_salt" not in (run / "RUN_MANIFEST_S1.json").read_text()
+    assert not (run / "legs").exists()
+
+    results = [g.resolve() for g in ACC.book_corpus(run, tree["share"])]
+    bad = [r["gate"] for r in results if not r["resolved"]]
+    assert not bad, f"4b must pass pre-scoring; UNRESOLVED: {bad}"
+    # ... and G-SALT proper is simply not in the 4b list
+    assert "G-SALT" not in [r["gate"] for r in results]
+    # its CORPUS-TIME half still binds here, under its own name
+    half = [r for r in results if r["gate"].startswith("G-SALT (corpus-time")]
+    assert len(half) == 1 and half[0]["resolved"] is True
+
+
+def test_post_scoring_mode_binds_g_salt(tmp_path, tree, readout):
+    """It must bind at the point its addresses can exist — NOT be optional
+    forever. Dropping it from 4b without a mode that binds it afterwards would
+    trade a gate that fails every healthy run for one that never runs at all."""
+    run, share = tree["run"], tree["share"]
+    names = [g.name for g in ACC.address_book(run, share, "post")]
+    assert "G-SALT" in names
+    # the read-out-time gates come with it, on the REAL tree this time
+    for n in ACC.READOUT_TIME_GATES:
+        assert n in names, n
+    # on the full post-scoring tree it resolves
+    gate = [g for g in ACC.address_book(run, share, "post")
+            if g.name == "G-SALT"][0]
+    assert gate.resolve()["resolved"] is True
+
+
+def test_post_scoring_g_salt_fails_when_the_salt_is_absent(tmp_path, tree):
+    """ABSENT IS FAIL, at the phase where absence is a defect rather than a
+    schedule."""
+    run = _pre_scoring_tree(tmp_path, tree)
+    gate = [g for g in ACC.address_book(run, tree["share"], "post")
+            if g.name == "G-SALT"][0]
+    out = gate.resolve()
+    assert out["resolved"] is False and out["resolved_at"] == "UNRESOLVED"
+
+
+def test_post_scoring_g_salt_fails_when_a_leg_manifest_salt_is_wrong(tmp_path, tree):
+    """The FALLBACK is `resolved_config.world_seed_salt` on the ARB leg. A null
+    there is ABSENT, and absent is FAIL — the harness must not pass a leg whose
+    salt was never recorded."""
+    import shutil
+    run = tmp_path / "postscoring"
+    shutil.copytree(tree["run"], run)
+    # break the primary so the fallback is the one under test ...
+    for name in ("RUN_MANIFEST_S1.json", "RUN_MANIFEST_S2.json"):
+        m = json.loads((run / name).read_text())
+        m.pop("world_seed_salt", None)
+        (run / name).write_text(json.dumps(m))
+    # ... and null the salt on every ARB leg manifest
+    legs = sorted(run.glob(f"legs/s*/{ACC.JUDGE}/walled/leg*/manifest.json"))
+    assert legs, "the fixture must carry ARB leg manifests"
+    for p in legs:
+        d = json.loads(p.read_text())
+        d.setdefault("resolved_config", {})["world_seed_salt"] = None
+        p.write_text(json.dumps(d))
+    gate = [g for g in ACC.address_book(run, tree["share"], "post")
+            if g.name == "G-SALT"][0]
+    assert gate.resolve()["resolved"] is False
+
+
+def test_every_4b_address_is_resolvable_before_scoring(tmp_path, tree, readout):
+    """THE SWEEP, mechanised: every 4b entry must be answerable by an emitter
+    that has already run at 4b. This is the check that would have caught G-SALT
+    without an executor's refusal."""
+    run = _pre_scoring_tree(tmp_path, tree)
+    smokes = sorted(str(p) for p in run.glob("SMOKE_MANIFEST_*.json"))
+    CR.merge_into_manifest(run / "RUN_MANIFEST_S1.json",
+                           CR.build_block(smokes, run / "corpus" / "GEN_SMOKE.json"))
+    scoring_only = ("world_seed_salt", "resolved_config", "preflight.seeds",
+                    "widening.", "per_position_")
+    for g in ACC.book_corpus(run, tree["share"]):
+        for c in g.primary:                      # PRIMARY addresses only: a
+            for k in c.keys:                     # fallback may legitimately be
+                assert not any(s in k for s in scoring_only), (  # read-out-time
+                    f"{g.name}: primary address {k!r} is a SCORING-TIME "
+                    f"emission and cannot resolve at 4b")
+        r = g.resolve()
+        assert r["resolved"], f"{g.name} unresolvable pre-scoring"
+
+
+def test_mode_all_still_covers_every_gate_exactly_once():
+    """Scoping 4b down must not drop an address from the harness altogether."""
+    from pathlib import Path as _P
+    seen = [g.name for g in ACC.address_book(_P("/tmp/x"), _P("/tmp/y"), "all")]
+    assert len(seen) == len(set(seen)), f"a gate is audited twice: {seen}"
+    for m in ("4a", "4b-pre", "4b", "post"):
+        for n in [g.name for g in ACC.address_book(_P("/tmp/x"), _P("/tmp/y"), m)]:
+            assert n in seen, f"{n} is in {m} but not in `all`"
+    assert "G-SALT" in seen
+
+
+def test_w3_emits_the_g_salt_verdict_at_adjudication(tmp_path, tree):
+    """⭐ A gate that left the pre-scoring 4b list and was never picked up at
+    ADJUDICATION is a gate that stopped existing. The analyzer runs after the
+    legs, sees the manifests, and is where G-SALT's conjuncts actually bind."""
+    run = tree["run"]
+    plans = {t_: json.loads((run / "corpus" / f"positions_{t_.lower()}"
+                             / "POSITIONS_PLAN.json").read_text())
+             for t_ in ("S1", "S2")}
+    arms = {t_: json.loads((run / "corpus" / f"positions_{t_.lower()}"
+                            / "ARMS.json").read_text())
+            for t_ in ("S1", "S2")}
+    mans = [run / "RUN_MANIFEST_S1.json", run / "RUN_MANIFEST_S2.json"]
+
+    g = AW.salt_gate(mans, plans, arms)
+    assert g["ok"] is True
+    assert g["expected_world_seed_salt"] == "tiletie-v1"
+    assert g["by_stratum"]["S1"]["salt_ok"] is True
+    assert g["by_stratum"]["S1"]["deployed_cap_j_ok"] is True
+    assert g["by_stratum"]["S1"]["cap_seed_ok"] is True
+    assert g["resolved_at"] == "READOUT::widening.gates.salt"
+
+    # a WRONG salt fails
+    bad_man = tmp_path / "RUN_MANIFEST_S1.json"
+    d = json.loads((run / "RUN_MANIFEST_S1.json").read_text())
+    d["world_seed_salt"] = "tiearb2-v1"          # the salt §0.A WITHDREW
+    bad_man.write_text(json.dumps(d))
+    assert AW.salt_gate([bad_man], plans, arms)["ok"] is False
+    # an ABSENT salt fails
+    d.pop("world_seed_salt")
+    bad_man.write_text(json.dumps(d))
+    assert AW.salt_gate([bad_man], plans, arms)["ok"] is False
+    # a missing cap_seed on ONE rid fails ("present for EVERY rid")
+    holed = {t_: dict(v) for t_, v in arms.items()}
+    rid = sorted(holed["S1"])[0]
+    holed["S1"][rid] = dict(holed["S1"][rid], cap_seed=None)
+    out = AW.salt_gate(mans, plans, holed)
+    assert out["ok"] is False
+    assert out["by_stratum"]["S1"]["n_cap_seed_missing"] == 1
+    # a wrong deployed_cap_j fails
+    bad_plans = {t_: dict(v) for t_, v in plans.items()}
+    bad_plans["S2"] = dict(bad_plans["S2"], deployed_cap_j=8)
+    assert AW.salt_gate(mans, bad_plans, arms)["ok"] is False
+
+
+def test_g_salt_appears_in_the_gates_summary(tree, readout):
+    """It must show up where every other gate's PASS/FAIL is read."""
+    w = readout["widening"]
+    assert "G-SALT" in w["gates_summary"]
+    assert w["gates_summary"]["G-SALT"]["resolved_at"] == \
+        "READOUT::widening.gates.salt"
+    assert "salt" in w["gates"]
+    assert w["gates"]["salt"]["expected_world_seed_salt"] == "tiletie-v1"
+
+
+def test_run_manifest_fixture_is_audited_at_4a():
+    """⚠️ G-SALT's PRIMARY was audited at NEITHER pass once the gate left 4b:
+    4a carried only the LEG-manifest fallback and the smoke manifest. Scoping
+    the false failure out without this trades it for a SILENT HOLE."""
+    root = WF.FIXTURE_DIR
+    for st in ("S1", "S2"):
+        p = root / f"RUN_MANIFEST_{st}.json"
+        assert p.is_file(), f"the §R4.5 RUN-MANIFEST fixture {p.name} is missing"
+        d = json.loads(p.read_text())
+        assert d["world_seed_salt"] == "tiletie-v1"
+        assert d["m_worlds"] and d["b_ceiling_from_m"]
+        assert d["arb_backend"] == "rust"
+    names = [g.name for g in ACC.book_fixture(REPO / "x", REPO / "y")]
+    assert any("RUN-MANIFEST fixture" in n for n in names)

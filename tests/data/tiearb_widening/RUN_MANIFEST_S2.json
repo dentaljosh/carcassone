@@ -1,0 +1,22 @@
+{
+  "arb_backend": "rust",
+  "arb_legal_mask_cache": true,
+  "b_ceiling_from_m": 16,
+  "git_rev": "0123456",
+  "m_worlds": 32,
+  "preflight": {
+    "checks": {
+      "leaf_hash": {
+        "expected": "a36d2e15a3b3d71d",
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "ok": true
+      }
+    }
+  },
+  "resolved_backend_by_leg": {
+    "clair-puct/walled": "python",
+    "tier1-greedy/walled": "rust"
+  },
+  "stratum": "S2",
+  "world_seed_salt": "tiletie-v1"
+}
