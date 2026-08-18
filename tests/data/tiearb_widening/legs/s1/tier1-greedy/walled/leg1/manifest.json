@@ -1,0 +1,44 @@
+{
+  "judge": "tier1-greedy",
+  "leg": 1,
+  "n_crn_verified": 1,
+  "n_ok": 1,
+  "preflight": {
+    "seeds": {
+      "derivation": "sha256(tag|rid|j|salt)",
+      "m": 128,
+      "ok": true,
+      "prefix_stable_at": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "probe_playout_seeds_head": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "probe_rid": "PROBE",
+      "probe_world_seeds_head": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "salt": "tiletie-v1"
+    }
+  },
+  "profile": "walled",
+  "resolved_config": {
+    "backend": "rust",
+    "legal_mask_cache": true,
+    "m": 128,
+    "world_seed_salt": "tiletie-v1"
+  }
+}

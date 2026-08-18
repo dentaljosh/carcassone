@@ -1,0 +1,12 @@
+{
+  "arb_backend": "rust",
+  "arb_legal_mask_cache": true,
+  "c_worker_secs_per_playout": 2.3,
+  "crn_cross_leg_identical": true,
+  "judge": "clair-puct",
+  "m_worlds": 32,
+  "profile": "walled",
+  "smoke_judge": "clair-puct",
+  "stratum": "S2",
+  "worker_secs_per_playout": 4.369999999999999
+}

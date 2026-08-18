@@ -352,6 +352,17 @@ stratum. They exist so DESIGN §9 step **4a**'s schema pass can resolve the
 `READOUT::widening.*`, `GATE_DISJOINT`, `GATE_DRAW`, `POSITIONS_PLAN` and
 `ARMS` spellings **before any real corpus exists**.
 
+DESIGN §0.G adds two more, because it moved the four judge smokes OFF 4a (they
+are not corpus-free: `select_smoke_positions` reads `ARMS.json` /
+`POSITIONS_PLAN.json`, and `--positions-dir` DEFAULTS to the SPENT corpus):
+
+  * `legs/s1/tier1-greedy/walled/leg1/manifest.json` — the LEG-MANIFEST fixture
+    (`resolved_config.*`, `preflight.seeds.*`; these exist ONLY on the ARB leg)
+  * `SMOKE_MANIFEST_{S1,S2}_{clair-puct,tier1-greedy}.json` — the SMOKE-MANIFEST
+    fixture (`c_worker_secs_per_playout`, `crn_cross_leg_identical`)
+
+so every spelling those addresses use is still audited BEFORE the pair freezes.
+
 The `ARMS.json` fixtures deliberately contain all three rid KINDS:
   * one **champion-append** rid (`champ_outside_tieset`, `len(arms) - len(arms_full) == 1`)
   * one **capped** rid (`capped_at_4`, > 4 deduped arms, so the J=4 draw binds)
@@ -384,6 +395,25 @@ def emit_committed_fixtures(dest=FIXTURE_DIR, *, m_s1=128, m_s2=32,
 
     tmp = Path(tempfile.mkdtemp(prefix="widening_fixture_emit_"))
     try:
+        # ---- the TWO fixtures DESIGN §0.G adds ---------------------------- #
+        # §0.G moved the four judge smokes off 4a (they are NOT corpus-free:
+        # select_smoke_positions reads ARMS.json/POSITIONS_PLAN.json, and
+        # --positions-dir DEFAULTS to the SPENT corpus). These two fixtures keep
+        # every spelling those addresses use audited BEFORE the pair freezes.
+        make_records(tmp / "legfx", {"fx:root0:p000": {
+            "arms": [1, 2], "n_distinct_afterstates": 2}},
+            m=m_s1, seed=3, stratum_dir="s1")
+        leg = (tmp / "legfx" / "s1" / "tier1-greedy" / PROFILE / "leg1"
+               / "manifest.json")
+        legs_out = dest / "legs" / "s1" / "tier1-greedy" / PROFILE / "leg1"
+        legs_out.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(leg, legs_out / "manifest.json")
+        for st, mm in (("S1", m_s1), ("S2", m_s2)):
+            for j in JUDGES:
+                make_smoke_manifest(dest / f"SMOKE_MANIFEST_{st}_{j}.json",
+                                    judge=j, stratum=st, m=mm,
+                                    c=0.18 if j == "tier1-greedy" else 2.30)
+
         for tag, m, seed, prefix, band, e_lev in (
                 ("s1", m_s1, 7, "s1", 135000000000, AW.E_LEVELS_S1),
                 ("s2", m_s2, 23, "s2", 135000000350, AW.E_LEVELS_S2)):

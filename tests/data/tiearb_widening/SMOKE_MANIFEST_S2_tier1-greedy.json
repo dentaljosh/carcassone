@@ -1,0 +1,12 @@
+{
+  "arb_backend": "rust",
+  "arb_legal_mask_cache": true,
+  "c_worker_secs_per_playout": 0.18,
+  "crn_cross_leg_identical": true,
+  "judge": "tier1-greedy",
+  "m_worlds": 32,
+  "profile": "walled",
+  "smoke_judge": "tier1-greedy",
+  "stratum": "S2",
+  "worker_secs_per_playout": 0.34199999999999997
+}

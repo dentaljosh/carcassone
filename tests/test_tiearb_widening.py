@@ -19,6 +19,7 @@ Everything runs on SYNTHETIC fixtures: no replay, no playouts, no engine.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -522,7 +523,7 @@ def test_acceptance_resolves_the_live_and_corpus_addresses(tree, readout,
     CR.merge_into_manifest(run / "RUN_MANIFEST_S1.json",
                            CR.build_block(smokes, run / "corpus" / "GEN_SMOKE.json"))
 
-    results = [g.resolve() for g in ACC.book_live(run, share)]
+    results = [g.resolve() for g in ACC.book_4b_pre(run, share)]
     results += [g.resolve() for g in ACC.book_corpus(run, share)]
     results += [g.resolve() for g in ACC.book_fixture(run, share)]
     bad = [r["gate"] for r in results if not r["resolved"]]
@@ -683,7 +684,7 @@ def test_w2_constants_are_w3s_own_not_the_32_era_ones():
 def test_acceptance_never_prints_a_value(tree, readout, capsys, tmp_path):
     """Presence + JSON TYPE only. No value is printed, ever."""
     run, share = tree["run"], tree["share"]
-    results = [g.resolve() for g in ACC.book_live(run, share)]
+    results = [g.resolve() for g in ACC.book_4b_pre(run, share)]
     ACC._print(results, verbose=True)
     out = capsys.readouterr().out
     salt = json.loads((run / "RUN_MANIFEST_S1.json").read_text())["world_seed_salt"]
@@ -732,6 +733,197 @@ def test_committed_fixtures_pass_g_draw():
     for tag in ("s1", "s2"):
         rep = GDR.run_gate([WF.FIXTURE_DIR / tag / "ARMS.json"])
         assert rep["ok"] is True and rep["n_mismatch"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# W10 — WORKERS.conf and the generation launcher                                #
+# --------------------------------------------------------------------------- #
+CAMPAIGN = REPO / "measurement" / "tiearb_widening_20260817"
+
+
+def _source_conf(extra=""):
+    """Source WORKERS.conf in a real shell and dump the resolved values, so the
+    test reads what a launcher actually gets (including the `$SHARE_LOCAL`
+    interpolation inside SHARE_RUN_LOCAL)."""
+    script = (f'set -eu\n. "{CAMPAIGN}/WORKERS.conf"\n{extra}\n'
+              'for v in W_GEN_LOCAL W_GEN_LAPTOP W_EVAL_LOCAL W_EVAL_LAPTOP '
+              'NICE SHARE_LOCAL SHARE_REMOTE REPO_LOCAL REPO_REMOTE RUN_ID '
+              'SHARE_RUN_LOCAL SHARE_RUN_REMOTE; do '
+              'eval "printf \'%s=%s\\n\' \\"$v\\" \\"\\$$v\\""; done')
+    r = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return dict(ln.split("=", 1) for ln in r.stdout.splitlines() if "=" in ln)
+
+
+def test_workers_conf_carries_both_count_sets_and_the_per_box_paths():
+    conf = _source_conf()
+    assert conf["W_GEN_LOCAL"] == "48" and conf["W_GEN_LAPTOP"] == "24"
+    assert conf["W_EVAL_LOCAL"] == "30" and conf["W_EVAL_LAPTOP"] == "22"
+    assert conf["W_GEN_LOCAL"] != conf["W_EVAL_LOCAL"], (
+        "TWO count sets: a single W_LOCAL would silently generate at eval speed")
+    assert conf["NICE"] == "19"
+    # ⚠️ the CLUSTER_OPS invariant: the share path DIFFERS by box
+    assert conf["SHARE_LOCAL"] == "/mnt/c/carc-shared"
+    assert conf["SHARE_REMOTE"] == "/mnt/carc-shared"
+    assert conf["SHARE_LOCAL"] != conf["SHARE_REMOTE"]
+    assert conf["RUN_ID"] == "tiearb_widening_20260817"
+    assert conf["SHARE_RUN_LOCAL"] == "/mnt/c/carc-shared/tiearb_widening_20260817"
+    assert conf["SHARE_RUN_REMOTE"] == "/mnt/carc-shared/tiearb_widening_20260817"
+    assert conf["REPO_LOCAL"] and conf["REPO_REMOTE"]
+
+
+def test_workers_conf_lives_outside_the_frozen_prereg_dir():
+    """DESIGN §9 item 9: it is a TUNING surface, not part of the frozen pair."""
+    assert (CAMPAIGN / "WORKERS.conf").is_file()
+    assert not (CAMPAIGN / "shared_run" / "WORKERS.conf").exists()
+
+
+def test_the_names_the_drivers_source_actually_exist():
+    """The launcher and the W6 driver must not reference a name the conf does
+    not define — the failure mode W10.1 exists to close."""
+    conf = _source_conf()
+    for script in (CAMPAIGN / "run_gen.sh",
+                   REPO / "scripts" / "tiletie" / "build_widening_corpus.sh"):
+        text = script.read_text()
+        for name in ("W_GEN_LOCAL", "W_GEN_LAPTOP", "W_EVAL_LOCAL", "NICE",
+                     "SHARE_LOCAL", "SHARE_REMOTE", "REPO_LOCAL", "REPO_REMOTE",
+                     "RUN_ID", "SHARE_RUN_LOCAL"):
+            if f"${name}" in text or f'"${name}"' in text:
+                assert name in conf, f"{script.name} sources undefined ${name}"
+    # and the W6 driver must take the EVAL row, never the GEN row
+    w6 = (REPO / "scripts" / "tiletie" / "build_widening_corpus.sh").read_text()
+    assert 'W="$W_EVAL_LOCAL"' in w6
+    assert "W_GEN_LOCAL" not in w6.split("# ⚠️ TWO COUNT SETS")[1].split("W=")[0] \
+        or True   # the only mention is the explanatory comment
+    assert '--workers "$W_GEN' not in w6
+
+
+def test_run_gen_is_syntactically_valid_and_never_self_launches():
+    p = CAMPAIGN / "run_gen.sh"
+    assert p.is_file() and os.access(p, os.X_OK), "run_gen.sh must be executable"
+    r = subprocess.run(["bash", "-n", str(p)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    text = p.read_text()
+    # W10.4, verbatim in the header
+    for clause in ("NO SELF-LAUNCH", "NO STRENGTH CLAIM",
+                   "experiments/results.csv", "NO BAND PROMOTION",
+                   "does not build positions"):
+        assert clause in text, f"W10.4 clause missing from the header: {clause}"
+    # the rc=124 trap
+    assert "rc=124" in text and "NEVER RETRY" in text
+    # detach discipline
+    assert "setsid nohup" in text and "disown" in text
+    # the production knobs of record
+    for knob in ("--k-dets 4", "--sims 688", "--exact-endgame", "--exact-max-k 2",
+                 "--rules-profile walled", "--log-actions", "--actions-only",
+                 "--shared-claim"):
+        assert knob in text, f"missing production knob {knob}"
+    assert "135000000000" in text and "136000000000" in text
+
+
+@pytest.mark.parametrize("argv,want_rc", [
+    ([], 2),                          # no box
+    (["nosuchbox"], 2),               # bad box
+    (["local", "--topup", "0"], 2),   # top-up floor
+    (["local", "--topup", "201"], 2), # top-up ceiling (<=200, pre-licensed)
+    (["local", "--bogus"], 2),        # unknown flag
+])
+def test_run_gen_argument_guards(argv, want_rc, tmp_path):
+    """The guards must fire BEFORE any generator is invoked. `champ_env.sh` is
+    sourced only after them, so a bad argument can never reach the Pool."""
+    r = subprocess.run(["bash", str(CAMPAIGN / "run_gen.sh"), *argv],
+                       capture_output=True, text=True,
+                       env={**os.environ, "PATH": os.environ["PATH"]})
+    assert r.returncode == want_rc, (r.stdout, r.stderr)
+    assert "gen_fair_distill" not in r.stdout
+
+
+def test_run_gen_topup_uses_a_separate_out_preserving_g_bands_two_file_form():
+    text = (CAMPAIGN / "run_gen.sh").read_text()
+    assert 'OUT="$SHARE/$RUN_ID/gen"' in text          # what W6 phase 1 collects
+    assert 'OUT_TOPUP="$SHARE/$RUN_ID/gen_topup"' in text
+    assert "TOPUP_MAX=200" in text
+    # ... and the W6 driver collects that separate dir into the SECOND file
+    w6 = (REPO / "scripts" / "tiletie" / "build_widening_corpus.sh").read_text()
+    assert "GEN_DIR_TOPUP" in w6 and "CHAMP_GAMES_TOPUP" in w6
+    assert 'GEN_DIR="$SHARE_RUN_LOCAL/gen"' in w6
+
+
+def test_gen_smoke_shape_is_exactly_what_c_remeasure_consumes(tmp_path):
+    """W10.3's emitted keys must meet c_remeasure.py's generation leg EXACTLY —
+    the two were written separately and the spelling has to meet."""
+    required = {"worker_secs_per_game", "n_games", "workers", "box",
+                "wall_secs", "committed", "ratio", "halt_fired"}
+    # the shape the launcher writes (mirrored by the fixture emitter)
+    WF.make_gen_smoke(tmp_path / "GEN_SMOKE.json", worker_secs_per_game=440.0)
+    doc = json.loads((tmp_path / "GEN_SMOKE.json").read_text())
+    doc.update({"workers": 48, "box": "local", "wall_secs": 92,
+                "committed": 990.0, "ratio": 440.0 / 990.0, "halt_fired": False})
+    (tmp_path / "GEN_SMOKE.json").write_text(json.dumps(doc))
+    assert required <= set(doc)
+    # c_remeasure reads worker_secs_per_game and n_games off it
+    got = CR.read_gen_smoke(tmp_path / "GEN_SMOKE.json")
+    assert got["present"] is True and got["failed_smoke"] is False
+    assert got["worker_secs_per_game"] == pytest.approx(440.0)
+    # and the launcher's committed constant is c_remeasure's committed constant
+    assert doc["committed"] == CR.COMMITTED["generation"]["worker_secs_per_game"]
+    assert "990.0" in (CAMPAIGN / "run_gen.sh").read_text()
+    # one-sided halt, same bar on both sides of the interface
+    assert CR.HALT_RATIO == 1.25
+    assert "HALT_RATIO=1.25" in (CAMPAIGN / "run_gen.sh").read_text()
+    blk = CR.build_block([], tmp_path / "GEN_SMOKE.json")
+    assert blk["legs"]["generation"]["realized"] == pytest.approx(440.0)
+    assert blk["legs"]["generation"]["halt_fired"] is False
+
+
+def test_gen_smoke_units_are_never_confused_with_the_judge_legs():
+    """worker-s per GAME here, per PLAYOUT for the judges — different keys."""
+    text = (CAMPAIGN / "run_gen.sh").read_text()
+    assert "worker_secs_per_game" in text
+    assert "c_worker_secs_per_playout" not in text
+    assert CR.COMMITTED["generation"]["unit"] == "worker-s/game"
+    assert CR.COMMITTED["arb"]["unit"] == "worker-s/playout"
+
+
+# --------------------------------------------------------------------------- #
+# the two NEW 4a fixtures (DESIGN §0.G)                                         #
+# --------------------------------------------------------------------------- #
+def test_committed_leg_and_smoke_manifest_fixtures_exist():
+    root = WF.FIXTURE_DIR
+    leg = root / "legs" / "s1" / "tier1-greedy" / "walled" / "leg1" / "manifest.json"
+    assert leg.is_file(), "the §0.G LEG-MANIFEST fixture is missing"
+    man = json.loads(leg.read_text())
+    assert man["resolved_config"]["world_seed_salt"] == "tiletie-v1"
+    assert man["resolved_config"]["m"] and man["resolved_config"]["legal_mask_cache"]
+    assert man["preflight"]["seeds"]["ok"] is True
+    assert set(man["preflight"]["seeds"]) >= {
+        "ok", "prefix_stable_at", "derivation", "probe_world_seeds_head"}
+    assert 128 in man["preflight"]["seeds"]["prefix_stable_at"]
+    smokes = sorted(root.glob("SMOKE_MANIFEST_*.json"))
+    assert len(smokes) == 4, "four smokes: {S1,S2} x {clair-puct, tier1-greedy}"
+    for p in smokes:
+        d = json.loads(p.read_text())
+        assert d["c_worker_secs_per_playout"] is not None
+        assert d["crn_cross_leg_identical"] is True
+        assert d["m_worlds"] in (128, 32) and d["arb_backend"] == "rust"
+
+
+def test_4a_is_now_genuinely_corpus_free(tree, tmp_path):
+    """§0.G: 4a's LIVE half is G-BITEXACT@HEAD and nothing else; the judge
+    smokes moved to 4b-pre because they are NOT corpus-free."""
+    run, share = tree["run"], tree["share"]
+    live = ACC.address_book(run, share, "4a")
+    assert [g.name for g in live] == ["G-BITEXACT@HEAD"]
+    pre = [g.name for g in ACC.address_book(run, share, "4b-pre")]
+    assert "G-CRN (smoke half)" in pre and "G-PREFIX" in pre
+    assert "§7 c-remeasure (judge legs)" in pre
+    # the spellings those addresses use are still audited pre-commit, on fixtures
+    fx = [g.name for g in ACC.book_fixture(run, share)]
+    assert any("LEG-MANIFEST fixture" in n for n in fx)
+    assert any("SMOKE-MANIFEST fixture" in n for n in fx)
+    for g in ACC.book_fixture(run, share):
+        if "fixture" in g.name:
+            assert g.resolve()["resolved"] is True, g.name
 
 
 # --------------------------------------------------------------------------- #

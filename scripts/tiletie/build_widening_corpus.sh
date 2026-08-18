@@ -52,17 +52,30 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CAMPAIGN="$REPO/measurement/tiearb_widening_20260817"
 RUN_DIR="$CAMPAIGN/shared_run"
 
+# W10.1: the driver DIES without WORKERS.conf rather than inventing a count. It
+# lives OUTSIDE the frozen shared_run/ (DESIGN §9 item 9), so a W retune is never
+# an edit to a frozen file.
+CONF="$CAMPAIGN/WORKERS.conf"
+[ -f "$CONF" ] || { echo "[widening] FATAL: $CONF missing — W10.1 defines it." >&2
+                    exit 2; }
 # shellcheck disable=SC1091
-. "$CAMPAIGN/WORKERS.conf"         # W_LOCAL / NICE / SHARE_LOCAL / RUN_ID — the
-                                   # ONLY place worker counts live, and it sits
-                                   # OUTSIDE the frozen shared_run/ (DESIGN §9.9)
+. "$CONF"
+for v in W_EVAL_LOCAL NICE SHARE_LOCAL RUN_ID SHARE_RUN_LOCAL; do
+  [ -n "${!v:-}" ] || { echo "[widening] FATAL: $CONF does not set $v" >&2; exit 2; }
+done
+# ⚠️ TWO COUNT SETS. Every phase here is CPU-leaf mining (census, champ picks,
+# build positions), i.e. the F7d EVAL row — NOT the GEN row. Borrowing
+# W_GEN_LOCAL would over-subscribe the box; W10.1 exists so the two cannot be
+# confused. Generation itself is W10's run_gen.sh, at W_GEN_*.
+W="$W_EVAL_LOCAL"
 
 PY="$REPO/.venv/bin/python"
 LOGS="$RUN_DIR/logs"
 CORPUS="$RUN_DIR/corpus"
 SHADOW="$CORPUS/_shadow_repo"
 
-GEN_DIR="$SHARE_LOCAL/$RUN_ID/gen"
+GEN_DIR="$SHARE_RUN_LOCAL/gen"             # what W10's run_gen.sh produces
+GEN_DIR_TOPUP="$SHARE_RUN_LOCAL/gen_topup" # the SEPARATE reserved-range invocation
 CHAMP_GAMES="$CORPUS/champ_games_widening.jsonl"
 CHAMP_GAMES_TOPUP="$CORPUS/champ_games_widening_topup.jsonl"
 
@@ -132,6 +145,20 @@ if want 1; then
     --expect-games "$EXPECT_GAMES" --min-games "$MIN_GAMES" \
     --out "$CORPUS/CHAMP_GAMES_VERIFY.json" 2>&1 | tee "$LOGS/p1_verify.log"
 
+  # TOP-UP: W10's `run_gen.sh --topup N` writes to a SEPARATE --out, so it is
+  # collected into a SEPARATE champ-games file. That separation is what keeps
+  # G-BAND's two-file form intact end-to-end: merging the reserved range into the
+  # base file would put out-of-band seeds in front of the base verify and FAIL a
+  # healthy run.
+  if [ ! -f "$CHAMP_GAMES_TOPUP" ] \
+     && [ -d "$GEN_DIR_TOPUP" ] \
+     && [ -n "$(ls -A "$GEN_DIR_TOPUP" 2>/dev/null)" ]; then
+    say "PHASE 1 COLLECT (TOP-UP): $GEN_DIR_TOPUP -> $CHAMP_GAMES_TOPUP"
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/distill_flywheel/collect_action_logs.py" \
+      --in "$GEN_DIR_TOPUP" --out "$CHAMP_GAMES_TOPUP" --verify 10 2>&1 \
+      | tee "$LOGS/p1_collect_topup.log"
+  fi
+
   # TOP-UP file: a SECOND invocation against ITS OWN reserved range, carrying
   # only the increment. Holding it to the 850 floor would VOID every healthy run
   # that exercises the pre-licensed clause (<=200 games) — READ_RULE §2 G-BAND.
@@ -174,7 +201,7 @@ if want 2; then
       verify-champgames --path "$GAMES" --seed-lo "$LO" --seed-hi "$HI" \
       --min-games 1 --print-n)"
     N_CHAMPGAMES=$(( N_GAMES * MPG ))
-    say "PHASE 2 CENSUS $S: W=$W_LOCAL, games=$N_GAMES, --n-champgames $N_CHAMPGAMES"
+    say "PHASE 2 CENSUS $S: W=$W (eval row), games=$N_GAMES, --n-champgames $N_CHAMPGAMES"
     nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/run_census.py" \
       --out-dir "$CENSUS" \
       --champgames-path "$GAMES" \
@@ -183,7 +210,7 @@ if want 2; then
       --n-champgames "$N_CHAMPGAMES" \
       --max-per-game "$MPG" \
       --sample-seed "$SAMPLE_SEED" \
-      --workers "$W_LOCAL" \
+      --workers "$W" \
       --contention-note "tiearb widening corpus ($S); 100% walled self-play (e4 and CL-070 bank strata off via --limit-e4-games 0 / --limit-bank 0)" \
       2>&1 | tee "$LOGS/p2_census_$S.log"
   done
@@ -221,13 +248,13 @@ if want 4; then
     PICKS="$(picks_dir "$S")"; mkdir -p "$PICKS"
     if [ -f "$PICKS/champ_picks.jsonl.done" ]; then
       skip "4($S)" "$PICKS/champ_picks.jsonl.done"; continue; fi
-    say "PHASE 4 CHAMP PICKS $S: W=$W_LOCAL -> $PICKS"
+    say "PHASE 4 CHAMP PICKS $S: W=$W (eval row) -> $PICKS"
     nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/champ_picks.py" \
       --census-rows "$(census_dir "$S")/rows.jsonl" \
       --rules-profile "$PROFILE" \
       --champ-games "$(games_path "$S")" \
       --out "$PICKS/champ_picks.jsonl" \
-      --workers "$W_LOCAL" --nice "$NICE" --resume 2>&1 \
+      --workers "$W" --nice "$NICE" --resume 2>&1 \
       | tee "$LOGS/p4_champ_picks_$S.log"
     # champ_picks.py RESUMES into an existing jsonl, so that file existing does
     # NOT mean it is complete; a separate stamp marks the phase done.
@@ -359,7 +386,7 @@ fi
 # manifests are copied so the record is complete (DESIGN §8 builder delta 4).
 if want 6; then
   for S in s1 s2; do
-    SRC="$SHARE_LOCAL/$RUN_ID/$S"
+    SRC="$SHARE_RUN_LOCAL/$S"
     [ -d "$SRC" ] || { say "PHASE 6 $S: no leg output at $SRC yet — skipping"; continue; }
     say "PHASE 6 COPY-BACK $S: $SRC -> $RUN_DIR/legs/$S"
     while IFS= read -r -d '' m; do

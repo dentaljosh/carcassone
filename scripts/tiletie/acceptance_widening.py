@@ -14,30 +14,40 @@ an address at read time. Five gates across the two review rounds named addresses
 no emitter writes — each would have voided a HEALTHY run. This is the mechanical
 form of §1.5's structural test (*would this gate fail on a healthy run?*).
 
-Two phases, because the artifacts appear at two different times:
+THREE phases, because the artifacts appear at three different times (§0.G
+re-split what R2 called 4a, after the executor found the judge smokes are NOT
+corpus-free — see `book_4b_pre`):
 
-  `--mode 4a`  PRE-COMMIT, CORPUS-FREE.
-               (a) `live`    — the four smokes' manifests, the copied-back
-                               `tier1-greedy` leg manifests, the `RUN_MANIFEST_*`
-                               preflight keys, `GATE_BITEXACT_HEAD.json`.
-               (b) `fixture` — a STATIC SCHEMA AUDIT: W5 and W3 are run over
-                               committed synthetic fixtures in a scratch dir, and
-                               the `GATE_DISJOINT` / `GATE_DRAW` /
-                               `POSITIONS_PLAN` / `ARMS` / `READOUT::widening.*` /
-                               `per_position_*.jsonl` spellings are resolved
-                               THERE. The run's own
-                               `verdicts/SEALED_G_REPLICATE.json` is NOT brought
-                               into existence, and W3 never touches a real corpus
-                               position (REVIEW_R2 §N3).
+  `--mode 4a`      PRE-BLIND-COMMIT, and now GENUINELY corpus-free:
+                   (a) `live`    — `GATE_BITEXACT_HEAD.json`, nothing else.
+                   (b) `fixture` — a STATIC SCHEMA AUDIT: W5 and W3 are run over
+                                   committed synthetic fixtures in a scratch dir,
+                                   and the `GATE_DISJOINT` / `GATE_DRAW` /
+                                   `POSITIONS_PLAN` / `ARMS` /
+                                   `READOUT::widening.*` / `per_position_*.jsonl`
+                                   spellings — PLUS the two fixtures §0.G adds,
+                                   a LEG-MANIFEST (`resolved_config.*`,
+                                   `preflight.seeds.*`) and a SMOKE-MANIFEST
+                                   (`c_worker_secs_per_playout`,
+                                   `crn_cross_leg_identical`) — are resolved
+                                   THERE. The run's own
+                                   `verdicts/SEALED_G_REPLICATE.json` is NOT
+                                   brought into existence and W3 never touches a
+                                   real corpus position (REVIEW_R2 §N3).
 
-  `--mode 4b`  POST-CORPUS, PRE-SCORING — the real corpus artifacts, which exist
-               now and carry NO outcome statistic: `CHAMP_GAMES_VERIFY.json`,
-               `GATE_DISJOINT.json` (all five comparisons + `strata_root_overlap`),
-               `POSITIONS_PLAN.json` / `ARMS.json` on both strata,
-               `GATE_DRAW.json`, `GEN_SMOKE.json` and `RUN_MANIFEST_S1::
-               c_remeasure`.
+  `--mode 4b-pre`  POST-CORPUS, PRE-SCORING — the four judge smokes on the FRESH
+                   corpus, their per-judge manifests, `G-CRN`'s smoke half and
+                   §7's judge-leg `c`-remeasure, plus the `RUN_MANIFEST_*`
+                   preflight keys and the copied-back leg manifests.
 
-  `--mode all` both.
+  `--mode 4b`      POST-CORPUS, PRE-SCORING — the corpus artifacts, which carry
+                   NO outcome statistic: `CHAMP_GAMES_VERIFY.json`,
+                   `GATE_DISJOINT.json` (all five comparisons +
+                   `strata_root_overlap`), `POSITIONS_PLAN.json` / `ARMS.json` on
+                   both strata, `GATE_DRAW.json`, `GEN_SMOKE.json` and
+                   `RUN_MANIFEST_S1::c_remeasure`.
+
+  `--mode all`     all three.
 
 MECHANISM: key presence + JSON type ONLY. No value is computed, printed or
 stored — so running this does not spend the read rule and does not make the
@@ -329,9 +339,36 @@ COMPARISONS_FULL = ("s1_vs_tiletie0812", "s1_vs_tiearb2_0816",
 COMPARISON_RID_ONLY = "s1s2_vs_exclude_rids"
 
 
-def book_live(R: Path, S: Path) -> list:
-    """4a(live) — everything a SMOKE, a leg manifest or the bit-exact gate can
-    answer before any corpus exists."""
+def book_bitexact(R: Path) -> list:
+    """4a(live) — the ONLY live address 4a can answer, now that §0.G moved the
+    judge smokes to 4b-pre. `G-BITEXACT@HEAD` is produced at §9 step 3, before
+    the blind commit, and needs no corpus."""
+    return [Gate("G-BITEXACT@HEAD", [
+        Check(R, "GATE_BITEXACT_HEAD.json",
+              ["pass", "n_playouts_compared", "n_value_bit_identical",
+               "n_value_mismatch", "legal_mask_cache", "git_rev"])],
+        note="no fallback. Reached ONLY by verify_tier1_rust.py --out (W7); "
+             "without --out it can write only into the CLOSED Stage-2 run dir",
+        phase="4a-live")]
+
+
+def book_4b_pre(R: Path, S: Path) -> list:
+    """4b-pre (post-corpus, PRE-SCORING) — the four judge smokes on the FRESH
+    corpus, their per-judge manifests, `G-CRN`'s smoke half and §7's judge-leg
+    `c`-remeasure.
+
+    ⚠️ §0.G moved these OFF 4a. They were labelled "corpus-free", but
+    `run_tiletie.select_smoke_positions()` resolves its positions through
+    `<positions-dir>/ARMS.json` and `POSITIONS_PLAN.json` — files W6 does not
+    build until step 6 — and `--positions-dir` DEFAULTS TO
+    `measurement/tiletie_pricing_20260812/positions`, the SPENT corpus §3
+    requires disjointness FROM. Run as written, 4a would have quietly scored
+    positions from a burned corpus. **`--positions-dir` must be named
+    EXPLICITLY in every smoke invocation — never defaulted.**
+
+    The `c`-HALT still fires BEFORE the expensive legs, which is its whole
+    purpose. Their SPELLINGS are audited pre-commit by the two fixtures in
+    `book_fixture`, so the move costs no pre-commit coverage."""
     g = []
     g.append(Gate("G-LEAF", [
         Check(R, "RUN_MANIFEST_S1.json", ["preflight.checks.leaf_hash.ok"]),
@@ -339,13 +376,13 @@ def book_live(R: Path, S: Path) -> list:
         [Check(R, "RUN_MANIFEST_S*.json",
                ["preflight.checks.leaf_hash.harness_leaf_hash",
                 "preflight.checks.leaf_hash.expected"])],
-        phase="4a-live"))
+        phase="4b-pre"))
 
     g.append(Gate("G-M", [
         Check(R, "RUN_MANIFEST_S1.json", ["m_worlds", "b_ceiling_from_m"]),
         Check(R, "RUN_MANIFEST_S2.json", ["m_worlds", "b_ceiling_from_m"])],
         [Check(R, LEGS, ["resolved_config.m"])],
-        note="fallback exists ONLY on the tier1-greedy leg", phase="4a-live"))
+        note="fallback exists ONLY on the tier1-greedy leg", phase="4b-pre"))
 
     g.append(Gate("G-BACKEND", [
         Check(R, "RUN_MANIFEST_S1.json",
@@ -353,7 +390,7 @@ def book_live(R: Path, S: Path) -> list:
         Check(R, "RUN_MANIFEST_S2.json",
               ["arb_backend", "resolved_backend_by_leg", "arb_legal_mask_cache"])],
         [Check(R, LEGS, ["resolved_config.legal_mask_cache"])],
-        phase="4a-live"))
+        phase="4b-pre"))
 
     g.append(Gate("G-PREFIX", [
         Check(R, LEGS, ["preflight.seeds.ok", "preflight.seeds.prefix_stable_at"])],
@@ -361,15 +398,7 @@ def book_live(R: Path, S: Path) -> list:
                          "preflight.seeds.probe_world_seeds_head"])],
         note="witnessed ONCE on the ARB leg — prefix stability is a property of "
              "the shared seed derivation, not of a leg. `prefix_ok` exists "
-             "nowhere in the repo", phase="4a-live"))
-
-    g.append(Gate("G-BITEXACT@HEAD", [
-        Check(R, "GATE_BITEXACT_HEAD.json",
-              ["pass", "n_playouts_compared", "n_value_bit_identical",
-               "n_value_mismatch", "legal_mask_cache", "git_rev"])],
-        note="no fallback. Reached ONLY by verify_tier1_rust.py --out (W7); "
-             "without --out it can write only into the CLOSED Stage-2 run dir",
-        phase="4a-live"))
+             "nowhere in the repo", phase="4b-pre"))
 
     g.append(Gate("G-CRN (smoke half)", [
         Check(R, "SMOKE_MANIFEST_S1_*.json", ["crn_cross_leg_identical"],
@@ -382,7 +411,7 @@ def book_live(R: Path, S: Path) -> list:
         note="FOUR smokes: {S1 --m 128, S2 --m 32} x {clair-puct, tier1-greedy}; "
              "one shared --smoke-manifest path would overwrite. The per-record "
              "fallback is records/<rid>.json — there is no *.jsonl leg file",
-        phase="4a-live"))
+        phase="4b-pre"))
 
     g.append(Gate("§7 c-remeasure (judge legs)", [
         Check(R, "SMOKE_MANIFEST_S1_*.json", ["c_worker_secs_per_playout"],
@@ -392,7 +421,7 @@ def book_live(R: Path, S: Path) -> list:
         note="the figure of record is c_worker_secs_per_playout, NEVER "
              "worker_secs_per_playout (inflated ~1.9x); null/0 is a FAILED "
              "SMOKE, not a cheap leg and not a HALT",
-        phase="4a-live"))
+        phase="4b-pre"))
     return g
 
 
@@ -511,6 +540,36 @@ def book_fixture(R: Path, S: Path) -> list:
                "widening.branch.rung2.branch", "widening.branch.rung3.branch",
                "widening.gates.crn.ok", "widening.gates.crn.witness_kinds"])],
         phase="4a-fixture"))
+
+    # ---- the TWO fixtures §0.G adds, so moving the judge smokes to 4b-pre --- #
+    # ---- costs NO pre-commit coverage of their spellings -------------------- #
+    g.append(Gate("LEG-MANIFEST fixture (G-M / G-BACKEND / G-SALT / G-PREFIX "
+                  "fallbacks)", [
+        Check(R, LEGS,
+              ["resolved_config.world_seed_salt", "resolved_config.m",
+               "resolved_config.legal_mask_cache",
+               "preflight.seeds.ok", "preflight.seeds.prefix_stable_at",
+               "preflight.seeds.derivation",
+               "preflight.seeds.probe_world_seeds_head"])],
+        note="`resolved_config.*` and `preflight.seeds.*` exist ONLY on the "
+             "tier1-greedy (tier1_rust_leg) manifests — the clair-puct legs are "
+             "oracle_score_pilot manifests and carry neither. Auditing the "
+             "spellings HERE is what lets §0.G move the live smokes to 4b-pre "
+             "without losing pre-commit coverage",
+        phase="4a-fixture"))
+
+    g.append(Gate("SMOKE-MANIFEST fixture (G-CRN smoke half / §7 judge legs)", [
+        Check(R, "SMOKE_MANIFEST_S1_*.json",
+              ["c_worker_secs_per_playout", "crn_cross_leg_identical",
+               "m_worlds", "arb_backend"], min_files=2),
+        Check(R, "SMOKE_MANIFEST_S2_*.json",
+              ["c_worker_secs_per_playout", "crn_cross_leg_identical",
+               "m_worlds", "arb_backend"], min_files=2)],
+        note="four manifests, one per {stratum x judge} — one shared "
+             "--smoke-manifest path would have the second smoke overwrite the "
+             "first. The cost figure of record is c_worker_secs_per_playout, "
+             "NEVER worker_secs_per_playout",
+        phase="4a-fixture"))
     return g
 
 
@@ -568,10 +627,14 @@ def book_corpus(R: Path, S: Path) -> list:
 
 
 def address_book(run_dir, share, mode="all") -> list:
+    """The LIVE half of the book for `mode` (the fixture half is built
+    separately, against a scratch tree, by `build_fixture_tree`)."""
     R, S = Path(run_dir), Path(share)
     out = []
     if mode in ("4a", "all"):
-        out += book_live(R, S)
+        out += book_bitexact(R)
+    if mode in ("4b-pre", "all"):
+        out += book_4b_pre(R, S)
     if mode in ("4b", "all"):
         out += book_corpus(R, S)
     return out
@@ -673,7 +736,12 @@ def main(argv=None) -> int:
     ap.add_argument("--run-dir", required=True, help="the RUN/ tree (shared_run/)")
     ap.add_argument("--share", default="/mnt/c/carc-shared/tiearb_widening_20260817",
                     help="SHARE root holding the per-record leg output")
-    ap.add_argument("--mode", choices=("4a", "4b", "all"), default="all")
+    ap.add_argument("--mode", choices=("4a", "4b-pre", "4b", "all"),
+                    default="all",
+                    help="4a = fixture schema audit + G-BITEXACT@HEAD "
+                         "(pre-blind-commit, genuinely corpus-free); "
+                         "4b-pre = the four judge smokes on the FRESH corpus; "
+                         "4b = the corpus artifacts")
     ap.add_argument("--no-fixture", action="store_true",
                     help="skip the 4a static schema audit (live addresses only)")
     ap.add_argument("--fixture-dir", default=None,
