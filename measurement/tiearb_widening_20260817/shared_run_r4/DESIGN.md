@@ -35,7 +35,7 @@ Binding in their R3.3 wording, **not restated here**:
 | §9 | freeze-and-sequence, 4a / 4b-pre / 4b, the two-source merge discipline |
 | §10 | required manifests |
 | §11 | the draft `I6` amendment text |
-| §0.A–§0.O | every pre-blind amendment: `c_remeasure` spelling, the `allow_null` mechanism, `STAGE1B_LADDER.json`, W9/`D-DRAW`, the `WORKERS.conf` consumer mapping, `--backend rust`, the always-explicit `--positions-dir` rule |
+| §0.A–§0.O | every pre-blind amendment: `c_remeasure` spelling, the `allow_null` mechanism, `STAGE1B_LADDER.json`, W9/`D-DRAW`, the `WORKERS.conf` consumer mapping, `--backend rust`. ⚠️ **EXCEPT §0.O, which R4-0.4 OVERRIDES**: the rule is no longer "`--positions-dir` is always explicit" but **"every `run_tiletie` path flag is always explicit"** — all six, three of them git-tracked in the spent run |
 
 **Also carried, by reference, not rebuilt:** `STAGE1B_LADDER.json` (the `G-REPLICATE` reference)
 · the merged W-code (W2/W3/W5/W6/W7/W8/W10) · the fixtures · the 4a/4b acceptance harness.
@@ -123,6 +123,46 @@ spent-corpus collision the **banked** side would have been excluded rather than 
 which would have mutated a spent corpus's membership *and* left the duplicate position in the
 fresh corpus, **the exact event class that killed R3.3**. It is now pinned by a deliberate fixture
 collision, so the total order of R4-3 rule 1 is tested rather than merely asserted.
+
+### R4-0.4 AMENDMENT (rev R4.4) — §0.O widens: **EVERY `run_tiletie` path flag is ALWAYS explicit**
+
+⚠️ **This OVERRIDES the carried §0.O**, which named only `--positions-dir` and is now known to be
+too narrow by five flags.
+
+**The near-miss, on the record.** The executor's first smoke launch was killed mid-preflight
+because `run_tiletie`'s preflight **silently writes `GATE_BACKEND_RECHECK.json` into
+`measurement/tiletie_pricing_20260812/`** — a **git-tracked** file in the **SPENT** run's
+directory. **No damage: killed pre-write, the file's mtime is still Aug 12, `git status` clean,
+and the spent directory was verified pristine before and after.** The executor had set **four of
+six** path flags from §0.O's wording and was still caught — which is the whole argument for this
+amendment: a rule that names one flag reads as a rule about that flag.
+
+**Six of `run_tiletie`'s path defaults resolve into the spent run** (verified this session against
+`run_tiletie.py:103-108, 950-955`):
+
+| flag | default | tracked? |
+|---|---|---|
+| `--positions-dir` | `measurement/tiletie_pricing_20260812/positions` | — (the §0.O case) |
+| `--logs-dir` | `…/tiletie_pricing_20260812/logs` | — |
+| **`--gate-out`** | `…/tiletie_pricing_20260812/GATE_BACKEND_RECHECK.json` | ⚠️ **TRACKED** |
+| **`--manifest-out`** | `…/tiletie_pricing_20260812/RUN_MANIFEST.json` | ⚠️ **TRACKED** |
+| **`--smoke-manifest`** | `…/tiletie_pricing_20260812/SMOKE_MANIFEST.json` | ⚠️ **TRACKED** |
+| `--out-root` | `/mnt/c/carc-shared/tiletie_pricing_20260812` | — (share side) |
+
+**The rule, widened:** **every one of those six flags is passed explicitly, in full, in every
+invocation** — runbook, script, or hand-typed — for smokes and scoring alike. The three
+**git-tracked** defaults (`--gate-out`, `--manifest-out`, `--smoke-manifest`) are called out
+because they do not merely read the wrong corpus, they **mutate a closed run's tracked artifacts**.
+And `--gate-out` is the sharpest of the three: **it fires from the PREFLIGHT, before any leg
+runs**, so it needs no mention in your command and no scoring to do damage — the failure mode this
+campaign has now met three times (`verify_tier1_rust`'s hard-coded `OUT_PATH`, R4-0.3's launcher
+burst, and this) is **a default that writes somewhere a closed run lives.**
+
+**Durable fix, spec'd for a FUTURE quiet window — NOT now (this amendment is the binding fix for
+this run):** ⇒ **W11** — `run_tiletie` (and its siblings) **refuse to default-write into a
+directory containing a manifest whose run-id is not the current run's**, failing loud with the
+offending path rather than writing. A guard, not a convention: conventions are what these three
+incidents each defeated.
 
 ---
 
