@@ -50,7 +50,12 @@ orchestrator's reconciliation; the rung plans are the authority on their own des
 1. **W1 instrument wiring** (rust ARB judge into `run_tiletie.py`; bit-exactness
    obligation vs the python judge per the Phase-A G-BITEXACT precedent).
 2. **Blind DESIGN + READ_RULE** for the shared (2)+(3) run, then the run:
-   ≈865 worker-h ≈ **20–22 h wall on local W30 + laptop W22**.
+   ~~≈865 worker-h ≈ 20–22 h wall~~ **RE-PRICED AND FUNDED 2026-08-18: 1,174.2
+   worker-h ≈ 26–29 h two-box wall** (rev R3.1 DESIGN §7 roll-up; PLAN_J's leg was a
+   ~6× under-estimate — clair-puct omitted — and S2 is its own 1,100-capped-ply
+   stratum; owner funded the honest price, verbatim "funded"). W1 wiring LANDED
+   (`7b82610f`); prereg pair at rev R3.1 (three review rounds, `shared_run/`);
+   W-code merged; §9 sequence executing.
 3. Game-cell decision only after the offline read, per ruling 5.
 
 ## Owner decision asks (carried to Joshua)
