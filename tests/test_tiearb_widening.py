@@ -1389,7 +1389,7 @@ def test_floors_py_reproduces_the_committed_floors_json():
     """rev R4.5 reconciliation: the FLOORS.json the drafter committed with the
     blind pair must be EXACTLY what floors.py derives from the measured rates —
     otherwise two components disagree about the run's own floors."""
-    committed = (REPO.parents[2] / "measurement" / "tiearb_widening_20260817"
+    committed = (REPO / "measurement" / "tiearb_widening_20260817"
                  / "shared_run_r4" / "FLOORS.json")
     if not committed.is_file():
         pytest.skip("the committed FLOORS.json is not in this tree")
