@@ -9,8 +9,30 @@
 #
 #   spent 2026-08-12 corpus : 28000000000 ..                 (consumed)
 #   tiearb2_20260816        : 28100000000 .. 28100000849     (consumed)
-#   THIS RUN  (base)        : 135000000000 .. 135000000849   (850 games)
-#   THIS RUN  (top-up)      : 136000000000 .. 136000000199   (<=200, RESERVED)
+#   base       135000000000 .. 135000000849  (850 games) RETAINED AS VALID INPUT
+#   released   136000000000                  RELEASED UNUSED — never generated
+#   EXTENSION  137000000000 ..               SPLIT BY STRATUM (FLOORS.json)
+#   top-up     138000000000 .. 138000000499  RESERVED, not licensed
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# R4 BAND ARITHMETIC — three ways, and only two of them generate (DESIGN R4-6)
+# ─────────────────────────────────────────────────────────────────────────────
+#   * **135e9 is RETAINED as INPUT and this script REFUSES to generate into it.**
+#     Its 850 games are reusable (`PREREG_FAILURE` §3): the R3.3 run stopped
+#     PRE-SCORING, so no `arb`, `ora`, `Δ`, CI or per-position value was ever
+#     computed for them. Re-generating there would duplicate seeds and fail
+#     `G-BAND`'s `n_duplicate_seeds == 0` on a healthy run.
+#   * **137e9 is the EXTENSION, and it is SPLIT BY STRATUM.** `+games` is a SUM
+#     OF TWO DISJOINT REQUIREMENTS, and `strata_root_overlap == 0` is a gate
+#     conjunct — so mining both strata from one undivided range would FAIL
+#     `G-DISJOINT` §2b(v) ON A PERFECTLY HEALTHY CORPUS. The two sub-ranges are
+#     committed in `RUN/FLOORS.json` and read from there; this script never
+#     invents one. Two invocations, two `--out` directories.
+#   * **138e9 is the top-up**, its own invocation, its own directory, its own
+#     `verify-champgames` file.
+#
+# A game seed mined into the wrong stratum is a `G-DISJOINT` FAILURE, not a
+# bookkeeping slip.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # W10.4 — WHAT THIS SCRIPT MUST NOT DO (verbatim from DESIGN §8)
@@ -32,9 +54,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # USAGE — this script NEVER self-launches; paste one of these.
 # ─────────────────────────────────────────────────────────────────────────────
-#   ./run_gen.sh {local|laptop-side}            # the 850-game base band
-#   ./run_gen.sh {local|laptop-side} --smoke    # the §7.2 timed 10-game GEN smoke
-#   ./run_gen.sh {local|laptop-side} --topup N  # the reserved 136e9 range, N<=200
+#   ./run_gen.sh {local|laptop-side} --extension s1   # 137e9, the S1 sub-range
+#   ./run_gen.sh {local|laptop-side} --extension s2   # 137e9, the S2 sub-range
+#   ./run_gen.sh {local|laptop-side} --smoke          # the §7.2 timed GEN smoke
+#   ./run_gen.sh {local|laptop-side} --topup N        # 138e9, N <= 500
+#
+# (there is no base-band mode: 135e9 is RETAINED INPUT, never re-generated)
 #
 # BOTH BOXES run the SAME command against the SAME `--out` on the share with
 # `--shared-claim` O_EXCL work-stealing, so a slow box simply claims fewer games.
@@ -74,18 +99,35 @@ for v in W_GEN_LOCAL W_GEN_LAPTOP NICE SHARE_LOCAL SHARE_REMOTE \
   [ -n "${!v:-}" ] || { echo "[gen] FATAL: $CONF does not set $v" >&2; exit 2; }
 done
 
+USAGE="usage: $0 {local|laptop-side} {--extension s1|--extension s2|--smoke|--topup N} [--dry-run]"
 BOX="${1:-}"
-MODE="full"
+MODE=""
 TOPUP_GAMES=0
+EXT_STRATUM=""
+#: `--dry-run` resolves EVERYTHING — conf, floors, band, sub-range, worker count,
+#: the full argv — prints it, and EXITS WITHOUT GENERATING. Every automated
+#: caller (tests, lint, the acceptance harness) uses it. It exists because this
+#: script's whole job is to start an expensive irreversible job, and a test that
+#: reaches the `exec` starts 850 real games: on 2026-08-18 a unit test that
+#: passed `--topup 201` did exactly that, at W48, into the reserved band.
+DRY_RUN="${WIDENING_GEN_DRY_RUN:-0}"
 shift || true
 while [ $# -gt 0 ]; do
   case "$1" in
-    --smoke) MODE="smoke" ;;
-    --topup) MODE="topup"; TOPUP_GAMES="${2:-200}"; shift ;;
-    *) echo "usage: $0 {local|laptop-side} [--smoke | --topup N]" >&2; exit 2 ;;
+    --smoke)     MODE="smoke" ;;
+    --extension) MODE="extension"; EXT_STRATUM="${2:-}"; shift ;;
+    --topup)     MODE="topup"; TOPUP_GAMES="${2:-0}"; shift ;;
+    --dry-run)   DRY_RUN=1 ;;
+    --base|--full)
+      echo "[gen] REFUSING: band 135e9 is RETAINED AS VALID INPUT (850 games," \
+           "PREREG_FAILURE §3) and is NEVER re-generated. Generating there" \
+           "would duplicate seeds and fail G-BAND's n_duplicate_seeds == 0 on" \
+           "a healthy run. Use --extension s1|s2." >&2; exit 2 ;;
+    *) echo "$USAGE" >&2; exit 2 ;;
   esac
   shift
 done
+[ -n "$MODE" ] || { echo "$USAGE" >&2; exit 2; }
 
 case "$BOX" in
   local)       W="$W_GEN_LOCAL";  REPO="$REPO_LOCAL";  SHARE="$SHARE_LOCAL" ;;
@@ -93,13 +135,17 @@ case "$BOX" in
   *) echo "usage: $0 {local|laptop-side} [--smoke | --topup N]" >&2; exit 2 ;;
 esac
 
-# --- the band, and the knobs matched VERBATIM to CORPUS_MANIFEST.json --------- #
-SEED_START=135000000000
-GAMES=850
-TOPUP_SEED_START=136000000000
-TOPUP_MAX=200
+# --- the bands, and the knobs matched VERBATIM to CORPUS_MANIFEST.json -------- #
+BASE_SEED_START=135000000000       # RETAINED INPUT — never generated here
+EXTENSION_SEED_START=137000000000  # split by stratum; sub-ranges from FLOORS.json
+TOPUP_SEED_START=138000000000
+TOPUP_MAX=500
 SMOKE_GAMES=10
-COMMITTED_WORKER_SECS_PER_GAME=990.0     # DESIGN §7 currency A
+COMMITTED_WORKER_SECS_PER_GAME=372.0     # R4-5: 297.6 measured x 1.25 margin
+                                         # (R3 carried 990 inherited; the fresh
+                                         # same-config GEN smoke measured 297.6,
+                                         # so the one-sided HALT now trips above
+                                         # 465.0 = a REAL trigger, not a formality)
 HALT_RATIO=1.25                          # §7.3 — ONE-SIDED (costlier only)
 
 # `--backend rust`: DESIGN §3 names it in the config of record, and W10.1's own
@@ -109,11 +155,53 @@ HALT_RATIO=1.25                          # §7.3 — ONE-SIDED (costlier only)
 # carried here EXPLICITLY and this line is the audit trail for that reading.
 BACKEND=rust
 
-OUT="$SHARE/$RUN_ID/gen"                 # exactly what W6 phase 1 collects from
-OUT_TOPUP="$SHARE/$RUN_ID/gen_topup"     # SEPARATE dir — see the note below
 RUN_DIR="$REPO/measurement/$RUN_ID/shared_run"
+FLOORS="$RUN_DIR/FLOORS.json"
+
+# Each band/stratum generates into its OWN directory, so each gets its OWN
+# `verify-champgames` file and G-BAND's N-file form holds end-to-end. Merging
+# them into one --out would put seeds from two committed ranges in front of one
+# verify — the widened-band failure R3's defect B1 closed, generalised.
+OUT_EXT_S1="$SHARE/$RUN_ID/gen_ext_s1"
+OUT_EXT_S2="$SHARE/$RUN_ID/gen_ext_s2"
+OUT_TOPUP="$SHARE/$RUN_ID/gen_topup"
+
+# `FLOORS.json` is the ONLY source of the extension sub-ranges. R4-8b makes it
+# predate the band claim precisely so this script cannot invent one.
+ext_field() {
+  [ -f "$FLOORS" ] || { echo "[gen] FATAL: $FLOORS missing — R4-8b writes it" \
+    "BEFORE the extension band is claimed and before one game is generated." \
+    "The sub-ranges live there and are never invented here." >&2; exit 2; }
+  "$REPO/.venv/bin/python" - "$FLOORS" "$1" <<'PYEOF'
+import json, sys
+d = json.loads(open(sys.argv[1]).read()); k = sys.argv[2]
+sr = d.get("sub_ranges") or {}
+if k in ("s1_lo", "s1_hi", "s2_lo", "s2_hi"):
+    tag, which = k.split("_")
+    rng = sr.get(tag)
+    print("" if not rng else rng[0 if which == "lo" else 1])
+else:
+    print(d.get(k, ""))
+PYEOF
+}
 
 case "$MODE" in
+  extension)
+    case "$EXT_STRATUM" in
+      s1) THIS_OUT="$OUT_EXT_S1"; G="$(ext_field games_extension_s1)"
+          THIS_SEED="$(ext_field s1_lo)" ;;
+      s2) THIS_OUT="$OUT_EXT_S2"; G="$(ext_field games_extension_s2)"
+          THIS_SEED="$(ext_field s2_lo)" ;;
+      *) echo "$USAGE" >&2; exit 2 ;;
+    esac
+    if [ -z "$THIS_SEED" ] || [ -z "$G" ] || [ "$G" -eq 0 ] 2>/dev/null; then
+      echo "[gen] REFUSING: FLOORS.json commits NO $EXT_STRATUM extension" \
+           "sub-range (games_extension_$EXT_STRATUM = ${G:-0}). On the S1 ONLY" \
+           "row there is no S2 sub-range and NONE MAY BE GENERATED." >&2
+      exit 2
+    fi
+    THIS_GAMES="$G"
+    ;;
   topup)
     # G-BAND's TWO-FILE FORM: the top-up is a SEPARATE INVOCATION into a
     # SEPARATE --out, so W6 phase 1 collects two champ-games files and verifies
@@ -122,27 +210,44 @@ case "$MODE" in
     # neither range, which is exactly the failure R3's defect B1 closed.
     [ "$TOPUP_GAMES" -ge 1 ] && [ "$TOPUP_GAMES" -le "$TOPUP_MAX" ] || {
       echo "[gen] FATAL: --topup N must be 1..$TOPUP_MAX (the §3 blind clause is" \
-           "pre-licensed at <=200 games); got '$TOPUP_GAMES'" >&2; exit 2; }
+           "138e9 +0..+499); got '$TOPUP_GAMES'" >&2; exit 2; }
     THIS_OUT="$OUT_TOPUP"; THIS_SEED="$TOPUP_SEED_START"; THIS_GAMES="$TOPUP_GAMES"
     ;;
   smoke)
-    # SAME BAND, the band's FIRST TEN, RETAINED. No seed outside a committed
-    # range is ever created, so G-BAND is untouched and the full run simply
-    # resumes into the same --out under --shared-claim (the 10 are already done).
-    THIS_OUT="$OUT"; THIS_SEED="$SEED_START"; THIS_GAMES="$SMOKE_GAMES"
+    # SAME BAND as the run it prices — the EXTENSION S1 sub-range's FIRST TEN,
+    # RETAINED. No seed outside a committed range is ever created, so G-BAND is
+    # untouched and the extension run simply resumes into the same --out under
+    # --shared-claim (those ten are already done).
+    THIS_OUT="$OUT_EXT_S1"; THIS_SEED="$(ext_field s1_lo)"
+    THIS_GAMES="$SMOKE_GAMES"
+    [ -n "$THIS_SEED" ] || { echo "[gen] FATAL: no S1 extension sub-range in" \
+      "$FLOORS" >&2; exit 2; }
     ;;
-  *)
-    THIS_OUT="$OUT"; THIS_SEED="$SEED_START"; THIS_GAMES="$GAMES"
-    ;;
+  *) echo "$USAGE" >&2; exit 2 ;;
 esac
-
-mkdir -p "$THIS_OUT"
-# shellcheck disable=SC1091
-. "$REPO/scripts/distill_flywheel/champ_env.sh"
 
 echo "[gen] mode=$MODE box=$BOX W=$W backend=$BACKEND out=$THIS_OUT" \
      "games=$THIS_GAMES seed_start=$THIS_SEED"
 echo "[gen] CORPUS SUBSTRATE ONLY — 0 strength games, no results.csv row, no band promotion."
+
+GEN_ARGS_PREVIEW="--games $THIS_GAMES --k-dets 4 --sims 688 --exact-endgame \
+--exact-max-k 2 --rules-profile walled --backend $BACKEND --workers $W \
+--seed-start $THIS_SEED --log-actions --actions-only --out $THIS_OUT \
+--shared-claim"
+if [ "$DRY_RUN" != "0" ]; then
+  # ⚠️ EXIT BEFORE ANYTHING IRREVERSIBLE. Nothing is created — not the output
+  # directory, not a claim, not a game. Everything above this line is pure
+  # resolution (conf, floors, band, sub-range, worker count) and is exactly what
+  # a real run would use, so a dry run audits the resolution without buying it.
+  echo "[gen] DRY RUN — resolved command (NOTHING GENERATED, no directory created):"
+  echo "[gen]   nice -n $NICE $REPO/.venv/bin/python -u \\"
+  echo "[gen]     $REPO/scripts/distill_flywheel/gen_fair_distill.py $GEN_ARGS_PREVIEW"
+  exit 0
+fi
+
+mkdir -p "$THIS_OUT"
+# shellcheck disable=SC1091
+. "$REPO/scripts/distill_flywheel/champ_env.sh"
 
 GEN_ARGS=(
   --games "$THIS_GAMES"

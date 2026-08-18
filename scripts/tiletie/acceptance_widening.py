@@ -334,8 +334,11 @@ class Gate:
 # --------------------------------------------------------------------------- #
 LEGS = f"legs/s*/{JUDGE}/walled/leg*/manifest.json"
 RECORDS = f"s*/{JUDGE}/walled/leg*/records/*.json"
+#: R4 §2b(vi) — all SEVEN comparisons must be present. Three layers on each of
+#: the six; `b_rid` only on the rid-txt one.
 COMPARISONS_FULL = ("s1_vs_tiletie0812", "s1_vs_tiearb2_0816",
-                    "s2_vs_tiletie0812", "s2_vs_tiearb2_0816")
+                    "s2_vs_tiletie0812", "s2_vs_tiearb2_0816",
+                    "base_vs_extension", "s1_vs_s2")
 COMPARISON_RID_ONLY = "s1s2_vs_exclude_rids"
 
 
@@ -436,9 +439,28 @@ def book_fixture(R: Path, S: Path) -> list:
                  for c in COMPARISONS_FULL
                  for lay in ("a_root_id", "b_rid", "c_position_digest")]
               + [f"comparisons.{COMPARISON_RID_ONLY}.layers.b_rid.n_intersection",
-                 f"comparisons.{COMPARISON_RID_ONLY}.passed"])],
-        note="FIVE comparisons; the fifth is RID LAYER ONLY (EXCLUDE_RIDS_all.txt "
-             "is a rid text file). No fallback — a missing gate file is a FAIL",
+                 f"comparisons.{COMPARISON_RID_ONLY}.passed"]
+              + ["digest_exclusions.*.n_excluded", "digest_exclusions.*.rate",
+                 "digest_exclusions.*.bound_n",
+                 # ⚠️ an address G-DISJOINT READS — ABSENT IS FAIL
+                 "digest_exclusions.*.denominator_source",
+                 "digest_exclusions.*.rids", "digest_exclusions.*.void",
+                 "total_order", "voided_strata"])],
+        note="SEVEN comparisons (R4 §2b(vi)): three layers on the four "
+             "ARMS-vs-ARMS, three on base_vs_extension (per stratum), three on "
+             "s1_vs_s2, and b_rid ONLY on s1s2_vs_exclude_rids. Plus the "
+             "exclusion block, whose `denominator_source` is itself a read "
+             "address. No fallback — a missing gate file is a FAIL",
+        phase="4a-fixture"))
+
+    g.append(Gate("FLOORS.json (the frozen floors + exclusion denominator)", [
+        Check(R, "FLOORS.json",
+              ["n1", "n2", "option_label", "r_s1", "r_s2cap",
+               "games_extension_s1", "games_extension_s2", "sub_ranges"])],
+        note="R4-8b: written BEFORE the extension band is claimed and committed "
+             "WITH the blind pair. It carries the G-COMPLETE floors, the "
+             "extension sub-ranges AND the FROZEN exclusion denominator — a "
+             "floor chosen after supply is known is a floor fitted to the data",
         phase="4a-fixture"))
 
     g.append(Gate("G-DRAW", [
@@ -575,14 +597,17 @@ def book_fixture(R: Path, S: Path) -> list:
 
 def book_corpus(R: Path, S: Path) -> list:
     """4b — the real corpus artifacts (no outcome statistic among them)."""
-    g = [Gate("G-BAND", [
-        Check(R, "corpus/CHAMP_GAMES_VERIFY.json",
-              ["band_ok", "seed_band", "n_out_of_band", "n_duplicate_seeds",
-               "n_games_realized", "sha256_of_sorted_seeds"])],
-        note="no seed list exists anywhere BY DESIGN — the emitter publishes "
-             "sha256_of_sorted_seeds. If the blind top-up was exercised, "
-             "CHAMP_GAMES_VERIFY_TOPUP.json must satisfy the same conjuncts "
-             "against its OWN seed_band",
+    band_keys = ["band_ok", "seed_band", "n_out_of_band", "n_duplicate_seeds",
+                 "n_games_realized", "sha256_of_sorted_seeds"]
+    g = [Gate("G-BAND (N-file: base + extension [+ top-up])", [
+        Check(R, "corpus/CHAMP_GAMES_VERIFY.json", band_keys),
+        Check(R, "corpus/CHAMP_GAMES_VERIFY_EXT.json", band_keys)],
+        note="R4 §2c generalises the two-file form to N: EACH generated range "
+             "emits its OWN verify file, checked against ITS OWN range, with "
+             "its own committed floor. The top-up file is required IFF the "
+             "clause was exercised. 136e9 is RELEASED UNUSED and must appear in "
+             "NO file. No seed list exists anywhere by design — the emitter "
+             "publishes sha256_of_sorted_seeds",
         phase="4b")]
 
     g.append(Gate("G-SALT", [
@@ -665,13 +690,38 @@ def build_fixture_tree(scratch) -> Path:
     excl = Path(scratch) / "EXCLUDE_RIDS_all.txt"
     excl.write_text("# fixture exclusion list\nrefx:doesnotexist:p000\n")
 
+    # R4 shape: BOTH strata carry base-band AND extension-band positions (so
+    # `base_vs_extension` is a real comparison), and one EXTENSION digest is
+    # planted to collide with a banked corpus — so the exclusion path is
+    # exercised on a fixture instead of first meeting it on a real corpus, which
+    # is how the R3.3 pair died.
+    banked_leg = (Path(refs["tiletie0812"]) /
+                  f"positions_{WF.PROFILE}_leg1.jsonl")
+    first = json.loads(banked_leg.read_text().splitlines()[0])
+    # ⚠️ the two strata mine DISJOINT sub-ranges of BOTH bands — that split IS
+    # the disjointness mechanism, and a fixture that shared a range would fail
+    # `s1_vs_s2` on the rid layer exactly as a mis-split real corpus would.
+    for tag, base_lo, ext_lo, sd in (("s1", 135000000000, 137000000000, 41),
+                                     ("s2", 135000000350, 137000000508, 43)):
+        WF.make_r4_corpus(corpus / f"positions_{tag}", stratum=tag, seed=sd,
+                          base_lo=base_lo, ext_lo=ext_lo,
+                          collide_with=(first["rid"], first["checksum"])
+                          if tag == "s1" else None)
+    WF.make_records(share, json.loads(
+        (corpus / "positions_s1" / "ARMS.json").read_text()),
+        m=128, seed=11, stratum_dir="s1")
+    WF.make_records(share, json.loads(
+        (corpus / "positions_s2" / "ARMS.json").read_text()),
+        m=32, seed=13, stratum_dir="s2")
+
     cmds = [
-        [py, str(HERE / "gate_disjoint.py"), "--merged",
+        [py, str(HERE / "gate_disjoint.py"), "--r4",
          "--s1-dir", str(corpus / "positions_s1"),
          "--s2-dir", str(corpus / "positions_s2"),
          "--ref", f"tiletie0812={refs['tiletie0812']}",
          "--ref", f"tiearb2_0816={refs['tiearb2_0816']}",
          "--exclude-rids", str(excl),
+         "--floors", str(run / "FLOORS.json"),
          "--out", str(run / "GATE_DISJOINT.json")],
         [py, str(HERE / "gate_draw.py"),
          "--arms", str(corpus / "positions_s1" / "ARMS.json"),
@@ -687,6 +737,10 @@ def build_fixture_tree(scratch) -> Path:
          "--smoke-manifest", str(run / "SMOKE_MANIFEST_S1_tier1-greedy.json"),
          "--smoke-manifest", str(run / "SMOKE_MANIFEST_S1_clair-puct.json"),
          "--stage1b-ladder", str(fx["stage1b_ladder"]),
+         "--floors", str(run / "FLOORS.json"),
+         "--champ-games-verify", str(corpus / "CHAMP_GAMES_VERIFY.json"),
+         "--champ-games-verify", str(corpus / "CHAMP_GAMES_VERIFY_EXT.json"),
+         "--gate-disjoint", str(run / "GATE_DISJOINT.json"),
          # --d-draw is DELIBERATELY OMITTED: the fixture pass must exercise the
          # `d_draw_ran == false` state, so row 3 of the CLOSED allow_null table
          # is audited on the day it is written and not on the day it is needed.

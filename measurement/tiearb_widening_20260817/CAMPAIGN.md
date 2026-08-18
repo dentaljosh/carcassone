@@ -58,6 +58,34 @@ orchestrator's reconciliation; the rung plans are the authority on their own des
    W-code merged; §9 sequence executing.
 3. Game-cell decision only after the offline read, per ruling 5.
 
+## Two-box SCORING layer (build note, 2026-08-18 — NOT a prereg, NOT a ruling)
+
+`run_tiletie.py` has **no `--shared-claim` and no cross-box work stealing**, so the
+scoring legs cannot be split the way generation is: as-is they are single-box
+(~31 h local-only at `W_EVAL_LOCAL=30`). The owner ruled to build the two-box layer.
+It is a **parameterised copy of the `tiearb2_20260816` machinery** and lives OUTSIDE
+`shared_run/` — it is throughput plumbing, not part of the frozen pair:
+
+| file | what it owns |
+|---|---|
+| [`stage_chunks.py`](stage_chunks.py) | `POSITION_ORDER.json` — ONE committed seeded shuffle (seed **20260817**) per stratum, cut into whole-rid sequential chunks — and the per-chunk `run_tiletie`-shaped plan dirs under `chunks/<stratum>/chunk<k>/`. `verify` re-derives byte-identically. |
+| [`ALLOCATION.conf`](ALLOCATION.conf) | the static (stratum × box × judge) → chunk map, with the `30 : 22×0.75` capacity arithmetic shown. **Throughput only — it cannot move a value.** |
+| [`run_scoring.sh`](run_scoring.sh) | `run_scoring.sh {local\|laptop-side}` — sources `WORKERS.conf` (`W_EVAL_*`) + `ALLOCATION.conf`, pre-launch aborts, then one `run_tiletie` invocation per allocated chunk at DESIGN §4's knobs. |
+| [`merge_legs.py`](merge_legs.py) / [`merge_scoring.sh`](merge_scoring.sh) | reassembles the per-chunk leg output into the exact layout the READ_RULE addresses, with a **per-rid completeness check** that fails loudly on any gap or duplicate. |
+
+**Gate neutrality** (the claim the drafter signs): world/playout seeds are
+`sha256(tag|rid|j|salt)` (`oracle_score_pilot.world_seed`/`playout_seed`, which
+`tier1_rust_leg` **imports** rather than re-implements). Neither the chunk, the box,
+the worker count, the row's index in its leg file, nor `M` enters the derivation.
+Chunks are sets of **whole rids**, so `G-CRN`'s cross-judge join and the analyzer's
+per-position pairing on `rid` are indifferent to the split, and the merged tree is
+byte-indistinguishable **per rid** from a single-box run. Tests:
+`tests/test_tiearb_widening_chunks.py`.
+
+Realized two-box scoring wall ≈ **20 h** (vs ~31 h single-box); the DESIGN §7 "17.9 h
+parity" figure is the 52-*nominal*-worker number that does not price the laptop's
+~25% per-worker slowness.
+
 ## Owner decision asks (carried to Joshua)
 
 - Ratify **eps>0 closure** on banked data (rung funded, answered without spend).

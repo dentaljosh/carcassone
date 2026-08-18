@@ -247,13 +247,115 @@ def make_smoke_manifest(path, *, judge, stratum="S1", m=128, c=0.18):
     }, indent=2, sort_keys=True))
 
 
+def make_r4_corpus(out_dir, *, stratum="s1", n_base=8, n_ext=6, m=128, seed=41,
+                   base_lo=135000000000, ext_lo=137000000000,
+                   collide_with=None):
+    """An R4-shaped stratum: positions from BOTH the base band (135e9) and the
+    EXTENSION band (137e9), in one ARMS.json — which is what makes
+    `base_vs_extension` a real comparison rather than an empty one.
+
+    `collide_with` = `(rid, checksum)` plants a DIGEST COLLISION against another
+    corpus, so the exclusion path is exercised on a fixture instead of first
+    meeting it on a real corpus (which is how R3.3 died).
+    """
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    rng = random.Random(seed)
+    arms_index, leg_lines = {}, []
+    plan_capped = 0
+
+    def _add(i, band_lo, tag):
+        nonlocal plan_capped
+        seed_i = band_lo + i
+        # the REAL rid shape: the deck seed is carried IN the rid, which is what
+        # `band_of_rid` reads to place a position in the total order
+        rid = f"tt_sp_{seed_i}_p{i % 7}"
+        root = f"tt_sp_{seed_i}"
+        n_full = 3 + (i % 4)
+        arms_full = [100 + i * 10 + k for k in range(n_full)]
+        kept, capped, _ = BP._seeded_cap(rid, arms_full[1:], BP.DEPLOYED_CAP_J)
+        subset_j4 = [arms_full[0]] + list(kept)
+        arms = list(arms_full)
+        champ_outside = (i % 3) == 0
+        if champ_outside:
+            arms = arms + [900 + i]
+            champ_action, champ_index = arms[-1], len(arms) - 1
+        else:
+            champ_index = 1 % len(arms)
+            champ_action = arms[champ_index]
+        capped_at_4 = bool(capped) or (i % 2 == 0)
+        plan_capped += int(capped_at_4)
+        arms_index[rid] = {
+            "rid": rid, "root_id": root, "stratum": "selfplay",
+            "rules_profile": PROFILE, "ply": 10 + i,
+            "phase_bucket": "mid", "tercile": "mid", "band": tag,
+            "arms": arms, "arms_full": arms_full, "subset_j4": subset_j4,
+            "subset_j4_id": BP._subset_id(rid, subset_j4),
+            "capped_at_4": capped_at_4, "capped": False,
+            "cap_seed": BP._stable_seed(BP.CAP_SEED_TAG, rid, BP.CAP_SEED_DATE),
+            "champ_action": champ_action, "champ_arm_action": champ_action,
+            "champ_arm_index": champ_index,
+            "champ_outside_tieset": champ_outside,
+            "all_transposition": False,
+            "n_distinct_afterstates": n_full, "tie_size_exact": n_full,
+        }
+        leg_lines.append({"rid": rid, "root_id": root, "leg": 1,
+                          "checksum": f"BOARD::{stratum}::{tag}::{i:04d}"})
+        return rid
+
+    for i in range(n_base):
+        _add(i, base_lo, "135e9")
+    for i in range(n_ext):
+        _add(i, ext_lo, "137e9")
+
+    if collide_with:
+        # plant the collision on an EXTENSION rid, so the total order excludes
+        # THIS side and never the earlier corpus
+        _rid, checksum = collide_with
+        for ln in leg_lines:
+            if "137e9" in ln["checksum"]:
+                ln["checksum"] = checksum
+                break
+
+    (out / "ARMS.json").write_text(json.dumps(arms_index, indent=2, sort_keys=True))
+    (out / "DROPPED_ALL_TRANSPOSITION.json").write_text(
+        json.dumps({"rows": []}, indent=2))
+    (out / "POSITIONS_PLAN.json").write_text(json.dumps({
+        "n_positions": len(arms_index), "uncapped": True, "cap_j": None,
+        "cap_j_label": BP.cap_j_label(None), "deployed_cap_j": BP.DEPLOYED_CAP_J,
+        "n_positions_capped_at_4": plan_capped, "m_worlds_planned": m,
+        "afterstate_dedupe": {"applied": True, "n_dropped_all_transposition": 0},
+        "exclude_rids": {"n_requested": 0, "n_removed_from_supply": 0,
+                         "n_supply_after_exclusion": len(arms_index)},
+        "counts_by_stratum": {"selfplay": len(arms_index)},
+        "sample_seed": 20260819,
+    }, indent=2, sort_keys=True))
+    (out / f"positions_{PROFILE}_leg1.jsonl").write_text(
+        "\n".join(json.dumps(x) for x in leg_lines) + "\n")
+    return arms_index, leg_lines
+
+
+def make_floors(path, option="S2 at 700"):
+    import floors as FL                                            # noqa: E402
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    body = FL.build(option)
+    p.write_text(json.dumps(body, indent=2, sort_keys=True))
+    return body
+
+
 def make_champ_games_verify(path, *, lo=135000000000, hi=135000000849, n=850):
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps({
         "band_ok": True, "seed_band": [lo, hi], "n_games_realized": n,
         "n_out_of_band": 0, "n_duplicate_seeds": 0, "n_distinct_seeds": n,
-        "sha256_of_sorted_seeds": hashlib.sha256(b"fixture").hexdigest(),
+        # derived from the RANGE, so two files over different ranges get
+        # different digests — the emitter publishes a digest and no seed list,
+        # so identical digests across two files is the only detectable form of
+        # "a seed appears in two files" (R4 §2c)
+        "sha256_of_sorted_seeds": hashlib.sha256(
+            f"fixture|{lo}|{hi}|{n}".encode()).hexdigest(),
         "count_ok": True, "n_games_expected": n, "n_games_min_required": n,
         "shortfall_vs_expected": 0, "path": "fixture",
         "seed_min_observed": lo, "seed_max_observed": hi,
@@ -333,6 +435,10 @@ def build_full_fixture(root, *, m_s1=128, m_s2=32, n_s1=12, n_s2=12):
     make_bitexact(run / "GATE_BITEXACT_HEAD.json")
     make_stage1b_ladder(root / "stage1b_ladder.json")
     make_d_draw(root / "d_draw.json")
+    # R4: the committed floors + the N-file band verify (base / extension / top-up)
+    make_floors(run / "FLOORS.json", "S2 at 700")
+    make_champ_games_verify(corpus / "CHAMP_GAMES_VERIFY_EXT.json",
+                            lo=137000000000, hi=137000003406, n=3407)
     return {"run": run, "share": share, "root": root,
             "arms": {"S1": arms_s1, "S2": arms_s2},
             "stage1b_ladder": root / "stage1b_ladder.json",

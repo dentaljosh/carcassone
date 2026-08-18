@@ -93,9 +93,27 @@ CAP_J=inf                          # UNCAPPED — DESIGN §4's graded-knob table
 S1_SEED_LO=$SEED_LO;               S1_SEED_HI=135000000349
 S2_SEED_LO=135000000350;           S2_SEED_HI=$SEED_HI
 S1_MAX_PER_GAME=4;                 S2_MAX_PER_GAME=3
-S1_TARGET=1400                     # DESIGN §3: n1 = 1,350, supply at target 1,400
 S2_MAX_CAPPED_PER_ROOT=3           # PLAN_J ask 4 — root-bootstrap SEs
-S2_TARGET=0                        # 0 = take ALL remaining supply
+S1_TARGET=0                        # 0 = take ALL remaining supply; the FLOOR
+S2_TARGET=0                        # is the gate, not a sampler cap (R4 §2a)
+
+# --- R4: sizing comes from FLOORS.json, never from raw row counts ------------- #
+# R3 sized from RAW CENSUS ROWS and was unreachable by 27x on S2. R4's floors are
+# owner parameters committed BEFORE the extension band was claimed; this driver
+# READS them and reports realized supply against them, before any scoring leg.
+FLOORS="$RUN_DIR/FLOORS.json"
+[ -f "$FLOORS" ] || { echo "[widening] FATAL: $FLOORS missing. R4-8b: it is" \
+  "written BEFORE the extension band is claimed and committed WITH the blind" \
+  "pair. It carries the completion floors, the extension sub-ranges AND the" \
+  "frozen exclusion denominator — nothing may proceed without it." >&2; exit 2; }
+"$PY" "$REPO/scripts/tiletie/floors.py" verify --path "$FLOORS" > /dev/null \
+  || { echo "[widening] FATAL: $FLOORS did not validate" >&2; exit 2; }
+read_floor() { "$PY" -c "import json,sys;print(json.load(open(sys.argv[1]))[sys.argv[2]])" "$FLOORS" "$1"; }
+N1="$(read_floor n1)";  N2="$(read_floor n2)"
+GATE_FLOOR_S1="$(read_floor gate_floor_s1)"
+GATE_FLOOR_S2="$(read_floor gate_floor_s2)"
+OPTION_LABEL="$(read_floor option_label)"
+RUNG3_BOUGHT="$(read_floor rung3_bought)"
 
 BANKED_TILETIE="$REPO/measurement/tiletie_pricing_20260812/positions_pooled"
 BANKED_TIEARB2="$REPO/measurement/tiearb2_20260816/corpus/positions"
@@ -308,6 +326,73 @@ if want 5; then
     } > "$EXCL_BANKED"
   fi
 
+  # ---- 5a2: the R4-3 DIGEST-EXCLUSION PROBE -------------------------------- #
+  # R4-3 rule 5: excluded rids NEVER enter POSITIONS_PLAN, never reach a leg,
+  # and the completion floors are evaluated on the POST-exclusion count — so an
+  # exclusion can never be used to explain away a shortfall after the fact.
+  # A digest collision can only be SEEN on a realized board census, so the
+  # exclusions are computed on a THROWAWAY PROBE build and then applied to the
+  # real one. Deriving them from the final corpus instead would be circular.
+  EXCL_DIGEST="$CORPUS/EXCLUDE_RIDS_digest_r4.txt"
+  PROBE_S1="$CORPUS/_probe_s1"; PROBE_S2="$CORPUS/_probe_s2"
+  if [ -f "$EXCL_DIGEST" ]; then
+    skip 5a2 "$EXCL_DIGEST"
+  else
+    say "PHASE 5a2 PROBE BUILD (banked exclusions only, throwaway)"
+    rm -rf "$PROBE_S1" "$PROBE_S2"; mkdir -p "$PROBE_S1"
+    build_positions_into "$PROBE_S1" s1 "$EXCL_BANKED" 0 \
+      --allow-missing-champ-picks 2>&1 | tee "$LOGS/p5a2_probe_s1.log"
+    PROBE_S2_ARGS=()
+    if [ "$RUNG3_BOUGHT" = "True" ]; then
+      mkdir -p "$PROBE_S2"
+      build_positions_into "$PROBE_S2" s2 "$EXCL_BANKED" 0 \
+        --allow-missing-champ-picks 2>&1 | tee "$LOGS/p5a2_probe_s2.log"
+      PROBE_S2_ARGS=(--s2-dir "$PROBE_S2")
+    fi
+
+    say "PHASE 5a2 R4 G-DISJOINT on the PROBE -> the exclusion set"
+    # rc is captured, NOT fatal: a VOID must be REPORTED by phase 7 with every
+    # other gate beside it, not abort the build here.
+    set +e
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/gate_disjoint.py" --r4 \
+      --s1-dir "$PROBE_S1" "${PROBE_S2_ARGS[@]}" \
+      --ref "tiletie0812=$BANKED_TILETIE" \
+      --ref "tiearb2_0816=$BANKED_TIEARB2" \
+      --exclude-rids "$BANKED_EXCLUDE" \
+      --floors "$FLOORS" \
+      --out "$RUN_DIR/GATE_DISJOINT_PROBE.json" 2>&1 \
+      | tee "$LOGS/p5a2_gate_probe.log"
+    set -e
+
+    say "PHASE 5a2 -> $EXCL_DIGEST (the rids the total order excludes)"
+    "$PY" - "$RUN_DIR/GATE_DISJOINT_PROBE.json" "$EXCL_DIGEST" <<'PYEOF'
+import json, sys
+rep = json.loads(open(sys.argv[1]).read())
+rids, lines = [], []
+for s, v in sorted((rep.get("digest_exclusions") or {}).items()):
+    rids += list(v.get("rids") or [])
+    lines.append(f"# {s}: n_excluded={v.get('n_excluded')} "
+                 f"rate={v.get('rate')} bound={v.get('bound_n')} "
+                 f"void={v.get('void')} denominator_source="
+                 f"{v.get('denominator_source')}")
+head = ["# R4-3 digest exclusions, resolved by the TOTAL ORDER "
+        "spent < 135e9 < 137e9 < 138e9 (the later position is excluded);",
+        "# an S1<->S2 collision excludes the S2 rid regardless of band.",
+        "# Computed on a THROWAWAY PROBE build and applied BEFORE "
+        "POSITIONS_PLAN freezes (R4-3 rule 5).",
+        "# OUTCOME-INDEPENDENT BY CONSTRUCTION: the digest is a function of the "
+        "BOARD alone, computed before any value exists."] + lines
+open(sys.argv[2], "w").write("\n".join(head) + "\n"
+                             + "".join(r + "\n" for r in sorted(set(rids))))
+print(f"[exclusions] {len(set(rids))} rid(s) -> {sys.argv[2]}")
+PYEOF
+  fi
+
+  # every real build excludes the banked rids AND the R4-3 digest exclusions
+  EXCL_FINAL="$CORPUS/EXCLUDE_RIDS_final.txt"
+  { printf '# banked rid exclusions + the R4-3 digest exclusions\n'
+    cat "$EXCL_BANKED" "$EXCL_DIGEST"; } > "$EXCL_FINAL"
+
   # ---- 5b: S1, one pass, all remaining supply up to the target ------------- #
   P_S1="$(positions_dir s1)"
   if [ -f "$P_S1/POSITIONS_PLAN.json" ]; then
@@ -315,7 +400,7 @@ if want 5; then
   else
     mkdir -p "$P_S1"
     say "PHASE 5b BUILD POSITIONS s1: UNCAPPED, target $S1_TARGET -> $P_S1"
-    build_positions_into "$P_S1" s1 "$EXCL_BANKED" "$S1_TARGET" \
+    build_positions_into "$P_S1" s1 "$EXCL_FINAL" "$S1_TARGET" \
       --champ-picks "$(picks_dir s1)/champ_picks.jsonl" 2>&1 \
       | tee "$LOGS/p5b_build_s1.log"
   fi
@@ -331,7 +416,7 @@ if want 5; then
     if [ ! -f "$EXCL_S2" ]; then
       say "PHASE 5c PASS 1 (s2, --allow-missing-champ-picks, no playouts)"
       rm -rf "$P_S2_PASS1"; mkdir -p "$P_S2_PASS1"
-      build_positions_into "$P_S2_PASS1" s2 "$EXCL_BANKED" 0 \
+      build_positions_into "$P_S2_PASS1" s2 "$EXCL_FINAL" 0 \
         --allow-missing-champ-picks 2>&1 | tee "$LOGS/p5c_s2_pass1.log"
 
       say "PHASE 5c SELECT <=$S2_MAX_CAPPED_PER_ROOT capped rids per root"
@@ -344,7 +429,7 @@ if want 5; then
       { printf '# S2 pass-2 exclusion list = banked rids + every pass-1 rid NOT\n'
         printf '# selected as one of the <=%s capped plies of its root.\n' \
                "$S2_MAX_CAPPED_PER_ROOT"
-        cat "$EXCL_BANKED" "$CORPUS/_excl_s2_selection.txt"
+        cat "$EXCL_FINAL" "$CORPUS/_excl_s2_selection.txt"
       } > "$EXCL_S2"
     fi
     mkdir -p "$P_S2"
@@ -399,22 +484,100 @@ if want 6; then
 fi
 
 # --------------------------------------------------------------------------- #
-# PHASE 7 — THE GATES (always run): W5's merged G-DISJOINT and G-DRAW            #
+# PHASE 7 — THE GATES. ALL of them RUN; NONE short-circuits the others.          #
 # --------------------------------------------------------------------------- #
-if want 7; then
-  say "PHASE 7 G-DISJOINT (merged, five comparisons + strata_root_overlap)"
-  nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/gate_disjoint.py" --merged \
-    --s1-dir "$(positions_dir s1)" --s2-dir "$(positions_dir s2)" \
-    --ref "tiletie0812=$BANKED_TILETIE" \
-    --ref "tiearb2_0816=$BANKED_TIEARB2" \
-    --exclude-rids "$BANKED_EXCLUDE" \
-    --out "$RUN_DIR/GATE_DISJOINT.json" 2>&1 | tee "$LOGS/p7_gate_disjoint.log"
+# ⚠️ R4 §8 (W6.i), bought with a dead prereg: under `set -e` the R3.3 driver
+# ABORTED at the first failing gate, so `GATE_DRAW.json` WAS NEVER EMITTED. A
+# gate suite that short-circuits tells you about ONE failure when it could have
+# told you about ALL of them — and the run was already dead, so the information
+# was free. `run_tiletie`'s own preflight already has the right behaviour ("all
+# checks always run and are all printed, not short-circuited"); this phase now
+# matches it. Failures are AGGREGATED and reported together at the end.
+GATE_FAILURES=()
+run_gate() {                                # run_gate <name> <cmd...>
+  local name="$1"; shift
+  say "PHASE 7 GATE $name"
+  if "$@"; then
+    say "PHASE 7 GATE $name: PASS"
+  else
+    local rc=$?
+    GATE_FAILURES+=("$name(rc=$rc)")
+    say "PHASE 7 GATE $name: ***** FAIL (rc=$rc) ***** — CONTINUING so every"
+    say "                    other gate still reports (R4 §8 W6.i)"
+  fi
+}
 
-  say "PHASE 7 G-DRAW (the recorded J=4 subset reproduces this repo's own draw)"
-  nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/gate_draw.py" \
-    --arms "$(positions_dir s1)/ARMS.json" \
-    --arms "$(positions_dir s2)/ARMS.json" \
-    --out "$RUN_DIR/GATE_DRAW.json" 2>&1 | tee "$LOGS/p7_gate_draw.log"
+if want 7; then
+  set +e                                    # aggregate, never abort-on-first
+
+  S2_ARGS=()
+  [ "$RUNG3_BOUGHT" = "True" ] && S2_ARGS=(--s2-dir "$(positions_dir s2)")
+
+  # The exclusions were computed and APPLIED at phase 5 (before POSITIONS_PLAN
+  # froze). Carrying that probe report forward is what keeps the bound honest:
+  # a fresh gate on the post-exclusion corpus would report n_excluded == 0 and
+  # the bound would be vacuous.
+  CARRY=()
+  [ -f "$RUN_DIR/GATE_DISJOINT_PROBE.json" ] \
+    && CARRY=(--carry-exclusions "$RUN_DIR/GATE_DISJOINT_PROBE.json")
+
+  run_gate "G-DISJOINT (R4, seven comparisons)" \
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/gate_disjoint.py" --r4 \
+      --s1-dir "$(positions_dir s1)" "${S2_ARGS[@]}" \
+      --ref "tiletie0812=$BANKED_TILETIE" \
+      --ref "tiearb2_0816=$BANKED_TIEARB2" \
+      --exclude-rids "$BANKED_EXCLUDE" \
+      --floors "$FLOORS" "${CARRY[@]}" \
+      --out "$RUN_DIR/GATE_DISJOINT.json"
+
+  DRAW_ARMS=(--arms "$(positions_dir s1)/ARMS.json")
+  [ "$RUNG3_BOUGHT" = "True" ] && DRAW_ARMS+=(--arms "$(positions_dir s2)/ARMS.json")
+  run_gate "G-DRAW" \
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/gate_draw.py" \
+      "${DRAW_ARMS[@]}" --out "$RUN_DIR/GATE_DRAW.json"
+
+  # SUPPLY vs the committed floors — reported HERE, at the corpus stage, where
+  # the only sunk cost is generation (READ_RULE §2a's warning).
+  run_gate "supply vs FLOORS.json" \
+    "$PY" - "$(positions_dir s1)/POSITIONS_PLAN.json" \
+            "$(positions_dir s2)/POSITIONS_PLAN.json" \
+            "$GATE_FLOOR_S1" "$GATE_FLOOR_S2" "$OPTION_LABEL" "$RUNG3_BOUGHT" \
+    <<'PYEOF'
+import json, os, sys
+p1, p2, f1, f2, label, rung3 = sys.argv[1:7]
+f1, f2 = int(f1), int(f2)
+def n_of(p):
+    if not os.path.exists(p):
+        return None
+    d = json.loads(open(p).read())
+    return d.get("n_positions"), d.get("n_positions_capped_at_4")
+s1 = n_of(p1); s2 = n_of(p2)
+print(f"[supply] option={label} rung3_bought={rung3}")
+print(f"[supply] S1 n_positions={s1} floor={f1}")
+print(f"[supply] S2 n_positions/capped={s2} floor={f2}")
+bad = []
+if not s1 or s1[0] is None or s1[0] < f1:
+    bad.append(f"S1 {s1} < {f1}")
+if rung3 == "True" and (not s2 or (s2[1] or 0) < f2):
+    bad.append(f"S2 capped {s2} < {f2}")
+if bad:
+    print("[supply] SHORTFALL: " + "; ".join(bad), file=sys.stderr)
+    print("[supply] Caught at the CORPUS stage, where the only sunk cost is "
+          "generation — not at the read-out.", file=sys.stderr)
+    raise SystemExit(1)
+print("[supply] OK — realized supply meets the committed floors")
+PYEOF
+
+  set -e
+  if [ ${#GATE_FAILURES[@]} -gt 0 ]; then
+    say "================================================================"
+    say "PHASE 7: ${#GATE_FAILURES[@]} GATE(S) FAILED: ${GATE_FAILURES[*]}"
+    say "Every gate still ran and every report was written — that is the"
+    say "point of aggregating (R4 §8 W6.i). DO NOT start a scoring leg."
+    say "================================================================"
+    exit 1
+  fi
+  say "PHASE 7: all gates PASS"
 fi
 
 say "DONE"

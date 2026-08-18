@@ -40,12 +40,25 @@ COMMITTED = {
             "note": "rust, W30 contended"},
     "if": {"c_worker_secs_per_playout": 2.35,
            "unit": "worker-s/playout", "judge": "clair-puct",
-           "note": "from banked elapsed_secs"},
-    "generation": {"worker_secs_per_game": 990.0,
+           "smoke_indicated": 1.2313,
+           "note": "banked elapsed_secs, PLAUSIBLY THE W30-CONTENDED RUST "
+                   "PRICE. The smoke-indicated 1.2313 (idle box, M=32, "
+                   "sims=100) is 1.91x cheaper; that gap is NOT resolved here "
+                   "and NOT guessed at — the pre-run remeasure settles it. The "
+                   "ETA is sized off the COMMITTED figure, which cannot "
+                   "undershoot the envelope (R4-5)"},
+    "generation": {"worker_secs_per_game": 372.0,
                    "unit": "worker-s/game",
-                   "note": "PLAN_B; F7d's GEN row implies ~440 — the largest "
-                           "single line-item disagreement, which is why §7 "
-                           "requires a separate timed 10-game smoke"},
+                   "measured": 297.6,
+                   "note": "R4-5, RE-BASED ON MEASUREMENT: 297.6 measured by "
+                           "the fresh same-config GEN smoke, x1.25 margin in "
+                           "the direction that cannot under-commit. R3 carried "
+                           "990 inherited; the one-sided HALT now trips above "
+                           "465.0 worker-s/game (~1.56x the measured rate) — a "
+                           "real trigger, not a formality. Carrying 990 forward "
+                           "would have re-manufactured exactly the "
+                           "cost-model-miss disclosure this campaign has "
+                           "already written twice"},
 }
 HALT_RATIO = 1.25            # >25% COSTLIER, one-sided
 TOTAL_COMMITTED_WORKER_H = 1174.0

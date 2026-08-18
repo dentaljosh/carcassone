@@ -497,9 +497,22 @@ def arms_gate_block(arms_by_stratum: dict, include_partial=False) -> dict:
             "resolved_at": "READOUT::widening.gates.arms"}
 
 
-def completion_block(rows_s1, rows_s2) -> dict:
-    """`G-COMPLETE`: S1 scored `>= 1,283`; S2 scored CAPPED `>= 1,045`; mining
-    ceilings honoured (<=4 tied plies/root S1, <=3 capped plies/root S2)."""
+def completion_block(rows_s1, rows_s2, floors=None) -> dict:
+    """`G-COMPLETE` (R4 §2a, REPLACES the R3.3 row).
+
+    R3's floors were computed from RAW CENSUS ROWS and were unreachable by 27x
+    on S2 (`PREREG_FAILURE` §2): raw rows are not positions — qualification and
+    the design's own afterstate dedupe both apply. R4's floors are PARAMETERS
+    committed in `RUN/FLOORS.json` before the extension band is claimed, sized
+    from the MEASURED rates (`r_S1 = 1.574`, `r_S2cap = 0.206`), and the
+    conjunct is `s_n >= ceil(0.95 x n)`.
+
+    ⚠️ Both counts are evaluated AFTER the §2b exclusions — an exclusion can
+    never be used to explain away a shortfall after the fact.
+
+    ⚠️ If `n2 == 0` (the `S1 ONLY` row) rung 3 DOES NOT RUN: its branch table is
+    not adjudicated and the read-out states the J question was NOT BOUGHT —
+    never that it was answered. Absence of a purchase is not a result."""
     def _per_root(rows):
         d = defaultdict(int)
         for r in rows:
@@ -509,15 +522,114 @@ def completion_block(rows_s1, rows_s2) -> dict:
     s2_capped = [r for r in rows_s2 if r["capped_at_4"]]
     s1_n, s2_n = len(rows_s1), len(s2_capped)
     s1_mpr, s2_mpr = _per_root(rows_s1), _per_root(s2_capped)
+
+    if floors:
+        n1, n2 = int(floors["n1"]), int(floors["n2"])
+        f1 = int(floors.get("gate_floor_s1", math.ceil(0.95 * n1)))
+        f2 = int(floors.get("gate_floor_s2", math.ceil(0.95 * n2)))
+        label = floors.get("option_label")
+    else:
+        n1 = n2 = None
+        f1, f2 = G_COMPLETE_S1_FLOOR, G_COMPLETE_S2_FLOOR
+        label = "R3.3 constants (no FLOORS.json given)"
+    rung3 = bool(n2) if floors else True
+    ok = bool(s1_n >= f1 and s1_mpr <= S1_MAX_PER_ROOT)
+    if rung3:
+        ok = ok and bool(s2_n >= f2 and s2_mpr <= S2_MAX_PER_ROOT)
     return {
         "s1_n": s1_n, "s2_n": s2_n,
         "s1_max_per_root": s1_mpr, "s2_max_per_root": s2_mpr,
         "s1_n_all": len(rows_s1), "s2_n_all": len(rows_s2),
-        "s1_floor": G_COMPLETE_S1_FLOOR, "s2_floor": G_COMPLETE_S2_FLOOR,
+        "s1_floor": f1, "s2_floor": f2,
+        "n1_committed": n1, "n2_committed": n2, "option_label": label,
+        "rung3_bought": rung3,
+        "rung3_note": (None if rung3 else
+                       "n2 == 0 (the S1 ONLY row): the rung-3 question was NOT "
+                       "BOUGHT — not answered, not null, not inconclusive. "
+                       "Absence of a purchase is not a result."),
         "s1_ceiling": S1_MAX_PER_ROOT, "s2_ceiling": S2_MAX_PER_ROOT,
-        "ok": bool(s1_n >= G_COMPLETE_S1_FLOOR and s2_n >= G_COMPLETE_S2_FLOOR
-                   and s1_mpr <= S1_MAX_PER_ROOT and s2_mpr <= S2_MAX_PER_ROOT),
+        "evaluated_after_exclusions": True,
+        "ok": ok,
         "resolved_at": "READOUT::widening.completion",
+    }
+
+
+def band_block(verify_paths) -> dict:
+    """`G-BAND` (R4 §2c) — generalised from TWO files to N.
+
+    Each generated range emits its OWN `verify-champgames` file and is checked
+    against ITS OWN range, with its own committed floor. Never one invocation
+    over a widened band: that would report `n_out_of_band == 0` for a seed lying
+    in neither range — R3's B1 defect, generalised."""
+    files, seen_seeds_sha = {}, {}
+    ok = bool(verify_paths)
+    for p in verify_paths:
+        p = Path(p)
+        name = p.name
+        if not p.is_file():
+            files[name] = {"present": False, "ok": False,
+                           "why": "verify file absent"}
+            ok = False
+            continue
+        d = json.loads(p.read_text())
+        band = d.get("seed_band")
+        released = bool(band and 136000000000 <= int(band[0]) <= 136999999999)
+        this_ok = bool(d.get("band_ok") is True
+                       and d.get("n_out_of_band") == 0
+                       and d.get("n_duplicate_seeds") == 0
+                       and not released)
+        files[name] = {
+            "present": True, "band_ok": d.get("band_ok"),
+            "seed_band": band, "n_out_of_band": d.get("n_out_of_band"),
+            "n_duplicate_seeds": d.get("n_duplicate_seeds"),
+            "n_games_realized": d.get("n_games_realized"),
+            "sha256_of_sorted_seeds": d.get("sha256_of_sorted_seeds"),
+            "released_band_136e9": released,
+            "ok": this_ok, "path": str(p),
+        }
+        ok = ok and this_ok
+        sha = d.get("sha256_of_sorted_seeds")
+        if sha:
+            seen_seeds_sha.setdefault(sha, []).append(name)
+    # "no seed appears in two files" — the digest is the only handle the emitter
+    # publishes (no seed list exists anywhere by design), so identical digests
+    # across two files is the detectable case.
+    dupes = {k: v for k, v in seen_seeds_sha.items() if len(v) > 1}
+    if dupes:
+        ok = False
+    return {"ok": ok, "files": files, "n_files": len(files),
+            "duplicate_seed_digests": dupes,
+            "note": "each file checked against ITS OWN range, floors tabular; "
+                    "136e9 is RELEASED UNUSED and must appear in NO file",
+            "resolved_at": "READOUT::widening.gates.band"}
+
+
+def exclusions_block(gate_disjoint_path) -> dict:
+    """R4 §7a.2 — the digest-exclusion block, printed on EVERY branch, whether
+    or not anything was excluded. Surfaced from `GATE_DISJOINT.json`."""
+    if not gate_disjoint_path or not Path(gate_disjoint_path).is_file():
+        return {"present": False, "by_stratum": {},
+                "source": str(gate_disjoint_path) if gate_disjoint_path else None,
+                "note": "GATE_DISJOINT.json not supplied to the analyzer"}
+    d = json.loads(Path(gate_disjoint_path).read_text())
+    per = d.get("digest_exclusions") or {}
+    return {
+        "present": True,
+        "source": str(gate_disjoint_path),
+        "by_stratum": {s: {"n_excluded": v.get("n_excluded"),
+                           "rate": v.get("rate"),
+                           "bound_n": v.get("bound_n"),
+                           "denominator": v.get("denominator"),
+                           "denominator_source": v.get("denominator_source"),
+                           "rids": v.get("rids"),
+                           "void": v.get("void")}
+                       for s, v in sorted(per.items())},
+        "voided_strata": d.get("voided_strata"),
+        "total_order": d.get("total_order"),
+        "n_comparisons": len(d.get("comparisons") or {}),
+        "note": "the digest is a function of the BOARD alone, computed at "
+                "corpus-build time BEFORE any value exists — the exclusion is "
+                "outcome-independent by construction",
     }
 
 
@@ -877,6 +989,10 @@ def render_md(v: dict) -> str:
               # for anything but the failing gate's own inputs.
               json.dumps({"gates": w["gates"],
                           "completion": w["completion"],
+                          # R4 §2b: the exclusion block is ALWAYS printed,
+                          # whether or not anything was excluded — and it is a
+                          # gate input, so it is safe on a gate-fail report
+                          "exclusions": w.get("exclusions"),
                           "stage1_replication": w["stage1_replication"],
                           "plan_dirs": w["config"]["plan_dirs"],
                           "position_counts": w["config"]["counts"]},
@@ -911,8 +1027,16 @@ def render_md(v: dict) -> str:
           "A null here means **\"no rung above 16 is worth ≥ +0.04 pts/tied "
           "ply\"**, NOT `Δ = 0`: the saturating-exp (+0.017) and √B-noise "
           "(+0.021) models are not resolved by this design.", "",
-          "## Rung 3 — `J > 4` (S2 capped plies, primary `Δ_ora`)", "",
-          f"**BRANCH: `{b3['branch']}`** — {b3['reason']}", ""]
+          "## Rung 3 — `J > 4` (S2 capped plies, primary `Δ_ora`)", ""]
+    if not w["completion"].get("rung3_bought", True):
+        L += ["**THE RUNG-3 QUESTION WAS NOT BOUGHT.**", "",
+              w["completion"]["rung3_note"], "",
+              "Its branch table is not adjudicated and its riders are not "
+              "printed. The `J` question is neither answered, nor null, nor "
+              "inconclusive — it was not purchased.", ""]
+        L += _exclusion_lines(w)
+        return "\n".join(L)
+    L += [f"**BRANCH: `{b3['branch']}`** — {b3['reason']}", ""]
     s2 = w["j_rider"]["s2"]
     L += [f"- `Δ_ora` = {_f(s2['delta_ora'])} CI95 {_ci(s2['ci95_ora'])} "
           f"(n_capped {s2['n_capped']})",
@@ -958,7 +1082,45 @@ def render_md(v: dict) -> str:
           "`R6` the N4 waiver above B=16 is OPEN, re-priced at the flip decision · "
           "`R7` the phone is out of scope · `R8` `|z| < 2` is never \"refuted\".",
           ""]
+    L += _exclusion_lines(w)
     return "\n".join(L)
+
+
+def _exclusion_lines(w: dict) -> list:
+    """R4 §7a's mandatory additions: the supply chain against committed, the
+    digest-exclusion block (ALWAYS, whether or not anything was excluded), and
+    the predecessor's disposition in one line."""
+    c, x, p = w["completion"], w.get("exclusions") or {}, w.get("predecessor") or {}
+    L = ["", "## R4 §7a — supply, exclusions, predecessor", "",
+         f"- **Supply realized vs committed:** S1 {c['s1_n']} against floor "
+         f"{c['s1_floor']} (committed n₁ {c.get('n1_committed')}); "
+         f"S2 capped {c['s2_n']} against floor {c['s2_floor']} "
+         f"(committed n₂ {c.get('n2_committed')}); option "
+         f"`{c.get('option_label')}`. Both counts are AFTER the §2b exclusions.",
+         "", "### Digest exclusions (R4 §2b — printed whether or not any fired)",
+         ""]
+    if not x.get("present"):
+        L += ["`GATE_DISJOINT.json` was not supplied to the analyzer, so the "
+              "exclusion counters are UNRESOLVED here — read them at the gate "
+              "file's own address.", ""]
+    else:
+        L += ["| stratum | n_excluded | rate | bound | denominator | source | void |",
+              "|---|---|---|---|---|---|---|"]
+        for s, v in sorted(x["by_stratum"].items()):
+            L.append(f"| {s} | {v['n_excluded']} | {_f(v['rate'], 5)} | "
+                     f"{v['bound_n']} | {v['denominator']} | "
+                     f"`{v['denominator_source']}` | {_f(v['void'])} |")
+        L += ["", "The digest is a function of the **board alone**, computed at "
+              "corpus-build time **before any value exists** — the exclusion is "
+              "outcome-independent by construction, which is exactly why it is "
+              "legitimate here and was not in the 2026-08-14 open-city void. "
+              "A stratum over the bound is **VOID, not excluded-and-continued**, "
+              "and **a VOID is not curable by generating more games**.", ""]
+    if p:
+        L += [f"- **Predecessor:** pair `{p.get('pair')}` is "
+              f"{p.get('disposition')}. {p.get('corpus')}. "
+              f"{p.get('sizing_dependence')}.", ""]
+    return L
 
 
 # --------------------------------------------------------------------------- #
@@ -980,6 +1142,16 @@ def parse_args(argv=None):
                          '{"source":…, "rungs": {"1": {"arb":…, "se":…}, …}}')
     ap.add_argument("--d-draw", default=None,
                     help="D-DRAW report: {n_checked, agreement_rate}")
+    ap.add_argument("--floors", default=None,
+                    help="RUN/FLOORS.json — the committed G-COMPLETE floors "
+                         "(R4 §2a). Without it the R3.3 constants are used and "
+                         "the read-out says so")
+    ap.add_argument("--champ-games-verify", action="append", default=None,
+                    help="CHAMP_GAMES_VERIFY{,_EXT,_TOPUP}.json (repeatable) — "
+                         "G-BAND's N-file form (R4 §2c)")
+    ap.add_argument("--gate-disjoint", default=None,
+                    help="RUN/GATE_DISJOINT.json — surfaces the R4 §2b "
+                         "digest-exclusion counters on the READOUT")
     ap.add_argument("--m-expected-s1", type=int, default=M_EXPECTED_S1)
     ap.add_argument("--m-expected-s2", type=int, default=M_EXPECTED_S2)
     ap.add_argument("--boot-reps", type=int, default=BOOT_REPS)
@@ -1106,7 +1278,14 @@ def main(argv=None) -> int:
     unc = uncapped_gate({t: s["plan"] for t, s in strata.items()},
                         {t: s["uncapped"] for t, s in strata.items()})
     arms = arms_gate_block({t: s["arms"] for t, s in strata.items()})
-    completion = completion_block(rows_s1, rows_s2)
+
+    floors = None
+    if a.floors:
+        import floors as FL                                        # noqa: E402
+        floors = FL.load(a.floors)
+    completion = completion_block(rows_s1, rows_s2, floors)
+    band = band_block(a.champ_games_verify or [])
+    exclusions = exclusions_block(a.gate_disjoint)
 
     ref = json.loads(Path(a.stage1b_ladder).read_text())
     e16_ladder = b_ladder.get("E16", {})
@@ -1119,11 +1298,12 @@ def main(argv=None) -> int:
     (out_dir / "SEALED_G_REPLICATE.json").write_text(
         json.dumps(repl_sealed, indent=2, sort_keys=True))
 
-    gates = {"crn": crn, "uncapped": unc, "arms": arms}
+    gates = {"crn": crn, "uncapped": unc, "arms": arms, "band": band}
     gates_summary = {
         "G-CRN": {"ok": crn["ok"], "resolved_at": crn["resolved_at"]},
         "G-UNCAPPED": {"ok": unc["ok"], "resolved_at": unc["resolved_at"]},
         "G-ARMS": {"ok": arms["ok"], "resolved_at": arms["resolved_at"]},
+        "G-BAND": {"ok": band["ok"], "resolved_at": band["resolved_at"]},
         "G-COMPLETE": {"ok": completion["ok"],
                        "resolved_at": completion["resolved_at"]},
         "G-REPLICATE": {"ok": repl_public["pass"],
@@ -1136,6 +1316,20 @@ def main(argv=None) -> int:
         "gates_summary": gates_summary,
         "gates_ok": gates_ok,
         "completion": completion,
+        "exclusions": exclusions,
+        "predecessor": {
+            "pair": "604edc83",
+            "disposition": "SPENT-BY-GATE-FAILURE — frozen history; never "
+                           "amended, revived or re-read",
+            "corpus": "band 135e9's 850 games are REUSABLE INPUT, not a prior "
+                      "result: the run stopped PRE-SCORING, so no arb, ora, "
+                      "delta, CI or per-position value was ever computed",
+            "sizing_dependence": "R4's n is sized from rates measured on that "
+                                 "same corpus, so it is NOT statistically "
+                                 "independent of its STRUCTURE — a "
+                                 "nuisance-parameter read, never an estimand "
+                                 "dependence (PREREG_FAILURE §3.4)",
+        },
         "stage1_replication": repl_public,
         "delta": delta,
         "b_ladder": b_ladder,

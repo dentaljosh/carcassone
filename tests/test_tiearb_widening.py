@@ -19,6 +19,7 @@ Everything runs on SYNTHETIC fixtures: no replay, no playouts, no engine.
 from __future__ import annotations
 
 import json
+import math
 import os
 import subprocess
 import sys
@@ -460,12 +461,23 @@ def test_c_remeasure_halt_is_one_sided_and_reads_the_right_key(tmp_path):
         for j, c in (("tier1-greedy", 0.18), ("clair-puct", 2.30)):
             WF.make_smoke_manifest(run / f"SMOKE_MANIFEST_{st}_{j}.json",
                                    judge=j, stratum=st, m=m, c=c)
-    WF.make_gen_smoke(run / "GEN_SMOKE.json", worker_secs_per_game=440.0)
+    WF.make_gen_smoke(run / "GEN_SMOKE.json", worker_secs_per_game=297.6)
     smokes = sorted(str(p) for p in run.glob("SMOKE_MANIFEST_*.json"))
     blk = CR.build_block(smokes, run / "GEN_SMOKE.json")
     assert blk["ok"] is True and blk["halt_fired"] is False
-    # CHEAPER is recorded, never a halt
+    # CHEAPER is recorded, never a halt. R4-5 RE-BASED the committed figure to
+    # 372.0 = 297.6 measured x 1.25, so the HALT now trips above 465.0 — a real
+    # trigger, not the formality 990 made it.
+    assert blk["legs"]["generation"]["committed"] == 372.0
     assert blk["legs"]["generation"]["direction"] == "cheaper"
+    WF.make_gen_smoke(run / "GEN_SMOKE.json", worker_secs_per_game=440.0)
+    mid = CR.build_block(smokes, run / "GEN_SMOKE.json")
+    assert mid["legs"]["generation"]["direction"] == "COSTLIER"
+    assert mid["legs"]["generation"]["halt_fired"] is False       # 440 < 465
+    WF.make_gen_smoke(run / "GEN_SMOKE.json", worker_secs_per_game=470.0)
+    hot = CR.build_block(smokes, run / "GEN_SMOKE.json")
+    assert hot["legs"]["generation"]["halt_fired"] is True         # 470 > 465
+    WF.make_gen_smoke(run / "GEN_SMOKE.json", worker_secs_per_game=297.6)
     # the inflated wall x W key is recorded but explicitly NOT costed from
     assert all(r["worker_secs_per_playout_NOT_COSTED_FROM"] is not None
                for r in blk["smokes"])
@@ -512,10 +524,14 @@ def test_acceptance_resolves_the_live_and_corpus_addresses(tree, readout,
         WF.make_corpus(d, n_positions=5, m=8, seed=seed, rid_prefix=name[:4],
                        band_lo=999000000000)
         refs[name] = d
-    rep = GD.run_merged_gate(strata=_strata(run), refs={
+    rep = GD.run_r4_gate(strata=_strata(run), refs={
         n: {"arms": p / "ARMS.json", "legs": GD.leg_paths(p, GD.SPENT_LEG_GLOB)}
-        for n, p in refs.items()}, exclude_rids=[excl])
+        for n, p in refs.items()}, floors=FL.build("S2 at 700"),
+        exclude_rids=[excl])
     (run / "GATE_DISJOINT.json").write_text(json.dumps(rep, indent=2))
+    WF.make_floors(run / "FLOORS.json", "S2 at 700")
+    WF.make_champ_games_verify(run / "corpus" / "CHAMP_GAMES_VERIFY_EXT.json",
+                               lo=137000000000, hi=137000003406, n=3407)
     (run / "GATE_DRAW.json").write_text(json.dumps(GDR.run_gate(
         [run / "corpus" / f"positions_{t}" / "ARMS.json"
          for t in ("s1", "s2")]), indent=2))
@@ -821,28 +837,72 @@ def test_run_gen_is_syntactically_valid_and_never_self_launches():
     assert "135000000000" in text and "136000000000" in text
 
 
+#: ⚠️ EVERY test that invokes run_gen.sh sets this. On 2026-08-18 a
+#: parametrised guard case passed `--topup 201` — legal under R4's 500-game
+#: top-up range — and the script did exactly what it is built to do: it started
+#: 850 real games at W48 into the reserved band. A test must never be able to
+#: reach the `exec`.
+DRY = {"WIDENING_GEN_DRY_RUN": "1"}
+
+
 @pytest.mark.parametrize("argv,want_rc", [
     ([], 2),                          # no box
-    (["nosuchbox"], 2),               # bad box
+    (["nosuchbox", "--smoke"], 2),    # bad box
+    (["local"], 2),                   # no mode
     (["local", "--topup", "0"], 2),   # top-up floor
-    (["local", "--topup", "201"], 2), # top-up ceiling (<=200, pre-licensed)
+    (["local", "--topup", "501"], 2), # top-up ceiling (138e9 +0..+499)
     (["local", "--bogus"], 2),        # unknown flag
+    (["local", "--base"], 2),         # 135e9 is RETAINED INPUT, never generated
+    (["local", "--extension", "s3"], 2),   # no such stratum
 ])
-def test_run_gen_argument_guards(argv, want_rc, tmp_path):
-    """The guards must fire BEFORE any generator is invoked. `champ_env.sh` is
-    sourced only after them, so a bad argument can never reach the Pool."""
+def test_run_gen_argument_guards(argv, want_rc):
+    """The guards must fire BEFORE any generator is invoked — and even when they
+    do not, `--dry-run` stops short of the `exec`."""
     r = subprocess.run(["bash", str(CAMPAIGN / "run_gen.sh"), *argv],
                        capture_output=True, text=True,
-                       env={**os.environ, "PATH": os.environ["PATH"]})
+                       env={**os.environ, **DRY})
     assert r.returncode == want_rc, (r.stdout, r.stderr)
-    assert "gen_fair_distill" not in r.stdout
 
 
-def test_run_gen_topup_uses_a_separate_out_preserving_g_bands_two_file_form():
+def test_run_gen_dry_run_generates_nothing(tmp_path):
+    """The safety valve itself: a dry run resolves everything and creates
+    NOTHING — not the output directory, not a claim, not a game."""
+    floors_dir = tmp_path / "measurement" / "tiearb_widening_20260817"
+    (floors_dir / "shared_run").mkdir(parents=True)
+    WF.make_floors(floors_dir / "shared_run" / "FLOORS.json", "S2 at 700")
+    (floors_dir / "WORKERS.conf").write_text(
+        (CAMPAIGN / "WORKERS.conf").read_text()
+        .replace("REPO_LOCAL=/home/doctor/projects/carcassone",
+                 f"REPO_LOCAL={tmp_path}")
+        .replace("SHARE_LOCAL=/mnt/c/carc-shared",
+                 f"SHARE_LOCAL={tmp_path}/share"))
+    venv = tmp_path / ".venv" / "bin"
+    venv.mkdir(parents=True)
+    (venv / "python").symlink_to(sys.executable)
+    script = floors_dir / "run_gen.sh"
+    script.write_text((CAMPAIGN / "run_gen.sh").read_text())
+    script.chmod(0o755)
+    r = subprocess.run(["bash", str(script), "local", "--extension", "s1",
+                        "--dry-run"], capture_output=True, text=True,
+                       env={**os.environ, **DRY})
+    assert r.returncode == 0, r.stderr
+    assert "DRY RUN" in r.stdout and "NOTHING GENERATED" in r.stdout
+    assert "--seed-start 137000000000" in r.stdout   # the committed sub-range
+    assert "--games 508" in r.stdout                 # from FLOORS.json
+    assert "--workers 48" in r.stdout                # the GEN row, not EVAL
+    assert not (tmp_path / "share").exists(), (
+        "a dry run must not create the output directory")
+
+
+def test_run_gen_topup_uses_a_separate_out_preserving_g_bands_n_file_form():
+    """R4 §2c: EVERY generated range gets its OWN --out, so it gets its OWN
+    verify-champgames file. Merging them would put seeds from two committed
+    ranges in front of one verify — the widened-band failure, generalised."""
     text = (CAMPAIGN / "run_gen.sh").read_text()
-    assert 'OUT="$SHARE/$RUN_ID/gen"' in text          # what W6 phase 1 collects
+    assert 'OUT_EXT_S1="$SHARE/$RUN_ID/gen_ext_s1"' in text
+    assert 'OUT_EXT_S2="$SHARE/$RUN_ID/gen_ext_s2"' in text
     assert 'OUT_TOPUP="$SHARE/$RUN_ID/gen_topup"' in text
-    assert "TOPUP_MAX=200" in text
+    assert "TOPUP_MAX=500" in text
     # ... and the W6 driver collects that separate dir into the SECOND file
     w6 = (REPO / "scripts" / "tiletie" / "build_widening_corpus.sh").read_text()
     assert "GEN_DIR_TOPUP" in w6 and "CHAMP_GAMES_TOPUP" in w6
@@ -858,7 +918,7 @@ def test_gen_smoke_shape_is_exactly_what_c_remeasure_consumes(tmp_path):
     WF.make_gen_smoke(tmp_path / "GEN_SMOKE.json", worker_secs_per_game=440.0)
     doc = json.loads((tmp_path / "GEN_SMOKE.json").read_text())
     doc.update({"workers": 48, "box": "local", "wall_secs": 92,
-                "committed": 990.0, "ratio": 440.0 / 990.0, "halt_fired": False})
+                "committed": 372.0, "ratio": 440.0 / 372.0, "halt_fired": False})
     (tmp_path / "GEN_SMOKE.json").write_text(json.dumps(doc))
     assert required <= set(doc)
     # c_remeasure reads worker_secs_per_game and n_games off it
@@ -867,7 +927,7 @@ def test_gen_smoke_shape_is_exactly_what_c_remeasure_consumes(tmp_path):
     assert got["worker_secs_per_game"] == pytest.approx(440.0)
     # and the launcher's committed constant is c_remeasure's committed constant
     assert doc["committed"] == CR.COMMITTED["generation"]["worker_secs_per_game"]
-    assert "990.0" in (CAMPAIGN / "run_gen.sh").read_text()
+    assert "372.0" in (CAMPAIGN / "run_gen.sh").read_text()   # R4-5 re-based
     # one-sided halt, same bar on both sides of the interface
     assert CR.HALT_RATIO == 1.25
     assert "HALT_RATIO=1.25" in (CAMPAIGN / "run_gen.sh").read_text()
@@ -924,6 +984,373 @@ def test_4a_is_now_genuinely_corpus_free(tree, tmp_path):
     for g in ACC.book_fixture(run, share):
         if "fixture" in g.name:
             assert g.resolve()["resolved"] is True, g.name
+
+
+# --------------------------------------------------------------------------- #
+# R4 — FLOORS.json, the seven-comparison gate, exclusions, the N-file band       #
+# --------------------------------------------------------------------------- #
+import floors as FL                                                # noqa: E402
+
+
+@pytest.mark.parametrize("option,g1,g2,s1_hi,s2_hi", [
+    ("FULL", 508, 4840, 137000000507, 137000005347),
+    ("all-floors", 466, 4573, 137000000465, 137000005038),
+    ("S2 at 700", 508, 2899, 137000000507, 137000003406),
+    ("S2 at 500", 508, 1928, 137000000507, 137000002435),
+    ("S2 at 400", 508, 1442, 137000000507, 137000001949),
+])
+def test_floors_reproduce_the_committed_band_table(option, g1, g2, s1_hi, s2_hi):
+    """DESIGN R4-2.2's `+games` column and R4-6's sub-range table, from the
+    measured rates — not transcribed."""
+    b = FL.build(option)
+    assert (b["games_extension_s1"], b["games_extension_s2"]) == (g1, g2)
+    assert b["sub_ranges"]["s1"] == [137000000000, s1_hi]
+    assert b["sub_ranges"]["s2"] == [137000000000 + g1, s2_hi]
+
+
+def test_floors_s1_only_commits_no_s2_subrange():
+    """`n2 == 0` ⇒ rung 3 is NOT BOUGHT and NO S2 sub-range may be generated."""
+    b = FL.build("S1 ONLY")
+    assert b["n2"] == 0 and b["games_extension_s2"] == 0
+    assert b["sub_ranges"]["s2"] is None and b["rung3_bought"] is False
+
+
+def test_floors_validation_rejects_a_hand_edited_split(tmp_path):
+    """The extension size is DERIVED from the floor, never chosen separately —
+    a floor fitted to the data is the failure G-COMPLETE exists to prevent."""
+    p = tmp_path / "FLOORS.json"
+    good = FL.build("S2 at 700")
+    p.write_text(json.dumps(good))
+    assert FL.load(p)["n1"] == 1350
+    bad = dict(good, games_extension_s2=999)
+    p.write_text(json.dumps(bad))
+    with pytest.raises(FL.FloorsError, match="games_extension"):
+        FL.load(p)
+    bad2 = dict(good)
+    bad2["sub_ranges"] = {"s1": [137000000000, 137000000507], "s2": None}
+    p.write_text(json.dumps(bad2))
+    with pytest.raises(FL.FloorsError, match="sub_ranges"):
+        FL.load(p)
+    with pytest.raises(FL.FloorsError, match="not found"):
+        FL.load(tmp_path / "nope.json")
+
+
+def test_exclusion_bound_is_the_ceil_form_against_the_frozen_denominator():
+    """R4-3 rule 6: ONE spelling, `⌈0.005 x n⌉`. The '<=15 absolute' conjunct is
+    DELETED as inert (it can only bind above n = 3,000). Rule 7: the denominator
+    is FROZEN in FLOORS.json, so a VOID is not curable by generating more."""
+    f = FL.build("FULL")
+    b1, den1, src1 = FL.exclusion_bound(f, "S1")
+    b2, den2, src2 = FL.exclusion_bound(f, "S2")
+    assert (b1, den1, src1) == (7, 1350, "RUN/FLOORS.json::n1")
+    assert (b2, den2, src2) == (6, 1100, "RUN/FLOORS.json::n2")
+    # the cheapest floor buys the tightest bound — the false-VOID warning
+    assert FL.exclusion_bound(FL.build("S2 at 400"), "S2")[0] == 2
+    # ... and it does NOT grow with the realized corpus
+    assert FL.exclusion_bound(f, "S1")[0] == b1
+
+
+@pytest.mark.parametrize("rid,band", [
+    ("tt_sp_135000000122_p2", "135e9"),
+    ("tt_sp_137000000507_p0", "137e9"),
+    ("tt_sp_138000000499_p9", "138e9"),
+    ("tt_sp_136000000001_p1", "released136e9"),
+    ("tt_sp_28100000609_p2", "unknown"),
+    ("no-digits-here", "unknown"),
+])
+def test_band_of_rid(rid, band):
+    assert GD.band_of_rid(rid) == band
+
+
+def test_total_order_is_total_and_never_touches_the_earlier_corpus():
+    """R4-3 rules 1-3. Note rule 2 OVERRIDES the band order."""
+    # rule 1: the later band leaves
+    r = GD.resolve_collision("a_135", "b_137", a_band="135e9", b_band="137e9",
+                             a_stratum="S1", b_stratum="S1")
+    assert r["excluded_rid"] == "b_137" and "rule 1" in r["rule"]
+    # spent is rank 0 and is NEVER touched
+    r = GD.resolve_collision("ours", "banked", a_band="137e9", b_band="spent",
+                             a_stratum="S1", b_stratum="spent")
+    assert r["excluded_rid"] == "ours"
+    # rule 2 beats the band order: S1<->S2 excludes S2 EVEN when S2 is earlier
+    r = GD.resolve_collision("s1_137", "s2_135", a_band="137e9", b_band="135e9",
+                             a_stratum="S1", b_stratum="S2")
+    assert r["excluded_rid"] == "s2_135" and "rule 2" in r["rule"]
+    assert r["excluded_stratum"] == "S2"
+    # rule 3: same rank ⇒ lexicographically-later rid, so the order is TOTAL
+    r = GD.resolve_collision("aaa", "zzz", a_band="137e9", b_band="137e9",
+                             a_stratum="S1", b_stratum="S1")
+    assert r["excluded_rid"] == "zzz" and "rule 3" in r["rule"]
+
+
+@pytest.fixture(scope="module")
+def r4_tree(tmp_path_factory):
+    """An R4-shaped corpus: both strata carry base AND extension positions, the
+    two strata mine disjoint sub-ranges, and ONE extension digest collides with
+    a banked corpus."""
+    root = tmp_path_factory.mktemp("r4")
+    corpus = root / "corpus"
+    refs = {}
+    for name, seed in (("tiletie0812", 101), ("tiearb2_0816", 202)):
+        d = root / f"ref_{name}"
+        WF.make_corpus(d, n_positions=5, m=8, seed=seed, rid_prefix=name[:4],
+                       band_lo=999000000000)
+        refs[name] = d
+    banked = json.loads((refs["tiletie0812"] / "positions_walled_leg1.jsonl")
+                        .read_text().splitlines()[0])
+    for tag, blo, elo_, sd in (("s1", 135000000000, 137000000000, 41),
+                               ("s2", 135000000350, 137000000508, 43)):
+        WF.make_r4_corpus(corpus / f"positions_{tag}", stratum=tag, seed=sd,
+                          base_lo=blo, ext_lo=elo_,
+                          collide_with=(banked["rid"], banked["checksum"])
+                          if tag == "s1" else None)
+    floors = FL.build("S2 at 700")
+    excl = root / "EXCLUDE_RIDS_all.txt"
+    excl.write_text("# none\n")
+    return {"root": root, "corpus": corpus, "refs": refs, "floors": floors,
+            "excl": excl, "banked": banked}
+
+
+def _r4_report(t, **kw):
+    strata = {s.upper(): {
+        "arms": t["corpus"] / f"positions_{s}" / "ARMS.json",
+        "legs": GD.leg_paths(t["corpus"] / f"positions_{s}", GD.NEW_LEG_GLOB)}
+        for s in kw.pop("strata", ("s1", "s2"))}
+    refs = {n: {"arms": p / "ARMS.json",
+                "legs": GD.leg_paths(p, GD.SPENT_LEG_GLOB)}
+            for n, p in t["refs"].items()}
+    return GD.run_r4_gate(strata=strata, refs=refs, floors=t["floors"],
+                          exclude_rids=[t["excl"]], **kw)
+
+
+def test_r4_gate_emits_exactly_the_seven_committed_comparisons(r4_tree):
+    rep = _r4_report(r4_tree)
+    assert set(rep["comparisons"]) == set(GD.R4_COMPARISONS)
+    assert len(GD.R4_COMPARISONS) == 7
+    for name in ("s1_vs_tiletie0812", "s1_vs_tiearb2_0816", "s2_vs_tiletie0812",
+                 "s2_vs_tiearb2_0816", "base_vs_extension", "s1_vs_s2"):
+        assert set(rep["comparisons"][name]["layers"]) == {
+            "a_root_id", "b_rid", "c_position_digest"}, name
+    # the seventh is RID LAYER ONLY
+    assert set(rep["comparisons"]["s1s2_vs_exclude_rids"]["layers"]) == {"b_rid"}
+    # base_vs_extension is evaluated PER STRATUM
+    assert set(rep["comparisons"]["base_vs_extension"]["by_stratum"]) == {"S1", "S2"}
+
+
+def test_r4_digest_collision_is_excluded_not_fatal(r4_tree):
+    """The R3.3 pair DIED on exactly one such collision. R4 excludes and counts
+    it — and the earlier corpus is never touched."""
+    rep = _r4_report(r4_tree)
+    s1 = rep["digest_exclusions"]["S1"]
+    assert s1["n_excluded"] == 1
+    assert s1["rids"][0].startswith("tt_sp_137")   # the LATER band leaves
+    assert r4_tree["banked"]["rid"] not in s1["rids"]
+    assert s1["void"] is False and rep["passed"] is True
+    # the bound, its frozen denominator, and the source — all always emitted
+    assert s1["bound_n"] == 7 and s1["denominator"] == 1350
+    assert s1["denominator_source"] == "RUN/FLOORS.json::n1"
+    assert s1["rate"] == pytest.approx(1 / 1350)
+    # and it is ALWAYS present, even where nothing fired
+    s2 = rep["digest_exclusions"]["S2"]
+    assert s2["n_excluded"] == 0 and s2["denominator_source"]
+
+
+def test_r4_rid_and_root_layers_stay_zero_tolerance(r4_tree, tmp_path):
+    """A shared rid or root is a corpus LEAK, never a transposition — it FAILS,
+    it is not excluded."""
+    leak = tmp_path / "positions_leak"
+    shutil = __import__("shutil")
+    shutil.copytree(r4_tree["corpus"] / "positions_s1", leak)
+    rep = GD.run_r4_gate(
+        strata={"S1": {"arms": leak / "ARMS.json",
+                       "legs": GD.leg_paths(leak, GD.NEW_LEG_GLOB)}},
+        refs={"tiletie0812": {"arms": leak / "ARMS.json",
+                              "legs": GD.leg_paths(leak, GD.NEW_LEG_GLOB)}},
+        floors=r4_tree["floors"], exclude_rids=[])
+    c = rep["comparisons"]["s1_vs_tiletie0812"]["layers"]
+    assert c["a_root_id"]["n_intersection"] > 0
+    assert c["b_rid"]["n_intersection"] > 0
+    assert rep["comparisons"]["s1_vs_tiletie0812"]["passed"] is False
+    assert rep["passed"] is False
+
+
+def test_r4_void_fires_above_the_bound_and_is_not_curable(r4_tree):
+    """Exceeding the bound ⇒ the stratum is VOID, not excluded-and-continued.
+    And the denominator is FROZEN, so 'generate more games' cannot buy headroom
+    for exclusions after seeing them."""
+    # bound 1 at n1 = 1: the one collision is AT the bound, so excluded-and-continued
+    at_bound = _r4_report(dict(r4_tree, floors=dict(r4_tree["floors"], n1=1)))
+    s1 = at_bound["digest_exclusions"]["S1"]
+    assert s1["bound_n"] == math.ceil(0.005 * 1) == 1
+    assert s1["n_excluded"] == 1 and s1["void"] is False
+    assert at_bound["passed"] is True
+    # bound 0: the SAME collision now EXCEEDS it ⇒ VOID, and the run does not pass
+    over = _r4_report(dict(r4_tree, floors=dict(r4_tree["floors"], n1=0)))
+    v = over["digest_exclusions"]["S1"]
+    assert v["bound_n"] == 0 and v["n_excluded"] == 1 and v["void"] is True
+    assert over["voided_strata"] == ["S1"] and over["passed"] is False
+    # the denominator is FROZEN — the bound does not grow with the corpus
+    assert "NOT curable by generating more games" in v["note"]
+    assert "new prereg" in v["note"]
+
+
+def test_r4_carried_exclusions_keep_the_bound_honest(r4_tree, tmp_path):
+    """Exclusions are applied BEFORE POSITIONS_PLAN freezes, so a fresh gate on
+    the post-exclusion corpus would report 0 and the bound would be vacuous.
+    The probe report is carried forward instead."""
+    probe = _r4_report(r4_tree)
+    p = tmp_path / "GATE_DISJOINT_PROBE.json"
+    p.write_text(json.dumps(probe))
+    carried = GD.load_carried_exclusions(p)
+    assert carried["S1"]["rids"] == probe["digest_exclusions"]["S1"]["rids"]
+    # a clean corpus + carried probe still reports the TRUE total
+    clean = _r4_report(r4_tree, carried=carried)
+    assert clean["digest_exclusions"]["S1"]["n_excluded"] == 1
+    assert clean["digest_exclusions"]["S1"]["n_carried_from_probe"] == 1
+
+
+def test_r4_s1_only_still_emits_all_seven_comparisons(r4_tree):
+    """On the `S1 ONLY` row there is no S2 — but §2b(vi) requires all seven
+    comparisons PRESENT, so the impossible ones are present-and-explained,
+    never silently dropped."""
+    t = dict(r4_tree, floors=FL.build("S1 ONLY"))
+    rep = _r4_report(t, strata=("s1",))
+    assert set(rep["comparisons"]) == set(GD.R4_COMPARISONS)
+    assert rep["comparisons"]["s1_vs_s2"]["not_applicable"] is True
+    assert rep["comparisons"]["s2_vs_tiletie0812"]["not_applicable"] is True
+    assert "NOT BOUGHT" in rep["comparisons"]["s1_vs_s2"]["reason"]
+    assert rep["strata_root_overlap"] == 0
+
+
+def test_r4_released_band_136e9_is_a_failure_anywhere(r4_tree, tmp_path):
+    """136e9 was RELEASED UNUSED and must appear in NO file."""
+    d = tmp_path / "positions_s1"
+    WF.make_r4_corpus(d, stratum="s1", n_base=3, n_ext=3, seed=5,
+                      base_lo=136000000000, ext_lo=137000000000)
+    rep = GD.run_r4_gate(
+        strata={"S1": {"arms": d / "ARMS.json",
+                       "legs": GD.leg_paths(d, GD.NEW_LEG_GLOB)}},
+        refs={n: {"arms": p / "ARMS.json",
+                  "legs": GD.leg_paths(p, GD.SPENT_LEG_GLOB)}
+              for n, p in r4_tree["refs"].items()},
+        floors=r4_tree["floors"], exclude_rids=[])
+    assert rep["released_band_seeds_found"]
+    assert rep["passed"] is False
+
+
+def test_w3_reads_the_n_file_band_and_the_floors(tmp_path):
+    """R4 §2a/§2c on the analyzer side."""
+    WF.make_champ_games_verify(tmp_path / "CHAMP_GAMES_VERIFY.json")
+    WF.make_champ_games_verify(tmp_path / "CHAMP_GAMES_VERIFY_EXT.json",
+                               lo=137000000000, hi=137000003406, n=3407)
+    b = AW.band_block([tmp_path / "CHAMP_GAMES_VERIFY.json",
+                       tmp_path / "CHAMP_GAMES_VERIFY_EXT.json"])
+    assert b["ok"] is True and b["n_files"] == 2
+    # each file is checked against ITS OWN range
+    assert b["files"]["CHAMP_GAMES_VERIFY_EXT.json"]["seed_band"][0] == 137000000000
+    # a released-band file FAILS
+    WF.make_champ_games_verify(tmp_path / "CHAMP_GAMES_VERIFY_BAD.json",
+                               lo=136000000000, hi=136000000199, n=200)
+    bad = AW.band_block([tmp_path / "CHAMP_GAMES_VERIFY_BAD.json"])
+    assert bad["ok"] is False
+    assert bad["files"]["CHAMP_GAMES_VERIFY_BAD.json"]["released_band_136e9"]
+    # ... and two files sharing a seed digest FAIL (no seed list exists by design)
+    dup = AW.band_block([tmp_path / "CHAMP_GAMES_VERIFY.json",
+                         tmp_path / "CHAMP_GAMES_VERIFY.json"])
+    assert dup["ok"] is False or dup["duplicate_seed_digests"]
+
+
+def test_w3_completion_uses_the_committed_floors_and_names_an_unbought_rung3():
+    rows_s1 = [{"root_id": f"r{i}", "capped_at_4": True} for i in range(1300)]
+    rows_s2 = [{"root_id": f"q{i}", "capped_at_4": True} for i in range(690)]
+    f700 = FL.build("S2 at 700")
+    c = AW.completion_block(rows_s1, rows_s2, f700)
+    assert c["s1_floor"] == math.ceil(0.95 * 1350) == 1283
+    assert c["s2_floor"] == math.ceil(0.95 * 700) == 665
+    assert c["rung3_bought"] is True and c["ok"] is True
+    assert c["evaluated_after_exclusions"] is True
+    # S1 ONLY: rung 3 is NOT BOUGHT — not answered, not null, not inconclusive
+    c2 = AW.completion_block(rows_s1, [], FL.build("S1 ONLY"))
+    assert c2["rung3_bought"] is False and c2["ok"] is True
+    assert "NOT BOUGHT" in c2["rung3_note"]
+
+
+def test_w3_surfaces_the_exclusion_counters(r4_tree, tmp_path):
+    rep = _r4_report(r4_tree)
+    p = tmp_path / "GATE_DISJOINT.json"
+    p.write_text(json.dumps(rep))
+    x = AW.exclusions_block(p)
+    assert x["present"] is True
+    assert x["by_stratum"]["S1"]["n_excluded"] == 1
+    assert x["by_stratum"]["S1"]["denominator_source"] == "RUN/FLOORS.json::n1"
+    assert x["total_order"] == list(GD.BAND_ORDER)
+    absent = AW.exclusions_block(None)
+    assert absent["present"] is False
+
+
+def test_readout_prints_the_exclusion_block_on_every_branch(tree, readout):
+    """R4 §7a.2: printed whether or not anything was excluded."""
+    v = json.loads(json.dumps(readout))
+    v["widening"]["gates_ok"] = True
+    for g in v["widening"]["gates_summary"].values():
+        g["ok"] = True
+    v["widening"]["exclusions"] = {
+        "present": True, "by_stratum": {"S1": {
+            "n_excluded": 0, "rate": 0.0, "bound_n": 7, "denominator": 1350,
+            "denominator_source": "RUN/FLOORS.json::n1", "rids": [],
+            "void": False}}}
+    md = AW.render_md(v)
+    assert "Digest exclusions" in md and "RUN/FLOORS.json::n1" in md
+    assert "outcome-independent by construction" in md
+    assert "SPENT-BY-GATE-FAILURE" in md
+
+
+# --------------------------------------------------------------------------- #
+# W6 / W10 — the R4 driver + launcher deltas                                    #
+# --------------------------------------------------------------------------- #
+def test_w6_runs_all_gates_and_aggregates_never_aborting_on_the_first():
+    """R4 §8 W6.i, bought with a dead prereg: under `set -e` the R3.3 driver
+    aborted at the first failing gate and GATE_DRAW.json was NEVER EMITTED."""
+    t = (REPO / "scripts" / "tiletie" / "build_widening_corpus.sh").read_text()
+    assert "GATE_FAILURES=()" in t and "run_gate()" in t
+    assert "set +e" in t and "CONTINUING so every" in t
+    assert "GATE_DISJOINT_PROBE.json" in t          # exclusions before the freeze
+    assert "EXCLUDE_RIDS_final.txt" in t
+    assert "--carry-exclusions" in t
+    assert "FLOORS.json" in t and "gate_floor_s1" in t
+    assert "--r4" in t
+
+
+def test_w10_three_way_band_form():
+    t = (CAMPAIGN / "run_gen.sh").read_text()
+    assert "137000000000" in t and "138000000000" in t
+    assert "--extension s1" in t and "--extension s2" in t
+    # 135e9 is RETAINED INPUT and must be refusable
+    assert "RETAINED AS VALID INPUT" in t
+    r = subprocess.run(["bash", str(CAMPAIGN / "run_gen.sh"), "local", "--base"],
+                       capture_output=True, text=True,
+                       env={**os.environ, **DRY})
+    assert r.returncode == 2 and "REFUSING" in r.stderr
+    # the sub-ranges come from FLOORS.json, never from the script
+    assert "ext_field" in t and "sub_ranges" in t
+    assert "NONE MAY BE GENERATED" in t
+    # the re-based generation cost (R4-5): 297.6 measured x 1.25
+    assert "372.0" in t
+    assert CR.COMMITTED["generation"]["worker_secs_per_game"] == 372.0
+    assert CR.COMMITTED["generation"]["measured"] == 297.6
+
+
+def test_w10_extension_refuses_without_floors(tmp_path):
+    """FLOORS.json predates the band claim precisely so the launcher cannot
+    invent a sub-range."""
+    r = subprocess.run(
+        ["bash", str(CAMPAIGN / "run_gen.sh"), "local", "--extension", "s1",
+         "--dry-run"],
+        capture_output=True, text=True, env={**os.environ, **DRY})
+    # either FLOORS.json is absent (FATAL) or it exists and the run would start;
+    # in this repo it is absent until the owner writes it
+    assert r.returncode == 2
+    assert "FLOORS.json" in (r.stderr + r.stdout) or "FATAL" in r.stderr
 
 
 # --------------------------------------------------------------------------- #
