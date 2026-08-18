@@ -161,10 +161,22 @@ from pathlib import Path
 campaign, strata = Path(sys.argv[1]), sys.argv[2].split()
 doc = json.loads((campaign / "POSITION_ORDER.json").read_text())
 M_EXPECT = {"s1": 128, "s2": 32}
+noted = set()          # one NOTE per (stratum, value), not one per chunk
 for s in strata:
     st = doc["strata"].get(s)
     if st is None:
         sys.exit(f"[scoring] POSITION_ORDER.json has no stratum {s!r}")
+    # ---- M: assert the STAMP, which is what --m is derived from ---------- #
+    # POSITION_ORDER.json carries the COMMITTED M for the stratum (stamped by
+    # stage_chunks from the pair). `m_for()` below independently states the same
+    # constant to build `run_tiletie --m`. Cross-checking the two is the real
+    # assertion: if they ever disagree, this launcher would score at a budget
+    # the chunking was not sized for.
+    m_stamp = int(st.get("m", -1))
+    if m_stamp != M_EXPECT[s]:
+        sys.exit(f"[scoring] {s}: POSITION_ORDER.json stamps m={m_stamp} but "
+                 f"this launcher commits m={M_EXPECT[s]} — the stamp is what "
+                 f"--m is derived from, so a disagreement here IS a defect")
     order, sizes = st["order"], st["chunk_sizes"]
     if len(order) != st["n"] or sum(sizes) != st["n"]:
         sys.exit(f"[scoring] {s}: POSITION_ORDER inconsistent n={st['n']} "
@@ -199,9 +211,25 @@ for s in strata:
         if int(plan.get("deployed_cap_j", -1)) != 4:
             sys.exit(f"[scoring] {s}/chunk{k}: deployed_cap_j="
                      f"{plan.get('deployed_cap_j')} != 4 (G-SALT)")
-        if int(plan.get("m_worlds", -1)) != M_EXPECT[s]:
-            sys.exit(f"[scoring] {s}/chunk{k}: m_worlds={plan.get('m_worlds')} "
-                     f"!= {M_EXPECT[s]} (DESIGN §4)")
+        # ⚠️ NOT ASSERTED, and this is the SECOND copy of that decision (the
+        # first was stage_chunks.py, fixed at b06ad1ff; ruling 038185ed
+        # adjudicated the class). `build_positions` has NO `--m` flag: a chunk
+        # plan's `m_worlds` is INHERITED from the corpus plan, whose value comes
+        # from a module constant used only for cost arithmetic. It never enters
+        # a seed, a position, an arm or a digest — seeds are
+        # sha256(tag|rid|j|salt), with no M term. So it is 32 on EVERY corpus
+        # this pipeline builds, and asserting it against S1's committed 128
+        # refused the S1 launch outright while S2 passed on the coincidence that
+        # 32 equals its committed M. The M of record is G-M's, read from
+        # RUN_MANIFEST via `run_tiletie --m`.
+        m_plan = int(plan.get("m_worlds", -1))
+        if m_plan != M_EXPECT[s] and (s, m_plan) not in noted:
+            noted.add((s, m_plan))
+            print(f"[scoring] NOTE {s}: chunk plan m_worlds={m_plan} vs "
+                  f"committed m={M_EXPECT[s]}. NOT a defect and NOT asserted: "
+                  f"build_positions has no --m flag and its m_worlds is "
+                  f"cost-arithmetic metadata only. The M of record is G-M's, "
+                  f"from RUN_MANIFEST via run_tiletie --m.")
         if plan.get("world_seed_salt") not in (None, "tiletie-v1"):
             sys.exit(f"[scoring] {s}/chunk{k}: world_seed_salt="
                      f"{plan.get('world_seed_salt')!r} != 'tiletie-v1'")

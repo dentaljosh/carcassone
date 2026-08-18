@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -2078,3 +2079,83 @@ def test_run_manifest_fixture_is_audited_at_4a():
         assert d["arb_backend"] == "rust"
     names = [g.name for g in ACC.book_fixture(REPO / "x", REPO / "y")]
     assert any("RUN-MANIFEST fixture" in n for n in names)
+
+
+# --------------------------------------------------------------------------- #
+# The m_worlds CLASS, mechanised — two independent copies existed (stage_chunks #
+# and run_scoring), each refusing the S1 launch, each passing S2 on the same    #
+# coincidence. A third must not be able to appear quietly.                      #
+# --------------------------------------------------------------------------- #
+#: Every file a launcher, stager or driver of this run executes.
+_LAUNCH_PATH_FILES = [
+    REPO / "measurement" / "tiearb_widening_20260817" / "run_scoring.sh",
+    REPO / "measurement" / "tiearb_widening_20260817" / "run_gen.sh",
+    REPO / "measurement" / "tiearb_widening_20260817" / "merge_scoring.sh",
+    REPO / "measurement" / "tiearb_widening_20260817" / "stage_chunks.py",
+    REPO / "measurement" / "tiearb_widening_20260817" / "merge_legs.py",
+    REPO / "scripts" / "tiletie" / "build_widening_corpus.sh",
+    REPO / "scripts" / "tiletie" / "union_positions.py",
+]
+
+#: The shapes a plan-metadata-vs-committed-M comparison takes. Deliberately
+#: broad: it is cheaper to justify a match than to miss a third copy.
+_M_COMPARISON_PATTERNS = (
+    re.compile(r'm_worlds[^\n]{0,40}?(?:!=|==)\s*M_(?:EXPECT|BY_STRATUM|COMMITTED)'),
+    re.compile(r'M_(?:EXPECT|BY_STRATUM|COMMITTED)\[[^\]]+\][^\n]{0,40}?(?:!=|==)'
+               r'[^\n]{0,40}?m_worlds'),
+    re.compile(r'(?:plan|source_plan)[^\n]{0,30}m_worlds[^\n]{0,40}?(?:!=|==)'
+               r'\s*(?:128|32)\b'),
+)
+
+
+@pytest.mark.parametrize("path", _LAUNCH_PATH_FILES, ids=lambda p: p.name)
+def test_no_launcher_compares_plan_m_worlds_against_committed_m(path):
+    """⭐ THE CLASS, not the instance. `build_positions` has no `--m` flag, so a
+    plan's (or an inherited chunk plan's) `m_worlds` is cost-arithmetic metadata
+    that is 32 on EVERY corpus this pipeline builds. Comparing it against a
+    committed M refuses S1 outright and passes S2 on a coincidence — twice
+    independently discovered, in stage_chunks.py and run_scoring.sh.
+
+    What a launcher MAY assert is the M it STAMPS (POSITION_ORDER.json), which
+    is what `run_tiletie --m` is derived from."""
+    if not path.is_file():
+        pytest.skip(f"{path.name} not in this tree")
+    src = path.read_text()
+    for i, line in enumerate(src.splitlines(), 1):
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        for pat in _M_COMPARISON_PATTERNS:
+            assert not pat.search(line), (
+                f"{path.name}:{i} compares a plan's m_worlds against a committed "
+                f"M — the third copy of a defect fixed twice:\n    {s}")
+
+
+def test_the_two_known_sites_now_assert_the_stamp_instead():
+    """Both fixed sites must assert the STAMP, so the class is closed by
+    replacement rather than by deletion."""
+    sc = (REPO / "measurement" / "tiearb_widening_20260817"
+          / "stage_chunks.py").read_text()
+    assert "m_stamped = int(doc[" in sc and "stamps m=" in sc
+    assert "cost-arithmetic metadata" in sc
+
+    rs = (REPO / "measurement" / "tiearb_widening_20260817"
+          / "run_scoring.sh").read_text()
+    assert 'm_stamp = int(st.get("m", -1))' in rs
+    assert "stamps m=" in rs and "cost-arithmetic metadata" in rs
+    # the NEIGHBOURING assertions are untouched — all legitimately gate-addressed
+    for keep in ('plan.get("uncapped") is not True',
+                 'plan.get("cap_j") is not None',
+                 'int(plan.get("deployed_cap_j", -1)) != 4',
+                 'plan.get("world_seed_salt") not in (None, "tiletie-v1")'):
+        assert keep in rs, f"a neighbouring assertion was disturbed: {keep}"
+
+
+def test_run_scoring_reports_the_m_discrepancy_once_per_stratum():
+    """Reported, not asserted — and once per (stratum, value), not once per
+    chunk: a NOTE repeated eight times reads as an error."""
+    rs = (REPO / "measurement" / "tiearb_widening_20260817"
+          / "run_scoring.sh").read_text()
+    assert "noted = set()" in rs
+    assert "(s, m_plan) not in noted" in rs
+    assert "NOTE {s}: chunk plan m_worlds=" in rs
