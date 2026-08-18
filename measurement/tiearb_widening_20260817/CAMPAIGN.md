@@ -10,10 +10,10 @@ orchestrator's reconciliation; the rung plans are the authority on their own des
 
 | rung | state after planning | next physical action |
 |---|---|---|
-| (1) meeple plies | **likely dead — free prior below supply bar** (JCZ-mining meta: meeple exact-tie 16.5% = 4.8/game vs tile 55.1% = 22.96/game, before removing duplicates, which arithmetic suggests account for ~all of it; the July 60% figure is the *duplicate* class arbitration cannot separate) | ≤0.5 worker-h kill-census over 1,299 banked games (<5 min wall), grouping by board-level claimed-region id; carries the eps gap-CDF piggyback |
+| (1) meeple plies | **CLOSED 2026-08-18 — `M-DEAD` fired** on the pre-written §5 bar: pooled `arbitrable_plies_per_game` **1.410 < 4.0** (per-seat 0.705), `arbitrable_fraction` **0.195**, `fired/game` 7.236 over 1,299 banked games; **80.5% of fired plies are game-equivalent duplicates**. Both corpora agree (phi 14.43% vs 14.61%, ratio 1.012 — no `M-VOID`). `M-DUP-BOUND` did NOT fire: fraction conjunct holds (0.195 < 0.40), supply conjunct fails (7.236 < 8.0). Readout: [`census/READOUT.md`](census/READOUT.md) | **none.** No pricing, no corpus, no code touch; rung leaves the shared prereg. Close-out only: LEVER_INDEX row + roadmap row + DECISIONS line. Deviation on record: plan §4's C5 duplicate-CRN-invariance check was NOT run (needs playouts, outside the census's blind discipline) — must run first if meeple arbitration is ever revived |
 | (2) B>16 | **the live rung.** 5-model saturation fits split into two worlds: still-rising (Δ(16→64) +0.05…+0.20) vs saturated (~+0.02); free corroborants (flat pick-churn, climbing oracle-agreement) say still-rising | shared fresh-corpus instrument run, primary Δ(16→64), se≈0.020, 2σ floor +0.040 |
 | (3) J>4 | **alive, prize corrected** — the funded ~1.4× is an inherited raw-tie-set extrapolation; on the deduped arm population the same order-statistic math gives **≈1.244× at capped plies / ≈1.087× globally** (~+0.08 pts/capped ply). Arm selection is a seeded draw (no arm-0 side channel); un-capping is a call-site value, 0 LoC in carc-core | rides rung (2)'s shared run (+22% cost) — does not run standalone |
-| (4) eps>0 | **DEAD from banked data — recommend formal closure.** Leaf values are a lattice (0.05 grain); phi(eps) is the banked gap CDF; eps=0.05 adds +0.7–1.0% fired plies vs a 5% power-derived kill bar (fires on both independent corpora); meaningful mass needs eps≈1.0 = overriding a full point of leaf preference. Best fundable form ~21,000 games/cell | none — owner ratifies closure; gap-scalar piggyback rides the meeple census |
+| (4) eps>0 | **CLOSED 2026-08-18 — banked kill CORROBORATED on the fresh gap-CDF piggyback.** TILE (31,827 plies, all champ449 tile plies, no sampling): eps=0.05 adds **+0.66%** vs the 5% power-derived `K-DEAD` bar, and `m ≥ 0.30` first arrives at eps≈1.5–2.0 ⇒ `K-STRUCTURAL` holds. MEEPLE: `K-DEAD` also fires (+3.47% < 5%) but with 5.3× less margin, and **`K-STRUCTURAL`'s conjunct (i) does NOT transfer** — `m ≥ 0.30` arrives at eps≈0.25 (an atom of 4,144 plies at gap 0.25). Changes no branch: `K-DEAD` is census-independent power arithmetic, rung (1) is dead on supply, and the eps-widened sets' arbitrable fraction is unmeasured. Readout: [`census/READOUT.md`](census/READOUT.md) §8 | none — owner ratifies closure; the piggyback that was owed has been delivered |
 
 ## Cross-plan reconciliation (orchestrator rulings for the DESIGN phase)
 
@@ -44,8 +44,9 @@ orchestrator's reconciliation; the rung plans are the authority on their own des
 
 ## Sequencing (recommended)
 
-0. **Post-JCZ-markers, freeze lifted**: meeple kill-census (+eps gap piggyback) —
-   minutes; expected outcome: rungs (1)+(4) close, campaign narrows to (2)+(3).
+0. ✅ **DONE 2026-08-18** — meeple kill-census (+eps gap piggyback), 52.2 s wall / 0.4266
+   worker-h against a ≤0.5 worker-h bar. Expected outcome realized: rungs (1)+(4) closed,
+   campaign narrowed to (2)+(3). See [`census/READOUT.md`](census/READOUT.md).
 1. **W1 instrument wiring** (rust ARB judge into `run_tiletie.py`; bit-exactness
    obligation vs the python judge per the Phase-A G-BITEXACT precedent).
 2. **Blind DESIGN + READ_RULE** for the shared (2)+(3) run, then the run:

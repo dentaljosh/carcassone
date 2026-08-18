@@ -1,0 +1,157 @@
+{
+  "schema": "carcassonne-meeple-tie-census/v1-manifest",
+  "goal": "MEEPLE-ply leaf exact-tie census over banked champion games: replay + leaf calls only, no search, no playouts, NO outcome statistic. Rung (1) of the tie-arbiter widening campaign.",
+  "spec": [
+    "measurement/tiearb_widening_20260817/PLAN_meeple_ties.md",
+    "measurement/tiearb_widening_20260817/CAMPAIGN.md",
+    "measurement/tiearb_widening_20260817/PLAN_eps_near_ties.md"
+  ],
+  "blind_discipline": {
+    "game_fields_read": [
+      "game_id",
+      "deck_seed",
+      "actions",
+      "n_plies"
+    ],
+    "note": "score_p0/score_p1/sentinel are NOT read. C5 (duplicate CRN bit-invariance) is deliberately not implemented here \u2014 it needs playouts."
+  },
+  "argv": [
+    "scripts/tiletie/meeple_tie_census.py",
+    "--workers",
+    "30",
+    "--tile-gap-corpora",
+    "champ449",
+    "--out-dir",
+    "measurement/tiearb_widening_20260817/census"
+  ],
+  "resolved_args": {
+    "games": null,
+    "out_dir": "measurement/tiearb_widening_20260817/census",
+    "workers": 30,
+    "profile": "walled",
+    "limit_games": null,
+    "tile_gap": true,
+    "tile_gap_corpora": "champ449",
+    "abort_wall_mins": 30.0,
+    "contention_note": null
+  },
+  "git_rev": "1627a801",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "hostname": "Doctor",
+  "rules_profile": "walled",
+  "rules_profile_manifest": {
+    "name": "walled",
+    "grid_rule": "engine6",
+    "start_row": 6,
+    "start_col": 15,
+    "board_rows": 35,
+    "board_cols": 35,
+    "start_rule": "engine",
+    "window_size": 25,
+    "cloister_scan": "drifting",
+    "unplaceable_tile": "next_player",
+    "note": "the engine of record \u2014 every elo ever measured is a walled number",
+    "r9_env_expected": false,
+    "fixed_start_tile": false,
+    "recentred": false,
+    "r9_env_var": "CARCASSONNE_FIX_R9",
+    "r9_env_observed": false,
+    "r9_env_ok": true
+  },
+  "game_kwargs": {},
+  "env_resolved": {
+    "CARCASSONNE_FIX_R9": "0",
+    "r9_env_expected": false,
+    "leaf_env": {
+      "CARCASSONNE_V25_CAP": "8",
+      "CARCASSONNE_V25_OPP_CAP": "8",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+      "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+      "CARCASSONNE_V25_MEEPLE_K": "2.0",
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0",
+      "CUDA_VISIBLE_DEVICES": "",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "leaf_hashes": {
+    "harness_leaf_hash": "a36d2e15a3b3d71d",
+    "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+    "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "leaf_hash_of_record": "a36d2e15a3b3d71d",
+  "leaf_hash_assert_ok": true,
+  "leaf_bag_close": false,
+  "tie_eps_grid": [
+    0.0,
+    0.05,
+    0.2,
+    0.5,
+    1.0
+  ],
+  "corpora": [
+    {
+      "label": "champ449",
+      "path": "/home/doctor/projects/carcassone/measurement/champ_action_logs/champ_games.jsonl",
+      "n_games": 449,
+      "sha256": "fa6704df5278b6c52753894b3a83b291d8e22b521c544e0fc9a81f011190f455",
+      "tile_gap_read": true
+    },
+    {
+      "label": "tiearb2_850",
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/champ_games_tiearb2.jsonl",
+      "n_games": 850,
+      "sha256": "fe49665f699ea98be091fbd6df55c0e613e53dbf8334dc5d784210669c61bdb5",
+      "tile_gap_read": false
+    }
+  ],
+  "n_games_total": 1299,
+  "per_corpus_games": {
+    "champ449": 449,
+    "tiearb2_850": 850
+  },
+  "per_corpus_counters": {
+    "champ449": {
+      "tile_plies": 32328,
+      "meeple_plies": 32282,
+      "meeple_plies_ge2": 25848,
+      "tile_plies_ge2": 31827,
+      "n_plies": 64610,
+      "games": 449
+    },
+    "tiearb2_850": {
+      "tile_plies": 61200,
+      "meeple_plies": 61105,
+      "meeple_plies_ge2": 49046,
+      "n_plies": 122305,
+      "games": 850
+    }
+  },
+  "workers": 30,
+  "tile_gap_enabled": true,
+  "tile_gap_corpora": [
+    "champ449"
+  ],
+  "n_meeple_rows": 74894,
+  "n_tile_rows": 31827,
+  "wall_secs_total": 52.2,
+  "worker_secs": {
+    "total": 1535.8,
+    "meeple_census": 152.8,
+    "tile_gap_census": 1300.4,
+    "replay_residual": 82.6
+  },
+  "worker_hours_total": 0.4266,
+  "abort_wall_mins": 30.0,
+  "aborted": null,
+  "contention_note": null,
+  "outputs": {
+    "meeple_rows": "measurement/tiearb_widening_20260817/census/meeple_rows.jsonl",
+    "tile_gap_rows": "measurement/tiearb_widening_20260817/census/tile_gap_rows.jsonl",
+    "summary": "measurement/tiearb_widening_20260817/census/MEEPLE_CENSUS.json",
+    "census_md": "measurement/tiearb_widening_20260817/census/CENSUS.md"
+  },
+  "finished_utc": "2026-08-18T02:41:30Z"
+}

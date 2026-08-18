@@ -1,0 +1,17 @@
+[meeple_tie_census] 1299 games from 2 corpora {'champ449': 449, 'tiearb2_850': 850}; W=30; tile_gap=True on ['champ449']
+[meeple_tie_census] 100/1299 games (12s)
+[meeple_tie_census] 200/1299 games (22s)
+[meeple_tie_census] 300/1299 games (33s)
+[meeple_tie_census] 400/1299 games (43s)
+[meeple_tie_census] 500/1299 games (47s)
+[meeple_tie_census] 600/1299 games (48s)
+[meeple_tie_census] 700/1299 games (49s)
+[meeple_tie_census] 800/1299 games (49s)
+[meeple_tie_census] 900/1299 games (50s)
+[meeple_tie_census] 1000/1299 games (50s)
+[meeple_tie_census] 1100/1299 games (51s)
+[meeple_tie_census] 1200/1299 games (51s)
+
+[meeple_tie_census] DONE 52.2s wall / 0.4266 worker-h · 74894 meeple rows, 31827 tile rows
+[meeple_tie_census] phi_meeple_ply=0.1455 · fired/game=7.236 · arbitrable/game=1.410 · arbitrable_fraction=0.195 · branch hint M-DEAD
+[meeple_tie_census] -> measurement/tiearb_widening_20260817/census
