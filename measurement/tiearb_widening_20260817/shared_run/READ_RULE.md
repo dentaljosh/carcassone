@@ -1,8 +1,12 @@
 # TIE-ARBITER WIDENING — SHARED RUN, MECHANICAL READ RULE (rungs 2 + 3)
 
-> **STATUS: BLIND PREREGISTRATION — revision R3, THE BINDING PAIR PENDING MERGE. NOT
+> **STATUS: BLIND PREREGISTRATION — revision R3.1, THE BINDING PAIR PENDING MERGE. NOT
 > LAUNCHED. NO NUMBER OF THIS RUN EXISTS.** No further review round; the closing pass's one
-> blocking defect (`B1`, the `G-BAND` top-up clause) is fixed here with its pre-approved text.
+> blocking defect (`B1`, the `G-BAND` top-up clause) was fixed in R3 with its pre-approved text.
+> **R3.1** carries the dated pre-blind amendments of **DESIGN §0** (2026-08-18) — the W-code
+> builder's five ratification items, including the `allow_null` closed list in §1.2 below, whose
+> membership this session **amended from two entries to four** because two legitimate nulls
+> would otherwise have failed a healthy run.
 >
 > ⚠️ **BLIND-ORDER REQUIREMENT — NOT YET SATISFIED.** Drafted in an isolated worktree under
 > the main-tree commit freeze. **This file and [`DESIGN.md`](DESIGN.md) must be committed to
@@ -40,6 +44,21 @@ whose runner (`tier1_rust_leg.py`) emits `resolved_config` and `preflight.seeds`
    a dotted key path, verified against the emitter (R1 and R2 re-verified all of them).
 2. **ABSENT IS FAIL.** File missing, key missing, key `null` ⇒ the gate **FAILS**. Absent is
    never a pass, never "assume healthy", never "recompute by hand and proceed".
+   **`allow_null` — the CLOSED exception list (DESIGN §0.B).** Four addresses where `null` is the
+   *correct* value, each paired with the witness that distinguishes "legitimately null" from
+   "broken". A `null` at any of the four **without** its witness in the stated state is a FAIL,
+   exactly as anywhere else:
+
+   | address | `null` is legitimate iff | witness |
+   |---|---|---|
+   | `READOUT::widening.j_rider.s2.r_ora` | the §5 degenerate-denominator guard fired | `…s2.r_ora_reported == false` |
+   | `READOUT::widening.j_rider.s2.ci95_r_ora` | same event, same moment | `…s2.r_ora_reported == false` |
+   | `READOUT::widening.j_rider.d_draw.*` | W9 has not run | `…d_draw.d_draw_ran == false` |
+   | `POSITIONS_PLAN.json::cap_j` | the build was uncapped — **`G-UNCAPPED` requires this null** | `uncapped == true` ∧ `cap_j_label == "inf"` |
+
+   **This list is CLOSED at the blind commit. No address may be added to it afterwards** — "this
+   null is fine too" is how a fail-closed rule becomes fail-open. An unforeseen legitimate null
+   is a numbered deviation in the read-out (§7), never a quiet extension of this table.
 3. **Fallbacks are pre-registered, not improvised.** Try the primary, then the fallback; the
    read-out **must print `resolved_at: <address>`** for every gate, or `UNRESOLVED`. A gate
    answered only by a fallback is reported as such on the branch line. **A gate may have no
@@ -80,7 +99,7 @@ other.**
 | `G-DRAW` | for every rid: `[arms_full[0]] + _seeded_cap(rid, arms_full[1:], 4)[0] == subset_j4` (exact list identity, re-run at the run's `git_rev`); `subset_j4_id` matches the recomputed digest; `len(subset_j4) == min(4, len(arms_full))`; `n_mismatch == 0` | `RUN/GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}` (owned by **W5**) | `RUN/corpus/positions_{s1,s2}/ARMS.json::<rid>.{arms_full,subset_j4,subset_j4_id}` recomputed by the reader | **PASSES** — a pure function of `(rid, arms_full[1:])`. ⚠️ `_seeded_cap` returns `(kept, capped, dropped)` **without** the reference arm while `subset_j4 = [ref] + kept`: comparing the raw return fails on every healthy run. It does **NOT** assert agreement with the deployed rust draw — retired as unsatisfiable (DESIGN §5); carried as rider `I7` |
 | `G-ARMS` | every full-set arm scored on **all** `M` worlds — per-arm, not per-ply; `n_arms_complete == n_arms`; `include_partial == false` | `READOUT::widening.gates.arms.{n_arms,n_arms_complete,include_partial,ok}` | `RUN/verdicts/per_position_{s1,s2}.jsonl` per-arm world counts | **PASSES** — contingent on W3 (DESIGN §9 step 4a) |
 | `G-COMPLETE` | S1 scored `≥ 1,283` (95% of 1,350); S2 scored capped `≥ 1,045` (95% of 1,100); mining ceilings honoured (≤4 tied plies/root S1, ≤3 capped plies/root S2) | `READOUT::widening.completion.{s1_n,s2_n,s1_max_per_root,s2_max_per_root}` | `RUN/verdicts/per_position_{s1,s2}.jsonl` line counts + `root_id` grouping | **PASSES** — contingent on W3 |
-| `G-REPLICATE` **(binds BOTH rungs)** | the `(B ≤ 16, E = 16)` sub-read on S1 lands inside the **2×-inflated** 2σ envelope of Stage-1b's ladder at every rung `B ∈ {1,2,4,8,16}`, **and** the shared cell convicts (`arb_16` CI excludes 0) | `READOUT::widening.stage1_replication.{pass, per_rung_inside_envelope, arb16_convicts, envelope_inflation}` — **booleans only** | **none.** A missing or `null` boolean block is a **FAIL**. The sealed z-file is **not an address** and is never opened to answer this gate (§7) | **PASSES** if the instrument is sound. **A FAIL means `UNINTERPRETABLE`, NEVER `FAIL-the-lever`** — the fresh corpus is a different population. A rung failing the naive-σ envelope but passing the inflated one is a **mandatory caveat on every branch** |
+| `G-REPLICATE` **(binds BOTH rungs)** | the `(B ≤ 16, E = 16)` sub-read on S1 lands inside the **2×-inflated** 2σ envelope of Stage-1b's ladder at every rung `B ∈ {1,2,4,8,16}`, **and** the shared cell convicts (`arb_16` CI excludes 0). **The reference is `RUN/STAGE1B_LADDER.json`** — the banked ladder's `arb`/`se` per rung, transcribed by script from `measurement/tiearb2_20260816/READOUT.json::b_ladder.pooled` and **committed pre-blind** (DESIGN §0.C), passed to the analyzer as `--stage1b-ladder`; the analyzer **refuses to run without it**, which is fail-closed by construction and is not itself a gate | `READOUT::widening.stage1_replication.{pass, per_rung_inside_envelope, arb16_convicts, envelope_inflation}` — **booleans only** | **none.** A missing or `null` boolean block is a **FAIL**. The sealed z-file is **not an address** and is never opened to answer this gate (§7) | **PASSES** if the instrument is sound. **A FAIL means `UNINTERPRETABLE`, NEVER `FAIL-the-lever`** — the fresh corpus is a different population. A rung failing the naive-σ envelope but passing the inflated one is a **mandatory caveat on every branch** |
 
 **Precedence.** Gates are evaluated **before** any branch statistic is read. If any gate
 binding a rung FAILS, that rung's answer is `W-UNREADABLE` and **no branch of that rung
@@ -180,8 +199,17 @@ non-firing `X-FREE` is not evidence against the cap being free.
 Addresses:
 `READOUT::widening.j_rider.s2.{delta_ora,ci95_ora,r_ora,ci95_r_ora,ora_j4_ci95,delta_arb,ci95_arb,n_capped,xfree_window}` ·
 `…j_rider.s1_replication.{…}` · `…j_rider.interaction.{arb_full_64_minus_16,
-arb_full_16_minus_j4_16}` · `…j_rider.d_draw.{n_checked,agreement_rate}`. Fallback:
-`RUN/verdicts/per_position_{s2,s1}.jsonl` recomputed under §3.
+arb_full_16_minus_j4_16}` · `…j_rider.d_draw.{n_checked,agreement_rate,d_draw_ran}`. Fallback:
+`RUN/verdicts/per_position_{s2,s1}.jsonl` recomputed under §3 (and `RUN/D_DRAW.json` for the
+`d_draw` block).
+
+**`r_ora` / `d_draw` nullability.** When the pre-branch guard fires, `r_ora` **and**
+`ci95_r_ora` are `null` together with `r_ora_reported == false`, and the `Δ_ora`-only sub-table
+adjudicates — that is a legitimate null, not a FAIL (§1.2). `d_draw.*` is `null` with
+`d_draw_ran == false` until **W9** runs; an unrun `D-DRAW` **changes no branch and licenses no
+change** — it means the `I7` conditional is reported as **unmeasured**, and `D-DRAW`'s result,
+when it exists, is reported under `I7` as a magnitude and **may never correct, reweight or
+re-scale `Δ_ora`**.
 
 **S1 and S2 are NEVER pooled** (different `E` ⇒ different `ora` estimand). The S1 capped subset
 and `D-DRAW` are riders and adjudicate nothing.
@@ -232,7 +260,10 @@ and `D-DRAW` are riders and adjudicate nothing.
 brackets; both rungs' full companion tables (DESIGN §2's "reported in full" list); all eight
 riders; the realized worker-hours and wall against DESIGN §7's committed figures; and the
 `c`-remeasure outcome for **all three** legs (judge ARB, judge IF, generation) — realized vs
-committed, and whether the one-sided HALT fired.
+committed, and whether the one-sided HALT fired — read from
+`RUN/RUN_MANIFEST_S1.json::c_remeasure.{legs.{arb,if,generation}.{committed,realized,ratio,halt_fired},
+halt_fired, failed_smokes, ok}` (DESIGN §0.A; `arb`/`if` are per **playout**, `generation` is per
+**game** — the legs are never compared to each other).
 
 **On `W-UNREADABLE` (any gate FAIL): the harness report prints GATE INPUTS ONLY — no `arb`,
 no `ora`, no `Δ`, no CI, no per-position statistic.** This is a hard requirement: on

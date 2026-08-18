@@ -1,9 +1,13 @@
 # TIE-ARBITER WIDENING — SHARED INSTRUMENT RUN, DESIGN (rungs 2 `B>16` + 3 `J>4`)
 
-> **STATUS: BLIND PREREGISTRATION — revision R3, THE BINDING PAIR PENDING MERGE. NOT
-> LAUNCHED. NOTHING RUN. NO OUTCOME STATISTIC OF ANY KIND WAS READ WHILE WRITING THIS.**
+> **STATUS: BLIND PREREGISTRATION — revision R3.1, THE BINDING PAIR PENDING MERGE. NOT
+> LAUNCHED. NOTHING RUN. NO OUTCOME STATISTIC OF THIS RUN EXISTS OR WAS READ.**
 > No further review round: the closing pass passed rev R2 on everything but one defect (`B1`)
-> and pre-approved its fix, which this revision applies verbatim along with cosmetics C1–C6.
+> and pre-approved its fix, which R3 applied verbatim along with cosmetics C1–C6. **R3.1 adds
+> the dated pre-blind amendment section §0 (2026-08-18)** — the W-code builder's five
+> ratification items — and the committed `STAGE1B_LADDER.json` those amendments create. The
+> banked Stage-1b numbers in that file are adjudicated results of a **spent** corpus, already
+> quoted in `PLAN_B_gt_16.md` §1; transcribing them is not a read of this run.
 >
 > ⚠️ **BLIND-ORDER REQUIREMENT — NOT YET SATISFIED.** This file and
 > [`READ_RULE.md`](READ_RULE.md) were drafted and revised in an isolated **worktree** while
@@ -40,6 +44,72 @@
 >
 > `governance/PRODUCTION.yaml` is untouched by this DESIGN and by every branch of the
 > READ_RULE. No claim id is minted. No `experiments/results.csv` strength row is created.
+
+---
+
+## 0. Pre-blind amendments — 2026-08-18 (rev R3.1)
+
+**This is the legal window and it closes at the step-5 blind commit.** The W-code builder
+delivered W3/W5/W6/W8 + fixtures + a `c_remeasure.py` emitter (39 tests; the 4a harness verified
+end-to-end on fixtures) at `f26f4f29` in worktree `agent-ac2cd3b736f6e2bcc`, and surfaced five
+items that need a prereg decision **before** the pair freezes. All five are decided here.
+Nothing below moves a branch condition, a bar, a statistic or a power figure.
+
+**0.A — `c_remeasure` key spelling: RATIFIED VERBATIM.** §7 obliged the run to write
+realized-vs-committed `c` to `RUN_MANIFEST_S1.json` but named no key. The builder's spelling is
+adopted as written:
+`RUN_MANIFEST_S1.json::c_remeasure.{legs.{arb,if,generation}.{committed,realized,ratio,halt_fired},
+halt_fired, failed_smokes, ok}`. Two documentation riders, neither of which changes the emitter:
+(i) **the three legs do not share a unit** — `arb` and `if` are worker-s **per playout**,
+`generation` is worker-s **per game** (from `GEN_SMOKE.json::worker_secs_per_game`); `ratio` is
+`realized/committed` and is unitless, and **no comparison may be made across legs**;
+(ii) `halt_fired` is **one-sided** — true iff some leg's `ratio > 1.25` — while a non-empty
+`failed_smokes` (the §7 `null`/`0` case) is **not** a halt and **not** a cheap leg: it means
+re-run that smoke, and the long leg does not start until a real number exists.
+
+**0.B — `allow_null`: RATIFIED as a mechanism, membership AMENDED from two entries to four.**
+READ_RULE §1.2 makes `null` a FAIL, which is right for every address except those where `null`
+is the *correct* value. The closed list is now in READ_RULE §1.2. ⚠️ **The builder's list was
+short by two, and both omissions would have failed a healthy run** — the same disease class this
+pair has been fixing since `G-CAP`: `ci95_r_ora` is `null` in exactly the case `r_ora` is (the
+degenerate-denominator guard), and `widening.j_rider.d_draw.*` is `null` until W9 runs. **Builder
+action:** extend the `allow_null` list to the four entries in READ_RULE §1.2 and key each to its
+discriminating witness. **The list is CLOSED at the blind commit — no address may be added to it
+afterwards**, because "this null is fine too" is how a fail-closed rule becomes fail-open.
+
+**0.C — `STAGE1B_LADDER.json`: CREATED, committed here, pre-blind.** `widening.stage1_replication.*`
+needs the banked Stage-1b ladder as a committed reference, and the analyzer refuses to run
+without `--stage1b-ladder` (fail-closed by construction — a good property, not a gate). The file
+is transcribed **by script, not by hand**, from `measurement/tiearb2_20260816/READOUT.json`
+(`b_ladder.pooled`; source sha256 recorded in the file) and carries the five rungs' `arb`/`se`
+plus its `M=32 ⇒ E=16` context. These are **adjudicated, published numbers of a SPENT corpus**;
+they are already quoted in `PLAN_B_gt_16.md` §1. Committing them **before** the blind commit is
+precisely what makes `G-REPLICATE` a pre-registered comparison rather than a post-hoc one. Named
+in §10 and in the `G-REPLICATE` row.
+
+**0.D — `D-DRAW` gets an owner: NEW work item W9.** The owner-funded ≈2 wh probe had no work
+item. **W9** replays each S2 capped ply in rust and calls
+`carc_rs …tiearb_probe(j=4, salt="tiearb2-deploy-v1", ply=…)`, emitting `RUN/D_DRAW.json`
+`{n_checked, n_agree, agreement_rate, n_unreconstructible, git_rev}`, which the analyzer surfaces
+at `widening.j_rider.d_draw.*` via `--d-draw`. **No playouts, no outcome statistic.** It runs
+**post-corpus, alongside step 4b**, and is `null` until then (READ_RULE §1.2). ⚠️ W9 measures the
+very divergence `I7` declares out of scope: it is **reported under `I7` as the magnitude of that
+conditional, adjudicates nothing, cannot move any branch, and may NEVER be used to correct,
+reweight or re-scale `Δ_ora`.**
+
+**0.E — the §9 step-2 merge has TWO sources.** Written into §9 step 2 so an executor cannot
+merge half of it: W7 (`verify_tier1_rust.py --out`) lives in the **prereg** worktree
+`agent-a43f00f675fd11b65`; W3/W5/W6/W8 + fixtures + `c_remeasure.py` live in the **builder**
+worktree `agent-ac2cd3b736f6e2bcc` (`f26f4f29`).
+
+**0.F — W2 is CLOSED AS VERIFIED, not a phantom work item.** The builder's claim was checked
+against `scripts/tiletie/` at main HEAD by this session: every surviving `32` in the scoring path
+is an **argparse default** (`run_tiletie.py:960`, `tier1_rust_leg.py:438`,
+`oracle_score_pilot.py:1003`) or **docstring prose**; every consumer derives from `args.m` —
+`b_ceiling` (`run_tiletie.py:216`), `b_ceiling_from_m` (`:930`), `n_playouts` (`:812`),
+`preflight_seeds(salt, m)` and `preflight_m`. **Scope note:** `analyze_tiearb2.py`'s
+`M_EXPECTED`/`B_LADDER` constants are still 32/`{1,2,4,8,16}`, but those are **W3's** deliverable
+(§8), not W2's residue — do not close W3 on W2's evidence.
 
 ---
 
@@ -349,7 +419,11 @@ parity; with PLAN_B's 25% laptop-slowness + contention allowance, **≈ 26–29 
 3. **HALT is ONE-SIDED.** Halt and re-price only if a realized `c` is **>25% COSTLIER** than
    committed. Cheaper is recorded, never a halt (the generation line is already ~2.25×
    conservative). A re-priced run above **1,500 worker-h** requires fresh owner authorization.
-   Realized-vs-committed for all three legs is written to `RUN/RUN_MANIFEST_S1.json`.
+   Realized-vs-committed for all three legs is written by `c_remeasure.py` to
+   **`RUN/RUN_MANIFEST_S1.json::c_remeasure.{legs.{arb,if,generation}.{committed,realized,ratio,halt_fired},
+   halt_fired, failed_smokes, ok}`** (spelling ratified verbatim, §0.A). ⚠️ `arb`/`if` are
+   worker-s **per playout**, `generation` is worker-s **per game** — `ratio` is unitless and the
+   legs are **never compared to each other**.
 
 **Currency B: deploy wall (NOT convertible — Stage-2 §0.G; quoted, never derived from currency
 A).** `rho_wall` (sequential, N4 bar 1.20): B=16 **0.6224** · B=32 **1.2449** · B=64
@@ -368,12 +442,13 @@ ruled stays **OPEN and re-priced there** (rider `R6`). `rho_phone` is a third cu
 |---|---|
 | **W1** wire rust ARB judge | ✅ **MERGED** (`7b82610f`) |
 | **W4** uncapped arms + draw index | ✅ **CLOSED** (§5) |
-| **W2** no hard-coded 32 downstream of `--m` | TODO — §9 merge |
-| **W3** analyzer | TODO — §9 merge. See the **builder delta** below |
-| **W5** gate emitters (disjointness **and** draw) | TODO — §9 merge. See the **builder delta** below |
+| **W2** no hard-coded 32 downstream of `--m` | ✅ **CLOSED AS VERIFIED** (§0.F) — every surviving `32` is an argparse default or docstring prose; every consumer derives from `args.m`. Not a phantom item, and **not** evidence about W3's analyzer constants |
+| **W3** analyzer | **DELIVERED** `f26f4f29` (builder worktree) — pending the §9 step-2 merge and the 4a acceptance run. See the **builder delta** below; **W3 additionally owns the `allow_null` handling of §0.B and the `--stage1b-ladder` reference of §0.C** |
+| **W5** gate emitters (disjointness **and** draw) | **DELIVERED** `f26f4f29` — pending merge + 4a. See the **builder delta** below |
 | **W6** `build_widening_corpus.sh`: parameterised copy of `build_tiearb2_corpus.sh` (5 phases, shadow-root step, empty-stand-in switches, absolute `RUN/` outputs, leg-manifest copy-back, `GEN_SMOKE.json`) | TODO — §9 merge. See the **builder delta** below |
-| **W8** acceptance-test harness (**NEW in R2**) | TODO — §9 merge. See the **builder delta** below |
-| **W7** `verify_tier1_rust.py --out` | ✅ **DONE in this worktree** — the gate hard-coded `OUT_PATH` into the **closed** `tiearb2_stage2_20260817` run dir; re-running it for this campaign would have been a mid-run write to tracked artifacts of a closed run (REVIEW_R1 §2/§20) |
+| **W8** acceptance-test harness + fixtures (**NEW in R2**) | **DELIVERED** `f26f4f29`, 4a verified end-to-end on fixtures — pending merge. See the **builder delta** below |
+| **W7** `verify_tier1_rust.py --out` | ✅ **DONE in the prereg worktree `agent-a43f00f675fd11b65`** — the gate hard-coded `OUT_PATH` into the **closed** `tiearb2_stage2_20260817` run dir; re-running it for this campaign would have been a mid-run write to tracked artifacts of a closed run (REVIEW_R1 §2/§20). **It is the SECOND source of the §9 step-2 merge (§0.E)** |
+| **W9** `D-DRAW` probe (**NEW in R3.1**, §0.D) | TODO — runs **post-corpus, alongside step 4b**. Rust replay + `tiearb_probe(j=4, salt="tiearb2-deploy-v1", ply=…)` over the S2 capped plies → `RUN/D_DRAW.json::{n_checked,n_agree,agreement_rate,n_unreconstructible,git_rev}`, surfaced by the analyzer via `--d-draw` at `widening.j_rider.d_draw.*`. No playouts, no outcome statistic; `null` until it runs; **adjudicates nothing and may never correct, reweight or re-scale `Δ_ora`** |
 | PLAN_J §8(4) runtime `tiearb_capped_total` | **NOT built, NOT a gate** — a deploy-side rust counter behind the freeze; the offline witnesses (`ARMS.json::capped_at_4`, `POSITIONS_PLAN.json::n_positions_capped_at_4`) already satisfy the offline requirement |
 
 ### Builder delta — what changed between rev R1 and rev R2 (self-contained; diff your work against this)
@@ -434,8 +509,16 @@ the run is live:
 1. **All W-code in a worktree.** W2 · W3 · W5 · W6 · W7 · W8 are built and tested in a git
    worktree with `PYTHONPATH=<worktree>/src:<worktree>/engine`, never in the main tree.
 2. **ONE quiet-window merge**, at a moment when no local run is live (census first), of all
-   W-code in a **single commit**. **This commit is the `git_rev` of record** for
-   `G-BITEXACT@HEAD` (READ_RULE §2). ⚠️ **Its sha is recorded in TWO places, both created no
+   W-code in a **single commit** — **and the W-code has TWO SOURCES (§0.E). Merging one is
+   merging half the run:**
+   - worktree **`agent-ac2cd3b736f6e2bcc`**, commit **`f26f4f29`** — W3 (analyzer) · W5 (gate
+     emitters) · W6 (corpus driver) · W8 (acceptance harness + fixtures) · `c_remeasure.py`;
+   - worktree **`agent-a43f00f675fd11b65`** — **W7** (`verify_tier1_rust.py --out`). Take the
+     `scripts/tiletie/verify_tier1_rust.py` change **only**; the prereg pair,
+     `STAGE1B_LADDER.json` and the `REVIEW_R*.md` files do **not** ride in this merge — they are
+     the step-5 blind commit.
+
+   **This commit is the `git_rev` of record** for `G-BITEXACT@HEAD` (READ_RULE §2). ⚠️ **Its sha is recorded in TWO places, both created no
    later than the step-5 blind commit: (i) the blind commit's own message, and (ii)
    `RUN/W_CODE_MERGE.txt`, committed as part of that same blind commit.** It is **never**
    recorded by editing this DESIGN or the READ_RULE after step 5 — a post-blind edit to the
@@ -457,7 +540,9 @@ the run is live:
    get audited before any real corpus exists. **Mechanism: key presence + JSON type ONLY. No
    value is computed, printed or stored** — W3 never runs on real corpus positions here, and
    `SEALED_G_REPLICATE.json` is not brought into existence (REVIEW_R2 §N3).
-5. **THEN** the blind `DESIGN.md` + `READ_RULE.md` commit to main, in one commit.
+5. **THEN** the blind commit to main, in ONE commit: `DESIGN.md` + `READ_RULE.md` +
+   `STAGE1B_LADDER.json` + `W_CODE_MERGE.txt` (carrying step 2's sha) + the `REVIEW_R*.md`
+   provenance files.
 6. **THEN** the band claim, then the corpus build (generation → census → positions → gates).
 7. **4b — POST-CORPUS, PRE-SCORING acceptance test.** Re-run **W8** against the **real** corpus
    artifacts, which exist now and carry **no outcome statistic**: `CHAMP_GAMES_VERIFY.json`,
@@ -478,6 +563,9 @@ the run is live:
 
 `corpus/CHAMP_GAMES_VERIFY.json` (+ `…_TOPUP.json` iff the blind top-up was exercised) ·
 `corpus/GEN_SMOKE.json` · `W_CODE_MERGE.txt` (the §9 step-2 sha, committed with the blind pair) ·
+**`STAGE1B_LADDER.json`** (the committed `G-REPLICATE` reference, §0.C — written pre-blind,
+passed to the analyzer as `--stage1b-ladder`, which refuses to run without it) ·
+**`D_DRAW.json`** (W9, §0.D — `null` until it runs) ·
 `corpus/positions_{s1,s2}/{POSITIONS_PLAN.json,ARMS.json}` ·
 `GATE_DISJOINT.json` · `GATE_BITEXACT_HEAD.json` · `GATE_DRAW.json` ·
 `RUN_MANIFEST_{S1,S2}.json` · `SMOKE_MANIFEST_{S1,S2}_<judge>.json` ·
