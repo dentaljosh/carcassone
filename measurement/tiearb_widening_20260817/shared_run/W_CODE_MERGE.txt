@@ -1,0 +1,40 @@
+W_CODE_MERGE — the §9 step-2 W-code merge shas, recorded here and in this
+commit's message, both created no later than the step-5 blind commit
+(DESIGN.md §9 step 2; READ_RULE.md §2 G-BITEXACT@HEAD).
+
+THE git_rev OF RECORD for G-BITEXACT@HEAD:
+  413e985674e47a8d5ffe68a74b3dca097fc59b41
+
+  The FIRST scoped merge (two sources, §0.E): W3/W5/W6/W8 + fixtures +
+  c_remeasure.py from worktree-agent-ac2cd3b736f6e2bcc (f26f4f29 + b4e15959),
+  and W7 (verify_tier1_rust.py --out) from worktree-agent-a43f00f675fd11b65
+  (f7722ed3) — the verify_tier1_rust.py change ONLY.
+  GATE_BITEXACT_HEAD.json was produced AT this sha: PASS, 15,360/15,360
+  bit-identical, 0 mismatches, legal_mask_cache true. Its recorded git_rev is
+  this sha exactly, satisfying the first disjunct of the §2 conjunct.
+  Merge provenance and its scoped-checkout rationale: DESIGN §0.J.
+
+THE SECOND scoped merge (W10, rev R3.3 — the generation launcher, §0.H/§0.I):
+  23c6211efa9723a628d03c7f5d12e36f632546c1
+
+  measurement/tiearb_widening_20260817/{WORKERS.conf, run_gen.sh}, the W6
+  conf-name rewire (§0.K), the two new 4a fixtures (leg-manifest and
+  smoke-manifest) and the §0.G acceptance re-split. Delivered by the builder at
+  682d8f54.
+
+WHY TWO SHAS. The run's own git_rev is necessarily LATER than either (the blind
+commit is step 5; the gate is step 3), and the two emitters use different
+formats (40-char rev-parse HEAD vs --short). READ_RULE §2 is written for that
+reality: the conjunct is satisfied by 413e9856 itself, or by a descendant whose
+cumulative diff touches nothing under scripts/tiletie/, src/, engine/ or rust/.
+23c6211e DOES touch scripts/tiletie/ — it is the second W-code merge, landed
+BEFORE this blind commit and BEFORE any position was scored, and it is not
+offered as a satisfying descendant. The gate artifact's own git_rev is
+413e9856, which satisfies the conjunct directly.
+
+Both merges are scoped path checkouts rather than wholesale branch merges:
+both worktree branches fork BEHIND this branch's HEAD, so merging them whole
+would have reverted the JCZ close-out (§0.J).
+
+ACCEPTANCE at this point: §9 step 4a (amended §0.G, genuinely corpus-free) —
+PASS, 12 gates resolved, 0 unresolved, 0 fallback-only, 0 unaudited fallbacks.

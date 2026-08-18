@@ -1,0 +1,41 @@
+{
+  "schema": "carcassonne-stage1b-ladder/v1",
+  "purpose": "The BANKED Stage-1b arb ladder, transcribed as the committed reference for G-REPLICATE in measurement/tiearb_widening_20260817/shared_run/READ_RULE.md. These are adjudicated, published numbers of a SPENT corpus -- nothing here is a statistic of the widening run, and committing it BEFORE the blind commit is what makes G-REPLICATE a pre-registered comparison instead of a post-hoc one.",
+  "source": {
+    "path": "measurement/tiearb2_20260816/READOUT.json",
+    "sha256": "e096fd9fe636696ae4d4253368e2ecf06afcd9f318858a86656b7a47fe70dda9",
+    "key_path": "b_ladder.pooled",
+    "readout_md": "measurement/tiearb2_20260816/READOUT.md",
+    "transcribed_by": "script, not by hand (no typing of digits)"
+  },
+  "context": {
+    "m_worlds": 32,
+    "e_worlds": 16,
+    "parity_base": 1,
+    "n": 1350,
+    "n_roots": 724,
+    "note": "Stage-1b ran M=32, so its evaluation half is E=16. The widening run's comparable corner is the (B<=16, E=16) sub-read on S1. G-REPLICATE compares against the 2x-INFLATED 2-sigma envelope of these se's (CL-068 cross-band inflation, READ_RULE rider R1)."
+  },
+  "rungs": {
+    "1": {
+      "arb": 0.009414923837602111,
+      "se": 0.04815720185896405
+    },
+    "2": {
+      "arb": 0.03219799920152325,
+      "se": 0.04920222130999225
+    },
+    "4": {
+      "arb": 0.09196455991646706,
+      "se": 0.047703123889394454
+    },
+    "8": {
+      "arb": 0.08263632966852978,
+      "se": 0.047078470965358235
+    },
+    "16": {
+      "arb": 0.14408474602297155,
+      "se": 0.04785183966636599
+    }
+  }
+}
