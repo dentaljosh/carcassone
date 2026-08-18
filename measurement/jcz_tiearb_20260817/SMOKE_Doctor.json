@@ -1,0 +1,72 @@
+{
+ "witness": "SMOKE (DESIGN \u00a70.1.3 split ratio, \u00a70.1.4 laptop memory)",
+ "host": "Doctor",
+ "utc": "2026-08-18T00:10:18Z",
+ "git_head": "b2e8feed12c32ccea4106a12118d43d30a3879c2",
+ "workers_smoke": 30,
+ "workers_production_local": 30,
+ "workers_production_laptop": 22,
+ "java": "/usr/bin/java",
+ "java_version": "openjdk version \"17.0.19\" 2026-04-21",
+ "_JAVA_OPTIONS": "-Xmx256m -Xss1m -XX:+UseSerialGC -XX:TieredStopAtLevel=1",
+ "n_samples": 202,
+ "sample_csv": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/SMOKE_Doctor.samples.csv",
+ "peak_rss_total_kb": 4167432,
+ "peak_rss_total_gb": 3.97,
+ "peak_rss_worker_max_kb": 25344,
+ "peak_rss_workers_sum_kb": 26624,
+ "peak_n_workers": 2,
+ "peak_n_jvm": 31,
+ "peak_rss_jvm_sum_kb": 4144904,
+ "peak_rss_jvm_max_kb": 141408,
+ "peak_load1": 30.1,
+ "min_mem_available_kb": 31634640,
+ "min_mem_available_gb": 30.17,
+ "per_cell": [
+  {
+   "cell": "jcz_CHAMP_deploy11008",
+   "workers": 30,
+   "decks": 4,
+   "games_target": 8,
+   "games_recorded": 8,
+   "elapsed_s": 133.0,
+   "s_per_game_wall": 16.625,
+   "worker_s_per_game": 498.8,
+   "last_rc": 0
+  },
+  {
+   "cell": "jcz_ARB_B16J4_deploy11008",
+   "workers": 30,
+   "decks": 4,
+   "games_target": 8,
+   "games_recorded": 8,
+   "elapsed_s": 248.0,
+   "s_per_game_wall": 31.0,
+   "worker_s_per_game": 930.0,
+   "last_rc": 0
+  },
+  {
+   "cell": "jcz_CHAMP_deploy11008",
+   "workers": 30,
+   "decks": 15,
+   "games_target": 30,
+   "games_recorded": 38,
+   "elapsed_s": 195.0,
+   "s_per_game_wall": 5.132,
+   "worker_s_per_game": 153.9,
+   "last_rc": 0
+  },
+  {
+   "cell": "jcz_ARB_B16J4_deploy11008",
+   "workers": 30,
+   "decks": 15,
+   "games_target": 30,
+   "games_recorded": 38,
+   "elapsed_s": 433.0,
+   "s_per_game_wall": 11.395,
+   "worker_s_per_game": 341.8,
+   "last_rc": 0
+  }
+ ],
+ "note": "s_per_game_wall is the per-box throughput the DECKS_LOCAL/DECKS_LAPTOP split is set from (DESIGN \u00a70.1.3). peak_rss_* validate W against this box's RAM (DESIGN \u00a70.1.4). If W does not fit, that is REPORTED TO THE OWNER, never silently reduced \u2014 W is an owner-set value."
+}

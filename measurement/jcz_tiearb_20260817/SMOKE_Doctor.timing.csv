@@ -1,0 +1,5 @@
+cell,host,workers,decks,games_target,games_recorded,elapsed_s,last_rc
+jcz_CHAMP_deploy11008,Doctor,30,4,8,8,133,0
+jcz_ARB_B16J4_deploy11008,Doctor,30,4,8,8,248,0
+jcz_CHAMP_deploy11008,Doctor,30,15,30,38,195,0
+jcz_ARB_B16J4_deploy11008,Doctor,30,15,30,38,433,0

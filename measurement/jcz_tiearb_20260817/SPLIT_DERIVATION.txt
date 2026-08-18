@@ -1,0 +1,21 @@
+SATURATING SMOKE (15 decks = 30 new games/cell/box, base 900000300000)
+worker-seconds per game:
+  Doctor      cell A    195.0
+  Doctor      cell B    433.0
+  laptop-wsl  cell A    155.5
+  laptop-wsl  cell B    378.4
+
+CELL B / CELL A cost ratio   (DESIGN §6.2 predicted 2.71x):
+  Doctor      2.221
+  laptop-wsl  2.434
+
+s/deck for full A+B run:  Doctor 41.87   laptop 48.53
+BALANCED SPLIT -> DECKS_LOCAL=215  DECKS_LAPTOP=185  (sum 400)
+ETA  local 2.50 h   laptop 2.49 h
+  Doctor      430 games/cell -> 270,040 worker-s
+  laptop-wsl  370 games/cell -> 197,531 worker-s
+
+TOTAL REALIZED 467,571 worker-s   vs DESIGN §6.2 PREDICTED 291,360  (+60%)
+CAUSE: §6.2 used 98.1 s/game measured at W14 (2026-08-09). At W30 the same
+cell costs 195 worker-s/game -- a ~2x CONTENTION penalty on a DRAM-bound box.
+Same shape as Stage-2 §0.G: the cost model's CURRENCY was wrong, not the arbiter.
