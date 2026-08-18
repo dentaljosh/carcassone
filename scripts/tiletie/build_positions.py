@@ -265,6 +265,57 @@ def _stable_seed(*parts) -> int:
 CAP_SEED_TAG = "tiletie-cap"
 CAP_SEED_DATE = 20260812
 
+#: The deployed arbiter's cap (`tiearb.rs::build_arms`, `--cand-tiearb-j`). The
+#: `J > 4` rung reads the FULL arm set against this subset, so the subset must be
+#: recorded per ply even on an uncapped build -- PLAN_J_gt_4 §8 requirement (2).
+DEPLOYED_CAP_J = 4
+
+#: `--cap-j` spellings that mean "no cap at all" (PLAN_J_gt_4 §3.2's `--cap-j ∞`).
+UNCAPPED_TOKENS = frozenset({"inf", "+inf", "infinity", "∞", "none", "null", "0", "all"})
+
+
+def parse_cap_j(value) -> int | None:
+    """`--cap-j` -> an int cap, or `None` for UNCAPPED.
+
+    PLAN_J_gt_4 §3.2 builds arms with `--cap-j ∞` so one paid run serves both
+    widening rungs: the `B` prereg reads the seeded `J <= 4` sub-arm-set and the
+    `J` prereg reads the full set. Spelling it `inf`/`none`/`0`/`all` all mean the
+    same thing; anything else must be a positive int, and a negative or
+    non-numeric value FAILS rather than being clamped (a silently clamped cap is
+    how a run quietly prices the wrong arm population)."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in UNCAPPED_TOKENS:
+            return None
+        try:
+            value = int(v)
+        except ValueError:
+            raise ValueError(
+                f"--cap-j {value!r} is neither an integer nor one of "
+                f"{sorted(UNCAPPED_TOKENS)} (uncapped)") from None
+    value = int(value)
+    if value <= 0:
+        return None
+    return value
+
+
+def cap_j_label(cap_j) -> str:
+    return "inf" if cap_j is None else str(int(cap_j))
+
+
+def _subset_id(rid: str, subset: list) -> str:
+    """A stable, comparable id for one materialised arm subset.
+
+    `G-CAP` (PLAN_J_gt_4 §8 requirement 2) needs the two preregs to agree, by
+    inspection of the record alone, about WHICH arms the capped comparator read.
+    A digest over `(cap tag, seed date, rid, sorted arms)` is that handle: it is
+    reproducible from the recorded fields and it changes if any arm moves."""
+    body = "|".join([CAP_SEED_TAG, str(CAP_SEED_DATE), str(rid),
+                     ",".join(str(int(a)) for a in subset)])
+    return hashlib.sha256(body.encode()).hexdigest()[:16]
+
 
 # --------------------------------------------------------------------------- #
 # afterstate dedupe — DESIGN §6 threat 3 (the JOIN input)                       #
@@ -370,20 +421,41 @@ def build_tie_arms(row: dict, cap_j: int, afterstate: dict | None = None) -> dic
         assert tie_actions[0] == ref, "dedupe moved arm[0] -- impossible by min()"
 
     rid = rid_for(row)
-    candidates = list(tie_actions[1:])       # already ascending, ref excluded
-    capped, dropped = False, []
-    j = max(1, int(cap_j))
-    if len(candidates) > j - 1:
-        rng = random.Random(_stable_seed(CAP_SEED_TAG, rid, CAP_SEED_DATE))
-        keep_idx = sorted(rng.sample(range(len(candidates)), j - 1))
-        kept = sorted(candidates[i] for i in keep_idx)
-        dropped = sorted(set(candidates) - set(kept))
-        candidates = kept
-        capped = True
+    full_candidates = list(tie_actions[1:])  # already ascending, ref excluded
+    candidates, capped, dropped = _seeded_cap(rid, full_candidates, cap_j)
+
+    # PLAN_J_gt_4 §8 requirement (2): even on an UNCAPPED build, record the
+    # materialised J=4 subset per ply, so the capped comparator is an EXACT
+    # sub-read of the same CRN worlds and not a second run. The draw is the same
+    # seeded one at every J (one rng, `sample(range(len(candidates)), J-1)`), so
+    # this is a pure function of (rid, full arm set, J).
+    sub_j4, capped_at_4, _ = _seeded_cap(rid, full_candidates, DEPLOYED_CAP_J)
     return {"arms": [ref] + candidates, "capped": capped, "dropped_actions": dropped,
+            "arms_full": [ref] + full_candidates,
+            "subset_j4": [ref] + sub_j4,
+            "capped_at_4": capped_at_4,
             "dedupe_dropped_actions": dedupe_dropped,
             "n_distinct_afterstates": n_distinct,
             "all_transposition": all_transposition, "repr_of": repr_of}
+
+
+def _seeded_cap(rid: str, candidates: list, cap_j) -> tuple:
+    """DESIGN §2.2 step 2's seeded uniform draw. `cap_j=None` = UNCAPPED.
+
+    Returns `(kept, capped, dropped)`. NEVER index truncation, which would
+    correlate the drop with the tie-break convention itself; the seed is
+    `_stable_seed(CAP_SEED_TAG, rid, CAP_SEED_DATE)`, keyed on the rid alone, so
+    the draw is reproducible and INDEPENDENT of J's value -- which is what makes
+    a `J = 4` sub-read of an uncapped run exact."""
+    if cap_j is None:
+        return list(candidates), False, []
+    j = max(1, int(cap_j))
+    if len(candidates) <= j - 1:
+        return list(candidates), False, []
+    rng = random.Random(_stable_seed(CAP_SEED_TAG, rid, CAP_SEED_DATE))
+    keep_idx = sorted(rng.sample(range(len(candidates)), j - 1))
+    kept = sorted(candidates[i] for i in keep_idx)
+    return kept, True, sorted(set(candidates) - set(kept))
 
 
 # --------------------------------------------------------------------------- #
@@ -630,6 +702,14 @@ def build_arms_index(positions: list) -> dict:
             "capped": p["capped"], "dropped_actions": p["dropped_actions"],
             "dedupe_dropped_actions": p.get("dedupe_dropped_actions", []),
             "n_distinct_afterstates": p.get("n_distinct_afterstates"),
+            # PLAN_J_gt_4 §8 requirements (1)-(3): the full deduped arm list, the
+            # materialised J=4 seeded subset (+ its id and the seed that drew it),
+            # and the cap/outside-tieset witnesses. The analyser joins here on rid.
+            "arms_full": p.get("arms_full"),
+            "subset_j4": p.get("subset_j4"),
+            "subset_j4_id": p.get("subset_j4_id"),
+            "capped_at_4": p.get("capped_at_4"),
+            "cap_seed": p.get("cap_seed"),
             "champ_action": p["champ_action"], "champ_arm_index": p["champ_arm_index"],
             "champ_arm_action": p.get("champ_arm_action"),
             "champ_outside_tieset": p["champ_outside_tieset"],
@@ -642,7 +722,7 @@ def build_arms_index(positions: list) -> dict:
 # --------------------------------------------------------------------------- #
 # POSITIONS_PLAN.json — DESIGN §7.1 cost/ETA arithmetic                         #
 # --------------------------------------------------------------------------- #
-def cost_plan(positions: list, *, cap_j: int, sample_seed: int, playout_secs: float,
+def cost_plan(positions: list, *, cap_j, sample_seed: int, playout_secs: float,
              m_worlds: int = M_WORLDS, t_champ_secs: float = DEFAULT_T_CHAMP_SECS,
              workers=(14, 22)) -> dict:
     """DESIGN §7.1:
@@ -678,7 +758,19 @@ def cost_plan(positions: list, *, cap_j: int, sample_seed: int, playout_secs: fl
         "counts_by_stratum": {"e4": n_e4, "selfplay": n_selfplay},
         "counts_by_profile_leg": counts_by_profile_leg,
         "max_arms": max_arms, "mean_arms": mean_arms,
-        "cap_j": int(cap_j), "n_positions_capped": n_capped,
+        # `cap_j` is null when UNCAPPED (`--cap-j inf`, PLAN_J_gt_4 §3.2); the
+        # label is the human spelling. `n_positions_capped_at_4` is the deployed
+        # arbiter's cap rate over the SAME positions, which is the `J > 4` rung's
+        # denominator and is meaningful even on an uncapped build.
+        "cap_j": (None if cap_j is None else int(cap_j)),
+        "cap_j_label": cap_j_label(cap_j),
+        "uncapped": cap_j is None,
+        "deployed_cap_j": DEPLOYED_CAP_J,
+        "n_positions_capped": n_capped,
+        "n_positions_capped_at_4": sum(1 for p in positions if p.get("capped_at_4")),
+        "mean_arms_j4": (
+            (sum(len(p["subset_j4"]) for p in positions if p.get("subset_j4")) / n)
+            if n and all(p.get("subset_j4") for p in positions) else None),
         "sample_seed": int(sample_seed),
         "m_worlds": int(m_worlds), "playout_secs": float(playout_secs),
         "t_champ_secs": float(t_champ_secs),
@@ -707,7 +799,7 @@ def full_run_eta_secs(plan: dict, playout_secs: float, workers: int) -> dict:
 # --------------------------------------------------------------------------- #
 # driver                                                                        #
 # --------------------------------------------------------------------------- #
-def _tieset_playouts(rows: list, cap_j: int, amap: dict | None,
+def _tieset_playouts(rows: list, cap_j, amap: dict | None,
                      m_worlds: int = M_WORLDS) -> int:
     """Arm-playouts implied by the TIE-SET arms alone (champion arm excluded --
     it is not what dedupe acts on), over `rows`, with `amap=None` meaning "as the
@@ -741,7 +833,7 @@ def load_exclude_rids(path) -> set:
     return rids
 
 
-def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
+def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j, n: int,
          sample_seed: int, playout_secs: float, e4_dir: Path, bank_roots_path,
          champ_games_path, allow_missing_champ_picks: bool,
          afterstate_map: dict | None = None, require_afterstate_map: bool = True,
@@ -831,6 +923,16 @@ def build(rows: list, *, out_dir: Path, champ_picks: dict, cap_j: int, n: int,
             "champ_arm_action": champ.get("champ_arm_action"),
             "dedupe_dropped_actions": tie["dedupe_dropped_actions"],
             "n_distinct_afterstates": tie["n_distinct_afterstates"],
+            # --- the shared-run record (PLAN_J_gt_4 §8 requirements 1-3).
+            # `arms_full` is the full deduped set BEFORE any cap; `subset_j4` is
+            # the seeded J=4 draw the deployed cap would have kept. On an
+            # uncapped build `arms` == `arms_full` and the J=4 comparator is an
+            # exact sub-read over the SAME CRN worlds.
+            "arms_full": tie["arms_full"],
+            "subset_j4": tie["subset_j4"],
+            "subset_j4_id": _subset_id(rid_for(row), tie["subset_j4"]),
+            "capped_at_4": tie["capped_at_4"],
+            "cap_seed": _stable_seed(CAP_SEED_TAG, rid_for(row), CAP_SEED_DATE),
         }
         if row["stratum"] == "e4":
             pos["archive_path"] = resolve_archive_path(row, e4_dir)
@@ -941,7 +1043,14 @@ def main(argv=None) -> int:
                          "is resolved yet -- they get no champion arm at all "
                          "(champ_pick_missing=True), but their tie-set legs are "
                          "still scoreable.")
-    ap.add_argument("--cap-j", type=int, default=4)
+    ap.add_argument("--cap-j", default="4",
+                    help="max arms per position (reference + J-1 seeded draws). "
+                         "`inf` / `none` / `all` / `0` = UNCAPPED, which is what "
+                         "the widening campaign's shared run uses so the `J > 4` "
+                         "rung reads the full deduped set while the `B` rung "
+                         "reads the recorded seeded J=4 subset off the SAME CRN "
+                         "worlds (PLAN_J_gt_4 §3.2, §8). The J=4 subset is "
+                         "recorded per ply at every cap.")
     ap.add_argument("--n", type=int, default=0,
                     help="0 = all qualifying positions; else a seeded subsample "
                          "(--sample-seed), e4-first per DESIGN #7.3")
@@ -996,8 +1105,11 @@ def main(argv=None) -> int:
         print(f"[build_positions] afterstate map: {len(amap)} rid(s) from "
               f"{len(paths)} file(s): {paths}")
 
+    cap_j = parse_cap_j(args.cap_j)
+    print(f"[build_positions] cap_j={cap_j_label(cap_j)} "
+          f"(deployed cap J={DEPLOYED_CAP_J} recorded per ply as subset_j4)")
     plan = build(rows, out_dir=Path(args.out_dir), champ_picks=champ_picks,
-                cap_j=args.cap_j, n=args.n, sample_seed=args.sample_seed,
+                cap_j=cap_j, n=args.n, sample_seed=args.sample_seed,
                 playout_secs=args.playout_secs, e4_dir=Path(args.e4_dir),
                 bank_roots_path=args.bank_roots, champ_games_path=args.champ_games,
                 allow_missing_champ_picks=args.allow_missing_champ_picks,

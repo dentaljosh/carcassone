@@ -33,8 +33,18 @@ index r) -- `CARCASSONNE_FIX_R9` exported per profile (import-latched), thread
 envs pinned to 1, `--world-seed-salt` FIXED ONCE for the whole run (this is what
 makes every arm of a position and both judges share the same CRN worlds -- see
 `build_positions.py`'s module docstring and DESIGN §2.1). `clair-puct` runs
-`--backend rust`; `tier1-greedy` (out of scope for the rust gate) runs
-`--backend python`. Judges run sequentially (primary first); profiles+legs of
+`--backend rust`; `tier1-greedy` runs `--backend python` UNLESS `--arb-backend
+rust` is given, in which case its legs are run by
+`scripts/tiletie/tier1_rust_leg.py` (`carc_rs.tier1_leg`, the Phase-A port --
+`G-BITEXACT` 15,360/15,360, ~12.2x cheaper) instead of by the pilot, which has no
+rust tier1 path. This is campaign work item **W1**
+(`measurement/tiearb_widening_20260817/PLAN_B_gt_16.md` §0.3/§3, `CAMPAIGN.md`
+ruling 2). ⚠️ THE DEFAULT IS UNCHANGED (`python`) so every pre-existing
+invocation produces byte-identical legs; and `--arb-backend rust` FAILS the
+preflight if the wheel cannot do the job -- it never falls back silently.
+`--m` is likewise a real flag now, bounded at 128 (the campaign's shared run;
+usable `B` is `M/2` because the estimator cross-fits on parity halves).
+Judges run sequentially (primary first); profiles+legs of
 one judge run CONCURRENTLY with a proportional worker split
 (`run_farmwar.split_workers`, imported -- not re-implemented). `--n` is ALWAYS
 passed explicitly as the leg's own line count (`oracle_score_pilot` defaults
@@ -82,6 +92,9 @@ SCHEMA = "carcassonne-tiletie-run/v1"
 DESIGN_DOC = "measurement/tiletie_pricing_20260812/DESIGN.md"
 
 PILOT = REPO / "scripts" / "measurement_infra" / "oracle_score_pilot.py"
+#: W1 (PLAN_B_gt_16 §3): the rust ARB leg runner. Reached ONLY via
+#: `--arb-backend rust`; the default is unchanged python.
+TIER1_RUST_LEG = HERE / "tier1_rust_leg.py"
 GATE_SCRIPT = REPO / "scripts" / "rustport" / "gate_oracle_pilot_backend.py"
 #: ⚠️ NEVER write here -- the budget-headroom run's 20-position record is
 #: committed and load-bearing for other harnesses' provenance.
@@ -102,6 +115,22 @@ EXPECTED_LEAF_HASH = "a36d2e15a3b3d71d"
 WORLD_SEED_SALT = "tiletie-v1"
 
 JUDGE_BACKEND = {"clair-puct": "rust", "tier1-greedy": "python"}
+
+#: PLAN_B_gt_16 §0.2 — the cross-fit parity halves cap usable `B` at `M/2`, so
+#: the campaign's `B in {16,32,64}` needs `M = 128`. Nothing asks for more, and a
+#: typo'd `--m` must not silently buy a 10x run.
+M_MAX = 128
+
+#: ⭐ W1 (PLAN_B_gt_16 §0.3 / CAMPAIGN.md ruling 2). The ARB judge
+#: (`tier1-greedy`) was priced in PYTHON for Stage 1b at c = 2.18-2.73
+#: worker-s/playout. Phase A's rust port is `G-BITEXACT` 15,360/15,360 at
+#: c = 0.178232 -- 12.2x -- and is already in the installed `carc_rs` wheel.
+#: `--arb-backend rust` routes the `tier1-greedy` legs through
+#: `scripts/tiletie/tier1_rust_leg.py` instead of `oracle_score_pilot`.
+#:
+#: ⚠️ DEFAULT IS `python`, deliberately: every pre-existing invocation of this
+#: launcher must keep producing byte-identical legs. Opting in is one flag.
+ARB_BACKENDS = ("python", "rust")
 
 #: Rules profiles the RUST clairvoyant continuation can actually mirror.
 #:
@@ -125,13 +154,68 @@ JUDGE_BACKEND = {"clair-puct": "rust", "tier1-greedy": "python"}
 RUST_OK_PROFILES = frozenset({"walled"})
 
 
-def backend_for(judge: str, profile: str) -> str:
+def backend_for(judge: str, profile: str, arb_backend: str = "python") -> str:
     """Backend for one (judge, profile) leg. Rust requires BOTH a rust-gated
-    judge AND a profile the rust mirror can represent."""
+    judge AND a profile the rust mirror can represent.
+
+    `arb_backend` promotes the ARB judge (`tier1-greedy`) from its python-era
+    default to the Phase-A rust port (W1). It is subject to the SAME profile
+    restriction: `carc_rs.tier1_leg` replays under the default `GameConfig`, so
+    only `walled` may use it."""
     want = JUDGE_BACKEND[judge]
+    if judge == "tier1-greedy" and arb_backend == "rust":
+        want = "rust"
     if want == "rust" and profile not in RUST_OK_PROFILES:
         return "python"
     return want
+
+
+def check_arb_backend(args) -> dict:
+    """`--arb-backend rust` means the wheel MUST be able to do the job.
+
+    THE J13 LESSON, applied: a missing/stale wheel must FAIL the preflight, never
+    quietly fall back to the python continuation while the manifest says 'rust'
+    (that is a 12.2x cost surprise wearing the wrong label). Inert -- and always
+    PASS -- when `--arb-backend python`, which is the default."""
+    want = getattr(args, "arb_backend", "python")
+    if want not in ARB_BACKENDS:
+        return {"ok": False, "problems": [f"--arb-backend must be one of "
+                                          f"{list(ARB_BACKENDS)}, got {want!r}"]}
+    if want == "python":
+        return {"ok": True, "arb_backend": "python",
+                "note": "python-era ARB judge (behaviour-preserving default)"}
+    if "tier1-greedy" not in getattr(args, "judges", []):
+        return {"ok": True, "arb_backend": "rust",
+                "note": "no tier1-greedy leg in --judges; the flag is inert"}
+    if not TIER1_RUST_LEG.is_file():
+        return {"ok": False, "problems": [f"missing {TIER1_RUST_LEG}"]}
+    sys.path.insert(0, str(HERE))
+    try:
+        import tier1_rust_leg as TRL  # noqa: PLC0415
+
+        wheel = TRL.preflight_wheel()
+        seeds = TRL.preflight_seeds(WORLD_SEED_SALT, int(args.m))
+    except SystemExit as exc:                                      # fail-loud path
+        return {"ok": False, "arb_backend": "rust", "problems": [str(exc)]}
+    except Exception as exc:                                       # noqa: BLE001
+        return {"ok": False, "arb_backend": "rust",
+                "problems": [f"{type(exc).__name__}: {exc}"]}
+    return {"ok": True, "arb_backend": "rust", "wheel": wheel, "seeds": seeds,
+            "runner": str(TIER1_RUST_LEG)}
+
+
+def check_m(args) -> dict:
+    """`--m` is a flag now (the campaign runs M=128). Bound it loudly."""
+    m = int(args.m)
+    if not (1 <= m <= M_MAX):
+        return {"ok": False, "m": m,
+                "problems": [f"--m {m} out of range 1..{M_MAX} "
+                             "(PLAN_B_gt_16 §0.2 sizes the campaign at M=128; "
+                             "the parity halves cap usable B at M/2)"]}
+    return {"ok": True, "m": m, "m_max": M_MAX,
+            "b_ceiling": m // 2,
+            "note": "usable B is capped by the SELECTION parity half = M/2 "
+                    "(PLAN_B_gt_16 §0.2), not by M"}
 
 
 # --------------------------------------------------------------------------- #
@@ -278,6 +362,8 @@ def preflight(args) -> dict:
         "process_census": check_process_census(),
         "git_clean": check_git_clean(args),
         "positions": check_positions(args),
+        "m": check_m(args),
+        "arb_backend": check_arb_backend(args),
     }
     ok = all(c.get("ok", False) for name, c in checks.items() if name != "process_census")
     return {"ok": ok, "checks": checks}
@@ -334,7 +420,31 @@ def _r9_for(profile: str) -> str:
 
 
 def leg_command(*, positions_path, profile, judge, m, oracle_sims, workers, n,
-                out_root, out_subdir, resume) -> list:
+                out_root, out_subdir, resume, arb_backend="python",
+                legal_mask_cache=True) -> list:
+    """The subprocess for one leg.
+
+    ⭐ W1: when `judge == "tier1-greedy"` and `arb_backend == "rust"` this is
+    `scripts/tiletie/tier1_rust_leg.py`, NOT `oracle_score_pilot.py` -- the pilot
+    has no rust tier1 path (`build_continuation_agent` raises
+    `BACKEND_UNAVAILABLE_REASON` for it) and the Phase-A port is a whole-leg FFI
+    call, not a per-ply agent. Every other leg is byte-identical to before."""
+    resolved = backend_for(judge, profile, arb_backend)
+    if judge == "tier1-greedy" and resolved == "rust":
+        cmd = [sys.executable, str(TIER1_RUST_LEG),
+              "--positions-jsonl", str(positions_path),
+              "--rules-profile", str(profile),
+              "--m", str(int(m)),
+              "--oracle-sims", str(int(oracle_sims)),
+              "--world-seed-salt", WORLD_SEED_SALT,
+              "--workers", str(int(workers)),
+              "--n", str(int(n)),
+              "--out-root", str(out_root),
+              "--out-subdir", str(out_subdir)]
+        cmd.append("--legal-mask-cache" if legal_mask_cache
+                   else "--no-legal-mask-cache")
+        cmd.append("--resume" if resume else "--no-resume")
+        return cmd
     cmd = [sys.executable, str(PILOT),
           "--positions-jsonl", str(positions_path),
           "--rules-profile", str(profile),
@@ -346,7 +456,7 @@ def leg_command(*, positions_path, profile, judge, m, oracle_sims, workers, n,
           "--n", str(int(n)),                # ALWAYS explicit -- see module docstring
           "--out-root", str(out_root),
           "--out-subdir", str(out_subdir),
-          "--backend", backend_for(judge, profile)]
+          "--backend", resolved]
     if resume:
         cmd.append("--resume")
     return cmd
@@ -402,8 +512,13 @@ def launch_legs(args, plan: dict) -> list:
             cmd = leg_command(positions_path=info["path"], profile=profile, judge=judge,
                               m=args.m, oracle_sims=args.oracle_sims,
                               workers=shares[key], n=info["n"], out_root=args.out_root,
-                              out_subdir=sub, resume=args.resume)
-            print(f"[run_tiletie] ===== launch {sub} (R9={env['CARCASSONNE_FIX_R9']}, "
+                              out_subdir=sub, resume=args.resume,
+                              arb_backend=getattr(args, "arb_backend", "python"),
+                              legal_mask_cache=getattr(
+                                  args, "arb_legal_mask_cache", True))
+            print(f"[run_tiletie] ===== launch {sub} "
+                 f"(backend={backend_for(judge, profile, getattr(args, 'arb_backend', 'python'))}, "
+                 f"R9={env['CARCASSONNE_FIX_R9']}, "
                  f"W={shares[key]}, n={info['n']}) -> {log.name}", flush=True)
             fh = log.open("w")
             procs.append((judge, profile, leg_tag, key, sub, info, time.time(), fh,
@@ -413,6 +528,9 @@ def launch_legs(args, plan: dict) -> list:
             rc = pr.wait()
             fh.close()
             results.append({"judge": judge_, "profile": profile, "leg": int(leg_tag),
+                            "backend": backend_for(
+                                judge_, profile,
+                                getattr(args, "arb_backend", "python")),
                             "rc": rc, "n": info["n"], "workers": shares[key],
                             "positions_path": info["path"],
                             "out": f"{args.out_root}/{sub}",
@@ -460,15 +578,34 @@ def load_leg_records(out_dir, rids) -> dict:
     return recs
 
 
+def world_witness_key(rec: dict) -> str:
+    """Which per-world CRN witness this record carries.
+
+    The python leg (`oracle_score_pilot`) records `afterstate_deck_hash_a` -- the
+    deck AFTER the pick, hashed off the engine's object graph. The rust ARB leg
+    (W1, `tier1_rust_leg`) cannot produce that across the FFI, so it records
+    `world_deck_hash` -- the determinized world's own unseen deck -- and does NOT
+    fabricate the python field. Both are per-world lists that must be identical
+    across legs of one position; they are simply not the SAME quantity, so a set
+    of legs that mixes them is a harness error, not a CRN failure."""
+    if "afterstate_deck_hash_a" in rec:
+        return "afterstate_deck_hash_a"
+    if "world_deck_hash" in rec:
+        return "world_deck_hash"
+    return ""
+
+
 def check_crn_cross_leg(records_by_leg: dict) -> dict:
     """DESIGN §2.1's CRN claim, CHECKED, not assumed: because the world/playout
     seeds are `sha256(tag|rid|j|salt)` -- keyed on rid+salt, never on the arms --
-    every leg of one position (scored by a SEPARATE `oracle_score_pilot`
-    invocation, but under the SAME rid) must see the SAME M CRN worlds. That
-    means, across every leg of a position:
+    every leg of one position (scored by a SEPARATE leg invocation, but under the
+    SAME rid) must see the SAME M CRN worlds. That means, across every leg of a
+    position:
       1. `values_a` is BIT-IDENTICAL (raw f64 bit patterns, never `==`/approx)
       2. `world_seeds` and `playout_seeds` are identical
-      3. `afterstate_deck_hash_a` is identical
+      3. the per-world deck witness is identical -- `afterstate_deck_hash_a` on
+         a python leg, `world_deck_hash` on a rust ARB leg (W1). Legs that carry
+         DIFFERENT witness kinds are a hard error (see `world_witness_key`).
       4. `crn_verified` is True in every leg
 
     `records_by_leg`: {leg_index: {rid: record_dict}} -- one `records/<rid>.json`
@@ -490,14 +627,22 @@ def check_crn_cross_leg(records_by_leg: dict) -> dict:
 
     per_rid = {}
     base_leg = legs[0]
+    witnesses = set()
     for rid in rids:
         problems = []
         base = records_by_leg[base_leg][rid]
+        wkey = world_witness_key(base)
+        witnesses.add(wkey)
+        if not wkey:
+            problems.append(f"leg{base_leg}: no per-world deck witness "
+                            "(neither afterstate_deck_hash_a nor world_deck_hash)")
         if not base.get("crn_verified"):
             problems.append(f"leg{base_leg}: crn_verified is not True")
         base_bits = [_f64_bits(v) for v in base["values_a"]]
         for leg in legs[1:]:
             rec = records_by_leg[leg][rid]
+            rkey = world_witness_key(rec)
+            witnesses.add(rkey)
             if not rec.get("crn_verified"):
                 problems.append(f"leg{leg}: crn_verified is not True")
             bits = [_f64_bits(v) for v in rec["values_a"]]
@@ -507,11 +652,21 @@ def check_crn_cross_leg(records_by_leg: dict) -> dict:
                 problems.append(f"leg{leg}: world_seeds differ vs leg{base_leg}")
             if rec.get("playout_seeds") != base.get("playout_seeds"):
                 problems.append(f"leg{leg}: playout_seeds differ vs leg{base_leg}")
-            if rec.get("afterstate_deck_hash_a") != base.get("afterstate_deck_hash_a"):
-                problems.append(f"leg{leg}: afterstate_deck_hash_a differs vs leg{base_leg}")
+            if rkey != wkey:
+                # MIXED BACKENDS in one witness set: the two fields are different
+                # quantities, so comparing them would either pass vacuously or
+                # fail for the wrong reason. Report it as what it is.
+                problems.append(
+                    f"leg{leg}: per-world deck witness is {rkey or 'ABSENT'!r} but "
+                    f"leg{base_leg} carries {wkey or 'ABSENT'!r} -- these legs were "
+                    "scored by DIFFERENT backends and are not comparable on this "
+                    "field")
+            elif wkey and rec.get(wkey) != base.get(wkey):
+                problems.append(f"leg{leg}: {wkey} differs vs leg{base_leg}")
         per_rid[rid] = {"ok": not problems, "problems": problems}
     ok = all(v["ok"] for v in per_rid.values())
     return {"ok": ok, "legs_checked": legs, "rids_checked": rids, "per_rid": per_rid,
+           "world_witness_kinds": sorted(w for w in witnesses if w),
            "n_rids": len(rids), "n_ok": sum(1 for v in per_rid.values() if v["ok"])}
 
 
@@ -577,8 +732,12 @@ def build_smoke_positions(positions_dir: Path, rids: list, profile: str,
 
 def run_smoke(args, report: dict, plan: dict) -> int:
     """5 positions (or fewer, if that many multi-leg positions don't exist),
-    production knobs, clair-puct only, run over >= 2 legs, then the CRN
-    cross-leg witness. Exits non-zero on FAIL."""
+    production knobs, ONE judge (`--smoke-judge`, default `clair-puct`), run over
+    >= 2 legs, then the CRN cross-leg witness. Exits non-zero on FAIL.
+
+    `--smoke-judge tier1-greedy --arb-backend rust` is the W1 smoke: it exercises
+    the rust ARB leg end to end and proves its cross-leg CRN witness, on the same
+    5 positions and the same `--m` the run will use."""
     positions_dir = Path(args.positions_dir)
     profiles_present = sorted({k.split("/leg")[0] for k in plan.get("files", {})})
     profile = args.smoke_profile or (profiles_present[0] if profiles_present else None)
@@ -607,13 +766,25 @@ def run_smoke(args, report: dict, plan: dict) -> int:
 
     leg_out = {}
     for r, info in sorted(built.items()):
-        sub = f"smoke/clair-puct/{profile}/leg{r}"
+        sub = f"smoke/{args.smoke_judge}/{profile}/leg{r}"
         # profile-scoped: a second smoke on another profile must not overwrite
-        # the log of the one DESIGN/SMOKE.md cites.
-        log = logs_dir / f"smoke_{profile}_leg{r}.log"
-        cmd = leg_command(positions_path=info["path"], profile=profile, judge="clair-puct",
-                          m=32, oracle_sims=100, workers=args.workers, n=info["n"],
+        # the log of the one DESIGN/SMOKE.md cites. Judge-scoped for the same
+        # reason once --smoke-judge tier1-greedy exists (the W1 parity smoke).
+        log = logs_dir / (f"smoke_{profile}_leg{r}.log"
+                          if args.smoke_judge == "clair-puct" else
+                          f"smoke_{args.smoke_judge}_{args.arb_backend}_{profile}"
+                          f"_leg{r}.log")
+        # W2: `--m` is a FLAG now (the campaign runs M=128) and the smoke must
+        # follow it, not a hard-coded 32 -- a smoke at a different M than the run
+        # it is pricing is exactly the "cheap-smoke extrapolation" the house rule
+        # forbids. Defaults are unchanged (m=32, oracle_sims=100).
+        cmd = leg_command(positions_path=info["path"], profile=profile,
+                          judge=args.smoke_judge,
+                          m=args.m, oracle_sims=args.oracle_sims,
+                          workers=args.workers, n=info["n"],
                           out_root=args.out_root, out_subdir=sub,
+                          arb_backend=args.arb_backend,
+                          legal_mask_cache=args.arb_legal_mask_cache,
                           # Honour --resume/--no-resume. The smoke is NOT cheap on the
                           # python backend (measured ~20 min per leg at 5 workers on
                           # fixed_v1, SMOKE.md #3), and an interrupted smoke that has to
@@ -695,7 +866,10 @@ def run_smoke(args, report: dict, plan: dict) -> int:
         "legs": leg_out, "wall_secs": round(wall, 1), "workers": args.workers,
         "n_positions": n_positions, "n_legs": n_legs,
         "m_worlds": args.m, "oracle_sims": args.oracle_sims,
-        "backend": backend_for("clair-puct", profile),
+        "judge": args.smoke_judge,
+        "backend": backend_for(args.smoke_judge, profile, args.arb_backend),
+        "arb_backend": args.arb_backend,
+        "arb_legal_mask_cache": bool(args.arb_legal_mask_cache),
         "stratum": getattr(args, "smoke_stratum", None),
         "n_playouts": n_playouts,
         "elapsed_secs_sum": round(elapsed_sum, 3),
@@ -740,9 +914,20 @@ def write_manifest(args, report: dict | None, legs: list, path: Path, *,
         "preflight": report,
         "r9_by_profile": {p: _r9_for(p) for p in
                           sorted({leg["profile"] for leg in legs})} if legs else {},
-        "judges": list(args.judges), "judge_backend": {j: JUDGE_BACKEND[j]
-                                                       for j in args.judges},
+        "judges": list(args.judges),
+        # The DECLARED default map, and the RESOLVED per-(judge, profile) backend
+        # that actually ran. They differ whenever --arb-backend rust is given or a
+        # profile the rust mirror cannot represent forces a python fallback, and
+        # confusing the two is how a manifest ends up claiming a backend the legs
+        # did not use.
+        "judge_backend": {j: JUDGE_BACKEND[j] for j in args.judges},
+        "arb_backend": getattr(args, "arb_backend", "python"),
+        "arb_legal_mask_cache": bool(getattr(args, "arb_legal_mask_cache", True)),
+        "resolved_backend_by_leg": {
+            f"{leg['judge']}/{leg['profile']}/leg{leg['leg']}": leg.get("backend")
+            for leg in legs},
         "world_seed_salt": WORLD_SEED_SALT, "m_worlds": args.m,
+        "m_max": M_MAX, "b_ceiling_from_m": int(args.m) // 2,
         "oracle_sims": args.oracle_sims, "workers": args.workers,
         "resume": bool(args.resume),
         "positions_plan_path": str(plan_path), "arms_path": str(arms_path),
@@ -772,9 +957,36 @@ def build_arg_parser() -> argparse.ArgumentParser:
                     choices=sorted(JUDGE_BACKEND),
                     help="default clair-puct ONLY -- see module docstring for why "
                          "tier1-greedy is not on by default")
-    ap.add_argument("--m", type=int, default=32)
+    ap.add_argument("--m", type=int, default=32,
+                    help=f"CRN worlds per position (1..{M_MAX}; default 32 = "
+                         "Stage 1b). The widening campaign's shared run is "
+                         "M=128: the estimator cross-fits on PARITY HALVES, so "
+                         "usable B is capped at M/2, and B=64 needs M=128 "
+                         "(PLAN_B_gt_16 §0.2). World seeds are prefix-stable in "
+                         "M, so worlds 0..31 of an M=128 run are bit-identical "
+                         "to a banked M=32 run.")
     ap.add_argument("--oracle-sims", type=int, default=100)
-    ap.add_argument("--workers", type=int, default=14)
+    ap.add_argument("--workers", "-W", type=int, default=14)
+    ap.add_argument("--arb-backend", default="python", choices=list(ARB_BACKENDS),
+                    help="engine for the ARB judge (`tier1-greedy`). DEFAULT "
+                         "`python` = behaviour-preserving. `rust` routes those "
+                         "legs through scripts/tiletie/tier1_rust_leg.py "
+                         "(carc_rs.tier1_leg, Phase-A G-BITEXACT 15,360/15,360, "
+                         "12.2x cheaper -- PLAN_B_gt_16 §0.3, work item W1). "
+                         "Preflight FAILS if the wheel cannot do the job; there "
+                         "is no silent fallback.")
+    ap.add_argument("--arb-legal-mask-cache", action="store_true", default=True,
+                    help="rust ARB legs reproduce the python judge's per-record "
+                         "legal-mask memo (Game._legal_cache), collisions "
+                         "included. REQUIRED for python/rust bit-comparability.")
+    ap.add_argument("--no-arb-legal-mask-cache", dest="arb_legal_mask_cache",
+                    action="store_false",
+                    help="rust ARB legs use the HONEST recomputed legal mask. "
+                         "NOT bit-comparable with the python judge.")
+    ap.add_argument("--smoke-judge", default="clair-puct", choices=sorted(JUDGE_BACKEND),
+                    help="judge to smoke (default clair-puct). Use "
+                         "`--smoke-judge tier1-greedy --arb-backend rust` for the "
+                         "W1 ARB-leg smoke.")
     ap.add_argument("--resume", action="store_true", default=True)
     ap.add_argument("--no-resume", dest="resume", action="store_false")
     ap.add_argument("--yes", action="store_true",
@@ -783,7 +995,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                          "nothing launched")
     ap.add_argument("--smoke", action="store_true",
                     help="5-position production-knob smoke incl. the CRN "
-                         "cross-leg witness; clair-puct only")
+                         "cross-leg witness, for --smoke-judge (default "
+                         "clair-puct)")
     ap.add_argument("--smoke-profile", default=None,
                     help="rules profile to smoke (default: the first one present "
                          "in POSITIONS_PLAN.json)")
