@@ -1,0 +1,1186 @@
+#!/usr/bin/env python3
+"""W3 — the tie-arbiter WIDENING analyzer (rungs 2 `B>16` + 3 `J>4`).
+
+ONE invocation, ONE read-out, both rungs. It emits, at the EXACT spellings
+`measurement/tiearb_widening_20260817/shared_run/READ_RULE.md` §2/§4/§5 address:
+
+    verdicts/READOUT.json            the addressed machine surface (`READOUT::…`)
+    verdicts/READOUT.md              the harness REPORT (see the blindness rule)
+    verdicts/per_position_s1.jsonl   §4/§5's recompute fallback
+    verdicts/per_position_s2.jsonl
+    verdicts/SEALED_G_REPLICATE.json the G-REPLICATE z's — SEALED
+
+Address map (every one is a pre-registered branch input or gate input):
+
+    widening.gates.crn.{ok,witness_kinds}                        G-CRN
+    widening.gates.uncapped                                      G-UNCAPPED (fb)
+    widening.gates.arms.{n_arms,n_arms_complete,include_partial,ok}   G-ARMS
+    widening.completion.{s1_n,s2_n,s1_max_per_root,s2_max_per_root}   G-COMPLETE
+    widening.stage1_replication.{pass,per_rung_inside_envelope,
+                                 arb16_convicts,envelope_inflation}   G-REPLICATE
+    widening.delta.d_16_64.{value,ci95,se_root}                  §4 rung 2 PRIMARY
+    widening.delta.d_16_32.{value,ci95,se_root}                  §4 secondary
+    widening.b_ladder.E64.B{1,2,4,8,16,32,64}.{arb,ci95,se}      §4 ladder
+    widening.b_ladder.E16.B{…}.{arb,ci95,se}                     §4 sub-read
+    widening.j_rider.s2.{delta_ora,ci95_ora,r_ora,ci95_r_ora,ora_j4_ci95,
+                         delta_arb,ci95_arb,n_capped,xfree_window}    §5 PRIMARY
+    widening.j_rider.s1_replication.{…}                          §5 rider
+    widening.j_rider.interaction.{arb_full_64_minus_16,
+                                  arb_full_16_minus_j4_16}       §5 rider
+    widening.j_rider.d_draw.{n_checked,agreement_rate}           §5 rider
+
+⚠️ BLINDNESS — the two rules this module implements mechanically
+   1. `G-REPLICATE`'s natural inputs ARE outcome statistics. Its z's therefore
+      go to `SEALED_G_REPLICATE.json` and NOWHERE else: `READOUT.json` and
+      `READOUT.md` carry only `pass` / `per_rung_inside_envelope` /
+      `arb16_convicts` / `envelope_inflation`. Nothing in this module prints a
+      G-REPLICATE z (READ_RULE §7, REVIEW_R1 dimension note).
+   2. On ANY gate FAIL the `READOUT.md` REPORT prints GATE INPUTS ONLY — no
+      `arb`, no `ora`, no Δ, no CI, no per-position statistic — so that a fixing
+      session can read the failure report and stay blind. `READOUT.json` is the
+      machine surface the READ_RULE addresses and is always complete; the fixing
+      session reads the `.md`.
+
+Statistics, all as pre-registered (`DESIGN.md` §6 / `READ_RULE.md` §3):
+  * `arb(B, E)`  — SELECT on `sorted(sel)[:B]`, PRICE on `sorted(eva)[:E]`,
+    via `analyze_tiearb2.arb_at_budget` (bit-identical to Stage 1 at B=16/E=full).
+  * `ora(E)`     — `analyze_tiletie.crossfit_regret` on the same folds.
+  * Both symmetrised over the two parity folds, exactly as Stage 2 does.
+  * `J = 4` sub-read: the SAME CRN worlds, restricted to the rows whose arm is in
+    the recorded `subset_j4` (plus the champion comparator, which both pools must
+    contain for `Δ_ora` to be a difference of like quantities).
+  * SEs/CIs: percentile ROOT bootstrap, 2,000 reps, seed 20260819, cluster =
+    root, ONE shared resample draw across every statistic (so ratios and
+    differences stay coherent). Significance is `lower(CI95) > 0`, once, here.
+
+`S1` and `S2` are NEVER pooled (different `E` ⇒ different `ora` estimand).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[1]
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+import analyze_tiletie as AT                                       # noqa: E402
+import analyze_tiearb as TA                                        # noqa: E402
+import analyze_tiearb2 as A2                                       # noqa: E402
+
+# --- committed constants — NOT new numbers ---------------------------------- #
+# ⚠️ These are W3's OWN constants and are deliberately NOT inherited from
+# `analyze_tiearb2`, whose `B_LADDER` stops at 16 and whose harness defaults are
+# the `M = 32` era (W2, closed-as-verified). Inheriting them would silently cap
+# the widening ladder at the very rung this run exists to look above.
+B_LADDER = (1, 2, 4, 8, 16, 32, 64)          # DESIGN §2 / READ_RULE §4 — 7 rungs
+E_LEVELS_S1 = (64, 16)                       # E=64 primary, E=16 sub-read
+E_LEVELS_S2 = (16,)                          # DESIGN §4 "why S2 runs at M=32"
+M_EXPECTED_S1 = 128
+M_EXPECTED_S2 = 32
+BOOT_REPS = 2000                             # DESIGN §6
+BOOT_SEED = 20260819                         # DESIGN §6
+PARITY_BASE = A2.PARITY_BASE                 # Stage 1's convention (=1)
+RND_SEED = 20260819
+ENVELOPE_INFLATION = 2.0                     # R1 / CL-068, applied to G-REPLICATE
+D1664_FLOOR = 0.040                          # READ_RULE §4 committed floor
+D1632_FLOOR = 0.036                          # secondary, never a branch input
+PRED_LEGACY = 1.400                          # order-statistic arithmetic
+PRED_DEDUPED = 1.244
+PRED_DELTA_LEGACY = 0.1382                   # Stage-1b-derived magnitudes
+PRED_DELTA_DEDUPED = 0.0842
+G_COMPLETE_S1_FLOOR = 1283                   # 95% of 1,350
+G_COMPLETE_S2_FLOOR = 1045                   # 95% of 1,100
+S1_MAX_PER_ROOT = 4                          # mining ceiling
+S2_MAX_PER_ROOT = 3
+
+
+# --------------------------------------------------------------------------- #
+# the ONE shared root bootstrap                                                 #
+# --------------------------------------------------------------------------- #
+class RootBoot:
+    """Percentile root bootstrap with ONE shared resample draw.
+
+    Every statistic in the read-out is computed on the SAME `reps x G` root-index
+    draw, so a ratio (`R_ora`) and its numerator/denominator, and a difference and
+    its two terms, are coherent replicate-by-replicate. Rows contribute their
+    record weight (root sums / root counts), the `analyze_tiletie.bootstrap_roots`
+    convention.
+    """
+
+    def __init__(self, rows, reps=BOOT_REPS, seed=BOOT_SEED):
+        self.rows = list(rows)
+        self.reps = int(reps)
+        self.roots = sorted({r["root_id"] for r in self.rows})
+        self.g = len(self.roots)
+        self._pos = {rt: i for i, rt in enumerate(self.roots)}
+        if self.g >= 2:
+            rng = np.random.default_rng(seed)
+            self.idx = rng.integers(0, self.g, size=(self.reps, self.g))
+        else:
+            self.idx = None
+
+    # -- internals ---------------------------------------------------------- #
+    def _sums(self, key):
+        s = np.zeros(self.g, dtype=np.float64)
+        c = np.zeros(self.g, dtype=np.float64)
+        vals, rts = [], []
+        for r in self.rows:
+            v = r.get(key)
+            if v is None or v != v:
+                continue
+            i = self._pos[r["root_id"]]
+            s[i] += float(v)
+            c[i] += 1.0
+            vals.append(float(v))
+            rts.append(r["root_id"])
+        return s, c, vals, rts
+
+    def _replicates(self, key):
+        s, c, vals, _ = self._sums(key)
+        if not vals or self.idx is None:
+            return None, vals
+        tot = c[self.idx].sum(axis=1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out = s[self.idx].sum(axis=1) / tot
+        return out, vals
+
+    @staticmethod
+    def _pct(out):
+        srt = np.sort(out[np.isfinite(out)])
+        n = srt.size
+        if n == 0:
+            return None, None, None
+        lo = float(srt[int(0.025 * n)])
+        hi = float(srt[min(n - 1, int(0.975 * n))])
+        se = float(srt.std(ddof=1)) if n > 1 else float("nan")
+        return lo, hi, se
+
+    # -- public ------------------------------------------------------------- #
+    def stat(self, key):
+        """`{value, ci95, se_root, z, n, n_roots, significant}` for one key."""
+        out, vals = self._replicates(key)
+        n = len(vals)
+        value = (sum(vals) / n) if n else None
+        if out is None:
+            return {"value": value, "ci95": [None, None], "se_root": None,
+                    "z": None, "n": n, "n_roots": self.g, "significant": None}
+        lo, hi, se = self._pct(out)
+        z = (value / se) if (se and se == se and se > 0 and value is not None) else None
+        return {"value": value, "ci95": [lo, hi], "se_root": se, "z": z,
+                "n": n, "n_roots": self.g,
+                "significant": bool(lo is not None and lo > 0)}
+
+    def ratio(self, num_key, den_key):
+        """`mean(num)/mean(den)` with a CI from the SAME resample draw."""
+        num, nvals = self._replicates(num_key)
+        den, dvals = self._replicates(den_key)
+        nmean = (sum(nvals) / len(nvals)) if nvals else None
+        dmean = (sum(dvals) / len(dvals)) if dvals else None
+        value = (nmean / dmean) if (nmean is not None and dmean not in (None, 0)) else None
+        if num is None or den is None:
+            return {"value": value, "ci95": [None, None], "se_root": None,
+                    "n": len(nvals), "n_roots": self.g}
+        with np.errstate(invalid="ignore", divide="ignore"):
+            rep = num / den
+        lo, hi, se = self._pct(rep)
+        return {"value": value, "ci95": [lo, hi], "se_root": se,
+                "n": len(nvals), "n_roots": self.g}
+
+
+def _empty_stat():
+    return {"value": None, "ci95": [None, None], "se_root": None, "z": None,
+            "n": 0, "n_roots": 0, "significant": None}
+
+
+# --------------------------------------------------------------------------- #
+# per-position assembly                                                         #
+# --------------------------------------------------------------------------- #
+def world_witness_key(rec: dict) -> str:
+    """Which per-world CRN witness a record carries — the literal contract of
+    `run_tiletie.world_witness_key`, re-stated here so the analyzer never has to
+    import the (engine-bearing) driver. `afterstate_deck_hash_a` is the python
+    leg's; `world_deck_hash` is the rust ARB leg's; a leg set mixing them is a
+    harness error, not a CRN failure."""
+    if "afterstate_deck_hash_a" in rec:
+        return "afterstate_deck_hash_a"
+    if "world_deck_hash" in rec:
+        return "world_deck_hash"
+    return ""
+
+
+def _sym(xs):
+    return (xs[0] + xs[1]) / 2.0
+
+
+def _sub_rows(matrix, idxs):
+    return [matrix[i] for i in idxs]
+
+
+def build_rows(arms_index: dict, if_by_rid: dict, arb_by_rid: dict, *,
+               e_levels, m_expected, parity_base=PARITY_BASE,
+               rnd_seed=RND_SEED, stratum_tag="S1"):
+    """Assemble the arms x worlds matrices per position and evaluate every §4/§5
+    statistic on them, for the FULL deduped arm set and its `J=4` sub-read.
+
+    `include_partial_arms=False` semantics inherited verbatim from
+    `analyze_tiletie.build_positions`: a position missing any PLANNED leg in
+    either judge is EXCLUDED and counted.
+    """
+    rows = []
+    counts = {"planned": 0, "absent_if": 0, "absent_arb": 0, "armset_mismatch": 0,
+              "partial": 0, "champ_arm_absent": 0, "analysed": 0,
+              "m_mismatch": 0, "e_short": 0, "j4_absent": 0}
+    arms_gate = {"n_arms": 0, "n_arms_complete": 0}
+    crn = {"witness_kinds": defaultdict(set), "per_leg": defaultdict(
+        lambda: {"n_ok": 0, "n_crn_verified": 0, "n_records": 0}),
+        "n_records": 0, "n_crn_verified": 0}
+    uncapped = {"n_rids": 0, "n_prefix_ok": 0, "n_append_ok": 0, "n_violation": 0,
+                "violations": []}
+
+    for rid, meta in sorted(arms_index.items()):
+        counts["planned"] += 1
+        arms = meta["arms"]
+        n_arms = len(arms)
+        need = list(range(1, n_arms))
+        if_legs = if_by_rid.get(rid, {})
+        arb_legs = arb_by_rid.get(rid, {})
+        have_if = sorted(k for k in if_legs if k in need)
+        have_arb = sorted(k for k in arb_legs if k in need)
+
+        # ---- G-UNCAPPED, per rid: the EXACT prefix+append identity ---------- #
+        full = meta.get("arms_full")
+        if full is not None:
+            uncapped["n_rids"] += 1
+            prefix_ok = list(arms[:len(full)]) == list(full)
+            extra = len(arms) - len(full)
+            append_ok = (extra == 0) or (
+                extra == 1
+                and meta.get("champ_arm_action") == arms[-1]
+                and meta.get("champ_arm_index") == len(arms) - 1)
+            uncapped["n_prefix_ok"] += bool(prefix_ok)
+            uncapped["n_append_ok"] += bool(append_ok)
+            if not (prefix_ok and append_ok):
+                uncapped["n_violation"] += 1
+                if len(uncapped["violations"]) < 20:
+                    uncapped["violations"].append(
+                        {"rid": rid, "prefix_ok": prefix_ok,
+                         "append_ok": append_ok, "n_arms": len(arms),
+                         "n_arms_full": len(full)})
+
+        if not have_if:
+            counts["absent_if"] += 1
+            continue
+        if not have_arb:
+            counts["absent_arb"] += 1
+            continue
+        if have_if != have_arb:
+            counts["armset_mismatch"] += 1
+            continue
+        if [r for r in need if r not in if_legs]:
+            counts["partial"] += 1
+            continue
+
+        arm_order = [0] + have_if
+        champ_idx = meta.get("champ_arm_index")
+        if champ_idx not in arm_order:
+            counts["champ_arm_absent"] += 1
+            continue
+        champ_pos = arm_order.index(champ_idx)
+
+        # ---- matrices + the CRN / completeness witnesses -------------------- #
+        mats = {}
+        for jname, legs in (("if", if_legs), ("arb", arb_legs)):
+            ref = legs[have_if[0]]
+            va0 = ref["values_a"]
+            for r in have_if:
+                rec = legs[r]
+                crn["n_records"] += 1
+                crn["n_crn_verified"] += bool(rec.get("crn_verified"))
+                kind = world_witness_key(rec)
+                crn["witness_kinds"][jname].add(kind)
+                pl = crn["per_leg"][f"{jname}/leg{r}"]
+                pl["n_records"] += 1
+                pl["n_ok"] += bool(rec.get("ok", True))
+                pl["n_crn_verified"] += bool(rec.get("crn_verified"))
+            mats[jname] = [list(va0)] + [list(legs[r]["values_b"]) for r in have_if]
+
+        matrix_if, matrix_arb = mats["if"], mats["arb"]
+        m = len(matrix_if[0])
+
+        # G-ARMS: every FULL-SET arm scored on ALL M worlds — per arm, not per ply
+        arms_gate["n_arms"] += n_arms
+        arms_gate["n_arms_complete"] += sum(
+            1 for ri, ra in zip(matrix_if, matrix_arb)
+            if len(ri) == m and len(ra) == m)
+
+        if m != m_expected:
+            counts["m_mismatch"] += 1
+
+        sel0, eva0 = AT.parity_indices(m, base=parity_base, swap=False)
+        if min(len(sel0), len(eva0)) < max(e_levels):
+            counts["e_short"] += 1
+            continue
+
+        # ---- the J = 4 sub-read pool --------------------------------------- #
+        subset = meta.get("subset_j4")
+        if not subset:
+            counts["j4_absent"] += 1
+            continue
+        sub_set = set(subset)
+        j4_idx = [p for p, ai in enumerate(arm_order) if arms[ai] in sub_set]
+        if champ_pos not in j4_idx:
+            # the champion comparator must live in BOTH pools, else Δ_ora is a
+            # difference of unlike quantities (its champ term would not cancel)
+            j4_idx = sorted(j4_idx + [champ_pos])
+        champ_pos_j4 = j4_idx.index(champ_pos)
+        mif_j4 = _sub_rows(matrix_if, j4_idx)
+        marb_j4 = _sub_rows(matrix_arb, j4_idx)
+
+        a_rnd = TA.rnd_arm_position(rid, len(arm_order), rnd_seed)
+
+        acc = defaultdict(list)
+        for swap in (False, True):
+            sel, eva = AT.parity_indices(m, base=parity_base, swap=swap)
+            sel_sorted, eva_sorted = sorted(sel), sorted(eva)
+            for e in e_levels:
+                eva_e = eva_sorted[:e]
+                ora_full, _ = AT.crossfit_regret(matrix_if, sel, eva_e, champ_pos)
+                ora_j4, _ = AT.crossfit_regret(mif_j4, sel, eva_e, champ_pos_j4)
+                acc[f"ora_full_E{e}"].append(ora_full)
+                acc[f"ora_j4_E{e}"].append(ora_j4)
+                acc[f"rnd_E{e}"].append(
+                    AT._sub_mean(matrix_if[a_rnd], eva_e)
+                    - AT._sub_mean(matrix_if[champ_pos], eva_e))
+                for b in B_LADDER:
+                    if b > len(sel_sorted):
+                        continue
+                    acc[f"arb_full_E{e}_B{b}"].append(
+                        A2.arb_at_budget(matrix_arb, matrix_if, sel, eva_e,
+                                         champ_pos, b)[0])
+                    acc[f"arb_j4_E{e}_B{b}"].append(
+                        A2.arb_at_budget(marb_j4, mif_j4, sel, eva_e,
+                                         champ_pos_j4, b)[0])
+
+        row = {
+            "rid": rid, "root_id": meta["root_id"],
+            "stratum_tag": stratum_tag, "stratum": meta.get("stratum"),
+            "rules_profile": meta.get("rules_profile"),
+            "ply": meta.get("ply"), "phase_bucket": meta.get("phase_bucket"),
+            "capped_at_4": bool(meta.get("capped_at_4")),
+            "champ_outside_tieset": bool(meta.get("champ_outside_tieset")),
+            "n_distinct_afterstates": meta.get("n_distinct_afterstates"),
+            "m": m, "m_expected": m_expected,
+            "n_arms_planned": n_arms, "n_arms_scored": len(arm_order),
+            "n_arms_full": len(full) if full is not None else None,
+            "n_arms_j4": len(j4_idx),
+            "n_worlds_per_arm": [len(r) for r in matrix_if],
+            "champ_pos": champ_pos, "arm_order": arm_order,
+        }
+        for k, v in acc.items():
+            row[k] = _sym(v)
+        # the pre-registered contrasts, per position (CRN-paired within position)
+        for e in e_levels:
+            if f"arb_j4_E{e}_B64" in row and f"arb_j4_E{e}_B16" in row:
+                row[f"d_16_64_E{e}"] = row[f"arb_j4_E{e}_B64"] - row[f"arb_j4_E{e}_B16"]
+            if f"arb_j4_E{e}_B32" in row and f"arb_j4_E{e}_B16" in row:
+                row[f"d_16_32_E{e}"] = row[f"arb_j4_E{e}_B32"] - row[f"arb_j4_E{e}_B16"]
+            row[f"d_ora_E{e}"] = row[f"ora_full_E{e}"] - row[f"ora_j4_E{e}"]
+            if f"arb_full_E{e}_B16" in row:
+                row[f"d_arb_E{e}"] = (row[f"arb_full_E{e}_B16"]
+                                      - row[f"arb_j4_E{e}_B16"])
+            if f"arb_full_E{e}_B64" in row and f"arb_full_E{e}_B16" in row:
+                row[f"i_full_64_minus_16_E{e}"] = (row[f"arb_full_E{e}_B64"]
+                                                   - row[f"arb_full_E{e}_B16"])
+        rows.append(row)
+        counts["analysed"] += 1
+
+    crn_out = {
+        "witness_kinds": {k: sorted(v) for k, v in crn["witness_kinds"].items()},
+        "per_leg": {k: dict(v) for k, v in sorted(crn["per_leg"].items())},
+        "n_records": crn["n_records"], "n_crn_verified": crn["n_crn_verified"],
+    }
+    return rows, counts, arms_gate, crn_out, uncapped
+
+
+# --------------------------------------------------------------------------- #
+# gates the analyzer OWNS (READ_RULE §2 addresses under READOUT::widening.*)     #
+# --------------------------------------------------------------------------- #
+def crn_gate(crn_by_stratum: dict, smoke_manifests: list) -> dict:
+    """`G-CRN`: per-judge smoke witness true; `n_crn_verified == n_ok` on every
+    leg; EXACTLY ONE witness kind per judge."""
+    kinds, per_leg = defaultdict(set), {}
+    n_rec = n_ver = 0
+    leg_ok = True
+    for tag, c in sorted(crn_by_stratum.items()):
+        for j, ks in c["witness_kinds"].items():
+            kinds[j] |= set(ks)
+        for leg, v in c["per_leg"].items():
+            per_leg[f"{tag}/{leg}"] = v
+            if v["n_crn_verified"] != v["n_ok"]:
+                leg_ok = False
+        n_rec += c["n_records"]
+        n_ver += c["n_crn_verified"]
+    one_kind = bool(kinds) and all(len(v) == 1 and "" not in v
+                                   for v in kinds.values())
+    smokes = {}
+    smoke_ok = bool(smoke_manifests)
+    for p in smoke_manifests:
+        p = Path(p)
+        if not p.is_file():
+            smokes[str(p)] = None
+            smoke_ok = False
+            continue
+        man = json.loads(p.read_text())
+        val = man.get("crn_cross_leg_identical")
+        smokes[p.name] = val
+        if val is not True:
+            smoke_ok = False
+    return {
+        "ok": bool(leg_ok and one_kind and smoke_ok),
+        "witness_kinds": {k: sorted(v) for k, v in sorted(kinds.items())},
+        "exactly_one_kind_per_judge": one_kind,
+        "legs_consistent": leg_ok,
+        "smoke_crn_cross_leg_identical": smokes,
+        "smoke_ok": smoke_ok,
+        "n_records": n_rec, "n_crn_verified": n_ver,
+        "per_leg": per_leg,
+        "resolved_at": "READOUT::widening.gates.crn",
+    }
+
+
+def uncapped_gate(plans: dict, uncapped_by_stratum: dict) -> dict:
+    """`G-UNCAPPED` (the `READOUT` fallback address): `uncapped == true` and
+    `cap_j == null` on both strata, plus the per-rid prefix+append identity.
+
+    ⚠️ A naive `arms == arms_full` fails ~16% of rids BY DESIGN — the champion
+    pick is APPENDED when its transposition rep is absent from the tie set
+    (`champ_outside_tieset` 15.6–17.3% on the banked corpora; rust does the
+    identical append). The conjunct is the exact prefix+append identity."""
+    per = {}
+    ok = bool(plans)
+    for tag, plan in sorted(plans.items()):
+        u = uncapped_by_stratum.get(tag, {})
+        this = {
+            "uncapped": plan.get("uncapped"),
+            "cap_j": plan.get("cap_j"),
+            "n_rids": u.get("n_rids", 0),
+            "n_prefix_ok": u.get("n_prefix_ok", 0),
+            "n_append_ok": u.get("n_append_ok", 0),
+            "n_violation": u.get("n_violation", 0),
+            "violations": u.get("violations", []),
+        }
+        this["ok"] = bool(this["uncapped"] is True and this["cap_j"] is None
+                          and this["n_rids"] > 0 and this["n_violation"] == 0)
+        ok = ok and this["ok"]
+        per[tag] = this
+    return {"ok": ok, "by_stratum": per,
+            "resolved_at": "READOUT::widening.gates.uncapped"}
+
+
+def arms_gate_block(arms_by_stratum: dict, include_partial=False) -> dict:
+    """`G-ARMS`: every full-set arm scored on ALL `M` worlds — per ARM, not per
+    ply. `n_arms_complete == n_arms` and `include_partial == false`."""
+    n = sum(v["n_arms"] for v in arms_by_stratum.values())
+    c = sum(v["n_arms_complete"] for v in arms_by_stratum.values())
+    return {"n_arms": n, "n_arms_complete": c,
+            "include_partial": bool(include_partial),
+            "ok": bool(n > 0 and n == c and not include_partial),
+            "by_stratum": {k: dict(v) for k, v in sorted(arms_by_stratum.items())},
+            "resolved_at": "READOUT::widening.gates.arms"}
+
+
+def completion_block(rows_s1, rows_s2) -> dict:
+    """`G-COMPLETE`: S1 scored `>= 1,283`; S2 scored CAPPED `>= 1,045`; mining
+    ceilings honoured (<=4 tied plies/root S1, <=3 capped plies/root S2)."""
+    def _per_root(rows):
+        d = defaultdict(int)
+        for r in rows:
+            d[r["root_id"]] += 1
+        return max(d.values()) if d else 0
+
+    s2_capped = [r for r in rows_s2 if r["capped_at_4"]]
+    s1_n, s2_n = len(rows_s1), len(s2_capped)
+    s1_mpr, s2_mpr = _per_root(rows_s1), _per_root(s2_capped)
+    return {
+        "s1_n": s1_n, "s2_n": s2_n,
+        "s1_max_per_root": s1_mpr, "s2_max_per_root": s2_mpr,
+        "s1_n_all": len(rows_s1), "s2_n_all": len(rows_s2),
+        "s1_floor": G_COMPLETE_S1_FLOOR, "s2_floor": G_COMPLETE_S2_FLOOR,
+        "s1_ceiling": S1_MAX_PER_ROOT, "s2_ceiling": S2_MAX_PER_ROOT,
+        "ok": bool(s1_n >= G_COMPLETE_S1_FLOOR and s2_n >= G_COMPLETE_S2_FLOOR
+                   and s1_mpr <= S1_MAX_PER_ROOT and s2_mpr <= S2_MAX_PER_ROOT),
+        "resolved_at": "READOUT::widening.completion",
+    }
+
+
+def replication_gate(ladder_e16: dict, arb16_stat: dict, reference: dict,
+                     inflation=ENVELOPE_INFLATION) -> tuple:
+    """`G-REPLICATE` — binds BOTH rungs (ONE shared instrument check, NOT two
+    independent confirmations).
+
+    Returns `(public_block, sealed_block)`. The PUBLIC block is booleans only;
+    every z lives in the SEALED block, which goes to
+    `verdicts/SEALED_G_REPLICATE.json` and is printed by nothing.
+
+    A FAIL means **UNINTERPRETABLE, never FAIL-the-lever** — the fresh corpus is
+    a different population.
+    """
+    ref_rungs = (reference or {}).get("rungs") or {}
+    per_rung, per_rung_naive, sealed_rungs = {}, {}, {}
+    for b in (1, 2, 4, 8, 16):
+        key = f"B{b}"
+        run = ladder_e16.get(key) or {}
+        ref = ref_rungs.get(str(b)) or ref_rungs.get(key) or {}
+        rv, rse = run.get("arb"), run.get("se")
+        fv, fse = ref.get("arb"), ref.get("se")
+        if None in (rv, rse, fv, fse):
+            per_rung[key] = False
+            per_rung_naive[key] = False
+            sealed_rungs[key] = {"z": None, "reason": "input absent",
+                                 "run_arb": rv, "run_se": rse,
+                                 "ref_arb": fv, "ref_se": fse}
+            continue
+        sigma = math.sqrt(float(rse) ** 2 + float(fse) ** 2)
+        z = (float(rv) - float(fv)) / sigma if sigma > 0 else float("nan")
+        inside_inflated = bool(abs(z) <= 2.0 * inflation) if z == z else False
+        inside_naive = bool(abs(z) <= 2.0) if z == z else False
+        per_rung[key] = inside_inflated
+        per_rung_naive[key] = inside_naive
+        sealed_rungs[key] = {"z": z, "sigma": sigma, "run_arb": rv, "run_se": rse,
+                             "ref_arb": fv, "ref_se": fse,
+                             "inside_naive_2sigma": inside_naive,
+                             "inside_inflated_2sigma": inside_inflated}
+
+    convicts = bool(arb16_stat.get("ci95", [None, None])[0] is not None
+                    and arb16_stat["ci95"][0] > 0)
+    passed = bool(per_rung and all(per_rung.values()) and convicts)
+    caveat = bool(any(per_rung[k] and not per_rung_naive[k] for k in per_rung))
+    public = {
+        "pass": passed,
+        "per_rung_inside_envelope": per_rung,
+        "arb16_convicts": convicts,
+        "envelope_inflation": inflation,
+        "naive_envelope_caveat": caveat,
+        "reads": "UNINTERPRETABLE on FAIL — never FAIL-the-lever; the fresh "
+                 "corpus is a different population. Binds BOTH rungs: one shared "
+                 "instrument check, NOT two independent confirmations.",
+        "resolved_at": "READOUT::widening.stage1_replication",
+    }
+    sealed = {
+        "SEALED": "G-REPLICATE z-statistics. WRITE-ONLY: this file is NOT an "
+                  "address, no gate resolves against it, the harness never "
+                  "prints it and a fixing session never opens it (READ_RULE §7; "
+                  "REVIEW_R2 §N4). G-REPLICATE has NO fallback — a missing or "
+                  "null boolean block on the READOUT is a FAIL, and the fix is "
+                  "in W3, never in the seal.",
+        "reference_source": (reference or {}).get("source"),
+        "per_rung": sealed_rungs,
+        "per_rung_inside_envelope_naive": per_rung_naive,
+        "arb16": {"value": arb16_stat.get("value"), "ci95": arb16_stat.get("ci95"),
+                  "z": arb16_stat.get("z")},
+        "envelope_inflation": inflation,
+        "pass": passed,
+    }
+    return public, sealed
+
+
+# --------------------------------------------------------------------------- #
+# BRANCH TABLES — READ_RULE §4 and §5, implemented literally                     #
+# --------------------------------------------------------------------------- #
+def _lo(stat):
+    ci = (stat or {}).get("ci95") or [None, None]
+    return ci[0]
+
+
+def _hi(stat):
+    ci = (stat or {}).get("ci95") or [None, None]
+    return ci[1]
+
+
+def _fin(x):
+    return x is not None and x == x
+
+
+def decide_rung2(d1664: dict, arb64: dict, arb16: dict) -> dict:
+    """READ_RULE §4. Read in order; FIRST match wins; the table is TOTAL (row 5).
+
+    1 W-NOISY     : lower(CI95(arb_64)) <= 0   (broadened per REVIEW_R2 N14 —
+                    total, and it captures the negative case; a significantly
+                    NEGATIVE level carries a mandatory "mechanism anomaly" print)
+    2 W-REVERSAL  : upper(CI95(Δ)) < 0
+    3 W-RISING    : lower(CI95(Δ)) > 0 and Δ >= +0.040 and lower(CI95(arb_64)) > 0
+                    and arb(64) > arb(16)
+    4 W-SATURATED : 0 in CI95(Δ) and lower(CI95(arb_64)) > 0
+    5 W-INCONCLUSIVE (catch-all)
+
+    The `+0.040` floor is deliberately a POINT test on `Δ`, stated separately
+    from significance so neither can be quietly traded for the other
+    (READ_RULE §3).
+    """
+    dv, dlo, dhi = d1664.get("value"), _lo(d1664), _hi(d1664)
+    a64lo, a64hi = _lo(arb64), _hi(arb64)
+    a64, a16 = arb64.get("value"), arb16.get("value")
+    if not (_fin(dlo) and _fin(dhi) and _fin(a64lo) and _fin(a64hi)):
+        return {"branch": "W-INCONCLUSIVE",
+                "reason": "degenerate / absent CI (row 5 catch-all)",
+                "mechanism_anomaly_print": False}
+    if a64lo <= 0:
+        neg = bool(a64hi < 0)
+        return {"branch": "W-NOISY",
+                "reason": "arb_64 does not convict positive: "
+                          "lower(CI95(arb_64)) <= 0",
+                "mechanism_anomaly_print": neg,
+                "mandatory_print": (
+                    "the LEVEL is significantly NEGATIVE — a MECHANISM ANOMALY, "
+                    "not a 'noisy' reading, and it must not be reported as one"
+                    if neg else None)}
+    if dhi < 0:
+        return {"branch": "W-REVERSAL",
+                "reason": "upper(CI95(d_16_64)) < 0 — a strictly larger CRN "
+                          "sample cannot be worse in expectation for a "
+                          "consistent selector ⇒ mechanism anomaly, not a finding",
+                "mechanism_anomaly_print": True}
+    if (dlo > 0 and _fin(dv) and dv >= D1664_FLOOR and a64lo > 0
+            and _fin(a64) and _fin(a16) and a64 > a16):
+        return {"branch": "W-RISING",
+                "reason": f"lower(CI)>0, d>={D1664_FLOOR}, arb_64 convicts, "
+                          f"arb(64)>arb(16)",
+                "mechanism_anomaly_print": False}
+    if dlo <= 0 <= dhi and a64lo > 0:
+        return {"branch": "W-SATURATED",
+                "reason": "0 in CI95(d_16_64) and arb_64 convicts — B=16 is on "
+                          "the plateau to within +0.04 pts/tied ply",
+                "mechanism_anomaly_print": False}
+    # row 5, and the LEVEL/INCREMENT RESIDUE the read-out must name (R3 C6)
+    residue = bool(dlo > 0 and _fin(dv) and dv >= D1664_FLOOR
+                   and _fin(a64) and _fin(a16) and a64 <= a16)
+    return {"branch": "W-INCONCLUSIVE",
+            "reason": ("the LEVEL/INCREMENT RESIDUE: Δ is significant AND above "
+                       "the +0.040 floor while arb(64) <= arb(16) — the two "
+                       "readings DISAGREE, which the read-out must report as an "
+                       "INSTRUMENT QUESTION, not as a finding"
+                       if residue else
+                       "none of rows 1-4 (includes a significant d BELOW the "
+                       "+0.040 floor)"),
+            "level_increment_residue": residue,
+            "mechanism_anomaly_print": False}
+
+
+def decide_rung3(d_ora: dict, r_ora: dict, ora_j4: dict, d_arb: dict) -> dict:
+    """READ_RULE §5. Pre-branch guard first, then the main table (or the
+    committed `Δ_ora`-only sub-table when the guard fires). `X-NOISE` rides on
+    whichever branch fires and never changes it."""
+    guard = not (_fin(_lo(ora_j4)) and _lo(ora_j4) > 0)
+    dlo, dhi, dv = _lo(d_ora), _hi(d_ora), d_ora.get("value")
+    noise = bool(_fin(_hi(d_arb)) and _hi(d_arb) < 0 and _fin(dlo) and dlo > 0)
+
+    if guard:
+        # Δ_ora-only sub-table — the ratio is degenerate and is NOT reported
+        if not (_fin(dlo) and _fin(dhi)):
+            br, why = "X-INCONCLUSIVE-D", "degenerate / absent CI"
+        elif dlo > 0 and _fin(dv) and dlo <= PRED_DELTA_LEGACY <= dhi:
+            br, why = "X-CONFIRMED-D", "+0.1382 in CI95(delta_ora)"
+        elif dlo > PRED_DELTA_LEGACY:
+            br, why = "X-ABOVE-D", "lower(CI95(delta_ora)) > +0.1382"
+        elif dlo > 0 and dhi < PRED_DELTA_LEGACY and dhi >= PRED_DELTA_DEDUPED:
+            br, why = "X-PARTIAL-D", "resolved below the legacy magnitude"
+        elif dlo > 0 and dhi < PRED_DELTA_DEDUPED:
+            br, why = "X-BELOW-D", "resolved below BOTH magnitudes"
+        elif dlo <= 0 <= dhi and dhi < PRED_DELTA_DEDUPED:
+            br, why = "X-FREE-D", "0 in CI95(delta_ora) and upper < +0.0842"
+        else:
+            br, why = "X-INCONCLUSIVE-D", "none of the sub-table rows"
+        return {"branch": br, "reason": why, "guard_fired": True,
+                "r_ora_reported": False, "x_noise": noise}
+
+    rlo, rhi = _lo(r_ora), _hi(r_ora)
+    if not (_fin(dlo) and _fin(dhi)):
+        return {"branch": "X-INCONCLUSIVE", "reason": "degenerate / absent CI",
+                "guard_fired": False, "r_ora_reported": True, "x_noise": noise}
+    sig = dlo > 0
+    if sig and _fin(rlo) and _fin(rhi) and rlo <= PRED_LEGACY <= rhi:
+        br, why = "X-CONFIRMED", "lower(CI95(delta_ora))>0 and 1.400 in CI95(R_ora)"
+    elif sig and _fin(rlo) and rlo > PRED_LEGACY:
+        br, why = "X-ABOVE", "lower(CI95(R_ora)) > 1.400"
+    elif sig and _fin(rhi) and rhi < PRED_LEGACY and rhi >= PRED_DEDUPED:
+        br, why = "X-PARTIAL", "upper(CI95(R_ora)) < 1.400 and >= 1.244"
+    elif sig and _fin(rhi) and rhi < PRED_DEDUPED:
+        br, why = "X-BELOW", "upper(CI95(R_ora)) < 1.244 — below BOTH predictions"
+    elif (not sig) and dlo <= 0 <= dhi and dhi < PRED_DELTA_DEDUPED:
+        br, why = "X-FREE", "0 in CI95(delta_ora) and upper < +0.0842"
+    else:
+        br, why = "X-INCONCLUSIVE", "none of rows 1-5"
+    return {"branch": br, "reason": why, "guard_fired": False,
+            "r_ora_reported": True, "x_noise": noise}
+
+
+def xfree_window(d_ora: dict) -> dict:
+    """READ_RULE §5 mandatory print (iii): the interval of POINT ESTIMATES for
+    which `X-FREE` was reachable at the REALIZED se.
+
+    `X-FREE` needs `0 in CI95(Δ)` AND `upper(CI95(Δ)) < +0.0842` simultaneously.
+    With realized half-width `h`, a point estimate `p` reaches it iff
+    `-h <= p <= h` and `p + h < 0.0842`, i.e. `p in [-h, min(h, 0.0842 - h))`.
+    At `sd_Δ = 1.4` this requires `p <= +0.0015` — essentially zero or negative,
+    so a NON-firing `X-FREE` is not evidence against the cap being free."""
+    lo, hi, v = _lo(d_ora), _hi(d_ora), d_ora.get("value")
+    if not (_fin(lo) and _fin(hi)):
+        return {"half_width": None, "lo": None, "hi": None, "empty": None,
+                "point_estimate": v, "reachable_for_point_estimate": None,
+                "note": "CI absent — the window is undefined"}
+    h = (hi - lo) / 2.0
+    wlo = -h
+    whi = min(h, PRED_DELTA_DEDUPED - h)
+    empty = not (whi > wlo)
+    needs_negative = bool(whi <= 0.0)
+    reach = bool(_fin(v) and (wlo <= v < whi)) if not empty else False
+    if empty:
+        note = ("EMPTY at the realized se — X-FREE was UNREACHABLE, so its "
+                "non-firing is not evidence against the cap being free")
+    elif needs_negative:
+        note = ("NEAR-EMPTY: at the realized se X-FREE required a strictly "
+                "NEGATIVE point estimate, so its non-firing is not evidence "
+                "against the cap being free (REVIEW_R1 §9)")
+    else:
+        note = ("X-FREE was reachable only for point estimates in [lo, hi) — "
+                "at sd_Δ = 1.4 that bar is +0.0015, i.e. essentially zero")
+    return {"half_width": h, "lo": wlo, "hi": whi, "empty": bool(empty),
+            "requires_negative_point_estimate": needs_negative,
+            "point_estimate": v, "reachable_for_point_estimate": reach,
+            "note": note}
+
+
+# --------------------------------------------------------------------------- #
+# assembly of the READOUT blocks                                                #
+# --------------------------------------------------------------------------- #
+def ladder_block(boot: RootBoot, e: int, rows) -> dict:
+    """`widening.b_ladder.E<e>` — `B{b}.{arb, ci95, se, z, n, n_roots}`."""
+    out = {}
+    for b in B_LADDER:
+        key = f"arb_j4_E{e}_B{b}"
+        if not any(key in r for r in rows):
+            continue
+        s = boot.stat(key)
+        out[f"B{b}"] = {"arb": s["value"], "ci95": s["ci95"], "se": s["se_root"],
+                        "z": s["z"], "n": s["n"], "n_roots": s["n_roots"],
+                        "significant": s["significant"]}
+    return out
+
+
+def j_rider_block(rows, e: int, reps, seed) -> dict:
+    """`widening.j_rider.<slice>` on the CAPPED plies of `rows` at evaluation
+    width `e`. `Δ_ora` adjudicates; `Δ_arb` rides as the deployable quantity."""
+    capped = [r for r in rows if r["capped_at_4"]]
+    if not capped:
+        return {"delta_ora": None, "ci95_ora": [None, None], "r_ora": None,
+                "ci95_r_ora": None, "r_ora_reported": False,
+                "ora_j4_ci95": [None, None],
+                "delta_arb": None, "ci95_arb": [None, None], "n_capped": 0,
+                "xfree_window": xfree_window({}), "n_roots": 0}
+    b = RootBoot(capped, reps=reps, seed=seed)
+    d_ora = b.stat(f"d_ora_E{e}")
+    ora_j4 = b.stat(f"ora_j4_E{e}")
+    ora_full = b.stat(f"ora_full_E{e}")
+    d_arb = b.stat(f"d_arb_E{e}")
+    # READ_RULE §5 pre-branch guard. When it fires the ratio is DEGENERATE and is
+    # NOT reported: both `r_ora` and `ci95_r_ora` go to `null` TOGETHER, and
+    # `r_ora_reported` is the witness that distinguishes "legitimately null" from
+    # "broken" (READ_RULE §1.2's CLOSED allow_null table, rows 1-2). Emitting
+    # `[null, null]` for the CI instead of `null` would put the two addresses in
+    # different states at the same moment, which the table forbids.
+    guard = not (_fin(_lo(ora_j4)) and _lo(ora_j4) > 0)
+    r = ({"value": None, "ci95": None, "se_root": None}
+         if guard else b.ratio(f"ora_full_E{e}", f"ora_j4_E{e}"))
+    return {
+        "e_worlds": e,
+        "delta_ora": d_ora["value"], "ci95_ora": d_ora["ci95"],
+        "se_ora": d_ora["se_root"], "z_ora": d_ora["z"],
+        "significant_ora": d_ora["significant"],
+        "r_ora": r["value"], "ci95_r_ora": r["ci95"],
+        "r_ora_reported": not guard,
+        "ora_j4": ora_j4["value"], "ora_j4_ci95": ora_j4["ci95"],
+        "ora_full": ora_full["value"], "ora_full_ci95": ora_full["ci95"],
+        "delta_arb": d_arb["value"], "ci95_arb": d_arb["ci95"],
+        "n_capped": len(capped), "n_roots": b.g,
+        "xfree_window": xfree_window(d_ora),
+        "_d_ora": d_ora, "_r_ora": r, "_ora_j4": ora_j4, "_d_arb": d_arb,
+    }
+
+
+def _strip_private(obj):
+    """Drop the `_`-prefixed working values before the block is published."""
+    if isinstance(obj, dict):
+        return {k: _strip_private(v) for k, v in obj.items()
+                if not str(k).startswith("_")}
+    if isinstance(obj, list):
+        return [_strip_private(v) for v in obj]
+    return obj
+
+
+# --------------------------------------------------------------------------- #
+# the markdown REPORT (blindness-protected)                                     #
+# --------------------------------------------------------------------------- #
+def _f(x, nd=4):
+    if x is None:
+        return "n/a"
+    if isinstance(x, bool):
+        return "true" if x else "false"
+    if isinstance(x, (int,)) and not isinstance(x, bool):
+        return str(x)
+    try:
+        return "n/a" if x != x else f"{x:.{nd}f}"
+    except (TypeError, ValueError):
+        return str(x)
+
+
+def _ci(c, nd=4):
+    c = c or [None, None]
+    return f"[{_f(c[0], nd)}, {_f(c[1], nd)}]"
+
+
+def render_md(v: dict) -> str:
+    """The harness REPORT. On ANY gate FAIL it prints GATE INPUTS ONLY — no
+    `arb`, no `ora`, no Δ, no CI, no per-position statistic (READ_RULE §7). It
+    never prints a `G-REPLICATE` z on any branch."""
+    w = v["widening"]
+    gates = w["gates_summary"]
+    L = ["# TIE-ARBITER WIDENING — READ-OUT (rungs 2 + 3)", "",
+         f"generated: {v['generated_utc']}", "",
+         "> Significance is ONE test everywhere: `lower(CI95) > 0` on the",
+         "> percentile ROOT bootstrap (2,000 reps, seed 20260819, cluster = root).",
+         "> `G-REPLICATE` z-statistics are SEALED and appear nowhere in this file.",
+         "", "## Gates", "",
+         "| gate | verdict | resolved_at |", "|---|---|---|"]
+    for name, g in sorted(gates.items()):
+        L.append(f"| `{name}` | {'PASS' if g['ok'] else 'FAIL'} | "
+                 f"`{g.get('resolved_at') or 'UNRESOLVED'}` |")
+    L += ["",
+          f"analyzer-owned gates: **{'ALL PASS' if w['gates_ok'] else 'FAIL'}**",
+          ""]
+
+    if not w["gates_ok"]:
+        L += ["## ⛔ W-UNREADABLE — GATE INPUTS ONLY", "",
+              "READ_RULE §7: on any gate FAIL this report prints gate inputs and",
+              "nothing else — no `arb`, no `ora`, no Δ, no CI, no per-position",
+              "statistic — so a fixing session can read it and stay blind.", "",
+              "```json",
+              # GATE INPUTS ONLY. The config block is deliberately NOT dumped:
+              # it carries the ladder/E levels, and a fixing session has no use
+              # for anything but the failing gate's own inputs.
+              json.dumps({"gates": w["gates"],
+                          "completion": w["completion"],
+                          "stage1_replication": w["stage1_replication"],
+                          "plan_dirs": w["config"]["plan_dirs"],
+                          "position_counts": w["config"]["counts"]},
+                         indent=2, sort_keys=True, default=str),
+              "```", "",
+              "Nothing is licensed. No branch of either rung fires — not even",
+              "for information.", ""]
+        return "\n".join(L)
+
+    b2, b3 = w["branch"]["rung2"], w["branch"]["rung3"]
+    L += ["## Rung 2 — `B > 16` (S1, primary `Δ(16→64)` at E = 64)", "",
+          f"**BRANCH: `{b2['branch']}`** — {b2['reason']}", "",
+          f"- `Δ(16→64)` = {_f(w['delta']['d_16_64']['value'])} "
+          f"CI95 {_ci(w['delta']['d_16_64']['ci95'])} "
+          f"se_root {_f(w['delta']['d_16_64']['se_root'])} "
+          f"(committed floor +{D1664_FLOOR})",
+          f"- `Δ(16→32)` = {_f(w['delta']['d_16_32']['value'])} "
+          f"CI95 {_ci(w['delta']['d_16_32']['ci95'])} — reported with its CI, "
+          f"**never a branch input on its own**", "",
+          "| B | arb (E=64) | CI95 | se | arb (E=16) | CI95 | se |",
+          "|---|---|---|---|---|---|---|"]
+    e64, e16 = w["b_ladder"].get("E64", {}), w["b_ladder"].get("E16", {})
+    for b in B_LADDER:
+        k = f"B{b}"
+        a, c = e64.get(k), e16.get(k)
+        if not a and not c:
+            continue
+        L.append(f"| {b} | {_f((a or {}).get('arb'))} | {_ci((a or {}).get('ci95'))} "
+                 f"| {_f((a or {}).get('se'))} | {_f((c or {}).get('arb'))} | "
+                 f"{_ci((c or {}).get('ci95'))} | {_f((c or {}).get('se'))} |")
+    L += ["",
+          "A null here means **\"no rung above 16 is worth ≥ +0.04 pts/tied "
+          "ply\"**, NOT `Δ = 0`: the saturating-exp (+0.017) and √B-noise "
+          "(+0.021) models are not resolved by this design.", "",
+          "## Rung 3 — `J > 4` (S2 capped plies, primary `Δ_ora`)", "",
+          f"**BRANCH: `{b3['branch']}`** — {b3['reason']}", ""]
+    s2 = w["j_rider"]["s2"]
+    L += [f"- `Δ_ora` = {_f(s2['delta_ora'])} CI95 {_ci(s2['ci95_ora'])} "
+          f"(n_capped {s2['n_capped']})",
+          f"- `R_ora` = {_f(s2['r_ora'])} CI95 {_ci(s2['ci95_r_ora'])} "
+          f"— reported: {_f(s2['r_ora_reported'])}",
+          f"- `ora_J4` CI95 {_ci(s2['ora_j4_ci95'])} (the pre-branch guard)",
+          f"- `Δ_arb` = {_f(s2['delta_arb'])} CI95 {_ci(s2['ci95_arb'])} "
+          f"— deploy rider",
+          f"- `X-NOISE` rider fired: {_f(b3.get('x_noise'))}", "",
+          "**X-FREE attainability at the REALIZED se:** "
+          f"window [{_f(s2['xfree_window']['lo'])}, "
+          f"{_f(s2['xfree_window']['hi'])}) — "
+          f"{'EMPTY' if s2['xfree_window']['empty'] else 'non-empty'}. "
+          f"{s2['xfree_window']['note']}", "",
+          "Mandatory prints: this design **cannot separate 1.400 from 1.244** "
+          "(Δ = 0.054 ⇒ z 1.28–2.00); **+0.0842 is unresolved at the top of the "
+          "`sd_Δ` bracket** (z 1.995 at `sd_Δ` = 1.4).", "",
+          "### Riders", ""]
+    s1r = w["j_rider"]["s1_replication"]
+    inter = w["j_rider"]["interaction"]
+    L += [f"- S1 replication (`E=64`, non-adjudicating): `Δ_ora` "
+          f"{_f(s1r['delta_ora'])} CI95 {_ci(s1r['ci95_ora'])} "
+          f"(n_capped {s1r['n_capped']})",
+          f"- B×J interaction: `arb_full(64)−arb_full(16)` "
+          f"{_f((inter.get('arb_full_64_minus_16') or {}).get('value'))} · "
+          f"`arb_full(16)−arb_J4(16)` "
+          f"{_f((inter.get('arb_full_16_minus_j4_16') or {}).get('value'))}",
+          f"- `D-DRAW`: n_checked {w['j_rider']['d_draw']['n_checked']}, "
+          f"agreement_rate {_f(w['j_rider']['d_draw']['agreement_rate'])} "
+          f"— reports the magnitude of `I7`'s dedupe-partition conditional; "
+          f"adjudicates nothing.",
+          f"- Shared cell `arb(B=16, J≤4, E=16)` = "
+          f"{_f((e16.get('B16') or {}).get('arb'))} "
+          f"CI95 {_ci((e16.get('B16') or {}).get('ci95'))} — ONE number, "
+          f"declared shared, identical in both rungs' sections.", "",
+          "### Mandatory riders (READ_RULE §6)", "",
+          "`R1` σ-inflation (within-run CRN-paired primaries take NONE; banked "
+          "contrasts take 2×) · `R2` translation caveat (Stage-1b under-predicted "
+          "Phase B's game cell by 3.9×; no game cell is sized here) · `R3` "
+          "`I7-draw-scope` (instrument draw, NOT nested in `j`; licence "
+          "conditional on the unverified dedupe partition) · `R4` two currencies, "
+          "never converted · `R5` PRODUCTION.yaml untouched, no claim minted · "
+          "`R6` the N4 waiver above B=16 is OPEN, re-priced at the flip decision · "
+          "`R7` the phone is out of scope · `R8` `|z| < 2` is never \"refuted\".",
+          ""]
+    return "\n".join(L)
+
+
+# --------------------------------------------------------------------------- #
+# main                                                                          #
+# --------------------------------------------------------------------------- #
+def parse_args(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--plan-dir-s1", required=True)
+    ap.add_argument("--plan-dir-s2", default=None)
+    ap.add_argument("--if-records-s1", action="append", default=None)
+    ap.add_argument("--arb-records-s1", action="append", default=None)
+    ap.add_argument("--if-records-s2", action="append", default=None)
+    ap.add_argument("--arb-records-s2", action="append", default=None)
+    ap.add_argument("--smoke-manifest", action="append", default=None,
+                    help="per-judge SMOKE_MANIFEST_S1_<judge>.json (repeatable)")
+    ap.add_argument("--stage1b-ladder", required=True,
+                    help="the banked Stage-1b (B<=16, E=16) ladder the "
+                         "G-REPLICATE envelope is taken against: "
+                         '{"source":…, "rungs": {"1": {"arb":…, "se":…}, …}}')
+    ap.add_argument("--d-draw", default=None,
+                    help="D-DRAW report: {n_checked, agreement_rate}")
+    ap.add_argument("--m-expected-s1", type=int, default=M_EXPECTED_S1)
+    ap.add_argument("--m-expected-s2", type=int, default=M_EXPECTED_S2)
+    ap.add_argument("--boot-reps", type=int, default=BOOT_REPS)
+    ap.add_argument("--boot-seed", type=int, default=BOOT_SEED)
+    ap.add_argument("--rnd-seed", type=int, default=RND_SEED)
+    ap.add_argument("--parity-base", type=int, choices=(0, 1), default=PARITY_BASE)
+    ap.add_argument("--e-levels-s1", default=",".join(str(e) for e in E_LEVELS_S1))
+    ap.add_argument("--e-levels-s2", default=",".join(str(e) for e in E_LEVELS_S2))
+    ap.add_argument("--out-dir", required=True,
+                    help="RUN/verdicts — READOUT.{json,md}, per_position_*.jsonl, "
+                         "SEALED_G_REPLICATE.json")
+    return ap.parse_args(argv)
+
+
+def _load_records(roots):
+    if not roots:
+        return {}, {}, [], []
+    by_rid, present, not_ok, resolved = TA.merge_arb_records(roots)
+    return by_rid, present, not_ok, resolved
+
+
+def main(argv=None) -> int:
+    a = parse_args(argv)
+    out_dir = Path(a.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    e_s1 = tuple(int(x) for x in str(a.e_levels_s1).split(",") if x.strip())
+    e_s2 = tuple(int(x) for x in str(a.e_levels_s2).split(",") if x.strip())
+
+    strata = {}
+    for tag, plan_dir, ifr, arbr, e_lev, m_exp in (
+            ("S1", a.plan_dir_s1, a.if_records_s1, a.arb_records_s1, e_s1,
+             a.m_expected_s1),
+            ("S2", a.plan_dir_s2, a.if_records_s2, a.arb_records_s2, e_s2,
+             a.m_expected_s2)):
+        if not plan_dir:
+            continue
+        bundle = AT.load_plan(plan_dir)
+        if_by, if_present, if_notok, if_res = _load_records(ifr)
+        arb_by, arb_present, arb_notok, arb_res = _load_records(arbr)
+        rows, counts, arms_g, crn, unc = build_rows(
+            bundle["arms"], if_by, arb_by, e_levels=e_lev, m_expected=m_exp,
+            parity_base=a.parity_base, rnd_seed=a.rnd_seed, stratum_tag=tag)
+        strata[tag] = {"plan": bundle["plan"], "plan_dir": str(plan_dir),
+                       "rows": rows, "counts": counts, "arms": arms_g,
+                       "crn": crn, "uncapped": unc, "e_levels": list(e_lev),
+                       "m_expected": m_exp,
+                       "records": {"if": if_res, "arb": arb_res,
+                                   "if_present": if_present,
+                                   "arb_present": arb_present,
+                                   "n_if_not_ok": len(if_notok),
+                                   "n_arb_not_ok": len(arb_notok)}}
+
+    if "S1" not in strata:
+        raise SystemExit("REFUSING: S1 is the rung-2 stratum and is mandatory")
+
+    rows_s1 = strata["S1"]["rows"]
+    rows_s2 = strata.get("S2", {}).get("rows", [])
+
+    # ---- per-position fallback surfaces (READ_RULE §4/§5) ------------------- #
+    for tag, rows in (("s1", rows_s1), ("s2", rows_s2)):
+        p = out_dir / f"per_position_{tag}.jsonl"
+        p.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows))
+
+    # ---- rung 2 ------------------------------------------------------------ #
+    boot1 = RootBoot(rows_s1, reps=a.boot_reps, seed=a.boot_seed)
+    b_ladder = {"m_expected": a.m_expected_s1,
+                "m_observed": sorted({r["m"] for r in rows_s1}),
+                "e_levels": list(e_s1)}
+    for e in e_s1:
+        b_ladder[f"E{e}"] = ladder_block(boot1, e, rows_s1)
+    e_primary = e_s1[0]
+    delta = {
+        "d_16_64": boot1.stat(f"d_16_64_E{e_primary}"),
+        "d_16_32": boot1.stat(f"d_16_32_E{e_primary}"),
+        "e_worlds": e_primary,
+        "committed_floor_d_16_64": D1664_FLOOR,
+        "committed_floor_d_16_32": D1632_FLOOR,
+    }
+    arb64 = (b_ladder.get(f"E{e_primary}", {}).get("B64")
+             or {"value": None, "ci95": [None, None]})
+    arb16 = (b_ladder.get(f"E{e_primary}", {}).get("B16")
+             or {"value": None, "ci95": [None, None]})
+    arb64_stat = {"value": arb64.get("arb"), "ci95": arb64.get("ci95")}
+    arb16_stat = {"value": arb16.get("arb"), "ci95": arb16.get("ci95")}
+    rung2 = decide_rung2(delta["d_16_64"], arb64_stat, arb16_stat)
+
+    # ---- rung 3 ------------------------------------------------------------ #
+    j_s2 = j_rider_block(rows_s2, e_s2[0] if e_s2 else 16, a.boot_reps, a.boot_seed)
+    j_s1 = j_rider_block(rows_s1, e_primary, a.boot_reps, a.boot_seed)
+    capped_s1 = [r for r in rows_s1 if r["capped_at_4"]]
+    binter = RootBoot(capped_s1, reps=a.boot_reps, seed=a.boot_seed)
+    interaction = {
+        "arb_full_64_minus_16": binter.stat(f"i_full_64_minus_16_E{e_primary}"),
+        "arb_full_16_minus_j4_16": binter.stat(f"d_arb_E{e_primary}"),
+        "n_capped_s1": len(capped_s1), "e_worlds": e_primary,
+    }
+    rung3 = decide_rung3(j_s2["_d_ora"], j_s2["_r_ora"], j_s2["_ora_j4"],
+                         j_s2["_d_arb"])
+
+    # `D-DRAW` is W9's probe (`RUN/D_DRAW.json`). Until it has run every
+    # `d_draw.*` address is `null`, and `d_draw_ran` is the witness that makes
+    # that null legitimate rather than broken (READ_RULE §1.2, row 3). It
+    # reports the MAGNITUDE of rider `I7`'s unverified dedupe-partition
+    # conditional and adjudicates NOTHING.
+    d_draw = {"d_draw_ran": False, "n_checked": None, "n_agree": None,
+              "agreement_rate": None, "n_unreconstructible": None,
+              "git_rev": None, "source": a.d_draw,
+              "adjudicates": "nothing — a reported magnitude, never a branch input"}
+    if a.d_draw and Path(a.d_draw).is_file():
+        dd = json.loads(Path(a.d_draw).read_text())
+        d_draw.update({
+            "d_draw_ran": True,
+            "n_checked": dd.get("n_checked"),
+            "n_agree": dd.get("n_agree"),
+            "agreement_rate": dd.get("agreement_rate"),
+            "n_unreconstructible": dd.get("n_unreconstructible"),
+            "git_rev": dd.get("git_rev"),
+            "source": str(a.d_draw)})
+
+    # ---- gates ------------------------------------------------------------- #
+    crn = crn_gate({t: s["crn"] for t, s in strata.items()},
+                   a.smoke_manifest or [])
+    unc = uncapped_gate({t: s["plan"] for t, s in strata.items()},
+                        {t: s["uncapped"] for t, s in strata.items()})
+    arms = arms_gate_block({t: s["arms"] for t, s in strata.items()})
+    completion = completion_block(rows_s1, rows_s2)
+
+    ref = json.loads(Path(a.stage1b_ladder).read_text())
+    e16_ladder = b_ladder.get("E16", {})
+    arb16_e16 = e16_ladder.get("B16") or {}
+    repl_public, repl_sealed = replication_gate(
+        e16_ladder,
+        {"value": arb16_e16.get("arb"), "ci95": arb16_e16.get("ci95"),
+         "z": arb16_e16.get("z")},
+        ref)
+    (out_dir / "SEALED_G_REPLICATE.json").write_text(
+        json.dumps(repl_sealed, indent=2, sort_keys=True))
+
+    gates = {"crn": crn, "uncapped": unc, "arms": arms}
+    gates_summary = {
+        "G-CRN": {"ok": crn["ok"], "resolved_at": crn["resolved_at"]},
+        "G-UNCAPPED": {"ok": unc["ok"], "resolved_at": unc["resolved_at"]},
+        "G-ARMS": {"ok": arms["ok"], "resolved_at": arms["resolved_at"]},
+        "G-COMPLETE": {"ok": completion["ok"],
+                       "resolved_at": completion["resolved_at"]},
+        "G-REPLICATE": {"ok": repl_public["pass"],
+                        "resolved_at": repl_public["resolved_at"]},
+    }
+    gates_ok = all(g["ok"] for g in gates_summary.values())
+
+    widening = {
+        "gates": gates,
+        "gates_summary": gates_summary,
+        "gates_ok": gates_ok,
+        "completion": completion,
+        "stage1_replication": repl_public,
+        "delta": delta,
+        "b_ladder": b_ladder,
+        "j_rider": {
+            "s2": _strip_private(j_s2),
+            "s1_replication": _strip_private(j_s1),
+            "interaction": interaction,
+            "d_draw": d_draw,
+        },
+        "branch": {
+            "rung2": rung2 if gates_ok else
+            {"branch": "W-UNREADABLE",
+             "reason": "a gate binding this rung FAILED; no branch fires"},
+            "rung3": rung3 if gates_ok else
+            {"branch": "W-UNREADABLE",
+             "reason": "a gate binding this rung FAILED; no branch fires"},
+        },
+        "config": {
+            "b_ladder": list(B_LADDER),
+            "e_levels_s1": list(e_s1), "e_levels_s2": list(e_s2),
+            "m_expected_s1": a.m_expected_s1, "m_expected_s2": a.m_expected_s2,
+            "boot_reps": a.boot_reps, "boot_seed": a.boot_seed,
+            "rnd_seed": a.rnd_seed, "parity_base": a.parity_base,
+            "significance": "lower(CI95) > 0 on the percentile root bootstrap",
+            "pooling": "S1 and S2 are NEVER pooled (different E ⇒ different ora)",
+            "plan_dirs": {t: s["plan_dir"] for t, s in strata.items()},
+            "records": {t: s["records"] for t, s in strata.items()},
+            "counts": {t: s["counts"] for t, s in strata.items()},
+            "stage1b_ladder": str(a.stage1b_ladder),
+        },
+    }
+    verdict = {"generated_utc": AT._now_utc(),
+               "run": "tiearb_widening_20260817 shared_run",
+               "widening": widening}
+
+    (out_dir / "READOUT.json").write_text(
+        json.dumps(verdict, indent=2, sort_keys=True, default=str))
+    (out_dir / "READOUT.md").write_text(render_md(verdict))
+    print(f"[widening] READOUT -> {out_dir / 'READOUT.json'}")
+    print(f"[widening] report  -> {out_dir / 'READOUT.md'}")
+    print(f"[widening] gates_ok = {gates_ok} | rung2 = "
+          f"{widening['branch']['rung2']['branch']} | rung3 = "
+          f"{widening['branch']['rung3']['branch']}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,300 @@
+{
+  "s1:s1root135000000000:p000": {
+    "all_transposition": false,
+    "arms": [
+      100,
+      101,
+      102,
+      900
+    ],
+    "arms_full": [
+      100,
+      101,
+      102
+    ],
+    "cap_seed": 365682715,
+    "capped": false,
+    "capped_at_4": true,
+    "champ_action": 900,
+    "champ_arm_action": 900,
+    "champ_arm_index": 3,
+    "champ_outside_tieset": true,
+    "n_distinct_afterstates": 3,
+    "phase_bucket": "mid",
+    "ply": 10,
+    "rid": "s1:s1root135000000000:p000",
+    "root_id": "s1root135000000000",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      100,
+      101,
+      102
+    ],
+    "subset_j4_id": "5db8ae86af850462",
+    "tercile": "mid",
+    "tie_size_exact": 3
+  },
+  "s1:s1root135000000000:p004": {
+    "all_transposition": false,
+    "arms": [
+      140,
+      141,
+      142,
+      143
+    ],
+    "arms_full": [
+      140,
+      141,
+      142,
+      143
+    ],
+    "cap_seed": 21656463,
+    "capped": false,
+    "capped_at_4": true,
+    "champ_action": 141,
+    "champ_arm_action": 141,
+    "champ_arm_index": 1,
+    "champ_outside_tieset": false,
+    "n_distinct_afterstates": 4,
+    "phase_bucket": "mid",
+    "ply": 14,
+    "rid": "s1:s1root135000000000:p004",
+    "root_id": "s1root135000000000",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      140,
+      141,
+      142,
+      143
+    ],
+    "subset_j4_id": "814f8f1ccbdff0b5",
+    "tercile": "mid",
+    "tie_size_exact": 4
+  },
+  "s1:s1root135000000001:p001": {
+    "all_transposition": false,
+    "arms": [
+      110,
+      111,
+      112,
+      113,
+      114,
+      115
+    ],
+    "arms_full": [
+      110,
+      111,
+      112,
+      113,
+      114,
+      115
+    ],
+    "cap_seed": 1001490449,
+    "capped": false,
+    "capped_at_4": true,
+    "champ_action": 111,
+    "champ_arm_action": 111,
+    "champ_arm_index": 1,
+    "champ_outside_tieset": false,
+    "n_distinct_afterstates": 6,
+    "phase_bucket": "mid",
+    "ply": 11,
+    "rid": "s1:s1root135000000001:p001",
+    "root_id": "s1root135000000001",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      110,
+      111,
+      112,
+      113
+    ],
+    "subset_j4_id": "abae577f8fdc6c2d",
+    "tercile": "mid",
+    "tie_size_exact": 6
+  },
+  "s1:s1root135000000001:p005": {
+    "all_transposition": false,
+    "arms": [
+      150,
+      151,
+      152,
+      153,
+      154
+    ],
+    "arms_full": [
+      150,
+      151,
+      152,
+      153,
+      154
+    ],
+    "cap_seed": 1607965381,
+    "capped": false,
+    "capped_at_4": true,
+    "champ_action": 151,
+    "champ_arm_action": 151,
+    "champ_arm_index": 1,
+    "champ_outside_tieset": false,
+    "n_distinct_afterstates": 5,
+    "phase_bucket": "mid",
+    "ply": 15,
+    "rid": "s1:s1root135000000001:p005",
+    "root_id": "s1root135000000001",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      150,
+      151,
+      152,
+      154
+    ],
+    "subset_j4_id": "79cf2e6087b05431",
+    "tercile": "mid",
+    "tie_size_exact": 5
+  },
+  "s1:s1root135000000002:p002": {
+    "all_transposition": true,
+    "arms": [
+      120,
+      121
+    ],
+    "arms_full": [
+      120,
+      121
+    ],
+    "cap_seed": 1714487766,
+    "capped": false,
+    "capped_at_4": true,
+    "champ_action": 121,
+    "champ_arm_action": 121,
+    "champ_arm_index": 1,
+    "champ_outside_tieset": false,
+    "n_distinct_afterstates": 1,
+    "phase_bucket": "mid",
+    "ply": 12,
+    "rid": "s1:s1root135000000002:p002",
+    "root_id": "s1root135000000002",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      120,
+      121
+    ],
+    "subset_j4_id": "96f836d32491714b",
+    "tercile": "mid",
+    "tie_size_exact": 2
+  },
+  "s1:s1root135000000002:p006": {
+    "all_transposition": false,
+    "arms": [
+      160,
+      161,
+      162,
+      906
+    ],
+    "arms_full": [
+      160,
+      161,
+      162
+    ],
+    "cap_seed": 593339758,
+    "capped": false,
+    "capped_at_4": true,
+    "champ_action": 906,
+    "champ_arm_action": 906,
+    "champ_arm_index": 3,
+    "champ_outside_tieset": true,
+    "n_distinct_afterstates": 3,
+    "phase_bucket": "mid",
+    "ply": 16,
+    "rid": "s1:s1root135000000002:p006",
+    "root_id": "s1root135000000002",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      160,
+      161,
+      162
+    ],
+    "subset_j4_id": "9a95d90b1a33cccb",
+    "tercile": "mid",
+    "tie_size_exact": 3
+  },
+  "s1:s1root135000000003:p003": {
+    "all_transposition": false,
+    "arms": [
+      130,
+      131,
+      132,
+      903
+    ],
+    "arms_full": [
+      130,
+      131,
+      132
+    ],
+    "cap_seed": 117526926,
+    "capped": false,
+    "capped_at_4": false,
+    "champ_action": 903,
+    "champ_arm_action": 903,
+    "champ_arm_index": 3,
+    "champ_outside_tieset": true,
+    "n_distinct_afterstates": 3,
+    "phase_bucket": "mid",
+    "ply": 13,
+    "rid": "s1:s1root135000000003:p003",
+    "root_id": "s1root135000000003",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      130,
+      131,
+      132
+    ],
+    "subset_j4_id": "f1a3f32ca3ce4a6b",
+    "tercile": "mid",
+    "tie_size_exact": 3
+  },
+  "s1:s1root135000000003:p007": {
+    "all_transposition": false,
+    "arms": [
+      170,
+      171,
+      172,
+      173
+    ],
+    "arms_full": [
+      170,
+      171,
+      172,
+      173
+    ],
+    "cap_seed": 65669687,
+    "capped": false,
+    "capped_at_4": false,
+    "champ_action": 171,
+    "champ_arm_action": 171,
+    "champ_arm_index": 1,
+    "champ_outside_tieset": false,
+    "n_distinct_afterstates": 4,
+    "phase_bucket": "mid",
+    "ply": 17,
+    "rid": "s1:s1root135000000003:p007",
+    "root_id": "s1root135000000003",
+    "rules_profile": "walled",
+    "stratum": "selfplay",
+    "subset_j4": [
+      170,
+      171,
+      172,
+      173
+    ],
+    "subset_j4_id": "63dcda35285a0264",
+    "tercile": "mid",
+    "tie_size_exact": 4
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "rows": [
+    {
+      "action_played_outside_tieset": false,
+      "all_transposition": true,
+      "n_distinct_afterstates": 1,
+      "rid": "s2:s2root135000000352:p002",
+      "root_id": "s2root135000000352",
+      "stratum": "selfplay"
+    }
+  ]
+}

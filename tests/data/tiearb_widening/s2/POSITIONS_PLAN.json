@@ -1,0 +1,22 @@
+{
+  "afterstate_dedupe": {
+    "applied": true,
+    "n_dropped_all_transposition": 0
+  },
+  "cap_j": null,
+  "cap_j_label": "inf",
+  "counts_by_stratum": {
+    "selfplay": 8
+  },
+  "deployed_cap_j": 4,
+  "exclude_rids": {
+    "n_removed_from_supply": 0,
+    "n_requested": 0,
+    "n_supply_after_exclusion": 8
+  },
+  "m_worlds_planned": 32,
+  "n_positions": 8,
+  "n_positions_capped_at_4": 6,
+  "sample_seed": 20260819,
+  "uncapped": true
+}

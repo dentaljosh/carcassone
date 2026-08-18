@@ -54,6 +54,15 @@ Subcommands
     verify-champgames   band + count assertion over a collected champ-games jsonl
     emit-exclude-rids   the spent corpus's complete rid list -> newline file
     stage-shadow        build/refresh the shadow root, print the entry script
+    split-champgames    carve one collected jsonl into a deck-seed SUB-band (W6)
+    select-capped       the S2 <=3-capped-plies-per-root selection (W6)
+
+The last two were added for the tie-arbiter WIDENING run
+(`measurement/tiearb_widening_20260817/`), whose corpus is TWO root-disjoint
+strata carved out of ONE fresh game set by deck-seed sub-band, with the S2
+stratum built two-pass. Both are outcome-blind by construction: the sub-band is
+a property of the deck seed and `capped_at_4` is knowable BEFORE any pricing, so
+neither can see a statistic.
 
 Nothing here imports the engine, `carcassonne_ai`, numpy or torch.
 """
@@ -63,6 +72,7 @@ import argparse
 import hashlib
 import json
 import os
+import random
 import shutil
 import sys
 from pathlib import Path
@@ -188,6 +198,97 @@ def emit_exclude_rids(arms_path, out_path) -> list[str]:
 
 
 # --------------------------------------------------------------------------- #
+# 2b. deck-seed SUB-BAND split (W6) — the S1/S2 root-disjointness MECHANISM     #
+# --------------------------------------------------------------------------- #
+def split_champ_games(path, out_path, *, seed_lo: int, seed_hi: int) -> dict:
+    """Carve the games whose `deck_seed` lies in `[seed_lo, seed_hi]` into their
+    own jsonl.
+
+    This IS the widening run's root-disjointness mechanism: S1 takes band
+    `+0…+349` and S2 `+350…+849` off ONE generation, so no game can appear in
+    both strata and `strata_root_overlap == 0` is true by construction (the W5
+    gate then PROVES it rather than asserting it). Outcome-blind: a deck seed is
+    a property of the generation, not of any statistic."""
+    games = read_champ_games(path)
+    keep = [g for g in games if seed_lo <= int(g["deck_seed"]) <= seed_hi]
+    if not keep:
+        raise ValueError(
+            f"{path}: NO game has a deck_seed in [{seed_lo}, {seed_hi}] — the "
+            f"sub-band is empty; refusing to write a corpus with no games.")
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("".join(json.dumps(g) + "\n" for g in keep))
+    seeds = sorted(int(g["deck_seed"]) for g in keep)
+    return {"path": str(out_path), "n_in": len(games), "n_kept": len(keep),
+            "seed_band": [seed_lo, seed_hi],
+            "seed_min_observed": seeds[0], "seed_max_observed": seeds[-1],
+            "sha256_of_sorted_seeds": hashlib.sha256(
+                "\n".join(str(s) for s in seeds).encode()).hexdigest()}
+
+
+# --------------------------------------------------------------------------- #
+# 2c. the S2 two-pass selection (W6): <= N capped plies per root                #
+# --------------------------------------------------------------------------- #
+def select_capped_rids(arms_path, *, max_per_root: int = 3,
+                       seed: int = 20260819) -> dict:
+    """Pick at most `max_per_root` CAPPED rids per root from a pass-1 ARMS.json.
+
+    ⚠️ OUTCOME-BLIND BY CONSTRUCTION. `capped_at_4` is a property of the
+    deduped tie-set SIZE, knowable before a single playout — pass 1 is built
+    with `--allow-missing-champ-picks` and prices nothing. The within-root order
+    is a seeded shuffle keyed on `(root_id, seed)` rather than the rid's
+    lexicographic order, so the selection cannot correlate with ply index
+    (an early-ply bias would silently re-weight the phase mix).
+
+    Returns `{"selected": [...], "excluded": [...], ...}` — `excluded` is every
+    OTHER rid in the file (uncapped rids included: S2 is a capped-only stratum),
+    which is what `build_positions.py --exclude-rids` consumes for pass 2, since
+    it has no `--include-rids` flag."""
+    arms = json.loads(Path(arms_path).read_text())
+    if not isinstance(arms, dict):
+        raise ValueError(f"{arms_path}: expected a rid-keyed object, got "
+                         f"{type(arms).__name__}")
+    by_root: dict = {}
+    n_capped = 0
+    for rid, meta in sorted(arms.items()):
+        if not meta.get("capped_at_4"):
+            continue
+        n_capped += 1
+        by_root.setdefault(str(meta["root_id"]), []).append(rid)
+
+    selected = []
+    for root, rids in sorted(by_root.items()):
+        order = sorted(rids)
+        random.Random(_stable_seed_int(root, seed)).shuffle(order)
+        selected.extend(sorted(order[:max_per_root]))
+    selected = sorted(selected)
+    excluded = sorted(set(arms) - set(selected))
+    return {
+        "arms_path": str(arms_path), "max_per_root": max_per_root, "seed": seed,
+        "n_rids_total": len(arms), "n_capped": n_capped,
+        "n_roots_with_capped": len(by_root),
+        "n_selected": len(selected), "n_excluded": len(excluded),
+        "selected": selected, "excluded": excluded,
+    }
+
+
+def _stable_seed_int(*parts) -> int:
+    """PYTHONHASHSEED-independent integer seed (the `build_positions`
+    discipline: never `random.Random(<tuple>)`)."""
+    h = hashlib.sha256("|".join(str(p) for p in parts).encode()).digest()
+    return int.from_bytes(h[:8], "big") & 0x7FFFFFFF
+
+
+def write_rid_list(rids, out_path, header_lines=()) -> int:
+    """Write a `build_positions.py --exclude-rids` list (comments allowed)."""
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    head = "".join(f"# {ln}\n" for ln in header_lines)
+    out_path.write_text(head + "".join(str(r) + "\n" for r in rids))
+    return len(list(rids))
+
+
+# --------------------------------------------------------------------------- #
 # 3. shadow repo root for the unmodified transposition_census.py               #
 # --------------------------------------------------------------------------- #
 def _link(src: Path, dst: Path, *, hard: bool) -> None:
@@ -276,6 +377,21 @@ def main(argv=None) -> int:
     s.add_argument("--champ-games", required=True)
     s.add_argument("--repo", default=str(REPO))
 
+    sp = sub.add_parser("split-champgames")
+    sp.add_argument("--path", required=True)
+    sp.add_argument("--out", required=True)
+    sp.add_argument("--seed-lo", type=int, required=True)
+    sp.add_argument("--seed-hi", type=int, required=True)
+    sp.add_argument("--print-n", action="store_true")
+
+    sc = sub.add_parser("select-capped")
+    sc.add_argument("--arms", required=True, help="the PASS-1 ARMS.json")
+    sc.add_argument("--max-per-root", type=int, default=3)
+    sc.add_argument("--seed", type=int, default=20260819)
+    sc.add_argument("--out-exclude", required=True,
+                    help="rid list for build_positions --exclude-rids (pass 2)")
+    sc.add_argument("--out-report", default=None)
+
     a = ap.parse_args(argv)
 
     if a.cmd == "verify-champgames":
@@ -304,6 +420,35 @@ def main(argv=None) -> int:
         entry = stage_shadow(a.shadow_root, repo=Path(a.repo),
                              champ_games=a.champ_games)
         print(entry)
+        return 0
+
+    if a.cmd == "split-champgames":
+        rep = split_champ_games(a.path, a.out, seed_lo=a.seed_lo,
+                                seed_hi=a.seed_hi)
+        if a.print_n:
+            print(rep["n_kept"])
+        else:
+            print(json.dumps(rep, indent=2, sort_keys=True))
+        return 0
+
+    if a.cmd == "select-capped":
+        rep = select_capped_rids(a.arms, max_per_root=a.max_per_root,
+                                 seed=a.seed)
+        write_rid_list(rep["excluded"], a.out_exclude, header_lines=(
+            f"S2 pass-2 exclusion list: every rid NOT selected as one of the",
+            f"<= {a.max_per_root} capped plies of its root (seed {a.seed}).",
+            f"{rep['n_selected']} selected / {rep['n_excluded']} excluded of "
+            f"{rep['n_rids_total']} pass-1 rids ({rep['n_capped']} capped).",
+            "build_positions.py has no --include-rids, so the SELECTION is",
+            "expressed as the exclusion of its complement.",
+            "OUTCOME-BLIND: capped_at_4 is knowable before any playout."))
+        if a.out_report:
+            Path(a.out_report).parent.mkdir(parents=True, exist_ok=True)
+            Path(a.out_report).write_text(json.dumps(rep, indent=2,
+                                                     sort_keys=True))
+        print(f"[widening] selected {rep['n_selected']} capped rid(s) over "
+              f"{rep['n_roots_with_capped']} root(s); excluded "
+              f"{rep['n_excluded']} -> {a.out_exclude}")
         return 0
 
     raise AssertionError(f"unhandled cmd {a.cmd!r}")
