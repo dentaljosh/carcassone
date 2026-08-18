@@ -16,13 +16,18 @@ rust playouts (~3 s), spanning 1- to 125-ply continuations. No timing assertion
 is made anywhere — `c` is re-measured on an idle box, per the house rule that a
 timing bench is an exclusive tenant.
 
-⛔ NO PYTHON PLAYOUTS RUN BY DEFAULT. The python leg costs c ~ 2.2-2.7
-worker-s/playout, so re-running it here would blow the test budget by ~50x. The
-parity reference is therefore the BANKED python-judge output (the Stage-1b
-`tier1-greedy` records, already adjudicated and burned), which is exactly how
-Phase A's `G-BITEXACT` graded the port. A LIVE python-vs-rust re-run is provided
-as `test_live_python_leg_parity`, SKIPPED unless `TILETIE_PARITY_LIVE=1` — run it
-in the post-freeze smoke, not in CI.
+PARITY IS GRADED TWICE, AND ONLY THE CHEAP HALF RUNS BY DEFAULT.
+  * `test_rust_leg_is_bit_identical_to_the_banked_python_judge` — rust vs the
+    BANKED python-judge values (the adjudicated, burned Stage-1b `tier1-greedy`
+    records). No python playout runs; this is exactly how Phase A's `G-BITEXACT`
+    graded the port, and it covers the whole early->endgame ply ladder.
+  * `test_live_python_leg_parity_late` — REAL both-backends runs on the two LATE
+    fixtures (33- and 1-ply continuations), the half of the ladder the python
+    judge is cheap enough to re-run in CI. This is what catches a drifted PYTHON
+    leg, which a banked-file comparison cannot.
+  * `test_live_python_leg_parity_full_ladder` — the live comparison across EVERY
+    fixture including the 125-ply one. SKIPPED unless `TILETIE_PARITY_LIVE=1`:
+    run it in the post-freeze smoke on an idle box, not in CI.
 """
 from __future__ import annotations
 
@@ -630,19 +635,10 @@ def test_cap_j_label():
 # --------------------------------------------------------------------------- #
 # 10. the LIVE python-vs-rust parity re-run — POST-FREEZE SMOKE ONLY            #
 # --------------------------------------------------------------------------- #
-@pytest.mark.slow
-@pytest.mark.skipif(os.environ.get("TILETIE_PARITY_LIVE") != "1",
-                    reason="runs the PYTHON tier1 continuation (c ~ 2.2-2.7 "
-                           "worker-s/playout): far outside the unit-test budget. "
-                           "Run it in the post-freeze smoke with "
-                           "TILETIE_PARITY_LIVE=1 on an idle box.")
-def test_live_python_leg_parity(fixtures):
-    """Re-run the PYTHON judge on one banked leg and compare to the rust leg.
-
-    This is the honest end-to-end parity gate: it proves the two BACKENDS agree
-    today, not merely that rust reproduces a file. It is skipped by default
-    because one leg is ~8 python playouts at seconds each.
-    """
+def _live_python_vs_rust(fixtures, f):
+    """Run the PYTHON judge and the RUST leg on ONE banked position and compare
+    on raw f64 bit patterns. The honest end-to-end parity gate: it proves the two
+    BACKENDS agree today, not merely that rust reproduces a file."""
     pytest.importorskip("carc_rs")
     OSP._init({"level_a": 0, "level_b": 0,
                "alloc_a": {"total": 0, "label": "n/a"},
@@ -652,11 +648,11 @@ def test_live_python_leg_parity(fixtures):
                "world_seed_salt": fixtures["world_seed_salt"],
                "max_plies": fixtures["max_plies"], "wall_cap": 3600,
                "strict_crn": False, "backend": "python"})
-    f = copy.deepcopy(fixtures["fixtures"][-1])          # the cheapest (latest ply)
-    item = dict(f, deck_seed=int(f["deck_seed"]))
-    py = OSP._process(item)
+    item = _item(copy.deepcopy(f))
+    item["deck_seed"] = int(item["deck_seed"])
+    py = OSP._process(dict(item))
     assert py.get("ok") is True, py.get("error")
-    rs = TRL.score_one(item, m=fixtures["n_worlds"],
+    rs = TRL.score_one(dict(item), m=fixtures["n_worlds"],
                        salt=fixtures["world_seed_salt"],
                        max_plies=fixtures["max_plies"],
                        legal_mask_cache=True, world_deck_witness=True)
@@ -665,3 +661,38 @@ def test_live_python_leg_parity(fixtures):
     assert [_bits(v) for v in rs["values_b"]] == [_bits(v) for v in py["values_b"]]
     assert rs["playout_plies_a"] == py["playout_plies_a"]
     assert rs["playout_plies_b"] == py["playout_plies_b"]
+    assert rs["world_seeds"] == py["world_seeds"]
+    assert rs["playout_seeds"] == py["playout_seeds"]
+
+
+#: The two LATE fixtures. Their continuations are short (33 and 1 plies), so the
+#: python judge is cheap enough to run in CI; the two earlier ones are not.
+CHEAP_LIVE_FIXTURES = (2, 3)
+
+
+@pytest.mark.parametrize("idx", CHEAP_LIVE_FIXTURES)
+def test_live_python_leg_parity_late(fixtures, idx):
+    """⭐ A REAL python-vs-rust parity run, cheap enough for CI.
+
+    Unlike the banked-value gate above, this one RUNS BOTH BACKENDS, so it also
+    catches a drifted python leg — not just a rust port that stopped matching a
+    file. Restricted to the late fixtures purely on cost; the full early->endgame
+    ladder is `test_live_python_leg_parity_full_ladder`."""
+    if idx >= len(fixtures["fixtures"]):
+        pytest.skip("fixture bank is shorter than the ladder")
+    _live_python_vs_rust(fixtures, fixtures["fixtures"][idx])
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(os.environ.get("TILETIE_PARITY_LIVE") != "1",
+                    reason="runs the PYTHON tier1 continuation over EVERY fixture "
+                           "including a 125-ply one (c ~ 2.2-2.7 "
+                           "worker-s/playout): outside the unit-test budget. Run "
+                           "it in the post-freeze smoke with "
+                           "TILETIE_PARITY_LIVE=1 on an idle box.")
+@pytest.mark.parametrize("idx", [0, 1, 2, 3])
+def test_live_python_leg_parity_full_ladder(fixtures, idx):
+    """The same gate across the whole early->endgame ply ladder."""
+    if idx >= len(fixtures["fixtures"]):
+        pytest.skip("fixture bank is shorter than the ladder")
+    _live_python_vs_rust(fixtures, fixtures["fixtures"][idx])
