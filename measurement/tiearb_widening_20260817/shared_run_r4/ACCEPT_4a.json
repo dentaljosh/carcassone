@@ -1,5 +1,5 @@
 {
-  "fixture_run": "/tmp/widening_fixture_gq_zeptz/shared_run_r4",
+  "fixture_run": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4",
   "gates": [
     {
       "fallback": [],
@@ -52,7 +52,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/GATE_DISJOINT.json::{passed,strata_root_overlap,comparisons,comparisons.s1_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s1_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s1_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s2_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s2_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.base_vs_extension.layers.a_root_id.n_intersection,comparisons.base_vs_extension.layers.b_rid.n_intersection,comparisons.base_vs_extension.layers.c_position_digest.n_intersection,comparisons.s1_vs_s2.layers.a_root_id.n_intersection,comparisons.s1_vs_s2.layers.b_rid.n_intersection,comparisons.s1_vs_s2.layers.c_position_digest.n_intersection,comparisons.s1s2_vs_exclude_rids.layers.b_rid.n_intersection,comparisons.s1s2_vs_exclude_rids.passed,digest_exclusions.*.carried,digest_exclusions.*.residual,digest_exclusions.*.n_excluded,digest_exclusions.*.rate,digest_exclusions.*.bound_n,digest_exclusions.*.denominator_source,digest_exclusions.*.rids,digest_exclusions.*.void,total_order,voided_strata}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/GATE_DISJOINT.json::{passed,strata_root_overlap,comparisons,comparisons.s1_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s1_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s1_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s2_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s2_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.base_vs_extension.layers.a_root_id.n_intersection,comparisons.base_vs_extension.layers.b_rid.n_intersection,comparisons.base_vs_extension.layers.c_position_digest.n_intersection,comparisons.s1_vs_s2.layers.a_root_id.n_intersection,comparisons.s1_vs_s2.layers.b_rid.n_intersection,comparisons.s1_vs_s2.layers.c_position_digest.n_intersection,comparisons.s1s2_vs_exclude_rids.layers.b_rid.n_intersection,comparisons.s1s2_vs_exclude_rids.passed,digest_exclusions.*.carried,digest_exclusions.*.residual,digest_exclusions.*.n_excluded,digest_exclusions.*.rate,digest_exclusions.*.bound_n,digest_exclusions.*.denominator_source,digest_exclusions.*.rids,digest_exclusions.*.void,total_order,voided_strata}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -167,7 +167,7 @@
     {
       "fallback": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.corpus_union.totals.n_retained,widening.corpus_union.totals.n_fresh}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.corpus_union.totals.n_retained,widening.corpus_union.totals.n_fresh}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -190,7 +190,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/corpus/CORPUS_UNION.json::{by_stratum.*.origin_commit,by_stratum.*.banked_dir,by_stratum.*.sha256_by_file,by_stratum.*.n_retained,by_stratum.*.n_fresh,by_stratum.*.copied_not_symlinked,totals.n_retained,totals.n_fresh,totals.n_total}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/corpus/CORPUS_UNION.json::{by_stratum.*.origin_commit,by_stratum.*.banked_dir,by_stratum.*.sha256_by_file,by_stratum.*.n_retained,by_stratum.*.n_fresh,by_stratum.*.copied_not_symlinked,totals.n_retained,totals.n_fresh,totals.n_total}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -240,7 +240,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/FLOORS.json::{n1,n2,option_label,r_s1,r_s2cap,games_extension_s1,games_extension_s2,sub_ranges}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/FLOORS.json::{n1,n2,option_label,r_s1,r_s2cap,games_extension_s1,games_extension_s2,sub_ranges}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -280,7 +280,7 @@
     {
       "fallback": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/corpus/positions_s1/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/corpus/positions_s1/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -298,7 +298,7 @@
           "why": null
         },
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/corpus/positions_s2/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/corpus/positions_s2/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -324,7 +324,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -352,7 +352,7 @@
     {
       "fallback": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/per_position_s1.jsonl::{n_worlds_per_arm,n_arms_planned}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/per_position_s1.jsonl::{n_worlds_per_arm,n_arms_planned}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -367,7 +367,7 @@
           "why": null
         },
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/per_position_s2.jsonl::{n_worlds_per_arm,n_arms_planned}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/per_position_s2.jsonl::{n_worlds_per_arm,n_arms_planned}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -390,7 +390,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.gates.arms.n_arms,widening.gates.arms.n_arms_complete,widening.gates.arms.include_partial,widening.gates.arms.ok}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.gates.arms.n_arms,widening.gates.arms.n_arms_complete,widening.gates.arms.include_partial,widening.gates.arms.ok}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -418,7 +418,7 @@
     {
       "fallback": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/per_position_s1.jsonl::{root_id,rid}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/per_position_s1.jsonl::{root_id,rid}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -433,7 +433,7 @@
           "why": null
         },
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/per_position_s2.jsonl::{root_id,rid}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/per_position_s2.jsonl::{root_id,rid}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -456,7 +456,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.completion.s1_n,widening.completion.s2_n,widening.completion.s1_max_per_root,widening.completion.s2_max_per_root}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.completion.s1_n,widening.completion.s2_n,widening.completion.s1_max_per_root,widening.completion.s2_max_per_root}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -491,7 +491,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.stage1_replication.pass,widening.stage1_replication.per_rung_inside_envelope,widening.stage1_replication.arb16_convicts,widening.stage1_replication.envelope_inflation}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.stage1_replication.pass,widening.stage1_replication.per_rung_inside_envelope,widening.stage1_replication.arb16_convicts,widening.stage1_replication.envelope_inflation}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -519,7 +519,7 @@
     {
       "fallback": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.gates.uncapped}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.gates.uncapped}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -539,7 +539,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/corpus/positions_s1/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/corpus/positions_s1/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [
@@ -566,7 +566,7 @@
           "why": null
         },
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/corpus/positions_s2/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/corpus/positions_s2/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [
@@ -593,7 +593,7 @@
           "why": null
         },
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/corpus/positions_s*/ARMS.json::{arms,arms_full,champ_arm_action,champ_arm_index}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/corpus/positions_s*/ARMS.json::{arms,arms_full,champ_arm_action,champ_arm_index}",
           "n_files": 4,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -621,7 +621,7 @@
     {
       "fallback": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/per_position_s1.jsonl::{arb_j4_E64_B16,arb_j4_E64_B64,d_16_64_E64,root_id}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/per_position_s1.jsonl::{arb_j4_E64_B16,arb_j4_E64_B64,d_16_64_E64,root_id}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -650,7 +650,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.delta.d_16_64.value,widening.delta.d_16_64.ci95,widening.delta.d_16_64.se_root,widening.delta.d_16_32.value,widening.delta.d_16_32.ci95,widening.delta.d_16_32.se_root,widening.b_ladder.E64.B1.arb,widening.b_ladder.E64.B1.ci95,widening.b_ladder.E64.B1.se,widening.b_ladder.E64.B2.arb,widening.b_ladder.E64.B2.ci95,widening.b_ladder.E64.B2.se,widening.b_ladder.E64.B4.arb,widening.b_ladder.E64.B4.ci95,widening.b_ladder.E64.B4.se,widening.b_ladder.E64.B8.arb,widening.b_ladder.E64.B8.ci95,widening.b_ladder.E64.B8.se,widening.b_ladder.E64.B16.arb,widening.b_ladder.E64.B16.ci95,widening.b_ladder.E64.B16.se,widening.b_ladder.E64.B32.arb,widening.b_ladder.E64.B32.ci95,widening.b_ladder.E64.B32.se,widening.b_ladder.E64.B64.arb,widening.b_ladder.E64.B64.ci95,widening.b_ladder.E64.B64.se,widening.b_ladder.E16.B1.arb,widening.b_ladder.E16.B1.ci95,widening.b_ladder.E16.B1.se,widening.b_ladder.E16.B2.arb,widening.b_ladder.E16.B2.ci95,widening.b_ladder.E16.B2.se,widening.b_ladder.E16.B4.arb,widening.b_ladder.E16.B4.ci95,widening.b_ladder.E16.B4.se,widening.b_ladder.E16.B8.arb,widening.b_ladder.E16.B8.ci95,widening.b_ladder.E16.B8.se,widening.b_ladder.E16.B16.arb,widening.b_ladder.E16.B16.ci95,widening.b_ladder.E16.B16.se,widening.b_ladder.E16.B32.arb,widening.b_ladder.E16.B32.ci95,widening.b_ladder.E16.B32.se,widening.b_ladder.E16.B64.arb,widening.b_ladder.E16.B64.ci95,widening.b_ladder.E16.B64.se}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.delta.d_16_64.value,widening.delta.d_16_64.ci95,widening.delta.d_16_64.se_root,widening.delta.d_16_32.value,widening.delta.d_16_32.ci95,widening.delta.d_16_32.se_root,widening.b_ladder.E64.B1.arb,widening.b_ladder.E64.B1.ci95,widening.b_ladder.E64.B1.se,widening.b_ladder.E64.B2.arb,widening.b_ladder.E64.B2.ci95,widening.b_ladder.E64.B2.se,widening.b_ladder.E64.B4.arb,widening.b_ladder.E64.B4.ci95,widening.b_ladder.E64.B4.se,widening.b_ladder.E64.B8.arb,widening.b_ladder.E64.B8.ci95,widening.b_ladder.E64.B8.se,widening.b_ladder.E64.B16.arb,widening.b_ladder.E64.B16.ci95,widening.b_ladder.E64.B16.se,widening.b_ladder.E64.B32.arb,widening.b_ladder.E64.B32.ci95,widening.b_ladder.E64.B32.se,widening.b_ladder.E64.B64.arb,widening.b_ladder.E64.B64.ci95,widening.b_ladder.E64.B64.se,widening.b_ladder.E16.B1.arb,widening.b_ladder.E16.B1.ci95,widening.b_ladder.E16.B1.se,widening.b_ladder.E16.B2.arb,widening.b_ladder.E16.B2.ci95,widening.b_ladder.E16.B2.se,widening.b_ladder.E16.B4.arb,widening.b_ladder.E16.B4.ci95,widening.b_ladder.E16.B4.se,widening.b_ladder.E16.B8.arb,widening.b_ladder.E16.B8.ci95,widening.b_ladder.E16.B8.se,widening.b_ladder.E16.B16.arb,widening.b_ladder.E16.B16.ci95,widening.b_ladder.E16.B16.se,widening.b_ladder.E16.B32.arb,widening.b_ladder.E16.B32.ci95,widening.b_ladder.E16.B32.se,widening.b_ladder.E16.B64.arb,widening.b_ladder.E16.B64.ci95,widening.b_ladder.E16.B64.se}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -810,7 +810,7 @@
     {
       "fallback": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/per_position_s2.jsonl::{ora_full_E16,ora_j4_E16,d_ora_E16,capped_at_4,root_id}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/per_position_s2.jsonl::{ora_full_E16,ora_j4_E16,d_ora_E16,capped_at_4,root_id}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -842,7 +842,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.j_rider.s2.delta_ora,widening.j_rider.s2.ci95_ora,widening.j_rider.s2.r_ora,widening.j_rider.s2.ci95_r_ora,widening.j_rider.s2.ora_j4_ci95,widening.j_rider.s2.delta_arb,widening.j_rider.s2.ci95_arb,widening.j_rider.s2.n_capped,widening.j_rider.s2.xfree_window,widening.j_rider.s1_replication.delta_ora,widening.j_rider.s1_replication.ci95_ora,widening.j_rider.s1_replication.n_capped,widening.j_rider.interaction.arb_full_64_minus_16,widening.j_rider.interaction.arb_full_16_minus_j4_16,widening.j_rider.s2.r_ora_reported,widening.j_rider.d_draw.d_draw_ran,widening.j_rider.d_draw.n_checked,widening.j_rider.d_draw.agreement_rate}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.j_rider.s2.delta_ora,widening.j_rider.s2.ci95_ora,widening.j_rider.s2.r_ora,widening.j_rider.s2.ci95_r_ora,widening.j_rider.s2.ora_j4_ci95,widening.j_rider.s2.delta_arb,widening.j_rider.s2.ci95_arb,widening.j_rider.s2.n_capped,widening.j_rider.s2.xfree_window,widening.j_rider.s1_replication.delta_ora,widening.j_rider.s1_replication.ci95_ora,widening.j_rider.s1_replication.n_capped,widening.j_rider.interaction.arb_full_64_minus_16,widening.j_rider.interaction.arb_full_16_minus_j4_16,widening.j_rider.s2.r_ora_reported,widening.j_rider.d_draw.d_draw_ran,widening.j_rider.d_draw.n_checked,widening.j_rider.d_draw.agreement_rate}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [
@@ -948,7 +948,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.md",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.md",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -956,7 +956,7 @@
           "why": null
         },
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/verdicts/READOUT.json::{widening.gates_summary.*.resolved_at,widening.branch.rung2.branch,widening.branch.rung3.branch,widening.gates.crn.ok,widening.gates.crn.witness_kinds}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/verdicts/READOUT.json::{widening.gates_summary.*.resolved_at,widening.branch.rung2.branch,widening.branch.rung3.branch,widening.gates.crn.ok,widening.gates.crn.witness_kinds}",
           "n_files": 1,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -994,7 +994,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/legs/s*/tier1-greedy/walled/leg*/manifest.json::{resolved_config.world_seed_salt,resolved_config.m,resolved_config.legal_mask_cache,preflight.seeds.ok,preflight.seeds.prefix_stable_at,preflight.seeds.derivation,preflight.seeds.probe_world_seeds_head}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/legs/s*/tier1-greedy/walled/leg*/manifest.json::{resolved_config.world_seed_salt,resolved_config.m,resolved_config.legal_mask_cache,preflight.seeds.ok,preflight.seeds.prefix_stable_at,preflight.seeds.derivation,preflight.seeds.probe_world_seeds_head}",
           "n_files": 10,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -1038,7 +1038,7 @@
       "phase": "4a-fixture",
       "primary": [
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/SMOKE_MANIFEST_S1_*.json::{c_worker_secs_per_playout,crn_cross_leg_identical,m_worlds,arb_backend}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/SMOKE_MANIFEST_S1_*.json::{c_worker_secs_per_playout,crn_cross_leg_identical,m_worlds,arb_backend}",
           "n_files": 2,
           "resolved": true,
           "sanctioned_nulls": [],
@@ -1059,7 +1059,7 @@
           "why": null
         },
         {
-          "address": "/tmp/widening_fixture_gq_zeptz/shared_run_r4/SMOKE_MANIFEST_S2_*.json::{c_worker_secs_per_playout,crn_cross_leg_identical,m_worlds,arb_backend}",
+          "address": "/tmp/widening_fixture_h5lpuxy7/shared_run_r4/SMOKE_MANIFEST_S2_*.json::{c_worker_secs_per_playout,crn_cross_leg_identical,m_worlds,arb_backend}",
           "n_files": 2,
           "resolved": true,
           "sanctioned_nulls": [],

@@ -1,0 +1,13 @@
+{
+  "box": "local",
+  "committed": 990.0,
+  "gen_dir": "/mnt/c/carc-shared/tiearb_widening_20260817/gen",
+  "halt_fired": false,
+  "n_games": 10,
+  "note": "DESIGN \u00a77.2 generation c-remeasure. The smoke's games are the band's first ten and are RETAINED, so no seed outside a committed range is ever created and G-BAND is untouched.",
+  "ratio": 0.30060606060606065,
+  "units": "worker-seconds per GAME (the judge legs are per PLAYOUT \u2014 never compared, never the same key)",
+  "wall_secs": 62,
+  "worker_secs_per_game": 297.6,
+  "workers": 48
+}

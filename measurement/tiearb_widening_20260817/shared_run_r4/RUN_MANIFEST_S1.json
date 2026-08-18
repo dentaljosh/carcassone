@@ -1,0 +1,100 @@
+{
+  "c_remeasure": {
+    "failed_smokes": [],
+    "figure_of_record": "c_worker_secs_per_playout (\u03a3 elapsed_secs / playouts) \u2014 NOT worker_secs_per_playout",
+    "generation_smoke": {
+      "failed_smoke": false,
+      "n_games": 10,
+      "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/GEN_SMOKE.json",
+      "present": true,
+      "reason": null,
+      "worker_secs_per_game": 297.6
+    },
+    "halt_fired": false,
+    "legs": {
+      "arb": {
+        "committed": 0.178232,
+        "direction": "cheaper",
+        "halt_fired": false,
+        "ratio": 0.7811639771126959,
+        "realized": 0.13922841796875002,
+        "rule": "HALT IS ONE-SIDED \u2014 halt only when realized/committed > 1.25; cheaper is recorded, never a halt",
+        "unit": "worker-s/playout"
+      },
+      "generation": {
+        "committed": 372.0,
+        "direction": "cheaper",
+        "halt_fired": false,
+        "ratio": 0.8,
+        "realized": 297.6,
+        "rule": "HALT IS ONE-SIDED \u2014 halt only when realized/committed > 1.25; cheaper is recorded, never a halt",
+        "unit": "worker-s/game"
+      },
+      "if": {
+        "committed": 2.35,
+        "direction": "cheaper",
+        "halt_fired": false,
+        "ratio": 0.7471466090425533,
+        "realized": 1.7557945312500003,
+        "rule": "HALT IS ONE-SIDED \u2014 halt only when realized/committed > 1.25; cheaper is recorded, never a halt",
+        "unit": "worker-s/playout"
+      }
+    },
+    "n_smokes_expected": 4,
+    "n_smokes_read": 4,
+    "ok": true,
+    "reprice_authorization_worker_h": 1500.0,
+    "smokes": [
+      {
+        "arb_backend": "rust",
+        "c_worker_secs_per_playout": 1.7557945312500003,
+        "failed_smoke": false,
+        "judge": "if",
+        "m_worlds": 128,
+        "path": "measurement/tiearb_widening_20260817/shared_run_r4/SMOKE_MANIFEST_S1_clair-puct.json",
+        "present": true,
+        "reason": null,
+        "stratum": "S1",
+        "worker_secs_per_playout_NOT_COSTED_FROM": 3.5506485239602625
+      },
+      {
+        "arb_backend": "rust",
+        "c_worker_secs_per_playout": 0.13922841796875002,
+        "failed_smoke": false,
+        "judge": "arb",
+        "m_worlds": 128,
+        "path": "measurement/tiearb_widening_20260817/shared_run_r4/SMOKE_MANIFEST_S1_tier1-greedy.json",
+        "present": true,
+        "reason": null,
+        "stratum": "S1",
+        "worker_secs_per_playout_NOT_COSTED_FROM": 0.3211549452971667
+      },
+      {
+        "arb_backend": "rust",
+        "c_worker_secs_per_playout": 1.6278605468750005,
+        "failed_smoke": false,
+        "judge": "if",
+        "m_worlds": 32,
+        "path": "measurement/tiearb_widening_20260817/shared_run_r4/SMOKE_MANIFEST_S2_clair-puct.json",
+        "present": true,
+        "reason": null,
+        "stratum": "S2",
+        "worker_secs_per_playout_NOT_COSTED_FROM": 3.5606172177940607
+      },
+      {
+        "arb_backend": "rust",
+        "c_worker_secs_per_playout": 0.13595312499999998,
+        "failed_smoke": false,
+        "judge": "arb",
+        "m_worlds": 32,
+        "path": "measurement/tiearb_widening_20260817/shared_run_r4/SMOKE_MANIFEST_S2_tier1-greedy.json",
+        "present": true,
+        "reason": null,
+        "stratum": "S2",
+        "worker_secs_per_playout_NOT_COSTED_FROM": 0.3460794584825635
+      }
+    ],
+    "total_committed_worker_h": 1174.0
+  },
+  "stub": "created by c_remeasure.py before the S1 leg launched; run_tiletie merges its own keys in at launch"
+}

@@ -1,0 +1,490 @@
+{
+  "fixture_run": null,
+  "gates": [
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "G-BAND (N-file: base + extension [+ top-up])",
+      "has_fallback": false,
+      "note": "R4 \u00a72c generalises the two-file form to N: EACH generated range emits its OWN verify file, checked against ITS OWN range, with its own committed floor. The top-up file is required IFF the clause was exercised. 136e9 is RELEASED UNUSED and must appear in NO file. No seed list exists anywhere by design \u2014 the emitter publishes sha256_of_sorted_seeds",
+      "optional": false,
+      "phase": "4b",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/CHAMP_GAMES_VERIFY.json::{band_ok,seed_band,n_out_of_band,n_duplicate_seeds,n_games_realized,sha256_of_sorted_seeds}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "band_ok": [
+              "bool"
+            ],
+            "n_duplicate_seeds": [
+              "int"
+            ],
+            "n_games_realized": [
+              "int"
+            ],
+            "n_out_of_band": [
+              "int"
+            ],
+            "seed_band": [
+              "array"
+            ],
+            "sha256_of_sorted_seeds": [
+              "str"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/CHAMP_GAMES_VERIFY_EXT.json::{band_ok,seed_band,n_out_of_band,n_duplicate_seeds,n_games_realized,sha256_of_sorted_seeds}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "band_ok": [
+              "bool"
+            ],
+            "n_duplicate_seeds": [
+              "int"
+            ],
+            "n_games_realized": [
+              "int"
+            ],
+            "n_out_of_band": [
+              "int"
+            ],
+            "seed_band": [
+              "array"
+            ],
+            "sha256_of_sorted_seeds": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "G-SALT (corpus-time half only)",
+      "has_fallback": false,
+      "note": "the salt half of G-SALT binds POST-SCORING (`--mode post`): `world_seed_salt` is a MODULE CONSTANT emitted into RUN_MANIFEST at leg launch, so it cannot exist before a leg has run",
+      "optional": false,
+      "phase": "4b",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s*/POSITIONS_PLAN.json::{deployed_cap_j}",
+          "n_files": 4,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "deployed_cap_j": [
+              "int"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s*/ARMS.json::{cap_seed}",
+          "n_files": 4,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "cap_seed": [
+              "int"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "\u00a77 c-remeasure (generation + realized-vs-committed)",
+      "has_fallback": false,
+      "note": "the judge smoke cannot price the generation leg \u2014 \u00a77.2 requires a separate timed 10-game generation smoke. HALT is ONE-SIDED",
+      "optional": false,
+      "phase": "4b",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/GEN_SMOKE.json::{worker_secs_per_game}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "worker_secs_per_game": [
+              "float"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/RUN_MANIFEST_S1.json::{c_remeasure.legs.arb.committed,c_remeasure.legs.arb.realized,c_remeasure.legs.if.committed,c_remeasure.legs.if.realized,c_remeasure.legs.generation.committed,c_remeasure.legs.generation.realized,c_remeasure.halt_fired}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "c_remeasure.halt_fired": [
+              "bool"
+            ],
+            "c_remeasure.legs.arb.committed": [
+              "float"
+            ],
+            "c_remeasure.legs.arb.realized": [
+              "float"
+            ],
+            "c_remeasure.legs.generation.committed": [
+              "float"
+            ],
+            "c_remeasure.legs.generation.realized": [
+              "float"
+            ],
+            "c_remeasure.legs.if.committed": [
+              "float"
+            ],
+            "c_remeasure.legs.if.realized": [
+              "float"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "W9 D-DRAW (rider, OPTIONAL)",
+      "has_fallback": false,
+      "note": "OPTIONAL: absent until W9's probe runs, and its absence never fails the harness \u2014 `D-DRAW` reports the MAGNITUDE of rider I7's unverified dedupe-partition conditional and ADJUDICATES NOTHING. When absent, every READOUT `d_draw.*` address is null under row 3 of the CLOSED allow_null table (witness `d_draw_ran == false`)",
+      "optional": true,
+      "phase": "4b",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/D_DRAW.json::{n_checked,n_agree,agreement_rate,n_unreconstructible,git_rev}",
+          "n_files": 0,
+          "resolved": false,
+          "sanctioned_nulls": [],
+          "types": {},
+          "why": "no file matches the glob (need >= 1)"
+        }
+      ],
+      "primary_ok": false,
+      "resolved": true,
+      "resolved_at": "OPTIONAL-ABSENT"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "G-DISJOINT",
+      "has_fallback": false,
+      "note": "SEVEN comparisons (R4 \u00a72b(vi)): three layers on the four ARMS-vs-ARMS, three on base_vs_extension (per stratum), three on s1_vs_s2, and b_rid ONLY on s1s2_vs_exclude_rids. Plus the exclusion block, whose `denominator_source` is itself a read address. No fallback \u2014 a missing gate file is a FAIL",
+      "optional": false,
+      "phase": "4b",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json::{passed,strata_root_overlap,comparisons,comparisons.s1_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s1_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s1_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s2_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s2_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.base_vs_extension.layers.a_root_id.n_intersection,comparisons.base_vs_extension.layers.b_rid.n_intersection,comparisons.base_vs_extension.layers.c_position_digest.n_intersection,comparisons.s1_vs_s2.layers.a_root_id.n_intersection,comparisons.s1_vs_s2.layers.b_rid.n_intersection,comparisons.s1_vs_s2.layers.c_position_digest.n_intersection,comparisons.s1s2_vs_exclude_rids.layers.b_rid.n_intersection,comparisons.s1s2_vs_exclude_rids.passed,digest_exclusions.*.carried,digest_exclusions.*.residual,digest_exclusions.*.n_excluded,digest_exclusions.*.rate,digest_exclusions.*.bound_n,digest_exclusions.*.denominator_source,digest_exclusions.*.rids,digest_exclusions.*.void,total_order,voided_strata}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "comparisons": [
+              "object"
+            ],
+            "comparisons.base_vs_extension.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.base_vs_extension.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.base_vs_extension.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_s2.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_s2.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_s2.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiearb2_0816.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiearb2_0816.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiearb2_0816.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiletie0812.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiletie0812.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiletie0812.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1s2_vs_exclude_rids.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1s2_vs_exclude_rids.passed": [
+              "bool"
+            ],
+            "comparisons.s2_vs_tiearb2_0816.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiearb2_0816.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiearb2_0816.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiletie0812.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiletie0812.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiletie0812.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "digest_exclusions.*.bound_n": [
+              "int"
+            ],
+            "digest_exclusions.*.carried": [
+              "int"
+            ],
+            "digest_exclusions.*.denominator_source": [
+              "str"
+            ],
+            "digest_exclusions.*.n_excluded": [
+              "int"
+            ],
+            "digest_exclusions.*.rate": [
+              "float"
+            ],
+            "digest_exclusions.*.residual": [
+              "int"
+            ],
+            "digest_exclusions.*.rids": [
+              "array"
+            ],
+            "digest_exclusions.*.void": [
+              "bool"
+            ],
+            "passed": [
+              "bool"
+            ],
+            "strata_root_overlap": [
+              "int"
+            ],
+            "total_order": [
+              "array"
+            ],
+            "voided_strata": [
+              "array"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arms_full": [
+              "array"
+            ],
+            "subset_j4": [
+              "array"
+            ],
+            "subset_j4_id": [
+              "str"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arms_full": [
+              "array"
+            ],
+            "subset_j4": [
+              "array"
+            ],
+            "subset_j4_id": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-DRAW",
+      "has_fallback": true,
+      "note": "owned by W5 (DESIGN \u00a78 builder delta 2)",
+      "optional": false,
+      "phase": "4b",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "git_rev": [
+              "str"
+            ],
+            "n_checked": [
+              "int"
+            ],
+            "n_mismatch": [
+              "int"
+            ],
+            "ok": [
+              "bool"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json::{widening.gates.uncapped}",
+          "n_files": 0,
+          "resolved": false,
+          "sanctioned_nulls": [],
+          "types": {},
+          "why": "no file matches the glob (need >= 1)"
+        }
+      ],
+      "fallback_ok": false,
+      "gate": "G-UNCAPPED",
+      "has_fallback": true,
+      "note": "`cap_j` is null on an uncapped build \u2014 G-UNCAPPED REQUIRES that null. It is row 4 of the CLOSED allow_null table and is accepted only with its witness: `uncapped == true` AND `cap_j_label == \"inf\"`",
+      "optional": false,
+      "phase": "4b",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [
+            {
+              "key": "cap_j",
+              "row": "cap_j",
+              "witness": [
+                "cap_j_label",
+                "uncapped"
+              ]
+            }
+          ],
+          "types": {
+            "cap_j": [
+              "null"
+            ],
+            "cap_j_label": [
+              "str"
+            ],
+            "uncapped": [
+              "bool"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [
+            {
+              "key": "cap_j",
+              "row": "cap_j",
+              "witness": [
+                "cap_j_label",
+                "uncapped"
+              ]
+            }
+          ],
+          "types": {
+            "cap_j": [
+              "null"
+            ],
+            "cap_j_label": [
+              "str"
+            ],
+            "uncapped": [
+              "bool"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s*/ARMS.json::{arms,arms_full,champ_arm_action,champ_arm_index}",
+          "n_files": 4,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arms": [
+              "array"
+            ],
+            "arms_full": [
+              "array"
+            ],
+            "champ_arm_action": [
+              "int"
+            ],
+            "champ_arm_index": [
+              "int"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    }
+  ],
+  "mechanism": "key presence + JSON type only; no value is computed, printed or stored",
+  "mode": "4b",
+  "n_fallback_only": 0,
+  "n_gates": 7,
+  "n_unaudited_fallbacks": 1,
+  "n_unresolved": 0,
+  "passed": true,
+  "run_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4",
+  "share": "/mnt/c/carc-shared/tiearb_widening_20260817"
+}
