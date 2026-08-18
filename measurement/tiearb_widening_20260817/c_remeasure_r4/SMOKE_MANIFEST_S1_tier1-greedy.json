@@ -1,0 +1,404 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie --smoke",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/GATE_BACKEND_RECHECK_S1_tier1-greedy.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "30",
+          "--out",
+          "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/GATE_BACKEND_RECHECK_S1_tier1-greedy.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n2114038       01:22  0.1 python",
+        "loadavg": "3.26 3.30 9.04 1/879 2114320"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "81c0c838",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 11,
+        "plan_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/POSITIONS_PLAN.json",
+        "arms_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/ARMS.json"
+      },
+      "m": {
+        "ok": true,
+        "m": 128,
+        "m_max": 128,
+        "b_ceiling": 64,
+        "note": "usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 \u00a70.2), not by M"
+      },
+      "arb_backend": {
+        "ok": true,
+        "arb_backend": "rust",
+        "note": "no tier1-greedy leg in --judges; the flag is inert"
+      }
+    }
+  },
+  "profile": "walled",
+  "positions_selected": {
+    "rids": [
+      "tt_sp_135000000000_p10",
+      "tt_sp_135000000000_p42",
+      "tt_sp_135000000001_p56",
+      "tt_sp_135000000001_p88",
+      "tt_sp_135000000002_p116",
+      "tt_sp_135000000002_p18",
+      "tt_sp_135000000002_p8",
+      "tt_sp_135000000003_p16",
+      "tt_sp_135000000003_p28",
+      "tt_sp_135000000004_p34",
+      "tt_sp_135000000007_p136",
+      "tt_sp_135000000008_p20",
+      "tt_sp_135000000010_p38",
+      "tt_sp_135000000012_p136",
+      "tt_sp_135000000014_p101",
+      "tt_sp_135000000015_p14",
+      "tt_sp_135000000016_p124",
+      "tt_sp_135000000016_p16",
+      "tt_sp_135000000017_p64",
+      "tt_sp_135000000018_p58"
+    ],
+    "n_eligible": 324,
+    "note": null,
+    "synthesized": false
+  },
+  "legs": {
+    "1": {
+      "rc": 0,
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/c_remeasure_r4/smoke/tier1-greedy/walled/leg1",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/logs/smoke_tier1-greedy_rust_walled_leg1.log",
+      "n": 20,
+      "cmd": [
+        "/home/doctor/projects/carcassone/.venv/bin/python",
+        "/home/doctor/projects/carcassone/scripts/tiletie/tier1_rust_leg.py",
+        "--positions-jsonl",
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/smoke/smoke_walled_leg1.jsonl",
+        "--rules-profile",
+        "walled",
+        "--m",
+        "128",
+        "--oracle-sims",
+        "100",
+        "--world-seed-salt",
+        "tiletie-v1",
+        "--workers",
+        "30",
+        "--n",
+        "20",
+        "--out-root",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/c_remeasure_r4",
+        "--out-subdir",
+        "smoke/tier1-greedy/walled/leg1",
+        "--legal-mask-cache",
+        "--resume"
+      ]
+    },
+    "2": {
+      "rc": 0,
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/c_remeasure_r4/smoke/tier1-greedy/walled/leg2",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/logs/smoke_tier1-greedy_rust_walled_leg2.log",
+      "n": 20,
+      "cmd": [
+        "/home/doctor/projects/carcassone/.venv/bin/python",
+        "/home/doctor/projects/carcassone/scripts/tiletie/tier1_rust_leg.py",
+        "--positions-jsonl",
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/smoke/smoke_walled_leg2.jsonl",
+        "--rules-profile",
+        "walled",
+        "--m",
+        "128",
+        "--oracle-sims",
+        "100",
+        "--world-seed-salt",
+        "tiletie-v1",
+        "--workers",
+        "30",
+        "--n",
+        "20",
+        "--out-root",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/c_remeasure_r4",
+        "--out-subdir",
+        "smoke/tier1-greedy/walled/leg2",
+        "--legal-mask-cache",
+        "--resume"
+      ]
+    }
+  },
+  "wall_secs": 109.6,
+  "workers": 30,
+  "n_positions": 20,
+  "n_legs": 2,
+  "m_worlds": 128,
+  "oracle_sims": 100,
+  "judge": "tier1-greedy",
+  "backend": "rust",
+  "arb_backend": "rust",
+  "arb_legal_mask_cache": true,
+  "stratum": null,
+  "n_playouts": 10240,
+  "elapsed_secs_sum": 1425.699,
+  "elapsed_secs_by_position": {
+    "tt_sp_135000000000_p10": {
+      "leg1": 39.805,
+      "leg2": 42.166
+    },
+    "tt_sp_135000000000_p42": {
+      "leg1": 39.584,
+      "leg2": 37.706
+    },
+    "tt_sp_135000000001_p56": {
+      "leg1": 53.485,
+      "leg2": 54.971
+    },
+    "tt_sp_135000000001_p88": {
+      "leg1": 51.193,
+      "leg2": 50.912
+    },
+    "tt_sp_135000000002_p116": {
+      "leg1": 26.383,
+      "leg2": 26.858
+    },
+    "tt_sp_135000000002_p18": {
+      "leg1": 47.119,
+      "leg2": 47.354
+    },
+    "tt_sp_135000000002_p8": {
+      "leg1": 39.814,
+      "leg2": 38.424
+    },
+    "tt_sp_135000000003_p16": {
+      "leg1": 39.729,
+      "leg2": 38.797
+    },
+    "tt_sp_135000000003_p28": {
+      "leg1": 41.882,
+      "leg2": 40.017
+    },
+    "tt_sp_135000000004_p34": {
+      "leg1": 39.164,
+      "leg2": 40.671
+    },
+    "tt_sp_135000000007_p136": {
+      "leg1": 4.366,
+      "leg2": 4.096
+    },
+    "tt_sp_135000000008_p20": {
+      "leg1": 40.735,
+      "leg2": 40.058
+    },
+    "tt_sp_135000000010_p38": {
+      "leg1": 44.591,
+      "leg2": 45.613
+    },
+    "tt_sp_135000000012_p136": {
+      "leg1": 6.126,
+      "leg2": 6.465
+    },
+    "tt_sp_135000000014_p101": {
+      "leg1": 27.538,
+      "leg2": 28.883
+    },
+    "tt_sp_135000000015_p14": {
+      "leg1": 44.345,
+      "leg2": 45.776
+    },
+    "tt_sp_135000000016_p124": {
+      "leg1": 14.921,
+      "leg2": 14.708
+    },
+    "tt_sp_135000000016_p16": {
+      "leg1": 37.533,
+      "leg2": 38.281
+    },
+    "tt_sp_135000000017_p64": {
+      "leg1": 32.503,
+      "leg2": 31.849
+    },
+    "tt_sp_135000000018_p58": {
+      "leg1": 41.909,
+      "leg2": 39.369
+    }
+  },
+  "c_worker_secs_per_playout": 0.13922841796875002,
+  "c_worker_secs_per_playout_wall_based": 0.3211549452971667,
+  "c_note": "cost from c_worker_secs_per_playout (\u03a3 elapsed_secs / playouts); the wall-based figure is inflated by the slowest position (DESIGN \u00a77.4)",
+  "worker_secs_per_position": 164.43133199214935,
+  "worker_secs_per_playout": 0.3211549452971667,
+  "eta": {
+    "W=14": {
+      "wall_secs": 1394.238880357143,
+      "wall_hours": 0.3872885778769842
+    },
+    "W=22": {
+      "wall_secs": 887.2429238636364,
+      "wall_hours": 0.246456367739899
+    }
+  },
+  "crn_cross_leg_identical": true,
+  "crn_cross_leg_checked_rids": [
+    "tt_sp_135000000000_p10",
+    "tt_sp_135000000000_p42",
+    "tt_sp_135000000001_p56",
+    "tt_sp_135000000001_p88",
+    "tt_sp_135000000002_p116",
+    "tt_sp_135000000002_p18",
+    "tt_sp_135000000002_p8",
+    "tt_sp_135000000003_p16",
+    "tt_sp_135000000003_p28",
+    "tt_sp_135000000004_p34",
+    "tt_sp_135000000007_p136",
+    "tt_sp_135000000008_p20",
+    "tt_sp_135000000010_p38",
+    "tt_sp_135000000012_p136",
+    "tt_sp_135000000014_p101",
+    "tt_sp_135000000015_p14",
+    "tt_sp_135000000016_p124",
+    "tt_sp_135000000016_p16",
+    "tt_sp_135000000017_p64",
+    "tt_sp_135000000018_p58"
+  ],
+  "crn_cross_leg_detail": {
+    "ok": true,
+    "legs_checked": [
+      1,
+      2
+    ],
+    "rids_checked": [
+      "tt_sp_135000000000_p10",
+      "tt_sp_135000000000_p42",
+      "tt_sp_135000000001_p56",
+      "tt_sp_135000000001_p88",
+      "tt_sp_135000000002_p116",
+      "tt_sp_135000000002_p18",
+      "tt_sp_135000000002_p8",
+      "tt_sp_135000000003_p16",
+      "tt_sp_135000000003_p28",
+      "tt_sp_135000000004_p34",
+      "tt_sp_135000000007_p136",
+      "tt_sp_135000000008_p20",
+      "tt_sp_135000000010_p38",
+      "tt_sp_135000000012_p136",
+      "tt_sp_135000000014_p101",
+      "tt_sp_135000000015_p14",
+      "tt_sp_135000000016_p124",
+      "tt_sp_135000000016_p16",
+      "tt_sp_135000000017_p64",
+      "tt_sp_135000000018_p58"
+    ],
+    "per_rid": {
+      "tt_sp_135000000000_p10": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000000_p42": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000001_p56": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000001_p88": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000002_p116": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000002_p18": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000002_p8": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000003_p16": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000003_p28": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000004_p34": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000007_p136": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000008_p20": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000010_p38": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000012_p136": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000014_p101": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000015_p14": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000016_p124": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000016_p16": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000017_p64": {
+        "ok": true,
+        "problems": []
+      },
+      "tt_sp_135000000018_p58": {
+        "ok": true,
+        "problems": []
+      }
+    },
+    "world_witness_kinds": [
+      "world_deck_hash"
+    ],
+    "n_rids": 20,
+    "n_ok": 20
+  }
+}

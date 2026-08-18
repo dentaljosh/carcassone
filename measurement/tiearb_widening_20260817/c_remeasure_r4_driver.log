@@ -1,0 +1,109 @@
+=== [2026-08-18T03:38:50-04:00] SMOKE S1 m=128 judge=tier1-greedy W=30 ===
+    n_leg_files: 11
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=551 (e4=0 selfplay=551) max_arms=12 mean_arms=3.43 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=85760 oracle_worker_secs=141504.0 champ_pick_secs=7579.1
+[run_tiletie] ETA at W=14: 2.958 h (10649 s)
+[run_tiletie] ETA at W=22: 1.882 h (6777 s)
+
+[smoke] positions=20 legs=2 playouts=10240 wall_secs=109.6 workers=30
+[smoke] c (Σ elapsed_secs / playouts) = 0.1392 worker-s/playout   <- COST FROM THIS (Σ elapsed_secs = 1425.7 over 40 records)
+[smoke] c (wall x W / playouts)       = 0.3212 <- inflated by the slowest position, do NOT cost from this
+[smoke] extrapolated full-run ETA at W=14 (from Σ elapsed_secs): 0.387 h (1394 s)
+[smoke] extrapolated full-run ETA at W=22 (from Σ elapsed_secs): 0.246 h (887 s)
+
+CRN CROSS-LEG WITNESS: PASS (20/20 rids)
+[smoke] manifest -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S1_tier1-greedy.json
+--- rc=0 manifest=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S1_tier1-greedy.json
+=== [2026-08-18T03:42:03-04:00] SMOKE S2 m=32 judge=tier1-greedy W=30 ===
+    n_leg_files: 12
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/ARMS.json
+[preflight] m: PASS
+    m: 32
+    m_max: 128
+    b_ceiling: 16
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=103 (e4=0 selfplay=103) max_arms=13 mean_arms=6.97 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=39360 oracle_worker_secs=64944.0 champ_pick_secs=1416.8
+[run_tiletie] ETA at W=14: 1.317 h (4740 s)
+[run_tiletie] ETA at W=22: 0.838 h (3016 s)
+
+[smoke] positions=20 legs=2 playouts=2560 wall_secs=29.5 workers=30
+[smoke] c (Σ elapsed_secs / playouts) = 0.136 worker-s/playout   <- COST FROM THIS (Σ elapsed_secs = 348.0 over 40 records)
+[smoke] c (wall x W / playouts)       = 0.3461 <- inflated by the slowest position, do NOT cost from this
+[smoke] extrapolated full-run ETA at W=14 (from Σ elapsed_secs): 0.134 h (483 s)
+[smoke] extrapolated full-run ETA at W=22 (from Σ elapsed_secs): 0.085 h (308 s)
+
+CRN CROSS-LEG WITNESS: PASS (20/20 rids)
+[smoke] manifest -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S2_tier1-greedy.json
+--- rc=0 manifest=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S2_tier1-greedy.json
+=== [2026-08-18T03:43:57-04:00] SMOKE S1 m=128 judge=clair-puct W=30 ===
+    n_leg_files: 11
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=551 (e4=0 selfplay=551) max_arms=12 mean_arms=3.43 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=85760 oracle_worker_secs=141504.0 champ_pick_secs=7579.1
+[run_tiletie] ETA at W=14: 2.958 h (10649 s)
+[run_tiletie] ETA at W=22: 1.882 h (6777 s)
+
+[smoke] positions=20 legs=2 playouts=10240 wall_secs=1212.0 workers=30
+[smoke] c (Σ elapsed_secs / playouts) = 1.7558 worker-s/playout   <- COST FROM THIS (Σ elapsed_secs = 17979.3 over 40 records)
+[smoke] c (wall x W / playouts)       = 3.5506 <- inflated by the slowest position, do NOT cost from this
+[smoke] extrapolated full-run ETA at W=14 (from Σ elapsed_secs): 3.138 h (11297 s)
+[smoke] extrapolated full-run ETA at W=22 (from Σ elapsed_secs): 1.997 h (7189 s)
+
+CRN CROSS-LEG WITNESS: PASS (20/20 rids)
+[smoke] manifest -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S1_clair-puct.json
+--- rc=0 manifest=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S1_clair-puct.json
+=== [2026-08-18T04:05:33-04:00] SMOKE S2 m=32 judge=clair-puct W=30 ===
+    n_leg_files: 12
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/ARMS.json
+[preflight] m: PASS
+    m: 32
+    m_max: 128
+    b_ceiling: 16
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=103 (e4=0 selfplay=103) max_arms=13 mean_arms=6.97 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=39360 oracle_worker_secs=64944.0 champ_pick_secs=1416.8
+[run_tiletie] ETA at W=14: 1.317 h (4740 s)
+[run_tiletie] ETA at W=22: 0.838 h (3016 s)
+
+[smoke] positions=20 legs=2 playouts=2560 wall_secs=303.8 workers=30
+[smoke] c (Σ elapsed_secs / playouts) = 1.6279 worker-s/playout   <- COST FROM THIS (Σ elapsed_secs = 4167.3 over 40 records)
+[smoke] c (wall x W / playouts)       = 3.5606 <- inflated by the slowest position, do NOT cost from this
+[smoke] extrapolated full-run ETA at W=14 (from Σ elapsed_secs): 1.299 h (4678 s)
+[smoke] extrapolated full-run ETA at W=22 (from Σ elapsed_secs): 0.827 h (2977 s)
+
+CRN CROSS-LEG WITNESS: PASS (20/20 rids)
+[smoke] manifest -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S2_clair-puct.json
+--- rc=0 manifest=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/c_remeasure_r4/SMOKE_MANIFEST_S2_clair-puct.json
+=== [2026-08-18T04:12:02-04:00] ALL FOUR SMOKES DONE ===
