@@ -242,6 +242,42 @@ def healthy(tmp_path, diffs, **kw):
     return a, b, s, v
 
 
+def rewrite(path: Path, fn):
+    """Apply `fn(record, index) -> record` to every line of a cell archive."""
+    lines = []
+    for i, line in enumerate(path.read_text().splitlines()):
+        r = json.loads(line)
+        lines.append(json.dumps(fn(r, i) or r))
+    path.write_text("\n".join(lines) + "\n")
+
+
+def host_of(rec, n=N_DECKS) -> str:
+    """The host the healthy fixture's contiguous split put this record's deck on."""
+    return default_split(rec["deck_seed"] - BAND, n)
+
+
+def use_champion_manifest_cand_tiearb(path: Path, *, over=None, drop=()):
+    """Move CELL B's rung from the manifest's TOP LEVEL to the address the real
+    harness stamps the RESOLVED CONFIG at — `champion_manifest.cand_tiearb` — and
+    leave `record.champ_tiearb` as the pure firing TELEMETRY it really is (no
+    `enabled` / `salt` / `eps` anywhere in it).
+
+    ⚠️ The two are DIFFERENT OBJECTS, not two spellings of one: `cand_tiearb` is the
+    config the champion was constructed with, `champ_tiearb` is the per-game counter
+    block. Their only overlap is `mode` / `B` / `J`.
+    """
+    def f(r, i):
+        rung = dict(r["manifest"].pop("champ_tiearb"))
+        rung.update(over or {})
+        for k in drop:
+            rung.pop(k, None)
+        r["manifest"]["champion_manifest"]["cand_tiearb"] = rung
+        for k in ("enabled", "salt", "eps"):
+            r["champ_tiearb"].pop(k, None)
+        return r
+    rewrite(path, f)
+
+
 # --------------------------------------------------------------------------- #
 # 1-3 — the branch table on healthy cells                                       #
 # --------------------------------------------------------------------------- #
@@ -406,6 +442,84 @@ def test_G_ARB_fails_on_an_unauthorized_rung(tmp_path, capsys):
     assert out["precondition_detail"]["G-ARB"]["cell_b"]["checks"]["B"]["ok"] is False
 
 
+def test_G_ARB_resolves_the_rung_from_the_champion_manifest_cand_tiearb(tmp_path,
+                                                                        capsys):
+    """⭐ §0.F.2 PRECEDENT (the FIX-2 defect): with NO top-level `champ_tiearb`, all
+    six fields must resolve from the address the harness stamps the RESOLVED CONFIG
+    at — `manifest.champion_manifest.cand_tiearb` — and say so in `resolved_at`.
+
+    Resolving only from `record.champ_tiearb` (the firing TELEMETRY) leaves
+    `enabled` / `salt` / `eps` null, because that block does not carry them: it is a
+    DIFFERENT OBJECT, not a second spelling."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    use_champion_manifest_cand_tiearb(b)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-ARB"] is True, out["precondition_detail"]["G-ARB"]
+    cb = out["precondition_detail"]["G-ARB"]["cell_b"]
+    assert cb["conflicts"] == []
+    for k in ("enabled", "B", "J", "mode", "salt", "eps"):
+        assert cb["checks"][k]["ok"] is True, k
+        assert cb["resolved_at"][k] == "champion_manifest.cand_tiearb", k
+    # the telemetry address is still READ — it is simply not the only source
+    assert "record.champ_tiearb" in cb["addresses_found"]
+
+
+def test_G_ARB_fails_on_a_wrong_salt_at_the_manifest_address(tmp_path, capsys):
+    a, b = write_cells(tmp_path, diffs=_flat)
+    use_champion_manifest_cand_tiearb(b, over={"salt": "tiearb2-SOMETHING-ELSE"})
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-ARB"]
+    chk = out["precondition_detail"]["G-ARB"]["cell_b"]["checks"]["salt"]
+    assert chk["ok"] is False and chk["observed"] == "tiearb2-SOMETHING-ELSE"
+
+
+def test_G_ARB_fails_when_enabled_is_absent_at_EVERY_address(tmp_path, capsys):
+    """ABSENT AT EVERY ADDRESS STILL FAILS: `enabled` exists nowhere but the resolved
+    config, so dropping it there leaves it unwitnessed — and unwitnessed VOIDS."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    use_champion_manifest_cand_tiearb(b, drop=("enabled",))
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-ARB"]
+    chk = out["precondition_detail"]["G-ARB"]["cell_b"]["checks"]["enabled"]
+    assert chk["observed"] is None and chk["ok"] is False
+    assert chk["resolved_at"] is None
+
+
+def test_G_ARB_fails_when_two_addresses_DISAGREE(tmp_path, capsys):
+    """The config says `B: 16`, the telemetry says the champion actually ran `B: 32`.
+    Either could be the truth, so the merge refuses to pick: CONFLICT, VOIDS."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    use_champion_manifest_cand_tiearb(b)
+    rewrite(b, lambda r, i: r["champ_tiearb"].__setitem__("B", 32))
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-ARB"]
+    cb = out["precondition_detail"]["G-ARB"]["cell_b"]
+    assert cb["ok"] is False
+    assert [c["field"] for c in cb["conflicts"]] == ["B"]
+    assert set(cb["conflicts"][0]["addresses"]) == {"champion_manifest.cand_tiearb",
+                                                    "record.champ_tiearb"}
+
+
+def test_G_ARB_cell_A_clause_is_unchanged_by_the_manifest_address(tmp_path, capsys):
+    """The CELL A clause still fires on ANY `champ_tiearb` key — and the neighbouring
+    spelling `cand_tiearb` on CELL A stays ADVISORY, never a branch input."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    use_champion_manifest_cand_tiearb(b)
+    rewrite(a, lambda r, i: r["manifest"]["champion_manifest"].__setitem__(
+        "cand_tiearb", {"enabled": False}))
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    ca = out["precondition_detail"]["G-ARB"]["cell_a"]
+    assert ca["champ_tiearb_addresses_found"] == []
+    assert ca["advisory_neighbour_keys_found"] == [
+        "manifest.champion_manifest.cand_tiearb"]
+    assert out["preconditions"]["G-ARB"] is True
+
+
 def test_G_FIRE_fails_below_the_phi_effective_floor(tmp_path, capsys):
     a, b = write_cells(tmp_path, diffs=_flat, b_rec={"fired": 0})
     s, v = write_support(tmp_path)
@@ -470,12 +584,114 @@ def test_G_DIVERGE_tolerates_the_two_classified_benign_classes(tmp_path, capsys)
     assert out["branch"] == "J-CONFIRMED"
 
 
+def test_G_JCZ_passes_when_the_revs_are_EQUAL(tmp_path, capsys):
+    """⭐ REGRESSION (the FIX-1 defect): two byte-identical 40-char revs compared
+    EQUAL and the gate still reported `ok: false`, because the per-record witness
+    conjoined FULL COVERAGE into the same flag as value equality. Equal revs, fully
+    stamped, must read `ok: true` — with the observed value echoed."""
+    a, b, s, v = healthy(tmp_path, _flat)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-JCZ"] is True
+    for cell in (out["cell_a"], out["cell_b"]):
+        chk = out["precondition_detail"]["G-JCZ"]["observed"][cell]["checks"][
+            "jcz_git_rev"]
+        assert chk["observed"] == chk["expected"] == adj.WORKERS_CONF_FALLBACK[
+            "JCZ_REV"]
+        assert chk["ok"] is True and chk["matches_pin"] is True
+        assert chk["records_agree"] is True
+        assert chk["stamped_on_every_record"] is True
+        assert chk["records_with_witness"] == chk["n_records"] == N_DECKS * 2
+
+
 def test_G_JCZ_fails_on_a_different_jcz_revision(tmp_path, capsys):
     a, b = write_cells(tmp_path, diffs=_flat, b_kw={"jcz_rev": "f" * 40})
     s, v = write_support(tmp_path)
     out, _ = run(tmp_path, a, b, s, v, capsys)
     assert out["failed_preconditions"] == ["G-JCZ"]
     assert out["precondition_detail"]["G-JCZ"]["identical_across_cells"] is False
+    chk = out["precondition_detail"]["G-JCZ"]["observed"][out["cell_b"]]["checks"][
+        "jcz_git_rev"]
+    assert chk["ok"] is False and chk["matches_pin"] is False
+    assert chk["observed"] == "f" * 40           # the realized value is REPORTED
+
+
+def _unstamp_rev_on_the_laptop(path: Path):
+    """What `match.py` really does on a box where `git -C <jcz_repo> rev-parse HEAD`
+    cannot answer: `_git_rev` returns None, so EVERY game that box played carries
+    `jcz_git_rev: null` while running the correctly pinned checkout."""
+    rewrite(path, lambda r, i: r["manifest"].__setitem__("jcz_git_rev", None)
+            if host_of(r) == HOST_LAPTOP else None)
+
+
+def test_G_JCZ_passes_when_one_box_could_not_stamp_the_rev(tmp_path, capsys):
+    """⭐ §3.1 STRUCTURAL: a NULL is an UNSTAMPED record, not a DIFFERENT one. The
+    laptop's `_git_rev` returned None on every game it played; the pinned rev is
+    still witnessed on EVERY host at the per-host address the read-rule names, so the
+    gate must pass — a coverage conjunct here would void every healthy run that used
+    such a box."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    for p in (a, b):
+        _unstamp_rev_on_the_laptop(p)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-JCZ"] is True, out["precondition_detail"]["G-JCZ"]
+    det = out["precondition_detail"]["G-JCZ"]
+    chk = det["observed"][out["cell_b"]]["checks"]["jcz_git_rev"]
+    assert chk["ok"] is True
+    assert chk["stamped_on_every_record"] is False           # the gap is REPORTED
+    assert chk["coverage_gap_corroborated_on_every_host"] is True
+    assert chk["records_with_witness"] == (N_DECKS * 3) // 5 * 2
+    cov = det["record_witness_coverage"]["jcz_git_rev"][out["cell_a"]]
+    assert cov["n_records"] == N_DECKS * 2
+
+
+def test_G_JCZ_fails_when_an_unstamped_rev_has_no_per_host_witness(tmp_path, capsys):
+    """FAIL-CLOSED, the other half: the same coverage gap with NOTHING corroborating
+    it on the hosts VOIDS. Absence is only ever excused by the pinned value being
+    PRESENT AND EQUAL on every host that played."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    for p in (a, b):
+        _unstamp_rev_on_the_laptop(p)
+    s, v = write_support(tmp_path, env_overrides={
+        HOST_LOCAL: {"jcz_rev": None}, HOST_LAPTOP: {"jcz_rev": None}})
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-JCZ"]
+    chk = out["precondition_detail"]["G-JCZ"]["observed"][out["cell_b"]]["checks"][
+        "jcz_git_rev"]
+    assert chk["matches_pin"] is True             # the value it DID stamp is right…
+    assert chk["coverage_gap_corroborated_on_every_host"] is False   # …but unwitnessed
+    assert chk["ok"] is False
+
+
+def test_G_JCZ_fails_when_the_records_DISAGREE_on_the_rev(tmp_path, capsys):
+    """A mixed-provenance cell VOIDS even though every record agrees with SOME rev —
+    and even though the per-host ENV witnesses are healthy."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    rewrite(b, lambda r, i: r["manifest"].__setitem__("jcz_git_rev", "f" * 40)
+            if i % 2 else None)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-JCZ"]
+    chk = out["precondition_detail"]["G-JCZ"]["observed"][out["cell_b"]]["checks"][
+        "jcz_git_rev"]
+    assert chk["records_agree"] is False
+    assert len(chk["values_seen"]) == 2
+    assert chk["ok"] is False
+
+
+def test_G_JCZ_fails_when_the_rev_is_absent_from_EVERY_record(tmp_path, capsys):
+    """ABSENT AT EVERY ADDRESS STILL FAILS — a corroborating per-host witness excuses
+    a GAP, never a witness that no record carries at all."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    for p in (a, b):
+        rewrite(p, lambda r, i: r["manifest"].__setitem__("jcz_git_rev", None))
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == ["G-JCZ"]
+    chk = out["precondition_detail"]["G-JCZ"]["observed"][out["cell_a"]]["checks"][
+        "jcz_git_rev"]
+    assert chk["observed"] is None and chk["ok"] is False
+    assert chk["records_with_witness"] == 0
 
 
 def test_G_TOOL_fails_when_the_binary_sha_differs_across_cells(tmp_path, capsys):
@@ -757,17 +973,75 @@ def test_G_TOOL_fails_on_mixed_carc_rs_builds_across_boxes(tmp_path, capsys):
     assert out["failed_preconditions"] == ["G-TOOL"]
     det = out["precondition_detail"]["G-TOOL"]["cross_host_build_identity"]
     assert det["build_id_equal_across_hosts"] is False
+    assert det["ok"] is False
     assert set(det["preflight_build_id_by_host"]) == {HOST_LOCAL, HOST_LAPTOP}
+    # the two boxes' SHAS are identical in this fixture — the void is the BUILD ID,
+    # which is the only cross-host witness that binds (§0.F.2c)
+    assert det["binary_sha_equal_across_hosts"] is True
 
 
-def test_G_TOOL_fails_on_a_mixed_binary_sha_across_boxes(tmp_path, capsys):
+def test_G_TOOL_PASSES_on_differing_binary_shas_across_boxes(tmp_path, capsys):
+    """⭐ READ_RULE §0.F.2c — THE CASE THAT VOIDED A HEALTHY RUN (the FIX-3 defect).
+
+    The `.so` is NOT machine-reproducible: the two boxes produce different
+    `carc_rs_binary_sha` values at the SAME `carc_rs_build`, measured on this very
+    pair. Conjunct 1 therefore binds on the BUILD ID ALONE. The sha inequality is
+    still COMPUTED and REPORTED — explicitly labelled NON-BINDING — and it may never
+    touch `ok`.
+
+    (This test asserted the OPPOSITE before the fix; that assertion was the forbidden
+    cross-host comparison written into the suite.)"""
     a, b = write_cells(tmp_path, diffs=_flat)
     s, v = write_support(tmp_path,
                          env_overrides={HOST_LAPTOP: {"carc_rs_binary_sha": "f" * 16}})
     out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["failed_preconditions"] == []
+    assert out["preconditions"]["G-TOOL"] is True
+    det = out["precondition_detail"]["G-TOOL"]["cross_host_build_identity"]
+    assert det["binary_sha_equal_across_hosts"] is False     # differing, and REPORTED
+    assert det["binary_sha_equal_across_hosts_IS_NON_BINDING"] is True
+    assert det["build_id_equal_across_hosts"] is True        # ...the build id is equal
+    assert det["ok"] is True
+    assert det["binds_on"] == "carc_rs_build (the build id) ONLY"
+
+
+def test_G_TOOL_1b_fails_when_the_binary_sha_MOVED_within_one_host(tmp_path, capsys):
+    """CONJUNCT 1b (§0.F.2c): within a host, across the two cells, the sha DOES bind —
+    that is the rebuilt-here / stale-wheel witness. The laptop rebuilt its wheel
+    between the cells; the local box did not. The gate voids, 1b names the host that
+    moved, and conjunct 1 (build ids) is untouched."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    rewrite(b, lambda r, i: r["manifest"].__setitem__(
+        "carc_rs_binary_sha", "f" * 16) if host_of(r) == HOST_LAPTOP else None)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
     assert out["failed_preconditions"] == ["G-TOOL"]
-    assert (out["precondition_detail"]["G-TOOL"]["cross_host_build_identity"]
-            ["binary_sha_equal_across_hosts"] is False)
+    det = out["precondition_detail"]["G-TOOL"]["manifest_binary_sha_when_present"]
+    assert sorted(det["hosts_evaluated"]) == sorted([HOST_LOCAL, HOST_LAPTOP])
+    assert det["per_host"][HOST_LAPTOP]["equal_across_cells"] is False
+    assert det["per_host"][HOST_LAPTOP]["ok"] is False
+    assert det["per_host"][HOST_LOCAL]["ok"] is True          # 1b is per HOST
+    assert det["ok"] is False
+    # ...and the CROSS-HOST conjunct is unaffected: it never looks at the sha
+    assert (out["precondition_detail"]["G-TOOL"]["cross_host_build_identity"]["ok"]
+            is True)
+
+
+def test_G_TOOL_1b_passes_when_each_host_kept_its_own_sha(tmp_path, capsys):
+    """The REAL two-box shape: each box has its own sha (the .so is not reproducible)
+    and neither moved between the cells. 1b passes for BOTH hosts."""
+    a, b = write_cells(tmp_path, diffs=_flat)
+    for p in (a, b):
+        rewrite(p, lambda r, i: r["manifest"].__setitem__(
+            "carc_rs_binary_sha", "8ae0b98427debb2e")
+            if host_of(r) == HOST_LAPTOP else None)
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-TOOL"] is True, out["precondition_detail"]["G-TOOL"]
+    det = out["precondition_detail"]["G-TOOL"]["manifest_binary_sha_when_present"]
+    assert det["per_host"][HOST_LOCAL]["per_cell"][out["cell_a"]] == [f'"{BINSHA}"']
+    assert all(h["ok"] is True for h in det["per_host"].values())
+    assert set(det["per_host"]) == {HOST_LOCAL, HOST_LAPTOP}
 
 
 def test_G_TOOL_passes_when_the_manifest_has_NO_binary_sha(tmp_path, capsys):
@@ -798,8 +1072,13 @@ def test_G_TOOL_fails_when_no_build_witness_exists_anywhere(tmp_path, capsys):
                                           for h in (HOST_LOCAL, HOST_LAPTOP)})
     out, _ = run(tmp_path, a, b, s, v, capsys)
     assert out["failed_preconditions"] == ["G-TOOL"]
-    assert (out["precondition_detail"]["G-TOOL"]["any_build_witness_present"]
-            is False)
+    det = out["precondition_detail"]["G-TOOL"]
+    assert det["any_build_witness_present"] is False
+    # both sub-conjuncts fail closed on absence: no build id anywhere (conjunct 1),
+    # no sha anywhere (conjunct 1b)
+    assert det["cross_host_build_identity"]["build_id_witness_present"] is False
+    assert det["cross_host_build_identity"]["ok"] is False
+    assert det["manifest_binary_sha_when_present"]["present"] is False
 
 
 def test_G_TOOL_fails_when_our_git_rev_differs_across_cells(tmp_path, capsys):

@@ -57,6 +57,18 @@ Three properties this file is deliberately built around
   commits are the same, which is what a healthy launcher produces because it
   generates the pre-flight AFTER the wheel build and BEFORE the detached launch)
   PASSES.
+* **⛔ `carc_rs_binary_sha` IS NEVER COMPARED ACROSS HOSTS (READ_RULE §0.F.2c).** The
+  `.so` is not machine-reproducible — measured on this pair of boxes at the SAME
+  build id — so `G-TOOL`'s cross-HOST conjunct binds on `carc_rs_build` (the build
+  id) ALONE, and the sha binds WITHIN a host across the two cells (conjunct 1b, the
+  rebuilt-here / staleness witness). The cross-host sha comparison is still computed
+  and REPORTED, labelled NON-BINDING; it may never touch a gate's `ok`.
+* **An UNSTAMPED witness is not a DIFFERENT witness (`G-JCZ`).** A per-record field
+  the harness could not resolve (`match.py`'s `_git_rev` returns `None` on any
+  subprocess failure) is a COVERAGE GAP, not a provenance difference: it VOIDS unless
+  the pinned value is present and equal on EVERY host that played, at the per-host
+  pre-flight address the read-rule names. Records that DISAGREE, a value that differs
+  from the pin, and absence from EVERY record all still VOID.
 """
 from __future__ import annotations
 
@@ -1330,12 +1342,36 @@ def gate_cover(cells: dict, decks_per_cell: int) -> tuple:
     }
 
 
+#: `G-ARB`'s committed resolution order (§0.F.2's `G-LEAF` precedent applied to the
+#: rung): manifest TOP LEVEL → `config.*` → the HARNESS-NATIVE address where the
+#: resolved config is actually stamped → the per-game TELEMETRY block, LAST.
+#:
+#: ⚠️ **NAMING ASYMMETRY, and they are NOT two spellings of one object.**
+#:   * `manifest.champion_manifest.cand_tiearb` is the **resolved CONFIG** the
+#:     champion was constructed with — `{enabled, B, J, mode, salt, eps}`. It is the
+#:     only address carrying `enabled` / `salt` / `eps` at all.
+#:   * `record.champ_tiearb` is the per-game **firing TELEMETRY** —
+#:     `{tile_plies, fires, fired_plies, pickchanges, arms_total, playouts_total,
+#:     secs, errors, first_error, partial_argmax, max_plies, mode, B, J}`. It
+#:     overlaps the config on `mode`/`B`/`J` ONLY, and carries live counters
+#:     besides.
+#:   Reading the rung from the telemetry alone leaves `enabled`/`salt`/`eps` null and
+#:   fails a healthy run — the §0.F.2 defect class. Both are read; a DISAGREEMENT
+#:   between them on a shared field is a CONFLICT and FAILS.
+ARB_ADDRESSES = ("champ_tiearb", "config.champ_tiearb",
+                 "champion_manifest.cand_tiearb",     # the RESOLVED CONFIG
+                 "champion_manifest.champ_tiearb", "champion_manifest.tiearb",
+                 "tiearb")
+
+
 def _arb_dicts(records, key="champ_tiearb") -> list:
-    """Every `champ_tiearb`-shaped dict a cell exposes, with its address: the
-    manifest at both levels, the harness-native champion-manifest addresses, and —
-    LAST — the per-game telemetry block, which carries `mode`/`B`/`J`."""
-    manifest_addresses = (key, f"config.{key}", f"champion_manifest.{key}",
-                          "champion_manifest.tiearb", "tiearb")
+    """Every rung-shaped dict a cell exposes, with its address: the manifest at both
+    levels, the harness-native champion-manifest addresses (`cand_tiearb` — the
+    RESOLVED CONFIG, the only carrier of `enabled`/`salt`/`eps`), and — LAST — the
+    per-game telemetry block `record.champ_tiearb`, which carries `mode`/`B`/`J`.
+    See `ARB_ADDRESSES` for the naming asymmetry between the two objects."""
+    manifest_addresses = (ARB_ADDRESSES if key == "champ_tiearb" else
+                          (key, f"config.{key}", f"champion_manifest.{key}"))
     found, seen = [], set()
     for r in records:
         m = r.get("manifest") or {}
@@ -1362,14 +1398,21 @@ def gate_arb(cells: dict, a_name: str, b_name: str, rung: dict) -> tuple:
     mode:'argmax', salt:'tiearb2-deploy-v1', eps:0.0} AND CELL A carries NO
     `champ_tiearb` key". VOIDS on "any other rung; a key present on CELL A".
 
-    CELL B: every `champ_tiearb`-shaped dict the cell exposes (manifest top level,
-    `config.*`, the champion-manifest addresses, and the per-game telemetry block)
-    is MERGED into one resolved view, with each field's resolving address reported.
+    CELL B: every rung-shaped dict the cell exposes is MERGED into one resolved view,
+    read in the committed order (`ARB_ADDRESSES`, the §0.F.2 `G-LEAF` precedent):
+    manifest TOP LEVEL → `config.*` → `manifest.champion_manifest.cand_tiearb` (the
+    RESOLVED CONFIG) → `record.champ_tiearb` (the firing TELEMETRY), with **each
+    field's resolving address reported**.
+
     ⚠️ AMBIGUITY, DECLARED: the knob (`enabled`/`salt`/`eps`) and the telemetry
-    (`mode`/`B`/`J` + counters) are written by different code paths, so requiring
-    all six fields at ONE address would risk a gate no healthy run can satisfy. The
-    merge is fail-closed in both directions: a field missing from EVERY address
-    fails, and two addresses that DISAGREE on a field fail (`conflicts`).
+    (`mode`/`B`/`J` + counters) are written by different code paths — and under
+    DIFFERENT NAMES: the config is `champion_manifest.cand_tiearb`, the telemetry is
+    `record.champ_tiearb`. They are different OBJECTS, not two spellings of one.
+    Requiring all six fields at ONE address is a gate no healthy run can satisfy
+    (`record.champ_tiearb` has no `enabled`/`salt`/`eps` at all), so the merge reads
+    every address. It stays fail-closed in BOTH directions: a field **absent at
+    EVERY address FAILS**, a field **present-but-different FAILS**, and two addresses
+    that **DISAGREE** on a field FAIL (`conflicts`).
 
     CELL A: a recursive search for the key `champ_tiearb` anywhere in the record or
     its manifest. **Any presence fails**, verbatim — including a disabled stamp,
@@ -1385,11 +1428,15 @@ def gate_arb(cells: dict, a_name: str, b_name: str, rung: dict) -> tuple:
         for k, v in f["value"].items():
             if k not in ARB_RUNG_KEYS:
                 continue
-            if k in merged and merged[k] != v:
-                conflicts.append({"field": k, "a": merged[k], "b": v,
-                                  "addresses": [where[k], f["resolved_at"]]})
-            else:
-                merged[k], where[k] = v, f["resolved_at"]
+            if k in merged:
+                # The FIRST address in the committed order OWNS the field, so
+                # `resolved_at` reports where it was actually read from and is not
+                # overwritten by a later address that merely AGREES.
+                if merged[k] != v:
+                    conflicts.append({"field": k, "a": merged[k], "b": v,
+                                      "addresses": [where[k], f["resolved_at"]]})
+                continue
+            merged[k], where[k] = v, f["resolved_at"]
     checks = {}
     for k in ARB_RUNG_KEYS:
         want = rung[k]
@@ -1420,7 +1467,15 @@ def gate_arb(cells: dict, a_name: str, b_name: str, rung: dict) -> tuple:
         "cell_b": {"resolved": merged, "resolved_at": where, "checks": checks,
                    "conflicts": conflicts, "addresses_found": [f["resolved_at"]
                                                                for f in b_found],
-                   "ok": b_ok},
+                   "resolution_order": list(ARB_ADDRESSES) + ["record.champ_tiearb"],
+                   "ok": b_ok,
+                   "semantics": "PER FIELD: manifest top level → `config.*` → "
+                                "`champion_manifest.cand_tiearb` (the resolved "
+                                "CONFIG — the only carrier of enabled/salt/eps) → "
+                                "`record.champ_tiearb` (the firing TELEMETRY, which "
+                                "carries mode/B/J only). ABSENT AT EVERY ADDRESS "
+                                "FAILS; PRESENT-BUT-DIFFERENT FAILS; two addresses "
+                                "that DISAGREE are a CONFLICT and FAIL"},
         "cell_a": {"champ_tiearb_addresses_found": a_hits,
                    "advisory_neighbour_keys_found": sorted(set(a_adv)),
                    "n_records": len(cells[a_name]["records"]), "ok": a_ok,
@@ -1673,6 +1728,71 @@ JVM_PACKAGING_NOTE = (
     "every per-box effect is common to both terms of `margin_B(d) − margin_A(d)` "
     "and cancels exactly (DESIGN §0.1.2).")
 
+#: READ_RULE §0.F.2c, carried into the read-out beside the number it disarms.
+BINARY_SHA_CROSS_HOST_NOTE = (
+    "⛔ REPORTED, NEVER BINDING (READ_RULE §0.F.2c). `carc_rs_binary_sha` is "
+    "BOX-LOCAL staleness evidence and is NEVER compared across boxes: the `.so` is "
+    "NOT reproducible across machines. Measured on THIS pair of boxes at the SAME "
+    "`carc_rs_build` — `a4318fd59d9d8349` (Doctor) vs `8ae0b98427debb2e` "
+    "(laptop-wsl) — so a cross-host equality conjunct on the sha would void EVERY "
+    "healthy two-box run. ACROSS HOSTS the binding witness is `carc_rs_build` (the "
+    "build id, machine-independent by construction); WITHIN a host the sha binds "
+    "across the two cells (conjunct 1b), which is its true meaning.")
+
+
+#: `G-JCZ`: the per-record manifest witness → the per-host `PREFLIGHT_<host>_ENV.json`
+#: spelling of the SAME pinned artifact. Two spellings of one quantity (the ENV file is
+#: written by `preflight.sh`, the manifest by `scripts/jcz_match/match.py`).
+JCZ_ENV_KEY_OF = {"jcz_git_rev": "jcz_rev", "jcz_ai_class": "jcz_ai_class",
+                  "tile_set": "jcz_tiles"}
+
+JCZ_RECORD_WITNESS_SEMANTICS = (
+    "§3 VOIDS on 'any difference in the pinned artifacts on any host', so: records "
+    "that DISAGREE void; a value that differs from the pin voids; ABSENT FROM EVERY "
+    "RECORD voids. Absent from SOME records (match.py stamps `jcz_git_rev` as "
+    "`_git_rev(jcz_repo)`, which returns None on ANY subprocess failure — a box that "
+    "cannot answer stamps NULL on every game while running the pinned checkout) voids "
+    "UNLESS the pinned value is PRESENT AND EQUAL on EVERY host that played, at the "
+    "per-host address the read-rule names (verdicts/PREFLIGHT_<host>_ENV.json, "
+    "'verified ON EACH HOST'). No corroboration ⇒ the gap VOIDS.")
+
+
+def _jcz_per_host(envs, conf: dict) -> tuple:
+    """`G-JCZ`'s PER-HOST half (§0.F.1): the jar sha verified ON EACH HOST, plus the
+    pinned rev / ai class / tile set as that host's own pre-flight ENV recorded them.
+    An ABSENT per-host field is REPORTED (`ok: None`), never coerced to True — see
+    `gate_jcz`'s docstring for why absence is charged to `G-J13` and difference here.
+    """
+    per_host, host_ok = {}, True
+    for doc in envs:
+        h = doc.get("host")
+        checks, good = {}, True
+        for key, exp in (("jcz_jar_sha256", conf["JCZ_JAR_SHA256"]),
+                         ("jcz_rev", conf["JCZ_REV"]),
+                         ("jcz_ai_class", conf["JCZ_AI_CLASS"]),
+                         ("jcz_tiles", conf["JCZ_TILES"])):
+            got = doc.get(key)
+            if got is None:
+                checks[key] = {"observed": None, "expected": exp, "ok": None,
+                               "note": "ABSENT — REPORTED, not binding (see docstring)"}
+                continue
+            hit = (str(got) == exp) if key != "jcz_jar_sha256" else (
+                isinstance(got, str) and len(got) >= 8 and exp.startswith(got))
+            checks[key] = {"observed": got, "expected": exp, "ok": bool(hit)}
+            good &= bool(hit)
+        m = doc.get("jcz_jar_sha256_match")
+        if m is not None:
+            checks["jcz_jar_sha256_match_selfreport"] = {"observed": m,
+                                                         "ok": bool(m)}
+            good &= bool(m)
+        per_host[h] = {
+            "checks": checks, "path": doc.get("_path"),
+            "parse_error": doc.get("_parse_error"),
+            "jvm_version_string_REPORTED_NEVER_A_BRANCH_INPUT": doc.get("java"),
+            "ok": bool(good)}
+        host_ok &= bool(good)
+    return per_host, bool(host_ok)
+
 
 def gate_jcz(cells: dict, conf: dict, envs=(), hosts_played=()) -> tuple:
     """`G-JCZ` — **PER-HOST (§0.F.1).** JCZ provenance identical across cells AND
@@ -1703,7 +1823,52 @@ def gate_jcz(cells: dict, conf: dict, envs=(), hosts_played=()) -> tuple:
 
     ⚠️ The JVM *packaging* string differs by host BY DESIGN and is REPORTED, never a
     branch input — see `JVM_PACKAGING_NOTE`, printed with the read-out.
+
+    ⚠️ **§0.F.2-CLASS AMBIGUITY, DECLARED — an UNSTAMPED record is not a DIFFERENT
+    record.** `scripts/jcz_match/match.py:352` writes `jcz_git_rev` as
+    `_git_rev(jcz_repo)`, and `_git_rev` returns **`None` on ANY failure** of the
+    `git -C <jcz_repo> rev-parse HEAD` subprocess (`match.py:327-333`). A box where
+    that subprocess cannot answer therefore stamps a NULL on every one of its games
+    while running the correctly pinned checkout — so requiring the witness on EVERY
+    RECORD (the `resolve_witness` `consistent` flag, which conjoins full coverage with
+    non-disagreement) would void **every healthy run that used such a box**: the same
+    unsatisfiable-by-construction defect class as §0.F.2 / §0.F.2b / §0.F.2c.
+
+    The committed sentence conditions on a **DIFFERENCE** ("any difference in the
+    pinned artifacts on any host"), so each cell-level witness binds as:
+
+    * records that DISAGREE with each other → **VOIDS** (a mixed-provenance cell);
+    * a value that differs from the pin → **VOIDS**;
+    * ABSENT FROM EVERY RECORD → **VOIDS** (absent at every address still fails);
+    * absent from SOME records → **VOIDS UNLESS** the pinned value is witnessed on
+      **EVERY host that played**, at the per-host address the read-rule itself names
+      (`verdicts/PREFLIGHT_<host>_ENV.json`) — which is the artifact the committed
+      sentence points at ("verified ON EACH HOST"). No per-host corroboration, or a
+      host that played with no ENV witness at all, and the gap VOIDS. Both the
+      coverage and the corroboration are REPORTED per field.
     """
+    # ---- PER-HOST (§0.F.1) is resolved FIRST: it is also what corroborates a
+    # coverage gap in the per-record witnesses below.
+    per_host, host_ok = _jcz_per_host(envs, conf)
+    played = sorted({h for h in hosts_played if h})
+    hosts_without_env = [h for h in played if _match_host(h, per_host)[0] is None]
+
+    def _env_corroborates(key: str) -> bool:
+        """Is the pinned value for `key` witnessed, PRESENT AND EQUAL, on EVERY host
+        that played? Fail-closed: no hosts, a host with no ENV witness, an ABSENT
+        per-host field (`ok is None`) or a differing one all answer False."""
+        env_key = JCZ_ENV_KEY_OF.get(key)
+        if env_key is None or not played or hosts_without_env:
+            return False
+        for h in played:
+            k, _how = _match_host(h, per_host)
+            if k is None:
+                return False
+            chk = (per_host[k].get("checks") or {}).get(env_key)
+            if not (isinstance(chk, dict) and chk.get("ok") is True):
+                return False
+        return True
+
     want = {"jcz_git_rev": conf["JCZ_REV"], "jcz_ai_class": conf["JCZ_AI_CLASS"],
             "tile_set": conf["JCZ_TILES"]}
     obs, ok = {}, True
@@ -1712,9 +1877,28 @@ def gate_jcz(cells: dict, conf: dict, envs=(), hosts_played=()) -> tuple:
         good = True
         for key, exp in want.items():
             w = resolve_witness(c["records"], key)
-            hit = (w["value"] == exp) and w["consistent"]
+            # VALUE-level agreement: `resolve_witness`'s `distinct` is keyed by
+            # (value, address), so two records that agree on the value but resolved
+            # it at different addresses are NOT a disagreement.
+            values = {json.dumps(d["value"], sort_keys=True, default=str)
+                      for d in w["distinct"]}
+            agree = len(values) <= 1
+            present = w["n_resolved"] > 0
+            full = w["n_resolved"] == w["n_records"]
+            corroborated = _env_corroborates(key)
+            hit = bool(present and agree and (w["value"] == exp)
+                       and (full or corroborated))
             cell_obs[key] = {"observed": w["value"], "expected": exp,
-                             "resolved_at": w["resolved_at"], "ok": hit}
+                             "resolved_at": w["resolved_at"], "ok": hit,
+                             "matches_pin": bool(present and w["value"] == exp),
+                             "records_agree": agree,
+                             "values_seen": [json.loads(x) for x in sorted(values)],
+                             "records_with_witness": w["n_resolved"],
+                             "n_records": w["n_records"],
+                             "stamped_on_every_record": full,
+                             "coverage_gap_corroborated_on_every_host":
+                                 None if full else corroborated,
+                             "semantics": JCZ_RECORD_WITNESS_SEMANTICS}
             good &= hit
         wsha = resolve_witness(c["records"], "jcz_jar_sha256_16",
                                extra=("jcz_jar_sha256",))
@@ -1748,39 +1932,6 @@ def gate_jcz(cells: dict, conf: dict, envs=(), hosts_played=()) -> tuple:
                           default=str)
     identical = len({_sig(n) for n in obs}) == 1
 
-    # ---- PER-HOST (§0.F.1): the jar sha verified ON EACH HOST, plus the pinned
-    # rev / ai class / tile set as that host's own pre-flight recorded them.
-    per_host, host_ok = {}, True
-    for doc in envs:
-        h = doc.get("host")
-        checks, good = {}, True
-        for key, exp in (("jcz_jar_sha256", conf["JCZ_JAR_SHA256"]),
-                         ("jcz_rev", conf["JCZ_REV"]),
-                         ("jcz_ai_class", conf["JCZ_AI_CLASS"]),
-                         ("jcz_tiles", conf["JCZ_TILES"])):
-            got = doc.get(key)
-            if got is None:
-                checks[key] = {"observed": None, "expected": exp, "ok": None,
-                               "note": "ABSENT — REPORTED, not binding (see docstring)"}
-                continue
-            hit = (str(got) == exp) if key != "jcz_jar_sha256" else (
-                isinstance(got, str) and len(got) >= 8 and exp.startswith(got))
-            checks[key] = {"observed": got, "expected": exp, "ok": bool(hit)}
-            good &= bool(hit)
-        m = doc.get("jcz_jar_sha256_match")
-        if m is not None:
-            checks["jcz_jar_sha256_match_selfreport"] = {"observed": m,
-                                                         "ok": bool(m)}
-            good &= bool(m)
-        per_host[h] = {
-            "checks": checks, "path": doc.get("_path"),
-            "parse_error": doc.get("_parse_error"),
-            "jvm_version_string_REPORTED_NEVER_A_BRANCH_INPUT": doc.get("java"),
-            "ok": bool(good)}
-        host_ok &= bool(good)
-
-    played = sorted({h for h in hosts_played if h})
-    hosts_without_env = [h for h in played if _match_host(h, per_host)[0] is None]
     jvm = {h: v["jvm_version_string_REPORTED_NEVER_A_BRANCH_INPUT"]
            for h, v in per_host.items()}
     jar_by_host = {h: (v["checks"].get("jcz_jar_sha256") or {}).get("observed")
@@ -1792,6 +1943,17 @@ def gate_jcz(cells: dict, conf: dict, envs=(), hosts_played=()) -> tuple:
                      "ai_player": "LegacyAiPlayer"},
         "observed": obs,
         "identical_across_cells": identical,
+        "record_witness_coverage": {
+            key: {name: {
+                "records_with_witness": obs[name]["checks"][key][
+                    "records_with_witness"],
+                "n_records": obs[name]["checks"][key]["n_records"],
+                "stamped_on_every_record": obs[name]["checks"][key][
+                    "stamped_on_every_record"],
+                "coverage_gap_corroborated_on_every_host": obs[name]["checks"][key][
+                    "coverage_gap_corroborated_on_every_host"]}
+                for name in obs}
+            for key in want},
         "per_host": per_host,
         "per_host_ok": bool(host_ok),
         "hosts_that_played": played,
@@ -1893,15 +2055,32 @@ def _preflight_build_witness(preflights: list, envs: list) -> dict:
 
 def gate_tool(cells: dict, preflights: list, repo: Path, envs=(), hostres=None,
               hosts_played=()) -> tuple:
-    """`G-TOOL` — **(amended §0.F.2b)** three conjuncts, all fail-closed:
+    """`G-TOOL` — **(amended §0.F.2b + §0.F.2c)** four conjuncts, all fail-closed:
 
-    1. **CROSS-HOST build identity** — the `carc_rs` build id AND binary sha256
-       recorded in each host's `verdicts/PREFLIGHT_<host>_ENV.json` are EQUAL across
-       hosts. **Pre-flights are compared with pre-flights ONLY, never a pre-flight
-       against a manifest**: `carc_rs_build_id()` embeds `git rev-parse HEAD` at
-       CALL TIME, so that cross-comparison answers "did HEAD move between the two
-       moments?" and is a false positive by construction (the Stage-2 corrected
-       shape). MIXED BUILDS ACROSS BOXES FAIL.
+    1. **CROSS-HOST build identity — BINDS ON `carc_rs_build` (THE BUILD ID) ONLY.**
+       The build id recorded in each host's `verdicts/PREFLIGHT_<host>_ENV.json` is
+       EQUAL across hosts. **Pre-flights are compared with pre-flights ONLY, never a
+       pre-flight against a manifest**: `carc_rs_build_id()` embeds `git rev-parse
+       HEAD` at CALL TIME, so that cross-comparison answers "did HEAD move between
+       the two moments?" and is a false positive by construction (the Stage-2
+       corrected shape). MIXED BUILDS ACROSS BOXES FAIL. Absent from EVERY pre-flight
+       FAILS.
+
+       ⛔ **`carc_rs_binary_sha` IS NEVER COMPARED ACROSS HOSTS (§0.F.2c).** The
+       `.so` is **not machine-reproducible** — measured on this very pair of boxes at
+       the SAME build id (`a4318fd59d9d8349` vs `8ae0b98427debb2e`), three
+       independent pre-existing records. A cross-host equality conjunct on the sha
+       would void EVERY healthy two-box run. It is still COMPUTED and REPORTED as
+       `binary_sha_equal_across_hosts` — explicitly **NON-BINDING**, it may never
+       touch `ok`.
+
+    1b. **WITHIN-HOST staleness — BINDS ON `carc_rs_binary_sha` (§0.F.2c).** For each
+       host (attributed via the hostmap), the manifest binary sha is EQUAL across the
+       two cells and unmixed within a cell — the rebuilt-here / stale-wheel witness,
+       which is the comparison the sha is actually meaningful for. A sha that MOVED
+       within a host between cells FAILS. Evaluated and reported for EVERY host that
+       carries the witness. Absent at EVERY source — manifest AND pre-flights — FAILS
+       (`any_build_witness_present`).
     2. **CROSS-CELL code identity** — `our_git_rev` (falling back to
        `champion_manifest.code_commit`) equal across CELL A and CELL B, and
        CONSISTENT within each cell (a mixed-rev cell fails).
@@ -1924,14 +2103,19 @@ def gate_tool(cells: dict, preflights: list, repo: Path, envs=(), hostres=None,
     hostres = hostres or {}
 
     # ---- conjunct 1: pre-flight vs pre-flight, across hosts ------------------ #
+    # ⛔ §0.F.2c: the BUILD ID is the only cross-host branch input. The binary sha is
+    # computed and reported below, and is NEVER conjoined into `cross_host_ok` — the
+    # `.so` is not machine-reproducible, so that comparison could not pass on any
+    # healthy two-box run.
     pf = _preflight_build_witness(preflights, envs)
     build_ids = {h: b["build_id"] for h, b in pf.items() if b["build_id"] is not None}
     pf_shas = {h: b["binary_sha"] for h, b in pf.items()
                if b["binary_sha"] is not None}
     build_id_equal = len(set(build_ids.values())) <= 1
-    pf_sha_equal = len(set(pf_shas.values())) <= 1
+    pf_sha_equal = len(set(pf_shas.values())) <= 1      # REPORTED ONLY — NON-BINDING
+    have_build_id_witness = bool(build_ids)
     have_pf_witness = bool(build_ids or pf_shas)
-    cross_host_ok = bool(build_id_equal and pf_sha_equal)
+    cross_host_ok = bool(build_id_equal and have_build_id_witness)
 
     # ---- conjunct 2: cross-CELL code identity -------------------------------- #
     code_rev, code_ok = {}, True
@@ -1945,7 +2129,10 @@ def gate_tool(cells: dict, preflights: list, repo: Path, envs=(), hostres=None,
     revs = {json.dumps(v["value"], default=str) for v in code_rev.values()}
     code_equal = bool(code_ok and len(revs) == 1)
 
-    # ---- the manifest binary sha: BINDS WHEN PRESENT, within a host ---------- #
+    # ---- conjunct 1b: the binary sha BINDS WITHIN A HOST, across the two cells - #
+    # §0.F.2c: this — not the cross-host comparison — is the sha's true meaning: a
+    # rebuilt-here / staleness witness that catches a wheel changing under ONE box
+    # mid-run. Evaluated for EVERY host that carries the witness.
     man_sha: dict = {}
     for name, c in cells.items():
         by_host: dict = {}
@@ -1978,7 +2165,8 @@ def gate_tool(cells: dict, preflights: list, repo: Path, envs=(), hostres=None,
         equal_across_cells = len({json.dumps(v) for v in present}) <= 1
         good = (not mixed_in_cell) and equal_across_cells
         man_sha_detail[h] = {"per_cell": vals, "mixed_within_a_cell": mixed_in_cell,
-                             "equal_across_cells": equal_across_cells, "ok": good}
+                             "equal_across_cells": equal_across_cells, "ok": good,
+                             "n_cells_with_witness": len(present)}
         man_sha_ok &= good
     have_manifest_witness = bool(hosts_with_man_sha)
 
@@ -2014,13 +2202,21 @@ def gate_tool(cells: dict, preflights: list, repo: Path, envs=(), hostres=None,
             "preflight_build_id_by_host": build_ids,
             "preflight_binary_sha_by_host": pf_shas,
             "build_id_equal_across_hosts": build_id_equal,
+            "build_id_witness_present": have_build_id_witness,
             "binary_sha_equal_across_hosts": pf_sha_equal,
+            "binary_sha_equal_across_hosts_IS_NON_BINDING": True,
+            "binary_sha_cross_host_note": BINARY_SHA_CROSS_HOST_NOTE,
             "witness_present": have_pf_witness,
+            "binds_on": "carc_rs_build (the build id) ONLY",
             "ok": cross_host_ok,
-            "semantics": "PRE-FLIGHTS COMPARED WITH PRE-FLIGHTS ONLY — never against "
-                         "a manifest (carc_rs_build_id() embeds `git rev-parse HEAD` "
-                         "at call time, so that comparison is a false positive by "
-                         "construction). MIXED BUILDS ACROSS BOXES FAIL."},
+            "semantics": "§0.F.2c: BINDS ON THE BUILD ID ONLY. PRE-FLIGHTS COMPARED "
+                         "WITH PRE-FLIGHTS ONLY — never against a manifest "
+                         "(carc_rs_build_id() embeds `git rev-parse HEAD` at call "
+                         "time, so that comparison is a false positive by "
+                         "construction). MIXED BUILDS ACROSS BOXES FAIL; a build id "
+                         "absent from every pre-flight FAILS. ⛔ "
+                         "`binary_sha_equal_across_hosts` is REPORTED ONLY and may "
+                         "NEVER touch `ok` — the .so is not machine-reproducible."},
         "cross_cell_code_identity": {
             "observed": code_rev, "equal_across_cells": code_equal,
             "ok": code_equal,
@@ -2029,20 +2225,30 @@ def gate_tool(cells: dict, preflights: list, repo: Path, envs=(), hostres=None,
                          "fails)"},
         "manifest_binary_sha_when_present": {
             "by_cell_and_host": man_sha, "per_host": man_sha_detail,
+            "hosts_evaluated": hosts_with_man_sha,
             "present": have_manifest_witness, "ok": man_sha_ok,
-            "semantics": "§0.F.2b: this harness does NOT write `carc_rs_binary_sha`, "
-                         "so it BINDS ONLY WHEN PRESENT — and then WITHIN a host "
-                         "across the two cells, because the .so is not reproducible "
-                         "across machines"},
+            "binds_on": "carc_rs_binary_sha, WITHIN a host, across the two cells",
+            "semantics": "CONJUNCT 1b (§0.F.2b + §0.F.2c): this harness does not "
+                         "reliably write `carc_rs_binary_sha`, so it BINDS ONLY WHEN "
+                         "PRESENT — and then WITHIN a host across the two cells (host "
+                         "via the hostmap), because the .so is not reproducible "
+                         "across machines. A sha that MOVED within a host between "
+                         "cells FAILS; a sha MIXED within one cell on one host FAILS. "
+                         "Absent at EVERY source (manifest AND pre-flights) FAILS via "
+                         "`any_build_witness_present`."},
         "any_build_witness_present": bool(have_pf_witness or have_manifest_witness),
         "commit_range": {**primary, "manifest_commit_resolved_at": man_at},
         "commit_range_by_preflight_host": ranges,
         "hosts_that_played": sorted({h for h in hosts_played if h}),
         "wheel_relevant_paths": list(WHEEL_RELEVANT_PATHS),
-        "semantics": "THREE CONJUNCTS (§0.F.2b): cross-HOST build identity from the "
-                     "pre-flights; cross-CELL code identity from the manifests; and "
-                     "the commit range (NON-EMPTY or UNRESOLVED VOIDS, EMPTY or "
-                     "DEGENERATE PASSES). ABSENT AT EVERY SOURCE STILL FAILS."}
+        "semantics": "FOUR CONJUNCTS (§0.F.2b + §0.F.2c): (1) cross-HOST build "
+                     "identity from the pre-flights, BINDING ON THE BUILD ID ONLY "
+                     "(the cross-host binary-sha comparison is REPORTED, NEVER "
+                     "BINDING); (1b) within-HOST binary-sha identity across the two "
+                     "cells, host via the hostmap; (2) cross-CELL code identity from "
+                     "the manifests; and (3) the commit range (NON-EMPTY or "
+                     "UNRESOLVED VOIDS, EMPTY or DEGENERATE PASSES). ABSENT AT EVERY "
+                     "SOURCE STILL FAILS."}
 
 
 def gate_n(n_common, n_a, n_b) -> tuple:
@@ -2677,28 +2883,31 @@ def render(v: dict) -> str:
     ap("")
     gt = v["precondition_detail"]["G-TOOL"]
     tool = gt["commit_range"]
-    ap("### `G-TOOL` — the three conjuncts (§0.F.2b)")
+    ap("### `G-TOOL` — the four conjuncts (§0.F.2b + §0.F.2c)")
     ap("")
-    ap(f"1. CROSS-HOST build identity (pre-flights vs pre-flights ONLY): build id by "
-       f"host {gt['cross_host_build_identity']['preflight_build_id_by_host']} · "
-       f"binary sha by host "
-       f"{gt['cross_host_build_identity']['preflight_binary_sha_by_host']} · "
-       f"equal: build id "
-       f"{gt['cross_host_build_identity']['build_id_equal_across_hosts']}, sha "
-       f"{gt['cross_host_build_identity']['binary_sha_equal_across_hosts']} — "
+    chi = gt["cross_host_build_identity"]
+    ap(f"1. CROSS-HOST build identity (pre-flights vs pre-flights ONLY), **BINDING ON "
+       f"`carc_rs_build` (THE BUILD ID) ALONE**: build id by host "
+       f"{chi['preflight_build_id_by_host']} · equal = "
+       f"{chi['build_id_equal_across_hosts']} · witness present = "
+       f"{chi['build_id_witness_present']} · **conjunct ok = {chi['ok']}** — "
        f"**MIXED BUILDS ACROSS BOXES FAIL**")
+    ap(f"   - binary sha by host {chi['preflight_binary_sha_by_host']} · equal = "
+       f"{chi['binary_sha_equal_across_hosts']} — **NON-BINDING, REPORTED ONLY**")
+    ap(f"   - {chi['binary_sha_cross_host_note']}")
+    msh = gt["manifest_binary_sha_when_present"]
+    ap(f"1b. WITHIN-HOST staleness — `carc_rs_binary_sha` across the two cells, host "
+       f"via the hostmap: hosts evaluated {msh.get('hosts_evaluated')} · per host "
+       f"{msh['per_host']} · present = {msh['present']} · **ok = {msh['ok']}** "
+       f"(a sha that MOVED within a host between cells FAILS)")
     ap(f"2. CROSS-CELL code identity (`our_git_rev` → "
        f"`champion_manifest.code_commit`): equal across cells = "
        f"{gt['cross_cell_code_identity']['equal_across_cells']} · "
        + " · ".join(f"`{n}` = {o['value']} (at `{o['resolved_at']}`, consistent="
                     f"{o['consistent_across_records']})"
                     for n, o in gt["cross_cell_code_identity"]["observed"].items()))
-    ap(f"3. the commit range — below. Manifest `carc_rs_binary_sha` binds WHEN "
-       f"PRESENT (this harness does not write it): present="
-       f"{gt['manifest_binary_sha_when_present']['present']}, ok="
-       f"{gt['manifest_binary_sha_when_present']['ok']}, per host "
-       f"{gt['manifest_binary_sha_when_present']['per_host']}. Any build witness "
-       f"present at all: {gt['any_build_witness_present']} "
+    ap(f"3. the commit range — below. Any build witness present at all: "
+       f"{gt['any_build_witness_present']} "
        f"(ABSENT AT EVERY SOURCE STILL FAILS).")
     ap("")
     ap("#### the commit-range delta, on its own line")
