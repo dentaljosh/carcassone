@@ -107,23 +107,26 @@ corresponding rate and requires a re-measure, not a re-scale.
 Banked and reusable: **S1 551**, **S2 103**. Additional games
 `= ⌈(n₁−551)/1.574⌉ + ⌈(n₂−103)/0.206⌉`. Cost basis §R4-5.
 
-| option | n₁ | n₂ | **+games** (S1 / S2) | gen wh | scoring wh | **TOTAL wh**¹ | at smoke `c_IF` | wall h | ⚠️ false-VOID² |
+| option | n₁ | n₂ | **+games** (S1 / S2) | gen wh | scoring wh | **TOTAL wh**¹ | at smoke `c_IF` | wall h | false-VOID² S1 leg / S2 leg / **EITHER** |
 |---|---|---|---|---|---|---|---|---|---|
-| FULL targets | 1,350 | 1,100 | **5,348** (508 / 4,840) | 552.6 | 929.0 | **1,493** | 1,082 | ≈32 | 0.45% |
-| all-floors³ | 1,283 | 1,045 | **5,039** (466 / 4,573) | 520.7 | 882.8 | **1,414** | 1,024 | ≈30 | 0.34% |
-| **S2 at 700** (PLAN_J's own floor) | 1,350 | 700 | **3,407** (508 / 2,899) | 352.1 | 819.0 | **1,181** | 819 | ≈26 | 0.97% |
-| S2 at 500 | 1,350 | 500 | **2,436** (508 / 1,928) | 251.7 | 764.0 | **1,025** | 687 | ≈23 | 1.38% |
-| S2 at 400 | 1,350 | 400 | **1,950** (508 / 1,442) | 201.5 | 736.5 | **947** | 621 | ≈21 | **3.74%** |
-| **S1 ONLY** (rung 3 dropped) | 1,350 | — | **508** (508 / —) | 52.5 | 626.5 | **684** | 407 | ≈16 | 0.38% (S1) |
+| FULL targets | 1,350 | 1,100 | **5,348** (508 / 4,840) | 552.6 | 929.0 | **1,493** | 1,082 | ≈32 | 0.38 / 0.45 / **0.82%** |
+| all-floors³ | 1,283 | 1,045 | **5,039** (466 / 4,573) | 520.7 | 882.8 | **1,414** | 1,024 | ≈30 | 0.28 / 0.34 / **0.62%** |
+| **S2 at 700** (PLAN_J's own floor) | 1,350 | 700 | **3,407** (508 / 2,899) | 352.1 | 819.0 | **1,181** | 819 | ≈26 | 0.38 / 0.97 / **1.35%** |
+| S2 at 500 | 1,350 | 500 | **2,436** (508 / 1,928) | 251.7 | 764.0 | **1,025** | 687 | ≈23 | 0.38 / 1.38 / **1.75%** |
+| S2 at 400 | 1,350 | 400 | **1,950** (508 / 1,442) | 201.5 | 736.5 | **947** | 621 | ≈21 | 0.38 / 3.74 / **4.10%** |
+| **S1 ONLY** (rung 3 dropped) | 1,350 | — | **508** (508 / —) | 52.5 | 626.5 | **684** | 407 | ≈16 | 0.38 / — / **0.38%** |
 
 ¹ **TOTAL is not gen + scoring**: it also carries champ picks (`(n₁+n₂) × 13.755` worker-s) and,
 where rung 3 runs, `D-DRAW`'s 2.0 wh. Both are small; both are in the total.
-² ⭐ **REQUIRED reading before choosing (R4.1/C2).** The R4-3 exclusion bound is
+² ⭐ **REQUIRED reading before choosing (R4.1/C2, R4.2/C7).** The R4-3 exclusion bound is
 `⌈0.005 × n⌉`, so it **shrinks with the floor while the collision rate does not**: at S2 = 400 the
 bound is **2** and, at the observed 0.181%/position density (λ = 0.73), the chance of a **spurious
-VOID** — the stratum voided by ordinary transposition luck rather than by any defect — is
-**≈3.7%**, roughly **8× the FULL option's 0.45%**. **The cheapest floor buys both the least power
-and the highest spurious-VOID risk.** Poisson, `P(X > ⌈0.005n⌉)`.
+VOID** — that stratum voided by ordinary transposition luck rather than by any defect — is
+**3.74%**. **`EITHER` is the number that matters for the decision**: the probability that *some*
+stratum voids, `1 − (1−p_S1)(1−p_S2)` — **4.10% at S2 = 400 versus 0.82% at FULL, a 5× spread.**
+(Presenting only the S2 leg would understate every row, since S1 can void independently.)
+**The cheapest floor buys both the least power and the highest spurious-VOID risk.** Poisson,
+`P(X > ⌈0.005n⌉)` per leg, at the observed density.
 ³ Row renamed from "committed FLOORS" (R4.1/C4): these are **targets**, and a target of
 1,283/1,045 implies `G-COMPLETE` **gate** floors of `⌈0.95·n⌉` = **1,219 / 993**. The FULL row's
 targets imply gate floors 1,283/1,045 — which is why the two rows look confusingly alike and why
@@ -181,34 +184,52 @@ an empirical property that must be *measured*, and it was.
 2. **Intra-run cross-stratum collisions.** An S1↔S2 digest collision excludes the **S2** rid (S1 is
    the B-ladder's primary; S2 is the rider), regardless of band. Two strata sharing a board would
    contaminate the independent-replication rider that compares them.
-3. **The exclusion is OUTCOME-INDEPENDENT by construction and that is why it is legitimate.** The
+   ⚠️ **This rule is measured by the SEVENTH comparison, `s1_vs_s2` (R4.1/B4).** Without it the
+   rule governed a case **no comparison could see** — and it is the **largest** unmeasured case,
+   not a corner: calibrating a per-pair collision probability from the single observed event gives
+   **≈1–2 expected S1×S2 events at FULL** (1,350 × 1,100 pairs), **≈3.4× the base↔extension
+   count** — the reviewer's independent estimate was 1.29 events and 2.7×; the spread is the
+   assumed size of the spent reference corpus, and every version of the model agrees the case is
+   order-1 and the biggest one left unwatched.
+3. **Same-rank pairs (135e9×135e9, 137e9×137e9, S1×S1, S2×S2) are OUT OF SCOPE BY CONSTRUCTION,
+   and that is stated rather than left implicit (R4.1/R4).** No comparison compares a stratum-band
+   to itself, so no within-stratum duplicate board can be detected and **no exclusion can fire on
+   one**. Should such a comparison ever be added, the total order is completed by a deterministic
+   tiebreak — **the lexicographically-later `rid` is excluded** — so the rule is total in advance
+   rather than after the first surprise. **Named residual:** within-stratum transposition
+   duplicates are **unmeasured**; two positions in one stratum sharing a board would be treated as
+   independent observations by a bootstrap that clusters on `root_id`. A within-stratum digest
+   uniqueness check is cheap and is **recommended for a future prereg** — it is deliberately *not*
+   added here, because adding a conjunct at freeze time is exactly the move this discipline
+   forbids.
+4. **The exclusion is OUTCOME-INDEPENDENT by construction and that is why it is legitimate.** The
    digest is a function of the board alone, computed at corpus-build time, before any value
    exists. It is the opposite of the 2026-08-14 open-city void, whose exclusion was rejected
    precisely because it was *not* outcome-independent.
-4. **It happens before the positions are frozen.** Excluded rids never enter `POSITIONS_PLAN`,
+5. **It happens before the positions are frozen.** Excluded rids never enter `POSITIONS_PLAN`,
    never reach a scoring leg, and **the completion floors are evaluated on the post-exclusion
    count** — so an exclusion can never be used to explain away a shortfall after the fact.
-5. **The hard bound — ONE spelling, in both documents (R4.1/B3):**
+6. **The hard bound — ONE spelling, in both documents (R4.1/B3):**
    **`n_excluded ≤ ⌈0.005 × qualifying_deduped(stratum)⌉`**, per stratum. Above it, the stratum is
    **VOID** — not excluded, not disclosed-and-continued. *(R3 carried "≤0.5% AND ≤15 absolute" here
    and the `⌈·⌉` form in the READ_RULE — 6 vs 7 at n₁ = 1,350. The `⌈·⌉` form wins, being the
    binding document's. The "≤15 absolute" conjunct is **deleted as inert**: it can only bind when
    `0.005n > 15`, i.e. `n > 3,000`, which no option in R4-2.2 reaches.)*
-6. **The bound is evaluated ONCE, and a VOID is not curable by generating more (R4.1/R1).** It is
+7. **The bound is evaluated ONCE, and a VOID is not curable by generating more (R4.1/R1).** It is
    evaluated at the **first `POSITIONS_PLAN` freeze**, against the denominator recorded in
    `RUN/FLOORS.json` — **not** against the realized corpus size. Otherwise the bound would grow
    with the corpus and R4-7's threat 1 ("generate more games if supply is short") would double as
    a way to buy headroom for exclusions after seeing them. **A VOID stratum stays void; the answer
    is a new prereg, never a bigger corpus.**
-7. **Why 0.5%.** The realized rate is **1 / 551 = 0.181%**, so the bar carries ≈2.8× headroom: it
+8. **Why 0.5%.** The realized rate is **1 / 551 = 0.181%**, so the bar carries ≈2.8× headroom: it
    passes the observed world comfortably and still fails a world in which transposition
    degeneracy is a *property of the generator* rather than an accident. That second world is a
    different finding — it would mean champion self-play revisits boards at a rate that makes
    "fresh corpus" the wrong description — and it must surface as a VOID, not be absorbed silently.
    ⚠️ **The bound's tightness is floor-dependent and the cheapest floor is the most fragile:** see
-   R4-2.2's false-VOID column (0.45% at FULL vs **3.74%** at S2 = 400).
-7. **Always reported**, on every branch: the count, the rate, the excluded rids, and the bound
-   they were measured against — whether or not any exclusion occurred.
+   R4-2.2's false-VOID column (0.45% at FULL vs **3.74%** at S2 = 400, S2 leg).
+9. **Always reported**, on every branch: the count, the rate, the excluded rids, the bound they
+   were measured against, and **`denominator_source`** — whether or not any exclusion occurred.
 
 ---
 
@@ -367,7 +388,7 @@ invocation over a widened band. Exact conjunct: `READ_RULE.md` §2.
 
 | item | change |
 |---|---|
-| **W5** | `GATE_DISJOINT.json` gains (i) the R4-3 **exclusion** semantics — per-comparison collision lists, the excluded-rid set, the rate, the bound, and `void` vs `excluded` as distinct outcomes; and (ii) **a SIXTH comparison, `base_vs_extension`, per stratum, all three layers** (R4.1/B1) — the intra-stratum cross-band case R3's contiguous band made impossible and R4's band structure makes expected. The total order of R4-3.1 decides which side is excluded |
+| **W5** | `GATE_DISJOINT.json` gains: (i) the R4-3 **exclusion** semantics — per-comparison collision lists, the excluded-rid set, the rate, the bound, **`denominator_source`** (R4.1/R5 — it is an address `G-DISJOINT` reads, and **ABSENT IS FAIL**, so a builder working from this table must emit it), and `void` vs `excluded` as distinct outcomes; (ii) a **SIXTH** comparison **`base_vs_extension`**, per stratum, all three layers (R4.1/B1) — the intra-stratum cross-band case R3's contiguous band made impossible and R4's band structure makes expected; and (iii) a **SEVENTH** comparison **`s1_vs_s2`**, all three layers (R4.1/B4) — the *largest* previously-unmeasured case (≈1–2 expected events at FULL, ≈3.4× base↔extension), and the one R4-3 rule 2 already claimed to govern. Rid and root layers cost nothing extra there, being zero-tolerance already. The total order of R4-3 rule 1 decides which side is excluded |
 | **two-box layer** | **DELIVERED `1670f030`** — `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests (R4-4). No further W-work; its acceptance check is `stage_chunks verify`, post-corpus |
 | **W6** | (i) **run ALL gates and aggregate — never `set -e`-abort on the first failure** (that is why `GATE_DRAW.json` never emitted); (ii) apply R4-3's exclusions **before** freezing `POSITIONS_PLAN`; (iii) size from the R4-2 rates |
 | **W10** | extension-band generation: base + extension (+ optional top-up) as **separate invocations into separate directories**, each with its own `verify-champgames` file (the §0.L pattern, now three-way) |
@@ -386,10 +407,17 @@ The floor is an owner parameter, so the order in which it is chosen and frozen i
    games_extension_s2, sub_ranges}`.
 4. **The blind commit**: the R4 pair **and `FLOORS.json`, in ONE commit.**
 5. **Only then is the extension band claimed**, and generation starts.
+6. **Corpus build** (census → positions → champ picks → gates).
+7. **`stage_chunks verify` — the two-box acceptance check — runs HERE (R4.1/R6): after the corpus
+   build, beside the 4b address audit, BEFORE the first scoring leg.** It re-derives the chunking
+   against the real corpus and is the step that converts R4-4's signatures (given on delivered
+   code) into evidence about *this* corpus. **A failure sends R4 single-box** — a decision that is
+   free at this point and expensive one leg later.
+8. **Then** 4b-pre's smokes have already priced the legs, and scoring runs: S1, then S2.
 
 ⚠️ **`FLOORS.json` must exist before the extension band is claimed and before one game is
 generated.** A floor chosen — or adjusted — after supply is known is a floor fitted to the data,
-which is the failure `G-COMPLETE` exists to prevent. It is also the denominator R4-3.6's
+which is the failure `G-COMPLETE` exists to prevent. It is also the denominator R4-3 rule 7's
 exclusion bound is evaluated against, so it must predate the corpus for that reason too.
 *(Note the ordering interacts with R4-4: `ALLOCATION.conf` is sized on the committed `c`, so step 1
 may also revise the allocation — a wall-clock knob, never a value.)*
