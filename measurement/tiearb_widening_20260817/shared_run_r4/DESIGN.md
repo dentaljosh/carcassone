@@ -43,6 +43,89 @@ R4's W-delta is §8 and is small.
 
 ---
 
+## R4-0. Pre-blind amendments — 2026-08-18 (rev R4.3, the last)
+
+The W-code is otherwise complete at **`5c517cec`** (103 tests). Three items closed here; after
+this the pair does not move again. **No gate conjunct's value changes** — R4-0.1 fixes an
+ambiguity in how a conjunct is *counted*, R4-0.2 supplies the *mechanism* two rules needed in
+order to both be true at once, and R4-0.3 is a disclosure.
+
+### R4-0.1 RULING — seven comparisons, `base_vs_extension` carrying a `by_stratum` block. **RATIFIED AS BUILT.**
+
+§2b(vi) said "three layers on `base_vs_extension` **per stratum**" while fixing the total at
+**SEVEN** — and two strata make eight. The builder resolved it as **one** comparison keyed
+`base_vs_extension` whose **top-level layers are summed counts** across strata, plus a
+**`by_stratum`** block carrying each stratum's own three layers. **Ratified**, and the semantics
+are written here so they are the rule's text and not a private convention of the code:
+
+- **Summation is exact for the zero-tolerance layers.** Counts are non-negative, so
+  `sum == 0 ⟺ every stratum == 0`. Conjunct §2b(i) — rid and root intersections must be zero on
+  **every** comparison — therefore evaluates correctly on the summed top-level layer, with no
+  weakening and no special case.
+- **Nothing the digest conjuncts need is lost.** The bound is evaluated **per stratum** on
+  `digest_exclusions.<stratum>.n_excluded`, which is a separate block; the comparison's digest
+  layer is a *collision* count, and every collision is resolved individually by the total order
+  regardless of which stratum it sat in.
+- **Attribution on failure comes from `by_stratum`**, which is why the block is required rather
+  than optional: a summed count that fails must still say which stratum failed.
+- **The comparison count stays SEVEN** and READ_RULE §2b(vi)'s conjunct is unchanged in value.
+
+*The alternative — eight keys `s1_base_vs_extension` / `s2_base_vs_extension` — is a ten-line
+change but would require amending a gate conjunct's stated count at freeze time, for zero
+informational gain. The cheaper and less invasive route is also the correct one here.*
+
+### R4-0.2 RULING — the bound's evaluation mechanism. **BLESSED, and it is now the rule's text.**
+
+⭐ **A real defect, caught late: R4-3 rules 5 and 7 as written were JOINTLY VACUOUS.** Rule 5
+applies exclusions *before* the `POSITIONS_PLAN` freeze; rule 7 evaluates the bound *at* that
+freeze. Together they guarantee the frozen corpus reports `n_excluded == 0` — **the bound could
+never bind, on any corpus, however degenerate.** A bound that cannot fire is not a bound, and this
+is the same class as the unsatisfiable-conjunct family this campaign has been killing since
+`G-CAP` — only inverted: not fail-always, but **pass-always**.
+
+**The blessed flow — the only one under which both rules hold:**
+
+1. **Probe build** — positions built **without** exclusions (the two-pass, playout-free shape the
+   S2 build already uses with `--allow-missing-champ-picks`; costs no scoring).
+2. **Gate on the probe** — `G-DISJOINT` runs against it and measures the **true** collision count.
+   **This is the count the bound is judged on**, against the denominator frozen in
+   `RUN/FLOORS.json`.
+3. **Apply exclusions**, then the **final build carries them forward** (`--carry-exclusions`), so
+   no excluded rid ever reaches a leg — rule 5, satisfied on the artifact that is actually scored.
+4. **The final `GATE_DISJOINT.json` reports both**: `carried` (the probe's exclusions) and
+   `residual` (fresh collisions in the final build, **expected 0**).
+
+**The bound is evaluated on `carried + residual`**, once, at the final gate — which keeps the
+anti-gaming property intact (one evaluation, frozen denominator) while making the quantity
+evaluated the *real* collision count rather than a post-exclusion zero. **A nonzero `residual` is
+additionally a determinism defect** — the probe and the final build disagreed about the same
+corpus — and must be reported as such, not quietly folded into the total.
+
+### R4-0.3 DISCLOSURE — the accidental 138e9 generation burst, and why the top-up band is clean
+
+During the builder's test round an accidental **~2-minute generation burst ran into the reserved
+`138000000000` top-up band**. Cause, stated plainly because the mechanism matters: a guard-case
+test that had been **out-of-range under R3 became LEGAL under R4's wider band arithmetic** and so
+exec'd the **real** launcher at W48 instead of failing its guard. It was killed main-first with
+workers reaped, and ~358 artifacts landed on the share. **The entire `gen_topup/` directory was
+then verified and DELETED: the `138e9` band is clean, no registry row was ever claimed, and no
+repo state was touched.** The deletion is load-bearing, not hygiene — **had those artifacts
+survived, a later *licensed* top-up would have silently resumed into them via `--shared-claim`**,
+inheriting games generated by a test harness under no prereg into a range the prereg licenses,
+with the supply count quietly wrong and nothing in any gate able to see it. Because no artifact
+survives, the band's seeds are unspent and the top-up clause is exactly as clean as it reads.
+Guard added: **`--dry-run` / `WIDENING_GEN_DRY_RUN`** (resolves everything, prints `argv`, creates
+nothing), and **all tests now use it** — a test that can exec a production launcher is a
+launcher with a missing mode, not a test with a bad argument.
+
+⭐ **The same fixture round caught and fixed a real EXCLUSION-ORDER INVERSION**: on a
+spent-corpus collision the **banked** side would have been excluded rather than the R4 side —
+which would have mutated a spent corpus's membership *and* left the duplicate position in the
+fresh corpus, **the exact event class that killed R3.3**. It is now pinned by a deliberate fixture
+collision, so the total order of R4-3 rule 1 is tested rather than merely asserted.
+
+---
+
 ## R4-1. What changes, in one table
 
 | # | change | why |
@@ -206,21 +289,28 @@ an empirical property that must be *measured*, and it was.
    digest is a function of the board alone, computed at corpus-build time, before any value
    exists. It is the opposite of the 2026-08-14 open-city void, whose exclusion was rejected
    precisely because it was *not* outcome-independent.
-5. **It happens before the positions are frozen.** Excluded rids never enter `POSITIONS_PLAN`,
-   never reach a scoring leg, and **the completion floors are evaluated on the post-exclusion
-   count** — so an exclusion can never be used to explain away a shortfall after the fact.
+5. **It happens before the positions are frozen.** Excluded rids never enter the **final**
+   `POSITIONS_PLAN`, never reach a scoring leg, and **the completion floors are evaluated on the
+   post-exclusion count** — so an exclusion can never be used to explain away a shortfall after
+   the fact. ⚠️ **Read this together with rule 7's probe flow (R4-0.2):** applied naively — to the
+   only build there is — this rule makes rule 7's bound vacuous, because the frozen corpus would
+   then always report `n_excluded == 0`. The probe build is what lets both rules be true.
 6. **The hard bound — ONE spelling, in both documents (R4.1/B3):**
    **`n_excluded ≤ ⌈0.005 × qualifying_deduped(stratum)⌉`**, per stratum. Above it, the stratum is
    **VOID** — not excluded, not disclosed-and-continued. *(R3 carried "≤0.5% AND ≤15 absolute" here
    and the `⌈·⌉` form in the READ_RULE — 6 vs 7 at n₁ = 1,350. The `⌈·⌉` form wins, being the
    binding document's. The "≤15 absolute" conjunct is **deleted as inert**: it can only bind when
    `0.005n > 15`, i.e. `n > 3,000`, which no option in R4-2.2 reaches.)*
-7. **The bound is evaluated ONCE, and a VOID is not curable by generating more (R4.1/R1).** It is
-   evaluated at the **first `POSITIONS_PLAN` freeze**, against the denominator recorded in
-   `RUN/FLOORS.json` — **not** against the realized corpus size. Otherwise the bound would grow
-   with the corpus and R4-7's threat 1 ("generate more games if supply is short") would double as
-   a way to buy headroom for exclusions after seeing them. **A VOID stratum stays void; the answer
-   is a new prereg, never a bigger corpus.**
+7. **The bound is evaluated ONCE, on the PROBE's collision count, against the frozen denominator
+   (R4.1/R1 + R4-0.2's mechanism).** The evaluated quantity is
+   **`carried + residual`** — the exclusions measured on the **probe** build (which carries none)
+   plus any fresh collisions in the **final** build (expected `0`) — judged against the
+   denominator recorded in `RUN/FLOORS.json`, **not** against the realized corpus size. Otherwise
+   the bound would grow with the corpus and R4-7's threat 1 ("generate more games if supply is
+   short") would double as a way to buy headroom for exclusions after seeing them. **A nonzero
+   `residual` is separately a determinism defect** — probe and final disagreed about one corpus —
+   and is reported as such, never quietly folded in. **A VOID stratum stays void; the answer is a
+   new prereg, never a bigger corpus.**
 8. **Why 0.5%.** The realized rate is **1 / 551 = 0.181%**, so the bar carries ≈2.8× headroom: it
    passes the observed world comfortably and still fails a world in which transposition
    degeneracy is a *property of the generator* rather than an accident. That second world is a
@@ -388,10 +478,10 @@ invocation over a widened band. Exact conjunct: `READ_RULE.md` §2.
 
 | item | change |
 |---|---|
-| **W5** | `GATE_DISJOINT.json` gains: (i) the R4-3 **exclusion** semantics — per-comparison collision lists, the excluded-rid set, the rate, the bound, **`denominator_source`** (R4.1/R5 — it is an address `G-DISJOINT` reads, and **ABSENT IS FAIL**, so a builder working from this table must emit it), and `void` vs `excluded` as distinct outcomes; (ii) a **SIXTH** comparison **`base_vs_extension`**, per stratum, all three layers (R4.1/B1) — the intra-stratum cross-band case R3's contiguous band made impossible and R4's band structure makes expected; and (iii) a **SEVENTH** comparison **`s1_vs_s2`**, all three layers (R4.1/B4) — the *largest* previously-unmeasured case (≈1–2 expected events at FULL, ≈3.4× base↔extension), and the one R4-3 rule 2 already claimed to govern. Rid and root layers cost nothing extra there, being zero-tolerance already. The total order of R4-3 rule 1 decides which side is excluded |
+| **W5** | `GATE_DISJOINT.json` gains: (0) the **probe → gate → apply → carry-forward** flow of R4-0.2 (`--carry-exclusions`), with the final report carrying **`carried`** and **`residual`** per stratum — the quantity the bound is judged on is `carried + residual`; (i) the R4-3 **exclusion** semantics — per-comparison collision lists, the excluded-rid set, the rate, the bound, **`denominator_source`** (R4.1/R5 — it is an address `G-DISJOINT` reads, and **ABSENT IS FAIL**, so a builder working from this table must emit it), and `void` vs `excluded` as distinct outcomes; (ii) a **SIXTH** comparison **`base_vs_extension`** — one key, summed top-level layers plus the required `by_stratum` block (R4-0.1) — the intra-stratum cross-band case R3's contiguous band made impossible and R4's band structure makes expected; and (iii) a **SEVENTH** comparison **`s1_vs_s2`**, all three layers (R4.1/B4) — the *largest* previously-unmeasured case (≈1–2 expected events at FULL, ≈3.4× base↔extension), and the one R4-3 rule 2 already claimed to govern. Rid and root layers cost nothing extra there, being zero-tolerance already. The total order of R4-3 rule 1 decides which side is excluded |
 | **two-box layer** | **DELIVERED `1670f030`** — `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests (R4-4). No further W-work; its acceptance check is `stage_chunks verify`, post-corpus |
-| **W6** | (i) **run ALL gates and aggregate — never `set -e`-abort on the first failure** (that is why `GATE_DRAW.json` never emitted); (ii) apply R4-3's exclusions **before** freezing `POSITIONS_PLAN`; (iii) size from the R4-2 rates |
-| **W10** | extension-band generation: base + extension (+ optional top-up) as **separate invocations into separate directories**, each with its own `verify-champgames` file (the §0.L pattern, now three-way) |
+| **W6** | (i) **run ALL gates and aggregate — never `set -e`-abort on the first failure** (that is why `GATE_DRAW.json` never emitted); (ii) build the **probe**, gate it, then carry R4-0.2's exclusions into the **final** `POSITIONS_PLAN`; (iii) size from the R4-2 rates |
+| **W10** | (i) extension-band generation: base + extension (+ optional top-up) as **separate invocations into separate directories**, each with its own `verify-champgames` file (the §0.L pattern, now three-way); (ii) **`--dry-run` / `WIDENING_GEN_DRY_RUN`** — resolves everything, prints `argv`, **creates nothing** — and **all tests use it** (R4-0.3: a test that can exec a production launcher is a launcher missing a mode) |
 | **W3** | `G-BAND`'s N-file form and the exclusion counters surfaced in the verdict block |
 | carried unchanged | W2 · W7 · W8 + fixtures · W9 (`D-DRAW`) · `STAGE1B_LADDER.json` · the 4a/4b harness |
 
