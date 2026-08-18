@@ -1,17 +1,20 @@
 # TIE-ARBITER WIDENING — SHARED RUN, MECHANICAL READ RULE (rungs 2 + 3)
 
-> **STATUS: BLIND PREREGISTRATION, DRAFT (revision R1). NOT LAUNCHED. NO NUMBER OF THIS RUN
+> **STATUS: BLIND PREREGISTRATION, DRAFT (revision R2). NOT LAUNCHED. NO NUMBER OF THIS RUN
 > EXISTS.**
 >
 > ⚠️ **BLIND-ORDER REQUIREMENT — NOT YET SATISFIED.** Drafted in an isolated worktree under
 > the main-tree commit freeze. **This file and [`DESIGN.md`](DESIGN.md) must be committed to
-> the MAIN tree, in ONE commit, after the DESIGN §9 W-code merge and before the band claim and
-> before one position is scored.** A worktree commit does not satisfy blindness.
+> the MAIN tree, in ONE commit, after the DESIGN §9 W-code merge and its step-4a acceptance
+> test, and before the band claim and before one position is scored.** A worktree commit does
+> not satisfy blindness.
 >
-> Revision R1 folds in [`REVIEW_R1.md`](REVIEW_R1.md): **four gates in the first draft would
-> have voided a healthy run** (fictional or misspelled addresses, an unsatisfiable prefix
-> conjunct, and an identity that is false by design ~16% of the time), and two branch tables
-> were not total. Disposition: DESIGN §13.
+> Revisions: **R1** folded in [`REVIEW_R1.md`](REVIEW_R1.md) (four gates that would have voided
+> a healthy run; two non-total branch tables). **R2** folds in [`REVIEW_R2.md`](REVIEW_R2.md),
+> which failed R1 on nine further defects of the same class — a `git_rev` conjunct that fails
+> healthy runs twice over, an acceptance test sequenced before the corpus it audits, a sealed
+> file that was simultaneously forbidden-to-open and a fallback the reader must open, and four
+> addresses that exist only on the ARB leg. Disposition of all 30: DESIGN §13.
 >
 > **SINGLE USE. SPENT ON LANDING.** One adjudication, one analyzer invocation, one read-out
 > covering **both** rungs. No re-read, no second pass, no top-up at any `z`. The only
@@ -24,50 +27,59 @@
 `RUN` = `measurement/tiearb_widening_20260817/shared_run/` (absolute paths, DESIGN §4).
 `READOUT` = `RUN/verdicts/READOUT.json` (written by the W3 analyzer, one invocation).
 `SHARE` = `/mnt/c/carc-shared/tiearb_widening_20260817/{s1,s2}/`.
+**`<judge>` in every address below is bound to `tier1-greedy`** — the ARB leg is the only one
+whose runner (`tier1_rust_leg.py`) emits `resolved_config` and `preflight.seeds`; the
+`clair-puct` legs are `oracle_score_pilot` manifests and carry neither (REVIEW_R2 §N7).
 
 ---
 
 ## 1. Address discipline and fail-closed semantics
 
 1. **Every gate and every branch input is named below by its exact address** — file path plus
-   a dotted key path, verified against the emitter (REVIEW_R1 re-verified all of them).
+   a dotted key path, verified against the emitter (R1 and R2 re-verified all of them).
 2. **ABSENT IS FAIL.** File missing, key missing, key `null` ⇒ the gate **FAILS**. Absent is
    never a pass, never "assume healthy", never "recompute by hand and proceed".
 3. **Fallbacks are pre-registered, not improvised.** Try the primary, then the fallback; the
    read-out **must print `resolved_at: <address>`** for every gate, or `UNRESOLVED`. A gate
-   answered only by a fallback is reported as such on the branch line.
+   answered only by a fallback is reported as such on the branch line. **A gate may have no
+   fallback** — `G-DISJOINT`, `G-BITEXACT@HEAD` and `G-REPLICATE` do not, and for them a
+   missing primary is simply a FAIL.
 4. **No address may be invented at read time.** If a gate's inputs are unreachable at every
    pre-registered address, the answer is `W-UNREADABLE`, not a new address.
 5. **Structural test, written into every row:** *would this gate fail on a healthy run?* If
    yes it is an instrument defect, fixed **before** the run, never adjudicated around. Four
-   gates failed this test in the first draft; `G-CAP` failed it in PLAN_J. DESIGN §9 step 4
-   makes address-resolution a **pre-run acceptance test** on the smoke's own output.
+   gates failed this test in the first draft, one more in R1, and `G-CAP` failed it in PLAN_J.
+   DESIGN §9 steps **4a/4b** make address-resolution a **pre-run acceptance test** — presence
+   and type only, never a value.
 
 ---
 
 ## 2. Gates. Any FAIL ⇒ `W-UNREADABLE` for the affected rung; nothing is licensed
 
-S2 gates bind **rung 3 only**; an S2 failure leaves rung 2 readable, and vice versa. **The
-exception is `G-REPLICATE`, which binds BOTH rungs — one shared instrument check, NOT two
-independent confirmations; a joint pass must never be cited as if the two rungs corroborated
-each other.**
+**S1 gates bind BOTH rungs** — the shared cell lives on S1, and rung 3's replication and
+interaction riders are read there. **S2 gates bind rung 3 only.** Gates written `{S1,S2}` are
+evaluated **separately on each stratum and both must pass**: S2 is a separately built corpus
+launched by a separate `run_tiletie` invocation, so **nothing about S1 transfers to it**
+(REVIEW_R2 §N6). **`G-REPLICATE` binds BOTH rungs — one shared instrument check, NOT two
+independent confirmations; a joint pass must never be cited as if the rungs corroborated each
+other.**
 
 | gate | conjunct (all must hold) | primary address | fallback | on a healthy run |
 |---|---|---|---|---|
-| `G-BAND` | `band_ok == true`; `seed_band == [135000000000, 135000000849]` (∪ the reserved range iff the blind top-up was exercised); `n_out_of_band == 0`; `n_duplicate_seeds == 0`; `n_games_realized ≥ 850` | `RUN/corpus/CHAMP_GAMES_VERIFY.json::{band_ok,seed_band,n_out_of_band,n_duplicate_seeds,n_games_realized}` | — (**no seed list exists anywhere by design**: the emitter publishes `sha256_of_sorted_seeds`, a disclosure-discipline choice this rule keeps) | **PASSES** |
-| `G-DISJOINT` | `passed == true` **and** every `comparisons.<name>.layers.{a_root_id,b_rid,c_position_digest}.n_intersection == 0` over the **four** committed comparisons (S1 vs `tiletie_pricing_20260812`; S1 vs `tiearb2_20260816`; S2 vs both) **and** `strata_root_overlap == 0` | `RUN/GATE_DISJOINT.json::{passed, comparisons, strata_root_overlap}` | — (a missing gate file is a FAIL) | **PASSES** — but only against the **W5 merged** emitter: the stock `gate_disjoint.py` compares two ARMS.json corpora, emits `layers`/`passed` at top level with no `comparisons` or `strata_root_overlap`, and `load_rids` raises on a rid-txt. W5 must exist first (DESIGN §8) |
-| `G-LEAF` | leaf hash of record `a36d2e15a3b3d71d` resolves and asserts | `RUN/RUN_MANIFEST_{S1,S2}.json::preflight.checks.leaf_hash.ok` | `…preflight.checks.leaf_hash.harness_leaf_hash` compared literally to `…expected` | **PASSES** |
-| `G-SALT` | `world_seed_salt == "tiletie-v1"`; `deployed_cap_j == 4`; `cap_seed` present for **every** rid | `RUN/RUN_MANIFEST_S1.json::world_seed_salt` · `RUN/corpus/positions_s1/POSITIONS_PLAN.json::deployed_cap_j` · `…/ARMS.json::<rid>.cap_seed` | `RUN/legs/<judge>/walled/leg<N>/manifest.json::resolved_config.world_seed_salt` | **PASSES** — module constant, not a flag |
-| `G-M` | S1: `m_worlds == 128`, `b_ceiling_from_m == 64`. S2: `32` / `16` | `RUN/RUN_MANIFEST_{S1,S2}.json::{m_worlds,b_ceiling_from_m}` | `RUN/legs/…/manifest.json::resolved_config.m` | **PASSES** |
-| `G-BACKEND` | `arb_backend == "rust"`; every `tier1-greedy/walled` entry of `resolved_backend_by_leg` reads `rust`; `arb_legal_mask_cache == true` | `RUN/RUN_MANIFEST_{S1,S2}.json::{arb_backend,resolved_backend_by_leg,arb_legal_mask_cache}` | `RUN/legs/…/manifest.json::resolved_config.legal_mask_cache` | **PASSES** — the launcher refuses to fall back silently |
-| `G-BITEXACT@HEAD` | `pass == true`; `n_playouts_compared ≥ 1024`; `n_value_mismatch == 0`; `legal_mask_cache == true`; `git_rev` equals the run's | `RUN/GATE_BITEXACT_HEAD.json::{pass,n_playouts_compared,n_value_bit_identical,n_value_mismatch,legal_mask_cache,git_rev}` (reached by `verify_tier1_rust.py --out`, W7) | — | **PASSES** — 15,360/15,360 at Phase A on this wheel. ⚠️ Without `--out` this gate can only write into the **closed** Stage-2 run dir and can never appear at the address above; with `--no-legal-mask-cache` it would fail on a healthy run (57/15,360 move). Both spellings are forbidden |
-| `G-PREFIX` | `ok == true` **and** `prefix_stable_at ⊇ {1,2,4,8,16,32,64,128}` on S1 (`⊇ {1,2,4,8,16,32}` on S2) | `RUN/legs/<judge>/walled/leg<N>/manifest.json::preflight.seeds.{ok,prefix_stable_at}` | `…::preflight.seeds.derivation` present **and** `probe_world_seeds_head` non-empty | **PASSES** — `preflight_seeds()` asserts prefix stability fatally at launch and returns the ladder it verified. ⚠️ It emits a 4-entry head for a synthetic probe rid, **not** 32 seeds of run rids, and `prefix_ok` exists nowhere — the first draft's conjunct could not be met |
-| `G-CRN` | per-judge smoke witness `true`; `n_crn_verified == n_ok` on **every** leg; exactly one witness kind per judge | `RUN/SMOKE_MANIFEST_S1_<judge>.json::crn_cross_leg_identical` · `READOUT::widening.gates.crn.{ok,witness_kinds}` | per-record `SHARE/<judge>/walled/leg<N>/*.jsonl::{crn_verified,world_deck_hash\|afterstate_deck_hash_a}` | **PASSES**. ⚠️ `run_smoke` is single-judge and writes one `--smoke-manifest` path, so two smokes at one path would overwrite: per-judge filenames are mandatory. `crn_witness` is a **per-record** field, never a leg-manifest key |
-| `G-UNCAPPED` | `uncapped == true` and `cap_j == null` on both strata; and for every rid the **exact prefix+append identity**: `arms[:len(arms_full)] == arms_full`, `len(arms) − len(arms_full) ∈ {0,1}`, and any extra element equals `champ_arm_action` at `champ_arm_index == len(arms)−1` | `RUN/corpus/positions_{s1,s2}/POSITIONS_PLAN.json::{uncapped,cap_j}` · `…/ARMS.json::<rid>.{arms,arms_full,champ_arm_action,champ_arm_index}` | `READOUT::widening.gates.uncapped` | **PASSES**. ⚠️ A naive `arms == arms_full` **fails ~16% of rids by design** — `resolve_champion_arm` appends the champion pick when its transposition rep is absent (`champ_outside_tieset` 15.6–17.3% on the banked corpora; rust does the identical append) |
-| `G-DRAW` (replaces the retired `G-CAP`) | for every rid: `[arms_full[0]] + _seeded_cap(rid, arms_full[1:], 4)[0] == subset_j4` (exact list identity, re-run at the run's `git_rev`); `subset_j4_id` matches the recomputed digest; `len(subset_j4) == min(4, len(arms_full))`; `n_mismatch == 0` | `RUN/GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}` | `RUN/corpus/positions_{s1,s2}/ARMS.json::<rid>.{arms_full,subset_j4,subset_j4_id}` recomputed by the reader | **PASSES** — a pure function of `(rid, arms_full[1:])`. ⚠️ `_seeded_cap` returns `(kept, capped, dropped)` **without** the reference arm, while `subset_j4 = [ref] + kept`: comparing the raw return to `subset_j4` fails on every healthy run. It does **NOT** assert agreement with the deployed rust draw — retired as unsatisfiable (DESIGN §5); carried as rider `I7` |
-| `G-ARMS` | every full-set arm scored on **all** `M` worlds — per-arm, not per-ply; `n_arms_complete == n_arms`; `include_partial == false` | `READOUT::widening.gates.arms.{n_arms,n_arms_complete,include_partial,ok}` | `RUN/verdicts/per_position_{s1,s2}.jsonl` per-arm world counts | **PASSES** — contingent on W3 (DESIGN §9 step 4) |
+| `G-BAND` | `band_ok == true`; `seed_band == [135000000000, 135000000849]`; `n_out_of_band == 0`; `n_duplicate_seeds == 0`; `n_games_realized ≥ 850`. **If the blind top-up was exercised**, a SECOND `verify-champgames` invocation over the reserved range emits `CHAMP_GAMES_VERIFY_TOPUP.json` and **both** files must satisfy the above with their own `seed_band` — never one invocation with a widened band, which would report `n_out_of_band == 0` for a seed in neither range | `RUN/corpus/CHAMP_GAMES_VERIFY.json::{band_ok,seed_band,n_out_of_band,n_duplicate_seeds,n_games_realized}` (+ `…_TOPUP.json` iff exercised) | — (**no seed list exists anywhere by design**: the emitter publishes `sha256_of_sorted_seeds`, a disclosure-discipline choice this rule keeps) | **PASSES** |
+| `G-DISJOINT` | `passed == true` **and** every `comparisons.<name>.layers.{a_root_id,b_rid,c_position_digest}.n_intersection == 0` over the **five** committed comparisons — `s1_vs_tiletie0812`, `s1_vs_tiearb2_0816`, `s2_vs_tiletie0812`, `s2_vs_tiearb2_0816` (all three layers each), and `s1s2_vs_exclude_rids` (**rid layer only** — `EXCLUDE_RIDS_all.txt` is a rid text file with no root or digest layer) **and** `strata_root_overlap == 0` | `RUN/GATE_DISJOINT.json::{passed, comparisons, strata_root_overlap}` | **none** — a missing gate file is a FAIL | **PASSES** — but only against the **W5** emitter: the stock `gate_disjoint.py` compares two ARMS.json corpora, emits `layers`/`passed` at top level with no `comparisons` or `strata_root_overlap`, and its `load_rids` raises on a rid-txt |
+| `G-LEAF` `{S1,S2}` | leaf hash of record `a36d2e15a3b3d71d` resolves and asserts | `RUN/RUN_MANIFEST_{S1,S2}.json::preflight.checks.leaf_hash.ok` | `…preflight.checks.leaf_hash.harness_leaf_hash` compared literally to `…expected` | **PASSES** |
+| `G-SALT` `{S1,S2}` | `world_seed_salt == "tiletie-v1"`; `deployed_cap_j == 4`; `cap_seed` present for **every** rid — **on each stratum's own manifest, plan and ARMS.json** | `RUN/RUN_MANIFEST_{S1,S2}.json::world_seed_salt` · `RUN/corpus/positions_{s1,s2}/POSITIONS_PLAN.json::deployed_cap_j` · `…/ARMS.json::<rid>.cap_seed` | `RUN/legs/{s1,s2}/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.world_seed_salt` | **PASSES** — module constant, not a flag |
+| `G-M` | S1: `m_worlds == 128`, `b_ceiling_from_m == 64`. S2: `32` / `16` | `RUN/RUN_MANIFEST_{S1,S2}.json::{m_worlds,b_ceiling_from_m}` | `RUN/legs/{s1,s2}/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.m` | **PASSES** |
+| `G-BACKEND` | `arb_backend == "rust"`; every `tier1-greedy/walled` entry of `resolved_backend_by_leg` reads `rust`; `arb_legal_mask_cache == true` | `RUN/RUN_MANIFEST_{S1,S2}.json::{arb_backend,resolved_backend_by_leg,arb_legal_mask_cache}` | `RUN/legs/{s1,s2}/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.legal_mask_cache` | **PASSES** — the launcher refuses to fall back silently |
+| `G-BITEXACT@HEAD` | `pass == true`; `n_playouts_compared ≥ 1024`; `n_value_mismatch == 0`; `legal_mask_cache == true`; **and `git_rev` is the §9 step-2 W-code merge commit or a descendant of it whose cumulative diff touches nothing under `scripts/tiletie/`, `src/`, `engine/`, `rust/`** — compared by `startswith` on the 7-char short form, since this emitter writes the 40-char `rev-parse HEAD` while `RUN_MANIFEST::git_rev` is `rev-parse --short` | `RUN/GATE_BITEXACT_HEAD.json::{pass,n_playouts_compared,n_value_bit_identical,n_value_mismatch,legal_mask_cache,git_rev}` (reached by `verify_tier1_rust.py --out`, W7) | **none** | **PASSES**. ⚠️ A literal `git_rev == the run's` conjunct **fails a healthy run twice over**: the two emitters use different formats, and the gate is produced at §9 step 3 while the blind commit is step 5, so the run necessarily records a later HEAD. Without `--out` the gate can only write into the **closed** Stage-2 run dir; with `--no-legal-mask-cache` it fails on a healthy run (57/15,360 move). All three spellings are forbidden |
+| `G-PREFIX` | `ok == true` **and** `prefix_stable_at ⊇ {1,2,4,8,16,32,64,128}` on S1 (`⊇ {1,2,4,8,16,32}` on S2) | `RUN/legs/{s1,s2}/tier1-greedy/walled/leg<N>/manifest.json::preflight.seeds.{ok,prefix_stable_at}` | `…::preflight.seeds.derivation` present **and** `probe_world_seeds_head` non-empty | **PASSES** — `preflight_seeds()` asserts prefix stability fatally at launch and returns the ladder it verified. ⚠️ It emits a 4-entry head for a **synthetic probe rid**, not 32 seeds of run rids, and `prefix_ok` exists nowhere. Witnessed **once, on the ARB leg**: prefix stability is a property of the shared `world_seed`/`playout_seed` derivation both judges consume, not of a leg |
+| `G-CRN` `{S1,S2}` | per-judge smoke witness `true` on that stratum; `n_crn_verified == n_ok` on **every** leg of that stratum; exactly one witness kind per judge | `RUN/SMOKE_MANIFEST_{S1,S2}_<judge>.json::crn_cross_leg_identical` · `READOUT::widening.gates.crn.{ok,witness_kinds}` | per-record `SHARE/{s1,s2}/tier1-greedy/walled/leg<N>/records/<rid>.json::{crn_verified, world_deck_hash}` (**one JSON object per rid — there is no `*.jsonl` leg file**) | **PASSES**. ⚠️ `run_smoke` is single-judge and writes one `--smoke-manifest` path, so two smokes at one path would overwrite: per-judge, per-stratum filenames are mandatory. `crn_witness` is a **per-record** field, never a leg-manifest key |
+| `G-UNCAPPED` | `uncapped == true` and `cap_j == null` on both strata; and for every rid the **exact prefix+append identity**: `arms[:len(arms_full)] == arms_full`, `len(arms) − len(arms_full) ∈ {0,1}`, and any extra element equals `champ_arm_action` at `champ_arm_index == len(arms)−1` | `RUN/corpus/positions_{s1,s2}/POSITIONS_PLAN.json::{uncapped,cap_j}` · `…/ARMS.json::<rid>.{arms,arms_full,champ_arm_action,champ_arm_index}` | `READOUT::widening.gates.uncapped` | **PASSES**. ⚠️ A naive `arms == arms_full` **fails ~16% of rids by design** — `resolve_champion_arm` appends the champion pick when its transposition rep is absent (`champ_outside_tieset` 15.6–17.3% banked; rust does the identical append) |
+| `G-DRAW` | for every rid: `[arms_full[0]] + _seeded_cap(rid, arms_full[1:], 4)[0] == subset_j4` (exact list identity, re-run at the run's `git_rev`); `subset_j4_id` matches the recomputed digest; `len(subset_j4) == min(4, len(arms_full))`; `n_mismatch == 0` | `RUN/GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}` (owned by **W5**) | `RUN/corpus/positions_{s1,s2}/ARMS.json::<rid>.{arms_full,subset_j4,subset_j4_id}` recomputed by the reader | **PASSES** — a pure function of `(rid, arms_full[1:])`. ⚠️ `_seeded_cap` returns `(kept, capped, dropped)` **without** the reference arm while `subset_j4 = [ref] + kept`: comparing the raw return fails on every healthy run. It does **NOT** assert agreement with the deployed rust draw — retired as unsatisfiable (DESIGN §5); carried as rider `I7` |
+| `G-ARMS` | every full-set arm scored on **all** `M` worlds — per-arm, not per-ply; `n_arms_complete == n_arms`; `include_partial == false` | `READOUT::widening.gates.arms.{n_arms,n_arms_complete,include_partial,ok}` | `RUN/verdicts/per_position_{s1,s2}.jsonl` per-arm world counts | **PASSES** — contingent on W3 (DESIGN §9 step 4a) |
 | `G-COMPLETE` | S1 scored `≥ 1,283` (95% of 1,350); S2 scored capped `≥ 1,045` (95% of 1,100); mining ceilings honoured (≤4 tied plies/root S1, ≤3 capped plies/root S2) | `READOUT::widening.completion.{s1_n,s2_n,s1_max_per_root,s2_max_per_root}` | `RUN/verdicts/per_position_{s1,s2}.jsonl` line counts + `root_id` grouping | **PASSES** — contingent on W3 |
-| `G-REPLICATE` **(binds BOTH rungs)** | the `(B ≤ 16, E = 16)` sub-read on S1 lands inside the **2×-inflated** 2σ envelope of Stage-1b's ladder at every rung `B ∈ {1,2,4,8,16}`, **and** the shared cell convicts (`arb_16` CI excludes 0) | `READOUT::widening.stage1_replication.{pass, per_rung_inside_envelope, arb16_convicts, envelope_inflation}` — **booleans only** | `RUN/verdicts/SEALED_G_REPLICATE.json` (the z's; **sealed — not printed by the harness, not read by a fixing session**, §7) | **PASSES** if the instrument is sound. **A FAIL means `UNINTERPRETABLE`, NEVER `FAIL-the-lever`** — the fresh corpus is a different population. A rung that fails the naive-σ envelope but passes the inflated one is a **mandatory caveat on every branch** |
+| `G-REPLICATE` **(binds BOTH rungs)** | the `(B ≤ 16, E = 16)` sub-read on S1 lands inside the **2×-inflated** 2σ envelope of Stage-1b's ladder at every rung `B ∈ {1,2,4,8,16}`, **and** the shared cell convicts (`arb_16` CI excludes 0) | `READOUT::widening.stage1_replication.{pass, per_rung_inside_envelope, arb16_convicts, envelope_inflation}` — **booleans only** | **none.** A missing or `null` boolean block is a **FAIL**. The sealed z-file is **not an address** and is never opened to answer this gate (§7) | **PASSES** if the instrument is sound. **A FAIL means `UNINTERPRETABLE`, NEVER `FAIL-the-lever`** — the fresh corpus is a different population. A rung failing the naive-σ envelope but passing the inflated one is a **mandatory caveat on every branch** |
 
 **Precedence.** Gates are evaluated **before** any branch statistic is read. If any gate
 binding a rung FAILS, that rung's answer is `W-UNREADABLE` and **no branch of that rung
@@ -80,14 +92,16 @@ fires** — not even "for information".
 - **Significance is ONE test, everywhere:** a quantity is significant iff `lower(CI95) > 0`
   (or `upper(CI95) < 0` for a negative claim), where `CI95` is the **percentile
   root-bootstrap** interval — resample `root_id`, **2,000 reps, seed `20260819`**, cluster =
-  root. No `point/se` test appears in either branch table (REVIEW_R1 §8: mixing the two lets a
-  skewed bootstrap fire a "confirmed" branch while its CI straddles zero).
+  root. No `point/se` test appears in either branch table (REVIEW_R1 §8).
 - **Rung 2 se, corrected (REVIEW_R1 §12).** The measured law `Var(Δ;E) = T + N/E`,
   `T = 0.19, N = 15.4`, is the **Δ(8→16)** law and reproduces it exactly (`se` at n=1350/E=16 =
   **0.02922** vs published 0.0290 ✓). **`T` for Δ(16→64) is UNMEASURED**; PLAN_B's published
   0.0198–0.0203 back-solves to `T ≈ 0.30`. Pre-registered bracket:
   **`se(Δ(16→64)) ∈ [0.0179, 0.0200]` ⇒ `2σ ∈ [0.0357, 0.0400]`**. The **committed floor is
-  `+0.040`** and does not move with the realized se.
+  `+0.040`** and does not move with the realized se. **The floor is deliberately a POINT test
+  on `Δ`, not a CI test** — it is a pre-registered claim about the *size* worth licensing a
+  game cell for, and it is stated separately from significance precisely so neither can be
+  quietly traded for the other.
 - **Rung 3.** `sd_Δ ∈ [0.9, 1.4]` (bracketed in advance). At **N_capped = 1,100**:
   `se(Δ_ora) ∈ [0.0271, 0.0422]`. Resolves +0.1382 (z 3.27–5.10) and +0.0842 (z 1.995–3.10 —
   **resolved at `sd_Δ ≤ 1.396`, NOT at 1.4**); **cannot** separate 1.400 from 1.244
@@ -102,7 +116,7 @@ Read in order; the **first** row whose condition holds is the branch. Ties resol
 
 | # | branch | condition (verbatim-takeable) | what it licenses |
 |---|---|---|---|
-| 1 | **`W-NOISY`** | `arb_64` does not convict: `0 ∈ CI95(arb_64)` | the level itself does not convict on the fresh corpus; the increment is uninterpretable regardless of sign. **Nothing licensed.** |
+| 1 | **`W-NOISY`** | `arb_64` does not convict positive: `lower(CI95(arb_64)) ≤ 0` | the level itself does not convict on the fresh corpus; the increment is uninterpretable regardless of sign. **Nothing licensed.** **Mandatory print:** if additionally `upper(CI95(arb_64)) < 0` — the level is significantly **negative** — the read-out labels it a **mechanism anomaly** in the same sentence, alongside `W-NOISY`; it is not a "noisy" reading and must not be reported as one. |
 | 2 | **`W-REVERSAL`** | `upper(CI95(Δ(16→64))) < 0` | a strictly larger CRN sample cannot be worse in expectation for a consistent selector ⇒ a **mechanism anomaly, not a finding**. Report and diagnose (arm-order side channel? argmax tie-break? world-draw pathology?). **Licenses nothing.** |
 | 3 | **`W-RISING`** | `lower(CI95(Δ(16→64))) > 0` **and** `Δ(16→64) ≥ +0.040` **and** `lower(CI95(arb_64)) > 0` **and** `arb(64) > arb(16)` | the ladder is still rising at the instrument's new ceiling. **Licenses (does not fund) ONE** prereg: a deck-paired game cell at the best-reading rung, **plus a mandatory cost re-measure in the contended currency**, carrying `R2` and `R6`. |
 | 4 | **`W-SATURATED`** | `0 ∈ CI95(Δ(16→64))` **and** `lower(CI95(arb_64)) > 0` | `B = 16` is on the plateau **to within +0.04 pts/tied ply**. **CLOSES the `B` axis at 16.** The deploy question stays where Phase B left it. **Licenses nothing.** |
@@ -123,7 +137,7 @@ Addresses: `READOUT::widening.delta.d_16_64.{value,ci95,se_root}` · `…delta.d
 
 **Pre-branch guard (REVIEW_R1 §10).** If `lower(CI95(ora_J4)) ≤ 0`, the ratio `R_ora` is
 **degenerate and is NOT reported** (a ratio whose denominator replicates cross zero has no
-meaningful percentile CI). In that case rung 3 adjudicates on `Δ_ora` alone, via the committed
+meaningful percentile CI). Rung 3 then adjudicates on `Δ_ora` alone via the committed
 sub-table below — never by substituting a different ratio or a different statistic.
 
 **Main table** (`R_ora = ora_full / ora_J4`). Read in order; first match wins; ties → more
@@ -223,10 +237,14 @@ committed, and whether the one-sided HALT fired.
 no `ora`, no `Δ`, no CI, no per-position statistic.** This is a hard requirement: on
 2026-08-17 a mandatory companion table printed alongside a gate failure made the orchestrating
 session non-blind and forced the fixes to be written by a separate blind session.
-**`G-REPLICATE` is the one gate whose natural inputs are themselves outcome statistics**, so it
-resolves as **booleans only** (`pass`, `per_rung_inside_envelope`, `arb16_convicts`) and its
-z's are written to `RUN/verdicts/SEALED_G_REPLICATE.json`, which the harness never prints and a
-fixing session never opens. A gate-failure report must be safe for the fixing session to read.
+
+**The sealed file.** `G-REPLICATE` is the one gate whose natural inputs are themselves outcome
+statistics, so it resolves as **booleans only** and has **no fallback** (§2). Its z's are
+written **write-only** to `RUN/verdicts/SEALED_G_REPLICATE.json` by W3, for the eventual
+read-out only. **It is not an address in this rule, it is never opened to answer a gate, and a
+fixing session never opens it** — a file that is both forbidden and required is the collision
+this revision removes. If the boolean block is missing, `G-REPLICATE` FAILS and the fix is in
+W3, not in the seal.
 
 **Deviations.** Any deviation from DESIGN or this READ_RULE is recorded in the read-out as a
 numbered deviation with its direction of bias — never silently absorbed, never adjudicated

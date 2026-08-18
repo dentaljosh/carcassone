@@ -1,21 +1,27 @@
 # TIE-ARBITER WIDENING — SHARED INSTRUMENT RUN, DESIGN (rungs 2 `B>16` + 3 `J>4`)
 
-> **STATUS: BLIND PREREGISTRATION, DRAFT (revision R1). NOT LAUNCHED. NOTHING RUN. NO
+> **STATUS: BLIND PREREGISTRATION, DRAFT (revision R2). NOT LAUNCHED. NOTHING RUN. NO
 > OUTCOME STATISTIC OF ANY KIND WAS READ WHILE WRITING THIS.**
 >
 > ⚠️ **BLIND-ORDER REQUIREMENT — NOT YET SATISFIED.** This file and
 > [`READ_RULE.md`](READ_RULE.md) were drafted and revised in an isolated **worktree** while
 > the main tree is under a commit freeze. A worktree commit does **not** satisfy blindness.
-> **Both files must be committed to the MAIN tree, in ONE commit, BEFORE the band is claimed
-> and BEFORE one position is scored — and AFTER the §9 W-code merge.** Until that commit
-> exists, no leg of this run may start. Neither file may be edited after that commit except
-> through a numbered `§0` pre-run amendment that leaves every branch condition byte-identical
-> (the Stage-2 precedent).
+> **Both files must be committed to the MAIN tree, in ONE commit, AFTER the §9 W-code merge
+> and its step-4a acceptance test, and BEFORE the band is claimed and BEFORE one position is
+> scored.** Until that commit exists, no leg of this run may start. Neither file may be edited
+> after that commit except through a numbered `§0` pre-run amendment that leaves every branch
+> condition byte-identical (the Stage-2 precedent).
 >
-> **Revision R1 (this file) folds in [`REVIEW_R1.md`](REVIEW_R1.md)** — an independent
-> adversarial review of the first draft (commit `e788b143`) that verified every witness
-> address against the emitters and found 21 defects, four of them gates that **void a healthy
-> run**. Disposition of all 21: **§13**.
+> **Revision history.** **R1** folded in [`REVIEW_R1.md`](REVIEW_R1.md) — an independent
+> adversarial review of the first draft (`e788b143`) that verified every witness address
+> against the emitters and found 21 defects, four of them gates that **void a healthy run**.
+> **R2 (this file)** folds in [`REVIEW_R2.md`](REVIEW_R2.md), which **FAILED R1**: 13 of the 21
+> were verified genuinely closed, but the R1 edits introduced **nine new defects of the same
+> address/sequencing class**, four blocking — concentrated in §9, where the acceptance test was
+> sequenced before the corpus it audits, "resolving" the branch addresses would have computed
+> outcome statistics pre-commit, the sealed z-file was simultaneously forbidden-to-open and a
+> fallback the reader must open, and a new `git_rev` conjunct failed healthy runs twice over.
+> Disposition of all 30: **§13**.
 >
 > Authorities this obeys: [`CAMPAIGN.md`](../CAMPAIGN.md) rulings 1–5 (rungs 1 and 4 are
 > CLOSED; this run carries **only** rungs 2+3) · [`PLAN_B_gt_16.md`](../PLAN_B_gt_16.md) ·
@@ -151,6 +157,7 @@ The knobs the driver must resolve, and which this DESIGN fixes (they are the gra
 |---|---|---|
 | `run_census --max-per-game` | 4 | 3 |
 | `build_positions --cap-j` | `inf` (uncapped; `arms_full` + `subset_j4` recorded) | `inf` |
+| `build_positions --exclude-rids` | `measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_all.txt` | same file |
 | `--sample-seed` | 20260819 | 20260819 |
 | `run_tiletie --m` | **128** (`b_ceiling_from_m` 64) | **32** (`b_ceiling_from_m` 16) |
 | `run_tiletie --judges` | `clair-puct tier1-greedy` | `clair-puct tier1-greedy` |
@@ -164,7 +171,10 @@ The knobs the driver must resolve, and which this DESIGN fixes (they are the gra
 CWD-relative name. Leg records stay on the share
 (`/mnt/c/carc-shared/tiearb_widening_20260817/{s1,s2}/…`, per-record `jsonl`), and the driver's
 final phase **copies every leg `manifest.json` back** to
-`RUN/legs/<judge>/<profile>/leg<N>/manifest.json` — the address the READ_RULE reads.
+`RUN/legs/{s1,s2}/<judge>/walled/leg<N>/manifest.json` — the address the READ_RULE reads. Only
+the **`tier1-greedy`** legs are addressed by any gate (the `clair-puct` legs are
+`oracle_score_pilot` manifests and carry neither `resolved_config` nor `preflight.seeds`); copy
+both back, gate on the ARB ones.
 
 **Why S2 runs at `M=32`, not 128.** Rung 3 reads only `B=16`, which `M=32` fully supplies
 (sel 16 / eva 16), and `E=16` is **the precision Stage-1b's `capped_only` levels — the source
@@ -317,12 +327,18 @@ parity; with PLAN_B's 25% laptop-slowness + contention allowance, **≈ 26–29 
 **⚠️ `c`-REMEASURE OBLIGATION (binding, pre-run, one-sided).**
 
 1. **Judge legs.** Before the S1 IF leg starts, **on an IDLE box** (a timing bench is an
-   exclusive tenant), run `run_tiletie --smoke` at production knobs (`--m 128`,
-   `--arb-backend rust`, walled, ≥20 positions) **once per judge** and read
-   **`SMOKE_MANIFEST_S1_<judge>.json::c_worker_secs_per_playout`** — the Σ`elapsed_secs`/playout
-   figure of record. ⚠️ **NOT `worker_secs_per_playout`**, which is the wall×W figure the
-   emitter's own banner says not to cost from (inflated ~1.9×; a healthy smoke read at that key
-   would HALT a healthy run — REVIEW_R1 §5).
+   exclusive tenant), run `run_tiletie --smoke` at production knobs — **`--smoke-n 20`
+   (default is 5), `--arb-backend rust`, `--only-profiles walled`, and the stratum's own
+   `--m`** — **four invocations: {S1 `--m 128`, S2 `--m 32`} × {`clair-puct`, `tier1-greedy`}**,
+   each writing its own `--smoke-manifest` (`SMOKE_MANIFEST_{S1,S2}_<judge>.json`; one shared
+   path would have the second smoke overwrite the first). Read
+   **`…::c_worker_secs_per_playout`** — the Σ`elapsed_secs`/playout figure of record.
+   ⚠️ **NOT `worker_secs_per_playout`**, which is the wall×W figure the emitter's own banner
+   says not to cost from (inflated ~1.9×; a healthy smoke read at that key would HALT a healthy
+   run — REVIEW_R1 §5). ⚠️ **`c_worker_secs_per_playout` is `None` when no per-position
+   `elapsed_secs` was collected** (`c_sum = … if n_elapsed else None`). A `null` or `0` value is
+   **not** a cheap leg and **not** a HALT: it is a **failed smoke** — re-run the smoke; the
+   long leg does not start until a real number exists.
 2. **Generation leg** (REVIEW_R1 §21 — the largest single line-item disagreement, 990 vs the
    ~440 worker-s/game implied by the F7d GEN row, and the judge smoke cannot see it): a
    **separate timed 10-game generation smoke** on the same idle box, at the §3 config and the
@@ -350,11 +366,51 @@ ruled stays **OPEN and re-priced there** (rider `R6`). `rho_phone` is a third cu
 | **W1** wire rust ARB judge | ✅ **MERGED** (`7b82610f`) |
 | **W4** uncapped arms + draw index | ✅ **CLOSED** (§5) |
 | **W2** no hard-coded 32 downstream of `--m` | TODO — §9 merge |
-| **W3** analyzer: `m_expected` 128/32, `b_ladder {1,2,4,8,16,32,64}`, `E` sub-read, S1/S2 strata, root bootstrap per §6, **and the `widening.*` verdict block at the exact spellings READ_RULE §2/§4/§5 address** | TODO — §9 merge. **`G-ARMS`, `G-COMPLETE`, `G-REPLICATE` and every `READOUT::widening.*` address are contingent on W3 being built to those spellings: a pre-run acceptance test (§9 step 4) must resolve every address on the smoke's output before the band claim.** |
-| **W5** ONE merged `GATE_DISJOINT.json` with `comparisons:{<name>:{layers…, passed}}` over **four** comparisons + a `strata_root_overlap` int — the stock gate does two ARMS.json corpora and cannot read a rid-txt | TODO — §9 merge |
-| **W6** `build_widening_corpus.sh`: parameterised copy of `build_tiearb2_corpus.sh` (5 phases, shadow-root step, empty-stand-in switches, absolute `RUN/` outputs, leg-manifest copy-back, `GEN_SMOKE.json`) | TODO — §9 merge |
+| **W3** analyzer | TODO — §9 merge. See the **builder delta** below |
+| **W5** gate emitters (disjointness **and** draw) | TODO — §9 merge. See the **builder delta** below |
+| **W6** `build_widening_corpus.sh`: parameterised copy of `build_tiearb2_corpus.sh` (5 phases, shadow-root step, empty-stand-in switches, absolute `RUN/` outputs, leg-manifest copy-back, `GEN_SMOKE.json`) | TODO — §9 merge. See the **builder delta** below |
+| **W8** acceptance-test harness (**NEW in R2**) | TODO — §9 merge. See the **builder delta** below |
 | **W7** `verify_tier1_rust.py --out` | ✅ **DONE in this worktree** — the gate hard-coded `OUT_PATH` into the **closed** `tiearb2_stage2_20260817` run dir; re-running it for this campaign would have been a mid-run write to tracked artifacts of a closed run (REVIEW_R1 §2/§20) |
 | PLAN_J §8(4) runtime `tiearb_capped_total` | **NOT built, NOT a gate** — a deploy-side rust counter behind the freeze; the offline witnesses (`ARMS.json::capped_at_4`, `POSITIONS_PLAN.json::n_positions_capped_at_4`) already satisfy the offline requirement |
+
+### Builder delta — what changed between rev R1 and rev R2 (self-contained; diff your work against this)
+
+A builder implementing W3/W5/W6 against **rev R1** must apply these five changes. Nothing else
+in the W-scope moved.
+
+1. **W3 owns the sealed file and the print-suppression contract (new).** W3 writes
+   `RUN/verdicts/SEALED_G_REPLICATE.json` — the `G-REPLICATE` z's — **write-only**: nothing in
+   the READ_RULE addresses it, no gate resolves against it, and the harness must not print its
+   contents. W3's `READOUT::widening.stage1_replication` block carries **booleans only**
+   (`pass`, `per_rung_inside_envelope`, `arb16_convicts`, `envelope_inflation`) and
+   `G-REPLICATE` has **no fallback**: a missing or `null` boolean block is a FAIL, and the fix
+   is in W3, not in the seal. W3 also owns the **print-suppression contract**: on any gate
+   FAIL the report emits gate inputs only — no `arb`, `ora`, `Δ`, CI or per-position statistic
+   — and `G-REPLICATE`'s inputs at that moment are the booleans, never the z's.
+2. **W5 owns `GATE_DRAW.json` as well as `GATE_DISJOINT.json`** (in R1 the draw gate had no
+   owner). `GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}`, computed by re-running
+   `build_positions._seeded_cap(rid, arms_full[1:], 4)` and comparing
+   `[arms_full[0]] + kept == subset_j4` per rid, on **both** strata.
+3. **`GATE_DISJOINT.json` carries FIVE comparisons, not four.** `s1_vs_tiletie0812`,
+   `s1_vs_tiearb2_0816`, `s2_vs_tiletie0812`, `s2_vs_tiearb2_0816` (three layers each:
+   `a_root_id`, `b_rid`, `c_position_digest`) **plus `s1s2_vs_exclude_rids` — the rid layer
+   only**, against `measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_all.txt`, which is a rid
+   text file with no root or digest layer and which the stock `load_rids` raises on. Shape:
+   `{passed, comparisons:{<name>:{layers:{…:{n_intersection}}, passed}}, strata_root_overlap}`.
+4. **Every per-leg address is bound to `tier1-greedy`.** `resolved_config.*` and
+   `preflight.seeds.*` exist **only** on `tier1_rust_leg` manifests; the `clair-puct` legs are
+   `oracle_score_pilot` manifests and carry neither. W6's copy-back must therefore place ARB
+   leg manifests at `RUN/legs/{s1,s2}/tier1-greedy/walled/leg<N>/manifest.json` (copy the IF
+   legs too, but no gate reads them). The per-record CRN fallback is
+   `SHARE/{s1,s2}/tier1-greedy/walled/leg<N>/records/<rid>.json` — **one JSON object per rid;
+   there is no `*.jsonl` leg file.**
+5. **The acceptance test is W8, and it splits 4a/4b with a presence/type-only contract.**
+   A harness that walks a committed address list and, for each address, reports
+   **`resolved` / `UNRESOLVED` plus the JSON type of the value — and prints no value, ever.**
+   It resolves **primary AND fallback independently** (a fallback that is only exercised the
+   day it is needed is unaudited), across **both strata**, over every address named in
+   READ_RULE §2/§4/§5 **and** in §7's `c`-remeasure obligation (including `GEN_SMOKE.json` and
+   the realized-vs-committed `c` block). See §9 steps 4a/4b for what runs when.
 
 ---
 
@@ -364,31 +420,57 @@ Mid-run writes to the main tree are what broke the JCZ cells. This run's code an
 prereg therefore land in a fixed order, and nothing under `scripts/tiletie/` is edited once
 the run is live:
 
-1. **All W-code in a worktree.** W2 · W3 · W5 · W6 · W7 are built and tested in a git worktree
-   with `PYTHONPATH=<worktree>/src:<worktree>/engine`, never in the main tree.
+1. **All W-code in a worktree.** W2 · W3 · W5 · W6 · W7 · W8 are built and tested in a git
+   worktree with `PYTHONPATH=<worktree>/src:<worktree>/engine`, never in the main tree.
 2. **ONE quiet-window merge**, at a moment when no local run is live (census first), of all
-   W-code in a **single commit**.
+   W-code in a **single commit**. **This commit is the `git_rev` of record** for
+   `G-BITEXACT@HEAD` (READ_RULE §2).
 3. **`verify_tier1_rust.py --out`** points at `RUN/GATE_BITEXACT_HEAD.json`. Nothing this
    campaign runs may write into `measurement/tiearb2_stage2_20260817/` or any other closed
-   run's directory.
-4. **Pre-run acceptance test** (blind, outcome-free): run the smoke, then resolve **every**
-   address named in READ_RULE §2/§4/§5 against the smoke's artifacts. Any address that does not
-   resolve is fixed **now**, in code, not adjudicated around later.
+   run's directory. ⚠️ This gate is produced **here, at step 2's HEAD**, while the blind commit
+   is step 5 — so the run's own `git_rev` is necessarily *later*, and the two emitters use
+   different formats (40-char vs `--short`). READ_RULE's conjunct is written for that reality;
+   a literal equality would fail every healthy run (REVIEW_R2 §N1).
+4. **4a — PRE-COMMIT acceptance test (corpus-free).** Run the **four smokes** of §7.1
+   ({S1 `--m 128`, S2 `--m 32`} × both judges), then run **W8** over: every address that a
+   smoke, a leg manifest or a static fixture can answer — the `SMOKE_MANIFEST_*`,
+   `RUN/legs/{s1,s2}/tier1-greedy/…/manifest.json` (`resolved_config.*`, `preflight.seeds.*`),
+   the `RUN_MANIFEST_*` preflight keys — **plus a static schema audit of W3/W5/W6 outputs
+   against committed fixtures** (a fixture ARMS.json/plan/per_position row set), which is how
+   the `READOUT::widening.*`, `GATE_DISJOINT`, `GATE_DRAW` and `POSITIONS_PLAN`/`ARMS` spellings
+   get audited before any real corpus exists. **Mechanism: key presence + JSON type ONLY. No
+   value is computed, printed or stored** — W3 never runs on real corpus positions here, and
+   `SEALED_G_REPLICATE.json` is not brought into existence (REVIEW_R2 §N3).
 5. **THEN** the blind `DESIGN.md` + `READ_RULE.md` commit to main, in one commit.
-6. **THEN** the band claim, then generation, then scoring.
-7. **`WORKERS.conf` lives OUTSIDE this frozen directory** (`../WORKERS.conf`). If it must be
+6. **THEN** the band claim, then the corpus build (generation → census → positions → gates).
+7. **4b — POST-CORPUS, PRE-SCORING acceptance test.** Re-run **W8** against the **real** corpus
+   artifacts, which exist now and carry **no outcome statistic**: `CHAMP_GAMES_VERIFY.json`,
+   `GATE_DISJOINT.json` (incl. `strata_root_overlap` and all five comparisons),
+   `POSITIONS_PLAN.json`/`ARMS.json` on both strata, `GATE_DRAW.json`, `GEN_SMOKE.json` and
+   §7's realized-vs-committed `c` block. **Primary AND fallback independently, both strata,
+   presence/type only.** Any `UNRESOLVED` is fixed in code **before the first scoring leg** —
+   which is the last moment a fix is free. (The remaining `READOUT::widening.*` and
+   `per_position_*.jsonl` addresses are audited by 4a's fixture schema pass; they cannot exist
+   before scoring by construction.)
+8. **THEN** scoring: S1, then S2.
+9. **`WORKERS.conf` lives OUTSIDE this frozen directory** (`../WORKERS.conf`). If it must be
    retuned mid-run, that is a numbered §7 deviation in the read-out, not a silent edit.
 
 ---
 
 ## 10. Manifests the run MUST write (self-describing, absolute paths under `RUN/`)
 
-`corpus/CHAMP_GAMES_VERIFY.json` · `corpus/GEN_SMOKE.json` ·
-`corpus/positions_{s1,s2}/{POSITIONS_PLAN.json,ARMS.json}` · `GATE_DISJOINT.json` ·
-`GATE_BITEXACT_HEAD.json` · `GATE_DRAW.json` · `RUN_MANIFEST_{S1,S2}.json` ·
-`SMOKE_MANIFEST_{S1,S2}_<judge>.json` · `legs/<judge>/<profile>/leg<N>/manifest.json`
-(copied back from the share) · `verdicts/READOUT.{json,md}` ·
-`verdicts/per_position_{s1,s2}.jsonl` · `verdicts/SEALED_G_REPLICATE.json` · `logs/`.
+`corpus/CHAMP_GAMES_VERIFY.json` (+ `…_TOPUP.json` iff the blind top-up was exercised) ·
+`corpus/GEN_SMOKE.json` · `corpus/positions_{s1,s2}/{POSITIONS_PLAN.json,ARMS.json}` ·
+`GATE_DISJOINT.json` · `GATE_BITEXACT_HEAD.json` · `GATE_DRAW.json` ·
+`RUN_MANIFEST_{S1,S2}.json` · `SMOKE_MANIFEST_{S1,S2}_<judge>.json` ·
+`legs/{s1,s2}/<judge>/<profile>/leg<N>/manifest.json` (copied back from the share; **only the
+`tier1-greedy` legs are addressed by any gate** — §8 builder delta 4) ·
+`verdicts/READOUT.{json,md}` · `verdicts/per_position_{s1,s2}.jsonl` · `logs/` ·
+`verdicts/SEALED_G_REPLICATE.json` — **WRITE-ONLY**: not an address, never opened to answer a
+gate, never opened by a fixing session (READ_RULE §7).
+Per-record leg output stays on the share as `records/<rid>.json` (one object per rid; there is
+no `*.jsonl` leg file).
 
 ---
 
@@ -441,11 +523,38 @@ extends** (rider `R6`). ③ **The phone is out of scope for this axis.**
 
 ---
 
-## 13. Review disposition — `REVIEW_R1.md`, all 21 defects
+## 13. Review disposition
+
+### 13.B — `REVIEW_R2.md` (closing review of rev R1; verdict FAIL), all 14 items
+
+R2 verified 13 of R1's 21 fixes genuinely closed and called `I7` the strongest part of the
+document; the nine new defects below are all in the same address/sequencing class R1 was
+supposed to have retired. **All adopted; none rejected.** The reviewer's minimal fixes are
+taken as written except where noted.
 
 | # | class | fix, and where it now lives |
 |---|---|---|
-| 1 | voids-healthy-run | `G-DISJOINT` re-addressed to the **W5 merged** report (`comparisons.<name>.layers.<layer>.n_intersection`, `passed`, `strata_root_overlap`); W5 spec'd in §8; four comparisons + rid-txt handling named in §3 |
+| N1 | blocking | `G-BITEXACT@HEAD`'s `git_rev` conjunct rewritten: **"the §9 step-2 W-code merge commit or a descendant whose cumulative diff touches nothing under `scripts/tiletie/`, `src/`, `engine/`, `rust/`", compared by `startswith` on the 7-char short form.** A literal equality failed twice over — 40-char `rev-parse HEAD` vs `--short`, and the gate is produced at step 3 while the run records step-5+ HEAD. §9.3 states the sequencing that makes it so |
+| N2 | blocking | §9 step 4 **split into 4a (pre-commit, corpus-free: four smokes + static fixture schema audit) and 4b (post-corpus, pre-scoring: full address resolution against real corpus artifacts, which carry no outcome statistic)**. Blind commit stays step 5; 4b sits between corpus build and first scoring leg. **Two smokes per judge** (S1 `--m 128`, S2 `--m 32`) so the S2-side gates are covered |
+| N3 | blocking | The acceptance test now has an explicit mechanism: **key presence + JSON type ONLY, no value computed, printed or stored** (§9.4, §8 builder delta 5). W3 never runs on real corpus positions pre-commit and `SEALED_G_REPLICATE.json` is not forced into existence |
+| N4 | blocking | The sealed file is **not an address**: `G-REPLICATE` gets **no fallback** (missing boolean block = FAIL), and the seal is described in READ_RULE §7 as **write-only**. **N4b:** W3 now **owns** writing it and owns the print-suppression contract (§8 builder delta 1) |
+| N5 | required | `EXCLUDE_RIDS_all.txt` restored to every binding surface: **five** comparisons in `G-DISJOINT` (the fifth is rid-layer only) and `--exclude-rids` back in §4's knob table |
+| N6 | required | READ_RULE §2 preamble restores **"S1 gates bind BOTH rungs"**, and `G-SALT`/`G-CRN` are extended to `{S1,S2}` — evaluated separately on each stratum, both must pass (S2 is a separate corpus and a separate launch; nothing transfers) |
+| N7 | required | **`<judge>` bound to `tier1-greedy`** on all four per-leg addresses; `G-PREFIX`'s primary likewise, with a sentence stating prefix stability is witnessed **once on the ARB leg** as a property of the shared seed derivation. `clair-puct` legs are `oracle_score_pilot` manifests and have neither `resolved_config` nor `preflight.seeds` |
+| N8 | required | Per-record CRN fallback re-pathed to `…/records/<rid>.json` (one object per rid) in **both** documents |
+| N9 | required | `GATE_DRAW.json` assigned to **W5** (§8 builder delta 2) |
+| N10 | cosmetic | Adopted: `c_worker_secs_per_playout` `null`/`0` is a **failed smoke** (re-run), not a cheap leg and not a HALT (§7.1) |
+| N11 | cosmetic | Adopted: `--smoke-n 20` named explicitly (default is 5) |
+| N12 | cosmetic | Adopted: the top-up disjunct becomes a **second `verify-champgames` invocation** writing `CHAMP_GAMES_VERIFY_TOPUP.json`, both files checked against their own `seed_band` — never one widened band |
+| N13 | cosmetic | Adopted: READ_RULE §3 states the +0.040 floor is **deliberately a point test on `Δ`**, stated separately from significance so neither can be traded for the other |
+| N14 | cosmetic | Adopted, slightly beyond the letter: row 1 broadened to `lower(CI95(arb_64)) ≤ 0` (total, and it captures the negative case), **plus a mandatory print** labelling a significantly-negative level a **mechanism anomaly** rather than a "noisy" reading |
+| — | note | The R1 `--out` change adds one benign key (`out_path`) to the emitted gate JSON, recorded here as the reviewer asked |
+
+### 13.A — `REVIEW_R1.md`, all 21 defects
+
+| # | class | fix, and where it now lives |
+|---|---|---|
+| 1 | voids-healthy-run | `G-DISJOINT` re-addressed to the **W5 merged** report (`comparisons.<name>.layers.<layer>.n_intersection`, `passed`, `strata_root_overlap`); W5 spec'd in §8. ⚠️ R1 wrote **four** comparisons — **superseded by N5: five**, the fifth being the rid-txt at rid layer only |
 | 2 | voids-healthy-run | `verify_tier1_rust.py --out` **built in this worktree** (W7, §8); READ_RULE §2 now uses the real spellings `pass` / `n_playouts_compared` / `n_value_bit_identical` / `n_value_mismatch` / `legal_mask_cache` / `git_rev` |
 | 3 | voids-healthy-run | `G-PREFIX` → `preflight.seeds.{ok, prefix_stable_at}`; conjunct is `ok == true` **and** `prefix_stable_at ⊇ {1,2,4,8,16,32,64,128}` at `m=128` (`{…,32}` at `m=32`) |
 | 4 | voids-healthy-run | `G-UNCAPPED` restated as the **exact prefix+append identity** (the champion append is intended behaviour, ~16% of rids) |
@@ -462,7 +571,7 @@ extends** (rider `R6`). ③ **The phone is out of scope for this axis.**
 | 15 | process-risk | §4's literal command block **removed**; replaced by the W6 driver pointer + the graded-knob table |
 | 16 | process-risk | §4/§10: absolute `RUN/` paths + leg-manifest **copy-back** to `RUN/legs/…` |
 | 17 | process-risk | Per-leg fallbacks re-spelled `resolved_config.{world_seed_salt,m,legal_mask_cache}`; `G-LEAF` fallback `…leaf_hash.harness_leaf_hash` |
-| 18 | process-risk | Per-judge smokes `SMOKE_MANIFEST_S1_<judge>.json`; CRN witness primary at `READOUT::widening.gates.crn.witness_kinds` (W3), per-record `jsonl` fallback |
+| 18 | process-risk | Per-judge smokes; CRN witness primary at `READOUT::widening.gates.crn.witness_kinds` (W3), per-record fallback. ⚠️ R1's spellings **superseded**: `SMOKE_MANIFEST_{S1,S2}_<judge>.json` (N2 — both strata) and `records/<rid>.json`, not `*.jsonl` (N8) |
 | 19 | process-risk | `G-BAND` → `CHAMP_GAMES_VERIFY.json::{band_ok, seed_band, n_games_realized, n_out_of_band, n_duplicate_seeds}`; **`seeds_used` dropped** (its disclosure discipline restored) |
 | 20 | process-risk | New **§9 "Freeze and sequence"**: all W-code via worktree in ONE quiet-window merge **before** the blind commit; `--out` redirect; `WORKERS.conf` moved to `../WORKERS.conf` |
 | 21 | process-risk | §7 adds a **separate timed 10-game generation smoke** (`GEN_SMOKE.json`) — the judge smoke cannot price the generation leg |
