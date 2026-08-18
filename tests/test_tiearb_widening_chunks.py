@@ -400,14 +400,25 @@ def test_verify_refuses_a_chunk_plan_that_lost_uncapped(tmp_path, corpus):
                  "--stratum", "s1"])
 
 
-def test_stage_refuses_a_stratum_whose_m_disagrees_with_the_design(tmp_path):
+def test_stage_accepts_a_corpus_plan_whose_m_worlds_is_cost_metadata(tmp_path):
+    """⚠️ THIS TEST USED TO ASSERT THE OPPOSITE, AND THAT IS HOW THE DEFECT
+    SURVIVED. It required the stage to REFUSE an S1 corpus whose plan carries
+    `m_worlds = 32` — but `build_positions` has no `--m` flag, so EVERY corpus
+    it writes carries 32, and no S1 corpus this pipeline can build was ever
+    stageable. The test locked the bug in: it passed because the code was wrong
+    in the same direction.
+
+    `m_worlds` is cost-arithmetic metadata (playout totals, ETA); it never
+    enters seeds, positions, arms or digests. The M of record is `G-M`'s, read
+    from `RUN_MANIFEST` via `run_tiletie --m`."""
     d = tmp_path / "corpus" / "positions_s1"
-    make_corpus(d, m=32)                      # S1 is fixed at M=128 by DESIGN §4
+    make_corpus(d, m=32)                      # exactly what build_positions writes
     out_root = tmp_path / "campaign"
     out_root.mkdir()
-    with pytest.raises(SystemExit):
-        SC.main(["stage", "--out-root", str(out_root), "--s1-dir", str(d),
-                 "--stratum", "s1", "--chunks-s1", "2"])
+    assert SC.main(["stage", "--out-root", str(out_root), "--s1-dir", str(d),
+                    "--stratum", "s1", "--chunks-s1", "2"]) == 0
+    doc = json.loads((out_root / "POSITION_ORDER.json").read_text())
+    assert doc["strata"]["s1"]["m"] == 128    # the COMMITTED M is what we stamp
 
 
 # =========================================================================== #
@@ -719,3 +730,102 @@ def test_the_frozen_pair_is_untouched_by_this_layer():
         assert (CAMPAIGN / name).is_file()
         assert not (CAMPAIGN / "shared_run" / name).exists()
         assert not (CAMPAIGN / "shared_run_r4" / name).exists()
+
+
+# --------------------------------------------------------------------------- #
+# The S1 STAGE PATH — never exercised until now, because every stage test in    #
+# this file passes `--allow-m-mismatch` and the S1 assertion could not pass     #
+# without it.                                                                   #
+# --------------------------------------------------------------------------- #
+def test_s1_stage_succeeds_when_the_corpus_plan_carries_m32(tmp_path):
+    """THE EXACT CASE THAT WAS UNRUNNABLE.
+
+    `build_positions` has no `--m` flag: every corpus plan it writes carries
+    `m_worlds = 32` from a module constant used only for cost arithmetic. S1 is
+    scored at `--m 128`. The old assertion compared the two and died, so NO S1
+    corpus this pipeline can build could ever be staged — and S2 passed only
+    because 32 coincidentally equals its committed M.
+    """
+    corpus = tmp_path / "positions_s1"
+    make_corpus(corpus, n=24, m=32)   # as build_positions writes it
+    out_root = tmp_path / "campaign"
+    out_root.mkdir(parents=True, exist_ok=True)
+    rc = SC.main(["stage", "--out-root", str(out_root),
+                  "--s1-dir", str(corpus), "--stratum", "s1", "--chunks-s1", "4"])
+    assert rc == 0, "the S1 stage must run on a corpus plan that says m_worlds=32"
+
+    # POSITION_ORDER.json stamps the COMMITTED M (128), not the plan's 32
+    doc = json.loads((out_root / "POSITION_ORDER.json").read_text())
+    assert doc["strata"]["s1"]["m"] == 128
+    # ... and the chunk plans still carry the corpus plan's own number verbatim,
+    # because it is that plan's cost arithmetic and must not be "corrected"
+    plan = json.loads((out_root / "chunks" / "s1" / "chunk1"
+                       / "POSITIONS_PLAN.json").read_text())
+    assert plan["m_worlds"] == 32
+
+
+def test_s1_stage_reports_the_m_discrepancy_without_failing(tmp_path, capsys):
+    """Reported, not asserted — and the report says WHY the field is not a
+    defect, so the next reader does not re-assert it."""
+    corpus = tmp_path / "positions_s1"
+    make_corpus(corpus, n=16, m=32)
+    out_root = tmp_path / "campaign"
+    out_root.mkdir(parents=True, exist_ok=True)
+    assert SC.main(["stage", "--out-root", str(out_root), "--s1-dir", str(corpus),
+                    "--stratum", "s1", "--chunks-s1", "2"]) == 0
+    out = capsys.readouterr().out
+    assert "corpus plan m_worlds=32" in out and "committed m=128" in out
+    assert "no --m flag" in out and "cost-arithmetic metadata" in out
+    assert "G-M" in out and "run_tiletie --m" in out
+
+
+def test_stage_summary_separates_committed_m_from_the_plans_cost_metadata(tmp_path):
+    corpus = tmp_path / "positions_s1"
+    make_corpus(corpus, n=16, m=32)
+    out_root = tmp_path / "campaign"
+    out_root.mkdir(parents=True, exist_ok=True)
+    assert SC.main(["stage", "--out-root", str(out_root), "--s1-dir", str(corpus),
+                    "--stratum", "s1", "--chunks-s1", "2"]) == 0
+    summary = json.loads((out_root / "CHUNK_SUMMARY.json").read_text())
+    s1 = summary["strata"]["s1"]
+    assert s1["m"] == 128                     # the committed, stamped M
+    assert s1["m_plan_cost_metadata"] == 32   # what build_positions wrote
+
+
+def test_allow_m_mismatch_is_accepted_and_inert(tmp_path):
+    """Kept so existing fixture invocations do not fail on an unknown flag —
+    but it no longer gates anything, so passing it changes NOTHING."""
+    outs = []
+    for flag in ([], ["--allow-m-mismatch"]):
+        corpus = tmp_path / f"positions_s1{len(outs)}"
+        make_corpus(corpus, n=16, m=32)
+        out_root = tmp_path / f"campaign{len(outs)}"
+        out_root.mkdir(parents=True, exist_ok=True)
+        assert SC.main(["stage", "--out-root", str(out_root),
+                        "--s1-dir", str(corpus), "--stratum", "s1",
+                        "--chunks-s1", "2", *flag]) == 0
+        outs.append(json.loads((out_root / "POSITION_ORDER.json").read_text()))
+    assert outs[0]["strata"]["s1"]["sha256_order"] == \
+        outs[1]["strata"]["s1"]["sha256_order"]
+    assert outs[0]["strata"]["s1"]["m"] == outs[1]["strata"]["s1"]["m"] == 128
+
+
+def test_a_wrong_stamp_still_dies(tmp_path, monkeypatch):
+    """What IS worth asserting: the M stamped into POSITION_ORDER.json, which
+    the allocation is read against."""
+    corpus = tmp_path / "positions_s1"
+    make_corpus(corpus, n=16, m=32)
+    out_root = tmp_path / "campaign"
+    out_root.mkdir(parents=True, exist_ok=True)
+    real = SC.build_order_doc
+
+    def sabotage(*args, **kwargs):
+        doc, chunks = real(*args, **kwargs)
+        doc["strata"]["s1"]["m"] = 64          # a stamp that disagrees
+        return doc, chunks
+
+    monkeypatch.setattr(SC, "build_order_doc", sabotage)
+    with pytest.raises(SystemExit) as e:
+        SC.main(["stage", "--out-root", str(out_root), "--s1-dir", str(corpus),
+                 "--stratum", "s1", "--chunks-s1", "2"])
+    assert "stamps m=64" in str(e.value) and "commits m=128" in str(e.value)

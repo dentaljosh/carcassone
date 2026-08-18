@@ -129,6 +129,13 @@ def _die(msg: str) -> "NoReturn":  # noqa: F821
     raise SystemExit(f"REFUSING: {msg}")
 
 
+def log(msg: str) -> None:
+    """A NOTE on the printed surface. Used where a discrepancy is worth SEEING
+    but is not a defect — the alternative, staying silent, is how a field's
+    nature gets forgotten and re-asserted by the next reader."""
+    print(f"[stage_chunks] {msg}")
+
+
 def corpus_dir(stratum: str) -> Path:
     return RUN_DIR / "corpus" / f"positions_{stratum}"
 
@@ -301,6 +308,8 @@ def subset_plan(source_plan: dict, keep: set, arms: dict, files: dict,
     kept = sorted(keep)
     sub = {r: arms[r] for r in kept}
     arm_counts = [len(v["arms"]) for v in sub.values()]
+    # cost-arithmetic metadata (see the M note in `main`), carried VERBATIM so a
+    # chunk plan's playout arithmetic reads the same way as the corpus plan's
     m = int(source_plan["m_worlds"])
     playout_secs = float(source_plan.get("playout_secs") or 0.0)
     t_champ = float(source_plan.get("t_champ_secs") or 0.0)
@@ -488,11 +497,44 @@ def cmd_stage(a) -> int:
 
     for stratum, (plan, arms, dropped) in loaded.items():
         src = sources[stratum]
+        # ---- M: assert what we STAMP, report what the corpus plan CARRIES --- #
+        # ⚠️ The old assertion here compared the CORPUS PLAN's `m_worlds`
+        # against the stratum's committed M and died on a mismatch. It could
+        # never pass on S1, so the S1 stage was unrunnable — and every test
+        # passed `--allow-m-mismatch`, which is why nobody found out.
+        #
+        # `build_positions` has NO `--m` flag. Its `m_worlds` comes from a module
+        # constant (`M_WORLDS = 32`) used ONLY for the plan's cost arithmetic —
+        # `total_arm_playouts`, `oracle_worker_secs`, `eta_by_workers`. It never
+        # reaches a seed, a position, an arm or a digest: world and playout seeds
+        # are `sha256(tag|rid|j|salt)`, keyed on the rid and the salt, with no M
+        # term at all. So a corpus plan saying 32 while the stratum is scored at
+        # 128 is not a defect — it is a cost estimate written by a tool that does
+        # not know the scoring budget. S2 "passed" only because 32 happens to
+        # equal its committed M.
+        #
+        # The REAL M gate is `G-M`, which reads `RUN_MANIFEST_{S1,S2}.json::
+        # m_worlds` — written by `run_tiletie --m`, the flag that actually sets
+        # the scoring budget. Nothing here can or should substitute for it.
+        #
+        # What IS worth asserting is the M this tool STAMPS into
+        # `POSITION_ORDER.json`, which the allocation and the chunk sizing are
+        # read against: it must equal the stratum's committed M.
+        m_committed = M_BY_STRATUM[stratum]
+        m_stamped = int(doc["strata"][stratum]["m"])
+        if m_stamped != m_committed:
+            _die(f"{stratum}: POSITION_ORDER.json stamps m={m_stamped} but the "
+                 f"pair commits m={m_committed} for this stratum. The stamp is "
+                 f"what the allocation is read against, so a disagreement here "
+                 f"IS a defect.")
         m_plan = int(plan["m_worlds"])
-        if m_plan != M_BY_STRATUM[stratum] and not a.allow_m_mismatch:
-            _die(f"{stratum}: corpus plan m_worlds={m_plan} but DESIGN §4 fixes "
-                 f"{M_BY_STRATUM[stratum]} for this stratum. "
-                 f"(--allow-m-mismatch only for fixtures.)")
+        if m_plan != m_committed:
+            log(f"{stratum}: NOTE corpus plan m_worlds={m_plan} vs committed "
+                f"m={m_committed}. NOT a defect and NOT asserted: "
+                f"build_positions has no --m flag and its m_worlds is "
+                f"cost-arithmetic metadata only (it never enters seeds, "
+                f"positions, arms or digests). The M of record is G-M's, read "
+                f"from RUN_MANIFEST via run_tiletie --m.")
         leg_rows = read_leg_files(src, plan)
         chunks = chunks_by_stratum[stratum]
 
@@ -514,7 +556,10 @@ def cmd_stage(a) -> int:
                             "counts_by_profile_leg": p["counts_by_profile_leg"]})
         summary["strata"][stratum] = {
             "source_positions_dir": str(src),
-            "m": m_plan,
+            "m": m_committed,                  # the committed, stamped M
+            # the corpus plan's own number, carried for audit. Cost-arithmetic
+            # metadata written by build_positions, NOT the scoring budget.
+            "m_plan_cost_metadata": m_plan,
             "n": doc["strata"][stratum]["n"],
             "n_roots": doc["strata"][stratum]["n_roots"],
             "chunks": written,
@@ -630,7 +675,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     s.add_argument("--chunks-s1", type=int, default=DEFAULT_CHUNKS["s1"])
     s.add_argument("--chunks-s2", type=int, default=DEFAULT_CHUNKS["s2"])
     s.add_argument("--allow-m-mismatch", action="store_true",
-                   help="fixtures only: skip the DESIGN §4 m_worlds assertion")
+                   help="ACCEPTED AND INERT. The corpus plan's m_worlds is no "
+                        "longer asserted against the committed M — it is "
+                        "cost-arithmetic metadata, reported not gated — so "
+                        "there is nothing left to waive. Kept so existing "
+                        "fixture invocations keep working rather than failing "
+                        "on an unknown flag.")
     s.set_defaults(fn=cmd_stage)
 
     v = sub.add_parser("verify", help="re-derive and assert byte-identity")
