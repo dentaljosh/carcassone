@@ -37,7 +37,8 @@ Binding in their R3.3 wording, **not restated here**:
 | §11 | the draft `I6` amendment text |
 | §0.A–§0.O | every pre-blind amendment: `c_remeasure` spelling, the `allow_null` mechanism, `STAGE1B_LADDER.json`, W9/`D-DRAW`, the `WORKERS.conf` consumer mapping, `--backend rust`. ⚠️ **EXCEPT §0.O, which R4-0.4 OVERRIDES**: the rule is no longer "`--positions-dir` is always explicit" but **"every `run_tiletie` path flag is always explicit"** — all six, three of them git-tracked in the spent run |
 
-**Also carried, by reference, not rebuilt:** `STAGE1B_LADDER.json` (the `G-REPLICATE` reference)
+**Also carried, by reference, not rebuilt:** `STAGE1B_LADDER.json` (the `G-REPLICATE` reference —
+⚠️ **byte-identically COPIED into the new `RUN` by R4-0.5**, since `RUN` now means `shared_run_r4/`)
 · the merged W-code (W2/W3/W5/W6/W7/W8/W10) · the fixtures · the 4a/4b acceptance harness.
 R4's W-delta is §8 and is small.
 
@@ -163,6 +164,55 @@ this run):** ⇒ **W11** — `run_tiletie` (and its siblings) **refuse to defaul
 directory containing a manifest whose run-id is not the current run's**, failing loud with the
 offending path rather than writing. A guard, not a convention: conventions are what these three
 incidents each defeated.
+
+### R4-0.5 AMENDMENT (rev R4.5) — `RUN` redefined, and where the RETAINED corpus lives
+
+**The ambiguity, caught by the executor's dry-run before any generation** (box idle, nothing
+staged, the frozen R3 directory untouched): **this pair never redefined `RUN`.** It carried R3's
+`RUN = shared_run/` unchanged while living in `shared_run_r4/`, so every `RUN`-relative address in
+it — including all the carried ones — pointed into the **spent** run's directory. Four launchers
+hard-coded `shared_run/` to match (`run_gen.sh:158`, `build_widening_corpus.sh:53`,
+`run_scoring.sh:99`, `stage_chunks.py:91-94`).
+
+**RESOLUTION (a), adopted: `RUN = measurement/tiearb_widening_20260817/shared_run_r4/`,** defined
+in READ_RULE §R4-0 with the override stated as **total** — it reaches inside the CARRIED sections,
+where most `RUN` addresses actually live. The alternative — leaving `RUN = shared_run/` and writing
+R4's artifacts into the spent directory — is the failure class this campaign has now met three
+times (§R4-0.4) and was never a candidate. **One trap the redefinition itself creates is closed in
+the same breath:** `STAGE1B_LADDER.json` is carried *by reference* and existed only under the old
+`RUN`, so redefining alone would have left `G-REPLICATE`'s address resolving to nothing —
+**ABSENT IS FAIL, on a healthy run.** It is now a byte-identical **copy** under the new `RUN`
+(sha256 verified), not an address carve-out.
+
+**The RETAINED-corpus wrinkle, resolved.** Band 135e9's banked **551 (S1) / 103 (S2)** positions
+live under `shared_run/corpus/` — the old `RUN`. Under the redefinition:
+
+1. **`RUN/corpus/` (i.e. `shared_run_r4/corpus/`) holds the UNION** — retained + freshly generated
+   — and it is the only corpus any gate, driver or leg reads. There is no split-brain corpus.
+2. **The retained positions are READ read-only from the old `RUN` and COPIED in** (copied, not
+   symlinked: a symlink into a frozen directory invites a write-through and breaks on any later
+   archive or move). **`shared_run/` is never written to, at any point, by anything.**
+3. **A provenance stamp makes the union unambiguous** — `RUN/corpus/CORPUS_UNION.json` carrying,
+   per stratum: the **origin commit** of the retained artifacts, their path under the old `RUN`,
+   a **sha256 per copied file**, and the **retained / fresh counts**. The read-out prints the
+   retained-vs-fresh split, because R4's `n` is a *mixture* and a reader must be able to see its
+   composition.
+4. ⚠️ **Retained positions are NOT pre-cleared. They enter the probe build and are gated exactly
+   like fresh ones** — `G-DISJOINT` (including the digest layer and its total order), `G-DRAW`,
+   `G-UNCAPPED`, all of it. "Already gated under R3" is not a status any position holds: **R3's
+   gate FAILED, so nothing was ever passed.** The one known digest-colliding rid
+   (`tt_sp_135000000122_p2`) is excluded through the ordinary rule, not by hand.
+
+**Re-blind-commit disclosure.** The blind commit **`0b2d8f0e`** (pair at R4.4 + `FLOORS.json`, into
+`shared_run_r4/`) already landed. It is **superseded** by the re-commit carrying this revision.
+Legality is the same class as the §0.O re-commit: **nothing was generated, nothing staged, no
+position scored, and no statistic of this run exists** — the dry-run caught it *before* the first
+launcher ran. `FLOORS.json` stays where `0b2d8f0e` put it, which the redefinition makes correct.
+
+**W-item, executed by the builder BEFORE the new blind commit (not deferred):** rewire the four
+launchers from `shared_run/` to `shared_run_r4/`, **and repoint `stage_chunks.py`'s provenance
+citation at the R4 pair** — it currently cites R3's `DESIGN.md`/`READ_RULE.md` as chunk
+provenance, which would stamp every chunk with the **spent** pair's authority.
 
 ---
 
@@ -520,7 +570,8 @@ invocation over a widened band. Exact conjunct: `READ_RULE.md` §2.
 |---|---|
 | **W5** | `GATE_DISJOINT.json` gains: (0) the **probe → gate → apply → carry-forward** flow of R4-0.2 (`--carry-exclusions`), with the final report carrying **`carried`** and **`residual`** per stratum — the quantity the bound is judged on is `carried + residual`; (i) the R4-3 **exclusion** semantics — per-comparison collision lists, the excluded-rid set, the rate, the bound, **`denominator_source`** (R4.1/R5 — it is an address `G-DISJOINT` reads, and **ABSENT IS FAIL**, so a builder working from this table must emit it), and `void` vs `excluded` as distinct outcomes; (ii) a **SIXTH** comparison **`base_vs_extension`** — one key, summed top-level layers plus the required `by_stratum` block (R4-0.1) — the intra-stratum cross-band case R3's contiguous band made impossible and R4's band structure makes expected; and (iii) a **SEVENTH** comparison **`s1_vs_s2`**, all three layers (R4.1/B4) — the *largest* previously-unmeasured case (≈1–2 expected events at FULL, ≈3.4× base↔extension), and the one R4-3 rule 2 already claimed to govern. Rid and root layers cost nothing extra there, being zero-tolerance already. The total order of R4-3 rule 1 decides which side is excluded |
 | **two-box layer** | **DELIVERED `1670f030`** — `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests (R4-4). No further W-work; its acceptance check is `stage_chunks verify`, post-corpus |
-| **W6** | (i) **run ALL gates and aggregate — never `set -e`-abort on the first failure** (that is why `GATE_DRAW.json` never emitted); (ii) build the **probe**, gate it, then carry R4-0.2's exclusions into the **final** `POSITIONS_PLAN`; (iii) size from the R4-2 rates |
+| **W6** | (i) **run ALL gates and aggregate — never `set -e`-abort on the first failure** (that is why `GATE_DRAW.json` never emitted); (ii) build the **probe**, gate it, then carry R4-0.2's exclusions into the **final** `POSITIONS_PLAN`; (iii) size from the R4-2 rates; (iv) **assemble the UNION corpus under the new `RUN`** and emit **`RUN/corpus/CORPUS_UNION.json`** — retained/fresh counts per stratum, origin commit, path under the old `RUN`, per-file sha256 — copying the retained positions **read-only** out of `shared_run/`, which is never written to (R4-0.5) |
+| **launchers** | rewire `run_gen.sh:158`, `build_widening_corpus.sh:53`, `run_scoring.sh:99`, `stage_chunks.py:91-94` from `shared_run/` to `shared_run_r4/`, **and repoint `stage_chunks.py`'s provenance citation at the R4 pair** (it cites the SPENT R3 pair as chunk provenance). **Before** the new blind commit (R4-0.5) |
 | **W10** | (i) extension-band generation: base + extension (+ optional top-up) as **separate invocations into separate directories**, each with its own `verify-champgames` file (the §0.L pattern, now three-way); (ii) **`--dry-run` / `WIDENING_GEN_DRY_RUN`** — resolves everything, prints `argv`, **creates nothing** — and **all tests use it** (R4-0.3: a test that can exec a production launcher is a launcher missing a mode) |
 | **W3** | `G-BAND`'s N-file form and the exclusion counters surfaced in the verdict block |
 | carried unchanged | W2 · W7 · W8 + fixtures · W9 (`D-DRAW`) · `STAGE1B_LADDER.json` · the 4a/4b harness |

@@ -16,6 +16,30 @@
 >
 > `governance/PRODUCTION.yaml` untouched on every branch. No claim minted. No strength row.
 
+## R4 §0 — **`RUN` IS REDEFINED** (rev R4.5; overrides the carried §41)
+
+> **`RUN` = `measurement/tiearb_widening_20260817/shared_run_r4/`.**
+
+The R3.3 rule defines `RUN = shared_run/` and this pair **carried that definition unchanged while
+living in `shared_run_r4/`** — so every `RUN`-relative address in this pair pointed into the
+**spent, frozen** R3 directory. Redefined here, and the redefinition is **TOTAL**:
+
+1. **It applies to every address in this pair, INCLUDING every address inside the CARRIED
+   sections.** Wherever the R3.3 text says `RUN`, read `shared_run_r4/`. No address's *shape*
+   changes — `RUN/GATE_DISJOINT.json`, `RUN/FLOORS.json`, `RUN/verdicts/READOUT.json` and the rest
+   are all unchanged in form; only the directory they resolve under moves. A reader who resolves a
+   carried address under the old `RUN` has resolved the wrong file.
+2. **The spent R3 directory `shared_run/` is READ-ONLY for the whole of R4.** Nothing in this run
+   writes there — not a manifest, not a gate, not a log. (Third incident of this class in this
+   campaign; see DESIGN §R4-0.4.)
+3. ⚠️ **`STAGE1B_LADDER.json` is COPIED, not cross-referenced.** It is carried "by reference, not
+   rebuilt", and it lived only in the old `RUN` — so the redefinition alone would have left
+   `G-REPLICATE`'s `RUN/STAGE1B_LADDER.json` **resolving to a file that does not exist, and ABSENT
+   IS FAIL on a healthy run.** A byte-identical copy now sits at `RUN/STAGE1B_LADDER.json`
+   (sha256 `8cf952be277ef01b2a69d914d9f01971a8752a64a6c18f5e9229ddbd43edcd21`, verified equal to
+   the R3 original). **A copy, not an exception to the address rule** — carve-outs are how this
+   class recurs.
+
 ## CARRIED UNCHANGED from `../shared_run/READ_RULE.md` @ `604edc83`
 
 | § | content — binding in its R3.3 wording |
