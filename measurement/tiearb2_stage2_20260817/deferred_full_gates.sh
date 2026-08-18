@@ -111,7 +111,14 @@ log "all 4 JCZ markers present"
 # `bash …/deferred_full_gates.sh` and carries none of these strings.
 quiet=0
 while [ "$quiet" -lt 2 ]; do
-  n=$(pgrep -cf "eval_fair_puct|gen_fair|run_cell\.sh|match\.py" 2>/dev/null || true)
+  # ⚠️ WIDENED 2026-08-18 — `run_tiletie` added. The pattern could see generation
+  # (`gen_fair`) but NOT the tie-arbiter widening run's SCORING legs, so the box
+  # would have read "quiet" the moment generation drained and fired a ~4 h
+  # reconcile suite into a live 15-16 h scoring run. `run_tiletie` is the
+  # resident parent of every scoring leg (it spawns oracle_score_pilot /
+  # tier1_rust_leg as children and blocks on them), so matching it covers the
+  # whole leg. A quiet check must fail toward "still busy".
+  n=$(pgrep -cf "eval_fair_puct|gen_fair|run_cell\.sh|match\.py|run_tiletie" 2>/dev/null || true)
   case "$n" in ''|*[!0-9]*) n=0 ;; esac
   la=$(cut -d' ' -f1 /proc/loadavg)
   if [ "$n" -eq 0 ] && [ "${la%.*}" -lt 4 ]; then
