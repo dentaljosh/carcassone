@@ -1,0 +1,22 @@
+{
+ "witness": "G-SPLIT (pre-adjudication convenience check; adjudicate.py gates it independently)",
+ "utc": "2026-08-18T05:13:39Z",
+ "cell_a": "jcz_CHAMP_deploy11008",
+ "cell_b": "jcz_ARB_B16J4_deploy11008",
+ "band_tag": "b134",
+ "n_decks_a": 400,
+ "n_decks_b": 400,
+ "hosts_a": [
+  "Doctor",
+  "laptop-wsl"
+ ],
+ "hosts_b": [
+  "Doctor",
+  "laptop-wsl"
+ ],
+ "decks_only_in_a": [],
+ "decks_only_in_b": [],
+ "decks_with_different_host": [],
+ "identical": true,
+ "rationale": "DESIGN \u00a70.1.2 / READ_RULE G-SPLIT: D is deck-paired, so a deck that ran on different boxes in the two cells puts every per-box difference (JVM packaging, W and contention, RAM) INSIDE the paired difference, where it is indistinguishable from the arbiter's effect. Identical map => it cancels exactly."
+}

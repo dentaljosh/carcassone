@@ -1,5 +1,17 @@
 # JCZ OUT-OF-LINEAGE PRICING OF THE TIE ARBITER — DESIGN
 
+> **✅ STATUS 2026-08-18 — COMPLETE. RAN, ADJUDICATED, CLOSED. Branch `J-CONFIRMED`** on band
+> **134000000000** (tag `b134`), branch `tiearb2-stage2`. The numbers of record — and the ONLY
+> place to read them — are [`READOUT_b134.md`](READOUT_b134.md) / [`READOUT_b134.json`](READOUT_b134.json);
+> `results.csv` carries the three rows (`jcz_tiearb_CHAMP_deploy11008_…`,
+> `jcz_tiearb_ARB_B16J4_deploy11008_…`, `jcz_tiearb_D_ARBminusCHAMP_…`, all `_b134e9`).
+> ⚠️ **The FIRST attempt, on band 133000000000, was VOIDED `U-UNREADABLE`** and no statistic from
+> it is quotable — audit trail [`DISCLOSURE.md`](DISCLOSURE.md); its artifacts are preserved
+> untouched and the `b134` tag keeps the two runs from colliding.
+> ⛔ **What the verdict licenses is unchanged from the text below: corroborating evidence for the
+> owner's PENDING production-flip decision, and nothing else.** `governance/PRODUCTION.yaml` is
+> **untouched**. **The design text below is the committed prereg and is NOT edited by this banner.**
+
 > **Status: DESIGN COMMITTED 2026-08-17, BEFORE the band claim and BEFORE game 1.**
 > Owner authorization, verbatim (2026-08-17): **"lets do jcz"** — given in answer to the
 > question of whether the freshly `G-CONFIRMED` tie-arbitration edge

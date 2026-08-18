@@ -1,0 +1,66 @@
+{
+ "witness": "G-COVER (pre-adjudication convenience check; adjudicate.py gates it independently)",
+ "cell": "jcz_CHAMP_deploy11008",
+ "band": 134000000000,
+ "band_tag": "b134",
+ "decks": 400,
+ "deck_range": [
+  134000000000,
+  134000000399
+ ],
+ "games_expected": 800,
+ "utc": "2026-08-18T05:13:38Z",
+ "merged": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_CHAMP_deploy11008.b134.jsonl",
+ "shards": [
+  {
+   "shard": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_CHAMP_deploy11008.Doctor.b134.jsonl",
+   "host": "Doctor",
+   "records": 430
+  },
+  {
+   "shard": "/mnt/c/carc-shared/jcz_tiearb_20260817/jcz_CHAMP_deploy11008.laptop-wsl.b134.jsonl",
+   "host": "laptop-wsl",
+   "records": 370
+  }
+ ],
+ "sidecars": [
+  {
+   "host": "Doctor",
+   "seed_base": 134000000000,
+   "n_decks": 215,
+   "state": "COMPLETE",
+   "records_observed": 430,
+   "git_head": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+   "utc": "2026-08-18T03:42:33Z"
+  },
+  {
+   "host": "Doctor",
+   "seed_base": 134000000000,
+   "n_decks": 215,
+   "state": "COMPLETE",
+   "records_observed": 430,
+   "git_head": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+   "utc": "2026-08-18T03:42:33Z"
+  },
+  {
+   "host": "laptop-wsl",
+   "seed_base": 134000000215,
+   "n_decks": 185,
+   "state": "COMPLETE",
+   "records_observed": 370,
+   "git_head": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+   "utc": "2026-08-18T03:42:45Z"
+  }
+ ],
+ "records_total": 800,
+ "unique_cells": 800,
+ "torn_or_unparseable": 0,
+ "out_of_band": [],
+ "duplicates": [],
+ "missing": [],
+ "extra": [],
+ "hostmap_conflicts": [],
+ "sidecar_shard_mismatches": [],
+ "decks_without_sidecar": [],
+ "pass": true
+}

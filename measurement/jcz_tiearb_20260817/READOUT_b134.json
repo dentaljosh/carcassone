@@ -1,0 +1,1543 @@
+{
+  "schema": "carcassonne-jcz-tiearb-readout/v1",
+  "design": "measurement/jcz_tiearb_20260817/DESIGN.md",
+  "read_rule": "measurement/jcz_tiearb_20260817/READ_RULE.md",
+  "run_id": "jcz_tiearb_20260817",
+  "cell_a": "jcz_CHAMP_deploy11008",
+  "cell_b": "jcz_ARB_B16J4_deploy11008",
+  "branch": "J-CONFIRMED",
+  "branch_headline": "\u2b50 THE ARBITER'S EDGE SURVIVES OUT OF LINEAGE.",
+  "read": "Terminal-grounded tie arbitration buys real points against an opponent that shares no leaf, no search, no engine and no rules implementation with us. The Stage-2 edge is NOT an artefact of playing our own lineage at its own blind spots. LICENSES exactly one thing: it is corroborating evidence the owner may weigh in the pending production-flip decision. \u26d4 It does NOT flip PRODUCTION.yaml, does NOT license an on-device deploy (rho_phone 5.520 at B=16, unsolved), does NOT license a leaf term (CL-065 and the two dead menus stand), does NOT license a second cell or a larger B, and does NOT make anything superhuman (DESIGN \u00a78.1).",
+  "failed_preconditions": [],
+  "no_branch_matched": false,
+  "branch_reason": null,
+  "D": 2.72625,
+  "se_D": 0.8390428756695211,
+  "z_D": 3.2492380056556307,
+  "n_common": 400,
+  "D_block": {
+    "D": 2.72625,
+    "se_D": 0.8390428756695211,
+    "z_D": 3.2492380056556307,
+    "n_common": 400,
+    "n_common_decks": 400,
+    "M_A_on_common": 6.355,
+    "M_B_on_common": 9.08125,
+    "deck_seed_min": 134000000000,
+    "deck_seed_max": 134000000399,
+    "units": "DECKS (\u00a72: a paired statistic; each deck is 2 games)",
+    "naive_summary_difference_DIAGNOSTIC": 2.7262500000000003,
+    "n_to_resolve_D_2sigma_decks": 152,
+    "n_to_resolve_units": "DECKS per cell at the REALIZED dispersion",
+    "power_committed_before_the_run": {
+      "per_deck_paired_sd_assumed": 12.16,
+      "se_per_cell_at_400_decks": 0.608,
+      "se_D_assumed_rho_0": 0.86,
+      "conviction_floor_D_at_2sigma": 1.72,
+      "n_to_convict_D_1.00_at_2sigma_decks": 1183,
+      "n_to_convict_D_1.50_at_2sigma_decks": 526,
+      "source": "DESIGN.md \u00a74.1-\u00a74.3, committed 2026-08-17 before the band claim"
+    }
+  },
+  "z_D_witness": {
+    "analyzer_path": {
+      "D": 2.72625,
+      "se_D": 0.8390428756695211,
+      "z_D": 3.2492380056556307,
+      "n_common": 400
+    },
+    "recomputed": {
+      "D": 2.72625,
+      "se_D": 0.8390428756695211,
+      "z_D": 3.2492380056556307,
+      "n_common": 400
+    },
+    "gate": {
+      "tolerance_relative": 1e-09,
+      "fields": {
+        "D": {
+          "analyzer_path": 2.72625,
+          "recomputed": 2.72625,
+          "agree": true
+        },
+        "se_D": {
+          "analyzer_path": 0.8390428756695211,
+          "recomputed": 0.8390428756695211,
+          "agree": true
+        },
+        "z_D": {
+          "analyzer_path": 3.2492380056556307,
+          "recomputed": 3.2492380056556307,
+          "agree": true
+        },
+        "n_common": {
+          "analyzer_path": 400,
+          "recomputed": 400,
+          "agree": true
+        }
+      },
+      "semantics": "\u00a71 \u2014 the recomputation is a WITNESS, never a branch input; disagreement beyond float tolerance is U-UNREADABLE"
+    }
+  },
+  "cells": {
+    "jcz_CHAMP_deploy11008": {
+      "cell": "jcz_CHAMP_deploy11008",
+      "archive": "jcz_CHAMP_deploy11008.b134.jsonl",
+      "archive_exists": true,
+      "n_records": 800,
+      "n_scored": 800,
+      "n_decks_seat_balanced": 400,
+      "n_paired_decks_analyzer": 400,
+      "half_pair_decks": 0,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "W_D_L": [
+        505,
+        15,
+        280
+      ],
+      "win_rate": 0.640625,
+      "win_rate_z": 7.95495128834866,
+      "elo": 100.42240828085703,
+      "elo_sigma_1s": 12.285980323116263,
+      "elo_ci95": [
+        76.34188684754915,
+        124.5029297141649
+      ],
+      "paired_margin_mean": 6.355,
+      "paired_margin_sem": 0.6064094272714675,
+      "paired_margin_z": 10.479718345729308,
+      "unpaired_margin_mean": 6.355,
+      "unpaired_margin_sd": 18.849883889650798,
+      "per_seat": {
+        "0": {
+          "n": 400,
+          "wins": 275,
+          "draws": 5,
+          "mean_margin": 8.6925
+        },
+        "1": {
+          "n": 400,
+          "wins": 230,
+          "draws": 10,
+          "mean_margin": 4.0175
+        }
+      },
+      "voids": {},
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "ms_per_move_champ_OURS": 1908.857125,
+      "ms_per_move_jcz_OPPONENT": 140.641375,
+      "ms_ratio": 13.572514667180975,
+      "worker_s_per_game": 144.5862875,
+      "divergence_counts": {
+        "UNPLACEABLE_REDRAW": 46,
+        "WALL_LEGALITY": 10,
+        "SCORE_TIMING": 1
+      },
+      "divergence_real": {},
+      "final_agree_all": true,
+      "replay_ok_all": true
+    },
+    "jcz_ARB_B16J4_deploy11008": {
+      "cell": "jcz_ARB_B16J4_deploy11008",
+      "archive": "jcz_ARB_B16J4_deploy11008.b134.jsonl",
+      "archive_exists": true,
+      "n_records": 800,
+      "n_scored": 800,
+      "n_decks_seat_balanced": 400,
+      "n_paired_decks_analyzer": 400,
+      "half_pair_decks": 0,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "W_D_L": [
+        554,
+        9,
+        237
+      ],
+      "win_rate": 0.698125,
+      "win_rate_z": 11.207642481806777,
+      "elo": 145.6424169456388,
+      "elo_sigma_1s": 12.285980323116263,
+      "elo_ci95": [
+        121.5618955123309,
+        169.72293837894665
+      ],
+      "paired_margin_mean": 9.08125,
+      "paired_margin_sem": 0.6115077988577985,
+      "paired_margin_z": 14.850587379200011,
+      "unpaired_margin_mean": 9.08125,
+      "unpaired_margin_sd": 18.569010706976147,
+      "per_seat": {
+        "0": {
+          "n": 400,
+          "wins": 283,
+          "draws": 4,
+          "mean_margin": 9.5575
+        },
+        "1": {
+          "n": 400,
+          "wins": 271,
+          "draws": 5,
+          "mean_margin": 8.605
+        }
+      },
+      "voids": {},
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "ms_per_move_champ_OURS": 4646.76175,
+      "ms_per_move_jcz_OPPONENT": 138.553,
+      "ms_ratio": 33.537792397133224,
+      "worker_s_per_game": 335.1621,
+      "divergence_counts": {
+        "UNPLACEABLE_REDRAW": 40
+      },
+      "divergence_real": {},
+      "final_agree_all": true,
+      "replay_ok_all": true
+    }
+  },
+  "two_box": {
+    "hosts_played": [
+      "Doctor",
+      "laptop-wsl"
+    ],
+    "hosts_expected": [
+      "Doctor",
+      "laptop-wsl"
+    ],
+    "workers": {
+      "W_LOCAL": "30",
+      "W_LAPTOP": "22",
+      "DECKS_LOCAL": "215",
+      "DECKS_LAPTOP": "185",
+      "LAPTOP_HOST": "laptop-wsl"
+    },
+    "per_cell": {
+      "jcz_CHAMP_deploy11008": {
+        "host_source_resolved": "hostmap",
+        "hostmap": {
+          "searched": [
+            "jcz_CHAMP_deploy11008.b134.hostmap.json",
+            "jcz_CHAMP_deploy11008.b134.jsonl.hostmap.json",
+            "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_CHAMP_deploy11008.hostmap.json"
+          ],
+          "path": "jcz_CHAMP_deploy11008.b134.hostmap.json",
+          "exists": true,
+          "parsed": true,
+          "shape": "hostmap.deck_seed -> host",
+          "error": null,
+          "conflicts": []
+        },
+        "decks_per_host": {
+          "Doctor": 215,
+          "laptop-wsl": 185
+        },
+        "per_host": {
+          "Doctor": {
+            "n_games": 430,
+            "n_decks": 215,
+            "deck_seed_min": 134000000000,
+            "deck_seed_max": 134000000214,
+            "ms_per_move_champ_OURS": 2065.5581395348836,
+            "worker_s_per_game": 154.9199534883721
+          },
+          "laptop-wsl": {
+            "n_games": 370,
+            "n_decks": 185,
+            "deck_seed_min": 134000000215,
+            "deck_seed_max": 134000000399,
+            "ms_per_move_champ_OURS": 1726.7451351351351,
+            "worker_s_per_game": 132.5768918918919
+          }
+        }
+      },
+      "jcz_ARB_B16J4_deploy11008": {
+        "host_source_resolved": "hostmap",
+        "hostmap": {
+          "searched": [
+            "jcz_ARB_B16J4_deploy11008.b134.hostmap.json",
+            "jcz_ARB_B16J4_deploy11008.b134.jsonl.hostmap.json",
+            "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_ARB_B16J4_deploy11008.hostmap.json"
+          ],
+          "path": "jcz_ARB_B16J4_deploy11008.b134.hostmap.json",
+          "exists": true,
+          "parsed": true,
+          "shape": "hostmap.deck_seed -> host",
+          "error": null,
+          "conflicts": []
+        },
+        "decks_per_host": {
+          "Doctor": 215,
+          "laptop-wsl": 185
+        },
+        "per_host": {
+          "Doctor": {
+            "n_games": 430,
+            "n_decks": 215,
+            "deck_seed_min": 134000000000,
+            "deck_seed_max": 134000000214,
+            "ms_per_move_champ_OURS": 5008.100232558139,
+            "worker_s_per_game": 356.9537209302326
+          },
+          "laptop-wsl": {
+            "n_games": 370,
+            "n_decks": 185,
+            "deck_seed_min": 134000000215,
+            "deck_seed_max": 134000000399,
+            "ms_per_move_champ_OURS": 4226.827837837838,
+            "worker_s_per_game": 309.8367027027027
+          }
+        }
+      }
+    },
+    "jvm_version_by_host_REPORTED": {
+      "Doctor": null,
+      "laptop-wsl": null
+    },
+    "jvm_packaging_note": "\u26a0\ufe0f THE JVM *PACKAGING* DIFFERS BY HOST \u2014 `17.0.19+10-1-24.04.2-Ubuntu` locally vs `+10-1-26.04.2-Ubuntu` on the laptop, the SAME OpenJDK 17.0.19 on a different distro base (DESIGN \u00a70.1). It is **REPORTED HERE AND IS NEVER A BRANCH INPUT**: the PINNED artifacts are the jar (sha256, verified on each host) and the shim CLASSES (copied, not rebuilt \u2014 byte-identical bytecode on both hosts), and both are gated. The runtime difference cannot touch `D` because `G-SPLIT` holds the deck\u2192host map IDENTICAL across the two cells, so every per-box effect is common to both terms of `margin_B(d) \u2212 margin_A(d)` and cancels exactly (DESIGN \u00a70.1.2).",
+    "G-SPLIT": {
+      "PASS": true,
+      "realized": {
+        "n_common_decks_compared": 400,
+        "mismatched_decks": {
+          "n_total": 0,
+          "listed": [],
+          "truncated": false,
+          "list_cap": 20
+        },
+        "decks_with_no_host_in_either_cell": {
+          "n_total": 0,
+          "listed": [],
+          "truncated": false,
+          "list_cap": 20
+        },
+        "unparseable_hostmap": null,
+        "intra_cell_host_conflicts": null,
+        "per_cell": {
+          "jcz_CHAMP_deploy11008": {
+            "host_source_resolved": "hostmap",
+            "n_decks_from_hostmap": 400,
+            "n_decks_from_record_stamps": 0,
+            "hostmap": {
+              "searched": [
+                "jcz_CHAMP_deploy11008.b134.hostmap.json",
+                "jcz_CHAMP_deploy11008.b134.jsonl.hostmap.json",
+                "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_CHAMP_deploy11008.hostmap.json"
+              ],
+              "path": "jcz_CHAMP_deploy11008.b134.hostmap.json",
+              "exists": true,
+              "parsed": true,
+              "shape": "hostmap.deck_seed -> host",
+              "error": null,
+              "conflicts": []
+            },
+            "decks_per_host": {
+              "Doctor": 215,
+              "laptop-wsl": 185
+            }
+          },
+          "jcz_ARB_B16J4_deploy11008": {
+            "host_source_resolved": "hostmap",
+            "n_decks_from_hostmap": 400,
+            "n_decks_from_record_stamps": 0,
+            "hostmap": {
+              "searched": [
+                "jcz_ARB_B16J4_deploy11008.b134.hostmap.json",
+                "jcz_ARB_B16J4_deploy11008.b134.jsonl.hostmap.json",
+                "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_ARB_B16J4_deploy11008.hostmap.json"
+              ],
+              "path": "jcz_ARB_B16J4_deploy11008.b134.hostmap.json",
+              "exists": true,
+              "parsed": true,
+              "shape": "hostmap.deck_seed -> host",
+              "error": null,
+              "conflicts": []
+            },
+            "decks_per_host": {
+              "Doctor": 215,
+              "laptop-wsl": 185
+            }
+          }
+        },
+        "hosts_seen": [
+          "Doctor",
+          "laptop-wsl"
+        ],
+        "semantics": "FAIL-CLOSED. ABSENT AT EVERY SOURCE FAILS: the sidecar `<cell>.hostmap.json` is read first, then a `host`/`hostname` field on the records; a deck with no host in either cell, a deck whose host DIFFERS between the cells, an unparseable sidecar, or a deck claimed by two hosts inside one cell all VOID. Rationale: D is deck-paired, so a deck that changed boxes puts every per-box difference INSIDE the paired difference, arithmetically indistinguishable from the arbiter's effect (DESIGN \u00a70.1.2)."
+      }
+    },
+    "G-COVER": {
+      "PASS": true,
+      "realized": {
+        "per_cell": {
+          "jcz_CHAMP_deploy11008": {
+            "n_scored": 800,
+            "n_decks": 400,
+            "band_derived_from_records": 134000000000,
+            "band_window": [
+              134000000000,
+              134000000399
+            ],
+            "duplicate_deck_seat_replicate": {
+              "n_total": 0,
+              "listed": [],
+              "truncated": false,
+              "list_cap": 20
+            },
+            "out_of_band_deck_seeds": {
+              "n_total": 0,
+              "listed": [],
+              "truncated": false,
+              "list_cap": 20
+            },
+            "decks_without_both_seatings": {
+              "n_total": 0,
+              "listed": [],
+              "truncated": false,
+              "list_cap": 20
+            },
+            "n_games_if_complete": 800,
+            "ok": true
+          },
+          "jcz_ARB_B16J4_deploy11008": {
+            "n_scored": 800,
+            "n_decks": 400,
+            "band_derived_from_records": 134000000000,
+            "band_window": [
+              134000000000,
+              134000000399
+            ],
+            "duplicate_deck_seat_replicate": {
+              "n_total": 0,
+              "listed": [],
+              "truncated": false,
+              "list_cap": 20
+            },
+            "out_of_band_deck_seeds": {
+              "n_total": 0,
+              "listed": [],
+              "truncated": false,
+              "list_cap": 20
+            },
+            "decks_without_both_seatings": {
+              "n_total": 0,
+              "listed": [],
+              "truncated": false,
+              "list_cap": 20
+            },
+            "n_games_if_complete": 800,
+            "ok": true
+          }
+        },
+        "decks_declared": 400,
+        "seatings_per_deck_required": 2,
+        "reconciliation_with_G_N": "G-N owns VOLUME (its committed 80% floor: n_common >= 320 decks, >= 640 games/cell) and G-COVER owns SHAPE. G-COVER is therefore evaluated over what the cell CLAIMS to cover: no duplicate (deck_seed, champ_seat, replicate), no seed outside the cell's own record-derived band window, and BOTH seatings present for every deck that is present. A partial run fails G-N on volume rather than G-COVER on absence \u2014 the alternative reading would repeal G-N's floor and void every healthy-but-short run (READ_RULE \u00a73.1's defect class)."
+      }
+    },
+    "why_the_split_must_be_identical": "DESIGN \u00a70.1.2: `D` is deck-paired, so a deck that ran on different boxes in the two cells puts every per-box difference (JVM packaging, W and hence contention, RAM) INSIDE `margin_B(d) \u2212 margin_A(d)`, arithmetically indistinguishable from the arbiter's effect. With the split identical, every per-box effect is common to both terms and CANCELS EXACTLY."
+  },
+  "arbiter_telemetry": {
+    "n_games": 800,
+    "n_games_with_telemetry": 800,
+    "telemetry_on_every_game": true,
+    "tile_plies_total": 27577.0,
+    "fired_plies_total": 15438.0,
+    "fires_total": 15438.0,
+    "pickchanges_total": 9493.0,
+    "arms_total_total": 53001.0,
+    "playouts_total_total": 848016.0,
+    "secs_total": 158176.079130109,
+    "errors_total": 0.0,
+    "partial_argmax_total": 0.0,
+    "max_plies": [
+      400
+    ],
+    "mode": [
+      "argmax"
+    ],
+    "B": [
+      16
+    ],
+    "J": [
+      4
+    ],
+    "first_error": null,
+    "n_games_with_error": 0,
+    "fired_source": "fired_plies",
+    "fired_plies_used": 15438.0,
+    "phi": 19.2975,
+    "error_rate_on_fired": 0.0,
+    "phi_effective": 19.2975
+  },
+  "preconditions": {
+    "G-BAND": true,
+    "G-LEAF": true,
+    "G-SPLIT": true,
+    "G-COVER": true,
+    "G-ARB": true,
+    "G-FIRE": true,
+    "G-J13": true,
+    "G-RULES": true,
+    "G-DIVERGE": true,
+    "G-JCZ": true,
+    "G-TOOL": true,
+    "G-N": true,
+    "G-PLY": true,
+    "G-WITNESS": true
+  },
+  "precondition_detail": {
+    "G-BAND": {
+      "declared_band": 134000000000,
+      "band_claim": {
+        "path": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/BAND_CLAIM_b134.txt",
+        "exists": true,
+        "band": 134000000000,
+        "claimed_at": 1787022227.2057104,
+        "claimed_at_source": "file mtime",
+        "raw": "134000000000\njcz_tiearb_20260817\nclaimed 2026-08-17\n"
+      },
+      "claimed_before_game_1": true,
+      "sentinel_timestamp": 1787022227.2057104,
+      "sentinel_timestamp_source": "file mtime",
+      "earliest_finished_at": 1787022383.211507,
+      "decks_per_cell_declared": 400,
+      "per_cell": {
+        "jcz_CHAMP_deploy11008": {
+          "n_decks": 400,
+          "deck_seed_min": 134000000000,
+          "deck_seed_max": 134000000399,
+          "band_derived_from_records": 134000000000,
+          "all_within_declared_band": true,
+          "n_outside": 0
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "n_decks": 400,
+          "deck_seed_min": 134000000000,
+          "deck_seed_max": 134000000399,
+          "band_derived_from_records": 134000000000,
+          "all_within_declared_band": true,
+          "n_outside": 0
+        }
+      },
+      "same_band_across_cells": true,
+      "record_deck_sets_agree_with_band": true,
+      "manifest_band_witness": {
+        "jcz_CHAMP_deploy11008": {
+          "value": null,
+          "resolved_at": null,
+          "note": "absent at every address \u2014 REPORTED, not binding (see docstring)"
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "value": null,
+          "resolved_at": null,
+          "note": "absent at every address \u2014 REPORTED, not binding (see docstring)"
+        }
+      },
+      "manifest_band_agrees_where_present": true
+    },
+    "G-LEAF": {
+      "expected_equal": "a36d2e15a3b3d71d",
+      "observed": {
+        "jcz_CHAMP_deploy11008": {
+          "cand_leaf_hash": "a36d2e15a3b3d71d",
+          "resolved_at": "champion_manifest.leaf_hashes.harness_leaf_hash",
+          "consistent_across_records": true,
+          "distinct": [
+            {
+              "value": "a36d2e15a3b3d71d",
+              "resolved_at": "champion_manifest.leaf_hashes.harness_leaf_hash",
+              "n_records": 800
+            }
+          ],
+          "ok": true
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "cand_leaf_hash": "a36d2e15a3b3d71d",
+          "resolved_at": "champion_manifest.leaf_hashes.harness_leaf_hash",
+          "consistent_across_records": true,
+          "distinct": [
+            {
+              "value": "a36d2e15a3b3d71d",
+              "resolved_at": "champion_manifest.leaf_hashes.harness_leaf_hash",
+              "n_records": 800
+            }
+          ],
+          "ok": true
+        }
+      },
+      "semantics": "EQUALITY gate \u2014 difference OR absence VOIDS; the hash must also be consistent across every record of the cell (a mixed-rev cell fails)"
+    },
+    "G-SPLIT": {
+      "n_common_decks_compared": 400,
+      "mismatched_decks": {
+        "n_total": 0,
+        "listed": [],
+        "truncated": false,
+        "list_cap": 20
+      },
+      "decks_with_no_host_in_either_cell": {
+        "n_total": 0,
+        "listed": [],
+        "truncated": false,
+        "list_cap": 20
+      },
+      "unparseable_hostmap": null,
+      "intra_cell_host_conflicts": null,
+      "per_cell": {
+        "jcz_CHAMP_deploy11008": {
+          "host_source_resolved": "hostmap",
+          "n_decks_from_hostmap": 400,
+          "n_decks_from_record_stamps": 0,
+          "hostmap": {
+            "searched": [
+              "jcz_CHAMP_deploy11008.b134.hostmap.json",
+              "jcz_CHAMP_deploy11008.b134.jsonl.hostmap.json",
+              "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_CHAMP_deploy11008.hostmap.json"
+            ],
+            "path": "jcz_CHAMP_deploy11008.b134.hostmap.json",
+            "exists": true,
+            "parsed": true,
+            "shape": "hostmap.deck_seed -> host",
+            "error": null,
+            "conflicts": []
+          },
+          "decks_per_host": {
+            "Doctor": 215,
+            "laptop-wsl": 185
+          }
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "host_source_resolved": "hostmap",
+          "n_decks_from_hostmap": 400,
+          "n_decks_from_record_stamps": 0,
+          "hostmap": {
+            "searched": [
+              "jcz_ARB_B16J4_deploy11008.b134.hostmap.json",
+              "jcz_ARB_B16J4_deploy11008.b134.jsonl.hostmap.json",
+              "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/jcz_ARB_B16J4_deploy11008.hostmap.json"
+            ],
+            "path": "jcz_ARB_B16J4_deploy11008.b134.hostmap.json",
+            "exists": true,
+            "parsed": true,
+            "shape": "hostmap.deck_seed -> host",
+            "error": null,
+            "conflicts": []
+          },
+          "decks_per_host": {
+            "Doctor": 215,
+            "laptop-wsl": 185
+          }
+        }
+      },
+      "hosts_seen": [
+        "Doctor",
+        "laptop-wsl"
+      ],
+      "semantics": "FAIL-CLOSED. ABSENT AT EVERY SOURCE FAILS: the sidecar `<cell>.hostmap.json` is read first, then a `host`/`hostname` field on the records; a deck with no host in either cell, a deck whose host DIFFERS between the cells, an unparseable sidecar, or a deck claimed by two hosts inside one cell all VOID. Rationale: D is deck-paired, so a deck that changed boxes puts every per-box difference INSIDE the paired difference, arithmetically indistinguishable from the arbiter's effect (DESIGN \u00a70.1.2)."
+    },
+    "G-COVER": {
+      "per_cell": {
+        "jcz_CHAMP_deploy11008": {
+          "n_scored": 800,
+          "n_decks": 400,
+          "band_derived_from_records": 134000000000,
+          "band_window": [
+            134000000000,
+            134000000399
+          ],
+          "duplicate_deck_seat_replicate": {
+            "n_total": 0,
+            "listed": [],
+            "truncated": false,
+            "list_cap": 20
+          },
+          "out_of_band_deck_seeds": {
+            "n_total": 0,
+            "listed": [],
+            "truncated": false,
+            "list_cap": 20
+          },
+          "decks_without_both_seatings": {
+            "n_total": 0,
+            "listed": [],
+            "truncated": false,
+            "list_cap": 20
+          },
+          "n_games_if_complete": 800,
+          "ok": true
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "n_scored": 800,
+          "n_decks": 400,
+          "band_derived_from_records": 134000000000,
+          "band_window": [
+            134000000000,
+            134000000399
+          ],
+          "duplicate_deck_seat_replicate": {
+            "n_total": 0,
+            "listed": [],
+            "truncated": false,
+            "list_cap": 20
+          },
+          "out_of_band_deck_seeds": {
+            "n_total": 0,
+            "listed": [],
+            "truncated": false,
+            "list_cap": 20
+          },
+          "decks_without_both_seatings": {
+            "n_total": 0,
+            "listed": [],
+            "truncated": false,
+            "list_cap": 20
+          },
+          "n_games_if_complete": 800,
+          "ok": true
+        }
+      },
+      "decks_declared": 400,
+      "seatings_per_deck_required": 2,
+      "reconciliation_with_G_N": "G-N owns VOLUME (its committed 80% floor: n_common >= 320 decks, >= 640 games/cell) and G-COVER owns SHAPE. G-COVER is therefore evaluated over what the cell CLAIMS to cover: no duplicate (deck_seed, champ_seat, replicate), no seed outside the cell's own record-derived band window, and BOTH seatings present for every deck that is present. A partial run fails G-N on volume rather than G-COVER on absence \u2014 the alternative reading would repeal G-N's floor and void every healthy-but-short run (READ_RULE \u00a73.1's defect class)."
+    },
+    "G-ARB": {
+      "expected_rung": {
+        "enabled": true,
+        "B": 16,
+        "J": 4,
+        "mode": "argmax",
+        "salt": "tiearb2-deploy-v1",
+        "eps": 0.0
+      },
+      "cell_b": {
+        "resolved": {
+          "enabled": true,
+          "B": 16,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "resolved_at": {
+          "enabled": "champion_manifest.cand_tiearb",
+          "B": "champion_manifest.cand_tiearb",
+          "J": "champion_manifest.cand_tiearb",
+          "mode": "champion_manifest.cand_tiearb",
+          "salt": "champion_manifest.cand_tiearb",
+          "eps": "champion_manifest.cand_tiearb"
+        },
+        "checks": {
+          "enabled": {
+            "expected": true,
+            "observed": true,
+            "resolved_at": "champion_manifest.cand_tiearb",
+            "ok": true
+          },
+          "B": {
+            "expected": 16,
+            "observed": 16,
+            "resolved_at": "champion_manifest.cand_tiearb",
+            "ok": true
+          },
+          "J": {
+            "expected": 4,
+            "observed": 4,
+            "resolved_at": "champion_manifest.cand_tiearb",
+            "ok": true
+          },
+          "mode": {
+            "expected": "argmax",
+            "observed": "argmax",
+            "resolved_at": "champion_manifest.cand_tiearb",
+            "ok": true
+          },
+          "salt": {
+            "expected": "tiearb2-deploy-v1",
+            "observed": "tiearb2-deploy-v1",
+            "resolved_at": "champion_manifest.cand_tiearb",
+            "ok": true
+          },
+          "eps": {
+            "expected": 0.0,
+            "observed": 0.0,
+            "resolved_at": "champion_manifest.cand_tiearb",
+            "ok": true
+          }
+        },
+        "conflicts": [],
+        "addresses_found": [
+          "champion_manifest.cand_tiearb",
+          "record.champ_tiearb"
+        ],
+        "resolution_order": [
+          "champ_tiearb",
+          "config.champ_tiearb",
+          "champion_manifest.cand_tiearb",
+          "champion_manifest.champ_tiearb",
+          "champion_manifest.tiearb",
+          "tiearb",
+          "record.champ_tiearb"
+        ],
+        "ok": true,
+        "semantics": "PER FIELD: manifest top level \u2192 `config.*` \u2192 `champion_manifest.cand_tiearb` (the resolved CONFIG \u2014 the only carrier of enabled/salt/eps) \u2192 `record.champ_tiearb` (the firing TELEMETRY, which carries mode/B/J only). ABSENT AT EVERY ADDRESS FAILS; PRESENT-BUT-DIFFERENT FAILS; two addresses that DISAGREE are a CONFLICT and FAIL"
+      },
+      "cell_a": {
+        "champ_tiearb_addresses_found": [],
+        "advisory_neighbour_keys_found": [],
+        "n_records": 800,
+        "ok": true,
+        "semantics": "ANY presence of the key `champ_tiearb` on CELL A VOIDS (READ_RULE \u00a73, DESIGN \u00a76.1 byte-identity); an EMPTY cell also fails (absent is fail)"
+      }
+    },
+    "G-FIRE": {
+      "phi": 19.2975,
+      "phi_effective": 19.2975,
+      "error_rate_on_fired": 0.0,
+      "fired_plies_total": 15438.0,
+      "fired_field_used": "fired_plies",
+      "errors_total": 0.0,
+      "games_denominator": 800,
+      "n_games_with_telemetry": 800,
+      "floor": 1.0,
+      "binds_on": "phi_effective",
+      "formula": "phi = fired_plies_total / games; phi_effective = phi * (1 - error_rate_on_fired)",
+      "offline_prior_phi": 22.96,
+      "stage2_realized_phi": 17.573
+    },
+    "G-J13": {
+      "verdicts_dir": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/verdicts",
+      "hosts": {
+        "Doctor": {
+          "pick_changed": true,
+          "root_leaf_value_bits_unchanged": true,
+          "all_preflight_pass": true,
+          "path": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/verdicts/PREFLIGHT_Doctor_FIRST.json",
+          "parse_error": null,
+          "ok": true
+        },
+        "laptop-wsl": {
+          "pick_changed": true,
+          "root_leaf_value_bits_unchanged": true,
+          "all_preflight_pass": true,
+          "path": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/verdicts/PREFLIGHT_laptop-wsl_FIRST.json",
+          "parse_error": null,
+          "ok": true
+        }
+      },
+      "n_preflights": 2,
+      "hosts_that_played": [
+        "Doctor",
+        "laptop-wsl"
+      ],
+      "hosts_that_played_with_NO_preflight": [],
+      "hosts_expected": [
+        "Doctor",
+        "laptop-wsl"
+      ],
+      "expected_hosts_that_did_not_play": [],
+      "hosts_that_played_and_were_not_expected": [],
+      "preflight_host_name_matched_case_insensitively": null,
+      "host_roster_source": "derived from the G-SPLIT hostmap/record host stamps; EXPECTED_HOSTS is REPORTED against, never hard-coded into the gate",
+      "semantics": "PER-HOST and TWO-SIDED: pick CHANGED **and** root_leaf_value_bits UNCHANGED on EVERY host that played; a host that played with no pre-flight VOIDS; absent on either side, or no pre-flight at all, VOIDS"
+    },
+    "G-RULES": {
+      "expected_rules_profile": "fixed_v1",
+      "expected_r9_env": "1",
+      "observed": {
+        "jcz_CHAMP_deploy11008": {
+          "rules_profile": "fixed_v1",
+          "rules_profile_resolved_at": "rules_profile",
+          "r9_env": "1",
+          "r9_env_resolved_at": "r9_env",
+          "r9_env_ok_advisory": true,
+          "consistent_across_records": true,
+          "ok": true
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "rules_profile": "fixed_v1",
+          "rules_profile_resolved_at": "rules_profile",
+          "r9_env": "1",
+          "r9_env_resolved_at": "r9_env",
+          "r9_env_ok_advisory": true,
+          "consistent_across_records": true,
+          "ok": true
+        }
+      }
+    },
+    "G-DIVERGE": {
+      "final_agree_floor": 0.99,
+      "observed": {
+        "jcz_CHAMP_deploy11008": {
+          "real_total": 0,
+          "real": {},
+          "classified_counts": {
+            "UNPLACEABLE_REDRAW": 46,
+            "WALL_LEGALITY": 10,
+            "SCORE_TIMING": 1
+          },
+          "n_scored": 800,
+          "final_agree_n": 800,
+          "final_agree_frac": 1.0,
+          "replay_ok_all": true,
+          "ok": true
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "real_total": 0,
+          "real": {},
+          "classified_counts": {
+            "UNPLACEABLE_REDRAW": 40
+          },
+          "n_scored": 800,
+          "final_agree_n": 800,
+          "final_agree_frac": 1.0,
+          "replay_ok_all": true,
+          "ok": true
+        }
+      },
+      "benign_classes": [
+        "WALL_LEGALITY",
+        "UNPLACEABLE_REDRAW"
+      ],
+      "note": "`WALL_LEGALITY` (the bounded 25\u00d725 action window running out before the 35\u00d735 grid \u2014 it only ever ADDS options on JCZ's side, boards stay identical, and both affected 2026-08-09 games carried final_agree=True) and `UNPLACEABLE_REDRAW` (both engines discarded and redrew in lockstep; the divergent form `UNPLACEABLE_TURN_LOSS` fired 0 times) are the TWO CLASSIFIED-BENIGN classes, DESIGN \u00a72.1. \u26d4 ANY entry in a record's `real` ledger is a REAL divergence and VOIDS the run through `G-DIVERGE` \u2014 it is never re-classified here."
+    },
+    "G-JCZ": {
+      "expected": {
+        "jcz_git_rev": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+        "jcz_ai_class": "com.jcloisterzone.ai.AiEngine",
+        "tile_set": "basic:2",
+        "jcz_jar_sha256": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+        "ai_player": "LegacyAiPlayer"
+      },
+      "observed": {
+        "jcz_CHAMP_deploy11008": {
+          "checks": {
+            "jcz_git_rev": {
+              "observed": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "expected": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "resolved_at": "jcz_git_rev",
+              "ok": true,
+              "matches_pin": true,
+              "records_agree": true,
+              "values_seen": [
+                "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a"
+              ],
+              "records_with_witness": 430,
+              "n_records": 800,
+              "stamped_on_every_record": false,
+              "coverage_gap_corroborated_on_every_host": true,
+              "semantics": "\u00a73 VOIDS on 'any difference in the pinned artifacts on any host', so: records that DISAGREE void; a value that differs from the pin voids; ABSENT FROM EVERY RECORD voids. Absent from SOME records (match.py stamps `jcz_git_rev` as `_git_rev(jcz_repo)`, which returns None on ANY subprocess failure \u2014 a box that cannot answer stamps NULL on every game while running the pinned checkout) voids UNLESS the pinned value is PRESENT AND EQUAL on EVERY host that played, at the per-host address the read-rule names (verdicts/PREFLIGHT_<host>_ENV.json, 'verified ON EACH HOST'). No corroboration \u21d2 the gap VOIDS."
+            },
+            "jcz_ai_class": {
+              "observed": "com.jcloisterzone.ai.AiEngine",
+              "expected": "com.jcloisterzone.ai.AiEngine",
+              "resolved_at": "jcz_ai_class",
+              "ok": true,
+              "matches_pin": true,
+              "records_agree": true,
+              "values_seen": [
+                "com.jcloisterzone.ai.AiEngine"
+              ],
+              "records_with_witness": 800,
+              "n_records": 800,
+              "stamped_on_every_record": true,
+              "coverage_gap_corroborated_on_every_host": null,
+              "semantics": "\u00a73 VOIDS on 'any difference in the pinned artifacts on any host', so: records that DISAGREE void; a value that differs from the pin voids; ABSENT FROM EVERY RECORD voids. Absent from SOME records (match.py stamps `jcz_git_rev` as `_git_rev(jcz_repo)`, which returns None on ANY subprocess failure \u2014 a box that cannot answer stamps NULL on every game while running the pinned checkout) voids UNLESS the pinned value is PRESENT AND EQUAL on EVERY host that played, at the per-host address the read-rule names (verdicts/PREFLIGHT_<host>_ENV.json, 'verified ON EACH HOST'). No corroboration \u21d2 the gap VOIDS."
+            },
+            "tile_set": {
+              "observed": "basic:2",
+              "expected": "basic:2",
+              "resolved_at": "tile_set",
+              "ok": true,
+              "matches_pin": true,
+              "records_agree": true,
+              "values_seen": [
+                "basic:2"
+              ],
+              "records_with_witness": 800,
+              "n_records": 800,
+              "stamped_on_every_record": true,
+              "coverage_gap_corroborated_on_every_host": null,
+              "semantics": "\u00a73 VOIDS on 'any difference in the pinned artifacts on any host', so: records that DISAGREE void; a value that differs from the pin voids; ABSENT FROM EVERY RECORD voids. Absent from SOME records (match.py stamps `jcz_git_rev` as `_git_rev(jcz_repo)`, which returns None on ANY subprocess failure \u2014 a box that cannot answer stamps NULL on every game while running the pinned checkout) voids UNLESS the pinned value is PRESENT AND EQUAL on EVERY host that played, at the per-host address the read-rule names (verdicts/PREFLIGHT_<host>_ENV.json, 'verified ON EACH HOST'). No corroboration \u21d2 the gap VOIDS."
+            },
+            "jcz_jar_sha256": {
+              "observed": "4dc5439dbf228b13",
+              "expected_full": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+              "compared_prefix_len": 16,
+              "resolved_at": "jcz_jar_sha256_16",
+              "ok": true
+            },
+            "jcz_ai_config": {
+              "observed": {},
+              "resolved_at": "jcz_ai_config",
+              "ok": true,
+              "semantics": "EMPTY == the DEFAULT LegacyAiPlayer (DESIGN \u00a77.1: JCZ has no depth/budget/temperature/seed knob); a NON-EMPTY config that does not name LegacyAiPlayer FAILS"
+            },
+            "jcz_jar_path_reported": {
+              "observed": "/home/doctor/jcz_spike/JCloisterZone/build/Engine.jar",
+              "expected": "/home/doctor/jcz_spike/JCloisterZone/build/Engine.jar"
+            }
+          },
+          "ok": true
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "checks": {
+            "jcz_git_rev": {
+              "observed": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "expected": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "resolved_at": "jcz_git_rev",
+              "ok": true,
+              "matches_pin": true,
+              "records_agree": true,
+              "values_seen": [
+                "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a"
+              ],
+              "records_with_witness": 430,
+              "n_records": 800,
+              "stamped_on_every_record": false,
+              "coverage_gap_corroborated_on_every_host": true,
+              "semantics": "\u00a73 VOIDS on 'any difference in the pinned artifacts on any host', so: records that DISAGREE void; a value that differs from the pin voids; ABSENT FROM EVERY RECORD voids. Absent from SOME records (match.py stamps `jcz_git_rev` as `_git_rev(jcz_repo)`, which returns None on ANY subprocess failure \u2014 a box that cannot answer stamps NULL on every game while running the pinned checkout) voids UNLESS the pinned value is PRESENT AND EQUAL on EVERY host that played, at the per-host address the read-rule names (verdicts/PREFLIGHT_<host>_ENV.json, 'verified ON EACH HOST'). No corroboration \u21d2 the gap VOIDS."
+            },
+            "jcz_ai_class": {
+              "observed": "com.jcloisterzone.ai.AiEngine",
+              "expected": "com.jcloisterzone.ai.AiEngine",
+              "resolved_at": "jcz_ai_class",
+              "ok": true,
+              "matches_pin": true,
+              "records_agree": true,
+              "values_seen": [
+                "com.jcloisterzone.ai.AiEngine"
+              ],
+              "records_with_witness": 800,
+              "n_records": 800,
+              "stamped_on_every_record": true,
+              "coverage_gap_corroborated_on_every_host": null,
+              "semantics": "\u00a73 VOIDS on 'any difference in the pinned artifacts on any host', so: records that DISAGREE void; a value that differs from the pin voids; ABSENT FROM EVERY RECORD voids. Absent from SOME records (match.py stamps `jcz_git_rev` as `_git_rev(jcz_repo)`, which returns None on ANY subprocess failure \u2014 a box that cannot answer stamps NULL on every game while running the pinned checkout) voids UNLESS the pinned value is PRESENT AND EQUAL on EVERY host that played, at the per-host address the read-rule names (verdicts/PREFLIGHT_<host>_ENV.json, 'verified ON EACH HOST'). No corroboration \u21d2 the gap VOIDS."
+            },
+            "tile_set": {
+              "observed": "basic:2",
+              "expected": "basic:2",
+              "resolved_at": "tile_set",
+              "ok": true,
+              "matches_pin": true,
+              "records_agree": true,
+              "values_seen": [
+                "basic:2"
+              ],
+              "records_with_witness": 800,
+              "n_records": 800,
+              "stamped_on_every_record": true,
+              "coverage_gap_corroborated_on_every_host": null,
+              "semantics": "\u00a73 VOIDS on 'any difference in the pinned artifacts on any host', so: records that DISAGREE void; a value that differs from the pin voids; ABSENT FROM EVERY RECORD voids. Absent from SOME records (match.py stamps `jcz_git_rev` as `_git_rev(jcz_repo)`, which returns None on ANY subprocess failure \u2014 a box that cannot answer stamps NULL on every game while running the pinned checkout) voids UNLESS the pinned value is PRESENT AND EQUAL on EVERY host that played, at the per-host address the read-rule names (verdicts/PREFLIGHT_<host>_ENV.json, 'verified ON EACH HOST'). No corroboration \u21d2 the gap VOIDS."
+            },
+            "jcz_jar_sha256": {
+              "observed": "4dc5439dbf228b13",
+              "expected_full": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+              "compared_prefix_len": 16,
+              "resolved_at": "jcz_jar_sha256_16",
+              "ok": true
+            },
+            "jcz_ai_config": {
+              "observed": {},
+              "resolved_at": "jcz_ai_config",
+              "ok": true,
+              "semantics": "EMPTY == the DEFAULT LegacyAiPlayer (DESIGN \u00a77.1: JCZ has no depth/budget/temperature/seed knob); a NON-EMPTY config that does not name LegacyAiPlayer FAILS"
+            },
+            "jcz_jar_path_reported": {
+              "observed": "/home/doctor/jcz_spike/JCloisterZone/build/Engine.jar",
+              "expected": "/home/doctor/jcz_spike/JCloisterZone/build/Engine.jar"
+            }
+          },
+          "ok": true
+        }
+      },
+      "identical_across_cells": true,
+      "record_witness_coverage": {
+        "jcz_git_rev": {
+          "jcz_CHAMP_deploy11008": {
+            "records_with_witness": 430,
+            "n_records": 800,
+            "stamped_on_every_record": false,
+            "coverage_gap_corroborated_on_every_host": true
+          },
+          "jcz_ARB_B16J4_deploy11008": {
+            "records_with_witness": 430,
+            "n_records": 800,
+            "stamped_on_every_record": false,
+            "coverage_gap_corroborated_on_every_host": true
+          }
+        },
+        "jcz_ai_class": {
+          "jcz_CHAMP_deploy11008": {
+            "records_with_witness": 800,
+            "n_records": 800,
+            "stamped_on_every_record": true,
+            "coverage_gap_corroborated_on_every_host": null
+          },
+          "jcz_ARB_B16J4_deploy11008": {
+            "records_with_witness": 800,
+            "n_records": 800,
+            "stamped_on_every_record": true,
+            "coverage_gap_corroborated_on_every_host": null
+          }
+        },
+        "tile_set": {
+          "jcz_CHAMP_deploy11008": {
+            "records_with_witness": 800,
+            "n_records": 800,
+            "stamped_on_every_record": true,
+            "coverage_gap_corroborated_on_every_host": null
+          },
+          "jcz_ARB_B16J4_deploy11008": {
+            "records_with_witness": 800,
+            "n_records": 800,
+            "stamped_on_every_record": true,
+            "coverage_gap_corroborated_on_every_host": null
+          }
+        }
+      },
+      "per_host": {
+        "Doctor": {
+          "checks": {
+            "jcz_jar_sha256": {
+              "observed": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+              "expected": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+              "ok": true
+            },
+            "jcz_rev": {
+              "observed": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "expected": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "ok": true
+            },
+            "jcz_ai_class": {
+              "observed": "com.jcloisterzone.ai.AiEngine",
+              "expected": "com.jcloisterzone.ai.AiEngine",
+              "ok": true
+            },
+            "jcz_tiles": {
+              "observed": "basic:2",
+              "expected": "basic:2",
+              "ok": true
+            },
+            "jcz_jar_sha256_match_selfreport": {
+              "observed": true,
+              "ok": true
+            }
+          },
+          "path": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/verdicts/PREFLIGHT_Doctor_ENV.json",
+          "parse_error": null,
+          "jvm_version_string_REPORTED_NEVER_A_BRANCH_INPUT": null,
+          "ok": true
+        },
+        "laptop-wsl": {
+          "checks": {
+            "jcz_jar_sha256": {
+              "observed": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+              "expected": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+              "ok": true
+            },
+            "jcz_rev": {
+              "observed": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "expected": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+              "ok": true
+            },
+            "jcz_ai_class": {
+              "observed": "com.jcloisterzone.ai.AiEngine",
+              "expected": "com.jcloisterzone.ai.AiEngine",
+              "ok": true
+            },
+            "jcz_tiles": {
+              "observed": "basic:2",
+              "expected": "basic:2",
+              "ok": true
+            },
+            "jcz_jar_sha256_match_selfreport": {
+              "observed": true,
+              "ok": true
+            }
+          },
+          "path": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/verdicts/PREFLIGHT_laptop-wsl_ENV.json",
+          "parse_error": null,
+          "jvm_version_string_REPORTED_NEVER_A_BRANCH_INPUT": null,
+          "ok": true
+        }
+      },
+      "per_host_ok": true,
+      "hosts_that_played": [
+        "Doctor",
+        "laptop-wsl"
+      ],
+      "hosts_that_played_with_no_ENV_witness": [],
+      "jar_sha_by_host": {
+        "Doctor": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+        "laptop-wsl": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190"
+      },
+      "jar_sha_identical_across_hosts": true,
+      "jvm_version_by_host_REPORTED": {
+        "Doctor": null,
+        "laptop-wsl": null
+      },
+      "jvm_packaging_differs_across_hosts": false,
+      "jvm_packaging_note": "\u26a0\ufe0f THE JVM *PACKAGING* DIFFERS BY HOST \u2014 `17.0.19+10-1-24.04.2-Ubuntu` locally vs `+10-1-26.04.2-Ubuntu` on the laptop, the SAME OpenJDK 17.0.19 on a different distro base (DESIGN \u00a70.1). It is **REPORTED HERE AND IS NEVER A BRANCH INPUT**: the PINNED artifacts are the jar (sha256, verified on each host) and the shim CLASSES (copied, not rebuilt \u2014 byte-identical bytecode on both hosts), and both are gated. The runtime difference cannot touch `D` because `G-SPLIT` holds the deck\u2192host map IDENTICAL across the two cells, so every per-box effect is common to both terms of `margin_B(d) \u2212 margin_A(d)` and cancels exactly (DESIGN \u00a70.1.2)."
+    },
+    "G-TOOL": {
+      "cross_host_build_identity": {
+        "preflight_build_id_by_host": {
+          "Doctor": "carc_rs-0.1.0+44078bce83b1+rustc1.96.0",
+          "laptop-wsl": "carc_rs-0.1.0+44078bce83b1+rustc1.96.0"
+        },
+        "preflight_binary_sha_by_host": {
+          "Doctor": "a4318fd59d9d8349",
+          "laptop-wsl": "8ae0b98427debb2e"
+        },
+        "build_id_equal_across_hosts": true,
+        "build_id_witness_present": true,
+        "binary_sha_equal_across_hosts": false,
+        "binary_sha_equal_across_hosts_IS_NON_BINDING": true,
+        "binary_sha_cross_host_note": "\u26d4 REPORTED, NEVER BINDING (READ_RULE \u00a70.F.2c). `carc_rs_binary_sha` is BOX-LOCAL staleness evidence and is NEVER compared across boxes: the `.so` is NOT reproducible across machines. Measured on THIS pair of boxes at the SAME `carc_rs_build` \u2014 `a4318fd59d9d8349` (Doctor) vs `8ae0b98427debb2e` (laptop-wsl) \u2014 so a cross-host equality conjunct on the sha would void EVERY healthy two-box run. ACROSS HOSTS the binding witness is `carc_rs_build` (the build id, machine-independent by construction); WITHIN a host the sha binds across the two cells (conjunct 1b), which is its true meaning.",
+        "witness_present": true,
+        "binds_on": "carc_rs_build (the build id) ONLY",
+        "ok": true,
+        "semantics": "\u00a70.F.2c: BINDS ON THE BUILD ID ONLY. PRE-FLIGHTS COMPARED WITH PRE-FLIGHTS ONLY \u2014 never against a manifest (carc_rs_build_id() embeds `git rev-parse HEAD` at call time, so that comparison is a false positive by construction). MIXED BUILDS ACROSS BOXES FAIL; a build id absent from every pre-flight FAILS. \u26d4 `binary_sha_equal_across_hosts` is REPORTED ONLY and may NEVER touch `ok` \u2014 the .so is not machine-reproducible."
+      },
+      "cross_cell_code_identity": {
+        "observed": {
+          "jcz_CHAMP_deploy11008": {
+            "value": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+            "resolved_at": "our_git_rev",
+            "consistent_across_records": true,
+            "distinct": [
+              {
+                "value": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+                "resolved_at": "our_git_rev",
+                "n_records": 800
+              }
+            ]
+          },
+          "jcz_ARB_B16J4_deploy11008": {
+            "value": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+            "resolved_at": "our_git_rev",
+            "consistent_across_records": true,
+            "distinct": [
+              {
+                "value": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+                "resolved_at": "our_git_rev",
+                "n_records": 800
+              }
+            ]
+          }
+        },
+        "equal_across_cells": true,
+        "ok": true,
+        "semantics": "`our_git_rev` \u2192 `champion_manifest.code_commit`, equal across cells AND consistent within each (a mixed-rev cell fails)"
+      },
+      "manifest_binary_sha_when_present": {
+        "by_cell_and_host": {
+          "jcz_CHAMP_deploy11008": {
+            "Doctor": [
+              "\"a4318fd59d9d8349\""
+            ],
+            "laptop-wsl": [
+              "\"8ae0b98427debb2e\""
+            ]
+          },
+          "jcz_ARB_B16J4_deploy11008": {
+            "Doctor": [
+              "\"a4318fd59d9d8349\""
+            ],
+            "laptop-wsl": [
+              "\"8ae0b98427debb2e\""
+            ]
+          }
+        },
+        "per_host": {
+          "Doctor": {
+            "per_cell": {
+              "jcz_CHAMP_deploy11008": [
+                "\"a4318fd59d9d8349\""
+              ],
+              "jcz_ARB_B16J4_deploy11008": [
+                "\"a4318fd59d9d8349\""
+              ]
+            },
+            "mixed_within_a_cell": false,
+            "equal_across_cells": true,
+            "ok": true,
+            "n_cells_with_witness": 2
+          },
+          "laptop-wsl": {
+            "per_cell": {
+              "jcz_CHAMP_deploy11008": [
+                "\"8ae0b98427debb2e\""
+              ],
+              "jcz_ARB_B16J4_deploy11008": [
+                "\"8ae0b98427debb2e\""
+              ]
+            },
+            "mixed_within_a_cell": false,
+            "equal_across_cells": true,
+            "ok": true,
+            "n_cells_with_witness": 2
+          }
+        },
+        "hosts_evaluated": [
+          "Doctor",
+          "laptop-wsl"
+        ],
+        "present": true,
+        "ok": true,
+        "binds_on": "carc_rs_binary_sha, WITHIN a host, across the two cells",
+        "semantics": "CONJUNCT 1b (\u00a70.F.2b + \u00a70.F.2c): this harness does not reliably write `carc_rs_binary_sha`, so it BINDS ONLY WHEN PRESENT \u2014 and then WITHIN a host across the two cells (host via the hostmap), because the .so is not reproducible across machines. A sha that MOVED within a host between cells FAILS; a sha MIXED within one cell on one host FAILS. Absent at EVERY source (manifest AND pre-flights) FAILS via `any_build_witness_present`."
+      },
+      "any_build_witness_present": true,
+      "commit_range": {
+        "resolved": true,
+        "empty": true,
+        "command": null,
+        "output": "",
+        "reason": "DEGENERATE RANGE \u2014 the pre-flight and the manifest name the same commit, so no wheel-relevant path can have changed",
+        "preflight_commit": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+        "manifest_commit": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+        "manifest_commit_resolved_at": "our_git_rev"
+      },
+      "commit_range_by_preflight_host": {
+        "Doctor": {
+          "resolved": true,
+          "empty": true,
+          "command": null,
+          "output": "",
+          "reason": "DEGENERATE RANGE \u2014 the pre-flight and the manifest name the same commit, so no wheel-relevant path can have changed",
+          "preflight_commit": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+          "manifest_commit": "44078bce83b103fa3ae54c65c3de16675314bdbc"
+        },
+        "laptop-wsl": {
+          "resolved": true,
+          "empty": true,
+          "command": null,
+          "output": "",
+          "reason": "DEGENERATE RANGE \u2014 the pre-flight and the manifest name the same commit, so no wheel-relevant path can have changed",
+          "preflight_commit": "44078bce83b103fa3ae54c65c3de16675314bdbc",
+          "manifest_commit": "44078bce83b103fa3ae54c65c3de16675314bdbc"
+        }
+      },
+      "hosts_that_played": [
+        "Doctor",
+        "laptop-wsl"
+      ],
+      "wheel_relevant_paths": [
+        "rust/",
+        "src/",
+        "engine/",
+        "scripts/"
+      ],
+      "semantics": "FOUR CONJUNCTS (\u00a70.F.2b + \u00a70.F.2c): (1) cross-HOST build identity from the pre-flights, BINDING ON THE BUILD ID ONLY (the cross-host binary-sha comparison is REPORTED, NEVER BINDING); (1b) within-HOST binary-sha identity across the two cells, host via the hostmap; (2) cross-CELL code identity from the manifests; and (3) the commit range (NON-EMPTY or UNRESOLVED VOIDS, EMPTY or DEGENERATE PASSES). ABSENT AT EVERY SOURCE STILL FAILS."
+    },
+    "G-N": {
+      "n_common": 400,
+      "n_common_floor": 320,
+      "n_common_units": "DECKS (\u00a72)",
+      "n_games_scored": {
+        "CELL_A": 800,
+        "CELL_B": 800
+      },
+      "cell_games_floor": 640,
+      "cell_games_planned": 800,
+      "deck_clause_independently_binding": "two cells can each clear 640 games while overlapping on fewer than 320 COMMON decks \u2014 that weakens D and still voids"
+    },
+    "G-PLY": {
+      "per_cell": {
+        "jcz_CHAMP_deploy11008": {
+          "n_scored": 800,
+          "n_with_ply_witness": 800,
+          "witness": "moves_by_seat|moves + n_actions",
+          "ok": true
+        },
+        "jcz_ARB_B16J4_deploy11008": {
+          "n_scored": 800,
+          "n_with_ply_witness": 800,
+          "witness": "moves_by_seat|moves + n_actions",
+          "ok": true,
+          "arbiter_ply_witness": {
+            "tile_plies_total": 27577.0,
+            "partial_argmax_total": 0.0,
+            "telemetry_on_every_game": true,
+            "ok": true,
+            "semantics": "Stage-2 \u00a70.F verbatim: partial_argmax ABSENT is unknown-not-zero and FAILS; NON-ZERO means an argmax was taken over a partial world set (CRN pairing broken during play) and FAILS"
+          }
+        }
+      },
+      "cell_a": "jcz_CHAMP_deploy11008",
+      "cell_b": "jcz_ARB_B16J4_deploy11008"
+    },
+    "G-WITNESS": {
+      "tolerance_relative": 1e-09,
+      "fields": {
+        "D": {
+          "analyzer_path": 2.72625,
+          "recomputed": 2.72625,
+          "agree": true
+        },
+        "se_D": {
+          "analyzer_path": 0.8390428756695211,
+          "recomputed": 0.8390428756695211,
+          "agree": true
+        },
+        "z_D": {
+          "analyzer_path": 3.2492380056556307,
+          "recomputed": 3.2492380056556307,
+          "agree": true
+        },
+        "n_common": {
+          "analyzer_path": 400,
+          "recomputed": 400,
+          "agree": true
+        }
+      },
+      "semantics": "\u00a71 \u2014 the recomputation is a WITNESS, never a branch input; disagreement beyond float tolerance is U-UNREADABLE"
+    }
+  },
+  "cost": {
+    "field_name_trap": "\u26a0\ufe0f THE FIELD-NAME TRAP (READ_RULE \u00a70.C): in `eval_fair_puct`, `champ_prefix_ms_per_move` is the CANDIDATE side, the opposite of `eval_puct_priors`. \u2b50 IN **THIS** HARNESS (`scripts/jcz_match/`) THE FIELDS ARE `ms_per_move_champ` = OUR SIDE (the champion, \u00b1 the arbiter) and `ms_per_move_jcz` = JCZ, THE OPPONENT. `ms_ratio = ms_per_move_champ / ms_per_move_jcz` is ours-over-theirs. Do NOT import eval_fair_puct's inverted convention: a read-out that swaps them INVERTS the reading.",
+    "our_side_field": "ms_per_move_champ",
+    "opponent_field": "ms_per_move_jcz",
+    "ms_ratio": {
+      "jcz_CHAMP_deploy11008": 13.572514667180975,
+      "jcz_ARB_B16J4_deploy11008": 33.537792397133224
+    },
+    "ms_ratio_B_over_A": 2.4710080054825285,
+    "worker_s_per_game": {
+      "jcz_CHAMP_deploy11008": 144.5862875,
+      "jcz_ARB_B16J4_deploy11008": 335.1621
+    },
+    "worker_s_per_game_B_over_A": 2.3180766709982787,
+    "prediction": {
+      "cell_a_worker_s_per_game": 98.1,
+      "arbiter_worker_s_per_fired_ply": 9.57,
+      "phi_assumed": 17.6,
+      "cell_b_worker_s_per_game": 266.0,
+      "cell_b_over_cell_a": 2.71,
+      "source": "DESIGN.md \u00a76.2"
+    },
+    "waiver": "READ_RULE \u00a70.A (OWNER RULING, inherited from Stage-2 \u00a70.D), verbatim: \"we can afford some wallclock during play, especially if its not every tile draw. dont let that be the constraint right now.\" \u21d2 `ms_ratio` and every wall-clock quantity are MEASURED AND REPORTED on every branch and are NEVER a branch input. WAIVED: the consequence. NOT WAIVED: the measurement. \u26d4 ANTI-GAMING (binding): permission to spend clock is never licence to reshape the arbiter to look cheaper \u2014 B stays 16 and may not be expanded, the tie predicate is not narrowed, and there is no playout truncation for cost reasons.",
+    "never_a_branch_input": true
+  },
+  "cell_a_absolute": {
+    "reading_20260809": {
+      "elo": 111.4,
+      "win_rate": 0.655,
+      "paired_margin": 6.5,
+      "paired_margin_sem": 0.86,
+      "n_decks": 200,
+      "band": 108000000000.0,
+      "code_rev": "9c4bb50",
+      "archive": "measurement/jcz_match_20260809/confirm.jsonl",
+      "nominal_sigma_elo": 17.4,
+      "overdispersion_lo": 1.8,
+      "overdispersion_hi": 2.2
+    },
+    "realized": {
+      "elo": 100.42240828085703,
+      "elo_sigma_1s": 12.285980323116263,
+      "win_rate": 0.640625,
+      "paired_margin_mean": 6.355,
+      "paired_margin_sem": 0.6064094272714675,
+      "paired_margin_z": 10.479718345729308,
+      "n_paired_decks": 400
+    },
+    "delta_elo_vs_20260809": -10.977591719142978,
+    "cross_band_rider": "\u26a0\ufe0f CROSS-BAND CONTRAST (this band vs 1.08e11, at a different code era): CLAUDE.md's over-dispersion rider applies \u2014 \u03c3 inflates \u22481.8-2.2\u00d7, so \u00b117.4 elo becomes \u2248\u00b131-38 elo on this contrast. It is a REGRESSION TRIPWIRE, not a precision comparison. D \u2014 the primary statistic \u2014 is WITHIN-band and deck-matched, i.e. the robust class, and is unaffected.",
+    "why_printed_on_every_branch": "DESIGN \u00a73.2: the champion's out-of-lineage strength is a finding independent of D, and it is the single thing an out-of-lineage anchor exists to catch."
+  },
+  "dilution": {
+    "cell_b_tiearb_errors_total": 0.0,
+    "cell_b_tiearb_first_error": null,
+    "statement_required": false,
+    "verbatim_0B": "**\u00a70.B \u2014 the arbiter FAILS SOFT (from Stage-2 \u00a70.E).** On a deep-playout error the arbiter falls\nback to the champion's own pick and counts it: the ply is un-arbitrated, not lost. Accepted,\nbecause propagating would kill the GAME and the exclusion would be **candidate-correlated** \u2014 a\nbiased exclusion is far worse than a diluted effect. **The bias runs toward the champion, so a\npositive read is UNDERSTATED.** Never a branch input EXCEPT through `G-FIRE`'s `phi_effective`.\n\n\u26a0\ufe0f **Here the fail-soft asymmetry is NOT symmetric across cells** \u2014 CELL A has no arbiter to fail.\nConsequence, stated now: fail-soft dilutes `D` **toward zero**. A positive `D` is therefore a\n**lower bound** on the mechanism's true delta, and a null is correspondingly weaker evidence of\nabsence. This is reported on every branch (\u00a74.3 item 6)."
+  },
+  "divergence_ledger": {
+    "jcz_CHAMP_deploy11008": {
+      "classified_counts": {
+        "UNPLACEABLE_REDRAW": 46,
+        "WALL_LEGALITY": 10,
+        "SCORE_TIMING": 1
+      },
+      "REAL": {}
+    },
+    "jcz_ARB_B16J4_deploy11008": {
+      "classified_counts": {
+        "UNPLACEABLE_REDRAW": 40
+      },
+      "REAL": {}
+    }
+  },
+  "benign_classes": [
+    "WALL_LEGALITY",
+    "UNPLACEABLE_REDRAW"
+  ],
+  "benign_note": "`WALL_LEGALITY` (the bounded 25\u00d725 action window running out before the 35\u00d735 grid \u2014 it only ever ADDS options on JCZ's side, boards stay identical, and both affected 2026-08-09 games carried final_agree=True) and `UNPLACEABLE_REDRAW` (both engines discarded and redrew in lockstep; the divergent form `UNPLACEABLE_TURN_LOSS` fired 0 times) are the TWO CLASSIFIED-BENIGN classes, DESIGN \u00a72.1. \u26d4 ANY entry in a record's `real` ledger is a REAL divergence and VOIDS the run through `G-DIVERGE` \u2014 it is never re-classified here.",
+  "provenance": {
+    "workers_conf": {
+      "parsed": true,
+      "path": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/WORKERS.conf",
+      "keys": 42,
+      "filled_from_fallback": []
+    },
+    "constants": {
+      "W_LOCAL": "30",
+      "W_LAPTOP": "22",
+      "W_SMOKE_LOCAL": "30",
+      "W_SMOKE_LAPTOP": "22",
+      "JVM_OPTS": "-Xmx256m -Xss1m -XX:+UseSerialGC -XX:TieredStopAtLevel=1",
+      "SHARE_LOCAL": "/mnt/c/carc-shared",
+      "SHARE_REMOTE": "/mnt/carc-shared",
+      "REPO_LOCAL": "/home/doctor/projects/carcassone",
+      "REPO_REMOTE": "/home/doctor/projects/carcassone",
+      "LAPTOP_HOST": "laptop-wsl",
+      "JAVA_BIN": "/usr/bin/java",
+      "RUN_ID": "jcz_tiearb_20260817",
+      "RUN_DIR": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817",
+      "SHARE_RUN_LOCAL": "/mnt/c/carc-shared/jcz_tiearb_20260817",
+      "FREEZE_HEAD_FILE": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/FREEZE_HEAD",
+      "CELL_A": "jcz_CHAMP_deploy11008",
+      "CELL_B": "jcz_ARB_B16J4_deploy11008",
+      "TIEARB_B": "16",
+      "TIEARB_J": "4",
+      "TIEARB_MODE": "argmax",
+      "TIEARB_SALT": "tiearb2-deploy-v1",
+      "TIEARB_EPS": "0.0",
+      "CHAMP_LEAF_HASH": "a36d2e15a3b3d71d",
+      "K_DETS": "8",
+      "SIMS": "1376",
+      "EXACT_K": "2",
+      "DECKS": "400",
+      "N_GAMES": "800",
+      "BAND_TAG": "b134",
+      "BAND_FLOOR": "134000000000",
+      "BAND_SENTINEL": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/BAND_CLAIM_b134.txt",
+      "DECKS_LOCAL": "215",
+      "DECKS_LAPTOP": "185",
+      "RULES_PROFILE": "fixed_v1",
+      "FIX_R9": "1",
+      "JCZ_REV": "29a156154c75ad7bf5a3af6e2e5db3eaeb1af76a",
+      "JCZ_JAR": "/home/doctor/jcz_spike/JCloisterZone/build/Engine.jar",
+      "JCZ_JAR_SHA256": "4dc5439dbf228b1360b0b1987f5e90454c4a6ac434a8509be4d2c089f9671190",
+      "JCZ_AI_CLASS": "com.jcloisterzone.ai.AiEngine",
+      "JCZ_TILES": "basic:2",
+      "RUST_TOOLCHAIN": "1.96.0",
+      "NICE": "19"
+    },
+    "analyzer": {
+      "imported": true,
+      "from": "/home/doctor/projects/carcassone/scripts/jcz_match/analyze.py"
+    },
+    "analyzer_note": "scripts/jcz_match/analyze.py::analyze is the deck-pairing authority; per_deck_balanced() mirrors its by_deck construction so D can be taken deck-wise",
+    "band_sentinel": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/BAND_CLAIM_b134.txt",
+    "verdicts_dir": "/home/doctor/projects/carcassone/measurement/jcz_tiearb_20260817/verdicts",
+    "repo": "/home/doctor/projects/carcassone"
+  },
+  "what_no_branch_does": "READ_RULE \u00a75: No branch flips governance/PRODUCTION.yaml. No branch licenses an on-device deploy. No branch licenses a change to B, J, the tie predicate, the salt, or the playout. No branch licenses a second cell. No branch makes any claim about superhuman strength."
+}
