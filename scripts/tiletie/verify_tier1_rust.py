@@ -47,6 +47,12 @@ sys.path.insert(0, str(REPO / "scripts" / "measurement_infra"))
 
 RECORDS_ROOT = Path("/mnt/c/carc-shared/tiearb2_20260816/main")
 POSITIONS_ROOT = REPO / "measurement" / "tiearb2_20260816"
+#: Default output. ⚠️ This path is inside the CLOSED `tiearb2_stage2_20260817`
+#: run dir and is TRACKED: a re-run of this gate for a LATER campaign must NOT
+#: write there (a mid-run write into a closed run's artifacts is the JCZ failure
+#: mode). Pass `--out` to redirect — the widening campaign's `G-BITEXACT@HEAD`
+#: does exactly that (`measurement/tiearb_widening_20260817/shared_run/DESIGN.md`
+#: §9 "Freeze and sequence", REVIEW_R1 defects 2 and 20).
 OUT_PATH = REPO / "measurement" / "tiearb2_stage2_20260817" / "BITEXACT.json"
 
 # --- the COMMITTED constants (PHASE_A.md §3) --------------------------------
@@ -187,6 +193,14 @@ def _one(job: tuple) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=30)
+    ap.add_argument("--out", default=str(OUT_PATH),
+                    help="where to write the gate JSON. DEFAULT is the Phase-A "
+                         "path inside the CLOSED tiearb2_stage2_20260817 run dir; "
+                         "any LATER campaign re-running this gate MUST redirect "
+                         "(a write into a closed run's tracked artifacts is a "
+                         "mid-run main-tree write). The widening campaign passes "
+                         "--out .../tiearb_widening_20260817/shared_run/"
+                         "GATE_BITEXACT_HEAD.json.")
     args = ap.parse_args()
 
     import carc_rs
@@ -299,11 +313,13 @@ def main() -> int:
                  "digest is not a value and is not invertible, so no adjudicated "
                  "per-leg value leaves this gate."),
     }
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(json.dumps(out, indent=2) + "\n")
+    out_path = Path(args.out)
+    out["out_path"] = str(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k not in ("rids", "per_cell")},
                      indent=2))
-    print(f"[G-BITEXACT] {'PASS' if passed else 'FAIL'} -> {OUT_PATH}", flush=True)
+    print(f"[G-BITEXACT] {'PASS' if passed else 'FAIL'} -> {out_path}", flush=True)
     return 0 if passed else 1
 
 
