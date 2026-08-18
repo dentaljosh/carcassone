@@ -1,7 +1,7 @@
 # TIE-ARBITER WIDENING — SHARED INSTRUMENT RUN, DESIGN (rungs 2 `B>16` + 3 `J>4`)
 
-> **STATUS: BLIND PREREGISTRATION — revision R3.1, THE BINDING PAIR PENDING MERGE. NOT
-> LAUNCHED. NOTHING RUN. NO OUTCOME STATISTIC OF THIS RUN EXISTS OR WAS READ.**
+> **STATUS: BLIND PREREGISTRATION — revision R3.2, THE BINDING PAIR PENDING THE STEP-5 COMMIT.
+> NOT LAUNCHED. NO POSITION SCORED. NO OUTCOME STATISTIC OF THIS RUN EXISTS OR WAS READ.**
 > No further review round: the closing pass passed rev R2 on everything but one defect (`B1`)
 > and pre-approved its fix, which R3 applied verbatim along with cosmetics C1–C6. **R3.1 adds
 > the dated pre-blind amendment section §0 (2026-08-18)** — the W-code builder's five
@@ -110,6 +110,70 @@ is an **argparse default** (`run_tiletie.py:960`, `tier1_rust_leg.py:438`,
 `preflight_seeds(salt, m)` and `preflight_m`. **Scope note:** `analyze_tiearb2.py`'s
 `M_EXPECTED`/`B_LADDER` constants are still 32/`{1,2,4,8,16}`, but those are **W3's** deliverable
 (§8), not W2's residue — do not close W3 on W2's evidence.
+
+### Pre-blind amendments — 2026-08-18 (rev R3.2), from the §9 executor's three blockers
+
+The executor **stopped before the blind commit and was right to**. All three findings are of the
+class this pair exists to catch — an instruction that, followed literally, prices the wrong
+corpus. The window is still open; none of the below moves a branch condition, a bar, a statistic
+or a power figure, and **no gate conjunct's value changes** (§0.G moves *when* a witness is
+produced, never *what* it must say).
+
+**0.G — B1, the §9 ordering contradiction: ACCEPTED, acceptance content re-split.** Step 4a was
+labelled "corpus-free", but the four judge smokes resolve their positions through
+`run_tiletie.select_smoke_positions()`, which reads `<positions-dir>/ARMS.json` and
+`POSITIONS_PLAN.json` — files **W6 does not build until step 6** — and `--positions-dir`
+**defaults to `measurement/tiletie_pricing_20260812/positions`, the SPENT corpus §3 requires
+disjointness FROM.** Run as written, 4a would have quietly scored positions from a burned
+corpus: REVIEW_R1 §15's failure mode exactly, one layer deeper. Amended:
+
+- **4a (pre-blind-commit, and now genuinely corpus-free)** = the **fixture schema audit** +
+  **`G-BITEXACT@HEAD`**, nothing else. **W8's fixture set gains two fixtures** so the move costs
+  no pre-commit coverage: a **leg-manifest fixture** (`resolved_config.*`, `preflight.seeds.*`)
+  and a **smoke-manifest fixture** (`c_worker_secs_per_playout`, `crn_cross_leg_identical`), so
+  every spelling those addresses use is still audited **before** the pair freezes, statically,
+  with no corpus and no scoring.
+- **4b-pre (post-corpus, pre-scoring)** = the four judge smokes ({S1 `--m 128`, S2 `--m 32`} ×
+  both judges) on the **fresh** corpus, their per-judge manifests, `G-CRN`'s smoke half, and
+  §7's judge-leg `c`-remeasure. **`--positions-dir` is named EXPLICITLY in every invocation —
+  never defaulted** (the default is the trap above; W6 and any runbook must pass it in full).
+  The `c`-HALT therefore still fires **before** the expensive legs, which is its entire purpose.
+
+*Why the post-blind-commit position breaches no blindness:* a smoke is a **cost-and-witness**
+instrument. Its manifest was verified field-by-field by the R1 reviewer as outcome-free, and its
+outputs here are exactly `c_worker_secs_per_playout` (a timing), `crn_cross_leg_identical` (a
+seed-identity boolean), and address resolution (presence + type, no values). It computes no
+`arb`, no `ora`, no `Δ`, no CI, and touches no branch input; nothing it emits could tell a reader
+which way this run lands. The blind order that matters is **bars before data**, and every bar is
+already frozen in the step-5 commit before a single position is *priced*. ⚠️ **The residual, named
+rather than waived:** an address defect surfacing at 4b-pre can no longer be fixed by editing the
+frozen pair — it must be fixed in the **emitter**, or it is a numbered deviation and possibly
+`W-UNREADABLE`. The two new fixtures exist to make that outcome unlikely, not impossible.
+
+**0.H — B2, no generation launcher existed: NEW work item W10.** The W6 driver *consumes*
+`$SHARE/$RUN_ID/gen`; nothing *produced* it. §3 named the `run_gen.sh` pattern but tasked nobody —
+a corpus with no generator. W10 is specified end-to-end in §8 so a builder can implement it
+without asking, including its **GEN-smoke mode** (§7's 10-game timed run → `GEN_SMOKE.json`).
+
+**0.I — B3, `WORKERS.conf` was assumed, never specified: folded into W10.** The W6 driver sources
+`measurement/tiearb_widening_20260817/WORKERS.conf` and **dies without it**. Its exact contents
+are specified in §8 under W10 — carrying **both** count sets (GEN 48/24, EVAL 30/22), `NICE`, the
+per-box share paths, repo roots and `RUN_ID`. Per the R2 fix it lives **outside `shared_run/`**:
+it is a tuning surface, not part of the frozen pair, so a W retune is never an edit to a frozen
+file (§9 item 9).
+
+**0.J — merge provenance, so the adjudicator inherits no ambiguity.** The §9 step-2 merge landed
+as **`413e9856`**, and it is a **scoped 19-path checkout, not a wholesale branch merge**: both
+worktree branches fork behind HEAD, so merging them whole would have **reverted the JCZ
+close-out**. The checkout takes exactly the W-code paths (+ tests and fixtures) and nothing else —
+which is what §0.E's "code only" clause asks for, achieved by a different git verb. At that sha:
+`G-BITEXACT@HEAD` **PASS 15,360/15,360**, tests **121/121**. Two commits landed after it —
+`71a21795` (rung close-outs: `docs/LEVER_INDEX.md`, `docs/PROGRAM_ROADMAP…`, DECISIONS) and
+`f1db8944` (cost-of-record correction: roadmap + `CAMPAIGN.md`). **Both are docs-only — verified
+by this session, `git show --stat`: neither touches `scripts/tiletie/`, `src/`, `engine/` or
+`rust/`** — so both fall inside `G-BITEXACT@HEAD`'s `git_rev` conjunct *by construction*, and the
+gate produced at `413e9856` remains valid for a run recording any descendant of it that keeps
+that property.
 
 ---
 
@@ -449,7 +513,72 @@ ruled stays **OPEN and re-priced there** (rider `R6`). `rho_phone` is a third cu
 | **W8** acceptance-test harness + fixtures (**NEW in R2**) | **DELIVERED** `f26f4f29`, 4a verified end-to-end on fixtures — pending merge. See the **builder delta** below |
 | **W7** `verify_tier1_rust.py --out` | ✅ **DONE in the prereg worktree `agent-a43f00f675fd11b65`** — the gate hard-coded `OUT_PATH` into the **closed** `tiearb2_stage2_20260817` run dir; re-running it for this campaign would have been a mid-run write to tracked artifacts of a closed run (REVIEW_R1 §2/§20). **It is the SECOND source of the §9 step-2 merge (§0.E)** |
 | **W9** `D-DRAW` probe (**NEW in R3.1**, §0.D) | TODO — runs **post-corpus, alongside step 4b**. Rust replay + `tiearb_probe(j=4, salt="tiearb2-deploy-v1", ply=…)` over the S2 capped plies → `RUN/D_DRAW.json::{n_checked,n_agree,agreement_rate,n_unreconstructible,git_rev}`, surfaced by the analyzer via `--d-draw` at `widening.j_rider.d_draw.*`. No playouts, no outcome statistic; `null` until it runs; **adjudicates nothing and may never correct, reweight or re-scale `Δ_ora`** |
+| **W10** generation launcher + `WORKERS.conf` (**NEW in R3.2**, §0.H/§0.I) | TODO — **blocks step 6**. Full interface below |
 | PLAN_J §8(4) runtime `tiearb_capped_total` | **NOT built, NOT a gate** — a deploy-side rust counter behind the freeze; the offline witnesses (`ARMS.json::capped_at_4`, `POSITIONS_PLAN.json::n_positions_capped_at_4`) already satisfy the offline requirement |
+
+### W10 interface — implementable without asking
+
+**W10.1 `measurement/tiearb_widening_20260817/WORKERS.conf`** (outside `shared_run/`; the
+`tiearb2_20260816/WORKERS.conf` pattern, sourced as `. "$(dirname "$0")/../WORKERS.conf"`).
+Exactly these names — the W6 driver and the launchers source them and **die without them**:
+
+```sh
+W_GEN_LOCAL=48        # F7d GEN row (gen_fair_distill --backend rust)
+W_GEN_LAPTOP=24       # F7d GEN row
+W_EVAL_LOCAL=30       # F7d eval row (CPU-leaf / scoring legs)
+W_EVAL_LAPTOP=22      # F7d eval row
+NICE=19
+SHARE_LOCAL=/mnt/c/carc-shared         # ⚠️ path differs by box — CLUSTER_OPS invariant
+SHARE_REMOTE=/mnt/carc-shared
+REPO_LOCAL=/home/doctor/projects/carcassone
+REPO_REMOTE=/home/doctor/projects/carcassone
+RUN_ID=tiearb_widening_20260817
+SHARE_RUN_LOCAL="$SHARE_LOCAL/$RUN_ID"
+SHARE_RUN_REMOTE="$SHARE_REMOTE/$RUN_ID"
+```
+
+⚠️ **Two count sets, not one.** The R1/R2 documents cite W30/W22 for scoring and W48/W24 for
+generation; a single `W_LOCAL` (the tiearb2 spelling) cannot express that and would silently
+generate at eval speed. Any launcher picks the set that matches its workload and **never
+hard-codes a count**.
+
+**W10.2 `measurement/tiearb_widening_20260817/run_gen.sh`** — a parameterised copy of
+`measurement/tiearb2_20260816/run_gen.sh`. Same generator, same production knobs, **only the band
+differs** (root-level disjointness by construction):
+
+```sh
+usage:  ./run_gen.sh {local|laptop-side} [--smoke]
+sources: ../WORKERS.conf  and  $REPO/scripts/distill_flywheel/champ_env.sh
+OUT     = $SHARE/$RUN_ID/gen          # the directory W6 phase 1 collects from
+W       = W_GEN_LOCAL | W_GEN_LAPTOP
+exec nice -n "$NICE" "$REPO/.venv/bin/python" -u \
+  "$REPO/scripts/distill_flywheel/gen_fair_distill.py" \
+  --games "$GAMES" --k-dets 4 --sims 688 \
+  --exact-endgame --exact-max-k 2 --rules-profile walled \
+  --workers "$W" --seed-start "$SEED_START" \
+  --log-actions --actions-only --out "$OUT" --shared-claim
+```
+
+| constant | value |
+|---|---|
+| `SEED_START` / `GAMES` | `135000000000` / **850** (band `+0…+849`, §3) |
+| top-up (only if the §3 blind clause fires) | `TOPUP_SEED_START=136000000000`, `TOPUP_GAMES ≤ 200`, generated as a **separate invocation** so `G-BAND`'s two-file form holds (a widened band is forbidden) |
+| knobs | `k_dets 4 × sims 688 = 2752`, `exact_endgame K≤2`, leaf `a36d2e15a3b3d71d`, `rules_profile walled` — matched **verbatim** to `measurement/champ_action_logs/CORPUS_MANIFEST.json` |
+| both boxes | same command, same `--out` on the share, `--shared-claim` `O_EXCL` work-stealing; a slow box simply claims fewer games |
+| detach | `setsid nohup … & disown` (house rule >~1 min); **a detached ssh launch returning `rc=124` from `timeout` means LAUNCHED — never retry** |
+
+**W10.3 `--smoke` mode = §7's generation `c`-remeasure.** 10 games, **one box, idle** (a timing
+bench is an exclusive tenant), at the **same** knobs and the **same** band — the smoke's games are
+the band's **first 10** and are **RETAINED**, so no seed outside a committed range is ever created
+and `G-BAND` is untouched; the full run then resumes into the same `--out` under `--shared-claim`.
+Emits `RUN/corpus/GEN_SMOKE.json`:
+`{worker_secs_per_game, n_games, workers, box, wall_secs, committed: 990.0, ratio, halt_fired}`,
+`halt_fired` **one-sided** (`ratio > 1.25` only). `c_remeasure.py` reads it for the `generation`
+leg (§0.A). ⚠️ Units: **worker-s per GAME** here, per PLAYOUT for the judge legs — never compared.
+
+**W10.4 What W10 must NOT do.** No self-launch (the tiearb2 driver's rule); no strength claim, no
+`experiments/results.csv` row, no band promotion — these games are **corpus substrate** (`run_gen.sh`'s
+own banner). It does not build positions, run a census, or touch `shared_run/`.
 
 ### Builder delta — what changed between rev R1 and rev R2 (self-contained; diff your work against this)
 
@@ -530,32 +659,42 @@ the run is live:
    is step 5 — so the run's own `git_rev` is necessarily *later*, and the two emitters use
    different formats (40-char vs `--short`). READ_RULE's conjunct is written for that reality;
    a literal equality would fail every healthy run (REVIEW_R2 §N1).
-4. **4a — PRE-COMMIT acceptance test (corpus-free).** Run the **four smokes** of §7.1
-   ({S1 `--m 128`, S2 `--m 32`} × both judges), then run **W8** over: every address that a
-   smoke, a leg manifest or a static fixture can answer — the `SMOKE_MANIFEST_*`,
-   `RUN/legs/{s1,s2}/tier1-greedy/…/manifest.json` (`resolved_config.*`, `preflight.seeds.*`),
-   the `RUN_MANIFEST_*` preflight keys — **plus a static schema audit of W3/W5/W6 outputs
-   against committed fixtures** (a fixture ARMS.json/plan/per_position row set), which is how
-   the `READOUT::widening.*`, `GATE_DISJOINT`, `GATE_DRAW` and `POSITIONS_PLAN`/`ARMS` spellings
-   get audited before any real corpus exists. **Mechanism: key presence + JSON type ONLY. No
-   value is computed, printed or stored** — W3 never runs on real corpus positions here, and
-   `SEALED_G_REPLICATE.json` is not brought into existence (REVIEW_R2 §N3).
+4. **4a — PRE-COMMIT acceptance test, genuinely CORPUS-FREE (amended §0.G).** Two things only:
+   (i) **`G-BITEXACT@HEAD`** at step 2's sha, and (ii) **W8's static fixture schema audit** over
+   the committed fixture set — `ARMS.json` / `POSITIONS_PLAN.json` / `per_position` rows per
+   stratum, **plus the two fixtures added by §0.G**: a **leg-manifest fixture**
+   (`resolved_config.*`, `preflight.seeds.*`) and a **smoke-manifest fixture**
+   (`c_worker_secs_per_playout`, `crn_cross_leg_identical`). That is how the
+   `READOUT::widening.*`, `GATE_DISJOINT`, `GATE_DRAW`, `POSITIONS_PLAN`/`ARMS`, per-leg and
+   smoke spellings all get audited **before any real corpus exists**. **Mechanism: key presence
+   + JSON type ONLY — no value computed, printed or stored**; W3 never runs on real positions
+   here and `SEALED_G_REPLICATE.json` is not brought into existence (REVIEW_R2 §N3).
+   ⚠️ **No smoke runs at 4a** — a smoke needs a positions dir, and the only one that exists at
+   this moment is the SPENT corpus the flag defaults to (§0.G).
 5. **THEN** the blind commit to main, in ONE commit: `DESIGN.md` + `READ_RULE.md` +
    `STAGE1B_LADDER.json` + `W_CODE_MERGE.txt` (carrying step 2's sha) + the `REVIEW_R*.md`
    provenance files.
-6. **THEN** the band claim, then the corpus build (generation → census → positions → gates).
-7. **4b — POST-CORPUS, PRE-SCORING acceptance test.** Re-run **W8** against the **real** corpus
-   artifacts, which exist now and carry **no outcome statistic**: `CHAMP_GAMES_VERIFY.json`,
-   `GATE_DISJOINT.json` (incl. `strata_root_overlap` and all five comparisons),
-   `POSITIONS_PLAN.json`/`ARMS.json` on both strata, `GATE_DRAW.json`, `GEN_SMOKE.json` and
-   §7's realized-vs-committed `c` block. **Primary AND fallback independently, both strata,
-   presence/type only.** Any `UNRESOLVED` is fixed in code **before the first scoring leg** —
-   which is the last moment a fix is free. (The remaining `READOUT::widening.*` and
-   `per_position_*.jsonl` addresses are audited by 4a's fixture schema pass; they cannot exist
-   before scoring by construction.)
-8. **THEN** scoring: S1, then S2.
-9. **`WORKERS.conf` lives OUTSIDE this frozen directory** (`../WORKERS.conf`). If it must be
-   retuned mid-run, that is a numbered §7 deviation in the read-out, not a silent edit.
+6. **THEN** the band claim, then generation (**W10**, incl. its 10-game timed GEN smoke →
+   `GEN_SMOKE.json`), then the corpus build (census → positions → champ picks → gates).
+7. **4b-pre — POST-CORPUS, PRE-SCORING smokes + judge `c`-remeasure (moved here by §0.G).**
+   The **four** smokes of §7.1 ({S1 `--m 128`, S2 `--m 32`} × `clair-puct`, `tier1-greedy`) on
+   the **FRESH** corpus, **with `--positions-dir` named EXPLICITLY in every invocation — never
+   defaulted** — writing `SMOKE_MANIFEST_{S1,S2}_<judge>.json`. These produce `G-CRN`'s smoke
+   half and §7's judge-leg `c` figures, so **the one-sided `c`-HALT fires here, before the
+   expensive legs.**
+8. **4b — POST-CORPUS, PRE-SCORING acceptance test.** Run **W8** against the **real** artifacts,
+   which carry **no outcome statistic**: `CHAMP_GAMES_VERIFY.json` (+ `…_TOPUP.json` iff
+   exercised), `GATE_DISJOINT.json` (incl. `strata_root_overlap` and all five comparisons),
+   `POSITIONS_PLAN.json`/`ARMS.json` on both strata, `GATE_DRAW.json`, `GEN_SMOKE.json`, the
+   step-7 smoke manifests, and §7's realized-vs-committed `c` block. **Primary AND fallback
+   independently, both strata, presence/type only.** Any `UNRESOLVED` is fixed **in the emitter**
+   before the first scoring leg — the frozen pair cannot move, so a wrong *address* is a
+   numbered deviation, not an edit (§0.G's named residual).
+9. **W9 (`D-DRAW`)** runs here, alongside 4b — post-corpus, no playouts, non-adjudicating.
+10. **THEN** scoring: S1, then S2.
+11. **`WORKERS.conf` lives OUTSIDE this frozen directory** (`../WORKERS.conf`, specified under
+    W10 in §8). If it must be retuned mid-run, that is a numbered §7 deviation in the read-out,
+    not a silent edit.
 
 ---
 

@@ -1,7 +1,12 @@
 # TIE-ARBITER WIDENING — SHARED RUN, MECHANICAL READ RULE (rungs 2 + 3)
 
-> **STATUS: BLIND PREREGISTRATION — revision R3.1, THE BINDING PAIR PENDING MERGE. NOT
-> LAUNCHED. NO NUMBER OF THIS RUN EXISTS.** No further review round; the closing pass's one
+> **STATUS: BLIND PREREGISTRATION — revision R3.2, THE BINDING PAIR PENDING THE STEP-5 COMMIT.
+> NOT LAUNCHED. NO POSITION SCORED. NO NUMBER OF THIS RUN EXISTS.** **R3.2** answers the §9
+> executor's three pre-commit blockers in DESIGN §0 — the judge smokes move from step 4a to the
+> post-corpus **4b-pre** (4a was not corpus-free, and `--positions-dir` defaults to a **spent**
+> corpus), plus the missing generation launcher (**W10**) and its `WORKERS.conf`.
+> **No gate conjunct's value changed** — `G-CRN`'s smoke witness must still read exactly what it
+> read before; only the moment it is produced moved. No further review round; the closing pass's one
 > blocking defect (`B1`, the `G-BAND` top-up clause) was fixed in R3 with its pre-approved text.
 > **R3.1** carries the dated pre-blind amendments of **DESIGN §0** (2026-08-18) — the W-code
 > builder's five ratification items, including the `allow_null` closed list in §1.2 below, whose
