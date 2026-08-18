@@ -1,0 +1,11 @@
+44078bce83b103fa3ae54c65c3de16675314bdbc
+# TOTAL COMMIT FREEZE — see measurement/jcz_tiearb_20260817/FREEZE.md
+# stamped at band-claim time: 2026-08-18T03:04:22Z
+# band 134000000000   band_tag b134
+# NO COMMIT MAY LAND IN THIS REPOSITORY — none, of any kind, including
+# docs, measurement/, android/, and README typos — until ALL FOUR of
+# these markers exist:
+#   /mnt/c/carc-shared/jcz_tiearb_20260817/DONE_jcz_CHAMP_deploy11008_Doctor_b134
+#   /mnt/c/carc-shared/jcz_tiearb_20260817/DONE_jcz_ARB_B16J4_deploy11008_Doctor_b134
+#   /mnt/c/carc-shared/jcz_tiearb_20260817/DONE_jcz_CHAMP_deploy11008_laptop-wsl_b134
+#   /mnt/c/carc-shared/jcz_tiearb_20260817/DONE_jcz_ARB_B16J4_deploy11008_laptop-wsl_b134

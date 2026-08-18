@@ -86,9 +86,33 @@ log "all 4 JCZ markers present"
 # --- then wait for the box to actually go quiet. A marker says the DRIVER
 # --- finished; it does not say every worker has exited (an mp Pool's children
 # --- routinely outlive their main). Require two consecutive quiet samples.
+# ⚠️⚠️ THIRD LATENT HANG, FIXED 2026-08-18 — this loop could NEVER have advanced.
+#
+# `pgrep -c` prints its count AND EXITS 1 when the count is zero. The old form
+#     n=$(pgrep -cf "..." 2>/dev/null || echo 0)
+# therefore produced the TWO-LINE string "0\n0" on a genuinely quiet box: pgrep's
+# own "0" plus the fallback's. `[ "0\n0" -eq 0 ]` is not a false test — it is a
+# BASH ERROR ("integer expression expected"), so the `if` took the else branch,
+# `quiet` was reset to 0, and the script logged `box still busy (procs=0 …)`
+# forever. Measured, not reasoned: a two-line reproducer returns exactly that.
+# The failure mode is identical to the marker bug above — it hangs precisely when
+# its condition is SATISFIED — and it sat immediately downstream of it, so fixing
+# only the markers would have moved the hang forty lines later.
+#
+# `|| true` + an explicit numeric guard: pgrep's count is used when it is a
+# number, and anything else (empty, multi-line, an error) reads as 0.
+#
+# ⚠️ The pattern is WIDENED to a bare `match\.py` per the re-run brief: the old
+# `jcz_match/match\.py` only matched an argv carrying the full relative path, and
+# a spawn worker re-exec'd with a different argv shape would have read as quiet
+# while it was still holding the box. `match\.py` subsumes it and this repo has
+# exactly one `match.py` (scripts/jcz_match/). A quiet check must fail toward
+# "still busy". No self-match risk: this script's own argv is
+# `bash …/deferred_full_gates.sh` and carries none of these strings.
 quiet=0
 while [ "$quiet" -lt 2 ]; do
-  n=$(pgrep -cf "eval_fair_puct|gen_fair|run_cell.sh|jcz_match/match\.py" 2>/dev/null || echo 0)
+  n=$(pgrep -cf "eval_fair_puct|gen_fair|run_cell\.sh|match\.py" 2>/dev/null || true)
+  case "$n" in ''|*[!0-9]*) n=0 ;; esac
   la=$(cut -d' ' -f1 /proc/loadavg)
   if [ "$n" -eq 0 ] && [ "${la%.*}" -lt 4 ]; then
     quiet=$((quiet+1))
