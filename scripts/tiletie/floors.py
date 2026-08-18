@@ -199,7 +199,19 @@ def main(argv=None) -> int:
     w.add_argument("--out", required=True)
     v = sub.add_parser("verify", help="validate an existing FLOORS.json")
     v.add_argument("--path", required=True)
+    r = sub.add_parser("range", help="one end of one committed sub-range "
+                                     "(empty when the stratum has none)")
+    r.add_argument("--path", required=True)
+    r.add_argument("--stratum", required=True, choices=("s1", "s2"))
+    r.add_argument("--end", required=True, choices=("lo", "hi"))
     a = ap.parse_args(argv)
+
+    if a.cmd == "range":
+        # the shell asks for ONE number; an absent sub-range prints nothing, so
+        # the caller's `[ -n "$X" ]` guard is the whole error path
+        rng = (load(a.path).get("sub_ranges") or {}).get(a.stratum)
+        print("" if not rng else rng[0 if a.end == "lo" else 1])
+        return 0
 
     if a.cmd == "write":
         body = build(a.option)

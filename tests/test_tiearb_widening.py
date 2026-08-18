@@ -923,7 +923,10 @@ def test_run_gen_topup_uses_a_separate_out_preserving_g_bands_n_file_form():
     # ... and the W6 driver collects that separate dir into the SECOND file
     w6 = (REPO / "scripts" / "tiletie" / "build_widening_corpus.sh").read_text()
     assert "GEN_DIR_TOPUP" in w6 and "CHAMP_GAMES_TOPUP" in w6
-    assert 'GEN_DIR="$SHARE_RUN_LOCAL/gen"' in w6
+    # ... and the extension dirs, one per stratum. There is NO base gen dir:
+    # 135e9 is RETAINED and never regenerated (R4-6).
+    assert 'GEN_DIR_EXT_S1="$SHARE_RUN_LOCAL/gen_ext_s1"' in w6
+    assert 'GEN_DIR_EXT_S2="$SHARE_RUN_LOCAL/gen_ext_s2"' in w6
 
 
 def test_gen_smoke_shape_is_exactly_what_c_remeasure_consumes(tmp_path):
@@ -1675,3 +1678,184 @@ def test_no_source_hardcodes_the_stage1b_ladder_under_the_old_run():
         src = path.read_text()
         assert "shared_run/STAGE1B_LADDER" not in src, path.name
         assert "shared_run/FLOORS.json" not in src, path.name
+
+
+# --------------------------------------------------------------------------- #
+# W6 collection layer — the EXTENSION bands, and G-BAND's N-file form (§2c)     #
+# --------------------------------------------------------------------------- #
+DRIVER = REPO / "scripts" / "tiletie" / "build_widening_corpus.sh"
+
+
+def _games_file(path, lo, n):
+    """A champ-games jsonl over `n` consecutive deck seeds from `lo`."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(
+        json.dumps({"deck_seed": lo + i, "actions": []}) + "\n"
+        for i in range(n)))
+
+
+def _scratch_campaign(tmp_path, option="FULL"):
+    """A repo-shaped scratch tree the driver can actually run in."""
+    repo = tmp_path / "repo"
+    camp = repo / "measurement" / "tiearb_widening_20260817"
+    (camp / "shared_run_r4").mkdir(parents=True)
+    (repo / "scripts" / "tiletie").mkdir(parents=True)
+    (repo / ".venv" / "bin").mkdir(parents=True)
+    (repo / ".venv" / "bin" / "python").symlink_to(sys.executable)
+    for f in (REPO / "scripts" / "tiletie").glob("*.py"):
+        (repo / "scripts" / "tiletie" / f.name).write_text(f.read_text())
+    (repo / "scripts" / "tiletie" / DRIVER.name).write_text(DRIVER.read_text())
+    share = tmp_path / "share"
+    conf = (CAMPAIGN / "WORKERS.conf").read_text().replace(
+        "SHARE_LOCAL=/mnt/c/carc-shared", f"SHARE_LOCAL={share}")
+    (camp / "WORKERS.conf").write_text(conf)
+    floors = FL.build(option)
+    (camp / "shared_run_r4" / "FLOORS.json").write_text(json.dumps(floors))
+    return {"repo": repo, "campaign": camp, "share": share, "floors": floors,
+            "run": camp / "shared_run_r4",
+            "banked": camp / "shared_run" / "corpus"}
+
+
+def _run_driver(tree, *phases):
+    return subprocess.run(
+        ["bash", str(tree["repo"] / "scripts" / "tiletie" / DRIVER.name),
+         *[str(p) for p in phases]],
+        capture_output=True, text=True)
+
+
+def test_driver_preamble_runs_clean_under_set_u(tmp_path):
+    """`set -euo pipefail` turns any leftover 850-era variable into an abort.
+    Phase 99 matches nothing, so this exercises the whole constants preamble."""
+    tree = _scratch_campaign(tmp_path)
+    r = _run_driver(tree, 99)
+    assert r.returncode == 0, (r.stdout[-3000:], r.stderr[-3000:])
+    assert "unbound variable" not in r.stderr
+
+
+def test_driver_dies_without_the_extension_generation_dirs(tmp_path):
+    """The base band is retained, so the ONLY thing phase 1 collects is the
+    extension — and it must say so rather than silently mining nothing."""
+    tree = _scratch_campaign(tmp_path)
+    _games_file(tree["banked"] / "champ_games_s1.jsonl", 135000000000, 350)
+    _games_file(tree["banked"] / "champ_games_s2.jsonl", 135000000350, 500)
+    r = _run_driver(tree, 1)
+    assert r.returncode == 2
+    assert "gen_ext_s1" in (r.stdout + r.stderr)
+
+
+def test_phase1_emits_the_n_file_band_verify_per_sub_range(tmp_path):
+    """§2c: EVERY generated range emits its OWN verify file, checked against ITS
+    OWN range with its own committed floor — base-s1/base-s2/ext-s1/ext-s2."""
+    tree = _scratch_campaign(tmp_path)
+    f = tree["floors"]
+    _games_file(tree["banked"] / "champ_games_s1.jsonl", 135000000000, 350)
+    _games_file(tree["banked"] / "champ_games_s2.jsonl", 135000000350, 500)
+    (tree["banked"] / "CHAMP_GAMES_VERIFY.json").write_text(json.dumps(
+        {"band_ok": True, "seed_band": [135000000000, 135000000849],
+         "n_games_realized": 850, "n_out_of_band": 0, "n_duplicate_seeds": 0,
+         "sha256_of_sorted_seeds": "0" * 64}))
+    corpus = tree["run"] / "corpus"
+    # pre-place the collected extension files so `collect` is skipped: this test
+    # is about the VERIFY shape, not about collect_action_logs' parser
+    _games_file(corpus / "champ_games_ext_s1.jsonl",
+                f["sub_ranges"]["s1"][0], f["games_extension_s1"])
+    _games_file(corpus / "champ_games_ext_s2.jsonl",
+                f["sub_ranges"]["s2"][0], f["games_extension_s2"])
+    (tree["share"] / "tiearb_widening_20260817" / "gen_ext_s1").mkdir(parents=True)
+    (tree["share"] / "tiearb_widening_20260817" / "gen_ext_s2").mkdir(parents=True)
+
+    r = _run_driver(tree, 1)
+    assert r.returncode == 0, (r.stdout[-4000:], r.stderr[-4000:])
+
+    expect = {
+        "CHAMP_GAMES_VERIFY_BASE_S1.json": ([135000000000, 135000000349], 350),
+        "CHAMP_GAMES_VERIFY_BASE_S2.json": ([135000000350, 135000000849], 500),
+        "CHAMP_GAMES_VERIFY_EXT_S1.json": (f["sub_ranges"]["s1"],
+                                           f["games_extension_s1"]),
+        "CHAMP_GAMES_VERIFY_EXT_S2.json": (f["sub_ranges"]["s2"],
+                                           f["games_extension_s2"]),
+    }
+    for name, (band, n) in expect.items():
+        p = corpus / name
+        assert p.is_file(), f"{name} missing — §2c requires a file per range"
+        d = json.loads(p.read_text())
+        assert d["seed_band"] == band, name
+        assert d["band_ok"] is True and d["n_out_of_band"] == 0, name
+        assert d["n_duplicate_seeds"] == 0, name
+        assert d["n_games_realized"] >= n, name
+    # the extension-wide file §2c's table names, over the CONTIGUOUS union
+    ext = json.loads((corpus / "CHAMP_GAMES_VERIFY_EXT.json").read_text())
+    assert ext["seed_band"] == [f["sub_ranges"]["s1"][0], f["sub_ranges"]["s2"][1]]
+    assert ext["n_games_realized"] == (f["games_extension_s1"]
+                                       + f["games_extension_s2"])
+    # ... and the base whole-band file §2c names as the primary address
+    assert (corpus / "CHAMP_GAMES_VERIFY.json").is_file()
+    # 136e9 appears in NO file
+    for p in corpus.glob("CHAMP_GAMES_VERIFY*.json"):
+        lo = json.loads(p.read_text())["seed_band"][0]
+        assert not (136000000000 <= lo <= 136999999999), f"{p.name} is 136e9"
+
+
+def test_phase1_fails_when_an_extension_file_lands_in_the_wrong_sub_range(tmp_path):
+    """A game mined into the wrong stratum is a G-DISJOINT failure, not a
+    bookkeeping slip — and the per-file verify is what catches it first."""
+    tree = _scratch_campaign(tmp_path)
+    f = tree["floors"]
+    _games_file(tree["banked"] / "champ_games_s1.jsonl", 135000000000, 350)
+    _games_file(tree["banked"] / "champ_games_s2.jsonl", 135000000350, 500)
+    corpus = tree["run"] / "corpus"
+    # S1's file carries S2's seeds — the exact mis-split the split exists to stop
+    _games_file(corpus / "champ_games_ext_s1.jsonl",
+                f["sub_ranges"]["s2"][0], f["games_extension_s1"])
+    _games_file(corpus / "champ_games_ext_s2.jsonl",
+                f["sub_ranges"]["s2"][0], f["games_extension_s2"])
+    for d in ("gen_ext_s1", "gen_ext_s2"):
+        (tree["share"] / "tiearb_widening_20260817" / d).mkdir(parents=True)
+    r = _run_driver(tree, 1)
+    assert r.returncode != 0
+    assert "OUTSIDE the declared band" in (r.stdout + r.stderr)
+
+
+def test_phase1_topup_verifies_against_138e9_not_the_released_136e9(tmp_path):
+    """R4-6: the top-up reserve is 138e9 +0..+499. 136e9 was RELEASED UNUSED —
+    verifying against it would check a band R4 does not own."""
+    src = DRIVER.read_text()
+    assert "TOPUP_LO=138000000000" in src and "TOPUP_HI=138000000499" in src
+    assert "136000000" not in src
+
+
+def test_driver_derives_every_extension_expectation_from_floors():
+    """No 850-era literal may size the extension: the sub-ranges and their game
+    counts are the owner's committed choice."""
+    src = DRIVER.read_text()
+    for name in ("EXT_S1_GAMES", "EXT_S2_GAMES", "EXT_S1_LO", "EXT_S1_HI",
+                 "EXT_S2_LO", "EXT_S2_HI"):
+        assert f'{name}="$(' in src, f"{name} must be READ from FLOORS.json"
+    assert "read_floor games_extension_s1" in src
+    assert "read_floor games_extension_s2" in src
+    # the base band's facts are asserted, not re-derived
+    assert "BASE_S1_GAMES=350" in src and "BASE_S2_GAMES=500" in src
+    # and nothing sizes a stratum from a literal target any more
+    assert "S1_TARGET=0" in src and "S2_TARGET=0" in src
+
+
+def test_extension_stratum_is_decided_by_source_directory():
+    """The producer already segregated the sub-ranges into their own --out
+    dirs; re-deriving the split from seeds here would be a second,
+    independently-wrong copy of the same rule."""
+    src = DRIVER.read_text()
+    assert 'GEN_DIR_EXT_S1="$SHARE_RUN_LOCAL/gen_ext_s1"' in src
+    assert 'GEN_DIR_EXT_S2="$SHARE_RUN_LOCAL/gen_ext_s2"' in src
+    assert "BY SOURCE DIRECTORY" in src
+    # the base band is never regenerated, so there is no base gen dir at all
+    assert 'GEN_DIR="$SHARE_RUN_LOCAL/gen"' not in src
+
+
+def test_census_and_picks_mine_the_extension_not_the_base_band():
+    src = DRIVER.read_text()
+    assert "LO=$EXT_S1_LO; HI=$EXT_S1_HI" in src
+    assert "LO=$EXT_S2_LO; HI=$EXT_S2_HI" in src
+    # the base sub-band filters are gone from the mining phases
+    assert "LO=$S1_SEED_LO" not in src and "LO=$S2_SEED_LO" not in src
+    assert 'games_path()        { echo "$CORPUS/champ_games_ext_$1.jsonl"; }' in src
+    assert "banked_games_path()" in src

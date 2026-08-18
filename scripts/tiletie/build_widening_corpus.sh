@@ -21,12 +21,14 @@
 #     (outcome-blind: `capped_at_4` is knowable before any pricing), then pass 2
 #     builds only those. `build_positions.py` has no `--include-rids`, so the
 #     selection is expressed as the exclusion of its complement.
-#   * The band verify is TWO INVOCATIONS when the blind top-up was exercised —
-#     the base file against [135000000000,135000000849] carrying the >=850
-#     floor, and CHAMP_GAMES_VERIFY_TOPUP.json against ITS OWN
-#     [136000000000,136000000199] carrying only the increment. NEVER one
-#     invocation over a widened band: that would report `n_out_of_band == 0`
-#     for a seed lying in neither range (READ_RULE §2 `G-BAND`, R3 defect B1).
+#   * The band verify is N INVOCATIONS, one per generated range (§2c). The BASE
+#     band (135e9 +0..+849) is RETAINED INPUT — never regenerated, verified
+#     read-only per sub-range; the EXTENSION (137e9) is verified per stratum
+#     against the sub-range FLOORS.json commits, plus once over their contiguous
+#     union; the TOP-UP (138e9 +0..+499) iff exercised, carrying only the
+#     increment. NEVER one invocation over a widened band: that would report
+#     `n_out_of_band == 0` for a seed lying in neither range (R3 defect B1).
+#     ⚠️ 136e9 is RELEASED UNUSED and must appear in NO file.
 #   * Every output path is ABSOLUTE and under RUN/ (REVIEW_R1 §16).
 #   * WORKERS.conf lives OUTSIDE the frozen prereg dir (DESIGN §9, item 9), so a
 #     W retune is never a mid-run edit to a frozen file.
@@ -87,24 +89,37 @@ LOGS="$RUN_DIR/logs"
 CORPUS="$RUN_DIR/corpus"
 SHADOW="$CORPUS/_shadow_repo"
 
-GEN_DIR="$SHARE_RUN_LOCAL/gen"             # what W10's run_gen.sh produces
-GEN_DIR_TOPUP="$SHARE_RUN_LOCAL/gen_topup" # the SEPARATE reserved-range invocation
-CHAMP_GAMES="$CORPUS/champ_games_widening.jsonl"
-CHAMP_GAMES_TOPUP="$CORPUS/champ_games_widening_topup.jsonl"
+# ⚠️ R4 BAND LAYOUT. There is NO base-band generation directory: 135e9 is
+# RETAINED and is never regenerated (R4-6), so this driver mines ONLY the
+# extension, and the union step brings the retained POSITIONS in. Each generated
+# range has its OWN directory, which is what makes G-BAND's N-file form true
+# end-to-end (§2c) — the stratum of an extension game is decided BY SOURCE
+# DIRECTORY, because the producer already segregated the two sub-ranges.
+GEN_DIR_EXT_S1="$SHARE_RUN_LOCAL/gen_ext_s1"
+GEN_DIR_EXT_S2="$SHARE_RUN_LOCAL/gen_ext_s2"
+GEN_DIR_TOPUP="$SHARE_RUN_LOCAL/gen_topup"
+CHAMP_GAMES_TOPUP="$CORPUS/champ_games_topup.jsonl"
 
-# --- corpus constants (DESIGN §3) -------------------------------------------- #
-SEED_LO=135000000000
-SEED_HI=135000000849
-TOPUP_LO=136000000000
-TOPUP_HI=136000000199
-EXPECT_GAMES=850
-MIN_GAMES="${WIDENING_MIN_GAMES:-$EXPECT_GAMES}"
+# --- corpus constants ---------------------------------------------------------- #
+# BASE band — RETAINED INPUT, never regenerated. Its champ-games files live under
+# the SPENT pair and are read READ-ONLY. The +0…+349 / +350…+849 split is R3's
+# and is a FACT of the retained corpus (PREREG_FAILURE §2: S1 350 games, S2 500),
+# not an R4 parameter — so it is asserted against the retained files, not assumed.
+BASE_LO=135000000000
+BASE_HI=135000000849
+BASE_EXPECT=850
+BASE_S1_LO=$BASE_LO;               BASE_S1_HI=135000000349;  BASE_S1_GAMES=350
+BASE_S2_LO=135000000350;           BASE_S2_HI=$BASE_HI;      BASE_S2_GAMES=500
+# TOP-UP — R4-6's reserve. ⚠️ 136e9 was RELEASED UNUSED and must appear in NO
+# file; carrying it here (as this driver did) would have verified the top-up
+# against a band R4 does not own.
+TOPUP_LO=138000000000
+TOPUP_HI=138000000499
+MIN_GAMES="${WIDENING_MIN_GAMES:-}"   # optional override, per-file floors below
 SAMPLE_SEED=20260819
 PROFILE=walled
 CAP_J=inf                          # UNCAPPED — DESIGN §4's graded-knob table
 
-S1_SEED_LO=$SEED_LO;               S1_SEED_HI=135000000349
-S2_SEED_LO=135000000350;           S2_SEED_HI=$SEED_HI
 S1_MAX_PER_GAME=4;                 S2_MAX_PER_GAME=3
 S2_MAX_CAPPED_PER_ROOT=3           # PLAN_J ask 4 — root-bootstrap SEs
 S1_TARGET=0                        # 0 = take ALL remaining supply; the FLOOR
@@ -127,6 +142,23 @@ GATE_FLOOR_S1="$(read_floor gate_floor_s1)"
 GATE_FLOOR_S2="$(read_floor gate_floor_s2)"
 OPTION_LABEL="$(read_floor option_label)"
 RUNG3_BOUGHT="$(read_floor rung3_bought)"
+# EXTENSION EXPECTATIONS COME FROM FLOORS.json, NEVER FROM A LITERAL. The
+# sub-ranges and their game counts are the owner's committed choice; a hardcoded
+# number here would silently disagree with the band the producer generated.
+EXT_S1_GAMES="$(read_floor games_extension_s1)"
+EXT_S2_GAMES="$(read_floor games_extension_s2)"
+read_range() {
+  "$PY" "$REPO/scripts/tiletie/floors.py" range --path "$FLOORS" \
+        --stratum "$1" --end "$2"
+}
+EXT_S1_LO="$(read_range s1 lo)";   EXT_S1_HI="$(read_range s1 hi)"
+EXT_S2_LO="$(read_range s2 lo)";   EXT_S2_HI="$(read_range s2 hi)"
+[ -n "$EXT_S1_LO" ] || { echo "[widening] FATAL: $FLOORS commits no S1" \
+  "extension sub-range" >&2; exit 2; }
+if [ "$RUNG3_BOUGHT" = "True" ] && [ -z "$EXT_S2_LO" ]; then
+  echo "[widening] FATAL: rung3_bought is true but FLOORS.json commits no S2" \
+       "extension sub-range" >&2; exit 2
+fi
 
 BANKED_TILETIE="$REPO/measurement/tiletie_pricing_20260812/positions_pooled"
 BANKED_TIEARB2="$REPO/measurement/tiearb2_20260816/corpus/positions"
@@ -161,65 +193,132 @@ ext_positions_dir()    { echo "$CORPUS/positions_$1$EXTENSION_POSITIONS_SUFFIX";
 positions_dir()        { echo "$CORPUS/positions_$1"; }
 picks_dir()     { echo "$CORPUS/champ_picks_$1"; }
 map_path()      { echo "$(census_dir "$1")/afterstate_map_${PROFILE}.json"; }
-games_path()    { echo "$CORPUS/champ_games_$1.jsonl"; }
+#: the EXTENSION champ-games this driver collects (the base band's are retained)
+games_path()        { echo "$CORPUS/champ_games_ext_$1.jsonl"; }
+#: the RETAINED base champ-games, under the SPENT pair. READ-ONLY.
+banked_games_path() { echo "$BANKED_RUN_DIR/$BANKED_CORPUS_SUBDIR/champ_games_$1.jsonl"; }
 
 # --------------------------------------------------------------------------- #
-# PHASE 1 — COLLECT: merge the per-game action logs, verify the band, split     #
+# PHASE 1 — COLLECT the EXTENSION + the N-file G-BAND verify (§2c)              #
 # --------------------------------------------------------------------------- #
+# ⚠️ THE BASE BAND IS NOT COLLECTED HERE AND IS NEVER REGENERATED. 135e9's games
+# were collected by the R3.3 run; its champ-games files and its POSITIONS are
+# RETAINED INPUT under the SPENT pair and are read READ-ONLY (R4-0.5). What this
+# phase collects is the EXTENSION, from the two directories the producer already
+# segregated by sub-range.
+#
+# ⚠️ THE STRATUM OF AN EXTENSION GAME IS DECIDED BY SOURCE DIRECTORY, never by
+# re-filtering seeds. `run_gen.sh --extension s1|s2` wrote each sub-range to its
+# own `--out`, so the segregation already happened at production time; re-deriving
+# it here would be a second, independently-wrong copy of the same rule. The
+# per-file verify then PROVES the segregation held, against the sub-range
+# FLOORS.json commits.
+#
+# ⚠️ G-BAND §2c IS THIS: every generated range emits its OWN verify file and is
+# checked against ITS OWN range, with its own committed floor. Never one
+# invocation over a widened band — that would report `n_out_of_band == 0` for a
+# seed lying in neither range.
 if want 1; then
-  if [ -f "$CHAMP_GAMES" ]; then
-    skip 1 "$CHAMP_GAMES"
+  # ---- 1a: the BASE band's retained champ-games, verified per sub-range ----- #
+  # Read-only from the SPENT pair. The +0…+349 / +350…+849 split is R3's and is a
+  # FACT of these files (PREREG_FAILURE §2), so it is ASSERTED here rather than
+  # assumed: a retained file that does not match its committed sub-range would
+  # mean the retained corpus is not the corpus R4 sized itself against.
+  for S in s1 s2; do
+    SRC="$(banked_games_path "$S")"
+    if [ ! -f "$SRC" ]; then
+      say "PHASE 1a: retained $SRC ABSENT — the base band's games are RETAINED"
+      say "          INPUT; without them G-BAND cannot verify the base sub-ranges"
+      exit 2
+    fi
+    if [ "$S" = s1 ]; then LO=$BASE_S1_LO; HI=$BASE_S1_HI; G=$BASE_S1_GAMES
+                      else LO=$BASE_S2_LO; HI=$BASE_S2_HI; G=$BASE_S2_GAMES; fi
+    say "PHASE 1a VERIFY base-$S: [$LO, $HI], >= $G games (read-only source)"
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/tiearb2_corpus_lib.py" \
+      verify-champgames --path "$SRC" --seed-lo "$LO" --seed-hi "$HI" \
+      --expect-games "$G" --min-games "${MIN_GAMES:-$G}" \
+      --out "$CORPUS/CHAMP_GAMES_VERIFY_BASE_${S^^}.json" 2>&1 \
+      | tee "$LOGS/p1a_verify_base_$S.log"
+  done
+  # the whole-band base file §2c's table names as the primary address. Copied
+  # from the retained run (never symlinked, never written back).
+  if [ -f "$BANKED_RUN_DIR/$BANKED_CORPUS_SUBDIR/CHAMP_GAMES_VERIFY.json" ]; then
+    cp -f "$BANKED_RUN_DIR/$BANKED_CORPUS_SUBDIR/CHAMP_GAMES_VERIFY.json" \
+          "$CORPUS/CHAMP_GAMES_VERIFY.json"
+    say "PHASE 1a: base whole-band verify copied to $CORPUS/CHAMP_GAMES_VERIFY.json"
   else
-    say "PHASE 1 COLLECT: $GEN_DIR -> $CHAMP_GAMES"
-    nice -n "$NICE" "$PY" -u "$REPO/scripts/distill_flywheel/collect_action_logs.py" \
-      --in "$GEN_DIR" --out "$CHAMP_GAMES" --verify 10 2>&1 | tee "$LOGS/p1_collect.log"
+    say "PHASE 1a WARN: no retained CHAMP_GAMES_VERIFY.json to copy"
   fi
 
-  # The band/count assertion ALWAYS runs — it is the gate on phase 1's output.
-  # BASE file: its own range, and it alone carries the >= 850 floor.
-  say "PHASE 1 VERIFY (BASE): band [$SEED_LO, $SEED_HI], >= $MIN_GAMES games"
+  # ---- 1b: the EXTENSION, collected per stratum FROM ITS OWN DIRECTORY ------ #
+  for S in s1 s2; do
+    if [ "$S" = s2 ] && [ "$RUNG3_BOUGHT" != "True" ]; then
+      say "PHASE 1b: rung 3 NOT BOUGHT (n2 == 0) — no S2 extension to collect"
+      continue
+    fi
+    if [ "$S" = s1 ]; then SRC_DIR="$GEN_DIR_EXT_S1"; LO=$EXT_S1_LO; HI=$EXT_S1_HI
+                           G=$EXT_S1_GAMES
+                      else SRC_DIR="$GEN_DIR_EXT_S2"; LO=$EXT_S2_LO; HI=$EXT_S2_HI
+                           G=$EXT_S2_GAMES; fi
+    OUT="$(games_path "$S")"
+    if [ -f "$OUT" ]; then
+      skip "1b($S)" "$OUT"
+    else
+      [ -d "$SRC_DIR" ] || { echo "[widening] FATAL: extension dir $SRC_DIR" \
+        "missing — run_gen.sh --extension $S has not run" >&2; exit 2; }
+      say "PHASE 1b COLLECT ext-$S: $SRC_DIR -> $OUT"
+      nice -n "$NICE" "$PY" -u "$REPO/scripts/distill_flywheel/collect_action_logs.py" \
+        --in "$SRC_DIR" --out "$OUT" --verify 10 2>&1 \
+        | tee "$LOGS/p1b_collect_ext_$S.log"
+    fi
+    say "PHASE 1b VERIFY ext-$S: [$LO, $HI], >= $G games"
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/tiearb2_corpus_lib.py" \
+      verify-champgames --path "$OUT" --seed-lo "$LO" --seed-hi "$HI" \
+      --expect-games "$G" --min-games "${MIN_GAMES:-$G}" \
+      --out "$CORPUS/CHAMP_GAMES_VERIFY_EXT_${S^^}.json" 2>&1 \
+      | tee "$LOGS/p1b_verify_ext_$S.log"
+  done
+
+  # the extension-wide file §2c's table names, over the CONTIGUOUS union of the
+  # two committed sub-ranges. This is NOT a widened band: the sub-ranges abut by
+  # construction (S2 starts at S1's end + 1), so their union is exactly the
+  # committed extension range.
+  EXT_ALL="$CORPUS/champ_games_ext_all.jsonl"
+  if [ "$RUNG3_BOUGHT" = "True" ]; then
+    cat "$(games_path s1)" "$(games_path s2)" > "$EXT_ALL"
+    EXT_ALL_HI=$EXT_S2_HI; EXT_ALL_GAMES=$(( EXT_S1_GAMES + EXT_S2_GAMES ))
+  else
+    cp -f "$(games_path s1)" "$EXT_ALL"
+    EXT_ALL_HI=$EXT_S1_HI; EXT_ALL_GAMES=$EXT_S1_GAMES
+  fi
+  say "PHASE 1b VERIFY ext-ALL: [$EXT_S1_LO, $EXT_ALL_HI], >= $EXT_ALL_GAMES games"
   nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/tiearb2_corpus_lib.py" \
-    verify-champgames --path "$CHAMP_GAMES" \
-    --seed-lo "$SEED_LO" --seed-hi "$SEED_HI" \
-    --expect-games "$EXPECT_GAMES" --min-games "$MIN_GAMES" \
-    --out "$CORPUS/CHAMP_GAMES_VERIFY.json" 2>&1 | tee "$LOGS/p1_verify.log"
+    verify-champgames --path "$EXT_ALL" \
+    --seed-lo "$EXT_S1_LO" --seed-hi "$EXT_ALL_HI" \
+    --expect-games "$EXT_ALL_GAMES" --min-games "${MIN_GAMES:-$EXT_ALL_GAMES}" \
+    --out "$CORPUS/CHAMP_GAMES_VERIFY_EXT.json" 2>&1 \
+    | tee "$LOGS/p1b_verify_ext_all.log"
 
-  # TOP-UP: W10's `run_gen.sh --topup N` writes to a SEPARATE --out, so it is
-  # collected into a SEPARATE champ-games file. That separation is what keeps
-  # G-BAND's two-file form intact end-to-end: merging the reserved range into the
-  # base file would put out-of-band seeds in front of the base verify and FAIL a
-  # healthy run.
-  if [ ! -f "$CHAMP_GAMES_TOPUP" ] \
-     && [ -d "$GEN_DIR_TOPUP" ] \
-     && [ -n "$(ls -A "$GEN_DIR_TOPUP" 2>/dev/null)" ]; then
-    say "PHASE 1 COLLECT (TOP-UP): $GEN_DIR_TOPUP -> $CHAMP_GAMES_TOPUP"
-    nice -n "$NICE" "$PY" -u "$REPO/scripts/distill_flywheel/collect_action_logs.py" \
-      --in "$GEN_DIR_TOPUP" --out "$CHAMP_GAMES_TOPUP" --verify 10 2>&1 \
-      | tee "$LOGS/p1_collect_topup.log"
-  fi
-
-  # TOP-UP file: a SECOND invocation against ITS OWN reserved range, carrying
-  # only the increment. Holding it to the 850 floor would VOID every healthy run
-  # that exercises the pre-licensed clause (<=200 games) — READ_RULE §2 G-BAND.
-  if [ -f "$CHAMP_GAMES_TOPUP" ]; then
-    say "PHASE 1 VERIFY (TOP-UP): band [$TOPUP_LO, $TOPUP_HI], increment only"
+  # ---- 1c: the TOP-UP, iff the pre-licensed clause was exercised ------------ #
+  # ⚠️ 138e9, R4-6's reserve. 136e9 was RELEASED UNUSED and must appear in NO
+  # file; this driver carried it until R4.5 and would have verified the top-up
+  # against a band R4 does not own.
+  if [ -d "$GEN_DIR_TOPUP" ] && [ -n "$(ls -A "$GEN_DIR_TOPUP" 2>/dev/null)" ]; then
+    if [ ! -f "$CHAMP_GAMES_TOPUP" ]; then
+      say "PHASE 1c COLLECT (TOP-UP): $GEN_DIR_TOPUP -> $CHAMP_GAMES_TOPUP"
+      nice -n "$NICE" "$PY" -u "$REPO/scripts/distill_flywheel/collect_action_logs.py" \
+        --in "$GEN_DIR_TOPUP" --out "$CHAMP_GAMES_TOPUP" --verify 10 2>&1 \
+        | tee "$LOGS/p1c_collect_topup.log"
+    fi
+    say "PHASE 1c VERIFY (TOP-UP): band [$TOPUP_LO, $TOPUP_HI], increment only"
     nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/tiearb2_corpus_lib.py" \
       verify-champgames --path "$CHAMP_GAMES_TOPUP" \
-      --seed-lo "$TOPUP_LO" --seed-hi "$TOPUP_HI" \
-      --min-games 1 \
+      --seed-lo "$TOPUP_LO" --seed-hi "$TOPUP_HI" --min-games 1 \
       --out "$CORPUS/CHAMP_GAMES_VERIFY_TOPUP.json" 2>&1 \
-      | tee "$LOGS/p1_verify_topup.log"
+      | tee "$LOGS/p1c_verify_topup.log"
   else
-    say "PHASE 1: no top-up file — the blind corpus top-up was NOT exercised"
+    say "PHASE 1c: no top-up directory — the blind top-up was NOT exercised"
   fi
-
-  for S in s1 s2; do
-    if [ "$S" = s1 ]; then LO=$S1_SEED_LO; HI=$S1_SEED_HI; else LO=$S2_SEED_LO; HI=$S2_SEED_HI; fi
-    say "PHASE 1 SPLIT $S: deck-seed sub-band [$LO, $HI] -> $(games_path "$S")"
-    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/tiearb2_corpus_lib.py" \
-      split-champgames --path "$CHAMP_GAMES" --out "$(games_path "$S")" \
-      --seed-lo "$LO" --seed-hi "$HI" 2>&1 | tee "$LOGS/p1_split_$S.log"
-  done
 fi
 
 # --------------------------------------------------------------------------- #
@@ -227,9 +326,12 @@ fi
 # --------------------------------------------------------------------------- #
 if want 2; then
   for S in s1 s2; do
+    [ "$S" = s2 ] && [ "$RUNG3_BOUGHT" != "True" ] && continue
     CENSUS="$(census_dir "$S")"; GAMES="$(games_path "$S")"
-    if [ "$S" = s1 ]; then MPG=$S1_MAX_PER_GAME; LO=$S1_SEED_LO; HI=$S1_SEED_HI
-                     else MPG=$S2_MAX_PER_GAME; LO=$S2_SEED_LO; HI=$S2_SEED_HI; fi
+    # the EXTENSION sub-ranges (FLOORS.json), not the base band: the base's
+    # positions are RETAINED and are never re-mined.
+    if [ "$S" = s1 ]; then MPG=$S1_MAX_PER_GAME; LO=$EXT_S1_LO; HI=$EXT_S1_HI
+                     else MPG=$S2_MAX_PER_GAME; LO=$EXT_S2_LO; HI=$EXT_S2_HI; fi
     mkdir -p "$CENSUS"
     if [ -f "$CENSUS/rows.jsonl" ]; then skip "2($S)" "$CENSUS/rows.jsonl"; continue; fi
     # Realized game count -> the census ply target (MPG x games), so
@@ -264,12 +366,16 @@ fi
 # measurement/champ_action_logs/champ_games.jsonl is OUR corpus. WITHOUT THIS
 # STEP build_positions silently globs the SPENT corpus's map (REVIEW_R1 §15).
 if want 3; then
-  say "PHASE 3a stage shadow repo root -> $SHADOW"
-  ENTRY="$(nice -n "$NICE" "$PY" "$REPO/scripts/tiletie/tiearb2_corpus_lib.py" \
-    stage-shadow --shadow-root "$SHADOW" --champ-games "$CHAMP_GAMES")"
   for S in s1 s2; do
+    [ "$S" = s2 ] && [ "$RUNG3_BOUGHT" != "True" ] && continue
     MAP="$(map_path "$S")"
     if [ -f "$MAP" ]; then skip "3($S)" "$MAP"; continue; fi
+    # the shadow root is re-staged PER STRATUM against that stratum's own
+    # extension champ-games: transposition_census has no --champ-games flag, so
+    # the file it reads is whichever one the shadow points at.
+    say "PHASE 3a stage shadow repo root ($S) -> $SHADOW"
+    ENTRY="$(nice -n "$NICE" "$PY" "$REPO/scripts/tiletie/tiearb2_corpus_lib.py" \
+      stage-shadow --shadow-root "$SHADOW" --champ-games "$(games_path "$S")")"
     say "PHASE 3 TRANSPOSITION MAP $S via $ENTRY"
     nice -n "$NICE" "$PY" -u "$ENTRY" \
       --rows "$(census_dir "$S")/rows.jsonl" \
@@ -284,6 +390,7 @@ fi
 # WITHOUT --champ-picks the build raises KeyError on row 1 (REVIEW_R1 §15).
 if want 4; then
   for S in s1 s2; do
+    [ "$S" = s2 ] && [ "$RUNG3_BOUGHT" != "True" ] && continue
     PICKS="$(picks_dir "$S")"; mkdir -p "$PICKS"
     if [ -f "$PICKS/champ_picks.jsonl.done" ]; then
       skip "4($S)" "$PICKS/champ_picks.jsonl.done"; continue; fi
