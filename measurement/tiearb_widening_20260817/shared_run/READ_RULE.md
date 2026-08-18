@@ -1,7 +1,11 @@
 # TIE-ARBITER WIDENING — SHARED RUN, MECHANICAL READ RULE (rungs 2 + 3)
 
-> **STATUS: BLIND PREREGISTRATION — revision R3.2, THE BINDING PAIR PENDING THE STEP-5 COMMIT.
-> NOT LAUNCHED. NO POSITION SCORED. NO NUMBER OF THIS RUN EXISTS.** **R3.2** answers the §9
+> **STATUS: BLIND PREREGISTRATION — revision R3.3, FINAL. THE BINDING PAIR; the §9 executor
+> resumes against this revision. NOT LAUNCHED. NO POSITION SCORED. NO NUMBER OF THIS RUN
+> EXISTS.** R3.3 ratifies the W10 builder's five spec-code resolutions in DESIGN §0.K–§0.O —
+> launcher-side only (worker-name mapping, the top-up producer, `--backend rust`, the one
+> permitted `shared_run/` write, and the always-explicit `--positions-dir` rule).
+> **No gate conjunct's value changed in R3.2 or R3.3.** **R3.2** answers the §9
 > executor's three pre-commit blockers in DESIGN §0 — the judge smokes move from step 4a to the
 > post-corpus **4b-pre** (4a was not corpus-free, and `--positions-dir` defaults to a **spent**
 > corpus), plus the missing generation launcher (**W10**) and its `WORKERS.conf`.

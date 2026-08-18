@@ -1,7 +1,8 @@
 # TIE-ARBITER WIDENING — SHARED INSTRUMENT RUN, DESIGN (rungs 2 `B>16` + 3 `J>4`)
 
-> **STATUS: BLIND PREREGISTRATION — revision R3.2, THE BINDING PAIR PENDING THE STEP-5 COMMIT.
-> NOT LAUNCHED. NO POSITION SCORED. NO OUTCOME STATISTIC OF THIS RUN EXISTS OR WAS READ.**
+> **STATUS: BLIND PREREGISTRATION — revision R3.3, FINAL. THE BINDING PAIR; the §9 executor
+> resumes against this revision. NOT LAUNCHED. NO POSITION SCORED. NO OUTCOME STATISTIC OF THIS
+> RUN EXISTS OR WAS READ.**
 > No further review round: the closing pass passed rev R2 on everything but one defect (`B1`)
 > and pre-approved its fix, which R3 applied verbatim along with cosmetics C1–C6. **R3.1 adds
 > the dated pre-blind amendment section §0 (2026-08-18)** — the W-code builder's five
@@ -174,6 +175,49 @@ by this session, `git show --stat`: neither touches `scripts/tiletie/`, `src/`, 
 `rust/`** — so both fall inside `G-BITEXACT@HEAD`'s `git_rev` conjunct *by construction*, and the
 gate produced at `413e9856` remains valid for a run recording any descendant of it that keeps
 that property.
+
+### Pre-blind amendments — 2026-08-18 (rev R3.3), the W10 builder's spec-code resolutions
+
+W10 delivered at **`682d8f54`** (builder worktree; 70 tests; **4a and 4b-pre passing end-to-end
+on fixtures**). Five items where the spec and the code had to be reconciled. **All ratified as
+the builder resolved them; none touches a gate conjunct's value.** Two are defects in *this
+document*, and are recorded as such.
+
+**0.K — `WORKERS.conf` name mapping: RATIFIED, and W10.1's spec was incomplete.** W6 sources
+`W_LOCAL` and `$SHARE_LOCAL/$RUN_ID` — **neither of which §0.I specified**; the spec named a
+`W_GEN_*`/`W_EVAL_*` pair and left W6's own two reads unmapped. The builder rewired W6 to
+`W_EVAL_LOCAL` and `SHARE_RUN_LOCAL`, and **that is the correct mapping**: W6's phases (census,
+positions, champ picks) are **CPU-leaf mining — the F7d EVAL row** — so feeding them the GEN count
+would oversubscribe the box on exactly the workload class the EVAL sweep was run for. The mapping
+is now written into W10.1.
+
+**0.L — the top-up had a verifier but no producer: RATIFIED.** W10.2 spec'd a separate top-up
+*invocation* and `G-BAND` requires a second *file*, but W6 phase 1 only **verified**
+`CHAMP_GAMES_VERIFY_TOPUP.json` — nothing produced its input. The builder added
+**`run_gen.sh --topup`**, writing to a separate **`gen_topup/`**, which W6 phase 1 collects as
+that file's input. ⭐ This is what makes `G-BAND`'s two-file form *reachable* rather than merely
+required, and the alternative the builder rejected — merging top-up games into the base `--out` —
+would have **re-entered the B1 defect through the launcher**: one collected set spanning two
+ranges is precisely the "one invocation over a widened band" that `G-BAND` forbids, arriving by a
+different door.
+
+**0.M — `--backend rust` explicit in the gen exec line: RATIFIED, and this one was load-bearing.**
+`gen_fair_distill.py --backend` **defaults to `python`** (verified this session,
+`gen_fair_distill.py:554`), while §3 names rust as the config of record and W10.1's `W_GEN_LOCAL=48`
+is the **rust**-benched count (F7d GEN row). Leaving the flag implicit would have generated on the
+python engine at a worker count benched for rust — a wrong-config corpus produced by a launcher
+that looked right. The one-line addition is in W10.2's block.
+
+**0.N — W10.3 vs W10.4 contradiction: RATIFIED as exactly one file.** W10.4 said W10 "does not
+touch `shared_run/`" while W10.3 has it write `RUN/corpus/GEN_SMOKE.json`. Resolved the way the
+builder read it: **W10 writes exactly that one file under `shared_run/`, and nothing else**, with
+the exception disclosed in the launcher's own header so no future reader has to rediscover it.
+The file is a **cost witness** (§7's generation leg) — no outcome statistic, no branch input.
+
+**0.O — runbook rule, named so it cannot be lost: `--positions-dir` is ALWAYS explicit.** Every
+judge-smoke invocation, in every runbook, script and hand-typed command, passes `--positions-dir`
+in full. **The default is the trap** (`measurement/tiletie_pricing_20260812/positions`, the spent
+corpus — §0.G). Stated in §9's 4b-pre step and repeated here as a standing rule.
 
 ---
 
@@ -542,22 +586,48 @@ generation; a single `W_LOCAL` (the tiearb2 spelling) cannot express that and wo
 generate at eval speed. Any launcher picks the set that matches its workload and **never
 hard-codes a count**.
 
+**Consumer mapping (§0.K — every read of this file, named).** W6 was written against the tiearb2
+spelling and sources `W_LOCAL` + `$SHARE_LOCAL/$RUN_ID`; both are rewired:
+
+| consumer | takes | why |
+|---|---|---|
+| **W6** corpus driver (census · positions · champ picks) | **`W_EVAL_LOCAL`** (30) and **`SHARE_RUN_LOCAL`** | its phases are **CPU-leaf mining = the F7d EVAL row**; the GEN count (48) would **oversubscribe** the box on the very workload class the EVAL sweep measured |
+| **W10** `run_gen.sh` | `W_GEN_LOCAL` (48) / `W_GEN_LAPTOP` (24) | rust-era `gen_fair_distill` — the F7d **GEN** row |
+| scoring legs (`run_tiletie -W`) | `W_EVAL_LOCAL` (30) / `W_EVAL_LAPTOP` (22) | F7d **EVAL** row |
+
+`W_LOCAL` and a bare `SHARE_LOCAL/$RUN_ID` are **not** part of this contract — a launcher reading
+either is reading a name this file does not promise to define.
+
 **W10.2 `measurement/tiearb_widening_20260817/run_gen.sh`** — a parameterised copy of
 `measurement/tiearb2_20260816/run_gen.sh`. Same generator, same production knobs, **only the band
 differs** (root-level disjointness by construction):
 
 ```sh
-usage:  ./run_gen.sh {local|laptop-side} [--smoke]
+usage:  ./run_gen.sh {local|laptop-side} [--smoke] [--topup]
 sources: ../WORKERS.conf  and  $REPO/scripts/distill_flywheel/champ_env.sh
-OUT     = $SHARE/$RUN_ID/gen          # the directory W6 phase 1 collects from
+OUT     = $SHARE_RUN_{LOCAL,REMOTE}/gen         # what W6 phase 1 collects from
+          $SHARE_RUN_{LOCAL,REMOTE}/gen_topup   # --topup ONLY, never merged (§0.L)
 W       = W_GEN_LOCAL | W_GEN_LAPTOP
 exec nice -n "$NICE" "$REPO/.venv/bin/python" -u \
   "$REPO/scripts/distill_flywheel/gen_fair_distill.py" \
   --games "$GAMES" --k-dets 4 --sims 688 \
   --exact-endgame --exact-max-k 2 --rules-profile walled \
+  --backend rust \
   --workers "$W" --seed-start "$SEED_START" \
   --log-actions --actions-only --out "$OUT" --shared-claim
 ```
+
+⚠️ **`--backend rust` is NOT optional and NOT a default (§0.M).** `gen_fair_distill.py:554`
+defaults `--backend` to **`python`**; §3 names rust as the config of record and `W_GEN_LOCAL=48`
+is the **rust**-benched count. Omitting the flag generates the corpus on the wrong engine at a
+worker count sized for the other one.
+
+**`--topup` mode (§0.L)** — the producer for `G-BAND`'s second file: `SEED_START=136000000000`,
+`GAMES ≤ 200`, writing to **`gen_topup/`**, a **separate directory that is never merged into the
+base `--out`**. W6 phase 1 collects it into `CHAMP_GAMES_VERIFY_TOPUP.json`'s input, so the base
+and top-up files each verify against their own range. Merging the two collections would produce
+one set spanning two ranges — the widened-band form `G-BAND` forbids, arriving through the
+launcher instead of through the verifier.
 
 | constant | value |
 |---|---|
@@ -577,8 +647,12 @@ Emits `RUN/corpus/GEN_SMOKE.json`:
 leg (§0.A). ⚠️ Units: **worker-s per GAME** here, per PLAYOUT for the judge legs — never compared.
 
 **W10.4 What W10 must NOT do.** No self-launch (the tiearb2 driver's rule); no strength claim, no
-`experiments/results.csv` row, no band promotion — these games are **corpus substrate** (`run_gen.sh`'s
-own banner). It does not build positions, run a census, or touch `shared_run/`.
+`experiments/results.csv` row, no band promotion — these games are **corpus substrate**
+(`run_gen.sh`'s own banner). It does not build positions and does not run a census.
+**Its ONLY write under `shared_run/` is `RUN/corpus/GEN_SMOKE.json` (§0.N)** — one cost witness,
+no outcome statistic, no branch input — and that single exception is disclosed in the launcher's
+own header so no later reader has to rediscover it. Any other path under `shared_run/` is
+off-limits to W10.
 
 ### Builder delta — what changed between rev R1 and rev R2 (self-contained; diff your work against this)
 
@@ -679,7 +753,8 @@ the run is live:
 7. **4b-pre — POST-CORPUS, PRE-SCORING smokes + judge `c`-remeasure (moved here by §0.G).**
    The **four** smokes of §7.1 ({S1 `--m 128`, S2 `--m 32`} × `clair-puct`, `tier1-greedy`) on
    the **FRESH** corpus, **with `--positions-dir` named EXPLICITLY in every invocation — never
-   defaulted** — writing `SMOKE_MANIFEST_{S1,S2}_<judge>.json`. These produce `G-CRN`'s smoke
+   defaulted (§0.O: the default is the SPENT corpus, and this rule binds every runbook, script
+   and hand-typed command, not just this step)** — writing `SMOKE_MANIFEST_{S1,S2}_<judge>.json`. These produce `G-CRN`'s smoke
    half and §7's judge-leg `c` figures, so **the one-sided `c`-HALT fires here, before the
    expensive legs.**
 8. **4b — POST-CORPUS, PRE-SCORING acceptance test.** Run **W8** against the **real** artifacts,
