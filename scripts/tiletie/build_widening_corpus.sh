@@ -44,25 +44,38 @@
 #
 # Detach it (house rule: anything > ~1 min):
 #   setsid nohup scripts/tiletie/build_widening_corpus.sh \
-#     > measurement/tiearb_widening_20260817/shared_run/logs/driver.out \
+#     > measurement/tiearb_widening_20260817/shared_run_r4/logs/driver.out \
 #     2>&1 < /dev/null & disown
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CAMPAIGN="$REPO/measurement/tiearb_widening_20260817"
-RUN_DIR="$CAMPAIGN/shared_run"
+# rev R4.5 — the LIVE prereg pair is `shared_run_r4/`; `shared_run/` is the R3.3
+# pair, SPENT-BY-GATE-FAILURE. The name is defined ONCE, in
+# WORKERS.conf::PREREG_DIR_NAME (sourced below), and composed — never re-typed.
+RUN_DIR=""            # resolved after WORKERS.conf is sourced (see below)
 
 # W10.1: the driver DIES without WORKERS.conf rather than inventing a count. It
-# lives OUTSIDE the frozen shared_run/ (DESIGN §9 item 9), so a W retune is never
+# lives OUTSIDE the frozen prereg dir (DESIGN §9 item 9), so a W retune is never
 # an edit to a frozen file.
 CONF="$CAMPAIGN/WORKERS.conf"
 [ -f "$CONF" ] || { echo "[widening] FATAL: $CONF missing — W10.1 defines it." >&2
                     exit 2; }
 # shellcheck disable=SC1091
 . "$CONF"
-for v in W_EVAL_LOCAL NICE SHARE_LOCAL RUN_ID SHARE_RUN_LOCAL; do
+for v in W_EVAL_LOCAL NICE SHARE_LOCAL RUN_ID SHARE_RUN_LOCAL \
+         PREREG_DIR_NAME BANKED_PREREG_DIR_NAME; do
   [ -n "${!v:-}" ] || { echo "[widening] FATAL: $CONF does not set $v" >&2; exit 2; }
 done
+RUN_DIR="$CAMPAIGN/$PREREG_DIR_NAME"          # the LIVE (R4) pair
+BANKED_RUN_DIR="$CAMPAIGN/$BANKED_PREREG_DIR_NAME"
+# ⚠️ THE SPENT PAIR IS READ-ONLY, FOREVER. Band 135e9's positions are REUSABLE
+# INPUT and are READ from here; NOTHING is ever written back. Writing into a
+# closed run's tracked artifacts is the JCZ failure mode this campaign exists to
+# pre-empt, and a driver that "just drops one file there" is how it starts.
+[ "$RUN_DIR" != "$BANKED_RUN_DIR" ] || {
+  echo "[widening] FATAL: the live and banked prereg dirs resolve to the SAME" \
+       "path ($RUN_DIR). rev R4.5 requires them distinct." >&2; exit 2; }
 # ⚠️ TWO COUNT SETS. Every phase here is CPU-leaf mining (census, champ picks,
 # build positions), i.e. the F7d EVAL row — NOT the GEN row. Borrowing
 # W_GEN_LOCAL would over-subscribe the box; W10.1 exists so the two cannot be
@@ -137,7 +150,15 @@ say()  { echo "[widening][$(date '+%F %T')] $*"; }
 skip() { say "PHASE $1 SKIP — $2 already exists (delete it to re-run)"; }
 
 census_dir()    { echo "$CORPUS/census_$1"; }
-positions_dir() { echo "$CORPUS/positions_$1"; }
+#: THE THREE POSITION DIRECTORIES, and which run owns each (rev R4.5):
+#:   banked_positions_dir  the RETAINED 135e9 corpus, under the SPENT pair.
+#:                         READ-ONLY. Never written, never rebuilt, never moved.
+#:   ext_positions_dir     the fresh 137e9 extension, built by this driver.
+#:   positions_dir         the UNION — the corpus of record, what every gate,
+#:                         the analyzer and the chunker read.
+banked_positions_dir() { echo "$BANKED_RUN_DIR/$BANKED_CORPUS_SUBDIR/positions_$1"; }
+ext_positions_dir()    { echo "$CORPUS/positions_$1$EXTENSION_POSITIONS_SUFFIX"; }
+positions_dir()        { echo "$CORPUS/positions_$1"; }
 picks_dir()     { echo "$CORPUS/champ_picks_$1"; }
 map_path()      { echo "$(census_dir "$1")/afterstate_map_${PROFILE}.json"; }
 games_path()    { echo "$CORPUS/champ_games_$1.jsonl"; }
@@ -394,15 +415,20 @@ PYEOF
     cat "$EXCL_BANKED" "$EXCL_DIGEST"; } > "$EXCL_FINAL"
 
   # ---- 5b: S1, one pass, all remaining supply up to the target ------------- #
-  P_S1="$(positions_dir s1)"
+  P_S1="$(positions_dir s1)"; E_S1="$(ext_positions_dir s1)"
   if [ -f "$P_S1/POSITIONS_PLAN.json" ]; then
     skip "5b(s1)" "$P_S1/POSITIONS_PLAN.json"
   else
-    mkdir -p "$P_S1"
-    say "PHASE 5b BUILD POSITIONS s1: UNCAPPED, target $S1_TARGET -> $P_S1"
-    build_positions_into "$P_S1" s1 "$EXCL_FINAL" "$S1_TARGET" \
+    mkdir -p "$E_S1"
+    say "PHASE 5b BUILD EXTENSION POSITIONS s1: UNCAPPED -> $E_S1"
+    build_positions_into "$E_S1" s1 "$EXCL_FINAL" "$S1_TARGET" \
       --champ-picks "$(picks_dir s1)/champ_picks.jsonl" 2>&1 \
       | tee "$LOGS/p5b_build_s1.log"
+    say "PHASE 5b UNION s1: retained 135e9 (READ-ONLY) + extension -> $P_S1"
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/union_positions.py" \
+      --banked "$(banked_positions_dir s1)" --extension "$E_S1" \
+      --out "$P_S1" --stratum s1 --exclude-rids "$EXCL_FINAL" 2>&1 \
+      | tee "$LOGS/p5b_union_s1.log"
   fi
 
   # ---- 5c: S2, TWO-PASS ---------------------------------------------------- #
@@ -432,11 +458,16 @@ PYEOF
         cat "$EXCL_FINAL" "$CORPUS/_excl_s2_selection.txt"
       } > "$EXCL_S2"
     fi
-    mkdir -p "$P_S2"
-    say "PHASE 5c PASS 2 (s2, selected rids only, with champ picks) -> $P_S2"
-    build_positions_into "$P_S2" s2 "$EXCL_S2" "$S2_TARGET" \
+    E_S2="$(ext_positions_dir s2)"; mkdir -p "$E_S2"
+    say "PHASE 5c PASS 2 (s2, selected rids only, with champ picks) -> $E_S2"
+    build_positions_into "$E_S2" s2 "$EXCL_S2" "$S2_TARGET" \
       --champ-picks "$(picks_dir s2)/champ_picks.jsonl" 2>&1 \
       | tee "$LOGS/p5c_s2_pass2.log"
+    say "PHASE 5c UNION s2: retained 135e9 (READ-ONLY) + extension -> $P_S2"
+    nice -n "$NICE" "$PY" -u "$REPO/scripts/tiletie/union_positions.py" \
+      --banked "$(banked_positions_dir s2)" --extension "$E_S2" \
+      --out "$P_S2" --stratum s2 --exclude-rids "$EXCL_S2" 2>&1 \
+      | tee "$LOGS/p5c_union_s2.log"
   fi
 
   # ---- 5d: the plan assertions -------------------------------------------- #

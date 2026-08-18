@@ -96,7 +96,12 @@ PY="$REPO/.venv/bin/python"
 cd "$REPO" || { echo "[scoring] FATAL: cannot cd to repo root '$REPO'" >&2; exit 1; }
 
 CAMPAIGN="$REPO/measurement/$RUN_ID"
-RUN_DIR="$CAMPAIGN/shared_run"                 # FROZEN prereg dir — read only
+# rev R4.5 — the LIVE pair is `shared_run_r4/` (WORKERS.conf::PREREG_DIR_NAME);
+# `shared_run/` is the SPENT R3.3 pair and is read-only forever.
+[ -n "${PREREG_DIR_NAME:-}" ] || { echo "FATAL: WORKERS.conf does not set \
+PREREG_DIR_NAME (rev R4.5). Composing an empty name would drop this run's \
+artifacts into the campaign root instead of the LIVE prereg dir." >&2; exit 2; }
+RUN_DIR="$CAMPAIGN/$PREREG_DIR_NAME"           # FROZEN prereg dir — read only
 LOGS="$CAMPAIGN/logs"
 MANIFESTS="$CAMPAIGN/chunks/manifests"
 STAMPS="$CAMPAIGN/chunks/stamps"
@@ -253,7 +258,7 @@ for S in $STRATA; do
 
       # ⚠️ --positions-dir NAMED IN FULL (DESIGN §0.O) — the default is the SPENT
       #    measurement/tiletie_pricing_20260812/positions corpus.
-      # ⚠️ --gate-out / --manifest-out go OUTSIDE shared_run/: the frozen dir's
+      # ⚠️ --gate-out / --manifest-out go OUTSIDE the prereg dir: the frozen dir's
       #    RUN_MANIFEST_{S1,S2}.json is ONE file per stratum, assembled by
       #    merge_scoring.sh from these per-chunk manifests.
       CMD=(nice -n "$NICE" "$PY" "$REPO/scripts/tiletie/run_tiletie.py"

@@ -42,11 +42,11 @@
 #   * NO `experiments/results.csv` ROW. Not now, not later, on any outcome.
 #   * NO BAND PROMOTION. The games are CORPUS SUBSTRATE, nothing more.
 #   * It does not build positions, does not run a census, and does not touch
-#     `shared_run/`.
+#     the LIVE prereg dir.
 #
 #   ⚠️ ONE SANCTIONED EXCEPTION to the last clause, named rather than smuggled:
-#   `--smoke` writes exactly ONE file under `shared_run/` —
-#   `shared_run/corpus/GEN_SMOKE.json` — because W10.3 and §7.2 mandate that
+#   `--smoke` writes exactly ONE file under the LIVE prereg dir —
+#   `shared_run_r4/corpus/GEN_SMOKE.json` — because W10.3 and §7.2 mandate that
 #   exact address and §10 lists it among the manifests the run MUST write. It
 #   writes nothing else there, ever. (A copy also lands beside the games on the
 #   share so a laptop-side smoke is retrievable from the local box.)
@@ -155,7 +155,13 @@ HALT_RATIO=1.25                          # §7.3 — ONE-SIDED (costlier only)
 # carried here EXPLICITLY and this line is the audit trail for that reading.
 BACKEND=rust
 
-RUN_DIR="$REPO/measurement/$RUN_ID/shared_run"
+# rev R4.5 — the LIVE prereg pair is `shared_run_r4/`, NOT `shared_run/` (which
+# is SPENT-BY-GATE-FAILURE). The directory NAME is defined ONCE, in
+# WORKERS.conf::PREREG_DIR_NAME, and composed here — never re-typed.
+[ -n "${PREREG_DIR_NAME:-}" ] || { echo "FATAL: WORKERS.conf does not set \
+PREREG_DIR_NAME (rev R4.5). Composing an empty name would drop this run's \
+artifacts into the campaign root instead of the LIVE prereg dir." >&2; exit 2; }
+RUN_DIR="$REPO/measurement/$RUN_ID/$PREREG_DIR_NAME"
 FLOORS="$RUN_DIR/FLOORS.json"
 
 # Each band/stratum generates into its OWN directory, so each gets its OWN

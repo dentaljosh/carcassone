@@ -411,7 +411,10 @@ def build_full_fixture(root, *, m_s1=128, m_s2=32, n_s1=12, n_s2=12):
     """A complete, structurally valid RUN/ + SHARE/ pair. Returns
     `{"run": Path, "share": Path, "arms": {...}}`."""
     root = Path(root)
-    run, share = root / "shared_run", root / "share"
+    # rev R4.5 — the fixture tree mirrors the REAL layout: the live pair is
+    # `shared_run_r4/`, so a fixture built under `shared_run/` would audit the
+    # SPENT pair's path and pass while the real run wrote somewhere else.
+    run, share = root / "shared_run_r4", root / "share"
     corpus = run / "corpus"
 
     arms_s1 = make_corpus(corpus / "positions_s1", n_positions=n_s1, m=m_s1,

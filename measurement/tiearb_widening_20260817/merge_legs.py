@@ -53,7 +53,12 @@ REPO = HERE.parents[1]
 
 RUN_ID = "tiearb_widening_20260817"
 CAMPAIGN = REPO / "measurement" / RUN_ID
-RUN_DIR = CAMPAIGN / "shared_run"
+# rev R4.5 — the LIVE prereg pair is `shared_run_r4/` (see stage_chunks.py);
+# the name lives once, in WORKERS.conf::PREREG_DIR_NAME.
+sys.path.insert(0, str(REPO / "scripts" / "tiletie"))
+import widening_paths as WP  # noqa: E402
+
+RUN_DIR = WP.run_dir(CAMPAIGN)
 SCHEMA = "carcassonne-tiearb-widening-merge/v1"
 
 STRATA = ("s1", "s2")
@@ -508,12 +513,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--out-dir", required=True, help="SHARE/<RUN_ID>/<stratum>")
     ap.add_argument("--positions-dir", default=None,
                     help="the CORPUS positions dir (default: "
-                         "shared_run/corpus/positions_<stratum>) — the "
+                         "shared_run_r4/corpus/positions_<stratum>) — the "
                          "completeness DENOMINATOR")
     ap.add_argument("--manifests-dir", default=str(CAMPAIGN / "chunks" / "manifests"),
                     help="where run_scoring.sh wrote the per-chunk RUN_MANIFEST_*")
     ap.add_argument("--run-manifest-out", default=None,
-                    help="default: shared_run/RUN_MANIFEST_{S1,S2}.json")
+                    help="default: shared_run_r4/RUN_MANIFEST_{S1,S2}.json")
     ap.add_argument("--report", default=None,
                     help="default: <campaign>/MERGE_REPORT_<stratum>.json")
     ap.add_argument("--judges", nargs="+", default=list(JUDGES))

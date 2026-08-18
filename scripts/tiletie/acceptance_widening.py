@@ -440,7 +440,8 @@ def book_fixture(R: Path, S: Path) -> list:
                  for lay in ("a_root_id", "b_rid", "c_position_digest")]
               + [f"comparisons.{COMPARISON_RID_ONLY}.layers.b_rid.n_intersection",
                  f"comparisons.{COMPARISON_RID_ONLY}.passed"]
-              + ["digest_exclusions.*.n_excluded", "digest_exclusions.*.rate",
+              + ["digest_exclusions.*.carried", "digest_exclusions.*.residual",
+                 "digest_exclusions.*.n_excluded", "digest_exclusions.*.rate",
                  "digest_exclusions.*.bound_n",
                  # ⚠️ an address G-DISJOINT READS — ABSENT IS FAIL
                  "digest_exclusions.*.denominator_source",
@@ -451,6 +452,24 @@ def book_fixture(R: Path, S: Path) -> list:
              "s1_vs_s2, and b_rid ONLY on s1s2_vs_exclude_rids. Plus the "
              "exclusion block, whose `denominator_source` is itself a read "
              "address. No fallback — a missing gate file is a FAIL",
+        phase="4a-fixture"))
+
+    g.append(Gate("CORPUS_UNION.json (R4-0.5 §3 — the corpus's composition)", [
+        Check(R, "corpus/CORPUS_UNION.json",
+              ["by_stratum.*.origin_commit", "by_stratum.*.banked_dir",
+               "by_stratum.*.sha256_by_file", "by_stratum.*.n_retained",
+               "by_stratum.*.n_fresh", "by_stratum.*.copied_not_symlinked",
+               "totals.n_retained", "totals.n_fresh", "totals.n_total"])],
+        [Check(R, f"{V}/READOUT.json",
+               ["widening.corpus_union.totals.n_retained",
+                "widening.corpus_union.totals.n_fresh"])],
+        note="R4's `n` is a MIXTURE — retained band-135e9 positions COPIED "
+             "read-only out of the SPENT run, plus fresh 137e9 extension. The "
+             "stamp is where its composition is stated, and the read-out prints "
+             "the split. `origin_commit` is the sentinel string "
+             "\"untracked\" — never null — when the banked artifacts are not "
+             "in git: the CLOSED allow_null table stays at its four entries, "
+             "which is a stronger guarantee than widening it for one field",
         phase="4a-fixture"))
 
     g.append(Gate("FLOORS.json (the frozen floors + exclusion denominator)", [
@@ -701,12 +720,23 @@ def build_fixture_tree(scratch) -> Path:
     # ⚠️ the two strata mine DISJOINT sub-ranges of BOTH bands — that split IS
     # the disjointness mechanism, and a fixture that shared a range would fail
     # `s1_vs_s2` on the rid layer exactly as a mis-split real corpus would.
+    import union_positions as UP                                   # noqa: E402
+    banked_corpus = Path(scratch) / "shared_run" / "corpus"
     for tag, base_lo, ext_lo, sd in (("s1", 135000000000, 137000000000, 41),
                                      ("s2", 135000000350, 137000000508, 43)):
-        WF.make_r4_corpus(corpus / f"positions_{tag}", stratum=tag, seed=sd,
-                          base_lo=base_lo, ext_lo=ext_lo,
+        # the RETAINED side lives under the SPENT pair, read-only ...
+        WF.make_r4_corpus(banked_corpus / f"positions_{tag}", stratum=tag,
+                          seed=sd, n_base=8, n_ext=0, base_lo=base_lo,
                           collide_with=(first["rid"], first["checksum"])
                           if tag == "s1" else None)
+        # ... the fresh side under the LIVE one ...
+        WF.make_r4_corpus(corpus / f"positions_{tag}_ext", stratum=tag,
+                          seed=sd + 100, n_base=0, n_ext=6, ext_lo=ext_lo)
+        # ... and the UNION is assembled by the REAL emitter, so the 4a schema
+        # audit resolves CORPUS_UNION.json's spellings against the real writer.
+        UP.assemble(banked_corpus / f"positions_{tag}",
+                    corpus / f"positions_{tag}_ext",
+                    corpus / f"positions_{tag}", stratum=tag)
     WF.make_records(share, json.loads(
         (corpus / "positions_s1" / "ARMS.json").read_text()),
         m=128, seed=11, stratum_dir="s1")
@@ -741,6 +771,7 @@ def build_fixture_tree(scratch) -> Path:
          "--champ-games-verify", str(corpus / "CHAMP_GAMES_VERIFY.json"),
          "--champ-games-verify", str(corpus / "CHAMP_GAMES_VERIFY_EXT.json"),
          "--gate-disjoint", str(run / "GATE_DISJOINT.json"),
+         "--corpus-union", str(corpus / "CORPUS_UNION.json"),
          # --d-draw is DELIBERATELY OMITTED: the fixture pass must exercise the
          # `d_draw_ran == false` state, so row 3 of the CLOSED allow_null table
          # is audited on the day it is written and not on the day it is needed.
@@ -787,7 +818,8 @@ def _print(results, verbose):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--run-dir", required=True, help="the RUN/ tree (shared_run/)")
+    ap.add_argument("--run-dir", required=True, help="the RUN/ tree (shared_run_r4/ — the LIVE R4 pair; shared_run/ is the "
+                         "SPENT R3.3 pair and is read-only)")
     ap.add_argument("--share", default="/mnt/c/carc-shared/tiearb_widening_20260817",
                     help="SHARE root holding the per-record leg output")
     ap.add_argument("--mode", choices=("4a", "4b-pre", "4b", "all"),

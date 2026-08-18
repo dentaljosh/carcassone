@@ -1,7 +1,7 @@
 """Fast unit coverage for the tie-arbiter WIDENING instrument (rev R3).
 
 Covers the SHAPES and the CONTRACTS the blind prereg pair
-(`measurement/tiearb_widening_20260817/shared_run/{DESIGN,READ_RULE}.md`)
+(`measurement/tiearb_widening_20260817/shared_run_r4/{DESIGN,READ_RULE}.md`)
 addresses by exact spelling:
 
   W5  `gate_disjoint.py --merged`  — five comparisons + `strata_root_overlap`
@@ -41,7 +41,9 @@ import c_remeasure as CR                                           # noqa: E402
 import gate_disjoint as GD                                         # noqa: E402
 import gate_draw as GDR                                            # noqa: E402
 import tiearb2_corpus_lib as LIB                                   # noqa: E402
+import union_positions as UP                                       # noqa: E402
 import widening_fixtures as WF                                     # noqa: E402
+import widening_paths as WP                                        # noqa: E402
 
 M_S1, M_S2 = 128, 32
 
@@ -532,6 +534,18 @@ def test_acceptance_resolves_the_live_and_corpus_addresses(tree, readout,
     WF.make_floors(run / "FLOORS.json", "S2 at 700")
     WF.make_champ_games_verify(run / "corpus" / "CHAMP_GAMES_VERIFY_EXT.json",
                                lo=137000000000, hi=137000003406, n=3407)
+    # the union stamp is a 4b address (R4-0.5 §3) — emitted by the real writer
+    for tag in ("s1", "s2"):
+        b = tmp_path / f"banked_{tag}"
+        WF.make_r4_corpus(b, stratum=tag, n_base=4, n_ext=0, seed=131,
+                          base_lo=135000000000 if tag == "s1" else 135000000350)
+        UP.write_union_stamp(
+            run / "corpus", tag,
+            {"origin_commit": UP.origin_commit(b), "banked_dir": str(b),
+             "sha256_by_file": {"banked": {"ARMS.json":
+                                           UP.sha256_file(b / "ARMS.json")}},
+             "n_retained": 4, "n_fresh": 8, "copied_not_symlinked": True,
+             "n_excluded_rids_applied": 0})
     (run / "GATE_DRAW.json").write_text(json.dumps(GDR.run_gate(
         [run / "corpus" / f"positions_{t}" / "ARMS.json"
          for t in ("s1", "s2")]), indent=2))
@@ -764,7 +778,9 @@ def _source_conf(extra=""):
     script = (f'set -eu\n. "{CAMPAIGN}/WORKERS.conf"\n{extra}\n'
               'for v in W_GEN_LOCAL W_GEN_LAPTOP W_EVAL_LOCAL W_EVAL_LAPTOP '
               'NICE SHARE_LOCAL SHARE_REMOTE REPO_LOCAL REPO_REMOTE RUN_ID '
-              'SHARE_RUN_LOCAL SHARE_RUN_REMOTE; do '
+              'SHARE_RUN_LOCAL SHARE_RUN_REMOTE PREREG_DIR_NAME '
+              'BANKED_PREREG_DIR_NAME BANKED_CORPUS_SUBDIR UNION_CORPUS_SUBDIR '
+              'EXTENSION_POSITIONS_SUFFIX; do '
               'eval "printf \'%s=%s\\n\' \\"$v\\" \\"\\$$v\\""; done')
     r = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
@@ -792,6 +808,7 @@ def test_workers_conf_lives_outside_the_frozen_prereg_dir():
     """DESIGN §9 item 9: it is a TUNING surface, not part of the frozen pair."""
     assert (CAMPAIGN / "WORKERS.conf").is_file()
     assert not (CAMPAIGN / "shared_run" / "WORKERS.conf").exists()
+    assert not (CAMPAIGN / "shared_run_r4" / "WORKERS.conf").exists()
 
 
 def test_the_names_the_drivers_source_actually_exist():
@@ -868,8 +885,8 @@ def test_run_gen_dry_run_generates_nothing(tmp_path):
     """The safety valve itself: a dry run resolves everything and creates
     NOTHING — not the output directory, not a claim, not a game."""
     floors_dir = tmp_path / "measurement" / "tiearb_widening_20260817"
-    (floors_dir / "shared_run").mkdir(parents=True)
-    WF.make_floors(floors_dir / "shared_run" / "FLOORS.json", "S2 at 700")
+    (floors_dir / "shared_run_r4").mkdir(parents=True)
+    WF.make_floors(floors_dir / "shared_run_r4" / "FLOORS.json", "S2 at 700")
     (floors_dir / "WORKERS.conf").write_text(
         (CAMPAIGN / "WORKERS.conf").read_text()
         .replace("REPO_LOCAL=/home/doctor/projects/carcassone",
@@ -1206,7 +1223,16 @@ def test_r4_carried_exclusions_keep_the_bound_honest(r4_tree, tmp_path):
     # a clean corpus + carried probe still reports the TRUE total
     clean = _r4_report(r4_tree, carried=carried)
     assert clean["digest_exclusions"]["S1"]["n_excluded"] == 1
-    assert clean["digest_exclusions"]["S1"]["n_carried_from_probe"] == 1
+    # READ_RULE §2b names these EXACTLY: `carried` + `residual`, and the bound
+    # is evaluated on their sum (R4-0.2).
+    s1 = clean["digest_exclusions"]["S1"]
+    assert s1["carried"] == 1
+    # this fixture re-gates the SAME (un-excluded) corpus, so the collision is
+    # ALSO re-observed — which is precisely the non-healthy case the sum guards:
+    # the bound is judged on carried + residual, not on the deduped rid set.
+    assert s1["residual"] == 1 and s1["bound_basis"] == 2
+    assert s1["n_excluded"] == 1                 # the deduped rid set
+    assert s1["determinism_defect"] is True
 
 
 def test_r4_s1_only_still_emits_all_seven_comparisons(r4_tree):
@@ -1342,15 +1368,38 @@ def test_w10_three_way_band_form():
 
 def test_w10_extension_refuses_without_floors(tmp_path):
     """FLOORS.json predates the band claim precisely so the launcher cannot
-    invent a sub-range."""
+    invent a sub-range. With no FLOORS.json the launcher REFUSES; it never
+    guesses a range."""
+    campaign = tmp_path / "measurement" / "tiearb_widening_20260817"
+    campaign.mkdir(parents=True)
+    (campaign / "WORKERS.conf").write_text(
+        (CAMPAIGN / "WORKERS.conf").read_text()
+        .replace("REPO_LOCAL=/home/doctor/projects/carcassone",
+                 f"REPO_LOCAL={tmp_path}"))
+    script = campaign / "run_gen.sh"
+    script.write_text((CAMPAIGN / "run_gen.sh").read_text())
     r = subprocess.run(
-        ["bash", str(CAMPAIGN / "run_gen.sh"), "local", "--extension", "s1",
-         "--dry-run"],
+        ["bash", str(script), "local", "--extension", "s1", "--dry-run"],
         capture_output=True, text=True, env={**os.environ, **DRY})
-    # either FLOORS.json is absent (FATAL) or it exists and the run would start;
-    # in this repo it is absent until the owner writes it
-    assert r.returncode == 2
-    assert "FLOORS.json" in (r.stderr + r.stdout) or "FATAL" in r.stderr
+    assert r.returncode == 2, (r.stdout, r.stderr)
+    assert "FLOORS.json" in (r.stderr + r.stdout)
+
+
+def test_floors_py_reproduces_the_committed_floors_json():
+    """rev R4.5 reconciliation: the FLOORS.json the drafter committed with the
+    blind pair must be EXACTLY what floors.py derives from the measured rates —
+    otherwise two components disagree about the run's own floors."""
+    committed = (REPO.parents[2] / "measurement" / "tiearb_widening_20260817"
+                 / "shared_run_r4" / "FLOORS.json")
+    if not committed.is_file():
+        pytest.skip("the committed FLOORS.json is not in this tree")
+    theirs = json.loads(committed.read_text())
+    mine = FL.build(theirs["option_label"])
+    for k in set(mine) | set(theirs):
+        if k == "note":
+            continue
+        assert mine.get(k) == theirs.get(k), f"FLOORS.json disagrees on {k!r}"
+    assert FL.load(committed)["option_label"] == theirs["option_label"]
 
 
 # --------------------------------------------------------------------------- #
@@ -1365,3 +1414,264 @@ def test_cli_smoke(tree, tmp_path):
         capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     assert json.loads((tmp_path / "GATE_DRAW.json").read_text())["ok"] is True
+
+
+# --------------------------------------------------------------------------- #
+# rev R4.5 — WHICH prereg pair is live, and the retained-corpus union           #
+# --------------------------------------------------------------------------- #
+def test_the_prereg_dir_name_lives_in_exactly_one_place():
+    """ONE PLACE TO BE WRONG BEATS SIX. Every launcher composes the name from
+    WORKERS.conf::PREREG_DIR_NAME; none re-types it."""
+    conf = _source_conf()
+    assert conf["PREREG_DIR_NAME"] == "shared_run_r4"
+    assert conf["BANKED_PREREG_DIR_NAME"] == "shared_run"
+    assert conf["PREREG_DIR_NAME"] != conf["BANKED_PREREG_DIR_NAME"]
+    # python reads the SAME file, so shell and python cannot drift
+    assert WP.parse_conf(CAMPAIGN / "WORKERS.conf")["PREREG_DIR_NAME"] == \
+        conf["PREREG_DIR_NAME"]
+    assert WP.run_dir(CAMPAIGN).name == "shared_run_r4"
+    assert WP.banked_dir(CAMPAIGN).name == "shared_run"
+    # ... and the module fallbacks agree with the conf, so a drift is a FAILURE
+    for k, v in WP._FALLBACK.items():
+        assert conf[k] == v, f"widening_paths fallback {k} drifted from the conf"
+
+
+@pytest.mark.parametrize("path", [
+    "measurement/tiearb_widening_20260817/run_gen.sh",
+    "measurement/tiearb_widening_20260817/run_scoring.sh",
+    "measurement/tiearb_widening_20260817/merge_scoring.sh",
+    "scripts/tiletie/build_widening_corpus.sh",
+])
+def test_no_launcher_hardcodes_the_spent_prereg_dir(path):
+    """The R3.3 pair is SPENT. A launcher writing the LIVE run's artifacts into
+    it would put them where the READ_RULE does not look."""
+    src = (REPO / path).read_text()
+    bad = [ln for ln in src.splitlines()
+           if ('="' in ln or "='" in ln)
+           and "/shared_run" in ln and "shared_run_r4" not in ln
+           and "PREREG_DIR_NAME" not in ln and not ln.lstrip().startswith("#")]
+    assert not bad, f"{path} hard-codes the spent prereg dir: {bad}"
+    assert "$PREREG_DIR_NAME" in src
+
+
+@pytest.mark.parametrize("path", [
+    "measurement/tiearb_widening_20260817/stage_chunks.py",
+    "measurement/tiearb_widening_20260817/merge_legs.py",
+])
+def test_no_python_module_hardcodes_the_spent_prereg_dir(path):
+    src = (REPO / path).read_text()
+    assert 'CAMPAIGN / "shared_run"' not in src
+    assert "widening_paths" in src
+
+
+def test_stage_chunks_cites_the_R4_pair_as_chunk_provenance():
+    """Citing the R3.3 pair would stamp every chunk manifest with the
+    provenance of a prereg that is SPENT."""
+    sys.path.insert(0, str(REPO / "measurement" / "tiearb_widening_20260817"))
+    import stage_chunks as SC
+    assert SC.DESIGN_DOC.endswith("shared_run_r4/DESIGN.md")
+    assert SC.READ_RULE.endswith("shared_run_r4/READ_RULE.md")
+    assert SC.RUN_DIR.name == "shared_run_r4"
+    assert SC.BANKED_RUN_DIR.name == "shared_run"
+
+
+def test_union_assembles_retained_plus_extension_read_only(tmp_path):
+    """The retained 135e9 corpus is READ from the SPENT pair and never written
+    back; the union is the corpus of record under the LIVE run."""
+    banked = tmp_path / "shared_run" / "corpus" / "positions_s1"
+    ext = tmp_path / "shared_run_r4" / "corpus" / "positions_s1_ext"
+    out = tmp_path / "shared_run_r4" / "corpus" / "positions_s1"
+    WF.make_r4_corpus(banked, stratum="s1", n_base=6, n_ext=0, seed=61,
+                      base_lo=135000000000)
+    WF.make_r4_corpus(ext, stratum="s1", n_base=0, n_ext=5, seed=62,
+                      ext_lo=137000000000)
+    before = sorted(p.stat().st_mtime_ns for p in banked.rglob("*") if p.is_file())
+    prov = UP.assemble(banked, ext, out, stratum="s1")
+    assert prov["banked_kept"] == 6 and prov["extension_kept"] == 5
+    arms = json.loads((out / "ARMS.json").read_text())
+    assert len(arms) == 11
+    assert {v["provenance"] for v in arms.values()} == {"banked", "extension"}
+    plan = json.loads((out / "POSITIONS_PLAN.json").read_text())
+    assert plan["n_positions"] == 11
+    assert plan["union_provenance"]["banked_readonly"] is True
+    # ⚠️ the SPENT corpus is untouched — assembled by COPY, never by move
+    after = sorted(p.stat().st_mtime_ns for p in banked.rglob("*") if p.is_file())
+    assert before == after
+    assert (banked / "ARMS.json").is_file()
+
+
+def test_union_applies_exclusions_before_the_plan_freezes(tmp_path):
+    """R4-3 rule 5: an excluded rid never enters POSITIONS_PLAN. The retained
+    corpus carries the collision that killed R3.3 — excluded under R4's own
+    pre-committed rule, NOT re-adjudicated."""
+    banked = tmp_path / "b"; ext = tmp_path / "e"; out = tmp_path / "u"
+    WF.make_r4_corpus(banked, n_base=6, n_ext=0, seed=71, base_lo=135000000000)
+    WF.make_r4_corpus(ext, n_base=0, n_ext=4, seed=72, ext_lo=137000000000)
+    victim = sorted(json.loads((banked / "ARMS.json").read_text()))[0]
+    lst = tmp_path / "EXCLUDE.txt"
+    lst.write_text(f"# R4-3 digest exclusions\n{victim}\n")
+    prov = UP.assemble(banked, ext, out, stratum="s1",
+                       exclude_rids=UP.load_rid_exclusions([lst]))
+    assert prov["banked_excluded"] == 1 and prov["banked_kept"] == 5
+    arms = json.loads((out / "ARMS.json").read_text())
+    assert victim not in arms
+    leg = (out / "positions_walled_leg1.jsonl").read_text()
+    assert victim not in leg, "an excluded rid must not survive in the leg census"
+
+
+def test_union_refuses_to_write_into_the_spent_corpus(tmp_path):
+    banked = tmp_path / "b"; ext = tmp_path / "e"
+    WF.make_r4_corpus(banked, n_base=3, n_ext=0, seed=81, base_lo=135000000000)
+    WF.make_r4_corpus(ext, n_base=0, n_ext=3, seed=82, ext_lo=137000000000)
+    with pytest.raises(UP.UnionError, match="READ-ONLY FOREVER"):
+        UP.assemble(banked, ext, banked, stratum="s1")
+
+
+def test_union_raises_on_a_cross_side_rid_collision(tmp_path):
+    """Impossible by band construction — so it is a BUG, and a bug that let one
+    side silently win would corrupt the corpus."""
+    banked = tmp_path / "b"; ext = tmp_path / "e"
+    WF.make_r4_corpus(banked, n_base=4, n_ext=0, seed=91, base_lo=135000000000)
+    shutil = __import__("shutil")
+    shutil.copytree(banked, ext)
+    with pytest.raises(UP.UnionError, match="BOTH the banked and the extension"):
+        UP.assemble(banked, ext, tmp_path / "u", stratum="s1")
+
+
+def test_w6_reads_the_banked_corpus_and_assembles_the_union():
+    src = (REPO / "scripts" / "tiletie" / "build_widening_corpus.sh").read_text()
+    assert "banked_positions_dir()" in src and "ext_positions_dir()" in src
+    assert "union_positions.py" in src
+    assert 'RUN_DIR="$CAMPAIGN/$PREREG_DIR_NAME"' in src
+    assert 'BANKED_RUN_DIR="$CAMPAIGN/$BANKED_PREREG_DIR_NAME"' in src
+    # the driver refuses if the two ever resolve to the same path
+    assert 'FATAL: the live and banked prereg dirs resolve to the SAME' in src
+
+
+def test_digest_exclusions_carry_the_exact_read_rule_key_names(r4_tree):
+    """§2b's primary address names `{carried, residual, n_excluded, rate,
+    bound_n, denominator_source, rids, void}`. A near-miss spelling reads as
+    ABSENT, and ABSENT IS FAIL."""
+    rep = _r4_report(r4_tree)
+    for s, v in rep["digest_exclusions"].items():
+        assert {"carried", "residual", "n_excluded", "rate", "bound_n",
+                "denominator_source", "rids", "void"} <= set(v), s
+        # the bound is judged on carried + residual (R4-0.2); n_excluded is the
+        # deduped rid set and equals the sum on a healthy run (residual == 0)
+        assert v["bound_basis"] == v["carried"] + v["residual"]
+        if v["residual"] == 0:
+            assert v["n_excluded"] == v["bound_basis"]
+
+
+def test_nonzero_residual_is_flagged_as_a_determinism_defect(r4_tree, tmp_path):
+    """The final build seeing a collision the probe did not is an INSTRUMENT
+    question, reported separately from the corpus question."""
+    rep = _r4_report(r4_tree)                       # 1 residual, no carry
+    s1 = rep["digest_exclusions"]["S1"]
+    assert s1["residual"] == 1 and s1["carried"] == 0
+    assert s1["determinism_defect"] is True
+
+
+# --------------------------------------------------------------------------- #
+# R4-0.5 §3 — CORPUS_UNION.json, and COPIED-never-symlinked                     #
+# --------------------------------------------------------------------------- #
+def _union_pair(tmp_path, n_banked=6, n_fresh=5):
+    banked = tmp_path / "shared_run" / "corpus" / "positions_s1"
+    ext = tmp_path / "shared_run_r4" / "corpus" / "positions_s1_ext"
+    out = tmp_path / "shared_run_r4" / "corpus" / "positions_s1"
+    WF.make_r4_corpus(banked, n_base=n_banked, n_ext=0, seed=101,
+                      base_lo=135000000000)
+    WF.make_r4_corpus(ext, n_base=0, n_ext=n_fresh, seed=102,
+                      ext_lo=137000000000)
+    return banked, ext, out
+
+
+def test_corpus_union_stamp_carries_every_required_field(tmp_path):
+    """R4-0.5 §3: origin commit, path under the OLD RUN, a sha256 per copied
+    file, and the retained/fresh counts — per stratum."""
+    banked, ext, out = _union_pair(tmp_path)
+    UP.assemble(banked, ext, out, stratum="s1")
+    stamp = out.parent / UP.UNION_STAMP
+    assert stamp.is_file(), "R4-0.5 requires RUN/corpus/CORPUS_UNION.json"
+    d = json.loads(stamp.read_text())
+    s1 = d["by_stratum"]["S1"]
+    # NEVER null — the CLOSED allow_null table stays at four entries
+    assert isinstance(s1["origin_commit"], str) and s1["origin_commit"]
+    assert s1["banked_dir"] == str(banked)          # the path under the OLD RUN
+    assert s1["n_retained"] == 6 and s1["n_fresh"] == 5
+    shas = s1["sha256_by_file"]
+    assert "banked" in shas and "extension" in shas
+    assert "ARMS.json" in shas["banked"]
+    assert all(len(v) == 64 for side in shas.values() for v in side.values())
+    # the sha is of the SOURCE file, so it re-verifies against the banked tree
+    assert shas["banked"]["ARMS.json"] == UP.sha256_file(banked / "ARMS.json")
+    assert d["totals"] == {"n_retained": 6, "n_fresh": 5, "n_total": 11,
+                           "retained_fraction": 6 / 11}
+
+
+def test_corpus_union_stamp_accumulates_both_strata(tmp_path):
+    """ONE file for the whole corpus: S1 and S2 are separate invocations and
+    must accumulate, not overwrite."""
+    b1, e1, o1 = _union_pair(tmp_path)
+    UP.assemble(b1, e1, o1, stratum="s1")
+    b2 = tmp_path / "shared_run" / "corpus" / "positions_s2"
+    e2 = tmp_path / "shared_run_r4" / "corpus" / "positions_s2_ext"
+    o2 = tmp_path / "shared_run_r4" / "corpus" / "positions_s2"
+    WF.make_r4_corpus(b2, n_base=3, n_ext=0, seed=111, base_lo=135000000350)
+    WF.make_r4_corpus(e2, n_base=0, n_ext=2, seed=112, ext_lo=137000000508)
+    UP.assemble(b2, e2, o2, stratum="s2")
+    d = json.loads((o1.parent / UP.UNION_STAMP).read_text())
+    assert set(d["by_stratum"]) == {"S1", "S2"}
+    assert d["totals"]["n_retained"] == 9 and d["totals"]["n_fresh"] == 7
+
+
+def test_union_is_copied_never_symlinked(tmp_path):
+    """R4-0.5 §2, explicit: a symlink into a frozen directory invites a
+    WRITE-THROUGH and breaks on any later archive or move."""
+    banked, ext, out = _union_pair(tmp_path)
+    prov = UP.assemble(banked, ext, out, stratum="s1")
+    assert prov["copied_not_symlinked"] is True
+    links = [p for p in out.rglob("*") if p.is_symlink()]
+    assert not links, f"the union must contain NO symlinks, found {links}"
+    for f in out.iterdir():
+        if f.is_file():
+            assert not f.is_symlink()
+            assert f.stat().st_nlink == 1, f"{f.name} is a hard link, not a copy"
+    # and mutating the union must NOT reach the banked tree
+    before = UP.sha256_file(banked / "ARMS.json")
+    (out / "ARMS.json").write_text(json.dumps({"mutated": True}))
+    assert UP.sha256_file(banked / "ARMS.json") == before
+
+
+def test_w3_prints_the_retained_vs_fresh_split(tmp_path, tree, readout):
+    """R4-0.5 §3: R4's `n` is a MIXTURE and the reader must see its composition."""
+    banked, ext, out = _union_pair(tmp_path)
+    UP.assemble(banked, ext, out, stratum="s1")
+    blk = AW.union_block(out.parent / UP.UNION_STAMP)
+    assert blk["present"] is True
+    assert blk["by_stratum"]["S1"]["n_retained"] == 6
+    assert blk["by_stratum"]["S1"]["n_fresh"] == 5
+    assert blk["totals"]["n_total"] == 11
+    v = json.loads(json.dumps(readout))
+    v["widening"]["gates_ok"] = True
+    for g in v["widening"]["gates_summary"].values():
+        g["ok"] = True
+    v["widening"]["corpus_union"] = blk
+    md = AW.render_md(v)
+    assert "RETAINED vs FRESH" in md
+    assert "retained fraction" in md
+    assert "COPIED" in md
+    assert "R3's gate FAILED, so nothing was ever passed" in md
+    # absent is stated, never silently omitted
+    v["widening"]["corpus_union"] = AW.union_block(None)
+    assert "UNRESOLVED here" in AW.render_md(v)
+
+
+def test_no_source_hardcodes_the_stage1b_ladder_under_the_old_run():
+    """`STAGE1B_LADDER.json` is now a byte-identical copy under the NEW RUN;
+    a hard-coded old-RUN path would resolve to nothing — ABSENT IS FAIL on a
+    healthy run (G-REPLICATE has no fallback)."""
+    for path in (REPO / "scripts" / "tiletie").glob("*.py"):
+        src = path.read_text()
+        assert "shared_run/STAGE1B_LADDER" not in src, path.name
+        assert "shared_run/FLOORS.json" not in src, path.name

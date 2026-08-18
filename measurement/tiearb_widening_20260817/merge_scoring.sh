@@ -13,10 +13,10 @@
 #   from : $SHARE_RUN/chunks/<stratum>/chunk<k>/<judge>/walled/leg<N>/records/<rid>.json
 #   to   : $SHARE_RUN/<stratum>/<judge>/walled/leg<N>/records/<rid>.json
 #          $SHARE_RUN/<stratum>/<judge>/walled/leg<N>/manifest.json   (merged)
-#          shared_run/RUN_MANIFEST_{S1,S2}.json                       (merged)
+#          shared_run_r4/RUN_MANIFEST_{S1,S2}.json                    (merged)
 #
 # `build_widening_corpus.sh 6` then copies every manifest.json from
-# $SHARE_RUN/<stratum>/ back to shared_run/legs/<stratum>/… — the address
+# $SHARE_RUN/<stratum>/ back to shared_run_r4/legs/<stratum>/… — the address
 # G-SALT / G-M / G-BACKEND / G-PREFIX read. G-CRN's per-record fallback reads
 # the records tree this script assembles, directly on the share.
 #
@@ -66,7 +66,11 @@ done
 cd "$REPO" || { echo "[merge] FATAL: cannot cd to '$REPO'" >&2; exit 1; }
 
 CAMPAIGN="$REPO/measurement/$RUN_ID"
-RUN_DIR="$CAMPAIGN/shared_run"
+# rev R4.5 — LIVE pair, from WORKERS.conf::PREREG_DIR_NAME (see run_gen.sh)
+[ -n "${PREREG_DIR_NAME:-}" ] || { echo "FATAL: WORKERS.conf does not set \
+PREREG_DIR_NAME (rev R4.5). Composing an empty name would drop this run's \
+artifacts into the campaign root instead of the LIVE prereg dir." >&2; exit 2; }
+RUN_DIR="$CAMPAIGN/$PREREG_DIR_NAME"
 LOGS="$CAMPAIGN/logs"
 mkdir -p "$LOGS"
 
@@ -109,7 +113,7 @@ if [ "$rc_all" -eq 0 ] && [ -z "$DRY" ]; then
   echo "=============================================================================="
   echo "  ✅ merge COMPLETE for '$STRATA' — every rid present exactly once, both judges."
   echo "  Next: scripts/tiletie/build_widening_corpus.sh 6    (leg-manifest copy-back"
-  echo "        to shared_run/legs/<stratum>/… — the address the READ_RULE reads)"
+  echo "        to shared_run_r4/legs/<stratum>/… — the address the READ_RULE reads)"
   echo "=============================================================================="
 fi
 

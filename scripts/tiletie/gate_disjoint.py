@@ -138,7 +138,7 @@ DEFAULT_REFS = {
 DEFAULT_EXCLUDE_RIDS = (REPO / "measurement/tiearb2_20260816/corpus/"
                         "EXCLUDE_RIDS_all.txt")
 EXCLUDE_COMPARISON = "s1s2_vs_exclude_rids"
-DEFAULT_MERGED_OUT = (REPO / "measurement/tiearb_widening_20260817/shared_run/"
+DEFAULT_MERGED_OUT = (REPO / "measurement/tiearb_widening_20260817/shared_run_r4/"
                       "GATE_DISJOINT.json")
 
 #: leg1 carries EVERY position exactly once (leg r exists only for positions
@@ -766,9 +766,25 @@ def run_r4_gate(*, strata: dict, refs: dict, floors: dict, exclude_rids=None,
         bound, den, den_src = FL.exclusion_bound(floors, s)
         n = len(rids)
         per_stratum[s] = {
+            # READ_RULE §2b names `carried` and `residual` EXACTLY (R4-0.2):
+            # `carried` is the exclusion count measured on the PROBE build,
+            # `residual` the fresh collisions in the FINAL build (expected 0),
+            # and the bound is evaluated on `carried + residual`.
+            "carried": len(carried_rids),
+            "residual": n_residual,
             "n_excluded": n,
-            "n_carried_from_probe": len(carried_rids),
-            "n_residual_this_run": n_residual,
+            # ⚠️ A nonzero `residual` is additionally a DETERMINISM DEFECT: the
+            # final build saw a collision the probe did not, on the same corpus
+            # under the same rules. The count still binds the bound, but the
+            # defect is reported separately because it questions the instrument,
+            # not the corpus.
+            "determinism_defect": bool(n_residual),
+            # ⚠️ THE BOUND IS EVALUATED ON `carried + residual` — the rule's own
+            # arithmetic (R4-0.2) — NOT on `n_excluded`. The two differ only
+            # when a rid is BOTH carried and re-observed, which is exactly the
+            # non-healthy case; taking the sum is the conservative reading and
+            # voids earlier, which is the direction a bound should err in.
+            "bound_basis": len(carried_rids) + n_residual,
             "rids": sorted(rids),
             "rate": (n / den) if den else None,
             "bound_n": bound,
@@ -777,13 +793,17 @@ def run_r4_gate(*, strata: dict, refs: dict, floors: dict, exclude_rids=None,
             # emitted, whether or not anything was excluded
             "denominator_source": den_src,
             "bound_fraction": FL.EXCLUSION_BOUND_FRACTION,
-            "void": bool(n > bound),
+            "void": bool(len(carried_rids) + n_residual > bound),
             "evidence": evid,
-            "note": "the bound is evaluated ONCE, at the first POSITIONS_PLAN "
-                    "freeze, against the FROZEN FLOORS.json denominator. A VOID "
-                    "stratum stays VOID: it is NOT curable by generating more "
-                    "games, because the denominator does not grow with the "
-                    "corpus. The answer to a VOID is a new prereg.",
+            "note": "the bound is evaluated ONCE, on carried + residual "
+                    "(R4-0.2), at the FINAL gate, against the FROZEN "
+                    "FLOORS.json denominator. `carried` is the count measured "
+                    "on the PROBE build — the build that still contains the "
+                    "colliding rids — which is what makes rules 5 and 7 "
+                    "simultaneously satisfiable instead of jointly vacuous. A "
+                    "VOID stratum stays VOID: it is NOT curable by generating "
+                    "more games, because the denominator does not grow with "
+                    "the corpus. The answer to a VOID is a new prereg.",
         }
 
     # rid/root layers are zero-tolerance on EVERY comparison; the digest layer is
@@ -929,10 +949,16 @@ def _print_r4(report: dict, out_path) -> None:
               f"digest_collisions={c.get('n_digest_collisions', 0)}{na}")
     print(f"[G-DISJOINT] strata_root_overlap = {report['strata_root_overlap']}")
     for s, v in sorted(report["digest_exclusions"].items()):
-        print(f"[G-DISJOINT] exclusions[{s}] n={v['n_excluded']} "
+        print(f"[G-DISJOINT] exclusions[{s}] carried={v['carried']} "
+              f"residual={v['residual']} n_excluded={v['n_excluded']} "
               f"rate={v['rate']:.5f} bound={v['bound_n']} "
               f"(denominator {v['denominator']} from {v['denominator_source']}) "
               f"void={v['void']}")
+        if v.get("determinism_defect"):
+            print(f"[G-DISJOINT]   ⚠️ DETERMINISM DEFECT: residual="
+                  f"{v['residual']} — the FINAL build saw a collision the PROBE "
+                  f"did not, on the same corpus under the same rules.",
+                  file=sys.stderr)
         for rid in v["rids"]:
             print(f"[G-DISJOINT]   excluded rid: {rid}")
     if out_path:

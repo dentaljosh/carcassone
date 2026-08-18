@@ -2,7 +2,7 @@
 """Tests for the tie-arbiter WIDENING run's TWO-BOX chunk + merge layer.
 
 Fast, hermetic, no engine, no scoring. Covers the four properties the frozen
-`shared_run/{DESIGN,READ_RULE}.md` pair depends on:
+`shared_run_r4/{DESIGN,READ_RULE}.md` pair depends on (rev R4.5):
 
   1. the permutation is DETERMINISTIC and committed (byte-stable payload);
   2. chunks are WHOLE-RID and partition each stratum exactly;
@@ -75,7 +75,7 @@ def make_corpus(out_dir: Path, *, n=24, m=128, roots=6, max_arms=4,
     total_playouts = sum((c - 1) * 2 * m for c in arm_counts)
     plan = {
         "schema": "carcassonne-tiletie-positions/v1",
-        "design_doc": "measurement/tiearb_widening_20260817/shared_run/DESIGN.md",
+        "design_doc": "measurement/tiearb_widening_20260817/shared_run_r4/DESIGN.md",
         "n_positions": len(arms_index),
         "n_e4": 0, "n_selfplay": len(arms_index),
         "counts_by_stratum": {"selfplay": len(arms_index)},
@@ -698,21 +698,24 @@ def test_run_scoring_names_every_binding_knob():
     # detach discipline is documented in the header
     assert "setsid nohup" in src and "disown" in src
     # nothing may be written into the frozen prereg dir by the launcher
-    assert 'RUN_DIR="$CAMPAIGN/shared_run"' in src
+    # rev R4.5: the name is composed from WORKERS.conf::PREREG_DIR_NAME, never
+    # re-typed — one place to be wrong beats six.
+    assert 'RUN_DIR="$CAMPAIGN/$PREREG_DIR_NAME"' in src
 
 
-def test_run_scoring_writes_no_per_chunk_artifact_into_shared_run():
+def test_run_scoring_writes_no_per_chunk_artifact_into_the_prereg_dir():
     src = (CAMPAIGN / "run_scoring.sh").read_text()
     for flag in ("--gate-out", "--manifest-out"):
         i = src.index(flag)
         line = src[i:src.index("\n", i)]
-        assert "$RUN_DIR" not in line, f"{flag} points into the FROZEN shared_run/"
+        assert "$RUN_DIR" not in line, f"{flag} points into the FROZEN prereg dir"
 
 
 def test_the_frozen_pair_is_untouched_by_this_layer():
-    """Nothing this layer ships lives under shared_run/."""
+    """Nothing this layer ships lives under EITHER prereg dir."""
     ours = {"stage_chunks.py", "merge_legs.py", "ALLOCATION.conf",
             "run_scoring.sh", "merge_scoring.sh"}
     for name in ours:
         assert (CAMPAIGN / name).is_file()
         assert not (CAMPAIGN / "shared_run" / name).exists()
+        assert not (CAMPAIGN / "shared_run_r4" / name).exists()

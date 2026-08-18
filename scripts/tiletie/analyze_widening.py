@@ -2,7 +2,8 @@
 """W3 — the tie-arbiter WIDENING analyzer (rungs 2 `B>16` + 3 `J>4`).
 
 ONE invocation, ONE read-out, both rungs. It emits, at the EXACT spellings
-`measurement/tiearb_widening_20260817/shared_run/READ_RULE.md` §2/§4/§5 address:
+`measurement/tiearb_widening_20260817/shared_run_r4/READ_RULE.md` addresses
+(rev R4; the R3.3 pair in `shared_run/` is SPENT-BY-GATE-FAILURE):
 
     verdicts/READOUT.json            the addressed machine surface (`READOUT::…`)
     verdicts/READOUT.md              the harness REPORT (see the blindness rule)
@@ -604,6 +605,41 @@ def band_block(verify_paths) -> dict:
             "resolved_at": "READOUT::widening.gates.band"}
 
 
+def union_block(corpus_union_path) -> dict:
+    """R4-0.5 §3 — the corpus's COMPOSITION, surfaced on the read-out.
+
+    R4's `n` is a **MIXTURE**: retained band-135e9 positions (read read-only out
+    of the SPENT R3.3 run and COPIED in) plus freshly generated 137e9 extension
+    positions. A reader must be able to see that split, because "n = 1350" says
+    nothing about how much of it predates this prereg. This is not a caveat on
+    the estimand — the retained positions were never scored, so nothing about
+    them is an outcome — it is a disclosure about the corpus's construction."""
+    if not corpus_union_path or not Path(corpus_union_path).is_file():
+        return {"present": False,
+                "source": str(corpus_union_path) if corpus_union_path else None,
+                "by_stratum": {}, "totals": {},
+                "note": "CORPUS_UNION.json not supplied to the analyzer"}
+    d = json.loads(Path(corpus_union_path).read_text())
+    per = {}
+    for s, v in sorted((d.get("by_stratum") or {}).items()):
+        per[s] = {
+            "n_retained": v.get("n_retained"),
+            "n_fresh": v.get("n_fresh"),
+            "origin_commit": v.get("origin_commit"),
+            "banked_dir": v.get("banked_dir"),
+            "copied_not_symlinked": v.get("copied_not_symlinked"),
+            "n_excluded_rids_applied": v.get("n_excluded_rids_applied"),
+        }
+    return {
+        "present": True, "source": str(corpus_union_path),
+        "by_stratum": per, "totals": d.get("totals") or {},
+        "note": "the retained positions are NOT pre-cleared: they entered the "
+                "probe build and were gated exactly like fresh ones. 'Already "
+                "gated under R3' is not a status any position holds — R3's gate "
+                "FAILED, so nothing was ever passed.",
+    }
+
+
 def exclusions_block(gate_disjoint_path) -> dict:
     """R4 §7a.2 — the digest-exclusion block, printed on EVERY branch, whether
     or not anything was excluded. Surfaced from `GATE_DISJOINT.json`."""
@@ -617,6 +653,9 @@ def exclusions_block(gate_disjoint_path) -> dict:
         "present": True,
         "source": str(gate_disjoint_path),
         "by_stratum": {s: {"n_excluded": v.get("n_excluded"),
+                           "carried": v.get("carried"),
+                           "residual": v.get("residual"),
+                           "determinism_defect": v.get("determinism_defect"),
                            "rate": v.get("rate"),
                            "bound_n": v.get("bound_n"),
                            "denominator": v.get("denominator"),
@@ -993,6 +1032,7 @@ def render_md(v: dict) -> str:
                           # whether or not anything was excluded — and it is a
                           # gate input, so it is safe on a gate-fail report
                           "exclusions": w.get("exclusions"),
+                          "corpus_union": w.get("corpus_union"),
                           "stage1_replication": w["stage1_replication"],
                           "plan_dirs": w["config"]["plan_dirs"],
                           "position_counts": w["config"]["counts"]},
@@ -1091,7 +1131,31 @@ def _exclusion_lines(w: dict) -> list:
     digest-exclusion block (ALWAYS, whether or not anything was excluded), and
     the predecessor's disposition in one line."""
     c, x, p = w["completion"], w.get("exclusions") or {}, w.get("predecessor") or {}
-    L = ["", "## R4 §7a — supply, exclusions, predecessor", "",
+    u = w.get("corpus_union") or {}
+    L = ["", "## R4 §7a — supply, composition, exclusions, predecessor", ""]
+    # R4-0.5 §3: R4's `n` is a MIXTURE and the reader must see its composition.
+    L += ["### Corpus composition — RETAINED vs FRESH", ""]
+    if not u.get("present"):
+        L += ["`CORPUS_UNION.json` was not supplied to the analyzer, so the "
+              "retained-vs-fresh split is UNRESOLVED here — read it at the "
+              "stamp's own address.", ""]
+    else:
+        tot = u.get("totals") or {}
+        L += ["| stratum | retained (135e9) | fresh (137e9) | origin commit | copied |",
+              "|---|---|---|---|---|"]
+        for s, v in sorted(u["by_stratum"].items()):
+            oc = (v.get("origin_commit") or "untracked")[:12]
+            L.append(f"| {s} | {v.get('n_retained')} | {v.get('n_fresh')} | "
+                     f"`{oc}` | {_f(v.get('copied_not_symlinked'))} |")
+        L += ["",
+              f"**Totals:** {tot.get('n_retained')} retained + "
+              f"{tot.get('n_fresh')} fresh = {tot.get('n_total')} "
+              f"(retained fraction {_f(tot.get('retained_fraction'), 3)}). "
+              f"The retained positions were read READ-ONLY out of the SPENT "
+              f"R3.3 run and **COPIED** in — never symlinked, and "
+              f"`shared_run/` was never written to.", "",
+              u.get("note", ""), ""]
+    L += ["### Supply and floors", "",
          f"- **Supply realized vs committed:** S1 {c['s1_n']} against floor "
          f"{c['s1_floor']} (committed n₁ {c.get('n1_committed')}); "
          f"S2 capped {c['s2_n']} against floor {c['s2_floor']} "
@@ -1110,6 +1174,11 @@ def _exclusion_lines(w: dict) -> list:
             L.append(f"| {s} | {v['n_excluded']} | {_f(v['rate'], 5)} | "
                      f"{v['bound_n']} | {v['denominator']} | "
                      f"`{v['denominator_source']}` | {_f(v['void'])} |")
+        L += ["",
+              "`n_excluded` = `carried` (measured on the PROBE build, which is "
+              "where the bound is judged) + `residual` (fresh collisions in the "
+              "FINAL build, expected 0). A nonzero `residual` is additionally a "
+              "**determinism defect**."]
         L += ["", "The digest is a function of the **board alone**, computed at "
               "corpus-build time **before any value exists** — the exclusion is "
               "outcome-independent by construction, which is exactly why it is "
@@ -1149,6 +1218,10 @@ def parse_args(argv=None):
     ap.add_argument("--champ-games-verify", action="append", default=None,
                     help="CHAMP_GAMES_VERIFY{,_EXT,_TOPUP}.json (repeatable) — "
                          "G-BAND's N-file form (R4 §2c)")
+    ap.add_argument("--corpus-union", default=None,
+                    help="RUN/corpus/CORPUS_UNION.json — the retained-vs-fresh "
+                         "composition of the corpus (R4-0.5 §3). R4's n is a "
+                         "MIXTURE and the read-out must show its composition")
     ap.add_argument("--gate-disjoint", default=None,
                     help="RUN/GATE_DISJOINT.json — surfaces the R4 §2b "
                          "digest-exclusion counters on the READOUT")
@@ -1286,6 +1359,7 @@ def main(argv=None) -> int:
     completion = completion_block(rows_s1, rows_s2, floors)
     band = band_block(a.champ_games_verify or [])
     exclusions = exclusions_block(a.gate_disjoint)
+    union = union_block(a.corpus_union)
 
     ref = json.loads(Path(a.stage1b_ladder).read_text())
     e16_ladder = b_ladder.get("E16", {})
@@ -1317,6 +1391,7 @@ def main(argv=None) -> int:
         "gates_ok": gates_ok,
         "completion": completion,
         "exclusions": exclusions,
+        "corpus_union": union,
         "predecessor": {
             "pair": "604edc83",
             "disposition": "SPENT-BY-GATE-FAILURE — frozen history; never "
@@ -1362,7 +1437,7 @@ def main(argv=None) -> int:
         },
     }
     verdict = {"generated_utc": AT._now_utc(),
-               "run": "tiearb_widening_20260817 shared_run",
+               "run": "tiearb_widening_20260817 shared_run_r4",
                "widening": widening}
 
     (out_dir / "READOUT.json").write_text(

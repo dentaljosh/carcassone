@@ -86,12 +86,24 @@ sys.path.insert(0, str(REPO / "scripts" / "tiletie"))
 
 import build_tiearb_plan as BTP  # noqa: E402  (path insert must precede the import)
 
-RUN_ID = "tiearb_widening_20260817"
+import widening_paths as WP  # noqa: E402  (path insert must precede the import)
+
+RUN_ID = WP.RUN_ID
 CAMPAIGN = REPO / "measurement" / RUN_ID
-RUN_DIR = CAMPAIGN / "shared_run"                 # the FROZEN prereg dir — read only
+# rev R4.5 — the LIVE prereg pair is `shared_run_r4/`. `shared_run/` is the
+# R3.3 pair, SPENT-BY-GATE-FAILURE: frozen history, never amended, revived or
+# re-read. The directory name is defined ONCE, in
+# WORKERS.conf::PREREG_DIR_NAME, and read here through `widening_paths` so the
+# shell launchers and this module cannot drift apart.
+RUN_DIR = WP.run_dir(CAMPAIGN)                    # the FROZEN prereg dir — read only
+BANKED_RUN_DIR = WP.banked_dir(CAMPAIGN)          # ⚠️ SPENT pair — READ-ONLY FOREVER
 SCHEMA = "carcassonne-tiearb-widening-chunks/v1"
-DESIGN_DOC = f"measurement/{RUN_ID}/shared_run/DESIGN.md"
-READ_RULE = f"measurement/{RUN_ID}/shared_run/READ_RULE.md"
+# ⚠️ CHUNK PROVENANCE cites the pair the chunks were cut for. Citing the R3.3
+# pair would stamp every chunk manifest with the provenance of a prereg that is
+# SPENT — a reader reconstructing which rule governed these chunks would be
+# sent to the dead document.
+DESIGN_DOC = WP.design_doc()
+READ_RULE = WP.read_rule()
 
 #: ONE committed seed, one shuffle per stratum, written BEFORE launch.
 #: Deliberately NOT the corpus `--sample-seed` (20260819, DESIGN §4): the mining
@@ -516,7 +528,7 @@ def cmd_stage(a) -> int:
     summary["governance"] = ("Measurement plumbing only. Scores nothing, reads no "
                              "record, no value and no statistic. No results.csv "
                              "row, no band, no claim id. Writes NOTHING under "
-                             "shared_run/.")
+                             "shared_run_r4/.")
     (out_root / "CHUNK_SUMMARY.json").write_text(json.dumps(summary, indent=1) + "\n")
     print(json.dumps(summary, indent=1))
     return 0
@@ -608,7 +620,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     def common(p):
         p.add_argument("--out-root", default=str(CAMPAIGN),
                        help="where POSITION_ORDER.json and chunks/ live "
-                            "(default: the campaign dir, OUTSIDE shared_run/)")
+                            "(default: the campaign dir, OUTSIDE the prereg dir)")
         p.add_argument("--s1-dir", default=None, help="override the S1 corpus dir")
         p.add_argument("--s2-dir", default=None, help="override the S2 corpus dir")
         p.add_argument("--stratum", default=None, choices=list(STRATA))
