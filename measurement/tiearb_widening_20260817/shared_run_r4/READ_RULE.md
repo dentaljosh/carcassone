@@ -1,0 +1,109 @@
+# TIE-ARBITER WIDENING — MECHANICAL READ RULE **rev R4** (successor pair)
+
+> **STATUS: BLIND PREREGISTRATION, DRAFT. NOT LAUNCHED. NO POSITION SCORED. NO NUMBER OF THIS
+> RUN EXISTS.**
+>
+> Predecessor: the R3.3 rule at blind commit **`604edc83`** (`../shared_run/READ_RULE.md`),
+> **SPENT-BY-GATE-FAILURE** and frozen ([`../PREREG_FAILURE.md`](../PREREG_FAILURE.md)).
+>
+> ⚠️ **This rule INCORPORATES the R3.3 rule by reference at `604edc83` and overrides only the
+> sections restated below.** Everything not restated is binding **in its R3.3 wording**. Where
+> this file and the R3.3 file disagree, **this file governs R4**; where this file is silent,
+> **R3.3 governs**.
+>
+> **SINGLE USE. SPENT ON LANDING.** One adjudication, one analyzer invocation, one read-out for
+> both rungs. No re-read, no top-up at any `z`.
+>
+> `governance/PRODUCTION.yaml` untouched on every branch. No claim minted. No strength row.
+
+## CARRIED UNCHANGED from `../shared_run/READ_RULE.md` @ `604edc83`
+
+| § | content — binding in its R3.3 wording |
+|---|---|
+| §1 | address discipline; **ABSENT IS FAIL**; the **closed `allow_null` table** (4 entries + witnesses); fallbacks pre-registered; the structural test |
+| §2 | **every gate except the three restated below** — `G-LEAF`, `G-SALT`, `G-M`, `G-BACKEND`, `G-BITEXACT@HEAD`, `G-PREFIX`, `G-CRN`, `G-UNCAPPED`, `G-DRAW`, `G-ARMS`, **`G-REPLICATE`** (incl. `STAGE1B_LADDER.json` and its no-fallback rule) — and §2's precedence and binding-scope preamble |
+| §3 | the power arithmetic: significance defined **once** on the percentile root bootstrap (2,000 reps, seed 20260819, cluster `root_id`); the `se` bracket `[0.0179, 0.0200]`; the **+0.040 floor as a point test**; `sd_Δ ∈ [0.9, 1.4]` |
+| §4 | **rung-2 branch table, verbatim** — `W-NOISY` · `W-REVERSAL` · `W-RISING` · `W-SATURATED` · `W-INCONCLUSIVE`, with the level/increment residue and the mechanism-anomaly print |
+| §5 | **rung-3 branch table, verbatim** — the guard, `X-CONFIRMED` · `X-ABOVE` · `X-PARTIAL` · `X-BELOW` · `X-FREE` · `X-INCONCLUSIVE`, the `Δ_ora`-only sub-table, `X-NOISE`, and the three mandatory prints |
+| §6 | **all eight riders R1–R8** (σ-inflation, translation, `I7-draw-scope`, two currencies, governance, the open N4 waiver, phone out of scope, `\|z\|<2` is never "refuted") |
+| §7 | what the read-out prints; **gate-inputs-only on `W-UNREADABLE`**; the write-only sealed file; deviation discipline |
+| §8 | spent-on-landing; the six-touch close-out |
+
+**No estimand, bar, branch condition, threshold or rider changes in R4.** The three gates below
+change because R3's versions were **unsatisfiable against the world**, not because a bar moved.
+
+---
+
+## R4 §2a — `G-COMPLETE` (REPLACES the R3.3 row)
+
+R3's floors were computed from raw census rows and were unreachable by 27× on S2
+(`PREREG_FAILURE` §2). R4's floors are **parameters fixed by the owner's choice of row in
+DESIGN R4-2.2**, and the conjunct is written against whatever that choice commits.
+
+| conjunct (all must hold) | primary address | fallback | on a healthy run |
+|---|---|---|---|
+| `s1_n ≥ ⌈0.95 × n₁⌉` and `s2_n ≥ ⌈0.95 × n₂⌉`, where **`n₁`/`n₂` are the values committed in `RUN/FLOORS.json` before the extension band is claimed**; mining ceilings honoured (≤4 tied plies/root S1, ≤3 capped plies/root S2); **both counts evaluated AFTER the R4 §2b exclusions** | `READOUT::widening.completion.{s1_n,s2_n,s1_max_per_root,s2_max_per_root}` + `RUN/FLOORS.json::{n1,n2,option_label}` | `RUN/verdicts/per_position_{s1,s2}.jsonl` line counts + `root_id` grouping | **PASSES** — the floors are now sized from measured rates (`r_S1 = 1.574`, `r_S2cap = 0.206`), not from raw row counts |
+
+**`RUN/FLOORS.json` is committed with this pair**, carrying `{n1, n2, option_label, r_s1, r_s2cap,
+games_extension}` — the owner's choice frozen **before** generation, so a floor can never be
+chosen to fit a realized supply. **If `n₂ = 0` (the `S1 ONLY` row), rung 3 does not run**: its
+branch table is not adjudicated, its riders are not printed, and the read-out states that the J
+question was **not bought**, never that it was answered.
+
+⚠️ **Supply is knowable before scoring.** A shortfall must be caught at the corpus stage — where
+the only sunk cost is generation — not at the read-out. The corpus driver reports realized supply
+against `FLOORS.json` **before** the first scoring leg (DESIGN R4-8, W6).
+
+## R4 §2b — `G-DISJOINT` (REPLACES the R3.3 row)
+
+Digest collisions are now **excluded and counted** rather than fatal-on-first, under a bound
+committed before any R4 number exists (DESIGN R4-3).
+
+| conjunct (all must hold) | primary address | fallback | on a healthy run |
+|---|---|---|---|
+| **(i)** `passed == true` for the **rid** and **root** layers on **every** comparison — these remain **zero-tolerance**: a shared rid or root is a corpus leak, never a transposition. **(ii)** Digest layer: every collision is recorded and its **R4-side** rid excluded (S1↔S2 collisions exclude the **S2** rid); `n_excluded ≤ ⌈0.005 × qualifying_deduped(stratum)⌉` **and** `n_excluded ≤ 15`, per stratum. **(iii)** Exclusions applied **before** `POSITIONS_PLAN` is frozen, so no excluded rid reaches a leg. **(iv)** `strata_root_overlap == 0`. **(v)** All five comparisons present (three layers on the four ARMS-vs-ARMS; `b_rid` only on `s1s2_vs_exclude_rids`) | `RUN/GATE_DISJOINT.json::{passed, comparisons, strata_root_overlap, digest_exclusions:{<stratum>:{n_excluded, rate, bound_n, bound_frac, rids, void}}}` | **none** — a missing gate file is a FAIL | **PASSES.** Realized rate on band 135e9 was **1/551 = 0.18%**, ≈2.8× inside the bound. ⚠️ Exceeding **either** bound ⇒ that stratum is **VOID**, not excluded-and-continued: at that density, transposition degeneracy is a property of the generator and "fresh corpus" is the wrong description — a different finding, which must surface rather than be absorbed |
+
+**Always printed, on every branch, whether or not any exclusion occurred:** the per-stratum
+collision count, rate, excluded rids, and the bound they were measured against.
+
+**Why exclusion is legitimate here and was not in the 2026-08-14 open-city void:** the digest is a
+function of the **board alone**, computed at corpus-build time, **before any value exists**. That
+exclusion was rejected for being outcome-dependent; this one cannot be, by construction.
+
+## R4 §2c — `G-BAND` (REPLACES the R3.3 row; generalised from two files to N)
+
+R3's two-file form does not stretch to base + extension + top-up. The rule generalises; the
+principle — **each file checked against ITS OWN range, floors tabular** — is R3's B1 fix.
+
+| conjunct (all must hold) | primary address | fallback | on a healthy run |
+|---|---|---|---|
+| For **each** generated range, its **own** `verify-champgames` file satisfies `band_ok == true`, `seed_band` equal to **that** range, `n_out_of_band == 0`, `n_duplicate_seeds == 0`; **and each file meets its own committed floor** per the table below; **and** no seed appears in two files. **Never one invocation over a widened band** — it would report `n_out_of_band == 0` for a seed lying in neither range | `RUN/corpus/CHAMP_GAMES_VERIFY.json` (base) · `…_EXT.json` (extension) · `…_TOPUP.json` (top-up, iff exercised) — each `::{band_ok,seed_band,n_out_of_band,n_duplicate_seeds,n_games_realized}` | — (**no seed list anywhere by design**; the emitter publishes `sha256_of_sorted_seeds`) | **PASSES**, including on a healthy run that exercises any subset of the three |
+
+| file | range | its own floor |
+|---|---|---|
+| base | `135000000000` +0…+849 | `n_games_realized ≥ 850` |
+| extension | `137000000000` +0…+(N−1) | `≥ N`, `N` from `RUN/FLOORS.json::games_extension` |
+| top-up (iff exercised) | `138000000000` +0…+499 | **the increment only — never a run-level floor** |
+
+`136000000000` is **RELEASED UNUSED** and must appear in **no** file; a seed from it anywhere is a
+FAIL.
+
+---
+
+## R4 §7a — additions to what the read-out prints
+
+Everything in CARRIED §7, plus:
+
+1. **The supply chain, realized against committed**: raw → qualifying → deduped → capped per
+   stratum, beside `FLOORS.json`'s committed `n₁`/`n₂` and the rates they were sized from.
+2. **The digest-exclusion block** (R4 §2b), whether or not anything was excluded.
+3. **The predecessor's disposition, in one line**: the R3.3 pair `604edc83` is
+   SPENT-BY-GATE-FAILURE; band 135e9's games are input, not a prior result; **and R4's `n` is not
+   statistically independent of that corpus's structure** (`PREREG_FAILURE` §3.4) — a sizing
+   dependence, never an estimand dependence.
+4. **The deviation list** (`../DEVIATIONS.md`): D1's signature verdict, and D2 closed as
+   unnecessary.
+5. **Both `c_IF` figures** — committed 2.35 and smoke-indicated 1.2313 — with the remeasure's
+   verdict on the 1.91× gap, and the re-based generation `c` (297.6 measured → 372.0 committed).
+6. **If `n₂ = 0`:** an explicit statement that the rung-3 question was **not bought** — not
+   answered, not null, not inconclusive. Absence of a purchase is not a result.
