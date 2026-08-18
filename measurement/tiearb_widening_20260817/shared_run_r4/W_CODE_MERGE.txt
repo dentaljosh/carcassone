@@ -1,11 +1,19 @@
 W_CODE_MERGE — the W-code merge shas for the R4 successor run, recorded here and
-in this blind commit's message, both created no later than the blind commit
+in the blind commit's message, both created no later than the blind commit
 (DESIGN R4-8b step 4; READ_RULE §2 `G-BITEXACT@HEAD`).
 
-THREE MERGES, in order. All three are SCOPED PATH CHECKOUTS, not wholesale
-branch merges: every source worktree branch forks BEHIND this branch's HEAD, so
-merging any of them whole would have reverted work already on main (the first
-would have reverted the entire JCZ close-out). See DESIGN §0.J.
+⚠️ This file accompanies the RE-BLIND-COMMIT at pair rev R4.5, which SUPERSEDES
+the R4.4 blind commit `0b2d8f0e` per DESIGN §R4-0.5's re-commit disclosure. The
+supersession is free and carries no blindness cost: no game of the extension
+band had been generated, no launcher had run, no position was scored, and no
+statistic of this run exists. `FLOORS.json` is UNCHANGED between the two commits
+(sha256 7771435e3783d54aeb54148c46312c3c9926fc6bb7ae971a895110c0ce7f02d0),
+which the redefinition of `RUN` makes correctly located rather than moved.
+
+FOUR MERGES, in order. All four are SCOPED PATH CHECKOUTS, not wholesale branch
+merges: every source worktree branch forks BEHIND this branch's HEAD, so merging
+any of them whole would have reverted work already on main (the first would have
+reverted the entire JCZ close-out). See DESIGN §0.J.
 
 ────────────────────────────────────────────────────────────────────────────────
 1. 413e985674e47a8d5ffe68a74b3dca097fc59b41   ← THE git_rev OF RECORD
@@ -48,6 +56,33 @@ would have reverted the entire JCZ close-out). See DESIGN §0.J.
    branch forks at 06adef99 and HEAD had since corrected the clair-puct
    "python-era" mislabel there; the two edits are in different hunks and both
    survive.
+
+4. 5a1f33a05d8c98c6ddd694242c9d0d0191d41893   ← the R4.5 RUN rewiring
+
+   The fourth scoped merge, 15 paths, from worktree-agent-ac2cd3b736f6e2bcc
+   (5ca56881 + 5bb865ac). It fixes the defect the W10 dry-run caught BEFORE any
+   game was generated: the R4.4 pair never redefined `RUN`, so all four
+   launchers still resolved it to `shared_run/` — the SPENT, gate-failed,
+   committed R3 directory. run_gen refused outright; build_widening_corpus would
+   have assembled the R4 corpus inside the dead pair's dir; run_scoring and
+   stage_chunks would have read R3's SUPERSEDED DESIGN/READ_RULE as their frozen
+   authority and recorded them as chunk provenance.
+
+     - the directory name now lives ONCE, in WORKERS.conf::PREREG_DIR_NAME
+       (= shared_run_r4), with BANKED_PREREG_DIR_NAME (= shared_run) naming the
+       RETAINED 135e9 corpus — read-only, never written;
+     - scripts/tiletie/widening_paths.py resolves it, and the six path sites
+       compose from it instead of hard-coding;
+     - union_positions.py + RUN/corpus/CORPUS_UNION.json make the retained-plus-
+       fresh corpus union explicit, with per-stratum retained/fresh counts;
+     - the R4-0.2 carried/residual key-spelling fix in gate_disjoint.
+
+   Double-merge check against merge 3 (the builder had pulled the two-box layer
+   into its own branch via its own scoped checkout of 1670f030): HEAD's five
+   two-box files were byte-identical to 1670f030, the builder's differ from
+   1670f030 by only 41+/15- lines of pure RUN_DIR rewiring, and HEAD matched the
+   builder's pre-R4.5 baseline on every other path. The builder's tree is HEAD's
+   content PLUS R4.5 — no reversion.
 
 ────────────────────────────────────────────────────────────────────────────────
 WHY THE GATE IS NOT RE-RUN AT MERGE 3. READ_RULE §2 admits the step-2 merge sha
