@@ -1,7 +1,9 @@
 # TIE-ARBITER WIDENING — SHARED INSTRUMENT RUN, DESIGN (rungs 2 `B>16` + 3 `J>4`)
 
-> **STATUS: BLIND PREREGISTRATION, DRAFT (revision R2). NOT LAUNCHED. NOTHING RUN. NO
-> OUTCOME STATISTIC OF ANY KIND WAS READ WHILE WRITING THIS.**
+> **STATUS: BLIND PREREGISTRATION — revision R3, THE BINDING PAIR PENDING MERGE. NOT
+> LAUNCHED. NOTHING RUN. NO OUTCOME STATISTIC OF ANY KIND WAS READ WHILE WRITING THIS.**
+> No further review round: the closing pass passed rev R2 on everything but one defect (`B1`)
+> and pre-approved its fix, which this revision applies verbatim along with cosmetics C1–C6.
 >
 > ⚠️ **BLIND-ORDER REQUIREMENT — NOT YET SATISFIED.** This file and
 > [`READ_RULE.md`](READ_RULE.md) were drafted and revised in an isolated **worktree** while
@@ -169,7 +171,8 @@ The knobs the driver must resolve, and which this DESIGN fixes (they are the gra
 `--smoke-manifest`, `--gate-out` and the W6/W5 gate files resolve to
 `/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/…`, never a
 CWD-relative name. Leg records stay on the share
-(`/mnt/c/carc-shared/tiearb_widening_20260817/{s1,s2}/…`, per-record `jsonl`), and the driver's
+(`/mnt/c/carc-shared/tiearb_widening_20260817/{s1,s2}/…`, per-record `records/<rid>.json` — one
+JSON object per rid, **there is no `*.jsonl` leg file**), and the driver's
 final phase **copies every leg `manifest.json` back** to
 `RUN/legs/{s1,s2}/<judge>/walled/leg<N>/manifest.json` — the address the READ_RULE reads. Only
 the **`tier1-greedy`** legs are addressed by any gate (the `clair-puct` legs are
@@ -391,11 +394,13 @@ in the W-scope moved.
    owner). `GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}`, computed by re-running
    `build_positions._seeded_cap(rid, arms_full[1:], 4)` and comparing
    `[arms_full[0]] + kept == subset_j4` per rid, on **both** strata.
-3. **`GATE_DISJOINT.json` carries FIVE comparisons, not four.** `s1_vs_tiletie0812`,
-   `s1_vs_tiearb2_0816`, `s2_vs_tiletie0812`, `s2_vs_tiearb2_0816` (three layers each:
-   `a_root_id`, `b_rid`, `c_position_digest`) **plus `s1s2_vs_exclude_rids` — the rid layer
-   only**, against `measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_all.txt`, which is a rid
-   text file with no root or digest layer and which the stock `load_rids` raises on. Shape:
+3. **`GATE_DISJOINT.json` carries FIVE comparisons, not four.** All three layers
+   (`a_root_id`, `b_rid`, `c_position_digest`) on each of the **four ARMS-vs-ARMS**
+   comparisons — `s1_vs_tiletie0812`, `s1_vs_tiearb2_0816`, `s2_vs_tiletie0812`,
+   `s2_vs_tiearb2_0816` — **plus `s1s2_vs_exclude_rids`, on which `b_rid` is the ONLY layer**,
+   against `measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_all.txt`, which is a rid text file
+   with no root and no digest layer (emitting three layers there, or requiring them, fails a
+   healthy run) and which the stock `load_rids` raises on. Shape:
    `{passed, comparisons:{<name>:{layers:{…:{n_intersection}}, passed}}, strata_root_overlap}`.
 4. **Every per-leg address is bound to `tier1-greedy`.** `resolved_config.*` and
    `preflight.seeds.*` exist **only** on `tier1_rust_leg` manifests; the `clair-puct` legs are
@@ -411,6 +416,12 @@ in the W-scope moved.
    day it is needed is unaudited), across **both strata**, over every address named in
    READ_RULE §2/§4/§5 **and** in §7's `c`-remeasure obligation (including `GEN_SMOKE.json` and
    the realized-vs-committed `c` block). See §9 steps 4a/4b for what runs when.
+   **W8's deliverables are the harness AND the fixture set it audits against**: a committed
+   `ARMS.json` fixture (a handful of rids incl. one capped, one with the champion append, one
+   `all_transposition`), a `POSITIONS_PLAN.json` fixture, and a `per_position` row fixture for
+   each stratum — enough for the 4a schema pass to resolve the `READOUT::widening.*`,
+   `GATE_DISJOINT`, `GATE_DRAW`, `POSITIONS_PLAN`/`ARMS` spellings **before any real corpus
+   exists**. The fixtures carry synthetic values and are never a data source for any statistic.
 
 ---
 
@@ -424,7 +435,12 @@ the run is live:
    worktree with `PYTHONPATH=<worktree>/src:<worktree>/engine`, never in the main tree.
 2. **ONE quiet-window merge**, at a moment when no local run is live (census first), of all
    W-code in a **single commit**. **This commit is the `git_rev` of record** for
-   `G-BITEXACT@HEAD` (READ_RULE §2).
+   `G-BITEXACT@HEAD` (READ_RULE §2). ⚠️ **Its sha is recorded in TWO places, both created no
+   later than the step-5 blind commit: (i) the blind commit's own message, and (ii)
+   `RUN/W_CODE_MERGE.txt`, committed as part of that same blind commit.** It is **never**
+   recorded by editing this DESIGN or the READ_RULE after step 5 — a post-blind edit to the
+   frozen pair is exactly the move the freeze exists to forbid, and a `git_rev` conjunct whose
+   referent is written after the fact is not a pre-registration.
 3. **`verify_tier1_rust.py --out`** points at `RUN/GATE_BITEXACT_HEAD.json`. Nothing this
    campaign runs may write into `measurement/tiearb2_stage2_20260817/` or any other closed
    run's directory. ⚠️ This gate is produced **here, at step 2's HEAD**, while the blind commit
@@ -461,7 +477,8 @@ the run is live:
 ## 10. Manifests the run MUST write (self-describing, absolute paths under `RUN/`)
 
 `corpus/CHAMP_GAMES_VERIFY.json` (+ `…_TOPUP.json` iff the blind top-up was exercised) ·
-`corpus/GEN_SMOKE.json` · `corpus/positions_{s1,s2}/{POSITIONS_PLAN.json,ARMS.json}` ·
+`corpus/GEN_SMOKE.json` · `W_CODE_MERGE.txt` (the §9 step-2 sha, committed with the blind pair) ·
+`corpus/positions_{s1,s2}/{POSITIONS_PLAN.json,ARMS.json}` ·
 `GATE_DISJOINT.json` · `GATE_BITEXACT_HEAD.json` · `GATE_DRAW.json` ·
 `RUN_MANIFEST_{S1,S2}.json` · `SMOKE_MANIFEST_{S1,S2}_<judge>.json` ·
 `legs/{s1,s2}/<judge>/<profile>/leg<N>/manifest.json` (copied back from the share; **only the
@@ -524,6 +541,22 @@ extends** (rider `R6`). ③ **The phone is out of scope for this axis.**
 ---
 
 ## 13. Review disposition
+
+### 13.C — closing pass on rev R2 (verdict: FAIL on one defect, fix pre-approved)
+
+Everything else closed: the `git_rev` conjunct was walked step-by-step and passes under both
+readings, the 4a/4b coverage matrix verified complete, the `N14` broadening ruled *"strictly
+better than the letter"*, `I7` again named the strongest part of the document.
+
+| # | fix, and where it now lives |
+|---|---|
+| **B1** (blocking) | `G-BAND`'s top-up clause held `CHAMP_GAMES_VERIFY_TOPUP.json` to *"the above"*, **including `n_games_realized ≥ 850`** — but the top-up is pre-licensed at **≤200 games**, so a healthy run that exercises the pre-licensed clause **voids**. Replaced verbatim: each file is checked against **its own** committed range (`[135000000000,135000000849]` / `[136000000000,136000000199]`) for `band_ok`/`seed_band`/`n_out_of_band == 0`/`n_duplicate_seeds == 0`; **the BASE file alone carries `n_games_realized ≥ 850`**, the top-up carries the increment; never one invocation over a widened band |
+| C1 | last stale *"per-record `jsonl`"* prose in §4 → `records/<rid>.json` |
+| C2 | READ_RULE §7's `DESIGN §9.7` cross-reference → **§9, item 9** (post-renumber) |
+| C3 | `G-DISJOINT`'s quantifier tightened in **both** documents: three layers each on the four ARMS-vs-ARMS comparisons; **`b_rid` only** on `s1s2_vs_exclude_rids` |
+| C4 | the **fixture set** (ARMS.json / plan / per_position row fixtures, per stratum) named as an explicit **W8 deliverable** in the builder delta |
+| C5 | §9 step 2: the W-code merge sha is recorded in the **blind commit message** *and* **`RUN/W_CODE_MERGE.txt`** (committed with the blind pair), **never** by a post-blind edit to the frozen pair; `W_CODE_MERGE.txt` added to §10 |
+| C6 | rung-2 row 5 prose now names the **level/increment residue** — `Δ` significant and above the floor while `arb(64) ≤ arb(16)` — and requires the read-out to report the disagreement as an instrument question |
 
 ### 13.B — `REVIEW_R2.md` (closing review of rev R1; verdict FAIL), all 14 items
 
