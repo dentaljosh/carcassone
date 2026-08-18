@@ -1,0 +1,94 @@
+W_CODE_MERGE — the W-code merge shas for the R4 successor run, recorded here and
+in this blind commit's message, both created no later than the blind commit
+(DESIGN R4-8b step 4; READ_RULE §2 `G-BITEXACT@HEAD`).
+
+THREE MERGES, in order. All three are SCOPED PATH CHECKOUTS, not wholesale
+branch merges: every source worktree branch forks BEHIND this branch's HEAD, so
+merging any of them whole would have reverted work already on main (the first
+would have reverted the entire JCZ close-out). See DESIGN §0.J.
+
+────────────────────────────────────────────────────────────────────────────────
+1. 413e985674e47a8d5ffe68a74b3dca097fc59b41   ← THE git_rev OF RECORD
+                                                 for G-BITEXACT@HEAD
+
+   The first scoped merge, TWO SOURCES (§0.E), 19 paths:
+     - worktree-agent-ac2cd3b736f6e2bcc, f26f4f29 + b4e15959 — W3 (analyzer),
+       W5 (gate emitters), W6 (corpus driver), W8 (acceptance harness +
+       fixtures), c_remeasure.py, tiearb2_corpus_lib.py, and the R3.1 CLOSED
+       four-entry allow_null table;
+     - worktree-agent-a43f00f675fd11b65, f7722ed3 — W7 ONLY, the
+       verify_tier1_rust.py --out change.
+
+   RUN/GATE_BITEXACT_HEAD.json (produced at the R3 RUN dir, carried forward as
+   valid — see below) was produced AT this sha and records it exactly:
+   PASS, 15,360/15,360 value-bit-identical, 0 mismatches, legal_mask_cache true.
+   It therefore satisfies the FIRST disjunct of READ_RULE §2's git_rev conjunct
+   directly, without relying on the descendant clause.
+
+2. 23c6211efa9723a628d03c7f5d12e36f632546c1
+
+   The second scoped merge, 12 paths: W10 — measurement/tiearb_widening_20260817/
+   {WORKERS.conf, run_gen.sh}, the generation launcher the run never had
+   (§0.H/§0.I); the W6 conf-name rewire (§0.K); the §0.G acceptance re-split and
+   its two new fixtures (leg-manifest and smoke-manifest). Builder 682d8f54.
+
+3. 81c0c838e8c5947f5578927ba7699c7ddde75196
+
+   The third scoped merge, 16 paths, TWO SOURCES again:
+     - worktree-agent-acb67fb738d22b57f, 1670f030 — the TWO-BOX SCORING LAYER
+       (stage_chunks.py, ALLOCATION.conf, run_scoring.sh, merge_legs.py /
+       merge_scoring.sh, 36 tests). R4-4.
+     - worktree-agent-ac2cd3b736f6e2bcc, 682d8f54..5c517cec — the R4 W-code
+       delta: seven-comparison G-DISJOINT with the probe → gate → apply →
+       carry-forward flow, W6 run-ALL-gates-and-aggregate (the fix for the
+       set -e abort that stopped GATE_DRAW.json ever emitting), W10 three-way
+       bands + --dry-run, W3 N-file G-BAND, floors.py, fixtures, tests.
+
+   CAMPAIGN.md was taken as a 3-WAY PATCH rather than a checkout: the two-box
+   branch forks at 06adef99 and HEAD had since corrected the clair-puct
+   "python-era" mislabel there; the two edits are in different hunks and both
+   survive.
+
+────────────────────────────────────────────────────────────────────────────────
+WHY THE GATE IS NOT RE-RUN AT MERGE 3. READ_RULE §2 admits the step-2 merge sha
+ITSELF as the first disjunct, and GATE_BITEXACT_HEAD.json records 413e9856
+verbatim. Merges 2 and 3 DO touch scripts/tiletie/, so neither is offered as a
+satisfying "descendant whose cumulative diff touches nothing under
+scripts/tiletie/, src/, engine/, rust/" — that clause is not invoked. Both
+landed BEFORE this blind commit and before any position of this run was scored.
+The bit-exactness the gate establishes is a property of the rust tier1 leg
+(carc_rs.tier1_leg vs the python judge), which none of the three merges alters.
+
+────────────────────────────────────────────────────────────────────────────────
+ACCEPTANCE AND COST STATE AT THIS COMMIT
+
+  §9 step 4a (amended §0.G, genuinely corpus-free; R4 carries it):
+      PASS — 13 gates resolved, 0 unresolved, 0 fallback-only,
+      0 unaudited fallbacks. Includes the FLOORS.json fixture and the
+      leg-manifest / smoke-manifest fixtures.
+
+  Tests on main at merge 3: test_tiearb_widening.py 103,
+      test_tiearb_widening_chunks.py 36, test_tiletie_arb_backend.py 69
+      (65 pass + 4 skip) = 204 passed, 4 skipped.
+
+  R4-8b step 1, the c_IF remeasure (four judge smokes, idle box, production
+  knobs, ALL SIX run_tiletie path flags explicit per §0.O as widened in R4.4) —
+  realized c_worker_secs_per_playout, NO HALT on any leg (one-sided, >1.25):
+
+      S1 IF  clair-puct     1.75579  / committed 2.350000  = 0.747
+      S2 IF  clair-puct     1.62786  / committed 2.350000  = 0.693
+      S1 ARB tier1-greedy   0.13923  / committed 0.178232  = 0.781
+      S2 ARB tier1-greedy   0.13595  / committed 0.178232  = 0.763
+
+  All four smokes reported crn_cross_leg_identical = true.
+  The 1.91x c_IF gap resolves to 1.37x: mean realized IF 1.692 sits BETWEEN the
+  committed 2.35 (28% conservative) and the idle-smoke prior 1.2313 (27%
+  optimistic). Neither prior figure was correct.
+
+  GEN leg (measured pre-corpus, R3): 297.6 worker-s/game vs R4's committed
+  372.0 = 297.6 x 1.25. The margin is retained deliberately — it is what keeps
+  the one-sided HALT meaningful (it trips above 465.0) — and the owner funded
+  the conservative number.
+
+  FULL at realized c: ~1,244 wh (vs 1,493 at committed). FUNDED at this shape,
+  owner verbatim "fund full floor".

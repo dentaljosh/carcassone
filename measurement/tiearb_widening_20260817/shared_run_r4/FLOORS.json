@@ -1,0 +1,30 @@
+{
+  "banked_s1": 551,
+  "banked_s2cap": 103,
+  "exclusion_bound_s1": 7,
+  "exclusion_bound_s2": 6,
+  "extension_band": 137000000000,
+  "games_extension_s1": 508,
+  "games_extension_s2": 4840,
+  "gate_floor_s1": 1283,
+  "gate_floor_s2": 1045,
+  "max_per_game_s1": 4,
+  "max_per_game_s2": 3,
+  "n1": 1350,
+  "n2": 1100,
+  "note": "DESIGN R4-2.2. Written BEFORE the extension band is claimed and before one game is generated (R4-8b). Also the FROZEN denominator for the R4-3 exclusion bound: a VOID is not curable by generating more games.",
+  "option_label": "FULL",
+  "r_s1": 1.574,
+  "r_s2cap": 0.206,
+  "rung3_bought": true,
+  "sub_ranges": {
+    "s1": [
+      137000000000,
+      137000000507
+    ],
+    "s2": [
+      137000000508,
+      137000005347
+    ]
+  }
+}
