@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED** |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -709,6 +709,85 @@ same field, different emitter schema. Identical conjunction, with (iv) vacuous p
 Any **other** key under `execution` / `preflight.wheel` that differs keeps the **unchanged RAISE
 default** (D3). **This ruling licenses one field, under four conjuncts, for one enumerated rev
 pair; it opens nothing else.**
+
+### D4.14 RULING — `preflight.checks`, ruled EXHAUSTIVELY; and the classification sweep, COMMISSIONED
+
+**`preflight.checks` is a CLOSED SET of seven sub-keys** — verified against the emitter
+(`run_tiletie.preflight()`): `gate`, `leaf_hash`, `process_census`, `git_clean`, `positions`, `m`,
+`arb_backend`. So I rule all seven, not only the five that diverged: this block becomes
+**closed-by-enumeration today**, which is the sweep's goal applied to one block.
+
+| sub-key | class | grounds |
+|---|---|---|
+| `leaf_hash` | **IDENTITY_REQUIRED** *(unchanged — do not touch)* | ⚠️ **GATE-ADDRESSED**: `G-LEAF` reads `preflight.checks.leaf_hash.ok`. Constant across chunks; passes silently today. **May not be reclassified without a ruling.** |
+| `m` | **IDENTITY_REQUIRED** *(unchanged)* | `M` is a design constant per stratum (128 / 32), not chunk-scoped. Constant today; passes silently. |
+| `process_census` | **PER_CHUNK** | Timestamped telemetry — `ps` + loadavg at launch, **differs by construction on every invocation, even for byte-identical re-runs.** ⭐ **The emitter itself classifies it**: `ok` is computed `for name, c in checks.items() if name != "process_census"` — *"the process census is informational and never gates."* |
+| `gate` | **PER_CHUNK** | chunk-scoped `--gate-out` path. |
+| `positions` | **PER_CHUNK** | chunk-scoped `--positions-dir`. ⚠️ **Sweep item, not assumed away:** if this block carries a *count* sub-field, that count is a **completeness quantity** and must not be silently PER_CHUNK'd — D4's whole lesson was a completeness count nobody aggregated. The sweep enumerates its sub-keys and says which. |
+| `git_clean` | **PER_CHUNK (recorded) + LICENCE-GOVERNED (asserted)** | See the interaction below — it is **not** double-ruled. |
+| `arb_backend` | **JUDGE_SCOPED_IDENTITY** | equal across all chunks **within a judge**; cross-judge comparison **not performed** — `clair-puct` records the inert-flag note, `tier1-greedy` the wheel block, so the two shapes are not comparable and an equality between them would be meaningless rather than false. |
+
+**Two traps in that table, both worth stating explicitly.**
+
+⚠️ **`preflight.checks.arb_backend` is NOT the field `G-BACKEND` reads.** `G-BACKEND` reads
+**top-level** `RUN_MANIFEST::arb_backend` — the resolved string — while `preflight.checks.arb_backend`
+is `check_arb_backend()`'s **result dict**. Same name, two depths, different objects. **Classifying
+the preflight one JUDGE_SCOPED must not relax the top-level one, which stays IDENTITY_REQUIRED and
+gate-addressed.**
+
+⚠️ **Judge-scoped constancy must be ASSERTED, not assumed.** The evidence reports the *axis* of
+variation as the judge; it does not by itself prove constancy *within* a judge. So the class is an
+**active check** — equal across every chunk of the same judge, evaluated at merge time, refusing on
+a within-judge divergence — the same discipline that turned D4.13's conjunct (ii) from an
+assumption into a check.
+
+**How the `git_clean` merge rule and the D4.12 licence interact (so it is ruled once, not twice).**
+They govern different verbs: **the merge rule says how the field is CARRIED; the licence says what
+must be TRUE.**
+
+- **Merge rule (PER_CHUNK):** each chunk's `{ok, git_rev, dirty_paths}` is recorded per chunk. It
+  raises on nothing by itself, because `git_rev` legitimately differs across the licensed tranche
+  pair and `dirty_paths` is telemetry.
+- **D4.12 licence (assertion):** consumes `preflight.checks.git_clean.git_rev` for the **base-rev**
+  match against the enumerated pair, and asserts `preflight.checks.git_clean.ok == true` **on every
+  chunk**. A failure here refuses under the licence's own message, not under a merge-rule message.
+
+⇒ **One field, one recording rule, one assertion, no overlap.** The merge never independently
+compares `git_rev` across chunks — that comparison belongs to the licence, and duplicating it in
+the merge rule would produce a second, differently-worded refusal for one condition.
+
+**Everything else under `preflight.checks`** — and every dotted path already IDENTITY_REQUIRED —
+**keeps the fail-closed default.**
+
+### D4.14b COMMISSIONED — the classification sweep: exhaustive-by-ENUMERATION, not by crash
+
+**The executor's point is correct and is the real finding here: this is the THIRD telemetry-shaped
+field discovered by refusal** (`execution` → D3, `git_rev`/`code_rev` → D4.11, `preflight.checks` →
+here). Three refusals is a pattern, and the pattern says the classification is being built by
+crashing into it. **Commissioned**, to be presented for sign-off **in the same round**:
+
+1. **Enumerate from the REAL artifacts, not from reading code** — the full key set of the
+   `RUN_MANIFEST` (all 32 sources) **and** the per-leg manifests from **BOTH emitters**
+   (`run_tiletie`/`oracle_score_pilot` and `tier1_rust_leg` — different schemas; `execution` vs
+   `preflight.wheel` is exactly that difference, and reading one would have missed the other).
+2. **Classify EVERY remaining unclassified key**, one of: `IDENTITY_REQUIRED` · `AGGREGATE_SUM` ·
+   `PER_CHUNK` · `JUDGE_SCOPED_IDENTITY` · `LICENCE_GOVERNED` · `TELEMETRY` (PER_CHUNK, differs by
+   construction).
+3. **Record the OBSERVED divergence axis per key** — none / box / chunk / judge / invocation / rev
+   — **evidenced from the 32 artifacts**, so a classification is a measurement, not an opinion.
+4. ⭐ **Flag every GATE-ADDRESSED key by dotted path, cross-checked against the READ_RULE's address
+   list — and assert the converse: that every gate-addressed dotted path in the READ_RULE EXISTS in
+   the enumerated schema.** This is the check that would have caught `G-SALT`'s primary being
+   audited at neither pass, and the missing `RUN_MANIFEST` fixture. Gate-addressed keys are
+   IDENTITY_REQUIRED and may not be reclassified without a ruling.
+5. **Deliver it as a RE-RUNNABLE script**, not a one-time table, so the next schema change diffs
+   mechanically instead of refusing at merge time.
+
+**After the sweep, the fail-closed default changes meaning, and that is the point:** an
+unclassified-key raise no longer means *"a field nobody thought about"* — it means **a SCHEMA
+CHANGE: a new emitter field**. **That is exactly what should raise**, and it is the first time in
+this campaign that the default will be doing that job rather than absorbing the backlog of fields
+never enumerated.
 
 ---
 
