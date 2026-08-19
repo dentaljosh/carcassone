@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change* |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -709,6 +709,161 @@ same field, different emitter schema. Identical conjunction, with (iv) vacuous p
 Any **other** key under `execution` / `preflight.wheel` that differs keeps the **unchanged RAISE
 default** (D3). **This ruling licenses one field, under four conjuncts, for one enumerated rev
 pair; it opens nothing else.**
+
+### D4.14 RULING — `preflight.checks`, ruled EXHAUSTIVELY; and the classification sweep, COMMISSIONED
+
+**`preflight.checks` is a CLOSED SET of seven sub-keys** — verified against the emitter
+(`run_tiletie.preflight()`): `gate`, `leaf_hash`, `process_census`, `git_clean`, `positions`, `m`,
+`arb_backend`. So I rule all seven, not only the five that diverged: this block becomes
+**closed-by-enumeration today**, which is the sweep's goal applied to one block.
+
+| sub-key | class | grounds |
+|---|---|---|
+| `leaf_hash` | **IDENTITY_REQUIRED** *(unchanged — do not touch)* | ⚠️ **GATE-ADDRESSED**: `G-LEAF` reads `preflight.checks.leaf_hash.ok`. Constant across chunks; passes silently today. **May not be reclassified without a ruling.** |
+| `m` | **IDENTITY_REQUIRED** *(unchanged)* | `M` is a design constant per stratum (128 / 32), not chunk-scoped. Constant today; passes silently. |
+| `process_census` | **PER_CHUNK** | Timestamped telemetry — `ps` + loadavg at launch, **differs by construction on every invocation, even for byte-identical re-runs.** ⭐ **The emitter itself classifies it**: `ok` is computed `for name, c in checks.items() if name != "process_census"` — *"the process census is informational and never gates."* |
+| `gate` | **PER_CHUNK** | chunk-scoped `--gate-out` path. |
+| `positions` | **PER_CHUNK** | chunk-scoped `--positions-dir`. ⚠️ **Sweep item, not assumed away:** if this block carries a *count* sub-field, that count is a **completeness quantity** and must not be silently PER_CHUNK'd — D4's whole lesson was a completeness count nobody aggregated. The sweep enumerates its sub-keys and says which. |
+| `git_clean` | **PER_CHUNK (recorded) + LICENCE-GOVERNED (asserted)** | See the interaction below — it is **not** double-ruled. |
+| `arb_backend` | **JUDGE_SCOPED_IDENTITY** | equal across all chunks **within a judge**; cross-judge comparison **not performed** — `clair-puct` records the inert-flag note, `tier1-greedy` the wheel block, so the two shapes are not comparable and an equality between them would be meaningless rather than false. |
+
+**Two traps in that table, both worth stating explicitly.**
+
+⚠️ **`preflight.checks.arb_backend` is NOT the field `G-BACKEND` reads.** `G-BACKEND` reads
+**top-level** `RUN_MANIFEST::arb_backend` — the resolved string — while `preflight.checks.arb_backend`
+is `check_arb_backend()`'s **result dict**. Same name, two depths, different objects. **Classifying
+the preflight one JUDGE_SCOPED must not relax the top-level one, which stays IDENTITY_REQUIRED and
+gate-addressed.**
+
+⚠️ **Judge-scoped constancy must be ASSERTED, not assumed.** The evidence reports the *axis* of
+variation as the judge; it does not by itself prove constancy *within* a judge. So the class is an
+**active check** — equal across every chunk of the same judge, evaluated at merge time, refusing on
+a within-judge divergence — the same discipline that turned D4.13's conjunct (ii) from an
+assumption into a check.
+
+**How the `git_clean` merge rule and the D4.12 licence interact (so it is ruled once, not twice).**
+They govern different verbs: **the merge rule says how the field is CARRIED; the licence says what
+must be TRUE.**
+
+- **Merge rule (PER_CHUNK):** each chunk's `{ok, git_rev, dirty_paths}` is recorded per chunk. It
+  raises on nothing by itself, because `git_rev` legitimately differs across the licensed tranche
+  pair and `dirty_paths` is telemetry.
+- **D4.12 licence (assertion):** consumes `preflight.checks.git_clean.git_rev` for the **base-rev**
+  match against the enumerated pair, and asserts `preflight.checks.git_clean.ok == true` **on every
+  chunk**. A failure here refuses under the licence's own message, not under a merge-rule message.
+
+⇒ **One field, one recording rule, one assertion, no overlap.** The merge never independently
+compares `git_rev` across chunks — that comparison belongs to the licence, and duplicating it in
+the merge rule would produce a second, differently-worded refusal for one condition.
+
+**Everything else under `preflight.checks`** — and every dotted path already IDENTITY_REQUIRED —
+**keeps the fail-closed default.**
+
+### D4.14b COMMISSIONED — the classification sweep: exhaustive-by-ENUMERATION, not by crash
+
+**The executor's point is correct and is the real finding here: this is the THIRD telemetry-shaped
+field discovered by refusal** (`execution` → D3, `git_rev`/`code_rev` → D4.11, `preflight.checks` →
+here). Three refusals is a pattern, and the pattern says the classification is being built by
+crashing into it. **Commissioned**, to be presented for sign-off **in the same round**:
+
+1. **Enumerate from the REAL artifacts, not from reading code** — the full key set of the
+   `RUN_MANIFEST` (all 32 sources) **and** the per-leg manifests from **BOTH emitters**
+   (`run_tiletie`/`oracle_score_pilot` and `tier1_rust_leg` — different schemas; `execution` vs
+   `preflight.wheel` is exactly that difference, and reading one would have missed the other).
+2. **Classify EVERY remaining unclassified key**, one of: `IDENTITY_REQUIRED` · `AGGREGATE_SUM` ·
+   `PER_CHUNK` · `JUDGE_SCOPED_IDENTITY` · `LICENCE_GOVERNED` · `TELEMETRY` (PER_CHUNK, differs by
+   construction).
+3. **Record the OBSERVED divergence axis per key** — none / box / chunk / judge / invocation / rev
+   — **evidenced from the 32 artifacts**, so a classification is a measurement, not an opinion.
+4. ⭐ **Flag every GATE-ADDRESSED key by dotted path, cross-checked against the READ_RULE's address
+   list — and assert the converse: that every gate-addressed dotted path in the READ_RULE EXISTS in
+   the enumerated schema.** This is the check that would have caught `G-SALT`'s primary being
+   audited at neither pass, and the missing `RUN_MANIFEST` fixture. Gate-addressed keys are
+   IDENTITY_REQUIRED and may not be reclassified without a ruling.
+5. **Deliver it as a RE-RUNNABLE script**, not a one-time table, so the next schema change diffs
+   mechanically instead of refusing at merge time.
+
+**After the sweep, the fail-closed default changes meaning, and that is the point:** an
+unclassified-key raise no longer means *"a field nobody thought about"* — it means **a SCHEMA
+CHANGE: a new emitter field**. **That is exactly what should raise**, and it is the first time in
+this campaign that the default will be doing that job rather than absorbing the backlog of fields
+never enumerated.
+
+### D4.15 SIGN-OFF — the classification sweep (builder `684647f9` on `206e259f`)
+
+**SIGNED OFF. Both findings confirmed, both `(a)` and `(b)` confirmed, nothing rejected.** Verified
+against the artifacts and the code, not the summary: 355 artifacts, 134 rows, 0 UNCLASSIFIED,
+0 gate-addressed paths missing.
+
+**Finding 1 — the third `carc_rs_build` address: CONFIRMED as a NARROWING.** I checked the mask
+itself rather than the characterization. `_mask_licensed_build` replaces **only the key literally
+named `carc_rs_build`, and only when its value is a string**, recursing through dicts and lists;
+**everything else in the judge-scoped block — `carc_rs_binary_sha`, the version and toolchain
+components, the wheel path — remains under `preflight.checks.arb_backend`'s judge-scoped
+equality.** The extracted value is returned and routed through D4.13's four conjuncts exactly once,
+with `BUILD_LICENSED_PATHS` enumerating all three addresses. **The refusal is narrowed by exactly
+one field; the licence is not widened.** ⭐ And the sweep found this by **enumeration rather than by
+a merge refusal** — nested inside another classified block, invisible to top-level classification.
+That is the sweep doing precisely the job it was commissioned for, on its first outing.
+
+> **Recommended hardening, explicitly NON-BLOCKING:** the mask matches by **key name**, while the
+> licence matches by **dotted path** — two different scopes for one field. Assert that the set of
+> masked occurrences **equals** the set of enumerated licensed paths present in that manifest, so
+> the two cannot silently diverge if a fourth occurrence ever appears. It is non-blocking because
+> the sweep's freshness test is wired to `merge_legs` and a fourth occurrence is a **schema
+> change**, which now raises — but the assertion is one line and closes it definitively.
+
+**Finding 2 — the carry-forward rule: CONFIRMED as the correct GENERAL behaviour, NOT an
+enumerated preserve-list.** Grounds, in order:
+
+1. ⭐ **An enumerated preserve-list has the exact failure mode this campaign spent three rulings
+   fixing** — you enumerate what you have already crashed into. `c_remeasure` would have been on
+   the list only because it nearly broke; the next such key would not be.
+2. **The merge has no mandate to delete what it does not produce.** Its job is to *produce* merged
+   fields, not to own the file.
+3. **The asymmetry of harm favours carry-forward**: deleting a gate-addressed block makes the gate
+   read **ABSENT ⇒ FAIL**, discovered only at read-out, after the spend.
+
+Verified in code: **top-level only**, carried **verbatim**, *"never merged into and never
+rewritten"*, and recorded in `merge.preserved_from_existing` (live: `['c_remeasure','stub']`).
+Top-level-only is right — nested carry-forward could resurrect a deleted sub-key inside a block the
+merge *does* produce, which would be worse than either failure it prevents.
+
+> ⚠️ **Named residual — STALE PRESERVATION.** A key whose producer stops writing it is preserved
+> forever **from the merge's own prior output**, self-perpetuating and invisible. The guard already
+> exists: the sweep's freshness test surfaces a disappeared key as a schema change.
+> **Recommended hardening, non-blocking:** record the source file's **sha256 + mtime** per preserved
+> key, so a preserved block's *age* is visible rather than inferred.
+
+**(a) The 7/7 implementation matches D4.14 — verified row by row**, and both traps are honored:
+top-level `arb_backend` is **IDENTITY_REQUIRED, flagged gate-addressed** (row 21) and untouched;
+`preflight.checks.arb_backend` is JUDGE_SCOPED_IDENTITY *"equal WITHIN a judge, **ACTIVELY
+checked**; cross-judge not compared"* (row 39). `git_clean` reads *"carried per chunk; ASSERTED by
+the D4.12 licence (**ruled once, not twice**)"* — the interaction as ruled. The dry-check result is
+the **D4.13 trap honored**: `clair-puct` conjunct (iv) PASSED with chunk14 landed, **tier1 reported
+VACUOUS** both tranches — *vacuous reported as vacuous, never as passed*.
+
+- **`TELEMETRY` as a distinct class label for `process_census` is ACCEPTED and is an improvement**
+  on my "PER_CHUNK (telemetry)": it distinguishes *recorded per chunk because chunk-scoped* from
+  *recorded per chunk because it differs by construction*.
+- ✅ **My D4.14 `positions` flag CLOSES, with the reason rather than by assumption.**
+  `check_positions` returns `n_leg_files` — a **file** count, not a **rid** count. It could not
+  have caught D4: a leg file can exist and contain 793 of 1,344 rids. The rid-coverage quantity —
+  the one D4 was actually about — is carried by D4.3's cross-layer invariant and the merge's own
+  completeness check (**1344/1344, every leg, both judges**). PER_CHUNK is correct for it.
+- **The builder generalised D4.11 Amendment 2 better than I specified it**: rather than only
+  correcting the mis-spelled pilot path, the witness now **asserts every instrument path EXISTS at
+  both revs** — the generalisable form of the lesson, and it would catch the next vacuous-path
+  witness rather than that one.
+
+**(b) Closed-by-enumeration HOLDS, so the D4.14 meaning-change GOES LIVE.** 0 UNCLASSIFIED,
+0 gate-addressed paths missing, every classification carrying its observed divergence axis, and the
+generator re-runnable with a freshness test wired to `merge_legs`. **From here, an unclassified-key
+raise means a SCHEMA CHANGE — a new emitter field — which is exactly what should raise.** The
+default has stopped absorbing a backlog and started doing its job.
+
+> **SIGNATURE: the classification layer is complete and signed. The pipeline may rerun.** The two
+> hardenings above are follow-ups, **not conditions** — neither blocks the verdict.
 
 ---
 
