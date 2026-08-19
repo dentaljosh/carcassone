@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences. **§D4.18: 4 window-truncation rids dropped WHOLE-RID** (what `G-ARMS` already implies); **no post-hoc numeric bound enacted** — the pair's own floor governs, 1,340 ≥ 1,283 |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences. **§D4.18: 4 window-truncation rids dropped WHOLE-RID** (what `G-ARMS` already implies); **no post-hoc numeric bound enacted** — the pair's own floor governs, 1,340 ≥ 1,283. **§D4.19: the S2 void-scope stated GENERALLY** (artifact paths · analyzer conjuncts · READOUT key-paths alike), dual-witness, exact-segment match |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -1109,6 +1109,75 @@ so the move-aside is enforced rather than remembered.
    `WindowTruncationError` class.
 6. Emit the (c) sentence in the READOUT.
 7. Move the stale 08:13 artifacts aside before the run; record the move in provenance.
+
+### D4.19 RULING — READOUT-internal S2 keys void-scope too; the rule stated GENERALLY this time
+
+**CONFIRMED.** `widening.j_rider.s2.*` bears the S2 stratum marker, so it falls under the rule
+D4.16 blocker 2 already stated — *"only addresses bearing the S2 stratum marker, and only when the
+void witness is present."* The artifact is already honest
+(`j_rider.s2 = {status: VOID_S2, void: true, n_capped: 0}`); it is the **harness's address
+resolution** that had not been told.
+
+⭐ **This is the THIRD time I have stated a general rule and scoped my implementation guidance
+narrowly** (D4.16 → artifact paths; D4.17 ext 1 → `G-COMPLETE`'s analyzer-side conjunct; now →
+READOUT-internal keys). Rather than enumerate a third instance, **the rule is restated in its
+general form so it stops requiring per-instance rulings:**
+
+> **ANY address bearing the S2 stratum marker void-scopes under the positive witness — whether it
+> is an artifact PATH (`RUN_MANIFEST_S2.json`, `per_position_s2.jsonl`), an analyzer-side CONJUNCT
+> (`G-COMPLETE`'s `s2_n`), or a KEY PATH INSIDE an artifact (`widening.j_rider.s2.*`). The two
+> conditions travel with it unchanged: UNIFORM across all S2 addresses (not only blocking ones),
+> and NO LEAK TO S1.**
+
+**The dual-witness refinement: ACCEPTED, and it is the right shape.** Scope on the artifact's own
+`widening.j_rider.s2.void == true` **cross-checked against** `GATE_DISJOINT`'s
+`digest_exclusions.<s2>.void == true` — **both must agree; disagreement RAISES.** This is the same
+"two independent things must agree" form as D4.11's licence (code-resident pair **and** witness
+file), and it closes both one-sided failures:
+
+- **gate says void, READOUT does not** ⇒ the analyzer ignored the void — RAISE.
+- **READOUT says void, gate does not** ⇒ the analyzer **self-declared** a void with no gate basis
+  — RAISE. This is D4.16's *"absence must never be read as a void"* hardening, applied one layer
+  in: a component may not vouch for itself.
+
+⚠️ **THE OVER-MATCH TRAP, named because it is the failure this campaign keeps producing.** The
+marker is the **exact path segment `.s2.`** (or a declared S2-key list) — **never a prefix match on
+`j_rider.*` or a substring match on `s2`.** Three sibling addresses live under `j_rider.` and
+**must remain fully in force**:
+
+| address | status | why |
+|---|---|---|
+| `widening.j_rider.s1_replication.*` | **NOT void-scoped** | an **S1** quantity — the ≈244-capped-ply replication rider |
+| `widening.j_rider.interaction.*` | **NOT void-scoped** | also **S1** (computed on S1 ∩ capped) |
+| `widening.j_rider.d_draw.*` | **NOT void-scoped** | already governed by the **`allow_null` closed list** (§1.2) — `null` until W9 runs, with `d_draw_ran == false` as its witness. **Two different mechanisms; do not conflate them.** |
+
+**§5 then resolves at primary**, reported `VOID (stratum) — not evaluated` with both witnesses
+cited — **not** `resolved_at: <path>`, because nothing resolved and nothing was checked. Its
+fallback (`per_position_s2.jsonl`) is already void-scoped as an artifact path, so **both** sides of
+the row report VOID rather than one silently standing in for the other. **No rung-2 address is
+touched**, which is the non-leak condition doing its work: rung 3's branch table is never
+evaluated, so these six addresses feed nothing that fires.
+
+**BUILDER SPEC (one paragraph).** In `acceptance_widening`, extend the existing S2 void-scope from
+artifact paths to **address key-paths**: an address whose dotted path contains the exact segment
+`.s2.` is scoped `VOID (stratum) — not evaluated` **iff** `GATE_DISJOINT.json::digest_exclusions.<s2>.void`
+**and** `READOUT.json::widening.j_rider.s2.void` are **both** `true`; if exactly one is true,
+**RAISE** with a message naming which side disagreed. Match on the exact segment, never a prefix or
+substring — `s1_replication`, `interaction` and `d_draw` stay in force, and `d_draw`'s nullability
+remains the `allow_null` mechanism, untouched. Report the scoped row with both witnesses cited and
+no `resolved_at`. `ABSENT IS FAIL` is unchanged for every non-`.s2.` address, in this artifact and
+every other.
+
+**For the record, the verdict facts as reported** (adjudicated by the frozen branch table, not by
+me): rung 2 **`W-RISING`** — `Δ(16→64) = 0.0670`, `se 0.0228`, `z 2.94`, `CI [0.0215, 0.1111]`,
+against the committed floor `+0.040`; both conjuncts hold (`lower(CI) > 0` **and** `Δ ≥ 0.040`).
+All seven analyzer gates PASS; `G-REPLICATE` in envelope at every rung with
+`naive_envelope_caveat false`; rung 3 `VOID_S2`; 4 window-truncated rids dropped whole per D4.18.
+⚠️ **One observation the read-out already owes**: the realized `se 0.0228` sits **above** the
+pre-registered bracket `[0.0179, 0.0200]` — the design's variance model under-predicted modestly.
+It changes no branch (the realized CI governs, and the floor is fixed), and READ_RULE §3 **already
+requires** the realized CIs to be printed **beside the predicted brackets**, so this is a
+requirement already in force rather than anything new.
 
 ---
 
