@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED** |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change* |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -788,6 +788,82 @@ unclassified-key raise no longer means *"a field nobody thought about"* — it m
 CHANGE: a new emitter field**. **That is exactly what should raise**, and it is the first time in
 this campaign that the default will be doing that job rather than absorbing the backlog of fields
 never enumerated.
+
+### D4.15 SIGN-OFF — the classification sweep (builder `684647f9` on `206e259f`)
+
+**SIGNED OFF. Both findings confirmed, both `(a)` and `(b)` confirmed, nothing rejected.** Verified
+against the artifacts and the code, not the summary: 355 artifacts, 134 rows, 0 UNCLASSIFIED,
+0 gate-addressed paths missing.
+
+**Finding 1 — the third `carc_rs_build` address: CONFIRMED as a NARROWING.** I checked the mask
+itself rather than the characterization. `_mask_licensed_build` replaces **only the key literally
+named `carc_rs_build`, and only when its value is a string**, recursing through dicts and lists;
+**everything else in the judge-scoped block — `carc_rs_binary_sha`, the version and toolchain
+components, the wheel path — remains under `preflight.checks.arb_backend`'s judge-scoped
+equality.** The extracted value is returned and routed through D4.13's four conjuncts exactly once,
+with `BUILD_LICENSED_PATHS` enumerating all three addresses. **The refusal is narrowed by exactly
+one field; the licence is not widened.** ⭐ And the sweep found this by **enumeration rather than by
+a merge refusal** — nested inside another classified block, invisible to top-level classification.
+That is the sweep doing precisely the job it was commissioned for, on its first outing.
+
+> **Recommended hardening, explicitly NON-BLOCKING:** the mask matches by **key name**, while the
+> licence matches by **dotted path** — two different scopes for one field. Assert that the set of
+> masked occurrences **equals** the set of enumerated licensed paths present in that manifest, so
+> the two cannot silently diverge if a fourth occurrence ever appears. It is non-blocking because
+> the sweep's freshness test is wired to `merge_legs` and a fourth occurrence is a **schema
+> change**, which now raises — but the assertion is one line and closes it definitively.
+
+**Finding 2 — the carry-forward rule: CONFIRMED as the correct GENERAL behaviour, NOT an
+enumerated preserve-list.** Grounds, in order:
+
+1. ⭐ **An enumerated preserve-list has the exact failure mode this campaign spent three rulings
+   fixing** — you enumerate what you have already crashed into. `c_remeasure` would have been on
+   the list only because it nearly broke; the next such key would not be.
+2. **The merge has no mandate to delete what it does not produce.** Its job is to *produce* merged
+   fields, not to own the file.
+3. **The asymmetry of harm favours carry-forward**: deleting a gate-addressed block makes the gate
+   read **ABSENT ⇒ FAIL**, discovered only at read-out, after the spend.
+
+Verified in code: **top-level only**, carried **verbatim**, *"never merged into and never
+rewritten"*, and recorded in `merge.preserved_from_existing` (live: `['c_remeasure','stub']`).
+Top-level-only is right — nested carry-forward could resurrect a deleted sub-key inside a block the
+merge *does* produce, which would be worse than either failure it prevents.
+
+> ⚠️ **Named residual — STALE PRESERVATION.** A key whose producer stops writing it is preserved
+> forever **from the merge's own prior output**, self-perpetuating and invisible. The guard already
+> exists: the sweep's freshness test surfaces a disappeared key as a schema change.
+> **Recommended hardening, non-blocking:** record the source file's **sha256 + mtime** per preserved
+> key, so a preserved block's *age* is visible rather than inferred.
+
+**(a) The 7/7 implementation matches D4.14 — verified row by row**, and both traps are honored:
+top-level `arb_backend` is **IDENTITY_REQUIRED, flagged gate-addressed** (row 21) and untouched;
+`preflight.checks.arb_backend` is JUDGE_SCOPED_IDENTITY *"equal WITHIN a judge, **ACTIVELY
+checked**; cross-judge not compared"* (row 39). `git_clean` reads *"carried per chunk; ASSERTED by
+the D4.12 licence (**ruled once, not twice**)"* — the interaction as ruled. The dry-check result is
+the **D4.13 trap honored**: `clair-puct` conjunct (iv) PASSED with chunk14 landed, **tier1 reported
+VACUOUS** both tranches — *vacuous reported as vacuous, never as passed*.
+
+- **`TELEMETRY` as a distinct class label for `process_census` is ACCEPTED and is an improvement**
+  on my "PER_CHUNK (telemetry)": it distinguishes *recorded per chunk because chunk-scoped* from
+  *recorded per chunk because it differs by construction*.
+- ✅ **My D4.14 `positions` flag CLOSES, with the reason rather than by assumption.**
+  `check_positions` returns `n_leg_files` — a **file** count, not a **rid** count. It could not
+  have caught D4: a leg file can exist and contain 793 of 1,344 rids. The rid-coverage quantity —
+  the one D4 was actually about — is carried by D4.3's cross-layer invariant and the merge's own
+  completeness check (**1344/1344, every leg, both judges**). PER_CHUNK is correct for it.
+- **The builder generalised D4.11 Amendment 2 better than I specified it**: rather than only
+  correcting the mis-spelled pilot path, the witness now **asserts every instrument path EXISTS at
+  both revs** — the generalisable form of the lesson, and it would catch the next vacuous-path
+  witness rather than that one.
+
+**(b) Closed-by-enumeration HOLDS, so the D4.14 meaning-change GOES LIVE.** 0 UNCLASSIFIED,
+0 gate-addressed paths missing, every classification carrying its observed divergence axis, and the
+generator re-runnable with a freshness test wired to `merge_legs`. **From here, an unclassified-key
+raise means a SCHEMA CHANGE — a new emitter field — which is exactly what should raise.** The
+default has stopped absorbing a backlog and started doing its job.
+
+> **SIGNATURE: the classification layer is complete and signed. The pipeline may rerun.** The two
+> hardenings above are follow-ups, **not conditions** — neither blocks the verdict.
 
 ---
 
