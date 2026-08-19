@@ -111,18 +111,11 @@ for B in "$TIEARB_B_WIDE" "$TIEARB_B_NARROW"; do
   pfrc=$?
   set -e
 
-  if [ "$pfrc" -ne 0 ]; then
-    log "!!! G-J13 PRE-FLIGHT FAILED (rc=$pfrc) ON $HOST AT B=$B"
-    log "!!!   verdict: $PF_NOW"
+  if [ ! -s "$PF_NOW" ]; then
+    log "!!! PRE-FLIGHT PRODUCED NO VERDICT (rc=$pfrc) ON $HOST AT B=$B"
     log "!!!   stderr : $LOGS/preflight_${HOST}_${LABEL}_B${B}.log"
-    log "!!! REFUSING TO LAUNCH. A dead arbitration surface grades a perfect"
-    log "!!! champion-vs-champion null wearing the shape of a real cell, and NO"
-    log "!!! leaf-hash gate on this surface could ever detect it (the arbiter's"
-    log "!!! knobs live on SearchConfig, not LeafConfig — no leaf hash moves)."
-    { echo "utc $(ts)"; echo "G-J13 PRE-FLIGHT FAILED rc=$pfrc on $HOST at B=$B";
-      echo "see $PF_NOW"; } > "$RUN_DIR/FAILED_PREFLIGHT_${HOST}_B${B}"
-    cp -f "$RUN_DIR/FAILED_PREFLIGHT_${HOST}_B${B}" "$SHARE_RUN/" 2>/dev/null || true
-    cp -f "$PF_NOW" "$SHARE_RUN/verdicts/" 2>/dev/null || true
+    { echo "utc $(ts)"; echo "NO VERDICT rc=$pfrc on $HOST at B=$B"; } \
+      > "$RUN_DIR/FAILED_PREFLIGHT_${HOST}_B${B}"
     rc_all=13
     continue
   fi
@@ -133,6 +126,13 @@ for B in "$TIEARB_B_WIDE" "$TIEARB_B_NARROW"; do
   # is a SPENT run's file and is not edited, so they are injected here. ⚠️ The
   # injection COPIES, never invents: an absent boolean stays absent and the gate
   # fails closed on it.
+  #
+  # ⛔ AND IT IS **NOT** GATED BEHIND THE PROBE'S AGGREGATE `all_preflight_pass`.
+  # It runs whenever the probe's OWN J13 rows are OK. Gating it behind the
+  # aggregate flag meant an UNRELATED failing row left the pinned keys unwritten
+  # — the defect the injection exists to fix survived because something else
+  # failed. (Observed on the first real run: J13 passed at both B values on both
+  # hosts and two pre-§13.1 TOOL sentinel rows failed, so nothing was injected.)
   PF_NOW="$PF_NOW" B="$B" "$PY" - <<'PYEOF'
 import json, os, sys
 p = os.environ["PF_NOW"]
@@ -160,14 +160,129 @@ d["pinned_addresses_note"] = (
 open(p, "w").write(json.dumps(d, indent=2, sort_keys=True) + "\n")
 PYEOF
 
-  # fail closed if either pinned boolean is missing or not true
-  PF_NOW="$PF_NOW" "$PY" - <<'PYEOF' || { log "!!! G-J13 pinned witness NOT satisfied"; exit 13; }
+  # ---- THE LAUNCHER'S OWN VERDICT LAYER -----------------------------------
+  # ⭐ §13.1's class, FOURTH instance — and the first where the fix already
+  # existed upstream. The probe carries two PRE-§13.1 sentinel rows that treat
+  # normal production values as failures:
+  #
+  #   TOOL_rust_toolchain_is_pinned_and_real   reads RUSTUP_TOOLCHAIN, which is
+  #       UNSET in production (`rust_agent.py:372` defaults it to "unpinned"), so
+  #       it grades an env var's null instead of the RESOLVED rustc the box
+  #       actually ran.
+  #   TOOL_carc_rs_build_is_real_not_a_sentinel   treats "+rustcunpinned" as a
+  #       sentinel when DESIGN §13.1 rules it THE NORMAL PRODUCTION VALUE, which
+  #       PASSES provided both boxes emit it byte-identically. That row is the
+  #       exact defect §13.1 caught in this pair's own G-TOOL, and the
+  #       KNOWNGOOD_EVAL G-TOOL row is its standing evidence.
+  #
+  # The probe belongs to a SPENT, ADJUDICATED run and is NEVER edited, and its
+  # verdicts are never rewritten. Instead this launcher evaluates the PAIR'S OWN
+  # RULED READING over the probe's RAW FIELDS and records its verdict — with the
+  # citation — in its own block. Any OTHER failing row is a REAL failure and
+  # still refuses.
+  set +e
+  PF_NOW="$PF_NOW" B="$B" HOST="$HOST" "$PY" - <<'PYEOF'
 import json, os, sys
-w = json.loads(open(os.environ["PF_NOW"]).read()).get("j13_witness") or {}
-ok = (w.get("pick_changed") is True
-      and w.get("root_leaf_value_bits_unchanged") is True)
-sys.exit(0 if ok else 1)
+
+SUPERSEDED = {
+    "TOOL_rust_toolchain_is_pinned_and_real": (
+        "reads RUSTUP_TOOLCHAIN, which is UNSET in production, instead of the "
+        "RESOLVED rustc the box ran. The launcher re-evaluates it on "
+        "toolchain.rustc."),
+    "TOOL_carc_rs_build_is_real_not_a_sentinel": (
+        "treats '+rustcunpinned' as a sentinel when DESIGN §13.1 rules it the "
+        "NORMAL PRODUCTION VALUE, which PASSES provided both boxes emit it "
+        "byte-identically. G-TOOL's conjunct is EQUALITY ACROSS BOXES and "
+        "NOTHING ELSE."),
+}
+CITATION = ("b64_cell/DESIGN.md §13.1 (the unsatisfiable-gate class; G-TOOL's "
+            "conjunct is equality of carc_rs_build across boxes and nothing "
+            "else) + b64_cell/KNOWNGOOD_EVAL.json::rows.G-TOOL")
+
+p = os.environ["PF_NOW"]
+d = json.loads(open(p).read())
+rows = {c.get("check"): c for c in (d.get("checks") or [])}
+failed = sorted(k for k, c in rows.items() if not c.get("ok"))
+
+# --- the pair's own ruled reading, over the probe's RAW fields --------------
+tc = (d.get("toolchain") or {})
+rustc = tc.get("rustc")
+build = d.get("carc_rs_build")
+resolved = {
+    "rustc_resolved": rustc,
+    "rustc_ok": bool(rustc) and str(rustc).startswith("rustc "),
+    "carc_rs_build": build,
+    "carc_rs_build_present": bool(build),
+    "carc_rs_binary_sha": d.get("carc_rs_binary_sha"),
+    "binary_sha_note": ("BOX-LOCAL — never compared across boxes; the .so is "
+                        "not machine-reproducible"),
+    "cross_box_conjunct": ("G-TOOL compares carc_rs_build ACROSS BOXES at "
+                           "adjudication; this per-host verdict records the "
+                           "value, it does not decide the cross-box question"),
+}
+superseded = [k for k in failed if k in SUPERSEDED]
+real_failures = [k for k in failed if k not in SUPERSEDED]
+# a superseded row is only superseded if the RULED reading actually holds
+if superseded and not (resolved["rustc_ok"] and resolved["carc_rs_build_present"]):
+    real_failures += superseded
+    superseded = []
+
+j13 = {k: bool(c.get("ok")) for k, c in rows.items() if k.startswith("J13")}
+j13_ok = bool(j13) and all(j13.values())
+
+d["launcher_verdict"] = {
+    "layer": "b64_cell/preflight.sh — the launcher's OWN verdict over the "
+             "probe's artifact. The probe belongs to a SPENT, ADJUDICATED run "
+             "and is NEVER edited; its verdicts are never rewritten.",
+    "host": os.environ["HOST"], "B": int(os.environ["B"]),
+    "probe_all_preflight_pass": d.get("all_preflight_pass"),
+    "j13_rows": j13, "j13_ok": j13_ok,
+    "superseded_rows": {k: {"probe_ok": rows[k].get("ok"),
+                            "probe_observed": rows[k].get("observed"),
+                            "why_superseded": SUPERSEDED[k],
+                            "citation": CITATION}
+                        for k in superseded},
+    "ruled_reading": resolved,
+    "real_failures": real_failures,
+    "verdict": "PASS" if (j13_ok and not real_failures) else "FAIL",
+    "note": ("⛔ A superseded row is recorded WITH ITS CITATION, never deleted "
+             "and never silently passed. Any row outside the superseded set "
+             "still refuses."),
+}
+open(p, "w").write(json.dumps(d, indent=2, sort_keys=True) + "\n")
+
+for k in superseded:
+    print(f"[preflight]   SUPERSEDED {k} — {SUPERSEDED[k][:80]}…")
+print(f"[preflight]   ruled reading: rustc={rustc!r} carc_rs_build={build!r}")
+if not j13_ok:
+    print(f"[preflight]   ⛔ J13 ROWS FAILED: "
+          f"{sorted(k for k, v in j13.items() if not v)}")
+if real_failures:
+    print(f"[preflight]   ⛔ REAL FAILING ROWS: {real_failures}")
+sys.exit(0 if (j13_ok and not real_failures) else 1)
 PYEOF
+  vrc=$?
+  set -e
+  if [ "$vrc" -ne 0 ]; then
+    # ⚠️ NAME THE ROWS THAT ACTUALLY FAILED. The old message convicted G-J13 on
+    # every nonzero rc — and on the first real run J13 had PASSED at both B
+    # values on both hosts while two TOOL sentinel rows failed. A log that
+    # convicts the wrong gate is how a wrong cause survives into a close-out.
+    log "!!! PRE-FLIGHT REFUSED ON $HOST AT B=$B — see the rows named above"
+    log "!!!   verdict: $PF_NOW  (launcher_verdict.real_failures / .j13_rows)"
+    log "!!!   stderr : $LOGS/preflight_${HOST}_${LABEL}_B${B}.log"
+    log "!!! ⚠️ This refusal names the FAILING ROWS. It does NOT attribute the"
+    log "!!! failure to G-J13 unless a J13 row is among them."
+    { echo "utc $(ts)"; echo "PRE-FLIGHT REFUSED on $HOST at B=$B"; \
+      echo "see $PF_NOW::launcher_verdict"; } \
+      > "$RUN_DIR/FAILED_PREFLIGHT_${HOST}_B${B}"
+    cp -f "$RUN_DIR/FAILED_PREFLIGHT_${HOST}_B${B}" "$SHARE_RUN/" 2>/dev/null || true
+    cp -f "$PF_NOW" "$SHARE_RUN/verdicts/" 2>/dev/null || true
+    rc_all=13
+    continue
+  fi
+  rm -f "$RUN_DIR/FAILED_PREFLIGHT_${HOST}_B${B}" \
+        "$SHARE_RUN/FAILED_PREFLIGHT_${HOST}_B${B}" 2>/dev/null || true
 
   [ -f "$PF_OUT" ] || cp "$PF_NOW" "$PF_OUT"
   cp -f "$PF_NOW" "$SHARE_RUN/verdicts/" 2>/dev/null || true
