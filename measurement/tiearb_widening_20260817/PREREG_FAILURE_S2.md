@@ -45,13 +45,23 @@ short and was not leaky. It was degenerate in one specific, measurable way.**
 > predicates**: S1 mines *uniform tied plies* at `--max-per-game 4`, S2 mines *capped-only plies* at
 > `--max-per-game 3`. **The knobs did NOT stay the same and the population did not either.**
 >
-> **What the data actually supports.** Within S1 the collision count is **1 at both 350 and 858
-> games** — one event in total, which is no growth signal in either direction. The S2 rate is
-> genuinely ~36× S1's full-corpus rate, but that difference is **confounded between scale and
-> stratum**, and the mechanism makes the *stratum* explanation at least as strong: **all 30
-> collisions are at ply 2**, and capped plies are *disproportionately* ply-2 positions (a near-empty
-> board offers many equal-valued symmetric placements — which is exactly what makes a large tie set
-> and therefore a capped ply). **S2 may be dense because it is capped-only, not because it is big.**
+> **What the data actually supports.** ⛔ **RE-CORRECTED 2026-08-19 (second reversal, both errors
+> named).** The paragraph that stood here claimed the S1-vs-S2 gap was **confounded between scale
+> and stratum**, on the ground that capped plies are *"disproportionately ply-2"*. **That mechanism
+> is refuted by the corpora's own `ply` fields: S1 ply-2 share `35/1344 = 2.60%`, S2
+> `28/1064 = 2.63%` — identical.** There is no stratum mechanism to invoke.
+>
+> **And the same-currency contrast the correction said was unavailable does exist**, on the same two
+> final builds: internal-dupe density **S1 `1/1344 = 0.074%` @ 858 generated games** vs **S2
+> `3/1064 = 0.282%` @ 5,340** — the same quantity at two scales, **3.8× on 6.22× the games**,
+> consistent with the fitted `b ≈ 0.906`. ⇒ **THE SCALE-GROWTH READING IS RESTORED in the correct
+> currency.**
+>
+> **Both errors on the record:** (1) the *original* text compared **mismatched** quantities (S1's
+> banked rate against S2's) **across strata** — that defect was real and its correction stands;
+> (2) the *replacement* generalised **collision** ply to **corpus** ply, which is the same
+> inferential error later found in the R5 failed-record expectation. **The fix was to find the
+> same-currency contrast, not to invent a mechanism.**
 >
 > **What survives unchanged.** The **a priori pair-counting argument** in the next paragraph is
 > untouched by this: collisions are counted over pairs and grow ~quadratically in games while a

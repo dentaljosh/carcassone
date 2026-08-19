@@ -1,138 +1,140 @@
-# RUNG 3 (`J > 4`) — MECHANICAL READ RULE, rev R5
+# RUNG 3 (`J > 4`) — MECHANICAL READ RULE, rev R5.1
 
-> **STATUS: PREREGISTRATION DRAFT, READY FOR BLIND COMMIT. NOT LAUNCHED. NO POSITION SCORED.
-> NO `Δ_ora`, `R_ora`, `Δ_arb` OR CI EXISTS.**
+> **STATUS: PREREGISTRATION PAIR, AMENDED AFTER `REVIEW_R2.md` (FAIL: 6 BLOCKING, 11 REQUIRED).
+> NOT LAUNCHED. NO POSITION SCORED. NO `Δ_ora`, `R_ora`, `Δ_arb` OR CI EXISTS.**
 >
 > Commits in **ONE commit** with [`DESIGN.md`](DESIGN.md) and `FLOORS_R5.json`, before the first
-> scoring leg. **SINGLE USE, spent on landing.** No re-read, no second adjudication, no top-up.
+> scoring leg. **SINGLE USE, spent on landing.**
 >
 > **Parent chain by reference:** R3.3 (`../shared_run/` @ `604edc83`) → R4.5 (`../shared_run_r4/`)
-> → this. Every rung-3 estimand, branch condition, rider and power figure is **CARRIED**; §0 lists
-> what R5 changes.
->
-> `governance/PRODUCTION.yaml` untouched on every branch. No claim minted. No strength row.
+> → this. `governance/PRODUCTION.yaml` untouched on every branch.
 
-## §0 — What R5 changes, and what it carries
+## §0 — THE CARRIED-GATE SET, reconciled explicitly (B3)
 
-**CARRIED UNCHANGED** (binding in their R3.3/R4 wording, not restated): §1 address discipline and
-**ABSENT IS FAIL** · the `allow_null` closed list · §3's power arithmetic (`sd_Δ ∈ [0.9, 1.4]`,
-root bootstrap 2,000 reps seed `20260819`, significance **once** on the percentile CI) · **§5's
-rung-3 branch table verbatim** (`X-CONFIRMED` · `X-ABOVE` · `X-PARTIAL` · `X-BELOW` · `X-FREE` ·
-`X-INCONCLUSIVE`, the `R_ora` degenerate guard and its `Δ_ora`-only sub-table, the `X-NOISE`
-rider, the three mandatory prints) · **all eight riders R1–R8, including `I7-draw-scope`** ·
-`G-LEAF`, `G-SALT`, `G-M`, `G-BACKEND`, `G-PREFIX`, `G-CRN`, `G-UNCAPPED`, `G-DRAW`, `G-ARMS` ·
-§7's gate-inputs-only rule on `W-UNREADABLE`.
+**The previous revision carried nine gates in one file and a different nine in the other, and
+dropped three without a word.** Reconciled here; **this table is the authority and `DESIGN.md`
+§R5-7 points at it rather than restating it.**
 
-**R5 CHANGES, all recorded in [`DESIGN.md`](DESIGN.md) §R5-FINAL:** the ply floor (`k = 0`) · the
-exclusion bound's form (`G-SATURATION` replaces the circular relative bound) · `n₂` and the
-completion floor, from **realized** supply · the failed-record bound, authored pre-data · **W9
-`D-DRAW` funded** · existence-time markers on every address.
+| gate | status in R5 | why |
+|---|---|---|
+| `G-LEAF`, `G-SALT`, `G-M`, `G-BACKEND`, `G-PREFIX`, `G-CRN`, `G-UNCAPPED`, `G-DRAW`, `G-ARMS` | **CARRIED** | unchanged in substance; addresses re-marked and, where R3.3 had a second address, restored (R1) |
+| **`G-BITEXACT@HEAD`** | **CARRIED** | the rust ARB judge prices this run; its identity gate carries |
+| **`G-DISJOINT`** | ⭐ **RESTORED, rid/root layers only** | R5 previously read this gate's *artifact* for a consistency check while abandoning its *conjuncts*. Its **zero-tolerance rid/root layers are the LEAKAGE guard** and are distinct from the digest bound that voided R4. The digest layer is **not** carried — R5's degeneracy quantity is same-band internal duplication (§2 `G-INTERNAL-DUPE`), which no cross-set comparison can see |
+| **`G-BAND`** | ⭐ **RESTORED** | R9: with it dropped, nothing gated seed-range integrity, duplicate seeds, or the released-unused `136e9` band. R5 generates nothing, so its form is *retrospective*: the retained substrate's seeds must lie in the committed ranges |
+| **`G-REPLICATE`** | ⛔ **DROPPED, deliberately** | its `(B ≤ 16, E = 16)` corner is **S1's** and S1 is not this run's stratum. Dropped **with this sentence** rather than silently — R2's objection was the silence, not the drop |
+| `G-COMPLETE`, `G-FAILED`, `G-CORPUS`, `G-INTERNAL-DUPE`, `G-DDRAW`, `G-TWOBOX` | **R5-SPECIFIC** | §2 |
 
-## §1 — Existence-time markers
+**Stratum keying (R8): `s2` EVERYWHERE.** The previous revision spelled new addresses `r5` while
+every carried address used `s2`; under ABSENT IS FAIL one spelling had to fail. **`r5` appears in
+no address in this pair.**
 
-Every address carries one: **`[pre-corpus]`** · **`[post-corpus]`** · **`[post-scoring]`**
-(R5-6.1). **An unmarked address is a drafting defect, fixed before the blind commit, never
-adjudicated at read time.** Each acceptance pass audits exactly the markers that can exist at its
-point in the sequence — statically against a fixture otherwise. **No pass may demand an address its
-own position makes impossible, and no address may be audited at neither pass.**
+## §1 — Existence-time markers, and the pass that audits them (B6)
+
+Every address below carries **exactly one** of `[pre-corpus]` · `[post-corpus]` · `[post-scoring]`.
+**"as carried" is not a marker**; the previous revision used it for a six-gate row whose members
+resolve to two different markers, and marked nothing outside §2 at all.
+
+⭐ **THE ACCEPTANCE PASS (previously undefined, which left the marker machinery with no auditor):**
+
+- **`A1` `[pre-corpus]`, before the blind commit** — static schema audit against committed
+  fixtures for every `[post-corpus]` and `[post-scoring]` address; **key presence and JSON type
+  only, no value computed, printed or stored.**
+- **`A2` `[post-corpus]`, before the first scoring leg** — resolve every `[pre-corpus]` and
+  `[post-corpus]` address **live**, primary **and** fallback independently.
+- **`A3` `[post-scoring]`, before adjudication** — resolve the `[post-scoring]` addresses.
+- **Completeness assertion, mandatory in each pass:** the union of addresses audited across
+  `A1`+`A2`+`A3` **equals** the set of addresses named in this file. **No address may be audited
+  at neither pass**, and no pass may demand an address its own position makes impossible.
 
 ## §2 — Gates. Any FAIL ⇒ `W-UNREADABLE`; nothing licensed
 
-Scope markers per R5-6: **`[RUN]`** (whole-run) · **`[PER-STRATUM]`** (R5 has ONE stratum, so every
-gate here is `[RUN]` in effect; the marker is carried so the taxonomy stays total). **An unmarked
-gate is a drafting defect.**
+All gates are `[RUN]` in scope (R5 has one stratum); the marker column is the **existence-time**
+marker.
 
 | gate | marker | conjunct | address |
 |---|---|---|---|
-| `G-CORPUS` | `[post-corpus]` | the corpus is the **retained S2 substrate**, re-mined: `n_positions == 1064`, `--max-per-game 3`, `--cap-j inf`, **`min_ply == 0`**; and the physical leg file is the source, **not** the defective `POSITIONS_PLAN` `files` block (§0 note) | `RUN/corpus/positions_r5/POSITIONS_PLAN.json::{n_positions,cap_j,uncapped,max_per_game,min_ply}` |
-| ⭐ `G-SATURATION` | `[post-corpus]` | **`d_measured(G=5340) ≤ 0.05`** — the ABSOLUTE saturation guard, the live collision gate. Realized **0.002820** ⇒ clears **17.7×** | `RUN/CALIBRATION.json::by_ply_floor.0.d_model_at_governed` |
-| ⭐ `G-COLLIDE` | `[post-corpus]` | the run's realized digest-collision count **equals the calibration's `3`**, and every collision is at **ply 2**. ⚠️ **A MISMATCH RAISES** — it would mean the corpus is not the one the calibration measured | `RUN/GATE_DISJOINT.json::digest_exclusions.r5.{n_excluded,ply_histogram}` |
-| `G-COMPLETE` | `[post-scoring]` | `n_analysed ≥ 1011` (= `⌈0.95 × 1064⌉`), evaluated **after** exclusions and after the §3 failed-record drop | `READOUT::widening.completion.r5_n` |
-| ⭐ `G-FAILED` | `[post-scoring]` | **(i)** `n_failed_rids / n_attempted ≤ 0.02`; **(ii)** **any** failed record whose diagnostic class is **not** `WindowTruncationError` ⇒ **RAISE and escalate, regardless of count** | `READOUT::widening.failed.{n_failed_rids,rate,by_class}` |
-| `G-M` | `[post-scoring]` | **`m_worlds == 32`** and `b_ceiling_from_m == 16`. ⚠️ **NOT 128** — see §0 note | `RUN/RUN_MANIFEST_R5.json::{m_worlds,b_ceiling_from_m}` |
-| `G-SALT` | `[post-scoring]` | `world_seed_salt == "tiletie-v1"`; `deployed_cap_j == 4`; `cap_seed` present for every rid | `RUN/RUN_MANIFEST_R5.json::world_seed_salt` · `…/ARMS.json::<rid>.cap_seed` |
-| `G-BACKEND` | `[post-scoring]` | `arb_backend == "rust"`; every `tier1-greedy/walled` leg resolves `rust`; `arb_legal_mask_cache == true` | `RUN/RUN_MANIFEST_R5.json::{arb_backend,resolved_backend_by_leg,arb_legal_mask_cache}` |
-| `G-LEAF`, `G-PREFIX`, `G-CRN`, `G-UNCAPPED`, `G-DRAW`, `G-ARMS` | as carried | **carried verbatim from R3.3/R4**, with `{s1,s2}` read as this run's single stratum and `<judge>` bound to `tier1-greedy` | as carried |
-| `G-TWOBOX` | `[post-scoring]` | the D1 two-box layer's conjuncts as ruled in `../DEVIATIONS.md` §D1/§D3/§D4.13: `execution` per-chunk classification, `carc_rs_build` **equal across boxes**, `carc_rs_binary_sha` **constant within each box**, merge `preserved_from_existing` recorded | `RUN/MERGE_REPORT_r5.json` |
+| ⭐ `G-CORPUS` | `[post-corpus]` | The corpus is **R4's post-exclusion S2 leg file, ADOPTED AS-IS**, plus R5's own exclusion list — **not a fresh re-mine.** Conjuncts: the physical leg's **sha256 == `92ba1ee2dfbfed91…`** (full sha in `FLOORS_R5.json`); the R4 exclusion list's **sha256** matches the committed one; `--max-per-game 3`, `--cap-j inf`, `min_ply == 0`; and `n_positions_after_r5_exclusions == 1060` | `RUN/CORPUS_R5.json::{leg_path, leg_sha256, r4_exclusion_list_sha256, n_in, n_excluded_r5, n_positions}` |
+| ⭐ `G-INTERNAL-DUPE` | `[post-corpus]` | **(i) LIVE:** `d_internal ≤ 0.05` — the absolute saturation guard, computed **at run time from the physical leg**, never read from a frozen constant. **(ii) CONSISTENCY:** `n_dupe_groups == 3`, `n_dupe_positions == 6`, every member at **ply 2** and **137e9↔137e9 same-band**. A mismatch **RAISES** | `RUN/GATE_INTERNAL_DUPE.json::{n_positions, n_dupe_groups, n_dupe_positions, d_internal, ply_histogram, band_pairs, leg_sha256}` |
+| `G-DISJOINT` | `[post-corpus]` | **rid and root layers ZERO on every comparison** — the leakage guard, carried from R4 §2b(i). ⛔ The **digest layer is NOT carried** (see §0) | `RUN/GATE_DISJOINT_R5.json::{passed, comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection}` |
+| `G-BAND` | `[post-corpus]` | every retained seed lies in a committed range — banked `[135000000350, 135000000849]` or extension `[137000000508, 137000005347]`; `n_out_of_band == 0`; `n_duplicate_seeds == 0`; **no seed from the released-unused `136e9` band** | `RUN/CORPUS_R5.json::{seed_ranges, n_out_of_band, n_duplicate_seeds, n_seeds_136e9}` |
+| `G-COMPLETE` | `[post-scoring]` | `n_analysed ≥ 1007` (= `⌈0.95 × 1060⌉`), after exclusions and after §3's failed-record drop | `READOUT::widening.completion.s2_n` |
+| `G-FAILED` | `[post-scoring]` | **(i)** `n_failed_rids / n_attempted ≤ 0.02`; **(ii)** any failed record whose class is **not** `WindowTruncationError` ⇒ **RAISE regardless of count**. ⚠️ `n_attempted` is **addressed** (R5) | `READOUT::widening.failed.{n_failed_rids, n_attempted, rate, by_class}` |
+| `G-M` | `[post-scoring]` **+ `[post-corpus]`** | `m_worlds == 32` ∧ `b_ceiling_from_m == 16`. ⚠️ **NOT 128.** ⭐ **A `[post-corpus]` address is required (R1)** so the one constant this revision exists to correct halts the run **before** ~300 wh is spent, not after | **pre-leg:** `RUN/SMOKE_R5.json::resolved_config.m` · **post:** `RUN/RUN_MANIFEST_R5.json::{m_worlds,b_ceiling_from_m}` · **fallback:** `RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.m` |
+| `G-SALT` | `[post-scoring]` | `world_seed_salt == "tiletie-v1"`; **`deployed_cap_j == 4` (now ADDRESSED, R6)**; `cap_seed` present for every rid | `RUN/RUN_MANIFEST_R5.json::world_seed_salt` · `RUN/corpus/positions_s2/POSITIONS_PLAN.json::deployed_cap_j` · `…/ARMS.json::<rid>.cap_seed` · fallback `RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.world_seed_salt` |
+| `G-BACKEND` | `[post-scoring]` | `arb_backend == "rust"`; every `tier1-greedy/walled` leg resolves `rust`; `arb_legal_mask_cache == true` | `RUN/RUN_MANIFEST_R5.json::{arb_backend,resolved_backend_by_leg,arb_legal_mask_cache}` · fallback `…/manifest.json::resolved_config.legal_mask_cache` |
+| ⭐ `G-DDRAW` | `[post-scoring]` | **`d_draw_ran == true`** — R2: the previous revision *claimed* W9 discharged `I7`'s conditional while the mechanical rule still permitted the R4 outcome. Either the conjunct exists or the discharge claim goes; **the conjunct exists** | `READOUT::widening.j_rider.d_draw.d_draw_ran` · `RUN/D_DRAW.json` |
+| `G-LEAF`, `G-PREFIX`, `G-CRN`, `G-UNCAPPED`, `G-DRAW`, `G-ARMS`, `G-BITEXACT@HEAD` | `G-UNCAPPED` `[post-corpus]`; `G-DRAW` `[post-corpus]`; `G-BITEXACT@HEAD` `[pre-corpus]`; `G-LEAF`, `G-PREFIX`, `G-CRN`, `G-ARMS` `[post-scoring]` | carried verbatim from R3.3/R4, `<judge>` bound to `tier1-greedy`, stratum `s2` | as carried |
+| `G-TWOBOX` | `[post-scoring]` | `../DEVIATIONS.md` §D1/§D3/§D4.13 as ruled | `RUN/MERGE_REPORT_s2.json` |
 
-⚠️ **`G-SATURATION` is the live collision gate and `G-COLLIDE` is a consistency check — and the
-distinction is stated because the alternative would have been PASS-ALWAYS.** R5-1.2's relative
-bound `M × d_model` is **circular on a corpus already measured**: `bound = 3 × (3/1064) × 1064 = 9`
-against a realized 3, i.e. **satisfied by construction with exactly 3× headroom, incapable of
-firing.** It is **retired for this run** (DESIGN §R5-FINAL.b). The absolute 5% guard is not
-circular — it is an external bar the measurement either clears or does not — and it is what
-governs. **The relative bound returns the moment a successor GENERATES fresh games**, where `d` at
-the new scale is genuinely unmeasured.
+### §2.1 ⚠️ What the two degeneracy gates DO and DO NOT establish — stated, not implied
 
-## §3 — The failed-record policy, authored PRE-DATA
+**The collision quantity for this corpus is already known** (3 groups / 6 positions), because the
+calibration measured **the same physical file** R5 will score. ⇒ **Both gates are CORPUS-IDENTITY
+checks, not discovery gates.** Their live content is *"the corpus is the one that was measured"* —
+which is a real and falsifiable property (a different leg file, a re-mine, a truncated read all
+fail it), and it is **all** they establish.
 
-**Whole-rid drop, both judges**, per `../DEVIATIONS.md` §D4.18 — it is what `G-ARMS` implies (a rid
-with a valueless arm is not analysable, and the paired contrast needs both sides). Typed accounting
-printed **whether or not any failure occurred**: `n_failed_rids`, per rid `{judge, legs,
-diagnostic_class}`, and the pointer to `measurement/window_truncation_20260813/`.
+⛔ **The previous revision's `G-SATURATION` read `CALIBRATION.json::…d_model_at_governed` — a
+constant committed with the pair, and the FITTED value the pair's own text calls vacuous. A gate
+whose input is frozen before the run cannot fire.** `G-INTERNAL-DUPE` recomputes `d_internal` from
+the leg at run time instead. **A relative bound (`M × d`) remains retired**: on a pre-measured
+corpus it is satisfied by construction (DESIGN §R5-FINAL.b), and it returns only when a successor
+GENERATES fresh games.
 
-**The bound is authored here, before any R5 datum exists** — which is the only way a bound of this
-shape is worth anything (D4.18): **`n_failed_rids / n_attempted ≤ 0.02`**, and **any non-`WindowTruncationError`
-class RAISES regardless of count.**
+## §3 — The failed-record policy, authored pre-data — **EXPECTATION CORRECTED (B5)**
 
-⭐ **Stated expectation, pre-data, so the realized rate is legible rather than reassuring.**
-`WindowTruncationError` fires at **extreme board extents** (late game, ~70 tiles placed). R5's
-population is **capped plies** — tied plies with >4 distinct afterstates — and the calibration
-shows those skew **EARLY**: all three digest collisions are at **ply 2**, consistent with the
-mechanism that a near-empty board offers many equal-valued symmetric placements, which is what
-makes a large tie set. ⇒ **R5's window-truncation exposure should be LOWER than S1's realized
-0.30% (4/1,344), not higher.** A realized rate at or above S1's would be a surprise worth naming
-in the read-out even while passing the bound.
+Whole-rid drop across both judges (D4.18); typed accounting printed whether or not anything fails;
+bound `≤ 0.02` of attempted; **any non-`WindowTruncationError` class RAISES regardless of count.**
+
+⛔ **CORRECTION, on the record.** The previous revision pre-registered that R5's capped plies
+*"skew EARLY"* so exposure *"should be LOWER than S1's realized 0.30%"*. **Measured on this
+corpus's own `ply` field: mean 69.15, median 68, max 142; 63.3% at ply ≥ 50; only 2.63% at
+ply ≤ 2** — against S1's mean 66.50. **R5's corpus sits slightly DEEPER than S1's, in exactly the
+region where `WindowTruncationError` fires (~70 tiles placed).**
+
+⇒ **The pre-registered expectation is EQUAL-OR-HIGHER than S1's 0.30%, not lower.**
+
+**The inferential error, named so it is not repeated:** the prose reasoned from the ply of the
+three *collisions* — forced early by the birthday argument, since few distinct boards exist at
+ply 2 — and generalised it to the ply of the *corpus*. **Where collisions happen is not where the
+population lives.** Left uncorrected, a perfectly healthy elevated failure rate would have read as
+"a surprise worth naming".
 
 ## §4 — Branch table
 
 **CARRIED VERBATIM from R3.3 §5** — `X-CONFIRMED` · `X-ABOVE` · `X-PARTIAL` · `X-BELOW` ·
-`X-FREE` · `X-INCONCLUSIVE`, the `R_ora` degenerate-denominator guard and its committed
-`Δ_ora`-only sub-table, and the `X-NOISE` rider. **Not one threshold, sign or condition moves.**
+`X-FREE` · `X-INCONCLUSIVE`, the `R_ora` degenerate guard and its `Δ_ora`-only sub-table, the
+`X-NOISE` rider, the three mandatory prints. **Not one threshold, sign or condition moves.**
+Primary `Δ_ora` at capped plies, `ora` adjudicating, `arb` riding, significance once on the
+percentile root bootstrap. All addresses `[post-scoring]`; stratum key `s2`.
 
-Primary: **`Δ_ora` at capped plies**, `ora` adjudicating, `arb` riding. Significance **once**, on
-the percentile root bootstrap.
-
-**Power at the realized `n₂ = 1,064`** (§R5-FINAL.c), printed beside the realized CI:
+**Power at `n₂ = 1,060`** (§R5-FINAL.c), printed beside the realized CI:
 
 | prediction | `Δ_ora` | resolves at 2σ iff |
 |---|---|---|
-| legacy ×1.400 | +0.1382 | `sd_Δ ≤ 2.254` — **whole bracket** ✅ |
-| corrected ×1.244 | +0.0842 | `sd_Δ ≤ 1.373` — **most of the bracket**, fails only above 1.373 |
-| 1.400 **vs** 1.244 | Δ = 0.054 | `sd_Δ ≤ 0.881` — **NOT separable**, the carried blind spot |
+| legacy ×1.400 | +0.1382 | `sd_Δ ≤ 2.250` — whole bracket ✅ |
+| corrected ×1.244 | +0.0842 | `sd_Δ ≤ 1.371` |
+| 1.400 **vs** 1.244 | 0.054 | `sd_Δ ≤ 0.879` — **not separable**, carried blind spot |
 
-`se(Δ_ora) = sd_Δ/√1064 ∈ [0.0276, 0.0429]`. **Essentially unchanged from R4's `n₂ = 1,100`** —
-the realized supply costs 0.023 of `sd_Δ` headroom on the corrected prediction and nothing on the
-legacy one.
+`se(Δ_ora) = sd_Δ/√1060 ∈ [0.0276, 0.0430]`.
 
-## §5 — Riders, all carried
+## §5 — Riders
 
-**R1–R8 verbatim** (σ-inflation · translation caveat · **`I7-draw-scope`** · two currencies ·
-governance · the open N4 waiver · phone out of scope · `|z| < 2` is never "refuted").
-
-⭐ **`I7` binds here and R5 DISCHARGES it rather than inheriting it again.** R4 skipped W9 as moot
-when S2 voided, leaving `I7`'s **dedupe-partition conditional** — that the python afterstate key and
-rust `string_representation` induce the same partition — **UNMEASURED**, with the successor
-inheriting the obligation. **W9 `D-DRAW` is FUNDED in R5** (≈2 worker-h, the corpus already
-exists): it replays each capped ply and calls `tiearb_probe(j=4, salt="tiearb2-deploy-v1")`,
-emitting `RUN/D_DRAW.json::{n_checked, n_agree, agreement_rate, n_unreconstructible, git_rev}`,
-surfaced at `widening.j_rider.d_draw.*`. **No playouts, no outcome statistic; non-adjudicating; it
-may never correct, reweight or re-scale `Δ_ora`.** If it does not run, `d_draw.*` is `null` with
-`d_draw_ran == false` under the `allow_null` closed list, and `I7` rides **unmeasured** exactly as
-it did in R4 — but the funded path is the ruling.
+**R1–R8 carried verbatim** (σ-inflation · translation · **`I7-draw-scope`** · two currencies ·
+governance · open N4 waiver · phone out of scope · `|z| < 2` never "refuted"). `I7`'s
+dedupe-partition conditional is **discharged by W9**, now enforced by `G-DDRAW` (§2). All rider
+addresses `[post-scoring]`.
 
 ## §6 — What the read-out prints
 
-Everything in the carried §7, plus: **the full supply chain from `CALIBRATION.json`'s realized
-integers** (§R5-FINAL.c) · `G-SATURATION`'s realized `d` against 0.05 **and** the note that the
-relative bound was retired as circular · `G-COLLIDE`'s realized count against the calibration's 3,
-with the ply histogram · the failed-record accounting with §3's stated expectation · **`D-DRAW`'s
-agreement rate under `I7`** · the two-box merge report · and the **fitted `d_model(G) = a·G^b`
-(`b ≈ 0.906`) REPORTED with its `r² = 1.0` marked VACUOUS** — two points determine a line exactly,
-and the fit is **not** the bound.
+The carried §7 list, plus: the supply chain from `CORPUS_R5.json`'s realized integers · `d_internal`
+against 0.05 **with §2.1's statement that both degeneracy gates are corpus-identity checks** · the
+dupe-group consistency result · the failed-record accounting against §3's **corrected** expectation ·
+`D-DRAW`'s agreement rate under `I7` · the two-box merge report · the `A1`/`A2`/`A3` completeness
+assertions · and the fitted `d_model(G) = a·G^b` **REPORTED with `r² = 1.0` marked VACUOUS and
+explicitly NOT the bound**.
 
 ## §7 — Spent
 
-Single-use. On landing: the six-touch close-out, then `python3 scripts/doc_lint.py`. Any successor —
-including one that generates fresh games — needs a fresh pair, a fresh band, and a **live**
-relative bound.
+Single-use. Six-touch close-out, then `python3 scripts/doc_lint.py`. Any successor that **generates**
+fresh games needs a fresh pair, a fresh band, and a **live relative bound**.
