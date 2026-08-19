@@ -75,8 +75,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -85,6 +87,7 @@ if str(HERE) not in sys.path:
 
 REPO = Path(__file__).resolve().parents[2]
 
+import build_positions as BP                                        # noqa: E402
 import build_r5_corpus as BR5                                       # noqa: E402
 import gate_disjoint as GD                                          # noqa: E402
 import union_positions as UP                                        # noqa: E402
@@ -125,6 +128,21 @@ DEFAULT_MAX_PER_GAME = 3
 #: `stage_chunks.py`'s own default, matched here so a real launch and this
 #: staging step price the same chunk count unless overridden.
 DEFAULT_N_CHUNKS_S2 = 8
+#: DESIGN ruling `63ed329b`: the adopted S2 build (`shared_run_r4/corpus/
+#: positions_s2/`) contains ONLY leg1 -- legs are ARM-INDEX pairings
+#: (arms[0] vs arms[r]) that THIN as r rises, not "rungs over the same
+#: rids", and the probe corpus cannot supply them (a different population:
+#: extension-only, missing the 103 banked capped rids entirely). Legs 2-12
+#: are therefore DERIVED from the pinned authority (ARMS_R5.json's arm
+#: lists + the adopted leg1's source fields), never adopted from anywhere.
+DEFAULT_PROFILE = "walled"
+#: The EXACT pinned ladder on the real adopted corpus, legs 1..12 --
+#: substantive (a mismatch means the adopted leg1 or ARMS_R5 changed), not a
+#: tautology of `write_leg_files`' own r-range (which guarantees the
+#: THINNING PREDICATE, `len(arms) > r`, but not these specific counts).
+PINNED_LEG_LADDER = (1060, 1060, 1060, 1060, 866, 509, 366, 265, 171, 110, 66, 9)
+PINNED_LEG_LADDER_TOTAL = sum(PINNED_LEG_LADDER)               # 6,602
+DEFAULT_LEGS = tuple(range(1, len(PINNED_LEG_LADDER) + 1))     # 1..12
 
 
 class StagingError(RuntimeError):
@@ -239,6 +257,143 @@ def cross_layer_invariant(staged_arms_rids: set, filtered_leg_rids: set,
 
 
 # --------------------------------------------------------------------------- #
+# legs 2-N — DERIVED from the pinned authority (DESIGN ruling 63ed329b),       #
+# never adopted. Reuses build_positions.write_leg_files' exact row schema.     #
+# --------------------------------------------------------------------------- #
+def load_leg_rows(leg_path) -> dict:
+    """`rid -> row dict` off ANY leg jsonl — every leg shares one row shape
+    (`build_positions.write_leg_files`'s), so this loader is leg-number
+    agnostic."""
+    leg_path = Path(leg_path)
+    out = {}
+    for i, line in enumerate(leg_path.read_text().splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise StagingError(f"{leg_path}:{i}: not JSON ({exc})") from exc
+        if "rid" not in rec:
+            raise StagingError(f"{leg_path}:{i}: a line has no 'rid' field")
+        out[rec["rid"]] = rec
+    return out
+
+
+def _position_from_leg1_row(leg1_row: dict, arms_entry: dict) -> dict:
+    """One `write_leg_files`-compatible "position" dict: the ARM LIST comes
+    from `ARMS_R5.json` (the pinned population authority); every other field
+    — `checksum`, `actions`/`archive_path`, `action_played` — comes from the
+    ADOPTED leg1 row, because `ARMS.json` never carried those fields at all
+    (verified: R4's real `ARMS.json` entries have no `checksum` and no
+    `actions` key). Neither source is re-derived; each supplies exactly what
+    the other lacks."""
+    p = {
+        "rid": leg1_row["rid"], "root_id": leg1_row["root_id"],
+        "deck_seed": leg1_row["deck_seed"], "ply": leg1_row["ply"],
+        "seat": leg1_row["root_player"], "checksum": leg1_row["checksum"],
+        "rules_profile": leg1_row["rules_profile"], "stratum": leg1_row["stratum"],
+        "game_label": leg1_row["game_label"],
+        "champ_action": leg1_row["action_played"],
+        "arms": arms_entry["arms"],
+    }
+    if leg1_row["stratum"] == "e4":
+        p["archive_path"] = leg1_row.get("archive_path")
+    else:
+        p["actions"] = leg1_row["actions"]
+    return p
+
+
+def derive_legs(arms_r5: dict, leg1_rows: dict, staged_dir) -> dict:
+    """DESIGN ruling `63ed329b`: legs 2-N are a DETERMINISTIC function of
+    `ARMS_R5.json`'s arm lists and the adopted leg1's source fields —
+    derived here, never adopted from the probe (a DIFFERENT population) or
+    anywhere else. Reuses `build_positions.write_leg_files` — the EXACT row
+    schema, never re-implemented — writing to a throwaway TEMP directory so
+    its own freshly-derived leg1 can never overwrite the sha-pinned ADOPTED
+    leg1 already staged; only legs `r >= 2` are copied out.
+
+    Returns `{"files": {"<profile>/leg<r>": {"path", "n"}, ...}, "max_arms"}`
+    for the derived legs (`r >= 2`) only — the caller merges in its own
+    leg1 entry."""
+    missing = set(arms_r5) - set(leg1_rows)
+    if missing:
+        raise StagingError(
+            f"{len(missing)} ARMS_R5 rid(s) have no adopted leg1 row to "
+            f"derive source fields from (e.g. {sorted(missing)[:3]}) -- "
+            "the staged leg1 filter should make this impossible; something "
+            "upstream is inconsistent")
+
+    positions = [_position_from_leg1_row(leg1_rows[rid], arms_r5[rid])
+                for rid in sorted(arms_r5)]
+
+    tmp_dir = Path(tempfile.mkdtemp(prefix="r5_derive_legs_"))
+    try:
+        info = BP.write_leg_files(positions, tmp_dir)
+        files = {}
+        for key, finfo in info["files"].items():
+            _, _, leg_r_str = key.rpartition("/leg")
+            if int(leg_r_str) < 2:
+                continue                     # leg1 stays the ADOPTED file
+            src = Path(finfo["path"])
+            dest = Path(staged_dir) / src.name
+            dest.write_text(src.read_text())
+            files[key] = {"path": str(dest), "n": finfo["n"]}
+        return {"files": files, "max_arms": info["max_arms"]}
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+# --------------------------------------------------------------------------- #
+# the EXACT per-leg thinning-set invariant + the pinned ladder (63ed329b)      #
+# --------------------------------------------------------------------------- #
+def assert_leg_ladder(arms_r5: dict, staged_dir, *, profile=DEFAULT_PROFILE,
+                      legs=DEFAULT_LEGS, pinned_counts=PINNED_LEG_LADDER) -> dict:
+    """For every `r` in `legs`: `set(leg_r rids) == {rid : len(arms[rid]) >
+    r}` — EXACT equality (not "subset", which is too weak to catch a
+    truncated leg — exactly what the adopted build shipped), checked via
+    `build_r5_corpus.assert_rid_sets_equal` (the EXISTING checked tool,
+    reused — never a re-implementation). `G-STAGED`'s cross-layer invariant
+    extends to every leg under this predicate, not just leg1's global
+    equality (the N1 lesson: a global/whole-population check cannot see a
+    per-leg thinning defect).
+
+    Then the REALIZED per-leg counts are compared to `pinned_counts` — a
+    substantive check against a SPECIFIC, previously-measured population
+    (not a tautology of `write_leg_files`' own r-range, which guarantees
+    the predicate but not these numbers). Pass `pinned_counts=None` to skip
+    that second check (structural correctness only)."""
+    leg_counts: dict = {}
+    for r in legs:
+        leg_path = Path(staged_dir) / f"positions_{profile}_leg{r}.jsonl"
+        if not leg_path.is_file():
+            raise StagingError(
+                f"leg{r} missing from the staged dir: {leg_path} -- the "
+                "adopted build or the derivation did not produce it")
+        actual = set(load_leg_rows(leg_path))
+        expected = {rid for rid, v in arms_r5.items() if len(v["arms"]) > r}
+        BR5.assert_rid_sets_equal(
+            actual, expected,
+            what=f"leg{r} rid set vs the thinning predicate len(arms) > {r} "
+                 "(DESIGN ruling 63ed329b)")
+        leg_counts[str(r)] = len(actual)
+
+    realized = [leg_counts[str(r)] for r in legs]
+    ladder_matches = (pinned_counts is None) or (list(pinned_counts) == realized)
+    if pinned_counts is not None and not ladder_matches:
+        raise StagingError(
+            f"the realized per-leg ladder {realized} does NOT match the "
+            f"PINNED ladder {list(pinned_counts)} (DESIGN ruling 63ed329b) "
+            "-- the adopted corpus or ARMS_R5 changed underneath this tool")
+
+    return {
+        "leg_counts": leg_counts,
+        "leg_ladder_expected": list(pinned_counts) if pinned_counts is not None else None,
+        "leg_ladder_matches_expected": ladder_matches,
+        "n_total_pairs": sum(leg_counts.values()),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # the R4 source plan — every rid-independent key is COPIED from here,          #
 # NEVER synthesized. Refuses loudly if the source itself lacks the dedupe.     #
 # --------------------------------------------------------------------------- #
@@ -280,10 +435,9 @@ def load_r4_source_plan(path=DEFAULT_R4_SOURCE_PLAN) -> dict:
 # rid-set-dependent keys (via stage_chunks.subset_plan), files enumerates     #
 # what actually exists                                                        #
 # --------------------------------------------------------------------------- #
-def write_positions_plan(staged_dir, leg_dest_path, arms_r5: dict,
+def write_positions_plan(staged_dir, files: dict, arms_r5: dict,
                          r4_source_plan: dict, *,
-                         max_per_game=DEFAULT_MAX_PER_GAME,
-                         leg_key=DEFAULT_LEG_KEY) -> tuple:
+                         max_per_game=DEFAULT_MAX_PER_GAME) -> tuple:
     """Builds the staged corpus-level plan by COPYING `r4_source_plan`
     (deep copy) and recomputing ONLY `stage_chunks.RID_DEPENDENT_KEYS` over
     the staged population — via `stage_chunks.subset_plan`, the SAME
@@ -292,14 +446,13 @@ def write_positions_plan(staged_dir, leg_dest_path, arms_r5: dict,
     key — including `afterstate_dedupe` with its `design_ref`/
     `dropped_index_path` provenance, `cap_j`, `uncapped`, `m_worlds`,
     `sample_seed`, `deployed_cap_j`, `union_provenance`, … — is carried
-    VERBATIM. Returns `(plan_path, plan, carried_keys)`, where `carried_keys`
-    is the EXPLICIT enumeration (source keys minus `RID_DEPENDENT_KEYS`) so
-    the carried set is reported, not merely trusted."""
-    leg_dest_path = Path(leg_dest_path)
-    lines = [ln for ln in leg_dest_path.read_text().splitlines() if ln.strip()]
+    VERBATIM. `files` is the FULL, ALREADY-BUILT per-leg block (`"<profile>/
+    leg<r>": {"path", "n"}`, all 12 legs, per DESIGN ruling `63ed329b`) — this
+    function does not derive it. Returns `(plan_path, plan, carried_keys)`,
+    where `carried_keys` is the EXPLICIT enumeration (source keys minus
+    `RID_DEPENDENT_KEYS`) so the carried set is reported, not merely
+    trusted."""
     keep = set(arms_r5)
-    files = {leg_key: {"path": str(leg_dest_path), "n": len(lines)}}
-
     carried_keys = sorted(set(r4_source_plan) - SC.RID_DEPENDENT_KEYS)
 
     plan = SC.subset_plan(
@@ -322,8 +475,11 @@ def write_positions_plan(staged_dir, leg_dest_path, arms_r5: dict,
     plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True))
 
     # ASSERTS: every path in files{} exists on disk, its line count matches,
-    # and its rid set matches the population -- D4's defect was a files
-    # block pointing at a population the plan did not actually contain.
+    # and every rid it names is a genuine ARMS_R5 member -- D4's defect was
+    # a files block pointing at a population the plan did not actually
+    # contain. NOT "== the full population": legs THIN (63ed329b) so only
+    # leg1-4 carry all 1,060 -- the EXACT per-leg count is
+    # `assert_leg_ladder`'s job, not this generic per-file sanity check.
     for key, info in plan["files"].items():
         p = Path(info["path"])
         if not p.is_file():
@@ -336,10 +492,11 @@ def write_positions_plan(staged_dir, leg_dest_path, arms_r5: dict,
                 f"POSITIONS_PLAN.files[{key!r}]: plan says n={info['n']} but "
                 f"{p} has {len(file_lines)} lines")
         file_rids = {json.loads(ln)["rid"] for ln in file_lines}
-        if len(file_rids) != len(keep):
+        orphans = file_rids - keep
+        if orphans:
             raise StagingError(
-                f"POSITIONS_PLAN.files[{key!r}]: {len(file_rids)} distinct "
-                f"rid(s) on disk but n_positions={len(keep)}")
+                f"POSITIONS_PLAN.files[{key!r}]: {len(orphans)} rid(s) on "
+                f"disk are not in ARMS_R5 (e.g. {sorted(orphans)[:3]})")
     return plan_path, plan, carried_keys
 
 
@@ -380,11 +537,17 @@ def stage(*, arms_r5_path=DEFAULT_ARMS_R5, leg_path=DEFAULT_LEG_PATH,
          r4_source_plan_path=DEFAULT_R4_SOURCE_PLAN,
          staged_dir=DEFAULT_STAGED_DIR, stage_chunks_out_root=None,
          n_chunks=DEFAULT_N_CHUNKS_S2, max_per_game=DEFAULT_MAX_PER_GAME,
+         profile=DEFAULT_PROFILE, legs=DEFAULT_LEGS,
+         pinned_ladder=PINNED_LEG_LADDER,
          stage_chunks_script=STAGE_CHUNKS_SCRIPT) -> dict:
-    """The six-step recipe (drafter commit `97ca0276`), verbatim. Returns the
-    `STAGING_R5.json` report. Raises `StagingError` / `build_r5_corpus.
-    BuildError` / `gate_disjoint.GateInputError` on any step's failure —
-    every step's own ASSERT, not a summary check at the end."""
+    """The six-step recipe (drafter commit `97ca0276`), amended by ruling
+    `63ed329b` (legs 2-N derived from the pinned authority, never adopted).
+    Returns the `STAGING_R5.json` report. Raises `StagingError` /
+    `build_r5_corpus.BuildError` / `gate_disjoint.GateInputError` on any
+    step's failure — every step's own ASSERT, not a summary check at the
+    end. `pinned_ladder=None` skips the numeric-ladder check (structural
+    per-leg correctness only) — synthetic tests use this with their OWN
+    pinned counts instead of the real 12-entry ladder."""
     staged_dir = Path(staged_dir)
     stage_chunks_out_root = (Path(stage_chunks_out_root) if stage_chunks_out_root
                              else DEFAULT_STAGE_CHUNKS_OUT_ROOT)
@@ -401,12 +564,40 @@ def stage(*, arms_r5_path=DEFAULT_ARMS_R5, leg_path=DEFAULT_LEG_PATH,
 
     staged_arms = json.loads((staged_dir / "ARMS.json").read_text())
     staged_arms_rids = set(staged_arms)
-    cross_layer_witness = cross_layer_invariant(                       # 4
+    cross_layer_witness = cross_layer_invariant(                       # 4 (leg1)
         staged_arms_rids, filtered_rids, where=str(staged_dir))
 
+    # 63ed329b: legs 2-N are DERIVED from ARMS_R5 + the adopted leg1's
+    # source fields -- never adopted from the probe (a different population)
+    leg1_rows = load_leg_rows(leg_dest)
+    derived = derive_legs(arms_r5, leg1_rows, staged_dir)
+    leg1_n = len(leg1_rows)
+    files = {f"{profile}/leg1": {"path": str(leg_dest), "n": leg1_n}}
+    files.update(derived["files"])
+
+    # the EXACT per-leg thinning-set invariant, every leg -- and the pinned
+    # numeric ladder, a substantive check against the specific measured
+    # population, not a tautology of write_leg_files' own r-range.
+    ladder_witness = assert_leg_ladder(
+        arms_r5, staged_dir, profile=profile, legs=legs,
+        pinned_counts=pinned_ladder)
+
     plan_path, plan, carried_plan_keys = write_positions_plan(         # 5
-        staged_dir, leg_dest, arms_r5, r4_source_plan,
-        max_per_game=max_per_game)
+        staged_dir, files, arms_r5, r4_source_plan, max_per_game=max_per_game)
+
+    # cost identity: two INDEPENDENTLY-computed paths must agree -- the leg
+    # ladder's own pair count vs. subset_plan's arm-count-based formula.
+    m_worlds = int(plan["m_worlds"])
+    expected_total_arm_playouts = ladder_witness["n_total_pairs"] * 2 * m_worlds
+    total_arm_playouts_agrees = (
+        expected_total_arm_playouts == int(plan["total_arm_playouts"]))
+    if not total_arm_playouts_agrees:
+        raise StagingError(
+            f"cost identity mismatch: {ladder_witness['n_total_pairs']} "
+            f"pairs x 2 x {m_worlds} = {expected_total_arm_playouts} "
+            f"playouts, but the plan's own total_arm_playouts = "
+            f"{plan['total_arm_playouts']} -- the leg ladder and "
+            "subset_plan's arm-count formula disagree")
 
     sc = run_stage_chunks(staged_dir, out_root=stage_chunks_out_root,  # 6
                           n_chunks=n_chunks, script=stage_chunks_script)
@@ -430,6 +621,9 @@ def stage(*, arms_r5_path=DEFAULT_ARMS_R5, leg_path=DEFAULT_LEG_PATH,
                 "the leg layer could witness). This is that witness.",
         **copy_witness,
         **cross_layer_witness,
+        **ladder_witness,
+        "expected_total_arm_playouts": expected_total_arm_playouts,
+        "total_arm_playouts_agrees": total_arm_playouts_agrees,
         "stage_chunks_rid_set_agrees": stage_chunks_rid_set_agrees,
         "n_chunks": sc["n_chunks"],
         "staged_dir": str(staged_dir),
@@ -477,6 +671,17 @@ def main(argv=None) -> int:
                     help="R4's source plan carries no equivalent key -- this "
                          "is written directly, not copied (see "
                          "DEFAULT_MAX_PER_GAME)")
+    ap.add_argument("--profile", default=DEFAULT_PROFILE,
+                    help="rules profile the legs are keyed under "
+                         f"(default {DEFAULT_PROFILE!r}, DESIGN's own "
+                         "--only-profiles walled)")
+    ap.add_argument("--legs", type=int, nargs="+", default=list(DEFAULT_LEGS),
+                    help=f"which leg numbers to derive+assert (default "
+                         f"1..{len(DEFAULT_LEGS)})")
+    ap.add_argument("--skip-pinned-ladder", action="store_true",
+                    help="check only the per-leg thinning PREDICATE, not "
+                         "the specific pinned counts (63ed329b) -- for a "
+                         "corpus that is not the one the ladder was measured on")
     ap.add_argument("--stage-chunks-script", default=str(STAGE_CHUNKS_SCRIPT))
     ap.add_argument("--staging-out", default=str(DEFAULT_STAGING_OUT))
     a = ap.parse_args(argv)
@@ -487,6 +692,8 @@ def main(argv=None) -> int:
             r4_source_plan_path=a.r4_source_plan, staged_dir=a.staged_dir,
             stage_chunks_out_root=a.stage_chunks_out_root,
             n_chunks=a.n_chunks_s2, max_per_game=a.max_per_game,
+            profile=a.profile, legs=tuple(a.legs),
+            pinned_ladder=(None if a.skip_pinned_ladder else PINNED_LEG_LADDER),
             stage_chunks_script=a.stage_chunks_script)
     except (StagingError, BR5.BuildError, GD.GateInputError, UP.UnionError) as exc:
         print(f"\n{'=' * 70}\n[stage-r5-corpus] COULD NOT STAGE: {exc}\n"
@@ -505,6 +712,13 @@ def main(argv=None) -> int:
           f"{', '.join(report['carried_plan_keys'])}")
     print(f"[stage-r5-corpus] afterstate_dedupe.applied="
           f"{(report['afterstate_dedupe_carried'] or {}).get('applied')}")
+    leg_ladder = ",".join(str(report["leg_counts"][str(r)]) for r in a.legs)
+    print(f"[stage-r5-corpus] leg ladder [{leg_ladder}] total="
+          f"{report['n_total_pairs']} matches_pinned="
+          f"{report['leg_ladder_matches_expected']}")
+    print(f"[stage-r5-corpus] total_arm_playouts_agrees="
+          f"{report['total_arm_playouts_agrees']} "
+          f"({report['expected_total_arm_playouts']} playouts)")
     print("[stage-r5-corpus] G-STAGED PASS")
     return 0
 

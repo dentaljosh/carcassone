@@ -17,7 +17,7 @@
     "G-CORPUS",
     "G-BAND"
   ],
-  "leg_path": "/tmp/r5_fixture_corpus_8sgyvgqj/positions_walled_leg1.jsonl",
+  "leg_path": "/tmp/r5_fixture_corpus_bxwz9k4f/positions_walled_leg1.jsonl",
   "leg_sha256": "1c550a604382043f95d4ad6c4ec9426266c1176ab92973c22399c7e8cd49bea8",
   "max_positions_per_seed": 1,
   "n_distinct_seeds": 6,
@@ -27,7 +27,7 @@
   "n_positions": 5,
   "n_seeds_136e9": 0,
   "provenance": "R4's POST-EXCLUSION S2 leg file, ADOPTED AS-IS (DESIGN R5-FINAL.b2) -- NOT a fresh re-mine",
-  "r4_arms_path": "/tmp/r5_fixture_corpus_8sgyvgqj/R4_ARMS.json",
+  "r4_arms_path": "/tmp/r5_fixture_corpus_bxwz9k4f/R4_ARMS.json",
   "r4_exclusion_list_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "schema": "carcassonne-rung3-r5-corpus/v1",
   "seed_ranges": {

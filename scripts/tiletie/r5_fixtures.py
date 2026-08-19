@@ -117,6 +117,26 @@ A1_MARKERS = {
     "G-STAGED::stage_chunks_rid_set_agrees": (
         "STAGING_R5.fixture.json", "stage_chunks_rid_set_agrees", bool),
     "G-STAGED::n_chunks": ("STAGING_R5.fixture.json", "n_chunks", int),
+    # the one-field-fix follow-up: the ENUMERATED carried-verbatim set, so
+    # "afterstate_dedupe made it into the artifact, not just held in fact"
+    # is itself an audited address.
+    "G-STAGED::carried_plan_keys": (
+        "STAGING_R5.fixture.json", "carried_plan_keys", list),
+    "G-STAGED::afterstate_dedupe_carried": (
+        "STAGING_R5.fixture.json", "afterstate_dedupe_carried", dict),
+    # 63ed329b: legs 2-N are DERIVED (never adopted) -- the per-leg ladder
+    # witness, so a truncated/wrong leg count is itself an audited address.
+    "G-STAGED::leg_counts": ("STAGING_R5.fixture.json", "leg_counts", dict),
+    "G-STAGED::leg_ladder_expected": (
+        "STAGING_R5.fixture.json", "leg_ladder_expected", list),
+    "G-STAGED::leg_ladder_matches_expected": (
+        "STAGING_R5.fixture.json", "leg_ladder_matches_expected", bool),
+    "G-STAGED::n_total_pairs": (
+        "STAGING_R5.fixture.json", "n_total_pairs", int),
+    "G-STAGED::expected_total_arm_playouts": (
+        "STAGING_R5.fixture.json", "expected_total_arm_playouts", int),
+    "G-STAGED::total_arm_playouts_agrees": (
+        "STAGING_R5.fixture.json", "total_arm_playouts_agrees", bool),
 
     # G-BAND -- RUN/CORPUS_R5.json (same artifact, DIFFERENT gate)
     "G-BAND::n_distinct_seeds": ("CORPUS_R5.fixture.json", "n_distinct_seeds", int),
@@ -370,44 +390,73 @@ def _emit_disjoint_fixture(dest: Path) -> None:
 
 def _emit_staging_fixture(dest: Path) -> None:
     """`STAGING_R5.fixture.json`, produced by the REAL `stage_r5_corpus.
-    stage()` -- all six steps, including a REAL `stage_chunks.py stage`
-    subprocess -- on a tiny synthetic ARMS_R5.json + matching leg, into a
-    throwaway scratch tree (never the live campaign root)."""
+    stage()` -- all six steps including leg DERIVATION (DESIGN ruling
+    `63ed329b`) and a REAL `stage_chunks.py stage` subprocess -- on a tiny
+    synthetic ARMS_R5.json + matching (COMPLETE-schema) leg1, into a
+    throwaway scratch tree (never the live campaign root). The synthetic
+    population deliberately THINS (arm counts 4/3/2/2) so legs 1-3 exercise
+    a real (if tiny) ladder, not a single-leg degenerate case."""
     tmp = Path(tempfile.mkdtemp(prefix="r5_fixture_staging_"))
-    rows = [
-        {"rid": "tt_sp_135000000350_p10", "root_id": "sp_135000000350",
-         "deck_seed": 135000000350, "ply": 10, "checksum": "A"},
-        {"rid": "tt_sp_135000000351_p12", "root_id": "sp_135000000351",
-         "deck_seed": 135000000351, "ply": 12, "checksum": "B"},
-        {"rid": "tt_sp_137000000508_p20", "root_id": "sp_137000000508",
-         "deck_seed": 137000000508, "ply": 20, "checksum": "C"},
-        {"rid": "tt_sp_137000000509_p21", "root_id": "sp_137000000509",
-         "deck_seed": 137000000509, "ply": 21, "checksum": "D"},
-    ]
+    # arm counts 4, 3, 2, 2 -> leg1 (len>1): all 4; leg2 (len>2): 2; leg3
+    # (len>3): 1 -- a real, if tiny, thinning ladder (63ed329b).
+    specs = [(135000000350, 10, 4), (135000000351, 12, 3),
+            (137000000508, 20, 2), (137000000509, 21, 2)]
+    rows = []
+    for seed, ply, n_arms in specs:
+        rid = f"tt_sp_{seed}_p{ply}"
+        rows.append({
+            "rid": rid, "root_id": f"sp_{seed}", "deck_seed": seed, "ply": ply,
+            "checksum": f"C{seed}", "root_player": 0,
+            "rules_profile": "walled", "stratum": "selfplay",
+            "game_label": f"g{seed}", "action_played": 1,
+            "actions": [1, 2, 3],
+            "n_arms": n_arms,   # fixture-only scratch field, stripped below
+        })
     leg = tmp / "leg.jsonl"
-    leg.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    leg.write_text("\n".join(
+        json.dumps({k: v for k, v in r.items() if k != "n_arms"})
+        for r in rows) + "\n")
     # stage_chunks.py's own chunk-writer (subset_plan) reads several more
     # ARMS keys than the population authority itself needs (stratum,
     # root_id, arms) -- a REAL fixture must satisfy the REAL consumer, not
     # just the minimal shape build_r5_corpus.py itself checks.
     arms_r5 = tmp / "ARMS_R5.json"
     arms_r5.write_text(json.dumps({
-        r["rid"]: {"arms": [1, 2], "root_id": r["root_id"],
-                   "stratum": "selfplay", "rules_profile": "walled",
-                   "game_label": f"g{r['deck_seed']}",
+        r["rid"]: {"arms": list(range(1, r["n_arms"] + 1)),
+                   "root_id": r["root_id"], "stratum": "selfplay",
+                   "rules_profile": "walled", "game_label": r["game_label"],
                    "deck_seed": r["deck_seed"], "ply": r["ply"],
                    "seat": 0, "k_remaining": 10, "phase_bucket": "mid",
-                   "tercile": 1, "n_legal": 2, "n_cand": 2,
-                   "tie_size_exact": 2, "gap": 0.0, "capped": False,
+                   "tercile": 1, "n_legal": r["n_arms"], "n_cand": r["n_arms"],
+                   "tie_size_exact": r["n_arms"], "gap": 0.0, "capped": False,
                    "dropped_actions": [], "champ_action": 1,
                    "champ_arm_index": 0, "champ_outside_tieset": False}
         for r in rows
     }))
+    # a13ed934 amendment: stage() now COPIES the R4 source plan (never
+    # synthesizes) -- a synthetic fixture needs a synthetic SOURCE plan too,
+    # with a genuine afterstate_dedupe.applied=True block (stage_r5_corpus
+    # refuses without one) and every key subset_plan's recompute touches.
+    r4_source_plan = tmp / "R4_SOURCE_PLAN.json"
+    r4_source_plan.write_text(json.dumps({
+        "schema": "fixture", "m_worlds": 32, "cap_j": None, "uncapped": True,
+        "deployed_cap_j": 4, "cap_j_label": "inf", "sample_seed": 1,
+        "playout_secs": 0.19, "t_champ_secs": 13.755,
+        "afterstate_dedupe": {
+            "applied": True,
+            "design_ref": "DESIGN.md §6 threat 3 (fixture)",
+            "dropped_index_path": str(tmp / "DROPPED_ALL_TRANSPOSITION.json"),
+            "n_dropped_all_transposition": 0,
+        },
+        "mean_arms_j4": 2.0, "n_positions_capped_at_4": 0,
+    }))
 
     report = SR5.stage(
         arms_r5_path=arms_r5, leg_path=leg,
+        r4_source_plan_path=r4_source_plan,
         staged_dir=tmp / "staged" / "corpus" / "positions_s2",
-        stage_chunks_out_root=tmp / "staged", n_chunks=2)
+        stage_chunks_out_root=tmp / "staged", n_chunks=2,
+        legs=(1, 2, 3), pinned_ladder=(4, 2, 1))
     (dest / "STAGING_R5.fixture.json").write_text(
         json.dumps(report, indent=2, sort_keys=True))
 
