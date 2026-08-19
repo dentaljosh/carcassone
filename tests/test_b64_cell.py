@@ -573,3 +573,191 @@ def test_no_branch_touches_production_yaml():
         if forbidden == "write_text":
             continue          # the read-out itself is written; that is the point
     assert "untouched on every branch" in src
+
+
+# =========================================================================== #
+# THE LAUNCHER LAYER — preflight.sh / run_cells.sh / WORKERS.conf              #
+#                                                                             #
+# The pair referenced a layer that did not exist (the same missing-layer class #
+# as run_gen.sh and the chunk layer). These assert the launchers agree with    #
+# the pair, which is LAW and blind-committed.                                  #
+# =========================================================================== #
+import subprocess                                                  # noqa: E402
+
+PREFLIGHT = CELL_DIR / "preflight.sh"
+RUN_CELLS = CELL_DIR / "run_cells.sh"
+WORKERS = CELL_DIR / "WORKERS.conf"
+
+
+def _conf() -> dict:
+    out = {}
+    for raw in WORKERS.read_text().splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if "=" in line and not line.startswith("#"):
+            k, v = line.split("=", 1)
+            out[k.strip()] = v.strip().strip('"').strip("'")
+    return out
+
+
+def test_the_launcher_layer_EXISTS_and_is_executable():
+    for f in (PREFLIGHT, RUN_CELLS, WORKERS):
+        assert f.is_file(), f
+    for f in (PREFLIGHT, RUN_CELLS):
+        assert f.stat().st_mode & 0o111, f"{f} must be executable"
+        assert subprocess.run(["bash", "-n", str(f)]).returncode == 0, f
+
+
+def test_WORKERS_conf_carries_the_PAIRS_OWN_constants():
+    """Every knob is READ from the pair; none is invented in the launcher."""
+    c = _conf()
+    assert c["TIEARB_B_WIDE"] == "64" and c["TIEARB_B_NARROW"] == "16"
+    assert c["TIEARB_J"] == "4" and c["TIEARB_MODE"] == "argmax"
+    assert c["TIEARB_SALT"] == "tiearb2-deploy-v1" and c["TIEARB_EPS"] == "0.0"
+    assert c["K_DETS"] == "8" and c["SIMS"] == "1376" and c["EXACT_K"] == "2"
+    assert c["N_GAMES"] == "1500" and c["N_DECKS"] == "750"
+    assert c["CHAMP_LEAF_HASH"] == B64.CHAMP_LEAF_HASH
+    # DESIGN §7.4's two-box wall: 30 + 22 = 52
+    assert int(c["W_LOCAL"]) + int(c["W_LAPTOP"]) == 52
+    assert c["NICE"] == "19"
+    # §9: the smoke's own constants, and the HALT bar ARITHMETIC
+    assert c["N_SMOKE"] == "24" and c["SMOKE_BAND"] == "900000300000"
+    assert c["SMOKE_BAND_TIER"] == "throwaway"
+    assert c["SMOKE_BAND_REGISTRY_CLAIMED"] == "false"
+    assert float(c["WORKER_S_COMMITTED_WIDE"]) == 958.794
+    assert float(c["SMOKE_HALT_BAR"]) == pytest.approx(
+        float(c["SMOKE_HALT_MULTIPLE"]) * float(c["WORKER_S_COMMITTED_WIDE"]), abs=1e-3)
+    assert float(c["SMOKE_HALT_BAR"]) == pytest.approx(B64.SMOKE_HALT_BAR, abs=1e-3)
+    # G-N's floors, in the launcher's own units
+    assert c["N_COMMON_FLOOR"] == "600" and c["CELL_GAMES_FLOOR"] == "1200"
+
+
+def test_preflight_runs_the_control_at_BOTH_B_VALUES():
+    """⭐ CHANGE (a): the jcz precedent runs a single $TIEARB_B. G-J13 requires
+    BOTH, and a B=64 control has never been executed anywhere."""
+    src = PREFLIGHT.read_text()
+    assert 'for B in "$TIEARB_B_WIDE" "$TIEARB_B_NARROW"' in src
+    assert 'PREFLIGHT_TIEARB_B="$B"' in src
+    assert "NEVER been executed anywhere" in src
+    # one verdict file per (host, B) — the shape G-J13's "witness records" needs
+    assert 'PREFLIGHT_${HOST}_${LABEL}_B${B}.json' in src
+    # and it refuses to launch if either B fails
+    assert 'rc_all=13' in src and "REFUSING TO LAUNCH" in src
+
+
+def test_preflight_emits_the_two_booleans_at_the_PINNED_path():
+    """⭐ CHANGE (b): RULING 2's pinned path is authoritative; two_sided.* is
+    kept for house compatibility. The SPENT probe file is NOT edited."""
+    src = PREFLIGHT.read_text()
+    assert 'w["pick_changed"] = ts_block["pick_changed"]' in src
+    assert 'w["root_leaf_value_bits_unchanged"]' in src
+    assert "not edited here" in src or "is **not edited here**" in src
+    # the adjudicator's pinned constants are the ones being satisfied
+    assert B64.PREFLIGHT_CHANGED_PATH == "j13_witness.pick_changed"
+    assert B64.PREFLIGHT_UNCHANGED_PATH == \
+        "j13_witness.root_leaf_value_bits_unchanged"
+    # ⚠️ the injection COPIES, never invents
+    assert 'if "pick_changed" in ts_block:' in src
+    assert "never invents" in src or "COPIES, never invents" in src
+
+
+def test_the_pinned_emission_shape_satisfies_the_adjudicator(tmp_path):
+    """A synthetic post-processed verdict of the shape preflight.sh writes must
+    PASS G-J13 — the launcher and the gate agree by construction."""
+    docs = []
+    for host in ("Doctor", "laptop-wsl"):
+        for B in (64, 16):
+            docs.append({
+                "host": host,
+                "expected": {"B": B, "J": 4, "salt": "tiearb2-deploy-v1"},
+                "two_sided": {"pick_changed": True,
+                              "root_leaf_value_bits_unchanged": True},
+                "j13_witness": {"B": B, "pick_changed": True,
+                                "root_leaf_value_bits_unchanged": True},
+            })
+    ok, d = B64.gate_j13(docs)
+    assert ok is True, d
+    assert set(d["by_host"]["Doctor"]) == {"64", "16"}
+    # drop the B=64 record on one host and the gate FAILS — "both B values"
+    assert B64.gate_j13([x for x in docs
+                         if not (x["host"] == "Doctor"
+                                 and x["j13_witness"]["B"] == 64)])[0] is False
+
+
+def _dry(*args):
+    r = subprocess.run([str(RUN_CELLS), *args], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return r.stdout
+
+
+def test_run_cells_dry_run_prints_both_cells_without_launching():
+    out = _dry("local", "--dry-run", "--band", "139000000000")
+    assert "[dry-run] cell WIDE (B=64)" in out
+    assert "[dry-run] cell NARROW (B=16)" in out
+    assert "--cand-tiearb-b 64" in out and "--cand-tiearb-b 16" in out
+    assert "--seed-start 139000000000" in out
+    assert "--n 1500" in out and "--paired" in out and "--shared-claim" in out
+    assert "--k-dets 8" in out and "--sims 1376" in out and "--exact-k 2" in out
+    assert "--workers 30" in out and "nice -n 19" in out
+    assert "--cand-tiearb-mode argmax" in out
+    assert "--cand-tiearb-salt tiearb2-deploy-v1" in out
+
+
+def test_the_two_cells_differ_in_EXACTLY_ONE_ARGUMENT():
+    """⭐ DESIGN §1.3's load-bearing property: WIDE is a strict REFINEMENT of
+    NARROW. A second difference would break the nesting the whole 'increment'
+    framing rests on."""
+    out = _dry("local", "--dry-run", "--band", "139000000000")
+    lines = {n: l for n in ("WIDE", "NARROW") for l in out.splitlines()
+             if l.startswith(f"[dry-run] cell {n} ")}
+    w = lines["WIDE"].split(":", 1)[1].split()
+    n = lines["NARROW"].split(":", 1)[1].split()
+    assert len(w) == len(n)
+    diffs = [(a, b) for a, b in zip(w, n) if a != b]
+    # the B value, the two out-subdirs and the claim-host carry the cell name;
+    # the SEARCH knobs must be identical
+    assert ("64", "16") in diffs
+    knob_diffs = [d for d in diffs
+                  if not any(t in d[0] + d[1] for t in ("WIDE", "NARROW"))]
+    assert knob_diffs == [("64", "16")], knob_diffs
+
+
+def test_the_smoke_dry_run_uses_the_throwaway_band_and_N_SMOKE():
+    out = _dry("local", "--smoke", "--dry-run")
+    assert "--seed-start 900000300000" in out
+    assert "--n 24" in out
+    assert "smoke_b64_WIDE_B64J4_deploy11008" in out
+    assert "analyze_b64_cell.py smoke-check" in out
+    assert "1.50 x 958.794 = 1438.191" in out
+
+
+def test_run_cells_REFUSES_the_throwaway_band_for_a_real_cell():
+    r = subprocess.run([str(RUN_CELLS), "local", "--dry-run",
+                        "--band", "900000300000"], capture_output=True, text=True)
+    assert r.returncode != 0
+    assert "throwaway band may never carry a real cell" in (r.stdout + r.stderr)
+
+
+def test_run_cells_REFUSES_without_a_band_and_never_claims_one():
+    r = subprocess.run([str(RUN_CELLS), "local", "--dry-run"],
+                       capture_output=True, text=True)
+    assert r.returncode != 0
+    assert "no band" in (r.stdout + r.stderr)
+    src = RUN_CELLS.read_text()
+    assert "never claims a band" in src
+    assert "BAND_REGISTRY" in src
+    # ⛔ it must not shell out to a claim tool
+    assert "claim_band" not in src
+
+
+def test_run_cells_requires_the_preflight_before_a_real_launch():
+    src = RUN_CELLS.read_text()
+    assert "require_preflight" in src
+    assert 'PREFLIGHT_${HOST}_FIRST_B${B}.json' in src
+    assert "G-J13" in src
+
+
+def test_the_launcher_carries_the_blind_commit():
+    """READ_RULE §4.3 item 12: every run manifest must carry the blind commit."""
+    assert _conf()["BLIND_COMMIT"] == "ad089bda"
+    assert "BLIND_COMMIT" in RUN_CELLS.read_text()
+    assert "blind_commit=$BLIND_COMMIT" in RUN_CELLS.read_text()
