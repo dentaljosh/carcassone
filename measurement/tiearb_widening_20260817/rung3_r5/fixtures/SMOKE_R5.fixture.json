@@ -1,0 +1,13 @@
+{
+  "arb_backend": "rust",
+  "arb_legal_mask_cache": true,
+  "backend": "python",
+  "c_worker_secs_per_playout": 0.191824,
+  "crn_cross_leg_identical": true,
+  "driver": "run_tiletie --smoke",
+  "judge": "clair-puct",
+  "m_worlds": 32,
+  "oracle_sims": 100,
+  "schema": "carcassonne-tiletie-run/v1",
+  "stratum": "s2"
+}

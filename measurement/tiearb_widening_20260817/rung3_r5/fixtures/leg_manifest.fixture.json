@@ -1,0 +1,13 @@
+{
+  "judge": "tier1-greedy",
+  "leg": 1,
+  "n_crn_verified": 4,
+  "n_ok": 4,
+  "profile": "walled",
+  "resolved_config": {
+    "backend": "rust",
+    "legal_mask_cache": true,
+    "m": 32,
+    "world_seed_salt": "tiletie-v1"
+  }
+}

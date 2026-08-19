@@ -1,0 +1,19 @@
+{
+  "by_chunk": {
+    "0": {
+      "execution": {
+        "carc_rs_binary_sha": "fedcba9876543210",
+        "carc_rs_build": "abcdef0123456789abcdef0123456789abcdef01",
+        "carc_rs_path": "/opt/carc_rs/target/release/librust.so"
+      }
+    }
+  },
+  "carc_rs_binary_sha_constancy": {
+    "boxes": {},
+    "ok": true
+  },
+  "preserved_from_existing": {
+    "n_preserved": 0
+  },
+  "stratum": "s2"
+}

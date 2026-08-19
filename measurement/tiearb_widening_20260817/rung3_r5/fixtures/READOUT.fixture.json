@@ -1,0 +1,18 @@
+{
+  "widening": {
+    "completion": {
+      "s2_n": 1007
+    },
+    "failed": {
+      "by_class": {},
+      "n_attempted": 1060,
+      "n_failed_rids": 0,
+      "rate": 0.0
+    },
+    "j_rider": {
+      "d_draw": {
+        "d_draw_ran": true
+      }
+    }
+  }
+}

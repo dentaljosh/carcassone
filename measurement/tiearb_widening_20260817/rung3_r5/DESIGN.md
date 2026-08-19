@@ -1,9 +1,12 @@
-# RUNG 3 (`J > 4`) — SUCCESSOR PREREG, rev R5 (DESIGN DRAFT)
+# RUNG 3 (`J > 4`) — SUCCESSOR PREREG, rev R5.1
 
-> **STATUS: DRAFT, NOT A PREREGISTRATION YET. NOT LAUNCHED. NOTHING RUN.** The mechanical
-> `READ_RULE.md` is **deliberately not written yet** — see §R5-8: three of its bars are numbers
-> that **do not exist until the counts-only calibration sweep runs**, and writing a bar before
-> its calibration is exactly what killed R4's S2 stratum.
+> **STATUS: PREREGISTRATION PAIR, AMENDED AFTER [`REVIEW_R2.md`](REVIEW_R2.md) (FAIL: 6 BLOCKING,
+> 11 REQUIRED, 5 COSMETIC). NOT LAUNCHED. NOTHING SCORED.** The mechanical
+> [`READ_RULE.md`](READ_RULE.md) **is written** and commits with this file and `FLOORS_R5.json`.
+> ⚠️ **R11 fixed:** the previous banner said the pair was *"not a preregistration yet"* and that
+> the read-rule was *"deliberately not written yet"* — both false once §R5-FINAL and the read-rule
+> shipped. **A blind-commit pair must not carry a banner saying it is not one.** §R5-8 is
+> superseded by §R5-FINAL and now says so.
 >
 > **Naming, deliberately not `shared_run_r5/`:** this run is **rung 3 only**. Rung 2 is being
 > answered by the R4 pair under the owner's Reading-A ruling, so calling the successor "shared"
@@ -25,27 +28,453 @@ supply passed, every rid/root layer was zero. It was **degenerate in one measura
 bound was **the wrong shape** to see it coming. This successor fixes the shape, the mining
 predicate, the loop, and the drafting gap that made the void's scope arguable.
 
+## R5-FINAL — DESIGN FINALIZED AGAINST THE MEASURED CALIBRATION (2026-08-19)
+
+The sweep ran under the §R5-1.0 ruling. `CALIBRATION.json` is the measured input; the six design
+decisions are taken here and the pair is ready for blind commit.
+
+**⚠️ A constant the brief got wrong, caught before it propagated.** The task brief named the
+scoring shape as **`M = 128`**. **It is `M = 32`.** Rung 3 **is** stratum S2, and R3.3's `G-M`
+conjunct reads *"S1: `m_worlds == 128` … **S2: `32` / `16`**"*. R4's own reasoning is why: rung 3
+reads only `B = 16`, which `M = 32` fully supplies (sel 16 / eva 16), and **`E = 16` is the
+precision Stage-1b's `capped_only` levels — the source of the +0.1382 / +0.0842 predictions — were
+measured at.** Matching it keeps prediction and measurement in one currency **and costs 4× less**.
+Committing `M = 128` would have quadrupled the bill to buy a currency mismatch.
+
+**Pre-registered constants, verified against `shared_run_r4/`:** `--m 32` · `--oracle-sims 100` ·
+`--arb-backend rust` · `--arb-legal-mask-cache` on · `--only-profiles walled` · `--cap-j inf` ·
+`--max-per-game 3` · CRN salt **`tiletie-v1`** · instrument cap draw **`tiletie-cap|<rid>|20260812`**
+· deployed draw **`tiearb2-deploy-v1`** · **every `run_tiletie` path flag explicit** (§0.O as
+widened by R4-0.4 — all six, three of them git-tracked in a spent run). **The two-box scoring layer
+is the instrument** — proven on R4 and governed by `../DEVIATIONS.md` §D1/§D3/§D4.13.
+
+### R5-FINAL.a — THE PLY FLOOR: **`k = 0`.** The original estimand is kept.
+
+| | `k = 0` | `k = 3` |
+|---|---|---|
+| positions | **1,064** | 1,036 (**−2.6%**) |
+| collisions at governed scale | **3 GROUPS of 2 = 6 positions involved** (all ply 2, all 137e9↔137e9); excluding the later member of each removes **3** (N8) | **0**, at every scale |
+| `d` at governed scale | **0.282%** vs the 5% guard ⇒ clears **17.7×** | 0 |
+| estimand | **`Δ_ora` over capped tied plies — what rung 3 was bought to measure** | `Δ_ora(ply ≥ 3)` — a sub-population |
+
+**Ruled `k = 0`.** The ply-floor existed to rescue a bound that could not hold. **The bound holds:**
+`d = 0.282%` against an absolute 5% guard is a 17.7× margin, **measured on the exact corpus that
+will be scored**. Paying an **estimand change** — with R5-2.3's mandatory population-mismatch rider
+on every branch, and the 1.400/1.244 multipliers derived on the *unfloored* population — to fix a
+problem that is already measured-clear is a **bad trade**. ⚠️ **`k` stays a built knob (R5-W1) and
+the floor becomes live again the moment a successor GENERATES fresh games at a larger `G`**, where
+growth and extrapolation genuinely bite. It is set to 0 **for this run**, on this corpus, for this
+reason.
+
+### R5-FINAL.b — THE BOUND: the relative bound is **RETIRED as circular**; the absolute guard governs.
+
+⭐ **`M × d_model` cannot fire on a corpus that has already been measured.** `bound = 3 × (3/1064) ×
+1064 = 9` against a realized **3** — **satisfied by construction, with exactly `M` as its headroom,
+incapable of failing.** That is **pass-always**, the mirror of the R4-0.2 vacuity, and it must not
+be shipped as though it were a live test.
+
+**What governs instead:**
+
+1. **`G-INTERNAL-DUPE` — the ABSOLUTE 5% guard, RECOMPUTED AT RUN TIME.** `d_internal ≤ 0.05`;
+   realized 0.002820, clearing **17.7×**. ⛔ **B2/C1 CORRECTED:** the previous revision named this
+   gate `G-SATURATION` and addressed it at
+   `CALIBRATION.json::by_ply_floor.0.d_model_at_governed` — **a constant committed with the pair,
+   and the FITTED value this very section calls vacuous.** A gate whose input is frozen before the
+   run **cannot fire**: the retirement had swapped one vacuous bound for another. The replacement
+   **recomputes `d_internal` from the physical leg at corpus time** (READ_RULE §2), so the quantity
+   can differ from expectation if the corpus does. ⚠️ And see READ_RULE §2.1: because the
+   calibration measured **this same file**, both degeneracy gates are **corpus-identity checks, not
+   discovery gates** — that is stated rather than implied.
+2. **`G-COLLIDE` — a consistency check.** Realized collisions must **equal 3**, all at ply 2; a
+   mismatch **RAISES**, because it would mean the scored corpus is not the measured one.
+3. **The fit is REPORTED, never load-bearing.** `d_model(G) = a·G^b`, `b ≈ 0.906`, **`r² = 1.0` on
+   `n_points = 2` — vacuous by construction** (two points determine a line exactly), and both lie
+   above the `G = 500` composition break. ⭐ **No extrapolation is needed at all: the successor
+   scores the EXISTING corpus at exactly `G = 5,340`, generating nothing.** A fit exists to
+   extrapolate; there is nothing to extrapolate to.
+
+*The R4 death was a bound of the wrong shape — calibrated at 858 games, applied at 5,340. The fix
+is not a better fit; it is **not needing one**, because calibration and governance are the same
+corpus at the same scale.*
+
+### R5-FINAL.b2 — ⛔ CORPUS PROVENANCE (B4): it is R4's POST-EXCLUSION file, and it is adopted AS-IS
+
+**The previous revision said the retained positions "enter the probe build and are gated exactly
+like fresh ones … pre-cleared of nothing". THAT IS FALSE and is withdrawn.** Checked against the
+artifact: of R4's 29 excluded S2 rids, **28 are already ABSENT** from
+`corpus/positions_s2/positions_walled_leg1.jsonl` and **1 is present** —
+exactly `carried = 28` removed and `residual = 1` left behind. **Every R5 number rests on a file
+R4 had already cleaned.**
+
+Three consequences, all now handled rather than inherited:
+
+1. **The 0.282% was a POST-CLEANING RESIDUAL presented as the corpus's raw degeneracy.** It is now
+   labelled as such wherever it appears.
+2. **The 1 residual collider was still in the corpus and no R5 gate removed it.** It is
+   **`tt_sp_135000000839_p2`** (a banked-`135e9` rid, at ply 2) and **R5 excludes it.**
+3. **`n_positions == 1064` was an identity test that only passes if R5 silently reuses R4's
+   exclusion list** — while `G-CORPUS`'s own address implied a *fresh build*, which re-mines
+   **1,092** (= 1,064 + 28) and would have **failed the conjunct by 28 on a healthy run.**
+
+⭐ **RULED: the corpus is R4's post-exclusion leg file, ADOPTED AS-IS, with its provenance stated
+and pinned by hash — not re-mined.** Re-mining would re-admit the 28 and force R5 to re-derive an
+exclusion decision R4 already made and recorded. The pinning is `leg_sha256` +
+`r4_exclusion_list_sha256`, both committed in `FLOORS_R5.json` and gated by `G-CORPUS`.
+
+**R5's own exclusion list**, applied on top and committed before the run:
+
+```
+R4 post-exclusion leg file                                   1,064   ADOPTED AS-IS (sha-pinned)
+  - residual collider left behind by R4 (tt_sp_135000000839_p2)   1
+  - later-ordered member of each same-band internal-dupe group    3
+  =  n2 committed                                            1,060
+     G-COMPLETE floor = ceil(0.95 x 1060)                     1,007
+```
+
+⚠️ **The internal-dupe count is GROUPS, not positions — a distinction the calibration's bare
+`n_collisions: 3` hides.** Measured on the leg: **3 groups of size 2 = 6 positions involved**, all
+at **ply 2**, all **137e9↔137e9 same-band**. Excluding the later member of each group removes **3**
+positions and leaves one representative of each board, which is what independence requires.
+
+### R5-FINAL.c — `n₂` AND THE FLOOR, from REALIZED supply. **Nothing inherited.**
+
+```
+retained S2 substrate                    5,340 games generated   (no generation in R5)
+  games producing >=1 capped ply           980                   MEASURED (18.4% yield)
+  capped plies in R4's POST-EXCLUSION leg 1,064                  MEASURED, sha-pinned (R5-FINAL.b2)
+  mean positions per producing game      1.086, max 3 (= --max-per-game 3)
+  same-band internal-dupe GROUPS             3 (= 6 positions), all ply 2, all 137e9<->137e9
+  - R4 residual collider left behind         1  (tt_sp_135000000839_p2)
+  - later member of each dupe group          3
+  =>  n2 committed                       1,060
+      G-COMPLETE floor = ceil(0.95 x n2) 1,007
+```
+
+⛔ **R4's `n₂ = 1,100` is NOT inherited** — it was a target set before the supply was known.
+⛔ **And the previous revision's `1,064` is superseded**: it was R4's post-exclusion count taken as
+if it were raw supply, with the residual collider and the internal duplicates left in
+(§R5-FINAL.b2). `FLOORS_R5.json` records **1,060**.
+
+**Power is essentially unchanged across all three figures**: the corrected +0.0842 resolves at
+`sd_Δ ≤ 1.371` (vs 1.373 at 1,064 and 1.396 at 1,100), the legacy +0.1382 across the whole bracket,
+and 1.400-vs-1.244 remains unseparable at `sd_Δ ≤ 0.879`. **The 4 excluded positions cost 0.002 of
+`sd_Δ` headroom** — the exclusions are an independence correction, not a power decision.
+
+### R5-FINAL.d — `I7`: **W9 `D-DRAW` is FUNDED.** The obligation is discharged, not inherited again.
+
+R4 skipped W9 as moot when S2 voided, leaving `I7`'s **dedupe-partition conditional** unmeasured
+with the successor inheriting it. **R5 funds it** (≈2 worker-h; the corpus exists): post-corpus,
+no playouts, non-adjudicating, reported under `I7`, and it **may never correct, reweight or
+re-scale `Δ_ora`**. Binding location: `I7` rides **every** rung-3 branch (READ_RULE §5).
+
+### R5-FINAL.e — Existence-time markers: applied throughout (READ_RULE §1, R5-6.1).
+
+### R5-FINAL.f — The failed-record bound, authored PRE-DATA, with its expected class.
+
+`n_failed_rids / n_attempted ≤ 0.02`; **any non-`WindowTruncationError` class RAISES regardless of
+count**; whole-rid drop across both judges (D4.18).
+
+⛔ **THE EXPECTATION IS CORRECTED (B5), and the previous one is withdrawn.** The previous revision
+pre-registered that capped plies *"skew EARLY"* so exposure *"should be LOWER than S1's realized
+0.30%"*. **The corpus's own `ply` field refutes it: mean 69.15, median 68, max 142; 63.3% at
+ply ≥ 50; only 2.63% at ply ≤ 2** — against S1's mean 66.50. `WindowTruncationError` fires at
+**extreme board extents (~70 tiles placed)**, and **R5's corpus sits slightly DEEPER in that region
+than S1's.**
+
+⇒ **The pre-registered expectation is EQUAL-OR-HIGHER than S1's 0.30%.**
+
+⚠️ **The inferential error, named so it cannot recur:** the prose reasoned from the ply of the
+three **collisions** — forced early by the birthday argument, since few distinct boards exist at
+ply 2 — and generalised it to the ply of the **corpus**. **Where collisions happen is not where the
+population lives.** Uncorrected, a perfectly healthy elevated failure rate would have been reported
+as *"a surprise worth naming"*, which is worse than having no expectation at all.
+
+### R5-FINAL.g — Cost and wall. **No generation.**
+
+```
+scoring, M=32, per capped ply (R4-2.2 marginal S2 rate 302.5wh/1100 = 0.27500 wh/ply)
+  x n2 = 1,060                                              291.5 wh   at COMMITTED c
+champ picks  1,060 x 13.755 s                                 4.1 wh
+corpus assembly + gates (counts only)                        ~2   wh
+W9 D-DRAW                                                     2.0 wh
+TOTAL, committed c                                         ~299.6 wh
+TOTAL, at the S2 @ M=32 REALIZED c (below)                 ~211   wh
+```
+
+⭐ **R3 CORRECTED — the lower bound used the WRONG SMOKE, the same currency error this revision
+exists to fix for `M`.** The previous figure applied **S1 @ M=128** ratios (IF 0.7471, ARB 0.7812)
+when the same `c_remeasure` block carries **S2 @ M=32** smokes: **IF `1.6278605/2.35 = 0.69271`,
+ARB `0.13595312/0.178232 = 0.76279`** ⇒ **0.191824 wh/ply**. At `n₂ = 1,060`:
+`0.191824 × 1060 + 8.1 = 211.4 wh`.
+
+⇒ **≈211–300 worker-h.** Wall: at `W_EVAL_LOCAL 30 + W_EVAL_LAPTOP 22 = 52` (C3 — the previous
+5.3–7.0 h implied `W ≈ 43`, an unstated ~83%-of-nameplate derate), **≈4.1–5.8 h two-box at
+nameplate**; the committed figure carries the derate explicitly rather than burying it.
+R4 spent ≈500 wh *generating* these games; retaining them is the whole saving.
+
+⚠️ **C2, disclosed:** `_positions_s2_pass1/POSITIONS_PLAN.json::champ_pick_secs ≈ 21.5 wh` was
+already spent on this substrate, and R5 budgets another 4.1 wh for picks. **Double-paid and
+conservative** — left in rather than netted out, so the bill is never understated.
+
+### R5-FINAL.i — ⭐ EMITTER SPEC (N3): five artifacts, every addressed key, and the A1 fixture set
+
+**Five run-time artifacts are addressed by the read-rule and none had a builder.** Specified here
+so a builder implements without interpretation. **`RUN` = `measurement/tiearb_widening_20260817/rung3_r5/`.**
+
+| artifact | key → type / semantics | built by |
+|---|---|---|
+| **`RUN/CORPUS_R5.json`** | `leg_path` str · `leg_sha256` str(64) — of the **adopted R4 leg** · `r4_exclusion_list_sha256` str(64) — §R5-FINAL.j · `n_in` int (1064) · `n_excluded_r5` int (4) · `n_positions` int (**1060**) · `excluded_rids` list[str] (the 1 residual + 3 dupe-later-members) · `n_distinct_seeds` int (980) · `max_positions_per_seed` int (≤3) · `n_out_of_band` int (0) · `n_seeds_136e9` int (0) · `seed_ranges` obj (from `FLOORS_R5.json`) | **NEW** `scripts/tiletie/build_r5_corpus.py` — reads the leg, applies §R5-FINAL.b2's exclusion rule, emits. Pure counts; no scoring |
+| **`RUN/GATE_INTERNAL_DUPE.json`** | `n_positions` int · `n_dupe_groups` int (3) · `n_dupe_positions` int (6) · `d_internal` float (`n_dupe_groups / n_positions`) · `ply_histogram` obj{ply→count} over dupe members · `band_pairs` list[str] (`"137e9<->137e9"`) · `leg_sha256` str(64) | **NEW**, same script — the digest map is `sha256(checksum)` per row, grouped; **groups, not positions**, is the numerator |
+| **`RUN/GATE_DISJOINT_R5.json`** | `passed` bool · `comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection` int — **rid/root layers only**; the digest layer is not carried (READ_RULE §0). ⭐ **THE COMPARISON SET IS PINNED, and so is the exclude-rids REFERENCE** — see the two lines below | **EXTENDS** `scripts/tiletie/gate_disjoint.py` — same shape as R4's artifact, restricted to two layers |
+
+⭐ **`GATE_DISJOINT_R5` — the two lines REVIEW_R4 requires (P1), because an unpinned reference
+defaults to an EMPTY list and the comparison is then PASS-ALWAYS (the campaign's third
+mirror-disease catch):**
+
+```
+(a) COMPARISON SET, pinned:
+      { s2_vs_tiletie0812, s2_vs_tiearb2_0816, base_vs_extension, s2_vs_exclude_rids }
+    = R4's seven minus the three that require an in-run S1 side
+      (s1_vs_tiletie0812, s1_vs_tiearb2_0816, s1_vs_s2), with exclude-rids renamed.
+
+(b) EXCLUDE-RIDS REFERENCE, pinned (NEVER a default, NEVER an empty list):
+      sorted( GATE_DISJOINT.json::digest_exclusions.S2.rids )        -- the real 29-rid R4 S2 list
+      from  measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json
+      under the SAME canonical serialization as R5-FINAL.j (whose sha 76f9ac58... already pins it)
+      passed as run_r5_gate(exclude_rids=...)
+    EXPECTED: n_intersection == 0 on the 1,060-position OUTPUT
+              and NON-ZERO (1) on the pre-exclusion 1,064 INPUT
+    => this is the LIVE WITNESS that R5's four exclusions were actually applied.
+       A test MUST assert the comparison FAILS on the pre-exclusion corpus; a reference that
+       cannot fail on the un-cleaned corpus is not a reference.
+```
+
+⭐ **Why R4's S1 gets NO comparison, written down as REVIEW_R4 asks** — the one substantive gap in
+the set above, and it resolves in the pair's favour: **rid/root disjointness from R4's S1 is
+GUARANTEED BY `G-BAND`(i)'s range conjunct**, not by a comparison. R4-6 split band 135e9 at
+`+349/+350` (S2 takes `+350…+849`), and the 137e9 sub-ranges are disjoint by construction
+(S1 `+0…+507`, S2 `+508…+5347`). All 1,064 seeds lie inside R5's two committed ranges with **0
+out-of-range** ⇒ **no R5 rid can be an R4-S1 rid.** The guarantee is structural, so a comparison
+would be redundant — but the *reason* must be on the record, or a later reader sees only a missing
+comparison.
+
+⭐ **Band-label mapping, declared once (REVIEW_R4 (c)):** two vocabularies coexist deliberately —
+short `"137e9<->137e9"` in `GATE_INTERNAL_DUPE.band_pairs`, long `banked_135e9` /
+`extension_137e9` in `CORPUS_R5.seed_ranges` — **`banked_135e9` ≡ `135e9`, `extension_137e9` ≡
+`137e9`**. Each artifact's vocabulary matches the conjunct that reads it, and **`G-BAND` names its
+ranges numerically and never by label**, so no conjunct has to resolve a label across the two. ⚠️
+**This is NOT an R8-class hazard** (there, one key path had to resolve under a single spelling);
+it is declared here so the coexistence is deliberate rather than discovered.
+| **`RUN/SMOKE_R5.json`** | `m_worlds` int (**32, top level**) · `oracle_sims` int · `arb_backend` str · `c_worker_secs_per_playout` float · `crn_cross_leg_identical` bool | **EXISTING** `run_tiletie.py --smoke` with `--smoke-manifest RUN/SMOKE_R5.json`; **no code change** |
+| **`RUN/MERGE_REPORT_s2.json`** | `preserved_from_existing` obj · per-chunk `execution` block · `carc_rs_build` equality result · per-box `carc_rs_binary_sha` constancy result | **EXISTING** `merge_legs.py` (D1/D3/D4.13), pointed at R5's out-root |
+
+**A1's committed fixture set** — `RUN/fixtures/` (committed **with** the blind pair; A1 audits key
+presence + JSON type only, never a value):
+
+```
+fixtures/CORPUS_R5.fixture.json          fixtures/RUN_MANIFEST_R5.fixture.json
+fixtures/GATE_INTERNAL_DUPE.fixture.json fixtures/leg_manifest.fixture.json   <- resolved_config.*
+fixtures/GATE_DISJOINT_R5.fixture.json   fixtures/READOUT.fixture.json        <- widening.*
+fixtures/SMOKE_R5.fixture.json           fixtures/D_DRAW.fixture.json
+fixtures/MERGE_REPORT_s2.fixture.json
+```
+
+⚠️ **The fixture set must cover EVERY `[post-corpus]` and `[post-scoring]` address** — R5-6.1
+diagnosed exactly this leak in R4 ("covered the leg manifest and the smoke manifest but **not**
+`RUN_MANIFEST`"), and A1's completeness assertion is over the **marker list**, not over this
+filename list, so a missing fixture fails A1 rather than passing silently.
+
+### R5-FINAL.j — `r4_exclusion_list_sha256`: referent and canonical serialization (N4)
+
+The value `76f9ac58e2694a54…` is correct but was unreproducible because neither its referent nor
+its serialization was written. **Both are now pinned, exactly:**
+
+```
+r4_exclusion_list_sha256
+  = sha256( json.dumps( sorted( <GATE_DISJOINT.json>::digest_exclusions.S2.rids ) ) )
+  where <GATE_DISJOINT.json> = measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json
+  json.dumps default separators, no sort_keys (input is a list), UTF-8, no trailing newline
+```
+
+⚠️ **It is NOT any of the four `EXCLUDE_RIDS_*.txt` files** — a verifier that reached for those
+would fail to reproduce it, which is what happened on review.
+
+### R5-FINAL.h — For a second reviewer, before blind commit
+
+1. **`M = 32`, not 128** (above) — the one inherited constant I had to correct.
+2. **The retired relative bound** (§b) — the ruling that a pre-measured corpus makes `M × d`
+   pass-always. If a reviewer disagrees, the alternative is to *generate* fresh games, which
+   changes the run.
+3. **`k = 0` over `k = 3`** (§a) — trading 2.6% supply for an estimand change was refused.
+4. **The S2 union-plan pointer defect stands** (physical leg file complete and executor-verified;
+   `POSITIONS_PLAN` `files` block ext-only; `CORPUS_UNION` S2 `witnessed:false`). S2's *void* is
+   R4's; **this run reads the PHYSICAL file and `G-CORPUS` says so explicitly.** No repair is
+   licensed and none is taken.
+
+---
+
+## R5-1.0 ⚠️ PRE-DESIGN RULING (2026-08-19) — units, and a confound that changes the sweep's purpose
+
+The calibration sweep **refused on a unit mismatch and was right to refuse.** Ruling the three
+questions, plus one finding the refusal exposed that matters more than the units.
+
+### R5-1.0.a THE UNIT OF `G`: **games GENERATED.** Confirmed.
+
+`rung3_calibrate.py --scales` currently means *a prefix of games PRESENT in the mined leg file*.
+That cannot price the successor: **the successor sizes a generation run**, `FLOORS.json` is written
+in **generated** games, and only **18.4%** of generated games produce a capped ply at all
+(980 producing / 5,340 generated; 1,064 rids; mean 1.086 positions per producing game, max 3 = the
+per-root ceiling). A density indexed by *producing* games cannot be inverted into "how many games
+must I generate", which is the only question the bound is asked.
+
+**The seed → generation-index mapping, verified against `FLOORS.json` and the pair:**
+
+```
+S2 generation order (5,340 games):
+  [135000000350 … 135000000849]  -> idx    0 …  499   (banked; band 135e9, S2 sub-range)
+  [137000000508 … 137000005347]  -> idx  500 … 5339   (extension; FLOORS.sub_ranges.s2)
+  anything else                   -> RAISE
+```
+
+Verified: `FLOORS.json::sub_ranges.s2 = [137000000508, 137000005347]` and
+`games_extension_s2 = 4840`; the pair's R4-2.1 gives S2 = **500** banked games and R4-6 splits band
+135e9 at `+349/+350`. `500 + 4,840 = 5,340` ✓.
+
+⭐ **Why seed order is the correct order, since someone will object that work-stealing means games
+were not *produced* in seed order:** a successor sizing `G` games runs `--seed-start S --games G`
+and gets seeds `S … S+G−1`. **So a prefix of seeds is exactly the corpus `G` generated games would
+be** — which is the counterfactual the bound must price. Wall-clock/claim order is an artifact of
+`--shared-claim` and **must not be used**. **Zero-yield games advance `G` silently**, which is the
+entire point of the unit.
+
+### R5-1.0.b THE NUMERATOR: **NOT re-based.** Density stays per-POSITION.
+
+`d` must be in the same currency as the quantity the bound grades. R4's bound compared
+`carried + residual` (a **count of excluded positions**) against `⌈0.005 × qualifying_deduped⌉` (a
+**fraction of positions**). So:
+
+> **`d(G) = collisions / qualifying-deduped POSITIONS`, indexed by `G` = games GENERATED.**
+
+A hybrid, deliberately: the **independent** variable is what you buy (games), the **dependent**
+variable is what the bound grades (positions). §R5-1.2 as originally drafted said "a bound on the
+density" without pinning the density's own denominator — **that ambiguity is closed here.**
+
+### R5-1.0.c ⛔ SECOND REVERSAL (R4) — the stratum mechanism below is ITSELF WRONG, and the scale-growth story is RESTORED
+
+> **This section reversed the original scale-growth reading. `REVIEW_R2.md` §R4 reversed it back,
+> and the reviewer is right. Recorded as a SECOND reversal on one point, with both errors named,
+> because a quiet re-reversal would be worse than either mistake.**
+>
+> **The claim below — that capped plies are "disproportionately ply-2", so S2 may be dense because
+> it is capped-only rather than because it is big — is refuted by the corpus's own `ply` field.**
+> Measured this session on the two final builds: **S1 ply-2 share `35/1344 = 2.60%`; S2 ply-2 share
+> `28/1064 = 2.63%` — identical.** The strata have the **same** early-ply composition, so there is
+> no stratum mechanism to explain the density gap.
+>
+> **And the same-currency contrast I said did not exist is available on those same two builds:**
+> internal-dupe density **S1 `1/1344 = 0.074%` at 858 generated games** vs **S2 `3/1064 = 0.282%`
+> at 5,340** — the *same quantity* (same-band internal duplication) at two scales, **3.8× on 6.22×
+> the games**, consistent with the fitted `b ≈ 0.906`. ⇒ **The scale-growth reading SURVIVES in the
+> correct currency; the replacement mechanism does not.**
+>
+> **Both of my errors, named:** (1) the original comparison was cross-stratum *and* mismatched
+> (S1's *banked* rate against S2's), which was a real defect — that part of the reversal stands;
+> (2) the replacement mechanism generalised **collision** ply to **corpus** ply, the same
+> inferential error as B5. **The right fix was to find the same-currency contrast, not to invent a
+> mechanism.**
+>
+> **No consequence for R5**, which generates nothing and whose guards are corpus-identity checks
+> (READ_RULE §2.1). Corrected in place here and in
+> [`../PREREG_FAILURE_S2.md`](../PREREG_FAILURE_S2.md) §2.
+
+### R5-1.0.c (original text, superseded above) — the two "calibration points" are CROSS-STRATUM
+
+Checking the units surfaced something larger. The two points §R5-1 was built on —
+**858 games → 0.181%** and **5,340 → 2.636%** — are **not two points on one curve**:
+
+- `858` is **S1's** generated total; `0.181%` is **S1's banked** rate (1/551, from 350 games).
+  S1's *full-corpus* rate is **1/1,344 = 0.074%**. The original pairing mixed two S1 corpora.
+- More seriously, `2.636%` is **S2's** — and **S1 and S2 are different strata with different
+  mining predicates**: uniform tied plies at `--max-per-game 4` versus **capped-only** plies at
+  `--max-per-game 3`.
+
+**Within S1 the collision count is 1 at both 350 and 858 games — one event, no growth signal.** The
+S2 rate really is ~36× S1's, but that gap is **confounded between scale and stratum**, and the
+mechanism favours *stratum*: **all 30 collisions are at ply 2**, and capped plies are
+disproportionately ply-2 (a near-empty board offers many equal-valued symmetric placements — which
+is what makes a large tie set, hence a capped ply). **S2 may be dense because it is capped-only,
+not because it is big.** Corrected in place at [`../PREREG_FAILURE_S2.md`](../PREREG_FAILURE_S2.md) §2.
+
+⇒ **The sweep's primary purpose is now to DISENTANGLE scale from stratum, not to add points to an
+established curve.** It must therefore run **entirely within S2** (S2's own 5,340 generated games),
+so the fitted `d(G)` isolates the scale effect. **The a priori pair-counting argument survives
+untouched** — a linear-in-`n` bound must eventually fire for any nonzero revisit rate — but **the
+exponent and the magnitude are unmeasured**, and §R5-1.2's `M = 3` multiplier is applied to a
+`d_model` that does not exist yet. That is the correct order; it is only worth saying because the
+withdrawn numbers made it look as though it already did.
+
+### R5-1.0.d THE SCALES: **five, not four** — `{500, 1000, 1500, 3000, 5340}`
+
+The briefed `{500, 1500, 3000, 5340}` meets the ≥4 floor, but **`G = 500` is exactly the
+banked/extension boundary**, so the corpus composition **changes structurally there**: at
+`G ≤ 500` only band 135e9 is present and **no cross-band collision can occur**; above it, the
+`base_vs_extension` category (D4.11/B1) switches on. A single power law fitted across that break is
+fitting two regimes. **Adding `G = 1000` characterises the break** at zero extra cost (counts
+only). Mandatory reportables per scale: **band composition** and an explicit note that the
+**structural break at `G = 500`** makes any single-law fit an approximation across a composition
+change rather than a law.
+
+### R5-1.0.e TOOL AMENDMENT SPEC (builder)
+
+Add `--generated-order` (or equivalent): map each leg record's deck seed to a generation index via
+the **declared, committed ranges** above, in that order; a scale `G` selects records whose index is
+`< G`. **RAISE if any leg seed falls outside the declared ranges** — fail-loud on the unexpected,
+never silently skip, since an out-of-range seed means the corpus is not the one `FLOORS.json`
+describes. Per scale emit: `G`, `n_games_producing`, `n_positions`, `n_collisions`, `d`, and the
+**per-band game counts**. Declare the ranges in the tool's own manifest so the mapping is auditable
+without re-deriving it.
+
+⚠️ **Recorded, and the calibration must SAY it: the S2 union-plan pointer defect stands.** The
+physical leg file is **complete** (1,064 rows, both bands — the executor verified this before
+trusting it), while `POSITIONS_PLAN`'s `files` block is still **ext-only** and
+`CORPUS_UNION` S2 `witnessed:false`. **S2 is void, so no repair is licensed** — but the calibration
+reads the **physical file**, not the plan, and **must state that explicitly in its output**, so no
+later reader assumes the plan pointer was the source. Reading around a known-defective pointer is
+acceptable **only when it is disclosed**; undisclosed, it is the D4 failure again.
+
+---
+
 ## R5-1. ⭐ (a) The scale-aware bound — and the honest limit of what two points support
 
-**The finding to design against:** collision density is **not a constant of the generator**; it
-grows with games mined.
+> ⚠️ **SUPERSEDED IN PART by §R5-1.0.c — read that first.** The table and exponent below were the
+> pre-ruling framing; **the two rows are cross-stratum and the derived magnitudes are withdrawn.**
+> Retained only so the correction has its referent. **The design conclusion — that the bound must be
+> scale-aware and that `d_model` must be *measured* — is unchanged and is if anything stronger,
+> since `d_model` is now known to be entirely unmeasured rather than roughly known.**
 
-| corpus | games `G` | density `d` |
-|---|---|---|
-| base calibration | 858 | 0.181% |
-| S2 (governed scale) | 5,340 | 2.636% |
+**The finding to design against:** ~~collision density is **not a constant of the generator**; it
+grows with games mined.~~ **Amended:** whether density grows with games mined is **exactly what the
+sweep must establish** — the apparent growth below is confounded with the stratum (§R5-1.0.c). What
+*is* established a priori is that a **linear-in-`n` bound must eventually fire** for any nonzero
+revisit rate.
 
-`G` grew **6.22×**; `d` grew **14.56×**. Pair-counting (collisions ∝ `G²`, positions ∝ `G`, so
-`d ∝ G`) predicts **6.22×** — **the observed growth is 2.34× steeper than even the quadratic
-model.** Fitting the two points gives `d ∝ G^1.46` (collisions `∝ G^2.46`).
+| corpus | games `G` | density `d` | ⚠️ |
+|---|---|---|---|
+| ~~base calibration~~ | ~~858~~ | ~~0.181%~~ | **S1**, and the rate is S1's *banked* 1/551; S1's full-corpus rate is **0.074%** |
+| ~~S2 (governed scale)~~ | ~~5,340~~ | ~~2.636%~~ | **S2** — a different stratum and a different mining predicate |
 
-⚠️ **That exponent is an illustration, NOT a fit.** Two points determine a line through two
-points; they cannot distinguish `G^1.46` from a curve that bends. **The whole failure being fixed
+~~`G` grew 6.22×; `d` grew 14.56× … `d ∝ G^1.46`.~~ **WITHDRAWN (§R5-1.0.c):** that contrast reads
+a scale effect off a cross-stratum comparison. No exponent is currently supported by any data.
+
+⚠️ **The original caveat stands and is now doubled.** Two points could not have fixed an exponent
+in any case; and these two are not even two points on one curve. **The whole failure being fixed
 here was a bound calibrated at one scale and applied at another — the fix must not repeat it with
-one extra point.** So:
+one extra point, still less with one point per population.** So:
 
-**R5-1.1 — REQUIRED PRE-RUN: a counts-only density sweep, ≥4 scales.** Re-mine the **already
-generated** 5,340 games at `G ∈ {500, 1500, 3000, 5340}` and count collisions at each. No
+**R5-1.1 — REQUIRED PRE-RUN: a counts-only density sweep, ≥4 scales, ENTIRELY WITHIN S2.** Re-mine
+the **already generated** 5,340 S2 games at **`G ∈ {500, 1000, 1500, 3000, 5340}`** — five scales,
+`G` in **games GENERATED** per §R5-1.0.a, the extra point placed to characterise the structural
+break at the banked/extension boundary (§R5-1.0.d) — and count collisions at each. No
 generation, no scoring, no champ picks — **counts only**, the class
 [`PREREG_FAILURE.md`](../PREREG_FAILURE.md) §3.3 established as non-leaking. Emits
 `RUN/DENSITY_SWEEP.json`: per `G`, the positions mined, collisions found, density, and the
@@ -73,9 +502,14 @@ to proceed on a corpus that is mostly transpositions. So, independently:
 > **If `d_model(G_governed) > 5%`, the corpus design is VOID before it is built** — no bound
 > applies, and the answer is a ply-floor (§R5-2) or fewer games, never a bigger bound.
 
-The illustrative curve puts `d` at **6.6% by 10,000 games** and **18% by 20,000** — i.e. **the
-5% guard binds not far above the scale R4 already reached.** Rung 3 cannot be bought by scaling
-the corpus, and this clause says so before anyone tries.
+~~The illustrative curve puts `d` at 6.6% by 10,000 games and 18% by 20,000 — i.e. the 5% guard
+binds not far above the scale R4 already reached.~~ ⚠️ **WITHDRAWN with the exponent it was
+extrapolated from (§R5-1.0.c).** No projection of `d` beyond the measured scales is currently
+supported by anything. **The guard itself is unaffected and is not a projection:** it is a bar on
+the *measured* `d_model(G_governed)`, and it fires or does not fire on the sweep's own output. The
+claim it was illustrating — *"rung 3 cannot be bought by scaling the corpus"* — is now **an open
+question the sweep answers**, not a conclusion the design may assume. Stating it as settled before
+the measurement would be the R4 bound's error in the opposite direction.
 
 ## R5-2. ⭐ (b) The mining ply-floor — a new knob, and a first-class estimand change
 
@@ -92,6 +526,13 @@ asserted by a gate. A new knob, not a new instrument.
 is `k = 3` (it removes 100% of the 30 observed collisions). But `k = 3` is fitted to collisions at
 **one** scale, and deeper plies will begin colliding as `G` grows — so the committed rule is:
 
+> ⚠️ **R10, on the record: this rule had exactly ONE reachable answer.** "Smallest floor clearing
+> the guard, with supply above the floor" selects `k = 0` for **any** corpus that clears at `k = 0`
+> — and the supply floor is itself derived from `k = 0`'s supply. The outcome (`k = 0`) is right
+> and §R5-FINAL.a's estimand argument is right, but **presenting it as a discretionary "bad trade"
+> obscured that the pre-registered rule could not have returned anything else.** A selection rule
+> with one reachable value is a constant wearing a rule's clothes.
+>
 > **`k` = the smallest ply floor such that `d_model(G_governed | ply ≥ k) ≤ 5%` AND the retained
 > capped-ply supply still meets the floor in `FLOORS.json`** — both read off `DENSITY_SWEEP.json`'s
 > depth histogram. If no `k` satisfies both, **rung 3 is not affordable by re-mining** and the
@@ -145,14 +586,20 @@ position set* from the same games, which is the intended use and is not a re-rea
 gate **failed**, so no position built from them ever passed anything; and `CORPUS_UNION.json`
 (R4-0.5's shape) records origin commit, per-file sha256 and retained/fresh counts.
 
-## R5-5. Cost — re-mining is census + positions only
+## R5-5. ⛔ SUPERSEDED by §R5-FINAL.g (N7)
 
-| item | worker-h |
+> **This section's cost table priced `N ∈ {700, 1,100}` — both superseded by the realized
+> `n₂ = 1,060`, and its ≈197–309 wh conflicted with §R5-FINAL.g's ≈211–300 on the same page.**
+> **Two cost tables with different totals in one document is exactly the drift the house rule
+> against carrying numbers in prose exists to prevent.** The figure of record is **§R5-FINAL.g**;
+> the table below is struck.
+
+| ~~item~~ | ~~worker-h~~ |
 |---|---|
-| density sweep + census over 5,340 games (counts only) | ≈2 |
-| champ picks (`N` × 13.755 worker-s) | 2.7 – 4.2 |
-| pricing, `M = 32`, per R4's per-capped-ply rate | 192.5 (`N`=700) – 302.5 (`N`=1,100) |
-| **TOTAL** | **≈197 (`N`=700) – ≈309 (`N`=1,100)** |
+| ~~density sweep + census (counts only)~~ | ~~≈2~~ |
+| ~~champ picks~~ | ~~2.7 – 4.2~~ |
+| ~~pricing, `M = 32`~~ | ~~192.5 (`N`=700) – 302.5 (`N`=1,100)~~ |
+| ~~**TOTAL**~~ | ~~**≈197 – ≈309**~~ **→ see §R5-FINAL.g: ≈211.4 – 299.6 at `n₂` = 1,060** |
 
 **No generation.** R4 spent ≈**500 worker-h** generating those 5,340 games; retaining them is the
 entire saving, and it is why the successor is cheap. ⚠️ **Contingency:** if §R5-2's ply-floor cuts
@@ -202,21 +649,33 @@ neither pass. A completeness assertion over the marker list, not a hand-maintain
 
 ## R5-7. What is CARRIED unchanged
 
-Rung 3's **estimand** (`Δ_ora`, `ora` adjudicates, `arb` rides) · the **branch table**
-(`X-CONFIRMED` / `X-ABOVE` / `X-PARTIAL` / `X-BELOW` / `X-FREE` / `X-INCONCLUSIVE`, the `R_ora`
-degenerate guard and its `Δ_ora`-only sub-table, `X-NOISE`) · the **power arithmetic**
-(`sd_Δ ∈ [0.9, 1.4]`, the root bootstrap at 2,000 reps, significance on the percentile CI) ·
-**all eight riders**, including **`I7-draw-scope`** · the `I6` amendment draft · `G-DRAW`,
-`G-UNCAPPED`, `G-SALT`, `G-M`, `G-BACKEND`, `G-LEAF`, `G-CRN`, `G-PREFIX`, `G-BITEXACT@HEAD` ·
-the `allow_null` closed list · fail-closed address discipline.
+⭐ **THE GATE SET IS THE READ_RULE's §0 TABLE — this section no longer restates it (B3).** The two
+files previously carried **different nines** (this one had `G-BITEXACT@HEAD` and omitted `G-ARMS`;
+the read-rule did the reverse) and **both silently dropped `G-DISJOINT`, `G-BAND` and
+`G-REPLICATE`**. There is now **one authority**, with `carried / restored / dropped + why` for
+every gate: [`READ_RULE.md`](READ_RULE.md) §0.
 
-**`W9 (D-DRAW)` transfers here**, skipped in R4 as moot — so **`I7`'s dedupe-partition conditional
-is still UNMEASURED and this successor inherits the obligation**, not a clean slate.
+Otherwise carried: rung 3's **estimand** (`Δ_ora`, `ora` adjudicates, `arb` rides) · the **branch
+table** verbatim · the **power arithmetic** (`sd_Δ ∈ [0.9, 1.4]`, root bootstrap 2,000 reps,
+significance once on the percentile CI) · **all eight riders**, including **`I7-draw-scope`** ·
+the `I6` amendment draft · the `allow_null` closed list · fail-closed address discipline.
 
-⚠️ Every carried statistic keeps its wording but acquires §R5-2.3's population qualifier: the
-successor measures **ply ≥ `k`**.
+**`W9 (D-DRAW)` transfers here and IS FUNDED** — and, per R2, the claim of discharge is now
+**enforced by a conjunct** (`G-DDRAW`: `d_draw_ran == true`). The previous revision claimed `I7`'s
+conditional was discharged while the mechanical rule still permitted the exact R4 outcome; **either
+the conjunct exists or the claim goes, and the conjunct exists.**
 
-## R5-8. Why the READ_RULE is not written yet
+⛔ **The `ply ≥ k` population qualifier does NOT apply.** `k = 0` (§R5-FINAL.a), so the estimand is
+the **unfloored** capped-tied-ply population and the 1.400/1.244 multipliers need no
+population-mismatch rider. The qualifier returns only if a successor sets `k > 0`.
+
+## R5-8. ⛔ SUPERSEDED by §R5-FINAL and the shipped READ_RULE (R11)
+
+> **This section explained why the read-rule did not exist yet. It exists.** The calibration ran,
+> `d_model`, `k` and `n₂` are all fixed, and [`READ_RULE.md`](READ_RULE.md) commits with this file.
+> Retained only so the sequencing argument stays readable; **it describes no live state.**
+>
+> *(Original heading: "Why the READ_RULE is not written yet".)*
 
 Three of its bars are numbers that do not exist: **`d_model` and the bound** (§R5-1.2, from the
 sweep), **`k`** (§R5-2.2, from the depth histogram), and **`N_capped` / `FLOORS.json`** (from the
@@ -228,7 +687,7 @@ licence §R5-4 rests on.
 
 ## R5-9. Open for the owner
 
-1. **Fund the successor at all?** ≈197–309 worker-h, no generation — but §R5-1.3's guard may
+1. **Fund the successor at all?** ≈211–300 worker-h (§R5-FINAL.g), no generation — but §R5-1.3's guard may
    VOID the design before it is built, and §R5-2.2 may find no affordable `k`. **Both outcomes are
    possible answers, and neither is a strength result.**
 2. **Accept the estimand change** to *tied plies at ply ≥ k* (§R5-2.3), with the multipliers'

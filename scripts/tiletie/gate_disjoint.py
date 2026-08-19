@@ -140,6 +140,14 @@ DEFAULT_EXCLUDE_RIDS = (REPO / "measurement/tiearb2_20260816/corpus/"
 EXCLUDE_COMPARISON = "s1s2_vs_exclude_rids"
 DEFAULT_MERGED_OUT = (REPO / "measurement/tiearb_widening_20260817/shared_run_r4/"
                       "GATE_DISJOINT.json")
+#: rung3_r5's own out-root, per DESIGN §R5-FINAL.i.
+DEFAULT_R5_OUT = (REPO / "measurement/tiearb_widening_20260817/rung3_r5/"
+                  "GATE_DISJOINT_R5.json")
+#: `--r5`'s `s2_vs_exclude_rids` reference (REVIEW_R4 P1): R4's REAL S2
+#: exclusion list, `digest_exclusions.S2.rids`, off R4's real GATE_DISJOINT.json
+#: — NEVER an empty default (that was the pass-always defect P1 fixes).
+DEFAULT_R5_EXCLUDE_REF = (REPO / "measurement/tiearb_widening_20260817/"
+                          "shared_run_r4/GATE_DISJOINT.json")
 
 #: leg1 carries EVERY position exactly once (leg r exists only for positions
 #: with >= r+1 arms, and every scoreable position has at least 2), so leg1 is the
@@ -330,6 +338,38 @@ def load_rid_txt(path) -> set[str]:
     return out
 
 
+def load_r4_exclusion_rids(gate_disjoint_path) -> list:
+    """`digest_exclusions.S2.rids` off R4's REAL `GATE_DISJOINT.json`
+    (`shared_run_r4/GATE_DISJOINT.json`) — the 29-rid list R4's own R4-3
+    exclusion rule produced. This is the ONE loader for that list; both
+    `build_r5_corpus.py` (the `r4_exclusion_list_sha256` conjunct, DESIGN
+    §R5-FINAL.j) and `--r5`'s `s2_vs_exclude_rids` comparison (REVIEW_R4 P1)
+    go through it, so the two can never read two different lists.
+
+    RAISES `GateInputError` on a missing file, malformed JSON, or a missing
+    `digest_exclusions.S2.rids` path — never returns a coerced empty list,
+    because a silently-empty reference here is exactly REVIEW_R4 P1's
+    pass-always defect."""
+    p = Path(gate_disjoint_path)
+    if not p.is_file():
+        raise GateInputError(f"R4 GATE_DISJOINT.json not found: {p}")
+    try:
+        d = json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        raise GateInputError(f"{p}: not JSON ({exc})") from exc
+    try:
+        rids = d["digest_exclusions"]["S2"]["rids"]
+    except (KeyError, TypeError) as exc:
+        raise GateInputError(
+            f"{p}: no digest_exclusions.S2.rids -- not R4's GATE_DISJOINT.json "
+            "(wrong file, or a wrong-shaped one)") from exc
+    if not isinstance(rids, list):
+        raise GateInputError(
+            f"{p}: digest_exclusions.S2.rids is not a list "
+            f"(got {type(rids).__name__}) -- malformed reference")
+    return [str(r) for r in rids]
+
+
 def _corpus_identities(arms_path, legs) -> dict:
     """The three identity SETS of one corpus, loaded once and reused across the
     comparisons that name it (so a reference is never parsed twice)."""
@@ -370,16 +410,27 @@ def compare_identities(new_ids: dict, ref_ids: dict, *, inputs=None) -> dict:
             "n_layers_violated": n_bad, "passed": n_bad == 0}
 
 
-def compare_rid_list(new_rids: set, ref_rids: set, *, inputs=None) -> dict:
-    """The FIFTH comparison — `s1s2_vs_exclude_rids`, RID LAYER ONLY.
+def compare_rid_list(new_rids: set, ref_rids: set, *, inputs=None,
+                     new_rids_label: str = "S1 ∪ S2",
+                     ref_kind: str = "rid TEXT list") -> dict:
+    """The rid-list-only comparison (`s1s2_vs_exclude_rids` under `--merged`/
+    `--r4`; `s2_vs_exclude_rids` under `--r5`) — RID LAYER ONLY.
 
-    `EXCLUDE_RIDS_all.txt` is a rid text file: it carries no `root_id` and no
-    board checksum, so layers (a) and (c) do not exist for it and are
+    A rid list (whether an `EXCLUDE_RIDS_*.txt` file or, under `--r5`, R4's
+    real `digest_exclusions.S2.rids` loaded from JSON) carries no `root_id`
+    and no board checksum, so layers (a) and (c) do not exist for it and are
     deliberately ABSENT rather than faked as zero (a fabricated `0` would read
-    as a proof that was never performed)."""
+    as a proof that was never performed).
+
+    ⚠️ Both keyword-only string params default to the EXACT text `--merged`/
+    `--r4` always emitted (`"rid, S1 ∪ S2 against a rid TEXT list"`) — the
+    merged mode's `DISJOINTNESS.json` promise (byte-for-byte reproducible)
+    depends on that default never moving. `--r5` overrides both, since its
+    `new_rids` is `s2` alone (not `S1 ∪ S2`) and its reference is R4's real
+    JSON exclusion list (not a rid TEXT file)."""
     layers = {
         "b_rid": {
-            "identity": "rid, S1 ∪ S2 against a rid TEXT list",
+            "identity": f"rid, {new_rids_label} against a {ref_kind}",
             "n_new": len(new_rids), "n_ref": len(ref_rids),
             "n_intersection": len(new_rids & ref_rids),
         },
@@ -388,7 +439,7 @@ def compare_rid_list(new_rids: set, ref_rids: set, *, inputs=None) -> dict:
     return {"inputs": inputs or {},
             "layers": layers,
             "layers_absent": ["a_root_id", "c_position_digest"],
-            "layers_absent_reason": "a rid TEXT list has no root and no board "
+            "layers_absent_reason": f"a {ref_kind} has no root and no board "
                                     "identity; the missing layers are ABSENT, "
                                     "never fabricated as zero",
             "n_layers_violated": n_bad, "passed": n_bad == 0}
@@ -882,6 +933,163 @@ def _not_applicable(name, why) -> dict:
             "passed": True, "not_applicable": True, "reason": why}
 
 
+# --------------------------------------------------------------------------- #
+# R5 — rung3_r5's G-DISJOINT: rid/root ZERO-TOLERANCE layers ONLY               #
+# --------------------------------------------------------------------------- #
+# `measurement/tiearb_widening_20260817/rung3_r5/READ_RULE.md` §0 (rev R5.1):
+# "R5 previously read this gate's ARTIFACT for a consistency check while
+# abandoning its CONJUNCTS. Its zero-tolerance rid/root layers are the
+# LEAKAGE guard and are distinct from the digest bound that voided R4. The
+# digest layer is NOT carried — R5's degeneracy quantity is same-band
+# internal duplication (§2 G-INTERNAL-DUPE), which no cross-set comparison
+# can see." So `--r5` never loads a leg file and never computes a single
+# digest — it is strictly cheaper than `--merged`/`--r4`, not just a
+# restriction of their output.
+#
+# R5 has ONE stratum ("s2" everywhere, READ_RULE §0/§R8) — no `s1_vs_s2`.
+# Comparisons: the two ARMS-vs-spent-corpus comparisons (naming pattern
+# carried from R4 §2b(i)), `base_vs_extension` (S2 still spans the 135e9/
+# 137e9 bands, so the intra-stratum leak check R4 §2b(i) required stays
+# meaningful), and `s2_vs_exclude_rids` (rid layer only).
+R5_COMPARISONS = ("s2_vs_tiletie0812", "s2_vs_tiearb2_0816",
+                  "base_vs_extension", "s2_vs_exclude_rids")
+
+
+def _rid_root_side(*, label, arms=None, rids=None, seed_range=None) -> dict:
+    """One R5 comparison side: `{label, rids, roots}` — NO digest, NO leg
+    file read at all. `seed_range` restricts to a band sub-set (how
+    `base_vs_extension` splits S2 into its two bands)."""
+    if rids is not None:
+        return {"label": label, "rids": set(rids), "roots": set()}
+    r = load_rids(arms)
+    roots = load_root_ids(arms)
+    if seed_range is not None:
+        lo, hi = seed_range
+        def _in(x):
+            m = _SEED_RE.search(str(x))
+            return bool(m) and lo <= int(m.group(1)) <= hi
+        r = {x for x in r if _in(x)}
+        arms_idx = _load_arms(arms)
+        roots = {str(v["root_id"]) for k, v in arms_idx.items() if k in r}
+    return {"label": label, "rids": r, "roots": roots}
+
+
+def compare_r5(a: dict, b: dict, *, name: str) -> dict:
+    """ONE R5 comparison — rid/root layers only, both zero-tolerance (a
+    shared rid or root is a corpus LEAK, exactly R4's rule; there is no
+    digest layer to exclude-and-count here at all)."""
+    inter_r = a["roots"] & b["roots"]
+    inter_i = a["rids"] & b["rids"]
+    layers = {
+        "a_root_id": _layer_block("root_id (the GAME) from ARMS.json values",
+                                  len(a["roots"]), len(b["roots"]), len(inter_r),
+                                  zero_tolerance=True),
+        "b_rid": _layer_block("rid (the (game, ply) POSITION) from ARMS.json keys",
+                              len(a["rids"]), len(b["rids"]), len(inter_i),
+                              zero_tolerance=True),
+    }
+    n_bad = sum(1 for L in layers.values() if L["n_intersection"])
+    return {"name": name, "inputs": {"a": a.get("label"), "b": b.get("label")},
+            "layers": layers, "n_layers_violated": n_bad, "passed": n_bad == 0}
+
+
+def run_r5_gate(*, s2_arms, refs: dict, exclude_ref_rids,
+                base_range=None, extension_range=None) -> dict:
+    """The R5 `G-DISJOINT` report — rid/root layers only, no digest.
+
+    `s2_arms`  = path to R5's OWN corpus `ARMS.json` (post R5-FINAL.b2's
+                exclusions — the same corpus `CORPUS_R5.json` describes)
+    `refs`     = `{"tiletie0812": path, "tiearb2_0816": path}` (the two
+                banked ARMS.json references — same defaults as `--merged`/`--r4`)
+    `exclude_ref_rids` = the `s2_vs_exclude_rids` reference rid set —
+                REQUIRED, no default. REVIEW_R4 P1: an empty/omitted
+                reference makes this comparison PASS-ALWAYS
+                (`len(new & set()) == 0` unconditionally), the exact defect
+                class B1/B2 and the campaign's three prereg deaths share.
+                Load it with `load_r4_exclusion_rids(GATE_DISJOINT.json)` —
+                R4's real 29-rid S2 exclusion list, sha-pinned by DESIGN
+                §R5-FINAL.j — never construct an empty set here.
+    """
+    if not exclude_ref_rids:
+        raise GateInputError(
+            "--r5 refuses to run without a non-empty s2_vs_exclude_rids "
+            "reference (REVIEW_R4 P1): an empty/omitted reference makes "
+            "that comparison pass-always, not a leakage check. Pass R4's "
+            "real S2 exclusion list (load_r4_exclusion_rids on "
+            "shared_run_r4/GATE_DISJOINT.json)")
+
+    base_range = base_range or BAND_RANGES["135e9"]
+    extension_range = extension_range or BAND_RANGES["137e9"]
+
+    s2 = _rid_root_side(label="S2 (rung3_r5)", arms=s2_arms)
+    ref_sides = {n: _rid_root_side(label=n, arms=p) for n, p in sorted(refs.items())}
+
+    comparisons = {}
+    for n, rs in sorted(ref_sides.items()):
+        key = f"s2_vs_{n}"
+        comparisons[key] = compare_r5(s2, rs, name=key)
+
+    base = _rid_root_side(label="S2 base 135e9", arms=s2_arms, seed_range=base_range)
+    ext = _rid_root_side(label="S2 extension 137e9", arms=s2_arms,
+                         seed_range=extension_range)
+    comparisons["base_vs_extension"] = compare_r5(base, ext, name="base_vs_extension")
+
+    excl = set(str(r) for r in exclude_ref_rids)
+    comparisons["s2_vs_exclude_rids"] = compare_rid_list(
+        s2["rids"], excl,
+        inputs={"new_stratum": "s2",
+                "ref": "R4's real S2 digest_exclusions (DESIGN R5-FINAL.j)",
+                "n_ref_rids": len(excl)},
+        new_rids_label="s2", ref_kind="JSON reference list "
+                                     "(digest_exclusions.S2.rids)")
+    comparisons["s2_vs_exclude_rids"]["name"] = "s2_vs_exclude_rids"
+
+    for name in R5_COMPARISONS:
+        if name not in comparisons:
+            raise GateInputError(
+                f"internal error: R5 comparison {name!r} was never computed")
+
+    n_bad = sum(1 for c in comparisons.values() if not c["passed"])
+    return {
+        "gate": "G-DISJOINT",
+        "mode": "r5",
+        "goal": "rung3_r5's S2 corpus shares NO game and NO position with any "
+                "banked corpus, and its base/extension bands share none "
+                "with each other",
+        "disclosure_policy": "COUNTS ONLY — no rid, root_id, checksum or "
+                             "digest value appears in this report by "
+                             "construction",
+        "digest_layer": "NOT CARRIED (rung3_r5 READ_RULE rev R5.1 §0): R5's "
+                        "degeneracy quantity is same-band internal "
+                        "duplication (G-INTERNAL-DUPE), which no cross-set "
+                        "comparison can see — no leg file is read and no "
+                        "digest is computed by this mode",
+        "comparisons": comparisons,
+        "comparisons_expected": list(R5_COMPARISONS),
+        "n_comparisons_violated": n_bad,
+        "passed": n_bad == 0,
+    }
+
+
+def _print_r5(report: dict, out_path) -> None:
+    for cname in report["comparisons_expected"]:
+        c = report["comparisons"][cname]
+        bits = " ".join(f"{k[0]}={c['layers'][k]['n_intersection']}"
+                        for k in ("a_root_id", "b_rid") if k in c["layers"])
+        print(f"[G-DISJOINT] {cname:24s} {bits}")
+    if out_path:
+        print(f"[G-DISJOINT] -> {out_path}")
+    if report["passed"]:
+        print(f"[G-DISJOINT] PASS — {len(report['comparisons'])} comparison(s), "
+              f"rid/root layers all clean (digest layer not carried).")
+    else:
+        bad = sorted(k for k, c in report["comparisons"].items() if not c["passed"])
+        print(f"\n{'=' * 70}\n[G-DISJOINT] ***** ZERO-TOLERANCE LAYER VIOLATED "
+              f"*****\n[G-DISJOINT] {', '.join(bad)}\n"
+              f"[G-DISJOINT] A shared rid or root is a CORPUS LEAK. DO NOT "
+              f"score this corpus.\n{'=' * 70}", file=sys.stderr)
+
+
 def _kv(spec: str, what: str) -> tuple:
     """`name=value` for the repeatable merged-mode reference flags."""
     if "=" not in spec:
@@ -1038,7 +1246,55 @@ def main(argv=None) -> int:
                         "applied; its counts are carried into this report so the "
                         "bound is measured against the TRUE total, not against "
                         "the post-exclusion residual")
+
+    r5 = ap.add_argument_group(
+        "R5 mode (rung3_r5) — rid/root layers only, digest NOT carried")
+    r5.add_argument("--r5", action="store_true",
+                    help="emit the rung3_r5 G-DISJOINT report "
+                         "(READ_RULE rev R5.1 §0/§2)")
+    r5.add_argument("--r5-exclude-ref", default=str(DEFAULT_R5_EXCLUDE_REF),
+                    help="REQUIRED for --r5: R4's real GATE_DISJOINT.json, "
+                         "the source of s2_vs_exclude_rids' reference list "
+                         "(digest_exclusions.S2.rids, DESIGN R5-FINAL.j). "
+                         f"Default: {DEFAULT_R5_EXCLUDE_REF}. REVIEW_R4 P1: "
+                         "there is no empty fallback -- a missing/malformed/"
+                         "empty reference REFUSES (exit 2), it does not run "
+                         "with a pass-always comparison.")
     a = ap.parse_args(argv)
+
+    if a.r5:
+        out = a.out or str(DEFAULT_R5_OUT)
+        try:
+            if not a.s2_dir and not a.s2_arms:
+                raise GateInputError("--r5 requires --s2-dir (or --s2-arms): "
+                                     "R5's own corpus ARMS.json")
+            s2_arms = Path(a.s2_arms) if a.s2_arms else Path(a.s2_dir) / "ARMS.json"
+            if a.ref:
+                dirs = dict(_kv(spec, "ref") for spec in a.ref)
+            else:
+                dirs = {n: str(p) for n, p in DEFAULT_REFS.items()}
+            refs = {n: Path(d) / "ARMS.json" for n, d in dirs.items()}
+            # REVIEW_R4 P1: NEVER an empty/omitted default -- fail-closed if
+            # the reference cannot be resolved, loaded, or is empty.
+            if not a.r5_exclude_ref:
+                raise GateInputError(
+                    "--r5 requires --r5-exclude-ref: R4's real "
+                    "GATE_DISJOINT.json (digest_exclusions.S2.rids). Refusing "
+                    "to run with an empty s2_vs_exclude_rids reference "
+                    "(REVIEW_R4 P1 -- that comparison is pass-always without one)")
+            exclude_ref_rids = load_r4_exclusion_rids(a.r5_exclude_ref)
+            report = run_r5_gate(s2_arms=s2_arms, refs=refs,
+                                 exclude_ref_rids=exclude_ref_rids)
+        except GateInputError as exc:
+            print(f"\n{'=' * 70}\n[G-DISJOINT] COULD NOT EVALUATE: {exc}\n"
+                  f"{'=' * 70}", file=sys.stderr)
+            return 2
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
+        Path(out).write_text(json.dumps(report, indent=2, sort_keys=True))
+        _print_r5(report, out)
+        if not report["passed"]:
+            return 1
+        return 0
 
     if a.r4:
         import floors as FL                                        # noqa: E402

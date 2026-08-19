@@ -1,0 +1,55 @@
+{
+  "b_ceiling_from_m": 16,
+  "cap_j": null,
+  "corpus_provenance": {
+    "adopted": "R4 POST-EXCLUSION file, adopted AS-IS (not re-mined)",
+    "leg_path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/positions_walled_leg1.jsonl",
+    "leg_sha256": "92ba1ee2dfbfed91f4853173e16e6e008d430ebf708055f4c8a76258eacbb7df",
+    "n_in": 1064,
+    "r4_carried": 28,
+    "r4_exclusion_list_serialization": "json.dumps default separators, no sort_keys (input is a list), UTF-8, no trailing newline. NOT any EXCLUDE_RIDS_*.txt file (N4).",
+    "r4_exclusion_list_sha256": "76f9ac58e2694a5499966a3b519b11ad4e2e7633fd3ab2ab2acb5767535ddda7",
+    "r4_exclusion_list_sha256_referent": "sha256(json.dumps(sorted(GATE_DISJOINT.json::digest_exclusions.S2.rids)))",
+    "r4_exclusion_list_source_file": "measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+    "r4_residual": 1
+  },
+  "d_internal_measured": 0.002819548872180451,
+  "deployed_cap_j": 4,
+  "dupe_ply_expected": 2,
+  "failed_record_bound_frac": 0.02,
+  "floor_fraction": 0.95,
+  "g_governed": 5340,
+  "gate_floor": 1007,
+  "known_failure_class": "WindowTruncationError",
+  "m_worlds": 32,
+  "max_per_game": 3,
+  "max_positions_per_seed": 3,
+  "min_ply": 0,
+  "n2": 1060,
+  "n_distinct_seeds": 980,
+  "note": "R5.1 after REVIEW_R2. n2=1060 = 1064 adopted - 1 R4 residual collider - 3 internal-dupe later members. Relative bound M*d RETIRED (circular); G-INTERNAL-DUPE recomputes d at run time against the ABSOLUTE 5% guard. Both degeneracy gates are CORPUS-IDENTITY checks (READ_RULE 2.1). k=0. N1: n_duplicate_seeds DELETED (82 seeds occur >1 by construction under --max-per-game 3); replaced by max_positions_per_seed<=3 at positions level and range checks at seed level. N2: smoke m_worlds is TOP-LEVEL; leg resolved_config.m VERIFIED to exist (tier1_rust_leg.py:401) and is retained.",
+  "oracle_sims": 100,
+  "r5_exclusions": {
+    "excluded_later_member_per_group": 3,
+    "internal_dupe_groups": 3,
+    "internal_dupe_positions": 6,
+    "residual_collider": [
+      "tt_sp_135000000839_p2"
+    ],
+    "rule": "exclude R4 residual collider + later-ordered member of each same-band internal-dupe group",
+    "total_excluded": 4
+  },
+  "saturation_guard": 0.05,
+  "seed_ranges": {
+    "banked_135e9": [
+      135000000350,
+      135000000849
+    ],
+    "extension_137e9": [
+      137000000508,
+      137000005347
+    ],
+    "released_unused": 136000000000
+  },
+  "world_seed_salt": "tiletie-v1"
+}
