@@ -1,0 +1,52 @@
+{
+  "tt_oob_1_p5": {
+    "arms": [
+      1,
+      2
+    ],
+    "deck_seed": 1,
+    "ply": 5,
+    "root_id": "oob_1",
+    "stratum": "selfplay"
+  },
+  "tt_sp_135000000350_p10": {
+    "arms": [
+      1,
+      2
+    ],
+    "deck_seed": 135000000350,
+    "ply": 10,
+    "root_id": "sp_135000000350",
+    "stratum": "selfplay"
+  },
+  "tt_sp_135000000351_p12": {
+    "arms": [
+      1,
+      2
+    ],
+    "deck_seed": 135000000351,
+    "ply": 12,
+    "root_id": "sp_135000000351",
+    "stratum": "selfplay"
+  },
+  "tt_sp_137000000508_p2": {
+    "arms": [
+      1,
+      2
+    ],
+    "deck_seed": 137000000508,
+    "ply": 2,
+    "root_id": "sp_137000000508",
+    "stratum": "selfplay"
+  },
+  "tt_sp_137000000510_p20": {
+    "arms": [
+      1,
+      2
+    ],
+    "deck_seed": 137000000510,
+    "ply": 20,
+    "root_id": "sp_137000000510",
+    "stratum": "selfplay"
+  }
+}

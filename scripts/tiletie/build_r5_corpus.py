@@ -27,8 +27,19 @@ builder:
      (digests reused from `gate_disjoint.load_digest_map` — never
      recomputed here) and excludes the later-ordered (lexicographically
      larger rid) member of each group, keeping one representative per board.
-  5. Emits `CORPUS_R5.json` (`G-CORPUS` + the `G-BAND` range/mining-ceiling
-     conjuncts) and `GATE_INTERNAL_DUPE.json` (`G-INTERNAL-DUPE`).
+  5. Loads R4's REAL, pre-exclusion S2 `ARMS.json` (`R4_ARMS` — DESIGN ruling
+     `a13ed934`), asserts its rid set equals the leg's rid set (the D4
+     invariant this ruling exists to restore: the leg files and ARMS must
+     enumerate the SAME population), and MATERIALIZES `ARMS_R5.json` — `R4_ARMS`
+     restricted to the 1,060 survivors — asserting the survivor rid set equals
+     `R4_ARMS.rids − excluded_rids` in BOTH directions. This is the
+     **population authority**: every consumer (`gate_disjoint --r5`, staging,
+     scoring, the analyzer) reads `ARMS_R5.json`; none re-derives the
+     population by subtraction (shape (b) was ruled OUT — "D4 with the
+     operands swapped").
+  6. Emits `CORPUS_R5.json` (`G-CORPUS` + the `G-BAND` range/mining-ceiling
+     conjuncts, now including `arms_r5_sha256`), `GATE_INTERNAL_DUPE.json`
+     (`G-INTERNAL-DUPE`), and `ARMS_R5.json`.
 
 Pure counts; no scoring, no oracle, no champ picks — the class
 `PREREG_FAILURE.md` §3.3 established as non-leaking.
@@ -82,8 +93,16 @@ DEFAULT_LEG_PATH = (REPO / "measurement/tiearb_widening_20260817/shared_run_r4/"
                     "corpus/positions_s2/positions_walled_leg1.jsonl")
 DEFAULT_R4_GATE_DISJOINT = (REPO / "measurement/tiearb_widening_20260817/"
                             "shared_run_r4/GATE_DISJOINT.json")
+#: R4's REAL, pre-exclusion S2 `ARMS.json` — DESIGN ruling `a13ed934`'s
+#: "R4_ARMS": the materialized population authority `ARMS_R5.json` is
+#: computed FROM, never re-derived by a later subtraction.
+DEFAULT_R4_ARMS = (REPO / "measurement/tiearb_widening_20260817/shared_run_r4/"
+                   "corpus/positions_s2/ARMS.json")
 DEFAULT_CORPUS_OUT = RUN / "CORPUS_R5.json"
 DEFAULT_DUPE_OUT = RUN / "GATE_INTERNAL_DUPE.json"
+#: DESIGN ruling `a13ed934`, shape (a): the materialized population
+#: authority for the 1,060 survivors.
+DEFAULT_ARMS_R5_OUT = RUN / "ARMS_R5.json"
 
 #: DESIGN §R5-FINAL.b2 / FLOORS_R5.json::corpus_provenance -- PINNED, not
 #: re-derived. A mismatch means this is not the corpus R5 was designed
@@ -181,15 +200,36 @@ def band_pair_label(group: list, meta: dict, ranges=RC5.GENERATED_RANGES_S2) -> 
     return f"{bands[0]}<->{bands[1]}"
 
 
+def assert_rid_sets_equal(actual: set, expected: set, *, what: str) -> None:
+    """RAISES `BuildError` if `actual != expected` — checked in EITHER
+    direction (a rid `expected` but missing from `actual`, or a rid in
+    `actual` but not `expected`), so a divergence is caught regardless of
+    which side is wrong. DESIGN ruling `a13ed934`: `ARMS_R5.json`'s rid set
+    must equal `R4_ARMS.rids - excluded_rids`, "asserted at build time in
+    BOTH directions" — a standalone function so that requirement is
+    independently testable, not inline logic buried in `build()`."""
+    missing = expected - actual
+    extra = actual - expected
+    if missing or extra:
+        raise BuildError(
+            f"{what}: {len(missing)} missing (e.g. {sorted(missing)[:3]}), "
+            f"{len(extra)} extra (e.g. {sorted(extra)[:3]})")
+
+
 # --------------------------------------------------------------------------- #
 # the build                                                                     #
 # --------------------------------------------------------------------------- #
-def build(*, leg_path, r4_gate_disjoint_path,
+def build(*, leg_path, r4_gate_disjoint_path, r4_arms_path=DEFAULT_R4_ARMS,
+         arms_r5_out_path=DEFAULT_ARMS_R5_OUT,
          expect_leg_sha256=EXPECTED_LEG_SHA256,
          expect_exclusion_sha256=EXPECTED_R4_EXCLUSION_LIST_SHA256,
          ranges=RC5.GENERATED_RANGES_S2) -> tuple:
-    """Returns `(corpus_report, dupe_report)`. Raises `BuildError` /
-    `gate_disjoint.GateInputError` on any input or pinned-hash problem."""
+    """Returns `(corpus_report, dupe_report, arms_r5)`. Raises `BuildError` /
+    `gate_disjoint.GateInputError` on any input, pinned-hash, or
+    population-authority consistency problem. `arms_r5_out_path` is recorded
+    in `corpus_report` only — this function does no file writing itself
+    (the CLI does), so callers get one complete report without a follow-up
+    patch."""
     leg_path = Path(leg_path)
     if not leg_path.is_file():
         raise BuildError(f"leg file not found: {leg_path}")
@@ -227,6 +267,42 @@ def build(*, leg_path, r4_gate_disjoint_path,
     excluded_rids = sorted(set(residual) | set(later_members))
     n_excluded_r5 = len(excluded_rids)
     n_positions = n_in - n_excluded_r5
+
+    # ------------------------------------------------------------------- #
+    # ARMS_R5.json -- the materialized population authority (a13ed934)     #
+    # ------------------------------------------------------------------- #
+    r4_arms = GD._load_arms(r4_arms_path)
+    r4_arms_rids = set(r4_arms)
+    leg_rids = set(meta)
+    if leg_rids != r4_arms_rids:
+        only_leg = sorted(leg_rids - r4_arms_rids)
+        only_arms = sorted(r4_arms_rids - leg_rids)
+        raise BuildError(
+            "the leg and R4's ARMS.json do NOT enumerate the same rid set "
+            "-- this is the D4 invariant (\"the leg files enumerate exactly "
+            "the ARMS rids\") the a13ed934 ruling exists to restore: "
+            f"{len(only_leg)} rid(s) only in the leg (e.g. {only_leg[:3]}), "
+            f"{len(only_arms)} only in ARMS.json (e.g. {only_arms[:3]})")
+
+    excluded_set = set(excluded_rids)
+    # built by filtering r4_arms DIRECTLY (not by pre-computing the
+    # survivor set and indexing into it) so the equality check below is an
+    # INDEPENDENT cross-check of two separately-derived rid sets, not a
+    # tautology over one.
+    arms_r5 = {rid: v for rid, v in r4_arms.items() if rid not in excluded_set}
+    expected_survivors = r4_arms_rids - excluded_set
+    # asserted BOTH directions, explicitly -- not merely trusted from the
+    # comprehension above, per the ruling's own wording
+    assert_rid_sets_equal(set(arms_r5), expected_survivors,
+                          what="ARMS_R5's rid set vs R4_ARMS.rids - excluded_rids")
+    if len(arms_r5) != n_positions:
+        raise BuildError(
+            f"ARMS_R5 has {len(arms_r5)} rid(s) but the leg-derived "
+            f"n_positions == {n_positions} -- the population authority and "
+            "the leg-derived count disagree")
+
+    arms_r5_serialized = json.dumps(arms_r5, indent=2, sort_keys=True)
+    arms_r5_sha256 = hashlib.sha256(arms_r5_serialized.encode("utf-8")).hexdigest()
 
     seeds = [m["deck_seed"] for m in meta.values()]
     distinct_seeds = set(seeds)
@@ -267,6 +343,13 @@ def build(*, leg_path, r4_gate_disjoint_path,
         "n_out_of_band": len(out_of_band_seeds),
         "n_seeds_136e9": len(seeds_136e9),
         "seed_ranges": SEED_RANGES,
+        # ⭐ DESIGN ruling a13ed934: ARMS_R5.json is the MATERIALIZED
+        # POPULATION AUTHORITY. Every consumer reads it; none re-derives the
+        # population by subtraction.
+        "r4_arms_path": str(r4_arms_path),
+        "arms_r5_path": str(arms_r5_out_path),
+        "arms_r5_sha256": arms_r5_sha256,
+        "arms_r5_n_rids": len(arms_r5),
     }
 
     ply_hist: Counter = Counter()
@@ -296,7 +379,7 @@ def build(*, leg_path, r4_gate_disjoint_path,
         "ply_histogram": dict(sorted(ply_hist.items())),
         "band_pairs": band_pairs,
     }
-    return corpus_report, dupe_report
+    return corpus_report, dupe_report, arms_r5
 
 
 # --------------------------------------------------------------------------- #
@@ -308,6 +391,9 @@ def main(argv=None) -> int:
                     help="the R4 post-exclusion S2 leg1 jsonl (adopted AS-IS)")
     ap.add_argument("--r4-gate-disjoint", default=str(DEFAULT_R4_GATE_DISJOINT),
                     help="R4's GATE_DISJOINT.json (source of the R4 exclusion list)")
+    ap.add_argument("--r4-arms", default=str(DEFAULT_R4_ARMS),
+                    help="R4's REAL, pre-exclusion S2 ARMS.json (\"R4_ARMS\" -- "
+                         "a13ed934's population authority is computed FROM this)")
     ap.add_argument("--expect-leg-sha256", default=EXPECTED_LEG_SHA256,
                     help="pinned leg sha256; pass '' to skip (synthetic/test "
                          "corpora only)")
@@ -317,11 +403,15 @@ def main(argv=None) -> int:
                          "(synthetic/test corpora only)")
     ap.add_argument("--corpus-out", default=str(DEFAULT_CORPUS_OUT))
     ap.add_argument("--dupe-out", default=str(DEFAULT_DUPE_OUT))
+    ap.add_argument("--arms-r5-out", default=str(DEFAULT_ARMS_R5_OUT),
+                    help="a13ed934 shape (a): the materialized population "
+                         "authority for the survivors")
     a = ap.parse_args(argv)
 
     try:
-        corpus_report, dupe_report = build(
+        corpus_report, dupe_report, arms_r5 = build(
             leg_path=a.leg, r4_gate_disjoint_path=a.r4_gate_disjoint,
+            r4_arms_path=a.r4_arms, arms_r5_out_path=a.arms_r5_out,
             expect_leg_sha256=a.expect_leg_sha256,
             expect_exclusion_sha256=a.expect_exclusion_list_sha256)
     except (BuildError, GD.GateInputError) as exc:
@@ -334,6 +424,11 @@ def main(argv=None) -> int:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         Path(path).write_text(json.dumps(report, indent=2, sort_keys=True))
         print(f"[build-r5-corpus] {label} -> {path}")
+
+    Path(a.arms_r5_out).parent.mkdir(parents=True, exist_ok=True)
+    Path(a.arms_r5_out).write_text(json.dumps(arms_r5, indent=2, sort_keys=True))
+    print(f"[build-r5-corpus] ARMS_R5 -> {a.arms_r5_out} "
+          f"({len(arms_r5)} rids, sha256={corpus_report['arms_r5_sha256']})")
 
     print(f"[build-r5-corpus] n_in={corpus_report['n_in']} "
           f"n_excluded_r5={corpus_report['n_excluded_r5']} "

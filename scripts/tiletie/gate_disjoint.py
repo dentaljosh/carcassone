@@ -143,6 +143,10 @@ DEFAULT_MERGED_OUT = (REPO / "measurement/tiearb_widening_20260817/shared_run_r4
 #: rung3_r5's own out-root, per DESIGN §R5-FINAL.i.
 DEFAULT_R5_OUT = (REPO / "measurement/tiearb_widening_20260817/rung3_r5/"
                   "GATE_DISJOINT_R5.json")
+#: DESIGN ruling `a13ed934`: `--r5` reads the MATERIALIZED population
+#: authority, `ARMS_R5.json` — never `<dir>/ARMS.json` (R4's own PRE-exclusion
+#: file) and never a subtraction computed at read time.
+DEFAULT_R5_S2_ARMS = DEFAULT_R5_OUT.parent / "ARMS_R5.json"
 #: `--r5`'s `s2_vs_exclude_rids` reference (REVIEW_R4 P1): R4's REAL S2
 #: exclusion list, `digest_exclusions.S2.rids`, off R4's real GATE_DISJOINT.json
 #: — NEVER an empty default (that was the pass-always defect P1 fixes).
@@ -997,8 +1001,10 @@ def run_r5_gate(*, s2_arms, refs: dict, exclude_ref_rids,
                 base_range=None, extension_range=None) -> dict:
     """The R5 `G-DISJOINT` report — rid/root layers only, no digest.
 
-    `s2_arms`  = path to R5's OWN corpus `ARMS.json` (post R5-FINAL.b2's
-                exclusions — the same corpus `CORPUS_R5.json` describes)
+    `s2_arms`  = path to `ARMS_R5.json` — the MATERIALIZED population
+                authority (`build_r5_corpus.py`, DESIGN ruling `a13ed934`),
+                NEVER plain `ARMS.json` (R4's own pre-exclusion 1,064) and
+                NEVER a subtraction computed here or by any other consumer
     `refs`     = `{"tiletie0812": path, "tiearb2_0816": path}` (the two
                 banked ARMS.json references — same defaults as `--merged`/`--r4`)
     `exclude_ref_rids` = the `s2_vs_exclude_rids` reference rid set —
@@ -1265,10 +1271,17 @@ def main(argv=None) -> int:
     if a.r5:
         out = a.out or str(DEFAULT_R5_OUT)
         try:
-            if not a.s2_dir and not a.s2_arms:
-                raise GateInputError("--r5 requires --s2-dir (or --s2-arms): "
-                                     "R5's own corpus ARMS.json")
-            s2_arms = Path(a.s2_arms) if a.s2_arms else Path(a.s2_dir) / "ARMS.json"
+            # a13ed934: --r5 reads ARMS_R5.json, the MATERIALIZED population
+            # authority -- never plain "ARMS.json" (R4's own pre-exclusion
+            # file) and never a subtraction computed here. Precedence:
+            # --s2-arms (explicit) > <--s2-dir>/ARMS_R5.json > the rung3_r5
+            # out-root's own ARMS_R5.json (turnkey default once built).
+            if a.s2_arms:
+                s2_arms = Path(a.s2_arms)
+            elif a.s2_dir:
+                s2_arms = Path(a.s2_dir) / "ARMS_R5.json"
+            else:
+                s2_arms = DEFAULT_R5_S2_ARMS
             if a.ref:
                 dirs = dict(_kv(spec, "ref") for spec in a.ref)
             else:

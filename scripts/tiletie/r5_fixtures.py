@@ -51,6 +51,7 @@ REPO = Path(__file__).resolve().parents[2]
 
 import build_r5_corpus as BR5                                       # noqa: E402
 import gate_disjoint as GD                                          # noqa: E402
+import stage_r5_corpus as SR5                                       # noqa: E402
 import widening_fixtures as WF                                      # noqa: E402
 
 RUN = REPO / "measurement/tiearb_widening_20260817/rung3_r5"
@@ -62,6 +63,10 @@ FIXTURE_NAMES = (
     "MERGE_REPORT_s2.fixture.json", "RUN_MANIFEST_R5.fixture.json",
     "leg_manifest.fixture.json", "READOUT.fixture.json",
     "D_DRAW.fixture.json",
+    # DESIGN ruling a13ed934: the materialized population authority.
+    "ARMS_R5.fixture.json",
+    # drafter commit 97ca0276: the staged-layer witness (G-STAGED).
+    "STAGING_R5.fixture.json",
 )
 
 
@@ -82,6 +87,37 @@ A1_MARKERS = {
     "G-CORPUS::n_excluded_r5": ("CORPUS_R5.fixture.json", "n_excluded_r5", int),
     "G-CORPUS::n_positions": ("CORPUS_R5.fixture.json", "n_positions", int),
     "G-CORPUS::excluded_rids": ("CORPUS_R5.fixture.json", "excluded_rids", list),
+    # ⭐ DESIGN ruling a13ed934: ARMS_R5.json is the materialized population
+    # authority. Its sha lives in CORPUS_R5.json; its own existence + shape
+    # is a SEPARATE [post-corpus] address (RUN/ARMS_R5.json, not a dotted
+    # key inside CORPUS_R5.json) — the trio (address + fixture + marker) A1
+    # enforces automatically.
+    "G-CORPUS::arms_r5_sha256": (
+        "CORPUS_R5.fixture.json", "arms_r5_sha256", str),
+    "G-CORPUS::ARMS_R5.json": ("ARMS_R5.fixture.json", "*.root_id", str),
+
+    # ⭐ G-STAGED -- RUN/STAGING_R5.json (drafter commit 97ca0276, ruling (c):
+    # CORPUS_R5's identity does NOT suffice -- it is written BEFORE staging
+    # exists and cannot witness a layer that did not exist when it was
+    # written; STAGING_R5.json is that layer's own witness).
+    "G-STAGED::arms_r5_sha256": (
+        "STAGING_R5.fixture.json", "arms_r5_sha256", str),
+    "G-STAGED::staged_arms_sha256": (
+        "STAGING_R5.fixture.json", "staged_arms_sha256", str),
+    "G-STAGED::arms_copy_identical": (
+        "STAGING_R5.fixture.json", "arms_copy_identical", bool),
+    "G-STAGED::n_leg_rids": ("STAGING_R5.fixture.json", "n_leg_rids", int),
+    "G-STAGED::n_arms_rids": ("STAGING_R5.fixture.json", "n_arms_rids", int),
+    "G-STAGED::rid_sets_equal": (
+        "STAGING_R5.fixture.json", "rid_sets_equal", bool),
+    "G-STAGED::missing_in_leg": (
+        "STAGING_R5.fixture.json", "missing_in_leg", list),
+    "G-STAGED::missing_in_arms": (
+        "STAGING_R5.fixture.json", "missing_in_arms", list),
+    "G-STAGED::stage_chunks_rid_set_agrees": (
+        "STAGING_R5.fixture.json", "stage_chunks_rid_set_agrees", bool),
+    "G-STAGED::n_chunks": ("STAGING_R5.fixture.json", "n_chunks", int),
+
     # G-BAND -- RUN/CORPUS_R5.json (same artifact, DIFFERENT gate)
     "G-BAND::n_distinct_seeds": ("CORPUS_R5.fixture.json", "n_distinct_seeds", int),
     "G-BAND::max_positions_per_seed": (
@@ -288,14 +324,25 @@ def _emit_corpus_and_dupe_fixtures(dest: Path) -> None:
     leg.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
     r4_gate = tmp / "GATE_DISJOINT.json"
     r4_gate.write_text(json.dumps({"digest_exclusions": {"S2": {"rids": []}}}))
+    # a13ed934: build() now needs "R4_ARMS" too -- a build_arms_index-shaped
+    # dict covering the SAME rid set as the leg (the D4 invariant), one entry
+    # per row above.
+    r4_arms = tmp / "R4_ARMS.json"
+    r4_arms.write_text(json.dumps({
+        r["rid"]: {"arms": [1, 2], "root_id": r["root_id"], "stratum": "selfplay",
+                   "deck_seed": r["deck_seed"], "ply": r["ply"]}
+        for r in rows
+    }))
 
-    corpus_report, dupe_report = BR5.build(
-        leg_path=leg, r4_gate_disjoint_path=r4_gate,
+    corpus_report, dupe_report, arms_r5 = BR5.build(
+        leg_path=leg, r4_gate_disjoint_path=r4_gate, r4_arms_path=r4_arms,
         expect_leg_sha256="", expect_exclusion_sha256="")
     (dest / "CORPUS_R5.fixture.json").write_text(
         json.dumps(corpus_report, indent=2, sort_keys=True))
     (dest / "GATE_INTERNAL_DUPE.fixture.json").write_text(
         json.dumps(dupe_report, indent=2, sort_keys=True))
+    (dest / "ARMS_R5.fixture.json").write_text(
+        json.dumps(arms_r5, indent=2, sort_keys=True))
 
 
 def _emit_disjoint_fixture(dest: Path) -> None:
@@ -318,6 +365,50 @@ def _emit_disjoint_fixture(dest: Path) -> None:
         refs={"tiletie0812": ref1 / "ARMS.json", "tiearb2_0816": ref2 / "ARMS.json"},
         exclude_ref_rids={"some_unrelated_excluded_rid"})
     (dest / "GATE_DISJOINT_R5.fixture.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True))
+
+
+def _emit_staging_fixture(dest: Path) -> None:
+    """`STAGING_R5.fixture.json`, produced by the REAL `stage_r5_corpus.
+    stage()` -- all six steps, including a REAL `stage_chunks.py stage`
+    subprocess -- on a tiny synthetic ARMS_R5.json + matching leg, into a
+    throwaway scratch tree (never the live campaign root)."""
+    tmp = Path(tempfile.mkdtemp(prefix="r5_fixture_staging_"))
+    rows = [
+        {"rid": "tt_sp_135000000350_p10", "root_id": "sp_135000000350",
+         "deck_seed": 135000000350, "ply": 10, "checksum": "A"},
+        {"rid": "tt_sp_135000000351_p12", "root_id": "sp_135000000351",
+         "deck_seed": 135000000351, "ply": 12, "checksum": "B"},
+        {"rid": "tt_sp_137000000508_p20", "root_id": "sp_137000000508",
+         "deck_seed": 137000000508, "ply": 20, "checksum": "C"},
+        {"rid": "tt_sp_137000000509_p21", "root_id": "sp_137000000509",
+         "deck_seed": 137000000509, "ply": 21, "checksum": "D"},
+    ]
+    leg = tmp / "leg.jsonl"
+    leg.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    # stage_chunks.py's own chunk-writer (subset_plan) reads several more
+    # ARMS keys than the population authority itself needs (stratum,
+    # root_id, arms) -- a REAL fixture must satisfy the REAL consumer, not
+    # just the minimal shape build_r5_corpus.py itself checks.
+    arms_r5 = tmp / "ARMS_R5.json"
+    arms_r5.write_text(json.dumps({
+        r["rid"]: {"arms": [1, 2], "root_id": r["root_id"],
+                   "stratum": "selfplay", "rules_profile": "walled",
+                   "game_label": f"g{r['deck_seed']}",
+                   "deck_seed": r["deck_seed"], "ply": r["ply"],
+                   "seat": 0, "k_remaining": 10, "phase_bucket": "mid",
+                   "tercile": 1, "n_legal": 2, "n_cand": 2,
+                   "tie_size_exact": 2, "gap": 0.0, "capped": False,
+                   "dropped_actions": [], "champ_action": 1,
+                   "champ_arm_index": 0, "champ_outside_tieset": False}
+        for r in rows
+    }))
+
+    report = SR5.stage(
+        arms_r5_path=arms_r5, leg_path=leg,
+        staged_dir=tmp / "staged" / "corpus" / "positions_s2",
+        stage_chunks_out_root=tmp / "staged", n_chunks=2)
+    (dest / "STAGING_R5.fixture.json").write_text(
         json.dumps(report, indent=2, sort_keys=True))
 
 
@@ -374,11 +465,12 @@ def _emit_hand_built_fixtures(dest: Path) -> None:
 
 
 def emit_committed_fixtures(dest=FIXTURE_DIR) -> Path:
-    """Write the committed A1 fixture set (9 files)."""
+    """Write the committed A1 fixture set (11 files)."""
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)
     _emit_corpus_and_dupe_fixtures(dest)
     _emit_disjoint_fixture(dest)
+    _emit_staging_fixture(dest)
     _emit_hand_built_fixtures(dest)
     WF.make_d_draw(dest / "D_DRAW.fixture.json", n_checked=100, n_agree=98,
                    n_unreconstructible=1)
