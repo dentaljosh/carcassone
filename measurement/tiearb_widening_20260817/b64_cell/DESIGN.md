@@ -6,8 +6,14 @@
 > Authored under a 20-hour owner delegation (owner verbatim: *"take the highest EV picks.
 > I can't look over details right now"*). That delegation authorizes **drafting and
 > committing in a worktree**; it does **not** authorize the blind commit on `main`, the
-> band claim, the smoke, or the run. [§10](#10-open-choices-left-for-the-reviewer)
-> lists the choices deliberately left open.
+> band claim, the smoke, or the run.
+>
+> **REVIEWED at [`REVIEW_R1.md`](REVIEW_R1.md) (reviewer commit `769da984`) — verdict
+> FAIL, 1 BLOCKING + 4 REQUIRED + 2 cosmetic, all six §10 choices RULED.** All of it is
+> folded in; see [§13](#13-review-provenance--what-r1-changed-and-the-defect-class-it-caught)
+> for the delta and [§10](#10-the-six-open-choices--all-ruled-at-review-r1) for the
+> rulings. ⚠️ **B1 alters a gate's conjunct (`G-TOOL`) and must be re-read by whoever
+> merges.** The pair returns to the reviewer for sign-off before any blind commit.
 >
 > Written **before** any statistic of this cell exists. Every number in this file is
 > either (a) read off a completed run's artifact on disk with its path given, or (b)
@@ -106,8 +112,8 @@ head-to-head `champion+arb(64)` vs `champion+arb(16)` cannot be launched against
 harness as it stands.** This is a plumbing gap, exactly the class the JCZ cell hit and
 recorded ([`jcz_tiearb_20260817/DESIGN.md`](../../jcz_tiearb_20260817/DESIGN.md) §6.1).
 
-**Two ways out. This design takes the first; the second is [§10](#10-open-choices-left-for-the-reviewer)'s
-first open choice.**
+**Two ways out. This design takes the first; the second was §10's first open choice and
+is now RULED — see [§10.1](#101-contrast-shape--two-differenced-cells-stand).**
 
 ### 1.2 The design of record — two cells against the unmodified champion, DIFFERENCED
 
@@ -301,8 +307,19 @@ Three things follow, all pre-registered:
    ([§0.4](#04-the-stage-2-anti-gaming-clause-is-not-being-violated--stated-so-nobody-has-to-wonder)).
    The question is [`PLAN_B_gt_16.md`](../PLAN_B_gt_16.md) §6 open question 3, verbatim:
    *"Does the N4 `rho_wall ≤ 1.20` waiver … extend above `B = 16`? … worth settling
-   **before** the prereg, not after."* **It is still unsettled and it must be settled
-   before the blind commit.**
+   **before** the prereg, not after."*
+   ⭐ **RULED at review ([§10.2](#102-the-n4-waiver--do-not-ask-do-not-assume-say-it-in-the-branch-table)): do NOT ask, do NOT
+   assume — SAY IT IN THE BRANCH TABLE.** The owner is away, a waiver cannot be obtained
+   before the run, and moving a cost bar the owner set is outside a drafting delegation.
+   ⇒ **`W` is expected FALSE, `B-CONFIRMED` is UNREACHABLE by default, and a
+   `z_D ≥ +2.0` win fires `B-COSTKILL`** — declared as a **reachable-branch set** at
+   [READ_RULE](READ_RULE.md) §4.0 **before** the run, with `W`'s three mechanical
+   conjuncts at §4.0.1. ⛔ **This is not a hedge and must not be softened into one: a win
+   at `B` = 64 is a scientific result, not a deploy licence, unless the owner moved the
+   bar in writing first.**
+   ⚠️ **And the same applies to `B` = 32:** `rho_wall(32)` = 1.2449 **also exceeds 1.20**,
+   so `A` is FALSE there too and a `B` = 32 win would **also** be `B-COSTKILL`. **No rung
+   above 16 has a deploy route without this waiver** ([§10.4](#104-b--32--b64-vs-16-stands-three-cells-declined)).
 3. **`rho_phone(64)` = 23.90 ⇒ on-device is dead at this rung by a factor of ~20, and no
    branch may say otherwise.** ⚠️ Disclosed disagreement between two committed documents:
    `PLAN_B_gt_16.md` carries `rho_phone(16)` = **5.976** while Phase A / Stage 2 carry
@@ -480,10 +497,13 @@ summary.json::tiearb_secs_total          =  141,115.434 worker-s     MEASURED
 playouts per fired ply, B=16   = 737,952 / 14,058          =  52.4862      DERIVED
   => A_bar (arms per fired ply) = 52.4862 / 16             =   3.2804      DERIVED
      (Phase A's corpus constant was 3.0022; realized in-cell is +9.3% — REPORTED,
-      not reconciled, and not load-bearing: the chain below never uses A_bar,
-      it uses the measured seconds.)
+      not reconciled, and not load-bearing.)
 c_incell (worker-s per playout) = 141,115.434 / 737,952    =   0.191225    DERIVED
   (Phase A's W=30 figure was 0.178232 — realized in-cell is +7.3%.)
+  ⭐ WHY NEITHER DELTA CAN BITE: the chain below is built from MEASURED SECONDS
+     (tiearb_secs_per_game, and total elapsed_s), never from A_bar or c_incell.
+     Those two are printed as diagnostics of the Phase-A model and CANNOT
+     PROPAGATE into the projection, because no line below multiplies by them.
 
 arbiter per fired ply, B=16    = 176.394 / 17.5725         =  10.0381 worker-s   DERIVED
 arbiter per fired ply, B=64    = 4 x 10.0381               =  40.1524 worker-s   DERIVED
@@ -630,6 +650,13 @@ outside the `governance/BAND_REGISTRY.csv` allocation range, is **never claimed*
 *(Precedent: Stage 2's smoke used `900000100000` on the same terms.
 `900000300000` is unused anywhere in `measurement/`.)*
 
+⭐ **CONDITION OF ACCEPTANCE (R1 ruling 6): the throwaway band must DECLARE ITSELF
+THROWAWAY in the smoke manifest.** `SMOKE.json` and every smoke `manifest.json` carry
+`"band_tier": "throwaway"` and `"band_registry_claimed": false` beside
+`band_seed_start`. It is **never** claimed in `governance/BAND_REGISTRY.csv` and **never**
+read for an outcome (§9.2) ⇒ **it cannot later be mistaken for a claimed band**, which is
+the only way a throwaway band can do harm.
+
 ### 9.2 ⛔ COUNTS-AND-COST ONLY — the smoke may not read an outcome
 
 The smoke reads and prints **only**: `wall_secs`, `secs_per_game`,
@@ -703,67 +730,99 @@ exists is not a bar, and `ms_ratio` is not a branch input anywhere in this pair.
 
 ---
 
-## 10. Open choices left for the reviewer
+## 10. The six open choices — ALL RULED at review R1
 
-**None of these is settled by this draft, and the pair must not be blind-committed on
-`main` until they are.**
+> **Status: RULED.** These were left open in draft `0c373671` and were **all six ruled**
+> by [`REVIEW_R1.md`](REVIEW_R1.md) (reviewer commit `769da984`). The rulings are recorded
+> here **with their grounds**, because a ruling without its reason is re-litigated by the
+> next reader. **Nothing here is still open.**
 
-1. ⭐ **THE SHAPE OF THE CONTRAST — two differenced cells (§1.2, this draft) vs one
-   head-to-head cell behind a new `--opp-tiearb-*` knob.** This is the biggest lever on
-   the bill and I have deliberately not taken it. The arithmetic, so the reviewer decides
-   against numbers:
+### 10.1 CONTRAST SHAPE — two differenced cells STAND
 
-   | | this draft (two cells, differenced) | head-to-head (needs a W-item) |
-   |---|---|---|
-   | new code | **none** | `--opp-tiearb-*`: `make_production_champion` / opponent factory / manifest / a second two-sided positive control |
-   | per game | 429.612 + 958.794 = 1,388.406 worker-s across two cells | 253.218 + 176.394 + 705.6 = **1,135.2** worker-s in one cell |
-   | statistic | `D = M_w − M_n`, `se(D) = √2 · se_cell` at `ρ` = 0 | the paired margin **directly** — no √2, and the two agents are near-identical so the per-deck sd is plausibly far smaller |
-   | sd | **known** (13.812, measured) | **unknown** — no measurement of this population exists; would have to be measured at the smoke, and sizing `n` from it is sizing on data |
-   | precedent | Stage 2's `D`, JCZ's `D`, same analyzer | none in this programme |
-   | risk | 2× the games | a new instrument on the **opponent** side, where a bug is invisible to `G-J1`-style candidate gates |
+The head-to-head behind a new `--opp-tiearb-*` knob is probably cheaper (**1,135.2** vs
+**1,388.4** worker-s/game) and statistically stronger (no √2, and near-identical agents
+plausibly give a far smaller per-deck sd). **It is declined on two grounds:**
 
-   **My recommendation, and it is only a recommendation:** take this draft's shape for the
-   first cell. The head-to-head is probably cheaper *and* stronger, but it buys that with
-   an unmeasured dispersion and a new opponent-side instrument, and the programme's two
-   most expensive recent losses (R3.3, S2) were both *design-shape* failures rather than
-   power failures. If the reviewer prefers the head-to-head, **it needs a fresh pair** —
-   this read-rule does not transfer.
+1. **Unmeasured dispersion.** No measurement of that population exists, so `n` would have
+   to be sized from the smoke — and **§6.5 forbids sizing on data** for exactly this
+   reason. There is no way to buy the cheaper shape without buying that violation too.
+2. **A new OPPONENT-side instrument**, where a bug is invisible to every `G-J1`-class
+   candidate gate this programme has.
 
-2. ⭐ **THE N4 WAIVER ABOVE `B = 16` — unsettled, and it decides whether `B-CONFIRMED` is
-   reachable at all.** [`PLAN_B_gt_16.md`](../PLAN_B_gt_16.md) §6 asked it and it was
-   never answered: *"Does the N4 `rho_wall ≤ 1.20` waiver … extend above `B = 16`? …
-   worth settling **before** the prereg, not after."* `rho_wall(64)` = 2.4897 fails by
-   2.07×. **Without a dated `OWNER_WAIVER.md` committed before game 1, a win fires
-   `B-COSTKILL` and licenses nothing deployable** (§4 item 2, [READ_RULE](READ_RULE.md)
-   §4). I have deliberately **not** assumed the waiver extends — the delegation covers
-   drafting, not moving a cost bar the owner set.
+⭐ **And the decisive prior: this programme's two most expensive recent losses (R3.3, S2)
+were DESIGN-SHAPE failures, not power failures.** Take the known shape.
 
-3. **`n` = 1,500 games/cell at ≈13.2 h of two-box wall.** The §6.2 ladder is priced at
-   five rungs. 1,500 is the smallest that can convict the top of the §5.2 bracket. If
-   ≈13 h is too much wall, 1,200 (≈10.6 h, floor +1.595) is the next honest rung and it
-   **cannot** convict the bracket top — that trade should be taken with eyes open, not
-   discovered in the read-out.
+### 10.2 THE N4 WAIVER — do NOT ask, do NOT assume, SAY IT IN THE BRANCH TABLE
 
-4. **Whether `B = 32` belongs in this run.** `Δ(16→32)` = +0.0597 is 89% of `Δ(16→64)`
-   at **half** the cost, and `rho_wall(32)` = 1.2449 misses the N4 bar **by 3.7%** rather
-   than by 2.07× — i.e. `B = 32` is the rung that could plausibly *deploy*. A third cell
-   costs +694,000 worker-s (+4.4 h wall) and would make the read a 3-point ladder in game
-   points. ⛔ **I have left it out** — a third cell needs its own branch structure
-   (pairwise contrasts multiply, and the `+2.0` bar is not multiplicity-corrected
-   anywhere in this programme), and adding it silently would be a design change dressed as
-   a rider. **But it may be the higher-EV run and the reviewer should weigh it.**
+⭐ **Ruled: the honest posture is the drafted one, made explicit.** The owner is away, a
+waiver cannot be obtained before the run, and **moving a cost bar the owner set is outside
+a drafting delegation.** ⇒ `A` is decided by a conforming, pre-dated `OWNER_WAIVER.md`
+and nothing else, and **absent one, `B-CONFIRMED` is UNREACHABLE and a `z_D ≥ +2.0` win
+fires `B-COSTKILL`.**
 
-5. **`G-DIVERGE`'s floor (0.10).** Authored pre-data at 10% of common decks showing any
-   divergence, by analogy to `G-FIRE`'s inertness role. There is **no prior measurement**
-   of the `B=16`-vs-`B=64` pick-disagreement rate in a game — the offline corpus has a
-   pick-churn-per-doubling number that was *reported and never a branch input*. A second
-   drafter should sanity-check 0.10 against that number **before** the commit, since after
-   the smoke it is too late (and the smoke may not measure it anyway, §9.2).
+**That is now stated as a REACHABLE-BRANCH SET at [READ_RULE](READ_RULE.md) §4.0, before
+the run** — the Stage-2 `G-N` lesson applied prospectively: an unreachable headline branch
+must be visible **before** the run, never discovered in the read-out. `W`'s three
+conjuncts (existence · ordering · a **committed regex** on the content) are at §4.0.1, so
+the one owner input this pair accepts is a pattern match and not a judgement.
 
-6. **The smoke's `N_SMOKE` = 24/cell/box** and the throwaway band `900000300000`. Both are
-   mechanical; both are cheap to change; neither is load-bearing.
+### 10.3 `n` = 1,500 games/cell — ACCEPTED
 
----
+It is the **smallest** rung that can convict the top of the §5.2 bracket (floor **+1.427**
+vs bracket top **+1.435**, `z_D` ≈ 2.01); 1,200 cannot (floor +1.595). **13.24 h fits the
+20 h delegation with margin** for the smoke, the preflights and a re-run.
+
+### 10.4 `B` = 32 — `B64`-vs-`16` STANDS; three cells DECLINED
+
+⭐ **The apparent EV advantage of `B` = 32 DISSOLVES on a committed constant:
+`rho_wall(32)` = 1.2449 ALSO EXCEEDS the 1.20 bar** (by 3.7%). ⇒ **`A` is FALSE for
+`B` = 32 too, so a `B` = 32 win is ALSO `B-COSTKILL`.** Swapping the primary rung **buys
+no deploy licence** — the draft's "B=32 is the rung that could actually deploy" framing was
+wrong, and it is corrected here rather than left standing.
+
+**Given that neither rung can deploy without the same waiver, the run's value is
+scientific — and there `B` = 64 dominates on two counts:**
+
+1. **Detectability** — the largest offline `Δ` (+0.0670 vs +0.0597) and 48 extra worlds
+   vs 16, hence the best chance of detecting *any* game-level effect.
+2. ⭐ **KILL QUALITY, which is decisive** — **a `B-FLAT` at `B` = 64 BOUNDS THE WHOLE
+   AXIS**: if the biggest rung does not express at `n` = 1,500, the smaller one will not
+   either. A flat at `B` = 32 leaves `B` = 64 open and buys nothing. This programme
+   explicitly optimises for kill quality.
+
+⚠️ **The reviewer explicitly DECLINED to compare the two rungs' POWER**, because doing so
+requires multiplying by the **offline→game map §5.2 forbids using as a multiplier**. The
+ruling above rests **only** on committed constants and on kill quality — **not** on a
+projection. That refusal is recorded because it is the discipline, not a gap.
+
+**On three cells — declined on SCHEDULE RISK, not on statistics.** ⚠️ **The draft's
+multiplicity argument was WEAKER than it stated**: one pre-registered primary plus
+non-adjudicating riders is this programme's standard pattern and would handle multiplicity
+cleanly. The real objection is the clock — three cells cost ≈**831 worker-h ≈ 19.0 h** of
+two-box wall against a 20 h delegation, **leaving no margin** for the smoke, the
+preflights, or any re-run. ⭐ **And the drafted design already sequences the ladder
+correctly:** [READ_RULE](READ_RULE.md) `B-COSTKILL` clause (ii) names the `B` = 32
+question as **licensed-but-unfunded**, so `B` = 32 is paid for only if `B` = 64 shows
+something.
+
+### 10.5 `G-DIVERGE`'s 0.10 floor — KEPT, with the expected value printed
+
+Sanity-checked at review: offline pick-churn ≈**0.29** per fired ply
+(0.303 / 0.309 / 0.290 / 0.287) × ≈**35** fired plies per deck (`phi` 17.5725 × 2 seats)
+⇒ **expected `1 − f₀` = `1 − 0.71^35` ≈ 1.0.** ⇒ **0.10 carries ≈10× headroom: it is an
+INERTNESS detector, not a power check**, and the looseness is right — a tighter floor
+risks failing a healthy run, this campaign's most-repeated defect.
+
+⚠️ **The condition of keeping it:** a realized `1 − f₀` of, say, 0.15 would **pass** while
+sitting far below expectation. **[READ_RULE](READ_RULE.md) §4.3 item 3 therefore prints
+the expected ≈1.0 beside the realized on every branch**, so a barely-passing value is
+legible as an anomaly rather than read as a pass.
+
+### 10.6 `N_SMOKE` = 24 and band `900000300000` — ACCEPTED, with one condition
+
+Mechanical and not load-bearing. **Condition: the throwaway band declares itself throwaway
+in the smoke manifest** (`band_tier: "throwaway"`, `band_registry_claimed: false`), never
+claimed in `governance/BAND_REGISTRY.csv` and never read for an outcome — §9.1.
 
 ## 11. Threats — stated before the numbers
 
@@ -771,7 +830,13 @@ exists is not a bar, and `ms_ratio` is not a branch input anywhere in this pair.
    nested CRN means most plies may resolve identically, and `z_D ∝ √(1−f₀)`
    ([§1.3](#13--the-crn-is-nested-and-it-is-the-load-bearing-structural-property-of-this-design)).
    `G-DIVERGE` refuses an inert surface; nothing rescues a merely-thin one, and §6.3's
-   bounded-null language is where that lands.
+   bounded-null language is where that lands. ⭐ **Sanity-checked at review: the expected
+   `1 − f₀` is ≈1.0** (offline pick-churn ≈0.29/fired ply × ≈35 fired plies/deck), so the
+   0.10 floor carries **≈10× headroom** and is an inertness detector rather than a power
+   check — which is why [READ_RULE](READ_RULE.md) §4.3 must print the expected value
+   beside the realized, so a barely-passing 0.15 reads as the anomaly it would be.
+   ⚠️ `f₀` measured as "`D_i` exactly 0.0" **overcounts** identity ⇒ `1 − f₀`
+   **undercounts** divergence ⇒ **the floor is conservative** and can only fire early.
 2. **The effect bracket spans 3.9× and this cell can only reach its top**
    ([§5](#5-the-effect-size-we-are-trying-to-detect--and-the-39-translation-caveat-binds-both-ways),
    §6.3). A null is bounded, not an exclusion, and specifically **does not refute
@@ -826,3 +891,87 @@ exists is not a bar, and `ms_ratio` is not a branch input anywhere in this pair.
 - **Worktree isolation.** This draft was authored in a git worktree. Any source edit the
   cell needs (there should be none — §2) merges at a quiet window after a process census
   on every box, never beside a live run.
+---
+
+## 13. Review provenance — what R1 changed, and the defect class it caught
+
+> [`REVIEW_R1.md`](REVIEW_R1.md), reviewer commit `769da984`, against draft `0c373671`.
+> **Verdict FAIL — 1 BLOCKING, 4 REQUIRED, 2 cosmetic, all six §10 choices RULED.**
+> Every item is folded in below. The pair returns to the reviewer for sign-off; **B1 alters
+> a gate's conjunct and must be re-read by whoever merges.**
+
+**What the review re-derived from primitives and CONFIRMED** (recorded because a
+confirmation is evidence too, not just a formality): `sd` 13.812 · `se_cell(750)` 0.50435
+· `se(D)` 0.71326 · 2σ +1.4265 · the bracket 0.36793 / 1.4349 · the whole cost chain
+52.4862 → 3.2804 → 0.191225 → 10.0381 → 40.1524 → base 253.218 → NARROW 429.612 (identity
+check passes) → WIDE 958.794 · the bill 2,082,609 s = 578.5 wh → 11.13 h → ×1.19 =
+13.24 h · the 1.19 derate itself (4.41/3.706, measured not assumed) · and `G-N`'s
+1,200 games ≡ 600 decks as reachable and binding. **The nested-CRN finding (§1.3) was
+confirmed AT THE SOURCE** — `b` never enters `world_seed`'s derivation — and **the `√2`
+contradiction (§6.4) was confirmed**: `1.4 / 0.6906 = 2.027`, so PLAN_B graded against the
+single-cell `se`; the true `z` is **1.469** and does not convict.
+
+### 13.1 ⛔ B1 — `G-TOOL` would have failed EVERY healthy run. This campaign's THIRD unsatisfiable-gate catch.
+
+**The defect.** The drafted `G-TOOL` row ended: *"A `+rustcunpinned` or otherwise sentinel
+value is **unknown provenance, which is not agreement** ⇒ fail."* **But `unpinned` is the
+NORMAL production value** — `src/carcassonne_ai/rust_agent.py:372` is
+`tc = os.environ.get("RUSTUP_TOOLCHAIN") or "unpinned"`, and
+[`DEVIATIONS.md`](../DEVIATIONS.md) §D4.13 records **both boxes** emitting exactly
+`carc_rs-0.1.0+58c2b5395569+rustcunpinned` on the R4 run, where it was graded
+`IDENTITY_REQUIRED` and **passed**. ⇒ **as drafted the gate returns `U-UNREADABLE` on
+every run this programme can currently produce.**
+
+**The fix, per the JCZ §0.F.2c reading:** `G-TOOL`'s conjunct is **equality of
+`carc_rs_build` across boxes** — **never a pinnedness requirement**. `unpinned` passes
+provided both boxes emit it. If pinned toolchains are wanted, that is a change to the
+launch environment (`WORKERS.conf::RUST_TOOLCHAIN`), **not** a gate conjunct that voids
+the run. The rest of the row is unchanged and was confirmed correct: the
+`carc_rs_binary_sha`-never-across-boxes rule, and the `PREFLIGHT_*_${HOST}_FIRST.json`
+authority under `--shared-claim`.
+
+⭐ **THE CLASS, NAMED, because this is the third time.** An **unsatisfiable gate** — a
+precondition that no healthy run can pass — is this campaign's most-repeated defect:
+
+| # | gate | how it was unsatisfiable | caught by |
+|---|---|---|---|
+| 1 | Stage 2 `G-N` | `n_common ≥ 600` **decks** against a 400-deck ceiling — could only ever return `U-UNREADABLE` | the instrument's own exhaustiveness sweep, **before** any number existed (§0.A/§0.B) |
+| 2 | R4-0.2's probe loop | `residual == 0` after **one** pass, unreachable by construction — excluding rids admits positions the probe never saw | `ADJUDICATION_R4_GATES.md` ruling 3, **after** it fired on both strata |
+| 3 | **this pair's `G-TOOL`** | `+rustcunpinned` treated as a sentinel when it is the **default** value | **review R1, before the blind commit** |
+
+**Two things this table is for.** (i) The failure mode is *writing a bar against an
+imagined normal case instead of the measured one* — the correct antidote is what caught
+#1 and #3: **check every precondition against a REAL artifact from a completed run before
+committing it.** (ii) ⭐ **A gate that fails closed is not automatically safe.** The
+programme's fail-closed discipline is right, but a fail-closed gate that *always* fails is
+not conservative — it is a rule that cannot be run, and it destroys the run's information
+just as thoroughly as a wrong verdict would.
+
+⇒ **Adopted as a launch precondition for this pair:** every §3 row is evaluated against
+Stage 2's completed `summary.json` / `manifest.json` / preflight artifacts (the same
+fixtures §3's existence-time markers already require) and must **PASS on that healthy
+run**, before the blind commit. A row that fails a known-good run is a drafting defect.
+
+### 13.2 R1–R4 and C1–C2 — where each landed
+
+| item | fold |
+|---|---|
+| **R1** reachable branch set | [READ_RULE](READ_RULE.md) **§4.0** — the set under each value of `A`, `B-CONFIRMED` flagged UNREACHABLE by default; plus pointers on both branch rows |
+| **R2** `G-DIVERGE` expected value | [READ_RULE](READ_RULE.md) §3 `G-DIVERGE` row (derivation + ≈10× headroom) and **§4.3 item 3** (expected ≈1.0 printed beside realized; a barely-passing value is an ANOMALY, not a pass) |
+| **R3** PLAN_B erratum | a dated **erratum line in [`PLAN_B_gt_16.md`](../PLAN_B_gt_16.md) §5** — a note, **not** a silent fix; the wrong figures stay readable |
+| **R4** waiver content check | [READ_RULE](READ_RULE.md) **§4.0.1** — `W`'s third conjunct is a **committed regex**, so the check is a pattern match and not a judgement |
+| **C1** `f₀` direction | §11 threat 1 and [READ_RULE](READ_RULE.md) §4.3 item 3 — `D_i = 0` **overcounts** identity ⇒ `1−f₀` **undercounts** divergence ⇒ **the floor is conservative** |
+| **C2** `Ā`/`c_incell` deltas | §7.2 — one clause saying *why* they cannot bite: the chain uses **measured seconds** and never multiplies by either |
+
+### 13.3 Two places the draft was WRONG and is corrected, not quietly amended
+
+1. ⛔ **"`B` = 32 is the rung that could actually deploy" was WRONG.** `rho_wall(32)` =
+   1.2449 **exceeds** 1.20, so `A` is FALSE for `B` = 32 too and a `B` = 32 win is **also**
+   `B-COSTKILL`. The draft's §10 item 4 presented `B` = 32 as having a deploy story it
+   does not have. Corrected at [§10.4](#104-b--32--b64-vs-16-stands-three-cells-declined)
+   and in `B-COSTKILL` clause (ii).
+2. ⚠️ **The draft's multiplicity argument against a third cell was WEAKER than it
+   stated.** One pre-registered primary plus non-adjudicating riders is this programme's
+   standard pattern and handles multiplicity cleanly. **Three cells are declined on
+   SCHEDULE RISK** (≈831 wh ≈ 19.0 h against a 20 h delegation, no margin for the smoke,
+   the preflights or a re-run) — **not** on statistics. Corrected at §10.4.
