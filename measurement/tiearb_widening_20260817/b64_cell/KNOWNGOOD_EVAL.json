@@ -1,7 +1,7 @@
 {
   "all_evaluable_rows_pass": true,
   "failed_rows": [],
-  "generated_utc": "2026-08-19T20:49:21Z",
+  "generated_utc": "2026-08-19T21:05:17Z",
   "known_good_run": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a7173eaf014b5c81d/measurement/tiearb2_stage2_20260817",
   "meaning": "'all rows pass' means every row WITH a known-good analogue passes AND the rows without one are NAMED. A row that cannot be evaluated NEVER silently counts as covered.",
   "n_evaluated": 11,
@@ -60,15 +60,18 @@
       "detail": {
         "F_narrow": 0,
         "F_wide": 0,
+        "class_field_carried_forward": "a per-failure `diagnostic_class` belongs in the HARNESS, pre-registered by the next pair that needs it \u2014 rung3_r5 already carries D4.18's class trigger and can adopt it first",
         "clause2_candidate_correlated": false,
         "clause2_rule": "max(F) >= 5 AND max(F) > 3 \u00d7 max(min(F), 1)",
-        "clause3_rule": "ANY failure of an unknown class \u21d2 RAISE, regardless of count",
-        "clause3_unknown_classes": [],
+        "clause3_confirmation": null,
+        "clause3_exception_disclosure": "\u26a0\ufe0f A DELIBERATE, DISCLOSED EXCEPTION to 'no owner call adjudicates any outcome': it adjudicates NOTHING \u2014 no branch, no bar, no statistic moves on it \u2014 it decides only whether the run pauses.",
+        "clause3_halt": false,
+        "clause3_rule": "AS NARROWED (RULING 3): if F_w + F_n > 0 the read-out prints every failed game's raw failure record VERBATIM and the run HALTS for owner escalation BEFORE ADJUDICATION unless every failure is manually confirmed to be the known WindowTruncationError class. The confirmation is a HUMAN ACT recorded in the read-out and it gates ESCALATION, never a branch.",
         "known_class": "WindowTruncationError",
+        "n_failed_total": 0,
         "per_cell": {
           "NARROW": {
             "clause1_ok": true,
-            "diagnostic_classes": [],
             "n_attempted": 800,
             "n_failed": 0,
             "rate": 0.0,
@@ -76,13 +79,13 @@
           },
           "WIDE": {
             "clause1_ok": true,
-            "diagnostic_classes": [],
             "n_attempted": 800,
             "n_failed": 0,
             "rate": 0.0,
             "rate_bar": 0.02
           }
         },
+        "raw_failure_records": [],
         "selection_effect": "window-truncation failures fire at extreme board extents, so any dropped set is CORRELATED WITH BOARD GEOMETRY \u2014 late-game, large-extent positions \u2014 and that correlation is DISCLOSED rather than argued away.",
         "wide_exposure_note": "\u26a0\ufe0f WIDE carries ~4\u00d7 the per-ply exposure to the window-refusal class, so clause 2 is the one most likely to bind \u2014 and it binds in the direction that protects the reading."
       },
@@ -133,6 +136,9 @@
         "by_host": {
           "Doctor": {
             "16": {
+              "B": 16,
+              "B_matches_expected": true,
+              "expected_B": 16,
               "leaf_bits_unchanged": true,
               "pick_changed": true,
               "source": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a7173eaf014b5c81d/measurement/tiearb2_stage2_20260817/verdicts/PREFLIGHT_Doctor_FIRST.json",
@@ -141,6 +147,9 @@
           },
           "laptop-wsl": {
             "16": {
+              "B": 16,
+              "B_matches_expected": true,
+              "expected_B": 16,
               "leaf_bits_unchanged": true,
               "pick_changed": true,
               "source": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a7173eaf014b5c81d/measurement/tiearb2_stage2_20260817/verdicts/PREFLIGHT_laptop-wsl_FIRST.json",
@@ -155,7 +164,13 @@
           "Doctor",
           "laptop-wsl"
         ],
-        "semantics": "two-sided (pick CHANGES, leaf bits DO NOT), per host AND per B value; absent \u21d2 fail"
+        "pinned_addresses": {
+          "B": "j13_witness.B",
+          "expected_B": "expected.B",
+          "pick_changed": "j13_witness.pick_changed",
+          "root_leaf_value_bits_unchanged": "j13_witness.root_leaf_value_bits_unchanged"
+        },
+        "semantics": "for EACH host, BOTH B values appear across that host's witness records, each with both booleans true and expected.B == j13_witness.B. \u26a0\ufe0f ABSENT B \u21d2 FAIL \u2014 never 'assume the file's B' (RULING 2)"
       },
       "scaled": "expected_B: (64,16)\u2192(16,) \u2014 Stage 2 ran one B value; the TWO-SIDED and PER-HOST clauses are what is exercised",
       "status": "PASS"

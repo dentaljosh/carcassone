@@ -332,27 +332,68 @@ def test_G_N_both_clauses_and_the_deck_clause_binds_independently():
     assert "1200 games IS 600 decks" in d["same_80pct_bar"]
 
 
-def test_G_FAILED_all_three_clauses():
+def test_G_FAILED_clauses_1_and_2_are_untouched_by_the_narrowing():
     ok, d = B64.gate_failed({"WIDE": _cell(n_failed=0), "NARROW": _cell(B=16)})
-    assert ok is True
+    assert ok is True and d["n_failed_total"] == 0
+    conf = {"all_failures_confirmed": True}
     # clause 1 — RATE, not count
     assert B64.gate_failed({"WIDE": _cell(n_failed=31, n=1500),
-                            "NARROW": _cell(B=16)})[0] is False
+                            "NARROW": _cell(B=16)}, confirmation=conf)[0] is False
     assert B64.gate_failed({"WIDE": _cell(n_failed=29, n=1500),
-                            "NARROW": _cell(B=16, n_failed=29)})[0] is True
-    # clause 2 — candidate-correlation: >=5 AND > 3 × max(min,1)
-    ok, d = B64.gate_failed({"WIDE": _cell(n_failed=5), "NARROW": _cell(B=16, n_failed=0)})
+                            "NARROW": _cell(B=16, n_failed=29)},
+                           confirmation=conf)[0] is True
+    # clause 2 — candidate-correlation: >=5 AND > 3 x max(min,1)
+    ok, d = B64.gate_failed({"WIDE": _cell(n_failed=5),
+                             "NARROW": _cell(B=16, n_failed=0)},
+                            confirmation=conf)
     assert ok is False and d["clause2_candidate_correlated"] is True
     # the >=5 floor exists so a 1-vs-0 split (Stage 2's shape) does NOT void
-    ok, _ = B64.gate_failed({"WIDE": _cell(n_failed=1), "NARROW": _cell(B=16, n_failed=0)})
+    ok, _ = B64.gate_failed({"WIDE": _cell(n_failed=1),
+                             "NARROW": _cell(B=16, n_failed=0)},
+                            confirmation=conf)
     assert ok is True
-    # clause 3 — an unknown class RAISES regardless of count
-    c = _cell(n_failed=1)
-    c["summary"]["failed_classes"] = ["SomethingElseError"]
-    ok, d = B64.gate_failed({"WIDE": c, "NARROW": _cell(B=16, n_failed=1)})
-    assert ok is False and d["clause3_unknown_classes"] == ["SomethingElseError"]
-    c["summary"]["failed_classes"] = ["WindowTruncationError"]
-    assert B64.gate_failed({"WIDE": c, "NARROW": _cell(B=16, n_failed=1)})[0] is True
+
+
+def test_G_FAILED_clause3_AS_NARROWED_halts_on_ANY_failure_until_confirmed():
+    """RULING 3: clause 3 is no longer a CLASS check - the harness emits no class
+    and commissioning one after sign-off is how the three unsatisfiable gates
+    shipped. Any failure => verbatim disclosure + an escalation HALT, and only a
+    RECORDED HUMAN CONFIRMATION clears it."""
+    cells = {"WIDE": _cell(n_failed=1), "NARROW": _cell(B=16, n_failed=0)}
+    ok, d = B64.gate_failed(cells)
+    assert ok is False and d["clause3_halt"] is True and d["n_failed_total"] == 1
+    assert "HALTS for owner escalation BEFORE ADJUDICATION" in d["clause3_rule"]
+    assert "adjudicates NOTHING" in d["clause3_exception_disclosure"]
+    assert "rung3_r5" in d["class_field_carried_forward"]
+    # the confirmation is a HUMAN ACT and clears the halt without moving a bar
+    ok, d = B64.gate_failed(cells, confirmation={"all_failures_confirmed": True,
+                                                 "confirmed_by": "owner"})
+    assert ok is True and d["clause3_halt"] is False
+    assert d["clause3_confirmation"]["confirmed_by"] == "owner"
+    # a half-hearted confirmation does NOT clear it (fail-closed)
+    assert B64.gate_failed(cells,
+                           confirmation={"all_failures_confirmed": "yes"})[0] is False
+    assert B64.gate_failed(cells, confirmation={})[0] is False
+    # NO class field is CONSULTED any more (it survives only as history in
+    # SPEC_VS_BUILDABLE, which is evidence and must stay readable)
+    src = (TILETIE / "analyze_b64_cell.py").read_text()
+    assert 'get("failed_classes")' not in src
+    assert "diagnostic_classes" not in src
+
+
+def test_the_clause3_HALT_carries_the_raw_records_VERBATIM():
+    """The run PAUSES before adjudication and the raw failure records are emitted
+    as the harness wrote them - no class is invented."""
+    rec = {"seed": 1, "a_seat": 0, "diff": 1.0, "ok": False,
+           "error": "WindowTruncationError: boom", "traceback_tail": "...frame..."}
+    cells = {"WIDE": {**_cell(n_failed=1), "records": [rec]},
+             "NARROW": {**_cell(B=16), "records": []}}
+    raws = B64.raw_failure_records(cells)
+    assert len(raws) == 1 and raws[0]["verbatim"] is True
+    assert raws[0]["error"].startswith("WindowTruncationError")
+    assert raws[0]["traceback_tail"] == "...frame..."
+    ok, d = B64.gate_failed(cells, raw_records=raws)
+    assert ok is False and d["raw_failure_records"] == raws
 
 
 def test_G_TOOL_is_EQUALITY_across_boxes_and_unpinned_PASSES():
@@ -374,6 +415,55 @@ def test_G_TOOL_is_EQUALITY_across_boxes_and_unpinned_PASSES():
     mixed = pre + [{"host": "Doctor", "carc_rs_build": "carc_rs-0.1.0+aaaaaaaaaaaa+rustcunpinned"}]
     assert B64.gate_tool(mixed, {})[0] is False
     assert B64.gate_tool([], {})[0] is False
+
+
+def _preflight(host, B, changed=True, unchanged=True, expected_B=None):
+    return {"host": host,
+            "j13_witness": {"B": B, "pick_changed": changed,
+                            "root_leaf_value_bits_unchanged": unchanged},
+            "expected": {"B": B if expected_B is None else expected_B}}
+
+
+def test_G_J13_reads_the_PINNED_key_path_and_an_ABSENT_B_FAILS():
+    """RULING 2: the address is PINNED, not resolved over an order - G-J13 is the
+    gate that proves the instrument is LIVE at both B values, and 'the one gate
+    that proves the instrument is live should not be the one left to search'.
+    ABSENT B => FAIL, never 'assume the file's B'."""
+    assert B64.PREFLIGHT_B_PATH == "j13_witness.B"
+    assert B64.PREFLIGHT_B_EXPECTED_PATH == "expected.B"
+    good = [_preflight(h, b) for h in ("Doctor", "laptop-wsl") for b in (64, 16)]
+    ok, d = B64.gate_j13(good)
+    assert ok is True
+    assert d["pinned_addresses"]["B"] == "j13_witness.B"
+    assert "ABSENT" in d["semantics"] and "FAIL" in d["semantics"]
+
+    noB = [{"host": h,
+            "j13_witness": {"pick_changed": True,
+                            "root_leaf_value_bits_unchanged": True},
+            "expected": {}} for h in ("Doctor", "laptop-wsl")]
+    assert B64.gate_j13(noB)[0] is False
+    # B at the OLD top level is no longer read - the path is pinned
+    topB = [{"host": h, "B": b,
+             "j13_witness": {"pick_changed": True,
+                             "root_leaf_value_bits_unchanged": True},
+             "expected": {"B": b}}
+            for h in ("Doctor", "laptop-wsl") for b in (64, 16)]
+    assert B64.gate_j13(topB)[0] is False
+
+
+def test_G_J13_requires_BOTH_booleans_BOTH_B_values_and_expected_agreement():
+    base = [_preflight(h, b) for h in ("Doctor", "laptop-wsl") for b in (64, 16)]
+    assert B64.gate_j13(base)[0] is True
+    others = [p for p in base
+              if not (p["host"] == "Doctor" and p["j13_witness"]["B"] == 64)]
+    assert B64.gate_j13(others)[0] is False              # a B value missing
+    assert B64.gate_j13([_preflight("Doctor", 64, changed=False)]
+                        + others)[0] is False            # the pick did not change
+    assert B64.gate_j13([_preflight("Doctor", 64, unchanged=False)]
+                        + others)[0] is False            # the leaf bits moved
+    ok, d = B64.gate_j13([_preflight("Doctor", 64, expected_B=16)] + others)
+    assert ok is False
+    assert d["by_host"]["Doctor"]["64"]["B_matches_expected"] is False
 
 
 def test_G_PLY_treats_ABSENT_as_unknown_not_zero():
@@ -445,10 +535,21 @@ def test_spec_vs_buildable_mismatches_are_REPORTED_not_resolved():
     for m in B64.SPEC_VS_BUILDABLE:
         for k in ("where", "issue", "adjudicator_behaviour", "resolution"):
             assert m.get(k), (m, k)
-        assert "not resolved" in m["resolution"].lower() or \
-            "call" in m["resolution"].lower(), m["resolution"]
+        # all three were RULED pre-blind; the entries stay because a
+        # superseded finding is evidence — what changed, and why, must remain
+        # readable beside the code that changed with it
+        assert m.get("status"), m
+        if m["status"].startswith("RULED"):
+            assert "RULED 2026-08-19" in m["resolution"], m["resolution"]
+        else:
+            assert m["status"].startswith("NOTE"), m["status"]
     wheres = " | ".join(m["where"] for m in B64.SPEC_VS_BUILDABLE)
     assert "G-SMOKE" in wheres and "G-J13" in wheres
+    # all three ORIGINAL findings are RULED; the residual is a NOTE for the emitter
+    ruled = [m for m in B64.SPEC_VS_BUILDABLE if m["status"].startswith("RULED")]
+    notes = [m for m in B64.SPEC_VS_BUILDABLE if m["status"].startswith("NOTE")]
+    assert len(ruled) == 3 and len(notes) == 1
+    assert "pinned addresses" in notes[0]["where"]
 
 
 def test_the_committed_constants_match_the_frozen_pair():

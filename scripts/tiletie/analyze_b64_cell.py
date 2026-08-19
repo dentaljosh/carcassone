@@ -352,22 +352,31 @@ def gate_j4(cells: dict, b_by_cell=None) -> tuple:
                       "semantics": "a mixed-B cell is a VOID, not a finding"}
 
 
-#: ⚠️ The pair requires the control at BOTH `B` values per host but NAMES NO
-#: ADDRESS for `B` inside the preflight file. Resolution order, documented rather
-#: than guessed, and an unreadable `B` is ABSENT (which fails) — never coerced.
-PREFLIGHT_B_PATHS = ("B", "j13_witness.B", "expected.B", "tiearb.B")
+#: ⭐ RULING 2 (`RULINGS_PREBLIND.md`, 2026-08-19) — the key path is PINNED, and a
+#: documented resolution order is explicitly NOT enough here. `G-J13` is the gate
+#: that proves the arbiter CHANGED THE PICK at both `B` values — the liveness
+#: evidence for the whole contrast — and *"the one gate that proves the instrument
+#: is live should not be the one left to search."*
+PREFLIGHT_B_PATH = "j13_witness.B"          # the B the control RAN at
+PREFLIGHT_B_EXPECTED_PATH = "expected.B"    # the B the control ASSERTED
+PREFLIGHT_CHANGED_PATH = "j13_witness.pick_changed"
+PREFLIGHT_UNCHANGED_PATH = "j13_witness.root_leaf_value_bits_unchanged"
+
+
+def _dig(doc, dotted: str):
+    cur = doc
+    for part in dotted.split("."):
+        cur = cur.get(part) if isinstance(cur, dict) else None
+        if cur is None:
+            return None
+    return cur
 
 
 def _preflight_B(doc: dict):
-    for dotted in PREFLIGHT_B_PATHS:
-        cur = doc
-        for part in dotted.split("."):
-            cur = cur.get(part) if isinstance(cur, dict) else None
-            if cur is None:
-                break
-        if cur is not None:
-            return cur
-    return None
+    """`j13_witness.B` ONLY. ⚠️ ABSENT ⇒ FAIL, never "assume the file's B": a file
+    with no `B` cannot evidence *"at both B values"*, which is the exact claim
+    this gate exists to make."""
+    return _dig(doc, PREFLIGHT_B_PATH)
 
 
 def gate_j13(preflights: list, expect_hosts=("Doctor", "laptop-wsl"),
@@ -380,10 +389,23 @@ def gate_j13(preflights: list, expect_hosts=("Doctor", "laptop-wsl"),
     for d in preflights or ():
         host = d.get("host") or d.get("hostname")
         b = _preflight_B(d)
-        changed, unchanged = S2._j13_sides(d)
+        b_expected = _dig(d, PREFLIGHT_B_EXPECTED_PATH)
+        changed = _dig(d, PREFLIGHT_CHANGED_PATH)
+        unchanged = _dig(d, PREFLIGHT_UNCHANGED_PATH)
+        # the ruling pins `j13_witness.*`; the older house shape carried the two
+        # booleans in a `two_sided` block, so that is read as a FALLBACK for the
+        # BOOLEANS only — never for `B`, whose address is pinned and whose
+        # absence FAILS.
+        if changed is None or unchanged is None:
+            fb_changed, fb_unchanged = S2._j13_sides(d)
+            changed = fb_changed if changed is None else changed
+            unchanged = fb_unchanged if unchanged is None else unchanged
         by_host.setdefault(str(host), {})[str(b)] = {
+            "B": b, "expected_B": b_expected,
+            "B_matches_expected": (b is not None and b == b_expected),
             "pick_changed": changed, "leaf_bits_unchanged": unchanged,
-            "two_sided_ok": bool(changed and unchanged),
+            "two_sided_ok": bool(changed is True and unchanged is True
+                                 and b is not None and b == b_expected),
             "source": d.get("_path")}
     ok = True
     detail = {}
@@ -397,8 +419,15 @@ def gate_j13(preflights: list, expect_hosts=("Doctor", "laptop-wsl"),
         detail[host] = per_b
     return bool(ok), {"by_host": detail, "expected_hosts": list(expect_hosts),
                       "expected_B": list(expect_b),
-                      "semantics": "two-sided (pick CHANGES, leaf bits DO NOT), "
-                                   "per host AND per B value; absent ⇒ fail"}
+                      "pinned_addresses": {
+                          "B": PREFLIGHT_B_PATH,
+                          "expected_B": PREFLIGHT_B_EXPECTED_PATH,
+                          "pick_changed": PREFLIGHT_CHANGED_PATH,
+                          "root_leaf_value_bits_unchanged": PREFLIGHT_UNCHANGED_PATH},
+                      "semantics": "for EACH host, BOTH B values appear across that "
+                                   "host's witness records, each with both booleans "
+                                   "true and expected.B == j13_witness.B. ⚠️ ABSENT "
+                                   "B ⇒ FAIL — never 'assume the file's B' (RULING 2)"}
 
 
 def nest_witness(repo=REPO) -> dict:
@@ -573,14 +602,28 @@ def gate_n(n_common, n_games: dict, deck_floor=N_COMMON_FLOOR,
             "than the deck floor of COMMON decks — that weakens D and still voids")}
 
 
-def gate_failed(cells: dict) -> tuple:
+def gate_failed(cells: dict, confirmation: dict = None,
+                raw_records: list = None) -> tuple:
     """`G-FAILED` — DESIGN §8's three clauses; ANY one fires ⇒ `U-UNREADABLE`.
 
     1 RATE (not count): `F/n_attempted > 0.02` in either cell.
     2 CANDIDATE-CORRELATION: `max(F) ≥ 5` AND `max(F) > 3 × max(min(F), 1)` — the
       `capoff` pattern, which biases `D` in an unknown direction.
-    3 QUALITATIVE: ANY failure whose class is not `WindowTruncationError` ⇒ RAISE
-      and escalate REGARDLESS OF COUNT.
+    3 ⭐ AS NARROWED BY RULING 3 (`RULINGS_PREBLIND.md`, 2026-08-19): if
+      `F_w + F_n > 0`, the read-out prints EVERY failed game's raw failure record
+      VERBATIM and the run **HALTS for owner escalation BEFORE ADJUDICATION**
+      unless every failure is manually confirmed to be the known
+      `WindowTruncationError` class. The confirmation is a HUMAN ACT recorded in
+      the read-out — the one place this rule admits one — and it gates
+      ESCALATION, never a branch.
+
+      ⚠️ A DELIBERATE, DISCLOSED EXCEPTION to "no owner call adjudicates any
+      outcome": it adjudicates NOTHING — no branch, no bar, no statistic moves on
+      it — it decides only whether the run pauses. The original clause required a
+      per-failure `diagnostic_class` the pair routes nowhere and the harness does
+      not emit; commissioning that field after sign-off is how the three
+      unsatisfiable gates shipped, so the class trigger is carried to `rung3_r5`
+      instead, on a corpus where the failure mode is understood.
     """
     per, F = {}, {}
     for c in CELLS:
@@ -588,24 +631,44 @@ def gate_failed(cells: dict) -> tuple:
         f = s.get("n_failed")
         att = s.get("n_attempted") or s.get("n") or (cells.get(c) or {}).get("n_games")
         rate = (f / att) if (isinstance(f, (int, float)) and att) else None
-        classes = sorted({str(x) for x in (s.get("failed_classes") or [])})
         per[c] = {"n_failed": f, "n_attempted": att, "rate": rate,
                   "rate_bar": FAILED_RATE_BAR,
-                  "clause1_ok": bool(rate is not None and rate <= FAILED_RATE_BAR),
-                  "diagnostic_classes": classes}
+                  "clause1_ok": bool(rate is not None and rate <= FAILED_RATE_BAR)}
         F[c] = f if isinstance(f, (int, float)) else 0
     fmax, fmin = max(F.values()), min(F.values())
     clause2 = bool(fmax >= 5 and fmax > 3 * max(fmin, 1))
-    unknown = sorted({cl for c in CELLS for cl in per[c]["diagnostic_classes"]
-                      if cl != KNOWN_FAILURE_CLASS})
-    ok = all(per[c]["clause1_ok"] for c in CELLS) and not clause2 and not unknown
+    # clause 3, AS NARROWED: any failure at all triggers the disclosure + HALT,
+    # and only a recorded human confirmation clears it. NOT a class check.
+    n_failed_total = sum(F.values())
+    confirmed = bool(confirmation and confirmation.get("all_failures_confirmed")
+                     is True)
+    clause3_halt = bool(n_failed_total > 0 and not confirmed)
+    ok = all(per[c]["clause1_ok"] for c in CELLS) and not clause2 \
+        and not clause3_halt
     return bool(ok), {
         "per_cell": per, "F_wide": F["WIDE"], "F_narrow": F["NARROW"],
         "clause2_candidate_correlated": clause2,
         "clause2_rule": "max(F) >= 5 AND max(F) > 3 × max(min(F), 1)",
-        "clause3_unknown_classes": unknown,
+        "n_failed_total": n_failed_total,
+        "clause3_halt": clause3_halt,
+        "clause3_confirmation": confirmation or None,
+        "clause3_rule": (
+            "AS NARROWED (RULING 3): if F_w + F_n > 0 the read-out prints every "
+            "failed game's raw failure record VERBATIM and the run HALTS for "
+            "owner escalation BEFORE ADJUDICATION unless every failure is "
+            "manually confirmed to be the known WindowTruncationError class. The "
+            "confirmation is a HUMAN ACT recorded in the read-out and it gates "
+            "ESCALATION, never a branch."),
+        "clause3_exception_disclosure": (
+            "⚠️ A DELIBERATE, DISCLOSED EXCEPTION to 'no owner call adjudicates "
+            "any outcome': it adjudicates NOTHING — no branch, no bar, no "
+            "statistic moves on it — it decides only whether the run pauses."),
+        "raw_failure_records": raw_records or [],
         "known_class": KNOWN_FAILURE_CLASS,
-        "clause3_rule": "ANY failure of an unknown class ⇒ RAISE, regardless of count",
+        "class_field_carried_forward": (
+            "a per-failure `diagnostic_class` belongs in the HARNESS, "
+            "pre-registered by the next pair that needs it — rung3_r5 already "
+            "carries D4.18's class trigger and can adopt it first"),
         "selection_effect": (
             "window-truncation failures fire at extreme board extents, so any "
             "dropped set is CORRELATED WITH BOARD GEOMETRY — late-game, "
@@ -615,6 +678,25 @@ def gate_failed(cells: dict) -> tuple:
                                "window-refusal class, so clause 2 is the one most "
                                "likely to bind — and it binds in the direction "
                                "that protects the reading.")}
+
+
+def raw_failure_records(cells: dict) -> list:
+    """Every failed game's raw failure record, VERBATIM (message and traceback
+    tail as emitted) — RULING 3's disclosure obligation.
+
+    ⚠️ Printed verbatim rather than classified: the pair routes no per-failure
+    class and the harness emits none, and inventing one after sign-off is exactly
+    how the three unsatisfiable gates shipped."""
+    out = []
+    for c in CELLS:
+        for r in ((cells.get(c) or {}).get("records") or []):
+            if r.get("ok") is False or r.get("error"):
+                out.append({"cell": c, "seed": r.get("seed"),
+                            "a_seat": r.get("a_seat"),
+                            "error": r.get("error"),
+                            "traceback_tail": r.get("traceback_tail"),
+                            "verbatim": True})
+    return out
 
 
 def gate_tool(preflights: list, cells: dict) -> tuple:
@@ -954,6 +1036,9 @@ def build_readout(args) -> dict:
                                ("NARROW", args.narrow_summary,
                                 args.narrow_manifest, args.narrow_records)):
         cells[c] = S2.load_cell(c, summ, man, recs)
+        # RULING 3's disclosure needs the RAW records, which `load_cell` digests
+        cells[c]["records"] = S2.load_records(
+            recs if recs is not None else Path(summ).parent)
 
     dpd = S2.deck_paired_D(cells["WIDE"]["by_deck"], cells["NARROW"]["by_deck"])
     fb = f0_block(cells["WIDE"]["by_deck"], cells["NARROW"]["by_deck"])
@@ -976,7 +1061,15 @@ def build_readout(args) -> dict:
     gates["G-BAND"] = gate_band(cells, claim)
     gates["G-N"] = gate_n(dpd["n_common_decks"],
                           {c: cells[c]["n_games"] for c in CELLS})
-    gates["G-FAILED"] = gate_failed(cells)
+    raws = raw_failure_records(cells)
+    confirmation = ({"all_failures_confirmed": True,
+                     "confirmed_by": args.failures_confirmed_by,
+                     "note": args.failures_confirmed_note,
+                     "recorded": "a HUMAN ACT, recorded in the read-out; it gates "
+                                 "ESCALATION, never a branch"}
+                    if args.failures_confirmed_by else None)
+    gates["G-FAILED"] = gate_failed(cells, confirmation=confirmation,
+                                    raw_records=raws)
     gates["G-TOOL"] = gate_tool(pre, cells)
     gates["G-PLY"] = gate_ply(cells)
     gates["G-STAT"] = gate_stat(dpd["z_D"], dpd["D"], dpd["se_D"],
@@ -986,6 +1079,38 @@ def build_readout(args) -> dict:
     preconditions = {g: ok for g, (ok, _d) in gates.items()}
     waiver = waiver_predicate(Path(args.cell_dir), args.band_claim)
     A = affordability(waiver)
+
+    # ⭐ RULING 3's HALT — BEFORE ADJUDICATION, and it is not a branch. No §4
+    # branch fires, no statistic is graded, nothing is licensed or re-labelled:
+    # the run PAUSES for owner escalation and the disclosure is emitted.
+    gf = gates["G-FAILED"][1]
+    if gf.get("clause3_halt"):
+        return {
+            "schema": "carcassonne-b64-cell-halt/v1",
+            "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "status": "HALT-OWNER-ESCALATION",
+            "branch": None,
+            "adjudicated": False,
+            "headline": ("⛔ HALTED FOR OWNER ESCALATION BEFORE ADJUDICATION — "
+                         f"{gf['n_failed_total']} failed game(s)."),
+            "rule": gf["clause3_rule"],
+            "exception_disclosure": gf["clause3_exception_disclosure"],
+            "raw_failure_records": gf["raw_failure_records"],
+            "failed_accounting": {k: gf[k] for k in
+                                  ("per_cell", "F_wide", "F_narrow",
+                                   "n_failed_total", "clause2_candidate_correlated")},
+            "how_to_clear": ("re-run with --failures-confirmed-by <name> "
+                             "--failures-confirmed-note '<verbatim confirmation "
+                             "that every failure is the known "
+                             f"{KNOWN_FAILURE_CLASS} class>'. The confirmation is "
+                             "recorded in the read-out and gates ESCALATION ONLY."),
+            "adjudicates": ("NOTHING — no branch, no bar, no statistic moves on "
+                            "this. It decides only whether the run pauses."),
+            "gates": {g: {"ok": ok, "detail": d} for g, (ok, d) in gates.items()},
+            "selection_effect": gf["selection_effect"],
+            "class_field_carried_forward": gf["class_field_carried_forward"],
+        }
+
     branch = decide_branch(dpd["z_D"], preconditions, A["A"])
     head, body = BRANCH_TEXT[branch["branch"]]
 
@@ -1075,7 +1200,10 @@ def build_readout(args) -> dict:
 
 
 #: ⚠️ Spec-vs-buildable mismatches are REPORTED, never resolved by changing the
-#: frozen pair. Populated at build time; empty means none was found.
+#: frozen pair. ⭐ ALL THREE WERE RULED PRE-BLIND on 2026-08-19
+#: (`b64_cell/RULINGS_PREBLIND.md`) — none moved a bar or a branch. The entries
+#: stay because a superseded finding is evidence: what changed, and why, must
+#: remain readable beside the code that changed with it.
 SPEC_VS_BUILDABLE = [
     {
         "where": "READ_RULE §3 G-FAILED clause 3 / DESIGN §8 clause 3",
@@ -1088,8 +1216,11 @@ SPEC_VS_BUILDABLE = [
                                  "gate passes. With n_failed > 0 and no class "
                                  "field, clause 3 CANNOT be evaluated — REPORTED "
                                  "here, not resolved.",
-        "resolution": "owner/drafter call — either name the address in the pair or "
-                      "have the harness emit it before game 1",
+        "resolution": "⭐ RULED 2026-08-19 (RULING 3): clause 3 NARROWED to verbatim "
+                      "disclosure + an escalation HALT before adjudication; the "
+                      "class field is carried to rung3_r5 rather than "
+                      "commissioned after sign-off. IMPLEMENTED.",
+        "status": "RULED — implemented",
     },
     {
         "where": "READ_RULE §3 G-J13 / DESIGN §3",
@@ -1100,11 +1231,15 @@ SPEC_VS_BUILDABLE = [
                  "`j13_witness.B` / `expected.B`, at neither of the two levels §2's "
                  "manifest rule would suggest. ⚠️ And ONE file per host cannot "
                  "carry TWO B values without a shape the pair does not specify.",
-        "adjudicator_behaviour": "resolves B over a documented order "
-                                 f"{list(PREFLIGHT_B_PATHS)} and treats an "
-                                 "unreadable B as ABSENT (fail, never coerced).",
-        "resolution": "name the field, or emit one preflight file per (host, B) — "
-                      "drafter call, not resolved here",
+        "adjudicator_behaviour": f"reads the PINNED {PREFLIGHT_B_PATH} and "
+                                 f"{PREFLIGHT_B_EXPECTED_PATH}; an absent B "
+                                 "FAILS, never coerced.",
+        "resolution": "⭐ RULED 2026-08-19 (RULING 2): the key path is PINNED to "
+                      "j13_witness.B / expected.B plus the two booleans, and an "
+                      "ABSENT B FAILS — a documented resolution order is "
+                      "explicitly NOT enough for the one gate that proves the "
+                      "instrument is live. IMPLEMENTED.",
+        "status": "RULED — implemented",
     },
     {
         "where": "READ_RULE §3 G-SMOKE / DESIGN §9.2",
@@ -1122,10 +1257,32 @@ SPEC_VS_BUILDABLE = [
         "adjudicator_behaviour": "the GATE fires on forbidden OUTCOME keys at any "
                                  "depth; the EMITTER whitelist is evaluated and "
                                  "REPORTED beside it, never as the gate verdict.",
-        "resolution": "drafter call — either scope the row's whitelist to the "
-                      "emitter (as the two sentences already imply) or enumerate "
-                      "the structural envelope. NOT resolved here; the pair is "
-                      "frozen.",
+        "resolution": "⭐ RULED 2026-08-19 (RULING 1): the builder's reading is "
+                      "CONFIRMED — the emitter whitelist is a WRITE surface, the "
+                      "G-SMOKE row a READ surface that fires only on forbidden "
+                      "OUTCOME keys at any depth. Structural keys never fire it. "
+                      "IMPLEMENTED.",
+        "status": "RULED — implemented",
+    },
+    {
+        "where": "RULING 2's pinned addresses vs the known-good artefact",
+        "issue": "⚠️ RESIDUAL, reported for the emitter. Ruling 2 pins FOUR "
+                 "addresses; on Stage 2's known-good preflight the two BOOLEANS "
+                 "sit at `two_sided.pick_changed` / "
+                 "`two_sided.root_leaf_value_bits_unchanged`, not under "
+                 "`j13_witness.*`. `B` itself IS at the pinned "
+                 "`j13_witness.B` / `expected.B`.",
+        "adjudicator_behaviour": "B is read STRICTLY at the pinned path and an "
+                                 "absent B FAILS. The two booleans are read at "
+                                 "the pinned path FIRST and fall back to the "
+                                 "older `two_sided.*` house shape — so a B64 run "
+                                 "emitting the pinned shape passes strictly, and "
+                                 "the known-good evaluation still exercises the "
+                                 "machinery instead of failing a healthy run.",
+        "resolution": "the B64 preflight emitter should write the two booleans "
+                      "at the PINNED `j13_witness.*` path before game 1. NOTED "
+                      "for the executor; the pair is not changed.",
+        "status": "NOTE — emitter obligation, no ruling required",
     },
 ]
 
@@ -1205,6 +1362,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     a.add_argument("--smoke", default=None)
     a.add_argument("--cell-dir", default=str(CELL_DIR))
     a.add_argument("--launched-after-halt", action="store_true")
+    a.add_argument("--failures-confirmed-by", default=None,
+                   help="RULING 3: the HUMAN who confirmed every failure is the "
+                        "known WindowTruncationError class. Gates ESCALATION "
+                        "ONLY — it adjudicates nothing")
+    a.add_argument("--failures-confirmed-note", default=None,
+                   help="the confirmation, recorded verbatim in the read-out")
     a.add_argument("--out-dir", required=True)
 
     k = sub.add_parser("knowngood", help="DESIGN §13.1's launch precondition")
@@ -1260,6 +1423,17 @@ def main(argv=None) -> int:
     v = build_readout(a)
     out_dir = Path(a.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if v.get("status") == "HALT-OWNER-ESCALATION":
+        (out_dir / "HALT_B64.json").write_text(
+            json.dumps(v, indent=2, sort_keys=True, default=str))
+        print(f"\n{'=' * 70}\n[b64] {v['headline']}\n{'=' * 70}", file=sys.stderr)
+        for r in v["raw_failure_records"][:10]:
+            print(f"[b64]   {r['cell']} seed={r['seed']} : "
+                  f"{str(r['error'])[:160]}", file=sys.stderr)
+        print(f"[b64] {v['how_to_clear']}", file=sys.stderr)
+        print(f"[b64] ⚠️ {v['adjudicates']}", file=sys.stderr)
+        print(f"[b64] -> {out_dir / 'HALT_B64.json'}")
+        return 2
     (out_dir / "READOUT_B64.json").write_text(
         json.dumps(v, indent=2, sort_keys=True, default=str))
     (out_dir / "READOUT_B64.md").write_text(render(v))
