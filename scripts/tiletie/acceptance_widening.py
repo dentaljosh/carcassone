@@ -222,17 +222,42 @@ VOID_WHY = "VOID (stratum) — not evaluated"
 VOID_WITNESS_FILE = "GATE_DISJOINT.json"
 
 
+#: §D4.19's SECOND witness: the artifact's own marker. A component may not vouch
+#: for itself, and the harness may not ignore a gate — so BOTH must agree.
+ARTIFACT_WITNESS_FILE = "verdicts/READOUT.json"
+ARTIFACT_WITNESS_KEY = "widening.j_rider.s2.void"
+
+
 def void_stratum_scope(run_dir) -> dict:
     """Which strata a POSITIVE artifact witness declares void.
 
     `digest_exclusions.<stratum>.void == true` and nothing else: a missing file,
     a missing block, a missing row and a `null` all yield an INACTIVE scope, so
     absence can never scope an address out of `ABSENT IS FAIL`.
+
+    ⭐ §D4.19 adds the DUAL WITNESS for KEY-PATH scoping — the same "two
+    independent things must agree" form as D4.11's licence. The gate witness
+    scopes artifact PATHS (D4.16, unchanged); scoping a key path INSIDE the
+    READOUT additionally requires the READOUT's own `widening.j_rider.s2.void`,
+    and **disagreement in EITHER direction RAISES**:
+
+        gate void, READOUT not  ⇒ the analyzer IGNORED the void
+        READOUT void, gate not  ⇒ the analyzer SELF-DECLARED a void with no gate
+                                  basis — a component vouching for itself
+
+    ⚠️ A READOUT that does not exist yet is NOT a disagreement: the analyzer has
+    not run, which is `ABSENT IS FAIL` territory for its addresses and not a
+    contradicted witness. Key-path scoping simply stays off until it exists.
     """
     p = Path(run_dir) / VOID_WITNESS_FILE
     out = {"active": False, "strata": (), "source": str(p), "present": False,
            "address": f"{VOID_WITNESS_FILE}::digest_exclusions.<stratum>.void",
            "voided_strata": None,
+           "key_scope_active": False,
+           "artifact_witness": {"address": f"{ARTIFACT_WITNESS_FILE}::"
+                                           f"{ARTIFACT_WITNESS_KEY}",
+                                "present": False, "void": None,
+                                "source": str(Path(run_dir) / ARTIFACT_WITNESS_FILE)},
            "why": "no GATE_DISJOINT.json — absence is NOT a void witness"}
     if not p.is_file():
         return out
@@ -249,7 +274,59 @@ def void_stratum_scope(run_dir) -> dict:
                 "why": (f"positive witness: void is true for {list(strata)}"
                         if strata else
                         "no stratum carries void == true — scope INACTIVE")})
+
+    # ---- the SECOND witness, and the two-way disagreement check ------------ #
+    ap = Path(run_dir) / ARTIFACT_WITNESS_FILE
+    gate_void = "S2" in strata
+    if ap.is_file():
+        try:
+            doc = json.loads(ap.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(
+                f"REFUSING: {ap} is unreadable ({exc}) — the §D4.19 dual "
+                f"witness cannot be evaluated, and a witness that cannot be "
+                f"read is not a witness.")
+        vals = dig(doc, ARTIFACT_WITNESS_KEY)
+        artifact_void = bool(vals) and all(v is True for v in vals)
+        out["artifact_witness"].update({"present": True, "void": artifact_void})
+        if gate_void and not artifact_void:
+            raise SystemExit(
+                f"REFUSING: {VOID_WITNESS_FILE} declares S2 VOID but "
+                f"{ARTIFACT_WITNESS_FILE}::{ARTIFACT_WITNESS_KEY} does not "
+                f"({vals!r}) — THE ANALYZER IGNORED THE VOID. §D4.19: both "
+                f"witnesses must agree; disagreement in either direction raises.")
+        if artifact_void and not gate_void:
+            raise SystemExit(
+                f"REFUSING: {ARTIFACT_WITNESS_FILE}::{ARTIFACT_WITNESS_KEY} "
+                f"declares S2 void but {VOID_WITNESS_FILE} does not (voided "
+                f"strata {list(strata)}) — a SELF-DECLARED void with no gate "
+                f"basis. §D4.19: a component may not vouch for itself.")
+        out["key_scope_active"] = bool(gate_void and artifact_void)
+        out["why"] += (" | artifact witness AGREES — key-path scoping ACTIVE"
+                       if out["key_scope_active"] else
+                       " | artifact witness present and also not void")
+    else:
+        out["why"] += (" | no READOUT yet — key-path scoping stays OFF (an "
+                       "absent analyzer output is ABSENT-IS-FAIL, not a "
+                       "contradicted witness)")
     return out
+
+
+def _both_witnesses(scope) -> dict:
+    """§D4.19 — BOTH witnesses cited on every void-scoped row, and NO
+    `resolved_at`: nothing resolved and nothing was checked, so naming an
+    address it "resolved at" would be the carve-out-by-interpretation this
+    whole scope exists to avoid."""
+    scope = scope or {}
+    return {
+        "gate_witness": {k: scope.get(k) for k in
+                         ("address", "source", "voided_strata")},
+        "artifact_witness": scope.get("artifact_witness"),
+        "both_agree": bool(scope.get("key_scope_active")),
+        "resolved_at": None,
+        "note": "VOID (stratum) — not evaluated. Both witnesses agree; "
+                "disagreement in either direction raises.",
+    }
 
 
 #: How an address declares which stratum it belongs to when it is not passed
@@ -260,13 +337,37 @@ _STRATUM_MARKERS = (("S2", ("_S2", "_s2", "/s2/", "positions_s2", "S2_")),
 
 
 def stratum_of(glob: str, label: str = "") -> str:
-    """The stratum an address is marked for, or None. `s*` globs span both and
-    are deliberately NOT marked: they are not S2-addressed."""
-    hay = f"/{glob}/{label}/"
+    """The stratum an ARTIFACT PATH is marked for, or None. `s*` globs span both
+    and are deliberately NOT marked: they are not S2-addressed."""
+    hay = f"/{glob}/"
     for tag, marks in _STRATUM_MARKERS:
         if any(m in hay for m in marks):
             return tag
     return None
+
+
+def stratum_of_keypath(key: str) -> str:
+    """§D4.19 — the stratum a KEY PATH INSIDE an artifact is marked for.
+
+    ⚠️⚠️ EXACT PATH SEGMENT, and this guard is the point of the rule. The marker
+    is the segment `s2` between dots — NEVER a prefix match on `j_rider.*` and
+    NEVER a substring match on `s2`. Three siblings live under `j_rider.` and
+    stay FULLY IN FORCE:
+
+        widening.j_rider.s1_replication.*  an S1 quantity (the capped-ply rider)
+        widening.j_rider.interaction.*     also S1 (computed on S1 ∩ capped)
+        widening.j_rider.d_draw.*          governed by the CLOSED `allow_null`
+                                           list with `d_draw_ran == false` as
+                                           its witness — a DIFFERENT mechanism,
+                                           and conflating the two would let a
+                                           void silently stand in for a
+                                           legitimate null
+
+    A substring match on `"s2"` would swallow `s1_replication`? No — but it
+    WOULD swallow any future `s2_something`, and a prefix match on `j_rider.`
+    would swallow all three. Segment equality is the only match that cannot.
+    """
+    return "S2" if "s2" in str(key).split(".") else None
 
 
 class Check:
@@ -327,6 +428,23 @@ class Check:
                     "void_witness": {k: (void_scope or {}).get(k) for k in
                                      ("address", "source", "voided_strata",
                                       "why")}}
+
+        # ⭐ §D4.19 — KEY-PATH scoping, under the DUAL witness. An address whose
+        # dotted key bears the exact `s2` segment is not evaluated; its siblings
+        # (`s1_replication`, `interaction`, `d_draw`) are untouched and stay
+        # ABSENT-IS-FAIL / allow_null respectively. Only the S2 KEYS are removed
+        # — a check carrying both S1 and S2 keys still evaluates its S1 ones.
+        void_keys, live_keys = [], list(self.keys)
+        if (void_scope or {}).get("key_scope_active"):
+            void_keys = [k for k in self.keys
+                         if stratum_of_keypath(k) in (void_scope or {}).get(
+                             "strata", ())]
+            live_keys = [k for k in self.keys if k not in void_keys]
+            if void_keys and not live_keys:
+                return {**base, "resolved": None, "void": True, "types": {},
+                        "sanctioned_nulls": [], "why": VOID_WHY,
+                        "void_keys": void_keys,
+                        "void_witness": _both_witnesses(void_scope)}
         if len(files) < self.min_files:
             return {**base, "resolved": False, "types": {},
                     "sanctioned_nulls": [],
@@ -350,7 +468,7 @@ class Check:
                         continue
                     for ln in lines[:self.max_lines]:
                         rec = json.loads(ln)
-                        for k in self.keys:
+                        for k in live_keys:
                             vals = dig(rec, k)
                             note(k, vals)
                             if not self._ok(k, vals, rec):
@@ -362,19 +480,19 @@ class Check:
                         missing.append(f"{f.name}: not a non-empty rid-keyed object")
                         continue
                     for entry in list(doc.values())[:self.max_entries]:
-                        for k in self.keys:
+                        for k in live_keys:
                             vals = dig(entry, k)
                             note(k, vals)
                             if not self._ok(k, vals, entry):
                                 missing.append(f"{f.name}::<rid>.{k}")
                 elif self.kind == "json_any_of":
-                    hits = [k for k in self.keys if self._ok(k, dig(doc, k), doc)]
-                    for k in self.keys:
+                    hits = [k for k in live_keys if self._ok(k, dig(doc, k), doc)]
+                    for k in live_keys:
                         note(k, dig(doc, k))
                     if not hits:
-                        missing.append(f"{f.name}::{{{'|'.join(self.keys)}}}")
+                        missing.append(f"{f.name}::{{{'|'.join(live_keys)}}}")
                 else:
-                    for k in self.keys:
+                    for k in live_keys:
                         vals = dig(doc, k)
                         note(k, vals)
                         if not self._ok(k, vals, doc):
@@ -390,6 +508,10 @@ class Check:
         return {**base, "resolved": not missing,
                 "types": {k: sorted(v) for k, v in sorted(types.items())},
                 "sanctioned_nulls": sanctioned,
+                # the S2 KEYS that were not evaluated, and the two witnesses
+                # that licensed skipping exactly them
+                "void_keys": void_keys,
+                "void_witness": _both_witnesses(void_scope) if void_keys else None,
                 "why": None if not missing else "; ".join(missing[:6])}
 
 
@@ -429,10 +551,14 @@ class Gate:
             at = "primary" if ok_p else ("fallback" if ok_f else
                                          ("OPTIONAL-ABSENT" if self.optional
                                           else "UNRESOLVED"))
+        void_keys = sorted({k for r in prim + fall for k in (r.get("void_keys") or ())})
         return {"gate": self.name, "phase": self.phase, "resolved_at": at,
                 "optional": self.optional,
                 "resolved": at != "UNRESOLVED",
                 "void": all_void, "void_addresses": voided,
+                "void_keys": void_keys,
+                "void_witnesses": (_both_witnesses(void_scope)
+                                   if (voided or void_keys) else None),
                 "primary_ok": ok_p, "fallback_ok": ok_f if fall else None,
                 "primary": prim, "fallback": fall, "note": self.note,
                 "has_fallback": bool(self.fallback)}
