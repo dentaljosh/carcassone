@@ -135,6 +135,79 @@ RESOLVED_CONFIG_PER_CHUNK = frozenset({
 })
 
 # --------------------------------------------------------------------------- #
+# `preflight.checks` — ruled EXHAUSTIVELY by §D4.14 (7/7, a CLOSED SET)         #
+# --------------------------------------------------------------------------- #
+# The emitter (`run_tiletie.preflight()`) hands us seven sub-keys and no more,
+# so all seven are ruled rather than only the five that diverged: this block is
+# closed-by-enumeration, which is the sweep's goal applied to one block.
+#
+#   leaf_hash      IDENTITY_REQUIRED  ⚠️ GATE-ADDRESSED — `G-LEAF` reads
+#                                     `preflight.checks.leaf_hash.ok`. UNTOUCHABLE
+#                                     without a ruling.
+#   m              IDENTITY_REQUIRED  a per-stratum design constant (128 / 32),
+#                                     not chunk-scoped.
+#   process_census PER_CHUNK          timestamped telemetry (ps + loadavg at
+#                                     launch) that differs by construction on
+#                                     every invocation, even for byte-identical
+#                                     re-runs. ⭐ THE EMITTER ITSELF CLASSIFIES
+#                                     IT: `ok` is computed excluding
+#                                     process_census — "informational and never
+#                                     gates". PER_CHUNK, not dropped: the merge
+#                                     layer's job is provenance, and a per-chunk
+#                                     census is not meaningless merged (which is
+#                                     why `workers` was nulled), it is meaningful
+#                                     PER CHUNK.
+#   gate           PER_CHUNK          chunk-scoped `--gate-out` path.
+#   positions      PER_CHUNK          chunk-scoped `--positions-dir`.
+#   git_clean      PER_CHUNK recorded + LICENCE-GOVERNED asserted — see below.
+#   arb_backend    JUDGE_SCOPED_IDENTITY — equal across chunks WITHIN a judge,
+#                                     ACTIVELY checked; cross-judge comparison
+#                                     not performed (the two judges record
+#                                     different shapes, so an equality between
+#                                     them would be meaningless rather than
+#                                     false).
+#
+# ⚠️ TRAP 1 — `preflight.checks.arb_backend` is NOT the field `G-BACKEND` reads.
+# `G-BACKEND` reads TOP-LEVEL `RUN_MANIFEST::arb_backend`, the resolved string;
+# this one is `check_arb_backend()`'s result dict. Same name, two depths,
+# different objects. Classifying THIS one JUDGE_SCOPED does not relax the
+# top-level one, which stays in `RUN_MANIFEST_IDENTITY` and gate-addressed.
+#
+# ⚠️ TRAP 2 — judge-scoped constancy is ASSERTED, never assumed. The evidence
+# reports the AXIS of variation as the judge; it does not by itself prove
+# constancy WITHIN a judge. So the class is an ACTIVE check that refuses on a
+# within-judge divergence — the discipline that turned D4.13's conjunct (ii)
+# from an assumption into a check.
+#
+# ⚠️ `git_clean`, ruled ONCE not twice. The MERGE RULE says how the field is
+# CARRIED: per chunk, raising on nothing by itself, because `git_rev`
+# legitimately differs across the licensed tranche pair and `dirty_paths` is
+# telemetry. The D4.12 LICENCE says what must be TRUE: it consumes
+# `git_clean.git_rev` for the base-rev match and asserts `git_clean.ok == true`
+# on every chunk, refusing under its own message. The merge NEVER independently
+# compares `git_rev` across chunks — duplicating that would produce two
+# differently-worded refusals for one condition.
+PREFLIGHT_CHECKS_IDENTITY_REQUIRED = frozenset({"leaf_hash", "m"})
+PREFLIGHT_CHECKS_PER_CHUNK = frozenset({"process_census", "gate", "positions"})
+PREFLIGHT_CHECKS_LICENCE_GOVERNED = frozenset({"git_clean"})
+PREFLIGHT_CHECKS_JUDGE_SCOPED = frozenset({"arb_backend"})
+#: The closed set the emitter produces. Anything outside it is a SCHEMA CHANGE.
+PREFLIGHT_CHECKS_CLOSED_SET = (PREFLIGHT_CHECKS_IDENTITY_REQUIRED
+                               | PREFLIGHT_CHECKS_PER_CHUNK
+                               | PREFLIGHT_CHECKS_LICENCE_GOVERNED
+                               | PREFLIGHT_CHECKS_JUDGE_SCOPED)
+#: ⚠️ GATE-ADDRESSED and therefore not reclassifiable without a ruling.
+GATE_ADDRESSED_PATHS = (
+    "world_seed_salt", "m_worlds", "b_ceiling_from_m", "arb_backend",
+    "arb_legal_mask_cache", "resolved_backend_by_leg", "oracle_sims",
+    "preflight.checks.leaf_hash.ok",
+    "preflight.checks.leaf_hash.harness_leaf_hash",
+    "preflight.checks.leaf_hash.expected",
+    "resolved_config.world_seed_salt", "resolved_config.m",
+    "resolved_config.legal_mask_cache",
+)
+
+# --------------------------------------------------------------------------- #
 # `execution` — ruled by deviation D3 §D3.2 (commit 355ceb65)                   #
 # --------------------------------------------------------------------------- #
 # The S1 merge raised fail-closed on the whole `execution` block for all 11
@@ -209,6 +282,17 @@ LICENSED_TRANCHE_REVS = {
 #: a licensed sha.
 REV_LICENSED_PATHS = ("git_rev", "code_rev", "execution.code_rev",
                       "champion_manifest.code_commit")
+
+#: ⚠️ `carc_rs_build` — the §D4.13-licensed field — appears at THREE addresses.
+#: The third was found by the §D4.14b SWEEP rather than by a merge refusal,
+#: which is the sweep doing its job: it is nested INSIDE another classified
+#: block (`preflight.checks.arb_backend`), so no amount of top-level
+#: classification would have surfaced it.
+BUILD_LICENSED_PATHS = (
+    "execution.carc_rs_build",                        # oracle_score_pilot legs
+    "preflight.wheel.carc_rs_build",                  # tier1_rust_leg legs
+    "preflight.checks.arb_backend.wheel.carc_rs_build",   # RUN_MANIFEST (nested)
+)
 
 #: A rev value is matched as a sha PREFIX after the `-dirty` suffix is stripped
 #: (D4.12): the run records the same rev as a full sha, a short sha, and a
@@ -949,7 +1033,7 @@ class RevLicense:
 
 
 def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
-                    allow_varying=(), license=None) -> dict:
+                    allow_varying=(), license=None, judge_by_chunk=None) -> dict:
     """Merge {chunk_index: manifest dict} into one.
 
     Fail-closed: an unclassified key whose value differs across chunks raises.
@@ -1032,7 +1116,8 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
             merged[key] = _merge_preflight(present, per_chunk_block,
                                            license=license, manifests=by_chunk,
                                            rev_records=rev_records,
-                                           binary_sha=binary_sha_report)
+                                           binary_sha=binary_sha_report,
+                                           judge_by_chunk=judge_by_chunk)
             continue
         distinct = {_canon(v) for v in present.values()}
         if len(distinct) == 1 and len(present) == len(vals):
@@ -1234,8 +1319,169 @@ def _merge_champion_manifest(present: dict, per_chunk_block: dict, *,
     return merged
 
 
+def _judge_of(manifest: dict, chunk, judge_by_chunk=None):
+    """WHICH JUDGE produced this artifact — from the artifact where it says so
+    (`judge`, or `judges` on the RUN_MANIFEST), else from the caller's map (the
+    per-leg merge is per-judge by construction; the RUN_MANIFEST merge is not)."""
+    m = manifest or {}
+    j = m.get("judge")
+    if isinstance(j, str) and j.strip():
+        return j.strip()
+    js = m.get("judges")
+    if isinstance(js, list) and len(js) == 1 and isinstance(js[0], str):
+        return js[0]
+    for key in (chunk, str(chunk)):
+        if (judge_by_chunk or {}).get(key):
+            return (judge_by_chunk or {})[key]
+    return None
+
+
+_MASKED_BUILD = "<carc_rs_build: licensed separately, see merge.rev_license>"
+
+
+def _mask_licensed_build(value):
+    """(masked copy, the `carc_rs_build` it contained or None).
+
+    `carc_rs_build` appears at THREE addresses in this schema, one of them
+    nested inside another classified block. Masking it lets that block's own
+    rule be evaluated on everything else, while the licensed field goes through
+    §D4.13's four conjuncts exactly once and in one place.
+    """
+    if isinstance(value, dict):
+        out, found = {}, None
+        for k, v in value.items():
+            if k == "carc_rs_build" and isinstance(v, str):
+                out[k], found = _MASKED_BUILD, v
+                continue
+            out[k], sub = _mask_licensed_build(v)
+            found = found or sub
+        return out, found
+    if isinstance(value, list):
+        out, found = [], None
+        for v in value:
+            m, sub = _mask_licensed_build(v)
+            out.append(m)
+            found = found or sub
+        return out, found
+    return value, None
+
+
+def _merge_preflight_checks(present: dict, per_chunk_block: dict, *,
+                            manifests=None, judge_by_chunk=None, license=None,
+                            rev_records=None, binary_sha=None) -> dict:
+    """§D4.14's 7/7 table — a CLOSED SET, so an eighth sub-key is a SCHEMA
+    CHANGE and raises, which is exactly what the fail-closed default should mean
+    once a block is enumerated."""
+    order = sorted(present)
+    merged = json.loads(json.dumps(present[order[0]]))
+    keys = sorted({k for v in present.values() for k in v})
+    for key in keys:
+        vals = {k: v.get(key, _MISSING) for k, v in present.items()}
+        have = {k: v for k, v in vals.items() if v is not _MISSING}
+        distinct = {_canon(v) for v in have.values()}
+        if len(distinct) == 1 and len(have) == len(vals):
+            merged[key] = have[min(have)]
+            continue
+
+        if key in PREFLIGHT_CHECKS_IDENTITY_REQUIRED:
+            gate = (" ⚠️ GATE-ADDRESSED — `G-LEAF` reads "
+                    "`preflight.checks.leaf_hash.ok`; this path may not be "
+                    "reclassified without a ruling." if key == "leaf_hash"
+                    else " `m` is a per-stratum DESIGN CONSTANT (128 / 32), not "
+                         "chunk-scoped, so a divergence is a mis-configured run.")
+            raise MergeError(
+                f"identity-required path 'preflight.checks.{key}' DIVERGES "
+                f"across chunks: "
+                + "; ".join(f"chunk{k}={_canon(v)[:160]}"
+                            for k, v in sorted(have.items()))
+                + f" — §D4.14 rules it IDENTITY_REQUIRED.{gate}")
+
+        if key in PREFLIGHT_CHECKS_JUDGE_SCOPED:
+            # ⭐ FOUND BY THE §D4.14b SWEEP, not by a merge crash: this check
+            # dict EMBEDS `wheel.carc_rs_build` — a THIRD address of the build
+            # stamp, after `execution.carc_rs_build` and
+            # `preflight.wheel.carc_rs_build`. It therefore differs across the
+            # tranches for the same reason those do, and a naive equality here
+            # would refuse the merge for exactly the fact §D4.13 licensed. So
+            # the licensed field is MASKED OUT and routed through the same four
+            # conjuncts, and the REST of the dict is what the judge-scoped
+            # equality is evaluated on — a narrowing of the refusal, not a
+            # widening of the licence: same field, same conjuncts.
+            masked, builds = {}, {}
+            for k, v in have.items():
+                masked[k], found = _mask_licensed_build(v)
+                if found:
+                    builds[k] = found
+            if len({_canon(v) for v in builds.values()}) > 1:
+                if license is None:
+                    raise carc_rs_build_refusal(
+                        builds, where=f"preflight.checks.{key}.wheel.carc_rs_build")
+                rec = license.authorize_build(
+                    builds, manifests or {},
+                    where=f"preflight.checks.{key}.wheel.carc_rs_build",
+                    binary_sha=binary_sha or {})
+                if rev_records is not None:
+                    rev_records.append(rec)
+            # ⚠️ ASSERTED, not assumed (§D4.14 trap 2): equal WITHIN a judge.
+            # Across judges nothing is compared — `clair-puct` records the
+            # inert-flag note and `tier1-greedy` the wheel block, so an equality
+            # between them would be MEANINGLESS rather than false.
+            by_judge: dict = {}
+            for k, v in sorted(masked.items()):     # ⚠️ compare MASKED values …
+                j = _judge_of((manifests or {}).get(k) or {}, k, judge_by_chunk)
+                by_judge.setdefault(j, {})[k] = v
+            split = {j: v for j, v in by_judge.items()
+                     if len({_canon(x) for x in v.values()}) > 1}
+            if split:
+                raise MergeError(
+                    f"'preflight.checks.{key}' DIVERGES WITHIN a judge: "
+                    + "; ".join(
+                        f"judge {j!r}: "
+                        + ", ".join(f"chunk{k}={_canon(x)[:120]}"
+                                    for k, x in sorted(v.items()))
+                        for j, v in sorted(split.items(), key=lambda t: str(t[0])))
+                    + " — §D4.14 classes it JUDGE_SCOPED_IDENTITY, an ACTIVE "
+                      "check: constancy within a judge is asserted from the "
+                      "artifacts, never assumed. (Across judges nothing is "
+                      "compared: the two emitters record different shapes, so "
+                      "an equality between them would be meaningless.)")
+            if None in by_judge and len(by_judge) > 1:
+                raise MergeError(
+                    f"'preflight.checks.{key}' differs across chunks and the "
+                    f"JUDGE of chunk(s) {sorted(by_judge[None])} cannot be "
+                    f"determined, so the judge-scoped check cannot be evaluated. "
+                    f"Refused rather than pooled.")
+            for k, v in have.items():               # … but RECORD the originals
+                per_chunk_block[str(k)].setdefault("preflight", {}) \
+                    .setdefault("checks", {})[key] = v
+            merged[key] = have[min(have)]
+            continue
+
+        if key in (PREFLIGHT_CHECKS_PER_CHUNK | PREFLIGHT_CHECKS_LICENCE_GOVERNED):
+            # `git_clean` is RECORDED here and ASSERTED by the D4.12 licence —
+            # this rule compares nothing, deliberately: `git_rev` legitimately
+            # differs across the licensed pair, and duplicating the licence's
+            # comparison would give one condition two differently-worded
+            # refusals.
+            for k, v in have.items():
+                per_chunk_block[str(k)].setdefault("preflight", {}) \
+                    .setdefault("checks", {})[key] = v
+            merged[key] = have[min(have)]
+            continue
+
+        raise MergeError(
+            f"preflight.checks.{key!r} differs across chunks and is NOT in the "
+            f"CLOSED SET §D4.14 enumerated ({sorted(PREFLIGHT_CHECKS_CLOSED_SET)}): "
+            + "; ".join(f"chunk{k}={_canon(v)[:120]}" for k, v in sorted(have.items()))
+            + ". After the sweep this raise means a SCHEMA CHANGE — a new "
+              "emitter field — not a field nobody thought about. Classify it "
+              "(and re-run schema_sweep.py) rather than widening a class.")
+    return merged
+
+
 def _merge_preflight(present: dict, per_chunk_block: dict, *, license=None,
-                     manifests=None, rev_records=None, binary_sha=None) -> dict:
+                     manifests=None, rev_records=None, binary_sha=None,
+                     judge_by_chunk=None) -> dict:
     """`preflight` on the `tier1-greedy` leg carries `wheel.carc_rs_build`.
 
     Nested rather than compared whole, so a divergence localises to the field
@@ -1267,6 +1513,12 @@ def _merge_preflight(present: dict, per_chunk_block: dict, *, license=None,
                                        manifests=manifests,
                                        rev_records=rev_records,
                                        binary_sha=binary_sha)
+            continue
+        if key == "checks" and all(isinstance(v, dict) for v in have.values()):
+            merged[key] = _merge_preflight_checks(
+                have, per_chunk_block, manifests=manifests,
+                judge_by_chunk=judge_by_chunk, license=license,
+                rev_records=rev_records, binary_sha=binary_sha)
             continue
         raise MergeError(
             f"preflight.{key} differs across chunks and has no merge rule: "
@@ -1528,8 +1780,11 @@ def merge_stratum(*, stratum: str, chunks_root: Path, out_dir: Path,
                     man_paths[k] = mp
             if mans:
                 try:
-                    merged = merge_manifests(mans, allow_varying=allow_varying,
-                                             license=license)
+                    merged = merge_manifests(
+                        mans, allow_varying=allow_varying, license=license,
+                        # the per-leg merge is per-judge BY CONSTRUCTION — this
+                        # loop is inside `for judge in judges`
+                        judge_by_chunk={k: judge for k in mans})
                 except MergeError as exc:
                     report["problems"].append(f"{judge}/{leg_key}: manifest merge: {exc}")
                     leg_report["manifest_ok"] = False
@@ -1626,6 +1881,38 @@ def merge_run_manifest(*, stratum: str, manifests_dir: Path, out_path: Path,
         " RUN_MANIFEST flavour: resolved_backend_by_leg is the UNION over every "
         "(judge, chunk) invocation — no single invocation carries every leg, and "
         "G-BACKEND quantifies over all of them.")
+
+    # ⭐ NON-DESTRUCTIVE (found by the §D4.14b sweep's CONVERSE check).
+    # `RUN_MANIFEST_S1.json` is not written by this tool alone: `c_remeasure.py`
+    # merges its `c_remeasure` block into the SAME file — "a non-destructive
+    # merge" in its own words — and the READ_RULE addresses
+    # `RUN/RUN_MANIFEST_S1.json::c_remeasure.{legs.…,ok,halt_fired,…}`. A plain
+    # write here would DELETE a gate-addressed block, and a gate whose address
+    # does not exist reads as ABSENT — which is FAIL. So any top-level key the
+    # existing file carries that this merge does not produce is CARRIED FORWARD
+    # and RECORDED. It is never merged into, never rewritten, never silently
+    # dropped.
+    preserved = {}
+    existing_path = Path(out_path)
+    if existing_path.is_file():
+        try:
+            existing = json.loads(existing_path.read_text())
+        except json.JSONDecodeError:
+            existing = {}
+        for k, v in sorted(existing.items()):
+            if k not in merged:
+                merged[k] = v
+                preserved[k] = "carried forward from the existing file"
+    if preserved:
+        merged["merge"]["preserved_from_existing"] = {
+            "keys": sorted(preserved),
+            "source": str(existing_path),
+            "why": "written by another tool into the same artifact (e.g. "
+                   "c_remeasure.py) and GATE-ADDRESSED. Overwriting them would "
+                   "make a gate's address read ABSENT, which is FAIL. Carried "
+                   "forward verbatim — never merged into and never rewritten.",
+        }
+    out["preserved_from_existing"] = sorted(preserved)
 
     if not dry_run:
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
