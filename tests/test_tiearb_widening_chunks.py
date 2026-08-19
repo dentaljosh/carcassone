@@ -650,8 +650,12 @@ def _parse_conf(path: Path) -> dict:
 
 
 def test_allocation_covers_every_chunk_exactly_once_per_stratum_and_judge():
+    # ⚠️ R5 SUPERSESSION: S2 is EXCLUDED here, not merely unchecked — it no
+    # longer denotes a cover of 1..n at all (see the poison-value test below).
+    # Only S1 is a real, currently-licensed allocation (ADJUDICATION_R4_GATES
+    # RULING 1, Reading A).
     conf = _parse_conf(CAMPAIGN / "ALLOCATION.conf")
-    for stratum in ("s1", "s2"):
+    for stratum in ("s1",):
         n = int(conf[f"N_CHUNKS_{stratum}"])
         for judge in ("tier1_greedy", "clair_puct"):
             got = []
@@ -662,12 +666,43 @@ def test_allocation_covers_every_chunk_exactly_once_per_stratum_and_judge():
                 f"(got {sorted(got)}) — a gap loses rids, an overlap double-scores")
 
 
+def test_allocation_s2_rows_are_poisoned_not_a_cover():
+    """R5 SUPERSESSION (executor finding): the R4 S2 population these four
+    rows used to allocate is RULED VOID (PREREG_FAILURE_S2.md;
+    ADJUDICATION_R4_GATES.md RULING 2, commit 35a95408). They are set to a
+    sentinel that is NOT a valid chunk id, on purpose — so ANY attempt to
+    actually launch an s2 leg trips run_scoring.sh's own
+    `[ -d "$PLAN" ] || FATAL` guard loudly, rather than either silently
+    skipping (an empty value) or silently scoring the voided population (a
+    real chunk list). The successor lives at rung3_r5/."""
+    conf = _parse_conf(CAMPAIGN / "ALLOCATION.conf")
+    poison = "VOID_SEE_RUNG3_R5"
+    for box in ("local", "laptop_side"):
+        for judge in ("tier1_greedy", "clair_puct"):
+            key = f"ALLOC_s2_{box}_{judge}"
+            val = conf[key]
+            assert val == poison, f"{key}={val!r}, expected the poison sentinel {poison!r}"
+            # not a valid chunk id under ANY N_CHUNKS_s2 -- the launcher's
+            # `for k in $CH` loop treats it as a single opaque token, and
+            # "$CAMPAIGN/chunks/s2/chunk$k" can never exist on disk for it.
+            with pytest.raises(ValueError):
+                int(val)
+    # the default STRATUM_ORDER must not even ATTEMPT s2 -- defense in depth
+    # ahead of the poison values, so a bare `run_scoring.sh <box>` invocation
+    # never reaches the ALLOC_s2_* lookup at all.
+    assert conf["STRATUM_ORDER"] == "s1"
+
+
 def test_allocation_matches_the_two_box_capacity_ratio():
-    """local : laptop worker-hours ~= 30 : 22*0.75, per stratum."""
+    """local : laptop worker-hours ~= 30 : 22*0.75, per stratum.
+
+    ⚠️ R5 SUPERSESSION: S2 dropped from `playouts` -- pricing the poisoned
+    allocation against a real playout count would produce a number that looks
+    like a verdict about a population this campaign no longer scores."""
     conf = _parse_conf(CAMPAIGN / "ALLOCATION.conf")
     c_arb, c_if = float(conf["C_ARB_ASSUMED"]), float(conf["C_IF_ASSUMED"])
     rate = float(conf["LAPTOP_RATE"])
-    playouts = {"s1": 891993, "s2": 430848}
+    playouts = {"s1": 891993}
     for stratum, n_play in playouts.items():
         n = int(conf[f"N_CHUNKS_{stratum}"])
         wh = {}
