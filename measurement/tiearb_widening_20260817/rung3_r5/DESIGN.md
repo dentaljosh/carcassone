@@ -53,7 +53,7 @@ is the instrument** — proven on R4 and governed by `../DEVIATIONS.md` §D1/§D
 | | `k = 0` | `k = 3` |
 |---|---|---|
 | positions | **1,064** | 1,036 (**−2.6%**) |
-| collisions at governed scale | **3** (all ply 2) | **0**, at every scale |
+| collisions at governed scale | **3 GROUPS of 2 = 6 positions involved** (all ply 2, all 137e9↔137e9); excluding the later member of each removes **3** (N8) | **0**, at every scale |
 | `d` at governed scale | **0.282%** vs the 5% guard ⇒ clears **17.7×** | 0 |
 | estimand | **`Δ_ora` over capped tied plies — what rung 3 was bought to measure** | `Δ_ora(ply ≥ 3)` — a sub-population |
 
@@ -215,6 +215,50 @@ R4 spent ≈500 wh *generating* these games; retaining them is the whole saving.
 ⚠️ **C2, disclosed:** `_positions_s2_pass1/POSITIONS_PLAN.json::champ_pick_secs ≈ 21.5 wh` was
 already spent on this substrate, and R5 budgets another 4.1 wh for picks. **Double-paid and
 conservative** — left in rather than netted out, so the bill is never understated.
+
+### R5-FINAL.i — ⭐ EMITTER SPEC (N3): five artifacts, every addressed key, and the A1 fixture set
+
+**Five run-time artifacts are addressed by the read-rule and none had a builder.** Specified here
+so a builder implements without interpretation. **`RUN` = `measurement/tiearb_widening_20260817/rung3_r5/`.**
+
+| artifact | key → type / semantics | built by |
+|---|---|---|
+| **`RUN/CORPUS_R5.json`** | `leg_path` str · `leg_sha256` str(64) — of the **adopted R4 leg** · `r4_exclusion_list_sha256` str(64) — §R5-FINAL.j · `n_in` int (1064) · `n_excluded_r5` int (4) · `n_positions` int (**1060**) · `excluded_rids` list[str] (the 1 residual + 3 dupe-later-members) · `n_distinct_seeds` int (980) · `max_positions_per_seed` int (≤3) · `n_out_of_band` int (0) · `n_seeds_136e9` int (0) · `seed_ranges` obj (from `FLOORS_R5.json`) | **NEW** `scripts/tiletie/build_r5_corpus.py` — reads the leg, applies §R5-FINAL.b2's exclusion rule, emits. Pure counts; no scoring |
+| **`RUN/GATE_INTERNAL_DUPE.json`** | `n_positions` int · `n_dupe_groups` int (3) · `n_dupe_positions` int (6) · `d_internal` float (`n_dupe_groups / n_positions`) · `ply_histogram` obj{ply→count} over dupe members · `band_pairs` list[str] (`"137e9<->137e9"`) · `leg_sha256` str(64) | **NEW**, same script — the digest map is `sha256(checksum)` per row, grouped; **groups, not positions**, is the numerator |
+| **`RUN/GATE_DISJOINT_R5.json`** | `passed` bool · `comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection` int — **rid/root layers only**; the digest layer is not carried (READ_RULE §0) | **EXTENDS** `scripts/tiletie/gate_disjoint.py` — same shape as R4's artifact, restricted to two layers |
+| **`RUN/SMOKE_R5.json`** | `m_worlds` int (**32, top level**) · `oracle_sims` int · `arb_backend` str · `c_worker_secs_per_playout` float · `crn_cross_leg_identical` bool | **EXISTING** `run_tiletie.py --smoke` with `--smoke-manifest RUN/SMOKE_R5.json`; **no code change** |
+| **`RUN/MERGE_REPORT_s2.json`** | `preserved_from_existing` obj · per-chunk `execution` block · `carc_rs_build` equality result · per-box `carc_rs_binary_sha` constancy result | **EXISTING** `merge_legs.py` (D1/D3/D4.13), pointed at R5's out-root |
+
+**A1's committed fixture set** — `RUN/fixtures/` (committed **with** the blind pair; A1 audits key
+presence + JSON type only, never a value):
+
+```
+fixtures/CORPUS_R5.fixture.json          fixtures/RUN_MANIFEST_R5.fixture.json
+fixtures/GATE_INTERNAL_DUPE.fixture.json fixtures/leg_manifest.fixture.json   <- resolved_config.*
+fixtures/GATE_DISJOINT_R5.fixture.json   fixtures/READOUT.fixture.json        <- widening.*
+fixtures/SMOKE_R5.fixture.json           fixtures/D_DRAW.fixture.json
+fixtures/MERGE_REPORT_s2.fixture.json
+```
+
+⚠️ **The fixture set must cover EVERY `[post-corpus]` and `[post-scoring]` address** — R5-6.1
+diagnosed exactly this leak in R4 ("covered the leg manifest and the smoke manifest but **not**
+`RUN_MANIFEST`"), and A1's completeness assertion is over the **marker list**, not over this
+filename list, so a missing fixture fails A1 rather than passing silently.
+
+### R5-FINAL.j — `r4_exclusion_list_sha256`: referent and canonical serialization (N4)
+
+The value `76f9ac58e2694a54…` is correct but was unreproducible because neither its referent nor
+its serialization was written. **Both are now pinned, exactly:**
+
+```
+r4_exclusion_list_sha256
+  = sha256( json.dumps( sorted( <GATE_DISJOINT.json>::digest_exclusions.S2.rids ) ) )
+  where <GATE_DISJOINT.json> = measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json
+  json.dumps default separators, no sort_keys (input is a list), UTF-8, no trailing newline
+```
+
+⚠️ **It is NOT any of the four `EXCLUDE_RIDS_*.txt` files** — a verifier that reached for those
+would fail to reproduce it, which is what happened on review.
 
 ### R5-FINAL.h — For a second reviewer, before blind commit
 
@@ -503,14 +547,20 @@ position set* from the same games, which is the intended use and is not a re-rea
 gate **failed**, so no position built from them ever passed anything; and `CORPUS_UNION.json`
 (R4-0.5's shape) records origin commit, per-file sha256 and retained/fresh counts.
 
-## R5-5. Cost — re-mining is census + positions only
+## R5-5. ⛔ SUPERSEDED by §R5-FINAL.g (N7)
 
-| item | worker-h |
+> **This section's cost table priced `N ∈ {700, 1,100}` — both superseded by the realized
+> `n₂ = 1,060`, and its ≈197–309 wh conflicted with §R5-FINAL.g's ≈211–300 on the same page.**
+> **Two cost tables with different totals in one document is exactly the drift the house rule
+> against carrying numbers in prose exists to prevent.** The figure of record is **§R5-FINAL.g**;
+> the table below is struck.
+
+| ~~item~~ | ~~worker-h~~ |
 |---|---|
-| density sweep + census over 5,340 games (counts only) | ≈2 |
-| champ picks (`N` × 13.755 worker-s) | 2.7 – 4.2 |
-| pricing, `M = 32`, per R4's per-capped-ply rate | 192.5 (`N`=700) – 302.5 (`N`=1,100) |
-| **TOTAL** | **≈197 (`N`=700) – ≈309 (`N`=1,100)** |
+| ~~density sweep + census (counts only)~~ | ~~≈2~~ |
+| ~~champ picks~~ | ~~2.7 – 4.2~~ |
+| ~~pricing, `M = 32`~~ | ~~192.5 (`N`=700) – 302.5 (`N`=1,100)~~ |
+| ~~**TOTAL**~~ | ~~**≈197 – ≈309**~~ **→ see §R5-FINAL.g: ≈211.4 – 299.6 at `n₂` = 1,060** |
 
 **No generation.** R4 spent ≈**500 worker-h** generating those 5,340 games; retaining them is the
 entire saving, and it is why the successor is cheap. ⚠️ **Contingency:** if §R5-2's ply-floor cuts
@@ -598,7 +648,7 @@ licence §R5-4 rests on.
 
 ## R5-9. Open for the owner
 
-1. **Fund the successor at all?** ≈197–309 worker-h, no generation — but §R5-1.3's guard may
+1. **Fund the successor at all?** ≈211–300 worker-h (§R5-FINAL.g), no generation — but §R5-1.3's guard may
    VOID the design before it is built, and §R5-2.2 may find no affordable `k`. **Both outcomes are
    possible answers, and neither is a strength result.**
 2. **Accept the estimand change** to *tied plies at ply ≥ k* (§R5-2.3), with the multipliers'

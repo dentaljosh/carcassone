@@ -54,12 +54,12 @@ marker.
 | gate | marker | conjunct | address |
 |---|---|---|---|
 | ⭐ `G-CORPUS` | `[post-corpus]` | The corpus is **R4's post-exclusion S2 leg file, ADOPTED AS-IS**, plus R5's own exclusion list — **not a fresh re-mine.** Conjuncts: the physical leg's **sha256 == `92ba1ee2dfbfed91…`** (full sha in `FLOORS_R5.json`); the R4 exclusion list's **sha256** matches the committed one; `--max-per-game 3`, `--cap-j inf`, `min_ply == 0`; and `n_positions_after_r5_exclusions == 1060` | `RUN/CORPUS_R5.json::{leg_path, leg_sha256, r4_exclusion_list_sha256, n_in, n_excluded_r5, n_positions}` |
-| ⭐ `G-INTERNAL-DUPE` | `[post-corpus]` | **(i) LIVE:** `d_internal ≤ 0.05` — the absolute saturation guard, computed **at run time from the physical leg**, never read from a frozen constant. **(ii) CONSISTENCY:** `n_dupe_groups == 3`, `n_dupe_positions == 6`, every member at **ply 2** and **137e9↔137e9 same-band**. A mismatch **RAISES** | `RUN/GATE_INTERNAL_DUPE.json::{n_positions, n_dupe_groups, n_dupe_positions, d_internal, ply_histogram, band_pairs, leg_sha256}` |
+| ⭐ `G-INTERNAL-DUPE` | `[post-corpus]` | **(i) IDENTITY-DERIVED (N6 — not "LIVE"):** `d_internal ≤ 0.05`, computed at run time from the physical leg. ⚠️ Because `G-CORPUS` **sha-pins** that leg, `d_internal` is a deterministic function of a pinned file and **cannot fail unless the sha check already has** — the honest label, matching §2.1. **(ii) CONSISTENCY, which carries the falsifiable content:** `n_dupe_groups == 3`, `n_dupe_positions == 6`, every member at **ply 2** and **137e9↔137e9 same-band**. A mismatch **RAISES** | `RUN/GATE_INTERNAL_DUPE.json::{n_positions, n_dupe_groups, n_dupe_positions, d_internal, ply_histogram, band_pairs, leg_sha256}` |
 | `G-DISJOINT` | `[post-corpus]` | **rid and root layers ZERO on every comparison** — the leakage guard, carried from R4 §2b(i). ⛔ The **digest layer is NOT carried** (see §0) | `RUN/GATE_DISJOINT_R5.json::{passed, comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection}` |
-| `G-BAND` | `[post-corpus]` | every retained seed lies in a committed range — banked `[135000000350, 135000000849]` or extension `[137000000508, 137000005347]`; `n_out_of_band == 0`; `n_duplicate_seeds == 0`; **no seed from the released-unused `136e9` band** | `RUN/CORPUS_R5.json::{seed_ranges, n_out_of_band, n_duplicate_seeds, n_seeds_136e9}` |
+| `G-BAND` | `[post-corpus]` | **(i) RANGE, at the SEED level** (980 distinct seeds): every retained seed lies in a committed range — banked `[135000000350, 135000000849]` or extension `[137000000508, 137000005347]`; `n_out_of_band == 0`; **no seed from the released-unused `136e9` band**. **(ii) MINING CEILING, at the POSITIONS level:** `max_positions_per_seed ≤ 3`. ⛔ **`n_duplicate_seeds == 0` is DELETED (N1)** — see below | `RUN/CORPUS_R5.json::{seed_ranges, n_distinct_seeds, n_out_of_band, n_seeds_136e9, max_positions_per_seed}` |
 | `G-COMPLETE` | `[post-scoring]` | `n_analysed ≥ 1007` (= `⌈0.95 × 1060⌉`), after exclusions and after §3's failed-record drop | `READOUT::widening.completion.s2_n` |
 | `G-FAILED` | `[post-scoring]` | **(i)** `n_failed_rids / n_attempted ≤ 0.02`; **(ii)** any failed record whose class is **not** `WindowTruncationError` ⇒ **RAISE regardless of count**. ⚠️ `n_attempted` is **addressed** (R5) | `READOUT::widening.failed.{n_failed_rids, n_attempted, rate, by_class}` |
-| `G-M` | `[post-scoring]` **+ `[post-corpus]`** | `m_worlds == 32` ∧ `b_ceiling_from_m == 16`. ⚠️ **NOT 128.** ⭐ **A `[post-corpus]` address is required (R1)** so the one constant this revision exists to correct halts the run **before** ~300 wh is spent, not after | **pre-leg:** `RUN/SMOKE_R5.json::resolved_config.m` · **post:** `RUN/RUN_MANIFEST_R5.json::{m_worlds,b_ceiling_from_m}` · **fallback:** `RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.m` |
+| `G-M` | `[post-scoring]` **+ `[post-corpus]`** | `m_worlds == 32` ∧ `b_ceiling_from_m == 16`. ⚠️ **NOT 128.** ⭐ A `[post-corpus]` address is required (R1) so the constant this revision exists to correct halts the run **before** ~300 wh is spent | **pre-leg:** `RUN/SMOKE_R5.json::m_worlds` ⭐ **(N2 fixed — TOP-LEVEL; `run_tiletie`'s smoke manifest has no `resolved_config` key)** · **post:** `RUN/RUN_MANIFEST_R5.json::{m_worlds,b_ceiling_from_m}` · **fallback:** `RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.m` ✅ **verified to EXIST (`tier1_rust_leg.py:401`) — see §2.2** |
 | `G-SALT` | `[post-scoring]` | `world_seed_salt == "tiletie-v1"`; **`deployed_cap_j == 4` (now ADDRESSED, R6)**; `cap_seed` present for every rid | `RUN/RUN_MANIFEST_R5.json::world_seed_salt` · `RUN/corpus/positions_s2/POSITIONS_PLAN.json::deployed_cap_j` · `…/ARMS.json::<rid>.cap_seed` · fallback `RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.world_seed_salt` |
 | `G-BACKEND` | `[post-scoring]` | `arb_backend == "rust"`; every `tier1-greedy/walled` leg resolves `rust`; `arb_legal_mask_cache == true` | `RUN/RUN_MANIFEST_R5.json::{arb_backend,resolved_backend_by_leg,arb_legal_mask_cache}` · fallback `…/manifest.json::resolved_config.legal_mask_cache` |
 | ⭐ `G-DDRAW` | `[post-scoring]` | **`d_draw_ran == true`** — R2: the previous revision *claimed* W9 discharged `I7`'s conditional while the mechanical rule still permitted the R4 outcome. Either the conjunct exists or the discharge claim goes; **the conjunct exists** | `READOUT::widening.j_rider.d_draw.d_draw_ran` · `RUN/D_DRAW.json` |
@@ -80,6 +80,32 @@ whose input is frozen before the run cannot fire.** `G-INTERNAL-DUPE` recomputes
 the leg at run time instead. **A relative bound (`M × d`) remains retired**: on a pre-measured
 corpus it is satisfied by construction (DESIGN §R5-FINAL.b), and it returns only when a successor
 GENERATES fresh games.
+
+### §2.2 Two address rulings from `REVIEW_R3.md` — one accepted, one **partly rejected with evidence**
+
+**N1 — `n_duplicate_seeds == 0` is DELETED, not re-based.** Confirmed at source: the leg carries
+**1,064 positions over 980 distinct seeds; 82 seeds occur more than once, max 3** — which is exactly
+what `--max-per-game 3` *mandates*. R4's conjunct read **game-level** `CHAMP_GAMES_VERIFY*.json`
+(one row per game, where 0 is correct); the restoration re-pointed it at a **positions** artifact
+without re-basing. ⚠️ **But re-basing it to the seed level makes it VACUOUS** — a set of *distinct*
+seeds has no duplicates by construction. So the honest fix is neither: **delete it, and put the
+conjunct that carries the real invariant in its place — `max_positions_per_seed ≤ 3`**, which is
+the mining-ceiling integrity check the duplicate count was standing in for.
+
+**N2 / N5 — ACCEPTED for the smoke manifest, REJECTED for the leg manifest.** The review states
+that `resolved_config` exists in *neither* emitter. **Verified at source, and that is half right:**
+
+| address | verdict | evidence |
+|---|---|---|
+| `SMOKE_R5.json::resolved_config.m` | ⛔ **wrong — fixed to top-level `m_worlds`** | `run_tiletie.py` run-smoke manifest writes `"m_worlds": args.m` at top level and has **no `resolved_config` key** |
+| `legs/…/manifest.json::resolved_config.m` | ✅ **CORRECT — kept** | `tier1_rust_leg.py:396-406` writes `"resolved_config": {…, "m": int(args.m), "world_seed_salt": …, "legal_mask_cache": …}` |
+| `…resolved_config.world_seed_salt` (`G-SALT`), `…resolved_config.legal_mask_cache` (`G-BACKEND`) | ✅ **CORRECT — kept** | same block, lines 402 and 406 |
+
+⇒ **The leg-manifest fallbacks resolve and are retained.** These are the spellings R3.3 already
+carries and that this campaign's `REVIEW_R1` defect 17 established against the emitter. **Changing
+them to `m_worlds` on a blanket claim would have created a fail-always fallback — the exact class
+both reviews exist to catch.** The lesson cuts both ways: an address must be verified against its
+own emitter before it is *changed*, not only before it is written.
 
 ## §3 — The failed-record policy, authored pre-data — **EXPECTATION CORRECTED (B5)**
 
