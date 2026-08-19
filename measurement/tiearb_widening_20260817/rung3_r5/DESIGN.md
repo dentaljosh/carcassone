@@ -264,6 +264,63 @@ and (a) closes it rather than papering it with a convention.
 exists to fix. **A1 enforces this automatically:** its completeness assertion is over the **marker
 list**, so an address added without its fixture **fails A1** rather than passing silently.
 
+### ⭐ THE LEG STRUCTURE — RULED (2026-08-19, launch-blocking). The premise was wrong; the conclusion holds.
+
+The smoke refused on a missing leg2. **Verified against the artifacts, and the situation is worse
+than the diagnosis — but the fix is cleaner.**
+
+**Three facts, measured, not assumed (the N1 lesson):**
+
+1. ⛔ **`positions_s2/` — the adopted final build — contains ONLY `leg1`.** `positions_s1/` has 12
+   legs and the probe `_positions_s2_pass1/` has 11. **The final S2 build is TRUNCATED**, and the
+   brief's premise that "R4's S2 source carries legs 1-12" is **false for the build R5 adopts**.
+2. ⛔ **Legs are NOT "rungs over the SAME rids".** `build_positions.write_leg_files` emits, for
+   `r in 1..len(arms)-1`, one row per position pairing **`arms[0]` vs `arms[r]`**. They are
+   **arm-index pairings, and they THIN** as `r` rises (Stage-1b's banked counts 1350/792/448/113
+   are the same signature). S2's arm counts run **5–13** (mean 7.2283), so every capped position
+   belongs in legs 1–4 at minimum.
+3. ⛔ **The probe cannot supply the missing legs.** `_positions_s2_pass1/` is a **different
+   population** — 5,617 `leg1` rows (all tied plies, extension-only), and only **961 of the 1,064**
+   capped rids appear in it; the **103 banked capped rids are absent entirely.**
+
+**(a) RULED — DERIVE legs 2–12 from the pinned authority; do not adopt them from anywhere.** A leg
+file is a **deterministic function** of `(arm list, per-rid source fields)`, and both are already
+pinned: `ARMS_R5.json` (sha `adb4c5bd…cf8a`) carries the arm lists, and the adopted `leg1` carries
+every source field (`checksum`, `actions`, `deck_seed`, `ply`, `root_player`, `game_label`) for all
+1,060 rids. **This changes no population, re-mines nothing, and makes `ARMS_R5.json` genuinely the
+authority rather than one of three sources.**
+
+**The invariant is EXACT — not "equal", not "subset":**
+
+```
+for r in 1..12:  set(leg_r rids) == { rid in ARMS_R5 : len(arms[rid]) > r }
+EXPECTED ROWS (pinned, from the 1,060 population):
+  leg1 1060  leg2 1060  leg3 1060  leg4 1060  leg5 866  leg6 509
+  leg7  366  leg8  265  leg9  171  leg10 110  leg11  66  leg12   9
+  TOTAL 6,602 arm-pair rows   (= n x (A_bar - 1), A_bar = 7.2283)
+```
+
+⚠️ **Equality across legs is FALSE from leg5 on, and "subset" is true but too weak to catch a
+truncated leg** — the exact predicate is what makes the missing legs detectable. `G-STAGED`'s
+cross-layer invariant extends to **every** leg under this predicate, and `check_leg_layer` is
+already multi-file.
+
+**Cost is unaffected:** `6,602 pairs × 2 × M(32) = 422,528` playouts, identical to R4-2.2's
+`n × 2 × (Ā−1) × M`, so §R5-FINAL.g's ≈211–300 wh stands.
+
+**(b) The pair does NOT consume leg1 only — verified structurally.** Rung 3's primary is
+`Δ_ora = ora_full − ora_J4`, which requires the **full deduped arm set** priced; `leg1` alone
+prices `arm0`-vs-`arm1`, i.e. **~1 of ~6.2 pairs per position**. ⇒ **leg1-only staging would have
+produced an unobtainable estimand at scoring**, and the smoke's CRN cross-leg witness caught at
+zero cost what would otherwise have surfaced after ~200 worker-h. **The single-leg smoke mode is
+therefore NOT adopted** — there is nothing to replace `crn_cross_leg_identical` with, because the
+run genuinely has multiple legs.
+
+**(c) ETA denominators — the watch sizes on the invocation's ACTUAL worker count.** The plan's
+**8.987 h @ W22 single-box** and the committed **4.1–5.8 h @ W52 two-box** are **the same work at
+two denominators**; the committed figure is the two-box one, 8.987 h is the single-box fallback,
+and **the watch must size on whichever the launcher actually runs — never mix them.**
+
 ### ⭐ THE SMOKE INVOCATION — PINNED (2026-08-19)
 
 The pair named `SMOKE_R5.json`'s **fields** but never its **judge** or **`n`**, leaving both to
