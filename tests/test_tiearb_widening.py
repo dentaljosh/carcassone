@@ -22,6 +22,7 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -257,7 +258,7 @@ def test_w3_j4_subread_is_a_strict_subset_of_the_full_pool(tree):
     bundle = AT.load_plan(run / "corpus" / "positions_s1")
     if_by, *_ = TA.merge_arb_records([share / "s1" / "clair-puct"])
     arb_by, *_ = TA.merge_arb_records([share / "s1" / "tier1-greedy"])
-    rows, counts, arms_g, crn, unc = AW.build_rows(
+    rows, counts, arms_g, crn, unc, failed = AW.build_rows(
         bundle["arms"], if_by, arb_by, e_levels=AW.E_LEVELS_S1,
         m_expected=M_S1, stratum_tag="S1")
     assert rows and counts["analysed"] == len(rows)
@@ -2408,6 +2409,214 @@ def test_no_CLI_FLAG_can_activate_or_silence_the_void_scope():
     # the scope is computed from the run dir, and from nothing else
     assert "void_stratum_scope(run_dir)" in src
     assert "GATE_DISJOINT.json" in src
+
+
+# =========================================================================== #
+# §D4.18 — failed records: WHOLE-RID drop across BOTH judges, or RAISE         #
+#                                                                             #
+# 6 clair-puct records `ok:False` across 4 rids, all carrying the identical    #
+# `WindowTruncationError` — the KNOWN encoder-window limitation studied in     #
+# measurement/window_truncation_20260813/. A failed record carries NO          #
+# `values_a`/`values_b` at all, which is the KeyError that killed build_rows.  #
+# =========================================================================== #
+WINDOW_ERR = ("WindowTruncationError: PUCT reached a node with no valid actions "
+              "(Python IndexError) [cause=window_truncation n_total=4 "
+              "n_overflow=4 window=25@(-8,2) depth=5]")
+
+
+def _fail_records(share: Path, pattern: dict, *, judge="clair-puct",
+                  error=WINDOW_ERR):
+    """Rewrite `pattern = {rid: [leg, …]}` as REAL failed records: `ok:False`,
+    no `values_a` / `values_b`, an `error` carrying the diagnostic class."""
+    n = 0
+    for rid, legs in pattern.items():
+        for leg in legs:
+            p = share / "s1" / judge / "walled" / f"leg{leg}" / "records" / f"{rid}.json"
+            if not p.is_file():
+                continue
+            d = json.loads(p.read_text())
+            for k in ("values_a", "values_b", "alloc_a", "alloc_b"):
+                d.pop(k, None)
+            d.update({"ok": False, "error": error})
+            p.write_text(json.dumps(d))
+            n += 1
+    return n
+
+
+def _rows_with(tmp_path, tree, pattern, **kw):
+    """build_rows over a COPY of the fixture share with `pattern` failed."""
+    share = tmp_path / "share"
+    shutil.copytree(tree["share"], share)
+    n = _fail_records(share, pattern, **kw)
+    bundle = AT.load_plan(tree["run"] / "corpus" / "positions_s1")
+    if_by, *_ = TA.merge_arb_records([share / "s1" / "clair-puct"])
+    arb_by, *_ = TA.merge_arb_records([share / "s1" / "tier1-greedy"])
+    return n, bundle, AW.build_rows(bundle["arms"], if_by, arb_by,
+                                    e_levels=AW.E_LEVELS_S1, m_expected=M_S1,
+                                    stratum_tag="S1")
+
+
+def test_an_ok_false_record_drops_the_WHOLE_RID_from_BOTH_judges(tmp_path, tree):
+    """⭐ A failed record is never dereferenced, and the rid leaves BOTH matrices
+    — `G-ARMS`' `include_partial == false` consequence, not a new policy."""
+    rids = sorted(AT.load_plan(tree["run"] / "corpus" / "positions_s1")["arms"])
+    victim = rids[0]
+    n_failed, bundle, out = _rows_with(tmp_path, tree, {victim: [1]})
+    assert n_failed == 1
+    rows, counts, arms_g, crn, unc, failed = out
+
+    assert victim not in {r["rid"] for r in rows}, "the rid must leave IF …"
+    assert counts["failed_rid"] == 1
+    assert counts["analysed"] == counts["planned"] - 1
+    # … and the ARB side too: the paired contrast needs both, so a half-present
+    # rid is not a contrast. Nothing of it survives into any accounting.
+    assert all(r["rid"] != victim for r in rows)
+    assert failed["n_failed_rids"] == 1 and failed["n_failed_records"] == 1
+    row = failed["by_rid"][0]
+    assert row["rid"] == victim and row["legs"] == [1]
+    assert row["judges"] == ["clair-puct"]
+    assert row["diagnostic_class"] == ["WindowTruncationError"]
+    assert row["cause"] == ["window_truncation"]
+    assert failed["study"] == "measurement/window_truncation_20260813/"
+    assert "not a random subsample" in failed["selection_effect"]
+    assert "G-COMPLETE alone" in failed["consumed_by"]
+
+
+def test_the_EXACT_real_pattern_drops_exactly_four_rids(tmp_path, tree):
+    """The observed shape: one rid failed on THREE legs, three on ONE leg —
+    6 records, 4 rids, and `analysed == planned - 4`."""
+    rids = sorted(AT.load_plan(tree["run"] / "corpus" / "positions_s1")["arms"])
+    pattern = {rids[0]: [1, 2, 3], rids[1]: [1], rids[2]: [1], rids[3]: [3]}
+    n_failed, bundle, out = _rows_with(tmp_path, tree, pattern)
+    rows, counts, arms_g, crn, unc, failed = out
+    assert n_failed == 6, "6 records, as observed"
+    assert failed["n_failed_rids"] == 4
+    assert failed["n_failed_records"] == 6
+    assert counts["failed_rid"] == 4
+    assert counts["analysed"] == counts["planned"] - 4
+    assert {r["rid"] for r in rows}.isdisjoint(set(pattern))
+    three = [r for r in failed["by_rid"] if r["rid"] == rids[0]][0]
+    assert three["legs"] == [1, 2, 3] and three["n_records"] == 3
+
+
+def test_an_UNKNOWN_diagnostic_class_RAISES_regardless_of_count(tmp_path, tree):
+    """⭐ Count is the WRONG AXIS for a novel failure class. ONE record of an
+    unknown class refuses the whole analysis."""
+    rids = sorted(AT.load_plan(tree["run"] / "corpus" / "positions_s1")["arms"])
+    with pytest.raises(SystemExit) as e:
+        _rows_with(tmp_path, tree, {rids[0]: [1]},
+                   error="SomeOtherError: the encoder exploded [cause=mystery]")
+    msg = str(e.value)
+    assert "NOT the known" in msg and "WindowTruncationError" in msg
+    assert "COUNT IS THE WRONG AXIS" in msg
+    assert "Escalate; do not drop" in msg
+    assert "SomeOtherError" in msg
+
+
+def test_a_record_with_no_values_is_never_dereferenced(tmp_path, tree):
+    """The crash was a KeyError on `ref["values_a"]` of a failed record: a
+    failed record carries no values AT ALL."""
+    rids = sorted(AT.load_plan(tree["run"] / "corpus" / "positions_s1")["arms"])
+    # ok is not even set to False — the values are simply gone
+    share = tmp_path / "share"
+    shutil.copytree(tree["share"], share)
+    p = (share / "s1" / "clair-puct" / "walled" / "leg1" / "records"
+         / f"{rids[0]}.json")
+    d = json.loads(p.read_text())
+    d.pop("values_a")
+    d["error"] = WINDOW_ERR
+    p.write_text(json.dumps(d))
+    bundle = AT.load_plan(tree["run"] / "corpus" / "positions_s1")
+    if_by, *_ = TA.merge_arb_records([share / "s1" / "clair-puct"])
+    arb_by, *_ = TA.merge_arb_records([share / "s1" / "tier1-greedy"])
+    rows, counts, _, _, _, failed = AW.build_rows(
+        bundle["arms"], if_by, arb_by, e_levels=AW.E_LEVELS_S1,
+        m_expected=M_S1, stratum_tag="S1")           # ⭐ no KeyError
+    assert failed["n_failed_rids"] == 1
+    assert rids[0] not in {r["rid"] for r in rows}
+
+
+def test_G_COMPLETE_reads_the_POST_DROP_count_and_CRN_ARMS_are_untouched(
+        tmp_path, tree):
+    """§D4.18(b): consumed ONCE, by G-COMPLETE alone, on the post-drop count.
+    G-CRN's conjunct is over `ok` records and G-ARMS' over surviving rids, so
+    neither double-counts the same attrition."""
+    rids = sorted(AT.load_plan(tree["run"] / "corpus" / "positions_s1")["arms"])
+    _, bundle, base = _rows_with(tmp_path / "a", tree, {})
+    _, _, dropped = _rows_with(tmp_path / "b", tree, {rids[0]: [1]})
+    rows0, counts0, arms0, crn0, _, _ = base
+    rows1, counts1, arms1, crn1, _, failed1 = dropped
+
+    # G-COMPLETE: the denominator it reads IS the post-drop row count
+    c0 = AW.completion_block(rows0, [], None)
+    c1 = AW.completion_block(rows1, [], None)
+    assert c1["s1_n"] == c0["s1_n"] - 1 == len(rows1)
+    # G-ARMS: the dropped rid never enters the arm accounting
+    assert arms1["n_arms"] < arms0["n_arms"]
+    assert arms1["n_arms_complete"] == arms1["n_arms"]
+    # G-CRN: computed over ok records only — the failed record is in neither side
+    assert crn1["n_records"] < crn0["n_records"]
+    assert crn1["n_crn_verified"] == crn1["n_records"]
+
+
+def test_the_failed_record_block_is_printed_even_when_nothing_failed(readout):
+    """Printed whether or not any failure occurred — an empty block is a
+    statement, a missing block is a gap."""
+    fb = readout["widening"]["failed_records"]
+    assert "S1" in fb
+    assert fb["S1"]["n_failed_rids"] == 0
+    assert fb["S1"]["study"] == "measurement/window_truncation_20260813/"
+    assert "DISCLOSED rather than argued away" in fb["S1"]["selection_effect"]
+    assert fb["S1"]["known_class"] == "WindowTruncationError"
+
+
+def test_diagnostic_class_parses_the_real_error_string():
+    got = AW.diagnostic_class({"error": WINDOW_ERR})
+    assert got["diagnostic_class"] == "WindowTruncationError"
+    assert got["cause"] == "window_truncation"
+    assert AW.diagnostic_class({})["diagnostic_class"] is None
+    assert AW.diagnostic_class({"error": ""})["diagnostic_class"] is None
+
+
+# --- (d) the stale-artifact discipline, ENFORCED not remembered -------------- #
+def test_the_analyzer_REFUSES_to_overwrite_an_existing_readout(tmp_path, tree):
+    """§D4.18(d): a superseded artifact is EVIDENCE and stays readable; what
+    must be impossible is mistaking it for a verdict."""
+    out = tmp_path / "verdicts"
+    out.mkdir()
+    (out / "READOUT.json").write_text("{}")
+    run, share = tree["run"], tree["share"]
+    argv = ["--plan-dir-s1", str(run / "corpus" / "positions_s1"),
+            "--if-records-s1", str(share / "s1" / "clair-puct"),
+            "--arb-records-s1", str(share / "s1" / "tier1-greedy"),
+            "--stage1b-ladder", str(tree["stage1b_ladder"]),
+            # S1-only, so the D4.16 void witness is required for main() to run
+            "--gate-disjoint", _gate_disjoint(tmp_path / "gd.json"),
+            "--boot-reps", "40", "--out-dir", str(out)]
+    with pytest.raises(SystemExit) as e:
+        AW.main(argv)
+    msg = str(e.value)
+    assert "REFUSING to overwrite" in msg
+    assert ".invalid-" in msg and "invalid-empty-rowset" in msg
+    assert "NAME THE MOVE" in msg
+    assert (out / "READOUT.json").read_text() == "{}", "the stale file is intact"
+
+    # moved aside with the named convention -> the run proceeds, AND the move is
+    # NAMED in the provenance so the gap is documented rather than silent
+    (out / "READOUT.json").rename(out / "READOUT.json.invalid-empty-rowset")
+    AW.refuse_to_overwrite(out)          # no raise
+    assert AW.main(argv) == 0
+    doc = json.loads((out / "READOUT.json").read_text())
+    assert doc["provenance"]["superseded_artifacts"] == \
+        ["READOUT.json.invalid-empty-rowset"]
+    assert "mistaking it for a verdict" in doc["provenance"]["note"]
+    (out / "READOUT.json").unlink()
+    (out / "READOUT.md").unlink()
+    (out / "SEALED_G_REPLICATE.json").unlink()
+    # the SEALED artifact counts too — it is part of the same read-out
+    (out / "SEALED_G_REPLICATE.json").write_text("{}")
+    with pytest.raises(SystemExit):
+        AW.refuse_to_overwrite(out)
 
 
 # =========================================================================== #

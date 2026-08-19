@@ -225,6 +225,101 @@ def _sub_rows(matrix, idxs):
     return [matrix[i] for i in idxs]
 
 
+#: §D4.18 — the ONE failure class this analyzer may drop rather than raise on.
+#: `WindowTruncationError` is the KNOWN instrument limitation of the encoder at
+#: extreme board extents (PUCT reaches a node whose every legal action falls
+#: outside the 25-wide window), studied in `measurement/window_truncation_20260813/`.
+#: It is not data corruption — and any OTHER class is a different question that
+#: count is the wrong axis for, so it RAISES regardless of how few records carry it.
+KNOWN_FAILURE_CLASS = "WindowTruncationError"
+KNOWN_FAILURE_CAUSE = "window_truncation"
+WINDOW_TRUNCATION_STUDY = "measurement/window_truncation_20260813/"
+
+#: ⚠️ VERBATIM from §D4.18(c). Printed whether or not anything was dropped.
+SELECTION_EFFECT_SENTENCE = (
+    "The 4 dropped rids are not a random subsample. WindowTruncationError fires "
+    "at extreme board extents, so the dropped set is correlated with board "
+    "geometry — late-game, large-extent positions. At 4 / 1,344 = 0.30% the "
+    "maximum arithmetic influence on the primary is bounded by "
+    "(4/1,340)·|Δ|_max ≈ 0.003·|Δ|_max, a fraction of se ≈ 0.02 for any "
+    "plausible |Δ|_max; the point of this note is that the correlation is "
+    "DISCLOSED rather than argued away, so it is not rediscovered later as a "
+    "gotcha. Diagnostic class and study: "
+    + WINDOW_TRUNCATION_STUDY)
+
+
+def diagnostic_class(record: dict) -> dict:
+    """The failure's CLASS and CAUSE, from the record's own `error` field.
+
+    `error` reads `"<ClassName>: <message> [cause=<cause> …]"`, so the class is
+    the token before the first colon and the cause is the `cause=` marker. Both
+    are reported; the class is what the drop licence is matched on.
+    """
+    err = record.get("error")
+    if not isinstance(err, str) or not err.strip():
+        return {"diagnostic_class": None, "cause": None, "error": err}
+    cls = err.split(":", 1)[0].strip() or None
+    cause = None
+    if "cause=" in err:
+        cause = err.split("cause=", 1)[1].split()[0].strip().rstrip("]").strip()
+    return {"diagnostic_class": cls, "cause": cause, "error": err[:200]}
+
+
+def collect_failed_records(arms_index, if_by_rid, arb_by_rid) -> dict:
+    """{rid: [{judge, leg, diagnostic_class, cause, error}, …]} across BOTH judges.
+
+    A record is FAILED if it says `ok: False` or if it carries no values to
+    dereference — the shape that crashed `build_rows` (a failed record has no
+    `values_a` / `values_b` at all).
+    """
+    out: dict = {}
+    for judge, by_rid in (("clair-puct", if_by_rid), ("tier1-greedy", arb_by_rid)):
+        for rid in arms_index:
+            for leg, rec in sorted((by_rid.get(rid) or {}).items()):
+                if not isinstance(rec, dict):
+                    continue
+                broken = (rec.get("ok") is False
+                          or rec.get("values_a") is None
+                          or rec.get("values_b") is None)
+                if broken:
+                    out.setdefault(rid, []).append(
+                        {"judge": judge, "leg": leg, **diagnostic_class(rec)})
+    return out
+
+
+def failed_record_block(failed: dict, *, n_planned=None) -> dict:
+    """§D4.18(3) — the TYPED accounting, printed whether or not anything failed."""
+    rows = sorted(
+        ({"rid": rid,
+          "legs": sorted({f["leg"] for f in fs}),
+          "judges": sorted({f["judge"] for f in fs}),
+          "n_records": len(fs),
+          "diagnostic_class": sorted({str(f["diagnostic_class"]) for f in fs}),
+          "cause": sorted({str(f["cause"]) for f in fs})}
+         for rid, fs in failed.items()), key=lambda r: r["rid"])
+    return {
+        "n_failed_rids": len(rows),
+        "n_failed_records": sum(r["n_records"] for r in rows),
+        "n_planned": n_planned,
+        "by_rid": rows,
+        "policy": "WHOLE-RID DROP across BOTH judges, before any contrast — the "
+                  "consequence of G-ARMS' `include_partial == false` (a rid with "
+                  "a valueless arm is not analysable), not a new policy. The "
+                  "paired per-position contrast needs the IF side, so a "
+                  "half-present rid is not a contrast.",
+        "known_class": KNOWN_FAILURE_CLASS,
+        "unknown_class_rule": "any failed record whose diagnostic class is NOT "
+                              "the known class RAISES and escalates, regardless "
+                              "of count — a novel failure class is a different "
+                              "question, and count is the wrong axis for it",
+        "study": WINDOW_TRUNCATION_STUDY,
+        "selection_effect": SELECTION_EFFECT_SENTENCE,
+        "consumed_by": "G-COMPLETE alone, on the POST-DROP analysed count "
+                       "(G-CRN and G-ARMS are computed over surviving/ok "
+                       "records only, so there is nothing to double-count)",
+    }
+
+
 def build_rows(arms_index: dict, if_by_rid: dict, arb_by_rid: dict, *,
                e_levels, m_expected, parity_base=PARITY_BASE,
                rnd_seed=RND_SEED, stratum_tag="S1"):
@@ -238,7 +333,24 @@ def build_rows(arms_index: dict, if_by_rid: dict, arb_by_rid: dict, *,
     rows = []
     counts = {"planned": 0, "absent_if": 0, "absent_arb": 0, "armset_mismatch": 0,
               "partial": 0, "champ_arm_absent": 0, "analysed": 0,
-              "m_mismatch": 0, "e_short": 0, "j4_absent": 0}
+              "m_mismatch": 0, "e_short": 0, "j4_absent": 0, "failed_rid": 0}
+
+    # ---- §D4.18: failed records, resolved BEFORE any contrast -------------- #
+    failed = collect_failed_records(arms_index, if_by_rid, arb_by_rid)
+    unknown = [dict(f, rid=rid) for rid, fs in sorted(failed.items()) for f in fs
+               if f["diagnostic_class"] != KNOWN_FAILURE_CLASS]
+    if unknown:
+        raise SystemExit(
+            "REFUSING: {} failed record(s) carry a diagnostic class that is NOT "
+            "the known {!r}: {}. §D4.18 licenses a WHOLE-RID DROP for the known "
+            "encoder-window limitation ({}) and NOTHING else — a novel failure "
+            "class is a different question, and COUNT IS THE WRONG AXIS for it. "
+            "Escalate; do not drop.".format(
+                len(unknown), KNOWN_FAILURE_CLASS,
+                [{k: v for k, v in u.items() if k in
+                  ("rid", "judge", "leg", "diagnostic_class", "cause")}
+                 for u in unknown[:5]],
+                WINDOW_TRUNCATION_STUDY))
     arms_gate = {"n_arms": 0, "n_arms_complete": 0}
     crn = {"witness_kinds": defaultdict(set), "per_leg": defaultdict(
         lambda: {"n_ok": 0, "n_crn_verified": 0, "n_records": 0}),
@@ -248,6 +360,14 @@ def build_rows(arms_index: dict, if_by_rid: dict, arb_by_rid: dict, *,
 
     for rid, meta in sorted(arms_index.items()):
         counts["planned"] += 1
+        # ⭐ WHOLE-RID DROP, across BOTH judges, before ANY contrast. This loop
+        # is per-rid, so one `continue` removes the rid from both matrices, the
+        # CRN counters, the arm accounting and every downstream statistic —
+        # complete-case on intact rids, which is what `G-ARMS`'
+        # `include_partial == false` already implies.
+        if rid in failed:
+            counts["failed_rid"] += 1
+            continue
         arms = meta["arms"]
         n_arms = len(arms)
         need = list(range(1, n_arms))
@@ -297,6 +417,21 @@ def build_rows(arms_index: dict, if_by_rid: dict, arb_by_rid: dict, *,
         champ_pos = arm_order.index(champ_idx)
 
         # ---- matrices + the CRN / completeness witnesses -------------------- #
+        # ⚠️ §D4.18(1): a record that is `ok: False` — or that simply carries no
+        # values — is NEVER dereferenced. The pre-pass above already drops such
+        # rids, so reaching this is a defect rather than a data condition; it is
+        # guarded anyway, because the crash it replaces was a KeyError on
+        # `ref["values_a"]` of a failed record, and a guard that only exists
+        # upstream is one refactor away from being absent.
+        unusable = [(jn, r) for jn, legs in (("if", if_legs), ("arb", arb_legs))
+                    for r in have_if
+                    if (legs.get(r) or {}).get("ok") is False
+                    or (legs.get(r) or {}).get("values_a") is None
+                    or (legs.get(r) or {}).get("values_b") is None]
+        if unusable:
+            counts["failed_rid"] += 1
+            continue
+
         mats = {}
         for jname, legs in (("if", if_legs), ("arb", arb_legs)):
             ref = legs[have_if[0]]
@@ -408,7 +543,8 @@ def build_rows(arms_index: dict, if_by_rid: dict, arb_by_rid: dict, *,
         "per_leg": {k: dict(v) for k, v in sorted(crn["per_leg"].items())},
         "n_records": crn["n_records"], "n_crn_verified": crn["n_crn_verified"],
     }
-    return rows, counts, arms_gate, crn_out, uncapped
+    return (rows, counts, arms_gate, crn_out, uncapped,
+            failed_record_block(failed, n_planned=counts["planned"]))
 
 
 # --------------------------------------------------------------------------- #
@@ -1549,10 +1685,42 @@ def _load_records(roots):
     return by_rid, present, not_ok, resolved
 
 
+#: §D4.18(d) — the move-aside is ENFORCED, not remembered.
+INVALID_SUFFIX_CONVENTION = ".invalid-<reason>"
+
+
+def refuse_to_overwrite(out_dir: Path) -> None:
+    """A superseded READOUT is EVIDENCE and stays readable; what must be
+    impossible is mistaking it for a verdict (§D4.7's discipline, §D4.18(d)).
+
+    So the analyzer refuses to overwrite one. The move-aside then leaves a
+    readable record of the gap instead of a silent replacement.
+    """
+    existing = [p for p in (Path(out_dir) / "READOUT.json",
+                            Path(out_dir) / "READOUT.md",
+                            Path(out_dir) / "SEALED_G_REPLICATE.json")
+                if p.is_file()]
+    if not existing:
+        return
+    raise SystemExit(
+        "REFUSING to overwrite an existing read-out: "
+        + ", ".join(str(p) for p in existing)
+        + f". §D4.18(d): a superseded artifact is EVIDENCE and stays readable — "
+        f"what must be impossible is mistaking it for a verdict. Move it aside "
+        f"with a suffix that makes invalidity obvious ON SIGHT "
+        f"(`READOUT.json{INVALID_SUFFIX_CONVENTION}`, e.g. "
+        f"`READOUT.json.invalid-empty-rowset`), the same discipline as "
+        f"`CORPUS_UNION.defective_r4.5.json`, and NAME THE MOVE in the "
+        f"read-out's provenance so the gap in the record is documented rather "
+        f"than silent. Then re-run.")
+
+
 def main(argv=None) -> int:
     a = parse_args(argv)
     out_dir = Path(a.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # ⚠️ BEFORE any work: a stale read-out must be moved aside, never overwritten
+    refuse_to_overwrite(out_dir)
 
     e_s1 = tuple(int(x) for x in str(a.e_levels_s1).split(",") if x.strip())
     e_s2 = tuple(int(x) for x in str(a.e_levels_s2).split(",") if x.strip())
@@ -1568,11 +1736,12 @@ def main(argv=None) -> int:
         bundle = AT.load_plan(plan_dir)
         if_by, if_present, if_notok, if_res = _load_records(ifr)
         arb_by, arb_present, arb_notok, arb_res = _load_records(arbr)
-        rows, counts, arms_g, crn, unc = build_rows(
+        rows, counts, arms_g, crn, unc, failed_block = build_rows(
             bundle["arms"], if_by, arb_by, e_levels=e_lev, m_expected=m_exp,
             parity_base=a.parity_base, rnd_seed=a.rnd_seed, stratum_tag=tag)
         strata[tag] = {"plan": bundle["plan"], "plan_dir": str(plan_dir),
                        "rows": rows, "counts": counts, "arms": arms_g,
+                       "failed_records": failed_block,
                        "crn": crn, "uncapped": unc, "e_levels": list(e_lev),
                        "m_expected": m_exp,
                        "records": {"if": if_res, "arb": arb_res,
@@ -1722,6 +1891,9 @@ def main(argv=None) -> int:
         "gates_summary": gates_summary,
         "gates_ok": gates_ok,
         "completion": completion,
+        # §D4.18(3)+(6) — TYPED, per stratum, printed whether or not anything
+        # failed, and carrying the selection-effect sentence verbatim.
+        "failed_records": {t: s["failed_records"] for t, s in strata.items()},
         "exclusions": exclusions,
         "corpus_union": union,
         "predecessor": {
@@ -1800,8 +1972,23 @@ def main(argv=None) -> int:
             "stage1b_ladder": str(a.stage1b_ladder),
         },
     }
+    # §D4.18(d): the move-aside must be NAMED in the read-out's provenance, so
+    # the gap in the record is documented rather than silent. Detected from the
+    # artifacts themselves — the executor moves the file, the analyzer records
+    # it, and neither has to remember.
+    superseded = sorted(str(p.name) for p in out_dir.glob("*.invalid-*"))
     verdict = {"generated_utc": AT._now_utc(),
                "run": "tiearb_widening_20260817 shared_run_r4",
+               "provenance": {
+                   "superseded_artifacts": superseded,
+                   "note": ("a superseded read-out is EVIDENCE and stays "
+                            "readable; what must be impossible is mistaking it "
+                            "for a verdict. The analyzer REFUSES to overwrite "
+                            "one, so this list is the documented gap in the "
+                            "record rather than a silent replacement."
+                            if superseded else
+                            "no superseded read-out was moved aside for this run"),
+               },
                "widening": widening}
 
     (out_dir / "READOUT.json").write_text(
