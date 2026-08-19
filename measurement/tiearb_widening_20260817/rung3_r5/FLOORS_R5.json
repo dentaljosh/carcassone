@@ -29,6 +29,15 @@
   "n_distinct_seeds": 980,
   "note": "R5.1 after REVIEW_R2. n2=1060 = 1064 adopted - 1 R4 residual collider - 3 internal-dupe later members. Relative bound M*d RETIRED (circular); G-INTERNAL-DUPE recomputes d at run time against the ABSOLUTE 5% guard. Both degeneracy gates are CORPUS-IDENTITY checks (READ_RULE 2.1). k=0. N1: n_duplicate_seeds DELETED (82 seeds occur >1 by construction under --max-per-game 3); replaced by max_positions_per_seed<=3 at positions level and range checks at seed level. N2: smoke m_worlds is TOP-LEVEL; leg resolved_config.m VERIFIED to exist (tier1_rust_leg.py:401) and is retained.",
   "oracle_sims": 100,
+  "population_authority": {
+    "artifact": "RUN/ARMS_R5.json",
+    "consumers": "gate_disjoint --r5, staging, scoring, analyzer -- ALL READ IT; none re-derives the population by subtraction",
+    "identity": "rids == R4_ARMS.rids - excluded_rids, asserted BOTH directions at build time",
+    "n_rids_expected": 1060,
+    "ruling": "DESIGN R5-FINAL.i ruling 2026-08-19, shape (a): materialize one authority. Shape (b) (derive at read time) is D4 with the operands swapped -- four subtractions, four chances to diverge, no artifact to compare them against.",
+    "schema": "same as build_positions.build_arms_index output, restricted to surviving rids",
+    "sha_recorded_at": "CORPUS_R5.json::arms_r5_sha256 (value known only once the build emits it)"
+  },
   "r5_exclusions": {
     "excluded_later_member_per_group": 3,
     "internal_dupe_groups": 3,

@@ -227,6 +227,43 @@ so a builder implements without interpretation. **`RUN` = `measurement/tiearb_wi
 | **`RUN/GATE_INTERNAL_DUPE.json`** | `n_positions` int · `n_dupe_groups` int (3) · `n_dupe_positions` int (6) · `d_internal` float (`n_dupe_groups / n_positions`) · `ply_histogram` obj{ply→count} over dupe members · `band_pairs` list[str] (`"137e9<->137e9"`) · `leg_sha256` str(64) | **NEW**, same script — the digest map is `sha256(checksum)` per row, grouped; **groups, not positions**, is the numerator |
 | **`RUN/GATE_DISJOINT_R5.json`** | `passed` bool · `comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection` int — **rid/root layers only**; the digest layer is not carried (READ_RULE §0). ⭐ **THE COMPARISON SET IS PINNED, and so is the exclude-rids REFERENCE** — see the two lines below | **EXTENDS** `scripts/tiletie/gate_disjoint.py` — same shape as R4's artifact, restricted to two layers |
 
+### ⭐ RULING (2026-08-19, launch-blocking) — `ARMS_R5.json` IS MATERIALIZED. Shape (a).
+
+`gate_disjoint --r5` needs the R5 corpus's `ARMS.json`; `build_r5_corpus.py` emits only counts,
+shas, `excluded_rids` and seed ranges; **the only ARMS on disk is R4's 1,064 — the PRE-exclusion
+population, which this design explicitly does not pin.** The executor was right to refuse to
+hand-synthesize the input.
+
+**RULED: shape (a) — `build_r5_corpus.py` EMITS `RUN/ARMS_R5.json` for the surviving 1,060.**
+
+> **`RUN/ARMS_R5.json`** — the **materialized population authority** for R5. Same schema as
+> `build_positions.build_arms_index` output (rid → `{arms, arms_full, subset_j4, root_id, ply,
+> deck_seed, cap_seed, …}`), **restricted to the 1,060 surviving rids**. Built by
+> `build_r5_corpus.py` in the same pass that writes `CORPUS_R5.json`. **Its rid set MUST equal
+> `R4_ARMS.rids − excluded_rids` — asserted at build time in BOTH directions and gated.** Its
+> sha256 is recorded in `CORPUS_R5.json::arms_r5_sha256` and in `FLOORS_R5.json`. It carries a
+> `G-CORPUS` address, an A1 fixture (`fixtures/ARMS_R5.fixture.json`) and the `[post-corpus]`
+> marker. ⛔ **Every consumer — `gate_disjoint --r5`, staging, scoring, the analyzer — READS
+> `ARMS_R5.json`. None re-derives the population by subtraction.**
+
+**Why (a) and not (b), on the campaign's own most expensive lesson.** Shape (b) — deriving
+`R4_ARMS − excluded_rids` at read time — leaves the 1,060-population existing **only as a
+subtraction that four consumers each repeat**. ⭐ **That is D4 with the operands swapped.** D4's
+union assembled ARMS but not leg files, and **three independent "complete" signals were each true
+of a different population because nothing materialized the one population they were all supposed
+to agree on**; the missing invariant was *"the leg files enumerate exactly the ARMS rids"*. Shape
+(b) reproduces that exactly: four subtractions, four chances to diverge, and **no artifact to
+compare them against**. Shape (a) creates one authority and makes the invariant checkable.
+
+⚠️ **And the pair already names an output nothing materialized** — §R5-FINAL pins *"the
+1,060-position OUTPUT"* while `CORPUS_R5.json` carries counts but no rid list. **That gap is mine**,
+and (a) closes it rather than papering it with a convention.
+
+⚠️ **The G-CORPUS address + fixture + marker are MANDATORY, not optional** — without them
+`ARMS_R5.json` is simply *the next unwitnessed layer*, one level down from the one this ruling
+exists to fix. **A1 enforces this automatically:** its completeness assertion is over the **marker
+list**, so an address added without its fixture **fails A1** rather than passing silently.
+
 ⭐ **`GATE_DISJOINT_R5` — the two lines REVIEW_R4 requires (P1), because an unpinned reference
 defaults to an EMPTY list and the comparison is then PASS-ALWAYS (the campaign's third
 mirror-disease catch):**
@@ -276,7 +313,7 @@ fixtures/CORPUS_R5.fixture.json          fixtures/RUN_MANIFEST_R5.fixture.json
 fixtures/GATE_INTERNAL_DUPE.fixture.json fixtures/leg_manifest.fixture.json   <- resolved_config.*
 fixtures/GATE_DISJOINT_R5.fixture.json   fixtures/READOUT.fixture.json        <- widening.*
 fixtures/SMOKE_R5.fixture.json           fixtures/D_DRAW.fixture.json
-fixtures/MERGE_REPORT_s2.fixture.json
+fixtures/MERGE_REPORT_s2.fixture.json  fixtures/ARMS_R5.fixture.json        <- population authority
 ```
 
 ⚠️ **The fixture set must cover EVERY `[post-corpus]` and `[post-scoring]` address** — R5-6.1
