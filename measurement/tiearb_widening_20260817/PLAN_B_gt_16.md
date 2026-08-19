@@ -208,6 +208,37 @@ from +0.35 (naive) to +1.4 (realized-ratio) pts/game. A deck-paired `B=64` vs `B
 cell resolves +1.4 pts/game at n ≈ 800/cell but needs n ≈ 12,500 for +0.35. **Sizing it
 before the offline read would be guessing at the top of a 4× uncertainty.**
 
+> ### ⛔ ERRATUM — 2026-08-19: the two `n` figures in the paragraph above are WRONG (a missing √2)
+>
+> **The two power figures — *"resolves +1.4 pts/game at n ≈ 800/cell"* and *"needs
+> n ≈ 12,500 for +0.35"* — are SUPERSEDED.** They graded the effect against the
+> **single-cell** standard error instead of against `se(D) = √2 × se_cell`, which is what
+> a **difference of two independently-sampled cells** requires.
+>
+> **The arithmetic, from Stage 2's realized dispersion**
+> (`tiearb2_stage2_20260817/READOUT.json::cells.ARB.recomputed.se` = 0.6906057781774855
+> over 400 decks ⇒ per-deck paired `sd` = **13.812** pts):
+>
+> ```
+> se_cell(400 decks) = 13.812 / sqrt(400)   = 0.6906
+> the erratum's own arithmetic: 1.4 / 0.6906 = 2.027   <-- the single-cell se was used
+> se(D) | rho = 0    = sqrt(2) x 0.6906     = 0.9766
+> TRUE z for +1.435  = 1.435 / 0.9766       = 1.469    <-- DOES NOT CONVICT
+> ```
+>
+> ⇒ **n ≈ 800/cell does NOT resolve the top of the bracket.** Corrected figures, derived
+> in [`b64_cell/DESIGN.md`](b64_cell/DESIGN.md) §6.2–§6.4 and confirmed at
+> [`b64_cell/REVIEW_R1.md`](b64_cell/REVIEW_R1.md): convicting **+1.435** at 2σ needs
+> **≈741 decks = 1,482 games/cell** (the successor commits **1,500**), and convicting
+> **+0.368** needs **≈11,270 decks = 22,540 games/cell ≈ 8,693 worker-h ≈ 199 h of
+> two-box wall** — not 12,500 games.
+>
+> ⚠️ **This is an ERRATUM NOTE, not a silent fix: the original sentences are left above
+> unedited**, because a withdrawn figure that is quietly deleted teaches nothing (the
+> Stage 2 §0.G discipline). **Nothing else in this document is affected** — the §5 cost
+> table, the `rho_wall` / `rho_phone` figures, the 3.9× translation caveat and the §6 open
+> questions all stand, and no branch of any read-rule ever consumed these two `n` values.
+
 **Interaction with the other three rungs.**
 
 - ⭐ **`J > 4` — YES, one paid run serves both.** Post-dedup arm counts are
