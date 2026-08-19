@@ -152,3 +152,67 @@ never read for an outcome — so it cannot later be mistaken for a claimed band.
 fold **R1–R4**, and the pair is ready for blind commit with the six rulings above recorded in it.
 C1–C2 at the drafter's discretion. **No re-review needed for R1–R4 or the cosmetics; B1 should be
 re-read by whoever merges**, since it is the one change that alters a gate's conjunct.
+
+---
+
+# SIGN-OFF on the amended pair (drafter `3929fb1a`) — **PASS**
+
+Verified at source, not from the report.
+
+**B1 — the gate-altering change: CORRECT.** The new conjunct is *"THE CONJUNCT IS EQUALITY OF
+`carc_rs_build` ACROSS BOXES, AND NOTHING ELSE"*, with `+rustcunpinned` named explicitly as **the
+normal production value**, cited to `rust_agent.py:372` and to D4.13's recorded both-boxes values,
+and passing **provided it is equal on both boxes**. The two properties that had to survive the fix
+both survive: `carc_rs_binary_sha` remains **never compared across boxes**, and the
+`PREFLIGHT_*_${HOST}_FIRST.json` files remain authoritative over manifests under `--shared-claim`
+— with a correct addition I did not ask for (`mixed_builds` on a manifest is the writer's own
+observation and cannot see the other box). The pinning question is routed to
+`WORKERS.conf::RUST_TOOLCHAIN`, i.e. **the launch environment, never a gate conjunct**. ✅
+
+**R1 — reachable-branch set: MECHANIZED CORRECTLY.** §4.0 states the set under each value of `A`,
+flags `B-CONFIRMED` **UNREACHABLE by default**, and — the part that matters — explains why the
+branch is *retained rather than deleted* (`W` is a genuine two-valued predicate the owner may still
+flip before game 1), so its presence cannot be mistaken for an expectation. ✅
+
+**R4 — the waiver check: MECHANICAL, not judgement.** `W` is three fail-closed conjuncts, the
+third a **committed case-sensitive regex** requiring the rung (`B > 16`), an ISO date and a
+non-empty quote, with the decisive sentence present: *"The adjudicator matches the pattern; it does
+not read the quote for meaning."* The claim that Stage 2 §0.D fails it is sound — that ruling
+waived the N4 downgrade **for that cell**, not for `B > 16`, so it cannot be retro-fitted. ✅
+
+**§13.3's two self-corrections are on the record and correctly stated** — the `B = 32` deploy claim
+was wrong (`rho_wall(32)` = 1.2449 > 1.20 ⇒ `A` FALSE there too), and the three-cell decline is
+**schedule risk, not statistics**. Recording a superseded argument rather than quietly replacing it
+is the right house form. ✅
+
+## The new launch precondition — WELL-POSED, and it does not break blindness
+
+**Blindness: safe, and here is why, on the record.** The precondition evaluates §3's gate rows
+against **Stage 2's** completed artifacts. Stage 2 is a **spent, adjudicated, retired** run on a
+**different band (132e9), different decks, and a different candidate** (`B=16` arbiter vs the
+champion — not `WIDE` vs `NARROW`). Its verdict and its quantities are already **published and
+quoted inside this very pair** (`phi` 17.5725, `+3.07` pts/game, `z` +4.445, elo CI). ⇒ Reading
+them reveals **nothing about the B64 run**, whose statistics do not exist. And the rows being
+exercised are **structural** — does the address resolve, is the conjunct satisfiable — not
+outcome-bearing. **Gate rows on spent artifacts are fine; that is exactly the right fixture.**
+
+⚠️ **One refinement to fold when the evaluation is RUN — not a re-review, and not a blocker.**
+**Some §3 rows have no Stage-2 analogue and therefore cannot PASS or FAIL:**
+
+- **`G-DIVERGE`** — Stage 2's cells were `ARB`/`RND`, so no `f₀` of the `B=16`-vs-`B=64` kind
+  exists anywhere;
+- **`G-NEST`** — `[pre-run]`, evaluated against a pinned **code** witness at HEAD, not against run
+  artifacts (I verified its substance independently at `tiearb.rs::arbitrate`).
+
+⇒ **The evaluation must classify every row `PASS` / `FAIL` / `N-A (reason)`, and "all rows pass"
+must mean "every row with a known-good analogue passes, and the rows without one are named."**
+Otherwise a clean sweep silently reads as covering `G-DIVERGE`, which it cannot — and the whole
+point of this precondition is that an untested conjunct is how the three unsatisfiable gates got
+shipped. **A precondition that reports 100% while skipping two rows would reproduce, in miniature,
+the defect it exists to prevent.**
+
+## Verdict
+
+> **PASS.** Merge both worktrees' `b64_cell/` content, run the known-good gate evaluation **with
+> the `N-A (reason)` classification above**, and blind-commit on `main`. The run queues behind
+> `rung3_r5`. **B1's conjunct is correct as amended and needs no further review.**
