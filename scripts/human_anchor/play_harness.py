@@ -42,6 +42,16 @@ action agreement), and this harness's own gate is
 ``--rust-threads`` OS threads instead of spawn processes — and ``resolve_execution()``
 resolves the pair so a caller can never hand the factory the illegal combination.
 
+🔌 TIE-ARBITER PLUMBING (2026-08-19, measurement/tiearb2_stage2_20260817): the
+``--tiearb-*`` flags can arm the rust-only tie arbiter on the champion built here.
+**OFF BY DEFAULT and it stays off** — arming it in production is an OWNER decision (a
+``governance/PRODUCTION.yaml`` change), not this harness's default. Disarmed, NO
+``tiearb`` keyword reaches ``make_production_champion`` at all, so the champion is
+bit-for-bit the pre-plumbing one; the only change to a disarmed run is a manifest that
+now says ``tiearb: {"enabled": false}`` OUT LOUD instead of saying nothing.
+``--backend python`` + armed is refused AT LAUNCH (the arbiter is rust-only).
+Contract tests: ``tests/test_play_harness_tiearb.py``.
+
 Enforces the locked 2p Base+Farmers ruleset (the wingedsheep engine already
 constrains this; we assert `state.players == 2`). No ELO math lives here — this
 just produces trustworthy game records for the human-anchor program to score.
@@ -139,8 +149,122 @@ def resolve_execution(backend="inherit", profile="desktop", rust_threads=None,
                     no_parallel=no_parallel)
 
 
+# --------------------------------------------------------------------------- #
+# THE TIE ARBITER (measurement/tiearb2_stage2_20260817) — PLUMBING ONLY.        #
+#                                                                              #
+# ⚠️ OFF BY DEFAULT and it stays off: arming it in production is an OWNER       #
+# decision (a PRODUCTION.yaml change), NOT something this harness's default     #
+# does. Disarmed, `_resolve_tiearb` returns None and `_make_fair_agent` passes  #
+# NO `tiearb` keyword to the factory at all, so the champion — its config hash, #
+# its leaf hash, its manifest — is bit-for-bit what it was before this file     #
+# grew the flags (tests/test_play_harness_tiearb.py asserts exactly that).      #
+# --------------------------------------------------------------------------- #
+def _resolve_tiearb(args) -> dict | None:
+    """The ``--tiearb-*`` flags -> the dict ``make_production_champion`` takes, or
+    ``None`` when the arbiter was not armed.
+
+    ``None`` (not a dict with ``enabled=False``) on the unarmed leg, deliberately —
+    the caller uses ``is None`` to decide whether to pass the keyword AT ALL, which is
+    what makes a disarmed run byte-identical to a pre-arbiter one. The explicit
+    off-RECORD lives in the game log instead (see ``_game_tiearb_block``), where an
+    absent field would be unreadable rather than merely off.
+
+    Ported from ``scripts/jcz_match/match.py::_resolve_tiearb`` (the ``--champ-tiearb-*``
+    surface); the knobs and defaults are that harness's verbatim, so a game played here
+    is comparable to a graded cell without a translation table.
+    """
+    if not bool(getattr(args, "tiearb_enabled", False)):
+        return None
+    return {"enabled": True,
+            "B": int(args.tiearb_b), "J": int(args.tiearb_j),
+            "mode": str(args.tiearb_mode), "salt": str(args.tiearb_salt),
+            "eps": float(args.tiearb_eps)}
+
+
+def _champ_tiearb_telemetry(champ, tiearb) -> dict | None:
+    """TIE-ARBITER per-agent liveness read. ``None`` unless armed with an ENABLED
+    ``tiearb``; an armed agent that is NOT a Rust-backed champion RAISES rather than
+    stamping ``None`` (the arbiter is rust-only, and a silent ``None`` would let an
+    armed game that never actually arbitrated a single ply be read as one that did —
+    the J13 lesson).
+
+    Field-for-field the same read as ``match.py::_champ_tiearb_telemetry`` and
+    ``eval_fair_puct._cand_tiearb_telemetry``, so the three harnesses are comparable.
+    """
+    if not tiearb or not bool(tiearb.get("enabled")):
+        return None
+    rs = getattr(champ, "_rs", None)
+    if rs is None:
+        raise RuntimeError(
+            "tiearb is armed but the champion has no FairAgentRs (the tie arbiter is "
+            "rust-only) — it cannot have run")
+    s = rs.stats()
+    if not bool(s.get("tiearb_enabled")):
+        raise RuntimeError(
+            "tiearb is armed but FairAgentRs.stats() reports tiearb_enabled=False — "
+            "the knob was dropped between main() and the rust config (a STALE carc_rs "
+            "wheel is the usual cause)")
+    return {
+        "tile_plies": int(s["tiearb_tile_plies"]),
+        # `fires` and `fired_plies` are THE SAME NUMBER under two names, on purpose:
+        # the adjudicator's `G-FIRE` reads `fires` fail-closed while `fired_plies` is
+        # what the summary blocks aggregate. Emitting one and not the other would void
+        # a perfectly good record on a key spelling.
+        "fires": int(s["tiearb_fired_plies"]),
+        "fired_plies": int(s["tiearb_fired_plies"]),
+        "pickchanges": int(s["tiearb_pickchanges"]),
+        "arms_total": int(s["tiearb_arms_total"]),
+        "playouts_total": int(s["tiearb_playouts_total"]),
+        "secs": float(s["tiearb_secs"]),
+        # FAIL-SOFT counter: a tier1 continuation can hit the engine's window refusal
+        # or the ply ceiling deep in a determinized world, which falls back to the
+        # champion's own pick rather than killing the GAME. Nonzero is REPORTABLE, not
+        # fatal, and it must never be invisible.
+        "errors": int(s.get("tiearb_errors") or 0),
+        "first_error": s.get("tiearb_first_error"),
+        # READ_RULE §0.F `G-PLY`: plies that took an argmax over FEWER than B completed
+        # worlds. 0 by construction. ⚠️ Non-zero OR ABSENT => U-UNREADABLE.
+        "partial_argmax": int(s.get("tiearb_partial_argmax") or 0),
+        "max_plies": int(s.get("tiearb_max_plies") or 0),
+        "mode": str(s["tiearb_mode"]),
+        "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
+    }
+
+
+def _game_tiearb_block(agents: dict, tiearb: dict | None) -> dict:
+    """The per-GAME arbiter record stamped into every manifest — ALWAYS present.
+
+    ⚠️ UNLIKE ``match.py`` (whose frozen per-game jsonl schema forbids a new key on an
+    unarmed record) this harness stamps ``{"enabled": false}`` EXPLICITLY when
+    disarmed. The U-UNREADABLE rule: absent is unknown-not-zero, so a reader of a
+    human-anchor game log must never have to infer from silence whether the arbiter
+    was off, armed-but-dead, or armed-and-firing. The three states are now three
+    distinguishable records:
+
+      * ``{"enabled": false}``                       — never armed
+      * ``enabled: true`` + a seat with ``fires: 0`` — armed, no tie ever qualified
+      * ``enabled: true`` + a seat with ``fires > 0``— armed AND it arbitrated
+
+    Only factory-built champions are read (the same ``.manifest`` test the
+    ``champion_manifests`` block uses) — ``HumanCLIAgent`` carries no arbiter. An
+    armed game with NO champion seat raises: that is a wiring bug, not a null cell.
+    """
+    if not tiearb or not bool(tiearb.get("enabled")):
+        return {"enabled": False}
+    block = {"enabled": True, "config": dict(tiearb), "seats": {}}
+    for seat, a in sorted(agents.items()):
+        if getattr(a, "manifest", None) is None:
+            continue                 # not a factory champion (e.g. HumanCLIAgent)
+        block["seats"][str(seat)] = _champ_tiearb_telemetry(a, tiearb)
+    if not block["seats"]:
+        raise RuntimeError(
+            "tiearb is armed but no seat in this game is a factory-built champion — "
+            "the arbiter cannot have run on anything")
+    return block
+
+
 def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
-                     parallel_workers=None, execution=None):
+                     parallel_workers=None, execution=None, tiearb=None):
     """The PRODUCTION fair champion, built + runtime-verified by the champion factory
     (F1, 2026-07-19). Rewired from the PRE-FLIP FairHeuristicMCTSAgent (random-expansion
     UCT + old leaf) to the current champion: FairHeuristicPriorAgent (PUCT heuristic
@@ -157,16 +281,24 @@ def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
     ``execution`` (F-3, 2026-08-02) is the resolved ENGINE+split from
     resolve_execution(); when it names ``backend="rust"`` the returned agent is a
     ``rust_agent.RustFairAgent``, whose mirror play_game() below drives. It supersedes
-    ``parallel_workers`` when both are given (the pair is illegal on Rust)."""
+    ``parallel_workers`` when both are given (the pair is illegal on Rust).
+
+    ``tiearb`` (plumbing added 2026-08-19) arms THE TIE ARBITER. ⚠️ ``None`` — the
+    DEFAULT, and what ``_resolve_tiearb`` returns for every unarmed invocation — passes
+    NO ``tiearb`` keyword to the factory whatsoever, so the constructed champion is
+    bit-for-bit the pre-plumbing one. This is a keyword-PRESENCE contract, not a
+    keyword-value one; do not "simplify" it to always passing ``tiearb=tiearb``."""
     from carcassonne_ai.champion_factory import make_production_champion
     from carcassonne_ai.mirror_protocol import Execution
 
     if execution is None:
         execution = Execution(backend="python", rust_threads=None,
                               parallel_workers=parallel_workers)
+    # DISARMED => the keyword is ABSENT, not False. See the docstring.
+    arb_kw = {"tiearb": tiearb} if tiearb is not None else {}
     return make_production_champion("fair", game=game, seed=seed, sims=sims,
                                     k_dets=k_dets, exact_endgame=exact_endgame,
-                                    **execution.factory_kwargs())
+                                    **execution.factory_kwargs(), **arb_kw)
 
 
 class HumanCLIAgent:
@@ -205,10 +337,14 @@ class HumanCLIAgent:
 
 
 def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
-              config: dict) -> dict:
+              config: dict, tiearb: dict | None = None) -> dict:
     """Play one full 2p game. `agents` = {seat: agent} (seat -> object with
     choose_action(board)->int + the telemetry attrs). Returns a game record
-    {manifest, moves, result}. Never records a peek at the true deck."""
+    {manifest, moves, result}. Never records a peek at the true deck.
+
+    ``tiearb`` is the RESOLVED arbiter dict the seats were BUILT with (or None). It is
+    read-only here — it changes nothing about the play, it only tells the manifest
+    which arbiter record to stamp (`_game_tiearb_block`)."""
     from carcassonne_ai import mirror_protocol as MP
     from carcassonne_ai import window_truncation as _WT
 
@@ -300,6 +436,12 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
             str(seat): m for seat, a in agents.items()
             if (m := getattr(a, "manifest", None)) is not None
         },
+        # THE TIE ARBITER's per-game liveness witness. ALWAYS present, including the
+        # disarmed `{"enabled": false}` — an armed arbiter that never fired must be
+        # distinguishable from one that did AND from one that was never armed
+        # (U-UNREADABLE: absent is unknown-not-zero). This is a RECORD field only; the
+        # champion that produced the moves above is untouched when disarmed.
+        "tiearb": _game_tiearb_block(agents, tiearb),
         "config": config,
         "config_hash": C.sha256_of(config)[:16],
         "utc": _now_iso(),
@@ -321,7 +463,7 @@ def write_record(record: dict, out_dir: Path, tag: str) -> Path:
 
 
 def play_paired(game, deck_seed, ctor_a, ctor_b, label_a, label_b, config,
-                out_dir=None) -> list[dict]:
+                out_dir=None, tiearb=None) -> list[dict]:
     """Play the same deck twice, seats swapped: (A@0,B@1) then (B@0,A@1).
     Fresh agent instances per game (no cross-game state leak). Returns both records."""
     recs = []
@@ -329,7 +471,8 @@ def play_paired(game, deck_seed, ctor_a, ctor_b, label_a, label_b, config,
         ("a0", {0: ctor_a(), 1: ctor_b()}, {0: label_a, 1: label_b}),
         ("a1", {0: ctor_b(), 1: ctor_a()}, {0: label_b, 1: label_a}),
     ):
-        rec = play_game(game, deck_seed, seats, labels, config | {"seat_layout": tag})
+        rec = play_game(game, deck_seed, seats, labels, config | {"seat_layout": tag},
+                        tiearb=tiearb)
         if out_dir:
             write_record(rec, out_dir, tag)
         recs.append(rec)
@@ -337,7 +480,7 @@ def play_paired(game, deck_seed, ctor_a, ctor_b, label_a, label_b, config,
 
 
 # --------------------------------------------------------------------------- #
-def self_test(execution=None) -> int:
+def self_test(execution=None, tiearb=None) -> int:
     print("=== play_harness self-test ===")
     from carcassonne_ai.game_wrapper import Game
     game = Game(enable_legal_moves_cache=True)
@@ -348,17 +491,19 @@ def self_test(execution=None) -> int:
     t0 = time.time()
 
     def ctor_a():
-        return _make_fair_agent(game, sims, k_dets, seed=101, execution=execution)
+        return _make_fair_agent(game, sims, k_dets, seed=101, execution=execution,
+                                tiearb=tiearb)
 
     def ctor_b():
-        return _make_fair_agent(game, sims, k_dets, seed=202, execution=execution)
+        return _make_fair_agent(game, sims, k_dets, seed=202, execution=execution,
+                                tiearb=tiearb)
 
     config = {"sims": sims, "k_dets": k_dets,
               "champion": "puct_priors_v29_bmild_cap8 (champion_factory)",
               "exact_endgame": True, "ruleset": "2p_base_farmers"}
     out_dir = C.REPO_ROOT / "measurement/human_anchor/_selftest_games"
     recs = play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config,
-                       out_dir=out_dir)
+                       out_dir=out_dir, tiearb=tiearb)
     dt = time.time() - t0
     r0, r1 = recs
     print(f"    played 2 games in {dt:.1f}s   "
@@ -447,11 +592,66 @@ def main(argv=None) -> int:
                          "parallel_workers, and mutually exclusive with it.")
     ap.add_argument("--paired", action="store_true", help="play a seat-swapped rematch too")
     ap.add_argument("--out", type=Path, default=C.REPO_ROOT / "measurement/human_anchor/games")
+    # --- THE TIE ARBITER (measurement/tiearb2_stage2_20260817) -------------------
+    # PLUMBING, OFF BY DEFAULT. The knobs are `match.py`'s `--champ-tiearb-*` and
+    # `eval_fair_puct`'s `--cand-tiearb-*` verbatim (only the prefix differs — in THIS
+    # harness there is no "cand"/"champ" side to disambiguate), so a game played here
+    # with the deploy shape is directly comparable to a graded cell.
+    # ⚠️ ARMING THIS IS AN OWNER DECISION. This harness's default is and stays OFF;
+    # a production flip is a governance/PRODUCTION.yaml change, not a flag habit.
+    ap.add_argument("--tiearb-enabled", action="store_true",
+                    help="ARM the tie arbiter on the champion. RUST-ONLY: re-decide an "
+                         "exactly-tied TILE ply with terminal-grounded tier1-greedy "
+                         "playouts. OFF BY DEFAULT — a bare invocation constructs the "
+                         "champion with NO tiearb keyword at all, i.e. bit-for-bit the "
+                         "pre-plumbing player. ⚠️ The leaf hash does NOT move, so the "
+                         "wiring gates are the log's manifest.champion_manifests[*]."
+                         "cand_tiearb dict and the per-game manifest.tiearb telemetry.")
+    ap.add_argument("--tiearb-b", type=int, default=16,
+                    help="B: CRN determinizations per fired ply, SHARED by every arm "
+                         "(16 = the funded rung / the deploy shape of record).")
+    ap.add_argument("--tiearb-j", type=int, default=4,
+                    help="J: the cap on the afterstate-deduped tie set, applied by a "
+                         "SEEDED DRAW (never index truncation); the champion's own "
+                         "pooled_q_argmax pick is appended when the cap excluded it.")
+    ap.add_argument("--tiearb-mode", choices=("argmax", "random"), default="argmax",
+                    help="argmax = the ARB shape (take the world-mean argmax). random "
+                         "= the RND control: identical playouts, values DISCARDED, arm "
+                         "drawn by seeded RNG (matched wall clock).")
+    ap.add_argument("--tiearb-salt", type=str, default="tiearb2-deploy-v1",
+                    help="World/selection seed salt. The salt of record is "
+                         "'tiearb2-deploy-v1'; a different salt is a different "
+                         "experiment.")
+    ap.add_argument("--tiearb-eps", type=float, default=0.0,
+                    help="Tie membership tolerance on the outer chain value. 0.0 is "
+                         "the COMMITTED setting — exact f64 equality, NOT a tolerance.")
     args = ap.parse_args(argv)
 
+    # Resolved BEFORE either play path so the rust-only guard below fires AT LAUNCH,
+    # on --self-test too, and never 20 minutes into a human's game. Hoisting
+    # resolve_execution() above the --self-test branch is behaviour-identical: that
+    # branch called it with these same four arguments.
+    tiearb = _resolve_tiearb(args)
+    execution = resolve_execution(args.backend, args.profile, args.rust_threads,
+                                  args.no_parallel)
+    if tiearb is not None and not execution.is_rust:
+        # Precedent: eval_fair_puct's identical up-front refusal. The factory would
+        # also raise (champion_factory: "tiearb is RUST-ONLY"), but that is a raise
+        # per constructed agent, mid-run; this is one honest error before anything
+        # is built. `--backend inherit`/`auto` resolving to rust is FINE and passes.
+        ap.error(
+            "--tiearb-enabled is RUST-ONLY (the arbiter binds at the pooled_q_argmax "
+            "root hook in carc_core::fair::FairAgent); the resolved backend is "
+            f"{execution['backend']!r} ({execution.describe()}). Re-run with "
+            "--backend rust (or --backend auto/inherit on a box whose deploy profile "
+            "resolves to rust) — refusing up front instead of failing per-agent.")
+    if tiearb is not None:
+        print(f"[tiearb] TIE ARBITER ARMED on the champion: {tiearb} (leaf hash does "
+              "NOT move; the gates are the log's champion manifest cand_tiearb dict "
+              "and the per-game manifest.tiearb firing telemetry)", flush=True)
+
     if args.self_test:
-        return self_test(resolve_execution(args.backend, args.profile,
-                                           args.rust_threads, args.no_parallel))
+        return self_test(execution, tiearb=tiearb)
 
     from carcassonne_ai.champion_factory import load_production_spec
     from carcassonne_ai.game_wrapper import Game
@@ -465,9 +665,7 @@ def main(argv=None) -> int:
         args.sims = _spec.sims_per_det
     if args.k_dets is None:
         args.k_dets = _spec.k_dets
-    execution = resolve_execution(args.backend, args.profile, args.rust_threads,
-                                  args.no_parallel)
-    pw = execution["parallel_workers"]
+    pw = execution["parallel_workers"]          # resolved above, before the guard
     game = Game(enable_legal_moves_cache=True)
     seed = args.seed if args.seed is not None else random.randint(1, 2_000_000_000)
     config = {"sims": args.sims, "k_dets": args.k_dets,
@@ -489,17 +687,18 @@ def main(argv=None) -> int:
 
         def ctor_a():
             return _make_fair_agent(game, args.sims, args.k_dets, seed=101,
-                                    execution=execution)
+                                    execution=execution, tiearb=tiearb)
 
         def ctor_b():
             return _make_fair_agent(game, args.sims, args.k_dets, seed=202,
-                                    execution=execution)
+                                    execution=execution, tiearb=tiearb)
 
         if args.paired:
-            play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config, out_dir=args.out)
+            play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config,
+                        out_dir=args.out, tiearb=tiearb)
         else:
             rec = play_game(game, seed, {0: ctor_a(), 1: ctor_b()},
-                            {0: "fairA", 1: "fairB"}, config)
+                            {0: "fairA", 1: "fairB"}, config, tiearb=tiearb)
             print("wrote", write_record(rec, args.out, "a0"))
         return 0
 
@@ -507,10 +706,11 @@ def main(argv=None) -> int:
     human_seat = args.human
     ai_seat = 1 - human_seat
     human = HumanCLIAgent(game)
-    ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303, execution=execution)
+    ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303, execution=execution,
+                          tiearb=tiearb)
     agents = {human_seat: human, ai_seat: ai}
     labels = {human_seat: "human", ai_seat: f"fair@{args.sims}"}
-    rec = play_game(game, seed, agents, labels, config)
+    rec = play_game(game, seed, agents, labels, config, tiearb=tiearb)
     p = write_record(rec, args.out, f"human{human_seat}")
     print(f"\n=== GAME OVER === scores={rec['result']['scores']} "
           f"winner_seat={rec['result']['winner_seat']}")
