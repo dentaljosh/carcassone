@@ -100,6 +100,16 @@ parity" figure is the 52-*nominal*-worker number that does not price the laptop'
 
 ## Owner decision asks (carried to Joshua)
 
+> ✅ **RATIFIED 2026-08-19 — both census closures.** Executed under the owner's
+> 20-hour delegation (verbatim: *"take the highest EV picks. I can't look over
+> details right now"*, 2026-08-19), applying the orchestrator's standing
+> recommendation. (1) **meeple rung: M-DEAD stands** — the 0.4266 worker-h census
+> was the rung's entire budget; no meeple-arbitration instrument is built (revival
+> still requires plan §4's C5 duplicate-CRN-invariance check first). (2) **eps>0
+> rung: K-DEAD ∧ K-STRUCTURAL stand** — production `eps` stays **0.0**. Recorded
+> in DECISIONS 2026-08-19 (delegation entry); LEVER_INDEX rows already carry the
+> closures.
+
 - Ratify **eps>0 closure** on banked data (rung funded, answered without spend).
 - Ratify **meeple kill-census** as the rung's entire budget unless it survives its bar.
 - Confirm the **shared-run shape** for (2)+(3) at ~20–22 h two-box wall (his "these are
