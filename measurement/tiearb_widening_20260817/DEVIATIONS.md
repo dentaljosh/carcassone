@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences. **§D4.18: 4 window-truncation rids dropped WHOLE-RID** (what `G-ARMS` already implies); **no post-hoc numeric bound enacted** — the pair's own floor governs, 1,340 ≥ 1,283 |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -1017,6 +1017,98 @@ invitation to infer that `X-FREE` was considered.
 
 > **BOTH SIGNED. Nothing rejected. The pipeline may rerun — `analyze` THEN `post` — and the branch
 > table may fire on the real data.**
+
+### D4.18 RULING — failed clair-puct records: whole-rid drop, and NO new numeric bound
+
+*(Numbered D4.18: D4.17 is the implementation sign-off.)*
+
+6 `clair-puct` records `ok:False` across **4 distinct rids**; `tier1-greedy` zero. All six carry
+the identical **`WindowTruncationError`** — PUCT reached a node where all 4 legal actions fell
+outside the 25-wide encoding window (late game, 70 tiles placed, extent `[0,10,2,19]`, depth 5).
+**This is the known class studied in `measurement/window_truncation_20260813/`: an instrument
+limitation of the encoder at extreme board extents, not data corruption.**
+
+**(a) POLICY — WHOLE-RID DROP. Confirmed, and it is not a new policy: it is what `G-ARMS` already
+implies.**
+
+**First, as instructed, I checked the pair for an existing clause. There is none** — the only
+"excluded" machinery is the digest-collision apparatus (R4-3), which is about disjointness, not
+scoring failure. Two existing clauses govern instead, and the proposal maps onto them:
+
+- **`G-ARMS`**: *"every full-set arm scored on all `M` worlds — per-arm, not per-ply;
+  `n_arms_complete == n_arms`; `include_partial == false`."* ⇒ **a rid with a valueless arm is not
+  analysable at all.** Whole-rid drop is the consequence of that conjunct, not an addition to it.
+  Dropping from **both** judges follows too: `tier1-greedy` succeeded on these rids, but the paired
+  per-position contrast needs the IF side, so a half-present rid is not a contrast.
+- **`G-COMPLETE`**: `s1_n ≥ ⌈0.95 × n₁⌉ = 1,283`. **That 5% headroom is the closest thing the pair
+  has to a pre-registered attrition tolerance**, and the post-drop count clears it with margin:
+  **1,340 ≥ 1,283**.
+
+**⛔ I DECLINE to enact the proposed `⌈0.5% × stratum⌉ = 7` refuse-bound, and the reason is the
+principle this whole campaign runs on: we already know the value.** The attrition is 4 rids /
+0.30%. **A bar chosen now is chosen with knowledge of the datum it grades — that is not a bar**,
+even a generous one that the data comfortably clears. Enacting it would look like rigour while
+being its opposite, and it would set the precedent that a bound may be authored after its
+measurement.
+
+**What governs instead, in place of a post-hoc number:**
+
+1. **The pair's own floor**, which was set before the data: `1,340 ≥ 1,283`. It clears by 57.
+2. ⭐ **A QUALITATIVE escalation trigger, which does not grade the observed value:** **any failed
+   record whose diagnostic class is not the known `WindowTruncationError` class ⇒ RAISE and
+   escalate, regardless of count.** A novel failure class is a different question from a studied
+   instrument limitation, and count is the wrong axis for it. This is safe to add post-hoc
+   precisely because it is not a threshold on the number we can already see.
+3. **A pre-registered failed-record bound is carried to `rung3_r5`** — authored **before** its
+   data, which is the only way a bound of that shape is worth anything.
+
+**(b) HOW THE DROP READS INTO THE GATES — consumed ONCE, by `G-COMPLETE` alone.**
+
+| gate | effect | why |
+|---|---|---|
+| **`G-COMPLETE`** | **consumes it**: evaluated on the **post-drop analysed count**, `1,340` vs floor `1,283` | the same "counts evaluated **after** exclusions" discipline R4 §2a already applies to digest exclusions |
+| **`G-CRN`** | **unaffected** | its conjunct is `n_crn_verified == n_ok`, and both sides are computed **over `ok` records only**; a failed record lives in `n_failed`, outside both. It never enters the equality, so there is nothing to double-count |
+| **`G-ARMS`** | **unaffected** | a whole-dropped rid never enters the arm accounting; the conjunct is evaluated over surviving rids |
+
+⇒ **One consumption, no double-counting.** The attrition reduces exactly one denominator — the one
+whose floor was pre-registered for it.
+
+**(c) THE SELECTION-EFFECT SENTENCE, for the READOUT verbatim:**
+
+> **The 4 dropped rids are not a random subsample.** `WindowTruncationError` fires at extreme board
+> extents, so the dropped set is correlated with board geometry — late-game, large-extent positions.
+> At **4 / 1,344 = 0.30%** the maximum arithmetic influence on the primary is bounded by
+> `(4/1,340)·|Δ|_max ≈ 0.003·|Δ|_max`, a fraction of `se ≈ 0.02` for any plausible `|Δ|_max`; the
+> point of this note is that the correlation is **disclosed rather than argued away**, so it is not
+> rediscovered later as a gotcha. Diagnostic class and study:
+> `measurement/window_truncation_20260813/`.
+
+**(d) THE STALE ARTIFACTS — moved aside, never overwritten. Confirmed.**
+
+The 08:13 mispathed `READOUT`/`SEALED` artifacts from the empty-rowset run are
+**worthless-by-construction** and must be **renamed** (e.g. `.invalid-empty-rowset`) **before** the
+clean run — never merely overwritten. Same discipline as `CORPUS_UNION.defective_r4.5.json`
+(§D4.7): **a superseded artifact is evidence and stays readable; what must be impossible is
+mistaking it for a verdict.** The suffix must make invalidity obvious on sight, and the move must
+be **named in the READOUT's provenance** so the gap in the record is documented rather than silent.
+*Recommended, non-blocking:* have the analyzer **refuse to overwrite an existing `READOUT.json`**,
+so the move-aside is enforced rather than remembered.
+
+**BUILDER SPEC**
+
+1. `build_rows:303` — **check `ok` before dereferencing `ref["values_a"]`**; never crash on a
+   failed record.
+2. Collect `failed_rids` = every rid with **any** `ok:False` record in **either** judge; **drop
+   those rids from both judges' row sets before any contrast is computed** (complete-case on
+   intact rids).
+3. **Typed accounting in the READOUT**: `n_failed_rids`, and per rid `{judge, legs, diagnostic_class}`,
+   plus the pointer to `measurement/window_truncation_20260813/`. Printed whether or not any
+   failure occurred.
+4. `G-COMPLETE` reads the **post-drop** analysed count; `G-CRN` and `G-ARMS` are untouched (b).
+5. **RAISE** — do not drop — if any failed record's diagnostic class is not the known
+   `WindowTruncationError` class.
+6. Emit the (c) sentence in the READOUT.
+7. Move the stale 08:13 artifacts aside before the run; record the move in provenance.
 
 ---
 
