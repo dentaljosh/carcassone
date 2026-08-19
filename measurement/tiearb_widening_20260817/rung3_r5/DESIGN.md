@@ -225,7 +225,46 @@ so a builder implements without interpretation. **`RUN` = `measurement/tiearb_wi
 |---|---|---|
 | **`RUN/CORPUS_R5.json`** | `leg_path` str · `leg_sha256` str(64) — of the **adopted R4 leg** · `r4_exclusion_list_sha256` str(64) — §R5-FINAL.j · `n_in` int (1064) · `n_excluded_r5` int (4) · `n_positions` int (**1060**) · `excluded_rids` list[str] (the 1 residual + 3 dupe-later-members) · `n_distinct_seeds` int (980) · `max_positions_per_seed` int (≤3) · `n_out_of_band` int (0) · `n_seeds_136e9` int (0) · `seed_ranges` obj (from `FLOORS_R5.json`) | **NEW** `scripts/tiletie/build_r5_corpus.py` — reads the leg, applies §R5-FINAL.b2's exclusion rule, emits. Pure counts; no scoring |
 | **`RUN/GATE_INTERNAL_DUPE.json`** | `n_positions` int · `n_dupe_groups` int (3) · `n_dupe_positions` int (6) · `d_internal` float (`n_dupe_groups / n_positions`) · `ply_histogram` obj{ply→count} over dupe members · `band_pairs` list[str] (`"137e9<->137e9"`) · `leg_sha256` str(64) | **NEW**, same script — the digest map is `sha256(checksum)` per row, grouped; **groups, not positions**, is the numerator |
-| **`RUN/GATE_DISJOINT_R5.json`** | `passed` bool · `comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection` int — **rid/root layers only**; the digest layer is not carried (READ_RULE §0) | **EXTENDS** `scripts/tiletie/gate_disjoint.py` — same shape as R4's artifact, restricted to two layers |
+| **`RUN/GATE_DISJOINT_R5.json`** | `passed` bool · `comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection` int — **rid/root layers only**; the digest layer is not carried (READ_RULE §0). ⭐ **THE COMPARISON SET IS PINNED, and so is the exclude-rids REFERENCE** — see the two lines below | **EXTENDS** `scripts/tiletie/gate_disjoint.py` — same shape as R4's artifact, restricted to two layers |
+
+⭐ **`GATE_DISJOINT_R5` — the two lines REVIEW_R4 requires (P1), because an unpinned reference
+defaults to an EMPTY list and the comparison is then PASS-ALWAYS (the campaign's third
+mirror-disease catch):**
+
+```
+(a) COMPARISON SET, pinned:
+      { s2_vs_tiletie0812, s2_vs_tiearb2_0816, base_vs_extension, s2_vs_exclude_rids }
+    = R4's seven minus the three that require an in-run S1 side
+      (s1_vs_tiletie0812, s1_vs_tiearb2_0816, s1_vs_s2), with exclude-rids renamed.
+
+(b) EXCLUDE-RIDS REFERENCE, pinned (NEVER a default, NEVER an empty list):
+      sorted( GATE_DISJOINT.json::digest_exclusions.S2.rids )        -- the real 29-rid R4 S2 list
+      from  measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json
+      under the SAME canonical serialization as R5-FINAL.j (whose sha 76f9ac58... already pins it)
+      passed as run_r5_gate(exclude_rids=...)
+    EXPECTED: n_intersection == 0 on the 1,060-position OUTPUT
+              and NON-ZERO (1) on the pre-exclusion 1,064 INPUT
+    => this is the LIVE WITNESS that R5's four exclusions were actually applied.
+       A test MUST assert the comparison FAILS on the pre-exclusion corpus; a reference that
+       cannot fail on the un-cleaned corpus is not a reference.
+```
+
+⭐ **Why R4's S1 gets NO comparison, written down as REVIEW_R4 asks** — the one substantive gap in
+the set above, and it resolves in the pair's favour: **rid/root disjointness from R4's S1 is
+GUARANTEED BY `G-BAND`(i)'s range conjunct**, not by a comparison. R4-6 split band 135e9 at
+`+349/+350` (S2 takes `+350…+849`), and the 137e9 sub-ranges are disjoint by construction
+(S1 `+0…+507`, S2 `+508…+5347`). All 1,064 seeds lie inside R5's two committed ranges with **0
+out-of-range** ⇒ **no R5 rid can be an R4-S1 rid.** The guarantee is structural, so a comparison
+would be redundant — but the *reason* must be on the record, or a later reader sees only a missing
+comparison.
+
+⭐ **Band-label mapping, declared once (REVIEW_R4 (c)):** two vocabularies coexist deliberately —
+short `"137e9<->137e9"` in `GATE_INTERNAL_DUPE.band_pairs`, long `banked_135e9` /
+`extension_137e9` in `CORPUS_R5.seed_ranges` — **`banked_135e9` ≡ `135e9`, `extension_137e9` ≡
+`137e9`**. Each artifact's vocabulary matches the conjunct that reads it, and **`G-BAND` names its
+ranges numerically and never by label**, so no conjunct has to resolve a label across the two. ⚠️
+**This is NOT an R8-class hazard** (there, one key path had to resolve under a single spelling);
+it is declared here so the coexistence is deliberate rather than discovered.
 | **`RUN/SMOKE_R5.json`** | `m_worlds` int (**32, top level**) · `oracle_sims` int · `arb_backend` str · `c_worker_secs_per_playout` float · `crn_cross_leg_identical` bool | **EXISTING** `run_tiletie.py --smoke` with `--smoke-manifest RUN/SMOKE_R5.json`; **no code change** |
 | **`RUN/MERGE_REPORT_s2.json`** | `preserved_from_existing` obj · per-chunk `execution` block · `carc_rs_build` equality result · per-box `carc_rs_binary_sha` constancy result | **EXISTING** `merge_legs.py` (D1/D3/D4.13), pointed at R5's out-root |
 
