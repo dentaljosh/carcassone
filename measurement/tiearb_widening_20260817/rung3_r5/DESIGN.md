@@ -264,6 +264,39 @@ and (a) closes it rather than papering it with a convention.
 exists to fix. **A1 enforces this automatically:** its completeness assertion is over the **marker
 list**, so an address added without its fixture **fails A1** rather than passing silently.
 
+### ⭐ THE SMOKE INVOCATION — PINNED (2026-08-19)
+
+The pair named `SMOKE_R5.json`'s **fields** but never its **judge** or **`n`**, leaving both to
+whoever ran it. Pinned verbatim, at the carried §7.1 shape:
+
+```
+run_tiletie.py --judges tier1-greedy --smoke-judge tier1-greedy --smoke-n 20 \
+               --m 32 --arb-backend rust --only-profiles walled \
+               --positions-dir <explicit> --smoke-manifest RUN/SMOKE_R5.json \
+               --manifest-out <explicit> --gate-out <explicit> --logs-dir <explicit> \
+               --out-root <explicit>            # every path flag explicit, R4-0.4
+```
+
+⚠️ **THE FLAG-INERT TRAP — `--smoke-judge` ALONE IS NOT ENOUGH; `--judges` IS REQUIRED TOO.**
+Found empirically by the executor, and it is why the invocation is pinned rather than described.
+**Likely mechanism, flagged as likely rather than asserted:** `run_smoke` keys off
+`args.smoke_judge` throughout, but `write_manifest`'s **`resolved_backend_by_leg`** is built from
+the `--judges` loop — so with `--judges` at its `clair-puct` default the **ARB leg never appears in
+the manifest at all**, and `G-BACKEND`'s conjunct (*"every `tier1-greedy/walled` entry reads
+`rust`"*) has nothing to range over. **A conjunct with an empty domain is not a satisfied
+conjunct** — it is the vacuous-pass shape this pair has now caught four times.
+
+### ⭐ A GATE THAT FIRED CORRECTLY, recorded because the record is otherwise one-sided
+
+While the staging assembly was being built, the **`afterstate_dedupe` carry-forward** defect in the
+staged plan was **caught by its own gate**, before any scoring. ⭐ **It belongs in the record.**
+This campaign's history is dominated by gates that failed a healthy run or could not fire at all —
+`G-CAP`, the four R1 gates, R4-0.2's vacuity, `G-COLLIDE`, `G-SATURATION`, the `s2_vs_exclude_rids`
+default — and reading only that history would suggest the discipline produces nothing but
+false alarms. **It also produces this: a real defect, caught by a pre-registered check, at the
+cheapest possible moment.** `build_positions`' own dedupe assertion (*"a plan built before the
+dedupe landed … must not be launched"*) is the check that fired, and it fired exactly as written.
+
 ### ⭐ THE STAGING ASSEMBLY RECIPE — BLESSED AS AMENDED (2026-08-19), and it needs its own witness
 
 `ARMS_R5.json` is built and **sha-landed: `adb4c5bd7cf904a1fe00c839eab722fa79798b9f719b631b6f788900f3e5cf8a`**

@@ -41,6 +41,7 @@ LANDED_ARMS_R5_SHA256 = ("adb4c5bd7cf904a1fe00c839eab722fa79798b9f719b631"
 _REL_LEG = "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/positions_walled_leg1.jsonl"
 _REL_GD = "measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json"
 _REL_ARMS = "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/ARMS.json"
+_REL_PLAN = "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/POSITIONS_PLAN.json"
 _MAIN_CHECKOUT = Path("/home/doctor/projects/carcassone")
 
 
@@ -54,8 +55,31 @@ def _first_existing(*candidates):
 REAL_LEG = _first_existing(REPO / _REL_LEG, _MAIN_CHECKOUT / _REL_LEG)
 REAL_R4_GATE_DISJOINT = _first_existing(REPO / _REL_GD, _MAIN_CHECKOUT / _REL_GD)
 REAL_R4_ARMS = _first_existing(REPO / _REL_ARMS, _MAIN_CHECKOUT / _REL_ARMS)
+REAL_R4_SOURCE_PLAN = _first_existing(REPO / _REL_PLAN, _MAIN_CHECKOUT / _REL_PLAN)
 _REAL_INPUTS_PRESENT = (REAL_LEG.is_file() and REAL_R4_GATE_DISJOINT.is_file()
-                        and REAL_R4_ARMS.is_file())
+                        and REAL_R4_ARMS.is_file()
+                        and REAL_R4_SOURCE_PLAN.is_file())
+
+
+def make_synthetic_source_plan(tmp_path, *, applied=True, name="R4_SOURCE_PLAN.json"):
+    """A synthetic R4-source-plan-shaped file, WITH a genuine
+    `afterstate_dedupe` block (or, with `applied=False`, deliberately
+    without one — for the refuses-loudly test)."""
+    body = {
+        "schema": "fixture", "m_worlds": 32, "cap_j": None, "uncapped": True,
+        "deployed_cap_j": 4, "sample_seed": 1,
+        "playout_secs": 0.19, "t_champ_secs": 13.755,
+    }
+    if applied:
+        body["afterstate_dedupe"] = {
+            "applied": True,
+            "design_ref": "DESIGN.md §6 threat 3 (fixture)",
+            "dropped_index_path": str(tmp_path / "DROPPED_ALL_TRANSPOSITION.json"),
+            "n_dropped_all_transposition": 0,
+        }
+    p = tmp_path / name
+    p.write_text(json.dumps(body))
+    return p
 
 
 # --------------------------------------------------------------------------- #
@@ -234,49 +258,105 @@ def test_cross_layer_invariant_uses_check_leg_layer(monkeypatch):
 
 
 # =========================================================================== #
-# step 5 -- POSITIONS_PLAN.json, files block enumerates what actually exists   #
+# step 5 -- POSITIONS_PLAN.json: COPY the R4 source, recompute ONLY the        #
+# rid-set-dependent keys (via stage_chunks.subset_plan)                        #
 # =========================================================================== #
 def test_positions_plan_files_block_shape_and_existence(tmp_path):
-    arms_r5, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    arms_r5_path, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    arms_r5 = json.loads(arms_r5_path.read_text())
+    source_plan_path = make_synthetic_source_plan(tmp_path)
+    source_plan = json.loads(source_plan_path.read_text())
     staged_dir = tmp_path / "staged"
     staged_dir.mkdir()
     leg_dest = staged_dir / "positions_walled_leg1.jsonl"
     leg_dest.write_text(leg.read_text())
-    plan_path, plan = SR5.write_positions_plan(staged_dir, leg_dest, 4)
+    plan_path, plan, carried = SR5.write_positions_plan(
+        staged_dir, leg_dest, arms_r5, source_plan)
     assert plan_path.is_file()
     assert plan["n_positions"] == 4
-    assert plan["cap_j"] is None
-    assert plan["uncapped"] is True
-    assert plan["max_per_game"] == SR5.DEFAULT_MAX_PER_GAME
-    assert plan["m_worlds"] == SR5.DEFAULT_M_WORLDS
+    assert plan["cap_j"] is None                 # COPIED from source
+    assert plan["uncapped"] is True               # COPIED from source
+    assert plan["max_per_game"] == SR5.DEFAULT_MAX_PER_GAME  # the one addition
+    assert plan["m_worlds"] == 32                 # COPIED from source
+    assert plan["afterstate_dedupe"]["applied"] is True   # COPIED, with provenance
+    assert plan["afterstate_dedupe"]["design_ref"]
     assert SR5.DEFAULT_LEG_KEY in plan["files"]
     info = plan["files"][SR5.DEFAULT_LEG_KEY]
     assert Path(info["path"]) == leg_dest
     assert info["n"] == 4
     assert Path(info["path"]).is_file()
+    # "chunk"/"label" are chunk-only provenance, stripped at the corpus level
+    assert "chunk" not in plan
+    assert "label" not in plan
+    # carried_keys is the EXPLICIT enumeration: source keys minus
+    # RID_DEPENDENT_KEYS
+    assert set(carried) == set(source_plan) - SR5.SC.RID_DEPENDENT_KEYS
+    assert "afterstate_dedupe" in carried
+    assert "cap_j" in carried
+    assert "m_worlds" in carried
+    assert "n_positions" not in carried            # rid-dependent -- recomputed
 
 
 def test_positions_plan_rejects_a_files_block_that_overclaims(tmp_path):
     """D4's defect: a files block whose rid set does not match the
-    population it claims. Here the leg on disk has FEWER rids than
-    `n_positions` says -- the plan may never name a population its files do
+    population it claims. Here the leg on disk has FEWER rids than the
+    ARMS_R5 population -- the plan may never name a population its files do
     not contain."""
-    arms_r5, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    arms_r5_path, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    arms_r5 = json.loads(arms_r5_path.read_text())
+    # inflate the CLAIMED population by one rid the leg does not have
+    arms_r5["tt_sp_extra_p1"] = dict(next(iter(arms_r5.values())))
+    source_plan = json.loads(make_synthetic_source_plan(tmp_path).read_text())
     staged_dir = tmp_path / "staged"
     staged_dir.mkdir()
     leg_dest = staged_dir / "positions_walled_leg1.jsonl"
-    leg_dest.write_text(leg.read_text())    # 4 rids physically present
+    leg_dest.write_text(leg.read_text())    # only the original 4 rids present
     with pytest.raises(SR5.StagingError, match="distinct rid"):
-        SR5.write_positions_plan(staged_dir, leg_dest, 5)  # claims 5
+        SR5.write_positions_plan(staged_dir, leg_dest, arms_r5, source_plan)
 
 
 def test_positions_plan_rejects_missing_leg_file(tmp_path):
+    arms_r5_path, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    arms_r5 = json.loads(arms_r5_path.read_text())
+    source_plan = json.loads(make_synthetic_source_plan(tmp_path).read_text())
     staged_dir = tmp_path / "staged"
     staged_dir.mkdir()
     ghost = staged_dir / "positions_walled_leg1.jsonl"
     # never written -- write_positions_plan reads it back to assert existence
     with pytest.raises(FileNotFoundError):
-        SR5.write_positions_plan(staged_dir, ghost, 0)
+        SR5.write_positions_plan(staged_dir, ghost, arms_r5, source_plan)
+
+
+# =========================================================================== #
+# the R4 source plan -- COPY never synthesize, refuse if it lacks dedupe       #
+# =========================================================================== #
+def test_load_r4_source_plan_carries_afterstate_dedupe_with_provenance(tmp_path):
+    p = make_synthetic_source_plan(tmp_path)
+    plan = SR5.load_r4_source_plan(p)
+    dd = plan["afterstate_dedupe"]
+    assert dd["applied"] is True
+    assert "design_ref" in dd and "dropped_index_path" in dd
+
+
+def test_load_r4_source_plan_absent_dedupe_refuses(tmp_path):
+    """A source without afterstate_dedupe means the corpus genuinely was not
+    deduped -- staging must not launder that by silent omission."""
+    p = make_synthetic_source_plan(tmp_path, applied=False)
+    with pytest.raises(SR5.StagingError, match="afterstate_dedupe"):
+        SR5.load_r4_source_plan(p)
+
+
+def test_load_r4_source_plan_dedupe_applied_false_refuses(tmp_path):
+    p = tmp_path / "plan.json"
+    p.write_text(json.dumps({"m_worlds": 32,
+                            "afterstate_dedupe": {"applied": False}}))
+    with pytest.raises(SR5.StagingError, match="afterstate_dedupe"):
+        SR5.load_r4_source_plan(p)
+
+
+def test_load_r4_source_plan_missing_file_raises(tmp_path):
+    with pytest.raises(SR5.StagingError, match="not found"):
+        SR5.load_r4_source_plan(tmp_path / "nope.json")
 
 
 # =========================================================================== #
@@ -284,8 +364,9 @@ def test_positions_plan_rejects_missing_leg_file(tmp_path):
 # =========================================================================== #
 def test_full_stage_synthetic_end_to_end(tmp_path):
     arms_r5, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    source_plan = make_synthetic_source_plan(tmp_path)
     report = SR5.stage(
-        arms_r5_path=arms_r5, leg_path=leg,
+        arms_r5_path=arms_r5, leg_path=leg, r4_source_plan_path=source_plan,
         staged_dir=tmp_path / "run" / "corpus" / "positions_s2",
         stage_chunks_out_root=tmp_path / "run", n_chunks=2)
 
@@ -293,6 +374,7 @@ def test_full_stage_synthetic_end_to_end(tmp_path):
         "arms_r5_sha256", "staged_arms_sha256", "arms_copy_identical",
         "n_leg_rids", "n_arms_rids", "rid_sets_equal", "missing_in_leg",
         "missing_in_arms", "stage_chunks_rid_set_agrees", "n_chunks",
+        "carried_plan_keys", "afterstate_dedupe_carried", "r4_source_plan_path",
     }
     assert expected_keys <= set(report)
     assert report["arms_copy_identical"] is True
@@ -303,6 +385,8 @@ def test_full_stage_synthetic_end_to_end(tmp_path):
     assert report["stage_chunks_rid_set_agrees"] is True
     assert report["n_chunks"] == 2
     assert report["gate"] == "G-STAGED"
+    assert report["afterstate_dedupe_carried"]["applied"] is True
+    assert "afterstate_dedupe" in report["carried_plan_keys"]
     assert (tmp_path / "run" / "corpus" / "positions_s2" / "ARMS.json").is_file()
     assert (tmp_path / "run" / "corpus" / "positions_s2" /
            "positions_walled_leg1.jsonl").is_file()
@@ -311,10 +395,24 @@ def test_full_stage_synthetic_end_to_end(tmp_path):
     assert (tmp_path / "run" / "POSITION_ORDER.json").is_file()
 
 
+def test_full_stage_source_plan_missing_dedupe_refuses_before_touching_disk(tmp_path):
+    """The refuse-loudly path threaded all the way through stage(): a source
+    plan without afterstate_dedupe must stop the WHOLE assembly, not just
+    step 5 in isolation."""
+    arms_r5, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    bad_source_plan = make_synthetic_source_plan(tmp_path, applied=False)
+    with pytest.raises(SR5.StagingError, match="afterstate_dedupe"):
+        SR5.stage(arms_r5_path=arms_r5, leg_path=leg,
+                 r4_source_plan_path=bad_source_plan,
+                 staged_dir=tmp_path / "run" / "corpus" / "positions_s2",
+                 stage_chunks_out_root=tmp_path / "run", n_chunks=2)
+
+
 def test_stage_chunks_disagreement_raises(tmp_path, monkeypatch):
     """If stage_chunks' own re-derivation somehow disagreed, staging must
     RAISE -- never silently report success."""
     arms_r5, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    source_plan = make_synthetic_source_plan(tmp_path)
 
     def fake_run_stage_chunks(staged_dir, *, out_root, n_chunks, script):
         return {"order_rids": {"totally_different_rid"}, "n_chunks": n_chunks,
@@ -323,6 +421,7 @@ def test_stage_chunks_disagreement_raises(tmp_path, monkeypatch):
     monkeypatch.setattr(SR5, "run_stage_chunks", fake_run_stage_chunks)
     with pytest.raises(SR5.StagingError, match="does NOT agree"):
         SR5.stage(arms_r5_path=arms_r5, leg_path=leg,
+                 r4_source_plan_path=source_plan,
                  staged_dir=tmp_path / "run" / "corpus" / "positions_s2",
                  stage_chunks_out_root=tmp_path / "run", n_chunks=2)
 
@@ -333,10 +432,12 @@ def test_stage_chunks_disagreement_raises(tmp_path, monkeypatch):
 def test_cli_stage_r5_corpus_synthetic(tmp_path):
     import subprocess
     arms_r5, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    source_plan = make_synthetic_source_plan(tmp_path)
     staging_out = tmp_path / "STAGING_R5.json"
     r = subprocess.run(
         [sys.executable, str(TILETIE / "stage_r5_corpus.py"),
          "--arms-r5", str(arms_r5), "--leg", str(leg),
+         "--r4-source-plan", str(source_plan),
          "--staged-dir", str(tmp_path / "run" / "corpus" / "positions_s2"),
          "--stage-chunks-out-root", str(tmp_path / "run"),
          "--n-chunks-s2", "2", "--staging-out", str(staging_out)],
@@ -345,6 +446,25 @@ def test_cli_stage_r5_corpus_synthetic(tmp_path):
     body = json.loads(staging_out.read_text())
     assert body["arms_copy_identical"] is True
     assert body["stage_chunks_rid_set_agrees"] is True
+    assert body["afterstate_dedupe_carried"]["applied"] is True
+
+
+def test_cli_stage_r5_corpus_source_plan_missing_dedupe_exits_2(tmp_path):
+    import subprocess
+    arms_r5, leg, rows = make_synthetic_arms_and_leg(tmp_path, n=4)
+    bad_source_plan = make_synthetic_source_plan(tmp_path, applied=False)
+    staging_out = tmp_path / "STAGING_R5.json"
+    r = subprocess.run(
+        [sys.executable, str(TILETIE / "stage_r5_corpus.py"),
+         "--arms-r5", str(arms_r5), "--leg", str(leg),
+         "--r4-source-plan", str(bad_source_plan),
+         "--staged-dir", str(tmp_path / "run" / "corpus" / "positions_s2"),
+         "--stage-chunks-out-root", str(tmp_path / "run"),
+         "--staging-out", str(staging_out)],
+        capture_output=True, text=True)
+    assert r.returncode == 2
+    assert "afterstate_dedupe" in r.stderr
+    assert not staging_out.exists()
 
 
 def test_cli_stage_r5_corpus_missing_arms_exits_2(tmp_path):
@@ -385,6 +505,7 @@ def test_real_data_staging_end_to_end(tmp_path):
 
     report = SR5.stage(
         arms_r5_path=arms_r5_path, leg_path=REAL_LEG,
+        r4_source_plan_path=REAL_R4_SOURCE_PLAN,
         staged_dir=tmp_path / "run" / "corpus" / "positions_s2",
         stage_chunks_out_root=tmp_path / "run", n_chunks=8)
 
@@ -398,6 +519,13 @@ def test_real_data_staging_end_to_end(tmp_path):
     assert report["stage_chunks_rid_set_agrees"] is True
     assert report["n_chunks"] == 8
 
+    # carried-with-provenance, on the REAL data
+    dd = report["afterstate_dedupe_carried"]
+    assert dd["applied"] is True
+    assert dd["design_ref"]
+    assert dd["dropped_index_path"]
+    assert "afterstate_dedupe" in report["carried_plan_keys"]
+
     staged_dir = tmp_path / "run" / "corpus" / "positions_s2"
     assert (staged_dir / "ARMS.json").is_file()
     staged_arms = json.loads((staged_dir / "ARMS.json").read_text())
@@ -407,6 +535,38 @@ def test_real_data_staging_end_to_end(tmp_path):
                        .read_text().splitlines() if ln.strip()}
     assert len(staged_leg_rids) == 1060
     assert staged_leg_rids == set(staged_arms)
+
+    # print_eta/check_positions compatibility -- the ACTUAL bug this round
+    # fixes: a minimal plan crashes run_tiletie.py with a KeyError on the
+    # rid-dependent keys (n_e4, n_selfplay, max_arms, mean_arms, …), even
+    # though afterstate_dedupe alone would have been present. Every key
+    # print_eta indexes DIRECTLY (no .get()) must be present.
+    staged_plan = json.loads((staged_dir / "POSITIONS_PLAN.json").read_text())
+    for k in ("n_positions", "n_e4", "n_selfplay", "max_arms", "mean_arms",
+             "cap_j", "n_positions_capped", "total_arm_playouts",
+             "oracle_worker_secs", "champ_pick_secs", "eta_by_workers"):
+        assert k in staged_plan, f"print_eta needs {k!r}, staged plan lacks it"
+
+
+@pytest.mark.skipif(not _REAL_INPUTS_PRESENT,
+                    reason="the real (untracked, generated) R4 S2 leg / "
+                          "GATE_DISJOINT.json / ARMS.json are not present "
+                          "in this checkout")
+def test_real_data_carried_plan_keys_pinned():
+    """The enumerated carry set, PINNED against the real R4 source plan --
+    a regression here means either the source plan's own key set changed or
+    stage_chunks.RID_DEPENDENT_KEYS changed, either of which deserves a
+    human look, not a silent drift."""
+    source_plan = json.loads(REAL_R4_SOURCE_PLAN.read_text())
+    carried = sorted(set(source_plan) - SR5.SC.RID_DEPENDENT_KEYS)
+    assert carried == [
+        "afterstate_dedupe", "allow_missing_champ_picks", "cap_j",
+        "cap_j_label", "census_qualifying_n", "census_rows_n",
+        "deployed_cap_j", "design_doc", "exclude_rids", "formula",
+        "generated_utc", "m_worlds", "n_positions_champ_pick_missing",
+        "playout_secs", "sample_seed", "schema", "t_champ_secs", "uncapped",
+        "union_provenance",
+    ]
 
 
 def test_landed_floors_sha_matches_this_build():

@@ -32,9 +32,20 @@ THE SIX STEPS (97ca0276, verbatim):
      (`union_positions.check_leg_layer`): `set(leg rids) == set(staged ARMS
      rids) == set(ARMS_R5.json rids)`. This is D4's missing invariant,
      installed at the layer that lacked it.
-  5. WRITE `positions_s2/POSITIONS_PLAN.json` with a `files` block that
-     enumerates the leg file that ACTUALLY EXISTS — asserted: every path in
-     `files{}` exists on disk and its rid set matches step 4's population.
+  5. WRITE `positions_s2/POSITIONS_PLAN.json` by COPYING R4's real
+     corpus-level plan (never synthesizing) and recomputing ONLY the
+     rid-set-dependent keys, via `stage_chunks.subset_plan` — the SAME
+     function `stage_chunks.py`'s own chunk-writer uses. Every
+     rid-INDEPENDENT key (`afterstate_dedupe` with its `design_ref`/
+     `dropped_index_path` provenance, `cap_j`, `uncapped`, `m_worlds`,
+     `sample_seed`, …) is carried VERBATIM; the `files` block enumerates the
+     leg file that ACTUALLY EXISTS — asserted: every path in `files{}`
+     exists on disk and its rid set matches step 4's population. REFUSES
+     LOUDLY if the SOURCE plan itself lacks `afterstate_dedupe.applied ==
+     true` — a source without it means the corpus genuinely was not
+     deduped, and staging must not launder that (the executor's diagnosis:
+     a minimal plan can make dedupe true IN FACT but absent from the
+     ARTIFACT — the m_worlds-gap class).
   6. `stage_chunks.py stage --s2-dir positions_s2` — asserted: stage_chunks'
      OWN re-derivation (from the staged `ARMS.json` it reads independently)
      agrees with step 4's rid set.
@@ -81,16 +92,35 @@ import union_positions as UP                                        # noqa: E402
 RUN = REPO / "measurement/tiearb_widening_20260817/rung3_r5"
 CAMPAIGN_DIR = REPO / "measurement/tiearb_widening_20260817"
 STAGE_CHUNKS_SCRIPT = CAMPAIGN_DIR / "stage_chunks.py"
+if str(CAMPAIGN_DIR) not in sys.path:
+    sys.path.insert(0, str(CAMPAIGN_DIR))
+#: the EXISTING CHECKED TOOL for "deep-copy a corpus plan, recompute ONLY
+#: the rid-set-dependent keys, carry everything else verbatim" — imported as
+#: a module (not just invoked as the step-6 subprocess) so step 5 can reuse
+#: `subset_plan` / `RID_DEPENDENT_KEYS` directly, never re-implementing the
+#: partition between "recompute" and "copy-never-synthesize".
+import stage_chunks as SC                                           # noqa: E402
 
 DEFAULT_ARMS_R5 = RUN / "ARMS_R5.json"
 DEFAULT_LEG_PATH = BR5.DEFAULT_LEG_PATH
+#: R4's own corpus-level POSITIONS_PLAN.json — the ADOPTED source every
+#: rid-independent key (afterstate_dedupe with its design_ref/
+#: dropped_index_path provenance, cap_j, uncapped, m_worlds, sample_seed,
+#: …) is COPIED from, never synthesized. Executor finding (the m_worlds-gap
+#: class): a minimal hand-built plan makes the property (dedupe was applied
+#: to the adopted corpus) true IN FACT but absent from the ARTIFACT.
+DEFAULT_R4_SOURCE_PLAN = (REPO / "measurement/tiearb_widening_20260817/"
+                          "shared_run_r4/corpus/positions_s2/POSITIONS_PLAN.json")
 DEFAULT_STAGED_DIR = RUN / "corpus" / "positions_s2"
 DEFAULT_STAGING_OUT = RUN / "STAGING_R5.json"
 DEFAULT_STAGE_CHUNKS_OUT_ROOT = RUN
 DEFAULT_LEG_FILENAME = "positions_walled_leg1.jsonl"
 DEFAULT_LEG_KEY = "walled/leg1"
-#: DESIGN §R5-FINAL: R5's committed M (READ_RULE G-M) and mining ceiling.
-DEFAULT_M_WORLDS = 32
+#: NOT a key R4's source plan carries (verified: absent from the real
+#: shared_run_r4/corpus/positions_s2/POSITIONS_PLAN.json) — the six-step
+#: recipe (97ca0276) names it explicitly as a value to WRITE, so it is the
+#: one deliberate addition on top of the copied+recomputed plan, not a
+#: violation of copy-never-synthesize (there is nothing to copy).
 DEFAULT_MAX_PER_GAME = 3
 #: `stage_chunks.py`'s own default, matched here so a real launch and this
 #: staging step price the same chunk count unless overridden.
@@ -209,25 +239,85 @@ def cross_layer_invariant(staged_arms_rids: set, filtered_leg_rids: set,
 
 
 # --------------------------------------------------------------------------- #
-# step 5 — POSITIONS_PLAN.json, files block enumerating what actually exists  #
+# the R4 source plan — every rid-independent key is COPIED from here,          #
+# NEVER synthesized. Refuses loudly if the source itself lacks the dedupe.     #
 # --------------------------------------------------------------------------- #
-def write_positions_plan(staged_dir, leg_dest_path, n_positions, *,
-                         m_worlds=DEFAULT_M_WORLDS,
+def load_r4_source_plan(path=DEFAULT_R4_SOURCE_PLAN) -> dict:
+    """R4's real corpus-level `POSITIONS_PLAN.json` — the ADOPTED source
+    every rid-INDEPENDENT key of the staged plan is copied from verbatim.
+
+    RAISES `StagingError` if `afterstate_dedupe.applied is not True` on the
+    SOURCE — a source without it means the adopted corpus genuinely was not
+    deduped (built without `--afterstate-map`, or with `--no-dedupe`), and
+    staging must not launder that by silently omitting the field: the
+    property (dedupe applied) must hold in the ARTIFACT, not just "in fact"
+    on whatever corpus happens to be adopted. `run_tiletie.py`'s own
+    preflight (`check_positions`) enforces the same rule at launch time —
+    this is that check, moved earlier, so a bad source refuses at STAGING,
+    not at the first launch attempt."""
+    p = Path(path)
+    if not p.is_file():
+        raise StagingError(f"R4 source POSITIONS_PLAN.json not found: {p}")
+    try:
+        plan = json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        raise StagingError(f"{p}: not JSON ({exc})") from exc
+    dedupe = plan.get("afterstate_dedupe") or {}
+    if dedupe.get("applied") is not True:
+        raise StagingError(
+            f"{p}: afterstate_dedupe.applied is not True -- the R4 source "
+            "plan was built WITHOUT the DESIGN threat-3 afterstate dedupe "
+            "(or with --no-dedupe). Staging must not launder this: launching "
+            "against it would score ~26% known-zero transposition rows. "
+            "Rebuild the R4 source with build_positions.py --afterstate-map "
+            "before staging R5 (run_tiletie.py's own preflight refuses the "
+            "same way, at launch time instead of at staging time).")
+    return plan
+
+
+# --------------------------------------------------------------------------- #
+# step 5 — POSITIONS_PLAN.json: COPY the source, recompute ONLY the           #
+# rid-set-dependent keys (via stage_chunks.subset_plan), files enumerates     #
+# what actually exists                                                        #
+# --------------------------------------------------------------------------- #
+def write_positions_plan(staged_dir, leg_dest_path, arms_r5: dict,
+                         r4_source_plan: dict, *,
                          max_per_game=DEFAULT_MAX_PER_GAME,
                          leg_key=DEFAULT_LEG_KEY) -> tuple:
+    """Builds the staged corpus-level plan by COPYING `r4_source_plan`
+    (deep copy) and recomputing ONLY `stage_chunks.RID_DEPENDENT_KEYS` over
+    the staged population — via `stage_chunks.subset_plan`, the SAME
+    function `stage_chunks.py`'s own chunk-writer uses, never a
+    re-implementation of "which keys are rid-set-dependent". Every other
+    key — including `afterstate_dedupe` with its `design_ref`/
+    `dropped_index_path` provenance, `cap_j`, `uncapped`, `m_worlds`,
+    `sample_seed`, `deployed_cap_j`, `union_provenance`, … — is carried
+    VERBATIM. Returns `(plan_path, plan, carried_keys)`, where `carried_keys`
+    is the EXPLICIT enumeration (source keys minus `RID_DEPENDENT_KEYS`) so
+    the carried set is reported, not merely trusted."""
     leg_dest_path = Path(leg_dest_path)
     lines = [ln for ln in leg_dest_path.read_text().splitlines() if ln.strip()]
-    plan = {
-        "n_positions": int(n_positions),
-        "cap_j": None,
-        "uncapped": True,
-        "max_per_game": int(max_per_game),
-        # ⚠️ stage_chunks.py's cmd_stage reads plan["m_worlds"] directly
-        # (KeyError otherwise) -- cost-arithmetic metadata only, never a
-        # gated identity (G-M reads RUN_MANIFEST, not this).
-        "m_worlds": int(m_worlds),
-        "files": {leg_key: {"path": str(leg_dest_path), "n": len(lines)}},
-    }
+    keep = set(arms_r5)
+    files = {leg_key: {"path": str(leg_dest_path), "n": len(lines)}}
+
+    carried_keys = sorted(set(r4_source_plan) - SC.RID_DEPENDENT_KEYS)
+
+    plan = SC.subset_plan(
+        r4_source_plan, keep, arms_r5, files,
+        label="rung3_r5 staged corpus (the WHOLE population, not a chunk)",
+        out_dir=staged_dir, chunk_index=0, n_chunks=1, order_sha256="")
+    # "chunk" and "label" are genuinely CHUNK-specific provenance (chunk
+    # index/n_chunks/position-order sha) `subset_plan` writes for its real
+    # caller (stage_chunks.py's per-chunk plans); they do not apply to this
+    # CORPUS-level artifact, which is not a chunk. Every other key
+    # `subset_plan` touched (recomputed OR carried verbatim) stays.
+    plan.pop("chunk", None)
+    plan.pop("label", None)
+    # the one deliberate addition with no R4 source equivalent (see
+    # DEFAULT_MAX_PER_GAME's own docstring) -- not a copy-never-synthesize
+    # violation, since there is nothing in the source to have copied.
+    plan["max_per_game"] = int(max_per_game)
+
     plan_path = Path(staged_dir) / "POSITIONS_PLAN.json"
     plan_path.write_text(json.dumps(plan, indent=2, sort_keys=True))
 
@@ -246,11 +336,11 @@ def write_positions_plan(staged_dir, leg_dest_path, n_positions, *,
                 f"POSITIONS_PLAN.files[{key!r}]: plan says n={info['n']} but "
                 f"{p} has {len(file_lines)} lines")
         file_rids = {json.loads(ln)["rid"] for ln in file_lines}
-        if len(file_rids) != int(n_positions):
+        if len(file_rids) != len(keep):
             raise StagingError(
                 f"POSITIONS_PLAN.files[{key!r}]: {len(file_rids)} distinct "
-                f"rid(s) on disk but n_positions={n_positions}")
-    return plan_path, plan
+                f"rid(s) on disk but n_positions={len(keep)}")
+    return plan_path, plan, carried_keys
 
 
 # --------------------------------------------------------------------------- #
@@ -287,9 +377,9 @@ def run_stage_chunks(staged_dir, *, out_root, n_chunks=DEFAULT_N_CHUNKS_S2,
 # the full six-step assembly                                                   #
 # --------------------------------------------------------------------------- #
 def stage(*, arms_r5_path=DEFAULT_ARMS_R5, leg_path=DEFAULT_LEG_PATH,
+         r4_source_plan_path=DEFAULT_R4_SOURCE_PLAN,
          staged_dir=DEFAULT_STAGED_DIR, stage_chunks_out_root=None,
-         n_chunks=DEFAULT_N_CHUNKS_S2, m_worlds=DEFAULT_M_WORLDS,
-         max_per_game=DEFAULT_MAX_PER_GAME,
+         n_chunks=DEFAULT_N_CHUNKS_S2, max_per_game=DEFAULT_MAX_PER_GAME,
          stage_chunks_script=STAGE_CHUNKS_SCRIPT) -> dict:
     """The six-step recipe (drafter commit `97ca0276`), verbatim. Returns the
     `STAGING_R5.json` report. Raises `StagingError` / `build_r5_corpus.
@@ -301,6 +391,9 @@ def stage(*, arms_r5_path=DEFAULT_ARMS_R5, leg_path=DEFAULT_LEG_PATH,
 
     arms_r5 = GD._load_arms(arms_r5_path)              # reused, not re-implemented
     arms_r5_rids = set(arms_r5)
+    # refuses loudly if the SOURCE itself lacks afterstate_dedupe -- a
+    # source without it means the adopted corpus genuinely was not deduped
+    r4_source_plan = load_r4_source_plan(r4_source_plan_path)
 
     copy_witness = stage_arms_copy(arms_r5_path, staged_dir)          # 1-2
     leg_dest, filtered_rids = stage_leg_filter(leg_path, arms_r5_rids, # 3
@@ -311,9 +404,8 @@ def stage(*, arms_r5_path=DEFAULT_ARMS_R5, leg_path=DEFAULT_LEG_PATH,
     cross_layer_witness = cross_layer_invariant(                       # 4
         staged_arms_rids, filtered_rids, where=str(staged_dir))
 
-    n_positions = len(arms_r5_rids)
-    plan_path, plan = write_positions_plan(                            # 5
-        staged_dir, leg_dest, n_positions, m_worlds=m_worlds,
+    plan_path, plan, carried_plan_keys = write_positions_plan(         # 5
+        staged_dir, leg_dest, arms_r5, r4_source_plan,
         max_per_game=max_per_game)
 
     sc = run_stage_chunks(staged_dir, out_root=stage_chunks_out_root,  # 6
@@ -344,6 +436,15 @@ def stage(*, arms_r5_path=DEFAULT_ARMS_R5, leg_path=DEFAULT_LEG_PATH,
         "positions_plan_path": str(plan_path),
         "leg_path": str(leg_dest),
         "order_path": sc["order_path"],
+        # the executor's diagnosis (the m_worlds-gap class): a minimal plan
+        # can make a property true IN FACT (afterstate dedupe was applied to
+        # the adopted corpus) but absent from the ARTIFACT. This is the
+        # explicit, enumerated carried set -- copied verbatim from the R4
+        # source plan, never synthesized -- so the property is checkable
+        # here, not just asserted.
+        "r4_source_plan_path": str(r4_source_plan_path),
+        "carried_plan_keys": carried_plan_keys,
+        "afterstate_dedupe_carried": plan.get("afterstate_dedupe"),
     }
     return report
 
@@ -358,6 +459,12 @@ def main(argv=None) -> int:
                          "(build_r5_corpus.py's output)")
     ap.add_argument("--leg", default=str(DEFAULT_LEG_PATH),
                     help="the R4 post-exclusion S2 leg1 jsonl to filter")
+    ap.add_argument("--r4-source-plan", default=str(DEFAULT_R4_SOURCE_PLAN),
+                    help="R4's real corpus-level POSITIONS_PLAN.json -- every "
+                         "rid-independent key (afterstate_dedupe, cap_j, "
+                         "uncapped, m_worlds, sample_seed, …) is COPIED from "
+                         "here, never synthesized. Refuses if it lacks "
+                         "afterstate_dedupe.applied == true.")
     ap.add_argument("--staged-dir", default=str(DEFAULT_STAGED_DIR),
                     help="where the positions dir is assembled "
                          "(RUN/corpus/positions_s2)")
@@ -366,18 +473,20 @@ def main(argv=None) -> int:
                          "chunks/ (step 6) -- NEVER the live campaign root "
                          "for a scratch/test run")
     ap.add_argument("--n-chunks-s2", type=int, default=DEFAULT_N_CHUNKS_S2)
-    ap.add_argument("--m-worlds", type=int, default=DEFAULT_M_WORLDS)
-    ap.add_argument("--max-per-game", type=int, default=DEFAULT_MAX_PER_GAME)
+    ap.add_argument("--max-per-game", type=int, default=DEFAULT_MAX_PER_GAME,
+                    help="R4's source plan carries no equivalent key -- this "
+                         "is written directly, not copied (see "
+                         "DEFAULT_MAX_PER_GAME)")
     ap.add_argument("--stage-chunks-script", default=str(STAGE_CHUNKS_SCRIPT))
     ap.add_argument("--staging-out", default=str(DEFAULT_STAGING_OUT))
     a = ap.parse_args(argv)
 
     try:
         report = stage(
-            arms_r5_path=a.arms_r5, leg_path=a.leg, staged_dir=a.staged_dir,
+            arms_r5_path=a.arms_r5, leg_path=a.leg,
+            r4_source_plan_path=a.r4_source_plan, staged_dir=a.staged_dir,
             stage_chunks_out_root=a.stage_chunks_out_root,
-            n_chunks=a.n_chunks_s2, m_worlds=a.m_worlds,
-            max_per_game=a.max_per_game,
+            n_chunks=a.n_chunks_s2, max_per_game=a.max_per_game,
             stage_chunks_script=a.stage_chunks_script)
     except (StagingError, BR5.BuildError, GD.GateInputError, UP.UnionError) as exc:
         print(f"\n{'=' * 70}\n[stage-r5-corpus] COULD NOT STAGE: {exc}\n"
@@ -391,6 +500,11 @@ def main(argv=None) -> int:
           f"rid_sets_equal={report['rid_sets_equal']} "
           f"stage_chunks_rid_set_agrees={report['stage_chunks_rid_set_agrees']} "
           f"n_leg_rids={report['n_leg_rids']} n_chunks={report['n_chunks']}")
+    print(f"[stage-r5-corpus] carried {len(report['carried_plan_keys'])} key(s) "
+          f"verbatim from the R4 source plan (never synthesized): "
+          f"{', '.join(report['carried_plan_keys'])}")
+    print(f"[stage-r5-corpus] afterstate_dedupe.applied="
+          f"{(report['afterstate_dedupe_carried'] or {}).get('applied')}")
     print("[stage-r5-corpus] G-STAGED PASS")
     return 0
 

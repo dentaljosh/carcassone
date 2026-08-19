@@ -1,21 +1,40 @@
 {
+  "afterstate_dedupe_carried": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a76 threat 3 (fixture)",
+    "dropped_index_path": "/tmp/r5_fixture_staging_zstyr4sn/DROPPED_ALL_TRANSPOSITION.json",
+    "n_dropped_all_transposition": 0
+  },
   "arms_copy_identical": true,
   "arms_r5_sha256": "fe90aef0a871a2e9fb8e7fd155e138ba811708ff1d23d3938f1306afbb89bba3",
+  "carried_plan_keys": [
+    "afterstate_dedupe",
+    "cap_j",
+    "cap_j_label",
+    "deployed_cap_j",
+    "m_worlds",
+    "playout_secs",
+    "sample_seed",
+    "schema",
+    "t_champ_secs",
+    "uncapped"
+  ],
   "design_doc": "measurement/tiearb_widening_20260817/rung3_r5/DESIGN.md",
   "gate": "G-STAGED",
-  "leg_path": "/tmp/r5_fixture_staging_q49l_uzx/staged/corpus/positions_s2/positions_walled_leg1.jsonl",
+  "leg_path": "/tmp/r5_fixture_staging_zstyr4sn/staged/corpus/positions_s2/positions_walled_leg1.jsonl",
   "missing_in_arms": [],
   "missing_in_leg": [],
   "n_arms_rids": 4,
   "n_chunks": 2,
   "n_leg_rids": 4,
   "note": "CORPUS_R5.json is written BEFORE staging exists and cannot witness this layer (drafter ruling (c), the D4.7 finding: CORPUS_UNION asserted at the ARMS layer a property only the leg layer could witness). This is that witness.",
-  "order_path": "/tmp/r5_fixture_staging_q49l_uzx/staged/POSITION_ORDER.json",
-  "positions_plan_path": "/tmp/r5_fixture_staging_q49l_uzx/staged/corpus/positions_s2/POSITIONS_PLAN.json",
+  "order_path": "/tmp/r5_fixture_staging_zstyr4sn/staged/POSITION_ORDER.json",
+  "positions_plan_path": "/tmp/r5_fixture_staging_zstyr4sn/staged/corpus/positions_s2/POSITIONS_PLAN.json",
+  "r4_source_plan_path": "/tmp/r5_fixture_staging_zstyr4sn/R4_SOURCE_PLAN.json",
   "rid_sets_equal": true,
   "schema": "carcassonne-rung3-r5-staging/v1",
   "stage_chunks_rid_set_agrees": true,
-  "staged_arms_path": "/tmp/r5_fixture_staging_q49l_uzx/staged/corpus/positions_s2/ARMS.json",
+  "staged_arms_path": "/tmp/r5_fixture_staging_zstyr4sn/staged/corpus/positions_s2/ARMS.json",
   "staged_arms_sha256": "fe90aef0a871a2e9fb8e7fd155e138ba811708ff1d23d3938f1306afbb89bba3",
-  "staged_dir": "/tmp/r5_fixture_staging_q49l_uzx/staged/corpus/positions_s2"
+  "staged_dir": "/tmp/r5_fixture_staging_zstyr4sn/staged/corpus/positions_s2"
 }
