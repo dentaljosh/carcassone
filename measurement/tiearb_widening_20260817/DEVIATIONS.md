@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS`; S2 orphans moot (stays void) |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -292,7 +292,7 @@ calls "the important one". So:
 
 | key | class | why |
 |---|---|---|
-| `execution.carc_rs_binary_sha` | **PER_CHUNK** | **JCZ §0.F.2c** (`READ_RULE.md:135-164`, commit `0db347f0`): the `.so` is **not machine-reproducible**; this value is **BOX-LOCAL and may NEVER be compared across hosts.** The pair of shas observed here is the identical pair that ruling measured on these same two boxes. |
+| `execution.carc_rs_binary_sha` | **PER_CHUNK** (⚠️ **AMENDED by §D4.13**: PER_CHUNK for *cross-host* purposes — never compared across boxes — **plus a WITHIN-BOX constancy assertion** across all of that box's chunks) | **JCZ §0.F.2c** (`READ_RULE.md:135-164`, commit `0db347f0`): the `.so` is **not machine-reproducible**; this value is **BOX-LOCAL and may NEVER be compared across hosts.** The pair of shas observed here is the identical pair that ruling measured on these same two boxes. |
 | `execution.carc_rs_path` | **PER_CHUNK** | site-packages path — box-local by construction, carries no run semantics. Same category as `workers`, which R4-7.5 already **nulls** as *"box-specific, meaningless merged"*; PER_CHUNK is strictly better than nulling because it **records** rather than discards. |
 | `execution.carc_rs_build` | **IDENTITY_REQUIRED** | the **cross-host witness named by the JCZ ruling** — the value that legitimately *may* be compared across hosts. Equal here (`carc_rs-0.1.0+58c2b5395569+rustcunpinned`). If it ever differs, the merge **must** raise. |
 | any **other** key inside `execution` | **RAISE (unchanged default)** | preserves R4-7.5's fail-closed-on-the-unanticipated property. Opening the block wholesale would trade a real guarantee for a one-time convenience. |
@@ -554,6 +554,161 @@ obligation is not positioned to catch.
 > is amended below. **S2 stays void.** The three distinguishing facts of §D4.2 and the set-equality
 > guard of §D4.3 are **conditions of this ruling, not commentary**: if any fails, the completion is
 > void and the question goes to the owner.
+
+### D4.10 ADDENDUM — the two-rev tranche split: **foreseen, NOT forbidden**
+
+`D3-WITNESS` **PASSED** (23,184/23,184 bit-identical, digests equal, stacks genuinely different —
+`d3_witness/D3_WITNESS.json`), so §D4.4's precondition is discharged and the completion tranche is
+licensed to score two-box.
+
+**The rev split is a NECESSARY consequence of completion-scoring, not an incident.** The committed
+tranche (chunks 1-8) scored at **`58c2b539`**; the completion tranche (chunks 9-16) scores at
+**`4b24f512`** — the rev that exists *because* it contains the D4 fixes. **Holding the tranche at
+`58c2b539` was impossible: the staging code did not exist there.** Recorded here as the foreseen
+price of §D4.2's ruling, which licensed the completion knowing it would have to run at a later rev.
+
+**Not forbidden — checked, and the check is narrower than it looks.** `git_rev` appears in exactly
+**two** gate rows, and **neither constrains `RUN_MANIFEST::git_rev`**:
+
+- **`G-BITEXACT@HEAD`** constrains `GATE_BITEXACT_HEAD.json::git_rev` — *"is the §9 step-2 W-code
+  merge commit **or** a descendant of it whose cumulative diff touches nothing under…"*. The gate
+  was produced **at** that merge (§9.3: *"This gate is produced HERE, at step 2's HEAD"*), so the
+  **first disjunct is satisfied outright and the descendant branch is never reached.** The tranche
+  revs do not enter it. The row's own ⚠️ note **expressly rejects** comparing the gate's rev to the
+  run's — *"a literal `git_rev == the run's` conjunct fails a healthy run twice over"*.
+- **`G-DRAW`** constrains `GATE_DRAW.json::git_rev` — one artifact, one rev, no cross-tranche
+  identity claim.
+
+⇒ **No gate constrains the run's `git_rev`.** `git_rev`/`code_rev` being IDENTITY_REQUIRED in
+`merge_legs.py` is therefore a **merge-layer schema choice, not a pre-registered conjunct** —
+exactly the D3 situation, and the same latitude applies. **I do not escalate.**
+
+### D4.11 RULING (a) — the mechanism: enumerated licence + instrument witness, in CODE
+
+**ACCEPTED with three amendments.** Keep `git_rev`/`code_rev` **IDENTITY_REQUIRED by default**;
+add a **narrowly-scoped, explicitly-enumerated licensed pair** `{58c2b539 → committed tranche,
+4b24f512 → completion tranche}`; **any other rev, or any third value, still refuses.**
+
+**In CODE, not a CLI allowance** — for the reason `--allow-varying` was rejected: a flag is
+invisible in the artifact and passable by anyone at any time, whereas a code-resident enumerated
+licence is **reviewable, testable, diffable, and refuses everything not enumerated**. Small and
+tested, before the tranche drains.
+
+**Amendment 1 — the licence requires TWO independent things to agree.** The code holds the
+enumerated pair **and** requires `RUN/INSTRUMENT_IDENTITY.json` to exist and to assert the empty
+instrument diff. Either alone is weaker than both: a file can be edited, and a hard-coded pair
+alone asserts nothing about *why* the pair is safe. **Both, or refuse.**
+
+**Amendment 2 — ⚠️ the proposed instrument path list is MISSPELLED, and the error is the vacuous
+kind.** `scripts/tiletie/oracle_score_pilot.py` **does not exist** — the pilot is at
+**`scripts/measurement_infra/oracle_score_pilot.py`** (`run_tiletie.py:94`). A witness asserting
+"empty diff" over a non-existent path is **vacuously true**, and the file it was meant to cover is
+the one that executes the `clair-puct` leg — **93% of the run's cost, unwitnessed.** The corrected
+instrument set:
+
+```
+scripts/tiletie/run_tiletie.py
+scripts/measurement_infra/oracle_score_pilot.py      <-- corrected path
+scripts/tiletie/tier1_rust_leg.py
+src/  engine/  rust/
+```
+
+**Amendment 3 — the witness must cover the WORKING TREE, not only the committed tree.** A
+`git diff A..B` compares commits and is **blind to uncommitted dirt in the instrument scripts**.
+`INSTRUMENT_IDENTITY.json` must therefore record **both**: the committed diff (re-derivable — both
+full shas plus the path list, so a reader can **re-run it**, a recipe rather than a claim) **and**
+`git status --porcelain` scoped to the same paths, captured at witness time on each box.
+
+**Completeness note, and it is the reassuring half:** this witness covers the **interpreted** half
+of the instrument; D3's `execution.carc_rs_build` IDENTITY_REQUIRED already covers the **compiled**
+half (equal across all chunks). Together they close both halves — which is why the enumerated
+licence is safe rather than merely convenient.
+
+### D4.12 RULING (c) — the `-dirty` suffix
+
+Old legs recorded `58c2b539-dirty`, new will record `4b24f512-dirty`.
+
+**Rule: match the licence on the BASE REV (sha prefix), and require, per chunk,
+`preflight.checks.git_clean.ok == true`.**
+
+- **Not exact-string matching including the suffix**: if any chunk happened to record a clean
+  `code_rev` with no suffix, an exact-string licence would **refuse a healthy chunk** — a
+  false-refusal of the class this campaign keeps generating.
+- **Not bare suffix-stripping either**: stripping alone would silently accept a chunk whose
+  *instrument* was dirty. The scoped assertion is the one with semantics —
+  `run_tiletie.check_git_clean` computes `dirty` over **`src/carcassonne_ai/` and `engine/`** and
+  sets `ok = not dirty`. Requiring `ok == true` per chunk checks the thing the suffix only gestures
+  at, and checks it better.
+- ⚠️ **Named residual:** `git_clean.ok`'s scope is `src/carcassonne_ai/` + `engine/` **only** — it
+  does not cover `rust/` or `scripts/tiletie/`. `rust/` is covered by D3's `carc_rs_build`
+  equality; `scripts/tiletie/` is covered by Amendment 3's porcelain capture. **The three together
+  are what make the suffix safely ignorable; any one of them dropped and it is not.**
+
+### D4.13 RULING — `carc_rs_build` across tranches: **ACCEPTED**, and it closes a hole D3 opened
+
+The builder was **right to refuse to self-extend** the licence to a field D3 made
+IDENTITY_REQUIRED. Ruling it is mine.
+
+**The load-bearing fact, verified this session against the emitter** (`rust_agent.py:352-395`),
+and it is stronger than reported: `carc_rs_build_id()` builds `carc_rs-<version>+<rev12>+rustc<tc>`
+where `rev` comes from **`git rev-parse HEAD` at stamp time** — *"a property of the repo when the
+process started, NOT of the compiled artifact."* **The emitter's own docstring states the
+taxonomy this ruling relies on**, so this is the field's designed meaning, not a reinterpretation:
+
+> *"A `G-TOOL` gate is an EQUALITY check between two boxes' stamps, and the compiled `.so` is not
+> reproducible across machines… **The box-local staleness question is answered separately, by
+> `carc_rs_binary_sha`** plus the per-host positive control, **which is the only thing that can
+> prove the installed wheel actually carries the surface under test.**"
+
+⇒ `carc_rs_build` = **cross-host source-rev** witness. `carc_rs_binary_sha` = **within-box
+staleness/rebuild** witness. Across tranches HEAD moved (the D4 fixes) and the stamp followed;
+**the `.so` was not rebuilt.**
+
+⭐ **The self-correction, which I state because it is a defect in my own D3 ruling.** At a single
+rev, `carc_rs_build` **cannot detect a mid-run rebuild** — same HEAD ⇒ same stamp, different `.so`.
+D3 classified `carc_rs_binary_sha` **PER_CHUNK** (recorded, *not compared*), so **D3 as ruled left
+the within-box staleness case unchecked entirely**, while I described `carc_rs_build` as though it
+covered it. Conjunct (ii) below does not merely license this extension — **it closes that hole**,
+and it therefore becomes a **standing requirement** (the D3.2 amendment above), whether or not the
+tranche licence is ever exercised. As the coordinator observed, this makes the merge **strictly
+stronger than any single-rev run**, which never checks `.so` constancy at all.
+
+**The conjunction — accept a `carc_rs_build` divergence across tranches IFF ALL of:**
+
+| # | conjunct | failure ⇒ |
+|---|---|---|
+| **(i)** | Parse `carc_rs-<version>+<rev12>+rustc<toolchain>`. **`<version>` and `rustc<toolchain>` byte-equal** across all chunks; **only `<rev12>` may differ**, and every distinct `<rev12>` is a **12-char prefix of one of the licensed full revs**. | R1 or R3 |
+| **(ii)** | **Per box**, `carc_rs_binary_sha` is **CONSTANT across that box's chunks spanning BOTH tranches** (local `a4318fd59d9d8349` in both; laptop `8ae0b98427debb2e` in both). **Evaluated from the chunk manifests at merge time — an ACTIVE conjunct, not an assumption.** ⚠️ **Compared WITHIN a host only, never across** — JCZ §0.F.2c is untouched. | R2 |
+| **(iii)** | `INSTRUMENT_IDENTITY.json` includes **`rust/`** in its empty-diff scope *and* its porcelain capture shows `rust/` clean. | R4 |
+| **(iv)** | **Within each tranche**, `carc_rs_build` equal across boxes — D3's original check, preserved intact. ⚠️ **Vacuous for single-box legs** (the tier1 ARB legs are all-local): it must be **reported as vacuous, never as passed** — a vacuous pass read as evidence is how a witness stops witnessing. | R3 |
+
+⚠️ **A width trap, called out because this campaign's failures are spelling failures.** D4.11's
+licence matches `code_rev` on the **7-char short form**; `carc_rs_build` carries a **fixed 12-char
+slice** of the full commit — deliberately, because `--short` length is `core.abbrev` and therefore
+**per box** (the docstring records `cf51bf17` locally vs `cf51bf176b` on the laptop for one
+commit). **Compare 12-char prefixes of the licensed 40-char shas here; do not reuse the 7-char
+comparison.** Same underlying sha, three different widths in play.
+
+**Second address, same reading:** **`preflight.wheel.carc_rs_build`** on the tier1 rust ARB legs —
+same field, different emitter schema. Identical conjunction, with (iv) vacuous per above, so
+**(ii) carries the whole weight there.**
+
+**Refusal messages — three distinguished, plus one new:**
+
+- **`R1 CARC_RS_BUILD_UNLICENSED_REV`** — a `<rev12>` that is not a 12-prefix of a licensed rev.
+  Print the offending value, its parsed fragments, the licensed pair, and the leg/chunk.
+- **`R2 CARC_RS_BINARY_SHA_MOVED_WITHIN_BOX`** — (ii) fails. Print the box, every distinct sha, the
+  chunks each appeared in, and the meaning verbatim: *"the installed wheel changed under one box
+  mid-run — the `.so` that executed tranche 1 is not the `.so` that executed tranche 2."*
+- **`R3 CARC_RS_BUILD_VERSION_OR_TOOLCHAIN_DIFFERS`** — (i)'s byte-equality on the non-rev
+  components fails, or (iv) fails within a tranche. **This is D3's original message and is never
+  licensed**: print both full values with the differing component marked.
+- **`R4 INSTRUMENT_IDENTITY_RUST_SCOPE`** — (iii) fails (`rust/` absent from the diff scope, or
+  dirty in the porcelain capture).
+
+Any **other** key under `execution` / `preflight.wheel` that differs keeps the **unchanged RAISE
+default** (D3). **This ruling licenses one field, under four conjuncts, for one enumerated rev
+pair; it opens nothing else.**
 
 ---
 
