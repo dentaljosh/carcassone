@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change* |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness) |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -864,6 +864,89 @@ default has stopped absorbing a backlog and started doing its job.
 
 > **SIGNATURE: the classification layer is complete and signed. The pipeline may rerun.** The two
 > hardenings above are follow-ups, **not conditions** — neither blocks the verdict.
+
+### D4.16 RULING — the two Reading-A consequences, and two execution notes
+
+The merge **SUCCEEDED** (1344/1344 every leg both judges; licence self-rederived; `c_remeasure`
+preserved). Both blockers are **execution-layer W-code fixes: no gate, bar, address, branch or
+statistic of the R4 pair changes.** Under Reading A the rung-3 branch table is simply **never
+evaluated**, which the owner's ruling already settled.
+
+**⭐ Both blockers are governed by a distinction this log already drew, and I anchor them there
+rather than invent new semantics** — `ADJUDICATION_R4_GATES.md`, owner-ruling section:
+
+> *"§2a spells out what to say when `n₂ = 0` — 'the J question was **not bought**' — but that
+> clause is conditioned on the owner's pre-committed floor, and **this run bought rung 3 at
+> `n₂ = 1100` and then lost it to a void.** The read-out must therefore say the J question was
+> **bought and lost to a stratum void**: not 'not bought', not 'answered', not 'inconclusive'."*
+
+**`FLOORS.json::rung3_bought = true` is CORRECT and stays frozen** (sha `7771435e`). It is a true
+statement about what was **purchased**; flipping it to `false` would both falsify the record and
+make the READOUT emit the one phrase expressly forbidden above. **The executor was right to refuse
+to touch it.**
+
+**BLOCKER 1 — the analyzer's void-stratum guard. CONFIRMED as proposed, with one hardening.**
+
+The READOUT emits a rung-3 block carrying:
+
+| field | value |
+|---|---|
+| `status` | **`VOID_S2`** — ⚠️ a token that **must not collide with any rung-3 branch token** (`X-CONFIRMED` / `X-ABOVE` / `X-PARTIAL` / `X-BELOW` / `X-FREE` / `X-INCONCLUSIVE`). **No X-token may appear anywhere in the READOUT.** |
+| `bought` | `true`, with `n₂ = 1100` from `FLOORS.json` — truthful about what was purchased |
+| `estimand_read` | `false` |
+| `reason` | verbatim: *stratum voided at `G-DISJOINT` per `PREREG_FAILURE_S2.md` and `ADJUDICATION_R4_GATES.md` Reading A* |
+| `forbidden_readings` | inline: **not "not bought", not "answered", not "inconclusive", not any X-branch** |
+| `obligation_inherited_by` | `rung3_r5` — **including `I7`'s dedupe-partition conditional, which stays UNMEASURED** because W9/`D-DRAW` was skipped as moot |
+
+⭐ **HARDENING, and it is the D4 lesson applied: absence must NEVER be read as a void.** The guard
+fires **only** on a **positive witness** — `GATE_DISJOINT.json::digest_exclusions.<s2>.void == true`
+— **conjoined** with the absence of S2 inputs. **If S2 inputs are absent and that witness is NOT
+true, the analyzer must RAISE, not emit `VOID_S2`.** Missing inputs are exactly what D4 was: an
+assembly defect wearing the shape of a decision. A guard keyed on absence alone would have silently
+blessed D4's 551 missing rids.
+
+**The S1-side rung-3 riders** (the ≈244-capped-ply replication rider, the interaction rider) were
+computed and are real S1 measurements, so **report them** — suppressing measured quantities is
+worse — but under a heading that states they **adjudicate nothing and, with rung 3 void, have no
+primary to ride on**, and that **no rung-3 branch may be inferred from them.** That inference is
+the live risk of reporting them at all, so the prohibition travels with the number.
+
+**BLOCKER 2 — S2-addressed conjuncts. CONFIRMED, and it needs a HARNESS SCOPE, not a reading.**
+
+`G-SALT`'s S2 conjunct addresses `RUN_MANIFEST_S2.json::world_seed_salt`, which **cannot exist**
+under Reading A. Its S1 primary **RESOLVED**. The three candidate treatments and why only one is
+right: **FAIL** is false (nothing failed — a pre-registered rule voided the stratum); **PASS** is a
+lie (nothing was checked); **silent absence** violates §1.3's `resolved_at` duty.
+⇒ **`VOID (stratum) — not evaluated`**, citing the same positive witness.
+
+**This must be a harness scope in `acceptance_widening`, not a documented reading of the existing
+output.** A prose reading would require a human to translate `UNRESOLVED` into *"void, correctly"*
+— which is a **carve-out by interpretation**, and R4.5 already ruled that *carve-outs are how this
+class recurs* (that is why `STAGE1B_LADDER.json` was copied rather than address-excepted). The
+scope must be **derived from the artifact, never a human-passed flag** — a flag is silenceable, and
+`ABSENT IS FAIL` may not become silenceable. **Scope precisely: only addresses bearing the S2
+stratum marker, and only when the void witness is present.** `ABSENT IS FAIL` is untouched for S1
+and for every non-S2 address.
+
+**EXECUTION NOTE 3 — the briefed step order was circular; the executor's correction is right.**
+`post`-before-`analyze` cannot work: **7 of 8** unresolved post-gates address
+`verdicts/READOUT.json`, **which analysis produces**. Correct order is **`analyze` THEN `post`**.
+⭐ **This is the THIRD instance of one class** — an audit pass demanded an address its own position
+in the sequence made impossible (`G-SALT` at 4b, the 4a corpus-free contradiction, now this) — and
+it is **already fixed prospectively** by `rung3_r5/DESIGN.md` §R5-6.1's existence-time markers, in
+which `READOUT::*` is `[post-scoring]`: audited statically pre-commit, live at read-out, never in
+between. Recorded here as the third data point for a fix already written.
+
+**EXECUTION NOTE 4 — the leg-manifest copy-back is WITHIN the pair's §9 sequence. CONFIRMED.**
+24 manifests to `shared_run_r4/legs/s1/` (S2 skipped as void) is the specified population of the
+**fallback** addresses that `G-SALT` / `G-M` / `G-BACKEND` / `G-PREFIX` read — DESIGN §4: *"the
+driver's final phase **copies every leg `manifest.json` back** to `RUN/legs/…` — the address the
+READ_RULE reads"*, and R4-0.5's builder-delta item 4. **Ordering requirement, stated because it is
+load-bearing: the copy-back must PRECEDE the post-pass**, or those fallbacks resolve `UNRESOLVED`
+for a reason that is pure sequencing. Skipping S2 is correct — no S2 legs exist to copy.
+
+> **All four are execution-layer. Nothing in the frozen pair moves. This is the last ruling before
+> the branch table.**
 
 ---
 
