@@ -1293,3 +1293,498 @@ def test_a_real_two_box_leg_merges_with_the_observed_execution_pair(tmp_path, co
     assert man["execution"]["carc_rs_build"] == BOX_LOCAL_A["carc_rs_build"]
     assert (man["merge"]["by_chunk"]["2"]["execution"]["carc_rs_binary_sha"]
             == BOX_LOCAL_B["carc_rs_binary_sha"])
+
+
+# =========================================================================== #
+# 9. D4.11 / D4.12 — the TWO-REV tranche licence (`93f83e26`)                  #
+#                                                                             #
+# The committed tranche (chunks 1-8) scored at 58c2b539; the completion        #
+# tranche (chunks 9-16) scores at 4b24f512 — necessarily, since the staging    #
+# code did not exist at the older rev. The licence is an ENUMERATED pair in    #
+# code PLUS an instrument witness whose diff this layer RE-DERIVES.            #
+# =========================================================================== #
+import subprocess                                                  # noqa: E402
+
+import instrument_identity as II                                   # noqa: E402
+
+
+def _run_git(repo, *args):
+    r = subprocess.run(["git", "-C", str(repo), *args],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return r.stdout.strip()
+
+
+def _instrument_repo(tmp_path, name="repo"):
+    """A repo carrying every instrument path, with TWO commits whose diff over
+    those paths is empty (only a doc moved) — the real situation."""
+    r = tmp_path / name
+    for p in ML.INSTRUMENT_PATHS:
+        q = r / p
+        if p.endswith("/"):
+            q.mkdir(parents=True, exist_ok=True)
+            (q / "keep.py").write_text("x = 1\n")
+        else:
+            q.parent.mkdir(parents=True, exist_ok=True)
+            q.write_text("# instrument\n")
+    (r / "docs").mkdir(parents=True, exist_ok=True)
+    (r / "docs" / "note.md").write_text("a\n")
+    _run_git(r.parent, "init", "-q", str(r))
+    _run_git(r, "config", "user.email", "t@example.com")
+    _run_git(r, "config", "user.name", "t")
+    _run_git(r, "add", "-A")
+    _run_git(r, "commit", "-qm", "instrument at rev A")
+    a = _run_git(r, "rev-parse", "HEAD")
+    (r / "docs" / "note.md").write_text("b\n")          # NOT an instrument path
+    _run_git(r, "add", "-A")
+    _run_git(r, "commit", "-qm", "docs only -> rev B")
+    b = _run_git(r, "rev-parse", "HEAD")
+    return r, a, b
+
+
+def _instrument_moved(repo):
+    """A third commit that DOES touch the instrument — the diff must not be
+    empty against it."""
+    p = Path(repo) / "scripts" / "measurement_infra" / "oracle_score_pilot.py"
+    p.write_text("# instrument CHANGED\n")
+    _run_git(repo, "add", "-A")
+    _run_git(repo, "commit", "-qm", "instrument moved -> rev C")
+    return _run_git(repo, "rev-parse", "HEAD")
+
+
+def _license(repo, a, b, *, identity_path=None, git_clean_by_chunk=None):
+    return ML.RevLicense(repo=repo, identity_path=identity_path,
+                         git_clean_by_chunk=git_clean_by_chunk,
+                         revs={"committed_tranche": a, "completion_tranche": b})
+
+
+def _witness(repo, a, b, out, *, boxes=(("local", None),)):
+    doc = II.build(repo, boxes=boxes,
+                   revs={"committed_tranche": a, "completion_tranche": b})
+    Path(out).write_text(json.dumps(doc, indent=2, sort_keys=True))
+    return doc
+
+
+def _rev_manifest(rev, *, judge="clair-puct", git_clean=True, build_rev=None):
+    """A leg manifest in the real shape: the rev appears under FOUR spellings.
+
+    `carc_rs_build` is held EQUAL by default so these tests isolate the rev
+    licence; `build_rev` reproduces the real cross-tranche shape, which is the
+    ⛔ UNRULED blocker exercised below.
+    """
+    build = ("carc_rs-0.1.0+000000000000+rustcunpinned" if build_rev is None
+             else f"carc_rs-0.1.0+{build_rev[:12]}+rustcunpinned")
+    man = {
+        "schema": "carcassonne-tiletie-oracle-leg/v1", "judge": judge,
+        "profile": PROFILE, "leg": 1, "m_worlds": 128,
+        "n_rows_in": 10, "n_scored": 10, "n_ok": 10, "n_failed": 0,
+        "code_rev": rev[:8],                                  # short
+        "git_rev": rev,                                       # full
+        "execution": {
+            "carc_rs_binary_sha": "a4318fd59d9d8349",
+            "carc_rs_path": "/x/py3.12/site-packages/carc_rs.so",
+            "carc_rs_build": build,
+            "code_rev": f"{rev[:8]}-dirty",                   # the D4.12 form
+            "code_rev_dirty": True,
+        },
+        "champion_manifest": {"schema": "carcassonne-champion-factory/v1",
+                              "mode": "clairvoyant",
+                              "code_commit": rev},            # full, third place
+    }
+    if git_clean is not None:
+        man["preflight"] = {"checks": {"git_clean": {"ok": bool(git_clean),
+                                                     "dirty_paths": []}}}
+    return man
+
+
+@pytest.fixture()
+def two_rev(tmp_path):
+    repo, a, b = _instrument_repo(tmp_path)
+    wit = tmp_path / "INSTRUMENT_IDENTITY.json"
+    _witness(repo, a, b, wit)
+    return repo, a, b, wit
+
+
+# --- the licensed path ------------------------------------------------------- #
+def test_two_rev_merge_is_licensed_with_pair_witness_and_empty_diff(two_rev):
+    """All four spellings of the rev — `git_rev`, `code_rev`,
+    `execution.code_rev` (the `-dirty` one) and `champion_manifest.code_commit`
+    — merge under the enumerated licence, and every one is RECORDED per chunk."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    merged = ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)},
+                                license=lic)
+    rl = merged["merge"]["rev_license"]
+    assert set(rl["paths"]) == set(ML.REV_LICENSED_PATHS)
+    by = merged["merge"]["by_chunk"]
+    assert by["1"]["git_rev"] == a and by["9"]["git_rev"] == b
+    assert by["1"]["code_rev"] == a[:8] and by["9"]["code_rev"] == b[:8]
+    assert by["9"]["execution"]["code_rev"] == f"{b[:8]}-dirty"
+    assert by["9"]["champion_manifest"]["code_commit"] == b
+    # the merged doc keeps the lowest chunk's value — a real string, never null
+    assert merged["git_rev"] == a and merged["code_rev"] == a[:8]
+    # ⭐ the diff was RE-DERIVED here, not read out of the witness
+    rec = rl["records"][0]["instrument_identity"]
+    assert rec["rederived"]["empty"] is True
+    assert rec["rederived"]["n_files_changed"] == 0
+    assert rec["rederived"]["paths"] == list(ML.INSTRUMENT_PATHS)
+    assert rec["sha256"] == ML._sha256_file(wit)
+
+
+def test_the_dirty_suffix_is_matched_on_the_BASE_rev(two_rev):
+    """D4.12: `58c2b539-dirty` and `58c2b539` are the same rev. Exact-string
+    matching would refuse a healthy chunk that recorded a clean value."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    assert lic.tranche_of(a) == "committed_tranche"
+    assert lic.tranche_of(a[:8]) == "committed_tranche"
+    assert lic.tranche_of(f"{a[:8]}-dirty") == "committed_tranche"
+    assert lic.tranche_of(f"{b[:12]}-dirty") == "completion_tranche"
+    assert lic.tranche_of("deadbeefdeadbeef") is None
+    assert lic.tranche_of(a[:4]) is None, "4 hex chars is not evidence of a rev"
+    # and a mixed clean/dirty pair still merges
+    clean_a = _rev_manifest(a)
+    clean_a["execution"]["code_rev"] = a[:8]          # no suffix
+    clean_a["execution"]["code_rev_dirty"] = False
+    dirty_b = _rev_manifest(b)
+    dirty_b["execution"]["code_rev_dirty"] = False    # keep the bool identical
+    merged = ML.merge_manifests({1: clean_a, 9: dirty_b}, license=lic)
+    assert merged["merge"]["rev_license"]["records"]
+
+
+# --- every way the licence refuses ------------------------------------------- #
+def test_a_third_rev_refuses(two_rev):
+    """The licence is a CLOSED enumeration: two revs, no more."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    third = "0" * 40
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b),
+                            11: _rev_manifest(third)}, license=lic)
+    assert "NOT in the enumerated licence" in str(e.value)
+    assert "still refuses" in str(e.value)
+
+
+def test_an_unlicensed_rev_pair_refuses(two_rev):
+    """Neither member enumerated — the default IDENTITY_REQUIRED behaviour."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    x, y = "1" * 40, "2" * 40
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(x), 9: _rev_manifest(y)}, license=lic)
+    assert "NOT in the enumerated licence" in str(e.value)
+
+
+def test_the_licence_refuses_when_the_witness_is_ABSENT(tmp_path):
+    """D4.11 Amendment 1: the code holds the pair AND the witness must exist —
+    BOTH, or refuse. A hard-coded pair alone asserts nothing about WHY it is
+    safe."""
+    repo, a, b = _instrument_repo(tmp_path)
+    lic = _license(repo, a, b, identity_path=tmp_path / "nope.json")
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)}, license=lic)
+    assert ML.INSTRUMENT_IDENTITY_NAME in str(e.value) and "ABSENT" in str(e.value)
+
+
+def test_the_licence_refuses_when_the_REDERIVED_diff_is_not_empty(tmp_path):
+    """⭐ The file is the WHY; the re-derivation is the PROOF. A witness that
+    claims an empty diff over revs whose instrument actually moved is refused by
+    `git diff`, not by trust."""
+    repo, a, b = _instrument_repo(tmp_path)
+    c = _instrument_moved(repo)
+    wit = tmp_path / "INSTRUMENT_IDENTITY.json"
+    doc = II.build(repo, revs={"committed_tranche": a, "completion_tranche": b})
+    # a HAND-EDITED witness: the revs now say a..c, the claim still says empty
+    doc["revs"]["completion_tranche"]["sha"] = c
+    doc["committed_diff"]["rev_b"] = c
+    wit.write_text(json.dumps(doc, indent=2, sort_keys=True))
+    lic = _license(repo, a, c, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(c)}, license=lic)
+    assert "RE-DERIVED INSTRUMENT DIFF IS NOT EMPTY" in str(e.value)
+    assert "oracle_score_pilot.py" in str(e.value)
+
+
+def test_the_licence_refuses_a_witness_naming_a_different_pair(two_rev, tmp_path):
+    repo, a, b, wit = two_rev
+    doc = json.loads(wit.read_text())
+    doc["revs"]["completion_tranche"]["sha"] = "f" * 40
+    wit.write_text(json.dumps(doc))
+    lic = _license(repo, a, b, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)}, license=lic)
+    assert "code-resident licence enumerates" in str(e.value)
+
+
+def test_the_licence_refuses_the_VACUOUS_instrument_path_list(two_rev):
+    """D4.11 Amendment 2 — the misspelled `scripts/tiletie/oracle_score_pilot.py`
+    does not exist, so a witness over it is vacuously true and leaves the file
+    that runs 93% of the cost unwitnessed."""
+    repo, a, b, wit = two_rev
+    doc = json.loads(wit.read_text())
+    doc["instrument_paths"] = [p.replace("scripts/measurement_infra/",
+                                         "scripts/tiletie/")
+                               for p in doc["instrument_paths"]]
+    wit.write_text(json.dumps(doc))
+    lic = _license(repo, a, b, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)}, license=lic)
+    assert "VACUOUSLY TRUE" in str(e.value)
+    assert "scripts/measurement_infra/oracle_score_pilot.py" in str(e.value)
+
+
+def test_the_licence_refuses_a_dirty_working_tree_on_any_box(two_rev):
+    """Amendment 3: `git diff A..B` is blind to uncommitted dirt, so the
+    porcelain capture is load-bearing — and a dirty box refuses."""
+    repo, a, b, wit = two_rev
+    doc = json.loads(wit.read_text())
+    doc["working_tree"]["by_box"]["laptop"] = {
+        "box": "laptop", "host": "laptop-wsl", "clean": False,
+        "porcelain": " M scripts/tiletie/run_tiletie.py", "n_entries": 1}
+    wit.write_text(json.dumps(doc))
+    lic = _license(repo, a, b, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)}, license=lic)
+    assert "working tree NOT clean" in str(e.value) and "laptop" in str(e.value)
+
+
+def test_the_licence_refuses_a_witness_with_no_box_captured(two_rev):
+    repo, a, b, wit = two_rev
+    doc = json.loads(wit.read_text())
+    doc["working_tree"]["by_box"] = {}
+    wit.write_text(json.dumps(doc))
+    lic = _license(repo, a, b, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)}, license=lic)
+    assert "by_box is empty" in str(e.value)
+
+
+# --- D4.12's per-chunk clean assertion ---------------------------------------- #
+def test_git_clean_ok_false_refuses_regardless_of_rev(two_rev):
+    """*A chunk with `git_clean.ok` false refuses regardless of rev* — the
+    suffix only gestures at what this assertion checks."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a),
+                            9: _rev_manifest(b, git_clean=False)}, license=lic)
+    assert "git_clean.ok == true" in str(e.value) and "chunk9" in str(e.value)
+
+
+def test_git_clean_missing_everywhere_refuses(two_rev):
+    """The per-LEG manifests do not carry `preflight.checks`; with no per-chunk
+    RUN_MANIFEST map either, the evidence simply is not there — and absent
+    evidence is a refusal, never a pass."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a, git_clean=None),
+                            9: _rev_manifest(b, git_clean=None)}, license=lic)
+    assert "git_clean.ok == true" in str(e.value)
+
+
+def test_git_clean_comes_from_the_RUN_MANIFEST_map_for_leg_manifests(two_rev):
+    """The real per-leg manifests have no `preflight.checks`, so the evidence is
+    sourced from the per-chunk RUN_MANIFEST files — which do."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit,
+                   git_clean_by_chunk={1: {"ok": True}, 9: {"ok": True}})
+    merged = ML.merge_manifests({1: _rev_manifest(a, git_clean=None),
+                                 9: _rev_manifest(b, git_clean=None)}, license=lic)
+    rec = merged["merge"]["rev_license"]["records"][0]
+    assert rec["git_clean_by_chunk"]["9"]["source"] == "RUN_MANIFEST"
+    # ... and a false entry in the map refuses just the same
+    lic2 = _license(repo, a, b, identity_path=wit,
+                    git_clean_by_chunk={1: {"ok": True}, 9: {"ok": False}})
+    with pytest.raises(ML.MergeError):
+        ML.merge_manifests({1: _rev_manifest(a, git_clean=None),
+                            9: _rev_manifest(b, git_clean=None)}, license=lic2)
+
+
+def test_git_clean_map_is_read_from_real_RUN_MANIFEST_files(tmp_path):
+    d = tmp_path / "manifests"
+    d.mkdir()
+    for judge, ok in (("tier1-greedy", True), ("clair-puct", True)):
+        (d / f"RUN_MANIFEST_S1_{judge}_chunk9.json").write_text(json.dumps(
+            {"preflight": {"checks": {"git_clean": {"ok": ok, "dirty_paths": []}}}}))
+    (d / "RUN_MANIFEST_S1_clair-puct_chunk10.json").write_text(json.dumps(
+        {"preflight": {"checks": {"git_clean": {"ok": False,
+                                                "dirty_paths": ["src/x.py"]}}}}))
+    m = ML.git_clean_by_chunk_from_manifests(d, "s1")
+    assert m[9]["ok"] is True and len(m[9]["sources"]) == 2
+    assert m[10]["ok"] is False and m[10]["dirty_paths"] == ["src/x.py"]
+
+
+# --- the licence does not leak ------------------------------------------------ #
+def test_an_unenumerated_key_holding_a_licensed_sha_still_refuses(two_rev):
+    """The licence is keyed on ADDRESSES as well as values: a licensed sha
+    appearing somewhere nobody ruled on is still an unclassified divergence."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    ma, mb = _rev_manifest(a), _rev_manifest(b)
+    ma["harness"], mb["harness"] = a, b            # not an enumerated address
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: ma, 9: mb}, license=lic)
+    assert "'harness'" in str(e.value) and "DIVERGES" in str(e.value)
+
+
+def test_without_a_licence_object_the_default_refusal_is_unchanged(two_rev):
+    """The licence is opt-in at the call site; nothing about the default path
+    moved."""
+    repo, a, b, wit = two_rev
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)})
+    assert "DIVERGES across chunks" in str(e.value)
+
+
+def test_same_rev_chunks_never_consult_the_licence(tmp_path):
+    """INERT UNLESS A REV DIVERGES: no witness, no git, no cost — a single-rev
+    merge behaves exactly as before."""
+    repo, a, b = _instrument_repo(tmp_path)
+    lic = _license(repo, a, b, identity_path=tmp_path / "does_not_exist.json")
+    merged = ML.merge_manifests({1: _rev_manifest(a), 2: _rev_manifest(a)},
+                                license=lic)
+    assert "rev_license" not in merged["merge"]
+    assert merged["git_rev"] == a
+
+
+# --- ⛔ the carc_rs_build blocker --------------------------------------------- #
+def test_cross_rev_carc_rs_build_refuses_and_names_it_UNRULED(two_rev):
+    """⛔ THE REAL BLOCKER, asserted so it cannot be forgotten. The build string
+    stamps the repo rev, so it differs across the tranches — while D4.11's
+    completeness note assumes it is EQUAL across all chunks. The merge refuses
+    and names the question instead of extending the licence unilaterally."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a, build_rev=a),
+                            9: _rev_manifest(b, build_rev=b)}, license=lic)
+    msg = str(e.value)
+    assert "UNRULED" in msg and "carc_rs_build" in msg
+    assert "escalate for a ruling" in msg
+    # the same fact under the tier1-greedy leg's spelling
+    ma = {"schema": "x", "preflight": {"wheel": {"carc_rs_build":
+                                                 f"carc_rs-0.1.0+{a[:12]}+rustcunpinned"},
+                                       "seeds": {"ok": True}}}
+    mb = json.loads(json.dumps(ma))
+    mb["preflight"]["wheel"]["carc_rs_build"] = f"carc_rs-0.1.0+{b[:12]}+rustcunpinned"
+    with pytest.raises(ML.MergeError) as e2:
+        ML.merge_manifests({1: ma, 9: mb}, license=lic)
+    assert "UNRULED" in str(e2.value)
+    assert "preflight.wheel.carc_rs_build" in str(e2.value)
+
+
+def test_a_substantively_different_build_keeps_the_plain_D3_refusal(two_rev):
+    """A build that differs in MORE than the licensed rev fragment is a
+    mixed-build run — D3's original message, unchanged."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit)
+    mb = _rev_manifest(b)
+    mb["execution"]["carc_rs_build"] = "carc_rs-9.9.9+deadbeefdead+rustcpinned"
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 9: mb}, license=lic)
+    assert "CROSS-HOST WITNESS" in str(e.value)
+
+
+# --- the generator ------------------------------------------------------------ #
+def test_generator_emits_a_witness_the_licence_accepts(tmp_path):
+    """NEVER HAND-WRITTEN: every field is computed live, and the round trip
+    generator -> licence is the contract."""
+    repo, a, b = _instrument_repo(tmp_path)
+    out = tmp_path / "RUN" / ML.INSTRUMENT_IDENTITY_NAME
+    out.parent.mkdir()
+    rc = II.main(["--repo", str(repo), "--out", str(out),
+                  "--rev", f"committed_tranche={a}",
+                  "--rev", f"completion_tranche={b}"])
+    assert rc == 0
+    doc = json.loads(out.read_text())
+    assert doc["schema"] == ML.INSTRUMENT_IDENTITY_SCHEMA
+    assert doc["instrument_paths"] == list(ML.INSTRUMENT_PATHS)
+    assert doc["committed_diff"]["empty"] is True
+    assert "git -C" in doc["committed_diff"]["recipe"]
+    assert doc["working_tree"]["by_box"]["local"]["clean"] is True
+    # every instrument path exists at BOTH revs — the anti-vacuity check
+    for p, rows in doc["path_existence"].items():
+        assert len(rows) == 2, p
+        assert all(v["present"] and v["n_tracked_files"] > 0 for v in rows.values()), p
+    # the round trip: what the generator wrote is what the licence accepts
+    lic = _license(repo, a, b, identity_path=out)
+    assert ML.merge_manifests({1: _rev_manifest(a), 9: _rev_manifest(b)},
+                              license=lic)["merge"]["rev_license"]
+
+
+def test_generator_refuses_a_vacuous_path(tmp_path, monkeypatch):
+    """A path that does not exist at a rev cannot be witnessed — the generator
+    dies rather than emitting a vacuous truth."""
+    repo, a, b = _instrument_repo(tmp_path)
+    monkeypatch.setattr(ML, "INSTRUMENT_PATHS",
+                        tuple(ML.INSTRUMENT_PATHS) + ("scripts/tiletie/nope.py",))
+    with pytest.raises(SystemExit) as e:
+        II.build(repo, revs={"committed_tranche": a, "completion_tranche": b})
+    assert "VACUOUSLY TRUE" in str(e.value)
+
+
+def test_generator_reports_nonzero_when_the_instrument_moved(tmp_path):
+    repo, a, _b = _instrument_repo(tmp_path)
+    c = _instrument_moved(repo)
+    doc = II.build(repo, revs={"committed_tranche": a, "completion_tranche": c})
+    assert doc["committed_diff"]["empty"] is False
+    assert doc["committed_diff"]["n_files_changed"] == 1
+    assert "oracle_score_pilot.py" in doc["committed_diff"]["files_changed"][0]
+
+
+def test_the_licensed_pair_is_hard_coded_not_a_flag():
+    """D4.11: *in CODE, not a CLI allowance* — a flag is invisible in the
+    artifact and passable by anyone at any time."""
+    src = (CAMPAIGN / "merge_legs.py").read_text()
+    assert "58c2b539556916b0f6280d233b48d5dcbed7ca88" in src
+    assert "4b24f512a0833b3fe71a126b713c560b2c8c4db1" in src
+    assert len(ML.LICENSED_TRANCHE_REVS) == 2
+    assert all(len(v) == 40 for v in ML.LICENSED_TRANCHE_REVS.values())
+    # no CLI flag may license a rev
+    for bad in ("--allow-rev", "--allow-varying-rev", "--license-rev",
+                "--allow-two-rev"):
+        assert bad not in src
+    ap = ML.build_arg_parser()
+    opts = {a.option_strings[0] for a in ap._actions if a.option_strings}
+    assert "--instrument-identity" in opts       # WHERE the witness is, not a licence
+    assert not any("rev" in o for o in opts)
+
+
+def test_allow_varying_cannot_license_a_rev_at_any_address(two_rev):
+    """⭐ D4.11's reason for putting the licence in CODE: *a flag is invisible in
+    the artifact and passable by anyone at any time.* So `--allow-varying` must
+    not reach a rev at ANY of the four addresses, with or without a witness."""
+    repo, a, b, wit = two_rev
+    for lic in (None, _license(repo, a, b, identity_path=wit)):
+        for addr in ("git_rev", "code_rev", "execution.code_rev",
+                     "champion_manifest.code_commit"):
+            ma, mb = _rev_manifest(a), _rev_manifest(b)
+            if addr == "execution.code_rev":              # isolate one address
+                ma["git_rev"] = mb["git_rev"] = a
+                ma["code_rev"] = mb["code_rev"] = a[:8]
+                ma["champion_manifest"]["code_commit"] = b
+                mb["champion_manifest"]["code_commit"] = b
+            kwargs = {"allow_varying": [addr, addr.split(".")[0]]}
+            if lic is None:
+                with pytest.raises(ML.MergeError):
+                    ML.merge_manifests({1: ma, 9: mb}, **kwargs)
+            else:
+                # WITH the licence the merge is legal — but because the code
+                # enumerates it, never because a flag was passed
+                out = ML.merge_manifests({1: ma, 9: mb}, license=lic, **kwargs)
+                assert out["merge"]["rev_license"]["records"]
+                assert not out["merge"]["divergent_keys_allowed"], \
+                    "a rev must never be carried as an --allow-varying key"
+
+
+def test_the_licensed_pair_matches_the_real_run(two_rev):
+    """The enumerated shas are the run's actual tranche revs — a licence for the
+    wrong pair would be worse than none."""
+    assert ML.LICENSED_TRANCHE_REVS["committed_tranche"].startswith("58c2b539")
+    assert ML.LICENSED_TRANCHE_REVS["completion_tranche"].startswith("4b24f512")
+    lic = ML.RevLicense()
+    assert lic.tranche_of("58c2b539") == "committed_tranche"
+    assert lic.tranche_of("4b24f512-dirty") == "completion_tranche"
+    assert lic.tranche_of("58c2b539556916b0f6280d233b48d5dcbed7ca88") == \
+        "committed_tranche"

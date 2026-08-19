@@ -44,6 +44,26 @@ are PER_CHUNK; `carc_rs_build` is IDENTITY_REQUIRED — the cross-host witness;
 every other key inside `execution` keeps the fail-closed RAISE.  `--allow-varying`
 is REJECTED for that block by the same ruling and is not consulted there: it
 silences rather than records, and provenance is this layer's whole job.
+
+⚠️ THE TWO-REV TRANCHE SPLIT (deviation D4.11/D4.12, commit `93f83e26`).  The
+committed tranche (chunks 1-8) scored at `58c2b539`; the completion tranche
+(chunks 9-16) scores at `4b24f512`, the rev that exists *because* it carries the
+D4 fixes — holding the tranche at the old rev was impossible, the staging code
+did not exist there.  `git_rev`/`code_rev` stay **IDENTITY_REQUIRED by default**;
+a **narrowly-enumerated licensed pair** is the only divergence this file will
+accept, and it accepts it only when **two independent things agree**:
+
+  1. the enumerated pair is hard-coded HERE (a CLI flag was rejected for the same
+     reason `--allow-varying` was: a flag is invisible in the artifact and
+     passable by anyone; an enumerated code-resident licence is reviewable,
+     testable, diffable and refuses everything not enumerated); AND
+  2. `RUN/INSTRUMENT_IDENTITY.json` exists and asserts an EMPTY instrument diff
+     between the two revs — and this file **RE-DERIVES that diff itself** with
+     `git diff` before believing it.  The file is the *why*; the re-derivation is
+     the *proof*.  A file can be edited; a subprocess `git diff` cannot be.
+
+Plus, per D4.12, the `-dirty` suffix is matched on the BASE rev and every
+contributing chunk must carry `preflight.checks.git_clean.ok == true`.
 """
 from __future__ import annotations
 
@@ -51,6 +71,7 @@ import argparse
 import hashlib
 import json
 import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -141,6 +162,66 @@ RESOLVED_CONFIG_PER_CHUNK = frozenset({
 EXECUTION_PER_CHUNK = frozenset({"carc_rs_binary_sha", "carc_rs_path"})
 EXECUTION_IDENTITY_REQUIRED = frozenset({"carc_rs_build"})
 
+
+# --------------------------------------------------------------------------- #
+# the two-rev tranche licence — ruled by deviation D4.11/D4.12 (`93f83e26`)     #
+# --------------------------------------------------------------------------- #
+#: THE ENUMERATED LICENCE. Exactly two revs, full shas, hard-coded. Anything
+#: else — a third value, a typo, a rev nobody ruled on — refuses exactly as it
+#: does today. This is the whole point: the licence is a closed enumeration, not
+#: a permission to differ.
+LICENSED_TRANCHE_REVS = {
+    # chunks 1-8, the committed tranche (D4.10)
+    "committed_tranche": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+    # chunks 9-16, the completion tranche — the rev that carries the D4 fixes
+    "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+}
+
+#: ⚠️ ENUMERATED ADDRESSES, not a pattern. The run records its rev under FOUR
+#: spellings and the licence must cover each or refuse the merge for the very
+#: fact it licensed:
+#:   git_rev                        full sha   (tier1-greedy leg + RUN_MANIFEST)
+#:   code_rev                       short sha  (clair-puct leg)
+#:   execution.code_rev             `<short>-dirty`  (clair-puct leg) — this is
+#:                                  the field D4.12's `-dirty` rule is about
+#:   champion_manifest.code_commit  full sha   (clair-puct leg)
+#: Any OTHER key that differs still refuses, including one that happens to hold
+#: a licensed sha.
+REV_LICENSED_PATHS = ("git_rev", "code_rev", "execution.code_rev",
+                      "champion_manifest.code_commit")
+
+#: A rev value is matched as a sha PREFIX after the `-dirty` suffix is stripped
+#: (D4.12): the run records the same rev as a full sha, a short sha, and a
+#: short sha with the suffix. Below this length a "prefix" is not evidence.
+MIN_SHA_PREFIX = 8
+
+#: ⚠️ THE CORRECTED INSTRUMENT SET (D4.11 Amendment 2). The proposal spelled the
+#: pilot `scripts/tiletie/oracle_score_pilot.py`, which DOES NOT EXIST — the
+#: pilot is under `scripts/measurement_infra/`, and a witness asserting "empty
+#: diff" over a non-existent path is VACUOUSLY TRUE. That path is the file that
+#: executes the `clair-puct` leg: 93% of the run's cost, unwitnessed. So the
+#: witness check below also asserts every path EXISTS at both revs, which is the
+#: generalisable form of that lesson.
+INSTRUMENT_PATHS = (
+    "scripts/tiletie/run_tiletie.py",
+    "scripts/measurement_infra/oracle_score_pilot.py",   # <-- corrected path
+    "scripts/tiletie/tier1_rust_leg.py",
+    "src/",
+    "engine/",
+    "rust/",
+)
+
+INSTRUMENT_IDENTITY_NAME = "INSTRUMENT_IDENTITY.json"
+INSTRUMENT_IDENTITY_SCHEMA = "carcassonne-tiearb-widening-instrument-identity/v1"
+
+#: Where the witness is looked for, in order. D4.11 names `RUN/`; the campaign
+#: root is accepted as a fallback because that is where this campaign's other
+#: cross-cutting witnesses landed (`d3_witness/D3_WITNESS.json`). Whichever is
+#: found is RECORDED in the merged artifact, so the reader is never guessing.
+def instrument_identity_candidates(campaign=CAMPAIGN):
+    return (Path(RUN_DIR) / INSTRUMENT_IDENTITY_NAME,
+            Path(campaign) / INSTRUMENT_IDENTITY_NAME)
+
 #: Dotted paths that MUST agree across every chunk of a leg. A divergence here
 #: is a mixed-rev / mis-configured run, never a throughput artefact.
 IDENTITY_REQUIRED = (
@@ -194,8 +275,349 @@ class MergeError(RuntimeError):
     pass
 
 
+def _git(repo, *args) -> tuple:
+    """(rc, stdout, stderr) — plain `git`, no shell, absolute repo."""
+    r = subprocess.run(["git", "-C", str(repo), *args],
+                       capture_output=True, text=True)
+    return r.returncode, r.stdout, r.stderr
+
+
+def _strip_dirty(value: str) -> str:
+    """D4.12: match the licence on the BASE rev.
+
+    NOT exact-string matching including the suffix — a chunk that happened to
+    record a clean `code_rev` would then be REFUSED while a healthy dirty one
+    passed, a false refusal of the class this campaign keeps generating. And NOT
+    bare suffix-stripping either: the suffix is only *gestured* at here; the
+    assertion with semantics is `preflight.checks.git_clean.ok`, which
+    `RevLicense.authorize` requires per chunk.
+    """
+    s = str(value).strip()
+    for suffix in ("-dirty", ".dirty", "+dirty"):
+        if s.endswith(suffix):
+            return s[: -len(suffix)]
+    return s
+
+
+def _rev_fragment_of_build(build: str):
+    """The `+<hex>+` rev fragment `carc_rs-0.1.0+<rev12>+rustcunpinned` stamps,
+    and the string with it blanked — so "differs only by the rev" is decidable
+    rather than eyeballed."""
+    if not isinstance(build, str):
+        return None, None
+    parts = build.split("+")
+    for i, p in enumerate(parts):
+        q = p.strip().lower()
+        if len(q) >= MIN_SHA_PREFIX and all(c in "0123456789abcdef" for c in q):
+            blanked = list(parts)
+            blanked[i] = "<REV>"
+            return q, "+".join(blanked)
+    return None, build
+
+
+def _tranche_of_sha(value, revs=None):
+    """Module-level tranche lookup — the same prefix rule `RevLicense` uses."""
+    if not isinstance(value, str):
+        return None
+    base = _strip_dirty(value).lower()
+    if len(base) < MIN_SHA_PREFIX or not all(c in "0123456789abcdef" for c in base):
+        return None
+    for name, sha in (revs or LICENSED_TRANCHE_REVS).items():
+        if sha.lower().startswith(base) or base.startswith(sha.lower()):
+            return name
+    return None
+
+
+def carc_rs_build_refusal(values: dict, *, where: str, revs=None) -> "MergeError":
+    """⛔ UNRULED, and the merge says so precisely rather than merging or hiding.
+
+    D3 §D3.2 makes `carc_rs_build` IDENTITY_REQUIRED — *"the cross-host witness
+    … if it ever differs, the merge MUST raise"*. D4.11's completeness note then
+    leans on it: *"D3's `execution.carc_rs_build` IDENTITY_REQUIRED already
+    covers the compiled half (equal across all chunks)"*.
+
+    **That premise does not survive a two-rev tranche.** The build string stamps
+    the repo rev (`carc_rs-0.1.0+<rev12>+rustcunpinned`), so it differs between
+    the tranches for the same reason `git_rev` does — while remaining EQUAL
+    across boxes within a tranche, which is the cross-HOST property D3 actually
+    bought. The rev half is licensed by D4.11; the host half must stay.
+
+    Deciding which is a RULING, not a merge-layer choice, so this refuses and
+    names the question instead of quietly extending the licence.
+    """
+    revs = dict(revs or LICENSED_TRANCHE_REVS)
+    detail = "; ".join(f"chunk{k}={_canon(v)}" for k, v in sorted(values.items()))
+    licensed = {t: sha[:12] for t, sha in revs.items()}
+
+    frags = {k: _rev_fragment_of_build(v) for k, v in values.items()}
+    blanked = {b for _f, b in frags.values()}
+    tranches = {_tranche_of_sha(f, revs) for f, _b in frags.values()}
+    rev_only = (len(blanked) == 1 and None not in tranches
+                and len(tranches) == len(revs))
+    if not rev_only:
+        # the ORIGINAL D3 §D3.2 refusal — a genuinely different build, which is
+        # a mixed-build run and was never in question.
+        return MergeError(
+            f"identity-required path {where!r} DIVERGES across chunks: {detail}"
+            f" — D3 §D3.2 names this the CROSS-HOST WITNESS: it is the one value "
+            f"inside `execution` that may legitimately be compared across boxes, "
+            f"so a divergence is a mixed-build run and MUST raise. (The values "
+            f"differ in more than the licensed rev fragment, so the D4.11 "
+            f"two-rev question does not even arise here.)")
+
+    return MergeError(
+        f"carc_rs_build DIVERGES at {where}: {detail}. ⛔ UNRULED — D3 §D3.2 "
+        f"rules this field IDENTITY_REQUIRED ('if it ever differs, the merge "
+        f"MUST raise') while D4.11's completeness note assumes it is EQUAL "
+        f"across all chunks, which cannot hold across two revs: the build "
+        f"string embeds the repo rev ({licensed}). Within a tranche it is still "
+        f"equal across boxes — the cross-HOST witness D3 bought is intact; it is "
+        f"the cross-REV comparison that D4.11 did not foresee. This merge layer "
+        f"does NOT extend the licence to it: escalate for a ruling.")
+
+
+class RevLicense:
+    """The D4.11 licence: an enumerated rev pair AND a re-derived instrument
+    witness. Either alone is weaker than both — a file can be edited, and a
+    hard-coded pair alone asserts nothing about WHY the pair is safe."""
+
+    def __init__(self, *, repo=REPO, identity_path=None, campaign=CAMPAIGN,
+                 git_clean_by_chunk=None, revs=None):
+        self.repo = Path(repo)
+        self.campaign = Path(campaign)
+        self.revs = dict(revs if revs is not None else LICENSED_TRANCHE_REVS)
+        self._explicit_path = Path(identity_path) if identity_path else None
+        #: {(judge, chunk) | chunk: {"ok": bool, "source": str, …}} — the D4.12
+        #: per-chunk evidence for artifacts that do not carry it themselves
+        #: (per-leg manifests do NOT: only RUN_MANIFEST has preflight.checks).
+        self.git_clean_by_chunk = dict(git_clean_by_chunk or {})
+        self._witness = None
+        self.used = []
+
+    # ---- rev matching ---------------------------------------------------- #
+    def tranche_of(self, value):
+        """The tranche a recorded rev belongs to, or None. Matches a full sha, a
+        short sha, and (D4.12) the `-dirty` form, as a PREFIX either way."""
+        if not isinstance(value, str):
+            return None
+        base = _strip_dirty(value).lower()
+        if len(base) < MIN_SHA_PREFIX or not all(c in "0123456789abcdef" for c in base):
+            return None
+        for name, sha in self.revs.items():
+            sha = sha.lower()
+            if sha.startswith(base) or base.startswith(sha):
+                return name
+        return None
+
+    # ---- the witness ------------------------------------------------------ #
+    def identity_path(self):
+        if self._explicit_path is not None:
+            return self._explicit_path
+        for p in instrument_identity_candidates(self.campaign):
+            if p.is_file():
+                return p
+        return instrument_identity_candidates(self.campaign)[0]
+
+    def witness(self) -> dict:
+        """Load AND re-derive. Cached: the git work happens once per merge."""
+        if self._witness is not None:
+            return self._witness
+        p = self.identity_path()
+        if not p.is_file():
+            raise MergeError(
+                f"the two-rev licence requires {INSTRUMENT_IDENTITY_NAME} and it "
+                f"is ABSENT (looked at "
+                f"{[str(c) for c in instrument_identity_candidates(self.campaign)]}). "
+                f"D4.11 Amendment 1: the code holds the enumerated pair AND the "
+                f"witness must assert the empty instrument diff — BOTH, or "
+                f"refuse. Generate it with instrument_identity.py.")
+        try:
+            doc = json.loads(p.read_text())
+        except json.JSONDecodeError as exc:
+            raise MergeError(f"{p} is not valid JSON: {exc}")
+
+        if doc.get("schema") != INSTRUMENT_IDENTITY_SCHEMA:
+            raise MergeError(
+                f"{p}: schema {doc.get('schema')!r} != {INSTRUMENT_IDENTITY_SCHEMA!r}")
+        claimed = {str(v.get("sha", "")).lower()
+                   for v in (doc.get("revs") or {}).values()}
+        want = {s.lower() for s in self.revs.values()}
+        if claimed != want:
+            raise MergeError(
+                f"{p}: the witness asserts revs {sorted(claimed)} but the "
+                f"code-resident licence enumerates {sorted(want)}. Both must "
+                f"name the SAME pair — that is the point of requiring two "
+                f"independent things to agree.")
+        paths = list(doc.get("instrument_paths") or [])
+        if list(INSTRUMENT_PATHS) != paths:
+            raise MergeError(
+                f"{p}: instrument_paths {paths} != the corrected set "
+                f"{list(INSTRUMENT_PATHS)} (D4.11 Amendment 2 — a witness over a "
+                f"path that does not exist is VACUOUSLY TRUE)")
+        if (doc.get("committed_diff") or {}).get("empty") is not True:
+            raise MergeError(
+                f"{p}: committed_diff.empty is not true — the witness itself "
+                f"says the instrument moved between the two revs")
+        boxes = (doc.get("working_tree") or {}).get("by_box") or {}
+        if not boxes:
+            raise MergeError(
+                f"{p}: working_tree.by_box is empty. D4.11 Amendment 3: "
+                f"`git diff A..B` is BLIND to uncommitted dirt in the instrument "
+                f"scripts, so the witness must also carry `git status "
+                f"--porcelain` scoped to the same paths, per box.")
+        dirty = {b: v for b, v in boxes.items()
+                 if v.get("clean") is not True or (v.get("porcelain") or "").strip()}
+        if dirty:
+            raise MergeError(
+                f"{p}: working tree NOT clean over the instrument paths on "
+                f"box(es) {sorted(dirty)} — {[(b, (v.get('porcelain') or '')[:120]) for b, v in sorted(dirty.items())]}")
+
+        rederived = self.rederive()
+        doc = dict(doc)
+        doc["_rederived"] = rederived
+        doc["_path"] = str(p)
+        doc["_sha256"] = _sha256_file(p)
+        self._witness = doc
+        return doc
+
+    def rederive(self) -> dict:
+        """⭐ THE PROOF. The witness file is the *why*; this is the *that*.
+
+        Re-runs the recipe — existence of every instrument path at BOTH revs,
+        then `git diff` between them scoped to those paths — inside THIS repo,
+        never trusting a path or a result recorded in the file.
+        """
+        shas = sorted(self.revs.values())
+        a, b = shas[0], shas[1] if len(shas) > 1 else shas[0]
+        for sha in (a, b):
+            rc, _out, err = _git(self.repo, "cat-file", "-e", f"{sha}^{{commit}}")
+            if rc != 0:
+                raise MergeError(
+                    f"licensed rev {sha[:12]} is not a commit in {self.repo} "
+                    f"({err.strip()}) — the licence cannot be verified, so it "
+                    f"does not apply")
+        missing = []
+        for path in INSTRUMENT_PATHS:
+            for sha in (a, b):
+                rc, out, _err = _git(self.repo, "ls-tree", "-r", "--name-only",
+                                     sha, "--", path)
+                if rc != 0 or not out.strip():
+                    missing.append((path, sha[:12]))
+        if missing:
+            raise MergeError(
+                f"instrument path(s) absent at a licensed rev: {missing[:5]} — "
+                f"an 'empty diff' over a path that does not exist is VACUOUSLY "
+                f"TRUE, which is exactly the defect D4.11 Amendment 2 caught")
+        rc, stat, err = _git(self.repo, "diff", "--stat", a, b, "--", *INSTRUMENT_PATHS)
+        if rc != 0:
+            raise MergeError(f"git diff failed in {self.repo}: {err.strip()}")
+        rc, names, err = _git(self.repo, "diff", "--name-only", a, b,
+                              "--", *INSTRUMENT_PATHS)
+        if rc != 0:
+            raise MergeError(f"git diff failed in {self.repo}: {err.strip()}")
+        changed = [ln for ln in names.splitlines() if ln.strip()]
+        if changed:
+            raise MergeError(
+                f"RE-DERIVED INSTRUMENT DIFF IS NOT EMPTY between "
+                f"{a[:12]}..{b[:12]}: {len(changed)} file(s) changed "
+                f"(first: {changed[:5]}). The witness claims otherwise, so the "
+                f"witness is stale or wrong. The licence does NOT apply.")
+        return {
+            "recipe": f"git -C <repo> diff --name-only {a} {b} -- "
+                      + " ".join(INSTRUMENT_PATHS),
+            "repo": str(self.repo), "rev_a": a, "rev_b": b,
+            "paths": list(INSTRUMENT_PATHS),
+            "n_files_changed": 0, "empty": True, "stat": stat.strip(),
+            "verified_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+
+    # ---- D4.12's per-chunk clean assertion --------------------------------- #
+    def git_clean_ok(self, chunk, manifest: dict) -> dict:
+        """`preflight.checks.git_clean.ok == true`, per chunk.
+
+        Read from the artifact itself when it carries it (RUN_MANIFEST does);
+        otherwise from the per-chunk RUN_MANIFEST map the caller supplied (the
+        per-LEG manifests do not carry `preflight.checks` at all, and requiring
+        it *there* would refuse every healthy leg — a false refusal).
+        """
+        local = _get(manifest or {}, "preflight.checks.git_clean")
+        if local is not _MISSING and isinstance(local, dict):
+            return {"ok": bool(local.get("ok")), "source": "manifest",
+                    "dirty_paths": local.get("dirty_paths")}
+        for key in (chunk, str(chunk)):
+            if key in self.git_clean_by_chunk:
+                v = dict(self.git_clean_by_chunk[key])
+                v.setdefault("source", "RUN_MANIFEST")
+                v["ok"] = bool(v.get("ok"))
+                return v
+        return {"ok": None, "source": None}
+
+    # ---- the decision ------------------------------------------------------ #
+    def authorize(self, dotted: str, present: dict, manifests: dict) -> dict:
+        """Licence this divergence, or raise. `present` = {chunk: value}."""
+        if dotted not in REV_LICENSED_PATHS:
+            raise MergeError(
+                f"{dotted!r} is not a licensed rev address. The D4.11 licence is "
+                f"an ENUMERATED set of addresses ({list(REV_LICENSED_PATHS)}); "
+                f"any other key that differs still refuses, including one "
+                f"holding a licensed sha.")
+        by_tranche, unlicensed = {}, {}
+        for k, v in sorted(present.items()):
+            t = self.tranche_of(v)
+            if t is None:
+                unlicensed[k] = v
+            else:
+                by_tranche.setdefault(t, []).append(k)
+        if unlicensed:
+            raise MergeError(
+                f"identity-required path {dotted!r} DIVERGES across chunks and "
+                f"chunk(s) {sorted(unlicensed)} carry rev(s) "
+                f"{[str(v) for v in unlicensed.values()]} that are NOT in the "
+                f"enumerated licence "
+                f"{ {t: s[:12] for t, s in self.revs.items()} }. D4.11: any "
+                f"other rev, or any third value, still refuses.")
+
+        witness = self.witness()          # raises unless the licence is armed
+
+        clean, missing = {}, []
+        for k in sorted(present):
+            ev = self.git_clean_ok(k, manifests.get(k) or {})
+            clean[str(k)] = ev
+            if ev["ok"] is not True:
+                missing.append((k, ev))
+        if missing:
+            raise MergeError(
+                f"{dotted!r}: the two-rev licence requires "
+                f"preflight.checks.git_clean.ok == true for EVERY contributing "
+                f"chunk (D4.12 — the `-dirty` suffix only gestures at what this "
+                f"assertion checks). Not satisfied for: "
+                + "; ".join(f"chunk{k}={v}" for k, v in missing))
+
+        record = {
+            "path": dotted,
+            "by_chunk": {str(k): v for k, v in sorted(present.items())},
+            "tranches": {t: sorted(ks) for t, ks in sorted(by_tranche.items())},
+            "licensed_revs": {t: s for t, s in sorted(self.revs.items())},
+            "git_clean_by_chunk": clean,
+            "instrument_identity": {
+                "path": witness["_path"], "sha256": witness["_sha256"],
+                "rederived": witness["_rederived"],
+            },
+            "deviation": "D4.11/D4.12 (measurement/tiearb_widening_20260817/"
+                         "DEVIATIONS.md, commit 93f83e26)",
+            "note": "ENUMERATED two-rev licence. The tranche split is a "
+                    "NECESSARY consequence of the D4.2 completion — the "
+                    "completion tranche cannot run at the spent rev because the "
+                    "staging code did not exist there. No gate constrains the "
+                    "run's git_rev (D4.10). The instrument diff between the two "
+                    "revs was RE-DERIVED here, not read from the witness.",
+        }
+        self.used.append(record)
+        return record
+
+
 def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
-                    allow_varying=()) -> dict:
+                    allow_varying=(), license=None) -> dict:
     """Merge {chunk_index: manifest dict} into one.
 
     Fail-closed: an unclassified key whose value differs across chunks raises.
@@ -205,6 +627,7 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
     order = sorted(by_chunk)
     first = by_chunk[order[0]]
     allow = set(allow_varying)
+    rev_records = []
 
     # 1) identity-required paths
     for dotted in identity_required:
@@ -219,6 +642,11 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
                 f"absent on {missing} — a leg cannot be half-configured")
         distinct = {_canon(v) for v in present.values()}
         if len(distinct) != 1:
+            # ⭐ the ONLY divergence this file accepts: the enumerated two-rev
+            # licence (D4.11). Everything else raises exactly as it always did.
+            if license is not None and dotted in REV_LICENSED_PATHS:
+                rev_records.append(license.authorize(dotted, present, by_chunk))
+                continue
             raise MergeError(
                 f"identity-required path {dotted!r} DIVERGES across chunks: "
                 + "; ".join(f"chunk{k}={_canon(v)}" for k, v in sorted(present.items())))
@@ -253,10 +681,34 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
             merged[key] = _merge_resolved_config(present, per_chunk_block)
             continue
         if key == "execution":
-            merged[key] = _merge_execution(present, per_chunk_block)
+            merged[key] = _merge_execution(present, per_chunk_block,
+                                           license=license, manifests=by_chunk,
+                                           rev_records=rev_records)
+            continue
+        if key == "champion_manifest":
+            merged[key] = _merge_champion_manifest(
+                present, per_chunk_block, license=license, manifests=by_chunk,
+                rev_records=rev_records)
+            continue
+        if key == "preflight":
+            merged[key] = _merge_preflight(present, per_chunk_block,
+                                           license=license)
             continue
         distinct = {_canon(v) for v in present.values()}
         if len(distinct) == 1 and len(present) == len(vals):
+            merged[key] = present[min(present)]
+            continue
+        # the two-rev licence, at the TOP level (`git_rev` on the tier1-greedy
+        # leg, `code_rev` on the clair-puct leg). Licensed => RECORDED per chunk,
+        # never averaged, never silently carried.
+        if (license is not None and key in REV_LICENSED_PATHS
+                and len(present) == len(vals)):
+            # `git_rev`/`code_rev` are ALSO identity-required paths, so they may
+            # already have been authorized above — authorize once, record once.
+            if key not in {r["path"] for r in rev_records}:
+                rev_records.append(license.authorize(key, present, by_chunk))
+            for k, v in present.items():
+                per_chunk_block[str(k)][key] = v
             merged[key] = present[min(present)]
             continue
         if key in allow:
@@ -288,10 +740,24 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
             [float(m.get("wall_secs") or 0.0) for m in by_chunk.values()] or [0.0]),
         "divergent_keys_allowed": sorted(divergent),
     }
+    if rev_records:
+        merged["merge"]["rev_license"] = {
+            "schema": "carcassonne-tiearb-widening-rev-license/v1",
+            "deviation": "D4.11/D4.12",
+            "paths": sorted({r["path"] for r in rev_records}),
+            "records": rev_records,
+            "note": "⚠️ THIS LEG SPANS TWO REVS. The merged manifest carries the "
+                    "LOWEST-indexed chunk's value for each rev field so the key "
+                    "keeps its type and never reads null; the per-chunk truth is "
+                    "here and in merge.by_chunk. The pair is enumerated in "
+                    "merge_legs.LICENSED_TRANCHE_REVS and the instrument diff "
+                    "between the two revs was RE-DERIVED at merge time.",
+        }
     return merged
 
 
-def _merge_execution(present: dict, per_chunk_block: dict) -> dict:
+def _merge_execution(present: dict, per_chunk_block: dict, *, license=None,
+                     manifests=None, rev_records=None) -> dict:
     """Merge the `execution` block KEY BY KEY, per deviation D3 §D3.2.
 
     Three classes and no fourth: two BOX-LOCAL keys are recorded per chunk, the
@@ -330,6 +796,10 @@ def _merge_execution(present: dict, per_chunk_block: dict) -> dict:
                     f"chunks but absent on {missing} — a leg cannot be "
                     f"half-configured")
             if len(distinct) != 1:
+                if key == "carc_rs_build":
+                    raise carc_rs_build_refusal(
+                        have, where="execution.carc_rs_build",
+                        revs=(license.revs if license is not None else None))
                 raise MergeError(
                     f"identity-required path 'execution.{key}' DIVERGES across "
                     f"chunks: "
@@ -339,6 +809,16 @@ def _merge_execution(present: dict, per_chunk_block: dict) -> dict:
                       "one value inside `execution` that may legitimately be "
                       "compared across boxes, so a divergence is a mixed-build "
                       "run and MUST raise.")
+            merged[key] = have[min(have)]
+            continue
+        # ⭐ `execution.code_rev` — the `<short>-dirty` field D4.12 is about.
+        if (license is not None and key == "code_rev" and len(distinct) != 1
+                and len(have) == len(vals)):
+            rec = license.authorize("execution.code_rev", have, manifests or {})
+            if rev_records is not None:
+                rev_records.append(rec)
+            for k, v in have.items():
+                per_chunk_block[str(k)].setdefault("execution", {})[key] = v
             merged[key] = have[min(have)]
             continue
         if len(distinct) != 1 or len(have) != len(vals):
@@ -351,6 +831,90 @@ def _merge_execution(present: dict, per_chunk_block: dict) -> dict:
                 + "; ".join(f"chunk{k}={_canon(v)[:120]}"
                             for k, v in sorted(have.items())))
         merged[key] = have[min(have)]
+    return merged
+
+
+def _merge_champion_manifest(present: dict, per_chunk_block: dict, *,
+                             license=None, manifests=None,
+                             rev_records=None) -> dict:
+    """`champion_manifest` — identical across chunks EXCEPT `code_commit`, which
+    is the run's rev under a third spelling (full sha, `clair-puct` legs).
+
+    Licensed by the same enumerated pair; every other key keeps the fail-closed
+    raise, because a champion that differed in anything else would be a
+    different champion.
+    """
+    order = sorted(present)
+    if not all(isinstance(v, dict) for v in present.values()):
+        distinct = {_canon(v) for v in present.values()}
+        if len(distinct) != 1:
+            raise MergeError(
+                "`champion_manifest` is not a dict on every chunk and differs: "
+                + "; ".join(f"chunk{k}={_canon(v)[:120]}"
+                            for k, v in sorted(present.items())))
+        return json.loads(json.dumps(present[order[0]]))
+
+    merged = json.loads(json.dumps(present[order[0]]))
+    keys = sorted({k for v in present.values() for k in v})
+    for key in keys:
+        vals = {k: v.get(key, _MISSING) for k, v in present.items()}
+        have = {k: v for k, v in vals.items() if v is not _MISSING}
+        distinct = {_canon(v) for v in have.values()}
+        if len(distinct) == 1 and len(have) == len(vals):
+            merged[key] = have[min(have)]
+            continue
+        if license is not None and key == "code_commit":
+            rec = license.authorize("champion_manifest.code_commit", have,
+                                    manifests or {})
+            if rev_records is not None:
+                rev_records.append(rec)
+            for k, v in have.items():
+                per_chunk_block[str(k)].setdefault("champion_manifest", {})[key] = v
+            merged[key] = have[min(have)]
+            continue
+        raise MergeError(
+            f"champion_manifest.{key} differs across chunks and is NOT licensed "
+            f"(only `code_commit` is, under the D4.11 two-rev pair): "
+            + "; ".join(f"chunk{k}={_canon(v)[:120]}" for k, v in sorted(have.items())))
+    return merged
+
+
+def _merge_preflight(present: dict, per_chunk_block: dict, *, license=None) -> dict:
+    """`preflight` on the `tier1-greedy` leg carries `wheel.carc_rs_build`.
+
+    Nested rather than compared whole, so a divergence localises to the field
+    that actually moved instead of dumping the whole block into the error — the
+    difference between a reader who can act and one who cannot. `preflight.seeds.*`
+    is already IDENTITY_REQUIRED above; everything here keeps the raise.
+    """
+    order = sorted(present)
+    if not all(isinstance(v, dict) for v in present.values()):
+        distinct = {_canon(v) for v in present.values()}
+        if len(distinct) != 1:
+            raise MergeError(
+                "`preflight` is not a dict on every chunk and differs: "
+                + "; ".join(f"chunk{k}={_canon(v)[:120]}"
+                            for k, v in sorted(present.items())))
+        return json.loads(json.dumps(present[order[0]]))
+
+    merged = json.loads(json.dumps(present[order[0]]))
+    keys = sorted({k for v in present.values() for k in v})
+    for key in keys:
+        vals = {k: v.get(key, _MISSING) for k, v in present.items()}
+        have = {k: v for k, v in vals.items() if v is not _MISSING}
+        distinct = {_canon(v) for v in have.values()}
+        if len(distinct) == 1 and len(have) == len(vals):
+            merged[key] = have[min(have)]
+            continue
+        if key == "wheel" and all(isinstance(v, dict) for v in have.values()):
+            builds = {k: v.get("carc_rs_build") for k, v in have.items()}
+            if len({_canon(v) for v in builds.values()}) != 1:
+                raise carc_rs_build_refusal(
+                    builds, where="preflight.wheel.carc_rs_build",
+                    revs=(license.revs if license is not None else None))
+        raise MergeError(
+            f"preflight.{key} differs across chunks and has no merge rule: "
+            + "; ".join(f"chunk{k}={_canon(v)[:120]}" for k, v in sorted(have.items())))
     return merged
 
 
@@ -426,12 +990,53 @@ def chunk_dirs(chunks_root: Path) -> dict:
 # --------------------------------------------------------------------------- #
 # the merge                                                                    #
 # --------------------------------------------------------------------------- #
+def git_clean_by_chunk_from_manifests(manifests_dir, stratum: str) -> dict:
+    """{chunk: {"ok", "dirty_paths", "sources"}} from the per-chunk
+    `RUN_MANIFEST_*` files — the ONLY artifacts that carry
+    `preflight.checks.git_clean` (per-leg manifests do not).
+
+    ANDed across judges for the same chunk: a chunk is clean only if every
+    invocation that touched it said so.
+    """
+    out: dict = {}
+    d = Path(manifests_dir)
+    if not d.is_dir():
+        return out
+    S = str(stratum).upper()
+    for p in sorted(d.glob(f"RUN_MANIFEST_{S}_*_chunk*.json")):
+        try:
+            doc = json.loads(p.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        tag = p.name.split("_chunk")[-1][: -len(".json")]
+        try:
+            k = int(tag)
+        except ValueError:
+            continue
+        gc = _get(doc, "preflight.checks.git_clean")
+        if gc is _MISSING or not isinstance(gc, dict):
+            continue
+        row = out.setdefault(k, {"ok": True, "dirty_paths": [], "sources": []})
+        row["ok"] = bool(row["ok"]) and bool(gc.get("ok"))
+        row["dirty_paths"] = sorted(set(row["dirty_paths"])
+                                    | set(gc.get("dirty_paths") or []))
+        row["sources"].append(str(p))
+    return out
+
+
 def merge_stratum(*, stratum: str, chunks_root: Path, out_dir: Path,
                   positions_dir: Path, judges=JUDGES, dry_run: bool = False,
-                  allow_varying=()) -> dict:
+                  allow_varying=(), license=None, manifests_dir=None) -> dict:
     chunks_root, out_dir = Path(chunks_root), Path(out_dir)
     expected = expected_leg_rids(positions_dir)
     cdirs = chunk_dirs(chunks_root)
+    if license is None:
+        # the licence is ARMED BY DEFAULT but INERT unless a rev actually
+        # diverges: it is consulted only on divergence, and it refuses unless
+        # the witness is present and its diff re-derives empty.
+        license = RevLicense(git_clean_by_chunk=git_clean_by_chunk_from_manifests(
+            manifests_dir if manifests_dir is not None
+            else CAMPAIGN / "chunks" / "manifests", stratum))
     report = {
         "schema": SCHEMA, "run_id": RUN_ID, "stratum": stratum,
         "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -518,7 +1123,8 @@ def merge_stratum(*, stratum: str, chunks_root: Path, out_dir: Path,
                     man_paths[k] = mp
             if mans:
                 try:
-                    merged = merge_manifests(mans, allow_varying=allow_varying)
+                    merged = merge_manifests(mans, allow_varying=allow_varying,
+                                             license=license)
                 except MergeError as exc:
                     report["problems"].append(f"{judge}/{leg_key}: manifest merge: {exc}")
                     leg_report["manifest_ok"] = False
@@ -544,13 +1150,22 @@ def merge_stratum(*, stratum: str, chunks_root: Path, out_dir: Path,
                         dst_leg.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(sp, dst_leg / f"summary_chunk{k}.json")
 
+    if license is not None and license.used:
+        report["rev_license"] = {
+            "active": True,
+            "paths": sorted({r["path"] for r in license.used}),
+            "licensed_revs": dict(license.revs),
+            "instrument_identity": license.used[0]["instrument_identity"],
+            "note": "this stratum's merge SPANS TWO REVS under the enumerated "
+                    "D4.11 licence; the instrument diff was re-derived here",
+        }
     report["ok"] = not report["problems"]
     return report
 
 
 def merge_run_manifest(*, stratum: str, manifests_dir: Path, out_path: Path,
                        judges=JUDGES, dry_run: bool = False,
-                       allow_varying=()) -> dict:
+                       allow_varying=(), license=None) -> dict:
     """Merge the per-(judge, chunk) `RUN_MANIFEST_*` files into the single
     `RUN/RUN_MANIFEST_{S1,S2}.json` the READ_RULE addresses."""
     manifests_dir = Path(manifests_dir)
@@ -575,7 +1190,8 @@ def merge_run_manifest(*, stratum: str, manifests_dir: Path, out_path: Path,
             # per-invocation difference is expected rather than a defect
             allow_varying=set(allow_varying) | {"judges", "judge_backend",
                                                 "r9_by_profile",
-                                                "resolved_backend_by_leg"})
+                                                "resolved_backend_by_leg"},
+            license=license)
     except MergeError as exc:
         out["problems"].append(f"RUN_MANIFEST merge: {exc}")
         return out
@@ -636,6 +1252,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--allow-varying", nargs="*", default=[],
                     help="manifest keys allowed to differ across chunks "
                          "(recorded in merge.by_chunk instead of failing)")
+    ap.add_argument("--instrument-identity", default=None,
+                    help=f"path to {INSTRUMENT_IDENTITY_NAME} (default: "
+                         f"RUN/ then the campaign root). ⚠️ NOT a licence: it "
+                         f"only says WHERE the witness is. The rev pair is "
+                         f"hard-coded and the instrument diff is re-derived.")
+    ap.add_argument("--repo", default=str(REPO),
+                    help="repo the instrument diff is re-derived in")
     ap.add_argument("--dry-run", action="store_true",
                     help="report only: copy nothing, write nothing")
     ap.add_argument("--no-run-manifest", action="store_true",
@@ -649,16 +1272,23 @@ def main(argv=None) -> int:
     positions_dir = Path(a.positions_dir or (RUN_DIR / "corpus" / f"positions_{stratum}"))
     report_path = Path(a.report or (CAMPAIGN / f"MERGE_REPORT_{stratum}.json"))
 
+    license = RevLicense(
+        repo=Path(a.repo), identity_path=a.instrument_identity,
+        git_clean_by_chunk=git_clean_by_chunk_from_manifests(a.manifests_dir,
+                                                             stratum))
+
     rep = merge_stratum(stratum=stratum, chunks_root=Path(a.chunks_root),
                         out_dir=Path(a.out_dir), positions_dir=positions_dir,
                         judges=tuple(a.judges), dry_run=a.dry_run,
-                        allow_varying=a.allow_varying)
+                        allow_varying=a.allow_varying, license=license,
+                        manifests_dir=Path(a.manifests_dir))
 
     if not a.no_run_manifest and not rep["problems"]:
         out_path = Path(a.run_manifest_out or (RUN_DIR / RUN_MANIFEST_NAME[stratum]))
         rm = merge_run_manifest(stratum=stratum, manifests_dir=Path(a.manifests_dir),
                                 out_path=out_path, judges=tuple(a.judges),
-                                dry_run=a.dry_run, allow_varying=a.allow_varying)
+                                dry_run=a.dry_run, allow_varying=a.allow_varying,
+                                license=license)
         rep["run_manifest"] = rm
         rep["problems"].extend(rm["problems"])
         rep["ok"] = not rep["problems"]
