@@ -30,13 +30,37 @@ short and was not leaky. It was degenerate in one specific, measurable way.**
 
 **All 30 exclusions, both strata, are at ply 2.**
 
-| corpus | games mined | density |
-|---|---|---|
-| base (the R4 calibration) | 858 | **0.181%** |
-| S2 | 5,340 | **2.636%** |
+| corpus | games generated | positions | collisions | density |
+|---|---|---|---|---|
+| S1, banked | 350 | 551 | 1 | 0.181% |
+| S1, full | 858 | 1,344 | 1 | 0.074% |
+| **S2** | **5,340** | **1,100** | **29** | **2.636%** |
 
-**14.6× the density the bound was calibrated against**, from the same generator at the same
-knobs. The only thing that changed is **how many games were mined**.
+> ⚠️ **CORRECTED 2026-08-19 — this section originally paired "858 games" with "0.181%" and called
+> the S2 figure "14.6× the density the bound was calibrated against, from the same generator at the
+> same knobs; the only thing that changed is how many games were mined." THAT COMPARISON IS
+> CONFOUNDED AND THE QUOTED SENTENCE IS WITHDRAWN.** Two things are wrong with it. **(i)** It pairs
+> S1's *full* game count (858) with S1's *banked* rate (1/551) — two different corpora. **(ii)**
+> More seriously, it compares **S1 against S2**, which are **different strata with different mining
+> predicates**: S1 mines *uniform tied plies* at `--max-per-game 4`, S2 mines *capped-only plies* at
+> `--max-per-game 3`. **The knobs did NOT stay the same and the population did not either.**
+>
+> **What the data actually supports.** Within S1 the collision count is **1 at both 350 and 858
+> games** — one event in total, which is no growth signal in either direction. The S2 rate is
+> genuinely ~36× S1's full-corpus rate, but that difference is **confounded between scale and
+> stratum**, and the mechanism makes the *stratum* explanation at least as strong: **all 30
+> collisions are at ply 2**, and capped plies are *disproportionately* ply-2 positions (a near-empty
+> board offers many equal-valued symmetric placements — which is exactly what makes a large tie set
+> and therefore a capped ply). **S2 may be dense because it is capped-only, not because it is big.**
+>
+> **What survives unchanged.** The **a priori pair-counting argument** in the next paragraph is
+> untouched by this: collisions are counted over pairs and grow ~quadratically in games while a
+> linear-in-`n` bound grows linearly, so **such a bound must eventually fire for any generator with
+> a nonzero revisit rate.** That is theory, not this measurement. **What is withdrawn is the
+> empirical magnitude** — the "14.6×", the "6.22× games → 29× collisions", and the "2.34× steeper
+> than pair-counting" exponent — all of which read a scale effect off a cross-stratum contrast.
+> Disentangling them is now the **primary** purpose of the R5 calibration sweep, not a refinement of
+> it ([`rung3_r5/DESIGN.md`](rung3_r5/DESIGN.md) §R5-1.0).
 
 **Mechanism.** Early-game boards are a *small space*. At ply 2 the reachable set is tiny compared
 with the number of games drawn from it, so revisits are not an accident — they are the birthday
@@ -44,11 +68,14 @@ problem. The more you mine, the more certainly you re-derive a board you have al
 
 **Why this had to break the bound eventually — the structural point.** Collisions are counted over
 **pairs** of positions and grow ≈ quadratically in games mined; the bound `⌈0.005 × n⌉` grows
-**linearly** in positions, hence linearly in games. The observed ratio is consistent with that and
-excludes the linear model: 6.22× more games produced **29×** more collisions (quadratic predicts
-≈39, linear ≈6). ⇒ **For any generator with a nonzero revisit rate, a linear-in-`n` bound is
-asymptotically guaranteed to fire.** The R4 bound was not merely calibrated at the wrong scale —
-**it is the wrong shape.** It passed at 858 games and could not have passed at 5,340.
+**linearly** in positions, hence linearly in games. ⇒ **For any generator with a nonzero revisit
+rate, a linear-in-`n` bound is asymptotically guaranteed to fire.** ⭐ **This is an A PRIORI
+argument and it stands on its own** — it needs no measurement, and the correction above does not
+touch it. So the R4 bound was not merely calibrated at the wrong scale: **it is the wrong shape.**
+⚠️ **What this paragraph originally added — "6.22× more games produced 29× more collisions
+(quadratic predicts ≈39, linear ≈6)" — is WITHDRAWN with the correction above**: that ratio is the
+cross-stratum contrast, so it cannot date the growth. **The shape argument is theory; the exponent
+is not yet measured**, and measuring it within one stratum is what §R5-1.1's sweep is for.
 
 **This is a real property of champion self-play worth carrying forward**, independent of this
 campaign: *the "fresh corpus" premise degrades with corpus size, and it degrades first at low

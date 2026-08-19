@@ -25,27 +25,140 @@ supply passed, every rid/root layer was zero. It was **degenerate in one measura
 bound was **the wrong shape** to see it coming. This successor fixes the shape, the mining
 predicate, the loop, and the drafting gap that made the void's scope arguable.
 
+## R5-1.0 ⚠️ PRE-DESIGN RULING (2026-08-19) — units, and a confound that changes the sweep's purpose
+
+The calibration sweep **refused on a unit mismatch and was right to refuse.** Ruling the three
+questions, plus one finding the refusal exposed that matters more than the units.
+
+### R5-1.0.a THE UNIT OF `G`: **games GENERATED.** Confirmed.
+
+`rung3_calibrate.py --scales` currently means *a prefix of games PRESENT in the mined leg file*.
+That cannot price the successor: **the successor sizes a generation run**, `FLOORS.json` is written
+in **generated** games, and only **18.4%** of generated games produce a capped ply at all
+(980 producing / 5,340 generated; 1,064 rids; mean 1.086 positions per producing game, max 3 = the
+per-root ceiling). A density indexed by *producing* games cannot be inverted into "how many games
+must I generate", which is the only question the bound is asked.
+
+**The seed → generation-index mapping, verified against `FLOORS.json` and the pair:**
+
+```
+S2 generation order (5,340 games):
+  [135000000350 … 135000000849]  -> idx    0 …  499   (banked; band 135e9, S2 sub-range)
+  [137000000508 … 137000005347]  -> idx  500 … 5339   (extension; FLOORS.sub_ranges.s2)
+  anything else                   -> RAISE
+```
+
+Verified: `FLOORS.json::sub_ranges.s2 = [137000000508, 137000005347]` and
+`games_extension_s2 = 4840`; the pair's R4-2.1 gives S2 = **500** banked games and R4-6 splits band
+135e9 at `+349/+350`. `500 + 4,840 = 5,340` ✓.
+
+⭐ **Why seed order is the correct order, since someone will object that work-stealing means games
+were not *produced* in seed order:** a successor sizing `G` games runs `--seed-start S --games G`
+and gets seeds `S … S+G−1`. **So a prefix of seeds is exactly the corpus `G` generated games would
+be** — which is the counterfactual the bound must price. Wall-clock/claim order is an artifact of
+`--shared-claim` and **must not be used**. **Zero-yield games advance `G` silently**, which is the
+entire point of the unit.
+
+### R5-1.0.b THE NUMERATOR: **NOT re-based.** Density stays per-POSITION.
+
+`d` must be in the same currency as the quantity the bound grades. R4's bound compared
+`carried + residual` (a **count of excluded positions**) against `⌈0.005 × qualifying_deduped⌉` (a
+**fraction of positions**). So:
+
+> **`d(G) = collisions / qualifying-deduped POSITIONS`, indexed by `G` = games GENERATED.**
+
+A hybrid, deliberately: the **independent** variable is what you buy (games), the **dependent**
+variable is what the bound grades (positions). §R5-1.2 as originally drafted said "a bound on the
+density" without pinning the density's own denominator — **that ambiguity is closed here.**
+
+### R5-1.0.c ⭐ THE FINDING: the two "calibration points" are CROSS-STRATUM, and the sweep's primary purpose changes
+
+Checking the units surfaced something larger. The two points §R5-1 was built on —
+**858 games → 0.181%** and **5,340 → 2.636%** — are **not two points on one curve**:
+
+- `858` is **S1's** generated total; `0.181%` is **S1's banked** rate (1/551, from 350 games).
+  S1's *full-corpus* rate is **1/1,344 = 0.074%**. The original pairing mixed two S1 corpora.
+- More seriously, `2.636%` is **S2's** — and **S1 and S2 are different strata with different
+  mining predicates**: uniform tied plies at `--max-per-game 4` versus **capped-only** plies at
+  `--max-per-game 3`.
+
+**Within S1 the collision count is 1 at both 350 and 858 games — one event, no growth signal.** The
+S2 rate really is ~36× S1's, but that gap is **confounded between scale and stratum**, and the
+mechanism favours *stratum*: **all 30 collisions are at ply 2**, and capped plies are
+disproportionately ply-2 (a near-empty board offers many equal-valued symmetric placements — which
+is what makes a large tie set, hence a capped ply). **S2 may be dense because it is capped-only,
+not because it is big.** Corrected in place at [`../PREREG_FAILURE_S2.md`](../PREREG_FAILURE_S2.md) §2.
+
+⇒ **The sweep's primary purpose is now to DISENTANGLE scale from stratum, not to add points to an
+established curve.** It must therefore run **entirely within S2** (S2's own 5,340 generated games),
+so the fitted `d(G)` isolates the scale effect. **The a priori pair-counting argument survives
+untouched** — a linear-in-`n` bound must eventually fire for any nonzero revisit rate — but **the
+exponent and the magnitude are unmeasured**, and §R5-1.2's `M = 3` multiplier is applied to a
+`d_model` that does not exist yet. That is the correct order; it is only worth saying because the
+withdrawn numbers made it look as though it already did.
+
+### R5-1.0.d THE SCALES: **five, not four** — `{500, 1000, 1500, 3000, 5340}`
+
+The briefed `{500, 1500, 3000, 5340}` meets the ≥4 floor, but **`G = 500` is exactly the
+banked/extension boundary**, so the corpus composition **changes structurally there**: at
+`G ≤ 500` only band 135e9 is present and **no cross-band collision can occur**; above it, the
+`base_vs_extension` category (D4.11/B1) switches on. A single power law fitted across that break is
+fitting two regimes. **Adding `G = 1000` characterises the break** at zero extra cost (counts
+only). Mandatory reportables per scale: **band composition** and an explicit note that the
+**structural break at `G = 500`** makes any single-law fit an approximation across a composition
+change rather than a law.
+
+### R5-1.0.e TOOL AMENDMENT SPEC (builder)
+
+Add `--generated-order` (or equivalent): map each leg record's deck seed to a generation index via
+the **declared, committed ranges** above, in that order; a scale `G` selects records whose index is
+`< G`. **RAISE if any leg seed falls outside the declared ranges** — fail-loud on the unexpected,
+never silently skip, since an out-of-range seed means the corpus is not the one `FLOORS.json`
+describes. Per scale emit: `G`, `n_games_producing`, `n_positions`, `n_collisions`, `d`, and the
+**per-band game counts**. Declare the ranges in the tool's own manifest so the mapping is auditable
+without re-deriving it.
+
+⚠️ **Recorded, and the calibration must SAY it: the S2 union-plan pointer defect stands.** The
+physical leg file is **complete** (1,064 rows, both bands — the executor verified this before
+trusting it), while `POSITIONS_PLAN`'s `files` block is still **ext-only** and
+`CORPUS_UNION` S2 `witnessed:false`. **S2 is void, so no repair is licensed** — but the calibration
+reads the **physical file**, not the plan, and **must state that explicitly in its output**, so no
+later reader assumes the plan pointer was the source. Reading around a known-defective pointer is
+acceptable **only when it is disclosed**; undisclosed, it is the D4 failure again.
+
+---
+
 ## R5-1. ⭐ (a) The scale-aware bound — and the honest limit of what two points support
 
-**The finding to design against:** collision density is **not a constant of the generator**; it
-grows with games mined.
+> ⚠️ **SUPERSEDED IN PART by §R5-1.0.c — read that first.** The table and exponent below were the
+> pre-ruling framing; **the two rows are cross-stratum and the derived magnitudes are withdrawn.**
+> Retained only so the correction has its referent. **The design conclusion — that the bound must be
+> scale-aware and that `d_model` must be *measured* — is unchanged and is if anything stronger,
+> since `d_model` is now known to be entirely unmeasured rather than roughly known.**
 
-| corpus | games `G` | density `d` |
-|---|---|---|
-| base calibration | 858 | 0.181% |
-| S2 (governed scale) | 5,340 | 2.636% |
+**The finding to design against:** ~~collision density is **not a constant of the generator**; it
+grows with games mined.~~ **Amended:** whether density grows with games mined is **exactly what the
+sweep must establish** — the apparent growth below is confounded with the stratum (§R5-1.0.c). What
+*is* established a priori is that a **linear-in-`n` bound must eventually fire** for any nonzero
+revisit rate.
 
-`G` grew **6.22×**; `d` grew **14.56×**. Pair-counting (collisions ∝ `G²`, positions ∝ `G`, so
-`d ∝ G`) predicts **6.22×** — **the observed growth is 2.34× steeper than even the quadratic
-model.** Fitting the two points gives `d ∝ G^1.46` (collisions `∝ G^2.46`).
+| corpus | games `G` | density `d` | ⚠️ |
+|---|---|---|---|
+| ~~base calibration~~ | ~~858~~ | ~~0.181%~~ | **S1**, and the rate is S1's *banked* 1/551; S1's full-corpus rate is **0.074%** |
+| ~~S2 (governed scale)~~ | ~~5,340~~ | ~~2.636%~~ | **S2** — a different stratum and a different mining predicate |
 
-⚠️ **That exponent is an illustration, NOT a fit.** Two points determine a line through two
-points; they cannot distinguish `G^1.46` from a curve that bends. **The whole failure being fixed
+~~`G` grew 6.22×; `d` grew 14.56× … `d ∝ G^1.46`.~~ **WITHDRAWN (§R5-1.0.c):** that contrast reads
+a scale effect off a cross-stratum comparison. No exponent is currently supported by any data.
+
+⚠️ **The original caveat stands and is now doubled.** Two points could not have fixed an exponent
+in any case; and these two are not even two points on one curve. **The whole failure being fixed
 here was a bound calibrated at one scale and applied at another — the fix must not repeat it with
-one extra point.** So:
+one extra point, still less with one point per population.** So:
 
-**R5-1.1 — REQUIRED PRE-RUN: a counts-only density sweep, ≥4 scales.** Re-mine the **already
-generated** 5,340 games at `G ∈ {500, 1500, 3000, 5340}` and count collisions at each. No
+**R5-1.1 — REQUIRED PRE-RUN: a counts-only density sweep, ≥4 scales, ENTIRELY WITHIN S2.** Re-mine
+the **already generated** 5,340 S2 games at **`G ∈ {500, 1000, 1500, 3000, 5340}`** — five scales,
+`G` in **games GENERATED** per §R5-1.0.a, the extra point placed to characterise the structural
+break at the banked/extension boundary (§R5-1.0.d) — and count collisions at each. No
 generation, no scoring, no champ picks — **counts only**, the class
 [`PREREG_FAILURE.md`](../PREREG_FAILURE.md) §3.3 established as non-leaking. Emits
 `RUN/DENSITY_SWEEP.json`: per `G`, the positions mined, collisions found, density, and the
@@ -73,9 +186,14 @@ to proceed on a corpus that is mostly transpositions. So, independently:
 > **If `d_model(G_governed) > 5%`, the corpus design is VOID before it is built** — no bound
 > applies, and the answer is a ply-floor (§R5-2) or fewer games, never a bigger bound.
 
-The illustrative curve puts `d` at **6.6% by 10,000 games** and **18% by 20,000** — i.e. **the
-5% guard binds not far above the scale R4 already reached.** Rung 3 cannot be bought by scaling
-the corpus, and this clause says so before anyone tries.
+~~The illustrative curve puts `d` at 6.6% by 10,000 games and 18% by 20,000 — i.e. the 5% guard
+binds not far above the scale R4 already reached.~~ ⚠️ **WITHDRAWN with the exponent it was
+extrapolated from (§R5-1.0.c).** No projection of `d` beyond the measured scales is currently
+supported by anything. **The guard itself is unaffected and is not a projection:** it is a bar on
+the *measured* `d_model(G_governed)`, and it fires or does not fire on the sweep's own output. The
+claim it was illustrating — *"rung 3 cannot be bought by scaling the corpus"* — is now **an open
+question the sweep answers**, not a conclusion the design may assume. Stating it as settled before
+the measurement would be the R4 bound's error in the opposite direction.
 
 ## R5-2. ⭐ (b) The mining ply-floor — a new knob, and a first-class estimand change
 
