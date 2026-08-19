@@ -2159,3 +2159,260 @@ def test_run_scoring_reports_the_m_discrepancy_once_per_stratum():
     assert "noted = set()" in rs
     assert "(s, m_plan) not in noted" in rs
     assert "NOTE {s}: chunk plan m_worlds=" in rs
+
+
+# =========================================================================== #
+# §D4.16 — the rung-3 VOID_S2 guard, and the S2 void HARNESS SCOPE             #
+#                                                                             #
+# Both fire ONLY on a POSITIVE witness. Absence is never a void: missing       #
+# inputs are an assembly defect wearing the shape of a decision, which is      #
+# exactly what D4 was.                                                        #
+# =========================================================================== #
+X_TOKENS = ("X-CONFIRMED", "X-ABOVE", "X-PARTIAL", "X-BELOW", "X-FREE",
+            "X-INCONCLUSIVE")
+
+
+def _gate_disjoint(path, *, s2_void=True, s1_void=False):
+    Path(path).write_text(json.dumps({
+        "gate": "G-DISJOINT", "passed": not s2_void,
+        "voided_strata": (["S2"] if s2_void else []),
+        "digest_exclusions": {
+            "S1": {"void": s1_void, "n_excluded": 1, "carried": 0,
+                   "residual": 1, "bound_n": 7,
+                   "denominator_source": "RUN/FLOORS.json::n1"},
+            "S2": {"void": s2_void, "n_excluded": 29, "carried": 28,
+                   "residual": 1, "bound_n": 6,
+                   "denominator_source": "RUN/FLOORS.json::n2"},
+        }}))
+    return str(path)
+
+
+def _s1_only_argv(tree, out_dir, *, gate_disjoint=None, floors=None):
+    run, share = tree["run"], tree["share"]
+    argv = ["--plan-dir-s1", str(run / "corpus" / "positions_s1"),
+            "--if-records-s1", str(share / "s1" / "clair-puct"),
+            "--arb-records-s1", str(share / "s1" / "tier1-greedy"),
+            "--stage1b-ladder", str(tree["stage1b_ladder"]),
+            "--boot-reps", "60", "--out-dir", str(out_dir)]
+    if gate_disjoint:
+        argv += ["--gate-disjoint", str(gate_disjoint)]
+    if floors:
+        argv += ["--floors", str(floors)]
+    return argv
+
+
+# --- the analyzer guard ------------------------------------------------------ #
+def test_void_witness_is_POSITIVE_only(tmp_path):
+    """A missing file, a missing row and a non-true value are all NOT witnesses.
+    That asymmetry IS the D4 lesson."""
+    assert AW.void_stratum_witness(None)["void"] is False
+    assert AW.void_stratum_witness(tmp_path / "nope.json")["void"] is False
+    p = _gate_disjoint(tmp_path / "gd.json", s2_void=False)
+    w = AW.void_stratum_witness(p)
+    assert w["void"] is False and w["present"] is True and w["value"] is False
+    w2 = AW.void_stratum_witness(_gate_disjoint(tmp_path / "gd2.json"))
+    assert w2["void"] is True and w2["value"] is True
+    assert w2["address"] == "GATE_DISJOINT.json::digest_exclusions.S2.void"
+    # a stratum with no row at all is not a witness either
+    (tmp_path / "gd3.json").write_text(json.dumps({"digest_exclusions": {}}))
+    assert AW.void_stratum_witness(tmp_path / "gd3.json")["void"] is False
+
+
+def test_S2_absent_WITHOUT_the_witness_RAISES(tree, tmp_path):
+    """⭐ ABSENCE IS NOT A VOID. A guard keyed on absence alone would have
+    silently blessed D4's 551 never-scored rids."""
+    for gd in (None, _gate_disjoint(tmp_path / "gd_novoid.json", s2_void=False)):
+        with pytest.raises(SystemExit) as e:
+            AW.main(_s1_only_argv(tree, tmp_path / "out_raise",
+                                  gate_disjoint=gd))
+        assert "ABSENCE IS NOT A VOID" in str(e.value)
+        assert "assembly defect" in str(e.value)
+
+
+def test_S2_absent_WITH_the_witness_emits_the_VOID_S2_block(tree, tmp_path):
+    out = tmp_path / "out_void"
+    floors = tmp_path / "FLOORS.json"
+    WF.make_floors(floors, "FULL")            # the committed n2 = 1100 option
+    rc = AW.main(_s1_only_argv(
+        tree, out, gate_disjoint=_gate_disjoint(tmp_path / "gd.json"),
+        floors=floors))
+    assert rc == 0
+    doc = json.loads((out / "READOUT.json").read_text())
+    w = doc["widening"]
+    r3 = w["branch"]["rung3"]
+
+    assert r3["status"] == "VOID_S2" and r3["branch"] == "VOID_S2"
+    assert r3["bought"] is True and r3["n2"] == 1100
+    assert r3["estimand_read"] is False
+    assert "PREREG_FAILURE_S2.md" in r3["reason"]
+    assert "Reading A" in r3["reason"]
+    fr = " | ".join(r3["forbidden_readings"])
+    for phrase in ('not "not bought"', 'not "answered"', 'not "inconclusive"'):
+        assert phrase in fr
+    ob = r3["obligation_inherited_by"]
+    assert ob["successor"] == "rung3_r5"
+    assert "I7" in ob["includes"] and "UNMEASURED" in ob["includes"]
+    assert r3["witness"]["value"] is True
+
+    # ⚠️ the void scopes RUNG 3 ONLY. Rung 2 is computed and reported through
+    # its own path — never VOID_S2 — and its S1 statistics are present.
+    # (On this small fixture the SCALE gates G-COMPLETE/G-BAND/G-REPLICATE fail
+    # for reasons unrelated to the void: 12 fixture positions against a 1,283
+    # floor. What the void must not do is take rung 2 with it.)
+    assert w["branch"]["rung2"]["branch"] != "VOID_S2"
+    assert w["delta"]["d_16_64"]["value"] is not None
+    assert w["b_ladder"]["E64"]["B16"]["arb"] is not None
+    # the S2 conjunct of G-COMPLETE is NOT EVALUATED, and `bought` stays true
+    assert w["completion"]["s2_void"] is True
+    assert w["completion"]["s2_conjunct"] == "VOID (stratum) — not evaluated"
+    assert w["completion"]["rung3_bought"] is True
+    # the S1 riders are REPORTED, with the prohibition travelling WITH them
+    assert "adjudicates NOTHING" in w["j_rider"]["s1_riders_prohibition"].upper() \
+        or "ADJUDICATES NOTHING" in w["j_rider"]["s1_riders_prohibition"]
+    assert w["j_rider"]["s1_replication"]["adjudicates"]
+    assert w["j_rider"]["interaction"]["adjudicates"]
+    assert "no rung-3 branch may be inferred" in \
+        w["j_rider"]["s1_replication"]["adjudicates"]
+
+
+def test_the_VOID_S2_token_collides_with_NO_X_branch_token(tree, tmp_path):
+    """⚠️ §D4.16: the token must not collide with any rung-3 branch token, and
+    NO X-token may appear ANYWHERE in the READOUT on this path."""
+    assert AW.VOID_S2 not in X_TOKENS
+    assert not any(AW.VOID_S2.startswith(t) or t.startswith(AW.VOID_S2)
+                   for t in X_TOKENS)
+    out = tmp_path / "out_tok"
+    rc = AW.main(_s1_only_argv(tree, out,
+                               gate_disjoint=_gate_disjoint(tmp_path / "gd.json")))
+    assert rc == 0
+    blob = (out / "READOUT.json").read_text() + (out / "READOUT.md").read_text()
+    # the forbidden-readings line NAMES the X tokens once, as a prohibition —
+    # that is the only place they may appear, so strip it before the scan
+    doc = json.loads((out / "READOUT.json").read_text())
+    named = doc["widening"]["branch"]["rung3"]["forbidden_readings"][-1]
+    scan = blob.replace(named, "").replace(
+        "X-CONFIRMED / X-ABOVE / X-PARTIAL / X-BELOW / X-FREE / X-INCONCLUSIVE", "")
+    for t in X_TOKENS:
+        assert t not in scan, f"{t} leaked into the READOUT on the void path"
+
+
+def test_the_witness_does_NOT_suppress_real_S2_data(tree, tmp_path):
+    """A void witness with S2 inputs PRESENT must take the normal rung-3 path:
+    the witness scopes ABSENCE, it never silences measured data."""
+    run, share = tree["run"], tree["share"]
+    out = tmp_path / "out_normal"
+    rc = AW.main([
+        "--plan-dir-s1", str(run / "corpus" / "positions_s1"),
+        "--plan-dir-s2", str(run / "corpus" / "positions_s2"),
+        "--if-records-s1", str(share / "s1" / "clair-puct"),
+        "--arb-records-s1", str(share / "s1" / "tier1-greedy"),
+        "--if-records-s2", str(share / "s2" / "clair-puct"),
+        "--arb-records-s2", str(share / "s2" / "tier1-greedy"),
+        "--stage1b-ladder", str(tree["stage1b_ladder"]),
+        "--gate-disjoint", _gate_disjoint(tmp_path / "gd.json"),
+        "--boot-reps", "60", "--out-dir", str(out)])
+    assert rc == 0
+    r3 = json.loads((out / "READOUT.json").read_text())["widening"]["branch"]["rung3"]
+    assert r3.get("status") != "VOID_S2"
+    assert r3["branch"].startswith("X-") or r3["branch"] == "W-UNREADABLE"
+
+
+def test_G_COMPLETE_s2_conjunct_is_void_scoped_not_failed():
+    """The same witness, the same Reading A: a conjunct addressing a VOIDED
+    stratum is NOT EVALUATED — not failed (nothing failed), not passed (nothing
+    was checked). `rung3_bought` stays TRUE: the run PURCHASED the question."""
+    rows_s1 = [{"capped_at_4": False, "root_id": f"r{i}"} for i in range(2000)]
+    floors = {"n1": 1350, "n2": 1100, "option_label": "FULL"}
+    without = AW.completion_block(rows_s1, [], floors)
+    assert without["ok"] is False, "unscoped, the empty S2 stratum fails"
+    with_void = AW.completion_block(rows_s1, [], floors,
+                                    void_witness={"void": True, "value": True,
+                                                  "address": "a", "source": "s",
+                                                  "why": "w"})
+    assert with_void["ok"] is True
+    assert with_void["s2_void"] is True
+    assert with_void["s2_conjunct"] == "VOID (stratum) — not evaluated"
+    assert with_void["rung3_bought"] is True, \
+        'flipping this would emit "not bought", the forbidden phrase'
+    assert with_void["n2_committed"] == 1100
+
+
+# --- the acceptance harness scope -------------------------------------------- #
+def test_acceptance_void_scope_is_ARTIFACT_DERIVED(tmp_path):
+    run = tmp_path / "RUN"
+    run.mkdir()
+    assert ACC.void_stratum_scope(run)["active"] is False   # no artifact
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=False)
+    assert ACC.void_stratum_scope(run)["active"] is False   # void == false
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    scope = ACC.void_stratum_scope(run)
+    assert scope["active"] is True and scope["strata"] == ("S2",)
+    assert scope["voided_strata"] == ["S2"]
+
+
+def test_acceptance_S2_addresses_report_VOID_only_under_the_witness(tmp_path):
+    run = tmp_path / "RUN"
+    run.mkdir()
+    s2 = ACC.Check(run, "RUN_MANIFEST_S2.json", ["world_seed_salt"])
+    s1 = ACC.Check(run, "RUN_MANIFEST_S1.json", ["world_seed_salt"])
+    assert s2.stratum == "S2" and s1.stratum == "S1"
+
+    # no witness: ABSENT IS FAIL, for BOTH
+    assert s2.resolve()["resolved"] is False
+    assert s1.resolve()["resolved"] is False
+
+    scope = {"active": True, "strata": ("S2",), "address": "a", "source": "s",
+             "voided_strata": ["S2"], "why": "w"}
+    r2 = s2.resolve(scope)
+    assert r2["void"] is True and r2["resolved"] is None
+    assert r2["why"] == "VOID (stratum) — not evaluated"
+    assert r2["void_witness"]["address"] == "a"
+    # ⚠️ S1 is UNTOUCHED — ABSENT IS FAIL still binds it
+    r1 = s1.resolve(scope)
+    assert r1.get("void") is not True and r1["resolved"] is False
+
+
+def test_acceptance_gate_with_S1_and_S2_conjuncts_resolves_on_S1(tmp_path):
+    """`G-SALT`'s S1 primary RESOLVED while its S2 conjunct is void-scoped."""
+    run = tmp_path / "RUN"
+    run.mkdir()
+    (run / "RUN_MANIFEST_S1.json").write_text(json.dumps(
+        {"world_seed_salt": "tiletie-v1"}))
+    g = ACC.Gate("G-SALT-ish", [
+        ACC.Check(run, "RUN_MANIFEST_S1.json", ["world_seed_salt"]),
+        ACC.Check(run, "RUN_MANIFEST_S2.json", ["world_seed_salt"])])
+    assert g.resolve()["resolved_at"] == "UNRESOLVED"      # no witness
+    scope = {"active": True, "strata": ("S2",), "address": "a", "source": "s",
+             "voided_strata": ["S2"], "why": "w"}
+    r = g.resolve(scope)
+    assert r["resolved_at"] == "primary" and r["resolved"] is True
+    assert r["void"] is False and len(r["void_addresses"]) == 1
+
+    # a gate whose EVERY conjunct is S2 resolves at VOID (stratum)
+    g2 = ACC.Gate("G-S2-ONLY", [
+        ACC.Check(run, "RUN_MANIFEST_S2.json", ["world_seed_salt"])])
+    r2 = g2.resolve(scope)
+    assert r2["resolved_at"] == ACC.VOID_RESOLVED_AT
+    assert r2["void"] is True and r2["resolved"] is True
+
+
+def test_no_CLI_FLAG_can_activate_or_silence_the_void_scope():
+    """⚠️ A flag is silenceable and ABSENT IS FAIL may not become silenceable —
+    the same non-silenceable principle the two-rev licence rests on."""
+    src = (REPO / "scripts" / "tiletie" / "acceptance_widening.py").read_text()
+    for bad in ("--void", "--s2-void", "--allow-void", "--skip-s2",
+                "--stratum-void", "--no-absent-is-fail"):
+        assert bad not in src
+    # the scope is computed from the run dir, and from nothing else
+    assert "void_stratum_scope(run_dir)" in src
+    assert "GATE_DISJOINT.json" in src
+
+
+def test_stratum_marker_is_structural_and_s_star_globs_are_not_S2():
+    """`s*` spans both strata and is deliberately NOT S2-marked."""
+    assert ACC.stratum_of("RUN_MANIFEST_S2.json") == "S2"
+    assert ACC.stratum_of("SMOKE_MANIFEST_S2_*.json") == "S2"
+    assert ACC.stratum_of("corpus/positions_s2/ARMS.json") == "S2"
+    assert ACC.stratum_of("RUN_MANIFEST_S1.json") == "S1"
+    assert ACC.stratum_of("legs/s*/walled/leg*/manifest.json") is None
+    assert ACC.stratum_of("FLOORS.json") is None

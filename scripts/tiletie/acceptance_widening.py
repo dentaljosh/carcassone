@@ -198,6 +198,77 @@ def dig(obj, dotted: str):
     return cur
 
 
+#: §D4.16 BLOCKER 2 — the S2 VOID SCOPE.
+#:
+#: `G-SALT`'s S2 conjunct addresses `RUN_MANIFEST_S2.json::world_seed_salt`,
+#: which CANNOT EXIST under Reading A. FAIL is false (nothing failed — a
+#: pre-registered rule voided the stratum); PASS is a lie (nothing was checked);
+#: silent absence violates §1.3's `resolved_at` duty. ⇒ **VOID (stratum) — not
+#: evaluated**, citing the same positive witness the analyzer uses.
+#:
+#: ⚠️ IT MUST BE A HARNESS SCOPE, NOT A DOCUMENTED READING. A prose reading
+#: would require a human to translate `UNRESOLVED` into "void, correctly" — a
+#: CARVE-OUT BY INTERPRETATION, and R4.5 already ruled that carve-outs are how
+#: this class recurs (it is why `STAGE1B_LADDER.json` was COPIED rather than
+#: address-excepted).
+#:
+#: ⚠️ AND IT IS DERIVED FROM THE ARTIFACT, NEVER FROM A FLAG. There is no CLI
+#: option that activates, widens or silences it — `ABSENT IS FAIL` may not
+#: become silenceable, which is the same non-silenceable principle the two-rev
+#: licence rests on. Scope: ONLY addresses bearing the S2 stratum marker, and
+#: ONLY under the positive witness. S1 and every non-S2 address are untouched.
+VOID_RESOLVED_AT = "VOID (stratum)"
+VOID_WHY = "VOID (stratum) — not evaluated"
+VOID_WITNESS_FILE = "GATE_DISJOINT.json"
+
+
+def void_stratum_scope(run_dir) -> dict:
+    """Which strata a POSITIVE artifact witness declares void.
+
+    `digest_exclusions.<stratum>.void == true` and nothing else: a missing file,
+    a missing block, a missing row and a `null` all yield an INACTIVE scope, so
+    absence can never scope an address out of `ABSENT IS FAIL`.
+    """
+    p = Path(run_dir) / VOID_WITNESS_FILE
+    out = {"active": False, "strata": (), "source": str(p), "present": False,
+           "address": f"{VOID_WITNESS_FILE}::digest_exclusions.<stratum>.void",
+           "voided_strata": None,
+           "why": "no GATE_DISJOINT.json — absence is NOT a void witness"}
+    if not p.is_file():
+        return out
+    try:
+        d = json.loads(p.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        out["why"] = f"GATE_DISJOINT.json unreadable ({exc})"
+        return out
+    strata = tuple(sorted(
+        str(s).upper() for s, v in (d.get("digest_exclusions") or {}).items()
+        if isinstance(v, dict) and v.get("void") is True))
+    out.update({"present": True, "strata": strata, "active": bool(strata),
+                "voided_strata": d.get("voided_strata"),
+                "why": (f"positive witness: void is true for {list(strata)}"
+                        if strata else
+                        "no stratum carries void == true — scope INACTIVE")})
+    return out
+
+
+#: How an address declares which stratum it belongs to when it is not passed
+#: explicitly. Structural, from the address itself — never a human judgement at
+#: audit time.
+_STRATUM_MARKERS = (("S2", ("_S2", "_s2", "/s2/", "positions_s2", "S2_")),
+                    ("S1", ("_S1", "_s1", "/s1/", "positions_s1", "S1_")))
+
+
+def stratum_of(glob: str, label: str = "") -> str:
+    """The stratum an address is marked for, or None. `s*` globs span both and
+    are deliberately NOT marked: they are not S2-addressed."""
+    hay = f"/{glob}/{label}/"
+    for tag, marks in _STRATUM_MARKERS:
+        if any(m in hay for m in marks):
+            return tag
+    return None
+
+
 class Check:
     """ONE address: a file glob + the dotted keys that must resolve in it.
 
@@ -216,7 +287,7 @@ class Check:
     """
 
     def __init__(self, root, glob, keys=(), kind="json", label=None,
-                 min_files=1, max_lines=100, max_entries=100):
+                 min_files=1, max_lines=100, max_entries=100, stratum=None):
         self.root = Path(root)
         self.glob = glob
         self.keys = list(keys)
@@ -226,6 +297,9 @@ class Check:
         self.min_files = min_files
         self.max_lines = max_lines
         self.max_entries = max_entries
+        #: which stratum this address is marked for — explicit wins, else the
+        #: marker structurally present in the address itself
+        self.stratum = stratum or stratum_of(self.glob, self.label)
         self.sanctioned_nulls = []
 
     def _ok(self, key, vals, doc) -> bool:
@@ -238,9 +312,21 @@ class Check:
             self.sanctioned_nulls.append({"key": key, **(detail or {})})
         return ok
 
-    def resolve(self) -> dict:
+    def resolve(self, void_scope=None) -> dict:
         files = sorted(self.root.glob(self.glob)) if self.root.is_dir() else []
-        base = {"address": f"{self.root}/{self.label}", "n_files": len(files)}
+        base = {"address": f"{self.root}/{self.label}", "n_files": len(files),
+                "stratum": self.stratum}
+        # ⭐ §D4.16's harness scope: an S2-marked address under a POSITIVE void
+        # witness is NOT EVALUATED — never FAIL (nothing failed), never PASS
+        # (nothing was checked), never silent (the resolved_at duty). Untouched
+        # for S1 and for every non-S2 address, and unreachable from any flag.
+        if (void_scope or {}).get("active") and self.stratum in (
+                void_scope or {}).get("strata", ()):
+            return {**base, "resolved": None, "void": True, "types": {},
+                    "sanctioned_nulls": [], "why": VOID_WHY,
+                    "void_witness": {k: (void_scope or {}).get(k) for k in
+                                     ("address", "source", "voided_strata",
+                                      "why")}}
         if len(files) < self.min_files:
             return {**base, "resolved": False, "types": {},
                     "sanctioned_nulls": [],
@@ -322,17 +408,31 @@ class Gate:
         #: belongs to a rider whose emitter may legitimately not have run yet.
         self.optional = bool(optional)
 
-    def resolve(self) -> dict:
-        prim = [c.resolve() for c in self.primary]
-        fall = [c.resolve() for c in self.fallback]
-        ok_p = bool(prim) and all(r["resolved"] for r in prim)
-        ok_f = bool(fall) and all(r["resolved"] for r in fall)
-        at = "primary" if ok_p else ("fallback" if ok_f else
-                                     ("OPTIONAL-ABSENT" if self.optional
-                                      else "UNRESOLVED"))
+    def resolve(self, void_scope=None) -> dict:
+        prim = [c.resolve(void_scope) for c in self.primary]
+        fall = [c.resolve(void_scope) for c in self.fallback]
+
+        def _live(rs):
+            return [r for r in rs if not r.get("void")]
+
+        voided = [r["address"] for r in prim + fall if r.get("void")]
+        live_p, live_f = _live(prim), _live(fall)
+        # a VOID conjunct neither satisfies nor breaks its gate: the gate is
+        # decided by the conjuncts that were actually evaluated, and a gate
+        # whose every conjunct is void resolves at VOID (stratum).
+        ok_p = bool(live_p) and all(r["resolved"] for r in live_p)
+        ok_f = bool(live_f) and all(r["resolved"] for r in live_f)
+        all_void = bool(prim) and not live_p and (not fall or not live_f)
+        if all_void:
+            at = VOID_RESOLVED_AT
+        else:
+            at = "primary" if ok_p else ("fallback" if ok_f else
+                                         ("OPTIONAL-ABSENT" if self.optional
+                                          else "UNRESOLVED"))
         return {"gate": self.name, "phase": self.phase, "resolved_at": at,
                 "optional": self.optional,
                 "resolved": at != "UNRESOLVED",
+                "void": all_void, "void_addresses": voided,
                 "primary_ok": ok_p, "fallback_ok": ok_f if fall else None,
                 "primary": prim, "fallback": fall, "note": self.note,
                 "has_fallback": bool(self.fallback)}
@@ -889,7 +989,7 @@ def build_fixture_tree(scratch) -> Path:
 # --------------------------------------------------------------------------- #
 def _print(results, verbose):
     marks = {"primary": "OK ", "fallback": "FB ", "UNRESOLVED": "***",
-             "OPTIONAL-ABSENT": "-- "}
+             "OPTIONAL-ABSENT": "-- ", VOID_RESOLVED_AT: "VOI"}
     for r in results:
         print(f"[acceptance] {marks[r['resolved_at']]} {r['phase']:11s} "
               f"{r['gate']:36s} {r['resolved_at']}")
@@ -899,6 +999,11 @@ def _print(results, verbose):
                     print(f"[acceptance]        allow_null  row {s['row']!r} "
                           f"sanctions {s['key']} (witness "
                           f"{','.join(s.get('witness', []))})")
+                if c.get("void"):
+                    print(f"[acceptance]        {section:8s} "
+                          f"{'VOID':10s} {c['address']}  <- {c['why']} "
+                          f"({c['void_witness']['address']})")
+                    continue
                 if verbose or (not c["resolved"] and not r["optional"]):
                     state = "resolved" if c["resolved"] else "UNRESOLVED"
                     types = ", ".join(f"{k}:{'/'.join(v)}"
@@ -943,7 +1048,17 @@ def main(argv=None) -> int:
     print(f"[acceptance] mode  = {a.mode}  (presence + JSON type ONLY; no value "
           f"is computed, printed or stored)")
 
-    results = [g.resolve() for g in address_book(run_dir, a.share, a.mode)]
+    # ⚠️ ARTIFACT-DERIVED, NEVER A FLAG (§D4.16). There is deliberately no CLI
+    # option that activates, widens or silences this: `ABSENT IS FAIL` may not
+    # become silenceable.
+    scope = void_stratum_scope(run_dir)
+    if scope["active"]:
+        print(f"[acceptance] S2 VOID SCOPE ACTIVE — {scope['why']} "
+              f"({scope['address']}, {scope['source']}). S2-marked addresses "
+              f"report '{VOID_WHY}'; S1 and every non-S2 address are UNTOUCHED "
+              f"and ABSENT IS FAIL still binds them.")
+
+    results = [g.resolve(scope) for g in address_book(run_dir, a.share, a.mode)]
 
     fixture_run = None
     if a.mode in ("4a", "all") and not a.no_fixture:
@@ -966,6 +1081,8 @@ def main(argv=None) -> int:
                       if r["has_fallback"] and r["fallback_ok"] is False)
     report = {"run_dir": str(run_dir), "share": str(a.share), "mode": a.mode,
               "fixture_run": str(fixture_run) if fixture_run else None,
+              "void_scope": scope,
+              "n_void": sum(1 for r in results if r.get("void")),
               "n_gates": len(results), "n_unresolved": n_bad,
               "n_fallback_only": n_fb, "n_unaudited_fallbacks": n_fb_broken,
               "gates": results, "passed": n_bad == 0,
