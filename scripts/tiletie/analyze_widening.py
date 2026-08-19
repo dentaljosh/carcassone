@@ -498,7 +498,7 @@ def arms_gate_block(arms_by_stratum: dict, include_partial=False) -> dict:
             "resolved_at": "READOUT::widening.gates.arms"}
 
 
-def completion_block(rows_s1, rows_s2, floors=None) -> dict:
+def completion_block(rows_s1, rows_s2, floors=None, void_witness=None) -> dict:
     """`G-COMPLETE` (R4 §2a, REPLACES the R3.3 row).
 
     R3's floors were computed from RAW CENSUS ROWS and were unreachable by 27x
@@ -535,9 +535,22 @@ def completion_block(rows_s1, rows_s2, floors=None) -> dict:
         label = "R3.3 constants (no FLOORS.json given)"
     rung3 = bool(n2) if floors else True
     ok = bool(s1_n >= f1 and s1_mpr <= S1_MAX_PER_ROOT)
-    if rung3:
+    # ⭐ §D4.16's void scope, applied to THIS gate's S2 conjunct — same positive
+    # witness, same Reading A. A conjunct addressing a stratum a pre-registered
+    # rule VOIDED is not FAILED (nothing failed) and not PASSED (nothing was
+    # checked): it is NOT EVALUATED, and the block says so. `rung3_bought` stays
+    # TRUE — the run purchased the J question at n2 and then lost it to a void,
+    # and "not bought" is the one phrase the owner ruling forbids.
+    s2_void = bool((void_witness or {}).get("void"))
+    if rung3 and not s2_void:
         ok = ok and bool(s2_n >= f2 and s2_mpr <= S2_MAX_PER_ROOT)
     return {
+        "s2_conjunct": ("VOID (stratum) — not evaluated" if s2_void
+                        else "evaluated"),
+        "s2_void": s2_void,
+        "s2_void_witness": ({k: (void_witness or {}).get(k)
+                             for k in ("address", "value", "source", "why")}
+                            if s2_void else None),
         "s1_n": s1_n, "s2_n": s2_n,
         "s1_max_per_root": s1_mpr, "s2_max_per_root": s2_mpr,
         "s1_n_all": len(rows_s1), "s2_n_all": len(rows_s2),
@@ -719,6 +732,131 @@ def union_block(corpus_union_path) -> dict:
                 "probe build and were gated exactly like fresh ones. 'Already "
                 "gated under R3' is not a status any position holds — R3's gate "
                 "FAILED, so nothing was ever passed.",
+    }
+
+
+#: §D4.16 — the rung-3 void token. ⚠️ It must NOT collide with any rung-3 branch
+#: token, and no `X-` token may appear anywhere in the READOUT on this path.
+VOID_S2 = "VOID_S2"
+
+#: The POSITIVE witness, by dotted address. Absence is NOT a witness.
+VOID_WITNESS_ADDRESS = "GATE_DISJOINT.json::digest_exclusions.{stratum}.void"
+
+VOID_REASON = ("stratum voided at G-DISJOINT per PREREG_FAILURE_S2.md and "
+               "ADJUDICATION_R4_GATES.md Reading A")
+
+#: The owner ruling forbids the nearest available phrases by name. They are
+#: carried INLINE on the block so the prohibition cannot be separated from the
+#: status it qualifies.
+VOID_FORBIDDEN_READINGS = [
+    'not "not bought" — the run BOUGHT rung 3 at n2 = 1100',
+    'not "answered" — no estimand was read',
+    'not "inconclusive" — nothing was measured to be inconclusive about',
+    # ⚠️ §D4.17 takes OPTION (b): the six rung-3 branch tokens are NOT
+    # enumerated here. Naming them — even to forbid them — leaves a naive
+    # downstream grep finding a branch token in this READOUT, which is the
+    # actual risk; and they are enumerated in the READ_RULE, which is where a
+    # reader looks for them. The prohibition is stated WITHOUT the names, so
+    # zero occurrences is checkable by a naive grep over both output files.
+    "not any rung-3 branch of the READ_RULE's branch table (they are "
+    "enumerated there and are deliberately NOT named here): the table was "
+    "never evaluated",
+]
+
+#: The S1-side rung-3 riders are real measurements, so they are REPORTED —
+#: suppressing measured quantities is worse — but the prohibition travels WITH
+#: the number, because inferring a branch from them is the live risk of
+#: reporting them at all.
+S1_RIDER_PROHIBITION = (
+    "REPORTED, ADJUDICATES NOTHING. These are real S1 measurements, but with "
+    "rung 3 VOID they have NO PRIMARY TO RIDE ON: no rung-3 branch may be "
+    "inferred from them, in either direction. They are not a substitute "
+    "estimand, not a partial read, and not evidence for or against any "
+    "X-branch."
+)
+
+
+def void_stratum_witness(gate_disjoint_path, stratum: str = "S2") -> dict:
+    """⭐ §D4.16's POSITIVE WITNESS — `GATE_DISJOINT.json::digest_exclusions.
+    <stratum>.void == true`, read from the artifact.
+
+    **ABSENCE IS NEVER A VOID.** This returns `void=False` for a missing file, a
+    missing block, a missing stratum and a `null`; only a literal `true` is a
+    witness. That asymmetry is the D4 lesson: missing inputs are an assembly
+    defect wearing the shape of a decision, and a guard keyed on absence alone
+    would have silently blessed D4's 551 never-scored rids.
+    """
+    address = VOID_WITNESS_ADDRESS.format(stratum=stratum)
+    out = {"void": False, "stratum": stratum, "address": address,
+           "source": str(gate_disjoint_path) if gate_disjoint_path else None,
+           "present": False, "value": None, "voided_strata": None}
+    if not gate_disjoint_path or not Path(gate_disjoint_path).is_file():
+        out["why"] = "GATE_DISJOINT.json absent — absence is NOT a void witness"
+        return out
+    try:
+        d = json.loads(Path(gate_disjoint_path).read_text())
+    except json.JSONDecodeError as exc:
+        out["why"] = f"GATE_DISJOINT.json unreadable ({exc})"
+        return out
+    out["present"] = True
+    out["voided_strata"] = d.get("voided_strata")
+    per = d.get("digest_exclusions") or {}
+    row = None
+    for key, val in per.items():                    # tolerate S2 / s2 spelling
+        if str(key).upper() == str(stratum).upper() and isinstance(val, dict):
+            row = val
+            break
+    if row is None:
+        out["why"] = (f"no digest_exclusions row for {stratum!r} — a missing row "
+                      f"is not a witness")
+        return out
+    out["value"] = row.get("void")
+    out["void"] = row.get("void") is True
+    out["why"] = ("positive witness: void is true" if out["void"] else
+                  f"void is {row.get('void')!r}, not true — NOT a void witness")
+    return out
+
+
+def _floors_n2(floors_path):
+    """`FLOORS.json::n2` — READ, never edited. `rung3_bought` there is CORRECT
+    and stays frozen: it is a true statement about what was PURCHASED."""
+    if not floors_path or not Path(floors_path).is_file():
+        return None
+    try:
+        return int(json.loads(Path(floors_path).read_text())["n2"])
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None
+
+
+def void_rung3_block(witness: dict, n2, floors_source=None) -> dict:
+    """The rung-3 block on the void path (§D4.16's table).
+
+    ⚠️ `bought = true` with `n2` read from `FLOORS.json` — the run PURCHASED the
+    J question and then lost it to a stratum void. `FLOORS.json::rung3_bought`
+    is CORRECT and stays frozen: flipping it would falsify the record AND make
+    this read-out emit "not bought", the one phrase the owner ruling forbids.
+    """
+    return {
+        # both spellings carry the SAME non-X token: `status` is what §D4.16
+        # names, `branch` is the address every existing consumer reads. Neither
+        # may ever be an X-token on this path.
+        "status": VOID_S2,
+        "branch": VOID_S2,
+        "bought": True,
+        "n2": n2,
+        "n2_source": floors_source or "FLOORS.json::n2",
+        "estimand_read": False,
+        "reason": VOID_REASON,
+        "forbidden_readings": list(VOID_FORBIDDEN_READINGS),
+        "obligation_inherited_by": {
+            "successor": "rung3_r5",
+            "includes": "I7's dedupe-partition conditional, which stays "
+                        "UNMEASURED — W9 / D-DRAW was skipped as moot",
+        },
+        "witness": {k: witness.get(k) for k in
+                    ("address", "value", "source", "voided_strata", "why")},
+        "note": "the rung-3 branch table was NEVER EVALUATED. This is not a "
+                "branch, and it is not a failure of one.",
     }
 
 
@@ -1158,6 +1296,33 @@ def render_md(v: dict) -> str:
               "inconclusive — it was not purchased.", ""]
         L += _exclusion_lines(w)
         return "\n".join(L)
+    if b3.get("status") == VOID_S2:
+        # ⚠️ §D4.16 — no `X-` token may appear anywhere in this report on the
+        # void path, and the forbidden readings are printed WITH the status.
+        ob = b3["obligation_inherited_by"]
+        L += [f"**STATUS: `{b3['status']}`** — {b3['reason']}", "",
+              f"- **bought: `true`** at `n2 = {b3['n2']}` "
+              f"(`{b3['n2_source']}`) — the J question WAS purchased and then "
+              f"lost to a stratum void",
+              f"- **estimand_read: `false`** — the branch table was NEVER "
+              f"evaluated",
+              f"- witness: `{b3['witness']['address']}` = "
+              f"`{b3['witness']['value']}` (`{b3['witness']['source']}`)",
+              f"- **obligation inherited by `{ob['successor']}`** — "
+              f"{ob['includes']}", "",
+              "**THIS READING IS FORBIDDEN AS:**", ""]
+        L += [f"- {r}" for r in b3["forbidden_readings"]]
+        L += ["", "### S1-side rung-3 riders — REPORTED, ADJUDICATING NOTHING", "",
+              w["j_rider"]["s1_riders_prohibition"], "",
+              f"- S1 replication `Δ_ora` = "
+              f"{_f(w['j_rider']['s1_replication'].get('delta_ora'))} "
+              f"CI95 {_ci(w['j_rider']['s1_replication'].get('ci95_ora'))} "
+              f"(n_capped {w['j_rider']['s1_replication'].get('n_capped')})",
+              f"- interaction `arb_full(64−16)` = "
+              f"{_f((w['j_rider']['interaction'].get('arb_full_64_minus_16') or {}).get('value'))} "
+              f"(n_capped_s1 {w['j_rider']['interaction'].get('n_capped_s1')})", ""]
+        L += _exclusion_lines(w)
+        return "\n".join(L)
     L += [f"**BRANCH: `{b3['branch']}`** — {b3['reason']}", ""]
     s2 = w["j_rider"]["s2"]
     L += [f"- `Δ_ora` = {_f(s2['delta_ora'])} CI95 {_ci(s2['ci95_ora'])} "
@@ -1410,8 +1575,32 @@ def main(argv=None) -> int:
         "arb_full_16_minus_j4_16": binter.stat(f"d_arb_E{e_primary}"),
         "n_capped_s1": len(capped_s1), "e_worlds": e_primary,
     }
-    rung3 = decide_rung3(j_s2["_d_ora"], j_s2["_r_ora"], j_s2["_ora_j4"],
-                         j_s2["_d_arb"])
+    # ⭐ §D4.16 — the VOID-STRATUM GUARD, and it fires on a POSITIVE WITNESS
+    # CONJOINED with absent inputs, never on absence alone. If S2 inputs are
+    # missing and `GATE_DISJOINT::digest_exclusions.S2.void` is not literally
+    # true, this RAISES: missing inputs are exactly what D4 was — an assembly
+    # defect wearing the shape of a decision — and a guard keyed on absence
+    # would have silently blessed D4's 551 never-scored rids.
+    s2_witness = void_stratum_witness(a.gate_disjoint, "S2")
+    s2_inputs_present = bool(rows_s2)
+    rung3_void = None
+    if s2_inputs_present:
+        rung3 = decide_rung3(j_s2["_d_ora"], j_s2["_r_ora"], j_s2["_ora_j4"],
+                             j_s2["_d_arb"])
+    elif s2_witness["void"]:
+        rung3_void = void_rung3_block(s2_witness, n2=_floors_n2(a.floors),
+                                      floors_source=(str(a.floors) + "::n2")
+                                      if a.floors else None)
+        rung3 = rung3_void
+    else:
+        raise SystemExit(
+            "REFUSING: S2 inputs are ABSENT and there is no positive void "
+            f"witness ({s2_witness['address']} = {s2_witness['value']!r}; "
+            f"{s2_witness.get('why')}). ABSENCE IS NOT A VOID — missing inputs "
+            "are an assembly defect wearing the shape of a decision (that is "
+            "exactly what D4 was: 551 committed rids silently never scored). "
+            "Supply the S2 inputs, or supply the GATE_DISJOINT.json whose "
+            "digest_exclusions.S2.void is true.")
 
     # `D-DRAW` is W9's probe (`RUN/D_DRAW.json`). Until it has run every
     # `d_draw.*` address is `null`, and `d_draw_ran` is the witness that makes
@@ -1444,7 +1633,9 @@ def main(argv=None) -> int:
     if a.floors:
         import floors as FL                                        # noqa: E402
         floors = FL.load(a.floors)
-    completion = completion_block(rows_s1, rows_s2, floors)
+    completion = completion_block(rows_s1, rows_s2, floors,
+                                  void_witness=void_stratum_witness(
+                                      a.gate_disjoint, "S2"))
     salt = salt_gate(a.run_manifest or [],
                      {t_: s["plan"] for t_, s in strata.items()},
                      {t_: AT.load_plan(s["plan_dir"])["arms"]
@@ -1504,18 +1695,50 @@ def main(argv=None) -> int:
         "delta": delta,
         "b_ladder": b_ladder,
         "j_rider": {
-            "s2": _strip_private(j_s2),
-            "s1_replication": _strip_private(j_s1),
-            "interaction": interaction,
+            # ⚠️ on the void path the S2 slice is replaced by an explicit void
+            # stub: its degenerate form still carries an `xfree_window` NOTE
+            # naming `X-FREE`, and §D4.16 forbids ANY X-token anywhere in the
+            # READOUT on this path.
+            "s2": ({"void": True, "status": VOID_S2, "n_capped": 0,
+                    "note": "no S2 stratum was read — see branch.rung3"}
+                   if rung3_void else _strip_private(j_s2)),
+            # ⚠️ §D4.16: the S1-side rung-3 riders are REAL MEASUREMENTS and are
+            # reported — suppressing measured quantities is worse — but the
+            # prohibition travels WITH the number, because inferring a rung-3
+            # branch from them is the live risk of reporting them at all.
+            "s1_riders_prohibition": (S1_RIDER_PROHIBITION if rung3_void
+                                      else None),
+            # ⚠️ the rider's `xfree_window` is an ATTAINABILITY ANNOTATION for a
+            # branch that was never evaluated — with rung 3 void it has no
+            # referent, and its explanatory note names an X-token, which §D4.16
+            # forbids anywhere in this READOUT. Dropped WITH its reason, never
+            # silently.
+            "s1_replication": dict(
+                _strip_private(j_s1),
+                **({"adjudicates": S1_RIDER_PROHIBITION,
+                    "xfree_window": {
+                        "void": True,
+                        "note": "attainability annotation DROPPED: with rung 3 "
+                                "void there is no branch for it to annotate, "
+                                "and no branch token may appear in this "
+                                "read-out"}}
+                   if rung3_void else {})),
+            "interaction": dict(interaction,
+                                **({"adjudicates": S1_RIDER_PROHIBITION}
+                                   if rung3_void else {})),
             "d_draw": d_draw,
         },
         "branch": {
             "rung2": rung2 if gates_ok else
             {"branch": "W-UNREADABLE",
              "reason": "a gate binding this rung FAILED; no branch fires"},
-            "rung3": rung3 if gates_ok else
-            {"branch": "W-UNREADABLE",
-             "reason": "a gate binding this rung FAILED; no branch fires"},
+            # ⚠️ the VOID takes precedence over the gate-fail substitution: a
+            # stratum a pre-registered rule voided is unreadable for a reason
+            # that is not a gate failure, and `W-UNREADABLE` would mis-state it.
+            "rung3": rung3_void if rung3_void else (
+                rung3 if gates_ok else
+                {"branch": "W-UNREADABLE",
+                 "reason": "a gate binding this rung FAILED; no branch fires"}),
         },
         "config": {
             "b_ladder": list(B_LADDER),
