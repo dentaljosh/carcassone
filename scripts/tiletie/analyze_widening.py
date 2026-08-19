@@ -892,6 +892,45 @@ def exclusions_block(gate_disjoint_path) -> dict:
     }
 
 
+def ci95_of(v) -> list:
+    """ALWAYS a 2-list. ⚠️ A bare `None`, a short list or a non-list becomes
+    `[None, None]` — a TYPED ABSENCE — because `stat.get("ci95", [None, None])`
+    does NOT protect a key that is PRESENT WITH None: the default never fires,
+    and the next subscript raises. That is the shape that crashed W3."""
+    if isinstance(v, (list, tuple)) and len(v) == 2:
+        return [v[0], v[1]]
+    return [None, None]
+
+
+def ladder_stat(b_ladder: dict, e, b) -> dict:
+    """⭐ THE ONE CONSTRUCTOR for a ladder rung's stat, used at EVERY site.
+
+    Two shapes for the same field is what put a present-with-None `ci95` into
+    `replication_gate`: one call site defaulted to `{"value": None, "ci95":
+    [None, None]}` and survived a missing rung, the other defaulted to `{}` and
+    handed on `.get("ci95") -> None`. A missing rung is now a TYPED ABSENCE
+    everywhere — never a bare-None `ci95`, and never a traceback — and it says
+    WHICH layer was missing so the read-out can be acted on.
+    """
+    lad = (b_ladder or {}).get(f"E{e}")
+    rung = (lad or {}).get(f"B{b}")
+    if not isinstance(rung, dict):
+        return {
+            "value": None, "ci95": [None, None], "se": None, "z": None,
+            "absent": True,
+            # `lad is None` (the E level was never built) and `lad == {}` (built
+            # but empty) are DIFFERENT upstream faults and say so separately
+            "why": (f"no E{e} ladder exists — that E level was not requested"
+                    if lad is None else
+                    f"the E{e} ladder has no B{b} rung — no row carried "
+                    f"`arb_j4_E{e}_B{b}` (a rung above the cross-fit selection "
+                    f"half, or an empty row set)"),
+        }
+    return {"value": rung.get("arb"), "ci95": ci95_of(rung.get("ci95")),
+            "se": rung.get("se"), "z": rung.get("z"), "absent": False,
+            "why": None}
+
+
 def replication_gate(ladder_e16: dict, arb16_stat: dict, reference: dict,
                      inflation=ENVELOPE_INFLATION) -> tuple:
     """`G-REPLICATE` — binds BOTH rungs (ONE shared instrument check, NOT two
@@ -930,14 +969,24 @@ def replication_gate(ladder_e16: dict, arb16_stat: dict, reference: dict,
                              "inside_naive_2sigma": inside_naive,
                              "inside_inflated_2sigma": inside_inflated}
 
-    convicts = bool(arb16_stat.get("ci95", [None, None])[0] is not None
-                    and arb16_stat["ci95"][0] > 0)
+    # ⚠️ NORMALISED, not `.get(..., default)`: the default does NOT fire on a
+    # key that is present with `None`, which is exactly how a bare None reached
+    # this subscript. The gate now evaluates to its OWN absence semantics — a
+    # conjunct that cannot convict is FALSE, and FALSE here reads UNINTERPRETABLE
+    # — instead of raising.
+    arb16_ci = ci95_of(arb16_stat.get("ci95"))
+    convicts = bool(arb16_ci[0] is not None and arb16_ci[0] > 0)
+    arb16_absent = bool(arb16_stat.get("absent")) or arb16_ci[0] is None
     passed = bool(per_rung and all(per_rung.values()) and convicts)
     caveat = bool(any(per_rung[k] and not per_rung_naive[k] for k in per_rung))
     public = {
         "pass": passed,
         "per_rung_inside_envelope": per_rung,
         "arb16_convicts": convicts,
+        # the conjunct states WHY it could not convict rather than reading as a
+        # measured non-conviction — absence and refutation are different facts
+        "arb16_input_absent": arb16_absent,
+        "arb16_absent_why": arb16_stat.get("why") if arb16_absent else None,
         "envelope_inflation": inflation,
         "naive_envelope_caveat": caveat,
         "reads": "UNINTERPRETABLE on FAIL — never FAIL-the-lever; the fresh "
@@ -955,8 +1004,9 @@ def replication_gate(ladder_e16: dict, arb16_stat: dict, reference: dict,
         "reference_source": (reference or {}).get("source"),
         "per_rung": sealed_rungs,
         "per_rung_inside_envelope_naive": per_rung_naive,
-        "arb16": {"value": arb16_stat.get("value"), "ci95": arb16_stat.get("ci95"),
-                  "z": arb16_stat.get("z")},
+        "arb16": {"value": arb16_stat.get("value"), "ci95": arb16_ci,
+                  "z": arb16_stat.get("z"), "absent": arb16_absent,
+                  "why": arb16_stat.get("why")},
         "envelope_inflation": inflation,
         "pass": passed,
     }
@@ -1557,12 +1607,9 @@ def main(argv=None) -> int:
         "committed_floor_d_16_64": D1664_FLOOR,
         "committed_floor_d_16_32": D1632_FLOOR,
     }
-    arb64 = (b_ladder.get(f"E{e_primary}", {}).get("B64")
-             or {"value": None, "ci95": [None, None]})
-    arb16 = (b_ladder.get(f"E{e_primary}", {}).get("B16")
-             or {"value": None, "ci95": [None, None]})
-    arb64_stat = {"value": arb64.get("arb"), "ci95": arb64.get("ci95")}
-    arb16_stat = {"value": arb16.get("arb"), "ci95": arb16.get("ci95")}
+    # ONE constructor, here and at the G-REPLICATE site below (see `ladder_stat`)
+    arb64_stat = ladder_stat(b_ladder, e_primary, 64)
+    arb16_stat = ladder_stat(b_ladder, e_primary, 16)
     rung2 = decide_rung2(delta["d_16_64"], arb64_stat, arb16_stat)
 
     # ---- rung 3 ------------------------------------------------------------ #
@@ -1647,12 +1694,11 @@ def main(argv=None) -> int:
 
     ref = json.loads(Path(a.stage1b_ladder).read_text())
     e16_ladder = b_ladder.get("E16", {})
-    arb16_e16 = e16_ladder.get("B16") or {}
+    # ⚠️ the SAME constructor as the rung-2 site. The previous `or {}` here left
+    # `ci95` PRESENT WITH None, which `.get("ci95", [None, None])` inside the
+    # gate could not default away — and the next subscript raised.
     repl_public, repl_sealed = replication_gate(
-        e16_ladder,
-        {"value": arb16_e16.get("arb"), "ci95": arb16_e16.get("ci95"),
-         "z": arb16_e16.get("z")},
-        ref)
+        e16_ladder, ladder_stat(b_ladder, 16, 16), ref)
     (out_dir / "SEALED_G_REPLICATE.json").write_text(
         json.dumps(repl_sealed, indent=2, sort_keys=True))
 
