@@ -2276,24 +2276,26 @@ def test_S2_absent_WITH_the_witness_emits_the_VOID_S2_block(tree, tmp_path):
 
 
 def test_the_VOID_S2_token_collides_with_NO_X_branch_token(tree, tmp_path):
-    """⚠️ §D4.16: the token must not collide with any rung-3 branch token, and
-    NO X-token may appear ANYWHERE in the READOUT on this path."""
+    """⚠️ §D4.16 + §D4.17 option (b): the token must not collide with any
+    rung-3 branch token, and NO X-token may appear ANYWHERE in the READOUT on
+    this path — **UNCONDITIONALLY**. No line is stripped before the scan,
+    because the risk being closed is a NAIVE DOWNSTREAM GREP finding a branch
+    token in this file; a scan that needs a carve-out does not model that
+    reader. The enumeration lives in the READ_RULE, where a reader looks for
+    it — not here, not even to forbid it."""
     assert AW.VOID_S2 not in X_TOKENS
     assert not any(AW.VOID_S2.startswith(t) or t.startswith(AW.VOID_S2)
                    for t in X_TOKENS)
+    # the prohibition is stated WITHOUT the names
+    assert not any(t in r for r in AW.VOID_FORBIDDEN_READINGS for t in X_TOKENS)
     out = tmp_path / "out_tok"
     rc = AW.main(_s1_only_argv(tree, out,
                                gate_disjoint=_gate_disjoint(tmp_path / "gd.json")))
     assert rc == 0
-    blob = (out / "READOUT.json").read_text() + (out / "READOUT.md").read_text()
-    # the forbidden-readings line NAMES the X tokens once, as a prohibition —
-    # that is the only place they may appear, so strip it before the scan
-    doc = json.loads((out / "READOUT.json").read_text())
-    named = doc["widening"]["branch"]["rung3"]["forbidden_readings"][-1]
-    scan = blob.replace(named, "").replace(
-        "X-CONFIRMED / X-ABOVE / X-PARTIAL / X-BELOW / X-FREE / X-INCONCLUSIVE", "")
-    for t in X_TOKENS:
-        assert t not in scan, f"{t} leaked into the READOUT on the void path"
+    for name in ("READOUT.json", "READOUT.md"):
+        blob = (out / name).read_text()          # ⚠️ VERBATIM — nothing stripped
+        for t in X_TOKENS:
+            assert t not in blob, f"{t} leaked into {name} on the void path"
 
 
 def test_the_witness_does_NOT_suppress_real_S2_data(tree, tmp_path):

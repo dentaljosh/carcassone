@@ -752,8 +752,15 @@ VOID_FORBIDDEN_READINGS = [
     'not "not bought" — the run BOUGHT rung 3 at n2 = 1100',
     'not "answered" — no estimand was read',
     'not "inconclusive" — nothing was measured to be inconclusive about',
-    "not any X-branch token (X-CONFIRMED / X-ABOVE / X-PARTIAL / X-BELOW / "
-    "X-FREE / X-INCONCLUSIVE): the branch table was never evaluated",
+    # ⚠️ §D4.17 takes OPTION (b): the six rung-3 branch tokens are NOT
+    # enumerated here. Naming them — even to forbid them — leaves a naive
+    # downstream grep finding a branch token in this READOUT, which is the
+    # actual risk; and they are enumerated in the READ_RULE, which is where a
+    # reader looks for them. The prohibition is stated WITHOUT the names, so
+    # zero occurrences is checkable by a naive grep over both output files.
+    "not any rung-3 branch of the READ_RULE's branch table (they are "
+    "enumerated there and are deliberately NOT named here): the table was "
+    "never evaluated",
 ]
 
 #: The S1-side rung-3 riders are real measurements, so they are REPORTED —
