@@ -32,7 +32,8 @@
 |---|---|---|
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
-| **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — analysis does not proceed until it reads PASS (§D3.5) |
+| **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS`; S2 orphans moot (stays void) |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -398,6 +399,182 @@ PASS/FAIL. **Analysis does not proceed until this reads PASS.**
 
 ---
 
-*No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D1, D2 or
-D3. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their signature
-blocks read SIGNED; D3's classification is in force on ruling, its witness on PASS.*
+## D4 — the union assembled ARMS but not LEG FILES: 551 committed rids never scored
+
+**Status: RULED — COMPLETION-SCORING LICENSED, sequenced behind `D3-WITNESS`.**
+**Post-blind legality: assembly/execution layer only — no gate, bar, address, branch, statistic or
+estimand of the R4 pair changes.**
+
+### D4.1 What happened, and why every check said "complete"
+
+`union_positions.py` merged `ARMS.json` (**1,344 S1 rids** = 551 retained 135e9 + 793 fresh 137e9)
+but **the leg files in the union dirs are extension-only**: `POSITIONS_PLAN.json`'s `files` block
+points every leg file at `positions_s1_ext/`, and only the ext `leg1` jsonl physically exists in
+the union dir. **Both judges therefore scored only the 793 fresh rids; the 551 retained rids were
+never scored by any box.** S2 is the same shape (103 orphaned).
+
+⭐ **The lesson, and it is the whole point of this entry: three independent "complete" signals were
+all true — each of a different population, none of them the committed corpus.**
+
+| check | denominator it used | true? |
+|---|---|---|
+| supply gate | `POSITIONS_PLAN.n_positions = 1344` — an **ARMS** count | yes, of the ARMS layer |
+| `CORPUS_UNION.json` | `retained = 551`, `copied_not_symlinked = true` — asserted at the **ARMS** layer | yes, of an assembly that **did not happen at the leg layer** |
+| merge completeness | records vs the **(ext-only) leg files** | yes — **793/793 against a denominator that was itself the defect** |
+
+**The missing invariant, in one line: nothing ever asserted that the leg files enumerate exactly
+the `ARMS.json` rids.** Every layer checked itself against itself. This is the R3.3 miss class —
+**a gate reading a non-supply count as supply** — one layer down, and this time discovered *after*
+the scoring spend rather than before it.
+
+**Blindness is intact and that is load-bearing for everything below:** `analyze` never ran,
+`--mode post` never ran, **no statistic has been revealed**. The 793's records are complete and
+valid.
+
+### D4.2 RULING (1) — COMPLETION, not re-registration. **ACCEPTED.** Nothing in the pair forbids it.
+
+**Checked, quoting the finality clauses, all of which key on events that have not occurred:**
+
+- *"**SINGLE USE. SPENT ON LANDING.** One adjudication, one analyzer invocation, one read-out…
+  **No re-read, no second pass, no top-up at any `z`.**"* — **"at any `z`" presupposes a `z`. None
+  exists.** These clauses govern **adjudication**, not scoring.
+- §8: *"**When the read-out lands** this rule is spent: no re-read, no second adjudication, no
+  top-up, **no re-scoring of this corpus under any other rule**."* — expressly conditioned on the
+  read-out landing. It has not. And this is not *re*-scoring: the 551 have **never** been scored.
+- *"The only pre-licensed top-up is DESIGN §3's blind corpus top-up, which **expires the moment the
+  first scoring leg starts**."* — that clause governs **adding games**. The 551 add **no game and
+  no rid**: they are inside the committed `ARMS.json`, inside `POSITIONS_PLAN.n_positions = 1344`,
+  and inside `FLOORS.json`'s committed `n₁`.
+- Scoring is **already multi-tranche by construction** — 8 chunks per stratum, two boxes, strata
+  sequential. **A supplementary chunk is not a new kind of act**; it is the ninth chunk of a plan
+  that always had chunks.
+
+⇒ **No clause forbids completion-scoring. I do not escalate.**
+
+⚠️ **But the honest caveat, stated because it must be:** the *shape* of this action — score more,
+then evaluate the completion gate — is **superficially identical to the forbidden adaptive
+pattern**. Three facts distinguish it, and all three must hold or the ruling collapses:
+
+1. **The population was pre-committed** (`n₁` in `FLOORS.json`, before the band claim);
+2. **No outcome has been observed** — the stopping rule cannot have been conditioned on a result
+   that does not exist;
+3. **The increment is exactly the pre-committed remainder** — not "more", but "the rest".
+
+**Guard that makes (3) checkable rather than asserted:** the supplementary chunks must contain
+**exactly** the set `ARMS.json rids − already-scored rids`, asserted as a set equality in the
+re-stage artifact. Any rid outside that set, in either direction, voids the completion.
+
+**G-COMPLETE** is therefore evaluated **once the committed corpus is fully scored**. Evaluating it
+on 793 would grade the run against an artifact of a build defect rather than against the committed
+corpus — and it has never been *legitimately* evaluated, since the population it read was never
+the one the pair committed.
+
+### D4.3 RULING (2) — the fix. **ACCEPTED**, with one addition
+
+W-code fix in `union_positions.py` + a re-stage: leg files for the 551 assembled into the union
+dirs (**copied, never symlinked** — per `CORPUS_UNION`'s own claim, and per R4-0.5's reasoning
+that a symlink into a frozen dir invites write-through), then **supplementary chunks containing
+exactly the not-yet-scored rids, whole-rid, derived deterministically from the SAME committed
+`POSITION_ORDER.json` seed** — no new randomness, no re-shuffle of already-scored rids. Both
+judges score the 551 (`tier1-greedy` also covered only 793).
+
+**Addition:** the fix must also install **the missing cross-layer invariant** — an assertion that
+**the union's leg files enumerate exactly the `ARMS.json` rid set**, run at assembly time and
+re-checked before the first supplementary leg. Without it, this entry documents a defect it does
+not prevent.
+
+### D4.4 RULING (3) — **AMENDED: `D3-WITNESS` runs BEFORE the completion scoring**
+
+The coordinator's reading was that D3 blocks analysis but not the 551 scoring. **I disagree,
+mildly, on cost-discipline grounds rather than textual ones** — the invitation to say so is taken:
+
+1. **`D3-WITNESS` costs ~10 minutes at W30 (≈5.2 worker-h).** The completion scoring is **≈177
+   worker-h / several hours wall**. The house rule is the cheap check before the expensive spend.
+2. **A `D3-WITNESS` FAIL puts the entire two-box corpus in question**, which would make the 551
+   spend wasted work on a corpus that is already unusable. Spending hours to find that out is the
+   avoidable order.
+3. It is **the premise of the two-box completion itself**: if the 551 are to be scored two-box
+   (§D4.6), the witness is what licenses mixing their records with the existing ones.
+
+**Sequence: `D3-WITNESS` → (PASS) → union fix + re-stage → completion scoring → merge → 4b/verify →
+analysis.** On FAIL: **stop, score nothing further, escalate to the owner.**
+
+### D4.5 RULING (4) — S2. **ACCEPTED: moot.**
+
+S2 stays **VOID** under the owner's Reading-A ruling. The 103 orphaned rids change nothing: a void
+stratum is not completed into readability, and completing it would be exactly the "cure by
+generation/scoring" that R4-3 rule 7 forbids. **Do not assemble or score the S2 orphans.**
+
+### D4.6 RULING (c) — box allocation for the 551: **TWO-BOX, conditional on `D3-WITNESS` PASS**
+
+**Does the pair's text care about box composition? NO — verified.** No gate, bar, address, branch
+or statistic reads the box: the analyzer is box-blind, the primaries are **within-rid** (crossfit
+over `matrix_if` rows of one rid), and boxes first mix only in the stratum-wide mean. **The pair
+is silent on box composition because nothing in it depends on box composition.**
+
+Given that, the choice is operational, and it collapses once §D4.4's sequencing is adopted:
+
+- **If `D3-WITNESS` PASSES**, cross-box arithmetic identity is *witnessed*, box composition is
+  **irrelevant by measurement rather than by assumption**, and two-box is simply faster
+  (≈3.4 h vs ≈5.9 h single-box local).
+- **If it FAILS**, nothing further is scored at all, so single-box was never the safe hedge — it
+  would have bought nothing on PASS and saved nothing on FAIL.
+
+⇒ **Two-box, using the same deterministic allocation machinery against the committed
+`POSITION_ORDER.json`.** The corpus's box composition shifts either way; **it is disclosed here and
+it is not a statistic.**
+
+### D4.7 RULING (5) — `CORPUS_UNION.json`. **ACCEPTED**, with a required new field
+
+Correct/reissue **only as part of the fixed assembly**; preserve the old file renamed
+(`CORPUS_UNION.defective_r4.5.json` or the executor's house-style suffix); **never silently
+overwrite** — the false assertion is evidence of the defect and must remain readable.
+
+**Required in the reissued file: a LEG-LAYER witness** — per-stratum counts of rids whose leg files
+are physically present in the union dir, and the set-equality assertion of §D4.3. The old file's
+failure was not that it lied; it is that **it asserted at the ARMS layer a property that only the
+leg layer could witness**, and a reissue without a leg-layer field would repeat that exactly.
+
+### D4.8 The `c`-remeasure clauses: do they RE-BIND on the second tranche? **NO — and record anyway**
+
+**Textually they do not re-bind.** §7.1's obligation is worded as a one-time precondition —
+*"**Before the S1 IF leg starts**, on an IDLE box…"* — not "before each leg" and not "before each
+tranche". It was discharged, and all three legs came in **cheaper than committed** (arb 0.781 /
+gen 0.800 / IF 0.747, no halt; the HALT is one-sided so cheaper is recorded, never halted).
+
+**Recommended anyway, as a record and not a gate:** log the supplementary tranche's realized `c`
+into the same `c_remeasure` block as a second observation. It is free, it keeps the cost record
+complete across both tranches, and it would surface a throughput surprise that the one-time
+obligation is not positioned to catch.
+
+### D4.9 Signature
+
+> **RULED: completion-scoring is licensed** — no clause forbids it, the population was
+> pre-committed, and **no statistic has been observed**. **Sequenced behind `D3-WITNESS`**, which
+> is amended below. **S2 stays void.** The three distinguishing facts of §D4.2 and the set-equality
+> guard of §D4.3 are **conditions of this ruling, not commentary**: if any fails, the completion is
+> void and the question goes to the owner.
+
+---
+
+## D3 — AMENDED SPEC (selection rule), per D4
+
+`D3-WITNESS`'s sample selection is restated to be deterministic, non-empty by construction, and
+free of any cherry-picking discretion:
+
+> **Selection: the first 16 rids in `POSITION_ORDER.json` order among rids possessing
+> laptop-produced `clair-puct` records.** Deterministic (the order is committed), auditable, and
+> **guaranteed non-empty** — 314 laptop rids exist. If fewer than 16 qualify, take all qualifying
+> rids and record the realized `N`.
+
+Everything else in §D3.5 stands unchanged: **bar 100% bit-identical (`n_mismatch == 0`)**, counts
+and digests only in `RUN/CROSSBOX_WITNESS.json`, per-box python/numpy/glibc recorded, any mismatch
+an **owner-level escalation**. **Per §D4.4 it now runs before the completion scoring, not merely
+before analysis.**
+
+---
+
+*No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D1, D2, D3
+or D4. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their signature
+blocks read SIGNED; D3's classification is in force on ruling and its witness on PASS; D4's
+completion licence is in force subject to its §D4.9 conditions.*
