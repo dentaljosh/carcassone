@@ -2410,6 +2410,90 @@ def test_no_CLI_FLAG_can_activate_or_silence_the_void_scope():
     assert "GATE_DISJOINT.json" in src
 
 
+# =========================================================================== #
+# the present-with-None `ci95` crash — ONE constructor, a TYPED ABSENCE        #
+#                                                                             #
+# W3 died in `replication_gate` on `arb16_stat.get("ci95", [None, None])[0]`.  #
+# The default CANNOT fire on a key that is PRESENT WITH None, and the two call #
+# sites built that dict in two different shapes: one defaulted to a 2-list and #
+# survived, the other defaulted to `{}` and handed on a bare None.            #
+# =========================================================================== #
+def test_ci95_of_normalises_every_broken_shape():
+    assert AW.ci95_of([1.0, 2.0]) == [1.0, 2.0]
+    assert AW.ci95_of((1.0, 2.0)) == [1.0, 2.0]
+    assert AW.ci95_of(None) == [None, None]          # ⭐ the shape that crashed
+    assert AW.ci95_of([]) == [None, None]
+    assert AW.ci95_of([1.0]) == [None, None]
+    assert AW.ci95_of("nope") == [None, None]
+    assert AW.ci95_of({"lo": 1}) == [None, None]
+
+
+def test_a_ladder_missing_a_rung_yields_a_TYPED_ABSENCE_never_a_bare_None():
+    full = {"E64": {"B16": {"arb": 0.5, "ci95": [0.1, 0.9], "se": 0.2, "z": 2.5}},
+            "E16": {}}
+    got = AW.ladder_stat(full, 64, 16)
+    assert got["absent"] is False and got["ci95"] == [0.1, 0.9]
+    assert got["value"] == 0.5 and got["why"] is None
+
+    # rung missing from an EXISTING ladder — and the reason names the rung
+    missing_rung = AW.ladder_stat(full, 16, 16)
+    assert missing_rung["absent"] is True
+    assert missing_rung["ci95"] == [None, None], "NEVER a bare None"
+    assert "no B16 rung" in missing_rung["why"]
+
+    # the whole E level missing — a different reason, both typed
+    missing_level = AW.ladder_stat(full, 8, 16)
+    assert missing_level["absent"] is True
+    assert missing_level["ci95"] == [None, None]
+    assert "no E8 ladder" in missing_level["why"]
+    assert "no E8 ladder" != missing_rung["why"], "the two faults read apart"
+
+    # a rung present but carrying a bare-None ci95 is normalised too
+    broken = AW.ladder_stat({"E16": {"B16": {"arb": 0.2, "ci95": None}}}, 16, 16)
+    assert broken["ci95"] == [None, None] and broken["absent"] is False
+
+
+def test_replication_gate_does_not_CRASH_on_a_present_with_None_ci95():
+    """⭐ THE REGRESSION. This exact input raised
+    `TypeError: 'NoneType' object is not subscriptable` at the `convicts` line."""
+    ref = {"source": "x", "rungs": {str(b): {"arb": 0.1, "se": 0.1}
+                                    for b in (1, 2, 4, 8, 16)}}
+    ladder = {f"B{b}": {"arb": 0.1, "se": 0.1} for b in (1, 2, 4, 8, 16)}
+    public, sealed = AW.replication_gate(ladder, {"value": None, "ci95": None},
+                                         ref)
+    assert public["arb16_convicts"] is False
+    assert public["pass"] is False                 # its OWN absence semantics
+    assert public["arb16_input_absent"] is True
+    assert sealed["arb16"]["ci95"] == [None, None]
+    # and the missing-key shape, and a healthy one
+    assert AW.replication_gate(ladder, {}, ref)[0]["arb16_convicts"] is False
+    ok, _ = AW.replication_gate(ladder, {"value": 0.5, "ci95": [0.2, 0.8]}, ref)
+    assert ok["arb16_convicts"] is True and ok["arb16_input_absent"] is False
+
+
+def test_replication_gate_carries_the_absence_REASON_not_a_silent_false():
+    """A conjunct that could not convict is not the same fact as one that was
+    measured and did not — the block says which."""
+    ref = {"rungs": {str(b): {"arb": 0.1, "se": 0.1} for b in (1, 2, 4, 8, 16)}}
+    stat = AW.ladder_stat({"E64": {}}, 16, 16)      # no E16 ladder at all
+    public, sealed = AW.replication_gate({}, stat, ref)
+    assert public["arb16_input_absent"] is True
+    assert "no E16 ladder" in public["arb16_absent_why"]
+    assert sealed["arb16"]["absent"] is True
+
+
+def test_both_call_sites_use_the_ONE_ladder_stat_constructor():
+    """Two shapes for one field is what produced the crash; the fix is one
+    constructor, not two better defaults."""
+    src = (REPO / "scripts" / "tiletie" / "analyze_widening.py").read_text()
+    calls = [ln for ln in src.splitlines()
+             if "ladder_stat(b_ladder" in ln and not ln.lstrip().startswith("def ")]
+    assert len(calls) == 3, calls            # 64, 16 (rung 2) + 16/16 (G-REPLICATE)
+    for gone in ('arb16_e16 = e16_ladder.get("B16") or {}',
+                 'or {"value": None, "ci95": [None, None]})'):
+        assert gone not in src, f"an old ad-hoc shape survived: {gone}"
+
+
 def test_stratum_marker_is_structural_and_s_star_globs_are_not_S2():
     """`s*` spans both strata and is deliberately NOT S2-marked."""
     assert ACC.stratum_of("RUN_MANIFEST_S2.json") == "S2"
