@@ -829,3 +829,467 @@ def test_a_wrong_stamp_still_dies(tmp_path, monkeypatch):
         SC.main(["stage", "--out-root", str(out_root), "--s1-dir", str(corpus),
                  "--stratum", "s1", "--chunks-s1", "2"])
     assert "stamps m=64" in str(e.value) and "commits m=128" in str(e.value)
+
+
+# =========================================================================== #
+# 8. D3 / D4 — the cross-layer invariant, completion staging, `execution`      #
+#    Deviations D3 (`355ceb65`) and D4 (`751bdd12`).                           #
+# =========================================================================== #
+import union_positions as UP                                       # noqa: E402
+import widening_fixtures as WF                                     # noqa: E402
+
+
+def _union_sides(tmp_path, n_banked=6, n_fresh=5):
+    banked = tmp_path / "shared_run" / "corpus" / "positions_s1"
+    ext = tmp_path / "shared_run_r4" / "corpus" / "positions_s1_ext"
+    out = tmp_path / "shared_run_r4" / "corpus" / "positions_s1"
+    WF.make_r4_corpus(banked, n_base=n_banked, n_ext=0, seed=301,
+                      base_lo=135000000000)
+    WF.make_r4_corpus(ext, n_base=0, n_ext=n_fresh, seed=302,
+                      ext_lo=137000000000)
+    return banked, ext, out
+
+
+# --------------------------------------------------------------------------- #
+# (a) THE CROSS-LAYER INVARIANT — leg files enumerate exactly the ARMS rid set  #
+# --------------------------------------------------------------------------- #
+def test_union_assembles_leg_files_for_BOTH_sides_and_points_the_plan_at_them(tmp_path):
+    """THE D4 DEFECT, inverted into a test. The union merged ARMS but left the
+    leg files extension-only, so 551 committed rids had no leg line and were
+    never scored — while every count read complete."""
+    banked, ext, out = _union_sides(tmp_path)
+    prov = UP.assemble(banked, ext, out, stratum="s1")
+    arms = set(json.loads((out / "ARMS.json").read_text()))
+    plan = json.loads((out / "POSITIONS_PLAN.json").read_text())
+    assert plan["files"], "the union plan must carry a files block"
+    leg_rids = set()
+    for key, info in plan["files"].items():
+        p = Path(info["path"])
+        # ⚠️ the plan must point INSIDE the union dir, never at the extension
+        assert p.parent == out, f"{key} points at {p.parent}, not the union"
+        leg_rids |= {json.loads(ln)["rid"]
+                     for ln in p.read_text().splitlines() if ln.strip()}
+    assert leg_rids == arms and len(arms) == 11
+    leg = prov["leg_layer"]
+    assert leg["witnessed"] is True and leg["set_equality"]["ok"] is True
+    assert leg["set_equality"]["both_directions_checked"] is True
+    assert leg["n_rids_in_leg_files"] == leg["n_rids_in_arms"] == 11
+    assert leg["n_lines_by_side"] == {"banked": 6, "extension": 5}
+    for v in leg["files"].values():
+        assert len(v["sha256"]) == 64 and v["n_rids"] == v["n_lines"]
+
+
+def test_cross_layer_invariant_fires_when_ARMS_has_a_rid_with_no_leg_line(tmp_path):
+    """DIRECTION 1 — the D4 shape exactly: a rid in `ARMS.json` that no leg file
+    enumerates is UNSCORABLE, and every one-directional check passes it."""
+    banked, ext, out = _union_sides(tmp_path)
+    leg = banked / f"positions_{PROFILE}_leg1.jsonl"
+    lines = [ln for ln in leg.read_text().splitlines() if ln.strip()]
+    victim = json.loads(lines[0])["rid"]
+    leg.write_text("".join(ln + "\n" for ln in lines[1:]))       # ARMS keeps it
+    with pytest.raises(UP.UnionError) as e:
+        UP.assemble(banked, ext, out, stratum="s1")
+    assert "CROSS-LAYER INVARIANT VIOLATED" in str(e.value)
+    assert "NO leg line" in str(e.value) and victim in str(e.value)
+    # and nothing half-assembled is left behind for a later reader to trust
+    assert not (out / "ARMS.json").exists()
+
+
+def test_cross_layer_invariant_fires_when_a_leg_line_is_not_in_ARMS(tmp_path):
+    """DIRECTION 2 — a leg line for a rid the plan never committed. Checked
+    because a set equality that only looks one way is not a set equality."""
+    banked, ext, out = _union_sides(tmp_path)
+    leg = ext / f"positions_{PROFILE}_leg1.jsonl"
+    with open(leg, "a") as fh:
+        fh.write(json.dumps({"rid": "tt_sp_999999999999_p9", "leg": 1}) + "\n")
+    with pytest.raises(UP.UnionError) as e:
+        UP.assemble(banked, ext, out, stratum="s1")
+    assert "CROSS-LAYER INVARIANT VIOLATED" in str(e.value)
+    assert "NOT in ARMS" in str(e.value)
+
+
+def _rewrite_leg(corpus: Path, path: Path, lines) -> None:
+    """Rewrite one leg file AND its plan count, so the tampering under test is
+    the cross-layer one and not a line-count mismatch caught upstream."""
+    path.write_text("".join(ln + "\n" for ln in lines))
+    plan = json.loads((corpus / "POSITIONS_PLAN.json").read_text())
+    for key, info in plan["files"].items():
+        if Path(info["path"]).name == path.name:
+            info["n"] = len(lines)
+            plan.setdefault("counts_by_profile_leg", {})[key] = len(lines)
+    (corpus / "POSITIONS_PLAN.json").write_text(json.dumps(plan, indent=1))
+
+
+def _drop_rid_from_legs(corpus: Path, rid: str) -> None:
+    """THE D4 SHAPE: the rid stays in ARMS.json, its leg lines vanish."""
+    for p in corpus.glob("positions_*_leg*.jsonl"):
+        keep = [ln for ln in p.read_text().splitlines()
+                if ln.strip() and json.loads(ln)["rid"] != rid]
+        _rewrite_leg(corpus, p, keep)
+
+
+def test_stage_refuses_a_corpus_whose_leg_files_miss_a_committed_rid(tmp_path, corpus):
+    """Re-checked at the CHUNK layer too: staging off a defective corpus would
+    cut the wrong population into 8 pieces and every chunk would look fine."""
+    victim = sorted(json.loads((corpus / "ARMS.json").read_text()))[0]
+    _drop_rid_from_legs(corpus, victim)
+    with pytest.raises(SystemExit) as e:
+        SC.main(["stage", "--out-root", str(tmp_path / "campaign"),
+                 "--s1-dir", str(corpus), "--stratum", "s1", "--chunks-s1", "4"])
+    assert "CROSS-LAYER INVARIANT VIOLATED" in str(e.value)
+    assert "NO leg line" in str(e.value) and victim in str(e.value)
+
+
+def test_stage_refuses_a_corpus_with_a_leg_line_outside_ARMS(tmp_path, corpus):
+    p = sorted(corpus.glob("positions_*_leg*.jsonl"))[0]
+    lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
+    lines.append(json.dumps({"rid": "tt_sp_000000000001_p0", "leg": 1}))
+    _rewrite_leg(corpus, p, lines)
+    with pytest.raises(SystemExit) as e:
+        SC.main(["stage", "--out-root", str(tmp_path / "campaign"),
+                 "--s1-dir", str(corpus), "--stratum", "s1", "--chunks-s1", "4"])
+    assert "CROSS-LAYER INVARIANT VIOLATED" in str(e.value)
+    assert "NOT in ARMS" in str(e.value)
+
+
+def test_stage_summary_records_the_cross_layer_invariant(tmp_path, corpus):
+    out_root = stage(tmp_path, corpus, chunks=4)
+    inv = json.loads((out_root / "CHUNK_SUMMARY.json").read_text())
+    inv = inv["strata"]["s1"]["cross_layer_invariant"]
+    assert inv["ok"] is True and inv["both_directions_checked"] is True
+    assert inv["n_arms"] == inv["n_leg"] == 24
+
+
+# --------------------------------------------------------------------------- #
+# (e) CORPUS_UNION.json — reissued with a leg-layer witness, old file PRESERVED #
+# --------------------------------------------------------------------------- #
+def test_corpus_union_reissue_preserves_the_defective_stamp(tmp_path):
+    """D4.7: *never silently overwrite* — the false assertion is EVIDENCE of the
+    defect and must remain readable."""
+    banked, ext, out = _union_sides(tmp_path)
+    stamp = out.parent / UP.UNION_STAMP
+    stamp.parent.mkdir(parents=True, exist_ok=True)
+    old = {"schema": "carcassonne-tiearb-widening-corpus-union/v1",
+           "by_stratum": {"S1": {"n_retained": 551, "n_fresh": 793,
+                                 "copied_not_symlinked": True}},
+           "totals": {"n_retained": 551, "n_fresh": 793, "n_total": 1344}}
+    stamp.write_text(json.dumps(old, indent=2, sort_keys=True))
+
+    UP.assemble(banked, ext, out, stratum="s1")
+
+    archived = out.parent / UP.DEFECTIVE_STAMP
+    assert archived.is_file(), "the pre-fix stamp must be preserved by rename"
+    assert json.loads(archived.read_text()) == old, "preserved VERBATIM"
+    doc = json.loads(stamp.read_text())
+    assert doc["schema"] == UP.UNION_SCHEMA
+    assert doc["superseded_file"]["path"] == str(archived)
+    assert doc["by_stratum"]["S1"]["leg_layer"]["witnessed"] is True
+    assert doc["by_stratum"]["S1"]["leg_layer"]["set_equality"]["ok"] is True
+    assert doc["by_stratum"]["S1"]["n_retained"] == 6      # the REISSUED numbers
+
+
+def test_a_second_stratum_does_not_archive_a_witnessed_stamp(tmp_path):
+    """The rename triggers on a PRE-FIX stamp, not on every write: S1 and S2 are
+    separate invocations and must still ACCUMULATE into one file."""
+    b1, e1, o1 = _union_sides(tmp_path)
+    UP.assemble(b1, e1, o1, stratum="s1")
+    b2 = tmp_path / "shared_run" / "corpus" / "positions_s2"
+    e2 = tmp_path / "shared_run_r4" / "corpus" / "positions_s2_ext"
+    o2 = tmp_path / "shared_run_r4" / "corpus" / "positions_s2"
+    WF.make_r4_corpus(b2, n_base=3, n_ext=0, seed=311, base_lo=135000000350)
+    WF.make_r4_corpus(e2, n_base=0, n_ext=2, seed=312, ext_lo=137000000508)
+    UP.assemble(b2, e2, o2, stratum="s2")
+    assert not (o1.parent / UP.DEFECTIVE_STAMP).exists()
+    doc = json.loads((o1.parent / UP.UNION_STAMP).read_text())
+    assert set(doc["by_stratum"]) == {"S1", "S2"}
+    assert all(v["leg_layer"]["witnessed"] for v in doc["by_stratum"].values())
+
+
+# --------------------------------------------------------------------------- #
+# (b)/(c) COMPLETION STAGING — exactly `ARMS − already-scored`, deterministic   #
+# --------------------------------------------------------------------------- #
+def _score_chunks(out_root: Path, chunks, *, stratum="s1"):
+    """Write record trees for `chunks` ONLY — the D4 situation in miniature."""
+    recs = out_root / "records"
+    for k in chunks:
+        write_leg_output(recs / f"chunk{k}", SC.chunk_dir(out_root, stratum, k),
+                         chunk_tag=f"chunk{k}")
+    return recs
+
+
+def _complete(out_root, corpus, *, chunks=2, stratum="s1", records=(), extra=()):
+    argv = ["completion", "--out-root", str(out_root), f"--{stratum}-dir",
+            str(corpus), "--stratum", stratum, "--chunks", str(chunks)]
+    for r in records:
+        argv += ["--records-root", str(r)]
+    return SC.main(argv + list(extra))
+
+
+def test_completion_stages_exactly_the_never_scored_rids(tmp_path, corpus):
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    assert _complete(out_root, corpus, chunks=2, records=[recs]) == 0
+
+    plan = json.loads((out_root / "COMPLETION_PLAN_s1.json").read_text())
+    se = plan["set_equality"]
+    assert se["ok"] is True and se["both_directions_checked"] is True
+    assert se["n_expected"] == se["n_staged"] == 12
+    assert se["n_missing_from_staged"] == se["n_extra_in_staged"] == 0
+    assert se["n_overlap_with_scored"] == 0
+    assert plan["remainder"]["n_arms"] == 24
+    assert plan["remainder"]["n_scored_both_judges"] == 12
+
+    order = json.loads((out_root / "POSITION_ORDER.json").read_text())
+    committed = order["strata"]["s1"]["order"]
+    scored = set(committed[:12])                     # chunks 1+2 of a 4-way cut
+    staged = set()
+    for w in plan["chunks"]:
+        staged |= set(json.loads((Path(w["dir"]) / "ARMS.json").read_text()))
+    assert staged == set(committed) - scored
+    assert not (staged & scored), "a completion never re-stages a scored rid"
+    assert [w["chunk"] for w in plan["chunks"]] == [5, 6]
+
+
+def test_completion_set_equality_fires_in_BOTH_directions():
+    """D4.2, verbatim: *any rid outside that set, in either direction, voids the
+    completion.* Both differences are computed and both refuse."""
+    want, scored = {"a", "b", "c"}, {"x", "y"}
+    ok = SC.assert_completion_set_equality(want, want, scored)
+    assert ok["ok"] is True and ok["both_directions_checked"] is True
+
+    with pytest.raises(SystemExit) as e:            # DIRECTION 1: a rid dropped
+        SC.assert_completion_set_equality({"a", "b"}, want, scored)
+    assert "COMPLETION VOID" in str(e.value) and "NOT staged" in str(e.value)
+
+    with pytest.raises(SystemExit) as e:            # DIRECTION 2: a rid added
+        SC.assert_completion_set_equality(want | {"z"}, want, scored)
+    assert "OUTSIDE the remainder" in str(e.value)
+
+    with pytest.raises(SystemExit) as e:            # and never a re-score
+        SC.assert_completion_set_equality(want | {"x"}, want | {"x"}, scored)
+    assert "already-scored" in str(e.value)
+
+
+def test_completion_refuses_a_record_tree_holding_a_rid_outside_ARMS(tmp_path, corpus):
+    """The record tree and the committed corpus describing different populations
+    is the D4 failure class itself — it may not be absorbed silently."""
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    stray = recs / "chunk1" / "tier1-greedy" / PROFILE / "leg1" / "records"
+    (stray / "tt_sp_777777777777_p1.json").write_text("{}")
+    other = recs / "chunk1" / "clair-puct" / PROFILE / "leg1" / "records"
+    (other / "tt_sp_777777777777_p1.json").write_text("{}")
+    with pytest.raises(SystemExit) as e:
+        _complete(out_root, corpus, chunks=2, records=[recs])
+    assert "not in ARMS.json" in str(e.value) and "VOIDS the completion" in str(e.value)
+
+
+def test_completion_refuses_a_half_scored_rid(tmp_path, corpus):
+    """One judge holding a record the other does not makes the remainder
+    AMBIGUOUS — `G-CRN` joins the two judges per rid."""
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    victim = sorted((recs / "chunk1" / "clair-puct" / PROFILE / "leg1"
+                     / "records").glob("*.json"))[0]
+    victim.unlink()
+    with pytest.raises(SystemExit) as e:
+        _complete(out_root, corpus, chunks=2, records=[recs])
+    assert "AMBIGUOUS" in str(e.value)
+
+
+def test_completion_keeps_the_committed_order_and_never_reshuffles(tmp_path, corpus):
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    _complete(out_root, corpus, chunks=2, records=[recs])
+    st = json.loads((out_root / "POSITION_ORDER.json").read_text())["strata"]["s1"]
+    remainder = [r for r in st["order"] if r not in set(st["order"][:12])]
+    got = []
+    for k in (5, 6):
+        d = SC.chunk_dir(out_root, "s1", k)
+        assert sorted(d.glob("positions_*_leg*.jsonl")), \
+            "a supplementary chunk must carry its own leg files"
+        got.append(set(json.loads((d / "ARMS.json").read_text())))
+    # the two chunks are the SEQUENTIAL halves of the committed-order remainder
+    assert got[0] == set(remainder[:6]) and got[1] == set(remainder[6:])
+    plan = json.loads((out_root / "COMPLETION_PLAN_s1.json").read_text())
+    assert plan["permutation_seed"] == SC.PERMUTATION_SEED == 20260817
+    assert plan["position_order_sha256"] == st["sha256_order"]
+    cp = json.loads((SC.chunk_dir(out_root, "s1", 5) / "POSITIONS_PLAN.json").read_text())
+    assert cp["chunk"]["completion"]["tranche"] == "supplementary"
+    assert cp["chunk"]["position_order_sha256"] == st["sha256_order"]
+
+
+def test_completion_is_deterministic_and_leaves_scored_chunks_untouched(tmp_path, corpus):
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    before = {p.relative_to(out_root): p.read_bytes()
+              for k in (1, 2)
+              for p in SC.chunk_dir(out_root, "s1", k).rglob("*") if p.is_file()}
+    _complete(out_root, corpus, chunks=2, records=[recs])
+    after = {p.relative_to(out_root): p.read_bytes()
+             for k in (1, 2)
+             for p in SC.chunk_dir(out_root, "s1", k).rglob("*") if p.is_file()}
+    assert before == after, "already-scored chunks are NEVER rewritten"
+
+    # an independent staging of the same corpus reproduces the same tranche
+    other = stage(tmp_path / "second", corpus, chunks=4)
+    recs2 = _score_chunks(other, (1, 2))
+    _complete(other, corpus, chunks=2, records=[recs2])
+    for k in (5, 6):
+        a = (SC.chunk_dir(out_root, "s1", k) / "ARMS.json").read_text()
+        b = (SC.chunk_dir(other, "s1", k) / "ARMS.json").read_text()
+        assert a == b
+
+
+def test_completion_never_overwrites_a_staged_chunk_dir(tmp_path, corpus):
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    _complete(out_root, corpus, chunks=2, records=[recs])
+    with pytest.raises(SystemExit) as e:                 # re-run, same indices
+        _complete(out_root, corpus, chunks=2, records=[recs])
+    assert "already exists" in str(e.value)
+
+
+def test_completion_emits_a_two_box_allocation_in_ALLOCATION_conf_shape(tmp_path, corpus):
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    _complete(out_root, corpus, chunks=4, records=[recs])
+    plan = json.loads((out_root / "COMPLETION_PLAN_s1.json").read_text())
+    a = plan["allocation"]
+    chunks = a["chunks"]
+    assert chunks == [5, 6, 7, 8]
+    # the same SHAPE as ALLOCATION.conf: local takes ALL the ARB work plus an IF
+    # prefix; the laptop takes the IF suffix and no ARB at all
+    assert a["local_tier1_greedy"] == chunks
+    assert a["laptop_tier1_greedy"] == []
+    assert a["local_clair_puct"] + a["laptop_clair_puct"] == chunks
+    assert set(a["local_clair_puct"]) & set(a["laptop_clair_puct"]) == set()
+    # the arithmetic is DERIVED, not typed
+    cap, cost = a["capacity"], a["cost"]
+    assert cap["laptop_effective"] == pytest.approx(
+        cap["w_eval_laptop"] * cap["laptop_rate"])
+    assert cost["total_worker_hours"] == pytest.approx(
+        cost["arb_worker_hours"] + cost["if_worker_hours"], abs=0.02)
+    assert a["makespan_hours"] >= cost["ideal_makespan_hours"]
+
+    conf = (out_root / "ALLOCATION_COMPLETION_s1.conf").read_text()
+    for key in ("ALLOC_s1_local_tier1_greedy", "ALLOC_s1_local_clair_puct",
+                "ALLOC_s1_laptop_side_tier1_greedy",
+                "ALLOC_s1_laptop_side_clair_puct"):
+        assert f"{key}=" in conf, key
+    assert 'ALLOC_s1_laptop_side_tier1_greedy=""' in conf
+    assert "ideal makespan" in conf and "TRANCHE MAKESPAN" in conf
+    assert f'ALLOC_s1_local_tier1_greedy="{" ".join(str(k) for k in chunks)}"' in conf
+
+
+def test_completion_rechecks_the_cross_layer_invariant_before_staging(tmp_path, corpus):
+    """D4.3: the invariant is re-checked BEFORE the first supplementary leg —
+    otherwise the fix documents a defect it does not prevent."""
+    out_root = stage(tmp_path, corpus, chunks=4)
+    recs = _score_chunks(out_root, (1, 2))
+    _drop_rid_from_legs(corpus, sorted(json.loads(
+        (corpus / "ARMS.json").read_text()))[0])
+    with pytest.raises(SystemExit) as e:
+        _complete(out_root, corpus, chunks=2, records=[recs])
+    assert "CROSS-LAYER INVARIANT VIOLATED" in str(e.value)
+
+
+def test_completion_refuses_when_nothing_has_been_scored(tmp_path, corpus):
+    out_root = stage(tmp_path, corpus, chunks=4)
+    empty = tmp_path / "empty_records"
+    empty.mkdir()
+    with pytest.raises(SystemExit) as e:
+        _complete(out_root, corpus, chunks=2, records=[empty])
+    assert "not a completion" in str(e.value)
+
+
+# --------------------------------------------------------------------------- #
+# (d) `execution` — D3 §D3.2's key-by-key classification                        #
+# --------------------------------------------------------------------------- #
+def _man_with_execution(execution: dict) -> dict:
+    return {
+        "schema": "carcassonne-tiletie-tier1-rust-leg/v1", "git_rev": "58c2b539",
+        "judge": "clair-puct", "profile": PROFILE, "leg": 1,
+        "n_rows_in": 10, "n_scored": 10, "execution": execution,
+    }
+
+
+BOX_LOCAL_A = {"carc_rs_binary_sha": "a4318fd5" * 8,
+               "carc_rs_path": "/x/py3.12/site-packages/carc_rs.so",
+               "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"}
+BOX_LOCAL_B = {"carc_rs_binary_sha": "8ae0b984" * 8,
+               "carc_rs_path": "/y/py3.14/site-packages/carc_rs.so",
+               "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"}
+
+
+def test_execution_box_local_keys_merge_PER_CHUNK_and_are_recorded():
+    """D3 §D3.2: `carc_rs_binary_sha` (JCZ §0.F.2c — the .so is not
+    machine-reproducible) and `carc_rs_path` are BOX-LOCAL. PER_CHUNK RECORDS
+    them; nulling would discard them."""
+    merged = ML.merge_manifests({1: _man_with_execution(dict(BOX_LOCAL_A)),
+                                 2: _man_with_execution(dict(BOX_LOCAL_B))})
+    ex = merged["execution"]
+    assert ex["carc_rs_binary_sha"] == BOX_LOCAL_A["carc_rs_binary_sha"]
+    assert ex["carc_rs_build"] == BOX_LOCAL_A["carc_rs_build"]
+    by = merged["merge"]["by_chunk"]
+    assert by["1"]["execution"]["carc_rs_binary_sha"] == BOX_LOCAL_A["carc_rs_binary_sha"]
+    assert by["2"]["execution"]["carc_rs_binary_sha"] == BOX_LOCAL_B["carc_rs_binary_sha"]
+    assert by["2"]["execution"]["carc_rs_path"] == BOX_LOCAL_B["carc_rs_path"]
+    # the cross-host witness is NOT a per-chunk field
+    assert "carc_rs_build" not in by["1"].get("execution", {})
+
+
+def test_execution_carc_rs_build_is_IDENTITY_REQUIRED():
+    """The one value inside `execution` that may legitimately be compared across
+    hosts. If it ever differs the merge MUST raise — that is the property R4-7.5
+    calls the important one, and blanket PER_CHUNK would have discarded it."""
+    b = dict(BOX_LOCAL_B, carc_rs_build="carc_rs-0.1.0+deadbeef+rustcunpinned")
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _man_with_execution(dict(BOX_LOCAL_A)),
+                            2: _man_with_execution(b)})
+    assert "execution.carc_rs_build" in str(e.value)
+    assert "DIVERGES" in str(e.value) and "CROSS-HOST WITNESS" in str(e.value)
+
+
+def test_execution_keeps_the_fail_closed_raise_on_any_other_key():
+    """ANY OTHER key inside `execution` keeps the RAISE default — and
+    `--allow-varying` cannot silence it (D3 rejects it for this block)."""
+    a = dict(BOX_LOCAL_A, rustc_version="1.80.0")
+    b = dict(BOX_LOCAL_B, rustc_version="1.83.0")
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _man_with_execution(a), 2: _man_with_execution(b)},
+                           allow_varying=["execution", "rustc_version"])
+    assert "execution.rustc_version" in str(e.value)
+    assert "UNCLASSIFIED" in str(e.value)
+
+
+def test_execution_missing_on_one_chunk_still_raises():
+    with pytest.raises(ML.MergeError):
+        ML.merge_manifests({1: _man_with_execution(dict(BOX_LOCAL_A)),
+                            2: _man_with_execution(
+                                {k: v for k, v in BOX_LOCAL_B.items()
+                                 if k != "carc_rs_build"})})
+
+
+def test_a_real_two_box_leg_merges_with_the_observed_execution_pair(tmp_path, corpus):
+    """End to end: the observed local/laptop pair (differing sha + path, equal
+    build) merges clean and the merged tree stays complete."""
+    out_root = stage(tmp_path, corpus, chunks=2)
+    share = tmp_path / "share" / "chunks" / "s1"
+    for k, ex in ((1, BOX_LOCAL_A), (2, BOX_LOCAL_B)):
+        write_leg_output(share / f"chunk{k}", SC.chunk_dir(out_root, "s1", k),
+                         chunk_tag=f"chunk{k}", box=("local" if k == 1 else "laptop"))
+        for man in (share / f"chunk{k}").rglob("manifest.json"):
+            d = json.loads(man.read_text())
+            d["execution"] = dict(ex)
+            man.write_text(json.dumps(d, indent=2, sort_keys=True))
+    rep = ML.merge_stratum(stratum="s1", chunks_root=share,
+                           out_dir=tmp_path / "share" / "s1",
+                           positions_dir=corpus)
+    assert rep["ok"] is True, rep["problems"]
+    assert all(leg["manifest_ok"] for leg in rep["legs"].values())
+    man = json.loads(((tmp_path / "share" / "s1" / "clair-puct" / PROFILE
+                       / "leg1" / "manifest.json")).read_text())
+    assert man["execution"]["carc_rs_build"] == BOX_LOCAL_A["carc_rs_build"]
+    assert (man["merge"]["by_chunk"]["2"]["execution"]["carc_rs_binary_sha"]
+            == BOX_LOCAL_B["carc_rs_binary_sha"])

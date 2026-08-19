@@ -5,13 +5,51 @@ It scores NOTHING. It reads no record, no oracle value, no mean, no sd and no
 statistic. It only cuts the two already-built corpus plan dirs into the shapes
 `run_tiletie.py` consumes, one per (stratum, chunk).
 
-    stage   — write `POSITION_ORDER.json` (ONE seeded shuffle per stratum of that
-              stratum's SORTED rid list) and cut each stratum's order into
-              `--chunks-s1` / `--chunks-s2` near-equal SEQUENTIAL chunks, one
-              `run_tiletie`-shaped plan dir each, under `chunks/<stratum>/chunk<k>/`.
-    verify  — re-derive both permutations and assert BYTE-IDENTITY with the
-              committed `POSITION_ORDER.json`, plus rid-set identity with every
-              staged chunk dir and line counts with every chunk leg file.
+    stage      — write `POSITION_ORDER.json` (ONE seeded shuffle per stratum of
+                 that stratum's SORTED rid list) and cut each stratum's order into
+                 `--chunks-s1` / `--chunks-s2` near-equal SEQUENTIAL chunks, one
+                 `run_tiletie`-shaped plan dir each, under
+                 `chunks/<stratum>/chunk<k>/`.
+    verify     — re-derive both permutations and assert BYTE-IDENTITY with the
+                 committed `POSITION_ORDER.json`, plus rid-set identity with every
+                 staged chunk dir and line counts with every chunk leg file.
+    completion — SUPPLEMENTARY chunks for rids the corpus committed but that no
+                 box ever scored (D4). See the COMPLETION section below.
+
+──────────────────────────────────────────────────────────────────────────────
+COMPLETION STAGING (`completion`) — D4 ruling `751bdd12`, and its guard rails.
+
+`union_positions.py` merged `ARMS.json` but left the leg files extension-only,
+so 551 committed rids were never scored by any box. The ruling licenses scoring
+them — as **COMPLETION, not re-registration** — and makes three facts conditions
+of that licence, the third of which this subcommand exists to make CHECKABLE
+rather than asserted:
+
+    "the supplementary chunks must contain EXACTLY the set
+     `ARMS.json rids − already-scored rids`, asserted as a SET EQUALITY …
+     Any rid outside that set, in either direction, voids the completion."
+
+So `completion`:
+
+  * derives **already-scored** from the EXISTING RECORD TREES (never from a
+    plan, never from a count — the defect was three counts each true of a
+    different population). A rid counts as scored only if BOTH judges hold a
+    record for it; a rid scored by one judge and not the other makes the
+    remainder ambiguous and REFUSES;
+  * re-checks the **cross-layer invariant** (leg files enumerate exactly the
+    ARMS rid set) before the first supplementary leg, per D4.3;
+  * orders the remainder by the **SAME committed `POSITION_ORDER.json`**
+    (seed 20260817) — no re-shuffle, no new randomness, and already-scored rids
+    keep their chunks, which are never opened or rewritten;
+  * asserts the **set equality in BOTH directions** after staging, and that the
+    supplementary rid set is DISJOINT from the scored set;
+  * emits `ALLOCATION_COMPLETION_<stratum>.conf` — the two-box split of the
+    tranche in `ALLOCATION.conf`'s exact key spelling, with the capacity
+    arithmetic printed in its header.
+
+Supplementary chunks are numbered AFTER the committed ones (`chunk9…`) in the
+SAME `chunks/<stratum>/` tree, so `run_scoring.sh <box> <stratum> <judge> 9 10 …`
+and `merge_legs.py` (which globs `chunk*`) need no change at all.
 
 ──────────────────────────────────────────────────────────────────────────────
 WHY THE PERMUTATION EXISTS (the tiearb2_20260816 precedent, DESIGN §10 there).
@@ -83,10 +121,19 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(REPO / "scripts" / "tiletie"))
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
 
 import build_tiearb_plan as BTP  # noqa: E402  (path insert must precede the import)
 
 import widening_paths as WP  # noqa: E402  (path insert must precede the import)
+
+# the cross-layer invariant is DEFINED ONCE, by the tool that assembles the
+# union; this module re-checks it rather than re-implementing it (a second
+# spelling of an invariant is how two layers come to disagree about it)
+import union_positions as UP  # noqa: E402
+
+import merge_legs as ML  # noqa: E402  (the judge list of record lives there)
 
 RUN_ID = WP.RUN_ID
 CAMPAIGN = REPO / "measurement" / RUN_ID
@@ -112,6 +159,12 @@ READ_RULE = WP.read_rule()
 PERMUTATION_SEED = 20260817
 
 STRATA = ("s1", "s2")
+
+#: The two judges of record. Both must score every committed rid (`G-CRN` joins
+#: them per rid), so "already scored" means scored by BOTH.
+JUDGES = ML.JUDGES
+
+COMPLETION_SCHEMA = "carcassonne-tiearb-widening-completion/v1"
 
 #: DESIGN §4's graded-knob table. `--m` is the only one of these that
 #: `run_tiletie` takes as a flag; it is repeated here so the chunk layer can
@@ -391,7 +444,8 @@ def _w_of(key) -> float:
 def write_chunk_dir(out_dir: Path, keep: set, *, source_dir: Path,
                     source_plan: dict, source_arms: dict, dropped,
                     leg_rows: dict, label: str, chunk_index: int,
-                    n_chunks: int, order_sha256: str) -> dict:
+                    n_chunks: int, order_sha256: str,
+                    chunk_meta: dict | None = None) -> dict:
     """Write a `run_tiletie`-shaped plan dir restricted to `keep`."""
     out_dir = Path(out_dir)
     unknown = sorted(r for r in keep if r not in source_arms)
@@ -399,16 +453,30 @@ def write_chunk_dir(out_dir: Path, keep: set, *, source_dir: Path,
         _die(f"unknown rid(s) in {label}: {unknown[:5]}")
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    files = {}
+    files, selected = {}, set()
     for key, rows in sorted(leg_rows.items()):
-        sel = [line for rid, line in rows if rid in keep]     # SOURCE ORDER kept
+        sel = [(rid, line) for rid, line in rows if rid in keep]  # SOURCE ORDER
         if not sel:
             continue
         path = out_dir / f"positions_{key.replace('/', '_')}.jsonl"
-        path.write_text("".join(ln + "\n" for ln in sel))
+        path.write_text("".join(line + "\n" for _, line in sel))
         files[key] = {"n": len(sel), "path": str(path)}
+        selected.update(rid for rid, _ in sel)
     if not files:
         _die(f"{label}: no leg lines selected — the chunk would score nothing")
+    # ⭐ THE CROSS-LAYER INVARIANT, at chunk granularity (D4.3). A chunk whose
+    # ARMS.json carries rids its leg files do not is the D4 defect in miniature:
+    # `run_tiletie` scores the leg files, `merge_legs` counts against them, and
+    # the rids in the gap are silently never scored while every count reads
+    # complete. Checked in BOTH directions.
+    if selected != set(keep):
+        _die(f"{label}: CROSS-LAYER INVARIANT VIOLATED — the chunk's leg files "
+             f"enumerate {len(selected)} rid(s) but its ARMS.json carries "
+             f"{len(keep)}: {len(set(keep) - selected)} with NO leg line "
+             f"(first: {sorted(set(keep) - selected)[:3]}), "
+             f"{len(selected - set(keep))} leg rid(s) not in ARMS "
+             f"(first: {sorted(selected - set(keep))[:3]}). The SOURCE corpus "
+             f"dir is the defect, not this cut — re-assemble the union first.")
 
     arms = {r: source_arms[r] for r in sorted(keep)}
     (out_dir / ARMS_NAME).write_text(json.dumps(arms, indent=1))
@@ -421,6 +489,8 @@ def write_chunk_dir(out_dir: Path, keep: set, *, source_dir: Path,
     plan = subset_plan(source_plan, keep, source_arms, files, label=label,
                        out_dir=out_dir, chunk_index=chunk_index,
                        n_chunks=n_chunks, order_sha256=order_sha256)
+    if chunk_meta:
+        plan["chunk"].update(chunk_meta)
     (out_dir / PLAN_NAME).write_text(json.dumps(plan, indent=1))
     return plan
 
@@ -454,6 +524,22 @@ def check_whole_rid(chunks: list, leg_rows: dict) -> dict:
     return {"ok": not split and not orphan, "n_rids": len(owner),
             "split": split[:5], "orphan": orphan[:5],
             "n_split": len(split), "n_orphan": len(orphan)}
+
+
+def check_corpus_leg_layer(arms, leg_rows: dict, *, where: str) -> dict:
+    """⭐ D4.3's CROSS-LAYER INVARIANT at the CORPUS layer: the corpus dir's leg
+    files must enumerate exactly its `ARMS.json` rid set.
+
+    `check_whole_rid` above is NOT this check and never was: it asks whether
+    every LEG rid lands in exactly one chunk — one direction only, over the leg
+    layer's own population. A corpus whose ARMS carries 1,344 rids and whose leg
+    files carry 793 passes it perfectly. That is precisely how the D4 defect
+    survived staging, scoring and merge with three "complete" signals."""
+    leg_rids = {rid for rows in leg_rows.values() for rid, _ in rows}
+    try:
+        return UP.check_leg_layer(arms, leg_rids, where=where)
+    except UP.UnionError as exc:
+        _die(str(exc))
 
 
 # --------------------------------------------------------------------------- #
@@ -536,6 +622,7 @@ def cmd_stage(a) -> int:
                 f"positions, arms or digests). The M of record is G-M's, read "
                 f"from RUN_MANIFEST via run_tiletie --m.")
         leg_rows = read_leg_files(src, plan)
+        cross = check_corpus_leg_layer(arms, leg_rows, where=f"{stratum} corpus {src}")
         chunks = chunks_by_stratum[stratum]
 
         inv = check_whole_rid(chunks, leg_rows)
@@ -564,6 +651,7 @@ def cmd_stage(a) -> int:
             "n_roots": doc["strata"][stratum]["n_roots"],
             "chunks": written,
             "whole_rid_invariant": {"ok": True, "n_rids": inv["n_rids"]},
+            "cross_layer_invariant": cross,
             "totals": {
                 "legs": sum(w["legs"] for w in written),
                 "playouts": sum(w["playouts"] for w in written),
@@ -607,6 +695,8 @@ def cmd_verify(a) -> int:
                  f"({got_sha} != {want_sha}). DO NOT LAUNCH.")
         plan, arms, _ = loaded[stratum]
         leg_rows = read_leg_files(sources[stratum], plan)
+        check_corpus_leg_layer(arms, leg_rows,
+                               where=f"{stratum} corpus {sources[stratum]}")
         inv = check_whole_rid(chunks, leg_rows)
         if not inv["ok"]:
             _die(f"{stratum}: WHOLE-RID INVARIANT VIOLATED — {inv}")
@@ -619,13 +709,22 @@ def cmd_verify(a) -> int:
                 _die(f"{d} holds {len(have)} rids, the committed order says "
                      f"{len(ch)}; sets differ. DO NOT LAUNCH.")
             cp = json.loads((d / PLAN_NAME).read_text())
+            chunk_leg_rids = set()
             for key, info in (cp.get("files") or {}).items():
                 p = Path(info["path"])
                 if not p.is_file():
                     _die(f"{p} missing (chunk {stratum}/chunk{i}, leg {key})")
-                n = sum(1 for ln in p.read_text().splitlines() if ln.strip())
-                if n != int(info["n"]):
-                    _die(f"{p} has {n} lines, its plan says {info['n']}")
+                lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
+                if len(lines) != int(info["n"]):
+                    _die(f"{p} has {len(lines)} lines, its plan says {info['n']}")
+                chunk_leg_rids.update(json.loads(ln)["rid"] for ln in lines)
+            # the same cross-layer invariant, per chunk (D4.3)
+            if chunk_leg_rids != have:
+                _die(f"{d}: CROSS-LAYER INVARIANT VIOLATED — its leg files "
+                     f"enumerate {len(chunk_leg_rids)} rid(s) against an "
+                     f"ARMS.json of {len(have)} "
+                     f"({len(have - chunk_leg_rids)} with no leg line, "
+                     f"{len(chunk_leg_rids - have)} not in ARMS). DO NOT LAUNCH.")
             # the corpus properties the gates address must survive the subset
             for k in ("uncapped", "cap_j", "deployed_cap_j", "m_worlds",
                       "sample_seed", "world_seed_salt"):
@@ -642,6 +741,395 @@ def cmd_verify(a) -> int:
               f"(whole-rid invariant holds over {inv['n_rids']} rids)")
     print(f"[stage_chunks] VERIFY OK — POSITION_ORDER.json byte-identical "
           f"(seed {doc['seed']})")
+    return 0
+
+
+# --------------------------------------------------------------------------- #
+# completion staging (D4)                                                      #
+# --------------------------------------------------------------------------- #
+def scored_rids_by_judge(record_roots) -> dict:
+    """{judge: {rid, …}} read from the EXISTING RECORD TREES.
+
+    ⚠️ NEVER OPENS A RECORD. A record's rid is its FILE NAME — `merge_legs`'
+    blindness discipline verbatim, so no value, mean, `arb`, `ora` or Δ passes
+    through the tool that decides what still needs scoring. That matters here
+    more than anywhere: D4's licence rests on no outcome having been observed.
+
+    Accepts either a merged stratum tree (`<judge>/<profile>/leg<N>/records/`) or
+    a per-chunk tree (`chunk<k>/<judge>/…`) — the judge is the component four
+    levels above the record file in both shapes.
+    """
+    out: dict = {}
+    for root in record_roots or ():
+        root = Path(root)
+        if not root.is_dir():
+            _die(f"records root absent: {root}")
+        for f in root.rglob("records/*.json"):
+            rel = f.relative_to(root).parts
+            if len(rel) < 5:
+                _die(f"unrecognised record path {f} under {root} — expected "
+                     f"<judge>/<profile>/leg<N>/records/<rid>.json")
+            out.setdefault(rel[-5], set()).add(f.stem)
+    return out
+
+
+def completion_remainder(arms, order, scored_by_judge: dict) -> tuple:
+    """(remainder_in_committed_order, scored_set, report) — or die.
+
+    THE guard of D4.2: the increment must be *the rest*, never *more*. Every way
+    that could fail is a refusal here, not a note:
+
+      * a rid scored by one judge and not the other → the remainder is
+        AMBIGUOUS (the two judges would need different supplementary sets, and
+        `G-CRN` joins them per rid);
+      * a scored rid outside `ARMS.json` → the record tree and the committed
+        corpus describe different populations;
+      * a committed rid absent from `POSITION_ORDER.json` → the order was cut
+        for a different corpus, so "no re-shuffle" would be meaningless.
+    """
+    arms_rids, order = set(arms), list(order)
+    if not scored_by_judge:
+        _die("no records found under the given --records-root(s). A 'completion' "
+             "of a corpus nothing has scored is not a completion — check the "
+             "path before staging.")
+    missing_judges = sorted(set(JUDGES) - set(scored_by_judge))
+    if missing_judges:
+        _die(f"no records at all for judge(s) {missing_judges} — both judges "
+             f"score every rid (G-CRN joins them per rid), so the remainder "
+             f"cannot be derived from one judge's tree")
+    per_judge = {j: set(v) for j, v in scored_by_judge.items()}
+    both = set.intersection(*per_judge.values())
+    either = set.union(*per_judge.values())
+    partial = sorted(either - both)
+    if partial:
+        _die(f"{len(partial)} rid(s) are scored by SOME judges and not others "
+             f"(first: {partial[:5]}) — the completion set is AMBIGUOUS. D4's "
+             f"set-equality guard cannot be satisfied in both directions until "
+             f"this is resolved; escalate rather than staging a guess.")
+    outside = sorted(both - arms_rids)
+    if outside:
+        _die(f"{len(outside)} SCORED rid(s) are not in ARMS.json "
+             f"(first: {outside[:5]}) — the record tree and the committed corpus "
+             f"describe different populations. Any rid outside the committed set, "
+             f"in either direction, VOIDS the completion (D4.2).")
+    if set(order) != arms_rids:
+        _die(f"POSITION_ORDER.json covers {len(set(order))} rid(s) but ARMS.json "
+             f"carries {len(arms_rids)} — the committed order was cut for a "
+             f"different corpus. Staging a completion off it would be new "
+             f"randomness by another name.")
+    remainder = [rid for rid in order if rid not in both]   # COMMITTED ORDER kept
+    report = {
+        "n_arms": len(arms_rids), "n_scored_both_judges": len(both),
+        "n_remainder": len(remainder),
+        "scored_by_judge": {j: len(v) for j, v in sorted(per_judge.items())},
+        "judges_agree_on_scored_set": True,
+        "note": "already-scored = a record under EVERY judge. The remainder is "
+                "ARMS.json minus that set, in committed POSITION_ORDER order — "
+                "no re-shuffle, no new randomness.",
+    }
+    return remainder, both, report
+
+
+def assert_completion_set_equality(staged, want, scored) -> dict:
+    """⭐ D4.2's condition, as a check rather than a claim: the supplementary
+    chunks must hold EXACTLY `ARMS − already-scored`.
+
+    *"Any rid outside that set, in either direction, voids the completion."* So
+    BOTH differences are computed and BOTH refuse — a one-directional check
+    would pass a completion that quietly dropped rids, which is the same class
+    of miss as the defect it is here to prevent.
+    """
+    staged, want, scored = set(staged), set(want), set(scored)
+    missing, extra = sorted(want - staged), sorted(staged - want)
+    overlap = sorted(staged & scored)
+    if missing or extra or overlap:
+        _die(f"COMPLETION VOID — the supplementary chunks are not exactly "
+             f"ARMS − already-scored: {len(missing)} rid(s) of the remainder "
+             f"NOT staged (first: {missing[:3]}), {len(extra)} staged rid(s) "
+             f"OUTSIDE the remainder (first: {extra[:3]}), {len(overlap)} "
+             f"already-scored rid(s) re-staged (first: {overlap[:3]}). D4.2: "
+             f"any rid outside that set, in either direction, VOIDS the "
+             f"completion.")
+    return {
+        "ok": True, "both_directions_checked": True,
+        "expected": "ARMS.json rids MINUS already-scored rids",
+        "n_expected": len(want), "n_staged": len(staged),
+        "n_missing_from_staged": 0, "n_extra_in_staged": 0,
+        "n_overlap_with_scored": 0,
+        "note": "D4.2's third distinguishing fact — the increment is the "
+                "pre-committed REMAINDER, not 'more'. Asserted, not claimed.",
+    }
+
+
+def plan_completion_allocation(chunk_playouts, *, w_local, w_laptop,
+                               laptop_rate, c_arb, c_if, first_index) -> dict:
+    """ALLOCATION.conf's shape, re-derived for the supplementary tranche:
+    **local takes ALL the ARB chunks plus a PREFIX of the IF chunks; the laptop
+    takes the IF suffix.** The prefix length is chosen to minimise the makespan
+    against the same effective-capacity model ALLOCATION.conf is sized on, so
+    the arithmetic is derived here rather than typed."""
+    n = len(chunk_playouts)
+    eff_laptop = w_laptop * laptop_rate
+    arb_wh = [p * c_arb / 3600.0 for p in chunk_playouts]
+    if_wh = [p * c_if / 3600.0 for p in chunk_playouts]
+    total_wh = sum(arb_wh) + sum(if_wh)
+    pool = w_local + eff_laptop
+    best = None
+    for k in range(n + 1):
+        local_wh = sum(arb_wh) + sum(if_wh[:k])
+        laptop_wh = sum(if_wh[k:])
+        h_local = local_wh / w_local if w_local else float("inf")
+        h_laptop = (laptop_wh / eff_laptop) if eff_laptop else (
+            0.0 if not laptop_wh else float("inf"))
+        cand = {
+            "n_if_chunks_local": k,
+            "local_worker_hours": round(local_wh, 2),
+            "laptop_worker_hours": round(laptop_wh, 2),
+            "local_hours": round(h_local, 2), "laptop_hours": round(h_laptop, 2),
+            "makespan_hours": round(max(h_local, h_laptop), 2),
+            "local_share_of_worker_hours": round(local_wh / total_wh, 4) if total_wh else None,
+        }
+        if best is None or cand["makespan_hours"] < best["makespan_hours"]:
+            best = cand
+    idx = list(range(first_index, first_index + n))
+    best.update({
+        "chunks": idx,
+        "local_tier1_greedy": idx,                       # ALL the ARB work
+        "local_clair_puct": idx[: best["n_if_chunks_local"]],
+        "laptop_tier1_greedy": [],
+        "laptop_clair_puct": idx[best["n_if_chunks_local"]:],
+        "capacity": {
+            "w_eval_local": w_local, "w_eval_laptop": w_laptop,
+            "laptop_rate": laptop_rate, "laptop_effective": round(eff_laptop, 2),
+            "pool_effective": round(pool, 2),
+            "ideal_local_share": round(w_local / pool, 4) if pool else None,
+        },
+        "cost": {
+            "c_arb_assumed": c_arb, "c_if_assumed": c_if,
+            "playouts_by_chunk": list(chunk_playouts),
+            "playouts_total": sum(chunk_playouts),
+            "arb_worker_hours": round(sum(arb_wh), 2),
+            "if_worker_hours": round(sum(if_wh), 2),
+            "total_worker_hours": round(total_wh, 2),
+            "ideal_makespan_hours": round(total_wh / pool, 2) if pool else None,
+        },
+        "note": "throughput ONLY — chunk MEMBERSHIP is fixed by the committed "
+                "POSITION_ORDER.json and is identical for both judges. World and "
+                "playout seeds are sha256(tag|rid|j|salt): no chunk, no box, no "
+                "worker count and no M enters the derivation, so this split "
+                "cannot move a value.",
+    })
+    return best
+
+
+def allocation_conf_text(stratum: str, alloc: dict) -> str:
+    """`ALLOCATION.conf`'s exact key spelling, for the supplementary tranche."""
+    cap, cost = alloc["capacity"], alloc["cost"]
+
+    def _lst(v):
+        return " ".join(str(x) for x in v)
+
+    return "\n".join([
+        f"# ALLOCATION_COMPLETION_{stratum}.conf — the SUPPLEMENTARY tranche's",
+        f"# (box x judge x chunk) allocation, emitted by `stage_chunks.py completion`.",
+        "#",
+        "# ⚠️ SOURCE THIS *INSTEAD OF* ALLOCATION.conf for the supplementary legs, or",
+        "# pass the chunk numbers to run_scoring.sh directly — the ALLOC_* keys below",
+        "# use the SAME spelling and would otherwise be overridden by the committed",
+        "# tranche's values.",
+        "#",
+        "# ⚠️ THIS FILE CANNOT MOVE A VALUE. " + alloc["note"].replace("\n", " "),
+        "#",
+        "# --- THE ARITHMETIC -----------------------------------------------------",
+        f"#   chunks {alloc['chunks'][0]}..{alloc['chunks'][-1]}  "
+        f"({len(alloc['chunks'])} chunks, "
+        f"{cost['playouts_total']:,} arm playouts)",
+        f"#   IF  {cost['playouts_total']:,} x c_IF  {cost['c_if_assumed']} "
+        f"= {cost['if_worker_hours']} wh",
+        f"#   ARB {cost['playouts_total']:,} x c_ARB {cost['c_arb_assumed']} "
+        f"= {cost['arb_worker_hours']} wh",
+        f"#   TRANCHE TOTAL = {cost['total_worker_hours']} wh",
+        "#",
+        f"#   effective capacity: local W{cap['w_eval_local']} -> "
+        f"{cap['w_eval_local']} | laptop W{cap['w_eval_laptop']} x "
+        f"{cap['laptop_rate']} -> {cap['laptop_effective']} | pool "
+        f"{cap['pool_effective']}",
+        f"#   => ideal makespan {cost['ideal_makespan_hours']} h; local should take "
+        f"{cap['ideal_local_share']:.1%} of the worker-hours",
+        "#",
+        f"#   local  : IF chunks {_lst(alloc['local_clair_puct']) or '(none)'} "
+        f"+ ARB chunks {_lst(alloc['local_tier1_greedy']) or '(none)'} "
+        f"= {alloc['local_worker_hours']} wh",
+        f"#            -> {alloc['local_worker_hours']} / {cap['w_eval_local']} "
+        f"= {alloc['local_hours']} h",
+        f"#   laptop : IF chunks {_lst(alloc['laptop_clair_puct']) or '(none)'} "
+        f"= {alloc['laptop_worker_hours']} wh",
+        f"#            -> {alloc['laptop_worker_hours']} / "
+        f"{cap['laptop_effective']} = {alloc['laptop_hours']} h",
+        f"#   => TRANCHE MAKESPAN ~{alloc['makespan_hours']} h "
+        f"(local share {alloc['local_share_of_worker_hours']:.1%} vs the "
+        f"{cap['ideal_local_share']:.1%} ideal)",
+        "#",
+        "#   ⚠️ THE LAPTOP GETS NO ARB WORK — load balance, not capability, exactly",
+        "#   as in ALLOCATION.conf: ARB is a small share of the bill and far cheaper",
+        "#   per playout, so keeping it whole on one box removes a cross-box surface.",
+        "",
+        f"N_CHUNKS_COMPLETION_{stratum}={len(alloc['chunks'])}",
+        f"COMPLETION_CHUNKS_{stratum}=\"{_lst(alloc['chunks'])}\"",
+        f"LAPTOP_RATE={cap['laptop_rate']}",
+        "",
+        f"ALLOC_{stratum}_local_tier1_greedy=\"{_lst(alloc['local_tier1_greedy'])}\"",
+        f"ALLOC_{stratum}_local_clair_puct=\"{_lst(alloc['local_clair_puct'])}\"",
+        f"ALLOC_{stratum}_laptop_side_tier1_greedy=\"{_lst(alloc['laptop_tier1_greedy'])}\"",
+        f"ALLOC_{stratum}_laptop_side_clair_puct=\"{_lst(alloc['laptop_clair_puct'])}\"",
+        "",
+        "JUDGE_ORDER=\"tier1-greedy clair-puct\"",
+        f"STRATUM_ORDER=\"{stratum}\"",
+        "",
+    ])
+
+
+def _conf_float(conf: dict, key: str, where: str) -> float:
+    if key not in conf:
+        _die(f"{where} does not set {key} — the completion allocation is sized "
+             f"against it and will not be guessed")
+    try:
+        return float(conf[key])
+    except (TypeError, ValueError):
+        _die(f"{where}: {key}={conf[key]!r} is not a number")
+
+
+def cmd_complete(a) -> int:
+    out_root = Path(a.out_root).resolve()
+    if not a.stratum:
+        _die("completion is staged ONE stratum at a time — pass --stratum")
+    stratum = a.stratum
+    src = _resolve_sources(a)[stratum]
+    plan, arms, dropped = load_plan_dir(src)
+    leg_rows = read_leg_files(src, plan)
+
+    # (1) D4.3: the cross-layer invariant, RE-CHECKED before the first
+    #     supplementary leg. Staging a completion off a corpus that still has
+    #     the defect would produce a second wrong population.
+    cross = check_corpus_leg_layer(arms, leg_rows,
+                                   where=f"{stratum} corpus {src}")
+
+    # (2) the COMMITTED order, read — never re-derived, never re-shuffled
+    order_path = out_root / "POSITION_ORDER.json"
+    if not order_path.is_file():
+        _die(f"{order_path} does not exist — the committed order is the only "
+             f"legal source of the supplementary chunks' ordering")
+    doc = json.loads(order_path.read_text())
+    st = (doc.get("strata") or {}).get(stratum)
+    if st is None:
+        _die(f"POSITION_ORDER.json has no stratum {stratum!r}")
+    if int(doc.get("seed", -1)) != PERMUTATION_SEED:
+        _die(f"POSITION_ORDER.json was cut with seed {doc.get('seed')}, not the "
+             f"committed {PERMUTATION_SEED}")
+    order = list(st["order"])
+    if sha256_list(order) != st["sha256_order"]:
+        _die("POSITION_ORDER.json's order does not match its own digest — the "
+             "committed permutation changed. DO NOT STAGE.")
+
+    # (3) the remainder = ARMS − already-scored, set-checked both directions
+    scored_by_judge = scored_rids_by_judge(a.records_root)
+    remainder, scored, rem_report = completion_remainder(arms, order, scored_by_judge)
+    if not remainder:
+        _die("the remainder is EMPTY — every committed rid already has records "
+             "under every judge. There is nothing to complete.")
+
+    n_chunks = int(a.chunks)
+    if n_chunks > len(remainder):
+        _die(f"--chunks {n_chunks} exceeds the {len(remainder)}-rid remainder")
+    chunks = chunk_slices(remainder, n_chunks)
+
+    committed_n = int(st.get("chunks") or len(st.get("chunk_sizes") or []))
+    first = int(a.first_index) if a.first_index else committed_n + 1
+    existing = [d.name for d in sorted((out_root / "chunks" / stratum).glob("chunk*"))
+                if d.is_dir()]
+    written = []
+    for off, ch in enumerate(chunks):
+        k = first + off
+        d = chunk_dir(out_root, stratum, k)
+        if d.exists():
+            _die(f"{d} already exists — a supplementary chunk NEVER overwrites a "
+                 f"staged one. Already-scored rids keep their chunks untouched "
+                 f"(D4.3); pass --first-index past the existing ones.")
+        p = write_chunk_dir(
+            d, set(ch), source_dir=src, source_plan=plan, source_arms=arms,
+            dropped=dropped, leg_rows=leg_rows, label=f"{stratum}/chunk{k}",
+            chunk_index=k, n_chunks=committed_n + n_chunks,
+            order_sha256=st["sha256_order"],
+            chunk_meta={"completion": {
+                "schema": COMPLETION_SCHEMA,
+                "tranche": "supplementary",
+                "index_within_tranche": off + 1,
+                "n_chunks_in_tranche": n_chunks,
+                "committed_chunks": committed_n,
+                "deviation": "D4 (measurement/tiearb_widening_20260817/"
+                             "DEVIATIONS.md) — the union assembled ARMS but not "
+                             "leg files, so these rids were committed and never "
+                             "scored. Ordering is the SAME committed "
+                             "POSITION_ORDER.json (seed 20260817), filtered to "
+                             "the not-yet-scored rids: no re-shuffle, no new "
+                             "randomness.",
+            }})
+        written.append({"chunk": k, "dir": str(d), "n": p["n_positions"],
+                        "roots": p["n_roots"], "legs": p["total_legs"],
+                        "playouts": p["total_arm_playouts"]})
+
+    # (4) ⭐ THE SET-EQUALITY GUARD, BOTH DIRECTIONS (D4.2's condition, not a note)
+    staged = set()
+    for w in written:
+        staged |= set(json.loads((Path(w["dir"]) / ARMS_NAME).read_text()))
+    want = set(remainder)
+    set_equality = assert_completion_set_equality(staged, want, scored)
+
+    conf = WP.parse_conf(CAMPAIGN / "WORKERS.conf")
+    alloc_conf = WP.parse_conf(HERE / "ALLOCATION.conf")
+    alloc = plan_completion_allocation(
+        [w["playouts"] for w in written],
+        w_local=_conf_float(conf, "W_EVAL_LOCAL", "WORKERS.conf"),
+        w_laptop=_conf_float(conf, "W_EVAL_LAPTOP", "WORKERS.conf"),
+        laptop_rate=_conf_float(alloc_conf, "LAPTOP_RATE", "ALLOCATION.conf"),
+        c_arb=_conf_float(alloc_conf, "C_ARB_ASSUMED", "ALLOCATION.conf"),
+        c_if=_conf_float(alloc_conf, "C_IF_ASSUMED", "ALLOCATION.conf"),
+        first_index=first)
+    alloc_path = out_root / f"ALLOCATION_COMPLETION_{stratum}.conf"
+    alloc_path.write_text(allocation_conf_text(stratum, alloc))
+
+    summary = {
+        "schema": COMPLETION_SCHEMA, "run_id": RUN_ID, "design_doc": DESIGN_DOC,
+        "read_rule": READ_RULE, "deviation": "D4",
+        "stratum": stratum, "source_positions_dir": str(src),
+        "position_order": str(order_path), "permutation_seed": PERMUTATION_SEED,
+        "position_order_sha256": st["sha256_order"],
+        "records_roots": [str(r) for r in (a.records_root or ())],
+        "cross_layer_invariant": cross,
+        "remainder": rem_report,
+        "set_equality": set_equality,
+        "chunks": written,
+        "first_chunk_index": first, "n_chunks": n_chunks,
+        "committed_chunks": committed_n, "pre_existing_chunk_dirs": existing,
+        "allocation": alloc, "allocation_conf": str(alloc_path),
+        "ordering": "the SAME committed POSITION_ORDER.json, filtered to the "
+                    "not-yet-scored rids and cut into near-equal SEQUENTIAL "
+                    "chunks. No re-shuffle, no new seed, already-scored rids' "
+                    "chunks untouched.",
+        "governance": ("Measurement plumbing only. Scores nothing, opens no "
+                       "record, reads no value and no statistic. Writes NOTHING "
+                       "under the prereg dir."),
+    }
+    out_path = out_root / f"COMPLETION_PLAN_{stratum}.json"
+    out_path.write_text(json.dumps(summary, indent=1) + "\n")
+    print(json.dumps(summary, indent=1))
+    log(f"{stratum}: staged {n_chunks} supplementary chunk(s) "
+        f"{first}..{first + n_chunks - 1} over {len(want)} never-scored rid(s) "
+        f"(ARMS {rem_report['n_arms']} − scored {rem_report['n_scored_both_judges']}) "
+        f"— set equality holds in BOTH directions")
+    log(f"{stratum}: allocation -> {alloc_path} "
+        f"(local IF {alloc['local_clair_puct']} + ARB {alloc['local_tier1_greedy']}, "
+        f"laptop IF {alloc['laptop_clair_puct']}, makespan ~{alloc['makespan_hours']} h)")
     return 0
 
 
@@ -686,6 +1174,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
     v = sub.add_parser("verify", help="re-derive and assert byte-identity")
     common(v)
     v.set_defaults(fn=cmd_verify)
+
+    p = sub.add_parser("completion",
+                       help="stage SUPPLEMENTARY chunks for committed rids that "
+                            "no box ever scored (deviation D4)")
+    common(p)
+    p.add_argument("--records-root", action="append", default=None, required=True,
+                   help="an existing record tree (SHARE/<RUN_ID>/<stratum> or "
+                        "SHARE/<RUN_ID>/chunks/<stratum>); repeatable. Record "
+                        "FILE NAMES only are read — never their contents")
+    p.add_argument("--chunks", type=int, default=DEFAULT_CHUNKS["s1"],
+                   help="how many supplementary chunks to cut the remainder into")
+    p.add_argument("--first-index", type=int, default=None,
+                   help="first supplementary chunk number (default: one past the "
+                        "committed chunk count, so nothing is ever overwritten)")
+    p.set_defaults(fn=cmd_complete)
 
     c = sub.add_parser("clean", help="remove the staged chunk dirs")
     common(c)

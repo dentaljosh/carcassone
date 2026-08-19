@@ -37,6 +37,13 @@ They are properties of `(salt, m)` and of the code revision, never of the box, s
 divergence means a mixed-rev or mis-configured run and MUST fail loudly rather
 than be averaged away.  Counters are summed; per-chunk-varying fields
 (`workers`, `host`, wall clocks, paths) move into the merged `merge` block.
+
+⚠️ `execution` IS CLASSIFIED KEY BY KEY, NOT AS A BLOCK (deviation D3 §D3.2,
+commit `355ceb65`).  Two box-local keys (`carc_rs_binary_sha`, `carc_rs_path`)
+are PER_CHUNK; `carc_rs_build` is IDENTITY_REQUIRED — the cross-host witness;
+every other key inside `execution` keeps the fail-closed RAISE.  `--allow-varying`
+is REJECTED for that block by the same ruling and is not consulted there: it
+silences rather than records, and provenance is this layer's whole job.
 """
 from __future__ import annotations
 
@@ -95,6 +102,44 @@ PER_CHUNK = frozenset({
 RESOLVED_CONFIG_PER_CHUNK = frozenset({
     "positions_jsonl", "n", "workers", "out_root", "out_subdir", "resume",
 })
+
+# --------------------------------------------------------------------------- #
+# `execution` — ruled by deviation D3 §D3.2 (commit 355ceb65)                   #
+# --------------------------------------------------------------------------- #
+# The S1 merge raised fail-closed on the whole `execution` block for all 11
+# multi-chunk `clair-puct` legs, which is R4-7.5 working as pre-registered:
+# *"an unclassified differing key raises rather than defaulting … it fails
+# closed on fields nobody anticipated."*  The ruling classifies the block
+# KEY BY KEY and declines blanket PER_CHUNK, because opening the block wholesale
+# would let a FUTURE non-box-local divergence (a different rust version, a
+# different build) be recorded silently — discarding exactly the property
+# R4-7.5 calls the important one:
+#
+#   execution.carc_rs_binary_sha  PER_CHUNK          JCZ §0.F.2c — the .so is NOT
+#                                                    machine-reproducible; the
+#                                                    value is BOX-LOCAL and may
+#                                                    never be compared across
+#                                                    hosts.
+#   execution.carc_rs_path        PER_CHUNK          site-packages path; same
+#                                                    category as `workers`, which
+#                                                    R4-7.5 nulls as box-specific.
+#                                                    PER_CHUNK is strictly better:
+#                                                    it RECORDS rather than
+#                                                    discards.
+#   execution.carc_rs_build       IDENTITY_REQUIRED  the cross-host witness the
+#                                                    JCZ ruling names — the value
+#                                                    that legitimately MAY be
+#                                                    compared across hosts. If it
+#                                                    ever differs, the merge MUST
+#                                                    raise.
+#   any other key in execution    RAISE (default)    preserves the fail-closed
+#                                                    property.
+#
+# ⚠️ `--allow-varying` is REJECTED for this block by the same ruling: it silences
+# rather than records, and provenance is the merge layer's entire job. It is not
+# consulted anywhere in the `execution` path below.
+EXECUTION_PER_CHUNK = frozenset({"carc_rs_binary_sha", "carc_rs_path"})
+EXECUTION_IDENTITY_REQUIRED = frozenset({"carc_rs_build"})
 
 #: Dotted paths that MUST agree across every chunk of a leg. A divergence here
 #: is a mixed-rev / mis-configured run, never a throughput artefact.
@@ -207,6 +252,9 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
         if key == "resolved_config":
             merged[key] = _merge_resolved_config(present, per_chunk_block)
             continue
+        if key == "execution":
+            merged[key] = _merge_execution(present, per_chunk_block)
+            continue
         distinct = {_canon(v) for v in present.values()}
         if len(distinct) == 1 and len(present) == len(vals):
             merged[key] = present[min(present)]
@@ -240,6 +288,69 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
             [float(m.get("wall_secs") or 0.0) for m in by_chunk.values()] or [0.0]),
         "divergent_keys_allowed": sorted(divergent),
     }
+    return merged
+
+
+def _merge_execution(present: dict, per_chunk_block: dict) -> dict:
+    """Merge the `execution` block KEY BY KEY, per deviation D3 §D3.2.
+
+    Three classes and no fourth: two BOX-LOCAL keys are recorded per chunk, the
+    cross-host build witness must be IDENTICAL, and every other key keeps the
+    fail-closed raise. `allow_varying` is deliberately NOT threaded in here —
+    D3 rejects it for this block by name.
+    """
+    order = sorted(present)
+    non_dict = {k: v for k, v in present.items() if not isinstance(v, dict)}
+    if non_dict:
+        distinct = {_canon(v) for v in present.values()}
+        if len(distinct) != 1:
+            raise MergeError(
+                "`execution` is not a dict on every chunk and the values differ: "
+                + "; ".join(f"chunk{k}={_canon(v)[:120]}"
+                            for k, v in sorted(present.items())))
+        return json.loads(json.dumps(present[order[0]]))
+
+    merged = json.loads(json.dumps(present[order[0]]))
+    keys = sorted({k for v in present.values() for k in v})
+    for key in keys:
+        vals = {k: v.get(key, _MISSING) for k, v in present.items()}
+        have = {k: v for k, v in vals.items() if v is not _MISSING}
+        distinct = {_canon(v) for v in have.values()}
+        if key in EXECUTION_PER_CHUNK:
+            # BOX-LOCAL: recorded per chunk rather than discarded or asserted
+            for k, v in have.items():
+                per_chunk_block[str(k)].setdefault("execution", {})[key] = v
+            merged[key] = have[min(have)]
+            continue
+        if key in EXECUTION_IDENTITY_REQUIRED:
+            if len(have) != len(vals):
+                missing = sorted(k for k, v in vals.items() if v is _MISSING)
+                raise MergeError(
+                    f"identity-required path 'execution.{key}' is present on some "
+                    f"chunks but absent on {missing} — a leg cannot be "
+                    f"half-configured")
+            if len(distinct) != 1:
+                raise MergeError(
+                    f"identity-required path 'execution.{key}' DIVERGES across "
+                    f"chunks: "
+                    + "; ".join(f"chunk{k}={_canon(v)}"
+                                for k, v in sorted(have.items()))
+                    + " — D3 §D3.2 names this the CROSS-HOST WITNESS: it is the "
+                      "one value inside `execution` that may legitimately be "
+                      "compared across boxes, so a divergence is a mixed-build "
+                      "run and MUST raise.")
+            merged[key] = have[min(have)]
+            continue
+        if len(distinct) != 1 or len(have) != len(vals):
+            raise MergeError(
+                f"execution.{key} differs across chunks and is UNCLASSIFIED. D3 "
+                f"§D3.2 classifies only carc_rs_binary_sha / carc_rs_path "
+                f"(PER_CHUNK, box-local) and carc_rs_build (IDENTITY_REQUIRED); "
+                f"every other key inside `execution` keeps the fail-closed "
+                f"RAISE, and --allow-varying is rejected for this block: "
+                + "; ".join(f"chunk{k}={_canon(v)[:120]}"
+                            for k, v in sorted(have.items())))
+        merged[key] = have[min(have)]
     return merged
 
 
