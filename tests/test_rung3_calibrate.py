@@ -14,6 +14,14 @@ READ_RULE is drafted; §R5-2 adds a mining ply-floor knob. This suite covers:
   * the >= 4-scales precondition, enforced loudly
   * the CLI end to end (argparse, JSON emission, exit codes)
 
+AMENDMENT (drafter ruling `8211568e`) — `--generated-order` coverage:
+
+  * the seed -> generation-index mapping at BOTH declared range edges
+  * an out-of-range seed RAISES (fail loud, never silently dropped)
+  * a synthetic two-band leg produces correct per-scale counts, with a
+    zero-yield game (generated, no leg record) silently advancing G
+  * the S2 pointer-defect disclosure field is present verbatim
+
 Fast, hermetic, no engine, no replay, no leaf.
 """
 from __future__ import annotations
@@ -379,3 +387,254 @@ def test_cli_no_clearing_floor_exits_1_but_still_writes(tmp_path):
     assert r.returncode == 1
     assert out.is_file()
     assert "NO PLY FLOOR CLEARS" in r.stderr
+
+
+# =========================================================================== #
+# AMENDMENT (drafter ruling 8211568e) — --generated-order                     #
+# =========================================================================== #
+BANK_LO, BANK_HI = RC.GENERATED_RANGES_S2[0][1], RC.GENERATED_RANGES_S2[0][2]
+EXT_LO, EXT_HI = RC.GENERATED_RANGES_S2[1][1], RC.GENERATED_RANGES_S2[1][2]
+
+
+def _gen_line(*, seed, ply, checksum):
+    return {"rid": f"tt_sp_{seed}_p{ply}", "root_id": f"sp_{seed}",
+            "deck_seed": seed, "ply": ply, "checksum": checksum}
+
+
+# --------------------------------------------------------------------------- #
+# seed -> generation-index mapping, both range edges                          #
+# --------------------------------------------------------------------------- #
+def test_seed_to_generation_index_banked_edges():
+    lo_idx, lo_band = RC.seed_to_generation_index(BANK_LO)
+    hi_idx, hi_band = RC.seed_to_generation_index(BANK_HI)
+    assert (lo_idx, lo_band) == (0, "banked_135e9")
+    assert (hi_idx, hi_band) == (499, "banked_135e9")
+
+
+def test_seed_to_generation_index_extension_edges():
+    lo_idx, lo_band = RC.seed_to_generation_index(EXT_LO)
+    hi_idx, hi_band = RC.seed_to_generation_index(EXT_HI)
+    assert (lo_idx, lo_band) == (500, "extension_137e9")
+    assert (hi_idx, hi_band) == (5339, "extension_137e9")
+
+
+def test_seed_to_generation_index_interior_points():
+    # one step inside each edge, to prove the mapping is `idx_start + (seed -
+    # lo)` and not an off-by-one at the boundary itself
+    assert RC.seed_to_generation_index(BANK_LO + 1) == (1, "banked_135e9")
+    assert RC.seed_to_generation_index(BANK_HI - 1) == (498, "banked_135e9")
+    assert RC.seed_to_generation_index(EXT_LO + 1) == (501, "extension_137e9")
+    assert RC.seed_to_generation_index(EXT_HI - 1) == (5338, "extension_137e9")
+
+
+def test_seed_just_outside_each_edge_raises():
+    for bad in (BANK_LO - 1, BANK_HI + 1, EXT_LO - 1, EXT_HI + 1):
+        with pytest.raises(RC.CalibrationError, match="outside every declared"):
+            RC.seed_to_generation_index(bad)
+
+
+def test_seed_in_the_gap_between_bands_raises():
+    """A seed strictly between the two declared ranges (e.g. the RELEASED
+    136e9 band `gate_disjoint.py` tracks) is out of range too -- there is no
+    third band declared for S2."""
+    with pytest.raises(RC.CalibrationError, match="outside every declared"):
+        RC.seed_to_generation_index(136000000000)
+
+
+def test_n_games_total_generated_matches_ruling_arithmetic():
+    """500 banked + 4,840 extension = 5,340, the ruling's own reconciliation."""
+    assert RC.n_games_total_generated() == 5340
+    assert (BANK_HI - BANK_LO + 1) == 500
+    assert (EXT_HI - EXT_LO + 1) == 4840
+
+
+# --------------------------------------------------------------------------- #
+# out-of-range seed raises at the sweep level, not just the mapper             #
+# --------------------------------------------------------------------------- #
+def test_run_calibration_generated_raises_on_out_of_range_seed(tmp_path):
+    leg = tmp_path / "positions_walled_leg1.jsonl"
+    leg.write_text(json.dumps(_gen_line(seed=1, ply=2, checksum="X")) + "\n")
+    with pytest.raises(RC.CalibrationError, match="outside every declared"):
+        RC.run_calibration_generated(legs=[leg])
+
+
+def test_cli_generated_order_raises_on_out_of_range_seed(tmp_path):
+    leg = tmp_path / "positions_walled_leg1.jsonl"
+    leg.write_text(json.dumps(_gen_line(seed=1, ply=2, checksum="X")) + "\n")
+    out = tmp_path / "CALIBRATION.json"
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--generated-order",
+         "--legs", str(leg), "--out", str(out)],
+        capture_output=True, text=True)
+    assert r.returncode == 2
+    assert "outside every declared" in r.stderr
+    assert not out.exists()
+
+
+# --------------------------------------------------------------------------- #
+# synthetic two-band leg: correct per-scale counts, zero-yield advances G      #
+# --------------------------------------------------------------------------- #
+def make_two_band_corpus(tmp_path, *, n_banked_present=10, n_ext_present=10,
+                         banked_collide_at=(3, 4), ext_collide_at=(2, 3)):
+    """`n_banked_present` / `n_ext_present` leg records are WRITTEN (present in
+    the leg file); the rest of each band's 500 / 4,840 generated games are
+    ZERO-YIELD -- generated, but absent from the leg file entirely. This is
+    the fixture `n_games_producing` vs. `G` must distinguish."""
+    records = []
+    for i in range(n_banked_present):
+        seed = BANK_LO + i
+        checksum = "COLLIDE_BANK" if i in banked_collide_at else f"UNIQUE_BANK_{i}"
+        records.append(_gen_line(seed=seed, ply=2, checksum=checksum))
+    for i in range(n_ext_present):
+        seed = EXT_LO + i
+        checksum = "COLLIDE_EXT" if i in ext_collide_at else f"UNIQUE_EXT_{i}"
+        records.append(_gen_line(seed=seed, ply=5, checksum=checksum))
+    leg = tmp_path / "positions_walled_leg1.jsonl"
+    leg.write_text("\n".join(json.dumps(r) for r in records) + "\n")
+    return leg
+
+
+def test_generated_scale_500_is_the_banked_extension_boundary(tmp_path):
+    """At G=500 (idx < 500) only the banked band can appear -- band_composition
+    must show the FULL 500 banked slots and ZERO extension slots, regardless
+    of how many leg records are actually present."""
+    leg = make_two_band_corpus(tmp_path, n_banked_present=10, n_ext_present=10)
+    report = RC.run_calibration_generated(
+        legs=[leg], scales=[500, 1000, 1500, 3000, 5340], ply_floors=[0])
+    blk = report["by_ply_floor"]["0"]["per_scale"]["500"]
+    assert blk["band_composition"] == {"banked_135e9": 500, "extension_137e9": 0}
+    assert blk["n_positions"] == 10          # only the 10 WRITTEN banked rows
+    assert blk["n_games_producing"] == 10
+
+
+def test_generated_scale_1000_crosses_into_extension(tmp_path):
+    leg = make_two_band_corpus(tmp_path, n_banked_present=10, n_ext_present=10)
+    report = RC.run_calibration_generated(
+        legs=[leg], scales=[500, 1000, 1500, 3000, 5340], ply_floors=[0])
+    blk = report["by_ply_floor"]["0"]["per_scale"]["1000"]
+    # idx < 1000 covers ALL 500 banked slots + the first 500 extension slots
+    assert blk["band_composition"] == {"banked_135e9": 500, "extension_137e9": 500}
+    assert blk["n_positions"] == 20          # 10 banked + 10 extension rows
+    assert blk["n_collisions"] == 2          # one collision planted per band
+
+
+def test_zero_yield_games_advance_g_silently(tmp_path):
+    """Only 10 of the 500 banked slots and 10 of the 4,840 extension slots
+    ever produce a leg record; `n_games_producing` must reflect that (10 at
+    G=500, 20 at G=1000) while `G` itself and `band_composition` -- driven
+    purely by the declared ranges -- are unaffected by the missing 480 + 4,830
+    zero-yield games."""
+    leg = make_two_band_corpus(tmp_path, n_banked_present=10, n_ext_present=10)
+    report = RC.run_calibration_generated(
+        legs=[leg], scales=[500, 1000, 1500, 3000, 5340], ply_floors=[0])
+    per_scale = report["by_ply_floor"]["0"]["per_scale"]
+    assert per_scale["500"]["G"] == 500
+    assert per_scale["500"]["n_games_producing"] == 10
+    assert per_scale["500"]["band_composition"]["banked_135e9"] == 500
+    assert per_scale["1000"]["n_games_producing"] == 20
+    # scales far beyond the last producing game must still resolve, at the
+    # SAME producing count (no more games ever produce anything) but a GROWN
+    # band_composition (more zero-yield games are now "in the prefix")
+    assert per_scale["5340"]["n_games_producing"] == 20
+    assert per_scale["5340"]["band_composition"] == {
+        "banked_135e9": 500, "extension_137e9": 4840}
+
+
+def test_generated_nested_scale_monotonicity(tmp_path):
+    leg = make_two_band_corpus(tmp_path, n_banked_present=10, n_ext_present=10)
+    scales = [500, 1000, 1500, 3000, 5340]
+    report = RC.run_calibration_generated(legs=[leg], scales=scales,
+                                          ply_floors=[0, 3])
+    for blk in report["by_ply_floor"].values():
+        per_scale = blk["per_scale"]
+        prev = None
+        for g in scales:
+            cur = per_scale[str(g)]
+            if prev is not None:
+                assert cur["n_positions"] >= prev["n_positions"]
+                assert cur["n_collisions"] >= prev["n_collisions"]
+                assert cur["n_games_producing"] >= prev["n_games_producing"]
+            prev = cur
+
+
+def test_generated_density_matches_collisions_over_positions(tmp_path):
+    leg = make_two_band_corpus(tmp_path)
+    report = RC.run_calibration_generated(
+        legs=[leg], scales=[500, 1000, 1500, 3000, 5340])
+    blk = report["by_ply_floor"]["0"]["per_scale"]["5340"]
+    assert blk["d"] == pytest.approx(blk["n_collisions"] / blk["n_positions"])
+
+
+def test_generated_scale_exceeding_total_raises(tmp_path):
+    leg = make_two_band_corpus(tmp_path)
+    with pytest.raises(RC.CalibrationError, match="exceeds"):
+        RC.run_calibration_generated(
+            legs=[leg], scales=[500, 1000, 1500, 3000, 5341])
+
+
+def test_generated_default_scales_are_the_ruling_five():
+    assert RC.DEFAULT_GENERATED_SCALES == (500, 1000, 1500, 3000, 5340)
+
+
+# --------------------------------------------------------------------------- #
+# disclosure field                                                             #
+# --------------------------------------------------------------------------- #
+def test_disclosure_field_present_and_mentions_witnessed_false(tmp_path):
+    leg = make_two_band_corpus(tmp_path)
+    report = RC.run_calibration_generated(
+        legs=[leg], scales=[500, 1000, 1500, 3000, 5340])
+    disclosure = report["s2_pointer_defect_disclosure"]
+    assert disclosure == RC.S2_POINTER_DEFECT_DISCLOSURE
+    assert "witnessed:false" in disclosure
+    assert "PHYSICAL" in disclosure
+    assert "VOID" in disclosure
+
+
+def test_config_declares_generation_index_ranges_for_audit(tmp_path):
+    leg = make_two_band_corpus(tmp_path)
+    report = RC.run_calibration_generated(
+        legs=[leg], scales=[500, 1000, 1500, 3000, 5340])
+    ranges = report["config"]["generation_index_ranges"]
+    assert len(ranges) == 2
+    banked = next(r for r in ranges if r["band"] == "banked_135e9")
+    ext = next(r for r in ranges if r["band"] == "extension_137e9")
+    assert (banked["seed_lo"], banked["seed_hi"]) == (BANK_LO, BANK_HI)
+    assert (banked["idx_lo"], banked["idx_hi"]) == (0, 499)
+    assert (ext["seed_lo"], ext["seed_hi"]) == (EXT_LO, EXT_HI)
+    assert (ext["idx_lo"], ext["idx_hi"]) == (500, 5339)
+
+
+def test_cli_generated_order_writes_disclosure_and_ranges(tmp_path):
+    leg = make_two_band_corpus(tmp_path)
+    out = tmp_path / "CALIBRATION.json"
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--generated-order",
+         "--legs", str(leg), "--out", str(out)],
+        capture_output=True, text=True)
+    assert r.returncode in (0, 1), r.stderr
+    assert "DISCLOSURE:" in r.stdout
+    body = json.loads(out.read_text())
+    assert body["schema"] == "carcassonne-rung3-r5-calibration-generated/v1"
+    assert body["config"]["scales"] == list(RC.DEFAULT_GENERATED_SCALES)
+    assert "witnessed:false" in body["s2_pointer_defect_disclosure"]
+
+
+def test_cli_generated_order_defaults_scales_without_flag(tmp_path):
+    """--scales may be omitted entirely under --generated-order."""
+    leg = make_two_band_corpus(tmp_path)
+    out = tmp_path / "CALIBRATION.json"
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--generated-order",
+         "--legs", str(leg), "--out", str(out)],
+        capture_output=True, text=True)
+    assert out.is_file(), r.stderr
+
+
+def test_cli_legacy_mode_still_requires_scales(tmp_path):
+    leg = make_planted_corpus(tmp_path, n_games=10)
+    out = tmp_path / "CALIBRATION.json"
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--legs", str(leg), "--out", str(out)],
+        capture_output=True, text=True)
+    assert r.returncode == 2
+    assert "--scales is required" in r.stderr
