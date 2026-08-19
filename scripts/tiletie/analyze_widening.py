@@ -93,6 +93,27 @@ RND_SEED = 20260819
 ENVELOPE_INFLATION = 2.0                     # R1 / CL-068, applied to G-REPLICATE
 D1664_FLOOR = 0.040                          # READ_RULE §4 committed floor
 D1632_FLOOR = 0.036                          # secondary, never a branch input
+
+#: READ_RULE §3's PRE-REGISTERED power arithmetic. §3 requires the REALIZED
+#: quantities to be printed BESIDE these brackets — on the report surface, not
+#: only in the JSON — so a reader sees the design's variance model graded by the
+#: run rather than having to recompute it. A realized `se` outside the bracket
+#: changes NO branch (the realized CI governs and the floor is fixed); it is a
+#: disclosure about the design, and printing it is how it stops being a gotcha.
+SE_BRACKET = (0.0179, 0.0200)                # §3, `se` of Δ(16→64)
+SD_DELTA_BRACKET = (0.9, 1.4)                # §3, `sd_Δ`
+
+
+def vs_bracket(value, bracket) -> dict:
+    """`{realized, bracket, position, inside}` — the realized quantity graded
+    against its PRE-REGISTERED bracket, never the other way round."""
+    lo, hi = bracket
+    if value is None or value != value:
+        return {"realized": value, "bracket": [lo, hi], "position": "ABSENT",
+                "inside": None}
+    pos = "INSIDE" if lo <= value <= hi else ("ABOVE" if value > hi else "BELOW")
+    return {"realized": value, "bracket": [lo, hi], "position": pos,
+            "inside": pos == "INSIDE"}
 PRED_LEGACY = 1.400                          # order-statistic arithmetic
 PRED_DEDUPED = 1.244
 PRED_DELTA_LEGACY = 0.1382                   # Stage-1b-derived magnitudes
@@ -1457,7 +1478,21 @@ def render_md(v: dict) -> str:
           f"(committed floor +{D1664_FLOOR})",
           f"- `Δ(16→32)` = {_f(w['delta']['d_16_32']['value'])} "
           f"CI95 {_ci(w['delta']['d_16_32']['ci95'])} — reported with its CI, "
-          f"**never a branch input on its own**", "",
+          f"**never a branch input on its own**",
+          # ⚠️ READ_RULE §3: the REALIZED quantities printed BESIDE the
+          # PRE-REGISTERED brackets, on the report surface — a requirement
+          # already in force, not a new disclosure.
+          f"- **realized `se` {_f((w['delta'].get('se_vs_bracket') or {}).get('realized'))} "
+          f"vs the pre-registered §3 bracket "
+          f"{_ci((w['delta'].get('se_vs_bracket') or {}).get('bracket'))} — "
+          f"**{(w['delta'].get('se_vs_bracket') or {}).get('position')}**"
+          + ("**. The design's variance model under-predicted; this changes NO "
+             "branch — the REALIZED CI governs and the floor is fixed — and it "
+             "is printed because §3 requires the realized quantity beside its "
+             "bracket."
+             if (w['delta'].get('se_vs_bracket') or {}).get('position') == "ABOVE"
+             else "**.")
+          + f" `sd_Δ` bracket {_ci(w['delta'].get('sd_delta_bracket'))}.", "",
           "| B | arb (E=64) | CI95 | se | arb (E=16) | CI95 | se |",
           "|---|---|---|---|---|---|---|"]
     e64, e16 = w["b_ladder"].get("E64", {}), w["b_ladder"].get("E16", {})
@@ -1775,6 +1810,10 @@ def main(argv=None) -> int:
         "e_worlds": e_primary,
         "committed_floor_d_16_64": D1664_FLOOR,
         "committed_floor_d_16_32": D1632_FLOOR,
+        # READ_RULE §3 — the realized se BESIDE its pre-registered bracket
+        "se_vs_bracket": vs_bracket(
+            boot1.stat(f"d_16_64_E{e_primary}").get("se_root"), SE_BRACKET),
+        "sd_delta_bracket": list(SD_DELTA_BRACKET),
     }
     # ONE constructor, here and at the G-REPLICATE site below (see `ladder_stat`)
     arb64_stat = ladder_stat(b_ladder, e_primary, 64)

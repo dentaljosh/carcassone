@@ -2399,6 +2399,233 @@ def test_acceptance_gate_with_S1_and_S2_conjuncts_resolves_on_S1(tmp_path):
     assert r2["void"] is True and r2["resolved"] is True
 
 
+# --- §D4.19: READOUT-INTERNAL key paths, dual witness, over-match guard ------ #
+def _readout_witness(run: Path, void=True):
+    p = run / "verdicts" / "READOUT.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"widening": {"j_rider": {
+        "s2": {"void": void, "status": "VOID_S2", "n_capped": 0},
+        "s1_replication": {"delta_ora": 0.1, "ci95_ora": [0.0, 0.2],
+                           "n_capped": 244},
+        "interaction": {"arb_full_64_minus_16": {"value": 0.1},
+                        "arb_full_16_minus_j4_16": {"value": 0.1}},
+        "d_draw": {"d_draw_ran": False, "n_checked": None,
+                   "agreement_rate": None},
+    }}}))
+    return p
+
+
+def test_the_marker_matches_the_EXACT_segment_never_a_prefix_or_substring():
+    """⚠️ THE OVER-MATCH TRAP — the failure this campaign keeps producing."""
+    assert ACC.stratum_of_keypath("widening.j_rider.s2.delta_ora") == "S2"
+    assert ACC.stratum_of_keypath("widening.j_rider.s2.xfree_window") == "S2"
+    # the three siblings are NOT S2 — a prefix match on `j_rider.` would take
+    # all three, and a substring match on "s2" would take any future s2_*
+    for sibling in ("widening.j_rider.s1_replication.delta_ora",
+                    "widening.j_rider.s1_replication.n_capped",
+                    "widening.j_rider.interaction.arb_full_64_minus_16",
+                    "widening.j_rider.d_draw.d_draw_ran",
+                    "widening.j_rider.d_draw.n_checked",
+                    "widening.j_rider.d_draw.agreement_rate"):
+        assert ACC.stratum_of_keypath(sibling) is None, sibling
+    # neither a bare substring nor a neighbouring segment counts
+    assert ACC.stratum_of_keypath("widening.completion.s2_n") is None
+    assert ACC.stratum_of_keypath("widening.j_rider.s2_extra.x") is None
+    assert ACC.stratum_of_keypath("widening.branch.rung2.branch") is None
+
+
+def test_the_DUAL_WITNESS_must_agree_and_disagreement_RAISES_either_way(tmp_path):
+    run = tmp_path / "RUN"
+    run.mkdir()
+    # gate void, READOUT not -> the analyzer IGNORED the void
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    _readout_witness(run, void=False)
+    with pytest.raises(SystemExit) as e:
+        ACC.void_stratum_scope(run)
+    assert "THE ANALYZER IGNORED THE VOID" in str(e.value)
+
+    # READOUT void, gate not -> a SELF-DECLARED void, a component vouching for
+    # itself
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=False)
+    _readout_witness(run, void=True)
+    with pytest.raises(SystemExit) as e:
+        ACC.void_stratum_scope(run)
+    assert "SELF-DECLARED void" in str(e.value)
+    assert "may not vouch for itself" in str(e.value)
+
+    # both true -> key scoping ACTIVE
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    _readout_witness(run, void=True)
+    scope = ACC.void_stratum_scope(run)
+    assert scope["active"] is True and scope["key_scope_active"] is True
+    assert scope["artifact_witness"]["void"] is True
+
+    # neither -> everything off, and NOT a raise
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=False)
+    _readout_witness(run, void=False)
+    off = ACC.void_stratum_scope(run)
+    assert off["active"] is False and off["key_scope_active"] is False
+
+
+def test_an_absent_READOUT_is_not_a_disagreement_key_scoping_stays_off(tmp_path):
+    """The analyzer has not run — that is ABSENT-IS-FAIL territory for its
+    addresses, not a contradicted witness."""
+    run = tmp_path / "RUN"
+    run.mkdir()
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    scope = ACC.void_stratum_scope(run)          # no raise
+    assert scope["active"] is True               # artifact PATHS still scope
+    assert scope["key_scope_active"] is False    # key paths do not
+    assert scope["artifact_witness"]["present"] is False
+
+
+def test_S2_KEY_PATHS_void_scope_while_the_three_siblings_stay_in_force(tmp_path):
+    """⭐ §D4.19 end to end: the S2 keys are not evaluated, and `s1_replication`,
+    `interaction` and `d_draw` remain fully in force."""
+    run = tmp_path / "RUN"
+    run.mkdir()
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    _readout_witness(run, void=True)
+    scope = ACC.void_stratum_scope(run)
+
+    chk = ACC.Check(run, "verdicts/READOUT.json", [
+        "widening.j_rider.s2.delta_ora", "widening.j_rider.s2.ci95_ora",
+        "widening.j_rider.s1_replication.delta_ora",
+        "widening.j_rider.interaction.arb_full_64_minus_16",
+        "widening.j_rider.d_draw.d_draw_ran"])
+    r = chk.resolve(scope)
+    assert sorted(r["void_keys"]) == ["widening.j_rider.s2.ci95_ora",
+                                      "widening.j_rider.s2.delta_ora"]
+    assert r["resolved"] is True, "the S1 siblings resolved on their own"
+    assert r["void_witness"]["both_agree"] is True
+    assert r["void_witness"]["resolved_at"] is None, "nothing resolved"
+    assert r["void_witness"]["artifact_witness"]["void"] is True
+
+    # ⚠️ the siblings are still ABSENT-IS-FAIL: remove an S1 quantity and the
+    # check FAILS, void scope or not
+    doc = json.loads((run / "verdicts" / "READOUT.json").read_text())
+    del doc["widening"]["j_rider"]["s1_replication"]["delta_ora"]
+    (run / "verdicts" / "READOUT.json").write_text(json.dumps(doc))
+    bad = chk.resolve(scope)
+    assert bad["resolved"] is False
+    assert "s1_replication.delta_ora" in bad["why"]
+
+
+def test_d_draw_nullability_stays_the_allow_null_mechanism_not_the_void(tmp_path):
+    """Two different mechanisms; conflating them would let a void silently stand
+    in for a legitimate null."""
+    run = tmp_path / "RUN"
+    run.mkdir()
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    _readout_witness(run, void=True)
+    scope = ACC.void_stratum_scope(run)
+    chk = ACC.Check(run, "verdicts/READOUT.json",
+                    ["widening.j_rider.d_draw.n_checked",
+                     "widening.j_rider.d_draw.agreement_rate"])
+    r = chk.resolve(scope)
+    assert not r["void_keys"], "d_draw is NEVER void-scoped"
+    assert r["resolved"] is True
+    # it resolved because `allow_null` sanctioned the nulls on their witness
+    assert {s["key"] for s in r["sanctioned_nulls"]} == {
+        "widening.j_rider.d_draw.n_checked",
+        "widening.j_rider.d_draw.agreement_rate"}
+    # ... and with the witness FLIPPED, the same nulls FAIL — the mechanism is
+    # the witness, not the void
+    doc = json.loads((run / "verdicts" / "READOUT.json").read_text())
+    doc["widening"]["j_rider"]["d_draw"]["d_draw_ran"] = True
+    (run / "verdicts" / "READOUT.json").write_text(json.dumps(doc))
+    assert chk.resolve(scope)["resolved"] is False
+
+
+def test_a_wholly_S2_key_check_reports_VOID_with_both_witnesses_and_no_resolved_at(
+        tmp_path):
+    run = tmp_path / "RUN"
+    run.mkdir()
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    _readout_witness(run, void=True)
+    scope = ACC.void_stratum_scope(run)
+    g = ACC.Gate("READOUT §5-ish", [
+        ACC.Check(run, "verdicts/READOUT.json",
+                  ["widening.j_rider.s2.delta_ora",
+                   "widening.j_rider.s2.n_capped"])],
+        [ACC.Check(run, "verdicts/per_position_s2.jsonl", ["rid"], kind="jsonl")])
+    r = g.resolve(scope)
+    assert r["resolved_at"] == ACC.VOID_RESOLVED_AT
+    assert r["void"] is True and r["resolved"] is True
+    assert r["void_witnesses"]["resolved_at"] is None
+    assert r["void_witnesses"]["both_agree"] is True
+    assert r["void_witnesses"]["gate_witness"]["voided_strata"] == ["S2"]
+    # BOTH sides report void — neither silently stands in for the other
+    assert any(c.get("void") for c in r["primary"])
+    assert any(c.get("void") for c in r["fallback"])
+
+
+def test_key_scoping_does_NOT_leak_to_S1_or_to_rung_2_addresses(tmp_path):
+    run = tmp_path / "RUN"
+    run.mkdir()
+    _gate_disjoint(run / "GATE_DISJOINT.json", s2_void=True)
+    _readout_witness(run, void=True)
+    scope = ACC.void_stratum_scope(run)
+    chk = ACC.Check(run, "verdicts/READOUT.json",
+                    ["widening.branch.rung2.branch", "widening.delta.d_16_64"])
+    r = chk.resolve(scope)
+    assert not r["void_keys"], "no rung-2 address is touched"
+    assert r["resolved"] is False, "ABSENT IS FAIL, unchanged"
+
+
+# --- READ_RULE §3: the realized quantities BESIDE the pre-registered brackets - #
+def test_the_readout_prints_the_realized_se_beside_the_SS3_bracket(readout, tree):
+    """§3 fixes the `se` bracket [0.0179, 0.0200] and REQUIRES the realized
+    quantity printed beside it — on the REPORT surface, not only in the JSON."""
+    d = readout["widening"]["delta"]
+    assert d["se_vs_bracket"]["bracket"] == [0.0179, 0.0200]
+    assert d["se_vs_bracket"]["position"] in ("INSIDE", "ABOVE", "BELOW")
+    assert d["sd_delta_bracket"] == [0.9, 1.4]
+
+    # ⚠️ the line lives on the READABLE path: a gate-fail report prints gate
+    # inputs only (blindness), so render it with the gates passing — which is
+    # the state the real run is in.
+    md = AW.render_md(_gates_pass(readout))
+    assert "realized `se`" in md
+    assert "0.0179" in md and "0.02" in md, "the bracket must be ON the report"
+    assert "pre-registered §3 bracket" in md
+
+
+def test_vs_bracket_grades_the_realized_value_not_the_other_way_round():
+    assert AW.vs_bracket(0.0228, AW.SE_BRACKET)["position"] == "ABOVE"
+    assert AW.vs_bracket(0.0228, AW.SE_BRACKET)["inside"] is False
+    assert AW.vs_bracket(0.0190, AW.SE_BRACKET)["position"] == "INSIDE"
+    assert AW.vs_bracket(0.0100, AW.SE_BRACKET)["position"] == "BELOW"
+    assert AW.vs_bracket(None, AW.SE_BRACKET)["position"] == "ABSENT"
+    assert AW.SE_BRACKET == (0.0179, 0.0200)      # READ_RULE §3, verbatim
+
+
+def _gates_pass(readout):
+    """The same read-out with its gates passing — `render_md` prints gate inputs
+    ONLY on a gate FAIL (blindness), so the readable surface is reached here."""
+    doc = json.loads(json.dumps(readout))
+    doc["widening"]["gates_ok"] = True
+    for g in doc["widening"]["gates_summary"].values():
+        g["ok"] = True
+    return doc
+
+
+def test_an_ABOVE_bracket_se_says_it_changes_no_branch(readout):
+    """The realized se above its bracket is a DISCLOSURE about the design's
+    variance model — the realized CI governs and the floor is fixed."""
+    doc = _gates_pass(readout)
+    doc["widening"]["delta"]["se_vs_bracket"] = AW.vs_bracket(0.0228, AW.SE_BRACKET)
+    md = AW.render_md(doc)
+    assert "**ABOVE**" in md
+    assert "changes NO branch" in md
+    assert "REALIZED CI governs" in md
+    # and an INSIDE se says nothing of the sort — the note is the disclosure,
+    # not decoration
+    doc["widening"]["delta"]["se_vs_bracket"] = AW.vs_bracket(0.0190, AW.SE_BRACKET)
+    md2 = AW.render_md(doc)
+    assert "**INSIDE**" in md2 and "changes NO branch" not in md2
+
+
 def test_no_CLI_FLAG_can_activate_or_silence_the_void_scope():
     """⚠️ A flag is silenceable and ABSENT IS FAIL may not become silenceable —
     the same non-silenceable principle the two-rev licence rests on."""
