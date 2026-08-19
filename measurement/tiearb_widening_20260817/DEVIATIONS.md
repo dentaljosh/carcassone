@@ -33,7 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
-| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness) |
+| **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
@@ -947,6 +947,76 @@ for a reason that is pure sequencing. Skipping S2 is correct — no S2 legs exis
 
 > **All four are execution-layer. Nothing in the frozen pair moves. This is the last ruling before
 > the branch table.**
+
+### D4.17 SIGN-OFF — the D4.16 implementation (builder `499922fb` on `d56add33`)
+
+**BOTH SIGNED.** Extension 1 confirmed as the general rule I already wrote, not a new exception;
+extension 2 resolved by taking the **stricter** option.
+
+**Extension 1 — `G-COMPLETE`'s S2 conjunct: CONFIRMED, and it is Reading A applied, not a widening.**
+
+I checked this against the temptation, because *"the gate that blocks the verdict gets void-scoped"*
+is precisely the shape a bad ruling would take. It survives on four grounds:
+
+1. **It is the rule D4.16 already stated, applied to a conjunct I failed to enumerate.** Blocker 2
+   ruled *"only addresses bearing the S2 stratum marker, and only when the void witness is
+   present."* `G-COMPLETE`'s `s2_n` conjunct bears the S2 marker. I scoped my ruling to the
+   **acceptance harness** and the rung-3 block; `G-COMPLETE` is evaluated by the **analyzer**, so
+   the builder is right that I did not rule it and right that the mechanism is identical.
+2. **The adjudication's own logic:** *"S2 gates bind rung 3 only."* The `s2_n` conjunct binds rung
+   3; rung 3 is not adjudicated (`VOID_S2`). It governs a rung that is not being read — the
+   identical position `G-SALT`'s S2 conjunct occupies.
+3. **Consistency forbids the alternative.** Ruling `G-SALT`'s S2 conjunct void-scoped and
+   `G-COMPLETE`'s fatal would be incoherent: same stratum, same witness, same reason.
+4. **Otherwise the owner's ruling is self-defeating** — S2's floor evaluates against the empty
+   voided stratum, `gates_ok` goes false, and the whole read-out including **rung 2** collapses to
+   `W-UNREADABLE`, making the outcome Reading A specifies **unreachable**. A reading that annuls
+   the ruling it implements is the wrong reading.
+
+⚠️ **Two conditions, because uniformity is what separates this from gate-shopping:**
+
+- **The scope is UNIFORM, not selective.** *Every* S2-addressed conjunct is void-scoped by the
+  witness — **not only the ones that block.** If a future S2-addressed conjunct would have
+  *passed*, it is **still** reported `VOID (stratum) — not evaluated`; a void-scope applied only
+  where it helps is gate-shopping wearing this ruling's clothes.
+- **The void-scope may NOT leak to S1.** `G-COMPLETE`'s S1 conjunct is evaluated normally and is
+  what binds rung 2 — **1,344 ≥ 1,283 on real scored data**, which is the whole of D4's repair.
+
+**Displayed, never dropped:** the void-scoped conjunct appears in the READOUT as
+`s2_conjunct: "VOID (stratum) — not evaluated"` with the witness cited, and `gates_ok` is computed
+over the **evaluated** conjuncts. The read-out stays truthful about what was checked versus what
+was not. `rung3_bought` stays `true`.
+
+**Extension 2 — the X-token enumeration: I take OPTION (b), DROP THE ENUMERATION.**
+
+Not the strip-one-line carve-out. Reasons:
+
+1. **The rule's value is that it is UNCONDITIONAL.** "Zero occurrences" is checkable by anyone with
+   `grep`, including tools nobody has written yet. A rule with a carve-out is one you must know the
+   carve-out to apply — and the actual risk is a **naive downstream grep** finding an X-token in
+   the READOUT, which option (a) leaves fully live.
+2. **A special-cased scanner is a scanner with a blind spot**, and this campaign's failures have
+   been blind spots in checks. Strip-one-line also breaks silently if the line's format ever moves.
+3. **The prohibition does not need the tokens to be effective.** *"No branch token from the rung-3
+   table appears here; that table was never evaluated"* is fully informative, and the six tokens
+   are enumerated in the READ_RULE, which is where a reader looks for them.
+
+⚠️ **Keep the PROSE prohibitions** — *not "not bought", not "answered", not "inconclusive"* — and
+drop only the six tokens. Those phrases are not tokens, they do not trip a token scan, and they
+carry the distinction the owner-ruling section drew. **Zero token occurrences, prohibition intact.**
+
+**The two fixes the rule forced: both correct, and neither skips a frozen requirement.**
+The degenerate S2 `j_rider` slice → a void stub (its `xfree_window` note named `X-FREE`), and the
+S1 rider's `xfree_window` dropped as *"an attainability annotation for a never-evaluated branch has
+no referent."* ⭐ **That reasoning is right and worth affirming explicitly**, because it could
+otherwise look like a frozen mandatory-print was quietly skipped: READ_RULE §5's mandatory prints —
+including the `X-FREE` attainability window — are required **"on every X-branch"**. **No X-branch
+fires.** `VOID_S2` is not an X-branch, so the obligation is **never triggered**, and printing an
+attainability window for a branch that was never in play would be both meaningless and an
+invitation to infer that `X-FREE` was considered.
+
+> **BOTH SIGNED. Nothing rejected. The pipeline may rerun — `analyze` THEN `post` — and the branch
+> table may fire on the real data.**
 
 ---
 
