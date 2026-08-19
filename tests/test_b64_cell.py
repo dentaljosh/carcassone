@@ -761,3 +761,208 @@ def test_the_launcher_carries_the_blind_commit():
     assert _conf()["BLIND_COMMIT"] == "ad089bda"
     assert "BLIND_COMMIT" in RUN_CELLS.read_text()
     assert "blind_commit=$BLIND_COMMIT" in RUN_CELLS.read_text()
+
+
+# =========================================================================== #
+# THE LAUNCHER'S OWN VERDICT LAYER — §13.1's class, FOURTH instance            #
+#                                                                             #
+# The first real preflight SUCCEEDED substantively (B=64's first-ever run: J13 #
+# positive+negative OK on all four host x B runs, cross-box carc_rs_build      #
+# byte-identical) and the launcher REFUSED on two inherited PRE-§13.1 sentinel #
+# rows. These drive the SHIPPED embedded blocks, extracted from preflight.sh.  #
+# =========================================================================== #
+#: the REAL observed shape (both hosts emitted this build byte-identically)
+REAL_BUILD = "carc_rs-0.1.0+587ca17a8655+rustcunpinned"
+REAL_RUSTC = "rustc 1.96.0"
+
+
+def _embedded_blocks():
+    """The python heredocs preflight.sh actually ships, in order."""
+    src = PREFLIGHT.read_text()
+    out, rest = [], src
+    while "<<'PYEOF'" in rest:
+        body = rest.split("<<'PYEOF'", 1)[1]
+        block, rest = body.split("PYEOF", 1)
+        out.append(block.lstrip("\n"))
+    return out
+
+
+def _run_block(block, verdict, **env):
+    """Run one shipped block over a synthetic verdict file; return (rc, doc)."""
+    import os, tempfile
+    d = Path(tempfile.mkdtemp())
+    f = d / "PREFLIGHT.json"
+    f.write_text(json.dumps(verdict, indent=2))
+    r = subprocess.run([sys.executable, "-"], input=block, text=True,
+                       capture_output=True,
+                       env={**os.environ, "PF_NOW": str(f), **env})
+    return r, json.loads(f.read_text())
+
+
+def _real_verdict(B=64, host="Doctor", j13_ok=True, extra_fail=None):
+    """A probe verdict of the REAL observed shape: J13 rows OK, the two
+    pre-§13.1 TOOL sentinel rows FAILING, aggregate all_preflight_pass False."""
+    checks = [
+        {"check": "W1_wheel_has_tiearb_probe", "ok": True, "observed": {}},
+        {"check": "J13_POSITIVE_arbiter_changes_the_pick", "ok": j13_ok,
+         "observed": {"ply": 30}},
+        {"check": "J13_NEGATIVE_root_leaf_value_bits_UNCHANGED", "ok": j13_ok,
+         "observed": {"bits": 4605072590740914176}},
+        # ⛔ the two inherited sentinels, exactly as the probe emits them
+        {"check": "TOOL_rust_toolchain_is_pinned_and_real", "ok": False,
+         "observed": None},
+        {"check": "TOOL_carc_rs_build_is_real_not_a_sentinel", "ok": False,
+         "observed": REAL_BUILD},
+    ]
+    if extra_fail:
+        checks.append({"check": extra_fail, "ok": False, "observed": "boom"})
+    return {
+        "host": host, "all_preflight_pass": False, "checks": checks,
+        "expected": {"B": B, "J": 4, "salt": "tiearb2-deploy-v1"},
+        "toolchain": {"RUSTUP_TOOLCHAIN": None, "rustc": REAL_RUSTC},
+        "carc_rs_build": REAL_BUILD,
+        "carc_rs_binary_sha": "a4318fd59d9d8349",
+        "two_sided": {"pick_changed": j13_ok,
+                      "root_leaf_value_bits_unchanged": j13_ok},
+        "j13_witness": {"B": B, "salt": "tiearb2-deploy-v1"},
+    }
+
+
+def test_the_two_pre_SS13_1_sentinel_rows_are_SUPERSEDED_WITH_CITATION():
+    """⭐ DEFECT 1. '+rustcunpinned' is the NORMAL production value and PASSES
+    provided both boxes emit it; the toolchain check reads the RESOLVED rustc,
+    never RUSTUP_TOOLCHAIN's unset null. Recorded in the LAUNCHER's own verdict
+    — the spent probe and its verdicts are never edited."""
+    inject, verdict_block = _embedded_blocks()[0], _embedded_blocks()[1]
+    r, doc = _run_block(verdict_block, _real_verdict(), B="64", HOST="Doctor")
+    assert r.returncode == 0, r.stdout + r.stderr
+    lv = doc["launcher_verdict"]
+    assert lv["verdict"] == "PASS"
+    assert set(lv["superseded_rows"]) == {
+        "TOOL_rust_toolchain_is_pinned_and_real",
+        "TOOL_carc_rs_build_is_real_not_a_sentinel"}
+    for k, row in lv["superseded_rows"].items():
+        assert row["probe_ok"] is False, k
+        assert "DESIGN.md §13.1" in row["citation"]
+        assert "KNOWNGOOD_EVAL.json::rows.G-TOOL" in row["citation"]
+        assert row["why_superseded"]
+    # the RULED reading is evaluated over the probe's RAW fields
+    assert lv["ruled_reading"]["rustc_resolved"] == REAL_RUSTC
+    assert lv["ruled_reading"]["rustc_ok"] is True
+    assert lv["ruled_reading"]["carc_rs_build"] == REAL_BUILD
+    assert "never compared across boxes" in lv["ruled_reading"]["binary_sha_note"]
+    assert "ACROSS BOXES" in lv["ruled_reading"]["cross_box_conjunct"]
+    # the probe's own aggregate is RECORDED, not obeyed
+    assert lv["probe_all_preflight_pass"] is False
+    assert lv["real_failures"] == []
+    assert "never deleted" in lv["note"]
+
+
+def test_a_row_OUTSIDE_the_superseded_set_still_REFUSES():
+    """Only the two named rows are superseded; anything else is a REAL failure."""
+    _, verdict_block = _embedded_blocks()[:2]
+    r, doc = _run_block(verdict_block,
+                        _real_verdict(extra_fail="W3_production_champion_leaf_hash_of_record"),
+                        B="64", HOST="Doctor")
+    assert r.returncode != 0
+    lv = doc["launcher_verdict"]
+    assert lv["verdict"] == "FAIL"
+    assert lv["real_failures"] == ["W3_production_champion_leaf_hash_of_record"]
+    assert "REAL FAILING ROWS" in r.stdout
+
+
+def test_a_failing_J13_row_still_REFUSES_and_is_named():
+    _, verdict_block = _embedded_blocks()[:2]
+    r, doc = _run_block(verdict_block, _real_verdict(j13_ok=False),
+                        B="64", HOST="Doctor")
+    assert r.returncode != 0
+    lv = doc["launcher_verdict"]
+    assert lv["j13_ok"] is False and lv["verdict"] == "FAIL"
+    assert "J13 ROWS FAILED" in r.stdout
+
+
+def test_the_supersession_is_WITHDRAWN_if_the_ruled_reading_does_not_hold():
+    """A superseded row is only superseded while the pair's ruled reading
+    actually holds — an absent rustc or an absent build is a REAL failure."""
+    _, verdict_block = _embedded_blocks()[:2]
+    v = _real_verdict()
+    v["toolchain"]["rustc"] = "<FileNotFoundError: rustc>"
+    r, doc = _run_block(verdict_block, v, B="64", HOST="Doctor")
+    assert r.returncode != 0
+    lv = doc["launcher_verdict"]
+    assert lv["superseded_rows"] == {}
+    assert "TOOL_rust_toolchain_is_pinned_and_real" in lv["real_failures"]
+
+
+def test_the_pinned_injection_RUNS_despite_an_unrelated_FAILING_row():
+    """⭐ DEFECT 2. The injection must never be gated behind the probe's
+    aggregate all-pass flag: gating it meant an UNRELATED failing row left the
+    pinned keys unwritten, so the defect the injection exists to fix survived
+    because something else failed."""
+    inject = _embedded_blocks()[0]
+    v = _real_verdict()                     # all_preflight_pass is False
+    r, doc = _run_block(inject, v, B="64")
+    assert r.returncode == 0, r.stdout + r.stderr
+    w = doc["j13_witness"]
+    assert w["pick_changed"] is True
+    assert w["root_leaf_value_bits_unchanged"] is True
+    assert w["B"] == 64
+    assert "RULING 2" in doc["pinned_addresses_note"]
+    # and the shell no longer short-circuits before it
+    src = PREFLIGHT.read_text()
+    assert "NOT** GATED BEHIND" in src or "NOT`` GATED" in src or \
+        "NOT GATED BEHIND" in src or "**NOT** GATED BEHIND" in src
+    assert 'if [ "$pfrc" -ne 0 ]; then' not in src
+
+
+def test_the_injection_still_COPIES_NEVER_INVENTS():
+    inject = _embedded_blocks()[0]
+    v = _real_verdict()
+    del v["two_sided"]["root_leaf_value_bits_unchanged"]
+    r, doc = _run_block(inject, v, B="64")
+    assert r.returncode == 0
+    # absent stays ABSENT — the gate fails closed on it downstream
+    assert "root_leaf_value_bits_unchanged" not in doc["j13_witness"]
+    ok, _ = B64.gate_j13([doc])
+    assert ok is False
+    # a probe/pinned B disagreement is FATAL
+    v2 = _real_verdict(B=64)
+    v2["expected"]["B"] = 16
+    r2, _ = _run_block(inject, v2, B="64")
+    assert r2.returncode != 0
+
+
+def test_the_refusal_message_NAMES_THE_TRUE_ROWS():
+    """⭐ DEFECT 3. The old message convicted G-J13 on every nonzero rc — and on
+    the first real run J13 had PASSED at both B values on both hosts. A log that
+    convicts the wrong gate is how a wrong cause survives into a close-out."""
+    src = PREFLIGHT.read_text()
+    assert "PRE-FLIGHT REFUSED ON $HOST AT B=$B — see the rows named above" in src
+    assert "does NOT attribute the" in src and "G-J13 unless a J13 row" in src
+    # the old misattributing message is GONE
+    assert "G-J13 PRE-FLIGHT FAILED" not in src
+
+
+def test_the_healthy_path_END_TO_END_on_the_REAL_observed_shape():
+    """Both shipped blocks, in order, over the shape the executor actually
+    observed: J13 OK at both B on both hosts, the two sentinels failing, the
+    build byte-identical across boxes ⇒ PASS, pinned keys written, G-J13 green."""
+    inject, verdict_block = _embedded_blocks()[:2]
+    docs = []
+    for host in ("Doctor", "laptop-wsl"):
+        for B in (64, 16):
+            r1, doc = _run_block(inject, _real_verdict(B=B, host=host), B=str(B))
+            assert r1.returncode == 0
+            r2, doc = _run_block(verdict_block, doc, B=str(B), HOST=host)
+            assert r2.returncode == 0, r2.stdout + r2.stderr
+            assert doc["launcher_verdict"]["verdict"] == "PASS"
+            docs.append(doc)
+    # ⭐ and the adjudicator's G-J13 passes on exactly these four artifacts
+    ok, d = B64.gate_j13(docs)
+    assert ok is True, d
+    assert sorted(d["by_host"]["Doctor"]) == ["16", "64"]
+    assert sorted(d["by_host"]["laptop-wsl"]) == ["16", "64"]
+    # cross-box carc_rs_build equality — G-TOOL's only conjunct
+    ok_t, dt = B64.gate_tool(docs, {})
+    assert ok_t is True, dt
+    assert dt["distinct_builds"] == [REAL_BUILD]
