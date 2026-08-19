@@ -1,0 +1,154 @@
+{
+  "committed_diff": {
+    "empty": true,
+    "files_changed": [],
+    "n_files_changed": 0,
+    "paths": [
+      "scripts/tiletie/run_tiletie.py",
+      "scripts/measurement_infra/oracle_score_pilot.py",
+      "scripts/tiletie/tier1_rust_leg.py",
+      "src/",
+      "engine/",
+      "rust/"
+    ],
+    "recipe": "git -C /home/doctor/projects/carcassone diff --name-only 4b24f512a0833b3fe71a126b713c560b2c8c4db1 58c2b539556916b0f6280d233b48d5dcbed7ca88 -- scripts/tiletie/run_tiletie.py scripts/measurement_infra/oracle_score_pilot.py scripts/tiletie/tier1_rust_leg.py src/ engine/ rust/",
+    "recipe_note": "re-run this; it must print nothing. merge_legs.py runs the same comparison itself before honouring the licence.",
+    "rev_a": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+    "rev_b": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+    "stat": ""
+  },
+  "covers": "the INTERPRETED half of the instrument \u2014 AND, via `rust/` in both the diff scope and the porcelain capture, \u00a7D4.13 conjunct (iii), which is what lets the COMPILED half's carc_rs_build divergence be licensed across the two tranches. \u26a0\ufe0f `rust/` is therefore LOAD-BEARING here: drop it from the path list and merge_legs refuses with R4.",
+  "deviation": "D4.11 (measurement/tiearb_widening_20260817/DEVIATIONS.md, commit 93f83e26)",
+  "generated_utc": "2026-08-19T11:00:35Z",
+  "generator": "measurement/tiearb_widening_20260817/instrument_identity.py",
+  "governance": "Measurement plumbing only. Reads no record, no value and no statistic. Writes no governance file.",
+  "instrument_paths": [
+    "scripts/tiletie/run_tiletie.py",
+    "scripts/measurement_infra/oracle_score_pilot.py",
+    "scripts/tiletie/tier1_rust_leg.py",
+    "src/",
+    "engine/",
+    "rust/"
+  ],
+  "path_existence": {
+    "engine/": {
+      "4b24f512": {
+        "n_tracked_files": 138,
+        "present": true
+      },
+      "58c2b539": {
+        "n_tracked_files": 138,
+        "present": true
+      }
+    },
+    "rust/": {
+      "4b24f512": {
+        "n_tracked_files": 69,
+        "present": true
+      },
+      "58c2b539": {
+        "n_tracked_files": 69,
+        "present": true
+      }
+    },
+    "scripts/measurement_infra/oracle_score_pilot.py": {
+      "4b24f512": {
+        "n_tracked_files": 1,
+        "present": true
+      },
+      "58c2b539": {
+        "n_tracked_files": 1,
+        "present": true
+      }
+    },
+    "scripts/tiletie/run_tiletie.py": {
+      "4b24f512": {
+        "n_tracked_files": 1,
+        "present": true
+      },
+      "58c2b539": {
+        "n_tracked_files": 1,
+        "present": true
+      }
+    },
+    "scripts/tiletie/tier1_rust_leg.py": {
+      "4b24f512": {
+        "n_tracked_files": 1,
+        "present": true
+      },
+      "58c2b539": {
+        "n_tracked_files": 1,
+        "present": true
+      }
+    },
+    "src/": {
+      "4b24f512": {
+        "n_tracked_files": 52,
+        "present": true
+      },
+      "58c2b539": {
+        "n_tracked_files": 52,
+        "present": true
+      }
+    }
+  },
+  "revs": {
+    "committed_tranche": {
+      "committed_utc": "2026-08-18T12:41:52-04:00",
+      "sha": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+      "short": "58c2b539",
+      "subject": "tiearb widening EIGHTH scoped merge: the SECOND m_worlds site, and the class mechanised"
+    },
+    "completion_tranche": {
+      "committed_utc": "2026-08-19T00:15:39-04:00",
+      "sha": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+      "short": "4b24f512",
+      "subject": "tiearb widening: merge D4 completion build (union leg-layer fix + cross-layer invariant, completion staging, execution merge classification; 214 tests)"
+    }
+  },
+  "run_id": "tiearb_widening_20260817",
+  "schema": "carcassonne-tiearb-widening-instrument-identity/v1",
+  "working_tree": {
+    "by_box": {
+      "laptop": {
+        "box": "laptop",
+        "captured_utc": "2026-08-19T11:00:35Z",
+        "clean": true,
+        "head": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "host": "laptop-wsl",
+        "n_entries": 0,
+        "porcelain": "",
+        "repo": "/home/doctor/projects/carcassone",
+        "scope": [
+          "scripts/tiletie/run_tiletie.py",
+          "scripts/measurement_infra/oracle_score_pilot.py",
+          "scripts/tiletie/tier1_rust_leg.py",
+          "src/",
+          "engine/",
+          "rust/"
+        ],
+        "via": "ssh"
+      },
+      "local": {
+        "box": "local",
+        "captured_utc": "2026-08-19T11:00:34Z",
+        "clean": true,
+        "head": "206e259f18d08dc8c1589e0a083b4d06c368f974",
+        "host": "Doctor",
+        "n_entries": 0,
+        "porcelain": "",
+        "repo": "/home/doctor/projects/carcassone",
+        "scope": [
+          "scripts/tiletie/run_tiletie.py",
+          "scripts/measurement_infra/oracle_score_pilot.py",
+          "scripts/tiletie/tier1_rust_leg.py",
+          "src/",
+          "engine/",
+          "rust/"
+        ],
+        "via": "local"
+      }
+    },
+    "note": "D4.11 Amendment 3 \u2014 `git diff A..B` compares COMMITS and is blind to uncommitted dirt in the instrument scripts. The tranche is TWO-BOX, so a witness carrying only one box covers only half the working trees."
+  }
+}

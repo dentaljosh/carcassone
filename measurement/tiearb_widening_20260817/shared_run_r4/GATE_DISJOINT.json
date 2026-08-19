@@ -1,0 +1,846 @@
+{
+  "comparisons": {
+    "base_vs_extension": {
+      "by_stratum": {
+        "S1": {
+          "digest_collisions": [],
+          "inputs": {
+            "a": "S1 base 135e9",
+            "b": "S1 extension 137e9"
+          },
+          "layers": {
+            "a_root_id": {
+              "identity": "root_id (the GAME) from ARMS.json values",
+              "n_intersection": 0,
+              "n_new": 308,
+              "n_ref": 440,
+              "zero_tolerance": true
+            },
+            "b_rid": {
+              "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+              "n_intersection": 0,
+              "n_new": 551,
+              "n_ref": 793,
+              "zero_tolerance": true
+            },
+            "c_position_digest": {
+              "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+              "n_intersection": 0,
+              "n_new": 551,
+              "n_new_leg_lines": 1344,
+              "n_ref": 792,
+              "n_ref_leg_lines": 1344,
+              "zero_tolerance": false
+            }
+          },
+          "n_digest_collisions": 0,
+          "n_zero_tolerance_layers_violated": 0,
+          "name": "base_vs_extension[S1]",
+          "passed": true
+        },
+        "S2": {
+          "digest_collisions": [],
+          "inputs": {
+            "a": "S2 base 135e9",
+            "b": "S2 extension 137e9"
+          },
+          "layers": {
+            "a_root_id": {
+              "identity": "root_id (the GAME) from ARMS.json values",
+              "n_intersection": 0,
+              "n_new": 92,
+              "n_ref": 888,
+              "zero_tolerance": true
+            },
+            "b_rid": {
+              "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+              "n_intersection": 0,
+              "n_new": 103,
+              "n_ref": 961,
+              "zero_tolerance": true
+            },
+            "c_position_digest": {
+              "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+              "n_intersection": 0,
+              "n_new": 103,
+              "n_new_leg_lines": 1064,
+              "n_ref": 958,
+              "n_ref_leg_lines": 1064,
+              "zero_tolerance": false
+            }
+          },
+          "n_digest_collisions": 0,
+          "n_zero_tolerance_layers_violated": 0,
+          "name": "base_vs_extension[S2]",
+          "passed": true
+        }
+      },
+      "digest_collisions": [],
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 400,
+          "n_ref": 1328,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 654,
+          "n_ref": 1754,
+          "zero_tolerance": true
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+          "n_intersection": 0,
+          "n_new": 654,
+          "n_ref": 1750,
+          "zero_tolerance": false
+        }
+      },
+      "n_digest_collisions": 0,
+      "n_zero_tolerance_layers_violated": 0,
+      "name": "base_vs_extension",
+      "passed": true,
+      "per_stratum": true
+    },
+    "s1_vs_s2": {
+      "digest_collisions": [
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000504_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "135e9",
+          "b_rid": "tt_sp_135000000839_p2",
+          "b_side": "S2 (all bands)",
+          "digest": "41ff06fcf56973fb5789fcfde28f4bb14009e6dc3b1339179e62052b8acee0ae",
+          "excluded_rid": "tt_sp_135000000839_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        }
+      ],
+      "inputs": {
+        "a": "S1 (all bands)",
+        "b": "S2 (all bands)"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 748,
+          "n_ref": 980,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 1344,
+          "n_ref": 1064,
+          "zero_tolerance": true
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+          "n_intersection": 1,
+          "n_new": 1343,
+          "n_new_leg_lines": 1344,
+          "n_ref": 1061,
+          "n_ref_leg_lines": 1064,
+          "zero_tolerance": false
+        }
+      },
+      "n_digest_collisions": 1,
+      "n_zero_tolerance_layers_violated": 0,
+      "name": "s1_vs_s2",
+      "passed": true
+    },
+    "s1_vs_tiearb2_0816": {
+      "digest_collisions": [
+        {
+          "a_band": "135e9",
+          "a_rid": "tt_sp_135000000122_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000609_p2",
+          "b_side": "tiearb2_0816",
+          "digest": "dceabd7bd33a857026b8060df11a7a9e17dc278e336c140273831ce4d315cf3a",
+          "excluded_rid": "tt_sp_135000000122_p2",
+          "excluded_stratum": "S1",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        }
+      ],
+      "inputs": {
+        "a": "S1 (all bands)",
+        "b": "tiearb2_0816"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 748,
+          "n_ref": 724,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 1344,
+          "n_ref": 1350,
+          "zero_tolerance": true
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+          "n_intersection": 1,
+          "n_new": 1343,
+          "n_new_leg_lines": 1344,
+          "n_ref": 1350,
+          "n_ref_leg_lines": 1350,
+          "zero_tolerance": false
+        }
+      },
+      "n_digest_collisions": 1,
+      "n_zero_tolerance_layers_violated": 0,
+      "name": "s1_vs_tiearb2_0816",
+      "passed": true
+    },
+    "s1_vs_tiletie0812": {
+      "digest_collisions": [],
+      "inputs": {
+        "a": "S1 (all bands)",
+        "b": "tiletie0812"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 748,
+          "n_ref": 399,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 1344,
+          "n_ref": 733,
+          "zero_tolerance": true
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+          "n_intersection": 0,
+          "n_new": 1343,
+          "n_new_leg_lines": 1344,
+          "n_ref": 733,
+          "n_ref_leg_lines": 733,
+          "zero_tolerance": false
+        }
+      },
+      "n_digest_collisions": 0,
+      "n_zero_tolerance_layers_violated": 0,
+      "name": "s1_vs_tiletie0812",
+      "passed": true
+    },
+    "s1s2_vs_exclude_rids": {
+      "digest_collisions": [],
+      "inputs": {
+        "new_strata": [
+          "S1",
+          "S2"
+        ],
+        "ref_rid_txts": [
+          "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_all.txt"
+        ]
+      },
+      "layers": {
+        "b_rid": {
+          "identity": "rid, S1 \u222a S2 against a rid TEXT list",
+          "n_intersection": 0,
+          "n_new": 2408,
+          "n_ref": 738
+        }
+      },
+      "layers_absent": [
+        "a_root_id",
+        "c_position_digest"
+      ],
+      "layers_absent_reason": "a rid TEXT list has no root and no board identity; the missing layers are ABSENT, never fabricated as zero",
+      "n_digest_collisions": 0,
+      "n_layers_violated": 0,
+      "name": "s1s2_vs_exclude_rids",
+      "passed": true
+    },
+    "s2_vs_tiearb2_0816": {
+      "digest_collisions": [],
+      "inputs": {
+        "a": "S2 (all bands)",
+        "b": "tiearb2_0816"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 980,
+          "n_ref": 724,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 1064,
+          "n_ref": 1350,
+          "zero_tolerance": true
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+          "n_intersection": 0,
+          "n_new": 1061,
+          "n_new_leg_lines": 1064,
+          "n_ref": 1350,
+          "n_ref_leg_lines": 1350,
+          "zero_tolerance": false
+        }
+      },
+      "n_digest_collisions": 0,
+      "n_zero_tolerance_layers_violated": 0,
+      "name": "s2_vs_tiearb2_0816",
+      "passed": true
+    },
+    "s2_vs_tiletie0812": {
+      "digest_collisions": [],
+      "inputs": {
+        "a": "S2 (all bands)",
+        "b": "tiletie0812"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 980,
+          "n_ref": 399,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 1064,
+          "n_ref": 733,
+          "zero_tolerance": true
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) = game.string_representation(board) at the tied root",
+          "n_intersection": 0,
+          "n_new": 1061,
+          "n_new_leg_lines": 1064,
+          "n_ref": 733,
+          "n_ref_leg_lines": 733,
+          "zero_tolerance": false
+        }
+      },
+      "n_digest_collisions": 0,
+      "n_zero_tolerance_layers_violated": 0,
+      "name": "s2_vs_tiletie0812",
+      "passed": true
+    }
+  },
+  "comparisons_expected": [
+    "s1_vs_tiletie0812",
+    "s1_vs_tiearb2_0816",
+    "s2_vs_tiletie0812",
+    "s2_vs_tiearb2_0816",
+    "base_vs_extension",
+    "s1_vs_s2",
+    "s1s2_vs_exclude_rids"
+  ],
+  "digest_exclusions": {
+    "S1": {
+      "bound_basis": 1,
+      "bound_fraction": 0.005,
+      "bound_n": 7,
+      "carried": 0,
+      "denominator": 1350,
+      "denominator_source": "RUN/FLOORS.json::n1",
+      "determinism_defect": true,
+      "evidence": [
+        {
+          "a_band": "135e9",
+          "a_rid": "tt_sp_135000000122_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000609_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s1_vs_tiearb2_0816",
+          "digest": "dceabd7bd33a857026b8060df11a7a9e17dc278e336c140273831ce4d315cf3a",
+          "excluded_rid": "tt_sp_135000000122_p2",
+          "excluded_stratum": "S1",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        }
+      ],
+      "n_excluded": 1,
+      "note": "the bound is evaluated ONCE, on carried + residual (R4-0.2), at the FINAL gate, against the FROZEN FLOORS.json denominator. `carried` is the count measured on the PROBE build \u2014 the build that still contains the colliding rids \u2014 which is what makes rules 5 and 7 simultaneously satisfiable instead of jointly vacuous. A VOID stratum stays VOID: it is NOT curable by generating more games, because the denominator does not grow with the corpus. The answer to a VOID is a new prereg.",
+      "rate": 0.0007407407407407407,
+      "residual": 1,
+      "rids": [
+        "tt_sp_135000000122_p2"
+      ],
+      "void": false
+    },
+    "S2": {
+      "bound_basis": 29,
+      "bound_fraction": 0.005,
+      "bound_n": 6,
+      "carried": 28,
+      "denominator": 1100,
+      "denominator_source": "RUN/FLOORS.json::n2",
+      "determinism_defect": true,
+      "evidence": [
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000004119_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000447_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "0600bcaaf1821683ba68eca78cf5bf7672493663712cac779b19981ccbd2ff5a",
+          "excluded_rid": "tt_sp_137000004119_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000005203_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000447_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "0600bcaaf1821683ba68eca78cf5bf7672493663712cac779b19981ccbd2ff5a",
+          "excluded_rid": "tt_sp_137000005203_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000002476_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000122_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "1cdbfd6908c8be7a34e59bc5d33f449ff35f6148379a3cecae0d268caa7f02d9",
+          "excluded_rid": "tt_sp_137000002476_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000003817_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000122_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "1cdbfd6908c8be7a34e59bc5d33f449ff35f6148379a3cecae0d268caa7f02d9",
+          "excluded_rid": "tt_sp_137000003817_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000001863_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000074_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "2759970b57dff6457b8b7ddca1207367ef0ba6d6b4afd250c13ef7106240b8a2",
+          "excluded_rid": "tt_sp_137000001863_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000002233_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000559_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "56252837ac27e9da52df7822f0a175dccbb67812e83b49c2733211e4c05f33bb",
+          "excluded_rid": "tt_sp_137000002233_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000002484_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000814_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "6416b3a4cdc50b9a554c363eb082bdc6988dfd2bc208cfe015b1447c1f0799ea",
+          "excluded_rid": "tt_sp_137000002484_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000690_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000700_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "74a0a0d103d66c95f13004bb28485c94861739c995476639dce1220cf8403349",
+          "excluded_rid": "tt_sp_137000000690_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000001093_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000338_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "7df82c7f9676298e30ede95f678555e9b27452c979ee511f5da8e93609e07538",
+          "excluded_rid": "tt_sp_137000001093_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000005025_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000286_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "a1698c2c55a3f617d4bbfaa80e1c792f108ca8f932205e1f6fc066de843b0907",
+          "excluded_rid": "tt_sp_137000005025_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000001011_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000190_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "dc0b540d08cd10a7bf3fa15c97cdc07b30bffff042557d650b547e74e1987fba",
+          "excluded_rid": "tt_sp_137000001011_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000003030_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000190_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "dc0b540d08cd10a7bf3fa15c97cdc07b30bffff042557d650b547e74e1987fba",
+          "excluded_rid": "tt_sp_137000003030_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000003298_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000190_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "dc0b540d08cd10a7bf3fa15c97cdc07b30bffff042557d650b547e74e1987fba",
+          "excluded_rid": "tt_sp_137000003298_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000678_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000609_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "dceabd7bd33a857026b8060df11a7a9e17dc278e336c140273831ce4d315cf3a",
+          "excluded_rid": "tt_sp_137000000678_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000732_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000609_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "dceabd7bd33a857026b8060df11a7a9e17dc278e336c140273831ce4d315cf3a",
+          "excluded_rid": "tt_sp_137000000732_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000001161_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28100000055_p2",
+          "b_side": "tiearb2_0816",
+          "comparison": "s2_vs_tiearb2_0816",
+          "digest": "fe193aa25735e3dbfab89d8a8df1b4ca3a3baf43a3507bb9c88ef9751a7603e5",
+          "excluded_rid": "tt_sp_137000001161_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000002569_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28000000167_p2",
+          "b_side": "tiletie0812",
+          "comparison": "s2_vs_tiletie0812",
+          "digest": "32e93873c1854ca29a81090562f39dbdb7a1a1255a7a122a4c4fe55388620bde",
+          "excluded_rid": "tt_sp_137000002569_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000002875_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28000000167_p2",
+          "b_side": "tiletie0812",
+          "comparison": "s2_vs_tiletie0812",
+          "digest": "32e93873c1854ca29a81090562f39dbdb7a1a1255a7a122a4c4fe55388620bde",
+          "excluded_rid": "tt_sp_137000002875_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000003706_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28000000403_p2",
+          "b_side": "tiletie0812",
+          "comparison": "s2_vs_tiletie0812",
+          "digest": "51527326b531e857ef52744b0a0f35fa32d76f9464b9fd4099ca61c52e601805",
+          "excluded_rid": "tt_sp_137000003706_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000001247_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28000000398_p2",
+          "b_side": "tiletie0812",
+          "comparison": "s2_vs_tiletie0812",
+          "digest": "7cb7c0caef52a36397c207d4eb9b2779030018c63b4b460ef57a1695c586057f",
+          "excluded_rid": "tt_sp_137000001247_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000001885_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28000000398_p2",
+          "b_side": "tiletie0812",
+          "comparison": "s2_vs_tiletie0812",
+          "digest": "7cb7c0caef52a36397c207d4eb9b2779030018c63b4b460ef57a1695c586057f",
+          "excluded_rid": "tt_sp_137000001885_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000003865_p2",
+          "a_side": "S2 (all bands)",
+          "b_band": "spent",
+          "b_rid": "tt_sp_28000000398_p2",
+          "b_side": "tiletie0812",
+          "comparison": "s2_vs_tiletie0812",
+          "digest": "7cb7c0caef52a36397c207d4eb9b2779030018c63b4b460ef57a1695c586057f",
+          "excluded_rid": "tt_sp_137000003865_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 1 (total order: ('spent', '135e9', '137e9', '138e9'))"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000504_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "137e9",
+          "b_rid": "tt_sp_137000003939_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "41ff06fcf56973fb5789fcfde28f4bb14009e6dc3b1339179e62052b8acee0ae",
+          "excluded_rid": "tt_sp_137000003939_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000059_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "137e9",
+          "b_rid": "tt_sp_137000004517_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "527e67f90cd39333f20b5d2aa178d35aff6fe32dde02b3c746ebac3826bb5e4e",
+          "excluded_rid": "tt_sp_137000004517_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000220_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "137e9",
+          "b_rid": "tt_sp_137000000614_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "8e58acab1a87f60e2d6633e68ab0c07ab018a80dbbc049d5c7b54d60824332b3",
+          "excluded_rid": "tt_sp_137000000614_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000220_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "137e9",
+          "b_rid": "tt_sp_137000003055_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "8e58acab1a87f60e2d6633e68ab0c07ab018a80dbbc049d5c7b54d60824332b3",
+          "excluded_rid": "tt_sp_137000003055_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000107_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "137e9",
+          "b_rid": "tt_sp_137000003979_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "a613ee6b9bcbf3ef524fe27110003e1f15c943f5b53e2cb1606e98c77badc99d",
+          "excluded_rid": "tt_sp_137000003979_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000080_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "137e9",
+          "b_rid": "tt_sp_137000002166_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "c65c19cf98b1770a8287acf55f7fea30c2cc4b688d3b2a577765b1ae9843dadd",
+          "excluded_rid": "tt_sp_137000002166_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000126_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "137e9",
+          "b_rid": "tt_sp_137000002166_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "c65c19cf98b1770a8287acf55f7fea30c2cc4b688d3b2a577765b1ae9843dadd",
+          "excluded_rid": "tt_sp_137000002166_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        },
+        {
+          "a_band": "137e9",
+          "a_rid": "tt_sp_137000000504_p2",
+          "a_side": "S1 (all bands)",
+          "b_band": "135e9",
+          "b_rid": "tt_sp_135000000839_p2",
+          "b_side": "S2 (all bands)",
+          "comparison": "s1_vs_s2",
+          "digest": "41ff06fcf56973fb5789fcfde28f4bb14009e6dc3b1339179e62052b8acee0ae",
+          "excluded_rid": "tt_sp_135000000839_p2",
+          "excluded_stratum": "S2",
+          "rule": "R4-3 rule 2 (S1<->S2 => S2)"
+        }
+      ],
+      "n_excluded": 29,
+      "note": "the bound is evaluated ONCE, on carried + residual (R4-0.2), at the FINAL gate, against the FROZEN FLOORS.json denominator. `carried` is the count measured on the PROBE build \u2014 the build that still contains the colliding rids \u2014 which is what makes rules 5 and 7 simultaneously satisfiable instead of jointly vacuous. A VOID stratum stays VOID: it is NOT curable by generating more games, because the denominator does not grow with the corpus. The answer to a VOID is a new prereg.",
+      "rate": 0.026363636363636363,
+      "residual": 1,
+      "rids": [
+        "tt_sp_135000000839_p2",
+        "tt_sp_137000000614_p2",
+        "tt_sp_137000000678_p2",
+        "tt_sp_137000000690_p2",
+        "tt_sp_137000000732_p2",
+        "tt_sp_137000001011_p2",
+        "tt_sp_137000001093_p2",
+        "tt_sp_137000001161_p2",
+        "tt_sp_137000001247_p2",
+        "tt_sp_137000001863_p2",
+        "tt_sp_137000001885_p2",
+        "tt_sp_137000002166_p2",
+        "tt_sp_137000002233_p2",
+        "tt_sp_137000002476_p2",
+        "tt_sp_137000002484_p2",
+        "tt_sp_137000002569_p2",
+        "tt_sp_137000002875_p2",
+        "tt_sp_137000003030_p2",
+        "tt_sp_137000003055_p2",
+        "tt_sp_137000003298_p2",
+        "tt_sp_137000003706_p2",
+        "tt_sp_137000003817_p2",
+        "tt_sp_137000003865_p2",
+        "tt_sp_137000003939_p2",
+        "tt_sp_137000003979_p2",
+        "tt_sp_137000004119_p2",
+        "tt_sp_137000004517_p2",
+        "tt_sp_137000005025_p2",
+        "tt_sp_137000005203_p2"
+      ],
+      "void": true
+    }
+  },
+  "disclosure_policy": "counts, rids and digests of EXCLUDED positions only \u2014 the exclusion must be auditable, so the excluded rids are named (READ_RULE \u00a72b: always printed)",
+  "floors": {
+    "n1": 1350,
+    "n2": 1100,
+    "option_label": "FULL"
+  },
+  "gate": "G-DISJOINT",
+  "goal": "no widening stratum shares a game or a position with any banked corpus or with the other stratum; shared BOARDS are excluded under the R4-3 total order and counted against a frozen bound",
+  "mode": "r4",
+  "n_comparisons_violated": 0,
+  "passed": false,
+  "released_band_seeds_found": [],
+  "strata_root_overlap": 0,
+  "total_order": [
+    "spent",
+    "135e9",
+    "137e9",
+    "138e9"
+  ],
+  "voided_strata": [
+    "S2"
+  ]
+}

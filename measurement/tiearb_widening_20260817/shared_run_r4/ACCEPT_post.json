@@ -1,0 +1,797 @@
+{
+  "fixture_run": null,
+  "gates": [
+    {
+      "fallback": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/legs/s*/tier1-greedy/walled/leg*/manifest.json::{resolved_config.world_seed_salt}",
+          "n_files": 12,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "resolved_config.world_seed_salt": [
+              "str"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-SALT",
+      "has_fallback": true,
+      "note": "`world_seed_salt` is a MODULE CONSTANT, not a flag \u2014 which is exactly why it must be READ from what the run emitted rather than assumed. Binds here, where its emitters have run",
+      "optional": false,
+      "phase": "post",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/RUN_MANIFEST_S1.json::{world_seed_salt}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": "S1",
+          "types": {
+            "world_seed_salt": [
+              "str"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/RUN_MANIFEST_S2.json::{world_seed_salt}",
+          "n_files": 0,
+          "resolved": null,
+          "sanctioned_nulls": [],
+          "stratum": "S2",
+          "types": {},
+          "void": true,
+          "void_witness": {
+            "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+            "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+            "voided_strata": [
+              "S2"
+            ],
+            "why": "positive witness: void is true for ['S2'] | artifact witness AGREES \u2014 key-path scoping ACTIVE"
+          },
+          "why": "VOID (stratum) \u2014 not evaluated"
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s*/POSITIONS_PLAN.json::{deployed_cap_j}",
+          "n_files": 4,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "deployed_cap_j": [
+              "int"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s*/ARMS.json::{cap_seed}",
+          "n_files": 4,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "cap_seed": [
+              "int"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary",
+      "void": false,
+      "void_addresses": [
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/RUN_MANIFEST_S2.json::{world_seed_salt}"
+      ],
+      "void_keys": [],
+      "void_witnesses": {
+        "artifact_witness": {
+          "address": "verdicts/READOUT.json::widening.j_rider.s2.void",
+          "present": true,
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json",
+          "void": true
+        },
+        "both_agree": true,
+        "gate_witness": {
+          "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+          "voided_strata": [
+            "S2"
+          ]
+        },
+        "note": "VOID (stratum) \u2014 not evaluated. Both witnesses agree; disagreement in either direction raises.",
+        "resolved_at": null
+      }
+    },
+    {
+      "fallback": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s1.jsonl::{n_worlds_per_arm,n_arms_planned}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": "S1",
+          "types": {
+            "n_arms_planned": [
+              "int"
+            ],
+            "n_worlds_per_arm": [
+              "array"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s2.jsonl::{n_worlds_per_arm,n_arms_planned}",
+          "n_files": 1,
+          "resolved": null,
+          "sanctioned_nulls": [],
+          "stratum": "S2",
+          "types": {},
+          "void": true,
+          "void_witness": {
+            "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+            "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+            "voided_strata": [
+              "S2"
+            ],
+            "why": "positive witness: void is true for ['S2'] | artifact witness AGREES \u2014 key-path scoping ACTIVE"
+          },
+          "why": "VOID (stratum) \u2014 not evaluated"
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-ARMS",
+      "has_fallback": true,
+      "note": "",
+      "optional": false,
+      "phase": "post",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json::{widening.gates.arms.n_arms,widening.gates.arms.n_arms_complete,widening.gates.arms.include_partial,widening.gates.arms.ok}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "widening.gates.arms.include_partial": [
+              "bool"
+            ],
+            "widening.gates.arms.n_arms": [
+              "int"
+            ],
+            "widening.gates.arms.n_arms_complete": [
+              "int"
+            ],
+            "widening.gates.arms.ok": [
+              "bool"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary",
+      "void": false,
+      "void_addresses": [
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s2.jsonl::{n_worlds_per_arm,n_arms_planned}"
+      ],
+      "void_keys": [],
+      "void_witnesses": {
+        "artifact_witness": {
+          "address": "verdicts/READOUT.json::widening.j_rider.s2.void",
+          "present": true,
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json",
+          "void": true
+        },
+        "both_agree": true,
+        "gate_witness": {
+          "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+          "voided_strata": [
+            "S2"
+          ]
+        },
+        "note": "VOID (stratum) \u2014 not evaluated. Both witnesses agree; disagreement in either direction raises.",
+        "resolved_at": null
+      }
+    },
+    {
+      "fallback": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s1.jsonl::{root_id,rid}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": "S1",
+          "types": {
+            "rid": [
+              "str"
+            ],
+            "root_id": [
+              "str"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s2.jsonl::{root_id,rid}",
+          "n_files": 1,
+          "resolved": null,
+          "sanctioned_nulls": [],
+          "stratum": "S2",
+          "types": {},
+          "void": true,
+          "void_witness": {
+            "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+            "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+            "voided_strata": [
+              "S2"
+            ],
+            "why": "positive witness: void is true for ['S2'] | artifact witness AGREES \u2014 key-path scoping ACTIVE"
+          },
+          "why": "VOID (stratum) \u2014 not evaluated"
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-COMPLETE",
+      "has_fallback": true,
+      "note": "",
+      "optional": false,
+      "phase": "post",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json::{widening.completion.s1_n,widening.completion.s2_n,widening.completion.s1_max_per_root,widening.completion.s2_max_per_root}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "widening.completion.s1_max_per_root": [
+              "int"
+            ],
+            "widening.completion.s1_n": [
+              "int"
+            ],
+            "widening.completion.s2_max_per_root": [
+              "int"
+            ],
+            "widening.completion.s2_n": [
+              "int"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary",
+      "void": false,
+      "void_addresses": [
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s2.jsonl::{root_id,rid}"
+      ],
+      "void_keys": [],
+      "void_witnesses": {
+        "artifact_witness": {
+          "address": "verdicts/READOUT.json::widening.j_rider.s2.void",
+          "present": true,
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json",
+          "void": true
+        },
+        "both_agree": true,
+        "gate_witness": {
+          "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+          "voided_strata": [
+            "S2"
+          ]
+        },
+        "note": "VOID (stratum) \u2014 not evaluated. Both witnesses agree; disagreement in either direction raises.",
+        "resolved_at": null
+      }
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "G-REPLICATE",
+      "has_fallback": false,
+      "note": "NO FALLBACK \u2014 booleans only; a missing/null block is a FAIL. The sealed z-file is WRITE-ONLY and is not an address (READ_RULE \u00a77)",
+      "optional": false,
+      "phase": "post",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json::{widening.stage1_replication.pass,widening.stage1_replication.per_rung_inside_envelope,widening.stage1_replication.arb16_convicts,widening.stage1_replication.envelope_inflation}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "widening.stage1_replication.arb16_convicts": [
+              "bool"
+            ],
+            "widening.stage1_replication.envelope_inflation": [
+              "float"
+            ],
+            "widening.stage1_replication.pass": [
+              "bool"
+            ],
+            "widening.stage1_replication.per_rung_inside_envelope": [
+              "object"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary",
+      "void": false,
+      "void_addresses": [],
+      "void_keys": [],
+      "void_witnesses": null
+    },
+    {
+      "fallback": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s1.jsonl::{arb_j4_E64_B16,arb_j4_E64_B64,d_16_64_E64,root_id}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": "S1",
+          "types": {
+            "arb_j4_E64_B16": [
+              "float"
+            ],
+            "arb_j4_E64_B64": [
+              "float"
+            ],
+            "d_16_64_E64": [
+              "float"
+            ],
+            "root_id": [
+              "str"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "READOUT \u00a74 (rung 2 branch inputs)",
+      "has_fallback": true,
+      "note": "",
+      "optional": false,
+      "phase": "post",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json::{widening.delta.d_16_64.value,widening.delta.d_16_64.ci95,widening.delta.d_16_64.se_root,widening.delta.d_16_32.value,widening.delta.d_16_32.ci95,widening.delta.d_16_32.se_root,widening.b_ladder.E64.B1.arb,widening.b_ladder.E64.B1.ci95,widening.b_ladder.E64.B1.se,widening.b_ladder.E64.B2.arb,widening.b_ladder.E64.B2.ci95,widening.b_ladder.E64.B2.se,widening.b_ladder.E64.B4.arb,widening.b_ladder.E64.B4.ci95,widening.b_ladder.E64.B4.se,widening.b_ladder.E64.B8.arb,widening.b_ladder.E64.B8.ci95,widening.b_ladder.E64.B8.se,widening.b_ladder.E64.B16.arb,widening.b_ladder.E64.B16.ci95,widening.b_ladder.E64.B16.se,widening.b_ladder.E64.B32.arb,widening.b_ladder.E64.B32.ci95,widening.b_ladder.E64.B32.se,widening.b_ladder.E64.B64.arb,widening.b_ladder.E64.B64.ci95,widening.b_ladder.E64.B64.se,widening.b_ladder.E16.B1.arb,widening.b_ladder.E16.B1.ci95,widening.b_ladder.E16.B1.se,widening.b_ladder.E16.B2.arb,widening.b_ladder.E16.B2.ci95,widening.b_ladder.E16.B2.se,widening.b_ladder.E16.B4.arb,widening.b_ladder.E16.B4.ci95,widening.b_ladder.E16.B4.se,widening.b_ladder.E16.B8.arb,widening.b_ladder.E16.B8.ci95,widening.b_ladder.E16.B8.se,widening.b_ladder.E16.B16.arb,widening.b_ladder.E16.B16.ci95,widening.b_ladder.E16.B16.se,widening.b_ladder.E16.B32.arb,widening.b_ladder.E16.B32.ci95,widening.b_ladder.E16.B32.se,widening.b_ladder.E16.B64.arb,widening.b_ladder.E16.B64.ci95,widening.b_ladder.E16.B64.se}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "widening.b_ladder.E16.B1.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B1.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B1.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B16.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B16.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B16.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B2.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B2.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B2.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B32.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B32.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B32.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B4.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B4.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B4.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B64.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B64.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B64.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B8.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B8.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B8.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B1.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B1.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B1.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B16.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B16.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B16.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B2.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B2.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B2.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B32.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B32.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B32.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B4.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B4.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B4.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B64.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B64.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B64.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B8.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B8.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B8.se": [
+              "float"
+            ],
+            "widening.delta.d_16_32.ci95": [
+              "array"
+            ],
+            "widening.delta.d_16_32.se_root": [
+              "float"
+            ],
+            "widening.delta.d_16_32.value": [
+              "float"
+            ],
+            "widening.delta.d_16_64.ci95": [
+              "array"
+            ],
+            "widening.delta.d_16_64.se_root": [
+              "float"
+            ],
+            "widening.delta.d_16_64.value": [
+              "float"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary",
+      "void": false,
+      "void_addresses": [],
+      "void_keys": [],
+      "void_witnesses": null
+    },
+    {
+      "fallback": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s2.jsonl::{ora_full_E16,ora_j4_E16,d_ora_E16,capped_at_4,root_id}",
+          "n_files": 1,
+          "resolved": null,
+          "sanctioned_nulls": [],
+          "stratum": "S2",
+          "types": {},
+          "void": true,
+          "void_witness": {
+            "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+            "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+            "voided_strata": [
+              "S2"
+            ],
+            "why": "positive witness: void is true for ['S2'] | artifact witness AGREES \u2014 key-path scoping ACTIVE"
+          },
+          "why": "VOID (stratum) \u2014 not evaluated"
+        }
+      ],
+      "fallback_ok": false,
+      "gate": "READOUT \u00a75 (rung 3 branch inputs)",
+      "has_fallback": true,
+      "note": "`r_ora` and `ci95_r_ora` go null TOGETHER when the \u00a75 degenerate-denominator guard fires, and `d_draw.*` is null until W9 runs \u2014 rows 1-3 of the CLOSED allow_null table, accepted only with their witnesses (`r_ora_reported == false`, `d_draw_ran == false`)",
+      "optional": false,
+      "phase": "post",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json::{widening.j_rider.s2.delta_ora,widening.j_rider.s2.ci95_ora,widening.j_rider.s2.r_ora,widening.j_rider.s2.ci95_r_ora,widening.j_rider.s2.ora_j4_ci95,widening.j_rider.s2.delta_arb,widening.j_rider.s2.ci95_arb,widening.j_rider.s2.n_capped,widening.j_rider.s2.xfree_window,widening.j_rider.s1_replication.delta_ora,widening.j_rider.s1_replication.ci95_ora,widening.j_rider.s1_replication.n_capped,widening.j_rider.interaction.arb_full_64_minus_16,widening.j_rider.interaction.arb_full_16_minus_j4_16,widening.j_rider.s2.r_ora_reported,widening.j_rider.d_draw.d_draw_ran,widening.j_rider.d_draw.n_checked,widening.j_rider.d_draw.agreement_rate}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [
+            {
+              "key": "widening.j_rider.d_draw.n_checked",
+              "row": "d_draw.*",
+              "witness": [
+                "d_draw_ran"
+              ]
+            },
+            {
+              "key": "widening.j_rider.d_draw.agreement_rate",
+              "row": "d_draw.*",
+              "witness": [
+                "d_draw_ran"
+              ]
+            }
+          ],
+          "stratum": null,
+          "types": {
+            "widening.j_rider.d_draw.agreement_rate": [
+              "null"
+            ],
+            "widening.j_rider.d_draw.d_draw_ran": [
+              "bool"
+            ],
+            "widening.j_rider.d_draw.n_checked": [
+              "null"
+            ],
+            "widening.j_rider.interaction.arb_full_16_minus_j4_16": [
+              "object"
+            ],
+            "widening.j_rider.interaction.arb_full_64_minus_16": [
+              "object"
+            ],
+            "widening.j_rider.s1_replication.ci95_ora": [
+              "array"
+            ],
+            "widening.j_rider.s1_replication.delta_ora": [
+              "float"
+            ],
+            "widening.j_rider.s1_replication.n_capped": [
+              "int"
+            ]
+          },
+          "void_keys": [
+            "widening.j_rider.s2.delta_ora",
+            "widening.j_rider.s2.ci95_ora",
+            "widening.j_rider.s2.r_ora",
+            "widening.j_rider.s2.ci95_r_ora",
+            "widening.j_rider.s2.ora_j4_ci95",
+            "widening.j_rider.s2.delta_arb",
+            "widening.j_rider.s2.ci95_arb",
+            "widening.j_rider.s2.n_capped",
+            "widening.j_rider.s2.xfree_window",
+            "widening.j_rider.s2.r_ora_reported"
+          ],
+          "void_witness": {
+            "artifact_witness": {
+              "address": "verdicts/READOUT.json::widening.j_rider.s2.void",
+              "present": true,
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json",
+              "void": true
+            },
+            "both_agree": true,
+            "gate_witness": {
+              "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+              "voided_strata": [
+                "S2"
+              ]
+            },
+            "note": "VOID (stratum) \u2014 not evaluated. Both witnesses agree; disagreement in either direction raises.",
+            "resolved_at": null
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary",
+      "void": false,
+      "void_addresses": [
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/per_position_s2.jsonl::{ora_full_E16,ora_j4_E16,d_ora_E16,capped_at_4,root_id}"
+      ],
+      "void_keys": [
+        "widening.j_rider.s2.ci95_arb",
+        "widening.j_rider.s2.ci95_ora",
+        "widening.j_rider.s2.ci95_r_ora",
+        "widening.j_rider.s2.delta_arb",
+        "widening.j_rider.s2.delta_ora",
+        "widening.j_rider.s2.n_capped",
+        "widening.j_rider.s2.ora_j4_ci95",
+        "widening.j_rider.s2.r_ora",
+        "widening.j_rider.s2.r_ora_reported",
+        "widening.j_rider.s2.xfree_window"
+      ],
+      "void_witnesses": {
+        "artifact_witness": {
+          "address": "verdicts/READOUT.json::widening.j_rider.s2.void",
+          "present": true,
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json",
+          "void": true
+        },
+        "both_agree": true,
+        "gate_witness": {
+          "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+          "voided_strata": [
+            "S2"
+          ]
+        },
+        "note": "VOID (stratum) \u2014 not evaluated. Both witnesses agree; disagreement in either direction raises.",
+        "resolved_at": null
+      }
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "READOUT \u00a77 (report surface)",
+      "has_fallback": false,
+      "note": "",
+      "optional": false,
+      "phase": "post",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.md",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {},
+          "why": null
+        },
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json::{widening.gates_summary.*.resolved_at,widening.branch.rung2.branch,widening.branch.rung3.branch,widening.gates.crn.ok,widening.gates.crn.witness_kinds,widening.gates.salt.ok,widening.gates.salt.expected_world_seed_salt,widening.gates_summary.G-SALT.ok}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "stratum": null,
+          "types": {
+            "widening.branch.rung2.branch": [
+              "str"
+            ],
+            "widening.branch.rung3.branch": [
+              "str"
+            ],
+            "widening.gates.crn.ok": [
+              "bool"
+            ],
+            "widening.gates.crn.witness_kinds": [
+              "object"
+            ],
+            "widening.gates.salt.expected_world_seed_salt": [
+              "str"
+            ],
+            "widening.gates.salt.ok": [
+              "bool"
+            ],
+            "widening.gates_summary.*.resolved_at": [
+              "str"
+            ],
+            "widening.gates_summary.G-SALT.ok": [
+              "bool"
+            ]
+          },
+          "void_keys": [],
+          "void_witness": null,
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary",
+      "void": false,
+      "void_addresses": [],
+      "void_keys": [],
+      "void_witnesses": null
+    }
+  ],
+  "mechanism": "key presence + JSON type only; no value is computed, printed or stored",
+  "mode": "post",
+  "n_fallback_only": 0,
+  "n_gates": 7,
+  "n_unaudited_fallbacks": 1,
+  "n_unresolved": 0,
+  "n_void": 0,
+  "passed": true,
+  "run_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4",
+  "share": "/mnt/c/carc-shared/tiearb_widening_20260817",
+  "void_scope": {
+    "active": true,
+    "address": "GATE_DISJOINT.json::digest_exclusions.<stratum>.void",
+    "artifact_witness": {
+      "address": "verdicts/READOUT.json::widening.j_rider.s2.void",
+      "present": true,
+      "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/verdicts/READOUT.json",
+      "void": true
+    },
+    "key_scope_active": true,
+    "present": true,
+    "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+    "strata": [
+      "S2"
+    ],
+    "voided_strata": [
+      "S2"
+    ],
+    "why": "positive witness: void is true for ['S2'] | artifact witness AGREES \u2014 key-path scoping ACTIVE"
+  }
+}

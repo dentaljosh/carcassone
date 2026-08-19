@@ -1,0 +1,941 @@
+{
+  "generated_utc": "2026-08-19T12:45:48Z",
+  "provenance": {
+    "note": "a superseded read-out is EVIDENCE and stays readable; what must be impossible is mistaking it for a verdict. The analyzer REFUSES to overwrite one, so this list is the documented gap in the record rather than a silent replacement.",
+    "superseded_artifacts": [
+      "READOUT.json.invalid-empty-rowset",
+      "READOUT.json.invalid-superseded-rerun-se-bracket",
+      "READOUT.md.invalid-empty-rowset",
+      "READOUT.md.invalid-superseded-rerun-se-bracket",
+      "SEALED_G_REPLICATE.json.invalid-empty-rowset",
+      "SEALED_G_REPLICATE.json.invalid-superseded-rerun-se-bracket"
+    ]
+  },
+  "run": "tiearb_widening_20260817 shared_run_r4",
+  "widening": {
+    "b_ladder": {
+      "E16": {
+        "B1": {
+          "arb": 0.09209421641791045,
+          "ci95": [
+            -0.02363484398216939,
+            0.2174683072334079
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.0603051137393604,
+          "significant": false,
+          "z": 1.5271377617484152
+        },
+        "B16": {
+          "arb": 0.22056902985074628,
+          "ci95": [
+            0.10589096749811036,
+            0.34019194756554305
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.05820494641388013,
+          "significant": true,
+          "z": 3.789523802364453
+        },
+        "B2": {
+          "arb": 0.09078824626865671,
+          "ci95": [
+            -0.027895880574452005,
+            0.2195729700073153
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.0621955008618101,
+          "significant": false,
+          "z": 1.4597236940076386
+        },
+        "B32": {
+          "arb": 0.24605876865671641,
+          "ci95": [
+            0.13041085840058694,
+            0.3586253748125937
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.0584898213123065,
+          "significant": true,
+          "z": 4.2068647695619585
+        },
+        "B4": {
+          "arb": 0.17702891791044775,
+          "ci95": [
+            0.05646647015475313,
+            0.3084553506869125
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.06330047166879875,
+          "significant": true,
+          "z": 2.796644531129245
+        },
+        "B64": {
+          "arb": 0.2673274253731343,
+          "ci95": [
+            0.15387330572289157,
+            0.38187547746371275
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.057430440646949875,
+          "significant": true,
+          "z": 4.654803660945479
+        },
+        "B8": {
+          "arb": 0.16222014925373135,
+          "ci95": [
+            0.04890999251497006,
+            0.2815057663690476
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.059086623590242394,
+          "significant": true,
+          "z": 2.745463175873879
+        }
+      },
+      "E64": {
+        "B1": {
+          "arb": 0.028154151119402986,
+          "ci95": [
+            -0.049894662921348316,
+            0.11426943824404762
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.04099117517241385,
+          "significant": false,
+          "z": 0.6868344467067171
+        },
+        "B16": {
+          "arb": 0.13452075559701493,
+          "ci95": [
+            0.05606321581961346,
+            0.21667058270676692
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.04095530678422468,
+          "significant": true,
+          "z": 3.2845744827586087
+        },
+        "B2": {
+          "arb": 0.011841184701492537,
+          "ci95": [
+            -0.06402637956748695,
+            0.10104476917349219
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.041901705819909124,
+          "significant": false,
+          "z": 0.2825943352374531
+        },
+        "B32": {
+          "arb": 0.19418726679104478,
+          "ci95": [
+            0.11718159932024169,
+            0.2750623561013047
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.04047765624781102,
+          "significant": true,
+          "z": 4.797394038879071
+        },
+        "B4": {
+          "arb": 0.10102028917910448,
+          "ci95": [
+            0.024343557987711213,
+            0.186030436802974
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.04053944769034899,
+          "significant": true,
+          "z": 2.4919009738545066
+        },
+        "B64": {
+          "arb": 0.201533348880597,
+          "ci95": [
+            0.11990787307973665,
+            0.2880137631975867
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.04125311842218514,
+          "significant": true,
+          "z": 4.8852876240312595
+        },
+        "B8": {
+          "arb": 0.09541161380597014,
+          "ci95": [
+            0.01554355919583023,
+            0.17564450152207
+          ],
+          "n": 1340,
+          "n_roots": 748,
+          "se": 0.04053472522965014,
+          "significant": true,
+          "z": 2.35382411661641
+        }
+      },
+      "e_levels": [
+        64,
+        16
+      ],
+      "m_expected": 128,
+      "m_observed": [
+        128
+      ]
+    },
+    "branch": {
+      "rung2": {
+        "branch": "W-RISING",
+        "mechanism_anomaly_print": false,
+        "reason": "lower(CI)>0, d>=0.04, arb_64 convicts, arb(64)>arb(16)"
+      },
+      "rung3": {
+        "bought": true,
+        "branch": "VOID_S2",
+        "estimand_read": false,
+        "forbidden_readings": [
+          "not \"not bought\" \u2014 the run BOUGHT rung 3 at n2 = 1100",
+          "not \"answered\" \u2014 no estimand was read",
+          "not \"inconclusive\" \u2014 nothing was measured to be inconclusive about",
+          "not any rung-3 branch of the READ_RULE's branch table (they are enumerated there and are deliberately NOT named here): the table was never evaluated"
+        ],
+        "n2": 1100,
+        "n2_source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/FLOORS.json::n2",
+        "note": "the rung-3 branch table was NEVER EVALUATED. This is not a branch, and it is not a failure of one.",
+        "obligation_inherited_by": {
+          "includes": "I7's dedupe-partition conditional, which stays UNMEASURED \u2014 W9 / D-DRAW was skipped as moot",
+          "successor": "rung3_r5"
+        },
+        "reason": "stratum voided at G-DISJOINT per PREREG_FAILURE_S2.md and ADJUDICATION_R4_GATES.md Reading A",
+        "status": "VOID_S2",
+        "witness": {
+          "address": "GATE_DISJOINT.json::digest_exclusions.S2.void",
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+          "value": true,
+          "voided_strata": [
+            "S2"
+          ],
+          "why": "positive witness: void is true"
+        }
+      }
+    },
+    "completion": {
+      "evaluated_after_exclusions": true,
+      "n1_committed": 1350,
+      "n2_committed": 1100,
+      "ok": true,
+      "option_label": "FULL",
+      "resolved_at": "READOUT::widening.completion",
+      "rung3_bought": true,
+      "rung3_note": null,
+      "s1_ceiling": 4,
+      "s1_floor": 1283,
+      "s1_max_per_root": 4,
+      "s1_n": 1340,
+      "s1_n_all": 1340,
+      "s2_ceiling": 3,
+      "s2_conjunct": "VOID (stratum) \u2014 not evaluated",
+      "s2_floor": 1045,
+      "s2_max_per_root": 0,
+      "s2_n": 0,
+      "s2_n_all": 0,
+      "s2_void": true,
+      "s2_void_witness": {
+        "address": "GATE_DISJOINT.json::digest_exclusions.S2.void",
+        "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+        "value": true,
+        "why": "positive witness: void is true"
+      }
+    },
+    "config": {
+      "b_ladder": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "boot_reps": 2000,
+      "boot_seed": 20260819,
+      "counts": {
+        "S1": {
+          "absent_arb": 0,
+          "absent_if": 0,
+          "analysed": 1340,
+          "armset_mismatch": 0,
+          "champ_arm_absent": 0,
+          "e_short": 0,
+          "failed_rid": 4,
+          "j4_absent": 0,
+          "m_mismatch": 0,
+          "partial": 0,
+          "planned": 1344
+        }
+      },
+      "e_levels_s1": [
+        64,
+        16
+      ],
+      "e_levels_s2": [
+        16
+      ],
+      "m_expected_s1": 128,
+      "m_expected_s2": 32,
+      "parity_base": 1,
+      "plan_dirs": {
+        "S1": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1"
+      },
+      "pooling": "S1 and S2 are NEVER pooled (different E \u21d2 different ora)",
+      "records": {
+        "S1": {
+          "arb": [
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy"
+          ],
+          "arb_present": {
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg1": 1344,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg10": 18,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg11": 6,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg12": 1,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg2": 802,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg3": 444,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg4": 256,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg5": 189,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg6": 102,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg7": 80,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg8": 55,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/tier1-greedy::walled/leg9": 31
+          },
+          "if": [
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct"
+          ],
+          "if_present": {
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg1": 1344,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg10": 18,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg11": 6,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg12": 1,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg2": 802,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg3": 444,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg4": 256,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg5": 189,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg6": 102,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg7": 80,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg8": 55,
+            "/mnt/c/carc-shared/tiearb_widening_20260817/s1/clair-puct::walled/leg9": 31
+          },
+          "n_arb_not_ok": 0,
+          "n_if_not_ok": 6
+        }
+      },
+      "rnd_seed": 20260819,
+      "significance": "lower(CI95) > 0 on the percentile root bootstrap",
+      "stage1b_ladder": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/STAGE1B_LADDER.json"
+    },
+    "corpus_union": {
+      "by_stratum": {
+        "S1": {
+          "banked_dir": "measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1",
+          "copied_not_symlinked": true,
+          "n_excluded_rids_applied": 2116,
+          "n_fresh": 793,
+          "n_retained": 551,
+          "origin_commit": "untracked"
+        },
+        "S2": {
+          "banked_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2",
+          "copied_not_symlinked": true,
+          "n_excluded_rids_applied": 6772,
+          "n_fresh": 961,
+          "n_retained": 103,
+          "origin_commit": "untracked"
+        }
+      },
+      "note": "the retained positions are NOT pre-cleared: they entered the probe build and were gated exactly like fresh ones. 'Already gated under R3' is not a status any position holds \u2014 R3's gate FAILED, so nothing was ever passed.",
+      "present": true,
+      "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/CORPUS_UNION.json",
+      "totals": {
+        "n_fresh": 1754,
+        "n_retained": 654,
+        "n_total": 2408,
+        "retained_fraction": 0.27159468438538203
+      }
+    },
+    "delta": {
+      "committed_floor_d_16_32": 0.036,
+      "committed_floor_d_16_64": 0.04,
+      "d_16_32": {
+        "ci95": [
+          0.018982636224098234,
+          0.09979764532744666
+        ],
+        "n": 1340,
+        "n_roots": 748,
+        "se_root": 0.02053093590317398,
+        "significant": true,
+        "value": 0.05966651119402985,
+        "z": 2.906175903301403
+      },
+      "d_16_64": {
+        "ci95": [
+          0.021522951719092905,
+          0.11114140743550835
+        ],
+        "n": 1340,
+        "n_roots": 748,
+        "se_root": 0.022782074870063385,
+        "significant": true,
+        "value": 0.06701259328358208,
+        "z": 2.9414613754798724
+      },
+      "e_worlds": 64,
+      "sd_delta_bracket": [
+        0.9,
+        1.4
+      ],
+      "se_vs_bracket": {
+        "bracket": [
+          0.0179,
+          0.02
+        ],
+        "inside": false,
+        "position": "ABOVE",
+        "realized": 0.022782074870063385
+      }
+    },
+    "exclusions": {
+      "by_stratum": {
+        "S1": {
+          "bound_n": 7,
+          "carried": 0,
+          "denominator": 1350,
+          "denominator_source": "RUN/FLOORS.json::n1",
+          "determinism_defect": true,
+          "n_excluded": 1,
+          "rate": 0.0007407407407407407,
+          "residual": 1,
+          "rids": [
+            "tt_sp_135000000122_p2"
+          ],
+          "void": false
+        },
+        "S2": {
+          "bound_n": 6,
+          "carried": 28,
+          "denominator": 1100,
+          "denominator_source": "RUN/FLOORS.json::n2",
+          "determinism_defect": true,
+          "n_excluded": 29,
+          "rate": 0.026363636363636363,
+          "residual": 1,
+          "rids": [
+            "tt_sp_135000000839_p2",
+            "tt_sp_137000000614_p2",
+            "tt_sp_137000000678_p2",
+            "tt_sp_137000000690_p2",
+            "tt_sp_137000000732_p2",
+            "tt_sp_137000001011_p2",
+            "tt_sp_137000001093_p2",
+            "tt_sp_137000001161_p2",
+            "tt_sp_137000001247_p2",
+            "tt_sp_137000001863_p2",
+            "tt_sp_137000001885_p2",
+            "tt_sp_137000002166_p2",
+            "tt_sp_137000002233_p2",
+            "tt_sp_137000002476_p2",
+            "tt_sp_137000002484_p2",
+            "tt_sp_137000002569_p2",
+            "tt_sp_137000002875_p2",
+            "tt_sp_137000003030_p2",
+            "tt_sp_137000003055_p2",
+            "tt_sp_137000003298_p2",
+            "tt_sp_137000003706_p2",
+            "tt_sp_137000003817_p2",
+            "tt_sp_137000003865_p2",
+            "tt_sp_137000003939_p2",
+            "tt_sp_137000003979_p2",
+            "tt_sp_137000004119_p2",
+            "tt_sp_137000004517_p2",
+            "tt_sp_137000005025_p2",
+            "tt_sp_137000005203_p2"
+          ],
+          "void": true
+        }
+      },
+      "n_comparisons": 7,
+      "note": "the digest is a function of the BOARD alone, computed at corpus-build time BEFORE any value exists \u2014 the exclusion is outcome-independent by construction",
+      "present": true,
+      "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT.json",
+      "total_order": [
+        "spent",
+        "135e9",
+        "137e9",
+        "138e9"
+      ],
+      "voided_strata": [
+        "S2"
+      ]
+    },
+    "failed_records": {
+      "S1": {
+        "by_rid": [
+          {
+            "cause": [
+              "window_truncation"
+            ],
+            "diagnostic_class": [
+              "WindowTruncationError"
+            ],
+            "judges": [
+              "clair-puct"
+            ],
+            "legs": [
+              1
+            ],
+            "n_records": 1,
+            "rid": "tt_sp_135000000263_p10"
+          },
+          {
+            "cause": [
+              "window_truncation"
+            ],
+            "diagnostic_class": [
+              "WindowTruncationError"
+            ],
+            "judges": [
+              "clair-puct"
+            ],
+            "legs": [
+              1,
+              2,
+              3
+            ],
+            "n_records": 3,
+            "rid": "tt_sp_137000000161_p10"
+          },
+          {
+            "cause": [
+              "window_truncation"
+            ],
+            "diagnostic_class": [
+              "WindowTruncationError"
+            ],
+            "judges": [
+              "clair-puct"
+            ],
+            "legs": [
+              1
+            ],
+            "n_records": 1,
+            "rid": "tt_sp_137000000170_p30"
+          },
+          {
+            "cause": [
+              "window_truncation"
+            ],
+            "diagnostic_class": [
+              "WindowTruncationError"
+            ],
+            "judges": [
+              "clair-puct"
+            ],
+            "legs": [
+              3
+            ],
+            "n_records": 1,
+            "rid": "tt_sp_137000000305_p16"
+          }
+        ],
+        "consumed_by": "G-COMPLETE alone, on the POST-DROP analysed count (G-CRN and G-ARMS are computed over surviving/ok records only, so there is nothing to double-count)",
+        "known_class": "WindowTruncationError",
+        "n_failed_records": 6,
+        "n_failed_rids": 4,
+        "n_planned": 1344,
+        "policy": "WHOLE-RID DROP across BOTH judges, before any contrast \u2014 the consequence of G-ARMS' `include_partial == false` (a rid with a valueless arm is not analysable), not a new policy. The paired per-position contrast needs the IF side, so a half-present rid is not a contrast.",
+        "selection_effect": "The 4 dropped rids are not a random subsample. WindowTruncationError fires at extreme board extents, so the dropped set is correlated with board geometry \u2014 late-game, large-extent positions. At 4 / 1,344 = 0.30% the maximum arithmetic influence on the primary is bounded by (4/1,340)\u00b7|\u0394|_max \u2248 0.003\u00b7|\u0394|_max, a fraction of se \u2248 0.02 for any plausible |\u0394|_max; the point of this note is that the correlation is DISCLOSED rather than argued away, so it is not rediscovered later as a gotcha. Diagnostic class and study: measurement/window_truncation_20260813/",
+        "study": "measurement/window_truncation_20260813/",
+        "unknown_class_rule": "any failed record whose diagnostic class is NOT the known class RAISES and escalates, regardless of count \u2014 a novel failure class is a different question, and count is the wrong axis for it"
+      }
+    },
+    "gates": {
+      "arms": {
+        "by_stratum": {
+          "S1": {
+            "n_arms": 4660,
+            "n_arms_complete": 4660
+          }
+        },
+        "include_partial": false,
+        "n_arms": 4660,
+        "n_arms_complete": 4660,
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.arms"
+      },
+      "band": {
+        "duplicate_seed_digests": {},
+        "files": {
+          "CHAMP_GAMES_VERIFY.json": {
+            "band_ok": true,
+            "n_duplicate_seeds": 0,
+            "n_games_realized": 850,
+            "n_out_of_band": 0,
+            "ok": true,
+            "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/CHAMP_GAMES_VERIFY.json",
+            "present": true,
+            "released_band_136e9": false,
+            "seed_band": [
+              135000000000,
+              135000000849
+            ],
+            "sha256_of_sorted_seeds": "19a163acf925ef2e8adff8b54768c0d8ba4fc3d25ca96f57b59614d2053ca568"
+          }
+        },
+        "n_files": 1,
+        "note": "each file checked against ITS OWN range, floors tabular; 136e9 is RELEASED UNUSED and must appear in NO file",
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.band"
+      },
+      "crn": {
+        "exactly_one_kind_per_judge": true,
+        "legs_consistent": true,
+        "n_crn_verified": 6640,
+        "n_records": 6640,
+        "ok": true,
+        "per_leg": {
+          "S1/arb/leg1": {
+            "n_crn_verified": 1340,
+            "n_ok": 1340,
+            "n_records": 1340
+          },
+          "S1/arb/leg10": {
+            "n_crn_verified": 18,
+            "n_ok": 18,
+            "n_records": 18
+          },
+          "S1/arb/leg11": {
+            "n_crn_verified": 6,
+            "n_ok": 6,
+            "n_records": 6
+          },
+          "S1/arb/leg12": {
+            "n_crn_verified": 1,
+            "n_ok": 1,
+            "n_records": 1
+          },
+          "S1/arb/leg2": {
+            "n_crn_verified": 800,
+            "n_ok": 800,
+            "n_records": 800
+          },
+          "S1/arb/leg3": {
+            "n_crn_verified": 442,
+            "n_ok": 442,
+            "n_records": 442
+          },
+          "S1/arb/leg4": {
+            "n_crn_verified": 256,
+            "n_ok": 256,
+            "n_records": 256
+          },
+          "S1/arb/leg5": {
+            "n_crn_verified": 189,
+            "n_ok": 189,
+            "n_records": 189
+          },
+          "S1/arb/leg6": {
+            "n_crn_verified": 102,
+            "n_ok": 102,
+            "n_records": 102
+          },
+          "S1/arb/leg7": {
+            "n_crn_verified": 80,
+            "n_ok": 80,
+            "n_records": 80
+          },
+          "S1/arb/leg8": {
+            "n_crn_verified": 55,
+            "n_ok": 55,
+            "n_records": 55
+          },
+          "S1/arb/leg9": {
+            "n_crn_verified": 31,
+            "n_ok": 31,
+            "n_records": 31
+          },
+          "S1/if/leg1": {
+            "n_crn_verified": 1340,
+            "n_ok": 1340,
+            "n_records": 1340
+          },
+          "S1/if/leg10": {
+            "n_crn_verified": 18,
+            "n_ok": 18,
+            "n_records": 18
+          },
+          "S1/if/leg11": {
+            "n_crn_verified": 6,
+            "n_ok": 6,
+            "n_records": 6
+          },
+          "S1/if/leg12": {
+            "n_crn_verified": 1,
+            "n_ok": 1,
+            "n_records": 1
+          },
+          "S1/if/leg2": {
+            "n_crn_verified": 800,
+            "n_ok": 800,
+            "n_records": 800
+          },
+          "S1/if/leg3": {
+            "n_crn_verified": 442,
+            "n_ok": 442,
+            "n_records": 442
+          },
+          "S1/if/leg4": {
+            "n_crn_verified": 256,
+            "n_ok": 256,
+            "n_records": 256
+          },
+          "S1/if/leg5": {
+            "n_crn_verified": 189,
+            "n_ok": 189,
+            "n_records": 189
+          },
+          "S1/if/leg6": {
+            "n_crn_verified": 102,
+            "n_ok": 102,
+            "n_records": 102
+          },
+          "S1/if/leg7": {
+            "n_crn_verified": 80,
+            "n_ok": 80,
+            "n_records": 80
+          },
+          "S1/if/leg8": {
+            "n_crn_verified": 55,
+            "n_ok": 55,
+            "n_records": 55
+          },
+          "S1/if/leg9": {
+            "n_crn_verified": 31,
+            "n_ok": 31,
+            "n_records": 31
+          }
+        },
+        "resolved_at": "READOUT::widening.gates.crn",
+        "smoke_crn_cross_leg_identical": {
+          "SMOKE_MANIFEST_S1_clair-puct.json": true,
+          "SMOKE_MANIFEST_S1_tier1-greedy.json": true
+        },
+        "smoke_ok": true,
+        "witness_kinds": {
+          "arb": [
+            "world_deck_hash"
+          ],
+          "if": [
+            "afterstate_deck_hash_a"
+          ]
+        }
+      },
+      "salt": {
+        "by_stratum": {
+          "S1": {
+            "cap_seed_examples_missing": [],
+            "cap_seed_ok": true,
+            "deployed_cap_j": 4,
+            "deployed_cap_j_ok": true,
+            "n_cap_seed_missing": 0,
+            "n_rids": 1344,
+            "present": true,
+            "run_manifest": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/RUN_MANIFEST_S1.json",
+            "salt_ok": true,
+            "world_seed_salt": "tiletie-v1"
+          }
+        },
+        "distinct_salts_seen": [
+          "tiletie-v1"
+        ],
+        "expected_deployed_cap_j": 4,
+        "expected_world_seed_salt": "tiletie-v1",
+        "leg_fallback": {
+          "legs": [],
+          "n_checked": 0,
+          "ok": null
+        },
+        "note": "the salt is a MODULE CONSTANT (run_tiletie.WORLD_SEED_SALT), not a flag \u2014 so the conjunct is that the run RECORDED the constant of record, not that a flag was passed. Bound here because the pre-scoring address audit cannot reach a scoring-time emission.",
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.salt"
+      },
+      "uncapped": {
+        "by_stratum": {
+          "S1": {
+            "cap_j": null,
+            "n_append_ok": 1340,
+            "n_prefix_ok": 1340,
+            "n_rids": 1340,
+            "n_violation": 0,
+            "ok": true,
+            "uncapped": true,
+            "violations": []
+          }
+        },
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.uncapped"
+      }
+    },
+    "gates_ok": true,
+    "gates_summary": {
+      "G-ARMS": {
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.arms"
+      },
+      "G-BAND": {
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.band"
+      },
+      "G-COMPLETE": {
+        "ok": true,
+        "resolved_at": "READOUT::widening.completion"
+      },
+      "G-CRN": {
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.crn"
+      },
+      "G-REPLICATE": {
+        "ok": true,
+        "resolved_at": "READOUT::widening.stage1_replication"
+      },
+      "G-SALT": {
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.salt"
+      },
+      "G-UNCAPPED": {
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.uncapped"
+      }
+    },
+    "j_rider": {
+      "d_draw": {
+        "adjudicates": "nothing \u2014 a reported magnitude, never a branch input",
+        "agreement_rate": null,
+        "d_draw_ran": false,
+        "git_rev": null,
+        "n_agree": null,
+        "n_checked": null,
+        "n_unreconstructible": null,
+        "source": null
+      },
+      "interaction": {
+        "adjudicates": "REPORTED, ADJUDICATES NOTHING. These are real S1 measurements, but with rung 3 VOID they have NO PRIMARY TO RIDE ON: no rung-3 branch may be inferred from them, in either direction. They are not a substitute estimand, not a partial read, and not evidence for or against any X-branch.",
+        "arb_full_16_minus_j4_16": {
+          "ci95": [
+            -0.03531390134529148,
+            0.15061532079646017
+          ],
+          "n": 230,
+          "n_roots": 201,
+          "se_root": 0.04853596979162985,
+          "significant": false,
+          "value": 0.0531929347826087,
+          "z": 1.0959487368022458
+        },
+        "arb_full_64_minus_16": {
+          "ci95": [
+            0.014489850427350428,
+            0.2670298793859649
+          ],
+          "n": 230,
+          "n_roots": 201,
+          "se_root": 0.06561973127852241,
+          "significant": true,
+          "value": 0.14201766304347826,
+          "z": 2.1642524325600396
+        },
+        "e_worlds": 64,
+        "n_capped_s1": 230
+      },
+      "s1_replication": {
+        "adjudicates": "REPORTED, ADJUDICATES NOTHING. These are real S1 measurements, but with rung 3 VOID they have NO PRIMARY TO RIDE ON: no rung-3 branch may be inferred from them, in either direction. They are not a substitute estimand, not a partial read, and not evidence for or against any X-branch.",
+        "ci95_arb": [
+          -0.03531390134529148,
+          0.15061532079646017
+        ],
+        "ci95_ora": [
+          0.06825284090909091,
+          0.3327323717948718
+        ],
+        "ci95_r_ora": [
+          1.2141509433962263,
+          2.5520076743867346
+        ],
+        "delta_arb": 0.0531929347826087,
+        "delta_ora": 0.19932065217391304,
+        "e_worlds": 64,
+        "n_capped": 230,
+        "n_roots": 201,
+        "ora_full": 0.5151834239130435,
+        "ora_full_ci95": [
+          0.2865268640350877,
+          0.7598935589519651
+        ],
+        "ora_j4": 0.3158627717391304,
+        "ora_j4_ci95": [
+          0.12916900224215247,
+          0.5004396645021645
+        ],
+        "r_ora": 1.6310355952252933,
+        "r_ora_reported": true,
+        "se_ora": 0.06857011032375415,
+        "significant_ora": true,
+        "xfree_window": {
+          "note": "attainability annotation DROPPED: with rung 3 void there is no branch for it to annotate, and no branch token may appear in this read-out",
+          "void": true
+        },
+        "z_ora": 2.906815392782941
+      },
+      "s1_riders_prohibition": "REPORTED, ADJUDICATES NOTHING. These are real S1 measurements, but with rung 3 VOID they have NO PRIMARY TO RIDE ON: no rung-3 branch may be inferred from them, in either direction. They are not a substitute estimand, not a partial read, and not evidence for or against any X-branch.",
+      "s2": {
+        "n_capped": 0,
+        "note": "no S2 stratum was read \u2014 see branch.rung3",
+        "status": "VOID_S2",
+        "void": true
+      }
+    },
+    "predecessor": {
+      "corpus": "band 135e9's 850 games are REUSABLE INPUT, not a prior result: the run stopped PRE-SCORING, so no arb, ora, delta, CI or per-position value was ever computed",
+      "disposition": "SPENT-BY-GATE-FAILURE \u2014 frozen history; never amended, revived or re-read",
+      "pair": "604edc83",
+      "sizing_dependence": "R4's n is sized from rates measured on that same corpus, so it is NOT statistically independent of its STRUCTURE \u2014 a nuisance-parameter read, never an estimand dependence (PREREG_FAILURE \u00a73.4)"
+    },
+    "stage1_replication": {
+      "arb16_absent_why": null,
+      "arb16_convicts": true,
+      "arb16_input_absent": false,
+      "envelope_inflation": 2.0,
+      "naive_envelope_caveat": false,
+      "pass": true,
+      "per_rung_inside_envelope": {
+        "B1": true,
+        "B16": true,
+        "B2": true,
+        "B4": true,
+        "B8": true
+      },
+      "reads": "UNINTERPRETABLE on FAIL \u2014 never FAIL-the-lever; the fresh corpus is a different population. Binds BOTH rungs: one shared instrument check, NOT two independent confirmations.",
+      "resolved_at": "READOUT::widening.stage1_replication"
+    }
+  }
+}
