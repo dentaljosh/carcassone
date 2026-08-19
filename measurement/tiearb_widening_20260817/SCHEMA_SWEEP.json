@@ -1,0 +1,2425 @@
+{
+ "boxes": [
+  "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs",
+  "Doctor",
+  "None",
+  "laptop-wsl"
+ ],
+ "chunks": [
+  "1",
+  "10",
+  "11",
+  "12",
+  "13",
+  "14",
+  "15",
+  "16",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "None"
+ ],
+ "deviation": "D4.14b (commissioned)",
+ "gate_addressed_in_read_rule": {
+  "RUN_MANIFEST": [
+   "arb_backend",
+   "arb_legal_mask_cache",
+   "b_ceiling_from_m",
+   "c_remeasure.failed_smokes",
+   "c_remeasure.halt_fired",
+   "c_remeasure.legs.arb.committed",
+   "c_remeasure.legs.arb.halt_fired",
+   "c_remeasure.legs.arb.ratio",
+   "c_remeasure.legs.arb.realized",
+   "c_remeasure.legs.generation.committed",
+   "c_remeasure.legs.generation.halt_fired",
+   "c_remeasure.legs.generation.ratio",
+   "c_remeasure.legs.generation.realized",
+   "c_remeasure.legs.if.committed",
+   "c_remeasure.legs.if.halt_fired",
+   "c_remeasure.legs.if.ratio",
+   "c_remeasure.legs.if.realized",
+   "c_remeasure.ok",
+   "m_worlds",
+   "preflight.checks.leaf_hash.ok",
+   "resolved_backend_by_leg",
+   "world_seed_salt"
+  ],
+  "leg": [
+   "preflight.seeds.ok",
+   "preflight.seeds.prefix_stable_at",
+   "resolved_config.legal_mask_cache",
+   "resolved_config.m",
+   "resolved_config.world_seed_salt"
+  ]
+ },
+ "gate_addresses_missing_from_schema": [],
+ "generated_utc": "2026-08-19T11:20:28Z",
+ "generator": "measurement/tiearb_widening_20260817/schema_sweep.py",
+ "governance": "Measurement plumbing only. Opens no record, computes no statistic, writes nothing under the prereg dir.",
+ "judges": [
+  "None",
+  "clair-puct",
+  "tier1-greedy"
+ ],
+ "n_sources": 355,
+ "rows": [
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "arb_backend"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "arb_backend",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "arb_legal_mask_cache"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "arb_legal_mask_cache",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 16,
+   "n_sources": 32,
+   "observed_axis": "chunk",
+   "path": "arms_path",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 16,
+   "n_sources": 32,
+   "observed_axis": "chunk",
+   "path": "arms_sha256",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "b_ceiling_from_m"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "b_ceiling_from_m",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "design_doc",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "driver",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "error",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 32,
+   "n_sources": 32,
+   "observed_axis": "chunk+judge",
+   "path": "finished_utc",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 2,
+   "n_sources": 32,
+   "observed_axis": "chunk",
+   "path": "git_rev",
+   "rule": "D4.11/D4.12 enumerated pair",
+   "why": "the run's rev under one of its four spellings",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "RECOMPUTED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 2,
+   "n_sources": 32,
+   "observed_axis": "judge",
+   "path": "judge_backend",
+   "rule": "merge_run_manifest",
+   "why": "union / superset across the (judge, chunk) invocations \u2014 no single invocation carries them all, and G-BACKEND quantifies over all of them",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "RECOMPUTED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 2,
+   "n_sources": 32,
+   "observed_axis": "judge",
+   "path": "judges",
+   "rule": "merge_run_manifest",
+   "why": "union / superset across the (judge, chunk) invocations \u2014 no single invocation carries them all, and G-BACKEND quantifies over all of them",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 32,
+   "n_sources": 32,
+   "observed_axis": "chunk+judge",
+   "path": "legs",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "m_max",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "m_worlds"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "m_worlds",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "oracle_sims"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "oracle_sims",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 16,
+   "n_sources": 32,
+   "observed_axis": "chunk",
+   "path": "positions_plan_path",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 16,
+   "n_sources": 32,
+   "observed_axis": "chunk",
+   "path": "positions_plan_sha256",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "JUDGE_SCOPED_IDENTITY",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 3,
+   "n_sources": 32,
+   "observed_axis": "chunk+judge",
+   "path": "preflight.checks.arb_backend",
+   "rule": "D4.14 7/7",
+   "why": "equal WITHIN a judge, ACTIVELY checked; cross-judge not compared",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 32,
+   "n_sources": 32,
+   "observed_axis": "chunk+judge",
+   "path": "preflight.checks.gate",
+   "rule": "D4.14 7/7",
+   "why": "chunk-scoped path/flag",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 2,
+   "n_sources": 32,
+   "observed_axis": "chunk",
+   "path": "preflight.checks.git_clean",
+   "rule": "D4.14 7/7",
+   "why": "carried per chunk; ASSERTED by the D4.12 licence (ruled once, not twice)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "preflight.checks.leaf_hash.ok",
+    "preflight.checks.leaf_hash.harness_leaf_hash",
+    "preflight.checks.leaf_hash.expected"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "preflight.checks.leaf_hash",
+   "rule": "D4.14 7/7",
+   "why": "design constant / gate-addressed",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "preflight.checks.m",
+   "rule": "D4.14 7/7",
+   "why": "design constant / gate-addressed",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 16,
+   "n_sources": 32,
+   "observed_axis": "chunk",
+   "path": "preflight.checks.positions",
+   "rule": "D4.14 7/7",
+   "why": "chunk-scoped path/flag",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "TELEMETRY",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 32,
+   "n_sources": 32,
+   "observed_axis": "chunk+judge",
+   "path": "preflight.checks.process_census",
+   "rule": "D4.14 7/7 (PER_CHUNK)",
+   "why": "timestamped ps+loadavg \u2014 differs by construction; the emitter itself excludes it from `ok`",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "preflight.ok",
+   "rule": "_merge_preflight default",
+   "why": "unclassified inside `preflight` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "python",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "RECOMPUTED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "r9_by_profile",
+   "rule": "merge_run_manifest",
+   "why": "union / superset across the (judge, chunk) invocations \u2014 no single invocation carries them all, and G-BACKEND quantifies over all of them",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "RECOMPUTED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "resolved_backend_by_leg"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 10,
+   "n_sources": 32,
+   "observed_axis": "chunk+judge",
+   "path": "resolved_backend_by_leg",
+   "rule": "merge_run_manifest",
+   "why": "union / superset across the (judge, chunk) invocations \u2014 no single invocation carries them all, and G-BACKEND quantifies over all of them",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "resume",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "schema",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 2,
+   "n_sources": 32,
+   "observed_axis": "chunk+judge",
+   "path": "workers",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "world_seed_salt"
+   ],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "RUN_MANIFEST",
+   "n_distinct": 1,
+   "n_sources": 32,
+   "observed_axis": "none",
+   "path": "world_seed_salt",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": true,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "None"
+   ],
+   "kind": "RUN_MANIFEST_MERGED",
+   "n_distinct": 1,
+   "n_sources": 1,
+   "observed_axis": "none",
+   "path": "c_remeasure",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": true,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "None"
+   ],
+   "kind": "RUN_MANIFEST_MERGED",
+   "n_distinct": 1,
+   "n_sources": 1,
+   "observed_axis": "none",
+   "path": "stub",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "assumed_effect_pts",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.agent_class",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.champion_id",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "champion_manifest.code_commit",
+   "rule": "D4.11/D4.12 enumerated pair",
+   "why": "the run's rev under one of its four spellings",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.dirty",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.env_knobs",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.fair_deploy",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.leaf",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.leaf_hashes",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.leaf_value_panel",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.mode",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.provenance_note",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.reshuffle_semantics",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.schema",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.search",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "champion_manifest.source",
+   "rule": "_merge_champion_manifest default",
+   "why": "a different champion is a different run",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "code_rev",
+   "rule": "D4.11/D4.12 enumerated pair",
+   "why": "the run's rev under one of its four spellings",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "cost_note",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "crn",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "design_doc",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "driver",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 161,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "elapsed_secs_sum",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "env",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_UNION",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "errors",
+   "rule": "AGGREGATE_UNION",
+   "why": "set-unioned",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.audit_item",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.backend",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.backend_resolution",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "execution.carc_rs_binary_sha",
+   "rule": "EXECUTION_PER_CHUNK",
+   "why": "BOX-LOCAL \u2014 recorded, never compared across hosts (JCZ \u00a70.F.2c)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "execution.carc_rs_build",
+   "rule": "EXECUTION_IDENTITY_REQUIRED + D4.13",
+   "why": "cross-host source-rev witness; a cross-tranche divergence is licensed only under D4.13's four conjuncts",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "execution.carc_rs_path",
+   "rule": "EXECUTION_PER_CHUNK",
+   "why": "BOX-LOCAL \u2014 recorded, never compared across hosts (JCZ \u00a70.F.2c)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.carc_rs_version",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "execution.code_rev",
+   "rule": "D4.11/D4.12 enumerated pair",
+   "why": "the run's rev under one of its four spellings",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.code_rev_dirty",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.continuation_tree_policy",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.evidence",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.gap2_status",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.gap_status",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.identity_gate",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.rust_available",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.rust_threads",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.rust_toolchain",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.rust_unavailable_reason",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.seam",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.threads_note",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.tile_data_semantic_digest",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "execution.tile_data_source_sha256",
+   "rule": "D3 \u00a7D3.2 default",
+   "why": "unclassified inside `execution` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 157,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "generated_utc",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "git_rev",
+   "rule": "D4.11/D4.12 enumerated pair",
+   "why": "the run's rev under one of its four spellings",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "goal",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "harness",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "host",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "levels",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "m_worlds"
+   ],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "m_worlds",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "max_plies",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 51,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "n_crn_verified",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "n_failed",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 51,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "n_ok",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 51,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "n_playouts",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 51,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "n_rows_in",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 51,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "n_scored",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "oracle",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "preflight.m",
+   "rule": "_merge_preflight default",
+   "why": "unclassified inside `preflight` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "preflight.profile",
+   "rule": "_merge_preflight default",
+   "why": "unclassified inside `preflight` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "preflight.seeds",
+   "rule": "_merge_preflight default",
+   "why": "unclassified inside `preflight` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "preflight.wheel.carc_rs_binary_sha",
+   "rule": "D4.13 conjunct (ii)",
+   "why": "box-local; WITHIN-BOX constancy is a standing assertion",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "LICENCE_GOVERNED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "preflight.wheel.carc_rs_build",
+   "rule": "D4.13",
+   "why": "the tier1 emitter's spelling of the build stamp",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "preflight.wheel.carc_rs_file",
+   "rule": "D4.13 default",
+   "why": "unclassified inside `preflight.wheel` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "preflight.wheel.carc_rs_version",
+   "rule": "D4.13 default",
+   "why": "unclassified inside `preflight.wheel` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "preflight.wheel.ok",
+   "rule": "D4.13 default",
+   "why": "unclassified inside `preflight.wheel` \u21d2 RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "python",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "replay_game_kwargs",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.arb_backend",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "resolved_config.legal_mask_cache"
+   ],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.legal_mask_cache",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "resolved_config.m"
+   ],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.m",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.m_max",
+   "rule": "_merge_resolved_config default",
+   "why": "must agree across chunks or RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.max_plies",
+   "rule": "_merge_resolved_config default",
+   "why": "must agree across chunks or RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 51,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "resolved_config.n",
+   "rule": "RESOLVED_CONFIG_PER_CHUNK",
+   "why": "chunk-scoped run config",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.oracle_policy",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.oracle_sims",
+   "rule": "_merge_resolved_config default",
+   "why": "must agree across chunks or RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.oracle_sims_note",
+   "rule": "_merge_resolved_config default",
+   "why": "must agree across chunks or RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 16,
+   "n_sources": 161,
+   "observed_axis": "chunk",
+   "path": "resolved_config.out_root",
+   "rule": "RESOLVED_CONFIG_PER_CHUNK",
+   "why": "chunk-scoped run config",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 12,
+   "n_sources": 161,
+   "observed_axis": "leg",
+   "path": "resolved_config.out_subdir",
+   "rule": "RESOLVED_CONFIG_PER_CHUNK",
+   "why": "chunk-scoped run config",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 161,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "resolved_config.positions_jsonl",
+   "rule": "RESOLVED_CONFIG_PER_CHUNK",
+   "why": "chunk-scoped run config",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.resume",
+   "rule": "RESOLVED_CONFIG_PER_CHUNK",
+   "why": "chunk-scoped run config",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.rules_profile",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.strict_crn",
+   "rule": "_merge_resolved_config default",
+   "why": "must agree across chunks or RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 12,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "resolved_config.workers",
+   "rule": "RESOLVED_CONFIG_PER_CHUNK",
+   "why": "chunk-scoped run config",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.world_deck_witness",
+   "rule": "_merge_resolved_config default",
+   "why": "must agree across chunks or RAISE",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": true,
+   "gate_paths": [
+    "resolved_config.world_seed_salt"
+   ],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "resolved_config.world_seed_salt",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "rules_profile",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 140,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "sampling",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct",
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 2,
+   "n_sources": 322,
+   "observed_axis": "judge",
+   "path": "schema",
+   "rule": "IDENTITY_REQUIRED",
+   "why": "identity-required path",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 161,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "source",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "src_root",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 19,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "started_utc",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "IDENTITY_REQUIRED",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "status",
+   "rule": "default",
+   "why": "no merge rule: equal across chunks or RAISE (fail-closed default)",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 1,
+   "n_sources": 161,
+   "observed_axis": "none",
+   "path": "wall_cap_secs",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "AGGREGATE_SUM",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "tier1-greedy"
+   ],
+   "kind": "leg",
+   "n_distinct": 161,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "wall_secs",
+   "rule": "AGGREGATE_SUM",
+   "why": "pure counter",
+   "would_refuse_on_todays_artifacts": false
+  },
+  {
+   "class": "PER_CHUNK",
+   "contributed_by_another_tool": false,
+   "gate_addressed": false,
+   "gate_paths": [],
+   "judges": [
+    "clair-puct"
+   ],
+   "kind": "leg",
+   "n_distinct": 13,
+   "n_sources": 161,
+   "observed_axis": "leg+chunk",
+   "path": "workers",
+   "rule": "PER_CHUNK",
+   "why": "legitimately per chunk",
+   "would_refuse_on_todays_artifacts": false
+  }
+ ],
+ "run_id": "tiearb_widening_20260817",
+ "schema": "carcassonne-tiearb-widening-schema-sweep/v1",
+ "sources_by_kind": {
+  "RUN_MANIFEST": 32,
+  "RUN_MANIFEST_MERGED": 1,
+  "leg": 322
+ },
+ "tranches": [
+  "None",
+  "committed_tranche",
+  "completion_tranche"
+ ],
+ "unclassified": [],
+ "would_refuse": []
+}

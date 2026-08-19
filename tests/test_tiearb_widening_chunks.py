@@ -1954,6 +1954,250 @@ def test_D4_13_licenses_ONE_field_and_opens_nothing_else(two_rev):
     assert "opens nothing else" in str(e2.value)
 
 
+# =========================================================================== #
+# 11. §D4.14 — `preflight.checks` ruled 7/7, and the CLASSIFICATION SWEEP      #
+# =========================================================================== #
+import schema_sweep as SW                                          # noqa: E402
+
+
+def _checks_manifest(judge, *, census="2026-08-19T04:00:00Z", leaf_ok=True,
+                     m=128, arb_note="rust", gate="/x/gate_chunk1.json",
+                     rev="1" * 40, build=None):
+    """A RUN_MANIFEST-shaped artifact carrying the seven `preflight.checks`."""
+    return {
+        "schema": "carcassonne-tiletie-run/v1", "judges": [judge],
+        "git_rev": rev[:8], "m_worlds": m,
+        "preflight": {"ok": True, "checks": {
+            "leaf_hash": {"ok": leaf_ok, "harness_leaf_hash": "a36d2e15a3b3d71d",
+                          "expected": "a36d2e15a3b3d71d"},
+            "m": {"ok": True, "m": m, "m_max": m},
+            "process_census": {"ok": True, "at": census, "loadavg": [1.0, 2.0]},
+            "gate": {"ok": True, "path": gate},
+            "positions": {"ok": True, "dir": f"/x/{gate}"},
+            "git_clean": {"ok": True, "git_rev": rev[:8], "dirty_paths": []},
+            "arb_backend": {"ok": True, "arb_backend": "rust", "note": arb_note,
+                            "wheel": {"carc_rs_build": build or _build(rev)}},
+        }},
+    }
+
+
+def test_preflight_checks_process_census_merges_and_is_recorded_per_chunk():
+    """TELEMETRY: `ps` + loadavg at launch differ by construction on every
+    invocation — the EMITTER itself excludes process_census from `ok`."""
+    a = _checks_manifest("clair-puct", census="2026-08-19T04:00:00Z")
+    b = _checks_manifest("clair-puct", census="2026-08-19T09:59:59Z")
+    merged = ML.merge_manifests({1: a, 9: b})
+    assert merged["preflight"]["checks"]["process_census"]["at"] == \
+        "2026-08-19T04:00:00Z"                      # lowest chunk's value
+    by = merged["merge"]["by_chunk"]
+    assert by["1"]["preflight"]["checks"]["process_census"]["at"] != \
+        by["9"]["preflight"]["checks"]["process_census"]["at"]
+    assert ML.classify_note if False else True      # (no-op: readability)
+
+
+def test_preflight_checks_gate_and_positions_are_per_chunk():
+    a = _checks_manifest("clair-puct", gate="/x/gate_chunk1.json")
+    b = _checks_manifest("clair-puct", gate="/x/gate_chunk9.json")
+    merged = ML.merge_manifests({1: a, 9: b})
+    by = merged["merge"]["by_chunk"]
+    assert by["9"]["preflight"]["checks"]["gate"]["path"] == "/x/gate_chunk9.json"
+    assert by["9"]["preflight"]["checks"]["positions"]["dir"].endswith("chunk9.json")
+
+
+def test_preflight_checks_leaf_hash_divergence_REFUSES_and_says_gate_addressed():
+    """⚠️ GATE-ADDRESSED: `G-LEAF` reads `preflight.checks.leaf_hash.ok`. It may
+    not be reclassified without a ruling, and a divergence must refuse."""
+    a = _checks_manifest("clair-puct", leaf_ok=True)
+    b = _checks_manifest("clair-puct", leaf_ok=False)
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: a, 9: b})
+    assert "preflight.checks.leaf_hash" in str(e.value)
+    assert "GATE-ADDRESSED" in str(e.value) and "G-LEAF" in str(e.value)
+
+
+def test_preflight_checks_m_divergence_REFUSES():
+    a, b = _checks_manifest("clair-puct"), _checks_manifest("clair-puct")
+    b["preflight"]["checks"]["m"] = {"ok": True, "m": 32, "m_max": 32}
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: a, 9: b})
+    assert "preflight.checks.m" in str(e.value) and "DESIGN CONSTANT" in str(e.value)
+
+
+def test_preflight_checks_arb_backend_refuses_a_WITHIN_JUDGE_divergence():
+    """⚠️ TRAP 2 — judge-scoped constancy is ASSERTED, never assumed: the class
+    is an ACTIVE check."""
+    a = _checks_manifest("tier1-greedy", arb_note="rust")
+    b = _checks_manifest("tier1-greedy", arb_note="SOMETHING ELSE")
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: a, 9: b}, judge_by_chunk={1: "t", 9: "t"})
+    assert "DIVERGES WITHIN a judge" in str(e.value)
+    assert "never assumed" in str(e.value)
+
+
+def test_preflight_checks_arb_backend_tolerates_a_CROSS_JUDGE_difference():
+    """Across judges nothing is compared: `clair-puct` records the inert-flag
+    note, `tier1-greedy` the wheel block — an equality between them would be
+    MEANINGLESS rather than false."""
+    a = _checks_manifest("clair-puct", arb_note="the flag is inert")
+    b = _checks_manifest("tier1-greedy", arb_note="rust")
+    # `judges` is recomputed as a union by merge_run_manifest — mirrored here,
+    # since this is the cross-judge RUN_MANIFEST merge
+    merged = ML.merge_manifests({1: a, 2: b}, allow_varying=["judges"])
+    by = merged["merge"]["by_chunk"]
+    assert by["1"]["preflight"]["checks"]["arb_backend"]["note"] != \
+        by["2"]["preflight"]["checks"]["arb_backend"]["note"]
+
+
+def test_preflight_checks_arb_backend_licenses_its_NESTED_build_stamp(two_rev):
+    """⭐ FOUND BY THE SWEEP, not by a merge crash: this check dict EMBEDS a
+    THIRD address of `carc_rs_build`, so a naive judge-scoped equality would
+    refuse the merge for exactly the fact §D4.13 licensed."""
+    repo, a, b, wit = two_rev
+    lic = _license(repo, a, b, identity_path=wit,
+                   git_clean_by_chunk={1: {"ok": True}, 9: {"ok": True}})
+    m1 = _checks_manifest("tier1-greedy", rev=a, build=_build(a))
+    m2 = _checks_manifest("tier1-greedy", rev=b, build=_build(b))
+    merged = ML.merge_manifests({1: m1, 9: m2}, license=lic,
+                                judge_by_chunk={1: "t", 9: "t"})
+    paths = merged["merge"]["rev_license"]["paths"]
+    assert "preflight.checks.arb_backend.wheel.carc_rs_build" in paths
+    # the RECORDED value is the original, never the mask
+    by = merged["merge"]["by_chunk"]
+    assert by["9"]["preflight"]["checks"]["arb_backend"]["wheel"]["carc_rs_build"] \
+        == _build(b)
+    assert ML._MASKED_BUILD not in json.dumps(merged)
+    # ... and the rest of the dict is still actively judge-scoped
+    m2b = _checks_manifest("tier1-greedy", rev=b, build=_build(b),
+                           arb_note="DIFFERENT")
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: m1, 9: m2b}, license=lic,
+                           judge_by_chunk={1: "t", 9: "t"})
+    assert "DIVERGES WITHIN a judge" in str(e.value)
+
+
+def test_preflight_checks_is_a_CLOSED_SET_so_an_eighth_key_is_a_schema_change():
+    a, b = _checks_manifest("clair-puct"), _checks_manifest("clair-puct")
+    a["preflight"]["checks"]["brand_new_check"] = {"ok": True, "v": 1}
+    b["preflight"]["checks"]["brand_new_check"] = {"ok": True, "v": 2}
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: a, 9: b})
+    assert "CLOSED SET" in str(e.value) and "SCHEMA CHANGE" in str(e.value)
+    assert sorted(ML.PREFLIGHT_CHECKS_CLOSED_SET) == [
+        "arb_backend", "gate", "git_clean", "leaf_hash", "m", "positions",
+        "process_census"], "the emitter's seven, and no more"
+
+
+def test_git_clean_is_carried_by_the_merge_and_asserted_by_the_LICENCE(two_rev):
+    """Ruled ONCE, not twice: the merge rule says how the field is CARRIED, the
+    D4.12 licence says what must be TRUE. The merge never independently compares
+    `git_rev` — that would give one condition two differently-worded refusals."""
+    repo, a, b, wit = two_rev
+    m1 = _checks_manifest("clair-puct", rev=a, build=_build(a))
+    m2 = _checks_manifest("clair-puct", rev=b, build=_build(b))
+    # no licence: the merge does NOT refuse on git_clean.git_rev differing …
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: m1, 9: m2})
+    assert "git_clean" not in str(e.value), \
+        "the merge must not raise its own git_rev refusal"
+    # … it refuses on the rev fields, under the licence's vocabulary
+    lic = _license(repo, a, b, identity_path=wit)
+    merged = ML.merge_manifests({1: m1, 9: m2}, license=lic,
+                                judge_by_chunk={1: "c", 9: "c"})
+    by = merged["merge"]["by_chunk"]
+    assert by["1"]["preflight"]["checks"]["git_clean"]["git_rev"] == a[:8]
+    assert by["9"]["preflight"]["checks"]["git_clean"]["git_rev"] == b[:8]
+
+
+def test_the_preflight_arb_backend_trap_does_not_relax_the_TOP_LEVEL_one():
+    """⚠️ TRAP 1 — same name, two depths, different objects. `G-BACKEND` reads
+    TOP-LEVEL `RUN_MANIFEST::arb_backend`, which stays IDENTITY_REQUIRED."""
+    assert "arb_backend" in ML.RUN_MANIFEST_IDENTITY
+    assert "arb_backend" in ML.GATE_ADDRESSED_PATHS
+    a = dict(_checks_manifest("clair-puct"), arb_backend="rust")
+    b = dict(_checks_manifest("clair-puct"), arb_backend="python")
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: a, 9: b},
+                           identity_required=ML.RUN_MANIFEST_IDENTITY)
+    assert "'arb_backend'" in str(e.value) and "DIVERGES" in str(e.value)
+
+
+# --- the sweep ---------------------------------------------------------------- #
+def test_the_sweep_is_FRESH_the_wired_classification_matches_the_emitted_table():
+    """⭐ THE MECHANICAL-DIFF PROPERTY. The committed table must re-derive from
+    today's `merge_legs` tables — so a classification change that was not
+    re-swept shows up HERE rather than at merge time."""
+    p = CAMPAIGN / "SCHEMA_SWEEP.json"
+    assert p.is_file(), "SCHEMA_SWEEP.json must be committed beside the merge"
+    doc = json.loads(p.read_text())
+    drifted = []
+    for r in doc["rows"]:
+        now = SW.classify(r["path"], r["kind"])
+        if now["class"] != r["class"]:
+            drifted.append((r["kind"], r["path"], r["class"], now["class"]))
+    assert not drifted, (
+        "the wired classification no longer matches SCHEMA_SWEEP.json — re-run "
+        f"schema_sweep.py and commit the diff: {drifted[:5]}")
+
+
+def test_the_sweep_reports_a_CLOSED_schema_and_the_gate_converse():
+    doc = json.loads((CAMPAIGN / "SCHEMA_SWEEP.json").read_text())
+    assert doc["unclassified"] == [], "an unclassified key is a schema change"
+    assert doc["gate_addresses_missing_from_schema"] == [], \
+        "a gate whose address does not exist reads ABSENT, and absent is FAIL"
+    assert doc["would_refuse"] == []
+    # both emitters really were enumerated — the schema difference the
+    # commission names explicitly
+    paths = {(r["kind"], r["path"]) for r in doc["rows"]}
+    assert ("leg", "execution.carc_rs_build") in paths          # oracle_score_pilot
+    assert ("leg", "preflight.wheel.carc_rs_build") in paths    # tier1_rust_leg
+    assert ("RUN_MANIFEST", "preflight.checks.arb_backend") in paths
+    assert doc["n_sources"] >= 32
+
+
+def test_the_sweep_measures_the_axis_rather_than_asserting_it():
+    """`observed_axis` is a MEASUREMENT: a value that is a function of the chunk
+    reads `chunk`, one that differs per run reads `invocation`."""
+    rows = [{"chunk": 1, "judge": "a", "box": "x", "leg": 1, "tranche": "t",
+             "kind": "leg", "value": "1"},
+            {"chunk": 2, "judge": "a", "box": "x", "leg": 1, "tranche": "t",
+             "kind": "leg", "value": "2"}]
+    assert SW.observed_axis(rows)["axis"] == "chunk"
+    same = [dict(r, value="1") for r in rows]
+    assert SW.observed_axis(same)["axis"] == "none"
+    census = [dict(rows[0], value="t1"), dict(rows[0], value="t2")]
+    assert SW.observed_axis(census)["axis"] == "invocation"
+
+
+def test_the_sweep_expands_nested_brace_addresses():
+    """The c-remeasure address is NESTED-brace; a naive expander turns it into
+    phantom paths and then reports them as missing."""
+    got = SW._expand_braces("c_remeasure.{legs.{arb,if}.{ok,ratio},halt_fired}")
+    assert sorted(got) == sorted([
+        "c_remeasure.legs.arb.ok", "c_remeasure.legs.arb.ratio",
+        "c_remeasure.legs.if.ok", "c_remeasure.legs.if.ratio",
+        "c_remeasure.halt_fired"])
+
+
+def test_the_merged_RUN_MANIFEST_is_written_NON_DESTRUCTIVELY(tmp_path):
+    """⭐ ALSO FOUND BY THE SWEEP'S CONVERSE CHECK. `c_remeasure.py` merges a
+    GATE-ADDRESSED block into the same artifact this tool writes; a plain write
+    would delete it, and a gate whose address does not exist reads ABSENT."""
+    man = tmp_path / "manifests"
+    man.mkdir()
+    for judge in ("clair-puct", "tier1-greedy"):
+        (man / f"RUN_MANIFEST_S1_{judge}_chunk1.json").write_text(json.dumps(
+            {"schema": "x", "judges": [judge], "git_rev": "1" * 40}))
+    out = tmp_path / "RUN_MANIFEST_S1.json"
+    out.write_text(json.dumps({"c_remeasure": {"ok": True, "halt_fired": False},
+                               "stub": True}))
+    rep = ML.merge_run_manifest(stratum="s1", manifests_dir=man, out_path=out)
+    assert rep["ok"] is True
+    assert rep["preserved_from_existing"] == ["c_remeasure", "stub"]
+    doc = json.loads(out.read_text())
+    assert doc["c_remeasure"] == {"ok": True, "halt_fired": False}
+    assert doc["merge"]["preserved_from_existing"]["keys"] == ["c_remeasure", "stub"]
+
+
 def test_without_a_licence_a_build_divergence_still_raises_D3s_message(two_rev):
     repo, a, b, wit = two_rev
     # only the BUILD differs — the rev fields are held equal so the refusal
