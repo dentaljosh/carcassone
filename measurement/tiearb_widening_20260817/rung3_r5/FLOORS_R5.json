@@ -1,0 +1,21 @@
+{
+  "b_ceiling_from_m": 16,
+  "cap_j": null,
+  "collision_ply": 2,
+  "d_measured_at_governed": 0.002819548872180451,
+  "deployed_cap_j": 4,
+  "failed_record_bound_frac": 0.02,
+  "g_governed": 5340,
+  "gate_floor": 1011,
+  "known_failure_class": "WindowTruncationError",
+  "m_worlds": 32,
+  "max_per_game": 3,
+  "min_ply": 0,
+  "n2": 1064,
+  "n_collisions_expected": 3,
+  "note": "n2 is the REALIZED supply (1,064), not R4 inherited 1,100. Relative bound M*d RETIRED as circular on a pre-measured corpus; G-SATURATION (absolute 5%) governs. k=0 keeps the original estimand. See DESIGN R5-FINAL.",
+  "oracle_sims": 100,
+  "r_source": "CALIBRATION.json by_ply_floor.0",
+  "saturation_guard": 0.05,
+  "world_seed_salt": "tiletie-v1"
+}

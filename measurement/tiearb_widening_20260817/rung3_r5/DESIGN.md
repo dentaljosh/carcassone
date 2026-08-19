@@ -25,6 +25,131 @@ supply passed, every rid/root layer was zero. It was **degenerate in one measura
 bound was **the wrong shape** to see it coming. This successor fixes the shape, the mining
 predicate, the loop, and the drafting gap that made the void's scope arguable.
 
+## R5-FINAL — DESIGN FINALIZED AGAINST THE MEASURED CALIBRATION (2026-08-19)
+
+The sweep ran under the §R5-1.0 ruling. `CALIBRATION.json` is the measured input; the six design
+decisions are taken here and the pair is ready for blind commit.
+
+**⚠️ A constant the brief got wrong, caught before it propagated.** The task brief named the
+scoring shape as **`M = 128`**. **It is `M = 32`.** Rung 3 **is** stratum S2, and R3.3's `G-M`
+conjunct reads *"S1: `m_worlds == 128` … **S2: `32` / `16`**"*. R4's own reasoning is why: rung 3
+reads only `B = 16`, which `M = 32` fully supplies (sel 16 / eva 16), and **`E = 16` is the
+precision Stage-1b's `capped_only` levels — the source of the +0.1382 / +0.0842 predictions — were
+measured at.** Matching it keeps prediction and measurement in one currency **and costs 4× less**.
+Committing `M = 128` would have quadrupled the bill to buy a currency mismatch.
+
+**Pre-registered constants, verified against `shared_run_r4/`:** `--m 32` · `--oracle-sims 100` ·
+`--arb-backend rust` · `--arb-legal-mask-cache` on · `--only-profiles walled` · `--cap-j inf` ·
+`--max-per-game 3` · CRN salt **`tiletie-v1`** · instrument cap draw **`tiletie-cap|<rid>|20260812`**
+· deployed draw **`tiearb2-deploy-v1`** · **every `run_tiletie` path flag explicit** (§0.O as
+widened by R4-0.4 — all six, three of them git-tracked in a spent run). **The two-box scoring layer
+is the instrument** — proven on R4 and governed by `../DEVIATIONS.md` §D1/§D3/§D4.13.
+
+### R5-FINAL.a — THE PLY FLOOR: **`k = 0`.** The original estimand is kept.
+
+| | `k = 0` | `k = 3` |
+|---|---|---|
+| positions | **1,064** | 1,036 (**−2.6%**) |
+| collisions at governed scale | **3** (all ply 2) | **0**, at every scale |
+| `d` at governed scale | **0.282%** vs the 5% guard ⇒ clears **17.7×** | 0 |
+| estimand | **`Δ_ora` over capped tied plies — what rung 3 was bought to measure** | `Δ_ora(ply ≥ 3)` — a sub-population |
+
+**Ruled `k = 0`.** The ply-floor existed to rescue a bound that could not hold. **The bound holds:**
+`d = 0.282%` against an absolute 5% guard is a 17.7× margin, **measured on the exact corpus that
+will be scored**. Paying an **estimand change** — with R5-2.3's mandatory population-mismatch rider
+on every branch, and the 1.400/1.244 multipliers derived on the *unfloored* population — to fix a
+problem that is already measured-clear is a **bad trade**. ⚠️ **`k` stays a built knob (R5-W1) and
+the floor becomes live again the moment a successor GENERATES fresh games at a larger `G`**, where
+growth and extrapolation genuinely bite. It is set to 0 **for this run**, on this corpus, for this
+reason.
+
+### R5-FINAL.b — THE BOUND: the relative bound is **RETIRED as circular**; the absolute guard governs.
+
+⭐ **`M × d_model` cannot fire on a corpus that has already been measured.** `bound = 3 × (3/1064) ×
+1064 = 9` against a realized **3** — **satisfied by construction, with exactly `M` as its headroom,
+incapable of failing.** That is **pass-always**, the mirror of the R4-0.2 vacuity, and it must not
+be shipped as though it were a live test.
+
+**What governs instead:**
+
+1. **`G-SATURATION` — the ABSOLUTE 5% guard, live and external.** `d_measured(5340) = 0.002820`
+   ≤ 0.05, clearing **17.7×**. Not circular: the corpus either clears an outside bar or it does not.
+2. **`G-COLLIDE` — a consistency check.** Realized collisions must **equal 3**, all at ply 2; a
+   mismatch **RAISES**, because it would mean the scored corpus is not the measured one.
+3. **The fit is REPORTED, never load-bearing.** `d_model(G) = a·G^b`, `b ≈ 0.906`, **`r² = 1.0` on
+   `n_points = 2` — vacuous by construction** (two points determine a line exactly), and both lie
+   above the `G = 500` composition break. ⭐ **No extrapolation is needed at all: the successor
+   scores the EXISTING corpus at exactly `G = 5,340`, generating nothing.** A fit exists to
+   extrapolate; there is nothing to extrapolate to.
+
+*The R4 death was a bound of the wrong shape — calibrated at 858 games, applied at 5,340. The fix
+is not a better fit; it is **not needing one**, because calibration and governance are the same
+corpus at the same scale.*
+
+### R5-FINAL.c — `n₂` AND THE FLOOR, from REALIZED supply. **Nothing inherited.**
+
+```
+retained S2 substrate                    5,340 games generated   (no generation in R5)
+  games producing >=1 capped ply           980                   MEASURED (18.4% yield)
+  capped plies mined, k=0                1,064                   MEASURED  <-- n2
+  mean positions per producing game      1.086, max 3 (= --max-per-game 3)
+  digest collisions                          3, all ply 2        MEASURED
+  =>  n2 committed                       1,064
+      G-COMPLETE floor = ceil(0.95 x n2) 1,011
+```
+
+⛔ **R4's `n₂ = 1,100` is NOT inherited** — it was a target set before the supply was known, and
+`FLOORS_R5.json` records **1,064**, which is what exists. **Power is essentially unchanged**: the
+corrected +0.0842 resolves at `sd_Δ ≤ 1.373` (vs 1.396 at 1,100) and the legacy +0.1382 across the
+whole bracket. The realized supply costs **0.023 of `sd_Δ` headroom** and nothing else.
+
+### R5-FINAL.d — `I7`: **W9 `D-DRAW` is FUNDED.** The obligation is discharged, not inherited again.
+
+R4 skipped W9 as moot when S2 voided, leaving `I7`'s **dedupe-partition conditional** unmeasured
+with the successor inheriting it. **R5 funds it** (≈2 worker-h; the corpus exists): post-corpus,
+no playouts, non-adjudicating, reported under `I7`, and it **may never correct, reweight or
+re-scale `Δ_ora`**. Binding location: `I7` rides **every** rung-3 branch (READ_RULE §5).
+
+### R5-FINAL.e — Existence-time markers: applied throughout (READ_RULE §1, R5-6.1).
+
+### R5-FINAL.f — The failed-record bound, authored PRE-DATA, with its expected class.
+
+`n_failed_rids / n_attempted ≤ 0.02`; **any non-`WindowTruncationError` class RAISES regardless of
+count**; whole-rid drop across both judges (D4.18). ⭐ **Expected exposure is LOWER than S1's**:
+window truncation fires at **extreme board extents** (late game), while R5's capped plies skew
+**EARLY** — all three collisions at **ply 2**, consistent with a near-empty board offering many
+equal-valued symmetric placements, which is what makes a large tie set. **S1 realized 0.30%
+(4/1,344); a realized R5 rate at or above that is a surprise worth naming even while passing.**
+
+### R5-FINAL.g — Cost and wall. **No generation.**
+
+```
+scoring, M=32, per capped ply (R4 realized rates)  ARB 0.01936 + IF 0.2556 = 0.2749 wh
+  x n2 = 1,064                                              292.5 wh   at COMMITTED c
+champ picks  1,064 x 13.755 s                                 4.1 wh
+census + positions re-mine (counts only)                     ~2   wh
+W9 D-DRAW                                                     2.0 wh
+TOTAL, committed c                                         ~300.6 wh   =>  ~7.0 h two-box wall
+TOTAL, at R4's REALIZED c (IF 0.747x, ARB 0.781x)          ~226   wh   =>  ~5.3 h two-box wall
+```
+
+⇒ **≈226–301 worker-h, ≈5–7 h of two-box wall.** R4 spent ≈500 wh *generating* these games;
+retaining them is the whole saving.
+
+### R5-FINAL.h — For a second reviewer, before blind commit
+
+1. **`M = 32`, not 128** (above) — the one inherited constant I had to correct.
+2. **The retired relative bound** (§b) — the ruling that a pre-measured corpus makes `M × d`
+   pass-always. If a reviewer disagrees, the alternative is to *generate* fresh games, which
+   changes the run.
+3. **`k = 0` over `k = 3`** (§a) — trading 2.6% supply for an estimand change was refused.
+4. **The S2 union-plan pointer defect stands** (physical leg file complete and executor-verified;
+   `POSITIONS_PLAN` `files` block ext-only; `CORPUS_UNION` S2 `witnessed:false`). S2's *void* is
+   R4's; **this run reads the PHYSICAL file and `G-CORPUS` says so explicitly.** No repair is
+   licensed and none is taken.
+
+---
+
 ## R5-1.0 ⚠️ PRE-DESIGN RULING (2026-08-19) — units, and a confound that changes the sweep's purpose
 
 The calibration sweep **refused on a unit mismatch and was right to refuse.** Ruling the three
