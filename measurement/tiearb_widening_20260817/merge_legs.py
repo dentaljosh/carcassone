@@ -64,6 +64,16 @@ accept, and it accepts it only when **two independent things agree**:
 
 Plus, per D4.12, the `-dirty` suffix is matched on the BASE rev and every
 contributing chunk must carry `preflight.checks.git_clean.ok == true`.
+
+⚠️ `carc_rs_build` IS LICENSED ACROSS THE TRANCHES TOO (§D4.13, commit
+`b063111b`) — at both addresses (`execution.carc_rs_build` and
+`preflight.wheel.carc_rs_build`), under FOUR conjuncts, for ONE enumerated rev
+pair, opening nothing else.  The field stamps `git rev-parse HEAD` at process
+start, so it is the CROSS-HOST SOURCE-REV witness; `carc_rs_binary_sha` is the
+WITHIN-BOX STALENESS witness.  Conjunct (ii) — binary-sha constancy within a box
+— is therefore a **STANDING requirement on every merge**, licensed or not, which
+closes a hole D3 left open (at one rev, a rebuilt `.so` is invisible in the
+stamp) and makes this merge strictly stronger than any single-rev run.
 """
 from __future__ import annotations
 
@@ -159,6 +169,16 @@ RESOLVED_CONFIG_PER_CHUNK = frozenset({
 # ⚠️ `--allow-varying` is REJECTED for this block by the same ruling: it silences
 # rather than records, and provenance is the merge layer's entire job. It is not
 # consulted anywhere in the `execution` path below.
+#: ⚠️ `carc_rs_binary_sha` is PER_CHUNK **for cross-host purposes only** — never
+#: compared across boxes (JCZ §0.F.2c: the `.so` is not machine-reproducible).
+#: §D4.13 AMENDS D3.2 IN PLACE: it must ALSO be CONSTANT **within a box**, across
+#: that box's chunks, and that is a **STANDING requirement** — checked whether or
+#: not the two-rev licence is ever exercised. D3 as ruled left the within-box
+#: staleness case unchecked entirely: at a single rev `carc_rs_build` cannot
+#: detect a mid-run rebuild (same HEAD ⇒ same stamp, different `.so`), and
+#: `carc_rs_binary_sha` was recorded but never compared. `assert_binary_sha_
+#: constant_within_box` closes that hole, which makes this merge STRICTLY
+#: STRONGER than any single-rev run — those never check `.so` constancy at all.
 EXECUTION_PER_CHUNK = frozenset({"carc_rs_binary_sha", "carc_rs_path"})
 EXECUTION_IDENTITY_REQUIRED = frozenset({"carc_rs_build"})
 
@@ -194,6 +214,16 @@ REV_LICENSED_PATHS = ("git_rev", "code_rev", "execution.code_rev",
 #: (D4.12): the run records the same rev as a full sha, a short sha, and a
 #: short sha with the suffix. Below this length a "prefix" is not evidence.
 MIN_SHA_PREFIX = 8
+
+#: ⚠️⚠️ THE WIDTH TRAP (§D4.13), called out because this campaign's failures are
+#: SPELLING failures. `code_rev` is the `--short` form — whose length is
+#: `core.abbrev` and therefore **per box** (the emitter's docstring records
+#: `cf51bf17` locally vs `cf51bf176b` on the laptop for ONE commit), which is why
+#: `MIN_SHA_PREFIX` above is deliberately loose. `carc_rs_build` is different: it
+#: carries a **FIXED 12-CHAR SLICE**. Compare 12-char prefixes of the licensed
+#: 40-char shas HERE, and do NOT reuse the short-form comparison — same sha,
+#: three widths in play. Anything shorter than 12 is not a licensed fragment.
+BUILD_REV_FRAGMENT_WIDTH = 12
 
 #: ⚠️ THE CORRECTED INSTRUMENT SET (D4.11 Amendment 2). The proposal spelled the
 #: pilot `scripts/tiletie/oracle_score_pilot.py`, which DOES NOT EXIST — the
@@ -328,52 +358,185 @@ def _tranche_of_sha(value, revs=None):
     return None
 
 
-def carc_rs_build_refusal(values: dict, *, where: str, revs=None) -> "MergeError":
-    """⛔ UNRULED, and the merge says so precisely rather than merging or hiding.
+# --------------------------------------------------------------------------- #
+# `carc_rs_build` across tranches — ruled by §D4.13, under FOUR conjuncts       #
+# --------------------------------------------------------------------------- #
+# The emitter (`rust_agent.carc_rs_build_id`) composes
+# `carc_rs-<version>+<rev12>+rustc<toolchain>` with the rev from `git rev-parse
+# HEAD` AT STAMP TIME — "a property of the repo when the process started, NOT of
+# the compiled artifact". Its own docstring fixes the taxonomy this licence rests
+# on: `carc_rs_build` is the CROSS-HOST SOURCE-REV witness, and
+# `carc_rs_binary_sha` is the WITHIN-BOX STALENESS witness — "the only thing that
+# can prove the installed wheel actually carries the surface under test".
+#
+# So across tranches HEAD moved (the D4 fixes) and the stamp followed; the `.so`
+# was NOT rebuilt. Accepted IFF ALL FOUR hold:
+#   (i)   version + toolchain byte-equal; only <rev12> differs; every fragment a
+#         12-CHAR prefix of a licensed rev            -> else R1 / R3
+#   (ii)  per box, carc_rs_binary_sha CONSTANT across that box's chunks spanning
+#         BOTH tranches, evaluated live from the manifests, WITHIN-HOST ONLY
+#         (never across — JCZ §0.F.2c untouched)      -> else R2
+#   (iii) INSTRUMENT_IDENTITY covers `rust/` in the diff scope AND the porcelain
+#                                                     -> else R4
+#   (iv)  within each tranche, build equal across boxes — D3's original check,
+#         preserved. ⚠️ VACUOUS on single-host legs (all tier1 ARB legs are
+#         local): reported as VACUOUS, never as passed, because a vacuous pass
+#         read as evidence is how a witness stops witnessing. On those legs
+#         conjunct (ii) carries the whole weight.     -> else R3
+R1 = "R1 CARC_RS_BUILD_UNLICENSED_REV"
+R2 = "R2 CARC_RS_BINARY_SHA_MOVED_WITHIN_BOX"
+R3 = "R3 CARC_RS_BUILD_VERSION_OR_TOOLCHAIN_DIFFERS"
+R4 = "R4 INSTRUMENT_IDENTITY_RUST_SCOPE"
 
-    D3 §D3.2 makes `carc_rs_build` IDENTITY_REQUIRED — *"the cross-host witness
-    … if it ever differs, the merge MUST raise"*. D4.11's completeness note then
-    leans on it: *"D3's `execution.carc_rs_build` IDENTITY_REQUIRED already
-    covers the compiled half (equal across all chunks)"*.
+#: The verbatim meaning §D4.13 requires R2 to print.
+R2_MEANING = ("the installed wheel changed under one box mid-run — the `.so` "
+              "that executed tranche 1 is not the `.so` that executed tranche 2.")
 
-    **That premise does not survive a two-rev tranche.** The build string stamps
-    the repo rev (`carc_rs-0.1.0+<rev12>+rustcunpinned`), so it differs between
-    the tranches for the same reason `git_rev` does — while remaining EQUAL
-    across boxes within a tranche, which is the cross-HOST property D3 actually
-    bought. The rev half is licensed by D4.11; the host half must stay.
+RUST_SCOPE_PATH = "rust/"
 
-    Deciding which is a RULING, not a merge-layer choice, so this refuses and
-    names the question instead of quietly extending the licence.
+
+def parse_carc_rs_build(value):
+    """`carc_rs-0.1.0+58c2b5395569+rustcunpinned` ->
+    {version, rev, toolchain, raw}. None when the shape is not the emitter's."""
+    if not isinstance(value, str):
+        return None
+    parts = value.split("+")
+    if len(parts) != 3:
+        return None
+    version, rev, toolchain = (p.strip() for p in parts)
+    rev = rev.lower()
+    if not rev or not all(c in "0123456789abcdef" for c in rev):
+        return None
+    return {"version": version, "rev": rev, "toolchain": toolchain, "raw": value}
+
+
+def build_rev_is_licensed(fragment: str, revs=None) -> str:
+    """The tranche a `<rev12>` fragment belongs to, or None.
+
+    ⚠️ 12-CHAR WIDTH, deliberately not `MIN_SHA_PREFIX`. `code_rev`'s width is
+    `core.abbrev` and therefore per-box; this field's is a fixed 12-char slice.
+    A fragment shorter than 12 is not a licensed fragment — fail closed rather
+    than widen the comparison, because a 7-char prefix can collide where a
+    12-char one does not.
     """
-    revs = dict(revs or LICENSED_TRANCHE_REVS)
+    frag = str(fragment or "").lower()
+    if len(frag) < BUILD_REV_FRAGMENT_WIDTH:
+        return None
+    for name, sha in (revs or LICENSED_TRANCHE_REVS).items():
+        if sha.lower().startswith(frag):
+            return name
+    return None
+
+
+def _box_key(manifest: dict):
+    """(key, source) — WHICH BOX produced this chunk.
+
+    `host` when the emitter records it (the clair-puct legs do); otherwise the
+    wheel's own location, whose interpreter directory differs per box
+    (py3.12 local vs py3.14 laptop); otherwise the share root, which also
+    differs per box (`/mnt/c/carc-shared` vs `/mnt/carc-shared`). A chunk whose
+    box cannot be determined is REFUSED rather than pooled: conjunct (ii) is a
+    within-box statement, and pooling two boxes would read a legitimate
+    cross-host difference as a rebuild.
+    """
+    m = manifest or {}
+    host = m.get("host")
+    if isinstance(host, str) and host.strip():
+        return host.strip(), "host"
+    for dotted in ("execution.carc_rs_path", "preflight.wheel.carc_rs_file"):
+        v = _get(m, dotted)
+        if isinstance(v, str) and v.strip():
+            return str(Path(v).parent), dotted
+    out_root = _get(m, "resolved_config.out_root")
+    if isinstance(out_root, str) and out_root.strip():
+        parts = Path(out_root).parts
+        return "/".join(parts[:3]), "resolved_config.out_root"
+    return None, None
+
+
+def _binary_sha_of(manifest: dict):
+    """(sha, address) at either emitter's spelling."""
+    for dotted in ("execution.carc_rs_binary_sha",
+                   "preflight.wheel.carc_rs_binary_sha"):
+        v = _get(manifest or {}, dotted)
+        if v is not _MISSING and isinstance(v, str) and v.strip():
+            return v.strip(), dotted
+    return None, None
+
+
+def assert_binary_sha_constant_within_box(by_chunk: dict) -> dict:
+    """⭐ STANDING REQUIREMENT (§D4.13 conjunct (ii), amending D3.2 in place).
+
+    Runs on EVERY merge, licensed or not. D3 classified `carc_rs_binary_sha`
+    PER_CHUNK — recorded, never compared — so the within-box staleness case was
+    unchecked entirely, while `carc_rs_build` was described as though it covered
+    it. It cannot: at a single rev, same HEAD ⇒ same stamp ⇒ a mid-run rebuild is
+    invisible in the stamp. Comparing the sha WITHIN a box closes that, and makes
+    this merge strictly stronger than any single-rev run.
+
+    ⚠️ WITHIN A HOST ONLY. Two boxes legitimately hold different `.so` bytes
+    (JCZ §0.F.2c: not machine-reproducible), and nothing here ever compares them.
+    """
+    by_box: dict = {}
+    unknown = []
+    for chunk, man in sorted(by_chunk.items()):
+        sha, address = _binary_sha_of(man)
+        if sha is None:
+            continue
+        box, source = _box_key(man)
+        if box is None:
+            unknown.append(chunk)
+            continue
+        row = by_box.setdefault(box, {"box_key_source": source, "by_sha": {},
+                                      "address": address})
+        row["by_sha"].setdefault(sha, []).append(chunk)
+    if unknown:
+        raise MergeError(
+            f"{R2}: chunk(s) {unknown} record a carc_rs_binary_sha but their BOX "
+            f"cannot be determined (no `host`, no wheel path, no out_root), so "
+            f"within-box constancy cannot be evaluated. Refused rather than "
+            f"pooled: pooling two boxes would read a legitimate cross-host "
+            f"difference as a rebuild. {R2_MEANING}")
+    moved = {b: r for b, r in by_box.items() if len(r["by_sha"]) > 1}
+    if moved:
+        detail = "; ".join(
+            f"box {b!r} ({r['box_key_source']}): "
+            + ", ".join(f"{sha}=chunks{sorted(ch)}"
+                        for sha, ch in sorted(r["by_sha"].items()))
+            for b, r in sorted(moved.items()))
+        raise MergeError(
+            f"{R2}: {detail}. MEANING: {R2_MEANING} §D4.13 conjunct (ii) is a "
+            f"STANDING requirement — it holds whether or not the two-rev licence "
+            f"is exercised, because `carc_rs_build` cannot see a rebuild at a "
+            f"single rev (same HEAD, same stamp, different .so).")
+    return {
+        "ok": True, "conjunct": "(ii) binary_sha constant within box",
+        "standing_requirement": True,
+        "n_boxes": len(by_box),
+        "by_box": {b: {"sha": next(iter(r["by_sha"])),
+                       "chunks": sorted(next(iter(r["by_sha"].values()))),
+                       "box_key_source": r["box_key_source"],
+                       "address": r["address"]}
+                   for b, r in sorted(by_box.items())},
+        "note": "compared WITHIN a host only — never across (JCZ §0.F.2c: the "
+                ".so is not machine-reproducible). A box with no sha recorded "
+                "contributes nothing and is not counted as evidence.",
+    }
+
+
+def carc_rs_build_refusal(values: dict, *, where: str, revs=None) -> "MergeError":
+    """The refusal when NO licence object is in effect — D3 §D3.2, unchanged.
+
+    With a licence, `RevLicense.authorize_build` evaluates §D4.13's four
+    conjuncts instead and raises R1/R2/R3/R4 as appropriate.
+    """
     detail = "; ".join(f"chunk{k}={_canon(v)}" for k, v in sorted(values.items()))
-    licensed = {t: sha[:12] for t, sha in revs.items()}
-
-    frags = {k: _rev_fragment_of_build(v) for k, v in values.items()}
-    blanked = {b for _f, b in frags.values()}
-    tranches = {_tranche_of_sha(f, revs) for f, _b in frags.values()}
-    rev_only = (len(blanked) == 1 and None not in tranches
-                and len(tranches) == len(revs))
-    if not rev_only:
-        # the ORIGINAL D3 §D3.2 refusal — a genuinely different build, which is
-        # a mixed-build run and was never in question.
-        return MergeError(
-            f"identity-required path {where!r} DIVERGES across chunks: {detail}"
-            f" — D3 §D3.2 names this the CROSS-HOST WITNESS: it is the one value "
-            f"inside `execution` that may legitimately be compared across boxes, "
-            f"so a divergence is a mixed-build run and MUST raise. (The values "
-            f"differ in more than the licensed rev fragment, so the D4.11 "
-            f"two-rev question does not even arise here.)")
-
     return MergeError(
-        f"carc_rs_build DIVERGES at {where}: {detail}. ⛔ UNRULED — D3 §D3.2 "
-        f"rules this field IDENTITY_REQUIRED ('if it ever differs, the merge "
-        f"MUST raise') while D4.11's completeness note assumes it is EQUAL "
-        f"across all chunks, which cannot hold across two revs: the build "
-        f"string embeds the repo rev ({licensed}). Within a tranche it is still "
-        f"equal across boxes — the cross-HOST witness D3 bought is intact; it is "
-        f"the cross-REV comparison that D4.11 did not foresee. This merge layer "
-        f"does NOT extend the licence to it: escalate for a ruling.")
+        f"{R3}: identity-required path {where!r} DIVERGES across chunks: {detail}"
+        f" — D3 §D3.2 names this the CROSS-HOST WITNESS: it is the one value "
+        f"inside `execution` that may legitimately be compared across boxes, so "
+        f"a divergence is a mixed-build run and MUST raise. (No two-rev licence "
+        f"is in effect on this merge, so §D4.13's conjuncts were not evaluated.)")
 
 
 class RevLicense:
@@ -552,6 +715,175 @@ class RevLicense:
                 return v
         return {"ok": None, "source": None}
 
+    # ---- §D4.13: carc_rs_build across tranches ----------------------------- #
+    def rust_scope_ok(self) -> dict:
+        """Conjunct (iii): the witness must cover `rust/` in BOTH the empty-diff
+        scope and the porcelain capture. The compiled half is what this licence
+        is about, so a witness that does not look at `rust/` cannot support it."""
+        w = self.witness()
+        problems = []
+        if RUST_SCOPE_PATH not in (w.get("instrument_paths") or []):
+            problems.append(f"{RUST_SCOPE_PATH!r} absent from instrument_paths")
+        if RUST_SCOPE_PATH not in (w["_rederived"].get("paths") or []):
+            problems.append(f"{RUST_SCOPE_PATH!r} absent from the re-derived diff scope")
+        boxes = (w.get("working_tree") or {}).get("by_box") or {}
+        for name, v in sorted(boxes.items()):
+            scope = v.get("scope")
+            if scope is not None and RUST_SCOPE_PATH not in scope:
+                problems.append(f"box {name!r} porcelain scope omits {RUST_SCOPE_PATH!r}")
+            dirty = [ln for ln in (v.get("porcelain") or "").splitlines()
+                     if ln.strip() and RUST_SCOPE_PATH.rstrip("/") in ln]
+            if dirty:
+                problems.append(f"box {name!r} has DIRTY rust/ entries: {dirty[:3]}")
+        if problems:
+            raise MergeError(
+                f"{R4}: {'; '.join(problems)} (witness {w['_path']}). §D4.13 "
+                f"conjunct (iii): this licence is about the COMPILED half, so a "
+                f"witness that does not cover `rust/` — in the diff scope AND the "
+                f"porcelain — cannot support it.")
+        return {"ok": True, "conjunct": "(iii) instrument identity covers rust/",
+                "boxes": sorted(boxes), "witness": w["_path"]}
+
+    def authorize_build(self, present: dict, manifests: dict, *, where: str,
+                        binary_sha: dict) -> dict:
+        """§D4.13's four conjuncts, in full. `binary_sha` is the already-computed
+        STANDING conjunct (ii) report (it ran before this, for every merge)."""
+        parsed, unparseable = {}, {}
+        for k, v in sorted(present.items()):
+            p = parse_carc_rs_build(v)
+            (parsed if p else unparseable)[k] = p or v
+        if unparseable:
+            raise MergeError(
+                f"{R3}: {where} value(s) do not parse as "
+                f"`carc_rs-<version>+<rev12>+rustc<toolchain>`: "
+                + "; ".join(f"chunk{k}={_canon(v)}"
+                            for k, v in sorted(unparseable.items()))
+                + ". §D4.13 conjunct (i) cannot be evaluated on a shape it does "
+                  "not recognise, so this refuses rather than guessing.")
+
+        # ---- (i) version + toolchain byte-equal; only <rev12> may differ ---- #
+        versions = {p["version"] for p in parsed.values()}
+        toolchains = {p["toolchain"] for p in parsed.values()}
+        if len(versions) != 1 or len(toolchains) != 1:
+            which = ("version" if len(versions) != 1 else "") + \
+                    ("/toolchain" if len(toolchains) != 1 else "")
+            raise MergeError(
+                f"{R3}: {where} differs in {which.strip('/')}, NOT only in the "
+                f"rev fragment — "
+                + "; ".join(
+                    f"chunk{k}=[version={p['version']} | rev={p['rev']} | "
+                    f"toolchain={p['toolchain']}]" for k, p in sorted(parsed.items()))
+                + ". This is D3 §D3.2's original refusal and is NEVER licensed: "
+                  "the non-rev components are the build itself, and a run that "
+                  "mixes two of them is a mixed-build run.")
+
+        by_tranche, unlicensed = {}, {}
+        for k, p in sorted(parsed.items()):
+            t = build_rev_is_licensed(p["rev"], self.revs)
+            if t is None:
+                unlicensed[k] = p
+            else:
+                by_tranche.setdefault(t, []).append(k)
+        if unlicensed:
+            raise MergeError(
+                f"{R1}: {where} carries rev fragment(s) that are not a "
+                f"{BUILD_REV_FRAGMENT_WIDTH}-char prefix of a licensed rev — "
+                + "; ".join(
+                    f"chunk{k}: value={p['raw']!r} parsed[version={p['version']}, "
+                    f"rev={p['rev']}, toolchain={p['toolchain']}]"
+                    for k, p in sorted(unlicensed.items()))
+                + f". Licensed: "
+                + ", ".join(f"{t}={sha[:BUILD_REV_FRAGMENT_WIDTH]}"
+                            for t, sha in sorted(self.revs.items()))
+                + f". ⚠️ Compared at {BUILD_REV_FRAGMENT_WIDTH} chars, NOT at the "
+                  f"`code_rev` short width: `--short` length is core.abbrev and "
+                  f"therefore per-box, while this field is a fixed "
+                  f"{BUILD_REV_FRAGMENT_WIDTH}-char slice. A shorter prefix can "
+                  f"collide where the full slice does not.")
+
+        # ---- (iii) the witness must cover rust/ ----------------------------- #
+        rust = self.rust_scope_ok()
+
+        # ---- (iv) within a tranche, equal across boxes ---------------------- #
+        # ⚠️ The tranche of a CHUNK is read from the chunk's OWN rev fields
+        # (`git_rev` / `code_rev` / `execution.code_rev`), NOT from the field
+        # under test. Grouping by the build fragment would make (iv) vacuous by
+        # construction — a chunk whose stamp came from the wrong rev would sort
+        # itself into the other tranche and never be compared with its peers,
+        # which is precisely the anomaly (iv) exists to catch.
+        chunk_tranche = {}
+        for k in parsed:
+            man = manifests.get(k) or {}
+            t = None
+            for dotted in ("git_rev", "code_rev", "execution.code_rev"):
+                v = _get(man, dotted)
+                if v is not _MISSING:
+                    t = self.tranche_of(v)
+                    if t:
+                        break
+            chunk_tranche[k] = t or build_rev_is_licensed(parsed[k]["rev"], self.revs)
+        groups: dict = {}
+        for k, t in sorted(chunk_tranche.items()):
+            groups.setdefault(t, []).append(k)
+
+        per_tranche = {}
+        for tranche, chunks in sorted(groups.items()):
+            boxes = {}
+            for k in chunks:
+                box, _src = _box_key(manifests.get(k) or {})
+                boxes.setdefault(box, set()).add(parsed[k]["raw"])
+            distinct_builds = {b for vs in boxes.values() for b in vs}
+            if len(boxes) < 2:
+                per_tranche[tranche] = {
+                    "status": "VACUOUS", "n_boxes": len(boxes),
+                    "chunks": sorted(chunks),
+                    "why": "single-host leg — there is no cross-host comparison "
+                           "to make, so (iv) witnesses NOTHING here and is "
+                           "reported as vacuous rather than as passed. Conjunct "
+                           "(ii) carries the whole weight on this leg.",
+                }
+                continue
+            if len(distinct_builds) != 1:
+                raise MergeError(
+                    f"{R3}: within tranche {tranche!r} the {where} values differ "
+                    f"ACROSS BOXES: "
+                    + "; ".join(f"box {b!r}={sorted(v)}"
+                                for b, v in sorted(boxes.items(), key=lambda x: str(x[0])))
+                    + ". §D4.13 conjunct (iv) preserves D3's original cross-host "
+                      "check intact: two boxes at the SAME rev must stamp the "
+                      "same build, and a difference there is never licensed.")
+            per_tranche[tranche] = {"status": "PASSED", "n_boxes": len(boxes),
+                                    "chunks": sorted(chunks)}
+
+        record = {
+            "path": where,
+            "by_chunk": {str(k): p["raw"] for k, p in sorted(parsed.items())},
+            "tranches": {t: sorted(ks) for t, ks in sorted(by_tranche.items())},
+            "chunk_tranche_from_rev_fields": {str(k): t
+                                              for k, t in sorted(chunk_tranche.items())},
+            "deviation": "D4.13",
+            "conjuncts": {
+                "i_only_rev_fragment_differs": {
+                    "ok": True, "version": sorted(versions)[0],
+                    "toolchain": sorted(toolchains)[0],
+                    "rev_fragments": {str(k): p["rev"] for k, p in sorted(parsed.items())},
+                    "compared_at_width": BUILD_REV_FRAGMENT_WIDTH,
+                },
+                "ii_binary_sha_constant_within_box": binary_sha,
+                "iii_instrument_identity_rust_scope": rust,
+                "iv_within_tranche_cross_host_build_equality": per_tranche,
+            },
+            "note": "carc_rs_build is the CROSS-HOST SOURCE-REV witness (the rev "
+                    "is stamped from `git rev-parse HEAD` at process start, not "
+                    "from the artifact); carc_rs_binary_sha is the WITHIN-BOX "
+                    "STALENESS witness. Across tranches HEAD moved and the stamp "
+                    "followed — the .so was not rebuilt, which conjunct (ii) "
+                    "asserts rather than assumes. ⚠️ Where (iv) reads VACUOUS the "
+                    "leg is single-host and (ii) carries the whole weight.",
+        }
+        self.used.append(record)
+        return record
+
     # ---- the decision ------------------------------------------------------ #
     def authorize(self, dotted: str, present: dict, manifests: dict) -> dict:
         """Licence this divergence, or raise. `present` = {chunk: value}."""
@@ -629,6 +961,11 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
     allow = set(allow_varying)
     rev_records = []
 
+    # ⭐ §D4.13 conjunct (ii) is a STANDING requirement: the within-box `.so`
+    # constancy check runs on EVERY merge — licensed or not, one rev or two —
+    # because `carc_rs_build` cannot see a mid-run rebuild at a single rev.
+    binary_sha_report = assert_binary_sha_constant_within_box(by_chunk)
+
     # 1) identity-required paths
     for dotted in identity_required:
         vals = {k: _get(m, dotted) for k, m in by_chunk.items()}
@@ -683,7 +1020,8 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
         if key == "execution":
             merged[key] = _merge_execution(present, per_chunk_block,
                                            license=license, manifests=by_chunk,
-                                           rev_records=rev_records)
+                                           rev_records=rev_records,
+                                           binary_sha=binary_sha_report)
             continue
         if key == "champion_manifest":
             merged[key] = _merge_champion_manifest(
@@ -692,7 +1030,9 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
             continue
         if key == "preflight":
             merged[key] = _merge_preflight(present, per_chunk_block,
-                                           license=license)
+                                           license=license, manifests=by_chunk,
+                                           rev_records=rev_records,
+                                           binary_sha=binary_sha_report)
             continue
         distinct = {_canon(v) for v in present.values()}
         if len(distinct) == 1 and len(present) == len(vals):
@@ -740,6 +1080,10 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
             [float(m.get("wall_secs") or 0.0) for m in by_chunk.values()] or [0.0]),
         "divergent_keys_allowed": sorted(divergent),
     }
+    if binary_sha_report.get("n_boxes"):
+        # recorded on EVERY merge, not only licensed ones — it is the standing
+        # §D4.13 (ii) evidence and a reader must be able to see it was checked
+        merged["merge"]["binary_sha_within_box"] = binary_sha_report
     if rev_records:
         merged["merge"]["rev_license"] = {
             "schema": "carcassonne-tiearb-widening-rev-license/v1",
@@ -757,7 +1101,7 @@ def merge_manifests(by_chunk: dict, *, identity_required=IDENTITY_REQUIRED,
 
 
 def _merge_execution(present: dict, per_chunk_block: dict, *, license=None,
-                     manifests=None, rev_records=None) -> dict:
+                     manifests=None, rev_records=None, binary_sha=None) -> dict:
     """Merge the `execution` block KEY BY KEY, per deviation D3 §D3.2.
 
     Three classes and no fourth: two BOX-LOCAL keys are recorded per chunk, the
@@ -797,9 +1141,20 @@ def _merge_execution(present: dict, per_chunk_block: dict, *, license=None,
                     f"half-configured")
             if len(distinct) != 1:
                 if key == "carc_rs_build":
-                    raise carc_rs_build_refusal(
-                        have, where="execution.carc_rs_build",
-                        revs=(license.revs if license is not None else None))
+                    # §D4.13: licensed across tranches under four conjuncts;
+                    # without a licence, D3 §D3.2's refusal, unchanged.
+                    if license is None:
+                        raise carc_rs_build_refusal(
+                            have, where="execution.carc_rs_build")
+                    rec = license.authorize_build(
+                        have, manifests or {}, where="execution.carc_rs_build",
+                        binary_sha=binary_sha or {})
+                    if rev_records is not None:
+                        rev_records.append(rec)
+                    for k, v in have.items():
+                        per_chunk_block[str(k)].setdefault("execution", {})[key] = v
+                    merged[key] = have[min(have)]
+                    continue
                 raise MergeError(
                     f"identity-required path 'execution.{key}' DIVERGES across "
                     f"chunks: "
@@ -879,7 +1234,8 @@ def _merge_champion_manifest(present: dict, per_chunk_block: dict, *,
     return merged
 
 
-def _merge_preflight(present: dict, per_chunk_block: dict, *, license=None) -> dict:
+def _merge_preflight(present: dict, per_chunk_block: dict, *, license=None,
+                     manifests=None, rev_records=None, binary_sha=None) -> dict:
     """`preflight` on the `tier1-greedy` leg carries `wheel.carc_rs_build`.
 
     Nested rather than compared whole, so a divergence localises to the field
@@ -907,13 +1263,62 @@ def _merge_preflight(present: dict, per_chunk_block: dict, *, license=None) -> d
             merged[key] = have[min(have)]
             continue
         if key == "wheel" and all(isinstance(v, dict) for v in have.values()):
-            builds = {k: v.get("carc_rs_build") for k, v in have.items()}
-            if len({_canon(v) for v in builds.values()}) != 1:
-                raise carc_rs_build_refusal(
-                    builds, where="preflight.wheel.carc_rs_build",
-                    revs=(license.revs if license is not None else None))
+            merged[key] = _merge_wheel(have, per_chunk_block, license=license,
+                                       manifests=manifests,
+                                       rev_records=rev_records,
+                                       binary_sha=binary_sha)
+            continue
         raise MergeError(
             f"preflight.{key} differs across chunks and has no merge rule: "
+            + "; ".join(f"chunk{k}={_canon(v)[:120]}" for k, v in sorted(have.items())))
+    return merged
+
+
+def _merge_wheel(present: dict, per_chunk_block: dict, *, license=None,
+                 manifests=None, rev_records=None, binary_sha=None) -> dict:
+    """`preflight.wheel` on the tier1 rust ARB leg — the SECOND address of
+    `carc_rs_build`, same field, different emitter schema (§D4.13).
+
+    ⚠️ These legs are ALL-LOCAL, so conjunct (iv) is VACUOUS there and (ii)
+    carries the whole weight — which is exactly why (ii) had to become a
+    standing, actively-evaluated requirement rather than an assumption.
+    """
+    order = sorted(present)
+    merged = json.loads(json.dumps(present[order[0]]))
+    keys = sorted({k for v in present.values() for k in v})
+    for key in keys:
+        vals = {k: v.get(key, _MISSING) for k, v in present.items()}
+        have = {k: v for k, v in vals.items() if v is not _MISSING}
+        distinct = {_canon(v) for v in have.values()}
+        if len(distinct) == 1 and len(have) == len(vals):
+            merged[key] = have[min(have)]
+            continue
+        if key == "carc_rs_binary_sha":
+            # box-local, PER_CHUNK — recorded here; its WITHIN-BOX constancy is
+            # asserted by the standing check, never by this comparison
+            for k, v in have.items():
+                per_chunk_block[str(k)].setdefault("preflight", {}) \
+                    .setdefault("wheel", {})[key] = v
+            merged[key] = have[min(have)]
+            continue
+        if key == "carc_rs_build":
+            if license is None:
+                raise carc_rs_build_refusal(
+                    have, where="preflight.wheel.carc_rs_build")
+            rec = license.authorize_build(
+                have, manifests or {}, where="preflight.wheel.carc_rs_build",
+                binary_sha=binary_sha or {})
+            if rev_records is not None:
+                rev_records.append(rec)
+            for k, v in have.items():
+                per_chunk_block[str(k)].setdefault("preflight", {}) \
+                    .setdefault("wheel", {})[key] = v
+            merged[key] = have[min(have)]
+            continue
+        raise MergeError(
+            f"preflight.wheel.{key} differs across chunks and has no merge rule "
+            f"— §D4.13 licenses ONE field (`carc_rs_build`) under FOUR "
+            f"conjuncts and opens nothing else: "
             + "; ".join(f"chunk{k}={_canon(v)[:120]}" for k, v in sorted(have.items())))
     return merged
 

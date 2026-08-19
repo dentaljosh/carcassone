@@ -176,11 +176,12 @@ def build(repo=REPO, *, boxes=(("local", None),), revs=None) -> dict:
                     "tranche is TWO-BOX, so a witness carrying only one box "
                     "covers only half the working trees.",
         },
-        "covers": "the INTERPRETED half of the instrument. The COMPILED half is "
-                  "D3's execution.carc_rs_build; ⚠️ see DEVIATIONS D4.11's "
-                  "completeness note — that field embeds the repo rev, so it is "
-                  "NOT equal across a two-rev tranche, and merge_legs refuses on "
-                  "it rather than extending the licence unilaterally.",
+        "covers": "the INTERPRETED half of the instrument — AND, via `rust/` in "
+                  "both the diff scope and the porcelain capture, §D4.13 "
+                  "conjunct (iii), which is what lets the COMPILED half's "
+                  "carc_rs_build divergence be licensed across the two tranches. "
+                  "⚠️ `rust/` is therefore LOAD-BEARING here: drop it from the "
+                  "path list and merge_legs refuses with R4.",
         "governance": "Measurement plumbing only. Reads no record, no value and "
                       "no statistic. Writes no governance file.",
     }
