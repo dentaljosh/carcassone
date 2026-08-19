@@ -1,0 +1,441 @@
+{
+  "all_evaluable_rows_pass": true,
+  "failed_rows": [],
+  "generated_utc": "2026-08-19T20:49:21Z",
+  "known_good_run": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a7173eaf014b5c81d/measurement/tiearb2_stage2_20260817",
+  "meaning": "'all rows pass' means every row WITH a known-good analogue passes AND the rows without one are NAMED. A row that cannot be evaluated NEVER silently counts as covered.",
+  "n_evaluated": 11,
+  "n_fail": 0,
+  "n_na": 2,
+  "n_pass": 11,
+  "n_rows": 13,
+  "na_rows": [
+    "G-DIVERGE",
+    "G-NEST"
+  ],
+  "notes": [],
+  "precondition": "DESIGN \u00a713.1 \u2014 every \u00a73 row must PASS on a known-good run BEFORE the blind commit. A row that fails a healthy run is a drafting defect.",
+  "rows": {
+    "G-BAND": {
+      "detail": {
+        "band_claim": {
+          "band": 132000000000,
+          "claimed_before_game_1": true,
+          "expected_band": 132000000000,
+          "raw": "132000000000\nTIE-ARBITRATION STAGE 2 PHASE B: two deck-paired cells on ONE band and ONE deck set -- ARB (arbiter mode=argmax, B=16, J=4, salt tiearb2-deploy-v1) and RND (identical playouts/worlds/plies/arm set, values DISCARDED, arm drawn by seeded RNG = the matched-wall-clock control of A-DEPLOYABLE condition (a)). Candidate = the production champion + the tie arbiter; opponent = the UNMODIFIED production champion. BOTH arms FAIR PIMC k8x1376=11008, exact-K 2, rust both sides. cand_leaf_hash MUST EQUAL a36d2e15a3b3d71d (INVERTED gate). PRIMARY STATISTIC = deck-paired margin z per cell; D = M_arb - M_rnd is the mechanism net of clock and is a CONJUNCT.\nclaimed 2026-08-17",
+          "source": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a7173eaf014b5c81d/measurement/tiearb2_stage2_20260817/BAND_CLAIM.json"
+        },
+        "band_seed_start": {
+          "NARROW": {
+            "band_seed_start": 132000000000,
+            "resolved_at": "config.band_seed_start"
+          },
+          "WIDE": {
+            "band_seed_start": 132000000000,
+            "resolved_at": "config.band_seed_start"
+          }
+        },
+        "claimed_before_game_1": true,
+        "decks_only_in": {
+          "NARROW": [],
+          "WIDE": []
+        },
+        "n_decks": {
+          "NARROW": 400,
+          "WIDE": 400
+        },
+        "same_band": true,
+        "same_decks": true
+      },
+      "mapped": "WIDE \u2190 ARB, NARROW \u2190 RND (the same-band/same-decks clause needs TWO real cells, and Stage 2's two are band- and deck-matched)",
+      "status": "PASS"
+    },
+    "G-DIVERGE": {
+      "detail": {
+        "why": "no f0 analogue exists: Stage 2's ARB/RND cells are DIFFERENT-MODE cells, not a nested refinement, so 'the fraction of decks where the two cells coincide' is not the same quantity and grading this row on it would be a false pass"
+      },
+      "status": "N-A"
+    },
+    "G-FAILED": {
+      "detail": {
+        "F_narrow": 0,
+        "F_wide": 0,
+        "clause2_candidate_correlated": false,
+        "clause2_rule": "max(F) >= 5 AND max(F) > 3 \u00d7 max(min(F), 1)",
+        "clause3_rule": "ANY failure of an unknown class \u21d2 RAISE, regardless of count",
+        "clause3_unknown_classes": [],
+        "known_class": "WindowTruncationError",
+        "per_cell": {
+          "NARROW": {
+            "clause1_ok": true,
+            "diagnostic_classes": [],
+            "n_attempted": 800,
+            "n_failed": 0,
+            "rate": 0.0,
+            "rate_bar": 0.02
+          },
+          "WIDE": {
+            "clause1_ok": true,
+            "diagnostic_classes": [],
+            "n_attempted": 800,
+            "n_failed": 0,
+            "rate": 0.0,
+            "rate_bar": 0.02
+          }
+        },
+        "selection_effect": "window-truncation failures fire at extreme board extents, so any dropped set is CORRELATED WITH BOARD GEOMETRY \u2014 late-game, large-extent positions \u2014 and that correlation is DISCLOSED rather than argued away.",
+        "wide_exposure_note": "\u26a0\ufe0f WIDE carries ~4\u00d7 the per-ply exposure to the window-refusal class, so clause 2 is the one most likely to bind \u2014 and it binds in the direction that protects the reading."
+      },
+      "mapped": "WIDE \u2190 ARB, NARROW \u2190 RND (clause 2 compares the TWO cells)",
+      "status": "PASS"
+    },
+    "G-FIRE": {
+      "detail": {
+        "NARROW": {
+          "error_rate_on_fired": 0.0,
+          "floor": 1.0,
+          "ok": true,
+          "phi": 17.5725,
+          "phi_effective": 17.5725
+        },
+        "WIDE": {
+          "error_rate_on_fired": 0.0,
+          "floor": 1.0,
+          "ok": true,
+          "phi": 17.5725,
+          "phi_effective": 17.5725
+        }
+      },
+      "mapped": "both cells \u2190 Stage 2 ARB",
+      "status": "PASS"
+    },
+    "G-J1": {
+      "detail": {
+        "expected_equal": "a36d2e15a3b3d71d",
+        "observed": {
+          "NARROW": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "resolved_at": "config.cand_leaf_hash"
+          },
+          "WIDE": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "resolved_at": "config.cand_leaf_hash"
+          }
+        },
+        "read_at": "top level, then config.* (two-level, \u00a72)",
+        "semantics": "EQUALITY gate \u2014 a difference ABORTS; ABSENT under both levels also fails"
+      },
+      "mapped": "both cells \u2190 Stage 2 ARB",
+      "status": "PASS"
+    },
+    "G-J13": {
+      "detail": {
+        "by_host": {
+          "Doctor": {
+            "16": {
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "source": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a7173eaf014b5c81d/measurement/tiearb2_stage2_20260817/verdicts/PREFLIGHT_Doctor_FIRST.json",
+              "two_sided_ok": true
+            }
+          },
+          "laptop-wsl": {
+            "16": {
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "source": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a7173eaf014b5c81d/measurement/tiearb2_stage2_20260817/verdicts/PREFLIGHT_laptop-wsl_FIRST.json",
+              "two_sided_ok": true
+            }
+          }
+        },
+        "expected_B": [
+          16
+        ],
+        "expected_hosts": [
+          "Doctor",
+          "laptop-wsl"
+        ],
+        "semantics": "two-sided (pick CHANGES, leaf bits DO NOT), per host AND per B value; absent \u21d2 fail"
+      },
+      "scaled": "expected_B: (64,16)\u2192(16,) \u2014 Stage 2 ran one B value; the TWO-SIDED and PER-HOST clauses are what is exercised",
+      "status": "PASS"
+    },
+    "G-J4": {
+      "detail": {
+        "observed": {
+          "NARROW": {
+            "cand_tiearb": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              16
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          },
+          "WIDE": {
+            "cand_tiearb": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              16
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          }
+        },
+        "semantics": "a mixed-B cell is a VOID, not a finding"
+      },
+      "mapped": "both cells \u2190 Stage 2 ARB",
+      "scaled": "B: 64\u219216 (no B=64 artifact exists on a completed run \u2014 the row's MACHINERY is what is under test)",
+      "status": "PASS"
+    },
+    "G-N": {
+      "detail": {
+        "cell_games_floor": 640,
+        "cell_games_planned": 1500,
+        "deck_clause_independently_binding": "two cells can each clear the game floor while overlapping on fewer than the deck floor of COMMON decks \u2014 that weakens D and still voids",
+        "n_common": 400,
+        "n_common_floor": 320,
+        "n_common_units": "DECKS",
+        "n_games": {
+          "NARROW": 800,
+          "WIDE": 800
+        },
+        "same_80pct_bar": "640 games IS 320 decks"
+      },
+      "scaled": "floors 600 decks/1,200 games \u2192 Stage 2's own 320/640 (the SAME 80% bar at its own n). \u26a0\ufe0f Verbatim floors are unreachable on an 800-game run BY SIZE \u2014 grading them here would report a FAIL about Stage 2's scale, not about this row",
+      "status": "PASS",
+      "verbatim_would_be": "FAIL (by size)"
+    },
+    "G-NEST": {
+      "detail": {
+        "structural_witness_at_HEAD": {
+          "present": true,
+          "scope": "SOURCE-LEVEL witness at HEAD over the four seeding sites. The pair's GATE_NEST.json additionally records the pinned position/ply/salt byte-identity run; this tool emits the structural half and names the behavioural half.",
+          "sites": {
+            "build_arms_cap": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+              "found": true
+            },
+            "playout_seed": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+              "found": true
+            },
+            "select_stream": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+              "found": true
+            },
+            "world_seed": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+              "found": true
+            }
+          },
+          "source": "rust/carc/carc-core/src/tiearb.rs",
+          "why": "every seeding site is a pure function of j (no B term) \u21d2 the world sets NEST",
+          "witness": true
+        },
+        "why": "a [pre-run] CODE witness over the seeding source \u2014 Stage 2 has no GATE_NEST.json analogue (its two cells differ by MODE, not by B, so no nesting property was ever asserted for them)"
+      },
+      "status": "N-A"
+    },
+    "G-PLY": {
+      "detail": {
+        "NARROW": {
+          "ok": true,
+          "semantics": "ABSENT is unknown-not-zero and FAILS",
+          "tiearb_partial_argmax_total": 0
+        },
+        "WIDE": {
+          "ok": true,
+          "semantics": "ABSENT is unknown-not-zero and FAILS",
+          "tiearb_partial_argmax_total": 0
+        }
+      },
+      "mapped": "both cells \u2190 Stage 2 ARB",
+      "status": "PASS"
+    },
+    "G-SMOKE": {
+      "detail": {
+        "forbidden_outcome_keys": [],
+        "halt_bar": 1438.191,
+        "halt_bar_derivation": "1.5 \u00d7 958.794 (\u00a77.2)",
+        "halted": false,
+        "launched_anyway": false,
+        "one_sided": "an overrun HALTS, an underrun proceeds",
+        "present": true,
+        "surfaces": "EMITTER: fail-closed whitelist (\u00a79.2 sentence 2). GATE: any forbidden OUTCOME key (\u00a73 G-SMOKE row). This gate evaluates the GATE surface.",
+        "whitelist": {
+          "f0_note": "f0 is MARGIN-DERIVED and is FORBIDDEN at the smoke",
+          "forbidden_examples": [
+            "paired_mean_margin",
+            "paired_z",
+            "elo",
+            "winrate",
+            "W",
+            "D",
+            "L",
+            "f0",
+            "z_D",
+            "per_deck_margin"
+          ],
+          "forbidden_present": [
+            "cell_band_untouched",
+            "cells",
+            "cost_reference",
+            "eta_for_the_real_cells",
+            "headline",
+            "kind",
+            "phi_reference",
+            "production_knobs",
+            "throwaway_band",
+            "\u26a0\ufe0f"
+          ],
+          "keys": [
+            "cell_band_untouched",
+            "cells",
+            "cost_reference",
+            "eta_for_the_real_cells",
+            "headline",
+            "kind",
+            "phi_reference",
+            "production_knobs",
+            "throwaway_band",
+            "\u26a0\ufe0f"
+          ],
+          "mode": "FAIL-CLOSED: an unlisted key is a REFUSAL, not a warning",
+          "ok": false,
+          "whitelist": [
+            "band_registry_claimed",
+            "band_seed_start",
+            "band_tier",
+            "cand_leaf_hash",
+            "carc_rs_binary_sha",
+            "carc_rs_build",
+            "champ_prefix_ms_per_move",
+            "games_per_sec",
+            "ms_ratio_cand_over_opp",
+            "n_failed",
+            "rung_ms_per_move",
+            "rust_toolchain",
+            "secs_per_game",
+            "tiearb_errors_total",
+            "tiearb_fire_rate_on_tile_plies",
+            "tiearb_fired_plies_total",
+            "tiearb_first_error",
+            "tiearb_mean_arms",
+            "tiearb_partial_argmax_total",
+            "tiearb_phi",
+            "tiearb_pickchange_rate",
+            "tiearb_playouts_total",
+            "tiearb_secs_per_game",
+            "tiearb_tile_plies_total",
+            "wall_secs",
+            "worker_secs_per_game",
+            "workers"
+          ]
+        },
+        "worker_secs_per_game": null
+      },
+      "note": "the whitelist is evaluated against Stage 2's own SMOKE.json; keys outside this pair's \u00a79.2 list are reported",
+      "status": "PASS",
+      "whitelist_forbidden_present": [
+        "cell_band_untouched",
+        "cells",
+        "cost_reference",
+        "eta_for_the_real_cells",
+        "headline",
+        "kind",
+        "phi_reference",
+        "production_knobs",
+        "throwaway_band",
+        "\u26a0\ufe0f"
+      ]
+    },
+    "G-STAT": {
+      "detail": {
+        "nan_or_absent": [],
+        "precedence": "evaluated in \u00a73 BEFORE any branch comparison",
+        "values": {
+          "D": 7.49875,
+          "se_D": 0.9331534557744559,
+          "z_D": 8.035923731082935,
+          "z_NARROW": -6.668940989778436,
+          "z_WIDE": 4.445372594625194
+        }
+      },
+      "mapped": "z_D from Stage 2's own ARB\u2212RND contrast",
+      "status": "PASS"
+    },
+    "G-TOOL": {
+      "detail": {
+        "authority": "PREFLIGHT_*_${HOST}_FIRST.json, not the manifests",
+        "binary_sha_rule": "carc_rs_binary_sha is BOX-LOCAL and is NEVER compared across boxes (the .so is not machine-reproducible)",
+        "carc_rs_build_by_host": {
+          "Doctor": [
+            "carc_rs-0.1.0+c48216460325+rustc1.96.0"
+          ],
+          "laptop-wsl": [
+            "carc_rs-0.1.0+c48216460325+rustc1.96.0"
+          ]
+        },
+        "conjunct": "EQUALITY of carc_rs_build across boxes, AND NOTHING ELSE",
+        "distinct_builds": [
+          "carc_rs-0.1.0+c48216460325+rustc1.96.0"
+        ],
+        "mixed_within_a_host": {},
+        "unpinned_is_normal": "\u26d4 '+rustcunpinned' is the NORMAL production value (rust_agent.py:372) and PASSES provided both boxes emit it \u2014 DESIGN \u00a713.1, this campaign's THIRD unsatisfiable-gate catch"
+      },
+      "note": "\u2b50 THE ROW THE PRECONDITION EXISTS FOR \u2014 the drafted version treated '+rustcunpinned' as a sentinel and would have failed this healthy run",
+      "status": "PASS"
+    }
+  },
+  "schema": "carcassonne-b64-knowngood/v1",
+  "share": "/mnt/c/carc-shared/tiearb2_stage2_20260817"
+}
