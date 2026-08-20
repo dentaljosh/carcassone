@@ -804,6 +804,191 @@ def smoke_outcome_scan(doc, path="") -> list:
     return hits
 
 
+#: ⭐ THE COST DEFINITION, TAKEN FROM THE PAIR AND NOT CHOSEN HERE.
+#: DESIGN §7.1 states it as an equation over the artifacts:
+#:     sum over seed*.json of elapsed_s / 800 = 429.612 worker-s/game  MEASURED
+#: so `worker_secs_per_game` is Σ(per-game `elapsed_s`) / n_games — the
+#: NUMERATOR'S OWN CURRENCY, measured in-cell and contended.
+#: ⛔ NEVER `wall × W / n`: that is the house's standing prohibition (the
+#: run_tiletie banner), and it is also the exact error §9.3 decomposes — Stage 2's
+#: ~2× cost miss was "a currency error (a sequential t_champ divided into a
+#: contended per-move wall, ≈8× apart)", and §9.3's whole justification for the
+#: 1.50 bar is that §7.2 "never divides by a sequential quantity". Under
+#: `--shared-claim` two boxes overlap in wall time, so wall × W would be wrong
+#: here twice over.
+WORKER_SECS_DEFINITION = (
+    "worker_secs_per_game = SUM(seed*.json::elapsed_s) / n_games — DESIGN §7.1's "
+    "own equation ('sum over seed*.json of elapsed_s / 800 = 429.612'). NEVER "
+    "wall x W / n: the house forbids costing from wall clock, and §9.3 names that "
+    "very substitution as the currency error behind Stage 2's cost miss."
+)
+
+
+def aggregate_smoke(cell_dirs: dict, band=None, out_path=None) -> dict:
+    """§9's `SMOKE.json`, aggregated from the two smoke cells' OWN artifacts.
+
+    ⚠️ COUNTS-AND-COST ONLY (§9.2). The per-game records carry outcome fields
+    (`diff`, `score_p0/p1`, `won_by_champ`); NONE of them is read, and the write
+    is refused if any outcome key reaches the artifact at any depth.
+
+    ⚠️ FAIL-LOUD ON MISSING INPUTS. `elapsed_s` over the per-game records IS the
+    cost basis; a cell with no records cannot be aggregated and must not be
+    silently reported as zero.
+    """
+    cells, problems = {}, []
+    for name, d in sorted((cell_dirs or {}).items()):
+        p = Path(d)
+        recs = sorted(p.glob("seed*.json"))
+        if not recs:
+            problems.append(f"{name}: NO per-game records under {p} — "
+                            f"`elapsed_s` over seed*.json IS the cost basis "
+                            f"(DESIGN §7.1); refusing rather than reporting zero")
+            continue
+        elapsed, n_with, n_without = 0.0, 0, 0
+        for f in recs:
+            try:
+                r = json.loads(f.read_text())
+            except (OSError, json.JSONDecodeError) as exc:
+                problems.append(f"{name}: unreadable record {f.name} ({exc})")
+                continue
+            e = r.get("elapsed_s")
+            if isinstance(e, (int, float)):
+                elapsed += float(e)
+                n_with += 1
+            else:
+                n_without += 1
+        if n_without:
+            problems.append(f"{name}: {n_without} record(s) carry NO elapsed_s — "
+                            f"the cost definition cannot be evaluated on them")
+        summ = {}
+        sp = p / "summary.json"
+        if sp.is_file():
+            summ = json.loads(sp.read_text())
+        man = {}
+        mp = p / "manifest.json"
+        if mp.is_file():
+            man = json.loads(mp.read_text())
+        n_games = int(summ.get("n") or n_with)
+        champ_ms = summ.get("champ_prefix_ms_per_move")   # ⚠️ THE CANDIDATE SIDE
+        rung_ms = summ.get("rung_ms_per_move")            # ⚠️ the OPPONENT side
+        wall = None
+        if man.get("utc") and man.get("utc_end"):
+            try:
+                from datetime import datetime
+                fmt = "%Y-%m-%dT%H:%M:%SZ"
+                wall = (datetime.strptime(man["utc_end"], fmt)
+                        - datetime.strptime(man["utc"], fmt)).total_seconds()
+            except (ValueError, TypeError):
+                wall = None
+        cells[name] = {
+            # ---- the graded quantity, by the PAIR'S OWN definition ---------
+            "worker_secs_per_game": (elapsed / n_with) if n_with else None,
+            "n_games": n_games, "n_records": len(recs),
+            "n_records_with_elapsed_s": n_with,
+            "elapsed_s_total": round(elapsed, 3),
+            # ---- reported, never the cost basis ----------------------------
+            "wall_secs": wall,
+            "n_failed": summ.get("n_failed"),
+            "champ_prefix_ms_per_move": champ_ms,
+            "rung_ms_per_move": rung_ms,
+            "ms_ratio_cand_over_opp": ((champ_ms / rung_ms)
+                                       if (champ_ms is not None and rung_ms) else None),
+            "tiearb_phi": summ.get("tiearb_phi"),
+            "tiearb_fired_plies_total": summ.get("tiearb_fired_plies_total"),
+            "tiearb_tile_plies_total": summ.get("tiearb_tile_plies_total"),
+            "tiearb_fire_rate_on_tile_plies": summ.get("tiearb_fire_rate_on_tile_plies"),
+            "tiearb_pickchange_rate": summ.get("tiearb_pickchange_rate"),
+            "tiearb_mean_arms": summ.get("tiearb_mean_arms"),
+            "tiearb_playouts_total": summ.get("tiearb_playouts_total"),
+            "tiearb_secs_per_game": summ.get("tiearb_secs_per_game"),
+            "tiearb_errors_total": summ.get("tiearb_errors_total"),
+            "tiearb_first_error": summ.get("tiearb_first_error"),
+            "tiearb_partial_argmax_total": summ.get("tiearb_partial_argmax_total"),
+            "cand_leaf_hash": (man.get("cand_leaf_hash")
+                               or (man.get("config") or {}).get("cand_leaf_hash")),
+            "carc_rs_build": man.get("carc_rs_build"),
+            "carc_rs_binary_sha": man.get("carc_rs_binary_sha"),
+            "rust_toolchain": man.get("rust_toolchain"),
+            "band_seed_start": (man.get("band_seed_start")
+                                or (man.get("config") or {}).get("band_seed_start")),
+            "_manifest_present": bool(man),
+        }
+    if problems:
+        raise SystemExit("REFUSING to write SMOKE.json:\n  - "
+                         + "\n  - ".join(problems))
+
+    wide = cells.get("WIDE") or {}
+    doc = {
+        # top level = the GRADED cell's fields (§9.3 grades WIDE's
+        # worker_secs_per_game and nothing else), all inside §9.2's whitelist
+        "worker_secs_per_game": wide.get("worker_secs_per_game"),
+        "wall_secs": wide.get("wall_secs"),
+        "workers": None,
+        "secs_per_game": None,
+        "games_per_sec": None,
+        "n_failed": wide.get("n_failed"),
+        "champ_prefix_ms_per_move": wide.get("champ_prefix_ms_per_move"),
+        "rung_ms_per_move": wide.get("rung_ms_per_move"),
+        "ms_ratio_cand_over_opp": wide.get("ms_ratio_cand_over_opp"),
+        "tiearb_phi": wide.get("tiearb_phi"),
+        "tiearb_fired_plies_total": wide.get("tiearb_fired_plies_total"),
+        "tiearb_tile_plies_total": wide.get("tiearb_tile_plies_total"),
+        "tiearb_fire_rate_on_tile_plies": wide.get("tiearb_fire_rate_on_tile_plies"),
+        "tiearb_pickchange_rate": wide.get("tiearb_pickchange_rate"),
+        "tiearb_mean_arms": wide.get("tiearb_mean_arms"),
+        "tiearb_playouts_total": wide.get("tiearb_playouts_total"),
+        "tiearb_secs_per_game": wide.get("tiearb_secs_per_game"),
+        "tiearb_errors_total": wide.get("tiearb_errors_total"),
+        "tiearb_first_error": wide.get("tiearb_first_error"),
+        "tiearb_partial_argmax_total": wide.get("tiearb_partial_argmax_total"),
+        "cand_leaf_hash": wide.get("cand_leaf_hash"),
+        "carc_rs_build": wide.get("carc_rs_build"),
+        "carc_rs_binary_sha": wide.get("carc_rs_binary_sha"),
+        "rust_toolchain": wide.get("rust_toolchain"),
+        # §9.1's condition of acceptance (R1 ruling 6): the throwaway band
+        # DECLARES ITSELF throwaway so it can never be mistaken for a claimed one
+        "band_seed_start": band or wide.get("band_seed_start"),
+        "band_tier": "throwaway",
+        "band_registry_claimed": False,
+        # ---- underscore-prefixed EMITTER METADATA (exempt by construction) --
+        "_schema": "carcassonne-b64-smoke/v1",
+        "_generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "_definition": WORKER_SECS_DEFINITION,
+        "_graded": ("§9.3 grades ONE quantity: WIDE's worker_secs_per_game "
+                    f"against {SMOKE_HALT_BAR:.3f} (= {SMOKE_HALT_MULTIPLE} x "
+                    f"{WORKER_S_COMMITTED['WIDE']}). The rest is printed and "
+                    "graded by nothing (§9.4)."),
+        "_cells": cells,
+        "_cells_note": ("§9.4 prints BOTH cells. They live under an "
+                        "underscore-prefixed key because §9.2's emitter "
+                        "whitelist is a FLAT list of top-level keys and is "
+                        "fail-closed on anything outside it — see the "
+                        "pair-vs-buildable note in analyze_b64_cell.py."),
+        "_counts_and_cost_only": (
+            "the per-game records carry outcome fields (diff, score_p0/p1, "
+            "won_by_champ); NONE is read here, and the write is refused if any "
+            "outcome key reaches this artifact at any depth (§9.2)."),
+    }
+
+    # ---- FAIL-CLOSED AT WRITE TIME, on BOTH surfaces (RULING 1) ------------
+    wl = smoke_whitelist_check(doc)
+    if not wl["ok"]:
+        raise SystemExit(
+            f"REFUSING to write SMOKE.json: key(s) outside §9.2's emitter "
+            f"whitelist: {wl['forbidden_present']}")
+    leaked = smoke_outcome_scan(doc)
+    if leaked:
+        raise SystemExit(
+            f"REFUSING to write SMOKE.json: FORBIDDEN OUTCOME KEY(S) {leaked} — "
+            f"§9.2 is COUNTS-AND-COST ONLY and this is what lets the smoke run "
+            f"BEFORE the blind commit is spent without spending blindness.")
+
+    if out_path:
+        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(out_path).write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+    return doc
+
+
 def gate_smoke(smoke: dict, halted: bool = None, launched_anyway: bool = False) -> tuple:
     """`G-SMOKE` `[RUN]` — the smoke did not run at production knobs before game 1,
     or it HALTed on §9.3 and the cells were launched anyway, or `SMOKE.json`
@@ -1380,6 +1565,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("smoke-check", help="§9.2's fail-closed whitelist")
     s.add_argument("--smoke", required=True)
+
+    g = sub.add_parser("aggregate-smoke",
+                       help="emit SMOKE.json from the two smoke cells' artifacts")
+    g.add_argument("--wide-dir", required=True)
+    g.add_argument("--narrow-dir", required=True)
+    g.add_argument("--band", default=None)
+    g.add_argument("--out", required=True)
     return ap
 
 
@@ -1410,6 +1602,26 @@ def main(argv=None) -> int:
         print(f"[nest] witness = {doc['witness']} — {doc['why']}")
         print(f"[nest] -> {out}")
         return 0 if doc["witness"] else 1
+
+    if mode == "aggregate-smoke":
+        doc = aggregate_smoke({"WIDE": a.wide_dir, "NARROW": a.narrow_dir},
+                              band=a.band, out_path=a.out)
+        w = doc["_cells"].get("WIDE", {})
+        n = doc["_cells"].get("NARROW", {})
+        print(f"[smoke] WIDE   worker_secs_per_game = "
+              f"{w.get('worker_secs_per_game'):.3f}  "
+              f"(Σ elapsed_s {w.get('elapsed_s_total')} / n {w.get('n_records_with_elapsed_s')})")
+        print(f"[smoke] NARROW worker_secs_per_game = "
+              f"{n.get('worker_secs_per_game'):.3f}  "
+              f"(Σ elapsed_s {n.get('elapsed_s_total')} / n {n.get('n_records_with_elapsed_s')})")
+        print(f"[smoke] §9.3 HALT bar: WIDE {w.get('worker_secs_per_game'):.3f} vs "
+              f"{SMOKE_HALT_BAR:.3f}  ({SMOKE_HALT_MULTIPLE} x "
+              f"{WORKER_S_COMMITTED['WIDE']}) — "
+              f"{'⛔ OVER (HALT)' if (w.get('worker_secs_per_game') or 0) > SMOKE_HALT_BAR else 'under'}")
+        print(f"[smoke] ⚠️ ONE-SIDED: an overrun HALTS, an underrun proceeds. "
+              f"This tool REPORTS; it adjudicates nothing.")
+        print(f"[smoke] -> {a.out}")
+        return 0
 
     if mode == "smoke-check":
         doc = smoke_whitelist_check(json.loads(Path(a.smoke).read_text()))
