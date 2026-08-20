@@ -33,6 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
+| **D5** | R5's two-rev merge licence + **the orchestrator's own freeze violation** | **LICENCE RULED**; binary-sha conjunct ruled **conditionally, decision rule pre-committed** (§D5.2); freeze violation named with `W-FREEZE-LATCH` recommended (§D5.3) |
 | **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences. **§D4.18: 4 window-truncation rids dropped WHOLE-RID** (what `G-ARMS` already implies); **no post-hoc numeric bound enacted** — the pair's own floor governs, 1,340 ≥ 1,283. **§D4.19: the S2 void-scope stated GENERALLY** (artifact paths · analyzer conjuncts · READOUT key-paths alike), dual-witness, exact-segment match |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
@@ -1178,6 +1179,96 @@ pre-registered bracket `[0.0179, 0.0200]` — the design's variance model under-
 It changes no branch (the realized CI governs, and the floor is fixed), and READ_RULE §3 **already
 requires** the realized CIs to be printed **beside the predicted brackets**, so this is a
 requirement already in force rather than anything new.
+
+## D5 — R5's two-rev merge licence, and the ORCHESTRATOR'S freeze violation
+
+**Status: LICENCE RULED; binary-sha conjunct ruled CONDITIONALLY with the decision rule
+pre-committed (§D5.2). Post-blind legality: merge layer only — no gate, bar, address, branch or
+statistic of the R5 pair changes.**
+
+### D5.1 The R5 licence — D4.11's mechanism, instantiated
+
+`merge_legs` refused, and **it was right twice over**: its enumerated licence names **R4's** pair,
+which R5 could never satisfy **even single-rev**. R5 needs its own.
+
+**Realized pair, enumerated (full shas, per D4.13's width discipline):**
+
+```
+9bc2ab77...   chunks 1-2, 6-8   (laptop)
+a5aa4a5e...   chunks 3-5        (local)
+```
+
+⚠️ **The `9bc2ab772` in the record is the SAME commit at 9-char abbrev** — `core.abbrev` is per
+box, which is exactly why D4.13 fixed the comparison to **prefix-matching on the full sha** with a
+minimum width, and why `carc_rs_build` carries a **fixed 12-char slice**. **Enumerate full shas;
+match by prefix; never compare two abbreviations to each other.**
+
+**Conditions, unchanged from D4.11:** the merge holds the enumerated pair in **code**; it requires
+`RUN/INSTRUMENT_IDENTITY_R5.json` (both full shas, the instrument path list, the **re-derivable**
+empty-diff recipe, and the per-box `git status --porcelain` scoped to those paths); and **the merge
+re-derives the diff itself and refuses if non-empty.** The reported diff over the full instrument
+list is **empty** — the changes (`analyze_b64_cell.py`, `run_cells.sh`, tests, `BAND_REGISTRY`,
+`BAND_CLAIM`) are **nothing the scorer imports** — so the licence is genuinely available rather
+than merely asserted. Completeness is perfect: **24 legs, 13,204 records, per-leg counts exactly
+the pinned thinning ladder.**
+
+### D5.2 ⚠️ Does binary-sha constancy bind across the rev split? **YES — and the decision rule is pre-committed HERE, before the evidence.**
+
+**The rev licence does NOT absorb this question.** D4.11 licenses a **source-rev** split whose
+**instrument diff is empty**. `carc_rs_binary_sha` constancy is a **separate, standing requirement**
+(D3.2 as amended by D4.13 §ii) that exists precisely so a **compiled-artifact** change cannot ride
+in on a source-rev licence. **A wheel rebuild is a different fact from a HEAD move.**
+
+The B64 preflight rebuilt wheels ≈04:00; local's chunks 3-5 ran 23:45–05:16. **The rebuild may have
+landed mid-chunk.** Ruling, fixed now so the builder's report resolves it mechanically:
+
+| finding on local's per-chunk leg manifests | ruling |
+|---|---|
+| `carc_rs_binary_sha` **CONSTANT** across chunks 3-5 | D4.13 (ii) holds. **Licence applies; merge proceeds.** |
+| `carc_rs_binary_sha` **CHANGED** mid-run | ⛔ **D4.13 (ii) FIRES FOR REAL — the standing requirement doing its job.** The `.so` that executed chunk 3 is not the one that executed chunk 5. **NOT licensable by the rev licence**, and **not** waved through on "the rust source diff is empty". **RAISE**, and require a **within-box D3-WITNESS**: re-score **N ≥ 16** chunk-3 rids on the **current** wheel and raw-f64 diff against their stored records. **100% bit-identical ⇒ merge proceeds with the witness recorded; any mismatch ⇒ rescore the affected chunks on one wheel.** |
+
+⭐ **Why a witness rather than a refusal, and why not a waiver.** D3-WITNESS already measured
+**23,184/23,184 bit-identical** values across two *different builds of the same source* on two
+boxes — so same-source/different-build producing identical values has **precedent**. But that
+precedent is **cross-box at one instant**, not **within-box across a rebuild**, and the honest move
+is to **measure the case we have** rather than extend the one we measured. The instrument already
+exists; it costs minutes.
+
+**Builder action:** report `carc_rs_binary_sha` **per chunk** for local's chunks 3-5 (and the
+laptop's, for completeness) **before** the merge is attempted.
+
+### D5.3 ⛔ THE ORCHESTRATOR'S FREEZE VIOLATION — named plainly
+
+**The B64 aggregator commit `a5aa4a5e` was merged to `main` while rung-3's local scoring leg was
+live.** That violates the standing mid-run commit freeze — **the same class that voided the first
+JCZ run** — and it is the direct cause of R5's chunks being scored across two revs.
+
+**The mitigation is a witnessed fact, not an excuse.** The instrument diff over the full instrument
+list is **empty**, so the scored values are not in question on the *source* axis. ⭐ **But the
+mitigation was luck, not design:** nothing about the merge checked whether a scoring leg was live,
+and had the commit touched `rust/`, `src/` or `scripts/tiletie/`, R5's chunks 3-5 would have been
+**unrecoverable** — rescored at best, void at worst. **The freeze exists because "we checked
+afterwards and it was fine" is not a control.**
+
+⭐ **The discipline has now failed TWICE — JCZ, and here — and both times the failure was the
+ORCHESTRATOR's, not a builder's or an executor's.** That is the argument for a mechanism rather
+than more care:
+
+> **W-ITEM `W-FREEZE-LATCH` (recommended, owner floated it after the JCZ incident):** a PreToolUse
+> latch that **refuses a `main`-tree commit while any scoring leg is live** — live-ness detected
+> from the run roots' claim/record activity or an explicit `RUN_LIVE` sentinel dropped by the
+> launchers and cleared at close-out. **A convention that has failed twice at the same hands is a
+> hook's job.**
+
+### D5.4 The merge driver (c) — executor's direct `merge_legs` use is BLESSED
+
+`run_scoring_r5.sh` carries a TODO where the merge driver would be. **Using `merge_legs` directly
+is blessed**, per DESIGN line 448, on the same grounds D3/D4.13 already govern its behaviour: the
+classification, the licence and the carry-forward are all **in `merge_legs` itself**, so a thin
+driver would add a wrapper without adding a check. ⚠️ **Two conditions:** the exact invocation
+(out-roots, licence file, `INSTRUMENT_IDENTITY_R5.json` path) is **recorded in the read-out**, and
+the driver TODO is either **filled or deleted** — a TODO that reads as an unbuilt step, next to a
+step that was in fact performed by hand, is how a runbook lies to its next reader.
 
 ---
 
