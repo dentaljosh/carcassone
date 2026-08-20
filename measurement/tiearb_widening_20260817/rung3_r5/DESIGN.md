@@ -264,6 +264,75 @@ and (a) closes it rather than papering it with a convention.
 exists to fix. **A1 enforces this automatically:** its completeness assertion is over the **marker
 list**, so an address added without its fixture **fails A1** rather than passing silently.
 
+### ⭐ EXECUTION-LAYER COMPLETION — RULED (2026-08-19). Where the verdict is written, who audits, and what adjudicates.
+
+The pair defines `A1`/`A2`/`A3` and carries the branch table, but **names no tool for `A2`/`A3`
+and has no read-out address at all** — the addressed artifacts stop at `MERGE_REPORT_s2.json`.
+**Ruled here** on the D4.16 precedent: naming **where** a committed branch table's verdict gets
+**written**, and **who** performs a committed pass, **moves no bar, branch or statistic.**
+
+**1. EMISSION TARGET.** `RUN/READOUT_R5.json` + `RUN/READOUT_R5.md`, marker `[post-scoring]`,
+A1 fixture `fixtures/READOUT_R5.fixture.json`. Every `READOUT::…` address in the READ_RULE resolves
+against `READOUT_R5.json`.
+
+**2. THE `A2`/`A3` AUDITOR — `acceptance_r5` mode**, over **the pair's own address list**, with the
+completeness assertion the pair already specifies:
+
+```
+A1 (pre-corpus, static/fixtures) + A2 (post-corpus, live) + A3 (post-scoring, live)
+    ==  the COMPLETE set of addresses named in READ_RULE.md
+Per address: resolved / UNRESOLVED, plus JSON type. NO VALUE is printed, ever.
+Primary AND fallback resolved INDEPENDENTLY. Any address in neither pass FAILS the assertion.
+```
+
+**3. THE ADJUDICATOR — I/O pinned.**
+
+```
+INPUTS
+  merged leg records   RUN/legs/s2/**/records/<rid>.json   -- per-(rid, leg) arm values
+  ARMS_R5.json         the population authority: arms_full and subset_j4 per rid
+  FLOORS_R5.json       n2=1060, gate_floor=1007, and the pinned constants
+  the §2 gate artifacts (CORPUS_R5, STAGING_R5, GATE_INTERNAL_DUPE,
+                         GATE_DISJOINT_R5, RUN_MANIFEST_R5, MERGE_REPORT_s2, D_DRAW)
+
+PRIMARY
+  Delta_ora = ora_full - ora_J4, at capped plies, per rid, where
+    ora_full = cross-fit oracle value of the best arm over ARMS_R5[rid].arms_full
+    ora_J4   = same, restricted to ARMS_R5[rid].subset_j4
+  significance ONCE, on the percentile ROOT bootstrap (2,000 reps, seed 20260819, cluster root_id)
+  R_ora = ora_full / ora_J4, subject to the degenerate-denominator guard
+  Delta_arb, R_arb  -- deploy RIDERS, adjudicate nothing
+
+BRANCH TABLE -- VERBATIM from READ_RULE §4, not one threshold, sign or condition moved:
+  X-CONFIRMED  X-ABOVE  X-PARTIAL  X-BELOW  X-FREE  X-INCONCLUSIVE
+  + the R_ora degenerate guard and its committed Delta_ora-only sub-table
+  + the X-NOISE rider (non-adjudicating)
+  + the three mandatory prints (1.400-vs-1.244 unseparable; +0.0842 at the bracket top;
+    the X-FREE attainability window at the REALIZED se)
+```
+
+⛔ **THE S1-RIDER PROHIBITION APPLIES, and it is not optional.** R3.3 §5's address list includes
+`widening.j_rider.s1_replication.*` and `…interaction.*` — **S1 quantities. R5 HAS NO S1 STRATUM.**
+They must be **absent or null with their witness**, and **may never be reported as if measured**.
+A rider with no stratum behind it is not a weak result; it is **not a result**.
+
+⛔ **TOKEN DISCIPLINE, as ruled for R4 but inverted here.** R4's rung 3 fired **no** X-branch, so
+**no X-token could appear anywhere**. R5 **does** fire one, so **its token appears legitimately —
+and no other X-token may appear anywhere in the READOUT**, and the non-fired branches must not be
+narrated as near-misses. **`VOID_S2` must not appear at all**: R5 is the successor to that void,
+not a continuation of it.
+
+**4. `READOUT_R5.json` SCHEMA (the addresses the READ_RULE already names, made concrete):**
+
+```
+widening.j_rider.s2.{delta_ora, ci95_ora, r_ora, ci95_r_ora, ora_j4_ci95,
+                     delta_arb, ci95_arb, n_capped, xfree_window, r_ora_reported}
+widening.j_rider.d_draw.{n_checked, agreement_rate, d_draw_ran}
+widening.completion.s2_n            widening.failed.{n_failed_rids, n_attempted, rate, by_class}
+widening.gates.{<gate>: {ok, resolved_at}}          -- every §2 gate, never short-circuited
+widening.supply_chain.{...}         widening.branch.{fired, reasons, mandatory_prints}
+```
+
 ### ⭐ THE LEG STRUCTURE — RULED (2026-08-19, launch-blocking). The premise was wrong; the conclusion holds.
 
 The smoke refused on a missing leg2. **Verified against the artifacts, and the situation is worse

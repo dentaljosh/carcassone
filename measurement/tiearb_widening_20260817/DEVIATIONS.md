@@ -1289,7 +1289,65 @@ before analysis.**
 
 ---
 
-*No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D1, D2, D3
-or D4. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their signature
-blocks read SIGNED; D3's classification is in force on ruling and its witness on PASS; D4's
-completion licence is in force subject to its §D4.9 conditions.*
+## D6 — `A2` ran LATE: the pair named a pass and named no tool (third instance)
+
+**2026-08-20. Recorded, not excused.**
+
+### D6.1 What the pair required, and what happened
+
+`rung3_r5/READ_RULE.md` §1 places `A2` at **`[post-corpus]`, before the first scoring leg**. It ran
+**after all scoring**. **Root cause: no auditor existed.** The pair specified the pass, pinned its
+completeness assertion, and **named no tool to perform it** — so at the moment `A2` was due there
+was nothing to invoke, and the run proceeded past its own checkpoint without anyone declining it.
+
+**The proposed reading is CONFIRMED: `A2` runs NOW, late, and the lateness is disclosed here as a
+numbered deviation.** The reasoning, stated so a reader can check it rather than accept it:
+
+- **`A2`'s inputs are frozen and were frozen before scoring began.** Its addresses are
+  `[pre-corpus]`/`[post-corpus]` artifacts — `ARMS_R5.json`, `CORPUS_R5`, `STAGING_R5`, the leg
+  files, the `GATE_*` outputs — every one sha-pinned in the R5 licence. **Scoring reads them and
+  writes `[post-scoring]` artifacts, which `A2` does not audit.** So nothing `A2` inspects was
+  produced or modified by the work that overtook it: **the audit is late, not contaminated.**
+- ⚠️ **But its protective value is spent, and that is a real loss.** `A2` sat before the first
+  scoring leg **so that an address defect would be free to fix**. Discovering one now costs the
+  entire scoring spend. **The audit's validity survives the delay; its purpose does not.** If `A2`
+  fails, the run has already paid for the failure — that is the price of the omission, and it is
+  not to be softened in the write-up.
+- ⛔ **`A2` must VERIFY the freeze, not assume it.** Re-check each pinned sha against the artifact
+  on disk as part of the pass. "Frozen" is the premise of everything above; an unchecked premise
+  carrying this much weight is exactly what this campaign keeps getting wrong. Any drift ⇒ **RAISE
+  to the owner**, not repair.
+
+### D6.2 STANDING RULE — a pair may not name a pass without naming its tool
+
+**Adopted.** This is the **third instance of one disease**:
+
+| # | The pair named… | …and named no tool | Cost |
+|---|---|---|---|
+| 1 | the R4 **merge** | no merge driver | merge improvised post-hoc, licensed by deviation |
+| 2 | the B64 **SMOKE** | no emitter | blocking finding at sign-off |
+| 3 | R5's **`A2`/`A3`** | no auditor | **the checkpoint was silently skipped** |
+
+> **STANDING RULE (campaign-wide, effective now).** *A preregistration may not name a pass, gate,
+> merge, witness or audit without naming, in the same commit, the **tool** that performs it and the
+> **address** it writes. An activity with no actor is not preregistered — it is a wish, and it will
+> be skipped exactly when it matters.*
+
+This is the address sweep (D4.14b) generalized **one level up**. The sweep made *addresses*
+exhaustive by enumeration and caught the unresolvable ones. It could not catch these, because
+**every address here resolved fine** — what was missing was the *actor*. **Enumerate the verbs, not
+only the nouns.** Instance 3 shows the failure mode is not cosmetic: it is a checkpoint that
+**cannot fail**, because nothing runs it — the same **pass-always** disease this campaign has now
+found in `G-CAP`, `G-TOOL`, `G-COLLIDE`, `G-SATURATION` and `G-BAND`, wearing different clothes.
+
+*No bar, branch, statistic or estimand moves under D6. The execution-layer completion that supplies
+the missing tools is ruled in `rung3_r5/DESIGN.md` §"EXECUTION-LAYER COMPLETION".*
+
+---
+
+*No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D1, D2, D3,
+D4, D5 or D6. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their
+signature blocks read SIGNED; D3's classification is in force on ruling and its witness on PASS;
+D4's completion licence is in force subject to its §D4.9 conditions; D5's merge licence is in force
+subject to its pre-committed binary-sha decision rule; D6 is a disclosure and a standing rule, and
+both bind on writing.*
