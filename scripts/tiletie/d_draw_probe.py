@@ -257,6 +257,16 @@ def probe_rid(ms_factory, lc, meta: dict, row: dict) -> dict:
         "dropped_collapse_onto_reps": bool(dropped_collapse),
         "cells_equal": bool(cells_equal),
         "partition_agree": bool(reps_distinct and dropped_collapse and cells_equal),
+        # ⭐ THE STRENGTH OF THE PROOF IS PER-RID, not blanket. With NO dropped
+        # actions the python partition is DISCRETE (every tie action its own
+        # cell), so `reps_distinct` under the rust key proves the rust partition
+        # is discrete too — the two partitions are then IDENTICAL, exactly.
+        # Only where dedupe actually collapsed something is the check
+        # necessary-condition-only: python does not record WHICH representative
+        # each dropped action was collapsed onto, so equal counts plus
+        # membership cannot pin the assignment.
+        "exact_identity": bool(reps_distinct and dropped_collapse
+                               and cells_equal and not dropped),
         "n_cells_rust": len(set(kf) | set(kd)),
         "n_cells_python": meta.get("n_distinct_afterstates"),
     })
@@ -378,6 +388,9 @@ def run(arms: dict, replay: dict, *, ms_factory=None, lc=None,
     n_with_dropped = sum(1 for r in checked if r["n_dropped"] > 0)
     n_dropped_total = sum(r["n_dropped"] for r in checked)
     n_coincide = sum(1 for r in checked if r["probe_tieset_coincides"])
+    n_exact = sum(1 for r in checked if r["exact_identity"])
+    n_necessary = n_agree_p - n_exact
+    n_same_support = sum(1 for r in checked if r.get("chartered_same_support"))
 
     # ⭐ THE SELF-CHECK, so `G-DDRAW` cannot pass on a partial probe.
     d_draw_ran = bool(n_checked > 0 and (n_checked + n_unrec) == expect_n)
@@ -434,6 +447,25 @@ def run(arms: dict, replay: dict, *, ms_factory=None, lc=None,
                            "n_rids_with_dropped / n_dropped_actions. On a corpus "
                            "where dedupe dropped nothing it would be vacuous, "
                            "and that is why the count is printed.",
+            # ⭐ THE STRENGTH IS SPLIT, not blanket (drafter 1c8daee7 amendment
+            # 1). A single necessary-condition caveat over the whole population
+            # UNDERSTATES the result: on a rid where dedupe dropped nothing the
+            # python partition is DISCRETE, so pairwise-distinct rust keys prove
+            # the partitions are identical outright.
+            "n_exact_identity": n_exact,
+            "n_necessary_condition": n_necessary,
+            "n_necessary_condition_actions": n_dropped_total,
+            "strength": (
+                f"EXACT on {n_exact} rids; NECESSARY-CONDITION on "
+                f"{n_necessary} ({n_dropped_total} actions)."),
+            "why_the_split": "with NO dropped actions the python partition is "
+                             "DISCRETE — every tie action its own cell — so "
+                             "pairwise-distinct rust keys prove the rust "
+                             "partition is discrete too, and the two are "
+                             "IDENTICAL. Where dedupe DID collapse actions, "
+                             "python does not record WHICH representative each "
+                             "dropped action went to, so equal cell counts plus "
+                             "membership are necessary and not sufficient.",
             "limit": "This compares the INDUCED GROUPING directly, which is "
                      "what I7(b) asks. It is still a witness about the tie sets "
                      "the corpus recorded — it says nothing about positions "
@@ -466,7 +498,41 @@ def run(arms: dict, replay: dict, *, ms_factory=None, lc=None,
         # those rids can only ever count as DISagreement in a statistic that was
         # never measuring agreement in the first place
         "n_probe_fired": sum(1 for r in checked if r.get("fired")),
+        "n_same_support": n_same_support,
+        # ⭐ THE COMPARISON CURRENCY, pinned (drafter 1c8daee7 amendment 2).
+        # `n_agree` counts EXACT MATCHES, so its only comparable null is
+        # `expected_identical_rate` = mean 1/C(T,J). ⛔ NEVER compare it against
+        # `expected_overlap`, which is a MEAN INTERSECTION SIZE — a different
+        # quantity in different units. That two-currency slip is the same class
+        # of error as grading a count against a fraction.
+        "comparison": {
+            "statistic": "n_agree / n_checked — the EXACT-MATCH rate",
+            "comparable_null": "agreement_rate_null_model."
+                               "expected_identical_rate  (mean 1/C(T,J))",
+            "⛔ not_comparable": "agreement_rate_null_model.expected_overlap is "
+                                "a MEAN INTERSECTION SIZE, not a rate. "
+                                "Comparing an exact-match count against it is a "
+                                "two-currency error.",
+        },
         "agreement_rate_null_model": null_model(checked),
+        # ⛔ THE INTERPRETATION, fixed in the artifact so no later reader has to
+        # supply one. An exact-match rate BELOW its shared-support null is not a
+        # finding: the null ASSUMES a shared support, and the supports coincide
+        # on only `n_same_support` of `n_checked` rids. Where they differ the two
+        # draws are selecting from different sets and an exact match is close to
+        # impossible — which fully explains a sub-null reading.
+        "interpretation": {
+            "verdict": "CONFOUNDED AND UNINTERPRETABLE AS AN AGREEMENT MEASURE",
+            "why": "the chartered comparison pits two draws from DIFFERENT RNG "
+                   "streams and, on most rids, from different SUPPORTS "
+                   "(chartered_same_support). Its shared-support null therefore "
+                   "does not apply, and a reading below that null is fully "
+                   "explained by the support mismatch.",
+            "⛔ explicitly_not": "NOT evidence of disagreement between the two "
+                                "draws, and NOT evidence about the partition. "
+                                "The partition question is answered by the "
+                                "`partition` block and nowhere else.",
+        },
         "n_unreconstructible": n_unrec,
         "unreconstructible_detail": (
             [{"rid": r["rid"], "why": r.get("why")} for r in unrec[:20]]
@@ -540,15 +606,18 @@ def main(argv=None) -> int:
     print(f"{TOOL} TIER 1 (the discharge): partition_agree "
           f"{p['n_partition_agree']}/{p['n_partition_checked']} "
           f"(reps distinct {p['n_reps_distinct']}, dropped collapse "
-          f"{p['n_dropped_collapse_onto_reps']}, cells {p['n_cells_equal']}); "
-          f"the collapse conjunct is carried by {p['n_rids_with_dropped']} rids "
-          f"/ {p['n_dropped_actions']} dropped actions")
+          f"{p['n_dropped_collapse_onto_reps']}, cells {p['n_cells_equal']})")
+    print(f"{TOOL}   strength: {p['strength']}")
     td = doc["tieset_definition"]
     print(f"{TOOL} tie-set DEFINITION coincidence (reported, NOT the "
           f"discharge): {td['n_probe_tieset_coincides']}/{doc['n_checked']}")
-    print(f"{TOOL} TIER 2 (chartered, NOT the discharge): agree "
-          f"{doc['n_agree']}/{doc['n_checked']} vs null model "
-          f"{doc['agreement_rate_null_model']['expected_identical_rate']}")
+    print(f"{TOOL} TIER 2 (chartered, NOT the discharge): exact matches "
+          f"{doc['n_agree']}/{doc['n_checked']} vs the ONLY comparable null "
+          f"(expected_identical_rate) "
+          f"{doc['agreement_rate_null_model']['expected_identical_rate']} — "
+          f"same support on {doc['n_same_support']}/{doc['n_checked']}")
+    print(f"{TOOL}   {doc['interpretation']['verdict']} — not evidence of "
+          f"disagreement, and not evidence about the partition")
     if not a.dry_run:
         Path(a.out).write_text(json.dumps(doc, indent=2, sort_keys=True))
         print(f"{TOOL} -> {a.out}")

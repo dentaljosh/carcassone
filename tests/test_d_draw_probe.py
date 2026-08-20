@@ -80,6 +80,26 @@ def test_a_matching_partition_agrees_on_every_conjunct():
     assert r["reconstructed"] and r["partition_agree"]
     assert r["reps_distinct"] and r["dropped_collapse_onto_reps"]
     assert r["cells_equal"] and r["n_dropped"] == 2
+    # ⚠️ dedupe collapsed something here, so this rid is NECESSARY-CONDITION
+    assert r["exact_identity"] is False
+
+
+def test_a_rid_with_NO_dropped_actions_is_EXACT_identity():
+    """⭐ With nothing collapsed the python partition is DISCRETE, so pairwise
+    distinct rust keys prove the rust partition is discrete too — the two are
+    identical outright, not merely compatible."""
+    cells = {1: "A", 2: "B", 3: "C"}
+    r = DD.probe_rid(_factory(cells), None, _meta([1, 2, 3]), _row())
+    assert r["partition_agree"] and r["n_dropped"] == 0
+    assert r["exact_identity"] is True
+
+
+def test_exact_identity_never_outruns_partition_agree():
+    """A rid that fails the partition check is not 'exactly identical' — the
+    stronger label must never be reachable without the weaker one."""
+    cells = {1: "A", 2: "A", 3: "C"}          # two reps share a cell
+    r = DD.probe_rid(_factory(cells), None, _meta([1, 2, 3]), _row())
+    assert r["partition_agree"] is False and r["exact_identity"] is False
 
 
 def test_two_REPRESENTATIVES_sharing_a_rust_cell_FAILS():
@@ -218,6 +238,73 @@ def test_the_chartered_rate_is_emitted_BESIDE_its_null_model_and_labelled():
     # the discharge is elsewhere, and says so
     assert doc["partition"]["is_the_discharge"] is True
     assert doc["tieset_definition"]["is_the_discharge"] is False
+
+
+def test_the_discharge_reports_the_STRENGTH_SPLIT_not_a_blanket_caveat():
+    """⭐ Amendment 1. A single necessary-condition caveat over the whole
+    population UNDERSTATES the result — the split is emitted instead."""
+    cells = {1: "A", 2: "B", 3: "C", 91: "A"}
+    arms = {"exact1": _meta([1, 2, 3]), "exact2": _meta([1, 2, 3]),
+            "collapsed": _meta([1, 2, 3], [91])}
+    rows = {k: _row(rid=k) for k in arms}
+    doc = DD.run(arms, rows, ms_factory=_factory(cells), lc=None, expect_n=3)
+    p = doc["partition"]
+    assert p["n_partition_agree"] == 3
+    assert p["n_exact_identity"] == 2
+    assert p["n_necessary_condition"] == 1
+    assert p["n_necessary_condition_actions"] == 1
+    assert p["strength"] == ("EXACT on 2 rids; NECESSARY-CONDITION on 1 "
+                            "(1 actions).")
+    assert "DISCRETE" in p["why_the_split"]
+
+
+def test_the_two_strengths_PARTITION_the_agreeing_rids():
+    """n_exact + n_necessary == n_partition_agree, always — a rid cannot be
+    counted in both or in neither."""
+    cells = {1: "A", 2: "B", 91: "A"}
+    arms = {"a": _meta([1, 2]), "b": _meta([1, 2], [91]),
+            "c": _meta([1, 2], [91])}
+    doc = DD.run(arms, {k: _row(rid=k) for k in arms},
+                 ms_factory=_factory(cells), lc=None, expect_n=3)
+    p = doc["partition"]
+    assert p["n_exact_identity"] + p["n_necessary_condition"] == \
+        p["n_partition_agree"]
+
+
+def test_TIER2_names_its_comparable_null_and_FORBIDS_the_overlap_currency():
+    """⭐ Amendment 2. `n_agree` is an EXACT-MATCH count, so its only comparable
+    null is `expected_identical_rate`. `expected_overlap` is a mean intersection
+    SIZE — comparing the two is a two-currency error."""
+    arms = {"r1": _meta([1, 2, 3, 4, 5])}
+    doc = DD.run(arms, {"r1": _row()},
+                 ms_factory=_factory({i: chr(64 + i) for i in range(1, 6)},
+                                     tie=(1, 2, 3, 4, 5)), lc=None, expect_n=1)
+    c = doc["comparison"]
+    assert "EXACT-MATCH rate" in c["statistic"]
+    assert "expected_identical_rate" in c["comparable_null"]
+    assert "expected_overlap" in c["⛔ not_comparable"]
+    assert "two-currency error" in c["⛔ not_comparable"]
+    # both quantities still exist — the rule is which one you may compare to
+    nm = doc["agreement_rate_null_model"]
+    assert nm["expected_identical_rate"] is not None
+    assert nm["expected_overlap"] is not None
+
+
+def test_TIER2_carries_the_CONFOUNDED_verdict_and_says_what_it_is_NOT():
+    """A sub-null exact-match rate is fully explained by the support mismatch —
+    the shared-support null does not apply — so it is uninterpretable as an
+    agreement measure and is explicitly NOT evidence of disagreement."""
+    cells = {1: "A", 2: "B"}
+    arms = {f"r{i}": _meta([1, 2]) for i in range(4)}
+    doc = DD.run(arms, {k: _row(rid=k) for k in arms},
+                 ms_factory=_factory(cells, tie=(7, 8)), lc=None, expect_n=4)
+    it = doc["interpretation"]
+    assert it["verdict"] == "CONFOUNDED AND UNINTERPRETABLE AS AN AGREEMENT MEASURE"
+    assert "chartered_same_support" in it["why"]
+    assert "NOT evidence of disagreement" in it["⛔ explicitly_not"]
+    assert "partition" in it["⛔ explicitly_not"]
+    # the supports really do differ here, which is what makes it confounded
+    assert doc["n_same_support"] == 0 and doc["n_checked"] == 4
 
 
 def test_the_null_model_counts_FORCED_identity():
