@@ -127,6 +127,37 @@ STAMPS="$CAMPAIGN/chunks/stamps"
 ORDER="$CAMPAIGN/POSITION_ORDER.json"
 mkdir -p "$LOGS" "$MANIFESTS" "$STAMPS"
 
+# ---- W-FREEZE-LATCH sentinel (DEVIATIONS D5 (b)) -----------------------------
+# ⭐ Dropped at leg start, cleared at close-out AND on any exit (trap), so an
+# abort can never leave the tree latched. The PreToolUse latch
+# (scripts/hooks/pretooluse_lint.py) refuses a MAIN-TREE commit while it exists.
+# It is a FILE, not a convention: it is visible to WHOEVER commits, which is the
+# point — the freeze discipline has failed twice and both times at the
+# orchestrator's hands, not a builder's or an executor's.
+run_live_path() { echo "$CAMPAIGN/RUN_LIVE.json"; }
+run_live_drop() {
+  "$PY" - "$(run_live_path)" "$1" <<'RLEOF' || true
+import json, os, socket, sys, time
+p, what = sys.argv[1], sys.argv[2]
+json.dump({"what": what, "host": socket.gethostname(), "pid": os.getppid(),
+           "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+           "why": ("W-FREEZE-LATCH sentinel (DEVIATIONS D5 (b)): a MAIN-TREE "
+                   "commit while this leg is live can put two revisions into "
+                   "one run — spawn respawns and each new --shared-claim cell "
+                   "RE-IMPORT FROM DISK. Cleared at close-out and on any exit."),
+           "cleared_by": "the launcher's EXIT trap"},
+          open(p, "w"), indent=2, sort_keys=True)
+RLEOF
+  echo "[freeze] RUN_LIVE dropped -> $(run_live_path)"
+}
+run_live_clear() { rm -f "$(run_live_path)" 2>/dev/null || true; }
+
+if [ "${DRY_RUN:-0}" -eq 0 ]; then
+  trap 'run_live_clear' EXIT INT TERM
+  run_live_drop "rung3_r5 scoring leg (box=${BOX:-?})"
+fi
+
+
 # Share output is namespaced under rung3_r5/ too, so a real launch can never
 # collide with the parent's (now-refused) top-level `chunks/s2/` share path.
 SHARE_RUN_R5="$SHARE_RUN/rung3_r5"
@@ -329,10 +360,135 @@ if [ "$DRY_RUN" -eq 0 ]; then
   if [ "$ready" -eq 1 ]; then
     echo "=============================================================================="
     echo "  ✅ every allocated rung3_r5 chunk has scored on BOTH judges."
-    echo "  Next: merge / read-out (rung3_r5 has no merge_scoring.sh yet — TODO)."
+    echo ""
+    echo "  NEXT — MERGE. ⭐ The direct merge_legs use is BLESSED (D5 (c), DESIGN"
+    echo "  line 448): the classification, the licence and the carry-forward all"
+    echo "  live IN merge_legs, so a thin driver would add a wrapper without"
+    echo "  adding a check. Two conditions travel with the blessing: the EXACT"
+    echo "  invocation below is RECORDED IN THE READ-OUT, and this step is named"
+    echo "  here rather than left as a TODO — a TODO that reads as an unbuilt"
+    echo "  step, next to a step in fact performed by hand, is how a runbook lies"
+    echo "  to its next reader."
+    echo ""
+    echo "  1) the R5 instrument witness (BOTH boxes — one box leaves the other's"
+    echo "     working tree unwitnessed):"
+    echo ""
+    echo "     $PY $REPO/measurement/tiearb_widening_20260817/instrument_identity.py \\"
+    echo "       --licence R5 --repo $REPO \\"
+    echo "       --box local --box laptop:laptop-wsl \\"
+    echo "       --out $CAMPAIGN/INSTRUMENT_IDENTITY_R5.json"
+    echo ""
+    echo "  2) the merge itself (--dry-run FIRST; it writes nothing):"
+    echo ""
+    echo "     $PY -u $REPO/measurement/tiearb_widening_20260817/merge_legs.py \\"
+    echo "       --stratum $S --licence R5 \\"
+    echo "       --chunks-root $SHARE_RUN/chunks/$S \\"
+    echo "       --out-dir $CAMPAIGN/legs/$S \\"
+    echo "       --positions-dir $CAMPAIGN/corpus/positions_$S \\"
+    echo "       --manifests-dir $MANIFESTS --manifest-tag R5 \\"
+    echo "       --instrument-identity $CAMPAIGN/INSTRUMENT_IDENTITY_R5.json \\"
+    echo "       --run-manifest-out $CAMPAIGN/RUN_MANIFEST_R5.json \\"
+    echo "       --report $CAMPAIGN/MERGE_REPORT_$S.json"
+    echo ""
+    echo "  ⚠️ --manifest-tag R5 is REQUIRED and is a FILENAME, not an address."
+    echo "     This launcher wrote RUN_MANIFEST_R5_<judge>_chunk<N>.json; the"
+    echo "     merge's default glob is the STRATUM (RUN_MANIFEST_S2_*), which"
+    echo "     matches none of them. An empty glob is not a satisfied domain: the"
+    echo "     D4.12 evidence map would come back empty and the licence would"
+    echo "     refuse a HEALTHY run while naming the wrong cause."
+    echo ""
+    echo "  ⚠️ --run-manifest-out is RUN_MANIFEST_R5.json — the address READ_RULE"
+    echo "     §2 gives G-M, G-SALT and G-BACKEND. Writing RUN_MANIFEST_S2.json"
+    echo "     would leave all three primaries UNRESOLVED at A3."
+    echo ""
+    echo "  ⚠️ --licence R5 selects R5's OWN enumerated rev pair"
+    echo "     {9bc2ab772ee907cdf4278985cf717497b95b2af1,"
+    echo "      a5aa4a5e8573754b25476d220bbfe5fda514cf60} AND its witness file."
+    echo "     It is NOT a permission: a rev outside that pair still refuses, and"
+    echo "     the merge RE-DERIVES the instrument diff and refuses if non-empty."
+    echo ""
+    echo "  ⚠️ --out-dir is \$CAMPAIGN/legs/$S, NOT the share. READ_RULE §2"
+    echo "     addresses the merged legs at RUN/legs/$S/... and RUN is the"
+    echo "     CAMPAIGN dir; under ABSENT IS FAIL a G-M / G-SALT / G-BACKEND"
+    echo "     fallback that resolves nowhere is the fail-always shape this pair"
+    echo "     keeps catching. ⚠️ R4 merged its legs to the SHARE instead — this"
+    echo "     is a DELIBERATE divergence from that precedent, made to keep the"
+    echo "     addresses live, and it is REPORTED rather than assumed. One flag"
+    echo "     reverses it if the owner prefers the share (then A2/A3 and the"
+    echo "     adjudicator must both be pointed there explicitly)."
+    echo ""
+    echo "  3) G-DRAW — a pure invocation bless, no code change, no new mode."
+    echo ""
+    echo "     $PY $REPO/scripts/tiletie/gate_draw.py \\"
+    echo "       --arms $CAMPAIGN/ARMS_R5.json \\"
+    echo "       --out  $CAMPAIGN/GATE_DRAW_R5.json"
+    echo ""
+    echo "  ⛔ Do NOT pass --cap-j. Take the default DEPLOYED_CAP_J == 4. R5 is"
+    echo "     the rung-3 (J > 4) read and the temptation to 'match the rung' is"
+    echo "     precisely wrong: G-DRAW asserts that the recorded J=4 subset"
+    echo "     reproduces this repo's own seeded draw. Passing R5's J would"
+    echo "     compare subset_j4 against a draw it was never made by —"
+    echo "     FAIL-ALWAYS, the G-CAP shape again. Expect n_checked = 1,060;"
+    echo "     ok requires n_checked > 0, so an empty or mis-pathed --arms FAILS"
+    echo "     rather than passing on zero rows."
+    echo ""
+    echo "  4) W9 / D-DRAW — the dedupe-partition probe. LATE and disclosed"
+    echo "     (D6.1 class: its inputs are the sha-pinned corpus artifacts, which"
+    echo "     scoring READS and does not write). ~3 s for the whole population."
+    echo ""
+    echo "     $PY $REPO/scripts/tiletie/d_draw_probe.py \\"
+    echo "       --arms $CAMPAIGN/ARMS_R5.json \\"
+    echo "       --leg  $CAMPAIGN/corpus/positions_s2/positions_walled_leg1.jsonl \\"
+    echo "       --out  $CAMPAIGN/D_DRAW.json"
+    echo ""
+    echo "  ⛔ D-DRAW ADJUDICATES NOTHING and may never correct, reweight or"
+    echo "     re-scale Delta_ora. The DISCHARGE is the Tier-1 partition block;"
+    echo "     the chartered agreement_rate is a coincidence statistic printed"
+    echo "     beside its null model and labelled NOT-EVIDENCE."
+    echo "  ⚠️ NO FILTER FLAG EXISTS, by design: ARMS_R5 carries \`capped\` (false"
+    echo "     on all 1,060) beside \`capped_at_4\` (true on all 1,060), and"
+    echo "     filtering on the field whose NAME matches the charter's word"
+    echo "     empties the population and passes G-DDRAW vacuously."
+    echo ""
+    echo "  5) A2 — the [post-corpus] acceptance pass. ⛔ It is LATE (deviation"
+    echo "     D6: the pair named the pass and named no tool, so the checkpoint"
+    echo "     was skipped before the first scoring leg). Its inputs were frozen"
+    echo "     before scoring, so the audit is LATE, NOT CONTAMINATED — but its"
+    echo "     protective value is spent, and A2 VERIFIES the freeze rather than"
+    echo "     assuming it. A sha drift RAISES to the owner (exit 3); it is never"
+    echo "     repaired or re-pinned."
+    echo ""
+    echo "     $PY $REPO/scripts/tiletie/acceptance_r5.py \\"
+    echo "       --pass A2 --run $CAMPAIGN \\"
+    echo "       --json-out $CAMPAIGN/ACCEPTANCE_A2.json"
+    echo ""
+    echo "  6) ADJUDICATE — the read-out. --dry-run FIRST (it writes nothing)."
+    echo ""
+    echo "     $PY $REPO/scripts/tiletie/analyze_rung3_r5.py \\"
+    echo "       --run $CAMPAIGN --legs-root $CAMPAIGN/legs/$S \\"
+    echo "       --out-json $CAMPAIGN/READOUT_R5.json \\"
+    echo "       --out-md   $CAMPAIGN/READOUT_R5.md"
+    echo ""
+    echo "  7) A3 — the [post-scoring] pass, LAST."
+    echo ""
+    echo "     $PY $REPO/scripts/tiletie/acceptance_r5.py \\"
+    echo "       --pass A3 --run $CAMPAIGN \\"
+    echo "       --json-out $CAMPAIGN/ACCEPTANCE_A3.json"
+    echo ""
+    echo "  ⚠️ THE ORDER IS THE POINT — merge -> gate_draw -> D-DRAW -> A2 ->"
+    echo "     adjudicate -> A3 — and A3 comes AFTER the adjudicator, not before."
+    echo "     A3 audits READOUT:: addresses and THE ADJUDICATOR IS WHAT WRITES"
+    echo "     THEM; run first it can only ever report the artifact missing,"
+    echo "     which is exactly what happened (D6.3). Each pass is pinned"
+    echo "     RELATIVE TO THE PRODUCER OF ITS INPUTS — 'after X writes A', never"
+    echo "     'at the end': the extended D6.2 rule, whose load-bearing half is"
+    echo "     that naming the tool is necessary and NOT sufficient."
+    echo ""
+    echo "  ⛔ THE VERDICT STAYS SEALED UNTIL ALL 19 GATES PASS."
     echo "=============================================================================="
   fi
 fi
 
+run_live_clear
 echo "[scoring-r5] DONE box=$BOX rc_all=$rc_all $(date -Is)"
 exit "$rc_all"

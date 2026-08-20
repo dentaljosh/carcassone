@@ -108,6 +108,32 @@ require_preflight() {
 }
 
 # --------------------------------------------------------------------------- #
+
+# ---- W-FREEZE-LATCH sentinel (DEVIATIONS D5 (b)) -----------------------------
+# ⭐ Dropped at leg start, cleared at close-out AND on any exit (trap), so an
+# abort can never leave the tree latched. The PreToolUse latch
+# (scripts/hooks/pretooluse_lint.py) refuses a MAIN-TREE commit while it exists.
+# It is a FILE, not a convention: it is visible to WHOEVER commits, which is the
+# point — the freeze discipline has failed twice and both times at the
+# orchestrator's hands, not a builder's or an executor's.
+run_live_path() { echo "$DIR/RUN_LIVE.json"; }
+run_live_drop() {
+  "$PY" - "$(run_live_path)" "$1" <<'RLEOF' || true
+import json, os, socket, sys, time
+p, what = sys.argv[1], sys.argv[2]
+json.dump({"what": what, "host": socket.gethostname(), "pid": os.getppid(),
+           "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+           "why": ("W-FREEZE-LATCH sentinel (DEVIATIONS D5 (b)): a MAIN-TREE "
+                   "commit while this leg is live can put two revisions into "
+                   "one run — spawn respawns and each new --shared-claim cell "
+                   "RE-IMPORT FROM DISK. Cleared at close-out and on any exit."),
+           "cleared_by": "the launcher's EXIT trap"},
+          open(p, "w"), indent=2, sort_keys=True)
+RLEOF
+  echo "[freeze] RUN_LIVE dropped -> $(run_live_path)"
+}
+run_live_clear() { rm -f "$(run_live_path)" 2>/dev/null || true; }
+
 main() {
   mkdir -p "$LOGS" "$OUT"
   [ -n "$BAND" ] || { log "!!! FATAL: no band. The EXECUTOR claims it from"
@@ -126,6 +152,11 @@ main() {
   log "⭐ the two cells differ in EXACTLY ONE argument: --cand-tiearb-b"
 
   [ "$DRY" -eq 1 ] || [ "$SMOKE" -eq 1 ] || require_preflight
+
+  if [ "$DRY" -eq 0 ]; then
+    trap 'run_live_clear' EXIT INT TERM
+    run_live_drop "b64_cell $TAG leg (role=$ROLE)"
+  fi
 
   for pair in "$CELL_WIDE:$TIEARB_B_WIDE:$CELL_SUBDIR_WIDE" \
               "$CELL_NARROW:$TIEARB_B_NARROW:$CELL_SUBDIR_NARROW"; do
@@ -218,6 +249,7 @@ main() {
     log "⚠️ cells are NOT launched and the decision returns to the owner."
     log "⚠️ This launcher REPORTS the comparison; it adjudicates nothing."
   fi
+  run_live_clear
   log "DONE tag=$TAG"
 }
 

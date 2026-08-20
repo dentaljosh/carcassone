@@ -187,6 +187,43 @@ RESOLVED_CONFIG_PER_CHUNK = frozenset({
 # on every chunk, refusing under its own message. The merge NEVER independently
 # compares `git_rev` across chunks — duplicating that would produce two
 # differently-worded refusals for one condition.
+#: ⭐ THE EMITTER'S OWN SHAPE, read off `run_tiletie.check_git_clean`:
+#:     {"ok": bool, "git_rev": str, "dirty_paths": list[str]}
+#: The consumer mirrors it EXACTLY. It previously dropped `git_rev` — the one
+#: field the D4.12 licence's base-rev match consumes — and substituted an
+#: invented `source` telling the reader which artifact the dict came from. A
+#: consumer that renames its producer's fields is a second schema, and the one
+#: it dropped was load-bearing.
+GIT_CLEAN_KEYS = ("ok", "git_rev", "dirty_paths")
+
+
+def collapse_revs(revs) -> str:
+    """The single rev a set of recorded abbreviations denotes, or None.
+
+    ⚠️ MEASURED on this run's own manifests: chunks 6-8 carry BOTH `9bc2ab77`
+    and `9bc2ab772` — ONE commit at two `core.abbrev` widths, because the
+    abbreviation width is a per-BOX git setting. Collapsing on string equality
+    would read that as a conflict; treating any two strings as "the same commit"
+    would read a real split as agreement. So: PREFIX-COMPATIBLE collapses to the
+    LONGEST (most specific) spelling; anything else returns None and leaves both
+    spellings visible in `git_revs`. Chunks 3-5 really did span the R5 tranche
+    split and MUST come back None.
+    """
+    revs = sorted({str(r).lower() for r in (revs or []) if r})
+    if not revs:
+        return None
+    longest = max(revs, key=len)
+    return longest if all(longest.startswith(r) for r in revs) else None
+
+
+def _git_clean_shape(d: dict) -> dict:
+    """Project any git_clean-carrying dict onto the emitter's three keys."""
+    d = d if isinstance(d, dict) else {}
+    return {"ok": bool(d.get("ok")) if d.get("ok") is not None else None,
+            "git_rev": d.get("git_rev"),
+            "dirty_paths": d.get("dirty_paths")}
+
+
 PREFLIGHT_CHECKS_IDENTITY_REQUIRED = frozenset({"leaf_hash", "m"})
 PREFLIGHT_CHECKS_PER_CHUNK = frozenset({"process_census", "gate", "positions"})
 PREFLIGHT_CHECKS_LICENCE_GOVERNED = frozenset({"git_clean"})
@@ -268,6 +305,55 @@ LICENSED_TRANCHE_REVS = {
     "committed_tranche": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
     # chunks 9-16, the completion tranche — the rev that carries the D4 fixes
     "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+}
+
+#: ⭐ R5's OWN enumerated pair (D5 (a), commit `3b7cd11a`). D4.11's MECHANISM,
+#: instantiated for a different run — never a widening of R4's licence, which
+#: R5 could not satisfy even single-rev because it names R4's commits.
+#:
+#: ⚠️ FULL SHAS, AND COMPARISON IS PREFIX-MATCHING AGAINST THEM. The record's
+#: "9bc2ab772" is the SAME COMMIT at 9-char abbrev — which is exactly why D4.13
+#: fixed comparison to prefix-matching on the full sha with a minimum width, and
+#: why `carc_rs_build` carries a fixed 12-char slice. ⛔ NEVER compare two
+#: abbreviations to each other: one side of every comparison here is the
+#: enumerated 40-char sha.
+LICENSED_TRANCHE_REVS_R5 = {
+    "r5_chunks_1_2": "9bc2ab772ee907cdf4278985cf717497b95b2af1",
+    "r5_chunks_3_8": "a5aa4a5e8573754b25476d220bbfe5fda514cf60",
+}
+
+#: One licence per RUN. A licence is never reused across runs: its whole content
+#: is "these two commits, on this run, witnessed empty".
+LICENCE_SETS = {"R4": LICENSED_TRANCHE_REVS, "R5": LICENSED_TRANCHE_REVS_R5}
+IDENTITY_NAME_BY_LICENCE = {"R4": "INSTRUMENT_IDENTITY.json",
+                            "R5": "INSTRUMENT_IDENTITY_R5.json"}
+
+#: ⚠️ THE TWO SPLITS HAVE DIFFERENT CAUSES and the record must say which. R4's
+#: split was NECESSARY (the completion tranche's code did not exist at the spent
+#: rev). R5's was AVOIDABLE — a MAIN-TREE commit landed while a leg was live —
+#: and recording it as if it were necessary would launder the very failure the
+#: W-FREEZE-LATCH (D5 (b)) exists to prevent.
+LICENCE_DEVIATION = {
+    "R4": "D4.11/D4.12 (measurement/tiearb_widening_20260817/DEVIATIONS.md, "
+          "commit 93f83e26)",
+    "R5": "D5 (a) (measurement/tiearb_widening_20260817/DEVIATIONS.md, drafter "
+          "ruling 3b7cd11a)",
+}
+LICENCE_NOTE = {
+    "R4": "ENUMERATED two-rev licence. The tranche split is a NECESSARY "
+          "consequence of the D4.2 completion — the completion tranche cannot "
+          "run at the spent rev because the staging code did not exist there. "
+          "No gate constrains the run's git_rev (D4.10). The instrument diff "
+          "between the two revs was RE-DERIVED here, not read from the witness.",
+    "R5": "ENUMERATED two-rev licence. ⚠️ UNLIKE R4, THIS SPLIT WAS AVOIDABLE: "
+          "the B64 aggregator commit landed on main while rung-3's local "
+          "scoring leg was live, so chunks 1-2 scored at one rev and chunks 3-8 "
+          "at the next. The instrument diff between them is EMPTY — RE-DERIVED "
+          "here, not read from the witness — so the tranche is mergeable; but "
+          "that emptiness was LUCK, NOT DESIGN, since nothing checked the leg "
+          "before committing. Mechanism, not resolve: the W-FREEZE-LATCH "
+          "(D5 (b), scripts/hooks/pretooluse_lint.py) now refuses a main-tree "
+          "commit while a RUN_LIVE sentinel exists.",
 }
 
 #: ⚠️ ENUMERATED ADDRESSES, not a pattern. The run records its rev under FOUR
@@ -629,17 +715,29 @@ class RevLicense:
     hard-coded pair alone asserts nothing about WHY the pair is safe."""
 
     def __init__(self, *, repo=REPO, identity_path=None, campaign=CAMPAIGN,
-                 git_clean_by_chunk=None, revs=None):
+                 git_clean_by_chunk=None, revs=None, licence="R4"):
         self.repo = Path(repo)
         self.campaign = Path(campaign)
-        self.revs = dict(revs if revs is not None else LICENSED_TRANCHE_REVS)
+        #: ⭐ ONE LICENCE PER RUN (D5 (a)). `licence` selects the enumerated pair
+        #: AND the witness filename together, so a run can never be merged under
+        #: another run's licence or against another run's witness.
+        if licence not in LICENCE_SETS:
+            raise MergeError(f"unknown licence {licence!r}; "
+                             f"enumerated: {sorted(LICENCE_SETS)}")
+        self.licence = licence
+        self.identity_name = IDENTITY_NAME_BY_LICENCE[licence]
+        self.revs = dict(revs if revs is not None else LICENCE_SETS[licence])
         self._explicit_path = Path(identity_path) if identity_path else None
-        #: {(judge, chunk) | chunk: {"ok": bool, "source": str, …}} — the D4.12
+        #: {(judge, chunk) | chunk: {"ok", "git_rev", "dirty_paths"}} — the D4.12
         #: per-chunk evidence for artifacts that do not carry it themselves
         #: (per-leg manifests do NOT: only RUN_MANIFEST has preflight.checks).
         self.git_clean_by_chunk = dict(git_clean_by_chunk or {})
         self._witness = None
         self.used = []
+
+    def _candidates(self):
+        return (Path(RUN_DIR) / self.identity_name,
+                Path(self.campaign) / self.identity_name)
 
     # ---- rev matching ---------------------------------------------------- #
     def tranche_of(self, value):
@@ -660,10 +758,10 @@ class RevLicense:
     def identity_path(self):
         if self._explicit_path is not None:
             return self._explicit_path
-        for p in instrument_identity_candidates(self.campaign):
+        for p in self._candidates():
             if p.is_file():
                 return p
-        return instrument_identity_candidates(self.campaign)[0]
+        return self._candidates()[0]
 
     def witness(self) -> dict:
         """Load AND re-derive. Cached: the git work happens once per merge."""
@@ -672,9 +770,10 @@ class RevLicense:
         p = self.identity_path()
         if not p.is_file():
             raise MergeError(
-                f"the two-rev licence requires {INSTRUMENT_IDENTITY_NAME} and it "
+                f"the {self.licence} two-rev licence requires "
+                f"{self.identity_name} and it "
                 f"is ABSENT (looked at "
-                f"{[str(c) for c in instrument_identity_candidates(self.campaign)]}). "
+                f"{[str(c) for c in self._candidates()]}). "
                 f"D4.11 Amendment 1: the code holds the enumerated pair AND the "
                 f"witness must assert the empty instrument diff — BOTH, or "
                 f"refuse. Generate it with instrument_identity.py.")
@@ -789,15 +888,11 @@ class RevLicense:
         """
         local = _get(manifest or {}, "preflight.checks.git_clean")
         if local is not _MISSING and isinstance(local, dict):
-            return {"ok": bool(local.get("ok")), "source": "manifest",
-                    "dirty_paths": local.get("dirty_paths")}
+            return _git_clean_shape(local)
         for key in (chunk, str(chunk)):
             if key in self.git_clean_by_chunk:
-                v = dict(self.git_clean_by_chunk[key])
-                v.setdefault("source", "RUN_MANIFEST")
-                v["ok"] = bool(v.get("ok"))
-                return v
-        return {"ok": None, "source": None}
+                return _git_clean_shape(self.git_clean_by_chunk[key])
+        return {"ok": None, "git_rev": None, "dirty_paths": None}
 
     # ---- §D4.13: carc_rs_build across tranches ----------------------------- #
     def rust_scope_ok(self) -> dict:
@@ -1011,6 +1106,9 @@ class RevLicense:
 
         record = {
             "path": dotted,
+            #: ⭐ WHICH enumerated pair authorised this — a reader of the merged
+            #: manifest must never have to infer the licence from the shas.
+            "licence": self.licence,
             "by_chunk": {str(k): v for k, v in sorted(present.items())},
             "tranches": {t: sorted(ks) for t, ks in sorted(by_tranche.items())},
             "licensed_revs": {t: s for t, s in sorted(self.revs.items())},
@@ -1019,14 +1117,11 @@ class RevLicense:
                 "path": witness["_path"], "sha256": witness["_sha256"],
                 "rederived": witness["_rederived"],
             },
-            "deviation": "D4.11/D4.12 (measurement/tiearb_widening_20260817/"
-                         "DEVIATIONS.md, commit 93f83e26)",
-            "note": "ENUMERATED two-rev licence. The tranche split is a "
-                    "NECESSARY consequence of the D4.2 completion — the "
-                    "completion tranche cannot run at the spent rev because the "
-                    "staging code did not exist there. No gate constrains the "
-                    "run's git_rev (D4.10). The instrument diff between the two "
-                    "revs was RE-DERIVED here, not read from the witness.",
+            #: ⚠️ The two licences have DIFFERENT CAUSES, and a record that
+            #: recited the wrong one would convict the wrong thing in a
+            #: close-out. R4's split was NECESSARY; R5's was AVOIDABLE.
+            "deviation": LICENCE_DEVIATION[self.licence],
+            "note": LICENCE_NOTE[self.licence],
         }
         self.used.append(record)
         return record
@@ -1647,19 +1742,50 @@ def chunk_dirs(chunks_root: Path) -> dict:
 # --------------------------------------------------------------------------- #
 # the merge                                                                    #
 # --------------------------------------------------------------------------- #
-def git_clean_by_chunk_from_manifests(manifests_dir, stratum: str) -> dict:
-    """{chunk: {"ok", "dirty_paths", "sources"}} from the per-chunk
-    `RUN_MANIFEST_*` files — the ONLY artifacts that carry
+#: ⭐ THE FILENAME TAG IS NOT THE STRATUM KEY. The per-chunk manifests are named
+#: `RUN_MANIFEST_<TAG>_<judge>_chunk<N>.json`, and R4 wrote `<TAG> = S1|S2` while
+#: rung-3 R5's launcher wrote `<TAG> = R5` — MEASURED on disk, 16 files. A glob
+#: hard-coded to the stratum therefore matches NOTHING on R5, and an empty glob
+#: is not a satisfied domain: the D4.12 evidence map comes back empty, every
+#: chunk reads `ok: None`, and the licence refuses a HEALTHY run while naming
+#: the wrong cause ("the chunk was dirty"). The tag is an explicit knob and a
+#: zero-match refusal LISTS THE TAGS ACTUALLY PRESENT.
+#: ⚠️ This is a filename, NOT an address: READ_RULE §0 R8's "`s2` EVERYWHERE"
+#: governs the pair's addresses, and the pair's merged output really is
+#: addressed `RUN/RUN_MANIFEST_R5.json`. Nothing here moves an address.
+def manifest_tags_present(manifests_dir) -> list:
+    """The distinct `<TAG>`s of the `RUN_MANIFEST_<TAG>_*_chunk*.json` files on
+    disk — so a zero-match refusal can say what IS there."""
+    d = Path(manifests_dir)
+    if not d.is_dir():
+        return []
+    tags = set()
+    for p in d.glob("RUN_MANIFEST_*_chunk*.json"):
+        parts = p.name.split("_")
+        if len(parts) >= 3:
+            tags.add(parts[2])
+    return sorted(tags)
+
+
+def git_clean_by_chunk_from_manifests(manifests_dir, stratum: str,
+                                      manifest_tag=None) -> dict:
+    """{chunk: {"ok", "git_rev", "git_revs", "dirty_paths", "sources"}} from the
+    per-chunk `RUN_MANIFEST_*` files — the ONLY artifacts that carry
     `preflight.checks.git_clean` (per-leg manifests do not).
 
     ANDed across judges for the same chunk: a chunk is clean only if every
     invocation that touched it said so.
+
+    ⚠️ `git_rev` is CARRIED (D5 (1)) — it is the emitter's own field and the one
+    the D4.12 licence consumes for its base-rev match. If two judges recorded
+    DIFFERENT revs for one chunk, `git_rev` is None and both appear in
+    `git_revs`: a conflict is surfaced, never silently collapsed to one.
     """
     out: dict = {}
     d = Path(manifests_dir)
     if not d.is_dir():
         return out
-    S = str(stratum).upper()
+    S = str(manifest_tag or stratum).upper()
     for p in sorted(d.glob(f"RUN_MANIFEST_{S}_*_chunk*.json")):
         try:
             doc = json.loads(p.read_text())
@@ -1673,17 +1799,23 @@ def git_clean_by_chunk_from_manifests(manifests_dir, stratum: str) -> dict:
         gc = _get(doc, "preflight.checks.git_clean")
         if gc is _MISSING or not isinstance(gc, dict):
             continue
-        row = out.setdefault(k, {"ok": True, "dirty_paths": [], "sources": []})
+        row = out.setdefault(k, {"ok": True, "dirty_paths": [], "sources": [],
+                                 "git_revs": []})
         row["ok"] = bool(row["ok"]) and bool(gc.get("ok"))
         row["dirty_paths"] = sorted(set(row["dirty_paths"])
                                     | set(gc.get("dirty_paths") or []))
         row["sources"].append(str(p))
+        if gc.get("git_rev"):
+            row["git_revs"] = sorted(set(row["git_revs"]) | {str(gc["git_rev"])})
+    for row in out.values():
+        row["git_rev"] = collapse_revs(row["git_revs"])
     return out
 
 
 def merge_stratum(*, stratum: str, chunks_root: Path, out_dir: Path,
                   positions_dir: Path, judges=JUDGES, dry_run: bool = False,
-                  allow_varying=(), license=None, manifests_dir=None) -> dict:
+                  allow_varying=(), license=None, manifests_dir=None,
+                  manifest_tag=None) -> dict:
     chunks_root, out_dir = Path(chunks_root), Path(out_dir)
     expected = expected_leg_rids(positions_dir)
     cdirs = chunk_dirs(chunks_root)
@@ -1693,7 +1825,7 @@ def merge_stratum(*, stratum: str, chunks_root: Path, out_dir: Path,
         # the witness is present and its diff re-derives empty.
         license = RevLicense(git_clean_by_chunk=git_clean_by_chunk_from_manifests(
             manifests_dir if manifests_dir is not None
-            else CAMPAIGN / "chunks" / "manifests", stratum))
+            else CAMPAIGN / "chunks" / "manifests", stratum, manifest_tag))
     report = {
         "schema": SCHEMA, "run_id": RUN_ID, "stratum": stratum,
         "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -1825,21 +1957,35 @@ def merge_stratum(*, stratum: str, chunks_root: Path, out_dir: Path,
 
 def merge_run_manifest(*, stratum: str, manifests_dir: Path, out_path: Path,
                        judges=JUDGES, dry_run: bool = False,
-                       allow_varying=(), license=None) -> dict:
+                       allow_varying=(), license=None, manifest_tag=None) -> dict:
     """Merge the per-(judge, chunk) `RUN_MANIFEST_*` files into the single
-    `RUN/RUN_MANIFEST_{S1,S2}.json` the READ_RULE addresses."""
+    `RUN/RUN_MANIFEST_*.json` the READ_RULE addresses.
+
+    ⚠️ `manifest_tag` is the FILENAME tag, which is not always the stratum —
+    see `manifest_tags_present`. R5's launcher wrote `RUN_MANIFEST_R5_*`.
+    """
     manifests_dir = Path(manifests_dir)
-    S = stratum.upper()
+    S = str(manifest_tag or stratum).upper()
     found = {}
     for judge in judges:
         for p in sorted(manifests_dir.glob(f"RUN_MANIFEST_{S}_{judge}_chunk*.json")):
             k = p.name.split("_chunk")[-1][: -len(".json")]
             found[f"{judge}#{k}"] = (p, json.loads(p.read_text()))
     out = {"schema": SCHEMA, "stratum": S, "out_path": str(out_path),
+           "manifest_tag": S,
            "n_sources": len(found), "sources": sorted(str(p) for p, _ in found.values()),
            "ok": False, "problems": []}
     if not found:
-        out["problems"].append(f"no RUN_MANIFEST_{S}_*_chunk*.json under {manifests_dir}")
+        # ⭐ NAME THE TRUE CAUSE. An empty glob used to read downstream as "every
+        # chunk is dirty" — a refusal that convicts the wrong row. Say what is
+        # on disk instead.
+        present = manifest_tags_present(manifests_dir)
+        out["problems"].append(
+            f"no RUN_MANIFEST_{S}_*_chunk*.json under {manifests_dir}. "
+            f"Tags PRESENT there: {present or '(none)'}. The tag is a FILENAME, "
+            f"not the stratum key — pass --manifest-tag <TAG> if the launcher "
+            f"named these files after the run rather than the stratum. An empty "
+            f"glob is not a satisfied domain.")
         return out
     try:
         merged = merge_manifests(
@@ -1951,6 +2097,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
                          f"hard-coded and the instrument diff is re-derived.")
     ap.add_argument("--repo", default=str(REPO),
                     help="repo the instrument diff is re-derived in")
+    ap.add_argument("--licence", default="R4", choices=sorted(LICENCE_SETS),
+                    help="WHICH RUN's enumerated rev pair applies. ⚠️ NOT a "
+                         "permission: it selects an enumerated pair AND its "
+                         "witness filename together, so a run can never be "
+                         "merged under another run's licence. A rev outside the "
+                         "selected pair still refuses.")
+    ap.add_argument("--manifest-tag", default=None,
+                    help="FILENAME tag of the per-chunk RUN_MANIFEST files "
+                         "(`RUN_MANIFEST_<TAG>_<judge>_chunk<N>.json`). Defaults "
+                         "to the stratum, which is what R4 wrote; rung-3 R5's "
+                         "launcher wrote `R5`. ⚠️ A filename, NOT an address — "
+                         "it moves no gate and no address.")
     ap.add_argument("--dry-run", action="store_true",
                     help="report only: copy nothing, write nothing")
     ap.add_argument("--no-run-manifest", action="store_true",
@@ -1966,21 +2124,23 @@ def main(argv=None) -> int:
 
     license = RevLicense(
         repo=Path(a.repo), identity_path=a.instrument_identity,
-        git_clean_by_chunk=git_clean_by_chunk_from_manifests(a.manifests_dir,
-                                                             stratum))
+        licence=a.licence,
+        git_clean_by_chunk=git_clean_by_chunk_from_manifests(
+            a.manifests_dir, stratum, a.manifest_tag))
 
     rep = merge_stratum(stratum=stratum, chunks_root=Path(a.chunks_root),
                         out_dir=Path(a.out_dir), positions_dir=positions_dir,
                         judges=tuple(a.judges), dry_run=a.dry_run,
                         allow_varying=a.allow_varying, license=license,
-                        manifests_dir=Path(a.manifests_dir))
+                        manifests_dir=Path(a.manifests_dir),
+                        manifest_tag=a.manifest_tag)
 
     if not a.no_run_manifest and not rep["problems"]:
         out_path = Path(a.run_manifest_out or (RUN_DIR / RUN_MANIFEST_NAME[stratum]))
         rm = merge_run_manifest(stratum=stratum, manifests_dir=Path(a.manifests_dir),
                                 out_path=out_path, judges=tuple(a.judges),
                                 dry_run=a.dry_run, allow_varying=a.allow_varying,
-                                license=license)
+                                license=license, manifest_tag=a.manifest_tag)
         rep["run_manifest"] = rm
         rep["problems"].extend(rm["problems"])
         rep["ok"] = not rep["problems"]

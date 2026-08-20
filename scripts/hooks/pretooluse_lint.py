@@ -26,7 +26,8 @@ where an instruction does not. A loop-breaker (see _recent_block_count) escalate
 loudly once the same error class has fired repeatedly in a short window.
 
 Escape hatches (put in the command): `# nolint` (skip all), `# allow-sleep`,
-`# allow-path`, `# allow-doclint`, `# allow-nocd`. For Read, pass an explicit
+`# allow-path`, `# allow-doclint`, `# allow-nocd`, and
+`# allow-freeze: <reason>` (the W-FREEZE-LATCH — REASON MANDATORY). For Read, pass an explicit
 `limit` to read a known-large file whole on purpose (suppresses the nudge).
 """
 from __future__ import annotations
@@ -239,6 +240,73 @@ def _advisories(cmd: str) -> list[str]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# W-FREEZE-LATCH — refuse a MAIN-TREE commit while a scoring leg is live        #
+#                                                                              #
+# ⭐ Ruled by DEVIATIONS D5 (b) (`3b7cd11a`). The B64 aggregator commit was      #
+# merged to main while rung-3's local scoring leg was live — the same class     #
+# that voided the first JCZ run, and the direct cause of R5's two-rev split.    #
+# The mitigation (the instrument diff happened to be empty) is a WITNESSED      #
+# FACT, NOT AN EXCUSE: it was LUCK, NOT DESIGN, because nothing about the merge #
+# checked whether a leg was live. Had the commit touched rust/, src/ or         #
+# scripts/tiletie/, chunks 3-5 would have been UNRECOVERABLE.                   #
+#                                                                              #
+# ⚠️ The discipline has now failed TWICE and BOTH times at the ORCHESTRATOR's   #
+# hands, not a builder's or an executor's. "We checked afterwards and it was    #
+# fine" is not a control — a convention that has failed twice at the same hands #
+# is a hook's job.                                                             #
+# --------------------------------------------------------------------------- #
+#: Dropped by the launchers at leg start and cleared at close-out (and on trap).
+RUN_LIVE_NAME = "RUN_LIVE.json"
+
+
+def _live_sentinels(repo=None) -> list:
+    """Every live-leg sentinel under `measurement/`. On-disk, so it is visible
+    to WHOEVER commits — the latch is orchestrator-proof by construction.
+
+    ⚠️ `repo` is resolved LATE (module global, not a default-arg binding) so the
+    root stays overridable — a default-arg would freeze it at import."""
+    root = Path(repo if repo is not None else REPO) / "measurement"
+    if not root.is_dir():
+        return []
+    try:
+        return sorted(str(p) for p in root.glob("**/" + RUN_LIVE_NAME))
+    except OSError:
+        return []
+
+
+def _is_main_tree_commit(cmd: str, cwd: str | None) -> bool:
+    """A `git commit` that lands on the MAIN tree. A commit inside a git
+    worktree is exactly the safe pattern this project already mandates for live
+    trees, so it is never latched."""
+    if not re.search(r"\bgit\b[^|;&]*\bcommit\b", cmd):
+        return False
+    m = re.search(r"-C\s+(\S+)", cmd)
+    target = m.group(1).strip("'\"") if m else (cwd or "")
+    return "/.claude/worktrees/" not in str(target)
+
+
+def _freeze_latch(cmd: str, cwd: str | None) -> str | None:
+    if not _is_main_tree_commit(cmd, cwd):
+        return None
+    live = _live_sentinels()
+    if not live:
+        return None
+    return (
+        "⛔ W-FREEZE-LATCH: a scoring leg is LIVE and this is a MAIN-TREE commit.\n"
+        "   live sentinel(s): " + ", ".join(live[:4])
+        + ("" if len(live) <= 4 else f" (+{len(live) - 4} more)") + "\n"
+        "   Committing to main while a leg runs is what caused R5's two-rev "
+        "split (DEVIATIONS D5 (b)): spawn respawns and each new --shared-claim "
+        "cell RE-IMPORT FROM DISK, so a mid-run commit can put two revisions "
+        "into one run. That it was harmless last time was LUCK, NOT DESIGN.\n"
+        "   Do this instead: commit in a git worktree "
+        "(agents: isolation=\"worktree\") and merge at a quiet window.\n"
+        "   Override (LAST RESORT, REASON MANDATORY): add "
+        "`# allow-freeze: <why this cannot wait>` to the command. "
+        "`# allow-freeze` with no reason does NOT override.")
+
+
 def main() -> int:
     raw = sys.stdin.read()
     try:
@@ -280,6 +348,12 @@ def main() -> int:
         d = _doclint_on_commit(cmd)
         if d:
             blocks.append(d)
+    # ⚠️ THE REASON IS MANDATORY: a bare `# allow-freeze` does not override, so
+    # the override cannot be muscle-memory — it has to be an argument.
+    if not re.search(r"#\s*allow-freeze\s*:\s*\S", cmd):
+        f = _freeze_latch(cmd, data.get("cwd"))
+        if f:
+            blocks.append(f)
 
     if blocks:
         msg = "PreToolUse lint blocked this command:\n- " + "\n- ".join(blocks)
