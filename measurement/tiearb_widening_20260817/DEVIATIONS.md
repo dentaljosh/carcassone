@@ -1340,8 +1340,66 @@ only the nouns.** Instance 3 shows the failure mode is not cosmetic: it is a che
 **cannot fail**, because nothing runs it — the same **pass-always** disease this campaign has now
 found in `G-CAP`, `G-TOOL`, `G-COLLIDE`, `G-SATURATION` and `G-BAND`, wearing different clothes.
 
+### D6.3 — the sibling defect: `A3` ran BEFORE the adjudicator (ORDER, not existence)
+
+**Recorded. Corrected order CONFIRMED for the rerun: adjudicate → `A3`.**
+
+`A3` is `[post-scoring]` and audits `READOUT::…` addresses. **The adjudicator is what writes them.**
+Run first, `A3` can only ever report the artifact missing — which is exactly what it reported. This
+is the **R4 post-before-analyze class, third instance**, and it is a *different* root cause from
+D6.1: there the tool did not exist; here it existed and ran **at the wrong point in the order**.
+
+⚠️ **So the D6.2 standing rule, as first written, would NOT have caught this** — the tool was named.
+It is therefore **extended, and the extension is the load-bearing half**:
+
+> **STANDING RULE (extended).** *Naming the tool is necessary and not sufficient. A pass must also
+> be pinned **relative to the producer of its inputs** — "after X writes A", not "at the end". An
+> ordering given only as a stage label (`[post-scoring]`) does not order a pass against its
+> siblings, and siblings are where this keeps going wrong.*
+
+**No result was reached out of order** — the failure surfaced as an unresolvable address, the gate
+did its job, and nothing was read. **The cost was a rerun, not a contaminated verdict.**
+
+### D6.4 — the three R5 gate failures, for the record
+
+16/19 gates passed; the three failures are **fixed, not waived**, and **no outcome value was read by
+anyone** in diagnosing them (§7 suppression intact). Ruled in `rung3_r5/DESIGN.md` §"THE THREE GATE
+FAILURES": `G-DISJOINT` — consumer-side, the `ci95` class, the emitter's `layers_absent` declaration
+pre-dates the blind commit; `G-DDRAW` — the W9 probe never existed, the conjunct did its job, built
+now and late under the D6.1 licence; `G-DRAW` — a pure invocation bless, no code change.
+
+⚠️ **One finding from that ruling belongs here too, because it is a governance fact and not merely a
+build detail:** the `D-DRAW` probe **as chartered in §0.D** compares two RNG streams that are
+**different by construction** — the same fact for which `G-CAP` was retired as fail-always. Its
+`agreement_rate` is a coincidence statistic, not a partition measurement, so **the chartered probe
+alone would not have discharged `I7`'s dedupe-partition conditional** that the R5 pair claims it
+discharges. The fix adds the **direct** partition comparison (exact, and nearly free — both
+partitions are already materialized), keeps the chartered field beside its null model, and rests the
+discharge on the direct check. **`D-DRAW` adjudicates nothing, so no bar or branch moves** — but the
+*claim* would have been overstated, and that is recorded rather than quietly repaired.
+
+### D6.5 — the merge-vs-analysis rid drop: CLOSED, working as designed
+
+`13,204 → 13,188` records and `s2_n` `1,060 → 1,059` is **one rid**,
+`tt_sp_137000002820_p12` (9 arms ⇒ legs 1–8 × 2 judges = **exactly the 16 records**), removed by the
+**D4.18 whole-rid rule** on a single `ok:false` `clair-puct` leg-8 record of the **known
+`WindowTruncationError` class**. `1/1,060 = 0.094%` against the **2% bound**; deterministic across
+two re-runs; join-miss, dedup and boundary all excluded by set-diff both ways; the READOUT's
+`widening.failed` block names rid, class and cause. **`s2_n = 1,059` against floor `1,007` stands.**
+
+✅ **The loss is structural and outcome-independent** — the D4.18 predicate reads record *validity*,
+never a value — which is the only property that made it acceptable. The record arithmetic closes
+independently: 16 records is precisely one 9-arm rid's leg multiplicity under the committed thinning
+ladder, so **no second, unexplained rid is hiding inside the same delta.**
+
+**Parked, not now:** an `n_records_removed` field so that arithmetic closes *inside* the READOUT
+instead of via the rid's arm count. Worth doing — a reconciliation that requires an outside
+computation is a reconciliation most readers will skip — but it is an enhancement to a passing
+mechanism, and the freeze is open.
+
 *No bar, branch, statistic or estimand moves under D6. The execution-layer completion that supplies
-the missing tools is ruled in `rung3_r5/DESIGN.md` §"EXECUTION-LAYER COMPLETION".*
+the missing tools is ruled in `rung3_r5/DESIGN.md` §"EXECUTION-LAYER COMPLETION"; the three gate
+fixes in §"THE THREE GATE FAILURES".*
 
 ---
 
