@@ -1,5 +1,51 @@
 # THE `B = 64` GAME CELL — DESIGN (DRAFT)
 
+> **🏁 STATUS 2026-08-20 — RAN AND READ OUT. PRE-REGISTERED BRANCH `B-COSTKILL` FIRED:
+> THE WIDENING WINS AND THE RUNG IS UNAFFORDABLE — A WIN THAT CANNOT BE BOUGHT.
+> THE READ-RULE IS SPENT AND BAND 139e9 RETIRES FROM CONFIRMATORY USE.**
+> Read-out of record: `verdicts/READOUT_B64.md` + `READOUT_B64.json`.
+> **1,500 games/cell (750 decks × 2 seatings), 0 failed either cell, all 13 gates PASS.**
+> **PRIMARY `D` = M_WIDE − M_NARROW = +1.7167 pts/game, `se_D` 0.6463, `z_D` +2.6561,
+> `n_common` 750 decks**, against the committed 2σ conviction floor **+1.427** (committed `se(D)`
+> 0.7133; 426 decks would convict at the realized dispersion). Against the **unmodified champion**
+> as common opponent: **WIDE (B=64)** W872/L599/D29, wr 0.591, +63.9457 ± 9.1231 elo, M +5.3773 ·
+> **NARROW (B=16, the deployed rung)** W811/L655/D34, wr 0.552, +36.2644 ± 9.0197 elo, M +3.6607.
+> `f0` = 0.0160 (`G-DIVERGE` PASS; and per §1.3's nested CRN, identity is a **power loss**, not a
+> power win); `G-NEST` byte-identity witness PASS.
+>
+> ⛔⛔ **IT LICENSES NOTHING DEPLOYABLE. B = 64 IS NOT DEPLOYED AND IS NOT DEPLOYABLE ON THIS
+> RECORD; `governance/PRODUCTION.yaml` IS UNTOUCHED, no claim is minted, and the deployed shape
+> stays B=16 / J=4.** `B-CONFIRMED` was **unreachable before game 1**: affordability `A` is decided
+> entirely by the owner waiver `W`, `rho_wall(64)` = 2.4897 is **2.07× the house N4 bar of 1.20**,
+> and **no `OWNER_WAIVER.md` predated game 1** ⇒ `W` FALSE fail-closed. ⛔ **The ladder is not a
+> cheaper route: `rho_wall(32)` = 1.2449 also exceeds 1.20**, so a B=32 win would **also** be
+> `B-COSTKILL`. ⛔ **On-device is dead at this rung regardless** — `rho_phone(64)` ≈ [23.9, 22.08],
+> a third currency, not solved, out of scope.
+>
+> ⚖️ **THE BRANCH LICENSES EXACTLY TWO THINGS, both needing a fresh preregistration or a fresh
+> owner ruling: (i) a fresh owner wall-clock ruling on whether the N4 bar moves above B = 16 — the
+> ONE live follow-up, and it is the owner's alone; and (ii) a ladder question this cell DID NOT
+> MEASURE in game points and which no branch may infer from two points.** ⚠️ The owner's
+> pre-campaign ruling (*"we can afford some wallclock during play, especially if its not every tile
+> draw. dont let that be the constraint right now"*, `tiearb2_stage2_20260817/READ_RULE.md` §0.D,
+> commit `a81b8c72`) is **decision-relevant to (i) and is NOT a waiver**: it waived the
+> **consequence, not the measurement**, and was made at **B=16 where `rho_wall` = 0.6224**.
+> The anti-gaming clause still binds.
+>
+> ⚠️ **Cost is reported on every branch and is a branch input nowhere:** `ms_ratio` WIDE 6.6080
+> (predicted 6.5) / NARROW 2.3860 (predicted 2.42); `champ_prefix_ms_per_move` **is the CANDIDATE
+> side** (WIDE 11,651.28 ms / NARROW 4,128.57 ms; opponent-side `rung_ms_per_move` 1,763.20 /
+> 1,730.35) — swapping them inverts the cost verdict. Neither candidate's **search budget** moves,
+> so the extra cost buys **no extra search**: it is a wall-clock asymmetry, disclosed as one.
+> The three §13.1 spec-vs-buildable mismatches were **reported and ruled pre-blind** (RULINGS 1–3,
+> [`RULINGS_PREBLIND.md`](RULINGS_PREBLIND.md)), with the `j13_witness.*` boolean-path residual left
+> **noted for the emitter, not resolved here**.
+> Close-out: DECISIONS 2026-08-20 · `results.csv`
+> `tiearb_widening_b64_gamecell_WIDE_B64_minus_NARROW_B16_n750decks_b139e9` ·
+> [CAMPAIGN](../CAMPAIGN.md) · [PROGRAM_ROADMAP](../../../docs/PROGRAM_ROADMAP_2026-07-07.md) ·
+> [LEVER_INDEX](../../../docs/LEVER_INDEX.md) §6 · band 139e9 retired `decision_influenced=yes`.
+
+> *(Pre-run banner, kept for the record:)*
 > **STATUS: DRAFT FOR A SECOND DRAFTER. NOT A PREREGISTRATION. NOT COMMITTED BLIND ON
 > `main`. NOTHING LAUNCHED, NO BAND CLAIMED, NO SMOKE RUN, NO GAME PLAYED.**
 >
