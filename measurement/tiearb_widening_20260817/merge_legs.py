@@ -270,6 +270,55 @@ LICENSED_TRANCHE_REVS = {
     "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
 }
 
+#: ⭐ R5's OWN enumerated pair (D5 (a), commit `3b7cd11a`). D4.11's MECHANISM,
+#: instantiated for a different run — never a widening of R4's licence, which
+#: R5 could not satisfy even single-rev because it names R4's commits.
+#:
+#: ⚠️ FULL SHAS, AND COMPARISON IS PREFIX-MATCHING AGAINST THEM. The record's
+#: "9bc2ab772" is the SAME COMMIT at 9-char abbrev — which is exactly why D4.13
+#: fixed comparison to prefix-matching on the full sha with a minimum width, and
+#: why `carc_rs_build` carries a fixed 12-char slice. ⛔ NEVER compare two
+#: abbreviations to each other: one side of every comparison here is the
+#: enumerated 40-char sha.
+LICENSED_TRANCHE_REVS_R5 = {
+    "r5_chunks_1_2": "9bc2ab772ee907cdf4278985cf717497b95b2af1",
+    "r5_chunks_3_8": "a5aa4a5e8573754b25476d220bbfe5fda514cf60",
+}
+
+#: One licence per RUN. A licence is never reused across runs: its whole content
+#: is "these two commits, on this run, witnessed empty".
+LICENCE_SETS = {"R4": LICENSED_TRANCHE_REVS, "R5": LICENSED_TRANCHE_REVS_R5}
+IDENTITY_NAME_BY_LICENCE = {"R4": "INSTRUMENT_IDENTITY.json",
+                            "R5": "INSTRUMENT_IDENTITY_R5.json"}
+
+#: ⚠️ THE TWO SPLITS HAVE DIFFERENT CAUSES and the record must say which. R4's
+#: split was NECESSARY (the completion tranche's code did not exist at the spent
+#: rev). R5's was AVOIDABLE — a MAIN-TREE commit landed while a leg was live —
+#: and recording it as if it were necessary would launder the very failure the
+#: W-FREEZE-LATCH (D5 (b)) exists to prevent.
+LICENCE_DEVIATION = {
+    "R4": "D4.11/D4.12 (measurement/tiearb_widening_20260817/DEVIATIONS.md, "
+          "commit 93f83e26)",
+    "R5": "D5 (a) (measurement/tiearb_widening_20260817/DEVIATIONS.md, drafter "
+          "ruling 3b7cd11a)",
+}
+LICENCE_NOTE = {
+    "R4": "ENUMERATED two-rev licence. The tranche split is a NECESSARY "
+          "consequence of the D4.2 completion — the completion tranche cannot "
+          "run at the spent rev because the staging code did not exist there. "
+          "No gate constrains the run's git_rev (D4.10). The instrument diff "
+          "between the two revs was RE-DERIVED here, not read from the witness.",
+    "R5": "ENUMERATED two-rev licence. ⚠️ UNLIKE R4, THIS SPLIT WAS AVOIDABLE: "
+          "the B64 aggregator commit landed on main while rung-3's local "
+          "scoring leg was live, so chunks 1-2 scored at one rev and chunks 3-8 "
+          "at the next. The instrument diff between them is EMPTY — RE-DERIVED "
+          "here, not read from the witness — so the tranche is mergeable; but "
+          "that emptiness was LUCK, NOT DESIGN, since nothing checked the leg "
+          "before committing. Mechanism, not resolve: the W-FREEZE-LATCH "
+          "(D5 (b), scripts/hooks/pretooluse_lint.py) now refuses a main-tree "
+          "commit while a RUN_LIVE sentinel exists.",
+}
+
 #: ⚠️ ENUMERATED ADDRESSES, not a pattern. The run records its rev under FOUR
 #: spellings and the licence must cover each or refuse the merge for the very
 #: fact it licensed:
@@ -629,10 +678,18 @@ class RevLicense:
     hard-coded pair alone asserts nothing about WHY the pair is safe."""
 
     def __init__(self, *, repo=REPO, identity_path=None, campaign=CAMPAIGN,
-                 git_clean_by_chunk=None, revs=None):
+                 git_clean_by_chunk=None, revs=None, licence="R4"):
         self.repo = Path(repo)
         self.campaign = Path(campaign)
-        self.revs = dict(revs if revs is not None else LICENSED_TRANCHE_REVS)
+        #: ⭐ ONE LICENCE PER RUN (D5 (a)). `licence` selects the enumerated pair
+        #: AND the witness filename together, so a run can never be merged under
+        #: another run's licence or against another run's witness.
+        if licence not in LICENCE_SETS:
+            raise MergeError(f"unknown licence {licence!r}; "
+                             f"enumerated: {sorted(LICENCE_SETS)}")
+        self.licence = licence
+        self.identity_name = IDENTITY_NAME_BY_LICENCE[licence]
+        self.revs = dict(revs if revs is not None else LICENCE_SETS[licence])
         self._explicit_path = Path(identity_path) if identity_path else None
         #: {(judge, chunk) | chunk: {"ok": bool, "source": str, …}} — the D4.12
         #: per-chunk evidence for artifacts that do not carry it themselves
@@ -640,6 +697,10 @@ class RevLicense:
         self.git_clean_by_chunk = dict(git_clean_by_chunk or {})
         self._witness = None
         self.used = []
+
+    def _candidates(self):
+        return (Path(RUN_DIR) / self.identity_name,
+                Path(self.campaign) / self.identity_name)
 
     # ---- rev matching ---------------------------------------------------- #
     def tranche_of(self, value):
@@ -660,10 +721,10 @@ class RevLicense:
     def identity_path(self):
         if self._explicit_path is not None:
             return self._explicit_path
-        for p in instrument_identity_candidates(self.campaign):
+        for p in self._candidates():
             if p.is_file():
                 return p
-        return instrument_identity_candidates(self.campaign)[0]
+        return self._candidates()[0]
 
     def witness(self) -> dict:
         """Load AND re-derive. Cached: the git work happens once per merge."""
@@ -672,9 +733,10 @@ class RevLicense:
         p = self.identity_path()
         if not p.is_file():
             raise MergeError(
-                f"the two-rev licence requires {INSTRUMENT_IDENTITY_NAME} and it "
+                f"the {self.licence} two-rev licence requires "
+                f"{self.identity_name} and it "
                 f"is ABSENT (looked at "
-                f"{[str(c) for c in instrument_identity_candidates(self.campaign)]}). "
+                f"{[str(c) for c in self._candidates()]}). "
                 f"D4.11 Amendment 1: the code holds the enumerated pair AND the "
                 f"witness must assert the empty instrument diff — BOTH, or "
                 f"refuse. Generate it with instrument_identity.py.")
@@ -1011,6 +1073,9 @@ class RevLicense:
 
         record = {
             "path": dotted,
+            #: ⭐ WHICH enumerated pair authorised this — a reader of the merged
+            #: manifest must never have to infer the licence from the shas.
+            "licence": self.licence,
             "by_chunk": {str(k): v for k, v in sorted(present.items())},
             "tranches": {t: sorted(ks) for t, ks in sorted(by_tranche.items())},
             "licensed_revs": {t: s for t, s in sorted(self.revs.items())},
@@ -1019,14 +1084,11 @@ class RevLicense:
                 "path": witness["_path"], "sha256": witness["_sha256"],
                 "rederived": witness["_rederived"],
             },
-            "deviation": "D4.11/D4.12 (measurement/tiearb_widening_20260817/"
-                         "DEVIATIONS.md, commit 93f83e26)",
-            "note": "ENUMERATED two-rev licence. The tranche split is a "
-                    "NECESSARY consequence of the D4.2 completion — the "
-                    "completion tranche cannot run at the spent rev because the "
-                    "staging code did not exist there. No gate constrains the "
-                    "run's git_rev (D4.10). The instrument diff between the two "
-                    "revs was RE-DERIVED here, not read from the witness.",
+            #: ⚠️ The two licences have DIFFERENT CAUSES, and a record that
+            #: recited the wrong one would convict the wrong thing in a
+            #: close-out. R4's split was NECESSARY; R5's was AVOIDABLE.
+            "deviation": LICENCE_DEVIATION[self.licence],
+            "note": LICENCE_NOTE[self.licence],
         }
         self.used.append(record)
         return record
@@ -1951,6 +2013,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
                          f"hard-coded and the instrument diff is re-derived.")
     ap.add_argument("--repo", default=str(REPO),
                     help="repo the instrument diff is re-derived in")
+    ap.add_argument("--licence", default="R4", choices=sorted(LICENCE_SETS),
+                    help="WHICH RUN's enumerated rev pair applies. ⚠️ NOT a "
+                         "permission: it selects an enumerated pair AND its "
+                         "witness filename together, so a run can never be "
+                         "merged under another run's licence. A rev outside the "
+                         "selected pair still refuses.")
     ap.add_argument("--dry-run", action="store_true",
                     help="report only: copy nothing, write nothing")
     ap.add_argument("--no-run-manifest", action="store_true",
@@ -1966,6 +2034,7 @@ def main(argv=None) -> int:
 
     license = RevLicense(
         repo=Path(a.repo), identity_path=a.instrument_identity,
+        licence=a.licence,
         git_clean_by_chunk=git_clean_by_chunk_from_manifests(a.manifests_dir,
                                                              stratum))
 

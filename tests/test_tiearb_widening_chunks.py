@@ -14,6 +14,7 @@ Fast, hermetic, no engine, no scoring. Covers the four properties the frozen
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -2313,3 +2314,190 @@ def test_the_licensed_pair_matches_the_real_run(two_rev):
     assert lic.tranche_of("4b24f512-dirty") == "completion_tranche"
     assert lic.tranche_of("58c2b539556916b0f6280d233b48d5dcbed7ca88") == \
         "committed_tranche"
+
+
+# =========================================================================== #
+# 10. D5 (a) — the R5 LICENCE (drafter ruling `3b7cd11a`)                      #
+#                                                                             #
+# Rung-3 R5 split mid-run: chunks 1-2 scored at 9bc2ab77, chunks 3-8 at       #
+# a5aa4a5e (the B64 aggregator commit landed on main while the local leg was  #
+# live). Same SHAPE as D4.11, DIFFERENT PAIR — so it is the same code         #
+# parameterized by a licence name, never a second script that could drift.    #
+#                                                                             #
+# ⚠️ The licence is a NAMED, CODE-RESIDENT pair. `--licence R5` SELECTS one of #
+# two enumerations; it can never introduce a rev, which is the whole point of  #
+# putting the enumeration in code rather than on the command line.            #
+# =========================================================================== #
+R5_A = "9bc2ab772ee907cdf4278985cf717497b95b2af1"
+R5_B = "a5aa4a5e8573754b25476d220bbfe5fda514cf60"
+
+
+def test_the_R5_pair_is_enumerated_in_code_at_FULL_width():
+    revs = ML.LICENSED_TRANCHE_REVS_R5
+    assert set(revs.values()) == {R5_A, R5_B}
+    # ⚠️ full 40-char shas, so every comparison is abbrev-AGAINST-FULL
+    assert all(len(s) == 40 for s in revs.values()), revs
+    assert ML.LICENCE_SETS["R5"] is revs
+    assert ML.IDENTITY_NAME_BY_LICENCE["R5"] == "INSTRUMENT_IDENTITY_R5.json"
+    # the two licences are DISJOINT — no rev is licensed under both
+    assert not (set(ML.LICENCE_SETS["R4"].values()) & set(revs.values()))
+
+
+def test_R5_matches_a_recorded_abbrev_as_a_PREFIX_of_the_full_sha():
+    lic = ML.RevLicense(licence="R5")
+    for spelling in (R5_A, R5_A[:8], R5_A[:12], f"{R5_A[:8]}-dirty",
+                     R5_A[:12].upper()):
+        assert lic.tranche_of(spelling) == "r5_chunks_1_2", spelling
+    assert lic.tranche_of(R5_B[:12]) == "r5_chunks_3_8"
+    # ⚠️ NEVER abbrev-to-abbrev: below the floor nothing matches, so a 7-char
+    # coincidence can never license a rev.
+    assert ML.MIN_SHA_PREFIX == 8
+    assert lic.tranche_of(R5_A[:7]) is None
+    assert lic.tranche_of("") is None and lic.tranche_of(None) is None
+    assert lic.tranche_of("not-a-sha") is None
+
+
+def test_the_R4_and_R5_licences_REFUSE_each_others_revs():
+    """Cross-licence leakage is the failure that would let an unrelated commit
+    ride into a merge under a licence granted for a different split."""
+    r4, r5 = ML.RevLicense(), ML.RevLicense(licence="R5")
+    assert r5.tranche_of("58c2b539") is None
+    assert r5.tranche_of("4b24f512") is None
+    assert r4.tranche_of(R5_A[:8]) is None
+    assert r4.tranche_of(R5_B[:8]) is None
+
+
+def test_an_unknown_licence_NAME_refuses_rather_than_defaulting():
+    with pytest.raises(ML.MergeError) as e:
+        ML.RevLicense(licence="R6")
+    assert "R6" in str(e.value) and "R4" in str(e.value) and "R5" in str(e.value)
+
+
+def test_R5_looks_for_ITS_OWN_witness_file_and_names_it_when_ABSENT(tmp_path):
+    """A missing witness must name the R5 file — an error naming the R4 witness
+    would send the executor to regenerate the wrong document."""
+    lic = ML.RevLicense(licence="R5", campaign=str(tmp_path))
+    assert all(p.name == "INSTRUMENT_IDENTITY_R5.json" for p in lic._candidates())
+    with pytest.raises(ML.MergeError) as e:
+        lic.witness()
+    msg = str(e.value)
+    assert "INSTRUMENT_IDENTITY_R5.json" in msg and "ABSENT" in msg
+    assert "R5 two-rev licence" in msg
+    assert "INSTRUMENT_IDENTITY.json\"" not in msg      # not the R4 file
+
+
+def _r5_repo(tmp_path):
+    """An instrument repo whose two commits differ only OUTSIDE the instrument,
+    relabelled to the R5 tranche names."""
+    repo, a, b = _instrument_repo(tmp_path, name="r5repo")
+    return repo, a, b
+
+
+def test_R5_merges_under_its_own_witness_and_records_the_licence(tmp_path):
+    repo, a, b = _r5_repo(tmp_path)
+    wit = tmp_path / "INSTRUMENT_IDENTITY_R5.json"
+    doc = II.build(repo, boxes=(("local", None),),
+                   revs={"r5_chunks_1_2": a, "r5_chunks_3_8": b})
+    doc["licence"] = "R5"
+    wit.write_text(json.dumps(doc, indent=2, sort_keys=True))
+
+    lic = ML.RevLicense(repo=repo, identity_path=wit, licence="R5",
+                        revs={"r5_chunks_1_2": a, "r5_chunks_3_8": b})
+    merged = ML.merge_manifests({1: _rev_manifest(a), 5: _rev_manifest(b)},
+                                license=lic)
+    rl = merged["merge"]["rev_license"]
+    assert rl["records"]
+    for rec in rl["records"]:
+        assert set(rec["licensed_revs"].values()) == {a, b}
+        # ⭐ the record NAMES its licence, so a reader of the merged manifest can
+        # tell which enumerated pair authorised it without inferring from shas
+        assert rec["licence"] == "R5"
+        # the diff is RE-DERIVED here, never trusted from the witness
+        red = rec["instrument_identity"]["rederived"]
+        assert red["empty"] is True and red["n_files_changed"] == 0
+        assert {red["rev_a"], red["rev_b"]} == {a, b}
+
+
+def test_R5_refuses_an_R4_shaped_witness_naming_the_other_pair(tmp_path):
+    """The witness must name the pair the CODE enumerates — the two documents
+    are not interchangeable just because they share a schema."""
+    repo, a, b = _r5_repo(tmp_path)
+    wit = tmp_path / "INSTRUMENT_IDENTITY_R5.json"
+    other = ML.LICENSED_TRANCHE_REVS
+    doc = II.build(repo, boxes=(("local", None),),
+                   revs={"committed_tranche": a, "completion_tranche": b})
+    doc["revs"] = {k: {"sha": v} for k, v in other.items()}
+    wit.write_text(json.dumps(doc, indent=2, sort_keys=True))
+    lic = ML.RevLicense(repo=repo, identity_path=wit, licence="R5",
+                        revs={"r5_chunks_1_2": a, "r5_chunks_3_8": b})
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 5: _rev_manifest(b)}, license=lic)
+    assert "code-resident licence enumerates" in str(e.value)
+
+
+def test_R5_refuses_when_the_REDERIVED_instrument_diff_is_NOT_empty(tmp_path):
+    """The licence's whole content: the two revs must be identical over the
+    instrument. R5's diff is EMPTY IN FACT — but that is a re-derived finding,
+    not an assumption, and this proves the check can still fail."""
+    repo, a, _ = _r5_repo(tmp_path)
+    c = _instrument_moved(repo)
+    wit = tmp_path / "INSTRUMENT_IDENTITY_R5.json"
+    doc = II.build(repo, boxes=(("local", None),),
+                   revs={"r5_chunks_1_2": a, "r5_chunks_3_8": c})
+    doc["committed_diff"] = {"empty": True, "n_files_changed": 0,
+                             "files": []}            # ⚠️ the witness LIES
+    wit.write_text(json.dumps(doc, indent=2, sort_keys=True))
+    lic = ML.RevLicense(repo=repo, identity_path=wit, licence="R5",
+                        revs={"r5_chunks_1_2": a, "r5_chunks_3_8": c})
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 5: _rev_manifest(c)}, license=lic)
+    assert "oracle_score_pilot.py" in str(e.value)
+
+
+def test_a_rev_outside_the_R5_pair_still_refuses(tmp_path):
+    repo, a, b = _r5_repo(tmp_path)
+    wit = tmp_path / "INSTRUMENT_IDENTITY_R5.json"
+    doc = II.build(repo, boxes=(("local", None),),
+                   revs={"r5_chunks_1_2": a, "r5_chunks_3_8": b})
+    wit.write_text(json.dumps(doc, indent=2, sort_keys=True))
+    lic = ML.RevLicense(repo=repo, identity_path=wit, licence="R5",
+                        revs={"r5_chunks_1_2": a, "r5_chunks_3_8": b})
+    third = "c" * 40
+    with pytest.raises(ML.MergeError) as e:
+        ML.merge_manifests({1: _rev_manifest(a), 5: _rev_manifest(b),
+                            7: _rev_manifest(third)}, license=lic)
+    assert "NOT in the enumerated licence" in str(e.value)
+
+
+def test_the_generator_is_PARAMETERIZED_not_forked(tmp_path):
+    """One generator, one licence flag — a second script would be free to drift
+    from the enumeration the merge actually enforces."""
+    src = (Path(II.__file__)).read_text()
+    assert "--licence" in src
+    assert "ML.LICENCE_SETS" in src and "ML.IDENTITY_NAME_BY_LICENCE" in src
+    # and there is no rival generator alongside it
+    sibs = {p.name for p in Path(II.__file__).parent.glob("instrument_identity*.py")}
+    assert sibs == {"instrument_identity.py"}, sibs
+
+
+def test_the_merge_CLI_exposes_the_licence_and_defaults_to_R4():
+    src = (Path(ML.__file__)).read_text()
+    assert '"--licence"' in src and "choices=sorted(LICENCE_SETS)" in src
+    assert 'default="R4"' in src
+    assert "licence=a.licence," in src
+
+
+# --- ruling (c): the executor's merge step is BLESSED, not a TODO ------------- #
+def test_the_R5_launcher_carries_the_blessed_merge_invocation():
+    sh = (Path(ML.__file__).parent / "rung3_r5" / "run_scoring_r5.sh").read_text()
+    # ruling (c): the merge step is spelled out or deleted — never an unbuilt
+    # placeholder sitting next to steps the script really performs.
+    assert not re.search(r"(?m)^[^#]*\bTODO\b(?!.*reads as an unbuilt)", sh), \
+        "an unfilled TODO remains in the launcher"
+    assert "merge_legs.py" in sh
+    assert "--licence R5" in sh
+    assert "INSTRUMENT_IDENTITY_R5.json" in sh
+    # the witness is GENERATED before it is consumed, both boxes captured
+    assert "instrument_identity.py" in sh
+    assert "--box local" in sh and "--box laptop:laptop-wsl" in sh
+    assert sh.index("instrument_identity.py") < sh.index("merge_legs.py")

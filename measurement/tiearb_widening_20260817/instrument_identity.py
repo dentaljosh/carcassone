@@ -198,6 +198,12 @@ def main(argv=None) -> int:
                     help="NAME[:SSH_HOST] — repeatable. Default: local only. "
                          "Use e.g. --box local --box laptop:laptop-wsl to "
                          "capture BOTH working trees (D4.11 Amendment 3).")
+    ap.add_argument("--licence", default="R4", choices=sorted(ML.LICENCE_SETS),
+                    help="WHICH RUN's enumerated pair this witness is for. It "
+                         "selects the pair AND the default output filename "
+                         "together (R4 -> INSTRUMENT_IDENTITY.json, R5 -> "
+                         "INSTRUMENT_IDENTITY_R5.json), so a witness can never "
+                         "be mistaken for another run's.")
     ap.add_argument("--rev", action="append", default=None,
                     help="NAME=SHA — repeatable. ⚠️ NOT a licence: merge_legs "
                          "holds the enumerated pair and REFUSES a witness that "
@@ -210,7 +216,7 @@ def main(argv=None) -> int:
         name, _, host = spec.partition(":")
         boxes.append((name, host or None))
 
-    revs = None
+    revs = ML.LICENCE_SETS[a.licence]
     if a.rev:
         revs = {}
         for spec in a.rev:
@@ -220,11 +226,13 @@ def main(argv=None) -> int:
             revs[name] = sha
 
     doc = build(a.repo, boxes=tuple(boxes), revs=revs)
-    out = Path(a.out or (ML.RUN_DIR / ML.INSTRUMENT_IDENTITY_NAME))
+    doc["licence"] = a.licence
+    out = Path(a.out or (ML.RUN_DIR / ML.IDENTITY_NAME_BY_LICENCE[a.licence]))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
 
     cd = doc["committed_diff"]
+    print(f"[instrument-identity] licence: {a.licence}  -> {out.name}")
     print(f"[instrument-identity] revs: "
           + ", ".join(f"{k}={v['short']}" for k, v in sorted(doc["revs"].items())))
     print(f"[instrument-identity] committed diff over {len(ML.INSTRUMENT_PATHS)} "
