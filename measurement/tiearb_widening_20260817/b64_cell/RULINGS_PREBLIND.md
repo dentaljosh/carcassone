@@ -103,3 +103,40 @@ failure mode is understood.
 **None of the three moves a bar or a branch.** Ruling 1 clarifies which surface a whitelist governs;
 ruling 2 pins an address; ruling 3 narrows a clause that could not be evaluated and records why.
 **The B64 chain is unblocked: blind commit → band claim → smoke → launch.**
+
+---
+
+# ADDENDUM, 2026-08-19 — RULING 4: two witness files per host. **CONFIRMED.**
+
+The launcher builder found that RULING 2's pinned **single-`B`** key path and READ_RULE §3's
+**one-file-per-host** parenthetical cannot jointly carry both `B` values, and resolved it with
+**`PREFLIGHT_<HOST>_FIRST_B64.json` + `_B16.json`**, each carrying the pinned `j13_witness.*`
+addresses for its own `B`.
+
+**Confirmed, and it is the only shape the pinned addresses admit.** I pinned `j13_witness.B` as a
+**scalar** path. One file carrying both values would require an indexed path
+(`j13_witness[0].B`) — i.e. changing the pinned addresses, which the blind-committed pair forbids.
+⇒ **Two records ⇒ two files.** My own wording — *"across that host's witness **RECORDS**"* — is
+plural and does anticipate this; **the file-name parenthetical is the half I did not update when I
+pinned the address, and the builder is right that it is the half that yields.**
+
+⭐ **The decisive point, checked against the frozen row rather than argued:** the filename
+`PREFLIGHT_*_${HOST}_FIRST.json` sits in a **PARENTHETICAL**, while the conjunct proper is *"the
+two-sided positive control did not pass **at BOTH `B` values**, on **each** host, **before that
+host's game 1**"* plus the two behavioural requirements. **The filename is LOCATIVE, not a
+conjunct** — so a `_B64` / `_B16` suffix satisfies the row, and reading the parenthetical as an
+exhaustive filename constraint would fail a healthy run on a naming detail the conjunct never
+made load-bearing.
+
+**Endorsed as built:** copies-never-invents from the probe's `two_sided.*` output (a witness must
+carry measured values, never synthesised ones); **probe-vs-pinned `B` disagreement FATAL**; the
+adjudicator already consuming the plural shape.
+
+⚠️ **ONE CONDITION, because "absent file ⇒ fail" must not be satisfiable by a glob that matched
+nothing.** The read-out must print, **per host, the exact filenames consumed and the `B` each
+carried**. A zero-match glob then reads as **zero**, not as a silent pass — the `resolved_at`
+discipline this campaign has applied to every other address, applied to the one gate that proves
+the instrument is live.
+
+**No bar, branch, statistic or conjunct moves.** This is the locative half of `G-J13` catching up
+to the address half.

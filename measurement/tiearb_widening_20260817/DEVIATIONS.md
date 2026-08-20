@@ -33,6 +33,7 @@
 | **D1** | two-box scoring layer (chunk / allocation / merge) | ✅ **ALL SIX CLAUSES SIGNED** on the delivered layer (`1670f030`: `stage_chunks.py`, `ALLOCATION.conf`, `run_scoring.sh`, `merge_legs.py`/`merge_scoring.sh`, 36 tests). **TRANSFERS TO R4** as a **first-class instrument choice, not a deviation** — the clause-by-clause discharge is `shared_run_r4/DESIGN.md` R4-4; this section remains the neutrality argument of record. **Confirmed on the real corpus by `stage_chunks verify`, post-corpus; a failure there sends R4 single-box.** |
 | **D2** | rust IF judge swap (owner ruling C) | ⛔ **CLOSED AS UNNECESSARY — no deviation exists.** See the closing note below |
 | **D3** | `execution` merge classification + the unwitnessed cross-box link | **CLASSIFICATION RULED** (PER_CHUNK, §D3.2); **`D3-WITNESS` PENDING** — amended by D4 to run **before the completion scoring**, not merely before analysis |
+| **D5** | R5's two-rev merge licence + **the orchestrator's own freeze violation** | **LICENCE RULED**; binary-sha conjunct ruled **conditionally, decision rule pre-committed** (§D5.2); freeze violation named with `W-FREEZE-LATCH` recommended (§D5.3) |
 | **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences. **§D4.18: 4 window-truncation rids dropped WHOLE-RID** (what `G-ARMS` already implies); **no post-hoc numeric bound enacted** — the pair's own floor governs, 1,340 ≥ 1,283. **§D4.19: the S2 void-scope stated GENERALLY** (artifact paths · analyzer conjuncts · READOUT key-paths alike), dual-witness, exact-segment match |
 
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
@@ -1179,6 +1180,96 @@ It changes no branch (the realized CI governs, and the floor is fixed), and READ
 requires** the realized CIs to be printed **beside the predicted brackets**, so this is a
 requirement already in force rather than anything new.
 
+## D5 — R5's two-rev merge licence, and the ORCHESTRATOR'S freeze violation
+
+**Status: LICENCE RULED; binary-sha conjunct ruled CONDITIONALLY with the decision rule
+pre-committed (§D5.2). Post-blind legality: merge layer only — no gate, bar, address, branch or
+statistic of the R5 pair changes.**
+
+### D5.1 The R5 licence — D4.11's mechanism, instantiated
+
+`merge_legs` refused, and **it was right twice over**: its enumerated licence names **R4's** pair,
+which R5 could never satisfy **even single-rev**. R5 needs its own.
+
+**Realized pair, enumerated (full shas, per D4.13's width discipline):**
+
+```
+9bc2ab77...   chunks 1-2, 6-8   (laptop)
+a5aa4a5e...   chunks 3-5        (local)
+```
+
+⚠️ **The `9bc2ab772` in the record is the SAME commit at 9-char abbrev** — `core.abbrev` is per
+box, which is exactly why D4.13 fixed the comparison to **prefix-matching on the full sha** with a
+minimum width, and why `carc_rs_build` carries a **fixed 12-char slice**. **Enumerate full shas;
+match by prefix; never compare two abbreviations to each other.**
+
+**Conditions, unchanged from D4.11:** the merge holds the enumerated pair in **code**; it requires
+`RUN/INSTRUMENT_IDENTITY_R5.json` (both full shas, the instrument path list, the **re-derivable**
+empty-diff recipe, and the per-box `git status --porcelain` scoped to those paths); and **the merge
+re-derives the diff itself and refuses if non-empty.** The reported diff over the full instrument
+list is **empty** — the changes (`analyze_b64_cell.py`, `run_cells.sh`, tests, `BAND_REGISTRY`,
+`BAND_CLAIM`) are **nothing the scorer imports** — so the licence is genuinely available rather
+than merely asserted. Completeness is perfect: **24 legs, 13,204 records, per-leg counts exactly
+the pinned thinning ladder.**
+
+### D5.2 ⚠️ Does binary-sha constancy bind across the rev split? **YES — and the decision rule is pre-committed HERE, before the evidence.**
+
+**The rev licence does NOT absorb this question.** D4.11 licenses a **source-rev** split whose
+**instrument diff is empty**. `carc_rs_binary_sha` constancy is a **separate, standing requirement**
+(D3.2 as amended by D4.13 §ii) that exists precisely so a **compiled-artifact** change cannot ride
+in on a source-rev licence. **A wheel rebuild is a different fact from a HEAD move.**
+
+The B64 preflight rebuilt wheels ≈04:00; local's chunks 3-5 ran 23:45–05:16. **The rebuild may have
+landed mid-chunk.** Ruling, fixed now so the builder's report resolves it mechanically:
+
+| finding on local's per-chunk leg manifests | ruling |
+|---|---|
+| `carc_rs_binary_sha` **CONSTANT** across chunks 3-5 | D4.13 (ii) holds. **Licence applies; merge proceeds.** |
+| `carc_rs_binary_sha` **CHANGED** mid-run | ⛔ **D4.13 (ii) FIRES FOR REAL — the standing requirement doing its job.** The `.so` that executed chunk 3 is not the one that executed chunk 5. **NOT licensable by the rev licence**, and **not** waved through on "the rust source diff is empty". **RAISE**, and require a **within-box D3-WITNESS**: re-score **N ≥ 16** chunk-3 rids on the **current** wheel and raw-f64 diff against their stored records. **100% bit-identical ⇒ merge proceeds with the witness recorded; any mismatch ⇒ rescore the affected chunks on one wheel.** |
+
+⭐ **Why a witness rather than a refusal, and why not a waiver.** D3-WITNESS already measured
+**23,184/23,184 bit-identical** values across two *different builds of the same source* on two
+boxes — so same-source/different-build producing identical values has **precedent**. But that
+precedent is **cross-box at one instant**, not **within-box across a rebuild**, and the honest move
+is to **measure the case we have** rather than extend the one we measured. The instrument already
+exists; it costs minutes.
+
+**Builder action:** report `carc_rs_binary_sha` **per chunk** for local's chunks 3-5 (and the
+laptop's, for completeness) **before** the merge is attempted.
+
+### D5.3 ⛔ THE ORCHESTRATOR'S FREEZE VIOLATION — named plainly
+
+**The B64 aggregator commit `a5aa4a5e` was merged to `main` while rung-3's local scoring leg was
+live.** That violates the standing mid-run commit freeze — **the same class that voided the first
+JCZ run** — and it is the direct cause of R5's chunks being scored across two revs.
+
+**The mitigation is a witnessed fact, not an excuse.** The instrument diff over the full instrument
+list is **empty**, so the scored values are not in question on the *source* axis. ⭐ **But the
+mitigation was luck, not design:** nothing about the merge checked whether a scoring leg was live,
+and had the commit touched `rust/`, `src/` or `scripts/tiletie/`, R5's chunks 3-5 would have been
+**unrecoverable** — rescored at best, void at worst. **The freeze exists because "we checked
+afterwards and it was fine" is not a control.**
+
+⭐ **The discipline has now failed TWICE — JCZ, and here — and both times the failure was the
+ORCHESTRATOR's, not a builder's or an executor's.** That is the argument for a mechanism rather
+than more care:
+
+> **W-ITEM `W-FREEZE-LATCH` (recommended, owner floated it after the JCZ incident):** a PreToolUse
+> latch that **refuses a `main`-tree commit while any scoring leg is live** — live-ness detected
+> from the run roots' claim/record activity or an explicit `RUN_LIVE` sentinel dropped by the
+> launchers and cleared at close-out. **A convention that has failed twice at the same hands is a
+> hook's job.**
+
+### D5.4 The merge driver (c) — executor's direct `merge_legs` use is BLESSED
+
+`run_scoring_r5.sh` carries a TODO where the merge driver would be. **Using `merge_legs` directly
+is blessed**, per DESIGN line 448, on the same grounds D3/D4.13 already govern its behaviour: the
+classification, the licence and the carry-forward are all **in `merge_legs` itself**, so a thin
+driver would add a wrapper without adding a check. ⚠️ **Two conditions:** the exact invocation
+(out-roots, licence file, `INSTRUMENT_IDENTITY_R5.json` path) is **recorded in the read-out**, and
+the driver TODO is either **filled or deleted** — a TODO that reads as an unbuilt step, next to a
+step that was in fact performed by hand, is how a runbook lies to its next reader.
+
 ---
 
 ## D3 — AMENDED SPEC (selection rule), per D4
@@ -1198,7 +1289,147 @@ before analysis.**
 
 ---
 
-*No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D1, D2, D3
-or D4. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their signature
-blocks read SIGNED; D3's classification is in force on ruling and its witness on PASS; D4's
-completion licence is in force subject to its §D4.9 conditions.*
+## D6 — `A2` ran LATE: the pair named a pass and named no tool (third instance)
+
+**2026-08-20. Recorded, not excused.**
+
+### D6.1 What the pair required, and what happened
+
+`rung3_r5/READ_RULE.md` §1 places `A2` at **`[post-corpus]`, before the first scoring leg**. It ran
+**after all scoring**. **Root cause: no auditor existed.** The pair specified the pass, pinned its
+completeness assertion, and **named no tool to perform it** — so at the moment `A2` was due there
+was nothing to invoke, and the run proceeded past its own checkpoint without anyone declining it.
+
+**The proposed reading is CONFIRMED: `A2` runs NOW, late, and the lateness is disclosed here as a
+numbered deviation.** The reasoning, stated so a reader can check it rather than accept it:
+
+- **`A2`'s inputs are frozen and were frozen before scoring began.** Its addresses are
+  `[pre-corpus]`/`[post-corpus]` artifacts — `ARMS_R5.json`, `CORPUS_R5`, `STAGING_R5`, the leg
+  files, the `GATE_*` outputs — every one sha-pinned in the R5 licence. **Scoring reads them and
+  writes `[post-scoring]` artifacts, which `A2` does not audit.** So nothing `A2` inspects was
+  produced or modified by the work that overtook it: **the audit is late, not contaminated.**
+- ⚠️ **But its protective value is spent, and that is a real loss.** `A2` sat before the first
+  scoring leg **so that an address defect would be free to fix**. Discovering one now costs the
+  entire scoring spend. **The audit's validity survives the delay; its purpose does not.** If `A2`
+  fails, the run has already paid for the failure — that is the price of the omission, and it is
+  not to be softened in the write-up.
+- ⛔ **`A2` must VERIFY the freeze, not assume it.** Re-check each pinned sha against the artifact
+  on disk as part of the pass. "Frozen" is the premise of everything above; an unchecked premise
+  carrying this much weight is exactly what this campaign keeps getting wrong. Any drift ⇒ **RAISE
+  to the owner**, not repair.
+
+### D6.2 STANDING RULE — a pair may not name a pass without naming its tool
+
+**Adopted.** This is the **third instance of one disease**:
+
+| # | The pair named… | …and named no tool | Cost |
+|---|---|---|---|
+| 1 | the R4 **merge** | no merge driver | merge improvised post-hoc, licensed by deviation |
+| 2 | the B64 **SMOKE** | no emitter | blocking finding at sign-off |
+| 3 | R5's **`A2`/`A3`** | no auditor | **the checkpoint was silently skipped** |
+
+> **STANDING RULE (campaign-wide, effective now).** *A preregistration may not name a pass, gate,
+> merge, witness or audit without naming, in the same commit, the **tool** that performs it and the
+> **address** it writes. An activity with no actor is not preregistered — it is a wish, and it will
+> be skipped exactly when it matters.*
+
+This is the address sweep (D4.14b) generalized **one level up**. The sweep made *addresses*
+exhaustive by enumeration and caught the unresolvable ones. It could not catch these, because
+**every address here resolved fine** — what was missing was the *actor*. **Enumerate the verbs, not
+only the nouns.** Instance 3 shows the failure mode is not cosmetic: it is a checkpoint that
+**cannot fail**, because nothing runs it — the same **pass-always** disease this campaign has now
+found in `G-CAP`, `G-TOOL`, `G-COLLIDE`, `G-SATURATION` and `G-BAND`, wearing different clothes.
+
+### D6.3 — the sibling defect: `A3` ran BEFORE the adjudicator (ORDER, not existence)
+
+**Recorded. Corrected order CONFIRMED for the rerun: adjudicate → `A3`.**
+
+`A3` is `[post-scoring]` and audits `READOUT::…` addresses. **The adjudicator is what writes them.**
+Run first, `A3` can only ever report the artifact missing — which is exactly what it reported. This
+is the **R4 post-before-analyze class, third instance**, and it is a *different* root cause from
+D6.1: there the tool did not exist; here it existed and ran **at the wrong point in the order**.
+
+⚠️ **So the D6.2 standing rule, as first written, would NOT have caught this** — the tool was named.
+It is therefore **extended, and the extension is the load-bearing half**:
+
+> **STANDING RULE (extended).** *Naming the tool is necessary and not sufficient. A pass must also
+> be pinned **relative to the producer of its inputs** — "after X writes A", not "at the end". An
+> ordering given only as a stage label (`[post-scoring]`) does not order a pass against its
+> siblings, and siblings are where this keeps going wrong.*
+
+**No result was reached out of order** — the failure surfaced as an unresolvable address, the gate
+did its job, and nothing was read. **The cost was a rerun, not a contaminated verdict.**
+
+### D6.4 — the three R5 gate failures, for the record
+
+16/19 gates passed; the three failures are **fixed, not waived**, and **no outcome value was read by
+anyone** in diagnosing them (§7 suppression intact). Ruled in `rung3_r5/DESIGN.md` §"THE THREE GATE
+FAILURES": `G-DISJOINT` — consumer-side, the `ci95` class, the emitter's `layers_absent` declaration
+pre-dates the blind commit; `G-DDRAW` — the W9 probe never existed, the conjunct did its job, built
+now and late under the D6.1 licence; `G-DRAW` — a pure invocation bless, no code change.
+
+⚠️ **One finding from that ruling belongs here too, because it is a governance fact and not merely a
+build detail:** the `D-DRAW` probe **as chartered in §0.D** compares two RNG streams that are
+**different by construction** — the same fact for which `G-CAP` was retired as fail-always. Its
+`agreement_rate` is a coincidence statistic, not a partition measurement, so **the chartered probe
+alone would not have discharged `I7`'s dedupe-partition conditional** that the R5 pair claims it
+discharges. The fix adds the **direct** partition comparison (exact, and nearly free — both
+partitions are already materialized), keeps the chartered field beside its null model, and rests the
+discharge on the direct check. **`D-DRAW` adjudicates nothing, so no bar or branch moves** — but the
+*claim* would have been overstated, and that is recorded rather than quietly repaired.
+
+### D6.6 — the adjudicator's own spec carried the disease it was ruling on
+
+**2026-08-20. Recorded against myself, because the record is worthless if it only names other
+people's errors.** The D-DRAW build (`ce04cb49`) corrected **two defects in my `b130f0cd` spec**, and
+both are instances of classes I had been adjudicating all campaign:
+
+| my defect | the class | consequence had it shipped |
+|---|---|---|
+| Tier-1 required `set(probe.tie_actions) == set(arms_full) ∪ set(dropped)` | **conflating a measurement's DOMAIN with its RELATION** — `I7`(b) asks for the partition *of the tie set*, not for agreement *about* the tie set | a ~43% invented disagreement, reported under `I7` as if the licence were in doubt |
+| provenance RAISE bound the **repo HEAD** to the two-rev licence | ⛔ **FAIL-ALWAYS** — the campaign's signature disease, in the adjudicator's own text | a post-scoring probe is new code by construction and exists at neither licensed rev; the gate would refuse every healthy run |
+
+Both **SIGNED as amended**; the rulings are in `rung3_r5/DESIGN.md` §"SIGN-OFF on the D-DRAW build".
+The second is the sharper lesson: ⚠️ **I wrote a fail-always gate in the same session in which I
+ruled on `G-CAP`, `G-TOOL`, `G-COLLIDE`, `G-SATURATION`, `G-BAND` and `G-DDRAW`'s vacuity trap.**
+Knowing the failure mode by name did not stop me producing it. **The structural test — "would this
+fail on a healthy run?" — has to be applied to the ruling as well as to the thing ruled on**, and
+nothing in the process currently does that. The builder's review caught it; that is the control that
+worked, and it is the only one that was operating.
+
+*One thing my spec did get right and the record should keep: the added Tier-1 check itself. The
+chartered `D-DRAW` would not have discharged `I7` (D6.4), and the empirical result now confirms it
+from the other side — the chartered overlap runs **below its own shared-support null**, because the
+two draws frequently do not even share a support. The statistic is confounded, not merely weak.*
+
+### D6.5 — the merge-vs-analysis rid drop: CLOSED, working as designed
+
+`13,204 → 13,188` records and `s2_n` `1,060 → 1,059` is **one rid**,
+`tt_sp_137000002820_p12` (9 arms ⇒ legs 1–8 × 2 judges = **exactly the 16 records**), removed by the
+**D4.18 whole-rid rule** on a single `ok:false` `clair-puct` leg-8 record of the **known
+`WindowTruncationError` class**. `1/1,060 = 0.094%` against the **2% bound**; deterministic across
+two re-runs; join-miss, dedup and boundary all excluded by set-diff both ways; the READOUT's
+`widening.failed` block names rid, class and cause. **`s2_n = 1,059` against floor `1,007` stands.**
+
+✅ **The loss is structural and outcome-independent** — the D4.18 predicate reads record *validity*,
+never a value — which is the only property that made it acceptable. The record arithmetic closes
+independently: 16 records is precisely one 9-arm rid's leg multiplicity under the committed thinning
+ladder, so **no second, unexplained rid is hiding inside the same delta.**
+
+**Parked, not now:** an `n_records_removed` field so that arithmetic closes *inside* the READOUT
+instead of via the rid's arm count. Worth doing — a reconciliation that requires an outside
+computation is a reconciliation most readers will skip — but it is an enhancement to a passing
+mechanism, and the freeze is open.
+
+*No bar, branch, statistic or estimand moves under D6. The execution-layer completion that supplies
+the missing tools is ruled in `rung3_r5/DESIGN.md` §"EXECUTION-LAYER COMPLETION"; the three gate
+fixes in §"THE THREE GATE FAILURES".*
+
+---
+
+*No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D1, D2, D3,
+D4, D5 or D6. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their
+signature blocks read SIGNED; D3's classification is in force on ruling and its witness on PASS;
+D4's completion licence is in force subject to its §D4.9 conditions; D5's merge licence is in force
+subject to its pre-committed binary-sha decision rule; D6 is a disclosure and a standing rule, and
+both bind on writing.*

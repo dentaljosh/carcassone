@@ -264,6 +264,324 @@ and (a) closes it rather than papering it with a convention.
 exists to fix. **A1 enforces this automatically:** its completeness assertion is over the **marker
 list**, so an address added without its fixture **fails A1** rather than passing silently.
 
+### ⭐ EXECUTION-LAYER COMPLETION — RULED (2026-08-19). Where the verdict is written, who audits, and what adjudicates.
+
+The pair defines `A1`/`A2`/`A3` and carries the branch table, but **names no tool for `A2`/`A3`
+and has no read-out address at all** — the addressed artifacts stop at `MERGE_REPORT_s2.json`.
+**Ruled here** on the D4.16 precedent: naming **where** a committed branch table's verdict gets
+**written**, and **who** performs a committed pass, **moves no bar, branch or statistic.**
+
+**1. EMISSION TARGET.** `RUN/READOUT_R5.json` + `RUN/READOUT_R5.md`, marker `[post-scoring]`,
+A1 fixture `fixtures/READOUT_R5.fixture.json`. Every `READOUT::…` address in the READ_RULE resolves
+against `READOUT_R5.json`.
+
+**2. THE `A2`/`A3` AUDITOR — `acceptance_r5` mode**, over **the pair's own address list**, with the
+completeness assertion the pair already specifies:
+
+```
+A1 (pre-corpus, static/fixtures) + A2 (post-corpus, live) + A3 (post-scoring, live)
+    ==  the COMPLETE set of addresses named in READ_RULE.md
+Per address: resolved / UNRESOLVED, plus JSON type. NO VALUE is printed, ever.
+Primary AND fallback resolved INDEPENDENTLY. Any address in neither pass FAILS the assertion.
+```
+
+**3. THE ADJUDICATOR — I/O pinned.**
+
+```
+INPUTS
+  merged leg records   RUN/legs/s2/**/records/<rid>.json   -- per-(rid, leg) arm values
+  ARMS_R5.json         the population authority: arms_full and subset_j4 per rid
+  FLOORS_R5.json       n2=1060, gate_floor=1007, and the pinned constants
+  the §2 gate artifacts (CORPUS_R5, STAGING_R5, GATE_INTERNAL_DUPE,
+                         GATE_DISJOINT_R5, RUN_MANIFEST_R5, MERGE_REPORT_s2, D_DRAW)
+
+PRIMARY
+  Delta_ora = ora_full - ora_J4, at capped plies, per rid, where
+    ora_full = cross-fit oracle value of the best arm over ARMS_R5[rid].arms_full
+    ora_J4   = same, restricted to ARMS_R5[rid].subset_j4
+  significance ONCE, on the percentile ROOT bootstrap (2,000 reps, seed 20260819, cluster root_id)
+  R_ora = ora_full / ora_J4, subject to the degenerate-denominator guard
+  Delta_arb, R_arb  -- deploy RIDERS, adjudicate nothing
+
+BRANCH TABLE -- VERBATIM from READ_RULE §4, not one threshold, sign or condition moved:
+  X-CONFIRMED  X-ABOVE  X-PARTIAL  X-BELOW  X-FREE  X-INCONCLUSIVE
+  + the R_ora degenerate guard and its committed Delta_ora-only sub-table
+  + the X-NOISE rider (non-adjudicating)
+  + the three mandatory prints (1.400-vs-1.244 unseparable; +0.0842 at the bracket top;
+    the X-FREE attainability window at the REALIZED se)
+```
+
+⛔ **THE S1-RIDER PROHIBITION APPLIES, and it is not optional.** R3.3 §5's address list includes
+`widening.j_rider.s1_replication.*` and `…interaction.*` — **S1 quantities. R5 HAS NO S1 STRATUM.**
+They must be **absent or null with their witness**, and **may never be reported as if measured**.
+A rider with no stratum behind it is not a weak result; it is **not a result**.
+
+⛔ **TOKEN DISCIPLINE, as ruled for R4 but inverted here.** R4's rung 3 fired **no** X-branch, so
+**no X-token could appear anywhere**. R5 **does** fire one, so **its token appears legitimately —
+and no other X-token may appear anywhere in the READOUT**, and the non-fired branches must not be
+narrated as near-misses. **`VOID_S2` must not appear at all**: R5 is the successor to that void,
+not a continuation of it.
+
+**4. `READOUT_R5.json` SCHEMA (the addresses the READ_RULE already names, made concrete):**
+
+```
+widening.j_rider.s2.{delta_ora, ci95_ora, r_ora, ci95_r_ora, ora_j4_ci95,
+                     delta_arb, ci95_arb, n_capped, xfree_window, r_ora_reported}
+widening.j_rider.d_draw.{n_checked, agreement_rate, d_draw_ran}
+widening.completion.s2_n            widening.failed.{n_failed_rids, n_attempted, rate, by_class}
+widening.gates.{<gate>: {ok, resolved_at}}          -- every §2 gate, never short-circuited
+widening.supply_chain.{...}         widening.branch.{fired, reasons, mandatory_prints}
+```
+
+### ⭐ THE THREE GATE FAILURES — RULED (2026-08-20). 16/19 passed; these three are fixed, not waived.
+
+⛔ **Blindness held throughout: no outcome value read, by me or by anyone. §7 suppression intact.**
+None of the three fixes below moves a bar, a branch, a threshold or a statistic. Two are
+**consumer-side defects** (the artifact was right, the reader was wrong); one is **missing work**
+that a conjunct correctly refused to let the claim outrun.
+
+---
+
+#### FIX 1 — `G-DISJOINT`: the consumer must respect `layers_absent`. **Ruled: the `ci95` class.**
+
+**The emitter is correct and has been since R3.3.** `gate_disjoint.compare_rid_list` emits
+`layers_absent: ["a_root_id", "c_position_digest"]` with a reason, and its docstring states the
+rationale outright: *"a fabricated `0` would read as a proof that was never performed."* Verified
+present in `shared_run/GATE_DISJOINT.json` (R3.3), `shared_run_r4/GATE_DISJOINT.json`, and
+`rung3_r5/GATE_DISJOINT_R5.json` — **the declaration pre-dates the blind commit.** The acceptance
+auditor already honours it (its finding 4). The **adjudicator's** `all_rid_and_root_layers_zero`
+conjunct simply did not inherit the handling and read `a_root_id.n_intersection` as `null` ⇒ FAIL.
+
+**This is exactly the `ci95` class: an address named that its own emitter does not write.** The fix
+is consumer-side. But "respect `layers_absent`" must not become "any missing layer is excused" — that
+would convert the leakage guard into the campaign's signature **pass-always** disease. The conjunct
+is therefore restated with the absence licence **bounded on four sides**:
+
+```
+For each comparison C in GATE_DISJOINT_R5.json::comparisons:
+
+  b_rid   (RID LAYER)   REQUIRED PRESENT on every C, and n_intersection == 0.
+                        NO absence licence at all. A rid identity always exists.
+  a_root_id (ROOT LAYER) n_intersection == 0 if present.
+                        VACUOUS on C only if BOTH:
+                          "a_root_id" in C.layers_absent   AND   C.layers_absent_reason non-empty.
+  NEITHER present nor declared absent  ==>  FAIL.   (ABSENT-IS-FAIL survives intact.)
+  ANTI-VACUITY: a_root_id must be PRESENT-and-zero on >= 1 comparison, else the gate FAILS
+                as structurally vacuous.
+Plus the carried top-level conjunct GATE_DISJOINT_R5.json::passed == true.
+```
+
+**Satisfiable, and not by accident — checked against the artifact's structure (keys only):**
+`b_rid` is present on all four comparisons; `a_root_id` is present on three
+(`base_vs_extension`, `s2_vs_tiearb2_0816`, `s2_vs_tiletie0812`) and declared absent on exactly one
+(`s2_vs_exclude_rids`). **The anti-vacuity clause has 3 of 4 comparisons behind it.** The emitter's
+own `passed` already computes `n_bad` over `layers.values()` — i.e. it always ignored absent layers
+correctly. **The gate and the auditor agreed; only the adjudicator dissented.**
+
+---
+
+#### FIX 2 — `G-DDRAW`: the probe does not exist. **Ruled: build it — and the charter alone would not have discharged `I7`.**
+
+**The conjunct did its job and must not be softened.** It exists, in the pair's own words,
+*"precisely so the claim cannot outrun the artifact"* — R5's predecessor claimed `I7`'s conditional
+was discharged while the mechanical rule still permitted the R4 outcome. It just fired on exactly
+that. **`d_draw_ran == true` stands unchanged.**
+
+⚠️ **BLOCKING FINDING, raised to the owner: the chartered probe measures the wrong thing.**
+This changes no bar and no branch — `D-DRAW` adjudicates nothing — but the **discharge claim**
+rests on it, so it must be named before the builder writes code.
+
+- `I7`(b)'s load-bearing conjunct is that **the python afterstate-dedupe key and rust
+  `string_representation` induce the SAME PARTITION of the tie set** (DESIGN §5).
+- §0.D charters `D-DRAW` as *"agreement rate between the instrument's `J=4` draw and the **deployed**
+  rust draw."* ⛔ **Those two draws are different RNG streams BY CONSTRUCTION** — python
+  `random.Random(sha256("tiletie-cap"|rid|20260812))` versus rust MT19937
+  `sha256("tiearb2-deploy-v1"|digest|ply|"cap")`. **This is the very fact for which `G-CAP` was
+  retired as fail-always** (`gate_draw.py` docstring; DESIGN §5).
+- ⇒ A raw set-overlap `agreement_rate` between them is a **hypergeometric coincidence statistic**,
+  not a partition measurement. Uncalibrated, a highish value reads as "the partitions agree" when it
+  is mostly the arithmetic of drawing 4 from the same support. **`G-CAP`'s quantity re-badged from a
+  bar into a magnitude is still not evidence.**
+
+**RULED: the chartered field stays (the pair names it in §6 and I may not remove it), and the
+DIRECT comparison is added — because it is exact, nearly free, and is what `I7` actually asks.**
+Both are emitted; **the discharge rests on the direct check, and the read-out must say so.**
+
+The direct check is available because **both partitions are already materialized**:
+`carc_rs.MirrorState.tiearb_probe` returns `tie_actions`, `arms`, `n_distinct_afterstates`, `capped`,
+`n_legal`; `ARMS_R5.json` carries `arms_full`, `dedupe_dropped_actions`, `n_distinct_afterstates`,
+`n_cand`, `n_legal`, `subset_j4`, `archive_path`, `deck_seed`, `ply`, `root_id`.
+
+```
+W9 / D-DRAW  ->  RUN/D_DRAW.json          marker [post-scoring] (late; see DEVIATIONS D6.2)
+
+POPULATION -- pinned, and NOT to be inferred from a field name:
+  ALL 1,060 rids of ARMS_R5.json.
+  /!\ TRAP: ARMS_R5 carries BOTH `capped` (== false on all 1,060) and
+      `capped_at_4` (== true on all 1,060). The charter says "each S2 capped ply".
+      A builder filtering on `capped` gets an EMPTY population, n_checked == 0,
+      and a VACUOUSLY-PASSING G-DDRAW. Filter on NOTHING: take all 1,060.
+
+PER RID
+  replay the archived line (archive_path, deck_seed) to `ply`; call
+    tiearb_probe(cfg, champ_pick=-1, j=4, eps=0.0, salt="tiearb2-deploy-v1", ply=<ply>)
+  POSITION WITNESS (mandatory): the probe's n_legal MUST equal ARMS_R5[rid].n_legal.
+    Mismatch => count in n_unreconstructible; NEVER compare partitions at an unverified
+    position -- a disagreement measured at the wrong ply is worse than no measurement.
+    If a stronger both-sides witness exists, prefer it and record which was used in
+    `position_witness` -- verify it against its own emitter first (READ_RULE §2.2).
+
+TIER 1 -- THE DISCHARGE (exact, and the field the read-out cites for I7):
+  n_partition_checked
+  n_tieset_equal          set(probe.tie_actions) == set(arms_full) | set(dedupe_dropped_actions)
+  n_cells_equal           probe.n_distinct_afterstates == ARMS_R5[rid].n_distinct_afterstates
+  n_partition_agree       BOTH of the above
+  partition_agreement_rate = n_partition_agree / n_partition_checked
+  /!\ Report as a NECESSARY-CONDITION witness: equal support + equal cell count is
+      necessary for identical partitions, and is not sufficient (neither side exposes
+      its grouping map). State that limit in the read-out; do not round it up to "verified".
+
+TIER 2 -- THE CHARTERED FIELDS (kept verbatim; NOT the discharge):
+  n_checked, n_agree, agreement_rate, n_unreconstructible, git_rev
+    n_agree := |set(probe.arms) & set(subset_j4)| == 4   (the chartered draw comparison)
+  agreement_rate MUST be emitted beside `agreement_rate_null_model` -- the expected overlap
+  of two independent size-J draws from a shared support -- and labelled
+  NOT-EVIDENCE-ABOUT-THE-PARTITION. An uncalibrated coincidence statistic printed bare
+  is how G-CAP's error would re-enter through the rider door.
+
+PROVENANCE (D5 discipline, and it is cheap):
+  git_rev and carc_rs_build recorded; git_rev MUST lie in the R5 two-rev licence
+  {9bc2ab77..., a5aa4a5e...}; outside it => RAISE to the owner, do not proceed.
+
+SELF-CHECK, so G-DDRAW cannot pass vacuously:
+  d_draw_ran := (n_checked > 0) and (n_checked + n_unreconstructible == 1060)
+  Anything less is a partial probe and d_draw_ran stays FALSE.
+
+ANALYZER: surfaced at widening.j_rider.d_draw.{n_checked, agreement_rate, d_draw_ran}
+  via --d-draw (unchanged addresses), with the Tier-1 block carried alongside.
+```
+
+⛔ **Unchanged and absolute:** `D-DRAW` **adjudicates nothing, moves no branch, and may NEVER be
+used to correct, reweight or re-scale `Δ_ora`** (§0.D). That prohibition covers the added Tier-1
+fields exactly as it covers the chartered ones.
+
+**Running it NOW, post-scoring, is LEGAL — CONFIRMED.** Its inputs are the archived game lines and
+`ARMS_R5.json`, all `[pre-corpus]`/`[post-corpus]` and sha-pinned; **scoring reads them and does not
+write them.** Late, not contaminated — **the `A2` class exactly** (DEVIATIONS D6.1), and disclosed
+the same way. The one genuine cost is the same one D6.1 names: had it run on time, a defect would
+have been free to fix.
+
+---
+
+#### FIX 3 — `G-DRAW`: **bless the R5 invocation. No code change. No new mode.**
+
+`scripts/tiletie/gate_draw.py` is already corpus-agnostic: `--arms` (repeatable), `--cap-j`, `--out`.
+**Address verified against its own emitter** (READ_RULE §2.2 — the rule that exists because this
+campaign twice named keys nothing writes): the READOUT addresses
+`RUN/GATE_DRAW_R5.json::{ok, n_mismatch, deployed_cap_j}` and `run_gate()` emits **all three**
+(`deployed_cap_j` at `gate_draw.py:132`, `ok` and `n_mismatch` in the same dict). `ARMS_R5.json`
+carries the three inputs `check_rid` needs — `arms_full`, `subset_j4`, `subset_j4_id`.
+
+```
+python3 scripts/tiletie/gate_draw.py \
+    --arms measurement/tiearb_widening_20260817/rung3_r5/ARMS_R5.json \
+    --out  measurement/tiearb_widening_20260817/rung3_r5/GATE_DRAW_R5.json
+```
+
+⛔ **Do NOT pass `--cap-j`.** Take the default `build_positions.DEPLOYED_CAP_J == 4`. R5 is the
+rung-3 (`J > 4`) read, and the temptation to "match the rung" is precisely wrong: `G-DRAW` asserts
+that the recorded **`J = 4`** subset reproduces this repo's own seeded draw. Passing R5's `J` would
+compare `subset_j4` against a draw it was never made by — **fail-always, the `G-CAP` shape again.**
+✅ Not vacuous either: `ok` requires `n_checked > 0`, so an empty or mis-pathed `--arms` FAILS
+rather than passing on zero rows. Expected `n_checked = 1,060`.
+
+---
+
+#### ⭐ SIGN-OFF on the D-DRAW build (`ce04cb49`) — BOTH deviations SIGNED. My spec was wrong twice.
+
+**1. THE TIER-1 FORMULA — SIGNED, and my formula is WITHDRAWN.**
+
+The builder's replacement is adopted. **I do not need the empirical 664/1,060 to concede this — my
+formula was wrong on the pair's own text**, and that is the cleaner ground:
+
+> `I7`(b): *"the python afterstate-dedupe key and rust `string_representation` inducing the same
+> partition **of the tie set**."*
+
+**The tie set is the given domain; the partition of it is the question.** My `n_tieset_equal`
+conjunct asked whether rust independently re-derives the same tie *membership* — a **different
+question** (cross-implementation leaf agreement), which `I7` does not ask and which no branch rides
+on. I conflated the domain with the relation, and scored the conflation as disagreement.
+
+**The definitional claim is CONFIRMED at the emitter**, with one correction to its wording:
+`chain_census.tie_report` (the corpus side) and `carc_core::tiearb::detect_tie` (the probe side)
+use the *same shape* of definition — exact top-1 equality on the outer chain value — so the corpus
+tie set is **not** "the champion's" as opposed to a leaf tie set. What differs is **which leaf
+evaluates it.** The falsifier stands either way and is the decisive fact: six recorded arms holding
+two distinct **rust** leaf values cannot be a rust leaf-tie set, at a position the checksum witness
+confirms. ✅ **Correct conclusion, imprecise cause — recorded so the reason on file is the true one.**
+
+✅ **The replacement computes `I7`(b) directly**, and the python partition is fully materialized —
+**independently reproduced from `ARMS_R5.json`: `len(arms_full) == n_distinct_afterstates` on all
+1,060, and `tie_size_exact == len(arms_full) + len(dropped)` on all 1,060.**
+✅ **Not vacuous, and the anti-vacuity witness reproduces exactly: 59 rids / 304 dropped actions.**
+`reps_distinct` catches rust **over**-collapsing; `dropped_collapse` catches rust **under**-collapsing.
+
+⚠️ **AMENDMENT — state the residual precisely; it is smaller than my caveat and not zero.**
+Python **never materialized which representative each dropped action collapsed onto**, so:
+
+- On the **1,001 rids with no dropped actions**, python's partition is the **discrete** one, and
+  `reps_distinct` alone proves rust induces the discrete partition too ⇒ **EXACT identity, no
+  residual.**
+- On the **59 collapse rids**, the three conjuncts prove rust has the same cells *containing one
+  representative each*, but a dropped action python assigned to `rep_i` could sit in rust's `rep_j`
+  cell and still pass. ⇒ **necessary condition, not proof, and ONLY here.**
+
+**Required read-out wording: "exact on 1,001 rids; necessary-condition on 59 (304 actions)."** Not
+"verified" flat, and not my blanket "necessary-condition" either — **the blanket caveat understated
+a discharge that is exact on 94.4% of the corpus.**
+
+**2. PROVENANCE — SIGNED as built. The fail-always was MINE.**
+
+⛔ **My rule was fail-always, and it is the campaign's signature disease appearing in my own spec** —
+after a session spent ruling on it in everyone else's. A **post-scoring** probe is **new code by
+construction**; it exists at neither licensed rev, so gating its repo HEAD refuses every healthy run.
+
+Binding **`carc_rs_build`** is what I meant and failed to write: the licence exists to pin **the
+instrument that computes `string_representation`** — the object whose behaviour must match what the
+legs recorded — not the python driver that calls it. HEAD recorded with `git_rev_licensed` and the
+note is the one line I would have asked for; **it is already there.** ✅ The 12-char fixed-width
+comparison against a 40-char enumerated sha is correct per D4.11–12 (never `core.abbrev`), and
+reading the licence from `merge_legs.LICENSED_TRANCHE_REVS_R5` rather than retyping it is better
+than my spec — **one authority, one spelling.**
+
+**3. TIER 2 — one required correction to how it is REPORTED.**
+
+The empirical outcome confirms the `G-CAP` diagnosis, and ⚠️ **the confirmation must be stated
+carefully, because "below its own null" is one misread from becoming a finding.** Sub-null overlap
+is fully explained by the probe's own `chartered_same_support` field: **the two draws frequently do
+not share a support**, so the shared-support null does not apply to them. ⇒ The chartered statistic
+is **confounded and uninterpretable as an agreement measure** — which is the true and stronger
+statement. It is **not** evidence of disagreement, and must never be narrated as such.
+
+⛔ **Compare like with like.** A **count of exact matches** (47/1,060 = a rate of 0.0443) is not
+comparable to `expected_overlap` (a **mean intersection size**, `J²/T`). The artifact emits
+`expected_identical_rate` (`1/C(T,J)`) for precisely that comparison — **use it.** Quoting
+"47 vs 0.329" is a two-currency error of the kind R4 already governs.
+
+#### SEQUENCE for the rerun
+
+```
+1. gate_draw.py --arms ARMS_R5.json --out GATE_DRAW_R5.json      (FIX 3)
+2. W9 / D-DRAW probe                    -> RUN/D_DRAW.json        (FIX 2, late, disclosed)
+3. A2  acceptance_r5 --mode 4b          (late, disclosed; VERIFIES the pinned shas)
+4. ADJUDICATOR  (layers_absent-aware)   -> RUN/READOUT_R5.{json,md}   (FIX 1)
+5. A3  acceptance_r5 --mode post        (READOUT addresses now EXIST)
+```
+
+⛔ **Step 5 after step 4, not before** — see DEVIATIONS D6.3. `A3` audits `READOUT::…` addresses
+and **the adjudicator is what writes them**; running it first can only ever report the artifact
+missing, which is what happened. The verdict stays sealed until all 19 gates pass.
+
 ### ⭐ THE LEG STRUCTURE — RULED (2026-08-19, launch-blocking). The premise was wrong; the conclusion holds.
 
 The smoke refused on a missing leg2. **Verified against the artifacts, and the situation is worse
