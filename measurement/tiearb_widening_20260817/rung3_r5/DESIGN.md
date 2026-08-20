@@ -497,6 +497,77 @@ rather than passing on zero rows. Expected `n_checked = 1,060`.
 
 ---
 
+#### ⭐ SIGN-OFF on the D-DRAW build (`ce04cb49`) — BOTH deviations SIGNED. My spec was wrong twice.
+
+**1. THE TIER-1 FORMULA — SIGNED, and my formula is WITHDRAWN.**
+
+The builder's replacement is adopted. **I do not need the empirical 664/1,060 to concede this — my
+formula was wrong on the pair's own text**, and that is the cleaner ground:
+
+> `I7`(b): *"the python afterstate-dedupe key and rust `string_representation` inducing the same
+> partition **of the tie set**."*
+
+**The tie set is the given domain; the partition of it is the question.** My `n_tieset_equal`
+conjunct asked whether rust independently re-derives the same tie *membership* — a **different
+question** (cross-implementation leaf agreement), which `I7` does not ask and which no branch rides
+on. I conflated the domain with the relation, and scored the conflation as disagreement.
+
+**The definitional claim is CONFIRMED at the emitter**, with one correction to its wording:
+`chain_census.tie_report` (the corpus side) and `carc_core::tiearb::detect_tie` (the probe side)
+use the *same shape* of definition — exact top-1 equality on the outer chain value — so the corpus
+tie set is **not** "the champion's" as opposed to a leaf tie set. What differs is **which leaf
+evaluates it.** The falsifier stands either way and is the decisive fact: six recorded arms holding
+two distinct **rust** leaf values cannot be a rust leaf-tie set, at a position the checksum witness
+confirms. ✅ **Correct conclusion, imprecise cause — recorded so the reason on file is the true one.**
+
+✅ **The replacement computes `I7`(b) directly**, and the python partition is fully materialized —
+**independently reproduced from `ARMS_R5.json`: `len(arms_full) == n_distinct_afterstates` on all
+1,060, and `tie_size_exact == len(arms_full) + len(dropped)` on all 1,060.**
+✅ **Not vacuous, and the anti-vacuity witness reproduces exactly: 59 rids / 304 dropped actions.**
+`reps_distinct` catches rust **over**-collapsing; `dropped_collapse` catches rust **under**-collapsing.
+
+⚠️ **AMENDMENT — state the residual precisely; it is smaller than my caveat and not zero.**
+Python **never materialized which representative each dropped action collapsed onto**, so:
+
+- On the **1,001 rids with no dropped actions**, python's partition is the **discrete** one, and
+  `reps_distinct` alone proves rust induces the discrete partition too ⇒ **EXACT identity, no
+  residual.**
+- On the **59 collapse rids**, the three conjuncts prove rust has the same cells *containing one
+  representative each*, but a dropped action python assigned to `rep_i` could sit in rust's `rep_j`
+  cell and still pass. ⇒ **necessary condition, not proof, and ONLY here.**
+
+**Required read-out wording: "exact on 1,001 rids; necessary-condition on 59 (304 actions)."** Not
+"verified" flat, and not my blanket "necessary-condition" either — **the blanket caveat understated
+a discharge that is exact on 94.4% of the corpus.**
+
+**2. PROVENANCE — SIGNED as built. The fail-always was MINE.**
+
+⛔ **My rule was fail-always, and it is the campaign's signature disease appearing in my own spec** —
+after a session spent ruling on it in everyone else's. A **post-scoring** probe is **new code by
+construction**; it exists at neither licensed rev, so gating its repo HEAD refuses every healthy run.
+
+Binding **`carc_rs_build`** is what I meant and failed to write: the licence exists to pin **the
+instrument that computes `string_representation`** — the object whose behaviour must match what the
+legs recorded — not the python driver that calls it. HEAD recorded with `git_rev_licensed` and the
+note is the one line I would have asked for; **it is already there.** ✅ The 12-char fixed-width
+comparison against a 40-char enumerated sha is correct per D4.11–12 (never `core.abbrev`), and
+reading the licence from `merge_legs.LICENSED_TRANCHE_REVS_R5` rather than retyping it is better
+than my spec — **one authority, one spelling.**
+
+**3. TIER 2 — one required correction to how it is REPORTED.**
+
+The empirical outcome confirms the `G-CAP` diagnosis, and ⚠️ **the confirmation must be stated
+carefully, because "below its own null" is one misread from becoming a finding.** Sub-null overlap
+is fully explained by the probe's own `chartered_same_support` field: **the two draws frequently do
+not share a support**, so the shared-support null does not apply to them. ⇒ The chartered statistic
+is **confounded and uninterpretable as an agreement measure** — which is the true and stronger
+statement. It is **not** evidence of disagreement, and must never be narrated as such.
+
+⛔ **Compare like with like.** A **count of exact matches** (47/1,060 = a rate of 0.0443) is not
+comparable to `expected_overlap` (a **mean intersection size**, `J²/T`). The artifact emits
+`expected_identical_rate` (`1/C(T,J)`) for precisely that comparison — **use it.** Quoting
+"47 vs 0.329" is a two-currency error of the kind R4 already governs.
+
 #### SEQUENCE for the rerun
 
 ```

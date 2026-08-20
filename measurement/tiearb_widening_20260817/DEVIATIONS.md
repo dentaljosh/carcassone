@@ -1378,6 +1378,30 @@ partitions are already materialized), keeps the chartered field beside its null 
 discharge on the direct check. **`D-DRAW` adjudicates nothing, so no bar or branch moves** — but the
 *claim* would have been overstated, and that is recorded rather than quietly repaired.
 
+### D6.6 — the adjudicator's own spec carried the disease it was ruling on
+
+**2026-08-20. Recorded against myself, because the record is worthless if it only names other
+people's errors.** The D-DRAW build (`ce04cb49`) corrected **two defects in my `b130f0cd` spec**, and
+both are instances of classes I had been adjudicating all campaign:
+
+| my defect | the class | consequence had it shipped |
+|---|---|---|
+| Tier-1 required `set(probe.tie_actions) == set(arms_full) ∪ set(dropped)` | **conflating a measurement's DOMAIN with its RELATION** — `I7`(b) asks for the partition *of the tie set*, not for agreement *about* the tie set | a ~43% invented disagreement, reported under `I7` as if the licence were in doubt |
+| provenance RAISE bound the **repo HEAD** to the two-rev licence | ⛔ **FAIL-ALWAYS** — the campaign's signature disease, in the adjudicator's own text | a post-scoring probe is new code by construction and exists at neither licensed rev; the gate would refuse every healthy run |
+
+Both **SIGNED as amended**; the rulings are in `rung3_r5/DESIGN.md` §"SIGN-OFF on the D-DRAW build".
+The second is the sharper lesson: ⚠️ **I wrote a fail-always gate in the same session in which I
+ruled on `G-CAP`, `G-TOOL`, `G-COLLIDE`, `G-SATURATION`, `G-BAND` and `G-DDRAW`'s vacuity trap.**
+Knowing the failure mode by name did not stop me producing it. **The structural test — "would this
+fail on a healthy run?" — has to be applied to the ruling as well as to the thing ruled on**, and
+nothing in the process currently does that. The builder's review caught it; that is the control that
+worked, and it is the only one that was operating.
+
+*One thing my spec did get right and the record should keep: the added Tier-1 check itself. The
+chartered `D-DRAW` would not have discharged `I7` (D6.4), and the empirical result now confirms it
+from the other side — the chartered overlap runs **below its own shared-support null**, because the
+two draws frequently do not even share a support. The statistic is confounded, not merely weak.*
+
 ### D6.5 — the merge-vs-analysis rid drop: CLOSED, working as designed
 
 `13,204 → 13,188` records and `s2_n` `1,060 → 1,059` is **one rid**,
