@@ -148,6 +148,12 @@ main() {
   done
 
   if [ "$DRY" -eq 1 ]; then
+    printf '[dry-run] smoke aggregation:'
+    printf ' %q' "$PY" "$REPO/scripts/tiletie/analyze_b64_cell.py" aggregate-smoke \
+                 --wide-dir "$SHARE_RUN/smoke/smoke_$CELL_SUBDIR_WIDE" \
+                 --narrow-dir "$SHARE_RUN/smoke/smoke_$CELL_SUBDIR_NARROW" \
+                 --band "$SMOKE_BAND" --out "$SHARE_RUN/smoke/SMOKE.json"
+    printf '\n'
     printf '[dry-run] smoke gate check:'
     printf ' %q' "$PY" "$REPO/scripts/tiletie/analyze_b64_cell.py" smoke-check \
                  --smoke "$SHARE_RUN/smoke/SMOKE.json"
@@ -158,14 +164,59 @@ main() {
   fi
 
   if [ "$SMOKE" -eq 1 ]; then
-    log "--- §9.2 whitelist + §9.3 HALT bar ---"
+    # ---- THE AGGREGATION STEP ------------------------------------------------
+    # ⭐ It did not exist, so §9.3 never evaluated: this block called smoke-check
+    # on a SMOKE.json that NOTHING wrote, and the per-cell manifests carry none
+    # of §9.2's whitelist fields — `worker_secs_per_game`, the single quantity
+    # the HALT bar is defined on, was emitted nowhere. The aggregator reads the
+    # two cells' OWN per-game records and computes it by DESIGN §7.1's own
+    # equation (Σ elapsed_s / n).
+    log "--- §9 aggregation: the two smoke cells -> SMOKE.json ---"
+    set +e
+    "$PY" "$REPO/scripts/tiletie/analyze_b64_cell.py" aggregate-smoke \
+      --wide-dir "$SHARE_RUN/smoke/smoke_$CELL_SUBDIR_WIDE" \
+      --narrow-dir "$SHARE_RUN/smoke/smoke_$CELL_SUBDIR_NARROW" \
+      --band "$SMOKE_BAND" \
+      --out "$SHARE_RUN/smoke/SMOKE.json"
+    agg_rc=$?
+    set -e
+    if [ "$agg_rc" -ne 0 ]; then
+      # ⚠️ NAME THE ACTUAL CONDITION. The aggregator prints its own refusal —
+      # missing records, an unreadable record, a whitelist-external key, an
+      # outcome key. Do NOT restate it as something else.
+      log "!!! AGGREGATION REFUSED (rc=$agg_rc) — the aggregator's own message is"
+      log "!!! above and names the actual condition. This launcher does not"
+      log "!!! re-attribute it."
+      exit 9
+    fi
+
+    # ---- §9.2's whitelist, on the artifact that now exists -------------------
+    log "--- §9.2 whitelist check ---"
+    set +e
     "$PY" "$REPO/scripts/tiletie/analyze_b64_cell.py" smoke-check \
-      --smoke "$SHARE_RUN/smoke/SMOKE.json" || {
-        log "!!! §9.2 REFUSAL: SMOKE.json carries a key outside the counts-and-cost"
-        log "!!! whitelist. The smoke may not read an outcome."; exit 9; }
-    log "HALT bar: realized WIDE worker_secs_per_game > $SMOKE_HALT_BAR ⇒ HALT"
+      --smoke "$SHARE_RUN/smoke/SMOKE.json"
+    chk_rc=$?
+    set -e
+    if [ "$chk_rc" -ne 0 ]; then
+      # ⚠️ SAME SHAPE AS THE PREFLIGHT'S OLD G-J13 MISATTRIBUTION, and it bit
+      # here too: this line used to assert "whitelist violation" for ANY nonzero
+      # exit — and the real cause was a MISSING FILE. The checker prints the
+      # failing condition itself; propagate it, never re-label it.
+      if [ ! -f "$SHARE_RUN/smoke/SMOKE.json" ]; then
+        log "!!! SMOKE.json is ABSENT at $SHARE_RUN/smoke/SMOKE.json — that is a"
+        log "!!! MISSING ARTIFACT, not a whitelist violation."
+      else
+        log "!!! smoke-check REFUSED (rc=$chk_rc) — its own message above names"
+        log "!!! the condition (a key outside §9.2's counts-and-cost whitelist,"
+        log "!!! or an unreadable artifact). This launcher does not re-attribute it."
+      fi
+      exit 9
+    fi
+
+    log "HALT bar (§9.3): realized WIDE worker_secs_per_game > $SMOKE_HALT_BAR ⇒ HALT"
     log "⚠️ ONE-SIDED: an overrun HALTS, an underrun proceeds. On a HALT the real"
     log "⚠️ cells are NOT launched and the decision returns to the owner."
+    log "⚠️ This launcher REPORTS the comparison; it adjudicates nothing."
   fi
   log "DONE tag=$TAG"
 }

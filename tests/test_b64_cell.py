@@ -966,3 +966,157 @@ def test_the_healthy_path_END_TO_END_on_the_REAL_observed_shape():
     ok_t, dt = B64.gate_tool(docs, {})
     assert ok_t is True, dt
     assert dt["distinct_builds"] == [REAL_BUILD]
+
+
+# =========================================================================== #
+# §9 THE SMOKE AGGREGATOR — the step that did not exist, so §9.3 never         #
+# evaluated: run_cells called smoke-check on a SMOKE.json NOTHING wrote, and    #
+# `worker_secs_per_game` — the ONE quantity the HALT bar is defined on — was    #
+# emitted nowhere.                                                             #
+# =========================================================================== #
+SMOKE_SHARE = Path("/mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/smoke")
+SMOKE_WIDE = SMOKE_SHARE / "smoke_b64_WIDE_B64J4_deploy11008"
+SMOKE_NARROW = SMOKE_SHARE / "smoke_b64_NARROW_B16J4_deploy11008"
+
+
+def _rec(seed, seat, elapsed, **extra):
+    """A per-game record of the REAL shape — outcome fields INCLUDED, because
+    the point is that the aggregator never reads them."""
+    return {"seed": seed, "a_seat": seat, "elapsed_s": elapsed,
+            "diff": 18, "score_p0": 129, "score_p1": 111, "won_by_champ": True,
+            "moves": 142, "sims": 1376, "k_dets": 8, **extra}
+
+
+def _smoke_cell(d: Path, n=4, elapsed=100.0, phi=17.1, B=64, summary=True):
+    d.mkdir(parents=True, exist_ok=True)
+    for i in range(n):
+        (d / f"seed90000030000{i}_a0.json").write_text(
+            json.dumps(_rec(900000300000 + i, 0, elapsed)))
+    if summary:
+        (d / "summary.json").write_text(json.dumps({
+            "n": n, "n_failed": 0, "tiearb_phi": phi, "tiearb_B": [B],
+            "tiearb_secs_per_game": 576.85, "tiearb_errors_total": 0,
+            "tiearb_first_error": None, "tiearb_partial_argmax_total": 0,
+            "tiearb_playouts_total": 83136, "tiearb_fired_plies_total": 412,
+            "tiearb_tile_plies_total": 827, "tiearb_mean_arms": 3.15,
+            "tiearb_pickchange_rate": 0.57,
+            "tiearb_fire_rate_on_tile_plies": 0.498,
+            "champ_prefix_ms_per_move": 9895.63, "rung_ms_per_move": 1511.81,
+            # ⛔ outcome fields the aggregator must NEVER carry through
+            "paired_mean_margin": 1.23, "paired_z": 4.5, "elo": 23.9,
+            "winrate": 0.64, "W": 10, "D": 1, "L": 3}))
+    return d
+
+
+def test_the_cost_definition_is_the_PAIRS_OWN_not_wall_times_W(tmp_path):
+    """⭐ DESIGN §7.1 states it as an equation over the artifacts:
+    'sum over seed*.json of elapsed_s / 800 = 429.612'. ⛔ NEVER wall x W / n —
+    the house forbids costing from wall clock, and §9.3 names that very
+    substitution as the currency error behind Stage 2's ~2x cost miss."""
+    assert "SUM(seed*.json::elapsed_s) / n_games" in B64.WORKER_SECS_DEFINITION
+    assert "NEVER" in B64.WORKER_SECS_DEFINITION and "wall x W" in B64.WORKER_SECS_DEFINITION
+    w = _smoke_cell(tmp_path / "W", n=4, elapsed=250.0)
+    n = _smoke_cell(tmp_path / "N", n=4, elapsed=100.0, B=16)
+    doc = B64.aggregate_smoke({"WIDE": w, "NARROW": n})
+    assert doc["worker_secs_per_game"] == pytest.approx(250.0)
+    assert doc["_cells"]["WIDE"]["elapsed_s_total"] == pytest.approx(1000.0)
+    assert doc["_cells"]["NARROW"]["worker_secs_per_game"] == pytest.approx(100.0)
+    assert doc["_definition"] == B64.WORKER_SECS_DEFINITION
+
+
+def test_the_aggregate_carries_the_whitelist_fields_and_NO_OUTCOME(tmp_path):
+    doc = B64.aggregate_smoke({"WIDE": _smoke_cell(tmp_path / "W"),
+                               "NARROW": _smoke_cell(tmp_path / "N", B=16)})
+    # every non-underscore top-level key is inside §9.2's emitter whitelist
+    assert B64.smoke_whitelist_check(doc)["ok"] is True
+    # ⛔ and NO outcome key survives at ANY depth, though the inputs are full of them
+    assert B64.smoke_outcome_scan(doc) == []
+    for k in ("tiearb_phi", "tiearb_partial_argmax_total", "n_failed",
+              "champ_prefix_ms_per_move", "rung_ms_per_move",
+              "ms_ratio_cand_over_opp", "worker_secs_per_game"):
+        assert k in doc, k
+    # §9.1's condition of acceptance: the throwaway band declares itself
+    assert doc["band_tier"] == "throwaway"
+    assert doc["band_registry_claimed"] is False
+    # the gate passes on it
+    assert B64.gate_smoke(doc)[0] is True
+
+
+def test_the_aggregator_REFUSES_a_cell_with_no_records(tmp_path):
+    """`elapsed_s` over the per-game records IS the cost basis; a cell with no
+    records must refuse LOUDLY, never report zero."""
+    empty = tmp_path / "EMPTY"
+    empty.mkdir()
+    with pytest.raises(SystemExit) as e:
+        B64.aggregate_smoke({"WIDE": _smoke_cell(tmp_path / "W"), "NARROW": empty})
+    msg = str(e.value)
+    assert "NO per-game records" in msg and "cost basis" in msg
+    assert "refusing rather than reporting zero" in msg
+    # a record missing elapsed_s also refuses
+    bad = _smoke_cell(tmp_path / "B")
+    (bad / "seed900000300009_a0.json").write_text(json.dumps({"seed": 9, "a_seat": 0}))
+    with pytest.raises(SystemExit) as e2:
+        B64.aggregate_smoke({"WIDE": bad, "NARROW": _smoke_cell(tmp_path / "N2")})
+    assert "NO elapsed_s" in str(e2.value)
+
+
+def test_the_aggregator_REFUSES_a_whitelist_external_or_outcome_key(monkeypatch,
+                                                                    tmp_path):
+    """FAIL-CLOSED AT WRITE TIME, on BOTH surfaces (RULING 1)."""
+    w, n = _smoke_cell(tmp_path / "W"), _smoke_cell(tmp_path / "N", B=16)
+    real = B64.smoke_whitelist_check
+    monkeypatch.setattr(B64, "smoke_whitelist_check",
+                        lambda d: {**real(d), "ok": False,
+                                   "forbidden_present": ["not_in_the_list"]})
+    with pytest.raises(SystemExit) as e:
+        B64.aggregate_smoke({"WIDE": w, "NARROW": n})
+    assert "outside §9.2's emitter whitelist" in str(e.value)
+    monkeypatch.setattr(B64, "smoke_whitelist_check", real)
+    monkeypatch.setattr(B64, "smoke_outcome_scan", lambda d: ["_cells.WIDE.elo"])
+    with pytest.raises(SystemExit) as e2:
+        B64.aggregate_smoke({"WIDE": w, "NARROW": n})
+    assert "FORBIDDEN OUTCOME KEY" in str(e2.value)
+    assert "COUNTS-AND-COST ONLY" in str(e2.value)
+
+
+def test_run_cells_no_longer_asserts_a_FALSE_CAUSE_on_either_call():
+    """⭐ THE SAME SHAPE AS THE PREFLIGHT'S OLD G-J13 MISATTRIBUTION — and it bit
+    here too: the old line asserted 'whitelist violation' for ANY nonzero exit,
+    and the real cause was a MISSING FILE."""
+    src = RUN_CELLS.read_text()
+    # the aggregation step exists, and runs BETWEEN the cells and smoke-check
+    assert "aggregate-smoke" in src
+    assert src.index("aggregate-smoke") < src.index("smoke-check")
+    # neither refusal re-labels the checker's own condition
+    assert "does not re-attribute it" in src
+    assert "MISSING ARTIFACT, not a whitelist violation" in src
+    # the old blanket assertion is GONE
+    assert "§9.2 REFUSAL: SMOKE.json carries a key outside" not in src
+    # and both calls capture rc instead of `|| { assert a cause }`
+    assert "agg_rc=$?" in src and "chk_rc=$?" in src
+
+
+@pytest.mark.skipif(not (SMOKE_WIDE / "summary.json").is_file(),
+                    reason="the real smoke output is not on this box's share")
+def test_INTEGRATION_aggregate_the_REAL_smoke_read_only(tmp_path):
+    """⭐ THE LAUNCH EVIDENCE. Cost-only aggregation of records that already
+    exist is mechanical and blindness-clean — no re-run needed. ⚠️ This REPORTS
+    the comparison and adjudicates NOTHING."""
+    out = tmp_path / "SMOKE.json"
+    doc = B64.aggregate_smoke({"WIDE": SMOKE_WIDE, "NARROW": SMOKE_NARROW},
+                              band=900000300000, out_path=out)
+    assert out.is_file()
+    w = doc["_cells"]["WIDE"]
+    n = doc["_cells"]["NARROW"]
+    # the records carry what the pair's definition requires
+    assert w["n_records_with_elapsed_s"] == 24
+    assert n["n_records_with_elapsed_s"] == 24
+    assert w["worker_secs_per_game"] == pytest.approx(788.799, abs=0.01)
+    assert n["worker_secs_per_game"] == pytest.approx(367.845, abs=0.01)
+    # the artifact is clean on both surfaces
+    assert B64.smoke_whitelist_check(doc)["ok"] is True
+    assert B64.smoke_outcome_scan(doc) == []
+    assert B64.gate_smoke(doc)[0] is True
+    # ⚠️ REPORTED, NOT ADJUDICATED: the comparison, and nothing more
+    assert doc["worker_secs_per_game"] < B64.SMOKE_HALT_BAR
+    assert B64.SMOKE_HALT_BAR == pytest.approx(1438.191, abs=0.01)
