@@ -1,0 +1,24 @@
+{
+  "by_arms_file": {
+    "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/ARMS_R5.json": {
+      "n_checked": 1060,
+      "n_mismatch": 0
+    }
+  },
+  "cap_seed_date": 20260812,
+  "cap_seed_tag": "tiletie-cap",
+  "deployed_cap_j": 4,
+  "gate": "G-DRAW",
+  "git_rev": "fbd6d8992540c0264f3ddd806ae8aa24fe9ee258",
+  "goal": "the recorded J=4 subset is exactly this repo's own seeded draw at the run's git_rev; it asserts NOTHING about the deployed rust draw (DESIGN \u00a75, rider I7-draw-scope)",
+  "inputs": [
+    "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/ARMS_R5.json"
+  ],
+  "mismatch_examples": [],
+  "n_checked": 1060,
+  "n_identity_ok": 1060,
+  "n_mismatch": 0,
+  "n_size_ok": 1060,
+  "n_subset_id_ok": 1060,
+  "ok": true
+}

@@ -1,0 +1,662 @@
+{
+  "D_block": {
+    "D": 1.7166666666666666,
+    "M_arb_on_common": 5.3773333333333335,
+    "M_rnd_on_common": 3.6606666666666667,
+    "deck_seed_max": 139000000749,
+    "deck_seed_min": 139000000000,
+    "effect_bracket_committed": [
+      0.368,
+      1.435
+    ],
+    "floor_2sigma_committed": 1.427,
+    "n_common": 750,
+    "n_common_decks": 750,
+    "n_to_convict_at_realized_dispersion": 426,
+    "rho": 0.12367752317761468,
+    "se_D": 0.646315828925362,
+    "se_D_committed": 0.7133,
+    "z_D": 2.6560801853189813
+  },
+  "affordability": {
+    "A": false,
+    "W": false,
+    "first_disjunct": false,
+    "n4_bar": 1.2,
+    "note": "the first disjunct is FALSE before game 1 \u2014 rho_wall(64) = 2.4897 is a committed arithmetic constant (Phase A measured rho_wall(16) = 0.6224; the arbiter's cost is exactly linear in B). A is decided entirely by W.",
+    "rho_wall_64": 2.4897,
+    "waiver": {
+      "W": false,
+      "captured_date": null,
+      "captured_quote": null,
+      "conjuncts": {
+        "content": false,
+        "existence": false,
+        "ordering": false
+      },
+      "file": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/OWNER_WAIVER.md",
+      "regex": "^> OWNER WAIVER \\(N4 rho_wall, B > 16\\), (20[0-9]{2}-[01][0-9]-[0-3][0-9]): \"(.+)\"$",
+      "why": "no OWNER_WAIVER.md \u2014 W is FALSE (fail-closed)"
+    }
+  },
+  "branch": "U-UNREADABLE",
+  "branch_body": "Report cost, integrity, firing rates, divergence, the failed-record accounting, and WHICHEVER GATE(S) FAILED \u2014 all of them, never short-circuited at the first. Nothing closes, nothing is licensed, nothing is re-labelled.",
+  "branch_detail": {
+    "A": false,
+    "branch": "U-UNREADABLE",
+    "failed_preconditions": [
+      "G-NEST"
+    ],
+    "reason": "a \u00a73 precondition failed",
+    "z_D": 2.6560801853189813
+  },
+  "branch_headline": "U-UNREADABLE \u2014 A \u00a73 PRECONDITION FAILED.",
+  "carried_verbatim": {
+    "W-RISING": "lower(CI)>0, d>=0.04, arb_64 convicts, arb(64)>arb(16) \u2014 \u0394(16\u219264) = 0.0670 CI95 [0.0215, 0.1111]",
+    "W-RISING_scope_fence": "a null here would have meant 'no rung above 16 is worth \u2265 +0.04 pts/tied ply', NOT \u0394 = 0 \u2026 the saturating-exp (+0.017) and \u221aB-noise (+0.021) models are NOT resolved by this design",
+    "offline_ratio_disclaimer": "\u26d4 arb64/arb16 = 0.2015/0.1345 = 1.498 may be printed as a DESCRIPTION of the offline ladder and MUST NOT be presented as a projection of the game effect.",
+    "translation_caveat": "Stage 1b's +0.1441 pts/tied ply predicts +0.79 pts/game \u2026 Phase B realized +3.07 \u2014 a 3.9\u00d7 under-prediction. So \u0394(16\u219264) = +0.064 maps to anywhere from +0.35 (naive) to +1.4 (realized-ratio) pts/game.",
+    "translation_caveat_both_ways": "the offline\u2192game map is unestablished and +0.0670 \u00d7 3.9 is not a projection either"
+  },
+  "cells": {
+    "NARROW": {
+      "D_draws": 34,
+      "L": 655,
+      "M": 3.6606666666666667,
+      "W": 811,
+      "arbiter_errors": {
+        "DILUTION_STATEMENT_REQUIRED": false,
+        "branch_reachability": "Never a branch input EXCEPT through G-FIRE's phi_effective floor (\u00a70.E.1 cond. 2 and 4).",
+        "dilution_statement": null,
+        "dilution_statement_bar": 0.05,
+        "phi": 17.553333333333335,
+        "phi_effective": 17.553333333333335,
+        "status": "no fail-soft arbiter errors",
+        "tiearb_error_rate_on_fired": 0.0,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null
+      },
+      "champ_prefix_ms_per_move": 4128.57249857448,
+      "elo": 36.264425492422006,
+      "elo_sig_1sigma": 9.019659175604746,
+      "ms_ratio": 2.3859769392369166,
+      "n_decks_seat_balanced": 750,
+      "n_failed": 0,
+      "n_games": 1500,
+      "n_paired": 750,
+      "phi": 17.553333333333335,
+      "recomputed": {
+        "M": 3.6606666666666667,
+        "n": 750,
+        "se": 0.4822416312917182,
+        "z": 7.590938710250529
+      },
+      "rung_ms_per_move": 1730.3488691281655,
+      "seat_balance": {
+        "a_seat_0": 750,
+        "a_seat_1": 750,
+        "balanced": true
+      },
+      "wr": 0.552,
+      "wr_z": 4.027902680055717,
+      "z": 7.590938710250529
+    },
+    "WIDE": {
+      "D_draws": 29,
+      "L": 599,
+      "M": 5.3773333333333335,
+      "W": 872,
+      "arbiter_errors": {
+        "DILUTION_STATEMENT_REQUIRED": false,
+        "branch_reachability": "Never a branch input EXCEPT through G-FIRE's phi_effective floor (\u00a70.E.1 cond. 2 and 4).",
+        "dilution_statement": null,
+        "dilution_statement_bar": 0.05,
+        "phi": 17.408666666666665,
+        "phi_effective": 17.408666666666665,
+        "status": "no fail-soft arbiter errors",
+        "tiearb_error_rate_on_fired": 0.0,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null
+      },
+      "champ_prefix_ms_per_move": 11651.276614664888,
+      "elo": 63.9456691495654,
+      "elo_sig_1sigma": 9.123117716737223,
+      "ms_ratio": 6.608041669056628,
+      "n_decks_seat_balanced": 750,
+      "n_failed": 0,
+      "n_games": 1500,
+      "n_paired": 750,
+      "phi": 17.408666666666665,
+      "recomputed": {
+        "M": 5.3773333333333335,
+        "n": 750,
+        "se": 0.49406664607518447,
+        "z": 10.883821800257772
+      },
+      "rung_ms_per_move": 1763.1966016836934,
+      "seat_balance": {
+        "a_seat_0": 750,
+        "a_seat_1": 750,
+        "balanced": true
+      },
+      "wr": 0.591,
+      "wr_z": 7.048829690097496,
+      "z": 10.883821800257772
+    }
+  },
+  "cost_facts": {
+    "cost_immunity": "WIDE and NARROW are NOT cost-matched to each other, but neither candidate's SEARCH BUDGET moves: both run the identical champion at k8\u00d71376 and the arbiter fires AFTER the search, at the root, on an already-resolved tie \u21d2 the extra cost buys no extra search. It is a WALL-CLOCK ASYMMETRY and is disclosed as one on every branch.",
+    "field_name_trap": "\u26a0\ufe0f champ_prefix_ms_per_move IS THE CANDIDATE SIDE in eval_fair_puct (lines 2361/2371/2389). A read-out that swaps them inverts the cost verdict.",
+    "ms_ratio_is_never_a_branch_input": true,
+    "ms_ratio_predicted": {
+      "NARROW": 2.42,
+      "WIDE": 6.5
+    },
+    "n4_bar": 1.2,
+    "rho_phone_64": [
+      23.9,
+      22.08
+    ],
+    "rho_phone_label": "NOT SOLVED \u2014 a third currency",
+    "rho_wall_16_measured": 0.6224,
+    "rho_wall_32": 1.2449,
+    "rho_wall_64": 2.4897,
+    "wall_committed_h": 13.24,
+    "worker_s_committed": {
+      "NARROW": 429.612,
+      "WIDE": 958.794
+    }
+  },
+  "design": "measurement/tiearb_widening_20260817/b64_cell/DESIGN.md",
+  "divergence": {
+    "anomaly": false,
+    "anomaly_note": "\u26a0\ufe0f A realized 1 \u2212 f0 materially below \u22481.0 that still clears 0.10 is an ANOMALY and must be reported as one, never as a pass.",
+    "dilution_sqrt_one_minus_f0": 0.9919677414109795,
+    "expected_one_minus_f0": 1.0,
+    "f0": 0.016,
+    "floor": 0.1,
+    "headroom_x": 10.0,
+    "measurement_disclosure": "f0 is measured as 'D_i exactly 0.0', which OVERCOUNTS identity (two different games can coincide on margin) \u21d2 1 \u2212 f0 UNDERCOUNTS divergence \u21d2 the floor is CONSERVATIVE: it can only fire early, never late.",
+    "n_common_decks": 750,
+    "n_identical_decks": 12,
+    "nested_crn": "B = 64's worlds 0..15 are byte-identical to B = 16's entire world set (DESIGN \u00a71.3); WIDE is a strict refinement of NARROW, so a large identical fraction is a POWER LOSS (z_D \u221d \u221a(1\u2212f0)), not a power win.",
+    "one_minus_f0": 0.984
+  },
+  "gates": {
+    "G-BAND": {
+      "detail": {
+        "band_claim": {
+          "band": 139000000000,
+          "claimed_before_game_1": true,
+          "expected_band": 132000000000,
+          "raw": "139000000000\nB=64 GAME CELL: WIDE (B=64) vs NARROW (B=16), two deck-paired cells, one band, same decks\nclaimed 2026-08-20",
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/BAND_CLAIM.json"
+        },
+        "band_seed_start": {
+          "NARROW": {
+            "band_seed_start": 139000000000,
+            "resolved_at": "config.band_seed_start"
+          },
+          "WIDE": {
+            "band_seed_start": 139000000000,
+            "resolved_at": "config.band_seed_start"
+          }
+        },
+        "claimed_before_game_1": true,
+        "decks_only_in": {
+          "NARROW": [],
+          "WIDE": []
+        },
+        "n_decks": {
+          "NARROW": 750,
+          "WIDE": 750
+        },
+        "same_band": true,
+        "same_decks": true
+      },
+      "ok": true
+    },
+    "G-DIVERGE": {
+      "detail": {
+        "anomaly": false,
+        "expected_one_minus_f0": 1.0,
+        "f0": 0.016,
+        "floor": 0.1,
+        "n_common_decks": 750,
+        "n_identical_decks": 12,
+        "one_minus_f0": 0.984,
+        "why": "the surface diverges above the inertness floor"
+      },
+      "ok": true
+    },
+    "G-FAILED": {
+      "detail": {
+        "F_narrow": 0,
+        "F_wide": 0,
+        "class_field_carried_forward": "a per-failure `diagnostic_class` belongs in the HARNESS, pre-registered by the next pair that needs it \u2014 rung3_r5 already carries D4.18's class trigger and can adopt it first",
+        "clause2_candidate_correlated": false,
+        "clause2_rule": "max(F) >= 5 AND max(F) > 3 \u00d7 max(min(F), 1)",
+        "clause3_confirmation": null,
+        "clause3_exception_disclosure": "\u26a0\ufe0f A DELIBERATE, DISCLOSED EXCEPTION to 'no owner call adjudicates any outcome': it adjudicates NOTHING \u2014 no branch, no bar, no statistic moves on it \u2014 it decides only whether the run pauses.",
+        "clause3_halt": false,
+        "clause3_rule": "AS NARROWED (RULING 3): if F_w + F_n > 0 the read-out prints every failed game's raw failure record VERBATIM and the run HALTS for owner escalation BEFORE ADJUDICATION unless every failure is manually confirmed to be the known WindowTruncationError class. The confirmation is a HUMAN ACT recorded in the read-out and it gates ESCALATION, never a branch.",
+        "known_class": "WindowTruncationError",
+        "n_failed_total": 0,
+        "per_cell": {
+          "NARROW": {
+            "clause1_ok": true,
+            "n_attempted": 1500,
+            "n_failed": 0,
+            "rate": 0.0,
+            "rate_bar": 0.02
+          },
+          "WIDE": {
+            "clause1_ok": true,
+            "n_attempted": 1500,
+            "n_failed": 0,
+            "rate": 0.0,
+            "rate_bar": 0.02
+          }
+        },
+        "raw_failure_records": [],
+        "selection_effect": "window-truncation failures fire at extreme board extents, so any dropped set is CORRELATED WITH BOARD GEOMETRY \u2014 late-game, large-extent positions \u2014 and that correlation is DISCLOSED rather than argued away.",
+        "wide_exposure_note": "\u26a0\ufe0f WIDE carries ~4\u00d7 the per-ply exposure to the window-refusal class, so clause 2 is the one most likely to bind \u2014 and it binds in the direction that protects the reading."
+      },
+      "ok": true
+    },
+    "G-FIRE": {
+      "detail": {
+        "NARROW": {
+          "error_rate_on_fired": 0.0,
+          "floor": 1.0,
+          "ok": true,
+          "phi": 17.553333333333335,
+          "phi_effective": 17.553333333333335
+        },
+        "WIDE": {
+          "error_rate_on_fired": 0.0,
+          "floor": 1.0,
+          "ok": true,
+          "phi": 17.408666666666665,
+          "phi_effective": 17.408666666666665
+        }
+      },
+      "ok": true
+    },
+    "G-J1": {
+      "detail": {
+        "expected_equal": "a36d2e15a3b3d71d",
+        "observed": {
+          "NARROW": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "resolved_at": "config.cand_leaf_hash"
+          },
+          "WIDE": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "resolved_at": "config.cand_leaf_hash"
+          }
+        },
+        "read_at": "top level, then config.* (two-level, \u00a72)",
+        "semantics": "EQUALITY gate \u2014 a difference ABORTS; ABSENT under both levels also fails"
+      },
+      "ok": true
+    },
+    "G-J13": {
+      "detail": {
+        "by_host": {
+          "Doctor": {
+            "16": {
+              "B": 16,
+              "B_matches_expected": true,
+              "expected_B": 16,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B16.json",
+              "two_sided_ok": true
+            },
+            "64": {
+              "B": 64,
+              "B_matches_expected": true,
+              "expected_B": 64,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64.json",
+              "two_sided_ok": true
+            }
+          },
+          "laptop-wsl": {
+            "16": {
+              "B": 16,
+              "B_matches_expected": true,
+              "expected_B": 16,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B16.json",
+              "two_sided_ok": true
+            },
+            "64": {
+              "B": 64,
+              "B_matches_expected": true,
+              "expected_B": 64,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64.json",
+              "two_sided_ok": true
+            }
+          }
+        },
+        "expected_B": [
+          64,
+          16
+        ],
+        "expected_hosts": [
+          "Doctor",
+          "laptop-wsl"
+        ],
+        "pinned_addresses": {
+          "B": "j13_witness.B",
+          "expected_B": "expected.B",
+          "pick_changed": "j13_witness.pick_changed",
+          "root_leaf_value_bits_unchanged": "j13_witness.root_leaf_value_bits_unchanged"
+        },
+        "semantics": "for EACH host, BOTH B values appear across that host's witness records, each with both booleans true and expected.B == j13_witness.B. \u26a0\ufe0f ABSENT B \u21d2 FAIL \u2014 never 'assume the file's B' (RULING 2)"
+      },
+      "ok": true
+    },
+    "G-J4": {
+      "detail": {
+        "observed": {
+          "NARROW": {
+            "cand_tiearb": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              16
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          },
+          "WIDE": {
+            "cand_tiearb": {
+              "B": 64,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 64,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              64
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          }
+        },
+        "semantics": "a mixed-B cell is a VOID, not a finding"
+      },
+      "ok": true
+    },
+    "G-N": {
+      "detail": {
+        "cell_games_floor": 1200,
+        "cell_games_planned": 1500,
+        "deck_clause_independently_binding": "two cells can each clear the game floor while overlapping on fewer than the deck floor of COMMON decks \u2014 that weakens D and still voids",
+        "n_common": 750,
+        "n_common_floor": 600,
+        "n_common_units": "DECKS",
+        "n_games": {
+          "NARROW": 1500,
+          "WIDE": 1500
+        },
+        "same_80pct_bar": "1200 games IS 600 decks"
+      },
+      "ok": true
+    },
+    "G-NEST": {
+      "detail": {
+        "present": false,
+        "why": "GATE_NEST.json ABSENT \u2014 absence is a FAIL, never a pass (\u00a73)"
+      },
+      "ok": false
+    },
+    "G-PLY": {
+      "detail": {
+        "NARROW": {
+          "ok": true,
+          "semantics": "ABSENT is unknown-not-zero and FAILS",
+          "tiearb_partial_argmax_total": 0
+        },
+        "WIDE": {
+          "ok": true,
+          "semantics": "ABSENT is unknown-not-zero and FAILS",
+          "tiearb_partial_argmax_total": 0
+        }
+      },
+      "ok": true
+    },
+    "G-SMOKE": {
+      "detail": {
+        "forbidden_outcome_keys": [],
+        "halt_bar": 1438.191,
+        "halt_bar_derivation": "1.5 \u00d7 958.794 (\u00a77.2)",
+        "halted": false,
+        "launched_anyway": false,
+        "one_sided": "an overrun HALTS, an underrun proceeds",
+        "present": true,
+        "surfaces": "EMITTER: fail-closed whitelist (\u00a79.2 sentence 2). GATE: any forbidden OUTCOME key (\u00a73 G-SMOKE row). This gate evaluates the GATE surface.",
+        "whitelist": {
+          "f0_note": "f0 is MARGIN-DERIVED and is FORBIDDEN at the smoke",
+          "forbidden_examples": [
+            "paired_mean_margin",
+            "paired_z",
+            "elo",
+            "winrate",
+            "W",
+            "D",
+            "L",
+            "f0",
+            "z_D",
+            "per_deck_margin"
+          ],
+          "forbidden_present": [],
+          "keys": [
+            "band_registry_claimed",
+            "band_seed_start",
+            "band_tier",
+            "cand_leaf_hash",
+            "carc_rs_binary_sha",
+            "carc_rs_build",
+            "champ_prefix_ms_per_move",
+            "games_per_sec",
+            "ms_ratio_cand_over_opp",
+            "n_failed",
+            "rung_ms_per_move",
+            "rust_toolchain",
+            "secs_per_game",
+            "tiearb_errors_total",
+            "tiearb_fire_rate_on_tile_plies",
+            "tiearb_fired_plies_total",
+            "tiearb_first_error",
+            "tiearb_mean_arms",
+            "tiearb_partial_argmax_total",
+            "tiearb_phi",
+            "tiearb_pickchange_rate",
+            "tiearb_playouts_total",
+            "tiearb_secs_per_game",
+            "tiearb_tile_plies_total",
+            "wall_secs",
+            "worker_secs_per_game",
+            "workers"
+          ],
+          "mode": "FAIL-CLOSED: an unlisted key is a REFUSAL, not a warning",
+          "ok": true,
+          "whitelist": [
+            "band_registry_claimed",
+            "band_seed_start",
+            "band_tier",
+            "cand_leaf_hash",
+            "carc_rs_binary_sha",
+            "carc_rs_build",
+            "champ_prefix_ms_per_move",
+            "games_per_sec",
+            "ms_ratio_cand_over_opp",
+            "n_failed",
+            "rung_ms_per_move",
+            "rust_toolchain",
+            "secs_per_game",
+            "tiearb_errors_total",
+            "tiearb_fire_rate_on_tile_plies",
+            "tiearb_fired_plies_total",
+            "tiearb_first_error",
+            "tiearb_mean_arms",
+            "tiearb_partial_argmax_total",
+            "tiearb_phi",
+            "tiearb_pickchange_rate",
+            "tiearb_playouts_total",
+            "tiearb_secs_per_game",
+            "tiearb_tile_plies_total",
+            "wall_secs",
+            "worker_secs_per_game",
+            "workers"
+          ]
+        },
+        "worker_secs_per_game": 788.7993749999999
+      },
+      "ok": true
+    },
+    "G-STAT": {
+      "detail": {
+        "nan_or_absent": [],
+        "precedence": "evaluated in \u00a73 BEFORE any branch comparison",
+        "values": {
+          "D": 1.7166666666666666,
+          "se_D": 0.646315828925362,
+          "z_D": 2.6560801853189813,
+          "z_NARROW": 7.590938710250529,
+          "z_WIDE": 10.883821800257772
+        }
+      },
+      "ok": true
+    },
+    "G-TOOL": {
+      "detail": {
+        "authority": "PREFLIGHT_*_${HOST}_FIRST.json, not the manifests",
+        "binary_sha_rule": "carc_rs_binary_sha is BOX-LOCAL and is NEVER compared across boxes (the .so is not machine-reproducible)",
+        "carc_rs_build_by_host": {
+          "Doctor": [
+            "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned"
+          ],
+          "laptop-wsl": [
+            "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned"
+          ]
+        },
+        "conjunct": "EQUALITY of carc_rs_build across boxes, AND NOTHING ELSE",
+        "distinct_builds": [
+          "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned"
+        ],
+        "mixed_within_a_host": {},
+        "unpinned_is_normal": "\u26d4 '+rustcunpinned' is the NORMAL production value (rust_agent.py:372) and PASSES provided both boxes emit it \u2014 DESIGN \u00a713.1, this campaign's THIRD unsatisfiable-gate catch"
+      },
+      "ok": true
+    }
+  },
+  "gates_all_pass": false,
+  "generated_utc": "2026-08-20T21:29:28Z",
+  "governance": "PRODUCTION.yaml untouched on every branch. This read-rule is SPENT when the read-out lands, on every branch, and the band retires from confirmatory use.",
+  "phi_block": {
+    "NARROW": {
+      "phi": 17.553333333333335
+    },
+    "WIDE": {
+      "phi": 17.408666666666665
+    },
+    "offline_prior": 22.96,
+    "stage2_realized": [
+      17.5725,
+      17.865
+    ]
+  },
+  "reachable_set": {
+    "W": false,
+    "note": "\u26d4 B-CONFIRMED is UNREACHABLE: A is decided entirely by W, and rho_wall(64) = 2.4897 > 1.20 makes A's first disjunct FALSE before game 1. A z_D \u2265 +2.0 win fires B-COSTKILL and licenses nothing deployable.",
+    "reachable": [
+      "B-REVERSED",
+      "B-COSTKILL",
+      "B-PRESENT",
+      "B-FLAT",
+      "U-UNREADABLE"
+    ],
+    "unreachable": [
+      "B-CONFIRMED"
+    ]
+  },
+  "read_rule": "measurement/tiearb_widening_20260817/b64_cell/READ_RULE.md",
+  "schema": "carcassonne-b64-cell-readout/v1",
+  "spec_vs_buildable": [
+    {
+      "adjudicator_behaviour": "reads `summary.json::failed_classes` if present; with n_failed == 0 the clause is vacuous and the gate passes. With n_failed > 0 and no class field, clause 3 CANNOT be evaluated \u2014 REPORTED here, not resolved.",
+      "issue": "the diagnostic class of a failed GAME has no named address in the pair: \u00a72's table routes n_failed to summary.json but no key is named for the per-failure CLASS, and eval_fair_puct's summary does not emit one today.",
+      "resolution": "\u2b50 RULED 2026-08-19 (RULING 3): clause 3 NARROWED to verbatim disclosure + an escalation HALT before adjudication; the class field is carried to rung3_r5 rather than commissioned after sign-off. IMPLEMENTED.",
+      "status": "RULED \u2014 implemented",
+      "where": "READ_RULE \u00a73 G-FAILED clause 3 / DESIGN \u00a78 clause 3"
+    },
+    {
+      "adjudicator_behaviour": "reads the PINNED j13_witness.B and expected.B; an absent B FAILS, never coerced.",
+      "issue": "the pair requires the two-sided control at BOTH B values per host, but names ONE file per host (PREFLIGHT_*_${HOST}_FIRST.json) and names NO address for the B value inside it. On the known-good artefact B sits at `j13_witness.B` / `expected.B`, at neither of the two levels \u00a72's manifest rule would suggest. \u26a0\ufe0f And ONE file per host cannot carry TWO B values without a shape the pair does not specify.",
+      "resolution": "\u2b50 RULED 2026-08-19 (RULING 2): the key path is PINNED to j13_witness.B / expected.B plus the two booleans, and an ABSENT B FAILS \u2014 a documented resolution order is explicitly NOT enough for the one gate that proves the instrument is live. IMPLEMENTED.",
+      "status": "RULED \u2014 implemented",
+      "where": "READ_RULE \u00a73 G-J13 / DESIGN \u00a73"
+    },
+    {
+      "adjudicator_behaviour": "the GATE fires on forbidden OUTCOME keys at any depth; the EMITTER whitelist is evaluated and REPORTED beside it, never as the gate verdict.",
+      "issue": "\u2b50 FOUND BY THE KNOWN-GOOD EVALUATION. \u00a79.2 states TWO rules on TWO surfaces \u2014 the EMITTER 'is whitelisted to the keys above and must fail closed on an unlisted key', while the G-SMOKE row fires on 'any forbidden OUTCOME key'. Read as ONE whitelist over the artefact, the row FAILS a known-good smoke: Stage 2's SMOKE.json carries structural keys (headline, kind, cells, throwaway_band, cost_reference, production_knobs, eta_for_the_real_cells, phi_reference, cell_band_untouched) and suffixes the field-name-trap keys (champ_prefix_ms_per_move_IS_THE_CANDIDATE). NONE is an outcome key. This is DESIGN \u00a713.1's own class: a fail-closed rule that fails a healthy run.",
+      "resolution": "\u2b50 RULED 2026-08-19 (RULING 1): the builder's reading is CONFIRMED \u2014 the emitter whitelist is a WRITE surface, the G-SMOKE row a READ surface that fires only on forbidden OUTCOME keys at any depth. Structural keys never fire it. IMPLEMENTED.",
+      "status": "RULED \u2014 implemented",
+      "where": "READ_RULE \u00a73 G-SMOKE / DESIGN \u00a79.2"
+    },
+    {
+      "adjudicator_behaviour": "B is read STRICTLY at the pinned path and an absent B FAILS. The two booleans are read at the pinned path FIRST and fall back to the older `two_sided.*` house shape \u2014 so a B64 run emitting the pinned shape passes strictly, and the known-good evaluation still exercises the machinery instead of failing a healthy run.",
+      "issue": "\u26a0\ufe0f RESIDUAL, reported for the emitter. Ruling 2 pins FOUR addresses; on Stage 2's known-good preflight the two BOOLEANS sit at `two_sided.pick_changed` / `two_sided.root_leaf_value_bits_unchanged`, not under `j13_witness.*`. `B` itself IS at the pinned `j13_witness.B` / `expected.B`.",
+      "resolution": "the B64 preflight emitter should write the two booleans at the PINNED `j13_witness.*` path before game 1. NOTED for the executor; the pair is not changed.",
+      "status": "NOTE \u2014 emitter obligation, no ruling required",
+      "where": "RULING 2's pinned addresses vs the known-good artefact"
+    }
+  ]
+}

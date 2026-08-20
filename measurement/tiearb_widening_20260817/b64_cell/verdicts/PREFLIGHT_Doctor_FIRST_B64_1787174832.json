@@ -1,0 +1,284 @@
+{
+  "kind": "tiearb2_stage2_preflight",
+  "host": "Doctor",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "expected": {
+    "B": 64,
+    "J": 4,
+    "salt": "tiearb2-deploy-v1",
+    "eps": 0.0,
+    "champion_leaf_hash": "a36d2e15a3b3d71d"
+  },
+  "toolchain": {
+    "RUSTUP_TOOLCHAIN": null,
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "code_rev": "587ca17a86558aae5f1f10d78fe95757703e162d",
+    "code_rev_short": "587ca17a",
+    "dirty": true,
+    "dirty_code_paths": []
+  },
+  "backend_provenance": {
+    "carc_rs_version": "0.1.0",
+    "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "carc_rs_build": "carc_rs-0.1.0+587ca17a8655+rustcunpinned",
+    "carc_rs_binary_sha": "a4318fd59d9d8349",
+    "code_rev": "587ca17a-dirty",
+    "code_rev_dirty": true,
+    "rust_toolchain": null,
+    "tile_data_source_sha256": "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c",
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800"
+  },
+  "rust_toolchain": null,
+  "carc_rs_build": "carc_rs-0.1.0+587ca17a8655+rustcunpinned",
+  "carc_rs_version": "0.1.0",
+  "carc_rs_binary_sha": "a4318fd59d9d8349",
+  "code_rev_dirty": true,
+  "mixed_builds": false,
+  "all_preflight_pass": false,
+  "checks": [
+    {
+      "check": "W1_wheel_has_tiearb_probe",
+      "ok": true,
+      "observed": {
+        "carc_rs": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+        "version": "0.1.0"
+      }
+    },
+    {
+      "check": "W2_SearchConfigRs_accepts_tiearb_kwargs",
+      "ok": true,
+      "observed": {
+        "enabled": true,
+        "B": 64,
+        "J": 4,
+        "mode": "argmax",
+        "salt": "tiearb2-deploy-v1",
+        "eps": 0.0
+      }
+    },
+    {
+      "check": "W3_production_champion_leaf_hash_of_record",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "check": "J1_INVERTED_leaf_hash_UNMOVED_equals_champion_argmax",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "check": "J4_resolved_knob_reaches_rust_argmax",
+      "ok": true,
+      "observed": {
+        "resolved": {
+          "enabled": true,
+          "B": 64,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "expected": {
+          "enabled": true,
+          "B": 64,
+          "J": 4,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        }
+      }
+    },
+    {
+      "check": "J4_resolved_knob_in_as_manifest_argmax",
+      "ok": true,
+      "observed": {
+        "tiearb_enabled": true,
+        "tiearb_b": 64,
+        "tiearb_j": 4,
+        "tiearb_mode": "argmax",
+        "tiearb_salt": "tiearb2-deploy-v1",
+        "tiearb_eps": 0.0
+      }
+    },
+    {
+      "check": "J1_INVERTED_leaf_hash_UNMOVED_equals_champion_random",
+      "ok": true,
+      "observed": "a36d2e15a3b3d71d"
+    },
+    {
+      "check": "J4_resolved_knob_reaches_rust_random",
+      "ok": true,
+      "observed": {
+        "resolved": {
+          "enabled": true,
+          "B": 64,
+          "J": 4,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        },
+        "expected": {
+          "enabled": true,
+          "B": 64,
+          "J": 4,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1",
+          "eps": 0.0
+        }
+      }
+    },
+    {
+      "check": "J4_resolved_knob_in_as_manifest_random",
+      "ok": true,
+      "observed": {
+        "tiearb_enabled": true,
+        "tiearb_b": 64,
+        "tiearb_j": 4,
+        "tiearb_mode": "random",
+        "tiearb_salt": "tiearb2-deploy-v1",
+        "tiearb_eps": 0.0
+      }
+    },
+    {
+      "check": "TOOL_no_code_path_is_dirty",
+      "ok": true,
+      "observed": {
+        "dirty_code_paths": [],
+        "n_dirty_code_paths": 0,
+        "tree_dirty_at_all": true,
+        "scope": [
+          "src/",
+          "rust/",
+          "scripts/",
+          "engine/"
+        ],
+        "note": "a dirty MEASUREMENT path is normal and is not gated; a dirty CODE path means code_rev does not describe what ran"
+      }
+    },
+    {
+      "check": "TOOL_rust_toolchain_is_pinned_and_real",
+      "ok": false,
+      "observed": null
+    },
+    {
+      "check": "TOOL_carc_rs_build_is_real_not_a_sentinel",
+      "ok": false,
+      "observed": "carc_rs-0.1.0+587ca17a8655+rustcunpinned"
+    },
+    {
+      "check": "TOOL_carc_rs_binary_sha_is_real",
+      "ok": true,
+      "observed": "a4318fd59d9d8349"
+    },
+    {
+      "check": "J13_POSITIVE_arbiter_changes_the_pick",
+      "ok": true,
+      "observed": {
+        "ply": 30,
+        "champ_pick": 1155,
+        "arbiter_pick": 1349,
+        "arms": [
+          1154,
+          1155,
+          1349
+        ],
+        "fired_plies_examined": 1
+      }
+    },
+    {
+      "check": "J13_NEGATIVE_root_leaf_value_bits_UNCHANGED",
+      "ok": true,
+      "observed": {
+        "root_leaf_value_bits": 4605072590740914176,
+        "chosen_action": 1154,
+        "n_pooled": 2,
+        "plies": 30
+      }
+    }
+  ],
+  "two_sided": {
+    "pick_changed": true,
+    "root_leaf_value_bits_unchanged": true,
+    "pick_change_witness": {
+      "ply": 30,
+      "champ_pick": 1155,
+      "arbiter_pick": 1349,
+      "arms": [
+        1154,
+        1155,
+        1349
+      ],
+      "fired_plies_examined": 1
+    },
+    "root_leaf_value_bits_witness": {
+      "root_leaf_value_bits": 4605072590740914176,
+      "chosen_action": 1154,
+      "n_pooled": 2,
+      "plies": 30
+    }
+  },
+  "j13_witness": {
+    "salt": "tiearb2-deploy-v1",
+    "B": 64,
+    "J": 4,
+    "eps": 0.0,
+    "control_deck_seed": "28000000000",
+    "sims": 64,
+    "k_dets": 4,
+    "agent_seed": 101,
+    "positive_side": {
+      "changed_at_ply": 30,
+      "move_idx": 0,
+      "champ_pick": 1155,
+      "arbiter_pick": 1349,
+      "arms": [
+        1154,
+        1155,
+        1349
+      ],
+      "fired_plies_examined": 1,
+      "examined": [
+        {
+          "ply": 30,
+          "move_idx": 0,
+          "champ_pick": 1155,
+          "arbiter_pick": 1349,
+          "arms": [
+            1154,
+            1155,
+            1349
+          ],
+          "tiearb_fired": true,
+          "playouts": 192,
+          "secs": 46.232
+        }
+      ],
+      "agent_fired_plies": 1,
+      "agent_pickchanges": 1
+    },
+    "negative_side": {
+      "root_leaf_value_bits": 4605072590740914176,
+      "chosen_action": 1154,
+      "n_pooled": 2,
+      "plies": 30
+    },
+    "resolved_on": {
+      "enabled": true,
+      "B": 64,
+      "J": 4,
+      "mode": "argmax",
+      "salt": "tiearb2-deploy-v1",
+      "eps": 0.0
+    },
+    "resolved_off": {
+      "enabled": false,
+      "B": 16,
+      "J": 4,
+      "mode": "argmax",
+      "salt": "tiearb2-deploy-v1",
+      "eps": 0.0
+    }
+  },
+  "note": "WIRING ONLY. No game played, no strength number read. measurement/tiearb2_stage2_20260817/READ_RULE.md \u00a73 G-J1/G-J4/G-J13/G-TOOL. \u26a0\ufe0f J1 is an EQUALITY gate: this surface moves no leaf hash, so a MOVED candidate hash is a DEFECT, not evidence."
+}

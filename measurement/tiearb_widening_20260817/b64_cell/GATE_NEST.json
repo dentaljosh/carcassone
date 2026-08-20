@@ -1,0 +1,135 @@
+{
+  "adjudicates": "NOTHING \u2014 a precondition witness. It licenses the cell's increment framing and moves no bar, branch or statistic.",
+  "conjuncts": {
+    "cap_draw_identical": true,
+    "playout_seeds_identical": true,
+    "seed_i64_anchor_reproduces_arbiter_arms": true,
+    "select_stream_identical": true,
+    "structural_sites_b_free": true,
+    "world_seeds_identical": true,
+    "worlds_are_distinct": true,
+    "worlds_byte_identical": true
+  },
+  "gate": "G-NEST",
+  "generated_utc": "2026-08-20T21:37:45Z",
+  "marker": "[pre-run]",
+  "pinned": {
+    "b_narrow": 16,
+    "b_wide": 64,
+    "cap_actually_fired": true,
+    "control_start_ply": 30,
+    "deck_seed": "28000000000",
+    "j": 4,
+    "n_arms": 4,
+    "n_distinct_afterstates": 11,
+    "n_prefix_actions": 32,
+    "n_tie_actions": 11,
+    "ply": 32,
+    "salt": "tiearb2-deploy-v1",
+    "seat": 0,
+    "state_digest": "9099d17b7b4fa6da3655de5f5890f27e",
+    "why_this_position": "the cell's own G-J13 control line, walked to the first ply where the trigger fires AND the cap draw is consulted"
+  },
+  "runtime": {
+    "cap_seed_identical": true,
+    "first_differing_j": null,
+    "n_compared": 16,
+    "n_distinct_worlds_narrow": 16,
+    "n_distinct_worlds_wide": 64,
+    "playout_seeds_identical": true,
+    "select_seed_identical": true,
+    "world_seeds_identical": true,
+    "world_sha_prefix": [
+      "907d87f52d5b09d6",
+      "ebaca165d47245f0",
+      "ed97c0cdc6221403",
+      "8405c447dcae31bd",
+      "fde70296f3b95969",
+      "fe23c568bdf0e03a",
+      "31d0e00fb93d57a0",
+      "82ad32067426d2a8",
+      "fe922a4c15376289",
+      "2861197b039df0c6",
+      "1ced12283301cf75",
+      "9b27cd181b2a8c60",
+      "3b4694e8970db445",
+      "09ac64a0f21a09c8",
+      "f589d68414ffc224",
+      "1f6190cbf18bcfb9"
+    ],
+    "worlds_byte_identical": true
+  },
+  "schema": "carcassonne-b64-gate-nest/v1",
+  "scope": "[RUN]",
+  "seed_i64_anchor": {
+    "arbiter_arms": [
+      1128,
+      1129,
+      1175,
+      1225
+    ],
+    "cap_seed": 5783025514736988432,
+    "n_candidates": 10,
+    "ok": true,
+    "reproduced_arms": [
+      1128,
+      1129,
+      1175,
+      1225
+    ],
+    "why": "the python seed_i64 + MT19937 shuffle reproduce the RUST arbiter's own capped arm set exactly, so the seeding function used below is the arbiter's"
+  },
+  "sites": {
+    "build_arms_cap": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+      "found": true
+    },
+    "playout_seed": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+      "found": true
+    },
+    "select_stream": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+      "found": true
+    },
+    "world_seed": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+      "found": true
+    }
+  },
+  "structural": {
+    "present": true,
+    "scope": "SOURCE-LEVEL witness at HEAD over the four seeding sites. The pair's GATE_NEST.json additionally records the pinned position/ply/salt byte-identity run; this tool emits the structural half and names the behavioural half.",
+    "sites": {
+      "build_arms_cap": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+        "found": true
+      },
+      "playout_seed": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+        "found": true
+      },
+      "select_stream": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+        "found": true
+      },
+      "world_seed": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+        "found": true
+      }
+    },
+    "source": "rust/carc/carc-core/src/tiearb.rs",
+    "why": "every seeding site is a pure function of j (no B term) \u21d2 the world sets NEST",
+    "witness": true
+  },
+  "why": "B=64's worlds 0..15 are BYTE-IDENTICAL to B=16's entire set (real determinized decks, not just seeds), the cap draw and selection stream are identical, and every seeding site is a pure function of j with no B term \u21d2 the world sets NEST and WIDE is a strict refinement of NARROW",
+  "witness": true
+}

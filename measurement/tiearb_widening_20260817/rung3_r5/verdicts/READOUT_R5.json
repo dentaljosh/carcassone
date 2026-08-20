@@ -1,0 +1,1154 @@
+{
+  "generated_utc": "2026-08-20T21:24:22Z",
+  "provenance": {
+    "artifacts": {
+      "bitexact": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/INSTRUMENT_IDENTITY_R5.json",
+      "corpus": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/CORPUS_R5.json",
+      "d_draw": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/D_DRAW.json",
+      "disjoint": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/GATE_DISJOINT_R5.json",
+      "draw": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/GATE_DRAW_R5.json",
+      "floors": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/FLOORS_R5.json",
+      "internal_dupe": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/GATE_INTERNAL_DUPE.json",
+      "merge_report": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/MERGE_REPORT_s2.json",
+      "positions_plan": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/corpus/positions_s2/POSITIONS_PLAN.json",
+      "run_manifest": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/RUN_MANIFEST_R5.json",
+      "smoke": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/SMOKE_R5.json",
+      "staging": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/STAGING_R5.json"
+    },
+    "estimator": "analyze_widening (build_rows / RootBoot / j_rider_block / decide_rung3 / xfree_window) \u2014 this module is a DRIVER and EMITTER only",
+    "fixture": {
+      "accepted_alternative": "READOUT.fixture.json",
+      "accepted_alternative_exists": true,
+      "conflict": "The DESIGN's fixture list names `fixtures/READOUT.fixture.json` while its execution-layer ruling names `fixtures/READOUT_R5.fixture.json`, and the RUN dir contains the former. This tool PREFERS READOUT_R5, ACCEPTS READOUT, and records which name it used. The conflict is DISCLOSED, not resolved \u2014 resolving it is a prereg amendment, not an analyzer decision.",
+      "name_used": "READOUT_R5.fixture.json",
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/fixtures/READOUT_R5.fixture.json",
+      "preferred": "READOUT_R5.fixture.json",
+      "preferred_exists": false
+    },
+    "legs_root": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/legs/s2",
+    "population_authority": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/ARMS_R5.json",
+    "population_authority_rule": "READ, never re-derived by subtraction (DESIGN ruling 2026-08-19, shape (a))"
+  },
+  "read_rule": "measurement/tiearb_widening_20260817/rung3_r5/READ_RULE.md rev R5.1",
+  "run": "tiearb_widening_20260817 rung3_r5",
+  "widening": {
+    "branch": {
+      "fired": "X-INCONCLUSIVE",
+      "guard_fired": false,
+      "licensed": true,
+      "mandatory_prints": {
+        "i_separability_1400_vs_1244": "SEPARABILITY, carried blind spot: this design CANNOT separate 1.400 from 1.244. The gap is Delta = 0.054, which is z 1.28-2.00 across the pre-registered sd_delta bracket [0.9, 1.4] \u2014 under 2 sigma at every point of it. A point estimate that lands BETWEEN the two predictions reads as the partial-resolution row of the branch table (READ_RULE \u00a75 names it; it is deliberately not spelled here) ONLY IF the realized CI EXCLUDES 1.400 OUTRIGHT \u2014 never 'whichever of the two the reader prefers'.",
+        "ii_0842_unresolved_at_bracket_top": "POWER: the corrected prediction +0.0842 is UNRESOLVED at the top of the sd_delta bracket \u2014 z = 1.995 at sd_delta = 1.4, i.e. it fails 2 sigma by a hair at the pessimistic end. It resolves at 2 sigma iff sd_delta <= 1.371 (READ_RULE \u00a74's power table at n2 = 1,060; se(Delta_ora) = sd_delta/sqrt(1060) in [0.0276, 0.0430]).",
+        "iii_attainability_window_at_realized_se": "NEAR-EMPTY at the realized se: the `xfree_window` row ('the cap was free') required a strictly NEGATIVE point estimate (reachable only on [-0.08740676718204808, -0.003206767182048084)). Its non-firing is NOT evidence against the cap being free.",
+        "iii_window": {
+          "empty": false,
+          "half_width": 0.08740676718204808,
+          "hi": -0.003206767182048084,
+          "lo": -0.08740676718204808,
+          "point_estimate": 0.026794145420207742,
+          "reachable_for_point_estimate": false,
+          "requires_negative_point_estimate": true
+        },
+        "printed_on": "EVERY branch, fired or not \u2014 these are disclosures about the DESIGN, graded by the run, not results of it"
+      },
+      "noise_rider": false,
+      "non_fired_rows": "NOT NARRATED. The rows that did not fire are named in the READ_RULE and nowhere in this read-out \u2014 a near-miss narration is how a second branch token ends up on a page that fired one.",
+      "r_ora_reported": true,
+      "reasons": [
+        "none of rows 1-5",
+        "READ_RULE \u00a75, read IN ORDER, FIRST MATCH WINS; the table is TOTAL by row 6, so exactly one row fires for every input.",
+        "the pre-branch guard did NOT fire: lower(CI95(ora_J4)) > 0, so R_ora is a ratio of like quantities and IS reported."
+      ],
+      "table_source": "analyze_widening.decide_rung3 \u2014 READ_RULE \u00a75's table VERBATIM (carried unchanged from R3.3 \u00a75: not one threshold, sign or condition moves)"
+    },
+    "completion": {
+      "evaluated_after_exclusions": true,
+      "floor": 1007,
+      "n2_committed": 1060,
+      "s2_n": 1059
+    },
+    "config": {
+      "boot_reps": 2000,
+      "boot_seed": 20260819,
+      "counts": {
+        "absent_arb": 0,
+        "absent_if": 0,
+        "analysed": 1059,
+        "armset_mismatch": 0,
+        "champ_arm_absent": 0,
+        "e_short": 0,
+        "failed_rid": 1,
+        "j4_absent": 0,
+        "m_mismatch": 0,
+        "partial": 0,
+        "planned": 1060
+      },
+      "e_worlds": 16,
+      "judge_arbiter": "tier1-greedy",
+      "judge_oracle": "clair-puct",
+      "m_expected": 32,
+      "n_leg_manifests": 24,
+      "n_records_not_ok": {
+        "arbiter": 0,
+        "oracle": 1
+      },
+      "parity_base": 1,
+      "profile": "walled",
+      "records_present": {
+        "arbiter": {
+          "walled/leg1": 1060,
+          "walled/leg10": 110,
+          "walled/leg11": 66,
+          "walled/leg12": 9,
+          "walled/leg2": 1060,
+          "walled/leg3": 1060,
+          "walled/leg4": 1060,
+          "walled/leg5": 866,
+          "walled/leg6": 509,
+          "walled/leg7": 366,
+          "walled/leg8": 265,
+          "walled/leg9": 171
+        },
+        "oracle": {
+          "walled/leg1": 1060,
+          "walled/leg10": 110,
+          "walled/leg11": 66,
+          "walled/leg12": 9,
+          "walled/leg2": 1060,
+          "walled/leg3": 1060,
+          "walled/leg4": 1060,
+          "walled/leg5": 866,
+          "walled/leg6": 509,
+          "walled/leg7": 366,
+          "walled/leg8": 265,
+          "walled/leg9": 171
+        }
+      },
+      "rnd_seed": 20260819,
+      "significance": "lower(CI95) > 0 on the percentile root bootstrap",
+      "stratum": "s2"
+    },
+    "failed": {
+      "accounting": {
+        "by_rid": [
+          {
+            "cause": [
+              "window_truncation"
+            ],
+            "diagnostic_class": [
+              "WindowTruncationError"
+            ],
+            "judges": [
+              "clair-puct"
+            ],
+            "legs": [
+              8
+            ],
+            "n_records": 1,
+            "rid": "tt_sp_137000002820_p12"
+          }
+        ],
+        "consumed_by": "G-COMPLETE alone, on the POST-DROP analysed count (G-CRN and G-ARMS are computed over surviving/ok records only, so there is nothing to double-count)",
+        "known_class": "WindowTruncationError",
+        "n_failed_records": 1,
+        "n_failed_rids": 1,
+        "n_planned": 1060,
+        "policy": "WHOLE-RID DROP across BOTH judges, before any contrast \u2014 the consequence of G-ARMS' `include_partial == false` (a rid with a valueless arm is not analysable), not a new policy. The paired per-position contrast needs the IF side, so a half-present rid is not a contrast.",
+        "selection_effect": "The 4 dropped rids are not a random subsample. WindowTruncationError fires at extreme board extents, so the dropped set is correlated with board geometry \u2014 late-game, large-extent positions. At 4 / 1,344 = 0.30% the maximum arithmetic influence on the primary is bounded by (4/1,340)\u00b7|\u0394|_max \u2248 0.003\u00b7|\u0394|_max, a fraction of se \u2248 0.02 for any plausible |\u0394|_max; the point of this note is that the correlation is DISCLOSED rather than argued away, so it is not rediscovered later as a gotcha. Diagnostic class and study: measurement/window_truncation_20260813/",
+        "study": "measurement/window_truncation_20260813/",
+        "unknown_class_rule": "any failed record whose diagnostic class is NOT the known class RAISES and escalates, regardless of count \u2014 a novel failure class is a different question, and count is the wrong axis for it"
+      },
+      "by_class": {
+        "WindowTruncationError": 1
+      },
+      "corrected_expectation_r5": "READ_RULE \u00a73, CORRECTED ON THE RECORD: R5's corpus sits slightly DEEPER than S1's (mean ply 69.15, median 68, max 142; 63.3% at ply >= 50; only 2.63% at ply <= 2, against S1's mean 66.50) \u2014 in exactly the region where the encoder-window limitation fires. The pre-registered expectation is therefore EQUAL-OR-HIGHER than S1's realized 0.30%, NOT lower. The inferential error, named so it is not repeated: the previous revision reasoned from the ply of the three COLLISIONS (forced early by the birthday argument) and generalised it to the ply of the CORPUS. Where collisions happen is not where the population lives.",
+      "n_attempted": 1060,
+      "n_failed_rids": 1,
+      "rate": 0.0009433962264150943,
+      "selection_effect_note": "\u26a0\ufe0f AW.failed_record_block's `selection_effect` sentence is carried verbatim from S1 and quotes S1's realized 4 / 1,344 = 0.30%. Those integers are S1's, NOT this run's; the DISCLOSURE it makes (the dropped set is correlated with board geometry) is what carries, and this run's own integers are the four fields above."
+    },
+    "gates": {
+      "G-ARMS": {
+        "detail": {
+          "by_stratum": {
+            "s2": {
+              "n_arms": 7653,
+              "n_arms_complete": 7653
+            }
+          },
+          "include_partial": false,
+          "n_arms": 7653,
+          "n_arms_complete": 7653
+        },
+        "gate": "G-ARMS",
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.arms",
+        "why": null
+      },
+      "G-BACKEND": {
+        "detail": {
+          "conjuncts": {
+            "arb_backend_is_rust": true,
+            "arb_legal_mask_cache_true": true,
+            "every_arbiter_leg_resolves_rust": true
+          },
+          "leg_fallback_ok": false,
+          "n_arbiter_legs": 12
+        },
+        "gate": "G-BACKEND",
+        "ok": true,
+        "resolved_at": "RUN/RUN_MANIFEST_R5.json::{arb_backend, resolved_backend_by_leg, arb_legal_mask_cache} \u00b7 fallback RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.legal_mask_cache",
+        "why": null
+      },
+      "G-BAND": {
+        "detail": {
+          "conjuncts": {
+            "banked_range_committed": true,
+            "extension_range_committed": true,
+            "max_positions_per_seed_le_3": true,
+            "n_out_of_band_is_0": true,
+            "n_seeds_136e9_is_0": true,
+            "released_unused_136e9_declared": true
+          },
+          "deleted_conjunct": "n_duplicate_seeds == 0 \u2014 DELETED (\u00a72.2 N1), not re-based: vacuous at the seed level, and R4's game-level referent does not exist here",
+          "n_distinct_seeds": 980
+        },
+        "gate": "G-BAND",
+        "ok": true,
+        "resolved_at": "RUN/CORPUS_R5.json::{seed_ranges, n_distinct_seeds, n_out_of_band, n_seeds_136e9, max_positions_per_seed}",
+        "why": null
+      },
+      "G-BITEXACT@HEAD": {
+        "detail": {
+          "conjuncts": {
+            "committed_diff_empty": true,
+            "every_box_clean": true
+          }
+        },
+        "gate": "G-BITEXACT@HEAD",
+        "ok": true,
+        "resolved_at": "RUN/GATE_BITEXACT_HEAD.json::{pass, digests_equal, n_value_mismatch} \u00b7 RUN/INSTRUMENT_IDENTITY_R5.json::{committed_diff.empty, working_tree.by_box.<box>.clean}",
+        "why": null
+      },
+      "G-COMPLETE": {
+        "detail": {
+          "committed_parameters": {
+            "agrees_with_module_pin": true,
+            "gate_floor": 1007,
+            "leg_ladder": [
+              1060,
+              1060,
+              1060,
+              1060,
+              866,
+              509,
+              366,
+              265,
+              171,
+              110,
+              66,
+              9
+            ],
+            "module_pin": {
+              "gate_floor": 1007,
+              "leg_ladder": [
+                1060,
+                1060,
+                1060,
+                1060,
+                866,
+                509,
+                366,
+                265,
+                171,
+                110,
+                66,
+                9
+              ],
+              "n2": 1060,
+              "n_total_pairs": 6602
+            },
+            "n2": 1060,
+            "n_total_pairs": 6602,
+            "source": {
+              "gate_floor": "RUN/FLOORS_R5.json::gate_floor",
+              "leg_ladder": "RUN/STAGING_R5.json::leg_ladder_expected",
+              "n2": "RUN/FLOORS_R5.json::n2",
+              "n_total_pairs": "RUN/STAGING_R5.json::n_total_pairs"
+            }
+          },
+          "evaluated_after_exclusions": true,
+          "floor": 1007,
+          "n2_committed": 1060,
+          "s2_n": 1059
+        },
+        "gate": "G-COMPLETE",
+        "ok": true,
+        "resolved_at": "READOUT::widening.completion.s2_n",
+        "why": null
+      },
+      "G-CORPUS": {
+        "detail": {
+          "arms_r5_sha256_actual": "adb4c5bd7cf904a1fe00c839eab722fa79798b9f719b631b6f788900f3e5cf8a",
+          "arms_r5_sha256_committed": "adb4c5bd7cf904a1fe00c839eab722fa79798b9f719b631b6f788900f3e5cf8a",
+          "both_direction_identity_witness": "rids == R4_ARMS.rids - excluded_rids, asserted BOTH directions at build time",
+          "committed_parameters": {
+            "agrees_with_module_pin": true,
+            "gate_floor": 1007,
+            "leg_ladder": [
+              1060,
+              1060,
+              1060,
+              1060,
+              866,
+              509,
+              366,
+              265,
+              171,
+              110,
+              66,
+              9
+            ],
+            "module_pin": {
+              "gate_floor": 1007,
+              "leg_ladder": [
+                1060,
+                1060,
+                1060,
+                1060,
+                866,
+                509,
+                366,
+                265,
+                171,
+                110,
+                66,
+                9
+              ],
+              "n2": 1060,
+              "n_total_pairs": 6602
+            },
+            "n2": 1060,
+            "n_total_pairs": 6602,
+            "source": {
+              "gate_floor": "RUN/FLOORS_R5.json::gate_floor",
+              "leg_ladder": "RUN/STAGING_R5.json::leg_ladder_expected",
+              "n2": "RUN/FLOORS_R5.json::n2",
+              "n_total_pairs": "RUN/STAGING_R5.json::n_total_pairs"
+            }
+          },
+          "conjuncts": {
+            "arms_r5_n_rids_equals_committed_n2": true,
+            "arms_r5_sha256_matches": true,
+            "cap_j_inf": true,
+            "excluded_rids_count_is_4": true,
+            "excluded_rids_identity_gated": true,
+            "leg_sha256_matches_committed": true,
+            "max_per_game_3": true,
+            "min_ply_0": true,
+            "n_positions_equals_committed_n2": true,
+            "r4_exclusion_list_sha256_matches_committed": true
+          },
+          "excluded_rids": [
+            "tt_sp_135000000839_p2",
+            "tt_sp_137000002154_p2",
+            "tt_sp_137000003379_p2",
+            "tt_sp_137000004174_p2"
+          ],
+          "excluded_rids_leaked_into_authority": [],
+          "n_arms_rids": 1060,
+          "note": "the BOTH-DIRECTIONS identity (rids == R4_ARMS.rids - excluded_rids) is asserted at BUILD time and witnessed in FLOORS_R5.json::population_authority; this analyzer checks the half it can see WITHOUT re-deriving the population \u2014 that no excluded rid survives into the authority \u2014 and reports the build-time witness rather than repeating the subtraction"
+        },
+        "gate": "G-CORPUS",
+        "ok": true,
+        "resolved_at": "RUN/CORPUS_R5.json::{leg_path, leg_sha256, r4_exclusion_list_sha256, n_in, n_excluded_r5, n_positions, excluded_rids, arms_r5_sha256} \u00b7 RUN/ARMS_R5.json",
+        "why": null
+      },
+      "G-CRN": {
+        "detail": {
+          "exactly_one_kind_per_judge": true,
+          "legs_consistent": true,
+          "n_crn_verified": 13188,
+          "n_records": 13188,
+          "per_leg": {
+            "s2/arb/leg1": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/arb/leg10": {
+              "n_crn_verified": 110,
+              "n_ok": 110,
+              "n_records": 110
+            },
+            "s2/arb/leg11": {
+              "n_crn_verified": 66,
+              "n_ok": 66,
+              "n_records": 66
+            },
+            "s2/arb/leg12": {
+              "n_crn_verified": 9,
+              "n_ok": 9,
+              "n_records": 9
+            },
+            "s2/arb/leg2": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/arb/leg3": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/arb/leg4": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/arb/leg5": {
+              "n_crn_verified": 865,
+              "n_ok": 865,
+              "n_records": 865
+            },
+            "s2/arb/leg6": {
+              "n_crn_verified": 508,
+              "n_ok": 508,
+              "n_records": 508
+            },
+            "s2/arb/leg7": {
+              "n_crn_verified": 365,
+              "n_ok": 365,
+              "n_records": 365
+            },
+            "s2/arb/leg8": {
+              "n_crn_verified": 264,
+              "n_ok": 264,
+              "n_records": 264
+            },
+            "s2/arb/leg9": {
+              "n_crn_verified": 171,
+              "n_ok": 171,
+              "n_records": 171
+            },
+            "s2/if/leg1": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/if/leg10": {
+              "n_crn_verified": 110,
+              "n_ok": 110,
+              "n_records": 110
+            },
+            "s2/if/leg11": {
+              "n_crn_verified": 66,
+              "n_ok": 66,
+              "n_records": 66
+            },
+            "s2/if/leg12": {
+              "n_crn_verified": 9,
+              "n_ok": 9,
+              "n_records": 9
+            },
+            "s2/if/leg2": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/if/leg3": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/if/leg4": {
+              "n_crn_verified": 1059,
+              "n_ok": 1059,
+              "n_records": 1059
+            },
+            "s2/if/leg5": {
+              "n_crn_verified": 865,
+              "n_ok": 865,
+              "n_records": 865
+            },
+            "s2/if/leg6": {
+              "n_crn_verified": 508,
+              "n_ok": 508,
+              "n_records": 508
+            },
+            "s2/if/leg7": {
+              "n_crn_verified": 365,
+              "n_ok": 365,
+              "n_records": 365
+            },
+            "s2/if/leg8": {
+              "n_crn_verified": 264,
+              "n_ok": 264,
+              "n_records": 264
+            },
+            "s2/if/leg9": {
+              "n_crn_verified": 171,
+              "n_ok": 171,
+              "n_records": 171
+            }
+          },
+          "smoke_crn_cross_leg_identical": {
+            "SMOKE_R5.json": true
+          },
+          "smoke_ok": true,
+          "witness_kinds": {
+            "arb": [
+              "world_deck_hash"
+            ],
+            "if": [
+              "afterstate_deck_hash_a"
+            ]
+          }
+        },
+        "gate": "G-CRN",
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.crn",
+        "why": null
+      },
+      "G-DDRAW": {
+        "detail": {
+          "agreement_rate": 0.04433962264150943,
+          "d_draw_ran": true,
+          "n_checked": 1060
+        },
+        "gate": "G-DDRAW",
+        "ok": true,
+        "resolved_at": "READOUT::widening.j_rider.d_draw.d_draw_ran \u00b7 RUN/D_DRAW.json",
+        "why": null
+      },
+      "G-DISJOINT": {
+        "detail": {
+          "absence_licence": "BOUNDED ON FOUR SIDES (DESIGN 2026-08-20 FIX 1): b_rid has none; a_root_id needs layers_absent AND a non-empty reason; undeclared absence FAILS; and a_root_id must be present-and-zero somewhere or the gate is vacuous",
+          "comparisons": {
+            "base_vs_extension": {
+              "a_root_id": 0,
+              "a_root_id_state": "present",
+              "b_rid": 0
+            },
+            "s2_vs_exclude_rids": {
+              "a_root_id": null,
+              "a_root_id_state": "vacuous (declared absent WITH reason)",
+              "b_rid": 0
+            },
+            "s2_vs_tiearb2_0816": {
+              "a_root_id": 0,
+              "a_root_id_state": "present",
+              "b_rid": 0
+            },
+            "s2_vs_tiletie0812": {
+              "a_root_id": 0,
+              "a_root_id_state": "present",
+              "b_rid": 0
+            }
+          },
+          "conjuncts": {
+            "a_root_id_present_and_zero_on_at_least_one": true,
+            "a_root_id_zero_wherever_present": true,
+            "b_rid_present_and_zero_on_every_comparison": true,
+            "n_comparisons_present": true,
+            "no_undeclared_absent_layer": true,
+            "passed": true
+          },
+          "digest_layer": "NOT CARRIED in R5 (READ_RULE \u00a70)",
+          "n_root_present_zero": 3
+        },
+        "gate": "G-DISJOINT",
+        "ok": true,
+        "resolved_at": "RUN/GATE_DISJOINT_R5.json::{passed, comparisons.<name>.layers.{a_root_id,b_rid}.n_intersection, comparisons.<name>.{layers_absent, layers_absent_reason}}",
+        "why": null
+      },
+      "G-DRAW": {
+        "detail": {
+          "conjuncts": {
+            "deployed_cap_j_is_4": true,
+            "n_mismatch_is_0": true,
+            "ok": true
+          },
+          "n_checked": 1060,
+          "scope": "I7-draw-scope: asserts nothing about the DEPLOYED rust draw"
+        },
+        "gate": "G-DRAW",
+        "ok": true,
+        "resolved_at": "RUN/GATE_DRAW_R5.json::{ok, n_mismatch, deployed_cap_j}",
+        "why": null
+      },
+      "G-FAILED": {
+        "detail": {
+          "bound": 0.02,
+          "corrected_expectation_r5": "READ_RULE \u00a73, CORRECTED: R5's corpus sits slightly DEEPER than S1's (mean ply 69.15 vs 66.50; 63.3% at ply >= 50), in exactly the region where the encoder-window limitation fires, so the pre-registered expectation is EQUAL-OR-HIGHER than S1's realized 0.30%, NOT lower. Where collisions happen is not where the population lives.",
+          "n_attempted": 1060,
+          "n_failed_rids": 1,
+          "rate": 0.0009433962264150943,
+          "unknown_class_rule": "enforced upstream by analyze_widening.build_rows, which REFUSES on any class that is not 'WindowTruncationError' regardless of count"
+        },
+        "gate": "G-FAILED",
+        "ok": true,
+        "resolved_at": "READOUT::widening.failed.{n_failed_rids, n_attempted, rate, by_class}",
+        "why": null
+      },
+      "G-INTERNAL-DUPE": {
+        "detail": {
+          "conjuncts": {
+            "all_pairs_same_band_137e9": true,
+            "d_internal_le_0.05": true,
+            "every_member_at_ply_2": true,
+            "leg_sha256_matches_corpus": true,
+            "n_dupe_groups_is_3": true,
+            "n_dupe_positions_is_6": true
+          },
+          "d_internal": 0.002819548872180451,
+          "identity_check_only": "READ_RULE \u00a72.1: both degeneracy gates establish 'the corpus is the one that was measured' and NOTHING ELSE \u2014 a real, falsifiable property, and all they establish",
+          "raises": false
+        },
+        "gate": "G-INTERNAL-DUPE",
+        "ok": true,
+        "resolved_at": "RUN/GATE_INTERNAL_DUPE.json::{n_positions, n_dupe_groups, n_dupe_positions, d_internal, ply_histogram, band_pairs, leg_sha256}",
+        "why": null
+      },
+      "G-LEAF": {
+        "detail": {
+          "leaf_hash": {
+            "expected": "a36d2e15a3b3d71d",
+            "harness_leaf_hash": "a36d2e15a3b3d71d",
+            "ok": true
+          },
+          "source": "RUN_MANIFEST_R5.json"
+        },
+        "gate": "G-LEAF",
+        "ok": true,
+        "resolved_at": "RUN/RUN_MANIFEST_R5.json::preflight.checks.leaf_hash",
+        "why": null
+      },
+      "G-M": {
+        "detail": {
+          "conjuncts": {
+            "manifest_b_ceiling_is_16": true,
+            "manifest_m_worlds_is_32": true,
+            "smoke_m_worlds_is_32": true
+          },
+          "leg_fallback_ok": false,
+          "leg_fallback_values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "manifest_b_ceiling_from_m": 16,
+          "manifest_m_worlds": 32,
+          "smoke_m_worlds": 32
+        },
+        "gate": "G-M",
+        "ok": true,
+        "resolved_at": "pre-leg RUN/SMOKE_R5.json::m_worlds (TOP-LEVEL) \u00b7 post RUN/RUN_MANIFEST_R5.json::{m_worlds,b_ceiling_from_m} \u00b7 fallback RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.m",
+        "why": null
+      },
+      "G-PREFIX": {
+        "detail": {
+          "n_prefix_ok": 1059,
+          "n_rids": 1059,
+          "violations": []
+        },
+        "gate": "G-PREFIX",
+        "ok": true,
+        "resolved_at": "analyze_widening.build_rows uncapped counters (n_rids / n_prefix_ok), over RUN/ARMS_R5.json::<rid>.{arms, arms_full}",
+        "why": null
+      },
+      "G-SALT": {
+        "detail": {
+          "conjuncts": {
+            "cap_seed_present_for_every_rid": true,
+            "deployed_cap_j_is_4": true,
+            "world_seed_salt_of_record": true
+          },
+          "deployed_cap_j": 4,
+          "expected_world_seed_salt": "tiletie-v1",
+          "leg_fallback_ok": false,
+          "n_cap_seed_missing": 0,
+          "world_seed_salt": "tiletie-v1"
+        },
+        "gate": "G-SALT",
+        "ok": true,
+        "resolved_at": "RUN/RUN_MANIFEST_R5.json::world_seed_salt \u00b7 RUN/corpus/positions_s2/POSITIONS_PLAN.json::deployed_cap_j \u00b7 RUN/ARMS_R5.json::<rid>.cap_seed \u00b7 fallback RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.world_seed_salt",
+        "why": null
+      },
+      "G-STAGED": {
+        "detail": {
+          "committed_parameters": {
+            "agrees_with_module_pin": true,
+            "gate_floor": 1007,
+            "leg_ladder": [
+              1060,
+              1060,
+              1060,
+              1060,
+              866,
+              509,
+              366,
+              265,
+              171,
+              110,
+              66,
+              9
+            ],
+            "module_pin": {
+              "gate_floor": 1007,
+              "leg_ladder": [
+                1060,
+                1060,
+                1060,
+                1060,
+                866,
+                509,
+                366,
+                265,
+                171,
+                110,
+                66,
+                9
+              ],
+              "n2": 1060,
+              "n_total_pairs": 6602
+            },
+            "n2": 1060,
+            "n_total_pairs": 6602,
+            "source": {
+              "gate_floor": "RUN/FLOORS_R5.json::gate_floor",
+              "leg_ladder": "RUN/STAGING_R5.json::leg_ladder_expected",
+              "n2": "RUN/FLOORS_R5.json::n2",
+              "n_total_pairs": "RUN/STAGING_R5.json::n_total_pairs"
+            }
+          },
+          "conjuncts": {
+            "arms_copy_identical": true,
+            "missing_in_arms_empty": true,
+            "missing_in_leg_empty": true,
+            "n_arms_rids_equals_committed_n2": true,
+            "per_leg_exact_predicate": true,
+            "rid_sets_equal": true,
+            "stage_chunks_rid_set_agrees": true,
+            "staged_arms_sha_equals_authority": true,
+            "total_pairs_equals_committed": true
+          },
+          "note": "CORPUS_R5's identity does NOT cover this layer \u2014 it is written before staging exists (DESIGN staging recipe, ruling (c))",
+          "per_leg": {
+            "leg1": {
+              "exact": true,
+              "n_expected": 1060,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 1060,
+              "pinned": 1060,
+              "pinned_matches_expected": true
+            },
+            "leg10": {
+              "exact": true,
+              "n_expected": 110,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 110,
+              "pinned": 110,
+              "pinned_matches_expected": true
+            },
+            "leg11": {
+              "exact": true,
+              "n_expected": 66,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 66,
+              "pinned": 66,
+              "pinned_matches_expected": true
+            },
+            "leg12": {
+              "exact": true,
+              "n_expected": 9,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 9,
+              "pinned": 9,
+              "pinned_matches_expected": true
+            },
+            "leg2": {
+              "exact": true,
+              "n_expected": 1060,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 1060,
+              "pinned": 1060,
+              "pinned_matches_expected": true
+            },
+            "leg3": {
+              "exact": true,
+              "n_expected": 1060,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 1060,
+              "pinned": 1060,
+              "pinned_matches_expected": true
+            },
+            "leg4": {
+              "exact": true,
+              "n_expected": 1060,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 1060,
+              "pinned": 1060,
+              "pinned_matches_expected": true
+            },
+            "leg5": {
+              "exact": true,
+              "n_expected": 866,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 866,
+              "pinned": 866,
+              "pinned_matches_expected": true
+            },
+            "leg6": {
+              "exact": true,
+              "n_expected": 509,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 509,
+              "pinned": 509,
+              "pinned_matches_expected": true
+            },
+            "leg7": {
+              "exact": true,
+              "n_expected": 366,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 366,
+              "pinned": 366,
+              "pinned_matches_expected": true
+            },
+            "leg8": {
+              "exact": true,
+              "n_expected": 265,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 265,
+              "pinned": 265,
+              "pinned_matches_expected": true
+            },
+            "leg9": {
+              "exact": true,
+              "n_expected": 171,
+              "n_extra": 0,
+              "n_missing": 0,
+              "n_observed": 171,
+              "pinned": 171,
+              "pinned_matches_expected": true
+            }
+          },
+          "pinned_ladder": [
+            1060,
+            1060,
+            1060,
+            1060,
+            866,
+            509,
+            366,
+            265,
+            171,
+            110,
+            66,
+            9
+          ],
+          "total_pairs": 6602
+        },
+        "gate": "G-STAGED",
+        "ok": true,
+        "resolved_at": "RUN/STAGING_R5.json::{arms_r5_sha256, staged_arms_sha256, arms_copy_identical, n_leg_rids, n_arms_rids, rid_sets_equal, missing_in_leg, missing_in_arms, stage_chunks_rid_set_agrees, n_chunks}",
+        "why": null
+      },
+      "G-TWOBOX": {
+        "detail": {
+          "conjuncts": {
+            "merge_ok": true,
+            "no_problems": true,
+            "not_dry_run": true
+          },
+          "n_problems": 0,
+          "n_records_present": 13204,
+          "problems": []
+        },
+        "gate": "G-TWOBOX",
+        "ok": true,
+        "resolved_at": "RUN/MERGE_REPORT_s2.json::{ok, problems, dry_run, legs}",
+        "why": null
+      },
+      "G-UNCAPPED": {
+        "detail": {
+          "by_stratum": {
+            "s2": {
+              "cap_j": null,
+              "n_append_ok": 1059,
+              "n_prefix_ok": 1059,
+              "n_rids": 1059,
+              "n_violation": 0,
+              "ok": true,
+              "uncapped": true,
+              "violations": []
+            }
+          }
+        },
+        "gate": "G-UNCAPPED",
+        "ok": true,
+        "resolved_at": "READOUT::widening.gates.uncapped",
+        "why": null
+      }
+    },
+    "gates_dropped": {
+      "G-REPLICATE": "DROPPED deliberately (READ_RULE \u00a70): its (B <= 16, E = 16) corner is S1's, and S1 is not this run's stratum. Dropped with this sentence rather than silently \u2014 R2's objection was the silence, not the drop."
+    },
+    "gates_ok": true,
+    "j_rider": {
+      "d_draw": {
+        "adjudicates": "nothing \u2014 a reported magnitude, never a branch input. It reports the MAGNITUDE of rider I7's unverified dedupe-partition conditional.",
+        "agreement_rate": 0.04433962264150943,
+        "d_draw_ran": true,
+        "n_agree": 47,
+        "n_checked": 1060,
+        "n_unreconstructible": 0,
+        "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/D_DRAW.json"
+      },
+      "interaction": {
+        "address": "widening.j_rider.interaction",
+        "adjudicates": "nothing; there is nothing to adjudicate with",
+        "ci95": null,
+        "stratum": "S1 \u2014 absent from this run",
+        "value": null,
+        "witness": "R5 HAS NO S1 STRATUM. This address is carried in the \u00a75 address list because that list was inherited from R3.3/R4, which had one. Nothing was measured for it here \u2014 no positions, no worlds, no contrast. It is NOT a weak result, NOT a null result and NOT inconclusive: there is no result. Any number reported at this address would be a number about a different run."
+      },
+      "s1_replication": {
+        "address": "widening.j_rider.s1_replication",
+        "adjudicates": "nothing; there is nothing to adjudicate with",
+        "ci95": null,
+        "stratum": "S1 \u2014 absent from this run",
+        "value": null,
+        "witness": "R5 HAS NO S1 STRATUM. This address is carried in the \u00a75 address list because that list was inherited from R3.3/R4, which had one. Nothing was measured for it here \u2014 no positions, no worlds, no contrast. It is NOT a weak result, NOT a null result and NOT inconclusive: there is no result. Any number reported at this address would be a number about a different run."
+      },
+      "s2": {
+        "adjudication": "clair-puct is the ORACLE and ADJUDICATES; tier1-greedy is the ARBITER and RIDES \u2014 delta_arb / R_arb are DEPLOY RIDERS and adjudicate nothing. Significance is ONE test, taken ONCE, on the pre-committed percentile ROOT bootstrap (2000 reps, seed 20260819, cluster = root_id).",
+        "ci95_arb": [
+          -0.058426498572787824,
+          0.09681372549019608
+        ],
+        "ci95_ora": [
+          -0.05933988764044944,
+          0.11547364672364673
+        ],
+        "ci95_r_ora": [
+          0.766517571884984,
+          1.7279981760145917
+        ],
+        "delta_arb": 0.02044971671388102,
+        "delta_ora": 0.026794145420207742,
+        "e_worlds": 16,
+        "n_capped": 1059,
+        "n_roots": 976,
+        "ora_full": 0.2788597733711048,
+        "ora_j4": 0.2520656279508971,
+        "ora_j4_ci95": [
+          0.10346364068441065,
+          0.4004435107376284
+        ],
+        "r_ora": 1.1062982907984076,
+        "r_ora_reported": true,
+        "se_ora": 0.045514693010979,
+        "significant_ora": false,
+        "xfree_window": {
+          "attainability": "NEAR-EMPTY at the realized se: the `xfree_window` row ('the cap was free') required a strictly NEGATIVE point estimate (reachable only on [-0.08740676718204808, -0.003206767182048084)). Its non-firing is NOT evidence against the cap being free.",
+          "empty": false,
+          "half_width": 0.08740676718204808,
+          "hi": -0.003206767182048084,
+          "lo": -0.08740676718204808,
+          "point_estimate": 0.026794145420207742,
+          "reachable_for_point_estimate": false,
+          "requires_negative_point_estimate": true,
+          "source": "analyze_widening.xfree_window \u2014 numeric fields verbatim; prose re-worded so no branch token is spelled (see the module docstring's print-vs-token note)"
+        },
+        "z_ora": 0.5886922144843313
+      }
+    },
+    "markers": {
+      "addresses": [
+        "widening.j_rider.s2.delta_ora",
+        "widening.j_rider.s2.ci95_ora",
+        "widening.j_rider.s2.r_ora",
+        "widening.j_rider.s2.ci95_r_ora",
+        "widening.j_rider.s2.ora_j4_ci95",
+        "widening.j_rider.s2.delta_arb",
+        "widening.j_rider.s2.ci95_arb",
+        "widening.j_rider.s2.n_capped",
+        "widening.j_rider.s2.xfree_window",
+        "widening.j_rider.s2.r_ora_reported",
+        "widening.j_rider.d_draw.n_checked",
+        "widening.j_rider.d_draw.agreement_rate",
+        "widening.j_rider.d_draw.d_draw_ran",
+        "widening.completion.s2_n",
+        "widening.failed.n_failed_rids",
+        "widening.failed.n_attempted",
+        "widening.failed.rate",
+        "widening.failed.by_class",
+        "widening.gates",
+        "widening.supply_chain",
+        "widening.branch.fired",
+        "widening.branch.reasons",
+        "widening.branch.mandatory_prints"
+      ],
+      "audited_by": "A3, before adjudication. \u2b50 The A1 pass audits THIS LIST against the committed fixture, so an address added here without its fixture entry FAILS A1 rather than passing silently.",
+      "fixture_naming_conflict": "The DESIGN's fixture list names `fixtures/READOUT.fixture.json` while its execution-layer ruling names `fixtures/READOUT_R5.fixture.json`, and the RUN dir contains the former. This tool PREFERS READOUT_R5, ACCEPTS READOUT, and records which name it used. The conflict is DISCLOSED, not resolved \u2014 resolving it is a prereg amendment, not an analyzer decision.",
+      "marker": "[post-scoring]",
+      "n_addresses": 23,
+      "rule": "READ_RULE \u00a71: every address carries EXACTLY ONE existence-time marker, and every address THIS file writes is [post-scoring] \u2014 it exists only after scoring. 'as carried' is not a marker."
+    },
+    "stratum": "s2",
+    "supply_chain": {
+      "arms_r5_sha256": "adb4c5bd7cf904a1fe00c839eab722fa79798b9f719b631b6f788900f3e5cf8a",
+      "committed_parameters": {
+        "agrees_with_module_pin": true,
+        "gate_floor": 1007,
+        "leg_ladder": [
+          1060,
+          1060,
+          1060,
+          1060,
+          866,
+          509,
+          366,
+          265,
+          171,
+          110,
+          66,
+          9
+        ],
+        "module_pin": {
+          "gate_floor": 1007,
+          "leg_ladder": [
+            1060,
+            1060,
+            1060,
+            1060,
+            866,
+            509,
+            366,
+            265,
+            171,
+            110,
+            66,
+            9
+          ],
+          "n2": 1060,
+          "n_total_pairs": 6602
+        },
+        "n2": 1060,
+        "n_total_pairs": 6602,
+        "source": {
+          "gate_floor": "RUN/FLOORS_R5.json::gate_floor",
+          "leg_ladder": "RUN/STAGING_R5.json::leg_ladder_expected",
+          "n2": "RUN/FLOORS_R5.json::n2",
+          "n_total_pairs": "RUN/STAGING_R5.json::n_total_pairs"
+        }
+      },
+      "d_model_fit": {
+        "form": "d_model(G) = a * G^b",
+        "r_squared": 1.0,
+        "status": "VACUOUS \u2014 reported because \u00a76 requires it, and marked vacuous because r^2 = 1.0 on a fit with as many parameters as points says nothing. \u26d4 It is NOT the bound; the absolute 5% guard is."
+      },
+      "excluded_rids": [
+        "tt_sp_135000000839_p2",
+        "tt_sp_137000002154_p2",
+        "tt_sp_137000003379_p2",
+        "tt_sp_137000004174_p2"
+      ],
+      "floors_source": {
+        "failed_record_bound_frac": 0.02,
+        "floor_fraction": 0.95,
+        "gate_floor": 1007,
+        "n2": 1060
+      },
+      "internal_dupe": {
+        "band_pairs": [
+          "137e9<->137e9",
+          "137e9<->137e9",
+          "137e9<->137e9"
+        ],
+        "d_internal": 0.002819548872180451,
+        "guard": 0.05,
+        "n_dupe_groups": 3,
+        "n_dupe_positions": 6,
+        "ply_histogram": {
+          "2": 6
+        },
+        "what_it_establishes": "READ_RULE \u00a72.1: BOTH degeneracy gates are CORPUS-IDENTITY checks, NOT discovery gates. The collision quantity for this corpus was already known (3 groups / 6 positions) because the calibration measured the SAME PHYSICAL FILE. Their live content is 'the corpus is the one that was measured' \u2014 a real and falsifiable property (a different leg file, a re-mine, a truncated read all fail it) \u2014 and it is ALL they establish."
+      },
+      "leg_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/positions_walled_leg1.jsonl",
+      "leg_sha256": "92ba1ee2dfbfed91f4853173e16e6e008d430ebf708055f4c8a76258eacbb7df",
+      "max_positions_per_seed": 3,
+      "n_distinct_seeds": 980,
+      "n_excluded_r5": 4,
+      "n_in": 1064,
+      "n_out_of_band": 0,
+      "n_positions": 1060,
+      "n_seeds_136e9": 0,
+      "provenance": "R4's POST-EXCLUSION S2 leg file, ADOPTED AS-IS (DESIGN R5-FINAL.b2) -- NOT a fresh re-mine",
+      "seed_ranges": {
+        "banked_135e9": [
+          135000000350,
+          135000000849
+        ],
+        "extension_137e9": [
+          137000000508,
+          137000005347
+        ],
+        "released_unused": 136000000000
+      },
+      "staged": {
+        "leg_ladder_expected": [
+          1060,
+          1060,
+          1060,
+          1060,
+          866,
+          509,
+          366,
+          265,
+          171,
+          110,
+          66,
+          9
+        ],
+        "n_arms_rids": 1060,
+        "n_chunks": 8,
+        "n_leg_rids": 1060,
+        "n_total_pairs": 6602
+      }
+    }
+  }
+}
