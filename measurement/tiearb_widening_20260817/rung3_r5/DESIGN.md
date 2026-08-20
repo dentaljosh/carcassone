@@ -1,5 +1,51 @@
 # RUNG 3 (`J > 4`) — SUCCESSOR PREREG, rev R5.1
 
+> **🏁 STATUS 2026-08-20 — RAN, SCORED, AND READ OUT. PRE-REGISTERED BRANCH `X-INCONCLUSIVE`
+> FIRED. THE READ-RULE IS SPENT. NOTHING FURTHER IS QUEUED ON THIS PAIR.**
+> Read-out of record: `verdicts/READOUT_R5.md` + `READOUT_R5.json` (rev R5.1).
+> **`Δ_ora` = +0.0268, CI95 [−0.0593, +0.1155], se 0.0455, z +0.589, `n_capped` 1,059 / 976 roots at
+> E = 16**; `ora_J4` +0.2521 [+0.1035, +0.4004], so the pre-branch guard did not fire and
+> **`R_ora` = 1.1063 CI95 [+0.7665, +1.7280]** is reported; deploy rider `Δ_arb` +0.0204
+> [−0.0584, +0.0968] adjudicates nothing. **All 19 gate rows resolved and PASS**, none
+> short-circuited; `G-REPLICATE` **DROPPED deliberately and with a sentence** (its (B ≤ 16, E = 16)
+> corner is S1's, and S1 is not this run's stratum).
+>
+> ⛔ **`X-INCONCLUSIVE` IS NOT A NULL, AND THE SEPARABILITY BLIND SPOT IS WHY.** A null on this
+> design would have meant *"nothing above the floor"*; what actually happened is that **this design
+> cannot separate `R_ora` = 1.400 from 1.244** — the gap Δ = 0.054 is z 1.28–2.00 across the whole
+> pre-registered `sd_delta` bracket [0.9, 1.4], **under 2σ at every point of it** — and the realized
+> CI [0.767, 1.728] excludes **neither** prediction. The other two mandatory prints stand as
+> printed: the corrected +0.0842 prediction is **unresolved at the top of the bracket** (z = 1.995 at
+> `sd_delta` = 1.4; resolves at 2σ iff `sd_delta` ≤ 1.371), and the `xfree_window` row required a
+> **strictly negative** point estimate, so **its non-firing is not evidence against the cap being
+> free**. Rows that did not fire are named in the [`READ_RULE`](READ_RULE.md) and nowhere else.
+>
+> ⭐ **THE INHERITED OBLIGATION IS DISCHARGED:** `D-DRAW` **RAN**, and I7's dedupe-partition
+> conditional — carried UNMEASURED out of R4's `VOID_S2` — is now measured: partition 1,060/1,060
+> agree, `n_cells_equal` 1,060, 304 dropped actions all collapsing onto representatives, **with the
+> strength SPLIT and reported as split — exact identity on 1,001 rids, necessary-condition only on
+> 59**. ⚠️ The *chartered* agreement rate 0.0443 is **confounded and uninterpretable** as an
+> agreement measure (different RNG streams by construction, different supports on most rids) and
+> **adjudicates nothing**.
+>
+> ⚠️ **Execution record:** 1 rid of 1,060 dropped **whole-rid across both judges**, class
+> `WindowTruncationError` (D4.18); completion 1,059 ≥ the committed floor 1,007. **Two licensed
+> scoring revs `9bc2ab77` (laptop) + `a5aa4a5e` (local)** under [DEVIATIONS](../DEVIATIONS.md) D5.1,
+> instrument diff re-derived **empty** — caused by **the orchestrator's freeze violation (D5.3)**,
+> a B64 commit landing on `main` while this run's local leg was live; the clean outcome was **luck,
+> not design**, and `W-FREEZE-LATCH` is the recommended mechanism. The
+> `READOUT.fixture.json` / `READOUT_R5.fixture.json` naming conflict is **disclosed, not resolved**.
+>
+> ⛔ **LICENSES NOTHING.** `governance/PRODUCTION.yaml` untouched, **no claim minted**, no on-device
+> deploy, no change to the deployed B=16/J=4 shape, no licence to widen J. **No new band was claimed**
+> (corpus reused 135e9 + 137e9). ⚖️ **RE-OPEN BAR: ~4× this `n`** (≈4,200 capped plies) — a 2σ
+> resolution of the corrected prediction needs `se(Δ_ora)` ≲ 0.021 against the realized 0.0455.
+> Close-out: DECISIONS 2026-08-20 · `results.csv`
+> `tiearb_widening_r5_S2_rung3_Jgt4_offline_n1059plies_b135e9_137e9` ·
+> [CAMPAIGN](../CAMPAIGN.md) · [PROGRAM_ROADMAP](../../../docs/PROGRAM_ROADMAP_2026-07-07.md) ·
+> [LEVER_INDEX](../../../docs/LEVER_INDEX.md) §6.
+
+> *(Pre-run banner, kept for the record:)*
 > **STATUS: PREREGISTRATION PAIR, AMENDED AFTER [`REVIEW_R2.md`](REVIEW_R2.md) (FAIL: 6 BLOCKING,
 > 11 REQUIRED, 5 COSMETIC). NOT LAUNCHED. NOTHING SCORED.** The mechanical
 > [`READ_RULE.md`](READ_RULE.md) **is written** and commits with this file and `FLOORS_R5.json`.
