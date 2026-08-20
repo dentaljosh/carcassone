@@ -1589,11 +1589,14 @@ def test_git_clean_comes_from_the_RUN_MANIFEST_map_for_leg_manifests(two_rev):
     sourced from the per-chunk RUN_MANIFEST files — which do."""
     repo, a, b, wit = two_rev
     lic = _license(repo, a, b, identity_path=wit,
-                   git_clean_by_chunk={1: {"ok": True}, 9: {"ok": True}})
+                   git_clean_by_chunk={1: {"ok": True, "git_rev": a[:8]},
+                                       9: {"ok": True, "git_rev": b[:8]}})
     merged = ML.merge_manifests({1: _rev_manifest(a, git_clean=None),
                                  9: _rev_manifest(b, git_clean=None)}, license=lic)
     rec = merged["merge"]["rev_license"]["records"][0]
-    assert rec["git_clean_by_chunk"]["9"]["source"] == "RUN_MANIFEST"
+    # ⭐ D5 (1): the recorded evidence is the EMITTER's shape, `git_rev` and all
+    assert set(rec["git_clean_by_chunk"]["9"]) == set(ML.GIT_CLEAN_KEYS)
+    assert rec["git_clean_by_chunk"]["9"]["git_rev"] == b[:8]
     # ... and a false entry in the map refuses just the same
     lic2 = _license(repo, a, b, identity_path=wit,
                     git_clean_by_chunk={1: {"ok": True}, 9: {"ok": False}})
@@ -1614,6 +1617,133 @@ def test_git_clean_map_is_read_from_real_RUN_MANIFEST_files(tmp_path):
     m = ML.git_clean_by_chunk_from_manifests(d, "s1")
     assert m[9]["ok"] is True and len(m[9]["sources"]) == 2
     assert m[10]["ok"] is False and m[10]["dirty_paths"] == ["src/x.py"]
+
+
+# --- D5 (1) — the consumer mirrors the EMITTER's shape ------------------------ #
+REAL_MANIFEST_DIRS = [
+    Path("/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817"
+         "/chunks/manifests"),
+    Path("/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817"
+         "/rung3_r5/chunks/manifests"),
+]
+
+
+def _real_git_clean_blocks():
+    out = []
+    for d in REAL_MANIFEST_DIRS:
+        for p in sorted(d.glob("RUN_MANIFEST_*chunk*.json")) if d.is_dir() else []:
+            try:
+                doc = json.loads(p.read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            gc = ((doc.get("preflight") or {}).get("checks") or {}).get("git_clean")
+            if isinstance(gc, dict):
+                out.append((p, gc))
+    return out
+
+
+def test_the_consumer_shape_IS_the_emitters_shape_on_REAL_manifests():
+    """⭐ The defect: the consumer dropped `git_rev` — the one field the D4.12
+    licence's base-rev match reads — and substituted an invented `source`
+    naming the artifact it came from. Checked against every real manifest on
+    disk, not against a fixture of what we think the emitter writes."""
+    blocks = _real_git_clean_blocks()
+    if not blocks:
+        pytest.skip("no real RUN_MANIFEST files on this box")
+    for p, gc in blocks:
+        assert set(gc) == set(ML.GIT_CLEAN_KEYS), (str(p), sorted(gc))
+        # and the consumer's projection is exactly those keys, no more, no less
+        assert set(ML._git_clean_shape(gc)) == set(ML.GIT_CLEAN_KEYS)
+        assert ML._git_clean_shape(gc)["git_rev"] == gc["git_rev"]
+
+
+def test_git_clean_shape_carries_None_ok_when_NOTHING_recorded_it():
+    """`ok: None` is "not recorded", which is NOT `ok: False`. Collapsing them
+    would convict a chunk of dirt on missing evidence."""
+    empty = ML._git_clean_shape({})
+    assert empty["ok"] is None and empty["git_rev"] is None
+    assert ML._git_clean_shape({"ok": False})["ok"] is False
+    assert ML._git_clean_shape({"ok": True})["ok"] is True
+
+
+@pytest.mark.parametrize("revs,want", [
+    (["9bc2ab77"], "9bc2ab77"),
+    # ⚠️ REAL: chunks 6-8 carry one commit at TWO core.abbrev widths
+    (["9bc2ab77", "9bc2ab772"], "9bc2ab772"),
+    (["9bc2ab772", "9bc2ab77"], "9bc2ab772"),
+    # ⚠️ REAL: chunks 3-5 really did span the tranche split — NOT collapsible
+    (["9bc2ab77", "a5aa4a5e"], None),
+    ([], None),
+])
+def test_two_abbrev_WIDTHS_are_one_rev_but_two_REVS_are_not(revs, want):
+    assert ML.collapse_revs(revs) == want
+
+
+def test_the_manifest_TAG_is_not_the_stratum_and_R5_proves_it():
+    """⭐ MEASURED: rung-3 R5's launcher named its per-chunk manifests
+    `RUN_MANIFEST_R5_*`, not `RUN_MANIFEST_S2_*`. A glob hard-coded to the
+    stratum matches NOTHING — and an empty glob is not a satisfied domain."""
+    d = REAL_MANIFEST_DIRS[1]
+    if not d.is_dir():
+        pytest.skip("R5 manifests not on this box")
+    assert ML.manifest_tags_present(d) == ["R5"]
+    assert ML.git_clean_by_chunk_from_manifests(d, "s2") == {}
+    assert ML.git_clean_by_chunk_from_manifests(d, "s2", "R5")
+
+
+def test_a_zero_match_manifest_glob_names_the_TRUE_cause(tmp_path):
+    """The old refusal said "the chunk was dirty" for a run whose manifests were
+    simply named something else. A log that convicts the wrong row is how wrong
+    causes survive into close-outs."""
+    d = tmp_path / "manifests"
+    d.mkdir()
+    (d / "RUN_MANIFEST_R5_clair-puct_chunk1.json").write_text(json.dumps(
+        {"preflight": {"checks": {"git_clean": {"ok": True, "git_rev": "abc12345",
+                                                "dirty_paths": []}}}}))
+    out = ML.merge_run_manifest(stratum="s2", manifests_dir=d,
+                                out_path=tmp_path / "RM.json", dry_run=True)
+    assert out["problems"] and "R5" in out["problems"][0]
+    assert "--manifest-tag" in out["problems"][0]
+    assert "empty glob is not a satisfied domain" in out["problems"][0]
+    # ... and with the tag supplied it finds them
+    out2 = ML.merge_run_manifest(stratum="s2", manifests_dir=d,
+                                 out_path=tmp_path / "RM.json", dry_run=True,
+                                 judges=("clair-puct",), manifest_tag="R5")
+    assert out2["n_sources"] == 1 and out2["manifest_tag"] == "R5"
+
+
+def test_the_REAL_R5_evidence_map_resolves_every_chunk_CLEAN():
+    """⭐ THE REGRESSION THIS EXISTS FOR. The executor's dry-run merge refused
+    with twelve messages reading `{'ok': None, 'source': None}` — a HEALTHY run
+    convicted of a dirty working tree because the glob was looking for
+    `RUN_MANIFEST_S2_*` and the launcher had written `RUN_MANIFEST_R5_*`."""
+    d = REAL_MANIFEST_DIRS[1]
+    if not d.is_dir():
+        pytest.skip("R5 manifests not on this box")
+    gc = ML.git_clean_by_chunk_from_manifests(d, "s2", "R5")
+    assert sorted(gc) == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert all(v["ok"] is True for v in gc.values()), \
+        {k: v["ok"] for k, v in sorted(gc.items())}
+    # and the D4.12 licence consumes them without a single refusal
+    for k, v in sorted(gc.items()):
+        assert set(v) >= set(ML.GIT_CLEAN_KEYS)
+
+
+def test_the_real_manifests_collapse_exactly_as_the_run_actually_split():
+    """The width hazard and the tranche split, read off the run itself: the
+    laptop chunks are ONE rev at two widths; the local chunks that straddle the
+    R5 commit are two revs and must refuse to collapse."""
+    d = REAL_MANIFEST_DIRS[1]
+    if not d.is_dir():
+        pytest.skip("R5 manifests not on this box")
+    m = ML.git_clean_by_chunk_from_manifests(d, "s2", "R5")
+    if not m:
+        pytest.skip("no R5 RUN_MANIFEST rows")
+    assert m[1]["git_rev"] == "9bc2ab77" and m[2]["git_rev"] == "9bc2ab77"
+    for k in (3, 4, 5):                      # straddles the split
+        assert m[k]["git_rev"] is None and len(m[k]["git_revs"]) == 2
+    for k in (6, 7, 8):                      # one rev, two widths
+        assert m[k]["git_rev"] == "9bc2ab772"
 
 
 # --- the licence does not leak ------------------------------------------------ #
@@ -2497,6 +2627,32 @@ def test_the_R5_launcher_carries_the_blessed_merge_invocation():
     assert "merge_legs.py" in sh
     assert "--licence R5" in sh
     assert "INSTRUMENT_IDENTITY_R5.json" in sh
+    # ⭐ the two flags a healthy merge cannot do without on THIS run
+    assert "--manifest-tag R5" in sh, \
+        "the default glob is the stratum and matches none of R5's manifests"
+    assert "--run-manifest-out $CAMPAIGN/RUN_MANIFEST_R5.json" in sh, \
+        "RUN_MANIFEST_R5.json is the address G-M/G-SALT/G-BACKEND read"
+    # the S2 spelling survives only inside the warning that explains why it is
+    # wrong — never on the invocation line
+    assert not re.search(r"(?m)^\s*echo\s+\"\s+--run-manifest-out.*S2\.json", sh)
+    # ⭐ the merged legs land where READ_RULE §2 addresses them (RUN/legs/s2),
+    # not on the share — a fallback that resolves nowhere is fail-always
+    assert "--out-dir $CAMPAIGN/legs/$S" in sh
+
+
+def test_the_launcher_records_the_WHOLE_executor_sequence_in_order():
+    """merge -> A2 -> A3 -> adjudicate. A3 audits addresses the merge creates,
+    and adjudication may not precede the pass that checks its own inputs."""
+    sh = (Path(ML.__file__).parent / "rung3_r5" / "run_scoring_r5.sh").read_text()
+    order = [sh.index("merge_legs.py"),
+             sh.index("--pass A2"),
+             sh.index("--pass A3"),
+             sh.index("analyze_rung3_r5.py")]
+    assert order == sorted(order), order
+    assert "acceptance_r5.py" in sh
+    # A2's lateness is disclosed where the executor will read it, not only in
+    # DEVIATIONS — D6 exists because a pass with no actor gets skipped
+    assert "D6" in sh and "LATE" in sh
     # the witness is GENERATED before it is consumed, both boxes captured
     assert "instrument_identity.py" in sh
     assert "--box local" in sh and "--box laptop:laptop-wsl" in sh
