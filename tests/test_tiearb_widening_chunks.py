@@ -2641,18 +2641,45 @@ def test_the_R5_launcher_carries_the_blessed_merge_invocation():
 
 
 def test_the_launcher_records_the_WHOLE_executor_sequence_in_order():
-    """merge -> A2 -> A3 -> adjudicate. A3 audits addresses the merge creates,
-    and adjudication may not precede the pass that checks its own inputs."""
+    """⭐ THE RULED ORDER (DESIGN 2026-08-20 + D6.3):
+        merge -> gate_draw -> D-DRAW -> A2 -> ADJUDICATE -> A3.
+    ⛔ A3 comes LAST, after the adjudicator — it audits `READOUT::` addresses
+    and the adjudicator is what WRITES them, so running it first can only ever
+    report the artifact missing, which is exactly what happened."""
     sh = (Path(ML.__file__).parent / "rung3_r5" / "run_scoring_r5.sh").read_text()
     order = [sh.index("merge_legs.py"),
+             sh.index("gate_draw.py"),
+             sh.index("d_draw_probe.py"),
              sh.index("--pass A2"),
-             sh.index("--pass A3"),
-             sh.index("analyze_rung3_r5.py")]
+             sh.index("analyze_rung3_r5.py"),
+             sh.index("--pass A3")]
     assert order == sorted(order), order
     assert "acceptance_r5.py" in sh
     # A2's lateness is disclosed where the executor will read it, not only in
     # DEVIATIONS — D6 exists because a pass with no actor gets skipped
     assert "D6" in sh and "LATE" in sh
+    # each pass pinned RELATIVE TO THE PRODUCER of its inputs (extended D6.2)
+    assert "RELATIVE TO THE PRODUCER OF ITS INPUTS" in sh
+    assert "SEALED UNTIL ALL 19 GATES PASS" in sh
+
+
+def test_the_G_DRAW_invocation_is_pinned_WITHOUT_cap_j():
+    """⛔ `--cap-j` is the fail-always trap: `G-DRAW` asserts the recorded J=4
+    subset reproduces this repo's seeded draw, so passing R5's own J would
+    compare `subset_j4` against a draw it was never made by."""
+    sh = (Path(ML.__file__).parent / "rung3_r5" / "run_scoring_r5.sh").read_text()
+    block = sh[sh.index("gate_draw.py"):sh.index("d_draw_probe.py")]
+    assert "--cap-j" not in block.split("Do NOT pass")[0]
+    assert "ARMS_R5.json" in block and "GATE_DRAW_R5.json" in block
+    assert "FAIL-ALWAYS" in block and "1,060" in block
+
+
+def test_the_D_DRAW_invocation_names_its_prohibition_and_the_population_trap():
+    sh = (Path(ML.__file__).parent / "rung3_r5" / "run_scoring_r5.sh").read_text()
+    block = sh[sh.index("d_draw_probe.py"):sh.index("--pass A2")]
+    assert "ADJUDICATES NOTHING" in block
+    assert "NO FILTER FLAG EXISTS" in block
+    assert "capped_at_4" in block and "vacuously" in block
     # the witness is GENERATED before it is consumed, both boxes captured
     assert "instrument_identity.py" in sh
     assert "--box local" in sh and "--box laptop:laptop-wsl" in sh

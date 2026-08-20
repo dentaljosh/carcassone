@@ -591,34 +591,114 @@ def gate_internal_dupe(dupe, corpus) -> dict:
 
 
 def gate_disjoint(dis) -> dict:
-    """`G-DISJOINT` — rid and root layers ZERO on every comparison (the LEAKAGE
-    guard). ⛔ The DIGEST layer is NOT carried in R5 (READ_RULE §0)."""
+    """`G-DISJOINT` — the LEAKAGE guard. ⛔ The DIGEST layer is NOT carried in
+    R5 (READ_RULE §0).
+
+    ⭐ **THE ABSENCE LICENCE IS BOUNDED ON FOUR SIDES** (DESIGN 2026-08-20,
+    FIX 1). The emitter has declared `layers_absent` with a reason since R3.3 —
+    *"a fabricated `0` would read as a proof that was never performed"* — and
+    that declaration PRE-DATES the blind commit; this consumer simply never
+    inherited the handling and read a declared-absent layer as `null` ⇒ FAIL.
+    That is the `ci95` class: an address named that its own emitter does not
+    write. But "respect `layers_absent`" must not decay into "any missing layer
+    is excused", which would convert the leakage guard into this campaign's
+    signature PASS-ALWAYS disease. So:
+
+      b_rid      REQUIRED PRESENT on EVERY comparison, and `n_intersection == 0`.
+                 ⛔ NO absence licence at all — a rid identity always exists.
+      a_root_id  zero if present; VACUOUS on a comparison ONLY IF BOTH
+                 `"a_root_id" in layers_absent` AND `layers_absent_reason` is
+                 non-empty. A bare list with no reason does not excuse it.
+      NEITHER present nor declared absent ⇒ FAIL (ABSENT-IS-FAIL survives).
+      ANTI-VACUITY: `a_root_id` must be PRESENT-and-zero on ≥ 1 comparison, or
+                 the gate FAILS as structurally vacuous — a root layer excused
+                 everywhere has stopped being a guard.
+
+    Satisfiable and not by accident: on the real artifact `b_rid` is present on
+    all four comparisons and `a_root_id` on three, declared absent on exactly
+    one (`s2_vs_exclude_rids` — a JSON reference list has no root identity), so
+    the anti-vacuity clause has 3 of 4 comparisons behind it.
+    """
     if dis is None:
         return _gate("G-DISJOINT", False, "RUN/GATE_DISJOINT_R5.json",
                      "GATE_DISJOINT_R5.json is ABSENT or unreadable — "
                      "ABSENT IS FAIL")
-    per, bad = {}, []
+    per = {}
+    rid_bad, root_bad, undeclared, n_root_present_zero = [], [], [], 0
     for name, cmp_ in sorted((dis.get("comparisons") or {}).items()):
-        layers = (cmp_ or {}).get("layers") or {}
+        cmp_ = cmp_ or {}
+        layers = cmp_.get("layers") or {}
+        absent = list(cmp_.get("layers_absent") or [])
+        reason = str(cmp_.get("layers_absent_reason") or "").strip()
         row = {}
-        for layer in ("a_root_id", "b_rid"):
-            n = (layers.get(layer) or {}).get("n_intersection")
-            row[layer] = n
-            if n != 0:
-                bad.append(f"{name}.{layer}")
+
+        # ---- b_rid: required, no licence ---------------------------------- #
+        n_rid = (layers.get("b_rid") or {}).get("n_intersection")
+        row["b_rid"] = n_rid
+        if n_rid != 0:
+            rid_bad.append(f"{name}.b_rid={n_rid!r}")
+            if "b_rid" in absent:
+                # ⛔ named as absent — which the rid layer may never be
+                undeclared.append(f"{name}.b_rid (declared absent — the rid "
+                                  f"layer carries NO absence licence)")
+
+        # ---- a_root_id: zero if present, vacuous only if DECLARED --------- #
+        if "a_root_id" in layers:
+            n_root = (layers.get("a_root_id") or {}).get("n_intersection")
+            row["a_root_id"] = n_root
+            row["a_root_id_state"] = "present"
+            if n_root == 0:
+                n_root_present_zero += 1
+            else:
+                root_bad.append(f"{name}.a_root_id={n_root!r}")
+        elif "a_root_id" in absent and reason:
+            row["a_root_id"] = None
+            row["a_root_id_state"] = "vacuous (declared absent WITH reason)"
+        else:
+            row["a_root_id"] = None
+            row["a_root_id_state"] = "UNDECLARED"
+            undeclared.append(
+                f"{name}.a_root_id (neither present nor declared absent"
+                + ("" if "a_root_id" not in absent else
+                   " — listed in layers_absent but layers_absent_reason is "
+                   "EMPTY, and an undocumented absence is not a licence")
+                + ")")
         per[name] = row
-    conj = {"passed": dis.get("passed") is True,
-            "all_rid_and_root_layers_zero": not bad,
-            "n_comparisons_present": bool(per)}
+
+    conj = {
+        "passed": dis.get("passed") is True,
+        "n_comparisons_present": bool(per),
+        "b_rid_present_and_zero_on_every_comparison": not rid_bad,
+        "a_root_id_zero_wherever_present": not root_bad,
+        "no_undeclared_absent_layer": not undeclared,
+        # ⭐ anti-vacuity — the clause that stops the licence eating the gate
+        "a_root_id_present_and_zero_on_at_least_one": n_root_present_zero >= 1,
+    }
     bad_c = sorted(k for k, v in conj.items() if not v)
+    why = []
+    if rid_bad:
+        why.append(f"rid layer: {rid_bad}")
+    if root_bad:
+        why.append(f"root layer: {root_bad}")
+    if undeclared:
+        why.append(f"undeclared absences: {undeclared}")
+    if not conj["a_root_id_present_and_zero_on_at_least_one"]:
+        why.append("STRUCTURALLY VACUOUS: a_root_id is present-and-zero on NO "
+                   "comparison, so the root layer proved nothing anywhere")
     return _gate(
         "G-DISJOINT", not bad_c,
         "RUN/GATE_DISJOINT_R5.json::{passed, comparisons.<name>.layers."
-        "{a_root_id,b_rid}.n_intersection}",
+        "{a_root_id,b_rid}.n_intersection, comparisons.<name>."
+        "{layers_absent, layers_absent_reason}}",
         None if not bad_c else
         f"G-DISJOINT row FAILED on conjunct(s) {bad_c}"
-        + (f"; non-zero intersections at {bad}" if bad else ""),
+        + ("; " + "; ".join(why) if why else ""),
         conjuncts=conj, comparisons=per,
+        n_root_present_zero=n_root_present_zero,
+        absence_licence="BOUNDED ON FOUR SIDES (DESIGN 2026-08-20 FIX 1): b_rid "
+                        "has none; a_root_id needs layers_absent AND a non-empty "
+                        "reason; undeclared absence FAILS; and a_root_id must be "
+                        "present-and-zero somewhere or the gate is vacuous",
         digest_layer="NOT CARRIED in R5 (READ_RULE §0)")
 
 
