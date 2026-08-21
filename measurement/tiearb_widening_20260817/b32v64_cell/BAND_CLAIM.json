@@ -1,0 +1,3 @@
+140000000000
+B=32 vs B=64 TIE-ARBITER LADDER GAME CELL: two deck-paired cells on ONE band and the SAME decks, n=1500 decks x 2 seatings = 3000 games each. CELL_B32 = production champion + root tie-arbiter B=32/J=4; CELL_B64 = production champion + root tie-arbiter B=64/J=4 (a fresh-band replicate of the shape DEPLOYED 2026-08-20). Opponent BOTH cells = the UNMODIFIED production champion a36d2e15a3b3d71d. Both arms FAIR PIMC k8x1376=11008 (eval_fair_puct.py --info fair --opponent fair-champion), fixed_v1, rust backend both sides, exact-K 2, salt tiearb2-deploy-v1, mode argmax, eps 0.0. PRIMARY = deck-paired D = M_B64 - M_B32 in pts/game with its z; each cell's elo/wr vs the common champion opponent is SECONDARY and adjudicates nothing.
+claimed 2026-08-20

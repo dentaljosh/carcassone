@@ -1,0 +1,960 @@
+{
+  "all_evaluable_rows_pass": true,
+  "branch_on_known_good": {
+    "D": 1.7166666666666666,
+    "adjudicated": true,
+    "branch": "L-RISING",
+    "equiv": {
+      "D": 1.7166666666666666,
+      "EQUIV": false,
+      "UB95": 2.779856205248887,
+      "UB95_label": "ONE-SIDED 95% UPPER BOUND ON THE COST",
+      "ci_z": 1.645,
+      "equiv_shape": "one_sided",
+      "predicate": "UB95(D) = D + 1.645*se_D <= TOLERANCE_PTS  \u2014  ONE-SIDED NON-INFERIORITY at 95%: the ONE-SIDED 95% UPPER BOUND ON THE COST is below the tolerance. \u26a0\ufe0f 1.645 here is z_{0.95}, the ONE-SIDED 95% critical value \u2014 the read-out must say 'one-sided 95% upper bound', NEVER '90% CI' (READ_RULE \u00a74). \u26a0\ufe0f The |\u00b7| is dropped and the negative arm is governed by BRANCH ORDER, not by the predicate: L-REVERSED (z_D <= -2.0) is branch #2 and pre-empts L-SATURATED (#4) by FIRST-MATCH-WINS (\u00a74.4).",
+      "se_D": 0.646315828925362,
+      "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell/WORKERS.conf",
+      "statistic": 2.779856205248887,
+      "statistic_name": "UB95(D)",
+      "tolerance_pts": 0.93,
+      "why": "UB95(D) = +2.779856 > 0.93"
+    },
+    "first_match_note": null,
+    "reason": "z_D +2.6561 >= +2.0",
+    "se_D": 0.646315828925362,
+    "z_D": 2.6560801853189813
+  },
+  "branch_on_known_good_disclaimer": "\u26d4 NOT A VERDICT AND NOT A RE-ADJUDICATION. The b64 cell's verdict of record is B-COSTKILL, its read-rule is SPENT and its band 139e9 is RETIRED from confirmatory use. This label is emitted ONLY to prove the branch machinery runs end-to-end on real numbers; READ_RULE \u00a75 forbids re-reading, re-labelling or re-adjudicating that cell, and nothing here does.",
+  "coverage_caveat": "\u26a0\ufe0f 'n/n PASS' is a ROW count. A row whose CONJUNCTS are not all exercised is listed in rows_with_partial_conjunct_coverage with the unexercised conjunct NAMED \u2014 the same promise this file makes for N-A rows, kept at conjunct granularity so a multi-conjunct row's PASS cannot over-state its coverage.",
+  "equiv_config": {
+    "ci_z": 1.645,
+    "committed_block": "READ_RULE \u00a74 / WORKERS.conf's top-of-file committed constants block. \u26d4 Changing those two lines changes this adjudicator's behaviour with NO code edit; the adjudicator carries NO default for either.",
+    "elo_gloss_non_binding": "0.93 pts/game x 16.1247 elo per pt/game = +15.00 elo \u2014 the gloss is a DESCRIPTION and every branch condition is written in pts/game, never in elo.",
+    "equiv_shape": "one_sided",
+    "predicate": "UB95(D) = D + 1.645*se_D <= TOLERANCE_PTS  \u2014  ONE-SIDED NON-INFERIORITY at 95%: the ONE-SIDED 95% UPPER BOUND ON THE COST is below the tolerance. \u26a0\ufe0f 1.645 here is z_{0.95}, the ONE-SIDED 95% critical value \u2014 the read-out must say 'one-sided 95% upper bound', NEVER '90% CI' (READ_RULE \u00a74). \u26a0\ufe0f The |\u00b7| is dropped and the negative arm is governed by BRANCH ORDER, not by the predicate: L-REVERSED (z_D <= -2.0) is branch #2 and pre-empts L-SATURATED (#4) by FIRST-MATCH-WINS (\u00a74.4).",
+    "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell/WORKERS.conf",
+    "supported_shapes": [
+      "two_sided",
+      "one_sided"
+    ],
+    "tolerance_pts": 0.93
+  },
+  "failed_rows": [],
+  "generated_utc": "2026-08-21T05:26:19Z",
+  "known_good_run": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell",
+  "known_good_verdict_of_record": "B-COSTKILL (spent; band 139e9 RETIRED)",
+  "meaning": "'all rows pass' means every row WITH a known-good analogue passes AND the rows without one are NAMED. A row that cannot be evaluated NEVER silently counts as covered.",
+  "n_evaluated": 13,
+  "n_fail": 0,
+  "n_na": 0,
+  "n_pass": 13,
+  "n_rows": 13,
+  "na_rows": [],
+  "precondition": "DESIGN \u00a712.1 / READ_RULE \u00a70 \u2014 every \u00a73 row must be evaluated against a COMPLETED, KNOWN-GOOD run's artifacts and must PASS on it, BEFORE the blind commit. A row that fails a healthy run is a drafting defect.",
+  "rows": {
+    "G-BAND": {
+      "detail": {
+        "band_claim": {
+          "band": 139000000000,
+          "claimed_before_game_1": true,
+          "expected_band": 139000000000,
+          "raw": "139000000000\nB=64 GAME CELL: WIDE (B=64) vs NARROW (B=16), two deck-paired cells, one band, same decks\nclaimed 2026-08-20",
+          "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/BAND_CLAIM.json"
+        },
+        "band_is_expected": true,
+        "band_seed_start": {
+          "CELL_B32": {
+            "band_seed_start": 139000000000,
+            "matches_expected": true,
+            "resolved_at": "config.band_seed_start"
+          },
+          "CELL_B64": {
+            "band_seed_start": 139000000000,
+            "matches_expected": true,
+            "resolved_at": "config.band_seed_start"
+          }
+        },
+        "claimed_before_game_1": true,
+        "deck_range": "139000000000..139000001499",
+        "decks_only_in": {
+          "CELL_B32": [],
+          "CELL_B64": []
+        },
+        "expected_band": 139000000000,
+        "n_decks": {
+          "CELL_B32": 750,
+          "CELL_B64": 750
+        },
+        "same_band": true,
+        "same_decks": true,
+        "semantics": "four conjuncts, ALL required: a pre-dated claim sentinel, the sentinel naming the PINNED band, both cells on that same band, and identical realized deck sets",
+        "sentinel_band": 139000000000,
+        "sentinel_matches_expected": true
+      },
+      "marker": "[pre-run]+[post-cells]",
+      "scaled": "expected_band 140000000000 \u2192 139000000000 (the known-good run's own claimed band). \u26a0\ufe0f Grading this cell's band verbatim would report a FAIL about WHICH BAND the b64 cell ran on, not about the row.",
+      "scope": "[RUN]",
+      "status": "PASS"
+    },
+    "G-DIVERGE": {
+      "detail": {
+        "anomaly": false,
+        "anomaly_bar": 0.95,
+        "dilution_sqrt_one_minus_f0": 0.9919677414109795,
+        "expected_one_minus_f0": 0.98,
+        "f0": 0.016,
+        "floor": 0.1,
+        "headroom_x": 9.799999999999999,
+        "n_common_decks": 750,
+        "n_identical_decks": 12,
+        "one_minus_f0": 0.984,
+        "role": "INERTNESS DETECTOR, not a power check",
+        "why": "the surface diverges above the inertness floor"
+      },
+      "divergence_block": {
+        "anomaly": false,
+        "anomaly_bar": 0.95,
+        "anomaly_note": "\u26a0\ufe0f A realized 1 \u2212 f0 below 0.95 PASSES the gate and is an ANOMALY that MUST be reported as one, never as a pass (READ_RULE \u00a74.3 item 3).",
+        "dilution_sqrt_one_minus_f0": 0.9919677414109795,
+        "expected_derivation": "DESIGN \u00a78.2, RE-DERIVED AT THIS RUNG: the measured 32\u219264 value-change fraction on this campaign's own R4 corpus is 0.4045 per fired ply (shared_run_r4/verdicts/per_position_s1.jsonl, 1,340 plies); a deck carries \u224834.96 fired plies (2 seats \u00d7 phi 17.481) \u21d2 the modelled 1 \u2212 f0 is 1.0000, calibrated against the b64_cell's realized 0.9840 at a 31%-churnier rung \u21d2 EXPECTED \u22480.98.",
+        "expected_one_minus_f0": 0.98,
+        "f0": 0.016,
+        "floor": 0.1,
+        "headroom_x": 9.799999999999999,
+        "measurement_disclosure": "f0 is measured as 'D_i exactly 0.0', which OVERCOUNTS identity (two different games can coincide on margin) \u21d2 1 \u2212 f0 UNDERCOUNTS divergence \u21d2 the floor is CONSERVATIVE: it can only fire early, never late.",
+        "n_common_decks": 750,
+        "n_identical_decks": 12,
+        "nested_crn": "B = 64's worlds 0..31 are byte-identical to B = 32's entire world set (DESIGN \u00a71.3); CELL_B64 is a strict REFINEMENT of CELL_B32, so a large identical fraction is a POWER LOSS (z_D \u221d \u221a(1\u2212f0)), not a power win.",
+        "one_minus_f0": 0.984
+      },
+      "marker": "[post-cells]",
+      "note": "\u2b50 VERBATIM AND ON REAL DATA \u2014 unlike the b64 cell's own known-good pass (which had to mark this N-A against Stage 2's different-MODE cells), the b64 cell IS a nested refinement (16 \u2282 64), so f0 is the same quantity and the row is exercised for real.",
+      "scope": "[RUN]",
+      "status": "PASS"
+    },
+    "G-FAILED": {
+      "detail": {
+        "F_CELL_B32": 0,
+        "F_CELL_B64": 0,
+        "clause2_candidate_correlated": false,
+        "clause2_rule": "max(F) >= 5 AND max(F) > 3 \u00d7 max(min(F), 1)",
+        "clause3_confirmation": null,
+        "clause3_exception_disclosure": "\u26a0\ufe0f A DELIBERATE, DISCLOSED EXCEPTION to 'no owner call adjudicates any outcome': it adjudicates NOTHING \u2014 no branch, no bar, no statistic moves on it \u2014 it decides only whether the run pauses.",
+        "clause3_halt": false,
+        "clause3_rule": "AS NARROWED (RULING 3, carried VERBATIM): if F_w + F_n > 0 the read-out prints every failed game's raw failure record VERBATIM and the run HALTS for owner escalation BEFORE ADJUDICATION unless every failure is manually confirmed to be the known WindowTruncationError class. The confirmation is a HUMAN ACT recorded in the read-out and it gates ESCALATION, never a branch.",
+        "clause3_vacuous_at_zero": true,
+        "failure_surface_REPORT_ONLY": {
+          "emitter": "eval_fair_puct.py::_failure_block (since 2026-08-14)",
+          "per_cell": {
+            "CELL_B32": {
+              "failed_cells": [],
+              "failure_rate": 0.0,
+              "failure_rate_trigger": 0.005,
+              "fields_present": [
+                "failed_cells",
+                "failure_rate",
+                "failure_rate_trigger",
+                "resolved_failed_cells",
+                "validity_trigger_fired"
+              ],
+              "n_failed": 0,
+              "resolved_failed_cells": [],
+              "tiearb_error_rate_on_fired": 0.0,
+              "tiearb_errors_total": 0,
+              "tiearb_first_error": null,
+              "tiearb_partial_argmax_total": 0,
+              "validity_trigger_fired": false
+            },
+            "CELL_B64": {
+              "failed_cells": [],
+              "failure_rate": 0.0,
+              "failure_rate_trigger": 0.005,
+              "fields_present": [
+                "failed_cells",
+                "failure_rate",
+                "failure_rate_trigger",
+                "resolved_failed_cells",
+                "validity_trigger_fired"
+              ],
+              "n_failed": 0,
+              "resolved_failed_cells": [],
+              "tiearb_error_rate_on_fired": 0.0,
+              "tiearb_errors_total": 0,
+              "tiearb_first_error": null,
+              "tiearb_partial_argmax_total": 0,
+              "validity_trigger_fired": false
+            }
+          },
+          "status": "REPORT ONLY \u2014 wired into NO conjunct (DESIGN \u00a713.2 item 2)",
+          "wired_into_conjuncts": []
+        },
+        "hi_exposure_note": "\u26a0\ufe0f CELL_B64 runs 2\u00d7 the playouts per fired ply of CELL_B32 (not 4\u00d7 as the b64 cell's WIDE did over NARROW), so it carries ~2\u00d7 the per-ply exposure to the window-refusal class \u2014 directional, and it favours CELL_B32. Clause 2 binds in the direction that PROTECTS the reading.",
+        "known_class": "WindowTruncationError",
+        "n_failed_total": 0,
+        "no_class_field_at_HEAD": "eval_fair_puct emits no `diagnostic_class` / `failed_classes` field (re-checked at HEAD, DESIGN \u00a713.2 item 2), so clause 3 carries RULING 3's narrowing verbatim. The per-failure surface it DOES emit (failed_cells[].window_truncation and friends) is PRINTED and wired into NO conjunct; promoting it is a decision for a FUTURE pair.",
+        "per_cell": {
+          "CELL_B32": {
+            "clause1_ok": true,
+            "n_attempted": 1500,
+            "n_failed": 0,
+            "rate": 0.0,
+            "rate_bar": 0.02
+          },
+          "CELL_B64": {
+            "clause1_ok": true,
+            "n_attempted": 1500,
+            "n_failed": 0,
+            "rate": 0.0,
+            "rate_bar": 0.02
+          }
+        },
+        "raw_failure_records": [],
+        "selection_effect": "window-truncation failures fire at extreme board extents, so any dropped set is CORRELATED WITH BOARD GEOMETRY \u2014 late-game, large-extent positions \u2014 and that correlation is DISCLOSED rather than argued away."
+      },
+      "failure_surface_REPORT_ONLY": {
+        "emitter": "eval_fair_puct.py::_failure_block (since 2026-08-14)",
+        "per_cell": {
+          "CELL_B32": {
+            "failed_cells": [],
+            "failure_rate": 0.0,
+            "failure_rate_trigger": 0.005,
+            "fields_present": [
+              "failed_cells",
+              "failure_rate",
+              "failure_rate_trigger",
+              "resolved_failed_cells",
+              "validity_trigger_fired"
+            ],
+            "n_failed": 0,
+            "resolved_failed_cells": [],
+            "tiearb_error_rate_on_fired": 0.0,
+            "tiearb_errors_total": 0,
+            "tiearb_first_error": null,
+            "tiearb_partial_argmax_total": 0,
+            "validity_trigger_fired": false
+          },
+          "CELL_B64": {
+            "failed_cells": [],
+            "failure_rate": 0.0,
+            "failure_rate_trigger": 0.005,
+            "fields_present": [
+              "failed_cells",
+              "failure_rate",
+              "failure_rate_trigger",
+              "resolved_failed_cells",
+              "validity_trigger_fired"
+            ],
+            "n_failed": 0,
+            "resolved_failed_cells": [],
+            "tiearb_error_rate_on_fired": 0.0,
+            "tiearb_errors_total": 0,
+            "tiearb_first_error": null,
+            "tiearb_partial_argmax_total": 0,
+            "validity_trigger_fired": false
+          }
+        },
+        "status": "REPORT ONLY \u2014 wired into NO conjunct (DESIGN \u00a713.2 item 2)",
+        "wired_into_conjuncts": []
+      },
+      "marker": "[post-cells]",
+      "note": "verbatim \u2014 all three clauses on the real cells (the b64 cell realized 0/1500 failures in BOTH cells, so clause 3 is vacuous and clauses 1 and 2 evaluate on real emitted quantities)",
+      "scope": "[RUN]+[PER-CELL]",
+      "status": "PASS"
+    },
+    "G-FIRE": {
+      "detail": {
+        "floor": 1.0,
+        "headroom": "\u224817\u00d7 against the realized prior",
+        "observed": {
+          "CELL_B32": {
+            "error_rate_on_fired": 0.0,
+            "floor": 1.0,
+            "ok": true,
+            "phi": 17.553333333333335,
+            "phi_effective": 17.553333333333335
+          },
+          "CELL_B64": {
+            "error_rate_on_fired": 0.0,
+            "floor": 1.0,
+            "ok": true,
+            "phi": 17.408666666666665,
+            "phi_effective": 17.408666666666665
+          }
+        },
+        "prior": {
+          "b64_cell_realized": [
+            17.5533,
+            17.4087
+          ],
+          "committed": 17.481,
+          "offline": 22.96
+        }
+      },
+      "marker": "[post-cells]",
+      "note": "verbatim \u2014 the floor 1.0 against a realized phi \u224817.4\u201317.6",
+      "scope": "[PER-CELL]",
+      "status": "PASS"
+    },
+    "G-J1": {
+      "detail": {
+        "expected_equal": "a36d2e15a3b3d71d",
+        "observed": {
+          "CELL_B32": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "ok": true,
+            "resolved_at": "config.cand_leaf_hash"
+          },
+          "CELL_B64": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "ok": true,
+            "resolved_at": "config.cand_leaf_hash"
+          }
+        },
+        "read_at": "top level, then config.* (two-level, \u00a72.1)",
+        "semantics": "EQUALITY gate \u2014 a difference ABORTS; ABSENT under both levels also fails"
+      },
+      "marker": "[post-cells]",
+      "note": "verbatim \u2014 both cells' REAL manifests, same champion leaf hash",
+      "scope": "[PER-CELL]",
+      "status": "PASS"
+    },
+    "G-J13": {
+      "detail": {
+        "by_host": {
+          "Doctor": {
+            "16": {
+              "B": 16,
+              "B_matches_expected": true,
+              "expected_B": 16,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B16.json",
+              "two_sided_ok": true
+            },
+            "64": {
+              "B": 64,
+              "B_matches_expected": true,
+              "expected_B": 64,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64.json",
+              "two_sided_ok": true
+            }
+          },
+          "laptop-wsl": {
+            "16": {
+              "B": 16,
+              "B_matches_expected": true,
+              "expected_B": 16,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B16.json",
+              "two_sided_ok": true
+            },
+            "64": {
+              "B": 64,
+              "B_matches_expected": true,
+              "expected_B": 64,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64.json",
+              "two_sided_ok": true
+            }
+          }
+        },
+        "expected_B": [
+          64,
+          16
+        ],
+        "expected_hosts": [
+          "Doctor",
+          "laptop-wsl"
+        ],
+        "files_consumed_other_hosts": {},
+        "files_consumed_per_host": {
+          "Doctor": [
+            {
+              "expected.B": 64,
+              "j13_witness.B": 64,
+              "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            },
+            {
+              "expected.B": 16,
+              "j13_witness.B": 16,
+              "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B16.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            }
+          ],
+          "laptop-wsl": [
+            {
+              "expected.B": 64,
+              "j13_witness.B": 64,
+              "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            },
+            {
+              "expected.B": 16,
+              "j13_witness.B": 16,
+              "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B16.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            }
+          ]
+        },
+        "n_files_consumed": 4,
+        "pinned_addresses": {
+          "B": "j13_witness.B",
+          "expected_B": "expected.B",
+          "pick_changed": "j13_witness.pick_changed",
+          "root_leaf_value_bits_unchanged": "j13_witness.root_leaf_value_bits_unchanged"
+        },
+        "semantics": "for EACH host, BOTH B values appear across that host's witness records, each with both booleans true and expected.B == j13_witness.B. \u26a0\ufe0f ABSENT B \u21d2 FAIL \u2014 never 'assume the file's B' (RULING 2)",
+        "strictness": "\u26d4 STRICTLY PINNED \u2014 the b64 cell's two_sided.* fallback is GONE. b32v64_cell/preflight.sh asserts all four pinned addresses on the emitting host before that host's game 1 (DESIGN \u00a713.1), so a missing pinned address is an EMITTER defect and must fail loudly."
+      },
+      "marker": "[pre-run]",
+      "scaled": "expected_B: (64,32)\u2192(64,16) \u2014 the b64 cell ran B \u2208 {64,16}. \u2b50 The STRICT-PINNED read (no two_sided.* fallback) is what is exercised, and it PASSES on the real files because that cell's preflight injected the pinned j13_witness.* booleans.",
+      "scope": "[PER-CELL]",
+      "status": "PASS"
+    },
+    "G-J4": {
+      "detail": {
+        "observed": {
+          "CELL_B32": {
+            "cand_tiearb": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 16,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              16
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          },
+          "CELL_B64": {
+            "cand_tiearb": {
+              "B": 64,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 64,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              64
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          }
+        },
+        "semantics": "a mixed-B cell is a VOID, not a finding"
+      },
+      "mapped": "CELL_B32 \u2190 the b64 cell's NARROW",
+      "marker": "[post-cells]",
+      "scaled": "B: 32\u219216 for the low cell (no B = 32 artifact exists on any completed run \u2014 the row's MACHINERY is what is under test)",
+      "scope": "[PER-CELL]",
+      "status": "PASS"
+    },
+    "G-N": {
+      "detail": {
+        "cell_decks_planned": 750,
+        "cell_games_floor": 1200,
+        "cell_games_planned": 1500,
+        "deck_clause_independently_binding": "two cells can each clear the game floor while overlapping on fewer than the deck floor of COMMON decks \u2014 that weakens D and still voids",
+        "deck_clause_reachable": true,
+        "game_clause_reachable": true,
+        "n_common": 750,
+        "n_common_floor": 600,
+        "n_common_units": "DECKS",
+        "n_games": {
+          "CELL_B32": 1500,
+          "CELL_B64": 1500
+        },
+        "reachability_note": "600 <= the 750-deck ceiling and 1200 <= the 1500-game ceiling \u2014 BOTH clauses are reachable (Stage 2's version was unreachable by construction)",
+        "same_80pct_bar": "1200 games IS 600 decks"
+      },
+      "marker": "[post-cells]",
+      "scaled": "floors 1,200 decks / 2,400 games \u2192 the b64 cell's own 600/1,200 (the SAME 80% bar at its own n). \u26a0\ufe0f Verbatim floors are unreachable on a 1,500-game run BY SIZE \u2014 grading them here would report a FAIL about the b64 cell's scale, not about this row",
+      "scope": "[RUN]+[PER-CELL]",
+      "status": "PASS",
+      "verbatim_would_be": "FAIL (by size)"
+    },
+    "G-NEST": {
+      "detail": {
+        "anchor": null,
+        "claim": null,
+        "n_distinct_worlds_hi": null,
+        "n_distinct_worlds_lo": null,
+        "present": true,
+        "runtime": {
+          "cap_seed_identical": true,
+          "first_differing_j": null,
+          "n_compared": 16,
+          "n_distinct_worlds_narrow": 16,
+          "n_distinct_worlds_wide": 64,
+          "playout_seeds_identical": true,
+          "select_seed_identical": true,
+          "world_seeds_identical": true,
+          "world_sha_prefix": [
+            "907d87f52d5b09d6",
+            "ebaca165d47245f0",
+            "ed97c0cdc6221403",
+            "8405c447dcae31bd",
+            "fde70296f3b95969",
+            "fe23c568bdf0e03a",
+            "31d0e00fb93d57a0",
+            "82ad32067426d2a8",
+            "fe922a4c15376289",
+            "2861197b039df0c6",
+            "1ced12283301cf75",
+            "9b27cd181b2a8c60",
+            "3b4694e8970db445",
+            "09ac64a0f21a09c8",
+            "f589d68414ffc224",
+            "1f6190cbf18bcfb9"
+          ],
+          "worlds_byte_identical": true
+        },
+        "sites": {
+          "build_arms_cap": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+            "found": true
+          },
+          "playout_seed": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+            "found": true
+          },
+          "select_stream": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+            "found": true
+          },
+          "world_seed": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+            "found": true
+          }
+        },
+        "structural": {
+          "present": true,
+          "scope": "SOURCE-LEVEL witness at HEAD over the four seeding sites. The pair's GATE_NEST.json additionally records the pinned position/ply/salt byte-identity run; this tool emits the structural half and names the behavioural half.",
+          "sites": {
+            "build_arms_cap": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+              "found": true
+            },
+            "playout_seed": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+              "found": true
+            },
+            "select_stream": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+              "found": true
+            },
+            "world_seed": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+              "found": true
+            }
+          },
+          "source": "rust/carc/carc-core/src/tiearb.rs",
+          "why": "every seeding site is a pure function of j (no B term) \u21d2 the world sets NEST",
+          "witness": true
+        },
+        "why": "B=64's worlds 0..15 are BYTE-IDENTICAL to B=16's entire set (real determinized decks, not just seeds), the cap draw and selection stream are identical, and every seeding site is a pure function of j with no B term \u21d2 the world sets NEST and WIDE is a strict refinement of NARROW",
+        "witness": true
+      },
+      "marker": "[pre-run]",
+      "scaled": "the b64 cell's own GATE_NEST.json witnesses 16 \u2282 64, not 32 \u2282 64. \u2b50 The ROW is a presence+witness check and transfers verbatim; the structural claim it rests on is B-INDEPENDENT (the seeding sites are pure functions of j).",
+      "scope": "[RUN]",
+      "status": "PASS",
+      "structural_witness_at_HEAD": {
+        "b_independent": "the claim is about the SOURCE \u2014 the four seeding sites are pure functions of j with no B term \u2014 so it is not a claim about any (B_lo, B_hi) pair and transfers between rungs unchanged.",
+        "present": true,
+        "scope": "SOURCE-LEVEL witness at HEAD over the four seeding sites. The pair's GATE_NEST.json additionally records the pinned position/ply/salt byte-identity run at 32 \u2282 64; this function emits the STRUCTURAL half and names the behavioural half.",
+        "sites": {
+          "build_arms_cap": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+            "found": true
+          },
+          "playout_seed": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+            "found": true
+          },
+          "select_stream": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+            "found": true
+          },
+          "world_seed": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+            "found": true
+          }
+        },
+        "source": "rust/carc/carc-core/src/tiearb.rs",
+        "why": "every seeding site is a pure function of j (no B term) \u21d2 the world sets NEST",
+        "witness": true
+      }
+    },
+    "G-PLY": {
+      "detail": {
+        "observed": {
+          "CELL_B32": {
+            "ok": true,
+            "semantics": "ABSENT is unknown-not-zero and FAILS",
+            "tiearb_partial_argmax_total": 0
+          },
+          "CELL_B64": {
+            "ok": true,
+            "semantics": "ABSENT is unknown-not-zero and FAILS",
+            "tiearb_partial_argmax_total": 0
+          }
+        },
+        "prior": "0 in both cells (Stage 2 realized 0 across 28,350 fired plies; the b64 cell realized 0 in both)"
+      },
+      "marker": "[post-cells]",
+      "note": "verbatim \u2014 0 in both cells",
+      "scope": "[PER-CELL]",
+      "status": "PASS"
+    },
+    "G-SMOKE": {
+      "conjunct_coverage": {
+        "conjunct1_production_knobs_before_game_1": "NOT EVALUATED (scaled)",
+        "conjunct2_halted_and_launched_anyway": "EVALUATED",
+        "conjunct3_forbidden_outcome_keys": "EVALUATED"
+      },
+      "detail": {
+        "cells_ran": true,
+        "conjunct1_production_knobs_before_game_1": {
+          "evaluated": false,
+          "observed": null,
+          "smoke_utc": null,
+          "why": "\u26a0\ufe0f NOT EVALUATED \u2014 expected_knobs is None. Disclosed by the caller (the known-good evaluation scales this conjunct away because the b64 cell's SMOKE.json predates the production_knobs / smoke_utc keys this pair adds); the row's OTHER conjuncts still bind."
+        },
+        "conjunct2_halted_and_launched_anyway": false,
+        "conjunct3_forbidden_outcome_keys": [],
+        "cost_definition": "worker_secs_per_game = SUM(seed*.json::elapsed_s) / n \u2014 DESIGN \u00a77.1's own equation ('sum over seed*.json of elapsed_s / 1500 => 928.0251 worker-s per game'). NEVER wall x W / n: the house forbids costing from wall clock, and \u00a79.3 names that very substitution as the currency error behind Stage 2's cost miss.",
+        "forbidden_outcome_keys": [],
+        "halt_bar": 1392.0375,
+        "halt_record": {
+          "bar": 1392.0375,
+          "committed": 928.025,
+          "evaluable": true,
+          "graded_cell": "CELL_B64",
+          "graded_on": "\u00a79.3 grades CELL_B64 ONLY \u2014 the one cell whose cost is MEASURED rather than projected. CELL_B32's realized cost is printed against its projection and graded NOWHERE (\u00a79.4); grading a 1.50x bar against a projection would be grading a model against itself.",
+          "halt": false,
+          "multiple": 1.5,
+          "on_halt": "\u26d4 the real cells are NOT launched, the smoke numbers and the revised bill are reported, and the decision returns to the OWNER. No re-tuning of B, the trigger, J, eps or the playout is licensed by a HALT \u2014 the only permitted responses are STOP, or the OWNER RE-FUNDS at the realized cost. \u26d4 There is NO override flag: a halt is not a switch the executor flips.",
+          "one_sided": "an overrun HALTS, an underrun proceeds",
+          "realized": 788.7993749999999,
+          "why": "CELL_B64 realized 788.799 worker-s/game <= 1392.037 (= 1.5 x 928.025, MEASURED on the b64 cell's WIDE)"
+        },
+        "halted": false,
+        "launched_anyway": false,
+        "launched_anyway_provenance": "\u26d4 DERIVED, NOT SUPPLIED: halt \u2227 cells_ran, where cells_ran is mechanical (at [post-cells] adjudication the cells demonstrably ran). The old --launched-after-halt store_true flag is DELETED: its default was the PASSING value, which made this conjunct a pass-always gate and a second undeclared human input.",
+        "one_sided": "an overrun HALTS, an underrun proceeds",
+        "present": true,
+        "surfaces": "EMITTER: fail-closed whitelist (\u00a79.2 sentence 2). GATE: any forbidden OUTCOME key at any depth (\u00a73's G-SMOKE row). This gate evaluates the GATE surface; structural keys never fire it (RULING 1, carried VERBATIM).",
+        "whitelist_REPORTED_not_a_gate_input": {
+          "f0_note": "f0 is MARGIN-DERIVED and is FORBIDDEN at the smoke",
+          "forbidden_examples": [
+            "paired_mean_margin",
+            "paired_z",
+            "elo",
+            "winrate",
+            "W",
+            "D",
+            "L",
+            "f0",
+            "z_D",
+            "per_deck_margin"
+          ],
+          "forbidden_present": [],
+          "keys": [
+            "band_registry_claimed",
+            "band_seed_start",
+            "band_tier",
+            "cand_leaf_hash",
+            "carc_rs_binary_sha",
+            "carc_rs_build",
+            "champ_prefix_ms_per_move",
+            "games_per_sec",
+            "ms_ratio_cand_over_opp",
+            "n_failed",
+            "rung_ms_per_move",
+            "rust_toolchain",
+            "secs_per_game",
+            "tiearb_errors_total",
+            "tiearb_fire_rate_on_tile_plies",
+            "tiearb_fired_plies_total",
+            "tiearb_first_error",
+            "tiearb_mean_arms",
+            "tiearb_partial_argmax_total",
+            "tiearb_phi",
+            "tiearb_pickchange_rate",
+            "tiearb_playouts_total",
+            "tiearb_secs_per_game",
+            "tiearb_tile_plies_total",
+            "wall_secs",
+            "worker_secs_per_game",
+            "workers"
+          ],
+          "mode": "FAIL-CLOSED: an unlisted key is a REFUSAL, not a warning",
+          "ok": true,
+          "surface": "EMITTER (write) \u2014 \u00a79.2 sentence 2",
+          "whitelist": [
+            "band_registry_claimed",
+            "band_seed_start",
+            "band_tier",
+            "cand_leaf_hash",
+            "carc_rs_binary_sha",
+            "carc_rs_build",
+            "champ_prefix_ms_per_move",
+            "games_per_sec",
+            "ms_ratio_cand_over_opp",
+            "n_failed",
+            "production_knobs",
+            "rung_ms_per_move",
+            "rust_toolchain",
+            "secs_per_game",
+            "smoke_utc",
+            "tiearb_errors_total",
+            "tiearb_fire_rate_on_tile_plies",
+            "tiearb_fired_plies_total",
+            "tiearb_first_error",
+            "tiearb_mean_arms",
+            "tiearb_partial_argmax_total",
+            "tiearb_phi",
+            "tiearb_pickchange_rate",
+            "tiearb_playouts_total",
+            "tiearb_secs_per_game",
+            "tiearb_tile_plies_total",
+            "wall_secs",
+            "worker_secs_per_game",
+            "workers"
+          ]
+        },
+        "worker_secs_per_game": 788.7993749999999
+      },
+      "halt_record_on_known_good": {
+        "bar": 1392.0375,
+        "committed": 928.025,
+        "evaluable": true,
+        "graded_cell": "CELL_B64",
+        "graded_on": "\u00a79.3 grades CELL_B64 ONLY \u2014 the one cell whose cost is MEASURED rather than projected. CELL_B32's realized cost is printed against its projection and graded NOWHERE (\u00a79.4); grading a 1.50x bar against a projection would be grading a model against itself.",
+        "halt": false,
+        "multiple": 1.5,
+        "on_halt": "\u26d4 the real cells are NOT launched, the smoke numbers and the revised bill are reported, and the decision returns to the OWNER. No re-tuning of B, the trigger, J, eps or the playout is licensed by a HALT \u2014 the only permitted responses are STOP, or the OWNER RE-FUNDS at the realized cost. \u26d4 There is NO override flag: a halt is not a switch the executor flips.",
+        "one_sided": "an overrun HALTS, an underrun proceeds",
+        "realized": 788.7993749999999,
+        "why": "CELL_B64 realized 788.799 worker-s/game <= 1392.037 (= 1.5 x 928.025, MEASURED on the b64 cell's WIDE)"
+      },
+      "marker": "[post-smoke]",
+      "note": "the GATE surface (forbidden OUTCOME keys at any depth) evaluated against the b64 cell's own SMOKE.json; the EMITTER whitelist result is reported beside it and is NOT a gate input (RULING 1). \u2b50 The launched-anyway conjunct is exercised with cells_ran=True \u2014 the REAL state of that completed run \u2014 so it is graded on a genuine observation, not on a convenient default.",
+      "scaled": "expected_knobs None \u2014 the b64 cell's SMOKE.json predates the production_knobs / smoke_utc keys DESIGN \u00a79.2 adds here, so the FIRST conjunct is not evaluable on it. \u26a0\ufe0f Grading it verbatim would report a FAIL about that cell's emitter VINTAGE, not about this row. The halt and outcome-key conjuncts bind unchanged.",
+      "scope": "[RUN]",
+      "smoke_path": "/mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/smoke/SMOKE.json",
+      "status": "PASS",
+      "whitelist_forbidden_present": []
+    },
+    "G-STAT": {
+      "D_block_on_known_good": {
+        "CI90": [
+          0.653477128084446,
+          2.779856205248887
+        ],
+        "D": 1.7166666666666666,
+        "UB95": 2.779856205248887,
+        "n_common": 750,
+        "rho": 0.12367752317761468,
+        "se_D": 0.646315828925362,
+        "z_D": 2.6560801853189813
+      },
+      "detail": {
+        "CI90_label": "two-sided 90% interval \u2014 REPORTED FOR CONTEXT, adjudicates nothing",
+        "UB95_label": "ONE-SIDED 95% UPPER BOUND ON THE COST",
+        "checks": "NaN, +/-inf and absent all FAIL; se_D <= 0 FAILS",
+        "nan_inf_or_absent": [],
+        "precedence": "evaluated in \u00a73 BEFORE any branch comparison \u2014 this is what makes READ_RULE \u00a74.4's 'no branch is entered on a NaN comparison' true mechanically",
+        "se_D_positive": true,
+        "values": {
+          "CI90_hi": 2.779856205248887,
+          "CI90_lo": 0.653477128084446,
+          "D": 1.7166666666666666,
+          "UB95": 2.779856205248887,
+          "se_D": 0.646315828925362,
+          "z_CELL_B32": 7.590938710250529,
+          "z_CELL_B64": 10.883821800257772,
+          "z_D": 2.6560801853189813
+        }
+      },
+      "marker": "[post-cells]",
+      "note": "verbatim \u2014 z_D from the b64 cell's own WIDE\u2212NARROW contrast, including UB95(D), the CI90 bounds and the se_D > 0 clause",
+      "scope": "[RUN]",
+      "status": "PASS"
+    },
+    "G-TOOL": {
+      "consumed_named_addresses": [
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64.json",
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B16.json",
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64.json",
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B16.json"
+      ],
+      "detail": {
+        "authority": "PREFLIGHT_${HOST}_FIRST_B*.json, not the manifests",
+        "binary_sha_rule": "carc_rs_binary_sha is BOX-LOCAL and is NEVER compared across boxes (the .so is not machine-reproducible)",
+        "carc_rs_build_by_host": {
+          "Doctor": [
+            "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned"
+          ],
+          "laptop-wsl": [
+            "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned"
+          ]
+        },
+        "conjunct": "EQUALITY of carc_rs_build across boxes, AND NOTHING ELSE",
+        "distinct_builds": [
+          "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned"
+        ],
+        "mixed_within_a_host": {},
+        "n_hosts": 2,
+        "unpinned_is_normal": "\u26d4 '+rustcunpinned' is the NORMAL production value (rust_agent.py:372) and PASSES provided both boxes emit it \u2014 this campaign's THIRD unsatisfiable-gate catch. If pinned toolchains are wanted that is a change to WORKERS.conf::RUST_TOOLCHAIN, NEVER a gate conjunct that voids the run."
+      },
+      "marker": "[pre-run]+[post-cells]",
+      "note": "\u2b50 THE ROW THE PRECONDITION EXISTS FOR \u2014 a version that treated '+rustcunpinned' as a sentinel would have FAILED this healthy run. The conjunct is cross-box EQUALITY and nothing else. Both hosts emit one identical carc_rs-\u2026+rustcunpinned string at the NAMED addresses.",
+      "scope": "[RUN]",
+      "status": "PASS",
+      "superseded_rotations_REPORT_ONLY": [
+        {
+          "B": 64,
+          "carc_rs_build": "carc_rs-0.1.0+587ca17a8655+rustcunpinned",
+          "host": "Doctor",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64_1787174832.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        },
+        {
+          "B": 64,
+          "carc_rs_build": "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned",
+          "host": "Doctor",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64_1787201781.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        },
+        {
+          "B": 16,
+          "carc_rs_build": "carc_rs-0.1.0+587ca17a8655+rustcunpinned",
+          "host": "Doctor",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B16_1787174879.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        },
+        {
+          "B": 16,
+          "carc_rs_build": "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned",
+          "host": "Doctor",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B16_1787201832.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        },
+        {
+          "B": 64,
+          "carc_rs_build": "carc_rs-0.1.0+587ca17a8655+rustcunpinned",
+          "host": "laptop-wsl",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64_1787174974.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        },
+        {
+          "B": 64,
+          "carc_rs_build": "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned",
+          "host": "laptop-wsl",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64_1787201858.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        },
+        {
+          "B": 16,
+          "carc_rs_build": "carc_rs-0.1.0+587ca17a8655+rustcunpinned",
+          "host": "laptop-wsl",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B16_1787175009.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        },
+        {
+          "B": 16,
+          "carc_rs_build": "carc_rs-0.1.0+a5aa4a5e8573+rustcunpinned",
+          "host": "laptop-wsl",
+          "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B16_1787201893.json",
+          "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+        }
+      ]
+    }
+  },
+  "rows_with_partial_conjunct_coverage": {
+    "G-SMOKE": {
+      "conjunct1_production_knobs_before_game_1": "NOT EVALUATED (scaled)"
+    }
+  },
+  "schema": "carcassonne-b32v64-knowngood/v1",
+  "share": "/mnt/c/carc-shared/tiearb_widening_20260817_b64_cell"
+}
