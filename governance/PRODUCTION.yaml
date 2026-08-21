@@ -67,6 +67,22 @@ budget_authorized_by: >
   champion pays ~4.26× sequential wall-clock (13.76 vs 3.23 s/move) unless it is run k-parallel. Throughput eval farms
   are game-parallel and do NOT benefit from the split (workers already saturate the box), so budget future n=400
   confirms against this champion at ~4× the old wall-clock, or run fewer/cheaper screens.
+tiearb_folded_in: "2026-08-20"   # root tie-arbiter armed on the DESKTOP deploy: B=64 CRN playout worlds per tied arm, J<=4 arms.
+tiearb_authorized_by: >
+  Joshua, 2026-08-20 ('I'm buying b64') — the fresh owner wall-clock ruling that the B-COSTKILL branch licensed
+  (measurement/tiearb_widening_20260817/b64_cell/OWNER_RULING_20260820.md). EVIDENCE: results.csv
+  `tiearb_widening_b64_gamecell_WIDE_B64_minus_NARROW_B16_n750decks_b139e9` — WIDE (champion + arbiter B=64)
+  +63.95±9.12 elo vs the unmodified champion (wr 0.591, n=1,500, band 139e9) and primary D = WIDE−NARROW
+  +1.7167 pts/game deck-paired, z_D +2.6561 over the committed 2σ floor +1.427, 13/13 gates PASS.
+  ⚠️ THE VERDICT OF RECORD REMAINS B-COSTKILL — this fold does not rewrite it: the waiver W was FALSE fail-closed
+  before game 1 by design. The deploy is a FRESH owner decision on that evidence — exactly the branch's licensed
+  follow-up (i); precedent for config promotion on an owner 'yes' over existing gated evidence: the 2026-07-29
+  k8×1376 budget promotion. COST, accepted by the ruling: rho_wall(64) = 2.4897 sequential amortized arbiter
+  overhead vs the retired N4 bar 1.20 (≈3.5× total per move; the arbiter fires POST-search at the root on
+  already-resolved ties, so the extra wall buys no extra search). DESKTOP ONLY: rho_phone(64) ≈ 22–24 — the
+  phone keeps playing the unmodified champion. Rulers/anchors are NOT re-anchored by this fold (fixed eval
+  sides stay unmodified-champion; the curve125 ambient-contamination warning pattern applies). J stays 4
+  (rung3_r5 X-INCONCLUSIVE — no licence to widen J). No claim minted; self-anchored caveat applies.
 supersedes:
   - deep_classical_v29_bmild_cap8   # HeuristicMCTS random-expansion UCT (C=3.0, one-random-child/sim, no priors) @ h6400
                                      # + exact-K<=4 — the PRIOR champion (2026-07-02 .. 2026-07-07); now LINEAGE. SAME v2.9
@@ -155,6 +171,22 @@ champion:
     fair_agent: FairHeuristicPriorAgent # src/carcassonne_ai/fair_agent.py — PIMC wrapper of the champion HeuristicPriorAgent.
                                         # eval_fair_puct.py --k-dets/--sims defaults track the constructor defaults; the
                                         # AUTHORITATIVE budget is these two YAML fields, read by champion_factory.
+    tiearb:                             # ⭐ ROOT TIE-ARBITER (folded 2026-08-20, tiearb_authorized_by above). RUST-ONLY:
+                                        # FairAgentRs post-search root tie-break — on a resolved tie it plays B CRN
+                                        # playout worlds per tied arm (J caps the arm set, deterministic self-anchored
+                                        # cap draw) and argmaxes the mean. An armed non-rust champion RAISES
+                                        # (play_harness._champ_tiearb_telemetry), so this cannot silently no-op.
+      enabled: true                     # DESKTOP deploy only. Mobile stays OFF — rho_phone(64) ≈ 22–24, unsolved third currency.
+      B: 64                             # PROMOTED 2026-08-20 from the measured-but-never-deployed 16 by the owner ruling above.
+      J: 4                              # UNCHANGED — rung3_r5 read X-INCONCLUSIVE; no licence to widen J.
+      mode: argmax
+      salt: "tiearb2-deploy-v1"
+      eps: 0.0
+      # ⚠️ WIRING: the play harness does NOT read this block yet. Arming is explicit:
+      #   scripts/human_anchor/play_harness.py --human 0 --backend rust --tiearb-enabled --tiearb-b 64
+      # The harness flag default is still --tiearb-b 16, so `--tiearb-b 64` is REQUIRED — same
+      # deliberately-partial-wiring class as the desktop.parallel_workers note below. Cost:
+      # ~3.5× per move sequential (≈6 s/move vs the ~1.8 s champion baseline), fires on tied plies only.
     # ---------------------------------------------------------------------------------
     # DEPLOY EXECUTION PROFILES (added 2026-07-29 with the k8×1376 promotion).
     #
