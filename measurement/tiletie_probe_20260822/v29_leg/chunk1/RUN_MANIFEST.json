@@ -1,0 +1,194 @@
+{
+  "schema": "carcassonne-tiletie-probe/v1",
+  "mode": "score-v29",
+  "generated_utc": "2026-08-22T07:21:41+00:00",
+  "policy": "v29-greedy",
+  "policy_meta": {
+    "continuation_agent": "probe_pickers.V29GreedyContinuation",
+    "family": "IN-FAMILY with the agents under test: no search (1-ply argmax) but the PRODUCTION curve125 flat leaf (a36d2e15a3b3d71d), i.e. the same leaf the champion is steered by. NOT the out-of-family discriminator tier1-greedy is \u2014 a positive sign here CAN be same-family self-preference, and must be read as such.",
+    "uses_oracle_sims": false,
+    "registered_by": "scripts/tiletie/probe_pickers.register_v29_policy (process-local; oracle_score_pilot.py is NOT edited on disk)"
+  },
+  "leaf_provenance": {
+    "harness_leaf_hash": "a36d2e15a3b3d71d",
+    "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+    "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "plan_dir": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled",
+  "chunk": "1/1",
+  "chunk_seed": 20260822,
+  "n_positions": 733,
+  "n_legs": 1468,
+  "m": 32,
+  "world_seed_salt": "tiletie-v1",
+  "workers": 16,
+  "out_root": "measurement/tiletie_probe_20260822/v29_leg/chunk1",
+  "legs": [
+    {
+      "key": "app_aug2/leg1",
+      "profile": "app_aug2",
+      "leg": "leg1",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_app_aug2_leg1.jsonl",
+      "n": 3,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/app_aug2/leg1",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "app_aug2/leg2",
+      "profile": "app_aug2",
+      "leg": "leg2",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_app_aug2_leg2.jsonl",
+      "n": 2,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/app_aug2/leg2",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "app_aug2/leg3",
+      "profile": "app_aug2",
+      "leg": "leg3",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_app_aug2_leg3.jsonl",
+      "n": 2,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/app_aug2/leg3",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "fixed_v1/leg1",
+      "profile": "fixed_v1",
+      "leg": "leg1",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_fixed_v1_leg1.jsonl",
+      "n": 53,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/fixed_v1/leg1",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "fixed_v1/leg2",
+      "profile": "fixed_v1",
+      "leg": "leg2",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_fixed_v1_leg2.jsonl",
+      "n": 27,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/fixed_v1/leg2",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "fixed_v1/leg3",
+      "profile": "fixed_v1",
+      "leg": "leg3",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_fixed_v1_leg3.jsonl",
+      "n": 14,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/fixed_v1/leg3",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "fixed_v1/leg4",
+      "profile": "fixed_v1",
+      "leg": "leg4",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_fixed_v1_leg4.jsonl",
+      "n": 4,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/fixed_v1/leg4",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "walled/leg1",
+      "profile": "walled",
+      "leg": "leg1",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_walled_leg1.jsonl",
+      "n": 677,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/walled/leg1",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "walled/leg2",
+      "profile": "walled",
+      "leg": "leg2",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_walled_leg2.jsonl",
+      "n": 409,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/walled/leg2",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "walled/leg3",
+      "profile": "walled",
+      "leg": "leg3",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_walled_leg3.jsonl",
+      "n": 216,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/walled/leg3",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "key": "walled/leg4",
+      "profile": "walled",
+      "leg": "leg4",
+      "positions_path": "measurement/tiletie_probe_20260822/v29_leg/chunk1/legs/positions_walled_leg4.jsonl",
+      "n": 61,
+      "out": "measurement/tiletie_probe_20260822/v29_leg/chunk1/v29-greedy/walled/leg4",
+      "rc": 0,
+      "verify": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    }
+  ],
+  "crn_note": "world_seed/playout_seed come from oracle_score_pilot, IMPORTED and never re-derived; salt and M are FORCED by the existing clair-puct records (tiearb DESIGN \u00a73.3) and are not a choice.",
+  "governance": "0 games, no band, no results.csv row, no claim id.",
+  "git": "f93970cd",
+  "wall_secs": 1030.4,
+  "problems": [],
+  "cost": {
+    "n_records": 1468,
+    "n_rids": 733,
+    "worker_secs": 15176.2,
+    "playouts": 93952,
+    "worker_secs_per_playout": 0.1615
+  }
+}
