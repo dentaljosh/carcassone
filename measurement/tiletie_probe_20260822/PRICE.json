@@ -1,0 +1,38 @@
+{
+  "schema": "carcassonne-tiletie-probe/v1",
+  "mode": "price",
+  "generated_utc": "2026-08-22T07:11:24+00:00",
+  "rules_profile": "walled",
+  "leaf_provenance": {
+    "harness_leaf_hash": "a36d2e15a3b3d71d",
+    "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+    "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "per_policy": {
+    "v29-greedy": {
+      "n_playouts": 20,
+      "mean_s": 0.09939672265245462,
+      "median_s": 0.10443300350016216,
+      "p90_s": 0.17160801659774733,
+      "min_s": 0.028129500002251007,
+      "max_s": 0.21062901699042413,
+      "mean_plies": 62.8
+    },
+    "tier1-greedy": {
+      "n_playouts": 20,
+      "mean_s": 1.223002727500716,
+      "median_s": 1.4337082134952652,
+      "p90_s": 1.9502521089962104,
+      "min_s": 0.425975930003915,
+      "max_s": 2.0798140059923753,
+      "mean_plies": 62.8
+    }
+  },
+  "corpus": {
+    "legs": 1468,
+    "m": 32,
+    "playouts_full_leg": 93952
+  },
+  "host": "Doctor",
+  "warning": "SEQUENTIAL single-thread timings. A W-parallel box is DRAM-latency-bound; divide by W only after a real bench."
+}

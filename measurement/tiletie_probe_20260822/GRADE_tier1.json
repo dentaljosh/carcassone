@@ -1,0 +1,129 @@
+{
+  "schema": "carcassonne-tiletie-probe/v1",
+  "mode": "grade",
+  "picker": "tier1",
+  "generated_utc": "2026-08-22T07:10:45+00:00",
+  "git": "141fe827",
+  "knowngood": {
+    "schema": "carcassonne-tiletie-probe/v1",
+    "gate": "KNOWNGOOD",
+    "ok": true,
+    "tol": 1e-09,
+    "published": {
+      "arb": 0.20645928315484208,
+      "ora": 0.2545233140066622,
+      "F": 0.8111605962722847
+    },
+    "reproduced": {
+      "arb": 0.20645928315484208,
+      "ora": 0.2545233140066622,
+      "F": 0.8111605962722847,
+      "n": 733,
+      "n_roots": 399
+    },
+    "max_abs_position_delta": 0.0,
+    "worst_rid": null,
+    "delta": {
+      "arb": 0.0,
+      "ora": 0.0,
+      "F": 0.0
+    },
+    "n_of_record": [
+      733,
+      399
+    ],
+    "source_readout": "measurement/tiearb_20260816/READOUT.json",
+    "generated_utc": "2026-08-22T07:10:44+00:00"
+  },
+  "blocks": {
+    "tier1": {
+      "n": 733,
+      "n_roots": 399,
+      "n_dropped": 0,
+      "arb": {
+        "n": 733,
+        "n_roots": 399,
+        "mean": 0.20645928315484208,
+        "se_cluster": 0.05506829789378417,
+        "boot_mean": 0.20637765722764465,
+        "boot_lo": 0.09734086302568841,
+        "boot_hi": 0.3152238959025977,
+        "se_boot": 0.05546811758422655,
+        "z": 3.7491495297904636,
+        "sd_positions": 1.5818554861804046,
+        "frac_boot_le_0": 0.0002
+      },
+      "ora": {
+        "n": 733,
+        "n_roots": 399,
+        "mean": 0.2545233140066622,
+        "se_cluster": 0.05978286294244883,
+        "boot_mean": 0.2543753755493542,
+        "boot_lo": 0.1390646318778077,
+        "boot_hi": 0.37310175216676045,
+        "se_boot": 0.05974975738770062,
+        "z": 4.25746278246467,
+        "sd_positions": 1.6526094556835598,
+        "frac_boot_le_0": 0.0
+      },
+      "F": 0.8111605962722847,
+      "F_boot_median": 0.8135869407755618,
+      "F_lo": 0.4495228911399793,
+      "F_hi": 1.320253468632722,
+      "F_finite_reps": 20000.0,
+      "G-BOOT": 0.0,
+      "G-BOOT_fired": false,
+      "F_fixed": 0.736565405475712,
+      "pickchg": 0.762619372442019,
+      "sel_agree": 0.25375170532060026,
+      "elo_arb": 20.15241859743538
+    }
+  },
+  "witnesses": {},
+  "integrity": {
+    "if": {
+      "values_a_drift": 0,
+      "seed_drift": 0,
+      "crn_unverified": 0,
+      "checksum_failed": 0,
+      "arm_index_mismatch": 0,
+      "zero_distinct_afterstates": 0
+    },
+    "arb": {
+      "values_a_drift": 0,
+      "seed_drift": 0,
+      "crn_unverified": 0,
+      "checksum_failed": 0,
+      "arm_index_mismatch": 0,
+      "zero_distinct_afterstates": 0
+    }
+  },
+  "cross_if_vs_tier1": {
+    "compared_legs": 1468,
+    "crn_cross_mismatch": 0,
+    "seed_cross_mismatch": 0,
+    "arm_cross_mismatch": 0,
+    "examples": []
+  },
+  "completion": {
+    "planned": 733,
+    "absent_if": 0,
+    "absent_arb": 0,
+    "armset_mismatch": 0,
+    "partial": 0,
+    "champ_arm_absent": 0,
+    "analysed": 733,
+    "armset_mismatch_rids": [],
+    "champ_absent_rids": [],
+    "armset_mismatch_frac": 0.0,
+    "armset_frac_note": "denominator = positions where BOTH judges had at least one scored leg, i.e. analysed + armset-mismatched."
+  },
+  "arb_roots": [
+    "/mnt/c/carc-shared/tiletie_oof_20260814/merged/tier1-greedy",
+    "/mnt/c/carc-shared/tiletie_oof_20260814/pilot/tier1-greedy",
+    "/mnt/c/carc-shared/tiearb_20260816/merged/tier1-greedy"
+  ],
+  "ceiling_caveat": "CEILING CAVEAT (LEVER_INDEX 'arbiter playout-policy upgrade', verbatim): on THIS corpus the entire judge-quality ceiling is ora - arb = +0.048 pts/tied ply at the point estimate, and F = 0.811 has CI95 [0.450, 1.320] \u2014 the CI INCLUDES 1, i.e. includes ZERO remaining headroom. Any picker's gain here is an unknown fraction of an effect that is itself consistent with zero. This is an OFFLINE probe of a B=16-grade selection; the DEPLOYED arbiter is B=64 and captures more, so the residual gap at deploy is plausibly smaller still.",
+  "net_asymmetry_caveat": "NET FOLD ASYMMETRY: tier1/v29 select on M/2 worlds and are priced on the disjoint M/2; the net's pick is world-independent, so its two folds agree and its arb is a FULL-M difference \u2014 same estimand, LESS noise. Its winner's-curse control is the ROOT split, not the world split. Do not read a net-vs-rollout gap of order the noise as a strength difference.",
+  "governance": "0 games, no band, no results.csv row, no claim id. The tiearb holdout is SPENT; nothing here re-opens a blind slice."
+}
