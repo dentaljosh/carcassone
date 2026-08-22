@@ -1,0 +1,989 @@
+{
+  "adjudicated": false,
+  "adjudicates": "NOTHING \u2014 no branch, no bar, no statistic moves on this. It decides only whether the run pauses.",
+  "branch": null,
+  "exception_disclosure": "\u26a0\ufe0f A DELIBERATE, DISCLOSED EXCEPTION to 'no owner call adjudicates any outcome': it adjudicates NOTHING \u2014 no branch, no bar, no statistic moves on it \u2014 it decides only whether the run pauses.",
+  "failed_accounting": {
+    "F_CELL_B32": 3,
+    "F_CELL_B64": 0,
+    "clause2_candidate_correlated": false,
+    "n_failed_total": 3,
+    "per_cell": {
+      "CELL_B32": {
+        "clause1_ok": true,
+        "n_attempted": 2997,
+        "n_failed": 3,
+        "rate": 0.001001001001001001,
+        "rate_bar": 0.02
+      },
+      "CELL_B64": {
+        "clause1_ok": true,
+        "n_attempted": 3000,
+        "n_failed": 0,
+        "rate": 0.0,
+        "rate_bar": 0.02
+      }
+    }
+  },
+  "failure_surface_REPORT_ONLY": {
+    "emitter": "eval_fair_puct.py::_failure_block (since 2026-08-14)",
+    "per_cell": {
+      "CELL_B32": {
+        "failed_cells": [
+          {
+            "a_seat": 1,
+            "attempts": 1,
+            "exc": "IndexError: board row index 35 out of range (len 35)",
+            "exc_type": "PanicException",
+            "permanent": false,
+            "seed": 140000001096,
+            "window_diag": null,
+            "window_truncation": false
+          },
+          {
+            "a_seat": 0,
+            "attempts": 1,
+            "exc": "IndexError: board row index 35 out of range (len 35)",
+            "exc_type": "PanicException",
+            "permanent": false,
+            "seed": 140000001115,
+            "window_diag": null,
+            "window_truncation": false
+          },
+          {
+            "a_seat": 0,
+            "attempts": 1,
+            "exc": "IndexError: board row index 35 out of range (len 35)",
+            "exc_type": "PanicException",
+            "permanent": false,
+            "seed": 140000001286,
+            "window_diag": null,
+            "window_truncation": false
+          }
+        ],
+        "failure_rate": 0.001,
+        "failure_rate_trigger": 0.005,
+        "fields_present": [
+          "failed_cells",
+          "failure_rate",
+          "failure_rate_trigger",
+          "resolved_failed_cells",
+          "validity_trigger_fired"
+        ],
+        "n_failed": 3,
+        "resolved_failed_cells": [],
+        "tiearb_error_rate_on_fired": 0.0,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null,
+        "tiearb_partial_argmax_total": 0,
+        "validity_trigger_fired": false
+      },
+      "CELL_B64": {
+        "failed_cells": [],
+        "failure_rate": 0.0,
+        "failure_rate_trigger": 0.005,
+        "fields_present": [
+          "failed_cells",
+          "failure_rate",
+          "failure_rate_trigger",
+          "resolved_failed_cells",
+          "validity_trigger_fired"
+        ],
+        "n_failed": 0,
+        "resolved_failed_cells": [],
+        "tiearb_error_rate_on_fired": 0.0,
+        "tiearb_errors_total": 0,
+        "tiearb_first_error": null,
+        "tiearb_partial_argmax_total": 0,
+        "validity_trigger_fired": false
+      }
+    },
+    "status": "REPORT ONLY \u2014 wired into NO conjunct (DESIGN \u00a713.2 item 2)",
+    "wired_into_conjuncts": []
+  },
+  "gates": {
+    "G-BAND": {
+      "detail": {
+        "band_claim": {
+          "band": 140000000000,
+          "claimed_before_game_1": true,
+          "expected_band": 140000000000,
+          "raw": "140000000000\nB=32 vs B=64 TIE-ARBITER LADDER GAME CELL: two deck-paired cells on ONE band and the SAME decks, n=1500 decks x 2 seatings = 3000 games each. CELL_B32 = production champion + root tie-arbiter B=32/J=4; CELL_B64 = production champion + root tie-arbiter B=64/J=4 (a fresh-band replicate of the shape DEPLOYED 2026-08-20). Opponent BOTH cells = the UNMODIFIED production champion a36d2e15a3b3d71d. Both arms FAIR PIMC k8x1376=11008 (eval_fair_puct.py --info fair --opponent fair-champion), fixed_v1, rust backend both sides, exact-K 2, salt tiearb2-deploy-v1, mode argmax, eps 0.0. PRIMARY = deck-paired D = M_B64 - M_B32 in pts/game with its z; each cell's elo/wr vs the common champion opponent is SECONDARY and adjudicates nothing.\nclaimed 2026-08-20",
+          "source": "measurement/tiearb_widening_20260817/b32v64_cell/BAND_CLAIM.json"
+        },
+        "band_is_expected": true,
+        "band_seed_start": {
+          "CELL_B32": {
+            "band_seed_start": 140000000000,
+            "matches_expected": true,
+            "resolved_at": "config.band_seed_start"
+          },
+          "CELL_B64": {
+            "band_seed_start": 140000000000,
+            "matches_expected": true,
+            "resolved_at": "config.band_seed_start"
+          }
+        },
+        "claimed_before_game_1": true,
+        "deck_range": "140000000000..140000001499",
+        "decks_only_in": {
+          "CELL_B32": [],
+          "CELL_B64": [
+            140000001096,
+            140000001115,
+            140000001286
+          ]
+        },
+        "expected_band": 140000000000,
+        "n_decks": {
+          "CELL_B32": 1497,
+          "CELL_B64": 1500
+        },
+        "same_band": true,
+        "same_decks": false,
+        "semantics": "four conjuncts, ALL required: a pre-dated claim sentinel, the sentinel naming the PINNED band, both cells on that same band, and identical realized deck sets",
+        "sentinel_band": 140000000000,
+        "sentinel_matches_expected": true
+      },
+      "marker": "[pre-run]+[post-cells]",
+      "ok": false,
+      "scope": "[RUN]"
+    },
+    "G-DIVERGE": {
+      "detail": {
+        "anomaly": false,
+        "anomaly_bar": 0.95,
+        "dilution_sqrt_one_minus_f0": 0.9939697942612782,
+        "expected_one_minus_f0": 0.98,
+        "f0": 0.012024048096192385,
+        "floor": 0.1,
+        "headroom_x": 9.799999999999999,
+        "n_common_decks": 1497,
+        "n_identical_decks": 18,
+        "one_minus_f0": 0.9879759519038076,
+        "role": "INERTNESS DETECTOR, not a power check",
+        "why": "the surface diverges above the inertness floor"
+      },
+      "marker": "[post-cells]",
+      "ok": true,
+      "scope": "[RUN]"
+    },
+    "G-FAILED": {
+      "detail": {
+        "F_CELL_B32": 3,
+        "F_CELL_B64": 0,
+        "clause2_candidate_correlated": false,
+        "clause2_rule": "max(F) >= 5 AND max(F) > 3 \u00d7 max(min(F), 1)",
+        "clause3_confirmation": null,
+        "clause3_exception_disclosure": "\u26a0\ufe0f A DELIBERATE, DISCLOSED EXCEPTION to 'no owner call adjudicates any outcome': it adjudicates NOTHING \u2014 no branch, no bar, no statistic moves on it \u2014 it decides only whether the run pauses.",
+        "clause3_halt": true,
+        "clause3_rule": "AS NARROWED (RULING 3, carried VERBATIM): if F_w + F_n > 0 the read-out prints every failed game's raw failure record VERBATIM and the run HALTS for owner escalation BEFORE ADJUDICATION unless every failure is manually confirmed to be the known WindowTruncationError class. The confirmation is a HUMAN ACT recorded in the read-out and it gates ESCALATION, never a branch.",
+        "clause3_vacuous_at_zero": false,
+        "failure_surface_REPORT_ONLY": {
+          "emitter": "eval_fair_puct.py::_failure_block (since 2026-08-14)",
+          "per_cell": {
+            "CELL_B32": {
+              "failed_cells": [
+                {
+                  "a_seat": 1,
+                  "attempts": 1,
+                  "exc": "IndexError: board row index 35 out of range (len 35)",
+                  "exc_type": "PanicException",
+                  "permanent": false,
+                  "seed": 140000001096,
+                  "window_diag": null,
+                  "window_truncation": false
+                },
+                {
+                  "a_seat": 0,
+                  "attempts": 1,
+                  "exc": "IndexError: board row index 35 out of range (len 35)",
+                  "exc_type": "PanicException",
+                  "permanent": false,
+                  "seed": 140000001115,
+                  "window_diag": null,
+                  "window_truncation": false
+                },
+                {
+                  "a_seat": 0,
+                  "attempts": 1,
+                  "exc": "IndexError: board row index 35 out of range (len 35)",
+                  "exc_type": "PanicException",
+                  "permanent": false,
+                  "seed": 140000001286,
+                  "window_diag": null,
+                  "window_truncation": false
+                }
+              ],
+              "failure_rate": 0.001,
+              "failure_rate_trigger": 0.005,
+              "fields_present": [
+                "failed_cells",
+                "failure_rate",
+                "failure_rate_trigger",
+                "resolved_failed_cells",
+                "validity_trigger_fired"
+              ],
+              "n_failed": 3,
+              "resolved_failed_cells": [],
+              "tiearb_error_rate_on_fired": 0.0,
+              "tiearb_errors_total": 0,
+              "tiearb_first_error": null,
+              "tiearb_partial_argmax_total": 0,
+              "validity_trigger_fired": false
+            },
+            "CELL_B64": {
+              "failed_cells": [],
+              "failure_rate": 0.0,
+              "failure_rate_trigger": 0.005,
+              "fields_present": [
+                "failed_cells",
+                "failure_rate",
+                "failure_rate_trigger",
+                "resolved_failed_cells",
+                "validity_trigger_fired"
+              ],
+              "n_failed": 0,
+              "resolved_failed_cells": [],
+              "tiearb_error_rate_on_fired": 0.0,
+              "tiearb_errors_total": 0,
+              "tiearb_first_error": null,
+              "tiearb_partial_argmax_total": 0,
+              "validity_trigger_fired": false
+            }
+          },
+          "status": "REPORT ONLY \u2014 wired into NO conjunct (DESIGN \u00a713.2 item 2)",
+          "wired_into_conjuncts": []
+        },
+        "hi_exposure_note": "\u26a0\ufe0f CELL_B64 runs 2\u00d7 the playouts per fired ply of CELL_B32 (not 4\u00d7 as the b64 cell's WIDE did over NARROW), so it carries ~2\u00d7 the per-ply exposure to the window-refusal class \u2014 directional, and it favours CELL_B32. Clause 2 binds in the direction that PROTECTS the reading.",
+        "known_class": "WindowTruncationError",
+        "n_failed_total": 3,
+        "no_class_field_at_HEAD": "eval_fair_puct emits no `diagnostic_class` / `failed_classes` field (re-checked at HEAD, DESIGN \u00a713.2 item 2), so clause 3 carries RULING 3's narrowing verbatim. The per-failure surface it DOES emit (failed_cells[].window_truncation and friends) is PRINTED and wired into NO conjunct; promoting it is a decision for a FUTURE pair.",
+        "per_cell": {
+          "CELL_B32": {
+            "clause1_ok": true,
+            "n_attempted": 2997,
+            "n_failed": 3,
+            "rate": 0.001001001001001001,
+            "rate_bar": 0.02
+          },
+          "CELL_B64": {
+            "clause1_ok": true,
+            "n_attempted": 3000,
+            "n_failed": 0,
+            "rate": 0.0,
+            "rate_bar": 0.02
+          }
+        },
+        "raw_failure_records": [],
+        "selection_effect": "window-truncation failures fire at extreme board extents, so any dropped set is CORRELATED WITH BOARD GEOMETRY \u2014 late-game, large-extent positions \u2014 and that correlation is DISCLOSED rather than argued away."
+      },
+      "marker": "[post-cells]",
+      "ok": false,
+      "scope": "[RUN]+[PER-CELL]"
+    },
+    "G-FIRE": {
+      "detail": {
+        "floor": 1.0,
+        "headroom": "\u224817\u00d7 against the realized prior",
+        "observed": {
+          "CELL_B32": {
+            "error_rate_on_fired": 0.0,
+            "floor": 1.0,
+            "ok": true,
+            "phi": 17.514848181514846,
+            "phi_effective": 17.514848181514846
+          },
+          "CELL_B64": {
+            "error_rate_on_fired": 0.0,
+            "floor": 1.0,
+            "ok": true,
+            "phi": 17.471666666666668,
+            "phi_effective": 17.471666666666668
+          }
+        },
+        "prior": {
+          "b64_cell_realized": [
+            17.5533,
+            17.4087
+          ],
+          "committed": 17.481,
+          "offline": 22.96
+        }
+      },
+      "marker": "[post-cells]",
+      "ok": true,
+      "scope": "[PER-CELL]"
+    },
+    "G-J1": {
+      "detail": {
+        "expected_equal": "a36d2e15a3b3d71d",
+        "observed": {
+          "CELL_B32": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "ok": true,
+            "resolved_at": "config.cand_leaf_hash"
+          },
+          "CELL_B64": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "ok": true,
+            "resolved_at": "config.cand_leaf_hash"
+          }
+        },
+        "read_at": "top level, then config.* (two-level, \u00a72.1)",
+        "semantics": "EQUALITY gate \u2014 a difference ABORTS; ABSENT under both levels also fails"
+      },
+      "marker": "[post-cells]",
+      "ok": true,
+      "scope": "[PER-CELL]"
+    },
+    "G-J13": {
+      "detail": {
+        "by_host": {
+          "Doctor": {
+            "32": {
+              "B": 32,
+              "B_matches_expected": true,
+              "expected_B": 32,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B32.json",
+              "two_sided_ok": true
+            },
+            "64": {
+              "B": 64,
+              "B_matches_expected": true,
+              "expected_B": 64,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64.json",
+              "two_sided_ok": true
+            }
+          },
+          "laptop-wsl": {
+            "32": {
+              "B": 32,
+              "B_matches_expected": true,
+              "expected_B": 32,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B32.json",
+              "two_sided_ok": true
+            },
+            "64": {
+              "B": 64,
+              "B_matches_expected": true,
+              "expected_B": 64,
+              "leaf_bits_unchanged": true,
+              "pick_changed": true,
+              "read": "STRICTLY at the pinned addresses \u2014 no two_sided.* fallback",
+              "source": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64.json",
+              "two_sided_ok": true
+            }
+          }
+        },
+        "expected_B": [
+          64,
+          32
+        ],
+        "expected_hosts": [
+          "Doctor",
+          "laptop-wsl"
+        ],
+        "files_consumed_other_hosts": {},
+        "files_consumed_per_host": {
+          "Doctor": [
+            {
+              "expected.B": 64,
+              "j13_witness.B": 64,
+              "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            },
+            {
+              "expected.B": 32,
+              "j13_witness.B": 32,
+              "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B32.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            }
+          ],
+          "laptop-wsl": [
+            {
+              "expected.B": 64,
+              "j13_witness.B": 64,
+              "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            },
+            {
+              "expected.B": 32,
+              "j13_witness.B": 32,
+              "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B32.json",
+              "pinned_present": {
+                "expected.B": true,
+                "j13_witness.B": true,
+                "j13_witness.pick_changed": true,
+                "j13_witness.root_leaf_value_bits_unchanged": true
+              }
+            }
+          ]
+        },
+        "n_files_consumed": 4,
+        "pinned_addresses": {
+          "B": "j13_witness.B",
+          "expected_B": "expected.B",
+          "pick_changed": "j13_witness.pick_changed",
+          "root_leaf_value_bits_unchanged": "j13_witness.root_leaf_value_bits_unchanged"
+        },
+        "preflight_resolution": {
+          "mode": "RESOLVED from the NAMED addresses",
+          "n_named": 4,
+          "n_rotations_excluded": 4,
+          "named_pattern": "PREFLIGHT_{host}_FIRST_B{B}.json",
+          "verdicts_dir": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts"
+        },
+        "semantics": "for EACH host, BOTH B values appear across that host's witness records, each with both booleans true and expected.B == j13_witness.B. \u26a0\ufe0f ABSENT B \u21d2 FAIL \u2014 never 'assume the file's B' (RULING 2)",
+        "strictness": "\u26d4 STRICTLY PINNED \u2014 the b64 cell's two_sided.* fallback is GONE. b32v64_cell/preflight.sh asserts all four pinned addresses on the emitting host before that host's game 1 (DESIGN \u00a713.1), so a missing pinned address is an EMITTER defect and must fail loudly."
+      },
+      "marker": "[pre-run]",
+      "ok": true,
+      "scope": "[PER-CELL]"
+    },
+    "G-J4": {
+      "detail": {
+        "observed": {
+          "CELL_B32": {
+            "cand_tiearb": {
+              "B": 32,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 32,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              32
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          },
+          "CELL_B64": {
+            "cand_tiearb": {
+              "B": 64,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "config_ok": true,
+            "expected": {
+              "B": 64,
+              "J": 4,
+              "enabled": true,
+              "eps": 0.0,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1"
+            },
+            "ok": true,
+            "resolved_at": "cand_tiearb",
+            "singletons_ok": true,
+            "tiearb_B": [
+              64
+            ],
+            "tiearb_J": [
+              4
+            ],
+            "tiearb_modes": [
+              "argmax"
+            ]
+          }
+        },
+        "semantics": "a mixed-B cell is a VOID, not a finding"
+      },
+      "marker": "[post-cells]",
+      "ok": true,
+      "scope": "[PER-CELL]"
+    },
+    "G-N": {
+      "detail": {
+        "cell_decks_planned": 1500,
+        "cell_games_floor": 2400,
+        "cell_games_planned": 3000,
+        "deck_clause_independently_binding": "two cells can each clear the game floor while overlapping on fewer than the deck floor of COMMON decks \u2014 that weakens D and still voids",
+        "deck_clause_reachable": true,
+        "game_clause_reachable": true,
+        "n_common": 1497,
+        "n_common_floor": 1200,
+        "n_common_units": "DECKS",
+        "n_games": {
+          "CELL_B32": 2997,
+          "CELL_B64": 3000
+        },
+        "reachability_note": "1200 <= the 1500-deck ceiling and 2400 <= the 3000-game ceiling \u2014 BOTH clauses are reachable (Stage 2's version was unreachable by construction)",
+        "same_80pct_bar": "2400 games IS 1200 decks"
+      },
+      "marker": "[post-cells]",
+      "ok": true,
+      "scope": "[RUN]+[PER-CELL]"
+    },
+    "G-NEST": {
+      "detail": {
+        "anchor": null,
+        "claim": "B=64's worlds j in 0..31 are byte-identical to B=32's ENTIRE world set \u2014 B=32 is a strict SUBSET of B=64",
+        "n_distinct_worlds_hi": null,
+        "n_distinct_worlds_lo": null,
+        "present": true,
+        "runtime": {
+          "cap_seed_identical": true,
+          "first_differing_j": null,
+          "n_compared": 32,
+          "n_distinct_worlds_hi": 64,
+          "n_distinct_worlds_lo": 32,
+          "playout_seeds_identical": true,
+          "select_seed_identical": true,
+          "world_seeds_identical": true,
+          "world_sha_prefix": [
+            "907d87f52d5b09d6",
+            "ebaca165d47245f0",
+            "ed97c0cdc6221403",
+            "8405c447dcae31bd",
+            "fde70296f3b95969",
+            "fe23c568bdf0e03a",
+            "31d0e00fb93d57a0",
+            "82ad32067426d2a8",
+            "fe922a4c15376289",
+            "2861197b039df0c6",
+            "1ced12283301cf75",
+            "9b27cd181b2a8c60",
+            "3b4694e8970db445",
+            "09ac64a0f21a09c8",
+            "f589d68414ffc224",
+            "1f6190cbf18bcfb9",
+            "4bfa5d987c4ee829",
+            "07b3f425b2684669",
+            "6bf947b80a18b016",
+            "246dc71fcb0b0f7d",
+            "12f07f1dec4b5ff5",
+            "cf5096e5448327be",
+            "7d26254368c43872",
+            "96093898f920f3a7",
+            "ea866738428b173d",
+            "e28841f458c71cb9",
+            "c3184ebab7be6d02",
+            "e33bf4534cec620e",
+            "5051da7274671071",
+            "9bb162ecfea44078",
+            "9f923bbc74874bd4",
+            "4b472768756e52f6"
+          ],
+          "worlds_byte_identical": true
+        },
+        "sites": {
+          "build_arms_cap": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+            "found": true
+          },
+          "playout_seed": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+            "found": true
+          },
+          "select_stream": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+            "found": true
+          },
+          "world_seed": {
+            "b_free": true,
+            "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+            "found": true
+          }
+        },
+        "structural": {
+          "b_independent": "the claim is about the SOURCE \u2014 the four seeding sites are pure functions of j with no B term \u2014 so it is not a claim about any (B_lo, B_hi) pair and transfers between rungs unchanged.",
+          "present": true,
+          "scope": "SOURCE-LEVEL witness at HEAD over the four seeding sites. The pair's GATE_NEST.json additionally records the pinned position/ply/salt byte-identity run at 32 \u2282 64; this function emits the STRUCTURAL half and names the behavioural half.",
+          "sites": {
+            "build_arms_cap": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+              "found": true
+            },
+            "playout_seed": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+              "found": true
+            },
+            "select_stream": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+              "found": true
+            },
+            "world_seed": {
+              "b_free": true,
+              "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+              "found": true
+            }
+          },
+          "source": "rust/carc/carc-core/src/tiearb.rs",
+          "why": "every seeding site is a pure function of j (no B term) \u21d2 the world sets NEST",
+          "witness": true
+        },
+        "why": "B=64's worlds 0..31 are BYTE-IDENTICAL to B=32's entire set (real determinized decks, not just seeds), the cap draw and selection stream are identical, and every seeding site is a pure function of j with no B term \u21d2 the world sets NEST and B=64 is a strict refinement of B=32",
+        "witness": true
+      },
+      "marker": "[pre-run]",
+      "ok": true,
+      "scope": "[RUN]"
+    },
+    "G-PLY": {
+      "detail": {
+        "observed": {
+          "CELL_B32": {
+            "ok": true,
+            "semantics": "ABSENT is unknown-not-zero and FAILS",
+            "tiearb_partial_argmax_total": 0
+          },
+          "CELL_B64": {
+            "ok": true,
+            "semantics": "ABSENT is unknown-not-zero and FAILS",
+            "tiearb_partial_argmax_total": 0
+          }
+        },
+        "prior": "0 in both cells (Stage 2 realized 0 across 28,350 fired plies; the b64 cell realized 0 in both)"
+      },
+      "marker": "[post-cells]",
+      "ok": true,
+      "scope": "[PER-CELL]"
+    },
+    "G-SMOKE": {
+      "detail": {
+        "cells_ran": true,
+        "conjunct1_production_knobs_before_game_1": {
+          "comparison": "field-by-field against WORKERS.conf (DESIGN \u00a79.2); ANY mismatch fires, and an observed None mismatches",
+          "earliest_cell_record_utc": "2026-08-21T06:03:39Z",
+          "evaluated": true,
+          "expected": {
+            "backend": "rust",
+            "c_puct": 1.5,
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "cand_tiearb_per_cell": {
+              "CELL_B32": {
+                "B": 32,
+                "J": 4,
+                "enabled": true,
+                "eps": 0.0,
+                "mode": "argmax",
+                "salt": "tiearb2-deploy-v1"
+              },
+              "CELL_B64": {
+                "B": 64,
+                "J": 4,
+                "enabled": true,
+                "eps": 0.0,
+                "mode": "argmax",
+                "salt": "tiearb2-deploy-v1"
+              }
+            },
+            "exact_k": 2,
+            "final_select": "visits",
+            "k_dets": 8,
+            "leaf_quantize": "float",
+            "opponent": "fair-champion",
+            "rules_profile": "fixed_v1",
+            "sims": 1376,
+            "tau_p": 5.0
+          },
+          "fields": [
+            "k_dets",
+            "sims",
+            "exact_k",
+            "rules_profile",
+            "cand_leaf_hash",
+            "c_puct",
+            "tau_p",
+            "leaf_quantize",
+            "final_select",
+            "opponent",
+            "backend",
+            "cand_tiearb_per_cell"
+          ],
+          "mismatched": {},
+          "observed": {
+            "backend": "rust",
+            "c_puct": 1.5,
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "cand_tiearb_per_cell": {
+              "CELL_B32": {
+                "B": 32,
+                "J": 4,
+                "enabled": true,
+                "eps": 0.0,
+                "mode": "argmax",
+                "salt": "tiearb2-deploy-v1"
+              },
+              "CELL_B64": {
+                "B": 64,
+                "J": 4,
+                "enabled": true,
+                "eps": 0.0,
+                "mode": "argmax",
+                "salt": "tiearb2-deploy-v1"
+              }
+            },
+            "exact_k": 2,
+            "final_select": "visits",
+            "k_dets": 8,
+            "leaf_quantize": "float",
+            "opponent": "fair-champion",
+            "rules_profile": "fixed_v1",
+            "sims": 1376,
+            "tau_p": 5.0
+          },
+          "ok": true,
+          "ordering_ok": true,
+          "ordering_semantics": "both sides are PARSED to aware UTC datetimes before comparison \u2014 the emitters write different ISO spellings (offset vs Z) and a lexicographic compare is only accidentally right. An EXACT TIE FIRES, per DESIGN \u00a79.2's '>='.",
+          "ordering_why": "smoke_utc 2026-08-21T05:55:55+00:00 (2026-08-21T05:55:55+00:00) < earliest real-cell record 2026-08-21T06:03:39Z (2026-08-21T06:03:39+00:00) \u2014 DESIGN \u00a79.2: 'smoke_utc >= that \u21d2 FIRES' (the smoke must COMPLETE before game 1; an EXACT TIE FIRES)",
+          "provenance": "read OFF the smoke cells' own manifests, never injected by the emitter",
+          "smoke_utc": "2026-08-21T05:55:55+00:00",
+          "smoke_utc_parsed": "2026-08-21T05:55:55+00:00"
+        },
+        "conjunct2_halted_and_launched_anyway": false,
+        "conjunct3_forbidden_outcome_keys": [],
+        "cost_definition": "worker_secs_per_game = SUM(seed*.json::elapsed_s) / n \u2014 DESIGN \u00a77.1's own equation ('sum over seed*.json of elapsed_s / 1500 => 928.0251 worker-s per game'). NEVER wall x W / n: the house forbids costing from wall clock, and \u00a79.3 names that very substitution as the currency error behind Stage 2's cost miss.",
+        "forbidden_outcome_keys": [],
+        "halt_bar": 1392.0375,
+        "halt_record": {
+          "bar": 1392.0375,
+          "committed": 928.025,
+          "evaluable": true,
+          "graded_cell": "CELL_B64",
+          "graded_on": "\u00a79.3 grades CELL_B64 ONLY \u2014 the one cell whose cost is MEASURED rather than projected. CELL_B32's realized cost is printed against its projection and graded NOWHERE (\u00a79.4); grading a 1.50x bar against a projection would be grading a model against itself.",
+          "halt": false,
+          "multiple": 1.5,
+          "on_halt": "\u26d4 the real cells are NOT launched, the smoke numbers and the revised bill are reported, and the decision returns to the OWNER. No re-tuning of B, the trigger, J, eps or the playout is licensed by a HALT \u2014 the only permitted responses are STOP, or the OWNER RE-FUNDS at the realized cost. \u26d4 There is NO override flag: a halt is not a switch the executor flips.",
+          "one_sided": "an overrun HALTS, an underrun proceeds",
+          "realized": 843.3233333333333,
+          "why": "CELL_B64 realized 843.323 worker-s/game <= 1392.037 (= 1.5 x 928.025, MEASURED on the b64 cell's WIDE)"
+        },
+        "halted": false,
+        "launched_anyway": false,
+        "launched_anyway_provenance": "\u26d4 DERIVED, NOT SUPPLIED: halt \u2227 cells_ran, where cells_ran is mechanical (at [post-cells] adjudication the cells demonstrably ran). The old --launched-after-halt store_true flag is DELETED: its default was the PASSING value, which made this conjunct a pass-always gate and a second undeclared human input.",
+        "one_sided": "an overrun HALTS, an underrun proceeds",
+        "present": true,
+        "surfaces": "EMITTER: fail-closed whitelist (\u00a79.2 sentence 2). GATE: any forbidden OUTCOME key at any depth (\u00a73's G-SMOKE row). This gate evaluates the GATE surface; structural keys never fire it (RULING 1, carried VERBATIM).",
+        "whitelist_REPORTED_not_a_gate_input": {
+          "f0_note": "f0 is MARGIN-DERIVED and is FORBIDDEN at the smoke",
+          "forbidden_examples": [
+            "paired_mean_margin",
+            "paired_z",
+            "elo",
+            "winrate",
+            "W",
+            "D",
+            "L",
+            "f0",
+            "z_D",
+            "per_deck_margin"
+          ],
+          "forbidden_present": [],
+          "keys": [
+            "band_registry_claimed",
+            "band_seed_start",
+            "band_tier",
+            "cand_leaf_hash",
+            "carc_rs_binary_sha",
+            "carc_rs_build",
+            "champ_prefix_ms_per_move",
+            "games_per_sec",
+            "ms_ratio_cand_over_opp",
+            "n_failed",
+            "production_knobs",
+            "rung_ms_per_move",
+            "rust_toolchain",
+            "secs_per_game",
+            "smoke_utc",
+            "tiearb_errors_total",
+            "tiearb_fire_rate_on_tile_plies",
+            "tiearb_fired_plies_total",
+            "tiearb_first_error",
+            "tiearb_mean_arms",
+            "tiearb_partial_argmax_total",
+            "tiearb_phi",
+            "tiearb_pickchange_rate",
+            "tiearb_playouts_total",
+            "tiearb_secs_per_game",
+            "tiearb_tile_plies_total",
+            "wall_secs",
+            "worker_secs_per_game",
+            "workers"
+          ],
+          "mode": "FAIL-CLOSED: an unlisted key is a REFUSAL, not a warning",
+          "ok": true,
+          "surface": "EMITTER (write) \u2014 \u00a79.2 sentence 2",
+          "whitelist": [
+            "band_registry_claimed",
+            "band_seed_start",
+            "band_tier",
+            "cand_leaf_hash",
+            "carc_rs_binary_sha",
+            "carc_rs_build",
+            "champ_prefix_ms_per_move",
+            "games_per_sec",
+            "ms_ratio_cand_over_opp",
+            "n_failed",
+            "production_knobs",
+            "rung_ms_per_move",
+            "rust_toolchain",
+            "secs_per_game",
+            "smoke_utc",
+            "tiearb_errors_total",
+            "tiearb_fire_rate_on_tile_plies",
+            "tiearb_fired_plies_total",
+            "tiearb_first_error",
+            "tiearb_mean_arms",
+            "tiearb_partial_argmax_total",
+            "tiearb_phi",
+            "tiearb_pickchange_rate",
+            "tiearb_playouts_total",
+            "tiearb_secs_per_game",
+            "tiearb_tile_plies_total",
+            "wall_secs",
+            "worker_secs_per_game",
+            "workers"
+          ]
+        },
+        "worker_secs_per_game": 843.3233333333333
+      },
+      "marker": "[post-smoke]",
+      "ok": true,
+      "scope": "[RUN]"
+    },
+    "G-STAT": {
+      "detail": {
+        "CI90_label": "two-sided 90% interval \u2014 REPORTED FOR CONTEXT, adjudicates nothing",
+        "UB95_label": "ONE-SIDED 95% UPPER BOUND ON THE COST",
+        "checks": "NaN, +/-inf and absent all FAIL; se_D <= 0 FAILS",
+        "nan_inf_or_absent": [],
+        "precedence": "evaluated in \u00a73 BEFORE any branch comparison \u2014 this is what makes READ_RULE \u00a74.4's 'no branch is entered on a NaN comparison' true mechanically",
+        "se_D_positive": true,
+        "values": {
+          "CI90_hi": 1.4142840121226854,
+          "CI90_lo": -0.12236684445401458,
+          "D": 0.6459585838343354,
+          "UB95": 1.4142840121226854,
+          "se_D": 0.4670671296585714,
+          "z_CELL_B32": 13.062918108536858,
+          "z_CELL_B64": 15.236191658887154,
+          "z_D": 1.3830101559630938
+        }
+      },
+      "marker": "[post-cells]",
+      "ok": true,
+      "scope": "[RUN]"
+    },
+    "G-TOOL": {
+      "detail": {
+        "authority": "PREFLIGHT_${HOST}_FIRST_B*.json, not the manifests",
+        "binary_sha_rule": "carc_rs_binary_sha is BOX-LOCAL and is NEVER compared across boxes (the .so is not machine-reproducible)",
+        "carc_rs_build_by_host": {
+          "Doctor": [
+            "carc_rs-0.1.0+6542cffb2c30+rustcunpinned"
+          ],
+          "laptop-wsl": [
+            "carc_rs-0.1.0+6542cffb2c30+rustcunpinned"
+          ]
+        },
+        "conjunct": "EQUALITY of carc_rs_build across boxes, AND NOTHING ELSE",
+        "distinct_builds": [
+          "carc_rs-0.1.0+6542cffb2c30+rustcunpinned"
+        ],
+        "mixed_within_a_host": {},
+        "n_hosts": 2,
+        "preflight_resolution": {
+          "mode": "RESOLVED from the NAMED addresses",
+          "n_named": 4,
+          "n_rotations_excluded": 4,
+          "named_pattern": "PREFLIGHT_{host}_FIRST_B{B}.json",
+          "verdicts_dir": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts"
+        },
+        "superseded_rotations_REPORT_ONLY": [
+          {
+            "B": 64,
+            "carc_rs_build": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+            "host": "Doctor",
+            "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B64_1787290305.json",
+            "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+          },
+          {
+            "B": 32,
+            "carc_rs_build": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+            "host": "Doctor",
+            "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_Doctor_FIRST_B32_1787290350.json",
+            "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+          },
+          {
+            "B": 64,
+            "carc_rs_build": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+            "host": "laptop-wsl",
+            "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B64_1787290384.json",
+            "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+          },
+          {
+            "B": 32,
+            "carc_rs_build": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+            "host": "laptop-wsl",
+            "path": "measurement/tiearb_widening_20260817/b32v64_cell/verdicts/PREFLIGHT_laptop-wsl_FIRST_B32_1787290420.json",
+            "status": "SUPERSEDED ROTATION \u2014 not a named address, wired into no conjunct, recorded rather than dropped"
+          }
+        ],
+        "unpinned_is_normal": "\u26d4 '+rustcunpinned' is the NORMAL production value (rust_agent.py:372) and PASSES provided both boxes emit it \u2014 this campaign's THIRD unsatisfiable-gate catch. If pinned toolchains are wanted that is a change to WORKERS.conf::RUST_TOOLCHAIN, NEVER a gate conjunct that voids the run."
+      },
+      "marker": "[pre-run]+[post-cells]",
+      "ok": true,
+      "scope": "[RUN]"
+    }
+  },
+  "generated_utc": "2026-08-22T06:44:07Z",
+  "headline": "\u26d4 HALTED FOR OWNER ESCALATION BEFORE ADJUDICATION \u2014 3 failed game(s).",
+  "how_to_clear": "re-run with --failures-confirmed-by <name> --failures-confirmed-note '<verbatim confirmation that every failure is the known WindowTruncationError class>'. The confirmation is recorded in the read-out and gates ESCALATION ONLY.",
+  "raw_failure_records": [],
+  "rule": "AS NARROWED (RULING 3, carried VERBATIM): if F_w + F_n > 0 the read-out prints every failed game's raw failure record VERBATIM and the run HALTS for owner escalation BEFORE ADJUDICATION unless every failure is manually confirmed to be the known WindowTruncationError class. The confirmation is a HUMAN ACT recorded in the read-out and it gates ESCALATION, never a branch.",
+  "schema": "carcassonne-b32v64-cell-halt/v1",
+  "selection_effect": "window-truncation failures fire at extreme board extents, so any dropped set is CORRELATED WITH BOARD GEOMETRY \u2014 late-game, large-extent positions \u2014 and that correlation is DISCLOSED rather than argued away.",
+  "status": "HALT-OWNER-ESCALATION"
+}

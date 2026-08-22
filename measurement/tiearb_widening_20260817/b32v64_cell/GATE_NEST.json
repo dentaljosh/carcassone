@@ -1,0 +1,154 @@
+{
+  "adjudicates": "NOTHING \u2014 a precondition witness. It licenses the cell's increment framing and moves no bar, branch or statistic.",
+  "claim": "B=64's worlds j in 0..31 are byte-identical to B=32's ENTIRE world set \u2014 B=32 is a strict SUBSET of B=64",
+  "conjuncts": {
+    "cap_draw_identical": true,
+    "playout_seeds_identical": true,
+    "seed_i64_anchor_reproduces_arbiter_arms": true,
+    "select_stream_identical": true,
+    "structural_sites_b_free": true,
+    "world_seeds_identical": true,
+    "worlds_are_distinct": true,
+    "worlds_byte_identical": true
+  },
+  "gate": "G-NEST",
+  "generated_utc": "2026-08-22T06:43:22Z",
+  "marker": "[pre-run]",
+  "pinned": {
+    "b_hi": 64,
+    "b_lo": 32,
+    "cap_actually_fired": true,
+    "control_start_ply": 30,
+    "deck_seed": "28000000000",
+    "j": 4,
+    "n_arms": 4,
+    "n_distinct_afterstates": 11,
+    "n_prefix_actions": 32,
+    "n_tie_actions": 11,
+    "ply": 32,
+    "salt": "tiearb2-deploy-v1",
+    "seat": 0,
+    "state_digest": "9099d17b7b4fa6da3655de5f5890f27e",
+    "why_this_position": "the cell's own G-J13 control line, walked to the first ply where the trigger fires AND the cap draw is consulted"
+  },
+  "runtime": {
+    "cap_seed_identical": true,
+    "first_differing_j": null,
+    "n_compared": 32,
+    "n_distinct_worlds_hi": 64,
+    "n_distinct_worlds_lo": 32,
+    "playout_seeds_identical": true,
+    "select_seed_identical": true,
+    "world_seeds_identical": true,
+    "world_sha_prefix": [
+      "907d87f52d5b09d6",
+      "ebaca165d47245f0",
+      "ed97c0cdc6221403",
+      "8405c447dcae31bd",
+      "fde70296f3b95969",
+      "fe23c568bdf0e03a",
+      "31d0e00fb93d57a0",
+      "82ad32067426d2a8",
+      "fe922a4c15376289",
+      "2861197b039df0c6",
+      "1ced12283301cf75",
+      "9b27cd181b2a8c60",
+      "3b4694e8970db445",
+      "09ac64a0f21a09c8",
+      "f589d68414ffc224",
+      "1f6190cbf18bcfb9",
+      "4bfa5d987c4ee829",
+      "07b3f425b2684669",
+      "6bf947b80a18b016",
+      "246dc71fcb0b0f7d",
+      "12f07f1dec4b5ff5",
+      "cf5096e5448327be",
+      "7d26254368c43872",
+      "96093898f920f3a7",
+      "ea866738428b173d",
+      "e28841f458c71cb9",
+      "c3184ebab7be6d02",
+      "e33bf4534cec620e",
+      "5051da7274671071",
+      "9bb162ecfea44078",
+      "9f923bbc74874bd4",
+      "4b472768756e52f6"
+    ],
+    "worlds_byte_identical": true
+  },
+  "schema": "carcassonne-b32v64-gate-nest/v1",
+  "scope": "[RUN]",
+  "seed_i64_anchor": {
+    "arbiter_arms": [
+      1128,
+      1129,
+      1175,
+      1225
+    ],
+    "cap_seed": 5783025514736988432,
+    "n_candidates": 10,
+    "ok": true,
+    "reproduced_arms": [
+      1128,
+      1129,
+      1175,
+      1225
+    ],
+    "why": "the python seed_i64 + MT19937 shuffle reproduce the RUST arbiter's own capped arm set exactly, so the seeding function used below is the arbiter's"
+  },
+  "sites": {
+    "build_arms_cap": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+      "found": true
+    },
+    "playout_seed": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+      "found": true
+    },
+    "select_stream": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+      "found": true
+    },
+    "world_seed": {
+      "b_free": true,
+      "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+      "found": true
+    }
+  },
+  "structural": {
+    "b_independent": "the claim is about the SOURCE \u2014 the four seeding sites are pure functions of j with no B term \u2014 so it is not a claim about any (B_lo, B_hi) pair and transfers between rungs unchanged.",
+    "present": true,
+    "scope": "SOURCE-LEVEL witness at HEAD over the four seeding sites. The pair's GATE_NEST.json additionally records the pinned position/ply/salt byte-identity run at 32 \u2282 64; this function emits the STRUCTURAL half and names the behavioural half.",
+    "sites": {
+      "build_arms_cap": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"cap\"])",
+        "found": true
+      },
+      "playout_seed": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js, \"playout\"])",
+        "found": true
+      },
+      "select_stream": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), \"select\"])",
+        "found": true
+      },
+      "world_seed": {
+        "b_free": true,
+        "expression": "seed_i64(&[salt, digest, &ply.to_string(), &js])",
+        "found": true
+      }
+    },
+    "source": "rust/carc/carc-core/src/tiearb.rs",
+    "why": "every seeding site is a pure function of j (no B term) \u21d2 the world sets NEST",
+    "witness": true
+  },
+  "structural_source": "scripts/tiletie/analyze_b32v64_cell.py::nest_witness \u2014 a B-FREE reading of the rust seeding sites, owned by THIS cell's adjudicator (repointed off the spent b64_cell tool, DESIGN \u00a713.2 item 7)",
+  "why": "B=64's worlds 0..31 are BYTE-IDENTICAL to B=32's entire set (real determinized decks, not just seeds), the cap draw and selection stream are identical, and every seeding site is a pure function of j with no B term \u21d2 the world sets NEST and B=64 is a strict refinement of B=32",
+  "witness": true
+}

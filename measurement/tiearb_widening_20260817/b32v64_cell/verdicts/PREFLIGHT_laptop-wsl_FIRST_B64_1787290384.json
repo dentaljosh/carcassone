@@ -1,0 +1,337 @@
+{
+  "all_preflight_pass": false,
+  "backend_provenance": {
+    "carc_rs_binary_sha": "8ae0b98427debb2e",
+    "carc_rs_build": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+    "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+    "carc_rs_version": "0.1.0",
+    "code_rev": "6542cffb2-dirty",
+    "code_rev_dirty": true,
+    "rust_toolchain": null,
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800",
+    "tile_data_source_sha256": "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c"
+  },
+  "carc_rs_binary_sha": "8ae0b98427debb2e",
+  "carc_rs_build": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+  "carc_rs_version": "0.1.0",
+  "checks": [
+    {
+      "check": "W1_wheel_has_tiearb_probe",
+      "observed": {
+        "carc_rs": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+        "version": "0.1.0"
+      },
+      "ok": true
+    },
+    {
+      "check": "W2_SearchConfigRs_accepts_tiearb_kwargs",
+      "observed": {
+        "B": 64,
+        "J": 4,
+        "enabled": true,
+        "eps": 0.0,
+        "mode": "argmax",
+        "salt": "tiearb2-deploy-v1"
+      },
+      "ok": true
+    },
+    {
+      "check": "W3_production_champion_leaf_hash_of_record",
+      "observed": "a36d2e15a3b3d71d",
+      "ok": true
+    },
+    {
+      "check": "J1_INVERTED_leaf_hash_UNMOVED_equals_champion_argmax",
+      "observed": "a36d2e15a3b3d71d",
+      "ok": true
+    },
+    {
+      "check": "J4_resolved_knob_reaches_rust_argmax",
+      "observed": {
+        "expected": {
+          "B": 64,
+          "J": 4,
+          "enabled": true,
+          "eps": 0.0,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1"
+        },
+        "resolved": {
+          "B": 64,
+          "J": 4,
+          "enabled": true,
+          "eps": 0.0,
+          "mode": "argmax",
+          "salt": "tiearb2-deploy-v1"
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "J4_resolved_knob_in_as_manifest_argmax",
+      "observed": {
+        "tiearb_b": 64,
+        "tiearb_enabled": true,
+        "tiearb_eps": 0.0,
+        "tiearb_j": 4,
+        "tiearb_mode": "argmax",
+        "tiearb_salt": "tiearb2-deploy-v1"
+      },
+      "ok": true
+    },
+    {
+      "check": "J1_INVERTED_leaf_hash_UNMOVED_equals_champion_random",
+      "observed": "a36d2e15a3b3d71d",
+      "ok": true
+    },
+    {
+      "check": "J4_resolved_knob_reaches_rust_random",
+      "observed": {
+        "expected": {
+          "B": 64,
+          "J": 4,
+          "enabled": true,
+          "eps": 0.0,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1"
+        },
+        "resolved": {
+          "B": 64,
+          "J": 4,
+          "enabled": true,
+          "eps": 0.0,
+          "mode": "random",
+          "salt": "tiearb2-deploy-v1"
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "J4_resolved_knob_in_as_manifest_random",
+      "observed": {
+        "tiearb_b": 64,
+        "tiearb_enabled": true,
+        "tiearb_eps": 0.0,
+        "tiearb_j": 4,
+        "tiearb_mode": "random",
+        "tiearb_salt": "tiearb2-deploy-v1"
+      },
+      "ok": true
+    },
+    {
+      "check": "TOOL_no_code_path_is_dirty",
+      "observed": {
+        "dirty_code_paths": [],
+        "n_dirty_code_paths": 0,
+        "note": "a dirty MEASUREMENT path is normal and is not gated; a dirty CODE path means code_rev does not describe what ran",
+        "scope": [
+          "src/",
+          "rust/",
+          "scripts/",
+          "engine/"
+        ],
+        "tree_dirty_at_all": true
+      },
+      "ok": true
+    },
+    {
+      "check": "TOOL_rust_toolchain_is_pinned_and_real",
+      "observed": null,
+      "ok": false
+    },
+    {
+      "check": "TOOL_carc_rs_build_is_real_not_a_sentinel",
+      "observed": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+      "ok": false
+    },
+    {
+      "check": "TOOL_carc_rs_binary_sha_is_real",
+      "observed": "8ae0b98427debb2e",
+      "ok": true
+    },
+    {
+      "check": "J13_POSITIVE_arbiter_changes_the_pick",
+      "observed": {
+        "arbiter_pick": 1349,
+        "arms": [
+          1154,
+          1155,
+          1349
+        ],
+        "champ_pick": 1155,
+        "fired_plies_examined": 1,
+        "ply": 30
+      },
+      "ok": true
+    },
+    {
+      "check": "J13_NEGATIVE_root_leaf_value_bits_UNCHANGED",
+      "observed": {
+        "chosen_action": 1154,
+        "n_pooled": 2,
+        "plies": 30,
+        "root_leaf_value_bits": 4605072590740914176
+      },
+      "ok": true
+    }
+  ],
+  "code_rev_dirty": true,
+  "expected": {
+    "B": 64,
+    "J": 4,
+    "champion_leaf_hash": "a36d2e15a3b3d71d",
+    "eps": 0.0,
+    "salt": "tiearb2-deploy-v1"
+  },
+  "host": "laptop-wsl",
+  "j13_witness": {
+    "B": 64,
+    "J": 4,
+    "agent_seed": 101,
+    "control_deck_seed": "28000000000",
+    "eps": 0.0,
+    "k_dets": 4,
+    "negative_side": {
+      "chosen_action": 1154,
+      "n_pooled": 2,
+      "plies": 30,
+      "root_leaf_value_bits": 4605072590740914176
+    },
+    "pick_changed": true,
+    "positive_side": {
+      "agent_fired_plies": 1,
+      "agent_pickchanges": 1,
+      "arbiter_pick": 1349,
+      "arms": [
+        1154,
+        1155,
+        1349
+      ],
+      "champ_pick": 1155,
+      "changed_at_ply": 30,
+      "examined": [
+        {
+          "arbiter_pick": 1349,
+          "arms": [
+            1154,
+            1155,
+            1349
+          ],
+          "champ_pick": 1155,
+          "move_idx": 0,
+          "playouts": 192,
+          "ply": 30,
+          "secs": 34.722,
+          "tiearb_fired": true
+        }
+      ],
+      "fired_plies_examined": 1,
+      "move_idx": 0
+    },
+    "resolved_off": {
+      "B": 16,
+      "J": 4,
+      "enabled": false,
+      "eps": 0.0,
+      "mode": "argmax",
+      "salt": "tiearb2-deploy-v1"
+    },
+    "resolved_on": {
+      "B": 64,
+      "J": 4,
+      "enabled": true,
+      "eps": 0.0,
+      "mode": "argmax",
+      "salt": "tiearb2-deploy-v1"
+    },
+    "root_leaf_value_bits_unchanged": true,
+    "salt": "tiearb2-deploy-v1",
+    "sims": 64
+  },
+  "kind": "tiearb2_stage2_preflight",
+  "launcher_verdict": {
+    "B": 64,
+    "host": "laptop-wsl",
+    "j13_ok": true,
+    "j13_rows": {
+      "J13_NEGATIVE_root_leaf_value_bits_UNCHANGED": true,
+      "J13_POSITIVE_arbiter_changes_the_pick": true
+    },
+    "layer": "b32v64_cell/preflight.sh \u2014 the launcher's OWN verdict over the probe's artifact. The probe belongs to a SPENT, ADJUDICATED run and is NEVER edited; its verdicts are never rewritten.",
+    "note": "\u26d4 A superseded row is recorded WITH ITS CITATION, never deleted and never silently passed. Any row outside the superseded set still refuses.",
+    "probe_all_preflight_pass": false,
+    "real_failures": [],
+    "ruled_reading": {
+      "binary_sha_note": "BOX-LOCAL \u2014 never compared across boxes; the .so is not machine-reproducible",
+      "carc_rs_binary_sha": "8ae0b98427debb2e",
+      "carc_rs_build": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+      "carc_rs_build_present": true,
+      "cross_box_conjunct": "G-TOOL compares carc_rs_build ACROSS BOXES at adjudication; this per-host verdict records the value, it does not decide the cross-box question",
+      "rustc_ok": true,
+      "rustc_resolved": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    "superseded_rows": {
+      "TOOL_carc_rs_build_is_real_not_a_sentinel": {
+        "citation": "b64_cell/DESIGN.md \u00a713.1 (the unsatisfiable-gate class; G-TOOL's conjunct is equality of carc_rs_build across boxes and nothing else) \u2014 inherited by b32v64_cell, which does not restate it. (b64_cell/KNOWNGOOD_EVAL.json is deliberately NOT cited: this cell has no known-good evaluation of its own yet.)",
+        "probe_observed": "carc_rs-0.1.0+6542cffb2c30+rustcunpinned",
+        "probe_ok": false,
+        "why_superseded": "treats '+rustcunpinned' as a sentinel when b64_cell/DESIGN.md \u00a713.1 rules it the NORMAL PRODUCTION VALUE, which PASSES provided both boxes emit it byte-identically. G-TOOL's conjunct is EQUALITY ACROSS BOXES and NOTHING ELSE."
+      },
+      "TOOL_rust_toolchain_is_pinned_and_real": {
+        "citation": "b64_cell/DESIGN.md \u00a713.1 (the unsatisfiable-gate class; G-TOOL's conjunct is equality of carc_rs_build across boxes and nothing else) \u2014 inherited by b32v64_cell, which does not restate it. (b64_cell/KNOWNGOOD_EVAL.json is deliberately NOT cited: this cell has no known-good evaluation of its own yet.)",
+        "probe_observed": null,
+        "probe_ok": false,
+        "why_superseded": "reads RUSTUP_TOOLCHAIN, which is UNSET in production, instead of the RESOLVED rustc the box ran. The launcher re-evaluates it on toolchain.rustc."
+      }
+    },
+    "verdict": "PASS"
+  },
+  "mixed_builds": false,
+  "note": "WIRING ONLY. No game played, no strength number read. measurement/tiearb2_stage2_20260817/READ_RULE.md \u00a73 G-J1/G-J4/G-J13/G-TOOL. \u26a0\ufe0f J1 is an EQUALITY gate: this surface moves no leaf hash, so a MOVED candidate hash is a DEFECT, not evidence.",
+  "pinned_address_assert": {
+    "B": 64,
+    "addresses": [
+      "j13_witness.B",
+      "expected.B",
+      "j13_witness.pick_changed",
+      "j13_witness.root_leaf_value_bits_unchanged"
+    ],
+    "ok": true,
+    "tool": "b32v64_cell/preflight.sh (the pinned-address assert)",
+    "violations": [],
+    "why": "closes the LAST mismatch block of b64_cell/verdicts/READOUT_B64.md \u2014 RULING 2 pins four addresses and, on b64_cell, the two booleans were only ever written under two_sided.* so the adjudicator had to fall back. They are ASSERTED here, before game 1. An ABSENT address FAILS: it is never coerced and never assumed."
+  },
+  "pinned_addresses_note": "RULING 2 (b64_cell/RULINGS_PREBLIND.md): the adjudicator reads j13_witness.B / expected.B and the two booleans at j13_witness.*. two_sided.* is kept for house compatibility; the pinned path is authoritative. An ABSENT B FAILS \u2014 it is never assumed.",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "rust_toolchain": null,
+  "toolchain": {
+    "RUSTUP_TOOLCHAIN": null,
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "code_rev": "6542cffb2c30b6e12b011e77cd44a9ee3d98124e",
+    "code_rev_short": "6542cffb2",
+    "dirty": true,
+    "dirty_code_paths": [],
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "two_sided": {
+    "pick_change_witness": {
+      "arbiter_pick": 1349,
+      "arms": [
+        1154,
+        1155,
+        1349
+      ],
+      "champ_pick": 1155,
+      "fired_plies_examined": 1,
+      "ply": 30
+    },
+    "pick_changed": true,
+    "root_leaf_value_bits_unchanged": true,
+    "root_leaf_value_bits_witness": {
+      "chosen_action": 1154,
+      "n_pooled": 2,
+      "plies": 30,
+      "root_leaf_value_bits": 4605072590740914176
+    }
+  }
+}

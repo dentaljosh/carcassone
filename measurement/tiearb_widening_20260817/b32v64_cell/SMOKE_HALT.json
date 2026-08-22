@@ -1,0 +1,13 @@
+{
+  "bar": 1392.0375,
+  "committed": 928.025,
+  "evaluable": true,
+  "graded_cell": "CELL_B64",
+  "graded_on": "\u00a79.3 grades CELL_B64 ONLY \u2014 the one cell whose cost is MEASURED rather than projected. CELL_B32's realized cost is printed against its projection and graded NOWHERE (\u00a79.4); grading a 1.50x bar against a projection would be grading a model against itself.",
+  "halt": false,
+  "multiple": 1.5,
+  "on_halt": "\u26d4 the real cells are NOT launched, the smoke numbers and the revised bill are reported, and the decision returns to the OWNER. No re-tuning of B, the trigger, J, eps or the playout is licensed by a HALT \u2014 the only permitted responses are STOP, or the OWNER RE-FUNDS at the realized cost. \u26d4 There is NO override flag: a halt is not a switch the executor flips.",
+  "one_sided": "an overrun HALTS, an underrun proceeds",
+  "realized": 843.3233333333333,
+  "why": "CELL_B64 realized 843.323 worker-s/game <= 1392.037 (= 1.5 x 928.025, MEASURED on the b64 cell's WIDE)"
+}
