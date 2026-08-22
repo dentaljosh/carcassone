@@ -76,6 +76,24 @@
 //! the argmax in BOTH modes, and differs only in which arm the last line
 //! returns. `TiearbMode::Random` draws from its own RNG stream, seeded from the
 //! same state digest, which consumes nothing from the playout work.
+//!
+//! ## World THREADING is a latency knob with no semantics (2026-08-21)
+//!
+//! [`arbitrate`] takes a `threads` count and splits the `B` CRN worlds across
+//! `min(B, threads)` scoped OS threads (arms inner) — `fair::search_worlds`'s
+//! idiom and its chunking. This buys nothing but wall-clock and is REQUIRED to
+//! change no number: the per-`(world, arm)` seeds are pure functions of
+//! `(salt, digest, ply, j)` and nothing is shared between playouts, so the only
+//! order-sensitive step is the f64 accumulation — which is why the threads
+//! write margins into disjoint per-world slots and the fold into the per-arm
+//! sums happens after the join, in the original `j`-then-arm order. The
+//! whole-ply revert survives too: the fold propagates the error of the FIRST
+//! failing `(j, arm)` in sequential order, never whichever thread lost the
+//! race. `threads = 1` is the pre-change loop including its short-circuit, and
+//! `SearchConfig::tiearb_threads` defaults to 1, so no deployed cell changes
+//! until someone deliberately flips it. It does NOT change the mode contract
+//! above: `ARB` and `RND` run the identical playouts at the identical thread
+//! count, so they stay wall-clock indistinguishable.
 
 use std::collections::HashMap;
 
@@ -387,6 +405,13 @@ pub struct ArbOutcome {
 ///
 /// ⚠️ Both modes execute the identical work — the same worlds, the same
 /// playouts, the same means, the same argmax. Only the returned arm differs.
+///
+/// `threads` splits the `B` worlds across `min(b, threads)` scoped OS threads
+/// (arms inner). It is a LATENCY knob and NOTHING else: the result is
+/// bit-identical at every thread count — same `means` to the bit, same
+/// `argmax_arm`, same `chosen`, same error on any failing playout (see
+/// [`arbitrate_core`]). `1` (the default everywhere) is the pre-change
+/// sequential loop, short-circuit included.
 #[allow(clippy::too_many_arguments)]
 pub fn arbitrate(
     g: &Game,
@@ -398,31 +423,130 @@ pub fn arbitrate(
     ply: i64,
     mode: TiearbMode,
     max_plies: usize,
+    threads: usize,
 ) -> Result<ArbOutcome, String> {
+    arbitrate_core(
+        g,
+        arms,
+        b,
+        salt,
+        digest,
+        ply,
+        mode,
+        threads,
+        |_j, world, a, playout_seed| {
+            // cache = None: the HONEST legal mask, at every thread count. See
+            // the module docs — the memo is a python-replay-harness defect and
+            // would leak an arm-order side channel into a CRN comparison. A
+            // SHARED memo across threads would be that side channel plus a data
+            // race, so there is deliberately no per-thread cache either.
+            tier1_playout(world, a, seat, playout_seed, max_plies, None).map(|(margin, _plies)| margin)
+        },
+    )
+}
+
+/// The `(world, arm)` engine behind [`arbitrate`], with the playout itself
+/// injected so the identity gate can construct failures at a chosen
+/// `(j, arm)` (a real `tier1_playout` failure is a deep, state-dependent event
+/// that cannot be aimed).
+///
+/// `playout(j, world, arm, playout_seed) -> margin`. It must be a PURE function
+/// of its arguments — that is what makes the world loop parallelisable at all.
+///
+/// ## Why the reduction is split out from the work (requirement: BIT-IDENTITY)
+///
+/// f64 addition is not associative, so `sums[i] += margin` in a different `j`
+/// order is a different number. The threads therefore only ever WRITE margins
+/// into disjoint per-world slots; the fold into `sums` happens after the join,
+/// on one thread, in exactly the original `j`-then-arm order. Threads change
+/// *when* a playout runs, never *what* is added to what, in which order.
+///
+/// ## The whole-ply revert, preserved
+///
+/// Sequentially the first failing `(j, arm)` short-circuits the whole call with
+/// `?`. Threaded, every world runs to completion (a thread cannot cancel its
+/// siblings) and each world reports EITHER its full arm row OR the first error
+/// inside that world — its own determinization first, then arms ascending. The
+/// post-join fold then walks worlds in ascending `j` and propagates the first
+/// `Err` it meets, so the error that escapes is the error of the first failing
+/// `(j, arm)` in SEQUENTIAL order, not whichever thread lost the race. Same
+/// error string, same whole-ply revert, at every thread count.
+#[allow(clippy::too_many_arguments)]
+fn arbitrate_core<F>(
+    g: &Game,
+    arms: &[i32],
+    b: usize,
+    salt: &str,
+    digest: &str,
+    ply: i64,
+    mode: TiearbMode,
+    threads: usize,
+    playout: F,
+) -> Result<ArbOutcome, String>
+where
+    F: Fn(usize, &Game, i32, i64) -> Result<f64, String> + Sync,
+{
     if arms.is_empty() {
         return Err("arbitrate called with an empty arm set".to_string());
     }
-    let mut sums = vec![0.0f64; arms.len()];
-    let mut n_playouts = 0usize;
-    let mut worlds_completed = 0usize;
-    for j in 0..b {
+    let n_arms = arms.len();
+    let ply_s = ply.to_string();
+    // One world's full arm row, or the first error WITHIN that world. The seeds
+    // are pure functions of `(salt, digest, ply, j)` and nothing is shared
+    // between worlds, so this closure is order-independent by construction.
+    let world_row = |j: usize| -> Result<Vec<f64>, String> {
         let js = j.to_string();
-        let world_seed = seed_i64(&[salt, digest, &ply.to_string(), &js]);
-        let playout_seed = seed_i64(&[salt, digest, &ply.to_string(), &js, "playout"]);
+        let world_seed = seed_i64(&[salt, digest, &ply_s, &js]);
+        let playout_seed = seed_i64(&[salt, digest, &ply_s, &js, "playout"]);
         let mut rng = MT19937::from_py_int_seed_i64(world_seed);
         let world = reshuffled_determinization(g, &mut rng)?;
-        for (i, &a) in arms.iter().enumerate() {
-            // cache = None: the HONEST legal mask. See the module docs — the
-            // memo is a python-replay-harness defect and would leak an
-            // arm-order side channel into a CRN comparison.
-            // ⚠️ THE `?` IS THE WHOLE-PLY REVERT. A failure in ANY world for ANY
-            // arm propagates out of `arbitrate` immediately, so the caller falls
-            // back to the champion's own `pooled_q_argmax` pick for the ENTIRE
-            // ply. There is deliberately no "average the survivors" path: a
-            // partial world set would break the CRN pairing across arms, which
-            // is the entire basis of the ARB-vs-RND comparison.
-            let (margin, _plies) =
-                tier1_playout(&world, a, seat, playout_seed, max_plies, None)?;
+        let mut row = Vec::with_capacity(n_arms);
+        for &a in arms.iter() {
+            row.push(playout(j, &world, a, playout_seed)?);
+        }
+        Ok(row)
+    };
+
+    let n_workers = threads.clamp(1, b.max(1));
+    let mut rows: Vec<Result<Vec<f64>, String>> = Vec::with_capacity(b);
+    if n_workers <= 1 {
+        // The pre-change path, byte for byte in behaviour AND in cost: the
+        // first failure short-circuits and the remaining worlds are never run.
+        for j in 0..b {
+            rows.push(Ok(world_row(j)?));
+        }
+    } else {
+        rows.resize_with(b, || Ok(Vec::new()));
+        // ceil(b / workers) CONTIGUOUS worlds per worker — `fair::search_worlds`'s
+        // chunking, arms inner.
+        let per = b.div_ceil(n_workers);
+        let world_row = &world_row;
+        std::thread::scope(|s| {
+            let mut base = 0usize;
+            for chunk in rows.chunks_mut(per) {
+                let start = base;
+                base += chunk.len();
+                s.spawn(move || {
+                    for (off, slot) in chunk.iter_mut().enumerate() {
+                        *slot = world_row(start + off);
+                    }
+                });
+            }
+        });
+    }
+
+    let mut sums = vec![0.0f64; n_arms];
+    let mut n_playouts = 0usize;
+    let mut worlds_completed = 0usize;
+    for row in rows {
+        // ⚠️ THE `?` IS THE WHOLE-PLY REVERT. A failure in ANY world for ANY arm
+        // propagates out of `arbitrate`, so the caller falls back to the
+        // champion's own `pooled_q_argmax` pick for the ENTIRE ply. There is
+        // deliberately no "average the survivors" path: a partial world set
+        // would break the CRN pairing across arms, which is the entire basis of
+        // the ARB-vs-RND comparison.
+        let row = row?;
+        for (i, margin) in row.into_iter().enumerate() {
             sums[i] += margin;
             n_playouts += 1;
         }
@@ -478,6 +602,7 @@ pub fn arbitrate_decision(
     ply: i64,
     mode: TiearbMode,
     max_plies: usize,
+    threads: usize,
     scratch: &mut LeafScratch,
 ) -> Result<Option<(ArmSet, ArbOutcome)>, String> {
     if g.state.phase != Phase::Tiles {
@@ -500,7 +625,9 @@ pub fn arbitrate_decision(
         // one of them: there is nothing to arbitrate. Counted as NOT fired.
         return Ok(None);
     }
-    let out = arbitrate(g, seat, &arms.arms, b, salt, &digest, ply, mode, max_plies)?;
+    let out = arbitrate(
+        g, seat, &arms.arms, b, salt, &digest, ply, mode, max_plies, threads,
+    )?;
     Ok(Some((arms, out)))
 }
 
@@ -683,6 +810,7 @@ mod tests {
             7,
             TiearbMode::Argmax,
             TIEARB_MAX_PLIES,
+            1,
         )
         .unwrap();
         assert_eq!(out.means[0].to_bits(), out.means[1].to_bits());
@@ -698,8 +826,8 @@ mod tests {
         let legal = g.legal_actions();
         let arms = [legal[0], legal[1], legal[2]];
         let seat = g.state.current_player;
-        let a = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Argmax, TIEARB_MAX_PLIES).unwrap();
-        let r = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random, TIEARB_MAX_PLIES).unwrap();
+        let a = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Argmax, TIEARB_MAX_PLIES, 1).unwrap();
+        let r = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random, TIEARB_MAX_PLIES, 1).unwrap();
         assert_eq!(a.n_playouts, r.n_playouts, "the two modes must cost the same");
         for (x, y) in a.means.iter().zip(r.means.iter()) {
             assert_eq!(x.to_bits(), y.to_bits(), "random mode changed the playouts");
@@ -708,12 +836,12 @@ mod tests {
         assert_eq!(a.chosen, a.argmax_arm);
         assert!(arms.contains(&r.chosen));
         // seeded => reproducible
-        let r2 = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random, TIEARB_MAX_PLIES).unwrap();
+        let r2 = arbitrate(&g, seat, &arms, 2, "s", "d", 3, TiearbMode::Random, TIEARB_MAX_PLIES, 1).unwrap();
         assert_eq!(r.chosen, r2.chosen);
         // ...and it is a real draw: some (digest, ply) picks a non-first arm.
         let mut saw_other = false;
         for ply in 0..24i64 {
-            let x = arbitrate(&g, seat, &arms, 1, "s", "d", ply, TiearbMode::Random, TIEARB_MAX_PLIES).unwrap();
+            let x = arbitrate(&g, seat, &arms, 1, "s", "d", ply, TiearbMode::Random, TIEARB_MAX_PLIES, 1).unwrap();
             if x.chosen != arms[0] {
                 saw_other = true;
                 break;
@@ -756,9 +884,358 @@ mod tests {
             0,
             TiearbMode::Argmax,
             TIEARB_MAX_PLIES,
+            1,
             &mut s,
         )
         .unwrap();
         assert!(out.is_none());
+    }
+
+    // ---------------------------------------------------------------------
+    // THE WORLD-THREADING IDENTITY GATE (2026-08-21).
+    //
+    // Threading `arbitrate`'s `B x arms` playouts is a LATENCY lever that owes
+    // no strength claim — and it owes none EXACTLY BECAUSE it changes no
+    // number. These are the tests that make that a checked property rather
+    // than an argument: bit-equal `ArbOutcome` and bit-equal error behaviour at
+    // every thread count, on real states and on injected failures.
+    // ---------------------------------------------------------------------
+
+    /// Everything an `ArbOutcome` carries, reduced to a bit-comparable value.
+    /// `means` go through `to_bits`, because "equal to a tolerance" is exactly
+    /// the claim this gate is NOT allowed to settle for.
+    fn outcome_bits(o: &ArbOutcome) -> (Vec<i32>, Vec<u64>, i32, i32, usize, usize) {
+        (
+            o.arms.clone(),
+            o.means.iter().map(|m| m.to_bits()).collect(),
+            o.argmax_arm,
+            o.chosen,
+            o.n_playouts,
+            o.worlds_completed,
+        )
+    }
+
+    /// A margin schedule chosen so that a REORDERED fold would be visibly
+    /// wrong: `2^53` in world 0 and `1.0` in every later world. Summed in `j`
+    /// order every `+ 1.0` is swallowed by the rounding and the total is
+    /// exactly `2^53 + arm`; summed in any order that accumulates the ones
+    /// first, they survive and the total is larger. So this test fails if the
+    /// threaded path ever reduces per-thread partials instead of folding the
+    /// per-world slots in the original order.
+    fn synthetic_margin(j: usize, arm: i32) -> f64 {
+        if j == 0 {
+            9_007_199_254_740_992.0 + arm as f64
+        } else {
+            1.0
+        }
+    }
+
+    /// The reduction is order-preserving at every `(B, arms, threads)`.
+    ///
+    /// Uses the injected-playout core so the whole matrix costs no playouts —
+    /// the property under test is the FOLD, not the engine.
+    #[test]
+    fn the_threaded_fold_is_the_sequential_fold_bit_for_bit() {
+        let g = tiles_root("28000000000", 30);
+        let legal = g.legal_actions();
+        for b in [0usize, 1, 2, 3, 16, 32, 64, 65] {
+            for n_arms in 1..=5usize {
+                let arms: Vec<i32> = legal.iter().copied().take(n_arms).collect();
+                // the sequential fold, written out longhand
+                let mut want = vec![0.0f64; n_arms];
+                for j in 0..b {
+                    for (i, &a) in arms.iter().enumerate() {
+                        want[i] += synthetic_margin(j, a);
+                    }
+                }
+                let denom = b.max(1) as f64;
+                let want: Vec<u64> = want.iter().map(|s| (s / denom).to_bits()).collect();
+                for t in [1usize, 2, 3, 4, 8, 64] {
+                    let out = arbitrate_core(
+                        &g,
+                        &arms,
+                        b,
+                        "s",
+                        "d",
+                        11,
+                        TiearbMode::Argmax,
+                        t,
+                        |j, _w, a, _seed| Ok(synthetic_margin(j, a)),
+                    )
+                    .unwrap();
+                    let got: Vec<u64> = out.means.iter().map(|m| m.to_bits()).collect();
+                    assert_eq!(
+                        got, want,
+                        "means differ at B={b}, arms={n_arms}, threads={t}"
+                    );
+                    assert_eq!(out.n_playouts, b * n_arms);
+                    assert_eq!(out.worlds_completed, b);
+                }
+            }
+        }
+    }
+
+    /// WHOLE-PLY REVERT, and the FIRST failure in SEQUENTIAL order wins.
+    ///
+    /// Two playouts are made to fail with DISTINGUISHABLE messages at
+    /// `(j, arm)` pairs deliberately placed so that the thread that finishes
+    /// first is not the one whose error must escape: `(5, 0)` lands in an early
+    /// chunk at every thread count, `(2, 3)` earlier still, and the world-major
+    /// order says `(2, 3)` is the one the sequential loop would have hit first.
+    #[test]
+    fn the_first_failure_in_sequential_order_wins_at_every_thread_count() {
+        let g = tiles_root("28000000000", 30);
+        let legal = g.legal_actions();
+        let arms: Vec<i32> = legal.iter().copied().take(5).collect();
+        let b = 32usize;
+        // (failing (j, arm-index) pairs, the message that must escape)
+        let cases: Vec<(Vec<(usize, usize)>, &str)> = vec![
+            (vec![(5, 0), (2, 3)], "boom j=2 i=3"),
+            (vec![(2, 3), (2, 1)], "boom j=2 i=1"),
+            (vec![(31, 0), (0, 4)], "boom j=0 i=4"),
+            (vec![(17, 2)], "boom j=17 i=2"),
+            // every world fails: the first is still (0, 0)
+            ((0..b).map(|j| (j, 0)).collect(), "boom j=0 i=0"),
+        ];
+        for (fails, want) in cases {
+            for t in [1usize, 2, 4, 8, 32] {
+                let fails = &fails;
+                let arms_ref = &arms;
+                let err = arbitrate_core(
+                    &g,
+                    &arms,
+                    b,
+                    "s",
+                    "d",
+                    3,
+                    TiearbMode::Argmax,
+                    t,
+                    move |j, _w, a, _seed| {
+                        let i = arms_ref.iter().position(|&x| x == a).unwrap();
+                        if fails.contains(&(j, i)) {
+                            Err(format!("boom j={j} i={i}"))
+                        } else {
+                            Ok(1.0)
+                        }
+                    },
+                )
+                .expect_err("the whole ply must revert, not average the survivors");
+                assert_eq!(err, want, "wrong error escaped at threads={t}");
+            }
+        }
+    }
+
+    /// The gate proper: REAL `tier1-greedy` playouts, a spread of states x arm
+    /// sets x `B in {16, 32, 64}`, `threads in {2, 4, 8}` each bit-identical to
+    /// the sequential loop — `means` included, in BOTH modes.
+    ///
+    /// (Late-game roots on purpose: same code path, ~20x cheaper playouts.
+    /// carc-core banks no serialized fixture states, so these are built the way
+    /// every other test in this module builds them — `Game::from_seed` + a
+    /// deterministic walk — which also side-steps the parked banked-fixture
+    /// replay panic at `engine/mod.rs:411` entirely.)
+    #[test]
+    fn threading_is_bit_identical_to_sequential() {
+        for (seed, from) in [("28000000000", 132usize), ("42", 130)] {
+            let g = tiles_root(seed, from);
+            let legal = g.legal_actions();
+            let seat = g.state.current_player;
+            assert!(legal.len() >= 3, "need >= 3 legal actions at {seed}/{from}");
+            // (B, arms, modes). The full mode cross only at B = 16: the mode
+            // changes nothing but the last line's `chosen`, and the cheap
+            // `the_threaded_fold_is_the_sequential_fold_bit_for_bit` already
+            // covers the fold at B in {16, 32, 64, 65} x 1..=5 arms x 6 thread
+            // counts. This test is here for the REAL playouts, and a real
+            // playout costs ~10 ms.
+            let cases: [(usize, usize, &[TiearbMode]); 4] = [
+                (16, 2, &[TiearbMode::Argmax, TiearbMode::Random]),
+                (16, 3, &[TiearbMode::Argmax, TiearbMode::Random]),
+                (32, 3, &[TiearbMode::Argmax]),
+                (64, 2, &[TiearbMode::Argmax]),
+            ];
+            for (b, n_arms, modes) in cases {
+                let arms: Vec<i32> = legal.iter().copied().take(n_arms).collect();
+                {
+                    for &mode in modes {
+                        let want = arbitrate(
+                            &g,
+                            seat,
+                            &arms,
+                            b,
+                            TIEARB_SALT_OF_RECORD,
+                            "d",
+                            9,
+                            mode,
+                            TIEARB_MAX_PLIES,
+                            1,
+                        )
+                        .unwrap();
+                        for t in [2usize, 4, 8] {
+                            let got = arbitrate(
+                                &g,
+                                seat,
+                                &arms,
+                                b,
+                                TIEARB_SALT_OF_RECORD,
+                                "d",
+                                9,
+                                mode,
+                                TIEARB_MAX_PLIES,
+                                t,
+                            )
+                            .unwrap();
+                            assert_eq!(
+                                outcome_bits(&got),
+                                outcome_bits(&want),
+                                "threads={t} changed the outcome at seed={seed}, \
+                                 from={from}, arms={n_arms}, B={b}, mode={}",
+                                mode.value()
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// The same identity on the FAILING path, with real playouts: an illegal
+    /// arm makes `tier1_playout` error inside every world, and the message that
+    /// escapes must be the same one at every thread count. A second case drives
+    /// the OTHER real failure mode — the `max_plies` guard.
+    #[test]
+    fn a_real_playout_failure_reverts_the_whole_ply_at_every_thread_count() {
+        let g = tiles_root("28000000000", 132);
+        let legal = g.legal_actions();
+        let seat = g.state.current_player;
+        // arm 1 is illegal -> world 0, arm 1 is the first failure everywhere.
+        let arms = [legal[0], 999_999, legal[1]];
+        let seq = arbitrate(
+            &g,
+            seat,
+            &arms,
+            32,
+            TIEARB_SALT_OF_RECORD,
+            "d",
+            5,
+            TiearbMode::Argmax,
+            TIEARB_MAX_PLIES,
+            1,
+        )
+        .expect_err("an illegal arm must fail the whole ply");
+        for t in [2usize, 4, 8] {
+            let got = arbitrate(
+                &g,
+                seat,
+                &arms,
+                32,
+                TIEARB_SALT_OF_RECORD,
+                "d",
+                5,
+                TiearbMode::Argmax,
+                TIEARB_MAX_PLIES,
+                t,
+            )
+            .expect_err("an illegal arm must fail the whole ply");
+            assert_eq!(got, seq, "the escaping error changed at threads={t}");
+        }
+        // ...and the ply ceiling, the failure mode the deployed arbiter
+        // actually meets.
+        let legal_arms = [legal[0], legal[1]];
+        let seq = arbitrate(
+            &g,
+            seat,
+            &legal_arms,
+            32,
+            TIEARB_SALT_OF_RECORD,
+            "d",
+            5,
+            TiearbMode::Argmax,
+            2,
+            1,
+        )
+        .expect_err("max_plies = 2 must abort every playout");
+        assert!(seq.contains("max_plies=2"), "unexpected error: {seq}");
+        for t in [2usize, 4, 8] {
+            let got = arbitrate(
+                &g,
+                seat,
+                &legal_arms,
+                32,
+                TIEARB_SALT_OF_RECORD,
+                "d",
+                5,
+                TiearbMode::Argmax,
+                2,
+                t,
+            )
+            .expect_err("max_plies = 2 must abort every playout");
+            assert_eq!(got, seq, "the escaping error changed at threads={t}");
+        }
+    }
+
+    /// `arbitrate_decision` passes the knob through, and the whole trigger +
+    /// arbitration is thread-count invariant end to end.
+    #[test]
+    fn arbitrate_decision_is_thread_count_invariant() {
+        let cfg = LeafConfig::curve125();
+        let mut s = LeafScratch::new();
+        // Walk until the trigger actually fires, so this is not a vacuous
+        // `Ok(None) == Ok(None)`.
+        let mut g = tiles_root("28000000000", 120);
+        let mut fired = None;
+        for _ in 0..40 {
+            let champ = g.legal_actions()[0];
+            let out = arbitrate_decision(
+                &g,
+                champ,
+                &cfg,
+                8,
+                4,
+                TIEARB_SALT_OF_RECORD,
+                0.0,
+                13,
+                TiearbMode::Argmax,
+                TIEARB_MAX_PLIES,
+                1,
+                &mut s,
+            )
+            .unwrap();
+            if let Some((arms, o)) = out {
+                fired = Some((g.clone(), champ, arms, o));
+                break;
+            }
+            let l = g.legal_actions();
+            g.advance(l[l.len() / 2]).unwrap();
+            while g.state.phase != Phase::Tiles || g.legal_actions().len() < 2 {
+                let l = g.legal_actions();
+                g.advance(l[l.len() / 2]).unwrap();
+            }
+        }
+        let (g, champ, arms, want) = fired.expect("the trigger never fired in 40 tile plies");
+        assert!(arms.arms.len() >= 2);
+        for t in [2usize, 4, 8] {
+            let (arms_t, got) = arbitrate_decision(
+                &g,
+                champ,
+                &cfg,
+                8,
+                4,
+                TIEARB_SALT_OF_RECORD,
+                0.0,
+                13,
+                TiearbMode::Argmax,
+                TIEARB_MAX_PLIES,
+                t,
+                &mut s,
+            )
+            .unwrap()
+            .expect("the trigger must fire identically at every thread count");
+            assert_eq!(arms_t.arms, arms.arms, "arm set differs at threads={t}");
+            assert_eq!(
+                outcome_bits(&got),
+                outcome_bits(&want),
+                "arbitrate_decision differs at threads={t}"
+            );
+        }
     }
 }

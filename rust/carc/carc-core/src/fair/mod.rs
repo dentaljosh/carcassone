@@ -613,6 +613,7 @@ impl FairAgent {
             move_idx,
             s.tiearb_mode,
             s.tiearb_max_plies,
+            s.tiearb_threads,
             &mut self.tiearb_scratch,
         );
         // ⚠️ FAIL SOFT, AND COUNT IT. The arbiter introduces a failure mode the
@@ -1034,6 +1035,48 @@ mod tests {
         assert!(a.tiearb_tile_plies >= fired);
         assert!(a.tiearb_arms_total >= 2 * fired);
         assert!(a.tiearb_secs > 0.0);
+    }
+
+    /// AGENT-LEVEL leg of the arbiter's world-threading identity gate
+    /// (2026-08-21): `search.tiearb_threads` is a LATENCY knob, so a whole
+    /// played game must be identical at every setting — same action sequence,
+    /// same firing/pick-change/playout telemetry. Note this is the arbiter's
+    /// OWN thread count, deliberately independent of `FairConfig::threads`
+    /// (the k-world fan-out), which stays at 1 here.
+    #[test]
+    fn tiearb_thread_count_invariance() {
+        let play = |tiearb_threads: usize| {
+            let mut c = cfg(2, 16, 1);
+            c.search.tiearb_enabled = true;
+            c.search.tiearb_b = 4;
+            c.search.tiearb_threads = tiearb_threads;
+            c.exact_endgame = false;
+            let mut a = FairAgent::new(c);
+            let mut g = Game::from_seed("28000000000");
+            let mut acts = Vec::new();
+            for _ in 0..24 {
+                if g.is_terminal() {
+                    break;
+                }
+                let act = a.choose_action(&g, None).unwrap();
+                acts.push(act);
+                g.advance(act).unwrap();
+            }
+            (
+                acts,
+                a.tiearb_fired_plies,
+                a.tiearb_pickchanges,
+                a.tiearb_arms_total,
+                a.tiearb_playouts_total,
+                a.tiearb_errors,
+                a.tiearb_partial_argmax,
+            )
+        };
+        let want = play(1);
+        assert!(want.1 > 0, "the arbiter never fired — the test is vacuous");
+        for t in [2usize, 4, 8] {
+            assert_eq!(play(t), want, "tiearb_threads={t} changed the game");
+        }
     }
 
     /// `random` mode must spend the SAME playouts as `argmax` on the same

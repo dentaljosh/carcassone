@@ -199,6 +199,15 @@ pub struct SearchConfig {
     /// default; a full 2-player base game is ~144 plies. Exposed only so a test
     /// can CONSTRUCT a mid-playout failure and witness the whole-ply revert.
     pub tiearb_max_plies: usize,
+    /// OS threads the arbiter splits its `B` CRN worlds across (arms inner).
+    /// **A LATENCY knob and nothing else** — [`crate::tiearb::arbitrate`] is
+    /// bit-identical at every thread count (same means, same pick, same error),
+    /// the G6/G4 behaviour-identity class. `1` (the default) is the pre-change
+    /// sequential loop, so no cell changes until this is deliberately raised.
+    /// Deliberately NOT `FairConfig::threads`: the k-world fan-out and the
+    /// arbiter's world fan-out are different budgets on different boxes, and
+    /// coupling them would silently flip a deployed `rust_threads = 2` cell.
+    pub tiearb_threads: usize,
 }
 
 impl Default for SearchConfig {
@@ -229,6 +238,7 @@ impl Default for SearchConfig {
             tiearb_salt: String::from(crate::tiearb::TIEARB_SALT_OF_RECORD),
             tiearb_eps: 0.0,
             tiearb_max_plies: crate::tiearb::TIEARB_MAX_PLIES,
+            tiearb_threads: 1,
         }
     }
 }
