@@ -1462,6 +1462,7 @@ impl PySearchConfig {
         tiearb_salt=carc_core::tiearb::TIEARB_SALT_OF_RECORD,
         tiearb_eps=0.0,
         tiearb_max_plies=carc_core::tiearb::TIEARB_MAX_PLIES,
+        tiearb_threads=1,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1489,6 +1490,7 @@ impl PySearchConfig {
         tiearb_salt: &str,
         tiearb_eps: f64,
         tiearb_max_plies: usize,
+        tiearb_threads: usize,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -1578,6 +1580,19 @@ impl PySearchConfig {
                  champion's pick)",
             ));
         }
+        // The arbiter's world-thread count. A LATENCY knob in the G4/G6
+        // behaviour-identity class: `carc_core::tiearb::arbitrate` is
+        // bit-identical at every thread count (same means, same pick, same
+        // error on a failing playout), and `1` is the pre-change sequential
+        // loop. Deliberately SEPARATE from `RustFairAgent(threads=..)`, which
+        // splits the k determinized worlds: coupling them would silently flip
+        // the arbiter on every already-deployed `rust_threads = 2` cell.
+        if tiearb_threads < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "tiearb_threads must be >= 1 (1 == the sequential loop); got \
+                 {tiearb_threads}"
+            )));
+        }
         if tiearb_enabled && tiearb_salt.is_empty() {
             return Err(pyo3::exceptions::PyValueError::new_err(
                 "tiearb_salt must be non-empty when the arbiter is enabled (the salt \
@@ -1612,6 +1627,7 @@ impl PySearchConfig {
                 tiearb_salt: tiearb_salt.to_string(),
                 tiearb_eps,
                 tiearb_max_plies,
+                tiearb_threads,
             },
         })
     }
@@ -1660,6 +1676,17 @@ impl PySearchConfig {
         d.set_item("salt", i.tiearb_salt.clone())?;
         d.set_item("eps", i.tiearb_eps)?;
         Ok(d)
+    }
+
+    /// The arbiter's world-thread count, read back. Deliberately NOT a key of
+    /// the [`Self::tiearb`] dict above: that dict IS the pre-registered
+    /// `cand_tiearb` shape `{enabled, B, J, mode, salt, eps}` that READ_RULE
+    /// `G-J4` and `gate_cell.py` read, and threading is a latency knob that
+    /// moves no number - it does not belong in the instrument's resolved-config
+    /// stamp. Exposed separately so a manifest CAN record it if a cell wants to.
+    #[getter]
+    fn tiearb_threads(&self) -> usize {
+        self.inner.tiearb_threads
     }
 
     #[getter]
@@ -2431,6 +2458,11 @@ impl PyFairAgent {
         // WITNESSED rather than asserted in prose. Non-zero => U-UNREADABLE.
         d.set_item("tiearb_partial_argmax", a.tiearb_partial_argmax)?;
         d.set_item("tiearb_max_plies", a.cfg.search.tiearb_max_plies)?;
+        // The arbiter's world-thread count. Telemetry only: the value cannot
+        // move any number in this dict (the threading gate is bit-identity), it
+        // is here so a cell's provenance records WHICH latency setting produced
+        // its wall-clock, next to `tiearb_secs`.
+        d.set_item("tiearb_threads", a.cfg.search.tiearb_threads)?;
         d.set_item("k_dets", a.cfg.k_dets)?;
         d.set_item("sims_per_det", a.cfg.search.simulations)?;
         d.set_item("threads", a.cfg.threads)?;
