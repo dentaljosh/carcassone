@@ -1,0 +1,26 @@
+# C++ objects and libs
+
+*.slo
+*.lo
+*.o
+*.a
+*.la
+*.lai
+*.so
+*.dll
+*.dylib
+
+# Qt-es
+
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+qrc_*.cpp
+Makefile
+*-build-*
+*.qm
+
+Thumbs.db
+Carcasum/jcz/resources/plugins/classic/tiles/*/*.jpg
+Carcasum/jcz/resources/plugins/rgg_siege/tiles/*/*.jpg
+states/render/*
