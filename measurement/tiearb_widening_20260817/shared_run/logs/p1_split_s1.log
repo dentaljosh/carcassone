@@ -1,0 +1,12 @@
+{
+  "n_in": 850,
+  "n_kept": 350,
+  "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_s1.jsonl",
+  "seed_band": [
+    135000000000,
+    135000000349
+  ],
+  "seed_max_observed": 135000000349,
+  "seed_min_observed": 135000000000,
+  "sha256_of_sorted_seeds": "4e8a21015150ad9845fecb25fc89377ba64e4794dac4d7a8f12682a85082c16f"
+}

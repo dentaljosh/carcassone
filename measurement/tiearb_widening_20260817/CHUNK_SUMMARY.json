@@ -1,0 +1,189 @@
+{
+ "schema": "carcassonne-tiearb-widening-chunks/v1",
+ "run_id": "tiearb_widening_20260817",
+ "design_doc": "measurement/tiearb_widening_20260817/shared_run_r4/DESIGN.md",
+ "read_rule": "measurement/tiearb_widening_20260817/shared_run_r4/READ_RULE.md",
+ "permutation_seed": 20260817,
+ "position_order": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/POSITION_ORDER.json",
+ "strata": {
+  "s1": {
+   "source_positions_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1",
+   "m": 128,
+   "m_plan_cost_metadata": 32,
+   "n": 1344,
+   "n_roots": 748,
+   "chunks": [
+    {
+     "chunk": 1,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk1",
+     "n": 168,
+     "roots": 158,
+     "legs": 259,
+     "playouts": 27904,
+     "counts_by_profile_leg": {
+      "walled/leg1": 94,
+      "walled/leg10": 2,
+      "walled/leg11": 1,
+      "walled/leg12": 1,
+      "walled/leg2": 60,
+      "walled/leg3": 40,
+      "walled/leg4": 22,
+      "walled/leg5": 16,
+      "walled/leg6": 8,
+      "walled/leg7": 6,
+      "walled/leg8": 6,
+      "walled/leg9": 3
+     }
+    },
+    {
+     "chunk": 2,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk2",
+     "n": 168,
+     "roots": 154,
+     "legs": 247,
+     "playouts": 27328,
+     "counts_by_profile_leg": {
+      "walled/leg1": 99,
+      "walled/leg2": 56,
+      "walled/leg3": 36,
+      "walled/leg4": 23,
+      "walled/leg5": 19,
+      "walled/leg6": 6,
+      "walled/leg7": 5,
+      "walled/leg8": 3
+     }
+    },
+    {
+     "chunk": 3,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk3",
+     "n": 168,
+     "roots": 156,
+     "legs": 254,
+     "playouts": 27264,
+     "counts_by_profile_leg": {
+      "walled/leg1": 99,
+      "walled/leg10": 2,
+      "walled/leg11": 1,
+      "walled/leg2": 58,
+      "walled/leg3": 32,
+      "walled/leg4": 18,
+      "walled/leg5": 14,
+      "walled/leg6": 11,
+      "walled/leg7": 11,
+      "walled/leg8": 6,
+      "walled/leg9": 2
+     }
+    },
+    {
+     "chunk": 4,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk4",
+     "n": 168,
+     "roots": 161,
+     "legs": 262,
+     "playouts": 27968,
+     "counts_by_profile_leg": {
+      "walled/leg1": 97,
+      "walled/leg10": 3,
+      "walled/leg11": 1,
+      "walled/leg2": 60,
+      "walled/leg3": 35,
+      "walled/leg4": 20,
+      "walled/leg5": 16,
+      "walled/leg6": 10,
+      "walled/leg7": 10,
+      "walled/leg8": 7,
+      "walled/leg9": 3
+     }
+    },
+    {
+     "chunk": 5,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk5",
+     "n": 168,
+     "roots": 156,
+     "legs": 207,
+     "playouts": 25088,
+     "counts_by_profile_leg": {
+      "walled/leg1": 90,
+      "walled/leg2": 53,
+      "walled/leg3": 25,
+      "walled/leg4": 13,
+      "walled/leg5": 11,
+      "walled/leg6": 7,
+      "walled/leg7": 4,
+      "walled/leg8": 3,
+      "walled/leg9": 1
+     }
+    },
+    {
+     "chunk": 6,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6",
+     "n": 168,
+     "roots": 157,
+     "legs": 268,
+     "playouts": 27008,
+     "counts_by_profile_leg": {
+      "walled/leg1": 104,
+      "walled/leg10": 1,
+      "walled/leg2": 69,
+      "walled/leg3": 37,
+      "walled/leg4": 24,
+      "walled/leg5": 17,
+      "walled/leg6": 7,
+      "walled/leg7": 4,
+      "walled/leg8": 3,
+      "walled/leg9": 2
+     }
+    },
+    {
+     "chunk": 7,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk7",
+     "n": 168,
+     "roots": 161,
+     "legs": 266,
+     "playouts": 25088,
+     "counts_by_profile_leg": {
+      "walled/leg1": 104,
+      "walled/leg10": 2,
+      "walled/leg11": 1,
+      "walled/leg2": 67,
+      "walled/leg3": 35,
+      "walled/leg4": 21,
+      "walled/leg5": 17,
+      "walled/leg6": 8,
+      "walled/leg7": 6,
+      "walled/leg8": 3,
+      "walled/leg9": 2
+     }
+    },
+    {
+     "chunk": 8,
+     "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk8",
+     "n": 168,
+     "roots": 152,
+     "legs": 225,
+     "playouts": 25344,
+     "counts_by_profile_leg": {
+      "walled/leg1": 106,
+      "walled/leg2": 55,
+      "walled/leg3": 28,
+      "walled/leg4": 14,
+      "walled/leg5": 9,
+      "walled/leg6": 7,
+      "walled/leg7": 3,
+      "walled/leg8": 2,
+      "walled/leg9": 1
+     }
+    }
+   ],
+   "whole_rid_invariant": {
+    "ok": true,
+    "n_rids": 1344
+   },
+   "totals": {
+    "legs": 1988,
+    "playouts": 212992
+   }
+  }
+ },
+ "governance": "Measurement plumbing only. Scores nothing, reads no record, no value and no statistic. No results.csv row, no band, no claim id. Writes NOTHING under shared_run_r4/."
+}

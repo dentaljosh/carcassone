@@ -1,0 +1,10 @@
+[run_cells 2026-08-21T05:57:10Z Doctor/local] role=local W=30 N=3000 band=140000000000 tag=cells out=/mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell
+[run_cells 2026-08-21T05:57:10Z Doctor/local] blind_commit=71b3286c  champion_leaf_hash=a36d2e15a3b3d71d
+[run_cells 2026-08-21T05:57:10Z Doctor/local] ⭐ the two cells differ in EXACTLY ONE EXPERIMENTAL argument: --cand-tiearb-b
+[run_cells 2026-08-21T05:57:10Z Doctor/local] ⚠️ they also differ in --out-subdir and --claim-host, which are BOOKKEEPING:
+[run_cells 2026-08-21T05:57:10Z Doctor/local] ⚠️ two cells cannot share one output dir or one --shared-claim tag without
+[run_cells 2026-08-21T05:57:10Z Doctor/local] ⚠️ corrupting each other (DESIGN §13.2 item 6). No other knob moves.
+[freeze] RUN_LIVE dropped -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell/RUN_LIVE.json
+[run_cells 2026-08-21T05:57:10Z Doctor/local] cell B32 (B=32) -> /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/b32v64_B32J4_deploy11008
+[run_cells 2026-08-21T15:30:24Z Doctor/local] cell B64 (B=64) -> /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/b32v64_B64J4_deploy11008
+[run_cells 2026-08-22T06:33:56Z Doctor/local] DONE tag=cells

@@ -1,0 +1,115 @@
+{
+  "comparisons": {
+    "base_vs_extension": {
+      "inputs": {
+        "a": "S2 base 135e9",
+        "b": "S2 extension 137e9"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 91,
+          "n_ref": 886,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 102,
+          "n_ref": 958,
+          "zero_tolerance": true
+        }
+      },
+      "n_layers_violated": 0,
+      "name": "base_vs_extension",
+      "passed": true
+    },
+    "s2_vs_exclude_rids": {
+      "inputs": {
+        "n_ref_rids": 29,
+        "new_stratum": "s2",
+        "ref": "R4's real S2 digest_exclusions (DESIGN R5-FINAL.j)"
+      },
+      "layers": {
+        "b_rid": {
+          "identity": "rid, s2 against a JSON reference list (digest_exclusions.S2.rids)",
+          "n_intersection": 0,
+          "n_new": 1060,
+          "n_ref": 29
+        }
+      },
+      "layers_absent": [
+        "a_root_id",
+        "c_position_digest"
+      ],
+      "layers_absent_reason": "a JSON reference list (digest_exclusions.S2.rids) has no root and no board identity; the missing layers are ABSENT, never fabricated as zero",
+      "n_layers_violated": 0,
+      "name": "s2_vs_exclude_rids",
+      "passed": true
+    },
+    "s2_vs_tiearb2_0816": {
+      "inputs": {
+        "a": "S2 (rung3_r5)",
+        "b": "tiearb2_0816"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 977,
+          "n_ref": 724,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 1060,
+          "n_ref": 1350,
+          "zero_tolerance": true
+        }
+      },
+      "n_layers_violated": 0,
+      "name": "s2_vs_tiearb2_0816",
+      "passed": true
+    },
+    "s2_vs_tiletie0812": {
+      "inputs": {
+        "a": "S2 (rung3_r5)",
+        "b": "tiletie0812"
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 977,
+          "n_ref": 399,
+          "zero_tolerance": true
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 1060,
+          "n_ref": 733,
+          "zero_tolerance": true
+        }
+      },
+      "n_layers_violated": 0,
+      "name": "s2_vs_tiletie0812",
+      "passed": true
+    }
+  },
+  "comparisons_expected": [
+    "s2_vs_tiletie0812",
+    "s2_vs_tiearb2_0816",
+    "base_vs_extension",
+    "s2_vs_exclude_rids"
+  ],
+  "digest_layer": "NOT CARRIED (rung3_r5 READ_RULE rev R5.1 \u00a70): R5's degeneracy quantity is same-band internal duplication (G-INTERNAL-DUPE), which no cross-set comparison can see \u2014 no leg file is read and no digest is computed by this mode",
+  "disclosure_policy": "COUNTS ONLY \u2014 no rid, root_id, checksum or digest value appears in this report by construction",
+  "gate": "G-DISJOINT",
+  "goal": "rung3_r5's S2 corpus shares NO game and NO position with any banked corpus, and its base/extension bands share none with each other",
+  "mode": "r5",
+  "n_comparisons_violated": 0,
+  "passed": true
+}

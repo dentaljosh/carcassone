@@ -1,0 +1,986 @@
+{
+  "cost_note": "c = \u03a3 elapsed_secs / n_playouts is the currency of record (analyze_tiearb2.cost_block::c_from_elapsed_secs). It is NOT computed here: a timing number is only meaningful on an uncontended box, so cost is re-measured deliberately, never harvested from a production leg.",
+  "design_doc": "measurement/tiearb_widening_20260817/PLAN_B_gt_16.md",
+  "driver": "tier1_rust_leg",
+  "elapsed_secs_sum": 2092.998,
+  "errors": [],
+  "generated_utc": "2026-08-18T16:45:34Z",
+  "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+  "merge": {
+    "binary_sha_within_box": {
+      "by_box": {
+        "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs": {
+          "address": "preflight.wheel.carc_rs_binary_sha",
+          "box_key_source": "preflight.wheel.carc_rs_file",
+          "chunks": [
+            1,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ],
+          "sha": "a4318fd59d9d8349"
+        }
+      },
+      "conjunct": "(ii) binary_sha constant within box",
+      "n_boxes": 1,
+      "note": "compared WITHIN a host only \u2014 never across (JCZ \u00a70.F.2c: the .so is not machine-reproducible). A box with no sha recorded contributes nothing and is not counted as evidence.",
+      "ok": true,
+      "standing_requirement": true
+    },
+    "by_chunk": {
+      "1": {
+        "elapsed_secs_sum": 133.263,
+        "generated_utc": "2026-08-18T16:45:34Z",
+        "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+        "n_crn_verified": 3,
+        "n_failed": 0,
+        "n_ok": 3,
+        "n_playouts": 768,
+        "n_rows_in": 3,
+        "n_scored": 3,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 3,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk1",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk1/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 133.263
+      },
+      "10": {
+        "elapsed_secs_sum": 617.362,
+        "generated_utc": "2026-08-19T04:46:29Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 5,
+        "n_failed": 0,
+        "n_ok": 5,
+        "n_playouts": 1280,
+        "n_rows_in": 5,
+        "n_scored": 5,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 5,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk10",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk10/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 617.362
+      },
+      "11": {
+        "elapsed_secs_sum": 212.401,
+        "generated_utc": "2026-08-19T04:55:39Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 4,
+        "n_failed": 0,
+        "n_ok": 4,
+        "n_playouts": 1024,
+        "n_rows_in": 4,
+        "n_scored": 4,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 4,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk11",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk11/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 212.401
+      },
+      "12": {
+        "elapsed_secs_sum": 218.151,
+        "generated_utc": "2026-08-19T05:09:03Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 2,
+        "n_failed": 0,
+        "n_ok": 2,
+        "n_playouts": 512,
+        "n_rows_in": 2,
+        "n_scored": 2,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 2,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk12",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk12/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 218.151
+      },
+      "13": {
+        "elapsed_secs_sum": 73.958,
+        "generated_utc": "2026-08-19T05:22:49Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 1,
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_playouts": 256,
+        "n_rows_in": 1,
+        "n_scored": 1,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 1,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk13/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 73.958
+      },
+      "14": {
+        "elapsed_secs_sum": 45.863,
+        "generated_utc": "2026-08-19T05:36:33Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 1,
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_playouts": 256,
+        "n_rows_in": 1,
+        "n_scored": 1,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 1,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk14",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk14/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 45.863
+      },
+      "15": {
+        "elapsed_secs_sum": 89.084,
+        "generated_utc": "2026-08-19T05:46:32Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 2,
+        "n_failed": 0,
+        "n_ok": 2,
+        "n_playouts": 512,
+        "n_rows_in": 2,
+        "n_scored": 2,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 2,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk15",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk15/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 89.084
+      },
+      "16": {
+        "elapsed_secs_sum": 31.048,
+        "generated_utc": "2026-08-19T05:52:13Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 1,
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_playouts": 256,
+        "n_rows_in": 1,
+        "n_scored": 1,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 1,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk16",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk16/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 31.048
+      },
+      "3": {
+        "elapsed_secs_sum": 132.184,
+        "generated_utc": "2026-08-18T17:05:04Z",
+        "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+        "n_crn_verified": 2,
+        "n_failed": 0,
+        "n_ok": 2,
+        "n_playouts": 512,
+        "n_rows_in": 2,
+        "n_scored": 2,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 2,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk3",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk3/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 132.184
+      },
+      "4": {
+        "elapsed_secs_sum": 137.93,
+        "generated_utc": "2026-08-18T17:16:15Z",
+        "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+        "n_crn_verified": 3,
+        "n_failed": 0,
+        "n_ok": 3,
+        "n_playouts": 768,
+        "n_rows_in": 3,
+        "n_scored": 3,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 3,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk4",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk4/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 137.931
+      },
+      "5": {
+        "elapsed_secs_sum": 80.722,
+        "generated_utc": "2026-08-18T17:26:15Z",
+        "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+        "n_crn_verified": 1,
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_playouts": 256,
+        "n_rows_in": 1,
+        "n_scored": 1,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 1,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk5",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk5/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 80.722
+      },
+      "6": {
+        "elapsed_secs_sum": 110.688,
+        "generated_utc": "2026-08-18T17:35:35Z",
+        "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+        "n_crn_verified": 2,
+        "n_failed": 0,
+        "n_ok": 2,
+        "n_playouts": 512,
+        "n_rows_in": 2,
+        "n_scored": 2,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 2,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 110.687
+      },
+      "7": {
+        "elapsed_secs_sum": 82.362,
+        "generated_utc": "2026-08-18T17:46:12Z",
+        "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+        "n_crn_verified": 2,
+        "n_failed": 0,
+        "n_ok": 2,
+        "n_playouts": 512,
+        "n_rows_in": 2,
+        "n_scored": 2,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 2,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk7",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk7/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 82.363
+      },
+      "8": {
+        "elapsed_secs_sum": 44.859,
+        "generated_utc": "2026-08-18T17:59:10Z",
+        "git_rev": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+        "n_crn_verified": 1,
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_playouts": 256,
+        "n_rows_in": 1,
+        "n_scored": 1,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 1,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk8",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk8/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 44.859
+      },
+      "9": {
+        "elapsed_secs_sum": 83.123,
+        "generated_utc": "2026-08-19T04:21:57Z",
+        "git_rev": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+        "n_crn_verified": 1,
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_playouts": 256,
+        "n_rows_in": 1,
+        "n_scored": 1,
+        "preflight": {
+          "wheel": {
+            "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          }
+        },
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 1,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk9",
+          "out_subdir": "tier1-greedy/walled/leg9",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk9/positions_walled_leg9.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 83.123
+      }
+    },
+    "chunks": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "divergent_keys_allowed": [],
+    "generated_utc": "2026-08-19T11:34:50Z",
+    "note": "A TWO-BOX merge of per-chunk legs. Counters are summed; gate-addressed fields were asserted IDENTICAL across chunks before being carried. Per-chunk values are below. wall_secs is a SUM across chunks that ran on different boxes and possibly concurrently \u2014 it is NOT a wall clock and is not the cost currency of record (DESIGN \u00a77 costs from elapsed_secs).",
+    "records_by_chunk": {
+      "1": 3,
+      "10": 5,
+      "11": 4,
+      "12": 2,
+      "13": 1,
+      "14": 1,
+      "15": 2,
+      "16": 1,
+      "2": 0,
+      "3": 2,
+      "4": 3,
+      "5": 1,
+      "6": 2,
+      "7": 2,
+      "8": 1,
+      "9": 1
+    },
+    "rev_license": {
+      "deviation": "D4.11/D4.12",
+      "note": "\u26a0\ufe0f THIS LEG SPANS TWO REVS. The merged manifest carries the LOWEST-indexed chunk's value for each rev field so the key keeps its type and never reads null; the per-chunk truth is here and in merge.by_chunk. The pair is enumerated in merge_legs.LICENSED_TRANCHE_REVS and the instrument diff between the two revs was RE-DERIVED at merge time.",
+      "paths": [
+        "git_rev",
+        "preflight.wheel.carc_rs_build"
+      ],
+      "records": [
+        {
+          "by_chunk": {
+            "1": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "10": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "11": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "12": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "13": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "14": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "15": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "16": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "3": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "4": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "5": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "6": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "7": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "8": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "9": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+          },
+          "deviation": "D4.11/D4.12 (measurement/tiearb_widening_20260817/DEVIATIONS.md, commit 93f83e26)",
+          "git_clean_by_chunk": {
+            "1": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk1.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk1.json"
+              ]
+            },
+            "10": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk10.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk10.json"
+              ]
+            },
+            "11": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk11.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk11.json"
+              ]
+            },
+            "12": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk12.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk12.json"
+              ]
+            },
+            "13": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk13.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk13.json"
+              ]
+            },
+            "14": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk14.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk14.json"
+              ]
+            },
+            "15": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk15.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk15.json"
+              ]
+            },
+            "16": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk16.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk16.json"
+              ]
+            },
+            "3": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk3.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk3.json"
+              ]
+            },
+            "4": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk4.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk4.json"
+              ]
+            },
+            "5": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk5.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk5.json"
+              ]
+            },
+            "6": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk6.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk6.json"
+              ]
+            },
+            "7": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk7.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk7.json"
+              ]
+            },
+            "8": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk8.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk8.json"
+              ]
+            },
+            "9": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk9.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk9.json"
+              ]
+            }
+          },
+          "instrument_identity": {
+            "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/INSTRUMENT_IDENTITY.json",
+            "rederived": {
+              "empty": true,
+              "n_files_changed": 0,
+              "paths": [
+                "scripts/tiletie/run_tiletie.py",
+                "scripts/measurement_infra/oracle_score_pilot.py",
+                "scripts/tiletie/tier1_rust_leg.py",
+                "src/",
+                "engine/",
+                "rust/"
+              ],
+              "recipe": "git -C <repo> diff --name-only 4b24f512a0833b3fe71a126b713c560b2c8c4db1 58c2b539556916b0f6280d233b48d5dcbed7ca88 -- scripts/tiletie/run_tiletie.py scripts/measurement_infra/oracle_score_pilot.py scripts/tiletie/tier1_rust_leg.py src/ engine/ rust/",
+              "repo": "/home/doctor/projects/carcassone",
+              "rev_a": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+              "rev_b": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+              "stat": "",
+              "verified_utc": "2026-08-19T11:33:47Z"
+            },
+            "sha256": "5dc04affc36c3c18396c6bb5744ef81b143447c112dd4412adb285a5f4ade9d4"
+          },
+          "licensed_revs": {
+            "committed_tranche": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+          },
+          "note": "ENUMERATED two-rev licence. The tranche split is a NECESSARY consequence of the D4.2 completion \u2014 the completion tranche cannot run at the spent rev because the staging code did not exist there. No gate constrains the run's git_rev (D4.10). The instrument diff between the two revs was RE-DERIVED here, not read from the witness.",
+          "path": "git_rev",
+          "tranches": {
+            "committed_tranche": [
+              1,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "completion_tranche": [
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ]
+          }
+        },
+        {
+          "by_chunk": {
+            "1": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "10": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "11": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "12": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "13": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "14": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "15": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "16": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "3": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "4": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "5": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "6": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "7": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "8": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "9": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          },
+          "chunk_tranche_from_rev_fields": {
+            "1": "committed_tranche",
+            "10": "completion_tranche",
+            "11": "completion_tranche",
+            "12": "completion_tranche",
+            "13": "completion_tranche",
+            "14": "completion_tranche",
+            "15": "completion_tranche",
+            "16": "completion_tranche",
+            "3": "committed_tranche",
+            "4": "committed_tranche",
+            "5": "committed_tranche",
+            "6": "committed_tranche",
+            "7": "committed_tranche",
+            "8": "committed_tranche",
+            "9": "completion_tranche"
+          },
+          "conjuncts": {
+            "i_only_rev_fragment_differs": {
+              "compared_at_width": 12,
+              "ok": true,
+              "rev_fragments": {
+                "1": "58c2b5395569",
+                "10": "4b24f512a083",
+                "11": "4b24f512a083",
+                "12": "4b24f512a083",
+                "13": "4b24f512a083",
+                "14": "4b24f512a083",
+                "15": "4b24f512a083",
+                "16": "4b24f512a083",
+                "3": "58c2b5395569",
+                "4": "58c2b5395569",
+                "5": "58c2b5395569",
+                "6": "58c2b5395569",
+                "7": "58c2b5395569",
+                "8": "58c2b5395569",
+                "9": "4b24f512a083"
+              },
+              "toolchain": "rustcunpinned",
+              "version": "carc_rs-0.1.0"
+            },
+            "ii_binary_sha_constant_within_box": {
+              "by_box": {
+                "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs": {
+                  "address": "preflight.wheel.carc_rs_binary_sha",
+                  "box_key_source": "preflight.wheel.carc_rs_file",
+                  "chunks": [
+                    1,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16
+                  ],
+                  "sha": "a4318fd59d9d8349"
+                }
+              },
+              "conjunct": "(ii) binary_sha constant within box",
+              "n_boxes": 1,
+              "note": "compared WITHIN a host only \u2014 never across (JCZ \u00a70.F.2c: the .so is not machine-reproducible). A box with no sha recorded contributes nothing and is not counted as evidence.",
+              "ok": true,
+              "standing_requirement": true
+            },
+            "iii_instrument_identity_rust_scope": {
+              "boxes": [
+                "laptop",
+                "local"
+              ],
+              "conjunct": "(iii) instrument identity covers rust/",
+              "ok": true,
+              "witness": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/INSTRUMENT_IDENTITY.json"
+            },
+            "iv_within_tranche_cross_host_build_equality": {
+              "committed_tranche": {
+                "chunks": [
+                  1,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "n_boxes": 1,
+                "status": "VACUOUS",
+                "why": "single-host leg \u2014 there is no cross-host comparison to make, so (iv) witnesses NOTHING here and is reported as vacuous rather than as passed. Conjunct (ii) carries the whole weight on this leg."
+              },
+              "completion_tranche": {
+                "chunks": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16
+                ],
+                "n_boxes": 1,
+                "status": "VACUOUS",
+                "why": "single-host leg \u2014 there is no cross-host comparison to make, so (iv) witnesses NOTHING here and is reported as vacuous rather than as passed. Conjunct (ii) carries the whole weight on this leg."
+              }
+            }
+          },
+          "deviation": "D4.13",
+          "note": "carc_rs_build is the CROSS-HOST SOURCE-REV witness (the rev is stamped from `git rev-parse HEAD` at process start, not from the artifact); carc_rs_binary_sha is the WITHIN-BOX STALENESS witness. Across tranches HEAD moved and the stamp followed \u2014 the .so was not rebuilt, which conjunct (ii) asserts rather than assumes. \u26a0\ufe0f Where (iv) reads VACUOUS the leg is single-host and (ii) carries the whole weight.",
+          "path": "preflight.wheel.carc_rs_build",
+          "tranches": {
+            "committed_tranche": [
+              1,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "completion_tranche": [
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ]
+          }
+        }
+      ],
+      "schema": "carcassonne-tiearb-widening-rev-license/v1"
+    },
+    "run_id": "tiearb_widening_20260817",
+    "schema": "carcassonne-tiearb-widening-merge/v1",
+    "sources": {
+      "1": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk1/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "d75bb634aa9e9b853f97a8145039229705492f7279ab5f449473688055b1c36a"
+      },
+      "10": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk10/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "e80229ce7e1320f67c4aff4a71bd1949edc8e166c71f61057f78e91e0e54b94b"
+      },
+      "11": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk11/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "15ebe68eb6482bf5ed77fb44d01563596d36480d16135508a13dca81edd1a6f2"
+      },
+      "12": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk12/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "586cf740d37d31729d9720126603861712975370891f0213d851a70fe8c777b1"
+      },
+      "13": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "f21b13fb5f4d871d3422555bc04198805388589577ef2d552e56d8d6321d0470"
+      },
+      "14": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk14/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "abedd08b94ea22f9f8d0b851ef8a8fb48ee3f1795f0d6d96702674a7f09da2d9"
+      },
+      "15": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk15/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "63bbe15cad75f9454de7067cd7fb2375c25f35843ce8a2c71dc368a652cdedd4"
+      },
+      "16": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk16/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "229fc3f0aa390448f8044c1d77eb3956e34c50bc1414e00927e0f9021a2a213b"
+      },
+      "3": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk3/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "050a159295ad870273cece7d221e817434e554a0ef2acbfd18c6d0e29163a18c"
+      },
+      "4": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk4/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "e7b261e770554247bc1672f68d7221699bf8684e1046514aa082ae75c21603cb"
+      },
+      "5": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk5/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "8331b893766e3ed9177997e76b17c2ca33f2aec99ee3920a04f139fdbbef8aab"
+      },
+      "6": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "e60a5b26ca5c5a3655c2886cd5570fdad60bb36418441516e2fbb1815f2afbd3"
+      },
+      "7": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk7/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "6299469968becccc874c315536870882605a69f70c0cdb25ed8eba6bfe99b0be"
+      },
+      "8": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk8/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "1497ef4e7df107fe3be60088814de968f95739cc81c73f0b6f8b120ef89df184"
+      },
+      "9": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk9/tier1-greedy/walled/leg9/manifest.json",
+        "sha256": "7724bd4c67b4ecdcd8259a18b57575db0cad3a736060e8542f399ec912b04a48"
+      }
+    },
+    "wall_secs_max": 617.362
+  },
+  "n_crn_verified": 31,
+  "n_failed": 0,
+  "n_ok": 31,
+  "n_playouts": 7936,
+  "n_rows_in": 31,
+  "n_scored": 31,
+  "preflight": {
+    "m": {
+      "m": 128,
+      "m_max": 128,
+      "ok": true
+    },
+    "profile": {
+      "ok": true,
+      "rules_profile": "walled"
+    },
+    "seeds": {
+      "derivation": "oracle_score_pilot.world_seed/playout_seed = sha256(tag|rid|j|salt); M never enters",
+      "m": 128,
+      "ok": true,
+      "prefix_stable_at": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "probe_playout_seeds_head": [
+        1938509246,
+        2003412182,
+        1243735750,
+        2109152271
+      ],
+      "probe_rid": "tt_preflight_probe_p0",
+      "probe_world_seeds_head": [
+        396867482,
+        806153112,
+        2069078063,
+        1564736894
+      ],
+      "salt": "tiletie-v1"
+    },
+    "wheel": {
+      "carc_rs_binary_sha": "a4318fd59d9d8349",
+      "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+      "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+      "carc_rs_version": "0.1.0",
+      "ok": true
+    }
+  },
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "resolved_config": {
+    "arb_backend": "rust",
+    "legal_mask_cache": true,
+    "m": 128,
+    "m_max": 128,
+    "max_plies": 400,
+    "n": 31,
+    "oracle_policy": "tier1-greedy",
+    "oracle_sims": 100,
+    "oracle_sims_note": "INERT: tier1-greedy is a 1-ply argmax, no search",
+    "out_root": null,
+    "out_subdir": null,
+    "positions_jsonl": null,
+    "resume": true,
+    "rules_profile": "walled",
+    "strict_crn": false,
+    "workers": null,
+    "world_deck_witness": true,
+    "world_seed_salt": "tiletie-v1"
+  },
+  "schema": "carcassonne-tiletie-tier1-rust-leg/v1",
+  "wall_secs": 2092.999
+}

@@ -1,0 +1,6 @@
+[tier1_rust_leg] preflight m: PASS {'m': 128, 'm_max': 128}
+[tier1_rust_leg] preflight wheel: PASS {'carc_rs_file': '/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py', 'carc_rs_version': '0.1.0', 'carc_rs_build': 'carc_rs-0.1.0+4b24f512a083+rustcunpinned', 'carc_rs_binary_sha': 'a4318fd59d9d8349'}
+[tier1_rust_leg] preflight profile: PASS {'rules_profile': 'walled'}
+[tier1_rust_leg] preflight seeds: PASS {'salt': 'tiletie-v1', 'm': 128, 'prefix_stable_at': [1, 2, 4, 8, 16, 32, 64, 128], 'derivation': 'oracle_score_pilot.world_seed/playout_seed = sha256(tag|rid|j|salt); M never enters', 'probe_rid': 'tt_preflight_probe_p0', 'probe_world_seeds_head': [396867482, 806153112, 2069078063, 1564736894], 'probe_playout_seeds_head': [1938509246, 2003412182, 1243735750, 2109152271]}
+[tier1_rust_leg] 10 rows (10 to score) M=128 W=1 -> /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk16/tier1-greedy/walled/leg5
+[tier1_rust_leg] scored=10 ok=10 failed=0 wall=434.0s -> /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk16/tier1-greedy/walled/leg5/manifest.json

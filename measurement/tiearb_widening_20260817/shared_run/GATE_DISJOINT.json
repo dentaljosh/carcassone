@@ -1,0 +1,209 @@
+{
+  "comparisons": {
+    "s1_vs_tiearb2_0816": {
+      "inputs": {
+        "new_arms": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/ARMS.json",
+        "new_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg1.jsonl"
+        ],
+        "ref_arms": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/positions/ARMS.json",
+        "ref_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/positions/positions_walled_leg1.jsonl"
+        ]
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 308,
+          "n_ref": 724
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 551,
+          "n_ref": 1350
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) where checksum = game.string_representation(board) at the tied root",
+          "n_intersection": 1,
+          "n_new": 551,
+          "n_new_leg_lines": 551,
+          "n_ref": 1350,
+          "n_ref_leg_lines": 1350
+        }
+      },
+      "n_layers_violated": 1,
+      "passed": false
+    },
+    "s1_vs_tiletie0812": {
+      "inputs": {
+        "new_arms": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/ARMS.json",
+        "new_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg1.jsonl"
+        ],
+        "ref_arms": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/ARMS.json",
+        "ref_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_app_aug2_leg1.jsonl",
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg1.jsonl",
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg1.jsonl"
+        ]
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 308,
+          "n_ref": 399
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 551,
+          "n_ref": 733
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) where checksum = game.string_representation(board) at the tied root",
+          "n_intersection": 0,
+          "n_new": 551,
+          "n_new_leg_lines": 551,
+          "n_ref": 733,
+          "n_ref_leg_lines": 733
+        }
+      },
+      "n_layers_violated": 0,
+      "passed": true
+    },
+    "s1s2_vs_exclude_rids": {
+      "inputs": {
+        "new_strata": [
+          "S1",
+          "S2"
+        ],
+        "ref_rid_txts": [
+          "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/EXCLUDE_RIDS_all.txt"
+        ]
+      },
+      "layers": {
+        "b_rid": {
+          "identity": "rid, S1 \u222a S2 against a rid TEXT list",
+          "n_intersection": 0,
+          "n_new": 654,
+          "n_ref": 738
+        }
+      },
+      "layers_absent": [
+        "a_root_id",
+        "c_position_digest"
+      ],
+      "layers_absent_reason": "a rid TEXT list has no root and no board identity; the missing layers are ABSENT, never fabricated as zero",
+      "n_layers_violated": 0,
+      "passed": true
+    },
+    "s2_vs_tiearb2_0816": {
+      "inputs": {
+        "new_arms": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/ARMS.json",
+        "new_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg1.jsonl"
+        ],
+        "ref_arms": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/positions/ARMS.json",
+        "ref_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/positions/positions_walled_leg1.jsonl"
+        ]
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 92,
+          "n_ref": 724
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 103,
+          "n_ref": 1350
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) where checksum = game.string_representation(board) at the tied root",
+          "n_intersection": 0,
+          "n_new": 103,
+          "n_new_leg_lines": 103,
+          "n_ref": 1350,
+          "n_ref_leg_lines": 1350
+        }
+      },
+      "n_layers_violated": 0,
+      "passed": true
+    },
+    "s2_vs_tiletie0812": {
+      "inputs": {
+        "new_arms": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/ARMS.json",
+        "new_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg1.jsonl"
+        ],
+        "ref_arms": "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/ARMS.json",
+        "ref_legs": [
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_app_aug2_leg1.jsonl",
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_fixed_v1_leg1.jsonl",
+          "/home/doctor/projects/carcassone/measurement/tiletie_pricing_20260812/positions_pooled/positions_walled_leg1.jsonl"
+        ]
+      },
+      "layers": {
+        "a_root_id": {
+          "identity": "root_id (the GAME) from ARMS.json values",
+          "n_intersection": 0,
+          "n_new": 92,
+          "n_ref": 399
+        },
+        "b_rid": {
+          "identity": "rid (the (game, ply) POSITION) from ARMS.json keys",
+          "n_intersection": 0,
+          "n_new": 103,
+          "n_ref": 733
+        },
+        "c_position_digest": {
+          "identity": "sha256(checksum) where checksum = game.string_representation(board) at the tied root",
+          "n_intersection": 0,
+          "n_new": 103,
+          "n_new_leg_lines": 103,
+          "n_ref": 733,
+          "n_ref_leg_lines": 733
+        }
+      },
+      "n_layers_violated": 0,
+      "passed": true
+    }
+  },
+  "disclosure_policy": "COUNTS ONLY \u2014 no rid, root_id, checksum or digest value appears in this report by construction",
+  "gate": "G-DISJOINT",
+  "goal": "every widening stratum shares NO game, NO position and NO board with any banked corpus, and the two strata share no game",
+  "mode": "merged",
+  "n_comparisons_violated": 1,
+  "passed": false,
+  "sha256_rid_list_by_stratum": {
+    "S1": "fd83af68805e600f8e9bc8237fa8fedca47fee061cb1e9206115bd19f6b0638d",
+    "S2": "130c023d5af505b7b60b8bb8cd80f6e307d1747a811187cb307122f7b26c515b"
+  },
+  "strata": {
+    "S1": {
+      "arms": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/ARMS.json",
+      "legs": [
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg1.jsonl"
+      ],
+      "n_position_digests": 551,
+      "n_rids": 551,
+      "n_roots": 308
+    },
+    "S2": {
+      "arms": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/ARMS.json",
+      "legs": [
+        "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg1.jsonl"
+      ],
+      "n_position_digests": 103,
+      "n_rids": 103,
+      "n_roots": 92
+    }
+  },
+  "strata_root_overlap": 0
+}

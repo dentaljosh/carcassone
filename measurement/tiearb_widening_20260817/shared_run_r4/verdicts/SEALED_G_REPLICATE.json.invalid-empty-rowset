@@ -1,0 +1,71 @@
+{
+  "SEALED": "G-REPLICATE z-statistics. WRITE-ONLY: this file is NOT an address, no gate resolves against it, the harness never prints it and a fixing session never opens it (READ_RULE \u00a77; REVIEW_R2 \u00a7N4). G-REPLICATE has NO fallback \u2014 a missing or null boolean block on the READOUT is a FAIL, and the fix is in W3, never in the seal.",
+  "arb16": {
+    "absent": true,
+    "ci95": [
+      null,
+      null
+    ],
+    "value": null,
+    "why": "the E16 ladder has no B16 rung \u2014 no row carried `arb_j4_E16_B16` (a rung above the cross-fit selection half, or an empty row set)",
+    "z": null
+  },
+  "envelope_inflation": 2.0,
+  "pass": false,
+  "per_rung": {
+    "B1": {
+      "reason": "input absent",
+      "ref_arb": 0.009414923837602111,
+      "ref_se": 0.04815720185896405,
+      "run_arb": null,
+      "run_se": null,
+      "z": null
+    },
+    "B16": {
+      "reason": "input absent",
+      "ref_arb": 0.14408474602297155,
+      "ref_se": 0.04785183966636599,
+      "run_arb": null,
+      "run_se": null,
+      "z": null
+    },
+    "B2": {
+      "reason": "input absent",
+      "ref_arb": 0.03219799920152325,
+      "ref_se": 0.04920222130999225,
+      "run_arb": null,
+      "run_se": null,
+      "z": null
+    },
+    "B4": {
+      "reason": "input absent",
+      "ref_arb": 0.09196455991646706,
+      "ref_se": 0.047703123889394454,
+      "run_arb": null,
+      "run_se": null,
+      "z": null
+    },
+    "B8": {
+      "reason": "input absent",
+      "ref_arb": 0.08263632966852978,
+      "ref_se": 0.047078470965358235,
+      "run_arb": null,
+      "run_se": null,
+      "z": null
+    }
+  },
+  "per_rung_inside_envelope_naive": {
+    "B1": false,
+    "B16": false,
+    "B2": false,
+    "B4": false,
+    "B8": false
+  },
+  "reference_source": {
+    "key_path": "b_ladder.pooled",
+    "path": "measurement/tiearb2_20260816/READOUT.json",
+    "readout_md": "measurement/tiearb2_20260816/READOUT.md",
+    "sha256": "e096fd9fe636696ae4d4253368e2ecf06afcd9f318858a86656b7a47fe70dda9",
+    "transcribed_by": "script, not by hand (no typing of digits)"
+  }
+}

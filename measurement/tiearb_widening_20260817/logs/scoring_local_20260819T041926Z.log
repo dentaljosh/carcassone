@@ -1,0 +1,280 @@
+[scoring] 2026-08-19T00:19:26-04:00 box=local W=30 strata='s1' judges='clair-puct'
+[scoring] share-run=/mnt/c/carc-shared/tiearb_widening_20260817  repo=/home/doctor/projects/carcassone  log=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/scoring_local_20260819T041926Z.log
+[scoring] sizing assumption: local W30 vs laptop W22
+[scoring]   x LAPTOP_RATE=0.75 -> effective 30 : 16.5
+[scoring] salt: run_tiletie.WORLD_SEED_SALT = 'tiletie-v1' (module constant, passed to BOTH leg drivers as --world-seed-salt)
+[scoring] NOTE s1: chunk plan m_worlds=32 vs committed m=128. NOT a defect and NOT asserted: build_positions has no --m flag and its m_worlds is cost-arithmetic metadata only. The M of record is G-M's, from RUN_MANIFEST via run_tiletie --m.
+[scoring] s1: POSITION_ORDER verified (seed 20260817, n=1344, sizes=[168, 168, 168, 168, 168, 168, 168, 168]) — whole-rid chunks, disjoint, exhaustive
+[scoring] ---- process census ----
+    PID     ELAPSED %CPU COMMAND
+2811331       00:26  0.0 python
+2811332       00:26  0.4 python
+2811333       00:25 99.8 python
+2811334       00:25 97.5 python
+2811335       00:25 99.8 python
+2.78 5.94 22.96 7/822 2811435
+[scoring] ===== stratum=s1 judge=clair-puct chunks='9 10 11 12 13' m=128
+[scoring] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk9 --judges clair-puct --m 128 --oracle-sims 100 --arb-backend rust --arb-legal-mask-cache --only-profiles walled --workers 30 --out-root /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk9 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk9.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk9.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk9.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk9.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 21.62 10.77 22.66 32/871 2812013
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+2811331       02:20  0.1 python
+2811441       01:54  0.2 python
+2811920       00:46  0.3 python
+2811921       00:46  0.2 python
+2811922       00:46  0.2 python
+2811923       00:46  0.2 python
+2811924       00:46 97.0 python
+2811925       00:46 95.6 python
+2811926       00:46 96.4 python
+2811927       00:46 97.0 python
+2811928       00:46 95.3 python
+2811938       00:46 97.6 python
+2811939       00:46 95.7 python
+2811943       00:46 95.9 python
+[preflight] git_clean: PASS
+    git_rev: 4b24f512
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 9
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk9/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk9/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=68 (e4=0 selfplay=68) max_arms=10 mean_arms=3.28 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=9920 oracle_worker_secs=16368.0 champ_pick_secs=935.4
+[run_tiletie] ETA at W=14: 0.343 h (1236 s)
+[run_tiletie] ETA at W=22: 0.218 h (787 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (backend=rust, R9=0, W=13, n=68) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (backend=rust, R9=0, W=7, n=38) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (backend=rust, R9=0, W=4, n=21) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (backend=rust, R9=0, W=2, n=14) -> leg_clair-puct_walled_leg4.log
+[run_tiletie] ===== launch clair-puct/walled/leg5 (backend=rust, R9=0, W=1, n=9) -> leg_clair-puct_walled_leg5.log
+[run_tiletie] ===== launch clair-puct/walled/leg6 (backend=rust, R9=0, W=1, n=2) -> leg_clair-puct_walled_leg6.log
+[run_tiletie] ===== launch clair-puct/walled/leg7 (backend=rust, R9=0, W=1, n=1) -> leg_clair-puct_walled_leg7.log
+[run_tiletie] ===== launch clair-puct/walled/leg8 (backend=rust, R9=0, W=1, n=1) -> leg_clair-puct_walled_leg8.log
+[run_tiletie] ===== launch clair-puct/walled/leg9 (backend=rust, R9=0, W=1, n=1) -> leg_clair-puct_walled_leg9.log
+[scoring] s1/clair-puct/chunk9 rc=0 2026-08-19T02:10:59-04:00
+[scoring] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk10 --judges clair-puct --m 128 --oracle-sims 100 --arb-backend rust --arb-legal-mask-cache --only-profiles walled --workers 30 --out-root /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk10 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk10.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk10.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk10.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk10.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.15 3.00 11.75 1/811 2854401
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+2854247       01:24  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 4b24f512
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 10
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk10/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk10/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=69 (e4=0 selfplay=69) max_arms=11 mean_arms=3.77 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=12224 oracle_worker_secs=20169.6 champ_pick_secs=949.1
+[run_tiletie] ETA at W=14: 0.419 h (1508 s)
+[run_tiletie] ETA at W=22: 0.267 h (960 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (backend=rust, R9=0, W=10, n=69) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg10 (backend=rust, R9=0, W=1, n=1) -> leg_clair-puct_walled_leg10.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (backend=rust, R9=0, W=6, n=42) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (backend=rust, R9=0, W=4, n=25) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (backend=rust, R9=0, W=2, n=15) -> leg_clair-puct_walled_leg4.log
+[run_tiletie] ===== launch clair-puct/walled/leg5 (backend=rust, R9=0, W=2, n=12) -> leg_clair-puct_walled_leg5.log
+[run_tiletie] ===== launch clair-puct/walled/leg6 (backend=rust, R9=0, W=1, n=8) -> leg_clair-puct_walled_leg6.log
+[run_tiletie] ===== launch clair-puct/walled/leg7 (backend=rust, R9=0, W=1, n=8) -> leg_clair-puct_walled_leg7.log
+[run_tiletie] ===== launch clair-puct/walled/leg8 (backend=rust, R9=0, W=2, n=6) -> leg_clair-puct_walled_leg8.log
+[run_tiletie] ===== launch clair-puct/walled/leg9 (backend=rust, R9=0, W=1, n=5) -> leg_clair-puct_walled_leg9.log
+[scoring] s1/clair-puct/chunk10 rc=0 2026-08-19T03:17:42-04:00
+[scoring] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk11 --judges clair-puct --m 128 --oracle-sims 100 --arb-backend rust --arb-legal-mask-cache --only-profiles walled --workers 30 --out-root /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk11 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk11.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk11.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk11.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk11.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 4.03 10.14 18.16 1/817 2861868
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+2861749       01:26  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 4b24f512
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 10
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk11/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk11/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=69 (e4=0 selfplay=69) max_arms=11 mean_arms=3.46 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=10880 oracle_worker_secs=17952.0 champ_pick_secs=949.1
+[run_tiletie] ETA at W=14: 0.375 h (1350 s)
+[run_tiletie] ETA at W=22: 0.239 h (859 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (backend=rust, R9=0, W=12, n=69) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg10 (backend=rust, R9=0, W=1, n=2) -> leg_clair-puct_walled_leg10.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (backend=rust, R9=0, W=7, n=39) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (backend=rust, R9=0, W=3, n=21) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (backend=rust, R9=0, W=2, n=13) -> leg_clair-puct_walled_leg4.log
+[run_tiletie] ===== launch clair-puct/walled/leg5 (backend=rust, R9=0, W=1, n=9) -> leg_clair-puct_walled_leg5.log
+[run_tiletie] ===== launch clair-puct/walled/leg6 (backend=rust, R9=0, W=1, n=5) -> leg_clair-puct_walled_leg6.log
+[run_tiletie] ===== launch clair-puct/walled/leg7 (backend=rust, R9=0, W=1, n=4) -> leg_clair-puct_walled_leg7.log
+[run_tiletie] ===== launch clair-puct/walled/leg8 (backend=rust, R9=0, W=1, n=4) -> leg_clair-puct_walled_leg8.log
+[run_tiletie] ===== launch clair-puct/walled/leg9 (backend=rust, R9=0, W=1, n=4) -> leg_clair-puct_walled_leg9.log
+[scoring] s1/clair-puct/chunk11 rc=0 2026-08-19T04:18:21-04:00
+[scoring] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk12 --judges clair-puct --m 128 --oracle-sims 100 --arb-backend rust --arb-legal-mask-cache --only-profiles walled --workers 30 --out-root /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk12 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk12.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk12.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk12.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk12.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.22 7.83 16.21 1/846 2869094
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+2868920       01:25  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 4b24f512
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 11
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk12/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk12/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=69 (e4=0 selfplay=69) max_arms=12 mean_arms=3.52 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=11136 oracle_worker_secs=18374.4 champ_pick_secs=949.1
+[run_tiletie] ETA at W=14: 0.383 h (1380 s)
+[run_tiletie] ETA at W=22: 0.244 h (878 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (backend=rust, R9=0, W=11, n=69) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg10 (backend=rust, R9=0, W=1, n=2) -> leg_clair-puct_walled_leg10.log
+[run_tiletie] ===== launch clair-puct/walled/leg11 (backend=rust, R9=0, W=1, n=1) -> leg_clair-puct_walled_leg11.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (backend=rust, R9=0, W=8, n=47) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (backend=rust, R9=0, W=3, n=23) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (backend=rust, R9=0, W=1, n=11) -> leg_clair-puct_walled_leg4.log
+[run_tiletie] ===== launch clair-puct/walled/leg5 (backend=rust, R9=0, W=1, n=8) -> leg_clair-puct_walled_leg5.log
+[run_tiletie] ===== launch clair-puct/walled/leg6 (backend=rust, R9=0, W=1, n=5) -> leg_clair-puct_walled_leg6.log
+[run_tiletie] ===== launch clair-puct/walled/leg7 (backend=rust, R9=0, W=1, n=4) -> leg_clair-puct_walled_leg7.log
+[run_tiletie] ===== launch clair-puct/walled/leg8 (backend=rust, R9=0, W=1, n=2) -> leg_clair-puct_walled_leg8.log
+[run_tiletie] ===== launch clair-puct/walled/leg9 (backend=rust, R9=0, W=1, n=2) -> leg_clair-puct_walled_leg9.log
+[scoring] s1/clair-puct/chunk12 rc=0 2026-08-19T05:39:24-04:00
+[scoring] EXACT: nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/tiletie/run_tiletie.py --positions-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk13 --judges clair-puct --m 128 --oracle-sims 100 --arb-backend rust --arb-legal-mask-cache --only-profiles walled --workers 30 --out-root /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13 --logs-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs --gate-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk13.json --manifest-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk13.json --resume --yes
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk13.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk13.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 3.34 2.12 5.78 1/812 2878094
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+2877911       01:25  0.1 python
+[preflight] git_clean: PASS
+    git_rev: 4b24f512
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 9
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk13/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk13/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=69 (e4=0 selfplay=69) max_arms=10 mean_arms=3.32 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=10240 oracle_worker_secs=16896.0 champ_pick_secs=949.1
+[run_tiletie] ETA at W=14: 0.354 h (1275 s)
+[run_tiletie] ETA at W=22: 0.225 h (811 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (backend=rust, R9=0, W=13, n=69) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (backend=rust, R9=0, W=6, n=36) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (backend=rust, R9=0, W=3, n=20) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (backend=rust, R9=0, W=2, n=14) -> leg_clair-puct_walled_leg4.log
+[run_tiletie] ===== launch clair-puct/walled/leg5 (backend=rust, R9=0, W=1, n=9) -> leg_clair-puct_walled_leg5.log
+[run_tiletie] ===== launch clair-puct/walled/leg6 (backend=rust, R9=0, W=2, n=5) -> leg_clair-puct_walled_leg6.log
+[run_tiletie] ===== launch clair-puct/walled/leg7 (backend=rust, R9=0, W=1, n=4) -> leg_clair-puct_walled_leg7.log
+[run_tiletie] ===== launch clair-puct/walled/leg8 (backend=rust, R9=0, W=1, n=2) -> leg_clair-puct_walled_leg8.log
+[run_tiletie] ===== launch clair-puct/walled/leg9 (backend=rust, R9=0, W=1, n=1) -> leg_clair-puct_walled_leg9.log
+[scoring] s1/clair-puct/chunk13 rc=0 2026-08-19T06:47:03-04:00
+[scoring] ALL 8 chunks DONE for s1/clair-puct (both boxes)
+==============================================================================
+  ✅ every allocated chunk of 's1' has scored on BOTH judges.
+  Next (LOCAL BOX, after the laptop's chunks have landed on the share):
+      measurement/tiearb_widening_20260817/merge_scoring.sh <stratum>
+==============================================================================
+[scoring] DONE box=local rc_all=0 2026-08-19T06:47:03-04:00

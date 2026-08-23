@@ -1,6 +1,6 @@
 # SCHEMA SWEEP — the merge layer's classification, closed by enumeration
 
-*Generated `2026-08-19T11:20:28Z` by `measurement/tiearb_widening_20260817/schema_sweep.py` — **re-runnable**: re-run it and diff, do not hand-edit.*
+*Generated `2026-08-19T11:32:12Z` by `measurement/tiearb_widening_20260817/schema_sweep.py` — **re-runnable**: re-run it and diff, do not hand-edit.*
 
 **Commissioned by [`DEVIATIONS.md` §D4.14b](DEVIATIONS.md).** Three merge refusals in a row (`execution` → D3, `git_rev`/`code_rev` → D4.11, `preflight.checks` → D4.14) meant the classification was being built by crashing into it. Enumerating it closes the schema, and the fail-closed default changes meaning: an unclassified-key raise now means **a schema change — a new emitter field**, which is exactly what should raise.
 

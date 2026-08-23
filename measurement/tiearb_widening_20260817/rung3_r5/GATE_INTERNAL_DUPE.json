@@ -1,0 +1,21 @@
+{
+  "band_pairs": [
+    "137e9<->137e9",
+    "137e9<->137e9",
+    "137e9<->137e9"
+  ],
+  "d_internal": 0.002819548872180451,
+  "design_doc": "measurement/tiearb_widening_20260817/rung3_r5/DESIGN.md",
+  "gate": "G-INTERNAL-DUPE",
+  "leg_sha256": "92ba1ee2dfbfed91f4853173e16e6e008d430ebf708055f4c8a76258eacbb7df",
+  "n_dupe_groups": 3,
+  "n_dupe_positions": 6,
+  "n_positions": 1064,
+  "note": "IDENTITY-DERIVED (DESIGN R5-FINAL.b): d_internal is a deterministic function of the sha-pinned leg and cannot fail unless G-CORPUS's sha check already has. The CONSISTENCY conjunct (n_dupe_groups/n_dupe_positions/ply/band) carries the falsifiable content.",
+  "ply_histogram": {
+    "2": 6
+  },
+  "saturation_guard": 0.05,
+  "saturation_void": false,
+  "schema": "carcassonne-rung3-r5-gate-internal-dupe/v1"
+}

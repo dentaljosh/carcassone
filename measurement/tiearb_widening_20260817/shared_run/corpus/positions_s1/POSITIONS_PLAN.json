@@ -1,0 +1,127 @@
+{
+  "afterstate_dedupe": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+    "dropped_index_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/DROPPED_ALL_TRANSPOSITION.json",
+    "dropped_pct": 26.533333333333335,
+    "n_dropped_all_transposition": 199,
+    "n_dropped_by_stratum": {
+      "selfplay": 199
+    },
+    "n_dropped_with_action_played_outside_tieset": 32,
+    "n_positions_with_arm_dedupe": 111,
+    "n_qualifying_before_drop": 750,
+    "savings_pct_full_supply": 36.732623033992894,
+    "tieset_arm_playouts_full_supply_after": 79808,
+    "tieset_arm_playouts_full_supply_before": 126144
+  },
+  "allow_missing_champ_picks": false,
+  "cap_j": null,
+  "cap_j_label": "inf",
+  "census_qualifying_n": 750,
+  "census_rows_n": 1400,
+  "champ_pick_secs": 7579.1152,
+  "counts_by_profile_leg": {
+    "walled/leg1": 551,
+    "walled/leg10": 8,
+    "walled/leg11": 2,
+    "walled/leg2": 324,
+    "walled/leg3": 176,
+    "walled/leg4": 101,
+    "walled/leg5": 70,
+    "walled/leg6": 38,
+    "walled/leg7": 31,
+    "walled/leg8": 22,
+    "walled/leg9": 17
+  },
+  "counts_by_stratum": {
+    "e4": 0,
+    "selfplay": 551
+  },
+  "deployed_cap_j": 4,
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "eta_by_workers": {
+    "W=14": {
+      "wall_hours": 2.9579983174603175,
+      "wall_secs": 10648.793942857143
+    },
+    "W=22": {
+      "wall_hours": 1.8823625656565657,
+      "wall_secs": 6776.505236363636
+    }
+  },
+  "exclude_rids": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a77.3 (Stage B is an extension of the same records directory, not a re-draw: the new positions are disjoint from the earlier stage by construction)",
+    "n_removed_from_supply": 0,
+    "n_requested": 2088,
+    "n_supply_after_exclusion": 551
+  },
+  "files": {
+    "walled/leg1": {
+      "n": 551,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg1.jsonl"
+    },
+    "walled/leg10": {
+      "n": 8,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg10.jsonl"
+    },
+    "walled/leg11": {
+      "n": 2,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg11.jsonl"
+    },
+    "walled/leg2": {
+      "n": 324,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg2.jsonl"
+    },
+    "walled/leg3": {
+      "n": 176,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg3.jsonl"
+    },
+    "walled/leg4": {
+      "n": 101,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg4.jsonl"
+    },
+    "walled/leg5": {
+      "n": 70,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg5.jsonl"
+    },
+    "walled/leg6": {
+      "n": 38,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg6.jsonl"
+    },
+    "walled/leg7": {
+      "n": 31,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg7.jsonl"
+    },
+    "walled/leg8": {
+      "n": 22,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg8.jsonl"
+    },
+    "walled/leg9": {
+      "n": 17,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg9.jsonl"
+    }
+  },
+  "formula": "DESIGN.md #7.1: oracle_worker_secs = n_positions*(A_bar-1)*2*M*c (summed per-position here, algebraically identical); champ_pick_secs = n_selfplay*t_champ; wall_hours = (oracle_worker_secs+champ_pick_secs)/(3600*W)",
+  "generated_utc": "2026-08-18T06:23:47Z",
+  "m_worlds": 32,
+  "max_arms": 12,
+  "mean_arms": 3.4319419237749544,
+  "mean_arms_j4": 2.780399274047187,
+  "n_e4": 0,
+  "n_positions": 551,
+  "n_positions_capped": 0,
+  "n_positions_capped_at_4": 88,
+  "n_positions_champ_pick_missing": 0,
+  "n_selfplay": 551,
+  "oracle_worker_secs": 141504.0,
+  "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1",
+  "playout_secs": 1.65,
+  "sample_seed": 20260819,
+  "schema": "carcassonne-tiletie-positions/v1",
+  "t_champ_secs": 13.7552,
+  "total_arm_playouts": 85760,
+  "total_worker_secs": 149083.1152,
+  "uncapped": true
+}

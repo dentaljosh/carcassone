@@ -1,0 +1,1 @@
+/home/doctor/projects/carcassone/scripts/tiletie/build_positions.py

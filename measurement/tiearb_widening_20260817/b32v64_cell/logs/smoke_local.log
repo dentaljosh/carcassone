@@ -1,0 +1,133 @@
+[run_cells 2026-08-21T05:34:44Z Doctor/local] role=local W=30 N=24 band=900000400000 tag=smoke out=/mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke
+[run_cells 2026-08-21T05:34:44Z Doctor/local] blind_commit=71b3286c  champion_leaf_hash=a36d2e15a3b3d71d
+[run_cells 2026-08-21T05:34:44Z Doctor/local] ⭐ the two cells differ in EXACTLY ONE EXPERIMENTAL argument: --cand-tiearb-b
+[run_cells 2026-08-21T05:34:44Z Doctor/local] ⚠️ they also differ in --out-subdir and --claim-host, which are BOOKKEEPING:
+[run_cells 2026-08-21T05:34:44Z Doctor/local] ⚠️ two cells cannot share one output dir or one --shared-claim tag without
+[run_cells 2026-08-21T05:34:44Z Doctor/local] ⚠️ corrupting each other (DESIGN §13.2 item 6). No other knob moves.
+[freeze] RUN_LIVE dropped -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell/RUN_LIVE.json
+[run_cells 2026-08-21T05:34:44Z Doctor/local] cell B32 (B=32) -> /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke/smoke_b32v64_B32J4_deploy11008
+[run_cells 2026-08-21T05:45:38Z Doctor/local] cell B64 (B=64) -> /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke/smoke_b32v64_B64J4_deploy11008
+[run_cells 2026-08-21T05:55:55Z Doctor/local] --- §9 aggregation: the two smoke cells -> SMOKE.json ---
+[smoke] CELL_B64  worker_secs_per_game = 843.323  (Σ elapsed_s 20239.76 / n 24)
+[smoke] CELL_B32  worker_secs_per_game = 502.446  (Σ elapsed_s 12058.713 / n 24)
+[smoke] §9.3 HALT bar: CELL_B64 843.323 vs 1392.037 (1.5 x 928.025) — under
+[smoke] ⚠️ ONE-SIDED: an overrun HALTS, an underrun proceeds. CELL_B32's cost is PRINTED and graded NOWHERE (§9.4).
+[smoke] ⚠️ This tool REPORTS; it adjudicates nothing.
+[smoke] -> /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke/SMOKE.json
+[run_cells 2026-08-21T05:55:55Z Doctor/local] --- §9.2 whitelist check ---
+[smoke] §9.3: under the bar — CELL_B64 realized 843.323 worker-s/game <= 1392.037 (= 1.5 x 928.025, MEASURED on the b64 cell's WIDE)
+[smoke] halt record -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell/SMOKE_HALT.json
+{
+ "surfaces": "\u00a79.2 defines TWO surfaces (RULING 1, VERBATIM). The EMITTER whitelist is fail-closed on unlisted keys and governs what SMOKE.json may contain. The G-SMOKE ROW fires only on forbidden OUTCOME keys, at any depth. Structural keys are expected and NEVER fire the row. A reading that applies the emitter whitelist to the row fails a known-good smoke.",
+ "emitter_surface": {
+  "ok": true,
+  "keys": [
+   "band_registry_claimed",
+   "band_seed_start",
+   "band_tier",
+   "cand_leaf_hash",
+   "carc_rs_binary_sha",
+   "carc_rs_build",
+   "champ_prefix_ms_per_move",
+   "games_per_sec",
+   "ms_ratio_cand_over_opp",
+   "n_failed",
+   "production_knobs",
+   "rung_ms_per_move",
+   "rust_toolchain",
+   "secs_per_game",
+   "smoke_utc",
+   "tiearb_errors_total",
+   "tiearb_fire_rate_on_tile_plies",
+   "tiearb_fired_plies_total",
+   "tiearb_first_error",
+   "tiearb_mean_arms",
+   "tiearb_partial_argmax_total",
+   "tiearb_phi",
+   "tiearb_pickchange_rate",
+   "tiearb_playouts_total",
+   "tiearb_secs_per_game",
+   "tiearb_tile_plies_total",
+   "wall_secs",
+   "worker_secs_per_game",
+   "workers"
+  ],
+  "forbidden_present": [],
+  "whitelist": [
+   "band_registry_claimed",
+   "band_seed_start",
+   "band_tier",
+   "cand_leaf_hash",
+   "carc_rs_binary_sha",
+   "carc_rs_build",
+   "champ_prefix_ms_per_move",
+   "games_per_sec",
+   "ms_ratio_cand_over_opp",
+   "n_failed",
+   "production_knobs",
+   "rung_ms_per_move",
+   "rust_toolchain",
+   "secs_per_game",
+   "smoke_utc",
+   "tiearb_errors_total",
+   "tiearb_fire_rate_on_tile_plies",
+   "tiearb_fired_plies_total",
+   "tiearb_first_error",
+   "tiearb_mean_arms",
+   "tiearb_partial_argmax_total",
+   "tiearb_phi",
+   "tiearb_pickchange_rate",
+   "tiearb_playouts_total",
+   "tiearb_secs_per_game",
+   "tiearb_tile_plies_total",
+   "wall_secs",
+   "worker_secs_per_game",
+   "workers"
+  ],
+  "forbidden_examples": [
+   "paired_mean_margin",
+   "paired_z",
+   "elo",
+   "winrate",
+   "W",
+   "D",
+   "L",
+   "f0",
+   "z_D",
+   "per_deck_margin"
+  ],
+  "surface": "EMITTER (write) \u2014 \u00a79.2 sentence 2",
+  "mode": "FAIL-CLOSED: an unlisted key is a REFUSAL, not a warning",
+  "f0_note": "f0 is MARGIN-DERIVED and is FORBIDDEN at the smoke"
+ },
+ "gate_surface": {
+  "ok": true,
+  "forbidden_outcome_keys": [],
+  "scanned": "every key, at ANY depth"
+ },
+ "cost_definition": "worker_secs_per_game = SUM(seed*.json::elapsed_s) / n \u2014 DESIGN \u00a77.1's own equation ('sum over seed*.json of elapsed_s / 1500 => 928.0251 worker-s per game'). NEVER wall x W / n: the house forbids costing from wall clock, and \u00a79.3 names that very substitution as the currency error behind Stage 2's cost miss.",
+ "worker_secs_per_game": 843.3233333333333,
+ "halt_bar": 1392.0375,
+ "halt_bar_derivation": "1.5 x 928.025 (\u00a79.3, graded on CELL_B64 only)",
+ "halt_record": {
+  "halt": false,
+  "realized": 843.3233333333333,
+  "bar": 1392.0375,
+  "graded_cell": "CELL_B64",
+  "evaluable": true,
+  "multiple": 1.5,
+  "committed": 928.025,
+  "why": "CELL_B64 realized 843.323 worker-s/game <= 1392.037 (= 1.5 x 928.025, MEASURED on the b64 cell's WIDE)",
+  "graded_on": "\u00a79.3 grades CELL_B64 ONLY \u2014 the one cell whose cost is MEASURED rather than projected. CELL_B32's realized cost is printed against its projection and graded NOWHERE (\u00a79.4); grading a 1.50x bar against a projection would be grading a model against itself.",
+  "on_halt": "\u26d4 the real cells are NOT launched, the smoke numbers and the revised bill are reported, and the decision returns to the OWNER. No re-tuning of B, the trigger, J, eps or the playout is licensed by a HALT \u2014 the only permitted responses are STOP, or the OWNER RE-FUNDS at the realized cost. \u26d4 There is NO override flag: a halt is not a switch the executor flips.",
+  "one_sided": "an overrun HALTS, an underrun proceeds"
+ },
+ "halt_record_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell/SMOKE_HALT.json",
+ "halt": false,
+ "one_sided": "an overrun HALTS, an underrun proceeds",
+ "adjudicates": "NOTHING about the CELLS \u2014 this tool REPORTS both \u00a79.2 surfaces. It DOES decide the \u00a79.3 HALT, which is a COST gate on whether the real cells launch at all, and is a branch input NOWHERE."
+}
+[run_cells 2026-08-21T05:55:55Z Doctor/local] --- §9.3 HALT bar (one-sided; graded on CELL_B64 only) ---
+[run_cells 2026-08-21T05:55:55Z Doctor/local]   bar = 1.50 x 928.025 = 1392.038 worker-s/game
+[run_cells 2026-08-21T05:55:55Z Doctor/local]   §9.3: UNDER the bar — the real cells may proceed.
+[run_cells 2026-08-21T05:55:55Z Doctor/local] DONE tag=smoke

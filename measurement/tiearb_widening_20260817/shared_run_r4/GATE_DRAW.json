@@ -1,0 +1,29 @@
+{
+  "by_arms_file": {
+    "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/ARMS.json": {
+      "n_checked": 1344,
+      "n_mismatch": 0
+    },
+    "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/ARMS.json": {
+      "n_checked": 1064,
+      "n_mismatch": 0
+    }
+  },
+  "cap_seed_date": 20260812,
+  "cap_seed_tag": "tiletie-cap",
+  "deployed_cap_j": 4,
+  "gate": "G-DRAW",
+  "git_rev": "2565525b3029665485d8a316fc16e1f9172f3073",
+  "goal": "the recorded J=4 subset is exactly this repo's own seeded draw at the run's git_rev; it asserts NOTHING about the deployed rust draw (DESIGN \u00a75, rider I7-draw-scope)",
+  "inputs": [
+    "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/ARMS.json",
+    "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/ARMS.json"
+  ],
+  "mismatch_examples": [],
+  "n_checked": 2408,
+  "n_identity_ok": 2408,
+  "n_mismatch": 0,
+  "n_size_ok": 2408,
+  "n_subset_id_ok": 2408,
+  "ok": true
+}

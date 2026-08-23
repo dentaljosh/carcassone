@@ -1,0 +1,7 @@
+[scoring] 2026-08-18T12:32:10-04:00 box=local W=30 strata='s1' judges='tier1-greedy clair-puct'
+[scoring] share-run=/mnt/c/carc-shared/tiearb_widening_20260817  repo=/home/doctor/projects/carcassone  log=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/scoring_local_20260818T163210Z.log
+[scoring] sizing assumption: local W30 vs laptop W22
+[scoring]   x LAPTOP_RATE=0.75 -> effective 30 : 16.5
+[scoring] salt: run_tiletie.WORLD_SEED_SALT = 'tiletie-v1' (module constant, passed to BOTH leg drivers as --world-seed-salt)
+[scoring] s1/chunk1: m_worlds=32 != 128 (DESIGN §4)
+[scoring] FATAL: POSITION_ORDER / chunk verification failed — DO NOT LAUNCH.

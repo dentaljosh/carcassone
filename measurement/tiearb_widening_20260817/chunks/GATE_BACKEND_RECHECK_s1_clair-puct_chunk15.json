@@ -1,0 +1,199 @@
+{
+  "gate": "rustport A3/B1 \u2014 oracle_score_pilot python vs rust continuation",
+  "why": "the pilot is a RULER (+0.7375 pts/disagreement, cluster-robust z +2.97); a converted ruler is a NEW ruler unless the conversion is provably a no-op ON THE RECORD.",
+  "seam": "the CONTINUATION AGENT only (build_continuation_agent -> champion_factory.build_clairvoyant_champion(backend=...) -> rust_agent.RustCarryClairvoyantAgent over carc_rs.PersistentSearcher). World sampling, CRN seed derivation, replay, the determinization draw and the terminal-score read are the SAME code on both legs.",
+  "gap2": "CLOSED \u2014 the rust continuation is a PERSISTING-TREE search (best_action carries), not MirrorState.search_single. Evidence: GAP2_ORACLE_CONTINUATION_TREE.json (the problem), GATE_GAP2_PERSISTENT.json (the fix, three-way).",
+  "surface": "every record field except ['elapsed_secs'], floats canonicalised to raw f64 bit patterns \u2014 per-world terminal margins (values_a/values_b), ply counts, the afterstate deck-hash / board-key CRN witnesses, and the whole position_delta block",
+  "knobs": {
+    "m_worlds": 2,
+    "oracle_sims": 100,
+    "max_plies": 400,
+    "oracle_policy": "clair-puct"
+  },
+  "positions": 8,
+  "field_checks": 376,
+  "mismatches": [],
+  "python_secs": 279.8,
+  "rust_secs": 32.4,
+  "speedup": 8.63,
+  "verdict": "PASS",
+  "scope": "the clair-puct continuation at these knobs on this revision. tier1-greedy is out of scope (no Rust RuleBasedPlayer \u2014 the harness refuses it). Says nothing about Gap 3 (evaluator injection) or the snapshot/UCT family, which remain OPEN.",
+  "rows": [
+    {
+      "rid": "s28000000002_p104_r1",
+      "source": "champ",
+      "deck_seed": 28000000002,
+      "ply": 104,
+      "m": 2,
+      "fields": 47,
+      "delta": -3.0,
+      "values_a": [
+        -16.0,
+        -36.0
+      ],
+      "values_b": [
+        -21.0,
+        -37.0
+      ],
+      "crn_verified": true,
+      "python_secs": 21.02,
+      "rust_secs": 2.77,
+      "speedup": 7.59,
+      "identical": true
+    },
+    {
+      "rid": "s28000000000_p104_r1",
+      "source": "champ",
+      "deck_seed": 28000000000,
+      "ply": 104,
+      "m": 2,
+      "fields": 47,
+      "delta": -8.0,
+      "values_a": [
+        -18.0,
+        -4.0
+      ],
+      "values_b": [
+        -25.0,
+        -13.0
+      ],
+      "crn_verified": true,
+      "python_secs": 23.01,
+      "rust_secs": 3.17,
+      "speedup": 7.25,
+      "identical": true
+    },
+    {
+      "rid": "s28000000001_p104_r1",
+      "source": "champ",
+      "deck_seed": 28000000001,
+      "ply": 104,
+      "m": 2,
+      "fields": 47,
+      "delta": -4.5,
+      "values_a": [
+        -3.0,
+        12.0
+      ],
+      "values_b": [
+        -2.0,
+        2.0
+      ],
+      "crn_verified": true,
+      "python_secs": 23.78,
+      "rust_secs": 2.93,
+      "speedup": 8.12,
+      "identical": true
+    },
+    {
+      "rid": "s28000000000_p72_r1",
+      "source": "champ",
+      "deck_seed": 28000000000,
+      "ply": 72,
+      "m": 2,
+      "fields": 47,
+      "delta": -8.5,
+      "values_a": [
+        -11.0,
+        6.0
+      ],
+      "values_b": [
+        -22.0,
+        0.0
+      ],
+      "crn_verified": true,
+      "python_secs": 36.59,
+      "rust_secs": 4.43,
+      "speedup": 8.26,
+      "identical": true
+    },
+    {
+      "rid": "s28000000001_p72_r1",
+      "source": "champ",
+      "deck_seed": 28000000001,
+      "ply": 72,
+      "m": 2,
+      "fields": 47,
+      "delta": 7.5,
+      "values_a": [
+        -5.0,
+        -30.0
+      ],
+      "values_b": [
+        -2.0,
+        -18.0
+      ],
+      "crn_verified": true,
+      "python_secs": 36.59,
+      "rust_secs": 4.49,
+      "speedup": 8.16,
+      "identical": true
+    },
+    {
+      "rid": "s28000000000_p40_r1",
+      "source": "champ",
+      "deck_seed": 28000000000,
+      "ply": 40,
+      "m": 2,
+      "fields": 47,
+      "delta": -7.0,
+      "values_a": [
+        8.0,
+        -3.0
+      ],
+      "values_b": [
+        -5.0,
+        -4.0
+      ],
+      "crn_verified": true,
+      "python_secs": 44.7,
+      "rust_secs": 4.82,
+      "speedup": 9.28,
+      "identical": true
+    },
+    {
+      "rid": "s28000000001_p40_r1",
+      "source": "champ",
+      "deck_seed": 28000000001,
+      "ply": 40,
+      "m": 2,
+      "fields": 47,
+      "delta": 17.0,
+      "values_a": [
+        -53.0,
+        6.0
+      ],
+      "values_b": [
+        0.0,
+        -13.0
+      ],
+      "crn_verified": true,
+      "python_secs": 46.1,
+      "rust_secs": 4.75,
+      "speedup": 9.7,
+      "identical": true
+    },
+    {
+      "rid": "s28000000002_p40_r1",
+      "source": "champ",
+      "deck_seed": 28000000002,
+      "ply": 40,
+      "m": 2,
+      "fields": 47,
+      "delta": 12.5,
+      "values_a": [
+        -15.0,
+        -13.0
+      ],
+      "values_b": [
+        -4.0,
+        1.0
+      ],
+      "crn_verified": true,
+      "python_secs": 47.99,
+      "rust_secs": 5.04,
+      "speedup": 9.51,
+      "identical": true
+    }
+  ]
+}

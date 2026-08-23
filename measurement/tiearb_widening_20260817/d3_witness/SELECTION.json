@@ -1,0 +1,41 @@
+{
+ "n_rids_requested": 16,
+ "n_rids_realized": 16,
+ "rids": [
+  "tt_sp_137000000503_p47",
+  "tt_sp_137000000405_p66",
+  "tt_sp_137000000250_p94",
+  "tt_sp_137000000462_p142",
+  "tt_sp_137000000266_p84",
+  "tt_sp_137000000506_p14",
+  "tt_sp_137000000184_p8",
+  "tt_sp_137000000354_p54",
+  "tt_sp_137000000083_p10",
+  "tt_sp_137000000383_p22",
+  "tt_sp_137000000028_p132",
+  "tt_sp_137000000080_p2",
+  "tt_sp_137000000163_p104",
+  "tt_sp_137000000369_p6",
+  "tt_sp_137000000426_p62",
+  "tt_sp_137000000307_p73"
+ ],
+ "selection_rule": "DEVIATIONS (drafter 751bdd12), verbatim: 'The first 16 rids in POSITION_ORDER.json order among rids possessing laptop-produced clair-puct records'. Deterministic; no cherry-picking; realized N recorded.",
+ "n_laptop_recorded_rids_total": 314,
+ "laptop_chunks": [
+  6,
+  7,
+  8
+ ],
+ "source_corpus": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1",
+ "positions_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/d3_witness/positions",
+ "order_sha256": "0225d6a728a01fee09d9e7ff0926984b0091068ba48504c13b3b6c4754e2ae54",
+ "legs": {
+  "walled/leg1": 16,
+  "walled/leg2": 13,
+  "walled/leg3": 10,
+  "walled/leg4": 6,
+  "walled/leg5": 5,
+  "walled/leg6": 1
+ },
+ "m_plan_cost_metadata": null
+}

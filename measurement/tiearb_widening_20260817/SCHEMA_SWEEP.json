@@ -59,7 +59,7 @@
   ]
  },
  "gate_addresses_missing_from_schema": [],
- "generated_utc": "2026-08-19T11:20:28Z",
+ "generated_utc": "2026-08-19T11:32:12Z",
  "generator": "measurement/tiearb_widening_20260817/schema_sweep.py",
  "governance": "Measurement plumbing only. Opens no record, computes no statistic, writes nothing under the prereg dir.",
  "judges": [

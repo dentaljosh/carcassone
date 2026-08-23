@@ -1,0 +1,189 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 16, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1500 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 1500 to play, 30 workers, out=/mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/b64_NARROW_B16J4_deploy11008
+  10/1500 played (42.4s/game, ~1052 min left)
+  20/1500 played (23.2s/game, ~572 min left)
+  30/1500 played (22.1s/game, ~542 min left)
+  40/1500 played (21.0s/game, ~511 min left)
+  50/1500 played (18.4s/game, ~445 min left)
+  60/1500 played (18.6s/game, ~447 min left)
+  70/1500 played (18.1s/game, ~431 min left)
+  80/1500 played (16.9s/game, ~400 min left)
+  90/1500 played (17.4s/game, ~408 min left)
+  100/1500 played (17.0s/game, ~397 min left)
+  110/1500 played (16.7s/game, ~388 min left)
+  120/1500 played (16.5s/game, ~380 min left)
+  130/1500 played (16.5s/game, ~377 min left)
+  140/1500 played (16.3s/game, ~369 min left)
+  150/1500 played (16.2s/game, ~364 min left)
+  160/1500 played (16.3s/game, ~363 min left)
+  170/1500 played (16.1s/game, ~356 min left)
+  180/1500 played (16.1s/game, ~353 min left)
+  190/1500 played (16.2s/game, ~354 min left)
+  200/1500 played (16.1s/game, ~349 min left)
+  210/1500 played (15.8s/game, ~339 min left)
+  220/1500 played (16.2s/game, ~346 min left)
+  230/1500 played (15.9s/game, ~337 min left)
+  240/1500 played (15.7s/game, ~329 min left)
+  250/1500 played (16.0s/game, ~333 min left)
+  260/1500 played (15.8s/game, ~327 min left)
+  270/1500 played (15.8s/game, ~325 min left)
+  280/1500 played (16.0s/game, ~325 min left)
+  290/1500 played (15.7s/game, ~316 min left)
+  300/1500 played (15.8s/game, ~316 min left)
+  310/1500 played (15.8s/game, ~314 min left)
+  320/1500 played (15.7s/game, ~309 min left)
+  330/1500 played (15.6s/game, ~304 min left)
+  340/1500 played (15.8s/game, ~305 min left)
+  350/1500 played (15.7s/game, ~300 min left)
+  360/1500 played (15.7s/game, ~298 min left)
+  370/1500 played (15.7s/game, ~295 min left)
+  380/1500 played (15.6s/game, ~291 min left)
+  390/1500 played (15.6s/game, ~289 min left)
+  400/1500 played (15.6s/game, ~286 min left)
+  410/1500 played (15.6s/game, ~283 min left)
+  420/1500 played (15.5s/game, ~279 min left)
+  430/1500 played (15.6s/game, ~278 min left)
+  440/1500 played (15.6s/game, ~275 min left)
+  450/1500 played (15.5s/game, ~271 min left)
+  460/1500 played (15.4s/game, ~268 min left)
+  470/1500 played (15.4s/game, ~265 min left)
+  480/1500 played (15.5s/game, ~263 min left)
+  490/1500 played (15.5s/game, ~261 min left)
+  500/1500 played (15.4s/game, ~257 min left)
+  510/1500 played (15.6s/game, ~257 min left)
+  520/1500 played (15.5s/game, ~253 min left)
+  530/1500 played (15.5s/game, ~250 min left)
+  540/1500 played (15.4s/game, ~247 min left)
+  550/1500 played (15.5s/game, ~246 min left)
+Process ForkPoolWorker-30:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 131, in worker
+    put((job, i, result))
+  File "/usr/lib/python3.12/multiprocessing/queues.py", line 399, in put
+    self._writer.send_bytes(obj)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 200, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 427, in _send_bytes
+    self._send(header + buf)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 384, in _send
+    n = write(self._handle, buf)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 136, in worker
+    put((job, i, (False, wrapped)))
+  File "/usr/lib/python3.12/multiprocessing/queues.py", line 399, in put
+    self._writer.send_bytes(obj)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 200, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 427, in _send_bytes
+    self._send(header + buf)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 384, in _send
+    n = write(self._handle, buf)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+Process ForkPoolWorker-25:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 131, in worker
+    put((job, i, result))
+  File "/usr/lib/python3.12/multiprocessing/queues.py", line 399, in put
+    self._writer.send_bytes(obj)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 200, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 427, in _send_bytes
+    self._send(header + buf)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 384, in _send
+    n = write(self._handle, buf)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3.12/multiprocessing/pool.py", line 136, in worker
+    put((job, i, (False, wrapped)))
+  File "/usr/lib/python3.12/multiprocessing/queues.py", line 399, in put
+    self._writer.send_bytes(obj)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 200, in send_bytes
+    self._send_bytes(m[offset:offset + size])
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 427, in _send_bytes
+    self._send(header + buf)
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 384, in _send
+    n = write(self._handle, buf)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 16, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1500 paired=True K=2 k_dets=8 sims=1376 | 1010 cached, 490 to play, 14 workers, out=/mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/b64_NARROW_B16J4_deploy11008
+  10/490 played (34.3s/game, ~274 min left)
+  20/490 played (30.8s/game, ~241 min left)
+  30/490 played (29.2s/game, ~224 min left)
+  40/490 played (26.2s/game, ~196 min left)
+  50/490 played (25.9s/game, ~190 min left)
+  60/490 played (25.3s/game, ~181 min left)
+  70/490 played (25.2s/game, ~176 min left)
+  80/490 played (24.6s/game, ~168 min left)
+  90/490 played (24.6s/game, ~164 min left)
+  100/490 played (23.9s/game, ~155 min left)
+  110/490 played (24.4s/game, ~154 min left)
+  120/490 played (23.9s/game, ~148 min left)
+  130/490 played (23.8s/game, ~143 min left)
+  140/490 played (24.1s/game, ~141 min left)
+  150/490 played (23.8s/game, ~135 min left)
+  160/490 played (23.7s/game, ~130 min left)
+  170/490 played (23.7s/game, ~127 min left)
+  180/490 played (23.7s/game, ~122 min left)
+  190/490 played (23.3s/game, ~117 min left)
+  200/490 played (23.4s/game, ~113 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 1472   candidate: 798W / 34D / 640L   winrate 0.554 (z=+4.12)
+avg score diff (candidate - opponent): +3.74
+ELO: +37.4  (+/- 9.1 1sigma)
+PAIRED: 728 decks   mean seat-balanced margin +3.71   z = +7.57
+prefix ms/move: candidate 4140  opponent 1736  (ratio 2.38x)
+fair endgame: candidate latched 1472/1472 games, 1.24s solver/game, timeouts=0
+fair endgame: opponent  latched 1472/1472 games, 1.30s solver/game, timeouts=0
+tie-arbiter: 1472 games, mode(s) argmax — phi 17.54 fired tile plies/game (offline prior 22.96; 25813/50742 of tile plies), pick-change 0.593, mean arms 3.26, 1347328 playouts, 164.3s/game
+[summary.json] wrote /mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/b64_NARROW_B16J4_deploy11008/summary.json
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 16, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1500 paired=True K=2 k_dets=8 sims=1376 | 1472 cached, 28 to play, 14 workers, out=/mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/b64_NARROW_B16J4_deploy11008
+  10/28 played (37.2s/game, ~11 min left)
+  20/28 played (34.0s/game, ~5 min left)
+  28/28 played (28.2s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 1500   candidate: 811W / 34D / 655L   winrate 0.552 (z=+4.03)
+avg score diff (candidate - opponent): +3.66
+ELO: +36.3  (+/- 9.0 1sigma)
+PAIRED: 750 decks   mean seat-balanced margin +3.66   z = +7.59
+prefix ms/move: candidate 4129  opponent 1730  (ratio 2.39x)
+fair endgame: candidate latched 1500/1500 games, 1.24s solver/game, timeouts=0
+fair endgame: opponent  latched 1500/1500 games, 1.31s solver/game, timeouts=0
+tie-arbiter: 1500 games, mode(s) argmax — phi 17.55 fired tile plies/game (offline prior 22.96; 26330/51706 of tile plies), pick-change 0.593, mean arms 3.26, 1374528 playouts, 164.0s/game
+[summary.json] wrote /mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/b64_NARROW_B16J4_deploy11008/summary.json

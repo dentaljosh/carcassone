@@ -1,0 +1,300 @@
+{
+  "addresses": [
+    {
+      "address": "READOUT::widening.completion.s2_n",
+      "gate": "G-COMPLETE",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "READOUT::widening.failed.n_failed_rids",
+      "gate": "G-FAILED",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "READOUT::widening.failed.n_attempted",
+      "gate": "G-FAILED",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "READOUT::widening.failed.rate",
+      "gate": "G-FAILED",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "READOUT::widening.failed.by_class",
+      "gate": "G-FAILED",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "object"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/RUN_MANIFEST_R5.json::m_worlds",
+      "gate": "G-M",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/RUN_MANIFEST_R5.json::b_ceiling_from_m",
+      "gate": "G-M",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.m",
+      "gate": "G-M",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 12,
+      "role": "fallback",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/RUN_MANIFEST_R5.json::world_seed_salt",
+      "gate": "G-SALT",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/corpus/positions_s2/POSITIONS_PLAN.json::deployed_cap_j",
+      "gate": "G-SALT",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "\u2026/ARMS.json::<rid>.cap_seed",
+      "gate": "G-SALT",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/legs/s2/tier1-greedy/walled/leg<N>/manifest.json::resolved_config.world_seed_salt",
+      "gate": "G-SALT",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 12,
+      "role": "fallback",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/RUN_MANIFEST_R5.json::arb_backend",
+      "gate": "G-BACKEND",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/RUN_MANIFEST_R5.json::resolved_backend_by_leg",
+      "gate": "G-BACKEND",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "object"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/RUN_MANIFEST_R5.json::arb_legal_mask_cache",
+      "gate": "G-BACKEND",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "boolean"
+      ],
+      "why": null
+    },
+    {
+      "address": "\u2026/manifest.json::resolved_config.legal_mask_cache",
+      "gate": "G-BACKEND",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 12,
+      "role": "fallback",
+      "state": "resolved",
+      "types": [
+        "boolean"
+      ],
+      "why": null
+    },
+    {
+      "address": "READOUT::widening.j_rider.d_draw.d_draw_ran",
+      "gate": "G-DDRAW",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "boolean"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/D_DRAW.json",
+      "gate": "G-DDRAW",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [],
+      "why": null
+    },
+    {
+      "address": "RUN/MERGE_REPORT_s2.json",
+      "gate": "G-TWOBOX",
+      "marker": "[post-scoring]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [],
+      "why": null
+    }
+  ],
+  "completeness": {
+    "audited_at_no_pass": [],
+    "by_pass_counts": {
+      "A1": 54,
+      "A2": 35,
+      "A3": 19
+    },
+    "carried_without_address": [
+      {
+        "address_cell": "as carried",
+        "gates": [
+          "G-LEAF",
+          "G-PREFIX",
+          "G-CRN",
+          "G-UNCAPPED",
+          "G-DRAW",
+          "G-ARMS",
+          "G-BITEXACT@HEAD"
+        ],
+        "why": "the address column names NO address ('as carried') \u2014 this row cannot be evaluated at any pass and is REPORTED rather than counted as covered"
+      }
+    ],
+    "invented": [],
+    "n_in_address_table": 54,
+    "n_named_in_read_rule": 54,
+    "ok": true,
+    "rulings_not_addresses": [
+      "SMOKE_R5.json::resolved_config.m",
+      "legs/\u2026/manifest.json::resolved_config.m"
+    ],
+    "uncovered": [],
+    "union_equals_table": true
+  },
+  "freeze_verification": null,
+  "mechanism": "address + gate + marker + resolved/UNRESOLVED + JSON type name. NO VALUE is printed or stored \u2014 not the value, not a truncation of it, not a length, not a sha.",
+  "n_addresses_this_pass": 19,
+  "n_unresolved": 0,
+  "no_fixture_committed": [],
+  "pass": "A3",
+  "passed": true,
+  "read_rule": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/READ_RULE.md",
+  "readout_fixture_ambiguity": {
+    "accepted": [
+      "READOUT_R5.fixture.json",
+      "READOUT.fixture.json"
+    ],
+    "design_fixture_list_names": "fixtures/READOUT.fixture.json",
+    "execution_layer_ruling_names": "fixtures/READOUT_R5.fixture.json",
+    "found": "READOUT.fixture.json",
+    "handling": "EITHER name is accepted, READOUT_R5 preferred. The pair contradicts itself here; this tool REPORTS the conflict and does not edit the pair to settle it."
+  },
+  "run": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5",
+  "unaudited_fallbacks": []
+}

@@ -1,0 +1,168 @@
+[merge] 2026-08-19T07:00:49-04:00 strata=' s1' dry='--dry-run'
+[merge] share-run=/mnt/c/carc-shared/tiearb_widening_20260817  log=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/merge_20260819T110049Z.log
+[merge] ===== s1: /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1 -> /mnt/c/carc-shared/tiearb_widening_20260817/s1
+[merge] EXACT: /home/doctor/projects/carcassone/.venv/bin/python -u /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/merge_legs.py --stratum s1 --chunks-root /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1 --out-dir /mnt/c/carc-shared/tiearb_widening_20260817/s1 --positions-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1 --manifests-dir /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests --run-manifest-out /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/RUN_MANIFEST_S1.json --report /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/MERGE_REPORT_s1.json --dry-run
+{
+ "schema": "carcassonne-tiearb-widening-merge/v1",
+ "run_id": "tiearb_widening_20260817",
+ "stratum": "s1",
+ "generated_utc": "2026-08-19T11:00:49Z",
+ "chunks_root": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1",
+ "out_dir": "/mnt/c/carc-shared/tiearb_widening_20260817/s1",
+ "positions_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1",
+ "chunks_found": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16
+ ],
+ "expected_legs": {
+  "walled/leg1": 1344,
+  "walled/leg10": 18,
+  "walled/leg11": 6,
+  "walled/leg12": 1,
+  "walled/leg2": 802,
+  "walled/leg3": 444,
+  "walled/leg4": 256,
+  "walled/leg5": 189,
+  "walled/leg6": 102,
+  "walled/leg7": 80,
+  "walled/leg8": 55,
+  "walled/leg9": 31
+ },
+ "judges": [
+  "tier1-greedy",
+  "clair-puct"
+ ],
+ "dry_run": true,
+ "problems": [
+  "RUN_MANIFEST merge: preflight.checks differs across chunks and has no merge rule: chunk1={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk2={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk3={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk4={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk5={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk6={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk7={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk8={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk9={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk10={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk11={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk12={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk13={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk14={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk15={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk16={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk17={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk18={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk19={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk20={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk21={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk22={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk23={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk24={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk25={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk26={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk27={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk28={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk29={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk30={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk31={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk32={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru"
+ ],
+ "ok": false,
+ "n_records_copied": 0,
+ "n_records_present": 6656,
+ "rev_license": {
+  "active": true,
+  "paths": [
+   "champion_manifest.code_commit",
+   "code_rev",
+   "execution.carc_rs_build",
+   "execution.code_rev",
+   "git_rev",
+   "preflight.wheel.carc_rs_build"
+  ],
+  "licensed_revs": {
+   "committed_tranche": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+   "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+  },
+  "instrument_identity": {
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/INSTRUMENT_IDENTITY.json",
+   "sha256": "5dc04affc36c3c18396c6bb5744ef81b143447c112dd4412adb285a5f4ade9d4",
+   "rederived": {
+    "recipe": "git -C <repo> diff --name-only 4b24f512a0833b3fe71a126b713c560b2c8c4db1 58c2b539556916b0f6280d233b48d5dcbed7ca88 -- scripts/tiletie/run_tiletie.py scripts/measurement_infra/oracle_score_pilot.py scripts/tiletie/tier1_rust_leg.py src/ engine/ rust/",
+    "repo": "/home/doctor/projects/carcassone",
+    "rev_a": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+    "rev_b": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+    "paths": [
+     "scripts/tiletie/run_tiletie.py",
+     "scripts/measurement_infra/oracle_score_pilot.py",
+     "scripts/tiletie/tier1_rust_leg.py",
+     "src/",
+     "engine/",
+     "rust/"
+    ],
+    "n_files_changed": 0,
+    "empty": true,
+    "stat": "",
+    "verified_utc": "2026-08-19T11:00:49Z"
+   }
+  },
+  "note": "this stratum's merge SPANS TWO REVS under the enumerated D4.11 licence; the instrument diff was re-derived here"
+ },
+ "run_manifest": {
+  "schema": "carcassonne-tiearb-widening-merge/v1",
+  "stratum": "S1",
+  "out_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/RUN_MANIFEST_S1.json",
+  "n_sources": 32,
+  "sources": [
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk1.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk10.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk11.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk12.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk13.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk14.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk15.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk16.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk2.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk3.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk4.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk5.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk6.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk7.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk8.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk9.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk1.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk10.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk11.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk12.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk13.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk14.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk15.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk16.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk2.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk3.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk4.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk5.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk6.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk7.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk8.json",
+   "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk9.json"
+  ],
+  "ok": false,
+  "problems": [
+   "RUN_MANIFEST merge: preflight.checks differs across chunks and has no merge rule: chunk1={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk2={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk3={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk4={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk5={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk6={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk7={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk8={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk9={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk10={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk11={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk12={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk13={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk14={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk15={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk16={\"arb_backend\": {\"arb_backend\": \"rust\", \"note\": \"no tier1-greedy leg in --judges; the flag is inert\", \"ok\": true}, \"gate; chunk17={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk18={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk19={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk20={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk21={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk22={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk23={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk24={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk25={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk26={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk27={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk28={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk29={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk30={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk31={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk32={\"arb_backend\": {\"arb_backend\": \"rust\", \"ok\": true, \"runner\": \"/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru"
+  ]
+ }
+}
+[merge] ok   clair-puct/walled/leg1: present=1344/1344 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 94, '2': 99, '3': 99, '4': 97, '5': 90, '6': 104, '7': 104, '8': 106, '9': 68, '10': 69, '11': 69, '12': 69, '13': 69, '14': 69, '15': 69, '16': 69}
+[merge] ok   clair-puct/walled/leg10: present=18/18 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 2, '2': 0, '3': 2, '4': 3, '5': 0, '6': 1, '7': 2, '8': 0, '9': 0, '10': 1, '11': 2, '12': 2, '13': 0, '14': 1, '15': 1, '16': 1}
+[merge] ok   clair-puct/walled/leg11: present=6/6 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 1, '2': 0, '3': 1, '4': 1, '5': 0, '6': 0, '7': 1, '8': 0, '9': 0, '10': 0, '11': 0, '12': 1, '13': 0, '14': 1, '15': 0, '16': 0}
+[merge] ok   clair-puct/walled/leg12: present=1/1 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 1, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0, '10': 0, '11': 0, '12': 0, '13': 0, '14': 0, '15': 0, '16': 0}
+[merge] ok   clair-puct/walled/leg2: present=802/802 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 60, '2': 56, '3': 58, '4': 60, '5': 53, '6': 69, '7': 67, '8': 55, '9': 38, '10': 42, '11': 39, '12': 47, '13': 36, '14': 41, '15': 38, '16': 43}
+[merge] ok   clair-puct/walled/leg3: present=444/444 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 40, '2': 36, '3': 32, '4': 35, '5': 25, '6': 37, '7': 35, '8': 28, '9': 21, '10': 25, '11': 21, '12': 23, '13': 20, '14': 25, '15': 13, '16': 28}
+[merge] ok   clair-puct/walled/leg4: present=256/256 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 22, '2': 23, '3': 18, '4': 20, '5': 13, '6': 24, '7': 21, '8': 14, '9': 14, '10': 15, '11': 13, '12': 11, '13': 14, '14': 10, '15': 6, '16': 18}
+[merge] ok   clair-puct/walled/leg5: present=189/189 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 16, '2': 19, '3': 14, '4': 16, '5': 11, '6': 17, '7': 17, '8': 9, '9': 9, '10': 12, '11': 9, '12': 8, '13': 9, '14': 8, '15': 5, '16': 10}
+[merge] ok   clair-puct/walled/leg6: present=102/102 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 8, '2': 6, '3': 11, '4': 10, '5': 7, '6': 7, '7': 8, '8': 7, '9': 2, '10': 8, '11': 5, '12': 5, '13': 5, '14': 6, '15': 2, '16': 5}
+[merge] ok   clair-puct/walled/leg7: present=80/80 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 6, '2': 5, '3': 11, '4': 10, '5': 4, '6': 4, '7': 6, '8': 3, '9': 1, '10': 8, '11': 4, '12': 4, '13': 4, '14': 3, '15': 2, '16': 5}
+[merge] ok   clair-puct/walled/leg8: present=55/55 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 6, '2': 3, '3': 6, '4': 7, '5': 3, '6': 3, '7': 3, '8': 2, '9': 1, '10': 6, '11': 4, '12': 2, '13': 2, '14': 2, '15': 2, '16': 3}
+[merge] ok   clair-puct/walled/leg9: present=31/31 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 3, '2': 0, '3': 2, '4': 3, '5': 1, '6': 2, '7': 2, '8': 1, '9': 1, '10': 5, '11': 4, '12': 2, '13': 1, '14': 1, '15': 2, '16': 1}
+[merge] ok   tier1-greedy/walled/leg1: present=1344/1344 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 94, '2': 99, '3': 99, '4': 97, '5': 90, '6': 104, '7': 104, '8': 106, '9': 68, '10': 69, '11': 69, '12': 69, '13': 69, '14': 69, '15': 69, '16': 69}
+[merge] ok   tier1-greedy/walled/leg10: present=18/18 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 2, '2': 0, '3': 2, '4': 3, '5': 0, '6': 1, '7': 2, '8': 0, '9': 0, '10': 1, '11': 2, '12': 2, '13': 0, '14': 1, '15': 1, '16': 1}
+[merge] ok   tier1-greedy/walled/leg11: present=6/6 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 1, '2': 0, '3': 1, '4': 1, '5': 0, '6': 0, '7': 1, '8': 0, '9': 0, '10': 0, '11': 0, '12': 1, '13': 0, '14': 1, '15': 0, '16': 0}
+[merge] ok   tier1-greedy/walled/leg12: present=1/1 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 1, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0, '10': 0, '11': 0, '12': 0, '13': 0, '14': 0, '15': 0, '16': 0}
+[merge] ok   tier1-greedy/walled/leg2: present=802/802 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 60, '2': 56, '3': 58, '4': 60, '5': 53, '6': 69, '7': 67, '8': 55, '9': 38, '10': 42, '11': 39, '12': 47, '13': 36, '14': 41, '15': 38, '16': 43}
+[merge] ok   tier1-greedy/walled/leg3: present=444/444 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 40, '2': 36, '3': 32, '4': 35, '5': 25, '6': 37, '7': 35, '8': 28, '9': 21, '10': 25, '11': 21, '12': 23, '13': 20, '14': 25, '15': 13, '16': 28}
+[merge] ok   tier1-greedy/walled/leg4: present=256/256 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 22, '2': 23, '3': 18, '4': 20, '5': 13, '6': 24, '7': 21, '8': 14, '9': 14, '10': 15, '11': 13, '12': 11, '13': 14, '14': 10, '15': 6, '16': 18}
+[merge] ok   tier1-greedy/walled/leg5: present=189/189 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 16, '2': 19, '3': 14, '4': 16, '5': 11, '6': 17, '7': 17, '8': 9, '9': 9, '10': 12, '11': 9, '12': 8, '13': 9, '14': 8, '15': 5, '16': 10}
+[merge] ok   tier1-greedy/walled/leg6: present=102/102 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 8, '2': 6, '3': 11, '4': 10, '5': 7, '6': 7, '7': 8, '8': 7, '9': 2, '10': 8, '11': 5, '12': 5, '13': 5, '14': 6, '15': 2, '16': 5}
+[merge] ok   tier1-greedy/walled/leg7: present=80/80 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 6, '2': 5, '3': 11, '4': 10, '5': 4, '6': 4, '7': 6, '8': 3, '9': 1, '10': 8, '11': 4, '12': 4, '13': 4, '14': 3, '15': 2, '16': 5}
+[merge] ok   tier1-greedy/walled/leg8: present=55/55 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 6, '2': 3, '3': 6, '4': 7, '5': 3, '6': 3, '7': 3, '8': 2, '9': 1, '10': 6, '11': 4, '12': 2, '13': 2, '14': 2, '15': 2, '16': 3}
+[merge] ok   tier1-greedy/walled/leg9: present=31/31 copied=0 missing=0 extra=0 dupes=0 by_chunk={'1': 3, '2': 0, '3': 2, '4': 3, '5': 1, '6': 2, '7': 2, '8': 1, '9': 1, '10': 5, '11': 4, '12': 2, '13': 1, '14': 1, '15': 2, '16': 1}
+[merge] report -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/MERGE_REPORT_s1.json
+
+[merge] FATAL: 1 problem(s) — the merged tree is NOT complete. DO NOT ANALYSE.
+  - RUN_MANIFEST merge: preflight.checks differs across chunks and has no merge rule: chunk1={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk2={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk3={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk4={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk5={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk6={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk7={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk8={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk9={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk10={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk11={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk12={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk13={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk14={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk15={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk16={"arb_backend": {"arb_backend": "rust", "note": "no tier1-greedy leg in --judges; the flag is inert", "ok": true}, "gate; chunk17={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk18={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk19={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk20={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk21={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk22={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk23={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk24={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk25={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk26={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk27={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk28={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk29={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk30={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk31={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru; chunk32={"arb_backend": {"arb_backend": "rust", "ok": true, "runner": "/home/doctor/projects/carcassone/scripts/tiletie/tier1_ru
+[merge] s1 rc=1
+[merge] DONE rc_all=1 2026-08-19T07:00:57-04:00

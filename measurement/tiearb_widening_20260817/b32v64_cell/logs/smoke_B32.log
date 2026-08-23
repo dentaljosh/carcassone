@@ -1,0 +1,21 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 32, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=24 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 24 to play, 30 workers, out=/mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke/smoke_b32v64_B32J4_deploy11008
+  10/24 played (49.2s/game, ~11 min left)
+  20/24 played (27.3s/game, ~2 min left)
+  24/24 played (26.6s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 24   candidate: 8W / 0D / 16L   winrate 0.333 (z=-1.63)
+avg score diff (candidate - opponent): -4.54
+ELO: -120.4  (+/- 75.2 1sigma)
+PAIRED: 12 decks   mean seat-balanced margin -4.54   z = -1.67
+prefix ms/move: candidate 5813  opponent 1457  (ratio 3.99x)
+fair endgame: candidate latched 24/24 games, 0.44s solver/game, timeouts=0
+fair endgame: opponent  latched 24/24 games, 0.66s solver/game, timeouts=0
+tie-arbiter: 24 games, mode(s) argmax — phi 18.46 fired tile plies/game (offline prior 22.96; 443/827 of tile plies), pick-change 0.569, mean arms 3.26, 46272 playouts, 299.4s/game
+[summary.json] wrote /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke/smoke_b32v64_B32J4_deploy11008/summary.json

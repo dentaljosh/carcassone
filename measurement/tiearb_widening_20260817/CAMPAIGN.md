@@ -1,9 +1,12 @@
 # Tie-arbiter widening campaign — planning consolidation (2026-08-18)
 
-> **🏁 STATUS 2026-08-20 — THE CAMPAIGN IS TERMINAL. ALL FOUR RUNGS *AND* THE B=64 GAME CELL NOW
-> HOLD TERMINAL STATES; NOTHING IS RUNNING AND NOTHING IS QUEUED. Exactly ONE follow-up is live,
-> and it is an OWNER DECISION: whether the N4 `rho_wall` bar moves above B = 16.**
+> **🏁 STATUS 2026-08-22 — THE CAMPAIGN IS TERMINAL. ALL FOUR RUNGS *AND* BOTH GAME CELLS NOW HOLD
+> TERMINAL STATES; NOTHING IS RUNNING AND NOTHING IS QUEUED, AND NO FOLLOW-UP IS LIVE.** The last
+> open question — the `B = 32` vs `B = 64` ladder read in **game** currency — ran 2026-08-21/22 and
+> closed **`L-AMBIGUOUS` under owner Reading A**, which **licenses nothing**: the deployed shape
+> stays **B=64 / J=4** and **B = 128 is unfunded by default**. See the game-cell row below.
 >
+> *(Superseded 2026-08-22, kept because it is the ruling that set the deployed shape:)*
 > **✅ RESOLVED 2026-08-20 (late) — owner, verbatim: *"I'm buying b64."*** The N4 bar is waived
 > for DESKTOP at B=64; deploy folded into `governance/PRODUCTION.yaml` (`fair_deploy.tiearb`,
 > B=64/J=4). **The verdict of record REMAINS `B-COSTKILL`** — this does not rewrite it, it is the
@@ -20,6 +23,7 @@
 > | (3) `J>4` successor `rung3_r5` | **`X-INCONCLUSIVE`** — unanswered at the fundable `n`, **not** a null | **2026-08-20** |
 > | (4) eps>0 near-ties | `K-DEAD` ∧ `K-STRUCTURAL` (census) | 2026-08-18 |
 > | **the `B=64` GAME cell** | **`B-COSTKILL`** — the widening WINS (`z_D` +2.6561) and the rung is UNAFFORDABLE | **2026-08-20** |
+> | **the `B=32` vs `B=64` GAME cell** | ⭐ **`L-AMBIGUOUS`** (owner Reading A) — UNRESOLVED, licenses NOTHING; `D` +0.6460, `z_D` +1.3830, `UB95(D)` **+1.4143** > the 0.93 tolerance. ⚠️ Mechanical record **`U-UNREADABLE`** (`G-BAND` conjunct 4), stands unedited | **2026-08-22** |
 >
 > ⛔ **`governance/PRODUCTION.yaml` UNTOUCHED on every one of these; NO claim minted by any of them;
 > the deployed shape stays B=16 / J=4.** ⛔ **`B-COSTKILL` licenses NOTHING DEPLOYABLE** — B=64 is
@@ -33,8 +37,29 @@
 > kept as history. Verdict write-ups: **DECISIONS 2026-08-20** (both) · DECISIONS 2026-08-19 (R4) ·
 > `experiments/results.csv` rows `tiearb_widening_r4_S1_rung2_B16to64_offline_n1340plies_b135e9_137e9`,
 > `tiearb_widening_r5_S2_rung3_Jgt4_offline_n1059plies_b135e9_137e9`,
-> `tiearb_widening_b64_gamecell_WIDE_B64_minus_NARROW_B16_n750decks_b139e9` ·
+> `tiearb_widening_b64_gamecell_WIDE_B64_minus_NARROW_B16_n750decks_b139e9`,
+> `tiearb_widening_b32v64_gamecell_B64_minus_B32_n1497decks_b140e9` ·
 > [PROGRAM_ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md).
+>
+> ⭐ **THE `b32v64` GAME CELL — CLOSED 2026-08-22, `L-AMBIGUOUS` UNDER OWNER READING A.** Two
+> deck-paired cells on band **140e9**, ONE deck set, **1,500 decks × 2 seatings = 3,000 games/cell**
+> (6,000 total), `CELL_B64` (the DEPLOYED shape, fresh-band replicate) vs `CELL_B32` (the cheaper
+> candidate), both against the **unmodified champion**. **PRIMARY `D` = M_B64 − M_B32 = +0.6460
+> pts/game, `se_D` 0.4671, `z_D` +1.3830, `n_common` 1,497 decks; `UB95(D)` = +1.4143 — the
+> ONE-SIDED 95% UPPER BOUND ON THE COST — against the committed 0.93 tolerance ⇒ `EQUIV` FALSE.**
+> ⛔ **THE MECHANICAL RECORD IS `U-UNREADABLE` AND STANDS UNEDITED:** `G-BAND` failed on conjunct 4
+> ("identical realized deck sets"), 12/13 gates PASS, and the **entire** difference is the 3
+> owner-confirmed panic-failed decks (`decks_only_in[CELL_B32]` = `[]`). ⭐ **The pair contradicted
+> itself** — `G-FAILED` tolerates ≤2% failures while conjunct 4 fires on *any* failure — a
+> **fourth** unsatisfiable gate and the **first found after its run**; owner ruled *"reading a"*
+> 2026-08-22, discharging the conjunct. ⛔ **LICENSES NOTHING:** deploy stays **B=64/J=4**
+> (`threads: 8` armed the same day, a bit-identical latency knob), **B = 128 UNFUNDED BY DEFAULT**,
+> no claim minted, `PRODUCTION.yaml` untouched, band 140e9 **RETIRED** `decision_influenced=yes`,
+> read-rule **SPENT**. ⚠️ **The ruling was NOT blind** (the adjudicator printed the statistics beside
+> the failed gate) — disclosure travels with every citation. Ruling of record:
+> [`b32v64_cell/ADJUDICATION_GBAND_READING_A.md`](b32v64_cell/ADJUDICATION_GBAND_READING_A.md);
+> read-out [`b32v64_cell/verdicts/READOUT_B32V64.md`](b32v64_cell/verdicts/READOUT_B32V64.md);
+> deviations [`DEVIATIONS.md`](DEVIATIONS.md) **D7.1**/**D7.2**; DECISIONS 2026-08-22.
 
 **Funded 2026-08-17 (late), owner verbatim: "i'm funding all 4. these are our only live
 levers for elo. have agents plan them out."** Four rung plans landed the same night

@@ -1,0 +1,203 @@
+{
+ "afterstate_dedupe": {
+  "applied": true,
+  "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+  "dropped_index_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2_ext/DROPPED_ALL_TRANSPOSITION.json",
+  "dropped_pct": 25.547348984436823,
+  "n_dropped_all_transposition": 1937,
+  "n_dropped_by_stratum": {
+   "selfplay": 1937
+  },
+  "n_dropped_with_action_played_outside_tieset": 273,
+  "n_positions_with_arm_dedupe": 54,
+  "n_qualifying_before_drop": 7582,
+  "savings_pct_full_supply": 35.295561665357425,
+  "tieset_arm_playouts_full_supply_after": 843456,
+  "tieset_arm_playouts_full_supply_before": 1303552
+ },
+ "allow_missing_champ_picks": false,
+ "cap_j": null,
+ "cap_j_label": "inf",
+ "census_qualifying_n": 7582,
+ "census_rows_n": 14520,
+ "champ_pick_secs": 1829.4416,
+ "counts_by_profile_leg": {
+  "walled/leg1": 133,
+  "walled/leg10": 13,
+  "walled/leg11": 9,
+  "walled/leg12": 1,
+  "walled/leg2": 133,
+  "walled/leg3": 133,
+  "walled/leg4": 133,
+  "walled/leg5": 100,
+  "walled/leg6": 70,
+  "walled/leg7": 52,
+  "walled/leg8": 39,
+  "walled/leg9": 22
+ },
+ "counts_by_stratum": {
+  "selfplay": 133
+ },
+ "deployed_cap_j": 4,
+ "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+ "eta_by_workers": {
+  "W=14": {
+   "wall_secs": 6451.588685714285,
+   "wall_hours": 1.7921079682539682
+  },
+  "W=22": {
+   "wall_secs": 4105.556436363636,
+   "wall_hours": 1.1404323434343433
+  }
+ },
+ "exclude_rids": {
+  "applied": true,
+  "design_ref": "DESIGN.md \u00a77.3 (Stage B is an extension of the same records directory, not a re-draw: the new positions are disjoint from the earlier stage by construction)",
+  "n_removed_from_supply": 4684,
+  "n_requested": 6772,
+  "n_supply_after_exclusion": 1064
+ },
+ "files": {
+  "walled/leg1": {
+   "n": 133,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg1.jsonl"
+  },
+  "walled/leg10": {
+   "n": 13,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg10.jsonl"
+  },
+  "walled/leg11": {
+   "n": 9,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg11.jsonl"
+  },
+  "walled/leg12": {
+   "n": 1,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg12.jsonl"
+  },
+  "walled/leg2": {
+   "n": 133,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg2.jsonl"
+  },
+  "walled/leg3": {
+   "n": 133,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg3.jsonl"
+  },
+  "walled/leg4": {
+   "n": 133,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg4.jsonl"
+  },
+  "walled/leg5": {
+   "n": 100,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg5.jsonl"
+  },
+  "walled/leg6": {
+   "n": 70,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg6.jsonl"
+  },
+  "walled/leg7": {
+   "n": 52,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg7.jsonl"
+  },
+  "walled/leg8": {
+   "n": 39,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg8.jsonl"
+  },
+  "walled/leg9": {
+   "n": 22,
+   "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg9.jsonl"
+  }
+ },
+ "formula": "DESIGN.md #7.1: oracle_worker_secs = n_positions*(A_bar-1)*2*M*c (summed per-position here, algebraically identical); champ_pick_secs = n_selfplay*t_champ; wall_hours = (oracle_worker_secs+champ_pick_secs)/(3600*W)",
+ "generated_utc": "2026-08-18T15:24:14Z",
+ "m_worlds": 32,
+ "max_arms": 13,
+ "max_per_game": 3,
+ "mean_arms": 7.3007518796992485,
+ "mean_arms_j4": 4.0,
+ "n_e4": 0,
+ "n_positions": 133,
+ "n_positions_capped": 0,
+ "n_positions_capped_at_4": 133,
+ "n_positions_champ_pick_missing": 0,
+ "n_roots": 133,
+ "n_selfplay": 133,
+ "oracle_worker_secs": 88492.79999999999,
+ "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4",
+ "playout_secs": 1.65,
+ "sample_seed": 20260819,
+ "schema": "carcassonne-tiletie-positions/v1",
+ "t_champ_secs": 13.7552,
+ "total_arm_playouts": 53632,
+ "total_legs": 838,
+ "total_worker_secs": 90322.2416,
+ "uncapped": true,
+ "union_provenance": {
+  "banked_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2",
+  "banked_excluded": 0,
+  "banked_in": 103,
+  "banked_kept": 103,
+  "banked_readonly": true,
+  "copied_not_symlinked": true,
+  "extension_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2_ext",
+  "extension_excluded": 0,
+  "extension_in": 961,
+  "extension_kept": 961,
+  "n_excluded_rids_applied": 6772,
+  "n_fresh": 961,
+  "n_retained": 103,
+  "note": "band 135e9 is REUSABLE INPUT (PREREG_FAILURE \u00a73: the R3.3 run stopped PRE-SCORING, so no arb/ora/delta/CI/per-position value was ever computed for these positions). The banked directory is READ-ONLY FOREVER; this union is assembled by COPY, never by symlink. \u26a0\ufe0f Retained positions are NOT pre-cleared: they enter the probe build and are gated exactly like fresh ones. 'Already gated under R3' is not a status any position holds \u2014 R3's gate FAILED, so nothing was ever passed.",
+  "origin_commit": "untracked",
+  "rev": "R4.5",
+  "sha256_by_file": {
+   "banked": {
+    "ARMS.json": "dd8941cb0baf9c4a55674eb7e1b50a48a0b449e0adc54b6c7c3e051b2fcf93bd",
+    "DROPPED_ALL_TRANSPOSITION.json": "e91e349d3e73d8b9168564368abb67727c8a4e34caf7a97e40576b40e860c821",
+    "POSITIONS_PLAN.json": "329eee19cff1fbe9773c5e36997fc4f13cfbb63d35692b55a9c7a856c6344832",
+    "positions_walled_leg1.jsonl": "6e9e1ab0633b81480928303bf01029b0a3d1696888e2b31856cfea0be84f7d06",
+    "positions_walled_leg10.jsonl": "2763760904134b96fabba0ecc2e139ddae941f0a99fffdbabd06d32c7a0c66a0",
+    "positions_walled_leg11.jsonl": "7c5160844397f95e142ab402451b83910ec09b7b303bd5dca55fc552a2675cc8",
+    "positions_walled_leg12.jsonl": "df6037793e36fbb25f46e972bc4f3ea5d84509b375dc9ff7290259c2b47ef60d",
+    "positions_walled_leg2.jsonl": "2979dea871518a7c1bcfdd5a63e09814cea899ae457ead3dad017bcb5215d279",
+    "positions_walled_leg3.jsonl": "0c02f02a3157f5d4f467115d833fce02d31460a51e1d8082f6327042a9e2b489",
+    "positions_walled_leg4.jsonl": "d98d5204ff198aa715571e059ad87f3d77663317ff1d379312e30897899dabdb",
+    "positions_walled_leg5.jsonl": "f975f88030990bad39b5c7d45af0a254bc804c5ac3b00a85e5ddd653dafe2db4",
+    "positions_walled_leg6.jsonl": "0ec7c2eb547634cb737fbb5feef89f43cd1e01478eaca5d26feb85a2afa173de",
+    "positions_walled_leg7.jsonl": "19f5ac593e2fe9997cba0a72c1012af2554a9c40fa023102ee1e7877fb2d326c",
+    "positions_walled_leg8.jsonl": "fad9a1ced27329b5a72e9bb45b405749e9b14c279aaa2001ef8d00122aab9b38",
+    "positions_walled_leg9.jsonl": "1506b245d6ef0982bedd0c371d0ad28fce460a74e1d34d86a85e4b4a2e2c713d"
+   },
+   "extension": {
+    "ARMS.json": "a35e35f67db533b6b746d0275702725c4c3e149ebe219b6a2a98a04af44717dd",
+    "DROPPED_ALL_TRANSPOSITION.json": "eff4e0e75ecff693a07e4cb62f05c3f41e5f035c9436995559f083afb7c441e3",
+    "POSITIONS_PLAN.json": "af83fc52d38667bee33b7fc918b522e3c0730ea7556c783776c2a22bf20dba64",
+    "positions_walled_leg1.jsonl": "6484537c24603ed07e70b0d59790faf139e228d9cf9c55e3ded14e03bf4770d1",
+    "positions_walled_leg10.jsonl": "81df894fd3fa668974a84db6643dec2ce46f08bb4202e53d21f079be65f3db0d",
+    "positions_walled_leg11.jsonl": "c04b8ec09e74f8f62438a902a97779794460836376a27519248c52e8fac118db",
+    "positions_walled_leg12.jsonl": "dcdd27d1983c2e7365e689677a20caddfab5f05f0f6c92be2014a162fce3bdee",
+    "positions_walled_leg2.jsonl": "4dcf564e0004c1e404454cd8469af490c2eb3ec94e22c8ab6ea5bf449e2f69c1",
+    "positions_walled_leg3.jsonl": "d8e6ecc09889b1697e28e88db9fee4a7f578679c6fdb38d24279f2298b2da665",
+    "positions_walled_leg4.jsonl": "4aca7f97e1852f69f26be6dc3a5aec095b94a61f69278df971b2b33c88dccef3",
+    "positions_walled_leg5.jsonl": "fb8f0e3f15b498f90db002e7698001b7614d0911fadc777b99dd2992047bc649",
+    "positions_walled_leg6.jsonl": "ad47dcff34562523eb466e93498b7829b6c0f0e224f25b0bae89532da09f247c",
+    "positions_walled_leg7.jsonl": "a1c2af366a4e7b26e9325118a7893e8b8c6fa12b5e7de17560527c016a1a3ed8",
+    "positions_walled_leg8.jsonl": "3c45d925d4bc6f74a42ada07a62f38e33672ab1298a8a998278d6a7cdc66a668",
+    "positions_walled_leg9.jsonl": "2ec6f214e9c9edacdfc50dbaf6c2bfd8c6b0c6d93b416c2eef0955d402f6cad7"
+   }
+  },
+  "stratum": "s2",
+  "union_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2"
+ },
+ "label": "s2/chunk4",
+ "chunk": {
+  "schema": "carcassonne-tiearb-widening-chunks/v1",
+  "run_id": "tiearb_widening_20260817",
+  "design_doc": "measurement/tiearb_widening_20260817/shared_run_r4/DESIGN.md",
+  "read_rule": "measurement/tiearb_widening_20260817/shared_run_r4/READ_RULE.md",
+  "index": 4,
+  "n_chunks": 8,
+  "permutation_seed": 20260817,
+  "position_order_sha256": "376f69de2d602444c29e2d9cf1045cef20d98d556060f7f0e4af4d101db3e47c",
+  "source_positions_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/corpus/positions_s2",
+  "note": "A THROUGHPUT SUBSET of the corpus plan. Every key that is not a function of the rid set is carried VERBATIM from the corpus POSITIONS_PLAN.json (uncapped, cap_j, deployed_cap_j, afterstate_dedupe, sample_seed, m_worlds, world_seed_salt, \u2026) \u2014 the gates address the CORPUS plan, and a chunk that recomputed those could silently disagree with it."
+ }
+}

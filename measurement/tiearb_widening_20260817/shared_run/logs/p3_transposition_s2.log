@@ -1,0 +1,46 @@
+{
+  "profile": "walled",
+  "stratum": "selfplay",
+  "n_tied_positions": 804,
+  "n_unresolved": 0,
+  "all_transposition_n": 191,
+  "all_transposition_pct": 23.76,
+  "any_duplicate_pct": 38.93,
+  "mean_tie_size": 3.708,
+  "mean_distinct_afterstates": 2.749,
+  "effective_shrink": 0.7414,
+  "distinct_hist": {
+    "1": 191,
+    "2": 295,
+    "3": 137,
+    "4": 78,
+    "5": 32,
+    "6": 31,
+    "7": 6,
+    "8": 13,
+    "9": 8,
+    "10": 6,
+    "11": 2,
+    "12": 5
+  },
+  "by_phase": {
+    "early": {
+      "n": 309,
+      "all_transposition_pct": 17.8,
+      "mean_tie_size": 3.647,
+      "mean_distinct": 2.767
+    },
+    "mid": {
+      "n": 261,
+      "all_transposition_pct": 29.89,
+      "mean_tie_size": 3.839,
+      "mean_distinct": 2.801
+    },
+    "late": {
+      "n": 234,
+      "all_transposition_pct": 24.79,
+      "mean_tie_size": 3.641,
+      "mean_distinct": 2.667
+    }
+  }
+}

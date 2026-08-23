@@ -1,0 +1,171 @@
+{
+ "gate": "D3-WITNESS",
+ "spec": "DEVIATIONS \u00a7D3.5 as amended by drafter 751bdd12",
+ "bar": "n_mismatch == 0 across all rids; 100% bit-identical, NOT within-tolerance",
+ "n_rids": 16,
+ "rids": [
+  "tt_sp_137000000503_p47",
+  "tt_sp_137000000405_p66",
+  "tt_sp_137000000250_p94",
+  "tt_sp_137000000462_p142",
+  "tt_sp_137000000266_p84",
+  "tt_sp_137000000506_p14",
+  "tt_sp_137000000184_p8",
+  "tt_sp_137000000354_p54",
+  "tt_sp_137000000083_p10",
+  "tt_sp_137000000383_p22",
+  "tt_sp_137000000028_p132",
+  "tt_sp_137000000080_p2",
+  "tt_sp_137000000163_p104",
+  "tt_sp_137000000369_p6",
+  "tt_sp_137000000426_p62",
+  "tt_sp_137000000307_p73"
+ ],
+ "selection_rule": "DEVIATIONS (drafter 751bdd12), verbatim: 'The first 16 rids in POSITION_ORDER.json order among rids possessing laptop-produced clair-puct records'. Deterministic; no cherry-picking; realized N recorded.",
+ "n_values_compared": 23184,
+ "n_bit_identical": 23184,
+ "n_mismatch": 0,
+ "sha256_local": "891f1370f38691fc17ee51e5015249a7514cb18ae115473005124d17bdc9a919",
+ "sha256_laptop": "891f1370f38691fc17ee51e5015249a7514cb18ae115473005124d17bdc9a919",
+ "digests_equal": true,
+ "pass": true,
+ "excluded_keys": [
+  "carc_rs_binary_sha",
+  "carc_rs_path",
+  "elapsed_secs",
+  "host",
+  "started_utc",
+  "workers"
+ ],
+ "canonicalisation": "every float compared as its RAW f64 BIT PATTERN (struct '<d' -> uint64), the currency G-BITEXACT uses; containers compared structurally so a length or ordering difference is a mismatch",
+ "stack_local": {
+  "python": "3.12.3",
+  "numpy": "2.4.4",
+  "glibc": "2.39",
+  "machine": "x86_64",
+  "node": "Doctor"
+ },
+ "stack_laptop": {
+  "python": "3.14.4",
+  "numpy": "2.4.6",
+  "glibc": "2.43",
+  "machine": "x86_64",
+  "node": "laptop-wsl"
+ },
+ "per_rid": [
+  {
+   "rid": "tt_sp_137000000503_p47",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000405_p66",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000250_p94",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000462_p142",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000266_p84",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000506_p14",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000184_p8",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000354_p54",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000083_p10",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000383_p22",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000028_p132",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000080_p2",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000163_p104",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000369_p6",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000426_p62",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  },
+  {
+   "rid": "tt_sp_137000000307_p73",
+   "status": "OK",
+   "n_compared": 1449,
+   "n_mismatch": 0,
+   "mismatch_fields": []
+  }
+ ],
+ "note": "Counts and digests only. A digest is not a value and is not invertible, so no adjudicated per-leg value leaves this gate. No arb, no ora, no delta.",
+ "stack_note": "Queried LIVE per box at witness time, not read from manifests \u2014 the run artifacts do not record the interpreter/libm stack, which is precisely why D3.5 requires the witness to be RUN rather than looked up. The laptop value was collected by a second direct ssh query after the in-differ probe failed on output parsing; the diff result is unaffected."
+}

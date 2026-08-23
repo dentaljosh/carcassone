@@ -1,0 +1,18 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=24 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 24 to play, 30 workers, out=/mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke/smoke_b32v64_B64J4_deploy11008
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 24   candidate: 15W / 2D / 7L   winrate 0.667 (z=+1.63)
+avg score diff (candidate - opponent): +5.88
+ELO: +120.4  (+/- 75.2 1sigma)
+PAIRED: 12 decks   mean seat-balanced margin +5.88   z = +2.03
+prefix ms/move: candidate 10565  opponent 1638  (ratio 6.45x)
+fair endgame: candidate latched 24/24 games, 0.45s solver/game, timeouts=0
+fair endgame: opponent  latched 24/24 games, 0.92s solver/game, timeouts=0
+tie-arbiter: 24 games, mode(s) argmax — phi 17.00 fired tile plies/game (offline prior 22.96; 408/828 of tile plies), pick-change 0.581, mean arms 3.28, 85696 playouts, 622.2s/game
+[summary.json] wrote /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell/smoke/smoke_b32v64_B64J4_deploy11008/summary.json

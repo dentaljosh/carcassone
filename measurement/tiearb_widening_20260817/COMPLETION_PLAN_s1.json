@@ -1,0 +1,199 @@
+{
+ "schema": "carcassonne-tiearb-widening-completion/v1",
+ "run_id": "tiearb_widening_20260817",
+ "design_doc": "measurement/tiearb_widening_20260817/shared_run_r4/DESIGN.md",
+ "read_rule": "measurement/tiearb_widening_20260817/shared_run_r4/READ_RULE.md",
+ "deviation": "D4",
+ "stratum": "s1",
+ "source_positions_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1",
+ "position_order": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/POSITION_ORDER.json",
+ "permutation_seed": 20260817,
+ "position_order_sha256": "0225d6a728a01fee09d9e7ff0926984b0091068ba48504c13b3b6c4754e2ae54",
+ "records_roots": [
+  "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1"
+ ],
+ "cross_layer_invariant": {
+  "ok": true,
+  "both_directions_checked": true,
+  "n_arms": 1344,
+  "n_leg": 1344,
+  "n_in_arms_not_in_legs": 0,
+  "n_in_legs_not_in_arms": 0,
+  "in_arms_not_in_legs": [],
+  "in_legs_not_in_arms": []
+ },
+ "remainder": {
+  "n_arms": 1344,
+  "n_scored_both_judges": 793,
+  "n_remainder": 551,
+  "scored_by_judge": {
+   "clair-puct": 793,
+   "tier1-greedy": 793
+  },
+  "judges_agree_on_scored_set": true,
+  "note": "already-scored = a record under EVERY judge. The remainder is ARMS.json minus that set, in committed POSITION_ORDER order \u2014 no re-shuffle, no new randomness."
+ },
+ "set_equality": {
+  "ok": true,
+  "both_directions_checked": true,
+  "expected": "ARMS.json rids MINUS already-scored rids",
+  "n_expected": 551,
+  "n_staged": 551,
+  "n_missing_from_staged": 0,
+  "n_extra_in_staged": 0,
+  "n_overlap_with_scored": 0,
+  "note": "D4.2's third distinguishing fact \u2014 the increment is the pre-committed REMAINDER, not 'more'. Asserted, not claimed."
+ },
+ "chunks": [
+  {
+   "chunk": 9,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk9",
+   "n": 68,
+   "roots": 63,
+   "legs": 155,
+   "playouts": 9920
+  },
+  {
+   "chunk": 10,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk10",
+   "n": 69,
+   "roots": 64,
+   "legs": 191,
+   "playouts": 12224
+  },
+  {
+   "chunk": 11,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk11",
+   "n": 69,
+   "roots": 63,
+   "legs": 170,
+   "playouts": 10880
+  },
+  {
+   "chunk": 12,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk12",
+   "n": 69,
+   "roots": 64,
+   "legs": 174,
+   "playouts": 11136
+  },
+  {
+   "chunk": 13,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk13",
+   "n": 69,
+   "roots": 65,
+   "legs": 160,
+   "playouts": 10240
+  },
+  {
+   "chunk": 14,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk14",
+   "n": 69,
+   "roots": 62,
+   "legs": 167,
+   "playouts": 10688
+  },
+  {
+   "chunk": 15,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk15",
+   "n": 69,
+   "roots": 65,
+   "legs": 140,
+   "playouts": 8960
+  },
+  {
+   "chunk": 16,
+   "dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk16",
+   "n": 69,
+   "roots": 63,
+   "legs": 183,
+   "playouts": 11712
+  }
+ ],
+ "first_chunk_index": 9,
+ "n_chunks": 8,
+ "committed_chunks": 8,
+ "pre_existing_chunk_dirs": [
+  "chunk1",
+  "chunk2",
+  "chunk3",
+  "chunk4",
+  "chunk5",
+  "chunk6",
+  "chunk7",
+  "chunk8"
+ ],
+ "allocation": {
+  "n_if_chunks_local": 5,
+  "local_worker_hours": 39.76,
+  "laptop_worker_hours": 20.47,
+  "local_hours": 1.33,
+  "laptop_hours": 1.24,
+  "makespan_hours": 1.33,
+  "local_share_of_worker_hours": 0.6601,
+  "chunks": [
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "local_tier1_greedy": [
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "local_clair_puct": [
+   9,
+   10,
+   11,
+   12,
+   13
+  ],
+  "laptop_tier1_greedy": [],
+  "laptop_clair_puct": [
+   14,
+   15,
+   16
+  ],
+  "capacity": {
+   "w_eval_local": 30.0,
+   "w_eval_laptop": 22.0,
+   "laptop_rate": 0.75,
+   "laptop_effective": 16.5,
+   "pool_effective": 46.5,
+   "ideal_local_share": 0.6452
+  },
+  "cost": {
+   "c_arb_assumed": 0.178232,
+   "c_if_assumed": 2.35,
+   "playouts_by_chunk": [
+    9920,
+    12224,
+    10880,
+    11136,
+    10240,
+    10688,
+    8960,
+    11712
+   ],
+   "playouts_total": 85760,
+   "arb_worker_hours": 4.25,
+   "if_worker_hours": 55.98,
+   "total_worker_hours": 60.23,
+   "ideal_makespan_hours": 1.3
+  },
+  "note": "throughput ONLY \u2014 chunk MEMBERSHIP is fixed by the committed POSITION_ORDER.json and is identical for both judges. World and playout seeds are sha256(tag|rid|j|salt): no chunk, no box, no worker count and no M enters the derivation, so this split cannot move a value."
+ },
+ "allocation_conf": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/ALLOCATION_COMPLETION_s1.conf",
+ "ordering": "the SAME committed POSITION_ORDER.json, filtered to the not-yet-scored rids and cut into near-equal SEQUENTIAL chunks. No re-shuffle, no new seed, already-scored rids' chunks untouched.",
+ "governance": "Measurement plumbing only. Scores nothing, opens no record, reads no value and no statistic. Writes NOTHING under the prereg dir."
+}

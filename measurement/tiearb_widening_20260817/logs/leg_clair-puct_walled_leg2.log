@@ -1,0 +1,83 @@
+[pilot] population=36 positions | n=36 | M=128 | policy=clair-puct | oracle_sims=100 | W=6
+[pilot] out -> /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13/clair-puct/walled/leg2
+[pilot] resume: 0 already done, 36 to go
+[1/36] tt_sp_135000000016_p124 ok delta=+0.117 crn=True 140.611s
+[2/36] tt_sp_135000000002_p116 ok delta=+0.289 crn=True 331.85s
+[3/36] tt_sp_135000000028_p58 ok delta=+0.125 crn=True 582.872s
+[4/36] tt_sp_135000000078_p111 ok delta=-0.672 crn=True 295.589s
+[5/36] tt_sp_135000000088_p136 ok delta=+0.000 crn=True 75.533s
+[6/36] tt_sp_135000000089_p124 ok delta=+0.539 crn=True 183.625s
+[7/36] tt_sp_135000000048_p14 ok delta=+0.320 crn=True 812.874s
+[8/36] tt_sp_135000000031_p4 ok delta=-2.438 crn=True 833.893s
+[9/36] tt_sp_135000000074_p49 ok delta=-0.680 crn=True 713.973s
+[10/36] tt_sp_135000000052_p10 ok delta=-0.648 crn=True 859.157s
+[11/36] tt_sp_135000000150_p136 ok delta=+0.906 crn=True 68.578s
+[12/36] tt_sp_135000000151_p136 ok delta=-0.672 crn=True 82.523s
+[13/36] tt_sp_135000000160_p136 ok delta=-0.133 crn=True 93.87s
+[14/36] tt_sp_135000000097_p100 ok delta=+0.008 crn=True 436.868s
+[15/36] tt_sp_135000000092_p14 ok delta=+1.406 crn=True 748.828s
+[16/36] tt_sp_135000000182_p124 ok delta=-0.109 crn=True 194.165s
+[17/36] tt_sp_135000000118_p62 ok delta=+0.133 crn=True 661.981s
+[18/36] tt_sp_135000000107_p12 ok delta=+1.445 crn=True 718.814s
+[19/36] tt_sp_135000000169_p68 ok delta=+0.586 crn=True 653.22s
+[20/36] tt_sp_135000000170_p50 ok delta=-1.195 crn=True 685.582s
+[21/36] tt_sp_135000000233_p98 ok delta=-0.453 crn=True 476.373s
+[22/36] tt_sp_135000000233_p70 ok delta=-0.477 crn=True 571.209s
+[23/36] tt_sp_135000000199_p58 ok delta=-0.164 crn=True 631.276s
+[24/36] tt_sp_135000000256_p72 ok delta=-0.773 crn=True 567.907s
+[25/36] tt_sp_135000000278_p114 ok delta=-3.211 crn=True 305.844s
+[26/36] tt_sp_135000000269_p24 ok delta=+2.156 crn=True 793.831s
+[27/36] tt_sp_135000000271_p22 ok delta=+3.516 crn=True 755.069s
+[28/36] tt_sp_135000000312_p100 ok delta=-4.102 crn=True 260.514s
+[29/36] tt_sp_135000000327_p135 ok delta=+0.383 crn=True 47.727s
+[30/36] tt_sp_135000000283_p28 ok delta=+0.758 crn=True 628.936s
+[31/36] tt_sp_135000000291_p8 ok delta=-0.156 crn=True 717.854s
+[32/36] tt_sp_135000000306_p12 ok delta=-1.234 crn=True 706.066s
+[33/36] tt_sp_135000000314_p79 ok delta=-0.898 crn=True 432.524s
+[34/36] tt_sp_135000000323_p14 ok delta=-1.633 crn=True 614.179s
+[35/36] tt_sp_135000000346_p72 ok delta=-0.086 crn=True 432.829s
+[36/36] tt_sp_135000000339_p18 ok delta=-0.680 crn=True 557.173s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 36,
+  "m_worlds": 128,
+  "sd_delta_positions": 1.359544947955121,
+  "mean_delta_pts": -0.2146267361111111,
+  "se_mean_delta": 0.2265908246591868,
+  "z_pilot_observed": -0.947199589541762,
+  "mean_within_position_var": 147.40683952591863,
+  "var_between_positions_est": 0.6967465317140531,
+  "sd_delta_projected_by_m": {
+    "8": 4.372939683148383,
+    "16": 3.1479634689881597,
+    "32": 2.3028700065133965,
+    "64": 1.7320445719745585
+  },
+  "median_crn_var_reduction": 1.4898438908198717,
+  "n_positions_perfect_pairing": 1,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=128": 0.8381609180637369,
+    "N=36_at_M=128": 0.308926895452569,
+    "N=36_at_M=8": 0.09604523053874205,
+    "N=36_at_M=16": 0.1334195914716251,
+    "N=36_at_M=32": 0.1823811152223441,
+    "N=36_at_M=64": 0.24248798604599034
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 36,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 36,
+  "wall_secs": 3143.9,
+  "manifest": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13/clair-puct/walled/leg2/manifest.json"
+}

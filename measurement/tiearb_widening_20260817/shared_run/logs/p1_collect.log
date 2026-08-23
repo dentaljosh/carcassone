@@ -1,0 +1,2 @@
+wrote 850 games to /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_widening.jsonl (plies min/med/max = 141/144/144)
+round-trip verify: 10 ok / 0 bad (of 10 replayed)

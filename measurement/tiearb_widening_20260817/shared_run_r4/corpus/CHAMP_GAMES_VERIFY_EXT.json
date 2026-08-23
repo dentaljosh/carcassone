@@ -1,0 +1,19 @@
+{
+  "band_ok": true,
+  "count_ok": true,
+  "n_distinct_seeds": 5348,
+  "n_duplicate_seeds": 0,
+  "n_games_expected": 5348,
+  "n_games_min_required": 5348,
+  "n_games_realized": 5348,
+  "n_out_of_band": 0,
+  "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/champ_games_ext_all.jsonl",
+  "seed_band": [
+    137000000000,
+    137000005347
+  ],
+  "seed_max_observed": 137000005347,
+  "seed_min_observed": 137000000000,
+  "sha256_of_sorted_seeds": "8688eacfc812fb0b0736860271eceb64d6030488fce852d2ef2efc4a9f143774",
+  "shortfall_vs_expected": 0
+}

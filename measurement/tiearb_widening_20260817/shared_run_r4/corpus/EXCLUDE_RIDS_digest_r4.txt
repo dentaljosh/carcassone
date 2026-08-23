@@ -1,0 +1,34 @@
+# R4-3 digest exclusions, resolved by the TOTAL ORDER spent < 135e9 < 137e9 < 138e9 (the later position is excluded);
+# an S1<->S2 collision excludes the S2 rid regardless of band.
+# Computed on a THROWAWAY PROBE build and applied BEFORE POSITIONS_PLAN freezes (R4-3 rule 5).
+# OUTCOME-INDEPENDENT BY CONSTRUCTION: the digest is a function of the BOARD alone, computed before any value exists.
+# S1: n_excluded=0 rate=0.0 bound=7 void=False denominator_source=RUN/FLOORS.json::n1
+# S2: n_excluded=28 rate=0.025454545454545455 bound=6 void=True denominator_source=RUN/FLOORS.json::n2
+tt_sp_137000000614_p2
+tt_sp_137000000678_p2
+tt_sp_137000000690_p2
+tt_sp_137000000732_p2
+tt_sp_137000001011_p2
+tt_sp_137000001093_p2
+tt_sp_137000001161_p2
+tt_sp_137000001247_p2
+tt_sp_137000001863_p2
+tt_sp_137000001885_p2
+tt_sp_137000002166_p2
+tt_sp_137000002233_p2
+tt_sp_137000002476_p2
+tt_sp_137000002484_p2
+tt_sp_137000002569_p2
+tt_sp_137000002875_p2
+tt_sp_137000003030_p2
+tt_sp_137000003055_p2
+tt_sp_137000003298_p2
+tt_sp_137000003706_p2
+tt_sp_137000003817_p2
+tt_sp_137000003865_p2
+tt_sp_137000003939_p2
+tt_sp_137000003979_p2
+tt_sp_137000004119_p2
+tt_sp_137000004517_p2
+tt_sp_137000005025_p2
+tt_sp_137000005203_p2

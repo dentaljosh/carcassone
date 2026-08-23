@@ -1,0 +1,323 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "git_rev": "a5aa4a5e",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/GATE_BACKEND_RECHECK_clair-puct_chunk4.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "30",
+          "--out",
+          "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/GATE_BACKEND_RECHECK_clair-puct_chunk4.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n 169288       01:22  0.1 python",
+        "loadavg": "3.64 2.35 6.82 1/500 170466"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "a5aa4a5e",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 12,
+        "plan_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/POSITIONS_PLAN.json",
+        "arms_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/ARMS.json"
+      },
+      "m": {
+        "ok": true,
+        "m": 32,
+        "m_max": 128,
+        "b_ceiling": 16,
+        "note": "usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 \u00a70.2), not by M"
+      },
+      "arb_backend": {
+        "ok": true,
+        "arb_backend": "rust",
+        "note": "no tier1-greedy leg in --judges; the flag is inert"
+      }
+    }
+  },
+  "r9_by_profile": {
+    "walled": "0"
+  },
+  "judges": [
+    "clair-puct"
+  ],
+  "judge_backend": {
+    "clair-puct": "rust"
+  },
+  "arb_backend": "rust",
+  "arb_legal_mask_cache": true,
+  "resolved_backend_by_leg": {
+    "clair-puct/walled/leg1": "rust",
+    "clair-puct/walled/leg10": "rust",
+    "clair-puct/walled/leg11": "rust",
+    "clair-puct/walled/leg12": "rust",
+    "clair-puct/walled/leg2": "rust",
+    "clair-puct/walled/leg3": "rust",
+    "clair-puct/walled/leg4": "rust",
+    "clair-puct/walled/leg5": "rust",
+    "clair-puct/walled/leg6": "rust",
+    "clair-puct/walled/leg7": "rust",
+    "clair-puct/walled/leg8": "rust",
+    "clair-puct/walled/leg9": "rust"
+  },
+  "world_seed_salt": "tiletie-v1",
+  "m_worlds": 32,
+  "m_max": 128,
+  "b_ceiling_from_m": 16,
+  "oracle_sims": 100,
+  "workers": 30,
+  "resume": true,
+  "positions_plan_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/POSITIONS_PLAN.json",
+  "arms_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/ARMS.json",
+  "positions_plan_sha256": "dd0b6f4f27bb155a55e1f2eb81cdebf9fc22e5d1dd5050c2aa5c7c4fe776189f",
+  "arms_sha256": "0d34a66c778ad4b39d107f5c1da5cd86caab0fad6677aef425428737b037026a",
+  "legs": [
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 1,
+      "backend": "rust",
+      "rc": 0,
+      "n": 133,
+      "workers": 5,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg1.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg1",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg1.log",
+      "wall_secs": 3409.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 10,
+      "backend": "rust",
+      "rc": 0,
+      "n": 13,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg10.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg10",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg10.log",
+      "wall_secs": 3409.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 11,
+      "backend": "rust",
+      "rc": 0,
+      "n": 9,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg11.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg11",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg11.log",
+      "wall_secs": 3409.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 12,
+      "backend": "rust",
+      "rc": 0,
+      "n": 1,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg12.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg12",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg12.log",
+      "wall_secs": 3409.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 2,
+      "backend": "rust",
+      "rc": 0,
+      "n": 133,
+      "workers": 4,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg2.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg2",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg2.log",
+      "wall_secs": 4144.3,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 3,
+      "backend": "rust",
+      "rc": 0,
+      "n": 133,
+      "workers": 4,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg3.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg3",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg3.log",
+      "wall_secs": 4159.6,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 4,
+      "backend": "rust",
+      "rc": 0,
+      "n": 133,
+      "workers": 4,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg4.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg4",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg4.log",
+      "wall_secs": 4172.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 5,
+      "backend": "rust",
+      "rc": 0,
+      "n": 100,
+      "workers": 3,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg5.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg5",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg5.log",
+      "wall_secs": 4180.9,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 6,
+      "backend": "rust",
+      "rc": 0,
+      "n": 70,
+      "workers": 2,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg6.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg6",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg6.log",
+      "wall_secs": 4180.9,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 7,
+      "backend": "rust",
+      "rc": 0,
+      "n": 52,
+      "workers": 2,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg7.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg7",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg7.log",
+      "wall_secs": 4180.9,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 8,
+      "backend": "rust",
+      "rc": 0,
+      "n": 39,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg8.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg8",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg8.log",
+      "wall_secs": 4249.7,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 9,
+      "backend": "rust",
+      "rc": 0,
+      "n": 22,
+      "workers": 2,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg9.jsonl",
+      "out": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/clair-puct/walled/leg9",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/logs/leg_clair-puct_walled_leg9.log",
+      "wall_secs": 4249.7,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    }
+  ],
+  "error": null,
+  "finished_utc": "2026-08-20T07:59:30Z"
+}

@@ -1,0 +1,285 @@
+{
+  "schema": "carcassonne-tiletie-run/v1",
+  "driver": "run_tiletie",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "git_rev": "58c2b539",
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "gate": {
+        "ok": true,
+        "verdict": "PASS",
+        "mismatches": [],
+        "positions": 8,
+        "field_checks": 376,
+        "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk6.json",
+        "cmd": [
+          "/home/doctor/projects/carcassone/.venv/bin/python",
+          "/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py",
+          "--positions",
+          "8",
+          "--m",
+          "2",
+          "--workers",
+          "22",
+          "--out",
+          "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/GATE_BACKEND_RECHECK_s1_clair-puct_chunk6.json"
+        ],
+        "returncode": 0
+      },
+      "leaf_hash": {
+        "ok": true,
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "expected": "a36d2e15a3b3d71d"
+      },
+      "process_census": {
+        "ok": true,
+        "ps_head": "    PID     ELAPSED %CPU COMMAND\n 536149       00:52  0.1 python",
+        "loadavg": "3.20 0.95 0.34 1/362 536239"
+      },
+      "git_clean": {
+        "ok": true,
+        "git_rev": "58c2b539",
+        "dirty_paths": []
+      },
+      "positions": {
+        "ok": true,
+        "problems": [],
+        "n_leg_files": 10,
+        "plan_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/POSITIONS_PLAN.json",
+        "arms_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/ARMS.json"
+      },
+      "m": {
+        "ok": true,
+        "m": 128,
+        "m_max": 128,
+        "b_ceiling": 64,
+        "note": "usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 \u00a70.2), not by M"
+      },
+      "arb_backend": {
+        "ok": true,
+        "arb_backend": "rust",
+        "note": "no tier1-greedy leg in --judges; the flag is inert"
+      }
+    }
+  },
+  "r9_by_profile": {
+    "walled": "0"
+  },
+  "judges": [
+    "clair-puct"
+  ],
+  "judge_backend": {
+    "clair-puct": "rust"
+  },
+  "arb_backend": "rust",
+  "arb_legal_mask_cache": true,
+  "resolved_backend_by_leg": {
+    "clair-puct/walled/leg1": "rust",
+    "clair-puct/walled/leg10": "rust",
+    "clair-puct/walled/leg2": "rust",
+    "clair-puct/walled/leg3": "rust",
+    "clair-puct/walled/leg4": "rust",
+    "clair-puct/walled/leg5": "rust",
+    "clair-puct/walled/leg6": "rust",
+    "clair-puct/walled/leg7": "rust",
+    "clair-puct/walled/leg8": "rust",
+    "clair-puct/walled/leg9": "rust"
+  },
+  "world_seed_salt": "tiletie-v1",
+  "m_worlds": 128,
+  "m_max": 128,
+  "b_ceiling_from_m": 64,
+  "oracle_sims": 100,
+  "workers": 22,
+  "resume": true,
+  "positions_plan_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/POSITIONS_PLAN.json",
+  "arms_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/ARMS.json",
+  "positions_plan_sha256": "001090e2fc9fb29bbea6ac63f815b24e4bd48016b28896cc21cb9b75d1dc1d71",
+  "arms_sha256": "13e2f1ea03b10dff9c44555e2c00db71dad2254b9a27fad5c985bbcfbc8f658c",
+  "legs": [
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 1,
+      "backend": "rust",
+      "rc": 0,
+      "n": 104,
+      "workers": 8,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg1.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg1",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg1.log",
+      "wall_secs": 6134.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 10,
+      "backend": "rust",
+      "rc": 0,
+      "n": 1,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg10.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg10",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg10.log",
+      "wall_secs": 6134.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 2,
+      "backend": "rust",
+      "rc": 0,
+      "n": 69,
+      "workers": 5,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg2.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg2",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg2.log",
+      "wall_secs": 6233.7,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 3,
+      "backend": "rust",
+      "rc": 0,
+      "n": 37,
+      "workers": 3,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg3.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg3",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg3.log",
+      "wall_secs": 6233.7,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 4,
+      "backend": "rust",
+      "rc": 0,
+      "n": 24,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg4.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg4",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg4.log",
+      "wall_secs": 8062.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 5,
+      "backend": "rust",
+      "rc": 0,
+      "n": 17,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg5.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg5",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg5.log",
+      "wall_secs": 8062.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 6,
+      "backend": "rust",
+      "rc": 0,
+      "n": 7,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg6.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg6",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg6.log",
+      "wall_secs": 8062.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 7,
+      "backend": "rust",
+      "rc": 0,
+      "n": 4,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg7.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg7",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg7.log",
+      "wall_secs": 8062.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 8,
+      "backend": "rust",
+      "rc": 0,
+      "n": 3,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg8.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg8",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg8.log",
+      "wall_secs": 8062.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "judge": "clair-puct",
+      "profile": "walled",
+      "leg": 9,
+      "backend": "rust",
+      "rc": 0,
+      "n": 2,
+      "workers": 1,
+      "positions_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg9.jsonl",
+      "out": "/mnt/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg9",
+      "log": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/logs/leg_clair-puct_walled_leg9.log",
+      "wall_secs": 8062.8,
+      "records_verified": {
+        "ok": true,
+        "missing": [],
+        "extra": []
+      }
+    }
+  ],
+  "error": null,
+  "finished_utc": "2026-08-18T19:12:18Z"
+}

@@ -36,6 +36,8 @@
 | **D5** | R5's two-rev merge licence + **the orchestrator's own freeze violation** | **LICENCE RULED**; binary-sha conjunct ruled **conditionally, decision rule pre-committed** (§D5.2); freeze violation named with `W-FREEZE-LATCH` recommended (§D5.3) |
 | **D4** | the union assembled ARMS but not leg files — **551 committed rids never scored** | **RULED: completion-scoring licensed**, sequenced behind `D3-WITNESS` (**PASSED** 23,184/23,184); S2 orphans moot (stays void). **§D4.10-12: the two-rev tranche split is foreseen and NOT forbidden** — enumerated licence + instrument witness, in code. **§D4.13: `carc_rs_build` licensed under four conjuncts**, closing a within-box staleness hole D3 opened. **§D4.14: `preflight.checks` ruled exhaustively (7/7); the classification sweep COMMISSIONED**. **§D4.15: sweep SIGNED OFF** — 355 artifacts, 134 rows, 0 unclassified, 0 gate-addressed paths missing; the closed-by-enumeration property holds and the fail-closed default now means *schema change*. **§D4.16: merge SUCCEEDED 1344/1344; the two Reading-A consequences ruled** (analyzer `VOID_S2` guard on a positive witness; S2-addressed conjuncts scoped `VOID (stratum)` in the harness). **§D4.17: implementation SIGNED OFF** — `G-COMPLETE`'s S2 conjunct void-scoped under the same uniform rule; the X-token enumeration dropped for zero occurrences. **§D4.18: 4 window-truncation rids dropped WHOLE-RID** (what `G-ARMS` already implies); **no post-hoc numeric bound enacted** — the pair's own floor governs, 1,340 ≥ 1,283. **§D4.19: the S2 void-scope stated GENERALLY** (artifact paths · analyzer conjuncts · READOUT key-paths alike), dual-witness, exact-segment match |
 
+| **D7** | the `b32v64` game cell: **`G-BAND` conjunct 4 contradicts `G-FAILED`** (post-blind discovery), and **the adjudicator printed the statistics beside the failed gate** | **§D7.1 RESOLVED by owner Reading A** 2026-08-22 (verbatim *"reading a"*) — the conjunct is DISCHARGED by the confirmed failure set, branch `L-AMBIGUOUS`; standing lesson adopted. **§D7.2 DISCLOSED AND OWED, NOT PATCHED** — the §7 blindness print defect is a tool defect against a **spent** adjudicator; the fix is owed to any successor, never retrofitted here. Ruling of record: [`b32v64_cell/ADJUDICATION_GBAND_READING_A.md`](b32v64_cell/ADJUDICATION_GBAND_READING_A.md) |
+
 > ⚠️ **The run these deviations were drafted against STOPPED PRE-SCORING** and its pair is
 > **SPENT-BY-GATE-FAILURE** ([`PREREG_FAILURE.md`](PREREG_FAILURE.md)). Neither deviation was ever
 > in force; **neither was used to score anything.** D1's analysis transfers intact to the R4
@@ -1427,9 +1429,166 @@ fixes in §"THE THREE GATE FAILURES".*
 
 ---
 
+## D7 — the `b32v64` GAME CELL: an unsatisfiable-gate PAIR, and a blindness print defect
+
+**2026-08-22. Both recorded POST-BLIND and POST-RUN — which is itself the finding.** Unlike D1–D6,
+neither of these could be fixed before the run, because neither was *found* before the run: D7.1
+was invisible to a zero-failure known-good fixture, and D7.2 was invisible until a gate actually
+failed. **Ruling of record:**
+[`b32v64_cell/ADJUDICATION_GBAND_READING_A.md`](b32v64_cell/ADJUDICATION_GBAND_READING_A.md).
+
+⛔ **Neither deviation moves a gate, an address, a bar, a branch, a statistic, an estimand, a seed
+derivation or a power figure of the frozen pair** (`71b3286c`), and `governance/PRODUCTION.yaml`
+is untouched by both. D7.1 is a **governance ruling on a drafting defect**; D7.2 is a
+**disclosure plus a standing obligation on successors**.
+
+### D7.1 — `G-BAND` conjunct 4 and `G-FAILED` contradict each other for every `n_failed > 0`
+
+**RESOLVED by owner ruling 2026-08-22 (post-havdalah), verbatim: *"reading a"*.**
+
+**What the pair says, in two places that never met.** `G-BAND` is four conjuncts, all required,
+the fourth being *"realized deck sets identical"*. `G-FAILED` clause 1 tolerates
+`n_failed / n_attempted ≤ 0.02` per cell — ≈60 games in a 3,000-game cell — and `DESIGN §8.1`
+says why in its own words: *"its job is to catch a broken run, not to grade a good one."*
+Clause 3 adds an escalation HALT cleared by a recorded **human confirmation**.
+
+**The contradiction.** `D` is deck-paired *over the decks completed in BOTH cells*, and each
+cell's `M` is **seat-balanced**, so a deck losing either seating is dropped **whole** from that
+cell's realized set (the campaign's own D4.18 whole-rid discipline, in decks). ⇒ **any tolerated
+failure necessarily makes the realized deck sets differ**, so conjunct 4, read literally, fires
+on **any** failure. There is no `n_failed` between 1 and the 2% bar at which both clauses hold.
+⇒ `G-FAILED`'s bound, its clause-2 candidate-correlation test, its clause-3 escalation and the
+owner confirmation clause 3 exists to obtain are all **dead letters** on the literal reading.
+**Fourth instance of the unsatisfiable-gate disease** (after `G-CAP`, `G-TOOL`'s
+`+rustcunpinned`, and Stage 2's unreachable `G-N`) — and the **first** of the four found *after*
+its run rather than before it.
+
+**Realized.** 12/13 gates PASS. `G-BAND` failed on conjunct 4 alone:
+`n_decks` 1,497 (`CELL_B32`) vs 1,500 (`CELL_B64`);
+`decks_only_in[CELL_B64] = [140000001096, 140000001115, 140000001286]` — **exactly the three
+owner-confirmed panic-failed decks** — and `decks_only_in[CELL_B32] = []`, i.e. `CELL_B32` holds
+**no** deck `CELL_B64` lacks. Rate 3/2,997 = **0.100%** against the 2% bar (20× margin);
+clause 2 did **not** fire (`max(F) = 3 < 5`). All three: `PanicException`,
+`"IndexError: board row index 35 out of range (len 35)"`, `window_truncation: false`, one
+seating each, sibling seating succeeded — the **parked pre-existing rust engine board-bounds
+family**, not an arbiter or instrument defect (`tiearb_errors_total: 0` in both cells).
+
+**Why both reviews missed it, stated rather than excused.** `REVIEW_R1` (FAIL, 7) and
+`REVIEW_R2` (PASS, 0) both read this pair. The `b64_cell` sibling — the fixture every check was
+calibrated against — realized **`n_failed = 0` in both cells**, where the two clauses are
+consistent, conjunct 4 passes, and clause 3 is *vacuous* (the §3 gate table says so in those
+words). **The contradiction only exists at `n_failed ≥ 1`, and the fixture had none.**
+
+> ⭐ **STANDING LESSON (campaign-wide, effective now).** *A conjunct requiring two cells to be
+> IDENTICAL in some realized set must carve out its own pair's FAILURE POLICY, explicitly, in its
+> own text — or it silently voids every run that failure policy was written to tolerate.*
+> **Corollary, and it is the half that generalizes past this gate:** *a known-good fixture proves
+> a rule passes a healthy run **of the fixture's shape**, not of every healthy shape the rule
+> admits.* The `b64_cell` fixture had zero failures; the bound admitted sixty. **Enumerate the
+> gate's interactions with the pair's OTHER clauses, not only the gate's own healthy-run value** —
+> this is `DESIGN §1.5`'s *"would this fail on a healthy run?"* test applied **pairwise** instead
+> of per-gate, which is the level at which this one hid.
+
+**The ruling, and its scope.** Reading A governs: conjunct 4 is **DISCHARGED by the confirmed
+failure set**, the branch table applies unamended, and the branch is **`L-AMBIGUOUS`**
+(`z_D` +1.3830, `UB95(D)` +1.4143 > 0.93). ⛔ **The mechanical `U-UNREADABLE` is NOT deleted** —
+it stands as what the frozen rule executed literally produced, exactly as `B-COSTKILL` still
+stands at the `b64_cell` after the owner bought B=64. ⛔ **The pair is NOT amended**; the
+taxonomy gap is fixed prospectively by the standing lesson above, never retroactively.
+⛔ **`L-AMBIGUOUS` licenses nothing** — the deploy stays `B` = 64 / `J` = 4, `B` = 128 is
+unfunded by default, no claim is minted, band 140e9 retires, and the read-rule is SPENT.
+
+### D7.2 — the adjudicator printed `z_D` and `UB95(D)` beside the failed gate
+
+**DISCLOSED. Fix OWED TO ANY SUCCESSOR ADJUDICATOR, and deliberately NOT patched into this spent
+one.**
+
+**The rule breached**, quoted verbatim ([`shared_run/READ_RULE.md`](shared_run/READ_RULE.md) §7,
+the campaign's standing blindness protection):
+
+> *"**On `W-UNREADABLE` (any gate FAIL): the harness report prints GATE INPUTS ONLY — no `arb`,
+> no `ora`, no `Δ`, no CI, no per-position statistic.** This is a hard requirement: on
+> 2026-08-17 a mandatory companion table printed alongside a gate failure made the orchestrating
+> session non-blind and forced the fixes to be written by a separate blind session."*
+
+…and this pair's own restatement, `b32v64_cell/READ_RULE.md` §4.1 row 1: *"⛔ The read-out may
+**not** print `D`, `z_D` or a branch label as if adjudicated."*
+
+**What happened.** `scripts/tiletie/analyze_b32v64_cell.py` emitted its gate summary with the
+`D`-block statistics on the **same console line** as `gates_failed: ["G-BAND"]`. So the session
+that discovered D7.1 and drafted the option card **already knew** `z_D` = +1.3830 and
+`UB95(D)` = +1.4143 — i.e. that Reading A selects `L-AMBIGUOUS` and not `L-SATURATED` or
+`L-RISING`. **The owner's D7.1 ruling was therefore NOT blind to the outcome it could affect**,
+and the clean R4 terms (*"nothing is scored, so the ruling is blind to every statistic it could
+affect"*, `ADJUDICATION_R4_GATES.md`) were **not available**.
+
+⚠️ **AND THE SURFACE IS WIDER THAN THE CONSOLE LINE — corrected on the record at write-up time,
+because the narrower statement would have understated the defect.** The tool's **emitted
+artifact** leaks it too. Preserved byte-identical as
+[`b32v64_cell/verdicts/READOUT_B32V64_TOOL_EMITTED_UUNREADABLE.md`](b32v64_cell/verdicts/READOUT_B32V64_TOOL_EMITTED_UUNREADABLE.md),
+it prints under its own `## BRANCH: U-UNREADABLE` heading a complete
+**`§4.3 item 2 — the D block: THE PRIMARY`** section (`D`, `se_D`, **`z_D`**, **`UB95(D)`**,
+`CI90(D)`, `rho`, **`EQUIV = False`**, both resolving-`n` figures) — and leaks `UB95` a second
+time **inside the gate table**, whose `G-STAT` row reads `PASS | UB95=+1.4143 se_D>0=True`.
+⇒ **the `U-UNREADABLE` suppression was enforced by nothing but the read-out author's discipline,
+and it leaked on the first gate failure this campaign's game cells ever had.**
+
+**Why the ruling is nonetheless defensible, and the argument is on the record rather than
+implied.** Two facts, both fixed **before** the ruling: (1) Reading A lands on `L-AMBIGUOUS`,
+the one branch of five that **licenses nothing and favors no one** — under Reading B the run is
+void and also licenses nothing, so the two readings differ in what is *recorded*, not in what is
+*authorized*; and (2) the orchestrator's written recommendation stated **in advance** that a
+non-blind ruling toward any **REWARDING** branch (`L-SATURATED`, which licenses the one-word
+swap-down and kills `B` = 128; or `L-RISING`, which licenses a `B` = 128 prereg) would instead
+have drawn a **"stand + fresh-band re-run"** recommendation. **The asymmetry was declared before
+the ruling, not discovered after it.**
+
+⛔ **What this does NOT do:** it does not make the ruling blind, does not retroactively satisfy
+§7, and **does not set a precedent** that a non-blind gate ruling is acceptable whenever the
+ruler judges the stakes low. It is a **disclosure of a breach with a mitigating argument**, and
+the mitigation is available exactly once.
+
+⛔ **NOT PATCHED HERE, and that is the ruling, not an omission.** `analyze_b32v64_cell.py` is a
+**spent** tool for a **SPENT** read-rule. Editing it now would change the behaviour of the
+instrument that produced the artifact of record **after the fact** — the same class of quiet
+post-hoc amendment this campaign has refused throughout (D4.18, `G-SALT`, the `failed_cells[]`
+non-promotion). **Blindness cannot be restored by editing the tool that already spent it.**
+
+> ⭐ **OBLIGATION ON THE SUCCESSOR (any future adjudicator in this family).** *On any gate FAIL
+> the tool must print **gate inputs only** — no `D`, no `se_D`, no `z_D`, no `UB95`, no `CI`, no
+> branch label — on **stdout as well as in the artifact**, and the outcome block must be written
+> to a separate address the failing path does not touch. The `U-UNREADABLE` suppression clause
+> must be enforced by the **emitter**, not left to the read-out author's discipline: a
+> suppression rule that only the prose obeys is a suppression rule that leaks on the first
+> failure — which is what happened here, on the first gate failure this campaign's game cells
+> ever had.*
+
+### D7.3 — READ_RULE §4.3 item 8's mandatory realized-cost print has NO EMITTER (the D6.2 class, fourth instance)
+
+**Discovered at close-out (2026-08-23): `cost_facts.worker_s_realized` is `null` for BOTH cells in
+`READOUT_B32V64.json` — the pair mandates a realized worker-s/game print (§4.3 item 8) and nothing
+in the chain emits the value.** The adjudicator's cost block reads a field the leg summaries do not
+carry; the known-good evaluation could not catch it because the b64 spent artifacts satisfy the
+*shape* check while the value resolves absent at read time. The read-out reports the print as
+**ABSENT** rather than inventing it; the only wall figure quoted (≈24.5 h two-box) is explicitly
+labelled *sentinel-mtime-derived, not adjudicator-emitted*, and is never a §4.3 discharge.
+
+> ⭐ **THE STANDING RULE, RESTATED (D6.2's, now with four instances):** a pair may not name a
+> mandatory print without naming, in the same commit, the tool that emits its value and the address
+> it is read from — **and the known-good evaluation must assert the VALUE resolves non-null on the
+> fixture, not merely that the address parses.** A shape check on a spent artifact is not an
+> emitter proof.
+
+*No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D7.1, D7.2
+or D7.3. `governance/PRODUCTION.yaml` untouched. D7.1 is in force on the owner's ruling; D7.2 and
+D7.3 bind on writing, as disclosures and obligations on successors.*
+
+---
+
 *No gate, address, bar, branch, statistic or estimand of the frozen pair is altered by D1, D2, D3,
-D4, D5 or D6. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their
+D4, D5, D6 or D7. `governance/PRODUCTION.yaml` untouched. D1 and D2 are not in force until their
 signature blocks read SIGNED; D3's classification is in force on ruling and its witness on PASS;
 D4's completion licence is in force subject to its §D4.9 conditions; D5's merge licence is in force
 subject to its pre-committed binary-sha decision rule; D6 is a disclosure and a standing rule, and
-both bind on writing.*
+both bind on writing; D7.1 is in force on the owner's 2026-08-22 ruling and D7.2/D7.3 are
+disclosures plus successor obligations, binding on writing.*

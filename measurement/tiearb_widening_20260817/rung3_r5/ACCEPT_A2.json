@@ -1,0 +1,531 @@
+{
+  "addresses": [
+    {
+      "address": "RUN/CORPUS_R5.json::leg_path",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::leg_sha256",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::r4_exclusion_list_sha256",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::n_in",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::n_excluded_r5",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::n_positions",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::excluded_rids",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "array"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::arms_r5_sha256",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/ARMS_R5.json",
+      "gate": "G-CORPUS",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::arms_r5_sha256",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::staged_arms_sha256",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::arms_copy_identical",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "boolean"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::n_leg_rids",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::n_arms_rids",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::rid_sets_equal",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "boolean"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::missing_in_leg",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "array"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::missing_in_arms",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "array"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::stage_chunks_rid_set_agrees",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "boolean"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/STAGING_R5.json::n_chunks",
+      "gate": "G-STAGED",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_INTERNAL_DUPE.json::n_positions",
+      "gate": "G-INTERNAL-DUPE",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_INTERNAL_DUPE.json::n_dupe_groups",
+      "gate": "G-INTERNAL-DUPE",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_INTERNAL_DUPE.json::n_dupe_positions",
+      "gate": "G-INTERNAL-DUPE",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_INTERNAL_DUPE.json::d_internal",
+      "gate": "G-INTERNAL-DUPE",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_INTERNAL_DUPE.json::ply_histogram",
+      "gate": "G-INTERNAL-DUPE",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "object"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_INTERNAL_DUPE.json::band_pairs",
+      "gate": "G-INTERNAL-DUPE",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "array"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_INTERNAL_DUPE.json::leg_sha256",
+      "gate": "G-INTERNAL-DUPE",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "string"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_DISJOINT_R5.json::passed",
+      "gate": "G-DISJOINT",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "boolean"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_DISJOINT_R5.json::comparisons.<name>.layers.a_root_id.n_intersection",
+      "gate": "G-DISJOINT",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/GATE_DISJOINT_R5.json::comparisons.<name>.layers.b_rid.n_intersection",
+      "gate": "G-DISJOINT",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::seed_ranges",
+      "gate": "G-BAND",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "object"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::n_distinct_seeds",
+      "gate": "G-BAND",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::n_out_of_band",
+      "gate": "G-BAND",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::n_seeds_136e9",
+      "gate": "G-BAND",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/CORPUS_R5.json::max_positions_per_seed",
+      "gate": "G-BAND",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    },
+    {
+      "address": "RUN/SMOKE_R5.json::m_worlds",
+      "gate": "G-M",
+      "marker": "[post-corpus]",
+      "mode": "live",
+      "n_files": 1,
+      "role": "primary",
+      "state": "resolved",
+      "types": [
+        "number"
+      ],
+      "why": null
+    }
+  ],
+  "completeness": {
+    "audited_at_no_pass": [],
+    "by_pass_counts": {
+      "A1": 54,
+      "A2": 35,
+      "A3": 19
+    },
+    "carried_without_address": [
+      {
+        "address_cell": "as carried",
+        "gates": [
+          "G-LEAF",
+          "G-PREFIX",
+          "G-CRN",
+          "G-UNCAPPED",
+          "G-DRAW",
+          "G-ARMS",
+          "G-BITEXACT@HEAD"
+        ],
+        "why": "the address column names NO address ('as carried') \u2014 this row cannot be evaluated at any pass and is REPORTED rather than counted as covered"
+      }
+    ],
+    "invented": [],
+    "n_in_address_table": 54,
+    "n_named_in_read_rule": 54,
+    "ok": true,
+    "rulings_not_addresses": [
+      "SMOKE_R5.json::resolved_config.m",
+      "legs/\u2026/manifest.json::resolved_config.m"
+    ],
+    "uncovered": [],
+    "union_equals_table": true
+  },
+  "freeze_verification": {
+    "checks": [
+      {
+        "check": "leg file vs CORPUS_R5.json::leg_sha256",
+        "result": "match"
+      },
+      {
+        "check": "RUN/ARMS_R5.json vs CORPUS_R5.json::arms_r5_sha256",
+        "result": "match"
+      },
+      {
+        "check": "FLOORS_R5.json::population_authority.arms_r5_sha256 vs CORPUS_R5.json::arms_r5_sha256",
+        "result": "match"
+      },
+      {
+        "check": "sha256(json.dumps(sorted(GATE_DISJOINT.json::digest_exclusions.S2.rids))) vs CORPUS_R5.json::r4_exclusion_list_sha256",
+        "result": "match"
+      }
+    ],
+    "disclosure": "match/MISMATCH only \u2014 no sha and no artifact-supplied path is printed or stored",
+    "verified": true
+  },
+  "mechanism": "address + gate + marker + resolved/UNRESOLVED + JSON type name. NO VALUE is printed or stored \u2014 not the value, not a truncation of it, not a length, not a sha.",
+  "n_addresses_this_pass": 35,
+  "n_unresolved": 0,
+  "no_fixture_committed": [],
+  "pass": "A2",
+  "passed": true,
+  "read_rule": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/READ_RULE.md",
+  "readout_fixture_ambiguity": {
+    "accepted": [
+      "READOUT_R5.fixture.json",
+      "READOUT.fixture.json"
+    ],
+    "design_fixture_list_names": "fixtures/READOUT.fixture.json",
+    "execution_layer_ruling_names": "fixtures/READOUT_R5.fixture.json",
+    "found": "READOUT.fixture.json",
+    "handling": "EITHER name is accepted, READOUT_R5 preferred. The pair contradicts itself here; this tool REPORTS the conflict and does not edit the pair to settle it."
+  },
+  "run": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5",
+  "unaudited_fallbacks": []
+}

@@ -1,0 +1,41 @@
+{
+  "n_positions": 132,
+  "m_worlds": 32,
+  "sd_delta_positions": 2.434367220005462,
+  "mean_delta_pts": 0.07646780303030302,
+  "se_mean_delta": 0.2118844696969697,
+  "z_pilot_observed": 0.3608938547486033,
+  "mean_within_position_var": 147.88218627810363,
+  "var_between_positions_est": 1.3048254406463817,
+  "sd_delta_projected_by_m": {
+    "8": 4.448606380138542,
+    "16": 3.2476856502789584,
+    "32": 2.434367220005462,
+    "64": 1.9014427683319188
+  },
+  "median_crn_var_reduction": 1.4752585133452438,
+  "n_positions_perfect_pairing": 12,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.46809595214826416,
+    "N=132_at_M=32": 0.33036871508379895,
+    "N=132_at_M=8": 0.18078443040183698,
+    "N=132_at_M=16": 0.24763442559357443,
+    "N=132_at_M=64": 0.42296238619943305
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 132,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 132,
+  "wall_secs": 3775.4,
+  "manifest": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5/clair-puct/walled/leg2/manifest.json"
+}

@@ -1,0 +1,1928 @@
+{
+  "assumed_effect_pts": 0.07,
+  "champion_manifest": {
+    "agent_class": "HeuristicPriorAgent",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1",
+      "CARCASSONNE_USE_FLAT_LEAF": "1"
+    },
+    "fair_deploy": {
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta",
+      "exact_max_k": 2,
+      "k_dets": 8,
+      "sims_per_det": 1376,
+      "total_sims": 11008
+    },
+    "leaf": {
+      "bonus_cap": 8.0,
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "opp_bonus_cap": 8.0,
+      "residual_scale": 0.0,
+      "value_blend": 0.0
+    },
+    "leaf_hashes": {
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02",
+      "harness_leaf_hash": "a36d2e15a3b3d71d"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_5v5_float": 0.0,
+      "empty_meeples_7v3_float": 6.25
+    },
+    "mode": "clairvoyant",
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory).",
+    "reshuffle_semantics": "clairvoyant descent of the true engine deck (dev/ruler only)",
+    "schema": "carcassonne-champion-factory/v1",
+    "search": {
+      "c_puct": 1.5,
+      "config_hash": "a177df670b3575d0",
+      "final_select": "visits",
+      "leaf_quantize": "float",
+      "reuse_tree": true,
+      "reuse_tree_effective": true,
+      "tau_p": 5.0,
+      "value_norm": 15.0
+    },
+    "source": "governance/PRODUCTION.yaml"
+  },
+  "code_rev": "58c2b539",
+  "crn": {
+    "level": "world (deck completion) AND continuation-policy seed",
+    "seed_derivation": "sha256(tag|rid|j|world_seed_salt) -> 31-bit; independent of pick and of budget",
+    "strict": true,
+    "witness": "afterstate deck-order hash asserted equal across the two picks for every world (crn_verified)"
+  },
+  "env": {
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CUDA_VISIBLE_DEVICES": "",
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "execution": {
+    "audit_item": "A3 (\u00a72) / B1 (\u00a73) \u2014 BACKEND_BYPASS_AUDIT_20260801.md",
+    "backend": "rust",
+    "backend_resolution": "resolved at launch by rust_world_search.resolve_backend (escape hatch: CARC_PROBE_FORCE_PYTHON=1)",
+    "carc_rs_binary_sha": "a4318fd59d9d8349",
+    "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+    "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "carc_rs_version": "0.1.0",
+    "code_rev": "58c2b539-dirty",
+    "code_rev_dirty": true,
+    "continuation_tree_policy": "PERSISTING \u2014 the playout calls best_action(), which never clears NeuralMCTS._nodes, so ONE tree spans every ply to terminal. On the rust backend this is carc_rs.PersistentSearcher via rust_agent.RustCarryClairvoyantAgent, NOT MirrorState.search_single (which is fresh-tree only and would be a different player).",
+    "evidence": "measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json",
+    "gap2_status": "CLOSED 2026-08-02 (rustport P6) \u2014 measurement/rustport_p6/GATE_GAP2_PERSISTENT.json",
+    "gap_status": {
+      "gap1_search_seed": "CLOSED \u2014 measurement/rustport_p6/GAP1_SEED_INVARIANCE.json; the continuation's playout_seed is inert on this path",
+      "gap2_reuse_tree": "CLOSED 2026-08-02 (rustport P6) \u2014 and NOT inert here: this harness's continuation is a PERSISTING-TREE search. carc_rs.PersistentSearcher supplies it; measurement/rustport_p6/GATE_GAP2_PERSISTENT.json",
+      "gap3_evaluator_injection": "OPEN, enforced \u2014 search_config_rs and RustCarryClairvoyantAgent both raise"
+    },
+    "identity_gate": "measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json \u2014 this harness's own _process record, python vs rust, every non-timing field as raw f64 bits",
+    "rust_available": true,
+    "rust_threads": 1,
+    "rust_toolchain": null,
+    "rust_unavailable_reason": null,
+    "seam": "ONE determinized world's search (fair_agent.search_one_world -> MirrorState.search_single). Determinization draw, pooling (_merge_root_stats) and decision rule (pooled_q_argmax) stay in Python and are the SAME function objects on both backends.",
+    "threads_note": "per-world search_single is SINGLE-THREADED; these probes are game-parallel farms, so rust_threads applies only to the whole-agent parity check",
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800",
+    "tile_data_source_sha256": "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c"
+  },
+  "goal": "Convert CL-070's 'the move changed' into 'the move improved' on a 20-position pilot, and measure the world-CRN variance reduction that decides whether the full ~652-position probe is powered.",
+  "harness": "oracle_score_pilot",
+  "host": "Doctor",
+  "levels": {
+    "alloc_a": {
+      "k_dets": 4,
+      "label": null,
+      "sims_per_det": 688,
+      "total": 2752
+    },
+    "alloc_b": {
+      "k_dets": 4,
+      "label": null,
+      "sims_per_det": 2752,
+      "total": 11008
+    },
+    "budget_ratio_b_over_a": 4.0,
+    "decision_rule": "q_argmax_action (pooled_q_argmax) \u2014 the DEPLOYED fair pick",
+    "level_a_key": 688,
+    "level_b_key": 2752,
+    "total_budget_a": 2752,
+    "total_budget_b": 11008
+  },
+  "m_worlds": 128,
+  "max_plies": 400,
+  "merge": {
+    "binary_sha_within_box": {
+      "by_box": {
+        "Doctor": {
+          "address": "execution.carc_rs_binary_sha",
+          "box_key_source": "host",
+          "chunks": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "sha": "a4318fd59d9d8349"
+        },
+        "laptop-wsl": {
+          "address": "execution.carc_rs_binary_sha",
+          "box_key_source": "host",
+          "chunks": [
+            6,
+            7,
+            8,
+            14,
+            15,
+            16
+          ],
+          "sha": "8ae0b98427debb2e"
+        }
+      },
+      "conjunct": "(ii) binary_sha constant within box",
+      "n_boxes": 2,
+      "note": "compared WITHIN a host only \u2014 never across (JCZ \u00a70.F.2c: the .so is not machine-reproducible). A box with no sha recorded contributes nothing and is not counted as evidence.",
+      "ok": true,
+      "standing_requirement": true
+    },
+    "by_chunk": {
+      "1": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 16,
+          "n_requested": 16,
+          "population_disagreements": 16,
+          "rids": [
+            "tt_sp_137000000019_p54",
+            "tt_sp_137000000059_p138",
+            "tt_sp_137000000083_p80",
+            "tt_sp_137000000095_p108",
+            "tt_sp_137000000098_p10",
+            "tt_sp_137000000145_p78",
+            "tt_sp_137000000155_p6",
+            "tt_sp_137000000205_p118",
+            "tt_sp_137000000209_p6",
+            "tt_sp_137000000293_p68",
+            "tt_sp_137000000319_p107",
+            "tt_sp_137000000347_p120",
+            "tt_sp_137000000367_p84",
+            "tt_sp_137000000404_p6",
+            "tt_sp_137000000485_p4",
+            "tt_sp_137000000500_p100"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk1/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-18T18:08:59Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "10": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 12,
+          "n_requested": 12,
+          "population_disagreements": 12,
+          "rids": [
+            "tt_sp_135000000020_p24",
+            "tt_sp_135000000051_p108",
+            "tt_sp_135000000097_p44",
+            "tt_sp_135000000118_p64",
+            "tt_sp_135000000145_p88",
+            "tt_sp_135000000147_p60",
+            "tt_sp_135000000161_p132",
+            "tt_sp_135000000168_p114",
+            "tt_sp_135000000257_p110",
+            "tt_sp_135000000269_p48",
+            "tt_sp_135000000291_p94",
+            "tt_sp_135000000305_p88"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk10/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T06:12:21Z",
+        "wall_cap_secs": 7200,
+        "workers": 2
+      },
+      "11": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 9,
+          "n_requested": 9,
+          "population_disagreements": 9,
+          "rids": [
+            "tt_sp_135000000019_p126",
+            "tt_sp_135000000072_p88",
+            "tt_sp_135000000108_p42",
+            "tt_sp_135000000158_p142",
+            "tt_sp_135000000202_p142",
+            "tt_sp_135000000207_p54",
+            "tt_sp_135000000228_p22",
+            "tt_sp_135000000289_p124",
+            "tt_sp_135000000303_p78"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk11/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T07:19:07Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "12": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 8,
+          "n_requested": 8,
+          "population_disagreements": 8,
+          "rids": [
+            "tt_sp_135000000002_p8",
+            "tt_sp_135000000014_p101",
+            "tt_sp_135000000023_p56",
+            "tt_sp_135000000025_p140",
+            "tt_sp_135000000097_p102",
+            "tt_sp_135000000163_p68",
+            "tt_sp_135000000231_p72",
+            "tt_sp_135000000300_p34"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk12/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T08:19:44Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "13": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 9,
+          "n_requested": 9,
+          "population_disagreements": 9,
+          "rids": [
+            "tt_sp_135000000002_p116",
+            "tt_sp_135000000016_p124",
+            "tt_sp_135000000074_p49",
+            "tt_sp_135000000169_p68",
+            "tt_sp_135000000233_p70",
+            "tt_sp_135000000233_p98",
+            "tt_sp_135000000291_p8",
+            "tt_sp_135000000314_p79",
+            "tt_sp_135000000346_p72"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk13/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T09:40:48Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "14": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "8ae0b98427debb2e",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "laptop-wsl",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 8,
+          "n_requested": 8,
+          "population_disagreements": 8,
+          "rids": [
+            "tt_sp_135000000015_p14",
+            "tt_sp_135000000046_p96",
+            "tt_sp_135000000181_p4",
+            "tt_sp_135000000191_p16",
+            "tt_sp_135000000214_p68",
+            "tt_sp_135000000222_p108",
+            "tt_sp_135000000305_p104",
+            "tt_sp_135000000321_p120"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk14/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T04:20:26Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "15": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "8ae0b98427debb2e",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "laptop-wsl",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 5,
+          "n_requested": 5,
+          "population_disagreements": 5,
+          "rids": [
+            "tt_sp_135000000082_p109",
+            "tt_sp_135000000247_p132",
+            "tt_sp_135000000265_p46",
+            "tt_sp_135000000308_p80",
+            "tt_sp_135000000336_p130"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk15/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T05:32:43Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "16": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "8ae0b98427debb2e",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "laptop-wsl",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 10,
+          "n_requested": 10,
+          "population_disagreements": 10,
+          "rids": [
+            "tt_sp_135000000055_p94",
+            "tt_sp_135000000086_p4",
+            "tt_sp_135000000094_p10",
+            "tt_sp_135000000100_p2",
+            "tt_sp_135000000186_p4",
+            "tt_sp_135000000201_p34",
+            "tt_sp_135000000225_p50",
+            "tt_sp_135000000260_p128",
+            "tt_sp_135000000273_p100",
+            "tt_sp_135000000344_p36"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk16/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T06:31:54Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "2": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 19,
+          "n_requested": 19,
+          "population_disagreements": 19,
+          "rids": [
+            "tt_sp_137000000108_p38",
+            "tt_sp_137000000125_p5",
+            "tt_sp_137000000157_p88",
+            "tt_sp_137000000226_p100",
+            "tt_sp_137000000245_p6",
+            "tt_sp_137000000249_p108",
+            "tt_sp_137000000263_p34",
+            "tt_sp_137000000285_p36",
+            "tt_sp_137000000302_p48",
+            "tt_sp_137000000338_p124",
+            "tt_sp_137000000352_p4",
+            "tt_sp_137000000371_p8",
+            "tt_sp_137000000372_p116",
+            "tt_sp_137000000377_p82",
+            "tt_sp_137000000417_p106",
+            "tt_sp_137000000431_p142",
+            "tt_sp_137000000436_p52",
+            "tt_sp_137000000455_p68",
+            "tt_sp_137000000491_p100"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk2/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-18T20:02:39Z",
+        "wall_cap_secs": 7200,
+        "workers": 2
+      },
+      "3": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 14,
+          "n_requested": 14,
+          "population_disagreements": 14,
+          "rids": [
+            "tt_sp_137000000003_p16",
+            "tt_sp_137000000016_p132",
+            "tt_sp_137000000019_p64",
+            "tt_sp_137000000079_p104",
+            "tt_sp_137000000155_p36",
+            "tt_sp_137000000159_p22",
+            "tt_sp_137000000160_p17",
+            "tt_sp_137000000287_p110",
+            "tt_sp_137000000302_p34",
+            "tt_sp_137000000322_p50",
+            "tt_sp_137000000362_p124",
+            "tt_sp_137000000369_p50",
+            "tt_sp_137000000427_p20",
+            "tt_sp_137000000503_p35"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk3/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-18T21:38:23Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "4": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 16,
+          "n_requested": 16,
+          "population_disagreements": 16,
+          "rids": [
+            "tt_sp_137000000029_p90",
+            "tt_sp_137000000091_p66",
+            "tt_sp_137000000106_p132",
+            "tt_sp_137000000125_p141",
+            "tt_sp_137000000161_p16",
+            "tt_sp_137000000199_p78",
+            "tt_sp_137000000210_p18",
+            "tt_sp_137000000290_p108",
+            "tt_sp_137000000295_p106",
+            "tt_sp_137000000303_p92",
+            "tt_sp_137000000339_p56",
+            "tt_sp_137000000395_p109",
+            "tt_sp_137000000399_p4",
+            "tt_sp_137000000402_p72",
+            "tt_sp_137000000410_p116",
+            "tt_sp_137000000504_p2"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk4/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-18T23:36:48Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "5": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 11,
+          "n_requested": 11,
+          "population_disagreements": 11,
+          "rids": [
+            "tt_sp_137000000054_p44",
+            "tt_sp_137000000061_p48",
+            "tt_sp_137000000064_p116",
+            "tt_sp_137000000083_p34",
+            "tt_sp_137000000089_p92",
+            "tt_sp_137000000101_p90",
+            "tt_sp_137000000126_p2",
+            "tt_sp_137000000126_p74",
+            "tt_sp_137000000365_p70",
+            "tt_sp_137000000443_p142",
+            "tt_sp_137000000446_p20"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk5/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T01:28:09Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "6": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "8ae0b98427debb2e",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "laptop-wsl",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 17,
+          "n_requested": 17,
+          "population_disagreements": 17,
+          "rids": [
+            "tt_sp_137000000021_p72",
+            "tt_sp_137000000028_p132",
+            "tt_sp_137000000028_p88",
+            "tt_sp_137000000080_p2",
+            "tt_sp_137000000115_p4",
+            "tt_sp_137000000116_p24",
+            "tt_sp_137000000195_p130",
+            "tt_sp_137000000259_p102",
+            "tt_sp_137000000266_p84",
+            "tt_sp_137000000290_p100",
+            "tt_sp_137000000369_p6",
+            "tt_sp_137000000399_p40",
+            "tt_sp_137000000410_p136",
+            "tt_sp_137000000412_p108",
+            "tt_sp_137000000474_p116",
+            "tt_sp_137000000503_p103",
+            "tt_sp_137000000503_p47"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk6/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-18T16:57:55Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "7": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "8ae0b98427debb2e",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "laptop-wsl",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 17,
+          "n_requested": 17,
+          "population_disagreements": 17,
+          "rids": [
+            "tt_sp_137000000017_p70",
+            "tt_sp_137000000025_p82",
+            "tt_sp_137000000032_p40",
+            "tt_sp_137000000035_p36",
+            "tt_sp_137000000048_p44",
+            "tt_sp_137000000195_p10",
+            "tt_sp_137000000201_p44",
+            "tt_sp_137000000222_p2",
+            "tt_sp_137000000263_p18",
+            "tt_sp_137000000311_p8",
+            "tt_sp_137000000334_p88",
+            "tt_sp_137000000340_p100",
+            "tt_sp_137000000364_p122",
+            "tt_sp_137000000370_p54",
+            "tt_sp_137000000421_p22",
+            "tt_sp_137000000441_p62",
+            "tt_sp_137000000482_p12"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk7/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-18T19:13:11Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "8": {
+        "champion_manifest": {
+          "code_commit": "58c2b539556916b0f6280d233b48d5dcbed7ca88"
+        },
+        "code_rev": "58c2b539",
+        "execution": {
+          "carc_rs_binary_sha": "8ae0b98427debb2e",
+          "carc_rs_build": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+          "code_rev": "58c2b539-dirty"
+        },
+        "host": "laptop-wsl",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 9,
+          "n_requested": 9,
+          "population_disagreements": 9,
+          "rids": [
+            "tt_sp_137000000014_p92",
+            "tt_sp_137000000299_p106",
+            "tt_sp_137000000385_p12",
+            "tt_sp_137000000414_p6",
+            "tt_sp_137000000458_p36",
+            "tt_sp_137000000489_p72",
+            "tt_sp_137000000490_p126",
+            "tt_sp_137000000496_p6",
+            "tt_sp_137000000507_p140"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk8/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-18T21:47:15Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      },
+      "9": {
+        "champion_manifest": {
+          "code_commit": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+        },
+        "code_rev": "4b24f512",
+        "execution": {
+          "carc_rs_binary_sha": "a4318fd59d9d8349",
+          "carc_rs_build": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+          "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+          "code_rev": "4b24f512-dirty"
+        },
+        "host": "Doctor",
+        "sampling": {
+          "head": 0,
+          "include_solver_region": false,
+          "n_chosen": 9,
+          "n_requested": 9,
+          "population_disagreements": 9,
+          "rids": [
+            "tt_sp_135000000024_p50",
+            "tt_sp_135000000055_p82",
+            "tt_sp_135000000058_p34",
+            "tt_sp_135000000202_p138",
+            "tt_sp_135000000231_p4",
+            "tt_sp_135000000236_p12",
+            "tt_sp_135000000250_p32",
+            "tt_sp_135000000294_p59",
+            "tt_sp_135000000295_p82"
+          ],
+          "sample_seed": 20260728
+        },
+        "source": {
+          "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+          "arm_b": "pick_b = the HUMAN's played move (action_played)",
+          "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+          "mode": "positions-jsonl",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk9/positions_walled_leg5.jsonl",
+          "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+        },
+        "started_utc": "2026-08-19T04:21:21Z",
+        "wall_cap_secs": 7200,
+        "workers": 1
+      }
+    },
+    "chunks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "divergent_keys_allowed": [],
+    "generated_utc": "2026-08-19T11:36:27Z",
+    "note": "A TWO-BOX merge of per-chunk legs. Counters are summed; gate-addressed fields were asserted IDENTICAL across chunks before being carried. Per-chunk values are below. wall_secs is a SUM across chunks that ran on different boxes and possibly concurrently \u2014 it is NOT a wall clock and is not the cost currency of record (DESIGN \u00a77 costs from elapsed_secs).",
+    "records_by_chunk": {
+      "1": 16,
+      "10": 12,
+      "11": 9,
+      "12": 8,
+      "13": 9,
+      "14": 8,
+      "15": 5,
+      "16": 10,
+      "2": 19,
+      "3": 14,
+      "4": 16,
+      "5": 11,
+      "6": 17,
+      "7": 17,
+      "8": 9,
+      "9": 9
+    },
+    "rev_license": {
+      "deviation": "D4.11/D4.12",
+      "note": "\u26a0\ufe0f THIS LEG SPANS TWO REVS. The merged manifest carries the LOWEST-indexed chunk's value for each rev field so the key keeps its type and never reads null; the per-chunk truth is here and in merge.by_chunk. The pair is enumerated in merge_legs.LICENSED_TRANCHE_REVS and the instrument diff between the two revs was RE-DERIVED at merge time.",
+      "paths": [
+        "champion_manifest.code_commit",
+        "code_rev",
+        "execution.carc_rs_build",
+        "execution.code_rev"
+      ],
+      "records": [
+        {
+          "by_chunk": {
+            "1": "58c2b539",
+            "10": "4b24f512",
+            "11": "4b24f512",
+            "12": "4b24f512",
+            "13": "4b24f512",
+            "14": "4b24f512",
+            "15": "4b24f512",
+            "16": "4b24f512",
+            "2": "58c2b539",
+            "3": "58c2b539",
+            "4": "58c2b539",
+            "5": "58c2b539",
+            "6": "58c2b539",
+            "7": "58c2b539",
+            "8": "58c2b539",
+            "9": "4b24f512"
+          },
+          "deviation": "D4.11/D4.12 (measurement/tiearb_widening_20260817/DEVIATIONS.md, commit 93f83e26)",
+          "git_clean_by_chunk": {
+            "1": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk1.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk1.json"
+              ]
+            },
+            "10": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk10.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk10.json"
+              ]
+            },
+            "11": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk11.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk11.json"
+              ]
+            },
+            "12": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk12.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk12.json"
+              ]
+            },
+            "13": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk13.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk13.json"
+              ]
+            },
+            "14": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk14.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk14.json"
+              ]
+            },
+            "15": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk15.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk15.json"
+              ]
+            },
+            "16": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk16.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk16.json"
+              ]
+            },
+            "2": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk2.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk2.json"
+              ]
+            },
+            "3": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk3.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk3.json"
+              ]
+            },
+            "4": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk4.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk4.json"
+              ]
+            },
+            "5": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk5.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk5.json"
+              ]
+            },
+            "6": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk6.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk6.json"
+              ]
+            },
+            "7": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk7.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk7.json"
+              ]
+            },
+            "8": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk8.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk8.json"
+              ]
+            },
+            "9": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk9.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk9.json"
+              ]
+            }
+          },
+          "instrument_identity": {
+            "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/INSTRUMENT_IDENTITY.json",
+            "rederived": {
+              "empty": true,
+              "n_files_changed": 0,
+              "paths": [
+                "scripts/tiletie/run_tiletie.py",
+                "scripts/measurement_infra/oracle_score_pilot.py",
+                "scripts/tiletie/tier1_rust_leg.py",
+                "src/",
+                "engine/",
+                "rust/"
+              ],
+              "recipe": "git -C <repo> diff --name-only 4b24f512a0833b3fe71a126b713c560b2c8c4db1 58c2b539556916b0f6280d233b48d5dcbed7ca88 -- scripts/tiletie/run_tiletie.py scripts/measurement_infra/oracle_score_pilot.py scripts/tiletie/tier1_rust_leg.py src/ engine/ rust/",
+              "repo": "/home/doctor/projects/carcassone",
+              "rev_a": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+              "rev_b": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+              "stat": "",
+              "verified_utc": "2026-08-19T11:33:47Z"
+            },
+            "sha256": "5dc04affc36c3c18396c6bb5744ef81b143447c112dd4412adb285a5f4ade9d4"
+          },
+          "licensed_revs": {
+            "committed_tranche": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+          },
+          "note": "ENUMERATED two-rev licence. The tranche split is a NECESSARY consequence of the D4.2 completion \u2014 the completion tranche cannot run at the spent rev because the staging code did not exist there. No gate constrains the run's git_rev (D4.10). The instrument diff between the two revs was RE-DERIVED here, not read from the witness.",
+          "path": "code_rev",
+          "tranches": {
+            "committed_tranche": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "completion_tranche": [
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ]
+          }
+        },
+        {
+          "by_chunk": {
+            "1": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "10": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "11": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "12": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "13": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "14": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "15": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "16": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+            "2": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "3": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "4": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "5": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "6": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "7": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "8": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "9": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+          },
+          "deviation": "D4.11/D4.12 (measurement/tiearb_widening_20260817/DEVIATIONS.md, commit 93f83e26)",
+          "git_clean_by_chunk": {
+            "1": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk1.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk1.json"
+              ]
+            },
+            "10": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk10.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk10.json"
+              ]
+            },
+            "11": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk11.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk11.json"
+              ]
+            },
+            "12": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk12.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk12.json"
+              ]
+            },
+            "13": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk13.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk13.json"
+              ]
+            },
+            "14": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk14.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk14.json"
+              ]
+            },
+            "15": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk15.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk15.json"
+              ]
+            },
+            "16": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk16.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk16.json"
+              ]
+            },
+            "2": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk2.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk2.json"
+              ]
+            },
+            "3": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk3.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk3.json"
+              ]
+            },
+            "4": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk4.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk4.json"
+              ]
+            },
+            "5": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk5.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk5.json"
+              ]
+            },
+            "6": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk6.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk6.json"
+              ]
+            },
+            "7": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk7.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk7.json"
+              ]
+            },
+            "8": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk8.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk8.json"
+              ]
+            },
+            "9": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk9.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk9.json"
+              ]
+            }
+          },
+          "instrument_identity": {
+            "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/INSTRUMENT_IDENTITY.json",
+            "rederived": {
+              "empty": true,
+              "n_files_changed": 0,
+              "paths": [
+                "scripts/tiletie/run_tiletie.py",
+                "scripts/measurement_infra/oracle_score_pilot.py",
+                "scripts/tiletie/tier1_rust_leg.py",
+                "src/",
+                "engine/",
+                "rust/"
+              ],
+              "recipe": "git -C <repo> diff --name-only 4b24f512a0833b3fe71a126b713c560b2c8c4db1 58c2b539556916b0f6280d233b48d5dcbed7ca88 -- scripts/tiletie/run_tiletie.py scripts/measurement_infra/oracle_score_pilot.py scripts/tiletie/tier1_rust_leg.py src/ engine/ rust/",
+              "repo": "/home/doctor/projects/carcassone",
+              "rev_a": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+              "rev_b": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+              "stat": "",
+              "verified_utc": "2026-08-19T11:33:47Z"
+            },
+            "sha256": "5dc04affc36c3c18396c6bb5744ef81b143447c112dd4412adb285a5f4ade9d4"
+          },
+          "licensed_revs": {
+            "committed_tranche": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+          },
+          "note": "ENUMERATED two-rev licence. The tranche split is a NECESSARY consequence of the D4.2 completion \u2014 the completion tranche cannot run at the spent rev because the staging code did not exist there. No gate constrains the run's git_rev (D4.10). The instrument diff between the two revs was RE-DERIVED here, not read from the witness.",
+          "path": "champion_manifest.code_commit",
+          "tranches": {
+            "committed_tranche": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "completion_tranche": [
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ]
+          }
+        },
+        {
+          "by_chunk": {
+            "1": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "10": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "11": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "12": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "13": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "14": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "15": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "16": "carc_rs-0.1.0+4b24f512a083+rustcunpinned",
+            "2": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "3": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "4": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "5": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "6": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "7": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "8": "carc_rs-0.1.0+58c2b5395569+rustcunpinned",
+            "9": "carc_rs-0.1.0+4b24f512a083+rustcunpinned"
+          },
+          "chunk_tranche_from_rev_fields": {
+            "1": "committed_tranche",
+            "10": "completion_tranche",
+            "11": "completion_tranche",
+            "12": "completion_tranche",
+            "13": "completion_tranche",
+            "14": "completion_tranche",
+            "15": "completion_tranche",
+            "16": "completion_tranche",
+            "2": "committed_tranche",
+            "3": "committed_tranche",
+            "4": "committed_tranche",
+            "5": "committed_tranche",
+            "6": "committed_tranche",
+            "7": "committed_tranche",
+            "8": "committed_tranche",
+            "9": "completion_tranche"
+          },
+          "conjuncts": {
+            "i_only_rev_fragment_differs": {
+              "compared_at_width": 12,
+              "ok": true,
+              "rev_fragments": {
+                "1": "58c2b5395569",
+                "10": "4b24f512a083",
+                "11": "4b24f512a083",
+                "12": "4b24f512a083",
+                "13": "4b24f512a083",
+                "14": "4b24f512a083",
+                "15": "4b24f512a083",
+                "16": "4b24f512a083",
+                "2": "58c2b5395569",
+                "3": "58c2b5395569",
+                "4": "58c2b5395569",
+                "5": "58c2b5395569",
+                "6": "58c2b5395569",
+                "7": "58c2b5395569",
+                "8": "58c2b5395569",
+                "9": "4b24f512a083"
+              },
+              "toolchain": "rustcunpinned",
+              "version": "carc_rs-0.1.0"
+            },
+            "ii_binary_sha_constant_within_box": {
+              "by_box": {
+                "Doctor": {
+                  "address": "execution.carc_rs_binary_sha",
+                  "box_key_source": "host",
+                  "chunks": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13
+                  ],
+                  "sha": "a4318fd59d9d8349"
+                },
+                "laptop-wsl": {
+                  "address": "execution.carc_rs_binary_sha",
+                  "box_key_source": "host",
+                  "chunks": [
+                    6,
+                    7,
+                    8,
+                    14,
+                    15,
+                    16
+                  ],
+                  "sha": "8ae0b98427debb2e"
+                }
+              },
+              "conjunct": "(ii) binary_sha constant within box",
+              "n_boxes": 2,
+              "note": "compared WITHIN a host only \u2014 never across (JCZ \u00a70.F.2c: the .so is not machine-reproducible). A box with no sha recorded contributes nothing and is not counted as evidence.",
+              "ok": true,
+              "standing_requirement": true
+            },
+            "iii_instrument_identity_rust_scope": {
+              "boxes": [
+                "laptop",
+                "local"
+              ],
+              "conjunct": "(iii) instrument identity covers rust/",
+              "ok": true,
+              "witness": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/INSTRUMENT_IDENTITY.json"
+            },
+            "iv_within_tranche_cross_host_build_equality": {
+              "committed_tranche": {
+                "chunks": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "n_boxes": 2,
+                "status": "PASSED"
+              },
+              "completion_tranche": {
+                "chunks": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16
+                ],
+                "n_boxes": 2,
+                "status": "PASSED"
+              }
+            }
+          },
+          "deviation": "D4.13",
+          "note": "carc_rs_build is the CROSS-HOST SOURCE-REV witness (the rev is stamped from `git rev-parse HEAD` at process start, not from the artifact); carc_rs_binary_sha is the WITHIN-BOX STALENESS witness. Across tranches HEAD moved and the stamp followed \u2014 the .so was not rebuilt, which conjunct (ii) asserts rather than assumes. \u26a0\ufe0f Where (iv) reads VACUOUS the leg is single-host and (ii) carries the whole weight.",
+          "path": "execution.carc_rs_build",
+          "tranches": {
+            "committed_tranche": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "completion_tranche": [
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ]
+          }
+        },
+        {
+          "by_chunk": {
+            "1": "58c2b539-dirty",
+            "10": "4b24f512-dirty",
+            "11": "4b24f512-dirty",
+            "12": "4b24f512-dirty",
+            "13": "4b24f512-dirty",
+            "14": "4b24f512-dirty",
+            "15": "4b24f512-dirty",
+            "16": "4b24f512-dirty",
+            "2": "58c2b539-dirty",
+            "3": "58c2b539-dirty",
+            "4": "58c2b539-dirty",
+            "5": "58c2b539-dirty",
+            "6": "58c2b539-dirty",
+            "7": "58c2b539-dirty",
+            "8": "58c2b539-dirty",
+            "9": "4b24f512-dirty"
+          },
+          "deviation": "D4.11/D4.12 (measurement/tiearb_widening_20260817/DEVIATIONS.md, commit 93f83e26)",
+          "git_clean_by_chunk": {
+            "1": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk1.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk1.json"
+              ]
+            },
+            "10": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk10.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk10.json"
+              ]
+            },
+            "11": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk11.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk11.json"
+              ]
+            },
+            "12": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk12.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk12.json"
+              ]
+            },
+            "13": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk13.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk13.json"
+              ]
+            },
+            "14": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk14.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk14.json"
+              ]
+            },
+            "15": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk15.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk15.json"
+              ]
+            },
+            "16": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk16.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk16.json"
+              ]
+            },
+            "2": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk2.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk2.json"
+              ]
+            },
+            "3": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk3.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk3.json"
+              ]
+            },
+            "4": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk4.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk4.json"
+              ]
+            },
+            "5": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk5.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk5.json"
+              ]
+            },
+            "6": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk6.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk6.json"
+              ]
+            },
+            "7": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk7.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk7.json"
+              ]
+            },
+            "8": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk8.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk8.json"
+              ]
+            },
+            "9": {
+              "dirty_paths": [],
+              "ok": true,
+              "source": "RUN_MANIFEST",
+              "sources": [
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_clair-puct_chunk9.json",
+                "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/manifests/RUN_MANIFEST_S1_tier1-greedy_chunk9.json"
+              ]
+            }
+          },
+          "instrument_identity": {
+            "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/INSTRUMENT_IDENTITY.json",
+            "rederived": {
+              "empty": true,
+              "n_files_changed": 0,
+              "paths": [
+                "scripts/tiletie/run_tiletie.py",
+                "scripts/measurement_infra/oracle_score_pilot.py",
+                "scripts/tiletie/tier1_rust_leg.py",
+                "src/",
+                "engine/",
+                "rust/"
+              ],
+              "recipe": "git -C <repo> diff --name-only 4b24f512a0833b3fe71a126b713c560b2c8c4db1 58c2b539556916b0f6280d233b48d5dcbed7ca88 -- scripts/tiletie/run_tiletie.py scripts/measurement_infra/oracle_score_pilot.py scripts/tiletie/tier1_rust_leg.py src/ engine/ rust/",
+              "repo": "/home/doctor/projects/carcassone",
+              "rev_a": "4b24f512a0833b3fe71a126b713c560b2c8c4db1",
+              "rev_b": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+              "stat": "",
+              "verified_utc": "2026-08-19T11:33:47Z"
+            },
+            "sha256": "5dc04affc36c3c18396c6bb5744ef81b143447c112dd4412adb285a5f4ade9d4"
+          },
+          "licensed_revs": {
+            "committed_tranche": "58c2b539556916b0f6280d233b48d5dcbed7ca88",
+            "completion_tranche": "4b24f512a0833b3fe71a126b713c560b2c8c4db1"
+          },
+          "note": "ENUMERATED two-rev licence. The tranche split is a NECESSARY consequence of the D4.2 completion \u2014 the completion tranche cannot run at the spent rev because the staging code did not exist there. No gate constrains the run's git_rev (D4.10). The instrument diff between the two revs was RE-DERIVED here, not read from the witness.",
+          "path": "execution.code_rev",
+          "tranches": {
+            "committed_tranche": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "completion_tranche": [
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ]
+          }
+        }
+      ],
+      "schema": "carcassonne-tiearb-widening-rev-license/v1"
+    },
+    "run_id": "tiearb_widening_20260817",
+    "schema": "carcassonne-tiearb-widening-merge/v1",
+    "sources": {
+      "1": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk1/clair-puct/walled/leg5/manifest.json",
+        "sha256": "91bfc8b73db48a2a3922ad1a72d1ece9cdc3f353d1a2a99ffcd65cf7d481d4bc"
+      },
+      "10": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk10/clair-puct/walled/leg5/manifest.json",
+        "sha256": "d150c6f85bd0e84259cefe1ce4b01b266e44e0de208289a2d211db1de012bfc5"
+      },
+      "11": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk11/clair-puct/walled/leg5/manifest.json",
+        "sha256": "0757fa278cef781953176a66a30c1c48cabbc6af305e98eb28ac9f677da5e9fd"
+      },
+      "12": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk12/clair-puct/walled/leg5/manifest.json",
+        "sha256": "e8ab63b84c3f44ea589e849557b5e802dd26a5178aa7ea381496b4c07fa6b888"
+      },
+      "13": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13/clair-puct/walled/leg5/manifest.json",
+        "sha256": "53f9fe1364af6014cc8f17001a98d6222347dd97b5d8c1e569b195a29cf1c751"
+      },
+      "14": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk14/clair-puct/walled/leg5/manifest.json",
+        "sha256": "629f8668bc40fc9cf593ead0d6189b5ba6cc4186e6b6bf441c7067cf2a3f41f9"
+      },
+      "15": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk15/clair-puct/walled/leg5/manifest.json",
+        "sha256": "a46cec8121a802d69dafe5ffdd392135583c78978c831078863196cff5755e49"
+      },
+      "16": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk16/clair-puct/walled/leg5/manifest.json",
+        "sha256": "877438d1b0024f17ff6c6e3a4a447d2eb8eb2d236f53c8f91f00ae09717a1b5d"
+      },
+      "2": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk2/clair-puct/walled/leg5/manifest.json",
+        "sha256": "60e86b8db9df8aafa95baf49154822acfeeff1011d2f22262814929730b24f54"
+      },
+      "3": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk3/clair-puct/walled/leg5/manifest.json",
+        "sha256": "ee6a8ef46782bcfb76df94eec089aae8d8417b98790a7f120b3685b6bcafbe8c"
+      },
+      "4": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk4/clair-puct/walled/leg5/manifest.json",
+        "sha256": "f3a2f47294aaba0ff15b1bf9790840efde9567037f11b33a47fb979e47ef8d0a"
+      },
+      "5": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk5/clair-puct/walled/leg5/manifest.json",
+        "sha256": "477376d5c91a97b54fc6166ee26006a63f678a6d7dcbf26734e7cde8e9f8e03c"
+      },
+      "6": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk6/clair-puct/walled/leg5/manifest.json",
+        "sha256": "974ddb1cc3d8533fb5ffb19d985fd109179305af7111c7036a82b9e8b0c4f8e0"
+      },
+      "7": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk7/clair-puct/walled/leg5/manifest.json",
+        "sha256": "cb312636ab3d5e409b5168ea80ad336cf541a7f8ca6acd92ecf4c19077393868"
+      },
+      "8": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk8/clair-puct/walled/leg5/manifest.json",
+        "sha256": "bc55c7cd7635b794b260f181778fdaddac96b249aab3b1a7ff40d1cccf2238af"
+      },
+      "9": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk9/clair-puct/walled/leg5/manifest.json",
+        "sha256": "1a65bf58ff25a5d200fd836b56dc5fd182d59afc4dbbd8722f76df4841e96a4e"
+      }
+    },
+    "wall_secs_max": 0.0
+  },
+  "oracle": {
+    "continuation_agent": "HeuristicPriorAgent via champion_factory.build_clairvoyant_champion",
+    "definition": "mean over M sampled deck completions of the TERMINAL engine score margin (root-player POV, points) after playing the afterstate out with the continuation policy on both seats",
+    "oracle_sims": 100,
+    "pilot_only_caveats": [
+      "oracle_sims is far below the champion's own budget \u2014 weak-continuation bias",
+      "shared curve125 leaf with the agent under test (shared-leaf blindness)",
+      "no exact-solver tail; solver_region positions excluded by default"
+    ],
+    "policy": "clair-puct",
+    "policy_family": "IN-FAMILY with the agents under test (PUCT search + curve125 leaf)",
+    "value_units": "engine points (final score differential)"
+  },
+  "replay_game_kwargs": {},
+  "rules_profile": {
+    "board_cols": 35,
+    "board_rows": 35,
+    "cloister_scan": "drifting",
+    "fixed_start_tile": false,
+    "grid_rule": "engine6",
+    "name": "walled",
+    "note": "the engine of record \u2014 every elo ever measured is a walled number",
+    "r9_env_expected": false,
+    "r9_env_observed": false,
+    "r9_env_ok": true,
+    "r9_env_var": "CARCASSONNE_FIX_R9",
+    "recentred": false,
+    "start_col": 15,
+    "start_row": 6,
+    "start_rule": "engine",
+    "unplaceable_tile": "next_player",
+    "window_size": 25
+  },
+  "sampling": {
+    "head": 0,
+    "include_solver_region": false,
+    "n_chosen": 16,
+    "n_requested": 16,
+    "population_disagreements": 16,
+    "rids": [
+      "tt_sp_137000000019_p54",
+      "tt_sp_137000000059_p138",
+      "tt_sp_137000000083_p80",
+      "tt_sp_137000000095_p108",
+      "tt_sp_137000000098_p10",
+      "tt_sp_137000000145_p78",
+      "tt_sp_137000000155_p6",
+      "tt_sp_137000000205_p118",
+      "tt_sp_137000000209_p6",
+      "tt_sp_137000000293_p68",
+      "tt_sp_137000000319_p107",
+      "tt_sp_137000000347_p120",
+      "tt_sp_137000000367_p84",
+      "tt_sp_137000000404_p6",
+      "tt_sp_137000000485_p4",
+      "tt_sp_137000000500_p100"
+    ],
+    "sample_seed": 20260728
+  },
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "source": {
+    "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+    "arm_b": "pick_b = the HUMAN's played move (action_played)",
+    "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+    "mode": "positions-jsonl",
+    "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/chunks/s1/chunk1/positions_walled_leg5.jsonl",
+    "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+  },
+  "src_root": "/home/doctor/projects/carcassone/src",
+  "started_utc": "2026-08-18T18:08:59Z",
+  "status": "PILOT \u2014 measures the per-position sd of the CRN-paired oracle delta. Its own mean delta is NOT a verdict.",
+  "wall_cap_secs": 7200,
+  "workers": 1
+}

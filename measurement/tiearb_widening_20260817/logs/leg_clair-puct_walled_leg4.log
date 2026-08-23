@@ -1,0 +1,61 @@
+[pilot] population=14 positions | n=14 | M=128 | policy=clair-puct | oracle_sims=100 | W=2
+[pilot] out -> /mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13/clair-puct/walled/leg4
+[pilot] resume: 0 already done, 14 to go
+[1/14] tt_sp_135000000016_p124 ok delta=+0.117 crn=True 141.362s
+[2/14] tt_sp_135000000002_p116 ok delta=+0.094 crn=True 335.7s
+[3/14] tt_sp_135000000150_p136 ok delta=-1.203 crn=True 69.137s
+[4/14] tt_sp_135000000160_p136 ok delta=+1.875 crn=True 99.177s
+[5/14] tt_sp_135000000074_p49 ok delta=-1.062 crn=True 726.316s
+[6/14] tt_sp_135000000169_p68 ok delta=-0.477 crn=True 662.725s
+[7/14] tt_sp_135000000233_p70 ok delta=-2.188 crn=True 620.935s
+[8/14] tt_sp_135000000233_p98 ok delta=+0.711 crn=True 485.42s
+[9/14] tt_sp_135000000256_p72 ok delta=-5.633 crn=True 557.533s
+[10/14] tt_sp_135000000278_p114 ok delta=-3.461 crn=True 289.612s
+[11/14] tt_sp_135000000271_p22 ok delta=+6.000 crn=True 753.44s
+[12/14] tt_sp_135000000314_p79 ok delta=-0.016 crn=True 435.877s
+[13/14] tt_sp_135000000291_p8 ok delta=+0.891 crn=True 658.18s
+[14/14] tt_sp_135000000346_p72 ok delta=+0.750 crn=True 386.879s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 14,
+  "m_worlds": 128,
+  "sd_delta_positions": 2.6568976591039584,
+  "mean_delta_pts": -0.2572544642857143,
+  "se_mean_delta": 0.710085768006337,
+  "z_pilot_observed": -0.3622864671798611,
+  "mean_within_position_var": 117.80767980174355,
+  "var_between_positions_est": 6.138732672500972,
+  "sd_delta_projected_by_m": {
+    "8": 4.5677885949022325,
+    "16": 3.674467670304087,
+    "32": 3.1337234508337612,
+    "64": 2.8247969253387426
+  },
+  "median_crn_var_reduction": 1.845386801396737,
+  "n_positions_perfect_pairing": 0,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=128": 0.42889022760149637,
+    "N=14_at_M=128": 0.09857964087427719,
+    "N=14_at_M=8": 0.05733978524454499,
+    "N=14_at_M=16": 0.07127998953178996,
+    "N=14_at_M=32": 0.08357981206174729,
+    "N=14_at_M=64": 0.09272029954605238
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 14,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 14,
+  "wall_secs": 3228.5,
+  "manifest": "/mnt/c/carc-shared/tiearb_widening_20260817/chunks/s1/chunk13/clair-puct/walled/leg4/manifest.json"
+}

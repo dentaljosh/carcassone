@@ -1,0 +1,23 @@
+{
+  "schema": "carcassonne-tiletie-champ-picks/v1",
+  "driver": "champ_picks",
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "census_rows": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/census_s2/rows.jsonl",
+  "rules_profile": "walled",
+  "bank_roots": "/mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/roots.jsonl",
+  "champ_games": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/champ_games_ext_s2.jsonl",
+  "bank_records_dir": "/mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9/records",
+  "out": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/champ_picks_s2/champ_picks.jsonl",
+  "workers": 30,
+  "resume": true,
+  "limit": null,
+  "n_selfplay_qualifying": 7582,
+  "n_other_profile_skipped": 0,
+  "n_attempted_this_run": 7582,
+  "n_rows_total": 7582,
+  "n_ok": 7582,
+  "n_error": 0,
+  "wall_secs": 622.8,
+  "code_rev": "2565525b",
+  "started_utc": "2026-08-18T15:24:08Z"
+}

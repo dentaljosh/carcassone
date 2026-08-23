@@ -1,0 +1,12 @@
+{
+  "n_positions": 1,
+  "error": "need >= 2 completed positions",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 1,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 1,
+  "wall_secs": 653.0,
+  "manifest": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/d3_witness/out/clair-puct/walled/leg6/manifest.json"
+}

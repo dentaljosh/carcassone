@@ -1,0 +1,5 @@
+[run_cells 2026-08-20T09:17:39Z Doctor/local] role=local W=30 N=1500 band=139000000000 tag=cells out=/mnt/c/carc-shared/tiearb_widening_20260817_b64_cell
+[run_cells 2026-08-20T09:17:39Z Doctor/local] blind_commit=ad089bda  champion_leaf_hash=a36d2e15a3b3d71d
+[run_cells 2026-08-20T09:17:39Z Doctor/local] ⭐ the two cells differ in EXACTLY ONE argument: --cand-tiearb-b
+[run_cells 2026-08-20T09:17:39Z Doctor/local] cell WIDE (B=64) -> /mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/b64_WIDE_B64J4_deploy11008
+[run_cells 2026-08-20T14:54:39Z Doctor/local] cell NARROW (B=16) -> /mnt/c/carc-shared/tiearb_widening_20260817_b64_cell/b64_NARROW_B16J4_deploy11008

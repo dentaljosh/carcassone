@@ -1,0 +1,56 @@
+[preflight] gate: PASS
+    verdict: PASS
+    mismatches: []
+    positions: 8
+    field_checks: 376
+    path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/d3_witness/GATE_BACKEND_RECHECK.json
+    cmd: ['/home/doctor/projects/carcassone/.venv/bin/python', '/home/doctor/projects/carcassone/scripts/rustport/gate_oracle_pilot_backend.py', '--positions', '8', '--m', '2', '--workers', '30', '--out', '/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/d3_witness/GATE_BACKEND_RECHECK.json']
+    returncode: 0
+[preflight] leaf_hash: PASS
+    harness_leaf_hash: a36d2e15a3b3d71d
+    expected: a36d2e15a3b3d71d
+[preflight] process census (informational):
+  loadavg: 31.50 30.42 28.45 29/870 2794724
+  ps (top 15 by etime):
+    PID     ELAPSED %CPU COMMAND
+2775992       50:01  0.0 python
+2775993       50:01 99.5 python
+2775994       50:01 99.3 python
+2775995       50:01 99.9 python
+2775996       50:01 99.4 python
+2775997       50:01 99.7 python
+2775998       50:01 99.8 python
+2775999       50:01 99.5 python
+2776000       50:01 99.4 python
+2776001       50:01 99.8 python
+2776002       50:01 99.8 python
+2776003       50:01 99.6 python
+2776004       50:01 99.4 python
+2776005       50:01 99.4 python
+[preflight] git_clean: PASS
+    git_rev: 58c2b539
+    dirty_paths: []
+[preflight] positions: PASS
+    problems: []
+    n_leg_files: 6
+    plan_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/d3_witness/positions/POSITIONS_PLAN.json
+    arms_path: /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/d3_witness/positions/ARMS.json
+[preflight] m: PASS
+    m: 128
+    m_max: 128
+    b_ceiling: 64
+    note: usable B is capped by the SELECTION parity half = M/2 (PLAN_B_gt_16 §0.2), not by M
+[preflight] arb_backend: PASS
+    arb_backend: rust
+    note: no tier1-greedy leg in --judges; the flag is inert
+
+[run_tiletie] plan: n_positions=16 (e4=0 selfplay=16) max_arms=7 mean_arms=4.19 cap_j=None capped=0
+[run_tiletie] total_arm_playouts=3264 oracle_worker_secs=5385.6 champ_pick_secs=220.1
+[run_tiletie] ETA at W=14: 0.111 h (400 s)
+[run_tiletie] ETA at W=22: 0.071 h (255 s)
+[run_tiletie] ===== launch clair-puct/walled/leg1 (backend=rust, R9=0, W=9, n=16) -> leg_clair-puct_walled_leg1.log
+[run_tiletie] ===== launch clair-puct/walled/leg2 (backend=rust, R9=0, W=8, n=13) -> leg_clair-puct_walled_leg2.log
+[run_tiletie] ===== launch clair-puct/walled/leg3 (backend=rust, R9=0, W=6, n=10) -> leg_clair-puct_walled_leg3.log
+[run_tiletie] ===== launch clair-puct/walled/leg4 (backend=rust, R9=0, W=3, n=6) -> leg_clair-puct_walled_leg4.log
+[run_tiletie] ===== launch clair-puct/walled/leg5 (backend=rust, R9=0, W=3, n=5) -> leg_clair-puct_walled_leg5.log
+[run_tiletie] ===== launch clair-puct/walled/leg6 (backend=rust, R9=0, W=1, n=1) -> leg_clair-puct_walled_leg6.log

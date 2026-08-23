@@ -1,0 +1,22 @@
+[G-DISJOINT] s1_vs_tiearb2_0816                 a_root_id          new=   308 ref=   724 intersection=     0
+[G-DISJOINT] s1_vs_tiearb2_0816                 b_rid              new=   551 ref=  1350 intersection=     0
+[G-DISJOINT] s1_vs_tiearb2_0816                 c_position_digest  new=   551 ref=  1350 intersection=     1
+[G-DISJOINT] s1_vs_tiletie0812                  a_root_id          new=   308 ref=   399 intersection=     0
+[G-DISJOINT] s1_vs_tiletie0812                  b_rid              new=   551 ref=   733 intersection=     0
+[G-DISJOINT] s1_vs_tiletie0812                  c_position_digest  new=   551 ref=   733 intersection=     0
+[G-DISJOINT] s1s2_vs_exclude_rids               b_rid              new=   654 ref=   738 intersection=     0
+[G-DISJOINT] s2_vs_tiearb2_0816                 a_root_id          new=    92 ref=   724 intersection=     0
+[G-DISJOINT] s2_vs_tiearb2_0816                 b_rid              new=   103 ref=  1350 intersection=     0
+[G-DISJOINT] s2_vs_tiearb2_0816                 c_position_digest  new=   103 ref=  1350 intersection=     0
+[G-DISJOINT] s2_vs_tiletie0812                  a_root_id          new=    92 ref=   399 intersection=     0
+[G-DISJOINT] s2_vs_tiletie0812                  b_rid              new=   103 ref=   733 intersection=     0
+[G-DISJOINT] s2_vs_tiletie0812                  c_position_digest  new=   103 ref=   733 intersection=     0
+[G-DISJOINT] strata_root_overlap = 0
+[G-DISJOINT] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/GATE_DISJOINT.json
+
+======================================================================
+[G-DISJOINT] ***** MERGED GATE FAILED *****
+[G-DISJOINT] violated comparison(s): s1_vs_tiearb2_0816
+[G-DISJOINT] strata_root_overlap = 0
+[G-DISJOINT] The corpus is CONTAMINATED — DO NOT score it.
+======================================================================

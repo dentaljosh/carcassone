@@ -1,0 +1,7 @@
+[run_census] E4 archives by profile: {} (limit_e4_games=0)
+[run_census] leg task-count estimate {'walled': 2032}, worker split {'walled': 30} of 30
+[run_census] launched leg walled (R9=0, W=30, task_est=2032) -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/census_s1/leg_walled/leg.log
+[run_census] leg walled done rc=0 (5.6s)
+
+[run_census] DONE: 2032 rows, 1 legs, 5.7s wall, mean secs/ply (leaf compute only) = 0.03924424212598425
+[run_census] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/census_s1

@@ -1,0 +1,47 @@
+[G-DISJOINT] s1_vs_tiletie0812        a=0 b=0 c=0 digest_collisions=0
+[G-DISJOINT] s1_vs_tiearb2_0816       a=0 b=0 c=0 digest_collisions=0
+[G-DISJOINT] s2_vs_tiletie0812        a=0 b=0 c=3 digest_collisions=6
+[G-DISJOINT] s2_vs_tiearb2_0816       a=0 b=0 c=11 digest_collisions=16
+[G-DISJOINT] base_vs_extension        a=0 b=0 c=0 digest_collisions=0
+[G-DISJOINT] s1_vs_s2                 a=0 b=0 c=5 digest_collisions=7
+[G-DISJOINT] s1s2_vs_exclude_rids     b=0 digest_collisions=0
+[G-DISJOINT] strata_root_overlap = 0
+[G-DISJOINT] exclusions[S1] carried=0 residual=0 n_excluded=0 rate=0.00000 bound=7 (denominator 1350 from RUN/FLOORS.json::n1) void=False
+[G-DISJOINT] exclusions[S2] carried=0 residual=28 n_excluded=28 rate=0.02545 bound=6 (denominator 1100 from RUN/FLOORS.json::n2) void=True
+[G-DISJOINT]   ⚠️ DETERMINISM DEFECT: residual=28 — the FINAL build saw a collision the PROBE did not, on the same corpus under the same rules.
+[G-DISJOINT]   excluded rid: tt_sp_137000000614_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000000678_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000000690_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000000732_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000001011_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000001093_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000001161_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000001247_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000001863_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000001885_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000002166_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000002233_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000002476_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000002484_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000002569_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000002875_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003030_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003055_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003298_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003706_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003817_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003865_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003939_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000003979_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000004119_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000004517_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000005025_p2
+[G-DISJOINT]   excluded rid: tt_sp_137000005203_p2
+[G-DISJOINT] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/GATE_DISJOINT_PROBE.json
+
+======================================================================
+[G-DISJOINT] ***** STRATUM VOID *****
+[G-DISJOINT] S2 exceeded the exclusion bound.
+[G-DISJOINT] At that density, transposition degeneracy is a PROPERTY OF THE GENERATOR and 'fresh corpus' is the wrong description — a DIFFERENT FINDING, which must surface rather than be absorbed.
+[G-DISJOINT] A VOID IS NOT CURABLE BY GENERATING MORE GAMES: the denominator is frozen in FLOORS.json. The answer is a new prereg.
+======================================================================

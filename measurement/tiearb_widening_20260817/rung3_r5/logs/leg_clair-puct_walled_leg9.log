@@ -1,0 +1,69 @@
+[pilot] population=23 positions | n=23 | M=32 | policy=clair-puct | oracle_sims=100 | W=2
+[pilot] out -> /mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5/clair-puct/walled/leg9
+[pilot] resume: 0 already done, 23 to go
+[1/23] tt_sp_135000000490_p60 ok delta=-1.344 crn=True 168.856s
+[2/23] tt_sp_135000000584_p16 ok delta=+3.500 crn=True 201.08s
+[3/23] tt_sp_135000000768_p128 ok delta=-0.500 crn=True 48.695s
+[4/23] tt_sp_137000000596_p30 ok delta=-0.312 crn=True 198.735s
+[5/23] tt_sp_137000001454_p22 ok delta=+0.594 crn=True 187.84s
+[6/23] tt_sp_137000002066_p116 ok delta=-0.531 crn=True 58.692s
+[7/23] tt_sp_137000001628_p44 ok delta=-2.562 crn=True 192.865s
+[8/23] tt_sp_137000002076_p10 ok delta=+3.031 crn=True 202.718s
+[9/23] tt_sp_137000002324_p110 ok delta=-3.250 crn=True 81.938s
+[10/23] tt_sp_137000002434_p132 ok delta=+0.094 crn=True 31.166s
+[11/23] tt_sp_137000002871_p102 ok delta=+2.969 crn=True 91.796s
+[12/23] tt_sp_137000002733_p78 ok delta=-4.469 crn=True 118.823s
+[13/23] tt_sp_137000003161_p102 ok delta=+0.531 crn=True 91.088s
+[14/23] tt_sp_137000003053_p2 ok delta=-2.469 crn=True 200.619s
+[15/23] tt_sp_137000003801_p140 ok delta=+0.000 crn=True 4.758s
+[16/23] tt_sp_137000003788_p84 ok delta=-1.594 crn=True 121.289s
+[17/23] tt_sp_137000003821_p121 ok delta=+0.906 crn=True 58.249s
+[18/23] tt_sp_137000004094_p112 ok delta=-0.125 crn=True 92.33s
+[19/23] tt_sp_137000004351_p50 ok delta=-0.625 crn=True 183.602s
+[20/23] tt_sp_137000004535_p34 ok delta=-2.906 crn=True 194.697s
+[21/23] tt_sp_137000004593_p110 ok delta=+0.156 crn=True 99.276s
+[22/23] tt_sp_137000004625_p94 ok delta=+2.188 crn=True 96.976s
+[23/23] tt_sp_137000004976_p30 ok delta=-2.844 crn=True 191.364s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 23,
+  "m_worlds": 32,
+  "sd_delta_positions": 2.106904799050694,
+  "mean_delta_pts": -0.4157608695652174,
+  "se_mean_delta": 0.43932001964809436,
+  "z_pilot_observed": -0.946373602318992,
+  "mean_within_position_var": 143.43013674614306,
+  "var_between_positions_est": 0.0,
+  "sd_delta_projected_by_m": {
+    "8": 4.234237486640054,
+    "16": 2.9940580399574657,
+    "32": 2.117118743320027,
+    "64": 1.4970290199787328
+  },
+  "median_crn_var_reduction": 1.5785080681639632,
+  "n_positions_perfect_pairing": 1,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.5408490417983816,
+    "N=23_at_M=32": 0.1585684353752586,
+    "N=23_at_M=8": 0.0792842176876293,
+    "N=23_at_M=16": 0.11212481593598618,
+    "N=23_at_M=64": 0.22424963187197236
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 23,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 23,
+  "wall_secs": 1527.0,
+  "manifest": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5/clair-puct/walled/leg9/manifest.json"
+}

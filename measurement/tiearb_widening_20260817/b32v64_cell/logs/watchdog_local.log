@@ -1,0 +1,832 @@
+[2026-08-21T05:57:01Z local] launcher_procs=0 B32_records=0 B64_records=0
+[2026-08-21T05:57:01Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-21T06:02:09Z local] launcher_procs=2 B32_records=0 B64_records=0
+[2026-08-21T06:07:17Z local] launcher_procs=2 B32_records=31 B64_records=0
+[2026-08-21T06:12:24Z local] launcher_procs=2 B32_records=52 B64_records=0
+[2026-08-21T06:17:30Z local] launcher_procs=2 B32_records=85 B64_records=0
+[2026-08-21T06:22:36Z local] launcher_procs=2 B32_records=105 B64_records=0
+[2026-08-21T06:27:38Z local] launcher_procs=2 B32_records=137 B64_records=0
+[2026-08-21T06:32:42Z local] launcher_procs=2 B32_records=160 B64_records=0
+[2026-08-21T06:37:47Z local] launcher_procs=2 B32_records=191 B64_records=0
+[2026-08-21T06:42:51Z local] launcher_procs=2 B32_records=215 B64_records=0
+[2026-08-21T06:47:55Z local] launcher_procs=2 B32_records=247 B64_records=0
+[2026-08-21T06:53:01Z local] launcher_procs=2 B32_records=270 B64_records=0
+[2026-08-21T06:58:06Z local] launcher_procs=2 B32_records=300 B64_records=0
+[2026-08-21T07:03:10Z local] launcher_procs=2 B32_records=330 B64_records=0
+[2026-08-21T07:08:15Z local] launcher_procs=2 B32_records=354 B64_records=0
+[2026-08-21T07:13:20Z local] launcher_procs=2 B32_records=380 B64_records=0
+[2026-08-21T07:18:25Z local] launcher_procs=2 B32_records=410 B64_records=0
+[2026-08-21T07:23:29Z local] launcher_procs=2 B32_records=432 B64_records=0
+[2026-08-21T07:28:34Z local] launcher_procs=2 B32_records=462 B64_records=0
+[2026-08-21T07:33:37Z local] launcher_procs=2 B32_records=489 B64_records=0
+[2026-08-21T07:38:39Z local] launcher_procs=2 B32_records=517 B64_records=0
+[2026-08-21T07:43:39Z local] launcher_procs=2 B32_records=544 B64_records=0
+[2026-08-21T07:48:39Z local] launcher_procs=2 B32_records=568 B64_records=0
+[2026-08-21T07:53:39Z local] launcher_procs=2 B32_records=599 B64_records=0
+[2026-08-21T07:58:39Z local] launcher_procs=2 B32_records=619 B64_records=0
+[2026-08-21T08:03:39Z local] launcher_procs=2 B32_records=652 B64_records=0
+[2026-08-21T08:08:39Z local] launcher_procs=2 B32_records=673 B64_records=0
+[2026-08-21T08:13:39Z local] launcher_procs=2 B32_records=703 B64_records=0
+[2026-08-21T08:18:39Z local] launcher_procs=2 B32_records=726 B64_records=0
+[2026-08-21T08:23:39Z local] launcher_procs=2 B32_records=753 B64_records=0
+[2026-08-21T08:28:39Z local] launcher_procs=2 B32_records=781 B64_records=0
+[2026-08-21T08:33:40Z local] launcher_procs=2 B32_records=808 B64_records=0
+[2026-08-21T08:38:40Z local] launcher_procs=2 B32_records=835 B64_records=0
+[2026-08-21T08:43:40Z local] launcher_procs=2 B32_records=858 B64_records=0
+[2026-08-21T08:48:40Z local] launcher_procs=2 B32_records=885 B64_records=0
+[2026-08-21T08:53:40Z local] launcher_procs=2 B32_records=910 B64_records=0
+[2026-08-21T08:58:40Z local] launcher_procs=2 B32_records=934 B64_records=0
+[2026-08-21T09:03:40Z local] launcher_procs=2 B32_records=967 B64_records=0
+[2026-08-21T09:08:40Z local] launcher_procs=2 B32_records=989 B64_records=0
+[2026-08-21T09:13:40Z local] launcher_procs=2 B32_records=1019 B64_records=0
+[2026-08-21T09:18:40Z local] launcher_procs=2 B32_records=1038 B64_records=0
+[2026-08-21T09:23:40Z local] launcher_procs=2 B32_records=1069 B64_records=0
+[2026-08-21T09:28:40Z local] launcher_procs=2 B32_records=1096 B64_records=0
+[2026-08-21T09:33:40Z local] launcher_procs=2 B32_records=1124 B64_records=0
+[2026-08-21T09:38:40Z local] launcher_procs=2 B32_records=1146 B64_records=0
+[2026-08-21T09:43:40Z local] launcher_procs=2 B32_records=1176 B64_records=0
+[2026-08-21T09:48:40Z local] launcher_procs=2 B32_records=1199 B64_records=0
+[2026-08-21T09:53:40Z local] launcher_procs=2 B32_records=1228 B64_records=0
+[2026-08-21T09:58:40Z local] launcher_procs=2 B32_records=1251 B64_records=0
+[2026-08-21T10:03:38Z local] launcher_procs=2 B32_records=1270 B64_records=0
+[2026-08-21T10:08:35Z local] launcher_procs=2 B32_records=1303 B64_records=0
+[2026-08-21T10:13:30Z local] launcher_procs=2 B32_records=1329 B64_records=0
+[2026-08-21T10:18:25Z local] launcher_procs=2 B32_records=1356 B64_records=0
+[2026-08-21T10:23:20Z local] launcher_procs=2 B32_records=1384 B64_records=0
+[2026-08-21T10:28:15Z local] launcher_procs=2 B32_records=1406 B64_records=0
+[2026-08-21T10:33:09Z local] launcher_procs=2 B32_records=1435 B64_records=0
+[2026-08-21T10:38:04Z local] launcher_procs=2 B32_records=1459 B64_records=0
+[2026-08-21T10:42:57Z local] launcher_procs=2 B32_records=1487 B64_records=0
+[2026-08-21T10:47:51Z local] launcher_procs=2 B32_records=1511 B64_records=0
+[2026-08-21T10:52:44Z local] launcher_procs=2 B32_records=1535 B64_records=0
+[2026-08-21T10:57:38Z local] launcher_procs=2 B32_records=1566 B64_records=0
+[2026-08-21T11:02:31Z local] launcher_procs=2 B32_records=1587 B64_records=0
+[2026-08-21T11:07:24Z local] launcher_procs=2 B32_records=1619 B64_records=0
+[2026-08-21T11:12:17Z local] launcher_procs=2 B32_records=1637 B64_records=0
+[2026-08-21T11:17:09Z local] launcher_procs=2 B32_records=1667 B64_records=0
+[2026-08-21T11:22:02Z local] launcher_procs=2 B32_records=1690 B64_records=0
+[2026-08-21T11:26:55Z local] launcher_procs=2 B32_records=1718 B64_records=0
+[2026-08-21T11:31:47Z local] launcher_procs=2 B32_records=1742 B64_records=0
+[2026-08-21T11:36:39Z local] launcher_procs=2 B32_records=1764 B64_records=0
+[2026-08-21T11:41:31Z local] launcher_procs=2 B32_records=1792 B64_records=0
+[2026-08-21T11:46:22Z local] launcher_procs=2 B32_records=1817 B64_records=0
+[2026-08-21T11:51:14Z local] launcher_procs=2 B32_records=1847 B64_records=0
+[2026-08-21T11:56:06Z local] launcher_procs=2 B32_records=1869 B64_records=0
+[2026-08-21T12:00:57Z local] launcher_procs=2 B32_records=1900 B64_records=0
+[2026-08-21T12:05:47Z local] launcher_procs=2 B32_records=1921 B64_records=0
+[2026-08-21T12:10:38Z local] launcher_procs=2 B32_records=1948 B64_records=0
+[2026-08-21T12:15:29Z local] launcher_procs=2 B32_records=1973 B64_records=0
+[2026-08-21T12:20:19Z local] launcher_procs=2 B32_records=1998 B64_records=0
+[2026-08-21T12:25:10Z local] launcher_procs=2 B32_records=2020 B64_records=0
+[2026-08-21T12:30:00Z local] launcher_procs=2 B32_records=2050 B64_records=0
+[2026-08-21T12:34:49Z local] launcher_procs=2 B32_records=2071 B64_records=0
+[2026-08-21T12:39:39Z local] launcher_procs=2 B32_records=2102 B64_records=0
+[2026-08-21T12:44:29Z local] launcher_procs=2 B32_records=2125 B64_records=0
+[2026-08-21T12:49:19Z local] launcher_procs=2 B32_records=2149 B64_records=0
+[2026-08-21T12:54:07Z local] launcher_procs=2 B32_records=2173 B64_records=0
+[2026-08-21T12:58:56Z local] launcher_procs=2 B32_records=2206 B64_records=0
+[2026-08-21T13:03:46Z local] launcher_procs=2 B32_records=2227 B64_records=0
+[2026-08-21T13:08:33Z local] launcher_procs=2 B32_records=2255 B64_records=0
+[2026-08-21T13:13:22Z local] launcher_procs=2 B32_records=2276 B64_records=0
+[2026-08-21T13:18:11Z local] launcher_procs=2 B32_records=2304 B64_records=0
+[2026-08-21T13:22:59Z local] launcher_procs=2 B32_records=2330 B64_records=0
+[2026-08-21T13:27:47Z local] launcher_procs=2 B32_records=2352 B64_records=0
+[2026-08-21T13:32:35Z local] launcher_procs=2 B32_records=2381 B64_records=0
+[2026-08-21T13:37:22Z local] launcher_procs=2 B32_records=2401 B64_records=0
+[2026-08-21T13:42:10Z local] launcher_procs=2 B32_records=2433 B64_records=0
+[2026-08-21T13:46:58Z local] launcher_procs=2 B32_records=2453 B64_records=0
+[2026-08-21T13:51:45Z local] launcher_procs=2 B32_records=2481 B64_records=0
+[2026-08-21T13:56:31Z local] launcher_procs=2 B32_records=2506 B64_records=0
+[2026-08-21T14:01:18Z local] launcher_procs=2 B32_records=2528 B64_records=0
+[2026-08-21T14:06:05Z local] launcher_procs=2 B32_records=2555 B64_records=0
+[2026-08-21T14:10:51Z local] launcher_procs=2 B32_records=2578 B64_records=0
+[2026-08-21T14:15:37Z local] launcher_procs=2 B32_records=2607 B64_records=0
+[2026-08-21T14:20:24Z local] launcher_procs=2 B32_records=2625 B64_records=0
+[2026-08-21T14:25:09Z local] launcher_procs=2 B32_records=2650 B64_records=0
+[2026-08-21T14:29:55Z local] launcher_procs=2 B32_records=2679 B64_records=0
+[2026-08-21T14:34:41Z local] launcher_procs=2 B32_records=2697 B64_records=0
+[2026-08-21T14:39:27Z local] launcher_procs=2 B32_records=2730 B64_records=0
+[2026-08-21T14:44:11Z local] launcher_procs=2 B32_records=2748 B64_records=0
+[2026-08-21T14:48:57Z local] launcher_procs=2 B32_records=2778 B64_records=0
+[2026-08-21T14:53:42Z local] launcher_procs=2 B32_records=2802 B64_records=0
+[2026-08-21T14:58:26Z local] launcher_procs=2 B32_records=2826 B64_records=0
+[2026-08-21T15:03:11Z local] launcher_procs=2 B32_records=2853 B64_records=0
+[2026-08-21T15:07:56Z local] launcher_procs=2 B32_records=2875 B64_records=0
+[2026-08-21T15:12:39Z local] launcher_procs=2 B32_records=2904 B64_records=0
+[2026-08-21T15:17:24Z local] launcher_procs=2 B32_records=2930 B64_records=0
+[2026-08-21T15:22:08Z local] launcher_procs=2 B32_records=2954 B64_records=0
+[2026-08-21T15:26:51Z local] launcher_procs=2 B32_records=2984 B64_records=0
+[2026-08-21T15:31:35Z local] launcher_procs=2 B32_records=3000 B64_records=0
+[2026-08-21T15:36:19Z local] launcher_procs=2 B32_records=3000 B64_records=0
+[2026-08-21T15:41:03Z local] launcher_procs=2 B32_records=3000 B64_records=3
+[2026-08-21T15:45:45Z local] launcher_procs=2 B32_records=3000 B64_records=33
+[2026-08-21T15:50:28Z local] launcher_procs=2 B32_records=3000 B64_records=44
+[2026-08-21T15:55:12Z local] launcher_procs=2 B32_records=3000 B64_records=60
+[2026-08-21T15:59:53Z local] launcher_procs=2 B32_records=3000 B64_records=77
+[2026-08-21T16:04:36Z local] launcher_procs=2 B32_records=3000 B64_records=91
+[2026-08-21T16:09:20Z local] launcher_procs=2 B32_records=3000 B64_records=105
+[2026-08-21T16:14:01Z local] launcher_procs=2 B32_records=3000 B64_records=122
+[2026-08-21T16:18:44Z local] launcher_procs=2 B32_records=3000 B64_records=137
+[2026-08-21T16:23:26Z local] launcher_procs=2 B32_records=3000 B64_records=161
+[2026-08-21T16:28:09Z local] launcher_procs=2 B32_records=3000 B64_records=169
+[2026-08-21T16:32:50Z local] launcher_procs=2 B32_records=3000 B64_records=187
+[2026-08-21T16:37:32Z local] launcher_procs=2 B32_records=3000 B64_records=207
+[2026-08-21T16:42:15Z local] launcher_procs=2 B32_records=3000 B64_records=220
+[2026-08-21T16:46:58Z local] launcher_procs=2 B32_records=3000 B64_records=233
+[2026-08-21T16:51:52Z local] launcher_procs=2 B32_records=3000 B64_records=251
+[2026-08-21T16:56:47Z local] launcher_procs=2 B32_records=3000 B64_records=269
+[2026-08-21T17:01:44Z local] launcher_procs=2 B32_records=3000 B64_records=284
+[2026-08-21T17:06:44Z local] launcher_procs=2 B32_records=3000 B64_records=301
+[2026-08-21T17:11:44Z local] launcher_procs=2 B32_records=3000 B64_records=320
+[2026-08-21T17:16:44Z local] launcher_procs=2 B32_records=3000 B64_records=334
+[2026-08-21T17:21:44Z local] launcher_procs=2 B32_records=3000 B64_records=349
+[2026-08-21T17:26:44Z local] launcher_procs=2 B32_records=3000 B64_records=367
+[2026-08-21T17:31:44Z local] launcher_procs=2 B32_records=3000 B64_records=386
+[2026-08-21T17:36:45Z local] launcher_procs=2 B32_records=3000 B64_records=402
+[2026-08-21T17:41:45Z local] launcher_procs=2 B32_records=3000 B64_records=419
+[2026-08-21T17:46:45Z local] launcher_procs=2 B32_records=3000 B64_records=438
+[2026-08-21T17:51:45Z local] launcher_procs=2 B32_records=3000 B64_records=454
+[2026-08-21T17:56:45Z local] launcher_procs=2 B32_records=3000 B64_records=472
+[2026-08-21T18:01:45Z local] launcher_procs=2 B32_records=3000 B64_records=485
+[2026-08-21T18:06:45Z local] launcher_procs=2 B32_records=3000 B64_records=505
+[2026-08-21T18:11:45Z local] launcher_procs=2 B32_records=3000 B64_records=520
+[2026-08-21T18:16:45Z local] launcher_procs=2 B32_records=3000 B64_records=538
+[2026-08-21T18:21:45Z local] launcher_procs=2 B32_records=3000 B64_records=555
+[2026-08-21T18:26:45Z local] launcher_procs=2 B32_records=3000 B64_records=571
+[2026-08-21T18:31:45Z local] launcher_procs=2 B32_records=3000 B64_records=588
+[2026-08-21T18:36:46Z local] launcher_procs=2 B32_records=3000 B64_records=606
+[2026-08-21T18:41:46Z local] launcher_procs=2 B32_records=3000 B64_records=624
+[2026-08-21T18:46:46Z local] launcher_procs=2 B32_records=3000 B64_records=638
+[2026-08-21T18:51:45Z local] launcher_procs=2 B32_records=3000 B64_records=658
+[2026-08-21T18:56:42Z local] launcher_procs=2 B32_records=3000 B64_records=673
+[2026-08-21T19:01:38Z local] launcher_procs=2 B32_records=3000 B64_records=688
+[2026-08-21T19:06:33Z local] launcher_procs=2 B32_records=3000 B64_records=710
+[2026-08-21T19:11:27Z local] launcher_procs=2 B32_records=3000 B64_records=724
+[2026-08-21T19:16:22Z local] launcher_procs=2 B32_records=3000 B64_records=741
+[2026-08-21T19:21:17Z local] launcher_procs=2 B32_records=3000 B64_records=755
+[2026-08-21T19:26:10Z local] launcher_procs=2 B32_records=3000 B64_records=773
+[2026-08-21T19:31:04Z local] launcher_procs=2 B32_records=3000 B64_records=790
+[2026-08-21T19:35:58Z local] launcher_procs=2 B32_records=3000 B64_records=804
+[2026-08-21T19:40:52Z local] launcher_procs=2 B32_records=3000 B64_records=818
+[2026-08-21T19:45:45Z local] launcher_procs=2 B32_records=3000 B64_records=844
+[2026-08-21T19:50:39Z local] launcher_procs=2 B32_records=3000 B64_records=855
+[2026-08-21T19:55:32Z local] launcher_procs=2 B32_records=3000 B64_records=869
+[2026-08-21T20:00:25Z local] launcher_procs=2 B32_records=3000 B64_records=884
+[2026-08-21T20:05:18Z local] launcher_procs=2 B32_records=3000 B64_records=908
+[2026-08-21T20:10:11Z local] launcher_procs=2 B32_records=3000 B64_records=919
+[2026-08-21T20:15:03Z local] launcher_procs=2 B32_records=3000 B64_records=935
+[2026-08-21T20:19:55Z local] launcher_procs=2 B32_records=3000 B64_records=957
+[2026-08-21T20:24:48Z local] launcher_procs=2 B32_records=3000 B64_records=969
+[2026-08-21T20:29:39Z local] launcher_procs=2 B32_records=3000 B64_records=981
+[2026-08-21T20:34:31Z local] launcher_procs=2 B32_records=3000 B64_records=1005
+[2026-08-21T20:39:23Z local] launcher_procs=2 B32_records=3000 B64_records=1015
+[2026-08-21T20:44:14Z local] launcher_procs=2 B32_records=3000 B64_records=1028
+[2026-08-21T20:49:05Z local] launcher_procs=2 B32_records=3000 B64_records=1049
+[2026-08-21T20:53:57Z local] launcher_procs=2 B32_records=3000 B64_records=1065
+[2026-08-21T20:58:47Z local] launcher_procs=2 B32_records=3000 B64_records=1078
+[2026-08-21T21:03:37Z local] launcher_procs=2 B32_records=3000 B64_records=1099
+[2026-08-21T21:08:28Z local] launcher_procs=2 B32_records=3000 B64_records=1112
+[2026-08-21T21:13:18Z local] launcher_procs=2 B32_records=3000 B64_records=1126
+[2026-08-21T21:18:08Z local] launcher_procs=2 B32_records=3000 B64_records=1146
+[2026-08-21T21:22:58Z local] launcher_procs=2 B32_records=3000 B64_records=1161
+[2026-08-21T21:27:48Z local] launcher_procs=2 B32_records=3000 B64_records=1177
+[2026-08-21T21:32:37Z local] launcher_procs=2 B32_records=3000 B64_records=1194
+[2026-08-21T21:37:27Z local] launcher_procs=2 B32_records=3000 B64_records=1209
+[2026-08-21T21:42:16Z local] launcher_procs=2 B32_records=3000 B64_records=1225
+[2026-08-21T21:47:05Z local] launcher_procs=2 B32_records=3000 B64_records=1240
+[2026-08-21T21:51:54Z local] launcher_procs=2 B32_records=3000 B64_records=1254
+[2026-08-21T21:56:43Z local] launcher_procs=2 B32_records=3000 B64_records=1268
+[2026-08-21T22:01:32Z local] launcher_procs=2 B32_records=3000 B64_records=1287
+[2026-08-21T22:06:20Z local] launcher_procs=2 B32_records=3000 B64_records=1307
+[2026-08-21T22:11:08Z local] launcher_procs=2 B32_records=3000 B64_records=1321
+[2026-08-21T22:15:57Z local] launcher_procs=2 B32_records=3000 B64_records=1336
+[2026-08-21T22:20:44Z local] launcher_procs=2 B32_records=3000 B64_records=1349
+[2026-08-21T22:25:32Z local] launcher_procs=2 B32_records=3000 B64_records=1366
+[2026-08-21T22:30:20Z local] launcher_procs=2 B32_records=3000 B64_records=1384
+[2026-08-21T22:35:06Z local] launcher_procs=2 B32_records=3000 B64_records=1395
+[2026-08-21T22:39:53Z local] launcher_procs=2 B32_records=3000 B64_records=1417
+[2026-08-21T22:44:41Z local] launcher_procs=2 B32_records=3000 B64_records=1438
+[2026-08-21T22:49:26Z local] launcher_procs=2 B32_records=3000 B64_records=1445
+[2026-08-21T22:54:13Z local] launcher_procs=2 B32_records=3000 B64_records=1462
+[2026-08-21T22:59:00Z local] launcher_procs=2 B32_records=3000 B64_records=1479
+[2026-08-21T23:03:47Z local] launcher_procs=2 B32_records=3000 B64_records=1495
+[2026-08-21T23:08:32Z local] launcher_procs=2 B32_records=3000 B64_records=1511
+[2026-08-21T23:13:18Z local] launcher_procs=2 B32_records=3000 B64_records=1524
+[2026-08-21T23:18:04Z local] launcher_procs=2 B32_records=3000 B64_records=1541
+[2026-08-21T23:22:48Z local] launcher_procs=2 B32_records=3000 B64_records=1559
+[2026-08-21T23:27:34Z local] launcher_procs=2 B32_records=3000 B64_records=1570
+[2026-08-21T23:32:20Z local] launcher_procs=2 B32_records=3000 B64_records=1583
+[2026-08-21T23:37:04Z local] launcher_procs=2 B32_records=3000 B64_records=1604
+[2026-08-21T23:41:49Z local] launcher_procs=2 B32_records=3000 B64_records=1619
+[2026-08-21T23:46:34Z local] launcher_procs=2 B32_records=3000 B64_records=1633
+[2026-08-21T23:51:19Z local] launcher_procs=2 B32_records=3000 B64_records=1652
+[2026-08-21T23:56:02Z local] launcher_procs=2 B32_records=3000 B64_records=1669
+[2026-08-22T00:00:47Z local] launcher_procs=2 B32_records=3000 B64_records=1679
+[2026-08-22T00:05:31Z local] launcher_procs=2 B32_records=3000 B64_records=1697
+[2026-08-22T00:10:14Z local] launcher_procs=2 B32_records=3000 B64_records=1716
+[2026-08-22T00:14:58Z local] launcher_procs=2 B32_records=3000 B64_records=1730
+[2026-08-22T00:19:42Z local] launcher_procs=2 B32_records=3000 B64_records=1743
+[2026-08-22T00:24:24Z local] launcher_procs=2 B32_records=3000 B64_records=1765
+[2026-08-22T00:29:07Z local] launcher_procs=2 B32_records=3000 B64_records=1779
+[2026-08-22T00:33:51Z local] launcher_procs=2 B32_records=3000 B64_records=1792
+[2026-08-22T00:38:32Z local] launcher_procs=2 B32_records=3000 B64_records=1810
+[2026-08-22T00:43:16Z local] launcher_procs=2 B32_records=3000 B64_records=1822
+[2026-08-22T00:47:59Z local] launcher_procs=2 B32_records=3000 B64_records=1838
+[2026-08-22T00:52:42Z local] launcher_procs=2 B32_records=3000 B64_records=1853
+[2026-08-22T00:57:23Z local] launcher_procs=2 B32_records=3000 B64_records=1870
+[2026-08-22T01:02:05Z local] launcher_procs=2 B32_records=3000 B64_records=1883
+[2026-08-22T01:06:48Z local] launcher_procs=2 B32_records=3000 B64_records=1899
+[2026-08-22T01:11:28Z local] launcher_procs=2 B32_records=3000 B64_records=1918
+[2026-08-22T01:16:11Z local] launcher_procs=2 B32_records=3000 B64_records=1928
+[2026-08-22T01:20:53Z local] launcher_procs=2 B32_records=3000 B64_records=1940
+[2026-08-22T01:25:33Z local] launcher_procs=2 B32_records=3000 B64_records=1962
+[2026-08-22T01:30:15Z local] launcher_procs=2 B32_records=3000 B64_records=1974
+[2026-08-22T01:34:57Z local] launcher_procs=2 B32_records=3000 B64_records=1990
+[2026-08-22T01:39:37Z local] launcher_procs=2 B32_records=3000 B64_records=2006
+[2026-08-22T01:44:19Z local] launcher_procs=2 B32_records=3000 B64_records=2019
+[2026-08-22T01:49:01Z local] launcher_procs=2 B32_records=3000 B64_records=2040
+[2026-08-22T01:53:47Z local] launcher_procs=2 B32_records=3000 B64_records=2058
+[2026-08-22T01:58:46Z local] launcher_procs=2 B32_records=3000 B64_records=2070
+[2026-08-22T02:03:46Z local] launcher_procs=2 B32_records=3000 B64_records=2087
+[2026-08-22T02:08:46Z local] launcher_procs=2 B32_records=3000 B64_records=2108
+[2026-08-22T02:13:46Z local] launcher_procs=2 B32_records=3000 B64_records=2121
+[2026-08-22T02:18:46Z local] launcher_procs=2 B32_records=3000 B64_records=2137
+[2026-08-22T02:23:47Z local] launcher_procs=2 B32_records=3000 B64_records=2158
+[2026-08-22T02:28:47Z local] launcher_procs=2 B32_records=3000 B64_records=2172
+[2026-08-22T02:33:47Z local] launcher_procs=2 B32_records=3000 B64_records=2190
+[2026-08-22T02:38:47Z local] launcher_procs=2 B32_records=3000 B64_records=2208
+[2026-08-22T02:43:47Z local] launcher_procs=2 B32_records=3000 B64_records=2223
+[2026-08-22T02:48:47Z local] launcher_procs=2 B32_records=3000 B64_records=2236
+[2026-08-22T02:53:47Z local] launcher_procs=2 B32_records=3000 B64_records=2259
+[2026-08-22T02:58:47Z local] launcher_procs=2 B32_records=3000 B64_records=2274
+[2026-08-22T03:03:47Z local] launcher_procs=2 B32_records=3000 B64_records=2288
+[2026-08-22T03:08:47Z local] launcher_procs=2 B32_records=3000 B64_records=2308
+[2026-08-22T03:13:47Z local] launcher_procs=2 B32_records=3000 B64_records=2326
+[2026-08-22T03:18:48Z local] launcher_procs=2 B32_records=3000 B64_records=2338
+[2026-08-22T03:23:48Z local] launcher_procs=2 B32_records=3000 B64_records=2360
+[2026-08-22T03:28:48Z local] launcher_procs=2 B32_records=3000 B64_records=2373
+[2026-08-22T03:33:48Z local] launcher_procs=2 B32_records=3000 B64_records=2387
+[2026-08-22T03:38:48Z local] launcher_procs=2 B32_records=3000 B64_records=2414
+[2026-08-22T03:43:48Z local] launcher_procs=2 B32_records=3000 B64_records=2421
+[2026-08-22T03:48:48Z local] launcher_procs=2 B32_records=3000 B64_records=2439
+[2026-08-22T03:53:47Z local] launcher_procs=2 B32_records=3000 B64_records=2458
+[2026-08-22T03:58:45Z local] launcher_procs=2 B32_records=3000 B64_records=2473
+[2026-08-22T04:03:41Z local] launcher_procs=2 B32_records=3000 B64_records=2485
+[2026-08-22T04:08:36Z local] launcher_procs=2 B32_records=3000 B64_records=2513
+[2026-08-22T04:13:31Z local] launcher_procs=2 B32_records=3000 B64_records=2525
+[2026-08-22T04:18:26Z local] launcher_procs=2 B32_records=3000 B64_records=2538
+[2026-08-22T04:23:20Z local] launcher_procs=2 B32_records=3000 B64_records=2559
+[2026-08-22T04:28:14Z local] launcher_procs=2 B32_records=3000 B64_records=2574
+[2026-08-22T04:33:08Z local] launcher_procs=2 B32_records=3000 B64_records=2592
+[2026-08-22T04:38:02Z local] launcher_procs=2 B32_records=3000 B64_records=2608
+[2026-08-22T04:42:56Z local] launcher_procs=2 B32_records=3000 B64_records=2618
+[2026-08-22T04:47:50Z local] launcher_procs=2 B32_records=3000 B64_records=2639
+[2026-08-22T04:52:43Z local] launcher_procs=2 B32_records=3000 B64_records=2655
+[2026-08-22T04:57:36Z local] launcher_procs=2 B32_records=3000 B64_records=2669
+[2026-08-22T05:02:29Z local] launcher_procs=2 B32_records=3000 B64_records=2689
+[2026-08-22T05:07:22Z local] launcher_procs=2 B32_records=3000 B64_records=2701
+[2026-08-22T05:12:14Z local] launcher_procs=2 B32_records=3000 B64_records=2722
+[2026-08-22T05:17:07Z local] launcher_procs=2 B32_records=3000 B64_records=2741
+[2026-08-22T05:22:00Z local] launcher_procs=2 B32_records=3000 B64_records=2753
+[2026-08-22T05:26:52Z local] launcher_procs=2 B32_records=3000 B64_records=2769
+[2026-08-22T05:31:44Z local] launcher_procs=2 B32_records=3000 B64_records=2787
+[2026-08-22T05:36:36Z local] launcher_procs=2 B32_records=3000 B64_records=2801
+[2026-08-22T05:41:28Z local] launcher_procs=2 B32_records=3000 B64_records=2822
+[2026-08-22T05:46:19Z local] launcher_procs=2 B32_records=3000 B64_records=2834
+[2026-08-22T05:51:10Z local] launcher_procs=2 B32_records=3000 B64_records=2850
+[2026-08-22T05:56:01Z local] launcher_procs=2 B32_records=3000 B64_records=2868
+[2026-08-22T06:00:52Z local] launcher_procs=2 B32_records=3000 B64_records=2885
+[2026-08-22T06:05:43Z local] launcher_procs=2 B32_records=3000 B64_records=2904
+[2026-08-22T06:10:33Z local] launcher_procs=2 B32_records=3000 B64_records=2914
+[2026-08-22T06:15:24Z local] launcher_procs=2 B32_records=3000 B64_records=2934
+[2026-08-22T06:20:13Z local] launcher_procs=2 B32_records=3000 B64_records=2952
+[2026-08-22T06:25:03Z local] launcher_procs=2 B32_records=3000 B64_records=2964
+[2026-08-22T06:29:54Z local] launcher_procs=2 B32_records=3000 B64_records=2988
+[2026-08-22T06:34:42Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T06:34:42Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T06:39:32Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T06:39:32Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T06:44:22Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T06:44:22Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T06:49:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T06:49:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T06:54:00Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T06:54:00Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T06:58:50Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T06:58:50Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:03:38Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:03:38Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:08:28Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:08:28Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:13:17Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:13:17Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:18:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:18:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:22:55Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:22:55Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:27:45Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:27:45Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:32:34Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:32:34Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:37:23Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:37:23Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:42:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:42:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:47:01Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:47:01Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:51:49Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:51:49Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T07:56:39Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T07:56:39Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:01:28Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:01:28Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:06:17Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:06:17Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:11:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:11:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:15:55Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:15:55Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:20:44Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:20:44Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:25:32Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:25:32Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:30:22Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:30:22Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:35:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:35:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:39:59Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:39:59Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:44:49Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:44:49Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:49:38Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:49:38Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:54:26Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:54:26Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T08:59:16Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T08:59:16Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:04:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:04:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:08:55Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:08:55Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:13:43Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:13:43Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:18:33Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:18:33Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:23:23Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:23:23Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:28:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:28:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:33:01Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:33:01Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:37:51Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:37:51Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:42:39Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:42:39Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:47:29Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:47:29Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:52:19Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:52:19Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T09:57:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T09:57:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:01:58Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:01:58Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:06:47Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:06:47Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:11:37Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:11:37Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:16:27Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:16:27Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:21:16Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:21:16Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:26:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:26:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:30:56Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:30:56Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:35:46Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:35:46Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:40:35Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:40:35Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:45:25Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:45:25Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:50:15Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:50:15Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:55:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:55:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T10:59:54Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T10:59:54Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:04:44Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:04:44Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:09:34Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:09:34Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:14:24Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:14:24Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:19:14Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:19:14Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:24:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:24:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:28:55Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:28:55Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:33:47Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:33:47Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:38:39Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:38:39Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:43:32Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:43:32Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:48:25Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:48:25Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:53:19Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:53:19Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T11:58:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T11:58:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:03:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:03:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:08:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:08:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:13:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:13:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:18:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:18:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:23:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:23:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:28:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:28:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:33:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:33:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:38:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:38:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:43:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:43:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:48:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:48:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:53:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:53:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T12:58:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T12:58:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:03:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:03:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:08:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:08:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:13:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:13:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:18:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:18:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:23:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:23:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:28:03Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:28:03Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:33:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:33:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:38:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:38:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:43:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:43:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:48:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:48:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:53:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:53:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T13:58:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T13:58:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:03:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:03:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:08:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:08:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:13:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:13:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:18:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:18:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:23:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:23:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:28:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:28:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:33:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:33:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:38:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:38:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:43:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:43:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:48:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:48:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:53:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:53:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T14:58:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T14:58:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:03:04Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:03:04Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:08:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:08:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:13:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:13:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:18:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:18:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:23:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:23:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:28:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:28:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:33:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:33:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:38:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:38:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:43:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:43:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:48:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:48:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:53:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:53:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T15:58:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T15:58:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:03:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:03:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:08:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:08:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:13:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:13:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:18:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:18:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:23:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:23:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:28:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:28:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:33:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:33:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:38:05Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:38:05Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:43:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:43:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:48:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:48:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:53:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:53:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T16:58:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T16:58:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:03:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:03:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:08:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:08:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:13:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:13:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:18:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:18:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:23:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:23:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:28:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:28:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:33:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:33:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:38:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:38:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:43:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:43:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:48:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:48:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:53:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:53:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T17:58:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T17:58:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:03:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:03:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:08:06Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:08:06Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:13:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:13:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:18:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:18:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:23:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:23:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:28:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:28:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:33:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:33:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:38:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:38:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:43:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:43:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:48:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:48:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:53:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:53:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T18:58:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T18:58:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:03:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:03:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:08:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:08:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:13:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:13:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:18:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:18:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:23:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:23:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:28:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:28:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:33:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:33:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:38:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:38:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:43:07Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:43:07Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:48:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:48:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:53:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:53:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T19:58:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T19:58:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:03:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:03:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:08:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:08:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:13:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:13:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:18:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:18:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:23:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:23:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:28:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:28:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:33:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:33:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:38:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:38:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:43:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:43:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:48:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:48:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:53:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:53:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T20:58:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T20:58:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:03:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:03:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:08:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:08:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:13:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:13:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:18:08Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:18:08Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:23:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:23:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:28:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:28:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:33:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:33:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:38:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:38:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:43:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:43:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:48:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:48:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:53:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:53:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T21:58:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T21:58:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:03:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:03:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:08:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:08:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:13:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:13:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:18:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:18:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:23:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:23:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:28:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:28:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:33:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:33:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:38:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:38:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:43:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:43:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:48:09Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:48:09Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:53:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:53:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T22:58:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T22:58:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:03:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:03:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:08:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:08:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:13:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:13:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:18:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:18:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:23:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:23:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:28:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:28:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:33:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:33:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:38:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:38:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:43:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:43:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:48:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:48:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:53:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:53:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-22T23:58:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-22T23:58:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:03:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:03:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:08:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:08:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:13:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:13:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:18:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:18:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:23:10Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:23:10Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:28:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:28:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:33:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:33:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:38:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:38:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:43:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:43:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:48:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:48:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:53:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:53:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T00:58:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T00:58:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:03:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:03:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:08:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:08:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:13:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:13:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:18:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:18:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:23:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:23:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:28:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:28:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:33:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:33:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:38:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:38:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:43:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:43:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:48:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:48:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:53:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:53:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T01:58:11Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T01:58:11Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:03:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:03:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:08:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:08:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:13:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:13:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:18:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:18:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:23:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:23:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:28:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:28:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:33:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:33:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:38:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:38:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:43:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:43:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:48:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:48:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:53:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:53:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T02:58:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T02:58:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:03:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:03:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:08:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:08:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:13:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:13:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:18:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:18:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:23:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:23:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:28:12Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:28:12Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:33:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:33:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:38:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:38:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:43:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:43:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:48:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:48:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:53:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:53:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T03:58:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T03:58:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T04:03:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T04:03:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T04:08:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T04:08:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T04:13:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T04:13:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume
+[2026-08-23T04:18:13Z local] launcher_procs=0 B32_records=3000 B64_records=3000
+[2026-08-23T04:18:13Z local] ⚠️ LAUNCHER DEAD — NOT restarting (observe-only); orchestrator must sweep claims-without-records before any resume

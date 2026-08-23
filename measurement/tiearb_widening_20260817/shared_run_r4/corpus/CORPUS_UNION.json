@@ -1,0 +1,239 @@
+{
+  "by_stratum": {
+    "S1": {
+      "banked_dir": "measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1",
+      "banked_excluded": 0,
+      "banked_in": 551,
+      "banked_kept": 551,
+      "banked_readonly": true,
+      "copied_not_symlinked": true,
+      "extension_dir": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1_ext",
+      "extension_excluded": 0,
+      "extension_in": 793,
+      "extension_kept": 793,
+      "leg_layer": {
+        "files": {
+          "walled/leg1": {
+            "n_lines": 1344,
+            "n_rids": 1344,
+            "name": "positions_walled_leg1.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg1.jsonl",
+            "sha256": "a37d57c624c875dbda35003173d4be2afae51ac3d57e44954f447006fa9b8b61"
+          },
+          "walled/leg10": {
+            "n_lines": 18,
+            "n_rids": 18,
+            "name": "positions_walled_leg10.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg10.jsonl",
+            "sha256": "6827afb824730215d803d480c30363390d87cc98b20af5c88d56302eb4c87090"
+          },
+          "walled/leg11": {
+            "n_lines": 6,
+            "n_rids": 6,
+            "name": "positions_walled_leg11.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg11.jsonl",
+            "sha256": "cc5efc1a8878da0e013e024f570af29e3488aca99cdf71fc729d98596aea448b"
+          },
+          "walled/leg12": {
+            "n_lines": 1,
+            "n_rids": 1,
+            "name": "positions_walled_leg12.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg12.jsonl",
+            "sha256": "69b76f168d9307b640fbf740bfe8ac0f7385bf8d5d93ebe39054d56bd3a51789"
+          },
+          "walled/leg2": {
+            "n_lines": 802,
+            "n_rids": 802,
+            "name": "positions_walled_leg2.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg2.jsonl",
+            "sha256": "a4e2958d9031fc4e557393d91622485e48d3e15206cdecbc8d004f00c43f9478"
+          },
+          "walled/leg3": {
+            "n_lines": 444,
+            "n_rids": 444,
+            "name": "positions_walled_leg3.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg3.jsonl",
+            "sha256": "26557cbe691d54b1b81a5ed2eb401cf28dbd91b9056b21e6bc3dc13bca5a8756"
+          },
+          "walled/leg4": {
+            "n_lines": 256,
+            "n_rids": 256,
+            "name": "positions_walled_leg4.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg4.jsonl",
+            "sha256": "10a67e470f52e0ec1bb7d4d508fc17f6382feb2db4790b143bea36ac34b894b8"
+          },
+          "walled/leg5": {
+            "n_lines": 189,
+            "n_rids": 189,
+            "name": "positions_walled_leg5.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg5.jsonl",
+            "sha256": "3911eb96450c19446da44392e8b647a94aedf340ed2bd2527fc66026eefa18c9"
+          },
+          "walled/leg6": {
+            "n_lines": 102,
+            "n_rids": 102,
+            "name": "positions_walled_leg6.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg6.jsonl",
+            "sha256": "a6a464c2c9d21cd884ab3dd3e9d2355a67b50f49df75f9431c34c0e4030bb30c"
+          },
+          "walled/leg7": {
+            "n_lines": 80,
+            "n_rids": 80,
+            "name": "positions_walled_leg7.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg7.jsonl",
+            "sha256": "f1955787313a51196490dac6f4637962004bbc3058157b346fed7e702aa98729"
+          },
+          "walled/leg8": {
+            "n_lines": 55,
+            "n_rids": 55,
+            "name": "positions_walled_leg8.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg8.jsonl",
+            "sha256": "2cd967f0ee813b4848a919cd3bbb55b4961201cd10e13c9194c2ea151d6863cd"
+          },
+          "walled/leg9": {
+            "n_lines": 31,
+            "n_rids": 31,
+            "name": "positions_walled_leg9.jsonl",
+            "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1/positions_walled_leg9.jsonl",
+            "sha256": "15187efcca5dd99dfdc84461b8930d3fa800d2923fbaedb0f20afdbd9665c782"
+          }
+        },
+        "n_leg_files": 12,
+        "n_lines_by_side": {
+          "banked": 1340,
+          "extension": 1988
+        },
+        "n_rids_in_arms": 1344,
+        "n_rids_in_leg_files": 1344,
+        "note": "the union's leg files are PHYSICALLY PRESENT in the union dir (copied, never symlinked) and POSITIONS_PLAN.json::files points at THEM, not at the extension dir. The rid set they enumerate was asserted EQUAL to ARMS.json's in BOTH directions before this stamp was written (D4.3).",
+        "set_equality": {
+          "both_directions_checked": true,
+          "in_arms_not_in_legs": [],
+          "in_legs_not_in_arms": [],
+          "n_arms": 1344,
+          "n_in_arms_not_in_legs": 0,
+          "n_in_legs_not_in_arms": 0,
+          "n_leg": 1344,
+          "ok": true
+        },
+        "witnessed": true
+      },
+      "n_excluded_rids_applied": 2116,
+      "n_fresh": 793,
+      "n_retained": 551,
+      "note": "band 135e9 is REUSABLE INPUT (PREREG_FAILURE \u00a73: the R3.3 run stopped PRE-SCORING, so no arb/ora/delta/CI/per-position value was ever computed for these positions). The banked directory is READ-ONLY FOREVER; this union is assembled by COPY, never by symlink. \u26a0\ufe0f Retained positions are NOT pre-cleared: they enter the probe build and are gated exactly like fresh ones. 'Already gated under R3' is not a status any position holds \u2014 R3's gate FAILED, so nothing was ever passed.",
+      "origin_commit": "untracked",
+      "rev": "R4.5",
+      "sha256_by_file": {
+        "banked": {
+          "ARMS.json": "35d27ee900d049ba25e9dd7f5a2a6a11de3cddbb98d1c68de45aaeadec182648",
+          "DROPPED_ALL_TRANSPOSITION.json": "5f5909cdd1f75975048352117f0092efaffb0c20fc47dae3d5b035e9922bbd42",
+          "POSITIONS_PLAN.json": "be8ee1ca92cf21233530b12ba4218f52e6d354f1b77845258225fd90ea593018",
+          "positions_walled_leg1.jsonl": "64bba0eae147d39b113d22dc291a835b5279836ca7512ec5f0f6547542aa94b7",
+          "positions_walled_leg10.jsonl": "aa706b8ca90484213466273404894678fba936b6dcc2a46dcc4a5f6268b278f5",
+          "positions_walled_leg11.jsonl": "f97446c58ecbf7fcaf8c7c6d22d18ecd7f4efef1a28bb37b351ee89ac962ff90",
+          "positions_walled_leg2.jsonl": "a76242fcba24f6d9e417d9f7ee045c611dde4e72bf9fc7db4c551c140a3356e0",
+          "positions_walled_leg3.jsonl": "4b703acc1be9d84cda9d3335143a9a9663b0d6089980fae60b0c667ba1e1676a",
+          "positions_walled_leg4.jsonl": "430ae34d0f78d08c4a6a66ed793850adf00715dbaf469529e91c5a23aaa04694",
+          "positions_walled_leg5.jsonl": "0a0b14a1fd786da30ec1455aded72cbd54c41c7cf7f43537454f40de71a0e650",
+          "positions_walled_leg6.jsonl": "bc780a037ace79e4e6c811d51bec6d4496887f9718ed04424474bcc0300c2239",
+          "positions_walled_leg7.jsonl": "f43566feb4bfa5b67a521d4099f6518b9a3c04241a9ce374627fa4fb4d890ccf",
+          "positions_walled_leg8.jsonl": "e620ba1ff15dacc1ee4dde92cfe4fde745d13a1bfbc9c4903cc0c510ff8aa027",
+          "positions_walled_leg9.jsonl": "c7927cfec2001d5f2a29e9dc4fe18861891ca31c1c3ef0941c30bc56e30cd12c"
+        },
+        "extension": {
+          "ARMS.json": "fe59337a1ac4f404c526a168d8320967c70ae8a02a4805fe88cbcd7901415f54",
+          "DROPPED_ALL_TRANSPOSITION.json": "cae273081c81b275098cb6efc4f9ae25f96daf922203d3e41a21e75e6834f0cc",
+          "POSITIONS_PLAN.json": "d054a55995ae5a2d7ff877b295ff869d50190c3556db905b11957c848667b775",
+          "positions_walled_leg1.jsonl": "0d3bf3bccd2fe724fd544a65d277edf18c8d92fba657acc99d3c95cdbec02ab8",
+          "positions_walled_leg10.jsonl": "01846a6f5295c2478db431bf11249e4391182022ae86805dbc424a4c98387c48",
+          "positions_walled_leg11.jsonl": "9e267770fd959eabd935bb2e0e602ddaae3588876b5e776a202bfb27306dbfdb",
+          "positions_walled_leg12.jsonl": "69b76f168d9307b640fbf740bfe8ac0f7385bf8d5d93ebe39054d56bd3a51789",
+          "positions_walled_leg2.jsonl": "82df3329919bfef1293170e445762b0d36cd458ab956476c7646e3ae920b41a5",
+          "positions_walled_leg3.jsonl": "892e38e5584308e06f84d8bf4db4be72c32059f2198665576cb70c7f46e06419",
+          "positions_walled_leg4.jsonl": "20331293d66f4642e2ba35edda92c7d3ca3df760a4522f8beaf1a589ffc10213",
+          "positions_walled_leg5.jsonl": "abe9a0f99a47de4314aeccf505dd88cf1d0c900e49ae3d81bb5b21f237371b96",
+          "positions_walled_leg6.jsonl": "a40ffa765d2ee1da0fc7e5d81d256898c06d13de842cc25a325bf6e87f9833b9",
+          "positions_walled_leg7.jsonl": "01aec4555e815e6ed1e851554b034771baaf0dc5ce48ab1ad9d68a3c6b6bf7c5",
+          "positions_walled_leg8.jsonl": "232274b5695c4cb7ff8bd46b0e6d2045df8b4d1a8dbe05ec83b524795b3cf587",
+          "positions_walled_leg9.jsonl": "bb9bf33b08ae02b130dec3ea4507de3db7f7b799666bd6f89a61a5d1e542d1f8"
+        }
+      },
+      "stratum": "s1",
+      "union_dir": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1"
+    },
+    "S2": {
+      "banked_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2",
+      "banked_excluded": 0,
+      "banked_in": 103,
+      "banked_kept": 103,
+      "banked_readonly": true,
+      "copied_not_symlinked": true,
+      "extension_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2_ext",
+      "extension_excluded": 0,
+      "extension_in": 961,
+      "extension_kept": 961,
+      "leg_layer": {
+        "note": "assembled BEFORE the D4.3 cross-layer invariant existed \u2014 this stratum's leg files were never asserted to enumerate the ARMS.json rid set. Carried forward unchanged; not re-witnessed.",
+        "witnessed": false
+      },
+      "n_excluded_rids_applied": 6772,
+      "n_fresh": 961,
+      "n_retained": 103,
+      "note": "band 135e9 is REUSABLE INPUT (PREREG_FAILURE \u00a73: the R3.3 run stopped PRE-SCORING, so no arb/ora/delta/CI/per-position value was ever computed for these positions). The banked directory is READ-ONLY FOREVER; this union is assembled by COPY, never by symlink. \u26a0\ufe0f Retained positions are NOT pre-cleared: they enter the probe build and are gated exactly like fresh ones. 'Already gated under R3' is not a status any position holds \u2014 R3's gate FAILED, so nothing was ever passed.",
+      "origin_commit": "untracked",
+      "rev": "R4.5",
+      "sha256_by_file": {
+        "banked": {
+          "ARMS.json": "dd8941cb0baf9c4a55674eb7e1b50a48a0b449e0adc54b6c7c3e051b2fcf93bd",
+          "DROPPED_ALL_TRANSPOSITION.json": "e91e349d3e73d8b9168564368abb67727c8a4e34caf7a97e40576b40e860c821",
+          "POSITIONS_PLAN.json": "329eee19cff1fbe9773c5e36997fc4f13cfbb63d35692b55a9c7a856c6344832",
+          "positions_walled_leg1.jsonl": "6e9e1ab0633b81480928303bf01029b0a3d1696888e2b31856cfea0be84f7d06",
+          "positions_walled_leg10.jsonl": "2763760904134b96fabba0ecc2e139ddae941f0a99fffdbabd06d32c7a0c66a0",
+          "positions_walled_leg11.jsonl": "7c5160844397f95e142ab402451b83910ec09b7b303bd5dca55fc552a2675cc8",
+          "positions_walled_leg12.jsonl": "df6037793e36fbb25f46e972bc4f3ea5d84509b375dc9ff7290259c2b47ef60d",
+          "positions_walled_leg2.jsonl": "2979dea871518a7c1bcfdd5a63e09814cea899ae457ead3dad017bcb5215d279",
+          "positions_walled_leg3.jsonl": "0c02f02a3157f5d4f467115d833fce02d31460a51e1d8082f6327042a9e2b489",
+          "positions_walled_leg4.jsonl": "d98d5204ff198aa715571e059ad87f3d77663317ff1d379312e30897899dabdb",
+          "positions_walled_leg5.jsonl": "f975f88030990bad39b5c7d45af0a254bc804c5ac3b00a85e5ddd653dafe2db4",
+          "positions_walled_leg6.jsonl": "0ec7c2eb547634cb737fbb5feef89f43cd1e01478eaca5d26feb85a2afa173de",
+          "positions_walled_leg7.jsonl": "19f5ac593e2fe9997cba0a72c1012af2554a9c40fa023102ee1e7877fb2d326c",
+          "positions_walled_leg8.jsonl": "fad9a1ced27329b5a72e9bb45b405749e9b14c279aaa2001ef8d00122aab9b38",
+          "positions_walled_leg9.jsonl": "1506b245d6ef0982bedd0c371d0ad28fce460a74e1d34d86a85e4b4a2e2c713d"
+        },
+        "extension": {
+          "ARMS.json": "a35e35f67db533b6b746d0275702725c4c3e149ebe219b6a2a98a04af44717dd",
+          "DROPPED_ALL_TRANSPOSITION.json": "eff4e0e75ecff693a07e4cb62f05c3f41e5f035c9436995559f083afb7c441e3",
+          "POSITIONS_PLAN.json": "af83fc52d38667bee33b7fc918b522e3c0730ea7556c783776c2a22bf20dba64",
+          "positions_walled_leg1.jsonl": "6484537c24603ed07e70b0d59790faf139e228d9cf9c55e3ded14e03bf4770d1",
+          "positions_walled_leg10.jsonl": "81df894fd3fa668974a84db6643dec2ce46f08bb4202e53d21f079be65f3db0d",
+          "positions_walled_leg11.jsonl": "c04b8ec09e74f8f62438a902a97779794460836376a27519248c52e8fac118db",
+          "positions_walled_leg12.jsonl": "dcdd27d1983c2e7365e689677a20caddfab5f05f0f6c92be2014a162fce3bdee",
+          "positions_walled_leg2.jsonl": "4dcf564e0004c1e404454cd8469af490c2eb3ec94e22c8ab6ea5bf449e2f69c1",
+          "positions_walled_leg3.jsonl": "d8e6ecc09889b1697e28e88db9fee4a7f578679c6fdb38d24279f2298b2da665",
+          "positions_walled_leg4.jsonl": "4aca7f97e1852f69f26be6dc3a5aec095b94a61f69278df971b2b33c88dccef3",
+          "positions_walled_leg5.jsonl": "fb8f0e3f15b498f90db002e7698001b7614d0911fadc777b99dd2992047bc649",
+          "positions_walled_leg6.jsonl": "ad47dcff34562523eb466e93498b7829b6c0f0e224f25b0bae89532da09f247c",
+          "positions_walled_leg7.jsonl": "a1c2af366a4e7b26e9325118a7893e8b8c6fa12b5e7de17560527c016a1a3ed8",
+          "positions_walled_leg8.jsonl": "3c45d925d4bc6f74a42ada07a62f38e33672ab1298a8a998278d6a7cdc66a668",
+          "positions_walled_leg9.jsonl": "2ec6f214e9c9edacdfc50dbaf6c2bfd8c6b0c6d93b416c2eef0955d402f6cad7"
+        }
+      },
+      "stratum": "s2",
+      "union_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2"
+    }
+  },
+  "rev": "R4.5",
+  "schema": "carcassonne-tiearb-widening-corpus-union/v2",
+  "superseded_file": {
+    "path": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/CORPUS_UNION.r4.5-defective.json",
+    "why": "reissued under D4.7 with a LEG-LAYER witness. The previous stamp asserted the copy at the ARMS layer for an assembly that did not happen at the leg layer; it is preserved because the false assertion is evidence of the defect."
+  },
+  "totals": {
+    "n_fresh": 1754,
+    "n_retained": 654,
+    "n_total": 2408,
+    "retained_fraction": 0.27159468438538203
+  },
+  "what": "the composition of the corpus of record: RETAINED band-135e9 positions (read read-only out of the SPENT R3.3 run and COPIED in) plus FRESHLY generated 137e9 extension positions. R4's `n` is a MIXTURE and this is where its composition is stated."
+}

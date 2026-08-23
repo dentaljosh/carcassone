@@ -1,0 +1,2168 @@
+[widening][2026-08-18 02:21:22] PHASE 1 COLLECT: /mnt/c/carc-shared/tiearb_widening_20260817/gen -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_widening.jsonl
+wrote 850 games to /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_widening.jsonl (plies min/med/max = 141/144/144)
+round-trip verify: 10 ok / 0 bad (of 10 replayed)
+[widening][2026-08-18 02:21:25] PHASE 1 VERIFY (BASE): band [135000000000, 135000000849], >= 850 games
+{
+  "band_ok": true,
+  "count_ok": true,
+  "n_distinct_seeds": 850,
+  "n_duplicate_seeds": 0,
+  "n_games_expected": 850,
+  "n_games_min_required": 850,
+  "n_games_realized": 850,
+  "n_out_of_band": 0,
+  "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_widening.jsonl",
+  "seed_band": [
+    135000000000,
+    135000000849
+  ],
+  "seed_max_observed": 135000000849,
+  "seed_min_observed": 135000000000,
+  "sha256_of_sorted_seeds": "19a163acf925ef2e8adff8b54768c0d8ba4fc3d25ca96f57b59614d2053ca568",
+  "shortfall_vs_expected": 0
+}
+[widening][2026-08-18 02:21:25] PHASE 1: no top-up file — the blind corpus top-up was NOT exercised
+[widening][2026-08-18 02:21:25] PHASE 1 SPLIT s1: deck-seed sub-band [135000000000, 135000000349] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_s1.jsonl
+{
+  "n_in": 850,
+  "n_kept": 350,
+  "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_s1.jsonl",
+  "seed_band": [
+    135000000000,
+    135000000349
+  ],
+  "seed_max_observed": 135000000349,
+  "seed_min_observed": 135000000000,
+  "sha256_of_sorted_seeds": "4e8a21015150ad9845fecb25fc89377ba64e4794dac4d7a8f12682a85082c16f"
+}
+[widening][2026-08-18 02:21:25] PHASE 1 SPLIT s2: deck-seed sub-band [135000000350, 135000000849] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_s2.jsonl
+{
+  "n_in": 850,
+  "n_kept": 500,
+  "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_games_s2.jsonl",
+  "seed_band": [
+    135000000350,
+    135000000849
+  ],
+  "seed_max_observed": 135000000849,
+  "seed_min_observed": 135000000350,
+  "sha256_of_sorted_seeds": "49ead4a08e8b9799a65d0c25ec16ecb4b090f9e517235eddf16157138c72ec43"
+}
+[widening][2026-08-18 02:21:25] PHASE 2 CENSUS s1: W=30 (eval row), games=350, --n-champgames 1400
+[run_census] E4 archives by profile: {} (limit_e4_games=0)
+[run_census] leg task-count estimate {'walled': 1400}, worker split {'walled': 30} of 30
+[run_census] launched leg walled (R9=0, W=30, task_est=1400) -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/census_s1/leg_walled/leg.log
+[run_census] leg walled done rc=0 (4.4s)
+
+[run_census] DONE: 1400 rows, 1 legs, 4.5s wall, mean secs/ply (leaf compute only) = 0.03944792857142857
+[run_census] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/census_s1
+[widening][2026-08-18 02:21:30] PHASE 2 CENSUS s2: W=30 (eval row), games=500, --n-champgames 1500
+[run_census] E4 archives by profile: {} (limit_e4_games=0)
+[run_census] leg task-count estimate {'walled': 1500}, worker split {'walled': 30} of 30
+[run_census] launched leg walled (R9=0, W=30, task_est=1500) -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/census_s2/leg_walled/leg.log
+[run_census] leg walled done rc=0 (4.9s)
+
+[run_census] DONE: 1500 rows, 1 legs, 4.9s wall, mean secs/ply (leaf compute only) = 0.03786093333333333
+[run_census] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/census_s2
+[widening][2026-08-18 02:21:35] PHASE 3a stage shadow repo root -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_shadow_repo
+[widening][2026-08-18 02:21:35] PHASE 3 TRANSPOSITION MAP s1 via /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_shadow_repo/scripts/tiletie/transposition_census.py
+{
+  "profile": "walled",
+  "stratum": "selfplay",
+  "n_tied_positions": 750,
+  "n_unresolved": 0,
+  "all_transposition_n": 199,
+  "all_transposition_pct": 26.53,
+  "any_duplicate_pct": 41.33,
+  "mean_tie_size": 3.628,
+  "mean_distinct_afterstates": 2.663,
+  "effective_shrink": 0.7339,
+  "distinct_hist": {
+    "1": 199,
+    "2": 278,
+    "3": 116,
+    "4": 69,
+    "5": 21,
+    "6": 30,
+    "7": 9,
+    "8": 7,
+    "9": 5,
+    "10": 9,
+    "11": 5,
+    "12": 2
+  },
+  "by_phase": {
+    "early": {
+      "n": 283,
+      "all_transposition_pct": 23.32,
+      "mean_tie_size": 3.477,
+      "mean_distinct": 2.551
+    },
+    "mid": {
+      "n": 237,
+      "all_transposition_pct": 29.96,
+      "mean_tie_size": 3.709,
+      "mean_distinct": 2.671
+    },
+    "late": {
+      "n": 230,
+      "all_transposition_pct": 26.96,
+      "mean_tie_size": 3.73,
+      "mean_distinct": 2.791
+    }
+  }
+}
+[widening][2026-08-18 02:21:37] PHASE 3 TRANSPOSITION MAP s2 via /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_shadow_repo/scripts/tiletie/transposition_census.py
+{
+  "profile": "walled",
+  "stratum": "selfplay",
+  "n_tied_positions": 804,
+  "n_unresolved": 0,
+  "all_transposition_n": 191,
+  "all_transposition_pct": 23.76,
+  "any_duplicate_pct": 38.93,
+  "mean_tie_size": 3.708,
+  "mean_distinct_afterstates": 2.749,
+  "effective_shrink": 0.7414,
+  "distinct_hist": {
+    "1": 191,
+    "2": 295,
+    "3": 137,
+    "4": 78,
+    "5": 32,
+    "6": 31,
+    "7": 6,
+    "8": 13,
+    "9": 8,
+    "10": 6,
+    "11": 2,
+    "12": 5
+  },
+  "by_phase": {
+    "early": {
+      "n": 309,
+      "all_transposition_pct": 17.8,
+      "mean_tie_size": 3.647,
+      "mean_distinct": 2.767
+    },
+    "mid": {
+      "n": 261,
+      "all_transposition_pct": 29.89,
+      "mean_tie_size": 3.839,
+      "mean_distinct": 2.801
+    },
+    "late": {
+      "n": 234,
+      "all_transposition_pct": 24.79,
+      "mean_tie_size": 3.641,
+      "mean_distinct": 2.667
+    }
+  }
+}
+[widening][2026-08-18 02:21:40] PHASE 4 CHAMP PICKS s1: W=30 (eval row) -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_picks_s1
+[champ_picks] 750 selfplay tied positions under profile 'walled' (0 skipped -- other profiles)
+[champ_picks] resume: 0 already done, 750 to go
+[1/750] tt_sp_135000000002_p8 ok action=1052 0.77s
+[2/750] tt_sp_135000000006_p10 ok action=1156 0.834s
+[3/750] tt_sp_135000000000_p16 ok action=1553 0.878s
+[4/750] tt_sp_135000000000_p10 ok action=1252 0.921s
+[5/750] tt_sp_135000000005_p16 ok action=1353 1.052s
+[6/750] tt_sp_135000000003_p16 ok action=1053 1.071s
+[7/750] tt_sp_135000000002_p18 ok action=1047 1.079s
+[8/750] tt_sp_135000000008_p20 ok action=1358 1.127s
+[9/750] tt_sp_135000000005_p20 ok action=945 1.238s
+[10/750] tt_sp_135000000003_p28 ok action=1048 1.351s
+[11/750] tt_sp_135000000004_p34 ok action=1357 1.524s
+[12/750] tt_sp_135000000010_p112 ok action=1068 1.509s
+[13/750] tt_sp_135000000010_p38 ok action=1647 1.637s
+[14/750] tt_sp_135000000010_p44 ok action=1453 1.734s
+[15/750] tt_sp_135000000000_p42 ok action=1159 1.751s
+[16/750] tt_sp_135000000004_p46 ok action=1058 1.745s
+[17/750] tt_sp_135000000008_p38 ok action=1040 1.748s
+[18/750] tt_sp_135000000011_p18 ok action=1552 1.225s
+[19/750] tt_sp_135000000009_p72 ok action=956 1.034s
+[20/750] tt_sp_135000000001_p56 ok action=1136 1.048s
+[21/750] tt_sp_135000000015_p12 ok action=1448 -0.132s
+[22/750] tt_sp_135000000015_p14 ok action=1444 -0.209s
+[23/750] tt_sp_135000000001_p88 ok action=1436 1.306s
+[24/750] tt_sp_135000000015_p8 ok action=1352 -0.247s
+[25/750] tt_sp_135000000007_p54 ok action=1452 1.347s
+[26/750] tt_sp_135000000005_p88 ok action=1269 1.391s
+[27/750] tt_sp_135000000006_p58 ok action=1344 1.401s
+[28/750] tt_sp_135000000001_p90 ok action=1064 1.432s
+[29/750] tt_sp_135000000011_p36 ok action=936 0.542s
+[30/750] tt_sp_135000000016_p16 ok action=1356 -0.023s
+[31/750] tt_sp_135000000012_p72 ok action=1657 0.832s
+[32/750] tt_sp_135000000019_p10 ok action=1048 0.767s
+[33/750] tt_sp_135000000012_p84 ok action=1765 0.874s
+[34/750] tt_sp_135000000002_p74 ok action=1244 2.032s
+[35/750] tt_sp_135000000013_p60 ok action=1336 0.98s
+[36/750] tt_sp_135000000018_p38 ok action=1433 0.467s
+[37/750] tt_sp_135000000022_p10 ok action=1352 0.88s
+[38/750] tt_sp_135000000016_p58 ok action=1544 0.6s
+[39/750] tt_sp_135000000007_p112 ok action=1540 2.433s
+[40/750] tt_sp_135000000018_p58 ok action=961 0.725s
+[41/750] tt_sp_135000000020_p24 ok action=1245 1.347s
+[42/750] tt_sp_135000000020_p36 ok action=1260 1.346s
+[43/750] tt_sp_135000000026_p4 ok action=1353 0.612s
+[44/750] tt_sp_135000000014_p101 ok action=1545 1.877s
+[45/750] tt_sp_135000000002_p116 ok action=766 3.118s
+[46/750] tt_sp_135000000018_p74 ok action=745 2.125s
+[47/750] tt_sp_135000000017_p64 ok action=936 1.471s
+[48/750] tt_sp_135000000023_p56 ok action=1650 1.617s
+[49/750] tt_sp_135000000009_p134 ok action=1663 3.433s
+[50/750] tt_sp_135000000007_p136 ok action=867 3.95s
+[51/750] tt_sp_135000000006_p100 ok action=1164 3.983s
+[52/750] tt_sp_135000000016_p124 ok action=947 2.41s
+[53/750] tt_sp_135000000021_p112 ok action=932 2.643s
+[54/750] tt_sp_135000000024_p100 ok action=1437 2.322s
+[55/750] tt_sp_135000000024_p50 ok action=1341 2.355s
+[56/750] tt_sp_135000000019_p132 ok action=1766 3.213s
+[57/750] tt_sp_135000000020_p90 ok action=1651 3.093s
+[58/750] tt_sp_135000000027_p80 ok action=1339 2.048s
+[59/750] tt_sp_135000000026_p49 ok action=1651 2.191s
+[60/750] tt_sp_135000000021_p108 ok action=1351 3.187s
+[61/750] tt_sp_135000000031_p4 ok action=1152 0.701s
+[62/750] tt_sp_135000000028_p54 ok action=1156 1.943s
+[63/750] tt_sp_135000000031_p30 ok action=1262 1.219s
+[64/750] tt_sp_135000000024_p98 ok action=1465 2.654s
+[65/750] tt_sp_135000000029_p46 ok action=1032 1.771s
+[66/750] tt_sp_135000000028_p58 ok action=1563 2.164s
+[67/750] tt_sp_135000000013_p128 ok action=933 3.838s
+[68/750] tt_sp_135000000025_p140 ok action=643 2.717s
+[69/750] tt_sp_135000000019_p126 ok action=1330 3.908s
+[70/750] tt_sp_135000000023_p78 ok action=1537 3.294s
+[71/750] tt_sp_135000000012_p136 ok action=1870 4.222s
+[72/750] tt_sp_135000000028_p72 ok action=1036 2.101s
+[73/750] tt_sp_135000000038_p142 ok action=1038 0.211s
+[74/750] tt_sp_135000000035_p6 ok action=1257 0.672s
+[75/750] tt_sp_135000000036_p2 ok action=1149 0.636s
+[76/750] tt_sp_135000000021_p90 ok action=1757 3.928s
+[77/750] tt_sp_135000000040_p142 ok action=829 0.23s
+[78/750] tt_sp_135000000035_p8 ok action=1353 0.727s
+[79/750] tt_sp_135000000032_p32 ok action=1365 1.438s
+[80/750] tt_sp_135000000019_p124 ok action=1664 4.435s
+[81/750] tt_sp_135000000025_p106 ok action=1044 3.383s
+[82/750] tt_sp_135000000029_p58 ok action=1443 2.428s
+[83/750] tt_sp_135000000036_p16 ok action=1044 0.978s
+[84/750] tt_sp_135000000034_p28 ok action=1445 1.195s
+[85/750] tt_sp_135000000033_p36 ok action=1555 1.508s
+[86/750] tt_sp_135000000042_p11 ok action=1345 0.887s
+[87/750] tt_sp_135000000043_p6 ok action=1155 0.754s
+[88/750] tt_sp_135000000036_p38 ok action=949 1.444s
+[89/750] tt_sp_135000000032_p48 ok action=1235 2.153s
+[90/750] tt_sp_135000000033_p52 ok action=950 1.964s
+[91/750] tt_sp_135000000049_p142 ok action=1372 0.245s
+[92/750] tt_sp_135000000048_p2 ok action=1253 0.583s
+[93/750] tt_sp_135000000030_p129 ok action=1629 3.29s
+[94/750] tt_sp_135000000027_p130 ok action=744 4.352s
+[95/750] tt_sp_135000000042_p45 ok action=1337 1.431s
+[96/750] tt_sp_135000000048_p14 ok action=1453 0.959s
+[97/750] tt_sp_135000000043_p36 ok action=1452 1.468s
+[98/750] tt_sp_135000000048_p8 ok action=1350 0.729s
+[99/750] tt_sp_135000000044_p32 ok action=1047 1.571s
+[100/750] tt_sp_135000000041_p84 ok action=1364 1.942s
+[101/750] tt_sp_135000000046_p40 ok action=960 1.666s
+[102/750] tt_sp_135000000033_p108 ok action=841 3.061s
+[103/750] tt_sp_135000000053_p2 ok action=1148 0.602s
+[104/750] tt_sp_135000000038_p64 ok action=1528 2.607s
+[105/750] tt_sp_135000000052_p10 ok action=1153 0.784s
+[106/750] tt_sp_135000000037_p112 ok action=1371 2.703s
+[107/750] tt_sp_135000000041_p66 ok action=944 2.598s
+[108/750] tt_sp_135000000034_p72 ok action=957 3.126s
+[109/750] tt_sp_135000000032_p108 ok action=1532 3.807s
+[110/750] tt_sp_135000000031_p100 ok action=1262 4.518s
+[111/750] tt_sp_135000000029_p136 ok action=1564 4.849s
+[112/750] tt_sp_135000000051_p22 ok action=1258 1.132s
+[113/750] tt_sp_135000000050_p68 ok action=849 1.607s
+[114/750] tt_sp_135000000046_p66 ok action=1362 2.627s
+[115/750] tt_sp_135000000049_p54 ok action=1256 2.108s
+[116/750] tt_sp_135000000039_p114 ok action=1369 3.378s
+[117/750] tt_sp_135000000050_p46 ok action=1037 1.991s
+[118/750] tt_sp_135000000051_p108 ok action=1124 1.871s
+[119/750] tt_sp_135000000046_p102 ok action=1644 3.036s
+[120/750] tt_sp_135000000054_p40 ok action=1460 1.467s
+[121/750] tt_sp_135000000054_p38 ok action=1037 1.617s
+[122/750] tt_sp_135000000059_p10 ok action=1252 0.789s
+[123/750] tt_sp_135000000060_p6 ok action=1150 0.739s
+[124/750] tt_sp_135000000034_p134 ok action=868 4.466s
+[125/750] tt_sp_135000000054_p76 ok action=1441 1.976s
+[126/750] tt_sp_135000000055_p82 ok action=845 1.617s
+[127/750] tt_sp_135000000055_p94 ok action=965 1.595s
+[128/750] tt_sp_135000000059_p30 ok action=1549 1.243s
+[129/750] tt_sp_135000000063_p10 ok action=1046 0.848s
+[130/750] tt_sp_135000000064_p6 ok action=1151 0.756s
+[131/750] tt_sp_135000000041_p114 ok action=828 4.22s
+[132/750] tt_sp_135000000058_p34 ok action=1238 1.559s
+[133/750] tt_sp_135000000046_p96 ok action=859 3.881s
+[134/750] tt_sp_135000000049_p118 ok action=868 3.415s
+[135/750] tt_sp_135000000054_p86 ok action=1533 2.435s
+[136/750] tt_sp_135000000058_p54 ok action=966 2.07s
+[137/750] tt_sp_135000000047_p120 ok action=1949 4.304s
+[138/750] tt_sp_135000000051_p132 ok action=1032 3.605s
+[139/750] tt_sp_135000000066_p26 ok action=1551 1.218s
+[140/750] tt_sp_135000000052_p112 ok action=960 3.427s
+[141/750] tt_sp_135000000056_p92 ok action=1231 2.636s
+[142/750] tt_sp_135000000061_p90 ok action=736 2.124s
+[143/750] tt_sp_135000000065_p28 ok action=1062 1.609s
+[144/750] tt_sp_135000000068_p18 ok action=1445 1.018s
+[145/750] tt_sp_135000000044_p122 ok action=660 5.193s
+[146/750] tt_sp_135000000057_p126 ok action=1948 2.881s
+[147/750] tt_sp_135000000055_p126 ok action=1564 3.476s
+[148/750] tt_sp_135000000056_p74 ok action=1232 3.179s
+[149/750] tt_sp_135000000065_p100 ok action=1531 2.257s
+[150/750] tt_sp_135000000066_p58 ok action=1552 1.943s
+[151/750] tt_sp_135000000066_p52 ok action=956 2.165s
+[152/750] tt_sp_135000000069_p35 ok action=1343 1.829s
+[153/750] tt_sp_135000000070_p40 ok action=1543 1.911s
+[154/750] tt_sp_135000000067_p70 ok action=939 2.329s
+[155/750] tt_sp_135000000075_p26 ok action=1448 1.186s
+[156/750] tt_sp_135000000059_p110 ok action=844 3.768s
+[157/750] tt_sp_135000000077_p10 ok action=1240 0.82s
+[158/750] tt_sp_135000000074_p39 ok action=1541 1.366s
+[159/750] tt_sp_135000000063_p132 ok action=1556 3.267s
+[160/750] tt_sp_135000000069_p59 ok action=1262 2.412s
+[161/750] tt_sp_135000000063_p102 ok action=1332 3.353s
+[162/750] tt_sp_135000000077_p2 ok action=1348 0.713s
+[163/750] tt_sp_135000000068_p60 ok action=967 2.592s
+[164/750] tt_sp_135000000078_p19 ok action=1459 0.959s
+[165/750] tt_sp_135000000075_p42 ok action=1360 1.687s
+[166/750] tt_sp_135000000076_p30 ok action=1242 1.482s
+[167/750] tt_sp_135000000067_p110 ok action=844 3.128s
+[168/750] tt_sp_135000000062_p136 ok action=925 3.923s
+[169/750] tt_sp_135000000075_p72 ok action=1753 1.681s
+[170/750] tt_sp_135000000074_p49 ok action=956 2.029s
+[171/750] tt_sp_135000000068_p106 ok action=1267 3.407s
+[172/750] tt_sp_135000000070_p70 ok action=1465 3.196s
+[173/750] tt_sp_135000000071_p88 ok action=1260 2.856s
+[174/750] tt_sp_135000000072_p130 ok action=1127 2.832s
+[175/750] tt_sp_135000000080_p42 ok action=1544 1.553s
+[176/750] tt_sp_135000000072_p88 ok action=1362 2.942s
+[177/750] tt_sp_135000000076_p70 ok action=1356 2.298s
+[178/750] tt_sp_135000000079_p34 ok action=1059 1.77s
+[179/750] tt_sp_135000000085_p8 ok action=1345 0.697s
+[180/750] tt_sp_135000000083_p24 ok action=1257 1.177s
+[181/750] tt_sp_135000000086_p4 ok action=1148 0.559s
+[182/750] tt_sp_135000000085_p22 ok action=1356 1.128s
+[183/750] tt_sp_135000000086_p8 ok action=1352 0.712s
+[184/750] tt_sp_135000000082_p41 ok action=1164 1.811s
+[185/750] tt_sp_135000000080_p52 ok action=1557 2.102s
+[186/750] tt_sp_135000000072_p96 ok action=1328 3.451s
+[187/750] tt_sp_135000000078_p111 ok action=1128 2.944s
+[188/750] tt_sp_135000000081_p136 ok action=1565 2.339s
+[189/750] tt_sp_135000000065_p130 ok action=1444 5.571s
+[190/750] tt_sp_135000000071_p108 ok action=828 4.256s
+[191/750] tt_sp_135000000084_p76 ok action=848 1.824s
+[192/750] tt_sp_135000000070_p88 ok action=1433 4.614s
+[193/750] tt_sp_135000000091_p6 ok action=1353 0.719s
+[194/750] tt_sp_135000000080_p76 ok action=956 2.693s
+[195/750] tt_sp_135000000083_p70 ok action=1546 2.135s
+[196/750] tt_sp_135000000092_p14 ok action=1157 0.795s
+[197/750] tt_sp_135000000084_p58 ok action=1038 2.295s
+[198/750] tt_sp_135000000082_p109 ok action=957 2.863s
+[199/750] tt_sp_135000000081_p90 ok action=1362 2.999s
+[200/750] tt_sp_135000000082_p85 ok action=1468 2.874s
+[201/750] tt_sp_135000000094_p10 ok action=1257 0.766s
+[202/750] tt_sp_135000000088_p106 ok action=1052 1.791s
+[203/750] tt_sp_135000000096_p2 ok action=1148 0.827s
+[204/750] tt_sp_135000000092_p30 ok action=1161 1.457s
+[205/750] tt_sp_135000000085_p126 ok action=1544 2.9s
+[206/750] tt_sp_135000000096_p16 ok action=1544 1.064s
+[207/750] tt_sp_135000000085_p102 ok action=970 3.049s
+[208/750] tt_sp_135000000073_p132 ok action=961 5.158s
+[209/750] tt_sp_135000000095_p32 ok action=1044 1.454s
+[210/750] tt_sp_135000000088_p86 ok action=836 2.503s
+[211/750] tt_sp_135000000099_p10 ok action=1142 0.873s
+[212/750] tt_sp_135000000087_p72 ok action=1060 2.711s
+[213/750] tt_sp_135000000100_p2 ok action=1244 0.576s
+[214/750] tt_sp_135000000081_p106 ok action=1056 4.133s
+[215/750] tt_sp_135000000097_p44 ok action=1053 1.265s
+[216/750] tt_sp_135000000089_p80 ok action=1132 2.577s
+[217/750] tt_sp_135000000097_p34 ok action=1041 1.504s
+[218/750] tt_sp_135000000103_p20 ok action=1548 0.936s
+[219/750] tt_sp_135000000092_p114 ok action=1661 2.651s
+[220/750] tt_sp_135000000105_p8 ok action=1255 0.863s
+[221/750] tt_sp_135000000093_p68 ok action=1457 2.933s
+[222/750] tt_sp_135000000095_p70 ok action=1557 2.584s
+[223/750] tt_sp_135000000107_p12 ok action=1150 0.902s
+[224/750] tt_sp_135000000098_p50 ok action=956 2.165s
+[225/750] tt_sp_135000000098_p104 ok action=1336 2.321s
+[226/750] tt_sp_135000000089_p116 ok action=868 3.812s
+[227/750] tt_sp_135000000089_p124 ok action=1735 3.739s
+[228/750] tt_sp_135000000090_p112 ok action=1756 3.77s
+[229/750] tt_sp_135000000106_p34 ok action=1442 1.359s
+[230/750] tt_sp_135000000099_p60 ok action=941 2.311s
+[231/750] tt_sp_135000000107_p26 ok action=945 1.165s
+[232/750] tt_sp_135000000101_p60 ok action=1057 2.094s
+[233/750] tt_sp_135000000108_p16 ok action=1053 1.074s
+[234/750] tt_sp_135000000088_p136 ok action=1670 4.335s
+[235/750] tt_sp_135000000108_p8 ok action=1240 0.75s
+[236/750] tt_sp_135000000108_p42 ok action=852 1.424s
+[237/750] tt_sp_135000000104_p58 ok action=1540 2.389s
+[238/750] tt_sp_135000000097_p100 ok action=1274 3.449s
+[239/750] tt_sp_135000000094_p96 ok action=1638 3.753s
+[240/750] tt_sp_135000000094_p124 ok action=836 3.88s
+[241/750] tt_sp_135000000100_p136 ok action=861 3.0s
+[242/750] tt_sp_135000000097_p102 ok action=1372 3.849s
+[243/750] tt_sp_135000000115_p12 ok action=1359 0.863s
+[244/750] tt_sp_135000000108_p52 ok action=1641 1.772s
+[245/750] tt_sp_135000000114_p23 ok action=1553 1.19s
+[246/750] tt_sp_135000000117_p141 ok action=860 0.22s
+[247/750] tt_sp_135000000114_p25 ok action=1040 1.214s
+[248/750] tt_sp_135000000106_p62 ok action=1428 2.756s
+[249/750] tt_sp_135000000104_p94 ok action=1648 2.983s
+[250/750] tt_sp_135000000116_p4 ok action=1145 0.741s
+[251/750] tt_sp_135000000103_p68 ok action=1367 3.319s
+[252/750] tt_sp_135000000104_p112 ok action=855 3.306s
+[253/750] tt_sp_135000000114_p29 ok action=1055 1.312s
+[254/750] tt_sp_135000000117_p13 ok action=1155 0.73s
+[255/750] tt_sp_135000000105_p132 ok action=1843 3.06s
+[256/750] tt_sp_135000000109_p66 ok action=1644 2.058s
+[257/750] tt_sp_135000000112_p46 ok action=1132 1.813s
+[258/750] tt_sp_135000000110_p72 ok action=952 2.088s
+[259/750] tt_sp_135000000116_p30 ok action=1059 1.299s
+[260/750] tt_sp_135000000113_p96 ok action=1533 1.999s
+[261/750] tt_sp_135000000111_p60 ok action=937 2.229s
+[262/750] tt_sp_135000000122_p2 ok action=1246 0.636s
+[263/750] tt_sp_135000000106_p96 ok action=1027 3.578s
+[264/750] tt_sp_135000000105_p104 ok action=853 4.098s
+[265/750] tt_sp_135000000113_p98 ok action=1276 2.589s
+[266/750] tt_sp_135000000112_p76 ok action=928 2.704s
+[267/750] tt_sp_135000000109_p74 ok action=1640 2.932s
+[268/750] tt_sp_135000000115_p48 ok action=1240 2.13s
+[269/750] tt_sp_135000000082_p135 ok action=1649 8.265s
+[270/750] tt_sp_135000000118_p46 ok action=1164 1.627s
+[271/750] tt_sp_135000000120_p80 ok action=1566 1.541s
+[272/750] tt_sp_135000000125_p18 ok action=1052 0.966s
+[273/750] tt_sp_135000000118_p64 ok action=1069 1.925s
+[274/750] tt_sp_135000000118_p86 ok action=956 1.932s
+[275/750] tt_sp_135000000115_p82 ok action=1052 2.69s
+[276/750] tt_sp_135000000118_p62 ok action=1040 2.108s
+[277/750] tt_sp_135000000127_p4 ok action=1145 0.684s
+[278/750] tt_sp_135000000120_p74 ok action=1356 2.163s
+[279/750] tt_sp_135000000124_p35 ok action=1338 1.551s
+[280/750] tt_sp_135000000122_p100 ok action=933 2.316s
+[281/750] tt_sp_135000000126_p30 ok action=1144 1.335s
+[282/750] tt_sp_135000000120_p68 ok action=1444 2.555s
+[283/750] tt_sp_135000000114_p131 ok action=1055 4.022s
+[284/750] tt_sp_135000000128_p22 ok action=1242 1.201s
+[285/750] tt_sp_135000000116_p94 ok action=1646 3.458s
+[286/750] tt_sp_135000000122_p70 ok action=1043 2.679s
+[287/750] tt_sp_135000000125_p70 ok action=1667 2.092s
+[288/750] tt_sp_135000000123_p70 ok action=1164 2.682s
+[289/750] tt_sp_135000000123_p96 ok action=1548 2.687s
+[290/750] tt_sp_135000000132_p18 ok action=1259 1.035s
+[291/750] tt_sp_135000000133_p12 ok action=1355 0.912s
+[292/750] tt_sp_135000000127_p56 ok action=1464 1.768s
+[293/750] tt_sp_135000000128_p48 ok action=1054 1.59s
+[294/750] tt_sp_135000000125_p74 ok action=1661 2.407s
+[295/750] tt_sp_135000000129_p34 ok action=1542 1.497s
+[296/750] tt_sp_135000000126_p60 ok action=1553 2.353s
+[297/750] tt_sp_135000000121_p108 ok action=1636 3.689s
+[298/750] tt_sp_135000000126_p80 ok action=956 2.49s
+[299/750] tt_sp_135000000137_p10 ok action=1152 0.783s
+[300/750] tt_sp_135000000138_p2 ok action=1244 0.63s
+[301/750] tt_sp_135000000115_p120 ok action=1540 4.983s
+[302/750] tt_sp_135000000131_p64 ok action=1456 1.956s
+[303/750] tt_sp_135000000144_p142 ok action=955 0.214s
+[304/750] tt_sp_135000000121_p128 ok action=1847 4.113s
+[305/750] tt_sp_135000000140_p12 ok action=1342 0.811s
+[306/750] tt_sp_135000000134_p44 ok action=1041 1.705s
+[307/750] tt_sp_135000000139_p24 ok action=1056 1.069s
+[308/750] tt_sp_135000000129_p60 ok action=1340 2.507s
+[309/750] tt_sp_135000000128_p128 ok action=865 3.191s
+[310/750] tt_sp_135000000124_p111 ok action=740 4.223s
+[311/750] tt_sp_135000000144_p8 ok action=1344 0.946s
+[312/750] tt_sp_135000000121_p110 ok action=844 4.863s
+[313/750] tt_sp_135000000145_p10 ok action=1346 0.815s
+[314/750] tt_sp_135000000141_p69 ok action=752 1.304s
+[315/750] tt_sp_135000000138_p48 ok action=952 1.84s
+[316/750] tt_sp_135000000133_p68 ok action=853 2.853s
+[317/750] tt_sp_135000000132_p98 ok action=1467 3.339s
+[318/750] tt_sp_135000000134_p88 ok action=1033 2.765s
+[319/750] tt_sp_135000000135_p60 ok action=1548 2.663s
+[320/750] tt_sp_135000000144_p32 ok action=1448 1.697s
+[321/750] tt_sp_135000000135_p66 ok action=861 2.662s
+[322/750] tt_sp_135000000127_p138 ok action=1845 4.467s
+[323/750] tt_sp_135000000124_p135 ok action=1425 5.421s
+[324/750] tt_sp_135000000144_p130 ok action=654 2.271s
+[325/750] tt_sp_135000000135_p96 ok action=1432 3.3s
+[326/750] tt_sp_135000000139_p76 ok action=1560 2.971s
+[327/750] tt_sp_135000000151_p6 ok action=1048 0.714s
+[328/750] tt_sp_135000000146_p42 ok action=1552 1.974s
+[329/750] tt_sp_135000000137_p98 ok action=1641 3.564s
+[330/750] tt_sp_135000000150_p54 ok action=1456 1.288s
+[331/750] tt_sp_135000000134_p136 ok action=669 4.279s
+[332/750] tt_sp_135000000147_p60 ok action=743 2.216s
+[333/750] tt_sp_135000000134_p122 ok action=1860 4.463s
+[334/750] tt_sp_135000000149_p44 ok action=1740 2.034s
+[335/750] tt_sp_135000000150_p42 ok action=1337 1.63s
+[336/750] tt_sp_135000000148_p58 ok action=1467 2.226s
+[337/750] tt_sp_135000000150_p108 ok action=1468 2.173s
+[338/750] tt_sp_135000000158_p142 ok action=628 0.207s
+[339/750] tt_sp_135000000155_p14 ok action=1353 1.007s
+[340/750] tt_sp_135000000154_p32 ok action=1342 1.15s
+[341/750] tt_sp_135000000145_p88 ok action=1545 3.346s
+[342/750] tt_sp_135000000149_p74 ok action=945 2.71s
+[343/750] tt_sp_135000000146_p80 ok action=849 3.387s
+[344/750] tt_sp_135000000151_p136 ok action=1756 2.334s
+[345/750] tt_sp_135000000137_p122 ok action=872 4.908s
+[346/750] tt_sp_135000000143_p108 ok action=1537 4.315s
+[347/750] tt_sp_135000000159_p4 ok action=1344 0.67s
+[348/750] tt_sp_135000000142_p138 ok action=1233 4.48s
+[349/750] tt_sp_135000000147_p124 ok action=1477 3.574s
+[350/750] tt_sp_135000000154_p46 ok action=1460 1.906s
+[351/750] tt_sp_135000000151_p84 ok action=1043 2.671s
+[352/750] tt_sp_135000000135_p138 ok action=1036 5.496s
+[353/750] tt_sp_135000000150_p136 ok action=834 3.253s
+[354/750] tt_sp_135000000156_p70 ok action=849 1.765s
+[355/750] tt_sp_135000000155_p52 ok action=954 2.23s
+[356/750] tt_sp_135000000146_p110 ok action=1636 4.395s
+[357/750] tt_sp_135000000149_p114 ok action=1134 3.796s
+[358/750] tt_sp_135000000157_p44 ok action=1153 1.891s
+[359/750] tt_sp_135000000156_p128 ok action=1024 2.193s
+[360/750] tt_sp_135000000152_p108 ok action=1425 3.172s
+[361/750] tt_sp_135000000145_p124 ok action=1425 4.774s
+[362/750] tt_sp_135000000156_p72 ok action=1134 2.22s
+[363/750] tt_sp_135000000164_p10 ok action=1046 0.797s
+[364/750] tt_sp_135000000161_p68 ok action=1438 1.246s
+[365/750] tt_sp_135000000158_p54 ok action=1043 2.062s
+[366/750] tt_sp_135000000166_p2 ok action=1151 0.559s
+[367/750] tt_sp_135000000157_p102 ok action=1365 2.365s
+[368/750] tt_sp_135000000158_p112 ok action=1327 2.282s
+[369/750] tt_sp_135000000152_p90 ok action=1629 3.376s
+[370/750] tt_sp_135000000159_p110 ok action=1133 2.005s
+[371/750] tt_sp_135000000162_p38 ok action=1036 1.422s
+[372/750] tt_sp_135000000164_p20 ok action=1342 1.214s
+[373/750] tt_sp_135000000167_p4 ok action=1352 0.691s
+[374/750] tt_sp_135000000165_p14 ok action=1450 0.926s
+[375/750] tt_sp_135000000162_p42 ok action=1047 1.603s
+[376/750] tt_sp_135000000169_p4 ok action=1244 0.682s
+[377/750] tt_sp_135000000153_p101 ok action=1468 4.041s
+[378/750] tt_sp_135000000164_p32 ok action=1448 1.599s
+[379/750] tt_sp_135000000172_p10 ok action=1448 0.785s
+[380/750] tt_sp_135000000161_p118 ok action=1749 2.524s
+[381/750] tt_sp_135000000167_p36 ok action=1133 1.532s
+[382/750] tt_sp_135000000171_p20 ok action=1141 1.148s
+[383/750] tt_sp_135000000158_p92 ok action=1430 3.227s
+[384/750] tt_sp_135000000161_p132 ok action=932 2.619s
+[385/750] tt_sp_135000000163_p68 ok action=1461 2.254s
+[386/750] tt_sp_135000000169_p32 ok action=1057 1.52s
+[387/750] tt_sp_135000000168_p86 ok action=1761 1.673s
+[388/750] tt_sp_135000000170_p50 ok action=1137 1.648s
+[389/750] tt_sp_135000000162_p102 ok action=1128 2.903s
+[390/750] tt_sp_135000000166_p42 ok action=1136 2.232s
+[391/750] tt_sp_135000000177_p4 ok action=1154 0.663s
+[392/750] tt_sp_135000000162_p90 ok action=1444 2.996s
+[393/750] tt_sp_135000000169_p40 ok action=956 2.115s
+[394/750] tt_sp_135000000175_p34 ok action=1440 1.508s
+[395/750] tt_sp_135000000177_p26 ok action=1548 1.245s
+[396/750] tt_sp_135000000181_p4 ok action=1144 0.643s
+[397/750] tt_sp_135000000171_p56 ok action=1336 2.307s
+[398/750] tt_sp_135000000160_p86 ok action=1332 4.118s
+[399/750] tt_sp_135000000180_p20 ok action=1448 1.094s
+[400/750] tt_sp_135000000169_p68 ok action=1160 2.52s
+[401/750] tt_sp_135000000170_p64 ok action=1330 2.517s
+[402/750] tt_sp_135000000182_p12 ok action=1051 0.837s
+[403/750] tt_sp_135000000177_p34 ok action=1048 1.426s
+[404/750] tt_sp_135000000180_p26 ok action=1053 1.251s
+[405/750] tt_sp_135000000168_p114 ok action=1743 3.082s
+[406/750] tt_sp_135000000185_p10 ok action=1146 0.796s
+[407/750] tt_sp_135000000174_p116 ok action=974 2.594s
+[408/750] tt_sp_135000000176_p66 ok action=1561 2.031s
+[409/750] tt_sp_135000000186_p4 ok action=1258 0.558s
+[410/750] tt_sp_135000000175_p62 ok action=1060 2.154s
+[411/750] tt_sp_135000000179_p46 ok action=1140 1.746s
+[412/750] tt_sp_135000000181_p30 ok action=1452 1.378s
+[413/750] tt_sp_135000000161_p138 ok action=865 4.578s
+[414/750] tt_sp_135000000174_p62 ok action=1265 2.722s
+[415/750] tt_sp_135000000187_p8 ok action=1149 0.839s
+[416/750] tt_sp_135000000192_p2 ok action=1148 0.609s
+[417/750] tt_sp_135000000183_p130 ok action=1857 1.945s
+[418/750] tt_sp_135000000191_p16 ok action=1454 0.984s
+[419/750] tt_sp_135000000179_p104 ok action=1064 2.784s
+[420/750] tt_sp_135000000185_p40 ok action=957 1.781s
+[421/750] tt_sp_135000000183_p92 ok action=1544 2.076s
+[422/750] tt_sp_135000000194_p8 ok action=1147 0.754s
+[423/750] tt_sp_135000000194_p18 ok action=1262 0.998s
+[424/750] tt_sp_135000000190_p50 ok action=1140 1.601s
+[425/750] tt_sp_135000000195_p4 ok action=1152 0.605s
+[426/750] tt_sp_135000000191_p30 ok action=1552 1.329s
+[427/750] tt_sp_135000000188_p40 ok action=1344 1.769s
+[428/750] tt_sp_135000000173_p120 ok action=926 4.189s
+[429/750] tt_sp_135000000186_p54 ok action=748 2.162s
+[430/750] tt_sp_135000000196_p4 ok action=1240 0.689s
+[431/750] tt_sp_135000000187_p56 ok action=1758 2.31s
+[432/750] tt_sp_135000000172_p128 ok action=1432 4.494s
+[433/750] tt_sp_135000000192_p60 ok action=1652 0.689s
+[434/750] tt_sp_135000000202_p142 ok action=769 -0.938s
+[435/750] tt_sp_135000000175_p98 ok action=1849 2.9s
+[436/750] tt_sp_135000000192_p76 ok action=1058 0.968s
+[437/750] tt_sp_135000000178_p124 ok action=1524 2.834s
+[438/750] tt_sp_135000000194_p56 ok action=1444 0.742s
+[439/750] tt_sp_135000000190_p70 ok action=1132 1.506s
+[440/750] tt_sp_135000000202_p2 ok action=1245 -0.447s
+[441/750] tt_sp_135000000160_p136 ok action=637 6.215s
+[442/750] tt_sp_135000000204_p2 ok action=1150 0.635s
+[443/750] tt_sp_135000000193_p118 ok action=865 1.341s
+[444/750] tt_sp_135000000198_p30 ok action=1157 0.243s
+[445/750] tt_sp_135000000201_p20 ok action=1243 0.101s
+[446/750] tt_sp_135000000201_p34 ok action=1558 0.332s
+[447/750] tt_sp_135000000173_p128 ok action=655 4.455s
+[448/750] tt_sp_135000000196_p76 ok action=943 0.786s
+[449/750] tt_sp_135000000203_p22 ok action=1240 1.136s
+[450/750] tt_sp_135000000206_p8 ok action=1245 0.738s
+[451/750] tt_sp_135000000191_p70 ok action=1128 2.032s
+[452/750] tt_sp_135000000199_p90 ok action=1044 0.878s
+[453/750] tt_sp_135000000205_p28 ok action=1449 1.382s
+[454/750] tt_sp_135000000199_p58 ok action=1545 1.032s
+[455/750] tt_sp_135000000195_p58 ok action=1748 1.321s
+[456/750] tt_sp_135000000197_p56 ok action=860 1.222s
+[457/750] tt_sp_135000000182_p124 ok action=1761 3.42s
+[458/750] tt_sp_135000000208_p16 ok action=1452 1.018s
+[459/750] tt_sp_135000000186_p106 ok action=952 3.024s
+[460/750] tt_sp_135000000197_p58 ok action=1336 1.652s
+[461/750] tt_sp_135000000209_p36 ok action=1544 1.382s
+[462/750] tt_sp_135000000205_p52 ok action=840 2.171s
+[463/750] tt_sp_135000000213_p12 ok action=1549 0.883s
+[464/750] tt_sp_135000000207_p54 ok action=1432 1.883s
+[465/750] tt_sp_135000000163_p138 ok action=1229 7.264s
+[466/750] tt_sp_135000000189_p128 ok action=861 3.65s
+[467/750] tt_sp_135000000207_p48 ok action=844 2.2s
+[468/750] tt_sp_135000000213_p14 ok action=1059 1.02s
+[469/750] tt_sp_135000000190_p90 ok action=854 3.774s
+[470/750] tt_sp_135000000216_p12 ok action=1052 1.142s
+[471/750] tt_sp_135000000207_p82 ok action=1146 2.342s
+[472/750] tt_sp_135000000203_p90 ok action=740 3.115s
+[473/750] tt_sp_135000000206_p62 ok action=933 2.744s
+[474/750] tt_sp_135000000208_p78 ok action=955 2.403s
+[475/750] tt_sp_135000000217_p14 ok action=1053 0.939s
+[476/750] tt_sp_135000000210_p62 ok action=1456 2.164s
+[477/750] tt_sp_135000000211_p70 ok action=959 2.157s
+[478/750] tt_sp_135000000219_p14 ok action=1455 0.918s
+[479/750] tt_sp_135000000220_p14 ok action=954 0.942s
+[480/750] tt_sp_135000000209_p76 ok action=1364 2.896s
+[481/750] tt_sp_135000000212_p58 ok action=1438 2.566s
+[482/750] tt_sp_135000000219_p28 ok action=1337 1.324s
+[483/750] tt_sp_135000000209_p70 ok action=1229 3.026s
+[484/750] tt_sp_135000000221_p16 ok action=1456 1.034s
+[485/750] tt_sp_135000000210_p102 ok action=1237 3.012s
+[486/750] tt_sp_135000000214_p84 ok action=1137 2.39s
+[487/750] tt_sp_135000000212_p60 ok action=1548 2.757s
+[488/750] tt_sp_135000000222_p16 ok action=1146 0.964s
+[489/750] tt_sp_135000000223_p18 ok action=1241 0.981s
+[490/750] tt_sp_135000000214_p68 ok action=1645 2.555s
+[491/750] tt_sp_135000000227_p142 ok action=732 0.184s
+[492/750] tt_sp_135000000200_p118 ok action=1075 3.674s
+[493/750] tt_sp_135000000226_p4 ok action=1148 0.639s
+[494/750] tt_sp_135000000202_p138 ok action=1228 3.5s
+[495/750] tt_sp_135000000226_p6 ok action=1246 0.766s
+[496/750] tt_sp_135000000212_p92 ok action=1230 3.099s
+[497/750] tt_sp_135000000211_p94 ok action=1537 3.525s
+[498/750] tt_sp_135000000219_p60 ok action=1547 2.203s
+[499/750] tt_sp_135000000234_p142 ok action=1031 0.228s
+[500/750] tt_sp_135000000220_p88 ok action=1632 2.233s
+[501/750] tt_sp_135000000231_p4 ok action=1148 0.708s
+[502/750] tt_sp_135000000225_p50 ok action=1556 1.868s
+[503/750] tt_sp_135000000228_p22 ok action=1268 1.221s
+[504/750] tt_sp_135000000216_p88 ok action=1068 3.646s
+[505/750] tt_sp_135000000226_p42 ok action=953 1.614s
+[506/750] tt_sp_135000000217_p88 ok action=1232 3.062s
+[507/750] tt_sp_135000000223_p66 ok action=1561 2.363s
+[508/750] tt_sp_135000000233_p42 ok action=1048 1.409s
+[509/750] tt_sp_135000000236_p12 ok action=1154 0.827s
+[510/750] tt_sp_135000000227_p130 ok action=963 1.939s
+[511/750] tt_sp_135000000219_p90 ok action=844 3.485s
+[512/750] tt_sp_135000000213_p92 ok action=1557 4.446s
+[513/750] tt_sp_135000000231_p70 ok action=1040 1.819s
+[514/750] tt_sp_135000000221_p76 ok action=1640 3.085s
+[515/750] tt_sp_135000000233_p70 ok action=1437 1.797s
+[516/750] tt_sp_135000000237_p16 ok action=1352 0.964s
+[517/750] tt_sp_135000000226_p114 ok action=745 2.99s
+[518/750] tt_sp_135000000222_p108 ok action=1743 3.32s
+[519/750] tt_sp_135000000229_p126 ok action=930 2.419s
+[520/750] tt_sp_135000000240_p6 ok action=1355 0.765s
+[521/750] tt_sp_135000000225_p104 ok action=1758 3.318s
+[522/750] tt_sp_135000000221_p108 ok action=1845 3.788s
+[523/750] tt_sp_135000000231_p72 ok action=966 2.447s
+[524/750] tt_sp_135000000230_p124 ok action=1757 2.591s
+[525/750] tt_sp_135000000229_p136 ok action=1135 2.772s
+[526/750] tt_sp_135000000233_p98 ok action=1659 2.709s
+[527/750] tt_sp_135000000216_p98 ok action=866 4.966s
+[528/750] tt_sp_135000000227_p108 ok action=1860 3.377s
+[529/750] tt_sp_135000000236_p96 ok action=1761 2.234s
+[530/750] tt_sp_135000000250_p10 ok action=1053 0.783s
+[531/750] tt_sp_135000000246_p26 ok action=1457 1.161s
+[532/750] tt_sp_135000000237_p64 ok action=1545 2.313s
+[533/750] tt_sp_135000000249_p19 ok action=1152 1.013s
+[534/750] tt_sp_135000000238_p114 ok action=1061 2.445s
+[535/750] tt_sp_135000000236_p112 ok action=1035 3.024s
+[536/750] tt_sp_135000000234_p108 ok action=1435 3.348s
+[537/750] tt_sp_135000000239_p116 ok action=1069 2.751s
+[538/750] tt_sp_135000000250_p32 ok action=957 1.488s
+[539/750] tt_sp_135000000241_p68 ok action=1128 2.484s
+[540/750] tt_sp_135000000239_p62 ok action=1735 2.75s
+[541/750] tt_sp_135000000251_p30 ok action=1236 1.294s
+[542/750] tt_sp_135000000244_p75 ok action=1643 2.361s
+[543/750] tt_sp_135000000245_p62 ok action=1560 2.114s
+[544/750] tt_sp_135000000255_p22 ok action=1444 1.15s
+[545/750] tt_sp_135000000243_p126 ok action=1760 2.834s
+[546/750] tt_sp_135000000235_p102 ok action=1068 4.294s
+[547/750] tt_sp_135000000240_p84 ok action=952 3.245s
+[548/750] tt_sp_135000000259_p12 ok action=1354 0.898s
+[549/750] tt_sp_135000000244_p119 ok action=1748 2.974s
+[550/750] tt_sp_135000000252_p118 ok action=1653 1.899s
+[551/750] tt_sp_135000000239_p130 ok action=1164 3.8s
+[552/750] tt_sp_135000000235_p140 ok action=852 4.528s
+[553/750] tt_sp_135000000260_p10 ok action=1245 0.83s
+[554/750] tt_sp_135000000242_p139 ok action=830 3.245s
+[555/750] tt_sp_135000000242_p71 ok action=1276 3.295s
+[556/750] tt_sp_135000000247_p104 ok action=1652 2.943s
+[557/750] tt_sp_135000000253_p65 ok action=1567 2.03s
+[558/750] tt_sp_135000000259_p32 ok action=1457 1.255s
+[559/750] tt_sp_135000000251_p58 ok action=948 2.594s
+[560/750] tt_sp_135000000258_p140 ok action=1569 1.759s
+[561/750] tt_sp_135000000249_p135 ok action=1368 3.186s
+[562/750] tt_sp_135000000252_p106 ok action=860 2.665s
+[563/750] tt_sp_135000000263_p10 ok action=1049 0.838s
+[564/750] tt_sp_135000000254_p132 ok action=756 2.237s
+[565/750] tt_sp_135000000245_p124 ok action=925 3.891s
+[566/750] tt_sp_135000000262_p24 ok action=1336 1.152s
+[567/750] tt_sp_135000000269_p2 ok action=1351 0.658s
+[568/750] tt_sp_135000000250_p94 ok action=1168 3.492s
+[569/750] tt_sp_135000000272_p141 ok action=643 0.224s
+[570/750] tt_sp_135000000265_p24 ok action=1052 1.193s
+[571/750] tt_sp_135000000259_p68 ok action=863 2.191s
+[572/750] tt_sp_135000000256_p72 ok action=1444 2.717s
+[573/750] tt_sp_135000000270_p2 ok action=1244 0.623s
+[574/750] tt_sp_135000000263_p36 ok action=1435 1.469s
+[575/750] tt_sp_135000000260_p72 ok action=1229 2.028s
+[576/750] tt_sp_135000000257_p110 ok action=1174 2.771s
+[577/750] tt_sp_135000000264_p58 ok action=1544 1.481s
+[578/750] tt_sp_135000000270_p10 ok action=1447 0.832s
+[579/750] tt_sp_135000000269_p24 ok action=1256 1.269s
+[580/750] tt_sp_135000000271_p22 ok action=1441 1.108s
+[581/750] tt_sp_135000000263_p66 ok action=1635 1.954s
+[582/750] tt_sp_135000000265_p46 ok action=1548 1.82s
+[583/750] tt_sp_135000000267_p85 ok action=1328 1.808s
+[584/750] tt_sp_135000000266_p108 ok action=1645 1.866s
+[585/750] tt_sp_135000000268_p46 ok action=955 1.62s
+[586/750] tt_sp_135000000269_p48 ok action=940 1.557s
+[587/750] tt_sp_135000000276_p12 ok action=1055 0.842s
+[588/750] tt_sp_135000000256_p124 ok action=1765 3.809s
+[589/750] tt_sp_135000000261_p88 ok action=1664 2.624s
+[590/750] tt_sp_135000000279_p12 ok action=1446 0.847s
+[591/750] tt_sp_135000000274_p38 ok action=1040 1.468s
+[592/750] tt_sp_135000000247_p132 ok action=1748 5.54s
+[593/750] tt_sp_135000000269_p58 ok action=957 2.379s
+[594/750] tt_sp_135000000264_p112 ok action=1265 3.12s
+[595/750] tt_sp_135000000281_p20 ok action=1440 1.131s
+[596/750] tt_sp_135000000278_p54 ok action=948 1.753s
+[597/750] tt_sp_135000000283_p28 ok action=948 1.154s
+[598/750] tt_sp_135000000282_p36 ok action=952 1.378s
+[599/750] tt_sp_135000000283_p34 ok action=1058 1.199s
+[600/750] tt_sp_135000000277_p56 ok action=949 2.094s
+[601/750] tt_sp_135000000273_p100 ok action=1140 2.425s
+[602/750] tt_sp_135000000276_p74 ok action=1132 2.223s
+[603/750] tt_sp_135000000259_p134 ok action=1336 4.589s
+[604/750] tt_sp_135000000280_p52 ok action=1657 1.804s
+[605/750] tt_sp_135000000280_p46 ok action=1359 2.046s
+[606/750] tt_sp_135000000287_p6 ok action=1153 0.783s
+[607/750] tt_sp_135000000288_p4 ok action=1153 0.732s
+[608/750] tt_sp_135000000275_p112 ok action=1133 2.818s
+[609/750] tt_sp_135000000284_p130 ok action=1428 1.776s
+[610/750] tt_sp_135000000262_p138 ok action=1472 4.504s
+[611/750] tt_sp_135000000288_p8 ok action=1348 0.807s
+[612/750] tt_sp_135000000268_p138 ok action=1756 4.06s
+[613/750] tt_sp_135000000272_p101 ok action=1329 3.471s
+[614/750] tt_sp_135000000291_p8 ok action=1240 0.812s
+[615/750] tt_sp_135000000260_p128 ok action=1632 5.323s
+[616/750] tt_sp_135000000285_p62 ok action=948 1.916s
+[617/750] tt_sp_135000000283_p84 ok action=937 2.428s
+[618/750] tt_sp_135000000281_p90 ok action=749 2.833s
+[619/750] tt_sp_135000000292_p12 ok action=1345 0.945s
+[620/750] tt_sp_135000000287_p58 ok action=1266 1.767s
+[621/750] tt_sp_135000000274_p98 ok action=1360 3.831s
+[622/750] tt_sp_135000000285_p70 ok action=1736 2.205s
+[623/750] tt_sp_135000000279_p92 ok action=858 3.654s
+[624/750] tt_sp_135000000278_p92 ok action=1370 3.857s
+[625/750] tt_sp_135000000278_p114 ok action=1058 3.968s
+[626/750] tt_sp_135000000286_p78 ok action=1232 2.258s
+[627/750] tt_sp_135000000293_p28 ok action=946 1.324s
+[628/750] tt_sp_135000000285_p104 ok action=1755 3.02s
+[629/750] tt_sp_135000000298_p142 ok action=759 0.299s
+[630/750] tt_sp_135000000294_p21 ok action=1234 1.312s
+[631/750] tt_sp_135000000280_p132 ok action=1657 3.671s
+[632/750] tt_sp_135000000297_p10 ok action=1244 0.795s
+[633/750] tt_sp_135000000298_p2 ok action=1349 0.618s
+[634/750] tt_sp_135000000294_p59 ok action=1557 1.807s
+[635/750] tt_sp_135000000295_p36 ok action=946 1.624s
+[636/750] tt_sp_135000000290_p64 ok action=1333 2.426s
+[637/750] tt_sp_135000000297_p36 ok action=1361 1.255s
+[638/750] tt_sp_135000000295_p56 ok action=1336 1.858s
+[639/750] tt_sp_135000000297_p30 ok action=1149 1.336s
+[640/750] tt_sp_135000000291_p94 ok action=1544 2.6s
+[641/750] tt_sp_135000000304_p2 ok action=1149 0.604s
+[642/750] tt_sp_135000000296_p36 ok action=1449 1.612s
+[643/750] tt_sp_135000000299_p24 ok action=1057 1.045s
+[644/750] tt_sp_135000000304_p18 ok action=1055 0.995s
+[645/750] tt_sp_135000000302_p16 ok action=1450 1.081s
+[646/750] tt_sp_135000000294_p71 ok action=954 2.377s
+[647/750] tt_sp_135000000281_p132 ok action=841 4.726s
+[648/750] tt_sp_135000000289_p112 ok action=1557 3.215s
+[649/750] tt_sp_135000000286_p100 ok action=932 3.723s
+[650/750] tt_sp_135000000300_p34 ok action=1341 1.244s
+[651/750] tt_sp_135000000305_p10 ok action=1452 0.864s
+[652/750] tt_sp_135000000298_p42 ok action=1060 1.619s
+[653/750] tt_sp_135000000301_p26 ok action=1049 1.384s
+[654/750] tt_sp_135000000290_p94 ok action=1652 3.343s
+[655/750] tt_sp_135000000296_p124 ok action=1835 2.423s
+[656/750] tt_sp_135000000306_p12 ok action=1148 0.833s
+[657/750] tt_sp_135000000307_p14 ok action=1444 0.831s
+[658/750] tt_sp_135000000295_p82 ok action=1225 2.707s
+[659/750] tt_sp_135000000307_p8 ok action=1044 0.86s
+[660/750] tt_sp_135000000289_p124 ok action=762 3.845s
+[661/750] tt_sp_135000000303_p78 ok action=925 1.956s
+[662/750] tt_sp_135000000317_p142 ok action=1249 0.296s
+[663/750] tt_sp_135000000309_p16 ok action=1041 1.043s
+[664/750] tt_sp_135000000315_p10 ok action=1449 0.868s
+[665/750] tt_sp_135000000298_p50 ok action=1552 2.587s
+[666/750] tt_sp_135000000311_p32 ok action=1043 1.372s
+[667/750] tt_sp_135000000295_p134 ok action=1058 3.969s
+[668/750] tt_sp_135000000292_p126 ok action=1061 4.326s
+[669/750] tt_sp_135000000313_p42 ok action=840 1.661s
+[670/750] tt_sp_135000000312_p38 ok action=752 1.732s
+[671/750] tt_sp_135000000315_p44 ok action=1340 1.523s
+[672/750] tt_sp_135000000309_p102 ok action=1069 2.195s
+[673/750] tt_sp_135000000305_p88 ok action=742 2.778s
+[674/750] tt_sp_135000000320_p24 ok action=1340 1.38s
+[675/750] tt_sp_135000000308_p80 ok action=832 2.466s
+[676/750] tt_sp_135000000304_p98 ok action=761 3.161s
+[677/750] tt_sp_135000000299_p92 ok action=1273 3.661s
+[678/750] tt_sp_135000000311_p76 ok action=1132 2.486s
+[679/750] tt_sp_135000000305_p104 ok action=936 3.158s
+[680/750] tt_sp_135000000319_p108 ok action=833 1.998s
+[681/750] tt_sp_135000000306_p130 ok action=1329 2.955s
+[682/750] tt_sp_135000000323_p14 ok action=1553 0.963s
+[683/750] tt_sp_135000000319_p60 ok action=1364 2.134s
+[684/750] tt_sp_135000000326_p12 ok action=1256 0.959s
+[685/750] tt_sp_135000000326_p16 ok action=1140 0.908s
+[686/750] tt_sp_135000000314_p79 ok action=1652 2.923s
+[687/750] tt_sp_135000000314_p87 ok action=1165 2.842s
+[688/750] tt_sp_135000000325_p18 ok action=1448 1.256s
+[689/750] tt_sp_135000000324_p34 ok action=856 1.496s
+[690/750] tt_sp_135000000323_p32 ok action=1236 1.598s
+[691/750] tt_sp_135000000332_p4 ok action=1150 0.68s
+[692/750] tt_sp_135000000312_p100 ok action=1660 3.51s
+[693/750] tt_sp_135000000317_p118 ok action=1228 3.202s
+[694/750] tt_sp_135000000314_p91 ok action=1655 3.431s
+[695/750] tt_sp_135000000296_p138 ok action=1639 5.848s
+[696/750] tt_sp_135000000319_p132 ok action=864 3.217s
+[697/750] tt_sp_135000000329_p36 ok action=1340 1.489s
+[698/750] tt_sp_135000000307_p122 ok action=837 4.566s
+[699/750] tt_sp_135000000337_p4 ok action=1348 0.7s
+[700/750] tt_sp_135000000322_p72 ok action=1024 2.917s
+[701/750] tt_sp_135000000327_p117 ok action=1961 2.124s
+[702/750] tt_sp_135000000327_p97 ok action=1864 2.184s
+[703/750] tt_sp_135000000318_p122 ok action=1661 3.996s
+[704/750] tt_sp_135000000338_p11 ok action=1149 0.732s
+[705/750] tt_sp_135000000320_p92 ok action=964 3.884s
+[706/750] tt_sp_135000000336_p22 ok action=1356 1.364s
+[707/750] tt_sp_135000000332_p50 ok action=1457 2.01s
+[708/750] tt_sp_135000000328_p78 ok action=1348 2.594s
+[709/750] tt_sp_135000000333_p48 ok action=1460 1.989s
+[710/750] tt_sp_135000000339_p18 ok action=1050 1.103s
+[711/750] tt_sp_135000000330_p118 ok action=1333 2.625s
+[712/750] tt_sp_135000000330_p72 ok action=1541 2.53s
+[713/750] tt_sp_135000000330_p68 ok action=1335 2.607s
+[714/750] tt_sp_135000000341_p8 ok action=1242 0.8s
+[715/750] tt_sp_135000000342_p10 ok action=1549 0.743s
+[716/750] tt_sp_135000000332_p74 ok action=1432 2.498s
+[717/750] tt_sp_135000000337_p42 ok action=1061 1.828s
+[718/750] tt_sp_135000000336_p108 ok action=845 2.394s
+[719/750] tt_sp_135000000339_p30 ok action=1548 1.352s
+[720/750] tt_sp_135000000335_p86 ok action=1033 2.59s
+[721/750] tt_sp_135000000329_p68 ok action=1568 3.417s
+[722/750] tt_sp_135000000321_p116 ok action=1365 4.975s
+[723/750] tt_sp_135000000342_p20 ok action=1036 1.399s
+[724/750] tt_sp_135000000345_p6 ok action=1354 0.809s
+[725/750] tt_sp_135000000340_p36 ok action=1344 1.88s
+[726/750] tt_sp_135000000338_p77 ok action=848 2.417s
+[727/750] tt_sp_135000000344_p36 ok action=1464 1.366s
+[728/750] tt_sp_135000000335_p98 ok action=1144 3.349s
+[729/750] tt_sp_135000000337_p66 ok action=1542 2.778s
+[730/750] tt_sp_135000000343_p36 ok action=1559 1.686s
+[731/750] tt_sp_135000000327_p135 ok action=1958 4.351s
+[732/750] tt_sp_135000000347_p32 ok action=846 1.243s
+[733/750] tt_sp_135000000345_p36 ok action=956 1.445s
+[734/750] tt_sp_135000000336_p130 ok action=1277 3.427s
+[735/750] tt_sp_135000000345_p102 ok action=1745 1.777s
+[736/750] tt_sp_135000000339_p74 ok action=856 2.657s
+[737/750] tt_sp_135000000337_p104 ok action=1364 3.63s
+[738/750] tt_sp_135000000321_p128 ok action=841 5.713s
+[739/750] tt_sp_135000000348_p46 ok action=941 1.59s
+[740/750] tt_sp_135000000343_p60 ok action=1648 2.135s
+[741/750] tt_sp_135000000344_p76 ok action=1137 2.082s
+[742/750] tt_sp_135000000346_p94 ok action=1261 1.866s
+[743/750] tt_sp_135000000321_p120 ok action=1170 6.201s
+[744/750] tt_sp_135000000348_p48 ok action=1060 1.782s
+[745/750] tt_sp_135000000346_p72 ok action=856 2.106s
+[746/750] tt_sp_135000000342_p80 ok action=937 2.845s
+[747/750] tt_sp_135000000341_p120 ok action=1754 3.489s
+[748/750] tt_sp_135000000348_p74 ok action=944 2.287s
+[749/750] tt_sp_135000000349_p107 ok action=1751 2.235s
+[750/750] tt_sp_135000000349_p75 ok action=1264 2.225s
+[champ_picks] 750 ok, 0 errors, 750 rows total -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_picks_s1/champ_picks.jsonl
+[widening][2026-08-18 02:22:41] PHASE 4 CHAMP PICKS s2: W=30 (eval row) -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_picks_s2
+[champ_picks] 804 selfplay tied positions under profile 'walled' (0 skipped -- other profiles)
+[champ_picks] resume: 0 already done, 804 to go
+[1/804] tt_sp_135000000371_p2 ok action=1149 0.557s
+[2/804] tt_sp_135000000371_p15 ok action=1141 0.981s
+[3/804] tt_sp_135000000362_p26 ok action=1256 1.188s
+[4/804] tt_sp_135000000369_p18 ok action=1246 1.281s
+[5/804] tt_sp_135000000356_p22 ok action=1236 1.384s
+[6/804] tt_sp_135000000363_p34 ok action=1236 1.423s
+[7/804] tt_sp_135000000370_p92 ok action=1170 1.482s
+[8/804] tt_sp_135000000369_p36 ok action=1056 1.503s
+[9/804] tt_sp_135000000367_p94 ok action=751 1.564s
+[10/804] tt_sp_135000000352_p46 ok action=1263 1.801s
+[11/804] tt_sp_135000000370_p46 ok action=1545 1.804s
+[12/804] tt_sp_135000000351_p54 ok action=965 1.974s
+[13/804] tt_sp_135000000359_p44 ok action=1164 2.03s
+[14/804] tt_sp_135000000352_p74 ok action=959 2.114s
+[15/804] tt_sp_135000000357_p60 ok action=1128 2.202s
+[16/804] tt_sp_135000000376_p24 ok action=1450 1.071s
+[17/804] tt_sp_135000000358_p66 ok action=1536 2.347s
+[18/804] tt_sp_135000000352_p130 ok action=1324 2.393s
+[19/804] tt_sp_135000000365_p80 ok action=1860 2.426s
+[20/804] tt_sp_135000000350_p100 ok action=944 2.534s
+[21/804] tt_sp_135000000357_p92 ok action=1542 2.632s
+[22/804] tt_sp_135000000375_p54 ok action=1463 2.051s
+[23/804] tt_sp_135000000364_p83 ok action=1265 2.746s
+[24/804] tt_sp_135000000372_p66 ok action=1336 2.795s
+[25/804] tt_sp_135000000379_p28 ok action=1241 1.423s
+[26/804] tt_sp_135000000360_p106 ok action=964 2.896s
+[27/804] tt_sp_135000000373_p84 ok action=1133 2.936s
+[28/804] tt_sp_135000000381_p22 ok action=1157 1.243s
+[29/804] tt_sp_135000000368_p84 ok action=752 3.234s
+[30/804] tt_sp_135000000354_p76 ok action=847 3.26s
+[31/804] tt_sp_135000000353_p96 ok action=844 3.297s
+[32/804] tt_sp_135000000356_p88 ok action=1053 3.315s
+[33/804] tt_sp_135000000387_p10 ok action=1144 1.055s
+[34/804] tt_sp_135000000394_p12 ok action=1055 0.801s
+[35/804] tt_sp_135000000395_p4 ok action=1350 0.749s
+[36/804] tt_sp_135000000384_p34 ok action=1054 0.414s
+[37/804] tt_sp_135000000388_p28 ok action=1551 0.278s
+[38/804] tt_sp_135000000397_p10 ok action=1353 -0.248s
+[39/804] tt_sp_135000000379_p78 ok action=1667 1.18s
+[40/804] tt_sp_135000000378_p60 ok action=1052 1.352s
+[41/804] tt_sp_135000000395_p24 ok action=1456 0.071s
+[42/804] tt_sp_135000000360_p128 ok action=1748 2.964s
+[43/804] tt_sp_135000000381_p50 ok action=1560 1.151s
+[44/804] tt_sp_135000000376_p100 ok action=1435 2.115s
+[45/804] tt_sp_135000000400_p16 ok action=845 -0.157s
+[46/804] tt_sp_135000000365_p126 ok action=1537 3.195s
+[47/804] tt_sp_135000000401_p6 ok action=1253 -0.274s
+[48/804] tt_sp_135000000404_p140 ok action=1265 0.458s
+[49/804] tt_sp_135000000382_p58 ok action=1061 1.324s
+[50/804] tt_sp_135000000403_p4 ok action=1352 0.709s
+[51/804] tt_sp_135000000401_p32 ok action=1269 0.103s
+[52/804] tt_sp_135000000383_p124 ok action=942 1.547s
+[53/804] tt_sp_135000000402_p16 ok action=1152 1.098s
+[54/804] tt_sp_135000000407_p8 ok action=1256 0.714s
+[55/804] tt_sp_135000000377_p136 ok action=1048 2.717s
+[56/804] tt_sp_135000000398_p86 ok action=845 1.143s
+[57/804] tt_sp_135000000389_p94 ok action=1540 1.756s
+[58/804] tt_sp_135000000399_p40 ok action=1037 1.002s
+[59/804] tt_sp_135000000406_p42 ok action=1440 1.395s
+[60/804] tt_sp_135000000398_p74 ok action=848 1.484s
+[61/804] tt_sp_135000000390_p124 ok action=1761 1.975s
+[62/804] tt_sp_135000000380_p104 ok action=1268 2.966s
+[63/804] tt_sp_135000000380_p102 ok action=747 3.054s
+[64/804] tt_sp_135000000383_p134 ok action=1844 2.471s
+[65/804] tt_sp_135000000402_p98 ok action=1473 1.921s
+[66/804] tt_sp_135000000393_p88 ok action=750 2.102s
+[67/804] tt_sp_135000000393_p118 ok action=1752 2.394s
+[68/804] tt_sp_135000000399_p84 ok action=848 1.775s
+[69/804] tt_sp_135000000419_p18 ok action=1449 1.124s
+[70/804] tt_sp_135000000399_p126 ok action=1668 1.976s
+[71/804] tt_sp_135000000422_p10 ok action=1240 0.834s
+[72/804] tt_sp_135000000407_p56 ok action=1034 2.161s
+[73/804] tt_sp_135000000411_p44 ok action=1345 2.128s
+[74/804] tt_sp_135000000424_p8 ok action=1345 0.785s
+[75/804] tt_sp_135000000419_p38 ok action=944 1.528s
+[76/804] tt_sp_135000000413_p60 ok action=1361 2.611s
+[77/804] tt_sp_135000000427_p14 ok action=1340 0.838s
+[78/804] tt_sp_135000000428_p10 ok action=1054 0.784s
+[79/804] tt_sp_135000000428_p2 ok action=1149 0.599s
+[80/804] tt_sp_135000000408_p56 ok action=1640 2.87s
+[81/804] tt_sp_135000000426_p16 ok action=1052 0.965s
+[82/804] tt_sp_135000000416_p70 ok action=1169 2.489s
+[83/804] tt_sp_135000000417_p64 ok action=1361 2.544s
+[84/804] tt_sp_135000000404_p136 ok action=1033 3.528s
+[85/804] tt_sp_135000000403_p82 ok action=1166 3.628s
+[86/804] tt_sp_135000000424_p86 ok action=1132 1.607s
+[87/804] tt_sp_135000000433_p142 ok action=837 0.286s
+[88/804] tt_sp_135000000425_p44 ok action=952 1.398s
+[89/804] tt_sp_135000000429_p14 ok action=1147 0.876s
+[90/804] tt_sp_135000000401_p122 ok action=862 3.364s
+[91/804] tt_sp_135000000405_p136 ok action=940 3.86s
+[92/804] tt_sp_135000000415_p88 ok action=1337 3.406s
+[93/804] tt_sp_135000000429_p8 ok action=1351 0.833s
+[94/804] tt_sp_135000000416_p96 ok action=850 3.279s
+[95/804] tt_sp_135000000422_p122 ok action=1648 2.528s
+[96/804] tt_sp_135000000423_p72 ok action=1461 2.52s
+[97/804] tt_sp_135000000436_p6 ok action=1449 0.674s
+[98/804] tt_sp_135000000439_p142 ok action=1657 0.199s
+[99/804] tt_sp_135000000437_p4 ok action=1349 0.692s
+[100/804] tt_sp_135000000436_p12 ok action=1047 0.865s
+[101/804] tt_sp_135000000434_p30 ok action=1040 1.398s
+[102/804] tt_sp_135000000439_p14 ok action=1145 0.837s
+[103/804] tt_sp_135000000423_p88 ok action=948 3.165s
+[104/804] tt_sp_135000000440_p12 ok action=1148 0.836s
+[105/804] tt_sp_135000000422_p108 ok action=1369 3.526s
+[106/804] tt_sp_135000000420_p97 ok action=1129 3.834s
+[107/804] tt_sp_135000000437_p26 ok action=1342 1.444s
+[108/804] tt_sp_135000000444_p142 ok action=1164 0.209s
+[109/804] tt_sp_135000000425_p130 ok action=1232 3.116s
+[110/804] tt_sp_135000000421_p118 ok action=1365 3.984s
+[111/804] tt_sp_135000000435_p116 ok action=546 1.865s
+[112/804] tt_sp_135000000416_p120 ok action=1369 4.852s
+[113/804] tt_sp_135000000441_p20 ok action=1054 1.172s
+[114/804] tt_sp_135000000442_p22 ok action=1240 1.11s
+[115/804] tt_sp_135000000430_p60 ok action=1340 2.447s
+[116/804] tt_sp_135000000432_p64 ok action=1139 2.616s
+[117/804] tt_sp_135000000431_p90 ok action=936 2.636s
+[118/804] tt_sp_135000000437_p42 ok action=1040 1.954s
+[119/804] tt_sp_135000000434_p72 ok action=1274 2.63s
+[120/804] tt_sp_135000000435_p114 ok action=1653 2.646s
+[121/804] tt_sp_135000000428_p120 ok action=1628 3.732s
+[122/804] tt_sp_135000000438_p58 ok action=943 2.306s
+[123/804] tt_sp_135000000415_p138 ok action=1365 5.82s
+[124/804] tt_sp_135000000423_p122 ok action=1648 4.786s
+[125/804] tt_sp_135000000446_p32 ok action=848 1.239s
+[126/804] tt_sp_135000000424_p132 ok action=1744 4.735s
+[127/804] tt_sp_135000000432_p86 ok action=1233 3.263s
+[128/804] tt_sp_135000000454_p4 ok action=1247 0.689s
+[129/804] tt_sp_135000000443_p56 ok action=1265 2.141s
+[130/804] tt_sp_135000000448_p40 ok action=1243 1.715s
+[131/804] tt_sp_135000000454_p26 ok action=1047 1.308s
+[132/804] tt_sp_135000000444_p54 ok action=1160 1.975s
+[133/804] tt_sp_135000000441_p60 ok action=744 2.862s
+[134/804] tt_sp_135000000443_p58 ok action=1440 2.543s
+[135/804] tt_sp_135000000457_p24 ok action=1052 1.292s
+[136/804] tt_sp_135000000456_p32 ok action=1443 1.429s
+[137/804] tt_sp_135000000452_p58 ok action=959 2.093s
+[138/804] tt_sp_135000000459_p24 ok action=1157 1.008s
+[139/804] tt_sp_135000000451_p84 ok action=1168 2.172s
+[140/804] tt_sp_135000000440_p80 ok action=1065 3.354s
+[141/804] tt_sp_135000000456_p36 ok action=1232 1.507s
+[142/804] tt_sp_135000000438_p104 ok action=1366 3.787s
+[143/804] tt_sp_135000000443_p92 ok action=1469 2.88s
+[144/804] tt_sp_135000000444_p86 ok action=1436 2.727s
+[145/804] tt_sp_135000000457_p36 ok action=1337 1.643s
+[146/804] tt_sp_135000000429_p138 ok action=1432 5.497s
+[147/804] tt_sp_135000000453_p110 ok action=753 2.607s
+[148/804] tt_sp_135000000452_p62 ok action=1136 2.714s
+[149/804] tt_sp_135000000455_p78 ok action=1552 2.474s
+[150/804] tt_sp_135000000462_p22 ok action=1336 1.155s
+[151/804] tt_sp_135000000464_p8 ok action=1257 0.841s
+[152/804] tt_sp_135000000450_p94 ok action=1132 3.272s
+[153/804] tt_sp_135000000461_p57 ok action=1338 1.652s
+[154/804] tt_sp_135000000458_p90 ok action=1044 2.312s
+[155/804] tt_sp_135000000460_p80 ok action=1564 1.911s
+[156/804] tt_sp_135000000468_p2 ok action=1245 0.67s
+[157/804] tt_sp_135000000461_p49 ok action=957 1.853s
+[158/804] tt_sp_135000000460_p58 ok action=1564 2.391s
+[159/804] tt_sp_135000000470_p2 ok action=1245 0.62s
+[160/804] tt_sp_135000000451_p116 ok action=1030 3.908s
+[161/804] tt_sp_135000000455_p88 ok action=1642 3.443s
+[162/804] tt_sp_135000000458_p132 ok action=1340 2.957s
+[163/804] tt_sp_135000000458_p124 ok action=924 3.101s
+[164/804] tt_sp_135000000476_p140 ok action=760 0.387s
+[165/804] tt_sp_135000000466_p106 ok action=1652 1.704s
+[166/804] tt_sp_135000000462_p64 ok action=1040 1.942s
+[167/804] tt_sp_135000000460_p76 ok action=1532 2.884s
+[168/804] tt_sp_135000000475_p7 ok action=1353 0.715s
+[169/804] tt_sp_135000000449_p128 ok action=1429 4.454s
+[170/804] tt_sp_135000000482_p142 ok action=1268 0.223s
+[171/804] tt_sp_135000000472_p18 ok action=1236 1.186s
+[172/804] tt_sp_135000000466_p118 ok action=1069 2.051s
+[173/804] tt_sp_135000000466_p112 ok action=1470 2.135s
+[174/804] tt_sp_135000000463_p112 ok action=1136 2.362s
+[175/804] tt_sp_135000000477_p16 ok action=1144 1.026s
+[176/804] tt_sp_135000000474_p24 ok action=1041 1.275s
+[177/804] tt_sp_135000000486_p142 ok action=1665 0.226s
+[178/804] tt_sp_135000000462_p102 ok action=960 3.045s
+[179/804] tt_sp_135000000475_p27 ok action=1254 1.449s
+[180/804] tt_sp_135000000483_p6 ok action=1149 0.695s
+[181/804] tt_sp_135000000469_p80 ok action=842 2.188s
+[182/804] tt_sp_135000000463_p76 ok action=1546 2.994s
+[183/804] tt_sp_135000000487_p8 ok action=1257 0.692s
+[184/804] tt_sp_135000000477_p80 ok action=1654 1.506s
+[185/804] tt_sp_135000000465_p126 ok action=732 3.173s
+[186/804] tt_sp_135000000472_p130 ok action=1637 2.358s
+[187/804] tt_sp_135000000482_p32 ok action=1160 1.538s
+[188/804] tt_sp_135000000479_p31 ok action=1551 1.634s
+[189/804] tt_sp_135000000485_p24 ok action=1342 1.256s
+[190/804] tt_sp_135000000495_p142 ok action=847 0.259s
+[191/804] tt_sp_135000000465_p136 ok action=1439 3.706s
+[192/804] tt_sp_135000000459_p120 ok action=864 4.886s
+[193/804] tt_sp_135000000467_p98 ok action=1748 3.574s
+[194/804] tt_sp_135000000470_p78 ok action=1334 3.053s
+[195/804] tt_sp_135000000482_p70 ok action=1364 2.304s
+[196/804] tt_sp_135000000483_p68 ok action=750 2.226s
+[197/804] tt_sp_135000000489_p48 ok action=936 1.651s
+[198/804] tt_sp_135000000469_p120 ok action=1267 3.735s
+[199/804] tt_sp_135000000481_p82 ok action=936 2.585s
+[200/804] tt_sp_135000000484_p70 ok action=1240 2.238s
+[201/804] tt_sp_135000000483_p84 ok action=761 2.624s
+[202/804] tt_sp_135000000478_p78 ok action=1459 3.05s
+[203/804] tt_sp_135000000480_p138 ok action=866 3.055s
+[204/804] tt_sp_135000000493_p40 ok action=1355 1.623s
+[205/804] tt_sp_135000000497_p16 ok action=1340 0.983s
+[206/804] tt_sp_135000000476_p124 ok action=1541 3.732s
+[207/804] tt_sp_135000000467_p120 ok action=665 4.739s
+[208/804] tt_sp_135000000474_p114 ok action=1068 3.933s
+[209/804] tt_sp_135000000496_p24 ok action=1057 1.289s
+[210/804] tt_sp_135000000498_p6 ok action=1258 0.803s
+[211/804] tt_sp_135000000497_p22 ok action=1440 1.254s
+[212/804] tt_sp_135000000485_p62 ok action=748 2.96s
+[213/804] tt_sp_135000000500_p8 ok action=1357 0.818s
+[214/804] tt_sp_135000000490_p60 ok action=1147 2.593s
+[215/804] tt_sp_135000000491_p64 ok action=1356 2.22s
+[216/804] tt_sp_135000000496_p34 ok action=1453 1.675s
+[217/804] tt_sp_135000000490_p64 ok action=960 2.622s
+[218/804] tt_sp_135000000495_p50 ok action=1136 2.107s
+[219/804] tt_sp_135000000501_p8 ok action=1255 0.868s
+[220/804] tt_sp_135000000504_p4 ok action=1149 0.655s
+[221/804] tt_sp_135000000499_p30 ok action=1448 1.287s
+[222/804] tt_sp_135000000495_p56 ok action=1260 2.297s
+[223/804] tt_sp_135000000506_p2 ok action=1245 0.591s
+[224/804] tt_sp_135000000488_p78 ok action=1132 3.267s
+[225/804] tt_sp_135000000491_p132 ok action=1739 2.923s
+[226/804] tt_sp_135000000509_p2 ok action=1148 0.632s
+[227/804] tt_sp_135000000508_p10 ok action=1245 0.858s
+[228/804] tt_sp_135000000497_p71 ok action=1161 1.936s
+[229/804] tt_sp_135000000500_p48 ok action=1052 1.954s
+[230/804] tt_sp_135000000512_p2 ok action=1148 0.643s
+[231/804] tt_sp_135000000512_p10 ok action=1255 0.756s
+[232/804] tt_sp_135000000492_p96 ok action=1139 3.264s
+[233/804] tt_sp_135000000506_p24 ok action=1545 1.241s
+[234/804] tt_sp_135000000505_p36 ok action=1260 1.556s
+[235/804] tt_sp_135000000511_p24 ok action=1261 1.113s
+[236/804] tt_sp_135000000507_p26 ok action=1137 1.401s
+[237/804] tt_sp_135000000501_p54 ok action=1454 2.029s
+[238/804] tt_sp_135000000488_p132 ok action=1540 4.363s
+[239/804] tt_sp_135000000505_p40 ok action=1456 1.664s
+[240/804] tt_sp_135000000492_p132 ok action=1338 3.776s
+[241/804] tt_sp_135000000501_p90 ok action=1553 2.354s
+[242/804] tt_sp_135000000510_p77 ok action=1548 1.858s
+[243/804] tt_sp_135000000503_p70 ok action=1048 2.437s
+[244/804] tt_sp_135000000520_p15 ok action=1045 0.991s
+[245/804] tt_sp_135000000522_p10 ok action=1256 0.912s
+[246/804] tt_sp_135000000516_p50 ok action=1550 1.768s
+[247/804] tt_sp_135000000511_p50 ok action=1540 2.152s
+[248/804] tt_sp_135000000522_p20 ok action=1347 1.337s
+[249/804] tt_sp_135000000513_p101 ok action=836 2.576s
+[250/804] tt_sp_135000000513_p75 ok action=853 2.565s
+[251/804] tt_sp_135000000518_p136 ok action=1657 2.228s
+[252/804] tt_sp_135000000517_p88 ok action=853 2.556s
+[253/804] tt_sp_135000000529_p2 ok action=1247 0.658s
+[254/804] tt_sp_135000000504_p106 ok action=765 3.845s
+[255/804] tt_sp_135000000525_p66 ok action=1457 1.932s
+[256/804] tt_sp_135000000518_p74 ok action=1264 2.624s
+[257/804] tt_sp_135000000498_p100 ok action=1664 4.601s
+[258/804] tt_sp_135000000515_p92 ok action=1048 3.077s
+[259/804] tt_sp_135000000521_p62 ok action=956 2.393s
+[260/804] tt_sp_135000000521_p64 ok action=1240 2.327s
+[261/804] tt_sp_135000000496_p132 ok action=936 5.381s
+[262/804] tt_sp_135000000526_p92 ok action=1642 2.034s
+[263/804] tt_sp_135000000538_p142 ok action=850 0.204s
+[264/804] tt_sp_135000000528_p50 ok action=1557 1.772s
+[265/804] tt_sp_135000000535_p2 ok action=1247 0.572s
+[266/804] tt_sp_135000000522_p68 ok action=833 2.8s
+[267/804] tt_sp_135000000527_p66 ok action=1160 2.209s
+[268/804] tt_sp_135000000527_p74 ok action=1544 2.218s
+[269/804] tt_sp_135000000528_p64 ok action=1563 1.91s
+[270/804] tt_sp_135000000526_p46 ok action=842 2.679s
+[271/804] tt_sp_135000000521_p126 ok action=1842 3.239s
+[272/804] tt_sp_135000000532_p24 ok action=1442 1.295s
+[273/804] tt_sp_135000000505_p118 ok action=1541 4.76s
+[274/804] tt_sp_135000000534_p24 ok action=1546 1.093s
+[275/804] tt_sp_135000000534_p32 ok action=1457 1.174s
+[276/804] tt_sp_135000000531_p64 ok action=1660 1.863s
+[277/804] tt_sp_135000000539_p12 ok action=1347 0.873s
+[278/804] tt_sp_135000000541_p2 ok action=1254 0.707s
+[279/804] tt_sp_135000000519_p104 ok action=863 4.262s
+[280/804] tt_sp_135000000516_p134 ok action=963 4.84s
+[281/804] tt_sp_135000000541_p14 ok action=1245 1.028s
+[282/804] tt_sp_135000000544_p12 ok action=1340 0.811s
+[283/804] tt_sp_135000000524_p122 ok action=1652 4.083s
+[284/804] tt_sp_135000000541_p140 ok action=1265 1.212s
+[285/804] tt_sp_135000000538_p70 ok action=948 1.634s
+[286/804] tt_sp_135000000502_p116 ok action=1549 6.253s
+[287/804] tt_sp_135000000544_p18 ok action=1163 1.042s
+[288/804] tt_sp_135000000532_p92 ok action=1070 2.833s
+[289/804] tt_sp_135000000533_p60 ok action=1265 2.562s
+[290/804] tt_sp_135000000533_p140 ok action=1332 2.733s
+[291/804] tt_sp_135000000546_p10 ok action=1449 0.931s
+[292/804] tt_sp_135000000539_p84 ok action=940 2.05s
+[293/804] tt_sp_135000000547_p12 ok action=1244 0.955s
+[294/804] tt_sp_135000000537_p123 ok action=2051 2.75s
+[295/804] tt_sp_135000000520_p119 ok action=1652 5.394s
+[296/804] tt_sp_135000000540_p48 ok action=1336 2.103s
+[297/804] tt_sp_135000000550_p2 ok action=1244 0.637s
+[298/804] tt_sp_135000000547_p18 ok action=1345 1.003s
+[299/804] tt_sp_135000000539_p128 ok action=964 2.586s
+[300/804] tt_sp_135000000529_p118 ok action=654 4.457s
+[301/804] tt_sp_135000000542_p74 ok action=1661 2.584s
+[302/804] tt_sp_135000000552_p10 ok action=1053 0.88s
+[303/804] tt_sp_135000000545_p54 ok action=1553 2.04s
+[304/804] tt_sp_135000000548_p30 ok action=1448 1.442s
+[305/804] tt_sp_135000000553_p8 ok action=1351 0.762s
+[306/804] tt_sp_135000000540_p116 ok action=861 2.88s
+[307/804] tt_sp_135000000556_p4 ok action=1252 0.744s
+[308/804] tt_sp_135000000557_p4 ok action=1353 0.606s
+[309/804] tt_sp_135000000555_p18 ok action=1453 1.074s
+[310/804] tt_sp_135000000546_p90 ok action=760 2.164s
+[311/804] tt_sp_135000000557_p18 ok action=1445 1.021s
+[312/804] tt_sp_135000000559_p2 ok action=1252 0.676s
+[313/804] tt_sp_135000000555_p26 ok action=1548 1.286s
+[314/804] tt_sp_135000000548_p120 ok action=1175 2.227s
+[315/804] tt_sp_135000000553_p32 ok action=1556 1.583s
+[316/804] tt_sp_135000000550_p130 ok action=1229 2.169s
+[317/804] tt_sp_135000000528_p136 ok action=1550 5.845s
+[318/804] tt_sp_135000000540_p132 ok action=1371 3.679s
+[319/804] tt_sp_135000000537_p129 ok action=1840 4.323s
+[320/804] tt_sp_135000000542_p94 ok action=1164 3.624s
+[321/804] tt_sp_135000000550_p52 ok action=1360 2.167s
+[322/804] tt_sp_135000000547_p126 ok action=1646 2.893s
+[323/804] tt_sp_135000000545_p106 ok action=861 3.439s
+[324/804] tt_sp_135000000559_p32 ok action=1450 1.515s
+[325/804] tt_sp_135000000536_p102 ok action=1328 5.071s
+[326/804] tt_sp_135000000555_p56 ok action=1753 2.248s
+[327/804] tt_sp_135000000569_p4 ok action=1346 0.718s
+[328/804] tt_sp_135000000551_p78 ok action=1033 2.868s
+[329/804] tt_sp_135000000549_p108 ok action=1265 3.297s
+[330/804] tt_sp_135000000566_p24 ok action=1452 1.459s
+[331/804] tt_sp_135000000561_p78 ok action=1164 2.071s
+[332/804] tt_sp_135000000564_p66 ok action=1260 1.815s
+[333/804] tt_sp_135000000571_p25 ok action=1446 1.139s
+[334/804] tt_sp_135000000559_p114 ok action=1172 2.433s
+[335/804] tt_sp_135000000553_p104 ok action=1368 3.429s
+[336/804] tt_sp_135000000576_p142 ok action=732 0.229s
+[337/804] tt_sp_135000000536_p130 ok action=848 6.297s
+[338/804] tt_sp_135000000567_p54 ok action=953 2.035s
+[339/804] tt_sp_135000000558_p126 ok action=1435 3.033s
+[340/804] tt_sp_135000000564_p132 ok action=1069 2.454s
+[341/804] tt_sp_135000000571_p45 ok action=1643 1.743s
+[342/804] tt_sp_135000000565_p120 ok action=1369 2.593s
+[343/804] tt_sp_135000000567_p76 ok action=839 2.492s
+[344/804] tt_sp_135000000570_p60 ok action=1457 2.344s
+[345/804] tt_sp_135000000562_p92 ok action=1441 3.276s
+[346/804] tt_sp_135000000568_p62 ok action=1032 2.65s
+[347/804] tt_sp_135000000572_p68 ok action=1742 2.105s
+[348/804] tt_sp_135000000567_p90 ok action=1343 2.851s
+[349/804] tt_sp_135000000561_p114 ok action=752 3.679s
+[350/804] tt_sp_135000000566_p88 ok action=1273 3.161s
+[351/804] tt_sp_135000000572_p84 ok action=760 2.292s
+[352/804] tt_sp_135000000568_p66 ok action=947 2.998s
+[353/804] tt_sp_135000000573_p58 ok action=1556 2.281s
+[354/804] tt_sp_135000000560_p126 ok action=1632 4.488s
+[355/804] tt_sp_135000000572_p116 ok action=1631 3.266s
+[356/804] tt_sp_135000000577_p116 ok action=1124 2.091s
+[357/804] tt_sp_135000000579_p60 ok action=1040 1.736s
+[358/804] tt_sp_135000000584_p16 ok action=1343 0.913s
+[359/804] tt_sp_135000000563_p118 ok action=1140 4.589s
+[360/804] tt_sp_135000000583_p20 ok action=1140 1.193s
+[361/804] tt_sp_135000000578_p57 ok action=1557 2.303s
+[362/804] tt_sp_135000000577_p78 ok action=1049 2.51s
+[363/804] tt_sp_135000000585_p20 ok action=1240 1.201s
+[364/804] tt_sp_135000000575_p116 ok action=1633 3.034s
+[365/804] tt_sp_135000000581_p36 ok action=1260 1.844s
+[366/804] tt_sp_135000000582_p44 ok action=1047 1.673s
+[367/804] tt_sp_135000000579_p100 ok action=1641 2.335s
+[368/804] tt_sp_135000000586_p4 ok action=1152 0.758s
+[369/804] tt_sp_135000000580_p50 ok action=1052 1.981s
+[370/804] tt_sp_135000000584_p30 ok action=1261 1.48s
+[371/804] tt_sp_135000000574_p70 ok action=1357 3.521s
+[372/804] tt_sp_135000000580_p116 ok action=1648 2.238s
+[373/804] tt_sp_135000000583_p36 ok action=1259 1.63s
+[374/804] tt_sp_135000000582_p36 ok action=1340 1.923s
+[375/804] tt_sp_135000000585_p34 ok action=1165 1.594s
+[376/804] tt_sp_135000000578_p79 ok action=1164 2.811s
+[377/804] tt_sp_135000000594_p2 ok action=1247 0.594s
+[378/804] tt_sp_135000000600_p2 ok action=1350 0.594s
+[379/804] tt_sp_135000000587_p24 ok action=1046 1.326s
+[380/804] tt_sp_135000000577_p104 ok action=1226 3.867s
+[381/804] tt_sp_135000000591_p30 ok action=1441 1.16s
+[382/804] tt_sp_135000000576_p124 ok action=749 4.21s
+[383/804] tt_sp_135000000578_p103 ok action=1033 3.705s
+[384/804] tt_sp_135000000590_p18 ok action=1348 1.383s
+[385/804] tt_sp_135000000595_p24 ok action=1156 1.21s
+[386/804] tt_sp_135000000592_p36 ok action=949 1.35s
+[387/804] tt_sp_135000000573_p108 ok action=1520 5.231s
+[388/804] tt_sp_135000000490_p140 ok action=1534 16.93s
+[389/804] tt_sp_135000000601_p12 ok action=1344 1.034s
+[390/804] tt_sp_135000000591_p62 ok action=1557 2.144s
+[391/804] tt_sp_135000000593_p84 ok action=1444 2.213s
+[392/804] tt_sp_135000000590_p106 ok action=1329 2.438s
+[393/804] tt_sp_135000000603_p28 ok action=1140 1.362s
+[394/804] tt_sp_135000000602_p54 ok action=1458 1.599s
+[395/804] tt_sp_135000000586_p130 ok action=964 3.415s
+[396/804] tt_sp_135000000588_p74 ok action=936 3.065s
+[397/804] tt_sp_135000000605_p42 ok action=1165 1.323s
+[398/804] tt_sp_135000000604_p32 ok action=1036 1.352s
+[399/804] tt_sp_135000000600_p48 ok action=940 2.404s
+[400/804] tt_sp_135000000583_p104 ok action=1472 4.462s
+[401/804] tt_sp_135000000603_p58 ok action=1552 1.692s
+[402/804] tt_sp_135000000587_p124 ok action=832 3.621s
+[403/804] tt_sp_135000000590_p78 ok action=1653 3.022s
+[404/804] tt_sp_135000000610_p6 ok action=1352 0.753s
+[405/804] tt_sp_135000000598_p84 ok action=1757 2.96s
+[406/804] tt_sp_135000000589_p122 ok action=941 3.45s
+[407/804] tt_sp_135000000601_p114 ok action=739 2.476s
+[408/804] tt_sp_135000000588_p124 ok action=1371 3.916s
+[409/804] tt_sp_135000000597_p90 ok action=1548 3.407s
+[410/804] tt_sp_135000000607_p140 ok action=1028 1.809s
+[411/804] tt_sp_135000000605_p60 ok action=1740 2.123s
+[412/804] tt_sp_135000000613_p14 ok action=1256 0.96s
+[413/804] tt_sp_135000000609_p36 ok action=953 1.499s
+[414/804] tt_sp_135000000615_p14 ok action=1256 1.045s
+[415/804] tt_sp_135000000614_p17 ok action=1140 1.103s
+[416/804] tt_sp_135000000607_p52 ok action=1157 2.035s
+[417/804] tt_sp_135000000600_p88 ok action=1465 3.536s
+[418/804] tt_sp_135000000604_p100 ok action=949 2.816s
+[419/804] tt_sp_135000000617_p16 ok action=1152 1.11s
+[420/804] tt_sp_135000000589_p86 ok action=752 4.296s
+[421/804] tt_sp_135000000589_p92 ok action=656 4.546s
+[422/804] tt_sp_135000000621_p4 ok action=1355 0.752s
+[423/804] tt_sp_135000000614_p39 ok action=1551 1.792s
+[424/804] tt_sp_135000000624_p4 ok action=1148 0.631s
+[425/804] tt_sp_135000000625_p2 ok action=1148 0.6s
+[426/804] tt_sp_135000000602_p104 ok action=1332 4.007s
+[427/804] tt_sp_135000000611_p64 ok action=1353 2.572s
+[428/804] tt_sp_135000000607_p110 ok action=1846 3.363s
+[429/804] tt_sp_135000000616_p64 ok action=1233 1.978s
+[430/804] tt_sp_135000000618_p54 ok action=1241 1.945s
+[431/804] tt_sp_135000000619_p41 ok action=1455 1.901s
+[432/804] tt_sp_135000000628_p8 ok action=1047 0.726s
+[433/804] tt_sp_135000000629_p4 ok action=1152 0.659s
+[434/804] tt_sp_135000000623_p38 ok action=1454 1.555s
+[435/804] tt_sp_135000000619_p51 ok action=1336 2.2s
+[436/804] tt_sp_135000000624_p36 ok action=1559 1.512s
+[437/804] tt_sp_135000000615_p71 ok action=1270 2.73s
+[438/804] tt_sp_135000000618_p68 ok action=1265 2.379s
+[439/804] tt_sp_135000000612_p72 ok action=1152 2.968s
+[440/804] tt_sp_135000000574_p136 ok action=1557 9.11s
+[441/804] tt_sp_135000000627_p22 ok action=1040 1.207s
+[442/804] tt_sp_135000000631_p10 ok action=1353 0.732s
+[443/804] tt_sp_135000000617_p84 ok action=820 2.683s
+[444/804] tt_sp_135000000633_p18 ok action=1161 0.993s
+[445/804] tt_sp_135000000612_p100 ok action=1736 3.428s
+[446/804] tt_sp_135000000622_p52 ok action=1160 2.353s
+[447/804] tt_sp_135000000629_p140 ok action=1122 0.361s
+[448/804] tt_sp_135000000635_p12 ok action=1358 -0.317s
+[449/804] tt_sp_135000000616_p114 ok action=1840 2.378s
+[450/804] tt_sp_135000000620_p97 ok action=1128 1.714s
+[451/804] tt_sp_135000000642_p2 ok action=1246 0.62s
+[452/804] tt_sp_135000000638_p28 ok action=1451 0.234s
+[453/804] tt_sp_135000000627_p110 ok action=1454 1.793s
+[454/804] tt_sp_135000000575_p136 ok action=1636 9.156s
+[455/804] tt_sp_135000000620_p115 ok action=1336 2.613s
+[456/804] tt_sp_135000000638_p30 ok action=1252 0.332s
+[457/804] tt_sp_135000000633_p96 ok action=1136 0.956s
+[458/804] tt_sp_135000000643_p6 ok action=1155 0.777s
+[459/804] tt_sp_135000000643_p10 ok action=1445 0.881s
+[460/804] tt_sp_135000000636_p52 ok action=948 0.624s
+[461/804] tt_sp_135000000628_p125 ok action=1532 1.85s
+[462/804] tt_sp_135000000633_p48 ok action=1332 1.239s
+[463/804] tt_sp_135000000637_p46 ok action=957 0.71s
+[464/804] tt_sp_135000000644_p2 ok action=1247 0.653s
+[465/804] tt_sp_135000000635_p84 ok action=1052 1.035s
+[466/804] tt_sp_135000000632_p100 ok action=1032 1.678s
+[467/804] tt_sp_135000000626_p126 ok action=1569 2.521s
+[468/804] tt_sp_135000000635_p56 ok action=1541 1.284s
+[469/804] tt_sp_135000000636_p58 ok action=1457 1.186s
+[470/804] tt_sp_135000000645_p8 ok action=1244 0.71s
+[471/804] tt_sp_135000000650_p6 ok action=1253 0.773s
+[472/804] tt_sp_135000000648_p12 ok action=1160 0.921s
+[473/804] tt_sp_135000000649_p12 ok action=1044 0.907s
+[474/804] tt_sp_135000000645_p28 ok action=1237 1.326s
+[475/804] tt_sp_135000000660_p142 ok action=1748 0.199s
+[476/804] tt_sp_135000000621_p130 ok action=1746 3.948s
+[477/804] tt_sp_135000000656_p10 ok action=1242 0.794s
+[478/804] tt_sp_135000000641_p98 ok action=1269 2.542s
+[479/804] tt_sp_135000000644_p34 ok action=1041 1.612s
+[480/804] tt_sp_135000000620_p125 ok action=1268 4.081s
+[481/804] tt_sp_135000000652_p26 ok action=1452 1.351s
+[482/804] tt_sp_135000000639_p72 ok action=1538 2.219s
+[483/804] tt_sp_135000000637_p88 ok action=845 2.335s
+[484/804] tt_sp_135000000651_p52 ok action=1243 1.628s
+[485/804] tt_sp_135000000637_p100 ok action=1440 2.408s
+[486/804] tt_sp_135000000655_p34 ok action=1453 1.397s
+[487/804] tt_sp_135000000646_p58 ok action=948 2.105s
+[488/804] tt_sp_135000000630_p104 ok action=1739 3.371s
+[489/804] tt_sp_135000000639_p76 ok action=1636 2.235s
+[490/804] tt_sp_135000000668_p142 ok action=1068 0.251s
+[491/804] tt_sp_135000000623_p132 ok action=944 4.469s
+[492/804] tt_sp_135000000642_p70 ok action=1169 3.233s
+[493/804] tt_sp_135000000636_p126 ok action=1430 2.922s
+[494/804] tt_sp_135000000646_p60 ok action=1364 2.349s
+[495/804] tt_sp_135000000655_p46 ok action=1237 1.786s
+[496/804] tt_sp_135000000659_p70 ok action=954 1.544s
+[497/804] tt_sp_135000000640_p92 ok action=849 2.542s
+[498/804] tt_sp_135000000661_p26 ok action=945 1.225s
+[499/804] tt_sp_135000000664_p18 ok action=1036 1.079s
+[500/804] tt_sp_135000000651_p96 ok action=1034 2.433s
+[501/804] tt_sp_135000000664_p24 ok action=1457 1.448s
+[502/804] tt_sp_135000000649_p84 ok action=1646 3.058s
+[503/804] tt_sp_135000000674_p12 ok action=1049 0.943s
+[504/804] tt_sp_135000000669_p33 ok action=1361 1.296s
+[505/804] tt_sp_135000000652_p71 ok action=1538 3.061s
+[506/804] tt_sp_135000000677_p6 ok action=1256 0.802s
+[507/804] tt_sp_135000000672_p16 ok action=1054 1.224s
+[508/804] tt_sp_135000000660_p58 ok action=1260 2.19s
+[509/804] tt_sp_135000000670_p38 ok action=1048 1.359s
+[510/804] tt_sp_135000000671_p26 ok action=1337 1.399s
+[511/804] tt_sp_135000000657_p98 ok action=1032 2.993s
+[512/804] tt_sp_135000000656_p80 ok action=840 3.064s
+[513/804] tt_sp_135000000659_p84 ok action=1039 2.822s
+[514/804] tt_sp_135000000678_p3 ok action=1245 0.653s
+[515/804] tt_sp_135000000653_p86 ok action=1225 3.456s
+[516/804] tt_sp_135000000663_p68 ok action=1332 2.5s
+[517/804] tt_sp_135000000677_p28 ok action=1136 1.455s
+[518/804] tt_sp_135000000666_p138 ok action=1165 2.175s
+[519/804] tt_sp_135000000666_p134 ok action=762 2.411s
+[520/804] tt_sp_135000000679_p10 ok action=1052 0.787s
+[521/804] tt_sp_135000000673_p52 ok action=1349 1.935s
+[522/804] tt_sp_135000000675_p44 ok action=956 1.737s
+[523/804] tt_sp_135000000674_p58 ok action=1057 1.852s
+[524/804] tt_sp_135000000668_p120 ok action=1053 2.48s
+[525/804] tt_sp_135000000692_p142 ok action=1320 0.228s
+[526/804] tt_sp_135000000679_p36 ok action=1051 1.151s
+[527/804] tt_sp_135000000676_p88 ok action=1268 2.011s
+[528/804] tt_sp_135000000673_p60 ok action=1156 2.286s
+[529/804] tt_sp_135000000661_p82 ok action=1220 3.149s
+[530/804] tt_sp_135000000683_p8 ok action=1344 0.848s
+[531/804] tt_sp_135000000669_p127 ok action=841 2.792s
+[532/804] tt_sp_135000000683_p22 ok action=1057 1.14s
+[533/804] tt_sp_135000000685_p6 ok action=1049 0.79s
+[534/804] tt_sp_135000000676_p52 ok action=1460 2.419s
+[535/804] tt_sp_135000000693_p2 ok action=1246 0.699s
+[536/804] tt_sp_135000000678_p105 ok action=1465 2.334s
+[537/804] tt_sp_135000000680_p32 ok action=1039 1.62s
+[538/804] tt_sp_135000000681_p36 ok action=948 1.754s
+[539/804] tt_sp_135000000696_p4 ok action=1345 0.708s
+[540/804] tt_sp_135000000680_p56 ok action=846 1.894s
+[541/804] tt_sp_135000000663_p118 ok action=1533 3.917s
+[542/804] tt_sp_135000000697_p8 ok action=1144 0.701s
+[543/804] tt_sp_135000000693_p24 ok action=1153 1.277s
+[544/804] tt_sp_135000000678_p123 ok action=1061 2.699s
+[545/804] tt_sp_135000000696_p30 ok action=1338 1.176s
+[546/804] tt_sp_135000000700_p2 ok action=1351 0.65s
+[547/804] tt_sp_135000000679_p96 ok action=1643 2.383s
+[548/804] tt_sp_135000000699_p10 ok action=1356 0.939s
+[549/804] tt_sp_135000000681_p66 ok action=1648 2.387s
+[550/804] tt_sp_135000000701_p10 ok action=1345 0.914s
+[551/804] tt_sp_135000000698_p32 ok action=1337 1.555s
+[552/804] tt_sp_135000000684_p72 ok action=1064 2.607s
+[553/804] tt_sp_135000000707_p2 ok action=1247 0.755s
+[554/804] tt_sp_135000000683_p106 ok action=1652 3.195s
+[555/804] tt_sp_135000000691_p90 ok action=1333 2.624s
+[556/804] tt_sp_135000000702_p22 ok action=1358 1.326s
+[557/804] tt_sp_135000000699_p48 ok action=1144 1.991s
+[558/804] tt_sp_135000000688_p76 ok action=1740 2.832s
+[559/804] tt_sp_135000000701_p40 ok action=1359 1.551s
+[560/804] tt_sp_135000000688_p78 ok action=937 2.867s
+[561/804] tt_sp_135000000672_p128 ok action=840 4.929s
+[562/804] tt_sp_135000000701_p42 ok action=959 1.722s
+[563/804] tt_sp_135000000697_p68 ok action=932 2.518s
+[564/804] tt_sp_135000000693_p86 ok action=1237 2.68s
+[565/804] tt_sp_135000000700_p42 ok action=1557 2.037s
+[566/804] tt_sp_135000000710_p4 ok action=1155 0.666s
+[567/804] tt_sp_135000000694_p132 ok action=1430 2.969s
+[568/804] tt_sp_135000000699_p70 ok action=1162 2.674s
+[569/804] tt_sp_135000000694_p74 ok action=857 3.246s
+[570/804] tt_sp_135000000716_p2 ok action=1252 0.628s
+[571/804] tt_sp_135000000702_p90 ok action=1421 2.139s
+[572/804] tt_sp_135000000702_p110 ok action=1329 2.471s
+[573/804] tt_sp_135000000707_p93 ok action=1132 2.027s
+[574/804] tt_sp_135000000714_p14 ok action=1240 0.989s
+[575/804] tt_sp_135000000714_p18 ok action=1237 1.019s
+[576/804] tt_sp_135000000717_p8 ok action=1047 0.858s
+[577/804] tt_sp_135000000708_p42 ok action=1450 1.597s
+[578/804] tt_sp_135000000705_p56 ok action=1437 2.338s
+[579/804] tt_sp_135000000718_p22 ok action=1360 1.203s
+[580/804] tt_sp_135000000713_p38 ok action=1256 1.622s
+[581/804] tt_sp_135000000684_p124 ok action=1168 4.733s
+[582/804] tt_sp_135000000684_p130 ok action=1743 4.752s
+[583/804] tt_sp_135000000703_p100 ok action=1165 2.988s
+[584/804] tt_sp_135000000725_p2 ok action=1149 0.632s
+[585/804] tt_sp_135000000708_p110 ok action=1331 2.857s
+[586/804] tt_sp_135000000724_p10 ok action=1141 0.885s
+[587/804] tt_sp_135000000719_p48 ok action=1556 1.762s
+[588/804] tt_sp_135000000687_p96 ok action=1332 4.975s
+[589/804] tt_sp_135000000715_p86 ok action=862 2.008s
+[590/804] tt_sp_135000000713_p60 ok action=1432 2.206s
+[591/804] tt_sp_135000000709_p116 ok action=848 2.749s
+[592/804] tt_sp_135000000712_p76 ok action=1161 2.511s
+[593/804] tt_sp_135000000722_p34 ok action=1448 1.483s
+[594/804] tt_sp_135000000685_p120 ok action=1631 5.387s
+[595/804] tt_sp_135000000728_p12 ok action=1241 0.795s
+[596/804] tt_sp_135000000703_p86 ok action=1438 3.752s
+[597/804] tt_sp_135000000732_p4 ok action=1355 0.752s
+[598/804] tt_sp_135000000726_p40 ok action=1041 1.492s
+[599/804] tt_sp_135000000722_p52 ok action=1341 1.822s
+[600/804] tt_sp_135000000716_p104 ok action=1533 2.666s
+[601/804] tt_sp_135000000710_p90 ok action=960 2.962s
+[602/804] tt_sp_135000000729_p22 ok action=944 1.094s
+[603/804] tt_sp_135000000733_p8 ok action=1053 0.793s
+[604/804] tt_sp_135000000721_p120 ok action=869 2.205s
+[605/804] tt_sp_135000000736_p4 ok action=1144 0.688s
+[606/804] tt_sp_135000000719_p82 ok action=866 2.59s
+[607/804] tt_sp_135000000724_p52 ok action=944 2.185s
+[608/804] tt_sp_135000000727_p50 ok action=848 1.809s
+[609/804] tt_sp_135000000741_p4 ok action=1355 0.689s
+[610/804] tt_sp_135000000730_p80 ok action=1632 1.777s
+[611/804] tt_sp_135000000719_p78 ok action=865 3.245s
+[612/804] tt_sp_135000000736_p32 ok action=1437 1.38s
+[613/804] tt_sp_135000000740_p12 ok action=1343 0.982s
+[614/804] tt_sp_135000000728_p52 ok action=1328 2.161s
+[615/804] tt_sp_135000000738_p20 ok action=1046 1.098s
+[616/804] tt_sp_135000000723_p70 ok action=841 2.874s
+[617/804] tt_sp_135000000708_p138 ok action=1532 4.648s
+[618/804] tt_sp_135000000724_p58 ok action=1561 2.866s
+[619/804] tt_sp_135000000722_p112 ok action=653 3.14s
+[620/804] tt_sp_135000000742_p8 ok action=1449 0.833s
+[621/804] tt_sp_135000000725_p110 ok action=1740 2.877s
+[622/804] tt_sp_135000000739_p27 ok action=1058 1.405s
+[623/804] tt_sp_135000000740_p22 ok action=1160 1.319s
+[624/804] tt_sp_135000000732_p48 ok action=1644 2.139s
+[625/804] tt_sp_135000000743_p20 ok action=1055 1.163s
+[626/804] tt_sp_135000000747_p2 ok action=1253 0.674s
+[627/804] tt_sp_135000000744_p25 ok action=955 1.207s
+[628/804] tt_sp_135000000733_p130 ok action=937 2.47s
+[629/804] tt_sp_135000000746_p24 ok action=1157 1.304s
+[630/804] tt_sp_135000000729_p80 ok action=633 2.823s
+[631/804] tt_sp_135000000727_p86 ok action=1267 3.126s
+[632/804] tt_sp_135000000749_p20 ok action=1340 0.983s
+[633/804] tt_sp_135000000737_p66 ok action=1436 2.42s
+[634/804] tt_sp_135000000741_p54 ok action=1455 2.122s
+[635/804] tt_sp_135000000751_p20 ok action=1156 1.056s
+[636/804] tt_sp_135000000754_p12 ok action=1158 0.82s
+[637/804] tt_sp_135000000741_p60 ok action=946 2.267s
+[638/804] tt_sp_135000000756_p6 ok action=1240 0.704s
+[639/804] tt_sp_135000000742_p59 ok action=1060 2.427s
+[640/804] tt_sp_135000000737_p92 ok action=1028 3.056s
+[641/804] tt_sp_135000000748_p44 ok action=1237 1.726s
+[642/804] tt_sp_135000000748_p52 ok action=1351 1.764s
+[643/804] tt_sp_135000000752_p32 ok action=1156 1.549s
+[644/804] tt_sp_135000000746_p58 ok action=1456 2.301s
+[645/804] tt_sp_135000000753_p66 ok action=1643 1.971s
+[646/804] tt_sp_135000000756_p30 ok action=1448 1.506s
+[647/804] tt_sp_135000000757_p39 ok action=952 1.646s
+[648/804] tt_sp_135000000759_p102 ok action=1368 1.613s
+[649/804] tt_sp_135000000763_p26 ok action=948 1.251s
+[650/804] tt_sp_135000000757_p117 ok action=1227 2.133s
+[651/804] tt_sp_135000000749_p96 ok action=934 2.989s
+[652/804] tt_sp_135000000746_p84 ok action=1432 3.268s
+[653/804] tt_sp_135000000750_p80 ok action=859 2.933s
+[654/804] tt_sp_135000000755_p130 ok action=1232 2.337s
+[655/804] tt_sp_135000000735_p138 ok action=843 4.7s
+[656/804] tt_sp_135000000764_p42 ok action=1457 1.559s
+[657/804] tt_sp_135000000762_p50 ok action=944 1.88s
+[658/804] tt_sp_135000000762_p56 ok action=1056 1.939s
+[659/804] tt_sp_135000000760_p52 ok action=957 2.121s
+[660/804] tt_sp_135000000754_p104 ok action=1530 3.061s
+[661/804] tt_sp_135000000738_p138 ok action=1260 4.926s
+[662/804] tt_sp_135000000751_p120 ok action=1564 3.485s
+[663/804] tt_sp_135000000771_p2 ok action=1246 0.646s
+[664/804] tt_sp_135000000767_p24 ok action=954 1.136s
+[665/804] tt_sp_135000000750_p102 ok action=960 3.801s
+[666/804] tt_sp_135000000767_p140 ok action=1165 1.502s
+[667/804] tt_sp_135000000769_p18 ok action=1342 1.033s
+[668/804] tt_sp_135000000735_p136 ok action=721 5.575s
+[669/804] tt_sp_135000000764_p66 ok action=1441 2.409s
+[670/804] tt_sp_135000000773_p14 ok action=1444 0.987s
+[671/804] tt_sp_135000000755_p128 ok action=964 3.576s
+[672/804] tt_sp_135000000759_p90 ok action=1640 3.005s
+[673/804] tt_sp_135000000774_p26 ok action=1357 1.023s
+[674/804] tt_sp_135000000766_p52 ok action=1061 2.26s
+[675/804] tt_sp_135000000765_p126 ok action=768 2.515s
+[676/804] tt_sp_135000000750_p126 ok action=1171 4.347s
+[677/804] tt_sp_135000000769_p40 ok action=1060 1.453s
+[678/804] tt_sp_135000000765_p70 ok action=1536 2.687s
+[679/804] tt_sp_135000000777_p18 ok action=1142 0.974s
+[680/804] tt_sp_135000000765_p110 ok action=968 2.948s
+[681/804] tt_sp_135000000766_p60 ok action=1160 2.421s
+[682/804] tt_sp_135000000772_p52 ok action=1544 1.711s
+[683/804] tt_sp_135000000748_p130 ok action=965 4.937s
+[684/804] tt_sp_135000000780_p26 ok action=1552 1.037s
+[685/804] tt_sp_135000000752_p116 ok action=734 4.891s
+[686/804] tt_sp_135000000777_p38 ok action=1340 1.6s
+[687/804] tt_sp_135000000775_p42 ok action=1532 2.056s
+[688/804] tt_sp_135000000775_p126 ok action=1657 2.21s
+[689/804] tt_sp_135000000781_p48 ok action=1043 1.507s
+[690/804] tt_sp_135000000787_p24 ok action=1344 1.319s
+[691/804] tt_sp_135000000786_p28 ok action=949 1.39s
+[692/804] tt_sp_135000000785_p36 ok action=1444 1.646s
+[693/804] tt_sp_135000000792_p10 ok action=1241 0.962s
+[694/804] tt_sp_135000000778_p70 ok action=1247 2.195s
+[695/804] tt_sp_135000000788_p32 ok action=1162 1.381s
+[696/804] tt_sp_135000000793_p10 ok action=1141 0.842s
+[697/804] tt_sp_135000000791_p34 ok action=1445 1.368s
+[698/804] tt_sp_135000000779_p81 ok action=1464 2.494s
+[699/804] tt_sp_135000000780_p62 ok action=960 2.51s
+[700/804] tt_sp_135000000794_p20 ok action=1447 0.95s
+[701/804] tt_sp_135000000774_p86 ok action=1066 3.354s
+[702/804] tt_sp_135000000784_p104 ok action=1321 2.306s
+[703/804] tt_sp_135000000785_p70 ok action=944 2.422s
+[704/804] tt_sp_135000000776_p78 ok action=1165 3.223s
+[705/804] tt_sp_135000000782_p123 ok action=1033 2.707s
+[706/804] tt_sp_135000000795_p16 ok action=1257 1.073s
+[707/804] tt_sp_135000000779_p89 ok action=1660 3.137s
+[708/804] tt_sp_135000000790_p70 ok action=1642 2.222s
+[709/804] tt_sp_135000000796_p26 ok action=956 1.154s
+[710/804] tt_sp_135000000780_p80 ok action=1233 3.259s
+[711/804] tt_sp_135000000783_p82 ok action=856 2.959s
+[712/804] tt_sp_135000000797_p22 ok action=1238 1.199s
+[713/804] tt_sp_135000000792_p44 ok action=1141 2.115s
+[714/804] tt_sp_135000000798_p30 ok action=1544 1.263s
+[715/804] tt_sp_135000000808_p142 ok action=1564 0.207s
+[716/804] tt_sp_135000000802_p8 ok action=1354 0.809s
+[717/804] tt_sp_135000000793_p58 ok action=1362 2.13s
+[718/804] tt_sp_135000000803_p10 ok action=1444 0.9s
+[719/804] tt_sp_135000000771_p132 ok action=2044 4.843s
+[720/804] tt_sp_135000000798_p46 ok action=1037 1.639s
+[721/804] tt_sp_135000000803_p12 ok action=1355 0.973s
+[722/804] tt_sp_135000000788_p110 ok action=1044 3.29s
+[723/804] tt_sp_135000000806_p8 ok action=1240 0.696s
+[724/804] tt_sp_135000000796_p42 ok action=1261 2.11s
+[725/804] tt_sp_135000000794_p84 ok action=1760 2.478s
+[726/804] tt_sp_135000000791_p96 ok action=936 3.326s
+[727/804] tt_sp_135000000812_p4 ok action=1449 0.61s
+[728/804] tt_sp_135000000799_p126 ok action=549 1.925s
+[729/804] tt_sp_135000000808_p18 ok action=849 1.003s
+[730/804] tt_sp_135000000796_p84 ok action=1652 2.648s
+[731/804] tt_sp_135000000806_p46 ok action=1445 1.605s
+[732/804] tt_sp_135000000804_p52 ok action=1360 1.805s
+[733/804] tt_sp_135000000798_p68 ok action=1268 2.555s
+[734/804] tt_sp_135000000790_p124 ok action=1842 4.182s
+[735/804] tt_sp_135000000800_p122 ok action=1569 2.286s
+[736/804] tt_sp_135000000775_p140 ok action=760 5.515s
+[737/804] tt_sp_135000000805_p46 ok action=941 1.82s
+[738/804] tt_sp_135000000801_p108 ok action=940 2.36s
+[739/804] tt_sp_135000000807_p66 ok action=952 1.672s
+[740/804] tt_sp_135000000799_p60 ok action=1362 2.576s
+[741/804] tt_sp_135000000783_p112 ok action=964 4.934s
+[742/804] tt_sp_135000000804_p68 ok action=852 2.103s
+[743/804] tt_sp_135000000818_p14 ok action=1456 0.974s
+[744/804] tt_sp_135000000814_p40 ok action=1538 1.506s
+[745/804] tt_sp_135000000816_p30 ok action=1549 1.329s
+[746/804] tt_sp_135000000812_p72 ok action=747 1.746s
+[747/804] tt_sp_135000000768_p128 ok action=1733 7.019s
+[748/804] tt_sp_135000000802_p140 ok action=1380 3.039s
+[749/804] tt_sp_135000000809_p54 ok action=1232 2.176s
+[750/804] tt_sp_135000000812_p54 ok action=1437 2.109s
+[751/804] tt_sp_135000000807_p102 ok action=1631 2.745s
+[752/804] tt_sp_135000000821_p24 ok action=1048 1.213s
+[753/804] tt_sp_135000000816_p102 ok action=1756 1.959s
+[754/804] tt_sp_135000000817_p116 ok action=1564 2.013s
+[755/804] tt_sp_135000000820_p40 ok action=1642 1.804s
+[756/804] tt_sp_135000000834_p2 ok action=1252 0.571s
+[757/804] tt_sp_135000000827_p46 ok action=949 1.616s
+[758/804] tt_sp_135000000824_p54 ok action=1139 1.717s
+[759/804] tt_sp_135000000831_p20 ok action=1047 1.128s
+[760/804] tt_sp_135000000833_p6 ok action=1344 0.736s
+[761/804] tt_sp_135000000828_p30 ok action=1440 1.638s
+[762/804] tt_sp_135000000829_p100 ok action=1566 1.629s
+[763/804] tt_sp_135000000835_p20 ok action=1060 0.96s
+[764/804] tt_sp_135000000815_p76 ok action=857 3.183s
+[765/804] tt_sp_135000000817_p92 ok action=960 2.813s
+[766/804] tt_sp_135000000813_p110 ok action=1949 3.374s
+[767/804] tt_sp_135000000828_p54 ok action=1636 2.095s
+[768/804] tt_sp_135000000810_p104 ok action=1269 3.654s
+[769/804] tt_sp_135000000824_p72 ok action=1537 2.413s
+[770/804] tt_sp_135000000824_p78 ok action=1538 2.439s
+[771/804] tt_sp_135000000839_p2 ok action=1148 0.609s
+[772/804] tt_sp_135000000840_p2 ok action=1349 0.628s
+[773/804] tt_sp_135000000838_p6 ok action=1348 0.777s
+[774/804] tt_sp_135000000826_p112 ok action=1070 2.593s
+[775/804] tt_sp_135000000837_p22 ok action=1441 1.018s
+[776/804] tt_sp_135000000837_p24 ok action=1040 1.087s
+[777/804] tt_sp_135000000817_p84 ok action=1164 3.742s
+[778/804] tt_sp_135000000841_p12 ok action=949 0.888s
+[779/804] tt_sp_135000000822_p94 ok action=1467 3.243s
+[780/804] tt_sp_135000000828_p78 ok action=740 2.922s
+[781/804] tt_sp_135000000832_p92 ok action=1568 2.422s
+[782/804] tt_sp_135000000844_p8 ok action=1450 0.729s
+[783/804] tt_sp_135000000846_p4 ok action=1258 0.67s
+[784/804] tt_sp_135000000836_p115 ok action=960 2.159s
+[785/804] tt_sp_135000000834_p86 ok action=1652 2.502s
+[786/804] tt_sp_135000000847_p22 ok action=1140 1.135s
+[787/804] tt_sp_135000000832_p124 ok action=1225 3.042s
+[788/804] tt_sp_135000000848_p26 ok action=1136 1.085s
+[789/804] tt_sp_135000000838_p66 ok action=1763 2.052s
+[790/804] tt_sp_135000000837_p64 ok action=941 2.18s
+[791/804] tt_sp_135000000842_p38 ok action=1040 1.727s
+[792/804] tt_sp_135000000845_p76 ok action=1332 1.512s
+[793/804] tt_sp_135000000825_p108 ok action=2057 4.041s
+[794/804] tt_sp_135000000845_p46 ok action=1044 1.557s
+[795/804] tt_sp_135000000843_p48 ok action=956 1.683s
+[796/804] tt_sp_135000000843_p104 ok action=1040 1.842s
+[797/804] tt_sp_135000000813_p122 ok action=836 5.37s
+[798/804] tt_sp_135000000842_p86 ok action=738 2.143s
+[799/804] tt_sp_135000000820_p128 ok action=1571 4.711s
+[800/804] tt_sp_135000000841_p110 ok action=1732 2.36s
+[801/804] tt_sp_135000000844_p60 ok action=1458 2.202s
+[802/804] tt_sp_135000000832_p138 ok action=1069 4.097s
+[803/804] tt_sp_135000000833_p118 ok action=1432 4.231s
+[804/804] tt_sp_135000000831_p136 ok action=849 5.593s
+[champ_picks] 804 ok, 0 errors, 804 rows total -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/champ_picks_s2/champ_picks.jsonl
+[widening][2026-08-18 02:23:47] PHASE 5a banked rid exclusion lists -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/EXCLUDE_RIDS_banked.txt
+[tiearb2] wrote 733 spent rids -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_excl_tiletie0812.txt
+[tiearb2] wrote 1350 spent rids -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_excl_tiearb2_0816.txt
+[widening][2026-08-18 02:23:47] PHASE 5b BUILD POSITIONS s1: UNCAPPED, target 1400 -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1
+[build_positions] afterstate map: 750 rid(s) from 1 file(s): ['/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/census_s1/afterstate_map_walled.json']
+[build_positions] cap_j=inf (deployed cap J=4 recorded per ply as subset_j4)
+[build_positions] exclude-rids: 2088 requested | 0 removed from the deduped supply | 551 positions remain samplable
+[build_positions] afterstate dedupe: applied=True | dropped 199/750 all-transposition positions (26.5%) | arm-deduped 111 | tie-set arm-playouts 126144 -> 79808 (36.7% saved)
+[build_positions] 1400 census rows -> 750 qualifying -> 551 sampled | e4=0 selfplay=551 | max_arms=12 mean_arms=3.43 | capped=0 | champ_pick_missing=0
+[build_positions] 11 leg files -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1
+{
+  "afterstate_dedupe": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+    "dropped_index_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/DROPPED_ALL_TRANSPOSITION.json",
+    "dropped_pct": 26.533333333333335,
+    "n_dropped_all_transposition": 199,
+    "n_dropped_by_stratum": {
+      "selfplay": 199
+    },
+    "n_dropped_with_action_played_outside_tieset": 32,
+    "n_positions_with_arm_dedupe": 111,
+    "n_qualifying_before_drop": 750,
+    "savings_pct_full_supply": 36.732623033992894,
+    "tieset_arm_playouts_full_supply_after": 79808,
+    "tieset_arm_playouts_full_supply_before": 126144
+  },
+  "allow_missing_champ_picks": false,
+  "cap_j": null,
+  "cap_j_label": "inf",
+  "census_qualifying_n": 750,
+  "census_rows_n": 1400,
+  "champ_pick_secs": 7579.1152,
+  "counts_by_profile_leg": {
+    "walled/leg1": 551,
+    "walled/leg10": 8,
+    "walled/leg11": 2,
+    "walled/leg2": 324,
+    "walled/leg3": 176,
+    "walled/leg4": 101,
+    "walled/leg5": 70,
+    "walled/leg6": 38,
+    "walled/leg7": 31,
+    "walled/leg8": 22,
+    "walled/leg9": 17
+  },
+  "counts_by_stratum": {
+    "e4": 0,
+    "selfplay": 551
+  },
+  "deployed_cap_j": 4,
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "eta_by_workers": {
+    "W=14": {
+      "wall_hours": 2.9579983174603175,
+      "wall_secs": 10648.793942857143
+    },
+    "W=22": {
+      "wall_hours": 1.8823625656565657,
+      "wall_secs": 6776.505236363636
+    }
+  },
+  "exclude_rids": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a77.3 (Stage B is an extension of the same records directory, not a re-draw: the new positions are disjoint from the earlier stage by construction)",
+    "n_removed_from_supply": 0,
+    "n_requested": 2088,
+    "n_supply_after_exclusion": 551
+  },
+  "files": {
+    "walled/leg1": {
+      "n": 551,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg1.jsonl"
+    },
+    "walled/leg10": {
+      "n": 8,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg10.jsonl"
+    },
+    "walled/leg11": {
+      "n": 2,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg11.jsonl"
+    },
+    "walled/leg2": {
+      "n": 324,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg2.jsonl"
+    },
+    "walled/leg3": {
+      "n": 176,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg3.jsonl"
+    },
+    "walled/leg4": {
+      "n": 101,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg4.jsonl"
+    },
+    "walled/leg5": {
+      "n": 70,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg5.jsonl"
+    },
+    "walled/leg6": {
+      "n": 38,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg6.jsonl"
+    },
+    "walled/leg7": {
+      "n": 31,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg7.jsonl"
+    },
+    "walled/leg8": {
+      "n": 22,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg8.jsonl"
+    },
+    "walled/leg9": {
+      "n": 17,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1/positions_walled_leg9.jsonl"
+    }
+  },
+  "formula": "DESIGN.md #7.1: oracle_worker_secs = n_positions*(A_bar-1)*2*M*c (summed per-position here, algebraically identical); champ_pick_secs = n_selfplay*t_champ; wall_hours = (oracle_worker_secs+champ_pick_secs)/(3600*W)",
+  "generated_utc": "2026-08-18T06:23:47Z",
+  "m_worlds": 32,
+  "max_arms": 12,
+  "mean_arms": 3.4319419237749544,
+  "mean_arms_j4": 2.780399274047187,
+  "n_e4": 0,
+  "n_positions": 551,
+  "n_positions_capped": 0,
+  "n_positions_capped_at_4": 88,
+  "n_positions_champ_pick_missing": 0,
+  "n_selfplay": 551,
+  "oracle_worker_secs": 141504.0,
+  "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s1",
+  "playout_secs": 1.65,
+  "sample_seed": 20260819,
+  "schema": "carcassonne-tiletie-positions/v1",
+  "t_champ_secs": 13.7552,
+  "total_arm_playouts": 85760,
+  "total_worker_secs": 149083.1152,
+  "uncapped": true
+}
+[widening][2026-08-18 02:23:47] PHASE 5c PASS 1 (s2, --allow-missing-champ-picks, no playouts)
+[build_positions] afterstate map: 804 rid(s) from 1 file(s): ['/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/census_s2/afterstate_map_walled.json']
+[build_positions] cap_j=inf (deployed cap J=4 recorded per ply as subset_j4)
+[build_positions] exclude-rids: 2088 requested | 0 removed from the deduped supply | 613 positions remain samplable
+[build_positions] afterstate dedupe: applied=True | dropped 191/804 all-transposition positions (23.8%) | arm-deduped 122 | tie-set arm-playouts 139328 -> 89984 (35.4% saved)
+[build_positions] 1500 census rows -> 804 qualifying -> 613 sampled | e4=0 selfplay=613 | max_arms=12 mean_arms=3.29 | capped=0 | champ_pick_missing=613
+[build_positions] 11 leg files -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1
+{
+  "afterstate_dedupe": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+    "dropped_index_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/DROPPED_ALL_TRANSPOSITION.json",
+    "dropped_pct": 23.756218905472636,
+    "n_dropped_all_transposition": 191,
+    "n_dropped_by_stratum": {
+      "selfplay": 191
+    },
+    "n_dropped_with_action_played_outside_tieset": 26,
+    "n_positions_with_arm_dedupe": 122,
+    "n_qualifying_before_drop": 804,
+    "savings_pct_full_supply": 35.415709692237016,
+    "tieset_arm_playouts_full_supply_after": 89984,
+    "tieset_arm_playouts_full_supply_before": 139328
+  },
+  "allow_missing_champ_picks": true,
+  "cap_j": null,
+  "cap_j_label": "inf",
+  "census_qualifying_n": 804,
+  "census_rows_n": 1500,
+  "champ_pick_secs": 8431.9376,
+  "counts_by_profile_leg": {
+    "walled/leg1": 613,
+    "walled/leg10": 7,
+    "walled/leg11": 5,
+    "walled/leg2": 318,
+    "walled/leg3": 181,
+    "walled/leg4": 103,
+    "walled/leg5": 71,
+    "walled/leg6": 40,
+    "walled/leg7": 34,
+    "walled/leg8": 21,
+    "walled/leg9": 13
+  },
+  "counts_by_stratum": {
+    "e4": 0,
+    "selfplay": 613
+  },
+  "deployed_cap_j": 4,
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "eta_by_workers": {
+    "W=14": {
+      "wall_hours": 3.113205111111111,
+      "wall_secs": 11207.538400000001
+    },
+    "W=22": {
+      "wall_hours": 1.9811305252525253,
+      "wall_secs": 7132.069890909092
+    }
+  },
+  "exclude_rids": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a77.3 (Stage B is an extension of the same records directory, not a re-draw: the new positions are disjoint from the earlier stage by construction)",
+    "n_removed_from_supply": 0,
+    "n_requested": 2088,
+    "n_supply_after_exclusion": 613
+  },
+  "files": {
+    "walled/leg1": {
+      "n": 613,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg1.jsonl"
+    },
+    "walled/leg10": {
+      "n": 7,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg10.jsonl"
+    },
+    "walled/leg11": {
+      "n": 5,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg11.jsonl"
+    },
+    "walled/leg2": {
+      "n": 318,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg2.jsonl"
+    },
+    "walled/leg3": {
+      "n": 181,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg3.jsonl"
+    },
+    "walled/leg4": {
+      "n": 103,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg4.jsonl"
+    },
+    "walled/leg5": {
+      "n": 71,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg5.jsonl"
+    },
+    "walled/leg6": {
+      "n": 40,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg6.jsonl"
+    },
+    "walled/leg7": {
+      "n": 34,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg7.jsonl"
+    },
+    "walled/leg8": {
+      "n": 21,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg8.jsonl"
+    },
+    "walled/leg9": {
+      "n": 13,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1/positions_walled_leg9.jsonl"
+    }
+  },
+  "formula": "DESIGN.md #7.1: oracle_worker_secs = n_positions*(A_bar-1)*2*M*c (summed per-position here, algebraically identical); champ_pick_secs = n_selfplay*t_champ; wall_hours = (oracle_worker_secs+champ_pick_secs)/(3600*W)",
+  "generated_utc": "2026-08-18T06:23:47Z",
+  "m_worlds": 32,
+  "max_arms": 12,
+  "mean_arms": 3.293637846655791,
+  "mean_arms_j4": 2.8140293637846656,
+  "n_e4": 0,
+  "n_positions": 613,
+  "n_positions_capped": 0,
+  "n_positions_capped_at_4": 103,
+  "n_positions_champ_pick_missing": 613,
+  "n_selfplay": 613,
+  "oracle_worker_secs": 148473.6,
+  "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_positions_s2_pass1",
+  "playout_secs": 1.65,
+  "sample_seed": 20260819,
+  "schema": "carcassonne-tiletie-positions/v1",
+  "t_champ_secs": 13.7552,
+  "total_arm_playouts": 89984,
+  "total_worker_secs": 156905.5376,
+  "uncapped": true
+}
+[widening][2026-08-18 02:23:46] PHASE 5c SELECT <=3 capped rids per root
+[widening] selected 103 capped rid(s) over 92 root(s); excluded 510 -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/_excl_s2_selection.txt
+[widening][2026-08-18 02:23:46] PHASE 5c PASS 2 (s2, selected rids only, with champ picks) -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2
+[build_positions] afterstate map: 804 rid(s) from 1 file(s): ['/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/census_s2/afterstate_map_walled.json']
+[build_positions] cap_j=inf (deployed cap J=4 recorded per ply as subset_j4)
+[build_positions] exclude-rids: 2598 requested | 510 removed from the deduped supply | 103 positions remain samplable
+[build_positions] afterstate dedupe: applied=True | dropped 191/804 all-transposition positions (23.8%) | arm-deduped 5 | tie-set arm-playouts 139328 -> 89984 (35.4% saved)
+[build_positions] 1500 census rows -> 804 qualifying -> 103 sampled | e4=0 selfplay=103 | max_arms=13 mean_arms=6.97 | capped=0 | champ_pick_missing=0
+[build_positions] 12 leg files -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2
+{
+  "afterstate_dedupe": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a76 threat 3 (arms deduped by successor board key; all-transposition positions dropped as analytic zeros)",
+    "dropped_index_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/DROPPED_ALL_TRANSPOSITION.json",
+    "dropped_pct": 23.756218905472636,
+    "n_dropped_all_transposition": 191,
+    "n_dropped_by_stratum": {
+      "selfplay": 191
+    },
+    "n_dropped_with_action_played_outside_tieset": 26,
+    "n_positions_with_arm_dedupe": 5,
+    "n_qualifying_before_drop": 804,
+    "savings_pct_full_supply": 35.415709692237016,
+    "tieset_arm_playouts_full_supply_after": 89984,
+    "tieset_arm_playouts_full_supply_before": 139328
+  },
+  "allow_missing_champ_picks": false,
+  "cap_j": null,
+  "cap_j_label": "inf",
+  "census_qualifying_n": 804,
+  "census_rows_n": 1500,
+  "champ_pick_secs": 1416.7856,
+  "counts_by_profile_leg": {
+    "walled/leg1": 103,
+    "walled/leg10": 8,
+    "walled/leg11": 5,
+    "walled/leg12": 1,
+    "walled/leg2": 103,
+    "walled/leg3": 103,
+    "walled/leg4": 103,
+    "walled/leg5": 76,
+    "walled/leg6": 44,
+    "walled/leg7": 35,
+    "walled/leg8": 21,
+    "walled/leg9": 13
+  },
+  "counts_by_stratum": {
+    "e4": 0,
+    "selfplay": 103
+  },
+  "deployed_cap_j": 4,
+  "design_doc": "measurement/tiletie_pricing_20260812/DESIGN.md",
+  "eta_by_workers": {
+    "W=14": {
+      "wall_hours": 1.3166822539682541,
+      "wall_secs": 4740.056114285714
+    },
+    "W=22": {
+      "wall_hours": 0.8378887070707071,
+      "wall_secs": 3016.3993454545457
+    }
+  },
+  "exclude_rids": {
+    "applied": true,
+    "design_ref": "DESIGN.md \u00a77.3 (Stage B is an extension of the same records directory, not a re-draw: the new positions are disjoint from the earlier stage by construction)",
+    "n_removed_from_supply": 510,
+    "n_requested": 2598,
+    "n_supply_after_exclusion": 103
+  },
+  "files": {
+    "walled/leg1": {
+      "n": 103,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg1.jsonl"
+    },
+    "walled/leg10": {
+      "n": 8,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg10.jsonl"
+    },
+    "walled/leg11": {
+      "n": 5,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg11.jsonl"
+    },
+    "walled/leg12": {
+      "n": 1,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg12.jsonl"
+    },
+    "walled/leg2": {
+      "n": 103,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg2.jsonl"
+    },
+    "walled/leg3": {
+      "n": 103,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg3.jsonl"
+    },
+    "walled/leg4": {
+      "n": 103,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg4.jsonl"
+    },
+    "walled/leg5": {
+      "n": 76,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg5.jsonl"
+    },
+    "walled/leg6": {
+      "n": 44,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg6.jsonl"
+    },
+    "walled/leg7": {
+      "n": 35,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg7.jsonl"
+    },
+    "walled/leg8": {
+      "n": 21,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg8.jsonl"
+    },
+    "walled/leg9": {
+      "n": 13,
+      "path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2/positions_walled_leg9.jsonl"
+    }
+  },
+  "formula": "DESIGN.md #7.1: oracle_worker_secs = n_positions*(A_bar-1)*2*M*c (summed per-position here, algebraically identical); champ_pick_secs = n_selfplay*t_champ; wall_hours = (oracle_worker_secs+champ_pick_secs)/(3600*W)",
+  "generated_utc": "2026-08-18T06:23:46Z",
+  "m_worlds": 32,
+  "max_arms": 13,
+  "mean_arms": 6.970873786407767,
+  "mean_arms_j4": 4.0,
+  "n_e4": 0,
+  "n_positions": 103,
+  "n_positions_capped": 0,
+  "n_positions_capped_at_4": 103,
+  "n_positions_champ_pick_missing": 0,
+  "n_selfplay": 103,
+  "oracle_worker_secs": 64944.0,
+  "out_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/corpus/positions_s2",
+  "playout_secs": 1.65,
+  "sample_seed": 20260819,
+  "schema": "carcassonne-tiletie-positions/v1",
+  "t_champ_secs": 13.7552,
+  "total_arm_playouts": 39360,
+  "total_worker_secs": 66360.7856,
+  "uncapped": true
+}
+[s1] afterstate_dedupe.applied = True
+[s1] uncapped = True | cap_j = None
+[s1] n_positions = 551 | n_positions_capped_at_4 = 88
+[s1] exclude_rids.n_removed_from_supply = 0
+[s2] afterstate_dedupe.applied = True
+[s2] uncapped = True | cap_j = None
+[s2] n_positions = 103 | n_positions_capped_at_4 = 103
+[s2] exclude_rids.n_removed_from_supply = 510
+[widening][2026-08-18 02:23:47] PHASE 6 s1: no leg output at /mnt/c/carc-shared/tiearb_widening_20260817/s1 yet — skipping
+[widening][2026-08-18 02:23:47] PHASE 6 s2: no leg output at /mnt/c/carc-shared/tiearb_widening_20260817/s2 yet — skipping
+[widening][2026-08-18 02:23:47] PHASE 7 G-DISJOINT (merged, five comparisons + strata_root_overlap)
+[G-DISJOINT] s1_vs_tiearb2_0816                 a_root_id          new=   308 ref=   724 intersection=     0
+[G-DISJOINT] s1_vs_tiearb2_0816                 b_rid              new=   551 ref=  1350 intersection=     0
+[G-DISJOINT] s1_vs_tiearb2_0816                 c_position_digest  new=   551 ref=  1350 intersection=     1
+[G-DISJOINT] s1_vs_tiletie0812                  a_root_id          new=   308 ref=   399 intersection=     0
+[G-DISJOINT] s1_vs_tiletie0812                  b_rid              new=   551 ref=   733 intersection=     0
+[G-DISJOINT] s1_vs_tiletie0812                  c_position_digest  new=   551 ref=   733 intersection=     0
+[G-DISJOINT] s1s2_vs_exclude_rids               b_rid              new=   654 ref=   738 intersection=     0
+[G-DISJOINT] s2_vs_tiearb2_0816                 a_root_id          new=    92 ref=   724 intersection=     0
+[G-DISJOINT] s2_vs_tiearb2_0816                 b_rid              new=   103 ref=  1350 intersection=     0
+[G-DISJOINT] s2_vs_tiearb2_0816                 c_position_digest  new=   103 ref=  1350 intersection=     0
+[G-DISJOINT] s2_vs_tiletie0812                  a_root_id          new=    92 ref=   399 intersection=     0
+[G-DISJOINT] s2_vs_tiletie0812                  b_rid              new=   103 ref=   733 intersection=     0
+[G-DISJOINT] s2_vs_tiletie0812                  c_position_digest  new=   103 ref=   733 intersection=     0
+[G-DISJOINT] strata_root_overlap = 0
+[G-DISJOINT] -> /home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/GATE_DISJOINT.json
+
+======================================================================
+[G-DISJOINT] ***** MERGED GATE FAILED *****
+[G-DISJOINT] violated comparison(s): s1_vs_tiearb2_0816
+[G-DISJOINT] strata_root_overlap = 0
+[G-DISJOINT] The corpus is CONTAMINATED — DO NOT score it.
+======================================================================

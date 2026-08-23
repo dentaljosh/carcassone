@@ -1,0 +1,936 @@
+{
+  "fixture_run": "/tmp/widening_fixture_wt54jhqx/shared_run",
+  "gates": [
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "G-BITEXACT@HEAD",
+      "has_fallback": false,
+      "note": "no fallback. Reached ONLY by verify_tier1_rust.py --out (W7); without --out it can write only into the CLOSED Stage-2 run dir",
+      "optional": false,
+      "phase": "4a-live",
+      "primary": [
+        {
+          "address": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run/GATE_BITEXACT_HEAD.json::{pass,n_playouts_compared,n_value_bit_identical,n_value_mismatch,legal_mask_cache,git_rev}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "git_rev": [
+              "str"
+            ],
+            "legal_mask_cache": [
+              "bool"
+            ],
+            "n_playouts_compared": [
+              "int"
+            ],
+            "n_value_bit_identical": [
+              "int"
+            ],
+            "n_value_mismatch": [
+              "int"
+            ],
+            "pass": [
+              "bool"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "G-DISJOINT",
+      "has_fallback": false,
+      "note": "FIVE comparisons; the fifth is RID LAYER ONLY (EXCLUDE_RIDS_all.txt is a rid text file). No fallback \u2014 a missing gate file is a FAIL",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/GATE_DISJOINT.json::{passed,strata_root_overlap,comparisons,comparisons.s1_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s1_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s1_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s1_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiletie0812.layers.a_root_id.n_intersection,comparisons.s2_vs_tiletie0812.layers.b_rid.n_intersection,comparisons.s2_vs_tiletie0812.layers.c_position_digest.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.a_root_id.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.b_rid.n_intersection,comparisons.s2_vs_tiearb2_0816.layers.c_position_digest.n_intersection,comparisons.s1s2_vs_exclude_rids.layers.b_rid.n_intersection,comparisons.s1s2_vs_exclude_rids.passed}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "comparisons": [
+              "object"
+            ],
+            "comparisons.s1_vs_tiearb2_0816.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiearb2_0816.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiearb2_0816.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiletie0812.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiletie0812.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1_vs_tiletie0812.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1s2_vs_exclude_rids.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s1s2_vs_exclude_rids.passed": [
+              "bool"
+            ],
+            "comparisons.s2_vs_tiearb2_0816.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiearb2_0816.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiearb2_0816.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiletie0812.layers.a_root_id.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiletie0812.layers.b_rid.n_intersection": [
+              "int"
+            ],
+            "comparisons.s2_vs_tiletie0812.layers.c_position_digest.n_intersection": [
+              "int"
+            ],
+            "passed": [
+              "bool"
+            ],
+            "strata_root_overlap": [
+              "int"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/corpus/positions_s1/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arms_full": [
+              "array"
+            ],
+            "subset_j4": [
+              "array"
+            ],
+            "subset_j4_id": [
+              "str"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/corpus/positions_s2/ARMS.json::{arms_full,subset_j4,subset_j4_id}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arms_full": [
+              "array"
+            ],
+            "subset_j4": [
+              "array"
+            ],
+            "subset_j4_id": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-DRAW",
+      "has_fallback": true,
+      "note": "owned by W5 (DESIGN \u00a78 builder delta 2)",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/GATE_DRAW.json::{n_checked,n_mismatch,ok,git_rev}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "git_rev": [
+              "str"
+            ],
+            "n_checked": [
+              "int"
+            ],
+            "n_mismatch": [
+              "int"
+            ],
+            "ok": [
+              "bool"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/per_position_s1.jsonl::{n_worlds_per_arm,n_arms_planned}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "n_arms_planned": [
+              "int"
+            ],
+            "n_worlds_per_arm": [
+              "array"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/per_position_s2.jsonl::{n_worlds_per_arm,n_arms_planned}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "n_arms_planned": [
+              "int"
+            ],
+            "n_worlds_per_arm": [
+              "array"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-ARMS",
+      "has_fallback": true,
+      "note": "",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.json::{widening.gates.arms.n_arms,widening.gates.arms.n_arms_complete,widening.gates.arms.include_partial,widening.gates.arms.ok}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "widening.gates.arms.include_partial": [
+              "bool"
+            ],
+            "widening.gates.arms.n_arms": [
+              "int"
+            ],
+            "widening.gates.arms.n_arms_complete": [
+              "int"
+            ],
+            "widening.gates.arms.ok": [
+              "bool"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/per_position_s1.jsonl::{root_id,rid}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "rid": [
+              "str"
+            ],
+            "root_id": [
+              "str"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/per_position_s2.jsonl::{root_id,rid}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "rid": [
+              "str"
+            ],
+            "root_id": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-COMPLETE",
+      "has_fallback": true,
+      "note": "",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.json::{widening.completion.s1_n,widening.completion.s2_n,widening.completion.s1_max_per_root,widening.completion.s2_max_per_root}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "widening.completion.s1_max_per_root": [
+              "int"
+            ],
+            "widening.completion.s1_n": [
+              "int"
+            ],
+            "widening.completion.s2_max_per_root": [
+              "int"
+            ],
+            "widening.completion.s2_n": [
+              "int"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "G-REPLICATE",
+      "has_fallback": false,
+      "note": "NO FALLBACK \u2014 booleans only; a missing/null block is a FAIL. The sealed z-file is WRITE-ONLY and is not an address (READ_RULE \u00a77)",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.json::{widening.stage1_replication.pass,widening.stage1_replication.per_rung_inside_envelope,widening.stage1_replication.arb16_convicts,widening.stage1_replication.envelope_inflation}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "widening.stage1_replication.arb16_convicts": [
+              "bool"
+            ],
+            "widening.stage1_replication.envelope_inflation": [
+              "float"
+            ],
+            "widening.stage1_replication.pass": [
+              "bool"
+            ],
+            "widening.stage1_replication.per_rung_inside_envelope": [
+              "object"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.json::{widening.gates.uncapped}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "widening.gates.uncapped": [
+              "object"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "G-UNCAPPED",
+      "has_fallback": true,
+      "note": "`cap_j` is null on an uncapped build \u2014 G-UNCAPPED REQUIRES that null. It is row 4 of the CLOSED allow_null table and is accepted only with its witness: `uncapped == true` AND `cap_j_label == \"inf\"`",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/corpus/positions_s1/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [
+            {
+              "key": "cap_j",
+              "row": "cap_j",
+              "witness": [
+                "cap_j_label",
+                "uncapped"
+              ]
+            }
+          ],
+          "types": {
+            "cap_j": [
+              "null"
+            ],
+            "cap_j_label": [
+              "str"
+            ],
+            "uncapped": [
+              "bool"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/corpus/positions_s2/POSITIONS_PLAN.json::{uncapped,cap_j,cap_j_label}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [
+            {
+              "key": "cap_j",
+              "row": "cap_j",
+              "witness": [
+                "cap_j_label",
+                "uncapped"
+              ]
+            }
+          ],
+          "types": {
+            "cap_j": [
+              "null"
+            ],
+            "cap_j_label": [
+              "str"
+            ],
+            "uncapped": [
+              "bool"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/corpus/positions_s*/ARMS.json::{arms,arms_full,champ_arm_action,champ_arm_index}",
+          "n_files": 2,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arms": [
+              "array"
+            ],
+            "arms_full": [
+              "array"
+            ],
+            "champ_arm_action": [
+              "int"
+            ],
+            "champ_arm_index": [
+              "int"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/per_position_s1.jsonl::{arb_j4_E64_B16,arb_j4_E64_B64,d_16_64_E64,root_id}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arb_j4_E64_B16": [
+              "float"
+            ],
+            "arb_j4_E64_B64": [
+              "float"
+            ],
+            "d_16_64_E64": [
+              "float"
+            ],
+            "root_id": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "READOUT \u00a74 (rung 2 branch inputs)",
+      "has_fallback": true,
+      "note": "",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.json::{widening.delta.d_16_64.value,widening.delta.d_16_64.ci95,widening.delta.d_16_64.se_root,widening.delta.d_16_32.value,widening.delta.d_16_32.ci95,widening.delta.d_16_32.se_root,widening.b_ladder.E64.B1.arb,widening.b_ladder.E64.B1.ci95,widening.b_ladder.E64.B1.se,widening.b_ladder.E64.B2.arb,widening.b_ladder.E64.B2.ci95,widening.b_ladder.E64.B2.se,widening.b_ladder.E64.B4.arb,widening.b_ladder.E64.B4.ci95,widening.b_ladder.E64.B4.se,widening.b_ladder.E64.B8.arb,widening.b_ladder.E64.B8.ci95,widening.b_ladder.E64.B8.se,widening.b_ladder.E64.B16.arb,widening.b_ladder.E64.B16.ci95,widening.b_ladder.E64.B16.se,widening.b_ladder.E64.B32.arb,widening.b_ladder.E64.B32.ci95,widening.b_ladder.E64.B32.se,widening.b_ladder.E64.B64.arb,widening.b_ladder.E64.B64.ci95,widening.b_ladder.E64.B64.se,widening.b_ladder.E16.B1.arb,widening.b_ladder.E16.B1.ci95,widening.b_ladder.E16.B1.se,widening.b_ladder.E16.B2.arb,widening.b_ladder.E16.B2.ci95,widening.b_ladder.E16.B2.se,widening.b_ladder.E16.B4.arb,widening.b_ladder.E16.B4.ci95,widening.b_ladder.E16.B4.se,widening.b_ladder.E16.B8.arb,widening.b_ladder.E16.B8.ci95,widening.b_ladder.E16.B8.se,widening.b_ladder.E16.B16.arb,widening.b_ladder.E16.B16.ci95,widening.b_ladder.E16.B16.se,widening.b_ladder.E16.B32.arb,widening.b_ladder.E16.B32.ci95,widening.b_ladder.E16.B32.se,widening.b_ladder.E16.B64.arb,widening.b_ladder.E16.B64.ci95,widening.b_ladder.E16.B64.se}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "widening.b_ladder.E16.B1.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B1.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B1.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B16.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B16.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B16.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B2.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B2.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B2.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B32.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B32.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B32.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B4.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B4.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B4.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B64.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B64.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B64.se": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B8.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E16.B8.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E16.B8.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B1.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B1.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B1.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B16.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B16.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B16.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B2.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B2.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B2.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B32.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B32.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B32.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B4.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B4.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B4.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B64.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B64.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B64.se": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B8.arb": [
+              "float"
+            ],
+            "widening.b_ladder.E64.B8.ci95": [
+              "array"
+            ],
+            "widening.b_ladder.E64.B8.se": [
+              "float"
+            ],
+            "widening.delta.d_16_32.ci95": [
+              "array"
+            ],
+            "widening.delta.d_16_32.se_root": [
+              "float"
+            ],
+            "widening.delta.d_16_32.value": [
+              "float"
+            ],
+            "widening.delta.d_16_64.ci95": [
+              "array"
+            ],
+            "widening.delta.d_16_64.se_root": [
+              "float"
+            ],
+            "widening.delta.d_16_64.value": [
+              "float"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/per_position_s2.jsonl::{ora_full_E16,ora_j4_E16,d_ora_E16,capped_at_4,root_id}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "capped_at_4": [
+              "bool"
+            ],
+            "d_ora_E16": [
+              "float"
+            ],
+            "ora_full_E16": [
+              "float"
+            ],
+            "ora_j4_E16": [
+              "float"
+            ],
+            "root_id": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "fallback_ok": true,
+      "gate": "READOUT \u00a75 (rung 3 branch inputs)",
+      "has_fallback": true,
+      "note": "`r_ora` and `ci95_r_ora` go null TOGETHER when the \u00a75 degenerate-denominator guard fires, and `d_draw.*` is null until W9 runs \u2014 rows 1-3 of the CLOSED allow_null table, accepted only with their witnesses (`r_ora_reported == false`, `d_draw_ran == false`)",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.json::{widening.j_rider.s2.delta_ora,widening.j_rider.s2.ci95_ora,widening.j_rider.s2.r_ora,widening.j_rider.s2.ci95_r_ora,widening.j_rider.s2.ora_j4_ci95,widening.j_rider.s2.delta_arb,widening.j_rider.s2.ci95_arb,widening.j_rider.s2.n_capped,widening.j_rider.s2.xfree_window,widening.j_rider.s1_replication.delta_ora,widening.j_rider.s1_replication.ci95_ora,widening.j_rider.s1_replication.n_capped,widening.j_rider.interaction.arb_full_64_minus_16,widening.j_rider.interaction.arb_full_16_minus_j4_16,widening.j_rider.s2.r_ora_reported,widening.j_rider.d_draw.d_draw_ran,widening.j_rider.d_draw.n_checked,widening.j_rider.d_draw.agreement_rate}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [
+            {
+              "key": "widening.j_rider.s2.r_ora",
+              "row": "r_ora",
+              "witness": [
+                "r_ora_reported"
+              ]
+            },
+            {
+              "key": "widening.j_rider.s2.ci95_r_ora",
+              "row": "ci95_r_ora",
+              "witness": [
+                "r_ora_reported"
+              ]
+            },
+            {
+              "key": "widening.j_rider.d_draw.n_checked",
+              "row": "d_draw.*",
+              "witness": [
+                "d_draw_ran"
+              ]
+            },
+            {
+              "key": "widening.j_rider.d_draw.agreement_rate",
+              "row": "d_draw.*",
+              "witness": [
+                "d_draw_ran"
+              ]
+            }
+          ],
+          "types": {
+            "widening.j_rider.d_draw.agreement_rate": [
+              "null"
+            ],
+            "widening.j_rider.d_draw.d_draw_ran": [
+              "bool"
+            ],
+            "widening.j_rider.d_draw.n_checked": [
+              "null"
+            ],
+            "widening.j_rider.interaction.arb_full_16_minus_j4_16": [
+              "object"
+            ],
+            "widening.j_rider.interaction.arb_full_64_minus_16": [
+              "object"
+            ],
+            "widening.j_rider.s1_replication.ci95_ora": [
+              "array"
+            ],
+            "widening.j_rider.s1_replication.delta_ora": [
+              "float"
+            ],
+            "widening.j_rider.s1_replication.n_capped": [
+              "int"
+            ],
+            "widening.j_rider.s2.ci95_arb": [
+              "array"
+            ],
+            "widening.j_rider.s2.ci95_ora": [
+              "array"
+            ],
+            "widening.j_rider.s2.ci95_r_ora": [
+              "null"
+            ],
+            "widening.j_rider.s2.delta_arb": [
+              "float"
+            ],
+            "widening.j_rider.s2.delta_ora": [
+              "float"
+            ],
+            "widening.j_rider.s2.n_capped": [
+              "int"
+            ],
+            "widening.j_rider.s2.ora_j4_ci95": [
+              "array"
+            ],
+            "widening.j_rider.s2.r_ora": [
+              "null"
+            ],
+            "widening.j_rider.s2.r_ora_reported": [
+              "bool"
+            ],
+            "widening.j_rider.s2.xfree_window": [
+              "object"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "READOUT \u00a77 (report surface)",
+      "has_fallback": false,
+      "note": "",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.md",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {},
+          "why": null
+        },
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/verdicts/READOUT.json::{widening.gates_summary.*.resolved_at,widening.branch.rung2.branch,widening.branch.rung3.branch,widening.gates.crn.ok,widening.gates.crn.witness_kinds}",
+          "n_files": 1,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "widening.branch.rung2.branch": [
+              "str"
+            ],
+            "widening.branch.rung3.branch": [
+              "str"
+            ],
+            "widening.gates.crn.ok": [
+              "bool"
+            ],
+            "widening.gates.crn.witness_kinds": [
+              "object"
+            ],
+            "widening.gates_summary.*.resolved_at": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "LEG-MANIFEST fixture (G-M / G-BACKEND / G-SALT / G-PREFIX fallbacks)",
+      "has_fallback": false,
+      "note": "`resolved_config.*` and `preflight.seeds.*` exist ONLY on the tier1-greedy (tier1_rust_leg) manifests \u2014 the clair-puct legs are oracle_score_pilot manifests and carry neither. Auditing the spellings HERE is what lets \u00a70.G move the live smokes to 4b-pre without losing pre-commit coverage",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/legs/s*/tier1-greedy/walled/leg*/manifest.json::{resolved_config.world_seed_salt,resolved_config.m,resolved_config.legal_mask_cache,preflight.seeds.ok,preflight.seeds.prefix_stable_at,preflight.seeds.derivation,preflight.seeds.probe_world_seeds_head}",
+          "n_files": 10,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "preflight.seeds.derivation": [
+              "str"
+            ],
+            "preflight.seeds.ok": [
+              "bool"
+            ],
+            "preflight.seeds.prefix_stable_at": [
+              "array"
+            ],
+            "preflight.seeds.probe_world_seeds_head": [
+              "array"
+            ],
+            "resolved_config.legal_mask_cache": [
+              "bool"
+            ],
+            "resolved_config.m": [
+              "int"
+            ],
+            "resolved_config.world_seed_salt": [
+              "str"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    },
+    {
+      "fallback": [],
+      "fallback_ok": null,
+      "gate": "SMOKE-MANIFEST fixture (G-CRN smoke half / \u00a77 judge legs)",
+      "has_fallback": false,
+      "note": "four manifests, one per {stratum x judge} \u2014 one shared --smoke-manifest path would have the second smoke overwrite the first. The cost figure of record is c_worker_secs_per_playout, NEVER worker_secs_per_playout",
+      "optional": false,
+      "phase": "4a-fixture",
+      "primary": [
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/SMOKE_MANIFEST_S1_*.json::{c_worker_secs_per_playout,crn_cross_leg_identical,m_worlds,arb_backend}",
+          "n_files": 2,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arb_backend": [
+              "str"
+            ],
+            "c_worker_secs_per_playout": [
+              "float"
+            ],
+            "crn_cross_leg_identical": [
+              "bool"
+            ],
+            "m_worlds": [
+              "int"
+            ]
+          },
+          "why": null
+        },
+        {
+          "address": "/tmp/widening_fixture_wt54jhqx/shared_run/SMOKE_MANIFEST_S2_*.json::{c_worker_secs_per_playout,crn_cross_leg_identical,m_worlds,arb_backend}",
+          "n_files": 2,
+          "resolved": true,
+          "sanctioned_nulls": [],
+          "types": {
+            "arb_backend": [
+              "str"
+            ],
+            "c_worker_secs_per_playout": [
+              "float"
+            ],
+            "crn_cross_leg_identical": [
+              "bool"
+            ],
+            "m_worlds": [
+              "int"
+            ]
+          },
+          "why": null
+        }
+      ],
+      "primary_ok": true,
+      "resolved": true,
+      "resolved_at": "primary"
+    }
+  ],
+  "mechanism": "key presence + JSON type only; no value is computed, printed or stored",
+  "mode": "4a",
+  "n_fallback_only": 0,
+  "n_gates": 12,
+  "n_unaudited_fallbacks": 0,
+  "n_unresolved": 0,
+  "passed": true,
+  "run_dir": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run",
+  "share": "/mnt/c/carc-shared/tiearb_widening_20260817"
+}

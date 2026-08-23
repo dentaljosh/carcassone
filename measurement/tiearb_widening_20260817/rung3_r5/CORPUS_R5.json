@@ -1,0 +1,51 @@
+{
+  "arms_r5_n_rids": 1060,
+  "arms_r5_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/ARMS_R5.json",
+  "arms_r5_sha256": "adb4c5bd7cf904a1fe00c839eab722fa79798b9f719b631b6f788900f3e5cf8a",
+  "design_doc": "measurement/tiearb_widening_20260817/rung3_r5/DESIGN.md",
+  "disclosure": "This reads the PHYSICAL leg file directly. The S2 union-plan pointer defect stands at R4 (POSITIONS_PLAN files-block extension-only, CORPUS_UNION S2 witnessed:false) -- S2 is VOID at R4, no repair is licensed, and this builder does NOT read the plan.",
+  "excluded_rids": [
+    "tt_sp_135000000839_p2",
+    "tt_sp_137000002154_p2",
+    "tt_sp_137000003379_p2",
+    "tt_sp_137000004174_p2"
+  ],
+  "excluded_rids_detail": {
+    "internal_dupe_later_members": [
+      "tt_sp_137000002154_p2",
+      "tt_sp_137000003379_p2",
+      "tt_sp_137000004174_p2"
+    ],
+    "r4_residual": [
+      "tt_sp_135000000839_p2"
+    ]
+  },
+  "gates": [
+    "G-CORPUS",
+    "G-BAND"
+  ],
+  "leg_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/positions_walled_leg1.jsonl",
+  "leg_sha256": "92ba1ee2dfbfed91f4853173e16e6e008d430ebf708055f4c8a76258eacbb7df",
+  "max_positions_per_seed": 3,
+  "n_distinct_seeds": 980,
+  "n_excluded_r5": 4,
+  "n_in": 1064,
+  "n_out_of_band": 0,
+  "n_positions": 1060,
+  "n_seeds_136e9": 0,
+  "provenance": "R4's POST-EXCLUSION S2 leg file, ADOPTED AS-IS (DESIGN R5-FINAL.b2) -- NOT a fresh re-mine",
+  "r4_arms_path": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s2/ARMS.json",
+  "r4_exclusion_list_sha256": "76f9ac58e2694a5499966a3b519b11ad4e2e7633fd3ab2ab2acb5767535ddda7",
+  "schema": "carcassonne-rung3-r5-corpus/v1",
+  "seed_ranges": {
+    "banked_135e9": [
+      135000000350,
+      135000000849
+    ],
+    "extension_137e9": [
+      137000000508,
+      137000005347
+    ],
+    "released_unused": 136000000000
+  }
+}

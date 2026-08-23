@@ -1,0 +1,331 @@
+{
+  "cost_note": "c = \u03a3 elapsed_secs / n_playouts is the currency of record (analyze_tiearb2.cost_block::c_from_elapsed_secs). It is NOT computed here: a timing number is only meaningful on an uncontended box, so cost is re-measured deliberately, never harvested from a production leg.",
+  "design_doc": "measurement/tiearb_widening_20260817/PLAN_B_gt_16.md",
+  "driver": "tier1_rust_leg",
+  "elapsed_secs_sum": 1412.128,
+  "errors": [],
+  "generated_utc": "2026-08-19T23:27:34Z",
+  "git_rev": "9bc2ab772ee907cdf4278985cf717497b95b2af1",
+  "merge": {
+    "binary_sha_within_box": {
+      "by_box": {
+        "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs": {
+          "address": "preflight.wheel.carc_rs_binary_sha",
+          "box_key_source": "preflight.wheel.carc_rs_file",
+          "chunks": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "sha": "a4318fd59d9d8349"
+        }
+      },
+      "conjunct": "(ii) binary_sha constant within box",
+      "n_boxes": 1,
+      "note": "compared WITHIN a host only \u2014 never across (JCZ \u00a70.F.2c: the .so is not machine-reproducible). A box with no sha recorded contributes nothing and is not counted as evidence.",
+      "ok": true,
+      "standing_requirement": true
+    },
+    "by_chunk": {
+      "1": {
+        "elapsed_secs_sum": 164.114,
+        "generated_utc": "2026-08-19T23:27:34Z",
+        "n_crn_verified": 12,
+        "n_failed": 0,
+        "n_ok": 12,
+        "n_playouts": 768,
+        "n_rows_in": 12,
+        "n_scored": 12,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 12,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk1",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk1/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 164.115
+      },
+      "2": {
+        "elapsed_secs_sum": 157.651,
+        "generated_utc": "2026-08-19T23:36:22Z",
+        "n_crn_verified": 10,
+        "n_failed": 0,
+        "n_ok": 10,
+        "n_playouts": 640,
+        "n_rows_in": 10,
+        "n_scored": 10,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 10,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk2",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk2/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 157.651
+      },
+      "3": {
+        "elapsed_secs_sum": 257.353,
+        "generated_utc": "2026-08-19T23:47:32Z",
+        "n_crn_verified": 18,
+        "n_failed": 0,
+        "n_ok": 18,
+        "n_playouts": 1152,
+        "n_rows_in": 18,
+        "n_scored": 18,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 18,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk3",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk3/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 257.353
+      },
+      "4": {
+        "elapsed_secs_sum": 134.562,
+        "generated_utc": "2026-08-19T23:55:22Z",
+        "n_crn_verified": 13,
+        "n_failed": 0,
+        "n_ok": 13,
+        "n_playouts": 832,
+        "n_rows_in": 13,
+        "n_scored": 13,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 13,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 134.561
+      },
+      "5": {
+        "elapsed_secs_sum": 159.669,
+        "generated_utc": "2026-08-20T00:04:41Z",
+        "n_crn_verified": 13,
+        "n_failed": 0,
+        "n_ok": 13,
+        "n_playouts": 832,
+        "n_rows_in": 13,
+        "n_scored": 13,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 13,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 159.669
+      },
+      "6": {
+        "elapsed_secs_sum": 215.414,
+        "generated_utc": "2026-08-20T00:13:44Z",
+        "n_crn_verified": 18,
+        "n_failed": 0,
+        "n_ok": 18,
+        "n_playouts": 1152,
+        "n_rows_in": 18,
+        "n_scored": 18,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 18,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk6",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk6/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 215.414
+      },
+      "7": {
+        "elapsed_secs_sum": 193.207,
+        "generated_utc": "2026-08-20T00:21:36Z",
+        "n_crn_verified": 14,
+        "n_failed": 0,
+        "n_ok": 14,
+        "n_playouts": 896,
+        "n_rows_in": 14,
+        "n_scored": 14,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 14,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk7",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk7/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 193.208
+      },
+      "8": {
+        "elapsed_secs_sum": 130.158,
+        "generated_utc": "2026-08-20T00:30:01Z",
+        "n_crn_verified": 12,
+        "n_failed": 0,
+        "n_ok": 12,
+        "n_playouts": 768,
+        "n_rows_in": 12,
+        "n_scored": 12,
+        "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+        "resolved_config": {
+          "n": 12,
+          "out_root": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk8",
+          "out_subdir": "tier1-greedy/walled/leg10",
+          "positions_jsonl": "/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk8/positions_walled_leg10.jsonl",
+          "resume": true,
+          "workers": 1
+        },
+        "wall_secs": 130.159
+      }
+    },
+    "chunks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "divergent_keys_allowed": [],
+    "generated_utc": "2026-08-20T20:39:52Z",
+    "note": "A TWO-BOX merge of per-chunk legs. Counters are summed; gate-addressed fields were asserted IDENTICAL across chunks before being carried. Per-chunk values are below. wall_secs is a SUM across chunks that ran on different boxes and possibly concurrently \u2014 it is NOT a wall clock and is not the cost currency of record (DESIGN \u00a77 costs from elapsed_secs).",
+    "records_by_chunk": {
+      "1": 12,
+      "2": 10,
+      "3": 18,
+      "4": 13,
+      "5": 13,
+      "6": 18,
+      "7": 14,
+      "8": 12
+    },
+    "run_id": "tiearb_widening_20260817",
+    "schema": "carcassonne-tiearb-widening-merge/v1",
+    "sources": {
+      "1": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk1/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "70e768103a8b85a6f9c1071c9abd6022390619379bed77a15cf2059c4f2a3a79"
+      },
+      "2": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk2/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "f777004201eb10bbd393c2d4d5501d6704c433110fb7b4df557da1743c01127f"
+      },
+      "3": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk3/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "39594bc26e557470f327decb23ccd0733696c6bf68ee09f2e127e1e0ceb5fb15"
+      },
+      "4": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "a08baf12a4517638d5fbabee785cd587bc463362a41e72c5259e1b7c4278f9c2"
+      },
+      "5": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "a3e3ed801bba833aef6b31c31a45bf5bcc0bc684ba9fc0f1a0e230732c02de86"
+      },
+      "6": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk6/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "8dd093729eb43ef87df6705be66108309f7b2095abcbcdf81781397121164096"
+      },
+      "7": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk7/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "c97b8016bd43ab828c14d727d0bff6723f2bba9ed472ffcbf16e9f5040070123"
+      },
+      "8": {
+        "path": "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk8/tier1-greedy/walled/leg10/manifest.json",
+        "sha256": "7a8bdc32a65e85f34eff88f03e50cc5a0c7313ce03cd4050ce524d24b438b335"
+      }
+    },
+    "wall_secs_max": 257.353
+  },
+  "n_crn_verified": 110,
+  "n_failed": 0,
+  "n_ok": 110,
+  "n_playouts": 7040,
+  "n_rows_in": 110,
+  "n_scored": 110,
+  "preflight": {
+    "m": {
+      "m": 32,
+      "m_max": 128,
+      "ok": true
+    },
+    "profile": {
+      "ok": true,
+      "rules_profile": "walled"
+    },
+    "seeds": {
+      "derivation": "oracle_score_pilot.world_seed/playout_seed = sha256(tag|rid|j|salt); M never enters",
+      "m": 32,
+      "ok": true,
+      "prefix_stable_at": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32
+      ],
+      "probe_playout_seeds_head": [
+        1938509246,
+        2003412182,
+        1243735750,
+        2109152271
+      ],
+      "probe_rid": "tt_preflight_probe_p0",
+      "probe_world_seeds_head": [
+        396867482,
+        806153112,
+        2069078063,
+        1564736894
+      ],
+      "salt": "tiletie-v1"
+    },
+    "wheel": {
+      "carc_rs_binary_sha": "a4318fd59d9d8349",
+      "carc_rs_build": "carc_rs-0.1.0+9bc2ab772ee9+rustcunpinned",
+      "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+      "carc_rs_version": "0.1.0",
+      "ok": true
+    }
+  },
+  "python": "/home/doctor/projects/carcassone/.venv/bin/python",
+  "resolved_config": {
+    "arb_backend": "rust",
+    "legal_mask_cache": true,
+    "m": 32,
+    "m_max": 128,
+    "max_plies": 400,
+    "n": 110,
+    "oracle_policy": "tier1-greedy",
+    "oracle_sims": 100,
+    "oracle_sims_note": "INERT: tier1-greedy is a 1-ply argmax, no search",
+    "out_root": null,
+    "out_subdir": null,
+    "positions_jsonl": null,
+    "resume": true,
+    "rules_profile": "walled",
+    "strict_crn": false,
+    "workers": null,
+    "world_deck_witness": true,
+    "world_seed_salt": "tiletie-v1"
+  },
+  "schema": "carcassonne-tiletie-tier1-rust-leg/v1",
+  "wall_secs": 1412.13
+}

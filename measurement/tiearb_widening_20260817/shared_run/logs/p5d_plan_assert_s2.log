@@ -1,0 +1,4 @@
+[s2] afterstate_dedupe.applied = True
+[s2] uncapped = True | cap_j = None
+[s2] n_positions = 103 | n_positions_capped_at_4 = 103
+[s2] exclude_rids.n_removed_from_supply = 510
