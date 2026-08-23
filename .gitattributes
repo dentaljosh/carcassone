@@ -1,0 +1,14 @@
+# Vendored upstream trees are stored BYTE-IDENTICAL to their pinned commit, so that
+# `diff -ru <pristine-clone> vendor/<x>` recovers exactly our patch list and nothing
+# else. Git's automatic CRLF normalisation would silently rewrite upstream files that
+# ship with CRLF (Carcasum vendors quazip, whose MSVC project files do), turning a
+# clean diff into dozens of phantom whole-file changes and breaking the
+# "minimal and re-appliable" contract in vendor/carcasum/CARCASUM_PATCHES.md.
+vendor/** -text
+
+# Same reasoning for the checked-in reference XML the tile oracles pin by sha256:
+# tests/test_jcz_tile_oracle.py and tests/test_carcasum_tile_oracle.py assert the
+# vendored bytes, so any normalisation would fail those tests rather than pass
+# quietly -- but pinning here means the failure never happens in the first place.
+tests/data/jcz/*.xml -text
+tests/data/carcasum/*.xml -text

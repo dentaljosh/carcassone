@@ -116,3 +116,11 @@ scripts/m5_bench/MANIFEST.json
 # ARMS.json, PILOT_RIDS.json, POSITION_ORDER.json, PLAN_SUMMARY.json -- stays TRACKED.
 measurement/tiletie_oof_20260814/positions_*/*.jsonl
 measurement/tiletie_oof_20260814/positions_chunk*/
+
+# Carcasum (vendor/carcasum) build outputs. The SOURCE tree is tracked -- it is a
+# vendored, patched upstream (see vendor/carcasum/CARCASUM_PATCHES.md) -- but the
+# out-of-tree qmake shadow builds are not: they are ~1.7MB binaries plus .o files,
+# and they are reproducible from the tracked source with the incantation in
+# scripts/carcasum_match/bootstrap_toolchain.sh. The rootless Qt5 toolchain itself
+# lives OUTSIDE the repo at /home/doctor/opt/carcasum-toolchain.
+vendor/carcasum/build-*/
