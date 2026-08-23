@@ -111,7 +111,7 @@ build_common() {
   # manifest (n: 400, n_paired: 200). DO NOT "fix" this to 200 -- that would
   # halve the deck set DESIGN §4/§5 costed and gated.
   COMMON=(--info fair --opponent h800 --backend rust
-          --k-dets 4 --sims 688 --exact-k 2
+          --k-dets 4 --sims 1032 --exact-k 2
           --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits
           --n 400 --paired --seed-start "$BAND"
           --rules-profile fixed_v1 --workers "$W"
@@ -204,7 +204,7 @@ run_pilot() {
   # override --n and --seed-start for the pilot; everything else matches CELL R800
   local PARGV=(nice -n 19 "$PY" -u "$HARNESS"
         --info fair --opponent h800 --backend rust
-        --k-dets 4 --sims 688 --exact-k 2
+        --k-dets 4 --sims 1032 --exact-k 2
         --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits
         --n 16 --paired --seed-start "$PILOT_SEED_START"
         --rules-profile fixed_v1 --workers "$W"
