@@ -864,6 +864,9 @@ def build_features(args) -> dict:
     t0 = time.time()
     for i, rid in enumerate(sorted(by_rid)):
         row = meta[rid]
+        if rid not in arms_index:
+            skipped.append({"rid": rid, "error": "KeyError: absent from ARMS.json"})
+            continue
         arms = [int(a) for a in arms_index[rid]["arms"]]
         try:
             actions = row.get("actions")
@@ -909,8 +912,28 @@ def collect_labels(args) -> dict:
     """
     arb_by_rid, _, _, roots = ATB.merge_arb_records(args.arb_records)
     arms_index = json.loads(Path(args.plan_dir, "ARMS.json").read_text())
+    out = labels_from_records(arb_by_rid, arms_index)
+    out["roots"] = roots
+    return out
+
+
+def labels_from_records(by_rid: dict, arms_index: dict, *, allow_m=(None,),
+                        subset_worlds: int = 0) -> dict:
+    """`collect_labels`' body, factored so a SECOND judge's records can reuse it
+    verbatim (P3 needs the `clair-puct` oracle's own arm order through the exact
+    same shape gates) and so the stage-1 auxiliary corpora can be admitted with an
+    EXPLICIT `m` waiver instead of a silent coercion.
+
+    `allow_m=(None,)` means "the stage-0 rule": `m` must equal `ATB.M_EXPECTED`
+    (32) or the rid is refused and counted under `shape_problems`. Passing e.g.
+    `allow_m=(32, 128), subset_worlds=32` admits an `m=128` corpus by taking the
+    FIRST 32 CRN worlds — an exact estimand match, because the world seeds are
+    ordered and the salt is identical (PLAN.md §3.1). The waiver is recorded on
+    every affected rid so the witness can never lose it.
+    """
     labels, shape_problems = {}, []
-    for rid, legs in arb_by_rid.items():
+    n_subset = 0
+    for rid, legs in by_rid.items():
         meta = arms_index.get(rid)
         if meta is None:
             shape_problems.append({"rid": rid, "why": "absent from ARMS.json"})
@@ -921,34 +944,85 @@ def collect_labels(args) -> dict:
             shape_problems.append({"rid": rid, "why": f"partial arms {have} != {need}"})
             continue
         ref = legs[have[0]]
-        if int(ref.get("m") or 0) != ATB.M_EXPECTED:
+        m_rec = int(ref.get("m") or 0)
+        ok_m = (m_rec == ATB.M_EXPECTED) if allow_m == (None,) else (m_rec in allow_m)
+        if not ok_m:
             shape_problems.append({"rid": rid, "why": f"m={ref.get('m')} != "
                                                       f"{ATB.M_EXPECTED}"})
             continue
         if ref.get("world_seed_salt") != RT.WORLD_SEED_SALT:
             shape_problems.append({"rid": rid, "why": f"salt={ref.get('world_seed_salt')}"})
             continue
-        vals = [float(np.mean(ref["values_a"]))] + [
-            float(np.mean(legs[r]["values_b"])) for r in have]
+        cut = int(subset_worlds) if (subset_worlds and m_rec > int(subset_worlds)) else 0
+        if cut:
+            n_subset += 1
+        mat = matrix_for(legs, [0] + have)
+        if cut:
+            mat = [row[:cut] for row in mat]
+        vals = [float(np.mean(row)) for row in mat]
         labels[rid] = {"root_id": meta["root_id"], "arm_order": [0] + have,
-                       "labels": vals}
-    return {"labels": labels, "shape_problems": shape_problems, "roots": roots,
-            "n_rids": len(labels), "n_arm_labels": sum(len(v["labels"])
-                                                       for v in labels.values())}
+                       "labels": vals, "m": (cut or m_rec),
+                       "m_record": m_rec, "worlds_subset": bool(cut),
+                       "n_arms_planned": len(meta["arms"]),
+                       "rules_profile": meta.get("rules_profile"),
+                       "se_pairs": se_pairs_for(mat)}
+    return {"labels": labels, "shape_problems": shape_problems, "roots": [],
+            "n_rids": len(labels), "n_subset_worlds": n_subset,
+            "n_arm_labels": sum(len(v["labels"]) for v in labels.values())}
 
 
-def pairwise_rows(feats: dict, labels: dict, rids) -> tuple:
-    """Antisymmetrised sibling pairs: (x_i - x_j, 1) and (x_j - x_i, 0)."""
+def se_pairs_for(matrix) -> dict:
+    """`se_pair` for every unordered sibling pair, CRN-PAIRED (PLAN.md §6.4).
+
+    The arms of one rid are scored on the SAME ordered CRN worlds, so the honest
+    standard error of `margin_i − margin_j` is the sd of the per-world DIFFERENCE
+    over √m — not `sd·√2/√m`, which is the unpaired form the plan writes beside
+    its own "CRN-paired ⇒ use the paired sd" instruction. The paired form is used;
+    it is smaller wherever the CRN pairing works, so it is the CONSERVATIVE choice
+    for a near-tie filter (it declares FEWER pairs to be coin flips).
+
+    Keys are `"i,j"` strings so the dict survives a JSON round-trip.
+    """
+    out = {}
+    n = len(matrix)
+    m = len(matrix[0]) if n else 0
+    if m < 2:
+        return out
+    arr = np.asarray(matrix, dtype=np.float64)
+    for i in range(n):
+        for j in range(i + 1, n):
+            d = arr[i] - arr[j]
+            out[f"{i},{j}"] = float(np.std(d, ddof=1) / np.sqrt(m))
+    return out
+
+
+def pairwise_rows(feats: dict, labels: dict, rids, *, kappa: float = 0.0) -> tuple:
+    """Antisymmetrised sibling pairs: (x_i - x_j, 1) and (x_j - x_i, 0).
+
+    `kappa` is the PLAN.md §6.4 PRE-REGISTERED NEAR-TIE FILTER: a pair is kept only
+    if `|margin_i − margin_j| >= kappa · se_pair`. **`kappa=0.0` reproduces stage-0
+    EXACTLY** — it drops only *exact* ties, which is what stage-0 did, i.e. it fed
+    the ranker every pair whose margin difference was smaller than its own standard
+    error (coin-flip labels presented as data). The filter is a TRAINING-set filter
+    only; every accuracy in the free tier is graded on the UNFILTERED pair set so
+    the kappa arms share one test set.
+    """
     X, y, grp = [], [], []
+    kappa = float(kappa)
     for rid in rids:
         f, lb = feats.get(rid), labels.get(rid)
         if f is None or lb is None or len(f) != len(lb["labels"]):
             continue
         v = lb["labels"]
+        sep = lb.get("se_pairs") or {}
         for i in range(len(v)):
             for j in range(i + 1, len(v)):
                 if v[i] == v[j]:
                     continue                       # a tie carries no order
+                if kappa > 0.0:
+                    se = sep.get(f"{i},{j}")
+                    if se is not None and abs(v[i] - v[j]) < kappa * se:
+                        continue                   # a coin flip carries no order
                 d = np.asarray(f[i], dtype=np.float64) - np.asarray(f[j], dtype=np.float64)
                 X.append(d); y.append(1 if v[i] > v[j] else 0); grp.append(lb["root_id"])
                 X.append(-d); y.append(0 if v[i] > v[j] else 1); grp.append(lb["root_id"])
@@ -1111,6 +1185,846 @@ def load_net_scores(args) -> dict:
 
 
 # =========================================================================== #
+# 4b. STAGE-1 FREE TIER — P1 / P2 / P3 (PLAN.md §9.2)                          #
+# =========================================================================== #
+#
+# ⚠️ ZERO WORKER-HOURS. Every number in this section is computed from records
+# ALREADY ON DISK. No leg is scored, no position is generated, no graded position
+# is bought. The read rule for P3 is pre-registered in
+# `measurement/tienet_stage1_plan_20260823/P3_RULE.md`, committed BEFORE the first
+# fit — that commit, not this code, is what makes P3 a test rather than a story.
+
+FREE_TIER_PLAN = "measurement/tienet_stage1_plan_20260823/PLAN.md"
+P3_RULE_DOC = "measurement/tienet_stage1_plan_20260823/P3_RULE.md"
+
+#: PLAN.md §9.2 P3 — the boundary between "the features cannot rank even a perfect
+#: target" and "the features carry real signal". Declared, not negotiable.
+P3_ALIVE_BAR = 0.55
+#: PLAN.md §7.1 — the committed fraction of `arb` a tie-net must reproduce.
+GATE_FRACTION = 0.50
+
+R1_COLLINEARITY_NOTE = (
+    "R1 COLLINEARITY (PLAN.md §5): for a LINEAR pairwise ranker on x_a - x_b the "
+    "afterstate-minus-ROOT diff features CANCEL EXACTLY — (x_a-x_r)-(x_b-x_r) = "
+    "x_a-x_b. R1 is perfectly collinear with R0 in a linear model and adds "
+    "literally nothing; it is a rung ONLY paired with M2/M3.")
+
+FREE_TIER_PRIOR = (
+    "PRIOR, stated in PLAN.md §8 before any number was bought: ~10-15% that any "
+    "stage-1 tier clears §7.1. The free tier is designed to be worth running AT "
+    "that prior because its primary deliverable is a POWERED KILL, not a win.")
+
+
+def pair_agreement(pred, target, *, target_ties="drop"):
+    """(agree, n_pairs) over unordered sibling pairs of one position.
+
+    Mirrors `pairwise_rows`' convention exactly so the numbers are commensurable:
+    a pair whose TARGET values are equal carries no order and is not counted.
+
+    ⚠️ A pair on which the PREDICTOR ties scores 0.5, not 1.0 — at pick time it is
+    a coin flip, and scoring it as a win would flatter the predictor. This matters:
+    a degenerate all-constant model would otherwise read 1.000.
+    """
+    n = len(target)
+    agree, tot = 0.0, 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            if target[i] == target[j]:
+                continue
+            tot += 1
+            d = pred[i] - pred[j]
+            if d == 0:
+                agree += 0.5
+            elif (d > 0) == (target[i] > target[j]):
+                agree += 1.0
+    return agree, tot
+
+
+def _means(matrix, idx=None):
+    if idx is None:
+        return [float(np.mean(r)) for r in matrix]
+    return [float(AT._sub_mean(r, idx)) for r in matrix]
+
+
+def graded_matrices(inp: dict) -> dict:
+    """rid -> the two banked value matrices for the ACCEPTED graded corpus.
+
+    Built from `analyze_tiearb.build_positions`' own accepted rows and its own
+    `arm_order`, so this cannot silently re-scope the 733.
+    """
+    out = {}
+    for row in inp["rows"]:
+        rid = row["rid"]
+        out[rid] = {
+            "if": matrix_for(inp["if_by_rid"][rid], row["arm_order"]),
+            "arb": matrix_for(inp["arb_by_rid"][rid], row["arm_order"]),
+            "arm_order": row["arm_order"], "root_id": row["root_id"],
+            "champ_pos": row["champ_pos"], "m": row["m"],
+            "scale_all": row["scale_all"], "stratum": row["stratum"],
+        }
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# P1 — calibrate rank accuracy -> capture                                       #
+# --------------------------------------------------------------------------- #
+def p1_calibration(inp: dict, mats: dict, seed: int) -> dict:
+    """PLAN.md §9.2 P1. The ARBITER's own sibling-rank accuracy against the
+    `clair-puct` ORACLE order, on the graded 733 — both orderings are banked.
+
+    Without this the whole accuracy axis of the label sweep is uninterpretable:
+    it is what converts "rank accuracy 0.53" into "capture X pts/tied ply".
+
+    Two accuracies are reported and they are NOT interchangeable:
+
+    * ``full`` — the arbiter's full-M mean order vs the oracle's full-M mean
+      order. This is the estimand the NET is graded on (its pick is
+      world-independent), so it is the one to read a net accuracy against.
+    * ``crossfit`` — the arbiter's order from the SELECTION half vs the oracle's
+      order on the disjoint EVALUATION half, symmetrised over the two parity
+      folds. This is the estimand `arb = +0.2065` was actually priced on, so it is
+      the honest anchor for the accuracy->capture map. It is LOWER than `full` by
+      construction (half the worlds, plus the winner's-curse control) — that gap
+      is the NET FOLD ASYMMETRY caveat showing up as a number.
+    """
+    acc = {"full": [0.0, 0], "crossfit": [0.0, 0]}
+    top1 = {"full": [0, 0], "crossfit": [0, 0]}
+    per_arms = defaultdict(lambda: [0.0, 0])
+    for row in inp["rows"]:
+        d = mats[row["rid"]]
+        mi, ma = d["if"], d["arb"]
+        ora_full, arb_full = _means(mi), _means(ma)
+        a, t = pair_agreement(arb_full, ora_full)
+        acc["full"][0] += a; acc["full"][1] += t
+        per_arms[len(ora_full)][0] += a; per_arms[len(ora_full)][1] += t
+        if t:
+            top1["full"][1] += 1
+            top1["full"][0] += int(max(range(len(arb_full)),
+                                       key=lambda i: (arb_full[i], -i))
+                                   == max(range(len(ora_full)),
+                                          key=lambda i: (ora_full[i], -i)))
+        folds = (AT.parity_indices(d["m"], base=ATB.PARITY_BASE, swap=False),
+                 AT.parity_indices(d["m"], base=ATB.PARITY_BASE, swap=True))
+        for sel, eva in folds:
+            pa, ta = pair_agreement(_means(ma, sel), _means(mi, eva))
+            acc["crossfit"][0] += pa; acc["crossfit"][1] += ta
+            if ta:
+                top1["crossfit"][1] += 1
+                p, q = _means(ma, sel), _means(mi, eva)
+                top1["crossfit"][0] += int(
+                    max(range(len(p)), key=lambda i: (p[i], -i))
+                    == max(range(len(q)), key=lambda i: (q[i], -i)))
+
+    rows = inp["rows"]
+    cap = {k: AT.aggregate(rows, k, "scale_all", seed=seed)
+           for k in ("arb", "ora", "rnd")}
+    a_cf = acc["crossfit"][0] / acc["crossfit"][1]
+    a_full = acc["full"][0] / acc["full"][1]
+
+    # The accuracy -> capture map. Two empirical anchors bracket the arbiter:
+    #   (0.5, rnd)  a coin-flip ranker picks a uniformly random arm, and
+    #   (a_cf, arb) the arbiter's realized accuracy at its realized capture.
+    # Linear interpolation between them is the honest local calibration; the
+    # (1.0, ora) anchor is reported as the far end but NOT used for the slope,
+    # because the map is not linear all the way to a perfect ranker.
+    rnd_c, arb_c, ora_c = cap["rnd"]["mean"], cap["arb"]["mean"], cap["ora"]["mean"]
+    slope = (arb_c - rnd_c) / (a_cf - 0.5) if a_cf != 0.5 else None
+
+    def acc_for(c):
+        return None if not slope else 0.5 + (c - rnd_c) / slope
+
+    def cap_for(a):
+        return None if not slope else rnd_c + (a - 0.5) * slope
+
+    stage0_acc = 0.5211                      # GRADE_net.json inner-CV mean
+    return {
+        "what": "PLAN.md §9.2 P1 — arbiter sibling-rank accuracy vs the clair-puct "
+                "oracle order on the graded 733; calibrates accuracy -> capture.",
+        "n_positions": len(rows), "n_roots": cap["arb"]["n_roots"],
+        "acc_full": a_full, "acc_full_pairs": acc["full"][1],
+        "acc_crossfit": a_cf, "acc_crossfit_pairs": acc["crossfit"][1],
+        "top1_full": top1["full"][0] / max(1, top1["full"][1]),
+        "top1_crossfit": top1["crossfit"][0] / max(1, top1["crossfit"][1]),
+        "acc_by_n_arms": {str(k): {"acc": v[0] / v[1], "pairs": v[1]}
+                          for k, v in sorted(per_arms.items()) if v[1]},
+        "capture": {k: {"mean": v["mean"], "se_cluster": v["se_cluster"],
+                        "z": v["z"], "n": v["n"], "n_roots": v["n_roots"]}
+                    for k, v in cap.items()},
+        "calibration": {
+            "anchors": [[0.5, rnd_c], [a_cf, arb_c], [1.0, ora_c]],
+            "slope_pts_per_acc": slope,
+            "acc_needed_for_half_arb": acc_for(GATE_FRACTION * arb_c),
+            "acc_needed_for_full_arb": acc_for(arb_c),
+            "predicted_capture_at_stage0_acc": cap_for(stage0_acc),
+            "stage0_measured_capture": -0.04510,
+            "stage0_inner_cv_acc": stage0_acc,
+            "note": "Slope is fitted on (0.5, rnd) and (acc_crossfit, arb) ONLY. "
+                    "The (1.0, ora) anchor is printed for scale and is NOT on the "
+                    "line — a perfect ranker is not reachable by extrapolating a "
+                    "local slope. `predicted_capture_at_stage0_acc` is what the "
+                    "calibration says stage-0's 0.5211 should have been worth; "
+                    "compare it to the MEASURED -0.0451 before trusting either.",
+        },
+        "asymmetry_caveat": NET_ASYMMETRY_CAVEAT,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# P2 — label-noise audit (the B-vs-n decision)                                  #
+# --------------------------------------------------------------------------- #
+def p2_label_noise(mats: dict, kappas=(0.5, 1.0, 2.0)) -> dict:
+    """PLAN.md §9.2 P2. Distribution of `|Δ margin| / se_pair` over the graded
+    corpus's sibling pairs, per judge.
+
+    The decision it buys: stage-0 dropped only EXACT ties, so it fed the ranker
+    every pair whose margin difference was smaller than its own standard error —
+    coin-flip labels presented as data. If a large fraction of pairs sit below
+    1 `se_pair`, the EFFECTIVE stage-0 label count was far below its nominal
+    count, and route (b) should buy **B** (deeper labels, `se ∝ 1/√B`) rather than
+    **n** (more plies) at the same worker-seconds.
+    """
+    out = {}
+    for judge, name in (("arb", "tier1-greedy (the TRAINING label of record)"),
+                        ("if", "clair-puct (the P3 noiseless-target arm)")):
+        ts, exact = [], 0
+        for d in mats.values():
+            mat = d[judge]
+            v = _means(mat)
+            sep = se_pairs_for(mat)
+            n = len(v)
+            for i in range(n):
+                for j in range(i + 1, n):
+                    if v[i] == v[j]:
+                        exact += 1
+                        continue
+                    se = sep.get(f"{i},{j}")
+                    if not se:
+                        continue
+                    ts.append(abs(v[i] - v[j]) / se)
+        arr = np.asarray(ts, dtype=np.float64)
+        n_pairs = int(arr.size)
+        out[judge] = {
+            "judge": name, "n_pairs_non_exact_tie": n_pairs,
+            "n_exact_ties_dropped_by_stage0": exact,
+            "t_quantiles": {q: float(np.percentile(arr, q))
+                            for q in (5, 10, 25, 50, 75, 90, 95)} if n_pairs else {},
+            "t_mean": float(arr.mean()) if n_pairs else None,
+            "frac_below": {str(k): float((arr < k).mean()) for k in kappas},
+            "effective_pairs_at_kappa": {
+                str(k): int((arr >= k).sum()) for k in kappas},
+            "kappa0_pairs": n_pairs,
+        }
+    return {
+        "what": "PLAN.md §9.2 P2 — label-noise audit; the B-vs-n decision.",
+        "se_pair_definition": "CRN-PAIRED: sd over worlds of (margin_i - margin_j) "
+                              "/ sqrt(m). Smaller than the unpaired sd*sqrt(2)/sqrt(m) "
+                              "wherever the CRN pairing works, so it declares FEWER "
+                              "pairs to be coin flips — the conservative choice.",
+        "by_judge": out,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# P3 — feature informativeness against a NOISELESS target                       #
+# --------------------------------------------------------------------------- #
+def crossfit_ranker(feats: dict, labels: dict, rids, *, kfold: int, split_seed: int,
+                    model: str, min_pairs: int, kappa: float = 0.0) -> dict:
+    """`cmd_train_net`'s cross-fit, factored out so P3 and the label sweep run the
+    IDENTICAL estimator with only the label source / pool changed.
+
+    Returns the held-out scores, the per-fold witness, and BOTH accuracies:
+
+    * ``inner_cv_acc_mean`` — the statistic stage-0 published (0.5211). It is a
+      TRAINING-ADJACENT number (the inner root-grouped CV inside the training
+      folds), and it is the one `P3_RULE.md` pre-registered the branch on, purely
+      so the comparison to stage-0 is apples-to-apples.
+    * ``oof_acc`` — the honest out-of-fold accuracy: every root scored by a model
+      that never saw it, graded on the UNFILTERED pair set. Reported beside, never
+      substituted for, the branch statistic.
+    """
+    roots = sorted({labels[r]["root_id"] for r in rids})
+    folds = root_folds(roots, kfold, split_seed)
+    scores_by_rid, fold_meta = {}, []
+    for k, te_roots in enumerate(folds):
+        te = set(te_roots)
+        tr_rids = [r for r in rids if labels[r]["root_id"] not in te]
+        te_rids = [r for r in rids if labels[r]["root_id"] in te]
+        assert not ({labels[r]["root_id"] for r in tr_rids} & te), "root leak"
+        X, y, g = pairwise_rows(feats, labels, tr_rids, kappa=kappa)
+        if X.shape[0] < min_pairs:
+            fold_meta.append({"fold": k, "skipped": True, "n_pairs": int(X.shape[0])})
+            continue
+        mdl = fit_ranker(X, y, g, model=model, seed=split_seed + k)
+        scores_by_rid.update(score_arms(mdl, feats, te_rids))
+        fold_meta.append({"fold": k, "n_train_rids": len(tr_rids),
+                          "n_train_roots": len(roots) - len(te),
+                          "n_test_rids": len(te_rids), "n_pairs": int(X.shape[0]),
+                          "kind": mdl["kind"], "C": mdl.get("C"),
+                          "inner_cv_acc": mdl.get("inner_cv_acc")})
+    ag, tot, npos = 0.0, 0, 0
+    for rid, s in scores_by_rid.items():
+        lb = labels.get(rid)
+        if lb is None or len(s) != len(lb["labels"]):
+            continue
+        a, t = pair_agreement(s, lb["labels"])
+        ag += a; tot += t; npos += 1
+    inner = [f.get("inner_cv_acc") for f in fold_meta if f.get("inner_cv_acc") is not None]
+    return {
+        "scores_by_rid": scores_by_rid, "folds": fold_meta,
+        "n_rids": len(rids), "n_roots": len(roots),
+        "n_train_pairs_total": sum(f.get("n_pairs", 0) for f in fold_meta),
+        "inner_cv_acc_mean": (float(np.mean(inner)) if inner else None),
+        "inner_cv_acc_folds": inner,
+        "oof_acc": (ag / tot) if tot else None, "oof_pairs": tot,
+        "oof_positions": npos, "model": model, "kappa": kappa,
+        "kfold": kfold, "split_seed": split_seed,
+    }
+
+
+def p3_feature_informativeness(inp: dict, mats: dict, feats: dict, args) -> dict:
+    """PLAN.md §9.2 P3 — THE DECISIVE PRE-FLIGHT. Read rule: `P3_RULE.md`.
+
+    Same 84 features, same estimator, same 5-fold root cross-fit, same seed, same
+    label COUNT — only the label NOISE is removed, by swapping the arbiter's noisy
+    CRN margins for the `clair-puct` oracle's own arm order (banked for all 733).
+
+    ⚠️ RAIL (PLAN.md §9.2, verbatim): P3 trains against the same oracle quantity
+    used to grade. It is a DIAGNOSTIC OF FEATURE INFORMATIVENESS ONLY and MUST
+    NEVER be reported as capture. No `arb`, no `F`, no capture CI comes out of it.
+    """
+    arms_index = json.loads(Path(args.plan_dir, "ARMS.json").read_text())
+    arb = labels_from_records(inp["arb_by_rid"], arms_index)
+    ora = labels_from_records(inp["if_by_rid"], arms_index)
+    # P3 is scoped to the ACCEPTED graded corpus and to rids the oracle arm also
+    # covers, so the two arms differ in label NOISE and in nothing else.
+    keep = sorted(set(feats) & set(arb["labels"]) & set(ora["labels"]) & set(mats))
+    same_order = [r for r in keep
+                  if arb["labels"][r]["arm_order"] == ora["labels"][r]["arm_order"]]
+    arms = {
+        "arbiter": crossfit_ranker(feats, arb["labels"], same_order,
+                                   kfold=args.kfold, split_seed=args.split_seed,
+                                   model=args.model, min_pairs=args.min_pairs),
+        "oracle": crossfit_ranker(feats, ora["labels"], same_order,
+                                  kfold=args.kfold, split_seed=args.split_seed,
+                                  model=args.model, min_pairs=args.min_pairs),
+    }
+    for a in arms.values():
+        a.pop("scores_by_rid", None)
+    published = [0.5285, 0.5251, 0.5212, 0.5229, 0.5080]
+    got = arms["arbiter"]["inner_cv_acc_folds"]
+    ctrl_ok = (len(got) == len(published)
+               and all(abs(a - b) <= 5e-4 for a, b in zip(sorted(got), sorted(published))))
+    p3 = arms["oracle"]["inner_cv_acc_mean"]
+    branch = "ALIVE" if (p3 is not None and p3 >= P3_ALIVE_BAR) else "DEAD"
+    return {
+        "what": "PLAN.md §9.2 P3 — feature informativeness against a NOISELESS "
+                "target. Read rule pre-registered at " + P3_RULE_DOC + ".",
+        "n_rids": len(same_order), "n_roots": arms["oracle"]["n_roots"],
+        "arms": arms,
+        "control": {
+            "published_stage0_inner_cv_folds": published,
+            "reproduced": got, "ok": bool(ctrl_ok), "tol": 5e-4,
+            "why": "the arbiter-label arm re-runs stage-0's own fit; if it does not "
+                   "reproduce GRADE_net.json's per-fold inner-CV accuracies, P3 is "
+                   "VOID and no branch fires.",
+        },
+        "p3_acc": p3, "alive_bar": P3_ALIVE_BAR, "branch": branch,
+        "branch_meaning": (
+            "DEAD: the 84 features cannot rank siblings even against a perfect, "
+            "noiseless target => the label routes are ARITHMETICALLY dead; run the "
+            "free A1-A3 sweep to convert the §7.2 kill into a LABEL-SCALED kill, "
+            "then STOP."
+            if branch == "DEAD" else
+            "ALIVE: the features carry real signal => proceed to the full free "
+            "tier; P2 then decides depth-vs-breadth for any future funded route."),
+        "rail": "DIAGNOSTIC ONLY — must never be reported as capture.",
+    }
+
+
+def cmd_preflight(args) -> int:
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    inp = load_grade_inputs(args)
+    kg = require_knowngood(inp, args.boot_seed, out_dir)     # ⛔ THE GATE, always first
+    mats = graded_matrices(inp)
+    parts = [p.strip().lower() for p in str(args.parts).split(",") if p.strip()]
+
+    rep = {"schema": SCHEMA, "mode": "preflight", "generated_utc": _utc(),
+           "git": _git_rev(), "knowngood": kg, "plan": FREE_TIER_PLAN,
+           "read_rule": P3_RULE_DOC, "parts": parts,
+           "n_positions": len(inp["rows"]),
+           "governance": "0 games, no band, no results.csv row, no claim id, no "
+                         "RUN_LIVE.json. ZERO worker-hours: every number is computed "
+                         "from records already on disk.",
+           "ceiling_caveat": CEILING_CAVEAT,
+           "net_asymmetry_caveat": NET_ASYMMETRY_CAVEAT,
+           "r1_collinearity_note": R1_COLLINEARITY_NOTE,
+           "prior": FREE_TIER_PRIOR}
+
+    if "p1" in parts:
+        rep["P1"] = p1_calibration(inp, mats, args.boot_seed)
+        c = rep["P1"]
+        print(f"\n=== P1 — arbiter rank accuracy vs the clair-puct oracle order ===")
+        print(f"  acc (full-M, the NET's estimand)      {c['acc_full']:.4f}  "
+              f"over {c['acc_full_pairs']} pairs")
+        print(f"  acc (cross-fit, arb=+0.2065's own)    {c['acc_crossfit']:.4f}  "
+              f"over {c['acc_crossfit_pairs']} pairs")
+        print(f"  top-1 agreement  full {c['top1_full']:.4f}   "
+              f"cross-fit {c['top1_crossfit']:.4f}")
+        cal = c["calibration"]
+        print(f"  capture anchors: rnd {c['capture']['rnd']['mean']:+.5f}  "
+              f"arb {c['capture']['arb']['mean']:+.5f}  "
+              f"ora {c['capture']['ora']['mean']:+.5f}")
+        print(f"  slope {cal['slope_pts_per_acc']:.4f} pts per unit accuracy  =>  "
+              f"acc needed for 0.50*arb = {cal['acc_needed_for_half_arb']:.4f}")
+        print(f"  calibration says stage-0's acc 0.5211 is worth "
+              f"{cal['predicted_capture_at_stage0_acc']:+.5f}; MEASURED "
+              f"{cal['stage0_measured_capture']:+.5f}")
+
+    if "p2" in parts:
+        rep["P2"] = p2_label_noise(mats)
+        print(f"\n=== P2 — label-noise audit (|Δ margin| / se_pair) ===")
+        for j, b in rep["P2"]["by_judge"].items():
+            q = b["t_quantiles"]
+            print(f"  [{j}] {b['judge']}")
+            print(f"        pairs {b['n_pairs_non_exact_tie']}  exact ties dropped "
+                  f"{b['n_exact_ties_dropped_by_stage0']}  median t {q.get(50, 0):.3f}")
+            print(f"        frac below 0.5 se {b['frac_below']['0.5']:.3f}   "
+                  f"below 1 se {b['frac_below']['1.0']:.3f}   "
+                  f"below 2 se {b['frac_below']['2.0']:.3f}")
+            print(f"        effective pairs  k=0.5 {b['effective_pairs_at_kappa']['0.5']}"
+                  f"   k=1.0 {b['effective_pairs_at_kappa']['1.0']}"
+                  f"   (k=0 -> {b['kappa0_pairs']})")
+
+    if "p3" in parts:
+        fb = json.loads(Path(args.features).read_text())
+        rep["P3"] = p3_feature_informativeness(inp, mats, fb["features"], args)
+        p3 = rep["P3"]
+        print(f"\n=== P3 — ⭐ THE GATE: feature informativeness vs a NOISELESS target ===")
+        print(f"  read rule (pre-registered, committed before this fit): {P3_RULE_DOC}")
+        print(f"  control — stage-0 arbiter-label arm reproduces: "
+              f"{'PASS ✅' if p3['control']['ok'] else 'FAIL ⛔'}")
+        print(f"      published {['%.4f' % x for x in p3['control']['published_stage0_inner_cv_folds']]}")
+        print(f"      reproduced {['%.4f' % x for x in p3['control']['reproduced']]}")
+        for name, a in p3["arms"].items():
+            print(f"  [{name:<7}] inner-CV acc {a['inner_cv_acc_mean']:.4f}  "
+                  f"folds {['%.4f' % x for x in a['inner_cv_acc_folds']]}")
+            print(f"            OOF acc {a['oof_acc']:.4f} over {a['oof_pairs']} "
+                  f"held-out pairs / {a['oof_positions']} positions   "
+                  f"train pairs {a['n_train_pairs_total']}")
+        print(f"\n  ⭐ p3_acc = {p3['p3_acc']:.4f}   bar = {P3_ALIVE_BAR}   "
+              f"=> BRANCH: {p3['branch']}")
+        print(f"  {p3['branch_meaning']}")
+        print(f"  ⚠️ {p3['rail']}")
+
+    (out_dir / "PREFLIGHT.json").write_text(json.dumps(rep, indent=2, default=str))
+    print(f"\n⚠️  {CEILING_CAVEAT}")
+    print(f"\n⚠️  {R1_COLLINEARITY_NOTE}")
+    print(f"\n[wrote] {out_dir / 'PREFLIGHT.json'}")
+    return 0
+
+
+# =========================================================================== #
+# 4c. STAGE-1 FREE TIER — A1/A2/A3 THE LABEL SWEEP (PLAN.md §3.1, §6.3, §9.3)  #
+# =========================================================================== #
+#
+# The "L" design's LABEL ARM: features fixed at R0, model fixed at M0, the pair
+# pool swept T0 -> T1 -> T2 -> T3 for ZERO compute by unifying the banked
+# auxiliary corpora. Its primary readout is RANK ACCURACY (PLAN.md §9.1: capture's
+# se is 0.0552 FOREVER at n=733, but accuracy's error bar shrinks with labels);
+# capture is a diagnostic at every rung and the headline at the top rung only
+# (§7.4's anti-shopping rail).
+
+#: P1's realized calibration, read off PREFLIGHT.json and reused so the sweep can
+#: print "what capture SHOULD this accuracy be worth" beside what it measured.
+#: Anchors: (0.5, rnd = +0.015115) and (acc_crossfit = 0.537902, arb = +0.206459).
+P1_RND_CAPTURE = 0.015115114814570356
+P1_SLOPE = 5.048383165777653
+
+AUX_TRAIN = "aux-train"
+CROSS_FIT = "cross-fit"
+
+AUX_TRAIN_NOTE = (
+    "AUX-TRAIN / GRADE-733 (PLAN.md §6.3): trained ONLY on auxiliary corpora, "
+    "graded on all 733. The auxiliaries are disjoint seed BANDS with 0 rid overlap "
+    "(G-DISJOINT, asserted in code), so there is no leakage channel, the cross-fit "
+    "disappears and the full 733 is a pure out-of-sample holdout — no 1/5 shrinkage "
+    "of the graded n, and the winner's-curse control strengthens from 'a root split' "
+    "to 'a different band entirely'. ⚠️ This makes the TRAINING set out-of-band; the "
+    "GRADING is entirely within the graded corpus's own band, so CLAUDE.md's "
+    "'inflate sigma 1.5-2x on cross-band CONTRASTS' does NOT bite the error bar. "
+    "What bites is DISTRIBUTION SHIFT IN THE MODEL — a bias risk on the estimate, "
+    "not a variance risk on the interval. The stage-0 root cross-fit is retained "
+    "beside it as the conservative consistency check; if the two disagree by more "
+    "than ~1 sigma the shift is doing real work and the CROSS-FIT is the headline.")
+
+
+def _repo_path(p) -> Path:
+    """Registry paths are repo-relative by convention; absolute ones pass through."""
+    q = Path(p)
+    return q if q.is_absolute() else (REPO / q)
+
+
+def load_corpus_pool(name: str, spec: dict) -> dict:
+    """One auxiliary corpus -> its labels + features, through the SAME shape gates.
+
+    `allow_m` / `subset_worlds` are the PLAN.md §3.1 explicit `m=128` waiver; they
+    default to the stage-0 refusal. Nothing is coerced silently.
+    """
+    by_rid, _present, _not_ok, _roots = ATB.merge_arb_records(list(spec["records"]))
+    arms_index = json.loads((_repo_path(spec["plan_dir"]) / "ARMS.json").read_text())
+    lab = labels_from_records(
+        by_rid, arms_index,
+        allow_m=tuple(spec.get("allow_m") or (None,)),
+        subset_worlds=int(spec.get("subset_worlds") or 0))
+    fb = json.loads(_repo_path(spec["features"]).read_text())
+    feats = fb["features"]
+    rids = sorted(set(feats) & set(lab["labels"]))
+    labels = {r: lab["labels"][r] for r in rids}
+    pairs = sum(sum(1 for i in range(len(v["labels"]))
+                    for j in range(i + 1, len(v["labels"]))
+                    if v["labels"][i] != v["labels"][j]) for v in labels.values())
+    return {
+        "name": name, "labels": labels, "feats": {r: feats[r] for r in rids},
+        "meta": {
+            "name": name, "tier": spec.get("tier"), "plan_dir": spec["plan_dir"],
+            "records": list(spec["records"]), "features_cache": spec["features"],
+            "rules_profiles": fb.get("rules_profile"),
+            "allow_m": spec.get("allow_m"), "subset_worlds": spec.get("subset_worlds"),
+            "n_rids": len(rids), "n_roots": len({v["root_id"] for v in labels.values()}),
+            "n_arm_labels": sum(len(v["labels"]) for v in labels.values()),
+            "n_pairs_non_tied": pairs,
+            "n_worlds_subset": sum(1 for v in labels.values() if v.get("worlds_subset")),
+            "n_shape_problems": len(lab["shape_problems"]),
+            "shape_problems_sample": lab["shape_problems"][:10],
+            "n_no_features": len(set(lab["labels"]) - set(feats)),
+            "declared_shift": spec.get("declared_shift"),
+            "arm_count_hist": _hist(len(v["labels"]) for v in labels.values()),
+        },
+    }
+
+
+def _hist(it) -> dict:
+    h = defaultdict(int)
+    for x in it:
+        h[int(x)] += 1
+    return {str(k): v for k, v in sorted(h.items())}
+
+
+def assert_disjoint(graded_labels: dict, pools: list) -> dict:
+    """⛔ G-DISJOINT, THE LOAD-BEARING GATE for AUX-TRAIN/GRADE-733.
+
+    If any auxiliary rid or root also appears in the graded corpus, the 733 is NOT
+    a pure holdout and the whole design collapses into a leak. This REFUSES rather
+    than reports — a silent overlap would make every accuracy in the sweep a lie.
+    """
+    g_rids = set(graded_labels)
+    g_roots = {v["root_id"] for v in graded_labels.values()}
+    w = {"graded_rids": len(g_rids), "graded_roots": len(g_roots), "by_corpus": {}}
+    for p in pools:
+        rid_ov = sorted(g_rids & set(p["labels"]))
+        root_ov = sorted(g_roots & {v["root_id"] for v in p["labels"].values()})
+        w["by_corpus"][p["name"]] = {"rid_overlap": len(rid_ov),
+                                     "root_overlap": len(root_ov),
+                                     "examples": (rid_ov[:5] + root_ov[:5])}
+        if rid_ov or root_ov:
+            raise SystemExit(
+                f"⛔ G-DISJOINT FAILED for {p['name']}: {len(rid_ov)} rid / "
+                f"{len(root_ov)} root overlap with the graded 733 (e.g. "
+                f"{(rid_ov[:3] + root_ov[:3])}). AUX-TRAIN/GRADE-733 requires ZERO "
+                f"overlap — the 733 would not be a holdout. REFUSING.")
+    return w
+
+
+def acc_bootstrap_se(per_root: dict, seed: int, reps: int = 2000) -> dict:
+    """Root-CLUSTERED bootstrap se on a pair accuracy.
+
+    PLAN.md §9.1 prices the accuracy axis with an assumed cluster design-effect of
+    ~3. This measures it instead: resample ROOTS with replacement, recompute
+    agree/total inside each replicate. `deff` is the realized ratio to the nominal
+    sqrt(0.25/pairs), reported so the plan's assumption can be checked rather than
+    inherited.
+    """
+    roots = sorted(per_root)
+    if not roots:
+        return {}
+    ag = np.asarray([per_root[r][0] for r in roots], dtype=np.float64)
+    tot = np.asarray([per_root[r][1] for r in roots], dtype=np.float64)
+    n_pairs = float(tot.sum())
+    if n_pairs <= 0:
+        return {}
+    rng = np.random.default_rng(int(seed))
+    idx = rng.integers(0, len(roots), size=(int(reps), len(roots)))
+    num, den = ag[idx].sum(axis=1), tot[idx].sum(axis=1)
+    ok = den > 0
+    draws = num[ok] / den[ok]
+    se = float(draws.std(ddof=1))
+    nominal = float(np.sqrt(0.25 / n_pairs))
+    return {"acc": float(ag.sum() / n_pairs), "n_pairs": int(n_pairs),
+            "n_roots": len(roots), "se_boot_cluster": se,
+            "se_nominal": nominal, "deff": (se / nominal if nominal else None),
+            "ci95": [float(np.percentile(draws, 2.5)),
+                     float(np.percentile(draws, 97.5))], "reps": int(reps)}
+
+
+def grade_scores_on_733(scores: dict, inp: dict, graded_labels: dict,
+                        oracle_labels: dict, boot_seed: int) -> dict:
+    """One scored arm set -> rank accuracy against BOTH targets, plus capture.
+
+    ⚠️ THE TWO ACCURACIES ARE NOT INTERCHANGEABLE and conflating them is the single
+    easiest way to misread this whole sweep:
+
+    * ``rank_accuracy`` (vs the ARBITER's CRN margins) is the training objective's
+      own test statistic — "did the net learn what it was taught". It is the number
+      commensurable with stage-0's published 0.5211 and with §7.2's bar.
+    * ``rank_accuracy_oracle`` (vs the `clair-puct` ORACLE order) is "did the net
+      learn the TRUTH". **This is the one P1's accuracy->capture calibration is
+      keyed to**, because capture is priced by the oracle. Comparing the net's
+      arbiter-target accuracy to P1's 0.5379 would be comparing two different
+      quantities and would license a conclusion the data does not support.
+
+    Both are graded on the UNFILTERED pair set so every kappa arm shares one test
+    set. Capture goes through `price_picks` + `aggregate_picker`, unchanged.
+    """
+    def _acc(target):
+        per_root = defaultdict(lambda: [0.0, 0])
+        for rid, s in scores.items():
+            lb = target.get(rid)
+            if lb is None or len(s) != len(lb["labels"]):
+                continue
+            a, t = pair_agreement(s, lb["labels"])
+            per_root[lb["root_id"]][0] += a
+            per_root[lb["root_id"]][1] += t
+        pr = {k: (float(v[0]), int(v[1])) for k, v in per_root.items()}
+        return acc_bootstrap_se(pr, boot_seed), {k: list(v) for k, v in pr.items()}
+
+    acc_arb, pr_arb = _acc(graded_labels)
+    acc_ora, pr_ora = _acc(oracle_labels)
+    priced = price_picks(inp["rows"], inp["if_by_rid"], picker_net(scores))
+    block = aggregate_picker(priced, inp["rows"], boot_seed)
+    return {"rank_accuracy": acc_arb, "rank_accuracy_oracle": acc_ora,
+            "capture": block, "n_scored_rids": len(scores),
+            "per_root_acc": pr_arb, "per_root_acc_oracle": pr_ora}
+
+
+def paired_acc_contrast(a: dict, b: dict, seed: int, reps: int = 4000,
+                        key: str = "per_root_acc",
+                        acc_key: str = "rank_accuracy") -> dict:
+    """acc(a) − acc(b) with the SAME resampled roots in every replicate.
+
+    ⚠️ Load-bearing: every cell of the label sweep is graded on the IDENTICAL 2,458
+    pairs of the graded 733, so the two accuracies are strongly positively
+    correlated. Treating them as independent (adding the marginal se's in
+    quadrature) OVERSTATES the error on their difference — i.e. it would understate
+    a real trend. The paired bootstrap is the correct instrument and is what the
+    trend claim is read on.
+    """
+    pa, pb = a.get(key) or {}, b.get(key) or {}
+    roots = sorted(set(pa) & set(pb))
+    if not roots:
+        return {}
+    A = np.asarray([pa[r] for r in roots], dtype=np.float64)
+    B = np.asarray([pb[r] for r in roots], dtype=np.float64)
+    rng = np.random.default_rng(int(seed))
+    idx = rng.integers(0, len(roots), size=(int(reps), len(roots)))
+    da = A[:, 0][idx].sum(axis=1) / A[:, 1][idx].sum(axis=1)
+    db = B[:, 0][idx].sum(axis=1) / B[:, 1][idx].sum(axis=1)
+    d = da - db
+    point = float(A[:, 0].sum() / A[:, 1].sum() - B[:, 0].sum() / B[:, 1].sum())
+    se = float(d.std(ddof=1))
+    return {"target": ("oracle" if "oracle" in key else "arbiter"),
+            "delta_acc": point, "se_paired": se,
+            "z": (point / se) if se else None,
+            "ci95": [float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))],
+            "n_roots": len(roots), "reps": int(reps),
+            "se_unpaired_quadrature": float(np.sqrt(
+                (a[acc_key]["se_boot_cluster"] ** 2)
+                + (b[acc_key]["se_boot_cluster"] ** 2)))}
+
+
+def run_label_tier(inp: dict, graded_feats: dict, graded_labels: dict,
+                   graded_rids: list, pools: list, *, design: str, model: str,
+                   kappa: float, args, oracle_labels: dict) -> dict:
+    """One cell of the label arm: a pair pool x a split design -> scores on the 733."""
+    feats = dict(graded_feats)
+    labels = dict(graded_labels)
+    for p in pools:
+        feats.update(p["feats"])
+        labels.update(p["labels"])
+    aux_rids = [r for p in pools for r in sorted(p["labels"])]
+
+    if design == AUX_TRAIN:
+        if not aux_rids:
+            return {"design": design, "skipped": "no auxiliary corpus at this tier"}
+        X, y, g = pairwise_rows(feats, labels, aux_rids, kappa=kappa)
+        mdl = fit_ranker(X, y, g, model=model, seed=args.split_seed)
+        scores = score_arms(mdl, graded_feats, graded_rids)
+        fitmeta = {"n_train_pairs_rows": int(X.shape[0]),
+                   "n_train_rids": len(aux_rids),
+                   "n_train_roots": len(set(g)), "C": mdl.get("C"),
+                   "kind": mdl["kind"], "inner_cv_acc": mdl.get("inner_cv_acc")}
+    else:
+        roots = sorted({graded_labels[r]["root_id"] for r in graded_rids})
+        folds = root_folds(roots, args.kfold, args.split_seed)
+        scores, fm = {}, []
+        for k, te_roots in enumerate(folds):
+            te = set(te_roots)
+            tr = [r for r in graded_rids if graded_labels[r]["root_id"] not in te]
+            teg = [r for r in graded_rids if graded_labels[r]["root_id"] in te]
+            assert not ({graded_labels[r]["root_id"] for r in tr} & te), "root leak"
+            X, y, g = pairwise_rows(feats, labels, tr + aux_rids, kappa=kappa)
+            mdl = fit_ranker(X, y, g, model=model, seed=args.split_seed + k)
+            scores.update(score_arms(mdl, graded_feats, teg))
+            fm.append({"fold": k, "n_pairs_rows": int(X.shape[0]), "C": mdl.get("C"),
+                       "inner_cv_acc": mdl.get("inner_cv_acc")})
+        inner = [f["inner_cv_acc"] for f in fm if f.get("inner_cv_acc") is not None]
+        fitmeta = {"folds": fm, "n_train_pairs_rows": sum(f["n_pairs_rows"] for f in fm),
+                   "inner_cv_acc": (float(np.mean(inner)) if inner else None),
+                   "kind": model}
+    out = grade_scores_on_733(scores, inp, graded_labels, oracle_labels,
+                              args.boot_seed)
+    out.update({"design": design, "model": model, "kappa": kappa, "fit": fitmeta,
+                "corpora": [p["name"] for p in pools]})
+    return out
+
+
+def cmd_sweep(args) -> int:
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    inp = load_grade_inputs(args)
+    kg = require_knowngood(inp, args.boot_seed, out_dir)     # ⛔ THE GATE, always first
+
+    arms_index = json.loads(Path(args.plan_dir, "ARMS.json").read_text())
+    graded_labels = labels_from_records(inp["arb_by_rid"], arms_index)["labels"]
+    #: the clair-puct ORACLE arm order on the same graded corpus. Used ONLY as a
+    #: second grading target for rank accuracy — never as a training label in the
+    #: sweep, and never as a capture statistic (that is P3's rail, and it holds
+    #: here too: the sweep's models are trained on ARBITER margins throughout).
+    oracle_labels = labels_from_records(inp["if_by_rid"], arms_index)["labels"]
+    graded_feats = json.loads(Path(args.features).read_text())["features"]
+    accepted = {r["rid"] for r in inp["rows"]}
+    graded_rids = sorted(set(graded_feats) & set(graded_labels) & accepted)
+
+    registry = {k: v for k, v in json.loads(_repo_path(args.corpora).read_text()).items()
+                if not k.startswith("_") and isinstance(v, dict)}
+    order = [n for n in sorted(registry, key=lambda k: registry[k].get("tier", 99))
+             if not registry[n].get("disabled")]
+    pools = [load_corpus_pool(n, registry[n]) for n in order]
+    disjoint = assert_disjoint(graded_labels, pools)          # ⛔ G-DISJOINT
+
+    tiers = [{"tier": "T0", "pools": [], "label": "stage-0 (incumbent)"}]
+    for i, p in enumerate(pools):
+        tiers.append({"tier": f"T{i+1}", "pools": pools[:i + 1],
+                      "label": "+" + p["name"]})
+
+    cells = []
+    for t in tiers:
+        for design in (CROSS_FIT, AUX_TRAIN):
+            r = run_label_tier(inp, graded_feats, graded_labels, graded_rids,
+                               t["pools"], design=design, model=args.model,
+                               kappa=0.0, args=args, oracle_labels=oracle_labels)
+            r.update({"tier": t["tier"], "tier_label": t["label"], "arm": "label"})
+            cells.append(r)
+            _print_cell(r)
+
+    # the pre-registered near-tie sweep, at the TOP label rung (PLAN.md §6.4)
+    top = tiers[-1]
+    for kap in [float(k) for k in str(args.kappas).split(",") if k.strip()]:
+        if kap == 0.0:
+            continue
+        for design in (CROSS_FIT, AUX_TRAIN):
+            r = run_label_tier(inp, graded_feats, graded_labels, graded_rids,
+                               top["pools"], design=design, model=args.model,
+                               kappa=kap, args=args, oracle_labels=oracle_labels)
+            r.update({"tier": top["tier"], "tier_label": top["label"] + f" k={kap}",
+                      "arm": "kappa"})
+            cells.append(r)
+            _print_cell(r)
+
+    # --- paired contrasts: the label TREND, the kappa curve, the design check ---
+    def cell(t, design, kap=0.0, arm=None):
+        for c in cells:
+            if (c.get("tier") == t and c.get("design") == design
+                    and c.get("kappa") == kap and not c.get("skipped")):
+                return c
+        return None
+
+    top_t = tiers[-1]["tier"]
+    want = [("label_trend_T0_to_top__crossfit", cell(top_t, CROSS_FIT),
+             cell("T0", CROSS_FIT)),
+            ("label_trend_T0_to_top__auxtrain_vs_stage0", cell(top_t, AUX_TRAIN),
+             cell("T0", CROSS_FIT)),
+            ("design_check_auxtrain_minus_crossfit_at_top", cell(top_t, AUX_TRAIN),
+             cell(top_t, CROSS_FIT)),
+            ("kappa_1.0_minus_0_at_top__crossfit", cell(top_t, CROSS_FIT, 1.0),
+             cell(top_t, CROSS_FIT)),
+            ("kappa_0.5_minus_0_at_top__crossfit", cell(top_t, CROSS_FIT, 0.5),
+             cell(top_t, CROSS_FIT))]
+    contrasts = {}
+    for name, a, b in want:
+        if not (a and b):
+            continue
+        contrasts[name] = paired_acc_contrast(a, b, args.boot_seed)
+        contrasts[name + "__vs_ORACLE_order"] = paired_acc_contrast(
+            a, b, args.boot_seed, key="per_root_acc_oracle",
+            acc_key="rank_accuracy_oracle")
+    print("\n=== PAIRED accuracy contrasts (same graded pairs, root-clustered) ===")
+    for name, c in contrasts.items():
+        if c:
+            print(f"  [{c['target']:<8}] {name:<58} Δacc {c['delta_acc']:+.4f} ± "
+                  f"{c['se_paired']:.4f} (z {c['z']:+.2f})  "
+                  f"CI95 [{c['ci95'][0]:+.4f}, {c['ci95'][1]:+.4f}]"
+                  f"   [unpaired se would be {c['se_unpaired_quadrature']:.4f}]")
+
+    rep = {
+        "schema": SCHEMA, "mode": "sweep", "generated_utc": _utc(), "git": _git_rev(),
+        "contrasts": contrasts,
+        "knowngood": kg, "plan": FREE_TIER_PLAN, "read_rule": P3_RULE_DOC,
+        "design_note": AUX_TRAIN_NOTE, "g_disjoint": disjoint,
+        "corpora": [p["meta"] for p in pools],
+        "graded": {"n_rids": len(graded_rids),
+                   "n_roots": len({graded_labels[r]["root_id"] for r in graded_rids}),
+                   "n_pairs_non_tied": sum(
+                       sum(1 for i in range(len(graded_labels[r]["labels"]))
+                           for j in range(i + 1, len(graded_labels[r]["labels"]))
+                           if graded_labels[r]["labels"][i] != graded_labels[r]["labels"][j])
+                       for r in graded_rids)},
+        "cells": cells, "model": args.model, "kappas": args.kappas,
+        "anti_shopping": "PLAN.md §7.4: stage-1 is licensed ONE headline capture read "
+                         "against the spent 733 — the TOP label rung. Every other cell "
+                         "here is a DIAGNOSTIC and its capture may NOT be quoted as a "
+                         "result.",
+        "ceiling_caveat": CEILING_CAVEAT,
+        "net_asymmetry_caveat": NET_ASYMMETRY_CAVEAT,
+        "r1_collinearity_note": R1_COLLINEARITY_NOTE,
+        "prior": FREE_TIER_PRIOR,
+        "governance": "0 games, no band, no results.csv row, no claim id, no "
+                      "RUN_LIVE.json. ZERO worker-hours.",
+    }
+    (out_dir / "SWEEP.json").write_text(json.dumps(rep, indent=2, default=str))
+    print(f"\n⚠️  {AUX_TRAIN_NOTE}")
+    print(f"\n[wrote] {out_dir / 'SWEEP.json'}")
+    return 0
+
+
+def _print_cell(r: dict) -> None:
+    if r.get("skipped"):
+        print(f"  [{r.get('tier')}/{r['design']}] SKIPPED — {r['skipped']}")
+        return
+    a, o, c = r["rank_accuracy"], r["rank_accuracy_oracle"], r["capture"]
+    # P1's calibration maps ORACLE-target accuracy -> capture; apply it to the
+    # oracle-target number and print the gap to what was actually measured.
+    pred = P1_RND_CAPTURE + (o["acc"] - 0.5) * P1_SLOPE
+    print(f"  [{r['tier']:<3} {r['design']:<9} k={r['kappa']:<4}] "
+          f"train_rows {r['fit']['n_train_pairs_rows']:>7}  "
+          f"acc/arb {a['acc']:.4f} ± {a['se_boot_cluster']:.4f} "
+          f"(deff {a['deff']:.2f})  acc/ora {o['acc']:.4f} ± {o['se_boot_cluster']:.4f}  "
+          f"capture {c['arb']['mean']:+.5f} ± {c['arb']['se_cluster']:.4f} "
+          f"boot [{c['arb']['boot_lo']:+.4f}, {c['arb']['boot_hi']:+.4f}]  "
+          f"(P1 would predict {pred:+.4f} from acc/ora)")
+
+
+# =========================================================================== #
 # 5. PRICING PROBE                                                             #
 # =========================================================================== #
 def cmd_price(args) -> int:
@@ -1261,6 +2175,34 @@ def build_parser():
     s.add_argument("--min-pairs", type=int, default=50)
     s.add_argument("--limit", type=int, default=0)
     s.set_defaults(func=cmd_train_net)
+
+    s = sub.add_parser("preflight", help="stage-1 FREE TIER pre-flights P1/P2/P3 "
+                                         "(PLAN.md §9.2; ZERO worker-hours)")
+    _add_grade_args(s)
+    s.add_argument("--parts", default="p1,p2,p3")
+    s.add_argument("--features", default=str(DEFAULT_OUT_DIR / "features.json"))
+    s.add_argument("--model", default="pairwise-logistic",
+                   choices=("pairwise-logistic", "gbdt"))
+    s.add_argument("--kfold", type=int, default=5)
+    s.add_argument("--split-seed", type=int, default=PROBE_SEED)
+    s.add_argument("--min-pairs", type=int, default=50)
+    s.set_defaults(func=cmd_preflight)
+
+    s = sub.add_parser("sweep", help="stage-1 FREE TIER label sweep A1/A2/A3 + the "
+                                     "pre-registered near-tie kappa curve "
+                                     "(PLAN.md §9.3; ZERO worker-hours)")
+    _add_grade_args(s)
+    s.add_argument("--corpora", default=str(REPO / "measurement"
+                                            / "tienet_stage1_plan_20260823"
+                                            / "CORPORA.json"))
+    s.add_argument("--features", default=str(DEFAULT_OUT_DIR / "features.json"))
+    s.add_argument("--model", default="pairwise-logistic",
+                   choices=("pairwise-logistic", "gbdt"))
+    s.add_argument("--kfold", type=int, default=5)
+    s.add_argument("--split-seed", type=int, default=PROBE_SEED)
+    s.add_argument("--min-pairs", type=int, default=50)
+    s.add_argument("--kappas", default="0,0.5,1.0")
+    s.set_defaults(func=cmd_sweep)
 
     s = sub.add_parser("price", help="time N v2.9-greedy playouts on real positions")
     s.add_argument("--playouts", type=int, default=20)

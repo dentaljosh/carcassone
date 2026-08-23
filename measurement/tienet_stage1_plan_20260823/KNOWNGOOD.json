@@ -1,0 +1,31 @@
+{
+  "schema": "carcassonne-tiletie-probe/v1",
+  "gate": "KNOWNGOOD",
+  "ok": true,
+  "tol": 1e-09,
+  "published": {
+    "arb": 0.20645928315484208,
+    "ora": 0.2545233140066622,
+    "F": 0.8111605962722847
+  },
+  "reproduced": {
+    "arb": 0.20645928315484208,
+    "ora": 0.2545233140066622,
+    "F": 0.8111605962722847,
+    "n": 733,
+    "n_roots": 399
+  },
+  "max_abs_position_delta": 0.0,
+  "worst_rid": null,
+  "delta": {
+    "arb": 0.0,
+    "ora": 0.0,
+    "F": 0.0
+  },
+  "n_of_record": [
+    733,
+    399
+  ],
+  "source_readout": "measurement/tiearb_20260816/READOUT.json",
+  "generated_utc": "2026-08-23T06:11:32+00:00"
+}

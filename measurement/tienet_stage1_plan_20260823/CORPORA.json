@@ -1,0 +1,69 @@
+{
+  "_README": [
+    "STAGE-1 FREE-TIER AUXILIARY LABEL REGISTRY (PLAN.md §3.1 route (a), A1/A2/A3).",
+    "Every corpus here is a DISJOINT SEED BAND with 0 rid overlap with the graded 733",
+    "(G-DISJOINT, asserted in probe_pickers.assert_disjoint, which REFUSES on overlap).",
+    "That disjointness is what licenses AUX-TRAIN/GRADE-733 (PLAN.md §6.3): trained only",
+    "on these, the full 733 is a pure out-of-sample holdout.",
+    "ZERO worker-hours: every record referenced here is already banked on disk.",
+    "Paths, record counts and label counts verified against PRICE.md §2 on 2026-08-23."
+  ],
+  "tiearb2": {
+    "tier": 1,
+    "a_item": "A1",
+    "plan_dir": "measurement/tiearb2_20260816/corpus/positions",
+    "records": ["/mnt/c/carc-shared/tiearb2_20260816/main/merged"],
+    "features": "measurement/tienet_stage1_plan_20260823/features_tiearb2.json",
+    "rules_profiles": ["walled"],
+    "allow_m": [32],
+    "subset_worlds": 0,
+    "expected": {"rids": 1350, "roots": 724, "arm_labels": 4053, "records": 2703},
+    "key_family": "oracle_score_pilot (afterstate_board_key_{a,b}, crn_verified by deck hash)",
+    "note": "CLEAN. Same arm-floor (2), same m=32, same salt tiletie-v1, disjoint band. Plumbing only."
+  },
+  "shared_run_r4": {
+    "tier": 2,
+    "a_item": "A2",
+    "plan_dir": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1",
+    "records": ["/mnt/c/carc-shared/tiearb_widening_20260817/s1"],
+    "features": "measurement/tienet_stage1_plan_20260823/features_shared_run_r4.json",
+    "rules_profiles": ["walled"],
+    "allow_m": [32, 128],
+    "subset_worlds": 32,
+    "expected": {"rids": 1344, "roots": 748, "arm_labels": 4672, "records": 3328},
+    "key_family": "RUST LEG (afterstate_board_key_{a,b}_root, arb_backend, crn_witness='world_deck_hash', world_deck_hash, n_distinct_worlds; NO afterstate_deck_hash_{a,b}/alloc_{a,b}/level_{a,b})",
+    "note": [
+      "m=128, admitted ONLY by the explicit PLAN.md §3.1 waiver: FIRST 32 ordered CRN",
+      "worlds are taken, which is an exact estimand match (the world seeds are ordered",
+      "and the salt is identical). collect_labels' m!=32 refusal remains the DEFAULT.",
+      "⚠️ The crn_verified-by-deck-hash witness is UNAVAILABLE on rust-leg records; the",
+      "rust leg emits crn_witness='world_deck_hash' instead. Stated, not papered over.",
+      "⛔ EXCLUDED and never globbed: shared_run_r4/corpus/champ_picks_s{1,2}/records/*.json",
+      "(8,648 files, wrong schema) and verdicts/per_position_s2.jsonl (0 bytes, S2 gate-VOIDed).",
+      "shared_run_r4 contributes 0 usable S2 labels; rung3_r5 is the corpus that supplied S2."
+    ]
+  },
+  "rung3_r5": {
+    "tier": 3,
+    "a_item": "A3",
+    "plan_dir": "measurement/tiearb_widening_20260817/rung3_r5/corpus/positions_s2",
+    "records": [
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk1",
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk2",
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk3",
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4",
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5",
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk6",
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk7",
+      "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk8"
+    ],
+    "features": "measurement/tienet_stage1_plan_20260823/features_rung3_r5.json",
+    "rules_profiles": ["walled"],
+    "allow_m": [32],
+    "subset_worlds": 0,
+    "expected": {"rids": 1060, "roots": 977, "arm_labels": 7662, "records": 6602},
+    "key_family": "RUST LEG (same renamed family as shared_run_r4), m=32",
+    "declared_shift": "ARM-FLOOR 5 BY DESIGN (it is the widening corpus). Its tie-set width distribution does not overlap the graded corpus (floor 2) except in the k=5 stratum. Training on it and grading on arm-floor-2 ties is a COVARIATE SHIFT in the very thing the ranker keys on, not just more data. 62% of all free pairs come from this one shifted corpus — it is admitted as a DECLARED STRATUM and its tier is reported separately from the CLEAN FREE tier so the shift can never drive a headline unnoticed.",
+    "note": "No single merged share root exists; the 8 per-chunk record roots above ARE the record set (6,602 records total)."
+  }
+}
