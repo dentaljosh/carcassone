@@ -119,15 +119,38 @@ each one moves either the fairness of the pairing or the projected wall:
    our champion's wall-clock, not their strength. Wall and thread-CPU tracked to within
    0.1 % on an idle box (measured: 50.19 ms wall vs 50.19 ms CPU at a 50 ms budget); they
    will diverge under load, and the readout reports **both**.
-3. **Their throughput on our hardware is ~2× the thesis's, so this is a STRONGER
-   Carcasum than the one that published 84 %.** Measured at a 50 ms budget: ~892
-   playouts/turn ⇒ ~17.8 k playouts/s ⇒ **~89 k playouts/turn at 5 s**, against the
-   thesis's **42,879** on a 2014 Xeon E3-1230v2. That is inventory §3.1 item 5 confirmed
-   with a number, and it cuts *toward* the candidate. It also means the thesis's own
-   numbers are **not** the numbers we would measure, which is a further reason §0.1
-   refuses to carry the +188 forward. (Extrapolation from 50 ms is linear-in-time and
-   the tree grows, so treat ~89 k as an estimate to be replaced by the gate-6 smoke's
-   measurement at the real budget.)
+3. **Their throughput on our hardware is NOT above the thesis's — MEASURED, and this
+   corrects an earlier estimate in this document.** A draft of this section claimed
+   *"~2× the thesis's, so this is a STRONGER Carcasum than the one that published 84 %"*,
+   extrapolated linearly from a **50 ms** budget on the local box and flagged there as an
+   estimate pending the gate-6 smoke. The smoke measured it at the real budget and
+   overturned it ([`SMOKE_READOUT.md`](../carcasum_smoke_20260823/SMOKE_READOUT.md) §2).
+
+   A Carcasum playout is a **full random rollout to the end of the game**, so playouts/turn
+   is violently skewed: ~28 k in the opening, ~2.6 M on the last few plies where a rollout
+   is one or two plies long. Against the thesis's **42,879 playouts/turn**:
+
+   | statistic | ours | vs thesis |
+   |---|---|---|
+   | mean | 163,786 | 3.82× — **an artefact of endgame plies; do not quote** |
+   | **median** | 46,332 | **1.08×** — parity |
+   | **opening (ply 0–9)** | 27,915 | **0.65×** — *slower* |
+
+   The plies that decide a game run at **0.65–1.1×** the thesis's throughput. So the
+   opponent we will face is, in throughput terms, roughly *the* thesis's Carcasum — **not a
+   stronger one**. Inventory §3.1 item 5 ("a modern Carcasum is stronger than the thesis's,
+   which cuts toward the candidate") therefore **does not survive measurement on this
+   hardware** and must not be carried into the readout. It does not push the other way
+   either: it removes a thumb from the scale, and §0.1's refusal to carry the transitive
+   +188 forward stands unchanged.
+
+   Budget fidelity is excellent: **5016.2 ms/turn mean against a 5000 ms setting (+0.3 %),
+   with 0 of 142 turns exceeding budget + 200 ms.**
+
+4. **Realized cost, for the record.** Champion **763.0 ms/move**; opponent **5016.2
+   ms/turn**; **228.5 s wall per game**, which decomposes as
+   `36 × 5.016 + 67 × 0.763 = 231.7 s` — only one side thinks at a time, so a game holds
+   ≈ 1 core for its whole duration. That is the basis of the wall projection in §4.3.
 
 ---
 
@@ -172,25 +195,86 @@ their whole purpose is to be looked at.
 
 ---
 
-## 4. Prerequisites — all must be green before blind commit
+## 4. Prerequisites — **ALL GREEN as of 2026-08-23**
 
-1. **Build** — `vendor/carcasum` at upstream `5f5e3654d31ce8cef0eebeb80a7fb989ef7c2550`, the
-   driver binary built, its sha256 pinned, `CARCASUM_PATCHES.md` complete and re-appliable.
-2. **Tile mapping** — `tests/data/carcasum/TILE_MAPPING.tsv` verified against *their loader*
-   (not merely their XML) by `tests/test_carcasum_tile_oracle.py`, and the deck-count multiset
-   agreeing 72/72 under the garden-variant collapse.
-3. **Divergence audit (THE gate)** — ~50 cheap games (their AI at a low budget vs our
-   tier1-greedy or random; the point is rules coverage, not strength):
-   - final-score agreement **N/N**, zero REAL divergences;
-   - **per-terrain** agreement, not just totals — the `score_detail` diff is what licenses the
-     word *farms* in any later sentence;
-   - **farms actually exercised in > 80 % of audit games** (a farm-free corpus certifies
-     nothing about farm scoring, and farms are where the R9-class bugs live);
-   - unplaceable-tile redraw exercised at least once, and agreeing.
-   Any irreconcilable divergence is reported loudly and **blocks this cell**.
-4. **Smoke** — 4 games at production knobs, timed, with both sides' realized s/move reported and
-   a projected wall for n=400 (§6 of the build report). A smoke is not evidence of strength;
-   n=4 is noise, and this prereg pre-commits to **not** reading its win/loss.
+Every gate below is discharged, with the artefact that discharges it. Nothing here is
+"expected to pass"; each line is a result.
+
+| # | gate | status |
+|---|---|---|
+| 1 | **Build** | ✅ `vendor/carcasum` @ `5f5e3654d31ce8cef0eebeb80a7fb989ef7c2550`, patches R1 + B1–B8 in [`CARCASUM_PATCHES.md`](../../vendor/carcasum/CARCASUM_PATCHES.md), driver built on **both** boxes from a rootless Qt5 prefix. Binary sha256 is stamped in every manifest as the **primary provenance witness** (the vendored tree has no `.git`, so a git rev is secondary). |
+| 1b | **Cross-box witness** | ✅ `--dump-tiles` is **byte-identical** on the local box and the laptop (`sha256 7c771afe…`, 7391 bytes) across different Ubuntu releases (noble 24.04 / resolute 26.04), Qt patch versions (5.15.13 / 5.15.18), vendored-vs-system ICU, and `-march=native` on different CPUs. The binaries differ, as they must; **the tile model does not**. |
+| 2 | **Tile mapping** | ✅ 32/32 rows, verified against *their loader* and not merely their XML, by `tests/test_carcasum_tile_oracle.py` (12/12) and `tests/test_carcasum_rules_patch.py`. Deck-count multiset agrees 72/72 under the garden-variant collapse. |
+| 3 | **Divergence audit (THE gate)** | ✅ **PASS 50/50** — [`measurement/carcasum_audit_20260823/AUDIT_READOUT.md`](../carcasum_audit_20260823/AUDIT_READOUT.md). Zero REAL divergences, zero voids, exact final-score agreement 50/50, **exact farm agreement 50/50**, farms scored in **50/50 = 100 %** of games, replay 50/50, `UNPLACEABLE_REDRAW` exercised 4×. |
+| 3b | **Tiny-city patch observed live** | ✅ Not inferred from a source diff: a *constructed* plain 2-tile city scores **4**, not 2, in the actual binary (`tests/test_carcasum_rules_patch.py`). |
+| 4 | **Smoke at production knobs** | ✅ 4 games on the laptop under exclusive tenancy — §4.1. |
+
+### 4.1 What the audit changed about this prereg
+
+Two checks in the original draft were **not implementable as written**, and saying so is part
+of the record:
+
+- **The per-terrain score diff is an ENDGAME diff, not a per-ply one.** Our engine tracks only
+  a flat `scores[player]`; it has no per-terrain breakdown, and instrumenting shared `engine/`
+  code for an audit was not on the table. What discharges the *farms* claim is
+  `aux_targets.extract_terminal_ownership` — a recording replica of `count_final_scores` whose
+  attributed points sum to the engine's end-of-game additions by construction — compared
+  against their absolute `score_detail["field"]`. Sound because **fields never score mid-game
+  in either engine**, so no differencing and nothing to contaminate.
+- **`ENDGAME_TERRAIN_MISMATCH` is telemetry, not a rules class.** It was demoted out of `REAL`
+  after measuring both candidate baselines: against the terminating ply the delta is
+  identically zero (Carcasum runs `endGame()` inside `step()`), and against the prior ply it
+  carries that ply's mid-game closures. No ply yields the endgame-only quantity. Leaving it
+  REAL would have voided ~16 % of games for a bookkeeping reason **and reported it as "the
+  engines disagree on the rules."**
+- **The redraw check cannot be left to volume.** At the measured 1.4/100 rate, n=50 fires only
+  ~50 % of the time. It happened to fire 4× here; the standing requirement is the *constructed*
+  case, not the lucky one.
+
+### 4.2 The coordinate-frame gates, and why they are gates
+
+Three separate encoding bugs during the build could each have surfaced as a wall of per-ply
+"divergences" and been read as a rules disagreement: a wrong board offset (72 vs the true 145),
+a transport hang that voided every game with an empty stderr, and Carcasum enumerating only
+*physically distinct* tile rotations where our action space enumerates all four. None of them
+announces itself as a plumbing fault.
+
+So the harness now **refuses to guess a coordinate frame**:
+
+* the origin comes from the driver's `ready` handshake (`start_xy`), never a constant, and
+  there is **no fallback** — a `ready` line without `start_xy` is a hard void;
+* `board_size` must be odd and `start_xy` must equal its centre, asserted before ply 0;
+* a **ply-0 mapping failure is a distinct diagnostic class** (`COORD_FRAME_MISMATCH`), never an
+  ordinary `VOID_UNMAPPABLE`;
+* tile rotations are reduced modulo each tile's rotational period, derived from the driver's own
+  `--dump-tiles` (edges **and** node partition).
+
+**A coordinate bug must never be able to masquerade as a rules finding.** That sentence is the
+gate.
+
+---
+
+### 4.3 Projected wall, and why W is a throughput knob and not a strength knob
+
+Basis: **228.5 s/game** measured at W=4 on the idle laptop (24 cores), with a game holding
+≈ 1 core for its duration (both sides single-threaded, strictly alternating).
+
+| workers | linear | with contention allowance |
+|---|---|---|
+| W=8 | 3.17 h | ~3.2–3.5 h |
+| **W=14** | 1.81 h | **~2.0 h — recommended** (smallest W within ~10 % of practical peak) |
+| W=22 | 1.15 h | ~1.4 h (22 of 24 cores; DRAM contention is this project's known bottleneck) |
+
+**Contention cannot weaken the opponent.** Its budget is thread CPU-time, so a descheduled
+Carcasum still receives its full 5 CPU-seconds and searches exactly as deeply — it merely
+takes longer in wall terms. So raising W costs wall-clock per game and risks nothing about
+the *validity* of the comparison. That is an unusually comfortable property for a timed
+opponent and is worth stating explicitly, because the instinct from every other cell in
+this project is that parallelism perturbs the measurement.
+
+**Validate, don't trust.** This is a 4-game projection. Read the realized
+`wall_secs_per_game_mean` off the first ~20 finished games and re-project before assuming
+the total.
 
 ---
 
@@ -202,7 +286,7 @@ Let `d` = deck-paired margin in points, `z = d / SE(d)`, over 200 decks.
 |---|---|---|
 | **A — usable reference** | `\|z\| ≥ 3` | Report the sign and size. Carcasum enters the ruler set at this budget. Queue rung 2 (the budget ladder) to find the budget where it equals the champion — *that*, not this cell, is the non-saturating-ruler deliverable. |
 | **B — level** | `\|z\| < 3` and `\|d\| ≤ 2.0 pts` | Report **level at this budget**. A level opponent is the *most* useful ruler outcome, not a null: it means the knob is positioned where it can move in both directions. Queue rung 2 anyway. |
-| **C — inconclusive** | `\|z\| < 3` and `\|d\| > 2.0 pts` | **Top-up once** to n=800 using the reserved range `141000000200..141000000299`, then re-read under the SAME rule. One top-up, pre-registered, no second. |
+| **C — inconclusive** | `\|z\| < 3` and `\|d\| > 2.0 pts` | **Top-up once** to n=800 using the reserved range `142000000200..142000000299`, then re-read under the SAME rule. One top-up, pre-registered, no second. |
 | **D — void-contaminated** | voids or REAL divergences > 1 % of games | **No strength number is published.** Diagnose, patch, re-audit, re-run. A win rate over a rules disagreement is a rules result. |
 
 **Read-rule discipline:** these branches are fixed *before* any game is played, and the fired
