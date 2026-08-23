@@ -864,6 +864,9 @@ def build_features(args) -> dict:
     t0 = time.time()
     for i, rid in enumerate(sorted(by_rid)):
         row = meta[rid]
+        if rid not in arms_index:
+            skipped.append({"rid": rid, "error": "KeyError: absent from ARMS.json"})
+            continue
         arms = [int(a) for a in arms_index[rid]["arms"]]
         try:
             actions = row.get("actions")
@@ -1622,6 +1625,301 @@ def cmd_preflight(args) -> int:
 
 
 # =========================================================================== #
+# 4c. STAGE-1 FREE TIER — A1/A2/A3 THE LABEL SWEEP (PLAN.md §3.1, §6.3, §9.3)  #
+# =========================================================================== #
+#
+# The "L" design's LABEL ARM: features fixed at R0, model fixed at M0, the pair
+# pool swept T0 -> T1 -> T2 -> T3 for ZERO compute by unifying the banked
+# auxiliary corpora. Its primary readout is RANK ACCURACY (PLAN.md §9.1: capture's
+# se is 0.0552 FOREVER at n=733, but accuracy's error bar shrinks with labels);
+# capture is a diagnostic at every rung and the headline at the top rung only
+# (§7.4's anti-shopping rail).
+
+AUX_TRAIN = "aux-train"
+CROSS_FIT = "cross-fit"
+
+AUX_TRAIN_NOTE = (
+    "AUX-TRAIN / GRADE-733 (PLAN.md §6.3): trained ONLY on auxiliary corpora, "
+    "graded on all 733. The auxiliaries are disjoint seed BANDS with 0 rid overlap "
+    "(G-DISJOINT, asserted in code), so there is no leakage channel, the cross-fit "
+    "disappears and the full 733 is a pure out-of-sample holdout — no 1/5 shrinkage "
+    "of the graded n, and the winner's-curse control strengthens from 'a root split' "
+    "to 'a different band entirely'. ⚠️ This makes the TRAINING set out-of-band; the "
+    "GRADING is entirely within the graded corpus's own band, so CLAUDE.md's "
+    "'inflate sigma 1.5-2x on cross-band CONTRASTS' does NOT bite the error bar. "
+    "What bites is DISTRIBUTION SHIFT IN THE MODEL — a bias risk on the estimate, "
+    "not a variance risk on the interval. The stage-0 root cross-fit is retained "
+    "beside it as the conservative consistency check; if the two disagree by more "
+    "than ~1 sigma the shift is doing real work and the CROSS-FIT is the headline.")
+
+
+def _repo_path(p) -> Path:
+    """Registry paths are repo-relative by convention; absolute ones pass through."""
+    q = Path(p)
+    return q if q.is_absolute() else (REPO / q)
+
+
+def load_corpus_pool(name: str, spec: dict) -> dict:
+    """One auxiliary corpus -> its labels + features, through the SAME shape gates.
+
+    `allow_m` / `subset_worlds` are the PLAN.md §3.1 explicit `m=128` waiver; they
+    default to the stage-0 refusal. Nothing is coerced silently.
+    """
+    by_rid, _present, _not_ok, _roots = ATB.merge_arb_records(list(spec["records"]))
+    arms_index = json.loads((_repo_path(spec["plan_dir"]) / "ARMS.json").read_text())
+    lab = labels_from_records(
+        by_rid, arms_index,
+        allow_m=tuple(spec.get("allow_m") or (None,)),
+        subset_worlds=int(spec.get("subset_worlds") or 0))
+    fb = json.loads(_repo_path(spec["features"]).read_text())
+    feats = fb["features"]
+    rids = sorted(set(feats) & set(lab["labels"]))
+    labels = {r: lab["labels"][r] for r in rids}
+    pairs = sum(sum(1 for i in range(len(v["labels"]))
+                    for j in range(i + 1, len(v["labels"]))
+                    if v["labels"][i] != v["labels"][j]) for v in labels.values())
+    return {
+        "name": name, "labels": labels, "feats": {r: feats[r] for r in rids},
+        "meta": {
+            "name": name, "tier": spec.get("tier"), "plan_dir": spec["plan_dir"],
+            "records": list(spec["records"]), "features_cache": spec["features"],
+            "rules_profiles": fb.get("rules_profile"),
+            "allow_m": spec.get("allow_m"), "subset_worlds": spec.get("subset_worlds"),
+            "n_rids": len(rids), "n_roots": len({v["root_id"] for v in labels.values()}),
+            "n_arm_labels": sum(len(v["labels"]) for v in labels.values()),
+            "n_pairs_non_tied": pairs,
+            "n_worlds_subset": sum(1 for v in labels.values() if v.get("worlds_subset")),
+            "n_shape_problems": len(lab["shape_problems"]),
+            "shape_problems_sample": lab["shape_problems"][:10],
+            "n_no_features": len(set(lab["labels"]) - set(feats)),
+            "declared_shift": spec.get("declared_shift"),
+            "arm_count_hist": _hist(len(v["labels"]) for v in labels.values()),
+        },
+    }
+
+
+def _hist(it) -> dict:
+    h = defaultdict(int)
+    for x in it:
+        h[int(x)] += 1
+    return {str(k): v for k, v in sorted(h.items())}
+
+
+def assert_disjoint(graded_labels: dict, pools: list) -> dict:
+    """⛔ G-DISJOINT, THE LOAD-BEARING GATE for AUX-TRAIN/GRADE-733.
+
+    If any auxiliary rid or root also appears in the graded corpus, the 733 is NOT
+    a pure holdout and the whole design collapses into a leak. This REFUSES rather
+    than reports — a silent overlap would make every accuracy in the sweep a lie.
+    """
+    g_rids = set(graded_labels)
+    g_roots = {v["root_id"] for v in graded_labels.values()}
+    w = {"graded_rids": len(g_rids), "graded_roots": len(g_roots), "by_corpus": {}}
+    for p in pools:
+        rid_ov = sorted(g_rids & set(p["labels"]))
+        root_ov = sorted(g_roots & {v["root_id"] for v in p["labels"].values()})
+        w["by_corpus"][p["name"]] = {"rid_overlap": len(rid_ov),
+                                     "root_overlap": len(root_ov),
+                                     "examples": (rid_ov[:5] + root_ov[:5])}
+        if rid_ov or root_ov:
+            raise SystemExit(
+                f"⛔ G-DISJOINT FAILED for {p['name']}: {len(rid_ov)} rid / "
+                f"{len(root_ov)} root overlap with the graded 733 (e.g. "
+                f"{(rid_ov[:3] + root_ov[:3])}). AUX-TRAIN/GRADE-733 requires ZERO "
+                f"overlap — the 733 would not be a holdout. REFUSING.")
+    return w
+
+
+def acc_bootstrap_se(per_root: dict, seed: int, reps: int = 2000) -> dict:
+    """Root-CLUSTERED bootstrap se on a pair accuracy.
+
+    PLAN.md §9.1 prices the accuracy axis with an assumed cluster design-effect of
+    ~3. This measures it instead: resample ROOTS with replacement, recompute
+    agree/total inside each replicate. `deff` is the realized ratio to the nominal
+    sqrt(0.25/pairs), reported so the plan's assumption can be checked rather than
+    inherited.
+    """
+    roots = sorted(per_root)
+    if not roots:
+        return {}
+    ag = np.asarray([per_root[r][0] for r in roots], dtype=np.float64)
+    tot = np.asarray([per_root[r][1] for r in roots], dtype=np.float64)
+    n_pairs = float(tot.sum())
+    if n_pairs <= 0:
+        return {}
+    rng = np.random.default_rng(int(seed))
+    idx = rng.integers(0, len(roots), size=(int(reps), len(roots)))
+    num, den = ag[idx].sum(axis=1), tot[idx].sum(axis=1)
+    ok = den > 0
+    draws = num[ok] / den[ok]
+    se = float(draws.std(ddof=1))
+    nominal = float(np.sqrt(0.25 / n_pairs))
+    return {"acc": float(ag.sum() / n_pairs), "n_pairs": int(n_pairs),
+            "n_roots": len(roots), "se_boot_cluster": se,
+            "se_nominal": nominal, "deff": (se / nominal if nominal else None),
+            "ci95": [float(np.percentile(draws, 2.5)),
+                     float(np.percentile(draws, 97.5))], "reps": int(reps)}
+
+
+def grade_scores_on_733(scores: dict, inp: dict, graded_labels: dict,
+                        boot_seed: int) -> dict:
+    """One scored arm set -> (rank accuracy vs the ARBITER label) + (capture).
+
+    Rank accuracy is graded on the UNFILTERED pair set so every kappa arm shares
+    one test set. Capture goes through `price_picks` + `aggregate_picker` — the
+    imported estimators, unchanged.
+    """
+    per_root = defaultdict(lambda: [0.0, 0])
+    for rid, s in scores.items():
+        lb = graded_labels.get(rid)
+        if lb is None or len(s) != len(lb["labels"]):
+            continue
+        a, t = pair_agreement(s, lb["labels"])
+        per_root[lb["root_id"]][0] += a
+        per_root[lb["root_id"]][1] += t
+    acc = acc_bootstrap_se({k: tuple(v) for k, v in per_root.items()}, boot_seed)
+    priced = price_picks(inp["rows"], inp["if_by_rid"], picker_net(scores))
+    block = aggregate_picker(priced, inp["rows"], boot_seed)
+    return {"rank_accuracy": acc, "capture": block, "n_scored_rids": len(scores)}
+
+
+def run_label_tier(inp: dict, graded_feats: dict, graded_labels: dict,
+                   graded_rids: list, pools: list, *, design: str, model: str,
+                   kappa: float, args) -> dict:
+    """One cell of the label arm: a pair pool x a split design -> scores on the 733."""
+    feats = dict(graded_feats)
+    labels = dict(graded_labels)
+    for p in pools:
+        feats.update(p["feats"])
+        labels.update(p["labels"])
+    aux_rids = [r for p in pools for r in sorted(p["labels"])]
+
+    if design == AUX_TRAIN:
+        if not aux_rids:
+            return {"design": design, "skipped": "no auxiliary corpus at this tier"}
+        X, y, g = pairwise_rows(feats, labels, aux_rids, kappa=kappa)
+        mdl = fit_ranker(X, y, g, model=model, seed=args.split_seed)
+        scores = score_arms(mdl, graded_feats, graded_rids)
+        fitmeta = {"n_train_pairs_rows": int(X.shape[0]),
+                   "n_train_rids": len(aux_rids),
+                   "n_train_roots": len(set(g)), "C": mdl.get("C"),
+                   "kind": mdl["kind"], "inner_cv_acc": mdl.get("inner_cv_acc")}
+    else:
+        roots = sorted({graded_labels[r]["root_id"] for r in graded_rids})
+        folds = root_folds(roots, args.kfold, args.split_seed)
+        scores, fm = {}, []
+        for k, te_roots in enumerate(folds):
+            te = set(te_roots)
+            tr = [r for r in graded_rids if graded_labels[r]["root_id"] not in te]
+            teg = [r for r in graded_rids if graded_labels[r]["root_id"] in te]
+            assert not ({graded_labels[r]["root_id"] for r in tr} & te), "root leak"
+            X, y, g = pairwise_rows(feats, labels, tr + aux_rids, kappa=kappa)
+            mdl = fit_ranker(X, y, g, model=model, seed=args.split_seed + k)
+            scores.update(score_arms(mdl, graded_feats, teg))
+            fm.append({"fold": k, "n_pairs_rows": int(X.shape[0]), "C": mdl.get("C"),
+                       "inner_cv_acc": mdl.get("inner_cv_acc")})
+        inner = [f["inner_cv_acc"] for f in fm if f.get("inner_cv_acc") is not None]
+        fitmeta = {"folds": fm, "n_train_pairs_rows": sum(f["n_pairs_rows"] for f in fm),
+                   "inner_cv_acc": (float(np.mean(inner)) if inner else None),
+                   "kind": model}
+    out = grade_scores_on_733(scores, inp, graded_labels, args.boot_seed)
+    out.update({"design": design, "model": model, "kappa": kappa, "fit": fitmeta,
+                "corpora": [p["name"] for p in pools]})
+    return out
+
+
+def cmd_sweep(args) -> int:
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    inp = load_grade_inputs(args)
+    kg = require_knowngood(inp, args.boot_seed, out_dir)     # ⛔ THE GATE, always first
+
+    arms_index = json.loads(Path(args.plan_dir, "ARMS.json").read_text())
+    graded_labels = labels_from_records(inp["arb_by_rid"], arms_index)["labels"]
+    graded_feats = json.loads(Path(args.features).read_text())["features"]
+    accepted = {r["rid"] for r in inp["rows"]}
+    graded_rids = sorted(set(graded_feats) & set(graded_labels) & accepted)
+
+    registry = {k: v for k, v in json.loads(_repo_path(args.corpora).read_text()).items()
+                if not k.startswith("_") and isinstance(v, dict)}
+    order = [n for n in sorted(registry, key=lambda k: registry[k].get("tier", 99))
+             if not registry[n].get("disabled")]
+    pools = [load_corpus_pool(n, registry[n]) for n in order]
+    disjoint = assert_disjoint(graded_labels, pools)          # ⛔ G-DISJOINT
+
+    tiers = [{"tier": "T0", "pools": [], "label": "stage-0 (incumbent)"}]
+    for i, p in enumerate(pools):
+        tiers.append({"tier": f"T{i+1}", "pools": pools[:i + 1],
+                      "label": "+" + p["name"]})
+
+    cells = []
+    for t in tiers:
+        for design in (CROSS_FIT, AUX_TRAIN):
+            r = run_label_tier(inp, graded_feats, graded_labels, graded_rids,
+                               t["pools"], design=design, model=args.model,
+                               kappa=0.0, args=args)
+            r.update({"tier": t["tier"], "tier_label": t["label"], "arm": "label"})
+            cells.append(r)
+            _print_cell(r)
+
+    # the pre-registered near-tie sweep, at the TOP label rung (PLAN.md §6.4)
+    top = tiers[-1]
+    for kap in [float(k) for k in str(args.kappas).split(",") if k.strip()]:
+        if kap == 0.0:
+            continue
+        for design in (CROSS_FIT, AUX_TRAIN):
+            r = run_label_tier(inp, graded_feats, graded_labels, graded_rids,
+                               top["pools"], design=design, model=args.model,
+                               kappa=kap, args=args)
+            r.update({"tier": top["tier"], "tier_label": top["label"] + f" k={kap}",
+                      "arm": "kappa"})
+            cells.append(r)
+            _print_cell(r)
+
+    rep = {
+        "schema": SCHEMA, "mode": "sweep", "generated_utc": _utc(), "git": _git_rev(),
+        "knowngood": kg, "plan": FREE_TIER_PLAN, "read_rule": P3_RULE_DOC,
+        "design_note": AUX_TRAIN_NOTE, "g_disjoint": disjoint,
+        "corpora": [p["meta"] for p in pools],
+        "graded": {"n_rids": len(graded_rids),
+                   "n_roots": len({graded_labels[r]["root_id"] for r in graded_rids}),
+                   "n_pairs_non_tied": sum(
+                       sum(1 for i in range(len(graded_labels[r]["labels"]))
+                           for j in range(i + 1, len(graded_labels[r]["labels"]))
+                           if graded_labels[r]["labels"][i] != graded_labels[r]["labels"][j])
+                       for r in graded_rids)},
+        "cells": cells, "model": args.model, "kappas": args.kappas,
+        "anti_shopping": "PLAN.md §7.4: stage-1 is licensed ONE headline capture read "
+                         "against the spent 733 — the TOP label rung. Every other cell "
+                         "here is a DIAGNOSTIC and its capture may NOT be quoted as a "
+                         "result.",
+        "ceiling_caveat": CEILING_CAVEAT,
+        "net_asymmetry_caveat": NET_ASYMMETRY_CAVEAT,
+        "r1_collinearity_note": R1_COLLINEARITY_NOTE,
+        "prior": FREE_TIER_PRIOR,
+        "governance": "0 games, no band, no results.csv row, no claim id, no "
+                      "RUN_LIVE.json. ZERO worker-hours.",
+    }
+    (out_dir / "SWEEP.json").write_text(json.dumps(rep, indent=2, default=str))
+    print(f"\n⚠️  {AUX_TRAIN_NOTE}")
+    print(f"\n[wrote] {out_dir / 'SWEEP.json'}")
+    return 0
+
+
+def _print_cell(r: dict) -> None:
+    if r.get("skipped"):
+        print(f"  [{r.get('tier')}/{r['design']}] SKIPPED — {r['skipped']}")
+        return
+    a, c = r["rank_accuracy"], r["capture"]
+    print(f"  [{r['tier']:<3} {r['design']:<9} k={r['kappa']:<4}] "
+          f"train_rows {r['fit']['n_train_pairs_rows']:>7}  "
+          f"acc {a['acc']:.4f} ± {a['se_boot_cluster']:.4f} "
+          f"(deff {a['deff']:.2f}, {a['n_pairs']} pairs)  "
+          f"capture {c['arb']['mean']:+.5f} ± {c['arb']['se_cluster']:.4f} "
+          f"boot [{c['arb']['boot_lo']:+.4f}, {c['arb']['boot_hi']:+.4f}]")
+
+
+# =========================================================================== #
 # 5. PRICING PROBE                                                             #
 # =========================================================================== #
 def cmd_price(args) -> int:
@@ -1784,6 +2082,22 @@ def build_parser():
     s.add_argument("--split-seed", type=int, default=PROBE_SEED)
     s.add_argument("--min-pairs", type=int, default=50)
     s.set_defaults(func=cmd_preflight)
+
+    s = sub.add_parser("sweep", help="stage-1 FREE TIER label sweep A1/A2/A3 + the "
+                                     "pre-registered near-tie kappa curve "
+                                     "(PLAN.md §9.3; ZERO worker-hours)")
+    _add_grade_args(s)
+    s.add_argument("--corpora", default=str(REPO / "measurement"
+                                            / "tienet_stage1_plan_20260823"
+                                            / "CORPORA.json"))
+    s.add_argument("--features", default=str(DEFAULT_OUT_DIR / "features.json"))
+    s.add_argument("--model", default="pairwise-logistic",
+                   choices=("pairwise-logistic", "gbdt"))
+    s.add_argument("--kfold", type=int, default=5)
+    s.add_argument("--split-seed", type=int, default=PROBE_SEED)
+    s.add_argument("--min-pairs", type=int, default=50)
+    s.add_argument("--kappas", default="0,0.5,1.0")
+    s.set_defaults(func=cmd_sweep)
 
     s = sub.add_parser("price", help="time N v2.9-greedy playouts on real positions")
     s.add_argument("--playouts", type=int, default=20)

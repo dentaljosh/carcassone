@@ -564,6 +564,109 @@ def test_free_tier_carries_the_plan_s_honesty_rails_verbatim():
         assert rail in body, f"cmd_preflight must carry {rail} into its artifact"
 
 
+def test_g_disjoint_refuses_rather_than_reports_an_overlap():
+    """AUX-TRAIN/GRADE-733 is only valid if the auxiliaries share NO rid and NO root
+    with the graded corpus. An overlap must ABORT — reporting it would let a leaked
+    holdout produce a number that reads like a result."""
+    graded = {"g1": {"root_id": "R1", "labels": [0.0, 1.0]},
+              "g2": {"root_id": "R2", "labels": [0.0, 1.0]}}
+    clean = [{"name": "aux", "labels": {"a1": {"root_id": "R9", "labels": [0.0, 1.0]}}}]
+    w = PP.assert_disjoint(graded, clean)
+    assert w["by_corpus"]["aux"] == {"rid_overlap": 0, "root_overlap": 0, "examples": []}
+    for bad in ({"g1": {"root_id": "R9", "labels": [0.0, 1.0]}},      # rid overlap
+                {"x9": {"root_id": "R1", "labels": [0.0, 1.0]}}):     # root overlap
+        with pytest.raises(SystemExit, match="G-DISJOINT FAILED"):
+            PP.assert_disjoint(graded, [{"name": "aux", "labels": bad}])
+
+
+def test_acc_bootstrap_se_clusters_on_roots_and_measures_the_design_effect():
+    """PLAN.md §9.1 ASSUMES a cluster design-effect of ~3 on the accuracy axis. This
+    measures it. A root whose positions all agree (or all disagree) inflates the
+    variance above the nominal binomial — the deff must exceed 1 in that case."""
+    # 40 roots, 10 pairs each, perfectly correlated inside a root => big deff
+    lumpy = {f"R{i}": ((10.0 if i % 2 else 0.0), 10) for i in range(40)}
+    out = PP.acc_bootstrap_se(lumpy, seed=20260823, reps=1500)
+    assert out["n_pairs"] == 400 and out["n_roots"] == 40
+    assert out["acc"] == pytest.approx(0.5, abs=0.05)
+    assert out["deff"] > 2.0, "fully-correlated clusters must blow up the error bar"
+    assert out["ci95"][0] < out["acc"] < out["ci95"][1]
+    # independent-ish within a root => deff near 1
+    even = {f"R{i}": (5.0, 10) for i in range(40)}
+    assert PP.acc_bootstrap_se(even, seed=20260823, reps=1500)["se_boot_cluster"] \
+        < out["se_boot_cluster"]
+    assert PP.acc_bootstrap_se({}, seed=1) == {}
+
+
+def _toy_pool(name, n, root_prefix, seed=0):
+    rng = np.random.default_rng(seed)
+    labels, feats = {}, {}
+    for i in range(n):
+        rid = f"{name}_p{i}"
+        x = rng.normal(size=(3, 4))
+        labels[rid] = {"root_id": f"{root_prefix}{i % 7}", "arm_order": [0, 1, 2],
+                       "labels": [float(v) for v in x[:, 0] * 2.0],
+                       "se_pairs": {"0,1": 0.1, "0,2": 0.1, "1,2": 0.1}}
+        feats[rid] = x.tolist()
+    return {"name": name, "labels": labels, "feats": feats, "meta": {}}
+
+
+def test_aux_train_trains_ONLY_on_auxiliary_rids():
+    """The §6.3 protocol change, asserted two ways: no graded root can reach the
+    training groups, and the AUX-TRAIN code path really does hand `pairwise_rows`
+    the auxiliary rids alone (the CROSS-FIT path is the one that adds them to the
+    graded folds)."""
+    pool = _toy_pool("aux", 30, "A", seed=1)
+    graded = _toy_pool("g", 20, "G", seed=2)
+    feats = {**graded["feats"], **pool["feats"]}
+    labels = {**graded["labels"], **pool["labels"]}
+    _X, _y, g = PP.pairwise_rows(feats, labels, sorted(pool["labels"]))
+    assert g, "the toy pool must produce pairs"
+    assert set(g) <= {f"A{i}" for i in range(7)}, "no graded root may appear as a group"
+
+    src = Path(PP.__file__).read_text()
+    body = src[src.index("def run_label_tier"):src.index("def cmd_sweep")]
+    aux_branch = body[body.index("if design == AUX_TRAIN"):body.index("    else:")]
+    assert "pairwise_rows(feats, labels, aux_rids" in aux_branch
+    assert "graded_rids" not in aux_branch.split("scores = ")[0], (
+        "AUX-TRAIN must not put a graded rid in its training call")
+    xfit = body[body.index("    else:"):]
+    assert "tr + aux_rids" in xfit, "the CROSS-FIT arm is the one that pools both"
+
+
+def test_corpora_registry_is_well_formed_and_declares_its_waivers():
+    """The registry is the plumbing spec A1-A3 run on; a silent typo there would
+    quietly shrink the label sweep instead of failing."""
+    reg = json.loads((REPO / "measurement/tienet_stage1_plan_20260823"
+                      / "CORPORA.json").read_text())
+    corpora = {k: v for k, v in reg.items() if not k.startswith("_")}
+    assert set(corpora) == {"tiearb2", "shared_run_r4", "rung3_r5"}
+    assert [corpora[n]["tier"] for n in ("tiearb2", "shared_run_r4", "rung3_r5")] == [1, 2, 3]
+    for name, spec in corpora.items():
+        for key in ("plan_dir", "records", "features", "allow_m", "expected"):
+            assert key in spec, f"{name} missing {key}"
+        assert (REPO / spec["plan_dir"] / "ARMS.json").is_file(), name
+        assert spec["records"], name
+    # the m=128 waiver must be EXPLICIT and paired with the first-32 subset
+    r4 = corpora["shared_run_r4"]
+    assert r4["allow_m"] == [32, 128] and r4["subset_worlds"] == 32
+    assert corpora["tiearb2"]["allow_m"] == [32]
+    assert corpora["rung3_r5"]["allow_m"] == [32]
+    # the covariate shift must be DECLARED, not discovered later
+    assert "ARM-FLOOR 5" in corpora["rung3_r5"]["declared_shift"]
+    assert "COVARIATE SHIFT" in corpora["rung3_r5"]["declared_shift"].upper()
+    assert "62%" in corpora["rung3_r5"]["declared_shift"]
+
+
+def test_aux_train_note_keeps_the_cross_band_distinction_straight():
+    """The easiest way to mis-sell AUX-TRAIN is to call it a cross-band CONTRAST and
+    inflate sigma, or to forget the bias risk entirely. Both must be stated."""
+    note = PP.AUX_TRAIN_NOTE
+    assert "does NOT bite" in note, "grading stays within the graded corpus's own band"
+    assert "DISTRIBUTION SHIFT" in note and "bias risk" in note
+    assert "G-DISJOINT" in note
+    assert "CROSS-FIT is the headline" in note, "the conservative design must win ties"
+
+
 @share_only
 def test_preflight_reproduces_stage0_s_own_inner_cv_folds(real_inputs):
     """The P3 CONTROL. The arbiter-label arm re-runs stage-0's fit; if it does not

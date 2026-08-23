@@ -1,0 +1,1204 @@
+{
+  "schema": "carcassonne-tiletie-probe/v1",
+  "mode": "sweep",
+  "generated_utc": "2026-08-23T06:06:42+00:00",
+  "git": "91714acc",
+  "knowngood": {
+    "schema": "carcassonne-tiletie-probe/v1",
+    "gate": "KNOWNGOOD",
+    "ok": true,
+    "tol": 1e-09,
+    "published": {
+      "arb": 0.20645928315484208,
+      "ora": 0.2545233140066622,
+      "F": 0.8111605962722847
+    },
+    "reproduced": {
+      "arb": 0.20645928315484208,
+      "ora": 0.2545233140066622,
+      "F": 0.8111605962722847,
+      "n": 733,
+      "n_roots": 399
+    },
+    "max_abs_position_delta": 0.0,
+    "worst_rid": null,
+    "delta": {
+      "arb": 0.0,
+      "ora": 0.0,
+      "F": 0.0
+    },
+    "n_of_record": [
+      733,
+      399
+    ],
+    "source_readout": "measurement/tiearb_20260816/READOUT.json",
+    "generated_utc": "2026-08-23T06:04:47+00:00"
+  },
+  "plan": "measurement/tienet_stage1_plan_20260823/PLAN.md",
+  "read_rule": "measurement/tienet_stage1_plan_20260823/P3_RULE.md",
+  "design_note": "AUX-TRAIN / GRADE-733 (PLAN.md \u00a76.3): trained ONLY on auxiliary corpora, graded on all 733. The auxiliaries are disjoint seed BANDS with 0 rid overlap (G-DISJOINT, asserted in code), so there is no leakage channel, the cross-fit disappears and the full 733 is a pure out-of-sample holdout \u2014 no 1/5 shrinkage of the graded n, and the winner's-curse control strengthens from 'a root split' to 'a different band entirely'. \u26a0\ufe0f This makes the TRAINING set out-of-band; the GRADING is entirely within the graded corpus's own band, so CLAUDE.md's 'inflate sigma 1.5-2x on cross-band CONTRASTS' does NOT bite the error bar. What bites is DISTRIBUTION SHIFT IN THE MODEL \u2014 a bias risk on the estimate, not a variance risk on the interval. The stage-0 root cross-fit is retained beside it as the conservative consistency check; if the two disagree by more than ~1 sigma the shift is doing real work and the CROSS-FIT is the headline.",
+  "g_disjoint": {
+    "graded_rids": 733,
+    "graded_roots": 399,
+    "by_corpus": {
+      "tiearb2": {
+        "rid_overlap": 0,
+        "root_overlap": 0,
+        "examples": []
+      },
+      "shared_run_r4": {
+        "rid_overlap": 0,
+        "root_overlap": 0,
+        "examples": []
+      },
+      "rung3_r5": {
+        "rid_overlap": 0,
+        "root_overlap": 0,
+        "examples": []
+      }
+    }
+  },
+  "corpora": [
+    {
+      "name": "tiearb2",
+      "tier": 1,
+      "plan_dir": "measurement/tiearb2_20260816/corpus/positions",
+      "records": [
+        "/mnt/c/carc-shared/tiearb2_20260816/main/merged"
+      ],
+      "features_cache": "measurement/tienet_stage1_plan_20260823/features_tiearb2.json",
+      "rules_profiles": "walled",
+      "allow_m": [
+        32
+      ],
+      "subset_worlds": 0,
+      "n_rids": 1350,
+      "n_roots": 724,
+      "n_arm_labels": 4053,
+      "n_pairs_non_tied": 4544,
+      "n_worlds_subset": 0,
+      "n_shape_problems": 0,
+      "shape_problems_sample": [],
+      "n_no_features": 0,
+      "declared_shift": null,
+      "arm_count_hist": {
+        "2": 558,
+        "3": 344,
+        "4": 335,
+        "5": 113
+      }
+    },
+    {
+      "name": "shared_run_r4",
+      "tier": 2,
+      "plan_dir": "measurement/tiearb_widening_20260817/shared_run_r4/corpus/positions_s1",
+      "records": [
+        "/mnt/c/carc-shared/tiearb_widening_20260817/s1"
+      ],
+      "features_cache": "measurement/tienet_stage1_plan_20260823/features_shared_run_r4.json",
+      "rules_profiles": "walled",
+      "allow_m": [
+        32,
+        128
+      ],
+      "subset_worlds": 32,
+      "n_rids": 1344,
+      "n_roots": 748,
+      "n_arm_labels": 4672,
+      "n_pairs_non_tied": 7915,
+      "n_worlds_subset": 1344,
+      "n_shape_problems": 0,
+      "shape_problems_sample": [],
+      "n_no_features": 0,
+      "declared_shift": null,
+      "arm_count_hist": {
+        "2": 542,
+        "3": 358,
+        "4": 188,
+        "5": 67,
+        "6": 87,
+        "7": 22,
+        "8": 25,
+        "9": 24,
+        "10": 13,
+        "11": 12,
+        "12": 5,
+        "13": 1
+      }
+    },
+    {
+      "name": "rung3_r5",
+      "tier": 3,
+      "plan_dir": "measurement/tiearb_widening_20260817/rung3_r5/corpus/positions_s2",
+      "records": [
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk1",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk2",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk3",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk4",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk5",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk6",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk7",
+        "/mnt/c/carc-shared/tiearb_widening_20260817/rung3_r5/chunks/s2/chunk8"
+      ],
+      "features_cache": "measurement/tienet_stage1_plan_20260823/features_rung3_r5.json",
+      "rules_profiles": "walled",
+      "allow_m": [
+        32
+      ],
+      "subset_worlds": 0,
+      "n_rids": 1060,
+      "n_roots": 977,
+      "n_arm_labels": 7662,
+      "n_pairs_non_tied": 24300,
+      "n_worlds_subset": 0,
+      "n_shape_problems": 0,
+      "shape_problems_sample": [],
+      "n_no_features": 0,
+      "declared_shift": "ARM-FLOOR 5 BY DESIGN (it is the widening corpus). Its tie-set width distribution does not overlap the graded corpus (floor 2) except in the k=5 stratum. Training on it and grading on arm-floor-2 ties is a COVARIATE SHIFT in the very thing the ranker keys on, not just more data. 62% of all free pairs come from this one shifted corpus \u2014 it is admitted as a DECLARED STRATUM and its tier is reported separately from the CLEAN FREE tier so the shift can never drive a headline unnoticed.",
+      "arm_count_hist": {
+        "5": 194,
+        "6": 357,
+        "7": 143,
+        "8": 101,
+        "9": 94,
+        "10": 61,
+        "11": 44,
+        "12": 57,
+        "13": 9
+      }
+    }
+  ],
+  "graded": {
+    "n_rids": 733,
+    "n_roots": 399,
+    "n_pairs_non_tied": 2458
+  },
+  "cells": [
+    {
+      "rank_accuracy": {
+        "acc": 0.5097640358014646,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.008729667327880813,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.8656027525121316,
+        "ci95": [
+          0.4925718009118839,
+          0.5263065332397835
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": -0.04509840767028913,
+          "se_cluster": 0.05515268268452876,
+          "boot_mean": -0.04499260579245464,
+          "boot_lo": -0.1524134949787668,
+          "boot_hi": 0.06415071833977691,
+          "se_boot": 0.05502158341637664,
+          "z": -0.8177010704674204,
+          "sd_positions": 1.5297198604675697,
+          "frac_boot_le_0": 0.7956
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": -0.17718772775804995,
+        "F_boot_median": -0.17898535383402447,
+        "F_lo": -0.8385599891715985,
+        "F_hi": 0.22593628902823024,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": -0.16089335594109572,
+        "pickchg": 0.47748976807639837,
+        "sel_agree": 0.1937244201909959,
+        "elo_arb": -4.3973445401290245
+      },
+      "n_scored_rids": 733,
+      "design": "cross-fit",
+      "model": "pairwise-logistic",
+      "kappa": 0.0,
+      "fit": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_pairs_rows": 3962,
+            "C": 0.01,
+            "inner_cv_acc": 0.5285343352883676
+          },
+          {
+            "fold": 1,
+            "n_pairs_rows": 3910,
+            "C": 1.0,
+            "inner_cv_acc": 0.5250511247443763
+          },
+          {
+            "fold": 2,
+            "n_pairs_rows": 4018,
+            "C": 0.01,
+            "inner_cv_acc": 0.5211623684189682
+          },
+          {
+            "fold": 3,
+            "n_pairs_rows": 4020,
+            "C": 0.01,
+            "inner_cv_acc": 0.5228821295335557
+          },
+          {
+            "fold": 4,
+            "n_pairs_rows": 3754,
+            "C": 0.003,
+            "inner_cv_acc": 0.5079985709749127
+          }
+        ],
+        "n_train_pairs_rows": 19664,
+        "inner_cv_acc": 0.5211257057920361,
+        "kind": "pairwise-logistic"
+      },
+      "corpora": [],
+      "tier": "T0",
+      "tier_label": "stage-0 (incumbent)",
+      "arm": "label"
+    },
+    {
+      "design": "aux-train",
+      "skipped": "no auxiliary corpus at this tier",
+      "tier": "T0",
+      "tier_label": "stage-0 (incumbent)",
+      "arm": "label"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5217656631407649,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.00922111775568553,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.9143332283771606,
+        "ci95": [
+          0.5033100775960643,
+          0.5388942931258106
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": -0.004722733367435311,
+          "se_cluster": 0.05186511437466927,
+          "boot_mean": -0.00474660913455144,
+          "boot_lo": -0.10755532133934552,
+          "boot_hi": 0.09593580886786349,
+          "se_boot": 0.05160382806253796,
+          "z": -0.09105799581041465,
+          "sd_positions": 1.459747348733661,
+          "frac_boot_le_0": 0.5347
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": -0.018555209316941757,
+        "F_boot_median": -0.017616918494974546,
+        "F_lo": -0.567773474344068,
+        "F_hi": 0.3509108841354779,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": -0.016848852541688587,
+        "pickchg": 0.4597544338335607,
+        "sel_agree": 0.20327421555252387,
+        "elo_arb": -0.46046834430615613
+      },
+      "n_scored_rids": 733,
+      "design": "cross-fit",
+      "model": "pairwise-logistic",
+      "kappa": 0.0,
+      "fit": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_pairs_rows": 13050,
+            "C": 0.01,
+            "inner_cv_acc": 0.5199229973641817
+          },
+          {
+            "fold": 1,
+            "n_pairs_rows": 12998,
+            "C": 0.01,
+            "inner_cv_acc": 0.5188518851837817
+          },
+          {
+            "fold": 2,
+            "n_pairs_rows": 13106,
+            "C": 0.003,
+            "inner_cv_acc": 0.5177037727373297
+          },
+          {
+            "fold": 3,
+            "n_pairs_rows": 13108,
+            "C": 0.01,
+            "inner_cv_acc": 0.5275424612672934
+          },
+          {
+            "fold": 4,
+            "n_pairs_rows": 12842,
+            "C": 0.01,
+            "inner_cv_acc": 0.5228136408250991
+          }
+        ],
+        "n_train_pairs_rows": 65104,
+        "inner_cv_acc": 0.521366951475537,
+        "kind": "pairwise-logistic"
+      },
+      "corpora": [
+        "tiearb2"
+      ],
+      "tier": "T1",
+      "tier_label": "+tiearb2",
+      "arm": "label"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5237998372660699,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.009630808136452722,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.954956668876114,
+        "ci95": [
+          0.50432555664575,
+          0.5417493702549874
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.022546627639982962,
+          "se_cluster": 0.05438054952554964,
+          "boot_mean": 0.022743697320255343,
+          "boot_lo": -0.08464946189810514,
+          "boot_hi": 0.12877014661575822,
+          "se_boot": 0.05424012707864984,
+          "z": 0.4146083082406122,
+          "sd_positions": 1.4850667361517365,
+          "frac_boot_le_0": 0.3392
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.08858374223193086,
+        "F_boot_median": 0.08995484922901922,
+        "F_lo": -0.4436071028129127,
+        "F_hi": 0.47220902053885006,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.08043748712088107,
+        "pickchg": 0.47748976807639837,
+        "sel_agree": 0.21828103683492497,
+        "elo_arb": 2.1983330329301576
+      },
+      "n_scored_rids": 733,
+      "design": "aux-train",
+      "model": "pairwise-logistic",
+      "kappa": 0.0,
+      "fit": {
+        "n_train_pairs_rows": 9088,
+        "n_train_rids": 1350,
+        "n_train_roots": 716,
+        "C": 0.03,
+        "kind": "pairwise-logistic",
+        "inner_cv_acc": 0.5199163732394366
+      },
+      "corpora": [
+        "tiearb2"
+      ],
+      "tier": "T1",
+      "tier_label": "+tiearb2",
+      "arm": "label"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.514646053702197,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.009059914824148616,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.8983489192379426,
+        "ci95": [
+          0.4971372680133237,
+          0.5322522323656396
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.04898635030474427,
+          "se_cluster": 0.0499974768542644,
+          "boot_mean": 0.04923488722228566,
+          "boot_lo": -0.04784527843934699,
+          "boot_hi": 0.14762605995652947,
+          "se_boot": 0.049616477256926084,
+          "z": 0.9797764484702414,
+          "sd_positions": 1.3552682279187085,
+          "frac_boot_le_0": 0.1597
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.19246311677154274,
+        "F_boot_median": 0.1951256932818985,
+        "F_lo": -0.23165718022449222,
+        "F_hi": 0.5809320845931121,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.17476400394129243,
+        "pickchg": 0.44747612551159616,
+        "sel_agree": 0.208731241473397,
+        "elo_arb": 4.776486354259247
+      },
+      "n_scored_rids": 733,
+      "design": "cross-fit",
+      "model": "pairwise-logistic",
+      "kappa": 0.0,
+      "fit": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_pairs_rows": 28880,
+            "C": 0.003,
+            "inner_cv_acc": 0.5177631578947369
+          },
+          {
+            "fold": 1,
+            "n_pairs_rows": 28828,
+            "C": 0.003,
+            "inner_cv_acc": 0.5167901571418317
+          },
+          {
+            "fold": 2,
+            "n_pairs_rows": 28936,
+            "C": 0.003,
+            "inner_cv_acc": 0.5201479126347802
+          },
+          {
+            "fold": 3,
+            "n_pairs_rows": 28938,
+            "C": 0.03,
+            "inner_cv_acc": 0.5205268010697595
+          },
+          {
+            "fold": 4,
+            "n_pairs_rows": 28672,
+            "C": 0.003,
+            "inner_cv_acc": 0.5189034598214286
+          }
+        ],
+        "n_train_pairs_rows": 144254,
+        "inner_cv_acc": 0.5188262977125074,
+        "kind": "pairwise-logistic"
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4"
+      ],
+      "tier": "T2",
+      "tier_label": "+shared_run_r4",
+      "arm": "label"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5152563059397884,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.009229505890408071,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.9151649659716832,
+        "ci95": [
+          0.4970686359875011,
+          0.5335599711627186
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.034196576294803126,
+          "se_cluster": 0.054050973195977535,
+          "boot_mean": 0.03455154714613823,
+          "boot_lo": -0.07148315021694267,
+          "boot_hi": 0.14094367136648522,
+          "se_boot": 0.05388898523391561,
+          "z": 0.6326727211888209,
+          "sd_positions": 1.475663957576697,
+          "frac_boot_le_0": 0.26045
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.1343553789100358,
+        "F_boot_median": 0.13680913426087715,
+        "F_lo": -0.3483279566798605,
+        "F_hi": 0.5417422692960631,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.12199991542919417,
+        "pickchg": 0.49113233287858116,
+        "sel_agree": 0.2100954979536153,
+        "elo_arb": 3.3342799244818937
+      },
+      "n_scored_rids": 733,
+      "design": "aux-train",
+      "model": "pairwise-logistic",
+      "kappa": 0.0,
+      "fit": {
+        "n_train_pairs_rows": 24918,
+        "n_train_rids": 2694,
+        "n_train_roots": 1450,
+        "C": 1.0,
+        "kind": "pairwise-logistic",
+        "inner_cv_acc": 0.5185407691252986
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4"
+      ],
+      "tier": "T2",
+      "tier_label": "+shared_run_r4",
+      "arm": "label"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5351912123677787,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.009107814842543532,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.9030985146361084,
+        "ci95": [
+          0.5174154231965563,
+          0.552405170886851
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.014998236275477488,
+          "se_cluster": 0.052105703469133346,
+          "boot_mean": 0.015012545075063718,
+          "boot_lo": -0.0867888488557687,
+          "boot_hi": 0.11689746118394186,
+          "se_boot": 0.05190122691628665,
+          "z": 0.2878425062308625,
+          "sd_positions": 1.456104269391179,
+          "frac_boot_le_0": 0.3871
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.058926768001633455,
+        "F_boot_median": 0.058885411702962784,
+        "F_lo": -0.44887135229352476,
+        "F_hi": 0.432323023039701,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.05350779976980909,
+        "pickchg": 0.4815825375170532,
+        "sel_agree": 0.20054570259208732,
+        "elo_arb": 1.4623416623843748
+      },
+      "n_scored_rids": 733,
+      "design": "cross-fit",
+      "model": "pairwise-logistic",
+      "kappa": 0.0,
+      "fit": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_pairs_rows": 77480,
+            "C": 0.01,
+            "inner_cv_acc": 0.5200696954052659
+          },
+          {
+            "fold": 1,
+            "n_pairs_rows": 77428,
+            "C": 0.003,
+            "inner_cv_acc": 0.5198636553153713
+          },
+          {
+            "fold": 2,
+            "n_pairs_rows": 77536,
+            "C": 0.3,
+            "inner_cv_acc": 0.5186365043334709
+          },
+          {
+            "fold": 3,
+            "n_pairs_rows": 77538,
+            "C": 0.3,
+            "inner_cv_acc": 0.5213831523137966
+          },
+          {
+            "fold": 4,
+            "n_pairs_rows": 77272,
+            "C": 0.01,
+            "inner_cv_acc": 0.519437830003106
+          }
+        ],
+        "n_train_pairs_rows": 387254,
+        "inner_cv_acc": 0.5198781674742021,
+        "kind": "pairwise-logistic"
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4",
+        "rung3_r5"
+      ],
+      "tier": "T3",
+      "tier_label": "+rung3_r5",
+      "arm": "label"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5323433685923515,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.009243613586847959,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.9165638349561828,
+        "ci95": [
+          0.5135697219541497,
+          0.5502185221829647
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.02573173082063987,
+          "se_cluster": 0.05048285529983233,
+          "boot_mean": 0.02597410691135134,
+          "boot_lo": -0.07264068503255756,
+          "boot_hi": 0.12435586630411029,
+          "se_boot": 0.050281827606843195,
+          "z": 0.5097122709841123,
+          "sd_positions": 1.3717492059372094,
+          "frac_boot_le_0": 0.3035
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.1010977360603058,
+        "F_boot_median": 0.1021960012916789,
+        "F_lo": -0.3631924377803019,
+        "F_hi": 0.47118421359708607,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.09180068077288574,
+        "pickchg": 0.46521145975443384,
+        "sel_agree": 0.208731241473397,
+        "elo_arb": 2.5088959249114042
+      },
+      "n_scored_rids": 733,
+      "design": "aux-train",
+      "model": "pairwise-logistic",
+      "kappa": 0.0,
+      "fit": {
+        "n_train_pairs_rows": 73518,
+        "n_train_rids": 3754,
+        "n_train_roots": 2381,
+        "C": 0.01,
+        "kind": "pairwise-logistic",
+        "inner_cv_acc": 0.5177100115326896
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4",
+        "rung3_r5"
+      ],
+      "tier": "T3",
+      "tier_label": "+rung3_r5",
+      "arm": "label"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5303091944670464,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.009160350705725476,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.9083077839092516,
+        "ci95": [
+          0.512112572830252,
+          0.5487155882254893
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.02431449033913368,
+          "se_cluster": 0.052479591185318746,
+          "boot_mean": 0.024408490917479042,
+          "boot_lo": -0.07723831480960358,
+          "boot_hi": 0.12554773141266537,
+          "se_boot": 0.0521101563914329,
+          "z": 0.4633132574008256,
+          "sd_positions": 1.453142547288407,
+          "frac_boot_le_0": 0.3244
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.09552952127009175,
+        "F_boot_median": 0.09569626290107648,
+        "F_lo": -0.39729824529881436,
+        "F_hi": 0.47115076014158996,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.08674452493447621,
+        "pickchg": 0.4665757162346521,
+        "sel_agree": 0.20327421555252387,
+        "elo_arb": 2.3707076903527264
+      },
+      "n_scored_rids": 733,
+      "design": "cross-fit",
+      "model": "pairwise-logistic",
+      "kappa": 0.5,
+      "fit": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_pairs_rows": 55270,
+            "C": 0.003,
+            "inner_cv_acc": 0.5278995143499625
+          },
+          {
+            "fold": 1,
+            "n_pairs_rows": 55264,
+            "C": 0.003,
+            "inner_cv_acc": 0.5240301100173712
+          },
+          {
+            "fold": 2,
+            "n_pairs_rows": 55312,
+            "C": 1.0,
+            "inner_cv_acc": 0.5269742551345097
+          },
+          {
+            "fold": 3,
+            "n_pairs_rows": 55302,
+            "C": 1.0,
+            "inner_cv_acc": 0.5285163198127789
+          },
+          {
+            "fold": 4,
+            "n_pairs_rows": 55138,
+            "C": 0.003,
+            "inner_cv_acc": 0.5263885130928034
+          }
+        ],
+        "n_train_pairs_rows": 276286,
+        "inner_cv_acc": 0.5267617424814851,
+        "kind": "pairwise-logistic"
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4",
+        "rung3_r5"
+      ],
+      "tier": "T3",
+      "tier_label": "+rung3_r5 k=0.5",
+      "arm": "kappa"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5362082994304312,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.009208699116502038,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.9131018403006237,
+        "ci95": [
+          0.5179223610661692,
+          0.5548304693082455
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.04001720729255325,
+          "se_cluster": 0.05448579558028817,
+          "boot_mean": 0.040274921768944816,
+          "boot_lo": -0.06511436255559457,
+          "boot_hi": 0.1459762485706926,
+          "se_boot": 0.05430043387903785,
+          "z": 0.7344521056609229,
+          "sd_positions": 1.4885470146681468,
+          "frac_boot_le_0": 0.2312
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.15722413268399368,
+        "F_boot_median": 0.1585760589927065,
+        "F_lo": -0.3272176340854615,
+        "F_hi": 0.5624300114703837,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.14276563429380396,
+        "pickchg": 0.4761255115961801,
+        "sel_agree": 0.19918144611186903,
+        "elo_arb": 3.9018550551604414
+      },
+      "n_scored_rids": 733,
+      "design": "aux-train",
+      "model": "pairwise-logistic",
+      "kappa": 0.5,
+      "fit": {
+        "n_train_pairs_rows": 52454,
+        "n_train_rids": 3754,
+        "n_train_roots": 2283,
+        "C": 0.003,
+        "kind": "pairwise-logistic",
+        "inner_cv_acc": 0.528139225874234
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4",
+        "rung3_r5"
+      ],
+      "tier": "T3",
+      "tier_label": "+rung3_r5 k=0.5",
+      "arm": "kappa"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5303091944670464,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.008731277616736841,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.865762423025768,
+        "ci95": [
+          0.5133431017323136,
+          0.5474755960532321
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.011401831789488486,
+          "se_cluster": 0.05356264713996819,
+          "boot_mean": 0.011408266143426028,
+          "boot_lo": -0.09239355056280484,
+          "boot_hi": 0.11653559458741042,
+          "se_boot": 0.053352723723550065,
+          "z": 0.21286908691599177,
+          "sd_positions": 1.4690834463127438,
+          "frac_boot_le_0": 0.4168
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.04479680705866512,
+        "F_boot_median": 0.045612205596015545,
+        "F_lo": -0.4703865923754202,
+        "F_hi": 0.4396787414330307,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.04067724505704062,
+        "pickchg": 0.47066848567530695,
+        "sel_agree": 0.1937244201909959,
+        "elo_arb": 1.1116861869642267
+      },
+      "n_scored_rids": 733,
+      "design": "cross-fit",
+      "model": "pairwise-logistic",
+      "kappa": 1.0,
+      "fit": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_pairs_rows": 36306,
+            "C": 0.003,
+            "inner_cv_acc": 0.5369360394139582
+          },
+          {
+            "fold": 1,
+            "n_pairs_rows": 36332,
+            "C": 0.03,
+            "inner_cv_acc": 0.5367716587486914
+          },
+          {
+            "fold": 2,
+            "n_pairs_rows": 36318,
+            "C": 0.03,
+            "inner_cv_acc": 0.5359879150640605
+          },
+          {
+            "fold": 3,
+            "n_pairs_rows": 36292,
+            "C": 0.03,
+            "inner_cv_acc": 0.5377767661077116
+          },
+          {
+            "fold": 4,
+            "n_pairs_rows": 36284,
+            "C": 0.3,
+            "inner_cv_acc": 0.5350285368649481
+          }
+        ],
+        "n_train_pairs_rows": 181532,
+        "inner_cv_acc": 0.5365001832398739,
+        "kind": "pairwise-logistic"
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4",
+        "rung3_r5"
+      ],
+      "tier": "T3",
+      "tier_label": "+rung3_r5 k=1.0",
+      "arm": "kappa"
+    },
+    {
+      "rank_accuracy": {
+        "acc": 0.5374288039056143,
+        "n_pairs": 2458,
+        "n_roots": 399,
+        "se_boot_cluster": 0.008792077503561445,
+        "se_nominal": 0.01008507343876366,
+        "deff": 0.8717911234803337,
+        "ci95": [
+          0.519894536667186,
+          0.554885797395933
+        ],
+        "reps": 2000
+      },
+      "capture": {
+        "n": 733,
+        "n_roots": 399,
+        "n_dropped": 0,
+        "arb": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.02463273580650139,
+          "se_cluster": 0.0530874834715344,
+          "boot_mean": 0.024738844078487397,
+          "boot_lo": -0.07721087284753912,
+          "boot_hi": 0.12853320334138357,
+          "se_boot": 0.05295129040993739,
+          "z": 0.4640027026278144,
+          "sd_positions": 1.4479973437944085,
+          "frac_boot_le_0": 0.32035
+        },
+        "ora": {
+          "n": 733,
+          "n_roots": 399,
+          "mean": 0.2545233140066622,
+          "se_cluster": 0.05978286294244883,
+          "boot_mean": 0.2543753755493542,
+          "boot_lo": 0.1390646318778077,
+          "boot_hi": 0.37310175216676045,
+          "se_boot": 0.05974975738770062,
+          "z": 4.25746278246467,
+          "sd_positions": 1.6526094556835598,
+          "frac_boot_le_0": 0.0
+        },
+        "F": 0.09677988007753435,
+        "F_boot_median": 0.09770194794571863,
+        "F_lo": -0.39213640267367367,
+        "F_hi": 0.48595334012767794,
+        "F_finite_reps": 20000.0,
+        "G-BOOT": 0.0,
+        "G-BOOT_fired": false,
+        "F_fixed": 0.08787989941670135,
+        "pickchg": 0.4583901773533424,
+        "sel_agree": 0.20054570259208732,
+        "elo_arb": 2.401738193018465
+      },
+      "n_scored_rids": 733,
+      "design": "aux-train",
+      "model": "pairwise-logistic",
+      "kappa": 1.0,
+      "fit": {
+        "n_train_pairs_rows": 34436,
+        "n_train_rids": 3754,
+        "n_train_roots": 2102,
+        "C": 0.03,
+        "kind": "pairwise-logistic",
+        "inner_cv_acc": 0.5365893731461213
+      },
+      "corpora": [
+        "tiearb2",
+        "shared_run_r4",
+        "rung3_r5"
+      ],
+      "tier": "T3",
+      "tier_label": "+rung3_r5 k=1.0",
+      "arm": "kappa"
+    }
+  ],
+  "model": "pairwise-logistic",
+  "kappas": "0,0.5,1.0",
+  "anti_shopping": "PLAN.md \u00a77.4: stage-1 is licensed ONE headline capture read against the spent 733 \u2014 the TOP label rung. Every other cell here is a DIAGNOSTIC and its capture may NOT be quoted as a result.",
+  "ceiling_caveat": "CEILING CAVEAT (LEVER_INDEX 'arbiter playout-policy upgrade', verbatim): on THIS corpus the entire judge-quality ceiling is ora - arb = +0.048 pts/tied ply at the point estimate, and F = 0.811 has CI95 [0.450, 1.320] \u2014 the CI INCLUDES 1, i.e. includes ZERO remaining headroom. Any picker's gain here is an unknown fraction of an effect that is itself consistent with zero. This is an OFFLINE probe of a B=16-grade selection; the DEPLOYED arbiter is B=64 and captures more, so the residual gap at deploy is plausibly smaller still.",
+  "net_asymmetry_caveat": "NET FOLD ASYMMETRY: tier1/v29 select on M/2 worlds and are priced on the disjoint M/2; the net's pick is world-independent, so its two folds agree and its arb is a FULL-M difference \u2014 same estimand, LESS noise. Its winner's-curse control is the ROOT split, not the world split. Do not read a net-vs-rollout gap of order the noise as a strength difference.",
+  "r1_collinearity_note": "R1 COLLINEARITY (PLAN.md \u00a75): for a LINEAR pairwise ranker on x_a - x_b the afterstate-minus-ROOT diff features CANCEL EXACTLY \u2014 (x_a-x_r)-(x_b-x_r) = x_a-x_b. R1 is perfectly collinear with R0 in a linear model and adds literally nothing; it is a rung ONLY paired with M2/M3.",
+  "prior": "PRIOR, stated in PLAN.md \u00a78 before any number was bought: ~10-15% that any stage-1 tier clears \u00a77.1. The free tier is designed to be worth running AT that prior because its primary deliverable is a POWERED KILL, not a win.",
+  "governance": "0 games, no band, no results.csv row, no claim id, no RUN_LIVE.json. ZERO worker-hours."
+}
