@@ -25,6 +25,13 @@ set -euo pipefail
 TOOLCHAIN_PREFIX="${TOOLCHAIN_PREFIX:-/home/doctor/opt/carcasum-toolchain}"
 DEB_CACHE="${DEB_CACHE:-/home/doctor/opt/carcasum-toolchain-cache}"
 
+# ⚠️ CROSS-RELEASE NOTE. These names were chosen on Ubuntu noble (24.04) and also
+# resolve on resolute (26.04) — verified on the laptop 2026-08-23. What does NOT
+# travel is anything whose version is baked into a soname: see the ICU block far
+# below, which reads the required version out of the extracted libQt5Core.so.5
+# rather than naming a package here. If you add a dependency with a versioned
+# soname, resolve it the same way instead of hardcoding it in this list.
+#
 # Ubuntu noble (24.04). Names include the t64 64-bit-time_t renames that
 # happened for noble. If these package names 404, run
 #   apt-cache search libqt5<module>
@@ -96,6 +103,46 @@ for deb in "$DEB_CACHE"/*.deb; do
 done
 
 LIBDIR="$TOOLCHAIN_PREFIX/usr/lib/x86_64-linux-gnu"
+
+# --------------------------------------------------------------------------- #
+# ICU — resolved from the BINARY, never from a hardcoded release assumption.
+#
+# Qt5Core links ICU with a VERSIONED soname (libicuuc.so.NN) and versioned
+# symbols (ucal_openTimeZones_NN). NN tracks the distro, not Qt: noble ships
+# ICU 74, resolute (26.04) ships ICU 78. If the box has no matching system ICU
+# the link dies with
+#     libQt5Core.so: undefined reference to `ucal_openTimeZones_78'
+# which names the version it wanted and is otherwise easy to misread as a Qt
+# problem. (Hit for real on the laptop, 2026-08-23: this script's original
+# package list assumed noble, the laptop is resolute, and it has NO system ICU
+# at all.)
+#
+# So: read the required soname out of the libQt5Core.so.5 we just extracted,
+# and fetch exactly that libicuNN. Works on any release, including ones that
+# did not exist when this was written.
+# --------------------------------------------------------------------------- #
+QT_CORE_SO="$(ls "$LIBDIR"/libQt5Core.so.5 2>/dev/null || true)"
+if [[ -n "$QT_CORE_SO" ]]; then
+    ICU_VER="$(readelf -d "$QT_CORE_SO" 2>/dev/null \
+                 | grep -oE 'libicuuc\.so\.[0-9]+' | grep -oE '[0-9]+$' | head -1 || true)"
+    if [[ -n "${ICU_VER:-}" ]]; then
+        if [[ -e "/usr/lib/x86_64-linux-gnu/libicuuc.so.$ICU_VER" ]]; then
+            echo "== ICU $ICU_VER satisfied system-wide, not vendoring =="
+        elif compgen -G "$LIBDIR/libicuuc.so.$ICU_VER" > /dev/null; then
+            echo "== ICU $ICU_VER already in prefix =="
+        else
+            echo "== Qt needs ICU $ICU_VER and it is absent — fetching libicu$ICU_VER =="
+            if ! compgen -G "$DEB_CACHE/libicu${ICU_VER}_*.deb" > /dev/null; then
+                ( cd "$DEB_CACHE" && apt-get download "libicu$ICU_VER" )
+            fi
+            for deb in "$DEB_CACHE"/libicu"$ICU_VER"_*.deb; do
+                dpkg-deb -x "$deb" "$TOOLCHAIN_PREFIX"
+            done
+        fi
+    else
+        echo "  NOTE: could not read an ICU soname from $QT_CORE_SO — skipping ICU step" >&2
+    fi
+fi
 
 # libgl-dev / libglx-dev ship libGL.so -> libGL.so.1 and libGLX.so ->
 # libGLX.so.0 as *relative* symlinks. Those versioned targets live in the
