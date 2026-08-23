@@ -657,6 +657,59 @@ def test_corpora_registry_is_well_formed_and_declares_its_waivers():
     assert "62%" in corpora["rung3_r5"]["declared_shift"]
 
 
+def test_paired_contrast_beats_quadrature_and_is_zero_against_itself():
+    """Every sweep cell is graded on the SAME graded pairs, so the accuracies are
+    positively correlated and the unpaired quadrature se OVERSTATES the error on
+    their difference. The paired bootstrap must be the tighter instrument."""
+    rng = np.random.default_rng(7)
+    base = {f"R{i}": [float(rng.integers(0, 11)), 10] for i in range(60)}
+    a = {"per_root_acc": base, "rank_accuracy": {"se_boot_cluster": 0.012}}
+    assert PP.paired_acc_contrast(a, a, 5, reps=800)["delta_acc"] == 0.0
+    shifted = {k: [min(10.0, v[0] + 1.0), 10] for k, v in base.items()}
+    b = {"per_root_acc": shifted, "rank_accuracy": {"se_boot_cluster": 0.012}}
+    c = PP.paired_acc_contrast(b, a, 5, reps=4000)
+    assert c["delta_acc"] > 0 and c["target"] == "arbiter"
+    assert c["se_paired"] < c["se_unpaired_quadrature"]
+    # the oracle-target view reads the other per-root key and labels itself
+    o = {"per_root_acc_oracle": shifted, "rank_accuracy_oracle": {"se_boot_cluster": 0.01}}
+    p = {"per_root_acc_oracle": base, "rank_accuracy_oracle": {"se_boot_cluster": 0.01}}
+    co = PP.paired_acc_contrast(o, p, 5, reps=800, key="per_root_acc_oracle",
+                                acc_key="rank_accuracy_oracle")
+    assert co["target"] == "oracle" and co["delta_acc"] == pytest.approx(c["delta_acc"])
+    assert PP.paired_acc_contrast({}, {}, 1) == {}
+
+
+def test_the_two_grading_targets_are_kept_distinct():
+    """⚠️ The easiest misread of the whole sweep: comparing the net's accuracy
+    against the ARBITER's labels to P1's accuracy against the ORACLE order. The
+    harness must compute both and must say why they are not interchangeable."""
+    doc = " ".join(PP.grade_scores_on_733.__doc__.split())
+    assert "NOT INTERCHANGEABLE" in doc.upper()
+    assert "ORACLE" in doc and "ARBITER" in doc
+    assert "P1's accuracy->capture calibration is keyed to" in doc
+    src = Path(PP.__file__).read_text()
+    body = src[src.index("def grade_scores_on_733"):src.index("def paired_acc_contrast")]
+    assert '"rank_accuracy": acc_arb' in body and '"rank_accuracy_oracle": acc_ora' in body
+    assert '"per_root_acc_oracle": pr_ora' in body
+    # the sweep must NEVER train on the oracle labels — they are a grading target only
+    sw = src[src.index("def cmd_sweep"):src.index("def _print_cell")]
+    assert "oracle_labels = labels_from_records" in sw
+    tier = src[src.index("def run_label_tier"):src.index("def cmd_sweep")]
+    assert "oracle_labels" not in tier.split("out = grade_scores_on_733")[0].replace(
+        "oracle_labels: dict", ""), "oracle labels must not reach a training call"
+
+
+def test_p1_calibration_constants_match_the_committed_preflight():
+    """The sweep prints 'what capture would P1 predict for this accuracy'. Those
+    constants are P1's realized anchors — if PREFLIGHT.json is re-read they must
+    still agree, or the printed prediction is against a stale calibration."""
+    pre = json.loads((REPO / "measurement/tienet_stage1_plan_20260823"
+                      / "PREFLIGHT.json").read_text())
+    cal = pre["P1"]["calibration"]
+    assert PP.P1_SLOPE == pytest.approx(cal["slope_pts_per_acc"], rel=1e-12)
+    assert PP.P1_RND_CAPTURE == pytest.approx(cal["anchors"][0][1], rel=1e-12)
+
+
 def test_aux_train_note_keeps_the_cross_band_distinction_straight():
     """The easiest way to mis-sell AUX-TRAIN is to call it a cross-band CONTRAST and
     inflate sigma, or to forget the bias risk entirely. Both must be stated."""

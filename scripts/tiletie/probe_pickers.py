@@ -1635,6 +1635,12 @@ def cmd_preflight(args) -> int:
 # capture is a diagnostic at every rung and the headline at the top rung only
 # (§7.4's anti-shopping rail).
 
+#: P1's realized calibration, read off PREFLIGHT.json and reused so the sweep can
+#: print "what capture SHOULD this accuracy be worth" beside what it measured.
+#: Anchors: (0.5, rnd = +0.015115) and (acc_crossfit = 0.537902, arb = +0.206459).
+P1_RND_CAPTURE = 0.015115114814570356
+P1_SLOPE = 5.048383165777653
+
 AUX_TRAIN = "aux-train"
 CROSS_FIT = "cross-fit"
 
@@ -1762,30 +1768,83 @@ def acc_bootstrap_se(per_root: dict, seed: int, reps: int = 2000) -> dict:
 
 
 def grade_scores_on_733(scores: dict, inp: dict, graded_labels: dict,
-                        boot_seed: int) -> dict:
-    """One scored arm set -> (rank accuracy vs the ARBITER label) + (capture).
+                        oracle_labels: dict, boot_seed: int) -> dict:
+    """One scored arm set -> rank accuracy against BOTH targets, plus capture.
 
-    Rank accuracy is graded on the UNFILTERED pair set so every kappa arm shares
-    one test set. Capture goes through `price_picks` + `aggregate_picker` — the
-    imported estimators, unchanged.
+    ⚠️ THE TWO ACCURACIES ARE NOT INTERCHANGEABLE and conflating them is the single
+    easiest way to misread this whole sweep:
+
+    * ``rank_accuracy`` (vs the ARBITER's CRN margins) is the training objective's
+      own test statistic — "did the net learn what it was taught". It is the number
+      commensurable with stage-0's published 0.5211 and with §7.2's bar.
+    * ``rank_accuracy_oracle`` (vs the `clair-puct` ORACLE order) is "did the net
+      learn the TRUTH". **This is the one P1's accuracy->capture calibration is
+      keyed to**, because capture is priced by the oracle. Comparing the net's
+      arbiter-target accuracy to P1's 0.5379 would be comparing two different
+      quantities and would license a conclusion the data does not support.
+
+    Both are graded on the UNFILTERED pair set so every kappa arm shares one test
+    set. Capture goes through `price_picks` + `aggregate_picker`, unchanged.
     """
-    per_root = defaultdict(lambda: [0.0, 0])
-    for rid, s in scores.items():
-        lb = graded_labels.get(rid)
-        if lb is None or len(s) != len(lb["labels"]):
-            continue
-        a, t = pair_agreement(s, lb["labels"])
-        per_root[lb["root_id"]][0] += a
-        per_root[lb["root_id"]][1] += t
-    acc = acc_bootstrap_se({k: tuple(v) for k, v in per_root.items()}, boot_seed)
+    def _acc(target):
+        per_root = defaultdict(lambda: [0.0, 0])
+        for rid, s in scores.items():
+            lb = target.get(rid)
+            if lb is None or len(s) != len(lb["labels"]):
+                continue
+            a, t = pair_agreement(s, lb["labels"])
+            per_root[lb["root_id"]][0] += a
+            per_root[lb["root_id"]][1] += t
+        pr = {k: (float(v[0]), int(v[1])) for k, v in per_root.items()}
+        return acc_bootstrap_se(pr, boot_seed), {k: list(v) for k, v in pr.items()}
+
+    acc_arb, pr_arb = _acc(graded_labels)
+    acc_ora, pr_ora = _acc(oracle_labels)
     priced = price_picks(inp["rows"], inp["if_by_rid"], picker_net(scores))
     block = aggregate_picker(priced, inp["rows"], boot_seed)
-    return {"rank_accuracy": acc, "capture": block, "n_scored_rids": len(scores)}
+    return {"rank_accuracy": acc_arb, "rank_accuracy_oracle": acc_ora,
+            "capture": block, "n_scored_rids": len(scores),
+            "per_root_acc": pr_arb, "per_root_acc_oracle": pr_ora}
+
+
+def paired_acc_contrast(a: dict, b: dict, seed: int, reps: int = 4000,
+                        key: str = "per_root_acc",
+                        acc_key: str = "rank_accuracy") -> dict:
+    """acc(a) − acc(b) with the SAME resampled roots in every replicate.
+
+    ⚠️ Load-bearing: every cell of the label sweep is graded on the IDENTICAL 2,458
+    pairs of the graded 733, so the two accuracies are strongly positively
+    correlated. Treating them as independent (adding the marginal se's in
+    quadrature) OVERSTATES the error on their difference — i.e. it would understate
+    a real trend. The paired bootstrap is the correct instrument and is what the
+    trend claim is read on.
+    """
+    pa, pb = a.get(key) or {}, b.get(key) or {}
+    roots = sorted(set(pa) & set(pb))
+    if not roots:
+        return {}
+    A = np.asarray([pa[r] for r in roots], dtype=np.float64)
+    B = np.asarray([pb[r] for r in roots], dtype=np.float64)
+    rng = np.random.default_rng(int(seed))
+    idx = rng.integers(0, len(roots), size=(int(reps), len(roots)))
+    da = A[:, 0][idx].sum(axis=1) / A[:, 1][idx].sum(axis=1)
+    db = B[:, 0][idx].sum(axis=1) / B[:, 1][idx].sum(axis=1)
+    d = da - db
+    point = float(A[:, 0].sum() / A[:, 1].sum() - B[:, 0].sum() / B[:, 1].sum())
+    se = float(d.std(ddof=1))
+    return {"target": ("oracle" if "oracle" in key else "arbiter"),
+            "delta_acc": point, "se_paired": se,
+            "z": (point / se) if se else None,
+            "ci95": [float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))],
+            "n_roots": len(roots), "reps": int(reps),
+            "se_unpaired_quadrature": float(np.sqrt(
+                (a[acc_key]["se_boot_cluster"] ** 2)
+                + (b[acc_key]["se_boot_cluster"] ** 2)))}
 
 
 def run_label_tier(inp: dict, graded_feats: dict, graded_labels: dict,
                    graded_rids: list, pools: list, *, design: str, model: str,
-                   kappa: float, args) -> dict:
+                   kappa: float, args, oracle_labels: dict) -> dict:
     """One cell of the label arm: a pair pool x a split design -> scores on the 733."""
     feats = dict(graded_feats)
     labels = dict(graded_labels)
@@ -1822,7 +1881,8 @@ def run_label_tier(inp: dict, graded_feats: dict, graded_labels: dict,
         fitmeta = {"folds": fm, "n_train_pairs_rows": sum(f["n_pairs_rows"] for f in fm),
                    "inner_cv_acc": (float(np.mean(inner)) if inner else None),
                    "kind": model}
-    out = grade_scores_on_733(scores, inp, graded_labels, args.boot_seed)
+    out = grade_scores_on_733(scores, inp, graded_labels, oracle_labels,
+                              args.boot_seed)
     out.update({"design": design, "model": model, "kappa": kappa, "fit": fitmeta,
                 "corpora": [p["name"] for p in pools]})
     return out
@@ -1836,6 +1896,11 @@ def cmd_sweep(args) -> int:
 
     arms_index = json.loads(Path(args.plan_dir, "ARMS.json").read_text())
     graded_labels = labels_from_records(inp["arb_by_rid"], arms_index)["labels"]
+    #: the clair-puct ORACLE arm order on the same graded corpus. Used ONLY as a
+    #: second grading target for rank accuracy — never as a training label in the
+    #: sweep, and never as a capture statistic (that is P3's rail, and it holds
+    #: here too: the sweep's models are trained on ARBITER margins throughout).
+    oracle_labels = labels_from_records(inp["if_by_rid"], arms_index)["labels"]
     graded_feats = json.loads(Path(args.features).read_text())["features"]
     accepted = {r["rid"] for r in inp["rows"]}
     graded_rids = sorted(set(graded_feats) & set(graded_labels) & accepted)
@@ -1857,7 +1922,7 @@ def cmd_sweep(args) -> int:
         for design in (CROSS_FIT, AUX_TRAIN):
             r = run_label_tier(inp, graded_feats, graded_labels, graded_rids,
                                t["pools"], design=design, model=args.model,
-                               kappa=0.0, args=args)
+                               kappa=0.0, args=args, oracle_labels=oracle_labels)
             r.update({"tier": t["tier"], "tier_label": t["label"], "arm": "label"})
             cells.append(r)
             _print_cell(r)
@@ -1870,14 +1935,50 @@ def cmd_sweep(args) -> int:
         for design in (CROSS_FIT, AUX_TRAIN):
             r = run_label_tier(inp, graded_feats, graded_labels, graded_rids,
                                top["pools"], design=design, model=args.model,
-                               kappa=kap, args=args)
+                               kappa=kap, args=args, oracle_labels=oracle_labels)
             r.update({"tier": top["tier"], "tier_label": top["label"] + f" k={kap}",
                       "arm": "kappa"})
             cells.append(r)
             _print_cell(r)
 
+    # --- paired contrasts: the label TREND, the kappa curve, the design check ---
+    def cell(t, design, kap=0.0, arm=None):
+        for c in cells:
+            if (c.get("tier") == t and c.get("design") == design
+                    and c.get("kappa") == kap and not c.get("skipped")):
+                return c
+        return None
+
+    top_t = tiers[-1]["tier"]
+    want = [("label_trend_T0_to_top__crossfit", cell(top_t, CROSS_FIT),
+             cell("T0", CROSS_FIT)),
+            ("label_trend_T0_to_top__auxtrain_vs_stage0", cell(top_t, AUX_TRAIN),
+             cell("T0", CROSS_FIT)),
+            ("design_check_auxtrain_minus_crossfit_at_top", cell(top_t, AUX_TRAIN),
+             cell(top_t, CROSS_FIT)),
+            ("kappa_1.0_minus_0_at_top__crossfit", cell(top_t, CROSS_FIT, 1.0),
+             cell(top_t, CROSS_FIT)),
+            ("kappa_0.5_minus_0_at_top__crossfit", cell(top_t, CROSS_FIT, 0.5),
+             cell(top_t, CROSS_FIT))]
+    contrasts = {}
+    for name, a, b in want:
+        if not (a and b):
+            continue
+        contrasts[name] = paired_acc_contrast(a, b, args.boot_seed)
+        contrasts[name + "__vs_ORACLE_order"] = paired_acc_contrast(
+            a, b, args.boot_seed, key="per_root_acc_oracle",
+            acc_key="rank_accuracy_oracle")
+    print("\n=== PAIRED accuracy contrasts (same graded pairs, root-clustered) ===")
+    for name, c in contrasts.items():
+        if c:
+            print(f"  [{c['target']:<8}] {name:<58} Δacc {c['delta_acc']:+.4f} ± "
+                  f"{c['se_paired']:.4f} (z {c['z']:+.2f})  "
+                  f"CI95 [{c['ci95'][0]:+.4f}, {c['ci95'][1]:+.4f}]"
+                  f"   [unpaired se would be {c['se_unpaired_quadrature']:.4f}]")
+
     rep = {
         "schema": SCHEMA, "mode": "sweep", "generated_utc": _utc(), "git": _git_rev(),
+        "contrasts": contrasts,
         "knowngood": kg, "plan": FREE_TIER_PLAN, "read_rule": P3_RULE_DOC,
         "design_note": AUX_TRAIN_NOTE, "g_disjoint": disjoint,
         "corpora": [p["meta"] for p in pools],
@@ -1910,13 +2011,17 @@ def _print_cell(r: dict) -> None:
     if r.get("skipped"):
         print(f"  [{r.get('tier')}/{r['design']}] SKIPPED — {r['skipped']}")
         return
-    a, c = r["rank_accuracy"], r["capture"]
+    a, o, c = r["rank_accuracy"], r["rank_accuracy_oracle"], r["capture"]
+    # P1's calibration maps ORACLE-target accuracy -> capture; apply it to the
+    # oracle-target number and print the gap to what was actually measured.
+    pred = P1_RND_CAPTURE + (o["acc"] - 0.5) * P1_SLOPE
     print(f"  [{r['tier']:<3} {r['design']:<9} k={r['kappa']:<4}] "
           f"train_rows {r['fit']['n_train_pairs_rows']:>7}  "
-          f"acc {a['acc']:.4f} ± {a['se_boot_cluster']:.4f} "
-          f"(deff {a['deff']:.2f}, {a['n_pairs']} pairs)  "
+          f"acc/arb {a['acc']:.4f} ± {a['se_boot_cluster']:.4f} "
+          f"(deff {a['deff']:.2f})  acc/ora {o['acc']:.4f} ± {o['se_boot_cluster']:.4f}  "
           f"capture {c['arb']['mean']:+.5f} ± {c['arb']['se_cluster']:.4f} "
-          f"boot [{c['arb']['boot_lo']:+.4f}, {c['arb']['boot_hi']:+.4f}]")
+          f"boot [{c['arb']['boot_lo']:+.4f}, {c['arb']['boot_hi']:+.4f}]  "
+          f"(P1 would predict {pred:+.4f} from acc/ora)")
 
 
 # =========================================================================== #
