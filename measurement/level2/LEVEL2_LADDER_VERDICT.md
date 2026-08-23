@@ -1,5 +1,16 @@
 # Level-2 saturated-ruler ladder — VERDICT (L2-1)
 
+> **⚠️ ANNOTATED 2026-08-23 (D1, TRACK_D_PREP_2026-08-23 §3.2):** (i) top rung
+> superseded by CL-043 (PUCT rung above h6400, 2026-07-07); (ii) the config note
+> below asserting `HeuristicMCTS` default c_puct = 1.5 was INVERTED —
+> `DEFAULT_C = 3.0` since `534043a4`, and every ladder site (this one included)
+> ran at c=3.0, corrected below (TRACK_D_PREP §2.2; the five results.csv
+> `fair_ruler_*` rows stamping `old_c=1.5` are mis-stamped against their own
+> manifests — correcting those rows is an OWNER decision per
+> `measurement/track_d2_prep/READ_RULE.md` §5, not taken here); (iii) rung
+> spacing is under adjudication by D2 — carry D2's
+> `S` onto this row when it lands.
+
 > **Measurement gate only.** No train / promote / redesign / modify-iter8 follows.
 > Executes [LEVEL2_LADDER_PROTOCOL.md](LEVEL2_LADDER_PROTOCOL.md) (§5/§8.3 of the
 > MEASUREMENT_FIRST spec). Champion under test FROZEN: iter8 (sha `0d355002…`).
@@ -8,16 +19,27 @@
 > `LADDER_RESULTS.json` (via `scripts/level2/aggregate_l2_ladder.py`).
 
 ## Config note — the heur rungs run at the PRODUCTION ruler's actual c_puct
-All heuristic rungs use `HeuristicMCTS` at the module default **c_puct = 1.5**.
+
+> **CORRECTED 2026-08-23 (D1, TRACK_D_PREP §2.2):** the module default is
+> **`c_puct = 3.0`**, not 1.5, and the inference below is backwards. This
+> section is kept for history; do not cite it for the c value.
+
+~~All heuristic rungs use `HeuristicMCTS` at the module default **c_puct = 1.5**.
 This is **not** a deviation: in the production eval gate
 (`eval_net_vs_heuristic.py`) the `--c-puct 3.0` flag is applied to the **neural**
 side only — the `HeuristicMCTS` opponent is constructed without `c_puct` and so
 has *always* run at 1.5. The `old_c=3.0` column in prior results.csv ladder rows
-is the **net-side** c, not the heuristic's. Therefore the ladder's R4
-(`heur_v2_7@800`, c=1.5) is byte-for-byte the established ruler, and the
-saturation gate is measured at the production heuristic config. v2.7 leaf env
-matches production: `CAP=12 DROP_THREE_OPEN=1 FLAT_LEAF=1`, no residual/blend.
-Provenance smoke passed: each heur rung ran exactly its claimed leaf
+is the **net-side** c, not the heuristic's.~~ **CORRECTED:** `DEFAULT_C = 3.0`
+in `src/carcassonne_ai/mcts.py:36` (introduced at 3.0 in `534043a4`, never
+changed), and `HeuristicMCTS` forwards `**kwargs` with no `c` of its own — so
+every ladder rung constructor here (`scripts/ladder_rung_eval.py:89`, no `c`
+passed) ran at **c=3.0**, the same c_puct-flavored-differently parameter the
+champion's PUCT `c_puct=1.5` is NOT the same axis as (that is a different
+algorithm's exploration term; see `governance/PRODUCTION.yaml:101`). Therefore
+the ladder's R4 (`heur_v2_7@800`, **c=3.0**) is byte-for-byte the established
+ruler, and the saturation gate is measured at the production heuristic config.
+v2.7 leaf env matches production: `CAP=12 DROP_THREE_OPEN=1 FLAT_LEAF=1`, no
+residual/blend. Provenance smoke passed: each heur rung ran exactly its claimed leaf
 (v2.7 rungs `v2_7_calls>0 & v1_calls==0`; v1 rung the inverse).
 
 ## The matrix (n=200 paired each, disjoint fresh bands 3.0e9+)

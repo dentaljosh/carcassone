@@ -6,6 +6,11 @@ new champion — neither hybrid:5 nor hybrid:8 beats heur@3200 (both lose at |z|
 remains strongest.** Measurement only — no training, no promotion. Champion of record unchanged
 (iter8, [governance/PRODUCTION.yaml](../../governance/PRODUCTION.yaml)).
 
+**ANNOTATED → SUPERSEDED (2026-08-23, D1, TRACK_D_PREP_2026-08-23 §3.2, CL-026):**
+"deep heuristic remains strongest" is falsified as a top-of-ecosystem claim by
+CL-043 (the PUCT-priors flip, 2026-07-07); the hybrid's subject (iter8) is
+retired lineage two evidence-epochs back. Not re-run — no live consumer.
+
 ## Question
 Joshua's hybrid-handoff experiment: does iter8's early/midgame policy strength combine with deep
 heuristic endgame precision? Motivated by L2-3 (iter8 plays the endgame *worst*, top-1 0.667 @ K=2)

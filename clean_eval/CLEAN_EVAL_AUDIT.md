@@ -1,5 +1,14 @@
 # CLEAN_EVAL_AUDIT — old headline claims re-judged on the repaired ruler
 
+> **⚠️ SCOPE SPLIT (D1, 2026-08-23, TRACK_D_PREP_2026-08-23 §3.2):** the
+> instrument claims (CL-013/014/015 — provenance, seed namespace, semantic
+> contracts) stand Confirmed and era-independent. The strength ABSOLUTES
+> (CL-001/CL-012 rows) are denominated against a clairvoyant, non-top,
+> matched-v2.7 opponent: NOT blanket-discountable (the leaf effect is
+> non-transitive — this file's own finding) but NOT comparable to fair-ladder
+> numbers, and their checkpoints are retired lineage. No re-run — it would
+> price retired checkpoints.
+
 > **⚠️ UPDATE 2026-06-08 — the n=1200 top-up (PROTOCOL_001) resolved the two open items, and one REVERSES a Phase-3 read:**
 > 1. **Residual value-head marginal RESOLVED POSITIVE:** +37.6 elo / z=2.98 at n=1200 (was +26/z=1.30 "inconclusive" at n=400 — underpowered, not wrong). The old "+45 robust" largely survives clean. **CL-004 → Supported.**
 > 2. **Non-transitivity OVERTURNED:** clean net-vs-v1 cells give iter_11 +35.7 / Stage-B +24.4 (old Stage-B-vs-v1 +86.9 was a 62-elo contamination inflation). Clean Δ(v2.7−v1) is **same-sign for both nets** (iter_11 +54, Stage-B +10) — NOT sign-varying. The "leaf effect is non-transitive" reframe was a contamination artifact → **CL-016 Disfavored; CL-012 strengthened.** What stands: no single universal discount (magnitudes differ per net), and old unmatched-leaf absolutes are not comparable to clean ones.
