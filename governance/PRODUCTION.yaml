@@ -182,6 +182,18 @@ champion:
       mode: argmax
       salt: "tiearb2-deploy-v1"
       eps: 0.0
+      threads: 8                        # ⭐ ARMED 2026-08-22 (Joshua, verbatim 'arm threads'): the arbiter's B×arms
+                                        # playouts thread across 8 workers on DESKTOP (merge b0628e46, worktree build
+                                        # 45b092f6). BIT-IDENTICAL by gate (fold-order-preserving reduction, first-
+                                        # failure-in-sequential-order error semantics, whole-game invariance at
+                                        # threads {1,2,4,8}; crate suite 154/154 on stable AND pinned 1.96.0) ⇒ a
+                                        # LATENCY lever in the CL-071/G6 class — measured 6.5–6.8× on the arbiter
+                                        # term at B=64×3 arms; NO strength claim owed, NO re-eval owed. The knob is
+                                        # rust `tiearb_threads` (carc-py kwarg; SearchConfig default stays 1) —
+                                        # deliberately separate from `rust_threads` and deliberately NOT in the
+                                        # pre-registered cand_tiearb manifest shape (G-J4 reads {enabled,B,J,mode,
+                                        # salt,eps}; latency knobs don't belong in instrument stamps — it reports in
+                                        # stats() telemetry instead). MOBILE: still no arbiter at all.
       # ⚠️ WIRING: the play harness does NOT read this block yet. Arming is explicit:
       #   scripts/human_anchor/play_harness.py --human 0 --backend rust --tiearb-enabled --tiearb-b 64
       # The harness flag default is still --tiearb-b 16, so `--tiearb-b 64` is REQUIRED — same
