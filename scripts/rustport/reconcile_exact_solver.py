@@ -67,6 +67,7 @@ import os
 import random
 import sys
 import time
+import zlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -395,6 +396,15 @@ def run_job(job: dict) -> dict:
             "tb": traceback.format_exc()[-1500:],
         })
     out["leg"] = job["leg"]
+    # Identity, so an interrupted run can be resumed job-by-job rather than
+    # only rebuilt as a partial. Additive: `merge()` reads only the counter
+    # keys, and `rebuild_from_rows` pops `leg` and ignores everything else.
+    # Defensive like the body above: a row that cannot be keyed still has to be
+    # RECORDED (it carries a mismatch), so keying must never raise here.
+    try:
+        out["job_key"] = job_key(job)
+    except Exception:  # noqa: BLE001
+        out["job_key"] = f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
     return out
 
 
@@ -525,6 +535,80 @@ def sample(rows: list, n: int, seed: int) -> list:
     return [rows[i] for i in idx]
 
 
+def cell_seed(source: str, k: int) -> int:
+    """Stable per-(corpus, K) sampling seed.
+
+    ⚠️ FIXED 2026-08-23. This used to be `abs(hash((source, k))) % 100_000`,
+    which does NOT honour the contract `sample()` advertises ("reproducible
+    across runs and boxes"): CPython salts `hash()` of a str per PROCESS unless
+    PYTHONHASHSEED is pinned, so every invocation drew a DIFFERENT sub-sample.
+
+    Measured, not reasoned — the same `--leg all --per-k 25` plan built under
+    four hash seeds yields 179 / 186 / 182 / 177 jobs (jobs are grouped by deck
+    seed, so a different row sample is a different job COUNT). That is exactly
+    why the historical logs disagree with each other: the 2026-08-17 partial
+    logged `jobs=186` and the 2026-08-19 run logged `jobs=179` from identical
+    arguments on the same box.
+
+    The consequence that forced the fix: a gate whose job set is not
+    reproducible cannot be RESUMED (see `--resume`), and this gate is a
+    multi-hour run that has now been killed twice mid-flight.
+
+    `zlib.crc32` is stable across processes, boxes and Python versions. The
+    seeds it produces differ from any given hash-salted draw, so the sampled
+    population changes — that is a change of WHICH rows are compared, never of
+    what a comparison means, and no banked verdict is retroactively affected
+    (`G7_exact_solver_main.json` etc. are already written and keep their own
+    recorded `args`).
+    """
+    return zlib.crc32(f"{source}\x00{k}".encode()) % 100_000
+
+
+def job_key(job: dict) -> str:
+    """Stable identity for one job — the unit `--resume` skips.
+
+    It must be derivable identically at plan time and from a recorded row, and
+    must not collide between two jobs that do different work.
+    """
+    kind = job["kind"]
+    if kind in ("golden", "v2"):
+        pos = job["pos"]
+        return f"{kind}:{pos['seed']}:k{pos['k']}"
+    if kind == "corpus":
+        return f"corpus:{job['leg']}:{job['source']}:{job['seed']}"
+    if kind == "synth":
+        return f"synth:{job['tag']}"
+    raise ValueError(f"unknown job kind {kind!r}")
+
+
+def recorded_job_keys(rows_path: Path) -> set[str]:
+    """The job keys already present in an incremental rows file.
+
+    Fails LOUDLY on a rows file written before job keys existed: silently
+    treating an unkeyed row as "nothing recorded" would re-run work the file
+    already paid for, and silently treating it as "everything recorded" would
+    skip comparisons that never ran. Neither is an honest resume.
+    """
+    keys: set[str] = set()
+    unkeyed = 0
+    for line in rows_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        k = row.get("job_key")
+        if k is None:
+            unkeyed += 1
+        else:
+            keys.add(k)
+    if unkeyed:
+        raise SystemExit(
+            f"--resume: {rows_path} has {unkeyed} row(s) with no `job_key` "
+            f"(written before 2026-08-23). A resume cannot tell which jobs "
+            f"they were. Move the file aside and start a fresh rows file, or "
+            f"rebuild the partial verdict from it with --from-rows.")
+    return keys
+
+
 def build_jobs(args) -> list[dict]:
     legs = set(args.leg)
     if "all" in legs:
@@ -558,8 +642,7 @@ def build_jobs(args) -> list[dict]:
                 continue
             # deterministic sub-sample, seeded by the CELL so a re-run picks the
             # same rows on any box
-            picked += sample(by_k[k], args.per_k,
-                             seed=abs(hash((source, k))) % 100_000)
+            picked += sample(by_k[k], args.per_k, seed=cell_seed(source, k))
         # Group by seed: one greedy walk serves every K of that game.
         by_seed: dict[int, list] = {}
         for r in picked:
@@ -682,6 +765,12 @@ def main() -> int:
     ap.add_argument("--from-rows", default=None,
                     help="rebuild the verdict from an incremental rows file "
                          "instead of running (an interrupted gate's record)")
+    ap.add_argument("--resume", action="store_true",
+                    help="skip jobs already recorded in this tag's rows file "
+                         "and append the rest. OFF by default: it is only "
+                         "sound when the plan is identical, so it re-checks "
+                         "that and refuses on an unkeyed (pre-2026-08-23) "
+                         "rows file rather than guess")
     args = ap.parse_args()
     if not args.leg:
         args.leg = ["all"]
@@ -751,6 +840,34 @@ def main() -> int:
     # zero mismatches, no artifact).  `--from-rows` rebuilds the verdict from
     # this file, and it is the honest partial record either way.
     rows_path = out_dir / f"G7_exact_solver_{args.tag}_rows.jsonl"
+
+    # RESUME: the rows file is opened in APPEND mode, so a re-run with the same
+    # --tag adds to whatever is already there. Without --resume that DOUBLE
+    # COUNTS every job the previous attempt finished (observed: the `run` tag's
+    # rows file carries 28 golden + 24 v2 rows for a 14-golden + 12-v2 plan —
+    # two attempts' worth — so a --from-rows rebuild of it over-reports checks).
+    # With --resume we read the recorded keys and plan only the remainder.
+    n_planned = len(jobs)
+    n_skipped_resume = 0
+    if args.resume and rows_path.exists():
+        done_keys = recorded_job_keys(rows_path)
+        jobs = [j for j in jobs if job_key(j) not in done_keys]
+        n_skipped_resume = n_planned - len(jobs)
+        orphan = done_keys - {job_key(j) for j in build_jobs(args)}
+        print(f"[resume] {n_skipped_resume}/{n_planned} jobs already recorded "
+              f"in {rows_path.name}; {len(jobs)} to run", flush=True)
+        if orphan:
+            # Recorded work that this plan does not contain: the arguments or
+            # the corpora moved. Loud, not fatal — the rows are still honest
+            # records, but the run is no longer the plan it is resuming.
+            print(f"  ⚠️ {len(orphan)} recorded job(s) are NOT in the current "
+                  f"plan (args or corpora changed): "
+                  f"{sorted(orphan)[:5]}{' …' if len(orphan) > 5 else ''}",
+                  flush=True)
+    elif args.resume:
+        print(f"[resume] no rows file at {rows_path} — running the full plan",
+              flush=True)
+
     rows_fh = rows_path.open("a")
 
     def _record(out: dict) -> None:
@@ -787,6 +904,24 @@ def main() -> int:
                 merge(totals, out)
     rows_fh.close()
 
+    n_ran = done
+    if n_skipped_resume:
+        # THE VERDICT IS OVER THE WHOLE PLAN, NOT OVER THIS PROCESS'S SHARE.
+        # Without this, a resume that had only 3 jobs left would report 3 jobs'
+        # worth of checks, and a resume with NOTHING left would report zero
+        # checks and therefore FAIL a gate that had actually finished. The rows
+        # file now holds every job of the plan, so re-derive from it.
+        totals = blank()
+        per_leg = {}
+        for line in rows_path.read_text().splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            leg = row.pop("leg", "?")
+            per_leg.setdefault(leg, blank())
+            merge(per_leg[leg], dict(row))
+            merge(totals, row)
+
     n_bad = len(totals["mismatches"])
     # POSITIVE EVIDENCE REQUIRED: zero mismatches over zero checks is the
     # sha-of-empty shape. No comparisons => no PASS, ever.
@@ -800,6 +935,11 @@ def main() -> int:
         "rules_profile": profile.name,
         "r9_enabled": carc_rs.r9_enabled(),
         "args": vars(args),
+        # Resume bookkeeping (additive; both 0 on a plain full run).
+        "jobs_planned": n_planned,
+        "jobs_ran_this_process": n_ran,
+        "jobs_skipped_resume": n_skipped_resume,
+        "rows_file": str(rows_path),
         "positions": totals["positions"],
         "checks": totals["checks"],
         "skipped_budget": totals["skipped"],

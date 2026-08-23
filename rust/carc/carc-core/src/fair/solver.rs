@@ -75,6 +75,15 @@ pub const WIN_TIE: f64 = 1e-9;
 /// deterministic minimax and `outcome` is a monotone transform of the
 /// deterministic margin; DESIGN §2 proposition).  Divergence requires a chance
 /// bag of ≥ 2, i.e. a K ≥ 3 latch.
+///
+/// **The proposition SURVIVES [`SolverConfig::wc_tiebreak`] armed.**  Arming
+/// the flag only changes `outcome(0.0)` from `0.5` to `0.0` — it does not
+/// touch `m > 0.0` or `m < 0.0` — and `outcome` stays monotone non-decreasing
+/// in `m` either way (see `outcome`'s own doc comment).  At K<=2 every chance
+/// bag is still a singleton regardless of the flag (the flag is a terminal
+/// scoring rule, not a chance-node rule), so the solve is still a
+/// deterministic minimax and lexicographic `(w, m)` max still equals margin
+/// max, armed or not.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Objective {
     Margin,
@@ -98,14 +107,36 @@ impl Objective {
     }
 }
 
-/// `outcome(m)` — the terminal WIN lattice, P0 POV.  `m` is an exact integral
-/// score differential at terminals, so the comparisons are exact.
+/// `outcome(m, wc_tiebreak)` — the terminal WIN lattice, P0 POV.  `m` is an
+/// exact integral score differential at terminals, so the comparisons are
+/// exact.
+///
+/// `wc_tiebreak` (default `false`, the untouched incumbent reading): official
+/// World Championship rules rule a tied final score a LOSS for the starting
+/// player — `measurement/TOURNAMENT_LANDSCAPE_MEMO_20260728.md` §1.3,
+/// verbatim: *"in the unlikely case of a draw / tie in all games ... the
+/// starting player always loses automatically!"*  P0 IS the starting player
+/// (`outcome` is already P0-POV, so this is a value change at `m == 0.0`
+/// only, no sign/lattice change elsewhere).  Armed, `m == 0.0` yields `0.0`
+/// (a loss for P0) instead of the unarmed `0.5` (a draw); `m > 0.0` and
+/// `m < 0.0` are untouched in both readings.  Mirrors
+/// `scripts/level2/endgame_solver._outcome(m, wc_tiebreak=False)` exactly.
+///
+/// This function stays monotone non-decreasing in `m` in EITHER reading
+/// (unarmed: `0, 0.5, 1`; armed: `0, 0, 1`), which is what keeps the DESIGN
+/// §2 K<=2 coincidence proposition (see [`Objective`]'s doc comment) alive
+/// under the flag — see `win_and_margin_coincide_at_k2_the_inertness_proposition`
+/// and its armed sibling below.
 #[inline]
-fn outcome(m: f64) -> f64 {
+fn outcome(m: f64, wc_tiebreak: bool) -> f64 {
     if m > 0.0 {
         1.0
     } else if m == 0.0 {
-        0.5
+        if wc_tiebreak {
+            0.0
+        } else {
+            0.5
+        }
     } else {
         0.0
     }
@@ -169,6 +200,24 @@ pub struct SolverConfig {
     pub chance_drop: ChanceDrop,
     /// E1 (default [`Objective::Margin`] = the untouched incumbent code path).
     pub objective: Objective,
+    /// WC tie-break rule (`BACKLOG.md` 2026-08-03; verbatim source in
+    /// `outcome`'s doc comment).  Default `false` == the untouched incumbent:
+    /// a tied final score (`m == 0.0`) values as `0.5` (a draw), exactly as it
+    /// always has.  Armed, it values as `0.0` (the WC rule: the starting
+    /// player, P0, automatically loses a tie).
+    ///
+    /// ⚠️ Under [`Objective::Margin`] this flag is INERT BY CONSTRUCTION:
+    /// margin mode never calls `outcome` (it backs up the raw score
+    /// differential `m`, not the win lattice), so an armed-but-margin solve is
+    /// bit-identical to an unarmed one.  This is a legitimate "armed but
+    /// inert" state — e.g. the flag riding in from a process-wide rules
+    /// profile that also has `Objective::Win` cells — and is deliberately NOT
+    /// rejected (unlike E1's loud `Clairvoyant + Win` refusal in
+    /// `endgame::Config`, which rejects a combination that is never
+    /// meaningful).  [`SolveResult::wc_tiebreak`] stamps the resolved value on
+    /// every solve, armed or not, objective or not, so the inert state stays
+    /// VISIBLE off a result rather than silently assumed.
+    pub wc_tiebreak: bool,
 }
 
 impl Default for SolverConfig {
@@ -179,6 +228,7 @@ impl Default for SolverConfig {
             tt_cap: 0,
             chance_drop: ChanceDrop::Type,
             objective: Objective::Margin,
+            wc_tiebreak: false,
         }
     }
 }
@@ -205,6 +255,11 @@ pub struct SolveResult {
     pub child_win_values: Vec<(i32, f64)>,
     /// Transposition-table entries retained at the end of the solve.
     pub tt_entries: usize,
+    /// The RESOLVED [`SolverConfig::wc_tiebreak`] this solve ran under —
+    /// stamped unconditionally (both objectives, armed or not) so the
+    /// `Objective::Margin` "armed but inert" state is readable off a result
+    /// instead of assumed from the caller's config.
+    pub wc_tiebreak: bool,
 }
 
 /// 128-bit TT key.
@@ -392,7 +447,7 @@ impl<'a> Solver<'a> {
     fn value_win(&mut self, g: &Game) -> Result<(f64, f64), SolveError> {
         if g.state.is_terminated() {
             let m = g.flat_base_score(0) as f64;
-            return Ok((outcome(m), m));
+            return Ok((outcome(m, self.cfg.wc_tiebreak), m));
         }
         let key = self.key(g);
         if let Some(&v) = self.tt_win.get(&key) {
@@ -543,6 +598,9 @@ pub fn solve_marginalized(g: &Game, cfg: &SolverConfig) -> Result<SolveResult, S
         win_value: None,
         child_win_values: Vec::new(),
         tt_entries: s.tt_entries(),
+        // Stamped even though margin mode never calls `outcome` — the flag is
+        // INERT here by construction, not absent; see `SolverConfig::wc_tiebreak`.
+        wc_tiebreak: cfg.wc_tiebreak,
     })
 }
 
@@ -560,7 +618,7 @@ fn solve_marginalized_win(g: &Game, cfg: &SolverConfig) -> Result<SolveResult, S
         nb.advance(a).map_err(SolveError::Engine)?;
         let v = if nb.state.is_terminated() {
             let m = nb.flat_base_score(0) as f64;
-            (outcome(m), m)
+            (outcome(m, cfg.wc_tiebreak), m)
         } else if drew_a_tile(g, &nb, was_meeples) {
             s.chance_win(&nb)?
         } else {
@@ -592,6 +650,7 @@ fn solve_marginalized_win(g: &Game, cfg: &SolverConfig) -> Result<SolveResult, S
         win_value: Some(vstar.0),
         child_win_values: pairs.iter().map(|&(a, v)| (a, v.0)).collect(),
         tt_entries: s.tt_entries(),
+        wc_tiebreak: cfg.wc_tiebreak,
     })
 }
 
@@ -694,7 +753,7 @@ mod tests {
             assert_eq!(m.optimal_actions, w.optimal_actions, "seed {seed}");
             assert_eq!(m.value.to_bits(), w.value.to_bits(), "seed {seed}");
             let wv = w.win_value.expect("win mode must report win_value");
-            assert_eq!(wv, outcome(m.value), "seed {seed}");
+            assert_eq!(wv, outcome(m.value, false), "seed {seed}");
             assert_eq!(m.child_values.len(), w.child_values.len());
             for ((a1, v1), (a2, v2)) in m.child_values.iter().zip(w.child_values.iter()) {
                 assert_eq!(a1, a2);
@@ -705,7 +764,7 @@ mod tests {
             for ((_, m_child), (_, w_child)) in
                 m.child_values.iter().zip(w.child_win_values.iter())
             {
-                assert_eq!(outcome(*m_child), *w_child, "seed {seed}");
+                assert_eq!(outcome(*m_child, false), *w_child, "seed {seed}");
             }
         }
     }
@@ -752,5 +811,131 @@ mod tests {
         assert_eq!(Objective::parse("win").unwrap(), Objective::Win);
         assert!(Objective::parse("wins").is_err());
         assert_eq!(Objective::Win.value(), "win");
+    }
+
+    // ---- WC tie-break rule (BACKLOG.md 2026-08-03) ------------------------ //
+
+    /// `outcome`'s full truth table, both readings, over positive / zero /
+    /// negative margins.  Unarmed is the pre-flag lattice, untouched.
+    #[test]
+    fn outcome_truth_table_both_readings() {
+        for m in [1.0, 0.5, 100.0] {
+            assert_eq!(outcome(m, false), 1.0);
+            assert_eq!(outcome(m, true), 1.0, "positive margin is a win either way");
+        }
+        assert_eq!(outcome(0.0, false), 0.5, "unarmed: a tie is a draw");
+        assert_eq!(outcome(0.0, true), 0.0, "armed: a tie is a P0 loss (the WC rule)");
+        for m in [-1.0, -0.5, -100.0] {
+            assert_eq!(outcome(m, false), 0.0);
+            assert_eq!(outcome(m, true), 0.0, "negative margin is a loss either way");
+        }
+    }
+
+    /// Default-off inertness: a seeded win-mode solve with `wc_tiebreak: false`
+    /// is bit-identical to `SolverConfig::default()` (which is already
+    /// `wc_tiebreak: false` — this pins that constructing the field
+    /// explicitly changes nothing, i.e. the field itself carries no hidden
+    /// default drift).
+    #[test]
+    fn wc_tiebreak_false_is_bit_identical_to_default() {
+        for seed in ["11", "12", "13", "14"] {
+            let g = endgame(seed, 2);
+            let a = solve_marginalized(&g, &win_cfg()).unwrap();
+            let b = solve_marginalized(
+                &g,
+                &SolverConfig {
+                    wc_tiebreak: false,
+                    ..win_cfg()
+                },
+            )
+            .unwrap();
+            assert_eq!(a.value.to_bits(), b.value.to_bits());
+            assert_eq!(a.win_value.map(f64::to_bits), b.win_value.map(f64::to_bits));
+            assert_eq!(a.optimal_actions, b.optimal_actions);
+            assert_eq!(a.nodes, b.nodes);
+            assert!(!a.wc_tiebreak && !b.wc_tiebreak);
+        }
+    }
+
+    /// Margin mode is INERT under the flag by construction: margin never
+    /// calls `outcome`, so an armed margin solve is bit-identical to an
+    /// unarmed one — but the result still STAMPS the armed state (visible,
+    /// not silently assumed).
+    #[test]
+    fn wc_tiebreak_is_inert_under_margin_objective() {
+        for seed in ["11", "12", "13", "14"] {
+            let g = endgame(seed, 2);
+            let off = solve_marginalized(&g, &SolverConfig::default()).unwrap();
+            let on = solve_marginalized(
+                &g,
+                &SolverConfig {
+                    wc_tiebreak: true,
+                    ..SolverConfig::default()
+                },
+            )
+            .unwrap();
+            assert_eq!(off.value.to_bits(), on.value.to_bits(), "seed {seed}");
+            assert_eq!(off.optimal_actions, on.optimal_actions, "seed {seed}");
+            assert_eq!(off.nodes, on.nodes, "seed {seed}");
+            assert!(!off.wc_tiebreak);
+            assert!(on.wc_tiebreak, "armed state must be readable off the result");
+        }
+    }
+
+    /// Armed correctness at a constructed terminal: `m == 0.0` values `0.0`
+    /// armed / `0.5` unarmed (already covered by the truth table), and the
+    /// lexicographic comparison orders a tie STRICTLY BELOW a win and, armed,
+    /// EQUAL-TO a loss on the `w` component.
+    #[test]
+    fn lex_better_orders_a_tie_below_a_win_and_armed_equal_to_a_loss() {
+        let win = (outcome(1.0, true), 1.0); // (1.0, 1.0)
+        let tie_armed = (outcome(0.0, true), 0.0); // (0.0, 0.0)
+        let tie_unarmed = (outcome(0.0, false), 0.0); // (0.5, 0.0)
+        let loss = (outcome(-1.0, true), -1.0); // (0.0, -1.0)
+
+        // A win beats an armed tie, for the maximizer.
+        assert!(lex_better(win, tie_armed, true));
+        assert!(!lex_better(tie_armed, win, true));
+        // An unarmed tie strictly beats an armed tie (0.5 > 0.0 on the w
+        // component) for the maximizer — arming the flag costs P0 real value.
+        assert!(lex_better(tie_unarmed, tie_armed, true));
+        // Armed, a tie's `w` (0.0) equals a loss's `w` (0.0) — lex_better
+        // falls through to the margin component, where the tie's m=0.0 beats
+        // the loss's m=-1.0.
+        assert!((tie_armed.0 - loss.0).abs() <= WIN_TIE, "w components are equal armed");
+        assert!(lex_better(tie_armed, loss, true), "same w, better m must still win");
+        // For the minimizer the armed tie and the loss are equally preferred
+        // on `w` (0.0 == 0.0) but the loss has the better (more negative) `m`.
+        assert!(lex_better(loss, tie_armed, false));
+    }
+
+    fn win_cfg_armed() -> SolverConfig {
+        SolverConfig {
+            wc_tiebreak: true,
+            ..win_cfg()
+        }
+    }
+
+    /// The DESIGN §2 K<=2 coincidence proposition, ARMED: mirrors
+    /// `win_and_margin_coincide_at_k2_the_inertness_proposition` but with
+    /// `wc_tiebreak: true` on both sides — win value must equal
+    /// `outcome(margin, true)`, not the unarmed lattice.
+    #[test]
+    fn win_and_margin_coincide_at_k2_armed() {
+        for seed in ["11", "12", "13", "14", "15", "16", "17", "18"] {
+            let g = endgame(seed, 2);
+            let m = solve_marginalized(&g, &SolverConfig::default()).unwrap();
+            let w = solve_marginalized(&g, &win_cfg_armed()).unwrap();
+            assert_eq!(m.optimal_actions, w.optimal_actions, "seed {seed}");
+            assert_eq!(m.value.to_bits(), w.value.to_bits(), "seed {seed}");
+            let wv = w.win_value.expect("win mode must report win_value");
+            assert_eq!(wv, outcome(m.value, true), "seed {seed}");
+            for ((_, m_child), (_, w_child)) in
+                m.child_values.iter().zip(w.child_win_values.iter())
+            {
+                assert_eq!(outcome(*m_child, true), *w_child, "seed {seed}");
+            }
+            assert!(w.wc_tiebreak);
+        }
     }
 }

@@ -645,6 +645,7 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                         parallel_workers=_UNSET,
                         sims_tile=_UNSET, sims_meeple=_UNSET,
                         exact_objective=_UNSET,
+                        wc_tiebreak=_UNSET,
                         backend: str = "python", rust_threads: int | None = None):
     """Construct the fair-play PIMC champion (FairHeuristicPriorAgent). Only kwargs the
     caller actually sets are forwarded, so any left at ``_UNSET`` fall through to the
@@ -728,6 +729,10 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
             # E1 exact-solver objective (2026-08-14): both backends; solver-side,
             # leaf hash untouched. Absent-when-unset, same convention.
             exact_objective=exact_objective,
+            # WC tie-break (BACKLOG 2026-08-03): both backends; rule-of-the-MATCH,
+            # not a candidate-side knob (see fair_agent/rust_agent). Absent-when-
+            # unset, same convention.
+            wc_tiebreak=wc_tiebreak,
         ).items() if v is not _UNSET}
         if "sims" not in rs_kw or "k_dets" not in rs_kw:
             raise ValueError(
@@ -774,6 +779,7 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
         parallel_workers=parallel_workers,
         sims_tile=sims_tile, sims_meeple=sims_meeple,
         exact_objective=exact_objective,
+        wc_tiebreak=wc_tiebreak,
     ).items() if v is not _UNSET}
     return FairHeuristicPriorAgent(game, cfg, **kw)
 
@@ -990,7 +996,8 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
                              parallel_workers: int | None = None,
                              backend: str = "auto",
                              rust_threads: int | None = None,
-                             tiearb: dict | None = None):
+                             tiearb: dict | None = None,
+                             wc_tiebreak: bool = False):
     """Instantiate the production champion named by governance/PRODUCTION.yaml and attach
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
@@ -1130,6 +1137,13 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
         raise ValueError(
             "tiearb is a FAIR-mode feature (the tie arbiter binds at the fair PIMC "
             f"agent's pooled_q_argmax root hook); got mode={mode!r}")
+    # WC tie-break (BACKLOG 2026-08-03): binds only where an exact endgame solve can
+    # happen (mode="fair" — the clairvoyant ruler runs no exact solver here), same
+    # fair-mode-only shape as exact_budget/tiearb above.
+    if wc_tiebreak and mode != "fair":
+        raise ValueError(
+            "wc_tiebreak is a FAIR-mode feature (it binds the exact endgame solver's "
+            f"tie resolution); got mode={mode!r}")
 
     # ⚠️ RESOLVED values, not the raw kwargs (REVIEW 2026-08-02 #5 / ROUND2 F-1).
     # `None` is the INHERIT-FROM-PROCESS sentinel for meeple_dedup and intra_reuse, so
@@ -1198,6 +1212,9 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     budget_kw = {} if exact_budget is None else {"exact_budget": int(exact_budget)}
     par_kw = ({} if parallel_workers is None
               else {"parallel_workers": int(parallel_workers)})
+    # WC tie-break — same absent-when-OFF shape as the kwargs above; both backends
+    # (fair_agent/rust_agent both accept it, unlike tiearb which is rust-only).
+    wc_kw = {} if not wc_tiebreak else {"wc_tiebreak": True}
 
     if backend == "rust":
         from .rust_agent import RustFairAgent
@@ -1229,7 +1246,7 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             seed=int(seed), exact_endgame=bool(exact_endgame),
             exact_max_k=spec.exact_max_k,
             threads=(1 if rust_threads is None else int(rust_threads)),
-            **_rs_geom, **budget_kw)
+            **_rs_geom, **budget_kw, **wc_kw)
     elif mode == "fair":
         agent = build_fair_champion(
             game, cfg=cfg,
@@ -1237,7 +1254,7 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             k_dets=(spec.k_dets if k_dets is None else int(k_dets)),
             seed=int(seed), exact_endgame=bool(exact_endgame),
             exact_max_k=spec.exact_max_k, **dedup_kw, **intra_kw, **budget_kw,
-            **par_kw)
+            **par_kw, **wc_kw)
     elif mode == "clairvoyant":
         total = (spec.k_dets * spec.sims_per_det) if sims is None else int(sims)
         agent = build_clairvoyant_champion(
@@ -1372,6 +1389,23 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             "B": int(tiearb["B"]), "J": int(tiearb["J"]),
             "mode": str(tiearb["mode"]), "salt": str(tiearb["salt"]),
             "eps": float(tiearb["eps"]),
+        }
+
+    # WC TIE-BREAK (BACKLOG 2026-08-03): stamped ONLY when it resolves ON, same
+    # no-hash-drift terms as every kwarg above — a champion built without it carries
+    # a manifest byte-identical to the pre-knob one. Rule of the MATCH (both seats),
+    # not a candidate-side search variant: it binds the exact endgame solver's tie
+    # resolution (the STARTING seat automatically loses an exact-score tie), not the
+    # leaf, so no leaf hash moves.
+    if wc_tiebreak:
+        manifest = dict(manifest)
+        manifest["wc_tiebreak"] = {
+            "enabled": True,
+            "scope": "official WC tie-break rule (BACKLOG 2026-08-03): a tied final "
+                     "score is an automatic LOSS for the STARTING seat (seat 0), "
+                     "applied at the exact endgame solver — SYMMETRIC to both seats, "
+                     "keyed off seat identity, not candidate/opponent role",
+            "note": "terminal-scoring-only change; no leaf hash moves.",
         }
 
     agent.manifest = manifest

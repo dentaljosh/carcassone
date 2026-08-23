@@ -55,6 +55,20 @@ from .features import N_FARM_SCALARS, N_SCALAR_FEATURES, encode_scalars
 
 SCORE_NORM_SCALE = 15.0  # see DECISIONS.md (validated against 1000 random games)
 
+# WC tie-break (BACKLOG 2026-08-03 "WC tie-break rule flag"). The official WC
+# rule resolves a tied final score by ruling the STARTING player the loser; our
+# engine's incumbent behaviour is a symmetric draw. `Game(wc_tiebreak=True)`
+# flips which seat's epsilon sign wins a tie in `get_game_ended` below.
+# Magnitude is deliberately left at the SAME epsilon as the incumbent draw
+# sentinel, not inflated to +-1.0: `get_game_ended` is a *margin*-flavored
+# value (tanh(score_diff / SCORE_NORM_SCALE)), so a bigger tie magnitude would
+# corrupt the margin scale every existing value target/leaf is calibrated
+# against. The sign is what the WC rule determines; the magnitude is a
+# separate (unmade) policy decision. The exact/unambiguous home for
+# seat-asymmetric WC play is the WIN-objective exact solver (see
+# scripts/level2/endgame_solver.py's `wc_tiebreak`), not this margin sentinel.
+WC_TIE_VALUE = 1e-6
+
 
 # --- Window-overflow audit (measurement-only, DEFAULT OFF) -------------------
 # Phase 0.2 post-review measurement. `get_valid_moves` already computes
@@ -88,6 +102,43 @@ _CACHE_COLLIDE_CHECK = os.environ.get("CARCASSONNE_CACHE_COLLIDE_CHECK", "0") ==
 # production mask/raise semantics are byte-for-byte unchanged. Read as a module
 # global (tests monkeypatch `game_wrapper._WINDOW_STRICT`).
 _WINDOW_STRICT = os.environ.get("CARCASSONNE_WINDOW_STRICT", "0") == "1"
+
+# --- Legal-cache / transposition key: injective rotation fix (DEFAULT OFF) ---
+# `_tile_rotation_signature`'s per-tile key component is `(4 outer edges,
+# shield, chapel, flowers)`. That is NOT injective for a 180-degree-
+# rotationally-symmetric tile — witness `city_left_right`, whose edges read
+# `('grass', 'city', 'grass', 'city')` at both rotation 0 and rotation 2 —
+# even though the tile's FARM SLOTS rotate (`farmer_positions` /
+# `tile_connections` are permuted, and which absolute Side a given corner ends
+# up on changes). Two genuinely different boards can therefore collide on one
+# `_legal_cache` key (== one `string_representation`, which doubles as the
+# MCTS transposition key), and the second board to ask gets served the
+# FIRST board's mask. Localised 2026-08-17 by tiearb2 Stage-2's G-BITEXACT
+# (57/15,360 banked playout values moved by it); parked as commit `05ed019c`;
+# see docs/PROGRAM_ROADMAP_2026-07-07.md 2026-08-17 "by-catch" entry and
+# rust/carc/carc-core/src/tier1.rs's `LegalMaskCache` docstring.
+#
+# CARCASSONNE_FIX_LEGAL_CACHE_KEY=1 folds the rotating farm-slot geometry into
+# the per-tile signature (see `_farm_slot_signature`), making the key
+# injective on rotation: new play/analysis can opt in for correct masks.
+#
+# DEFAULT OFF, and this is a DELIBERATE correctness-vs-reproducibility choice,
+# not R9's "moves engine semantics so opt in" precedent (this IS a bug fix,
+# not a rules variant) -- the reason is narrower and harder: `string_
+# representation` is BOTH the legal-cache key and the MCTS transposition key,
+# and it is exactly what the tiearb2 Stage-2 rust port's `LegalMaskCache`
+# (`legal_mask_cache=True`) was built to reproduce BIT-FOR-BIT against the
+# BURNED, unregeneratable Stage-1b banked corpus (rust/carc/carc-core/src/
+# tier1.rs, tests/test_tier1_rust.py::test_the_memo_collision_is_real_and_is_
+# what_the_bank_carries). Flipping the historical signature by default would
+# silently change what every replay/analysis/MCTS-transposition path computes
+# for every 180-symmetric-tile position ever banked, with no way to
+# regenerate the ground truth to re-verify against. An opt-in flag lets new
+# play/analysis get the correct mask while every replay path that says
+# nothing keeps computing exactly what it always has. Read as a module
+# global (tests monkeypatch `game_wrapper._FIX_LEGAL_CACHE_KEY`), matching
+# `_WINDOW_STRICT` above.
+_FIX_LEGAL_CACHE_KEY = os.environ.get("CARCASSONNE_FIX_LEGAL_CACHE_KEY", "0") == "1"
 
 
 def _state_fingerprint(state) -> dict:
@@ -327,6 +378,18 @@ DRAW_RULES = (DRAW_RULE_ENGINE, DRAW_RULE_REDRAW)
 DRAW_RULE_LEGACY = DRAW_RULE_ENGINE   # what a record with no `draw_rule` means
 
 
+def resolve_winner(score0: int, score1: int, wc_tiebreak: bool = False) -> int:
+    """Winner seat index, or -1 for a draw. Seat 0 is the STARTING player.
+    Under `wc_tiebreak` (official WC rule) a tied final score is an automatic
+    LOSS for the starting player, so -1 is unreachable and seat 1 wins."""
+    if score0 > score1:
+        return 0
+    if score1 > score0:
+        return 1
+    # score0 == score1
+    return 1 if wc_tiebreak else -1
+
+
 def _next_total_tiles(total_tiles: int, state, n_set_aside_before: int) -> int:
     """`board.total_tiles` after a transition, minus any tile set aside by it.
 
@@ -444,6 +507,7 @@ class Game:
         start_col: int | None = None,
         cloister_scan_fix: bool = False,
         draw_rule: str = DRAW_RULE_ENGINE,
+        wc_tiebreak: bool = False,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -520,6 +584,13 @@ class Game:
             cloister_scan_fix = True
         if draw_rule == DRAW_RULE_ENGINE and "draw_rule" in _prof_kw:
             draw_rule = _prof_kw["draw_rule"]
+        # WC tie-break (BACKLOG 2026-08-03). Same "fill in only what the caller
+        # left unsaid" rule as the four levers above: no shipped profile sets
+        # `wc_tiebreak` today (adoption into a future `fixed_v2` bundle is an
+        # explicitly separate decision — see rules_profile.py), so this stays
+        # the no-op every profile's Gate A0 identity rests on.
+        if not wc_tiebreak and _prof_kw.get("wc_tiebreak"):
+            wc_tiebreak = True
         self.fixed_start_tile = bool(fixed_start_tile)
         # Where the start tile sits on the 35x35 grid. `None` means "say nothing
         # to the engine", which is what makes the default path byte-identical:
@@ -550,6 +621,12 @@ class Game:
                 f"unknown draw_rule {draw_rule!r}; expected one of {DRAW_RULES}")
         self.draw_rule = str(draw_rule)
         self.redraw_unplaceable = self.draw_rule == DRAW_RULE_REDRAW
+        # WC tie-break (BACKLOG 2026-08-03 "WC tie-break rule flag"). OPT-IN,
+        # DEFAULT OFF. Terminal-scoring-only: it changes nothing about legal
+        # moves, transitions or encoding, only which seat `get_game_ended`
+        # reports as the winner of an exact-tie terminal. See WC_TIE_VALUE
+        # above for why the magnitude stays at epsilon.
+        self.wc_tiebreak = bool(wc_tiebreak)
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -834,6 +911,14 @@ class Game:
         Final value is tanh((score_player - score_opp) / SCORE_NORM_SCALE).
         Exact tie returns a tiny epsilon so callers can distinguish "ended in
         draw" from "still going" — anything in (-1e-4, 1e-4) means draw.
+
+        Under `self.wc_tiebreak` (BACKLOG 2026-08-03, official WC rule) an
+        exact tie is NOT a draw: the STARTING player (seat 0) automatically
+        loses, so the epsilon's sign is flipped relative to the incumbent
+        convention below. The antisymmetry contract
+        `get_game_ended(b, 0) == -get_game_ended(b, 1)` still holds in both
+        modes, and `abs(v) < 1e-4` still identifies "tied on points" either
+        way — only WHICH seat the tiny value favors changes.
         """
         if not board.state.is_terminated():
             return 0.0
@@ -845,7 +930,13 @@ class Game:
         # so the perspective contract get_game_ended(b,0) == -get_game_ended(b,1)
         # still holds for draws — MCTS value backup relies on antisymmetry.
         if v == 0.0:
-            return 1e-6 if player == 0 else -1e-6
+            if self.wc_tiebreak:
+                # WC tie-break ARMED: seat 0 (starting player) automatically
+                # loses a tied score, so the sign is flipped from the line
+                # below rather than sharing it — flag-off must stay reachable
+                # and byte-identical.
+                return -WC_TIE_VALUE if player == 0 else WC_TIE_VALUE
+            return WC_TIE_VALUE if player == 0 else -WC_TIE_VALUE
         return v
 
     # --- Canonical form / encoding --------------------------------------
@@ -948,12 +1039,39 @@ class Game:
         return result
 
 
+def _farm_slot_signature(tile) -> tuple:
+    """Rotating farm-slot geometry: the part `(4 edges, shield, chapel,
+    flowers)` CANNOT see. `Tile.turn()` permutes each `FarmerConnection`'s
+    `farmer_positions` / `tile_connections` / `city_sides`
+    (SideModificationUtil.turn_farmer_connection), so this differs between
+    rotation 0 and rotation 2 of a tile whose 4 outer edges happen to read the
+    same both ways (e.g. `city_left_right`). Only consulted when
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY=1` — see that flag's comment for why the
+    default path never calls this."""
+    out = []
+    for fc in getattr(tile, "farms", ()) or ():
+        out.append((
+            tuple(getattr(s, "value", str(s)) for s in fc.farmer_positions),
+            tuple(getattr(s, "value", str(s)) for s in fc.tile_connections),
+            tuple(getattr(s, "value", str(s)) for s in fc.city_sides),
+        ))
+    return tuple(out)
+
+
 def _tile_rotation_signature(tile) -> tuple:
     """Capture tile orientation + scoring-relevant properties.
 
     `description` alone is rotation-blind — two `tile.turn(...)` results
     with the same description but different orientations would otherwise
-    collide. The 4 outer edges uniquely encode rotation.
+    collide. The 4 outer edges uniquely encode rotation EXCEPT on a
+    180-degree-rotationally-symmetric tile (e.g. `city_left_right`: edges
+    read `('grass', 'city', 'grass', 'city')` at both rotation 0 and rotation
+    2), where the edges alone collide even though the farm slots have
+    rotated. See the `CARCASSONNE_FIX_LEGAL_CACHE_KEY` flag comment above —
+    DEFAULT OFF, so this defect is reproduced by default (it is what the
+    tiearb2 Stage-2 rust port's `legal_mask_cache=True` certifies against);
+    set the flag to fold `_farm_slot_signature` in and make the key
+    injective on rotation.
 
     Defense-in-depth: also pin shield/chapel/flowers. The vendored engine
     has had at least one description-collision bug (city_diagonal_top_left_road
@@ -965,7 +1083,10 @@ def _tile_rotation_signature(tile) -> tuple:
     Cached on the Tile instance: Tiles are canonically-shared immutable refs
     (base_tiles dict + Tile.turn() builds a fresh Tile per rotation), so the
     signature for any given Tile reference is stable for the lifetime of the
-    process.
+    process -- PROVIDED `CARCASSONNE_FIX_LEGAL_CACHE_KEY` does not change
+    mid-process (it is an import-time-latched env var, like `_WINDOW_STRICT`
+    et al., so it never does in production; tests that monkeypatch the flag
+    mid-session must clear `tile._rot_sig_cache` themselves).
     """
     cached = tile._rot_sig_cache
     if cached is not None:
@@ -978,6 +1099,8 @@ def _tile_rotation_signature(tile) -> tuple:
         tile.get_type(Side.LEFT).value,
     )
     sig = (edges, bool(tile.shield), bool(tile.chapel), bool(tile.flowers))
+    if _FIX_LEGAL_CACHE_KEY:
+        sig = sig + (_farm_slot_signature(tile),)
     tile._rot_sig_cache = sig
     return sig
 

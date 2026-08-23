@@ -117,6 +117,15 @@ pub struct Config {
     /// margin, so margin-max is already win-optimal — a clairvoyant "win mode"
     /// would be a live-looking no-op flag.
     pub objective: Objective,
+    /// WC tie-break rule (`BACKLOG.md` 2026-08-03) — see
+    /// [`crate::fair::solver::SolverConfig::wc_tiebreak`] for the full doc
+    /// (verbatim WC rule text, inertness contract). Default `false` == the
+    /// untouched incumbent. Threaded straight into the
+    /// `fair::solver::SolverConfig` this module builds when delegating a
+    /// [`Objective::Win`] marginalized solve; INERT under [`Objective::Margin`]
+    /// for the same reason it is inert there — this module's own margin path
+    /// never calls `outcome` either.
+    pub wc_tiebreak: bool,
 }
 
 impl Default for Config {
@@ -127,6 +136,7 @@ impl Default for Config {
             alphabeta: false,
             chance_drop: ChanceDrop::Type,
             objective: Objective::Margin,
+            wc_tiebreak: false,
         }
     }
 }
@@ -488,6 +498,7 @@ pub fn solve(g: &Game, mode: Mode, cfg: &Config) -> Result<SolveResult, SolveErr
             tt_cap: cfg.tt_cap,
             chance_drop: cfg.chance_drop,
             objective: Objective::Win,
+            wc_tiebreak: cfg.wc_tiebreak,
         };
         let r = crate::fair::solver::solve_marginalized(g, &fcfg)?;
         return Ok(SolveResult {

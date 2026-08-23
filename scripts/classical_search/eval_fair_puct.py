@@ -679,11 +679,16 @@ def _random_net_rep(sighted=True, device="cpu", value_global_pool=True, seed=0):
 # (`.move(board) -> int`).                                                       #
 # --------------------------------------------------------------------------- #
 class _MarginalizedHandoff:
-    def __init__(self, prefix, game_plain, K: int, budget: int = EXACT_BUDGET):
+    def __init__(self, prefix, game_plain, K: int, budget: int = EXACT_BUDGET,
+                wc_tiebreak: bool = False):
         self._prefix = prefix
         self._game = game_plain
         self._K = int(K)
         self._budget = budget
+        # WC tie-break (BACKLOG 2026-08-03): rule of the MATCH, applied at the
+        # shared marginalized-endgame solve BOTH arms ride through on the python
+        # backend. Default False -> byte-identical solve() call below.
+        self._wc_tiebreak = bool(wc_tiebreak)
         self._latched = False
         self.latch_k = None
         self.prefix_moves = 0
@@ -710,8 +715,11 @@ class _MarginalizedHandoff:
             return mv
         t0 = time.perf_counter()
         try:
+            # WC tie-break: only passed when non-default, so an unarmed cell's
+            # solve() call is byte-for-byte the pre-knob one.
+            _wc_kw = {} if not self._wc_tiebreak else {"wc_tiebreak": self._wc_tiebreak}
             res = S.solve(self._game, board, mode="marginalized",
-                          budget=self._budget, alphabeta=False)
+                          budget=self._budget, alphabeta=False, **_wc_kw)
             dt = time.perf_counter() - t0
             self.solver_secs += dt
             self.max_solve_secs = max(self.max_solve_secs, dt)
@@ -1130,7 +1138,7 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    meeple_dedup=None, intra_reuse=None,
                    coreml_model=None, net_backend=None,
                    backend="python", rust_threads=None,
-                   simsplit=None, exact_objective=None):
+                   simsplit=None, exact_objective=None, wc_tiebreak=False):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     ``exact_objective`` (E1, CANDIDATE side only; None = OFF = "margin" =
@@ -1188,7 +1196,18 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
     ``--info fair`` only (the PIMC agent is the one with a two-decision turn
     structure); works on BOTH backends. ``_make_opponent`` never forwards it.
 
-    info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
+    info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck).
+
+    ``wc_tiebreak`` (BACKLOG 2026-08-03 "WC tie-break rule flag"; None/False = OFF =
+    byte-identical) is a RULE OF THE MATCH, unlike every candidate-only knob above:
+    it applies to whichever side's exact-endgame solve resolves a tie, keyed off
+    SEAT (seat 0 is the starting player and automatically loses an exact tie), not
+    off candidate/opponent role. It is threaded wherever an exact solve can happen:
+    the shared `_MarginalizedHandoff`/`_MirrorMarginalizedHandoff` wrapper (python
+    backend any info, and rust-backend `--info clair`, both of which own the solve
+    themselves) and `RustFairAgent` directly (rust-backend `--info fair`, which owns
+    its own marginalized solve). `_make_opponent`'s head-to-head call passes the
+    SAME flag, so both seats arm together."""
     backend = _resolve_backend(backend)
     if exact_objective is not None and exact_objective != "margin":
         if info != "fair" or backend != "rust":
@@ -1223,7 +1242,8 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
         # per-ply action + root stats, bit-exact) before it grades anything.
         prefix = champion_factory.build_clairvoyant_champion(
             game, cfg=cfg, simulations=(sims * k_dets), seed=seed, backend="rust")
-        return _MirrorMarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
+        return _MirrorMarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K,
+                                          wc_tiebreak=wc_tiebreak)
     if backend == "rust":
         if info != "fair":
             raise SystemExit(
@@ -1248,6 +1268,10 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
             # pre-knob one (and keeps working against a pre-E1 wheel).
             **({} if exact_objective in (None, "margin")
                else dict(exact_objective=str(exact_objective))),
+            # WC tie-break: same absent-when-OFF idiom, so an unarmed cell is
+            # byte-identical to the pre-knob one (and keeps working against a
+            # pre-knob carc_rs wheel).
+            **({} if not wc_tiebreak else dict(wc_tiebreak=bool(wc_tiebreak))),
             **_split_kw)
     if info == "fair":
         # F1: route through the champion factory (single construction point). Byte-
@@ -1326,7 +1350,8 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
     else:  # clair
         prefix = champion_factory.build_clairvoyant_champion(
             game, cfg=cfg, simulations=(sims * k_dets), seed=seed)
-    return _MarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
+    return _MarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K,
+                                wc_tiebreak=wc_tiebreak)
 
 
 # --------------------------------------------------------------------------- #
@@ -1355,8 +1380,15 @@ _NET_OPPONENTS = ("net", _BARE_NET)
 def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
                    opp_leaf_cfg=None, net=None, handles=None, sighted_game=None,
                    rep=None, opp_sims=None, opp_k_dets=None,
-                   backend="python", rust_threads=None):
+                   backend="python", rust_threads=None, wc_tiebreak=False):
     """Build the OPPONENT side.
+
+    ``wc_tiebreak`` (rule of the MATCH; see `_make_champion`'s docstring) reaches
+    ONLY the head-to-head modes (`fair-champion`/`net`), which own an exact-endgame
+    solve via the same `_make_champion` machinery the candidate uses. The LEAFLESS
+    RUNGS (h800/greedy/bare-net) have no endgame solve at all — nothing to arm — so
+    the flag is silently unused for them; the SEAT-keyed W/D/L classification in
+    `_play_one_inner` still applies regardless of opponent type.
 
     ``backend`` reaches ONLY the ``fair-champion`` head-to-head, which is the same
     production PIMC agent as the candidate. The rungs are deliberately excluded: h800
@@ -1438,7 +1470,8 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
     return _make_champion(info, opp_cfg, _opp_sims, _opp_k_dets, K, seed + 1,
                           Game(enable_legal_moves_cache=True), net=net,
                           handles=handles, sighted_game=sighted_game, rep=rep,
-                          backend=_opp_backend, rust_threads=rust_threads)
+                          backend=_opp_backend, rust_threads=rust_threads,
+                          wc_tiebreak=wc_tiebreak)
 
 
 # The PRODUCTION champion's search knobs (governance/PRODUCTION.yaml). These are ALSO
@@ -1618,6 +1651,14 @@ class GameResult:
     # READ_RULE §2's `phi`: a cell whose sum is 0 never fired the surface and
     # `G-FIRE` VOIDS it — it must NOT be read as a null.
     cand_tiearb: dict | None = None
+    # WC TIE-BREAK (BACKLOG 2026-08-03 "WC tie-break rule flag"). `wc_tiebreak` is
+    # the ARMED state this game was played under (rule of the MATCH — both seats,
+    # not candidate-only); `wc_tie_resolved` is True only when the flag actually
+    # decided an exact tie (diff==0 while armed) — the per-game liveness witness
+    # aggregated by _summary's wc_tie_resolved_games. Dataclass defaults (both
+    # False) so an old saved record with neither key still loads via GameResult(**d).
+    wc_tiebreak: bool = False
+    wc_tie_resolved: bool = False
 
 
 # Track-F Gate A oracle-prior cost fields — OMITTED from the serialized per-game JSON for
@@ -1871,7 +1912,7 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
                  netprior_backend=None, backend="python", rust_threads=None,
                  simsplit=None, cand_jrules_prior=None, cand_jrules_filter=None,
-                 cand_exact_objective=None, cand_tiearb=None):
+                 cand_exact_objective=None, cand_tiearb=None, wc_tiebreak=False):
     _W["info"] = info
     # J-RULES PRIOR surface B (CANDIDATE side ONLY, rust-only; None = OFF =
     # byte-identical). A dict {dose, mask, scope} resolved once in main().
@@ -1886,6 +1927,10 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     # E1 exact-K WIN objective (CANDIDATE side ONLY, rust-only; None = OFF =
     # margin = byte-identical). Resolved once in main().
     _W["cand_exact_objective"] = cand_exact_objective
+    # WC TIE-BREAK (BACKLOG 2026-08-03). ⚠️ NOT candidate-side — a single flag that
+    # arms BOTH seats' exact solvers (rule of the match). Resolved once in main(),
+    # False = OFF = byte-identical to every historical cell.
+    _W["wc_tiebreak"] = bool(wc_tiebreak)
     # ENGINE (rustport P6). Resolved ONCE in main() and passed as a literal, never as
     # "auto" — a worker that re-resolved the YAML could disagree with the manifest.
     _W["backend"] = backend
@@ -2130,6 +2175,24 @@ def _play_one(args) -> GameResult | GameFailure | None:
                            record=rec)
 
 
+def _classify_outcome(diff: int, a_seat: int, wc_tiebreak: bool) -> tuple[bool, bool]:
+    """(won_by_champ, drew) from the raw candidate-relative margin `diff`, the seat
+    the CANDIDATE occupies (`a_seat`), and whether the WC tie-break rule is armed.
+
+    Factored out as a small PURE function (no game, no agents) so the classification
+    truth table is unit-testable on its own — see tests/test_wc_tiebreak_plumbing.py.
+
+    ⚠️ `diff` is NEVER touched here or by the caller: the paired-z statistic
+    (`_paired_z`) is margin-based, and every historical comparison assumes `diff`
+    is the raw score margin. Only the W/D/L CLASSIFICATION moves. Under the WC rule
+    an exact tie (diff==0) is an automatic loss for the STARTING seat (seat 0) — so
+    it is never a draw, and it is a candidate win exactly when the candidate sits in
+    seat 1."""
+    won_by_champ = (diff > 0) or (bool(wc_tiebreak) and diff == 0 and a_seat == 1)
+    drew = (diff == 0) and not wc_tiebreak
+    return won_by_champ, drew
+
+
 def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
     """The game itself. UNCHANGED from the pre-guard version — a zero-failure cell
     is bit-identical, because nothing on this path moved."""
@@ -2158,7 +2221,8 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
                            backend=_W.get("backend", "python"),
                            rust_threads=_W.get("rust_threads"),
                            simsplit=_W.get("simsplit"),
-                           exact_objective=_W.get("cand_exact_objective"))
+                           exact_objective=_W.get("cand_exact_objective"),
+                           wc_tiebreak=_W.get("wc_tiebreak", False))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
@@ -2166,7 +2230,8 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
         sighted_game=_W.get("opp_sighted_game"), rep=_W.get("opp_rep"),
         opp_sims=_W.get("opp_sims"), opp_k_dets=_W.get("opp_k_dets"),
         backend=_W.get("backend", "python"),
-        rust_threads=_W.get("rust_threads"))
+        rust_threads=_W.get("rust_threads"),
+        wc_tiebreak=_W.get("wc_tiebreak", False))
 
     # Seat any Rust mirror on the REAL initial board before the first decision, and
     # advance it on EVERY applied action of BOTH seats below. No-op for python agents.
@@ -2191,11 +2256,13 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
     elapsed = time.perf_counter() - t0
     s0, s1 = board.state.scores
     diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
+    _wc_tiebreak = bool(_W.get("wc_tiebreak", False))
+    _won_by_champ, _drew = _classify_outcome(diff, a_seat, _wc_tiebreak)
     r = GameResult(
         seed=seed, a_seat=a_seat, info=_W["info"], exact_k=_W["exact_k"],
         k_dets=_W["k_dets"], sims=_W["sims"], rung_sims=_W["rung_sims"],
         score_p0=int(s0), score_p1=int(s1), diff=int(diff),
-        won_by_champ=(diff > 0), drew=(diff == 0), elapsed_s=round(elapsed, 3),
+        won_by_champ=_won_by_champ, drew=_drew, elapsed_s=round(elapsed, 3),
         moves=moves, deck_hash=dh,
         champ_prefix_moves=champ.prefix_moves, champ_exact_moves=champ.exact_moves,
         champ_prefix_secs=round(champ.prefix_secs, 3),
@@ -2209,6 +2276,11 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
         # Track-F Gate A: candidate oracle cost telemetry (empty {} for non-oracle cells,
         # so the fields stay at their dataclass-default zeros and _save omits them).
         **_oracle_telemetry(getattr(champ, "_prefix", None)),
+        # WC tie-break (BACKLOG 2026-08-03): `wc_tiebreak` is the ARMED state this
+        # game was played under; `wc_tie_resolved` is True only when the flag
+        # actually decided an exact tie (the liveness witness — see _summary).
+        wc_tiebreak=_wc_tiebreak,
+        wc_tie_resolved=bool(_wc_tiebreak and diff == 0),
     )
     _save(p, r)
     return r
@@ -2311,11 +2383,68 @@ def _paired_z(results):
     return mean, z, len(ds)
 
 
+#: `failed_classes` recognised top-level names (READOUT_B64.md "SPEC-vs-
+#: BUILDABLE" clause 3 / RULING 3, 2026-08-19: the class field commissioned
+#: here). Anything not in this set is bucketed "other:<ExcName>" rather than
+#: invented — the set stays a closed, explicit list, never a guess at every
+#: exception type that could ever be raised.
+_RECOGNISED_FAILURE_CLASSES = frozenset({
+    # pyo3's panic wrapper: `type(exc).__name__` for a Rust-side panic
+    # propagated through the pyo3 boundary (see the `noqa: BLE001 — incl.
+    # pyo3 PanicException` catch above).
+    "PanicException",
+    # `carc_rs.WindowTruncationError`'s own class name (see
+    # `carcassonne_ai/window_truncation.py`). Named here too so an exact-type
+    # match still lands in this bucket even on a record where the
+    # `window_truncation` flag is absent/stale — the flag is still the
+    # AUTHORITATIVE precedence path (below), this is only the fallback.
+    "WindowTruncationError",
+})
+
+
+def _classify_failure(rec: dict) -> str:
+    """One failure record -> its `failed_classes` histogram bucket.
+
+    ⚠️ PRECEDENCE, read this before changing it: `window_truncation` wins over
+    `exc_type` unconditionally. `window_truncation.is_window_truncation` (see
+    `carcassonne_ai/window_truncation.py`) classifies by PAYLOAD, not just by
+    class identity — `carc_rs.WindowTruncationError` is one match, but a plain
+    `RuntimeError` carrying the same truncation cause also flags true. So a
+    truncation failure can have `exc_type == "RuntimeError"` (a generic type
+    name that tells the reader nothing) while `window_truncation` is the
+    field that actually knows what family it is. Checking `exc_type` first
+    would silently misfile those into the generic bucket.
+    """
+    if rec.get("window_truncation"):
+        return "WindowTruncationError"
+    exc_type = rec.get("exc_type")
+    if exc_type in _RECOGNISED_FAILURE_CLASSES:
+        return exc_type
+    return f"other:{exc_type}"
+
+
+def _failed_classes_block(bad) -> dict:
+    """Histogram `{class_name: count}` over `bad` (the outstanding failure
+    records). ALWAYS present in the summary, even as `{}` when `bad` is
+    empty — a zero rate is stated, never inferred from a missing key (same
+    convention as every other field in `_failure_block`). Counts sum to
+    `len(bad)` by construction: `_classify_failure` returns exactly one
+    bucket per record."""
+    hist: dict = {}
+    for r in bad:
+        cls = _classify_failure(r)
+        hist[cls] = hist.get(cls, 0) + 1
+    return hist
+
+
 def _failure_block(results, failures, resolved=None) -> dict:
     """The EXCLUSION block. Key names mirror `h2h.summarize` exactly
     (`n_failed` / `failure_rate` / `failed_cells` / `failed_by_seat`), and they are
     ALWAYS present — a zero rate is stated, never inferred from a missing key or
-    from a record count that does not add up.
+    from a record count that does not add up. `failed_classes` (ADDITIVE,
+    2026-08-23, READOUT_B64.md RULING 3) is the same convention applied to the
+    per-failure diagnostic CLASS: a dict histogram, sibling to `failed_cells`,
+    always present — `{}` when there are no failures, never absent or null.
 
     `failures` is the list of OUTSTANDING failure records for this cell (from
     `load_failures`). `resolved` is the list of records whose game later SUCCEEDED:
@@ -2347,6 +2476,11 @@ def _failure_block(results, failures, resolved=None) -> dict:
                           "window_diag": r.get("window_diag")} for r in bad],
         "failed_by_seat": {"0": sum(1 for r in bad if int(r.get("a_seat", -1)) == 0),
                            "1": sum(1 for r in bad if int(r.get("a_seat", -1)) == 1)},
+        # ADDITIVE (2026-08-23): per-failure diagnostic class histogram. See
+        # `_classify_failure` for the window_truncation-over-exc_type precedence.
+        # Sums to len(bad) == n_failed by construction; {} (present, not absent)
+        # when bad is empty.
+        "failed_classes": _failed_classes_block(bad),
         # NOT failures of this cell — a crash that a later pass played through.
         # Counted separately so a flaky game stays visible without voiding the cell.
         "n_resolved_failures": len(fixed),
@@ -2427,13 +2561,16 @@ def _patch_failure_manifest(out, block: dict, n_failed_this_leg: int) -> None:
                    bool(block.get("validity_trigger_fired")))
     patch_manifest(out, "failed_cells", block.get("failed_cells", []))
     patch_manifest(out, "failed_by_seat", block.get("failed_by_seat", {"0": 0, "1": 0}))
+    # ADDITIVE (2026-08-23): mirrors summary.json's failed_classes into
+    # manifest.json, same parity convention as every other key in this block.
+    patch_manifest(out, "failed_classes", block.get("failed_classes", {}))
     patch_manifest(out, "n_resolved_failures", int(block.get("n_resolved_failures", 0)))
     patch_manifest(out, "resolved_failed_cells", block.get("resolved_failed_cells", []))
 
 
 def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
              opp_label=None, opp_k_dets=None, opp_sims=None, failures=None,
-             resolved=None):
+             resolved=None, wc_tiebreak=False):
     n = len(results)
     w = sum(1 for r in results if r.won_by_champ)
     d = sum(1 for r in results if r.drew)
@@ -2615,6 +2752,19 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
     # THE EXCLUSION BLOCK — always present (h2h parity: a zero rate is STATED).
     _fail_block = _failure_block(results, failures, resolved)
     _shout_failures(_fail_block, n)
+    # WC TIE-BREAK (BACKLOG 2026-08-03) — ALWAYS present, unconditionally (3-state
+    # "absent is unknown-not-zero" convention, scripts/human_anchor/play_harness.py
+    # _game_tiearb_block): `wc_tiebreak` is the armed state, `wc_tie_resolved_games`
+    # is the liveness witness (fired count). Three distinguishable states:
+    #   * wc_tiebreak=False                                — never armed
+    #   * wc_tiebreak=True,  wc_tie_resolved_games=0        — armed, no tie fired
+    #   * wc_tiebreak=True,  wc_tie_resolved_games>0        — armed AND it resolved
+    _wc_resolved = sum(1 for r in results if getattr(r, "wc_tie_resolved", False))
+    wc_summary = {"wc_tiebreak": bool(wc_tiebreak), "wc_tie_resolved_games": _wc_resolved}
+    if wc_tiebreak:
+        print(f"WC tie-break: ARMED — {_wc_resolved}/{n} games resolved by the "
+              f"starting-seat-loses-ties rule"
+              + ("" if _wc_resolved else "  ⚠️ armed but INERT (no tie fired this cell)"))
     return {
         "info": info, "exact_k": exact_k, "k_dets": k_dets, "sims": sims,
         "total_sims": k_dets * sims, "rung_sims": rung_sims,
@@ -2632,6 +2782,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         "champ_timeouts": sum(r.champ_timeouts for r in results),
         **oracle_summary,
         **tiearb_summary,
+        **wc_summary,
     }
 
 
@@ -2787,13 +2938,15 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                exact_objective=(None if str(getattr(
                                    args, "cand_exact_objective", "margin"))
                                    == "margin"
-                                   else str(args.cand_exact_objective)))
+                                   else str(args.cand_exact_objective)),
+                               wc_tiebreak=bool(getattr(args, "wc_tiebreak", False)))
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
             sighted_game=smoke_opp_game, rep=opp_rep, opp_sims=args.opp_sims,
             opp_k_dets=args.opp_k_dets, backend=args.backend,
-            rust_threads=args.rust_threads)
+            rust_threads=args.rust_threads,
+            wc_tiebreak=bool(getattr(args, "wc_tiebreak", False)))
         _start_mirrors(board, champ, rung)
         moves = 0
         rung_moves = 0
@@ -2815,16 +2968,19 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
         s0, s1 = board.state.scores
         diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
         _os = _opp_stats(rung)
+        _smoke_wc = bool(getattr(args, "wc_tiebreak", False))
+        _smoke_won, _smoke_drew = _classify_outcome(diff, a_seat, _smoke_wc)
         results.append(GameResult(
             seed=seed, a_seat=a_seat, info=args.info, exact_k=args.exact_k,
             k_dets=args.k_dets, sims=args.sims, rung_sims=args.rung_sims,
             score_p0=int(s0), score_p1=int(s1), diff=int(diff),
-            won_by_champ=(diff > 0), drew=(diff == 0), elapsed_s=0.0, moves=moves,
+            won_by_champ=_smoke_won, drew=_smoke_drew, elapsed_s=0.0, moves=moves,
             deck_hash=dh, champ_prefix_moves=champ.prefix_moves,
             champ_exact_moves=champ.exact_moves, champ_prefix_secs=champ.prefix_secs,
             champ_solver_secs=champ.solver_secs, champ_timeouts=champ.n_timeouts,
             rung_moves=rung_moves, rung_secs=rung_secs, latch_k=champ.latch_k,
-            opponent=args.opponent, **_os))
+            opponent=args.opponent, wc_tiebreak=_smoke_wc,
+            wc_tie_resolved=bool(_smoke_wc and diff == 0), **_os))
         print(f"[smoke] a_seat={a_seat}: {s0}-{s1} diff(cand-opp)={diff:+d} moves={moves} | "
               f"cand prefix/exact={champ.prefix_moves}/{champ.exact_moves} "
               f"latch_k={champ.latch_k} solver={champ.solver_secs:.2f}s to={champ.n_timeouts}"
@@ -2892,7 +3048,8 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
 
     summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
                     args.rung_sims, opponent=args.opponent, opp_label=opp_label,
-                    opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims)
+                    opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims,
+                    wc_tiebreak=bool(getattr(args, "wc_tiebreak", False)))
     if args.out_root:
         out = Path(args.out_root) / (args.out_subdir or "fair_smoke_k2")
         out.mkdir(parents=True, exist_ok=True)
@@ -3228,6 +3385,23 @@ def main(argv=None) -> int:
                          "⚠️ At the deployed exact-K 2 the objectives provably "
                          "coincide (DESIGN §2) — this knob exists to price the "
                          "objective, not to claim a K=2 effect.")
+    ap.add_argument("--wc-tiebreak", action="store_true",
+                    help="WC tie-break rule (BACKLOG 2026-08-03 'WC tie-break rule "
+                         "flag'; measurement/TOURNAMENT_LANDSCAPE_MEMO_20260728.md "
+                         "§1.3/§1.4): official World Championship rule — a tied "
+                         "final score is an automatic LOSS for the STARTING player "
+                         "(seat 0), never a symmetric draw. ⚠️ NOT a --cand- flag: "
+                         "this is a RULE OF THE MATCH, applied SYMMETRICALLY to "
+                         "BOTH seats' exact endgame solvers (keyed off seat "
+                         "identity, not candidate/opponent role), and it changes "
+                         "the W/D/L CLASSIFICATION (via the seat mapping) without "
+                         "touching `diff` — the paired-z margin statistic is "
+                         "unaffected. Default OFF = byte-identical to every "
+                         "historical cell (symmetric draw). Applies wherever an "
+                         "exact solve can run (any --info, either --backend); a "
+                         "cell with zero resolved ties is 'armed but inert', "
+                         "distinguishable in summary.json's wc_tie_resolved_games "
+                         "from 'never armed' (wc_tiebreak=false).")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
     ap.add_argument("--paired", action="store_true")
@@ -3773,6 +3947,30 @@ def main(argv=None) -> int:
         print(f"[E1] CANDIDATE exact-K objective = {_cand_exact_objective} "
               f"(resolved; leaf hash does NOT move — the manifest field is the "
               f"wiring gate)", flush=True)
+    # WC TIE-BREAK (BACKLOG 2026-08-03 "WC tie-break rule flag"): resolve ONCE,
+    # fail fast. False == OFF == every historical run, byte-identical. ⚠️ Unlike
+    # cand_exact_objective above this is a RULE OF THE MATCH (both seats, not
+    # candidate-only) and works on BOTH backends (fair_agent AND rust_agent both
+    # accept it) — so there is no --backend/--info restriction to enforce here.
+    # Stamped into the manifest unconditionally (a bool, not a None-shaped value)
+    # since there is nothing to discriminate but armed/unarmed.
+    _wc_tiebreak = bool(getattr(args, "wc_tiebreak", False))
+    if _wc_tiebreak and _backend == "rust":
+        # Launch-time liveness probe (same shape as the E1 probe above): a stale
+        # (pre-knob) carc_rs wheel dies HERE with the rebuild instruction rather
+        # than partway into the first worker.
+        from carcassonne_ai import champion_factory as _cfac
+        _probe_wc_agent = _cfac.build_fair_champion(
+            Game(enable_legal_moves_cache=True), sims=1, k_dets=1, seed=0,
+            wc_tiebreak=True, backend="rust")
+        assert bool(_probe_wc_agent.wc_tiebreak) is True, \
+            f"resolved wc_tiebreak {_probe_wc_agent.wc_tiebreak!r} != requested True"
+        del _probe_wc_agent
+        print("[WC] TIE-BREAK LIVE (rust probe passed; leaf hash does NOT move — "
+              "the manifest field is the wiring gate)", flush=True)
+    elif _wc_tiebreak:
+        print("[WC] TIE-BREAK LIVE on the python backend (shared "
+              "_MarginalizedHandoff; leaf hash does NOT move)", flush=True)
     if args.rust_threads is not None and _backend != "rust":
         ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
     if args.rust_threads is not None and args.info == "clair":
@@ -3958,7 +4156,8 @@ def main(argv=None) -> int:
                             args.rung_sims, opponent=args.opponent, opp_label=opp_label,
                             opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims,
                             failures=[r for r in _cell if not r.get("resolved")],
-                            resolved=[r for r in _cell if r.get("resolved")])
+                            resolved=[r for r in _cell if r.get("resolved")],
+                            wc_tiebreak=bool(getattr(args, "wc_tiebreak", False)))
             json.dump(summ, open(out / "summary.json", "w"), indent=2)
             _patch_failure_manifest(out, summ, 0)
         else:
@@ -4203,6 +4402,12 @@ def main(argv=None) -> int:
         # wiring gate; the disagreement proof is the pinned K=3 positive control
         # (tests/test_e1_win_objective.py::test_positive_control_objectives_disagree).
         "cand_exact_objective": _cand_exact_objective,
+        # WC TIE-BREAK (BACKLOG 2026-08-03). ⚠️ Rule of the MATCH (both seats), not
+        # candidate-only — unlike cand_exact_objective above there is no "cand_"
+        # prefix on purpose. Stamped unconditionally (always a bool): the wiring
+        # gate is this field plus summary.json's wc_tie_resolved_games (the
+        # 3-state absent-is-unknown-not-zero convention).
+        "wc_tiebreak": _wc_tiebreak,
         # rung_leaf_* is the env DEFAULT_CONFIG. For --opponent h800 it IS the opponent's
         # leaf (the ruler). For a head-to-head no agent uses it — it is recorded anyway as
         # the PROOF that the in-process curve125 injection did not move DEFAULT_CONFIG.
@@ -4590,7 +4795,7 @@ def main(argv=None) -> int:
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
-                          _cand_exact_objective, _cand_tiearb))
+                          _cand_exact_objective, _cand_tiearb, _wc_tiebreak))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -4605,7 +4810,7 @@ def main(argv=None) -> int:
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
-                          _cand_exact_objective, _cand_tiearb))
+                          _cand_exact_objective, _cand_tiearb, _wc_tiebreak))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
@@ -4656,7 +4861,8 @@ def main(argv=None) -> int:
     summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
                     args.rung_sims, opponent=args.opponent, opp_label=opp_label,
                     opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims,
-                    failures=cell_failures, resolved=cell_resolved)
+                    failures=cell_failures, resolved=cell_resolved,
+                    wc_tiebreak=bool(getattr(args, "wc_tiebreak", False)))
     json.dump(summ, open(out / "summary.json", "w"), indent=2)
     print(f"[summary.json] wrote {out/'summary.json'}")
     # n_failed / failure_rate / failed_cells into manifest.json too (h2h parity:

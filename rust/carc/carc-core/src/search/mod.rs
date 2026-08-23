@@ -199,6 +199,18 @@ pub struct SearchConfig {
     /// default; a full 2-player base game is ~144 plies. Exposed only so a test
     /// can CONSTRUCT a mid-playout failure and witness the whole-ply revert.
     pub tiearb_max_plies: usize,
+    /// WC tie-break rule (`BACKLOG.md` 2026-08-03; verbatim source at
+    /// `crate::fair::solver::SolverConfig::wc_tiebreak`'s doc comment): official
+    /// World Championship rules rule a tied FINAL score a LOSS for the
+    /// starting player (P0). `false` (default == the champion) is the
+    /// untouched incumbent — [`Searcher::game_ended`]'s tie branch (the
+    /// terminal-value sentinel for an exact `tanh` output of `0.0`) keeps its
+    /// pre-flag signs byte for byte. Armed, that tie branch sign-flips: `-1e-6`
+    /// for player 0, `1e-6` for player 1 (magnitude UNCHANGED — this is a
+    /// terminal-scoring-only rule change, not a rescale of the margin-flavored
+    /// tanh value). Mirrors `game_wrapper.Game.get_game_ended`'s armed branch
+    /// exactly (the python-side mirror-image change).
+    pub wc_tiebreak: bool,
     /// OS threads the arbiter splits its `B` CRN worlds across (arms inner).
     /// **A LATENCY knob and nothing else** — [`crate::tiearb::arbitrate`] is
     /// bit-identical at every thread count (same means, same pick, same error),
@@ -239,6 +251,7 @@ impl Default for SearchConfig {
             tiearb_eps: 0.0,
             tiearb_max_plies: crate::tiearb::TIEARB_MAX_PLIES,
             tiearb_threads: 1,
+            wc_tiebreak: false,
         }
     }
 }
@@ -521,6 +534,17 @@ impl<'a> Searcher<'a> {
     }
 
     /// `game_wrapper.Game.get_game_ended(board, player)`.
+    ///
+    /// The tie branch (`v == 0.0`, an exact `tanh` zero) is the WC tie-break
+    /// seam: unarmed it is the symmetric draw sentinel (`1e-6` / `-1e-6`,
+    /// signed so `player == 0` is positive); armed
+    /// ([`SearchConfig::wc_tiebreak`]) it SIGN-FLIPS to `-1e-6` for player 0
+    /// and `1e-6` for player 1 — a tied final score is a loss for the
+    /// starting player (P0), not a draw. Byte-for-byte port of
+    /// `game_wrapper.Game.get_game_ended`'s armed branch. The magnitude stays
+    /// epsilon in both readings (untouched, unarmed literals for `false`) —
+    /// this is a *margin*-flavored tanh value and inflating it would corrupt
+    /// the margin scale.
     fn game_ended(&self, g: &Game, player: usize) -> f64 {
         if !g.state.is_terminated() {
             return 0.0;
@@ -529,7 +553,13 @@ impl<'a> Searcher<'a> {
         let diff = (g.state.scores[player] - g.state.scores[opp]) as f64;
         let v = self.tanh(diff / self.cfg.score_norm_scale);
         if v == 0.0 {
-            if player == 0 {
+            if self.cfg.wc_tiebreak {
+                if player == 0 {
+                    -1e-6
+                } else {
+                    1e-6
+                }
+            } else if player == 0 {
                 1e-6
             } else {
                 -1e-6
@@ -1412,6 +1442,90 @@ mod tests {
             assert_eq!(x.0, y.0);
             assert_eq!(x.1, y.1);
             assert_eq!(x.2.to_bits(), y.2.to_bits());
+        }
+    }
+
+    // ---- WC tie-break rule (BACKLOG.md 2026-08-03) ------------------------ //
+
+    /// Play a seed all the way to `is_terminated()`, then FORCE a tied final
+    /// score (`state.scores` set equal) — the cheapest way to construct the
+    /// exact-`tanh`-zero terminal the tie branch needs, without depending on
+    /// any real seed actually ending level.
+    fn terminal_with_tied_score(seed: &str) -> Game {
+        let mut g = Game::from_seed(seed);
+        let mut guard = 0;
+        while !g.state.is_terminated() {
+            guard += 1;
+            assert!(guard < 400, "seed {seed}: runaway terminal walk");
+            let legal = g.legal_actions();
+            g.advance(legal[legal.len() / 2]).unwrap();
+        }
+        g.state.scores = [37, 37];
+        g
+    }
+
+    #[test]
+    fn game_ended_tie_branch_unarmed_keeps_incumbent_signs() {
+        let g = terminal_with_tied_score("11");
+        let cfg = SearchConfig::default();
+        assert!(!cfg.wc_tiebreak, "default must stay off");
+        let s = Searcher::new(&cfg);
+        assert_eq!(s.game_ended(&g, 0), 1e-6);
+        assert_eq!(s.game_ended(&g, 1), -1e-6);
+    }
+
+    #[test]
+    fn game_ended_tie_branch_armed_sign_flips() {
+        let g = terminal_with_tied_score("11");
+        let cfg = SearchConfig {
+            wc_tiebreak: true,
+            ..SearchConfig::default()
+        };
+        let s = Searcher::new(&cfg);
+        assert_eq!(s.game_ended(&g, 0), -1e-6, "P0 (the starting player) loses the tie");
+        assert_eq!(s.game_ended(&g, 1), 1e-6);
+    }
+
+    /// The perspective contract (`get_game_ended(b,0) == -get_game_ended(b,1)`)
+    /// holds in BOTH readings, and across several seeds — arming the flag
+    /// sign-flips the sentinel, it does not break antisymmetry.
+    #[test]
+    fn game_ended_tie_branch_antisymmetric_both_readings() {
+        for seed in ["11", "12", "13"] {
+            let g = terminal_with_tied_score(seed);
+            for wc_tiebreak in [false, true] {
+                let cfg = SearchConfig { wc_tiebreak, ..SearchConfig::default() };
+                let s = Searcher::new(&cfg);
+                let v0 = s.game_ended(&g, 0);
+                let v1 = s.game_ended(&g, 1);
+                assert_eq!(v0, -v1, "seed {seed} wc_tiebreak={wc_tiebreak}");
+                assert_eq!(v0.abs(), 1e-6, "seed {seed} wc_tiebreak={wc_tiebreak}");
+            }
+        }
+    }
+
+    /// A non-tied terminal is untouched by the flag at all — the flag only
+    /// ever reaches the `v == 0.0` branch.
+    #[test]
+    fn game_ended_non_tie_terminal_is_flag_invariant() {
+        let mut g = Game::from_seed("11");
+        let mut guard = 0;
+        while !g.state.is_terminated() {
+            guard += 1;
+            assert!(guard < 400);
+            let legal = g.legal_actions();
+            g.advance(legal[legal.len() / 2]).unwrap();
+        }
+        g.state.scores = [40, 22]; // a real, non-tied margin
+        let off_cfg = SearchConfig::default();
+        let on_cfg = SearchConfig {
+            wc_tiebreak: true,
+            ..SearchConfig::default()
+        };
+        let off = Searcher::new(&off_cfg);
+        let on = Searcher::new(&on_cfg);
+        for player in [0usize, 1] {
+            assert_eq!(off.game_ended(&g, player), on.game_ended(&g, player));
         }
     }
 }

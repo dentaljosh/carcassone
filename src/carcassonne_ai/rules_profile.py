@@ -100,6 +100,13 @@ class RulesProfile:
     # `as_manifest` stamps expected AND observed so a leg that forgot is visible
     # in the artifact rather than only in the operator's memory.
     r9_env_expected: bool = False
+    # WC tie-break (BACKLOG.md 2026-08-03 "WC tie-break rule flag"). OPT-IN,
+    # DEFAULT OFF on every shipped profile below, including `fixed_v1` — this
+    # is a terminal-scoring-only rule divergence the Phase-B bundle does NOT
+    # cover, and folding it into a `fixed_v2` bundle is an explicitly SEPARATE
+    # decision (BACKLOG: "would become part of a future fixed_v2 profile
+    # bundle, adoption a separate decision"), not made by adding this field.
+    wc_tiebreak: bool = False
 
     # --- derived ------------------------------------------------------------ #
     @property
@@ -139,10 +146,20 @@ class RulesProfile:
         # engine rule silently.
         if self.unplaceable_tile == "redraw":
             kw["draw_rule"] = "redraw"
+        # WC tie-break — `Game(wc_tiebreak=True)`. No shipped profile sets this
+        # today, so this stays the no-op every profile's `game_kwargs()`
+        # identity rests on (Gate A0 for `walled`, and the "adopts nothing"
+        # contract for every other named profile including `fixed_v1`).
+        if self.wc_tiebreak:
+            kw["wc_tiebreak"] = True
         return kw
 
     def as_manifest(self) -> dict:
         d = asdict(self)
+        # `wc_tiebreak` is a plain dataclass field (not a derived @property like
+        # `fixed_start_tile`/`recentred` above), so `asdict()` already stamps it
+        # unconditionally — absent-is-unknown-not-zero holds for free: every
+        # manifest states True or False explicitly, never omits the key.
         d["fixed_start_tile"] = self.fixed_start_tile
         d["recentred"] = self.recentred
         # R9 is env-latched and cannot be applied from here, so the manifest
@@ -302,6 +319,13 @@ def _check_supported(prof: RulesProfile) -> None:
         raise RulesProfileError(
             f"profile {prof.name!r} asks for unplaceable_tile={prof.unplaceable_tile!r}; "
             f"known: {list(_UNPLACEABLE_RULES)}")
+    # `wc_tiebreak` is a plain bool, not a string vocabulary like cloister_scan/
+    # unplaceable_tile above — every value a bool can hold (True/False) is
+    # honourable end-to-end in `game_wrapper.Game`, so there is no unrecognised
+    # value to refuse here. Named explicitly (rather than left unmentioned) so
+    # the validator is seen to KNOW about the field, not silently ignore it —
+    # if `wc_tiebreak` ever grows a non-bool vocabulary, its check belongs here
+    # next to the other two.
 
 
 # --------------------------------------------------------------------------- #

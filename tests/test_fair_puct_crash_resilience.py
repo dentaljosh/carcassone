@@ -258,6 +258,88 @@ class TestTheRateIsVisible:
         assert {k: base[k] for k in keys} == {k: with_fail[k] for k in keys}
 
 
+class TestFailedClasses:
+    """`failed_classes` (ADDITIVE, 2026-08-23) — the per-failure diagnostic-class
+    histogram commissioned by READOUT_B64.md's "SPEC-vs-BUILDABLE" clause 3 /
+    RULING 3. Sibling to `failed_cells` in the same exclusion block; the
+    adjudicator reads it at `summary.json::failed_classes`."""
+
+    def test_n_failed_zero_gives_an_empty_dict_not_a_missing_key(self):
+        b = efp._failure_block([_result()], [])
+        assert b["n_failed"] == 0
+        assert "failed_classes" in b
+        assert b["failed_classes"] == {}
+
+    def test_a_mix_of_classes_including_an_unrecognised_one(self):
+        bad = [
+            {"seed": 1, "a_seat": 0, "exc_type": "PanicException"},
+            {"seed": 2, "a_seat": 1, "exc_type": "PanicException"},
+            {"seed": 3, "a_seat": 0, "exc_type": "IndexError"},
+        ]
+        b = efp._failure_block([_result()], bad)
+        assert b["failed_classes"] == {"PanicException": 2, "other:IndexError": 1}
+
+    def test_window_truncation_takes_precedence_over_a_generic_exc_type(self):
+        """A truncation failure can carry `exc_type == 'RuntimeError'` (see
+        `carcassonne_ai.window_truncation.is_window_truncation` — it classifies by
+        payload, not just class identity). The generic type name must not shadow
+        the semantic class the `window_truncation` flag already knows."""
+        bad = [{"seed": 1, "a_seat": 0, "exc_type": "RuntimeError",
+               "window_truncation": True}]
+        b = efp._failure_block([_result()], bad)
+        assert b["failed_classes"] == {"WindowTruncationError": 1}
+        assert "other:RuntimeError" not in b["failed_classes"]
+
+    def test_the_histogram_sums_to_n_failed(self):
+        bad = [
+            {"seed": 1, "a_seat": 0, "exc_type": "PanicException"},
+            {"seed": 2, "a_seat": 1, "exc_type": "RuntimeError",
+             "window_truncation": True},
+            {"seed": 3, "a_seat": 0, "exc_type": "IndexError"},
+            {"seed": 4, "a_seat": 1, "exc_type": "ValueError"},
+        ]
+        b = efp._failure_block([_result()], bad)
+        assert b["n_failed"] == len(bad) == 4
+        assert sum(b["failed_classes"].values()) == b["n_failed"]
+
+    def test_a_missing_exc_type_is_still_classified_not_dropped(self):
+        b = efp._failure_block([_result()], [{"seed": 1, "a_seat": 0}])
+        assert sum(b["failed_classes"].values()) == 1
+
+    def test_failed_classes_reaches_the_manifest(self, tmp_path):
+        (tmp_path / "manifest.json").write_text(json.dumps({"kind": "eval_fair_puct"}))
+        block = efp._failure_block([_result()], [
+            {"seed": 1, "a_seat": 0, "exc_type": "PanicException"},
+            {"seed": 2, "a_seat": 1, "exc_type": "IndexError"},
+        ])
+        efp._patch_failure_manifest(tmp_path, block, n_failed_this_leg=2)
+        man = json.loads((tmp_path / "manifest.json").read_text())
+        assert man["failed_classes"] == {"PanicException": 1, "other:IndexError": 1}
+
+    def test_a_clean_manifest_stamps_an_empty_dict(self, tmp_path):
+        (tmp_path / "manifest.json").write_text(json.dumps({"kind": "eval_fair_puct"}))
+        efp._patch_failure_manifest(tmp_path, efp._failure_block([_result()], []), 0)
+        man = json.loads((tmp_path / "manifest.json").read_text())
+        assert man["failed_classes"] == {}
+
+    def test_the_summary_carries_failed_classes_too(self):
+        summ = efp._summary([_result(1), _result(2)], "fair", 4, 8, 1376, 800,
+                            failures=[{"seed": 3, "a_seat": 0,
+                                       "exc_type": "WindowTruncationError"}])
+        assert summ["failed_classes"] == {"WindowTruncationError": 1}
+
+    def test_existing_keys_are_unchanged_by_the_addition(self):
+        """ADDITIVE ONLY: no existing key's name/type/value moves."""
+        bad = [{"seed": 4, "a_seat": 1, "exc_type": "RuntimeError"}]
+        b = efp._failure_block([_result(1), _result(2), _result(3)], bad)
+        assert b["n_failed"] == 1 and b["failure_rate"] == pytest.approx(0.25)
+        assert b["failed_by_seat"] == {"0": 0, "1": 1}
+        assert b["failed_cells"][0]["seed"] == 4
+        assert set(b["failed_cells"][0].keys()) == {
+            "seed", "a_seat", "attempts", "permanent", "exc_type", "exc",
+            "window_truncation", "window_diag"}
+
+
 class TestItReachesTheManifest:
     def _manifest(self, tmp_path):
         (tmp_path / "manifest.json").write_text(json.dumps({"kind": "eval_fair_puct"}))

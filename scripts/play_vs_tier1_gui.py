@@ -90,7 +90,7 @@ from carcassonne_ai.action_space import (
     tile_action_count,
     tile_pass_index,
 )
-from carcassonne_ai.game_wrapper import Board, Game
+from carcassonne_ai.game_wrapper import Board, Game, resolve_winner
 # RuleBasedPlayer / champion_factory are imported lazily in `build_opponent` so a
 # champion game never pays for the Tier-1 module and vice versa.
 
@@ -995,10 +995,19 @@ class GameGUI:
         sb.delete("all")
         s0, s1 = self.board.state.scores
         diff = s0 - s1
-        if diff == 0:
+        # NOTE (WC tie-break plumbing, 2026-08-23): this already branched on an exact
+        # tie before computing `winner`, so the "silent player-1 win on a tie" bug
+        # described for this line did NOT reproduce in this file as found — `winner`
+        # was never even evaluated in the diff==0 case. Routed through
+        # `game_wrapper.resolve_winner` anyway for a single source of truth on winner
+        # determination; wc_tiebreak is NOT wired to a CLI flag here (out of this
+        # pass's scope — a human-facing GUI, not the eval/harness pipeline), so this
+        # is a no-op refactor: resolve_winner(s0, s1, wc_tiebreak=False) returns -1 on
+        # an exact tie exactly like the old `diff == 0` branch did.
+        winner = resolve_winner(s0, s1, wc_tiebreak=False)
+        if winner == -1:
             verdict = "Tie!"
         else:
-            winner = 0 if diff > 0 else 1
             verdict = "You win!" if winner == self.human else f"{self.ai.name} wins."
         x = SIDEBAR_PAD
         y = 100
