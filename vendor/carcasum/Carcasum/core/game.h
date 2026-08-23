@@ -183,6 +183,7 @@ public:
 	inline int const * getScores() const { return playerScores; }
 	inline int getPlayerMeeples(int player) const { return playerMeeples[player]; }
 	inline int getPlayerScore(int player) const { return playerScores[player]; }
+	inline int getScoreDetail(TerrainType terrain, int player) const { return playerScoresDetail[terrain][player]; }
 	inline int getTileCount() const { return tiles.size(); }
 	inline TileCountType const & getTileCounts() const { return tileCount; }
 	inline QList<Tile *> const & getTiles() { return tiles; }

@@ -90,7 +90,15 @@ was missed.
 
 ## BUILD patches
 
-All four are mechanical. None changes a value, an ordering, or a control-flow path.
+None changes a value, an ordering, or a control-flow path.
+
+> **⚠️ Patch ids are a wire protocol — do not renumber.** `carcasum_driver` emits this
+> exact list in its `ready` line, and `match.py` stamps it into every game's manifest,
+> so a game whose manifest patch-list differs from the frozen one is detectably not
+> part of a cell. Renaming `B5` to reclassify it would silently invalidate that check.
+> **B5 is therefore filed below under its original id but belongs to a third class —
+> INSTRUMENTATION — described after the table.** B6/B7 are pure `const` accessors over
+> already-existing private state and are genuinely build-class.
 
 | # | file | change | why |
 |---|---|---|---|
@@ -98,6 +106,40 @@ All four are mechanical. None changes a value, an ordering, or a control-flow pa
 | **B2** | `Carcasum/core/game.cpp` | `+#include <QDataStream>` | `storeToFile`/`loadFromFile` use `QDataStream`; Qt 5.15 no longer pulls it in transitively via `<QFile>`. |
 | **B3** | `Carcasum/core/util.h` | `+#include <cmath>` | `std::sqrt`/`std::log` used without the header; libstdc++ no longer leaks it in transitively. |
 | **B4** | `Carcasum/player/mctsplayer.tpp` | wrapped one `Q_ASSERT` in `#if ASSERT_ENABLED` | the assertion references `childNSum`, which is itself declared under `#if ASSERT_ENABLED`. Qt 5.15's release-mode `Q_ASSERT(cond)` expands to `static_cast<void>(false && (cond))`, which **still parses** `cond` → undeclared identifier. Guarding the assert matches the guard already on its operand. No-op in release either way. |
+| **B5** | `Carcasum/static.h` | `COUNT_PLAYOUTS 0` → `COUNT_PLAYOUTS 1` | needed so `carcasum_driver` can report the opponent's per-move `playouts` count (`ev_move.playouts`, PROTOCOL.md §3.2). Every `#if COUNT_PLAYOUTS` site in `player/*.tpp` (checked: `mctsplayer.tpp:415-416`, `montecarloplayer.tpp:105-113,181-189`, `montecarloplayer2.tpp:131-132`, `montecarloplayeruct.tpp:139-140`) is a bare `++playouts`/`playouts += N` counter increment — no branching, no RNG draw, no effect on which move is chosen. This is a shared, process-wide macro (not under `Carcasum/player/**`, so not excluded by the no-touch rule there), so flipping it also activates the already-written `#if COUNT_PLAYOUTS` bookkeeping in `tournament/main.cpp`'s `run()` for anyone who rebuilds that target — inert there too, same reasoning. |
+| **B6** | `Carcasum/core/game.h` | `+ inline int getScoreDetail(TerrainType terrain, int player) const { return playerScoresDetail[terrain][player]; }` | exposes existing private state (`Game::playerScoresDetail`) needed for `ev_move`/`game_over`'s `score_detail` object (PROTOCOL.md §3.2/§3.3). Same class of patch as the accessor the driver task spec pre-authorized; behaviour-free. |
+| **B7** | `Carcasum/core/tile.h` | `+ inline int getBonus() const { return getCityData()->bonus; }` on `CityNode` | exposes the existing private pennant/bonus field needed for `dump_tiles`'s per-node `pennant` (PROTOCOL.md §4). Behaviour-free, same justification as B6. |
+| **B8** | `Carcasum/Carcasum.pro` + new file `Carcasum/driver/main.cpp` | added an `else:driver { TARGET = carcasum_driver; ... SOURCES += driver/main.cpp }` branch, mirroring `tournament`, placed between the `tournament` and GUI (`else`) branches | adds the `carcasum_driver` build target (`scripts/carcasum_match/PROTOCOL.md`). New target only — does not touch any existing target's `SOURCES`/`HEADERS`/behaviour. |
+
+## INSTRUMENTATION patch (B5, filed above under its build-era id)
+
+`COUNT_PLAYOUTS 0 → 1` is **not** a build fix and should not be read as one. It is the
+only edit in this file that puts an instruction inside the search's hot loop, so it
+gets its own class and its own argument.
+
+**What it costs.** At every `#if COUNT_PLAYOUTS` site the body is a bare counter
+increment — `++playouts` in `mctsplayer.tpp:415`, `playouts += N` in the flat-MC
+players. There is no branch on the counter, no RNG draw, and the search never *reads*
+it. So the sequence of simulations and the move ultimately chosen are **bit-identical**
+with the flag on or off; the only effect is throughput, and the unit of work being
+counted is a full random rollout of ~35+ plies against a single integer increment.
+
+**Why it is nonetheless worth stating.** Their budget is a *time* budget
+(`boost::chrono::thread_clock`), so in principle anything that slows the loop buys
+fewer playouts per move, and playouts-per-move is strength. The overhead here is far
+below the noise of the measurement, but the honest form of that claim is "negligible
+and here is why", not "it's a build patch".
+
+**Why we want it anyway.** Gate 6 of the build exists to check the thesis's *5 s/move
+≈ 42,879 playouts/turn* against what our hardware actually delivers. Without this flag
+that check is impossible — we would be able to report wall-clock but not throughput,
+and the budget knob (the entire reason Carcasum was chosen over JCZ) would be
+unverifiable. The instrumentation buys the thing the cell is for.
+
+**Scope note.** `static.h` is process-wide, not under `Carcasum/player/**`, so flipping
+it also activates the already-written `#if COUNT_PLAYOUTS` bookkeeping in
+`tournament/main.cpp` for anyone who rebuilds that target — inert there for the same
+reason.
 
 ### Toolchain, not a patch
 

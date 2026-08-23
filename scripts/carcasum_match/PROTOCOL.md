@@ -42,15 +42,53 @@ Every line carries a `"t"` key naming its type.
 
 | thing | Carcasum | ours |
 |---|---|---|
-| board | `size × size` with `size = 72`, `offset = size/2 = 36`; start tile at `(36, 36)` | 35×35, start at `(game.start_row, game.start_col)`, 25×25 action window |
+| board | **`145 × 145`**, `getOffset() == 72`, start tile at **`(72, 72)`** — see the warning below | 35×35, start at `(game.start_row, game.start_col)`, 25×25 action window |
 | axes | `x` → east (`Tile::right`), `y` → **south** (`Tile::down`) | `row` → south, `column` → east |
 | rotation | `TileMove::orientation ∈ {left=0, up=1, right=2, down=3}` = **quarter turns clockwise** from the tile template's base orientation. Proof: `getEdge(side, o) = edges[(4 + side - o) % 4]`, so at `o=1` the base `left`(W) edge answers for absolute `up`(N), i.e. W→N, a CW quarter turn. | `rot ∈ 0..3`, CW quarter turns of our tile representation |
 | meeple | `MeepleMove::nodeIndex` — an index into `Tile::nodes[]`, i.e. **tile-local and rotation-invariant** | `(feature, side)` slot in `action_space` |
 
+> ### ⚠️ The board is 145×145, not 72×72 — and NOTHING may hardcode the offset
+>
+> An earlier revision of this document said "`size = 72`, `offset = 36`, start at
+> `(36,36)`". **That was wrong.** `Board::Board(Game *, uint s)` initialises
+> `size(s * 2 + 1)`, and `Game::newGame` passes `tiles.size()` (= 72), so the internal
+> board is **145 × 145**, `getOffset()` is **72**, and the start tile sits at
+> **`(72, 72)`**. Caught empirically by the driver leg: hardcoding `(36,36)` read back
+> `start_tile_type: -1, board_size: 145`.
+>
+> **The lesson is not "use 72".** It is that a coordinate constant must never be
+> written down twice. The driver derives its frame live from `getOffset()` /
+> `getInternalSize()` and publishes it in the `ready` line; Python takes the origin
+> from that handshake and hardcodes nothing.
+>
+> **Why this is worth a warning box.** A wrong offset does not fail loudly — it
+> produces a legal-*looking* move at the wrong square, which comes back as
+> `VOID_UNMAPPABLE` on essentially every ply. A divergence audit would then report
+> ~100 % divergences, and the obvious (wrong) reading of that is *"the two engines
+> disagree on the rules"*. **A coordinate bug must never be able to masquerade as a
+> rules finding.** Hence the mandatory handshake assertions below, and the separate
+> diagnostic class for a ply-0 mapping failure.
+>
+> Their board is enormous relative to the game (offset 72 for at most ~72 placed
+> tiles), so **their** side can never wall-escape. `WALL_LEGALITY` remains a real
+> class, but it is a statement about **our** `centered18` window only.
+
 **Position map (Python side):** reuse `scripts/jcz_oracle/tile_map.to_jcz_position` —
-JCZ's `(x, y)` convention is the same handedness as Carcasum's — then add the offset:
-`carcasum_xy = (jcz_x + 36, jcz_y + 36)` relative to whatever origin
-`to_jcz_position` was given. Do **not** hand-roll a second coordinate transform.
+JCZ's `(x, y)` convention is the same handedness as Carcasum's — then translate by the
+origin **read from the `ready` line**:
+`carcasum_xy = (jcz_x + start_xy[0], jcz_y + start_xy[1])`, with `to_jcz_position`
+called against OUR origin as before. Do **not** hand-roll a second coordinate
+transform, and do **not** write `36` or `72` anywhere.
+
+**Mandatory handshake assertions.** On `ready`, assert `board_size` is odd and
+`start_xy == (board_size // 2, board_size // 2)`; fault loudly otherwise. Stamp both
+into the manifest. These are cheap and they are exactly what would have caught the
+error above on ply 0 rather than at the audit.
+
+**Ply-0 mapping failure is a distinct class.** If the *first* ply already fails to map,
+the harness emits a coordinate-frame diagnostic (`HARNESS_ERROR`) carrying our coord,
+our origin, their offered `xy`, and the handshake's `start_xy` — **not** an ordinary
+per-ply `VOID_UNMAPPABLE`.
 
 **Rotation map (Python side):** reuse `tile_map.jcz_rotation_quarters(rot, rot_cw90)`
 where `rot_cw90` is the per-kind column of `tests/data/carcasum/TILE_MAPPING.tsv`.
@@ -84,16 +122,36 @@ canonical slot order and record `n_matching_slots`).
              "progressive_bias":false,
              "utility":"portion",  // Utilities::PortionUtility (the thesis 84% config)
              "playout":"random"},  // Playouts::RandomPlayout   (ditto)
- "seed":12345}                     // seeds Carcasum's DefaultRandom / RandomTable
+ "seed":12345}                     // accepted and stamped, but see the warning below
 ```
+
+> ### ⚠️ `seed` does NOT make the opponent reproducible
+>
+> Carcasum's RNG seed is **compile-time only** (`RANDOM_SEED` in `static.h`); there is
+> no per-game seeding API to wire. What that does and does not cost us:
+>
+> * **Decks and seat-swaps ARE exactly reproducible** — the tile order is forced by
+>   `ForcedTileProvider` and never touches their RNG. Deck-paired CRN, which is the
+>   estimator of record, is therefore fully intact.
+> * **The opponent's MCTS internals are NOT reproducible.** Two runs of the same cell
+>   can differ in the opponent's moves.
+>
+> So the opponent is a **non-CRN** opponent — exactly the posture the JCZ match already
+> operates under. `determinism_report` must treat a replicate's opponent-side
+> difference as **expected, not a fault**, and no part of the harness may promise
+> replicate-level determinism for the opponent side.
 
 The driver replies:
 
 ```json
-{"t":"ready","start_tile_type":2,"start_xy":[36,36],"board_size":72,
+{"t":"ready","start_tile_type":2,"start_xy":[72,72],"board_size":145,
  "deck_len":71,"players":["external","MCTSPlayer<PortionUtility,RandomPlayout>"],
- "revision":"5f5e365...","patches":["tiny_city_modern","upper_bound_modern"]}
+ "revision":"5f5e365...","patches":["tiny_city_modern"]}
 ```
+
+`start_xy` and `board_size` are read live from `getOffset()` / `getInternalSize()` —
+they are the coordinate frame of record, and Python must use them rather than any
+constant of its own.
 
 ⚠️ `deck` is **71** entries, not 72: Carcasum's `TileFactory::createPack` *prepends*
 the positioned `RCr` tile and `Game::newGame` immediately does

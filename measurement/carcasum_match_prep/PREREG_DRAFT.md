@@ -62,7 +62,18 @@ the **deck-paired margin in points**, with win-rate/elo reported alongside.
 - Both are reported. The paired one is load-bearing, exactly as in the JCZ confirm
   ([`measurement/jcz_match_20260809/CONFIRM_READOUT.md`](../jcz_match_20260809/CONFIRM_READOUT.md) §1).
 
-**n = 400** = 200 decks × 2 seatings (seat-swapped CRN). Rationale: the JCZ match used the same
+**⚠️ The opponent is NON-CRN, and the pairing is still sound.** Carcasum's RNG seed is
+**compile-time only** (`RANDOM_SEED` in `static.h`) — there is no per-game seeding API
+to wire. The **deck order is forced** by the harness and never touches their RNG, so
+decks and seat-swaps are exactly reproducible and the **deck-paired estimator is fully
+intact**; what is not reproducible is the opponent's MCTS internals, so two runs of the
+same cell can differ in its moves. This is the same posture the JCZ match already
+operates under. Consequences that must not be forgotten at readout: a replicate's
+opponent-side difference is **expected, not a fault**, and no determinism claim may be
+made about the opponent side. Variance from their search is absorbed into the residual,
+not removed by the pairing — the pairing removes **deck** variance only.
+
+**n = 400** = 200 decks × 2 seatings (seat-swapped CRN on the deck). Rationale: the JCZ match used the same
 size and resolved a +111 elo effect at z 7.55; n=400 is a verdict only for effects ≥ ~35 elo
 (2σ) and cannot resolve +20 elo. If the true gap is small, the pre-registered outcome is
 **"inconclusive at n=400"**, not a top-up improvised after seeing the number — see §5.

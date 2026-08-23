@@ -79,7 +79,7 @@
 #define DRAW_TILE_POSITION_TEXT      0
 #define DRAW_NODE_ID_TEXT            0
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS               0
+#define COUNT_PLAYOUTS               1
 // MCTSPlayer
 #define MCTS_COUNT_EXPAND_HITS       0
 #define MCTS_PRINT_UTILITIES         0

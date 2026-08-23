@@ -44,6 +44,15 @@ core {
 	SOURCES += \
 		tournament/main.cpp
 
+} else:driver {
+	TARGET = carcasum_driver
+
+	CONFIG   += console
+	CONFIG   -= app_bundle
+
+	SOURCES += \
+		driver/main.cpp
+
 } else {
 	QT       += gui svg
 

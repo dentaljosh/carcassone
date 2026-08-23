@@ -175,7 +175,11 @@ public:
 	{
 		return getCityData()->open;
 	}
-	
+	inline int getBonus() const
+	{
+		return getCityData()->bonus;
+	}
+
 	virtual bool equals(Node const & other, Game const * g) const
 	{
 		CityNode const * c = dynamic_cast<CityNode const *>(&other);
