@@ -697,7 +697,8 @@ class FairHeuristicPriorAgent:
                  parallel_workers: int | None = None,
                  sims_tile: int | None = None,
                  sims_meeple: int | None = None,
-                 exact_objective: str = "margin"):
+                 exact_objective: str = "margin",
+                 wc_tiebreak: bool = False):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -834,6 +835,15 @@ class FairHeuristicPriorAgent:
                 f"exact_objective must be 'margin'|'win', got {exact_objective!r}")
         self._exact_objective = str(exact_objective)
         self.exact_objective = self._exact_objective   # public alias (manifest read-off)
+        # WC tie-break (BACKLOG 2026-08-03 "WC tie-break rule flag"). Rule of the
+        # MATCH, not a candidate-side knob: applies symmetrically to both agents
+        # and keys off SEAT (seat 0 = starting player), not off which side is the
+        # candidate. Default False -> byte-identical to the pre-knob solver call
+        # (see `_exact_move`'s `_wc_kw`). Validated as a bool (no ternary string
+        # space like exact_objective) since the solver-side contract is a single
+        # on/off switch.
+        self._wc_tiebreak = bool(wc_tiebreak)
+        self.wc_tiebreak = self._wc_tiebreak   # public alias (manifest read-off)
         # LATENCY: within-search leaf batching (default 1 = the byte-identical champion
         # path). batch_size>1 makes each per-determinization NeuralMCTS collect that many
         # leaves under VIRTUAL LOSS and evaluate them in ONE `batch_evaluator` call
@@ -1281,8 +1291,11 @@ class FairHeuristicPriorAgent:
             # call is byte-for-byte the pre-knob one.
             _obj_kw = ({} if self._exact_objective == "margin"
                        else {"objective": self._exact_objective})
+            # WC tie-break: same "only pass when non-default" idiom, so the
+            # default (False) call is byte-for-byte the pre-knob solve().
+            _wc_kw = {} if not self._wc_tiebreak else {"wc_tiebreak": self._wc_tiebreak}
             res = S.solve(self._game, board, mode="marginalized",
-                          budget=self._exact_budget, alphabeta=False, **_obj_kw)
+                          budget=self._exact_budget, alphabeta=False, **_obj_kw, **_wc_kw)
         except S.BudgetExceeded:
             self.solver_secs += time.perf_counter() - t0
             self.n_timeouts += 1

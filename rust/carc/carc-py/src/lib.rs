@@ -742,7 +742,9 @@ impl PyMirrorState {
     /// comparison must run both sides at the same cap.  The solve runs under
     /// `allow_threads`, so a Python-side pool is free to fan out.
     #[pyo3(signature = (mode="clairvoyant", budget=4_000_000, alphabeta=false,
-                        tt_cap=0, chance_drop="type", objective="margin"))]
+                        tt_cap=0, chance_drop="type", objective="margin",
+                        wc_tiebreak=false))]
+    #[allow(clippy::too_many_arguments)]
     fn solve_endgame<'py>(
         &self,
         py: Python<'py>,
@@ -752,6 +754,7 @@ impl PyMirrorState {
         tt_cap: usize,
         chance_drop: &str,
         objective: &str,
+        wc_tiebreak: bool,
     ) -> PyResult<Option<Bound<'py, PyDict>>> {
         let m = endgame::Mode::parse(mode).map_err(pyo3::exceptions::PyValueError::new_err)?;
         let cfg = endgame::Config {
@@ -763,6 +766,10 @@ impl PyMirrorState {
             // (the core rejects clairvoyant+win loudly).
             objective: fair::solver::Objective::parse(objective)
                 .map_err(pyo3::exceptions::PyValueError::new_err)?,
+            // WC tie-break (BACKLOG.md 2026-08-03). `false` = the untouched
+            // incumbent. INERT under objective="margin" by construction; see
+            // `endgame::Config::wc_tiebreak`.
+            wc_tiebreak,
         };
         let game = &self.game;
         let t0 = std::time::Instant::now();
@@ -791,6 +798,9 @@ impl PyMirrorState {
         d.set_item("wall_ms", wall_ms)?;
         // E1 win-objective payload (`None`/`[]` under objective="margin").
         d.set_item("objective", cfg.objective.value())?;
+        // WC tie-break (BACKLOG.md 2026-08-03): the RESOLVED knob, stamped
+        // unconditionally — INERT (but visible) under objective="margin".
+        d.set_item("wc_tiebreak", cfg.wc_tiebreak)?;
         d.set_item("win_value", res.win_value)?;
         d.set_item("win_value_bits", res.win_value.map(|v| v.to_bits()))?;
         d.set_item(
@@ -1463,6 +1473,7 @@ impl PySearchConfig {
         tiearb_eps=0.0,
         tiearb_max_plies=carc_core::tiearb::TIEARB_MAX_PLIES,
         tiearb_threads=1,
+        wc_tiebreak=false,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1491,6 +1502,7 @@ impl PySearchConfig {
         tiearb_eps: f64,
         tiearb_max_plies: usize,
         tiearb_threads: usize,
+        wc_tiebreak: bool,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -1628,6 +1640,7 @@ impl PySearchConfig {
                 tiearb_eps,
                 tiearb_max_plies,
                 tiearb_threads,
+                wc_tiebreak,
             },
         })
     }
@@ -1687,6 +1700,14 @@ impl PySearchConfig {
     #[getter]
     fn tiearb_threads(&self) -> usize {
         self.inner.tiearb_threads
+    }
+
+    /// The RESOLVED WC tie-break knob (BACKLOG.md 2026-08-03), read back so a
+    /// manifest can stamp it — visible even though `false` is byte-identical
+    /// to the pre-flag search.
+    #[getter]
+    fn wc_tiebreak(&self) -> bool {
+        self.inner.wc_tiebreak
     }
 
     #[getter]
@@ -2121,6 +2142,7 @@ impl PyFairAgent {
         start_col = None,
         cloister_scan_fix = None,
         draw_rule = None,
+        wc_tiebreak = None,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -2141,6 +2163,11 @@ impl PyFairAgent {
         start_col: Option<i32>,
         cloister_scan_fix: Option<bool>,
         draw_rule: Option<&str>,
+        // WC tie-break (BACKLOG.md 2026-08-03). `None` == UNSPECIFIED, which
+        // INHERITS `search_cfg`'s value; `Some(w)` wins on both legs except
+        // that silently disarming an explicitly-armed `search_cfg` is refused.
+        // See the resolution block in the body for the full contract.
+        wc_tiebreak: Option<bool>,
     ) -> PyResult<Self> {
         // The agent takes the SAME rules knobs as the mirror, so a flags-on
         // eval cannot silently be graded under the flags-off convention.
@@ -2167,8 +2194,33 @@ impl PyFairAgent {
                 "threads must be >= 1, got {threads}"
             )));
         }
+        // WC tie-break (BACKLOG.md 2026-08-03) — RESOLUTION RULE, not a silent
+        // override. A rules flag that can be silently dropped is a
+        // wrong-rules-cell factory, so the two legs (this agent's own kwarg and
+        // whatever `search_cfg` was separately constructed with) are reconciled
+        // by the single pure helper `fair::resolve_wc_tiebreak` (unit-tested in
+        // `carc-core` — see `fair::resolve_wc_tiebreak_tests`), not re-derived
+        // here, so there is exactly ONE place this logic can drift:
+        //
+        //   * kwarg omitted (`None`) => INHERIT `search_cfg`'s value. Nothing is
+        //     overridden, so a caller that armed only the SearchConfig keeps the
+        //     rule it asked for, and the untouched-default path stays untouched.
+        //   * kwarg `Some(w)` that would SILENTLY DISARM an explicitly-armed
+        //     `search_cfg` (search armed, kwarg false) => REFUSED LOUDLY below.
+        //     This is the only genuinely dangerous combination: the caller would
+        //     get a cell that looks armed at the call site and plays unarmed.
+        //   * any other `Some(w)` => `w` wins on BOTH legs. In particular
+        //     `search_cfg` false + kwarg true is the NORMAL arming path
+        //     (`rust_agent.py` builds `search_config_rs(...)` without the knob
+        //     and passes `wc_tiebreak=True` to the agent only when armed).
+        //
+        // `false` on both legs is the untouched incumbent.
+        let mut search = search_cfg.inner.clone();
+        let wc_tiebreak = fair::resolve_wc_tiebreak(search.wc_tiebreak, wc_tiebreak)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        search.wc_tiebreak = wc_tiebreak;
         let cfg = fair::FairConfig {
-            search: search_cfg.inner.clone(),
+            search,
             k_dets,
             seed,
             min_pooled_visits,
@@ -2183,6 +2235,7 @@ impl PyFairAgent {
                 // untouched incumbent code path.
                 objective: fair::solver::Objective::parse(exact_objective)
                     .map_err(pyo3::exceptions::PyValueError::new_err)?,
+                wc_tiebreak,
             },
             threads,
         };
@@ -2282,12 +2335,13 @@ impl PyFairAgent {
     /// Returns `None` on `BudgetExceeded` (what the agent sees), else a dict
     /// with `value_bits` / `optimal_actions` / `child_values` (raw bits) /
     /// `nodes` / `to_move`.
-    #[pyo3(signature = (budget=None, objective=None))]
+    #[pyo3(signature = (budget=None, objective=None, wc_tiebreak=None))]
     fn solve_marginalized<'py>(
         &self,
         py: Python<'py>,
         budget: Option<u64>,
         objective: Option<&str>,
+        wc_tiebreak: Option<bool>,
     ) -> PyResult<Option<Bound<'py, PyDict>>> {
         let game = match self.game.as_ref() {
             None => return Err(no_game()),
@@ -2302,6 +2356,11 @@ impl PyFairAgent {
         if let Some(o) = objective {
             cfg.objective = fair::solver::Objective::parse(o)
                 .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        }
+        // WC tie-break per-call override (None = the agent's constructed
+        // value, byte-identical). Same seam shape as `objective` above.
+        if let Some(w) = wc_tiebreak {
+            cfg.wc_tiebreak = w;
         }
         let res = py.allow_threads(|| fair::solver::solve_marginalized(game, &cfg));
         let res = match res {
@@ -2327,6 +2386,10 @@ impl PyFairAgent {
         // E1 win-objective payload (`None`/`[]` in margin mode — the liveness
         // discriminator the parity/positive-control tests read).
         d.set_item("objective", cfg.objective.value())?;
+        // WC tie-break (BACKLOG.md 2026-08-03): the RESOLVED per-call value
+        // (`res.wc_tiebreak`, not just `cfg.wc_tiebreak` — this stamps what
+        // the solve actually ran under). INERT under objective="margin".
+        d.set_item("wc_tiebreak", res.wc_tiebreak)?;
         d.set_item("win_value", res.win_value)?;
         d.set_item("win_value_bits", res.win_value.map(|v| v.to_bits()))?;
         d.set_item(
@@ -2472,6 +2535,15 @@ impl PyFairAgent {
         // E1: the RESOLVED objective — the manifest liveness surface (the leaf
         // hash deliberately does not move on this knob, surface-B style).
         d.set_item("exact_objective", a.cfg.solver.objective.value())?;
+        // WC tie-break (BACKLOG.md 2026-08-03): the RESOLVED knob on BOTH legs
+        // (they are kept in sync at construction — see `PyFairAgent::new`).
+        // Stamped unconditionally; INERT under exact_objective="margin".
+        d.set_item("wc_tiebreak", a.cfg.solver.wc_tiebreak)?;
+        // The SEARCH leg's resolved value, stamped separately on purpose: the
+        // two legs are reconciled at construction, so these must always agree —
+        // emitting both makes a future divergence VISIBLE in the artifact
+        // instead of assumed from the constructor's contract.
+        d.set_item("wc_tiebreak_search", a.cfg.search.wc_tiebreak)?;
         d.set_item("min_pooled_visits", a.cfg.min_pooled_visits)?;
         d.set_item("last_move", self.last_move(py)?)?;
         Ok(d)

@@ -50,11 +50,23 @@ _TIE = 1e-6  # float tolerance for optimal-set membership in the marginalized mo
 _WIN_TIE = 1e-9
 
 
-def _outcome(m: float) -> float:
+def _outcome(m: float, wc_tiebreak: bool = False) -> float:
     """The terminal WIN lattice, P0 POV: win > draw > loss, draw = half a win
     (the lattice the eval harness scores W/D/L on). `m` is an exact integral
-    score differential at terminals, so the comparisons are exact."""
-    return 1.0 if m > 0 else (0.5 if m == 0 else 0.0)
+    score differential at terminals, so the comparisons are exact.
+
+    `wc_tiebreak` (BACKLOG 2026-08-03 "WC tie-break rule flag", official WC
+    rule): a tied final score (`m == 0`) is an automatic LOSS for the starting
+    player, who is always P0 in this solver's convention (root `to_move`
+    tracks the actual mover, but `m`/`_outcome` are always P0-POV). Armed, a
+    tie scores 0.0 instead of 0.5 — the mid lattice value is unreachable.
+    Default OFF: unarmed this is the untouched incumbent lattice.
+    """
+    if m > 0:
+        return 1.0
+    if m == 0:
+        return 0.0 if wc_tiebreak else 0.5
+    return 0.0
 
 
 def _lex_better(x: tuple, v: tuple, maximize: bool) -> bool:
@@ -92,6 +104,13 @@ class SolveResult:
     win_value: float | None = None                 # E[outcome] of the optimum
     child_win_values: dict | None = None           # per-action E[outcome]
     objective: str = "margin"
+    # WC tie-break (BACKLOG 2026-08-03): whether THIS solve was armed. Additive
+    # with a default so every existing constructor/caller is untouched. Under
+    # objective="margin" the flag is INERT by construction (see `solve()`) but
+    # still stamped here so the armed state is readable off any result — an
+    # "armed but inert" leg is visible, not silently indistinguishable from an
+    # unarmed one.
+    wc_tiebreak: bool = False
 
 
 def tile_key(tile) -> str:
@@ -153,7 +172,8 @@ class _Solver:
     (clairvoyant) or the sorted bag MULTISET (marginalized = the spec's V5
     no-leak key: states differing only in unrevealed order collide)."""
 
-    def __init__(self, game: Game, mode: str, budget: int, alphabeta: bool = False):
+    def __init__(self, game: Game, mode: str, budget: int, alphabeta: bool = False,
+                 wc_tiebreak: bool = False):
         assert mode in ("clairvoyant", "marginalized")
         # Alpha-beta is EXACT (it only prunes provably-irrelevant subtrees), but
         # it is sound only for pure minimax — chance (expectation) nodes have no
@@ -166,6 +186,11 @@ class _Solver:
         self.mode = mode
         self.budget = budget
         self.alphabeta = alphabeta
+        # WC tie-break (BACKLOG 2026-08-03). Reaches only `_value_win`'s
+        # terminal `_outcome(...)` call — the margin path (`_value`/`_chance`/
+        # `_value_ab`) never reads this attribute, so it is INERT by
+        # construction under objective="margin" (see `solve()`'s docstring).
+        self.wc_tiebreak = bool(wc_tiebreak)
         self.nodes = 0
         self.tt: dict = {}
         # E1 win mode's (w, m) table. Exactly one of tt/tt_win is used per
@@ -263,7 +288,7 @@ class _Solver:
     def _value_win(self, board: Board) -> tuple:
         if _terminal(board):
             m = float(flat_base_score(board.state, 0))
-            return (_outcome(m), m)
+            return (_outcome(m, self.wc_tiebreak), m)
         key = self._key(board)
         cached = self.tt_win.get(key)
         if cached is not None:
@@ -364,7 +389,7 @@ class _Solver:
 
 def solve(game: Game, board: Board, mode: str = "marginalized",
           budget: int = 4_000_000, alphabeta: bool = False,
-          objective: str = "margin") -> SolveResult:
+          objective: str = "margin", wc_tiebreak: bool = False) -> SolveResult:
     """Solve the position. Evaluates EVERY legal root action exactly (no
     cross-action pruning at the root) so regret can be scored for any move.
 
@@ -382,11 +407,35 @@ def solve(game: Game, board: Board, mode: str = "marginalized",
     win-optimal there — a clairvoyant "win mode" would be a live-looking no-op
     flag, hence the loud assert. At the deployed exact_max_k=2 the two
     objectives PROVABLY coincide (every chance bag is a singleton; DESIGN §2);
-    divergence requires K>=3."""
+    divergence requires K>=3.
+
+    `wc_tiebreak` (BACKLOG 2026-08-03 "WC tie-break rule flag", official WC
+    rule): under objective="win", a tied terminal margin (m == 0) is scored as
+    an automatic LOSS for the starting player (P0) instead of a draw — see
+    `_outcome`. UNDER objective="margin" THE FLAG IS INERT BY CONSTRUCTION:
+    margin mode never calls `_outcome` (the "margin" branch below reads raw
+    `flat_base_score`/`_value`/`_chance`/`_value_ab` values only), so an armed-
+    but-margin-objective call is a legitimate "armed but inert" state — e.g.
+    the flag arriving from a process-wide rules profile while this particular
+    leg runs the margin objective — and is NOT refused (unlike E1's
+    marginalized-only refusal above). It is made VISIBLE instead, via
+    `SolveResult.wc_tiebreak`, rather than silently doing nothing with no
+    trace.
+
+    The DESIGN §2 K<=2 inertness proposition SURVIVES `wc_tiebreak`: armed,
+    `_outcome` is still a MONOTONE NON-DECREASING transform of the margin `m`
+    (0.0 for m<=0, 1.0 for m>0 — collapsing what used to be a 3-value step to
+    a 2-value one is still monotone), and at K<=2 every chance bag is a
+    singleton so the solve is a deterministic minimax. A monotone transform of
+    a deterministic margin can never invert which action maximizes it, so
+    lexicographic (w, m) max still equals plain margin max at K<=2 whether or
+    not the flag is armed (pinned by
+    `tests/test_wc_tiebreak.py::test_k2_inertness_survives_wc_tiebreak_armed`).
+    """
     assert objective in ("margin", "win"), f"objective must be margin|win, got {objective!r}"
     assert not (objective == "win" and mode != "marginalized"), \
         "objective='win' is marginalized-only (clairvoyant margin-max is already win-optimal)"
-    s = _Solver(game, mode, budget, alphabeta=alphabeta)
+    s = _Solver(game, mode, budget, alphabeta=alphabeta, wc_tiebreak=wc_tiebreak)
     to_move = board.state.current_player
     was_meeples = (board.state.phase == _MEEPLES)
     legal = _legal(game, board)
@@ -398,7 +447,7 @@ def solve(game: Game, board: Board, mode: str = "marginalized",
             nb, _ = game.get_next_state(board, a)
             if _terminal(nb):
                 m = float(flat_base_score(nb.state, 0))
-                pairs[a] = (_outcome(m), m)
+                pairs[a] = (_outcome(m, wc_tiebreak), m)
             elif _drew_a_tile(board, nb, was_meeples):
                 pairs[a] = s._chance_win(nb)
             else:
@@ -418,7 +467,7 @@ def solve(game: Game, board: Board, mode: str = "marginalized",
                            nodes=s.nodes, completed=True,
                            win_value=float(vstar[0]),
                            child_win_values={a: float(v[0]) for a, v in pairs.items()},
-                           objective="win")
+                           objective="win", wc_tiebreak=wc_tiebreak)
 
     child_values: dict[int, float] = {}
     for a in legal:
@@ -439,7 +488,7 @@ def solve(game: Game, board: Board, mode: str = "marginalized",
     optimal = [a for a, v in child_values.items() if abs(v - vstar) <= tol]
     return SolveResult(mode=mode, value=float(vstar), to_move=to_move,
                        optimal_actions=optimal, child_values=child_values,
-                       nodes=s.nodes, completed=True)
+                       nodes=s.nodes, completed=True, wc_tiebreak=wc_tiebreak)
 
 
 def regret_of(res: SolveResult, action: int) -> float:

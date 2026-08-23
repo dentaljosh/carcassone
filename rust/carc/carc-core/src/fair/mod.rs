@@ -93,6 +93,76 @@ impl Default for FairConfig {
     }
 }
 
+/// Reconcile the agent-level `wc_tiebreak` kwarg against the `wc_tiebreak`
+/// already baked into a caller-supplied `search_cfg` (`PySearchConfig` on the
+/// pyo3 side), for [`FairConfig`]'s two legs (`search` and `solver`) — a pure
+/// function so the resolution rule is unit-testable without pyo3 or a live
+/// wheel.
+///
+/// The agent constructor's own `wc_tiebreak` kwarg is `Option<bool>`:
+///
+/// - `None` (unspecified) — **inherit** `search_cfg_value`, no override at
+///   all. This is the untouched-default path: a caller who never mentions the
+///   flag anywhere gets `false` on both legs, byte-identical to before the
+///   flag existed.
+/// - `Some(w)` where `search_cfg_value == true && w == false` — this is the
+///   SILENT-DISARM case: a caller explicitly armed the search leg
+///   (`PySearchConfig(wc_tiebreak=True)`) and then, whether by a stale
+///   default or a copy-paste, asked the agent to build with the flag OFF.
+///   Silently letting the agent kwarg win would quietly disarm a leg the
+///   caller deliberately armed — a wrong-rules-cell factory, the exact
+///   failure class this house has been burned by repeatedly (silently-inert /
+///   silently-overridden knobs). **RAISE**, don't resolve.
+/// - `Some(w)` otherwise (armed-agrees, or the agent arms a leg the search
+///   config left off) — resolve to `w`, applied to BOTH legs. This is the
+///   normal arming path: `search_config_rs(...)` is built WITHOUT
+///   `wc_tiebreak` (`false`) and the caller passes `wc_tiebreak=True` to the
+///   agent only when armed — `search_cfg_value=false` + `Some(true)` must
+///   resolve, not raise.
+pub fn resolve_wc_tiebreak(search_cfg_value: bool, agent_kwarg: Option<bool>) -> Result<bool, String> {
+    match agent_kwarg {
+        None => Ok(search_cfg_value),
+        Some(w) if search_cfg_value && !w => Err(format!(
+            "wc_tiebreak mismatch: search_cfg was built with wc_tiebreak=True but the \
+             agent constructor was called with wc_tiebreak=False — this would SILENTLY \
+             DISARM the search leg's WC tie-break rule while some other leg may still \
+             think it is armed. Fix by either (a) passing wc_tiebreak=True to the agent \
+             too (arm both legs), or (b) omitting the agent's wc_tiebreak kwarg entirely \
+             (defaults to None, which INHERITS search_cfg's value)."
+        )),
+        Some(w) => Ok(w),
+    }
+}
+
+#[cfg(test)]
+mod resolve_wc_tiebreak_tests {
+    use super::resolve_wc_tiebreak;
+
+    /// The full truth table: `None`/`Some(true)`/`Some(false)` agent kwarg ×
+    /// `search_cfg_value` true/false — six cells, five resolve, one raises.
+    #[test]
+    fn truth_table() {
+        // None (unspecified) always inherits, whatever search_cfg carries.
+        assert_eq!(resolve_wc_tiebreak(false, None), Ok(false));
+        assert_eq!(resolve_wc_tiebreak(true, None), Ok(true));
+        // Some(w) where search_cfg is false: never a silent disarm (there is
+        // nothing armed to disarm), so both resolve to w.
+        assert_eq!(resolve_wc_tiebreak(false, Some(false)), Ok(false));
+        assert_eq!(
+            resolve_wc_tiebreak(false, Some(true)),
+            Ok(true),
+            "the normal arming path: search_cfg=false + Some(true) must resolve, not raise"
+        );
+        // Some(true) where search_cfg is already true: agrees, resolves.
+        assert_eq!(resolve_wc_tiebreak(true, Some(true)), Ok(true));
+        // Some(false) where search_cfg is true: the silent-disarm case — raise.
+        let e = resolve_wc_tiebreak(true, Some(false)).unwrap_err();
+        assert!(e.contains("wc_tiebreak=True"), "must name the search leg's value: {e}");
+        assert!(e.contains("wc_tiebreak=False"), "must name the agent kwarg's value: {e}");
+        assert!(e.contains("DISARM"), "must say what's dangerous about it: {e}");
+    }
+}
+
 #[derive(Debug)]
 pub enum FairError {
     /// `ValueError("fair agent asked to move with no legal actions")`.

@@ -646,7 +646,8 @@ class RustFairAgent:
                  reconcile: bool | None = None,
                  sims_tile: int | None = None,
                  sims_meeple: int | None = None,
-                 exact_objective: str = "margin"):
+                 exact_objective: str = "margin",
+                 wc_tiebreak: bool = False):
         import carc_rs
 
         from . import fair_agent as _fa
@@ -702,10 +703,20 @@ class RustFairAgent:
                 f"exact_objective must be 'margin'|'win', got {exact_objective!r}")
         self._exact_objective = str(exact_objective)
         self.exact_objective = self._exact_objective   # public alias (manifest read-off)
+        # WC tie-break (BACKLOG 2026-08-03 "WC tie-break rule flag"). Rule of the
+        # MATCH, not a candidate-side knob: it applies symmetrically to both
+        # agents and keys off SEAT (seat 0 = starting player). Default False ->
+        # byte-identical FFI call (the kwarg is only passed when non-default,
+        # same idiom as exact_objective above). ⚠️ Per-box footgun: carc_rs is a
+        # BUILT wheel; rebuild it on every box before any run that passes
+        # wc_tiebreak=True.
+        self._wc_tiebreak = bool(wc_tiebreak)
+        self.wc_tiebreak = self._wc_tiebreak   # public alias (manifest read-off)
 
         try:
             _obj_kw = ({} if self._exact_objective == "margin"
                        else {"exact_objective": self._exact_objective})
+            _wc_kw = {} if not self._wc_tiebreak else {"wc_tiebreak": self._wc_tiebreak}
             self._rs = carc_rs.FairAgentRs(
                 search_config_rs(cfg, self._sims),
                 k_dets=self._k_dets,
@@ -718,6 +729,7 @@ class RustFairAgent:
                 chance_drop="type",
                 threads=self._threads,
                 **_obj_kw,
+                **_wc_kw,
                 window_size=int(window_size),
                 start_rule=start_rule,
                 start_row=start_row,
@@ -744,6 +756,13 @@ class RustFairAgent:
                     "rebuild the wheel on THIS box (per-box footgun: carc_rs is a "
                     "built artifact) before running exact_objective="
                     f"{self._exact_objective!r}") from e
+            if "wc_tiebreak" in str(e):
+                raise RuntimeError(
+                    "this carc_rs wheel predates the WC tie-break wc_tiebreak knob "
+                    "— rebuild the wheel on THIS box (per-box footgun: carc_rs is a "
+                    "built artifact; reinstall from rust/carc/target/wheels) before "
+                    "running wc_tiebreak="
+                    f"{self._wc_tiebreak!r}") from e
             raise
         self._started = False
         self._plies = 0
@@ -1028,6 +1047,12 @@ class RustFairAgent:
             **({"exact_objective": str(s.get("exact_objective",
                                             self._exact_objective))}
                if self._exact_objective != "margin" else {}),
+            # WC tie-break — stamped ONLY when non-default (same convention as
+            # exact_objective above); the RESOLVED value from the rust side when
+            # the wheel carries it, so a manifest can never quote a knob the FFI
+            # silently dropped.
+            **({"wc_tiebreak": bool(s.get("wc_tiebreak", self._wc_tiebreak))}
+               if self._wc_tiebreak else {}),
         }
 
     def __repr__(self) -> str:

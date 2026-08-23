@@ -263,8 +263,28 @@ def _game_tiearb_block(agents: dict, tiearb: dict | None) -> dict:
     return block
 
 
+def _game_wc_tiebreak_block(wc_tiebreak: bool, scores: list[int]) -> dict:
+    """The per-GAME WC tie-break record — ALWAYS present, same 3-state
+    "absent is unknown-not-zero" convention as ``_game_tiearb_block``:
+
+      * ``{"enabled": false}``                                     — never armed
+      * ``enabled: true``, ``tied_games: 0``                       — armed, this game was NOT tied
+      * ``enabled: true``, ``tied_games: 1``, ``resolved_for_seat1: 1`` — armed AND it fired
+
+    (BACKLOG 2026-08-03 "WC tie-break rule flag".) A tie always resolves FOR seat 1
+    (seat 0, the starting player, automatically loses) when armed, so
+    ``resolved_for_seat1`` mirrors ``tied_games`` exactly — it is a separate key
+    (rather than inferred) so a reader never has to re-derive the WC rule's
+    direction from this record."""
+    if not wc_tiebreak:
+        return {"enabled": False}
+    tied = int(scores[0] == scores[1])
+    return {"enabled": True, "tied_games": tied, "resolved_for_seat1": tied}
+
+
 def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
-                     parallel_workers=None, execution=None, tiearb=None):
+                     parallel_workers=None, execution=None, tiearb=None,
+                     wc_tiebreak=False):
     """The PRODUCTION fair champion, built + runtime-verified by the champion factory
     (F1, 2026-07-19). Rewired from the PRE-FLIP FairHeuristicMCTSAgent (random-expansion
     UCT + old leaf) to the current champion: FairHeuristicPriorAgent (PUCT heuristic
@@ -287,7 +307,16 @@ def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
     DEFAULT, and what ``_resolve_tiearb`` returns for every unarmed invocation — passes
     NO ``tiearb`` keyword to the factory whatsoever, so the constructed champion is
     bit-for-bit the pre-plumbing one. This is a keyword-PRESENCE contract, not a
-    keyword-value one; do not "simplify" it to always passing ``tiearb=tiearb``."""
+    keyword-value one; do not "simplify" it to always passing ``tiearb=tiearb``.
+
+    ``wc_tiebreak`` (BACKLOG 2026-08-03 "WC tie-break rule flag"; default False) arms
+    the official WC tie-break RULE OF THE MATCH on this champion's exact endgame
+    solver. Same keyword-PRESENCE contract as ``tiearb``: False passes NO
+    ``wc_tiebreak`` keyword to the factory, so a disarmed call builds bit-for-bit the
+    pre-plumbing champion. Unlike ``tiearb`` this is NOT rust-only — arm it on either
+    seat's agent built through this factory and the caller (``play_game``) is what
+    actually applies the rule to W/D/L classification via
+    ``carcassonne_ai.game_wrapper.resolve_winner``."""
     from carcassonne_ai.champion_factory import make_production_champion
     from carcassonne_ai.mirror_protocol import Execution
 
@@ -296,9 +325,10 @@ def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
                               parallel_workers=parallel_workers)
     # DISARMED => the keyword is ABSENT, not False. See the docstring.
     arb_kw = {"tiearb": tiearb} if tiearb is not None else {}
+    wc_kw = {"wc_tiebreak": True} if wc_tiebreak else {}
     return make_production_champion("fair", game=game, seed=seed, sims=sims,
                                     k_dets=k_dets, exact_endgame=exact_endgame,
-                                    **execution.factory_kwargs(), **arb_kw)
+                                    **execution.factory_kwargs(), **arb_kw, **wc_kw)
 
 
 class HumanCLIAgent:
@@ -337,16 +367,26 @@ class HumanCLIAgent:
 
 
 def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
-              config: dict, tiearb: dict | None = None) -> dict:
+              config: dict, tiearb: dict | None = None,
+              wc_tiebreak: bool = False) -> dict:
     """Play one full 2p game. `agents` = {seat: agent} (seat -> object with
     choose_action(board)->int + the telemetry attrs). Returns a game record
     {manifest, moves, result}. Never records a peek at the true deck.
 
     ``tiearb`` is the RESOLVED arbiter dict the seats were BUILT with (or None). It is
     read-only here — it changes nothing about the play, it only tells the manifest
-    which arbiter record to stamp (`_game_tiearb_block`)."""
+    which arbiter record to stamp (`_game_tiearb_block`).
+
+    ``wc_tiebreak`` (BACKLOG 2026-08-03 "WC tie-break rule flag"; default False) is
+    ALSO read-only here w.r.t. the PLAY — the seats were built by the caller with the
+    SAME flag arming their exact solvers (or not). What this function does with it is
+    decide the WINNER: `False` (default) is byte-identical to the pre-knob inline
+    expression (symmetric draw on an exact tie); `True` routes through
+    `game_wrapper.resolve_winner`, which rules the STARTING seat (0) an automatic
+    LOSER on an exact tie, per the official WC rule."""
     from carcassonne_ai import mirror_protocol as MP
     from carcassonne_ai import window_truncation as _WT
+    from carcassonne_ai.game_wrapper import resolve_winner
 
     random.seed(int(deck_seed))          # fixes the engine shuffle (root_replay contract)
     board = game.get_init_board()
@@ -417,7 +457,11 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
         move_idx += 1
 
     scores = list(board.state.scores)
-    winner = 0 if scores[0] > scores[1] else 1 if scores[1] > scores[0] else -1
+    # WC tie-break (BACKLOG 2026-08-03): `resolve_winner` gives the IDENTICAL winner
+    # to the old inline expression whenever wc_tiebreak=False (property-tested in
+    # tests/test_wc_tiebreak_plumbing.py); armed, an exact tie (diff==0) is an
+    # automatic LOSS for the STARTING seat (0), never -1.
+    winner = resolve_winner(scores[0], scores[1], wc_tiebreak=wc_tiebreak)
     result = {"scores": scores, "winner_seat": winner,
               "margin_seat0_minus_seat1": scores[0] - scores[1], "n_moves": move_idx,
               "wall_secs": round(time.time() - t_start, 2)}
@@ -442,6 +486,9 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
         # (U-UNREADABLE: absent is unknown-not-zero). This is a RECORD field only; the
         # champion that produced the moves above is untouched when disarmed.
         "tiearb": _game_tiearb_block(agents, tiearb),
+        # WC TIE-BREAK's per-game liveness witness — ALWAYS present, same 3-state
+        # convention as `tiearb` above (see `_game_wc_tiebreak_block`).
+        "wc_tiebreak": _game_wc_tiebreak_block(wc_tiebreak, scores),
         "config": config,
         "config_hash": C.sha256_of(config)[:16],
         "utc": _now_iso(),
@@ -463,7 +510,7 @@ def write_record(record: dict, out_dir: Path, tag: str) -> Path:
 
 
 def play_paired(game, deck_seed, ctor_a, ctor_b, label_a, label_b, config,
-                out_dir=None, tiearb=None) -> list[dict]:
+                out_dir=None, tiearb=None, wc_tiebreak=False) -> list[dict]:
     """Play the same deck twice, seats swapped: (A@0,B@1) then (B@0,A@1).
     Fresh agent instances per game (no cross-game state leak). Returns both records."""
     recs = []
@@ -472,7 +519,7 @@ def play_paired(game, deck_seed, ctor_a, ctor_b, label_a, label_b, config,
         ("a1", {0: ctor_b(), 1: ctor_a()}, {0: label_b, 1: label_a}),
     ):
         rec = play_game(game, deck_seed, seats, labels, config | {"seat_layout": tag},
-                        tiearb=tiearb)
+                        tiearb=tiearb, wc_tiebreak=wc_tiebreak)
         if out_dir:
             write_record(rec, out_dir, tag)
         recs.append(rec)
@@ -625,6 +672,19 @@ def main(argv=None) -> int:
     ap.add_argument("--tiearb-eps", type=float, default=0.0,
                     help="Tie membership tolerance on the outer chain value. 0.0 is "
                          "the COMMITTED setting — exact f64 equality, NOT a tolerance.")
+    # --- WC TIE-BREAK (BACKLOG 2026-08-03 "WC tie-break rule flag") --------------
+    ap.add_argument("--wc-tiebreak", action="store_true",
+                    help="ARM the official WC tie-break rule: a tied final score is "
+                         "an automatic LOSS for the STARTING player (seat 0), never a "
+                         "symmetric draw (measurement/TOURNAMENT_LANDSCAPE_MEMO_20260728"
+                         ".md §1.3/§1.4). OFF BY DEFAULT — winner_seat is computed by "
+                         "the pre-knob inline expression's IDENTICAL twin "
+                         "(game_wrapper.resolve_winner), so a bare invocation is "
+                         "byte-identical. ⚠️ RULE OF THE MATCH: it arms BOTH seats' "
+                         "exact-endgame solvers (not one agent's), and it moves the "
+                         "W/D/L classification through the seat mapping only — no "
+                         "leaf hash moves. Wiring gate is manifest.wc_tiebreak "
+                         "(3-state: absent/never-armed vs armed-inert vs armed-fired).")
     args = ap.parse_args(argv)
 
     # Resolved BEFORE either play path so the rust-only guard below fires AT LAUNCH,
@@ -649,6 +709,20 @@ def main(argv=None) -> int:
         print(f"[tiearb] TIE ARBITER ARMED on the champion: {tiearb} (leaf hash does "
               "NOT move; the gates are the log's champion manifest cand_tiearb dict "
               "and the per-game manifest.tiearb firing telemetry)", flush=True)
+
+    # WC TIE-BREAK (BACKLOG 2026-08-03). Resolved BEFORE --self-test too, same
+    # up-front-not-mid-run posture as tiearb above (it is not rust-only, so there is
+    # no backend refusal to add here).
+    _wc_tiebreak = bool(args.wc_tiebreak)
+    # Passed downstream ONLY when armed, the same "a disarmed run builds the
+    # exact same call as pre-flag code" rule `tiearb` follows above. Splatting
+    # an empty dict (rather than threading `wc_tiebreak=False` everywhere) is
+    # what keeps the flag-off path byte-identical at every construction site.
+    _wc_kw = {"wc_tiebreak": True} if _wc_tiebreak else {}
+    if _wc_tiebreak:
+        print("[wc-tiebreak] WC TIE-BREAK ARMED on both seats: a tied final score is "
+              "an automatic LOSS for the STARTING player (leaf hash does NOT move; "
+              "the gate is the log's manifest.wc_tiebreak block)", flush=True)
 
     if args.self_test:
         return self_test(execution, tiearb=tiearb)
@@ -676,7 +750,8 @@ def main(argv=None) -> int:
               # is gated behaviour-identical (G4/G6), so it can never explain a result.
               "parallel_workers": pw, "deploy_profile": args.profile,
               "backend": execution["backend"],
-              "rust_threads": execution["rust_threads"]}
+              "rust_threads": execution["rust_threads"],
+              "wc_tiebreak": _wc_tiebreak}
     print(f"[exec] budget k{args.k_dets}x{args.sims} = {args.k_dets * args.sims} sims/move | "
           f"{execution.describe()}"
           f"{'' if execution['source'] != 'profile' else f' (profile {args.profile!r})'}")
@@ -687,18 +762,21 @@ def main(argv=None) -> int:
 
         def ctor_a():
             return _make_fair_agent(game, args.sims, args.k_dets, seed=101,
-                                    execution=execution, tiearb=tiearb)
+                                    execution=execution, tiearb=tiearb,
+                                    **_wc_kw)
 
         def ctor_b():
             return _make_fair_agent(game, args.sims, args.k_dets, seed=202,
-                                    execution=execution, tiearb=tiearb)
+                                    execution=execution, tiearb=tiearb,
+                                    **_wc_kw)
 
         if args.paired:
             play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config,
-                        out_dir=args.out, tiearb=tiearb)
+                        out_dir=args.out, tiearb=tiearb, **_wc_kw)
         else:
             rec = play_game(game, seed, {0: ctor_a(), 1: ctor_b()},
-                            {0: "fairA", 1: "fairB"}, config, tiearb=tiearb)
+                            {0: "fairA", 1: "fairB"}, config, tiearb=tiearb,
+                            **_wc_kw)
             print("wrote", write_record(rec, args.out, "a0"))
         return 0
 
@@ -707,10 +785,11 @@ def main(argv=None) -> int:
     ai_seat = 1 - human_seat
     human = HumanCLIAgent(game)
     ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303, execution=execution,
-                          tiearb=tiearb)
+                          tiearb=tiearb, **_wc_kw)
     agents = {human_seat: human, ai_seat: ai}
     labels = {human_seat: "human", ai_seat: f"fair@{args.sims}"}
-    rec = play_game(game, seed, agents, labels, config, tiearb=tiearb)
+    rec = play_game(game, seed, agents, labels, config, tiearb=tiearb,
+                    **_wc_kw)
     p = write_record(rec, args.out, f"human{human_seat}")
     print(f"\n=== GAME OVER === scores={rec['result']['scores']} "
           f"winner_seat={rec['result']['winner_seat']}")
