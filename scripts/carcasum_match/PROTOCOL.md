@@ -158,9 +158,20 @@ Python must apply its own meeple-phase pass (see `ev_move.meeple: null` below).
  "ms":4998,"playouts":42879}
 ```
 
-`score_detail` is `Game::playerScoresDetail[terrain][player]` — it is the whole reason
-the audit can say *farm scoring specifically agreed* rather than *the totals happened
-to agree*. `ms` / `playouts` are per-move and only meaningful for a search player
+`score_detail` is `Game::playerScoresDetail[terrain][player]`.
+
+⚠️ **It is telemetry, not a symmetric diff target.** Our engine tracks only a flat
+`game_state.scores[player]` and has no per-terrain breakdown, so there is nothing on
+our side to diff it against ply-by-ply, and instrumenting shared `engine/` code for an
+audit is not on the table. What the harness actually does (see
+[`measurement/carcasum_match_prep/AUDIT_PLAN.md`](../../measurement/carcasum_match_prep/AUDIT_PLAN.md)
+checks 2 / 2a / 2b): diff the **totals** every ply, then at `game_over` re-compute OUR
+farm points independently with the engine's own scorer and compare them to their
+`score_detail["field"]`. Fields score only at game end in both engines, so that
+comparison is a genuine farm-vs-farm number — which is what licenses the word *farms*
+in any later sentence, rather than an inference from agreeing totals.
+
+`ms` / `playouts` are per-move and only meaningful for a search player
 (`ms` for the external seat is the driver-side round-trip and should be ignored;
 Python times the champion itself).
 
