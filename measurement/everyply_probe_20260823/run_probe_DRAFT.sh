@@ -123,9 +123,18 @@ require_owed_builds() {
 # ⛔ READ_RULE §3 G-KNOWNGOOD. Runs the `knowngood` SUBCOMMAND ONLY -- `grade`,
 # `preflight` and `sweep` call require_knowngood against constants hard-pinned to
 # the OLD 733/399 corpus and would fail-always here (DESIGN §6.2).
+# ⚠️ probe_pickers.py's `--if-records`/`--arb-records` (and analyze_tiearb.py's
+# DEFAULT_ARB_ROOTS fallback it uses when --arb-records is absent) default to
+# LOCAL-BOX literal paths under /mnt/c/carc-shared. $SHARE (resolved above, per
+# $ROLE) is this launcher's own share-root variable -- pass it explicitly so
+# those python-side defaults never fire on a remote box.
 gate_knowngood() {
   log "GATE G-KNOWNGOOD -- probe_pickers.py knowngood (must reproduce arb=+0.2065)"
   run nice -n 19 "$PY" "$REPO/scripts/tiletie/probe_pickers.py" knowngood \
+      --if-records "$SHARE/tiletie_pricing_20260812/clair-puct" \
+      --arb-records "$SHARE/tiletie_oof_20260814/merged" \
+      --arb-records "$SHARE/tiletie_oof_20260814/pilot" \
+      --arb-records "$SHARE/tiearb_20260816/merged" \
       --out-dir "$DIR" >> "$LOGS/knowngood.log" 2>&1
   local rc=$?
   if [ "$DRY" -eq 0 ] && [ "$rc" -ne 0 ]; then
