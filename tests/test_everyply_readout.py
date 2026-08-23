@@ -922,14 +922,15 @@ def test_afterstate_dedupe_is_build_positions_own_validator():
 def test_pooled_q_is_refused_on_a_non_python_backend(monkeypatch):
     """DESIGN §3.1's named BUILD RISK, made mechanical: the pooled root Q lives
     only in the PYTHON `fair_agent.pooled_q_argmax` hook."""
-    class _Ex:
-        backend = "rust"
-        rust_threads = 1
-        source = "profile"
-
     import carcassonne_ai.mirror_protocol as MP
 
-    monkeypatch.setattr(MP, "resolve_execution", lambda *a, **k: _Ex())
+    # A real `Execution` (dict-based: only `backend`/`is_rust` are properties,
+    # `rust_threads`/`source` are dict keys) -- a bare-attribute stand-in here
+    # previously masked the `ex.rust_threads`/`ex.source` AttributeError that
+    # `check_arm_builder_backend` actually raises against the real class.
+    ex = MP.Execution(backend="rust", rust_threads=1, parallel_workers=None,
+                       profile="desktop", source="profile")
+    monkeypatch.setattr(MP, "resolve_execution", lambda *a, **k: ex)
     with pytest.raises(SystemExit, match="pooled_q"):
         EC.check_arm_builder_backend("pooled_q")
     got = EC.check_arm_builder_backend("leaf_topk")

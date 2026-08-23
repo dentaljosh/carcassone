@@ -363,8 +363,8 @@ def check_arm_builder_backend(arm_builder: str) -> dict:
     ex = MP.resolve_execution("inherit", profile="desktop", rust_threads=1)
     if arm_builder == "pooled_q" and ex.backend != "python":
         raise SystemExit(POOLED_Q_BACKEND_REFUSAL.format(backend=ex.backend))
-    return {"backend": ex.backend, "rust_threads": ex.rust_threads,
-            "source": ex.source, "arm_builder": arm_builder}
+    return {"backend": ex.backend, "rust_threads": ex["rust_threads"],
+            "source": ex["source"], "arm_builder": arm_builder}
 
 
 def _cell(item: tuple) -> dict:
