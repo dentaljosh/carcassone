@@ -1,8 +1,4 @@
-> ⛔ **DRAFT — NOT BLIND-COMMITTED — NOT LAUNCHED.** Prepared 2026-08-23 under
-> `docs/TRACK_D_PREP_2026-08-23.md`. No band is claimed, no games have been played,
-> no owner authorization exists. The blind-commit discipline (freeze the pair, commit
-> it, stamp `BLIND_COMMIT=<sha>` before game 1) is DEFERRED to the orchestrator —
-> nothing here may be cited as a pre-registration until that commit exists.
+> ⛔→✅ **FROZEN 2026-08-23 (the blind commit is THE COMMIT THAT INTRODUCES THIS BANNER; its sha is stamped into `run_cells.sh` in the follow-up commit, per the b32v64 pattern).** Drafted under `docs/TRACK_D_PREP_2026-08-23.md`; reviewed by the orchestrator (one REQUIRED amendment: the COARSE/COMPRESSED dispersion-conditional boundary, applied pre-freeze). Launch authorization: the owner's 2026-08-23 directive (prep Track D + "if everything were ready to launch... launch shortest wallclock first" + "you take it from here"). No statistic of any kind exists at freeze time.
 
 # READ_RULE — rung compression (D2)
 
