@@ -119,15 +119,38 @@ each one moves either the fairness of the pairing or the projected wall:
    our champion's wall-clock, not their strength. Wall and thread-CPU tracked to within
    0.1 % on an idle box (measured: 50.19 ms wall vs 50.19 ms CPU at a 50 ms budget); they
    will diverge under load, and the readout reports **both**.
-3. **Their throughput on our hardware is ~2× the thesis's, so this is a STRONGER
-   Carcasum than the one that published 84 %.** Measured at a 50 ms budget: ~892
-   playouts/turn ⇒ ~17.8 k playouts/s ⇒ **~89 k playouts/turn at 5 s**, against the
-   thesis's **42,879** on a 2014 Xeon E3-1230v2. That is inventory §3.1 item 5 confirmed
-   with a number, and it cuts *toward* the candidate. It also means the thesis's own
-   numbers are **not** the numbers we would measure, which is a further reason §0.1
-   refuses to carry the +188 forward. (Extrapolation from 50 ms is linear-in-time and
-   the tree grows, so treat ~89 k as an estimate to be replaced by the gate-6 smoke's
-   measurement at the real budget.)
+3. **Their throughput on our hardware is NOT above the thesis's — MEASURED, and this
+   corrects an earlier estimate in this document.** A draft of this section claimed
+   *"~2× the thesis's, so this is a STRONGER Carcasum than the one that published 84 %"*,
+   extrapolated linearly from a **50 ms** budget on the local box and flagged there as an
+   estimate pending the gate-6 smoke. The smoke measured it at the real budget and
+   overturned it ([`SMOKE_READOUT.md`](../carcasum_smoke_20260823/SMOKE_READOUT.md) §2).
+
+   A Carcasum playout is a **full random rollout to the end of the game**, so playouts/turn
+   is violently skewed: ~28 k in the opening, ~2.6 M on the last few plies where a rollout
+   is one or two plies long. Against the thesis's **42,879 playouts/turn**:
+
+   | statistic | ours | vs thesis |
+   |---|---|---|
+   | mean | 163,786 | 3.82× — **an artefact of endgame plies; do not quote** |
+   | **median** | 46,332 | **1.08×** — parity |
+   | **opening (ply 0–9)** | 27,915 | **0.65×** — *slower* |
+
+   The plies that decide a game run at **0.65–1.1×** the thesis's throughput. So the
+   opponent we will face is, in throughput terms, roughly *the* thesis's Carcasum — **not a
+   stronger one**. Inventory §3.1 item 5 ("a modern Carcasum is stronger than the thesis's,
+   which cuts toward the candidate") therefore **does not survive measurement on this
+   hardware** and must not be carried into the readout. It does not push the other way
+   either: it removes a thumb from the scale, and §0.1's refusal to carry the transitive
+   +188 forward stands unchanged.
+
+   Budget fidelity is excellent: **5016.2 ms/turn mean against a 5000 ms setting (+0.3 %),
+   with 0 of 142 turns exceeding budget + 200 ms.**
+
+4. **Realized cost, for the record.** Champion **763.0 ms/move**; opponent **5016.2
+   ms/turn**; **228.5 s wall per game**, which decomposes as
+   `36 × 5.016 + 67 × 0.763 = 231.7 s` — only one side thinks at a time, so a game holds
+   ≈ 1 core for its whole duration. That is the basis of the wall projection in §4.3.
 
 ---
 
@@ -228,6 +251,30 @@ So the harness now **refuses to guess a coordinate frame**:
 
 **A coordinate bug must never be able to masquerade as a rules finding.** That sentence is the
 gate.
+
+---
+
+### 4.3 Projected wall, and why W is a throughput knob and not a strength knob
+
+Basis: **228.5 s/game** measured at W=4 on the idle laptop (24 cores), with a game holding
+≈ 1 core for its duration (both sides single-threaded, strictly alternating).
+
+| workers | linear | with contention allowance |
+|---|---|---|
+| W=8 | 3.17 h | ~3.2–3.5 h |
+| **W=14** | 1.81 h | **~2.0 h — recommended** (smallest W within ~10 % of practical peak) |
+| W=22 | 1.15 h | ~1.4 h (22 of 24 cores; DRAM contention is this project's known bottleneck) |
+
+**Contention cannot weaken the opponent.** Its budget is thread CPU-time, so a descheduled
+Carcasum still receives its full 5 CPU-seconds and searches exactly as deeply — it merely
+takes longer in wall terms. So raising W costs wall-clock per game and risks nothing about
+the *validity* of the comparison. That is an unusually comfortable property for a timed
+opponent and is worth stating explicitly, because the instinct from every other cell in
+this project is that parallelism perturbs the measurement.
+
+**Validate, don't trust.** This is a 4-game projection. Read the realized
+`wall_secs_per_game_mean` off the first ~20 finished games and re-project before assuming
+the total.
 
 ---
 

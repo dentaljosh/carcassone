@@ -1,0 +1,28 @@
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=2 seats=[0, 1] repeats=1 workers=4 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=0 todo=4
+[carcasum-match] binary=vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/4] deck=5200000 champ_seat=1 rep=0 scores=[68, 102] void=None champ=653.2ms/mv opp=5015.9ms/turn (177180.2 playouts) replay_ok=True
+[2/4] deck=5200000 champ_seat=0 rep=0 scores=[88, 68] void=None champ=772.0ms/mv opp=5015.8ms/turn (131427.9 playouts) replay_ok=True
+[3/4] deck=5200001 champ_seat=1 rep=0 scores=[97, 91] void=None champ=781.2ms/mv opp=5015.6ms/turn (191761.0 playouts) replay_ok=True
+[4/4] deck=5200001 champ_seat=0 rep=0 scores=[72, 77] void=None champ=845.4ms/mv opp=5017.5ms/turn (153591.1 playouts) replay_ok=True
+
+[carcasum-match] DONE 4 games in 3.9 min
+{
+ "n_records": 4,
+ "n_scored": 4,
+ "voids": {},
+ "wins": 2,
+ "draws": 0,
+ "losses": 2,
+ "win_rate": 0.5,
+ "n_paired_decks": 2,
+ "paired_margin_mean": 10.75,
+ "paired_margin_sem": 16.25,
+ "mean_margin_unpaired": 10.75,
+ "elo_from_win_rate": -0.0,
+ "champ_ms_per_move_mean": 763.0,
+ "opp_driver_ms_per_turn_mean": 5016.2,
+ "opp_driver_playouts_per_turn_mean": 163490.0,
+ "wall_secs_per_game_mean": 228.5,
+ "replay_failures": []
+}
+exit=0
