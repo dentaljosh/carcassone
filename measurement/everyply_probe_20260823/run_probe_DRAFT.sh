@@ -185,7 +185,7 @@ stage_corpus() {
   if [ -f "$DIR/DONE_corpus_chunk$k" ]; then log "corpus chunk$k already DONE -- skipping"; return 0; fi
   log "STAGE corpus chunk$k -- fresh champion search x positions (t_champ ~13.8-25 s each)"
   run nice -n 19 "$PY" "$REPO/scripts/tiletie/build_everyply_corpus.py" \
-      --mode arms \
+      --mode arms --arm-builder leaf_topk \
       --selection "$DIR/SELECTION.jsonl" --chunk "$k" \
       --out-dir "$DIR/positions_chunk$k" \
       --rules-profile walled \
