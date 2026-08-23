@@ -82,8 +82,19 @@ def rules_profile_block() -> dict:
     return active().as_manifest()
 
 
+# Top-level manifest keys this writer owns. `extra=` may never shadow one of them:
+# a launcher-supplied stamp that overwrote `code_rev` or `rules_profile` would turn
+# the provenance block into a claim the launcher made rather than one the process
+# observed, which is the exact failure mode manifests exist to prevent.
+RESERVED_TOP_LEVEL_KEYS = (
+    "kind", "game", "code_rev", "host", "utc", "leaf_env", "rules_profile",
+    "config", "evaluator",
+)
+
+
 def write_manifest(out_dir, *, kind: str, game: str, config: dict,
-                   overwrite: bool = False, evaluator: dict | None = None) -> Path:
+                   overwrite: bool = False, evaluator: dict | None = None,
+                   extra: dict | None = None) -> Path:
     """Write <out_dir>/manifest.json with resolved config + provenance.
 
     Skips if a manifest already exists (so racing multi-box --shared-claim workers
@@ -93,6 +104,15 @@ def write_manifest(out_dir, *, kind: str, game: str, config: dict,
     `eval_provenance.build_eval_provenance` (checkpoint SHA256, full commit, argv,
     per-side leaf/value config, runtime-verified counters). Stored verbatim under
     manifest["evaluator"]. Absent for legacy callers (back-compat).
+
+    `extra` (optional): launcher-controlled passthrough keys, merged at manifest
+    TOP LEVEL verbatim. Built for pre-registration stamps a read-rule reads by name
+    at a fixed address (the `BLIND_COMMIT` case: a cell's pre-registration sha has
+    to be IN the artifact, and no harness field carried it). Keys are refused if
+    they collide with anything this writer already wrote (`RESERVED_TOP_LEVEL_KEYS`
+    plus `evaluator` when present) — a stamp may ADD provenance, never restate or
+    overwrite provenance the process itself observed. `None`/empty leaves the
+    manifest byte-identical to a call that never passed the argument.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -116,6 +136,16 @@ def write_manifest(out_dir, *, kind: str, game: str, config: dict,
     }
     if evaluator is not None:
         manifest["evaluator"] = evaluator
+    for k, v in (extra or {}).items():
+        if not isinstance(k, str) or not k:
+            raise ValueError(f"write_manifest(extra=...): key must be a non-empty str, got {k!r}")
+        if k in manifest:
+            raise ValueError(
+                f"write_manifest(extra=...): refusing to overwrite manifest key {k!r} "
+                f"(reserved: {RESERVED_TOP_LEVEL_KEYS}). A stamp may add provenance, "
+                "never shadow provenance this writer observed."
+            )
+        manifest[k] = v
     tmp = out_dir / f".manifest.{os.getpid()}.tmp"
     tmp.write_text(json.dumps(manifest, indent=2, default=str))
     tmp.replace(mpath)  # atomic

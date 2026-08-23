@@ -3060,6 +3060,84 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# --stamp-key: LAUNCHER-CONTROLLED MANIFEST PASSTHROUGH.                       #
+#                                                                             #
+# Why this exists (D2 / track_d2r2_prep, G-TOOL): a pre-registration's blind   #
+# commit sha has to be READABLE IN THE ARTIFACT, at an address a read-rule can #
+# name before game 1. This harness had no such address — `leaf_env` is an      #
+# ALLOWLIST of leaf knobs (`run_manifest._LEAF_ENV_KEYS`) and lands at         #
+# `manifest["leaf_env"][...]`, which is neither manifest top level nor         #
+# `config.*`, the two addresses the house read-rules search. So a gate reading #
+# "BLIND_COMMIT is stamped in both manifests" was UNSATISFIABLE against this   #
+# harness at any address — a healthy run could not pass it. That is precisely  #
+# the class the structural test exists to catch, and it shipped once; this     #
+# flag is the smallest honest fix.                                            #
+#                                                                             #
+# The stamp is written to BOTH searched addresses, identically (the same       #
+# belt-and-braces the `cand_tiearb` block above uses, and for the same reason: #
+# no read-rule should have to win an argument about which address is           #
+# canonical):                                                                  #
+#     manifest["<KEY>"]                       (top level, via write_manifest   #
+#                                              extra=)                         #
+#     manifest["config"]["stamps"]["<KEY>"]   (under config.*)                 #
+#                                                                             #
+# It is INERT unless passed: no --stamp-key => no `stamps` block and no extra  #
+# top-level key, so every existing cell's manifest is byte-identical.          #
+#                                                                             #
+# A stamp is DOCUMENTATION, never an input: nothing in this harness reads it   #
+# back, and it may not shadow a key the harness itself writes (below).         #
+# --------------------------------------------------------------------------- #
+# Top-level manifest keys this harness writes or patches. A stamp that reused
+# one would let a launcher ASSERT provenance the process is supposed to OBSERVE.
+_STAMP_KEY_FORBIDDEN = frozenset(_run_manifest_reserved := (
+    # run_manifest.write_manifest's own block
+    "kind", "game", "code_rev", "host", "utc", "leaf_env", "rules_profile",
+    "config", "evaluator",
+    # _patch_failure_manifest
+    "n_failed", "failure_rate", "n_failed_this_leg", "validity_trigger_fired",
+    "failed_cells", "failed_by_seat", "failed_classes", "n_resolved_failures",
+    "resolved_failed_cells",
+    # the tie-arbiter + rust-provenance + end-timestamp patches at close-out
+    "cand_tiearb", "rust_toolchain", "carc_rs_build", "carc_rs_version",
+    "carc_rs_binary_sha", "mixed_builds", "utc_end",
+))
+del _run_manifest_reserved
+
+
+def _parse_stamp_keys(items):
+    """`["K=V", ...]` -> `{"K": "V", ...}`. Fail-loud on every malformed shape.
+
+    Values stay STRINGS verbatim (no JSON coercion): a sha, a run id and a date
+    all round-trip exactly, and a reader never has to know whether `0123` was
+    stamped as an int. Keys are ASCII identifier-shaped so the stamp can be read
+    with `jq .KEY manifest.json` without quoting games."""
+    out = {}
+    for item in items or ():
+        if "=" not in item:
+            raise ValueError(f"--stamp-key must be KEY=VALUE (got {item!r})")
+        k, v = item.split("=", 1)
+        k = k.strip()
+        if not k or not (k[0].isalpha() and k[0].isascii()):
+            raise ValueError(f"--stamp-key: key must start with an ASCII letter (got {k!r})")
+        if not all((c.isascii() and (c.isalnum() or c == "_")) for c in k):
+            raise ValueError(
+                f"--stamp-key: key must be [A-Za-z][A-Za-z0-9_]* (got {k!r})")
+        if len(k) > 64:
+            raise ValueError(f"--stamp-key: key longer than 64 chars ({k!r})")
+        if k in _STAMP_KEY_FORBIDDEN:
+            raise ValueError(
+                f"--stamp-key: {k!r} is a manifest key this harness writes itself. "
+                "A stamp ADDS provenance; it may never restate or shadow provenance "
+                "the process observed.")
+        if k in out:
+            raise ValueError(f"--stamp-key: duplicate key {k!r}")
+        if len(v) > 4096:
+            raise ValueError(f"--stamp-key: value for {k!r} longer than 4096 chars")
+        out[k] = v
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="eval_fair_puct")
     ap.add_argument("--info", choices=("fair", "clair", "fair-net", "fair-netprior"),
@@ -3445,6 +3523,17 @@ def main(argv=None) -> int:
                          "manifest.json (cand_leaf_cfg / cand_leaf_hash / "
                          "champion.netprior_leaf), along with cand_curve_drift_allowed. "
                          "The curve must still be 8 finite floats.")
+    ap.add_argument("--stamp-key", action="append", default=None, metavar="KEY=VALUE",
+                    help="LAUNCHER-CONTROLLED MANIFEST STAMP, repeatable. Writes KEY=VALUE "
+                         "(value kept as a verbatim string) to BOTH manifest addresses the "
+                         "house read-rules search: top level `manifest[\"KEY\"]` AND "
+                         "`manifest[\"config\"][\"stamps\"][\"KEY\"]`. Built for "
+                         "pre-registration provenance a read-rule names before game 1 — "
+                         "e.g. `--stamp-key BLIND_COMMIT=$(cat BLIND_COMMIT)`. PURELY "
+                         "DOCUMENTARY: nothing in this harness reads it back, it changes no "
+                         "game, and it is refused if the key collides with any manifest key "
+                         "the harness writes itself. Absent -> the manifest is byte-identical "
+                         "to a run that never passed the flag.")
     ap.add_argument("--summary-only", action="store_true")
     ap.add_argument("--no-results-csv", action="store_true",
                     help="do not append to experiments/results.csv (this eval NEVER writes it; "
@@ -3587,6 +3676,13 @@ def main(argv=None) -> int:
         args.net_mode = "residual"
     if args.net_lambda is None:
         args.net_lambda = 0.25
+
+    # Launcher-controlled manifest stamps (--stamp-key). Parsed EARLY and fail-loud:
+    # a malformed pre-registration stamp must abort before game 1, not after 800 games.
+    try:
+        _stamps = _parse_stamp_keys(args.stamp_key)
+    except ValueError as e:
+        ap.error(str(e))
 
     # C5 Stage-3 candidate-leaf override (--cand-leaf-json). None -> the FAIR champion
     # keeps env DEFAULT_CONFIG (byte-identical to today). The h800 rung NEVER takes it.
@@ -4681,8 +4777,15 @@ def main(argv=None) -> int:
         }
         man_cfg["intra_turn_reuse"] = intra_block
         man_cfg["champion"]["intra_turn_reuse"] = intra_block
+    # --stamp-key, at BOTH addresses a house read-rule searches (manifest top level,
+    # then `config.*`). Added ONLY when the flag was passed, so an unstamped cell's
+    # manifest is byte-identical to the pre-change output. See the _parse_stamp_keys
+    # block for why the top-level+config double-write is deliberate.
+    if _stamps:
+        man_cfg["stamps"] = dict(_stamps)
     write_manifest(out, kind="eval_fair_puct", game=game_tag(Game()),
-                   config=man_cfg, overwrite=True)
+                   config=man_cfg, overwrite=True,
+                   extra=(dict(_stamps) if _stamps else None))
     # THE TIE ARBITER's resolved knob, ALSO stamped at manifest TOP LEVEL.
     # ⚠️ Deliberate belt-and-braces, and the reason is a real discrepancy in the
     # pre-registration: DESIGN §4 / READ_RULE §3 `G-J4` originally read

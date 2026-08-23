@@ -1,10 +1,65 @@
-> ⛔→✅ **FROZEN 2026-08-23 (the blind commit is THE COMMIT THAT INTRODUCES THIS BANNER; its sha is stamped into `run_cells.sh` in the follow-up commit, per the b32v64 pattern).** Drafted under `docs/TRACK_D_PREP_2026-08-23.md`; reviewed by the orchestrator (one REQUIRED amendment: the COARSE/COMPRESSED dispersion-conditional boundary, applied pre-freeze). Launch authorization: the owner's 2026-08-23 directive (prep Track D + "if everything were ready to launch... launch shortest wallclock first" + "you take it from here"). No statistic of any kind exists at freeze time.
+> ## §0 — PROVENANCE BANNER (the pre-registered instrument-fix successor)
+>
+> ⛔→✅ **FROZEN 2026-08-23 (the blind commit is THE COMMIT THAT INTRODUCES THIS BANNER; its sha is stamped into `run_cells.sh` in the follow-up commit, per the b32v64 pattern). No statistic of any kind exists at freeze time.**
+>
+> **1. What this is.** This pair is the **pre-registered instrument-fix successor** to
+> [`../track_d2_prep/DESIGN.md`](../track_d2_prep/DESIGN.md) / [`READ_RULE.md`](../track_d2_prep/READ_RULE.md),
+> whose first attempt adjudicated **`U-UNREADABLE`** — the branch its own §4 names for a gate
+> failure, and a fully acceptable outcome. Four INSTRUMENT gates failed. **No strength or spacing
+> statistic from that run is adjudicated, quoted, or carried here**, and none was consulted in
+> drafting this one.
+>
+> **2. This drafting session is STATISTICS-BLIND, per the first pair's §4 binding.** That clause
+> reads, verbatim: *"If an instrument defect is found after a first adjudication, the session that
+> writes the fix MUST be a session that has not seen `S`, `z_S`, or either cell's summary
+> statistics."* The session that wrote this pair and the fixed launcher did not open the first
+> attempt's `READOUT_D2.*`, any `summary.json`, or any per-game record. It read the frozen pair
+> (which predates the run), the harness source, and a mechanics-only description of the four gate
+> failures. **Bars do not move. §4 is not edited. Every §-numbered rule, branch, gate, and `n`
+> below is VERBATIM from the frozen original.**
+>
+> **3. What changed, exhaustively:** the run id (`track_d2_prep` → `track_d2r2_prep`); the band
+> (`141000000000` → **`143000000000`**, §5) and the pilot's disjoint range
+> (`141999999000..007` → `143999999000..007`, §9); the launcher (§7/§9 references now point at the
+> FIXED [`run_cells.sh`](run_cells.sh)); this banner; and the §3.1 structural test, re-run over
+> **ALL** gates including `G-TOOL` (DESIGN §7 tail and [`READ_RULE.md`](READ_RULE.md) §3.1).
+> Nothing else.
+>
+> **4. THE FOUR INSTRUMENT FIXES**, each closing one of the four failed gates:
+>
+> | # | gate that failed | mechanism of the failure | the fix, in this launcher |
+> |---|---|---|---|
+> | 1 | `G-RULES` | the first launcher never exported `CARCASSONNE_FIX_R9`, so `fixed_v1` cells ran with `r9_env_ok=False`. R9 **cannot** live in the rules profile — `base_deck` derives farm data at IMPORT time and the Rust registry latches a `OnceLock`, so it must be in the ENVIRONMENT before the process starts | `run_cells.sh` **exports `CARCASSONNE_FIX_R9=1` at file scope**, before any leg including `--pilot` and `--dry-run`, and `assert_r9_env` REFUSES to run if it is unset or not truthy |
+> | 2 | `G-LEAF` | the probe played the **rung-default v2.9 leaf**, not the champion `curve125` leaf: for `--info fair --opponent h800` the harness does not auto-inject `curve125` (that fires only for `fair-netprior` / head-to-head / `bare-net` / `greedy`), so `cand_leaf_hash` read a non-champion hash in both cells | the champion leaf is injected the way production play does it — **in-process via `--cand-leaf-json`** ([`champion_leaf_curve125.json`](champion_leaf_curve125.json)), never by exporting the curve env (which would move `DEFAULT_CONFIG` and therefore MOVE THE RUNG). `preflight_leaf` builds one champion **through the harness's own module** and asserts, before game 1, candidate `== a36d2e15a3b3d71d` **and** rung `== 42af12fce22e1a0f` |
+> | 3 | `G-TOOL` (a) | the two cells ran at **different repo revs** — a commit landed on main between the legs via a freeze-latch override — so the pair was not one instrument | the launcher **snapshots `git rev-parse HEAD` + a code-path dirty fingerprint at start and RE-CHECKS before EACH cell**, refusing to start a subsequent cell if either moved, loud, with both revs named. Plus a **dirty-CODE refusal** for real cells (pilot exempt), overridable only by `LAUNCH_DIRTY=1` with a mandatory `LAUNCH_DIRTY_REASON`, logged |
+> | 4 | `G-TOOL` (b) | the "`BLIND_COMMIT` in both manifests" sub-clause was **UNSATISFIABLE**: `eval_fair_puct.py` had no stamping path at any address the read-rule searches (its `leaf_env` block is an allowlist of leaf knobs and lands at `manifest["leaf_env"][...]`, which is neither manifest top level nor `config.*`) | a minimal, additive **`--stamp-key KEY=VALUE`** passthrough was added to the harness's manifest writer (inert unless passed; tested). The launcher routes the `BLIND_COMMIT` file's content through it, landing the stamp at **BOTH** searched addresses: **`manifest["BLIND_COMMIT"]`** and **`manifest["config"]["stamps"]["BLIND_COMMIT"]`** |
+>
+> **5. ⚠️ THE §9 PILOT'S ONE RE-PICK IS ALREADY SPENT AND CARRIES.** The probe budget that runs
+> is **k4×1032**, not the `--sims 688` written in §3.1 below. That re-pick was taken under §9's
+> *"`--sims` is re-picked **ONCE**, on the pilot, and **FROZEN** before any cell seed is touched"*
+> — on the **discarded** first-attempt pilot band, **before any cell ran and therefore before any
+> statistic existed**. It is an **execution-layer** value, not a bar, and it **carries verbatim**
+> into this successor: §3.1's frozen text is preserved unedited (bars do not move), and the
+> launcher's `COMMON` array is the operative value. **§9's re-pick allowance is now EXHAUSTED** —
+> a pilot-ratio FAIL here is a pair-level decision for the orchestrator, not a second re-pick.
+>
+> **6. ⚠️ §6's cost arithmetic is the 688-era figure and reads LOW.** The probe runs at 1.5× the
+> per-move sims §6 costed, so the probe side of each cell costs proportionally more; the
+> rung-dominated shape of `CELL R1600` (§6's actual point) is unchanged. §6 is preserved verbatim
+> because it is not a bar; the operative expectation is that both cells cost more wall-clock than
+> the numbers printed there.
+>
+> **7. Provenance of the original.** Drafted under `docs/TRACK_D_PREP_2026-08-23.md`; reviewed by
+> the orchestrator (one REQUIRED amendment: the COARSE/COMPRESSED dispersion-conditional boundary,
+> applied pre-freeze). Launch authorization: the owner's 2026-08-23 directive (prep Track D + "if
+> everything were ready to launch... launch shortest wallclock first" + "you take it from here").
+> That authorization funded the *question*; §0's four owner sign-offs below are owed again for
+> this band.
 
 # RUNG COMPRESSION: IS THE REFERENCE LADDER'S SPACING A USABLE UNIT? — DESIGN (DRAFT)
 
-Run id `track_d2_prep`. Pair: this file + [`READ_RULE.md`](READ_RULE.md). Launcher (drafted,
-non-executable): [`run_cells.sh`](run_cells.sh) (drafted here as `run_cells_DRAFT.sh`; renamed at
-blind-commit time — POINTER REPAIR ONLY, no text of this pair changed). Band claim (drafted, not appended):
+Run id `track_d2r2_prep`. Pair: this file + [`READ_RULE.md`](READ_RULE.md). Launcher (drafted,
+non-executable): [`run_cells.sh`](run_cells.sh). Band claim (drafted, not appended):
 [`BAND_CLAIM_DRAFT.json`](BAND_CLAIM_DRAFT.json). Roadmap item **D2**
 ([`../../docs/PROGRAM_ROADMAP_2026-07-07.md`](../../docs/PROGRAM_ROADMAP_2026-07-07.md), Track D).
 
@@ -21,19 +76,19 @@ owner signs off on all four of the following, explicitly, before game 1:
 | # | owed sign-off | why it is the owner's call, not this draft's |
 |---|---|---|
 | (a) | **funding the ~16 core-hours** (§6) | this is spend, and the standing cost-discipline rule requires a one-sentence confirm before anything that burns time |
-| (b) | **the band claim** — 141000000000 (§5) | `governance/BAND_REGISTRY.csv` is a source of truth the orchestrator edits, not a builder |
+| (b) | **the band claim** — 143000000000 (§5) | `governance/BAND_REGISTRY.csv` is a source of truth the orchestrator edits, not a builder |
 | (c) | **the probe-budget choice** — k4×688 = 2752, the equal-time reading (§3) — vs the optional k8×1376 = 11008 production-agent extension (§6) | two different questions at two different costs; the owner picks which is funded |
 | (d) | **tie-arbiter OFF** | the probe P is the pre-arbiter fair PIMC champion; running WITH the arbiter would confound the rung-spacing question with the arbiter's own tied-ply behavior, which is exactly the class of confound this cell exists to avoid introducing |
 
 **Pre-launch checklist** (mirrors the jcz / b32v64 precedent, all must be true before any real
 cell fires):
 
-- [ ] band claimed in [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv) (141000000000, per §5)
+- [ ] band claimed in [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv) (143000000000, per §5)
 - [ ] this pair (`DESIGN.md` + `READ_RULE.md`) frozen and committed to `main`
-- [ ] `BLIND_COMMIT=<sha>` stamped into the launcher's config (§ launcher, `run_cells_DRAFT.sh` currently reads a placeholder and refuses to run without it)
+- [ ] `BLIND_COMMIT=<sha>` stamped into the launcher's config (§ launcher, `run_cells.sh` currently reads a placeholder and refuses to run without it)
 - [ ] the §9 pilot has run and its gate has PASSED (equal-time ratio inside [0.85, 1.20])
 - [ ] process census clean on every box this cell touches (standing repo rule — census before any launch)
-- [ ] `RUN_LIVE.json` sentinel dropped for the duration (freeze-latch discipline; see `run_cells_DRAFT.sh`)
+- [ ] `RUN_LIVE.json` sentinel dropped for the duration (freeze-latch discipline; see `run_cells.sh`)
 
 ---
 
@@ -340,14 +395,14 @@ here so a future "just add n" ask does not have to re-derive it (jcz DESIGN §4.
 
 ## 5. THE BAND
 
-**Band `141000000000`** — the next free step-aligned start in
+**Band `143000000000`** — the next free step-aligned start in
 [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv). Registry high-water
-at draft time is **140000000000** (the B=32-vs-B=64 tie-arbiter ladder cell, retired 2026-08-22).
+at draft time is **141000000000** (the FIRST D2 attempt's own band, spent on the U-UNREADABLE run and retired with it; 142000000000 is spoken for by the drafted `../carcasum_match_prep/PREREG_DRAFT.md` row).
 
 ⛔ **NOT CLAIMED.** The row is DRAFTED in [`BAND_CLAIM_DRAFT.json`](BAND_CLAIM_DRAFT.json) and
 must be appended to the registry by the orchestrator before launch.
 
-Seeds `141000000000 .. 141000000199` (200 decks), used by **BOTH** cells (CRN by design — the
+Seeds `143000000000 .. 143000000199` (200 decks), used by **BOTH** cells (CRN by design — the
 same deck set, same seatings, feeding §4's paired statistic).
 
 Per CL-068, **band identity is load-bearing**: never pool D2's numbers across bands, and this
@@ -405,7 +460,7 @@ adjudicated. This section is the summary; `READ_RULE.md` §3 is the binding text
 
 | id | proposition | VOIDS on |
 |---|---|---|
-| `G-BAND` | both cells' `manifest.json` `seed_start` == 141000000000; deck sets identical; `n_common` == 200 | mismatch |
+| `G-BAND` | both cells' `manifest.json` `seed_start` == 143000000000; deck sets identical; `n_common` == 200 | mismatch |
 | `G-SINGLEVAR` | the two cells' argv differ in exactly `--rung-sims`, `--out-subdir`, `--claim-host` and nothing else — diffed directly from the two `manifest.json` `config` blocks | any other differing key |
 | `G-RUNG` | both manifests' `config.rung.c` == 3.0, `config.rung.agent` == `"HeuristicMCTS"`, `config.rung.leaf_hash` identical across cells, `config.rung.sims` == 800 / 1600 respectively | any deviation |
 | `G-LEAF` | `config.cand_leaf_hash` == `a36d2e15a3b3d71d` in both cells | mismatch or absence |
@@ -417,13 +472,23 @@ adjudicated. This section is the summary; `READ_RULE.md` §3 is the binding text
 
 **The structural test** (jcz READ_RULE §0.F precedent): every gate above must be SATISFIABLE by
 construction before launch — a gate that cannot pass on a healthy run is fixed BEFORE game 1,
-never discovered after. Applied here: `G-SINGLEVAR` is guaranteed by building both cells' argv
-from one shared `COMMON` array in the launcher (§ launcher); `G-RUNG`/`G-LEAF`/`G-RULES` are
-guaranteed by the harness's own manifest-writing behavior, already exercised identically by every
-F5/tiearb cell that preceded this one; `G-TIMING`'s interval is set from the §3.2 equal-time
-derivation with room either side, and the §9 pilot re-picks `--sims` ONCE if it is violated,
-before any cell band is touched. Answer for every gate: **would this gate fail on every healthy
-run of this launcher? NO.**
+never discovered after. **The binding text is [`READ_RULE.md`](READ_RULE.md) §3.1, which for this
+successor is RE-RUN OVER ALL NINE GATES**, including the three the first attempt's audit skipped
+(`G-BAND`, `G-TOOL`, `G-SAT`). That omission is why this pair exists: `G-TOOL`'s
+`BLIND_COMMIT`-in-both-manifests sub-clause was structurally unsatisfiable against the harness at
+either address the read-rule searches, and the audit that exists to catch exactly that never
+asked it. **A partial structural test is the failure mode, not a lighter version of the test.**
+Summary of the answers, in gate order: `G-BAND` pinned from one `COMMON` array; `G-SINGLEVAR`
+structural in that same array (and none of the four fixes widens it — they are identical in both
+cells); `G-RUNG` and `G-LEAF` now VALUE-checked before game 1 by the launcher's `preflight_leaf`
+(rung `42af12fce22e1a0f`, candidate `a36d2e15a3b3d71d`, asserted distinct); `G-RULES` satisfiable
+only because the launcher now exports `CARCASSONNE_FIX_R9` and refuses to run without it;
+`G-TOOL` (a) harness-written, (b) now pinned by a start-of-run rev snapshot re-checked before each
+cell, (c) now satisfiable via the additive `--stamp-key` passthrough writing `BLIND_COMMIT` to
+BOTH searched addresses; `G-N` from `--n 400`; `G-TIMING` from the §3.2 derivation, verified by
+the §9 pilot (whose one re-pick is already SPENT — §0 item 5); `G-SAT` a genuine property of the
+data with room on both rails. Answer for every gate: **would this gate fail on every healthy run
+of this launcher? NO.**
 
 ---
 
@@ -453,7 +518,7 @@ Stated before launch so no branch can be narrated past them:
 
 ## 9. THE PILOT (pre-blind, mandatory, ~5 minutes)
 
-n=8 decks (`--n 16 --paired`) on a **SEPARATE seed range** `141999999000..141999999007` — never
+n=8 decks (`--n 16 --paired`) on a **SEPARATE seed range** `143999999000..143999999007` — never
 the cell band — running **CELL R800's config only**.
 
 **Purpose:**
