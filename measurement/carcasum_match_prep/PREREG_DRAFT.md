@@ -97,10 +97,37 @@ budget-shopping exercise with a post-hoc rung.
 |---|---|
 | **Ours** | the champion of record in `governance/PRODUCTION.yaml` at its deploy budget, rust backend, `verify=True`. Leaf hash stamped in every record's manifest. **No tie-arbiter lever** unless a separate cell says otherwise — the arbiter is a live, separately-governed contrast and mixing it in here would confound the reference reading. |
 | **Theirs** | `MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>`, `Cp = 0.5`, `reuseTree = false`, no node priors / progressive widening / progressive bias. **This is the exact configuration the thesis's 84 % was measured at** — and, per the thesis's own conclusions, *not their best* (they conclude a normalised Heyden evaluation + ε-greedy playouts is stronger). Deliberate: matching the published cell is worth more than maximising the opponent, and "their best" is a rung-2 question. |
-| **Their budget** | **`budget_ms = 5000`** — the thesis's 5 s/move. ⚠️ Their timer is `boost::chrono::thread_clock`, i.e. **thread CPU time, not wall clock**; under `nice -n 19` on a loaded box the wall cost can exceed 5 s while the search still gets its 5 CPU-seconds. Whatever the smoke measures is what the readout reports; the *pre-registered* budget is the 5000 ms setting, not a realized wall figure. |
+| **Their budget** | **`budget_ms = 5000`** — the thesis's 5 s/move. Three properties of that number, all verified against their source rather than assumed, and all load-bearing (§2.1). |
 | **Rules** | `fixed_v1` + `CARCASSONNE_FIX_R9=1`, both sides. **Not a knob.** Carcasum's `basic.xml` declares `RCr` as `<farm city="N">EL WR</farm>` — the same half-edge convention that produced R9 — so R9-off would reintroduce genuine farm-partition divergences. Games from this cell are therefore **not comparable to `walled` (R9-off) production elo**, the same caveat the JCZ match carries. |
 | **Their patches** | the modern tiny-city rule, and whatever else the audit forces — the exact list lives in `vendor/carcasum/CARCASUM_PATCHES.md` and is echoed by the driver's `ready` line into every manifest. A game whose manifest patch-list differs from the frozen one is not part of this cell. |
 | **Hardware** | one box, exclusive tenancy. **A timing bench is an exclusive tenant** — no agent compute, no other run, on the box for the duration. Which box: to be named at blind commit, after the smoke's projected wall (§4) is known. |
+
+### 2.1 What "5 s/move" actually means here
+
+Three things, each checked against their source and confirmed on our hardware, because
+each one moves either the fairness of the pairing or the projected wall:
+
+1. **The budget is per TURN, not per decision.** `MCTSPlayer::getMeepleMove` returns the
+   `meepleMove` already cached by `getTileMove` (`mctsplayer.tpp:162-165`) — one search
+   covers both halves of a turn. So 5 s/move costs ~5 s per turn, ~36 turns per player
+   per game, i.e. **~3 min of opponent thinking per game**, not the ~6 min a
+   per-decision reading would imply. The whole n=400 wall projection rests on this.
+2. **The clock is `boost::chrono::thread_clock` — thread CPU time, not wall clock**
+   (`USE_BOOST_THREAD_TIMER=1`, `static.h`). This is *good* for us and worth saying why:
+   the opponent gets its 5 CPU-seconds regardless of how loaded the box is, so **its
+   search size does not shrink when we run W workers in parallel**. Contention degrades
+   our champion's wall-clock, not their strength. Wall and thread-CPU tracked to within
+   0.1 % on an idle box (measured: 50.19 ms wall vs 50.19 ms CPU at a 50 ms budget); they
+   will diverge under load, and the readout reports **both**.
+3. **Their throughput on our hardware is ~2× the thesis's, so this is a STRONGER
+   Carcasum than the one that published 84 %.** Measured at a 50 ms budget: ~892
+   playouts/turn ⇒ ~17.8 k playouts/s ⇒ **~89 k playouts/turn at 5 s**, against the
+   thesis's **42,879** on a 2014 Xeon E3-1230v2. That is inventory §3.1 item 5 confirmed
+   with a number, and it cuts *toward* the candidate. It also means the thesis's own
+   numbers are **not** the numbers we would measure, which is a further reason §0.1
+   refuses to carry the +188 forward. (Extrapolation from 50 ms is linear-in-time and
+   the tree grows, so treat ~89 k as an estimate to be replaced by the gate-6 smoke's
+   measurement at the real budget.)
 
 ---
 
