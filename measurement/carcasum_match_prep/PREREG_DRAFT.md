@@ -133,12 +133,24 @@ each one moves either the fairness of the pairing or the projected wall:
 
 ## 3. Band plan — **planned, not claimed**
 
-Next free band is **1.41e11** (`governance/BAND_REGISTRY.csv` currently tops out at 1.40e11,
-retired). The row below is written out so the blind commit is a copy-paste, and is **not to be
-appended until the cell is authorised.**
+Next free band is **1.42e11**. The row below is written out so the blind commit is a
+copy-paste, and is **not to be appended until the cell is authorised.**
+
+> ⚠️ **This was 1.41e11 in the first draft of this document, and 1.41e11 is now TAKEN.**
+> It was free when the draft was written (the registry topped out at 1.40e11) and was
+> claimed while this harness was being built, by the **D2 rung-compression cell**, which
+> is *live on the local box right now* consuming `--seed-start 141000000000`. Caught by
+> the pre-launch process census, not by re-reading the registry — which is the argument
+> for the census being a reflex rather than a response.
+>
+> **The general lesson, worth more than the number:** a band planned in a document is
+> not a band reserved. Between drafting and blind-committing, re-read
+> `governance/BAND_REGISTRY.csv` **and** census the cluster for a live run whose
+> `--seed-start` falls in the planned range — a band can be in flight before its
+> registry row lands.
 
 ```
-band_seed_start : 141000000000
+band_seed_start : 142000000000
 label           : CARCASUM EXTERNAL-REFERENCE MATCH, RUNG 1 — champion vs Carcasum
                   MCTSPlayer<PortionUtility,RandomPlayout> @ Cp=0.5, budget 5000 ms/move,
                   fixed_v1 + CARCASSONNE_FIX_R9=1, deck-paired seat-swapped CRN.
@@ -147,8 +159,8 @@ status          : (open at commit)
 claimed_date    : (date of blind commit)
 decision_influenced : (blank until close-out)
 evidence_or_claim   : measurement/carcasum_match_prep/PREREG_DRAFT.md -> the committed prereg
-notes           : Seeds 141000000000..141000000199 = 200 decks x 2 seats = n=400.
-                  ** TOP-UP RANGE RESERVED UP FRONT: 141000000200..141000000299 **, consumed
+notes           : Seeds 142000000000..142000000199 = 200 decks x 2 seats = n=400.
+                  ** TOP-UP RANGE RESERVED UP FRONT: 142000000200..142000000299 **, consumed
                   ONLY if the §5 top-up branch fires. (Reserving up front is the lesson the
                   1.21e11 row had to record at close-out and the 1.19e11 row got right.)
 ```
