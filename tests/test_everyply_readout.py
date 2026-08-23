@@ -186,7 +186,7 @@ def _build(corpus, tmp_path, monkeypatch, *, blind_ok=True, knowngood_ok=True,
     out = tmp_path / "out"
     out.mkdir(exist_ok=True)
 
-    def _fake_kg(out_dir, python_exe=None, timeout=7200):
+    def _fake_kg(out_dir, python_exe=None, timeout=7200, if_records=None, arb_records=None):
         Path(out_dir).mkdir(parents=True, exist_ok=True)
         (Path(out_dir) / "KNOWNGOOD.json").write_text(json.dumps(
             {"ok": bool(knowngood_ok), "reproduced": {"arb": 0.2065}, "delta": {}}))
@@ -375,7 +375,7 @@ def test_gate_knowngood_runs_the_subcommand_first_and_refuses_on_failure(tmp_pat
                                                                         monkeypatch):
     calls = []
 
-    def _fake(out_dir, python_exe=None, timeout=7200):
+    def _fake(out_dir, python_exe=None, timeout=7200, if_records=None, arb_records=None):
         calls.append(str(out_dir))
         Path(out_dir).mkdir(parents=True, exist_ok=True)
         (Path(out_dir) / "KNOWNGOOD.json").write_text(json.dumps({"ok": True}))
@@ -394,7 +394,7 @@ def test_gate_knowngood_runs_the_subcommand_first_and_refuses_on_failure(tmp_pat
     (0, None),                # ABSENT IS FAIL
 ])
 def test_gate_knowngood_fail_modes(tmp_path, monkeypatch, rc, payload):
-    def _fake(out_dir, python_exe=None, timeout=7200):
+    def _fake(out_dir, python_exe=None, timeout=7200, if_records=None, arb_records=None):
         Path(out_dir).mkdir(parents=True, exist_ok=True)
         if payload is not None:
             (Path(out_dir) / "KNOWNGOOD.json").write_text(json.dumps(payload))
@@ -411,6 +411,106 @@ def test_gate_knowngood_uses_the_knowngood_subcommand_only():
     assert '"knowngood"' in src
     for bad in ('"grade"', '"preflight"', '"sweep"'):
         assert bad not in src
+
+
+# --------------------------------------------------------------------------- #
+# EP-D5 — the analyse-stage G-KNOWNGOOD re-invocation must thread record       #
+# roots explicitly, the SECOND call site of the EP-D4 box-hardcode bug class.  #
+# Real invocation shape (subprocess.run's own argv), not a hand-shaped mock —  #
+# EP-D3 lesson: a mock shaped unlike the real object is why bugs ship.         #
+# --------------------------------------------------------------------------- #
+def test_invoke_knowngood_threads_if_and_arb_records_into_real_argv(tmp_path, monkeypatch):
+    captured = {}
+
+    def _fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+
+        class _P:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return _P()
+
+    monkeypatch.setattr(A.subprocess, "run", _fake_run)
+    A.invoke_knowngood(tmp_path, if_records="/share/tiletie_pricing_20260812/clair-puct",
+                       arb_records=["/share/tiletie_oof_20260814/merged",
+                                    "/share/tiletie_oof_20260814/pilot",
+                                    "/share/tiearb_20260816/merged"])
+    cmd = captured["cmd"]
+    assert cmd[cmd.index("knowngood") + 1:cmd.index("knowngood") + 3] == \
+        ["--out-dir", str(tmp_path)]
+    assert cmd.count("--if-records") == 1
+    assert cmd[cmd.index("--if-records") + 1] == "/share/tiletie_pricing_20260812/clair-puct"
+    assert cmd.count("--arb-records") == 3
+    arb_vals = [cmd[i + 1] for i, tok in enumerate(cmd) if tok == "--arb-records"]
+    assert arb_vals == ["/share/tiletie_oof_20260814/merged",
+                        "/share/tiletie_oof_20260814/pilot",
+                        "/share/tiearb_20260816/merged"]
+
+
+def test_invoke_knowngood_omits_record_flags_when_not_threaded(tmp_path, monkeypatch):
+    """Absent if_records/arb_records must not inject empty/None flags — the call
+    falls back to probe_pickers.py's own (box-local) defaults, unchanged."""
+    captured = {}
+
+    def _fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+
+        class _P:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return _P()
+
+    monkeypatch.setattr(A.subprocess, "run", _fake_run)
+    A.invoke_knowngood(tmp_path)
+    assert "--if-records" not in captured["cmd"]
+    assert "--arb-records" not in captured["cmd"]
+
+
+def test_gate_knowngood_threads_record_roots_through_to_invoke(tmp_path, monkeypatch):
+    """The analyse-stage gate must pass its --knowngood-if-records/
+    --knowngood-arb-records CLI inputs all the way to the subprocess call, not
+    just accept and drop them."""
+    seen = {}
+
+    def _fake(out_dir, python_exe=None, timeout=7200, if_records=None, arb_records=None):
+        seen["if_records"] = if_records
+        seen["arb_records"] = arb_records
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        (Path(out_dir) / "KNOWNGOOD.json").write_text(json.dumps({"ok": True}))
+        return {"rc": 0, "cmd": [], "stdout_tail": "", "stderr_tail": ""}
+
+    monkeypatch.setattr(A, "invoke_knowngood", _fake)
+    g = A.gate_knowngood(tmp_path, if_records="/share/x", arb_records=["/share/y", "/share/z"])
+    assert g["ok"] is True
+    assert seen["if_records"] == "/share/x"
+    assert seen["arb_records"] == ["/share/y", "/share/z"]
+
+
+def test_parse_args_exposes_knowngood_record_root_flags(corpus, tmp_path):
+    """The launcher's stage_analyze() passes --knowngood-if-records / repeated
+    --knowngood-arb-records — parse_args must accept and carry them (EP-D5)."""
+    out = tmp_path / "out"
+    argv = ["--arb-records", str(corpus["arb"]), "--if-records", str(corpus["if"]),
+            "--plan-dir", str(corpus["pair"]), "--out-dir", str(out),
+            "--knowngood-if-records", "/share/tiletie_pricing_20260812/clair-puct",
+            "--knowngood-arb-records", "/share/a", "--knowngood-arb-records", "/share/b"]
+    a = A.parse_args(argv)
+    assert a.knowngood_if_records == "/share/tiletie_pricing_20260812/clair-puct"
+    assert a.knowngood_arb_records == ["/share/a", "/share/b"]
+
+
+def test_launcher_threads_share_into_analyze_stage_knowngood_flags():
+    """The bash launcher's stage_analyze() must pass $SHARE-resolved roots into
+    the new --knowngood-if-records/--knowngood-arb-records flags, mirroring
+    EP-D4's gate_knowngood() bash function (the belt to this suspenders)."""
+    src = (REPO / "measurement/everyply_probe_20260823/run_probe_DRAFT.sh").read_text()
+    analyze_call = src[src.index("stage_analyze() {"):]
+    analyze_call = analyze_call[:analyze_call.index("\n}\n")]
+    assert '--knowngood-if-records "$SHARE/tiletie_pricing_20260812/clair-puct"' \
+        in analyze_call
+    assert analyze_call.count('--knowngood-arb-records "$SHARE/') == 3
 
 
 def test_gate_crn_fails_on_an_unverified_record(corpus, tmp_path, monkeypatch):

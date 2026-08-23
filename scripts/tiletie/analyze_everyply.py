@@ -210,15 +210,29 @@ def _mean(xs):
 # --------------------------------------------------------------------------- #
 # G-KNOWNGOOD — run the subcommand FIRST, refuse on failure                     #
 # --------------------------------------------------------------------------- #
-def invoke_knowngood(out_dir, python_exe=None, timeout=7200) -> dict:
+def invoke_knowngood(out_dir, python_exe=None, timeout=7200,
+                     if_records=None, arb_records=None) -> dict:
     """Run ``probe_pickers.py knowngood`` and return ``{rc, stdout_tail}``.
 
     A separate process on purpose: it is the tiearb harness's own gate, pinned to
     the OLD corpus's constants, and importing it here would drag those pins into
     this analyser. Tests monkeypatch THIS function — never the gate that reads it.
+
+    ⚠️ EP-D5: ``probe_pickers.py``'s ``--if-records``/``--arb-records`` default to
+    LOCAL-BOX literal paths under ``/mnt/c/carc-shared`` (``DEFAULT_IF_RECORDS`` /
+    ``analyze_tiearb.DEFAULT_ARB_ROOTS``). This is the SAME bug class EP-D4 fixed
+    at the launcher's pre-launch ``gate_knowngood()`` bash call site — a SECOND
+    call site, here, that EP-D4 did not cover. ``if_records``/``arb_records`` let
+    the caller thread role-resolved (``$SHARE``) roots explicitly, mirroring
+    EP-D4's pattern; when both are absent the python-side defaults still fire
+    (only correct on the box those defaults name).
     """
     cmd = [python_exe or sys.executable, str(REPO / "scripts/tiletie/probe_pickers.py"),
            "knowngood", "--out-dir", str(out_dir)]
+    if if_records:
+        cmd += ["--if-records", str(if_records)]
+    for root in (arb_records or []):
+        cmd += ["--arb-records", str(root)]
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
                            cwd=str(REPO))
@@ -230,9 +244,11 @@ def invoke_knowngood(out_dir, python_exe=None, timeout=7200) -> dict:
                 "stderr_tail": f"{type(exc).__name__}: {exc}"}
 
 
-def gate_knowngood(knowngood_dir, knowngood_json=None, python_exe=None) -> dict:
+def gate_knowngood(knowngood_dir, knowngood_json=None, python_exe=None,
+                   if_records=None, arb_records=None) -> dict:
     """READ_RULE §3 ``G-KNOWNGOOD``. FIRST. Refuses on failure."""
-    run = invoke_knowngood(knowngood_dir, python_exe=python_exe)
+    run = invoke_knowngood(knowngood_dir, python_exe=python_exe,
+                           if_records=if_records, arb_records=arb_records)
     path = Path(knowngood_json) if knowngood_json else Path(knowngood_dir) / "KNOWNGOOD.json"
     payload = None
     if path.is_file():
@@ -246,7 +262,9 @@ def gate_knowngood(knowngood_dir, knowngood_json=None, python_exe=None) -> dict:
         "address": (f"scripts/tiletie/probe_pickers.py knowngood -> "
                     f"{path} ['ok'] == true  (require_knowngood pins arb=+0.2065, "
                     "N_POSITIONS_OF_RECORD=733, N_ROOTS_OF_RECORD=399, tol 1e-9 "
-                    "against measurement/tiearb_20260816/READOUT.json)"),
+                    "against measurement/tiearb_20260816/READOUT.json; "
+                    "record roots threaded via --knowngood-if-records/"
+                    "--knowngood-arb-records, EP-D5)"),
         "realized": {"rc": run["rc"], "ok_field": (payload or {}).get("ok"),
                      "reproduced": (payload or {}).get("reproduced"),
                      "delta": (payload or {}).get("delta")},
@@ -1061,7 +1079,8 @@ def build_readout(args) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ⛔ G-KNOWNGOOD FIRST — nothing else in this harness may be read until it passes.
-    kg = gate_knowngood(args.knowngood_dir or out_dir, args.knowngood, args.python_exe)
+    kg = gate_knowngood(args.knowngood_dir or out_dir, args.knowngood, args.python_exe,
+                       args.knowngood_if_records, args.knowngood_arb_records)
 
     pos_dirs = ([Path(d) for d in args.positions_dir] if args.positions_dir
                 else discover_plan_dirs(pair_dir, args.positions_glob))
@@ -1330,6 +1349,14 @@ def parse_args(argv=None):
                     help="path the KNOWNGOOD.json is READ from (the gate still RUNS the "
                          "probe_pickers.py knowngood subcommand first)")
     ap.add_argument("--knowngood-dir", default=None)
+    ap.add_argument("--knowngood-if-records", default=None,
+                    help="EP-D5: role-resolved ($SHARE) root threaded into the internal "
+                         "'probe_pickers.py knowngood' re-invocation's --if-records, so it "
+                         "does not fall back to probe_pickers.py's local-box hardcoded "
+                         "DEFAULT_IF_RECORDS (the EP-D4 bug class, second call site)")
+    ap.add_argument("--knowngood-arb-records", action="append", default=None,
+                    help="EP-D5: same, for the re-invocation's (repeatable) --arb-records; "
+                         "absent falls back to analyze_tiearb.DEFAULT_ARB_ROOTS")
     ap.add_argument("--python-exe", default=None)
     ap.add_argument("--blind-commit", default=None)
     ap.add_argument("--boot-seed", type=int, default=20260823)

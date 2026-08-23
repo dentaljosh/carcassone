@@ -280,12 +280,20 @@ stage_analyze() {
     ARB_ARGS+=(--arb-records "$OUT/arb/chunk$k")
     IF_ARGS+=(--if-records "$OUT/if/chunk$k")
   done
+  # ⚠️ EP-D5: analyze_everyply.py's OWN internal G-KNOWNGOOD re-invocation is a
+  # SECOND call site of the same probe_pickers.py --if-records/--arb-records
+  # local-box hardcode EP-D4 fixed at gate_knowngood() above -- thread the same
+  # $SHARE-resolved roots into it explicitly.
   run nice -n 19 "$PY" "$REPO/scripts/tiletie/analyze_everyply.py" \
       "${ARB_ARGS[@]}" "${IF_ARGS[@]}" \
       --plan-dir "$DIR" \
       --selection "$DIR/SELECTION.jsonl" \
       --holdout-games "$DIR/HOLDOUT_GAMES.json" \
       --knowngood "$DIR/KNOWNGOOD.json" \
+      --knowngood-if-records "$SHARE/tiletie_pricing_20260812/clair-puct" \
+      --knowngood-arb-records "$SHARE/tiletie_oof_20260814/merged" \
+      --knowngood-arb-records "$SHARE/tiletie_oof_20260814/pilot" \
+      --knowngood-arb-records "$SHARE/tiearb_20260816/merged" \
       --blind-commit "$DIR/BLIND_COMMIT" \
       --boot-seed 20260823 \
       --out-dir "$DIR" >> "$LOGS/analyze.log" 2>&1
