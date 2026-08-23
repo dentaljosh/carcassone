@@ -1,4 +1,4 @@
-# Carcasum external-reference match — PREREG **DRAFT**
+> ⛔→✅ **FROZEN 2026-08-23 (branch-freeze: the blind commit is THE COMMIT INTRODUCING THIS BANNER, on branch carcasum-match-freeze — local main is latched under a live reconcile suite; the branch merges at the quiet window; a committed sha is a provable freeze on any branch). Owner funding: "I'm funding carcasum" 2026-08-23. No game on band 1.42e11 exists at freeze time.**
 
 > **STATUS: DRAFT — NOT BLIND-COMMITTED, NOT AUTHORISED, NOT LAUNCHED.**
 > Nothing in this file is frozen. It exists so that the *design* is on record before any
@@ -288,6 +288,8 @@ Let `d` = deck-paired margin in points, `z = d / SE(d)`, over 200 decks.
 | **B — level** | `\|z\| < 3` and `\|d\| ≤ 2.0 pts` | Report **level at this budget**. A level opponent is the *most* useful ruler outcome, not a null: it means the knob is positioned where it can move in both directions. Queue rung 2 anyway. |
 | **C — inconclusive** | `\|z\| < 3` and `\|d\| > 2.0 pts` | **Top-up once** to n=800 using the reserved range `142000000200..142000000299`, then re-read under the SAME rule. One top-up, pre-registered, no second. |
 | **D — void-contaminated** | voids or REAL divergences > 1 % of games | **No strength number is published.** Diagnose, patch, re-audit, re-run. A win rate over a rules disagreement is a rules result. |
+
+**Branch order (pre-freeze clarification, orchestrator): D is evaluated FIRST — contamination voids the read regardless of z or d; then A, then B, then C, first-match-wins.**
 
 **Read-rule discipline:** these branches are fixed *before* any game is played, and the fired
 branch **is** the authorisation to execute it — a fired trigger gets run and reported, not
