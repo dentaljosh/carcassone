@@ -23,6 +23,17 @@
 > original calibration, the smoke result, or the champion/opponent/rules configuration.
 > Full detail: `READ_RULE.md` §1.1/§5, `WORKERS.conf`, `run_cells.sh`.
 
+> ⚠️ **AMENDED PRE-LAUNCH #2, zero games run; amended blind commit = this commit.**
+> A launch-agent review found `analyze_ladder.py` implemented only 2 of `READ_RULE.md`
+> §3's 7 gates (`gate_d_void`, `gate_g_n`) plus a fail-OPEN `G-MODE` passthrough —
+> `G-BINARY`, `G-RULES`, `G-CHAMP`, `G-BUDGET`, and `G-SHARED-DECKS` were documented as
+> "Fail-closed. ABSENT is FAIL." but never read `manifest.*` at all, so a binary swap,
+> rules drift, champion mismatch, leaked time-budget mode, or an out-of-range deck seed
+> would have passed the read-out silently. All five are now implemented and wired into
+> `main()`'s per-rung gate conjunction, `G-MODE` is fixed to fail-closed, and two wrong
+> manifest addresses in `READ_RULE.md`'s own table were found and corrected in the same
+> pass. Full detail: `READ_RULE.md` §3 (its own banner and table), and this file's §7.
+
 This is the single non-amendment status paragraph in this file. (r1's `PREREG.md` left
 a stale `STATUS: DRAFT` paragraph under its own FROZEN banner — a defect named
 explicitly in this cell's brief. This file carries exactly one FROZEN statement plus

@@ -19,6 +19,22 @@
 > pre-amendment aggregate WLS fit to a secondary witness (§1.2) — full detail below.
 > `WORKERS.conf::BLIND_COMMIT` is re-stamped to this amendment commit's own sha by the
 > same follow-up-commit convention as the original freeze.
+>
+> ⚠️ **AMENDED PRE-LAUNCH #2, zero games run; amended blind commit = this commit.**
+> Launch-agent review found `analyze_ladder.py` implemented only `gate_d_void`,
+> `gate_g_n`, and a fail-OPEN `G-MODE` passthrough, while this section documented FIVE
+> MORE gates (`G-BINARY`, `G-RULES`, `G-CHAMP`, `G-BUDGET`, `G-SHARED-DECKS`) as
+> "Fail-closed. ABSENT is FAIL." — none of which the code ever read from
+> `manifest.*`, so a binary swap, rules drift, champion mismatch, leaked time-budget
+> mode, or an out-of-range deck seed would have passed the read-out silently. All five
+> are now implemented (`gate_g_binary`/`gate_g_rules`/`gate_g_champ`/`gate_g_budget`/
+> `gate_g_shared_decks`, wired via `manifest_gates()` into `main()`'s per-rung
+> conjunction), and `G-MODE`'s own fail-open bug (`is not False` treating an ABSENT
+> value as PASS) is fixed to fail-closed (`is True`). Two address errors in this
+> section's own table were found and corrected in the same pass (see the `G-RULES`/
+> `G-CHAMP` rows below) — the code always used the corrected addresses. Full
+> gate-by-gate detail stays in the table below; nothing here changes the branch table
+> (§4) or the interim test (§5) logic itself, only what feeds them.
 
 # READ_RULE — Carcasum rung-2 budget ladder
 
@@ -128,6 +144,18 @@ value; a from-scratch recomputation from the raw per-game records is printed alo
 (same "recomputation is a witness, never a branch input" discipline as `track_d2_prep`
 §1). A disagreement beyond floating-point tolerance is `U-UNREADABLE`.
 
+**Status note, added at amendment #2's re-verification pass (READ_RULE.md's own audit,
+requested alongside the five manifest gates):** `analyze_ladder.py` currently computes
+every number in ONE pass, straight from the raw per-game records — there is no separate
+cached/stored value it re-derives against, so this "recomputation is a witness"
+discipline is currently **vacuously satisfied**: nothing yet exists for a fresh
+computation to disagree WITH. This is not a sixth undischarged gate (there is no
+missing check here — there is nothing to check yet), but it is worth naming precisely
+so a future reader does not mistake "no disagreement reported" for "the recomputation
+ran and passed." If this analyzer is ever extended to read a previously-emitted JSON
+report and re-derive its numbers against fresh records (e.g. a resumed or re-run
+read-out), this is where that check would need to be added for real.
+
 ---
 
 ## §2 — UNITS AND POWER
@@ -161,11 +189,11 @@ precedent, `track_d2_prep/READ_RULE.md` §3).
 
 | id | proposition | address | DROPS the point on |
 |---|---|---|---|
-| `G-BINARY` | `manifest.carcasum_binary_sha256` for the rung equals rung 1's own recorded sha (same vendored build, same patch set) | `games.jsonl` line 1 → `manifest.carcasum_binary_sha256` | mismatch or absent |
-| `G-RULES` | `manifest.rules_manifest.name == "fixed_v1"` and `manifest.r9_env_ok == true` | `manifest.rules_manifest`, `manifest.r9_env_ok` | anything else |
-| `G-CHAMP` | `manifest.champion_manifest.leaf_hash` equals rung 1's own recorded champion leaf hash; `manifest.champion_manifest.tiearb == null/off` | `manifest.champion_manifest` | mismatch, absent, or tie-arbiter present |
-| `G-BUDGET` | `manifest.opponent.playouts == <the rung's assigned m>` and `manifest.opponent.budget_ms == null` | `manifest.opponent` | wrong m, or budget_ms not null (time-mode leaked in) |
-| `G-MODE` | pooled median realized `carcasum_playouts` over the rung's own real turns is within **±5%** of the assigned `m` | recomputed by `analyze_ladder.py` from every `moves[].carcasum_playouts` in the rung's archive | outside ±5% — this is the smoke's own gate, re-checked at real scale, not assumed transitive (DESIGN.md §8) |
+| `G-BINARY` | `manifest.carcasum_binary_sha256` for the rung equals rung 1's own recorded sha `c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968` (pinned `RUNG1_BINARY_SHA256`, source: r1's frozen corpus `games.jsonl` line 1 — that corpus ran on the LAPTOP; this is that box's own build's sha, NOT the DESIGN.md §8 smoke's — the smoke ran on this local dev box's own separately-built binary and correctly has a DIFFERENT sha (`99aebb4e...`), per the cross-box witness precedent in `PREREG.md` §4 ("the binaries differ, as they must; the tile model does not"). This gate is only meaningful once the real launch runs on the laptop against the SAME binary r1 used.) | `games.jsonl` line 1 → `manifest.carcasum_binary_sha256` | mismatch or absent |
+| `G-RULES` | `manifest.rules_manifest.name == "fixed_v1"` and `manifest.rules_manifest.r9_env_ok == true` | `games.jsonl` line 1 → `manifest.rules_manifest.name`, `manifest.rules_manifest.r9_env_ok` **(⚠️ CORRECTED address — an earlier draft of this row wrote the bare `manifest.r9_env_ok`, which does not exist at that path in the real manifest; verified against r1's own archive before this correction landed)** | anything else |
+| `G-CHAMP` | `manifest.champion_manifest.leaf_hashes.harness_leaf_hash` equals rung 1's own recorded champion leaf hash `a36d2e15a3b3d71d` (pinned `RUNG1_CHAMP_LEAF_HASH`, cross-verified against both r1's corpus manifest AND `governance/PRODUCTION.yaml` line 128's PRIMARY leaf-hash dialect — both agree exactly); `manifest.champion_manifest.tiearb` is `null`/absent/off | `games.jsonl` line 1 → `manifest.champion_manifest.leaf_hashes.harness_leaf_hash` **(⚠️ CORRECTED address — an earlier draft wrote the bare `manifest.champion_manifest.leaf_hash`, which does not exist; the real field is nested under `leaf_hashes`)**, `manifest.champion_manifest.tiearb` | mismatch or absent leaf hash; tie-arbiter present. ⚠️ **`tiearb` is the ONE sub-check in these five gates where ABSENT is NOT fail** — the real manifest schema carries no `tiearb` key at all when the tie-arbiter is off (verified: r1's own manifest has none), so a missing key means off/PASS; only an explicitly present, truthy value fails it. |
+| `G-BUDGET` | `manifest.opponent.playouts == <the rung's assigned m>` and `manifest.opponent.budget_ms == null` | `games.jsonl` line 1 → `manifest.opponent.playouts`, `manifest.opponent.budget_ms` | wrong m, or budget_ms not null (time-mode leaked in) |
+| `G-MODE` | pooled median realized `carcasum_playouts` over the rung's own real turns is within **±5%** of the assigned `m` | recomputed by `analyze_ladder.py` from every `moves[].carcasum_playouts` in the rung's archive | outside ±5% **— and, corrected here (amendment #2): a rung with NO real opponent turns at all (median undefined, `g_mode_pass` absent/`None`) now FAILS this gate. The prior implementation read `stats.get("g_mode_pass") is not False`, which treats an ABSENT value as a PASS — fail-OPEN, contradicting this section's own "ABSENT is FAIL" rule. Fixed to `is True` (only an explicit, computed PASS counts).** This is the smoke's own gate, re-checked at real scale, not assumed transitive (DESIGN.md §8). |
 | `G-N` | the rung reached `n_common_decks >= 80` (80% of the n=100 target — the same 80%-floor convention `track_d2_prep`'s `N_COMMON_FLOOR` uses) | `analyze_ladder.py`'s own deck-pairing count | under 80 decks paired |
 | `G-SHARED-DECKS` (amendment) | for D0/A/B/C only: the rung's own set of realized `deck_seed` values is a SUBSET of `{143000000000..143000000099}` — i.e. the rung drew from the ONE shared range, not an independent range | `analyze_ladder.py`'s own deck_seed collection per rung | any `deck_seed` outside the shared 100-deck range |
 

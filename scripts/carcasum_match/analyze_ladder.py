@@ -174,6 +174,152 @@ def gate_d_void(stats: dict) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# THE FIVE MANIFEST GATES (PRE-LAUNCH AMENDMENT #2) — G-BINARY / G-RULES /    #
+# G-CHAMP / G-BUDGET / G-SHARED-DECKS, READ_RULE.md §3. Every one is          #
+# fail-closed: an absent field, an absent manifest, or an empty record list   #
+# is a FAIL, never a skip, never a pass. These check the SAME structural      #
+# facts the gate table names — no gate here invents a new proposition.       #
+#                                                                              #
+# Reference values, sourced from the real r1 archive (verified against BOTH  #
+# the frozen corpus and governance/PRODUCTION.yaml before being pinned):     #
+#   RUNG1_BINARY_SHA256   <- measurement/carcasum_match_20260823/games.jsonl  #
+#                            line 1, manifest.carcasum_binary_sha256          #
+#                            (rung 1's frozen corpus; independently confirmed #
+#                            against this session's own local scratchpad     #
+#                            copy of that same corpus)                       #
+#   RUNG1_CHAMP_LEAF_HASH <- the SAME corpus's                                #
+#                            manifest.champion_manifest.leaf_hashes           #
+#                            .harness_leaf_hash, CROSS-VERIFIED against       #
+#                            governance/PRODUCTION.yaml line 128              #
+#                            (leaf_hash: "a36d2e15a3b3d71d", the PRIMARY      #
+#                            dialect) — both sources agree exactly.           #
+#                                                                              #
+# ⚠️ ADDRESS CORRECTION (found while implementing, not just filling in a      #
+# blank): the pre-amendment READ_RULE.md §3 table wrote the addresses as     #
+# bare `manifest.r9_env_ok` and `manifest.champion_manifest.leaf_hash`.       #
+# Neither exists at that path in the real manifest — the real fields are     #
+# `manifest.rules_manifest.r9_env_ok` and                                    #
+# `manifest.champion_manifest.leaf_hashes.harness_leaf_hash` (confirmed by   #
+# inspecting line 1 of the real r1 corpus directly). READ_RULE.md's table is  #
+# corrected to match in this same commit; the code below always used the     #
+# corrected addresses (a wrong address that never resolves would fail EVERY  #
+# rung closed, which is safe but useless — worth fixing, not worth shipping). #
+# --------------------------------------------------------------------------- #
+RUNG1_BINARY_SHA256 = "c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968"
+RUNG1_CHAMP_LEAF_HASH = "a36d2e15a3b3d71d"
+SHARED_DECK_SEED_LO = 143_000_000_000
+SHARED_DECK_SEED_HI = 143_000_000_099
+
+
+def _first_manifest(records: list[dict]) -> dict | None:
+    """games.jsonl line 1's manifest — the address READ_RULE.md §3 names for
+    every one of these five gates. Absent records or an absent/non-dict
+    manifest are both FAIL, never a skip (fail-closed, per the table)."""
+    if not records:
+        return None
+    m = records[0].get("manifest")
+    return m if isinstance(m, dict) else None
+
+
+def gate_g_binary(records: list[dict]) -> tuple[bool, str]:
+    m = _first_manifest(records)
+    if m is None:
+        return False, "no records / manifest absent"
+    sha = m.get("carcasum_binary_sha256")
+    if not sha:
+        return False, "manifest.carcasum_binary_sha256 absent"
+    if sha != RUNG1_BINARY_SHA256:
+        return False, f"sha256 mismatch: got {sha}"
+    return True, "ok"
+
+
+def gate_g_rules(records: list[dict]) -> tuple[bool, str]:
+    m = _first_manifest(records)
+    if m is None:
+        return False, "no records / manifest absent"
+    rm = m.get("rules_manifest")
+    if not isinstance(rm, dict):
+        return False, "manifest.rules_manifest absent"
+    name = rm.get("name")
+    if name != "fixed_v1":
+        return False, f"rules_manifest.name={name!r} != 'fixed_v1'"
+    r9ok = rm.get("r9_env_ok")
+    if r9ok is not True:
+        return False, f"rules_manifest.r9_env_ok={r9ok!r} != True (absent counts as fail)"
+    return True, "ok"
+
+
+def gate_g_champ(records: list[dict]) -> tuple[bool, str]:
+    m = _first_manifest(records)
+    if m is None:
+        return False, "no records / manifest absent"
+    cm = m.get("champion_manifest")
+    if not isinstance(cm, dict):
+        return False, "manifest.champion_manifest absent"
+    leaf_hashes = cm.get("leaf_hashes")
+    if not isinstance(leaf_hashes, dict):
+        return False, "manifest.champion_manifest.leaf_hashes absent"
+    lh = leaf_hashes.get("harness_leaf_hash")
+    if not lh:
+        return False, "manifest.champion_manifest.leaf_hashes.harness_leaf_hash absent"
+    if lh != RUNG1_CHAMP_LEAF_HASH:
+        return False, f"champion leaf hash mismatch: got {lh}"
+    # ⚠️ tiearb has NO dedicated key anywhere in the real manifest schema when
+    # off (verified: r1's own manifest carries no "tiearb" key at all, at any
+    # level of champion_manifest) — ABSENCE here is what "off" looks like, so
+    # this one sub-check treats a missing key as PASS, not fail. An explicit
+    # PRESENT-and-truthy value fails the gate; this is the one place in these
+    # five gates where "absent" is NOT "fail", and it is called out precisely
+    # because it is the exception to the rule stated everywhere else.
+    tiearb = cm.get("tiearb")
+    if tiearb not in (None, False, 0, "", "off"):
+        return False, f"champion_manifest.tiearb present and not off: {tiearb!r}"
+    return True, "ok"
+
+
+def gate_g_budget(records: list[dict], assigned_playouts: int | None) -> tuple[bool, str]:
+    m = _first_manifest(records)
+    if m is None:
+        return False, "no records / manifest absent"
+    if assigned_playouts is None:
+        return False, "no assigned playouts for this rung to check against"
+    opp = m.get("opponent")
+    if not isinstance(opp, dict):
+        return False, "manifest.opponent absent"
+    p = opp.get("playouts")
+    b = opp.get("budget_ms")
+    if p != assigned_playouts:
+        return False, f"opponent.playouts={p!r} != assigned {assigned_playouts}"
+    if b is not None:
+        return False, f"opponent.budget_ms={b!r} != null (time-mode leaked in)"
+    return True, "ok"
+
+
+def gate_g_shared_decks(records: list[dict]) -> tuple[bool, str]:
+    if not records:
+        return False, "no records"
+    seeds = {int(r["deck_seed"]) for r in records if "deck_seed" in r}
+    if not seeds:
+        return False, "no deck_seed field present in any record"
+    bad = sorted(s for s in seeds if not (SHARED_DECK_SEED_LO <= s <= SHARED_DECK_SEED_HI))
+    if bad:
+        return False, f"{len(bad)} deck_seed(s) outside the shared range, e.g. {bad[:5]}"
+    return True, "ok"
+
+
+def manifest_gates(records: list[dict], assigned_playouts: int | None) -> dict[str, tuple[bool, str]]:
+    """All five gates, run together, per rung. Used by main() to decide
+    whether a shared-deck rung is usable; every one is fail-closed."""
+    return {
+        "G-BINARY": gate_g_binary(records),
+        "G-RULES": gate_g_rules(records),
+        "G-CHAMP": gate_g_champ(records),
+        "G-BUDGET": gate_g_budget(records, assigned_playouts),
+        "G-SHARED-DECKS": gate_g_shared_decks(records),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # AGGREGATE weighted least squares — the estimator that CAN include rung 0    #
 # from the start (no deck-matching needed), used for the interim test and as  #
 # a SECONDARY witness on the final read (READ_RULE.md §1.2).                  #
@@ -417,6 +563,84 @@ def _selftest() -> int:
     assert cr["x_star"] > 14.0, cr
     print("[selftest] within-deck anchored crossover OK: x*=%.4f b*=%.1f" % (cr["x_star"], cr["b_star"]))
 
+    # ---- the five manifest gates (PRE-LAUNCH AMENDMENT #2) ---------------------
+    # Real record shapes throughout (a dict with "deck_seed"/"manifest" keys, as
+    # `load()` actually produces) — NOT attribute-mock objects, per the EP-D3
+    # lesson named in this amendment's brief.
+    good_manifest = {
+        "carcasum_binary_sha256": RUNG1_BINARY_SHA256,
+        "rules_manifest": {"name": "fixed_v1", "r9_env_ok": True},
+        "champion_manifest": {"leaf_hashes": {"harness_leaf_hash": RUNG1_CHAMP_LEAF_HASH}},
+        "opponent": {"playouts": 16384, "budget_ms": None},
+    }
+    good_records = [{"deck_seed": 143000000000, "manifest": good_manifest}]
+
+    # G-BINARY: pass / fail (wrong sha) / absent (missing key)
+    assert gate_g_binary(good_records)[0] is True
+    bad_bin_m = {**good_manifest, "carcasum_binary_sha256": "deadbeef"}
+    assert gate_g_binary([{"deck_seed": 1, "manifest": bad_bin_m}])[0] is False
+    absent_bin_m = {k: v for k, v in good_manifest.items() if k != "carcasum_binary_sha256"}
+    assert gate_g_binary([{"deck_seed": 1, "manifest": absent_bin_m}])[0] is False
+    assert gate_g_binary([])[0] is False   # no records at all
+    print("[selftest] G-BINARY pass/fail/absent OK")
+
+    # G-RULES: pass / fail (wrong profile name) / absent (missing r9_env_ok)
+    assert gate_g_rules(good_records)[0] is True
+    bad_rules_m = {**good_manifest, "rules_manifest": {"name": "walled", "r9_env_ok": True}}
+    assert gate_g_rules([{"deck_seed": 1, "manifest": bad_rules_m}])[0] is False
+    absent_r9_m = {**good_manifest, "rules_manifest": {"name": "fixed_v1"}}  # r9_env_ok missing
+    assert gate_g_rules([{"deck_seed": 1, "manifest": absent_r9_m}])[0] is False
+    print("[selftest] G-RULES pass/fail/absent OK")
+
+    # G-CHAMP: pass / fail (wrong leaf hash) / absent (missing leaf_hashes) /
+    # tiearb PRESENT-and-truthy fails / tiearb absent (good_manifest) passes.
+    assert gate_g_champ(good_records)[0] is True
+    bad_champ_m = {**good_manifest, "champion_manifest": {"leaf_hashes": {"harness_leaf_hash": "wronghash"}}}
+    assert gate_g_champ([{"deck_seed": 1, "manifest": bad_champ_m}])[0] is False
+    absent_lh_m = {**good_manifest, "champion_manifest": {}}
+    assert gate_g_champ([{"deck_seed": 1, "manifest": absent_lh_m}])[0] is False
+    tiearb_on_m = {**good_manifest, "champion_manifest": {
+        "leaf_hashes": {"harness_leaf_hash": RUNG1_CHAMP_LEAF_HASH}, "tiearb": {"b": 64}}}
+    assert gate_g_champ([{"deck_seed": 1, "manifest": tiearb_on_m}])[0] is False
+    print("[selftest] G-CHAMP pass/fail/absent/tiearb-present OK")
+
+    # G-BUDGET: pass / fail (wrong playouts) / fail (leaked time-budget mode) / absent
+    assert gate_g_budget(good_records, 16384)[0] is True
+    wrong_p_m = {**good_manifest, "opponent": {"playouts": 999, "budget_ms": None}}
+    assert gate_g_budget([{"deck_seed": 1, "manifest": wrong_p_m}], 16384)[0] is False
+    leaked_time_m = {**good_manifest, "opponent": {"playouts": 16384, "budget_ms": 5000}}
+    assert gate_g_budget([{"deck_seed": 1, "manifest": leaked_time_m}], 16384)[0] is False
+    absent_opp_m = {k: v for k, v in good_manifest.items() if k != "opponent"}
+    assert gate_g_budget([{"deck_seed": 1, "manifest": absent_opp_m}], 16384)[0] is False
+    print("[selftest] G-BUDGET pass/fail/absent OK")
+
+    # G-SHARED-DECKS: pass (both range endpoints) / fail (out of range) / absent (no deck_seed key)
+    in_range_records = [{"deck_seed": s, "manifest": good_manifest} for s in (143000000000, 143000000099)]
+    assert gate_g_shared_decks(in_range_records)[0] is True
+    out_of_range_records = [{"deck_seed": 143000000000, "manifest": good_manifest},
+                             {"deck_seed": 999999999999, "manifest": good_manifest}]
+    assert gate_g_shared_decks(out_of_range_records)[0] is False
+    no_seed_records = [{"manifest": good_manifest}]
+    assert gate_g_shared_decks(no_seed_records)[0] is False
+    print("[selftest] G-SHARED-DECKS pass/fail/absent OK")
+
+    # G-MODE fail-closed fix: a rung with real game records but ZERO
+    # carcasum_playouts anywhere (no real opponent turns -> median undefined)
+    # must be treated as FAIL, never a silent pass.
+    no_playout_data_records = [
+        {"deck_seed": 143000000000, "champ_seat": 0, "winner": "champ",
+         "margin_champ_minus_opp": 5, "void": None, "manifest": good_manifest, "moves": []},
+        {"deck_seed": 143000000000, "champ_seat": 1, "winner": "opp",
+         "margin_champ_minus_opp": -3, "void": None, "manifest": good_manifest, "moves": []},
+    ]
+    stats_no_playouts = per_rung_stats(no_playout_data_records, assigned_playouts=16384)
+    assert stats_no_playouts["g_mode_pass"] is None, stats_no_playouts   # absent, not False
+    # the FIXED fail-closed read main() now uses: `is True`, not `is not False`
+    assert (stats_no_playouts.get("g_mode_pass") is True) is False
+    assert (stats_no_playouts.get("g_mode_pass") is not False) is True  # the OLD (buggy) read WOULD pass
+    print("[selftest] G-MODE fail-closed on absent playout data OK "
+          "(g_mode_pass=None correctly excluded by `is True`, would have leaked through the old `is not False`)")
+
     print("[selftest] ALL PASS")
     return 0
 
@@ -473,18 +697,36 @@ def main(argv=None) -> int:
 
     shared_stats = []  # (name, x, stats) for gate-passing shared-deck rungs
     for name, path, x, assigned in shared_defs:
-        stats = per_rung_stats(load(path), assigned_playouts=assigned)
+        records = load(path)
+        stats = per_rung_stats(records, assigned_playouts=assigned)
         stats["x_log2_playouts"] = x
         report["rungs"][name] = stats
+
+        mgates = manifest_gates(records, assigned)
+        stats["manifest_gates"] = mgates
+        mgates_ok = all(passed for passed, _reason in mgates.values())
+
+        # ⚠️ FAIL-CLOSED FIX (amendment #2): `is not False` treats an ABSENT
+        # g_mode_pass (None — no real opponent turns to compute a median from)
+        # as a PASS, which is fail-OPEN and contradicts §3's "ABSENT is FAIL".
+        # `is True` is the fail-closed form: only an explicit, computed PASS
+        # counts.
+        g_mode_ok = stats.get("g_mode_pass") is True
+
         ok = (gate_d_void(stats) and gate_g_n(stats, args.n_decks_target)
-              and stats.get("g_mode_pass") is not False
+              and g_mode_ok and mgates_ok
               and stats["paired_margin_mean"] is not None
               and stats["paired_margin_sem"] not in (None, 0))
         if ok:
             shared_stats.append((name, x, stats))
             aggregate_points.append((x, stats["paired_margin_mean"], stats["paired_margin_sem"]))
         else:
-            report.setdefault("dropped", []).append(name)
+            failed_gates = [gid for gid, (passed, _r) in mgates.items() if not passed]
+            report.setdefault("dropped", []).append({
+                "rung": name,
+                "g_mode_ok": g_mode_ok,
+                "manifest_gate_failures": {gid: mgates[gid][1] for gid in failed_gates},
+            })
 
     # --- interim mode: aggregate fit only, kill-only exit code -----------------
     if args.interim:
