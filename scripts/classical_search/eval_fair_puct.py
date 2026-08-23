@@ -2383,11 +2383,68 @@ def _paired_z(results):
     return mean, z, len(ds)
 
 
+#: `failed_classes` recognised top-level names (READOUT_B64.md "SPEC-vs-
+#: BUILDABLE" clause 3 / RULING 3, 2026-08-19: the class field commissioned
+#: here). Anything not in this set is bucketed "other:<ExcName>" rather than
+#: invented — the set stays a closed, explicit list, never a guess at every
+#: exception type that could ever be raised.
+_RECOGNISED_FAILURE_CLASSES = frozenset({
+    # pyo3's panic wrapper: `type(exc).__name__` for a Rust-side panic
+    # propagated through the pyo3 boundary (see the `noqa: BLE001 — incl.
+    # pyo3 PanicException` catch above).
+    "PanicException",
+    # `carc_rs.WindowTruncationError`'s own class name (see
+    # `carcassonne_ai/window_truncation.py`). Named here too so an exact-type
+    # match still lands in this bucket even on a record where the
+    # `window_truncation` flag is absent/stale — the flag is still the
+    # AUTHORITATIVE precedence path (below), this is only the fallback.
+    "WindowTruncationError",
+})
+
+
+def _classify_failure(rec: dict) -> str:
+    """One failure record -> its `failed_classes` histogram bucket.
+
+    ⚠️ PRECEDENCE, read this before changing it: `window_truncation` wins over
+    `exc_type` unconditionally. `window_truncation.is_window_truncation` (see
+    `carcassonne_ai/window_truncation.py`) classifies by PAYLOAD, not just by
+    class identity — `carc_rs.WindowTruncationError` is one match, but a plain
+    `RuntimeError` carrying the same truncation cause also flags true. So a
+    truncation failure can have `exc_type == "RuntimeError"` (a generic type
+    name that tells the reader nothing) while `window_truncation` is the
+    field that actually knows what family it is. Checking `exc_type` first
+    would silently misfile those into the generic bucket.
+    """
+    if rec.get("window_truncation"):
+        return "WindowTruncationError"
+    exc_type = rec.get("exc_type")
+    if exc_type in _RECOGNISED_FAILURE_CLASSES:
+        return exc_type
+    return f"other:{exc_type}"
+
+
+def _failed_classes_block(bad) -> dict:
+    """Histogram `{class_name: count}` over `bad` (the outstanding failure
+    records). ALWAYS present in the summary, even as `{}` when `bad` is
+    empty — a zero rate is stated, never inferred from a missing key (same
+    convention as every other field in `_failure_block`). Counts sum to
+    `len(bad)` by construction: `_classify_failure` returns exactly one
+    bucket per record."""
+    hist: dict = {}
+    for r in bad:
+        cls = _classify_failure(r)
+        hist[cls] = hist.get(cls, 0) + 1
+    return hist
+
+
 def _failure_block(results, failures, resolved=None) -> dict:
     """The EXCLUSION block. Key names mirror `h2h.summarize` exactly
     (`n_failed` / `failure_rate` / `failed_cells` / `failed_by_seat`), and they are
     ALWAYS present — a zero rate is stated, never inferred from a missing key or
-    from a record count that does not add up.
+    from a record count that does not add up. `failed_classes` (ADDITIVE,
+    2026-08-23, READOUT_B64.md RULING 3) is the same convention applied to the
+    per-failure diagnostic CLASS: a dict histogram, sibling to `failed_cells`,
+    always present — `{}` when there are no failures, never absent or null.
 
     `failures` is the list of OUTSTANDING failure records for this cell (from
     `load_failures`). `resolved` is the list of records whose game later SUCCEEDED:
@@ -2419,6 +2476,11 @@ def _failure_block(results, failures, resolved=None) -> dict:
                           "window_diag": r.get("window_diag")} for r in bad],
         "failed_by_seat": {"0": sum(1 for r in bad if int(r.get("a_seat", -1)) == 0),
                            "1": sum(1 for r in bad if int(r.get("a_seat", -1)) == 1)},
+        # ADDITIVE (2026-08-23): per-failure diagnostic class histogram. See
+        # `_classify_failure` for the window_truncation-over-exc_type precedence.
+        # Sums to len(bad) == n_failed by construction; {} (present, not absent)
+        # when bad is empty.
+        "failed_classes": _failed_classes_block(bad),
         # NOT failures of this cell — a crash that a later pass played through.
         # Counted separately so a flaky game stays visible without voiding the cell.
         "n_resolved_failures": len(fixed),
@@ -2720,6 +2782,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         "champ_timeouts": sum(r.champ_timeouts for r in results),
         **oracle_summary,
         **tiearb_summary,
+        **wc_summary,
     }
 
 
