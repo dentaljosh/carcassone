@@ -292,14 +292,24 @@ stage_pilot() {
   log "STAGE pilot -- $PILOT_N positions from chunk 1's head, production knobs"
   log "⚠️ the pilot reads ONLY wall-clock, integrity and coverage -- NO statistic"
   run nice -n 19 "$PY" "$REPO/scripts/tiletie/build_everyply_corpus.py" \
-      --mode arms --selection "$DIR/SELECTION.jsonl" --chunk 1 --limit "$PILOT_N" \
+      --mode arms --arm-builder leaf_topk --selection "$DIR/SELECTION.jsonl" --chunk 1 --limit "$PILOT_N" \
       --out-dir "$DIR/positions_pilot" --rules-profile walled --workers "$W" \
       >> "$LOGS/pilot.log" 2>&1
+  local rc=$?
+  if [ "$DRY" -eq 0 ] && [ "$rc" -ne 0 ]; then
+    log "pilot corpus build FAILED rc=$rc"
+    return "$rc"
+  fi
   run nice -n 19 "$PY" "$REPO/scripts/tiletie/run_tiletie.py" \
       --positions-dir "$DIR/positions_pilot" --judges tier1-greedy --arb-backend rust \
       --m "$M_WORLDS" --workers "$W" --out-root "$OUT/pilot/arb" --logs-dir "$LOGS" \
       --gate-out "$DIR/GATE_BACKEND_RECHECK_pilot.json" \
       --manifest-out "$DIR/RUN_MANIFEST_pilot.json" --yes >> "$LOGS/pilot.log" 2>&1
+  rc=$?
+  if [ "$DRY" -eq 0 ] && [ "$rc" -ne 0 ]; then
+    log "pilot arb FAILED rc=$rc"
+    return "$rc"
+  fi
   [ "$DRY" -eq 1 ] && return 0
   touch "$DIR/DONE_pilot"
   log "PILOT DONE -- apply DESIGN §12's mechanical rule before launching any chunk."
