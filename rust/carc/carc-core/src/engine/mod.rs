@@ -25,6 +25,23 @@
 //!   34 in CPython. [`GameState::board_direct`] reproduces that exactly (it is
 //!   benign only because the far rows/columns stay empty — but "benign" is a
 //!   property of the corpus, not of the code).
+//!
+//!   ⚠️ **The OTHER end of the same unguarded index used to CRASH** (fixed
+//!   2026-08-23, `panic-triage`).  All three readers above are reached with a
+//!   coordinate stepped ONE cell off the tile they started from —
+//!   `CityUtil.opposite_edge`, `FarmUtil.opposite_edge` and the cloister 3x3 —
+//!   so a region touching the LAST row/column produces index `35`, which CPython
+//!   raises `IndexError` on and this port faithfully panicked on
+//!   (`IndexError: board row index 35 out of range (len 35)`).  Under
+//!   `fixed_v1` (`centered18`, start row 18) the bottom wall is only 16 rows
+//!   from the start tile and the tie-arbiter's tier-1 playouts spread far wider
+//!   than champion play, so it fired at ~0.1% of live B=32 games (three seeds,
+//!   2026-08-22).  [`GameState::board_direct`] now returns `None` — "no tile
+//!   there" — for any index outside `[-len, len)` instead of panicking.
+//!   **The `-1` wrap is deliberately UNCHANGED**: it is a scoring semantic every
+//!   recorded game, checkpoint and gate was produced under, so touching it would
+//!   move the rules epoch.  Only the crash is removed, and no game that did not
+//!   crash can observe the difference.
 //! * **`remove_meeples_and_collect_points` rebinds its `coordinate` local
 //!   inside the cloister scan**, so each outer row iteration re-derives its
 //!   column range from the *last tile seen*.  See
@@ -37,6 +54,10 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::tiles::{self, tile_id, FarmerSide, RotTile, Side, TerrainType, TileId};
 
+#[cfg(test)]
+mod board_bounds_tests;
+#[cfg(test)]
+mod board_wall_probe;
 #[cfg(test)]
 mod cloister_scan_fix_tests;
 
@@ -379,11 +400,26 @@ impl GameState {
     // --- board access -----------------------------------------------------
 
     /// `game_state.board[row][column]` — **including CPython's negative-index
-    /// wrap**.  Out-of-range indices panic, mirroring `IndexError`.
+    /// wrap** (`row == -1` reads row 34).
+    ///
+    /// ⚠️ Every caller reaches this with a coordinate stepped one cell off a
+    /// placed tile (`opposite_edge` for cities/farms, the 3x3 for cloisters), so
+    /// an index of `BOARD_ROWS` / `BOARD_COLS` is a NORMAL consequence of a
+    /// region touching the last row or column.  CPython raises `IndexError`
+    /// there and this port used to panic with it; that crashed live production
+    /// games (three b32v64 seeds, 2026-08-22).  An index outside `[-len, len)`
+    /// now reads as **`None` — "no tile there"**, which is what every caller
+    /// already does with an off-board neighbour.
+    ///
+    /// ⛔ The `-1` wrap is NOT fixed here on purpose.  It is a scoring semantic
+    /// of the engine of record (see the module header); removing it would move
+    /// the rules epoch, and it is unreachable-in-effect unless the board occupies
+    /// BOTH extreme rows (or columns) at once.  A fix for it belongs behind an
+    /// opt-in `GameConfig` flag like `cloister_scan_fix`, not here.
     #[inline]
     pub fn board_direct(&self, row: i32, col: i32) -> Option<TileId> {
-        let r = py_index(row, BOARD_ROWS, "row");
-        let c = py_index(col, BOARD_COLS, "column");
+        let r = py_index(row, BOARD_ROWS)?;
+        let c = py_index(col, BOARD_COLS)?;
         let v = self.board[(r * BOARD_COLS + c) as usize];
         if v == EMPTY {
             None
@@ -406,8 +442,36 @@ impl GameState {
         }
     }
 
+    /// Place `id` at `coord`.
+    ///
+    /// ⚠️ **The bounds check is not defensive padding — it closes a SILENT
+    /// wrong-cell WRITE.**  The index is row-major (`row * BOARD_COLS + col`),
+    /// so an out-of-range COLUMN with an in-range row aliases into a neighbouring
+    /// row and lands *inside* the buffer: `(10, 35)` writes `(11, 0)` and
+    /// `(10, -1)` writes `(9, 34)` — no panic, no error, just a tile in the wrong
+    /// place and a board that disagrees with `placed_coords`.  Only a coordinate
+    /// far enough out to leave the whole 1,225-cell buffer crashes, which is the
+    /// case the banked-fixture replay happens to hit.
+    ///
+    /// Legal play cannot reach either: `possible_playing_positions` draws from
+    /// `open_positions`, which is bounds-filtered on insert.  The exposure is the
+    /// REPLAY path — `MirrorState.advance` applies a banked action verbatim, with
+    /// no legality check — so a fixture recorded under a different `grid_rule`
+    /// (`engine6` start row 6 vs `centered18` start row 18 = a 12-row shift)
+    /// arrives here off-board.  Fail loudly and name the coordinate.
     #[inline]
     fn set_tile(&mut self, coord: Coord, id: TileId) {
+        assert!(
+            coord.row >= 0 && coord.row < BOARD_ROWS && coord.col >= 0 && coord.col < BOARD_COLS,
+            "tile placement at ({}, {}) is outside the {}x{} board — a row-major \
+             write there would alias a DIFFERENT in-bounds cell.  Legal play cannot \
+             produce this; it means an action was replayed onto a board whose \
+             geometry it was not recorded under (check grid_rule / start_row).",
+            coord.row,
+            coord.col,
+            BOARD_ROWS,
+            BOARD_COLS
+        );
         self.board[(coord.row * BOARD_COLS + coord.col) as usize] = id;
     }
 
@@ -1261,14 +1325,21 @@ impl GameState {
 // Free functions
 // ---------------------------------------------------------------------------
 
-/// CPython list indexing: negatives wrap, out-of-range is an `IndexError`.
+/// CPython list indexing **as an `Option`**: negatives wrap (`-1` -> `len - 1`),
+/// and an index outside `[-len, len)` — where CPython raises `IndexError` —
+/// yields `None`.
+///
+/// The wrap half is load-bearing and bit-exact with the Python engine.  The
+/// `None` half is the 2026-08-23 board-bounds fix: the sole caller
+/// ([`GameState::board_direct`]) is only ever asked about a cell one step off a
+/// placed tile, and "off the board" means "no tile", not "abort the game".
 #[inline]
-fn py_index(i: i32, len: i32, what: &str) -> i32 {
+fn py_index(i: i32, len: i32) -> Option<i32> {
     let j = if i < 0 { i + len } else { i };
     if j < 0 || j >= len {
-        panic!("IndexError: board {what} index {i} out of range (len {len})");
+        return None;
     }
-    j
+    Some(j)
 }
 
 /// The shared body of `CityUtil.find_city` and `RoadUtil.find_road`: grow the
