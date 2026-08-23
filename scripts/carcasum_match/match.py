@@ -207,7 +207,8 @@ VOID_ERROR = "VOID_ERROR"
 REAL = frozenset({
     "SCORE_FINAL",               # terminal totals disagree
     "FARM_SCORE_FINAL",          # our exact farm total vs score_detail["field"]
-    "ENDGAME_TERRAIN_MISMATCH",  # our endgame-only per-terrain vs their terminal delta (ASSUMPTION, see docstring)
+    # ⚠️ ENDGAME_TERRAIN_MISMATCH is DELIBERATELY *NOT* REAL — see the constant
+    # below and `_ENDGAME_DELTA_UNSOUND` for the measurement that demoted it.
     "MEEPLE_LEGALITY",           # canonicalised meeple option sets differ
     "MEEPLE_SLOT_UNMAPPED",      # our legal slot resolves to no Carcasum feature
     "LEGALITY_OURS_EXTRA",       # we allow a tile placement Carcasum does not offer
@@ -223,7 +224,47 @@ CLASSIFIED = frozenset({
     "UNPLACEABLE_REDRAW",  # A3 retail redraw — expected under fixed_v1 on both sides
     "SCORE_TIMING",        # a running mismatch that reconciles by the terminal
     "WALL_LEGALITY",       # Carcasum offers a placement our bounded window cannot express
+    "ENDGAME_TERRAIN_MISMATCH",   # telemetry only — NOT a rules finding; see below
 })
+
+#: WHY `ENDGAME_TERRAIN_MISMATCH` IS TELEMETRY AND NOT A REAL DIVERGENCE.
+#:
+#: The check wants OUR endgame-only per-terrain vector (from
+#: `aux_targets.extract_terminal_ownership`) against THEIRS. We have no absolute
+#: per-terrain figure of our own — our engine tracks a flat `scores[player]` — so
+#: theirs has to be turned into an endgame-only quantity by differencing
+#: `score_detail` across the end of the game. **There is no ply at which that
+#: difference is the endgame-only quantity**, which was measured, not assumed
+#: (2026-08-23, real driver, deck 5100013):
+#:
+#:   * against the TERMINATING ply's `ev_move`, the delta is EXACTLY ZERO on every
+#:     terrain — `game_over.score_detail` and the last `ev_move.score_detail` are
+#:     byte-identical, because Carcasum's `endGame()` runs INSIDE the terminating
+#:     `Game::step()`, so the last `ev_move` already contains the endgame sweep;
+#:   * against the ply BEFORE it, the delta additionally contains that ply's
+#:     MID-GAME closures, so it over-reports. That is the direction actually
+#:     observed in the 50-game audit: theirs >= ours on 8/50 games, never the
+#:     reverse.
+#:
+#: So the class fires on a bookkeeping-alignment artefact, not on a rules
+#: disagreement — and the audit corroborates that reading, since those same 8
+#: games had EXACT final-score agreement and EXACT farm agreement. Leaving it in
+#: REAL would void ~16 % of games for a non-rules reason and corrupt the rated
+#: match's void accounting.
+#:
+#: It stays as reported telemetry because the direction and size are still worth
+#: eyeballing. To make it sound, the DRIVER must publish a `score_detail` snapshot
+#: taken after the terminating ply's mid-game closures but BEFORE `endGame()` —
+#: i.e. a `pre_endgame` field on `game_over`. That is a small change at the
+#: `simEndGame()` boundary and is the way to recover a full per-terrain endgame
+#: check; it is NOT needed for the rated match, because `FARM_SCORE_FINAL` below
+#: already covers the terrain that matters.
+#:
+#: `FARM_SCORE_FINAL` IS sound and stays REAL: fields never score mid-game in
+#: either engine, so their ABSOLUTE `score_detail["field"]` at `game_over` IS the
+#: endgame-only field figure, with no differencing and nothing to contaminate it.
+#: The 50-game audit agreed 50/50 on it, with farms exercised in 50/50 games.
+_ENDGAME_DELTA_UNSOUND = True
 
 _COMPASS_CW = {"N": "E", "E": "S", "S": "W", "W": "N"}
 _CARCASUM_TERRAIN_TO_FEATURE = {"field": "Field", "road": "Road", "city": "City", "cloister": "Monastery"}
@@ -1476,11 +1517,15 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
                         div.add("ENDGAME_TERRAIN_MISMATCH", -1, {
                             "terrain": terr, "ours": endgame_ours[terr], "carcasum_delta": delta,
                             "carcasum_base": base, "carcasum_final": fin,
-                            "note": "delta = (the terminating ev_move's score_detail) minus "
-                                    "(the PLY BEFORE it's score_detail) -- assumes the endgame "
-                                    "sweep runs synchronously inside the terminating ply, which "
-                                    "PROTOCOL.md does not guarantee for Carcasum (see match.py "
-                                    "docstring's score-diffing section)"})
+                            "note": "TELEMETRY, NOT A RULES FINDING. delta = terminal "
+                                    "score_detail minus the score_detail at the ply BEFORE the "
+                                    "terminating one, so it also carries that ply's MID-GAME "
+                                    "closures; measured against the terminating ply itself the "
+                                    "delta is identically zero, because Carcasum runs endGame() "
+                                    "inside step(). Neither ply yields the endgame-only quantity, "
+                                    "so this class was demoted out of REAL on 2026-08-23 after "
+                                    "measuring both. FARM_SCORE_FINAL is the sound per-terrain "
+                                    "check. See _ENDGAME_DELTA_UNSOUND in this module."})
             except Exception as e:                              # noqa: BLE001
                 div.add("HARNESS_ERROR", -1, f"endgame ownership audit failed: {type(e).__name__}: {e}")
     except _StopGame:
