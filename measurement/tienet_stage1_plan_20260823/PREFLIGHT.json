@@ -1,0 +1,359 @@
+{
+  "schema": "carcassonne-tiletie-probe/v1",
+  "mode": "preflight",
+  "generated_utc": "2026-08-23T05:57:43+00:00",
+  "git": "17d56dd6",
+  "knowngood": {
+    "schema": "carcassonne-tiletie-probe/v1",
+    "gate": "KNOWNGOOD",
+    "ok": true,
+    "tol": 1e-09,
+    "published": {
+      "arb": 0.20645928315484208,
+      "ora": 0.2545233140066622,
+      "F": 0.8111605962722847
+    },
+    "reproduced": {
+      "arb": 0.20645928315484208,
+      "ora": 0.2545233140066622,
+      "F": 0.8111605962722847,
+      "n": 733,
+      "n_roots": 399
+    },
+    "max_abs_position_delta": 0.0,
+    "worst_rid": null,
+    "delta": {
+      "arb": 0.0,
+      "ora": 0.0,
+      "F": 0.0
+    },
+    "n_of_record": [
+      733,
+      399
+    ],
+    "source_readout": "measurement/tiearb_20260816/READOUT.json",
+    "generated_utc": "2026-08-23T05:57:43+00:00"
+  },
+  "plan": "measurement/tienet_stage1_plan_20260823/PLAN.md",
+  "read_rule": "measurement/tienet_stage1_plan_20260823/P3_RULE.md",
+  "parts": [
+    "p1",
+    "p2",
+    "p3"
+  ],
+  "n_positions": 733,
+  "governance": "0 games, no band, no results.csv row, no claim id, no RUN_LIVE.json. ZERO worker-hours: every number is computed from records already on disk.",
+  "ceiling_caveat": "CEILING CAVEAT (LEVER_INDEX 'arbiter playout-policy upgrade', verbatim): on THIS corpus the entire judge-quality ceiling is ora - arb = +0.048 pts/tied ply at the point estimate, and F = 0.811 has CI95 [0.450, 1.320] \u2014 the CI INCLUDES 1, i.e. includes ZERO remaining headroom. Any picker's gain here is an unknown fraction of an effect that is itself consistent with zero. This is an OFFLINE probe of a B=16-grade selection; the DEPLOYED arbiter is B=64 and captures more, so the residual gap at deploy is plausibly smaller still.",
+  "net_asymmetry_caveat": "NET FOLD ASYMMETRY: tier1/v29 select on M/2 worlds and are priced on the disjoint M/2; the net's pick is world-independent, so its two folds agree and its arb is a FULL-M difference \u2014 same estimand, LESS noise. Its winner's-curse control is the ROOT split, not the world split. Do not read a net-vs-rollout gap of order the noise as a strength difference.",
+  "r1_collinearity_note": "R1 COLLINEARITY (PLAN.md \u00a75): for a LINEAR pairwise ranker on x_a - x_b the afterstate-minus-ROOT diff features CANCEL EXACTLY \u2014 (x_a-x_r)-(x_b-x_r) = x_a-x_b. R1 is perfectly collinear with R0 in a linear model and adds literally nothing; it is a rung ONLY paired with M2/M3.",
+  "prior": "PRIOR, stated in PLAN.md \u00a78 before any number was bought: ~10-15% that any stage-1 tier clears \u00a77.1. The free tier is designed to be worth running AT that prior because its primary deliverable is a POWERED KILL, not a win.",
+  "P1": {
+    "what": "PLAN.md \u00a79.2 P1 \u2014 arbiter sibling-rank accuracy vs the clair-puct oracle order on the graded 733; calibrates accuracy -> capture.",
+    "n_positions": 733,
+    "n_roots": 399,
+    "acc_full": 0.5485516115871073,
+    "acc_full_pairs": 2451,
+    "acc_crossfit": 0.5379020692481049,
+    "acc_crossfit_pairs": 4881,
+    "top1_full": 0.44397759103641454,
+    "top1_crossfit": 0.4282700421940928,
+    "acc_by_n_arms": {
+      "2": {
+        "acc": 0.548951048951049,
+        "pairs": 286
+      },
+      "3": {
+        "acc": 0.5595637583892618,
+        "pairs": 596
+      },
+      "4": {
+        "acc": 0.5502114164904862,
+        "pairs": 946
+      },
+      "5": {
+        "acc": 0.5353130016051364,
+        "pairs": 623
+      }
+    },
+    "capture": {
+      "arb": {
+        "mean": 0.20645928315484208,
+        "se_cluster": 0.05506829789378417,
+        "z": 3.7491495297904636,
+        "n": 733,
+        "n_roots": 399
+      },
+      "ora": {
+        "mean": 0.2545233140066622,
+        "se_cluster": 0.05978286294244883,
+        "z": 4.25746278246467,
+        "n": 733,
+        "n_roots": 399
+      },
+      "rnd": {
+        "mean": 0.015115114814570356,
+        "se_cluster": 0.05989029968566953,
+        "z": 0.25238001636159924,
+        "n": 733,
+        "n_roots": 399
+      }
+    },
+    "calibration": {
+      "anchors": [
+        [
+          0.5,
+          0.015115114814570356
+        ],
+        [
+          0.5379020692481049,
+          0.20645928315484208
+        ],
+        [
+          1.0,
+          0.2545233140066622
+        ]
+      ],
+      "slope_pts_per_acc": 5.048383165777653,
+      "acc_needed_for_half_arb": 0.5174540093074091,
+      "acc_needed_for_full_arb": 0.5379020692481049,
+      "predicted_capture_at_stage0_acc": 0.12163599961247888,
+      "stage0_measured_capture": -0.0451,
+      "stage0_inner_cv_acc": 0.5211,
+      "note": "Slope is fitted on (0.5, rnd) and (acc_crossfit, arb) ONLY. The (1.0, ora) anchor is printed for scale and is NOT on the line \u2014 a perfect ranker is not reachable by extrapolating a local slope. `predicted_capture_at_stage0_acc` is what the calibration says stage-0's 0.5211 should have been worth; compare it to the MEASURED -0.0451 before trusting either."
+    },
+    "asymmetry_caveat": "NET FOLD ASYMMETRY: tier1/v29 select on M/2 worlds and are priced on the disjoint M/2; the net's pick is world-independent, so its two folds agree and its arb is a FULL-M difference \u2014 same estimand, LESS noise. Its winner's-curse control is the ROOT split, not the world split. Do not read a net-vs-rollout gap of order the noise as a strength difference."
+  },
+  "P2": {
+    "what": "PLAN.md \u00a79.2 P2 \u2014 label-noise audit; the B-vs-n decision.",
+    "se_pair_definition": "CRN-PAIRED: sd over worlds of (margin_i - margin_j) / sqrt(m). Smaller than the unpaired sd*sqrt(2)/sqrt(m) wherever the CRN pairing works, so it declares FEWER pairs to be coin flips \u2014 the conservative choice.",
+    "by_judge": {
+      "arb": {
+        "judge": "tier1-greedy (the TRAINING label of record)",
+        "n_pairs_non_exact_tie": 2439,
+        "n_exact_ties_dropped_by_stage0": 107,
+        "t_quantiles": {
+          "5": 0.08491170394168583,
+          "10": 0.17841957635349223,
+          "25": 0.4283996280110375,
+          "50": 0.9294853593376481,
+          "75": 1.596863267819116,
+          "90": 2.513520576598814,
+          "95": 3.443244625907084
+        },
+        "t_mean": 1.268873512081189,
+        "frac_below": {
+          "0.5": 0.2894628946289463,
+          "1.0": 0.5284952849528495,
+          "2.0": 0.8339483394833949
+        },
+        "effective_pairs_at_kappa": {
+          "0.5": 1733,
+          "1.0": 1150,
+          "2.0": 405
+        },
+        "kappa0_pairs": 2439
+      },
+      "if": {
+        "judge": "clair-puct (the P3 noiseless-target arm)",
+        "n_pairs_non_exact_tie": 2423,
+        "n_exact_ties_dropped_by_stage0": 114,
+        "t_quantiles": {
+          "5": 0.0830067591905142,
+          "10": 0.15716416533945335,
+          "25": 0.3854531655267867,
+          "50": 0.8522532019006752,
+          "75": 1.451054099097696,
+          "90": 2.1893899514872084,
+          "95": 2.7219191682403756
+        },
+        "t_mean": 1.081731089245086,
+        "frac_below": {
+          "0.5": 0.32274040445728436,
+          "1.0": 0.574081716879901,
+          "2.0": 0.8741229880313661
+        },
+        "effective_pairs_at_kappa": {
+          "0.5": 1641,
+          "1.0": 1032,
+          "2.0": 305
+        },
+        "kappa0_pairs": 2423
+      }
+    }
+  },
+  "P3": {
+    "what": "PLAN.md \u00a79.2 P3 \u2014 feature informativeness against a NOISELESS target. Read rule pre-registered at measurement/tienet_stage1_plan_20260823/P3_RULE.md.",
+    "n_rids": 733,
+    "n_roots": 399,
+    "arms": {
+      "arbiter": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_train_rids": 601,
+            "n_train_roots": 319,
+            "n_test_rids": 132,
+            "n_pairs": 3962,
+            "kind": "pairwise-logistic",
+            "C": 0.01,
+            "inner_cv_acc": 0.5285343352883676
+          },
+          {
+            "fold": 1,
+            "n_train_rids": 577,
+            "n_train_roots": 319,
+            "n_test_rids": 156,
+            "n_pairs": 3910,
+            "kind": "pairwise-logistic",
+            "C": 1.0,
+            "inner_cv_acc": 0.5250511247443763
+          },
+          {
+            "fold": 2,
+            "n_train_rids": 590,
+            "n_train_roots": 319,
+            "n_test_rids": 143,
+            "n_pairs": 4018,
+            "kind": "pairwise-logistic",
+            "C": 0.01,
+            "inner_cv_acc": 0.5211623684189682
+          },
+          {
+            "fold": 3,
+            "n_train_rids": 590,
+            "n_train_roots": 319,
+            "n_test_rids": 143,
+            "n_pairs": 4020,
+            "kind": "pairwise-logistic",
+            "C": 0.01,
+            "inner_cv_acc": 0.5228821295335557
+          },
+          {
+            "fold": 4,
+            "n_train_rids": 574,
+            "n_train_roots": 320,
+            "n_test_rids": 159,
+            "n_pairs": 3754,
+            "kind": "pairwise-logistic",
+            "C": 0.003,
+            "inner_cv_acc": 0.5079985709749127
+          }
+        ],
+        "n_rids": 733,
+        "n_roots": 399,
+        "n_train_pairs_total": 19664,
+        "inner_cv_acc_mean": 0.5211257057920361,
+        "inner_cv_acc_folds": [
+          0.5285343352883676,
+          0.5250511247443763,
+          0.5211623684189682,
+          0.5228821295335557,
+          0.5079985709749127
+        ],
+        "oof_acc": 0.5097640358014646,
+        "oof_pairs": 2458,
+        "oof_positions": 733,
+        "model": "pairwise-logistic",
+        "kappa": 0.0,
+        "kfold": 5,
+        "split_seed": 20260822
+      },
+      "oracle": {
+        "folds": [
+          {
+            "fold": 0,
+            "n_train_rids": 601,
+            "n_train_roots": 319,
+            "n_test_rids": 132,
+            "n_pairs": 3968,
+            "kind": "pairwise-logistic",
+            "C": 0.3,
+            "inner_cv_acc": 0.529233870967742
+          },
+          {
+            "fold": 1,
+            "n_train_rids": 577,
+            "n_train_roots": 319,
+            "n_test_rids": 156,
+            "n_pairs": 3888,
+            "kind": "pairwise-logistic",
+            "C": 0.03,
+            "inner_cv_acc": 0.5030864197530864
+          },
+          {
+            "fold": 2,
+            "n_train_rids": 590,
+            "n_train_roots": 319,
+            "n_test_rids": 143,
+            "n_pairs": 4004,
+            "kind": "pairwise-logistic",
+            "C": 0.1,
+            "inner_cv_acc": 0.507251497005988
+          },
+          {
+            "fold": 3,
+            "n_train_rids": 590,
+            "n_train_roots": 319,
+            "n_test_rids": 143,
+            "n_pairs": 4016,
+            "kind": "pairwise-logistic",
+            "C": 0.003,
+            "inner_cv_acc": 0.5077191235059761
+          },
+          {
+            "fold": 4,
+            "n_train_rids": 574,
+            "n_train_roots": 320,
+            "n_test_rids": 159,
+            "n_pairs": 3732,
+            "kind": "pairwise-logistic",
+            "C": 1.0,
+            "inner_cv_acc": 0.5187538484160609
+          }
+        ],
+        "n_rids": 733,
+        "n_roots": 399,
+        "n_train_pairs_total": 19608,
+        "inner_cv_acc_mean": 0.5132089519297707,
+        "inner_cv_acc_folds": [
+          0.529233870967742,
+          0.5030864197530864,
+          0.507251497005988,
+          0.5077191235059761,
+          0.5187538484160609
+        ],
+        "oof_acc": 0.48633210934312526,
+        "oof_pairs": 2451,
+        "oof_positions": 733,
+        "model": "pairwise-logistic",
+        "kappa": 0.0,
+        "kfold": 5,
+        "split_seed": 20260822
+      }
+    },
+    "control": {
+      "published_stage0_inner_cv_folds": [
+        0.5285,
+        0.5251,
+        0.5212,
+        0.5229,
+        0.508
+      ],
+      "reproduced": [
+        0.5285343352883676,
+        0.5250511247443763,
+        0.5211623684189682,
+        0.5228821295335557,
+        0.5079985709749127
+      ],
+      "ok": true,
+      "tol": 0.0005,
+      "why": "the arbiter-label arm re-runs stage-0's own fit; if it does not reproduce GRADE_net.json's per-fold inner-CV accuracies, P3 is VOID and no branch fires."
+    },
+    "p3_acc": 0.5132089519297707,
+    "alive_bar": 0.55,
+    "branch": "DEAD",
+    "branch_meaning": "DEAD: the 84 features cannot rank siblings even against a perfect, noiseless target => the label routes are ARITHMETICALLY dead; run the free A1-A3 sweep to convert the \u00a77.2 kill into a LABEL-SCALED kill, then STOP.",
+    "rail": "DIAGNOSTIC ONLY \u2014 must never be reported as capture."
+  }
+}

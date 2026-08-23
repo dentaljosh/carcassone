@@ -409,3 +409,173 @@ def test_label_collection_reports_shape_mismatches_rather_than_forcing_them():
     for rid, v in list(lab["labels"].items())[:20]:
         assert len(v["labels"]) == len(v["arm_order"])
         assert all(np.isfinite(x) for x in v["labels"])
+
+
+# =========================================================================== #
+# STAGE-1 FREE TIER — P1 / P2 / P3 + the pre-registered near-tie filter        #
+# (measurement/tienet_stage1_plan_20260823/PLAN.md §9.2, §6.4)                 #
+# =========================================================================== #
+def test_pair_agreement_drops_target_ties_and_halves_predictor_ties():
+    """The accuracy convention must match `pairwise_rows`' own, or the label sweep
+    and the model's training set are measuring different things."""
+    # perfect / reversed
+    assert PP.pair_agreement([3.0, 2.0, 1.0], [3.0, 2.0, 1.0]) == (3.0, 3)
+    assert PP.pair_agreement([1.0, 2.0, 3.0], [3.0, 2.0, 1.0]) == (0.0, 3)
+    # a TARGET tie carries no order -> not counted at all
+    assert PP.pair_agreement([1.0, 2.0], [5.0, 5.0]) == (0.0, 0)
+    # a PREDICTOR tie is a coin flip at pick time -> half credit, never full
+    assert PP.pair_agreement([1.0, 1.0], [2.0, 1.0]) == (0.5, 1)
+    # the degenerate constant model must read 0.5, not 1.0
+    agree, tot = PP.pair_agreement([0.0] * 4, [4.0, 3.0, 2.0, 1.0])
+    assert tot == 6 and agree / tot == 0.5
+
+
+def test_se_pairs_for_is_the_crn_paired_standard_error():
+    rng = np.random.default_rng(20260823)
+    mat = rng.normal(size=(3, 32)).tolist()
+    sep = PP.se_pairs_for(mat)
+    assert set(sep) == {"0,1", "0,2", "1,2"}, "keys must be JSON-safe 'i,j' strings"
+    arr = np.asarray(mat)
+    for i, j in ((0, 1), (0, 2), (1, 2)):
+        d = arr[i] - arr[j]
+        want = float(np.std(d, ddof=1) / np.sqrt(arr.shape[1]))
+        assert sep[f"{i},{j}"] == pytest.approx(want, rel=1e-12)
+    # PAIRED, not the unpaired sd*sqrt(2)/sqrt(m): on CRN-correlated arms it is
+    # strictly SMALLER, which is what makes it the conservative near-tie filter.
+    base = rng.normal(size=32)
+    corr = [(base + 0.01 * rng.normal(size=32)).tolist(),
+            (base + 0.01 * rng.normal(size=32)).tolist()]
+    a = np.asarray(corr)
+    unpaired = float(np.std(a[0], ddof=1) * np.sqrt(2) / np.sqrt(32))
+    assert PP.se_pairs_for(corr)["0,1"] < unpaired
+    assert json.loads(json.dumps(sep)) == sep
+
+
+def test_kappa_zero_reproduces_stage0_and_kappa_monotonically_shrinks_the_pool():
+    """PLAN.md §6.4: `kappa=0` MUST reproduce stage-0 exactly (exact ties only).
+    Larger kappa must be a strict SUBSET — never a re-weighting, never a new pair."""
+    feats = {f"p{i}": [[float(i), 1.0], [0.0, float(i)]] for i in range(6)}
+    labels = {}
+    for i in range(6):
+        mat = [[0.0] * 8, [float(i) * 0.05] * 4 + [float(i) * 0.05 + 0.4] * 4]
+        labels[f"p{i}"] = {"root_id": f"R{i % 3}", "arm_order": [0, 1],
+                           "labels": [float(np.mean(m)) for m in mat],
+                           "se_pairs": PP.se_pairs_for(mat)}
+    rids = sorted(labels)
+    n0 = PP.pairwise_rows(feats, labels, rids, kappa=0.0)[0].shape[0]
+    # kappa=0 is byte-identical to the un-parameterised stage-0 call
+    assert np.array_equal(PP.pairwise_rows(feats, labels, rids)[0],
+                          PP.pairwise_rows(feats, labels, rids, kappa=0.0)[0])
+    counts = [PP.pairwise_rows(feats, labels, rids, kappa=k)[0].shape[0]
+              for k in (0.0, 0.5, 1.0, 2.0)]
+    assert counts[0] == n0
+    assert counts == sorted(counts, reverse=True), "kappa must only ever remove pairs"
+
+
+def test_labels_from_records_is_a_refactor_not_a_change(real_inputs):
+    """`collect_labels`' body was factored out so a second judge can reuse it. The
+    factored path must produce BIT-IDENTICAL labels to the stage-0 one."""
+    arms_index = json.loads(Path(PP.DEFAULT_PLAN_DIR, "ARMS.json").read_text())
+    got = PP.labels_from_records(real_inputs["arb_by_rid"], arms_index)
+    old = PP.collect_labels(_Args())
+    assert set(got["labels"]) == set(old["labels"])
+    for rid, v in old["labels"].items():
+        assert got["labels"][rid]["labels"] == v["labels"], rid
+        assert got["labels"][rid]["arm_order"] == v["arm_order"], rid
+
+
+def test_m_waiver_is_explicit_and_subsets_the_FIRST_worlds():
+    """PLAN.md §3.1: an m=128 corpus is admitted only by an EXPLICIT waiver, and
+    the subset is the FIRST 32 ordered CRN worlds — an exact estimand match."""
+    legs = {1: {"values_a": [1.0] * 32 + [99.0] * 96,
+                "values_b": [2.0] * 32 + [99.0] * 96,
+                "m": 128, "world_seed_salt": RT.WORLD_SEED_SALT,
+                "pick_a": 10, "pick_b": 11}}
+    arms_index = {"rid1": {"arms": [10, 11], "root_id": "R", "rules_profile": "walled"}}
+    # default: REFUSED, and counted rather than coerced
+    out = PP.labels_from_records({"rid1": legs}, arms_index)
+    assert out["labels"] == {}
+    assert out["shape_problems"][0]["why"].startswith("m=128")
+    # explicit waiver: admitted, first 32 worlds only, and the waiver is recorded
+    out = PP.labels_from_records({"rid1": legs}, arms_index,
+                                 allow_m=(32, 128), subset_worlds=32)
+    assert out["labels"]["rid1"]["labels"] == [1.0, 2.0], "the 99.0 tail must be cut"
+    assert out["labels"]["rid1"]["m"] == 32
+    assert out["labels"]["rid1"]["m_record"] == 128
+    assert out["labels"]["rid1"]["worlds_subset"] is True
+    assert out["n_subset_worlds"] == 1
+
+
+def test_crossfit_ranker_holds_out_every_root_it_grades():
+    feats = {f"p{i}": [[float(i), 1.0, 0.0], [0.0, float(i), 1.0]] for i in range(40)}
+    labels = {f"p{i}": {"root_id": f"R{i % 8}", "arm_order": [0, 1],
+                        "labels": [0.0, float(i % 5) - 2.0]} for i in range(40)}
+    rids = [r for r in sorted(labels) if labels[r]["labels"][0] != labels[r]["labels"][1]]
+    res = PP.crossfit_ranker(feats, labels, rids, kfold=4, split_seed=PP.PROBE_SEED,
+                             model="pairwise-logistic", min_pairs=2)
+    # every root that got a score was held out of the fold that scored it, and the
+    # folds together grade every root exactly once
+    all_roots = {labels[r]["root_id"] for r in rids}
+    graded = {labels[r]["root_id"] for r in res["scores_by_rid"]}
+    assert graded == all_roots, "the cross-fit must grade every root"
+    assert sum(f.get("n_test_rids", 0) for f in res["folds"]) == len(rids)
+    for f in res["folds"]:
+        assert f["n_train_roots"] == res["n_roots"] - len(
+            PP.root_folds(sorted(all_roots), 4, PP.PROBE_SEED)[f["fold"]])
+    assert res["oof_pairs"] > 0
+    assert 0.0 <= res["oof_acc"] <= 1.0
+    assert res["n_roots"] == len({labels[r]["root_id"] for r in rids})
+
+
+def test_the_p3_bar_and_its_read_rule_are_committed_and_unmoved():
+    """The whole point of P3 is that the branch was written down BEFORE the number.
+    If the bar or the rule doc drifts, the pre-registration is worthless."""
+    assert PP.P3_ALIVE_BAR == 0.55
+    assert PP.GATE_FRACTION == 0.50
+    rule = REPO / PP.P3_RULE_DOC
+    assert rule.is_file(), f"{PP.P3_RULE_DOC} must exist before any P3 fit"
+    txt = rule.read_text()
+    assert "0.55" in txt and "DEAD" in txt and "ALIVE" in txt
+    tracked = subprocess.run(["git", "-C", str(REPO), "ls-files", "--error-unmatch",
+                              PP.P3_RULE_DOC], capture_output=True)
+    assert tracked.returncode == 0, "the read rule must be COMMITTED, not just written"
+
+
+def test_p3_is_walled_off_from_the_capture_statistic():
+    """PLAN.md §9.2's rail, enforced in code: P3 may never emit a capture number."""
+    src = Path(PP.__file__).read_text()
+    body = src[src.index("def p3_feature_informativeness"):
+               src.index("def cmd_preflight")]
+    for banned in ("aggregate_picker", "paired_ratio_bootstrap", "price_picks",
+                   "F_lo", "F_hi"):
+        assert banned not in body, f"P3 must not touch {banned} — it is not a capture read"
+    assert "DIAGNOSTIC" in PP.p3_feature_informativeness.__doc__.upper()
+
+
+def test_free_tier_carries_the_plan_s_honesty_rails_verbatim():
+    assert "CANCEL EXACTLY" in PP.R1_COLLINEARITY_NOTE
+    assert "collinear" in PP.R1_COLLINEARITY_NOTE
+    assert "10-15%" in PP.FREE_TIER_PRIOR
+    assert "POWERED KILL" in PP.FREE_TIER_PRIOR
+    src = Path(PP.__file__).read_text()
+    body = src[src.index("def cmd_preflight"):]
+    for rail in ("CEILING_CAVEAT", "R1_COLLINEARITY_NOTE", "NET_ASYMMETRY_CAVEAT",
+                 "FREE_TIER_PRIOR"):
+        assert rail in body, f"cmd_preflight must carry {rail} into its artifact"
+
+
+@share_only
+def test_preflight_reproduces_stage0_s_own_inner_cv_folds(real_inputs):
+    """The P3 CONTROL. The arbiter-label arm re-runs stage-0's fit; if it does not
+    reproduce GRADE_net.json's per-fold inner-CV accuracies, P3 is void."""
+    pre = json.loads((REPO / "measurement/tienet_stage1_plan_20260823"
+                      / "PREFLIGHT.json").read_text())
+    published = json.loads(
+        (REPO / "measurement/tiletie_probe_20260822/GRADE_net.json").read_text()
+    )["witnesses"]["net_model"]["folds"]
+    want = sorted(f["inner_cv_acc"] for f in published if f.get("inner_cv_acc"))
+    got = sorted(pre["P3"]["arms"]["arbiter"]["inner_cv_acc_folds"])
+    assert len(got) == len(want)
+    for a, b in zip(got, want):
+        assert abs(a - b) < 5e-4, (got, want)
+    assert pre["P3"]["control"]["ok"] is True
