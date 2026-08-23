@@ -164,10 +164,19 @@ def test_win_objective_parity(seed, wc):
     assert "win_value" in rs and rs["win_value"] is not None
     assert abs(py.win_value - float(rs["win_value"])) < 1e-9, \
         f"seed{seed} win wc={wc}: win_value"
-    py_wv = sorted((int(a), float(v)) for a, v in py.child_win_values.items())
-    rs_wv = sorted((int(a), float(v)) for a, v in rs["child_win_values"])
-    for (pa, pv), (ra, rv) in zip(py_wv, rs_wv):
-        assert pa == ra and abs(pv - rv) < 1e-9, f"seed{seed} win wc={wc}: child_win_values"
+    # ⚠️ `child_win_values` crosses the FFI as f64 BIT PATTERNS, exactly like
+    # `child_values` (see `assert_same_core` above and the pyo3 stamping in
+    # rust/carc/carc-py/src/lib.rs: both go through `.to_bits()`; only the
+    # scalar `win_value` is stamped as a raw float, with `win_value_bits`
+    # alongside). Reading them as floats compares a python 1.0 against the
+    # integer 4607182418800017408 — and that mistake HIDES on any position
+    # where every child scores 0.0, because bits(0.0) == 0 == float(0). Seed 7
+    # is the first position in this sweep where the lattice is all-1.0, which
+    # is why it was the only one to catch it. Compare in bits: the solver is a
+    # byte-exact port, so this is exact equality, no tolerance.
+    py_wv = sorted((int(a), ubits(v)) for a, v in py.child_win_values.items())
+    rs_wv = sorted((int(a), int(v)) for a, v in rs["child_win_values"])
+    assert py_wv == rs_wv, f"seed{seed} win wc={wc}: child_win_values"
 
 
 def test_wc_tiebreak_stamped_on_the_rust_result():
