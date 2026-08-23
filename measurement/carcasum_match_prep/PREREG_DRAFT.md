@@ -172,25 +172,62 @@ their whole purpose is to be looked at.
 
 ---
 
-## 4. Prerequisites — all must be green before blind commit
+## 4. Prerequisites — **ALL GREEN as of 2026-08-23**
 
-1. **Build** — `vendor/carcasum` at upstream `5f5e3654d31ce8cef0eebeb80a7fb989ef7c2550`, the
-   driver binary built, its sha256 pinned, `CARCASUM_PATCHES.md` complete and re-appliable.
-2. **Tile mapping** — `tests/data/carcasum/TILE_MAPPING.tsv` verified against *their loader*
-   (not merely their XML) by `tests/test_carcasum_tile_oracle.py`, and the deck-count multiset
-   agreeing 72/72 under the garden-variant collapse.
-3. **Divergence audit (THE gate)** — ~50 cheap games (their AI at a low budget vs our
-   tier1-greedy or random; the point is rules coverage, not strength):
-   - final-score agreement **N/N**, zero REAL divergences;
-   - **per-terrain** agreement, not just totals — the `score_detail` diff is what licenses the
-     word *farms* in any later sentence;
-   - **farms actually exercised in > 80 % of audit games** (a farm-free corpus certifies
-     nothing about farm scoring, and farms are where the R9-class bugs live);
-   - unplaceable-tile redraw exercised at least once, and agreeing.
-   Any irreconcilable divergence is reported loudly and **blocks this cell**.
-4. **Smoke** — 4 games at production knobs, timed, with both sides' realized s/move reported and
-   a projected wall for n=400 (§6 of the build report). A smoke is not evidence of strength;
-   n=4 is noise, and this prereg pre-commits to **not** reading its win/loss.
+Every gate below is discharged, with the artefact that discharges it. Nothing here is
+"expected to pass"; each line is a result.
+
+| # | gate | status |
+|---|---|---|
+| 1 | **Build** | ✅ `vendor/carcasum` @ `5f5e3654d31ce8cef0eebeb80a7fb989ef7c2550`, patches R1 + B1–B8 in [`CARCASUM_PATCHES.md`](../../vendor/carcasum/CARCASUM_PATCHES.md), driver built on **both** boxes from a rootless Qt5 prefix. Binary sha256 is stamped in every manifest as the **primary provenance witness** (the vendored tree has no `.git`, so a git rev is secondary). |
+| 1b | **Cross-box witness** | ✅ `--dump-tiles` is **byte-identical** on the local box and the laptop (`sha256 7c771afe…`, 7391 bytes) across different Ubuntu releases (noble 24.04 / resolute 26.04), Qt patch versions (5.15.13 / 5.15.18), vendored-vs-system ICU, and `-march=native` on different CPUs. The binaries differ, as they must; **the tile model does not**. |
+| 2 | **Tile mapping** | ✅ 32/32 rows, verified against *their loader* and not merely their XML, by `tests/test_carcasum_tile_oracle.py` (12/12) and `tests/test_carcasum_rules_patch.py`. Deck-count multiset agrees 72/72 under the garden-variant collapse. |
+| 3 | **Divergence audit (THE gate)** | ✅ **PASS 50/50** — [`measurement/carcasum_audit_20260823/AUDIT_READOUT.md`](../carcasum_audit_20260823/AUDIT_READOUT.md). Zero REAL divergences, zero voids, exact final-score agreement 50/50, **exact farm agreement 50/50**, farms scored in **50/50 = 100 %** of games, replay 50/50, `UNPLACEABLE_REDRAW` exercised 4×. |
+| 3b | **Tiny-city patch observed live** | ✅ Not inferred from a source diff: a *constructed* plain 2-tile city scores **4**, not 2, in the actual binary (`tests/test_carcasum_rules_patch.py`). |
+| 4 | **Smoke at production knobs** | ✅ 4 games on the laptop under exclusive tenancy — §4.1. |
+
+### 4.1 What the audit changed about this prereg
+
+Two checks in the original draft were **not implementable as written**, and saying so is part
+of the record:
+
+- **The per-terrain score diff is an ENDGAME diff, not a per-ply one.** Our engine tracks only
+  a flat `scores[player]`; it has no per-terrain breakdown, and instrumenting shared `engine/`
+  code for an audit was not on the table. What discharges the *farms* claim is
+  `aux_targets.extract_terminal_ownership` — a recording replica of `count_final_scores` whose
+  attributed points sum to the engine's end-of-game additions by construction — compared
+  against their absolute `score_detail["field"]`. Sound because **fields never score mid-game
+  in either engine**, so no differencing and nothing to contaminate.
+- **`ENDGAME_TERRAIN_MISMATCH` is telemetry, not a rules class.** It was demoted out of `REAL`
+  after measuring both candidate baselines: against the terminating ply the delta is
+  identically zero (Carcasum runs `endGame()` inside `step()`), and against the prior ply it
+  carries that ply's mid-game closures. No ply yields the endgame-only quantity. Leaving it
+  REAL would have voided ~16 % of games for a bookkeeping reason **and reported it as "the
+  engines disagree on the rules."**
+- **The redraw check cannot be left to volume.** At the measured 1.4/100 rate, n=50 fires only
+  ~50 % of the time. It happened to fire 4× here; the standing requirement is the *constructed*
+  case, not the lucky one.
+
+### 4.2 The coordinate-frame gates, and why they are gates
+
+Three separate encoding bugs during the build could each have surfaced as a wall of per-ply
+"divergences" and been read as a rules disagreement: a wrong board offset (72 vs the true 145),
+a transport hang that voided every game with an empty stderr, and Carcasum enumerating only
+*physically distinct* tile rotations where our action space enumerates all four. None of them
+announces itself as a plumbing fault.
+
+So the harness now **refuses to guess a coordinate frame**:
+
+* the origin comes from the driver's `ready` handshake (`start_xy`), never a constant, and
+  there is **no fallback** — a `ready` line without `start_xy` is a hard void;
+* `board_size` must be odd and `start_xy` must equal its centre, asserted before ply 0;
+* a **ply-0 mapping failure is a distinct diagnostic class** (`COORD_FRAME_MISMATCH`), never an
+  ordinary `VOID_UNMAPPABLE`;
+* tile rotations are reduced modulo each tile's rotational period, derived from the driver's own
+  `--dump-tiles` (edges **and** node partition).
+
+**A coordinate bug must never be able to masquerade as a rules finding.** That sentence is the
+gate.
 
 ---
 
@@ -202,7 +239,7 @@ Let `d` = deck-paired margin in points, `z = d / SE(d)`, over 200 decks.
 |---|---|---|
 | **A — usable reference** | `\|z\| ≥ 3` | Report the sign and size. Carcasum enters the ruler set at this budget. Queue rung 2 (the budget ladder) to find the budget where it equals the champion — *that*, not this cell, is the non-saturating-ruler deliverable. |
 | **B — level** | `\|z\| < 3` and `\|d\| ≤ 2.0 pts` | Report **level at this budget**. A level opponent is the *most* useful ruler outcome, not a null: it means the knob is positioned where it can move in both directions. Queue rung 2 anyway. |
-| **C — inconclusive** | `\|z\| < 3` and `\|d\| > 2.0 pts` | **Top-up once** to n=800 using the reserved range `141000000200..141000000299`, then re-read under the SAME rule. One top-up, pre-registered, no second. |
+| **C — inconclusive** | `\|z\| < 3` and `\|d\| > 2.0 pts` | **Top-up once** to n=800 using the reserved range `142000000200..142000000299`, then re-read under the SAME rule. One top-up, pre-registered, no second. |
 | **D — void-contaminated** | voids or REAL divergences > 1 % of games | **No strength number is published.** Diagnose, patch, re-audit, re-run. A win rate over a rules disagreement is a rules result. |
 
 **Read-rule discipline:** these branches are fixed *before* any game is played, and the fired
