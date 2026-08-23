@@ -10,10 +10,23 @@
 > monitors, exactly as `measurement/carcasum_match_prep/LAUNCH_PROCEDURE.md` did for
 > rung 1.**
 
-This is the single status paragraph in this file. (r1's `PREREG.md` left a stale
-`STATUS: DRAFT` paragraph under its own FROZEN banner — a defect named explicitly in
-this cell's brief. This file carries exactly one status statement, above, and nothing
-below contradicts it.)
+> ⚠️ **AMENDED PRE-LAUNCH, zero games run; amended blind commit = the commit
+> introducing this line.** Owner's mid-build steer (relayed by the coordinator,
+> verbatim: *"100k is way above their 16k flattening, no? so maybe we see its flat
+> by just comparing to 50k?"*), mapped onto the real (not the then-believed) 32,551
+> median calibration: adds rung **D0 = 16,384 playouts (0.5× the base)**, reorders
+> execution cheapest-first (D0→A→B→C) with a kill-only interim futility check between
+> rungs, and restructures D0/A/B/C onto **one shared 100-deck set** with the
+> **within-deck slope** as the estimator of record. This is design-time — the pair was
+> frozen but unlaunched with zero statistics of any kind, so the amendment supersedes
+> the pre-amendment text below wherever the two disagree; nothing here retracts the
+> original calibration, the smoke result, or the champion/opponent/rules configuration.
+> Full detail: `READ_RULE.md` §1.1/§5, `WORKERS.conf`, `run_cells.sh`.
+
+This is the single non-amendment status paragraph in this file. (r1's `PREREG.md` left
+a stale `STATUS: DRAFT` paragraph under its own FROZEN banner — a defect named
+explicitly in this cell's brief. This file carries exactly one FROZEN statement plus
+the one AMENDED notice above it, and nothing below contradicts either.)
 
 Design: this file. Read-out branch table: [`READ_RULE.md`](READ_RULE.md). Constants:
 [`WORKERS.conf`](WORKERS.conf). Launcher: [`run_cells.sh`](run_cells.sh). Analyzer:
@@ -58,10 +71,11 @@ what budget B\* does Carcasum equal the champion?**
 - **Non-CRN-opponent posture** — Carcasum's RNG seed is compile-time only; decks and
   seatings are exactly reproducible, the opponent's MCTS search is not. Same as rung 1.
 
-**What is new:** three playout-budget rungs, a fourth ladder point supplied by rung 1's
-own already-collected datum (relabeled "rung 0"), and a fitted line across all four
-points in log2(playouts) to locate — or bound — the budget B\* at which the fitted
-margin crosses zero.
+**What is new:** four playout-budget rungs (D0/A/B/C, amendment-added D0 below), a
+fifth ladder point supplied by rung 1's own already-collected datum (relabeled "rung
+0"), and a fitted line — primarily the within-deck slope across the four shared-deck
+rungs, secondarily an aggregate fit that can include rung 0 — to locate, or bound, the
+budget B\* at which the fitted margin crosses zero.
 
 ---
 
@@ -117,27 +131,53 @@ not to a number this cell chose after the fact.
 
 ---
 
-## 2. The three rungs
+## 2. The four rungs (D0 added by the pre-launch amendment)
 
 | rung | multiplier | playouts (`m`, `mIsTimeout=false`) | `log2(m)` |
 |---|---|---|---|
+| **D0** | **0.5×** | **16,384** (2¹⁴) | 14 |
 | A | 2× | **65,536** (2¹⁶) | 16 |
 | B | 4× | **131,072** (2¹⁷) | 17 |
 | C | 8× | **262,144** (2¹⁸) | 18 |
 
-`n = 200` games/rung = **100 decks × 2 seatings**, deck-paired seat-swapped CRN, fresh
-deck range per rung (§4). Champion config, rules profile, and opponent identity are
-otherwise byte-identical to rung 1 (§0) — the *only* experimental variable across all
-four ladder points (including rung 0) is the opponent's playout budget.
+`n = 200` games/rung = **100 decks × 2 seatings**, deck-paired seat-swapped CRN.
+Champion config, rules profile, and opponent identity are otherwise byte-identical to
+rung 1 (§0) — the *only* experimental variable across all five ladder points (D0, A, B,
+C, and rung 0) is the opponent's playout budget.
 
-**Why n=200/rung and not n=400 like rung 1.** This is a three-point slope-and-crossover
-question across a ladder, not a single-point "is it usable" verdict — the load-bearing
-statistic is the *fitted line*, which pools information across all four points, and the
-per-rung n only needs to keep each point's SE small enough that the pooled fit is
-informative, not to independently clear a ±35-elo bar on its own. n=200 (100 decks) at
-r1's realized dispersion (paired SEM ≈0.98 pts at n=200 decks) gives each rung SEM
-≈1.38 pts (SEM scales as 1/√n_decks, so halving n_decks from 200→100 multiplies SEM by
-√2). See `READ_RULE.md` §2 for the fit's power arithmetic.
+**Why D0.** Owner's steer (relayed by the coordinator): the original "compare to ~50k"
+instinct, mapped onto the REAL 32,551 median (not the then-believed ~100k), lands on a
+**0.5× down-rung at 16,384 playouts** — half of r1's own calibrated cost, cheapest of
+all four new rungs, AND it lands exactly on the thesis's own doubling table's *last*
+measured datum (16,384-vs-8,192 → 56.3%), giving this cell a direct external
+cross-check against a published number, for free.
+
+**SHARED DECKS (amendment §3): D0, A, B, and C all draw the SAME 100-deck set**, not
+four disjoint 100-deck ranges. This is a deliberate CRN extension of the same trick
+`match.py`'s own deck-pairing already uses (differencing the SAME deck's two seatings
+cancels that deck's own variance) — reusing the identical `deck_seed` across all four
+rungs means `agent_seed(deck_seed, champ_seat)` (the CHAMPION's own PIMC determinization
+seed — see `match.py`) is IDENTICAL for a given deck+seat across every rung, so only the
+**opponent's budget** differs between a deck's four (or fewer) appearances. That is
+exactly the property the **within-deck slope** estimator (`READ_RULE.md` §1.1) needs:
+a per-deck regression across rungs where the only thing that changed *is* the
+independent variable, not the champion's own randomness too. The opponent itself stays
+non-CRN regardless (compile-time-only seed, unchanged posture from rung 1) — reusing the
+deck only removes CHAMPION-side noise, never opponent-side.
+
+⚠️ **Rung 0 (r1) is NOT part of the shared-deck set.** It lives on band `142000000000`
+(200 decks, a disjoint range from this cell's `143000000000`), so it shares zero
+`deck_seed` values with D0/A/B/C by construction — the within-deck estimator cannot
+include it. It re-enters the read-out as an independent cross-check on the fitted
+line's backward extrapolation only (`READ_RULE.md` §1.1), never as an input to the
+primary branch decision. The interim futility test (§READ_RULE.md §5) uses a SEPARATE,
+simpler AGGREGATE fit that *can* include rung 0 trivially (no deck-matching needed).
+
+**Why n=200/rung and not n=400 like rung 1.** Unchanged reasoning from the
+pre-amendment text: the load-bearing statistic pools information across rungs (now via
+the within-deck slope rather than only the aggregate fit), so per-rung n needs to keep
+each point informative, not independently clear a ±35-elo bar. See `READ_RULE.md` §2
+for the fit's power arithmetic.
 
 ---
 
@@ -149,19 +189,34 @@ construction to rung 1's `summarize()`, computed independently by
 `analyze_ladder.py` (not `match.py`'s own `summarize()` — see §7 for why a second,
 corrected implementation exists).
 
-**Primary, ladder-level:** a **weighted least-squares fit** of margin against
-`log2(playouts)` across the four points {rung 0 (r1), rung A, rung B, rung C}, weighted
-by each point's inverse-variance (`1/sem²`). Secondarily, the same fit run on
-`elo_from_win_rate` instead of margin, reported alongside — never a branch input (same
-"secondary, never a branch input" discipline `READ_RULE.md` templates from
-`track_d2_prep/READ_RULE.md` §1 use elsewhere in this repo).
+**Primary, ladder-level (AMENDED):** the **within-deck slope** across the four
+shared-deck rungs {D0, A, B, C} — for each of the 100 shared decks, its own margin at
+every rung it appears in is regressed against `log2(playouts)` *independently of every
+other deck*, and the per-deck slopes are averaged (mean, with the population SEM over
+decks). This is the CRN extension of deck-pairing itself: differencing the SAME deck
+across budgets cancels that deck's own baseline variance the way differencing the SAME
+deck's two seatings already does. Anchored at D0 (the cheapest shared-deck rung, using
+D0's own aggregate deck-paired margin as the intercept) for the crossover.
 
-The fitted line's **zero-margin crossing**, `x* = -β0/β1` (in log2-playouts), converted
-to `B* = 2^x*` playouts, is the answer to "at what budget does Carcasum equal the
-champion" — full formulas, its standard error via the delta method, and the exact
-branch conditions are in `READ_RULE.md` §4-§5 (kept out of this file so the read-rule
-is a single, self-contained, git-diffable target, matching the `track_d2_prep`
-precedent).
+**Secondary, ladder-level (witness, never a branch input):** the pre-amendment
+**weighted least-squares fit** of each rung's own aggregate margin against
+`log2(playouts)` — the one estimator that CAN include rung 0 (no deck-matching needed,
+since it works on rung-level aggregates, not per-deck values). Reported alongside the
+primary fit and used, on its own, to drive the interim futility test (`READ_RULE.md`
+§5), which needs to fire from as few as 2 points (rung 0 + D0) before any shared-deck
+rung besides D0 has even run.
+
+Rung 0 additionally serves as an **independent cross-check** (never a branch input): the
+primary within-deck line, extrapolated backward from D0 to rung 0's own `x`, is compared
+against rung 0's directly-measured margin (+4.08 pts, §0). A large disagreement is
+reported, not silently absorbed.
+
+The fitted line's **zero-margin crossing**, `x* = -β0/β1` (in log2-playouts, or the
+anchored form for the primary estimator), converted to `B* = 2^x*` playouts, is the
+answer to "at what budget does Carcasum equal the champion" — full formulas, standard
+errors via the delta method, the interim test, and the exact branch conditions are all
+in `READ_RULE.md` §1.1/§4/§5 (kept out of this file so the read-rule is a single,
+self-contained, git-diffable target, matching the `track_d2_prep` precedent).
 
 ---
 
@@ -182,18 +237,28 @@ band_seed_start : 143000000000
 label           : CARCASUM RUNG-2 BUDGET LADDER: champion vs Carcasum MCTSPlayer
                   <PortionUtility,RandomPlayout> @ Cp=0.5, playout-budget mode
                   (mIsTimeout=0), fixed_v1 + CARCASSONNE_FIX_R9=1, deck-paired
-                  seat-swapped CRN, 3 rungs x n=200 games (100 decks x 2 seats).
+                  seat-swapped CRN, 4 rungs (D0/A/B/C) x n=200 games (100 decks x
+                  2 seats) -- amendment: ALL FOUR RUNGS SHARE THE SAME 100 DECKS.
 tier            : claim
 status          : (open at commit)
 claimed_date    : (date of blind commit)
 decision_influenced : (blank until close-out)
 evidence_or_claim   : measurement/carcasum_rung2_prep/DESIGN.md -> the committed design
-notes           : Seeds 143000000000..143000000299 = 3 rungs x 100 decks, ONE
-                  contiguous range, split by rung (rung A = ..000..099, rung B =
-                  ..100..199, rung C = ..200..299). Rung 0 draws NO new seeds -- it
-                  is rung 1's already-collected corpus on band 142000000000, cited
-                  not re-claimed. No top-up range reserved: this cell's branch table
-                  (READ_RULE.md) has no C-style top-up branch, unlike rung 1's.
+notes           : Seeds 143000000000..143000000099 -- ONE 100-deck range, REUSED
+                  VERBATIM by D0, A, B, AND C (the amendment's shared-deck design,
+                  for the within-deck slope estimator). This is a NARROWER claim
+                  than the pre-amendment draft (which reserved 300 disjoint seeds,
+                  100/rung) -- sharing decks means only 100 seeds are drawn in
+                  total, not 400. Per-rung NAMESPACING is by OUTPUT PATH, not seed
+                  offset: each rung writes to its own out-subdir
+                  (measurement/carcasum_rung2_20260823/rung{D0,A,B,C}/games.jsonl)
+                  so match.py's own --resume dedup (keyed on deck_seed+champ_seat
+                  within ONE archive file) never collides across rungs -- see
+                  READ_RULE.md §1.1 and WORKERS.conf. Rung 0 draws NO new seeds --
+                  it is rung 1's already-collected corpus on band 142000000000
+                  (a DISJOINT range, shares no deck_seed with this band), cited
+                  not re-claimed. No top-up range reserved: this cell's branch
+                  table (READ_RULE.md) has no C-style top-up branch.
 ```
 
 **Band hygiene.** The smoke (§8) used a dev-tier throwaway seed (`900000500000`, well
@@ -208,18 +273,23 @@ Every gate (its exact tool + address, fail-closed, no pass-always/fail-always
 conditions) and the full D→K→A→B branch table (first-match-wins) live in
 [`READ_RULE.md`](READ_RULE.md), not here — same split as `track_d2_prep`'s
 `DESIGN.md`/`READ_RULE.md` pair, so the read-out target is one small, diffable file. A
-one-line summary, expanded fully in `READ_RULE.md` §5:
+one-line summary, expanded fully in `READ_RULE.md` §4-§5 (AMENDED: D checked first as
+before; K is now checked BOTH as a per-rung interim test after D0/A/B and as the final
+test on the primary within-deck estimator; A/B now read off the primary estimator, with
+the pre-amendment aggregate WLS demoted to a secondary witness):
 
 ⚠️ **Sign convention** (spelled out in full in `READ_RULE.md` §4): margin = champion −
-Carcasum, so a genuine closing-the-gap trend is a **negative** slope (β1 < 0); "credibly
-closing" is `z_slope ≤ −2`, not `≥ 2`.
+Carcasum, so a genuine closing-the-gap trend is a **negative** slope; "credibly closing"
+is `z_slope ≤ −2`, not `≥ 2` — applies identically to the primary within-deck slope and
+the secondary aggregate `β1`.
 
 | order | branch | fires when | action |
 |---|---|---|---|
+| 0 (amendment) | **INTERIM K — kill-only, between rungs** | after each of D0/A/B completes: the SECONDARY aggregate fit (rung 0 + completed shared-deck rungs) has slope ≥0 AND z_slope ≥ +2 | Stop the ladder early — remaining rungs are never launched. Kill-only: a right-signed OR inconclusive interim reading never stops it. `READ_RULE.md` §5. |
 | 1 | **D — void-contaminated** | any `VOID_*`/REAL-divergence rate > rung 1's threshold (copied verbatim, `READ_RULE.md` §3) | `U-UNREADABLE`, no strength number published |
-| 2 | **K — saturation kill** | fitted slope β1 ≥ 0, OR (β1 < 0 but not credible: z_slope > −2) AND crossover x\* is not found inside the tested range | "Carcasum saturates below champion; better-but-saturating ruler." STOP. |
-| 3 | **A — usable price** | β1 < 0 AND x0 ≤ x\* ≤ x3 (crossover inside [rung 0, 8×]) AND z_interp ≥ 2 | Report B\* = 2^x\* as the program's first external-currency price of the champion. |
-| 4 | **B — bound, not a price** | β1 < 0 AND x\* > x3 (crossover beyond 8×) AND the slope IS credibly closing (z_slope ≤ −2) | Report the bound; queue a possible 16× extension as an **owner decision**, not pre-authorized here. |
+| 2 | **K — saturation kill (final)** | PRIMARY (within-deck) mean slope ≥ 0, OR (mean slope < 0 but not credible: z_slope > −2) AND crossover x\* is not found inside the tested range | "Carcasum saturates below champion; better-but-saturating ruler." STOP. |
+| 3 | **A — usable price** | mean slope < 0 AND x0(D0) ≤ x\* ≤ x3 (crossover inside [D0, 8×]) AND z_interp ≥ 2 | Report B\* = 2^x\* as the program's first external-currency price of the champion. |
+| 4 | **B — bound, not a price** | mean slope < 0 AND x\* > x3 (crossover beyond 8×) AND the slope IS credibly closing (z_slope ≤ −2) | Report the bound; queue a possible 16× extension as an **owner decision**, not pre-authorized here. |
 
 ---
 
@@ -256,34 +326,42 @@ re-derivation.
 
 | rung | opp share | champ share | total/game | n | wall @ W=14 (linear) |
 |---|---|---|---|---|---|
+| **D0 (0.5×)** | **85.75 s** | 78.22 s | **163.97 s** | 200 | 2,342 s = **0.65 h** |
 | A (2×) | 343.00 s | 78.22 s | 421.22 s | 200 | 6,017 s = **1.67 h** |
 | B (4×) | 686.00 s | 78.22 s | 764.22 s | 200 | 10,917 s = **3.03 h** |
 | C (8×) | 1,372.00 s | 78.22 s | 1,450.22 s | 200 | 20,717 s = **5.76 h** |
-| **linear total** | | | | | **10.46 h** |
+| **linear total** | | | | | **11.11 h** |
 
 Applying the same contention allowance rung 1's own §4.3 measured at W=14 (linear
-1.81h → realized ~2.0h, a ×1.105 factor): **≈11.6 h total**, near the low end of a
-12-16h envelope rather than centered in it — reported as derived, not forced to match a
-prior verbal estimate. **Validate, don't trust** (rung 1's own §3 discipline): re-project
-off the first ~20 games of each rung before assuming the total, exactly as
-`LAUNCH_PROCEDURE.md` §3 does.
+1.81h → realized ~2.0h, a ×1.105 factor): **≈12.3 h total** — close to, though not
+identical to, the coordinator's own ~12.5h ballpark relayed with the amendment; this
+cell's own consistent scaling method is what is reported, and the two agree to within
+~2%. **Validate, don't trust** (rung 1's own §3 discipline): re-project off the first
+~20 games of each rung before assuming the total, exactly as `LAUNCH_PROCEDURE.md` §3
+does.
 
-**Abort-to-partial rule.** A rung whose wall-clock exceeds **2× its own linear
-projection** aborts (the launcher wraps each rung's `match.py` invocation in `timeout`
-at that bound) rather than blocking the remaining rungs:
+**Execution order is cheapest-first (amendment §2): D0 → A → B → C**, with the
+kill-only interim futility check (`READ_RULE.md` §5) run after every completed rung
+starting with D0 — so an early, decisive non-closing signal stops the ladder before its
+most expensive rungs (B, C) are ever launched, not after.
+
+**Abort-to-partial rule (unchanged in kind, D0 added).** A rung whose wall-clock exceeds
+**2× its own linear projection** aborts (the launcher wraps each rung's `match.py`
+invocation in `timeout` at that bound) rather than blocking the remaining rungs:
 
 | rung | 2x abort bound |
 |---|---|
+| D0 | 1.30 h (4,685 s) |
 | A | 3.34 h (12,034 s) |
 | B | 6.07 h (21,834 s) |
 | C | 11.51 h (41,434 s) |
 
 An aborted rung's partial games are kept (archived incrementally, resumable under
-`--resume`) but that rung is marked `ABORTED_PARTIAL`, not `DONE`, and
-`analyze_ladder.py` (§7) fits on **rung 0 plus whichever of A/B/C reached `DONE` — only
-if that count is ≥ 2** (i.e. the ladder needs at least 2 of the 3 new rungs complete to
-run at all; 1 or 0 completed rungs is insufficient for a meaningful weighted fit and
-that condition is itself reported, not silently substituted).
+`--resume`) but that rung is marked `ABORTED_PARTIAL`, not `DONE`. `analyze_ladder.py`
+(§7) computes its **primary** (within-deck) estimator on whichever of D0/A/B/C reached
+`DONE` — only if that count is **≥ 2** (an underpowered within-deck slope, from a single
+shared-deck rung, is not a slope at all) — and its **secondary** aggregate witness on
+rung 0 plus whichever shared-deck rungs are usable, same ≥2-new-rungs floor.
 
 ---
 
@@ -302,7 +380,17 @@ is a new, separate readout tool (same relationship `jcz_match/analyze.py` has to
 `jcz_match/match.py`'s own `summarize()` — see that file's own docstring for the
 precedent) that recomputes win rate / paired margin / SEM from the raw per-game
 records **and** the pooled per-move `carcasum_playouts` fields directly, reporting
-**both median and mean**, per rung, before running the cross-rung fit.
+**both median and mean**, per rung, before running the cross-rung fit(s).
+
+**AMENDED (pre-launch):** the same file also computes the **within-deck slope**
+(primary, §3) over the shared-deck rungs, the **aggregate WLS** (secondary witness,
+unchanged from the pre-amendment design), and the **kill-only interim futility test**
+(`--interim` mode, `READ_RULE.md` §5). `--selftest` exercises all three against
+hand-computable numbers before any archive exists — the within-deck case constructs
+three synthetic decks with KNOWN per-deck slopes (−1, −2, −0.5) and asserts the
+recovered mean matches the hand-computed average exactly; the interim case exercises
+"confidently wrong-signed fires", "right-signed never fires", and "wrong-signed but not
+confident never fires" as three separate assertions.
 
 ---
 
