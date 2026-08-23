@@ -285,10 +285,10 @@ elif [ "$BACKEND_DECISION" = "SKIP" ]; then
 elif [ "$SMOKE" = "1" ]; then
   log "=== reconcile_backend: SMOKE — would RUN, not running ==="
 else
-  log "=== reconcile_backend, COMMITTED default (100 games) at 28 workers ==="
+  log "=== reconcile_backend, COMMITTED default (100 games) at 14 workers (owner W14 desktop-friendly window from 2026-08-24 morning) ==="
   # The gate's own default is --workers 14; 28 is a throughput choice only and
   # moves no value (game-level fork pool, results index-addressed).
-  nice -n 19 "$PY" scripts/rustport/reconcile_backend.py --games 100 --workers 28 \
+  nice -n 19 "$PY" scripts/rustport/reconcile_backend.py --games 100 --workers 14 \
     > "$OUT/backend_full.log" 2>&1
   rc_backend=$?
   log "reconcile_backend rc=$rc_backend"
