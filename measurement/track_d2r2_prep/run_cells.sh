@@ -120,8 +120,8 @@ export CARCASSONNE_FIX_R9=1
 # CURVE125 block in eval_fair_puct.py and `_assert_rung_is_ruler`.
 
 # the band pinned by the pair -- --band may only CONFIRM this, never shadow it
-PINNED_BAND=143000000000
-PILOT_SEED_START=143999999000   # DISJOINT throwaway range, DESIGN §9; never pooled, never claimed
+PINNED_BAND=144000000000
+PILOT_SEED_START=144999999000   # DISJOINT throwaway range, DESIGN §9; never pooled, never claimed
 
 # The two leaf hashes this cell's identity rests on (DESIGN §3.1, READ_RULE §3).
 CHAMP_LEAF_HASH=a36d2e15a3b3d71d      # candidate: the curve125 production champion

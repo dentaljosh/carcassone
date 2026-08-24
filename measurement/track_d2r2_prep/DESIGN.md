@@ -19,8 +19,8 @@
 > below is VERBATIM from the frozen original.**
 >
 > **3. What changed, exhaustively:** the run id (`track_d2_prep` → `track_d2r2_prep`); the band
-> (`141000000000` → **`143000000000`**, §5) and the pilot's disjoint range
-> (`141999999000..007` → `143999999000..007`, §9); the launcher (§7/§9 references now point at the
+> (`141000000000` → **`144000000000`**, §5) and the pilot's disjoint range
+> (`141999999000..007` → `144999999000..007`, §9); the launcher (§7/§9 references now point at the
 > FIXED [`run_cells.sh`](run_cells.sh)); this banner; and the §3.1 structural test, re-run over
 > **ALL** gates including `G-TOOL` (DESIGN §7 tail and [`READ_RULE.md`](READ_RULE.md) §3.1).
 > Nothing else.
@@ -55,6 +55,25 @@
 > everything were ready to launch... launch shortest wallclock first" + "you take it from here").
 > That authorization funded the *question*; §0's four owner sign-offs below are owed again for
 > this band.
+>
+> **8. AMENDMENT 2026-08-24 — band substituted, `143000000000` → `144000000000`, nothing else.**
+> At draft time (item 4 table, c9fac9b9) `143000000000` was the registry's next free step-aligned
+> start. Between that freeze commit and this ceremony, an UNRELATED session claimed
+> `143000000000` for `measurement/carcasum_rung2_prep/` (`governance/BAND_REGISTRY.csv`, status
+> `claimed`, `claimed_date` 2026-08-23) — a same-day race between two independent prep sessions,
+> neither aware of the other. Re-read of the registry at launch time (2026-08-24) shows
+> `144000000000` is the next free step-aligned start (`142000000000` and `143000000000` both
+> claimed; `145000000000`+ unclaimed). **This is a pure band substitution, mechanically identical
+> in kind to the original's own `141000000000` → `143000000000` swap (item 3 above): every
+> `143000000000` seed-start / manifest-match literal and the §9 pilot's disjoint sub-range
+> (`143999999000..007` → `144999999000..007`) are replaced verbatim; the predecessor's own band
+> (`141000000000`, the voided first attempt) is untouched wherever it appears. No bar, gate,
+> threshold, branch condition, probe config, or rung config is touched. Zero games exist under
+> this pair at amendment time** (`BLIND_COMMIT` still the placeholder, `BAND_CLAIMED` absent), **so
+> blindness is preserved trivially — this amendment predates game 1 by construction, same as the
+> original successor's own drafting predated the first attempt's readout.** Owed sign-offs (item
+> below) are unaffected; the band re-pick itself needs no fresh authorization beyond what the
+> band-claim checklist already requires (band claimed in the registry before launch).
 
 # RUNG COMPRESSION: IS THE REFERENCE LADDER'S SPACING A USABLE UNIT? — DESIGN (DRAFT)
 
@@ -76,14 +95,14 @@ owner signs off on all four of the following, explicitly, before game 1:
 | # | owed sign-off | why it is the owner's call, not this draft's |
 |---|---|---|
 | (a) | **funding the ~16 core-hours** (§6) | this is spend, and the standing cost-discipline rule requires a one-sentence confirm before anything that burns time |
-| (b) | **the band claim** — 143000000000 (§5) | `governance/BAND_REGISTRY.csv` is a source of truth the orchestrator edits, not a builder |
+| (b) | **the band claim** — 144000000000 (§5) | `governance/BAND_REGISTRY.csv` is a source of truth the orchestrator edits, not a builder |
 | (c) | **the probe-budget choice** — k4×688 = 2752, the equal-time reading (§3) — vs the optional k8×1376 = 11008 production-agent extension (§6) | two different questions at two different costs; the owner picks which is funded |
 | (d) | **tie-arbiter OFF** | the probe P is the pre-arbiter fair PIMC champion; running WITH the arbiter would confound the rung-spacing question with the arbiter's own tied-ply behavior, which is exactly the class of confound this cell exists to avoid introducing |
 
 **Pre-launch checklist** (mirrors the jcz / b32v64 precedent, all must be true before any real
 cell fires):
 
-- [ ] band claimed in [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv) (143000000000, per §5)
+- [ ] band claimed in [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv) (144000000000, per §5)
 - [ ] this pair (`DESIGN.md` + `READ_RULE.md`) frozen and committed to `main`
 - [ ] `BLIND_COMMIT=<sha>` stamped into the launcher's config (§ launcher, `run_cells.sh` currently reads a placeholder and refuses to run without it)
 - [ ] the §9 pilot has run and its gate has PASSED (equal-time ratio inside [0.85, 1.20])
@@ -395,14 +414,14 @@ here so a future "just add n" ask does not have to re-derive it (jcz DESIGN §4.
 
 ## 5. THE BAND
 
-**Band `143000000000`** — the next free step-aligned start in
+**Band `144000000000`** — the next free step-aligned start in
 [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv). Registry high-water
 at draft time is **141000000000** (the FIRST D2 attempt's own band, spent on the U-UNREADABLE run and retired with it; 142000000000 is spoken for by the drafted `../carcasum_match_prep/PREREG_DRAFT.md` row).
 
 ⛔ **NOT CLAIMED.** The row is DRAFTED in [`BAND_CLAIM_DRAFT.json`](BAND_CLAIM_DRAFT.json) and
 must be appended to the registry by the orchestrator before launch.
 
-Seeds `143000000000 .. 143000000199` (200 decks), used by **BOTH** cells (CRN by design — the
+Seeds `144000000000 .. 144000000199` (200 decks), used by **BOTH** cells (CRN by design — the
 same deck set, same seatings, feeding §4's paired statistic).
 
 Per CL-068, **band identity is load-bearing**: never pool D2's numbers across bands, and this
@@ -460,7 +479,7 @@ adjudicated. This section is the summary; `READ_RULE.md` §3 is the binding text
 
 | id | proposition | VOIDS on |
 |---|---|---|
-| `G-BAND` | both cells' `manifest.json` `seed_start` == 143000000000; deck sets identical; `n_common` == 200 | mismatch |
+| `G-BAND` | both cells' `manifest.json` `seed_start` == 144000000000; deck sets identical; `n_common` == 200 | mismatch |
 | `G-SINGLEVAR` | the two cells' argv differ in exactly `--rung-sims`, `--out-subdir`, `--claim-host` and nothing else — diffed directly from the two `manifest.json` `config` blocks | any other differing key |
 | `G-RUNG` | both manifests' `config.rung.c` == 3.0, `config.rung.agent` == `"HeuristicMCTS"`, `config.rung.leaf_hash` identical across cells, `config.rung.sims` == 800 / 1600 respectively | any deviation |
 | `G-LEAF` | `config.cand_leaf_hash` == `a36d2e15a3b3d71d` in both cells | mismatch or absence |
@@ -518,7 +537,7 @@ Stated before launch so no branch can be narrated past them:
 
 ## 9. THE PILOT (pre-blind, mandatory, ~5 minutes)
 
-n=8 decks (`--n 16 --paired`) on a **SEPARATE seed range** `143999999000..143999999007` — never
+n=8 decks (`--n 16 --paired`) on a **SEPARATE seed range** `144999999000..144999999007` — never
 the cell band — running **CELL R800's config only**.
 
 **Purpose:**

@@ -11,7 +11,7 @@
 > not see `S`, `z_S`, or either cell's summary statistics, and did not open the first attempt's
 > readout or any `summary.json`. **Bars do not move. §4 is not edited.** Every §-numbered rule,
 > branch, gate, threshold and `n` below is **VERBATIM** from the frozen original. The changes are
-> exhaustively: the run id, the band (`141000000000` → **`143000000000`**), the launcher
+> exhaustively: the run id, the band (`141000000000` → **`144000000000`**), the launcher
 > reference (the FIXED [`run_cells.sh`](run_cells.sh)), this banner, and **§3.1 — re-run over ALL
 > gates including `G-TOOL`**, which is the check whose absence let the unsatisfiable `G-TOOL`
 > sub-clause ship.
@@ -21,6 +21,13 @@
 > `--sims` re-pick, **k4×1032**, frozen on the discarded pilot band before any cell ran and
 > therefore before any statistic existed (`DESIGN.md` §0 item 5). §9's re-pick allowance is now
 > exhausted.
+>
+> **AMENDMENT 2026-08-24 (`DESIGN.md` §0 item 8):** the band above already reads the substituted
+> value — `144000000000`, not the `143000000000` this pair originally drafted. A same-day,
+> unrelated session claimed `143000000000` for `carcasum_rung2_prep` before this pair's band was
+> registered; the swap is mechanical (band + the §9 pilot's disjoint sub-range only, now
+> `144999999000..007`), zero games existed under this pair when it was made, and every gate,
+> branch, bar and threshold below is untouched. See `DESIGN.md` §0 item 8 for the full account.
 
 # READ_RULE — rung compression (D2)
 
@@ -75,7 +82,7 @@ and the adjudicator reports which address resolved (the house `G-BAND`/`G-J1` fi
 
 | id | proposition | VOIDS on |
 |---|---|---|
-| `G-BAND` | both cells' `manifest.json` `seed_start` == 143000000000; record-derived deck sets agree; `n_common` == 200 | any mismatch |
+| `G-BAND` | both cells' `manifest.json` `seed_start` == 144000000000; record-derived deck sets agree; `n_common` == 200 | any mismatch |
 | `G-SINGLEVAR` | the two cells' `config` blocks differ in exactly `rung.sims`, `out_subdir`/output path, and `claim_host` — nothing else | any other differing key |
 | `G-RUNG` | both manifests: `config.rung.c` == 3.0, `config.rung.agent` == `"HeuristicMCTS"`, `config.rung.leaf_hash` identical across cells, `config.rung.sims` == 800 (R800) / 1600 (R1600) | any deviation |
 | `G-LEAF` | `config.cand_leaf_hash` == `a36d2e15a3b3d71d` in BOTH cells | mismatch or absence |
