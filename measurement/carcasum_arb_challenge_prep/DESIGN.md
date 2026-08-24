@@ -10,13 +10,31 @@
 > commit stamps the real sha before any real launch; `run_cells.sh` refuses a real
 > (non-dry-run) launch while it reads PENDING.**
 
+> ⚠️ **AMENDED PRE-LAUNCH #1 (2026-08-24, zero games run; amended blind commit = the commit
+> introducing this line).** Pre-launch review found that the band claimed above,
+> `144000000000`, **collided with an unmerged sibling branch's own same-day claim**
+> (`d2r2-freeze`'s `measurement/track_d2r2_prep/`, also `144000000000`) — both claims were
+> made in good faith against the checked-out repo's own `governance/BAND_REGISTRY.csv`, which
+> is **blind to claims committed on OTHER unmerged freeze branches**. This pair's own build had
+> already run the "re-verify the registry + census a live run" check **twice** (once at design
+> time, once immediately before the CSV append) and still missed it, because both checks were
+> scoped to the main-tree checkout, not to every branch. **Band substituted: `144000000000` →
+> `147000000000`.** Full finding, the corrected all-branches procedure, and why `146000000000`
+> was also skipped: §4.1. Every file where the old band appeared (`BAND_CLAIM.json`,
+> `BAND_CLAIMED`, this file, `READ_RULE.md`, `WORKERS.conf`, `scripts/carcasum_match/
+> analyze_arb_challenge.py`) is amended in the same commit; `run_cells.sh` carries no
+> band literal (it reads `WORKERS.conf`) and needed no edit. `WORKERS.conf::BLIND_COMMIT` is
+> re-stamped to this amendment commit's own sha by the same follow-up-commit convention as the
+> original freeze. **Nothing about the design, power arithmetic, sequencing, or branch table
+> changes — only the band.**
+
 # CARCASUM ARBITER-TRANSFER CHALLENGE — DESIGN
 
-This is the single non-FROZEN-banner status paragraph in this file — deliberately, after
+This is the single non-banner status paragraph in this file — deliberately, after
 `carcasum_match_prep/PREREG.md`'s own frozen text was found to retain a stale `STATUS: DRAFT`
 paragraph beneath its FROZEN banner (flagged in that cell's own r1 READOUT §6 as a documentation
-defect). Nothing below contradicts the banner above it. **The orchestrator launches; this build
-stops at the smoke (§9).**
+defect). Nothing below contradicts either banner above it. **The orchestrator launches; this
+build stops at the smoke (§9).**
 
 Design: this file. Read-out branch table: [`READ_RULE.md`](READ_RULE.md). Constants:
 [`WORKERS.conf`](WORKERS.conf). Launcher: [`run_cells.sh`](run_cells.sh). Band claim:
@@ -113,7 +131,7 @@ contrast); it may corroborate but never substitutes for the within-pair `D`.
 | **Champion** | the champion of record, `governance/PRODUCTION.yaml` fair deploy: `k8×1376=11008`, rust backend, `verify=True`, curve125 leaf, leaf hash `a36d2e15a3b3d71d`. **No tie-arbiter.** | **Identical**, plus the root tie-arbiter exactly as `fair_deploy.tiearb`: `B=64, J=4, mode=argmax, salt="tiearb2-deploy-v1", eps=0.0, threads=8`. Leaf hash **unchanged** (the arbiter is a search knob, not a leaf field — the champion's manifest carries the SAME `a36d2e15a3b3d71d`). |
 | **Opponent** | `MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>`, `Cp=0.5`, `reuseTree=false`, no priors/widening/bias, `budget_ms=5000, mIsTimeout=true`. **Byte-identical between arms** — this is the r1 config verbatim. | same |
 | **Rules** | `fixed_v1` + `CARCASSONNE_FIX_R9=1`, both sides | same |
-| **Deck band** | shared 250-seed range `144000000000..144000000249` (§4) | **the same range** — within-pair CRN |
+| **Deck band** | shared 250-seed range `147000000000..147000000249` (§4, amended §4.1) | **the same range** — within-pair CRN |
 | **Hardware** | one box, exclusive tenancy (laptop, once free — §7) | same box, same launch window (§6) |
 
 **Single-variable discipline (the `G-SINGLEVAR` gate, §0):** the two arms' launch commands
@@ -228,16 +246,58 @@ max seed start = 143000000000   (the rung-2 claim, carcasum_rung2_prep, still LI
 **⚠️ The task brief's "registry high-water 145e9, likely 146000000000" does not match the
 registry as re-read.** The actual high-water mark is `143000000000` (rung 2's own claim,
 consistent with `STATUS.md`'s own "rung-2 is the one thing still live" note and the git log
-above) — nothing has claimed 144e9 or 145e9. **Next free band: `144000000000`.** A live-run
-process census (`ps`, `find ... RUN_LIVE.json`) at draft time found no process and no
-`RUN_LIVE.json` touching the 144e9-146e9 range — the only live sentinel anywhere is
-`measurement/tiearb2_stage2_20260817/RUN_LIVE.json` (an unrelated deferred-gates job). This
-discrepancy is called out explicitly for the orchestrator to re-verify immediately before
-claiming, per the standing lesson (r1's own PREREG.md §3: "a band planned in a document is not
-a band reserved").
+above) — nothing has claimed 144e9 or 145e9 **on the checked-out branch**. A live-run process
+census (`ps`, `find ... RUN_LIVE.json`) at draft time found no process and no `RUN_LIVE.json`
+touching the 144e9-146e9 range either.
+
+> ⚠️ **This was `144000000000` at the original freeze commit (`7cd3aafb`), and `144000000000`
+> is now TAKEN — by an unmerged sibling branch, not by anything the main-tree registry check
+> above could see.** A pre-launch review (§4.1) found that `d2r2-freeze`'s own
+> `measurement/track_d2r2_prep/` had claimed the SAME band, `144000000000`, the SAME day, on
+> ITS branch — a genuine race between two independent, good-faith builds, each checking the
+> ONE registry file each could see from its own checkout. **The general lesson, worth more
+> than the number (same shape as r1's own PREREG.md §3 losing 1.41e11 this way once):** a
+> band-freedom check scoped to `git log`/`python3 -c "..."` against the CHECKED-OUT branch's
+> `governance/BAND_REGISTRY.csv` is blind to every claim sitting on an unmerged sibling
+> branch — and this program currently has SIX such freeze branches alive at once
+> (`carcasum-match-freeze`, `carcasum-rung2-freeze`, `carcasum-arb-freeze`, `d1-rebase-freeze`,
+> `d2r2-freeze`, plus whatever the next one is). **The corrected procedure, for the next
+> claimer:** sweep every local branch, not just the checkout — `for b in $(git for-each-ref
+> --format='%(refname:short)' refs/heads/); do git ls-tree -r --name-only "$b" --
+> measurement/ | grep -i 'BAND_CLAIM\.json$'; done`, then `git show <branch>:<path>` each hit
+> to read its claimed range, THEN take the lowest free integer above the highest thing seen
+> anywhere — not just above the local registry's own high-water mark. §4.1 has the full sweep
+> this correction is based on.
+
+### 4.1 Band substitution amendment (2026-08-24, zero games run)
+
+**Finding.** The all-branches sweep (the corrected procedure above, run against this repo's
+~150 local branches) found band claims sitting on THREE freeze branches invisible to the
+main-tree checkout:
+
+| branch | band | status | source |
+|---|---|---|---|
+| `d2r2-freeze` | `144000000000` | claimed, registry row present on that branch | `measurement/track_d2r2_prep/BAND_CLAIM.json` + that branch's own `governance/BAND_REGISTRY.csv` |
+| `d1-rebase-freeze` | `145000000000` | claimed, registry row present on that branch | `measurement/track_d1_fair_rebase/BAND_CLAIM.json` (`_role: PRIMARY`) |
+| `d1-rebase-freeze` | `146000000000` | **soft-reserved, NOT in that branch's own registry** (`status: DRAFT-NOT-CLAIMED`) | same file (`_role: RESERVATION -- append ONLY if the owner wants the range held... No cell may run on this range without a fresh owner funding decision`) |
+
+`146000000000` is, by the letter of "no branch claims it," free — `d1-rebase-freeze` never
+appended it to any registry and its own status field says `DRAFT-NOT-CLAIMED`. **This design
+skips it anyway**, deliberately more conservative than the letter requires: that track has
+already spent a paragraph explaining exactly what it wants `146000000000` for (a `n=800`
+n-extension of its own six-cell design) and explicitly asked that nothing run there without
+its own fresh funding decision. Taking it for an unrelated cell — even one that is, today,
+technically unclaimed — would manufacture the identical collision this amendment exists to
+fix, the moment that track's own extension gets funded. **Band substituted:
+`144000000000` → `147000000000`** — confirmed clear by the same sweep (no branch, anywhere,
+mentions `147000000000`) and clear of every registry high-water mark found on any branch
+(`145000000000` is the highest ACTUAL claim on any branch; `146000000000` is spoken for in
+spirit).
+
+**Amended band block (supersedes the struck block above in every particular):**
 
 ```
-band_seed_start : 144000000000
+band_seed_start : 147000000000
 label           : CARCASUM ARBITER-TRANSFER CHALLENGE: two deck-paired arms on ONE band,
                   ONE shared 200(+50 topup)-deck set. ARM-OFF = production champion
                   (k8x1376 rust fixed_v1+R9 curve125, NO tie-arbiter) vs Carcasum
@@ -251,17 +311,22 @@ status          : (open at commit)
 claimed_date    : (date of blind commit)
 decision_influenced : (blank until close-out)
 evidence_or_claim   : measurement/carcasum_arb_challenge_prep/DESIGN.md -> the committed design
-notes           : Seeds 144000000000..144000000199 = 200 decks x 2 seats x 2 arms = 800
+notes           : Seeds 147000000000..147000000199 = 200 decks x 2 seats x 2 arms = 800
                   games PRIMARY. TOP-UP RANGE RESERVED UP FRONT:
-                  144000000200..144000000249 (50 more decks, consumed ONLY if
+                  147000000200..147000000249 (50 more decks, consumed ONLY if
                   READ_RULE.md's top-up branch fires, ONE top-up, no second --
                   matching the 142e9/r1 top-up convention). BOTH ARMS DRAW THE SAME
                   SEED RANGE (within-pair CRN, rung-2's shared-decks convention,
                   READ_RULE.md SS1) -- per-arm separation is by OUTPUT PATH, not seed
-                  offset. Registry high-water at claim time was 143000000000 (rung-2's
-                  own claim), NOT 145e9/146e9 as an earlier verbal estimate assumed --
-                  re-verified fresh against governance/BAND_REGISTRY.csv and a live-run
-                  process census before this row was drafted.
+                  offset. BAND SUBSTITUTED 2026-08-24 (SS4.1): the original claim,
+                  144000000000, collided with an unmerged sibling branch's own
+                  same-day claim (d2r2-freeze's track_d2r2_prep) that a main-tree-scoped
+                  registry check could not see; 146000000000 was also skipped, not
+                  because any branch has formally claimed it, but because
+                  d1-rebase-freeze has explicitly earmarked it for its own future
+                  n-extension. Zero games ran on 144000000000 before the substitution --
+                  no BAND_REGISTRY.csv row for it survives on this branch (this
+                  amendment REPLACES that row with the 147e9 row, in the same commit).
 ```
 
 **Band hygiene.** The G-MODE-class smoke (§9) uses a disjoint dev-tier throwaway seed, never

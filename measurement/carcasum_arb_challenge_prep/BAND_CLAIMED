@@ -1,4 +1,13 @@
-Band 144000000000 (seeds 144000000000..144000000249, 200 primary + 50 reserved
+Band 147000000000 (seeds 147000000000..147000000249, 200 primary + 50 reserved
 top-up decks) claimed 2026-08-24 in governance/BAND_REGISTRY.csv as part of the
 carcasum-arb-freeze build. Re-verified fresh (registry high-water + live-run
 process census) immediately before the CSV append -- see BAND_CLAIM.json.
+
+AMENDMENT #1 (2026-08-24, zero games run): the ORIGINAL claim, 144000000000,
+collided with an unmerged sibling branch's own same-day claim (d2r2-freeze's
+measurement/track_d2r2_prep/) -- invisible to a main-tree-scoped registry
+check. Fixed by an all-branches sweep (DESIGN.md SS4.1); band substituted to
+147000000000, confirmed clear across every local branch, not just the
+checkout. The old 144000000000 row this build had appended to
+governance/BAND_REGISTRY.csv is REPLACED (not left standing) by the
+147000000000 row in the same amendment commit.

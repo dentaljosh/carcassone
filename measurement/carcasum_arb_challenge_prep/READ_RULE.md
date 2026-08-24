@@ -10,6 +10,18 @@
 > commit stamps the real sha before any real launch; `run_cells.sh` refuses a real
 > (non-dry-run) launch while it reads PENDING.**
 
+> ⚠️ **AMENDED PRE-LAUNCH #1 (2026-08-24, zero games run; amended blind commit = the commit
+> introducing this line).** The band claimed above, `144000000000`, collided with an unmerged
+> sibling branch's own same-day claim (`d2r2-freeze`'s `measurement/track_d2r2_prep/`) — a
+> main-tree-scoped registry check cannot see claims sitting on other unmerged freeze branches.
+> **Band substituted: `144000000000` → `147000000000`.** Every band literal below this line is
+> the corrected value; the collision finding, the corrected all-branches sweep procedure, and
+> why `146000000000` was also skipped (soft-reserved by `d1-rebase-freeze` for its own future
+> use, even though not formally claimed) live in `DESIGN.md` §4.1 — not repeated here, same
+> "read-rule stays a small diffable target" discipline `carcasum_rung2_prep/READ_RULE.md`
+> already established. Nothing about the gates, statistics, or branch table below changes —
+> only the band literals in `G-SHARED-DECKS` (§3) and the top-up seed range (§4).
+
 # READ_RULE — Carcasum arbiter-transfer challenge
 
 > **⚠️ BLIND ORDERING.** This file is committed BEFORE the band is claimed, BEFORE game 1, and
@@ -45,7 +57,7 @@ negative transfer, itself a real, reportable finding (§4's `N` branch).
 
 **Secondary, per arm (witness, never a branch input):** each arm's own win rate / elo / margin
 vs Carcasum, computed independently for ARM-OFF and ARM-ON. ARM-OFF's own number is a
-**cross-band** replication of r1 (`b142000000000`, this cell's band is `144000000000`) — any
+**cross-band** replication of r1 (`b142000000000`, this cell's band is `147000000000`) — any
 comparison between the two carries the full CL-068 cross-band humility discount (1.8-2.2x SD
 inflation); it is reported for corroboration only, never in place of `D`.
 
@@ -103,7 +115,7 @@ address resolved (house `G-BAND`/`G-J1` precedent).
 | `G-CHAMP-ON` | ARM-ON ONLY: `manifest.champion_manifest.leaf_hashes.harness_leaf_hash == "a36d2e15a3b3d71d"` (same pin — the arbiter does NOT move the leaf hash) AND `manifest.champion_manifest.cand_tiearb == {enabled:true, B:64, J:4, mode:"argmax", salt:"tiearb2-deploy-v1", eps:0.0}` EXACTLY | ARM-ON `games.jsonl` line 1 | leaf mismatch, OR `cand_tiearb` absent/null (arbiter leaked OFF on the ON arm), OR any field of the resolved dict off the pinned spec |
 | `G-SINGLEVAR` | the two arms' manifests agree EXACTLY on: `our_git_rev`, `rules_profile`, `opponent` (see `G-BUDGET`), `sims_override`/`k_dets_override` (both null — the champion runs at the YAML budget, not a smoke override), `execution.backend == "rust"` — i.e. the ONLY manifest field that differs between arms is `champion_manifest.cand_tiearb` | cross-manifest diff, `games.jsonl` line 1 of each arm | ANY of the listed fields differs between arms (this is the `track_d2_prep` G-SINGLEVAR lesson, ported: `results.csv d2_rung_compression_U_UNREADABLE...b141e9` — "the two invocations differ in EXACTLY ONE experimental argument" was asserted by prose there and never checked; here it is checked) |
 | `G-N` | each arm independently reaches `n_common_decks >= 160` (80% of the n=200 primary target, the house 80%-floor convention) BEFORE the cross-arm intersection in `G-SHARED-DECKS` is taken | analyzer's own per-arm deck-pairing count | either arm under 160 |
-| `G-SHARED-DECKS` | every realized `deck_seed` in EITHER arm's archive is a subset of `{144000000000..144000000249}`; the PRIMARY `D` statistic is computed over the INTERSECTION of the two arms' own realized deck sets (a deck missing from either arm cannot be paired across arms and is excluded from `D`, though it may still count toward that arm's own secondary win rate) | analyzer's own deck_seed collection, both arms | any `deck_seed` outside the shared range in either arm; OR the intersection falls below the `G-N` floor even though each arm individually cleared it |
+| `G-SHARED-DECKS` | every realized `deck_seed` in EITHER arm's archive is a subset of `{147000000000..147000000249}`; the PRIMARY `D` statistic is computed over the INTERSECTION of the two arms' own realized deck sets (a deck missing from either arm cannot be paired across arms and is excluded from `D`, though it may still count toward that arm's own secondary win rate) | analyzer's own deck_seed collection, both arms | any `deck_seed` outside the shared range in either arm; OR the intersection falls below the `G-N` floor even though each arm individually cleared it |
 | `G-TIMING` | median realized `opp_driver_ms_per_turn`, pooled over each arm's own real turns, is within +-10% of 5000ms (looser than rung 2's playout-mode +-5%, because TIME-mode is thread-CPU time and can drift under real contention, not a driver-enforced exact playout count — formalizes r1's own informal `LAUNCH_PROCEDURE.md` §3 watch item, "opp_driver_ms_per_turn drifting well above 5000") | recomputed by the analyzer from every `moves[].opp_driver_ms` field, per arm | either arm outside +-10% |
 
 ### §3.1 — `D` — void-contaminated (checked FIRST, before any branch below)
@@ -147,7 +159,7 @@ game record actually exists on it — same convention as `BAND_REGISTRY.csv`'s
 | **T — TRANSFER** | `D >= 2.0` pts AND `z_D >= 2.0` | Report: the arbiter's internal gain (`+66 elo` desktop) transfers externally. State `D`, `z_D`, and the implied elo-per-point conversion from THIS cell's own secondary numbers (not r1's, to avoid a cross-band elo scale). This is new evidence for widening the arbiter's authorized use beyond the champion-mirror confirmation it currently rests on. |
 | **W — WASHOUT** | `\|D\| <= 2.0` pts AND `\|z_D\| < 2.0` | Report: the arbiter's internal gain does **not** measurably transfer to this external opponent — a real finding, not a null result to bury. The arbiter's win may be champion-mirror-specific (`DESIGN.md` §0's own framing of the risk this cell exists to price). Does not itself argue for de-authorizing the arbiter's DEPLOYED (internal) use — that rests on its own, already-adjudicated evidence — but it bounds how far the arbiter's authorization should be READ, i.e. it is not evidence the arbiter helps against arbitrary opponents. |
 | **N — NEGATIVE TRANSFER** *(flagged addition, §4 preamble)* | `D <= -2.0` pts AND `z_D <= -2.0` | Report: the arbiter measurably HURTS against this external opponent. This does not by itself argue for de-authorizing the deployed internal use (different opponent, different question) but is a concrete counter-example to "the arbiter never costs strength" and should be logged as such in `docs/LEVER_INDEX.md` and flagged in any future arbiter-widening discussion. |
-| **top-up (once, C-style, r1 precedent)** | `\|z_D\| < 2.0` AND `\|D\| > 2.0` pts (i.e. neither the equivalence region nor a confident read) | Consume the reserved 50-deck top-up (seeds `144000000200..144000000249`), re-read `D`/`z_D`/`SE_D` over the full n=250 under this SAME table. Fired **once**; a second inconclusive read after the top-up falls to `U-UNREADABLE`, not a second top-up (r1's own "one top-up, pre-registered, no second" discipline). |
+| **top-up (once, C-style, r1 precedent)** | `\|z_D\| < 2.0` AND `\|D\| > 2.0` pts (i.e. neither the equivalence region nor a confident read) | Consume the reserved 50-deck top-up (seeds `147000000200..147000000249`), re-read `D`/`z_D`/`SE_D` over the full n=250 under this SAME table. Fired **once**; a second inconclusive read after the top-up falls to `U-UNREADABLE`, not a second top-up (r1's own "one top-up, pre-registered, no second" discipline). |
 | **U — UNREADABLE** | `D` (§3.1) fired, OR the top-up was already consumed and the re-read is still inconclusive | No strength number for `D` is published. Both arms' own secondary absolute numbers may still be reported (with the standing R9-on / non-CRN-opponent / cross-band-to-r1 caveats), clearly labeled as not adjudicating the transfer question. |
 
 **Read-rule discipline:** the fired branch **is** the authorization to report it — a fired

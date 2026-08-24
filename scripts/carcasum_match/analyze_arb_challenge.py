@@ -73,8 +73,8 @@ ARMED_TIEARB_SPEC = {"enabled": True, "B": 64, "J": 4, "mode": "argmax",
 #: DESIGN.md §4 — the shared 250-seed band (200 primary + 50 reserved top-up),
 #: reused verbatim by BOTH arms (within-pair CRN); per-arm separation is by
 #: OUTPUT PATH, not seed offset.
-SHARED_DECK_SEED_LO = 144_000_000_000
-SHARED_DECK_SEED_HI = 144_000_000_249
+SHARED_DECK_SEED_LO = 147_000_000_000
+SHARED_DECK_SEED_HI = 147_000_000_249
 
 #: The opponent config held fixed across BOTH arms (DESIGN.md §2), byte-identical
 #: to r1's own configuration.
@@ -482,8 +482,8 @@ def _selftest() -> int:
         "champion_manifest": {"leaf_hashes": {"harness_leaf_hash": PROD_LEAF_HASH},
                               "cand_tiearb": dict(ARMED_TIEARB_SPEC)},
     }
-    off_recs = [{"deck_seed": 144000000000, "manifest": good_off_manifest}]
-    on_recs = [{"deck_seed": 144000000000, "manifest": good_on_manifest}]
+    off_recs = [{"deck_seed": 147000000000, "manifest": good_off_manifest}]
+    on_recs = [{"deck_seed": 147000000000, "manifest": good_on_manifest}]
 
     assert gate_g_binary(off_recs, on_recs)[0] is True
     bad_bin = [{"deck_seed": 1, "manifest": {**good_on_manifest, "carcasum_binary_sha256": "x" * 32}}]
