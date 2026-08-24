@@ -8107,3 +8107,59 @@ real emitted record before being armed, the same rule now applied to analyzers.
 remote/local) · `docs/LEVER_INDEX.md` §9 · band `142000000000`–`142000000199` retires
 `decision_influenced=yes` in `governance/BAND_REGISTRY.csv`; the reserved top-up
 `142000000200`–`142000000299` releases (branch C never fired).
+
+## 2026-08-23 (evening) — EVERY-PLY ROLLOUT ARBITRATION, SIZE-1 KILL-SCREEN: **`E-UNRESOLVED`, and the reopen bar is a ~134× corpus, not more n — the lever PARKS**
+
+Frozen pair (`BLIND_COMMIT c946eae7`, `DESIGN.md`/`READ_RULE.md`) unchanged bit-for-bit from
+freeze through the run rev — verified by `git diff c946eae7..<run-rev> -- DESIGN.md
+READ_RULE.md` returning empty. Getting from a frozen, funded pair (owner: *"every ply. fund."*)
+to a readable adjudication took **five execution-layer fixes, EP-D1 through EP-D5**, every one
+made statistics-blind (zero legs of the pricing run existed at fix time, verified by the
+archived failed-pilot directories as witness): EP-D1 routed `--arm-builder leaf_topk` into the
+corpus-stage argv per the pair's own §3.1 pre-committed fallback (pooled-Q is unreachable
+through the rust backend, which exposes pooled N, not Q); EP-D2 found the *sibling* pilot stage
+had missed the same argv fix and, worse, had been silently reporting false success (`DONE_pilot`
+written regardless of return code) — fixed as argv-plus-rc-parity together, so the guard-parity
+fix paid for itself on the very next run; EP-D3 fixed a latent `Execution`-object attribute-read
+bug that a mock-based unit test had been hiding since before EP-D2 made the code path reachable;
+EP-D4 found `probe_pickers.py`'s `--if-records`/`--arb-records` defaults hardcoded to the LOCAL
+share path, refusing the run on the laptop — fixed by threading the launcher's own
+role-resolved `$SHARE` through; EP-D5 found a **second** call site of the exact same defect
+class, inside `analyze_everyply.py`'s own internal re-invocation of the knowngood check, missed
+by EP-D4's one-pass audit.
+
+**First adjudication: `U-UNREADABLE`.** `G-KNOWNGOOD` failed at the EP-D5 call site — 10/11
+gates PASS, the underlying games/records were never touched by the defect, and an independent
+recompute matched the analyze stage's numbers bit-for-bit — but those numbers were QUARANTINED
+(seen by the adjudicator and orchestrator, not adjudicated, not quotable) until a **fresh**
+statistics-blind agent (the first adjudicator and the orchestrator were disqualified, having
+seen the quarantined numbers) fixed EP-D5 and re-ran the analyze stage locally against the
+banked share records.
+
+**Final adjudication, all 11 gates PASS, byte-identity triple-confirmed: `E-UNRESOLVED`.**
+κ̂ (pts per non-tied ply, arbitrated pick minus search pick) = **+0.0135, se 0.1105, z +0.122,
+UB95 (one-sided) +0.2346**, over n=450 non-tied plies (307 priced, 143 zero-filled per the
+pair's own §0.A rule, 311 roots), replaying the existing band 28e9 (no new band). Neither the
+pre-registered harm bar nor the flat-null bar fires; `E-FUND` is **unreachable at SIZE-1 by
+design** — READ_RULE §0.A scopes this pair as kill-only, it cannot fund the lever regardless of
+what κ̂ reads.
+
+**The decision-relevant fact is the power arithmetic, not the point estimate:** resolving κ̂ at
+2σ at this design needs **≈120,317 positions — roughly 134× the maximum constructible corpus**
+for this probe shape. This is not "underpowered, buy more n" — it is unmeasurable at any
+feasible scale. **Owner ruling: park the lever with this annotation** (verbatim, *"recommend
+park-with-annotation - okay"*) — `docs/LEVER_INDEX.md`'s every-ply row now carries the verdict,
+the unmeasurability arithmetic, and the reopen bar in place. Reopen requires **a mechanism
+argument predicting a per-ply effect ≥ ~0.5 pts** (large enough to be measurable at a
+constructible n), not a bigger corpus at the same expected effect size.
+
+Two flags carried in the readout, neither withholding the verdict: the frozen pair never states
+where `analyze` may execute (the root cause of the EP-D5 defect class), and the EP-D5 analyze
+invocation carries no first-party rev stamp of its own.
+
+`results.csv everyply_size1_probe_kill_screen_n450_nontied_plies_b28e9` · readout of record
+`measurement/everyply_probe_20260823/READOUT_FINAL.md` · deviation log
+`measurement/everyply_probe_20260823/DEVIATIONS.md` (EP-D1..D5, shas + statistics-blindness
+witness for each) · `docs/LEVER_INDEX.md` every-ply rollout arbitration row (parked in place,
+step 1 of this batch) · no `governance/BAND_REGISTRY.csv` row owed (reuses band 28e9, no new
+seeds claimed).
