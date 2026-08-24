@@ -1,0 +1,4 @@
+Band 144000000000 (seeds 144000000000..144000000249, 200 primary + 50 reserved
+top-up decks) claimed 2026-08-24 in governance/BAND_REGISTRY.csv as part of the
+carcasum-arb-freeze build. Re-verified fresh (registry high-water + live-run
+process census) immediately before the CSV append -- see BAND_CLAIM.json.
