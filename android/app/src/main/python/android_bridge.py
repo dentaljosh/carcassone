@@ -166,6 +166,38 @@ ANDROID_FALLBACK_BUDGET: dict[str, int] = {"k_dets": 4, "sims_per_det": 688}
 # setting on the Pixel; the YAML is authoritative when it says otherwise.
 ANDROID_FALLBACK_RUST_THREADS: int = 4
 
+# --------------------------------------------------------------------------- #
+# 1b-2. THE MOBILE TIE-ARBITER. ⭐ ADDED 2026-08-24 — owner ruling, verbatim:    #
+#     "so let's default to b32 on phone. but. give me a settings screen where  #
+#     I can choose lower options. and there should be a progress indicator     #
+#     during the longer thinking turns."                                       #
+#                                                                              #
+# Same mechanism as the desktop's `fair_deploy.tiearb` (RUST-ONLY post-search  #
+# root tie-break: B CRN playout worlds per tied arm, J caps the arm set,       #
+# argmax the mean). Desktop runs a FIXED B=64/threads=8; mobile makes B a      #
+# SETTINGS-SCREEN CHOICE (B_options below) with a smaller default, because a   #
+# B=32 fire measures ~20.8-28.9s at tiearb_threads=2 on the reference device — #
+# too long to hardcode without a way to back off. J/mode/salt/eps/threads are  #
+# NOT user-selectable: only B moves, exactly like the desktop shape says.      #
+#                                                                              #
+# FAIL-CLOSED, same discipline as the budget above: `mobile_tiearb()` never    #
+# raises and never guesses a B a caller did not ask for. See its docstring.    #
+# --------------------------------------------------------------------------- #
+TIEARB_LEVEL_OFF = "off"
+TIEARB_LEVEL_B8 = "b8"
+TIEARB_LEVEL_B16 = "b16"
+TIEARB_LEVEL_B32 = "b32"
+# Strongest-first, matching the Settings screen's display order and B_options.
+TIEARB_LEVELS: tuple[str, ...] = (
+    TIEARB_LEVEL_B32, TIEARB_LEVEL_B16, TIEARB_LEVEL_B8, TIEARB_LEVEL_OFF)
+TIEARB_LEVEL_DEFAULT = TIEARB_LEVEL_B32          # what a NEW app game uses (the owner ruling).
+# A save/archive written before this feature shipped has no `tiearb_level` key at
+# all; absent means "played without the arbiter", never a guessed B — the same
+# absent-is-legacy contract as start_rule/grid_rule/draw_rule/cloister_rule/farm_rule.
+TIEARB_LEVEL_LEGACY = TIEARB_LEVEL_OFF
+TIEARB_LEVEL_TO_B: dict[str, int] = {
+    TIEARB_LEVEL_B8: 8, TIEARB_LEVEL_B16: 16, TIEARB_LEVEL_B32: 32}
+
 # Desktop convenience: when the repo tree is visible above this file and the package is
 # not installed, make src/ importable. On device this resolves to a path that does not
 # exist and is skipped. (android/app/src/main/python/android_bridge.py -> parents[4] is
@@ -672,6 +704,69 @@ def budget_for_backend(backend: str, spec=None) -> dict:
             "backend": BACKEND_PYTHON, "rust_threads": None, "floored": True}
 
 
+def _tiearb_off(level: str, *, from_yaml: bool, reason: str | None) -> dict:
+    return {"enabled": False, "B": 0, "J": 0, "mode": "", "salt": "", "eps": 0.0,
+            "threads": 0, "level": str(level), "from_yaml": bool(from_yaml),
+            "reason": reason}
+
+
+def mobile_tiearb(level: str, spec=None) -> dict:
+    """The tie-arbiter config THIS PLATFORM runs for a Settings-screen ``level``.
+
+    ``level`` is one of ``TIEARB_LEVELS`` — what the Settings screen persists and
+    ``new_game``'s ``tiearb_level`` key carries. Returns ``{"enabled", "B", "J",
+    "mode", "salt", "eps", "threads", "level", "from_yaml", "reason"}``.
+
+    FAIL-CLOSED on every axis, the same discipline as ``mobile_budget()``: an
+    unknown level, a bundled YAML with no ``mobile.tiearb`` block, or a B this
+    build's ``B_options`` does not list all resolve to ``enabled=False`` rather
+    than raising or guessing a B nobody asked for. ``reason`` explains why
+    whenever ``enabled`` is False for anything other than an explicit
+    ``"off"`` request, so a degraded game can say why on screen.
+
+    Reads ``spec.deploy_profiles`` directly rather than going through
+    ``champion_factory.deploy_profile()`` — that function's return shape is a
+    fixed set of budget/execution keys shared with every caller (desktop
+    included) and does not carry a nested ``tiearb`` block; extending it would
+    widen a shared contract for a mobile-only field. ``ProductionSpec.
+    deploy_profiles`` already exposes the raw per-profile dict, which is all
+    this needs.
+
+    ⚠️ DOES NOT CHECK THE BACKEND. The tie arbiter is RUST-ONLY
+    (``champion_factory.make_production_champion``: "tiearb is RUST-ONLY"); the
+    backend gate belongs to the caller, which alone knows whether the Rust
+    mirror actually started — ``_Session._build_opponent`` forces
+    ``enabled=False`` here whenever its own resolved ``backend`` is not
+    ``"rust"``, and ``_start_rust_mirror`` re-confirms the arbiter went live
+    against ``FairAgentRs.stats()`` before trusting it for the manifest.
+    """
+    if level not in TIEARB_LEVELS:
+        return _tiearb_off(
+            level, from_yaml=False,
+            reason=f"unknown tiearb level {level!r}; expected one of {TIEARB_LEVELS}")
+    if level == TIEARB_LEVEL_OFF:
+        return _tiearb_off(level, from_yaml=True, reason=None)
+    spec = spec or champion_factory.load_production_spec()
+    mobile_prof = dict((spec.deploy_profiles or {}).get(ANDROID_DEPLOY_PROFILE) or {})
+    ta = mobile_prof.get("tiearb")
+    if not isinstance(ta, dict) or not ta.get("enabled"):
+        return _tiearb_off(
+            level, from_yaml=False,
+            reason="no mobile tiearb profile in the bundled PRODUCTION.yaml")
+    b_options = [int(b) for b in (ta.get("B_options") or [])]
+    b = TIEARB_LEVEL_TO_B.get(level)
+    if b is None or b not in b_options:
+        return _tiearb_off(
+            level, from_yaml=True,
+            reason=(f"level {level!r} (B={b}) is not in this build's "
+                    f"B_options {b_options}"))
+    return {"enabled": True, "B": int(b), "J": int(ta.get("J", 4)),
+            "mode": str(ta.get("mode", "argmax")),
+            "salt": str(ta.get("salt", "tiearb2-deploy-v1")),
+            "eps": float(ta.get("eps", 0.0)), "threads": int(ta.get("threads", 2)),
+            "level": level, "from_yaml": True, "reason": None}
+
+
 def _shim_factory_repo() -> str | None:
     """Make ``champion_factory._hashers()``'s sys.path inserts harmless on device.
 
@@ -947,7 +1042,20 @@ _prog_leaf_calls = 0        # cumulative evaluator calls for the CURRENT ai_move
 _prog_expected = 0          # k_dets * sims (the nominal leaf budget)
 _prog_t0 = 0.0              # perf_counter at ai_move entry; 0.0 == idle
 _prog_thinking = False
+_prog_tiearb_armed = False  # was the tie arbiter RESOLVED enabled for this session?
 _agent_ref = None           # the live agent, for a lock-free `_latched` read
+
+# get_progress()'s "arbiter" phase is a HEURISTIC, not a live signal: `arbitrate`
+# (rust/carc/carc-core/src/tiearb.rs) exposes no mid-search arm x playout counter
+# over the PyO3 boundary — the whole search+arbitration runs inside one blocking,
+# GIL-released `choose_action` call. What IS known: the champion's own un-arbitrated
+# move resolves in ~1.5-2.2s on this budget (PRODUCTION.yaml mobile.measured_s_per_move),
+# while a tiearb fire adds seconds to tens of seconds on top (mobile.tiearb.
+# measured_per_fire_s). So once a THINKING, tiearb-armed session's elapsed time
+# crosses this bound, an in-progress fire is the likely explanation — an honest
+# estimate, not a proof, which is why the UI label stays generic ("likely
+# arbitrating") rather than a bare assertion.
+TIEARB_PROGRESS_HEURISTIC_S = 2.0
 
 
 def _wrap_evaluator_with_counter(agent) -> None:
@@ -1005,7 +1113,8 @@ class _Session:
                  backend: str = BACKEND_DEFAULT,
                  played_backend: str | None = None,
                  played_sims: int | None = None,
-                 played_k_dets: int | None = None):
+                 played_k_dets: int | None = None,
+                 tiearb_level: str = TIEARB_LEVEL_DEFAULT):
         self.seed = int(seed)
         # Which start-tile convention this session plays under. New games use the
         # app default (retail); a RESTORE passes whatever the save recorded, so a
@@ -1114,6 +1223,30 @@ class _Session:
         # OS threads the mirror folds its k worlds across; resolved from the YAML
         # profile by `_build_opponent` (None until then, and for tier1).
         self.rust_threads: int | None = None
+        # THE TIE-ARBITER LEVEL. Which Settings-screen tier this session asked for
+        # ("b32"/"b16"/"b8"/"off") — validated like the other rule/backend levers,
+        # never guessed. ⚠️ UNLIKE `backend`/`sims`/`k_dets`, this is deliberately
+        # NOT sticky across a restore (no `played_tiearb_level`): the arbiter is a
+        # pure search-QUALITY knob — it changes no legality, no RNG stream, no
+        # replay determinism (`arbitrate` is a post-search root tie-break; the
+        # `(deck_seed, actions)` contract is unaffected either way) — so resuming
+        # a save at the user's CURRENT setting is safe by construction, unlike
+        # resuming at a different BUDGET, which the sticky fields exist to
+        # prevent because it would misrepresent what a resumed E4 game ran at.
+        # "Next game" (task requirement 2) is read as "next session build";
+        # restore_game builds one too, so a setting change takes effect there as
+        # well as at new_game — never mid-search inside a live `ai_move` call.
+        if tiearb_level not in TIEARB_LEVELS:
+            raise ValueError(
+                f"unknown tiearb_level {tiearb_level!r}; expected one of "
+                f"{TIEARB_LEVELS}")
+        self.tiearb_level = str(tiearb_level)
+        # Safe default until `_build_opponent` resolves it; also what a tier1
+        # session (no search at all) keeps. Never crash on a missing/malformed
+        # profile — this dict staying `{"enabled": False, ...}` IS the fail-closed
+        # behaviour requirement 1 asks for.
+        self.tiearb: dict = _tiearb_off(self.tiearb_level, from_yaml=False,
+                                        reason=None)
 
         self.game = self.rules_game()
         # The agent gets its OWN Game (mirrors play_vs_tier1_gui.build_opponent): the
@@ -1263,6 +1396,17 @@ class _Session:
         if self.req_k_dets is not None:
             eff_k = int(self.req_k_dets)
         self.rust_threads = mob["rust_threads"]
+        # THE TIE ARBITER — resolved AFTER backend, for the same reason budget is:
+        # it is RUST-ONLY (champion_factory: "tiearb is RUST-ONLY"), so a request
+        # against a backend that just demoted to python must fail closed here, not
+        # crash later inside `_start_rust_mirror`. `mobile_tiearb` itself never
+        # raises; this is the one place its answer can still be overridden to OFF.
+        self.tiearb = mobile_tiearb(self.tiearb_level, spec)
+        if self.tiearb["enabled"] and self.backend != BACKEND_RUST:
+            self.tiearb = _tiearb_off(
+                self.tiearb_level, from_yaml=self.tiearb["from_yaml"],
+                reason=(f"backend resolved to {self.backend!r}; the tie arbiter "
+                        "is rust-only"))
         # parallel_workers is deliberately NEVER passed here: the fair agent's split uses
         # spawn processes, which Chaquopy cannot provide. Omitting it is the byte-identical
         # sequential path — the SAME player, just slower, not a different agent.
@@ -1534,6 +1678,23 @@ class _Session:
                 # golden AND the three leaf-hash dialects match. Fail loud, never warn.
                 champion_factory.verify_leaf(leaf_cfg, spec, backend="rust")
             leaf = leaf_config_rs(leaf_cfg)
+            # THE TIE ARBITER — conditional-keyword, same discipline as the desktop's
+            # `rust_agent.search_config_rs()`: omit every `tiearb_*` kwarg entirely
+            # when disarmed, so a `carc_rs` wheel built before the arbiter existed
+            # still constructs this exact call unchanged. `self.tiearb["enabled"]`
+            # is the RESOLVED answer from `_build_opponent` (`mobile_tiearb()`),
+            # already fail-closed against a missing YAML block, an unknown level, a
+            # B this build does not offer, and a backend that is not rust.
+            tiearb_kw = {}
+            if self.tiearb.get("enabled"):
+                tiearb_kw = dict(
+                    tiearb_enabled=True,
+                    tiearb_b=int(self.tiearb["B"]), tiearb_j=int(self.tiearb["J"]),
+                    tiearb_mode=str(self.tiearb["mode"]),
+                    tiearb_salt=str(self.tiearb["salt"]),
+                    tiearb_eps=float(self.tiearb["eps"]),
+                    tiearb_threads=int(self.tiearb["threads"]),
+                )
             search = carc_rs.SearchConfigRs(
                 leaf, sims,
                 float(self.spec_knob("c_puct")), float(self.spec_knob("tau_p")),
@@ -1541,6 +1702,7 @@ class _Session:
                 str(self.spec_knob("leaf_quantize")), str(self.spec_knob("final_select")),
                 None, 1.0,
                 ANDROID_EXP_FMA, ANDROID_TANH_FLAVOR,
+                **tiearb_kw,
             )
             self.rs = carc_rs.FairAgentRs(
                 search, k_dets=k_dets, seed=int(self.seed),
@@ -1585,6 +1747,23 @@ class _Session:
             )
             self.rs.start_game_from_deck(self._full_deck_descriptions())
             self._assert_mirror("game start")
+            if self.tiearb.get("enabled"):
+                # "CANNOT SILENTLY NO-OP" (PRODUCTION.yaml fair_deploy.tiearb): the
+                # desktop harness RAISES if it armed the arbiter but the champion's
+                # own telemetry disagrees (`play_harness._champ_tiearb_telemetry`).
+                # The app's fail-closed contract forbids the raise — so instead the
+                # ARCHIVE'S claim is downgraded to match reality, never the other
+                # way around, and never silently: `rs_note` says so on screen.
+                try:
+                    live = self.rs.stats()
+                except Exception:                  # noqa: BLE001 — telemetry only
+                    live = None
+                if not (isinstance(live, dict) and bool(live.get("tiearb_enabled"))):
+                    self.tiearb = {**self.tiearb, "enabled": False,
+                                   "reason": "armed but FairAgentRs.stats() did not "
+                                             "confirm tiearb_enabled=True"}
+                    self.rs_note = ((self.rs_note + "; " if self.rs_note else "")
+                                    + "tie arbiter requested but not confirmed live")
         except BaseException as exc:              # noqa: BLE001
             # ⚠️ BaseException, not Exception (REVIEW.md C-a): this IS the degrade
             # net, and the failure it exists to absorb — a Rust panic — arrives as
@@ -2123,6 +2302,10 @@ def new_game(config_json: str = "{}") -> str:
                       move. "rust" mirrors the game into `carc_rs.FairAgentRs`;
                       the Python engine stays authoritative for legality, UI,
                       scoring and the save record either way. Opt-in (P7).
+        tiearb_level  "b32"|"b16"|"b8"|"off", default "b32" — the Settings-screen
+                      tie-arbiter tier (see TIEARB_LEVELS). RUST-ONLY: on a
+                      "python"-resolved backend this is fail-closed to no
+                      arbiter, never an error. An unknown value is refused.
 
     Returns the full state object (see ``get_state``)."""
     global _S, _GENERATION, _prog_leaf_calls, _prog_expected, _prog_t0
@@ -2156,6 +2339,7 @@ def new_game(config_json: str = "{}") -> str:
             # An EXPLICIT `farm_rule` that disagrees with the latch is still refused.
             farm_rule=str(cfg.get("farm_rule", FARM_RULE_LATCHED)),
             backend=str(cfg.get("backend", BACKEND_DEFAULT)),
+            tiearb_level=str(cfg.get("tiearb_level", TIEARB_LEVEL_DEFAULT)),
         )
         _S = s
         _agent_ref = s.agent
@@ -2211,6 +2395,7 @@ def ai_move(generation=None) -> str:
     instead of applying it to a board it was never computed for. The echoed
     ``generation`` lets the caller drop a stale result unconditionally."""
     global _prog_leaf_calls, _prog_t0, _prog_thinking, _prog_expected
+    global _prog_tiearb_armed
     try:
         s = _require_session()
         gen = s.generation if generation is None else int(generation)
@@ -2229,6 +2414,7 @@ def ai_move(generation=None) -> str:
         _prog_expected = _expected_leaf_calls(s)
         _prog_t0 = t0
         _prog_thinking = True
+        _prog_tiearb_armed = bool(s.tiearb.get("enabled"))
         try:
             idx = int(s.pick(board))
         finally:
@@ -2270,20 +2456,33 @@ def ai_move(generation=None) -> str:
 
 def get_progress() -> str:
     """Cheap, lock-free progress poll — the ONLY function safe to call while
-    ``ai_move`` is blocking. Reads module-global ints and one agent bool."""
+    ``ai_move`` is blocking. Reads module-global ints and one agent bool.
+
+    ``phase`` gained a fourth value, ``"arbiter"``, alongside ``idle``/``search``/
+    ``exact``. ⚠️ IT IS A HEURISTIC, not a live signal — see
+    ``TIEARB_PROGRESS_HEURISTIC_S``'s comment for why no true one exists. It fires
+    only when THIS session actually armed the tie arbiter (``_prog_tiearb_armed``,
+    set from the RESOLVED ``s.tiearb`` in ``ai_move``, never the mere request) and
+    the think has run long enough that an ordinary un-arbitrated move would already
+    be done. ``fraction`` stays ``null`` in this phase — there is nothing to make it
+    determinate with — so the UI's contract (requirement 3: determinate when
+    queryable, else an indeterminate spinner with a label) is met honestly rather
+    than by inventing a number."""
     try:
         t0 = _prog_t0
         thinking = bool(_prog_thinking)
         leaf_calls = int(_prog_leaf_calls)
         expected = int(_prog_expected)
         latched = bool(getattr(_agent_ref, "_latched", False))
+        elapsed = (time.perf_counter() - t0) if (thinking and t0) else 0.0
         if not thinking:
             phase = "idle"
         elif latched:
             phase = "exact"     # exact-endgame solve: leaf counter does not move
+        elif bool(_prog_tiearb_armed) and elapsed >= TIEARB_PROGRESS_HEURISTIC_S:
+            phase = "arbiter"   # heuristic — see docstring
         else:
             phase = "search"
-        elapsed = (time.perf_counter() - t0) if (thinking and t0) else 0.0
         frac = (min(1.0, leaf_calls / expected) if (expected > 0 and phase == "search")
                 else None)
         return _ok({"ok": True, "leaf_calls": leaf_calls, "expected": expected,
@@ -2369,6 +2568,14 @@ def _save_payload(s: _Session) -> dict:
         "backend": s.backend,
         "sims_effective": s.eff_sims,
         "k_dets_effective": s.eff_k_dets,
+        # THE TIE-ARBITER LEVEL REQUESTED at session start ("b32"/"b16"/"b8"/"off",
+        # see TIEARB_LEVELS). Carried forward on restore so a RESUMED unfinished
+        # game continues at the level it was SAVED with — the same per-game-
+        # invariant contract as the five rule fields above, not the current
+        # ambient Settings value (which only takes effect at the next `new_game`).
+        # Absent on any save written before this feature shipped == TIEARB_LEVEL_LEGACY
+        # ("off") — a pre-arbiter save resumes without the arbiter, never a guess.
+        "tiearb_level": s.tiearb_level,
     }
     out.update(_spec_fingerprint())
     return out
@@ -2428,6 +2635,25 @@ def archive_record() -> str:
             "backend": s.backend,
             "backend_note": s.rs_note,
             "rust_threads": (s.rust_threads if s.backend == BACKEND_RUST else None),
+            # THE TIE ARBITER, AS RESOLVED at game start (mandatory E4 archive
+            # discipline — CLAUDE.md "manifest stamping"). `s.tiearb` is the FINAL
+            # answer after every fail-closed gate (missing YAML block, unsupported
+            # level, non-rust backend, and the post-construction `stats()` liveness
+            # check in `_start_rust_mirror`) — never the mere request. Four fields,
+            # exactly what the task calls for: enabled, B, threads, and the salt.
+            # Absent on any archive written before this feature shipped, which is
+            # the correct backward-compatible reading — "absent == no arbiter" is
+            # also literally true of every one of those games. `tiearb_level` (the
+            # Settings-screen choice) rides in `_save_payload` above; these are what
+            # it actually resolved to, which is what E4 trend analysis conditions
+            # on — the same "condition on the resolved epoch" contract CLAUDE.md
+            # already uses for rules_profile/cloister_rule/farm_rule.
+            "tiearb_enabled": bool(s.tiearb.get("enabled")),
+            "tiearb_b": int(s.tiearb["B"]) if s.tiearb.get("enabled") else None,
+            "tiearb_threads": (int(s.tiearb["threads"])
+                               if s.tiearb.get("enabled") else None),
+            "tiearb_salt": (str(s.tiearb["salt"]) if s.tiearb.get("enabled")
+                            else None),
             # BOTH SIDES OF A RESUME (ROUND2 F-2). The three `*_effective`/`backend`
             # fields above describe THIS session; if the game was resumed and the
             # resolution changed under it, `played_*` is what the earlier half ran
@@ -2582,6 +2808,14 @@ def restore_game(json_str: str) -> str:
         if not played_sims or not played_k:
             played_sims = played_k = None
 
+        # THE TIE-ARBITER LEVEL is carried forward the same per-game-invariant way
+        # as the five rule fields below (see `_save_payload`'s comment): a resumed
+        # game continues at the level it was SAVED with, not today's Settings
+        # value. Absent == TIEARB_LEVEL_LEGACY ("off") — a save written before this
+        # feature shipped resumes without the arbiter, matching the archive's own
+        # "absent == no arbiter" contract.
+        tiearb_level = str(blob.get("tiearb_level", TIEARB_LEVEL_LEGACY))
+
         # VOCABULARY FIRST, so an unknown value is reported as itself. Both checks
         # that follow are downstream of "these five strings mean something" — the
         # label derivation and the farm-rule gate would otherwise turn a typo'd
@@ -2686,6 +2920,7 @@ def restore_game(json_str: str) -> str:
             played_backend=played_backend,
             played_sims=played_sims,
             played_k_dets=played_k,
+            tiearb_level=tiearb_level,
         )
 
         # Replay. Whose decision each logged action was is decided by the board it was

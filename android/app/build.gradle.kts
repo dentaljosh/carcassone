@@ -361,8 +361,8 @@ android {
         // Chaquopy 17 requires >= 24; 26 keeps us clear of legacy multidex/ART quirks.
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1-m0"
+        versionCode = 2
+        versionName = "0.1-m1"
 
         // Instrumented tests are the ONLY surface that can run code inside the
         // app's Chaquopy environment (numpy + the carc_rs wheel as pip resolved

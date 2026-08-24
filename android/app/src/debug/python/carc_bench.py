@@ -126,6 +126,17 @@ class _BenchSession(B._Session):
             raise ValueError(f"bench_rust_threads must be >= 1, got {t}")
         self._bench_threads = t
         self._bench_tiearb = _resolve_tiearb(bench_tiearb)
+        # ⚠️ THE BASE SESSION MUST NOT ARM ITS OWN ARBITER (added 2026-08-24 with
+        # the mobile Settings-screen tiearb feature). `_Session` now defaults
+        # `tiearb_level` to the app's own B32-on-by-default — exactly what would
+        # make the "control" arm above indistinguishable from an armed one, since
+        # THIS class's own arming is a separate mechanism (the `SearchConfigRs`
+        # monkeypatch in `_start_rust_mirror` below) driven by `bench_tiearb`, not
+        # by the app Settings. `setdefault`, not assignment: a caller that passes
+        # `tiearb_level` explicitly through `kw` still wins, and the `_assert_tiearb`
+        # disagreement check below is what catches it if that ever conflicts with
+        # `bench_tiearb` rather than silently double-arming.
+        kw.setdefault("tiearb_level", B.TIEARB_LEVEL_OFF)
         super().__init__(**kw)
 
     def _build_opponent(self) -> None:

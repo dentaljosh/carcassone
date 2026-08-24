@@ -335,6 +335,50 @@ champion:
           + carve-out) and DECISIONS 2026-08-01 (the rust port P7/G7 + this unpin).
           READER: android/app/src/main/python/android_bridge.py resolves THIS profile (fail-closed: if the
           profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).
+        tiearb:                          # ⭐ MOBILE TIE-ARBITER (folded 2026-08-24, owner ruling below). Same
+                                        # mechanism as fair_deploy.tiearb above (RUST-ONLY post-search root
+                                        # tie-break: B CRN playout worlds per tied arm, J caps the arm set,
+                                        # argmax the mean) — sized and made user-selectable for the phone.
+          enabled: true                  # default ON at B_default. The Settings screen can drop to a smaller
+                                        # B or OFF; OFF and any resolution failure are BOTH fail-closed (no
+                                        # arbiter, never a crash) — android_bridge.mobile_tiearb() owns it.
+          B_default: 32                  # ⭐ OWNER RULING (2026-08-2x, Joshua, verbatim): "so let's default to
+                                        # b32 on phone. but. give me a settings screen where I can choose lower
+                                        # options. and there should be a progress indicator during the longer
+                                        # thinking turns." Desktop stays B=64 (fair_deploy.tiearb.B above) —
+                                        # this is a separate, smaller number for the phone's thermal/latency
+                                        # budget, not a desktop change. Desktop prior: B=32 retains ~85% of the
+                                        # B=64 arbiter's value (measurement/tiearb_widening_20260817/ ladder).
+          B_options: [32, 16, 8]         # the Settings screen's selectable levels, strongest first. A 4th
+                                        # option (OFF) is not a B value — it clears `enabled` entirely rather
+                                        # than naming a B.
+          J: 4                           # UNCHANGED from desktop — rung3_r5 read X-INCONCLUSIVE, no licence to
+                                        # widen J on either platform. No independent mobile measurement of J.
+          mode: argmax
+          salt: "tiearb2-deploy-v1"      # the deploy salt of record — same as desktop.
+          eps: 0.0
+          threads: 2                     # ⭐ tiearb_threads=2 — the MEASURED Pixel optimum (this week's
+                                        # on-device characterization: t3/t4/t8 all regress vs t2). Distinct
+                                        # from `rust_threads` above (that folds the k_dets determinization
+                                        # worlds; this folds the arbiter's B*arms playouts) — same decoupling
+                                        # as desktop's `threads: 8` vs the champion's own `rust_threads`.
+          measured_per_fire_s:           # per-fire wall-clock at threads=2 (thermal drift noted at B=32).
+            b8: [7.0, 7.0]
+            b16: [15.2, 15.2]
+            b32: [20.8, 28.9]
+          measured_tied_plies_per_game: 17.6
+          note: >
+            Owner-decided change (verbatim ruling above). MEASURED FACTS baked in: tiearb_threads=2 is the
+            Pixel optimum (t3/t4/t8 all regress); per-fire at t2: B=8 ~7.0s, B=16 ~15.2s, B=32 ~20.8-28.9s
+            (thermal drift on sustained load); ~17.6 tied plies/game => ~2.1 / ~4.4 / ~6-8.5 minutes added per
+            game at B=8/16/32 respectively. Same semantics as desktop otherwise (RUST-ONLY, J=4, argmax, same
+            salt) — only B and threads differ, and B is now client-selectable via the Settings screen (OFF
+            included). READER: android_bridge.mobile_tiearb(level) resolves this block (fail-closed: a
+            missing/malformed block, an unsupported level, or a non-rust backend all resolve to
+            {"enabled": False}, never a crash — see that function's docstring). MANIFEST STAMPING: every
+            archived mobile game records tiearb_enabled/tiearb_b/tiearb_threads/tiearb_salt AS RESOLVED at
+            game start (android_bridge.archive_record), absent on any pre-arbiter build, so E4 trend analysis
+            can condition on this epoch the same way it conditions on rules_profile.
     stale_path_flag: >
       ✅ CLEARED 2026-07-26 — the gap this flag described was FIXED on 2026-07-19 by F1 (91bff94) and the flag
       was simply never cleared (the 6-touch close-out leaking at touch 4, exactly where CLAUDE.md says it

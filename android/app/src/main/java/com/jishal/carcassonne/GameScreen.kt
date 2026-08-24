@@ -1012,7 +1012,14 @@ private fun ThinkingBanner(ui: GameUiState, state: GameState, modifier: Modifier
             } else {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
                 Text(
-                    if (p?.phase == "exact") "solving the endgame exactly" else "searching",
+                    when (p?.phase) {
+                        "exact" -> "solving the endgame exactly"
+                        // Heuristic, not determinate: the tie-arbiter has no leaf
+                        // count to show a fraction against, just a label hint that
+                        // the champion is thinking longer than usual on a tie.
+                        "arbiter" -> "arbitrating tied tile…"
+                        else -> "searching"
+                    },
                     fontSize = 10.sp,
                 )
             }

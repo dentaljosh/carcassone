@@ -57,6 +57,25 @@ class DifficultyTest {
     }
 
     @Test
+    fun `tiearb_level defaults to b32 and always sends explicitly`() {
+        // Unlike sims/k_dets, tiearb_level has no "let the bridge decide" case —
+        // it is always present, even at the default.
+        val c = cfg(Difficulty.CHAMPION)
+        assertTrue("tiearb_level must be present even at the default", c.has("tiearb_level"))
+        assertEquals("b32", c.getString("tiearb_level"))
+    }
+
+    @Test
+    fun `tiearb_level threads through explicitly`() {
+        val c = JSONObject(
+            Difficulty.CHAMPION.newGameConfig(
+                seed = 7, humanPlayer = 0, tieArbLevel = TieArbLevel.OFF,
+            )
+        )
+        assertEquals("off", c.getString("tiearb_level"))
+    }
+
+    @Test
     fun `instant swaps the agent and sends no budget`() {
         val c = cfg(Difficulty.INSTANT)
         assertEquals("tier1", c.getString("opponent"))

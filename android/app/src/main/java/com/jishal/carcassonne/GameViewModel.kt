@@ -107,6 +107,8 @@ data class GameUiState(
     val saveMismatch: String? = null,
     /** The persisted difficulty preset; the next [GameViewModel.newGame] uses it. */
     val difficulty: Difficulty = Difficulty.DEFAULT,
+    /** The persisted tie-arbiter level; the next [GameViewModel.newGame] uses it. */
+    val tieArbLevel: TieArbLevel = TieArbLevel.DEFAULT,
     /**
      * Rolling mean of the last [GameViewModel.ETA_WINDOW] AI move durations **for
      * the decision now in flight**, in seconds — `null` until there is a usable
@@ -281,6 +283,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             settings.difficulty.collect { d -> _ui.update { it.copy(difficulty = d) } }
         }
+        viewModelScope.launch {
+            settings.tieArbLevel.collect { l -> _ui.update { it.copy(tieArbLevel = l) } }
+        }
     }
 
     /** Persist a new difficulty. The change applies to the NEXT game, not this one. */
@@ -288,6 +293,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             runCatching { settings.setDifficulty(d) }
                 .onFailure { Log.w(TAG, "difficulty write failed", it) }
+        }
+    }
+
+    /** Persist a new tie-arbiter level. The change applies to the NEXT game, not this one. */
+    fun setTieArbLevel(level: TieArbLevel) {
+        viewModelScope.launch {
+            runCatching { settings.setTieArbLevel(level) }
+                .onFailure { Log.w(TAG, "tie-arb level write failed", it) }
         }
     }
 
@@ -356,24 +369,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private fun launchNewGame(seat: Seat, seed: Int) = launchOp { e ->
         saveStore.clear()
         aiDurations.clear()
-        // Read the PERSISTED value rather than the mirrored one: the DataStore
+        // Read the PERSISTED values rather than the mirrored ones: the DataStore
         // collect is asynchronous, so a Start tapped in the first moments after a
         // cold launch could otherwise silently start a game at the default budget
         // instead of the saved preset.
         val difficulty = runCatching { settings.difficulty.first() }
             .getOrElse { _ui.value.difficulty }
+        val tieArbLevel = runCatching { settings.tieArbLevel.first() }
+            .getOrElse { _ui.value.tieArbLevel }
         previewFor = null
         _ui.update {
             GameUiState(
                 budget = it.budget, busy = true, hasSave = false,
-                difficulty = difficulty, archiveCount = it.archiveCount,
+                difficulty = difficulty, tieArbLevel = tieArbLevel, archiveCount = it.archiveCount,
             )
         }
         // The preset owns the whole opponent/budget decision, including the choice
         // to OMIT sims/k_dets at Champion so the bridge falls through to
         // governance/PRODUCTION.yaml — the only place a strength knob is allowed
         // to live. `budget` is read separately and used for DISPLAY only.
-        val cfg = difficulty.newGameConfig(seed = seed, humanPlayer = seat.humanPlayer())
+        val cfg = difficulty.newGameConfig(
+            seed = seed, humanPlayer = seat.humanPlayer(), tieArbLevel = tieArbLevel,
+        )
         runBridge(e) { PythonBridge.newGame(cfg) }
     }
 
@@ -671,7 +688,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _ui.update {
             GameUiState(
                 budget = it.budget, hasSave = it.hasSave,
-                difficulty = it.difficulty, archiveCount = it.archiveCount,
+                difficulty = it.difficulty, tieArbLevel = it.tieArbLevel,
+                archiveCount = it.archiveCount,
             )
         }
     }
