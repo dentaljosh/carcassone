@@ -8,11 +8,11 @@
 > freeze time rather than at launch time). §0.4 records the pre-freeze reconciliation against
 > `measurement/track_d2r2_prep/run_cells.sh`, owed by §7.1.1 at draft time and executed here.
 
-# FAIR-RULER RE-BASELINE: THE RULER OF RECORD, RE-MEASURED ON THE PRODUCTION INSTRUMENT — DESIGN (DRAFT)
+# FAIR-RULER RE-BASELINE: THE RULER OF RECORD, RE-MEASURED ON THE PRODUCTION INSTRUMENT — DESIGN (FROZEN)
 
-Run id `track_d1_fair_rebase`. Pair: this file + [`READ_RULE.md`](READ_RULE.md). Launcher (drafted,
-non-executable): [`run_cells_DRAFT.sh`](run_cells_DRAFT.sh). Band claim (drafted, NOT appended):
-[`BAND_CLAIM_DRAFT.json`](BAND_CLAIM_DRAFT.json).
+Run id `track_d1_fair_rebase`. Pair: this file + [`READ_RULE.md`](READ_RULE.md). Launcher (FROZEN, mode
+644 — chmod +x is a launch act): [`run_cells.sh`](run_cells.sh). Band claim (finalized, claimed):
+[`BAND_CLAIM.json`](BAND_CLAIM.json) (historical draft plan: [`BAND_CLAIM_DRAFT.json`](BAND_CLAIM_DRAFT.json)).
 
 Roadmap item: the **named successor to D1**
 ([`../../docs/PROGRAM_ROADMAP_2026-07-07.md`](../../docs/PROGRAM_ROADMAP_2026-07-07.md) line 110 — *"the one
