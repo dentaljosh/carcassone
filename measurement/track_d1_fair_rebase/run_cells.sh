@@ -692,7 +692,12 @@ else:
     per_sim_ms = cand_ms / 800.0
     tot = 0.0
     for name, S in (("A800",800),("B1600",1600),("C2752",2752),("D5504",5504),("E11008",11008)):
-        sg = (0.070*per_sim_ms*S + 0.071*rung_ms) / 1000.0 + (solver or 1.11)
+        # DESIGN.md §6.2.2 amendment: 0.070/0.071 already ARE the ms->s scale of the
+        # ~70/71 moves/game the DESIGN §6 model names (70/1000, 71/1000) -- do NOT
+        # divide by 1000 again (that was the decimal-scale bug: printed re-projected
+        # core-h/wall were ~1000x too small). This is the informational print only;
+        # the W-COST gate comparison below (rung_ms vs local_rung_ms*tol) is untouched.
+        sg = 0.070*per_sim_ms*S + 0.071*rung_ms + (solver or 1.11)
         sg *= 1.02
         tot += sg*800
         print(f"[pilot]   re-projected {name}: {sg:6.1f} s/game  -> {sg*800/3600:5.2f} core-h")

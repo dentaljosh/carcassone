@@ -571,6 +571,48 @@ the local 624.3 by >25% should be re-costed and re-confirmed with the owner befo
 generic W.** At E11008 the mix shifts hard toward the rust probe; the memory rule (`worker_count_by_bottleneck`)
 says re-bench after any code-era change. The pilot's timing print is the cheap version of that check.
 
+### 6.2.1 OWNER RE-CONFIRMATION — the laptop overage fired, and was ruled on (amendment, 2026-08-24)
+
+The §9 pilot ran on the laptop (`fixed_v1` arm, seed range `145999999000..145999999007`, code_rev
+`b58a425be7`). Every structural gate (`G-LEAF`, `G-RULES`, `G-BACKEND`, `G-RUNG`, `G-TIEARB`, `G-EXACT`, `G-N`)
+PASSED on the real record (`/mnt/c/carc-shared/track_d1_fair_rebase/pilot_fixed_v1/{manifest,summary}.json`).
+The §9(b) W-COST check FAILED: realized `rung_ms_per_move = 781.8` against the local calibration
+`624.3 × 1.25 = 780.4` — **+25.23%**, over the >25% trigger named in this section above. Per that trigger and
+`run_cells.sh`'s `set -e`, the pilot script exited at the W-COST failure before the `walled` arm ran, so the
+§3.6/§7.2B R9-inversion check (`GW-RULES`) is still unverified as of this amendment.
+
+That is exactly the condition this section's own text names: *"A laptop leg whose pilot rung ms/move exceeds
+the local 624.3 by >25% should be re-costed and re-confirmed with the owner before launch, not absorbed."* The
+owner was asked and ruled:
+
+> **Joshua, 2026-08-24 morning: "for w cost, move to laptop"**
+
+Read against the re-costed figure this authorizes: **accept the laptop's realized +25.23% W-COST overage and
+run the six-cell sequence there** (rather than falling back to local or re-pricing the cell). Re-costed wall,
+using the realized 781.8 ms/move rung figure in place of the local 624.3 calibration, at the funded 118.8
+core-h roll-up (§6.1) and W=22: **≈6.75 h** (the local 5.4 h at W=22, §6.2 table, scaled by the realized
+781.8/624.3 = 1.2523× overage — the ladder's cost is rung-dominated, §6.1, so this scaling is a close
+approximation of the true re-cost, not a re-derivation from first principles).
+
+**Zero cells of the six-cell band have run as of this amendment.** The pilot band (`145999999xxx`) is disjoint
+from the claimed band (`145000000000..145000000399`, §5) and is discarded, never pooled — its consumption does
+not touch the real band. This amendment records the ruling and fixes the execution-layer wall-clock projection
+bug named in §6.2.2 below; it authorizes nothing beyond what §0.1/§0.2 already funded and ruled, and it does
+not touch the §9(b) W-COST **gate comparison** itself (`rung_ms > local_rung_ms * tol` stays the >25% trigger
+it always was) — only the informational core-h re-projection that prints alongside it.
+
+### 6.2.2 Execution-layer fix — the pilot's wall re-projection had a decimal-scale error
+
+`run_cells.sh`'s pilot arm re-projects §6.1's roll-up from the box's own realized `rung_ms_per_move` /
+`champ_prefix_ms_per_move` (§9(b)). Before this amendment the code computed
+`sg = (0.070*per_sim_ms*S + 0.071*rung_ms) / 1000.0 + (solver or 1.11)` — an erroneous extra `/1000.0`. The
+`0.070`/`0.071` coefficients **are already the ms→s conversion of the ≈70/71 moves/game named in this section's
+own model** (`s/game = 0.070 × probe_ms_per_move + 0.071 × 624.3 + 1.11`, i.e. `70/1000` and `71/1000`); dividing
+by 1000 a second time made the printed re-projected core-h/wall figures ~1000× too small — an execution-layer
+bug in the *informational* print only, not in the §9(b) gate comparison (which compares `rung_ms` directly to
+`local_rung_ms * tol` and was unaffected). Fixed in the same commit as this record (§6.2.2 is descriptive; the
+diff lives in `run_cells.sh`).
+
 ### 6.3 Optional extensions — priced, unfunded, authorized by nothing here
 
 | ext | what it buys | cost | status |
