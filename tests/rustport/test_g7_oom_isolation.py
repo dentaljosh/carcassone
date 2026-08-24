@@ -152,6 +152,60 @@ def test_a_genuine_non_memory_crash_is_still_a_mismatch_not_an_oom(g7, monkeypat
 
 
 # --------------------------------------------------------------------------
+# 3b. regression for the 2026-08-24 misclassification incident: a MemoryError
+#     raised DEEP inside the dispatched job function (not at run_job's own
+#     top level, and not via a wrapper-level mock of run_job itself) must
+#     propagate OUT of the real run_job, not get swallowed by its own
+#     exception firewall into an EXCEPTION mismatch. Job
+#     corpus:l23:l23_positions:3200000129 hit exactly this: the MemoryError
+#     fired inside `job_corpus` -> `check_position` -> `_timed_py_solve` ->
+#     `endgame_solver._value_ab` (recursing) -> `_key` ->
+#     `game_wrapper.string_representation`, and surfaced through run_job's
+#     `except Exception` as a fabricated correctness mismatch instead of
+#     OOM_SKIPPED. These tests exercise the REAL `run_job` — only the leaf
+#     job-kind function (`job_corpus`) is faked, several real call frames
+#     below where run_job's own firewall lives, and the OOM fires from a
+#     nested inner() call rather than a bare top-level raise.
+# --------------------------------------------------------------------------
+
+def test_run_job_propagates_memoryerror_not_a_mismatch(g7, monkeypatch):
+    """The exact chokepoint: run_job's own try/except must re-raise a
+    MemoryError from the dispatched job function rather than convert it into
+    an `EXCEPTION` mismatch row."""
+    def fake_job_corpus(job):
+        def inner():
+            raise MemoryError()
+        inner()
+        return {}  # pragma: no cover
+
+    monkeypatch.setattr(g7, "job_corpus", fake_job_corpus)
+    job = {"kind": "corpus", "leg": "l23", "tag": "corpus:l23:fake:1"}
+    with pytest.raises(MemoryError):
+        g7.run_job(job)
+
+
+def test_job_over_cap_memoryerror_from_real_check_path_is_oom_skipped(g7, monkeypatch):
+    """End-to-end: drive the REAL `run_job` (not monkeypatched — only
+    `job_corpus`, the leaf, is faked) through `run_job_capped` and confirm the
+    result lands as OOM_SKIPPED with zero mismatches and zero checks, which is
+    what the incident row should have been."""
+    def fake_job_corpus(job):
+        def inner():
+            raise MemoryError()
+        inner()
+        return {}  # pragma: no cover
+
+    monkeypatch.setattr(g7, "job_corpus", fake_job_corpus)
+    job = {"kind": "corpus", "leg": "l23", "tag": "corpus:l23:fake:1"}
+    out = g7.run_job_capped(job, TINY_CAP)
+    assert out["status"] == "OOM_SKIPPED"
+    assert out["mismatches"] == []
+    assert out["checks"] == 0
+    assert out["oom_skipped"] == 1
+    assert out["leg"] == "l23"
+
+
+# --------------------------------------------------------------------------
 # 4. the pool survives: one OOM job among several must not stall or kill the
 #    others, and every job still gets a row
 # --------------------------------------------------------------------------

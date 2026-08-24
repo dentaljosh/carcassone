@@ -420,6 +420,25 @@ def run_job(job: dict) -> dict:
             out = job_v2(job)
         else:
             raise ValueError(f"unknown job kind {kind!r}")
+    except MemoryError:
+        # MUST propagate, never become a mismatch row (fixed 2026-08-24, after
+        # job corpus:l23:l23_positions:3200000129's OOM — hit its RLIMIT_AS
+        # cap deep in the solver call tree, `job_corpus` -> `check_position`
+        # -> `_timed_py_solve` -> `endgame_solver._value_ab` (recursing) ->
+        # `_key` -> `game_wrapper.string_representation` — surfaced through
+        # THIS `except Exception` below, and got recorded as an EXCEPTION
+        # mismatch instead of OOM_SKIPPED, falsely inflating the gate's
+        # mismatch count. `run_job` is always called from inside
+        # `_isolated_job_target` in production (workers>1 or workers=1 with
+        # `--job-mem-cap-gb` > 0, i.e. every real run — see `run_job_capped`),
+        # whose OWN `except MemoryError` clause exists specifically to catch
+        # this and report it as OOM_SKIPPED via `_oom_row`. That clause is
+        # dead code unless this one re-raises rather than swallows. When
+        # isolation is OFF (`--job-mem-cap-gb 0`, the debugger/unit-test path)
+        # or `run_job` is called directly, this simply propagates as a real
+        # MemoryError — the honest signal, and the pre-existing behavior for
+        # that path is unchanged.
+        raise
     except Exception as exc:  # noqa: BLE001 — a crash IS a mismatch here
         import traceback
         out = blank()
@@ -433,9 +452,14 @@ def run_job(job: dict) -> dict:
     # only rebuilt as a partial. Additive: `merge()` reads only the counter
     # keys, and `rebuild_from_rows` pops `leg` and ignores everything else.
     # Defensive like the body above: a row that cannot be keyed still has to be
-    # RECORDED (it carries a mismatch), so keying must never raise here.
+    # RECORDED (it carries a mismatch), so keying must never raise here — EXCEPT
+    # a MemoryError, which must keep propagating for the same reason as above
+    # (job_key() is cheap and unlikely to be where a cap is actually hit, but
+    # if it somehow is, it is still an OOM, never a fabricated UNKEYABLE row).
     try:
         out["job_key"] = job_key(job)
+    except MemoryError:
+        raise
     except Exception:  # noqa: BLE001
         out["job_key"] = f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
     return out
@@ -596,7 +620,17 @@ def run_job_capped(job: dict, cap_bytes: int) -> dict:
         # fall back to running the job inline rather than losing it silently.
         parent_conn.close()
         child_conn.close()
-        return run_job(job)
+        try:
+            return run_job(job)
+        except MemoryError:
+            # Couldn't even fork a child to isolate this job — itself often a
+            # symptom of memory pressure — AND the inline fallback then also
+            # hit the wall. Still an OOM, not a correctness mismatch, and
+            # letting this propagate uncaught here would crash the POOL
+            # WORKER (unlike the isolated-child path, there is no subprocess
+            # boundary to contain it), taking every in-flight sibling job's
+            # `imap_unordered` iteration down with it.
+            return _oom_row(job, cap_bytes, None)
     child_conn.close()  # only the child should hold the write end open
 
     status, payload = None, None
