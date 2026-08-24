@@ -54,6 +54,29 @@ at all, and `--per-k` samples each (corpus, K) cell.  Everything is reported —
 the JSON records exactly which cells were sampled and at what N, so a partial
 run cannot be read as a full one.
 
+## Per-job memory isolation (added 2026-08-23, after two whole-scope OOM kills)
+
+`reconcile_exact_solver` run `run2` was OOM-killed inside its systemd scope
+TWICE: first at workers=3/28G, then at workers=2/34G — dmesg showed ONE
+worker's Python marginalized solve at 27.6 GB RSS and STILL GROWING (its
+transposition table has no bound). Both times the WHOLE scope died, taking
+every sibling worker's in-flight job with it, even though only one job was
+pathological.
+
+Each job now runs in its OWN forked subprocess with its OWN `RLIMIT_AS` cap
+(`--job-mem-cap-gb`, default 26). A job that exceeds its cap dies alone —
+either it raises a catchable `MemoryError` (the common case for a Python dict
+blowing its bound) or the OS/allocator kills the subprocess outright (Rust's
+default allocator aborts on OOM rather than raising) — and either way the
+POOL WORKER that owns it survives, because the worker only forked a child and
+joined it; it never allocated the memory itself. The dead job is recorded as
+one extra row with `"status": "OOM_SKIPPED"` (checks=0, no mismatches — an
+OOM is not a correctness finding) so `--resume` will not replan it forever,
+and the run's summary reports the skip count and job keys LOUDLY — see
+`run_job_capped` and the `oom_skipped`/`oom_job_keys` fields below. Set
+`--job-mem-cap-gb 0` to disable isolation and go back to running jobs inline
+(useful for a debugger, or for the unit tests that call `run_job` directly).
+
 Usage:
   python scripts/rustport/reconcile_exact_solver.py --leg all --per-k 25 \\
       --workers 3 --out measurement/rustport_exact_solver
@@ -61,10 +84,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import multiprocessing as mp
+import multiprocessing.pool as mp_pool
 import os
 import random
+import resource
 import sys
 import time
 import zlib
@@ -339,7 +365,12 @@ def check_position(tag: str, game, board, ms, *, budget: int, modes, extra: dict
 
 
 def blank() -> dict:
-    return {"checks": 0, "skipped": 0, "positions": 0, "mismatches": [], "cells": {}}
+    # `oom_skipped`/`oom_job_keys` are additive, like the resume bookkeeping
+    # fields below — a row written by an OLDER version of this script simply
+    # lacks them, and `merge()`/`rebuild_from_rows()` read them with `.get(...,
+    # default)`, so old rows stay valid without a rewrite.
+    return {"checks": 0, "skipped": 0, "positions": 0, "mismatches": [], "cells": {},
+            "oom_skipped": 0, "oom_job_keys": []}
 
 
 def merge(dst: dict, src: dict) -> None:
@@ -347,6 +378,8 @@ def merge(dst: dict, src: dict) -> None:
     dst["skipped"] += src.get("skipped", 0)
     dst["positions"] += src.get("positions", 0)
     dst["mismatches"].extend(src.get("mismatches", []))
+    dst["oom_skipped"] = dst.get("oom_skipped", 0) + src.get("oom_skipped", 0)
+    dst.setdefault("oom_job_keys", []).extend(src.get("oom_job_keys", []))
     for k, v in src.get("cells", {}).items():
         dst["cells"][k] = dst["cells"].get(k, 0) + v
 
@@ -406,6 +439,198 @@ def run_job(job: dict) -> dict:
     except Exception:  # noqa: BLE001
         out["job_key"] = f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
     return out
+
+
+# --------------------------------------------------------------------------
+# per-job memory isolation
+# --------------------------------------------------------------------------
+#
+# `run_job` above is already exception-firewalled against ordinary Python
+# exceptions — a bad position becomes an `EXCEPTION` mismatch, never a dead
+# pool worker.  It CANNOT firewall against unbounded memory growth: a
+# transposition table that keeps growing past what the box can hold gets the
+# whole PROCESS killed (by the kernel OOM-killer, or — under an outer
+# systemd-run scope, which is how this gate is launched — the cgroup's
+# MemoryMax), and multiprocessing.Pool's `imap_unordered` has no way to tell
+# "one worker died" from "the whole run died" from the consumer side. That is
+# exactly what happened twice (see the module docstring's "Per-job memory
+# isolation" section).
+#
+# The fix is to give each JOB — not each pool worker, which serves many jobs
+# in sequence — its own address-space cap, in its own subprocess, so a job
+# that blows the cap dies ALONE and the pool worker that forked it (and never
+# itself allocated the memory) lives to serve the next job.
+
+
+def _isolated_job_target(job: dict, cap_bytes: int, conn) -> None:
+    """Runs in a freshly forked child: cap this process's address space, run
+    the job, and report back over the pipe. Never raises past this function —
+    an uncaught exception here would leave the parent's `poll()` waiting on a
+    pipe the child closes without sending anything, which the parent already
+    reads correctly as an OOM-shaped death, but a real (non-memory) crash
+    should say so honestly rather than pretend to be an OOM.
+    """
+    try:
+        if cap_bytes > 0:
+            resource.setrlimit(resource.RLIMIT_AS, (cap_bytes, cap_bytes))
+    except (ValueError, OSError):
+        pass  # a cap it cannot set is a cap it cannot enforce — run uncapped
+    try:
+        result = run_job(job)
+    except MemoryError:
+        # The common case: a Python dict/list allocation hit the RLIMIT_AS
+        # ceiling cleanly and CPython raised, rather than the OS killing the
+        # process outright. Report it as the same OOM shape either way — the
+        # parent tells cap_bytes and job identity, this just says "hit it".
+        try:
+            conn.send(("OOM", None))
+        except Exception:  # noqa: BLE001 — the pipe itself may be gone
+            pass
+        return
+    except Exception as exc:  # noqa: BLE001 — a crash here must not vanish
+        try:
+            conn.send(("ERROR", f"{type(exc).__name__}: {exc}"))
+        except Exception:  # noqa: BLE001
+            pass
+        return
+    try:
+        conn.send(("OK", result))
+    except Exception:  # noqa: BLE001 — result too big to pickle etc: treat
+        # like any other child-side failure; the parent's poll+EOF path below
+        # will read this as a dead child with no usable payload.
+        pass
+
+
+class _NoDaemonProcess(mp.get_context("fork").Process):
+    """A fork-context `Process` whose `daemon` flag is pinned to `False`.
+
+    `run_job_capped` needs to fork a per-job child FROM WITHIN a pool worker,
+    but `multiprocessing.pool.Pool` creates its own workers as daemon
+    processes, and daemon processes are hard-blocked from having children —
+    `AssertionError: daemonic processes are not allowed to have children`,
+    raised at `Process.start()`, unconditionally. Without this, `run_job_capped`
+    would ALWAYS hit that assertion when called from a pool worker (every
+    real run, since `--workers 1` is not the production path) and its own
+    `except Exception: return run_job(job)` fallback would swallow it and
+    fail OPEN — every job would run uncapped and isolation would silently do
+    nothing. Measured, not assumed: this exact failure mode was caught by
+    `test_pool_survives_one_oom_job_among_several` before this class existed.
+    """
+    @property
+    def daemon(self) -> bool:
+        return False
+
+    @daemon.setter
+    def daemon(self, value) -> None:
+        pass  # refuse to become a daemon, whatever Pool asks for
+
+
+class _NoDaemonForkContext(type(mp.get_context("fork"))):
+    Process = _NoDaemonProcess
+
+
+class NestablePool(mp_pool.Pool):
+    """`multiprocessing.pool.Pool`, but its own workers are NOT daemons.
+
+    The standard, widely-used recipe for a pool whose workers may themselves
+    hold child processes (ours do: one isolated grandchild per job). Every
+    other `Pool` behavior (task queue, `imap_unordered`, worker respawn on
+    `maxtasksperchild`) is untouched — this only changes the ONE flag that
+    blocks nesting.
+    """
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("context", _NoDaemonForkContext())
+        super().__init__(*args, **kwargs)
+
+
+def _oom_row(job: dict, cap_bytes: int, exitcode) -> dict:
+    """The recorded row for a job that died to its memory cap (or crashed
+    without sending anything usable — same shape, see `run_job_capped`)."""
+    out = blank()
+    out["leg"] = job.get("leg", "?")
+    try:
+        out["job_key"] = job_key(job)
+    except Exception:  # noqa: BLE001
+        out["job_key"] = f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
+    out["status"] = "OOM_SKIPPED"
+    out["cap_bytes"] = cap_bytes
+    out["exitcode"] = exitcode
+    out["oom_skipped"] = 1
+    out["oom_job_keys"] = [out["job_key"]]
+    return out
+
+
+def run_job_capped(job: dict, cap_bytes: int) -> dict:
+    """`run_job(job)`, isolated in its own subprocess with an RLIMIT_AS cap.
+
+    `cap_bytes <= 0` disables isolation entirely and calls `run_job` inline —
+    the pre-2026-08-23 behavior, kept for the unit tests and for a debugger
+    session where subprocess isolation just gets in the way.
+
+    Detects an OOM three ways, because a runaway allocation can fail in any
+    of them depending on WHERE it happens (measured, not assumed — see the
+    three-mode probe in the commit that added this):
+      1. the child raises `MemoryError` and says so cleanly (`_isolated_job_target`)
+      2. the child is killed by a signal (SIGKILL from the OOM-killer, SIGABRT
+         from Rust's default alloc-error handler, ...) — `proc.exitcode < 0`
+      3. the child's write end of the pipe closes without ever sending
+         anything (any of the above, or a segfault) — `conn.poll()` returns
+         True and `conn.recv()` raises `EOFError`
+    Cases 2 and 3 are folded into the same OOM_SKIPPED row: from the outside,
+    "died before reporting, while capped" IS what an OOM job looks like, and
+    a job dying for some OTHER hard-crash reason while under a memory cap is
+    not a distinction this gate needs to make — `run_job`'s own exception
+    firewall already reports every recoverable failure as a normal mismatch,
+    so anything reaching this path is, by construction, not recoverable.
+    """
+    if cap_bytes <= 0:
+        return run_job(job)
+
+    ctx = mp.get_context("fork")
+    parent_conn, child_conn = ctx.Pipe(duplex=False)
+    proc = ctx.Process(target=_isolated_job_target, args=(job, cap_bytes, child_conn))
+    try:
+        proc.start()
+    except Exception:  # noqa: BLE001 — could not even fork (e.g. box out of
+        # memory for the fork itself): the isolation layer failed open, so
+        # fall back to running the job inline rather than losing it silently.
+        parent_conn.close()
+        child_conn.close()
+        return run_job(job)
+    child_conn.close()  # only the child should hold the write end open
+
+    status, payload = None, None
+    try:
+        if parent_conn.poll(timeout=None):
+            try:
+                status, payload = parent_conn.recv()
+            except EOFError:
+                status = "EOF"
+    finally:
+        parent_conn.close()
+    proc.join()
+
+    if status == "OK":
+        return payload
+    if status == "ERROR":
+        # A real (non-memory) crash inside the isolated child. Still record
+        # it — as a mismatch, matching what `run_job`'s own firewall would
+        # have produced had the exception fired outside isolation — rather
+        # than folding it into OOM_SKIPPED, which would misreport a genuine
+        # bug as a resource limitation.
+        out = blank()
+        out["leg"] = job.get("leg", "?")
+        try:
+            out["job_key"] = job_key(job)
+        except Exception:  # noqa: BLE001
+            out["job_key"] = f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
+        out["mismatches"].append({
+            "tag": job.get("tag", out["job_key"]), "field": "EXCEPTION",
+            "error": f"isolated child: {payload}"})
+        return out
+    # status in ("OOM", "EOF", None): the child hit the cap, was killed, or
+    # otherwise died without a usable payload — all the same OOM shape.
+    return _oom_row(job, cap_bytes, proc.exitcode)
 
 
 def job_golden(job: dict) -> dict:
@@ -712,18 +937,24 @@ def rebuild_from_rows(rows_path: Path, args) -> int:
         "cells": totals["cells"],
         "n_mismatches": n_bad,
         "mismatches": totals["mismatches"][: args.max_mismatch_report],
+        "oom_skipped": totals["oom_skipped"],
+        "oom_job_keys": totals["oom_job_keys"],
         "per_leg": {k: {"positions": v["positions"], "checks": v["checks"],
                         "skipped": v["skipped"], "cells": v["cells"],
-                        "n_mismatches": len(v["mismatches"])}
+                        "n_mismatches": len(v["mismatches"]),
+                        "oom_skipped": v.get("oom_skipped", 0)}
                     for k, v in sorted(per_leg.items())},
     }
     out_path = rows_path.with_name(rows_path.name.replace("_rows.jsonl", "_partial.json"))
     out_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
     print(json.dumps({k: payload[k] for k in
                       ("verdict", "partial", "jobs_recorded", "positions",
-                       "checks", "skipped_budget", "n_mismatches", "per_leg",
-                       "cells")}, indent=2))
+                       "checks", "skipped_budget", "n_mismatches",
+                       "oom_skipped", "per_leg", "cells")}, indent=2))
     print(f"-> {out_path}")
+    if totals["oom_skipped"]:
+        print(f"  ⚠️ {totals['oom_skipped']} job(s) OOM_SKIPPED in this "
+              f"partial record: {totals['oom_job_keys']}")
     return 0 if ok else 1
 
 
@@ -756,6 +987,12 @@ def main() -> int:
                          "are walled-only by construction, so use with --leg synth")
     ap.add_argument("--workers", type=int, default=3,
                     help="fork workers; keep low, a GPU run may own the box")
+    ap.add_argument("--job-mem-cap-gb", type=float, default=26.0,
+                    help="per-JOB RLIMIT_AS cap in GiB, applied in a forked "
+                         "subprocess so one pathological job (unbounded "
+                         "transposition-table growth) dies alone instead of "
+                         "OOM-killing the whole run. 0 disables isolation "
+                         "and runs jobs inline (pre-2026-08-23 behavior).")
     ap.add_argument("--out", default=None, help="directory for the verdict JSON")
     ap.add_argument("--tag", default="run")
     ap.add_argument("--max-mismatch-report", type=int, default=200)
@@ -874,16 +1111,30 @@ def main() -> int:
         rows_fh.write(json.dumps(out, sort_keys=True, default=str) + "\n")
         rows_fh.flush()
 
+    cap_bytes = int(args.job_mem_cap_gb * (1024 ** 3)) if args.job_mem_cap_gb > 0 else 0
+    if cap_bytes > 0:
+        print(f"[reconcile_exact_solver] per-job memory cap: "
+              f"{args.job_mem_cap_gb:g} GiB (RLIMIT_AS, isolated subprocess "
+              f"per job) — a job that exceeds it is recorded OOM_SKIPPED, "
+              f"never silently, and the pool keeps going", flush=True)
+
     totals = blank()
     per_leg: dict[str, dict] = {}
     done = 0
     if jobs:
         if args.workers > 1:
-            ctx = mp.get_context("fork")
-            with ctx.Pool(args.workers) as pool:
-                for out in pool.imap_unordered(run_job, jobs, chunksize=1):
+            worker_fn = functools.partial(run_job_capped, cap_bytes=cap_bytes)
+            # NestablePool, not ctx.Pool: run_job_capped forks a per-job child
+            # FROM the pool worker, and a plain Pool's workers are daemons —
+            # daemons cannot have children — see _NoDaemonProcess above.
+            with NestablePool(args.workers) as pool:
+                for out in pool.imap_unordered(worker_fn, jobs, chunksize=1):
                     done += 1
                     _record(out)
+                    if out.get("status") == "OOM_SKIPPED":
+                        print(f"  ⚠️ OOM_SKIPPED {out.get('job_key')} "
+                              f"(cap={out.get('cap_bytes')}B "
+                              f"exitcode={out.get('exitcode')})", flush=True)
                     leg = out.pop("leg")
                     per_leg.setdefault(leg, blank())
                     merge(per_leg[leg], dict(out))
@@ -891,13 +1142,18 @@ def main() -> int:
                     if done % 10 == 0:
                         print(f"  {done}/{len(jobs)} jobs, "
                               f"{totals['checks']} checks, "
-                              f"{len(totals['mismatches'])} mismatches "
+                              f"{len(totals['mismatches'])} mismatches, "
+                              f"{totals['oom_skipped']} OOM-skipped "
                               f"({time.time() - t0:.0f}s)", flush=True)
         else:
             for job in jobs:
-                out = run_job(job)
+                out = run_job_capped(job, cap_bytes)
                 done += 1
                 _record(out)
+                if out.get("status") == "OOM_SKIPPED":
+                    print(f"  ⚠️ OOM_SKIPPED {out.get('job_key')} "
+                          f"(cap={out.get('cap_bytes')}B "
+                          f"exitcode={out.get('exitcode')})", flush=True)
                 leg = out.pop("leg")
                 per_leg.setdefault(leg, blank())
                 merge(per_leg[leg], dict(out))
@@ -946,17 +1202,32 @@ def main() -> int:
         "cells": totals["cells"],
         "n_mismatches": n_bad,
         "mismatches": totals["mismatches"][: args.max_mismatch_report],
+        # Fail-loud: a job that died to its memory cap is a documented hole in
+        # the run, never a silent one — the count AND the job keys, both in
+        # the payload and echoed to stdout below, so an operator scanning the
+        # log (not just the JSON) cannot miss it. It does NOT flip `verdict`:
+        # an OOM is a resource limitation, not a correctness finding, and a
+        # gate that could never PASS again once one pathological tail job
+        # exists would defeat the point of isolating it.
+        "job_mem_cap_gb": args.job_mem_cap_gb,
+        "oom_skipped": totals["oom_skipped"],
+        "oom_job_keys": totals["oom_job_keys"],
         "per_leg": {k: {"positions": v["positions"], "checks": v["checks"],
                         "skipped": v["skipped"], "cells": v["cells"],
-                        "n_mismatches": len(v["mismatches"])}
+                        "n_mismatches": len(v["mismatches"]),
+                        "oom_skipped": v.get("oom_skipped", 0)}
                     for k, v in sorted(per_leg.items())},
     }
     out_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
     print(json.dumps({k: payload[k] for k in
                       ("verdict", "positions", "checks", "skipped_budget",
-                       "n_mismatches", "per_leg", "cells")}, indent=2))
+                       "n_mismatches", "oom_skipped", "per_leg", "cells")},
+                     indent=2))
     print(f"-> {out_path}")
+    if totals["oom_skipped"]:
+        print(f"  ⚠️ {totals['oom_skipped']} job(s) OOM_SKIPPED at "
+              f"{args.job_mem_cap_gb:g} GiB/job: {totals['oom_job_keys']}")
     for m in totals["mismatches"][:20]:
         print("  MISMATCH", json.dumps(m)[:400])
     return 0 if ok else 1

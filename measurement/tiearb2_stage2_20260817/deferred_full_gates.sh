@@ -102,6 +102,17 @@ mkdir -p "$LOGS" "$OUT"
 #   FORCE_EXACT=1     ignore STAMP_exact_solver.json and run it again
 #   EXACT_WORKERS=N   fork workers for the exact-solver gate (default 3)
 #   EXACT_TAG=name    rows/verdict tag for the exact-solver gate (default run2)
+#   EXACT_JOB_MEM_CAP_GB=N   per-JOB RLIMIT_AS cap in GiB for the exact-solver
+#                     gate (default 26; see reconcile_exact_solver.py's "Per-job
+#                     memory isolation" header). 0 disables isolation and goes
+#                     back to the pre-2026-08-23 behavior where one pathological
+#                     job's unbounded memory growth OOM-kills the WHOLE run
+#                     inside the outer systemd scope — this is what happened
+#                     TWICE (workers=3/28G, then workers=2/34G, dmesg showing
+#                     one worker at 27.6GB RSS and still growing). With
+#                     isolation on, that job now dies alone, gets recorded
+#                     `OOM_SKIPPED`, and `--resume` skips it on the next launch
+#                     instead of retrying it forever.
 #   SMOKE=1           do everything EXCEPT the two long solves; used to prove
 #                     the suite is wired correctly without paying for it
 #   ALLOW_DIRTY=1     let the backend gate SKIP even though guarded Python
@@ -117,6 +128,7 @@ FORCE_BACKEND=${FORCE_BACKEND:-0}
 FORCE_EXACT=${FORCE_EXACT:-0}
 EXACT_WORKERS=${EXACT_WORKERS:-3}
 EXACT_TAG=${EXACT_TAG:-run2}
+EXACT_JOB_MEM_CAP_GB=${EXACT_JOB_MEM_CAP_GB:-26}
 SMOKE=${SMOKE:-0}
 ALLOW_DIRTY=${ALLOW_DIRTY:-0}
 SKIP_WAIT=${SKIP_WAIT:-0}
@@ -325,13 +337,17 @@ sys.exit(1 if bad else 0)" "$ROWS"; then
     log "reconcile_exact_solver --plan-only rc=$rc_exact"
     cat "$OUT/exact_solver_plan.log"
   else
-    log "=== reconcile_exact_solver, UNCAPPED (tag=$EXACT_TAG workers=$EXACT_WORKERS, --resume) ==="
+    log "=== reconcile_exact_solver, UNCAPPED wall-budget / ${EXACT_JOB_MEM_CAP_GB}GiB per-job mem cap (tag=$EXACT_TAG workers=$EXACT_WORKERS, --resume) ==="
     nice -n 19 "$PY" scripts/rustport/reconcile_exact_solver.py \
       --tag "$EXACT_TAG" --workers "$EXACT_WORKERS" --resume \
+      --job-mem-cap-gb "$EXACT_JOB_MEM_CAP_GB" \
       > "$OUT/exact_solver_full.log" 2>&1
     rc_exact=$?
     log "reconcile_exact_solver rc=$rc_exact"
     tail -8 "$OUT/exact_solver_full.log"
+    if grep -aq "OOM_SKIPPED" "$OUT/exact_solver_full.log"; then
+      log "  ⚠️ this run recorded OOM_SKIPPED job(s) — see grep OOM_SKIPPED $OUT/exact_solver_full.log"
+    fi
     stamp exact_solver "$rc_exact" "ran here; rows $ROWS; log $OUT/exact_solver_full.log"
   fi
 fi
@@ -348,9 +364,9 @@ cat /proc/loadavg
   else
     echo "  (not run here — see $OUT/${STAMP_PREFIX}_backend.json)"
   fi
-  echo "reconcile_exact_solver (uncapped, tag=$EXACT_TAG) rc=$rc_exact"
+  echo "reconcile_exact_solver (uncapped wall-budget, tag=$EXACT_TAG, ${EXACT_JOB_MEM_CAP_GB}GiB/job mem cap) rc=$rc_exact"
   if [ -f "$OUT/exact_solver_full.log" ]; then
-    grep -aE "jobs, .* checks|PASS|FAIL" "$OUT/exact_solver_full.log" | tail -3
+    grep -aE "jobs, .* checks|PASS|FAIL|OOM_SKIPPED|oom_skipped" "$OUT/exact_solver_full.log" | tail -6
   fi
   echo "stamps: $OUT/${STAMP_PREFIX}_backend.json $OUT/${STAMP_PREFIX}_exact_solver.json"
   echo "logs: $OUT/"
