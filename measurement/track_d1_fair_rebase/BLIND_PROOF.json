@@ -1,0 +1,8 @@
+{
+  "blind_commit": "3adab58bc268729d7f5b1d92af335f8344fe821a",
+  "blind_stamp_mode": "manifest",
+  "head_at_launch": "8bd68f848fcbadebe40042a97e8b8b90db42be8d",
+  "is_ancestor_of_head": true,
+  "utc": "2026-08-24T12:58:51Z",
+  "why": "eval_fair_puct.py's --stamp-key path (when present) is ADDITIVE; READ_RULE \u00a73 G-BLIND is gated against THIS artifact plus git ancestry ALWAYS, and against the manifest ADDITIONALLY when blind_stamp_mode==manifest."
+}
