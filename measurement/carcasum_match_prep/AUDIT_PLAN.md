@@ -1,7 +1,7 @@
 # Carcasum divergence audit — the gate before any strength number
 
 > **Status: current.** This is gate 5 of the Carcasum harness build. It runs *before*
-> [`PREREG_DRAFT.md`](PREREG_DRAFT.md) may be blind-committed, and it is the reason a later win
+> [`PREREG.md`](PREREG.md) may be blind-committed, and it is the reason a later win
 > rate cannot quietly be a rules artefact.
 
 ## The bar, stated as a precedent

@@ -5,7 +5,7 @@
 > the match with its own monitors.** This file exists so that firing it is a checklist rather
 > than an act of authorship at 2 a.m.
 >
-> Gate order: [`PREREG_DRAFT.md`](PREREG_DRAFT.md) frozen → band 1.42e11 claimed →
+> Gate order: [`PREREG.md`](PREREG.md) frozen → band 1.42e11 claimed →
 > launch → monitor → close out.
 
 ---
@@ -46,7 +46,7 @@ disown
 ```
 
 `--decks 200 --champ-seat both` = **n=400** (200 decks × 2 seatings, deck-paired CRN).
-`--workers 14` per [`PREREG_DRAFT.md`](PREREG_DRAFT.md) §4.3 — the smallest W within ~10 % of
+`--workers 14` per [`PREREG.md`](PREREG.md) §4.3 — the smallest W within ~10 % of
 practical peak. **W is a throughput knob, not a strength knob**: the opponent's budget is
 thread CPU-time, so contention cannot shrink its search.
 

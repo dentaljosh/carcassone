@@ -6,7 +6,7 @@
 >
 > This discharges gate 5 of [`AUDIT_PLAN.md`](../carcasum_match_prep/AUDIT_PLAN.md) and
 > unblocks the blind commit of
-> [`PREREG_DRAFT.md`](../carcasum_match_prep/PREREG_DRAFT.md) — **not** the rated match
+> [`PREREG.md`](../carcasum_match_prep/PREREG.md) — **not** the rated match
 > itself, which is the orchestrator's to fire.
 >
 > Archive: `audit.jsonl` · harness [`scripts/carcasum_match/`](../../scripts/carcasum_match/) ·
