@@ -1,0 +1,8 @@
+[run_cells_DRAFT 2026-08-23T06:13:46Z Doctor/local] role=local W=22 band=141000000000 out=/mnt/c/carc-shared/track_d2_prep
+[run_cells_DRAFT 2026-08-23T06:13:46Z Doctor/local] ⭐ the two real cells differ in EXACTLY ONE EXPERIMENTAL argument: --rung-sims
+[run_cells_DRAFT 2026-08-23T06:13:46Z Doctor/local] ⚠️ they also differ in --out-subdir and --claim-host, which are BOOKKEEPING
+[run_cells_DRAFT 2026-08-23T06:13:46Z Doctor/local]    (two cells cannot share one output dir or one --shared-claim tag).
+[run_cells_DRAFT 2026-08-23T06:13:47Z Doctor/local] [freeze] RUN_LIVE dropped -> /home/doctor/projects/carcassone/measurement/track_d2_prep/RUN_LIVE.json
+[run_cells_DRAFT 2026-08-23T06:13:47Z Doctor/local] cell R800 (rung-sims=800) -> /mnt/c/carc-shared/track_d2_prep/d2_rung800
+[run_cells_DRAFT 2026-08-23T06:40:49Z Doctor/local] cell R1600 (rung-sims=1600) -> /mnt/c/carc-shared/track_d2_prep/d2_rung1600
+[run_cells_DRAFT 2026-08-23T07:21:41Z Doctor/local] DONE -- both cells complete, RUN_LIVE cleared

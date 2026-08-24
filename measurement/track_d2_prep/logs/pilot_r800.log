@@ -1,0 +1,38 @@
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_h800_k2]: info=fair n=16 paired=True K=2 k_dets=4 sims=688 | 0 cached, 16 to play, 22 workers, out=/mnt/c/carc-shared/track_d2_prep/pilot_r800
+  10/16 played (6.4s/game, ~1 min left)
+  16/16 played (4.7s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs HeuristicMCTS(h800) ===
+games: 16   candidate: 10W / 0D / 6L   winrate 0.625 (z=+1.00)
+avg score diff (candidate - opponent): +5.19
+ELO: +88.7  (+/- 89.7 1sigma)
+PAIRED: 8 decks   mean seat-balanced margin +5.19   z = +1.25
+prefix ms/move: candidate 351  opponent 543  (ratio 0.65x)
+fair endgame: candidate latched 16/16 games, 0.36s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/track_d2_prep/pilot_r800/summary.json
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s1032_vs_h800_k2]: info=fair n=16 paired=True K=2 k_dets=4 sims=1032 | 16 cached, 0 to play, 22 workers, out=/mnt/c/carc-shared/track_d2_prep/pilot_r800
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=1032, total~4128) vs HeuristicMCTS(h800) ===
+games: 16   candidate: 10W / 0D / 6L   winrate 0.625 (z=+1.00)
+avg score diff (candidate - opponent): +5.19
+ELO: +88.7  (+/- 89.7 1sigma)
+PAIRED: 8 decks   mean seat-balanced margin +5.19   z = +1.25
+prefix ms/move: candidate 351  opponent 543  (ratio 0.65x)
+fair endgame: candidate latched 16/16 games, 0.36s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/track_d2_prep/pilot_r800/summary.json
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s1032_vs_h800_k2]: info=fair n=16 paired=True K=2 k_dets=4 sims=1032 | 0 cached, 16 to play, 22 workers, out=/mnt/c/carc-shared/track_d2_prep/pilot_r800
+  10/16 played (7.9s/game, ~1 min left)
+  16/16 played (6.1s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=1032, total~4128) vs HeuristicMCTS(h800) ===
+games: 16   candidate: 8W / 1D / 7L   winrate 0.531 (z=+0.25)
+avg score diff (candidate - opponent): +2.81
+ELO: +21.7  (+/- 87.0 1sigma)
+PAIRED: 8 decks   mean seat-balanced margin +2.81   z = +0.53
+prefix ms/move: candidate 539  opponent 554  (ratio 0.97x)
+fair endgame: candidate latched 16/16 games, 0.40s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=16 (1σ≈±87); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/track_d2_prep/pilot_r800/summary.json

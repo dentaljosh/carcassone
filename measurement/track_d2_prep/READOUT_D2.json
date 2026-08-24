@@ -1,0 +1,264 @@
+{
+  "run_id": "track_d2_prep",
+  "band": 141000000000,
+  "blind_commit": "db901b295e754cc9ae6a7fc6fcf2755d9efcb483",
+  "branch": "U-UNREADABLE",
+  "branch_reason": "\u00a73 gate(s) FAILED: G-SINGLEVAR, G-LEAF, G-RULES, G-TOOL \u2014 ANY \u00a73 gate FAILS \u21d2 U-UNREADABLE.",
+  "S": 1.9575,
+  "se_S": 1.2764772578070056,
+  "z_S": 1.5335173329785718,
+  "n_common": 200,
+  "M_R800": 6.95,
+  "se_M_R800": 0.9124281482002519,
+  "z_M_R800": 7.617038134683537,
+  "M_R1600": 4.9925,
+  "se_M_R1600": 0.9515755085606513,
+  "z_M_R1600": 5.246562101573665,
+  "se_prereg": 1.25,
+  "compressed_reachable": false,
+  "S_elo": 22.91704524417198,
+  "scale_used": 11.70730280672898,
+  "scale_prereg": 15.6,
+  "elo_delta": 3.6596633130592977,
+  "bound": {
+    "lo_pts": -0.5443954253017309,
+    "hi_pts": 4.4593954253017305,
+    "lo_elo": -6.373402090605372,
+    "hi_elo": 52.20749257894933
+  },
+  "witness": {
+    "n_common": 200,
+    "S": 1.9575,
+    "se_S": 1.2764772578070056,
+    "z_S": 1.5335173329785718,
+    "M_R800": 6.95,
+    "se_M_R800": 0.9124281482002519,
+    "z_M_R800": 7.617038134683537,
+    "M_R1600": 4.9925,
+    "se_M_R1600": 0.9515755085606513,
+    "z_M_R1600": 5.246562101573665
+  },
+  "witness_agreement": {
+    "S": true,
+    "se_S": true,
+    "z_S": true,
+    "M_R800": true,
+    "M_R1600": true,
+    "n_common": true
+  },
+  "witness_ok": true,
+  "gates": [
+    {
+      "id": "G-BAND",
+      "proposition": "both cells' seed_start == 141000000000; record-derived deck sets agree; n_common == 200",
+      "status": "PASS",
+      "realized": "R800 seed_start=141000000000; R1600 seed_start=141000000000; record-derived deck sets agree=True (|R800|=200, |R1600|=200, only-in-R800=0, only-in-R1600=0); n_common=200",
+      "address": "R800:config.seed_start, R1600:config.seed_start; deck sets: RECORDS"
+    },
+    {
+      "id": "G-SINGLEVAR",
+      "proposition": "the two cells' config blocks differ in exactly rung.sims, out_subdir/output path, and claim_host \u2014 nothing else",
+      "status": "FAIL",
+      "realized": "config blocks differ at: backend.carc_rs_build (carc_rs-0.1.0+ce2353739955+rustcunpinned vs carc_rs-0.1.0+513a509d3023+rustcunpinned), backend.code_rev (ce235373-dirty vs 513a509d-dirty), code_rev (ce235373-dirty vs 513a509d-dirty), opponent.label (HeuristicMCTS(h800) vs HeuristicMCTS(h1600)), opponent.sims (800 vs 1600), rung.sims (800 vs 1600)  \u26d4 UNEXPECTED: backend.carc_rs_build, backend.code_rev, code_rev, opponent.label, opponent.sims",
+      "address": "config.* (deep diff, both manifests)"
+    },
+    {
+      "id": "G-RUNG",
+      "proposition": "both manifests: config.rung.c == 3.0, config.rung.agent == \"HeuristicMCTS\", config.rung.leaf_hash identical across cells, config.rung.sims == 800 (R800) / 1600 (R1600)",
+      "status": "PASS",
+      "realized": "R800: c=3 agent=HeuristicMCTS sims=800 leaf_hash=42af12fce22e1a0f; R1600: c=3 agent=HeuristicMCTS sims=1600 leaf_hash=42af12fce22e1a0f; rung leaf_hash identical across cells=True",
+      "address": "R800:config.rung.c/config.rung.agent/config.rung.leaf_hash/config.rung.sims, R1600:config.rung.c/config.rung.agent/config.rung.leaf_hash/config.rung.sims"
+    },
+    {
+      "id": "G-LEAF",
+      "proposition": "config.cand_leaf_hash == a36d2e15a3b3d71d in BOTH cells",
+      "status": "FAIL",
+      "realized": "R800 cand_leaf_hash=42af12fce22e1a0f; R1600 cand_leaf_hash=42af12fce22e1a0f",
+      "address": "R800:config.cand_leaf_hash, R1600:config.cand_leaf_hash"
+    },
+    {
+      "id": "G-RULES",
+      "proposition": "rules_profile.name == \"fixed_v1\" and r9_env_ok == true, in BOTH cells",
+      "status": "FAIL",
+      "realized": "R800 rules_profile.name=fixed_v1 r9_env_ok=False; R1600 rules_profile.name=fixed_v1 r9_env_ok=False",
+      "address": "R800:rules_profile.name/rules_profile.r9_env_ok, R1600:rules_profile.name/rules_profile.r9_env_ok"
+    },
+    {
+      "id": "G-TOOL",
+      "proposition": "same carc_rs_version and tile_data_semantic_digest across both cells; same code rev in both; BLIND_COMMIT in both manifests equal to the launcher's frozen value",
+      "status": "FAIL",
+      "realized": "carc_rs_version: R800=0.1.0 identical_across_cells=True; tile_data_semantic_digest: R800=525f7041ab8402f3008f9cd2\u2026 identical_across_cells=True; code_rev: R800=ce235373-dirty identical_across_cells=False; BLIND_COMMIT: R800=ABSENT identical_across_cells=False; BLIND_COMMIT == launcher's frozen value (db901b295e75\u2026)=False; placeholder=False",
+      "address": "R800.carc_rs_version:carc_rs_version, R1600.carc_rs_version:carc_rs_version, R800.tile_data_semantic_digest:config.backend.tile_data_semantic_digest, R1600.tile_data_semantic_digest:config.backend.tile_data_semantic_digest, R800.code_rev:code_rev, R1600.code_rev:code_rev, R800.BLIND_COMMIT:ABSENT, R1600.BLIND_COMMIT:ABSENT"
+    },
+    {
+      "id": "G-N",
+      "proposition": "400 games scored in EACH cell; n_failed == 0 (a nonzero rate below 2% is REPORTED, not silently absorbed, and does not by itself fire this gate \u2014 \u00a73/\u00a73.1)",
+      "status": "PASS",
+      "realized": "R800: games scored=400, n_failed=0, failure_rate=0, failure records on disk=0; R1600: games scored=400, n_failed=0, failure_rate=0, failure records on disk=0",
+      "address": "summary.json + manifest top level (n_failed / failure_rate); games counted from RECORDS"
+    },
+    {
+      "id": "G-TIMING",
+      "proposition": "both cells report champ_prefix_ms_per_move and rung_ms_per_move; CELL R800's realized ratio is inside [0.85, 1.2]",
+      "status": "PASS",
+      "realized": "R800: champ_prefix_ms_per_move=608.6 rung_ms_per_move=624.3 ratio=0.9750; R1600: champ_prefix_ms_per_move=602.9 rung_ms_per_move=1255.6 ratio=0.4801; CELL R800 ratio inside [0.85, 1.2]=True",
+      "address": "summary.json (both cells)",
+      "disclosure": "DISCLOSURE (context, NOT a gate modifier): a 50-game Carcasum audit ran on the same box beside these cells for ~a few minutes. Wall-clock contention over that window inflates BOTH sides' ms/move, and only unevenly if the two sides were not equally exposed. `G-TIMING` adjudicates on the realized ratio EXACTLY as the frozen pair wrote it \u2014 this disclosure changes no threshold and no verdict; it is printed so a reader can see the one known co-tenant of the measurement window.",
+      "disclosure_material": false
+    },
+    {
+      "id": "G-SAT",
+      "proposition": "CELL R800's probe winrate vs h800 is inside [0.5, 0.9]",
+      "status": "PASS",
+      "realized": "CELL R800 winrate=0.615",
+      "address": "summary.json (CELL R800)"
+    }
+  ],
+  "gates_summary": "5/9 PASS, FAILED: G-SINGLEVAR, G-LEAF, G-RULES, G-TOOL",
+  "R800": {
+    "cell": "R800",
+    "path": "/mnt/c/carc-shared/track_d2_prep/d2_rung800",
+    "rung": "HeuristicMCTS(h800, c=3.0)",
+    "n_games": 400,
+    "n_decks": 200,
+    "seat_balance": {
+      "a_seat=0": 200,
+      "a_seat=1": 200
+    },
+    "W": 242,
+    "D": 8,
+    "L": 150,
+    "winrate": 0.615,
+    "winrate_z": 4.6,
+    "elo": 81.36575450676642,
+    "elo_sig_1sigma": 17.850335547728218,
+    "elo_ci95": [
+      46.379096833219116,
+      116.35241218031373
+    ],
+    "paired_mean_margin": 6.95,
+    "paired_se": 0.9124281482002519,
+    "paired_z": 7.617038134683537,
+    "n_paired": 200,
+    "summary_paired_mean_margin": 6.95,
+    "summary_paired_z": 7.617038134683537,
+    "summary_n_paired": 200,
+    "avg_diff": 6.95,
+    "n_failed": 0,
+    "failure_rate": 0.0,
+    "failed_classes": {},
+    "champ_prefix_ms_per_move": 608.6228391258652,
+    "rung_ms_per_move": 624.2529679078452,
+    "time_ratio": 0.9749618670867298,
+    "solver_secs_per_game": 1.105705,
+    "band_seed_start": 141000000000,
+    "cand_leaf_hash": "42af12fce22e1a0f",
+    "rung_leaf_hash": "42af12fce22e1a0f",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": "False",
+    "code_rev": "ce235373-dirty",
+    "carc_rs_version": "0.1.0",
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800",
+    "realized_elo_per_pt": 11.70730280672898,
+    "total_sims": 4128,
+    "k_dets": 4,
+    "sims": 1032,
+    "rung_sims": 800
+  },
+  "R1600": {
+    "cell": "R1600",
+    "path": "/mnt/c/carc-shared/track_d2_prep/d2_rung1600",
+    "rung": "HeuristicMCTS(h1600, c=3.0)",
+    "n_games": 400,
+    "n_decks": 200,
+    "seat_balance": {
+      "a_seat=0": 200,
+      "a_seat=1": 200
+    },
+    "W": 237,
+    "D": 14,
+    "L": 149,
+    "winrate": 0.61,
+    "winrate_z": 4.3999999999999995,
+    "elo": 77.70609119370712,
+    "elo_sig_1sigma": 17.80807950594272,
+    "elo_ci95": [
+      42.80225536205939,
+      112.60992702535486
+    ],
+    "paired_mean_margin": 4.9925,
+    "paired_se": 0.9515755085606513,
+    "paired_z": 5.246562101573665,
+    "n_paired": 200,
+    "summary_paired_mean_margin": 4.9925,
+    "summary_paired_z": 5.246562101573665,
+    "summary_n_paired": 200,
+    "avg_diff": 4.9925,
+    "n_failed": 0,
+    "failure_rate": 0.0,
+    "failed_classes": {},
+    "champ_prefix_ms_per_move": 602.8637022541132,
+    "rung_ms_per_move": 1255.6122542456485,
+    "time_ratio": 0.4801352489318479,
+    "solver_secs_per_game": 1.1185075,
+    "band_seed_start": 141000000000,
+    "cand_leaf_hash": "42af12fce22e1a0f",
+    "rung_leaf_hash": "42af12fce22e1a0f",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": "False",
+    "code_rev": "513a509d-dirty",
+    "carc_rs_version": "0.1.0",
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800",
+    "realized_elo_per_pt": 15.564565086370981,
+    "total_sims": 4128,
+    "k_dets": 4,
+    "sims": 1032,
+    "rung_sims": 1600
+  },
+  "mandatory_coarse_sentence": null,
+  "prior_table": [
+    {
+      "source": "measurement/level2/LEVEL2_LADDER_VERDICT.md (CL-023, 2026-06-18)",
+      "contrast": "heur_v2_7@1600 vs @800",
+      "n": "400, paired",
+      "band": "fresh, 3.0e9+",
+      "result": "+55.2 \u00b117.6 elo, paired z 3.23",
+      "in_points_prereg": 3.5
+    },
+    {
+      "source": "experiments/results.csv row l22_ctrl_heur1600_vs_heur800_b310_n400 (2026-06-19)",
+      "contrast": "heur@1600 vs heur@800",
+      "n": "400, paired",
+      "band": "3.10e9",
+      "result": "+20.0 elo, sigma 17.4, z 3.285",
+      "in_points_prereg": 1.3
+    }
+  ],
+  "defects": [
+    {
+      "gate": "G-SINGLEVAR",
+      "headline": "the two cells' `config` blocks differ beyond the single experimental variable",
+      "detail": "The unexpected differing keys are `code_rev` (ce235373-dirty vs 513a509d-dirty), `backend.code_rev`, and `backend.carc_rs_build` \u2014 the two cells did NOT run at the same repo revision. `opponent.label` / `opponent.sims` also differ, but those are the rung's own knob mirrored under `opponent` (aliases of `rung.sims`, not a second experimental axis); **even under the most generous reading that treats them as aliases, this gate still FAILS on the code-rev / build triple.** DESIGN \u00a73.1 argued this property was STRUCTURAL because both argv are built from one `COMMON` array \u2014 that argument covers the ARGV, and the tree moving underneath the launcher between two sequential cells is a path it does not cover."
+    },
+    {
+      "gate": "G-LEAF",
+      "headline": "the probe did not run the curve125 champion leaf the pair pinned",
+      "detail": "`config.cand_leaf_hash` reads `42af12fce22e1a0f` in BOTH cells, where the pair requires `a36d2e15a3b3d71d` (`champion_factory.LEAF_HASH_HARNESS`, the C7 curve125 champion leaf). The realized hash is identical to `config.rung.leaf_hash` (`42af12fce22e1a0f`) \u2014 i.e. the candidate ran the RUNG's own DEFAULT v2.9 leaf, because `run_cells.sh` passes no `--cand-leaf-json` and no curve125 injection. The mismatch is IDENTICAL in both cells, so it is a probe-IDENTITY defect (the probe is not the config DESIGN \u00a73.1/\u00a73.2 costed and justified), not a cross-cell inconsistency."
+    },
+    {
+      "gate": "G-RULES",
+      "headline": "`fixed_v1` was stamped but its R9 env latch was never exported",
+      "detail": "`rules_profile.name` = `fixed_v1` in both cells (correct), but `r9_env_ok` = `False` in both. `fixed_v1` carries `r9_env_expected=True`, and R9 CANNOT live in the profile \u2014 `base_deck` derives the farm data at import time and the Rust registry latches a `OnceLock`, so `CARCASSONNE_FIX_R9` must be exported into the ENVIRONMENT before the process starts. `run_cells.sh` exports nothing, so both cells played the `fixed_v1` bundle WITHOUT the R9 farm fix. This is the F9 A0 fail-loud path doing exactly what it was built to do."
+    },
+    {
+      "gate": "G-TOOL",
+      "headline": "two independent failures \u2014 a real mixed-rev cell pair, and a structurally unsatisfiable `BLIND_COMMIT` sub-clause",
+      "detail": "(1) SUBSTANTIVE: `code_rev` differs across the cells (`ce235373-dirty` vs `513a509d-dirty`; both `-dirty`) \u2014 the main tree moved between the R800 and R1600 legs, which the `RUN_LIVE.json` freeze latch exists to prevent. `carc_rs_version` and `tile_data_semantic_digest` DO match across cells, so the rust engine build is not implicated; the repo revision is. (2) INSTRUMENT: `BLIND_COMMIT` is ABSENT from both manifests at every address searched (top level, `config.*`, `config.backend.*`, `config.env.*`, `config.rung.*`, `evaluator.*`, plus the `blind_commit` / `CARC_BLIND_COMMIT` spellings). `eval_fair_puct.py` has NO `BLIND_COMMIT` stamping path at all, and this launcher only checks the `BLIND_COMMIT` FILE as a precondition \u2014 it never passes the value to the harness. That sub-clause therefore could not pass on ANY healthy run of this launcher: a \u00a73.1 structural-test miss (\u00a73.1 applied the test to G-SINGLEVAR / G-RUNG / G-LEAF / G-RULES / G-TIMING / G-N and never to G-TOOL's BLIND_COMMIT clause). Named as an instrument defect; NOT fixed here."
+    }
+  ],
+  "context_notes": [
+    "**Probe budget realized k4\u00d71032 = 4128**, not DESIGN \u00a73.1's k4\u00d7688 = 2752. That is the \u00a79 pilot's ONE allowed re-pick (repo commit `ce235373`: \"D2 pilot re-pick \u2026 probe sims 688\u21921032, equal-time ratio 0.6455\u21920.9737 PASS\"), taken on the discarded pilot band before any cell seed was touched, exactly as \u00a79 permits. No \u00a73 gate covers the probe's own `--sims`; recorded as context.",
+    "**`G-TIMING` PASSED on its own bar**: CELL R800's realized ratio 0.9750 is inside [0.85, 1.2]. The R1600 cell's ratio (0.4801) is NOT gated by the pair (the gate names CELL R800 only) and is expected \u2014 the rung side doubles its sims while the probe does not.",
+    "**`G-BAND`, `G-RUNG`, `G-N`, `G-TIMING`, `G-SAT` all PASS**: the band, the 200 shared decks with both seatings in both cells, the c=3.0 / HeuristicMCTS / 800-vs-1600 rung identity, 400/400 scored games with a ZERO failure rate in each cell, the equal-time ratio, and the non-saturation check are all clean. The cell RAN well; what voids it is provenance and probe identity, not the games."
+  ]
+}

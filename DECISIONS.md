@@ -8163,3 +8163,59 @@ invocation carries no first-party rev stamp of its own.
 witness for each) · `docs/LEVER_INDEX.md` every-ply rollout arbitration row (parked in place,
 step 1 of this batch) · no `governance/BAND_REGISTRY.csv` row owed (reuses band 28e9, no new
 seeds claimed).
+
+## 2026-08-23 — D2 RUNG-COMPRESSION CELL: **`U-UNREADABLE`, instrument-void — four gates fail, and the root cause is a freeze-latch override this session itself blessed**
+
+800 games (`measurement/track_d2_prep/`, blind pair `db901b29`, `analyze_d2.py` written from
+the pair's text alone before any statistic was opened) — probe (k4×1032 equal-time) vs
+`HeuristicMCTS` rungs h800/h1600, shared 200-deck set, both seatings, both cells. **9 gates
+evaluated, 5 PASS, 4 FAIL — `U-UNREADABLE` per `READ_RULE.md` §4 (any §3 gate failing ⇒
+`U-UNREADABLE`, a fully acceptable outcome; no statistic from this run is adjudicated, quoted,
+or entered as a verdict anywhere).**
+
+**The four failed gates, each a real defect, not a false alarm:**
+
+1. **`G-SINGLEVAR`** — the two cells' `config` blocks differ beyond the single experimental
+   variable: `code_rev` reads `ce235373-dirty` for CELL R800 and `513a509d-dirty` for CELL
+   R1600 — **the main tree moved between the two legs of a single cell.**
+2. **`G-LEAF`** — `cand_leaf_hash` reads `42af12fce22e1a0f` (the rung's own default v2.9 leaf)
+   in BOTH cells, where the frozen pair requires `a36d2e15a3b3d71d` (the curve125 champion
+   leaf) — `run_cells.sh` passes no `--cand-leaf-json`, so the probe never ran the leaf the
+   design costed and justified.
+3. **`G-RULES`** — `rules_profile.name=fixed_v1` is correctly stamped, but `r9_env_ok=False`
+   in both cells: `CARCASSONNE_FIX_R9` was never exported into the process environment before
+   launch, so both cells played `fixed_v1` **without** the R9 farm fix. The F9 A0 fail-loud
+   path did exactly what it was built to do.
+4. **`G-TOOL`** — two independent failures: the same mixed-revision fact as (1), which the
+   `RUN_LIVE.json` freeze latch exists to prevent; and a `BLIND_COMMIT` manifest sub-clause
+   that is **structurally unsatisfiable** — `eval_fair_puct.py` has no stamping path for
+   `BLIND_COMMIT` at all, so no healthy run of this launcher could ever have passed that
+   clause (a §3.1 structural-test gap: the pair's own pre-launch structural test covered
+   `G-SINGLEVAR`/`G-RUNG`/`G-LEAF`/`G-RULES`/`G-TIMING`/`G-N` and never `G-TOOL`'s
+   `BLIND_COMMIT` clause).
+
+**The games themselves are clean** — 0 failed in either cell, 400/400 scored, `G-BAND`/
+`G-RUNG`/`G-N`/`G-TIMING`/`G-SAT` all PASS, witness recomputation of the printed-not-adjudicated
+statistics agrees bit-for-bit with the analyzer. What voids the cell is provenance and probe
+identity, not the play.
+
+**The override lesson, on the record because this session caused it:** the mixed-rev gates
+(1 and part of 4) trace to a **doc-only freeze-latch override**, blessed by this orchestrator
+mid-run to land an annotation-only commit between the R800 and R1600 legs, on the reasoning
+that a documentation-only change couldn't affect a running cell. It moved the repo revision the
+second leg saw. **New standing rule, in force from this decision forward: no freeze-latch
+overrides for convenience, ever — not even doc-only ones, not even ones the orchestrator itself
+is confident are inert.** This is the second time in the same window a blessed override cost a
+gate (see the freeze-latch parser fix landing the same day for the mechanical half of the fix);
+this entry is the policy half.
+
+Band `141000000000` retires **spent-void** in `governance/BAND_REGISTRY.csv`. The corrected
+successor, **d2r2**, fixing all four gate classes (env export, curve125 leaf injection,
+single-revision guarantee via the branch-freeze pattern, and a real `BLIND_COMMIT` stamping
+path via `write_manifest`'s new `extra=` passthrough), is built and preregistered at
+`measurement/track_d2r2_prep/` — merged this batch via `worktree-agent-a6fa9a86b1c2d35fb` —
+ready to launch at the next quiet window; **not launched by this entry.**
+
+`results.csv d2_rung_compression_U_UNREADABLE_instrument_void_n800_b141e9` · readout of record
+`measurement/track_d2_prep/READOUT_D2.md` · `docs/PROGRAM_ROADMAP_2026-07-07.md` D2 line
+(flipped from `LAUNCHED` to `U-UNREADABLE` + d2r2 ready).
