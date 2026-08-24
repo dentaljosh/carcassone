@@ -33,7 +33,9 @@ Escape hatches (put in the command): `# nolint` (skip all), `# allow-sleep`,
 from __future__ import annotations
 
 import json
+import os
 import re
+import shlex
 import sys
 import time
 from pathlib import Path
@@ -275,15 +277,152 @@ def _live_sentinels(repo=None) -> list:
         return []
 
 
+# Git subcommands that create or rewrite a commit on the checked-out tree.
+# An explicit allow-list (not "the text contains commit somewhere") so BYPASS
+# classes that don't literally say "commit" -- merge, cherry-pick, rebase,
+# commit-tree, pull (its merge/rebase side) -- latch too.
+_COMMIT_CREATING_GIT_SUBCOMMANDS = {
+    "commit", "merge", "cherry-pick", "rebase", "commit-tree", "pull",
+}
+
+# A heredoc marker -- `<<'EOF'`, `<<-EOF`, `<<"TAG"` -- captured so the BODY
+# text (stdin payload, never itself executed as a shell command) can be
+# dropped before we go hunting for a git invocation. A scratchpad write whose
+# heredoc body happens to mention a git verb must never trip the latch.
+_HEREDOC_RE = re.compile(r"<<-?\s*(['\"]?)(\w+)\1")
+
+# A leading `FOO=bar` env-var assignment ahead of the actual program name,
+# e.g. `GIT_AUTHOR_DATE=... git commit ...`.
+_ENV_ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+
+# git global options that consume a SEPARATE following token as their
+# argument (as opposed to a self-contained `--opt=value`).
+_GIT_ARG_OPTS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+
+
+def _strip_heredoc_bodies(cmd: str) -> str:
+    """Drop heredoc BODY lines (stdin payload, not shell commands) so their
+    text can never be mistaken for an invocation. Keeps the marker line
+    itself (`cat <<'EOF' > /tmp/x.sh`) so anything genuinely chained on a
+    later line is still visible to the segment scan below."""
+    lines = cmd.split("\n")
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        out.append(line)
+        m = _HEREDOC_RE.search(line)
+        if not m:
+            i += 1
+            continue
+        delim = m.group(2)
+        i += 1
+        while i < len(lines) and lines[i].strip() != delim:
+            i += 1
+        if i < len(lines):  # skip the terminator line itself too
+            i += 1
+    return "\n".join(out)
+
+
+def _split_pipeline(cmd: str) -> list[str]:
+    """Split into segments at top-level `&&`, `||`, `;`, `|`, `&`, newline --
+    but NEVER inside a quoted string, so a quoted grep pattern (or any other
+    argument) that happens to contain one of these characters, or the words
+    `git`/`commit`, is never split apart or surfaced as a leading word."""
+    segments: list[str] = []
+    buf: list[str] = []
+    i, n = 0, len(cmd)
+    in_squote = in_dquote = False
+    while i < n:
+        c = cmd[i]
+        if in_squote:
+            buf.append(c)
+            in_squote = c != "'"
+            i += 1
+            continue
+        if in_dquote:
+            if c == "\\" and i + 1 < n:
+                buf.append(c); buf.append(cmd[i + 1])
+                i += 2
+                continue
+            buf.append(c)
+            if c == '"':
+                in_dquote = False
+            i += 1
+            continue
+        if c == "'":
+            in_squote = True
+            buf.append(c); i += 1; continue
+        if c == '"':
+            in_dquote = True
+            buf.append(c); i += 1; continue
+        if c == "\\" and i + 1 < n:
+            buf.append(c); buf.append(cmd[i + 1]); i += 2; continue
+        if cmd[i:i + 2] in ("&&", "||"):
+            segments.append("".join(buf)); buf = []; i += 2; continue
+        if c in (";", "|", "&", "\n"):
+            segments.append("".join(buf)); buf = []; i += 1; continue
+        buf.append(c); i += 1
+    segments.append("".join(buf))
+    return segments
+
+
+def _git_invocation(tokens: list[str]) -> tuple[str, str | None] | None:
+    """`tokens` = one already-tokenized pipeline segment. If it's an actual
+    git invocation (leading env-assignments skipped, matched on the PROGRAM
+    NAME, not substring), return `(subcommand, dash_C_target)` -- subcommand
+    is "" if `git` was invoked with no subcommand. Else None (not git)."""
+    i = 0
+    while i < len(tokens) and _ENV_ASSIGN_RE.match(tokens[i]):
+        i += 1
+    if i >= len(tokens) or os.path.basename(tokens[i]) != "git":
+        return None
+    i += 1
+    target = None
+    while i < len(tokens):
+        t = tokens[i]
+        if not t.startswith("-"):
+            return t, target  # first non-option token = the subcommand
+        if t in _GIT_ARG_OPTS:
+            if t == "-C" and i + 1 < len(tokens):
+                target = tokens[i + 1]
+            i += 2
+            continue
+        i += 1  # a self-contained flag (-p, --no-pager, --opt=value, ...)
+    return "", target  # bare `git` (+ options only), no subcommand
+
+
 def _is_main_tree_commit(cmd: str, cwd: str | None) -> bool:
-    """A `git commit` that lands on the MAIN tree. A commit inside a git
-    worktree is exactly the safe pattern this project already mandates for live
-    trees, so it is never latched."""
-    if not re.search(r"\bgit\b[^|;&]*\bcommit\b", cmd):
-        return False
-    m = re.search(r"-C\s+(\S+)", cmd)
-    target = m.group(1).strip("'\"") if m else (cwd or "")
-    return "/.claude/worktrees/" not in str(target)
+    """A commit-CREATING git invocation (commit / merge / cherry-pick /
+    rebase / commit-tree / pull) that lands on the MAIN tree. A commit inside
+    a git worktree is exactly the safe pattern this project already mandates
+    for live trees, so it is never latched.
+
+    Matches by TOKENIZING each pipeline segment's leading words (env-var
+    prefixes skipped, `&&`/`;`/`|`/`&`/newline segment splits, heredoc BODIES
+    dropped first) rather than by substring/regex search over the whole
+    command text. That means: (a) commit-creating verbs a
+    `git ... commit`-shaped regex would miss (merge, cherry-pick, rebase,
+    commit-tree, pull) are now caught, and (b) a read-only command that
+    merely CONTAINS the trigger phrase in a quoted argument, or a heredoc
+    payload that mentions a git verb in its body text, never fires -- only an
+    actual leading `git <subcmd>` process invocation does."""
+    stripped = _strip_heredoc_bodies(cmd)
+    for segment in _split_pipeline(stripped):
+        try:
+            tokens = shlex.split(segment, posix=True)
+        except ValueError:
+            continue  # unbalanced quote in this segment -> not ours to parse
+        inv = _git_invocation(tokens)
+        if inv is None:
+            continue
+        subcommand, dash_c_target = inv
+        if subcommand not in _COMMIT_CREATING_GIT_SUBCOMMANDS:
+            continue
+        target = dash_c_target if dash_c_target is not None else (cwd or "")
+        if "/.claude/worktrees/" not in str(target):
+            return True
+    return False
 
 
 def _freeze_latch(cmd: str, cwd: str | None) -> str | None:

@@ -142,3 +142,108 @@ def test_the_hook_FAILS_OPEN_if_measurement_is_absent(tmp_path, monkeypatch):
     monkeypatch.setattr(LINT, "REPO", str(tmp_path / "nope"))
     assert LINT._live_sentinels() == []
     assert LINT._freeze_latch("git commit -m x", cwd=str(tmp_path)) is None
+
+
+# --------------------------------------------------------------------------- #
+# Matching-fix regression tests (owner-approved, morning packet). Three       #
+# documented failure classes from the previous night, each reproduced below: #
+#   (1) BYPASS  -- commit-creating git verbs other than `git commit` sailed   #
+#                  through the old `\bgit\b[^|;&]*\bcommit\b` regex.         #
+#   (2) FALSE POS -- a read-only command whose TEXT merely contained the      #
+#                  trigger phrase (quoted grep/echo argument) got blocked.    #
+#   (3) FALSE POS -- a command writing only to /tmp whose heredoc PAYLOAD     #
+#                  text mentioned git verbs got blocked (3x for real).       #
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize("verb_cmd", [
+    "git merge feature-branch",
+    "git cherry-pick abc1234",
+    "git rebase --continue",
+    "git commit-tree abc1234 -m 'x'",
+    "git pull origin main",
+])
+def test_BYPASS_FIXED_non_commit_git_verbs_now_latch(verb_cmd, tmp_path,
+                                                      monkeypatch, capsys):
+    """(1) BYPASS repro: these create/rewrite a commit exactly like
+    `git commit` does, but the old regex required the literal word `commit`
+    to appear -- merge/cherry-pick/rebase/pull sailed through while a leg was
+    live. Must now BLOCK with the sentinel present, and ALLOW once it's gone
+    (proves this isn't a blanket ban on the verb, only a live-leg gate)."""
+    _sentinel(tmp_path)
+    rc, err = _hook(verb_cmd, tmp_path, monkeypatch, capsys)
+    assert rc == 2, (verb_cmd, err)
+    assert "W-FREEZE-LATCH" in err
+
+    (tmp_path / "measurement" / "rung3_r5" / LINT.RUN_LIVE_NAME).unlink()
+    rc2, err2 = _hook(verb_cmd, tmp_path, monkeypatch, capsys)
+    assert rc2 == 0, (verb_cmd, err2)
+    assert "W-FREEZE-LATCH" not in err2
+
+
+def test_the_latch_ALLOWS_a_WORKTREE_merge_and_cherry_pick_even_while_live(
+        tmp_path, monkeypatch):
+    """The worktree exemption (kept as-is) must extend to the newly-caught
+    verbs too, not just `commit`."""
+    monkeypatch.setattr(LINT, "REPO", str(_sentinel(tmp_path)))
+    wt = "/home/doctor/projects/carcassone/.claude/worktrees/agent-abc"
+    assert LINT._freeze_latch(f"git -C {wt} merge feature-x",
+                              cwd=str(tmp_path)) is None
+    assert LINT._freeze_latch("git cherry-pick abc123", cwd=wt) is None
+    # ... but a `-C` back into the main tree IS latched, same as commit
+    assert LINT._freeze_latch(f"git -C {tmp_path} merge feature-x",
+                              cwd=wt) is not None
+
+
+@pytest.mark.parametrize("cmd", [
+    'grep -rn "git commit" DECISIONS.md',
+    'grep -rn "must not git commit while a leg is live" STATUS.md',
+    "echo 'reminder: never git commit on main while a leg is live'",
+    "echo 'run git merge only after the leg clears'",
+])
+def test_FALSE_POSITIVE_FIXED_readonly_text_containing_trigger_phrase(
+        cmd, tmp_path, monkeypatch, capsys):
+    """(2) FALSE POSITIVE repro: a read-only command whose text merely
+    CONTAINS the trigger phrase inside a quoted grep/echo argument used to
+    trip the old whole-string regex. The leading word of the (only) pipeline
+    segment is `grep`/`echo`, never `git`, so it must never latch."""
+    _sentinel(tmp_path)
+    rc, err = _hook(cmd, tmp_path, monkeypatch, capsys)
+    assert rc == 0, (cmd, err)
+    assert "W-FREEZE-LATCH" not in err
+
+
+def test_FALSE_POSITIVE_FIXED_heredoc_payload_mentions_git_verbs(
+        tmp_path, monkeypatch, capsys):
+    """(3) FALSE POSITIVE repro: a command that only WRITES to /tmp via a
+    heredoc, whose payload BODY happens to mention git verbs, used to trip
+    the old regex on the raw command text (blocked 3x for real, per the
+    morning packet). The heredoc body is stdin data, never itself executed
+    as a shell command, so it must be stripped before the git-invocation
+    scan and must never latch."""
+    cmd = (
+        "cat > /tmp/scratch/notes.md <<'EOF'\n"
+        "Plan: after the leg finishes, git commit -m 'close out' on main.\n"
+        "Also remember git merge origin/main and git commit-tree later.\n"
+        "EOF\n"
+    )
+    _sentinel(tmp_path)
+    rc, err = _hook(cmd, tmp_path, monkeypatch, capsys)
+    assert rc == 0, (cmd, err)
+    assert "W-FREEZE-LATCH" not in err
+
+
+def test_heredoc_scratch_write_THEN_a_REAL_commit_still_latches(
+        tmp_path, monkeypatch, capsys):
+    """Negative control for the (3) fix: dropping heredoc bodies must not
+    become a blanket exemption for anything containing `<<`. A genuine `git
+    commit` chained AFTER the heredoc (outside its body) still latches."""
+    cmd = (
+        "cat > /tmp/scratch/notes.md <<'EOF'\n"
+        "just a note, nothing about git here\n"
+        "EOF\n"
+        "git commit -am 'oops on main'\n"
+    )
+    _sentinel(tmp_path)
+    rc, err = _hook(cmd, tmp_path, monkeypatch, capsys)
+    assert rc == 2, (cmd, err)
+    assert "W-FREEZE-LATCH" in err
