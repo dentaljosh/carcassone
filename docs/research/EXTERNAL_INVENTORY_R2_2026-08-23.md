@@ -140,3 +140,20 @@ GitHub REST search over all 911 repos matching `carcassonne`, sorted by stars (t
 ## 6. Close-out
 
 Per the six-touch checklist, this doc is touch (3)-shaped only — it is research, not an experiment close-out. If a Carcasum pilot is authorised it needs its own `measurement/` cell, prereg, and a divergence audit before any strength number is quoted. Add a `docs/LEVER_INDEX.md` row for **"Carcasum external reference"** (and a DECLINED row for **Carcassonne-SGE**, **SYNCS**, **Asmodee Conqueror**, **OpenSpiel/Ludii — game absent**) so the next reader's grep cannot miss that these were looked at, whatever is decided.
+
+Carcasum itself was subsequently vendored, audited, and rated — see `docs/LEVER_INDEX.md` §9 and `results.csv carcasum_match_r1_champion_vs_mcts5000ms_n400_b142e9` (BRANCH A, usable reference, 2026-08-23).
+
+## 7. R3 addendum (owner-supplied link, 2026-08-23 late)
+
+**kotatsuyaki/carcassonne-rust** (GitLab, Rust, NO LICENSE, dead since 2021-09) — triaged, not integrated:
+
+- **Rules engine** = NEAR-EXACT scope match to ours: 2-player, 72 tiles verified, farmers scored per-field (modern rules), no river; headless `testdrive` CLI. Candidate as a **third referee** for differential rules testing — build-compat patch + a ~15-line seed hook, medium effort.
+- **MCTS** = a real chance-node tree with random playouts, UCT √2. No strength evidence beyond the author's own uncalibratable claim ("almost on par with average human players at ~4000 iterations" — no n, no opponent, no clock). Likely sub-JCZ. Skip as an opponent.
+- **GNN** (ScalableAlphaZero-style GATv2) = training code only, no published weights. The author's blog posts (recovered via the GitLab raw-file API after the rendered pages went auth-walled) confirm the classic hobby-AZ stall in the author's own words: *"almost on par with my previous simple MCTS after two days"*, and self-play used `Board::new_small`, a nonstandard board. Reference-only; no evidence it ever played competently.
+- **Ops trap for any future harness**: `testdrive` defaults to the Small board (`--size Normal` mandatory) and 500 iterations (the author played at 4000) — silent footguns for anyone benchmarking against the published claim.
+- **License**: none declared — private benchmarking only, no redistribution.
+- **Disposition**: unfunded, pending owner. Priority jumps if the Carcasum rung-2 budget ladder fires K-SATURATION (a saturating ruler would want a **second**, independent, budget-scalable external reference to cross-check it).
+
+Also triaged and rejected in the same pass (no further action): `hanskrig/carcassonne-rl` (wingedsheep-wrapper UCT baseline, below bar), `drgtheneutrino` (field topology knowingly broken), `abhg86` (trains without farmers), Xbox360 Sierra port (closed, curiosity only, selectable International scoring), TheCodingMonkeys field edition (unverified, discontinued), BGA + BrettspielWelt (closed to bots absent private authorization).
+
+See `docs/LEVER_INDEX.md` §9 for the pointer row; DECISIONS 2026-08-23.

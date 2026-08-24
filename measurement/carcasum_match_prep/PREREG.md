@@ -1,14 +1,25 @@
 > ⛔→✅ **FROZEN 2026-08-23 (branch-freeze: the blind commit is THE COMMIT INTRODUCING THIS BANNER, on branch carcasum-match-freeze — local main is latched under a live reconcile suite; the branch merges at the quiet window; a committed sha is a provable freeze on any branch). Owner funding: "I'm funding carcasum" 2026-08-23. No game on band 1.42e11 exists at freeze time.**
 
-> **STATUS: DRAFT — NOT BLIND-COMMITTED, NOT AUTHORISED, NOT LAUNCHED.**
-> Nothing in this file is frozen. It exists so that the *design* is on record before any
-> Carcasum strength number exists, and so the blind commit — when and if it happens — is a
-> review of a written plan rather than a fresh act of authorship. The band row below is
-> **planned, not claimed**: `governance/BAND_REGISTRY.csv` has NOT been appended to.
+> ~~**STATUS: DRAFT — NOT BLIND-COMMITTED, NOT AUTHORISED, NOT LAUNCHED.** Nothing in this
+> file is frozen. It exists so that the *design* is on record before any Carcasum strength
+> number exists, and so the blind commit — when and if it happens — is a review of a written
+> plan rather than a fresh act of authorship. The band row below is **planned, not claimed**:
+> `governance/BAND_REGISTRY.csv` has NOT been appended to.
 >
 > **Gate:** this prereg may not be blind-committed until the divergence audit
 > ([`AUDIT_PLAN.md`](AUDIT_PLAN.md), gate 5 of the build) passes N/N with zero REAL
-> divergences. A strength number measured across a rules disagreement is a rules result.
+> divergences. A strength number measured across a rules disagreement is a rules result.~~
+>
+> **Doc defect, struck post-merge 2026-08-23 (quiet-window close-out):** this whole paragraph
+> is leftover pre-freeze `PREREG_DRAFT.md` text that the blind commit (`35f3c6da`) never
+> deleted when it added the FROZEN banner above — flagged, not fixed, in the r1 READOUT §6.
+> The frozen bytes at `35f3c6da` (and every commit on `carcasum-match-freeze` through the
+> merge) are UNTOUCHED by this edit — `git show 35f3c6da:measurement/carcasum_match_prep/PREREG.md`
+> still reads the stale paragraph verbatim, as it must for the freeze to mean anything. This
+> strike is a working-tree-only correction on `tiearb2-stage2`, after the rated match (r1) has
+> already run and been adjudicated (`measurement/carcasum_match_20260823/READOUT.md`), so it
+> changes no decision and reads no statistic. The gate it describes already passed:
+> `measurement/carcasum_audit_20260823/AUDIT_READOUT.md`, PASS 50/50, 0 REAL divergences.
 
 ---
 

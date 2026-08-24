@@ -8059,3 +8059,51 @@ baseline window was not recorded, so re-running `report` had to guess it (landed
 
 → `measurement/pixel_tiearb_ab_20260817/` (`READOUT.md` · `results.{md,json}` ·
 `manifest.json` · `runs/` · `samples.csv` · `device_build.txt` · `battery_pack.txt`)
+
+## 2026-08-23 — CARCASUM RATED MATCH r1: **BRANCH A (usable external reference)** — the program's first out-of-lineage rating, and the transitivity lesson it teaches on its own
+
+Champion (`PRODUCTION.yaml` `puct_priors_v29_bmild_cap8`, k8×1376 rust, `fixed_v1` R9 on) vs
+Carcasum (TripleWhy, MSc 2014, vendored @5f5e365) `MCTSPlayer<PortionUtility,RandomPlayout>`
+@5000ms/turn, Cp=0.5 — deck-paired, n=400 (200 decks × 2 seats), band
+`142000000000`–`142000000199`. Frozen `PREREG.md` (blind commit `35f3c6da`) read mechanically;
+gate D (void/divergence) checked first per its own D-first ordering clarification and does not
+fire — 0/400 voids, 0/400 REAL divergences, 400/400 final-score+farm+replay agreement, matching
+the earlier one-time divergence audit (50/50 PASS). **Branch A fired: |z| = 4.175 ≥ 3.**
+**Champion beats Carcasum by +4.08 pts/deck paired (SE 0.9772, z +4.175, n=200 paired decks);
+wr 0.56875 (223W/9D/168L), elo_from_win_rate +48.08 (secondary, 1σ ≈ ±17.4 at n=400).**
+
+**The transitivity lesson:** the thesis-transitive prior (chaining through shared opponents)
+put Carcasum at ≈+188 elo relative to the champion; the direct measurement reads −48 — off by
+~236 elo, in the direction that makes transitive/self-anchored elo chains look *worse* than a
+direct measurement, not better. This is exactly the failure mode blocker #1 in CLAUDE.md
+names (self-anchored elo can climb while absolute strength regresses) — Carcasum is the first
+independently-implemented opponent to demonstrate it with a real number instead of a general
+worry.
+
+**Verdict: Carcasum enters the ruler set as a usable, non-saturated external reference at this
+budget.** Per the frozen branch text verbatim: *"Carcasum enters the ruler set at this budget.
+Queue rung 2 (the budget ladder) to find the budget where it equals the champion — that, not
+this cell, is the non-saturating-ruler deliverable."* Rung 2 (playout-denominated budget
+ladder, D0/A/B/C rungs) was funded same day (owner: *"i'm fine funding rung2"*), preregistered
+and amended twice pre-launch (a fail-open gate class caught in review both times), frozen at
+`d8f98e51`, and launched on the laptop — its close-out is **not** part of this entry (run still
+live at merge time).
+
+Two documentation defects flagged in the readout, adjudicated around, not through: (1) the
+frozen `PREREG.md` retains a stale "STATUS: DRAFT" paragraph directly beneath its own FROZEN
+banner, left over from `PREREG_DRAFT.md` — a defect in the frozen artifact's prose, not an
+ambiguity in the decision rule itself, which was applied as written; (2) `summarize()` emits
+mean playouts/turn where §5 asks for median (mean is endgame-skewed) — doesn't touch the branch
+decision.
+
+**Watcher lesson, on the record because it cost real time:** the completion watcher armed for
+this run never fired — its grep predicate was written against an assumed schema that didn't
+match the real emitted `games.jsonl` records. Watcher predicates must be tested against one
+real emitted record before being armed, the same rule now applied to analyzers.
+
+`results.csv carcasum_match_r1_champion_vs_mcts5000ms_n400_b142e9` · readout of record
+`measurement/carcasum_match_20260823/READOUT.md` (games.jsonl sha256
+`9af5cd296cb8373971b4ebee81694b27105bfac54361651802653f48e9ae8ec6`, verified identical
+remote/local) · `docs/LEVER_INDEX.md` §9 · band `142000000000`–`142000000199` retires
+`decision_influenced=yes` in `governance/BAND_REGISTRY.csv`; the reserved top-up
+`142000000200`–`142000000299` releases (branch C never fired).
