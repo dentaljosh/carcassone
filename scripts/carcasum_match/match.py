@@ -1252,6 +1252,9 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
     actions: list[int] = []
     move_log: list[dict] = []
     ms_by_seat = {0: 0.0, 1: 0.0}
+    #: Driver-reported opponent cost per TURN (wall ms) and rollouts per turn.
+    opp_drv_ms: list[float] = []
+    opp_drv_playouts: list[float] = []
     moves_by_seat = {0: 0, 1: 0}
     think_moves_by_seat = {0: 0, 1: 0}
     void: str | None = None
@@ -1427,8 +1430,23 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
                         _void(VOID_UNMAPPABLE, {"ply": ply, "phase": "tiles",
                                                 "carcasum_move": msg, "ours": offered})
                         break
+                    # The opponent's cost is measured by the DRIVER, not by us: from
+                    # here we only see the wall time of a blocking read, which folds in
+                    # our own scheduling. `ms` is the driver's wall clock for the turn
+                    # and `playouts` its rollout count -- the two figures that price the
+                    # budget knob and let the thesis's 42,879 playouts/turn be checked on
+                    # our hardware. Carried onto the move_log and aggregated per game;
+                    # `_apply` still receives 0.0 so the CHAMPION's ms/move denominator
+                    # stays a pure thinking rate.
+                    _cm = msg.get("ms")
+                    _cp = msg.get("playouts")
+                    if isinstance(_cm, (int, float)) and _cm > 0:
+                        opp_drv_ms.append(float(_cm))
+                    if isinstance(_cp, (int, float)) and _cp > 0:
+                        opp_drv_playouts.append(float(_cp))
                     _apply(a, player, 0.0, "opp_tile",
-                          {"carcasum_move": {"x": msg.get("x"), "y": msg.get("y"), "o": msg.get("o")}})
+                          {"carcasum_move": {"x": msg.get("x"), "y": msg.get("y"), "o": msg.get("o")},
+                           "carcasum_ms": _cm, "carcasum_playouts": _cp})
                     if board.state.phase == GamePhase.MEEPLES:
                         mv = msg.get("meeple")
                         if mv is None:
@@ -1570,7 +1588,20 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
         "moves_by_seat": {str(k): v for k, v in moves_by_seat.items()},
         "think_moves_by_seat": {str(k): v for k, v in think_moves_by_seat.items()},
         "ms_per_move_champ": round(ms_by_seat[champ_seat] / max(think_moves_by_seat[champ_seat], 1), 1),
+        # ⚠️ ms_per_move_opp is measured from OUR side and is ~0 by construction: we
+        # never time the opponent, we block on a read. The opponent's real cost is
+        # what the DRIVER reports, below. Kept for symmetry of shape only.
         "ms_per_move_opp": round(ms_by_seat[opp_seat] / max(think_moves_by_seat[opp_seat], 1), 1),
+        #: The opponent's realized cost, as measured by the driver. `*_ms` is wall
+        #: milliseconds per TURN (their budget is per turn -- getMeepleMove returns the
+        #: move getTileMove already cached), `*_playouts` is rollouts per turn. These
+        #: are the figures that price the budget knob and let the thesis's
+        #: 42,879 playouts/turn be checked against our hardware.
+        "opp_driver_ms_per_turn": (round(sum(opp_drv_ms) / len(opp_drv_ms), 1)
+                                   if opp_drv_ms else None),
+        "opp_driver_playouts_per_turn": (round(sum(opp_drv_playouts) / len(opp_drv_playouts), 1)
+                                         if opp_drv_playouts else None),
+        "opp_driver_turns": len(opp_drv_ms),
         "wall_secs": round(time.time() - t_start, 2),
         "moves": move_log,
         "finished_at": time.time(),
@@ -1700,8 +1731,24 @@ def summarize(records: list[dict]) -> dict:
         "paired_margin_sem": (var / len(paired)) ** 0.5 if var is not None else None,
         "mean_margin_unpaired": (sum(r["margin_champ_minus_opp"] for r in ok) / n if n else None),
         "elo_from_win_rate": _wr_to_elo((wins + 0.5 * draws) / n) if n else None,
+        # Realized cost, both sides. The champion figure is a THINKING rate (our own
+        # timer, denominator = plies we were actually asked about); the opponent
+        # figures are the DRIVER's, per TURN. Reported together because a strength
+        # number against a budgeted opponent is meaningless without them.
+        "champ_ms_per_move_mean": _mean([r.get("ms_per_move_champ") for r in ok]),
+        "opp_driver_ms_per_turn_mean": _mean([r.get("opp_driver_ms_per_turn") for r in ok]),
+        "opp_driver_playouts_per_turn_mean": _mean(
+            [r.get("opp_driver_playouts_per_turn") for r in ok]),
+        "wall_secs_per_game_mean": _mean([r.get("wall_secs") for r in ok]),
         "replay_failures": [r.get("deck_seed") for r in records if r.get("replay_ok") is False],
     }
+
+
+def _mean(xs):
+    """Mean of the numeric entries, or None. Never raises on a missing field —
+    a record written before a telemetry field existed must not break a readout."""
+    vals = [float(x) for x in xs if isinstance(x, (int, float))]
+    return round(sum(vals) / len(vals), 1) if vals else None
 
 
 def _wr_to_elo(wr: float) -> float | None:
@@ -1818,7 +1865,8 @@ def main(argv=None) -> int:
                       f"champ_seat={rec['champ_seat']} rep={rec.get('replicate')} "
                       f"scores={rec.get('scores')} void={rec.get('void')} "
                       f"champ={rec.get('ms_per_move_champ')}ms/mv "
-                      f"opp={rec.get('ms_per_move_opp')}ms/mv "
+                      f"opp={rec.get('opp_driver_ms_per_turn')}ms/turn "
+                      f"({rec.get('opp_driver_playouts_per_turn')} playouts) "
                       f"replay_ok={rec.get('replay_ok')}", flush=True)
 
     print(f"\n[carcasum-match] DONE {len(records)} games in {(time.time()-t0)/60:.1f} min")
