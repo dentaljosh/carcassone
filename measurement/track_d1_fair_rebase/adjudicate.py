@@ -749,7 +749,18 @@ def write_readout(r, path):
     w(f"5. **`W-GAMELEN` shows the expected `walled` signature.** W2752 runs "
       f"{r['per_cell']['W2752']['mean_moves'] - r['per_cell']['C2752']['mean_moves']:+.2f} moves/game longer "
       f"than C2752 — the `centered18`+`redraw` rules change, visible and small.")
-    w("6. **`moves` counts plies, not per-side moves.** The per-cell mean of ≈142 is ≈71 per side, which is "
+    alt = 7.9350
+    z_alt = (r["R"]["E11008"]["stat"] - alt) / r["era"]["D_11008"]["se_eff"]
+    w(f"6. **The frozen pair carries two different G2 values for the 11008 rung — the branch is robust to "
+      f"which one is right.** `READ_RULE.md` §1 pre-registers `D_11008 = R_11008 − 9.7700` "
+      f"(`fair_ruler_k8x1376_11008`), while `DESIGN.md` §4.1 quotes that same row's realized paired mean as "
+      f"**7.9350** (7.9350 / 8.4547 = 0.939 pts se). This adjudication uses **READ_RULE's 9.7700**, because "
+      f"READ_RULE is the frozen instrument and §1 is where the comparator is pre-registered. Recorded for "
+      f"audit: against 7.9350 the reading would be `D_11008 = {r['R']['E11008']['stat'] - alt:+.4f}`, "
+      f"`z_eff = {z_alt:+.2f}` — **still under the 2.0 bar, so `ERA-BOUNDED-NULL` fires either way** and no "
+      f"branch depends on resolving the discrepancy. It should be reconciled before the G2 rows are cited "
+      f"again.")
+    w("7. **`moves` counts plies, not per-side moves.** The per-cell mean of ≈142 is ≈71 per side, which is "
       "the ≈70/71 the DESIGN §6 cost model assumes — not a discrepancy.")
     w("")
     w("---\n")
