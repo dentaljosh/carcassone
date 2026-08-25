@@ -160,6 +160,16 @@ parity" figure is the 52-*nominal*-worker number that does not price the laptop'
 > rung: K-DEAD ∧ K-STRUCTURAL stand** — production `eps` stays **0.0**. Recorded
 > in DECISIONS 2026-08-19 (delegation entry); LEVER_INDEX rows already carry the
 > closures.
+>
+> ✅ **DIRECT OWNER CONFIRMATION 2026-08-24.** Joshua independently re-derived
+> rung (4)'s question from first principles ("we're sure that wherever the leaf
+> has an opinion, we should trust it and not the arb? … I'm willing to give more
+> wall clock"), was shown the K-DEAD ∧ K-STRUCTURAL record, and ratified
+> directly (verbatim: *"I'm satisfied."*). The 2026-08-19 delegated ratification
+> is thereby upgraded to a direct one; no longer merely executed-under-delegation.
+> Same day, the independent search-side E4 census (measurement/meeple_tie_census_20260824/)
+> confirmed rung (1) from a second instrument: 0.287% pooled-Q meeple ties,
+> 0/6 leaf-distinguishable.
 
 - Ratify **eps>0 closure** on banked data (rung funded, answered without spend).
 - Ratify **meeple kill-census** as the rung's entire budget unless it survives its bar.
