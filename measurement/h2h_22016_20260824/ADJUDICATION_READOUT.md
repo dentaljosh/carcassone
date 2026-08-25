@@ -1,4 +1,14 @@
-# 22016 vs 11008 BUDGET H2H — ADJUDICATION READ-OUT
+# 22016 vs 11008 BUDGET H2H — ADJUDICATION READ-OUT (FROZEN INSTRUMENT)
+
+> **➡️ SEQUEL, 2026-08-25:** the owner authorized a post-void re-read of this same archive
+> under amended gates (owner verbatim *"h2h option 1"*). That re-read fired **`H-POSITIVE`**
+> (14/14 gates PASS) — see
+> [`ADJUDICATION_READOUT_AMENDED.md`](ADJUDICATION_READOUT_AMENDED.md).
+> **This document is NOT superseded.** `U-UNREADABLE` remains the verdict of the *frozen,
+> unedited* instrument and everything below still stands; the two readouts are designed to be
+> read side by side, and the amended one carries the integrity disclosure.
+
+
 
 > **BRANCH OF RECORD: `U-UNREADABLE` (READ_RULE.md §4, first-match-wins, `VOID` first).**
 > Fired by the **unmodified frozen** `adjudicate.py` at `h2h22k-freeze` tip `e465c8a2`,
