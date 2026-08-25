@@ -1351,8 +1351,27 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
         if void is None:
             void, void_detail = cls, detail
 
-    read_timeout_s = float(read_timeout_s) if read_timeout_s is not None else max(
-        30.0, (opponent.get("budget_ms") or 5000) / 1000.0 * 4 + 15.0)
+    if read_timeout_s is not None:
+        read_timeout_s = float(read_timeout_s)
+    elif opponent.get("playouts"):
+        # Playout-budget mode (`--opp-playouts`): `main()` always sets
+        # `opponent["budget_ms"] = None` in this mode (see the CLI plumbing
+        # below), so the OLD formula's `(opponent.get("budget_ms") or 5000)`
+        # silently fell through to DEFAULT_OPPONENT's 5000ms every time,
+        # giving EVERY playout-mode rung the SAME fixed 35.0s read timeout
+        # regardless of how many playouts were actually requested. That is
+        # what produced the rung-C (m=262144) 100% VOID_ERROR storm
+        # (2026-08-23): the driver's real per-move search time scales
+        # ~linearly with playout count (measured on the laptop box,
+        # m=131072 -> 22.26s realized, m=262144 -> 44.73s realized, i.e.
+        # ~1.70e-4s/playout) and the fixed 35.0s cap killed every opponent
+        # move once the budget crossed it. This branch scales the timeout
+        # with the actual playout count instead, at ~1.5x the measured slope
+        # (2.5e-4 s/playout) plus the same +15.0s fixed overhead the
+        # budget_ms branch already used, floored at the same 30.0s.
+        read_timeout_s = max(30.0, opponent["playouts"] * 2.5e-4 + 15.0)
+    else:
+        read_timeout_s = max(30.0, (opponent.get("budget_ms") or 5000) / 1000.0 * 4 + 15.0)
     drv = CarcasumDriver(binary=binary, read_timeout_s=read_timeout_s)
     ready: dict | None = None
     final_msg: dict | None = None
