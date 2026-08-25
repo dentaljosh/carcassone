@@ -211,23 +211,34 @@ def test_production_yaml_resolved():
 
 
 def test_mobile_profile_is_the_champion_of_record_on_the_rust_backend():
-    """THE UNPIN GUARD (2026-08-01). The mobile profile was PINNED at k4x688 from
-    2026-07-29 because 11008 sims needed 8 spawn processes and Chaquopy has none. The
-    rustport native core (4 OS threads inside ONE call, 1.551 s/move on the Pixel — G7
-    leg 3) met the profile's own written unpin condition, so the phone now plays the
-    CHAMPION OF RECORD.
+    """THE UNPIN GUARD (2026-08-01), RE-POINTED 2026-08-25 AT THE k16x1376 FOLD.
 
-    Two halves, and the second is the one that keeps the phone safe: the profile must
-    resolve to the champion budget, AND that budget must be inseparable from
-    `backend: rust`. 11008 sims on the Python engine is ~25 s/move here."""
+    HISTORY IN THREE STEPS. The mobile profile was PINNED at k4x688 from 2026-07-29
+    because 11008 sims needed 8 spawn processes and Chaquopy has none. The rustport
+    native core (OS threads inside ONE call, 1.551 s/move on the Pixel — G7 leg 3) met
+    the profile's own written unpin condition, so on 2026-08-01 the phone rose to the
+    CHAMPION OF RECORD (k8x1376 = 11008). On 2026-08-25 the owner authorized a
+    MOBILE-ONLY doubling to k16x1376 = 22016 ("let's upgrade to 22k and push the apk",
+    evidence h2h22016 H-POSITIVE) — so the phone is now the first deploy profile in the
+    program to run ABOVE the champion of record.
+
+    ⚠️ WHY THIS TEST CHANGED SHAPE. It used to assert mobile == the champion of record.
+    That equality was never the safety property — it was the state of the world on
+    2026-08-01, and the owner has since moved it deliberately. What this test guards is
+    the property that actually keeps the phone safe, and it is UNCHANGED: whatever the
+    budget is, it comes from the YAML and is INSEPARABLE from `backend: rust`. 11008
+    sims on the Python engine is ~25 s/move here; 22016 is ~50."""
     from carcassonne_ai import champion_factory as cf
 
     spec = cf.load_production_spec()
     mob = B.mobile_budget(spec)
     assert mob["profile"] == "mobile" and mob["from_yaml"] is True
-    full = (spec.k_dets, spec.sims_per_det, spec.k_dets * spec.sims_per_det)
-    assert (mob["k_dets"], mob["sims_per_det"], mob["total_sims"]) == full, \
-        "the phone must now run the champion of record"
+    full_total = spec.k_dets * spec.sims_per_det
+    # THE FOLD OF RECORD: pure WIDTH doubling. Same per-world depth as the champion,
+    # twice the determinizations — the CL-060 allocation shape at 2x the budget.
+    assert (mob["k_dets"], mob["sims_per_det"], mob["total_sims"]) == (
+        2 * spec.k_dets, spec.sims_per_det, 2 * full_total), \
+        "the phone runs the owner-authorized k16x1376 = 22016 mobile fold"
     assert mob["backend"] == B.BACKEND_RUST
     assert mob["rust_threads"] and mob["rust_threads"] >= 1
     # parallel_workers stays null forever: Chaquopy has no multiprocessing. The
@@ -235,8 +246,12 @@ def test_mobile_profile_is_the_champion_of_record_on_the_rust_backend():
     assert cf.deploy_profile("mobile", spec)["parallel_workers"] is None
 
     d = ok(B.production_budget())
-    assert (d["k_dets"], d["sims_per_det"], d["total_sims"]) == full
-    assert d["total_sims"] == d["champion_of_record_total_sims"]
+    assert (d["k_dets"], d["sims_per_det"], d["total_sims"]) == (
+        mob["k_dets"], mob["sims_per_det"], mob["total_sims"])
+    assert d["champion_of_record_total_sims"] == full_total
+    # The headline and the champion of record are now DIFFERENT numbers, and
+    # production_budget() must keep reporting both so the UI can never conflate them.
+    assert d["total_sims"] != d["champion_of_record_total_sims"]
 
     # THE COUPLING: asking for the Python engine must drop the BUDGET too, never leave
     # the phone holding a 25 s/move champion budget on the slow path.
@@ -309,7 +324,13 @@ def test_manifest_without_session_falls_back_to_the_spec():
     # figures are the mobile profile and the champion of record rides alongside.
     budget = ok(B.production_budget())
     assert man["fair_deploy"]["total_sims"] == budget["champion_of_record_total_sims"]
-    assert budget["total_sims"] <= budget["champion_of_record_total_sims"]
+    # ⚠️ NOT `<=` (relaxed 2026-08-25). That bound encoded "the phone can only ever be
+    # weaker than the champion of record", which was true for every mobile profile from
+    # 2026-07-29 (the k4x688 carve-out) through 2026-08-01 (parity) — and the owner
+    # deliberately inverted it with the k16x1376 = 22016 fold. The invariant that
+    # survives is the one this test exists for: the two figures are reported SEPARATELY
+    # and are both positive, so a caller can never read one as the other.
+    assert budget["total_sims"] > 0 and budget["champion_of_record_total_sims"] > 0
 
 
 # --------------------------------------------------------------------------- #

@@ -1496,16 +1496,29 @@ class _Session:
                     f"against this budget, not the champion's.")
             self.opponent_name = f"Champion(reduced k{eff_k}x{eff_sims})"
         elif mob["total_sims"] != full:
-            # Running exactly the device profile, but the profile is below the champion
-            # of record. This was the 2026-07-29 .. 2026-08-01 carve-out's normal state;
-            # after the unpin it can only be reached by a hand-edited YAML profile.
+            # Running exactly the device profile, and the profile DIFFERS from the
+            # champion of record.
+            #
+            # ⚠️ DIRECTION-AWARE SINCE 2026-08-25, and that is not cosmetic. This branch
+            # used to hardcode the word BELOW, because for its whole life the phone could
+            # only ever be the WEAKER side: it was the 2026-07-29 .. 2026-08-01 k4x688
+            # carve-out's normal state, and after the unpin it was reachable only by a
+            # hand-edited YAML. The owner's k16x1376 = 22016 mobile fold inverted it — the
+            # phone is now the first deploy profile in the program to run ABOVE the
+            # champion of record — and this string is BOTH rendered in the app (status
+            # bar, end-of-game dialog, Settings) AND persisted verbatim into the permanent
+            # E4 archive by `archive_record`. Left hardcoded it would have written
+            # "BELOW ... smaller search" onto every game played at TWICE the champion
+            # budget: a false sentence on screen and a false sentence in the record.
             # Honest, and archived with the game — E4 must grade against THIS budget.
+            above = mob["total_sims"] > full
             self.budget_note = (
                 f"MOBILE PROFILE — k{mob['k_dets']}x{mob['sims_per_det']}="
-                f"{mob['total_sims']} sims/move, the on-device budget, BELOW the champion "
+                f"{mob['total_sims']} sims/move, the on-device budget, "
+                f"{'ABOVE' if above else 'BELOW'} the champion "
                 f"of record k{spec.k_dets}x{spec.sims_per_det}={full}. Same agent, same "
-                f"leaf, smaller search — grade results against this budget, not the "
-                f"champion's.")
+                f"leaf, {'larger' if above else 'smaller'} search — grade results against "
+                f"this budget, not the champion's.")
 
     # -- the Rust mirror (P7, opt-in) ---------------------------------------
     def _full_deck_descriptions(self) -> list[str]:

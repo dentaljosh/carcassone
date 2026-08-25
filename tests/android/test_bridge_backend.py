@@ -370,6 +370,38 @@ def test_an_explicit_python_request_does_not_claim_the_device_lacks_rust():
     assert st["backend_note"] is None
 
 
+def test_the_mobile_profile_note_names_the_direction_it_actually_went():
+    """2026-08-25. The `MOBILE PROFILE` note hardcoded the word BELOW, because for its
+    whole life the phone could only ever be the WEAKER side (the k4x688 carve-out, then
+    parity at the 2026-08-01 unpin). The owner's k16x1376 = 22016 fold inverted that.
+
+    This matters beyond wording: the string is rendered in the app AND persisted verbatim
+    into the permanent E4 archive by `archive_record`, so a hardcoded BELOW would write
+    "smaller search" onto every game played at TWICE the champion budget."""
+    from carcassonne_ai import champion_factory as cf
+
+    spec = cf.load_production_spec()
+    mob = B.mobile_budget(spec)
+    full = spec.k_dets * spec.sims_per_det
+    if mob["total_sims"] == full:
+        pytest.skip("mobile profile is at parity with the champion; no note to check")
+
+    st = _j(B.new_game(json.dumps({"seed": 7, "opponent": "champion",
+                                   "human_player": 0, "backend": "rust",
+                                   "verify": False})))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    note = st["budget_note"] or ""
+    assert "MOBILE PROFILE" in note, note
+    if mob["total_sims"] > full:
+        assert "ABOVE the champion" in note and "larger search" in note, note
+        assert "BELOW" not in note and "smaller search" not in note, note
+    else:
+        assert "BELOW the champion" in note and "smaller search" in note, note
+    # Whichever direction, both budgets are named in full so the record is self-describing.
+    assert f"{mob['total_sims']}" in note and f"{full}" in note, note
+
+
 def test_a_missing_wheel_still_says_so():
     """The other half of F-7 — the true statement must survive the fix."""
     monkey = pytest.MonkeyPatch()

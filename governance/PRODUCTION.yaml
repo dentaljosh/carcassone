@@ -278,11 +278,46 @@ champion:
           The champion of record. Requires ≥8 usable cores and a multiprocessing-capable runtime.
           Run SEQUENTIALLY it is the same player, just 6.37× slower (13.76 s/move) — that is a clock
           problem, not a different agent.
-      mobile:                           # ANDROID / CHAQUOPY. ⚠️ UNPINNED 2026-08-01 — the phone now plays
-                                        # the CHAMPION OF RECORD. The carve-out below is CLOSED. Read the note.
-        k_dets: 8                       # = the champion of record (the two fields above), not a carve-out.
-        sims_per_det: 1376
-        total_sims: 11008
+      mobile:                           # ANDROID / CHAQUOPY. ⚠️ UNPINNED 2026-08-01 — the phone plays at or
+                                        # above the CHAMPION OF RECORD. The old carve-out is CLOSED. Read the note.
+                                        # ⭐ 2026-08-25: the phone is now ABOVE the desktop champion of record
+                                        # (k16×1376 = 22016 vs k8×1376 = 11008). See mobile_budget_authorized_by.
+        k_dets: 16                      # ⭐ 2026-08-25: 8 → 16 (mobile-only budget doubling; desktop UNTOUCHED).
+        sims_per_det: 1376              # unchanged — the doubling is pure WIDTH (k), the CL-060 allocation shape.
+        total_sims: 22016               # ⭐ 2026-08-25: 11008 → 22016.
+        mobile_budget_authorized_by: >
+          ⭐ OWNER AUTHORIZATION, 2026-08-25, Joshua, verbatim: "let's upgrade to 22k and push the apk".
+          MOBILE-ONLY. `champion.fair_deploy` and `deploy_profiles.desktop` are UNTOUCHED by this change —
+          the champion of record remains k8×1376 = 11008, and this profile is now the first deploy profile
+          in the program's history to run ABOVE it rather than below.
+          EVIDENCE — results.csv `h2h22016_k16x1376_vs_champ_k8x1376_n700decks_b148e9_AMENDED` (2026-08-25,
+          band 148e9, 700 decks × 2 seats = n=1400, raw measurement/h2h_22016_20260824): k16×1376 = 22016 vs
+          the champion k8×1376 = 11008, both sides fair PIMC, arbiter OFF on both sides
+          (`fair_deploy_noarb`) → H-POSITIVE, W714/D29/L657, +14.2 elo, deck-paired margin +1.2293 pts/deck,
+          z +2.52. Games clean 1400/1400, 0 failed.
+          ⚠️ THREE CAVEATS THAT TRAVEL WITH THIS NUMBER — do not quote +14.2 without them:
+            (1) TYPE-M. The read is BELOW its own pre-registered MDE (±1.55 pts/deck), so the magnitude is
+                inflated by the winner's-curse mechanism; the true effect is plausibly smaller. The +7.1
+                elo "closure central" is NOT excluded by this measurement.
+            (2) ELO SCALE. The elo figure is at the realized 11.51 pts/elo scale, which is OUTSIDE the
+                pinned bracket; graded on the pinned scale the same games read +20.6 … +23.8.
+            (3) THE ADJUDICATOR DID NOT LICENSE DEPLOY. Its own line reads "deploy NOT licensed (2.00× wall)"
+                — a WALL-CLOCK ruling (the doubling costs ~2× per move), not a strength reversal. This fold
+                is therefore an OWNER decision that ACCEPTS that cost on the phone, over the adjudicator's
+                cost gate. Precedent for config promotion on an owner 'yes' over existing gated evidence:
+                the 2026-07-29 k8×1376 promotion and the 2026-08-20 desktop B=64 tie-arbiter fold.
+          ALSO ON THE RECORD: this row is an owner-authorized POST-VOID RE-READ. The frozen adjudicator
+          returned U-UNREADABLE on 2 archive-independent INSTRUMENT defects and published no D; the z was
+          visible pre-authorization, and the disclosure lives in that run's AMENDMENTS.md. The GAMES were
+          never in question (1400/1400 clean). Band 148e9 is SPENT and retires from confirmatory use.
+          NO CLAIM IS MINTED and the self-anchored caveat applies: this is a head-to-head against the
+          incumbent, and says nothing about absolute/superhuman strength or either structural blocker.
+          ⚠️ E4 EPOCH BOUNDARY. Phone games from this build forward are a NEW BUDGET EPOCH (22016). Because
+          the running budget now DIFFERS from `champion.fair_deploy`, `champion_factory` resumes stamping
+          `runtime_budget_override` on mobile manifests — here it names a budget ABOVE the intent, not below
+          (that key's own prose still says "BELOW … WEAKER"; it is direction-blind — read the numbers).
+          Archives self-label via `played_sims_effective` / `played_k_dets_effective`; owner-vs-champion
+          statistics MUST condition on the epoch exactly as they condition on `rules_profile`.
         backend: rust                   # carc_rs, the rustport core (P4 bit-exact / P6 G6 / P7 G7). LOAD-BEARING:
                                         # the budget above is payable ONLY on this backend. See the note.
         rust_threads: 2                 # FLIPPED 4->2 2026-08-16 (owner: "flip it"): the on-device battery A/B
@@ -295,7 +330,13 @@ champion:
         parallel_workers: null          # still null and always will be: Chaquopy has no multiprocessing. The
                                         # parallelism here is Rust threads inside ONE call — a different
                                         # mechanism, which is exactly why the unpin condition could be met.
-        measured_s_per_move: 1.551      # ⚠️ measured at threads=4 (pre-flip); t2 midgame latency not yet
+        measured_s_per_move: 1.551      # ⚠️ STALE FOR THE CURRENT BUDGET (2026-08-25) — this is the k8×1376
+                                        # = 11008 figure. The k16×1376 = 22016 fold above DOUBLES the search,
+                                        # so expect ~2× (≈3.1 s/move) pending an on-device re-measure; the
+                                        # value is left byte-unchanged rather than guessed, because this file
+                                        # records MEASURED numbers only. Nothing reads this key (documentation
+                                        # field; the only reference is a comment in android_bridge.py).
+                                        # ⚠️ also measured at threads=4 (pre-flip); t2 midgame latency not yet
                                         # measured -- opening-phase bench read t2 25% FASTER than t4, so treat
                                         # 1.551 as an upper bound until re-measured.
                                         # Pixel 9 Pro (caiman), threads=4, 20 replayed midgame roots: median
