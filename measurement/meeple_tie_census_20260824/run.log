@@ -1,0 +1,157 @@
+[1/39] 1785982194_705585.json sims=1376 k_dets=8 elapsed=0s
+  [1785982194_705585.json] ply 48/142 4s
+  [1785982194_705585.json] ply 96/142 12s
+    -> meeple_total=71 meeple_pimc=44 q_ties=0 double_ties=0 wall=20.85s
+[2/39] 1785984310_1698417952.json sims=1376 k_dets=8 elapsed=21s
+  [1785984310_1698417952.json] ply 48/142 4s
+  [1785984310_1698417952.json] ply 96/142 15s
+    -> meeple_total=71 meeple_pimc=59 q_ties=0 double_ties=0 wall=26.35s
+[3/39] 1785986044_1911511187.json sims=1376 k_dets=8 elapsed=48s
+  [1785986044_1911511187.json] ply 48/142 4s
+  [1785986044_1911511187.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=52 q_ties=0 double_ties=0 wall=24.25s
+[4/39] 1786045035_338139.json sims=1376 k_dets=8 elapsed=72s
+  [1786045035_338139.json] ply 48/142 4s
+  [1786045035_338139.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=52 q_ties=1 double_ties=1 wall=23.04s
+[5/39] 1786074812_935815.json sims=1376 k_dets=8 elapsed=96s
+  [1786074812_935815.json] ply 48/142 5s
+  [1786074812_935815.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=47 q_ties=0 double_ties=0 wall=24.08s
+[6/39] 1786076853_2116173857.json sims=1376 k_dets=8 elapsed=120s
+  [1786076853_2116173857.json] ply 48/142 4s
+  [1786076853_2116173857.json] ply 96/142 15s
+    -> meeple_total=71 meeple_pimc=57 q_ties=0 double_ties=0 wall=26.4s
+[7/39] 1786113542_627623.json sims=1376 k_dets=8 elapsed=146s
+  [1786113542_627623.json] ply 48/141 5s
+  [1786113542_627623.json] ply 96/141 16s
+    -> meeple_total=70 meeple_pimc=63 q_ties=0 double_ties=0 wall=29.92s
+[8/39] 1786116818_134510.json sims=1376 k_dets=8 elapsed=177s
+  [1786116818_134510.json] ply 48/142 4s
+  [1786116818_134510.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=58 q_ties=1 double_ties=1 wall=25.1s
+[9/39] 1786118143_1621601234.json sims=1376 k_dets=8 elapsed=202s
+  [1786118143_1621601234.json] ply 48/141 5s
+  [1786118143_1621601234.json] ply 96/141 13s
+    -> meeple_total=70 meeple_pimc=53 q_ties=0 double_ties=0 wall=25.77s
+[10/39] 1786142936_703591.json sims=1376 k_dets=8 elapsed=228s
+  [1786142936_703591.json] ply 48/142 5s
+  [1786142936_703591.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=52 q_ties=0 double_ties=0 wall=23.5s
+[11/39] 1786242001_49628.json sims=1376 k_dets=8 elapsed=252s
+  [1786242001_49628.json] ply 48/142 4s
+  [1786242001_49628.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=49 q_ties=0 double_ties=0 wall=21.91s
+[12/39] 1786243458_1382293676.json sims=1376 k_dets=8 elapsed=274s
+  [1786243458_1382293676.json] ply 48/142 5s
+  [1786243458_1382293676.json] ply 96/142 16s
+    -> meeple_total=71 meeple_pimc=56 q_ties=1 double_ties=1 wall=25.59s
+[13/39] 1786325073_523563.json sims=1376 k_dets=8 elapsed=300s
+  [1786325073_523563.json] ply 48/142 4s
+  [1786325073_523563.json] ply 96/142 18s
+    -> meeple_total=71 meeple_pimc=63 q_ties=0 double_ties=0 wall=38.28s
+[14/39] 1786329790_523563.json sims=1376 k_dets=8 elapsed=338s
+  [1786329790_523563.json] ply 48/142 4s
+  [1786329790_523563.json] ply 96/142 16s
+    -> meeple_total=71 meeple_pimc=56 q_ties=0 double_ties=0 wall=22.69s
+[15/39] 1786337185_638286.json sims=1376 k_dets=8 elapsed=361s
+  [1786337185_638286.json] ply 48/142 4s
+  [1786337185_638286.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=52 q_ties=0 double_ties=0 wall=22.0s
+[16/39] 1786367787_389099.json sims=1376 k_dets=8 elapsed=383s
+  [1786367787_389099.json] ply 48/142 4s
+  [1786367787_389099.json] ply 96/142 16s
+    -> meeple_total=71 meeple_pimc=58 q_ties=0 double_ties=0 wall=28.46s
+[17/39] 1786403231_207028.json sims=1376 k_dets=8 elapsed=412s
+  [1786403231_207028.json] ply 48/142 5s
+  [1786403231_207028.json] ply 96/142 15s
+    -> meeple_total=71 meeple_pimc=52 q_ties=0 double_ties=0 wall=28.6s
+[18/39] 1786417055_68387.json sims=1376 k_dets=8 elapsed=441s
+  [1786417055_68387.json] ply 48/142 4s
+  [1786417055_68387.json] ply 96/142 16s
+    -> meeple_total=71 meeple_pimc=63 q_ties=0 double_ties=0 wall=33.67s
+[19/39] 1786418867_411846845.json sims=1376 k_dets=8 elapsed=475s
+  [1786418867_411846845.json] ply 48/142 4s
+  [1786418867_411846845.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=56 q_ties=0 double_ties=0 wall=27.12s
+[20/39] 1786454767_166575.json sims=1376 k_dets=8 elapsed=502s
+  [1786454767_166575.json] ply 48/142 4s
+  [1786454767_166575.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=49 q_ties=0 double_ties=0 wall=24.91s
+[21/39] 1786501074_943197.json sims=1376 k_dets=8 elapsed=527s
+  [1786501074_943197.json] ply 48/142 5s
+  [1786501074_943197.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=58 q_ties=0 double_ties=0 wall=26.95s
+[22/39] 1786503336_446661.json sims=1376 k_dets=8 elapsed=555s
+  [1786503336_446661.json] ply 48/142 4s
+  [1786503336_446661.json] ply 96/142 18s
+    -> meeple_total=71 meeple_pimc=54 q_ties=0 double_ties=0 wall=26.82s
+[23/39] 1786511848_634689.json sims=1376 k_dets=8 elapsed=582s
+  [1786511848_634689.json] ply 48/142 5s
+  [1786511848_634689.json] ply 96/142 12s
+    -> meeple_total=71 meeple_pimc=55 q_ties=0 double_ties=0 wall=27.61s
+[24/39] 1786590116_64346.json sims=1376 k_dets=8 elapsed=610s
+  [1786590116_64346.json] ply 48/142 5s
+  [1786590116_64346.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=40 q_ties=0 double_ties=0 wall=18.62s
+[25/39] 1786591802_1104719504.json sims=1376 k_dets=8 elapsed=628s
+  [1786591802_1104719504.json] ply 48/142 5s
+  [1786591802_1104719504.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=52 q_ties=1 double_ties=1 wall=23.5s
+[26/39] 1786680851_216289.json sims=1376 k_dets=8 elapsed=652s
+  [1786680851_216289.json] ply 48/142 5s
+  [1786680851_216289.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=50 q_ties=0 double_ties=0 wall=22.49s
+[27/39] 1786684476_1793735743.json sims=1376 k_dets=8 elapsed=675s
+  [1786684476_1793735743.json] ply 48/142 4s
+  [1786684476_1793735743.json] ply 96/142 15s
+    -> meeple_total=71 meeple_pimc=55 q_ties=0 double_ties=0 wall=23.78s
+[28/39] 1786719876_241820.json sims=1376 k_dets=8 elapsed=699s
+  [1786719876_241820.json] ply 48/142 5s
+  [1786719876_241820.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=66 q_ties=0 double_ties=0 wall=29.4s
+[29/39] 1786851750_988400.json sims=1376 k_dets=8 elapsed=729s
+  [1786851750_988400.json] ply 48/142 4s
+  [1786851750_988400.json] ply 96/142 12s
+    -> meeple_total=71 meeple_pimc=52 q_ties=1 double_ties=1 wall=26.1s
+[30/39] 1786853357_1865394167.json sims=1376 k_dets=8 elapsed=755s
+  [1786853357_1865394167.json] ply 48/142 5s
+  [1786853357_1865394167.json] ply 96/142 16s
+    -> meeple_total=71 meeple_pimc=54 q_ties=1 double_ties=1 wall=26.56s
+[31/39] 1786904828_407067.json sims=1376 k_dets=8 elapsed=782s
+  [1786904828_407067.json] ply 48/142 5s
+  [1786904828_407067.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=43 q_ties=0 double_ties=0 wall=21.05s
+[32/39] 1786906191_1630706897.json sims=1376 k_dets=8 elapsed=803s
+  [1786906191_1630706897.json] ply 48/142 5s
+  [1786906191_1630706897.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=47 q_ties=0 double_ties=0 wall=20.86s
+[33/39] 1786939252_94231.json sims=1376 k_dets=8 elapsed=824s
+  [1786939252_94231.json] ply 48/141 5s
+  [1786939252_94231.json] ply 96/141 14s
+    -> meeple_total=70 meeple_pimc=51 q_ties=0 double_ties=0 wall=22.45s
+[34/39] 1786940705_1217326033.json sims=1376 k_dets=8 elapsed=847s
+  [1786940705_1217326033.json] ply 48/141 5s
+  [1786940705_1217326033.json] ply 96/141 15s
+    -> meeple_total=70 meeple_pimc=61 q_ties=0 double_ties=0 wall=30.78s
+[35/39] 1786975727_210415.json sims=1376 k_dets=8 elapsed=878s
+  [1786975727_210415.json] ply 48/142 4s
+  [1786975727_210415.json] ply 96/142 12s
+    -> meeple_total=71 meeple_pimc=48 q_ties=0 double_ties=0 wall=20.1s
+[36/39] 1786992300_991662233.json sims=1376 k_dets=8 elapsed=898s
+  [1786992300_991662233.json] ply 48/142 4s
+  [1786992300_991662233.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=55 q_ties=0 double_ties=0 wall=29.23s
+[37/39] 1787005678_833139.json sims=1376 k_dets=8 elapsed=928s
+  [1787005678_833139.json] ply 48/142 4s
+  [1787005678_833139.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=50 q_ties=0 double_ties=0 wall=22.43s
+[38/39] 1787017561_548945.json sims=1376 k_dets=8 elapsed=950s
+  [1787017561_548945.json] ply 48/142 4s
+  [1787017561_548945.json] ply 96/142 13s
+    -> meeple_total=71 meeple_pimc=52 q_ties=0 double_ties=0 wall=22.1s
+[39/39] 1787019007_1477882043.json sims=1376 k_dets=8 elapsed=973s
+  [1787019007_1477882043.json] ply 48/142 4s
+  [1787019007_1477882043.json] ply 96/142 14s
+    -> meeple_total=71 meeple_pimc=55 q_ties=0 double_ties=0 wall=30.93s
+[census] DONE 39 archives in 1004s -> /tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/census_out
