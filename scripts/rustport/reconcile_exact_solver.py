@@ -77,6 +77,51 @@ and the run's summary reports the skip count and job keys LOUDLY — see
 `--job-mem-cap-gb 0` to disable isolation and go back to running jobs inline
 (useful for a debugger, or for the unit tests that call `run_job` directly).
 
+## Per-job TIME cap (added 2026-08-24, owner-authorized "2hr cutoff")
+
+Memory is not the only way one job eats a run. On the same `run2` campaign one
+job ran **9 hours** before finally hitting its memory cap (so the 9 hours bought
+nothing), and a second was killed at 2 h by the operator — killed, therefore
+NOT recorded, therefore replanned forever by `--resume`. `--job-time-cap-secs`
+(default 0 = off; the campaign runs it at 7200) puts a hard per-job cap on the
+same isolated child, and a job that blows it is RECORDED as
+`"status": "TIME_SKIPPED"` — the exact shape of an `OOM_SKIPPED` row (checks=0,
+zero mismatches — a timeout is not a correctness finding), so it is
+resume-compatible and fail-loud in the summary, and never inflates the gate's
+mismatch count.
+
+**Mechanism, and why this one** (`_isolated_job_target` / `run_job_capped`):
+
+* the child arms `RLIMIT_CPU` at `(cap, cap + CPU_HARD_GRACE_S)` and leaves
+  `SIGXCPU` at its DEFAULT disposition, so the kernel terminates it the moment
+  it burns `cap` seconds of CPU and the parent reads an **unambiguous kill
+  signature**: `exitcode == -signal.SIGXCPU` (-24), which nothing else in this
+  gate produces (an OOM shows up as `MemoryError`, `-SIGKILL` or `-SIGABRT`).
+  These jobs are CPU-pinned at ~100 %, so CPU time ≈ wall time.
+* deliberately NOT `signal.alarm`: `_timed_py_solve` already owns `SIGALRM` for
+  the per-solve `--solve-timeout-s` cap and clears it in a `finally`, so a
+  job-level alarm would be silently disarmed by the first Python solve.
+* deliberately NOT a Python-level `SIGXCPU` handler raising an exception: a
+  Python signal handler only runs at a bytecode boundary, so a child parked
+  inside a long **Rust** `solve_endgame` would ignore it for as long as the
+  solve lasts. Default disposition kills from Rust and Python alike.
+* because there is no in-child Python exception, a timeout CANNOT fall through
+  `run_job`'s broad `except Exception` into the legacy `EXCEPTION` mismatch
+  path — the bug fixed at 9ca3ce44 for `MemoryError` is structurally impossible
+  here. (`_JobTimeCapExceeded` exists as a `BaseException` and is re-raised at
+  both of `run_job`'s chokepoints anyway, so that a future in-child timeout
+  path cannot regress into that bug either.)
+* the parent adds a WALL backstop (`parent_conn.poll(timeout=cap +
+  WALL_GRACE_S)`) for the one case `RLIMIT_CPU` cannot see: a child blocked on
+  I/O or swapping, burning wall clock without burning CPU. It SIGKILLs the
+  child and records the same `TIME_SKIPPED` row with `kill_reason: "wall"`.
+
+Every `TIME_SKIPPED` row carries `kill_reason`, `exitcode`, `child_cpu_s`
+(measured via `RUSAGE_CHILDREN`, not assumed) and `elapsed_s`, so which branch
+fired is auditable from the rows file alone. Like `oom_skipped`, `time_skipped`
+does NOT flip the verdict: a resource cutoff is a documented hole in coverage,
+not a correctness finding.
+
 Usage:
   python scripts/rustport/reconcile_exact_solver.py --leg all --per-k 25 \\
       --workers 3 --out measurement/rustport_exact_solver
@@ -91,6 +136,7 @@ import multiprocessing.pool as mp_pool
 import os
 import random
 import resource
+import signal
 import sys
 import time
 import zlib
@@ -314,6 +360,28 @@ class _PySolveTimeout(Exception):
     """
 
 
+class _JobTimeCapExceeded(BaseException):
+    """A whole JOB blew its `--job-time-cap-secs` cap — a SKIP, never a mismatch.
+
+    Distinct from `_PySolveTimeout` above, which caps ONE Python solve and is a
+    per-cell skip inside an otherwise healthy job; this caps the entire job and
+    discards it.
+
+    Derives from `BaseException`, not `Exception`, ON PURPOSE: the failure mode
+    fixed at 9ca3ce44 was a resource-limit signal (`MemoryError`) being caught
+    by a broad `except Exception` and recorded as a fabricated correctness
+    mismatch.  A `BaseException` cannot be caught that way by `run_job`'s
+    firewall, by `check_position`, or by anything inside `endgame_solver`, so
+    the misclassification is impossible by construction rather than by
+    remembering to add a re-raise clause at every layer (they are added anyway).
+
+    NOTE: the shipped mechanism (see the module docstring) kills the isolated
+    child from the kernel via `RLIMIT_CPU`/`SIGXCPU`, so in production this
+    exception is never actually raised — the parent classifies from the child's
+    exit signature.  It is kept as the typed contract for the in-child path.
+    """
+
+
 def _timed_py_solve(game, board, mode, budget, ab, cap_s: int):
     if cap_s <= 0:
         return S.solve(game, board, mode, budget=budget, alphabeta=ab)
@@ -365,12 +433,16 @@ def check_position(tag: str, game, board, ms, *, budget: int, modes, extra: dict
 
 
 def blank() -> dict:
-    # `oom_skipped`/`oom_job_keys` are additive, like the resume bookkeeping
-    # fields below — a row written by an OLDER version of this script simply
-    # lacks them, and `merge()`/`rebuild_from_rows()` read them with `.get(...,
-    # default)`, so old rows stay valid without a rewrite.
+    # `oom_skipped`/`oom_job_keys` and `time_skipped`/`time_job_keys` are
+    # additive, like the resume bookkeeping fields below — a row written by an
+    # OLDER version of this script simply lacks them, and
+    # `merge()`/`rebuild_from_rows()` read them with `.get(..., default)`, so
+    # old rows stay valid without a rewrite.  That matters concretely here:
+    # the live `run2` rows file already holds 121 rows written before the time
+    # cap existed, and a resume must keep reading them.
     return {"checks": 0, "skipped": 0, "positions": 0, "mismatches": [], "cells": {},
-            "oom_skipped": 0, "oom_job_keys": []}
+            "oom_skipped": 0, "oom_job_keys": [],
+            "time_skipped": 0, "time_job_keys": []}
 
 
 def merge(dst: dict, src: dict) -> None:
@@ -380,6 +452,8 @@ def merge(dst: dict, src: dict) -> None:
     dst["mismatches"].extend(src.get("mismatches", []))
     dst["oom_skipped"] = dst.get("oom_skipped", 0) + src.get("oom_skipped", 0)
     dst.setdefault("oom_job_keys", []).extend(src.get("oom_job_keys", []))
+    dst["time_skipped"] = dst.get("time_skipped", 0) + src.get("time_skipped", 0)
+    dst.setdefault("time_job_keys", []).extend(src.get("time_job_keys", []))
     for k, v in src.get("cells", {}).items():
         dst["cells"][k] = dst["cells"].get(k, 0) + v
 
@@ -420,6 +494,19 @@ def run_job(job: dict) -> dict:
             out = job_v2(job)
         else:
             raise ValueError(f"unknown job kind {kind!r}")
+    except _JobTimeCapExceeded:
+        # Same contract as the MemoryError clause below, for the per-job WALL
+        # cap (`--job-time-cap-secs`): a cutoff is a TIME_SKIPPED row, never an
+        # `EXCEPTION` mismatch.  Belt AND braces: `_JobTimeCapExceeded` derives
+        # from `BaseException` precisely so that no broad `except Exception`
+        # anywhere in the solver call tree (here, in `check_position`, or deep
+        # inside `endgame_solver`) can swallow it in the first place — this
+        # clause is the explicit, greppable statement of the rule so that
+        # re-parenting the class later cannot silently reintroduce 9ca3ce44's
+        # bug.  In the shipped mechanism the child is killed by the kernel and
+        # this exception never fires; it exists for any future in-child
+        # timeout path.
+        raise
     except MemoryError:
         # MUST propagate, never become a mismatch row (fixed 2026-08-24, after
         # job corpus:l23:l23_positions:3200000129's OOM — hit its RLIMIT_AS
@@ -458,6 +545,8 @@ def run_job(job: dict) -> dict:
     # if it somehow is, it is still an OOM, never a fabricated UNKEYABLE row).
     try:
         out["job_key"] = job_key(job)
+    except _JobTimeCapExceeded:
+        raise
     except MemoryError:
         raise
     except Exception:  # noqa: BLE001
@@ -486,21 +575,77 @@ def run_job(job: dict) -> dict:
 # itself allocated the memory) lives to serve the next job.
 
 
-def _isolated_job_target(job: dict, cap_bytes: int, conn) -> None:
-    """Runs in a freshly forked child: cap this process's address space, run
-    the job, and report back over the pipe. Never raises past this function —
-    an uncaught exception here would leave the parent's `poll()` waiting on a
-    pipe the child closes without sending anything, which the parent already
-    reads correctly as an OOM-shaped death, but a real (non-memory) crash
-    should say so honestly rather than pretend to be an OOM.
+# How much CPU grace the child gets between the RLIMIT_CPU SOFT limit (which
+# terminates it via SIGXCPU, the signature the parent classifies on) and the
+# HARD limit (SIGKILL, uncatchable).  Only reachable if SIGXCPU were somehow
+# blocked; it is a backstop, not the mechanism.
+CPU_HARD_GRACE_S = 60
+# How much WALL grace the PARENT gives beyond the job's CPU cap before it
+# SIGKILLs the child itself.  This is the branch that catches a child burning
+# wall clock without burning CPU (blocked on I/O, swapping) — RLIMIT_CPU is
+# blind to that.  Module-level so the tests can shrink it.
+WALL_GRACE_S = 120
+
+
+def _arm_job_caps(cap_bytes: int, time_cap_secs: int) -> None:
+    """Arm this (already forked) process's per-job resource caps.
+
+    Each cap is armed independently: a box that refuses one must still get the
+    other.  Both fail OPEN (a cap that cannot be set is a cap that cannot be
+    enforced) — for the time cap the parent's wall backstop still applies, so
+    failing open here is not the same as having no cutoff at all.
     """
-    try:
-        if cap_bytes > 0:
+    if cap_bytes > 0:
+        try:
             resource.setrlimit(resource.RLIMIT_AS, (cap_bytes, cap_bytes))
-    except (ValueError, OSError):
-        pass  # a cap it cannot set is a cap it cannot enforce — run uncapped
+        except (ValueError, OSError):
+            pass
+    if time_cap_secs > 0:
+        try:
+            # SIGXCPU's default action is terminate-with-core, and a core dump
+            # of a 30 GB solver child would be catastrophic on a box that is
+            # already short of disk.  Refuse the core, keep the termination.
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        except (ValueError, OSError):
+            pass
+        try:
+            # SOFT = the cap (SIGXCPU, default disposition => the child dies
+            # here, and `exitcode == -SIGXCPU` is the parent's signature).
+            # HARD = cap + grace (SIGKILL) purely as a backstop.
+            resource.setrlimit(
+                resource.RLIMIT_CPU,
+                (int(time_cap_secs), int(time_cap_secs) + CPU_HARD_GRACE_S))
+        except (ValueError, OSError):
+            pass
+
+
+def _isolated_job_target(job: dict, cap_bytes: int, conn,
+                         time_cap_secs: int = 0) -> None:
+    """Runs in a freshly forked child: cap this process's address space AND its
+    CPU time, run the job, and report back over the pipe. Never raises past
+    this function — an uncaught exception here would leave the parent's
+    `poll()` waiting on a pipe the child closes without sending anything, which
+    the parent already reads correctly as an OOM-shaped death, but a real
+    (non-memory) crash should say so honestly rather than pretend to be an OOM.
+
+    The TIME cap is enforced by the kernel, not by this function: `RLIMIT_CPU`
+    is armed above and SIGXCPU keeps its default disposition, so a job over the
+    cap is terminated wherever it is — including inside a multi-hour Rust
+    `solve_endgame`, where a Python-level signal handler would never get to
+    run.  The `except _JobTimeCapExceeded` clause below therefore does not fire
+    in production; it is the typed in-child path, kept symmetric with the
+    `except MemoryError`/`"OOM"` path so a future in-child cutoff cannot land
+    anywhere but `TIME_SKIPPED`.
+    """
+    _arm_job_caps(cap_bytes, time_cap_secs)
     try:
         result = run_job(job)
+    except _JobTimeCapExceeded:
+        try:
+            conn.send(("TIMEOUT", None))
+        except Exception:  # noqa: BLE001 — the pipe itself may be gone
+            pass
+        return
     except MemoryError:
         # The common case: a Python dict/list allocation hit the RLIMIT_AS
         # ceiling cleanly and CPython raised, rather than the OS killing the
@@ -567,15 +712,24 @@ class NestablePool(mp_pool.Pool):
         super().__init__(*args, **kwargs)
 
 
+def _row_key(job: dict) -> str:
+    """`job_key(job)`, with the UNKEYABLE fallback both skip-row builders use.
+
+    A row that cannot be keyed still has to be RECORDED (it documents a hole in
+    coverage), so keying must never raise out of a skip-row builder.
+    """
+    try:
+        return job_key(job)
+    except Exception:  # noqa: BLE001
+        return f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
+
+
 def _oom_row(job: dict, cap_bytes: int, exitcode) -> dict:
     """The recorded row for a job that died to its memory cap (or crashed
     without sending anything usable — same shape, see `run_job_capped`)."""
     out = blank()
     out["leg"] = job.get("leg", "?")
-    try:
-        out["job_key"] = job_key(job)
-    except Exception:  # noqa: BLE001
-        out["job_key"] = f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
+    out["job_key"] = _row_key(job)
     out["status"] = "OOM_SKIPPED"
     out["cap_bytes"] = cap_bytes
     out["exitcode"] = exitcode
@@ -584,12 +738,63 @@ def _oom_row(job: dict, cap_bytes: int, exitcode) -> dict:
     return out
 
 
-def run_job_capped(job: dict, cap_bytes: int) -> dict:
-    """`run_job(job)`, isolated in its own subprocess with an RLIMIT_AS cap.
+def _time_row(job: dict, time_cap_secs: int, exitcode, kill_reason: str,
+              elapsed_s: float | None = None,
+              child_cpu_s: float | None = None) -> dict:
+    """The recorded row for a job cut off by its WALL cap.
 
-    `cap_bytes <= 0` disables isolation entirely and calls `run_job` inline —
-    the pre-2026-08-23 behavior, kept for the unit tests and for a debugger
-    session where subprocess isolation just gets in the way.
+    Deliberately the SAME shape as `_oom_row`: recorded (so `--resume` never
+    replans it), keyed, zero checks, zero mismatches — a cutoff is a resource
+    limitation, not a correctness finding, and must never inflate the gate's
+    mismatch count (the 9ca3ce44 lesson).  `kill_reason`/`exitcode`/
+    `child_cpu_s`/`elapsed_s` record WHICH branch fired so the classification
+    is auditable from the rows file alone:
+
+      "rlimit_cpu"  the child burned `time_cap_secs` of CPU and the kernel
+                    terminated it with SIGXCPU (`exitcode == -24`)
+      "cpu_budget"  the child died by some other signal having ALREADY spent
+                    its whole CPU budget (measured via RUSAGE_CHILDREN) — the
+                    RLIMIT_CPU hard-limit SIGKILL backstop
+      "wall"        the parent's wall-clock backstop SIGKILLed a child that was
+                    over its deadline without burning the CPU to prove it
+    """
+    out = blank()
+    out["leg"] = job.get("leg", "?")
+    out["job_key"] = _row_key(job)
+    out["status"] = "TIME_SKIPPED"
+    out["time_cap_secs"] = time_cap_secs
+    out["kill_reason"] = kill_reason
+    out["exitcode"] = exitcode
+    if elapsed_s is not None:
+        out["elapsed_s"] = round(float(elapsed_s), 1)
+    if child_cpu_s is not None:
+        out["child_cpu_s"] = round(float(child_cpu_s), 1)
+    out["time_skipped"] = 1
+    out["time_job_keys"] = [out["job_key"]]
+    return out
+
+
+def _children_cpu_s() -> float:
+    """Total CPU seconds this process's REAPED children have consumed.
+
+    Differenced across one `start()`/`join()` it is that child's own CPU time —
+    measured, not inferred from wall clock.  Jobs run one-at-a-time inside a
+    given pool worker, so nothing else lands in the delta.
+    """
+    ru = resource.getrusage(resource.RUSAGE_CHILDREN)
+    return float(ru.ru_utime) + float(ru.ru_stime)
+
+
+def run_job_capped(job: dict, cap_bytes: int, time_cap_secs: int = 0) -> dict:
+    """`run_job(job)`, isolated in its own subprocess under an RLIMIT_AS cap
+    and an RLIMIT_CPU (wall) cap.
+
+    Both caps off (`cap_bytes <= 0` and `time_cap_secs <= 0`) disables
+    isolation entirely and calls `run_job` inline — the pre-2026-08-23
+    behavior, kept for the unit tests and for a debugger session where
+    subprocess isolation just gets in the way.  Either cap ON forks a child:
+    a time cap cannot be enforced inline without killing the pool worker that
+    owns the job.
 
     Detects an OOM three ways, because a runaway allocation can fail in any
     of them depending on WHERE it happens (measured, not assumed — see the
@@ -607,21 +812,35 @@ def run_job_capped(job: dict, cap_bytes: int) -> dict:
     firewall already reports every recoverable failure as a normal mismatch,
     so anything reaching this path is, by construction, not recoverable.
     """
-    if cap_bytes <= 0:
+    time_cap_secs = int(time_cap_secs or 0)
+    if cap_bytes <= 0 and time_cap_secs <= 0:
         return run_job(job)
 
     ctx = mp.get_context("fork")
     parent_conn, child_conn = ctx.Pipe(duplex=False)
-    proc = ctx.Process(target=_isolated_job_target, args=(job, cap_bytes, child_conn))
+    proc = ctx.Process(target=_isolated_job_target,
+                       args=(job, cap_bytes, child_conn, time_cap_secs))
+    cpu0 = _children_cpu_s()
+    t0 = time.time()
     try:
         proc.start()
     except Exception:  # noqa: BLE001 — could not even fork (e.g. box out of
         # memory for the fork itself): the isolation layer failed open, so
         # fall back to running the job inline rather than losing it silently.
+        # NOTE the time cap is NOT enforced on this fallback path: arming
+        # RLIMIT_CPU here would cap the POOL WORKER, not the job, and killing
+        # the worker is exactly what isolation exists to avoid. A fork failure
+        # is already an exceptional, loud condition.
         parent_conn.close()
         child_conn.close()
         try:
             return run_job(job)
+        except _JobTimeCapExceeded:
+            # Cannot happen on this path today (nothing arms an in-child
+            # timeout inline), but if it ever does it is a TIME_SKIPPED row for
+            # the same reason the MemoryError clause below is an OOM one:
+            # letting it propagate would kill the pool worker.
+            return _time_row(job, time_cap_secs, None, "inline_fallback")
         except MemoryError:
             # Couldn't even fork a child to isolate this job — itself often a
             # symptom of memory pressure — AND the inline fallback then also
@@ -633,19 +852,45 @@ def run_job_capped(job: dict, cap_bytes: int) -> dict:
             return _oom_row(job, cap_bytes, None)
     child_conn.close()  # only the child should hold the write end open
 
+    # WALL BACKSTOP: RLIMIT_CPU is blind to a child that is over its deadline
+    # without burning CPU (blocked on I/O, or thrashing swap). Give the kernel
+    # cap first crack — it produces the clean `-SIGXCPU` signature — and only
+    # step in `WALL_GRACE_S` later.
+    wall_cap = (time_cap_secs + WALL_GRACE_S) if time_cap_secs > 0 else None
     status, payload = None, None
+    wall_timeout = False
     try:
-        if parent_conn.poll(timeout=None):
+        if parent_conn.poll(timeout=wall_cap):
             try:
                 status, payload = parent_conn.recv()
             except EOFError:
                 status = "EOF"
+        elif wall_cap is not None:
+            wall_timeout = True
     finally:
         parent_conn.close()
-    proc.join()
+    if wall_timeout:
+        try:
+            proc.kill()
+        except Exception:  # noqa: BLE001 — already gone is fine
+            pass
+        proc.join(timeout=30)
+    else:
+        proc.join()
+    elapsed_s = time.time() - t0
+    child_cpu_s = max(0.0, _children_cpu_s() - cpu0)
 
+    if wall_timeout:
+        return _time_row(job, time_cap_secs, proc.exitcode, "wall",
+                         elapsed_s, child_cpu_s)
     if status == "OK":
         return payload
+    if status == "TIMEOUT":
+        # The typed in-child path (see `_isolated_job_target`). Not reachable
+        # with the shipped kernel-kill mechanism; classified first regardless,
+        # so it can never fall through to the OOM row below.
+        return _time_row(job, time_cap_secs, proc.exitcode, "in_child",
+                         elapsed_s, child_cpu_s)
     if status == "ERROR":
         # A real (non-memory) crash inside the isolated child. Still record
         # it — as a mismatch, matching what `run_job`'s own firewall would
@@ -654,14 +899,24 @@ def run_job_capped(job: dict, cap_bytes: int) -> dict:
         # bug as a resource limitation.
         out = blank()
         out["leg"] = job.get("leg", "?")
-        try:
-            out["job_key"] = job_key(job)
-        except Exception:  # noqa: BLE001
-            out["job_key"] = f"UNKEYABLE:{job.get('kind')!r}:{job.get('tag', '?')}"
+        out["job_key"] = _row_key(job)
         out["mismatches"].append({
             "tag": job.get("tag", out["job_key"]), "field": "EXCEPTION",
             "error": f"isolated child: {payload}"})
         return out
+    # TIME before OOM: a child killed by SIGXCPU is UNAMBIGUOUSLY the CPU cap
+    # (nothing else in this gate raises that signal), and a child killed by
+    # anything else having already spent its whole CPU budget is the RLIMIT_CPU
+    # hard-limit SIGKILL backstop. Both would otherwise be swallowed by the
+    # `died without a payload => OOM` rule below and misreported as memory.
+    if time_cap_secs > 0 and status in (None, "EOF"):
+        if proc.exitcode == -int(signal.SIGXCPU):
+            return _time_row(job, time_cap_secs, proc.exitcode, "rlimit_cpu",
+                             elapsed_s, child_cpu_s)
+        if proc.exitcode is not None and proc.exitcode < 0 \
+                and child_cpu_s >= time_cap_secs:
+            return _time_row(job, time_cap_secs, proc.exitcode, "cpu_budget",
+                             elapsed_s, child_cpu_s)
     # status in ("OOM", "EOF", None): the child hit the cap, was killed, or
     # otherwise died without a usable payload — all the same OOM shape.
     return _oom_row(job, cap_bytes, proc.exitcode)
@@ -935,6 +1190,26 @@ def build_jobs(args) -> list[dict]:
 
 # --------------------------------------------------------------------------
 
+def _announce_skip(out: dict) -> None:
+    """Fail-loud, on STDOUT, the moment a skip row lands.
+
+    An operator tailing the log must not have to open the JSON to learn that a
+    job was dropped — and must be able to tell WHICH cap dropped it.
+    """
+    status = out.get("status")
+    if status == "OOM_SKIPPED":
+        print(f"  ⚠️ OOM_SKIPPED {out.get('job_key')} "
+              f"(cap={out.get('cap_bytes')}B "
+              f"exitcode={out.get('exitcode')})", flush=True)
+    elif status == "TIME_SKIPPED":
+        print(f"  ⚠️ TIME_SKIPPED {out.get('job_key')} "
+              f"(cap={out.get('time_cap_secs')}s "
+              f"reason={out.get('kill_reason')} "
+              f"cpu={out.get('child_cpu_s')}s "
+              f"elapsed={out.get('elapsed_s')}s "
+              f"exitcode={out.get('exitcode')})", flush=True)
+
+
 def rebuild_from_rows(rows_path: Path, args) -> int:
     """Rebuild the verdict from an incremental rows file.
 
@@ -973,10 +1248,13 @@ def rebuild_from_rows(rows_path: Path, args) -> int:
         "mismatches": totals["mismatches"][: args.max_mismatch_report],
         "oom_skipped": totals["oom_skipped"],
         "oom_job_keys": totals["oom_job_keys"],
+        "time_skipped": totals["time_skipped"],
+        "time_job_keys": totals["time_job_keys"],
         "per_leg": {k: {"positions": v["positions"], "checks": v["checks"],
                         "skipped": v["skipped"], "cells": v["cells"],
                         "n_mismatches": len(v["mismatches"]),
-                        "oom_skipped": v.get("oom_skipped", 0)}
+                        "oom_skipped": v.get("oom_skipped", 0),
+                        "time_skipped": v.get("time_skipped", 0)}
                     for k, v in sorted(per_leg.items())},
     }
     out_path = rows_path.with_name(rows_path.name.replace("_rows.jsonl", "_partial.json"))
@@ -984,11 +1262,14 @@ def rebuild_from_rows(rows_path: Path, args) -> int:
     print(json.dumps({k: payload[k] for k in
                       ("verdict", "partial", "jobs_recorded", "positions",
                        "checks", "skipped_budget", "n_mismatches",
-                       "oom_skipped", "per_leg", "cells")}, indent=2))
+                       "oom_skipped", "time_skipped", "per_leg", "cells")}, indent=2))
     print(f"-> {out_path}")
     if totals["oom_skipped"]:
         print(f"  ⚠️ {totals['oom_skipped']} job(s) OOM_SKIPPED in this "
               f"partial record: {totals['oom_job_keys']}")
+    if totals["time_skipped"]:
+        print(f"  ⚠️ {totals['time_skipped']} job(s) TIME_SKIPPED in this "
+              f"partial record: {totals['time_job_keys']}")
     return 0 if ok else 1
 
 
@@ -1027,6 +1308,15 @@ def main() -> int:
                          "transposition-table growth) dies alone instead of "
                          "OOM-killing the whole run. 0 disables isolation "
                          "and runs jobs inline (pre-2026-08-23 behavior).")
+    ap.add_argument("--job-time-cap-secs", type=int, default=0,
+                    help="per-JOB wall cap in SECONDS (0 = off; the campaign "
+                         "runs 7200). Armed as RLIMIT_CPU inside the same "
+                         "isolated subprocess as the memory cap — these jobs "
+                         "are CPU-pinned, so CPU time == wall time — with a "
+                         "parent-side wall backstop for a child that blocks "
+                         "instead of computing. A job that exceeds it is "
+                         "recorded TIME_SKIPPED: never silent, never a "
+                         "mismatch, and skipped by --resume thereafter.")
     ap.add_argument("--out", default=None, help="directory for the verdict JSON")
     ap.add_argument("--tag", default="run")
     ap.add_argument("--max-mismatch-report", type=int, default=200)
@@ -1146,18 +1436,26 @@ def main() -> int:
         rows_fh.flush()
 
     cap_bytes = int(args.job_mem_cap_gb * (1024 ** 3)) if args.job_mem_cap_gb > 0 else 0
+    time_cap_secs = max(0, int(args.job_time_cap_secs or 0))
     if cap_bytes > 0:
         print(f"[reconcile_exact_solver] per-job memory cap: "
               f"{args.job_mem_cap_gb:g} GiB (RLIMIT_AS, isolated subprocess "
               f"per job) — a job that exceeds it is recorded OOM_SKIPPED, "
               f"never silently, and the pool keeps going", flush=True)
+    if time_cap_secs > 0:
+        print(f"[reconcile_exact_solver] per-job time cap: {time_cap_secs}s "
+              f"(RLIMIT_CPU in the same isolated subprocess, +{WALL_GRACE_S}s "
+              f"parent wall backstop) — a job that exceeds it is recorded "
+              f"TIME_SKIPPED, never silently, and the pool keeps going",
+              flush=True)
 
     totals = blank()
     per_leg: dict[str, dict] = {}
     done = 0
     if jobs:
         if args.workers > 1:
-            worker_fn = functools.partial(run_job_capped, cap_bytes=cap_bytes)
+            worker_fn = functools.partial(run_job_capped, cap_bytes=cap_bytes,
+                                          time_cap_secs=time_cap_secs)
             # NestablePool, not ctx.Pool: run_job_capped forks a per-job child
             # FROM the pool worker, and a plain Pool's workers are daemons —
             # daemons cannot have children — see _NoDaemonProcess above.
@@ -1165,10 +1463,7 @@ def main() -> int:
                 for out in pool.imap_unordered(worker_fn, jobs, chunksize=1):
                     done += 1
                     _record(out)
-                    if out.get("status") == "OOM_SKIPPED":
-                        print(f"  ⚠️ OOM_SKIPPED {out.get('job_key')} "
-                              f"(cap={out.get('cap_bytes')}B "
-                              f"exitcode={out.get('exitcode')})", flush=True)
+                    _announce_skip(out)
                     leg = out.pop("leg")
                     per_leg.setdefault(leg, blank())
                     merge(per_leg[leg], dict(out))
@@ -1177,21 +1472,30 @@ def main() -> int:
                         print(f"  {done}/{len(jobs)} jobs, "
                               f"{totals['checks']} checks, "
                               f"{len(totals['mismatches'])} mismatches, "
-                              f"{totals['oom_skipped']} OOM-skipped "
+                              f"{totals['oom_skipped']} OOM-skipped, "
+                              f"{totals['time_skipped']} TIME-skipped "
                               f"({time.time() - t0:.0f}s)", flush=True)
         else:
             for job in jobs:
-                out = run_job_capped(job, cap_bytes)
+                out = run_job_capped(job, cap_bytes, time_cap_secs)
                 done += 1
                 _record(out)
-                if out.get("status") == "OOM_SKIPPED":
-                    print(f"  ⚠️ OOM_SKIPPED {out.get('job_key')} "
-                          f"(cap={out.get('cap_bytes')}B "
-                          f"exitcode={out.get('exitcode')})", flush=True)
+                _announce_skip(out)
                 leg = out.pop("leg")
                 per_leg.setdefault(leg, blank())
                 merge(per_leg[leg], dict(out))
                 merge(totals, out)
+                # `--workers 1` is the production shape for this campaign, so
+                # it gets the same periodic progress line as the pool branch —
+                # without it a single-worker multi-hour run logs nothing
+                # between skips.
+                if done % 10 == 0:
+                    print(f"  {done}/{len(jobs)} jobs, "
+                          f"{totals['checks']} checks, "
+                          f"{len(totals['mismatches'])} mismatches, "
+                          f"{totals['oom_skipped']} OOM-skipped, "
+                          f"{totals['time_skipped']} TIME-skipped "
+                          f"({time.time() - t0:.0f}s)", flush=True)
     rows_fh.close()
 
     n_ran = done
@@ -1246,22 +1550,35 @@ def main() -> int:
         "job_mem_cap_gb": args.job_mem_cap_gb,
         "oom_skipped": totals["oom_skipped"],
         "oom_job_keys": totals["oom_job_keys"],
+        # Same fail-loud contract as the OOM fields above, for the per-job WALL
+        # cap: counted, keyed, echoed to stdout, and — like an OOM — NOT a
+        # verdict flip. A cutoff is a documented hole in coverage, not a
+        # correctness finding, and a gate that could never PASS again once one
+        # pathological tail job exists would defeat the point of capping it.
+        "job_time_cap_secs": time_cap_secs,
+        "time_skipped": totals["time_skipped"],
+        "time_job_keys": totals["time_job_keys"],
         "per_leg": {k: {"positions": v["positions"], "checks": v["checks"],
                         "skipped": v["skipped"], "cells": v["cells"],
                         "n_mismatches": len(v["mismatches"]),
-                        "oom_skipped": v.get("oom_skipped", 0)}
+                        "oom_skipped": v.get("oom_skipped", 0),
+                        "time_skipped": v.get("time_skipped", 0)}
                     for k, v in sorted(per_leg.items())},
     }
     out_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
     print(json.dumps({k: payload[k] for k in
                       ("verdict", "positions", "checks", "skipped_budget",
-                       "n_mismatches", "oom_skipped", "per_leg", "cells")},
+                       "n_mismatches", "oom_skipped", "time_skipped",
+                       "per_leg", "cells")},
                      indent=2))
     print(f"-> {out_path}")
     if totals["oom_skipped"]:
         print(f"  ⚠️ {totals['oom_skipped']} job(s) OOM_SKIPPED at "
               f"{args.job_mem_cap_gb:g} GiB/job: {totals['oom_job_keys']}")
+    if totals["time_skipped"]:
+        print(f"  ⚠️ {totals['time_skipped']} job(s) TIME_SKIPPED at "
+              f"{time_cap_secs}s/job: {totals['time_job_keys']}")
     for m in totals["mismatches"][:20]:
         print("  MISMATCH", json.dumps(m)[:400])
     return 0 if ok else 1
