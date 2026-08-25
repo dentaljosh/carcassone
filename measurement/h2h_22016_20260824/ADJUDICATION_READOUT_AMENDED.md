@@ -172,8 +172,8 @@ banner clause, so the amendment is impossible to miss on a grep:
 > `H-POSITIVE` is an **owner-authorized post-void re-read of the same archive** under amended
 > gates, with the diagnostic `z` visible before authorization — see
 > `measurement/h2h_22016_prep/AMENDMENTS.md`. Band **148e9 is SPENT** and retires from
-> confirmatory use. → [AMENDED READOUT](../measurement/h2h_22016_20260824/ADJUDICATION_READOUT_AMENDED.md)
-> · [FROZEN READOUT](../measurement/h2h_22016_20260824/ADJUDICATION_READOUT.md)
+> confirmatory use. → [AMENDED READOUT](ADJUDICATION_READOUT_AMENDED.md)
+> · [FROZEN READOUT](ADJUDICATION_READOUT.md)
 
 **Cross-reference also owed** (same grep-reachability argument): the two
 **tie-triggered search escalation** rows (lines 214/216) both cite *"uniform deep search above
