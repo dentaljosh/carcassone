@@ -1,0 +1,857 @@
+{
+  "run_id": "track_d1_fair_rebase",
+  "band_seed_start": 145000000000,
+  "branch": "FR-RESCALED",
+  "era_branch": "ERA-BOUNDED-NULL",
+  "attribution_branch": "RULES-BOUNDED-NULL",
+  "R": {
+    "A800": {
+      "stat": 2.385,
+      "se": 0.5541267487083485,
+      "z": 4.30406943097289,
+      "n": 400,
+      "ci95": [
+        1.2989115725316367,
+        3.471088427468363
+      ],
+      "winrate": 0.579375,
+      "elo": 55.62586796820806,
+      "elo_sig": 12.44147561255033,
+      "W": 454,
+      "D": 19,
+      "L": 327
+    },
+    "B1600": {
+      "stat": 5.47,
+      "se": 0.6435585007282937,
+      "z": 8.499615798423584,
+      "n": 400,
+      "ci95": [
+        4.208625338572544,
+        6.731374661427456
+      ],
+      "winrate": 0.650625,
+      "elo": 108.01556864964515,
+      "elo_sig": 12.882140250243282,
+      "W": 511,
+      "D": 19,
+      "L": 270
+    },
+    "C2752": {
+      "stat": 7.755,
+      "se": 0.6313523794741485,
+      "z": 12.283156367382533,
+      "n": 400,
+      "ci95": [
+        6.517549336230669,
+        8.99245066376933
+      ],
+      "winrate": 0.68875,
+      "elo": 137.98090070241943,
+      "elo_sig": 13.26520063856184,
+      "W": 543,
+      "D": 16,
+      "L": 241
+    },
+    "D5504": {
+      "stat": 8.98,
+      "se": 0.6753321841118215,
+      "z": 13.29715984409991,
+      "n": 400,
+      "ci95": [
+        7.6563489191408305,
+        10.30365108085917
+      ],
+      "winrate": 0.684375,
+      "elo": 134.44909642299027,
+      "elo_sig": 13.214981002588244,
+      "W": 540,
+      "D": 15,
+      "L": 245
+    },
+    "E11008": {
+      "stat": 10.565,
+      "se": 0.6548298005353551,
+      "z": 16.133963346449107,
+      "n": 400,
+      "ci95": [
+        9.281533590950703,
+        11.848466409049296
+      ],
+      "winrate": 0.729375,
+      "elo": 172.23318387680186,
+      "elo_sig": 13.82419704935995,
+      "W": 575,
+      "D": 17,
+      "L": 208
+    }
+  },
+  "spacings": {
+    "D1": {
+      "stat": 3.085,
+      "se": 0.8298269967960362,
+      "z": 3.717642366313932,
+      "n": 400,
+      "ci95": [
+        1.458539086279769,
+        4.711460913720231
+      ],
+      "se_prereg": 0.885
+    },
+    "D2": {
+      "stat": 2.285,
+      "se": 0.8606512731850733,
+      "z": 2.6549661531827384,
+      "n": 400,
+      "ci95": [
+        0.5981235045572566,
+        3.9718764954427437
+      ],
+      "se_prereg": 0.885
+    },
+    "D3": {
+      "stat": 1.225,
+      "se": 0.8724667949387396,
+      "z": 1.4040648963448674,
+      "n": 400,
+      "ci95": [
+        -0.4850349180799294,
+        2.9350349180799293
+      ],
+      "se_prereg": 0.885
+    },
+    "D4": {
+      "stat": 1.585,
+      "se": 0.9104125108156325,
+      "z": 1.7409690455374005,
+      "n": 400,
+      "ci95": [
+        -0.1994085211986396,
+        3.3694085211986398
+      ],
+      "se_prereg": 0.885
+    },
+    "SPAN": {
+      "stat": 8.18,
+      "se": 0.8455324137232361,
+      "z": 9.674377785211105,
+      "n": 400,
+      "ci95": [
+        6.5227564691024575,
+        9.837243530897542
+      ],
+      "se_prereg": 0.885
+    }
+  },
+  "era": {
+    "D_2752": {
+      "stat": -0.8875000000000002,
+      "se_naive": 1.124057750770693,
+      "se_eff": 2.248115501541386,
+      "z_eff": -0.39477509024402857,
+      "g2_value": 8.6425,
+      "g2_source": "fair_ruler_rebase_2752 (G2, python, walled, band 24e9, k4)",
+      "z_eff_committed_se": -0.3892543859649124,
+      "se_eff_committed": 2.28
+    },
+    "D_5504": {
+      "stat": -1.8025000000000002,
+      "se_naive": 1.1493361383412788,
+      "se_eff": 2.2986722766825576,
+      "z_eff": -0.7841483182636922,
+      "g2_value": 10.7825,
+      "g2_source": "fair_ruler_rebase_5504 (G2, python, walled, band 24e9, k4)",
+      "z_eff_committed_se": -0.7905701754385966,
+      "se_eff_committed": 2.28
+    },
+    "D_11008": {
+      "stat": 0.7949999999999999,
+      "se_naive": 1.1374102459839075,
+      "se_eff": 2.274820491967815,
+      "z_eff": 0.34947812489252356,
+      "g2_value": 9.77,
+      "g2_source": "fair_ruler_k8x1376_11008 (G2, python, walled, band 24e9, k8x1376)",
+      "z_eff_committed_se": 0.34868421052631576,
+      "se_eff_committed": 2.28
+    }
+  },
+  "attribution": {
+    "A": {
+      "stat": -0.04,
+      "se": 0.908004849666313,
+      "z": -0.044052628149177604,
+      "n": 400,
+      "ci95": [
+        -1.8196895053459734,
+        1.7396895053459733
+      ],
+      "se_prereg": 0.885
+    },
+    "residual": {
+      "stat": -0.8475000000000001,
+      "se_inherited": 2.248115501541386,
+      "note": "LEFTOVER, never an estimate of the band effect (READ_RULE \u00a71)"
+    },
+    "n_common_CW": 400,
+    "C2752_absolute": 7.755,
+    "W2752_absolute": 7.795,
+    "note": "descriptive; not a branch input (READ_RULE \u00a74.4)"
+  },
+  "elo_scale": {
+    "per_cell_ratios": [
+      23.32321508100967,
+      19.746904689149023,
+      17.7925081498929,
+      14.972059735299583,
+      16.302241729938654
+    ],
+    "mean_ratio": 18.427385877057965,
+    "ls_slope_through_origin": 16.73751507780227,
+    "committed": 13.7
+  },
+  "n_common_ladder": 400,
+  "gates_3A": [
+    {
+      "id": "G-BAND",
+      "verdict": "PASS",
+      "realized": "all five: seed_start=145000000000, n_decks=400, seatings_per_deck=2",
+      "address": "config.seed_start"
+    },
+    {
+      "id": "G-DECKS",
+      "verdict": "PASS",
+      "realized": "n_common=400; deck-set mismatches: none",
+      "address": "records"
+    },
+    {
+      "id": "G-SINGLEVAR",
+      "verdict": "PASS",
+      "realized": "only the allowed axis keys differ",
+      "address": "config.*"
+    },
+    {
+      "id": "G-REV",
+      "verdict": "PASS",
+      "realized": "code_rev=['8bd68f848f-dirty'] vs PINNED_SRC_REV=8bd68f848fcbadebe40042a97e8b8b90db42be8d; SRC_CLEAN boundaries=13 dirty=none missing=none",
+      "address": "code_rev / SRC_CLEAN.jsonl"
+    },
+    {
+      "id": "G-BLIND",
+      "verdict": "PASS",
+      "realized": "blind_commit=3adab58bc268729d7f5b1d92af335f8344fe821a 40hex=True ancestor_of_HEAD=True introduced_FROZEN_banner=True blind_stamp_mode=manifest; manifest stamp == BLIND_COMMIT in all five: True",
+      "address": "BLIND_COMMIT + git (+ manifest, additive)"
+    },
+    {
+      "id": "G-LEAF",
+      "verdict": "PASS",
+      "realized": "cand=a36d2e15a3b3d71d rung=42af12fce22e1a0f in all five",
+      "address": "config.cand_leaf_hash / config.rung.leaf_hash"
+    },
+    {
+      "id": "G-RULES",
+      "verdict": "PASS",
+      "realized": "name==\"fixed_v1\" and r9_env_ok==true in all five",
+      "address": "rules_profile.name"
+    },
+    {
+      "id": "G-BACKEND",
+      "verdict": "PASS",
+      "realized": "rust-resolved on every leg; carc_rs_version / binary_sha / tile_data_semantic_digest identical across legs",
+      "address": "config.backend.* (+ top-level mixed_builds)"
+    },
+    {
+      "id": "G-RUNG",
+      "verdict": "PASS",
+      "realized": "HeuristicMCTS, c=3.0, sims=800 in all five",
+      "address": "config.rung.sims"
+    },
+    {
+      "id": "G-BUDGET",
+      "verdict": "PASS",
+      "realized": "(4,200,800)/(4,400,1600)/(4,688,2752)/(4,1376,5504)/(8,1376,11008), products hold",
+      "address": "config.champion.k_dets"
+    },
+    {
+      "id": "G-TIEARB",
+      "verdict": "PASS",
+      "realized": "enabled==false in all five",
+      "address": "cand_tiearb.enabled"
+    },
+    {
+      "id": "G-EXACT",
+      "verdict": "PASS",
+      "realized": "exact_k=2, mode=marginalized, shared_by_both_arms=true in all five",
+      "address": "config.endgame.shared_by_both_arms"
+    },
+    {
+      "id": "G-N",
+      "verdict": "PASS",
+      "realized": "A800: n=800 n_failed=0 rate=0.0000% | B1600: n=800 n_failed=0 rate=0.0000% | C2752: n=800 n_failed=0 rate=0.0000% | D5504: n=800 n_failed=0 rate=0.0000% | E11008: n=800 n_failed=0 rate=0.0000%",
+      "address": "summary + records"
+    },
+    {
+      "id": "G-SAT-END",
+      "verdict": "PASS",
+      "realized": "A800 wr=0.5794, E11008 wr=0.7294 both inside [0.5,0.9]",
+      "address": "summary.winrate"
+    },
+    {
+      "id": "RECON (READ_RULE \u00a71)",
+      "verdict": "PASS",
+      "realized": "analyzer == from-scratch witness on every checked statistic",
+      "address": "summary vs records"
+    }
+  ],
+  "gates_3B": [
+    {
+      "id": "GW-RULES",
+      "verdict": "PASS",
+      "realized": "name='walled' r9_env_ok=True r9_env_observed=False (expected=False) -- INVERTED expectation: walled requires R9 OFF",
+      "address": "rules_profile.name"
+    },
+    {
+      "id": "GW-PAIR",
+      "verdict": "PASS",
+      "realized": "config blocks differ only in the allowed keys",
+      "address": "config.*"
+    },
+    {
+      "id": "GW-DECKS",
+      "verdict": "PASS",
+      "realized": "n_common(C,W)=400; sets equal=True",
+      "address": "records"
+    },
+    {
+      "id": "GW-N",
+      "verdict": "PASS",
+      "realized": "n=800 n_failed=0 rate=0.0000%",
+      "address": "summary + records"
+    },
+    {
+      "id": "GW-SAT",
+      "verdict": "PASS",
+      "realized": "W2752 winrate=0.6775 vs [0.5,0.9]",
+      "address": "summary.winrate"
+    }
+  ],
+  "witnesses": [
+    {
+      "id": "G-SAT-MID",
+      "realized": "B1600=0.6506; C2752=0.6887; D5504=0.6844  [inside]"
+    },
+    {
+      "id": "W-TIMING",
+      "realized": "A800=1074.7; B1600=1080.5; C2752=1078.0; D5504=1078.3; E11008=1075.9; W2752=1068.1  spread=1.2%  [within +/-25%]"
+    },
+    {
+      "id": "W-COST",
+      "realized": "A800: realized 88.6 s/game vs DESIGN \u00a76 local model 54.8 (+61.8%); B1600: realized 98.7 s/game vs DESIGN \u00a76 local model 63.2 (+56.3%); C2752: realized 111.0 s/game vs DESIGN \u00a76 local model 75.3 (+47.4%); D5504: realized 139.3 s/game vs DESIGN \u00a76 local model 104.3 (+33.6%); E11008: realized 200.6 s/game vs DESIGN \u00a76 local model 162.2 (+23.7%); W2752: realized 109.3 s/game vs DESIGN \u00a76 local model 75.3 (+45.1%)"
+    },
+    {
+      "id": "W-SCALE",
+      "realized": "realized elo/pt: LS-slope 16.74, mean per-cell ratio 18.43, committed 13.7"
+    },
+    {
+      "id": "W-GAMELEN",
+      "realized": "C2752 mean moves/game 141.94 vs W2752 143.90 (delta +1.96)"
+    }
+  ],
+  "reconciliation": [
+    {
+      "cell": "A800",
+      "stat": "paired_mean_margin",
+      "analyzer": 2.385,
+      "witness": 2.385,
+      "agree": true
+    },
+    {
+      "cell": "A800",
+      "stat": "paired_z",
+      "analyzer": 4.30406943097289,
+      "witness": 4.30406943097289,
+      "agree": true
+    },
+    {
+      "cell": "A800",
+      "stat": "n_paired",
+      "analyzer": 400.0,
+      "witness": 400.0,
+      "agree": true
+    },
+    {
+      "cell": "A800",
+      "stat": "winrate",
+      "analyzer": 0.579375,
+      "witness": 0.579375,
+      "agree": true
+    },
+    {
+      "cell": "A800",
+      "stat": "elo",
+      "analyzer": 55.62586796820806,
+      "witness": 55.62586796820806,
+      "agree": true
+    },
+    {
+      "cell": "B1600",
+      "stat": "paired_mean_margin",
+      "analyzer": 5.47,
+      "witness": 5.47,
+      "agree": true
+    },
+    {
+      "cell": "B1600",
+      "stat": "paired_z",
+      "analyzer": 8.499615798423584,
+      "witness": 8.499615798423584,
+      "agree": true
+    },
+    {
+      "cell": "B1600",
+      "stat": "n_paired",
+      "analyzer": 400.0,
+      "witness": 400.0,
+      "agree": true
+    },
+    {
+      "cell": "B1600",
+      "stat": "winrate",
+      "analyzer": 0.650625,
+      "witness": 0.650625,
+      "agree": true
+    },
+    {
+      "cell": "B1600",
+      "stat": "elo",
+      "analyzer": 108.01556864964515,
+      "witness": 108.01556864964515,
+      "agree": true
+    },
+    {
+      "cell": "C2752",
+      "stat": "paired_mean_margin",
+      "analyzer": 7.755,
+      "witness": 7.755,
+      "agree": true
+    },
+    {
+      "cell": "C2752",
+      "stat": "paired_z",
+      "analyzer": 12.283156367382533,
+      "witness": 12.283156367382533,
+      "agree": true
+    },
+    {
+      "cell": "C2752",
+      "stat": "n_paired",
+      "analyzer": 400.0,
+      "witness": 400.0,
+      "agree": true
+    },
+    {
+      "cell": "C2752",
+      "stat": "winrate",
+      "analyzer": 0.68875,
+      "witness": 0.68875,
+      "agree": true
+    },
+    {
+      "cell": "C2752",
+      "stat": "elo",
+      "analyzer": 137.98090070241943,
+      "witness": 137.98090070241943,
+      "agree": true
+    },
+    {
+      "cell": "D5504",
+      "stat": "paired_mean_margin",
+      "analyzer": 8.98,
+      "witness": 8.98,
+      "agree": true
+    },
+    {
+      "cell": "D5504",
+      "stat": "paired_z",
+      "analyzer": 13.29715984409991,
+      "witness": 13.29715984409991,
+      "agree": true
+    },
+    {
+      "cell": "D5504",
+      "stat": "n_paired",
+      "analyzer": 400.0,
+      "witness": 400.0,
+      "agree": true
+    },
+    {
+      "cell": "D5504",
+      "stat": "winrate",
+      "analyzer": 0.684375,
+      "witness": 0.684375,
+      "agree": true
+    },
+    {
+      "cell": "D5504",
+      "stat": "elo",
+      "analyzer": 134.44909642299027,
+      "witness": 134.44909642299027,
+      "agree": true
+    },
+    {
+      "cell": "E11008",
+      "stat": "paired_mean_margin",
+      "analyzer": 10.565,
+      "witness": 10.565,
+      "agree": true
+    },
+    {
+      "cell": "E11008",
+      "stat": "paired_z",
+      "analyzer": 16.133963346449107,
+      "witness": 16.133963346449107,
+      "agree": true
+    },
+    {
+      "cell": "E11008",
+      "stat": "n_paired",
+      "analyzer": 400.0,
+      "witness": 400.0,
+      "agree": true
+    },
+    {
+      "cell": "E11008",
+      "stat": "winrate",
+      "analyzer": 0.729375,
+      "witness": 0.729375,
+      "agree": true
+    },
+    {
+      "cell": "E11008",
+      "stat": "elo",
+      "analyzer": 172.23318387680186,
+      "witness": 172.23318387680186,
+      "agree": true
+    },
+    {
+      "cell": "W2752",
+      "stat": "paired_mean_margin",
+      "analyzer": 7.795,
+      "witness": 7.795,
+      "agree": true
+    },
+    {
+      "cell": "W2752",
+      "stat": "paired_z",
+      "analyzer": 11.733149301756514,
+      "witness": 11.733149301756514,
+      "agree": true
+    },
+    {
+      "cell": "W2752",
+      "stat": "n_paired",
+      "analyzer": 400.0,
+      "witness": 400.0,
+      "agree": true
+    },
+    {
+      "cell": "W2752",
+      "stat": "winrate",
+      "analyzer": 0.6775,
+      "witness": 0.6775,
+      "agree": true
+    },
+    {
+      "cell": "W2752",
+      "stat": "elo",
+      "analyzer": 128.95183223006268,
+      "witness": 128.95183223006268,
+      "agree": true
+    }
+  ],
+  "per_cell": {
+    "A800": {
+      "n": 800,
+      "W": 454,
+      "D": 19,
+      "L": 327,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "winrate": 0.579375,
+      "winrate_z": 4.490128060534575,
+      "elo": 55.62586796820806,
+      "elo_sig_1sigma": 12.44147561255033,
+      "paired_mean_margin_analyzer": 2.385,
+      "paired_z_analyzer": 4.30406943097289,
+      "n_paired": 400,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "failed_classes": [],
+      "champ_prefix_ms_per_move": 148.8958118124649,
+      "rung_ms_per_move": 1074.7238209291677,
+      "ratio": 0.1385433251900334,
+      "solver_secs_per_game": 1.991605,
+      "realized_s_per_game": 88.58426625,
+      "mean_moves": 141.95125,
+      "code_rev": "8bd68f848f-dirty",
+      "rules_profile": "fixed_v1",
+      "r9_env_ok": true,
+      "cand_leaf_hash": "a36d2e15a3b3d71d",
+      "rung_leaf_hash": "42af12fce22e1a0f",
+      "backend": "rust",
+      "carc_rs_version": "0.1.0",
+      "carc_rs_binary_sha": "8ae0b98427debb2e",
+      "tiearb_enabled": false,
+      "budget": [
+        4,
+        200,
+        800
+      ]
+    },
+    "B1600": {
+      "n": 800,
+      "W": 511,
+      "D": 19,
+      "L": 270,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "winrate": 0.650625,
+      "winrate_z": 8.520636713297899,
+      "elo": 108.01556864964515,
+      "elo_sig_1sigma": 12.882140250243282,
+      "paired_mean_margin_analyzer": 5.47,
+      "paired_z_analyzer": 8.499615798423584,
+      "n_paired": 400,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "failed_classes": [],
+      "champ_prefix_ms_per_move": 290.87091337441103,
+      "rung_ms_per_move": 1080.4574196389256,
+      "ratio": 0.2692108990945855,
+      "solver_secs_per_game": 1.94289375,
+      "realized_s_per_game": 98.727285,
+      "mean_moves": 141.94375,
+      "code_rev": "8bd68f848f-dirty",
+      "rules_profile": "fixed_v1",
+      "r9_env_ok": true,
+      "cand_leaf_hash": "a36d2e15a3b3d71d",
+      "rung_leaf_hash": "42af12fce22e1a0f",
+      "backend": "rust",
+      "carc_rs_version": "0.1.0",
+      "carc_rs_binary_sha": "8ae0b98427debb2e",
+      "tiearb_enabled": false,
+      "budget": [
+        4,
+        400,
+        1600
+      ]
+    },
+    "C2752": {
+      "n": 800,
+      "W": 543,
+      "D": 16,
+      "L": 241,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "winrate": 0.68875,
+      "winrate_z": 10.677312395916866,
+      "elo": 137.98090070241943,
+      "elo_sig_1sigma": 13.26520063856184,
+      "paired_mean_margin_analyzer": 7.755,
+      "paired_z_analyzer": 12.283156367382533,
+      "n_paired": 400,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "failed_classes": [],
+      "champ_prefix_ms_per_move": 472.98169493982897,
+      "rung_ms_per_move": 1077.9739335658176,
+      "ratio": 0.43876913922701105,
+      "solver_secs_per_game": 1.8506475,
+      "realized_s_per_game": 111.02189375,
+      "mean_moves": 141.9425,
+      "code_rev": "8bd68f848f-dirty",
+      "rules_profile": "fixed_v1",
+      "r9_env_ok": true,
+      "cand_leaf_hash": "a36d2e15a3b3d71d",
+      "rung_leaf_hash": "42af12fce22e1a0f",
+      "backend": "rust",
+      "carc_rs_version": "0.1.0",
+      "carc_rs_binary_sha": "8ae0b98427debb2e",
+      "tiearb_enabled": false,
+      "budget": [
+        4,
+        688,
+        2752
+      ]
+    },
+    "D5504": {
+      "n": 800,
+      "W": 540,
+      "D": 15,
+      "L": 245,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "winrate": 0.684375,
+      "winrate_z": 10.429825022501573,
+      "elo": 134.44909642299027,
+      "elo_sig_1sigma": 13.214981002588244,
+      "paired_mean_margin_analyzer": 8.98,
+      "paired_z_analyzer": 13.29715984409991,
+      "n_paired": 400,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "failed_classes": [],
+      "champ_prefix_ms_per_move": 887.9683762232693,
+      "rung_ms_per_move": 1078.3225312175275,
+      "ratio": 0.8234719673534684,
+      "solver_secs_per_game": 1.51296875,
+      "realized_s_per_game": 139.33776875,
+      "mean_moves": 141.94875,
+      "code_rev": "8bd68f848f-dirty",
+      "rules_profile": "fixed_v1",
+      "r9_env_ok": true,
+      "cand_leaf_hash": "a36d2e15a3b3d71d",
+      "rung_leaf_hash": "42af12fce22e1a0f",
+      "backend": "rust",
+      "carc_rs_version": "0.1.0",
+      "carc_rs_binary_sha": "8ae0b98427debb2e",
+      "tiearb_enabled": false,
+      "budget": [
+        4,
+        1376,
+        5504
+      ]
+    },
+    "E11008": {
+      "n": 800,
+      "W": 575,
+      "D": 17,
+      "L": 208,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "winrate": 0.729375,
+      "winrate_z": 12.975409434773146,
+      "elo": 172.23318387680186,
+      "elo_sig_1sigma": 13.82419704935995,
+      "paired_mean_margin_analyzer": 10.565,
+      "paired_z_analyzer": 16.133963346449107,
+      "n_paired": 400,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "failed_classes": [],
+      "champ_prefix_ms_per_move": 1777.4612275964555,
+      "rung_ms_per_move": 1075.9341106433944,
+      "ratio": 1.6520168010414291,
+      "solver_secs_per_game": 1.621265,
+      "realized_s_per_game": 200.628715,
+      "mean_moves": 141.9475,
+      "code_rev": "8bd68f848f-dirty",
+      "rules_profile": "fixed_v1",
+      "r9_env_ok": true,
+      "cand_leaf_hash": "a36d2e15a3b3d71d",
+      "rung_leaf_hash": "42af12fce22e1a0f",
+      "backend": "rust",
+      "carc_rs_version": "0.1.0",
+      "carc_rs_binary_sha": "8ae0b98427debb2e",
+      "tiearb_enabled": false,
+      "budget": [
+        8,
+        1376,
+        11008
+      ]
+    },
+    "W2752": {
+      "n": 800,
+      "W": 537,
+      "D": 10,
+      "L": 253,
+      "seat_balance": {
+        "0": 400,
+        "1": 400
+      },
+      "winrate": 0.6775,
+      "winrate_z": 10.040916292848975,
+      "elo": 128.95183223006268,
+      "elo_sig_1sigma": 13.139529063702938,
+      "paired_mean_margin_analyzer": 7.795,
+      "paired_z_analyzer": 11.733149301756514,
+      "n_paired": 400,
+      "n_failed": 0,
+      "failure_rate": 0.0,
+      "failed_classes": [],
+      "champ_prefix_ms_per_move": 443.72771622587567,
+      "rung_ms_per_move": 1068.126270435553,
+      "ratio": 0.415426273566828,
+      "solver_secs_per_game": 1.3630250000000002,
+      "realized_s_per_game": 109.295155,
+      "mean_moves": 143.89875,
+      "code_rev": "8bd68f848f-dirty",
+      "rules_profile": "walled",
+      "r9_env_ok": true,
+      "cand_leaf_hash": "a36d2e15a3b3d71d",
+      "rung_leaf_hash": "42af12fce22e1a0f",
+      "backend": "rust",
+      "carc_rs_version": "0.1.0",
+      "carc_rs_binary_sha": "8ae0b98427debb2e",
+      "tiearb_enabled": false,
+      "budget": [
+        4,
+        688,
+        2752
+      ]
+    }
+  },
+  "cost_witness": [
+    {
+      "cell": "A800",
+      "realized_s_per_game": 88.58426625,
+      "design6_model_local": 54.76349399999999,
+      "box_realized_model": 88.71970311284345,
+      "err_vs_local_model": 0.617578787978722
+    },
+    {
+      "cell": "B1600",
+      "realized_s_per_game": 98.727285,
+      "design6_model_local": 63.182981999999996,
+      "box_realized_model": 99.01633448057248,
+      "err_vs_local_model": 0.562561339697452
+    },
+    {
+      "cell": "C2752",
+      "realized_s_per_game": 111.02189375,
+      "design6_model_local": 75.30704472,
+      "box_realized_model": 111.49551542896107,
+      "err_vs_local_model": 0.4742564146925672
+    },
+    {
+      "cell": "D5504",
+      "realized_s_per_game": 139.33776875,
+      "design6_model_local": 104.27008344000001,
+      "box_realized_model": 140.2316548020733,
+      "err_vs_local_model": 0.33631588422175707
+    },
+    {
+      "cell": "E11008",
+      "realized_s_per_game": 200.628715,
+      "design6_model_local": 162.19616088,
+      "box_realized_model": 202.43487278743288,
+      "err_vs_local_model": 0.236951071538827
+    },
+    {
+      "cell": "W2752",
+      "realized_s_per_game": 109.295155,
+      "design6_model_local": 75.30704472,
+      "box_realized_model": 108.26093033673556,
+      "err_vs_local_model": 0.4513271023497416
+    }
+  ]
+}
