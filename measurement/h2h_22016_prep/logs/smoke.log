@@ -1,0 +1,17 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=2 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=2 paired=True K=2 k_dets=16 sims=1376 | 0 cached, 2 to play, 2 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/smoke_h2h_k16x1376_vs_champ_k8x1376
+  2/2 played (63.4s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=16, sims=1376, total~22016) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 2   candidate: 2W / 0D / 0L   winrate 1.000 (z=+1.41)
+avg score diff (candidate - opponent): +13.00
+ELO: +800.0  (+/- nan 1sigma)
+prefix ms/move: candidate 1177  opponent 637  (ratio 1.85x)
+fair endgame: candidate latched 2/2 games, 0.10s solver/game, timeouts=0
+fair endgame: opponent  latched 2/2 games, 0.19s solver/game, timeouts=0
+[summary.json] wrote /home/doctor/projects/carcassone/measurement/h2h_22016_20260824/smoke_h2h_k16x1376_vs_champ_k8x1376/summary.json

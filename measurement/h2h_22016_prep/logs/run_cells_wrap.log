@@ -1,0 +1,79 @@
+[preflight] carcassonne_ai.__file__ = /home/doctor/projects/carcassone/src/carcassonne_ai/__init__.py
+[preflight] fixed_v1 resolved, r9_env_ok=True
+[preflight] candidate leaf hash = a36d2e15a3b3d71d (want a36d2e15a3b3d71d)
+[preflight] leaf + rules OK
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] [preflight] nproc=24 >= W=22
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] [ram] pre-flight: MemAvailable=10869 MB (floor 2500 MB)
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] [census] clean: no foreign RUN_LIVE.json, no co-tenant process
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] [preflight] ALL 10 CHECKS PASS -- clear to launch
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] [freeze] RUN_LIVE dropped -> /home/doctor/projects/carcassone/measurement/h2h_22016_prep/RUN_LIVE.json
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] starting from 0/1400 records already on disk
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] [ram] before-pass-1: MemAvailable=10854 MB (floor 800 MB)
+[h2h22k 2026-08-25T07:08:52Z laptop-wsl] pass 1/20: 0/1400 records, timeout 3400s
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl] [claims] swept 22 orphan claim(s) with no matching record
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl] pass 1: rc=143, 3400s wall, +194 games -> 194/1400
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl] pass 1: REALIZED 385 worker-s/game (model: 442)
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl] pass 1 rc=143 (non-timeout). The harness is resumable under --shared-claim;
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl]   continuing, but a pass that makes NO progress fails closed below.
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl] [void-rate] no summary.json yet -- skipping
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl] [ram] before-pass-2: MemAvailable=10808 MB (floor 800 MB)
+[h2h22k 2026-08-25T08:05:32Z laptop-wsl] pass 2/20: 194/1400 records, timeout 3400s
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl] [claims] swept 22 orphan claim(s) with no matching record
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl] pass 2: rc=143, 3400s wall, +196 games -> 390/1400
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl] pass 2: REALIZED 381 worker-s/game (model: 442)
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl] pass 2 rc=143 (non-timeout). The harness is resumable under --shared-claim;
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl]   continuing, but a pass that makes NO progress fails closed below.
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl] [void-rate] no summary.json yet -- skipping
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl] [ram] before-pass-3: MemAvailable=10803 MB (floor 800 MB)
+[h2h22k 2026-08-25T09:02:12Z laptop-wsl] pass 3/20: 390/1400 records, timeout 3400s
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl] [claims] swept 22 orphan claim(s) with no matching record
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl] pass 3: rc=143, 3400s wall, +201 games -> 591/1400
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl] pass 3: REALIZED 372 worker-s/game (model: 442)
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl] pass 3 rc=143 (non-timeout). The harness is resumable under --shared-claim;
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl]   continuing, but a pass that makes NO progress fails closed below.
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl] [void-rate] no summary.json yet -- skipping
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl] [ram] before-pass-4: MemAvailable=10818 MB (floor 800 MB)
+[h2h22k 2026-08-25T09:58:52Z laptop-wsl] pass 4/20: 591/1400 records, timeout 3400s
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl] [claims] swept 22 orphan claim(s) with no matching record
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl] pass 4: rc=143, 3401s wall, +196 games -> 787/1400
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl] pass 4: REALIZED 381 worker-s/game (model: 442)
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl] pass 4 rc=143 (non-timeout). The harness is resumable under --shared-claim;
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl]   continuing, but a pass that makes NO progress fails closed below.
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl] [void-rate] no summary.json yet -- skipping
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl] [ram] before-pass-5: MemAvailable=10808 MB (floor 800 MB)
+[h2h22k 2026-08-25T10:55:33Z laptop-wsl] pass 5/20: 787/1400 records, timeout 3400s
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl] [claims] swept 22 orphan claim(s) with no matching record
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl] pass 5: rc=143, 3400s wall, +194 games -> 981/1400
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl] pass 5: REALIZED 385 worker-s/game (model: 442)
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl] pass 5 rc=143 (non-timeout). The harness is resumable under --shared-claim;
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl]   continuing, but a pass that makes NO progress fails closed below.
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl] [void-rate] no summary.json yet -- skipping
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl] [ram] before-pass-6: MemAvailable=10802 MB (floor 800 MB)
+[h2h22k 2026-08-25T11:52:13Z laptop-wsl] pass 6/20: 981/1400 records, timeout 3400s
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl] [claims] swept 22 orphan claim(s) with no matching record
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl] pass 6: rc=143, 3400s wall, +197 games -> 1178/1400
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl] pass 6: REALIZED 379 worker-s/game (model: 442)
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl] pass 6 rc=143 (non-timeout). The harness is resumable under --shared-claim;
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl]   continuing, but a pass that makes NO progress fails closed below.
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl] [void-rate] no summary.json yet -- skipping
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl] [ram] before-pass-7: MemAvailable=10825 MB (floor 800 MB)
+[h2h22k 2026-08-25T12:48:53Z laptop-wsl] pass 7/20: 1178/1400 records, timeout 3400s
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl] [claims] swept 22 orphan claim(s) with no matching record
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl] pass 7: rc=143, 3400s wall, +198 games -> 1376/1400
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl] pass 7: REALIZED 377 worker-s/game (model: 442)
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl] pass 7 rc=143 (non-timeout). The harness is resumable under --shared-claim;
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl]   continuing, but a pass that makes NO progress fails closed below.
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl] [void-rate] no summary.json yet -- skipping
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl] [ram] before-pass-8: MemAvailable=10809 MB (floor 800 MB)
+[h2h22k 2026-08-25T13:45:33Z laptop-wsl] pass 8/20: 1376/1400 records, timeout 3400s
+[h2h22k 2026-08-25T13:54:02Z laptop-wsl] pass 8: rc=0, 508s wall, +24 games -> 1400/1400
+[h2h22k 2026-08-25T13:54:02Z laptop-wsl] pass 8: REALIZED 465 worker-s/game (model: 442)
+[void-rate] n_failed=0 denom=1400 void_rate=0.000%
+[void-rate] OK (< 10.0% launcher-safety threshold).
+[h2h22k 2026-08-25T13:54:02Z laptop-wsl] all 1400/1400 records present -- running the FINAL POOLED SUMMARY pass
+[void-rate] n_failed=0 denom=1400 void_rate=0.000%
+[void-rate] OK (< 10.0% launcher-safety threshold).
+[h2h22k 2026-08-25T13:54:02Z laptop-wsl] DONE -- 1400/1400 games, 8 pass(es) + seal; RUN_LIVE cleared
+[h2h22k 2026-08-25T13:54:02Z laptop-wsl] NEXT: /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/measurement/h2h_22016_prep/adjudicate.py --selftest   (must exit 0), then
+[h2h22k 2026-08-25T13:54:02Z laptop-wsl]       /home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/measurement/h2h_22016_prep/adjudicate.py --run-dir /home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+[h2h22k 2026-08-25T13:54:02Z laptop-wsl] The fired branch IS the authorization to report it (READ_RULE SS4).
