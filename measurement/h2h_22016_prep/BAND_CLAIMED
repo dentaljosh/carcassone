@@ -1,0 +1,7 @@
+148000000000
+22016-vs-11008 DIRECT BUDGET HEAD-TO-HEAD -- seeds 148000000000..148000000699
+(700 decks x 2 seatings = 1400 games, deck-paired, no top-up reserved).
+Claimed 2026-08-24 on branch h2h22k-freeze, with the corrected ALL-BRANCHES
+sweep (DESIGN.md SS4.1): 114 branches enumerated, global max claim anywhere
+147000000000, 146000000000 skipped as soft-reserved by d1-rebase-freeze.
+Registry row appended on THIS BRANCH ONLY -- the main tree is latched.

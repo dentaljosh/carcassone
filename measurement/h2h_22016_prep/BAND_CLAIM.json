@@ -1,0 +1,70 @@
+{
+  "band_seed_start": 148000000000,
+  "band_seed_end": 148000000699,
+  "band_seed_end_topup": null,
+  "n_decks": 700,
+  "n_games": 1400,
+  "label": "22016-vs-11008 DIRECT BUDGET HEAD-TO-HEAD: one cell, deck-paired, both seatings. CANDIDATE F = the champion of record at k16x1376 = 22016 sims (one budget doubling above production; the OLD-ERA MEASURED WINNING ALLOCATION at 22016 -- results.csv curve_k16x1376_22016_vs_deploy_k4x688 +35.58 vs curve_k8x2752_22016_vs_deploy_k4x688 +3.51, same band 48e9, 2026-07-23). OPPONENT E = the champion of record verbatim, governance/PRODUCTION.yaml champion.fair_deploy k8x1376 = 11008. Instrument = production exactly, BOTH sides: rust backend (--opponent fair-champion is a _HEAD_TO_HEAD mode so converted_sides == [candidate, opponent]), fixed_v1 + CARCASSONNE_FIX_R9=1, curve125 leaf pinned a36d2e15a3b3d71d, exact-K<=2 MARGINALIZED (the fair handoff; K=3/4 are clairvoyant-only), c_puct 1.5 / tau_p 5 / float / visits, TIE-ARBITER OFF ON BOTH SIDES. SINGLE AXIS: k_dets 16 vs 8; sims_per_det = 1376 on both sides and in the must-not-differ set. PRIMARY = deck-paired margin D = M_F - M_E, cluster = deck, points primary and elo display-only.",
+  "tier": "claim",
+  "status": "claimed",
+  "claimed_date": "2026-08-24",
+  "claimed": "2026-08-24 -- appended to governance/BAND_REGISTRY.csv ON BRANCH h2h22k-freeze ONLY as part of this freeze build (carcasum_match_prep / carcasum_rung2_prep / carcasum_arb_challenge_prep precedent: all claimed their real row at freeze-commit time rather than deferring to launch). The main tree is NEVER written -- it is latched under a live carcasum_arb_challenge run.",
+  "decision_influenced": null,
+  "evidence_or_claim": "measurement/h2h_22016_prep/DESIGN.md",
+  "no_topup_reserved": "DELIBERATE (DESIGN.md SS3.4). Unlike carcasum_arb_challenge_prep and the r1 precedent, this cell reserves NO top-up range and READ_RULE.md SS4 carries NO top-up branch. A top-up exists to rescue a design whose INCONCLUSIVE region is a failure state; here the inconclusive region IS the licensed deliverable (H-NULL-BOUND is a bound, and a bound is what was purchased). Resolving the decay bound's own +7.1 elo central at 2sigma would need n ~= 5220 decks (SE_D must fall to 0.203 pts; (14.67/0.203)^2), 7.5x this purchase -- a fresh funding decision and a fresh band, not a top-up.",
+  "next_free_band_determination": {
+    "procedure": "the CORRECTED ALL-BRANCHES sweep prescribed by carcasum_arb_challenge_prep/DESIGN.md SS4.1 after the 144e9 collision, run as written and extended: a band-freedom check scoped to the CHECKED-OUT branch's own governance/BAND_REGISTRY.csv is blind to every claim sitting on an unmerged sibling branch, and this program currently has several such freeze branches alive at once. For every local branch: git ls-tree -r --name-only <branch> -- measurement/ | grep -i 'BAND_CLAIM\\.json$', then git show <branch>:<path> to read each hit; PLUS git show <branch>:governance/BAND_REGISTRY.csv on every branch that carries one. NO CHECKOUT is performed at any point.",
+    "branches_enumerated": 114,
+    "branches_carrying_a_BAND_CLAIM_json": 33,
+    "branches_carrying_a_BAND_REGISTRY_csv": 74,
+    "textually_distinct_registry_versions": 33,
+    "global_max_claim_found_anywhere": 147000000000,
+    "global_max_claim_owner": "carcasum-arb-freeze : measurement/carcasum_arb_challenge_prep/ (itself an amendment from 144000000000)",
+    "frontier": [
+      {
+        "band": 141000000000,
+        "experiment": "track_d2_prep (D2 rung-compression, U-UNREADABLE)",
+        "status": "claimed"
+      },
+      {
+        "band": 142000000000,
+        "experiment": "carcasum_match_prep (Carcasum rated match r1)",
+        "status": "claimed"
+      },
+      {
+        "band": 143000000000,
+        "experiment": "carcasum_rung2_prep (Carcasum rung-2 budget ladder)",
+        "status": "claimed"
+      },
+      {
+        "band": 144000000000,
+        "experiment": "track_d2r2_prep (d2r2-freeze only)",
+        "status": "claimed"
+      },
+      {
+        "band": 145000000000,
+        "experiment": "track_d1_fair_rebase (d1-rebase-freeze only)",
+        "status": "claimed"
+      },
+      {
+        "band": 146000000000,
+        "experiment": "track_d1_fair_rebase EXTENSION (d1-rebase-freeze only)",
+        "status": "SOFT-RESERVED -- DRAFT-NOT-CLAIMED, no registry row on any branch"
+      },
+      {
+        "band": 147000000000,
+        "experiment": "carcasum_arb_challenge_prep (carcasum-arb-freeze only)",
+        "status": "claimed"
+      },
+      {
+        "band": 148000000000,
+        "experiment": "THIS CELL (h2h22k-freeze only)",
+        "status": "claimed here"
+      }
+    ],
+    "why_148_not_146": "146000000000 is not FORMALLY claimed anywhere -- no registry row on any branch, and its own status field reads DRAFT-NOT-CLAIMED -- so by the letter it is free. It is SKIPPED anyway, on exactly the reasoning carcasum_arb_challenge_prep used when it skipped the same band: d1-rebase-freeze has spent a committed paragraph earmarking it for its own future n-extension and asked that nothing run there without a fresh funding decision. Taking it for an unrelated cell would manufacture the identical collision the corrected procedure exists to prevent, the moment that extension is funded. 148000000000 is the lowest integer clear of everything found anywhere across all 114 branches.",
+    "collisions_observed_in_the_sweep": "144000000000 was double-claimed on 2026-08-24 (d2r2-freeze's track_d2r2_prep, final; and carcasum-arb-freeze's carcasum_arb_challenge_prep, caught pre-launch at zero games and self-amended to 147000000000). No other collision exists anywhere in the sweep. This cell's 148000000000 is unique across every branch, every claim file and all 33 distinct registry versions."
+  },
+  "band_hygiene": "The DESIGN.md SS9 smoke uses a disjoint dev-tier throwaway seed (WORKERS.conf::SMOKE_SEED_START = 990000000000), never pooled, never claimed, never adjudicated. No other seed range is touched by this cell.",
+  "release_if_never_launched": "If this cell is never launched, or is launched and adjudicates U-UNREADABLE with NO real game record on the band, 148000000000 is RELEASED under the BAND_REGISTRY.csv RELEASE-IF-NEVER-LAUNCHED clause. A band is spent only once real records exist on it."
+}
