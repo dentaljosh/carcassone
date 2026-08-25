@@ -1141,18 +1141,83 @@ class _RandomPolicy:
         return int(self._rng.choice(legal))
 
 
-def _make_champion(game, seed: int, *, sims, k_dets, execution, audit_mode: str | None):
+def _make_champion(game, seed: int, *, sims, k_dets, execution, audit_mode: str | None,
+                   tiearb: dict | None = None):
     if audit_mode is None:
         from carcassonne_ai.champion_factory import make_production_champion
 
         return make_production_champion("fair", game=game, seed=seed, sims=sims,
-                                        k_dets=k_dets, verify=True,
+                                        k_dets=k_dets, verify=True, tiearb=tiearb,
                                         **execution.factory_kwargs())
     if audit_mode == "greedy":
         return _GreedyPolicy(game, seed)
     if audit_mode == "random":
         return _RandomPolicy(game, seed)
     raise ValueError(f"unknown --audit-mode {audit_mode!r} (want 'greedy' or 'random')")
+
+
+# --------------------------------------------------------------------------- #
+# the tie arbiter (OUR side) — measurement/carcasum_arb_challenge_prep/         #
+# Ported field-for-field from scripts/jcz_match/match.py's own                 #
+# `_resolve_tiearb`/`_champ_tiearb_telemetry` (that harness's the precedent    #
+# for arming the arbiter on an out-of-lineage-match champion at all — this     #
+# harness had NO tiearb path before this port). Flags kept `--champ-tiearb-*`  #
+# to match that sibling harness's own naming ("our side is the champ").       #
+# --------------------------------------------------------------------------- #
+def _resolve_tiearb(args) -> dict | None:
+    """The ``--champ-tiearb-*`` flags -> the dict ``make_production_champion`` takes,
+    or ``None`` when the arbiter was not armed.
+
+    ⚠️ ``None``, not a dict with ``enabled=False``, on the unarmed leg (ARM-OFF) — so
+    an unarmed record's manifest carries no ``cand_tiearb`` key at all, byte-identical
+    to every Carcasum archive that predates this plumbing (r1, rung 2). Explicit
+    arming is required (``--champ-tiearb-enabled``); there is no default-on path.
+    """
+    if not bool(getattr(args, "champ_tiearb_enabled", False)):
+        return None
+    return {"enabled": True,
+            "B": int(args.champ_tiearb_b), "J": int(args.champ_tiearb_j),
+            "mode": str(args.champ_tiearb_mode), "salt": str(args.champ_tiearb_salt),
+            "eps": float(args.champ_tiearb_eps)}
+
+
+def _champ_tiearb_telemetry(champ, tiearb) -> dict | None:
+    """TIE-ARBITER per-game liveness read (OUR side). ``None`` unless this game was
+    armed with an ENABLED ``tiearb``; an armed game whose champion is NOT a
+    rust-backed agent (no ``_rs``/``FairAgentRs``) is a wiring bug and RAISES rather
+    than stamping ``None`` — a silent ``None`` would grade a champion-vs-champion null
+    wearing the shape of a real ARM-ON cell (the J13 failure mode).
+
+    Field-for-field the same read as ``jcz_match/match.py::_champ_tiearb_telemetry``.
+    """
+    if not tiearb or not bool(tiearb.get("enabled")):
+        return None
+    rs = getattr(champ, "_rs", None)
+    if rs is None:
+        raise RuntimeError(
+            "champ_tiearb is armed but the champion has no FairAgentRs (the tie "
+            "arbiter is rust-only) — it cannot have run")
+    s = rs.stats()
+    if not bool(s.get("tiearb_enabled")):
+        raise RuntimeError(
+            "champ_tiearb is armed but FairAgentRs.stats() reports "
+            "tiearb_enabled=False — the knob was dropped between main() and the "
+            "rust config (a STALE carc_rs wheel is the usual cause)")
+    return {
+        "tile_plies": int(s["tiearb_tile_plies"]),
+        "fires": int(s["tiearb_fired_plies"]),
+        "fired_plies": int(s["tiearb_fired_plies"]),
+        "pickchanges": int(s["tiearb_pickchanges"]),
+        "arms_total": int(s["tiearb_arms_total"]),
+        "playouts_total": int(s["tiearb_playouts_total"]),
+        "secs": float(s["tiearb_secs"]),
+        "errors": int(s.get("tiearb_errors") or 0),
+        "first_error": s.get("tiearb_first_error"),
+        "partial_argmax": int(s.get("tiearb_partial_argmax") or 0),
+        "max_plies": int(s.get("tiearb_max_plies") or 0),
+        "mode": str(s["tiearb_mode"]),
+        "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -1170,7 +1235,8 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
                    execution=None, verify_replay: bool = True, max_plies: int = 400,
                    audit_mode: str | None = None, read_timeout_s: float | None = None,
                    node_labels_by_type: dict | None = None,
-                   tile_periods: dict | None = None) -> dict:
+                   tile_periods: dict | None = None,
+                   tiearb: dict | None = None) -> dict:
     """Play ONE champion-vs-Carcasum game. Returns the archive record.
 
     Carcasum's `Game::step()` owns the turn loop, so this is "read a driver
@@ -1233,7 +1299,7 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
 
         execution = resolve_execution("rust", rust_threads=1)
     champ = _make_champion(game, seed, sims=sims, k_dets=k_dets, execution=execution,
-                           audit_mode=audit_mode)
+                           audit_mode=audit_mode, tiearb=tiearb)
     agents = {champ_seat: champ}
     MP.seat(agents, board)                        # mirror: seated once, on the INITIAL board
 
@@ -1606,6 +1672,12 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
         "moves": move_log,
         "finished_at": time.time(),
     }
+    # THE TIE ARBITER's per-game liveness witness — added ONLY on an armed game, so an
+    # unarmed record carries no `champ_tiearb` key at all and every prior Carcasum
+    # archive's schema (r1, rung 2) is unaffected by this port.
+    _ta = _champ_tiearb_telemetry(champ, tiearb)
+    if _ta is not None:
+        rec["champ_tiearb"] = _ta
     if verify_replay:
         rp = replay_actions(deck_seed, actions, PROFILE)
         rec["replay"] = rp
@@ -1630,7 +1702,8 @@ class _StopGame(Exception):
 _W: dict = {}
 
 
-def _worker_init(rust_threads: int, sims, k_dets, binary, opponent, audit_mode) -> None:
+def _worker_init(rust_threads: int, sims, k_dets, binary, opponent, audit_mode,
+                 tiearb=None) -> None:
     """Spawn-worker bootstrap: env FIRST, then the production leaf, then the engine."""
     export_profile_env(PROFILE)
     for p in (str(HUMAN_ANCHOR), str(JCZ_ORACLE), str(HERE)):
@@ -1647,9 +1720,26 @@ def _worker_init(rust_threads: int, sims, k_dets, binary, opponent, audit_mode) 
     ex = resolve_execution("rust", rust_threads=rust_threads)
     if not ex.is_rust:
         raise RuntimeError(f"backend did not resolve to rust: {ex.describe()}")
+    if tiearb and tiearb.get("enabled"):
+        # FAIL FAST, once per worker, BEFORE game 1 — not partway through the arm.
+        # Ported from jcz_match/match.py's own `_worker_init` probe: a carc_rs wheel
+        # predating the arbiter (or one that silently drops the keyword) must kill the
+        # pool here, rather than serve an ARM-ON cell whose champion never actually ran
+        # the arbiter — which would read as "the arbiter doesn't transfer" instead of
+        # "it never ran" (the J13 failure mode `champion_factory.py`'s own docstring
+        # names, and the exact reason `G-CHAMP-ON` exists on the analyzer side too).
+        from carcassonne_ai.champion_factory import production_prior_cfg
+        from carcassonne_ai.rust_agent import search_config_rs
+
+        resolved = dict(search_config_rs(production_prior_cfg(tiearb=tiearb), 8).tiearb)
+        if resolved != dict(tiearb):
+            raise RuntimeError(
+                f"the resolved rust tiearb knob {resolved} does not match the "
+                f"requested {dict(tiearb)} — refusing to play (a mismatch here is "
+                "exactly what G-CHAMP-ON exists to catch)")
     _W.update(execution=ex, sims=sims, k_dets=k_dets, binary=binary, opponent=opponent,
               audit_mode=audit_mode, node_labels_by_type=node_labels,
-              tile_periods=periods)
+              tile_periods=periods, tiearb=tiearb)
 
 
 def _play_cell(cell: tuple) -> dict:
@@ -1660,7 +1750,7 @@ def _play_cell(cell: tuple) -> dict:
                               opponent=_W["opponent"], execution=_W["execution"],
                               audit_mode=_W["audit_mode"],
                               node_labels_by_type=_W["node_labels_by_type"],
-                              tile_periods=_W["tile_periods"])
+                              tile_periods=_W["tile_periods"], tiearb=_W.get("tiearb"))
     except Exception as e:                     # noqa: BLE001 — a cell never kills the fleet
         return {"schema": SCHEMA, "deck_seed": int(deck_seed), "champ_seat": int(champ_seat),
                 "replicate": int(replicate), "void": VOID_ERROR,
@@ -1811,6 +1901,52 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--limit", type=int, default=0, help="stop after N cells")
+    # --- THE TIE ARBITER, on OUR side (measurement/carcasum_arb_challenge_prep/) ----
+    # Named `--champ-tiearb-*` to match `scripts/jcz_match/match.py`'s own convention
+    # ("our side is the champ"). OFF by default — explicit arming required, same
+    # discipline as `play_harness.py`'s own comment: "the harness flag default is
+    # still --tiearb-b 16, so --tiearb-b 64 is REQUIRED" for a real production-shape
+    # arm. `_resolve_tiearb` returns None (not a dict with enabled=False) when this
+    # flag is absent, so an unarmed run's manifest is byte-identical to every prior
+    # Carcasum archive (r1, rung 2).
+    ap.add_argument("--champ-tiearb-enabled", action="store_true",
+                    help="OUR side only, RUST-ONLY: arm the root tie-arbiter exactly "
+                         "as governance/PRODUCTION.yaml fair_deploy.tiearb specifies "
+                         "(pass -b/-j/-mode/-salt/-eps to match it explicitly — there "
+                         "is no default-on production shape). Leaf hash does NOT "
+                         "move; the wiring gates are the record's "
+                         "manifest.champion_manifest.cand_tiearb dict and the "
+                         "per-game champ_tiearb firing telemetry.")
+    ap.add_argument("--champ-tiearb-b", type=int, default=16,
+                    help="B: CRN determinizations per fired ply. PRODUCTION.yaml's "
+                         "deployed value is 64 — pass it explicitly.")
+    ap.add_argument("--champ-tiearb-j", type=int, default=4,
+                    help="J: cap on the afterstate-deduped tie set. PRODUCTION.yaml's "
+                         "deployed value is 4.")
+    ap.add_argument("--champ-tiearb-mode", choices=("argmax", "random"),
+                    default="argmax",
+                    help="argmax = take the world-mean argmax (PRODUCTION.yaml's "
+                         "deployed mode). random = a matched-wall-clock control.")
+    ap.add_argument("--champ-tiearb-salt", type=str, default="tiearb2-deploy-v1",
+                    help="World/selection seed salt. PRODUCTION.yaml's deployed salt "
+                         "is 'tiearb2-deploy-v1'; a different salt is a different "
+                         "experiment.")
+    ap.add_argument("--champ-tiearb-eps", type=float, default=0.0,
+                    help="Tie membership tolerance on the outer chain value. "
+                         "PRODUCTION.yaml's deployed value is 0.0 (exact f64 "
+                         "equality, not a tolerance).")
+    # ⚠️ tiearb_threads (PRODUCTION.yaml's deployed value: 8) is NOT wired here. It is
+    # a separate, LATENCY-ONLY rust kwarg (rust/carc/carc-py/src/lib.rs
+    # SearchConfig::tiearb_threads, default 1) that `make_production_champion`'s
+    # current signature does not expose a path for (verified: no `tiearb_threads`
+    # parameter on that function, and neither `jcz_match/match.py` nor
+    # `play_harness.py` — the two existing tiearb-arming harnesses — wire it either).
+    # Per PRODUCTION.yaml's own gate ("BIT-IDENTICAL by gate... NO strength claim
+    # owed"), running at threads=1 (the sequential default) plays the IDENTICAL games
+    # a threads=8 run would — only wall-clock differs. This cell therefore runs the
+    # arbiter sequentially; the wall-clock projection in DESIGN.md §7 is a floor, not
+    # a guarantee, because of this. Flagged for orchestrator review, not a correctness
+    # gap.
     args = ap.parse_args(argv)
 
     binary = Path(args.binary) if args.binary else _default_binary()
@@ -1825,6 +1961,13 @@ def main(argv=None) -> int:
         opponent["playouts"], opponent["budget_ms"] = int(args.opp_playouts), None
     if args.audit_mode and args.opp_budget_ms is None and args.opp_playouts is None:
         opponent["budget_ms"] = 200  # the audit gate wants coverage, not strength
+
+    tiearb = _resolve_tiearb(args)
+    if tiearb is not None:
+        print(f"[carcasum-match] TIE ARBITER LIVE on OUR side: {tiearb} (leaf hash "
+              "does NOT move; gates = the record's manifest cand_tiearb + the "
+              "per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, "
+              "runs sequentially — latency-only, no strength effect)", flush=True)
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1855,7 +1998,7 @@ def main(argv=None) -> int:
         with ctx.Pool(processes=max(1, min(args.workers, len(cells))),
                       initializer=_worker_init,
                       initargs=(args.rust_threads, args.sims, args.k_dets, args.binary,
-                                opponent, args.audit_mode)) as pool:
+                                opponent, args.audit_mode, tiearb)) as pool:
             for rec in pool.imap_unordered(_play_cell, cells):
                 fh.write(json.dumps(rec) + "\n")
                 fh.flush()

@@ -1,0 +1,640 @@
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=0 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000000 champ_seat=1 rep=0 scores=[80, 90] void=None champ=6328.2ms/mv opp=5012.2ms/turn (113332.4 playouts) replay_ok=True
+[2/40] deck=147000000003 champ_seat=0 rep=0 scores=[81, 85] void=None champ=7162.2ms/mv opp=5012.2ms/turn (90819.7 playouts) replay_ok=True
+[3/40] deck=147000000002 champ_seat=0 rep=0 scores=[74, 74] void=None champ=8731.5ms/mv opp=5015.8ms/turn (123609.2 playouts) replay_ok=True
+[4/40] deck=147000000002 champ_seat=1 rep=0 scores=[96, 87] void=None champ=9304.9ms/mv opp=5018.5ms/turn (106152.3 playouts) replay_ok=True
+[5/40] deck=147000000000 champ_seat=0 rep=0 scores=[109, 106] void=None champ=8177.1ms/mv opp=5015.5ms/turn (87547.7 playouts) replay_ok=True
+[6/40] deck=147000000001 champ_seat=0 rep=0 scores=[122, 83] void=None champ=9455.4ms/mv opp=5013.3ms/turn (82745.9 playouts) replay_ok=True
+[7/40] deck=147000000001 champ_seat=1 rep=0 scores=[95, 83] void=None champ=10961.8ms/mv opp=5015.1ms/turn (111398.8 playouts) replay_ok=True
+[8/40] deck=147000000004 champ_seat=0 rep=0 scores=[117, 99] void=None champ=5901.9ms/mv opp=5012.9ms/turn (82926.5 playouts) replay_ok=True
+[9/40] deck=147000000004 champ_seat=1 rep=0 scores=[89, 114] void=None champ=6899.6ms/mv opp=5017.5ms/turn (118553.2 playouts) replay_ok=True
+[10/40] deck=147000000005 champ_seat=1 rep=0 scores=[108, 121] void=None champ=6564.6ms/mv opp=5012.8ms/turn (133356.3 playouts) replay_ok=True
+[11/40] deck=147000000006 champ_seat=0 rep=0 scores=[119, 89] void=None champ=6005.8ms/mv opp=5013.6ms/turn (83726.3 playouts) replay_ok=True
+[12/40] deck=147000000005 champ_seat=0 rep=0 scores=[108, 86] void=None champ=7277.0ms/mv opp=5014.8ms/turn (98910.0 playouts) replay_ok=True
+[13/40] deck=147000000006 champ_seat=1 rep=0 scores=[84, 87] void=None champ=5834.8ms/mv opp=5012.7ms/turn (126505.0 playouts) replay_ok=True
+[14/40] deck=147000000003 champ_seat=1 rep=0 scores=[73, 66] void=None champ=13068.4ms/mv opp=5017.5ms/turn (127443.1 playouts) replay_ok=True
+[15/40] deck=147000000008 champ_seat=1 rep=0 scores=[111, 84] void=None champ=6103.0ms/mv opp=5013.7ms/turn (93814.5 playouts) replay_ok=True
+[16/40] deck=147000000009 champ_seat=1 rep=0 scores=[79, 121] void=None champ=4811.6ms/mv opp=5015.9ms/turn (111800.6 playouts) replay_ok=True
+[17/40] deck=147000000007 champ_seat=0 rep=0 scores=[107, 95] void=None champ=8031.3ms/mv opp=5015.2ms/turn (69738.2 playouts) replay_ok=True
+[18/40] deck=147000000008 champ_seat=0 rep=0 scores=[119, 105] void=None champ=6144.3ms/mv opp=5013.6ms/turn (91584.5 playouts) replay_ok=True
+[19/40] deck=147000000009 champ_seat=0 rep=0 scores=[88, 78] void=None champ=6221.4ms/mv opp=5014.9ms/turn (95654.5 playouts) replay_ok=True
+[20/40] deck=147000000007 champ_seat=1 rep=0 scores=[97, 111] void=None champ=11024.8ms/mv opp=5013.7ms/turn (95539.4 playouts) replay_ok=True
+[21/40] deck=147000000010 champ_seat=0 rep=0 scores=[77, 53] void=None champ=14627.2ms/mv opp=5013.9ms/turn (87040.1 playouts) replay_ok=True
+[22/40] deck=147000000012 champ_seat=1 rep=0 scores=[46, 76] void=None champ=7701.9ms/mv opp=5011.7ms/turn (131196.9 playouts) replay_ok=True
+[23/40] deck=147000000010 champ_seat=1 rep=0 scores=[90, 75] void=None champ=10143.5ms/mv opp=5018.4ms/turn (117955.2 playouts) replay_ok=True
+[24/40] deck=147000000011 champ_seat=0 rep=0 scores=[74, 100] void=None champ=9499.1ms/mv opp=5016.1ms/turn (94916.9 playouts) replay_ok=True
+[25/40] deck=147000000012 champ_seat=0 rep=0 scores=[99, 108] void=None champ=9968.9ms/mv opp=5016.6ms/turn (95565.8 playouts) replay_ok=True
+[26/40] deck=147000000011 champ_seat=1 rep=0 scores=[83, 72] void=None champ=10590.9ms/mv opp=5012.8ms/turn (112365.1 playouts) replay_ok=True
+[27/40] deck=147000000013 champ_seat=0 rep=0 scores=[83, 99] void=None champ=7045.7ms/mv opp=5014.9ms/turn (95927.9 playouts) replay_ok=True
+[28/40] deck=147000000013 champ_seat=1 rep=0 scores=[80, 105] void=None champ=5738.3ms/mv opp=5014.1ms/turn (129534.3 playouts) replay_ok=True
+[29/40] deck=147000000014 champ_seat=0 rep=0 scores=[90, 88] void=None champ=5716.7ms/mv opp=5017.2ms/turn (114382.3 playouts) replay_ok=True
+[30/40] deck=147000000014 champ_seat=1 rep=0 scores=[82, 91] void=None champ=6547.7ms/mv opp=5014.8ms/turn (133297.3 playouts) replay_ok=True
+[31/40] deck=147000000015 champ_seat=0 rep=0 scores=[95, 78] void=None champ=7482.6ms/mv opp=5015.6ms/turn (87888.4 playouts) replay_ok=True
+[32/40] deck=147000000016 champ_seat=0 rep=0 scores=[99, 67] void=None champ=7273.7ms/mv opp=5012.4ms/turn (90158.9 playouts) replay_ok=True
+[33/40] deck=147000000016 champ_seat=1 rep=0 scores=[87, 76] void=None champ=11116.6ms/mv opp=5019.3ms/turn (112329.5 playouts) replay_ok=True
+[34/40] deck=147000000015 champ_seat=1 rep=0 scores=[89, 113] void=None champ=11294.1ms/mv opp=5016.8ms/turn (113062.2 playouts) replay_ok=True
+[35/40] deck=147000000017 champ_seat=1 rep=0 scores=[89, 69] void=None champ=9923.0ms/mv opp=5013.5ms/turn (109810.6 playouts) replay_ok=True
+[36/40] deck=147000000018 champ_seat=0 rep=0 scores=[125, 96] void=None champ=5983.9ms/mv opp=5014.0ms/turn (99458.9 playouts) replay_ok=True
+[37/40] deck=147000000017 champ_seat=0 rep=0 scores=[41, 80] void=None champ=12878.4ms/mv opp=5014.6ms/turn (95553.8 playouts) replay_ok=True
+[38/40] deck=147000000018 champ_seat=1 rep=0 scores=[78, 52] void=None champ=8444.9ms/mv opp=5016.3ms/turn (143217.2 playouts) replay_ok=True
+[39/40] deck=147000000019 champ_seat=0 rep=0 scores=[90, 75] void=None champ=6503.7ms/mv opp=5015.8ms/turn (116329.5 playouts) replay_ok=True
+[40/40] deck=147000000019 champ_seat=1 rep=0 scores=[92, 75] void=None champ=8133.2ms/mv opp=5015.0ms/turn (163389.9 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 71.6 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 24,
+ "draws": 1,
+ "losses": 15,
+ "win_rate": 0.6125,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 5.325,
+ "paired_margin_sem": 3.062136122313792,
+ "mean_margin_unpaired": 5.325,
+ "elo_from_win_rate": 79.53375447769643,
+ "champ_ms_per_move_mean": 8265.6,
+ "opp_driver_ms_per_turn_mean": 5014.9,
+ "opp_driver_playouts_per_turn_mean": 107213.5,
+ "wall_secs_per_game_mean": 683.4,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=40 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000021 champ_seat=0 rep=0 scores=[123, 75] void=None champ=4312.1ms/mv opp=5013.9ms/turn (82601.0 playouts) replay_ok=True
+[2/40] deck=147000000022 champ_seat=0 rep=0 scores=[67, 75] void=None champ=5966.8ms/mv opp=5017.9ms/turn (100058.1 playouts) replay_ok=True
+[3/40] deck=147000000020 champ_seat=0 rep=0 scores=[94, 93] void=None champ=5635.7ms/mv opp=5012.8ms/turn (92453.9 playouts) replay_ok=True
+[4/40] deck=147000000023 champ_seat=0 rep=0 scores=[66, 85] void=None champ=7169.3ms/mv opp=5017.1ms/turn (101077.9 playouts) replay_ok=True
+[5/40] deck=147000000020 champ_seat=1 rep=0 scores=[60, 105] void=None champ=7604.9ms/mv opp=5016.6ms/turn (107592.8 playouts) replay_ok=True
+[6/40] deck=147000000022 champ_seat=1 rep=0 scores=[98, 102] void=None champ=10439.5ms/mv opp=5013.7ms/turn (117932.5 playouts) replay_ok=True
+[7/40] deck=147000000021 champ_seat=1 rep=0 scores=[87, 92] void=None champ=9042.0ms/mv opp=5016.2ms/turn (116384.9 playouts) replay_ok=True
+[8/40] deck=147000000023 champ_seat=1 rep=0 scores=[88, 125] void=None champ=6228.0ms/mv opp=5014.1ms/turn (112707.2 playouts) replay_ok=True
+[9/40] deck=147000000024 champ_seat=1 rep=0 scores=[72, 86] void=None champ=6842.1ms/mv opp=5014.4ms/turn (135440.9 playouts) replay_ok=True
+[10/40] deck=147000000024 champ_seat=0 rep=0 scores=[104, 93] void=None champ=6535.2ms/mv opp=5015.3ms/turn (92795.7 playouts) replay_ok=True
+[11/40] deck=147000000025 champ_seat=1 rep=0 scores=[93, 77] void=None champ=7292.8ms/mv opp=5013.2ms/turn (125625.7 playouts) replay_ok=True
+[12/40] deck=147000000025 champ_seat=0 rep=0 scores=[86, 73] void=None champ=9806.2ms/mv opp=5015.8ms/turn (92615.6 playouts) replay_ok=True
+[13/40] deck=147000000026 champ_seat=0 rep=0 scores=[119, 98] void=None champ=7155.6ms/mv opp=5018.1ms/turn (104110.8 playouts) replay_ok=True
+[14/40] deck=147000000026 champ_seat=1 rep=0 scores=[93, 91] void=None champ=9538.9ms/mv opp=5013.2ms/turn (129880.9 playouts) replay_ok=True
+[15/40] deck=147000000027 champ_seat=0 rep=0 scores=[115, 87] void=None champ=6342.5ms/mv opp=5014.9ms/turn (102417.2 playouts) replay_ok=True
+[16/40] deck=147000000027 champ_seat=1 rep=0 scores=[88, 112] void=None champ=8306.4ms/mv opp=5016.9ms/turn (96777.3 playouts) replay_ok=True
+[17/40] deck=147000000028 champ_seat=0 rep=0 scores=[92, 101] void=None champ=7730.2ms/mv opp=5013.5ms/turn (84561.3 playouts) replay_ok=True
+[18/40] deck=147000000029 champ_seat=0 rep=0 scores=[104, 97] void=None champ=5220.9ms/mv opp=5013.8ms/turn (91088.8 playouts) replay_ok=True
+[19/40] deck=147000000029 champ_seat=1 rep=0 scores=[86, 87] void=None champ=4154.4ms/mv opp=5014.1ms/turn (114644.8 playouts) replay_ok=True
+[20/40] deck=147000000028 champ_seat=1 rep=0 scores=[62, 66] void=None champ=11948.4ms/mv opp=5016.4ms/turn (102075.6 playouts) replay_ok=True
+[21/40] deck=147000000030 champ_seat=0 rep=0 scores=[89, 85] void=None champ=7199.3ms/mv opp=5017.6ms/turn (97700.2 playouts) replay_ok=True
+[22/40] deck=147000000030 champ_seat=1 rep=0 scores=[83, 76] void=None champ=6966.5ms/mv opp=5014.3ms/turn (113669.1 playouts) replay_ok=True
+[23/40] deck=147000000031 champ_seat=0 rep=0 scores=[125, 75] void=None champ=6491.9ms/mv opp=5014.8ms/turn (84619.6 playouts) replay_ok=True
+[24/40] deck=147000000032 champ_seat=0 rep=0 scores=[134, 93] void=None champ=5383.4ms/mv opp=5015.0ms/turn (93406.1 playouts) replay_ok=True
+[25/40] deck=147000000032 champ_seat=1 rep=0 scores=[76, 116] void=None champ=5745.1ms/mv opp=5019.0ms/turn (115567.1 playouts) replay_ok=True
+[26/40] deck=147000000031 champ_seat=1 rep=0 scores=[108, 85] void=None champ=9388.3ms/mv opp=5016.9ms/turn (98544.3 playouts) replay_ok=True
+[27/40] deck=147000000033 champ_seat=1 rep=0 scores=[69, 70] void=None champ=6588.8ms/mv opp=5013.7ms/turn (129646.2 playouts) replay_ok=True
+[28/40] deck=147000000034 champ_seat=0 rep=0 scores=[108, 102] void=None champ=6642.1ms/mv opp=5014.4ms/turn (84611.9 playouts) replay_ok=True
+[29/40] deck=147000000033 champ_seat=0 rep=0 scores=[85, 77] void=None champ=10008.4ms/mv opp=5016.1ms/turn (104524.2 playouts) replay_ok=True
+[30/40] deck=147000000035 champ_seat=0 rep=0 scores=[107, 73] void=None champ=8136.3ms/mv opp=5013.6ms/turn (94321.4 playouts) replay_ok=True
+[31/40] deck=147000000035 champ_seat=1 rep=0 scores=[88, 110] void=None champ=6748.8ms/mv opp=5013.9ms/turn (110329.8 playouts) replay_ok=True
+[32/40] deck=147000000036 champ_seat=0 rep=0 scores=[115, 83] void=None champ=4572.2ms/mv opp=5014.2ms/turn (96067.6 playouts) replay_ok=True
+[33/40] deck=147000000034 champ_seat=1 rep=0 scores=[87, 33] void=None champ=14176.1ms/mv opp=5012.9ms/turn (121592.5 playouts) replay_ok=True
+[34/40] deck=147000000036 champ_seat=1 rep=0 scores=[91, 89] void=None champ=8976.9ms/mv opp=5013.3ms/turn (104769.2 playouts) replay_ok=True
+[35/40] deck=147000000037 champ_seat=1 rep=0 scores=[93, 105] void=None champ=5510.4ms/mv opp=5016.2ms/turn (124796.0 playouts) replay_ok=True
+[36/40] deck=147000000037 champ_seat=0 rep=0 scores=[98, 82] void=None champ=8084.6ms/mv opp=5015.5ms/turn (103869.3 playouts) replay_ok=True
+[37/40] deck=147000000038 champ_seat=0 rep=0 scores=[67, 64] void=None champ=10910.7ms/mv opp=5013.0ms/turn (98899.0 playouts) replay_ok=True
+[38/40] deck=147000000039 champ_seat=0 rep=0 scores=[96, 89] void=None champ=9063.4ms/mv opp=5013.3ms/turn (90141.0 playouts) replay_ok=True
+[39/40] deck=147000000039 champ_seat=1 rep=0 scores=[93, 109] void=None champ=7143.3ms/mv opp=5016.9ms/turn (136983.9 playouts) replay_ok=True
+[40/40] deck=147000000038 champ_seat=1 rep=0 scores=[52, 58] void=None champ=14742.1ms/mv opp=5015.5ms/turn (153701.4 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 67.6 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 31,
+ "draws": 0,
+ "losses": 9,
+ "win_rate": 0.775,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 10.525,
+ "paired_margin_sem": 3.173176019799655,
+ "mean_margin_unpaired": 10.525,
+ "elo_from_win_rate": 214.84767375797915,
+ "champ_ms_per_move_mean": 7743.8,
+ "opp_driver_ms_per_turn_mean": 5015.1,
+ "opp_driver_playouts_per_turn_mean": 106515.1,
+ "wall_secs_per_game_mean": 653.6,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=80 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000040 champ_seat=0 rep=0 scores=[90, 83] void=None champ=6786.0ms/mv opp=5014.7ms/turn (107012.3 playouts) replay_ok=True
+[2/40] deck=147000000041 champ_seat=1 rep=0 scores=[89, 73] void=None champ=7593.4ms/mv opp=5014.8ms/turn (140242.8 playouts) replay_ok=True
+[3/40] deck=147000000042 champ_seat=0 rep=0 scores=[100, 68] void=None champ=6920.8ms/mv opp=5013.2ms/turn (93126.8 playouts) replay_ok=True
+[4/40] deck=147000000040 champ_seat=1 rep=0 scores=[82, 98] void=None champ=8147.9ms/mv opp=5015.7ms/turn (104404.0 playouts) replay_ok=True
+[5/40] deck=147000000041 champ_seat=0 rep=0 scores=[40, 73] void=None champ=10514.7ms/mv opp=5013.6ms/turn (95626.7 playouts) replay_ok=True
+[6/40] deck=147000000042 champ_seat=1 rep=0 scores=[102, 117] void=None champ=9630.0ms/mv opp=5011.1ms/turn (107601.1 playouts) replay_ok=True
+[7/40] deck=147000000043 champ_seat=0 rep=0 scores=[102, 85] void=None champ=13432.1ms/mv opp=5014.0ms/turn (82019.0 playouts) replay_ok=True
+[8/40] deck=147000000043 champ_seat=1 rep=0 scores=[95, 63] void=None champ=9738.3ms/mv opp=5015.0ms/turn (116855.3 playouts) replay_ok=True
+[9/40] deck=147000000044 champ_seat=1 rep=0 scores=[80, 107] void=None champ=8186.5ms/mv opp=5014.3ms/turn (109967.0 playouts) replay_ok=True
+[10/40] deck=147000000045 champ_seat=1 rep=0 scores=[68, 85] void=None champ=9608.4ms/mv opp=5017.7ms/turn (118234.8 playouts) replay_ok=True
+[11/40] deck=147000000045 champ_seat=0 rep=0 scores=[108, 94] void=None champ=9122.7ms/mv opp=5012.9ms/turn (77249.6 playouts) replay_ok=True
+[12/40] deck=147000000044 champ_seat=0 rep=0 scores=[96, 101] void=None champ=11784.5ms/mv opp=5015.5ms/turn (91186.2 playouts) replay_ok=True
+[13/40] deck=147000000046 champ_seat=0 rep=0 scores=[121, 97] void=None champ=9168.3ms/mv opp=5015.0ms/turn (93962.3 playouts) replay_ok=True
+[14/40] deck=147000000047 champ_seat=0 rep=0 scores=[117, 91] void=None champ=5550.5ms/mv opp=5015.4ms/turn (80665.3 playouts) replay_ok=True
+[15/40] deck=147000000046 champ_seat=1 rep=0 scores=[98, 87] void=None champ=9842.1ms/mv opp=5017.4ms/turn (115751.4 playouts) replay_ok=True
+[16/40] deck=147000000047 champ_seat=1 rep=0 scores=[98, 100] void=None champ=6637.4ms/mv opp=5014.2ms/turn (112336.9 playouts) replay_ok=True
+[17/40] deck=147000000048 champ_seat=0 rep=0 scores=[114, 79] void=None champ=6955.8ms/mv opp=5013.7ms/turn (102507.8 playouts) replay_ok=True
+[18/40] deck=147000000049 champ_seat=0 rep=0 scores=[78, 90] void=None champ=8742.7ms/mv opp=5013.6ms/turn (85396.9 playouts) replay_ok=True
+[19/40] deck=147000000049 champ_seat=1 rep=0 scores=[95, 87] void=None champ=8675.2ms/mv opp=5013.5ms/turn (110915.6 playouts) replay_ok=True
+[20/40] deck=147000000048 champ_seat=1 rep=0 scores=[80, 98] void=None champ=9507.4ms/mv opp=5016.1ms/turn (112679.0 playouts) replay_ok=True
+[21/40] deck=147000000050 champ_seat=0 rep=0 scores=[68, 89] void=None champ=6661.9ms/mv opp=5015.2ms/turn (97453.6 playouts) replay_ok=True
+[22/40] deck=147000000051 champ_seat=0 rep=0 scores=[105, 92] void=None champ=7079.6ms/mv opp=5012.5ms/turn (92311.1 playouts) replay_ok=True
+[23/40] deck=147000000050 champ_seat=1 rep=0 scores=[65, 114] void=None champ=8283.7ms/mv opp=5020.2ms/turn (116120.3 playouts) replay_ok=True
+[24/40] deck=147000000051 champ_seat=1 rep=0 scores=[84, 65] void=None champ=8724.2ms/mv opp=5014.4ms/turn (133565.2 playouts) replay_ok=True
+[25/40] deck=147000000052 champ_seat=0 rep=0 scores=[113, 83] void=None champ=7403.7ms/mv opp=5015.7ms/turn (92022.2 playouts) replay_ok=True
+[26/40] deck=147000000053 champ_seat=0 rep=0 scores=[126, 90] void=None champ=5969.9ms/mv opp=5014.7ms/turn (94087.6 playouts) replay_ok=True
+[27/40] deck=147000000053 champ_seat=1 rep=0 scores=[64, 84] void=None champ=7624.8ms/mv opp=5014.2ms/turn (120225.6 playouts) replay_ok=True
+[28/40] deck=147000000052 champ_seat=1 rep=0 scores=[100, 84] void=None champ=10888.9ms/mv opp=5014.2ms/turn (118093.6 playouts) replay_ok=True
+[29/40] deck=147000000054 champ_seat=0 rep=0 scores=[119, 93] void=None champ=5855.4ms/mv opp=5012.7ms/turn (81052.8 playouts) replay_ok=True
+[30/40] deck=147000000055 champ_seat=0 rep=0 scores=[118, 94] void=None champ=5289.8ms/mv opp=5015.5ms/turn (90572.3 playouts) replay_ok=True
+[31/40] deck=147000000054 champ_seat=1 rep=0 scores=[62, 93] void=None champ=8427.4ms/mv opp=5012.7ms/turn (78542.6 playouts) replay_ok=True
+[32/40] deck=147000000055 champ_seat=1 rep=0 scores=[105, 122] void=None champ=9413.2ms/mv opp=5012.9ms/turn (115557.8 playouts) replay_ok=True
+[33/40] deck=147000000056 champ_seat=0 rep=0 scores=[126, 70] void=None champ=7703.6ms/mv opp=5014.1ms/turn (98574.6 playouts) replay_ok=True
+[34/40] deck=147000000057 champ_seat=0 rep=0 scores=[86, 77] void=None champ=8878.3ms/mv opp=5013.8ms/turn (92910.1 playouts) replay_ok=True
+[35/40] deck=147000000056 champ_seat=1 rep=0 scores=[96, 62] void=None champ=11434.3ms/mv opp=5013.0ms/turn (122455.5 playouts) replay_ok=True
+[36/40] deck=147000000057 champ_seat=1 rep=0 scores=[90, 74] void=None champ=9979.2ms/mv opp=5012.8ms/turn (125367.9 playouts) replay_ok=True
+[37/40] deck=147000000058 champ_seat=0 rep=0 scores=[78, 84] void=None champ=8399.6ms/mv opp=5016.5ms/turn (130909.8 playouts) replay_ok=True
+[38/40] deck=147000000059 champ_seat=0 rep=0 scores=[126, 95] void=None champ=4899.6ms/mv opp=5015.0ms/turn (105726.1 playouts) replay_ok=True
+[39/40] deck=147000000058 champ_seat=1 rep=0 scores=[89, 94] void=None champ=7890.0ms/mv opp=5014.9ms/turn (102446.5 playouts) replay_ok=True
+[40/40] deck=147000000059 champ_seat=1 rep=0 scores=[79, 98] void=None champ=7994.3ms/mv opp=5017.6ms/turn (137932.9 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 71.3 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 27,
+ "draws": 0,
+ "losses": 13,
+ "win_rate": 0.675,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 9.675,
+ "paired_margin_sem": 3.2034674881085374,
+ "mean_margin_unpaired": 9.675,
+ "elo_from_win_rate": 126.96816474086026,
+ "champ_ms_per_move_mean": 8383.7,
+ "opp_driver_ms_per_turn_mean": 5014.6,
+ "opp_driver_playouts_per_turn_mean": 105091.7,
+ "wall_secs_per_game_mean": 699.4,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=120 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000063 champ_seat=0 rep=0 scores=[83, 82] void=None champ=7836.7ms/mv opp=5014.2ms/turn (91752.8 playouts) replay_ok=True
+[2/40] deck=147000000061 champ_seat=0 rep=0 scores=[111, 102] void=None champ=8485.7ms/mv opp=5013.5ms/turn (91833.7 playouts) replay_ok=True
+[3/40] deck=147000000062 champ_seat=1 rep=0 scores=[93, 117] void=None champ=8673.0ms/mv opp=5014.3ms/turn (106887.9 playouts) replay_ok=True
+[4/40] deck=147000000060 champ_seat=1 rep=0 scores=[83, 107] void=None champ=9817.6ms/mv opp=5012.6ms/turn (129240.1 playouts) replay_ok=True
+[5/40] deck=147000000060 champ_seat=0 rep=0 scores=[84, 75] void=None champ=10737.6ms/mv opp=5018.4ms/turn (130326.9 playouts) replay_ok=True
+[6/40] deck=147000000062 champ_seat=0 rep=0 scores=[95, 82] void=None champ=9701.5ms/mv opp=5016.3ms/turn (104429.7 playouts) replay_ok=True
+[7/40] deck=147000000063 champ_seat=1 rep=0 scores=[103, 84] void=None champ=5519.6ms/mv opp=5018.2ms/turn (114861.9 playouts) replay_ok=True
+[8/40] deck=147000000061 champ_seat=1 rep=0 scores=[86, 114] void=None champ=15584.8ms/mv opp=5018.2ms/turn (115274.6 playouts) replay_ok=True
+[9/40] deck=147000000064 champ_seat=1 rep=0 scores=[75, 119] void=None champ=5433.6ms/mv opp=5013.5ms/turn (105681.6 playouts) replay_ok=True
+[10/40] deck=147000000065 champ_seat=0 rep=0 scores=[108, 94] void=None champ=6832.3ms/mv opp=5015.2ms/turn (97964.1 playouts) replay_ok=True
+[11/40] deck=147000000065 champ_seat=1 rep=0 scores=[72, 98] void=None champ=7474.1ms/mv opp=5014.7ms/turn (126669.1 playouts) replay_ok=True
+[12/40] deck=147000000066 champ_seat=0 rep=0 scores=[62, 81] void=None champ=7878.1ms/mv opp=5015.3ms/turn (95190.8 playouts) replay_ok=True
+[13/40] deck=147000000064 champ_seat=0 rep=0 scores=[99, 110] void=None champ=11468.4ms/mv opp=5015.5ms/turn (91804.2 playouts) replay_ok=True
+[14/40] deck=147000000067 champ_seat=0 rep=0 scores=[75, 80] void=None champ=7115.9ms/mv opp=5015.0ms/turn (93988.0 playouts) replay_ok=True
+[15/40] deck=147000000066 champ_seat=1 rep=0 scores=[99, 80] void=None champ=10455.7ms/mv opp=5013.2ms/turn (117083.5 playouts) replay_ok=True
+[16/40] deck=147000000067 champ_seat=1 rep=0 scores=[110, 85] void=None champ=8654.7ms/mv opp=5011.6ms/turn (117360.6 playouts) replay_ok=True
+[17/40] deck=147000000068 champ_seat=0 rep=0 scores=[117, 98] void=None champ=6519.0ms/mv opp=5014.4ms/turn (94163.1 playouts) replay_ok=True
+[18/40] deck=147000000069 champ_seat=1 rep=0 scores=[103, 127] void=None champ=7607.6ms/mv opp=5015.5ms/turn (102699.3 playouts) replay_ok=True
+[19/40] deck=147000000069 champ_seat=0 rep=0 scores=[115, 95] void=None champ=7504.9ms/mv opp=5012.8ms/turn (77807.6 playouts) replay_ok=True
+[20/40] deck=147000000068 champ_seat=1 rep=0 scores=[97, 91] void=None champ=8419.2ms/mv opp=5014.2ms/turn (121794.9 playouts) replay_ok=True
+[21/40] deck=147000000070 champ_seat=0 rep=0 scores=[98, 80] void=None champ=7983.3ms/mv opp=5015.0ms/turn (113393.8 playouts) replay_ok=True
+[22/40] deck=147000000070 champ_seat=1 rep=0 scores=[89, 119] void=None champ=4408.5ms/mv opp=5020.1ms/turn (137931.1 playouts) replay_ok=True
+[23/40] deck=147000000071 champ_seat=1 rep=0 scores=[94, 124] void=None champ=5594.6ms/mv opp=5017.3ms/turn (143683.8 playouts) replay_ok=True
+[24/40] deck=147000000071 champ_seat=0 rep=0 scores=[91, 86] void=None champ=7773.1ms/mv opp=5015.7ms/turn (105807.6 playouts) replay_ok=True
+[25/40] deck=147000000072 champ_seat=0 rep=0 scores=[109, 87] void=None champ=4440.6ms/mv opp=5014.3ms/turn (137108.0 playouts) replay_ok=True
+[26/40] deck=147000000072 champ_seat=1 rep=0 scores=[94, 89] void=None champ=6069.8ms/mv opp=5014.7ms/turn (148676.8 playouts) replay_ok=True
+[27/40] deck=147000000073 champ_seat=0 rep=0 scores=[71, 72] void=None champ=7567.4ms/mv opp=5017.1ms/turn (130419.0 playouts) replay_ok=True
+[28/40] deck=147000000073 champ_seat=1 rep=0 scores=[76, 88] void=None champ=7571.3ms/mv opp=5013.6ms/turn (158636.3 playouts) replay_ok=True
+[29/40] deck=147000000074 champ_seat=1 rep=0 scores=[68, 93] void=None champ=4678.6ms/mv opp=5014.7ms/turn (165664.1 playouts) replay_ok=True
+[30/40] deck=147000000074 champ_seat=0 rep=0 scores=[98, 81] void=None champ=6996.8ms/mv opp=5018.5ms/turn (134969.9 playouts) replay_ok=True
+[31/40] deck=147000000075 champ_seat=1 rep=0 scores=[77, 70] void=None champ=5280.3ms/mv opp=5018.4ms/turn (145107.7 playouts) replay_ok=True
+[32/40] deck=147000000076 champ_seat=0 rep=0 scores=[88, 90] void=None champ=5202.7ms/mv opp=5016.1ms/turn (118117.1 playouts) replay_ok=True
+[33/40] deck=147000000075 champ_seat=0 rep=0 scores=[91, 68] void=None champ=6953.8ms/mv opp=5013.4ms/turn (105291.9 playouts) replay_ok=True
+[34/40] deck=147000000076 champ_seat=1 rep=0 scores=[82, 114] void=None champ=3325.8ms/mv opp=5017.3ms/turn (146466.1 playouts) replay_ok=True
+[35/40] deck=147000000077 champ_seat=1 rep=0 scores=[97, 111] void=None champ=5042.8ms/mv opp=5014.4ms/turn (144498.1 playouts) replay_ok=True
+[36/40] deck=147000000077 champ_seat=0 rep=0 scores=[83, 77] void=None champ=8352.4ms/mv opp=5016.4ms/turn (128220.6 playouts) replay_ok=True
+[37/40] deck=147000000078 champ_seat=0 rep=0 scores=[85, 92] void=None champ=6693.0ms/mv opp=5016.7ms/turn (125385.1 playouts) replay_ok=True
+[38/40] deck=147000000079 champ_seat=0 rep=0 scores=[120, 76] void=None champ=5131.1ms/mv opp=5014.5ms/turn (121284.1 playouts) replay_ok=True
+[39/40] deck=147000000078 champ_seat=1 rep=0 scores=[86, 96] void=None champ=7743.3ms/mv opp=5015.1ms/turn (174261.0 playouts) replay_ok=True
+[40/40] deck=147000000079 champ_seat=1 rep=0 scores=[62, 58] void=None champ=5190.4ms/mv opp=5019.7ms/turn (197164.6 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 63.0 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 27,
+ "draws": 0,
+ "losses": 13,
+ "win_rate": 0.675,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 10.325,
+ "paired_margin_sem": 2.7659287485590194,
+ "mean_margin_unpaired": 10.325,
+ "elo_from_win_rate": 126.96816474086026,
+ "champ_ms_per_move_mean": 7343.0,
+ "opp_driver_ms_per_turn_mean": 5015.5,
+ "opp_driver_playouts_per_turn_mean": 122722.5,
+ "wall_secs_per_game_mean": 638.7,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=160 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000082 champ_seat=0 rep=0 scores=[116, 101] void=None champ=3939.3ms/mv opp=5015.0ms/turn (123953.1 playouts) replay_ok=True
+[2/40] deck=147000000081 champ_seat=1 rep=0 scores=[99, 122] void=None champ=4167.4ms/mv opp=5013.4ms/turn (164690.9 playouts) replay_ok=True
+[3/40] deck=147000000080 champ_seat=0 rep=0 scores=[88, 111] void=None champ=5962.0ms/mv opp=5016.8ms/turn (137313.6 playouts) replay_ok=True
+[4/40] deck=147000000081 champ_seat=0 rep=0 scores=[87, 95] void=None champ=5906.2ms/mv opp=5014.5ms/turn (124127.6 playouts) replay_ok=True
+[5/40] deck=147000000080 champ_seat=1 rep=0 scores=[87, 78] void=None champ=6773.7ms/mv opp=5013.2ms/turn (166340.9 playouts) replay_ok=True
+[6/40] deck=147000000082 champ_seat=1 rep=0 scores=[51, 80] void=None champ=7408.9ms/mv opp=5011.4ms/turn (150316.9 playouts) replay_ok=True
+[7/40] deck=147000000083 champ_seat=0 rep=0 scores=[86, 75] void=None champ=7567.0ms/mv opp=5014.5ms/turn (111583.1 playouts) replay_ok=True
+[8/40] deck=147000000083 champ_seat=1 rep=0 scores=[76, 106] void=None champ=3382.6ms/mv opp=5014.0ms/turn (161332.9 playouts) replay_ok=True
+[9/40] deck=147000000084 champ_seat=0 rep=0 scores=[99, 96] void=None champ=5364.1ms/mv opp=5012.8ms/turn (107137.8 playouts) replay_ok=True
+[10/40] deck=147000000086 champ_seat=0 rep=0 scores=[89, 68] void=None champ=4201.9ms/mv opp=5015.8ms/turn (125089.9 playouts) replay_ok=True
+[11/40] deck=147000000084 champ_seat=1 rep=0 scores=[80, 103] void=None champ=5694.8ms/mv opp=5017.5ms/turn (134514.8 playouts) replay_ok=True
+[12/40] deck=147000000085 champ_seat=1 rep=0 scores=[89, 98] void=None champ=5647.9ms/mv opp=5015.6ms/turn (147325.0 playouts) replay_ok=True
+[13/40] deck=147000000085 champ_seat=0 rep=0 scores=[131, 76] void=None champ=6189.5ms/mv opp=5014.4ms/turn (110476.2 playouts) replay_ok=True
+[14/40] deck=147000000086 champ_seat=1 rep=0 scores=[80, 77] void=None champ=7090.7ms/mv opp=5014.6ms/turn (159793.2 playouts) replay_ok=True
+[15/40] deck=147000000087 champ_seat=0 rep=0 scores=[84, 75] void=None champ=5544.2ms/mv opp=5018.5ms/turn (136078.6 playouts) replay_ok=True
+[16/40] deck=147000000087 champ_seat=1 rep=0 scores=[86, 100] void=None champ=4952.4ms/mv opp=5017.5ms/turn (174812.4 playouts) replay_ok=True
+[17/40] deck=147000000088 champ_seat=1 rep=0 scores=[78, 107] void=None champ=4796.9ms/mv opp=5016.3ms/turn (144180.3 playouts) replay_ok=True
+[18/40] deck=147000000089 champ_seat=0 rep=0 scores=[99, 113] void=None champ=5298.4ms/mv opp=5014.8ms/turn (98633.3 playouts) replay_ok=True
+[19/40] deck=147000000088 champ_seat=0 rep=0 scores=[103, 81] void=None champ=7872.0ms/mv opp=5017.9ms/turn (130577.5 playouts) replay_ok=True
+[20/40] deck=147000000089 champ_seat=1 rep=0 scores=[64, 85] void=None champ=6632.0ms/mv opp=5015.2ms/turn (163407.1 playouts) replay_ok=True
+[21/40] deck=147000000090 champ_seat=1 rep=0 scores=[79, 128] void=None champ=4860.9ms/mv opp=5018.8ms/turn (149399.3 playouts) replay_ok=True
+[22/40] deck=147000000090 champ_seat=0 rep=0 scores=[81, 86] void=None champ=7915.4ms/mv opp=5015.2ms/turn (128500.5 playouts) replay_ok=True
+[23/40] deck=147000000092 champ_seat=0 rep=0 scores=[104, 69] void=None champ=4754.7ms/mv opp=5014.7ms/turn (115866.3 playouts) replay_ok=True
+[24/40] deck=147000000091 champ_seat=0 rep=0 scores=[91, 98] void=None champ=5909.9ms/mv opp=5015.8ms/turn (134210.9 playouts) replay_ok=True
+[25/40] deck=147000000092 champ_seat=1 rep=0 scores=[107, 102] void=None champ=4772.0ms/mv opp=5016.1ms/turn (113070.3 playouts) replay_ok=True
+[26/40] deck=147000000093 champ_seat=0 rep=0 scores=[130, 96] void=None champ=3734.7ms/mv opp=5017.8ms/turn (131340.7 playouts) replay_ok=True
+[27/40] deck=147000000091 champ_seat=1 rep=0 scores=[78, 64] void=None champ=8617.3ms/mv opp=5014.5ms/turn (187069.2 playouts) replay_ok=True
+[28/40] deck=147000000093 champ_seat=1 rep=0 scores=[72, 111] void=None champ=4115.9ms/mv opp=5013.0ms/turn (174486.5 playouts) replay_ok=True
+[29/40] deck=147000000094 champ_seat=0 rep=0 scores=[110, 77] void=None champ=6432.0ms/mv opp=5018.6ms/turn (145442.6 playouts) replay_ok=True
+[30/40] deck=147000000095 champ_seat=0 rep=0 scores=[98, 107] void=None champ=5060.9ms/mv opp=5015.4ms/turn (108407.4 playouts) replay_ok=True
+[31/40] deck=147000000094 champ_seat=1 rep=0 scores=[69, 48] void=None champ=8080.6ms/mv opp=5014.6ms/turn (182500.7 playouts) replay_ok=True
+[32/40] deck=147000000096 champ_seat=1 rep=0 scores=[81, 105] void=None champ=3942.3ms/mv opp=5019.1ms/turn (170809.1 playouts) replay_ok=True
+[33/40] deck=147000000095 champ_seat=1 rep=0 scores=[93, 100] void=None champ=6939.6ms/mv opp=5016.5ms/turn (154641.7 playouts) replay_ok=True
+[34/40] deck=147000000096 champ_seat=0 rep=0 scores=[59, 78] void=None champ=8624.7ms/mv opp=5019.6ms/turn (138754.2 playouts) replay_ok=True
+[35/40] deck=147000000097 champ_seat=0 rep=0 scores=[101, 79] void=None champ=6737.3ms/mv opp=5015.6ms/turn (131137.0 playouts) replay_ok=True
+[36/40] deck=147000000097 champ_seat=1 rep=0 scores=[97, 68] void=None champ=5427.9ms/mv opp=5013.2ms/turn (148203.5 playouts) replay_ok=True
+[37/40] deck=147000000098 champ_seat=0 rep=0 scores=[101, 71] void=None champ=4606.1ms/mv opp=5018.2ms/turn (142574.9 playouts) replay_ok=True
+[38/40] deck=147000000099 champ_seat=1 rep=0 scores=[92, 103] void=None champ=3624.3ms/mv opp=5017.6ms/turn (161074.6 playouts) replay_ok=True
+[39/40] deck=147000000098 champ_seat=1 rep=0 scores=[103, 74] void=None champ=7040.3ms/mv opp=5016.6ms/turn (209046.4 playouts) replay_ok=True
+[40/40] deck=147000000099 champ_seat=0 rep=0 scores=[125, 94] void=None champ=6514.0ms/mv opp=5016.8ms/turn (134006.4 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 54.8 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 26,
+ "draws": 0,
+ "losses": 14,
+ "win_rate": 0.65,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 10.85,
+ "paired_margin_sem": 3.0689660525295728,
+ "mean_margin_unpaired": 10.85,
+ "elo_from_win_rate": 107.53812491703204,
+ "champ_ms_per_move_mean": 5802.6,
+ "opp_driver_ms_per_turn_mean": 5015.8,
+ "opp_driver_playouts_per_turn_mean": 143305.7,
+ "wall_secs_per_game_mean": 538.3,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=200 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000101 champ_seat=0 rep=0 scores=[108, 110] void=None champ=4895.2ms/mv opp=5014.9ms/turn (126142.2 playouts) replay_ok=True
+[2/40] deck=147000000101 champ_seat=1 rep=0 scores=[77, 121] void=None champ=4832.3ms/mv opp=5015.9ms/turn (162281.6 playouts) replay_ok=True
+[3/40] deck=147000000100 champ_seat=1 rep=0 scores=[60, 51] void=None champ=6370.9ms/mv opp=5011.4ms/turn (158165.1 playouts) replay_ok=True
+[4/40] deck=147000000100 champ_seat=0 rep=0 scores=[97, 87] void=None champ=5364.0ms/mv opp=5013.8ms/turn (150282.3 playouts) replay_ok=True
+[5/40] deck=147000000103 champ_seat=0 rep=0 scores=[92, 83] void=None champ=5583.6ms/mv opp=5016.7ms/turn (126320.3 playouts) replay_ok=True
+[6/40] deck=147000000102 champ_seat=1 rep=0 scores=[102, 96] void=None champ=7519.0ms/mv opp=5013.5ms/turn (172353.3 playouts) replay_ok=True
+[7/40] deck=147000000102 champ_seat=0 rep=0 scores=[93, 79] void=None champ=9848.5ms/mv opp=5016.1ms/turn (122445.5 playouts) replay_ok=True
+[8/40] deck=147000000105 champ_seat=0 rep=0 scores=[84, 89] void=None champ=3711.2ms/mv opp=5015.7ms/turn (128100.0 playouts) replay_ok=True
+[9/40] deck=147000000103 champ_seat=1 rep=0 scores=[71, 110] void=None champ=5344.6ms/mv opp=5015.4ms/turn (149494.7 playouts) replay_ok=True
+[10/40] deck=147000000104 champ_seat=0 rep=0 scores=[99, 103] void=None champ=5362.1ms/mv opp=5015.1ms/turn (131229.4 playouts) replay_ok=True
+[11/40] deck=147000000104 champ_seat=1 rep=0 scores=[67, 67] void=None champ=5967.5ms/mv opp=5012.8ms/turn (144958.1 playouts) replay_ok=True
+[12/40] deck=147000000105 champ_seat=1 rep=0 scores=[92, 82] void=None champ=6453.8ms/mv opp=5014.3ms/turn (158762.5 playouts) replay_ok=True
+[13/40] deck=147000000106 champ_seat=0 rep=0 scores=[84, 88] void=None champ=7198.5ms/mv opp=5015.3ms/turn (117285.0 playouts) replay_ok=True
+[14/40] deck=147000000106 champ_seat=1 rep=0 scores=[70, 110] void=None champ=5052.2ms/mv opp=5011.8ms/turn (151574.7 playouts) replay_ok=True
+[15/40] deck=147000000107 champ_seat=0 rep=0 scores=[77, 93] void=None champ=6477.3ms/mv opp=5019.5ms/turn (150410.5 playouts) replay_ok=True
+[16/40] deck=147000000109 champ_seat=0 rep=0 scores=[62, 83] void=None champ=5360.6ms/mv opp=5014.1ms/turn (120888.5 playouts) replay_ok=True
+[17/40] deck=147000000108 champ_seat=0 rep=0 scores=[80, 65] void=None champ=6279.0ms/mv opp=5013.3ms/turn (120543.7 playouts) replay_ok=True
+[18/40] deck=147000000107 champ_seat=1 rep=0 scores=[104, 110] void=None champ=6628.4ms/mv opp=5019.0ms/turn (145944.9 playouts) replay_ok=True
+[19/40] deck=147000000108 champ_seat=1 rep=0 scores=[73, 79] void=None champ=6520.6ms/mv opp=5017.7ms/turn (155177.3 playouts) replay_ok=True
+[20/40] deck=147000000109 champ_seat=1 rep=0 scores=[89, 113] void=None champ=4768.6ms/mv opp=5014.3ms/turn (142978.6 playouts) replay_ok=True
+[21/40] deck=147000000110 champ_seat=0 rep=0 scores=[100, 99] void=None champ=7404.1ms/mv opp=5015.5ms/turn (121028.5 playouts) replay_ok=True
+[22/40] deck=147000000111 champ_seat=0 rep=0 scores=[74, 70] void=None champ=5571.5ms/mv opp=5016.9ms/turn (126004.1 playouts) replay_ok=True
+[23/40] deck=147000000112 champ_seat=1 rep=0 scores=[79, 87] void=None champ=5068.8ms/mv opp=5019.6ms/turn (152769.6 playouts) replay_ok=True
+[24/40] deck=147000000110 champ_seat=1 rep=0 scores=[103, 90] void=None champ=6060.4ms/mv opp=5015.2ms/turn (159510.3 playouts) replay_ok=True
+[25/40] deck=147000000111 champ_seat=1 rep=0 scores=[104, 107] void=None champ=5414.6ms/mv opp=5015.3ms/turn (176028.3 playouts) replay_ok=True
+[26/40] deck=147000000112 champ_seat=0 rep=0 scores=[123, 73] void=None champ=5550.0ms/mv opp=5016.5ms/turn (122409.9 playouts) replay_ok=True
+[27/40] deck=147000000113 champ_seat=0 rep=0 scores=[109, 87] void=None champ=5823.6ms/mv opp=5014.9ms/turn (115234.2 playouts) replay_ok=True
+[28/40] deck=147000000115 champ_seat=0 rep=0 scores=[104, 73] void=None champ=3314.6ms/mv opp=5015.8ms/turn (119690.1 playouts) replay_ok=True
+[29/40] deck=147000000114 champ_seat=0 rep=0 scores=[111, 95] void=None champ=3744.8ms/mv opp=5014.5ms/turn (178498.4 playouts) replay_ok=True
+[30/40] deck=147000000113 champ_seat=1 rep=0 scores=[52, 67] void=None champ=6958.9ms/mv opp=5013.2ms/turn (165346.7 playouts) replay_ok=True
+[31/40] deck=147000000115 champ_seat=1 rep=0 scores=[77, 122] void=None champ=3895.8ms/mv opp=5019.9ms/turn (158092.8 playouts) replay_ok=True
+[32/40] deck=147000000114 champ_seat=1 rep=0 scores=[95, 91] void=None champ=5619.9ms/mv opp=5015.5ms/turn (186544.4 playouts) replay_ok=True
+[33/40] deck=147000000116 champ_seat=0 rep=0 scores=[74, 99] void=None champ=6561.6ms/mv opp=5013.2ms/turn (123385.1 playouts) replay_ok=True
+[34/40] deck=147000000116 champ_seat=1 rep=0 scores=[77, 101] void=None champ=4271.6ms/mv opp=5014.9ms/turn (163637.8 playouts) replay_ok=True
+[35/40] deck=147000000118 champ_seat=0 rep=0 scores=[89, 64] void=None champ=5756.3ms/mv opp=5013.9ms/turn (119436.2 playouts) replay_ok=True
+[36/40] deck=147000000119 champ_seat=0 rep=0 scores=[90, 87] void=None champ=3720.7ms/mv opp=5016.3ms/turn (130053.5 playouts) replay_ok=True
+[37/40] deck=147000000118 champ_seat=1 rep=0 scores=[102, 85] void=None champ=5302.5ms/mv opp=5018.8ms/turn (138868.9 playouts) replay_ok=True
+[38/40] deck=147000000117 champ_seat=1 rep=0 scores=[65, 81] void=None champ=7841.7ms/mv opp=5013.6ms/turn (161075.8 playouts) replay_ok=True
+[39/40] deck=147000000117 champ_seat=0 rep=0 scores=[73, 62] void=None champ=8297.1ms/mv opp=5015.4ms/turn (124601.6 playouts) replay_ok=True
+[40/40] deck=147000000119 champ_seat=1 rep=0 scores=[100, 101] void=None champ=7226.4ms/mv opp=5020.7ms/turn (173082.2 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 56.3 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 26,
+ "draws": 1,
+ "losses": 13,
+ "win_rate": 0.6625,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 8.65,
+ "paired_margin_sem": 2.7968732541893995,
+ "mean_margin_unpaired": 8.65,
+ "elo_from_win_rate": 117.16484217672065,
+ "champ_ms_per_move_mean": 5823.6,
+ "opp_driver_ms_per_turn_mean": 5015.5,
+ "opp_driver_playouts_per_turn_mean": 143765.9,
+ "wall_secs_per_game_mean": 539.1,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=240 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000121 champ_seat=0 rep=0 scores=[109, 93] void=None champ=2372.2ms/mv opp=5015.2ms/turn (148439.4 playouts) replay_ok=True
+[2/40] deck=147000000120 champ_seat=1 rep=0 scores=[84, 102] void=None champ=5555.7ms/mv opp=5014.5ms/turn (154015.2 playouts) replay_ok=True
+[3/40] deck=147000000123 champ_seat=0 rep=0 scores=[74, 85] void=None champ=6307.3ms/mv opp=5014.3ms/turn (104357.1 playouts) replay_ok=True
+[4/40] deck=147000000120 champ_seat=0 rep=0 scores=[80, 79] void=None champ=5685.1ms/mv opp=5013.6ms/turn (126888.5 playouts) replay_ok=True
+[5/40] deck=147000000121 champ_seat=1 rep=0 scores=[99, 104] void=None champ=6225.8ms/mv opp=5014.9ms/turn (129546.3 playouts) replay_ok=True
+[6/40] deck=147000000122 champ_seat=1 rep=0 scores=[75, 73] void=None champ=7663.5ms/mv opp=5013.0ms/turn (165927.7 playouts) replay_ok=True
+[7/40] deck=147000000122 champ_seat=0 rep=0 scores=[116, 111] void=None champ=7275.5ms/mv opp=5016.0ms/turn (124991.3 playouts) replay_ok=True
+[8/40] deck=147000000123 champ_seat=1 rep=0 scores=[88, 93] void=None champ=5931.3ms/mv opp=5013.5ms/turn (151001.9 playouts) replay_ok=True
+[9/40] deck=147000000124 champ_seat=1 rep=0 scores=[94, 120] void=None champ=3891.2ms/mv opp=5015.2ms/turn (178744.8 playouts) replay_ok=True
+[10/40] deck=147000000125 champ_seat=0 rep=0 scores=[116, 89] void=None champ=4917.2ms/mv opp=5014.6ms/turn (118269.5 playouts) replay_ok=True
+[11/40] deck=147000000124 champ_seat=0 rep=0 scores=[71, 74] void=None champ=7675.7ms/mv opp=5018.3ms/turn (150854.8 playouts) replay_ok=True
+[12/40] deck=147000000126 champ_seat=0 rep=0 scores=[118, 84] void=None champ=5416.8ms/mv opp=5015.0ms/turn (118011.5 playouts) replay_ok=True
+[13/40] deck=147000000125 champ_seat=1 rep=0 scores=[72, 41] void=None champ=9854.0ms/mv opp=5014.1ms/turn (165785.6 playouts) replay_ok=True
+[14/40] deck=147000000127 champ_seat=0 rep=0 scores=[116, 89] void=None champ=6048.1ms/mv opp=5013.9ms/turn (110277.5 playouts) replay_ok=True
+[15/40] deck=147000000127 champ_seat=1 rep=0 scores=[82, 93] void=None champ=5077.5ms/mv opp=5016.4ms/turn (149967.1 playouts) replay_ok=True
+[16/40] deck=147000000126 champ_seat=1 rep=0 scores=[133, 136] void=None champ=11718.3ms/mv opp=5014.1ms/turn (147959.9 playouts) replay_ok=True
+[17/40] deck=147000000128 champ_seat=0 rep=0 scores=[92, 67] void=None champ=5232.8ms/mv opp=5018.5ms/turn (161179.5 playouts) replay_ok=True
+[18/40] deck=147000000129 champ_seat=0 rep=0 scores=[99, 112] void=None champ=5975.7ms/mv opp=5014.9ms/turn (124678.7 playouts) replay_ok=True
+[19/40] deck=147000000128 champ_seat=1 rep=0 scores=[93, 122] void=None champ=6298.0ms/mv opp=5017.6ms/turn (142228.6 playouts) replay_ok=True
+[20/40] deck=147000000129 champ_seat=1 rep=0 scores=[99, 96] void=None champ=5991.3ms/mv opp=5018.4ms/turn (155483.2 playouts) replay_ok=True
+[21/40] deck=147000000130 champ_seat=1 rep=0 scores=[86, 111] void=None champ=4788.2ms/mv opp=5014.1ms/turn (155541.2 playouts) replay_ok=True
+[22/40] deck=147000000130 champ_seat=0 rep=0 scores=[77, 89] void=None champ=6320.9ms/mv opp=5013.9ms/turn (120410.5 playouts) replay_ok=True
+[23/40] deck=147000000131 champ_seat=0 rep=0 scores=[101, 71] void=None champ=5231.7ms/mv opp=5013.4ms/turn (116927.1 playouts) replay_ok=True
+[24/40] deck=147000000132 champ_seat=0 rep=0 scores=[112, 99] void=None champ=4752.1ms/mv opp=5017.0ms/turn (132054.2 playouts) replay_ok=True
+[25/40] deck=147000000131 champ_seat=1 rep=0 scores=[88, 87] void=None champ=7908.5ms/mv opp=5015.3ms/turn (148445.1 playouts) replay_ok=True
+[26/40] deck=147000000132 champ_seat=1 rep=0 scores=[106, 87] void=None champ=7407.3ms/mv opp=5018.4ms/turn (136036.1 playouts) replay_ok=True
+[27/40] deck=147000000133 champ_seat=0 rep=0 scores=[127, 102] void=None champ=6616.9ms/mv opp=5013.3ms/turn (117791.7 playouts) replay_ok=True
+[28/40] deck=147000000134 champ_seat=1 rep=0 scores=[90, 131] void=None champ=4071.6ms/mv opp=5015.6ms/turn (152871.2 playouts) replay_ok=True
+[29/40] deck=147000000134 champ_seat=0 rep=0 scores=[83, 109] void=None champ=5713.3ms/mv opp=5016.3ms/turn (122918.3 playouts) replay_ok=True
+[30/40] deck=147000000133 champ_seat=1 rep=0 scores=[79, 107] void=None champ=6820.4ms/mv opp=5017.8ms/turn (145767.3 playouts) replay_ok=True
+[31/40] deck=147000000135 champ_seat=0 rep=0 scores=[47, 59] void=None champ=7602.8ms/mv opp=5014.4ms/turn (189821.9 playouts) replay_ok=True
+[32/40] deck=147000000136 champ_seat=0 rep=0 scores=[88, 77] void=None champ=5666.1ms/mv opp=5015.7ms/turn (123256.2 playouts) replay_ok=True
+[33/40] deck=147000000137 champ_seat=0 rep=0 scores=[72, 90] void=None champ=4927.0ms/mv opp=5015.6ms/turn (124815.1 playouts) replay_ok=True
+[34/40] deck=147000000136 champ_seat=1 rep=0 scores=[79, 113] void=None champ=5994.5ms/mv opp=5013.9ms/turn (153727.4 playouts) replay_ok=True
+[35/40] deck=147000000135 champ_seat=1 rep=0 scores=[79, 41] void=None champ=9434.9ms/mv opp=5015.4ms/turn (172122.9 playouts) replay_ok=True
+[36/40] deck=147000000138 champ_seat=0 rep=0 scores=[105, 80] void=None champ=4625.7ms/mv opp=5017.1ms/turn (130135.3 playouts) replay_ok=True
+[37/40] deck=147000000137 champ_seat=1 rep=0 scores=[69, 76] void=None champ=6632.7ms/mv opp=5013.3ms/turn (184041.6 playouts) replay_ok=True
+[38/40] deck=147000000138 champ_seat=1 rep=0 scores=[99, 108] void=None champ=5253.6ms/mv opp=5018.1ms/turn (167406.1 playouts) replay_ok=True
+[39/40] deck=147000000139 champ_seat=0 rep=0 scores=[84, 85] void=None champ=5533.2ms/mv opp=5016.0ms/turn (133722.7 playouts) replay_ok=True
+[40/40] deck=147000000139 champ_seat=1 rep=0 scores=[97, 96] void=None champ=5290.6ms/mv opp=5022.6ms/turn (186606.2 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 58.7 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 25,
+ "draws": 0,
+ "losses": 15,
+ "win_rate": 0.625,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 7.225,
+ "paired_margin_sem": 2.9342521238495833,
+ "mean_margin_unpaired": 7.225,
+ "elo_from_win_rate": 88.73949984654251,
+ "champ_ms_per_move_mean": 6142.6,
+ "opp_driver_ms_per_turn_mean": 5015.6,
+ "opp_driver_playouts_per_turn_mean": 143575.7,
+ "wall_secs_per_game_mean": 562.2,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=280 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000143 champ_seat=0 rep=0 scores=[114, 73] void=None champ=4225.8ms/mv opp=5015.7ms/turn (132739.9 playouts) replay_ok=True
+[2/40] deck=147000000140 champ_seat=0 rep=0 scores=[128, 93] void=None champ=4267.1ms/mv opp=5014.8ms/turn (125833.0 playouts) replay_ok=True
+[3/40] deck=147000000140 champ_seat=1 rep=0 scores=[98, 108] void=None champ=4245.9ms/mv opp=5018.7ms/turn (155721.1 playouts) replay_ok=True
+[4/40] deck=147000000142 champ_seat=0 rep=0 scores=[115, 104] void=None champ=4590.8ms/mv opp=5018.2ms/turn (146111.9 playouts) replay_ok=True
+[5/40] deck=147000000142 champ_seat=1 rep=0 scores=[92, 90] void=None champ=5357.0ms/mv opp=5014.2ms/turn (171980.5 playouts) replay_ok=True
+[6/40] deck=147000000141 champ_seat=0 rep=0 scores=[102, 75] void=None champ=5315.0ms/mv opp=5013.6ms/turn (112003.0 playouts) replay_ok=True
+[7/40] deck=147000000141 champ_seat=1 rep=0 scores=[79, 83] void=None champ=7119.1ms/mv opp=5016.3ms/turn (144635.1 playouts) replay_ok=True
+[8/40] deck=147000000143 champ_seat=1 rep=0 scores=[86, 84] void=None champ=4705.5ms/mv opp=5016.0ms/turn (176305.2 playouts) replay_ok=True
+[9/40] deck=147000000144 champ_seat=0 rep=0 scores=[87, 86] void=None champ=6238.6ms/mv opp=5013.9ms/turn (118140.1 playouts) replay_ok=True
+[10/40] deck=147000000144 champ_seat=1 rep=0 scores=[59, 116] void=None champ=5561.8ms/mv opp=5015.5ms/turn (160904.8 playouts) replay_ok=True
+[11/40] deck=147000000145 champ_seat=0 rep=0 scores=[111, 67] void=None champ=5840.7ms/mv opp=5015.7ms/turn (134526.7 playouts) replay_ok=True
+[12/40] deck=147000000146 champ_seat=0 rep=0 scores=[111, 90] void=None champ=5571.9ms/mv opp=5015.0ms/turn (97956.5 playouts) replay_ok=True
+[13/40] deck=147000000145 champ_seat=1 rep=0 scores=[77, 79] void=None champ=6574.0ms/mv opp=5015.8ms/turn (173562.6 playouts) replay_ok=True
+[14/40] deck=147000000146 champ_seat=1 rep=0 scores=[75, 80] void=None champ=6638.2ms/mv opp=5014.9ms/turn (132281.0 playouts) replay_ok=True
+[15/40] deck=147000000148 champ_seat=0 rep=0 scores=[99, 89] void=None champ=4997.1ms/mv opp=5016.8ms/turn (135528.5 playouts) replay_ok=True
+[16/40] deck=147000000147 champ_seat=0 rep=0 scores=[120, 79] void=None champ=5576.3ms/mv opp=5015.2ms/turn (116381.5 playouts) replay_ok=True
+[17/40] deck=147000000148 champ_seat=1 rep=0 scores=[105, 105] void=None champ=4288.5ms/mv opp=5013.8ms/turn (157465.2 playouts) replay_ok=True
+[18/40] deck=147000000150 champ_seat=0 rep=0 scores=[122, 76] void=None champ=3920.6ms/mv opp=5013.9ms/turn (112846.3 playouts) replay_ok=True
+[19/40] deck=147000000149 champ_seat=1 rep=0 scores=[79, 98] void=None champ=4645.5ms/mv opp=5019.7ms/turn (158797.6 playouts) replay_ok=True
+[20/40] deck=147000000149 champ_seat=0 rep=0 scores=[89, 91] void=None champ=7118.8ms/mv opp=5016.3ms/turn (123669.1 playouts) replay_ok=True
+[21/40] deck=147000000147 champ_seat=1 rep=0 scores=[103, 123] void=None champ=7048.8ms/mv opp=5018.8ms/turn (149055.5 playouts) replay_ok=True
+[22/40] deck=147000000150 champ_seat=1 rep=0 scores=[97, 126] void=None champ=2796.7ms/mv opp=5013.4ms/turn (123537.5 playouts) replay_ok=True
+[23/40] deck=147000000152 champ_seat=1 rep=0 scores=[87, 126] void=None champ=4450.7ms/mv opp=5016.1ms/turn (150200.9 playouts) replay_ok=True
+[24/40] deck=147000000151 champ_seat=1 rep=0 scores=[59, 74] void=None champ=6418.0ms/mv opp=5012.2ms/turn (176360.3 playouts) replay_ok=True
+[25/40] deck=147000000151 champ_seat=0 rep=0 scores=[82, 84] void=None champ=7784.4ms/mv opp=5014.6ms/turn (120019.3 playouts) replay_ok=True
+[26/40] deck=147000000152 champ_seat=0 rep=0 scores=[115, 111] void=None champ=5774.5ms/mv opp=5016.0ms/turn (115753.6 playouts) replay_ok=True
+[27/40] deck=147000000153 champ_seat=0 rep=0 scores=[94, 65] void=None champ=6832.3ms/mv opp=5014.9ms/turn (114204.7 playouts) replay_ok=True
+[28/40] deck=147000000153 champ_seat=1 rep=0 scores=[70, 105] void=None champ=6904.6ms/mv opp=5015.9ms/turn (151913.2 playouts) replay_ok=True
+[29/40] deck=147000000154 champ_seat=0 rep=0 scores=[92, 101] void=None champ=5922.1ms/mv opp=5013.5ms/turn (167289.4 playouts) replay_ok=True
+[30/40] deck=147000000154 champ_seat=1 rep=0 scores=[92, 111] void=None champ=3723.4ms/mv opp=5014.7ms/turn (152774.2 playouts) replay_ok=True
+[31/40] deck=147000000155 champ_seat=1 rep=0 scores=[97, 99] void=None champ=5222.8ms/mv opp=5012.9ms/turn (159026.8 playouts) replay_ok=True
+[32/40] deck=147000000155 champ_seat=0 rep=0 scores=[102, 88] void=None champ=5576.9ms/mv opp=5015.3ms/turn (118767.5 playouts) replay_ok=True
+[33/40] deck=147000000156 champ_seat=1 rep=0 scores=[104, 115] void=None champ=4760.3ms/mv opp=5014.4ms/turn (167416.4 playouts) replay_ok=True
+[34/40] deck=147000000157 champ_seat=0 rep=0 scores=[91, 89] void=None champ=6498.5ms/mv opp=5016.1ms/turn (122097.1 playouts) replay_ok=True
+[35/40] deck=147000000156 champ_seat=0 rep=0 scores=[104, 90] void=None champ=8243.3ms/mv opp=5016.1ms/turn (127784.9 playouts) replay_ok=True
+[36/40] deck=147000000157 champ_seat=1 rep=0 scores=[85, 92] void=None champ=5327.9ms/mv opp=5014.1ms/turn (137546.7 playouts) replay_ok=True
+[37/40] deck=147000000158 champ_seat=1 rep=0 scores=[75, 74] void=None champ=5621.6ms/mv opp=5013.6ms/turn (171451.1 playouts) replay_ok=True
+[38/40] deck=147000000158 champ_seat=0 rep=0 scores=[81, 89] void=None champ=8046.9ms/mv opp=5017.9ms/turn (135377.2 playouts) replay_ok=True
+[39/40] deck=147000000159 champ_seat=0 rep=0 scores=[73, 65] void=None champ=7231.0ms/mv opp=5018.5ms/turn (151293.9 playouts) replay_ok=True
+[40/40] deck=147000000159 champ_seat=1 rep=0 scores=[81, 90] void=None champ=5944.6ms/mv opp=5019.4ms/turn (183219.4 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 54.8 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 32,
+ "draws": 1,
+ "losses": 7,
+ "win_rate": 0.8125,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 15.125,
+ "paired_margin_sem": 2.529269449340742,
+ "mean_margin_unpaired": 15.125,
+ "elo_from_win_rate": 254.72883903486968,
+ "champ_ms_per_move_mean": 5673.2,
+ "opp_driver_ms_per_turn_mean": 5015.6,
+ "opp_driver_playouts_per_turn_mean": 142062.0,
+ "wall_secs_per_game_mean": 537.9,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=320 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000161 champ_seat=1 rep=0 scores=[88, 115] void=None champ=3233.2ms/mv opp=5015.2ms/turn (162721.6 playouts) replay_ok=True
+[2/40] deck=147000000160 champ_seat=0 rep=0 scores=[89, 77] void=None champ=4496.7ms/mv opp=5014.4ms/turn (133700.5 playouts) replay_ok=True
+[3/40] deck=147000000160 champ_seat=1 rep=0 scores=[65, 87] void=None champ=5927.1ms/mv opp=5016.1ms/turn (163174.4 playouts) replay_ok=True
+[4/40] deck=147000000162 champ_seat=0 rep=0 scores=[82, 84] void=None champ=5326.8ms/mv opp=5016.6ms/turn (134263.1 playouts) replay_ok=True
+[5/40] deck=147000000162 champ_seat=1 rep=0 scores=[86, 82] void=None champ=5405.2ms/mv opp=5018.2ms/turn (151216.9 playouts) replay_ok=True
+[6/40] deck=147000000161 champ_seat=0 rep=0 scores=[97, 88] void=None champ=6374.7ms/mv opp=5016.4ms/turn (118212.2 playouts) replay_ok=True
+[7/40] deck=147000000163 champ_seat=0 rep=0 scores=[74, 73] void=None champ=6750.9ms/mv opp=5016.4ms/turn (134586.1 playouts) replay_ok=True
+[8/40] deck=147000000163 champ_seat=1 rep=0 scores=[87, 81] void=None champ=4875.6ms/mv opp=5013.2ms/turn (163036.7 playouts) replay_ok=True
+[9/40] deck=147000000164 champ_seat=1 rep=0 scores=[86, 105] void=None champ=3887.6ms/mv opp=5016.3ms/turn (137518.2 playouts) replay_ok=True
+[10/40] deck=147000000164 champ_seat=0 rep=0 scores=[100, 59] void=None champ=6314.1ms/mv opp=5015.8ms/turn (118483.4 playouts) replay_ok=True
+[11/40] deck=147000000165 champ_seat=1 rep=0 scores=[101, 112] void=None champ=5200.7ms/mv opp=5014.3ms/turn (164574.0 playouts) replay_ok=True
+[12/40] deck=147000000166 champ_seat=0 rep=0 scores=[120, 96] void=None champ=5122.6ms/mv opp=5015.1ms/turn (104695.7 playouts) replay_ok=True
+[13/40] deck=147000000166 champ_seat=1 rep=0 scores=[99, 115] void=None champ=5324.0ms/mv opp=5014.6ms/turn (108538.7 playouts) replay_ok=True
+[14/40] deck=147000000165 champ_seat=0 rep=0 scores=[87, 96] void=None champ=6350.2ms/mv opp=5017.3ms/turn (137112.7 playouts) replay_ok=True
+[15/40] deck=147000000167 champ_seat=0 rep=0 scores=[88, 66] void=None champ=4401.9ms/mv opp=5014.4ms/turn (115251.3 playouts) replay_ok=True
+[16/40] deck=147000000167 champ_seat=1 rep=0 scores=[98, 107] void=None champ=5053.9ms/mv opp=5013.0ms/turn (155077.7 playouts) replay_ok=True
+[17/40] deck=147000000168 champ_seat=0 rep=0 scores=[99, 109] void=None champ=5456.5ms/mv opp=5016.1ms/turn (131534.2 playouts) replay_ok=True
+[18/40] deck=147000000168 champ_seat=1 rep=0 scores=[78, 66] void=None champ=8583.1ms/mv opp=5012.2ms/turn (162176.1 playouts) replay_ok=True
+[19/40] deck=147000000169 champ_seat=0 rep=0 scores=[96, 102] void=None champ=7121.1ms/mv opp=5015.3ms/turn (94799.7 playouts) replay_ok=True
+[20/40] deck=147000000170 champ_seat=0 rep=0 scores=[95, 97] void=None champ=5761.6ms/mv opp=5014.3ms/turn (109065.0 playouts) replay_ok=True
+[21/40] deck=147000000169 champ_seat=1 rep=0 scores=[81, 73] void=None champ=7497.4ms/mv opp=5014.0ms/turn (153196.7 playouts) replay_ok=True
+[22/40] deck=147000000170 champ_seat=1 rep=0 scores=[95, 68] void=None champ=7687.8ms/mv opp=5013.4ms/turn (163263.4 playouts) replay_ok=True
+[23/40] deck=147000000171 champ_seat=0 rep=0 scores=[99, 92] void=None champ=6702.6ms/mv opp=5015.4ms/turn (121000.1 playouts) replay_ok=True
+[24/40] deck=147000000171 champ_seat=1 rep=0 scores=[76, 93] void=None champ=7408.6ms/mv opp=5015.4ms/turn (150675.1 playouts) replay_ok=True
+[25/40] deck=147000000172 champ_seat=0 rep=0 scores=[78, 78] void=None champ=6090.9ms/mv opp=5017.0ms/turn (129254.0 playouts) replay_ok=True
+[26/40] deck=147000000172 champ_seat=1 rep=0 scores=[95, 97] void=None champ=6417.3ms/mv opp=5012.3ms/turn (165196.9 playouts) replay_ok=True
+[27/40] deck=147000000173 champ_seat=0 rep=0 scores=[113, 72] void=None champ=5276.4ms/mv opp=5014.9ms/turn (99176.9 playouts) replay_ok=True
+[28/40] deck=147000000174 champ_seat=1 rep=0 scores=[64, 135] void=None champ=5043.1ms/mv opp=5015.1ms/turn (131118.0 playouts) replay_ok=True
+[29/40] deck=147000000174 champ_seat=0 rep=0 scores=[55, 79] void=None champ=6955.2ms/mv opp=5015.2ms/turn (120219.1 playouts) replay_ok=True
+[30/40] deck=147000000173 champ_seat=1 rep=0 scores=[95, 101] void=None champ=8620.4ms/mv opp=5016.5ms/turn (150244.9 playouts) replay_ok=True
+[31/40] deck=147000000175 champ_seat=1 rep=0 scores=[75, 72] void=None champ=4290.4ms/mv opp=5013.4ms/turn (157168.4 playouts) replay_ok=True
+[32/40] deck=147000000175 champ_seat=0 rep=0 scores=[54, 100] void=None champ=7499.4ms/mv opp=5014.3ms/turn (111640.8 playouts) replay_ok=True
+[33/40] deck=147000000176 champ_seat=1 rep=0 scores=[86, 74] void=None champ=6128.3ms/mv opp=5012.5ms/turn (167976.1 playouts) replay_ok=True
+[34/40] deck=147000000176 champ_seat=0 rep=0 scores=[82, 72] void=None champ=7059.3ms/mv opp=5017.0ms/turn (129146.5 playouts) replay_ok=True
+[35/40] deck=147000000178 champ_seat=1 rep=0 scores=[79, 112] void=None champ=3140.1ms/mv opp=5015.0ms/turn (190998.8 playouts) replay_ok=True
+[36/40] deck=147000000177 champ_seat=0 rep=0 scores=[79, 87] void=None champ=7452.6ms/mv opp=5017.0ms/turn (138884.6 playouts) replay_ok=True
+[37/40] deck=147000000177 champ_seat=1 rep=0 scores=[112, 78] void=None champ=8773.1ms/mv opp=5017.6ms/turn (165985.4 playouts) replay_ok=True
+[38/40] deck=147000000178 champ_seat=0 rep=0 scores=[81, 77] void=None champ=6999.2ms/mv opp=5015.9ms/turn (131044.3 playouts) replay_ok=True
+[39/40] deck=147000000179 champ_seat=0 rep=0 scores=[108, 95] void=None champ=5305.4ms/mv opp=5016.2ms/turn (140312.1 playouts) replay_ok=True
+[40/40] deck=147000000179 champ_seat=1 rep=0 scores=[86, 115] void=None champ=4203.6ms/mv opp=5019.2ms/turn (187339.1 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 54.5 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 23,
+ "draws": 1,
+ "losses": 16,
+ "win_rate": 0.5875,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 5.825,
+ "paired_margin_sem": 3.607790364723188,
+ "mean_margin_unpaired": 5.825,
+ "elo_from_win_rate": 61.43356722313199,
+ "champ_ms_per_move_mean": 5988.0,
+ "opp_driver_ms_per_turn_mean": 5015.3,
+ "opp_driver_playouts_per_turn_mean": 140089.5,
+ "wall_secs_per_game_mean": 538.8,
+ "replay_failures": []
+}
+[carcasum-match] TIE ARBITER LIVE on OUR side: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0} (leaf hash does NOT move; gates = the record's manifest cand_tiearb + the per-game champ_tiearb firing telemetry; tiearb_threads NOT wired, runs sequentially — latency-only, no strength effect)
+[carcasum-match] profile=fixed_v1 {'CARCASSONNE_FIX_R9': '1', 'r9_env_expected': True} decks=200 seats=[0, 1] repeats=1 workers=7 audit_mode=None opponent={'kind': 'mcts', 'budget_ms': 5000, 'playouts': None, 'cp': 0.5, 'reuse_tree': False, 'node_priors': False, 'progressive_widening': False, 'progressive_bias': False, 'utility': 'portion', 'playout': 'random'} done=360 todo=40
+[carcasum-match] binary=/home/doctor/projects/carcassone/vendor/carcasum/build-driver/carcasum_driver sha256=c090847e1befa007e9b3b3031a9c880a60915e36f143aa6c3c30691599792968 (PRIMARY provenance witness; vendor git rev is secondary/best-effort)
+[1/40] deck=147000000182 champ_seat=1 rep=0 scores=[83, 121] void=None champ=3000.7ms/mv opp=5017.0ms/turn (132653.1 playouts) replay_ok=True
+[2/40] deck=147000000182 champ_seat=0 rep=0 scores=[101, 85] void=None champ=4738.2ms/mv opp=5013.6ms/turn (152140.8 playouts) replay_ok=True
+[3/40] deck=147000000181 champ_seat=1 rep=0 scores=[60, 49] void=None champ=6449.4ms/mv opp=5014.0ms/turn (174130.8 playouts) replay_ok=True
+[4/40] deck=147000000183 champ_seat=0 rep=0 scores=[104, 104] void=None champ=4985.1ms/mv opp=5016.2ms/turn (125942.6 playouts) replay_ok=True
+[5/40] deck=147000000180 champ_seat=0 rep=0 scores=[92, 66] void=None champ=5798.2ms/mv opp=5015.2ms/turn (120789.5 playouts) replay_ok=True
+[6/40] deck=147000000181 champ_seat=0 rep=0 scores=[102, 100] void=None champ=6315.8ms/mv opp=5016.1ms/turn (136823.7 playouts) replay_ok=True
+[7/40] deck=147000000180 champ_seat=1 rep=0 scores=[108, 95] void=None champ=6101.1ms/mv opp=5017.3ms/turn (156076.1 playouts) replay_ok=True
+[8/40] deck=147000000183 champ_seat=1 rep=0 scores=[88, 103] void=None champ=4935.1ms/mv opp=5014.9ms/turn (153558.9 playouts) replay_ok=True
+[9/40] deck=147000000184 champ_seat=0 rep=0 scores=[100, 108] void=None champ=4032.0ms/mv opp=5015.8ms/turn (125427.7 playouts) replay_ok=True
+[10/40] deck=147000000185 champ_seat=1 rep=0 scores=[97, 115] void=None champ=4058.1ms/mv opp=5015.0ms/turn (151009.2 playouts) replay_ok=True
+[11/40] deck=147000000186 champ_seat=1 rep=0 scores=[101, 123] void=None champ=2952.5ms/mv opp=5019.5ms/turn (154474.3 playouts) replay_ok=True
+[12/40] deck=147000000184 champ_seat=1 rep=0 scores=[105, 107] void=None champ=4594.8ms/mv opp=5015.5ms/turn (148387.1 playouts) replay_ok=True
+[13/40] deck=147000000185 champ_seat=0 rep=0 scores=[108, 81] void=None champ=5943.3ms/mv opp=5013.8ms/turn (113435.1 playouts) replay_ok=True
+[14/40] deck=147000000186 champ_seat=0 rep=0 scores=[106, 91] void=None champ=7504.8ms/mv opp=5014.5ms/turn (120749.0 playouts) replay_ok=True
+[15/40] deck=147000000187 champ_seat=1 rep=0 scores=[105, 102] void=None champ=4379.6ms/mv opp=5015.5ms/turn (162542.3 playouts) replay_ok=True
+[16/40] deck=147000000189 champ_seat=0 rep=0 scores=[88, 80] void=None champ=5902.6ms/mv opp=5015.8ms/turn (124181.7 playouts) replay_ok=True
+[17/40] deck=147000000187 champ_seat=0 rep=0 scores=[103, 101] void=None champ=8347.7ms/mv opp=5015.4ms/turn (120257.9 playouts) replay_ok=True
+[18/40] deck=147000000188 champ_seat=1 rep=0 scores=[98, 99] void=None champ=7615.2ms/mv opp=5020.0ms/turn (151985.9 playouts) replay_ok=True
+[19/40] deck=147000000188 champ_seat=0 rep=0 scores=[91, 71] void=None champ=7501.9ms/mv opp=5016.7ms/turn (105471.1 playouts) replay_ok=True
+[20/40] deck=147000000189 champ_seat=1 rep=0 scores=[98, 127] void=None champ=5564.4ms/mv opp=5014.2ms/turn (153301.8 playouts) replay_ok=True
+[21/40] deck=147000000190 champ_seat=0 rep=0 scores=[108, 71] void=None champ=6191.2ms/mv opp=5015.5ms/turn (114367.9 playouts) replay_ok=True
+[22/40] deck=147000000190 champ_seat=1 rep=0 scores=[82, 92] void=None champ=4481.8ms/mv opp=5012.2ms/turn (155258.8 playouts) replay_ok=True
+[23/40] deck=147000000191 champ_seat=0 rep=0 scores=[111, 69] void=None champ=4644.3ms/mv opp=5016.8ms/turn (140311.1 playouts) replay_ok=True
+[24/40] deck=147000000192 champ_seat=1 rep=0 scores=[82, 95] void=None champ=3209.8ms/mv opp=5015.9ms/turn (164812.3 playouts) replay_ok=True
+[25/40] deck=147000000192 champ_seat=0 rep=0 scores=[84, 78] void=None champ=5444.7ms/mv opp=5016.4ms/turn (127828.7 playouts) replay_ok=True
+[26/40] deck=147000000191 champ_seat=1 rep=0 scores=[101, 84] void=None champ=7137.8ms/mv opp=5015.0ms/turn (166650.8 playouts) replay_ok=True
+[27/40] deck=147000000194 champ_seat=0 rep=0 scores=[129, 81] void=None champ=3543.4ms/mv opp=5015.5ms/turn (119207.1 playouts) replay_ok=True
+[28/40] deck=147000000193 champ_seat=0 rep=0 scores=[89, 99] void=None champ=8146.0ms/mv opp=5014.6ms/turn (113699.8 playouts) replay_ok=True
+[29/40] deck=147000000195 champ_seat=0 rep=0 scores=[103, 81] void=None champ=3613.2ms/mv opp=5015.1ms/turn (126914.5 playouts) replay_ok=True
+[30/40] deck=147000000194 champ_seat=1 rep=0 scores=[69, 101] void=None champ=5932.6ms/mv opp=5013.1ms/turn (151919.1 playouts) replay_ok=True
+[31/40] deck=147000000195 champ_seat=1 rep=0 scores=[82, 117] void=None champ=4406.0ms/mv opp=5017.1ms/turn (163894.5 playouts) replay_ok=True
+[32/40] deck=147000000193 champ_seat=1 rep=0 scores=[85, 59] void=None champ=11555.5ms/mv opp=5015.8ms/turn (122001.6 playouts) replay_ok=True
+[33/40] deck=147000000196 champ_seat=0 rep=0 scores=[85, 84] void=None champ=5512.0ms/mv opp=5017.8ms/turn (127682.7 playouts) replay_ok=True
+[34/40] deck=147000000196 champ_seat=1 rep=0 scores=[67, 118] void=None champ=4868.9ms/mv opp=5017.0ms/turn (170243.6 playouts) replay_ok=True
+[35/40] deck=147000000197 champ_seat=0 rep=0 scores=[60, 74] void=None champ=5758.2ms/mv opp=5014.8ms/turn (127738.1 playouts) replay_ok=True
+[36/40] deck=147000000198 champ_seat=0 rep=0 scores=[98, 86] void=None champ=4298.0ms/mv opp=5017.0ms/turn (137639.5 playouts) replay_ok=True
+[37/40] deck=147000000199 champ_seat=0 rep=0 scores=[82, 102] void=None champ=4565.2ms/mv opp=5014.9ms/turn (111523.6 playouts) replay_ok=True
+[38/40] deck=147000000197 champ_seat=1 rep=0 scores=[50, 63] void=None champ=10761.7ms/mv opp=5014.0ms/turn (170617.7 playouts) replay_ok=True
+[39/40] deck=147000000198 champ_seat=1 rep=0 scores=[81, 115] void=None champ=4923.5ms/mv opp=5015.4ms/turn (189995.8 playouts) replay_ok=True
+[40/40] deck=147000000199 champ_seat=1 rep=0 scores=[85, 107] void=None champ=5232.0ms/mv opp=5019.0ms/turn (148277.6 playouts) replay_ok=True
+
+[carcasum-match] DONE 40 games in 53.7 min
+{
+ "n_records": 40,
+ "n_scored": 40,
+ "voids": {},
+ "wins": 30,
+ "draws": 1,
+ "losses": 9,
+ "win_rate": 0.7625,
+ "n_paired_decks": 20,
+ "paired_margin_mean": 12.425,
+ "paired_margin_sem": 3.167116196163317,
+ "mean_margin_unpaired": 12.425,
+ "elo_from_win_rate": 202.63049362317514,
+ "champ_ms_per_move_mean": 5623.7,
+ "opp_driver_ms_per_turn_mean": 5015.7,
+ "opp_driver_playouts_per_turn_mean": 140848.1,
+ "wall_secs_per_game_mean": 526.2,
+ "replay_failures": []
+}
