@@ -1,0 +1,236 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 0 cached, 1400 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/1400 played (32.9s/game, ~763 min left)
+  20/1400 played (20.4s/game, ~469 min left)
+  30/1400 played (22.7s/game, ~518 min left)
+  40/1400 played (19.3s/game, ~439 min left)
+  50/1400 played (19.9s/game, ~447 min left)
+  60/1400 played (18.7s/game, ~418 min left)
+  70/1400 played (18.7s/game, ~415 min left)
+  80/1400 played (18.8s/game, ~414 min left)
+  90/1400 played (18.5s/game, ~403 min left)
+  100/1400 played (17.7s/game, ~384 min left)
+  110/1400 played (18.2s/game, ~391 min left)
+  120/1400 played (18.0s/game, ~383 min left)
+  130/1400 played (18.1s/game, ~383 min left)
+  140/1400 played (18.0s/game, ~377 min left)
+  150/1400 played (17.7s/game, ~368 min left)
+  160/1400 played (17.8s/game, ~367 min left)
+  170/1400 played (17.5s/game, ~359 min left)
+  180/1400 played (17.7s/game, ~359 min left)
+  190/1400 played (17.6s/game, ~354 min left)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/mp-ije6lplu', '/mp-95awh19f', '/mp-j8q36cg2', '/mp-g48grjyf', '/mp-spqixbzp', '/mp-es4xir1_'}
+  warnings.warn(
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 194 cached, 1206 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/1206 played (33.4s/game, ~665 min left)
+  20/1206 played (21.5s/game, ~425 min left)
+  30/1206 played (21.9s/game, ~428 min left)
+  40/1206 played (19.7s/game, ~383 min left)
+  50/1206 played (20.0s/game, ~385 min left)
+  60/1206 played (18.8s/game, ~359 min left)
+  70/1206 played (18.7s/game, ~354 min left)
+  80/1206 played (18.5s/game, ~348 min left)
+  90/1206 played (18.2s/game, ~339 min left)
+  100/1206 played (17.7s/game, ~327 min left)
+  110/1206 played (17.8s/game, ~325 min left)
+  120/1206 played (17.7s/game, ~320 min left)
+  130/1206 played (17.7s/game, ~317 min left)
+  140/1206 played (17.5s/game, ~311 min left)
+  150/1206 played (17.6s/game, ~310 min left)
+  160/1206 played (17.4s/game, ~304 min left)
+  170/1206 played (17.2s/game, ~297 min left)
+  180/1206 played (17.3s/game, ~296 min left)
+  190/1206 played (17.3s/game, ~294 min left)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/mp-ctdqyfx1', '/mp-h9d8hses', '/mp-i79stat4', '/mp-9aj8vvdc', '/mp-ecimlw41', '/mp-6v6a4uym'}
+  warnings.warn(
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 390 cached, 1010 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/1010 played (34.0s/game, ~566 min left)
+  20/1010 played (22.0s/game, ~363 min left)
+  30/1010 played (21.9s/game, ~357 min left)
+  40/1010 played (20.3s/game, ~328 min left)
+  50/1010 played (19.2s/game, ~308 min left)
+  60/1010 played (18.9s/game, ~299 min left)
+  70/1010 played (18.3s/game, ~287 min left)
+  80/1010 played (17.8s/game, ~276 min left)
+  90/1010 played (17.6s/game, ~270 min left)
+  100/1010 played (17.6s/game, ~267 min left)
+  110/1010 played (17.7s/game, ~265 min left)
+  120/1010 played (17.1s/game, ~254 min left)
+  130/1010 played (17.4s/game, ~255 min left)
+  140/1010 played (17.0s/game, ~247 min left)
+  150/1010 played (17.3s/game, ~248 min left)
+  160/1010 played (16.9s/game, ~239 min left)
+  170/1010 played (16.7s/game, ~234 min left)
+  180/1010 played (16.9s/game, ~234 min left)
+  190/1010 played (17.0s/game, ~232 min left)
+  200/1010 played (16.7s/game, ~226 min left)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/mp-_xioiqh0', '/mp-2l6yvep6', '/mp-9qk1fh3g', '/mp-4_l46j97', '/mp-ihd9d4q2', '/mp-blvjpx2e'}
+  warnings.warn(
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 591 cached, 809 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/809 played (37.2s/game, ~496 min left)
+  20/809 played (22.8s/game, ~300 min left)
+  30/809 played (21.6s/game, ~281 min left)
+  40/809 played (19.5s/game, ~250 min left)
+  50/809 played (19.4s/game, ~246 min left)
+  60/809 played (19.5s/game, ~243 min left)
+  70/809 played (18.4s/game, ~226 min left)
+  80/809 played (18.2s/game, ~221 min left)
+  90/809 played (18.1s/game, ~217 min left)
+  100/809 played (17.9s/game, ~212 min left)
+  110/809 played (17.9s/game, ~208 min left)
+  120/809 played (18.0s/game, ~206 min left)
+  130/809 played (18.0s/game, ~203 min left)
+  140/809 played (17.3s/game, ~193 min left)
+  150/809 played (17.6s/game, ~193 min left)
+  160/809 played (17.2s/game, ~186 min left)
+  170/809 played (17.5s/game, ~186 min left)
+  180/809 played (17.5s/game, ~184 min left)
+  190/809 played (17.0s/game, ~175 min left)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/mp-c9rh64al', '/mp-ycmdy8cs', '/mp-h5m8yys8', '/mp-j8w1h0f4', '/mp-_d056_ct', '/mp-uu2wz56d'}
+  warnings.warn(
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 787 cached, 613 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/613 played (36.3s/game, ~365 min left)
+  20/613 played (22.8s/game, ~225 min left)
+  30/613 played (22.9s/game, ~223 min left)
+  40/613 played (20.9s/game, ~199 min left)
+  50/613 played (20.3s/game, ~190 min left)
+  60/613 played (19.0s/game, ~175 min left)
+  70/613 played (19.5s/game, ~177 min left)
+  80/613 played (18.5s/game, ~164 min left)
+  90/613 played (18.4s/game, ~160 min left)
+  100/613 played (18.7s/game, ~160 min left)
+  110/613 played (17.9s/game, ~150 min left)
+  120/613 played (18.2s/game, ~149 min left)
+  130/613 played (17.7s/game, ~143 min left)
+  140/613 played (18.0s/game, ~142 min left)
+  150/613 played (17.7s/game, ~136 min left)
+  160/613 played (17.7s/game, ~134 min left)
+  170/613 played (17.4s/game, ~128 min left)
+  180/613 played (17.5s/game, ~126 min left)
+  190/613 played (17.6s/game, ~124 min left)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/mp-c7ewkkyk', '/mp-2eezt3rv', '/mp-0wtwf135', '/mp-c91ar3wx', '/mp-6by1acxr', '/mp-f1s_w5vs'}
+  warnings.warn(
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 981 cached, 419 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/419 played (37.6s/game, ~256 min left)
+  20/419 played (23.9s/game, ~159 min left)
+  30/419 played (24.9s/game, ~161 min left)
+  40/419 played (21.3s/game, ~134 min left)
+  50/419 played (20.9s/game, ~128 min left)
+  60/419 played (19.9s/game, ~119 min left)
+  70/419 played (19.8s/game, ~115 min left)
+  80/419 played (19.0s/game, ~107 min left)
+  90/419 played (18.6s/game, ~102 min left)
+  100/419 played (18.5s/game, ~98 min left)
+  110/419 played (17.7s/game, ~91 min left)
+  120/419 played (17.9s/game, ~89 min left)
+  130/419 played (17.5s/game, ~84 min left)
+  140/419 played (17.9s/game, ~83 min left)
+  150/419 played (17.5s/game, ~79 min left)
+  160/419 played (17.7s/game, ~76 min left)
+  170/419 played (17.4s/game, ~72 min left)
+  180/419 played (17.3s/game, ~69 min left)
+  190/419 played (17.5s/game, ~67 min left)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/mp-wl_j_ea9', '/mp-nnplt3m3', '/mp-t65mndhc', '/mp-fwjdlque', '/mp-t9lji0w3', '/mp-6f9fetb8'}
+  warnings.warn(
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 1178 cached, 222 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/222 played (35.5s/game, ~125 min left)
+  20/222 played (22.4s/game, ~76 min left)
+  30/222 played (21.9s/game, ~70 min left)
+  40/222 played (19.3s/game, ~59 min left)
+  50/222 played (19.7s/game, ~56 min left)
+  60/222 played (18.4s/game, ~50 min left)
+  70/222 played (18.5s/game, ~47 min left)
+  80/222 played (18.5s/game, ~44 min left)
+  90/222 played (18.1s/game, ~40 min left)
+  100/222 played (18.1s/game, ~37 min left)
+  110/222 played (17.9s/game, ~33 min left)
+  120/222 played (17.5s/game, ~30 min left)
+  130/222 played (17.4s/game, ~27 min left)
+  140/222 played (17.6s/game, ~24 min left)
+  150/222 played (17.3s/game, ~21 min left)
+  160/222 played (17.7s/game, ~18 min left)
+  170/222 played (17.2s/game, ~15 min left)
+  180/222 played (17.4s/game, ~12 min left)
+  190/222 played (17.3s/game, ~9 min left)
+/usr/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown: {'/mp-jp8r63mr', '/mp-155pfgyj', '/mp-h6mmbam9', '/mp-01bse5yb', '/mp-u2tai_x4', '/mp-m980aszh'}
+  warnings.warn(
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 1376 cached, 24 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+  10/24 played (35.5s/game, ~8 min left)
+  20/24 played (19.7s/game, ~1 min left)
+  24/24 played (21.2s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=16, sims=1376, total~22016) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 1400   candidate: 714W / 29D / 657L   winrate 0.520 (z=+1.52)
+avg score diff (candidate - opponent): +1.23
+ELO: +14.2  (+/- 9.3 1sigma)
+PAIRED: 700 decks   mean seat-balanced margin +1.23   z = +2.52
+prefix ms/move: candidate 3449  opponent 1721  (ratio 2.00x)
+fair endgame: candidate latched 1400/1400 games, 1.38s solver/game, timeouts=0
+fair endgame: opponent  latched 1400/1400 games, 1.54s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=1400 (1σ≈±9); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376/summary.json
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-k-dets: ASYMMETRIC search budgets — candidate k16x1376 (total 22016) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=1400 paired=True K=2 k_dets=16 sims=1376 | 1400 cached, 0 to play, 22 workers, out=/home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376
+
+=== FAIR-PUCT[fair] (K=2, k_dets=16, sims=1376, total~22016) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 1400   candidate: 714W / 29D / 657L   winrate 0.520 (z=+1.52)
+avg score diff (candidate - opponent): +1.23
+ELO: +14.2  (+/- 9.3 1sigma)
+PAIRED: 700 decks   mean seat-balanced margin +1.23   z = +2.52
+prefix ms/move: candidate 3449  opponent 1721  (ratio 2.00x)
+fair endgame: candidate latched 1400/1400 games, 1.38s solver/game, timeouts=0
+fair endgame: opponent  latched 1400/1400 games, 1.54s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=1400 (1σ≈±9); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /home/doctor/projects/carcassone/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376/summary.json

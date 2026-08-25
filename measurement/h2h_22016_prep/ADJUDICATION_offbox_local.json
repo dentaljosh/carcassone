@@ -1,0 +1,229 @@
+{
+  "branch": "U-UNREADABLE",
+  "display": {
+    "elo_D": 14.153415640509905,
+    "elo_per_point": 11.513528121274764,
+    "elo_per_point_bracket": [
+      16.74,
+      19.35
+    ],
+    "elo_per_point_outside_bracket": true,
+    "limb": "own-ratio",
+    "two_sigma_elo": 11.233422021569824,
+    "two_sigma_elo_hi": null,
+    "two_sigma_elo_lo": null,
+    "two_sigma_pts": 0.9756715668078009
+  },
+  "gates": [
+    {
+      "id": "G-BAND",
+      "observed": "seed_start=148000000000@manifest.config.seed_start (want 148000000000); n_decks=700@manifest.config.n_decks (want 700); seatings_per_deck=2@manifest.config.seatings_per_deck (want 2)",
+      "passed": true,
+      "proposition": "config.seed_start==148000000000, config.n_decks==700, config.seatings_per_deck==2",
+      "resolved_address": "seed_start->manifest.config.seed_start; n_decks->manifest.config.n_decks; seatings_per_deck->manifest.config.seatings_per_deck"
+    },
+    {
+      "id": "G-DECKS",
+      "observed": "n_common=700 (want 700); out_of_range=[]; single_seat=[]",
+      "passed": true,
+      "proposition": "every realized deck_seed in [148000000000,148000000699]; every counted deck has both a_seat 0 and 1; n_common==700",
+      "resolved_address": "raw seed*_a*.json records (adjudicator's own collection)"
+    },
+    {
+      "id": "G-SINGLEVAR",
+      "observed": "champion.k_dets=16@manifest.config.champion.k_dets vs opponent.k_dets=8@manifest.config.opponent.k_dets (must DIFFER); champion.total_sims=22016@manifest.config.champion.total_sims vs opponent.total_sims=11008@manifest.config.opponent.total_sims (must DIFFER); champion.sims_per_det=1376@manifest.config.champion.sims_per_det vs opponent.sims_per_det=1376@manifest.config.opponent.sims_per_det (must EQUAL); cand_leaf_hash='a36d2e15a3b3d71d'@manifest.config.cand_leaf_hash vs opponent.leaf_hash='a36d2e15a3b3d71d'@manifest.config.opponent.leaf_hash (must EQUAL); champion.c_puct=1.5@manifest.config.champion.c_puct vs opponent.champ_cfg.c_puct=1.5@manifest.config.opponent.champ_cfg.c_puct (must EQUAL); champion.tau_p=5.0@manifest.config.champion.tau_p vs opponent.champ_cfg.tau_p=5.0@manifest.config.opponent.champ_cfg.tau_p (must EQUAL); champion.leaf_quantize='float'@manifest.config.champion.leaf_quantize vs opponent.champ_cfg.leaf_quantize='float'@manifest.config.opponent.champ_cfg.leaf_quantize (must EQUAL); champion.final_select='visits'@manifest.config.champion.final_select vs opponent.champ_cfg.final_select='visits'@manifest.config.opponent.champ_cfg.final_select (must EQUAL); champion.value_norm=15.0@manifest.config.champion.value_norm vs opponent.champ_cfg.value_norm=15.0@manifest.config.opponent.champ_cfg.value_norm (must EQUAL); endgame.mode='marginalized'@manifest.config.endgame.mode vs opponent.endgame.mode='marginalized'@manifest.config.opponent.endgame.mode (must EQUAL); endgame.exact_k=2@manifest.config.endgame.exact_k vs opponent.endgame.exact_k=2@manifest.config.opponent.endgame.exact_k (must EQUAL)",
+      "passed": true,
+      "proposition": "candidate/opponent config blocks differ in EXACTLY k_dets + total_sims (sims_per_det, leaf hash, search knobs, and the endgame handoff are identical)",
+      "resolved_address": "manifest.config.cand_leaf_hash; manifest.config.champion.c_puct; manifest.config.champion.final_select; manifest.config.champion.k_dets; manifest.config.champion.leaf_quantize; manifest.config.champion.sims_per_det; manifest.config.champion.tau_p; manifest.config.champion.total_sims; manifest.config.champion.value_norm; manifest.config.endgame.exact_k; manifest.config.endgame.mode; manifest.config.opponent.champ_cfg.c_puct; manifest.config.opponent.champ_cfg.final_select; manifest.config.opponent.champ_cfg.leaf_quantize; manifest.config.opponent.champ_cfg.tau_p; manifest.config.opponent.champ_cfg.value_norm; manifest.config.opponent.endgame.exact_k; manifest.config.opponent.endgame.mode; manifest.config.opponent.k_dets; manifest.config.opponent.leaf_hash; manifest.config.opponent.sims_per_det; manifest.config.opponent.total_sims"
+    },
+    {
+      "id": "G-REV",
+      "observed": "code_rev='e465c8a270-dirty'@manifest.code_rev vs PINNED_SRC_REV='e465c8a270350d17b357fd1520abf64685be951a'; boundaries=['after-pass-1', 'after-pass-2', 'after-pass-3', 'after-pass-4', 'after-pass-5', 'after-pass-6', 'after-pass-7', 'after-pass-8', 'after-seal', 'before-pass-1', 'before-pass-2', 'before-pass-3', 'before-pass-4', 'before-pass-5', 'before-pass-6', 'before-pass-7', 'before-pass-8', 'before-seal', 'pre-flight']; has_pre-flight=True; has_after-pass-N=True; dirty=none",
+      "passed": false,
+      "proposition": "config.code_rev == PINNED_SRC_REV; SRC_CLEAN.jsonl has a clean 'pre-flight' boundary and a clean 'after-pass-N' boundary for the final pass",
+      "resolved_address": "manifest.code_rev + SRC_CLEAN.jsonl"
+    },
+    {
+      "id": "G-BLIND",
+      "observed": "BLIND_COMMIT='3a0a631be8c4d37c5597d7a33b1d86c89a3429e7' hex40=True literal_PENDING=False ancestor_of_HEAD=False introduced_FROZEN_banner=True BLIND_PROOF.is_ancestor_of_head=True",
+      "passed": false,
+      "proposition": "BLIND_COMMIT is a 40-hex sha (not the literal PENDING), an ancestor of HEAD, the commit that introduced this pair's FROZEN banner, and BLIND_PROOF.json agrees",
+      "resolved_address": "BLIND_COMMIT + BLIND_PROOF.json + `git merge-base --is-ancestor`"
+    },
+    {
+      "id": "G-LEAF",
+      "observed": "cand='a36d2e15a3b3d71d'@manifest.config.cand_leaf_hash; opp='a36d2e15a3b3d71d'@manifest.config.opponent.leaf_hash; want='a36d2e15a3b3d71d'",
+      "passed": true,
+      "proposition": "config.cand_leaf_hash == opponent leaf hash == \"a36d2e15a3b3d71d\"",
+      "resolved_address": "manifest.config.cand_leaf_hash / manifest.config.opponent.leaf_hash"
+    },
+    {
+      "id": "G-RULES",
+      "observed": "name='fixed_v1'@manifest.rules_profile.name; r9_env_ok=True@manifest.rules_profile.r9_env_ok; r9_env_observed=True@manifest.rules_profile.r9_env_observed",
+      "passed": true,
+      "proposition": "rules_profile.name==\"fixed_v1\" AND r9_env_ok==true AND r9_env_observed==true",
+      "resolved_address": "manifest.rules_profile.name"
+    },
+    {
+      "id": "G-BACKEND",
+      "observed": "name='rust'@manifest.config.backend.name; requested='rust'@manifest.config.backend.requested; mixed_builds=False@manifest.mixed_builds; converted_sides=['candidate', 'opponent']@manifest.config.backend.converted_sides",
+      "passed": true,
+      "proposition": "backend.name==\"rust\", backend.requested==\"rust\", mixed_builds==false, backend.converted_sides==[\"candidate\",\"opponent\"]",
+      "resolved_address": "manifest.config.backend.name / manifest.mixed_builds / manifest.config.backend.converted_sides"
+    },
+    {
+      "id": "G-BUDGET",
+      "observed": "candidate=(16, 1376, 22016) (want (16, 1376, 22016)); opponent=(8, 1376, 11008) (want (8, 1376, 11008)); product_identity_holds=True",
+      "passed": true,
+      "proposition": "candidate (k_dets,sims_per_det,total_sims)==(16, 1376, 22016), opponent==(8, 1376, 11008), and k*s==total on both sides",
+      "resolved_address": "manifest.config.champion.k_dets/manifest.config.champion.sims_per_det/manifest.config.champion.total_sims ; manifest.config.opponent.k_dets/manifest.config.opponent.sims_per_det/manifest.config.opponent.total_sims"
+    },
+    {
+      "id": "G-TIEARB",
+      "observed": "cand_tiearb.enabled=False@manifest.cand_tiearb.enabled; stray tiearb-named keys=['config.champion.tiearb_b', 'config.champion.tiearb_enabled', 'config.champion.tiearb_eps', 'config.champion.tiearb_j', 'config.champion.tiearb_mode', 'config.champion.tiearb_salt']",
+      "passed": false,
+      "proposition": "cand_tiearb absent or enabled==false, and no other *tiearb* key resolves anywhere in the manifest/summary (the opponent side is structurally disarmed)",
+      "resolved_address": "manifest.cand_tiearb.enabled"
+    },
+    {
+      "id": "G-EXACT",
+      "observed": "candidate: mode='marginalized'@manifest.config.endgame.mode exact_k=2@manifest.config.endgame.exact_k; opponent: mode='marginalized'@manifest.config.opponent.endgame.mode exact_k=2@manifest.config.opponent.endgame.exact_k",
+      "passed": true,
+      "proposition": "config.endgame.exact_k==2, mode==\"marginalized\", identical on the opponent side",
+      "resolved_address": "manifest.config.endgame.mode/manifest.config.endgame.exact_k ; manifest.config.opponent.endgame.mode/manifest.config.opponent.endgame.exact_k"
+    },
+    {
+      "id": "G-N",
+      "observed": "n_scored(summary)=1400@summary.n (want 1400); n_failed=0@summary.n_failed; failure_rate=0.0 (void bar >= 2%); n_common(records)=700 (floor 560)",
+      "passed": true,
+      "proposition": "n_scored==1400; failure rate < 2%; n_common >= 560",
+      "resolved_address": "summary.n"
+    },
+    {
+      "id": "G-SAT",
+      "observed": "winrate=0.5203571428571429@summary.winrate",
+      "passed": true,
+      "proposition": "winrate in [0.35,0.65]",
+      "resolved_address": "summary.winrate"
+    },
+    {
+      "id": "RECON",
+      "observed": "paired_mean_margin: analyzer=1.2292857142857143@summary.paired_mean_margin witness=1.2292857142857143 agree=True; paired_z: analyzer=2.5198760650731833@summary.paired_z witness=2.5198760650731833 agree=True; n_paired: analyzer=700@summary.n_paired witness=700.0 agree=True; winrate: analyzer=0.5203571428571429@summary.winrate witness=0.5203571428571429 agree=True; elo: analyzer=14.153415640509905@summary.elo witness=14.153415640509905 agree=True",
+      "passed": true,
+      "proposition": "the analyzer's own summary.json value and the from-scratch witness recomputation agree (rel 1e-6 / abs 1e-9) on paired_mean_margin, paired_z, n_paired, winrate, elo",
+      "resolved_address": "summary.* (and manifest.* via the resolver) vs raw seed*_a*.json records"
+    }
+  ],
+  "recon": [
+    {
+      "address": "summary.paired_mean_margin",
+      "agree": true,
+      "analyzer": 1.2292857142857143,
+      "stat": "paired_mean_margin",
+      "witness": 1.2292857142857143
+    },
+    {
+      "address": "summary.paired_z",
+      "agree": true,
+      "analyzer": 2.5198760650731833,
+      "stat": "paired_z",
+      "witness": 2.5198760650731833
+    },
+    {
+      "address": "summary.n_paired",
+      "agree": true,
+      "analyzer": 700,
+      "stat": "n_paired",
+      "witness": 700.0
+    },
+    {
+      "address": "summary.winrate",
+      "agree": true,
+      "analyzer": 0.5203571428571429,
+      "stat": "winrate",
+      "witness": 0.5203571428571429
+    },
+    {
+      "address": "summary.elo",
+      "agree": true,
+      "analyzer": 14.153415640509905,
+      "stat": "elo",
+      "witness": 14.153415640509905
+    }
+  ],
+  "run_dir": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/wt-h2h22k/measurement/h2h_22016_20260824/h2h_k16x1376_vs_champ_k8x1376",
+  "schema_version": 1,
+  "statistic": {
+    "D": 1.2292857142857143,
+    "D_draws": 29,
+    "L": 657,
+    "SE_D": 0.48783578340390044,
+    "W": 714,
+    "elo_D": 14.153415640509905,
+    "elo_sig_1sigma": 9.293312345648147,
+    "n_common": 700,
+    "n_scored": 1400,
+    "winrate": 0.5203571428571429,
+    "z_D": 2.5198760650731833
+  },
+  "utc": "2026-08-25T13:58:30+00:00",
+  "void": {
+    "fired": true,
+    "gate_ids_failed": [
+      "G-REV",
+      "G-BLIND",
+      "G-TIEARB"
+    ],
+    "reasons": [
+      "gate(s) FAILED: G-REV, G-BLIND, G-TIEARB"
+    ]
+  },
+  "workers_conf": {
+    "ADJUDICATOR": "measurement/h2h_22016_prep/adjudicate.py",
+    "BACKEND": "rust",
+    "BAND": "148000000000",
+    "BAND_SENTINEL": "BAND_CLAIMED",
+    "BLIND_COMMIT": "3a0a631be8c4d37c5597d7a33b1d86c89a3429e7",
+    "CHUNK_GAMES": "100",
+    "CLAIM_STALE_SECS": "1800",
+    "C_PUCT": "1.5",
+    "DECK_SEED_END": "148000000699",
+    "DECK_SEED_START": "148000000000",
+    "EXACT_K": "2",
+    "E_K_DETS": "8",
+    "E_SIMS_PER_DET": "1376",
+    "E_TOTAL_SIMS": "11008",
+    "FINAL_SELECT": "visits",
+    "FIX_R9": "1",
+    "F_K_DETS": "16",
+    "F_SIMS_PER_DET": "1376",
+    "F_TOTAL_SIMS": "22016",
+    "INFO_MODE": "fair",
+    "LEAF_QUANTIZE": "float",
+    "MAX_PASSES": "20",
+    "NICE": "19",
+    "N_COMMON_FLOOR": "560",
+    "N_DECKS": "700",
+    "N_GAMES": "1400",
+    "OPPONENT_MODE": "fair-champion",
+    "OUT_CELL": "h2h_k16x1376_vs_champ_k8x1376",
+    "OUT_SUBDIR": "measurement/h2h_22016_20260824",
+    "PASS_TIMEOUT_SECS": "3400",
+    "PINNED_SRC_REV_FILE": "PINNED_SRC_REV",
+    "PREFLIGHT_RAM_FLOOR_MB": "2500",
+    "PROD_LEAF_HASH": "a36d2e15a3b3d71d",
+    "REPO_LOCAL": "/home/doctor/projects/carcassone",
+    "RULES_PROFILE": "fixed_v1",
+    "RUNTIME_RAM_FLOOR_MB": "800",
+    "RUN_ID": "h2h_22016_20260824",
+    "RUST_THREADS": "1",
+    "SMOKE_GAMES": "2",
+    "SMOKE_SEED_START": "990000000000",
+    "SMOKE_WORKERS": "2",
+    "SRC_CLEAN_LOG": "SRC_CLEAN.jsonl",
+    "TAU_P": "5",
+    "TIEARB": "off",
+    "VOID_RATE_ABORT_PCT": "10",
+    "W_LAPTOP": "22"
+  }
+}

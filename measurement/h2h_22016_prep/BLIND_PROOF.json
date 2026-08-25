@@ -1,0 +1,7 @@
+{
+  "blind_commit": "3a0a631be8c4d37c5597d7a33b1d86c89a3429e7",
+  "head_at_launch": "e465c8a270350d17b357fd1520abf64685be951a",
+  "is_ancestor_of_head": true,
+  "utc": "2026-08-25T07:08:52Z",
+  "why": "READ_RULE.md SS3 G-BLIND is gated against THIS artifact plus a live git-ancestry re-check. The blind commit is the commit that introduced the FROZEN banner on DESIGN.md/READ_RULE.md; its sha is stamped by a follow-up commit because a commit cannot name its own hash."
+}
