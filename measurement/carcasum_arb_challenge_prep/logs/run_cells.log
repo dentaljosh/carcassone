@@ -1,0 +1,45 @@
+[run_cells 2026-08-24T20:45:29Z laptop-wsl] [freeze] RUN_LIVE dropped -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_prep/RUN_LIVE.json
+[run_cells 2026-08-24T20:45:29Z laptop-wsl] arm_off: chunk toward 400 games (currently 0) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-24T20:45:29Z laptop-wsl] arm_on: chunk toward 400 games (currently 0) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-24T21:10:39Z laptop-wsl] arm_off: 40/400 games, void_rate=0.0
+[run_cells 2026-08-24T21:10:39Z laptop-wsl] arm_off: chunk toward 400 games (currently 40) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-24T21:36:03Z laptop-wsl] arm_off: 80/400 games, void_rate=0.0
+[run_cells 2026-08-24T21:36:03Z laptop-wsl] arm_off: chunk toward 400 games (currently 80) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-24T21:57:06Z laptop-wsl] arm_on: 40/400 games, void_rate=0.0
+[run_cells 2026-08-24T21:57:06Z laptop-wsl] arm_on: chunk toward 400 games (currently 40) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-24T22:00:15Z laptop-wsl] arm_off: 120/400 games, void_rate=0.0
+[run_cells 2026-08-24T22:00:15Z laptop-wsl] arm_off: chunk toward 400 games (currently 120) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-24T22:25:12Z laptop-wsl] arm_off: 160/400 games, void_rate=0.0
+[run_cells 2026-08-24T22:25:12Z laptop-wsl] arm_off: chunk toward 400 games (currently 160) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-24T22:50:29Z laptop-wsl] arm_off: 200/400 games, void_rate=0.0
+[run_cells 2026-08-24T22:50:29Z laptop-wsl] arm_off: chunk toward 400 games (currently 200) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-24T23:04:43Z laptop-wsl] arm_on: 80/400 games, void_rate=0.0
+[run_cells 2026-08-24T23:04:43Z laptop-wsl] arm_on: chunk toward 400 games (currently 80) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-24T23:15:07Z laptop-wsl] arm_off: 240/400 games, void_rate=0.0
+[run_cells 2026-08-24T23:15:07Z laptop-wsl] arm_off: chunk toward 400 games (currently 240) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-24T23:40:09Z laptop-wsl] arm_off: 280/400 games, void_rate=0.0
+[run_cells 2026-08-24T23:40:09Z laptop-wsl] arm_off: chunk toward 400 games (currently 280) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-25T00:05:07Z laptop-wsl] arm_off: 320/400 games, void_rate=0.0
+[run_cells 2026-08-25T00:05:07Z laptop-wsl] arm_off: chunk toward 400 games (currently 320) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-25T00:16:04Z laptop-wsl] arm_on: 120/400 games, void_rate=0.0
+[run_cells 2026-08-25T00:16:04Z laptop-wsl] arm_on: chunk toward 400 games (currently 120) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-25T00:30:43Z laptop-wsl] arm_off: 360/400 games, void_rate=0.0
+[run_cells 2026-08-25T00:30:43Z laptop-wsl] arm_off: chunk toward 400 games (currently 360) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_off/games.jsonl
+[run_cells 2026-08-25T00:55:46Z laptop-wsl] arm_off: 400/400 games, void_rate=0.0
+[run_cells 2026-08-25T00:55:46Z laptop-wsl] arm_off DONE (400/400 games)
+[run_cells 2026-08-25T01:19:05Z laptop-wsl] arm_on: 160/400 games, void_rate=0.0
+[run_cells 2026-08-25T01:19:05Z laptop-wsl] arm_on: chunk toward 400 games (currently 160) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-25T02:13:52Z laptop-wsl] arm_on: 200/400 games, void_rate=0.0
+[run_cells 2026-08-25T02:13:52Z laptop-wsl] arm_on: chunk toward 400 games (currently 200) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-25T03:10:11Z laptop-wsl] arm_on: 240/400 games, void_rate=0.0
+[run_cells 2026-08-25T03:10:11Z laptop-wsl] arm_on: chunk toward 400 games (currently 240) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-25T04:08:52Z laptop-wsl] arm_on: 280/400 games, void_rate=0.0
+[run_cells 2026-08-25T04:08:52Z laptop-wsl] arm_on: chunk toward 400 games (currently 280) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-25T05:03:39Z laptop-wsl] arm_on: 320/400 games, void_rate=0.0
+[run_cells 2026-08-25T05:03:39Z laptop-wsl] arm_on: chunk toward 400 games (currently 320) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-25T05:58:07Z laptop-wsl] arm_on: 360/400 games, void_rate=0.0
+[run_cells 2026-08-25T05:58:07Z laptop-wsl] arm_on: chunk toward 400 games (currently 360) -> /home/doctor/projects/carcassone/measurement/carcasum_arb_challenge_20260824/arm_on/games.jsonl
+[run_cells 2026-08-25T06:51:49Z laptop-wsl] arm_on: 400/400 games, void_rate=0.0
+[run_cells 2026-08-25T06:51:49Z laptop-wsl] arm_on DONE (400/400 games)
+[run_cells 2026-08-25T06:51:49Z laptop-wsl] ARM-OFF exit=0  ARM-ON exit=0
+[run_cells 2026-08-25T06:51:49Z laptop-wsl] DONE -- both arms complete; RUN_LIVE cleared
