@@ -81,6 +81,11 @@ fun SettingsScreen(vm: GameViewModel, onBack: () -> Unit) {
             onSelect = vm::setDifficulty,
         )
 
+        TieArbLevelCard(
+            selected = ui.tieArbLevel,
+            onSelect = vm::setTieArbLevel,
+        )
+
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(vertical = 4.dp)) {
                 SettingsRow(
@@ -218,6 +223,65 @@ private fun BudgetWarning(d: Difficulty, budget: ProductionBudget?) {
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.primary,
         )
+    }
+}
+
+// --------------------------------------------------------------------------- //
+// Tie-arbiter level                                                            //
+// --------------------------------------------------------------------------- //
+
+/**
+ * How hard the mobile tie-arbiter searches when the champion's top moves are
+ * tied at the leaf. A separate axis from [DifficultyCard]'s search budget —
+ * this only spends extra time on the rare tied decision, not on every move.
+ */
+@Composable
+private fun TieArbLevelCard(
+    selected: TieArbLevel,
+    onSelect: (TieArbLevel) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Tie-break search", fontWeight = FontWeight.Bold)
+
+            val index = TieArbLevel.entries.indexOf(selected).toFloat()
+            Slider(
+                value = index,
+                // Guarded: the slider emits on every drag tick, and each accepted
+                // value is a DataStore write.
+                onValueChange = { v ->
+                    val l = TieArbLevel.fromIndex(v.roundToInt())
+                    if (l != selected) onSelect(l)
+                },
+                valueRange = 0f..(TieArbLevel.entries.lastIndex).toFloat(),
+                // 4 stops = 2 intermediate steps.
+                steps = TieArbLevel.entries.size - 2,
+                colors = SliderDefaults.colors(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                for (l in TieArbLevel.entries) {
+                    Text(
+                        l.label,
+                        fontSize = 9.sp,
+                        fontWeight = if (l == selected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (l == selected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(2.dp))
+            Text(selected.label, style = MaterialTheme.typography.titleMedium)
+            Text(selected.perTileEstimate, fontSize = 12.sp)
+
+            Text(
+                "Only spent on tied tile decisions — not every move. A tie-break " +
+                    "change applies to the NEXT game.",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

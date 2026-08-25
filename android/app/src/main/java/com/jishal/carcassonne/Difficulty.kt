@@ -112,8 +112,18 @@ enum class Difficulty(
      * `sims`/`k_dets` are OMITTED (not null-valued) for [CHAMPION]: the bridge
      * treats an absent key as "use the YAML budget", and this is the single place
      * that decision is expressed.
+     *
+     * [tieArbLevel] is a SEPARATE settings axis (see [TieArbLevel]) folded in
+     * here only because this is the one place the `new_game` JSON gets built —
+     * it always sends `tiearb_level` explicitly (unlike `sims`/`k_dets`, there is
+     * no "let the bridge decide" case to omit it for).
      */
-    fun newGameConfig(seed: Int, humanPlayer: Int, verify: Boolean = true): String =
+    fun newGameConfig(
+        seed: Int,
+        humanPlayer: Int,
+        verify: Boolean = true,
+        tieArbLevel: TieArbLevel = TieArbLevel.DEFAULT,
+    ): String =
         JSONObject().apply {
             put("seed", seed)
             put("human_player", humanPlayer)
@@ -121,6 +131,7 @@ enum class Difficulty(
             put("verify", verify)
             kDets?.let { put("k_dets", it) }
             sims?.let { put("sims", it) }
+            put("tiearb_level", tieArbLevel.id)
         }.toString()
 
     companion object {
@@ -155,7 +166,16 @@ class SettingsStore(context: Context) {
         store.edit { it[KEY_DIFFICULTY] = d.id }
     }
 
+    val tieArbLevel: Flow<TieArbLevel> = store.data
+        .catch { t -> if (t is IOException) emit(emptyPreferences()) else throw t }
+        .map { prefs -> TieArbLevel.fromId(prefs[KEY_TIE_ARB_LEVEL]) }
+
+    suspend fun setTieArbLevel(level: TieArbLevel) {
+        store.edit { it[KEY_TIE_ARB_LEVEL] = level.id }
+    }
+
     private companion object {
         val KEY_DIFFICULTY = stringPreferencesKey("difficulty")
+        val KEY_TIE_ARB_LEVEL = stringPreferencesKey("tie_arb_level")
     }
 }
