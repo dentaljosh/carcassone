@@ -193,8 +193,15 @@ def main(argv=None) -> int:
     ap.add_argument("--legs", default=None,
                     help="explicit comma list, overrides --rung (smoke use)")
     ap.add_argument("--head", type=int, default=0,
-                    help="SMOKE ONLY: score just the first N rows of each leg's positions "
-                         "file (written to a temp positions file; the real leg is untouched)")
+                    help="SMOKE ONLY: score just N rows of each leg's positions file "
+                         "(written to a separate positions file; the real leg is untouched)")
+    ap.add_argument("--stride", action="store_true",
+                    help="SMOKE ONLY: take the --head rows EVENLY SPACED through the "
+                         "positions file instead of from the front. The file is sorted by "
+                         "(deck_seed, ply), so the front is all opening plies of the lowest "
+                         "seeds — R1's own head-6 probe averaged 71.0 s against a realized "
+                         "leg mean of 123.0 s (1.73x). A strided sample spans every phase "
+                         "and gives an unbiased mean for the ETA.")
     ap.add_argument("--out-root", default=None)
     ap.add_argument("--sentinel", default=None,
                     help="path of the completion sentinel JSON (default <share>/F4_DONE.json)")
@@ -235,8 +242,15 @@ def main(argv=None) -> int:
             raise SystemExit(f"[F4-BROKEN] missing positions file {pos}")
 
         if args.head:
-            head_pos = out_root / f"positions_{leg}_head{args.head}.jsonl"
-            lines = [l for l in pos.read_text().splitlines() if l.strip()][:args.head]
+            tag = "stride" if args.stride else "head"
+            head_pos = out_root / f"positions_{leg}_{tag}{args.head}.jsonl"
+            lines = [l for l in pos.read_text().splitlines() if l.strip()]
+            if args.stride and len(lines) > args.head:
+                step = len(lines) / float(args.head)
+                lines = [lines[min(len(lines) - 1, int(i * step))]
+                         for i in range(args.head)]
+            else:
+                lines = lines[:args.head]
             head_pos.write_text("\n".join(lines) + "\n")
             pos = head_pos
 
@@ -295,7 +309,8 @@ def main(argv=None) -> int:
     report["total_wall_secs"] = round(time.time() - started, 1)
     sent = Path(args.sentinel) if args.sentinel else share / "F4_DONE.json"
     if args.head:                      # a smoke never stamps the real sentinel
-        sent = out_root / f"F4_SMOKE_head{args.head}.json"
+        sent = out_root / (f"F4_SMOKE_{'stride' if args.stride else 'head'}"
+                           f"{args.head}.json")
     sent.write_text(json.dumps(report, indent=2))
     print(f"[f4] sentinel -> {sent}", flush=True)
     print(json.dumps({k: report[k] for k in ("ok", "rung", "legs", "total_wall_secs")}))

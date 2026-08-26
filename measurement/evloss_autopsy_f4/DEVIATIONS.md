@@ -97,3 +97,20 @@ the whole loader; on the banked corpus it reproduces the pooled mean and every c
 1-ply argmax with no search, and the pilot's own `--oracle-sims` help says it is IGNORED for
 this policy. Passing R1's `100` would stamp a meaningless budget into the F4 manifests.
 Everything else on the command line is R1's, unchanged.
+
+---
+
+### D-F4-9 — the smoke samples with a STRIDE, not a head (2026-08-26, post-blind-commit, pre-smoke)
+
+Added after the blind commit `83dc92f2ea6e26eeba5fc7a8724842694a7f1e91` and **before any
+tier1-greedy value existed**, so the blind property is intact: it is a sampling knob for the
+cost probe, and it cannot see an outcome because there is none yet.
+
+The positions files are sorted by `(deck_seed, ply)`, so `--head N` is all opening plies of
+the lowest seeds. R1's own head-6 preflight probe averaged **71.0 s/position against a
+realized leg mean of 123.0 s** — a 1.73× under-estimate, in the *opposite* direction to the
+"worst-case opening" note the probe carries. `--stride` takes the N rows evenly spaced
+through the file so the smoke spans every phase and every seed decile, and its mean is an
+unbiased ETA input rather than one needing a fudge factor. Both the raw strided mean and the
+head-anchored cross-check are reported.
+

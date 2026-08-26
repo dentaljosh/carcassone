@@ -37,7 +37,7 @@ case "$MODE" in
     echo "[f4] SMOKE: head=$HEAD W=$W  (synchronous)"
     exec "$PY" -u "$F4DIR/f4_judge_leg.py" \
       --share "$SHARE" --repo "$REPO" --python "$PY" \
-      --workers "$W" --legs sib2 --head "$HEAD" \
+      --workers "$W" --legs sib2 --head "$HEAD" --stride \
       --out-root "$SHARE/judge_f4_smoke" 2>&1 | tee "$LOGDIR/f4_smoke.log"
     ;;
   run)
