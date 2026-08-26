@@ -96,7 +96,6 @@ def _random_corpus(seeds=("4242", "77", "31337"), max_plies=130, start=16, every
     """Lockstep python `Game` + rust `MirrorState` random playouts, yielding
     `(label, board, mirror)` at sampled plies. The python board rides along so
     GATE 1 can also assert rust-champion == python-champion."""
-    out = []
     for s in seeds:
         import random as _r
         g = Game(enable_legal_moves_cache=True)
@@ -108,7 +107,6 @@ def _random_corpus(seeds=("4242", "77", "31337"), max_plies=130, start=16, every
             if g.get_game_ended(b, 0) != 0.0:
                 break
             if ply >= start and ply % every == 0:
-                out.append((f"seed{s}/ply{ply}", b.state, ms.string_repr()))
                 yield f"seed{s}/ply{ply}", b.state, ms
             a = int(rng.choice(np.flatnonzero(g.get_valid_moves(b)).tolist()))
             b, _ = g.get_next_state(b, a)
