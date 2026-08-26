@@ -1,0 +1,35 @@
+BAND_CLAIMED — executor interlock for invasion_screen_prep, band 151000000000
+Dropped 2026-08-26 (night) by the orchestrator session against DESIGN.md §0:
+
+(a) funding ≈56-62 core-h / ≈3.0-3.3 h wall — OWNER-RATIFIED via the build-first plan he
+    proposed and voted for ("why just build it and measure head to head vs the champ?" →
+    agreed plan "screen at 2750, survivors to production H2H" → "put an agent on the build" →
+    "my vote is we work on the term family", all 2026-08-26). Realized cost sits well inside
+    the stated "couple of box-days" envelope. Launched proactively at the next clean window
+    with a push notification to the owner; abort is one kill at any time.
+(b) band 151000000000 — ORCHESTRATOR: all-branches sweep at freeze (139 refs/641 files),
+    re-run at append (140/661), self-claim excluded correctly; free everywhere.
+(c) frozen mid weights β 0.12 / α 0.09 @ cap 11.0 / δ_farm 0.12 — derived, not guessed:
+    40.9% of the champion leaf's measured sibling-gap scale G=1.76 on the 93 census states;
+    alpha_cap = median invader_gain over the 51 merge rows. Leaf hashes pinned
+    (IDENT=a36d2e15 champion; A 0fd1680f; B 42adadc9; D 5012569b).
+(d) tie-arbiter OFF both sides — single-variable discipline.
+(e) tenancy class: RESULT-SAFE beside the 1-core reconcile solver (sims-denominated cells,
+    no timing gate; the d2r2/d2r3 lesson applies to CLOCK-reading instruments only). Census
+    at launch records the co-tenant explicitly.
+
+Pre-drop state: merge 1f3dce5a; 78/78 instrument tests + SELFTEST GREEN + dry-run rc=0 from
+the MAIN tree; fresh carc_rs wheel built (pinned toolchain 1.96.0) and kwarg-probed; smoke
+PASS (see driver log). Round 1 = 4 cells (C deferred per SHAPES.md). Adoption chain in
+READ_RULE: screen → production H2H → external Carcasum cell → adapting E4 stream.
+
+Amendment history (all pre-game-1, zero games spent, band unspent until this drop):
+- r1 035b3494: smoke writes provenance witnesses; G-WHEEL/G-BLIND/G-REV conjuncts made live;
+  111-test supplement committed; G-LEAF strict form + cost wording canonicalized.
+- r2 6890cfb0: G-REV dirty-scoping to CODE_PATHS via SRC_CLEAN.jsonl (throwaway-repo proof);
+  smoke stamps BLIND_COMMIT identically to real cells. 144 instrument tests.
+Final validation from the MAIN tree at merge 33-prefix HEAD: 144/144 tests, SELFTEST GREEN
+(all gate addresses resolve), dry-run rc=0, SMOKE rc=0 PASS 2026-08-26T22:04:13Z.
+Wheel: carc_rs 0.1.0 built 2026-08-26 with pinned rustc 1.96.0 (build-log-verified; the
+'rustcunpinned' stamp is the known cwd-detection quirk); G-WHEEL preflight PASS — all four
+pinned leaf hashes reproduce, kwargs forward.
