@@ -144,3 +144,30 @@ which is the same order as the "saving". A second smoke at the production W=22 m
 contended per-position cost directly, so the launch ETA rests on a measurement rather than
 on a contention assumption. House rule: bench, then extrapolate, then commit.
 
+---
+
+## LAUNCH RECORD — rung L1, W = 22, laptop, 2026-08-26 10:54 EDT
+
+No deviation: `F4_PREREG.md` §2.1's cost ladder selected **rung L1 (all five legs, 2,838
+position-legs)** because the smoke-derived projection fits the pre-stated ≤ 6.0 h budget.
+
+| | |
+|---|---|
+| box | `laptop-wsl` — 24 cores, 12 GB, **idle** at launch (two 12-day-old `until … sleep` babysit shells at 0.0 % CPU, no project python) |
+| smoke A | 10 strided positions, W = 10, **10/10 ok · 10/10 crn_verified · 0 wall-capped · 32 worlds each · all values finite**, mean 75.7 worker-s/position |
+| smoke B (contention) | 22 strided positions, W = 22 (production), **22/22 ok · 22/22 crn_verified · 0 wall-capped**, mean 108.5 / phase-weighted **109.8 worker-s/position** |
+| cross-judge CRN witness | **22/22 rids, 0 mismatches** on `world_seeds`, `playout_seeds`, `afterstate_deck_hash_{a,b}`, `pick_{a,b}`, `world_seed_salt` against the banked R1 records — while `values_a`/`values_b` differ, which is the design (same worlds, different continuation) |
+| same-rid cost vs R1 | F4(W22) / R1(W22) = **0.852** (min 0.710, max 1.132) |
+| **projected wall** | **3.94 h as measured · 4.53 h at +15 % · 5.12 h at +30 %.** The independent ratio-to-R1's-realized-wall estimate agrees: 0.852 × 4.47 h = **3.80 h** |
+| decision | **L1** (3.94 h ≤ 6.0 h). L2/L3 not needed. |
+| launched | 2026-08-26 10:54:45 EDT, `setsid nohup nice -n 19`, driver pid **1365703** |
+| log | `laptop:/home/doctor/evloss_autopsy/run/f4/logs/f4_leg.log` |
+| sentinel | `/mnt/carc-shared/evloss_autopsy_20260824/F4_DONE.json` (= `/mnt/c/carc-shared/…` locally) |
+| out tree | `<share>/judge_f4_tier1greedy/{leaf,sib2,sib3,sib4,rnd}/records/` |
+| verified running | 22 workers at ~100 % CPU, RSS ~46 MB each (~1 GB total on a 12 GB box); 12 records written in the first 2 min, all `ok` + `crn_verified` |
+
+⚠️ The smoke's per-position `delta` values scrolled past in the launcher log. **They are not a
+result and none was read as one:** the blind stamp `83dc92f2ea6e26eeba5fc7a8724842694a7f1e91`
+predates every one of them, and the entire per-category read is mechanical in
+`f4_adjudicate.py`, which was frozen at that commit.
+
