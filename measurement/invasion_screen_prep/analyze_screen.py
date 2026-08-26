@@ -610,9 +610,16 @@ def run_gates(cell: Cell, *, pinned_src_rev: str | None, blind_commit: str | Non
     sc = src_clean if isinstance(src_clean, Mapping) else None
     sc_ok = bool(sc and sc.get("ok"))
     sc_why = (sc or {}).get("why", "SRC_CLEAN verdict ABSENT — ABSENT is FAIL")
+    _, whole_tree_dirty = L.split_dirty("" if cr is MISSING else str(cr))
     g.add("G-REV", rv_ok and sc_ok, f"{cr_a} + SRC_CLEAN.jsonl",
           {"code_rev": None if cr is MISSING else cr,
            "pinned_src_rev": pinned_src_rev,
+           # ⭐ WHOLE-TREE dirt is INFORMATIONAL (the main tree is perpetually
+           # dirty with measurement artifacts, which is normal and permanent).
+           # The FATAL, code-path-scoped verdict is SRC_CLEAN.jsonl's.
+           "whole_tree_dirty_marker": whole_tree_dirty,
+           "whole_tree_dirty_is_informational": True,
+           "code_paths_clean_at_every_boundary": (sc or {}).get("ok"),
            "boundaries": (sc or {}).get("boundaries"),
            "dirty_boundaries": (sc or {}).get("dirty_boundaries"),
            "missing_after": (sc or {}).get("missing_after")},
