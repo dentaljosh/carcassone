@@ -149,6 +149,15 @@ _FROZEN_HASH_DEFAULT_OFF = {
     "tiletie_w_perim": 0.0,
     "tiletie_w_lib": 0.0,
     "tiletie_norm": 8.0,
+    # Invasion-risk family (measurement/invasion_term_build/, 2026-08-26):
+    # default-off candidate-only knobs, RUST-leaf only. Excluded on the same
+    # grounds as F6/F7b/Part C/denial/open-city/jrules/tile-tie.
+    "invasion_beta": 0.0,
+    "invasion_alpha": 0.0,
+    "invasion_alpha_cap": 0.0,
+    "invasion_stub_max_tiles": 2,
+    "invasion_gamma": 0.0,
+    "invasion_delta_farm": 0.0,
 }
 
 

@@ -41,6 +41,7 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 # Open-city discipline (2026-08-12) likewise — same rule.
 # The J-rules bundle (2026-08-13) likewise — same rule.
 # The tile-tie tie-break (2026-08-14) likewise — same rule.
+# The invasion-risk family (2026-08-26) likewise — same rule.
 _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
                                  "farm_base_off": False, "farm_growth_off": False,
                                  "v29_phase_beta": 0.0, "v29_phase_norm": 1.0,
@@ -52,7 +53,11 @@ _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.
                                  "jrules_dose": 0.0, "jrules_mask": 31,
                                  "tiletie_dose": 0.0, "tiletie_w_city": 1.0,
                                  "tiletie_w_road": 1.0, "tiletie_w_perim": 0.0,
-                                 "tiletie_w_lib": 0.0, "tiletie_norm": 8.0}
+                                 "tiletie_w_lib": 0.0, "tiletie_norm": 8.0,
+                                 "invasion_beta": 0.0, "invasion_alpha": 0.0,
+                                 "invasion_alpha_cap": 0.0,
+                                 "invasion_stub_max_tiles": 2,
+                                 "invasion_gamma": 0.0, "invasion_delta_farm": 0.0}
 
 
 def _leaf_dict(cfg) -> dict:
@@ -243,4 +248,25 @@ def _assert_cy_float_path(cfg) -> None:
               f"{getattr(cfg, 'tiletie_dose', 0.0)}) — the candidate leaf leaves the "
               "Cython fast path for the pure-Python flat leaf; NO rust mirror exists "
               "yet, so --backend rust FAILS CLOSED (TypeError) on this config.",
+              file=_sys.stderr)
+    # Invasion-risk family: ⚠️ THE MIRROR IMAGE of the tile-tie clause — this family
+    # is RUST-ONLY by decision (spec measurement/invasion_term_build/SHAPES.md), with
+    # NO flat_leaf and NO cy implementation. A set weight is therefore ONLY runnable
+    # with `--backend rust`; both Python leaves raise NotImplementedError. Sanity IS
+    # fatal (a nonsense threshold would define a DIFFERENT term than the pre-registered
+    # one).
+    _inv = {k: float(getattr(cfg, k, 0.0)) for k in
+            ("invasion_beta", "invasion_alpha", "invasion_gamma", "invasion_delta_farm")}
+    if any(v != 0.0 for v in _inv.values()):
+        import sys as _sys
+        if float(getattr(cfg, "invasion_alpha_cap", 0.0)) < 0.0:
+            raise ValueError("--cand-leaf-json: invasion_alpha_cap must be >= 0 "
+                             "(0.0 == uncapped; a negative per-pair cap is undefined)")
+        if int(getattr(cfg, "invasion_stub_max_tiles", 2)) < 1:
+            raise ValueError("--cand-leaf-json: invasion_stub_max_tiles must be >= 1 "
+                             "(a claimed component always spans at least one tile)")
+        print(f"[leaf-override] WARNING: invasion-risk family set ({_inv}) — this "
+              "family is implemented in the RUST leaf ONLY (no flat_leaf, no cy). "
+              "Run the cell with --backend rust; a --backend python leg will raise "
+              "NotImplementedError (fail-closed, never an invasion-blind leaf).",
               file=_sys.stderr)

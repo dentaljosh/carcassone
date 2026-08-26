@@ -405,6 +405,50 @@ class LeafConfig:
     tiletie_w_perim: float = 0.0
     tiletie_w_lib: float = 0.0
     tiletie_norm: float = 8.0
+    # --- INVASION-RISK TERM FAMILY — four candidate shapes A/B/C/D (candidate-only;
+    # spec measurement/invasion_term_build/SHAPES.md, building 2026-08-26) ---------
+    # Mechanism (docs/LEVER_INDEX.md "contested-feature / invasion-risk term" + the
+    # Stage A census measurement/e4_exploit_grading_20260825/): an invasion is a
+    # multi-ply plan whose FIRST move — a 2-tile stub claim beside an opponent
+    # feature — the champion leaf DEMOTES, because the merge payoff is plies away and
+    # the vendored full-points-on-tie rule hides the victim's loss, so self-play never
+    # priced it. Four shapes, each behind its own weight:
+    #   invasion_beta       Shape A, contested-value transfer. The leaf ADDS
+    #                       beta * T_A, T_A the SIGNED (antisymmetric) differential
+    #                       "opponent-held contestable value minus own-held
+    #                       contestable value". Offense + defense in one weight.
+    #   invasion_alpha      Shape B, stub-claim merge-potential bonus. The leaf ADDS
+    #                       alpha * T_B (T_B >= 0). OFFENSE ONLY — NOT antisymmetric.
+    #   invasion_alpha_cap  Shape B per-pair cap on the target's value, in points.
+    #                       0.0 (default) == UNCAPPED. Inert while alpha is 0.0.
+    #   invasion_stub_max_tiles  Shape B "stub" threshold in DISTINCT TILES
+    #                       (default 2). Inert while alpha is 0.0.
+    #   invasion_gamma      Shape C, dumping-ground discount. ⚠️ The leaf SUBTRACTS
+    #                       gamma * T_C (T_C >= 0) — note the sign against A/B/D.
+    #                       DEFENSE ONLY — NOT antisymmetric.
+    #   invasion_delta_farm Shape D, farm-specific contested differential. The leaf
+    #                       ADDS delta_farm * T_D. ⚠️ COLLINEAR with invasion_beta on
+    #                       fields: T_A == (cities+roads part) + T_D, exactly.
+    # ⚠️ RUST PATH ONLY — this family has NO flat_leaf implementation and NO cy
+    # implementation, by decision (owner 2026-08-26: RUST-FIRST, single
+    # implementation; screening cells run `--backend rust`). This is the TILE-TIE
+    # PATTERN WITH THE SIDES REVERSED: the knobs live here purely so
+    # `--cand-leaf-json` parses them and the leaf-hash dialect carries them, and BOTH
+    # Python leaves (flat AND object) FAIL LOUD on a nonzero weight rather than
+    # silently serving an invasion-blind leaf — which would read as "the term is
+    # worth nothing" instead of "the term never ran".
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg
+    # recipe (snapshot._frozen_config_hash + its mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE at their
+    # defaults, so 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
+    # A candidate that SETS a weight shifts the hash (it is a different leaf —
+    # intended).
+    invasion_beta: float = 0.0
+    invasion_alpha: float = 0.0
+    invasion_alpha_cap: float = 0.0
+    invasion_stub_max_tiles: int = 2
+    invasion_gamma: float = 0.0
+    invasion_delta_farm: float = 0.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -480,7 +524,41 @@ def _config_from_env() -> LeafConfig:
         tiletie_w_perim=float(os.environ.get("CARCASSONNE_TILETIE_W_PERIM", "0.0")),
         tiletie_w_lib=float(os.environ.get("CARCASSONNE_TILETIE_W_LIB", "0.0")),
         tiletie_norm=float(os.environ.get("CARCASSONNE_TILETIE_NORM", "8.0")),
+        # Invasion-risk family — every weight defaults 0.0 == family fully off ==
+        # unchanged production DEFAULT_CONFIG (the denial / open-city / jrules /
+        # tiletie pattern). ⚠️ RUST PATH ONLY: a nonzero weight makes BOTH Python
+        # leaves raise, so these env knobs exist for `--backend rust` cells and for
+        # the leaf-hash dialect, never to switch a Python leaf on.
+        invasion_beta=float(os.environ.get("CARCASSONNE_INVASION_BETA", "0.0")),
+        invasion_alpha=float(os.environ.get("CARCASSONNE_INVASION_ALPHA", "0.0")),
+        invasion_alpha_cap=float(os.environ.get("CARCASSONNE_INVASION_ALPHA_CAP", "0.0")),
+        invasion_stub_max_tiles=int(os.environ.get("CARCASSONNE_INVASION_STUB_MAX_TILES", "2")),
+        invasion_gamma=float(os.environ.get("CARCASSONNE_INVASION_GAMMA", "0.0")),
+        invasion_delta_farm=float(os.environ.get("CARCASSONNE_INVASION_DELTA_FARM", "0.0")),
     )
+
+
+def _invasion_off(cfg) -> bool:
+    """True iff EVERY invasion-risk weight is 0.0 — i.e. the family is fully off and
+    the leaf is the champion's, bit-for-bit. Mirrors
+    `carc_core::leaf::invasion::invasion_off` and `flat_leaf._invasion_off`. The two
+    inert shape-B knobs (`invasion_alpha_cap`, `invasion_stub_max_tiles`) are
+    deliberately NOT consulted: they cannot move a leaf value while `invasion_alpha`
+    is 0.0."""
+    return (float(getattr(cfg, "invasion_beta", 0.0)) == 0.0
+            and float(getattr(cfg, "invasion_alpha", 0.0)) == 0.0
+            and float(getattr(cfg, "invasion_gamma", 0.0)) == 0.0
+            and float(getattr(cfg, "invasion_delta_farm", 0.0)) == 0.0)
+
+
+_INVASION_RUST_ONLY_MSG = (
+    "LeafConfig invasion-risk weights (invasion_beta / invasion_alpha / "
+    "invasion_gamma / invasion_delta_farm) are implemented in the RUST leaf ONLY "
+    "(carc_core::leaf::invasion; spec measurement/invasion_term_build/SHAPES.md). "
+    "There is deliberately no flat_leaf and no Cython mirror — run the cell with "
+    "`--backend rust`. Refusing to serve an invasion-blind Python leaf, which would "
+    "read as 'the term is worth nothing' instead of 'the term never ran'."
+)
 
 
 DEFAULT_CONFIG: LeafConfig = _config_from_env()
@@ -970,6 +1048,10 @@ def virtual_score_v2(
             "LeafConfig.tiletie_dose (tile-tie tie-break) requires the flat leaf path "
             "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
         )
+    if not _invasion_off(cfg):
+        # The invasion-risk family is RUST-path ONLY (see the LeafConfig block) —
+        # fail loudly rather than silently serving an invasion-blind object leaf.
+        raise NotImplementedError(_INVASION_RUST_ONLY_MSG)
     if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
         # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC
         # Track B) — fail loudly rather than silently dropping the gate on the

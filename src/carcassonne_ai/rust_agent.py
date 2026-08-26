@@ -154,6 +154,35 @@ def leaf_config_rs(leaf_cfg):
             tiletie_w_lib=float(leaf_cfg.tiletie_w_lib),
             tiletie_norm=float(leaf_cfg.tiletie_norm),
         )
+    # Invasion-risk family (shapes A/B/C/D; spec
+    # measurement/invasion_term_build/SHAPES.md): same conditional-keyword rule as
+    # denial / open-city / jrules / tiletie above. A carc_rs build predating the
+    # family keeps serving every default-off (champion) config unchanged, while a
+    # NONZERO weight against the stale build raises TypeError (fail-closed loud,
+    # never a silently invasion-blind leaf, which would read as "the term is worth
+    # nothing" instead of "the term never ran").
+    # ⚠️ THIS IS THE ONE FAMILY THAT EXISTS ONLY IN RUST — the Python leaves RAISE on
+    # a nonzero weight, so `--backend rust` is not a speed preference here, it is the
+    # only route.
+    # The two INERT shape-B knobs are NESTED-conditional on `invasion_alpha` (the
+    # opencity_cap pattern): an invasion-capable build that predates a later knob
+    # keeps serving every default cell, and a moved knob against it fails closed.
+    invasion = {}
+    if (float(getattr(leaf_cfg, "invasion_beta", 0.0)) != 0.0
+            or float(getattr(leaf_cfg, "invasion_alpha", 0.0)) != 0.0
+            or float(getattr(leaf_cfg, "invasion_gamma", 0.0)) != 0.0
+            or float(getattr(leaf_cfg, "invasion_delta_farm", 0.0)) != 0.0):
+        invasion = dict(
+            invasion_beta=float(getattr(leaf_cfg, "invasion_beta", 0.0)),
+            invasion_alpha=float(getattr(leaf_cfg, "invasion_alpha", 0.0)),
+            invasion_gamma=float(getattr(leaf_cfg, "invasion_gamma", 0.0)),
+            invasion_delta_farm=float(getattr(leaf_cfg, "invasion_delta_farm", 0.0)),
+        )
+        if float(getattr(leaf_cfg, "invasion_alpha", 0.0)) != 0.0:
+            if float(getattr(leaf_cfg, "invasion_alpha_cap", 0.0)) != 0.0:
+                invasion["invasion_alpha_cap"] = float(leaf_cfg.invasion_alpha_cap)
+            if int(getattr(leaf_cfg, "invasion_stub_max_tiles", 2)) != 2:
+                invasion["invasion_stub_max_tiles"] = int(leaf_cfg.invasion_stub_max_tiles)
     return carc_rs.LeafConfigRs(
         sorted((int(k), float(v)) for k, v in leaf_cfg.closure_p.items()),
         float(leaf_cfg.bonus_cap),
@@ -175,6 +204,7 @@ def leaf_config_rs(leaf_cfg):
         **opencity,
         **jrules,
         **tiletie,
+        **invasion,
     )
 
 
