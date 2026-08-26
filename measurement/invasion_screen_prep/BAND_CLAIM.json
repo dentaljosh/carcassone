@@ -1,0 +1,91 @@
+{
+  "_banner": "FINALIZED at freeze, 2026-08-26. The orchestrator appends `_csv_row` VERBATIM to governance/BAND_REGISTRY.csv in the stamping commit (the r1 / rung2 / carcasum_arb / h2h_22016 / d2r3 / d2r4 precedent: claim the real row at freeze-commit time rather than deferring to launch, because a deferred claim is exactly how bands 143000000000 and 144000000000 got double-claimed by concurrent prep sessions). ⚠️ THE ROW BEING APPENDED DOES NOT ARM THE LAUNCHER: run_cells.sh additionally requires a BAND_CLAIMED sentinel file in this directory, which is DELIBERATELY NOT created at freeze. That file is the owner/orchestrator interlock and is dropped only after DESIGN.md §0's sign-off table reads GIVEN or DONE on all five lines -- and line (a), the FUNDING, is NOT GIVEN as of this freeze.",
+
+  "band_seed_start": 151000000000,
+  "band_seed_end_primary": 151000001399,
+  "n_decks_total": 1400,
+  "n_games_total": 2800,
+  "seatings_per_deck": 2,
+  "cells_sharing_this_band": 4,
+
+  "crn": "DECK-LEVEL ONLY, WITHIN EACH CELL. Each cell plays its own decks at BOTH seatings and its primary statistic is its OWN internal deck-paired margin D(d) = (diff(a_seat=0) + diff(a_seat=1))/2. ⚠️ THE FOUR CELLS DO NOT SHARE DECKS -- deliberately, see `disjoint_ranges_rationale`.",
+
+  "cell_allocation": [
+    {"cell": "IDENT", "seed_start": 151000000000, "seed_end": 151000000199, "n_decks": 200, "n_games": 400,
+     "candidate_leaf": "leaf_ident.json", "knobs": "invasion_beta/alpha/gamma/delta_farm all EXPLICITLY 0.0; both INERT shape-B knobs at defaults",
+     "cand_leaf_hash": "a36d2e15a3b3d71d",
+     "note": "The GAME-LEVEL weight-0 identity gate. Its candidate leaf hash EQUALS the champion's because an explicit-zero invasion config IS the champion leaf bit-for-bit (SHAPES.md §6: the hash names the leaf FUNCTION, not the JSON text), so this cell runs under the harness's STRICT hash assertion -- NO --allow-leaf-hash-drift. ⛔ A FAILED IDENT VOIDS ALL FOUR CELLS (READ_RULE.md §3.4)."},
+    {"cell": "A_MID", "seed_start": 151000000200, "seed_end": 151000000599, "n_decks": 400, "n_games": 800,
+     "candidate_leaf": "leaf_a_mid.json", "knobs": "invasion_beta = 0.12",
+     "cand_leaf_hash": "0fd1680fa363d65e",
+     "note": "Shape A -- contested-value transfer, cities+roads+farms. Runs WITH --allow-leaf-hash-drift (a nonzero weight moves the hash by design)."},
+    {"cell": "B_MID", "seed_start": 151000000600, "seed_end": 151000000999, "n_decks": 400, "n_games": 800,
+     "candidate_leaf": "leaf_b_mid.json", "knobs": "invasion_alpha = 0.09, invasion_alpha_cap = 11.0, invasion_stub_max_tiles = 2 (default, unmoved)",
+     "cand_leaf_hash": "42adadc988784b44",
+     "note": "Shape B -- stub-claim merge-potential bonus, offence-only. ⚠️ The cap is forwarded to rust ONLY because invasion_alpha != 0 (rust_agent.py:181-185 nests the two INERT knobs under a nonzero alpha); G-CAPFWD asserts the biconditional. Also the SMOKE cell -- the most plumbing to break."},
+    {"cell": "D_MID", "seed_start": 151000001000, "seed_end": 151000001399, "n_decks": 400, "n_games": 800,
+     "candidate_leaf": "leaf_d_mid.json", "knobs": "invasion_delta_farm = 0.12",
+     "cand_leaf_hash": "5012569b4e93d559",
+     "note": "Shape D -- shape A restricted to FIELDS. ⚠️ COLLINEAR WITH A by construction (T_A == cities+roads part + T_D exactly, SHAPES.md §4). A_MID and D_MID are two points on ONE 2-D surface read on the (beta, beta+delta_farm) basis = (0.12,0.12) and (0.00,0.12). NOT two independent shapes."}
+  ],
+
+  "shape_c_deferred": "Shape C (invasion_gamma) is NOT RUN in round 1 and spends no seeds. SHAPES.md §3: C is DEFENCE-ONLY and its H2H-vs-champion null is EXPECTED BY DESIGN (the champion does not invade), so a C cell here would purchase a guaranteed-uninformative null at ~18 core-h. Its round-2 weight is nonetheless DERIVED AND NAMED at freeze (gamma mid 0.23; bracket 0.08 / 0.23 / 0.69) so round 2 inherits a derivation rather than re-picking one. This is the pair's ONE deviation from the prereg skeleton's '5 cells', and it is the skeleton's own §3 rule applied.",
+
+  "disjoint_ranges_rationale": "DELIBERATE, and it costs the primary read NOTHING. track_d2r4_prep shared one deck set across its two cells because its primary statistic was the DIFFERENCE BETWEEN CELLS, which requires CRN. This pair's primary statistic is each cell's OWN internal deck-paired margin -- fully CRN'd within the cell (same deck, both seatings) and needing nothing from the other cells. What disjointness DOES cost: shape-vs-shape ranking becomes a deck-unmatched contrast, so READ_RULE.md §1 and §5 FORBID any branch from taking 'A read higher than B' as an input. Each cell is adjudicated against ZERO, on its own decks, never against a sibling.",
+
+  "smoke_range_disjoint": {
+    "seeds": "151999999000 .. 151999999007",
+    "n_decks": 8,
+    "n_games": 16,
+    "cell_config": "B_MID",
+    "status": "THROWAWAY. Discarded, never pooled, never claimed as a band, never adjudicated as a result. DESIGN.md §9.",
+    "note": "Deliberately far above the cell ranges so no arithmetic slip can reach them. The leg's PURPOSE is structural: it produces the REAL EMITTED MANIFEST the pair's adjudicator is validated against, and it ENDS by running analyze_screen.py --smoke-mode against that archive, requiring failures confined to the pinned allowed set (READ_RULE.md §3.5). A gate that cannot read what the harness emits is a LAUNCH BLOCKER, not a readout surprise."
+  },
+
+  "no_topup_reserved": "DELIBERATE. READ_RULE.md §5 carries NO top-up branch. A top-up exists to rescue a design whose inconclusive region is a failure state; here a bounded null IS a licensed and expected outcome of a SCREEN (READ_RULE.md §4 SCREEN-NULL-family-parks), and the bound is the deliverable. Resolving a small true effect is a fresh funding decision and a fresh band, not a top-up.",
+
+  "all_branches_sweep": {
+    "procedure_of_record": "measurement/carcasum_arb_challenge_prep/DESIGN.md §4.1, as extended by measurement/h2h_22016_prep/BAND_CLAIM.json and re-run by measurement/track_d2r3_prep/ and measurement/track_d2r4_prep/. For EVERY ref in refs/heads AND refs/remotes: read that ref's own governance/BAND_REGISTRY.csv AND every measurement/**/BAND_CLAIM*.json it carries; take the lowest integer clear of everything found anywhere across ALL refs, not just the checked-out branch's registry high-water mark.",
+    "why_the_main_tree_check_is_insufficient": "Bands 143000000000 and 144000000000 were each double-claimed on 2026-08-24 by concurrent prep sessions whose registry checks were scoped to the checked-out branch and therefore could not see an unmerged sibling freeze branch's own row. Both collisions were caught pre-launch at zero games and self-amended.",
+    "run_date": "2026-08-26",
+    "scope_realized": "139 refs scanned (122 refs/heads + 17 refs/remotes); 641 BAND_REGISTRY.csv / BAND_CLAIM*.json blobs read across them. Larger than track_d2r4_prep's stamped '135 refs / 563 files' because several worktree-agent-* branches (concurrent-session worktrees, including this build's) have been created since that stamp -- expected, not a discrepancy.",
+    "verification_method": "Two independent passes: (i) a raw-mention sweep over every blob, and (ii) a direct row-start grep for `146000000000,` and for `15[1-5]000000000,` in every one of the 139 refs' registries. Zero hits both ways for 151000000000.",
+    "findings": [
+      {"band": 143000000000, "status": "claimed", "source": "measurement/carcasum_rung2_prep/"},
+      {"band": 144000000000, "status": "retired -- D2 attempt 2's spent U-UNREADABLE band", "source": "measurement/track_d2r2_prep/"},
+      {"band": 145000000000, "status": "claimed", "source": "measurement/track_d1_fair_rebase/ (PRIMARY)"},
+      {"band": 146000000000, "status": "soft-reserved, DRAFT-NOT-CLAIMED, no registry row on ANY of the 139 refs", "source": "measurement/track_d1_fair_rebase/ -- earmarked for its own n=800 extension"},
+      {"band": 147000000000, "status": "claimed", "source": "measurement/carcasum_arb_challenge_prep/"},
+      {"band": 148000000000, "status": "claimed, primary + committed top-up through 148000000699", "source": "measurement/h2h_22016_prep/"},
+      {"band": 149000000000, "status": "RETIRED -- SPENT, NOT RELEASED", "source": "measurement/track_d2r3_prep/ -- D2 attempt 3's U-UNREADABLE burn-in abort; ~40 decks of real records exist, so RELEASE-IF-NEVER-LAUNCHED does NOT apply"},
+      {"band": 150000000000, "status": "SPENT -- ran clean, adjudicated D2-BOUNDED-NULL, decision_influenced=yes", "source": "measurement/track_d2r4_prep/"},
+      {"band": 151000000000, "status": "FREE on every ref, every registry version, and every claim file", "source": "this claim"}
+    ],
+    "why_151_not_146": "146000000000 carries no registry row on any of the 139 refs and is, by the letter, free. It is SKIPPED anyway, on the identical reasoning carcasum_arb_challenge_prep, h2h_22016_prep, track_d2r3_prep and track_d2r4_prep all used: d1-rebase-freeze has spent a committed paragraph earmarking it for that track's own n=800 extension and asked that nothing run there without a fresh funding decision. Taking it for an unrelated cell would manufacture the exact collision the corrected procedure exists to prevent, the moment that extension is funded.",
+    "why_151_not_150": "150000000000 is SPENT: track_d2r4_prep ran it clean to completion and adjudicated D2-BOUNDED-NULL with decision_influenced=yes. It is retired from confirmatory use under the standing band rule. A band that has influenced a decision can never again be a clean draw.",
+    "reverify_before_append": "MANDATORY. The sweep is RE-RUN immediately before the CSV append, in the stamping commit, and the append is ABORTED if 151000000000 has appeared anywhere in the interim."
+  },
+
+  "cross_band_discipline": "Per CL-068, band identity is LOAD-BEARING. NEVER pool this pair's numbers with any other band, and NEVER quote a pooled estimate. Cross-band contrasts on this instrument are over-dispersed 1.8-2.2x. ⚠️ The contrasts THIS pair reads are within-band AND deck-paired AND single-instrument -- the robust class CLAUDE.md exempts from the humility discount. 151000000000 RETIRES from confirmatory use once it has influenced any decision, including a SCREEN-NULL family-park decision.",
+
+  "release_if_never_launched": "If no cell is ever launched, 151000000000 is RELEASED under the BAND_REGISTRY.csv RELEASE-IF-NEVER-LAUNCHED clause -- a band is spent only once REAL RECORDS exist on it. ⚠️ THE CLAUSE DOES NOT SURVIVE A VOID: if the round runs and adjudicates U-UNREADABLE -- including on a G-IDENT failure after only the 400-game IDENT cell -- real records exist and the band is SPENT and RETIRED, exactly as bands 141e9, 144e9 and 149e9 were retired by prior voids. Attempt 3 of D2 is the worked example: it aborted at 80 of 800 games -- a fifth of one cell -- and its band was spent all the same.",
+
+  "_csv_row_columns": "band_seed_start,label,tier,status,claimed_date,decision_influenced,evidence_or_claim,notes",
+
+  "_csv_row": "151000000000,\"INVASION-RISK TERM FAMILY, ROUND-1 SCREEN AT 2752: FOUR deck-paired cells on ONE band, each on its OWN DISJOINT deck range (no reuse). Every cell is a head-to-head between the champion curve125 leaf PLUS one invasion knob (candidate) and the PLAIN champion curve125 leaf (opponent), at k4x688 = 2752 total sims on BOTH sides, rust BOTH sides (the family exists only in rust; both python leaves raise on a nonzero weight), fixed_v1 + CARCASSONNE_FIX_R9=1, exact-K<=2 MARGINALIZED, c_puct 1.5 / tau_p 5 / float / visits, TIE-ARBITER OFF ON BOTH SIDES. CELL IDENT = explicit weight-0 invasion config vs absent, 200 decks -- the GAME-LEVEL weight-0 identity gate, whose candidate leaf hash EQUALS the champion's a36d2e15a3b3d71d because a zero-weight config IS the champion leaf bit-for-bit; a FAILED IDENT VOIDS ALL FOUR CELLS. CELL A_MID = invasion_beta 0.12 (hash 0fd1680fa363d65e), 400 decks. CELL B_MID = invasion_alpha 0.09 at invasion_alpha_cap 11.0 (hash 42adadc988784b44), 400 decks. CELL D_MID = invasion_delta_farm 0.12 (hash 5012569b4e93d559), 400 decks. SHAPE C IS NOT RUN (defence-only; its vs-champion null is expected by design). The single variable within each cell is the invasion knob and NOTHING else (G-SINGLEVAR checks it alias-aware against the emitted manifest). PRIMARY = each cell's OWN deck-paired margin D = mean over decks of (diff at a_seat 0 + diff at a_seat 1)/2 in points, adjudicated AGAINST ZERO at the cell's own realized SE -- never against a sibling cell (the ranges are disjoint). Screen bar >= +2 sigma -> names the shape for a SEPARATE production-budget H2H; all mids < +1 sigma -> family parks and the solver-pricing instrument is the funded next step.\",claim,claimed,2026-08-26,pending,measurement/invasion_screen_prep/DESIGN.md,\"Seeds 151000000000..151000001399 = 1400 decks x 2 seatings = 2800 games across FOUR cells: IDENT 151000000000..151000000199 (200 decks/400 games); A_MID 151000000200..151000000599 (400/800); B_MID 151000000600..151000000999 (400/800); D_MID 151000001000..151000001399 (400/800). DISJOINT BY DESIGN -- each cell's primary statistic is its own internal deck-paired margin, so shared decks buy nothing; the cost is that shape-vs-shape ranking is deck-unmatched and READ_RULE.md forbids it as a branch input. NO TOP-UP RANGE RESERVED (a bounded null is a licensed outcome of a screen). The DESIGN.md section 9 smoke uses a disjoint throwaway sub-range 151999999000..151999999007 (8 decks, B_MID config), discarded, never pooled, never itself claimed; the leg ENDS by running the pair's own adjudicator against the emitted smoke archive and requires failures confined to a pinned allowed set. *** THE MID WEIGHTS ARE DERIVED, NOT CHOSEN, AND FROZEN AT CLAIM TIME: each is 0.40 x G / M_shape, where G = 1.76 leaf points is the champion leaf's own typical sibling-move value gap (median over the 93 Stage-A census invasion positions of the p90-p10 spread of the champion leaf value across the mover's legal afterstates; corroborated at 1.72 by the mean top1-top2 gap) and M_shape is the shape's median firing magnitude on the same 93 positions (A 6.0, B 8.0 at cap 11.0, D 6.0; C 3.03). invasion_alpha_cap = 11.0 is the Stage A census median invaded-feature value (median notes.invader_gain over the 51 notes.mech=='merge' rows of measurement/e4_exploit_grading_20260825/stage_b_plies.jsonl; mean 12.16, p25 8.5, p75 15.0), and it binds only the top decile of the leaf's own view of those features. The round-2 bracket is NAMED but NOT RUN: x1/3 and x3 of each mid. *** TENANCY CLASS: NON-EXCLUSIVE, RESULT-SAFE. This pair is SIMS-denominated -- it has no equal-time gate, no burn-in and no timing bar; every gate and the primary statistic are functions of GAME OUTCOMES, and outcomes are bit-identical under co-tenancy and at any W (the determinization merge is a sequential post-join fold, rust/carc/carc-core/src/fair/mod.rs:22-32; determinism verified empirically on this instrument at freeze). It MAY run beside the 1-core reconcile exact-solver suite. The only hard resource check is RAM (a WSL guest OOM tears down the whole VM), and the launcher's process census is ADVISORY. *** BAND PICKED BY THE ALL-BRANCHES SWEEP (139 refs / 641 files, 2026-08-26), re-verified immediately before this append; 146000000000 skipped as soft-reserved by track_d1_fair_rebase; 149000000000 skipped as SPENT by D2 attempt 3; 150000000000 skipped as SPENT by D2 attempt 4. *** NOT AUTHORIZED TO LAUNCH AT CLAIM TIME: DESIGN.md section 0 sign-off (a), the FUNDING (~54-62 core-h / ~2.9-3.3 h wall at W=22), is NOT GIVEN, and the BAND_CLAIMED executor sentinel is deliberately NOT created. Claiming this row protects against a concurrent-session band race; it does not arm the launcher.\"",
+
+  "authorization_state_at_claim": {
+    "what_the_owner_funded": "The BUILD-FIRST SCREENING PLAN -- i.e. building the term family before spending anything on screening it. That funded measurement/invasion_term_build/ (BUILT, NOT SCREENED). It did NOT fund this round's compute.",
+    "owner_signoff_outstanding": [
+      "(a) FUNDING ~54-62 core-h / ~2.9-3.3 h wall at W=22 on the local box -- NOT GIVEN. The standing cost-discipline rule requires a one-sentence confirm before this is spent, and the range (not a point) is the honest number: the candidate-side invasion arithmetic is UNMEASURED (0% to +25% per game) and this pair does not pretend to know where in that range the truth sits."
+    ],
+    "orchestrator_procedural_done_at_freeze": [
+      "(b) the band claim -- all-branches sweep re-run (139 refs / 641 files) and this row appended in the stamping commit",
+      "(c) the frozen MID weights and alpha_cap -- DERIVED from the 93 census positions through the rust bindings, arithmetic in DESIGN.md §3.2 and §3.2a, reproducible and not revisable after the blind commit",
+      "(d) tie-arbiter OFF both sides -- the launcher emits no --cand-tiearb-* flag of any spelling, and the opponent side is structurally disarmed",
+      "(e) TENANCY CLASS declared NON-EXCLUSIVE / RESULT-SAFE, with the sensitivity-class argument in DESIGN.md §6.3 -- a deliberate divergence from track_d2r4_prep §0(e), whose gates were TIMING gates and whose window therefore had to be exclusive. Ours are not."
+    ],
+    "additional_launch_precondition_unique_to_this_pair": "⛔ THE SHARED VENV'S carc_rs WHEEL IS STALE AS OF THIS FREEZE (measured: `TypeError: LeafConfigRs.__new__() got an unexpected keyword argument 'invasion_beta'`). The ORCHESTRATOR rebuilds it from the merged tree before launch; run_cells.sh makes a stale wheel a FATAL precondition with the rebuild command in the message. This build deliberately did NOT touch the shared venv (it is shared with a live solver run; the freeze's own fixtures and weight derivation used an unpacked SHADOW wheel on PYTHONPATH, the phase-seam pattern).",
+    "interlock": "BAND_CLAIMED is NOT dropped at freeze. run_cells.sh refuses every real cell without it. This claim row protects against a concurrent-session band race; it does not authorize a launch."
+  }
+}
