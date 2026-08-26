@@ -1,0 +1,60 @@
+{
+  "_banner": "FINALIZED at freeze, 2026-08-25. The orchestrator appends `_csv_row` VERBATIM to governance/BAND_REGISTRY.csv in the stamping commit (the r1 / rung2 / carcasum_arb / h2h_22016 precedent: claim the real row at freeze-commit time rather than deferring to launch, because a deferred claim is exactly how bands 143000000000 and 144000000000 got double-claimed by concurrent prep sessions). ⚠️ THE ROW BEING APPENDED DOES NOT ARM THE LAUNCHER: run_cells.sh additionally requires a BAND_CLAIMED sentinel file in this directory, which is DELIBERATELY NOT created at freeze. That file is the owner/orchestrator interlock and is dropped only after the five DESIGN.md §0 sign-offs are given and the §6.2 exclusive-tenancy window is scheduled.",
+
+  "band_seed_start": 149000000000,
+  "band_seed_end_primary": 149000000199,
+  "n_decks": 200,
+  "seatings_per_deck": 2,
+  "games_per_cell": 400,
+  "cells_sharing_this_band": 2,
+  "crn": "BOTH cells draw the SAME 200 decks at the SAME seatings. Cell separation is by OUTPUT PATH and --claim-host, never by seed offset -- the deck-paired contrast S = M_R800 - M_R1600 IS the primary statistic and requires it.",
+
+  "burn_in_sub_window": {
+    "seeds": "149000000000 .. 149000000039",
+    "n_decks": 40,
+    "n_games": 80,
+    "note": "NOT a separate allocation. These are CELL R800's own first 40 decks, played in the same invocation at the same production W, and they COUNT toward the 200. They are named here only because READ_RULE.md §3.2 reads the binding G-TIMING gate over exactly this seed range, and a band row that did not mention it would hide a load-bearing property of the allocation."
+  },
+
+  "smoke_range_disjoint": {
+    "seeds": "149999999000 .. 149999999007",
+    "n_decks": 8,
+    "status": "THROWAWAY. Discarded, never pooled, never claimed as a band. DESIGN.md §9.",
+    "note": "The smoke leg has NO TIMING AUTHORITY in this pair (DESIGN.md §9) -- it is a structural check and the fixture source for the adjudicator's selftest."
+  },
+
+  "all_branches_sweep": {
+    "procedure_of_record": "measurement/carcasum_arb_challenge_prep/DESIGN.md §4.1, as extended by measurement/h2h_22016_prep/BAND_CLAIM.json. For EVERY ref in refs/heads and refs/remotes: read that ref's own governance/BAND_REGISTRY.csv AND every measurement/**/BAND_CLAIM*.json it carries; take the lowest integer clear of everything found anywhere across ALL refs, not just the checked-out branch's registry high-water mark.",
+    "why_the_main_tree_check_is_insufficient": "Bands 143000000000 and 144000000000 were each double-claimed on 2026-08-24 by concurrent prep sessions whose registry checks were scoped to the checked-out branch and therefore could not see an unmerged sibling freeze branch's own row. Both collisions were caught pre-launch at zero games and self-amended.",
+    "run_date": "2026-08-25",
+    "findings": [
+      {"band": 143000000000, "status": "claimed", "source": "measurement/carcasum_rung2_prep/"},
+      {"band": 144000000000, "status": "retired", "source": "measurement/track_d2r2_prep/ -- D2 attempt 2's spent U-UNREADABLE band"},
+      {"band": 145000000000, "status": "claimed", "source": "measurement/track_d1_fair_rebase/ (PRIMARY)"},
+      {"band": 146000000000, "status": "soft-reserved, DRAFT-NOT-CLAIMED, no registry row on any ref", "source": "measurement/track_d1_fair_rebase/ -- earmarked for its own n=800 extension"},
+      {"band": 147000000000, "status": "claimed", "source": "measurement/carcasum_arb_challenge_prep/"},
+      {"band": 148000000000, "status": "claimed, primary+topup through 148000000699", "source": "measurement/h2h_22016_prep/ -- the highest allocation found on any ref"},
+      {"band": 149000000000, "status": "FREE on every ref, every registry version, and every claim file", "source": "this claim"}
+    ],
+    "why_149_not_146": "146000000000 carries no registry row on any ref and is, by the letter, free. It is SKIPPED anyway, on the identical reasoning carcasum_arb_challenge_prep and h2h_22016_prep both used when they skipped it: d1-rebase-freeze has spent a committed paragraph earmarking it for that track's own n=800 extension and asked that nothing run there without a fresh funding decision. Taking it for an unrelated cell would manufacture the exact collision the corrected procedure exists to prevent, the moment that extension is funded.",
+    "reverify_before_append": "MANDATORY. The sweep is re-run immediately before the CSV append, in the stamping commit, and the append is aborted if 149000000000 has appeared anywhere in the interim."
+  },
+
+  "release_if_never_launched": "If this cell is never launched, 149000000000 is RELEASED under the BAND_REGISTRY.csv RELEASE-IF-NEVER-LAUNCHED clause -- a band is spent only once real records exist on it. ⚠️ THE CLAUSE DOES NOT APPLY TO A BURN-IN ABORT: if READ_RULE.md §3.2's gate fires, ~40 decks of real records exist and the band is SPENT and RETIRED, exactly as bands 141000000000 and 144000000000 were retired by the two prior voids.",
+
+  "_csv_row": "149000000000,\"D2 RUNG-COMPRESSION, ATTEMPT 3 (COST-CALIBRATION SUCCESSOR): two deck-paired cells on ONE band, ONE shared 200-deck set, CRN both seatings. CELL R800 = frozen fair-PIMC probe (rust, k4x1600 = 6400 total sims, fixed_v1+R9, curve125 leaf a36d2e15a3b3d71d, exact-K 2, c_puct 1.5, tie-arbiter OFF) vs HeuristicMCTS(h800, c=3.0, leaf 42af12fce22e1a0f). CELL R1600 = the SAME probe vs HeuristicMCTS(h1600, c=3.0). The two cells differ in EXACTLY --rung-sims. PRIMARY = the deck-paired spacing S = M_R800 - M_R1600 in points/game.\",claim,claimed,2026-08-25,pending,measurement/track_d2r3_prep/DESIGN.md,\"Seeds 149000000000..149000000199 = 200 decks x 2 seatings x 2 cells = 800 games. NO top-up range reserved; READ_RULE.md §5 forbids any n extension without a fresh pair. *** THIRD ATTEMPT AT D2, AFTER TWO VOIDS FROM DIFFERENT CAUSES: attempt 1 (band 141000000000) U-UNREADABLE on four PROVENANCE gates; attempt 2 (band 144000000000) U-UNREADABLE on G-TIMING, realized equal-time ratio 0.8382 vs the frozen [0.85,1.20]. Attempt 3 inherits attempt 2's four instrument fixes VERBATIM (all four verified on real 400-game cells) and changes ONLY the cost calibration. *** THE COST-CALIBRATION FIX: the probe budget is re-derived against attempt 2's CELL-REALIZED SATURATED costs (rung 1103.1 ms/move, probe 924.7 ms/move at 5504 total => 0.168 ms per total-sim) rather than against a pilot's unsaturated ones; k4x1600 = 6400 projects an equal-time ratio of 0.975 (linear model) to 1.014 (superlinear, exponent 1.262) -- IN BAR UNDER BOTH MODELS, where attempt 2's k4x1376 projects 0.838 under both. *** THE BURN-IN GATE (READ_RULE.md §3.2): G-TIMING keeps the interval [0.85,1.20] VERBATIM across all three attempts -- no bar has ever moved -- but is now read over the CELL'S OWN FIRST 40 DECKS (149000000000..149000000039, 80 games) at full production W=22, enforced LIVE by a watcher that shares its arithmetic with the adjudicator, and aborts the run on FAIL for ~3.6 core-h instead of ~44. The burn-in games COUNT; they are cell games. *** EXCLUSIVE TENANT: the box runs nothing else for the ~2.5h window (G-TENANCY, a live per-process CPU sampler that aborts the cell on two consecutive foreign-load samples) -- attempt 2 was contaminated by a concurrent Android build. *** BAND PICKED BY THE ALL-BRANCHES SWEEP (carcasum_arb_challenge_prep DESIGN §4.1), re-verified immediately before this append; 146000000000 skipped as soft-reserved by track_d1_fair_rebase.\"",
+
+  "_csv_row_columns": "band_seed_start,label,tier,status,claimed_date,decision_influenced,evidence_or_claim,notes",
+
+  "authorization_state_at_claim": {
+    "owner_greenlight_for_the_BUILD": "2026-08-25, verbatim: 'let's greenlight redoing the wall clock thing'",
+    "owed_sign_offs_still_UNSIGNED": [
+      "(a) funding ~44 core-h / ~2.0 h wall",
+      "(b) the band claim itself",
+      "(c) the probe budget k4x1600 = 6400, which deliberately is NOT a named-lineage budget (DESIGN §3.2 step 6 reverses that preference and argues why)",
+      "(d) tie-arbiter OFF",
+      "(e) the ~2.5 h EXCLUSIVE-TENANCY window on the local box -- a constraint on the ORCHESTRATOR's own conduct, not just on the box"
+    ],
+    "interlock": "BAND_CLAIMED is NOT dropped at freeze. run_cells.sh refuses every real cell without it. Claiming the row protects against a concurrent-session band race; it does not authorize a launch."
+  }
+}
