@@ -771,30 +771,61 @@ def wheel_probe_ok(probe: Mapping | None) -> tuple[bool, str]:
 # `carcassonne_ai.run_manifest.code_rev()` emits `git rev-parse --short HEAD`    #
 # (7-12 hex, plus a `-dirty` suffix on a dirty tree) while `PINNED_SRC_REV` is   #
 # written from `git rev-parse HEAD` (40 hex). "Equals" is therefore read as      #
-# "NAMES THE SAME COMMIT": a case-insensitive PREFIX match of at least 7 hex,    #
-# with any `-dirty` marker an outright FAIL. Recorded here rather than reasoned  #
-# about at the gate, and reported to the pair's owner as a READ_RULE wording     #
-# defect rather than silently reinterpreted.                                    #
+# "NAMES THE SAME COMMIT": a case-insensitive PREFIX match of at least 7 hex.    #
+#                                                                               #
+# ⭐ THE `-dirty` SUFFIX IS INFORMATIONAL, NOT FATAL (amendment round 2,          #
+# 2026-08-26). `code_rev()` computes dirtiness over the WHOLE TREE, and the main #
+# tree is PERPETUALLY dirty with measurement logs, archives and run artifacts —  #
+# that is normal and permanent, not a defect. Treating the whole-tree marker as  #
+# fatal voided EVERY real cell run from the main tree, which the round-2 smoke   #
+# proved (`code_rev 'dbf78ed8-dirty' marks a DIRTY tree`).                       #
+#                                                                               #
+# The precedent is `track_d2r4_prep`'s `G-TOOL`: whole-tree dirt is              #
+# INFORMATIONAL, only CODE_PATHS dirt is fatal. This pair already carries the    #
+# code-path-scoped verdict — `SRC_CLEAN.jsonl`, written by the launcher at every #
+# boundary from `git status --porcelain -- src engine scripts rust tests         #
+# pyproject.toml setup.py` (measurement/ DELIBERATELY excluded). `G-REV`'s       #
+# dirty judgment is keyed on THAT, via `src_clean_facts`. So nothing is          #
+# relaxed: the fatal check MOVED to the scope that can actually distinguish a    #
+# mid-round code edit from a log file.                                          #
 # --------------------------------------------------------------------------- #
 MIN_REV_PREFIX = 7
+DIRTY_SUFFIX = "-dirty"
+
+
+def split_dirty(code_rev: str) -> tuple[str, bool]:
+    """`(sha_part, had_dirty_marker)`. The marker is WHOLE-TREE scoped and is
+    reported, never fatal — see the banner."""
+    s = (code_rev or "").strip()
+    if s.lower().endswith(DIRTY_SUFFIX):
+        return s[: -len(DIRTY_SUFFIX)], True
+    return s, False
 
 
 def rev_matches(code_rev, pinned) -> tuple[bool, str]:
-    """`(ok, why)` — does a manifest's short `code_rev` name `PINNED_SRC_REV`?"""
+    """`(ok, why)` — does a manifest's short `code_rev` NAME `PINNED_SRC_REV`?
+
+    ⛔ This answers the IDENTITY question only. The CLEANLINESS question is
+    `SRC_CLEAN.jsonl`'s (`src_clean_facts`), because only that reading is scoped
+    to the code paths. A `-dirty` marker here is noted in `why` and does not
+    fail the match.
+    """
     if not code_rev or not isinstance(code_rev, str):
         return False, "code_rev ABSENT — ABSENT is FAIL"
     if not pinned or not isinstance(pinned, str):
         return False, "PINNED_SRC_REV ABSENT — ABSENT is FAIL"
-    if code_rev.endswith("-dirty"):
-        return False, f"code_rev {code_rev!r} marks a DIRTY tree"
-    cr, pn = code_rev.strip().lower(), pinned.strip().lower()
+    cr, dirty = split_dirty(code_rev)
+    cr = cr.lower()
+    pn = pinned.strip().lower()
+    note = ("; ⚠️ whole-tree `-dirty` marker present — INFORMATIONAL ONLY "
+            "(the code-path verdict is SRC_CLEAN.jsonl's)" if dirty else "")
     if not is_hex40(pn):
-        return False, f"PINNED_SRC_REV {pinned!r} is not a 40-hex sha"
+        return False, f"PINNED_SRC_REV {pinned!r} is not a 40-hex sha{note}"
     if len(cr) < MIN_REV_PREFIX or any(ch not in "0123456789abcdef" for ch in cr):
-        return False, f"code_rev {code_rev!r} is not >= {MIN_REV_PREFIX} hex chars"
+        return False, f"code_rev {code_rev!r} is not >= {MIN_REV_PREFIX} hex chars{note}"
     if not pn.startswith(cr):
-        return False, f"code_rev {code_rev!r} is not a prefix of PINNED_SRC_REV {pinned!r}"
-    return True, f"code_rev {code_rev!r} names PINNED_SRC_REV {pinned!r}"
+        return False, f"code_rev {code_rev!r} is not a prefix of PINNED_SRC_REV {pinned!r}{note}"
+    return True, f"code_rev {code_rev!r} names PINNED_SRC_REV {pinned!r}{note}"
 
 
 def is_hex40(s) -> bool:

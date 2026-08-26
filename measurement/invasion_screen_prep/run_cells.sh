@@ -755,6 +755,9 @@ print_dry_run() {
   log "   Both properties are re-verified against the EMITTED manifest by G-SINGLEVAR."
   log ""
   build_argv "$SMOKE_CELL" "$SMOKE_GAMES" "$SMOKE_SEED_START" "$SMOKE_WORKERS" "smoke_${CELL_SUB[$SMOKE_CELL]}" no-stamp
+  # (the REAL smoke additionally carries --stamp-key BLIND_COMMIT=<sha> and
+  #  --stamp-key SCREEN_CELL=<cell>, exactly as a real cell does -- G-BLIND
+  #  requires the stamp on the smoke archive too)
   printf '[dry-run] SMOKE (%s cfg):' "$SMOKE_CELL"; printf ' %q' "${ARGV[@]}"; printf '\n'
   log "  smoke decks   : $SMOKE_SEED_START..$(( SMOKE_SEED_START + SMOKE_GAMES/2 - 1 )) -- DISJOINT, discarded, never pooled"
   log ""
@@ -828,7 +831,14 @@ run_smoke() {
   record_src_boundary "pre-flight"
 
   mkdir -p "$LOGS" "$so"
-  build_argv "$c" "$SMOKE_GAMES" "$SMOKE_SEED_START" "$SMOKE_WORKERS" "$sub" no-stamp
+  # ⭐ WITH-STAMP, EXACTLY AS A REAL CELL (amendment round 2, 2026-08-26).
+  # G-BLIND requires every adjudicated manifest to carry `stamps.BLIND_COMMIT`,
+  # and G-BLIND is NOT in READ_RULE SS3.5's allowed set -- so it must PASS on the
+  # smoke archive too. Running the smoke `no-stamp` produced "stamp mismatch" on
+  # every smoke. ⛔ The fix is to make the SMOKE match the real cells, NEVER to
+  # special-case the gate: the whole point of the leg is to exercise the same
+  # plumbing the real cells will. (d2r3/d2r4's smokes stamp the same way.)
+  build_argv "$c" "$SMOKE_GAMES" "$SMOKE_SEED_START" "$SMOKE_WORKERS" "$sub" with-stamp
   set +e
   "${ARGV[@]}" 2>&1 | tee "$LOGS/smoke.log"
   local rc=${PIPESTATUS[0]}

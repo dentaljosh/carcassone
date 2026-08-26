@@ -732,7 +732,6 @@ def test_rev_matching_is_a_prefix_rule_not_string_equality():
     full = "2eca4a92fb0012345678901234567890abcdef12"
     assert L.rev_matches("2eca4a92", full)[0]
     assert L.rev_matches("2ECA4A92", full)[0]
-    assert not L.rev_matches("2eca4a92-dirty", full)[0]
     assert not L.rev_matches("deadbee", full)[0]
     assert not L.rev_matches("2eca", full)[0]      # shorter than MIN_REV_PREFIX
     assert not L.rev_matches(None, full)[0]
@@ -1368,3 +1367,149 @@ def test_design_margin_wording_matches_the_published_table():
     arm = L.cell_by_name("A_MID").name
     ratio = marg["per_cell"][arm]["s_per_game"] / base["per_cell"][arm]["s_per_game"]
     assert ratio == pytest.approx(1.125), "the table is not +12.5% per game"
+
+
+# ═══════════════════════════════════════════════════════════════════════════ #
+# 16. AMENDMENT ROUND 2 — the two HEALTHY-RUN-VOIDING defects the round-2      #
+#     smoke found once round 1 had switched the gates on                      #
+# ═══════════════════════════════════════════════════════════════════════════ #
+
+# ---- (6) G-REV's dirty judgment is scoped to the CODE PATHS ---------------
+@pytest.mark.parametrize("code_rev", ["dbf78ed8-dirty", "2eca4a92-dirty",
+                                      "2ECA4A92-DIRTY"])
+def test_whole_tree_dirty_marker_does_not_fail_the_rev_match(code_rev):
+    """⭐ THE ROUND-2 BLOCKER. `run_manifest.code_rev()` computes dirtiness over
+    the WHOLE TREE, and the main tree is PERPETUALLY dirty with measurement logs
+    and run artifacts — normal and permanent. Treating that marker as fatal
+    voided every healthy run from the main tree (`code_rev 'dbf78ed8-dirty'
+    marks a DIRTY tree`). Per track_d2r4_prep's G-TOOL precedent, whole-tree dirt
+    is INFORMATIONAL; only CODE_PATHS dirt is fatal."""
+    full = "dbf78ed8" + "0" * 32 if code_rev.lower().startswith("dbf") \
+        else "2eca4a92" + "0" * 32
+    ok, why = L.rev_matches(code_rev, full)
+    assert ok is True, why
+    assert "INFORMATIONAL" in why
+
+
+def test_split_dirty_reports_the_marker_without_consuming_the_sha():
+    assert L.split_dirty("dbf78ed8-dirty") == ("dbf78ed8", True)
+    assert L.split_dirty("dbf78ed8") == ("dbf78ed8", False)
+    assert L.split_dirty("") == ("", False)
+
+
+def test_a_wrong_sha_still_fails_even_when_only_the_marker_differs():
+    """⛔ Nothing is RELAXED about identity: the prefix rule is untouched."""
+    full = "dbf78ed8" + "0" * 32
+    assert not L.rev_matches("deadbeef-dirty", full)[0]
+    assert not L.rev_matches("dbf7-dirty", full)[0]          # under MIN_REV_PREFIX
+    assert not L.rev_matches("dbf78ed8-dirty", None)[0]      # ABSENT pin
+
+
+def test_the_fatal_dirty_verdict_now_comes_from_src_clean_only(tmp_path):
+    """The fatal judgment MOVED, it did not vanish: a code-path-dirty boundary in
+    SRC_CLEAN.jsonl still voids G-REV even though the rev itself matches."""
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.0)
+    ok, _ = _gates_on_disk(d, L.IDENT_CELL)
+    assert ok.results["G-REV"]["ok"] is True
+    assert ok.results["G-REV"]["observed"]["whole_tree_dirty_is_informational"] is True
+    dirty = dict(_healthy_src_clean(), ok=False,
+                 dirty_boundaries=["A_MID-after-pass-3"], why="dirty at A_MID")
+    g, _ = _gates_on_disk(d, L.IDENT_CELL, src_clean=dirty)
+    assert g.results["G-REV"]["ok"] is False
+
+
+def test_the_launcher_code_path_scan_excludes_measurement(tmp_path):
+    """⭐ THE SCOPING PROOF, EXECUTED against a throwaway git repo rather than
+    asserted from the design: a dirty file under `measurement/` must produce an
+    EMPTY code-path scan, while a dirty file under `src/` must not. This is what
+    makes SRC_CLEAN.jsonl a trustworthy substitute for the whole-tree marker."""
+    code_paths = _launcher_code_paths()
+    assert "measurement" not in code_paths
+    repo = tmp_path / "r"
+    (repo / "src").mkdir(parents=True)
+    (repo / "measurement" / "logs").mkdir(parents=True)
+    for cmd in (["init", "-q"], ["config", "user.email", "t@t"],
+                ["config", "user.name", "t"]):
+        subprocess.run(["git", "-C", str(repo), *cmd], check=True,
+                       capture_output=True)
+    (repo / "src" / "a.py").write_text("x = 1\n")
+    (repo / "measurement" / "logs" / "run.log").write_text("start\n")
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "base"], check=True,
+                   capture_output=True)
+
+    def scan() -> str:
+        r = subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "--",
+                            *code_paths], capture_output=True, text=True)
+        return r.stdout.strip()
+
+    assert scan() == ""
+    # dirty a MEASUREMENT artifact — the normal, permanent condition of the main tree
+    (repo / "measurement" / "logs" / "run.log").write_text("start\nmore\n")
+    assert scan() == "", ("a dirty measurement artifact reached the CODE-PATH scan — "
+                          "SRC_CLEAN.jsonl would then void every healthy run")
+    # whole-tree status DOES see it, which is precisely why the whole-tree marker
+    # cannot be the fatal signal
+    whole = subprocess.run(["git", "-C", str(repo), "status", "--porcelain"],
+                           capture_output=True, text=True).stdout
+    assert "measurement/logs/run.log" in whole
+    # dirty a CODE path — this one MUST be caught
+    (repo / "src" / "a.py").write_text("x = 2\n")
+    assert "src/a.py" in scan()
+
+
+def _launcher_code_paths() -> list[str]:
+    """`CODE_PATHS=(...)` as the launcher declares it."""
+    src = (PREP / "run_cells.sh").read_text()
+    m = re.search(r"^CODE_PATHS=\(([^)]*)\)", src, re.M)
+    assert m, "CODE_PATHS not found in run_cells.sh"
+    return m.group(1).split()
+
+
+def test_launcher_code_paths_are_the_house_set():
+    assert _launcher_code_paths() == ["src", "engine", "scripts", "rust", "tests",
+                                      "pyproject.toml", "setup.py"]
+
+
+# ---- (7) the smoke stamps BLIND_COMMIT exactly as a real cell --------------
+def test_the_smoke_leg_stamps_blind_commit_like_a_real_cell():
+    """⭐ THE OTHER ROUND-2 BLOCKER: the unstamped smoke failed G-BLIND on 'stamp
+    mismatch'. G-BLIND is NOT in §3.5's allowed set, so it must PASS on the smoke
+    — and the fix is to make the SMOKE match the real cells, never to special-case
+    the gate. The whole point of the leg is to exercise the real plumbing."""
+    src = (PREP / "run_cells.sh").read_text()
+    smoke = src.split("run_smoke() {")[1].split("\n}\n")[0]
+    m = re.search(r'build_argv "\$c" "\$SMOKE_GAMES".*?(\S+)\s*$', smoke, re.M)
+    assert m, "could not find the smoke's build_argv call"
+    assert m.group(1) == "with-stamp", (
+        f"the smoke builds its argv {m.group(1)!r} — it must be 'with-stamp' so the "
+        "emitted manifest carries stamps.BLIND_COMMIT")
+
+
+def test_build_argv_emits_the_blind_stamp_only_with_stamp():
+    """The stamp is conditional on the with-stamp mode, and carries the sha from
+    the BLIND_COMMIT file — not a hard-coded literal."""
+    src = (PREP / "run_cells.sh").read_text()
+    body = src.split("build_argv() {")[1].split("\n}\n")[0]
+    assert '--stamp-key "BLIND_COMMIT=$(blind_commit_value)"' in body
+    assert '--stamp-key "SCREEN_CELL=$c"' in body
+    assert 'if [ "$stamp" = "with-stamp" ]' in body
+
+
+def test_g_blind_still_requires_the_stamp_to_match(tmp_path):
+    """⛔ The gate was NOT special-cased: a manifest whose stamp disagrees with the
+    BLIND_COMMIT file still fails."""
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.0, blind="b" * 40)
+    ok, _ = _gates_on_disk(d, L.IDENT_CELL, blind="b" * 40)
+    assert ok.results["G-BLIND"]["ok"] is True
+    g, _ = _gates_on_disk(d, L.IDENT_CELL, blind="e" * 40,
+                          blind_proof=_healthy_blind_proof("e" * 40))
+    assert g.results["G-BLIND"]["ok"] is False, "a stamp mismatch was tolerated"
+
+
+def test_read_rule_records_amendment_round_2():
+    rr = (PREP / "READ_RULE.md").read_text()
+    assert "AMENDMENT ROUND 2" in rr
+    for token in ("INFORMATIONAL", "dbf78ed8", "stamp mismatch", "G-TOOL"):
+        assert token in rr, f"amendment round 2 does not mention {token}"
