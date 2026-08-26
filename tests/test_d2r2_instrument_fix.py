@@ -32,7 +32,7 @@ HARNESS = REPO / "scripts" / "classical_search" / "eval_fair_puct.py"
 
 CHAMP_LEAF_HASH = "a36d2e15a3b3d71d"
 RUNG_RULER_LEAF_HASH = "42af12fce22e1a0f"
-BAND = "143000000000"
+BAND = "144000000000"
 
 sys.path.insert(0, str(REPO / "scripts" / "classical_search"))
 
@@ -425,7 +425,7 @@ def test_successor_band_is_consistent_everywhere():
         assert BAND in txt, f
         assert "141000000000" not in txt or f in ("DESIGN.md", "READ_RULE.md",
                                                   "BAND_CLAIM_DRAFT.json")
-    assert "PINNED_BAND=143000000000" in (D2R2 / "run_cells.sh").read_text()
+    assert "PINNED_BAND=144000000000" in (D2R2 / "run_cells.sh").read_text()
 
 
 def test_band_claim_is_drafted_not_claimed():

@@ -7,8 +7,17 @@
 # DESIGN.md §0 for the provenance banner. This file is that instrument fix.
 #
 # CELL R800 (--rung-sims 800) and CELL R1600 (--rung-sims 1600), deck-paired on
-# ONE band and THE SAME 200 decks, against a frozen fair-PIMC probe (k4x1032,
+# ONE band and THE SAME 200 decks, against a frozen fair-PIMC probe (k4x1376,
 # tie-arbiter OFF), vs the frozen HeuristicMCTS(h800 / h1600, c=3.0) rung.
+#
+# ⚠️ PROBE BUDGET AMENDED 2026-08-25 (DESIGN §0 banner item 9): k4x1032 -> k4x1376.
+# The §9 pilot read ratio 0.659 vs bar [0.85,1.20] on BOTH boxes because FIX 1
+# below (the R9 export) makes the python h800 rung ~58% dearer per move; the
+# frozen budget had been derived against non-R9 rung figures. The re-pick is the
+# ORCHESTRATOR's pair-level decision under READ_RULE §179-183, taken with the band
+# UNSPENT (zero games), NOT a launcher re-pick. ⛔ It does not renew: a pilot FAIL
+# at 1376 STOPS the run. See §0 item 9a for the standalone R9-cost finding and 9b
+# for the CARC_PY execution deviation.
 #
 #   run_cells.sh <local|laptop-side> [--pilot] [--dry-run] [--band <SEED_START>]
 #
@@ -120,8 +129,8 @@ export CARCASSONNE_FIX_R9=1
 # CURVE125 block in eval_fair_puct.py and `_assert_rung_is_ruler`.
 
 # the band pinned by the pair -- --band may only CONFIRM this, never shadow it
-PINNED_BAND=143000000000
-PILOT_SEED_START=143999999000   # DISJOINT throwaway range, DESIGN §9; never pooled, never claimed
+PINNED_BAND=144000000000
+PILOT_SEED_START=144999999000   # DISJOINT throwaway range, DESIGN §9; never pooled, never claimed
 
 # The two leaf hashes this cell's identity rests on (DESIGN §3.1, READ_RULE §3).
 CHAMP_LEAF_HASH=a36d2e15a3b3d71d      # candidate: the curve125 production champion
@@ -343,11 +352,18 @@ build_common() {
   # ⚠️ --n 400: the harness's --n counts GAMES; --paired gives 2 seatings per
   # deck, so --n 400 = 200 DECKS (DESIGN §4/§5's costed and gated deck count).
   # DO NOT "fix" this to 200.
-  # ⚠️ --sims 1032: the DESIGN §9 pilot's ONE permitted re-pick, frozen pre-cells
-  # on the DISCARDED first-attempt pilot band and CARRIED here (DESIGN §0 banner
-  # item 5). §3.1's verbatim text names the pre-re-pick 688; 1032 is what runs.
+  # ⚠️ --sims 1376: DESIGN §0 banner item 9 (AMENDMENT 2026-08-25), the
+  # ORCHESTRATOR-level re-pick taken under READ_RULE §179-183's own delegation
+  # after the §9 pilot read 0.659 vs bar [0.85,1.20] on BOTH boxes. Cause: FIX 1
+  # (the R9 export) makes the python h800 rung ~58% dearer per move (553.8 ->
+  # 877.2 ms), and the frozen budget was derived against non-R9 rung figures.
+  # k4x1376 = 5504 total = `fair_ruler_rebase_5504`, a NAMED lineage budget ->
+  # 5504 x 0.140 ms/total-sim = 770.6 ms => projected ratio 0.878, in-bar.
+  # SUPERSEDES §0 item 5's k4x1032 (which superseded §3.1's verbatim 688).
+  # ⛔ THE ALLOWANCE IS EXHAUSTED AND DOES NOT RENEW: if the pilot fails at 1376
+  # the run STOPS and returns to the orchestrator. No third re-pick.
   COMMON=(--info fair --opponent h800 --backend rust
-          --k-dets 4 --sims 1032 --exact-k 2
+          --k-dets 4 --sims 1376 --exact-k 2
           --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits
           --n 400 --paired --seed-start "$BAND"
           --rules-profile fixed_v1 --workers "$W"
@@ -442,13 +458,14 @@ print_dry_run() {
 run_pilot() {
   log "PILOT -- CELL R800 config only, n=16 (8 decks x 2 seatings), seed-start=$PILOT_SEED_START"
   log "PILOT band is DISCARDED and never pooled with the real cell band (DESIGN §9)."
-  log "⚠️ The §9 --sims re-pick is ALREADY SPENT (k4x1032, carried from the first"
-  log "⚠️ attempt's discarded pilot band). This pilot CONFIRMS the ratio; it does not"
-  log "⚠️ re-pick again -- §9 permits exactly one re-pick and it has been taken."
+  log "⚠️ Budget is k4x1376 per DESIGN §0 item 9 (AMENDMENT 2026-08-25) -- the"
+  log "⚠️ ORCHESTRATOR's pair-level re-pick after k4x1032 read 0.659 on both boxes."
+  log "⚠️ This pilot must REALIZE the projected 0.878 in-bar. ⛔ THE ALLOWANCE IS NOW"
+  log "⚠️ EXHAUSTED: a FAIL here STOPS the run and returns to the orchestrator."
   local sub="pilot_r800"
   local PARGV=(nice -n 19 "$PY" -u "$HARNESS"
         --info fair --opponent h800 --backend rust
-        --k-dets 4 --sims 1032 --exact-k 2
+        --k-dets 4 --sims 1376 --exact-k 2
         --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits
         --n 16 --paired --seed-start "$PILOT_SEED_START"
         --rules-profile fixed_v1 --workers "$W"
@@ -487,9 +504,11 @@ ok = lo <= ratio <= hi
 print(f"[pilot] champ_prefix_ms_per_move={champ_ms:.3f} rung_ms_per_move={rung_ms:.3f} ratio={ratio:.4f}")
 print(f"[pilot] bar=[{lo},{hi}]  =>  {'PASS' if ok else 'FAIL'}")
 if not ok:
-    print("[pilot] !!! The §9 re-pick allowance is SPENT (k4x1032 was picked on the "
-          "first attempt's pilot band). A FAIL here is a PAIR-LEVEL decision for the "
-          "orchestrator, NOT a second re-pick by this launcher.")
+    print("[pilot] !!! The re-pick allowance is EXHAUSTED TWICE OVER: k4x1032 was picked "
+          "on the first attempt's pilot band (DESIGN §0 item 5), and k4x1376 is the "
+          "ORCHESTRATOR's own pair-level re-pick of 2026-08-25 (§0 item 9), taken after "
+          "1032 read 0.659 on both boxes. ⛔ A FAIL HERE STOPS THE RUN and returns to the "
+          "orchestrator. There is no third re-pick, and none by this launcher ever.")
 sys.exit(0 if ok else 1)
 PEOF
 }

@@ -1,3 +1,18 @@
+> # ⛔ STATUS: **ADJUDICATED 2026-08-25 — BRANCH `U-UNREADABLE`** (gate `G-TIMING`).
+>
+> The run completed both cells (400/400 games each, `n_failed` 0, band `144000000000`) and
+> **eight of the nine §3 gates PASS — including all four that voided the first attempt**
+> (`G-RULES` `r9_env_ok=True`, `G-LEAF` `a36d2e15a3b3d71d`, `G-TOOL` one code rev
+> `d3c720cf-dirty` + `BLIND_COMMIT` at both addresses). **`G-TIMING` FAILS**: CELL R800's
+> realized equal-time ratio is **0.8382**, below the frozen `[0.85, 1.20]` floor by 1.38%.
+> Per `READ_RULE.md` §4, **no strength or spacing statistic from this run is adjudicated,
+> quoted, or entered in `experiments/results.csv`.** Readout:
+> [`READOUT_D2R2.md`](READOUT_D2R2.md) / [`READOUT_D2R2.json`](READOUT_D2R2.json);
+> adjudicator [`analyze_d2r2.py`](analyze_d2r2.py). This banner is a close-out stamp
+> (DESIGN §10 item 3) — **no bar, gate, threshold or branch condition below is edited.**
+>
+> ---
+>
 > ## §0 — PROVENANCE BANNER (the pre-registered instrument-fix successor)
 >
 > ⛔→✅ **FROZEN 2026-08-23 (the blind commit is THE COMMIT THAT INTRODUCES THIS BANNER; its sha is stamped into `run_cells.sh` in the follow-up commit, per the b32v64 pattern). No statistic of any kind exists at freeze time.**
@@ -19,8 +34,8 @@
 > below is VERBATIM from the frozen original.**
 >
 > **3. What changed, exhaustively:** the run id (`track_d2_prep` → `track_d2r2_prep`); the band
-> (`141000000000` → **`143000000000`**, §5) and the pilot's disjoint range
-> (`141999999000..007` → `143999999000..007`, §9); the launcher (§7/§9 references now point at the
+> (`141000000000` → **`144000000000`**, §5) and the pilot's disjoint range
+> (`141999999000..007` → `144999999000..007`, §9); the launcher (§7/§9 references now point at the
 > FIXED [`run_cells.sh`](run_cells.sh)); this banner; and the §3.1 structural test, re-run over
 > **ALL** gates including `G-TOOL` (DESIGN §7 tail and [`READ_RULE.md`](READ_RULE.md) §3.1).
 > Nothing else.
@@ -55,6 +70,107 @@
 > everything were ready to launch... launch shortest wallclock first" + "you take it from here").
 > That authorization funded the *question*; §0's four owner sign-offs below are owed again for
 > this band.
+>
+> **8. AMENDMENT 2026-08-24 — band substituted, `143000000000` → `144000000000`, nothing else.**
+> At draft time (item 4 table, c9fac9b9) `143000000000` was the registry's next free step-aligned
+> start. Between that freeze commit and this ceremony, an UNRELATED session claimed
+> `143000000000` for `measurement/carcasum_rung2_prep/` (`governance/BAND_REGISTRY.csv`, status
+> `claimed`, `claimed_date` 2026-08-23) — a same-day race between two independent prep sessions,
+> neither aware of the other. Re-read of the registry at launch time (2026-08-24) shows
+> `144000000000` is the next free step-aligned start (`142000000000` and `143000000000` both
+> claimed; `145000000000`+ unclaimed). **This is a pure band substitution, mechanically identical
+> in kind to the original's own `141000000000` → `143000000000` swap (item 3 above): every
+> `143000000000` seed-start / manifest-match literal and the §9 pilot's disjoint sub-range
+> (`143999999000..007` → `144999999000..007`) are replaced verbatim; the predecessor's own band
+> (`141000000000`, the voided first attempt) is untouched wherever it appears. No bar, gate,
+> threshold, branch condition, probe config, or rung config is touched. Zero games exist under
+> this pair at amendment time** (`BLIND_COMMIT` still the placeholder, `BAND_CLAIMED` absent), **so
+> blindness is preserved trivially — this amendment predates game 1 by construction, same as the
+> original successor's own drafting predated the first attempt's readout.** Owed sign-offs (item
+> below) are unaffected; the band re-pick itself needs no fresh authorization beyond what the
+> band-claim checklist already requires (band claimed in the registry before launch).
+>
+> **9. AMENDMENT 2026-08-25 — PROBE BUDGET RE-PICKED, `k4×1032` → `k4×1376` (total 4128 → 5504).
+> SUPERSEDES ITEM 5's operative value; item 5's text stands verbatim as the record of what it
+> superseded. Nothing else in the pair is touched.** Zero games exist under band `144000000000`
+> at amendment time (no cell output directory, no `DONE_*` sentinel, no `RUN_LIVE.json`), so this
+> amendment **predates game 1 by construction** and the pair remains blind — the same footing as
+> item 8's band substitution.
+>
+> **The reason, verbatim as authorized:** *"FIX 1 (the R9 export, itself mandated by the first
+> attempt's void) makes the python h800 rung ~58% more expensive per move (553.8→877.2 ms,
+> reproduced within 0.4% on two boxes) — the frozen equal-time budget was derived against non-R9
+> rung figures and is arithmetically unreachable under the corrected instrument (ratio 0.659 vs
+> bar [0.85,1.20]). Re-pick preserves DESIGN §3.2(2)'s named-lineage-budget property (k4×1376 =
+> `fair_ruler_rebase_5504`) and restates the §3.2 derivation against the R9 rung: 5504 × 0.140
+> ms/total-sim = 770.6 ms → ratio 0.878, in-bar."*
+>
+> **The §3.2 derivation, RESTATED against the R9-era rung** (the original §3.2(1) text stands
+> verbatim below; it is the non-R9 derivation and is superseded by this paragraph for the purpose
+> of picking the probe budget). §3.2(1) priced equal-time against F5 `rung_ms_per_move` figures of
+> **383.8 / 384.9 / 387.0 / 388.6 / 443.5 ms (median 387.0)** — all measured with `r9_env_ok`
+> **False**, the pre-FIX-1 era. Under FIX 1 the same frozen h800 rung, same code rev, same box,
+> measures **877.2 ms/move**. The probe side is nearly unaffected (rust: 539.3 → 577.7 ms, +7%),
+> so the equal-time target moves with the rung. Measured probe cost is **577.7 ms / 4128 total
+> sims = 0.140 ms per total-sim** (§3.2's own 11008-cell figure implies 0.154; consistent). Equal
+> time against the R9 rung therefore needs **877.2 / 0.140 ≈ 6,264 total sims**, and the in-bar
+> window `[0.85, 1.20]` spans **≈5,326 to ≈7,519 total**. **k4×1376 = 5,504 total ⇒ 770.6 ms ⇒
+> ratio 0.878**, inside the bar with margin on the low side, and it is a **named production-lineage
+> budget** (`fair_ruler_rebase_5504`, §3.2(2)'s "not an invented config" property) rather than a
+> number assembled to hit a bar. `k4×1566` would centre the ratio at 1.00 but is invented; the
+> named budget was preferred, per §3.2(2).
+>
+> ✅ **REALIZED, on the local box, before any cell seed was touched:**
+> `champ_prefix_ms_per_move = 830.581`, `rung_ms_per_move = 880.999`, **ratio = 0.9428, PASS**
+> against the unchanged `[0.85, 1.20]` bar — better than the 0.878 projection (the probe scales
+> very slightly superlinearly in sims: 830.6 ms realized vs 770.6 ms projected at 5504 total, i.e.
+> 0.151 ms/total-sim at this budget against the 0.140 measured at 4128 — which is itself closer to
+> §3.2's own 0.154 figure). `n_failed = 0`; probe winrate vs h800 = 0.625, inside `G-SAT`'s
+> `[0.50, 0.90]` with room on both rails. The pilot band `144999999000..007` is DISCARDED and
+> never pooled, per §9.
+>
+> ⚠️ **§6's cost arithmetic now reads LOWER STILL.** Item 6 already flagged §6 as a 688-era figure
+> reading low at 1032; at 1376 the probe side is 2× the sims §6 costed. `CELL R1600` remains
+> rung-dominated (§6's actual point) and the rung side is itself ~58% dearer under FIX 1, so both
+> cells cost materially more wall-clock than §6's printed numbers. §6 is preserved verbatim
+> because it is not a bar.
+>
+> ⛔ **THE RE-PICK ALLOWANCE IS NOW EXHAUSTED FOR A SECOND TIME AND DOES NOT RENEW.** This is a
+> pair-level decision taken by the orchestrator under READ_RULE §179–183's own delegation
+> (*"a fail is a pair-level decision for the orchestrator, not a silent second re-pick"*) — it is
+> NOT the launcher re-picking, and §9's clause is not re-armed by it. **If the pilot at k4×1376
+> also reads out of bar, the run STOPS and returns to the orchestrator; it does not re-pick a
+> third time.** No bar, gate, threshold, branch condition, rung config, band, or `n` is touched by
+> this amendment. `G-TIMING`'s interval is unchanged at `[0.85, 1.20]`.
+>
+> **9a. THE STANDALONE FINDING (it outlives this pair).** **R9's import-time farm derivation costs
+> the PYTHON leaf ~58% per move** — measured on the frozen `HeuristicMCTS(h800, c=3.0)` rung,
+> leaf `42af12fce22e1a0f`, same code rev and same box: **553.8 ms/move with `r9_env_ok=False` vs
+> 877.2 ms/move with `r9_env_ok=True`**, reproduced within 0.4% on a second box (laptop-wsl, W=16:
+> 787.3 ms, ratio identical to 3 s.f.). The rust probe side is nearly unaffected (+7%), so the
+> cost is specific to the Python leaf path, not to the rules change as such. **Any future
+> equal-time pairing of a rust candidate against a Python rung must be priced against R9-era rung
+> figures** — the pre-FIX-1 F5 numbers (`383.8`–`443.5` ms) understate an R9 rung by ~2.2×, and a
+> budget derived from them will land ~0.66 of equal time and fail a `G-TIMING`-class gate. This is
+> recorded here rather than only in this pair's log because the defect it caused (a frozen budget
+> invalidated by a *correctness fix applied to the same instrument*) is a general trap: **an
+> instrument fix can invalidate a calibration that was frozen against the unfixed instrument.**
+>
+> **9b. EXECUTION DEVIATION #1, recorded — `CARC_PY`.** The frozen cells were launched from the
+> `d2r2-freeze` **worktree** (rev `4105baed`, working tree clean, 0 dirty entries including all
+> `CODE_PATHS`). A worktree carries no `.venv`, so `run_cells.sh`'s `PY="${CARC_PY:-$REPO/.venv/bin/python}"`
+> resolves to a nonexistent interpreter and the launcher aborts; `CARC_PY` was set to the main
+> tree's venv (`/home/doctor/projects/carcassone/.venv/bin/python`). The launcher's header scopes
+> `CARC_PY` to dry-run/pre-flight use, so this is named as a deviation rather than passed over.
+> **It is inert here:** `src/`, `engine/` and `scripts/classical_search/` are **byte-identical**
+> between the freeze rev `4105baed` and the main tree's `HEAD` (`70843eb7`) — `git diff` between
+> them touches only `scripts/carcasum_match/`, `scripts/rustport/` and `tests/`, none of which is
+> on this cell's execution path — so the venv's editable install resolves the same source the
+> pinned rev carries, and `code_rev` in the manifests is not a lie. ⚠️ **The obvious "fix" is
+> WRONG:** prefixing `PYTHONPATH` to the worktree's `src`/`engine` would break the run, because the
+> worktree carries no built Cython extensions (`flat_leaf_cy`, `flat_repr_cy` `.so` live only in
+> the main tree) and `preflight_leaf`'s `_assert_cy_float_path` would fail. The launcher does not
+> assert rev equality against the main tree, so no other accommodation was needed.
 
 # RUNG COMPRESSION: IS THE REFERENCE LADDER'S SPACING A USABLE UNIT? — DESIGN (DRAFT)
 
@@ -76,14 +192,14 @@ owner signs off on all four of the following, explicitly, before game 1:
 | # | owed sign-off | why it is the owner's call, not this draft's |
 |---|---|---|
 | (a) | **funding the ~16 core-hours** (§6) | this is spend, and the standing cost-discipline rule requires a one-sentence confirm before anything that burns time |
-| (b) | **the band claim** — 143000000000 (§5) | `governance/BAND_REGISTRY.csv` is a source of truth the orchestrator edits, not a builder |
+| (b) | **the band claim** — 144000000000 (§5) | `governance/BAND_REGISTRY.csv` is a source of truth the orchestrator edits, not a builder |
 | (c) | **the probe-budget choice** — k4×688 = 2752, the equal-time reading (§3) — vs the optional k8×1376 = 11008 production-agent extension (§6) | two different questions at two different costs; the owner picks which is funded |
 | (d) | **tie-arbiter OFF** | the probe P is the pre-arbiter fair PIMC champion; running WITH the arbiter would confound the rung-spacing question with the arbiter's own tied-ply behavior, which is exactly the class of confound this cell exists to avoid introducing |
 
 **Pre-launch checklist** (mirrors the jcz / b32v64 precedent, all must be true before any real
 cell fires):
 
-- [ ] band claimed in [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv) (143000000000, per §5)
+- [ ] band claimed in [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv) (144000000000, per §5)
 - [ ] this pair (`DESIGN.md` + `READ_RULE.md`) frozen and committed to `main`
 - [ ] `BLIND_COMMIT=<sha>` stamped into the launcher's config (§ launcher, `run_cells.sh` currently reads a placeholder and refuses to run without it)
 - [ ] the §9 pilot has run and its gate has PASSED (equal-time ratio inside [0.85, 1.20])
@@ -395,14 +511,14 @@ here so a future "just add n" ask does not have to re-derive it (jcz DESIGN §4.
 
 ## 5. THE BAND
 
-**Band `143000000000`** — the next free step-aligned start in
+**Band `144000000000`** — the next free step-aligned start in
 [`../../governance/BAND_REGISTRY.csv`](../../governance/BAND_REGISTRY.csv). Registry high-water
 at draft time is **141000000000** (the FIRST D2 attempt's own band, spent on the U-UNREADABLE run and retired with it; 142000000000 is spoken for by the drafted `../carcasum_match_prep/PREREG_DRAFT.md` row).
 
 ⛔ **NOT CLAIMED.** The row is DRAFTED in [`BAND_CLAIM_DRAFT.json`](BAND_CLAIM_DRAFT.json) and
 must be appended to the registry by the orchestrator before launch.
 
-Seeds `143000000000 .. 143000000199` (200 decks), used by **BOTH** cells (CRN by design — the
+Seeds `144000000000 .. 144000000199` (200 decks), used by **BOTH** cells (CRN by design — the
 same deck set, same seatings, feeding §4's paired statistic).
 
 Per CL-068, **band identity is load-bearing**: never pool D2's numbers across bands, and this
@@ -460,7 +576,7 @@ adjudicated. This section is the summary; `READ_RULE.md` §3 is the binding text
 
 | id | proposition | VOIDS on |
 |---|---|---|
-| `G-BAND` | both cells' `manifest.json` `seed_start` == 143000000000; deck sets identical; `n_common` == 200 | mismatch |
+| `G-BAND` | both cells' `manifest.json` `seed_start` == 144000000000; deck sets identical; `n_common` == 200 | mismatch |
 | `G-SINGLEVAR` | the two cells' argv differ in exactly `--rung-sims`, `--out-subdir`, `--claim-host` and nothing else — diffed directly from the two `manifest.json` `config` blocks | any other differing key |
 | `G-RUNG` | both manifests' `config.rung.c` == 3.0, `config.rung.agent` == `"HeuristicMCTS"`, `config.rung.leaf_hash` identical across cells, `config.rung.sims` == 800 / 1600 respectively | any deviation |
 | `G-LEAF` | `config.cand_leaf_hash` == `a36d2e15a3b3d71d` in both cells | mismatch or absence |
@@ -518,7 +634,7 @@ Stated before launch so no branch can be narrated past them:
 
 ## 9. THE PILOT (pre-blind, mandatory, ~5 minutes)
 
-n=8 decks (`--n 16 --paired`) on a **SEPARATE seed range** `143999999000..143999999007` — never
+n=8 decks (`--n 16 --paired`) on a **SEPARATE seed range** `144999999000..144999999007` — never
 the cell band — running **CELL R800's config only**.
 
 **Purpose:**
