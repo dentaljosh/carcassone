@@ -186,3 +186,26 @@ All statistics over the **n_common = 400 decks** present in all five ladder cell
 - Does **not** pool this band with any other band, or license a second band or more n.
 - Does **not** unpark E4 (the human anchor), or fund DESIGN §6.3 (a)–(c).
 
+
+---
+
+## ADDENDUM 2026-08-26 — the §6-flagged G2 comparator discrepancy is RECONCILED
+
+Adjudication note 6 above flagged that the frozen pair carried two values for the 11008 G2 row
+(`READ_RULE.md` §1: 9.7700; `DESIGN.md` §4.1: 7.9350) and asked for reconciliation before the G2
+rows are cited again. Resolved against the cells' own `summary.json` (source of truth, share):
+
+| cell | paired_mean_margin | paired_z |
+|---|---|---|
+| `fair_ruler_k8x1376_11008` (k8×1376) | **9.765** | 9.866 |
+| `fair_ruler_rebase_11008` (k4×2752) | **7.935** | 8.455 |
+
+**DESIGN §4.1 mislabeled a row**: it quoted `fair_ruler_rebase_11008`'s realized 7.9350/8.4547
+under the `fair_ruler_k8x1376_11008` label. READ_RULE's pre-registered comparator 9.7700 matches
+the named row (9.765 ≈ 9.77, the results.csv margin) and was the correct value; the adjudication
+above therefore used the right number, and the ERA-BOUNDED-NULL verdict was already shown robust
+to either. Downstream: `measurement/track_d2r3_prep/DESIGN.md` §4.1 copied the same mislabeled
+line into its dispersion table; with the correct row, se(M) for that cell is 9.765/9.866 = 0.990
+pts (not 0.939), moving the three-row average se(M) from ≈0.93 to ≈0.95 — the d2r3 MDE band
+(33–40 elo) is unchanged at that precision. The d2r3 pair is frozen; this note is the record, and
+its DESIGN gets an era annotation at close-out rather than an edit.
