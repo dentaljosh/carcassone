@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -313,14 +314,46 @@ def test_assert_r9_env_refuses_when_unset_or_empty(mangle):
     assert "G-RULES" in r.stdout
 
 
-def test_launcher_refuses_a_real_cell_on_the_placeholder_blind_commit():
-    """The pair ships with a placeholder BLIND_COMMIT; a real cell must refuse
-    until the executor stamps the real sha after the freeze ceremony."""
-    assert (D2R3 / "BLIND_COMMIT").read_text().strip() == \
-        "PLACEHOLDER_BLIND_COMMIT_NOT_YET_STAMPED"
-    r = _sh("(require_blind_and_band); echo RC=$?")
+def test_blind_commit_file_is_either_the_placeholder_or_a_real_sha():
+    """The on-disk BLIND_COMMIT has TWO legitimate states, and a test that pins
+    one of them is a test that can only pass on one side of the freeze ceremony.
+
+    ⚠️ This test previously asserted the file WAS the placeholder. That passed
+    while the pair was being built and FAILED the moment the stamping commit
+    wrote the real sha — i.e. it was a self-invalidating test, green exactly
+    until the thing it guards actually happened. Fixed to assert the invariant
+    that holds in BOTH states: the file is either the shipped placeholder (before
+    stamping) or a 40-hex sha (after), and never anything else.
+    """
+    txt = (D2R3 / "BLIND_COMMIT").read_text().strip()
+    assert txt == "PLACEHOLDER_BLIND_COMMIT_NOT_YET_STAMPED" or re.fullmatch(r"[0-9a-f]{40}", txt), \
+        f"BLIND_COMMIT is neither the placeholder nor a 40-hex sha: {txt!r}"
+
+
+def test_launcher_refuses_a_real_cell_on_a_placeholder_blind_commit(tmp_path):
+    """The BEHAVIOUR the previous test meant to check, tested against a synthetic
+    placeholder rather than against whatever the repo happens to hold right now.
+
+    `require_blind_and_band` reads `$DIR/BLIND_COMMIT`, so pointing DIR at a temp
+    directory holding a placeholder exercises the real guard on both legs:
+    a non-40-hex BLIND_COMMIT refuses (rc=2), and a valid sha with no
+    BAND_CLAIMED sentinel ALSO refuses (rc=2) — the owner interlock.
+    """
+    (tmp_path / "BLIND_COMMIT").write_text("PLACEHOLDER_BLIND_COMMIT_NOT_YET_STAMPED\n")
+    r = _sh(f"DIR={tmp_path}; (require_blind_and_band); echo RC=$?")
     assert "RC=2" in r.stdout, r.stdout + r.stderr
     assert "40-hex" in r.stdout
+
+    # a real sha, but still no BAND_CLAIMED => still refuses
+    (tmp_path / "BLIND_COMMIT").write_text("0" * 40 + "\n")
+    r = _sh(f"DIR={tmp_path}; (require_blind_and_band); echo RC=$?")
+    assert "RC=2" in r.stdout, r.stdout + r.stderr
+    assert "BAND_CLAIMED" in r.stdout
+
+    # sha + sentinel => the guard passes (this is the ONLY armed state)
+    (tmp_path / "BAND_CLAIMED").write_text("")
+    r = _sh(f"DIR={tmp_path}; (require_blind_and_band); echo RC=$?")
+    assert "RC=0" in r.stdout, r.stdout + r.stderr
 
 
 def test_launcher_refuses_the_retired_laptop_role():
