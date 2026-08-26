@@ -48,8 +48,14 @@ def _write_leg(root: Path, leg, recs, *, manifest=True, policy="clair-puct",
     for r in recs:
         (d / f"{r['rid']}.json").write_text(json.dumps(r))
     if manifest:
+        # the REAL shape oracle_score_pilot.build_manifest writes (D-F4-10): the policy
+        # lives at `oracle.policy`, the engine at `execution.backend`.
         (root / leg / "manifest.json").write_text(json.dumps(
-            {"oracle_policy": policy, "execution": {"backend_resolved": backend}}))
+            {"oracle": {"policy": policy,
+                        "policy_family": ("OUT-OF-FAMILY: no search"
+                                          if policy == "tier1-greedy"
+                                          else "IN-FAMILY with the agents under test")},
+             "execution": {"backend": backend}}))
 
 
 def _tax():
@@ -323,6 +329,33 @@ def test_manifest_gate_rejects_the_wrong_judge(corpus):
     assert F4.manifest_gates(corpus["t1"], ("leaf", "sib2"))["all_ok"] is True
     # the R1 tree is clair-puct/rust — it must FAIL the F4 manifest gate
     assert F4.manifest_gates(corpus["clair"], ("leaf", "sib2"))["all_ok"] is False
+
+
+def test_manifest_gate_rejects_a_manifest_with_no_policy_key_at_all(corpus, tmp_path):
+    """D-F4-10 regression: the gate read `oracle_policy` at top level, which the harness
+    never writes (that name exists only in the per-position RECORD), so a correct
+    tier1-greedy manifest FAILED g2. Both spellings are accepted now; neither present
+    must still fail."""
+    bad = tmp_path / "badtree"
+    (bad / "sib2").mkdir(parents=True)
+    (bad / "sib2" / "manifest.json").write_text(json.dumps(
+        {"execution": {"backend": "python"}}))
+    assert F4.manifest_gates(bad, ("sib2",))["all_ok"] is False
+    # promoted-to-top-level spelling must also pass
+    (bad / "sib2" / "manifest.json").write_text(json.dumps(
+        {"oracle_policy": "tier1-greedy",
+         "oracle": {"policy_family": "OUT-OF-FAMILY: no search"},
+         "execution": {"backend": "python"}}))
+    assert F4.manifest_gates(bad, ("sib2",))["all_ok"] is True
+
+
+def test_manifest_gate_rejects_an_in_family_policy_family(corpus, tmp_path):
+    bad = tmp_path / "infam"
+    (bad / "sib2").mkdir(parents=True)
+    (bad / "sib2" / "manifest.json").write_text(json.dumps(
+        {"oracle": {"policy": "tier1-greedy", "policy_family": "IN-FAMILY oops"},
+         "execution": {"backend": "python"}}))
+    assert F4.manifest_gates(bad, ("sib2",))["all_ok"] is False
 
 
 def test_record_gate_rejects_a_wall_capped_or_uncrn_record(corpus):

@@ -114,3 +114,33 @@ through the file so the smoke spans every phase and every seed decile, and its m
 unbiased ETA input rather than one needing a fudge factor. Both the raw strided mean and the
 head-anchored cross-check are reported.
 
+### D-F4-10 — gate g2 read a manifest key the harness never writes (2026-08-26, post-smoke, pre-adjudication)
+
+Found by the smoke, before any adjudication. `f4_adjudicate.manifest_gates` looked for a
+**top-level `oracle_policy`**; `oracle_score_pilot.build_manifest` writes the policy at
+**`oracle.policy`** and the engine at **`execution.backend`** (`oracle_policy` and
+`backend_resolved` are per-position RECORD field names, not manifest ones). A perfectly
+correct tier1-greedy manifest would therefore have failed g2 and stamped `F4-BROKEN`.
+
+Fixed by reading the real key with the promoted spelling accepted as a fallback, and
+**strengthened** while there: g2 now also requires the harness's own attestation
+`oracle.policy_family` to start with `OUT-OF-FAMILY` — the harness stamping, in its own
+words, that the judge is not in the champion's family. Two regression tests pin it
+(`test_manifest_gate_rejects_a_manifest_with_no_policy_key_at_all`,
+`test_manifest_gate_rejects_an_in_family_policy_family`).
+
+This is the memory rule *"read the emitter before writing the parser — and before trusting
+a field NAME"* firing exactly as designed. It touches a gate, not a statistic; no F4
+category outcome had been computed when it was made.
+
+### D-F4-11 — the smoke was run TWICE, at W=10 and at W=22 (2026-08-26, pre-launch)
+
+The W=10 smoke measured **F4 = 0.501 × R1 per position on the same 10 rids**, flat across
+every phase (0.454–0.550). That number cannot be read as "the tier1 judge is 2× cheaper":
+it compares F4 at **W=10** against R1's banked leg at **W=22**, so it conflates judge cost
+with contention. R1's own preflight (6 concurrent, effectively uncontended) averaged 71.0 s
+against a realized W=22 leg mean of 123.0 s — i.e. **contention on this box is worth ~1.7×**,
+which is the same order as the "saving". A second smoke at the production W=22 measures the
+contended per-position cost directly, so the launch ETA rests on a measurement rather than
+on a contention assumption. House rule: bench, then extrapolate, then commit.
+

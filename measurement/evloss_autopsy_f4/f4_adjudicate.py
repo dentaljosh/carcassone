@@ -393,7 +393,14 @@ def record_gates(judge_t1: Path, legs) -> dict:
 
 
 def manifest_gates(judge_t1: Path, legs) -> dict:
-    """g2 — the judge really is tier1-greedy on python."""
+    """g2 — the judge really is tier1-greedy on python.
+
+    ⚠️ FIELD NAMES VERIFIED AGAINST A REAL MANIFEST (D-F4-10), not guessed:
+    `oracle_score_pilot.build_manifest` writes the policy at `oracle.policy` (NOT a
+    top-level `oracle_policy` — that name exists only in the per-position RECORD) and the
+    engine at `execution.backend`. Both spellings are accepted so a future manifest revision
+    that promotes either key still passes, but a manifest carrying NEITHER fails.
+    """
     out, ok = {}, True
     for leg in legs:
         m = judge_t1 / leg / "manifest.json"
@@ -402,12 +409,17 @@ def manifest_gates(judge_t1: Path, legs) -> dict:
             ok = False
             continue
         d = json.loads(m.read_text())
-        pol = d.get("oracle_policy")
-        be = (d.get("execution") or {}).get("backend_resolved") \
-            or (d.get("execution") or {}).get("backend")
-        leg_ok = bool(pol == "tier1-greedy" and be == "python")
+        pol = (d.get("oracle") or {}).get("policy") or d.get("oracle_policy")
+        ex = d.get("execution") or {}
+        be = ex.get("backend_resolved") or ex.get("backend")
+        # the harness's own out-of-family attestation, stamped by ORACLE_POLICIES
+        fam = (d.get("oracle") or {}).get("policy_family") or ""
+        leg_ok = bool(pol == "tier1-greedy" and be == "python"
+                      and fam.startswith("OUT-OF-FAMILY"))
         ok &= leg_ok
-        out[leg] = {"oracle_policy": pol, "backend": be, "ok": leg_ok}
+        out[leg] = {"oracle_policy": pol, "backend": be,
+                    "policy_family_out_of_family": bool(fam.startswith("OUT-OF-FAMILY")),
+                    "ok": leg_ok}
     out["all_ok"] = bool(ok)
     return out
 
