@@ -737,3 +737,634 @@ def test_rev_matching_is_a_prefix_rule_not_string_equality():
     assert not L.rev_matches("2eca", full)[0]      # shorter than MIN_REV_PREFIX
     assert not L.rev_matches(None, full)[0]
     assert not L.rev_matches("2eca4a92", None)[0]
+
+
+# ═══════════════════════════════════════════════════════════════════════════ #
+# 14. THE THREE THINGS A 4-GAME / EMPTY FIXTURE CANNOT PROVE                  #
+#                                                                             #
+# Everything above drives gates against the 4-game fixture or against an EMPTY #
+# archive. Both are necessary; neither is sufficient for these three:          #
+#                                                                             #
+#  (a) AN EMPTY ARCHIVE PROVES "ABSENT is FAIL" ONLY WEAKLY. It cannot tell a  #
+#      gate that fails because its witness is absent from a gate that fails    #
+#      ALWAYS. The sharp form needs a HEALTHY control that passes every gate,  #
+#      then one address removed at a time — READ_RULE §3.1 questions 2 and 4   #
+#      taken TOGETHER rather than one at a time.                               #
+#  (b) `round_branch()` proves the round-level ARITHMETIC. It does not prove   #
+#      the ADJUDICATOR wires a failed `G-IDENT` into ALL FOUR cells, which is  #
+#      the actual §3.4 obligation and the actual `track_d2_prep` defect.       #
+#  (c) A `<cell>/failed/` subdirectory only exists on a real archive, and the  #
+#      NON-RECURSIVE read is what stops its records being counted as           #
+#      completions.                                                            #
+#                                                                             #
+# The archives below are re-badges of `selftest_fixture/manifest.json` — a     #
+# REAL emitted manifest — onto each cell's frozen band, with per-deck margins  #
+# constructed to hit an EXACT z. Nothing here plays a game or spends a deck.   #
+# ═══════════════════════════════════════════════════════════════════════════ #
+import copy      # noqa: E402
+import random    # noqa: E402
+
+_FIXTURE_DIR = PREP / "selftest_fixture"
+
+
+def _exact_z_margins(n: int, z_target: float, seed: int = 20260826) -> list[float]:
+    """`n` per-deck margins whose deck-paired z is EXACTLY `z_target`.
+
+    `se` is shift-invariant, so a pure shift moves the mean without touching the
+    dispersion: `m_i = x_i - mean(x) + z_target * se(x)`. That is what lets the
+    IDENT-bar test below be exact rather than hostage to a random draw landing
+    near `|z| = 2`.
+    """
+    rng = random.Random(seed)
+    xs = [rng.gauss(0.0, 13.0) for _ in range(n)]
+    mx = sum(xs) / n
+    var = sum((x - mx) ** 2 for x in xs) / (n - 1)
+    se = math.sqrt(var / n)
+    return [x - mx + z_target * se for x in xs]
+
+
+def _build_full_cell(root: Path, spec, *, z_target: float = 0.0,
+                     blind: str = "b" * 40, pinned: str = "b" * 40) -> Path:
+    """A structurally HEALTHY full-size archive for `spec`, re-badged from the
+    real emitted manifest onto that cell's own frozen deck range."""
+    man = json.loads((_FIXTURE_DIR / "manifest.json").read_text())
+    cfg = man["config"]
+    champ_leaf = copy.deepcopy(cfg["cand_leaf_cfg"])       # curve125, no invasion keys
+
+    cfg["band_seed_start"] = spec.seed_start
+    cfg["seed_start"] = spec.seed_start
+    cfg["n_decks"] = spec.n_decks
+    cfg["n"] = spec.n_games
+    cfg["seatings_per_deck"] = 2
+    # ⚠️ `_leaf_dict` DROPS a field at its default, so the cell's knob is the ONLY
+    # invasion key on the candidate side — which is exactly what makes IDENT's
+    # leaf diff EMPTY and an arm's diff its own frozen key set.
+    cfg["cand_leaf_cfg"] = dict(champ_leaf, **dict(spec.invasion_values))
+    cfg["cand_leaf_hash"] = spec.cand_leaf_hash
+    cfg["opp_leaf_cfg"] = copy.deepcopy(champ_leaf)
+    cfg["opp_leaf_hash"] = L.PROD_LEAF_HASH
+    # `config.champion.leaf_cfg` is the FULL asdict (nothing dropped) — where
+    # G-INVASION and G-CAPFWD read the six invasion fields from.
+    cfg["champion"]["leaf_cfg"].update(L.INVASION_DEFAULTS)
+    cfg["champion"]["leaf_cfg"].update(spec.invasion_values)
+    cfg["stamps"] = {"BLIND_COMMIT": blind}
+    cfg["code_rev"] = pinned[:8]
+    man["code_rev"] = pinned[:8]
+
+    d = root / spec.out_subdir
+    d.mkdir(parents=True, exist_ok=True)
+    recs = []
+    for i, m in enumerate(_exact_z_margins(spec.n_decks, z_target)):
+        s = spec.seed_start + i
+        for a in (0, 1):
+            # `diff` is candidate-minus-opponent in POINTS; putting the whole
+            # per-deck margin on a_seat=0 makes D(d) = (2m + 0)/2 = m.
+            recs.append({"seed": s, "a_seat": a,
+                         "diff": (2.0 * m) if a == 0 else 0.0,
+                         "won_by_champ": ((i + a) % 2 == 0), "drew": False,
+                         "deck_hash": f"{s:016x}"})
+    for r in recs:
+        (d / f"seed{r['seed']:012d}_a{r['a_seat']}.json").write_text(json.dumps(r))
+
+    mean, z, n_paired, _se, _ = L.paired_margin(recs)
+    we = L.winrate_elo(recs)
+    (d / "summary.json").write_text(json.dumps({
+        "n": spec.n_games, "n_failed": 0, "failure_rate": 0.0,
+        "winrate": we["winrate"], "elo": we["elo"],
+        "elo_sig_1sigma": we["elo_sig_1sigma"],
+        "paired_mean_margin": mean, "paired_z": z, "n_paired": n_paired,
+        "avg_diff": we["avg_diff"],
+        "champ_prefix_ms_per_move": 500.0, "rung_ms_per_move": 490.0,
+    }, indent=1))
+    (d / "manifest.json").write_text(json.dumps(man, indent=1))
+    return d
+
+
+def _healthy_probe() -> dict:
+    p = {k: True for k in L.WHEEL_PROBE_REQUIRED_TRUE}
+    p["carc_rs_build"] = "carc_rs-0.1.0+deadbeefcafe+rustcunpinned"
+    return p
+
+
+def _healthy_wheel_ancestry(rev: str = "deadbeefcafe") -> dict:
+    """A PASSING `wheel_ancestry_facts` verdict. The real one shells out to git;
+    the gate consumes only the verdict, which is what lets these tests drive both
+    limbs without a repository."""
+    return {"ok": True, "rev": rev, "invasion_source_present": True,
+            "is_ancestor": True, "why": ""}
+
+
+def _healthy_blind_proof(blind: str = "b" * 40) -> dict:
+    return {"ok": True, "blind_commit": blind, "is_ancestor_of_head": True,
+            "introduced_frozen_banner": True, "proof_ok": True, "why": ""}
+
+
+def _healthy_src_clean(cells=None) -> dict:
+    names = ["pre-flight"] + [f"{c.name}-after-seal" for c in (cells or L.CELLS)]
+    return {"ok": True, "boundaries": names, "dirty_boundaries": [],
+            "has_preflight": True, "missing_after": [], "why": ""}
+
+
+def _gates_on_disk(cell_dir: Path, spec, *, blind="b" * 40, pinned="b" * 40, **over):
+    kw = dict(pinned_src_rev=pinned, blind_commit=blind,
+              wheel_probe=_healthy_probe(),
+              wheel_ancestry=_healthy_wheel_ancestry(),
+              blind_proof=_healthy_blind_proof(blind),
+              src_clean=_healthy_src_clean())
+    kw.update(over)
+    return A.run_gates(A.Cell(spec, cell_dir), **kw)
+
+
+@pytest.fixture(scope="module")
+def healthy_ident_archive(tmp_path_factory) -> Path:
+    return _build_full_cell(tmp_path_factory.mktemp("invasion_healthy"),
+                            L.IDENT_CELL, z_target=0.0)
+
+
+def test_a_healthy_full_size_archive_passes_every_gate(healthy_ident_archive):
+    """⭐ THE SATISFIABILITY CONTROL (READ_RULE §3.1 question 2): *"Can a healthy
+    run pass it?"* If a full-size re-badge of a REAL emitted manifest could not
+    clear every per-cell gate, the §9 smoke leg would be a PERMANENT launch
+    blocker and the ABSENT tests below would be proving nothing."""
+    gates, _ = _gates_on_disk(healthy_ident_archive, L.IDENT_CELL)
+    failed = gates.failed()
+    assert failed == [], json.dumps({g: gates.results[g] for g in failed},
+                                    default=str, indent=1)
+
+
+#: Each gate's OWN witness address(es) in the emitted manifest/summary. Verified
+#: against the real fixture, not written from the design.
+_ABSENT_PROBES = {
+    "G-BAND": ["config.band_seed_start", "config.seed_start"],
+    "G-SINGLEVAR": ["config.opponent.champ_cfg.c_puct"],
+    "G-LEAF": ["config.opp_leaf_hash", "config.opponent.leaf_hash"],
+    "G-INVASION": ["config.champion.leaf_cfg"],
+    "G-CAPFWD": ["config.champion.leaf_cfg"],
+    "G-WHEEL": ["carc_rs_build", "config.backend.carc_rs_build"],
+    "G-RULES": ["rules_profile.r9_env_ok", "config.rules_profile.r9_env_ok"],
+    "G-BACKEND": ["config.backend.name"],
+    "G-BUDGET": ["config.champion.k_dets"],
+    "G-EXACT": ["config.endgame.exact_k"],
+    "G-REV": ["config.code_rev", "code_rev"],
+    "G-BLIND": ["BLIND_COMMIT", "config.stamps.BLIND_COMMIT"],
+    "G-N": ["n"],
+    "G-SAT": ["winrate"],
+    "RECON": ["paired_mean_margin"],
+}
+
+
+def _drop_address(doc, dotted: str) -> None:
+    cur = doc
+    for part in dotted.split(".")[:-1]:
+        if not isinstance(cur, dict) or part not in cur:
+            return
+        cur = cur[part]
+    if isinstance(cur, dict):
+        cur.pop(dotted.split(".")[-1], None)
+
+
+@pytest.mark.parametrize("gid", sorted(_ABSENT_PROBES))
+def test_absent_is_fail_against_an_otherwise_healthy_archive(tmp_path, gid):
+    """READ_RULE §3.1 question 4, driven the SHARP way: start from an archive
+    that passes EVERY gate, remove ONE gate's own witness, and require exactly
+    that gate to fail. The empty-archive form above cannot make this distinction
+    — a gate that failed unconditionally would satisfy it just as well."""
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.0)
+    man = json.loads((d / "manifest.json").read_text())
+    summ = json.loads((d / "summary.json").read_text())
+    for addr in _ABSENT_PROBES[gid]:
+        _drop_address(man, addr)
+        _drop_address(man.get("config", {}), addr)
+        _drop_address(summ, addr)
+    (d / "manifest.json").write_text(json.dumps(man))
+    (d / "summary.json").write_text(json.dumps(summ))
+    gates, _ = _gates_on_disk(d, L.IDENT_CELL)
+    assert gates.results[gid]["ok"] is False, (
+        f"{gid} survived the removal of {_ABSENT_PROBES[gid]} — ABSENT became a "
+        "skip or a permissive default")
+
+
+def test_a_failed_g_ident_voids_all_four_cells_end_to_end(tmp_path, monkeypatch):
+    """⭐ READ_RULE §3.4, THROUGH THE ADJUDICATOR rather than through the branch
+    arithmetic alone.
+
+    A defect that moves a ZERO-weight leaf moves every nonzero one too, so no
+    A/B/D reading could be attributed to the term rather than to the wiring.
+    Reading A/B/D past a broken `IDENT` would be the `track_d2_prep` mistake with
+    a self-inflicted excuse. Four structurally healthy archives are built; the
+    ONLY thing that changes between the two adjudications is IDENT's realized z.
+    """
+    blind = pinned = "c" * 40
+    probe = _healthy_probe()
+    monkeypatch.setattr(A, "_read_text",
+                        lambda p: pinned if p.name == "PINNED_SRC_REV" else blind)
+    monkeypatch.setattr(A, "_read_json",
+                        lambda p: probe if p.name == L.WHEEL_PROBE_FILENAME
+                        else (json.loads(p.read_text()) if p.exists() else None))
+    # The three conjuncts that reach OUTSIDE the archive (git ancestry, the blind
+    # proof, SRC_CLEAN.jsonl) are stubbed HEALTHY here so that the ONLY thing
+    # differing between the two adjudications below is IDENT's realized z. Their
+    # own fail-closed behaviour is tested directly further down.
+    monkeypatch.setattr(A, "wheel_ancestry_facts",
+                        lambda *a, **k: _healthy_wheel_ancestry())
+    monkeypatch.setattr(A, "blind_facts", lambda *a, **k: _healthy_blind_proof(blind))
+    monkeypatch.setattr(A, "src_clean_facts", lambda *a, **k: _healthy_src_clean())
+
+    for spec in L.CELLS:
+        _build_full_cell(tmp_path, spec, z_target=0.0, blind=blind, pinned=pinned)
+    clean = A.adjudicate(tmp_path)
+    assert clean["ident_gate"]["ok"] is True, (
+        "the control arm must be clean, else the assertion below proves nothing: "
+        + json.dumps({n: c["gates"] for n, c in clean["cells"].items()},
+                     default=str)[:2000])
+    assert clean["round_branch"] == "SCREEN-NULL-family-parks"
+    assert all(c["branch"] != "U-UNREADABLE" for c in clean["cells"].values())
+
+    # …now break ONLY IDENT's z. Every other cell's archive is untouched.
+    _build_full_cell(tmp_path, L.IDENT_CELL, z_target=3.5, blind=blind, pinned=pinned)
+    broken = A.adjudicate(tmp_path)
+    assert broken["ident_gate"]["ok"] is False
+    assert broken["round_branch"] == "U-UNREADABLE"
+    for name, cell in broken["cells"].items():
+        assert cell["gates"]["G-IDENT"]["ok"] is False, name
+        assert cell["branch"] == "U-UNREADABLE", (
+            f"{name} was read past a broken IDENT (READ_RULE §3.4)")
+
+
+def test_a_failed_subdirectory_record_is_never_counted_as_a_completion(tmp_path):
+    """⚠️ The harness writes FAILURE records into `<cell>/failed/` using the SAME
+    `seed*_a*.json` filename pattern. A recursive glob would count them as
+    completions — inflating `n_common`, MOVING THE MARGIN, and turning a broken
+    cell into a healthy-looking one. The read must be NON-RECURSIVE."""
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.0)
+    before = A.Cell(L.IDENT_CELL, d)
+    (d / "failed").mkdir()
+    poison = L.IDENT_CELL.seed_end + 1
+    for a in (0, 1):
+        (d / "failed" / f"seed{poison:012d}_a{a}.json").write_text(json.dumps(
+            {"seed": poison, "a_seat": a, "diff": 999.0,
+             "won_by_champ": True, "drew": False}))
+    after = A.Cell(L.IDENT_CELL, d)
+    assert len(after.records) == len(before.records) == L.IDENT_CELL.n_games
+    assert poison not in L.per_deck_margins(after.records)
+    gates, _ = _gates_on_disk(d, L.IDENT_CELL)
+    assert gates.failed() == [], gates.failed()
+
+
+def test_recon_voids_but_never_moves_the_number(tmp_path):
+    """READ_RULE §3 `RECON`: *"The recomputation is a WITNESS, never a branch
+    input — it can only void, never move, the number."* The summary's `paired_z`
+    is nudged past the tolerance while the raw records are untouched: the gate
+    must void, AND the reported statistic must still be the summary's."""
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.5)
+    summ = json.loads((d / "summary.json").read_text())
+    summ["paired_z"] += 0.01
+    (d / "summary.json").write_text(json.dumps(summ))
+    gates, stats = _gates_on_disk(d, L.IDENT_CELL)
+    assert gates.results["RECON"]["ok"] is False
+    assert stats["z"] == pytest.approx(summ["paired_z"]), "RECON MOVED the number"
+
+
+def test_recon_absorbs_a_summation_order_difference_and_nothing_larger(tmp_path):
+    """`screen_lib.paired_margin` accumulates with `math.fsum` and the harness
+    with `sum`, so they differ in the last bits BY CONSTRUCTION. The rel-1e-6
+    tolerance exists to absorb exactly that, and nothing larger."""
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.5)
+    summ = json.loads((d / "summary.json").read_text())
+    summ["paired_mean_margin"] *= (1 + 1e-9)
+    (d / "summary.json").write_text(json.dumps(summ))
+    gates, _ = _gates_on_disk(d, L.IDENT_CELL)
+    assert gates.results["RECON"]["ok"] is True
+
+
+def test_the_witness_reproduces_the_real_archives_own_summary():
+    """⭐ TRANSCRIPTION FIDELITY, ON REAL DATA. `screen_lib`'s witness is a
+    deliberately INDEPENDENT re-implementation, so the only thing that makes it a
+    WITNESS rather than a second opinion is that it reproduces the harness's own
+    numbers off a real archive. All five `RECON` statistics, at `RECON`'s own
+    tolerance. If this fails, `RECON` is comparing two different statistics."""
+    recs = [json.loads(p.read_text())
+            for p in sorted(_FIXTURE_DIR.glob("seed*_a*.json"))]
+    summary = json.loads((_FIXTURE_DIR / "summary.json").read_text())
+    mean, z, n, _se, _ = L.paired_margin(recs)
+    we = L.winrate_elo(recs)
+    for stat, got in (("paired_mean_margin", mean), ("paired_z", z),
+                      ("n_paired", n), ("winrate", we["winrate"]),
+                      ("elo", we["elo"])):
+        assert L.recon_close(summary[stat], got), (
+            f"{stat}: harness {summary[stat]!r} vs witness {got!r}")
+
+
+def test_smoke_allowed_set_is_PARSED_from_read_rule_not_retyped():
+    """⛔ THE SELF-INVALIDATING-TEST GUARD. Asserting the set against a literal
+    copy of itself passes just as happily after someone edits both. This PARSES
+    §3.5's fenced block out of `READ_RULE.md`, so the pair's prose is the
+    authority and a silent WIDENING of the allowed set is caught.
+
+    ⚠️ `RECON/n_paired` is a SUB-CHECK id, not a gate id: the deck-count half of
+    the reconciliation may be excused on a 16-game throwaway; the margin / z /
+    winrate / elo halves may not."""
+    md = (PREP / "READ_RULE.md").read_text()
+    block = md.split("### §3.5")[1].split("---")[0].split("```")[1]
+    named = set(block.split())
+    assert named == set(L.SMOKE_ALLOWED_FAILURES), (
+        f"READ_RULE §3.5 names {sorted(named)}; screen_lib pins "
+        f"{sorted(L.SMOKE_ALLOWED_FAILURES)}")
+    assert "RECON/n_paired" in named and "RECON" not in named
+
+
+def test_workers_conf_leaf_hashes_and_budget_agree_with_the_library():
+    """`WORKERS.conf` carries the four pinned candidate hashes and the budget for
+    the launcher's own preflight. They are a SECOND copy, so they must be proven
+    equal to the library's — drift here would arm the wrong `--cand-leaf-json`
+    against the right hash assertion."""
+    conf = _workers_conf()
+    assert conf["PROD_LEAF_HASH"] == L.PROD_LEAF_HASH
+    for c in L.CELLS:
+        assert conf[f"CAND_LEAF_HASH_{c.name}"] == c.cand_leaf_hash, c.name
+    assert (int(conf["K_DETS"]), int(conf["SIMS_PER_DET"]), int(conf["TOTAL_SIMS"])) \
+        == (4, 688, 2752)
+    assert int(conf["K_DETS"]) * int(conf["SIMS_PER_DET"]) == int(conf["TOTAL_SIMS"])
+    assert int(conf["SMOKE_SEED_START"]) == L.SMOKE_SEED_START
+    assert int(conf["SMOKE_GAMES"]) == L.SMOKE_GAMES
+    assert conf["SMOKE_CELL"] == L.SMOKE_CELL
+
+
+def test_the_se_model_is_sigma_over_root_n_not_a_typed_table():
+    """READ_RULE §2.1 publishes SE = 1.0374 at 200 decks and 0.7335 at 400. Those
+    figures are `14.67/√n` ROUNDED to 4 dp, so the sharp test is the RELATIONSHIP
+    the rounding cannot hide: doubling n tightens SE by exactly √2. ⛔ POWER
+    ARITHMETIC ONLY — every §4 bar is evaluated at the cell's OWN realized SE."""
+    assert L.se_model(200) == pytest.approx(1.0374, abs=1e-4)
+    assert L.se_model(400) == pytest.approx(0.7335, abs=1e-4)
+    assert L.se_model(200) == pytest.approx(L.SIGMA_D_MODEL / math.sqrt(200), abs=1e-12)
+    assert L.se_model(200) / L.se_model(400) == pytest.approx(math.sqrt(2), abs=1e-12)
+
+
+@pytest.mark.parametrize("ratio,flagged", [(0.70, False), (1.43, False),
+                                           (0.6999, True), (1.4301, True)])
+def test_the_dispersion_anomaly_band_is_closed_at_its_endpoints(ratio, flagged):
+    """READ_RULE §1's `[0.70, 1.43]` flag is a CLOSED interval, and it is
+    REPORTED, never a branch input — so a flagged cell's branch is unmoved."""
+    out = L.se_anomaly(L.se_model(400) * ratio, 400)
+    assert out["flagged"] is flagged
+    assert out["ratio"] == pytest.approx(ratio)
+    assert L.branch_for_cell(2.5, True) == "PROMOTE"
+    assert L.se_anomaly(None, 400)["flagged"] is True, "an ABSENT SE is flagged too"
+
+
+@pytest.mark.parametrize("drop", sorted(L.WHEEL_PROBE_REQUIRED_TRUE) + ["carc_rs_build"])
+def test_the_wheel_probe_contract_fails_closed_on_every_field(drop):
+    """⭐ A STALE WHEEL IS THE WORST FAILURE MODE THIS PAIR HAS (DESIGN §7):
+    `leaf_config_rs` forwards the invasion kwargs CONDITIONALLY, so a build
+    predating the family serves every champion config unchanged and SILENTLY — a
+    stale-wheel IDENT would PASS, and a partial mismatch would read as "the term
+    is worth nothing" rather than "the term never ran". Every probe field is
+    load-bearing, so dropping any one must fail closed."""
+    probe = _healthy_probe()
+    assert L.wheel_probe_ok(probe)[0] is True
+    probe.pop(drop)
+    assert L.wheel_probe_ok(probe)[0] is False
+    assert L.wheel_probe_ok(None)[0] is False
+    assert L.wheel_probe_ok({})[0] is False
+
+
+def test_b_mid_is_the_only_cell_that_may_carry_a_cap():
+    """B is the only cell with `invasion_alpha != 0.0`, so it is the only cell
+    whose cap is actually FORWARDED by `leaf_config_rs` — which is why DESIGN §3
+    sets one there and nowhere else, and why the §9 smoke runs B's config."""
+    caps = {c.name: c.invasion_values.get("invasion_alpha_cap") for c in L.CELLS}
+    assert caps == {"IDENT": None, "A_MID": None, "B_MID": 11.0, "D_MID": None}
+    assert L.SMOKE_CELL == "B_MID"
+
+
+# ═══════════════════════════════════════════════════════════════════════════ #
+# 15. THE THREE CONJUNCTS ADDED BY THE 2026-08-26 PRE-GAME-1 AMENDMENT        #
+#                                                                             #
+# Each was STATED in READ_RULE §3 from the start and NOT ENFORCED by the first #
+# implementation. Two of them read artifacts `run_cells.sh` had always WRITTEN #
+# and nothing had ever READ BACK. Tests below drive both limbs of each.        #
+# ═══════════════════════════════════════════════════════════════════════════ #
+
+# ---- G-WHEEL: the ancestry conjunct ---------------------------------------
+def test_wheel_ancestry_is_required_for_g_wheel(tmp_path):
+    """⭐ THE ONLY CONJUNCT THAT CATCHES A STALE WHEEL POST-HOC, FROM THE ARCHIVE
+    ALONE. `WHEEL_PROBE.json` proves a nonzero forward worked at LAUNCH; this
+    proves the build that actually PLAYED the games could contain the family."""
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.0)
+    ok, _ = _gates_on_disk(d, L.IDENT_CELL)
+    assert ok.results["G-WHEEL"]["ok"] is True
+    for bad in ({"ok": False, "why": "rev predates the family"}, None):
+        g, _ = _gates_on_disk(d, L.IDENT_CELL, wheel_ancestry=bad)
+        assert g.results["G-WHEEL"]["ok"] is False, bad
+
+
+@pytest.mark.parametrize("build,rev", [
+    ("carc_rs-0.1.0+2eca4a92fb00+rustcunpinned", "2eca4a92fb00"),
+    ("carc_rs-1.59963.20305+abcdef1234567890+rustc1.79", "abcdef1234567890"),
+])
+def test_wheel_ancestry_extracts_the_embedded_rev(build, rev, tmp_path):
+    """`carc_rs_build_id()` emits `carc_rs-<version>+<rev>+rustc<tc>`. The rev is
+    the ONLY build fingerprint the manifest carries — `carc_rs_version` is
+    permanently '0.1.0'."""
+    out = A.wheel_ancestry_facts(tmp_path, build)
+    assert out["rev"] == rev
+
+
+@pytest.mark.parametrize("build", [None, "", "not-a-build-id", "carc_rs-0.1.0"])
+def test_wheel_ancestry_fails_closed_without_an_embedded_rev(build, tmp_path):
+    out = A.wheel_ancestry_facts(tmp_path, build)
+    assert out["ok"] is False and out["rev"] is None
+
+
+def test_wheel_ancestry_against_the_real_repo():
+    """Executed against THIS repository: the merge that landed the invasion build
+    carries `invasion.rs` and is an ancestor of HEAD; the commit BEFORE the family
+    existed does not carry the file and must fail the conjunct."""
+    repo = REPO
+    good = A.wheel_ancestry_facts(repo, "carc_rs-0.1.0+2eca4a92fb00+rustcunpinned")
+    assert good["invasion_source_present"] is True, good
+    assert good["is_ancestor"] is True, good
+    assert good["ok"] is True
+    # a rev that predates the family: the merge's FIRST parent's parent side.
+    pre = subprocess.run(["git", "-C", str(repo), "rev-parse", "2eca4a92^1"],
+                         capture_output=True, text=True).stdout.strip()
+    if pre:
+        bad = A.wheel_ancestry_facts(repo, f"carc_rs-0.1.0+{pre[:12]}+rustcunpinned")
+        assert bad["invasion_source_present"] is False, (
+            "the pre-family rev unexpectedly carries invasion.rs")
+        assert bad["ok"] is False
+
+
+# ---- G-BLIND: ancestry / banner / proof ------------------------------------
+def test_blind_conjuncts_are_required_for_g_blind(tmp_path):
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.0)
+    ok, _ = _gates_on_disk(d, L.IDENT_CELL)
+    assert ok.results["G-BLIND"]["ok"] is True
+    for bad in ({"ok": False, "why": "not an ancestor"}, None):
+        g, _ = _gates_on_disk(d, L.IDENT_CELL, blind_proof=bad)
+        assert g.results["G-BLIND"]["ok"] is False, bad
+
+
+def test_blind_facts_rejects_a_pending_or_short_sha(tmp_path):
+    for blind in (None, "", "PENDING", "abc123"):
+        assert A.blind_facts(tmp_path, blind, None, tmp_path / "d.md",
+                             tmp_path / "r.md")["ok"] is False
+
+
+def test_blind_facts_requires_the_proof_to_agree_with_a_live_recheck():
+    """⚠️ `run_cells.sh` has always WRITTEN BLIND_PROOF.json; until the amendment
+    nothing read it back, so a stale or disagreeing proof could sit unnoticed."""
+    repo = REPO
+    blind = (PREP / "BLIND_COMMIT").read_text().strip()
+    if not L.is_hex40(blind):
+        pytest.skip("BLIND_COMMIT is still PENDING in this tree")
+    good = A.blind_facts(repo, blind, {"blind_commit": blind,
+                                       "is_ancestor_of_head": True},
+                         PREP / "DESIGN.md", PREP / "READ_RULE.md")
+    assert good["is_ancestor_of_head"] is True
+    assert good["introduced_frozen_banner"] is True, (
+        "the blind commit must be the one that INTRODUCED the FROZEN banner")
+    assert good["ok"] is True
+    # absent proof
+    assert A.blind_facts(repo, blind, None, PREP / "DESIGN.md",
+                         PREP / "READ_RULE.md")["ok"] is False
+    # proof naming a DIFFERENT commit
+    assert A.blind_facts(repo, blind, {"blind_commit": "d" * 40,
+                                       "is_ancestor_of_head": True},
+                         PREP / "DESIGN.md", PREP / "READ_RULE.md")["ok"] is False
+    # proof DISAGREEING with the live re-check
+    assert A.blind_facts(repo, blind, {"blind_commit": blind,
+                                       "is_ancestor_of_head": False},
+                         PREP / "DESIGN.md", PREP / "READ_RULE.md")["ok"] is False
+
+
+# ---- G-REV: the SRC_CLEAN conjunct ----------------------------------------
+def test_src_clean_is_required_for_g_rev(tmp_path):
+    d = _build_full_cell(tmp_path, L.IDENT_CELL, z_target=0.0)
+    ok, _ = _gates_on_disk(d, L.IDENT_CELL)
+    assert ok.results["G-REV"]["ok"] is True
+    for bad in ({"ok": False, "why": "dirty at pre-flight"}, None):
+        g, _ = _gates_on_disk(d, L.IDENT_CELL, src_clean=bad)
+        assert g.results["G-REV"]["ok"] is False, bad
+
+
+def _write_src_clean(p: Path, rows) -> Path:
+    p.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    return p
+
+
+def test_src_clean_facts_requires_clean_at_every_boundary(tmp_path):
+    names = ["pre-flight"] + [f"{c.name}-after-seal" for c in L.CELLS]
+    cells = [c.name for c in L.CELLS]
+    good = _write_src_clean(tmp_path / "a.jsonl",
+                            [{"boundary": n, "src_clean": True} for n in names])
+    assert A.src_clean_facts(good, cells)["ok"] is True
+    # ONE dirty boundary voids it — a mid-round tree move is the track_d2_prep defect
+    rows = [{"boundary": n, "src_clean": (n != names[2])} for n in names]
+    dirty = _write_src_clean(tmp_path / "b.jsonl", rows)
+    out = A.src_clean_facts(dirty, cells)
+    assert out["ok"] is False and out["dirty_boundaries"] == [names[2]]
+
+
+def test_src_clean_facts_requires_a_preflight_and_a_per_cell_after_boundary(tmp_path):
+    cells = [c.name for c in L.CELLS]
+    # no pre-flight
+    p = _write_src_clean(tmp_path / "c.jsonl",
+                         [{"boundary": f"{c}-after-seal", "src_clean": True}
+                          for c in cells])
+    assert A.src_clean_facts(p, cells)["ok"] is False
+    # a cell with no after-boundary
+    rows = [{"boundary": "pre-flight", "src_clean": True}] + [
+        {"boundary": f"{c}-after-seal", "src_clean": True} for c in cells[:-1]]
+    p2 = _write_src_clean(tmp_path / "d.jsonl", rows)
+    out = A.src_clean_facts(p2, cells)
+    assert out["ok"] is False and out["missing_after"] == [cells[-1]]
+
+
+def test_src_clean_facts_absent_or_empty_is_fail(tmp_path):
+    assert A.src_clean_facts(tmp_path / "nope.jsonl", ["IDENT"])["ok"] is False
+    empty = tmp_path / "e.jsonl"
+    empty.write_text("")
+    assert A.src_clean_facts(empty, ["IDENT"])["ok"] is False
+    bad = tmp_path / "f.jsonl"
+    bad.write_text("{not json}\n")
+    assert A.src_clean_facts(bad, ["IDENT"])["ok"] is False
+
+
+def test_src_clean_smoke_mode_relaxes_only_the_per_cell_requirement(tmp_path):
+    """A smoke has ONE cell and no seal, so it cannot carry a per-cell
+    after-boundary for all four. ⛔ The CLEAN requirement does NOT relax."""
+    rows = [{"boundary": "pre-flight", "src_clean": True},
+            {"boundary": "smoke-after", "src_clean": True}]
+    p = _write_src_clean(tmp_path / "g.jsonl", rows)
+    assert A.src_clean_facts(p, [c.name for c in L.CELLS])["ok"] is False
+    assert A.src_clean_facts(p, ["B_MID"], smoke=True)["ok"] is True
+    rows[1]["src_clean"] = False
+    p2 = _write_src_clean(tmp_path / "h.jsonl", rows)
+    assert A.src_clean_facts(p2, ["B_MID"], smoke=True)["ok"] is False
+
+
+# ---- the smoke-blocker fix -------------------------------------------------
+def test_the_smoke_leg_writes_its_own_launch_artifacts():
+    """⭐ THE SMOKE-BLOCKER FIX. Running the smoke from the main tree exited 11:
+    G-REV read 'PINNED_SRC_REV ABSENT — ABSENT is FAIL' on EVERY smoke, because
+    only a real launch wrote that file. The fix SUPPLIES THE WITNESS; it must not
+    widen §3.5's allowed set."""
+    src = (PREP / "run_cells.sh").read_text()
+    smoke = src.split("run_smoke() {")[1].split("\n}\n")[0]
+    assert 'rev-parse HEAD > "$DIR/$PINNED_SRC_REV_FILE"' in smoke, \
+        "the smoke leg does not write PINNED_SRC_REV"
+    assert "write_blind_proof" in smoke, "the smoke leg does not write BLIND_PROOF.json"
+    assert 'record_src_boundary "pre-flight"' in smoke
+    assert "record_src_boundary" in smoke.split('record_src_boundary "pre-flight"')[1], \
+        "the smoke leg records no CLOSING SRC_CLEAN boundary"
+
+
+def test_the_amendment_did_not_widen_the_smoke_allowed_set():
+    """⛔ ABSENT-IS-FAIL STAYS SACRED. The smoke-blocker was fixed by supplying
+    the witness, never by excusing its absence — so G-REV and G-BLIND must STILL
+    be outside the allowed set after the amendment."""
+    assert "G-REV" not in L.SMOKE_ALLOWED_FAILURES
+    assert "G-BLIND" not in L.SMOKE_ALLOWED_FAILURES
+    assert "G-WHEEL" not in L.SMOKE_ALLOWED_FAILURES
+    assert L.SMOKE_ALLOWED_FAILURES == frozenset(
+        {"G-BAND", "G-DECKS", "G-N", "G-SAT", "G-IDENT", "RECON/n_paired"})
+
+
+def test_read_rule_records_the_pre_game_1_amendment():
+    """The house pre-game-1 pattern: an amendment made at zero games is an
+    AMENDMENT TO THE PAIR and must be recorded in the pair, dated, with its
+    reason — not applied silently."""
+    rr = (PREP / "READ_RULE.md").read_text()
+    assert "PRE-GAME-1 AMENDMENT" in rr
+    assert "2026-08-26" in rr
+    for token in ("PINNED_SRC_REV", "BLIND_PROOF.json", "SRC_CLEAN.jsonl",
+                  "ANCESTRY", "ABSENT-is-FAIL stays sacred"):
+        assert token in rr, f"the amendment note does not mention {token}"
+    design = (PREP / "DESIGN.md").read_text()
+    assert "PRE-GAME-1 AMENDMENT" in design
+
+
+def test_g_leaf_stricter_form_is_declared_canonical():
+    """Item 4: the implementation pins each cell's EXACT hash, which is stricter
+    than the pair's original 'champion vs not-champion' asymmetry. The stricter
+    form is now the canonical text."""
+    rr = (PREP / "READ_RULE.md").read_text()
+    assert "STRICTER FORM IS CANONICAL" in rr
+    for c in L.CELLS:
+        assert c.cand_leaf_hash in rr, f"{c.name}'s pinned hash is not in READ_RULE"
+
+
+def test_design_margin_wording_matches_the_published_table():
+    """Item 4: §6.2's prose said '0% to +50% on the candidate half, i.e. 0% to
+    +25% per game', a WIDER envelope than the table it introduced. The table is
+    canonical: cand_margin=0.25 on the candidate HALF is +12.5% per game."""
+    design = (PREP / "DESIGN.md").read_text()
+    assert "THE PUBLISHED TABLE IS CANONICAL" in design
+    assert "+12.5% per game" in design
+    base = L.project_round_cost(cand_margin=0.0)
+    marg = L.project_round_cost(cand_margin=L.CAND_MARGIN_TABLE)
+    arm = L.cell_by_name("A_MID").name
+    ratio = marg["per_cell"][arm]["s_per_game"] / base["per_cell"][arm]["s_per_game"]
+    assert ratio == pytest.approx(1.125), "the table is not +12.5% per game"

@@ -65,6 +65,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Mapping
@@ -76,6 +78,14 @@ if str(HERE) not in sys.path:
 import screen_lib as L  # noqa: E402
 
 MISSING = object()
+
+#: The path whose EXISTENCE at a given rev proves that rev carries the invasion
+#: family. `G-WHEEL`'s ancestry conjunct is the only post-hoc check that can
+#: catch a stale wheel from the archive alone (DESIGN §7).
+INVASION_SOURCE = "rust/carc/carc-core/src/leaf/invasion.rs"
+
+#: `rust_agent.carc_rs_build_id()` emits `carc_rs-<version>+<rev12>+rustc<tc>`.
+_BUILD_REV_RE = re.compile(r"^carc_rs-[^+]+\+([0-9a-f]{7,40})\+", re.I)
 
 #: The order in which a gate's addresses are tried. `manifest.json` first for
 #: config-shaped addresses; `summary.json` first for statistics. Each gate names
@@ -126,6 +136,139 @@ def dig(doc: Any, address: str) -> Any:
             return MISSING
         cur = cur[part]
     return cur
+
+
+# ═══════════════════════════════════════════════════════════════════════════ #
+# THE THREE CONJUNCTS THAT NEED SOMETHING OUTSIDE THE ARCHIVE                 #
+#                                                                             #
+# `G-WHEEL`'s ancestry, `G-BLIND`'s ancestry/banner/proof and `G-REV`'s        #
+# `SRC_CLEAN.jsonl` reading all need git or a launcher artifact. They are      #
+# computed HERE, by the caller, and handed to `run_gates` as VERDICTS — so the #
+# gate logic stays a pure function of its inputs and the instrument tests can  #
+# drive both limbs without a git repository.                                   #
+#                                                                             #
+# ⛔ EVERY ONE DEFAULTS TO `None`, AND `None` IS FAIL. A gate that cannot be    #
+# computed is ABSENT, and ABSENT is FAIL — never a skip.                       #
+# ═══════════════════════════════════════════════════════════════════════════ #
+def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(repo), *args],
+                          capture_output=True, text=True)
+
+
+def wheel_ancestry_facts(repo: Path, build: str | None,
+                         branch_tip: str = "HEAD") -> dict:
+    """⭐ THE CONJUNCT THAT ACTUALLY CATCHES A STALE WHEEL POST-HOC.
+
+    `WHEEL_PROBE.json` records that a nonzero forward SUCCEEDED at launch time,
+    which is the pre-flight half. This is the archive half: the rev embedded in
+    the manifest's own `carc_rs_build` must (a) be a rev at which
+    `rust/carc/carc-core/src/leaf/invasion.rs` EXISTS — i.e. the wheel was built
+    from a tree that carries the family at all — and (b) be an ancestor of the
+    branch tip, so it is this lineage's build and not some unrelated rev.
+
+    ⚠️ `carc_rs_version` is permanently "0.1.0" and can never discriminate; the
+    embedded rev is the only fingerprint the manifest carries.
+    """
+    if not build or not isinstance(build, str):
+        return {"ok": False, "why": "carc_rs_build ABSENT — ABSENT is FAIL",
+                "rev": None}
+    m = _BUILD_REV_RE.match(build.strip())
+    if not m:
+        return {"ok": False, "rev": None,
+                "why": f"carc_rs_build {build!r} carries no embedded git rev"}
+    rev = m.group(1)
+    has_src = _git(repo, "cat-file", "-e", f"{rev}:{INVASION_SOURCE}").returncode == 0
+    is_anc = _git(repo, "merge-base", "--is-ancestor", rev, branch_tip).returncode == 0
+    ok = has_src and is_anc
+    why = "wheel rev carries the invasion family and is in this lineage" if ok else (
+        f"rev {rev}: invasion.rs present={has_src}, ancestor-of-{branch_tip}={is_anc} — "
+        "a wheel built before the family serves every champion config unchanged and "
+        "SILENTLY, so a stale-wheel cell reads as 'the term is worth nothing' rather "
+        "than 'the term never ran'")
+    return {"ok": ok, "rev": rev, "invasion_source_present": has_src,
+            "is_ancestor": is_anc, "why": why}
+
+
+def blind_facts(repo: Path, blind: str | None, proof: Mapping | None,
+                design: Path, read_rule: Path) -> dict:
+    """READ_RULE §3 `G-BLIND`, in full: a 40-hex sha, an ANCESTOR of HEAD, the
+    commit that INTRODUCED this pair's FROZEN banner, and a `BLIND_PROOF.json`
+    that agrees with a LIVE re-check.
+
+    ⚠️ `run_cells.sh` writes `BLIND_PROOF.json` at launch; before this conjunct
+    existed nothing ever read it back, so a stale or disagreeing proof could sit
+    in the directory unnoticed. The live re-check is what makes the artifact
+    load-bearing rather than decorative.
+    """
+    if not blind or not L.is_hex40(blind):
+        return {"ok": False, "why": "BLIND_COMMIT is absent or not a 40-hex sha "
+                                    "(still the PENDING placeholder?)"}
+    live_anc = _git(repo, "merge-base", "--is-ancestor", blind, "HEAD").returncode == 0
+    # Did that commit INTRODUCE the FROZEN banner? Look for an ADDED line
+    # carrying the banner in either half of the pair.
+    show = _git(repo, "show", "--format=", "--unified=0", blind, "--",
+                str(design.relative_to(repo)), str(read_rule.relative_to(repo)))
+    banner = any(ln.startswith("+") and "STATUS: FROZEN" in ln
+                 for ln in show.stdout.splitlines())
+    proof_ok, proof_why = True, "BLIND_PROOF.json agrees with the live re-check"
+    if proof is None:
+        proof_ok, proof_why = False, "BLIND_PROOF.json ABSENT — ABSENT is FAIL"
+    else:
+        if str(proof.get("blind_commit", "")).strip() != blind:
+            proof_ok, proof_why = False, "BLIND_PROOF.json names a DIFFERENT blind commit"
+        elif bool(proof.get("is_ancestor_of_head")) is not live_anc:
+            proof_ok, proof_why = False, ("BLIND_PROOF.json's is_ancestor_of_head "
+                                          "DISAGREES with a live git re-check")
+    ok = live_anc and banner and proof_ok
+    return {"ok": ok, "blind_commit": blind, "is_ancestor_of_head": live_anc,
+            "introduced_frozen_banner": banner, "proof_ok": proof_ok,
+            "why": proof_why if not proof_ok else (
+                "" if ok else
+                f"ancestor-of-HEAD={live_anc}, introduced-FROZEN-banner={banner}")}
+
+
+def src_clean_facts(path: Path, cell_names, *, smoke: bool = False) -> dict:
+    """READ_RULE §3 `G-REV`'s second half: `SRC_CLEAN.jsonl` must record the code
+    paths CLEAN at EVERY boundary, with a `pre-flight` boundary and an `after-…`
+    boundary for each cell's final pass.
+
+    ⚠️ `run_cells.sh` appends to this file at every pass boundary; before this
+    conjunct existed nothing read it back either. A mid-round tree move is
+    exactly the `track_d2_prep` mixed-rev defect, and this pair is FOUR cells
+    long, so the window for one is four times wider.
+    """
+    if not path.is_file():
+        return {"ok": False, "why": f"{path.name} ABSENT — ABSENT is FAIL",
+                "boundaries": []}
+    rows = []
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except Exception:
+            return {"ok": False, "why": f"{path.name} has an unparseable line",
+                    "boundaries": []}
+    if not rows:
+        return {"ok": False, "why": f"{path.name} is empty", "boundaries": []}
+    names = [str(r.get("boundary", "")) for r in rows]
+    dirty = [n for n, r in zip(names, rows) if r.get("src_clean") is not True]
+    has_preflight = any(n == "pre-flight" or n.endswith("pre-flight") for n in names)
+    if smoke:
+        # A smoke has ONE cell and no seal; it must still record a pre-flight and
+        # an after-boundary, and must still be clean at both.
+        missing_after = [] if any("after" in n for n in names) else ["<smoke-after>"]
+    else:
+        missing_after = [c for c in cell_names
+                         if not any(n.startswith(f"{c}-after") for n in names)]
+    ok = (not dirty) and has_preflight and not missing_after
+    return {"ok": ok, "boundaries": names, "dirty_boundaries": dirty,
+            "has_preflight": has_preflight, "missing_after": missing_after,
+            "why": "" if ok else (
+                f"dirty at {dirty}; " if dirty else "") + (
+                "" if has_preflight else "no pre-flight boundary; ") + (
+                f"no after-boundary for {missing_after}" if missing_after else "")}
 
 
 class Cell:
@@ -207,8 +350,17 @@ def _invasion_subset(d) -> dict:
 # THE EIGHTEEN GATES (READ_RULE.md §3)                                        #
 # ═══════════════════════════════════════════════════════════════════════════ #
 def run_gates(cell: Cell, *, pinned_src_rev: str | None, blind_commit: str | None,
-              wheel_probe: Mapping | None, smoke: bool = False) -> tuple[Gates, dict]:
-    """Every gate, fail-closed, each reporting its resolved address."""
+              wheel_probe: Mapping | None, smoke: bool = False,
+              wheel_ancestry: Mapping | None = None,
+              blind_proof: Mapping | None = None,
+              src_clean: Mapping | None = None) -> tuple[Gates, dict]:
+    """Every gate, fail-closed, each reporting its resolved address.
+
+    `wheel_ancestry` / `blind_proof` / `src_clean` are the VERDICTS computed by
+    `wheel_ancestry_facts` / `blind_facts` / `src_clean_facts`. ⛔ Each defaults
+    to `None`, and `None` is FAIL — a conjunct that could not be computed is
+    ABSENT, never a skip.
+    """
     g = Gates()
     spec = cell.spec
     stats: dict[str, Any] = {}
@@ -355,16 +507,23 @@ def run_gates(cell: Cell, *, pinned_src_rev: str | None, blind_commit: str | Non
     bsha, _ = cell.resolve("carc_rs_binary_sha", "config.backend.carc_rs_binary_sha")
     mixed, _ = cell.resolve("mixed_builds", "config.backend.mixed_builds")
     probe_ok, probe_why = L.wheel_probe_ok(wheel_probe)
+    # ⭐ THE ANCESTRY CONJUNCT — the archive half of the stale-wheel check.
+    anc = wheel_ancestry if isinstance(wheel_ancestry, Mapping) else None
+    anc_ok = bool(anc and anc.get("ok"))
+    anc_why = (anc or {}).get("why", "wheel-ancestry verdict ABSENT — ABSENT is FAIL")
     w_ok = bool(build) and build is not MISSING and bsha not in (MISSING, None) \
-        and mixed is False and probe_ok
-    g.add("G-WHEEL", w_ok, f"{build_a} + {L.WHEEL_PROBE_FILENAME}",
+        and mixed is False and probe_ok and anc_ok
+    g.add("G-WHEEL", w_ok, f"{build_a} + {L.WHEEL_PROBE_FILENAME} + git ancestry",
           {"carc_rs_build": None if build is MISSING else build,
            "carc_rs_binary_sha": None if bsha is MISSING else bsha,
            "mixed_builds": None if mixed is MISSING else mixed,
-           "wheel_probe": probe_why},
+           "wheel_probe": probe_why,
+           "embedded_rev": (anc or {}).get("rev"),
+           "invasion_source_present": (anc or {}).get("invasion_source_present"),
+           "is_ancestor": (anc or {}).get("is_ancestor")},
           "" if w_ok else "⚠️ carc_rs_version is permanently '0.1.0' and is NOT a build "
-                          "discriminator; the fingerprint is carc_rs_build + the launcher's "
-                          "recorded NONZERO-kwarg forward")
+                          "discriminator; the fingerprint is carc_rs_build's embedded rev "
+                          f"+ the launcher's recorded NONZERO-kwarg forward. {anc_why}")
 
     # ---- G-RULES -----------------------------------------------------------
     rn, rn_a = cell.resolve("rules_profile.name", "config.rules_profile.name")
@@ -446,18 +605,40 @@ def run_gates(cell: Cell, *, pinned_src_rev: str | None, blind_commit: str | Non
     # ---- G-REV -------------------------------------------------------------
     cr, cr_a = cell.resolve("config.code_rev", "code_rev")
     rv_ok, rv_why = L.rev_matches(None if cr is MISSING else cr, pinned_src_rev)
-    g.add("G-REV", rv_ok, cr_a, {"code_rev": None if cr is MISSING else cr,
-                                 "pinned_src_rev": pinned_src_rev}, rv_why)
+    # ⭐ THE SRC_CLEAN CONJUNCT — the launcher has always WRITTEN SRC_CLEAN.jsonl
+    # at every pass boundary; until now nothing READ it back.
+    sc = src_clean if isinstance(src_clean, Mapping) else None
+    sc_ok = bool(sc and sc.get("ok"))
+    sc_why = (sc or {}).get("why", "SRC_CLEAN verdict ABSENT — ABSENT is FAIL")
+    g.add("G-REV", rv_ok and sc_ok, f"{cr_a} + SRC_CLEAN.jsonl",
+          {"code_rev": None if cr is MISSING else cr,
+           "pinned_src_rev": pinned_src_rev,
+           "boundaries": (sc or {}).get("boundaries"),
+           "dirty_boundaries": (sc or {}).get("dirty_boundaries"),
+           "missing_after": (sc or {}).get("missing_after")},
+          rv_why if not rv_ok else ("" if sc_ok else f"rev OK, but {sc_why}"))
 
     # ---- G-BLIND -----------------------------------------------------------
     stamp, st_a = cell.resolve("BLIND_COMMIT", "config.stamps.BLIND_COMMIT")
-    bl_ok = bool(blind_commit) and L.is_hex40(blind_commit or "") \
+    stamped_ok = bool(blind_commit) and L.is_hex40(blind_commit or "") \
         and (stamp is not MISSING) and str(stamp) == blind_commit
-    g.add("G-BLIND", bl_ok, st_a,
+    # ⭐ THE ANCESTRY / BANNER / PROOF CONJUNCTS — `run_cells.sh` writes
+    # BLIND_PROOF.json at launch; until now nothing read it back, so a stale or
+    # disagreeing proof could sit in the directory unnoticed.
+    bp = blind_proof if isinstance(blind_proof, Mapping) else None
+    bp_ok = bool(bp and bp.get("ok"))
+    bp_why = (bp or {}).get("why", "blind-ancestry verdict ABSENT — ABSENT is FAIL")
+    bl_ok = stamped_ok and bp_ok
+    g.add("G-BLIND", bl_ok, f"{st_a} + BLIND_PROOF.json + git ancestry",
           {"BLIND_COMMIT_file": blind_commit,
-           "stamped_in_manifest": None if stamp is MISSING else stamp},
-          "" if bl_ok else "BLIND_COMMIT must be a 40-hex ancestor of HEAD and every cell must "
-                           "carry it as a --stamp-key")
+           "stamped_in_manifest": None if stamp is MISSING else stamp,
+           "is_ancestor_of_head": (bp or {}).get("is_ancestor_of_head"),
+           "introduced_frozen_banner": (bp or {}).get("introduced_frozen_banner"),
+           "proof_ok": (bp or {}).get("proof_ok")},
+          "" if bl_ok else ("BLIND_COMMIT must be a 40-hex sha, an ANCESTOR of HEAD, the "
+                            "commit that introduced the FROZEN banner, agreed by "
+                            "BLIND_PROOF.json, and every cell must carry it as a "
+                            f"--stamp-key. {'' if stamped_ok else 'stamp mismatch. '}{bp_why}"))
 
     # ---- statistics (needed by G-N / G-SAT / G-IDENT / RECON) --------------
     n_scored, _ = cell.resolve("n")
@@ -694,10 +875,20 @@ def _read_json(p: Path):
         return None
 
 
+def _repo_root() -> Path:
+    r = subprocess.run(["git", "-C", str(HERE), "rev-parse", "--show-toplevel"],
+                       capture_output=True, text=True)
+    return Path(r.stdout.strip()) if r.returncode == 0 else HERE.parents[1]
+
+
 def adjudicate(run_dir: Path) -> dict:
     pinned = _read_text(HERE / "PINNED_SRC_REV")
     blind = _read_text(HERE / "BLIND_COMMIT")
     probe = _read_json(HERE / L.WHEEL_PROBE_FILENAME)
+    repo = _repo_root()
+    bproof = blind_facts(repo, blind, _read_json(HERE / "BLIND_PROOF.json"),
+                         HERE / "DESIGN.md", HERE / "READ_RULE.md")
+    sclean = src_clean_facts(HERE / "SRC_CLEAN.jsonl", [c.name for c in L.CELLS])
 
     cells: dict[str, dict] = {}
     for spec in L.CELLS:
@@ -705,8 +896,11 @@ def adjudicate(run_dir: Path) -> dict:
         if not path.is_dir():
             continue
         cell = Cell(spec, path)
+        build, _ = cell.resolve("carc_rs_build", "config.backend.carc_rs_build")
+        wanc = wheel_ancestry_facts(repo, None if build is MISSING else build)
         gates, stats = run_gates(cell, pinned_src_rev=pinned, blind_commit=blind,
-                                 wheel_probe=probe)
+                                 wheel_probe=probe, wheel_ancestry=wanc,
+                                 blind_proof=bproof, src_clean=sclean)
         cells[spec.name] = {"gates": gates.results, "stats": stats, "_gates_obj": gates}
 
     # ---- G-IDENT: computed once, applied ROUND-WIDE (READ_RULE §3.4) -------
@@ -775,8 +969,19 @@ def smoke_mode(cell_dir: Path) -> int:
     pinned = _read_text(HERE / "PINNED_SRC_REV")
     blind = _read_text(HERE / "BLIND_COMMIT")
     probe = _read_json(HERE / L.WHEEL_PROBE_FILENAME)
+    repo = _repo_root()
+    build, _ = cell.resolve("carc_rs_build", "config.backend.carc_rs_build")
+    wanc = wheel_ancestry_facts(repo, None if build is MISSING else build)
+    bproof = blind_facts(repo, blind, _read_json(HERE / "BLIND_PROOF.json"),
+                         HERE / "DESIGN.md", HERE / "READ_RULE.md")
+    # ⚠️ smoke=True on the SRC_CLEAN reading: a smoke has ONE cell and no seal, so
+    # it cannot carry a per-cell after-boundary for all four. It must still record
+    # a pre-flight and an after-boundary and be CLEAN at both — G-REV is NOT in
+    # §3.5's allowed set and must PASS on the smoke.
+    sclean = src_clean_facts(HERE / "SRC_CLEAN.jsonl", [spec.name], smoke=True)
     gates, stats = run_gates(cell, pinned_src_rev=pinned, blind_commit=blind,
-                             wheel_probe=probe, smoke=True)
+                             wheel_probe=probe, smoke=True, wheel_ancestry=wanc,
+                             blind_proof=bproof, src_clean=sclean)
     gates.add("G-IDENT", False, "smoke", None, L.SMOKE_ALLOWED_REASONS["G-IDENT"])
 
     failed = set(gates.failed())
