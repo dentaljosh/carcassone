@@ -1,3 +1,17 @@
+> # ✅ STATUS: **ADJUDICATED 2026-08-26 — `D2-BOUNDED-NULL`, 12/12 gates PASS — the first readable D2 cell in four attempts.**
+>
+> Burn-in PASSED (ratio 1.0891 in [0.85, 1.20]; rung 600.0 ms/move — 0.2% drift vs the clean
+> calibration, the rung is STABLE under enforced tenancy). Both cells 400/400 clean. Verdict
+> verbatim from `READ_RULE.md`: **S = +0.2775 pts (se 1.3263, z 0.209), 95% CI
+> [−2.3220, +2.8770] pts = [−34.4, +42.7] elo-equivalent** — not a zero; cannot separate the
+> +20.0-elo reading from zero; a CL-023-sized (+55.2 elo ≈ 3.5 pt) spacing lies outside the
+> interval in this band+denomination. Realized cost 24.94 core-h. Probe cost note for any
+> future equal-time pairing: 653.5 ms/move @4096 = +9.6% over linear (F ≈ 160 ms/move fixed —
+> use the two-point F + c·N fit). Extensions §4.4 remain unfunded. Readout:
+> `READOUT_D2R4.md` / `.json` (share); row `results.csv d2r4_rung_compression_D2_BOUNDED_NULL_n800_b150e9`;
+> DECISIONS 2026-08-26 (afternoon). This banner is a close-out stamp — **no bar, gate,
+> threshold or branch condition below is edited.**
+>
 > ## §0 — PROVENANCE BANNER (the pre-registered RESPIN of attempt 3)
 >
 > ⛔→✅ **FROZEN 2026-08-26 (the blind commit is THE COMMIT THAT INTRODUCES THIS FILE; its sha is stamped into [`BLIND_COMMIT`](BLIND_COMMIT) in the follow-up stamping commit, per the b32v64 / d2r2 / d2r3 pattern). No statistic of any kind exists at freeze time.**
