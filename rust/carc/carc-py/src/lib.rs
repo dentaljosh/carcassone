@@ -126,6 +126,12 @@ impl PyLeafConfig {
         opencity_cap = 0.0,
         jrules_dose = 0.0,
         jrules_mask = 31,
+        invasion_beta = 0.0,
+        invasion_alpha = 0.0,
+        invasion_alpha_cap = 0.0,
+        invasion_stub_max_tiles = 2,
+        invasion_gamma = 0.0,
+        invasion_delta_farm = 0.0,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -155,6 +161,12 @@ impl PyLeafConfig {
         opencity_cap: f64,
         jrules_dose: f64,
         jrules_mask: i64,
+        invasion_beta: f64,
+        invasion_alpha: f64,
+        invasion_alpha_cap: f64,
+        invasion_stub_max_tiles: i64,
+        invasion_gamma: f64,
+        invasion_delta_farm: f64,
     ) -> Self {
         PyLeafConfig {
             inner: leaf::LeafConfig {
@@ -184,6 +196,12 @@ impl PyLeafConfig {
                 opencity_cap,
                 jrules_dose,
                 jrules_mask,
+                invasion_beta,
+                invasion_alpha,
+                invasion_alpha_cap,
+                invasion_stub_max_tiles,
+                invasion_gamma,
+                invasion_delta_farm,
             },
         }
     }
@@ -706,12 +724,59 @@ impl PyMirrorState {
         d.set_item("denial_term", t.denial_term)?;
         d.set_item("opencity_term", t.opencity_term)?;
         d.set_item("jrules_term", t.jrules_term)?;
+        d.set_item("invasion_a", t.invasion_a)?;
+        d.set_item("invasion_b", t.invasion_b)?;
+        d.set_item("invasion_c", t.invasion_c)?;
+        d.set_item("invasion_d", t.invasion_d)?;
         d.set_item("meeple_term", t.meeple_term)?;
         d.set_item("return_term", t.return_term)?;
         d.set_item("flip_term", t.flip_term)?;
         d.set_item("score", t.score)?;
         d.set_item("value", t.value)?;
         Ok(d)
+    }
+
+    /// The four INVASION-RISK shape magnitudes at this state, computed
+    /// UNCONDITIONALLY (no weight gate) — a fixture/diagnostic view, not a leaf
+    /// path. Returns `{"T_A":…, "T_B":…, "T_C":…, "T_D":…}`; `cfg` supplies only
+    /// shape B's `invasion_alpha_cap` / `invasion_stub_max_tiles`.
+    fn invasion_terms<'py>(
+        &self,
+        py: Python<'py>,
+        player: usize,
+        cfg: &PyLeafConfig,
+    ) -> PyResult<Bound<'py, pyo3::types::PyDict>> {
+        let dec = leaf::decompose(&self.game.state);
+        let s = &self.game.state;
+        let d = pyo3::types::PyDict::new(py);
+        d.set_item("T_A", leaf::shape_a_term(s, player, &dec, &cfg.inner))?;
+        d.set_item("T_B", leaf::shape_b_term(s, player, &dec, &cfg.inner))?;
+        d.set_item("T_C", leaf::shape_c_term(s, player, &dec, &cfg.inner))?;
+        d.set_item("T_D", leaf::shape_d_term(s, player, &dec, &cfg.inner))?;
+        Ok(d)
+    }
+
+    /// Per-component dump behind the invasion shapes — one dict per CLAIMED
+    /// city/road/farm component: `kind, root, cnt0, cnt1, holder (-1 == tied),
+    /// value, tiles, open_n, edges`. Diagnostics only; never on a leaf path.
+    fn invasion_scan<'py>(&self, py: Python<'py>) -> PyResult<Vec<Bound<'py, pyo3::types::PyDict>>> {
+        let dec = leaf::decompose(&self.game.state);
+        let rows = leaf::invasion::invasion_scan_debug(&self.game.state, &dec);
+        let mut out = Vec::with_capacity(rows.len());
+        for r in rows {
+            let d = pyo3::types::PyDict::new(py);
+            d.set_item("kind", r.kind)?;
+            d.set_item("root", r.root)?;
+            d.set_item("cnt0", r.cnt0)?;
+            d.set_item("cnt1", r.cnt1)?;
+            d.set_item("holder", r.holder)?;
+            d.set_item("value", r.value)?;
+            d.set_item("tiles", r.tiles)?;
+            d.set_item("open_n", r.open_n)?;
+            d.set_item("edges", r.edges)?;
+            out.push(d);
+        }
+        Ok(out)
     }
 
     /// `flat_leaf.flat_base_score` via the **flat decomposition** (the P2 route),

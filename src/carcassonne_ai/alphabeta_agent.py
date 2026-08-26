@@ -101,7 +101,11 @@ _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.
                                  "jrules_dose": 0.0, "jrules_mask": 31,
                                  "tiletie_dose": 0.0, "tiletie_w_city": 1.0,
                                  "tiletie_w_road": 1.0, "tiletie_w_perim": 0.0,
-                                 "tiletie_w_lib": 0.0, "tiletie_norm": 8.0}
+                                 "tiletie_w_lib": 0.0, "tiletie_norm": 8.0,
+                                 "invasion_beta": 0.0, "invasion_alpha": 0.0,
+                                 "invasion_alpha_cap": 0.0,
+                                 "invasion_stub_max_tiles": 2,
+                                 "invasion_gamma": 0.0, "invasion_delta_farm": 0.0}
 
 
 def _leaf_hash(cfg) -> str:

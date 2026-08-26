@@ -39,6 +39,10 @@
 //! must not be routed here.
 
 pub mod decomp;
+/// INVASION-RISK TERM FAMILY — four candidate leaf shapes (A/B/C/D), each behind
+/// its own weight, every weight defaulting to `0.0` == the champion leaf
+/// bit-for-bit. Spec: `measurement/invasion_term_build/SHAPES.md`.
+pub mod invasion;
 /// J-RULES AS POLICY PRIORS (surface B) — expansion-time prior modulation for
 /// the search. NOT a leaf term: nothing in it touches [`LeafConfig`], any leaf
 /// value, or any leaf hash. It lives under `leaf` because it shares the
@@ -46,6 +50,9 @@ pub mod decomp;
 pub mod jrules_prior;
 
 pub use decomp::{decompose, decompose_into, Decomp, Scratch};
+pub use invasion::{
+    invasion_off, shape_a_term, shape_b_term, shape_c_term, shape_d_term, INV_STUB_MAX_TILES,
+};
 pub use jrules_prior::{jr_prior_clock, jrules_prior_term, JrPriorClock};
 
 /// Reusable working set for a hot leaf loop (P3/P4 search rates).
@@ -229,6 +236,39 @@ pub struct LeafConfig {
     /// ([`JR_J1`] | [`JR_J2`] | [`JR_J5`] | [`JR_J6`] | [`JR_J8`] == [`JR_ALL`] == 31,
     /// the default and the primary cell).
     pub jrules_mask: i64,
+
+    // --- INVASION-RISK TERM FAMILY (four candidate shapes; see [`invasion`]) ---
+    //
+    // ⚠️ RUST-ONLY by decision (owner 2026-08-26): there is no `flat_leaf.py` and
+    // no Cython mirror. Python carries the CONFIG FIELDS ONLY (so
+    // `--cand-leaf-json` and the leaf-hash dialect work) and FAILS LOUD on a
+    // nonzero weight; screening cells run `--backend rust`.
+    //
+    // EVERY weight defaults to `0.0` == the champion leaf, BIT-FOR-BIT: each shape
+    // is a separate gated statement in [`leaf_terms_with`] taking an early branch
+    // at zero, never an add/subtract of 0.0.
+    /// Shape A — contested-value transfer ("the tie is not free"). The leaf ADDS
+    /// `invasion_beta * T_A`; `T_A` is the SIGNED differential from
+    /// [`invasion::shape_a_term`].
+    pub invasion_beta: f64,
+    /// Shape B — stub-claim merge-potential bonus (OFFENSE ONLY, `T_B >= 0`, NOT
+    /// antisymmetric). The leaf ADDS `invasion_alpha * T_B`
+    /// ([`invasion::shape_b_term`]).
+    pub invasion_alpha: f64,
+    /// Shape B's per-pair cap on `V(L)`, in points. `0.0` (default) == UNCAPPED —
+    /// the cap branch is never taken.
+    pub invasion_alpha_cap: f64,
+    /// Shape B's "stub" threshold in DISTINCT TILES (default
+    /// [`invasion::INV_STUB_MAX_TILES`] == 2). Inert while `invasion_alpha` is 0.0.
+    pub invasion_stub_max_tiles: i64,
+    /// Shape C — dumping-ground discount (DEFENSE ONLY, `T_C >= 0`, NOT
+    /// antisymmetric). ⚠️ The leaf SUBTRACTS `invasion_gamma * T_C`
+    /// ([`invasion::shape_c_term`]) — note the sign against A/B/D.
+    pub invasion_gamma: f64,
+    /// Shape D — farm-specific contested differential. The leaf ADDS
+    /// `invasion_delta_farm * T_D` ([`invasion::shape_d_term`]). ⚠️ Collinear with
+    /// `invasion_beta` on fields: `T_A == T_A|cities+roads + T_D` exactly.
+    pub invasion_delta_farm: f64,
 }
 
 /// `flat_leaf._PHASE_K0` — mid-deck, frozen by the prereg.
@@ -284,6 +324,12 @@ impl LeafConfig {
             opencity_cap: 0.0,
             jrules_dose: 0.0,
             jrules_mask: JR_ALL,
+            invasion_beta: 0.0,
+            invasion_alpha: 0.0,
+            invasion_alpha_cap: 0.0,
+            invasion_stub_max_tiles: invasion::INV_STUB_MAX_TILES,
+            invasion_gamma: 0.0,
+            invasion_delta_farm: 0.0,
         }
     }
 
@@ -1584,6 +1630,18 @@ pub struct LeafTerms {
     /// sign; it may be negative). `0.0` whenever `jrules_dose == 0.0` (never
     /// computed then).
     pub jrules_term: f64,
+    /// Shape A's SIGNED transfer differential `T_A` (the leaf ADDS
+    /// `invasion_beta * T_A`); `0.0` whenever `invasion_beta == 0.0`.
+    pub invasion_a: f64,
+    /// Shape B's NON-NEGATIVE stub-merge potential `T_B` (the leaf ADDS
+    /// `invasion_alpha * T_B`); `0.0` whenever `invasion_alpha == 0.0`.
+    pub invasion_b: f64,
+    /// Shape C's NON-NEGATIVE unguarded-perimeter penalty `T_C` (⚠️ the leaf
+    /// SUBTRACTS `invasion_gamma * T_C`); `0.0` whenever `invasion_gamma == 0.0`.
+    pub invasion_c: f64,
+    /// Shape D's SIGNED contested-farm differential `T_D` (the leaf ADDS
+    /// `invasion_delta_farm * T_D`); `0.0` whenever `invasion_delta_farm == 0.0`.
+    pub invasion_d: f64,
     pub meeple_term: f64,
     pub return_term: f64,
     pub flip_term: f64,
@@ -1675,6 +1733,35 @@ pub fn leaf_terms_with(
         score += cfg.jrules_dose * jr_term;
     }
 
+    // INVASION-RISK FAMILY — four independently-gated statements in the fixed
+    // order A, B, C, D, applied AFTER the J-rules bundle and BEFORE the
+    // meeple/curve term. Each is a separate `if weight != 0.0` (float addition is
+    // not associative, so a fused expression would not be a pure superset of the
+    // default path), and each zero weight takes an early branch — never an
+    // add/subtract of 0.0 — so a config with the whole family off is BIT-IDENTICAL
+    // to the champion, not merely equal. ⚠️ SIGNS DIFFER: A/B/D are ADDED (they are
+    // bonus potentials), C is SUBTRACTED (it is a penalty, like denial/open-city).
+    let mut inv_a = 0.0;
+    if cfg.invasion_beta != 0.0 {
+        inv_a = invasion::shape_a_term(state, player, d, cfg);
+        score += cfg.invasion_beta * inv_a;
+    }
+    let mut inv_b = 0.0;
+    if cfg.invasion_alpha != 0.0 {
+        inv_b = invasion::shape_b_term(state, player, d, cfg);
+        score += cfg.invasion_alpha * inv_b;
+    }
+    let mut inv_c = 0.0;
+    if cfg.invasion_gamma != 0.0 {
+        inv_c = invasion::shape_c_term(state, player, d, cfg);
+        score -= cfg.invasion_gamma * inv_c;
+    }
+    let mut inv_d = 0.0;
+    if cfg.invasion_delta_farm != 0.0 {
+        inv_d = invasion::shape_d_term(state, player, d, cfg);
+        score += cfg.invasion_delta_farm * inv_d;
+    }
+
     let meeple_term = match &cfg.v29_meeple_curve {
         Some(curve) => {
             // Part C: beta == 0.0 (default/champion) takes the UNMODIFIED expression
@@ -1722,6 +1809,10 @@ pub fn leaf_terms_with(
         denial_term: den_term,
         opencity_term: oc_term,
         jrules_term: jr_term,
+        invasion_a: inv_a,
+        invasion_b: inv_b,
+        invasion_c: inv_c,
+        invasion_d: inv_d,
         meeple_term,
         return_term: r_term,
         flip_term: f_term,

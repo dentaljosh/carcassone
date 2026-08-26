@@ -1856,6 +1856,42 @@ def _denial_off(cfg) -> bool:
     return getattr(cfg, "denial_dose", 0.0) == 0.0
 
 
+def _invasion_off(cfg) -> bool:
+    """True iff EVERY invasion-risk weight is OFF (0.0) — then this leaf is the
+    champion's, bit-for-bit, and both the cy and the pure-Python flat routes are
+    correct.
+
+    ⚠️ THE SIDES ARE REVERSED HERE vs denial / open-city / jrules / tiletie. The
+    invasion-risk family (LeafConfig.invasion_*, spec
+    measurement/invasion_term_build/SHAPES.md) is implemented in the RUST leaf ONLY
+    — by decision, there is no flat_leaf mirror and no cy mirror. So a SET weight
+    does not "leave the fast path"; it makes BOTH Python leaves RAISE (see
+    `_require_invasion_off`). Screening cells run `--backend rust`.
+
+    The two inert shape-B knobs (`invasion_alpha_cap`, `invasion_stub_max_tiles`)
+    are deliberately NOT consulted: they cannot move a leaf value while
+    `invasion_alpha` is 0.0."""
+    return (getattr(cfg, "invasion_beta", 0.0) == 0.0
+            and getattr(cfg, "invasion_alpha", 0.0) == 0.0
+            and getattr(cfg, "invasion_gamma", 0.0) == 0.0
+            and getattr(cfg, "invasion_delta_farm", 0.0) == 0.0)
+
+
+def _require_invasion_off(cfg) -> None:
+    """Fail LOUD on a nonzero invasion-risk weight (see `_invasion_off`). Serving an
+    invasion-blind Python leaf to an invasion cell would read as 'the term is worth
+    nothing' instead of 'the term never ran' — precisely the misreading this build
+    exists to prevent."""
+    if not _invasion_off(cfg):
+        raise NotImplementedError(
+            "LeafConfig invasion-risk weights (invasion_beta / invasion_alpha / "
+            "invasion_gamma / invasion_delta_farm) are implemented in the RUST leaf "
+            "ONLY (carc_core::leaf::invasion; spec "
+            "measurement/invasion_term_build/SHAPES.md). There is deliberately no "
+            "flat_leaf and no Cython mirror — run the cell with `--backend rust`."
+        )
+
+
 def _c7_off(cfg) -> bool:
     """True iff both C7 term knobs are OFF — then the cy route need not advertise
     SUPPORTS_V29_C7_TERMS (a stale .so still runs the champion leaf bit-exactly)."""
@@ -1905,6 +1941,8 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
         cfg = DEFAULT_CONFIG
     if bag_close is None:
         bag_close = V210_BAG_CLOSE if cfg_was_none else bool(getattr(cfg, "bag_close", False))
+    # RUST-ONLY family — fail loud BEFORE any route is chosen (see _invasion_off).
+    _require_invasion_off(cfg)
     # v2.9 meeple curve (Candidate B). The cy leaf implements it when the loaded .so
     # advertises SUPPORTS_V29_CURVE; a STALE .so (no curve support) would silently
     # DROP the curve, so for curve configs we fall back to the pure-Python curve path
@@ -2028,6 +2066,8 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
         cfg = DEFAULT_CONFIG
     if bag_close is None:
         bag_close = V210_BAG_CLOSE if cfg_was_none else bool(getattr(cfg, "bag_close", False))
+    # RUST-ONLY family — fail loud BEFORE any route is chosen (see _invasion_off).
+    _require_invasion_off(cfg)
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
         global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7, _CY_SUPPORTS_SOFT_CAP, _CY_SUPPORTS_PHASE  # noqa: PLW0603
