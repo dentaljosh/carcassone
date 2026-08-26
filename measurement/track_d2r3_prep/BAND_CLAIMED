@@ -1,0 +1,23 @@
+BAND_CLAIMED — executor interlock for track_d2r3_prep, band 149000000000
+Dropped 2026-08-26 by the orchestrator session, AFTER all five DESIGN.md §0 sign-offs:
+
+(a) funding ≈44 core-h / ≈2.0 h wall — OWNER, ratified via approval of the launch plan
+    presented 2026-08-26 ("Say '(c) approved' and it launches into the next clean window"
+    → owner verbatim: "c approved and r2 funded").
+(b) band claim 149000000000 — ORCHESTRATOR: all-branches sweep re-run 2026-08-26
+    immediately before this drop (registry + BAND_CLAIM*.json across every refs/heads and
+    refs/remotes ref): 149e9 appears ONLY in this pair's own claim; nothing claimed above it.
+    Registry row merged to the main tree in commit d32c9324.
+(c) probe budget k4×1600 = 6400 (non-named-lineage, DESIGN §3.2 step 6 reversal) —
+    OWNER, verbatim 2026-08-26: "c approved and r2 funded".
+(d) tie-arbiter OFF — ORCHESTRATOR per DESIGN §3 (the probe P is the pre-arbiter fair
+    PIMC champion; arbiter-ON would confound rung spacing with tied-ply behaviour).
+(e) exclusive-tenancy window ≈2.5 h on the local box — ORCHESTRATOR, scheduled for
+    immediately after the smoke leg passes, 2026-08-26: solver suite paused (154/185),
+    no sibling cells, no builds, no agent compute for the duration; the R2 taxonomy
+    agent's compute is laptop-side only. G-TENANCY preflight census + live sampler
+    remain the enforcing mechanisms regardless of this scheduling note.
+
+Pre-drop checklist state: instrument tests 38/38 PASS from the main tree at d32c9324;
+dry-run preflights PASS (leaf hashes a36d2e15a3b3d71d / 42af12fce22e1a0f, R9 latched,
+code-dirty-files=0); smoke leg run + self-adjudication per §9 (see logs/ smoke record).
