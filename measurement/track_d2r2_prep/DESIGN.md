@@ -1,3 +1,18 @@
+> # ⛔ STATUS: **ADJUDICATED 2026-08-25 — BRANCH `U-UNREADABLE`** (gate `G-TIMING`).
+>
+> The run completed both cells (400/400 games each, `n_failed` 0, band `144000000000`) and
+> **eight of the nine §3 gates PASS — including all four that voided the first attempt**
+> (`G-RULES` `r9_env_ok=True`, `G-LEAF` `a36d2e15a3b3d71d`, `G-TOOL` one code rev
+> `d3c720cf-dirty` + `BLIND_COMMIT` at both addresses). **`G-TIMING` FAILS**: CELL R800's
+> realized equal-time ratio is **0.8382**, below the frozen `[0.85, 1.20]` floor by 1.38%.
+> Per `READ_RULE.md` §4, **no strength or spacing statistic from this run is adjudicated,
+> quoted, or entered in `experiments/results.csv`.** Readout:
+> [`READOUT_D2R2.md`](READOUT_D2R2.md) / [`READOUT_D2R2.json`](READOUT_D2R2.json);
+> adjudicator [`analyze_d2r2.py`](analyze_d2r2.py). This banner is a close-out stamp
+> (DESIGN §10 item 3) — **no bar, gate, threshold or branch condition below is edited.**
+>
+> ---
+>
 > ## §0 — PROVENANCE BANNER (the pre-registered instrument-fix successor)
 >
 > ⛔→✅ **FROZEN 2026-08-23 (the blind commit is THE COMMIT THAT INTRODUCES THIS BANNER; its sha is stamped into `run_cells.sh` in the follow-up commit, per the b32v64 pattern). No statistic of any kind exists at freeze time.**

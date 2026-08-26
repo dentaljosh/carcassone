@@ -1,3 +1,13 @@
+> # ⛔ STATUS: **ADJUDICATED 2026-08-25 — BRANCH `U-UNREADABLE`** (gate `G-TIMING`).
+>
+> Realized CELL R800 equal-time ratio **0.8382**, outside the frozen `[0.85, 1.20]`.
+> Eight of nine gates PASS (all four first-attempt voids are closed). §4.3's companion
+> table is printed in [`READOUT_D2R2.md`](READOUT_D2R2.md) but, per §4, **nothing in it is
+> adjudicated or quoted as a verdict.** This banner is a close-out stamp — **§4 is not
+> edited; no bar moved.**
+>
+> ---
+>
 > ## §0 — PROVENANCE BANNER (the pre-registered instrument-fix successor)
 >
 > ⛔→✅ **FROZEN 2026-08-23 (the blind commit is THE COMMIT THAT INTRODUCES THIS BANNER; its sha is stamped into `run_cells.sh` in the follow-up commit, per the b32v64 pattern). No statistic of any kind exists at freeze time.**
