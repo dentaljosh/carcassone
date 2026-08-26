@@ -795,13 +795,38 @@ run_smoke() {
   local c="$SMOKE_CELL" sub="smoke_${CELL_SUB[$SMOKE_CELL]}" so="$OUT/smoke_${CELL_SUB[$SMOKE_CELL]}"
   log "SMOKE (DESIGN.md SS9): ${SMOKE_GAMES} games at $c's EXACT production knobs, throwaway"
   log "  seed $SMOKE_SEED_START, W=$SMOKE_WORKERS. Never pooled, never claimed, never adjudicated"
-  log "  as a result. EXEMPT from the blind/band preconditions -- it spends neither."
+  log "  as a result. It spends NO BAND and drops NO BAND_CLAIMED -- but it DOES write its"
+  log "  own PINNED_SRC_REV / BLIND_PROOF.json / SRC_CLEAN boundaries, because G-REV and"
+  log "  G-BLIND are NOT in READ_RULE SS3.5's allowed set and must PASS on the smoke."
   log "  $c is the smoke cell because it has the MOST plumbing to break: a nonzero weight,"
   log "  the --allow-leaf-hash-drift flag, AND the cap-forwarding biconditional."
   require_table_agrees
   preflight_rules
   preflight_wheel
   census_advisory
+
+  # ------------------------------------------------------------------------- #
+  # ⭐ THE SMOKE WRITES ITS OWN LAUNCH ARTIFACTS (PRE-GAME-1 AMENDMENT).        #
+  #                                                                            #
+  # G-REV and G-BLIND are NOT in READ_RULE §3.5's pinned allowed set, so both   #
+  # must PASS on the smoke archive. But `PINNED_SRC_REV`, `SRC_CLEAN.jsonl` and #
+  # `BLIND_PROOF.json` were only ever written on the REAL-cell path, so         #
+  # G-REV read "PINNED_SRC_REV ABSENT — ABSENT is FAIL" on EVERY smoke and the  #
+  # leg exited 11 before a single real game could be authorised. Found by       #
+  # running the smoke from the main tree.                                      #
+  #                                                                            #
+  # ⛔ THE FIX IS TO SUPPLY THE WITNESS, NEVER TO WIDEN THE ALLOWED SET.        #
+  # ABSENT-is-FAIL stays sacred: the launcher knows the rev, so it writes it.   #
+  # This is SAFE and does not pre-empt a real launch — measurement/ is excluded #
+  # from CODE_PATHS (so writing it cannot dirty the tree the gate checks), and  #
+  # a real launch overwrites the file from `git rev-parse HEAD` anyway.         #
+  # The smoke still claims NO band and drops NO BAND_CLAIMED.                   #
+  # ------------------------------------------------------------------------- #
+  git -C "$REPO" rev-parse HEAD > "$DIR/$PINNED_SRC_REV_FILE"
+  log "SMOKE wrote $PINNED_SRC_REV_FILE = $(tr -d '[:space:]' < "$DIR/$PINNED_SRC_REV_FILE")"
+  write_blind_proof
+  record_src_boundary "pre-flight"
+
   mkdir -p "$LOGS" "$so"
   build_argv "$c" "$SMOKE_GAMES" "$SMOKE_SEED_START" "$SMOKE_WORKERS" "$sub" no-stamp
   set +e
@@ -851,6 +876,10 @@ SMEOF
     log "!!! adjudicator that has never seen an emitted manifest."
     exit 11
   fi
+  # The closing SRC_CLEAN boundary, so G-REV's SRC_CLEAN conjunct has both a
+  # pre-flight and an after- boundary to read (and both must be CLEAN).
+  record_src_boundary "smoke-after"
+
   log "SMOKE -- running the pair's own adjudicator in --smoke-mode against $so"
   "$PY" "$ADJ" --smoke-mode --cell "$so" || {
     log "!!! FATAL: analyze_screen.py --smoke-mode returned nonzero on the smoke archive."

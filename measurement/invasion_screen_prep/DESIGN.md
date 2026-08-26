@@ -3,6 +3,22 @@
 **STATUS: FROZEN, NOT AUTHORIZED TO LAUNCH (2026-08-26).** No cell has run. No band sentinel
 exists. Nothing in this directory has spent a game.
 
+> ### ⭐ PRE-GAME-1 AMENDMENT — 2026-08-26, ZERO GAMES PLAYED, BAND UNSPENT
+>
+> The full amendment note is in [`READ_RULE.md`](READ_RULE.md)'s banner. What it
+> changes **here**: §6.2's candidate-margin **prose** is corrected to match the
+> table it introduces (`cand_margin = +25%` on the candidate HALF = **+12.5% per
+> game**; the table's 16.0 → 18.0 core-h per arm is canonical). ⛔ **No cost
+> figure, no bar, and no branch condition moved** — §0(a)'s funding line is
+> unchanged at ≈54–62 core-h / ≈2.9–3.3 h wall.
+>
+> The other four items are gate-implementation tightenings recorded in
+> `READ_RULE.md`: the §9 smoke now writes its own `PINNED_SRC_REV` /
+> `BLIND_PROOF.json` / `SRC_CLEAN.jsonl` (a real smoke-blocker, fixed by
+> supplying the witness rather than widening §3.5's allowed set), and `G-WHEEL`,
+> `G-BLIND` and `G-REV` gained the conjuncts §3 had always claimed but the first
+> implementation did not enforce.
+
 Run id `invasion_screen_prep`. Pair: this file + [`READ_RULE.md`](READ_RULE.md). Launcher:
 [`run_cells.sh`](run_cells.sh). Adjudicator: [`analyze_screen.py`](analyze_screen.py). Shared
 primitives (the ONE implementation of every bar and every cost figure):
@@ -704,9 +720,17 @@ per game, BOTH sides rust at 2752:
 ⚠️ **THE CANDIDATE-SIDE INVASION ARITHMETIC IS UNMEASURED.** The four shapes add a per-component
 scan plus, for shape B, an ordered-pair scan over same-terrain components with a merge-distance-1
 test — on top of a `decompose` the leaf already pays for. It is charged to the **candidate side
-only** (the opponent's weights are all 0.0, so the gated statements are skipped). The honest range
-is **0% to +50% on the candidate half**, i.e. **0% to +25% per game**, and the pair does not
-pretend to know where in it the truth sits.
+only** (the opponent's weights are all 0.0, so the gated statements are skipped).
+
+⭐ **THE PUBLISHED TABLE IS CANONICAL (amended 2026-08-26, pre-game-1).** The margin is
+**`cand_margin = +25%` applied to the CANDIDATE HALF ONLY**, which is **+12.5% per game** — that is
+what `screen_lib.project_cost(..., cand_margin=0.25)` computes and what the table below prints
+(16.0 → 18.0 core-h per arm). An earlier sentence here read *"0% to +50% on the candidate half,
+i.e. 0% to +25% per game"*, which stated a **different, wider** envelope than the table it
+introduced. **The table wins**; the prose is corrected. The honest uncertainty is
+**`cand_margin` ∈ [0, 0.25]**, i.e. **0% to +12.5% per game**, and the pair does not pretend to know
+where in it the truth sits — which is why §0(a)'s funding line is the RANGE ≈54–62 core-h and not a
+point estimate.
 
 | cell | games | base (72 s/game) | +25% candidate margin | wall @ W=22, 84% util |
 |---|---|---|---|---|
