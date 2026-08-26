@@ -1,0 +1,27 @@
+BAND_CLAIMED — executor interlock for track_d2r4_prep, band 150000000000
+Dropped 2026-08-26 by the orchestrator session, AFTER the five DESIGN.md §0 sign-offs:
+
+(a) funding ≈27.8 core-h / ≈1.3 h wall — OWNER via "respon d2" (2026-08-26), given in
+    response to the orchestrator's explicit respin proposal (k4×1024 candidate, fresh band,
+    exclusive window, solver pause). ETA revised up from the proposal's ~24 core-h by the
+    builder's clean-cost derivation; within the same funding intent.
+(b) band claim 150000000000 — ORCHESTRATOR: all-branches sweep (135 refs / 563 files) run at
+    freeze, re-verified before the registry append; 150e9 free everywhere; 149e9 retired-spent;
+    146e9 skipped as soft-reserved (reasoning carried verbatim). Row merged in this tree.
+(c) probe budget k4×1024 = 4096 (non-named-lineage) — OWNER via "respon d2" (the number was
+    stated in the proposal he answered). Derivation: clean tenancy-enforced burn-in calibration
+    (rung 601.19 ms/move, probe 0.14552 ms/total-sim) ⇒ projected ratio 0.9914; rails: rung
+    ≥17.4% faster breaches 1.20, ≥16.6% slower breaches 0.85.
+(d) tie-arbiter OFF — ORCHESTRATOR per DESIGN (pre-arbiter fair PIMC probe; unchanged from
+    attempts 1-3).
+(e) exclusive-tenancy window ≈1.6 h — ORCHESTRATOR, scheduled now: reconcile solver PAUSED at
+    154/185 (main+child killed by exact pid, resumable via scripts/rustport/resume_run2_suite.sh);
+    F4 leg runs LAPTOP-side only (local footprint nil); no agents, no builds, no test suites
+    for the window. G-TENANCY preflight census + live sampler enforce regardless.
+
+Pre-drop state: merge 6e6b8afa+d2r4 (39/39 instrument tests from main tree), dry-run preflight
+PASS (leaf hashes a36d2e15a3b3d71d / 42af12fce22e1a0f, R9 latched, probe budget 4096), smoke
+PASS 2026-08-26T15:03:43Z (adjudicator failures confined to the pinned allowed set).
+Ceremony note: the freeze was re-run once on the branch (superseded e13ce589/6a6418f4
+force-replaced with c98f22ea/fc3636ea) to make §0's diff-vs-d2r3 statement exact — recorded
+in the stamping commit; BLIND_COMMIT = c98f22ea43fbae2081ae692b6d1bc8d324068fce.
