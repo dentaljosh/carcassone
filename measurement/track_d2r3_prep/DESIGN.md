@@ -1,3 +1,22 @@
+> # ⛔ STATUS: **ADJUDICATED 2026-08-26 — BURN-IN ABORT, `U-UNREADABLE`** (gate `G-TIMING`, READ_RULE §3.2).
+>
+> The burn-in gate fired at 80/800 games (~8 min, ~3.7 core-h — the cheap abort it was built
+> for): realized equal-time ratio **1.5491** vs the frozen `[0.85, 1.20]`, ABOVE the ceiling
+> where attempt 2 was below the floor. Window clean (40 decks × 2 seats, 0 malformed/missing;
+> rung **601.19 ms/move**, probe **931.30 ms/move**). **Root cause resolved the same morning:**
+> attempt 2's cell-realized costs — this pair's calibration basis (§3.2) — were **co-tenant-
+> inflated** (the reconcile exact-solver suite ran a silent long job through d2r2's entire cell
+> window; python rung ~1.8× inflated, rust probe ~1.13×; zero code changes between revs, env
+> byte-identical). `G-TENANCY` (new here) measured today's window clean and is validated. Band
+> `149000000000` SPENT + RETIRED. **Era annotation:** §4.1's dispersion table copied a
+> mislabeled G2 line from d1-rebase DESIGN §4.1 — the `7.9350/8.4547` row is
+> `fair_ruler_rebase_11008`, not `fair_ruler_k8x1376_11008` (9.765/9.866); corrected se(M)≈0.95,
+> MDE band unchanged (see `measurement/track_d1_fair_rebase/READOUT.md` addendum 2026-08-26).
+> A fourth attempt needs a fresh pair + band + owner decision; the clean calibration is in
+> `BURNIN_R800.json` on the share (equal-time candidate ⇒ k4×1024 = 4096, projected 0.991).
+> Row: `results.csv d2r3_rung_compression_U_UNREADABLE_burnin_abort_n80_b149e9`. This banner is
+> a close-out stamp — **no bar, gate, threshold or branch condition below is edited.**
+>
 > ## §0 — PROVENANCE BANNER (the pre-registered COST-CALIBRATION successor)
 >
 > ⛔→✅ **FROZEN 2026-08-25 (the blind commit is THE COMMIT THAT INTRODUCES THIS FILE; its sha is stamped into [`run_cells.sh`](run_cells.sh) and [`BLIND_COMMIT`](BLIND_COMMIT) in the follow-up commit, per the b32v64 / d2r2 pattern). No statistic of any kind exists at freeze time.**
