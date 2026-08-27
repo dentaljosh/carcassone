@@ -692,7 +692,13 @@ mean, z, n, se, _ = L.paired_margin(recs)
 # required keyword args with no defaults, precisely so a caller that cannot
 # answer one fails the gate CLOSED instead of inheriting a permissive default.
 sums = sorted(glob.glob(os.path.join(out, "summary.json")))
-cfg = json.load(open(sums[-1])).get("config", {}) if sums else {}
+# DEVIATION IS-D1 (2026-08-26, execution-layer, statistics-blind): config-shaped
+# conjuncts must be read from manifest.json -- summary.json carries NO config block
+# (analyze_screen.py's own module docstring states the split; this precheck was the
+# one misaddressed reader and fail-closed voided a healthy IDENT cell). n_failed is
+# a statistic and stays on summary.json.
+mans = sorted(glob.glob(os.path.join(out, "manifest.json")))
+cfg = json.load(open(mans[-1])).get("config", {}) if mans else {}
 n_failed = json.load(open(sums[-1])).get("n_failed") if sums else None
 cand_h = cfg.get("cand_leaf_hash")
 inv = {k: v for k, v in (cfg.get("cand_leaf_cfg") or {}).items() if k.startswith("invasion")}
