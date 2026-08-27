@@ -63,4 +63,32 @@ reason and its blast radius. Empty sections are stated as empty on purpose:
 
 ## After the freeze
 
-*(nothing yet)*
+Freeze sha `93c24490c53f30ca24b70e456147725137125fde` (`BLIND_COMMIT.json`).
+
+* **A-1 (2026-08-27) — a frozen COST statement corrected, not a cut changed.**
+  `MODE_CUT.json` / `PREREG.md` §1.4 were written while the cost probe's second
+  K=4 marginalized position was still running past the probe's 600 s cap, and say
+  so. It **completed at 483.8 s** (2,323,048 nodes). So the measured K=4
+  marginalized pair is **290.4 s and 483.8 s**, i.e. ~3.7× headroom under the
+  1800 s production cap rather than the "near it for the worst" the frozen text
+  allows for. **The cut is unchanged** (`k_marginalized_max = 4`); only the
+  headroom claim improves. The pre-registered `TIME_SKIPPED` attrition path stays
+  armed and is still the truth for any row that blows the cap.
+* **A-2 (2026-08-27) — the smoke's 10/10 champion agreement was challenged, not
+  accepted.** It looked implausible for owner plies with 24–52 legal actions, so
+  it was cross-checked against an independent instrument: `analyzer/ev_loss`'s
+  2026-08-25 grading of these same games recorded `agent_action` at every ply.
+  **My counterfactual reproduces it exactly on all 10 smoke plies**, and the
+  corpus-wide agreement rate on the same 47 games is **0.523 owner-seat / 0.733
+  champion-seat** — far from 1.0. The smoke's stratified selection draws its exact
+  rows from the lowest-K plies (136–140), where the champion latches its exact
+  solver, and 5 of 10 rows are champion-seat; a 10/10 draw there is unremarkable.
+  No code change. Recorded in `SMOKE_VALIDATION.json`.
+* **A-3 (2026-08-27) — the smoke does NOT exercise `exact_clairvoyant_M`.** The
+  10-ply stratified selection has no K=5 row (the three K=5 rows live in games the
+  smoke does not touch). That path is covered instead by
+  `test_ply_pricing.py::test_clairvoyant_M_*` (world averaging, true-future
+  exclusion, per-world skip accounting, all-worlds-skipped) against a monkeypatched
+  solver, and `set_unseen_deck` + the real clairvoyant solve are exercised on real
+  E4 positions by `cost_probe.py`. Named because "the smoke was green" must not be
+  read as "every mode ran".
