@@ -1,0 +1,472 @@
+{
+  "band": 153000000000,
+  "band_end": 153000003199,
+  "pair": "measurement/invasion_screen_r3_prep",
+  "round": 3,
+  "date": "2026-08-27",
+  "status": "claimed",
+  "owner_funding": "verbatim 'fund that shit' (2026-08-27), against the licensed round-3 menu: small-weight fine ladders for A and C plus the joint A+C partnered cell",
+  "owner_constraints": [
+    "verbatim 'limit local to w14 starting at 11am' (2026-08-27) \u2014 W_LOCAL FROZEN at 14 for the whole round; see screen_lib.W_LOCAL_NOTE"
+  ],
+  "predecessors": {
+    "round_1": {
+      "band": 151000000000,
+      "verdict": "MIXED",
+      "pair": "measurement/invasion_screen_prep"
+    },
+    "round_2": {
+      "band": 152000000000,
+      "verdict": "BRACKET-CONTINUE (amended re-read, IS-A1)",
+      "pair": "measurement/invasion_screen_r2_prep",
+      "note": "frozen verdict U-UNREADABLE stands unedited; the amended re-read (IS-A1) is BRACKET-CONTINUE"
+    }
+  },
+  "n_decks": 3200,
+  "n_games": 6400,
+  "cells": [
+    {
+      "cell": "A_LOW",
+      "shape": "A",
+      "rung": "low",
+      "box": "laptop",
+      "knobs": [
+        "invasion_beta"
+      ],
+      "weights": [
+        0.02
+      ],
+      "dose": "invasion_beta=0.02",
+      "seed_start": 153000000000,
+      "seed_end": 153000000399,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "e62afec3a84dfabd",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "champion",
+      "shape_b_env": false,
+      "chain_eligible": true,
+      "leaf_diff_keys": [
+        "invasion_beta"
+      ]
+    },
+    {
+      "cell": "A_MID",
+      "shape": "A",
+      "rung": "mid",
+      "box": "laptop",
+      "knobs": [
+        "invasion_beta"
+      ],
+      "weights": [
+        0.05
+      ],
+      "dose": "invasion_beta=0.05",
+      "seed_start": 153000000400,
+      "seed_end": 153000000799,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "9da236cf49065a21",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "champion",
+      "shape_b_env": false,
+      "chain_eligible": true,
+      "leaf_diff_keys": [
+        "invasion_beta"
+      ]
+    },
+    {
+      "cell": "A_HIGH",
+      "shape": "A",
+      "rung": "high",
+      "box": "laptop",
+      "knobs": [
+        "invasion_beta"
+      ],
+      "weights": [
+        0.1
+      ],
+      "dose": "invasion_beta=0.1",
+      "seed_start": 153000000800,
+      "seed_end": 153000001199,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "1fed3422b67be1d5",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "champion",
+      "shape_b_env": false,
+      "chain_eligible": true,
+      "leaf_diff_keys": [
+        "invasion_beta"
+      ]
+    },
+    {
+      "cell": "J_LOW",
+      "shape": "J",
+      "rung": "low",
+      "box": "laptop",
+      "knobs": [
+        "invasion_beta",
+        "invasion_gamma"
+      ],
+      "weights": [
+        0.02,
+        0.03
+      ],
+      "dose": "invasion_beta=0.02+invasion_gamma=0.03",
+      "seed_start": 153000001200,
+      "seed_end": 153000001599,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "9e2764605c0b2fff",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "champion",
+      "shape_b_env": false,
+      "chain_eligible": true,
+      "leaf_diff_keys": [
+        "invasion_beta",
+        "invasion_gamma"
+      ]
+    },
+    {
+      "cell": "J_HIGH",
+      "shape": "J",
+      "rung": "high",
+      "box": "laptop",
+      "knobs": [
+        "invasion_beta",
+        "invasion_gamma"
+      ],
+      "weights": [
+        0.05,
+        0.07
+      ],
+      "dose": "invasion_beta=0.05+invasion_gamma=0.07",
+      "seed_start": 153000001600,
+      "seed_end": 153000001999,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "d193865634f14543",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "champion",
+      "shape_b_env": false,
+      "chain_eligible": true,
+      "leaf_diff_keys": [
+        "invasion_beta",
+        "invasion_gamma"
+      ]
+    },
+    {
+      "cell": "C_LOW",
+      "shape": "C",
+      "rung": "low",
+      "box": "local",
+      "knobs": [
+        "invasion_gamma"
+      ],
+      "weights": [
+        0.03
+      ],
+      "dose": "invasion_gamma=0.03",
+      "seed_start": 153000002000,
+      "seed_end": 153000002399,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "86a6efb793a40ef2",
+      "opp_leaf": "42adadc988784b44",
+      "opponent": "shape_b",
+      "shape_b_env": true,
+      "chain_eligible": false,
+      "leaf_diff_keys": [
+        "invasion_alpha",
+        "invasion_alpha_cap",
+        "invasion_gamma"
+      ]
+    },
+    {
+      "cell": "C_MID",
+      "shape": "C",
+      "rung": "mid",
+      "box": "local",
+      "knobs": [
+        "invasion_gamma"
+      ],
+      "weights": [
+        0.07
+      ],
+      "dose": "invasion_gamma=0.07",
+      "seed_start": 153000002400,
+      "seed_end": 153000002799,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "f05d8576b7a6cc23",
+      "opp_leaf": "42adadc988784b44",
+      "opponent": "shape_b",
+      "shape_b_env": true,
+      "chain_eligible": false,
+      "leaf_diff_keys": [
+        "invasion_alpha",
+        "invasion_alpha_cap",
+        "invasion_gamma"
+      ]
+    },
+    {
+      "cell": "C_HIGH",
+      "shape": "C",
+      "rung": "high",
+      "box": "local",
+      "knobs": [
+        "invasion_gamma"
+      ],
+      "weights": [
+        0.15
+      ],
+      "dose": "invasion_gamma=0.15",
+      "seed_start": 153000002800,
+      "seed_end": 153000003199,
+      "n_decks": 400,
+      "n_games": 800,
+      "cand_leaf": "a8e9083b102a52cf",
+      "opp_leaf": "42adadc988784b44",
+      "opponent": "shape_b",
+      "shape_b_env": true,
+      "chain_eligible": false,
+      "leaf_diff_keys": [
+        "invasion_alpha",
+        "invasion_alpha_cap",
+        "invasion_gamma"
+      ]
+    }
+  ],
+  "smoke_ranges": {
+    "laptop": {
+      "cell": "J_HIGH",
+      "seed_start": 153999999100,
+      "seed_end": 153999999107,
+      "n_decks": 8,
+      "n_games": 16,
+      "disposition": "THROWAWAY \u2014 discarded, never pooled, never claimed"
+    },
+    "local": {
+      "cell": "C_MID",
+      "seed_start": 153999999000,
+      "seed_end": 153999999007,
+      "n_decks": 8,
+      "n_games": 16,
+      "disposition": "THROWAWAY \u2014 discarded, never pooled, never claimed"
+    }
+  },
+  "boxes": {
+    "local": {
+      "W": 14,
+      "share_mount": "/mnt/c/carc-shared",
+      "per_game_ratio": 1.0,
+      "ratio_is_measured": true,
+      "cells": [
+        "C_LOW",
+        "C_MID",
+        "C_HIGH"
+      ],
+      "core_hours": 62.03560229999998,
+      "wall_hours": 4.431114449999998
+    },
+    "laptop": {
+      "W": 22,
+      "share_mount": "/mnt/carc-shared",
+      "per_game_ratio": 1.0935,
+      "ratio_is_measured": true,
+      "cells": [
+        "A_LOW",
+        "A_MID",
+        "A_HIGH",
+        "J_LOW",
+        "J_HIGH"
+      ],
+      "core_hours": 109.46060753228998,
+      "wall_hours": 4.975482160558635
+    }
+  },
+  "cost": {
+    "core_hours_point": 171.49620983228994,
+    "core_hours_low": 164.519419267,
+    "core_hours_high": 178.5331261743333,
+    "core_hours_local_equiv": 162.13675230666666,
+    "round_wall_hours_point": 4.975482160558635,
+    "round_wall_hours_low": 4.658355316681818,
+    "round_wall_hours_high": 5.295341994287877,
+    "wall_hours_single_box_local": 11.581196593333333,
+    "why": "ONE unmeasured input (the JOINT leaf's per-move cost \u2014 no leaf carrying two invasion terms has ever run; the point estimate is ADDITIVE in the two measured increments, which the mechanism says is the DEAR end) plus the measured laptop ratio's narrow band. Every other figure is round-2 REALIZED."
+  },
+  "split_table": [
+    {
+      "local": [
+        "C"
+      ],
+      "laptop": [
+        "A",
+        "J"
+      ],
+      "local_core_hours": 62.03560229999998,
+      "laptop_core_hours": 109.46060753229,
+      "local_wall_hours": 4.431114449999998,
+      "laptop_wall_hours": 4.975482160558636,
+      "round_wall_hours": 4.975482160558636,
+      "total_core_hours": 171.49620983229,
+      "rank": 1,
+      "chosen": true
+    },
+    {
+      "local": [
+        "A"
+      ],
+      "laptop": [
+        "J",
+        "C"
+      ],
+      "local_core_hours": 57.062290219999994,
+      "laptop_core_hours": 114.89892429176997,
+      "local_wall_hours": 4.075877872857142,
+      "laptop_wall_hours": 5.222678376898635,
+      "round_wall_hours": 5.222678376898635,
+      "total_core_hours": 171.96121451176998,
+      "rank": 2,
+      "chosen": false
+    },
+    {
+      "local": [
+        "J"
+      ],
+      "laptop": [
+        "A",
+        "C"
+      ],
+      "local_core_hours": 43.03885978666667,
+      "laptop_core_hours": 130.23354547061996,
+      "local_wall_hours": 3.0742042704761907,
+      "laptop_wall_hours": 5.9197066123009074,
+      "round_wall_hours": 5.9197066123009074,
+      "total_core_hours": 173.27240525728664,
+      "rank": 3,
+      "chosen": false
+    },
+    {
+      "local": [
+        "A",
+        "J"
+      ],
+      "laptop": [
+        "C"
+      ],
+      "local_core_hours": 100.10115000666667,
+      "laptop_core_hours": 67.83593111504997,
+      "local_wall_hours": 7.150082143333334,
+      "laptop_wall_hours": 3.083451414320453,
+      "round_wall_hours": 7.150082143333334,
+      "total_core_hours": 167.93708112171663,
+      "rank": 4,
+      "chosen": false
+    },
+    {
+      "local": [
+        "J",
+        "C"
+      ],
+      "laptop": [
+        "A"
+      ],
+      "local_core_hours": 105.07446208666664,
+      "laptop_core_hours": 62.39761435556999,
+      "local_wall_hours": 7.505318720476189,
+      "laptop_wall_hours": 2.8362551979804542,
+      "round_wall_hours": 7.505318720476189,
+      "total_core_hours": 167.47207644223664,
+      "rank": 5,
+      "chosen": false
+    },
+    {
+      "local": [
+        "A",
+        "C"
+      ],
+      "laptop": [
+        "J"
+      ],
+      "local_core_hours": 119.09789251999997,
+      "laptop_core_hours": 47.06299317672,
+      "local_wall_hours": 8.50699232285714,
+      "laptop_wall_hours": 2.139226962578182,
+      "round_wall_hours": 8.50699232285714,
+      "total_core_hours": 166.16088569671996,
+      "rank": 6,
+      "chosen": false
+    }
+  ],
+  "weight_derivation": {
+    "A": {
+      "peak": 0.06916849015317286,
+      "chosen": [
+        0.02,
+        0.05,
+        0.1
+      ],
+      "licensed": [
+        0.01,
+        0.12
+      ]
+    },
+    "C": {
+      "peak_r2_only": 0.7544050708724297,
+      "peak_anchored": 0.1324530462666056,
+      "chosen": [
+        0.03,
+        0.07,
+        0.15
+      ],
+      "licensed": [
+        0.02,
+        0.23
+      ]
+    },
+    "J": {
+      "chosen": [
+        [
+          0.02,
+          0.03
+        ],
+        [
+          0.05,
+          0.07
+        ]
+      ],
+      "construction": "rung-matched to the two fine ladders"
+    }
+  },
+  "inherited_ident": {
+    "band": 151000000000,
+    "n_games": 400,
+    "n_paired": 200,
+    "n_failed": 0,
+    "D": 0.8325,
+    "SE": 0.8650404288051147,
+    "z": 0.9623827653349533,
+    "bar": 2.0,
+    "cand_leaf_hash": "a36d2e15a3b3d71d",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "verdict": "PRECONDITION-PASS",
+    "cost_multiplier": 0.996988008636405,
+    "inherited_by": "round 2 (held: 7/7 cells reported the pinned sha), and now round 3",
+    "note": "the \u22481.0 cost CONTROL as well as the wiring proof: with both sides weight-0 the candidate/opponent ms-per-move ratio was 0.997"
+  },
+  "wheel_binary_sha": "a9ac686bca1417f9",
+  "band_sweep": {
+    "date": "2026-08-27",
+    "refs": 147,
+    "refs_heads": 127,
+    "refs_remotes": 20,
+    "registry_and_claim_files": 808,
+    "result": "every mention of any band at or above 152e9 on any ref is round 2's own; a direct ^15[3-9]000000000, row-start grep over every ref's BAND_REGISTRY.csv returned ZERO hits",
+    "re_verify_before_append": true
+  },
+  "release_if_never_launched": "if no cell ever runs, 153000000000 is released. Once ANY real record exists on it \u2014 including under a round that voids on G-WHEEL-SAME \u2014 the band is SPENT, on the 149e9 precedent.",
+  "_csv_row": "153000000000,\"INVASION-RISK TERM FAMILY, ROUND-3 FINE LADDERS + JOINT AT 2752: EIGHT deck-paired cells on ONE band, each on its OWN DISJOINT 400-deck range (3200 decks / 6400 games, no reuse). Budget k4x688 = 2752 total sims on BOTH sides, rust BOTH sides (the family exists only in rust), fixed_v1 + CARCASSONNE_FIX_R9=1, exact-K<=2 MARGINALIZED, c_puct 1.5 / tau_p 5 / float / visits, TIE-ARBITER OFF ON BOTH SIDES. *** THE MENU THE OWNER FUNDED (verbatim 'fund that shit', 2026-08-27) IS THREE THINGS. (1) A THREE-POINT FINE LADDER FOR SHAPE A against the PLAIN CHAMPION at invasion_beta 0.02 / 0.05 / 0.1 (e62afec3a84dfabd / 9da236cf49065a21 / 1fed3422b67be1d5). (2) A THREE-POINT FINE LADDER FOR SHAPE C against a SHAPE-B INVADER (NOT the champion) at invasion_gamma 0.03 / 0.07 / 0.15 (86a6efb793a40ef2 / f05d8576b7a6cc23 / a8e9083b102a52cf). (3) *** TWO JOINT A+C CELLS AGAINST THE CHAMPION OF RECORD -- invasion_beta 0.02 + invasion_gamma 0.03 (9e2764605c0b2fff) and invasion_beta 0.05 + invasion_gamma 0.07 (d193865634f14543), each ONE leaf carrying TWO knobs. THE JOINT CELLS ARE THE ONLY ADOPTION-CHAIN-ELIGIBLE ONES: their opponent IS the champion, so a J cell at z >= +2.0 fires PROMOTE-JOINT and licenses ONE production-budget H2H of THAT LEAF AT THAT WEIGHT PAIR AS ONE LEAF. *** AND IT ATTRIBUTES NOTHING: a joint margin is a property of the PAIR and says nothing about either knob separately; attribution needs a later ABLATION pair on a fresh band. No branch may read a J margin as evidence for A or for C, subtract one cell's margin from another's to 'recover' a term, or describe a joint margin as the sum of two marginal ones. *** SHAPE B IS NOT RUN AS A CANDIDATE (round 2 demoted it on a noise signature: B_LOW -0.6175 / B_HIGH +0.0225 around round 1's B_MID +0.7575) BUT REMAINS THE INVADER-GENERATOR INSTRUMENT on all three C cells, at invasion_alpha 0.09 @ cap 11.0 (42adadc988784b44, bit-for-bit round 1's B_MID candidate and round 2's C opponent), set by exporting CARCASSONNE_INVASION_ALPHA/_CAP so the harness's own _curve125_leaf_cfg() resolves to it, with the C candidate taking them back off via EXPLICIT ZEROS in its --cand-leaf-json. SHAPE D IS NOT RUN. *** NO IDENT CELL: round 3 inherits round 1's PASS for the SECOND time (round 2 carried it once and it HELD, 7/7 cells across both boxes), gated by G-WHEEL-SAME on carc_rs_binary_sha a9ac686bca1417f9; a changed wheel or a different box re-owes one. *** PRIMARY = each cell's OWN deck-paired margin adjudicated AGAINST ZERO at its own realized SE (BRACKET >= +1 sigma, PROMOTE >= +2 sigma), plus TWO pre-registered WITHIN-BAND ladder statistics per shape: the low-vs-high SCALING contrast and -- new in round 3 -- the THREE-POINT INTERIOR LIFT D_mid - mean(D_low, D_high), which is the statistic a fine ladder owes and which round 2's two-point ladders could not support. NEITHER is ever a promotion input. *** ROUND 3 IS THE FIRST ROUND THAT PICKS WEIGHTS RATHER THAN INHERITING THEM, because the owner funded fine ladders in the small-weight region, and the derivation is disclosed IN CODE (screen_lib.WEIGHT_DERIVATION, recomputed at import): shape A from a local quadratic through the STRUCTURAL anchor D(beta=0)=0 plus r2's 0.04 and r1's 0.12, peaking at beta 0.0692; shape C from TWO readings that DISAGREE (the r2-only interpolation is convex with its vertex a MINIMUM at 0.7544, so the peak is at or below 0.08; the gamma=0-anchored one peaks at 0.1325, above it), so the C ladder brackets the whole contested region. Every weight sits inside the owner-licensed intervals beta [0.01, 0.12] and gamma [0.02, 0.23], with headroom deliberately left at both ends of each for a round-4 extension, and NO round-3 weight repeats a round-1 or round-2 point -- so no round-3 cell is poolable with a predecessor. Rounds 1 and 2 are DESCRIPTIVE OVERLAYS ONLY -- different bands, never pooled, never z-combined (CL-068); their one legitimate use, fixing WHERE round 3 measures, was spent before any round-3 number existed. *** A C READING NEVER ENTERS THE FOUR-LINK ADOPTION CHAIN: its opponent is not the champion of record.\",claim,claimed,2026-08-27,pending,measurement/invasion_screen_r3_prep/DESIGN.md,\"Seeds 153000000000..153000003199 = 3200 decks x 2 seatings = 6400 games across EIGHT cells, 400 decks / 800 games each: A_LOW 153000000000..153000000399; A_MID 153000000400..153000000799; A_HIGH 153000000800..153000001199; J_LOW 153000001200..153000001599; J_HIGH 153000001600..153000001999; C_LOW 153000002000..153000002399; C_MID 153000002400..153000002799; C_HIGH 153000002800..153000003199. DISJOINT BY DESIGN -- each cell's primary statistic is its own internal deck-paired margin, so shared decks buy the primary read nothing; the cost is that the pre-registered ladder statistics are UNMATCHED (root-sum-square SE), and READ_RULE.md section 4.5/4.5b state that price before any number. NO TOP-UP RANGE RESERVED. The DESIGN.md section 9 smoke uses DISJOINT throwaway sub-ranges, one per box -- local 153999999000..153999999007 (C_MID config) and laptop 153999999100..153999999107 (J_HIGH config, THE LOAD-BEARING ONE: the two-knob joint leaf has never emitted a manifest on any box in any round) -- 8 decks each, discarded, never pooled, never themselves claimed; each leg ENDS by running the pair's own adjudicator against the emitted smoke archive. *** COST ~165-179 core-h across BOTH boxes / ~4.7-5.3 h ROUND wall, built on round 2's REALIZED per-move costs rather than a model (which reproduces round 2's three shapes without ever under-predicting and by no more than +5%). ONE input is unmeasured and is carried as a stated envelope -- the JOINT leaf's per-move cost, since no leaf carrying two invasion terms has ever run; the point estimate is ADDITIVE in the two measured increments, which the mechanism says is the DEAR end. Round 2's OTHER unmeasured input, the laptop's per-game ratio, is now MEASURED at 1.0935x (the IDENTICAL shape-B leaf ran on both boxes in round 2: local 633.42 ms/move, laptop 692.66) rather than assumed at 1.4x. *** TWO-BOX EXECUTION, and the CELL->BOX ASSIGNMENT IS FROZEN IN THE PREREG and gated by G-HOST -- LOCAL runs ['C_LOW', 'C_MID', 'C_HIGH'] at W=14, LAPTOP runs ['A_LOW', 'A_MID', 'A_HIGH', 'J_LOW', 'J_HIGH'] at W=22, WHOLE CELLS PER BOX. *** W_LOCAL=14 IS AN OWNER CONSTRAINT, verbatim 'limit local to w14 starting at 11am' (2026-08-27): the round straddles the owner's interactive-use window, so W_LOCAL is FROZEN AT 14 FOR THE WHOLE ROUND -- never 22-then-14, because --workers is per-invocation and a cell runs in bounded resumable passes. W is THROUGHPUT-ONLY (games are bit-identical at any W and no gate reads a clock), so it moves WALL CLOCK and the ASSIGNMENT and nothing else -- but it moves the assignment decisively: all SIX whole-shape partitions were re-priced at W_LOCAL=14 and the fastest is now C-on-local / A+J-on-laptop (4.98 h round wall, local 4.43 h / laptop 4.98 h) rather than round 2's arrangement, which at this W would read 7.15 h. screen_lib.sanity_check() REFUSES a pair whose frozen assignment is not the fastest. SHAPES ARE ASSIGNED WHOLE so every pre-registered statistic is computed WITHIN one box and the round never relies on cross-box float identity. The SAME WHEEL FILE is installed on both boxes (never a laptop rebuild: a different sha makes G-WHEEL-SAME refuse, correctly); the repo is bundle-synced to the laptop and all eight cells must report ONE code_rev. *** G-REV's CROSS-BOX CLAUSE IS THE IS-A1 FOLD: round 2's frozen adjudicator compared the boxes' EMITTED SHORT REVS for string equality and FALSELY VOIDED a healthy single-rev round, because git rev-parse --short picks its length per clone. Round 3 canonicalizes every rev AGAINST THE PIN (screen_lib.cross_box_rev_gate) and additionally REQUIRES THE TWO BOXES' PIN FILES TO AGREE -- stricter than round 2's amendment script, exercised by the instrument suite in BOTH directions. Each box publishes its own launch artifacts to <out-root>/_provenance/<role>/ on the share; adjudication runs on the LOCAL box over the share-collected archives once BOTH boxes are done. *** TENANCY CLASS: NON-EXCLUSIVE, RESULT-SAFE (sims-denominated; no equal-time gate, no burn-in, no timing bar; outcomes are bit-identical under co-tenancy and at any W). The only hard resource check is RAM. *** BAND PICKED BY THE ALL-BRANCHES SWEEP (147 refs = 127 refs/heads + 20 refs/remotes, 808 registry-and-claim files, 2026-08-27), re-verified immediately before this append: EVERY mention of any band at or above 152e9 on any ref is round 2's OWN, and a direct ^15[3-9]000000000, row-start grep over every ref's registry returned ZERO hits. 152e9 SPENT by round 2; 151e9 by round 1; 150e9 by D2 attempt 4; 149e9 RETIRED; 146e9 skipped as soft-reserved by track_d1_fair_rebase. *** NOT AUTHORIZED TO LAUNCH AT CLAIM TIME: the BAND_CLAIMED executor sentinel is deliberately NOT created, and run_cells.sh refuses every real cell without it. Claiming this row protects against a concurrent-session band race; it does not arm the launcher.\""
+}
