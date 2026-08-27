@@ -1,0 +1,8 @@
+BAND_CLAIMED — invasion_screen_r3_prep, band 153000000000. Dropped 2026-08-27.
+(a)+(c) OWNER verbatim "fund that shit" (round-3 menu: A/C fine ladders + joint A+C cells);
+W_LOCAL=14 frozen per owner "limit local to w14 starting at 11am" (assignment recomputed:
+C local, A+J laptop, round wall ~4.98h, 171.5 core-h). (b) band 153e9 (sweep 147 refs/808
+files, re-verified at append). (d) arbiter OFF. (e) tenancy: result-safe class both boxes.
+Pre-drop: merge 879bbc0f; 217/217 tests; SELFTEST GREEN; both dry-runs rc=0; laptop synced
+879bbc0f, wheel verified; BOTH smokes rc=0 first try (local C_MID 12:34Z, laptop J_HIGH).
+IS-A1 folded into the frozen adjudicator (cross-box rev canonicalization, both-ways tested).
