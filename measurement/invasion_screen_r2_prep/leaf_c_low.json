@@ -1,0 +1,15 @@
+{
+  "v29_meeple_curve": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+  ],
+  "invasion_alpha": 0.0,
+  "invasion_alpha_cap": 0.0,
+  "invasion_gamma": 0.08
+}

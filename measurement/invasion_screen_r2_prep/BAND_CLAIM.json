@@ -1,0 +1,120 @@
+{
+  "_banner": "FINALIZED at freeze, 2026-08-27. The orchestrator appends `_csv_row` VERBATIM to governance/BAND_REGISTRY.csv in the STAMPING commit (the r1 / rung2 / carcasum_arb / h2h_22016 / d2r3 / d2r4 / invasion-r1 precedent), and RE-RUNS the all-branches sweep immediately before the append, aborting if 152000000000 has appeared anywhere in the interim. ⛔ APPENDING THE ROW DOES NOT ARM THE LAUNCHER: `BAND_CLAIMED` is deliberately NOT created at freeze and run_cells.sh refuses every real cell without it.",
+  "band_seed_start": 152000000000,
+  "band_seed_end_primary": 152000002799,
+  "n_decks_total": 2800,
+  "n_games_total": 5600,
+  "seatings_per_deck": 2,
+  "cells_sharing_this_band": 7,
+  "crn": "DECK-LEVEL ONLY, WITHIN EACH CELL. Each cell plays its own 400 decks at BOTH seatings and its primary statistic is its OWN internal deck-paired margin D(d) = (diff(a_seat=0) + diff(a_seat=1))/2, adjudicated AGAINST ZERO. ⚠️ THERE IS NO CRN ACROSS CELLS: the seven ranges are DISJOINT, so the pre-registered within-shape low-vs-high contrast (READ_RULE.md §4.5) is an UNMATCHED difference of two independent samples with a root-sum-square SE. That is a real, named power cost and it is stated in the pair rather than discovered at adjudication -- see `disjoint_ranges_rationale`.",
+  "cell_allocation": {
+    "A_LOW": {
+      "seeds": "152000000000..152000000399",
+      "decks": 400,
+      "games": 800,
+      "knob": "invasion_beta=0.04",
+      "cand_leaf": "f8c0f04092734f9e",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "the plain champion",
+      "box": "local"
+    },
+    "A_HIGH": {
+      "seeds": "152000000400..152000000799",
+      "decks": 400,
+      "games": 800,
+      "knob": "invasion_beta=0.36",
+      "cand_leaf": "f6ce81145cbd5102",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "the plain champion",
+      "box": "local"
+    },
+    "B_LOW": {
+      "seeds": "152000000800..152000001199",
+      "decks": 400,
+      "games": 800,
+      "knob": "invasion_alpha=0.03 @ cap 11.0",
+      "cand_leaf": "f5b7a26216794290",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "the plain champion",
+      "box": "local"
+    },
+    "B_HIGH": {
+      "seeds": "152000001200..152000001599",
+      "decks": 400,
+      "games": 800,
+      "knob": "invasion_alpha=0.27 @ cap 11.0",
+      "cand_leaf": "1a42effad7066c0b",
+      "opp_leaf": "a36d2e15a3b3d71d",
+      "opponent": "the plain champion",
+      "box": "local"
+    },
+    "C_LOW": {
+      "seeds": "152000001600..152000001999",
+      "decks": 400,
+      "games": 800,
+      "knob": "invasion_gamma=0.08",
+      "cand_leaf": "a6ab04dbb69ad29e",
+      "opp_leaf": "42adadc988784b44",
+      "opponent": "⭐ THE SHAPE-B AGENT -- champion curve125 + invasion_alpha 0.09 @ cap 11.0, bit-for-bit round 1's B_MID candidate",
+      "box": "laptop"
+    },
+    "C_MID": {
+      "seeds": "152000002000..152000002399",
+      "decks": 400,
+      "games": 800,
+      "knob": "invasion_gamma=0.23",
+      "cand_leaf": "897c21aca11b6fbd",
+      "opp_leaf": "42adadc988784b44",
+      "opponent": "⭐ THE SHAPE-B AGENT",
+      "box": "laptop"
+    },
+    "C_HIGH": {
+      "seeds": "152000002400..152000002799",
+      "decks": 400,
+      "games": 800,
+      "knob": "invasion_gamma=0.69",
+      "cand_leaf": "df34cb874fea6273",
+      "opp_leaf": "42adadc988784b44",
+      "opponent": "⭐ THE SHAPE-B AGENT",
+      "box": "laptop"
+    }
+  },
+  "no_ident_cell": "⛔ ROUND 2 SPENDS NO SEEDS ON AN IDENTITY CELL. Round 1's IDENT (400 games on band 151000000000) PASSED on every conjunct -- |z| 0.9624 <= 2.0, candidate hash == opponent hash == the champion pin, n_failed 0, leaf diff EMPTY -- and round 2 INHERITS that proof rather than re-buying it for ~15 core-h at round-2 cell size. ⛔ THE INHERITANCE IS CONDITIONAL AND THE CONDITION IS MECHANISED: G-WHEEL-SAME (READ_RULE.md §3) refuses the round unless every manifest's carc_rs_binary_sha equals a9ac686bca1417f9, the wheel round 1's IDENT was measured on. A CHANGED WHEEL RE-OWES AN IDENT CELL, and the launcher asserts the same thing at pre-flight, ON EACH BOX, so a wrong wheel is caught before any game rather than at adjudication. ⭐ THE SHA IS BOX-LOCAL *BY BUILD* -- two boxes COMPILING identical source produce different bytes -- WHICH IS EXACTLY WHY THE TWO-BOX ROUND SHIPS A WHEEL FILE INSTEAD OF BUILDING ONE: the same .whl is scp'd and pip-installed on both boxes, so the sha is identical on every cell regardless of host and this gate passes on both. A laptop-local `maturin build` produces a different sha and the gate REFUSES, correctly.",
+  "shape_d_not_run": "Shape D (invasion_delta_farm) is NOT RUN in round 2 and spends no seeds. Its round-1 mid read D -0.291 / z -0.490 -- a bounded null below zero -- and DESIGN §3.2(v)'s measured one-ply sibling-delta for T_D is ~0 at 94.6% of the census positions, so a D reading is the least informative of the family about its own mechanism. The owner's funded menu named the B bracket, the A bracket and the C-vs-B-agent cells; D was not on it. No branch may say anything about shape D at any weight other than round 1's mid.",
+  "disjoint_ranges_rationale": "DELIBERATE, and it costs the PRIMARY read nothing. Each cell's primary statistic is its own internal deck-paired margin against zero, which is fully CRN'd WITHIN the cell (same deck, both seatings) and needs nothing from a sibling. ⚠️ WHAT IT DOES COST IS THE §4.5 CONTRAST: had the two cells of a shape shared one 400-deck set, the low-vs-high difference would have been deck-matched and its SE roughly halved. The funded design named 7 x 400 disjoint decks and this claim honours it; the price is paid explicitly in READ_RULE.md §4.5, which computes SE(Delta) = sqrt(SE_low^2 + SE_high^2) and states that the contrast resolves at 2 sigma only for |Delta| >= ~1.7 pts/deck at round 1's realized dispersion. ⛔ AND NO CROSS-CELL CONTRAST IS A BRANCH INPUT: each cell is adjudicated against ZERO, never against a sibling, and the §4.5 contrast is a SHAPE reading and a round-3 input, never a promotion input.",
+  "smoke_range_disjoint": "⭐ ONE DESIGN.md §9 SMOKE PER BOX, each on its OWN disjoint throwaway sub-range, both placed deliberately far above every cell range so no arithmetic slip can reach a real deck: LAPTOP C_MID @ 152999999000..152999999007, LOCAL B_LOW @ 152999999100..152999999107 (8 decks / 16 games each). Both are DISCARDED, never pooled, never claimed, never adjudicated as a result. A single-box round could smoke once; a TWO-box round cannot -- each box has its own wheel install, repo checkout, share mount and W, and the leg exists to prove the plumbing ON THE MACHINE THAT WILL SPEND THE DECKS. ⭐ THE LAPTOP'S IS THE LOAD-BEARING ONE: round 2's most-plumbing config is a C cell (the shape-B env regime, a non-champion OPPONENT leaf, the explicit-zero neutralisation on the candidate side, a THREE-key leaf diff and two-sided hash pins -- all machinery that has never emitted a manifest on ANY box), and the laptop is the box that will run it; C_MID rather than C_LOW/C_HIGH because the interior rung is the one §4.7's noise-signature rule reads. The local leg is a cheap re-confirmation of the launcher and wheel install on a box round 1 already proved. EACH leg ENDS by running the pair's own adjudicator against its own emitted smoke archive and requires failures confined to a pinned allowed set. ⭐ The laptop leg additionally produces the FIRST OBSERVATION of BOTH unmeasured cost inputs -- shape C's per-move cost and the laptop's per-game ratio -- before any deck is spent.",
+  "no_topup_reserved": "DELIBERATE. READ_RULE.md §5 carries NO top-up branch. A bounded null IS a licensed and expected outcome of a screen, not a failure state to rescue, and an n-extension decided after seeing the numbers is the thing pre-registration exists to prevent.",
+  "all_branches_sweep": {
+    "procedure": "measurement/carcasum_arb_challenge_prep/DESIGN.md §4.1, as run by track_d2r4_prep §5 and invasion_screen_prep §5.2: for EVERY ref in refs/heads and refs/remotes, read that ref's OWN governance/BAND_REGISTRY.csv AND every measurement/**/BAND_CLAIM*.json it carries, then take the lowest integer clear of everything found anywhere. A registry check scoped to the checked-out branch is blind to an unmerged sibling freeze branch -- that is how 143e9 and 144e9 were double-claimed.",
+    "run_date": "2026-08-27",
+    "refs_swept": 143,
+    "refs_breakdown": "125 refs/heads + 18 refs/remotes",
+    "registry_and_claim_files_read": 723,
+    "findings": {
+      "143000000000": "claimed -- carcasum_rung2_prep",
+      "144000000000": "retired -- track_d2r2_prep (D2 attempt 2's void)",
+      "145000000000": "claimed -- track_d1_fair_rebase (PRIMARY)",
+      "146000000000": "SOFT-RESERVED by track_d1_fair_rebase for its own n=800 extension -- SKIPPED, on exactly the reasoning carcasum_arb_challenge_prep, h2h_22016_prep, track_d2r3_prep, track_d2r4_prep and invasion_screen_prep all used: by the letter it is unclaimed, but a sibling track has spent a committed paragraph earmarking it, and taking it would manufacture the exact collision the corrected procedure exists to prevent",
+      "147000000000": "claimed -- carcasum_arb_challenge_prep",
+      "148000000000": "claimed (+ top-up to 148000000699) -- h2h_22016_prep",
+      "149000000000": "RETIRED -- D2 attempt 3's burn-in-abort void; real records exist",
+      "150000000000": "SPENT -- D2 attempt 4, adjudicated D2-BOUNDED-NULL, decision_influenced=yes",
+      "151000000000": "SPENT -- invasion-screen ROUND 1, adjudicated MIXED (B BRACKET z 1.27), decision_influenced=yes. ⛔ THIS ROUND'S OWN PREDECESSOR: round 2 must never pool with it (CL-068).",
+      "152000000000": "FREE EVERYWHERE -- verified two ways: a raw-mention sweep over every ref's registry-and-claim files found no mention of any band at or above 152e9, and a direct row-start grep for 15[2-9]000000000 over every ref's registry returned zero hits"
+    }
+  },
+  "cross_band_discipline": "Per CL-068, band identity is LOAD-BEARING. NEVER pool this pair's numbers with any other band, and NEVER quote a pooled estimate. ⛔ THE SPECIFIC HAZARD THIS ROUND CARRIES: round 1's mids (band 151000000000) are the natural interior points of A's and B's ladders, and the temptation to read a three-point ladder across two bands is exactly the error CL-068 measured -- 1.8-2.2x over-dispersion on cross-band contrasts, in BOTH the elo and the deck-paired-margin statistics, with an identity control exonerating the harness and the 'different decks' explanation arithmetically excluded because the per-deck SEM already prices the deck draw. READ_RULE.md §4.5b therefore admits the r1 mids as a DESCRIPTIVE OVERLAY ONLY: plotted on the ladder, never pooled, never z-combined, never a branch input. The scaling question is answered WITHIN round 2 by the pre-registered low-vs-high contrast. 152000000000 retires from confirmatory use once it has influenced a decision.",
+  "release_if_never_launched": "If no cell is ever launched, 152000000000 is RELEASED under the BAND_REGISTRY.csv RELEASE-IF-NEVER-LAUNCHED clause -- a band is spent only once REAL RECORDS exist on it. ⚠️ THE CLAUSE DOES NOT SURVIVE FIRST CONTACT: once ANY real record exists, including under a round that voids on G-WHEEL-SAME, the band is SPENT (the 149e9 precedent -- a fifth of one cell was enough).",
+  "_csv_row_columns": "band_seed_start,label,tier,status,claimed_date,decision_influenced,evidence_or_claim,notes",
+  "_csv_row": "152000000000,\"INVASION-RISK TERM FAMILY, ROUND-2 BRACKET AT 2752: SEVEN deck-paired cells on ONE band, each on its OWN DISJOINT 400-deck range (2800 decks / 5600 games, no reuse). Budget k4x688 = 2752 total sims on BOTH sides, rust BOTH sides (the family exists only in rust), fixed_v1 + CARCASSONNE_FIX_R9=1, exact-K<=2 MARGINALIZED, c_puct 1.5 / tau_p 5 / float / visits, TIE-ARBITER OFF ON BOTH SIDES. FOUR cells bracket the OFFENCE shapes against the PLAIN CHAMPION at x1/3 and x3 of round 1's frozen mids: A_LOW invasion_beta 0.04 (leaf f8c0f04092734f9e), A_HIGH invasion_beta 0.36 (f6ce81145cbd5102), B_LOW invasion_alpha 0.03 @ cap 11.0 (f5b7a26216794290), B_HIGH invasion_alpha 0.27 @ cap 11.0 (1a42effad7066c0b). THREE cells screen the DEFENCE shape C at gamma 0.08 / 0.23 / 0.69 (a6ab04dbb69ad29e / 897c21aca11b6fbd / df34cb874fea6273) AGAINST A SHAPE-B AGENT, NOT the champion: the opponent leaf is the champion curve125 PLUS invasion_alpha 0.09 @ cap 11.0 (42adadc988784b44, bit-for-bit round 1's B_MID candidate), set by exporting CARCASSONNE_INVASION_ALPHA/_CAP so the harness's own _curve125_leaf_cfg() resolves to it, with the candidate taking them back off via EXPLICIT ZEROS in its --cand-leaf-json. SHAPES.md section 3 requires this: shape C is DEFENCE-ONLY and its vs-champion null is expected by construction. NO IDENT CELL: round 2 inherits round 1's PASS, gated by G-WHEEL-SAME on carc_rs_binary_sha a9ac686bca1417f9; a changed wheel or a different box re-owes one. SHAPE D IS NOT RUN. PRIMARY = each cell's OWN deck-paired margin adjudicated AGAINST ZERO at its own realized SE (BRACKET >= +1 sigma, PROMOTE >= +2 sigma), plus a pre-registered WITHIN-BAND unmatched low-vs-high contrast per shape. Round 1's mids are a DESCRIPTIVE OVERLAY ONLY -- different band, never pooled (CL-068). A C reading NEVER enters the four-link adoption chain: its opponent is not the champion of record.\",claim,claimed,2026-08-27,pending,measurement/invasion_screen_r2_prep/DESIGN.md,\"Seeds 152000000000..152000002799 = 2800 decks x 2 seatings = 5600 games across SEVEN cells, 400 decks / 800 games each: A_LOW 152000000000..152000000399; A_HIGH ..000400..000799; B_LOW ..000800..001199; B_HIGH ..001200..001599; C_LOW ..001600..001999; C_MID ..002000..002399; C_HIGH ..002400..002799. DISJOINT BY DESIGN -- each cell's primary statistic is its own internal deck-paired margin, so shared decks buy the primary read nothing; the cost is that the pre-registered low-vs-high contrast is UNMATCHED (root-sum-square SE, resolving at 2 sigma only for |Delta| >= ~1.7 pts/deck at round 1's realized dispersion), and READ_RULE.md section 4.5 states that price before any number. NO TOP-UP RANGE RESERVED. The DESIGN.md section 9 smoke uses a disjoint throwaway sub-range 152999999000..152999999007 (8 decks, C_MID config -- round 2's most-plumbing cell), discarded, never pooled, never itself claimed; the leg ENDS by running the pair's own adjudicator against the emitted smoke archive. *** THE WEIGHTS ARE NOT RE-PICKED: every one is x1/3 or x3 of a round-1 mid, and round 1 NAMED all six points in its own DESIGN section 3.4 bracket table BEFORE it had an answer. The derivation constants are unchanged (G = 1.76 leaf points, M_A 6.0 / M_B 8.0 / M_C 3.03 / M_D 6.0, target 0.40 x G = 0.704, invasion_alpha_cap 11.0 = the Stage A census median invaded-feature value). *** COST ~155-177 core-h across BOTH boxes / ~3.7-4.7 h ROUND wall, built on round 1's REALIZED per-move costs rather than a model; TWO inputs are unmeasured and both are carried as stated envelopes -- shape C's per-move cost (no gamma cell has ever run) and the laptop's per-game ratio for a rust-both-sides cell (assumed 1.4x). *** TWO-BOX EXECUTION, owner-directed 2026-08-27 ('get round 2 on both local and laptop'): the CELL->BOX ASSIGNMENT IS FROZEN IN THE PREREG and gated by G-HOST -- LOCAL runs A_LOW A_HIGH B_LOW B_HIGH, LAPTOP runs C_LOW C_MID C_HIGH, WHOLE CELLS PER BOX, both at W=22. SHAPES ARE ASSIGNED WHOLE so every pre-registered statistic is computed WITHIN one box and the round never relies on cross-box float identity. The SAME WHEEL FILE is installed on both boxes (never a laptop rebuild: a different sha makes G-WHEEL-SAME refuse, correctly); the repo is bundle-synced to the laptop and all seven cells must report ONE code_rev; each box publishes its own launch artifacts to <out-root>/_provenance/<role>/ on the share and G-REV/G-BLIND/G-WHEEL read each cell against its own box's; one SS9 smoke per box (laptop C_MID @ 152999999000, local B_LOW @ 152999999100) on disjoint throwaway ranges; adjudication runs on the LOCAL box over the share-collected archives once BOTH boxes are done. Cost ~165 core-h across both boxes, ROUND WALL ~4.1 h CONCURRENT (the MAX, not the sum; single-box local would be ~6.3 h). *** TENANCY CLASS: NON-EXCLUSIVE, RESULT-SAFE (sims-denominated; no equal-time gate, no burn-in, no timing bar; outcomes are bit-identical under co-tenancy and at any W). The only hard resource check is RAM. ⚠️ BUT THE WHEEL IS NOT FREE: G-WHEEL-SAME keys on carc_rs_binary_sha, which is box-local BY BUILD -- hence the shipped wheel FILE rather than a per-box rebuild. *** BAND PICKED BY THE ALL-BRANCHES SWEEP (143 refs / 723 files, 2026-08-27), re-verified immediately before this append; 146000000000 skipped as soft-reserved by track_d1_fair_rebase; 149e9 retired; 150e9 and 151e9 SPENT. *** NOT AUTHORIZED TO LAUNCH AT CLAIM TIME beyond the owner's funding of the cell menu: the BAND_CLAIMED executor sentinel is deliberately NOT created, and run_cells.sh refuses every real cell without it. Claiming this row protects against a concurrent-session band race; it does not arm the launcher.\"",
+  "authorization_state_at_claim": {
+    "funding": "GIVEN -- the owner funded the menu verbatim ('fund them all', 2026-08-27) in response to the offered B bracket + A bracket + C-vs-B-agent. DESIGN.md §0's sign-off table records it against items (a) and (c).",
+    "band_row": "ORCHESTRATOR-PROCEDURAL -- appended in the stamping commit, after re-running the sweep.",
+    "band_claimed_sentinel": "⛔ DELIBERATELY NOT CREATED. The interlock is unchanged from the house pattern and is not a formality: run_cells.sh refuses every real cell without it.",
+    "smoke": "NOT RUN BY THIS BUILD, and now owed PER BOX (laptop C_MID @ 152999999000, local B_LOW @ 152999999100). The orchestrator runs each on its own machine post-merge.",
+    "pinned_src_rev": "NOT WRITTEN BY THIS BUILD, and now owed PER BOX -- each must equal `git rev-parse HEAD` on ITS OWN box at launch, and a commit cannot contain its own sha. The two must be EQUAL, which the git-bundle sync guarantees and the adjudicator's one-code_rev-across-both-boxes check verifies.",
+    "two_box": "DIRECTED -- owner, 2026-08-27, verbatim 'get round 2 on both local and laptop'. Folded into the freeze BEFORE the blind commit, so this is NOT an amendment: no games had run and no blind commit existed."
+  },
+  "two_box_execution": "⭐ OWNER-DIRECTED 2026-08-27, verbatim 'get round 2 on both local and laptop'. THE CELL->BOX ASSIGNMENT IS FROZEN IN THE PREREG (screen_lib.CellSpec.box), WHOLE CELLS PER BOX, and G-HOST enforces it against the emitted manifest: LOCAL runs A_LOW A_HIGH B_LOW B_HIGH (W=22, out-root /mnt/c/carc-shared/invasion_screen_r2_20260827); LAPTOP runs C_LOW C_MID C_HIGH (W=22 per h2h_22016_prep's W_LAPTOP, out-root /mnt/carc-shared/invasion_screen_r2_20260827). *** SHAPES ARE ASSIGNED WHOLE, and that is the load-bearing property: every pre-registered statistic -- READ_RULE SS4.5's low-vs-high contrast for all three shapes, SS4.7's noise-signature check across C_LOW/C_MID/C_HIGH, and every cell's own deck-paired margin -- is computed WITHIN ONE BOX. The round therefore never relies on cross-box float identity, which this program HAS been bitten by (the Xeon was re-retired 2026-08-02 because AVX-512 makes the G0 determinism check FAIL by default). *** THE SAME WHEEL FILE is installed on both boxes (scp + pip install, NEVER a laptop-local rebuild), so carc_rs_binary_sha is identical on every cell regardless of host and G-WHEEL-SAME passes on both; a rebuild produces a different sha and the gate REFUSES, correctly. *** THE REPO IS BUNDLE-SYNCED to the laptop (it cannot reach GitHub) and the adjudicator checks that all seven cells report ONE code_rev across both machines. *** Each box writes its own PINNED_SRC_REV / SRC_CLEAN.jsonl / BLIND_PROOF.json / WHEEL_PROBE.json and publishes them to <out-root>/_provenance/<role>/ on the share, so G-REV, G-BLIND and G-WHEEL evaluate every cell against ITS OWN BOX's artifacts. *** ONE SS9 SMOKE PER BOX on disjoint throwaway ranges: laptop C_MID @ 152999999000 (the load-bearing one -- the C cells are simultaneously round 2's new machinery and the laptop's first sight of it), local B_LOW @ 152999999100. *** ADJUDICATION RUNS ON THE LOCAL BOX over the share-collected archives, once BOTH boxes are done. *** THE TWO BOXES RUN CONCURRENTLY, so the round's wall clock is the MAX over them (~4.1 h), not the sum; a single-box local run would be ~6.3 h.",
+  "cost": "~165 core-h ACROSS BOTH BOXES (local 74.4 / laptop 90.7), ROUND WALL ~4.1 h concurrent; envelope 155-177 core-h / 3.7-4.7 h. In local-equivalent compute the round is 139.2 core-h. Built on round 1's REALIZED per-move costs, not a model: the arithmetic reproduces round 1's three arms within ~1% and screen_lib.sanity_check() asserts that reproduction to 3%. TWO inputs are UNMEASURED and both are carried as stated envelopes: shape C's per-move cost (no gamma cell has ever run; assumed 686.8 ms/move inside [626.2, 763.2]) and the laptop's per-game ratio for a rust-both-sides cell (assumed 1.4x inside [1.3, 1.5]; the nearest datum, track_d1_fair_rebase's +73%, is a PYTHON-backend cell and does not transfer). Both get their first observation from the SS9 laptop smoke, before any deck is spent, and both are REPORTED at close-out. Neither moves a bar: the pair is sims-denominated and no gate reads a clock."
+}
