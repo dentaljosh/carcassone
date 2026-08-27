@@ -1,0 +1,196 @@
+{
+ "profile": "fixed_v1",
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "budget": 4000000,
+ "n_positions": 5,
+ "checks": 15,
+ "skipped": 0,
+ "mismatches": [],
+ "positions": [
+  {
+   "game": "1785982194_705585.json",
+   "ply": 138,
+   "k": 2,
+   "stratum": "diffgate",
+   "cells": {
+    "clairvoyant+ab": {
+     "status": "OK",
+     "py_s": 5.9987,
+     "rs_s": 0.2911,
+     "speedup": 20.61,
+     "nodes": 1493,
+     "value": -7.0,
+     "n_root_actions": 32
+    },
+    "clairvoyant": {
+     "status": "OK",
+     "py_s": 22.6316,
+     "rs_s": 1.1429,
+     "speedup": 19.8,
+     "nodes": 5126,
+     "value": -7.0,
+     "n_root_actions": 32
+    },
+    "marginalized": {
+     "status": "OK",
+     "py_s": 22.1036,
+     "rs_s": 1.1856,
+     "speedup": 18.64,
+     "nodes": 5126,
+     "value": -7.0,
+     "n_root_actions": 32
+    }
+   },
+   "desync": false
+  },
+  {
+   "game": "1785984310_1698417952.json",
+   "ply": 138,
+   "k": 2,
+   "stratum": "diffgate",
+   "cells": {
+    "clairvoyant+ab": {
+     "status": "OK",
+     "py_s": 3.1439,
+     "rs_s": 0.1426,
+     "speedup": 22.05,
+     "nodes": 633,
+     "value": -6.0,
+     "n_root_actions": 56
+    },
+    "clairvoyant": {
+     "status": "OK",
+     "py_s": 3.002,
+     "rs_s": 0.1467,
+     "speedup": 20.47,
+     "nodes": 633,
+     "value": -6.0,
+     "n_root_actions": 56
+    },
+    "marginalized": {
+     "status": "OK",
+     "py_s": 3.014,
+     "rs_s": 0.1385,
+     "speedup": 21.76,
+     "nodes": 633,
+     "value": -6.0,
+     "n_root_actions": 56
+    }
+   },
+   "desync": false
+  },
+  {
+   "game": "1785986044_1911511187.json",
+   "ply": 138,
+   "k": 2,
+   "stratum": "diffgate",
+   "cells": {
+    "clairvoyant+ab": {
+     "status": "OK",
+     "py_s": 6.076,
+     "rs_s": 0.2452,
+     "speedup": 24.78,
+     "nodes": 979,
+     "value": 44.0,
+     "n_root_actions": 44
+    },
+    "clairvoyant": {
+     "status": "OK",
+     "py_s": 5.6926,
+     "rs_s": 0.2356,
+     "speedup": 24.16,
+     "nodes": 979,
+     "value": 44.0,
+     "n_root_actions": 44
+    },
+    "marginalized": {
+     "status": "OK",
+     "py_s": 5.6935,
+     "rs_s": 0.239,
+     "speedup": 23.82,
+     "nodes": 979,
+     "value": 44.0,
+     "n_root_actions": 44
+    }
+   },
+   "desync": false
+  },
+  {
+   "game": "1786045035_338139.json",
+   "ply": 138,
+   "k": 2,
+   "stratum": "diffgate",
+   "cells": {
+    "clairvoyant+ab": {
+     "status": "OK",
+     "py_s": 1.8667,
+     "rs_s": 0.0869,
+     "speedup": 21.49,
+     "nodes": 554,
+     "value": -10.0,
+     "n_root_actions": 44
+    },
+    "clairvoyant": {
+     "status": "OK",
+     "py_s": 1.6991,
+     "rs_s": 0.0849,
+     "speedup": 20.01,
+     "nodes": 554,
+     "value": -10.0,
+     "n_root_actions": 44
+    },
+    "marginalized": {
+     "status": "OK",
+     "py_s": 1.6827,
+     "rs_s": 0.0869,
+     "speedup": 19.37,
+     "nodes": 554,
+     "value": -10.0,
+     "n_root_actions": 44
+    }
+   },
+   "desync": false
+  },
+  {
+   "game": "1786074812_935815.json",
+   "ply": 138,
+   "k": 2,
+   "stratum": "diffgate",
+   "cells": {
+    "clairvoyant+ab": {
+     "status": "OK",
+     "py_s": 19.5235,
+     "rs_s": 0.8118,
+     "speedup": 24.05,
+     "nodes": 1708,
+     "value": -12.0,
+     "n_root_actions": 48
+    },
+    "clairvoyant": {
+     "status": "OK",
+     "py_s": 19.1456,
+     "rs_s": 0.8053,
+     "speedup": 23.78,
+     "nodes": 1708,
+     "value": -12.0,
+     "n_root_actions": 48
+    },
+    "marginalized": {
+     "status": "OK",
+     "py_s": 19.034,
+     "rs_s": 0.7964,
+     "speedup": 23.9,
+     "nodes": 1708,
+     "value": -12.0,
+     "n_root_actions": 48
+    }
+   },
+   "desync": false
+  }
+ ],
+ "ok": true
+}
