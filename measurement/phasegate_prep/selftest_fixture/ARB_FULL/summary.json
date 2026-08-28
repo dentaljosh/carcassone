@@ -1,0 +1,22 @@
+{
+ "n": 20,
+ "n_failed": 0,
+ "n_paired": 10,
+ "paired_mean_margin": 2.403921111448823,
+ "paired_z": 4.259372447599773,
+ "winrate": 0.55,
+ "elo": 34.860070287560106,
+ "tiearb_games": 20,
+ "tiearb_fired_plies_total": 178,
+ "tiearb_fired_early_total": 60,
+ "tiearb_fired_mid_total": 55,
+ "tiearb_fired_late_total": 63,
+ "tiearb_fired_by_phase_sum": 178,
+ "tiearb_pickchanges_total": 44,
+ "tiearb_errors_total": 0,
+ "tiearb_error_rate_on_fired": 0.0,
+ "tiearb_first_error": null,
+ "tiearb_phase_gates": [
+  "all"
+ ]
+}

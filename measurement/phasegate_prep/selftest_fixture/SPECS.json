@@ -1,0 +1,42 @@
+[
+ {
+  "name": "IDENT",
+  "role": "local",
+  "phase_gate": "none",
+  "arb_enabled": true,
+  "seed_start": 154999999900,
+  "n_decks": 6,
+  "pool_key": "IDENT",
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a cell"
+ },
+ {
+  "name": "ARB_FULL",
+  "role": "laptop",
+  "phase_gate": "all",
+  "arb_enabled": true,
+  "seed_start": 154999999000,
+  "n_decks": 10,
+  "pool_key": "ARB_FULL",
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a cell"
+ },
+ {
+  "name": "ARB_EARLY_L",
+  "role": "local",
+  "phase_gate": "early",
+  "arb_enabled": true,
+  "seed_start": 154999999000,
+  "n_decks": 8,
+  "pool_key": "ARB_EARLY",
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a cell"
+ },
+ {
+  "name": "ARB_EARLY_R",
+  "role": "laptop",
+  "phase_gate": "early",
+  "arb_enabled": true,
+  "seed_start": 154999999008,
+  "n_decks": 4,
+  "pool_key": "ARB_EARLY",
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a cell"
+ }
+]

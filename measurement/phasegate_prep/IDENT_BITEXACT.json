@@ -1,0 +1,118 @@
+{
+  "what": "IDENT-BITEXACT — DESIGN.md §7.5 tests 1-2 / §8 checklist item 5 (A HARD ABORT).",
+  "verdict": "PASS",
+  "utc": "2026-08-28T17:29:55+00:00",
+  "code_rev_at_build": "530d44df4474ee85793a9dd0f15cacd0f40771a9",
+  "new_wheel": {
+    "so_sha256": "eff20530854d914a42881fd5ca4d31b9bf700351c52c667d2f937dbcd53a6a38",
+    "carc_rs_binary_sha": "eff20530854d914a",
+    "note": "⚠️ BOX-LOCAL (local 5900XT box, rustc 1.96.0). Two boxes compiling identical source produce different bytes — this value proves a REBUILD on THIS box, never cross-box agreement (carc_rs_build is the cross-box witness)."
+  },
+  "method": "20 seeded throwaway decks (9000000000xx — ⛔ no claimed band), whole games, k_dets=2 sims=64 tiearb_b=2 exact_endgame=off. Each arm was played under the PRE-change wheel (the venv's installed carc_rs) AND the POST-change wheel (built from this worktree, installed to a --target dir, ⛔ never over the main tree's wheel). Identity is asserted on the ACTION SEQUENCES and the final scores. The pre-change wheel cannot accept tiearb_phase_gate at all, so the two identity claims are CROSS-WHEEL by construction and cannot be produced inside one process.",
+  "claims": {
+    "new.all == old.arb": "gate=all IS today's ungated arbiter, bit for bit",
+    "new.none == old.champ": "gate=none IS the unmodified champion, bit for bit",
+    "new.all == new.arb": "within-wheel control (an explicit default is the default)",
+    "new.none == new.champ": "within-wheel control",
+    "old.champ == new.champ": "the rebuild moved nothing off the arbiter surface",
+    "new.early != new.all": "POSITIVE CONTROL — the gate is not a no-op"
+  },
+  "legs": {
+    "old.champ": {
+      "action_sha256": "49822b1dd032412629d4e52c97c766a59b24c848320fc6524fa1e72d13e58fde",
+      "fired_plies_total": 0,
+      "carc_rs": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+      "config": {
+        "games": 20,
+        "k_dets": 2,
+        "max_plies": 400,
+        "seed": 101,
+        "sims": 64,
+        "tiearb_b": 2
+      }
+    },
+    "old.arb": {
+      "action_sha256": "a930a4f1701c954a8326a1850da282e5419bab02df9c1b55bb657fd551118abb",
+      "fired_plies_total": 698,
+      "carc_rs": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+      "config": {
+        "games": 20,
+        "k_dets": 2,
+        "max_plies": 400,
+        "seed": 101,
+        "sims": 64,
+        "tiearb_b": 2
+      }
+    },
+    "new.champ": {
+      "action_sha256": "49822b1dd032412629d4e52c97c766a59b24c848320fc6524fa1e72d13e58fde",
+      "fired_plies_total": 0,
+      "carc_rs": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/newsp/carc_rs/__init__.py",
+      "config": {
+        "games": 20,
+        "k_dets": 2,
+        "max_plies": 400,
+        "seed": 101,
+        "sims": 64,
+        "tiearb_b": 2
+      }
+    },
+    "new.arb": {
+      "action_sha256": "a930a4f1701c954a8326a1850da282e5419bab02df9c1b55bb657fd551118abb",
+      "fired_plies_total": 698,
+      "carc_rs": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/newsp/carc_rs/__init__.py",
+      "config": {
+        "games": 20,
+        "k_dets": 2,
+        "max_plies": 400,
+        "seed": 101,
+        "sims": 64,
+        "tiearb_b": 2
+      }
+    },
+    "new.all": {
+      "action_sha256": "a930a4f1701c954a8326a1850da282e5419bab02df9c1b55bb657fd551118abb",
+      "fired_plies_total": 698,
+      "carc_rs": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/newsp/carc_rs/__init__.py",
+      "config": {
+        "games": 20,
+        "k_dets": 2,
+        "max_plies": 400,
+        "seed": 101,
+        "sims": 64,
+        "tiearb_b": 2
+      }
+    },
+    "new.none": {
+      "action_sha256": "49822b1dd032412629d4e52c97c766a59b24c848320fc6524fa1e72d13e58fde",
+      "fired_plies_total": 0,
+      "carc_rs": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/newsp/carc_rs/__init__.py",
+      "config": {
+        "games": 20,
+        "k_dets": 2,
+        "max_plies": 400,
+        "seed": 101,
+        "sims": 64,
+        "tiearb_b": 2
+      }
+    },
+    "new.early": {
+      "action_sha256": "204d9e7ae6d862841d293919e0565f90b10bf83caf3ffe73317e48b6bc939e2c",
+      "fired_plies_total": 242,
+      "carc_rs": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/newsp/carc_rs/__init__.py",
+      "config": {
+        "games": 20,
+        "k_dets": 2,
+        "max_plies": 400,
+        "seed": 101,
+        "sims": 64,
+        "tiearb_b": 2
+      }
+    }
+  },
+  "observed_fired_share_at_fixture_knobs": {
+    "early_over_all": 0.3467048710601719,
+    "⛔": "NOT a measurement of DESIGN §6.2's proxy. Fixture knobs (B=2, 64 sims, k_dets=2), 20 throwaway decks, no band, and the arbiter's arm set depends on the budget. The real number comes from the round's own ARB_FULL cell and, before it, the §9 smoke."
+  },
+  "governance": "⛔ NOTHING CLAIMED. No band, no results.csv row, no PRODUCTION.yaml change. ⚠️ The new wheel MOVES carc_rs_binary_sha, so the production arbiter's IDENT inheritance is RE-OWED (G-WHEEL-SAME: a changed wheel re-owes an IDENT cell). Recorded here; no governance file edited by this build."
+}
