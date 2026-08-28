@@ -1,0 +1,231 @@
+{
+ "built_from": [
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_001.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_002.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_003.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_004.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_005.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_006.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_007.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_008.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_009.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_010.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_011.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_012.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_013.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_014.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_015.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_016.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_017.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_018.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_019.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_020.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_021.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_022.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_023.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_024.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_laptop_025.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_001.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_002.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_003.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_004.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_005.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_006.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_007.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_008.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_009.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_010.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_011.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_012.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_013.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_014.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_015.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_016.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_017.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_018.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_019.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_020.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_021.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_022.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_023.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_024.jsonl",
+  "/mnt/c/carc-shared/e4_ply_pricing_20260827/rows_local_025.jsonl"
+ ],
+ "n_banked_rows": 290,
+ "n_divergent_total": 120,
+ "constants": {
+  "CONTROL_SEED": 20260828,
+  "N_CONTROL": 30,
+  "MATCH_STRATUM": "invasion",
+  "FULL_STRATA": [
+   "invasion",
+   "defense",
+   "farm_capture"
+  ]
+ },
+ "control_pool_n": 59,
+ "control_pool_deciles": {
+  "0": 1,
+  "1": 11,
+  "2": 8,
+  "3": 8,
+  "4": 4,
+  "5": 8,
+  "6": 6,
+  "7": 7,
+  "8": 5,
+  "9": 1
+ },
+ "control_quota": {
+  "0": 1,
+  "1": 6,
+  "2": 9,
+  "3": 6,
+  "4": 6,
+  "5": 1,
+  "7": 1
+ },
+ "control_shortfall_filled_by_nearest": 3,
+ "by_stratum": {
+  "control": {
+   "n": 30,
+   "n_games": 24,
+   "mean_ply_frac": 0.2969,
+   "mean_remaining_plies": 99.87,
+   "sum_remaining_plies": 2996,
+   "k_min": 21,
+   "k_max": 69,
+   "deciles": {
+    "0": 1,
+    "1": 7,
+    "2": 8,
+    "3": 8,
+    "4": 4,
+    "5": 1,
+    "7": 1
+   },
+   "profiles": {
+    "walled": 1,
+    "fixed_v1": 29
+   },
+   "phases": {
+    "tiles": 30
+   },
+   "actors": {
+    "0": 30
+   }
+  },
+  "defense": {
+   "n": 28,
+   "n_games": 20,
+   "mean_ply_frac": 0.4482,
+   "mean_remaining_plies": 78.29,
+   "sum_remaining_plies": 2192,
+   "k_min": 4,
+   "k_max": 64,
+   "deciles": {
+    "0": 1,
+    "1": 4,
+    "2": 7,
+    "4": 3,
+    "5": 5,
+    "6": 4,
+    "8": 3,
+    "9": 1
+   },
+   "profiles": {
+    "fixed_v1": 28
+   },
+   "phases": {
+    "tiles": 28
+   },
+   "actors": {
+    "1": 28
+   }
+  },
+  "farm_capture": {
+   "n": 12,
+   "n_games": 10,
+   "mean_ply_frac": 0.7883,
+   "mean_remaining_plies": 30,
+   "sum_remaining_plies": 360,
+   "k_min": 4,
+   "k_max": 24,
+   "deciles": {
+    "6": 3,
+    "7": 5,
+    "8": 2,
+    "9": 2
+   },
+   "profiles": {
+    "fixed_v1": 12
+   },
+   "phases": {
+    "meeples": 12
+   },
+   "actors": {
+    "0": 12
+   }
+  },
+  "invasion": {
+   "n": 21,
+   "n_games": 18,
+   "mean_ply_frac": 0.3336,
+   "mean_remaining_plies": 94.57,
+   "sum_remaining_plies": 1986,
+   "k_min": 17,
+   "k_max": 65,
+   "deciles": {
+    "0": 1,
+    "1": 4,
+    "2": 6,
+    "3": 4,
+    "4": 4,
+    "5": 1,
+    "7": 1
+   },
+   "profiles": {
+    "fixed_v1": 21
+   },
+   "phases": {
+    "tiles": 21
+   },
+   "actors": {
+    "0": 21
+   }
+  }
+ },
+ "total": {
+  "n": 91,
+  "n_games": 38,
+  "mean_ply_frac": 0.4167,
+  "mean_remaining_plies": 82.79,
+  "sum_remaining_plies": 7534,
+  "k_min": 4,
+  "k_max": 69,
+  "deciles": {
+   "0": 3,
+   "1": 15,
+   "2": 21,
+   "3": 12,
+   "4": 11,
+   "5": 7,
+   "6": 7,
+   "7": 7,
+   "8": 5,
+   "9": 3
+  },
+  "profiles": {
+   "walled": 1,
+   "fixed_v1": 90
+  },
+  "phases": {
+   "tiles": 79,
+   "meeples": 12
+  },
+  "actors": {
+   "0": 63,
+   "1": 28
+  }
+ }
+}

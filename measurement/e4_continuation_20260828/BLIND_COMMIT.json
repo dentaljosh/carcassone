@@ -1,0 +1,41 @@
+{
+ "blind_commit": "a59c3c1ae50af5d52cb373c8df0dfaa3dbe06274",
+ "branch": "e4-continuation-freeze",
+ "what": "E4 CONTINUATION PRICING \u2014 CRN-paired counterfactual continuations at the 91 divergent plies; the price is a REALIZED GAME OUTCOME, no judge anywhere.",
+ "frozen_before_any_continuation_outcome": true,
+ "disclosure": "PREREG \u00a70.1 / DEVIATIONS D-0: one control-ply unit (1787618319_251279 ply 4 world 0, delta +37) completed in a pre-freeze cost probe; its two invasion companions were killed mid-flight and produced no outcome.",
+ "owner_authorization_verbatim": "continuation . laptop w22. local w30",
+ "constants": {
+  "WORLD_SEED": 20260828,
+  "CONTINUATION_SEED": 0,
+  "M_WORLDS": 8,
+  "ARM_WALL_CAP_S": 600,
+  "CONTROL_SEED": 20260828,
+  "N_CONTROL": 30
+ },
+ "target_counts": {
+  "invasion": 21,
+  "defense": 28,
+  "farm_capture": 12,
+  "control": 30,
+  "total": 91,
+  "n_games": 38,
+  "sum_remaining_plies": 7534
+ },
+ "tests_passing": 34,
+ "file_sha256_16": {
+  "DEVIATIONS.md": "5db7c39b8f0a536b",
+  "PREREG.md": "e6b322d3cff1d47d",
+  "TARGETS.json": "6422f3d7bc663a40",
+  "aggregate.py": "0467e8a55ec3042d",
+  "build_continuation_targets.py": "5ce390dd1583f31e",
+  "continue_plies.py": "11c9aed9b0796b87",
+  "launch_laptop.sh": "60f8097a89db89c4",
+  "launch_local.sh": "4e9c530416d6b532",
+  "plan_boxes.py": "34b4eb232b3f9c17",
+  "run_continuation.sh": "af7b3e4c8ba0e044",
+  "sync_laptop.sh": "38723fd1b559cfaa",
+  "targets_continuation.jsonl": "5c371bdf9b027e34",
+  "test_continuation.py": "60be008d95e90453"
+ }
+}
