@@ -16,7 +16,14 @@ agent reads G-DAMAGE +2.25 pp on one deck range and +10.66 pp on the next, so
 28.7 %), at ~4 pts/game and under-powered at this n.
 AMENDED AGAIN 2026-08-28 (§4.2, FINAL iteration of this funding line): the HOLD
 fire, the TWO-RANGE REPLICATION CLAUSE, and G-DENY replacing G-DAMAGE as the
-damage gate. Re-smoke on ranges `900000030000..029` + `900000040000..029`.**
+damage gate. Re-smoke on ranges `900000030000..029` + `900000040000..029`.
+ROUND 3 RAN 2026-08-28 → ⛔ **PARKED. No arm is valid on either range and
+nothing replicates.** The control itself is the unmeasurable thing: over four
+disjoint 60-game ranges the champion-vs-champion denial base spans 5.1x and its
+took-all rate 7.0x. Pooled two-range denial uplift −0.17 ± 1.04 / −0.57 ± 1.00 —
+consistent with ZERO. Next mechanism, named not built: invasion QUALITY (victim
+selection by expected realised value), which needs search, not a rule —
+[SMOKE_READOUT.md](SMOKE_READOUT.md) §7.**
 Owner-funded 2026-08-28 ("start the build now") as the fallback
 [`measurement/s0_exploiter_prep/DESIGN.md`](../s0_exploiter_prep/DESIGN.md) §8.5
 pre-named and [`SMOKE_READOUT.md`](../s0_exploiter_prep/SMOKE_READOUT.md) §3

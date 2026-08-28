@@ -1,0 +1,24 @@
+{
+  "FM": {
+    "REPLICATED": false,
+    "a_valid": false,
+    "b_valid": false,
+    "pooled_deny_sem": 1.0371484645129854,
+    "pooled_deny_uplift": -0.16666666666666666,
+    "pooled_deny_z": -0.16069701915330747,
+    "pooled_n": 120,
+    "range_a": "FM_A",
+    "range_b": "FM_B"
+  },
+  "FMH": {
+    "REPLICATED": false,
+    "a_valid": false,
+    "b_valid": false,
+    "pooled_deny_sem": 0.9968200489978286,
+    "pooled_deny_uplift": -0.575,
+    "pooled_deny_z": -0.5768343048257173,
+    "pooled_n": 120,
+    "range_a": "FMH_A",
+    "range_b": "FMH_B"
+  }
+}

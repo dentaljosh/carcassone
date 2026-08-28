@@ -1,5 +1,19 @@
 # S0v2 SIGNATURE SMOKE — READ-OUT
 
+> # ⛔ PARKED 2026-08-28 after ROUND 3 — [§7](#7-round-3--hold--the-two-instrument-fixes-designmd-42--parked)
+>
+> **No arm is a valid ruler, on either fresh range, and nothing replicates.**
+> The park diagnosis is **not about the agent**: over four disjoint 60-game deck
+> ranges the champion-vs-champion CONTROL's own denial-per-game spans **5.1×**
+> and its took-all rate **7.0×** — so at this budget every CTRL-relative gate
+> measures the deck range, not the agent (§7.4). The pooled two-range denial
+> uplift is **−0.17 ± 1.04** (FM) and **−0.57 ± 1.00** (FMH): with all four
+> fires, S0v2 does **not** take materially more points from the champion than
+> the champion takes from itself. The remaining gap to the owner is **invasion
+> QUALITY — victim selection by expected realised value** — which needs search,
+> not a rule (§7.5, named and NOT built). Round 3 also **withdraws round 2's own
+> §6.3 finding** (§7.3). §1–§5 are round 1, §6 is round 2; both stand as written.
+
 > **ROUND 2 (the MAJORITY amendment) RAN 2026-08-28 — jump to [§6](#6-round-2--the-majority-amendment-designmd-41).**
 > The MAJORITY fire works mechanically and closes most of the took-all gap
 > (17.9 % → **26.4 %**, owner 28.9 %). It does **not** produce a certifiable
@@ -474,4 +488,180 @@ measurement/s0v2_scripted_prep/run_smoke.sh play S0V2_FM 400   # resumable
 measurement/s0v2_scripted_prep/run_smoke.sh grade S0V2_FM
 .venv/bin/python measurement/s0v2_scripted_prep/s0v2_bars.py \
   --root /mnt/c/carc-shared/s0v2_smoke_20260828 --round 2
+```
+
+---
+
+# §7 ROUND 3 — HOLD + the two instrument fixes ([DESIGN.md](DESIGN.md) §4.2) — **PARKED**
+
+**⛔ SMOKE. NOT A CELL. NOT A VERDICT.** Two disjoint fresh ranges,
+**`900000030000..029` (A)** and **`900000040000..029` (B)**, disjoint from every
+prior range. No band, no `results.csv` row, no claim. Bars: §4 as first
+registered, amended by §4.2 — committed before the first round-3 game
+(`s0v2: AMEND the prereg again (§4.2)`).
+
+**Ran 2026-08-28**, local box, `nice -n 19`, W=8, same shared tenancy as rounds
+1–2, six arms, **360 games, 360/360 reconciled**, ~36 min wall.
+Realized **37.1 – 53.5 worker-s/game** (141.9 moves/game) — **an upper bound**,
+shared box, not a cell price.
+
+# THE ANSWER: NO ARM IS A VALID RULER, ON EITHER RANGE, AND NOTHING REPLICATES.
+
+**This funding line is PARKED here.** The diagnosis is in §7.4, and its core is
+not about the agent: **the champion-vs-champion CONTROL is itself unstable across
+deck ranges by more than the effect any gate is trying to measure.**
+
+## §7.1 The results
+
+| range | arm | n | delib/game | sep σ | **G-EXPRESS** | **G-DENY uplift** | **G-DENY** | margin | **VALID** | [G-DAMAGE] |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **A** | CTRL_A | 60 | 0.533 ± 0.060 | — | — | — (base 2.650/g) | — | −0.03 ± 2.46 | — | — |
+| **A** | FM_A | 60 | 0.767 ± 0.087 | +2.21 | **FAIL** | +0.77 ± 1.65 (z 0.46) | **FAIL** | −12.18 ± 2.50 | **NO** | +0.94 pp |
+| **A** | FMH_A | 60 | 0.733 ± 0.089 | +1.87 | **FAIL** | +0.40 ± 1.52 (z 0.26) | **FAIL** | −11.92 ± 2.57 | **NO** | +2.74 pp |
+| **B** | CTRL_B | 60 | 0.342 ± 0.050 | — | — | — (base 3.583/g) | — | +0.77 ± 2.56 | — | — |
+| **B** | FM_B | 60 | 0.717 ± 0.098 | +3.41 | **FAIL** | **−1.10** ± 1.26 (z −0.87) | **FAIL** | −14.55 ± 3.31 | **NO** | +4.97 pp |
+| **B** | FMH_B | 60 | 0.700 ± 0.096 | +3.32 | **FAIL** | **−1.55** ± 1.29 (z −1.20) | **FAIL** | −14.97 ± 3.32 | **NO** | +3.51 pp |
+
+G-COMPETITIVE's hard floor passes everywhere; FMH_A is the only arm inside the
+preferred band (−11.92).
+
+### The TWO-RANGE REPLICATION CLAUSE, as registered
+
+| arm | A: delib | B: delib | A: deny+ | B: deny+ | **pooled deny+** | sem | z | **REPLICATED** |
+|---|---|---|---|---|---|---|---|---|
+| FM | 0.767 | 0.717 | +0.77 | −1.10 | **−0.17** | 1.04 | −0.16 | **NO** |
+| FMH | 0.733 | 0.700 | +0.40 | −1.55 | **−0.57** | 1.00 | −0.58 | **NO** |
+
+**The pooled two-range denial uplift is consistent with ZERO**, and the
+pre-registered +1.5 bar sits 1.6 σ (FM) and 2.1 σ (FMH) above the point
+estimate. This is not "under-powered and hopeful" — it is a **powered-enough
+negative on the primary gate**: with all four fires, **S0v2 does not take
+materially more points from the champion than the champion takes from itself.**
+
+## §7.2 What HOLD actually did
+
+HOLD fired **21 times on range A (0.35/game) and 12 on range B (0.20/game)**,
+defending 21 and 12 distinct contested holdings; `incumbent_held_conversions`
+equals `hold_fires` by construction and both matched.
+
+| | FM_A → **FMH_A** | FM_B → **FMH_B** |
+|---|---|---|
+| `incumbent_held` | 28.3 % → **25.0 %** | 25.6 % → **23.8 %** |
+| **plan completion** | 23.4 % → **29.4 %** | 27.4 % → **29.4 %** |
+| reinforce plans completed | 8/48 | 15/47 · 21/56 → 24/56 |
+| deck-matched margin (FMH − FM) | **+0.27 ± 1.12** (z +0.24) | **−0.42 ± 0.57** (z −0.73) |
+| G-DENY uplift | +0.77 → **+0.40** | −1.10 → **−1.55** |
+
+**HOLD is free and it works in the direction designed** — `incumbent_held` falls
+on both ranges and plan completion rises on both, the only two counters that
+replicate in this whole round. It is also **too small to matter**: 0.2–0.35
+fires/game, a 2–3 pp move on `incumbent_held` against the 4× gap to the owner
+(4.4 %), and it *lowers* G-DENY on both ranges — correctly and by design, since
+a HOLD spends a tile on a merge that denies the opponent nothing.
+
+## §7.3 ⛔ A CORRECTION TO ROUND 2'S OWN FINDING (§6.3)
+
+Round 2 concluded that MAJORITY outranking MERGE was "the mechanical reason"
+S0V2-FM's expression fell, and round 3's first instrument fix re-ranked them.
+**Round 3 instrumented that claim and it does not hold.** `merge_over_majority`
+— plies where a MERGE and a MAJORITY were both available and the new order
+chose MERGE — is **2 over 60 games on range A and 1 on range B**.
+
+A conflict that arises 1–2 times per 60 games cannot explain a 0.05/game
+expression difference. **§6.3's mechanical story is withdrawn: round 2's
+expression dip was noise.** The priority fix is retained because the ordering
+argument is still correct on its own terms, but it buys nothing measurable, and
+the gate conflict it was meant to resolve is not a real constraint on this
+agent's behaviour.
+
+## §7.4 ⭐ THE PARK DIAGNOSIS: the CONTROL is the thing that is not measurable
+
+Four disjoint 60-game deck ranges of **champion vs champion — the same agent,
+the same instrument, no plan module at all**:
+
+| control | range | delib/game | **denied/game** | **took_all** | champ farmer-zero |
+|---|---|---|---|---|---|
+| CTRL | `…10000` | 0.550 ± 0.060 | **0.700** | **5.3 %** | 15.05 % |
+| CTRL2 | `…20000` | 0.542 ± 0.064 | **2.567** | **13.2 %** | 13.72 % |
+| CTRL_A | `…30000` | 0.533 ± 0.060 | **2.650** | **12.9 %** | 15.81 % |
+| CTRL_B | `…40000` | **0.342** ± 0.050 | **3.583** | **36.8 %** | 16.98 % |
+
+**Denial per game spans 5.1×. Took-all spans 7.0×.** These are the baselines
+every gate in this prereg is defined as an uplift over. On range B the *control*
+denies 3.58 pts/game — **more than either exploiter arm on that range** — which
+is why both arms read a *negative* G-DENY uplift there.
+
+⇒ **At 60 games per cell, a CTRL-relative gate measures the deck range, not the
+agent.** Round 2 §6.2 caught this on G-DAMAGE; round 3 shows it is not a
+property of that one statistic — it is a property of the budget. The two-range
+replication clause did its job precisely: it refused to certify what a single
+range would have called a pass.
+
+**The honest budget, for whoever resumes.** The deck-matched G-DENY uplift SEM
+realized 1.0–1.65 at n=60. Resolving a +1.5 effect at 2 σ needs SEM ≤ 0.75, i.e.
+**~180 games per cell**; CTRL + one arm on two ranges is **~720 games** (≈ 1 h at
+W14, ~9 core-h). That is cheap. ⚠️ **But the pooled point estimate is ≈ 0, so the
+likely purchase is a confirmed NULL, not a pass** — and that should be priced in
+before anyone funds it.
+
+## §7.5 Where the remaining gap actually is — the next mechanism, NAMED not built
+
+Across three rounds the instrument closed the counters it was pointed at and
+never closed the one that matters:
+
+| | owner (E4) | best S0v2 (any round) |
+|---|---|---|
+| deliberate invasions / game | 1.80 | 0.93 (round 2 F2) |
+| `invader_took_all` | 28.9 % | 26.4 % (round 2 FM) |
+| `incumbent_held` | 4.4 % | 23.8 % (round 3 FMH_B) |
+| **points denied / game** | **12.40** | **≈ base + 0 (round 3, two ranges)** |
+| **invader gain / game** | **29.2** | **≈ 8–10** |
+
+Expression reached half the owner's rate; took-all reached 91 % of his. **Gain
+and denial did not move at all** — S0v2 takes ~10 points a game off its
+invasions where the owner takes ~29.
+
+That is not a frequency gap and not a majority gap. It is a **victim-SELECTION**
+gap: the owner invades features that turn out to be *worth a lot when they
+score*, and S0v2 invades whatever happens to be merge-reachable and clears a
+static `potential_pts` floor. Its mean victim is 10–11 tiles against the owner's
+8.29 — **bigger targets, less money**.
+
+⇒ **The next diagnosed mechanism is invasion QUALITY: choosing the victim by its
+EXPECTED REALISED value at scoring time**, not by its current size. That is an
+expected-value question over the remaining deck and the opponent's replies — it
+needs *search*, not a rule. **Which is itself the conclusion of this funding
+line: the part of the owner's exploit a script can carry has been carried, and
+the part that is left is exactly the part a script cannot.** It is named here
+and NOT built.
+
+Two smaller items also stay named and unbuilt: a **victim-value model** would
+need the exact-solver or a CRN continuation pricer to label "what this feature
+was ultimately worth", and any future ruler-certification should adopt §4.2's
+two-range clause *and* the ~180-games-per-cell budget from §7.4 from the start.
+
+## §7.6 What round 3 cannot say
+
+1. **Nothing about any leaf term, search knob or dose** — both sides ran the
+   same champion leaf `a36d2e15a3b3d71d` and the same search config throughout.
+2. **Nothing about HOLD's magnitude.** Its own deck-matched contrasts are
+   z +0.24 and z −0.73. What replicates is the *direction* on `incumbent_held`
+   and on plan completion, and the fire ledger showing it fires as specified.
+3. **Nothing about timing** — shared box; the s/game figures are upper bounds.
+4. **Nothing about the owner.** S0v2 is a proxy for a proxy; the E4 stream stays
+   the only judge-free out-of-family arbiter.
+5. **G-DAMAGE, reported under its own two-range clause, agrees with G-DENY that
+   nothing is certified**: +0.94 / +2.74 pp on range A and +4.97 / +3.51 pp on
+   range B, all below the +10 pp bar it used to gate on — after passing at
+   +10.66 / +12.37 pp on range `…20000`. The demoted gate replicates no better
+   than the one that replaced it, which is the §4.2 disclosure's own prediction.
+
+## §7.7 Reproduce
+
+```bash
+measurement/s0v2_scripted_prep/run_smoke.sh play FMH_A 400   # resumable
+measurement/s0v2_scripted_prep/run_smoke.sh grade FMH_A
+# the amended gate table + the two-range replication clause
+.venv/bin/python measurement/s0v2_scripted_prep/s0v2_bars.py \
+  --root /mnt/c/carc-shared/s0v2_smoke_20260828 --round 34
 ```
