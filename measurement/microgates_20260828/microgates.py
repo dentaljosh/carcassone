@@ -62,6 +62,15 @@ VOID_ATTRITION = 0.05
 VOID_GUARD = 0.01
 G_DETECT_MIN = 0.95
 
+#: The cross-stage determinism check compares the fields the PLAYOUT determines.
+#: g1 and g2 replay the same `(deck_seed, ply, world)` with the same policy seed,
+#: so these must be bit-identical across the two independent passes. The census
+#: fields are deliberately excluded: only g1's census feeds G1 and only g2's
+#: margins feed G2, and the two passes' census code is not required to be the
+#: same generation (see DEVIATIONS D4).
+CROSS_STAGE_KEYS = ("final_scores", "margin_p0_minus_p1", "scores_at_root",
+                    "n_continuation_plies", "arm_action")
+
 
 def world_rng(deck_seed: int, ply: int, world: int) -> random.Random:
     """The e4_continuation_20260828 world generator, verbatim. NO ARM TERM."""
@@ -154,16 +163,32 @@ def tagged_classes(row: dict) -> set:
 class Census:
     """Streaming Stage-A contest census over ONE rollout.
 
-    Seeded at the crux root: the root's components enter the union-find and every
-    component already contested THERE is pre-loaded into `contested_seen`, so only
-    NEW onsets are recorded (adaptation A1). `n_tiles` is the count of distinct
-    (row, col) among a component's positional keys (adaptation A2).
+    Seeded at the crux root: every component already contested THERE is pre-loaded,
+    so only NEW onsets are recorded (adaptation A1). `n_tiles` is the count of
+    distinct (row, col) among a component's positional keys (adaptation A2).
+
+    ⚠️ **Component identity is carried by KEY MEMBERSHIP, not by a union-find root
+    (adaptation A3).** Stage A dedups onsets on `fid = uf.find(rep)`, which is
+    sound THERE because it is a two-pass design: `extract_events` runs after the
+    whole replay, against the FINAL union-find, so every rep of a component maps
+    to one root. Evaluated INCREMENTALLY — which is what censusing a rollout as it
+    is played requires — that identity is not stable: `UF.union(a, b)` re-roots
+    onto `find(a)`, and `a` is the group's MINIMUM positional key, so a component
+    that grows a smaller key gets a NEW root and every previously-recorded `fid`
+    for it goes stale. The already-contested component is then re-reported as a
+    fresh onset (measured: a 29-tile farm carrying [2, 2] re-reported at plies
+    106, 110 and 114 as it grew to 33 tiles).
+
+    Cities, roads and farms only ever MERGE — a component never splits and never
+    loses a positional key — so the set of keys ever seen on a contested component
+    is monotone, and "have I already reported this component?" is exactly "does it
+    contain a key I have already marked contested?". That is what is used here,
+    and it needs no union-find at all.
     """
 
     def __init__(self, flat_leaf):
         self.fl = flat_leaf
-        self.uf = UF()
-        self.contested_seen = set()
+        self.contested_keys = set()      # every key of every component already reported
         self.prev = None                 # (reps -> record) of the previous ply
         self.onsets = []
 
@@ -186,7 +211,7 @@ class Census:
                 rep = kk[0]
                 for k in kk:
                     key_to_rep[k] = rep
-                rec[rep] = {"cls": cls, "rep": rep,
+                rec[rep] = {"cls": cls, "rep": rep, "keys": kk,
                             "n_tiles": len({(k[1], k[2]) for k in kk}),
                             "counts": [0, 0]}
         for pl in range(state.players):
@@ -202,34 +227,29 @@ class Census:
 
     def seed_root(self, state):
         decomp, groups, rec = self._scan(state)
-        for kk in groups:
-            base = kk[0]
-            for k in kk[1:]:
-                self.uf.union(base, k)
-        for rep, cm in rec.items():
+        for cm in rec.values():
             if cm["counts"][0] > 0 and cm["counts"][1] > 0:
-                self.contested_seen.add(self.uf.find(rep))
+                self.contested_keys.update(cm["keys"])
         self.prev = rec
         return decomp, rec
 
     def step(self, state, ply, actor, phase, placed_meeple: bool):
         """Census one post-action state; append any NEW contest onset."""
         decomp, groups, rec = self._scan(state)
-        for kk in groups:
-            base = kk[0]
-            for k in kk[1:]:
-                self.uf.union(base, k)
         for rep, cm in rec.items():
             if cm["counts"][0] <= 0 or cm["counts"][1] <= 0:
                 continue
-            f = self.uf.find(rep)
-            if f in self.contested_seen:
-                continue
-            self.contested_seen.add(f)
-            # --- mechanism, from the PREVIOUS ply's parts of the same fid ---- #
+            keyset = set(cm["keys"])
+            if keyset & self.contested_keys:
+                continue                      # this component was already reported
+            self.contested_keys |= keyset
+            # --- mechanism, from the PREVIOUS ply's parts OF THIS COMPONENT --- #
+            # A previous-ply component is a part of this one iff its representative
+            # key is one of this component's keys — keys are permanent, so this is
+            # exact and needs no union-find.
             pre_parts = []
             for prep, pcm in (self.prev or {}).items():
-                if self.uf.find(prep) != f:
+                if prep not in keyset:
                     continue
                 pre_parts.append({"n_tiles": pcm["n_tiles"],
                                   "m0": pcm["counts"][0], "m1": pcm["counts"][1]})
@@ -608,6 +628,16 @@ def do_unit(job: dict) -> dict:
         resolved = ev_loss.resolve_profile_name(arch)
         if resolved != job["profile"]:
             raise RuntimeError(f"profile drift {resolved} != {job['profile']}")
+        # ...and the PROCESS must be the one that profile owns. The check above only
+        # ties the ARCHIVE to the JOB; without this one a `walled` job handed to a
+        # `fixed_v1` process replays a walled game under centered18 + retail +
+        # fixed-cloister + redraw + R9 and returns a plausible, wrong answer with no
+        # error anywhere. (Measured while chasing a phantom nondeterminism: the same
+        # unit read margin -8 in its own walled process and -14 in a fixed_v1 one.)
+        if prof.name != job["profile"]:
+            raise RuntimeError(f"process profile {prof.name!r} != job profile "
+                               f"{job['profile']!r} — R9 is import-latched, so one "
+                               f"profile per process")
         out["r9_env"] = {"expected": prof.r9_env_expected,
                          "observed": _G["rules_profile"].r9_env_on()}
         if out["r9_env"]["expected"] != out["r9_env"]["observed"]:
@@ -845,9 +875,10 @@ def aggregate(outdir: Path, rows: list) -> dict:
             pa = str(u["played_action"])
             if pa in a["arms"] and pa in u["arms"]:
                 n_cmp += 1
-                n_ok += int(json.dumps(a["arms"][pa], sort_keys=True)
-                            == json.dumps(u["arms"][pa], sort_keys=True))
+                n_ok += int(all(a["arms"][pa][k] == u["arms"][pa][k]
+                                for k in CROSS_STAGE_KEYS))
         res["G_CROSS_STAGE"] = {"n_compared": n_cmp, "n_identical": n_ok,
+                                "compared_fields": list(CROSS_STAGE_KEYS),
                                 "pass": n_cmp > 0 and n_cmp == n_ok}
     res["BRANCH"] = decide(res)
     return res
