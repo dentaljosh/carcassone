@@ -1,3 +1,5 @@
+> # ✅ STATUS: **ADJUDICATED 2026-08-27 — round 1 `MIXED` (B BRACKET z 1.27; A null by 7e-5σ; D null; IDENT PASS after IS-D1).** Superseded by rounds 2-3; the FAMILY is CLOSED-AS-EXPLAINED 2026-08-28 (continuation pricing: per-ply residual null — the E4 edge is position-steering; DECISIONS 2026-08-28 overnight). Close-out stamp — nothing below is edited.
+>
 # INVASION-RISK TERM FAMILY — ROUND-1 SCREEN AT 2752 — DESIGN
 
 **STATUS: FROZEN, NOT AUTHORIZED TO LAUNCH (2026-08-26).** No cell has run. No band sentinel

@@ -1,3 +1,5 @@
+> # ✅ STATUS: **ADJUDICATED 2026-08-27 — round 2 `BRACKET-CONTINUE` on the IS-A1 amended re-read (A_HIGH REVERSED z −5.8; A_LOW/C_LOW bracket; B demoted).** The FAMILY is CLOSED-AS-EXPLAINED 2026-08-28 (per-ply residual null; steering conclusion on 3 instruments). Close-out stamp — nothing below is edited.
+>
 # INVASION-RISK TERM FAMILY — ROUND-2 BRACKET AT 2752 — DESIGN
 
 **STATUS: FROZEN, NOT LAUNCHED (2026-08-27).** No cell has run. No band sentinel exists.

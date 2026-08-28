@@ -1,3 +1,5 @@
+> # ✅ STATUS: **ADJUDICATED 2026-08-28 (overnight) — PRIMARY NULL, NEGATIVE POINT ESTIMATE** (invasion-minus-control divergence price −1.87 ± 1.88, z −0.99; farm_capture +2.53 z 1.68 n=12 the sole unpromoted thread; prefund 0/8 spent by the envelope's own bars). The per-ply residual is dead; steering conclusion on 3 instruments. results.csv `e4_continuation_pricing_PRIMARY_NULL_n91_judgefree`; CONTINUATION.json on share. Close-out stamp — nothing below is edited.
+>
 # PREREG — E4 CONTINUATION PRICING (judge-free, CRN-paired game outcomes)
 
 > **Status: BLIND-COMMITTED, PRE-OUTCOME.** This file, the frozen target set

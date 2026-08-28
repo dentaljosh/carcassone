@@ -1,3 +1,5 @@
+> # ✅ STATUS: **ADJUDICATED 2026-08-27 — round 3 `BRACKET-CONTINUE`, clean first read (A flat-null at its derived peak; C quasi-replicated γ≈0.07; joints underpowered-positive).** The FAMILY is CLOSED-AS-EXPLAINED 2026-08-28. Close-out stamp — nothing below is edited.
+>
 # INVASION-RISK TERM FAMILY — ROUND-3 FINE LADDERS + JOINT AT 2752 — DESIGN
 
 > **STATUS: FROZEN** (2026-08-27). This document and [`READ_RULE.md`](READ_RULE.md) are **the

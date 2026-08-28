@@ -1,3 +1,5 @@
+> # ✅ STATUS: **ADJUDICATED 2026-08-27 (evening) — THE AGREEMENT-GRADIENT INVERSION** (champion agrees with the owner's invasion moves 74.1% vs 33.7% control ⇒ the hole is upstream position-steering; exact channel ~0 at 4.5% coverage as pre-registered; rust-mirrors-E4 by-catch 30/30). results.csv `e4_ply_pricing_agreement_gradient_n290_judgefree`; PRICED.json on share. Close-out stamp — nothing below is edited.
+>
 # PREREG — E4 PLY PRICING (judge-free)
 
 > **Status: BLIND-COMMITTED, PRE-PRICING.** This file and the frozen target set
