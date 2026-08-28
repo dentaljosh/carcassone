@@ -1,0 +1,15 @@
+# Run products — regenerated on every box, never committed.
+out_*/
+chunks_*/
+logs/
+units_*.txt
+BOX_PLAN_*.json
+RUN_LIVE_*.json
+DONE_*.json
+SMOKE_UNITS.json
+SMOKE_RESULT.json
+# The pre-flight and the readouts ARE committed at close-out (they are the
+# evidence), so they are deliberately NOT ignored:
+#   LEGAL_PREFLIGHT.json  preflight_drops.txt  C1_PRICING.json  EXACT_LEG.json
+__pycache__/
+*.pyc
