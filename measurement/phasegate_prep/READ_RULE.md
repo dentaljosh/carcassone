@@ -1,8 +1,8 @@
 # PHASE-GATED TIE ARBITRATION — JUDGE-FREE PHASE DECOMPOSITION — READ RULE
 
-> **STATUS: DRAFT — NOT FROZEN.** This document and [`DESIGN.md`](DESIGN.md) are **the pair**. At
-> the blind commit the pair becomes law and ⛔ **nothing in this file moves after it**. Every bar,
-> every gate, every branch and every prohibition below exists **before any game does**.
+> **STATUS: FROZEN** (2026-08-28). This document and [`DESIGN.md`](DESIGN.md) are **the pair**, and
+> the pair is law. ⛔ **NOTHING IN THIS FILE MOVES AFTER THE BLIND COMMIT.** Every bar, every gate,
+> every branch and every prohibition below exists **before any game does**.
 >
 > If `analyze_phasegate.py`, `screen_lib.py` or `run_cells.sh` disagrees with this document,
 > **it is the code that is wrong.**
@@ -11,10 +11,12 @@
 > verdict as it stands, record the defect, and get the **OWNER** to authorise a re-read of the SAME
 > archive under a named, minimal, single-clause correction.
 >
-> ⛔ **0 games have been played. No band is claimed. The instrument does not exist.**
+> ⛔ **0 games have been played at this commit. No band is claimed at this commit.** The instrument
+> exists (merged `2d0ecdde`) and `IDENT_BITEXACT.json` is `PASS`.
 
-**Proposed band `154000000000` · 2 cells (Option A) or 4 (Option B) + `IDENT` · k8×1376 = 11008 both
-sides · local W=14 + laptop W=22, concurrent.**
+**Band `154000000000` · Option A1 — `IDENT` + `ARB_FULL` + `ARB_EARLY`(`_L`/`_R`) · k8×1376 = 11008
+both sides · local W=30 + laptop W=22, concurrent** (the owner's Shabbos-envelope W defaults; the
+`W=14` quoted below is the design-time figure and `W` is throughput-only).
 
 ⚠️ `W` is **throughput-only**. Games are bit-identical at any `W`, and **no gate in this pair reads a
 clock**. It moves wall clock and the cell→box assignment and **no bar, no gate and no branch**.

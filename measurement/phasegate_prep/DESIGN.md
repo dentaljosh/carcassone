@@ -1,15 +1,24 @@
 # PHASE-GATED TIE ARBITRATION — JUDGE-FREE PHASE DECOMPOSITION — DESIGN
 
-> **STATUS: DESIGN DRAFT — NOT FROZEN, NOT FUNDED, NOT LAUNCHED** (2026-08-28).
-> This document and [`READ_RULE.md`](READ_RULE.md) are **the pair**. They become law at the blind
-> commit; until the owner funds the round and the pair is stamped `FROZEN`, both are editable.
+> **STATUS: FROZEN** (2026-08-28). This document and [`READ_RULE.md`](READ_RULE.md) are **the
+> pair**, and the pair is law. Nothing in either moves after the blind commit. If the launcher, the
+> adjudicator or the bar library disagrees with the pair, **it is the code that is wrong.**
 >
-> ⛔ **0 games played. No band claimed. `governance/PRODUCTION.yaml` untouched. No `results.csv`
-> row. No claim id. No source file outside `measurement/phasegate_prep/` created or modified.**
+> ⭐ **FUNDED** — owner, Shabbos envelope 2026-08-28, verbatim *"plan looks good to me"* + *"start
+> the build now. we should default to w22 laptop w30 local"* (roadmap `NOW` block). Round = **Option
+> A1**: `IDENT` (40 decks) + `ARB_FULL` (400) + `ARB_EARLY` (1,200, split `_L`/`_R` per §6.5).
+> ⚠️ `W_LOCAL` is **30** by that owner default, not the 14 quoted in §6.4/§6.5 — `W` is
+> throughput-only (no gate reads a clock), so it moves wall clock and nothing else.
 >
-> ⛔ **THE INSTRUMENT DOES NOT EXIST YET.** The ply-window gate this design measures **is not built**
-> — see §7. `run_cells.sh`, `analyze_phasegate.py`, `screen_lib.py` and the selftest fixture are
-> **build items with estimates**, not deliverables of this commit.
+> ⛔ **NOT LAUNCHED at this commit.** `run_cells.sh` refuses every real cell without `BAND_CLAIMED`
+> and with `BLIND_COMMIT=PENDING`, neither of which this commit creates.
+>
+> ⭐ **THE INSTRUMENT NOW EXISTS** (merged at `2d0ecdde`, 201 rust + 48 pair tests green,
+> `IDENT_BITEXACT.json` = PASS). §7's build items are **delivered**; §7's prose is retained as the
+> build record and is no longer a proposal.
+>
+> ⛔ **0 games played at this commit. No band claimed. `governance/PRODUCTION.yaml` untouched. No
+> `results.csv` row. No claim id.**
 
 **Proposed band:** `154000000000` (free, §5) · **Cells:** 2 (Option A) or 4 (Option B) · **Budget:**
 k8×1376 = 11008 total sims, both sides · **Boxes:** local (W=14) + laptop (W=22), concurrent
