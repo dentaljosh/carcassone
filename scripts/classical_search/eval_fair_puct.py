@@ -1030,7 +1030,14 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
         jr.update(tiearb_enabled=True,
                   tiearb_b=int(tiearb["B"]), tiearb_j=int(tiearb["J"]),
                   tiearb_mode=str(tiearb["mode"]), tiearb_salt=str(tiearb["salt"]),
-                  tiearb_eps=float(tiearb["eps"]))
+                  tiearb_eps=float(tiearb["eps"]),
+                  # ⭐⭐ THE PHASE FIRE-GATE (measurement/phasegate_prep) — the
+                  # SINGLE variable of that round. `.get(..., "all")` keeps
+                  # every pre-round caller byte-identical ("all" == the ungated
+                  # arbiter), and an unknown value is refused by
+                  # HeuristicPriorConfig.__post_init__ AND again by the rust
+                  # parse, never silently coerced to "all".
+                  tiearb_phase_gate=str(tiearb.get("phase_gate", "all")))
     return HeuristicPriorConfig(
         c_puct=c_puct, tau_p=tau_p, leaf_quantize=leaf_quantize,
         final_select=final_select, value_norm=value_norm,
@@ -2365,6 +2372,24 @@ def _cand_tiearb_telemetry(champ) -> dict | None:
         "max_plies": int(s.get("tiearb_max_plies") or 0),
         "mode": str(s["tiearb_mode"]),
         "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
+        # ⭐⭐ THE PHASE FIRE-GATE and its per-phase fire counters
+        # (measurement/phasegate_prep/READ_RULE.md §4, `G-GATE` + `G-PHI`).
+        # ⛔ SUBSCRIPTED, NOT `.get()`: an ABSENT key means a STALE WHEEL that
+        # predates the gate, i.e. a candidate whose arbiter ran UNGATED — which
+        # on an `ARB_EARLY` cell is `ARB_FULL` wearing the primary's name and
+        # passes every other gate looking healthy. Fail LOUD here rather than
+        # bank 1,200 decks of a guaranteed-meaningless duplicate.
+        #
+        # `G-GATE` reads `phase_gate` (the knob was SET); `G-PHI` reads the
+        # three fired_* counters (the knob BOUND, witnessed by PLAY). Two
+        # independent witnesses, on purpose.
+        "phase_gate": str(s["tiearb_phase_gate"]),
+        "fired_early": int(s["tiearb_fired_early"]),
+        "fired_mid": int(s["tiearb_fired_mid"]),
+        "fired_late": int(s["tiearb_fired_late"]),
+        "pickchanges_early": int(s["tiearb_pickchanges_early"]),
+        "pickchanges_mid": int(s["tiearb_pickchanges_mid"]),
+        "pickchanges_late": int(s["tiearb_pickchanges_late"]),
     }
 
 
@@ -2703,6 +2728,25 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
                       if r.cand_tiearb.get("first_error")), None)
         _partial = sum(int(r.cand_tiearb.get("partial_argmax") or 0) for r in _ta)
         _modes = sorted({str(r.cand_tiearb["mode"]) for r in _ta})
+        # ⭐⭐ THE PHASE FIRE-GATE aggregates (measurement/phasegate_prep).
+        # ⛔ `.get(..., 0)` on the COUNTERS only — a record banked by a wheel
+        # predating the gate carries none, and summing it as 0 would silently
+        # short the totals. That case is caught upstream (the per-game
+        # telemetry SUBSCRIPTS the stats keys and raises), so a record here
+        # either has all of them or the run died before writing one. The
+        # `.get()` exists so `--resume` over a MIXED archive is diagnosable
+        # (`tiearb_phase_gates` would then read `["all", ""]`) rather than a
+        # traceback in the summary writer.
+        # ⛔ `tiearb_phase_gates` is a SET, printed as a sorted list: `G-GATE`
+        # is a per-CELL gate, so more than one value here means the cell mixed
+        # two configs and voids.
+        _gates = sorted({str(r.cand_tiearb.get("phase_gate", "")) for r in _ta})
+        _f_e = sum(int(r.cand_tiearb.get("fired_early") or 0) for r in _ta)
+        _f_m = sum(int(r.cand_tiearb.get("fired_mid") or 0) for r in _ta)
+        _f_l = sum(int(r.cand_tiearb.get("fired_late") or 0) for r in _ta)
+        _c_e = sum(int(r.cand_tiearb.get("pickchanges_early") or 0) for r in _ta)
+        _c_m = sum(int(r.cand_tiearb.get("pickchanges_mid") or 0) for r in _ta)
+        _c_l = sum(int(r.cand_tiearb.get("pickchanges_late") or 0) for r in _ta)
         tiearb_summary = {
             "tiearb_games": len(_ta),
             "tiearb_fired_plies_total": _fired,
@@ -2730,6 +2774,38 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             # READ_RULE §0.F `G-PLY`. Expected 0; ABSENT or NON-ZERO voids the
             # cell, so it is emitted unconditionally on every arbiter cell.
             "tiearb_partial_argmax_total": _partial,
+            # ⭐⭐ THE PHASE FIRE-GATE, in the STATISTICS document. `G-GATE`
+            # resolves `phase_gate` from `manifest:config.cand_tiearb`
+            # (config lives in the manifest — IS-D1) and `G-PHI` resolves the
+            # per-phase fires from HERE (statistics live in summary.json —
+            # IS-D1 again). `tiearb_phase_gates` is echoed for a one-document
+            # cross-check, never as `G-GATE`'s address.
+            "tiearb_phase_gates": _gates,
+            "tiearb_fired_early_total": _f_e,
+            "tiearb_fired_mid_total": _f_m,
+            "tiearb_fired_late_total": _f_l,
+            # ⭐ The PARTITION witness: on an ungated cell these three sum to
+            # `tiearb_fired_plies_total`. On a gated cell the two off-window
+            # totals are 0 — `G-PHI`'s window bit, derived from PLAY.
+            "tiearb_fired_by_phase_sum": _f_e + _f_m + _f_l,
+            "tiearb_pickchanges_early_total": _c_e,
+            "tiearb_pickchanges_mid_total": _c_m,
+            "tiearb_pickchanges_late_total": _c_l,
+            # ⭐ THE REALIZED per-phase fired SHARE — the number DESIGN §6.2
+            # could only proxy off `tile_gap_rows.jsonl` (0.3380 / 0.3059 /
+            # 0.3561, RAW exact-tie shares under a DIFFERENT rules epoch, with
+            # no repr-dedup column on disk). Meaningful ONLY on an ungated
+            # (`phase_gate == "all"`) cell; on a gated cell it is 1/0/0 by
+            # construction and says nothing.
+            "tiearb_fired_share_early": _f_e / max(1, _f_e + _f_m + _f_l),
+            "tiearb_fired_share_mid": _f_m / max(1, _f_e + _f_m + _f_l),
+            "tiearb_fired_share_late": _f_l / max(1, _f_e + _f_m + _f_l),
+            "tiearb_fired_share_proxy_note":
+                "DESIGN §6.2's proxy was 0.3380/0.3059/0.3561 (RAW exact-tie "
+                "shares, corpus champ449, rules_profile=walled/R9-off, NO "
+                "repr-dedup column). These shares are the DEDUPED runtime "
+                "split under this cell's own rules epoch and SUPERSEDE it for "
+                "sizing. Read only on a phase_gate=all cell.",
             "tiearb_max_plies": sorted({int(r.cand_tiearb.get("max_plies") or 0)
                                         for r in _ta}),
         }
@@ -3448,6 +3524,27 @@ def main(argv=None) -> int:
                     help="Tie membership tolerance on the outer chain value. 0.0 is "
                          "the COMMITTED setting — exact f64 equality, NOT a "
                          "tolerance (DESIGN §2).")
+    # --- THE PHASE FIRE-GATE (measurement/phasegate_prep) --------------------
+    ap.add_argument("--cand-tiearb-phase-gate",
+                    choices=("all", "early", "mid", "late", "none"), default="all",
+                    help="PHASE WINDOW on the arbiter's FIRE decision "
+                         "(measurement/phasegate_prep/DESIGN.md §7). 'all' "
+                         "(default) == TODAY'S UNGATED ARBITER, bit-for-bit; "
+                         "'none' == the unmodified champion with the knob armed "
+                         "(the IDENT cell); 'early'|'mid'|'late' fire ONLY inside "
+                         "the canonical census window on k_remaining = undrawn "
+                         "deck + the tile in hand: early=[49,71], mid=[25,47], "
+                         "late=[0,23] ⚠️ PLUS k=48 and k=24, which match no "
+                         "interval (both cut ends are strict) and fall through to "
+                         "'late' — the behaviour of "
+                         "sample_agreement_roots.phase_bucket, reproduced "
+                         "deliberately because every artefact keyed on it carries "
+                         "it. ⛔ NOT a playout ceiling (that is the rust "
+                         "tiearb_max_plies). ⛔ A silently-defaulted 'all' on an "
+                         "ARB_EARLY cell makes it BE ARB_FULL and the round's "
+                         "primary a healthy-looking duplicate of its own anchor — "
+                         "hence G-GATE (config) AND G-PHI (the per-phase fire "
+                         "counters, derived from play), both ABSENT-is-FAIL.")
     ap.add_argument("--cand-exact-objective", choices=("margin", "win"),
                     default="margin",
                     help="E1 exact-K solver objective for the CANDIDATE "
@@ -3981,7 +4078,22 @@ def main(argv=None) -> int:
                         B=int(args.cand_tiearb_b), J=int(args.cand_tiearb_j),
                         mode=str(args.cand_tiearb_mode),
                         salt=str(args.cand_tiearb_salt),
-                        eps=float(args.cand_tiearb_eps))
+                        eps=float(args.cand_tiearb_eps),
+                        # ⭐⭐ THE PHASE FIRE-GATE — `G-GATE`'s address, and the
+                        # single variable of the phasegate round. ALWAYS in the
+                        # dict (even at "all", even when the arbiter is off) so
+                        # `config.cand_tiearb.phase_gate` can never be ABSENT,
+                        # which READ_RULE §4 makes a FAIL rather than a default.
+                        phase_gate=str(args.cand_tiearb_phase_gate))
+    # ⛔ A phase gate without an ARBITER is a SILENT NO-OP, and it is exactly
+    # the shape a mis-typed ARB_EARLY launcher takes: the cell then plays the
+    # unmodified champion on both sides and reads as a clean, healthy null.
+    # Refuse it at launch rather than after 1,200 decks.
+    if _cand_tiearb["phase_gate"] != "all" and not _cand_tiearb["enabled"]:
+        ap.error(f"--cand-tiearb-phase-gate {_cand_tiearb['phase_gate']!r} was passed "
+                 "WITHOUT --cand-tiearb-enabled: the gate is a window on the "
+                 "arbiter's fire decision and there is no arbiter to gate. That "
+                 "cell would be champion-vs-champion wearing a gated cell's name.")
     if _cand_tiearb["enabled"]:
         if _backend != "rust":
             ap.error("--cand-tiearb-enabled is RUST-ONLY (the arbiter binds at the "
@@ -4006,7 +4118,11 @@ def main(argv=None) -> int:
         if _resolved_t != _cand_tiearb:
             ap.error(f"the resolved rust tiearb knob {_resolved_t} does not match "
                      f"the requested {_cand_tiearb} — refusing to launch (a "
-                     "mismatch here is exactly what G-J4 exists to catch)")
+                     "mismatch here is exactly what G-J4 exists to catch). "
+                     "⚠️ A MISSING 'phase_gate' key on the resolved side means a "
+                     "STALE carc_rs wheel that predates measurement/phasegate_prep "
+                     "— its arbiter would run UNGATED, which on an ARB_EARLY cell "
+                     "IS ARB_FULL.")
         print(f"[tiearb] TIE ARBITER LIVE on the candidate: {_cand_tiearb} "
               f"(leaf hash does NOT move; gates = manifest cand_tiearb + "
               f"summary tiearb_phi + the two-sided J13 control)", flush=True)
@@ -4972,6 +5088,40 @@ def main(argv=None) -> int:
     # `close_out` puts the exclusion block in the run manifest). Single-key merges,
     # so a racing --shared-claim peer can at worst lose its own stamp.
     _patch_failure_manifest(out, summ, n_failed_this_leg)
+    # ⭐⭐ THE PHASE FIRE-GATE's REALIZED per-phase fire counts, merged into the
+    # manifest's TOP-LEVEL `cand_tiearb` block (measurement/phasegate_prep,
+    # `G-PHI`). ⚠️ TOP LEVEL ONLY, and deliberately so:
+    #   * `config.cand_tiearb` is written BEFORE game 1 and stays CONFIG-ONLY —
+    #     that is IS-D1's rule (config from manifest.json, statistics from
+    #     summary.json) and `G-GATE` reads `phase_gate` from there.
+    #   * `patch_manifest` is a single top-level key merge (it cannot reach into
+    #     `config.*`), so the realized counts land beside the resolved knobs at
+    #     `manifest:cand_tiearb.fired_{early,mid,late}` — a second address for
+    #     `G-PHI` on top of summary.json's `tiearb_fired_*_total`.
+    # The counts themselves are the STATISTIC and summary.json remains their
+    # canonical home; this write exists so an adjudicator that resolves G-PHI
+    # from the manifest finds it rather than reading ABSENT (= FAIL).
+    if summ.get("tiearb_games"):
+        patch_manifest(out, "cand_tiearb", {
+            **_cand_tiearb,
+            "fired_plies": int(summ.get("tiearb_fired_plies_total") or 0),
+            "fired_early": int(summ.get("tiearb_fired_early_total") or 0),
+            "fired_mid": int(summ.get("tiearb_fired_mid_total") or 0),
+            "fired_late": int(summ.get("tiearb_fired_late_total") or 0),
+            "pickchanges": int(summ.get("tiearb_pickchanges_total") or 0),
+            "pickchanges_early": int(summ.get("tiearb_pickchanges_early_total") or 0),
+            "pickchanges_mid": int(summ.get("tiearb_pickchanges_mid_total") or 0),
+            "pickchanges_late": int(summ.get("tiearb_pickchanges_late_total") or 0),
+            # `G-FAILSOFT`'s named address, same reasoning.
+            "tiearb_errors_total": int(summ.get("tiearb_errors_total") or 0),
+            "tiearb_error_rate_on_fired":
+                float(summ.get("tiearb_error_rate_on_fired") or 0.0),
+            "_realized_note":
+                "keys above `phase_gate` are the RESOLVED CONFIG (also at "
+                "config.cand_tiearb, written before game 1); the fired_*/"
+                "pickchanges_*/tiearb_error* keys are REALIZED COUNTS patched "
+                "at close-out. summary.json is their canonical home.",
+        })
     # END timestamp: the manifest's `utc` is written BEFORE the first game, so a cell's
     # wall-clock span was previously unrecoverable. Single-key merge (never a rewrite),
     # so a racing --shared-claim peer can at worst lose its own stamp.

@@ -142,6 +142,126 @@ impl TiearbMode {
     }
 }
 
+/// The CANONICAL phase bucket of a `k_remaining`, reproduced BIT-FOR-BIT from
+/// `scripts/measurement_infra/sample_agreement_roots.py:96` (copied verbatim
+/// into `scripts/tiletie/chain_census.py:63`, which documents the copy as *"NOT
+/// redefined independently"*, and keyed on by
+/// `measurement/tiearb_widening_20260817/census/CENSUS.md` §6, the CL-070 root
+/// bank and `split_tiearb2.py`'s strata):
+///
+/// ```python
+/// PHASE_CUTS = {"early": (48, 10**9), "mid": (24, 48), "late": (-1, 24)}
+/// def phase_bucket(k):
+///     for name, (lo, hi) in PHASE_CUTS.items():
+///         if lo < k < hi:        # STRICT on BOTH ends
+///             return name
+///     return "late"              # the fall-through
+/// ```
+///
+/// ⚠️⚠️ **`k == 48` AND `k == 24` MATCH NO INTERVAL AND FALL THROUGH TO
+/// `"late"`.** Both ends of every cut are strict, so `48` fails `48 < 48` twice
+/// and `24` fails `24 < 24` twice. This is **reproduced, not repaired**
+/// (`measurement/phasegate_prep/DESIGN.md` §2.2 / `READ_RULE.md` §3): every
+/// artefact keyed on `phase_bucket` carries it, and a build that "fixed" the
+/// edge would no longer be measuring the axis those artefacts label. Repairing
+/// it is a separate, tree-wide change and is OUT OF SCOPE.
+///
+/// ⛔ The argument is `crate::fair::k_remaining(g)` — undrawn deck **plus the
+/// tile in hand** — NEVER `g.state.deck_len()`, which
+/// `search/window_diag.rs:156` uses and which is off by one against this axis.
+///
+/// Golden table (`k=71,49 -> early`; `47,25 -> mid`; `48,24,23 -> late`) is
+/// pinned by [`tests::phase_bucket_golden_table`] and, on the python side, by
+/// `tests/test_tiearb_phase_gate.py` against the canonical function itself.
+pub fn phase_bucket(k_remaining: i64) -> &'static str {
+    // Iteration order is `early`, `mid`, `late` — a python 3.7+ dict literal
+    // preserves insertion order, so this `if` chain IS that loop.
+    if 48 < k_remaining && k_remaining < 1_000_000_000 {
+        "early"
+    } else if 24 < k_remaining && k_remaining < 48 {
+        "mid"
+    } else if -1 < k_remaining && k_remaining < 24 {
+        "late"
+    } else {
+        // The fall-through: k == 48, k == 24, k < 0, and k >= 10**9.
+        "late"
+    }
+}
+
+/// THE FIRE-GATE (`measurement/phasegate_prep/DESIGN.md` §7.2). A phase window
+/// on the tie arbiter's *fire* decision, evaluated at the root hook.
+///
+/// ⛔ **NOT [`TIEARB_MAX_PLIES`]**, which is the *playout* ply ceiling — how
+/// deep one `tier1-greedy` rollout may run before it ERRORS. This says which
+/// GAME plies the arbiter fires at, and nothing about a rollout.
+///
+/// [`TiearbPhaseGate::All`] is the DEFAULT and is the pre-change arbiter, byte
+/// for byte: `fires_at` returns `true` unconditionally and nothing else on this
+/// surface is read. [`TiearbPhaseGate::None`] disarms the arbiter at every ply
+/// while leaving the knob armed — the `IDENT` cell's shape, which proves the
+/// gate reached the harness without changing a single played action.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TiearbPhaseGate {
+    /// Fire at every detected tie — the pre-change behaviour, the default.
+    All,
+    /// Fire only where [`phase_bucket`] is `"early"` (`k_remaining` ∈ [49, 71]).
+    Early,
+    /// Fire only where [`phase_bucket`] is `"mid"` (`k_remaining` ∈ [25, 47]).
+    Mid,
+    /// Fire only where [`phase_bucket`] is `"late"` (`k_remaining` ∈ [0, 23]
+    /// ⚠️ **plus `k == 48` and `k == 24`**).
+    Late,
+    /// Fire nowhere. The armed-but-inert `IDENT` shape.
+    #[allow(clippy::enum_variant_names)]
+    None,
+}
+
+impl TiearbPhaseGate {
+    /// Fail-closed parse, the [`TiearbMode::parse`] shape. ⛔ An unknown or
+    /// empty string is an ERROR, never a silent `All` — a silently-defaulted
+    /// `all` would make `ARB_EARLY` *BE* `ARB_FULL` and the primary a
+    /// guaranteed-meaningless duplicate of the anchor that looks perfectly
+    /// healthy (DESIGN §7.4, the inverted-liveness hazard).
+    pub fn parse(s: &str) -> Result<Self, String> {
+        match s {
+            "all" => Ok(TiearbPhaseGate::All),
+            "early" => Ok(TiearbPhaseGate::Early),
+            "mid" => Ok(TiearbPhaseGate::Mid),
+            "late" => Ok(TiearbPhaseGate::Late),
+            "none" => Ok(TiearbPhaseGate::None),
+            other => Err(format!(
+                "tiearb_phase_gate must be 'all'|'early'|'mid'|'late'|'none'; got {other:?}"
+            )),
+        }
+    }
+
+    pub fn value(&self) -> &'static str {
+        match self {
+            TiearbPhaseGate::All => "all",
+            TiearbPhaseGate::Early => "early",
+            TiearbPhaseGate::Mid => "mid",
+            TiearbPhaseGate::Late => "late",
+            TiearbPhaseGate::None => "none",
+        }
+    }
+
+    /// Does the arbiter fire at this `k_remaining`?
+    ///
+    /// ⭐ `All` short-circuits WITHOUT calling [`phase_bucket`], so the default
+    /// path does not even read the deck — the identity property is structural,
+    /// not arithmetic.
+    #[inline]
+    pub fn fires_at(&self, k_remaining: i64) -> bool {
+        match self {
+            TiearbPhaseGate::All => true,
+            TiearbPhaseGate::None => false,
+            TiearbPhaseGate::Early => phase_bucket(k_remaining) == "early",
+            TiearbPhaseGate::Mid => phase_bucket(k_remaining) == "mid",
+            TiearbPhaseGate::Late => phase_bucket(k_remaining) == "late",
+        }
+    }
+}
+
 /// One legal tile action's OUTER CHAIN value.
 #[derive(Clone, Debug)]
 pub struct ChainValue {
@@ -634,6 +754,114 @@ pub fn arbitrate_decision(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// ⭐ THE GOLDEN TABLE (`DESIGN.md` §2.2 / `READ_RULE.md` §3), pinned to the
+    /// exact seven values the design executed the canonical python function to
+    /// obtain. The python side asserts the same table against
+    /// `sample_agreement_roots.phase_bucket` itself
+    /// (`tests/test_tiearb_phase_gate.py`), so the two implementations cannot
+    /// drift apart silently.
+    #[test]
+    fn phase_bucket_golden_table() {
+        for (k, want) in [
+            (71, "early"),
+            (49, "early"),
+            (48, "late"),
+            (47, "mid"),
+            (25, "mid"),
+            (24, "late"),
+            (23, "late"),
+        ] {
+            assert_eq!(phase_bucket(k), want, "phase_bucket({k})");
+        }
+    }
+
+    /// ⚠️⚠️ The edge is REPRODUCED, NOT REPAIRED. Stated as its own test so a
+    /// well-meaning "fix" fails loudly with the reason attached.
+    #[test]
+    fn phase_bucket_boundary_falls_through_to_late() {
+        assert_eq!(phase_bucket(48), "late", "k=48 must NOT be early");
+        assert_eq!(phase_bucket(24), "late", "k=24 must NOT be mid");
+        // ... and the neighbours on both sides are unaffected.
+        assert_eq!(phase_bucket(50), "early");
+        assert_eq!(phase_bucket(49), "early");
+        assert_eq!(phase_bucket(47), "mid");
+        assert_eq!(phase_bucket(26), "mid");
+        assert_eq!(phase_bucket(25), "mid");
+        assert_eq!(phase_bucket(23), "late");
+    }
+
+    /// The whole `k_remaining` range a real game spans (71 -> 0) partitions
+    /// into exactly the three windows the read rule freezes, `48`/`24`
+    /// included in `late`.
+    #[test]
+    fn phase_windows_partition_the_whole_range() {
+        let mut early = Vec::new();
+        let mut mid = Vec::new();
+        let mut late = Vec::new();
+        for k in 0..=71i64 {
+            match phase_bucket(k) {
+                "early" => early.push(k),
+                "mid" => mid.push(k),
+                "late" => late.push(k),
+                other => panic!("phase_bucket({k}) returned {other:?}"),
+            }
+        }
+        assert_eq!(early, (49..=71).collect::<Vec<i64>>());
+        assert_eq!(mid, (25..=47).collect::<Vec<i64>>());
+        let mut want_late: Vec<i64> = (0..=23).collect();
+        want_late.push(24);
+        want_late.push(48);
+        want_late.sort_unstable();
+        assert_eq!(late, want_late);
+        assert_eq!(early.len() + mid.len() + late.len(), 72);
+    }
+
+    /// Out-of-range inputs take the fall-through, exactly as the python does.
+    #[test]
+    fn phase_bucket_out_of_range_falls_through() {
+        assert_eq!(phase_bucket(-1), "late");
+        assert_eq!(phase_bucket(-5), "late");
+        assert_eq!(phase_bucket(1_000_000_000), "late");
+    }
+
+    #[test]
+    fn phase_gate_parse_round_trips_and_fails_closed() {
+        for s in ["all", "early", "mid", "late", "none"] {
+            assert_eq!(TiearbPhaseGate::parse(s).unwrap().value(), s);
+        }
+        for bad in ["", "ALL", "Early", "full", "phase:early", "0"] {
+            assert!(
+                TiearbPhaseGate::parse(bad).is_err(),
+                "{bad:?} must NOT parse (a silent default is the inverted-liveness hazard)"
+            );
+        }
+    }
+
+    /// `All` fires everywhere, `None` nowhere, and each window fires exactly on
+    /// its own bucket — including at the two fall-through k's, where `late`
+    /// fires and `early`/`mid` do not.
+    #[test]
+    fn phase_gate_fires_at_matches_the_bucket() {
+        for k in 0..=71i64 {
+            let b = phase_bucket(k);
+            assert!(TiearbPhaseGate::All.fires_at(k), "All must fire at k={k}");
+            assert!(!TiearbPhaseGate::None.fires_at(k), "None must not fire at k={k}");
+            assert_eq!(TiearbPhaseGate::Early.fires_at(k), b == "early", "k={k}");
+            assert_eq!(TiearbPhaseGate::Mid.fires_at(k), b == "mid", "k={k}");
+            assert_eq!(TiearbPhaseGate::Late.fires_at(k), b == "late", "k={k}");
+            // exactly one window gate fires at every k
+            let n = [TiearbPhaseGate::Early, TiearbPhaseGate::Mid, TiearbPhaseGate::Late]
+                .iter()
+                .filter(|g| g.fires_at(k))
+                .count();
+            assert_eq!(n, 1, "exactly one window must own k={k}");
+        }
+        assert!(!TiearbPhaseGate::Early.fires_at(48), "ARB_EARLY must NOT fire at k=48");
+        assert!(TiearbPhaseGate::Late.fires_at(48));
+        assert!(!TiearbPhaseGate::Mid.fires_at(24), "ARB_MID must NOT fire at k=24");
+        assert!(TiearbPhaseGate::Late.fires_at(24));
+    }
 
     fn midgame(seed: &str, plies: usize) -> Game {
         let mut g = Game::from_seed(seed);

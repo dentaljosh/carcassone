@@ -356,6 +356,13 @@ def production_prior_cfg(spec: ProductionSpec | None = None, leaf_cfg=None, *,
                   tiearb_b=int(tiearb["B"]), tiearb_j=int(tiearb["J"]),
                   tiearb_mode=str(tiearb["mode"]), tiearb_salt=str(tiearb["salt"]),
                   tiearb_eps=float(tiearb["eps"]))
+        # THE PHASE FIRE-GATE (measurement/phasegate_prep). Optional key, so a
+        # caller that predates the round arms the arbiter exactly as before
+        # ("all" == ungated); a caller that passes it gets it validated by
+        # HeuristicPriorConfig.__post_init__ and refused if it is not one of
+        # all|early|mid|late|none.
+        if "phase_gate" in tiearb:
+            ta.update(tiearb_phase_gate=str(tiearb["phase_gate"]))
     return HeuristicPriorConfig(
         c_puct=spec.c_puct,
         tau_p=spec.tau_p,

@@ -293,6 +293,14 @@ def search_config_rs(cfg, sims: int):
             tiearb_mode=str(getattr(cfg, "tiearb_mode", "argmax")),
             tiearb_salt=str(getattr(cfg, "tiearb_salt", "tiearb2-deploy-v1")),
             tiearb_eps=float(getattr(cfg, "tiearb_eps", 0.0)),
+            # THE PHASE FIRE-GATE (measurement/phasegate_prep). Passed ONLY
+            # inside the already-conditional ENABLED block, so the same
+            # fail-closed rule the whole surface follows extends to it: a wheel
+            # predating the gate serves every default-off (champion) config
+            # unchanged, while an ENABLED arbiter raises TypeError instead of
+            # silently running UNGATED — which on an ARB_EARLY cell would
+            # produce a perfectly healthy-looking duplicate of ARB_FULL.
+            tiearb_phase_gate=str(getattr(cfg, "tiearb_phase_gate", "all")),
         )
     # ⚠️ `resolved_leaf_cfg()`, NOT `cfg.leaf_cfg` (fixed 2026-08-02). `leaf_cfg=None`
     # is the SENTINEL for "the env-built DEFAULT_CONFIG", and it is what every caller

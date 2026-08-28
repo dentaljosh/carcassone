@@ -387,9 +387,23 @@ pub struct FairAgent {
     /// Decisions where the trigger FIRED and the arbiter ran (`phi`'s
     /// numerator; `G-FIRE` voids the cell below 1.0 per game).
     pub tiearb_fired_plies: u64,
+    /// ⭐ PER-PHASE fired plies, bucketed by [`crate::tiearb::phase_bucket`] of
+    /// `k_remaining` at the fired ply (`measurement/phasegate_prep/DESIGN.md`
+    /// §7.2). ⛔ `G-PHI`'s address, and the ONLY witness of the gate that is
+    /// derived from PLAY rather than from config: on a `phase_gate = early`
+    /// cell `mid` and `late` must be 0 and `early` > 0; on `all` the three sum
+    /// to [`Self::tiearb_fired_plies`]; on `none` all four are 0.
+    ///
+    /// ⭐ They also measure the round's own deduped per-phase fired split,
+    /// which `DESIGN.md` §6.2 could only PROXY (the banked
+    /// `tile_gap_rows.jsonl` carries no repr-dedup column, so the true split is
+    /// unrecoverable from disk). `[early, mid, late]`.
+    pub tiearb_fired_by_phase: [u64; 3],
     /// Fired decisions where the returned action differs from the champion's
     /// own `pooled_q_argmax` pick.
     pub tiearb_pickchanges: u64,
+    /// [`Self::tiearb_pickchanges`] bucketed the same way. `[early, mid, late]`.
+    pub tiearb_pickchanges_by_phase: [u64; 3],
     /// Total arms arbitrated (the runtime analogue of the corpus `Ā` = 3.0022).
     pub tiearb_arms_total: u64,
     /// Total `tier1-greedy` playouts spent by the arbiter.
@@ -440,7 +454,9 @@ impl FairAgent {
             tiearb_scratch: crate::leaf::LeafScratch::new(),
             tiearb_tile_plies: 0,
             tiearb_fired_plies: 0,
+            tiearb_fired_by_phase: [0; 3],
             tiearb_pickchanges: 0,
+            tiearb_pickchanges_by_phase: [0; 3],
             tiearb_arms_total: 0,
             tiearb_playouts_total: 0,
             tiearb_secs: 0.0,
@@ -654,6 +670,20 @@ impl FairAgent {
         if !self.cfg.search.tiearb_enabled {
             return Ok(champ_pick);
         }
+        // ⭐ THE PHASE FIRE-GATE (`measurement/phasegate_prep/DESIGN.md` §7.2).
+        // A gated-out ply returns the champion's own pick down the SAME single
+        // branch as `tiearb_enabled == false` above — `crate::tiearb` is never
+        // touched and no counter moves, so `phase_gate = none` is the champion
+        // byte for byte and `phase_gate = all` short-circuits inside
+        // `fires_at` without even reading the deck.
+        //
+        // ⛔ `crate::fair::k_remaining(g)` — undrawn deck PLUS the tile in hand
+        // — is the census axis. NEVER `g.state.deck_len()`
+        // (`search/window_diag.rs:156`), which omits the tile in hand and is
+        // off by one against every artefact keyed on `phase_bucket`.
+        if !self.cfg.search.tiearb_phase_gate.fires_at(k_remaining(g)) {
+            return Ok(champ_pick);
+        }
         self.tiearb_arbitrate(g, move_idx, info, champ_pick)
     }
 
@@ -725,11 +755,24 @@ impl FairAgent {
                     self.tiearb_partial_argmax += 1;
                 }
                 self.tiearb_fired_plies += 1;
+                // ⭐ PER-PHASE fire counters — the same `k_remaining` the gate
+                // itself read one frame up, bucketed by the canonical census
+                // axis. Free (one deck read), and it is what makes DESIGN
+                // §6.2's biased proxy self-correcting: `ARB_FULL` measures its
+                // own deduped per-phase fired split as a by-product.
+                let ph = crate::tiearb::phase_bucket(k_remaining(g));
+                let pi = match ph {
+                    "early" => 0,
+                    "mid" => 1,
+                    _ => 2,
+                };
+                self.tiearb_fired_by_phase[pi] += 1;
                 self.tiearb_arms_total += arms.arms.len() as u64;
                 self.tiearb_playouts_total += out.n_playouts as u64;
                 let changed = out.chosen != champ_pick;
                 if changed {
                     self.tiearb_pickchanges += 1;
+                    self.tiearb_pickchanges_by_phase[pi] += 1;
                 }
                 info.tiearb_fired = true;
                 info.tiearb_arms = arms.arms;
@@ -1220,6 +1263,191 @@ mod tests {
         assert!(a.tiearb_fired_plies > 0, "the arbiter never ran");
         assert_eq!(a.tiearb_errors, 0);
         assert_eq!(a.tiearb_partial_argmax, 0);
+    }
+
+    // ----------------------------------------------------------------- //
+    // THE PHASE FIRE-GATE (measurement/phasegate_prep/DESIGN.md §7.2/§7.5) //
+    // ----------------------------------------------------------------- //
+
+    /// Play one seeded game with the arbiter armed at `gate` and return
+    /// `(action sequence, [fired_early, fired_mid, fired_late], fired_plies,
+    ///   tile_plies, errors, pickchanges)`.
+    #[allow(clippy::type_complexity)]
+    fn play_gated(
+        gate: crate::tiearb::TiearbPhaseGate,
+        enabled: bool,
+        seed: &str,
+        plies: usize,
+    ) -> (Vec<i32>, [u64; 3], u64, u64, u64, u64) {
+        let mut c = cfg(2, 16, 1);
+        c.search.tiearb_enabled = enabled;
+        c.search.tiearb_phase_gate = gate;
+        c.search.tiearb_b = 2; // cheap: these are wiring tests, not the cell
+        c.exact_endgame = false;
+        let mut a = FairAgent::new(c);
+        let mut g = Game::from_seed(seed);
+        let mut acts = Vec::new();
+        for _ in 0..plies {
+            if g.is_terminal() {
+                break;
+            }
+            let act = a.choose_action(&g, None).unwrap();
+            acts.push(act);
+            g.advance(act).unwrap();
+        }
+        (
+            acts,
+            a.tiearb_fired_by_phase,
+            a.tiearb_fired_plies,
+            a.tiearb_tile_plies,
+            a.tiearb_errors,
+            a.tiearb_pickchanges,
+        )
+    }
+
+    /// ⭐⭐ IDENTITY 1 — `gate = All` is TODAY'S UNGATED ARBITER. The default
+    /// IS `All`, so this asserts the default has not moved AND that setting it
+    /// explicitly changes nothing: same action sequence, same counters.
+    #[test]
+    fn phase_gate_all_is_the_ungated_arbiter() {
+        assert_eq!(
+            SearchConfig::default().tiearb_phase_gate,
+            crate::tiearb::TiearbPhaseGate::All,
+            "the DEFAULT gate must be All — the IDENT cell's premise"
+        );
+        // an agent built WITHOUT touching the field ...
+        let mut c = cfg(2, 16, 1);
+        c.search.tiearb_enabled = true;
+        c.search.tiearb_b = 2;
+        c.exact_endgame = false;
+        let mut base = FairAgent::new(c);
+        let mut g = Game::from_seed("28000000000");
+        let mut base_acts = Vec::new();
+        for _ in 0..30 {
+            if g.is_terminal() {
+                break;
+            }
+            let act = base.choose_action(&g, None).unwrap();
+            base_acts.push(act);
+            g.advance(act).unwrap();
+        }
+        // ... and one built with `All` set explicitly.
+        let (all_acts, _, fired_all, tile_all, _, chg_all) =
+            play_gated(crate::tiearb::TiearbPhaseGate::All, true, "28000000000", 30);
+        assert_eq!(base_acts, all_acts, "gate=all changed a played action");
+        assert_eq!(base.tiearb_fired_plies, fired_all);
+        assert_eq!(base.tiearb_tile_plies, tile_all);
+        assert_eq!(base.tiearb_pickchanges, chg_all);
+        assert!(fired_all > 0, "the arbiter never fired — the test proves nothing");
+    }
+
+    /// ⭐⭐ IDENTITY 2 — `gate = None` is THE UNMODIFIED CHAMPION. The armed
+    /// knob must produce the champion's own action sequence, byte for byte,
+    /// and touch NO counter (the gated-out ply returns down the same branch as
+    /// `tiearb_enabled == false`).
+    #[test]
+    fn phase_gate_none_is_the_unmodified_champion() {
+        let (champ_acts, champ_ph, champ_fired, champ_tile, champ_err, champ_chg) =
+            play_gated(crate::tiearb::TiearbPhaseGate::All, false, "28000000000", 40);
+        let (none_acts, none_ph, none_fired, none_tile, none_err, none_chg) =
+            play_gated(crate::tiearb::TiearbPhaseGate::None, true, "28000000000", 40);
+        assert_eq!(champ_acts, none_acts, "gate=none is NOT the champion");
+        assert_eq!((champ_ph, none_ph), ([0; 3], [0; 3]));
+        assert_eq!((champ_fired, none_fired), (0, 0));
+        // ⚠️ the gate short-circuits BEFORE `tiearb_arbitrate`, so a gated-out
+        // ply is not even a "tile ply at which the trigger was evaluated".
+        assert_eq!((champ_tile, none_tile), (0, 0));
+        assert_eq!((champ_err, none_err), (0, 0), "a gated-out ply is NOT an error");
+        assert_eq!((champ_chg, none_chg), (0, 0));
+    }
+
+    /// PARTITION — on `gate = all` the three per-phase counters sum to
+    /// `fired_plies` and at least two buckets are exercised over a whole game.
+    #[test]
+    fn phase_gate_counters_partition_the_fired_plies() {
+        let (_, ph, fired, _, err, _) =
+            play_gated(crate::tiearb::TiearbPhaseGate::All, true, "28000000000", 400);
+        assert!(fired > 0, "the arbiter never fired");
+        assert_eq!(ph[0] + ph[1] + ph[2], fired, "per-phase counters do not partition");
+        assert_eq!(err, 0);
+        assert!(
+            ph.iter().filter(|&&n| n > 0).count() >= 2,
+            "a whole game must span more than one phase; got {ph:?}"
+        );
+    }
+
+    /// ⭐⭐ DISJOINTNESS — `G-PHI`'s window bit, proved from PLAY. On
+    /// `gate = early` the mid and late counters are 0 and early is positive;
+    /// mirror for mid and late.
+    #[test]
+    fn phase_gate_windows_are_disjoint_in_play() {
+        for (gate, idx) in [
+            (crate::tiearb::TiearbPhaseGate::Early, 0usize),
+            (crate::tiearb::TiearbPhaseGate::Mid, 1),
+            (crate::tiearb::TiearbPhaseGate::Late, 2),
+        ] {
+            let (_, ph, fired, _, err, _) = play_gated(gate, true, "28000000000", 400);
+            assert!(ph[idx] > 0, "gate={} never fired: {ph:?}", gate.value());
+            assert_eq!(ph[idx], fired, "gate={} fired outside its window", gate.value());
+            for (j, n) in ph.iter().enumerate() {
+                if j != idx {
+                    assert_eq!(*n, 0, "gate={} fired in bucket {j}", gate.value());
+                }
+            }
+            assert_eq!(err, 0, "a gated-out ply must not touch tiearb_errors");
+        }
+    }
+
+    /// The gated cells are STRICTLY CHEAPER than `all` in fired plies, and the
+    /// three windows' fired counts sum to the ungated cell's — ⛔ on the SAME
+    /// game only, which is why this is asserted on ply COUNTS from the shared
+    /// prefix and never used as a claim about MARGINS (DESIGN §1.2: the slices
+    /// play different games and need not sum).
+    #[test]
+    fn phase_gate_fires_strictly_less_than_all() {
+        let (_, _, fired_all, _, _, _) =
+            play_gated(crate::tiearb::TiearbPhaseGate::All, true, "28000000000", 400);
+        for gate in [
+            crate::tiearb::TiearbPhaseGate::Early,
+            crate::tiearb::TiearbPhaseGate::Mid,
+            crate::tiearb::TiearbPhaseGate::Late,
+        ] {
+            let (_, _, fired, _, _, _) = play_gated(gate, true, "28000000000", 400);
+            assert!(
+                fired < fired_all,
+                "gate={} fired {fired} >= all's {fired_all}",
+                gate.value()
+            );
+        }
+    }
+
+    /// The gate reads `k_remaining` (deck + the tile IN HAND), NOT
+    /// `deck_len()`. A gate built on `deck_len` would fire one tile late; this
+    /// pins the two apart at the plies where a tile IS in hand.
+    #[test]
+    fn k_remaining_is_deck_len_plus_the_tile_in_hand() {
+        let mut g = Game::from_seed("28000000000");
+        let mut saw_difference = false;
+        for _ in 0..60 {
+            if g.is_terminal() {
+                break;
+            }
+            let k = k_remaining(&g);
+            let d = g.state.deck_len() as i64;
+            assert!(k == d || k == d + 1);
+            if k == d + 1 {
+                saw_difference = true;
+                // the off-by-one is REAL at the boundary: k=49 is early while
+                // deck_len=48 would bucket as late.
+                if k == 49 {
+                    assert_eq!(crate::tiearb::phase_bucket(k), "early");
+                    assert_eq!(crate::tiearb::phase_bucket(d), "late");
+                }
+            }
+            let la = g.legal_actions();
+            g.advance(la[la.len() / 2]).unwrap();
+        }
+        assert!(saw_difference, "never observed a tile in hand — the test proves nothing");
     }
 
     #[test]
