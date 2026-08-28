@@ -123,6 +123,19 @@ def test_plan_and_run_agree_on_the_unit_file_name():
     assert 'units_${BOX}_${BLOCK}${SUFFIX}_*.txt' in run
 
 
+def test_the_smoke_block_label_cannot_be_swallowed_by_a_real_block_glob():
+    """`units_local_base_*` must NOT match the smoke's own unit file."""
+    smoke = (HERE / "smoke_c1.sh").read_text()
+    assert "\nBLOCK=smoke\n" in smoke and '\nSUFFIX=""\n' in smoke
+    names = [f"units_local_{b}_fixed_v1.txt" for b in ("base", "E1", "E2", "E3")]
+    smoke_name = "units_local_smoke_fixed_v1.txt"
+    import fnmatch
+    for b in ("base", "E1", "E2", "E3"):
+        assert not fnmatch.fnmatch(smoke_name, f"units_local_{b}_*.txt")
+    for n in names:
+        assert not fnmatch.fnmatch(n, "units_local_smoke_*.txt")
+
+
 # --------------------------------------------------------------------------- #
 # §2  the arm-slot remap                                                        #
 # --------------------------------------------------------------------------- #

@@ -26,8 +26,14 @@ BOX="${BOX:?set BOX}"
 W="${W:?set W}"
 SHARE="${SHARE:?set SHARE}"
 PY="${PY:-$REPO/.venv/bin/python}"
-BLOCK=base
-SUFFIX=_smoke
+# ⚠️ BLOCK=smoke, not BLOCK=base with a suffix: run_c1.sh globs
+# `units_${BOX}_${BLOCK}${SUFFIX}_*.txt`, and `units_local_base_*` would happily
+# swallow a `units_local_base_smoke_*` file into the real base pass's chunk list.
+# A distinct block label keeps the two globs disjoint. The WORLD indices the
+# smoke uses are still the base block's own top two (see below), so the smoke
+# units ARE base-pass units and the resumable run skips them.
+BLOCK=smoke
+SUFFIX=""
 MAX_PROJECTED_H="${MAX_PROJECTED_H:-8}"
 
 export PYTHONPATH="$REPO/src:$REPO/engine:$REPO/scripts"
@@ -61,7 +67,7 @@ for r in (inv, fc):
         lines.append(f"{r['game']} {r['ply']} {w}")
 prof = {r["profile"] for r in (inv, fc)}
 assert len(prof) == 1, prof
-(D / f"units_local_base_smoke_{prof.pop()}.txt").write_text("\n".join(lines) + "\n")
+(D / f"units_SMOKEPICK_{prof.pop()}.txt").write_text("\n".join(lines) + "\n")
 (D / "SMOKE_UNITS.json").write_text(json.dumps(
     {"invasion": {k: inv[k] for k in ("game", "ply", "stratum", "k",
                                       "n_remaining_plies", "c1_action",
@@ -72,12 +78,11 @@ assert len(prof) == 1, prof
      "units": lines}, indent=1))
 print("\n".join(lines))
 PYEOF
-# run_c1.sh globs units_${BOX}_${BLOCK}${SUFFIX}_*.txt ; the picker wrote the
-# local-named file, so mirror it if this smoke runs on another box.
-for F in "$DIR"/units_local_base_smoke_*.txt; do
+# run_c1.sh globs units_${BOX}_${BLOCK}${SUFFIX}_*.txt — rename the picker's
+# box-agnostic file into that shape for whichever box is smoking.
+for F in "$DIR"/units_SMOKEPICK_*.txt; do
   [ -e "$F" ] || continue
-  T="${F/units_local_base_smoke_/units_${BOX}_${BLOCK}${SUFFIX}_}"
-  [ "$F" = "$T" ] || cp "$F" "$T"
+  mv "$F" "${F/units_SMOKEPICK_/units_${BOX}_${BLOCK}${SUFFIX}_}"
 done
 
 echo "=== [2/4] run them through run_c1.sh at PRODUCTION knobs"

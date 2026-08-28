@@ -474,11 +474,12 @@ is not a post-hoc filter — it is a frozen deterministic rule executing. Above
 ### 7.2 The smoke, and what it adjudicates
 
 [`smoke_c1.sh`](smoke_c1.sh) runs **4 real units through `run_c1.sh` itself**
-(same script, same flags, same knobs, `SUFFIX=_smoke`): the *most expensive*
-`invasion` ply and the median `farm_capture` ply, 2 worlds each, taken from the
-**top of the base block's own world range** so the smoke units are real run units
-and the resumable run simply skips them. It then adjudicates **from the emitted
-unit files**, not from exit codes:
+(same script, same flags, same knobs, `BLOCK=smoke` — a distinct label so the
+base pass's `units_<box>_base_*` glob cannot swallow the smoke's unit file): the
+*most expensive* `invasion` ply and the median `farm_capture` ply, 2 worlds each,
+taken from the **top of the base block's own world range**, so the smoke units
+are real base-pass units and the resumable run simply skips them. It then
+adjudicates **from the emitted unit files**, not from exit codes:
 
 | smoke gate | bar |
 |---|---|
