@@ -1,0 +1,44 @@
+BAND_CLAIMED — phasegate_prep, band 154000000000. Dropped 2026-08-28.
+
+FUNDING: the owner's ratified Shabbos envelope 2026-08-28, verbatim "plan looks good to me" +
+"start the build now. we should default to w22 laptop w30 local" (docs/PROGRAM_ROADMAP_2026-07-07.md
+NOW block: "anchor = A1 phase test (band 154e9; merge phasegate branch at quiet window -> wheel
+deploy both boxes -> production-knob smoke -> claim -> launch)"). Hard limits carried: no
+PRODUCTION/governance adoption, no phone, bands <= 154e9+1.
+
+ROUND: Option A1 — IDENT (40 decks, throwaway sub-range) + ARB_FULL (400, THE ANCHOR) + ARB_EARLY
+(1,200, THE PRIMARY, split _L 1037 local / _R 163 laptop on disjoint contiguous sub-ranges and
+pooled within-band, same-config). Candidate = champion + arb B=16/J=4/argmax/salt
+tiearb2-deploy-v1/eps 0.0 with the phase gate as THE SINGLE VARIABLE; opponent = the unmodified
+champion, arbiter off. k8x1376 = 11008 both sides, rust both sides, fixed_v1 + R9, exact_k 2
+marginalized, curve125 leaf a36d2e15a3b3d71d on BOTH sides.
+
+W: local 30 / laptop 22, the owner's verbatim defaults (design-time 14/22). W is throughput-only —
+games are bit-identical at any W and no gate in this pair reads a clock — so it moves wall clock and
+nothing else. The cell->box assignment is NOT recomputed: it is frozen in screen_lib.CELLS and is a
+G-HOST input.
+
+PRE-DROP EVIDENCE
+  merge 2d0ecdde (rust fire-gate + counters + carc-py plumbing + harness flag + instrument)
+  FREEZE/blind commit 2f8bb1357a4137f845916d6f96b62c3f00bc9998 (the pair stamped FROZEN)
+  IDENT-BITEXACT PASS (0 games): gate=all == today's ungated arbiter and gate=none == the
+    unmodified champion, bit for bit over 20 seeded games, cross-wheel, positive control fired
+  analyze_phasegate.py --selftest PASS on both boxes (SELFTEST_local.json / SELFTEST_laptop.json)
+  201 rust tests pass; 48/48 pair tests pass at build state (see DEVIATIONS PG-D1)
+  ONE wheel FILE built on local at rustc 1.96.0 (carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64,
+    sha256 c95d22f3…, binary sha 05fe19ecb65d06a1) and installed on BOTH boxes — same bytes, so
+    G-WHEEL-SAME passes per box AND agrees across boxes
+  laptop bundle-synced to the launch HEAD (remotes cannot reach github); both boxes report ONE HEAD
+  FULL-ARGS process census clean on both boxes (tenancy class: non-exclusive, RESULT-SAFE — no
+    timing statistic is a branch input — but the census is owed and was run)
+  BOTH SMOKES PASS at production knobs on the throwaway sub-range 154999999500+, 22 games each,
+    adjudicated from the EMITTED manifest.json (config) and summary.json (statistics), never config
+    off summary.json — the IS-D1 lesson. Two execution-layer launcher defects found and fixed
+    BEFORE any real deck (DEVIATIONS PG-D7 ambiguous --out, PG-D8 missing --rules-profile, which
+    would have run the whole round as `walled` and voided every cell at G-RULES).
+
+BAND: tree sweep re-run at claim time — ZERO references to 154000000000 anywhere in the tree
+outside measurement/phasegate_prep/ and the two docs that name it as a proposal, and zero rows
+starting 154000000000 in governance/BAND_REGISTRY.csv on ANY ref. 146e9 skipped: absent from the
+registry but carrying references in the tree — the registry is necessary and NOT sufficient, and the
+tree sweep is the binding check. Band retires decision_influenced=yes on every branch.

@@ -175,8 +175,24 @@ run_cell() {
     --opp-k-dets "$K_DETS" --opp-sims "$SIMS_PER_DET"
     --exact-k "$EXACT_K"
     --opponent fair-champion
-    --n "$n_games" --seed-start "$seed_start"
-    --workers "$W" --out "$out"
+    # ⛔⛔ PG-D9: WITHOUT --paired THE ROUND HAS NO PRIMARY. eval_fair_puct's
+    # _build_work (:2865) returns n DISTINCT decks at ONE seat each when paired is
+    # false, so NO deck appears in both seatings, n_paired = 0 on every cell, and
+    # the cell ALSO walks 2*n_decks seeds — outside its own frozen range and
+    # straight through its sibling sub-cell's. With --paired, --n 2074 is exactly
+    # 1037 decks x 2 seatings. Both precedent launchers pass it
+    # (tiearb2_stage2:213, invasion_screen_r3:322).
+    --n "$n_games" --paired --seed-start "$seed_start"
+    # ⚠️ PG-D7: `--out` is AMBIGUOUS in eval_fair_puct (--out-root / --out-subdir)
+    # and argparse REFUSES it. The out dir is root/sub (eval_fair_puct.py:4351-4353),
+    # so this pair of flags names EXACTLY the "$SHARE/$OUT_TAG/$name" above.
+    --workers "$W" --out-root "$SHARE/$OUT_TAG" --out-subdir "$name"
+    # ⚠️ PG-D8: WITHOUT THIS THE ROUND RUNS `walled` — rules_profile's argparse
+    # default is DEFAULT_PROFILE ("walled", the pre-F9 engine of record), NOT the
+    # fixed_v1 the pair freezes (DESIGN §2.4). G-CONFIG asserts
+    # manifest:rules_profile.name == screen_lib.RULES_PROFILE == "fixed_v1", so
+    # every cell would have voided at adjudication.
+    --rules-profile "$RULES_PROFILE"
     # ⛔⛔ THE SINGLE VARIABLE. Without --cand-tiearb-enabled the gate is a
     # SILENT NO-OP and the harness refuses at launch (champion-vs-champion
     # wearing a gated cell's name).

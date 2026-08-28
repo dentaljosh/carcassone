@@ -111,3 +111,118 @@ its own `RUN_LIVE.json` freeze-latch sentinel and censuses foreign ones), this r
 house-wide freeze-latch hook protects the round in the usual way. ⛔ **No watchdog was improvised** —
 none exists for this instrument, and inventing one at launch is exactly the class of launcher-side
 change that has no selftest behind it. The orchestrator owns liveness monitoring for this round.
+---
+
+## PG-D7 — `--out` is ambiguous in `eval_fair_puct` (launcher-side, caught by the smoke)
+
+**2026-08-28, pre-launch, first smoke attempt.** `run_cells.sh:179` passed `--out "$out"`.
+`eval_fair_puct` defines `--out-root` and `--out-subdir` and **no** `--out`, so argparse refused:
+`ambiguous option: --out could match --out-root, --out-subdir`. The cell died before playing a game.
+
+**Ground truth before the fix:** `eval_fair_puct.py:4351-4353` resolves the output dir as
+`root / sub` with `sub = args.out_subdir or tag` and `root = args.out_root or EVAL_ROOT`, so
+`--out-root "$SHARE/$OUT_TAG" --out-subdir "$name"` names **exactly** the `"$SHARE/$OUT_TAG/$name"`
+the launcher already `mkdir -p`s and already uses for its `DONE` marker. Both precedent launchers
+(`tiearb2_stage2_20260817/run_cells.sh:213`, `invasion_screen_r3_prep/run_cells.sh:324`) use the
+two-flag form.
+
+**Fix:** the two-flag form. **Why the smoke could not catch it earlier:** the smoke *is* what caught
+it — `--dry-run` only *prints* the argv, it never hands it to argparse. Statistics-blind: the cell
+never started, and the directory it names is unchanged.
+
+---
+
+## PG-D8 — `--rules-profile` was never passed: the round would have run `walled`
+
+**2026-08-28, pre-launch, first smoke attempt.** `WORKERS.conf` carries `RULES_PROFILE=fixed_v1`
+(DESIGN §2.4) but `run_cells.sh` never passed it to `eval_fair_puct`. The flag's argparse default is
+`rules_profile.DEFAULT_PROFILE` = **`walled`** — the pre-F9 engine of record — so **every cell would
+have been played under the wrong rules epoch**, and `G-RULES` (`manifest:rules_profile.name` vs
+`screen_lib.RULES_PROFILE == "fixed_v1"`) would have voided all four archives after the full ~320
+core-h had been spent.
+
+**Ground truth before the fix:** `src/carcassonne_ai/rules_profile.py:365-372` —
+`ap.add_argument(flag, choices=known(), default=DEFAULT_PROFILE)`, and `DEFAULT_PROFILE` is
+`"walled"`. `invasion_screen_r3_prep/run_cells.sh:323` passes `--rules-profile "$RULES_PROFILE"`.
+
+**Fix:** `--rules-profile "$RULES_PROFILE"` added, sourced from `WORKERS.conf` like every other
+constant. **Verified on the emitted smoke manifest** (the IS-D1 address: config from
+`manifest.json`): `rules_profile.name = "fixed_v1"`, `r9_env_ok = true`, `r9_env_observed = true`.
+
+**Why the smoke could not catch it in `--dry-run`:** a missing flag prints as a missing flag and
+looks like nothing. It is visible only in the **emitted manifest** of a real archive, which is
+precisely the reason DESIGN §9 makes the smoke end in the adjudicator rather than in a log grep.
+
+---
+
+## PG-D9 — ⛔ `--paired` was never passed: the round would have produced ZERO deck-paired margins
+
+**2026-08-28, pre-launch, during the first smoke.** `run_cells.sh` passed `--n "$n_games"` without
+`--paired`. `eval_fair_puct.py:2865-2872`:
+
+```python
+def _build_work(seed_start, n, paired):
+    if not paired:
+        return [(seed_start + i, i % 2) for i in range(n)]   # n DISTINCT decks, ONE seat each
+    work = []
+    for i in range(n // 2):
+        work.append((seed_start + i, 0))
+        work.append((seed_start + i, 1))                      # n//2 decks, BOTH seats
+    return work
+```
+
+**Three separate voids, from one missing flag:**
+
+1. **The primary statistic becomes uncomputable.** READ_RULE §1 is
+   `D(deck) = (diff(a_seat=0) + diff(a_seat=1))/2`, *"mean over decks appearing in BOTH seatings"*,
+   and a deck missing a seating is **DROPPED**. Unpaired, **no** deck appears in both seatings, so
+   `n_paired = 0` on every cell.
+2. **`G-DECKS` fails on its own half-played clause** (*"no deck appears at one seat only"*) and on
+   `n_common == frozen n_decks` (0 ≠ 1037).
+3. **`G-DECKS` also fails on range and on `G-SUBPOOL`.** Unpaired, a cell consumes
+   `2 × n_decks` seeds: `ARB_EARLY_L` would have run `154000000000..154000002073`, outside its frozen
+   `..154000001036` **and straight through `ARB_EARLY_R`'s sub-range**, destroying the disjointness
+   the pool is pooled on.
+
+With `--paired`, `--n 2074` yields exactly `1037` decks × 2 seatings over
+`154000000000..154000001036` — the frozen spec, exactly.
+
+**Ground truth before the fix:** both precedent launchers pass it —
+`tiearb2_stage2_20260817/run_cells.sh:213` (`--n "$N" --paired --seed-start "$BAND"`) and
+`invasion_screen_r3_prep/run_cells.sh:322`. The first smoke's own log line confirmed the defect
+live: `info=fair n=22 paired=False`.
+
+**Fix:** `--paired` added. Both smokes were **re-run from scratch** after the fix rather than
+adjudicated in the wrong shape — a smoke that does not play the production shape is not a smoke.
+
+**Why this one is the dangerous class:** it is *silent*. The unpaired cells run to completion, emit
+healthy-looking archives and burn the full round; the defect surfaces only at adjudication, on a
+spent band. It is the same family as the inverted-liveness hazard DESIGN §7.4 names — a default that
+looks perfectly healthy — and it is why DESIGN §9 requires the smoke to end in **this pair's own
+adjudicator** against a real emitted archive.
+
+---
+
+## PG-D10 — the smoke's §9 product arrives via `summary.json`, not via `SMOKE_<role>.json`
+
+**2026-08-28, pre-launch (observation, no code changed).** DESIGN §9 gives the smoke one substantive
+job beyond liveness: *return the realized per-phase fired counts*. The adjudicator's `--smoke-mode`
+record cannot carry them, because `adjudicate()` keys `cells` on `screen_lib.CELLS` names and the
+smoke archives are `SMOKE_EARLY` / `SMOKE_FULL`, which are not cells. So `SMOKE_<role>.json` comes
+back with `cells: {}`, `per_phase_fires: {}` and `round_gates_ok: false` — all **structurally
+expected** for a throwaway archive with no named cell in it, and **not** a smoke failure.
+
+⛔ **The adjudicator was NOT modified** — it is frozen law at the blind commit, and a launcher-side
+convenience is never a reason to touch it.
+
+**Where the number actually is, and it is complete:** the archive's own `summary.json` carries the
+full G-PHI address set — `tiearb_fired_{early,mid,late}_total`, `tiearb_fired_by_phase_sum`,
+`tiearb_fired_plies_total`, `tiearb_fired_share_{early,mid,late}`, `tiearb_pickchanges_*_total`,
+`tiearb_phase_gates`, plus the emitter's own note that these deduped runtime shares **supersede**
+DESIGN §6.2's raw-tie proxy for sizing and are to be read **only on a `phase_gate=all` cell**. The
+`gate=all` smoke leg is exactly that cell, so the round's ETA input is available before game 1 as
+DESIGN §9 intends.
+
+**Corroboration that the gate is not a no-op, from the `gate=early` leg's own telemetry:**
+`fired_early 134 / fired_mid 0 / fired_late 0`, `phase_gates ['early']` — the disjointness property
+`tests/test_tiearb_phase_gate.py` asserts offline, reproduced live in a production-knob archive.
