@@ -23,7 +23,13 @@ from pathlib import Path
 ROUNDS = {
     1: ("CTRL", ["S0V2_M", "S0V2_F"]),
     2: ("CTRL2", ["S0V2_F2", "S0V2_FM"]),   # the MAJORITY amendment
+    # round 3: HOLD + the two instrument fixes, on TWO disjoint fresh ranges.
+    # `--round 3` reads range A, `--round 4` range B, `--round 34` applies the
+    # TWO-RANGE REPLICATION CLAUSE across both (DESIGN.md §4.2).
+    3: ("CTRL_A", ["FM_A", "FMH_A"]),
+    4: ("CTRL_B", ["FM_B", "FMH_B"]),
 }
+REPLICATION = {34: (3, 4)}
 
 # DESIGN.md §4
 G_EXPRESS_ABS = 0.90
@@ -31,6 +37,9 @@ G_EXPRESS_SEP_SIGMA = 2.0
 G_DAMAGE_PP = 10.0
 G_COMPETITIVE_FLOOR = -25.0
 G_COMPETITIVE_PREFERRED = -12.0
+# DESIGN.md §4.2: G-DENY replaces G-DAMAGE as the PRIMARY damage gate.
+G_DENY_UPLIFT = 1.5          # pts/game over the same-range CTRL, deck-matched
+G_DENY_POOLED_Z = 2.0        # on the two-range pooled estimate
 
 
 def _mean(xs):
@@ -51,14 +60,56 @@ def load(root: Path, arm: str):
     return sig["summary"], sig["per_game"], tel
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--root", required=True)
-    ap.add_argument("--round", type=int, default=1, choices=sorted(ROUNDS))
-    ap.add_argument("--out", default=None)
-    args = ap.parse_args()
-    root = Path(args.root)
-    CTRL, ARM_NAMES = ROUNDS[args.round]
+def replication(root: Path, ra: int, rb: int, out_path=None) -> int:
+    """The TWO-RANGE REPLICATION CLAUSE (DESIGN.md §4.2).
+
+    An arm is S0v2-VALID only if it clears EVERY gate on BOTH disjoint fresh
+    ranges, **and** its pooled G-DENY uplift clears the bar at z >= 2.  Round 2
+    proved a single range cannot certify: the SAME agent read G-DAMAGE +2.25 pp
+    on one range and +10.66 pp on the next."""
+    a = {r["arm"].rsplit("_", 1)[0]: r for r in _round_rows(root, ra)}
+    b = {r["arm"].rsplit("_", 1)[0]: r for r in _round_rows(root, rb)}
+    out = {}
+    print("\n=== TWO-RANGE REPLICATION CLAUSE (DESIGN §4.2) ===")
+    print(f"{'arm':6s} {'A:delib':>8s} {'B:delib':>8s} {'A:deny+':>8s} {'B:deny+':>8s} "
+          f"{'pooled':>7s} {'sem':>5s} {'z':>6s} {'A:VALID':>8s} {'B:VALID':>8s} "
+          f"{'REPLICATED':>11s}")
+    for name in sorted(set(a) & set(b)):
+        ra_, rb_ = a[name], b[name]
+        pooled = list(ra_["deny_by_game"].values()) + list(rb_["deny_by_game"].values())
+        pm, ps = _mean(pooled), _sem(pooled)
+        z = (pm / ps) if ps else float("nan")
+        rep = bool(ra_["VALID"] and rb_["VALID"]
+                   and pm >= G_DENY_UPLIFT and z >= G_DENY_POOLED_Z)
+        out[name] = {
+            "range_a": ra_["arm"], "range_b": rb_["arm"],
+            "a_valid": ra_["VALID"], "b_valid": rb_["VALID"],
+            "pooled_deny_uplift": pm, "pooled_deny_sem": ps, "pooled_deny_z": z,
+            "pooled_n": len(pooled), "REPLICATED": rep,
+        }
+        print(f"{name:6s} {ra_['deliberate_per_game']:8.3f} "
+              f"{rb_['deliberate_per_game']:8.3f} {ra_['G_DENY_uplift']:+8.2f} "
+              f"{rb_['G_DENY_uplift']:+8.2f} {pm:+7.2f} {ps:5.2f} {z:+6.2f} "
+              f"{'YES' if ra_['VALID'] else 'NO':>8s} "
+              f"{'YES' if rb_['VALID'] else 'NO':>8s} "
+              f"{'YES' if rep else 'NO':>11s}")
+    if out_path:
+        Path(out_path).write_text(json.dumps(out, indent=2, sort_keys=True))
+        print(f"\nwrote {out_path}")
+    return 0
+
+
+def _round_rows(root: Path, rnd: int) -> list:
+    import io
+    import contextlib
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rows, _ = _evaluate(root, rnd)
+    return rows
+
+
+def _evaluate(root: Path, rnd: int):
+    CTRL, ARM_NAMES = ROUNDS[rnd]
 
     data = {a: load(root, a) for a in [CTRL] + ARM_NAMES}
 
@@ -83,6 +134,13 @@ def main() -> int:
         fz = s["farmer_zero_rate_b"]                 # the CHAMPION side
         damage_pp = 100.0 * (fz - ctrl_fz)
         margin, msem = s["margin_mean_a_minus_b"], s["margin_sem"]
+        # ---- G-DENY: deck-matched denial uplift over the same-range CTRL ----- #
+        db_a = tel["census_outcomes"]["denied_by_game"]
+        db_c = data[CTRL][2]["census_outcomes"]["denied_by_game"]
+        common = sorted(set(db_a) & set(db_c))
+        dd = [db_a[g] - db_c[g] for g in common]
+        deny_up, deny_sem = _mean(dd), _sem(dd)
+        g_deny = deny_up >= G_DENY_UPLIFT
         g_express = (rate >= G_EXPRESS_ABS) and (sep >= G_EXPRESS_SEP_SIGMA)
         g_damage = damage_pp >= G_DAMAGE_PP
         g_comp_hard = margin >= G_COMPETITIVE_FLOOR
@@ -96,12 +154,20 @@ def main() -> int:
             "G_EXPRESS_b": sep >= G_EXPRESS_SEP_SIGMA,
             "G_EXPRESS": g_express,
             "champ_farmer_zero_rate": fz, "ctrl_farmer_zero_rate": ctrl_fz,
-            "G_DAMAGE_pp": damage_pp, "G_DAMAGE": g_damage,
+            "G_DAMAGE_pp": damage_pp, "G_DAMAGE_reported_only": g_damage,
+            "deny_per_game": tel["denied_per_game"],
+            "ctrl_deny_per_game": data[CTRL][2]["denied_per_game"],
+            "G_DENY_uplift": deny_up, "G_DENY_sem": deny_sem,
+            "G_DENY_z": (deny_up / deny_sem) if deny_sem else float("nan"),
+            "G_DENY": g_deny,
+            "deny_by_game": {g: db_a[g] - db_c[g] for g in common},
             "margin": margin, "margin_sem": msem,
             "G_COMPETITIVE_hard": g_comp_hard,
             "G_COMPETITIVE_hard_resolved": g_comp_resolved,
             "G_COMPETITIVE_preferred": margin >= G_COMPETITIVE_PREFERRED,
-            "VALID": bool(g_express and g_damage and g_comp_hard),
+            # DESIGN §4.2: VALID = G-EXPRESS AND G-DENY AND G-COMPETITIVE.
+            # G-DAMAGE is REPORTED, not gating (see §4.2's disclosure).
+            "VALID": bool(g_express and g_deny and g_comp_hard),
             "plan_completion_rate": tel["plan_completion_rate"],
             "took_all_rate": tel["census_outcomes"]["outcome_rates"].get(
                 "invader_took_all", 0.0),
@@ -143,20 +209,21 @@ def main() -> int:
     print(f"CTRL champion farmer-zero rate (pooled): {100*ctrl_fz:.2f} %")
     print(f"CTRL invader_took_all rate: {100*ctrl_took_all:.2f} %")
     print()
-    hdr = (f"{'arm':8s} {'n':>3s} {'delib/g':>9s} {'sem':>6s} {'xCTRL':>6s} "
-           f"{'sep_s':>6s} {'EXPa':>5s} {'EXPb':>5s} {'dmg_pp':>7s} {'DMG':>4s} "
-           f"{'margin':>8s} {'sem':>5s} {'COMP':>5s} {'VALID':>6s}")
+    hdr = (f"{'arm':8s} {'n':>3s} {'delib/g':>9s} {'sem':>6s} {'sep_s':>6s} "
+           f"{'EXP':>4s} {'deny+':>7s} {'sem':>5s} {'z':>5s} {'DENY':>5s} "
+           f"{'margin':>8s} {'sem':>5s} {'COMP':>5s} {'VALID':>6s} {'[dmg_pp]':>9s}")
     print(hdr)
     for r in rows:
         print(f"{r['arm']:8s} {r['n']:3d} {r['deliberate_per_game']:9.4f} "
-              f"{r['sem']:6.3f} {r['multiple_of_ctrl']:6.2f} "
-              f"{r['separation_sigma']:6.2f} "
-              f"{'PASS' if r['G_EXPRESS_a'] else 'FAIL':>5s} "
-              f"{'PASS' if r['G_EXPRESS_b'] else 'FAIL':>5s} "
-              f"{r['G_DAMAGE_pp']:+7.2f} {'PASS' if r['G_DAMAGE'] else 'FAIL':>4s} "
+              f"{r['sem']:6.3f} {r['separation_sigma']:6.2f} "
+              f"{'PASS' if r['G_EXPRESS'] else 'FAIL':>4s} "
+              f"{r['G_DENY_uplift']:+7.2f} {r['G_DENY_sem']:5.2f} "
+              f"{r['G_DENY_z']:+5.2f} {'PASS' if r['G_DENY'] else 'FAIL':>5s} "
               f"{r['margin']:+8.2f} {r['margin_sem']:5.2f} "
               f"{'PASS' if r['G_COMPETITIVE_hard'] else 'FAIL':>5s} "
-              f"{'YES' if r['VALID'] else 'NO':>6s}")
+              f"{'YES' if r['VALID'] else 'NO':>6s} "
+              f"{r['G_DAMAGE_pp']:+9.2f}")
+    print("  (dmg_pp = G-DAMAGE, REPORTED ONLY since DESIGN §4.2; G-DENY gates)")
     print()
     for k, v in contrasts.items():
         print(f"{k}: n={v['n']} mean={v['mean']:+.2f} sem={v['sem']:.2f} "
@@ -171,13 +238,33 @@ def main() -> int:
               f"agent fires vs census {r['agent_fires_vs_census']}, "
               f"{r['worker_s_per_game_upper_bound']:.1f} worker-s/game (upper bound)")
 
+    return rows, {"round": rnd, "ctrl_arm": CTRL,
+                  "ctrl_took_all_rate": ctrl_took_all,
+                  "ctrl_rate": ctrl_rate, "ctrl_sem": ctrl_sem,
+                  "ctrl_deny_per_game": data[CTRL][2]["denied_per_game"],
+                  "ctrl_farmer_zero_rate": ctrl_fz, "arms": rows,
+                  "deck_matched_contrasts": contrasts}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--root", required=True)
+    ap.add_argument("--round", type=int, default=1,
+                    choices=sorted(ROUNDS) + sorted(REPLICATION))
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args()
+    root = Path(args.root)
+
+    if args.round in REPLICATION:
+        ra, rb = REPLICATION[args.round]
+        for r in (ra, rb):
+            print(f"\n########## RANGE {r} ##########")
+            _evaluate(root, r)
+        return replication(root, ra, rb, args.out)
+
+    _rows, blob = _evaluate(root, args.round)
     if args.out:
-        Path(args.out).write_text(json.dumps(
-            {"round": args.round, "ctrl_arm": CTRL,
-             "ctrl_took_all_rate": ctrl_took_all,
-             "ctrl_rate": ctrl_rate, "ctrl_sem": ctrl_sem,
-             "ctrl_farmer_zero_rate": ctrl_fz, "arms": rows,
-             "deck_matched_contrasts": contrasts}, indent=2, sort_keys=True))
+        Path(args.out).write_text(json.dumps(blob, indent=2, sort_keys=True))
         print(f"\nwrote {args.out}")
     return 0
 

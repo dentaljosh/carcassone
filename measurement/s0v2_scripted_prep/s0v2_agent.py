@@ -36,7 +36,13 @@ and, because step 1 can only happen on a tile you just played:
     0. SETUP     — play a tile whose own fresh, unclaimed segment is that small
                    component next to the victim.
 
-The three fires below are exactly those three steps.  Step 2 is the one the
+Those are three of the FOUR fires below.  The fourth pair came out of the
+smokes: **MAJORITY** (amendment §4.1) merges a SECOND owned part in to
+out-number the incumbent, because a 1-v-1 tie pays the incumbent in FULL under
+the vendored full-points-on-tie rule and therefore denies nothing; **HOLD**
+(amendment §4.2) is its mirror, lifting me from a strict deficit — where I score
+ZERO — back to a tie.  Fire priority is MERGE > MAJORITY > HOLD > SETUP; the
+argument is at the priority block in ``_tile_move``.  Step 2 is the one the
 config-only S0 could not buy: its plans STARTED (47 onsets at alpha 0.90) but
 COMPLETED at 28/47, because a depth-0 leaf term makes the first move attractive
 and never carries the plan.  A script carries it by construction.
@@ -148,6 +154,19 @@ class PlanConfig:
     reinforce_enabled: bool = True
     majority_min_pts: int = 4        # never flip a worthless feature (G-DAMAGE's
                                      # own caveat, applied to this fire)
+    # HOLD (AMENDMENT 2026-08-28 round 3, DESIGN.md §4.2) — MAJORITY's mirror.
+    # Round 2 left `incumbent_held` at 17.0 % against the owner's 4.4 %: after
+    # MAJORITY, S0v2 WINS its invasions about as often as the owner and still
+    # LOSES them 4x too often, because the champion merges ITS second part in
+    # and out-numbers S0v2 back.  A component where I am STRICTLY BEHIND scores
+    # me ZERO; lifting it back to a TIE scores me the feature IN FULL under the
+    # vendored full-points-on-tie rule.  (Deficit -> strict majority is
+    # MAJORITY's event; HOLD covers deficit -> tie, so the two are disjoint by
+    # construction.)  HOLD is a tile-phase fire and spends NO meeple; it is fed
+    # by the SAME REINFORCE foothold/setup, and therefore inherits its meeple
+    # reserve and its SHARED concurrency cap.
+    hold_enabled: bool = True
+    hold_min_pts: int = 4
     # Meeple economy.  A reinforcement spends a SECOND meeple on a feature
     # already committed — the exact trade H3' is about — so it keeps the
     # search-grounded gate AND two scarcity guards the other fires do not have.
@@ -371,6 +390,27 @@ class Structure:
             out.append(key)
         return out
 
+    def hold_targets(self, me: int, cfg: PlanConfig) -> list:
+        """CONTESTED components where I am STRICTLY BEHIND — the HOLD fire's
+        targets.
+
+        These score me ZERO today.  Lifting one back to a tie scores me the
+        feature IN FULL (full-points-on-tie), which is why HOLD is worth a tile
+        choice even though it denies the opponent nothing.  A strict subset of
+        `majority_targets`, so the REINFORCE foothold/setup that feeds MAJORITY
+        feeds HOLD too, with no extra meeple spend and under the SAME cap."""
+        opp = 1 - me
+        out = []
+        for key, c in self.counts.items():
+            if c[me] <= 0 or c[opp] <= 0 or c[me] >= c[opp]:
+                continue
+            if self.finished(key):
+                continue
+            if self.potential_pts(key) < cfg.hold_min_pts:
+                continue
+            out.append(key)
+        return out
+
 
 def kind_tel(kind: str) -> str:
     """Telemetry prefix for a meeple-phase candidate kind."""
@@ -510,6 +550,48 @@ def majority_events(pre: Structure, post: Structure, me: int) -> list:
     return events
 
 
+def hold_events(pre: Structure, post: Structure, me: int) -> list:
+    """HOLD events created for `me` between `pre` and `post` — MAJORITY's mirror.
+
+    A hold event is a merge that lifts me from a STRICT DEFICIT on a contested
+    component back to an exact TIE.  Under the vendored full-points-on-tie rule
+    that moves my award on the feature from ZERO to FULL; it denies the opponent
+    nothing, which is precisely why it is a distinct fire from MAJORITY and is
+    ranked below it.
+
+    Disjoint from ``majority_events`` by construction: this requires
+    ``post[me] == post[opp]``, that one requires ``post[me] > post[opp]``.
+    """
+    opp = 1 - me
+    events = []
+    for key, counts in post.counts.items():
+        if counts[opp] <= 0 or counts[me] != counts[opp]:
+            continue
+        parts: dict = {}
+        for mkey in post.members.get(key, ()):
+            pkey = pre.of_meeple.get(mkey)
+            if pkey is None:
+                continue
+            parts[pkey] = pre.counts.get(pkey, [0, 0])
+        if len(parts) < 2:
+            continue
+        deficits = [c for c in parts.values()
+                    if c[me] > 0 and c[opp] > 0 and c[me] < c[opp]]
+        if not deficits:
+            continue                       # I was not losing this feature
+        events.append({
+            "cls": key[0],
+            "post_key": key,
+            "me_after": counts[me], "opp_after": counts[opp],
+            "me_before": deficits[0][me], "opp_before": deficits[0][opp],
+            "victim_pts": post.potential_pts(key),
+            "my_meeples": sorted(
+                mkey for k, c in parts.items() if c[me] > 0
+                for mkey in pre.members.get(k, ()) if mkey[0] == me),
+        })
+    return events
+
+
 # --------------------------------------------------------------------------- #
 # the plan ledger (the state machine the tests pin)                             #
 # --------------------------------------------------------------------------- #
@@ -631,7 +713,12 @@ class ScriptedExploiter:
             "reinforce_vetoed_by_visits": 0, "reinforce_vetoed_by_leaf": 0,
             "reinforce_setup_fires": 0,
             "meeples_spent_on_reinforcement": 0,
+            # ---- the HOLD fire (amendment 2026-08-28 round 3) ---------------- #
+            "hold_fires": 0, "hold_candidates_seen": 0,
+            "incumbent_held_conversions": 0,
+            "merge_over_majority": 0,
         }
+        self._holdings_defended: set = set()
         self._ply = 0
 
     # -- mirror protocol (pure forwarding) --------------------------------- #
@@ -724,12 +811,16 @@ class ScriptedExploiter:
     def _tile_move(self, board, st, pre: Structure, me: int, in_window: bool):
         cfg = self.cfg
         opp = 1 - me
-        if not (cfg.merge_enabled or cfg.majority_enabled
+        if not (cfg.merge_enabled or cfg.majority_enabled or cfg.hold_enabled
                 or (cfg.setup_enabled and in_window)):
             return None
 
         victims = pre.victims_of(opp, cfg)
-        majors = pre.majority_targets(me, cfg) if cfg.majority_enabled else []
+        # HOLD's targets are a strict subset of MAJORITY's (both are contested
+        # components I am not ahead on), so ONE target set drives the scan-cell
+        # prefilter for both fires.
+        majors = (pre.majority_targets(me, cfg)
+                  if (cfg.majority_enabled or cfg.hold_enabled) else [])
         # The MERGE scan uses a WIDER victim set than the plan does.  The plan's
         # `victims_of` bar (>= victim_min_tiles) decides where it is worth
         # SPENDING a meeple; a merge spends nothing but the tile, and the census
@@ -794,22 +885,12 @@ class ScriptedExploiter:
 
         best_merge = None
         best_major = None
+        best_hold = None
         setup_cands = []
         for a in scan:
             child, _ = self.game.get_next_state(board, a)
             post = Structure(child.state)
-            if cfg.majority_enabled:
-                for ev in majority_events(pre, post, me):
-                    if ev["victim_pts"] < cfg.majority_min_pts:
-                        continue
-                    self.tel["majority_candidates_seen"] += 1
-                    # A majority is worth ~2x a tie: I take the feature AND the
-                    # incumbent loses it, where a tie pays both in full.
-                    rank = 2.0 * ev["victim_pts"] * (cfg.farm_pref
-                                                     if ev["cls"] == CLS_FARM else 1.0)
-                    if best_major is None or rank > best_major[0]:
-                        best_major = (rank, a, ev)
-            if best_major is None and cfg.merge_enabled:
+            if cfg.merge_enabled:
                 for ev in invasion_events(pre, post):
                     if ev["invader"] != me or ev["victim_pts"] < cfg.victim_min_pts:
                         continue
@@ -817,19 +898,65 @@ class ScriptedExploiter:
                     rank = ev["victim_pts"] * (cfg.farm_pref if ev["cls"] == CLS_FARM else 1.0)
                     if best_merge is None or rank > best_merge[0]:
                         best_merge = (rank, a, ev)
-            if best_major is None and best_merge is None and setup_on:
+            if cfg.majority_enabled:
+                for ev in majority_events(pre, post, me):
+                    if ev["victim_pts"] < cfg.majority_min_pts:
+                        continue
+                    self.tel["majority_candidates_seen"] += 1
+                    rank = 2.0 * ev["victim_pts"] * (cfg.farm_pref
+                                                     if ev["cls"] == CLS_FARM else 1.0)
+                    if best_major is None or rank > best_major[0]:
+                        best_major = (rank, a, ev)
+            if cfg.hold_enabled:
+                for ev in hold_events(pre, post, me):
+                    if ev["victim_pts"] < cfg.hold_min_pts:
+                        continue
+                    self.tel["hold_candidates_seen"] += 1
+                    rank = ev["victim_pts"] * (cfg.farm_pref if ev["cls"] == CLS_FARM else 1.0)
+                    if best_hold is None or rank > best_hold[0]:
+                        best_hold = (rank, a, ev)
+            if setup_on and best_merge is None and best_major is None \
+                    and best_hold is None:
                 s = self._setup_score(child, post, me, opp, a)
                 if s is not None:
                     self.tel["setup_candidates_seen"] += 1
                     setup_cands.append(s)
 
-        # MAJORITY outranks MERGE: it converts a `shared_tie` (which denies the
-        # incumbent NOTHING under full-points-on-tie) into an `invader_took_all`,
-        # roughly twice the swing of authoring a fresh tie.  Like MERGE it is
-        # UNGATED — it spends only a tile choice, no meeple, and gating the
-        # measured mechanism on the champion's own preferences would re-import
-        # exactly the "the champion doesn't value this" bias the instrument
-        # exists to escape.
+        # ---- FIRE PRIORITY: MERGE > MAJORITY > HOLD > SETUP ----------------- #
+        # (round 3; round 2 ran MAJORITY > MERGE and that is the mechanical
+        # reason S0V2-FM's expression fell — SMOKE_READOUT §6.3.)  One move per
+        # ply, so the order is an argument about which opportunity is scarcer
+        # and which counter it feeds:
+        #   MERGE    — the ONLY fire that scores a census DELIBERATE INVASION
+        #              (the census counts a feature's FIRST contest only), and
+        #              the scarcest: it needs an un-invaded victim, my own
+        #              smaller part, and the right tile, all at once.
+        #   MAJORITY — ~2x the point swing (I take the feature AND the incumbent
+        #              loses it), but its targets PERSIST: a contested feature
+        #              stays contested for many plies, so deferring one ply
+        #              rarely loses the chance.
+        #   HOLD     — same swing as MERGE (my award goes 0 -> full) but denies
+        #              nothing and scores no counter; it is the fire that stops
+        #              the instrument being a blunderer, which is what
+        #              G-COMPETITIVE is a bar on.
+        # MERGE, MAJORITY and HOLD are all UNGATED: each spends only a tile
+        # choice, no meeple, and gating the measured mechanism on the champion's
+        # own preferences would re-import exactly the "the champion doesn't
+        # value this" bias the instrument exists to escape.  Only the
+        # meeple-spending fires (SETUP, FOOTHOLD, REINFORCE) are gated.
+        if best_merge is not None and best_major is not None:
+            self.tel["merge_over_majority"] += 1
+        if best_merge is not None:
+            _, a, ev = best_merge
+            self.tel["merge_fires"] += 1
+            closed = self.ledger.complete(self._ply, ev["stub_meeples"])
+            self._record("merge", a, ply=self._ply, cls=ev["cls"],
+                         victim_pts=ev["victim_pts"],
+                         invader_tiles=ev["invader_tiles"],
+                         incumbent_tiles=ev["incumbent_tiles"],
+                         plans_closed=[p.pid for p in closed])
+            return a
+
         if best_major is not None:
             _, a, ev = best_major
             self.tel["majority_fires"] += 1
@@ -841,14 +968,16 @@ class ScriptedExploiter:
                          plans_closed=[p.pid for p in closed])
             return a
 
-        if best_merge is not None:
-            _, a, ev = best_merge
-            self.tel["merge_fires"] += 1
-            closed = self.ledger.complete(self._ply, ev["stub_meeples"])
-            self._record("merge", a, ply=self._ply, cls=ev["cls"],
+        if best_hold is not None:
+            _, a, ev = best_hold
+            self.tel["hold_fires"] += 1
+            self.tel["incumbent_held_conversions"] += 1
+            self._holdings_defended.add(tuple(sorted(ev["my_meeples"])))
+            closed = self.ledger.complete(self._ply, ev["my_meeples"])
+            self._record("hold", a, ply=self._ply, cls=ev["cls"],
                          victim_pts=ev["victim_pts"],
-                         invader_tiles=ev["invader_tiles"],
-                         incumbent_tiles=ev["incumbent_tiles"],
+                         me_before=ev["me_before"], opp_before=ev["opp_before"],
+                         me_after=ev["me_after"], opp_after=ev["opp_after"],
                          plans_closed=[p.pid for p in closed])
             return a
 
@@ -1078,6 +1207,7 @@ class ScriptedExploiter:
     # -- read-out ------------------------------------------------------------ #
     def telemetry(self) -> dict:
         out = dict(self.tel)
+        out["contested_holdings_defended"] = len(self._holdings_defended)
         out.update(self.ledger.summary())
         out["label"] = self.label
         out["cfg"] = self.cfg.as_dict()

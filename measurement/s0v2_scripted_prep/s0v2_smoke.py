@@ -95,11 +95,22 @@ PROFILES = {
     # it is re-run on the new seed range purely as the deck-matched control for
     # the MAJORITY amendment.
     "full": dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
-                 majority_enabled=False, reinforce_enabled=False),
+                 majority_enabled=False, reinforce_enabled=False,
+                 hold_enabled=False),
     # FULL PLAN + MAJORITY (the 2026-08-28 amendment): identical to `full`, plus
     # the fourth fire and the REINFORCE foothold/setup that feeds it.
+    # ⚠️ ROUND-3 NOTE: `full_major` is NOT bit-identical to the arm round 2 ran.
+    # Round 2's fire priority was MAJORITY > MERGE, which SMOKE_READOUT §6.3
+    # identified as the mechanical cause of that arm's expression miss; round 3
+    # fixes the order to MERGE > MAJORITY for BOTH arms, so that the FMH − FM
+    # contrast isolates HOLD and nothing else.
     "full_major": dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
-                       majority_enabled=True, reinforce_enabled=True),
+                       majority_enabled=True, reinforce_enabled=True,
+                       hold_enabled=False),
+    # FULL PLAN + MAJORITY + HOLD (the round-3 amendment): all four fires.
+    "full_major_hold": dict(victim_min_pts=3, victim_min_tiles=4,
+                            stub_max_tiles=6, majority_enabled=True,
+                            reinforce_enabled=True, hold_enabled=True),
 }
 
 
@@ -224,6 +235,8 @@ def _play_recorded(job):
             "scores": [s0, s1], "elapsed_s": prov["elapsed_s"],
             "moves": len(actions),
             "merge": tel.get("merge_fires", 0),
+            "major": tel.get("majority_fires", 0),
+            "hold": tel.get("hold_fires", 0),
             "foothold": tel.get("foothold_fires", 0),
             "setup": tel.get("setup_fires", 0),
             "plans": (tel.get("plans_started", 0), tel.get("plans_completed", 0))}
@@ -306,7 +319,8 @@ def main() -> int:
             done += 1
             print(f"  [{done}/{len(jobs)}] seed={r['seed']} a{r['a_seat']} "
                   f"diff={r['diff']:+d} moves={r['moves']} "
-                  f"merge={r['merge']} fh={r['foothold']} su={r['setup']} "
+                  f"merge={r['merge']} maj={r['major']} hold={r['hold']} "
+                  f"fh={r['foothold']} su={r['setup']} "
                   f"plans={r['plans'][0]}/{r['plans'][1]} "
                   f"{r['elapsed_s']:.1f}s  (wall {time.time() - t0:.0f}s)",
                   flush=True)

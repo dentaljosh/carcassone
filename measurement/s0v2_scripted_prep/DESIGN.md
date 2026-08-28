@@ -13,7 +13,10 @@ agent reads G-DAMAGE +2.25 pp on one deck range and +10.66 pp on the next, so
 **G-DAMAGE is not resolvable at n=60 and needs a two-range replication clause**
 — [SMOKE_READOUT.md](SMOKE_READOUT.md) §6.2. The MAJORITY fire itself works
 (took-all 17.9 % → 26.4 % vs the owner's 28.9 %; plan completion 17.6 % →
-28.7 %), at ~4 pts/game and under-powered at this n.**
+28.7 %), at ~4 pts/game and under-powered at this n.
+AMENDED AGAIN 2026-08-28 (§4.2, FINAL iteration of this funding line): the HOLD
+fire, the TWO-RANGE REPLICATION CLAUSE, and G-DENY replacing G-DAMAGE as the
+damage gate. Re-smoke on ranges `900000030000..029` + `900000040000..029`.**
 Owner-funded 2026-08-28 ("start the build now") as the fallback
 [`measurement/s0_exploiter_prep/DESIGN.md`](../s0_exploiter_prep/DESIGN.md) §8.5
 pre-named and [`SMOKE_READOUT.md`](../s0_exploiter_prep/SMOKE_READOUT.md) §3
@@ -377,6 +380,167 @@ converted to a majority — the amendment's own headline) ·
 and from the census, the statistic finding (1) named: the **outcome
 distribution** (`invader_took_all` / `shared_tie` / `incumbent_held`) and the
 **out-numbering-at-score rate** (owner 28.9 %, S0V2-F 9.3 %).
+
+---
+
+## §4.2 AMENDMENT 2026-08-28 (round 3) — the HOLD fire + TWO instrument fixes
+
+**Again an AMENDMENT, not a rewrite, and again committed before the first game
+of the round it governs.** G-EXPRESS and G-COMPETITIVE stand **exactly** as
+registered in §4. Two things change and both are disclosed here as changes:
+a **fourth fire** (HOLD), and the **two instrument fixes** round 2's read-out
+named — the two-range replication clause and the gate conflict.
+
+**This is the FINAL iteration of this funding line.** If round 3 does not
+produce a certified ruler, the work PARKS with a written diagnosis.
+
+### §4.2.1 The HOLD fire
+
+Round 2 left `incumbent_held` at **17.0 %** against the owner's **4.4 %**: after
+MAJORITY, S0v2 *wins* its invasions about as often as the owner does and still
+**loses** them four times too often, because the champion merges *its* own second
+part in and out-numbers S0v2 back.
+
+A component where I am **strictly behind** scores me **ZERO**. Lifting it back to
+a **tie** scores me the feature **IN FULL** (full-points-on-tie). That is HOLD:
+
+| | MAJORITY (§4.1) | **HOLD (§4.2)** |
+|---|---|---|
+| target | contested, I am tied **or behind** | contested, I am **strictly behind** |
+| result | post `me > opp` — strict majority | post `me == opp` — exact tie |
+| what it buys | I take the feature **and** they lose it (~2× swing) | my award goes 0 → full; **they lose nothing** |
+| disjoint? | yes, by construction — `majority_events` requires `post[me] > post[opp]`, `hold_events` requires `post[me] == post[opp]` | |
+
+HOLD is a **tile-phase** fire and spends **no meeple**. Its targets are a strict
+subset of MAJORITY's, so it is fed by the **same** REINFORCE foothold/setup and
+therefore inherits, unchanged: `min_meeples_for_reinforce = 2` (never the last
+meeple) and `max_open_reinforcements = 2` — **one shared concurrency cap across
+reinforcements and holds**, because they are literally the same plan objects.
+`test_hold_targets_are_only_components_i_am_losing` pins the subset relation and
+`test_hold_on_is_deterministic_legal_and_guarded` pins that HOLD spends no
+meeple.
+
+**HOLD is NOT visit-gated**, on the same grounds as MERGE and MAJORITY: it costs
+only a tile choice, and gating a measured mechanism on the champion's own
+preferences re-imports the bias the instrument exists to escape. Only the three
+**meeple-spending** fires (SETUP, FOOTHOLD, REINFORCE-FOOTHOLD) are gated.
+
+### §4.2.2 Fire priority — MERGE > MAJORITY > HOLD > SETUP
+
+Round 2 ran **MAJORITY > MERGE** and §6.3 showed that is the mechanical reason
+its expression fell (merge fires 61 → 57, merge candidates 88 → 79). One move
+per ply, so the order is an argument about scarcity and about which counter each
+fire feeds:
+
+1. **MERGE** — the **only** fire that scores a census *deliberate invasion*
+   (the census counts a feature's FIRST contest and nothing after), and the
+   scarcest: it needs an un-invaded victim, one of my smaller parts, and the
+   right tile, simultaneously.
+2. **MAJORITY** — ~2× the point swing, but its targets **persist**: a contested
+   feature stays contested for many plies, so deferring one ply rarely loses
+   the chance. A merge opportunity is tile-conditional and evaporates.
+3. **HOLD** — same swing as MERGE (my award 0 → full) but denies nothing and
+   scores no gate directly; it is the fire that stops the instrument being a
+   blunderer, which is what G-COMPETITIVE is a bar on.
+4. **SETUP** — gated, meeple-feeding, last.
+
+`merge_over_majority` counts the plies where the new order actually bit, so the
+fix is measured rather than assumed.
+
+⚠️ **Consequence for the arms:** round 3's `full_major` arm is therefore **NOT
+bit-identical to round 2's S0V2-FM** — it carries the priority fix. Both round-3
+arms carry it, so the **FMH − FM** contrast isolates HOLD and nothing else.
+
+### §4.2.3 INSTRUMENT FIX 1 — the TWO-RANGE REPLICATION CLAUSE
+
+Round 2 §6.2 proved a single range cannot certify a ruler: the **same agent**
+(`S0V2-F` / `S0V2-F2`, pinned bit-for-bit by a test) read G-DAMAGE **+2.25 pp**
+on one range and **+10.66 pp** on the next. So:
+
+> **An arm is S0v2-VALID only if it clears EVERY gate on BOTH of two disjoint
+> fresh deck ranges, AND its POOLED damage uplift clears the bar at z ≥ 2.**
+
+Ranges, fixed here before any game: **`900000030000..900000030029` (range A)**
+and **`900000040000..900000040029` (range B)**, 30 decks × 2 seats × 3 arms each.
+Disjoint from `900000002000`-area (the S0 smoke), `900000009000`-area (the
+calibration), `900000010000`-area (round 1) and `900000020000`-area (round 2).
+**CTRL is run on BOTH ranges** — every gate is CTRL-relative and CL-068 puts
+cross-range contrasts at 1.8–2.2× over-dispersion, so a cross-range CTRL would
+re-import the very error this clause exists to catch.
+
+### §4.2.4 INSTRUMENT FIX 2 — G-DENY replaces G-DAMAGE as the damage gate
+
+**The choice, stated plainly: G-DAMAGE is DEMOTED to reported-only and
+G-DENY becomes the primary damage gate.** Demoting a registered gate mid-line is
+exactly the goalpost-moving a prereg exists to prevent, so the reasoning and the
+honesty check are both on the record.
+
+*Why G-DAMAGE has to go.* It is (i) **farm-only** — it cannot see a denied city
+or road; (ii) a **rate over a small denominator** (~200 farmer deployments), so
+it is noisy by construction; (iii) **demonstrably non-reproducible** across
+ranges (§6.2); and (iv) it **fights G-EXPRESS for the one move per ply** (§6.3):
+G-EXPRESS counts *first contests*, G-DAMAGE needs *majorities on contests
+already made*, and no single move can serve both.
+
+*Why G-DENY is the right statistic.* **Points denied to the champion per game** —
+the census's own `incumbent_denied`, summed over the features this agent invaded.
+It is:
+
+* **unified** — monotone in BOTH invasion count and majority conversion, so the
+  fire-priority question stops being a gate conflict and becomes a plain
+  maximisation. One move, one counter.
+* **zero for a tie**, by construction, which is exactly the property G-DAMAGE was
+  introduced to supply (it refuses to reward cosmetic invasions).
+* **all-class** — cities, roads and farms, not farms alone.
+* **the quantity the ruler actually exists to create.** DESIGN §7's defence cell
+  measures `Δ = M1 − M0`, the points a defence term recovers. A defence can
+  recover at most what the exploit takes. G-DAMAGE was always a proxy for this;
+  G-DENY measures it directly, in points.
+
+**G-DENY, pre-registered:** the arm's deck-matched denial uplift over the
+**same-range** CTRL must be **≥ +1.5 pts/game on EACH range**, and the
+**two-range pooled** uplift must be **≥ +1.5 at z ≥ 2**.
+
+*Where +1.5 comes from, honestly.* Not from the owner — he denies **12.4
+pts/game** and half of that would be an automatic fail for any instrument this
+program can build. It comes from **the effect the D-cells chase**: the C ladder's
+defence signal is ~**+0.9 pts/deck**, so an exploiter that takes less than
+~1.5 pts/game from the champion cannot host a measurable defence contrast at all.
+It is a **floor for usefulness**, not an aspiration.
+
+*The honesty check — this bar is NOT easier.* Applied **retrospectively** to
+round 2, G-DENY **fails both arms**, including the one that passed G-DAMAGE:
+
+| round-2 arm | G-DAMAGE (old gate) | **G-DENY (new gate)** |
+|---|---|---|
+| S0V2-F2 | +10.66 pp — **PASS** | **+0.50 ± 1.13 (z 0.44) — FAIL** |
+| S0V2-FM | +12.37 pp — **PASS** | **+1.45 ± 1.09 (z 1.33) — FAIL** |
+
+The replacement makes the ladder **strictly harder**, and it moves the arm that
+G-DAMAGE certified into the fail column. **G-DAMAGE continues to be reported on
+both ranges**, with its own two-range clause applied, so a reader can see whether
+the demoted gate would have agreed.
+
+*Power, stated in advance.* Per-game denial has sd ≈ 7–8 pts, so at n=60 the
+deck-matched uplift SEM is ≈ 1.1 and at the pooled n=120 it is ≈ 0.8. **A +1.5
+uplift is therefore z ≈ 1.4 per range and z ≈ 1.9 pooled — right at the clause's
+z ≥ 2.** This smoke may well return **UNRESOLVED on G-DENY**, and that is a
+legitimate, pre-registered outcome which will be reported as such rather than
+rounded into a pass.
+
+### §4.2.5 S0v2-VALID, restated in full
+
+**VALID = G-EXPRESS AND G-DENY AND G-COMPETITIVE, on BOTH ranges, plus the
+pooled G-DENY z ≥ 2.** G-DAMAGE: reported, not gating.
+
+### §4.2.6 Additional pre-registered telemetry
+
+`hold_fires` · `hold_candidates_seen` · **`contested_holdings_defended`**
+(distinct holdings HOLD rescued) · **`incumbent_held_conversions`** ·
+`merge_over_majority` (plies where the priority fix bit) · and, from the census,
+**`denied_per_game` and its per-game vector** (G-DENY's raw material), alongside
+everything registered in §4 and §4.1.
+
 
 ### Pre-registered telemetry (reported for every arm; not gating)
 

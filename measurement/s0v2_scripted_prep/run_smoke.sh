@@ -54,6 +54,14 @@ arm_cfg() {   # $1 = arm -> sets PLAN and SEED
     CTRL2)   PLAN=off;        SEED=900000020000 ;;
     S0V2_F2) PLAN=full;       SEED=900000020000 ;;
     S0V2_FM) PLAN=full_major; SEED=900000020000 ;;
+    # ---- round 3: HOLD + the two instrument fixes (DESIGN.md SS4.2).
+    # TWO DISJOINT FRESH RANGES -- the replication clause exercising itself.
+    CTRL_A)  PLAN=off;             SEED=900000030000 ;;
+    FM_A)    PLAN=full_major;      SEED=900000030000 ;;
+    FMH_A)   PLAN=full_major_hold; SEED=900000030000 ;;
+    CTRL_B)  PLAN=off;             SEED=900000040000 ;;
+    FM_B)    PLAN=full_major;      SEED=900000040000 ;;
+    FMH_B)   PLAN=full_major_hold; SEED=900000040000 ;;
     *) echo "FATAL: unknown arm '$1'" >&2; exit 2 ;;
   esac
 }
@@ -75,7 +83,7 @@ case "$cmd" in
     "$PY" "$CENSUS" --games-dir "$OUT/$lo" --out-dir "$OUT/${lo}_rows" \
         --profile fixed_v1 --out-name rows.jsonl
     aname="S0V2"; bname="CHAMP"
-    case "$arm" in CTRL|CTRL2) aname="CHAMP_A"; bname="CHAMP_B" ;; esac
+    case "$arm" in CTRL|CTRL2|CTRL_A|CTRL_B) aname="CHAMP_A"; bname="CHAMP_B" ;; esac
     "$PY" "$SIG" --rows "$OUT/${lo}_rows/rows.jsonl" \
         --label "$arm" --a-name "$aname" --b-name "$bname" \
         --out "$OUT/${lo}_rows/signature.json"
@@ -84,7 +92,8 @@ case "$cmd" in
         --out "$OUT/${lo}_rows/telemetry.json"
     ;;
   grade-all)
-    for a in CTRL S0V2_M S0V2_F CTRL2 S0V2_F2 S0V2_FM; do
+    for a in CTRL S0V2_M S0V2_F CTRL2 S0V2_F2 S0V2_FM \
+             CTRL_A FM_A FMH_A CTRL_B FM_B FMH_B; do
       [ -d "$OUT/$(echo "$a" | tr 'A-Z' 'a-z')" ] || continue
       "$0" grade "$a"
       echo

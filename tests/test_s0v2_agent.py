@@ -28,7 +28,8 @@ os.environ.setdefault("CARCASSONNE_FIX_R9", "1")
 
 from s0v2_agent import (  # noqa: E402
     CLS_CITY, CLS_FARM, PlanConfig, PlanLedger, ScriptedExploiter, Structure,
-    invasion_events, majority_events, merge_plausible, parse_overrides,
+    invasion_events, hold_events, majority_events, merge_plausible,
+    parse_overrides,
 )
 
 
@@ -254,6 +255,76 @@ def test_majority_targets_are_contested_components_i_am_not_ahead_on():
 
 
 # --------------------------------------------------------------------------- #
+# UNIT — the HOLD detector (amendment 2026-08-28, round 3)                      #
+# --------------------------------------------------------------------------- #
+def _deficit_fixture(me_before, opp_before, my_spare_meeples):
+    """A contested component I am LOSING, plus `my_spare_meeples` of my own on a
+    separate part, merging into one component."""
+    T, S = (CLS_FARM, 1), (CLS_FARM, 2)
+    mine = [M_ME] + [(0, 20 + i, 20 + i, "TOP", "NORMAL") for i in range(me_before - 1)]
+    theirs = [M_OP] + [(1, 30 + i, 30 + i, "TOP", "NORMAL") for i in range(opp_before - 1)]
+    spare = [(0, 40 + i, 40 + i, "TOP_LEFT", "FARMER") for i in range(my_spare_meeples)]
+    pre = FakeStruct(tiles={T: 9, S: 2},
+                     counts={T: [me_before, opp_before], S: [my_spare_meeples, 0]},
+                     members={T: mine + theirs, S: spare})
+    P = (CLS_FARM, 9)
+    post = FakeStruct(tiles={P: 12},
+                      counts={P: [me_before + my_spare_meeples, opp_before]},
+                      members={P: mine + theirs + spare}, pts={P: 12})
+    return pre, post, spare
+
+
+def test_hold_lifts_a_strict_deficit_back_to_a_tie():
+    """1-v-2 (I score ZERO) + one of mine -> 2-v-2 (full-points-on-tie pays me
+    the whole feature).  This is the event round 2 left on the table."""
+    pre, post, spare = _deficit_fixture(1, 2, 1)
+    (ev,) = hold_events(pre, post, me=0)
+    assert (ev["me_before"], ev["opp_before"]) == (1, 2)
+    assert (ev["me_after"], ev["opp_after"]) == (2, 2)
+    assert ev["victim_pts"] == 12
+    assert set(ev["my_meeples"]) == {M_ME, spare[0]}
+    # ...and it is NOT a majority event: the two fires are disjoint
+    assert majority_events(pre, post, me=0) == []
+
+
+def test_hold_does_not_fire_when_the_merge_reaches_a_majority():
+    """Deficit -> strict majority is MAJORITY's event, not HOLD's."""
+    pre, post, _ = _deficit_fixture(1, 2, 2)          # 1v2 + 2 -> 3v2
+    assert hold_events(pre, post, me=0) == []
+    (ev,) = majority_events(pre, post, me=0)
+    assert (ev["me_after"], ev["opp_after"]) == (3, 2)
+
+
+def test_hold_does_not_fire_from_a_tie():
+    """A tie already pays me in full — there is nothing to recover."""
+    pre, post, _ = _deficit_fixture(2, 2, 0)
+    assert hold_events(pre, post, me=0) == []
+
+
+def test_hold_needs_a_merge():
+    P = (CLS_FARM, 9)
+    pre = FakeStruct(tiles={P: 12}, counts={P: [2, 2]}, members={P: [M_ME, M_OP]})
+    post = FakeStruct(tiles={P: 13}, counts={P: [2, 2]}, members={P: [M_ME, M_OP]})
+    assert hold_events(pre, post, me=0) == []
+
+
+def test_hold_targets_are_only_components_i_am_losing():
+    cfg = PlanConfig(hold_min_pts=4)
+    behind, tied, ahead, cheap = ((CLS_FARM, 1), (CLS_FARM, 2),
+                                  (CLS_FARM, 3), (CLS_FARM, 4))
+    s = FakeStruct(
+        tiles={k: 6 for k in (behind, tied, ahead, cheap)},
+        counts={behind: [1, 2], tied: [1, 1], ahead: [2, 1], cheap: [1, 3]},
+        members={k: [] for k in (behind, tied, ahead, cheap)},
+        pts={behind: 10, tied: 10, ahead: 10, cheap: 2})
+    assert set(Structure.hold_targets(s, 0, cfg)) == {behind}
+    # HOLD's targets are a strict subset of MAJORITY's, which is why the SAME
+    # REINFORCE foothold feeds both under ONE shared concurrency cap.
+    assert set(Structure.hold_targets(s, 0, cfg)) <= set(
+        Structure.majority_targets(s, 0, PlanConfig(majority_min_pts=4)))
+
+
+# --------------------------------------------------------------------------- #
 # UNIT — the plan state machine                                                 #
 # --------------------------------------------------------------------------- #
 class FakeLedgerStruct:
@@ -438,7 +509,7 @@ def test_every_move_the_agent_returns_is_legal_and_it_finishes_a_game():
     tel = ex.telemetry()
     assert tel["plies_seen"] > 0
     assert (tel["base_moves"] + tel["merge_fires"] + tel["setup_fires"]
-            + tel["foothold_fires"] + tel["majority_fires"]
+            + tel["foothold_fires"] + tel["majority_fires"] + tel["hold_fires"]
             + tel["reinforce_foothold_fires"]) >= tel["plies_seen"]
 
 
@@ -496,12 +567,69 @@ def test_majority_on_is_deterministic_and_legal():
     assert tel["reinforce_plans_started"] == tel["reinforce_foothold_fires"]
 
 
+def test_hold_on_is_deterministic_legal_and_guarded():
+    from s0v2_devplay import RULES_PROFILE, GreedyLeafAgent
+    from carcassonne_ai import rules_profile as RP
+    from carcassonne_ai.game_wrapper import Game
+
+    cfg = PlanConfig(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
+                     majority_enabled=True, reinforce_enabled=True,
+                     hold_enabled=True)
+    a = _dev_game(555006, 0, cfg)
+    b = _dev_game(555006, 0, cfg)
+    assert a["actions"] == b["actions"]
+    assert a["s0v2"]["telemetry"]["hold_fires"] == b["s0v2"]["telemetry"]["hold_fires"]
+
+    RP.activate(RULES_PROFILE)
+    random.seed(90210)
+    game = Game(enable_legal_moves_cache=True)
+    board = game.get_init_board()
+    ex = ScriptedExploiter(GreedyLeafAgent(game), game, cfg, label="hold")
+    opp = GreedyLeafAgent(game)
+    while game.get_game_ended(board, 0) == 0.0:
+        legal = set(int(i) for i in np.flatnonzero(game.get_valid_moves(board)))
+        act = ex.move(board) if board.state.current_player == 0 else opp.move(board)
+        assert act in legal
+        board, _ = game.get_next_state(board, act)
+        ex.advance(act)
+    tel = ex.telemetry()
+    # HOLD spends NO meeple: the meeple ledger is unchanged by it, and every
+    # reinforcement is still one plan under the SHARED concurrency cap.
+    assert tel["meeples_spent_on_reinforcement"] == tel["reinforce_foothold_fires"]
+    assert tel["incumbent_held_conversions"] == tel["hold_fires"]
+    assert tel["contested_holdings_defended"] <= tel["hold_fires"]
+
+
+def test_hold_off_leaves_the_majority_arm_untouched():
+    base = dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
+                majority_enabled=True, reinforce_enabled=True)
+    off = _dev_game(555007, 0, PlanConfig(**base, hold_enabled=False))
+    assert off["s0v2"]["telemetry"]["hold_fires"] == 0
+    assert off["s0v2"]["telemetry"]["incumbent_held_conversions"] == 0
+
+
+def test_merge_outranks_majority_in_the_fire_order():
+    """Round 3's priority fix.  Round 2 ran MAJORITY > MERGE and lost expression
+    to it (SMOKE_READOUT §6.3); `merge_over_majority` counts the plies where the
+    new order actually bit."""
+    cfg = PlanConfig(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
+                     majority_enabled=True, reinforce_enabled=True,
+                     hold_enabled=True)
+    g = _dev_game(555008, 0, cfg)
+    t = g["s0v2"]["telemetry"]
+    assert t["merge_over_majority"] >= 0
+    for f in g["s0v2"]["fires"]:
+        assert f["kind"] in ("merge", "majority", "hold", "setup",
+                             "foothold", "reinforce_foothold")
+
+
 def test_majority_off_is_the_previous_agent_exactly():
     """The amendment must be a pure ADDITION: with the new fire off, the agent
     reproduces the arm the 2026-08-28 smoke ran, move for move."""
     base = dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6)
     off = _dev_game(555005, 0, PlanConfig(**base, majority_enabled=False,
-                                          reinforce_enabled=False))
+                                          reinforce_enabled=False,
+                                          hold_enabled=False))
     assert off["s0v2"]["telemetry"]["majority_fires"] == 0
     assert off["s0v2"]["telemetry"]["reinforce_foothold_fires"] == 0
     assert off["s0v2"]["telemetry"]["meeples_spent_on_reinforcement"] == 0
@@ -512,7 +640,7 @@ def test_disabling_every_fire_reproduces_the_base_agent_exactly():
     wrapped agent plays the base agent's game move for move."""
     off = PlanConfig(merge_enabled=False, foothold_enabled=False,
                      setup_enabled=False, majority_enabled=False,
-                     reinforce_enabled=False)
+                     reinforce_enabled=False, hold_enabled=False)
     a = _dev_game(555002, 0, off)
     assert a["s0v2"]["telemetry"]["merge_fires"] == 0
     assert a["s0v2"]["telemetry"]["setup_fires"] == 0
@@ -527,12 +655,14 @@ def test_a_different_config_changes_the_game():
                                           foothold_enabled=False,
                                           setup_enabled=False,
                                           majority_enabled=False,
-                                          reinforce_enabled=False))
+                                          reinforce_enabled=False,
+                                          hold_enabled=False))
     assert on["s0v2"]["telemetry"]["plies_seen"] > 0
     fired = (on["s0v2"]["telemetry"]["merge_fires"]
              + on["s0v2"]["telemetry"]["setup_fires"]
              + on["s0v2"]["telemetry"]["foothold_fires"]
-             + on["s0v2"]["telemetry"]["majority_fires"])
+             + on["s0v2"]["telemetry"]["majority_fires"]
+             + on["s0v2"]["telemetry"]["hold_fires"])
     if fired:
         assert on["actions"] != off["actions"]
 

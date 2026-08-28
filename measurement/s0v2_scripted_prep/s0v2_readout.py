@@ -55,6 +55,7 @@ def census_deliberate(rows_path: Path):
             r = json.loads(line)
             by_game[r["game"]].append(r)
     out = {}
+    denial = {}
     outcomes = Counter()
     meeples_at_score = Counter()
     outnumber = 0
@@ -63,12 +64,19 @@ def census_deliberate(rows_path: Path):
         g = [r for r in grows if r["row"] == "game"][0]
         hp = int(g["human_player"])
         onsets = delib = 0
+        denied = 0.0
         for r in grows:
             if r["row"] != "contest" or r.get("invader") is None:
                 continue
             if int(r["invader"]) != hp:
                 continue
             onsets += 1
+            # G-DENY's raw material: points the incumbent LOST on features this
+            # agent invaded.  A tie denies EXACTLY ZERO under full-points-on-tie,
+            # so the statistic is monotone in BOTH invasion count and
+            # majority-conversion — which is why DESIGN §4.2 makes it the single
+            # primary damage gate instead of two gates fighting for one move.
+            denied += float(r.get("incumbent_denied") or 0.0)
             if int(r.get("actor", -1)) != hp:
                 continue
             delib += 1
@@ -79,7 +87,10 @@ def census_deliberate(rows_path: Path):
             meeples_at_score[f"{mi}v{mo}"] += 1
             outnumber += int(mi > mo)
         out[gid] = (delib, onsets)
+        denial[gid] = denied
     stats = {
+        "denied_per_game": (sum(denial.values()) / len(denial)) if denial else 0.0,
+        "denied_by_game": denial,
         "deliberate_total": total,
         "outcomes": dict(outcomes),
         "outcome_rates": {k: v / total for k, v in outcomes.items()} if total else {},
@@ -164,6 +175,7 @@ def main() -> int:
         "reconciliation_agent_minus_census": sum(per_game_merge) - sum(per_game_census),
         "fires": dict(fires),
         "census_outcomes": outcome_stats,
+        "denied_per_game": outcome_stats["denied_per_game"],
         "telemetry_totals": dict(tel),
         "plans_started": plan_started, "plans_completed": plan_done,
         "plans_abandoned": plan_aband, "plans_open_at_end": plan_open,
@@ -191,6 +203,7 @@ def main() -> int:
           f"-> deliberate/onset {out['census_completion_rate']}")
     print(f"fires                        {out['fires']}")
     oc = outcome_stats
+    print(f"POINTS DENIED / game (G-DENY) {oc['denied_per_game']:.3f}   (owner 12.40)")
     if oc["deliberate_total"]:
         rates = {k: f"{100*v:.1f}%" for k, v in sorted(oc["outcome_rates"].items())}
         print(f"census outcomes              {oc['outcomes']}  {rates}")
