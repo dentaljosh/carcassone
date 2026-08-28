@@ -1,0 +1,785 @@
+{
+ "artifact": "COST_MODEL",
+ "census": {
+  "Abar_of_record": 3.0022,
+  "Abar_ratio": 1.0502254715665618,
+  "Abar_total_measured_J4": 3.152986910737132,
+  "J_cap": 4,
+  "by_phase": {
+   "early": {
+    "Abar_capped_J4": 3.0495049504950495,
+    "Abar_uncapped": 4.120267909143855,
+    "fire_rate": 0.6680933852140077,
+    "fired_plies_per_game_phi": 15.296213808463252,
+    "n_fired": 6868,
+    "n_plies": 10280,
+    "tile_plies_per_game": 22.895322939866368
+   },
+   "late": {
+    "Abar_capped_J4": 3.286582838192621,
+    "Abar_uncapped": 13.409147436783197,
+    "fire_rate": 0.644836496480442,
+    "fired_plies_per_game_phi": 16.11804008908686,
+    "n_fired": 7237,
+    "n_plies": 11223,
+    "tile_plies_per_game": 24.99554565701559
+   },
+   "mid": {
+    "Abar_capped_J4": 3.111790252533376,
+    "Abar_uncapped": 7.396171787035548,
+    "fire_rate": 0.6021890740023247,
+    "fired_plies_per_game_phi": 13.846325167037861,
+    "n_fired": 6217,
+    "n_plies": 10324,
+    "tile_plies_per_game": 22.993318485523385
+   }
+  },
+  "falsifier_4_fired": false,
+  "n_games": 449,
+  "n_tile_plies": 31827,
+  "note": "corpus champ449, rules_profile walled, eps 0.0 exact ties (the deployed tiearb eps). TILE plies only -- the deployed arbiter's cost model of record (phi = 22.96 tied TILE plies) excludes the meeple rung (4.82/game, not deployed).",
+  "phi_prior_of_record": 22.96,
+  "phi_ratio_measured_over_prior": 1.9712795759837967,
+  "phi_total_measured": 45.26057906458797,
+  "source": "measurement/tiearb_widening_20260817/census/tile_gap_rows.jsonl"
+ },
+ "constants": {
+  "A_BAR_of_record": 3.0022,
+  "MOVES_PER_GAME": 72.0,
+  "PHI_PRIOR": 22.96,
+  "RHO_BAR": 1.2,
+  "T_CHAMP_s_per_move": 13.7552,
+  "T_PHONE_s_per_move": 1.551,
+  "c_source": "measurement/tiearb2_stage2_20260817/COST_REMEASURE.json (G-BITEXACT PASS)",
+  "c_tier1_rust_w1": 0.09376926309857178,
+  "c_tier1_rust_w30": 0.17823232349896898
+ },
+ "declared_deviation_r_from_profile": "PREREG 3.5 named TWO r_p models (plies, seconds) and a fallback rule. A THIRD, independently measured model arrived mid-analysis: PROFILE_TIER1.md section 3 (sibling instrument, exclusive tenancy, 480 identity-gated playouts). It is REPORTED as corroboration and is NOT substituted for the PREREG-mandated primary -- which is legitimate precisely because the two AGREE (early share 0.4200 vs 0.4256). No estimator was shopped: the fallback fired on the pre-registered 15% rule before this model existed.",
+ "deploy_shape": {
+  "desktop": {
+   "B": 64,
+   "J": 4,
+   "enabled": true,
+   "mode": "argmax",
+   "threads": 8,
+   "threads_speedup_measured": [
+    6.5,
+    6.8
+   ]
+  },
+  "desktop_stated_ms_per_move": {
+   "armed_total_s": 6.0,
+   "champion_baseline_s": 1.8,
+   "source": "governance/PRODUCTION.yaml tiearb WIRING note, lines 200-201: '~3.5x per move sequential (~6 s/move vs the ~1.8 s champion baseline), fires on tied plies only'"
+  },
+  "mobile": {
+   "enabled": false,
+   "note": "PRODUCTION.yaml: 'MOBILE: still no arbiter at all'. rho_phone(64) ~ 22-24, unsolved third currency. The funding brief's 'B=32 mobile' does not exist."
+  }
+ },
+ "generated_by": "measurement/arb_costopt_prep/cost_model.py",
+ "identities_of_record": {
+  "rho_amortized(B)": "rho_wall(B) * 22.96 / 72",
+  "rho_phone(B)": "Abar * B * c / 1.551",
+  "rho_wall(B)": "Abar * B * c / 13.7552",
+  "source": "scripts/tiletie/bench_tier1_rust.py::ladder, scripts/tiletie/analyze_tiearb2.py::rho_ladder",
+  "worker_secs_per_tied_ply(B)": "Abar * B * c"
+ },
+ "options": {
+  "B16_early": {
+   "B_by_phase": {
+    "early": 16,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "early(B64) - early(B16), PHASE_B_CAPTURE.json::corpus_A.ladder",
+   "cost_multiplier_corroboration_r_from_profile": 0.685028494430226,
+   "cost_multiplier_sensitivity_r_from_plies": 0.5766659182783656,
+   "cost_multiplier_vs_current": 0.680830652276019,
+   "description": "fire at B=16 when k_remaining > 48, B=64 otherwise",
+   "desktop_arbiter_s_per_move": 2.85948873955928,
+   "desktop_rho_amortized_equivalent": 0.554099543033075,
+   "desktop_s_per_move_total_stated_calibration": 4.65948873955928,
+   "eval_cell_worker_s_per_game_W1": 288.70960471776516,
+   "eval_cell_worker_s_per_game_W30": 548.7660024716558,
+   "eval_cell_worker_s_saved_per_game_W30": 257.2582278374957,
+   "phone_hypothetical_min_per_game_kappa1_W1": 4.811826745296086,
+   "phone_hypothetical_s_per_game_kappa1_W1": 288.70960471776516,
+   "phone_rho_phone_equivalent": 15.410031138493762,
+   "race_fraction_by_phase": {
+    "early": 1.0,
+    "late": 1.0,
+    "mid": 1.0
+   },
+   "speedup_vs_current": 1.4687940336660767
+  },
+  "B16_early_B32_mid": {
+   "B_by_phase": {
+    "early": 16,
+    "late": 64,
+    "mid": 32
+   },
+   "capture_at_risk": "early(B64)-early(B16) and mid(B64)-mid(B32)",
+   "cost_multiplier_corroboration_r_from_profile": 0.5140691084613598,
+   "cost_multiplier_sensitivity_r_from_plies": 0.4237630283233977,
+   "cost_multiplier_vs_current": 0.4938015586171967,
+   "description": "B=16 early, B=32 mid, B=64 late",
+   "desktop_arbiter_s_per_move": 2.073966546192226,
+   "desktop_rho_amortized_equivalent": 0.4018843996875175,
+   "desktop_s_per_move_total_stated_calibration": 3.873966546192226,
+   "eval_cell_worker_s_per_game_W1": 209.3989927168983,
+   "eval_cell_worker_s_per_game_W30": 398.01602120988537,
+   "eval_cell_worker_s_saved_per_game_W30": 408.0082090992662,
+   "phone_hypothetical_min_per_game_kappa1_W1": 3.489983211948305,
+   "phone_hypothetical_s_per_game_kappa1_W1": 209.3989927168983,
+   "phone_rho_phone_equivalent": 11.17678437227992,
+   "race_fraction_by_phase": {
+    "early": 1.0,
+    "late": 1.0,
+    "mid": 1.0
+   },
+   "speedup_vs_current": 2.0251049891383937
+  },
+  "current_B64_all_phases": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "none -- this is the incumbent",
+   "cost_multiplier_corroboration_r_from_profile": 1.0000000000000002,
+   "cost_multiplier_sensitivity_r_from_plies": 1.0,
+   "cost_multiplier_vs_current": 1.0,
+   "description": "the deployed desktop shape (PRODUCTION.yaml: B=64, J=4, threads=8)",
+   "desktop_arbiter_s_per_move": 4.2,
+   "desktop_rho_amortized_equivalent": 0.81385810286408,
+   "desktop_s_per_move_total_stated_calibration": 6.0,
+   "eval_cell_worker_s_per_game_W1": 424.0549448715449,
+   "eval_cell_worker_s_per_game_W30": 806.0242303091516,
+   "eval_cell_worker_s_saved_per_game_W30": 0.0,
+   "phone_hypothetical_min_per_game_kappa1_W1": 7.067582414525748,
+   "phone_hypothetical_s_per_game_kappa1_W1": 424.0549448715449,
+   "phone_rho_phone_equivalent": 22.634161794828096,
+   "race_fraction_by_phase": {
+    "early": 1.0,
+    "late": 1.0,
+    "mid": 1.0
+   },
+   "speedup_vs_current": 1.0
+  },
+  "gate_off_early": {
+   "B_by_phase": {
+    "early": 0,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "the early-bucket capture, PHASE_B_CAPTURE.json::corpus_A.ladder.B64.early",
+   "cost_multiplier_corroboration_r_from_profile": 0.5800379925736345,
+   "cost_multiplier_sensitivity_r_from_plies": 0.4355545577044874,
+   "cost_multiplier_vs_current": 0.5744408697013588,
+   "description": "do not fire the arbiter at all when k_remaining > 48",
+   "desktop_arbiter_s_per_move": 2.412651652745707,
+   "desktop_rho_amortized_equivalent": 0.46751335642274,
+   "desktop_s_per_move_total_stated_calibration": 4.212651652745707,
+   "eval_cell_worker_s_per_game_W1": 243.594491333172,
+   "eval_cell_worker_s_per_game_W30": 463.0132598591573,
+   "eval_cell_worker_s_saved_per_game_W30": 343.01097044999426,
+   "phone_hypothetical_min_per_game_kappa1_W1": 4.0599081888862,
+   "phone_hypothetical_s_per_game_kappa1_W1": 243.594491333172,
+   "phone_rho_phone_equivalent": 13.001987586382318,
+   "race_fraction_by_phase": {
+    "early": 1.0,
+    "late": 1.0,
+    "mid": 1.0
+   },
+   "speedup_vs_current": 1.7408232121782727
+  },
+  "gate_off_early_plus_racing_z1.5": {
+   "B_by_phase": {
+    "early": 0,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "early capture + the mid/late flip loss, both cited above",
+   "cost_multiplier_corroboration_r_from_profile": 0.3913835819810397,
+   "cost_multiplier_sensitivity_r_from_plies": 0.2938926503523974,
+   "cost_multiplier_vs_current": 0.3876068948905621,
+   "description": "phase gate OFF early + racing z=1.5 on mid/late",
+   "desktop_arbiter_s_per_move": 1.6279489585403608,
+   "desktop_rho_amortized_equivalent": 0.31545701213266975,
+   "desktop_s_per_move_total_stated_calibration": 3.4279489585403606,
+   "eval_cell_worker_s_per_game_W1": 164.36662044464802,
+   "eval_cell_worker_s_per_game_W30": 312.42054911668555,
+   "eval_cell_worker_s_saved_per_game_W30": 493.603681192466,
+   "phone_hypothetical_min_per_game_kappa1_W1": 2.739443674077467,
+   "phone_hypothetical_s_per_game_kappa1_W1": 164.36662044464802,
+   "phone_rho_phone_equivalent": 8.773157171743911,
+   "race_fraction_by_phase": {
+    "early": 0.7536219676549866,
+    "late": 0.6747550798258345,
+    "mid": 0.6747550798258345
+   },
+   "speedup_vs_current": 2.579933466566281
+  },
+  "gate_off_early_plus_racing_z2.0": {
+   "B_by_phase": {
+    "early": 0,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "early capture + the mid/late flip loss, both cited above",
+   "cost_multiplier_corroboration_r_from_profile": 0.4786207909512035,
+   "cost_multiplier_sensitivity_r_from_plies": 0.359399676538359,
+   "cost_multiplier_vs_current": 0.47400230145486305,
+   "description": "phase gate OFF early + racing z=2.0 on mid/late",
+   "desktop_arbiter_s_per_move": 1.9908096661104249,
+   "desktop_rho_amortized_equivalent": 0.3857706138152626,
+   "desktop_s_per_move_total_stated_calibration": 3.790809666110425,
+   "eval_cell_worker_s_per_game_W1": 201.00301981242734,
+   "eval_cell_worker_s_per_game_W30": 382.0573401949224,
+   "eval_cell_worker_s_saved_per_game_W30": 423.96689011422916,
+   "phone_hypothetical_min_per_game_kappa1_W1": 3.3500503302071225,
+   "phone_hypothetical_s_per_game_kappa1_W1": 201.00301981242734,
+   "phone_rho_phone_equivalent": 10.728644782250251,
+   "race_fraction_by_phase": {
+    "early": 0.8824123989218329,
+    "late": 0.8251542089985486,
+    "mid": 0.8251542089985486
+   },
+   "speedup_vs_current": 2.1096943979611145
+  },
+  "gate_off_early_plus_racing_z2.5": {
+   "B_by_phase": {
+    "early": 0,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "early capture + the mid/late flip loss, both cited above",
+   "cost_multiplier_corroboration_r_from_profile": 0.5297634731701414,
+   "cost_multiplier_sensitivity_r_from_plies": 0.397803071865714,
+   "cost_multiplier_vs_current": 0.5246514782826678,
+   "description": "phase gate OFF early + racing z=2.5 on mid/late",
+   "desktop_arbiter_s_per_move": 2.2035362087872046,
+   "desktop_rho_amortized_equivalent": 0.4269918567799671,
+   "desktop_s_per_move_total_stated_calibration": 4.003536208787205,
+   "eval_cell_worker_s_per_game_W1": 222.48105369993124,
+   "eval_cell_worker_s_per_game_W30": 422.8818039633459,
+   "eval_cell_worker_s_saved_per_game_W30": 383.1424263458057,
+   "phone_hypothetical_min_per_game_kappa1_W1": 3.7080175616655207,
+   "phone_hypothetical_s_per_game_kappa1_W1": 222.48105369993124,
+   "phone_rho_phone_equivalent": 11.875046445345642,
+   "race_fraction_by_phase": {
+    "early": 0.9434804582210242,
+    "late": 0.9133254716981132,
+    "mid": 0.9133254716981132
+   },
+   "speedup_vs_current": 1.9060272226303105
+  },
+  "gate_off_early_plus_racing_z3.0": {
+   "B_by_phase": {
+    "early": 0,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "early capture + the mid/late flip loss, both cited above",
+   "cost_multiplier_corroboration_r_from_profile": 0.5467847259456831,
+   "cost_multiplier_sensitivity_r_from_plies": 0.41058444880851175,
+   "cost_multiplier_vs_current": 0.541508483121963,
+   "description": "phase gate OFF early + racing z=3.0 on mid/late",
+   "desktop_arbiter_s_per_move": 2.2743356291122447,
+   "desktop_rho_amortized_equivalent": 0.4407110667584465,
+   "desktop_s_per_move_total_stated_calibration": 4.074335629112245,
+   "eval_cell_worker_s_per_game_W1": 229.6293499577579,
+   "eval_cell_worker_s_per_game_W30": 436.4689583142564,
+   "eval_cell_worker_s_saved_per_game_W30": 369.5552719948952,
+   "phone_hypothetical_min_per_game_kappa1_W1": 3.8271558326292987,
+   "phone_hypothetical_s_per_game_kappa1_W1": 229.6293499577579,
+   "phone_rho_phone_equivalent": 12.25659062025445,
+   "race_fraction_by_phase": {
+    "early": 0.9683288409703504,
+    "late": 0.9426705370101597,
+    "mid": 0.9426705370101597
+   },
+   "speedup_vs_current": 1.846693138092117
+  },
+  "racing_prune_z1.5": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.1189",
+   "cost_multiplier_corroboration_r_from_profile": 0.6328421342015974,
+   "cost_multiplier_sensitivity_r_from_plies": 0.6417466691877095,
+   "cost_multiplier_vs_current": 0.6331870856936689,
+   "description": "racing + trailing-arm pruning at t in {8,16}, z=1.5 (m=32)",
+   "desktop_arbiter_s_per_move": 2.6593857599134094,
+   "desktop_rho_amortized_equivalent": 0.515324440320685,
+   "desktop_s_per_move_total_stated_calibration": 4.45938575991341,
+   "eval_cell_worker_s_per_game_W1": 268.50611471720293,
+   "eval_cell_worker_s_per_game_W30": 510.36413338793426,
+   "eval_cell_worker_s_saved_per_game_W30": 295.6600969212173,
+   "phone_hypothetical_min_per_game_kappa1_W1": 4.475101911953383,
+   "phone_hypothetical_s_per_game_kappa1_W1": 268.50611471720293,
+   "phone_rho_phone_equivalent": 14.331658943986184,
+   "race_fraction_by_phase": {
+    "early": 0.6685899595687331,
+    "late": 0.6069598149492017,
+    "mid": 0.6069598149492017
+   },
+   "speedup_vs_current": 1.5793120589382843
+  },
+  "racing_prune_z2.0": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.0538",
+   "cost_multiplier_corroboration_r_from_profile": 0.7900312627042059,
+   "cost_multiplier_sensitivity_r_from_plies": 0.7970548150193221,
+   "cost_multiplier_vs_current": 0.7903033470808207,
+   "description": "racing + trailing-arm pruning at t in {8,16}, z=2.0 (m=32)",
+   "desktop_arbiter_s_per_move": 3.319274057739447,
+   "desktop_rho_amortized_equivalent": 0.6431947827423293,
+   "desktop_s_per_move_total_stated_calibration": 5.119274057739447,
+   "eval_cell_worker_s_per_game_W1": 335.1320422781548,
+   "eval_cell_worker_s_per_game_W30": 637.0036470415648,
+   "eval_cell_worker_s_saved_per_game_W30": 169.02058326758674,
+   "phone_hypothetical_min_per_game_kappa1_W1": 5.585534037969247,
+   "phone_hypothetical_s_per_game_kappa1_W1": 335.1320422781548,
+   "phone_rho_phone_equivalent": 17.887853824821484,
+   "race_fraction_by_phase": {
+    "early": 0.8182277628032345,
+    "late": 0.7696162917271407,
+    "mid": 0.7696162917271407
+   },
+   "speedup_vs_current": 1.2653369161268837
+  },
+  "racing_prune_z2.5": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.0226",
+   "cost_multiplier_corroboration_r_from_profile": 0.8839765806183807,
+   "cost_multiplier_sensitivity_r_from_plies": 0.8881766695836282,
+   "cost_multiplier_vs_current": 0.8841392872569254,
+   "description": "racing + trailing-arm pruning at t in {8,16}, z=2.5 (m=32)",
+   "desktop_arbiter_s_per_move": 3.7133850064790868,
+   "desktop_rho_amortized_equivalent": 0.7195639229945212,
+   "desktop_s_per_move_total_stated_calibration": 5.513385006479087,
+   "eval_cell_worker_s_per_game_W1": 374.92363671650253,
+   "eval_cell_worker_s_per_game_W30": 712.6376884973452,
+   "eval_cell_worker_s_saved_per_game_W30": 93.38654181180641,
+   "phone_hypothetical_min_per_game_kappa1_W1": 6.248727278608375,
+   "phone_hypothetical_s_per_game_kappa1_W1": 374.92363671650253,
+   "phone_rho_phone_equivalent": 20.011751676937244,
+   "race_fraction_by_phase": {
+    "early": 0.9008381064690026,
+    "late": 0.8717684143686503,
+    "mid": 0.8717684143686503
+   },
+   "speedup_vs_current": 1.1310435068466833
+  },
+  "racing_prune_z3.0": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.0142",
+   "cost_multiplier_corroboration_r_from_profile": 0.9282737254385368,
+   "cost_multiplier_sensitivity_r_from_plies": 0.9336037614406846,
+   "cost_multiplier_vs_current": 0.9284802049318065,
+   "description": "racing + trailing-arm pruning at t in {8,16}, z=3.0 (m=32)",
+   "desktop_arbiter_s_per_move": 3.8996168607135875,
+   "desktop_rho_amortized_equivalent": 0.7556511381326523,
+   "desktop_s_per_move_total_stated_calibration": 5.699616860713587,
+   "eval_cell_worker_s_per_game_W1": 393.72662211667796,
+   "eval_cell_worker_s_per_game_W30": 748.3775425374427,
+   "eval_cell_worker_s_saved_per_game_W30": 57.64668777170891,
+   "phone_hypothetical_min_per_game_kappa1_W1": 6.562110368611299,
+   "phone_hypothetical_s_per_game_kappa1_W1": 393.72662211667796,
+   "phone_rho_phone_equivalent": 21.015371181721658,
+   "race_fraction_by_phase": {
+    "early": 0.9496714959568733,
+    "late": 0.9127812046444121,
+    "mid": 0.9127812046444121
+   },
+   "speedup_vs_current": 1.0770288851483338
+  },
+  "racing_z1.5": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.1264, capture-weighted loss (ARBITER currency) 0.2567 pts/fire",
+   "cost_multiplier_corroboration_r_from_profile": 0.7078761763580353,
+   "cost_multiplier_sensitivity_r_from_plies": 0.7192711352090309,
+   "cost_multiplier_vs_current": 0.708317604019769,
+   "description": "paired sequential stopping at z=1.5, first check at 4 worlds (MEASURED at m=32; the deployed B=64 fraction is BRACKETED, see RACING_SIM.json::b64_worlds_fraction_{lower,upper}_bound)",
+   "desktop_arbiter_s_per_move": 2.97493393688303,
+   "desktop_rho_amortized_equivalent": 0.5764700214327598,
+   "desktop_s_per_move_total_stated_calibration": 4.77493393688303,
+   "eval_cell_worker_s_per_game_W1": 300.36558252414784,
+   "eval_cell_worker_s_per_game_W30": 570.9211515944567,
+   "eval_cell_worker_s_saved_per_game_W30": 235.1030787146949,
+   "phone_hypothetical_min_per_game_kappa1_W1": 5.00609304206913,
+   "phone_hypothetical_s_per_game_kappa1_W1": 300.36558252414784,
+   "phone_rho_phone_equivalent": 16.03217525150843,
+   "race_fraction_by_phase": {
+    "early": 0.7536219676549866,
+    "late": 0.6747550798258345,
+    "mid": 0.6747550798258345
+   },
+   "speedup_vs_current": 1.411796056352272
+  },
+  "racing_z2.0": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.0547, capture-weighted loss (ARBITER currency) 0.1036 pts/fire",
+   "cost_multiplier_corroboration_r_from_profile": 0.8492004733803312,
+   "cost_multiplier_sensitivity_r_from_plies": 0.8574733333348373,
+   "cost_multiplier_vs_current": 0.8495209545047758,
+   "description": "paired sequential stopping at z=2.0, first check at 4 worlds (MEASURED at m=32; the deployed B=64 fraction is BRACKETED, see RACING_SIM.json::b64_worlds_fraction_{lower,upper}_bound)",
+   "desktop_arbiter_s_per_move": 3.5679880089200586,
+   "desktop_rho_amortized_equivalent": 0.6913895123765392,
+   "desktop_s_per_move_total_stated_calibration": 5.367988008920059,
+   "eval_cell_worker_s_per_game_W1": 360.2435615297449,
+   "eval_cell_worker_s_per_game_W30": 684.7344734862077,
+   "eval_cell_worker_s_saved_per_game_W30": 121.2897568229439,
+   "phone_hypothetical_min_per_game_kappa1_W1": 6.004059358829082,
+   "phone_hypothetical_s_per_game_kappa1_W1": 360.2435615297449,
+   "phone_rho_phone_equivalent": 19.228194732357895,
+   "race_fraction_by_phase": {
+    "early": 0.8824123989218329,
+    "late": 0.8251542089985486,
+    "mid": 0.8251542089985486
+   },
+   "speedup_vs_current": 1.17713400087105
+  },
+  "racing_z2.5": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.0226, capture-weighted loss (ARBITER currency) 0.0422 pts/fire",
+   "cost_multiplier_corroboration_r_from_profile": 0.9259894203721899,
+   "cost_multiplier_sensitivity_r_from_plies": 0.930346316403453,
+   "cost_multiplier_vs_current": 0.9261582015369705,
+   "description": "paired sequential stopping at z=2.5, first check at 4 worlds (MEASURED at m=32; the deployed B=64 fraction is BRACKETED, see RACING_SIM.json::b64_worlds_fraction_{lower,upper}_bound)",
+   "desktop_arbiter_s_per_move": 3.889864446455276,
+   "desktop_rho_amortized_equivalent": 0.753761356854887,
+   "desktop_s_per_move_total_stated_calibration": 5.689864446455276,
+   "eval_cell_worker_s_per_game_W1": 392.74196509508914,
+   "eval_cell_worker_s_per_game_W30": 746.5059515383447,
+   "eval_cell_worker_s_saved_per_game_W30": 59.51827877080689,
+   "phone_hypothetical_min_per_game_kappa1_W1": 6.545699418251486,
+   "phone_hypothetical_s_per_game_kappa1_W1": 392.74196509508914,
+   "phone_rho_phone_equivalent": 20.9628145811948,
+   "race_fraction_by_phase": {
+    "early": 0.9434804582210242,
+    "late": 0.9133254716981132,
+    "mid": 0.9133254716981132
+   },
+   "speedup_vs_current": 1.0797291416741635
+  },
+  "racing_z3.0": {
+   "B_by_phase": {
+    "early": 64,
+    "late": 64,
+    "mid": 64
+   },
+   "capture_at_risk": "flip rate 0.0142, capture-weighted loss (ARBITER currency) 0.0350 pts/fire",
+   "cost_multiplier_corroboration_r_from_profile": 0.9534460498484373,
+   "cost_multiplier_sensitivity_r_from_plies": 0.9571532497375222,
+   "cost_multiplier_vs_current": 0.9535896625283965,
+   "description": "paired sequential stopping at z=3.0, first check at 4 worlds (MEASURED at m=32; the deployed B=64 fraction is BRACKETED, see RACING_SIM.json::b64_worlds_fraction_{lower,upper}_bound)",
+   "desktop_arbiter_s_per_move": 4.005076582619266,
+   "desktop_rho_amortized_equivalent": 0.7760866736561591,
+   "desktop_s_per_move_total_stated_calibration": 5.805076582619265,
+   "eval_cell_worker_s_per_game_W1": 404.37441177355424,
+   "eval_cell_worker_s_per_game_W30": 768.6163737702144,
+   "eval_cell_worker_s_saved_per_game_W30": 37.40785653893715,
+   "phone_hypothetical_min_per_game_kappa1_W1": 6.739573529559237,
+   "phone_hypothetical_s_per_game_kappa1_W1": 404.37441177355424,
+   "phone_rho_phone_equivalent": 21.583702707543253,
+   "race_fraction_by_phase": {
+    "early": 0.9683288409703504,
+    "late": 0.9426705370101597,
+    "mid": 0.9426705370101597
+   },
+   "speedup_vs_current": 1.048669086185927
+  }
+ },
+ "phase_cost_share_at_current_deploy": {
+  "advisory_56pct_reconciliation": "the 2026-08-28 advisory's 'early ~56% of arbiter cost' is the r_from_plies (playout-LENGTH) model. The PREREG-mandated fallback (r_from_secs, fired because the two models disagree 35.6% > 15%) puts early at share_PRIMARY_r_from_secs. Mechanism: early playouts are ~1.68x LONGER but each ply runs on a SMALLER board, so measured worker-seconds scale by only ~1.27x. Both are printed; the seconds model is the one with a stopwatch behind it and is the CONSERVATIVE one for the gate proposal.",
+  "note": "share_if_r_ignored is the fires-only share, printed so the two mechanisms (more fires vs costlier playouts) stay separable",
+  "rho_amortized_of_record_B64": 0.7939232880806977,
+  "rho_amortized_reproduced": 0.81385810286408,
+  "share_CORROBORATION_r_from_profile": {
+   "early": 0.4199620074263654,
+   "late": 0.23811922063590218,
+   "mid": 0.3419187719377324
+  },
+  "share_PRIMARY_r_from_secs": {
+   "early": 0.4255591302986411,
+   "late": 0.20038268238371418,
+   "mid": 0.37405818731764456
+  },
+  "share_SENSITIVITY_r_from_plies": {
+   "early": 0.5644454422955126,
+   "late": 0.12974877779455166,
+   "mid": 0.3058057799099358
+  },
+  "share_if_r_ignored": {
+   "early": 0.3268669527896996,
+   "late": 0.37120561841591887,
+   "mid": 0.30192742879438156
+  },
+  "three_model_note": "r_from_plies is the ADVISORY's model and is REFUTED by two independent cost measurements: this package's contended per-record seconds (rung3_r5, n=6,602) and the exclusive-tenant sequential profile (PROFILE_TIER1.md section 3, n=480, identity-gated). Both say cost is NOT proportional to remaining plies -- per-ply cost rises ~1.8x as the board fills, so the long early playouts run on cheap small boards. The two measured models agree on the early share to within 1 percentage point; the ply model over-states it by ~14 points.",
+  "worker_secs_per_game_W1": 424.0549448715449,
+  "worker_secs_per_game_W30": 806.0242303091516
+ },
+ "phi_calibration": {
+  "K_PHI": 0.5072847160712528,
+  "phi_measured_total": 45.26057906458797,
+  "phi_of_record": 22.96,
+  "residual_risk": "if the post-search tie rate is not phase-proportional to the leaf tie rate, the SHARES are biased and this package cannot say by how much. NOT measurable from banked data.",
+  "why": "the census fire predicate is a LEAF top-1 exact tie (1-ply v2.9 leaf, eps 0.0); the deployed arbiter fires on a POST-SEARCH root tie. The census supplies the PHASE SHARES; the absolute fired-plies-per-game level is taken from the record (22.96). Every ratio and multiplier in this file is INVARIANT to K_PHI."
+ },
+ "playout_length": {
+  "by_phase": {
+   "ALL": {
+    "mean_playout_plies": 72.51452448121782,
+    "mean_worker_secs_per_playout_contended": 0.18895870096182976,
+    "n_records": 6602
+   },
+   "early": {
+    "mean_playout_plies": 121.63340696758218,
+    "mean_worker_secs_per_playout_contended": 0.2401283276114363,
+    "n_records": 2221
+   },
+   "late": {
+    "mean_playout_plies": 24.620147471910112,
+    "mean_worker_secs_per_playout_contended": 0.09956349719101124,
+    "n_records": 2225
+   },
+   "mid": {
+    "mean_playout_plies": 71.34195993738405,
+    "mean_worker_secs_per_playout_contended": 0.22850257276205937,
+    "n_records": 2156
+   }
+  },
+  "falsifier_5_fired": true,
+  "falsifier_5_threshold": 0.15,
+  "max_abs_rel_disagreement": 0.3556343241622337,
+  "profile_caveat": "the LATE bucket has ONE grid point (root ply 100, k_remaining 22) and it sits at the shallow edge of late; deeper-late roots are cheaper still, so r_late from this model is an UPPER bound and the early share it implies is a LOWER bound. Different box (laptop i7-14650HX) -- used as a RATIO only.",
+  "profile_grid_map": {
+   "100": "late",
+   "14": "early",
+   "22": "early",
+   "30": "early",
+   "40": "early",
+   "50": "mid",
+   "6": "early",
+   "60": "mid",
+   "72": "mid",
+   "86": "mid"
+  },
+  "profile_ms_by_phase": {
+   "early": {
+    "mean_ms_per_playout": 100.86600000000001,
+    "n_grid_points": 5,
+    "root_plies": [
+     72,
+     72,
+     72,
+     72,
+     72
+    ]
+   },
+   "late": {
+    "mean_ms_per_playout": 50.36,
+    "n_grid_points": 1,
+    "root_plies": [
+     72
+    ]
+   },
+   "mid": {
+    "mean_ms_per_playout": 88.90499999999999,
+    "n_grid_points": 4,
+    "root_plies": [
+     72,
+     72,
+     72,
+     72
+    ]
+   }
+  },
+  "profile_source": "measurement/arb_costopt_prep/PROFILE_TIER1.md section 3 (branch worktree-agent-aa60f233af0253f99), 480 playouts, exclusive tenancy, identity gate 480/480",
+  "r_from_plies": {
+   "ALL": 1.0,
+   "early": 1.677366125445486,
+   "late": 0.33952022230094114,
+   "mid": 0.9838299354202139
+  },
+  "r_from_profile": {
+   "early": 1.2732259897959135,
+   "late": 0.6356915198988975,
+   "mid": 1.1222429423473288
+  },
+  "r_from_profile_unnormalised": {
+   "early": 100.86600000000001,
+   "late": 50.36,
+   "mid": 88.90499999999999
+  },
+  "r_from_secs": {
+   "ALL": 1.0,
+   "early": 1.2707979383280315,
+   "late": 0.5269061264933408,
+   "mid": 1.2092725637874575
+  },
+  "r_used": {
+   "ALL": 1.0,
+   "early": 1.2707979383280315,
+   "late": 0.5269061264933408,
+   "mid": 1.2092725637874575
+  },
+  "r_used_which": "r_from_secs (PREREG 3.5 fallback fired)",
+  "seconds_caveat": "mean_worker_secs_per_playout_contended is measured under the rung3_r5 run's own W-parallel contention and is used ONLY as a RATIO cross-check; the absolute cost constant of record stays COST_REMEASURE's c.",
+  "source": "rung3_r5 legs s2/tier1-greedy (6,602 records)"
+ },
+ "prereg": "measurement/arb_costopt_prep/PREREG.md",
+ "published_rho_reproduction": {
+  "B1": {
+   "rho_amortized": 0.012405051376260901,
+   "rho_phone": 0.3449961841448128,
+   "rho_wall": 0.038900857974337316,
+   "worker_secs_per_tied_ply": 0.5350890816086047
+  },
+  "B16": {
+   "rho_amortized": 0.19848082202017442,
+   "rho_phone": 5.519938946317005,
+   "rho_wall": 0.6224137275893971,
+   "worker_secs_per_tied_ply": 8.561425305737675
+  },
+  "B2": {
+   "rho_amortized": 0.024810102752521802,
+   "rho_phone": 0.6899923682896256,
+   "rho_wall": 0.07780171594867463,
+   "worker_secs_per_tied_ply": 1.0701781632172094
+  },
+  "B32": {
+   "rho_amortized": 0.39696164404034884,
+   "rho_phone": 11.03987789263401,
+   "rho_wall": 1.2448274551787941,
+   "worker_secs_per_tied_ply": 17.12285061147535
+  },
+  "B4": {
+   "rho_amortized": 0.049620205505043605,
+   "rho_phone": 1.3799847365792512,
+   "rho_wall": 0.15560343189734926,
+   "worker_secs_per_tied_ply": 2.1403563264344188
+  },
+  "B64": {
+   "rho_amortized": 0.7939232880806977,
+   "rho_phone": 22.07975578526802,
+   "rho_wall": 2.4896549103575882,
+   "worker_secs_per_tied_ply": 34.2457012229507
+  },
+  "B8": {
+   "rho_amortized": 0.09924041101008721,
+   "rho_phone": 2.7599694731585025,
+   "rho_wall": 0.31120686379469853,
+   "worker_secs_per_tied_ply": 4.2807126528688375
+  },
+  "check": "rho_wall(64) here vs PRODUCTION.yaml's stated 2.4897 and rho_phone(64) vs its stated '~22-24'"
+ },
+ "racing_b64_bracket": {
+  "z1.5": {
+   "cost_multiplier_bracket_vs_current": [
+    0.3541588020098845,
+    0.6423979980645245
+   ],
+   "gate_off_early_plus_racing_multiplier_bracket": [
+    0.19380344744528105,
+    0.3455425451022438
+   ],
+   "gate_off_early_plus_racing_speedup_bracket": [
+    2.89399963672811,
+    5.1598669331325615
+   ],
+   "speedup_bracket": [
+    1.5566673666681583,
+    2.823592112704544
+   ],
+   "why_a_bracket": "a z-threshold on a paired mean fires at an ABSOLUTE world index; the banked matrices stop at m=32, so a position that never fired by 32 has a true fire index in (32, 64] or never. LOWER assumes 32, UPPER assumes 64. The truth is inside."
+  },
+  "z2.0": {
+   "cost_multiplier_bracket_vs_current": [
+    0.4247604772523879,
+    0.8124983479556789
+   ],
+   "gate_off_early_plus_racing_multiplier_bracket": [
+    0.23700115072743153,
+    0.44751830544382204
+   ],
+   "gate_off_early_plus_racing_speedup_bracket": [
+    2.234545465147531,
+    4.219388795922229
+   ],
+   "speedup_bracket": [
+    1.2307717332793262,
+    2.3542680017421
+   ],
+   "why_a_bracket": "a z-threshold on a paired mean fires at an ABSOLUTE world index; the banked matrices stop at m=32, so a position that never fired by 32 has a true fire index in (32, 64] or never. LOWER assumes 32, UPPER assumes 64. The truth is inside."
+  },
+  "z2.5": {
+   "cost_multiplier_bracket_vs_current": [
+    0.46307910076848524,
+    0.909762558382146
+   ],
+   "gate_off_early_plus_racing_multiplier_bracket": [
+    0.2623257391413339,
+    0.5128619965364838
+   ],
+   "gate_off_early_plus_racing_speedup_bracket": [
+    1.949842270929237,
+    3.812054445260621
+   ],
+   "speedup_bracket": [
+    1.0991879043454211,
+    2.159458283348327
+   ],
+   "why_a_bracket": "a z-threshold on a paired mean fires at an ABSOLUTE world index; the banked matrices stop at m=32, so a position that never fired by 32 has a true fire index in (32, 64] or never. LOWER assumes 32, UPPER assumes 64. The truth is inside."
+  },
+  "z3.0": {
+   "cost_multiplier_bracket_vs_current": [
+    0.47679483126419825,
+    0.9448474073235837
+   ],
+   "gate_off_early_plus_racing_multiplier_bracket": [
+    0.2707542415609815,
+    0.5346301998490512
+   ],
+   "gate_off_early_plus_racing_speedup_bracket": [
+    1.8704517632605535,
+    3.693386276184234
+   ],
+   "speedup_bracket": [
+    1.0583719574705126,
+    2.097338172371854
+   ],
+   "why_a_bracket": "a z-threshold on a paired mean fires at an ABSOLUTE world index; the banked matrices stop at m=32, so a position that never fired by 32 has a true fire index in (32, 64] or never. LOWER assumes 32, UPPER assumes 64. The truth is inside."
+  }
+ },
+ "ratio_composability": "every multiplier here is a RATIO against the current deployed shape, so it composes multiplicatively with any constant-factor engine change -- e.g. the separately-gated 7.90x bit-identical count_final_scores swap (PROFILE_TIER1.md section 4). Absolute worker-seconds are quoted at TODAY's engine and would divide by that factor if it lands. NOTE: the swap's factor is itself occupancy-dependent (4.7x on a near-empty board, 8.2x at 65-77 placed tiles), so it does NOT cancel out of the phase shares -- it would shift them FURTHER toward early."
+}
