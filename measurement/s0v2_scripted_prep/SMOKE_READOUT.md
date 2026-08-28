@@ -1,5 +1,13 @@
 # S0v2 SIGNATURE SMOKE — READ-OUT
 
+> **ROUND 2 (the MAJORITY amendment) RAN 2026-08-28 — jump to [§6](#6-round-2--the-majority-amendment-designmd-41).**
+> The MAJORITY fire works mechanically and closes most of the took-all gap
+> (17.9 % → **26.4 %**, owner 28.9 %). It does **not** produce a certifiable
+> ruler, and round 2's most important result is a **method** one: the SAME agent
+> reads G-DAMAGE **+2.25 pp** on one deck range and **+10.66 pp** on the next, so
+> **G-DAMAGE is not resolvable at n=60** and no arm can be certified from a
+> single range. §1–§5 below are ROUND 1 and stand as written.
+
 **⛔ SMOKE. NOT A CELL. NOT A VERDICT.** No band claimed (throwaway seed range
 `900000010000..900000010029`), no `results.csv` row, no gate ladder, no claim,
 nothing adopted. Bars are [DESIGN.md](DESIGN.md) §4, committed before the first
@@ -263,3 +271,207 @@ PYTHONPATH=src:engine .venv/bin/python -m pytest tests/test_s0v2_agent.py -q
 
 Cost realized: 180 games ≈ **22 min wall at W=8** on a shared box
 (≈ 50 worker-s/game — an upper bound; see §4.4).
+
+---
+
+# §6 ROUND 2 — the MAJORITY amendment ([DESIGN.md](DESIGN.md) §4.1)
+
+**⛔ SMOKE. NOT A CELL. NOT A VERDICT.** Seeds **`900000020000..900000020029`**
+— disjoint from the `900000000000`-area (S0), `900000009000`-area (calibration)
+and `900000010000`-area (round 1) ranges. No band, no `results.csv` row, no
+claim. Bars are DESIGN.md §4 **unchanged**; the amendment (§4.1) added the fourth
+fire and its telemetry, and was committed before the first round-2 game
+(`s0v2: AMEND the prereg — add the MAJORITY fire (no bar moved)`).
+
+**Ran 2026-08-28**, local box, `nice -n 19`, W=8, same shared tenancy as round 1
+(the other agent's 8-worker job ran throughout both rounds), three arms,
+**180 games, 180/180 reconciled**. All three arms ran the SAME 30 decks, both
+seatings — deck-paired and deck-matched.
+
+**Why CTRL and the majority-off arm were re-run** (the coordinator left this
+call open): both G-EXPRESS(b) and G-DAMAGE are **CTRL-relative**, and `CLAUDE.md`
+CL-068 puts cross-range contrasts at 1.8–2.2× over-dispersion. Re-running CTRL
+and S0V2-F on the new range cost ~13 minutes and made every gate a within-range,
+deck-matched contrast. **That decision is what produced round 2's headline
+finding** — see §6.2.
+
+## §6.1 The results
+
+| arm | plan | n | **census deliberate / game** | ×CTRL2 | sep σ | **margin** | W-D-L |
+|---|---|---|---|---|---|---|---|
+| **CTRL2** | none | 60 | **0.633 / 0.450 → pooled 0.542 ± 0.064** | — | — | −0.65 ± 3.03 | 30-1-29 |
+| **S0V2-F2** | full, MAJORITY **off** | 60 | **0.933 ± 0.106** | 1.72× | +3.17 | **−8.88 ± 3.52** | 25-1-34 |
+| **S0V2-FM** | full + **MAJORITY** | 60 | 0.883 ± 0.098 | 1.63× | +2.92 | −12.82 ± 3.21 | 21-1-38 |
+
+| gate | bar (unchanged) | S0V2-F2 | S0V2-FM |
+|---|---|---|---|
+| **G-EXPRESS (a)** | ≥ 0.90 / game | **0.933 ✅** | **0.883 ❌** |
+| **G-EXPRESS (b)** | ≥ 2 σ over CTRL | +3.17 σ ✅ | +2.92 σ ✅ |
+| **G-DAMAGE** | ≥ +10 pp champ farmer-zero | **+10.66 pp ✅** (z 3.06) | **+12.37 pp ✅** (z 3.53) |
+| **G-COMPETITIVE** | ≥ −25 (pref −12) | ✅ hard, ✅ preferred | ✅ hard, ❌ preferred (−12.82) |
+| **S0v2-VALID** | all three | **YES — but see §6.2** | **NO** (G-EXPRESS a) |
+
+### Deck-matched margin contrasts (all three arms, same 30 decks)
+
+| contrast | n | mean | sem | z |
+|---|---|---|---|---|
+| S0V2-F2 − CTRL2 | 60 | −8.23 | 3.87 | −2.13 |
+| S0V2-FM − CTRL2 | 60 | −12.17 | 3.96 | −3.07 |
+| **S0V2-FM − S0V2-F2** (the amendment's own cost) | 60 | **−3.93** | 2.83 | −1.39 |
+
+### The statistic the amendment was built to move
+
+| | owner (E4) | CTRL2 | S0V2-F2 | **S0V2-FM** |
+|---|---|---|---|---|
+| **`invader_took_all`** | **28.9 %** (26/90) | 13.2 % (5/38) | 17.9 % (10/56) | **26.4 % (14/53)** |
+| `shared_tie` | 66.7 % | 71.1 % | 62.5 % | 54.7 % |
+| **`incumbent_held`** | **4.4 %** | 15.8 % | 19.6 % | **17.0 %** |
+| **out-numbering at score** | **28.9 %** | 13.2 % | 17.9 % | **26.4 %** |
+| out-numbering meeple counts | 2v1 ×10, 3v2 ×5, 4v3 ×7 … | 2v1 ×2, 3v2 ×1, 4v2 ×1 | 2v1 ×3, 3v2 ×2, 4v2 ×2, 4v3 ×2 | **2v1 ×5, 3v2 ×4, 4v2 ×3, 3v1 ×1, 4v3 ×1** |
+
+**The gap round 1 named is essentially closed on the point estimate: 26.4 % vs
+the owner's 28.9 %.** ⚠️ But the *contrast* is not resolved at this n — the
+two-proportion test S0V2-FM vs S0V2-F2 is **z +1.08**, and vs CTRL2 **z +1.53**.
+53 invasion events cannot separate 26 % from 18 %. What IS established is the
+**mechanism**, from the agent's own ledger rather than from a proportion test:
+**42 MAJORITY fires (0.70/game), 38 of them `from_tie`.**
+
+### The MAJORITY / REINFORCE ledger (S0V2-FM, 60 games)
+
+| | |
+|---|---|
+| MAJORITY fires | **42** (0.70/game) — of which **`from_tie` 38**, fresh 2-v-1 4 |
+| MAJORITY candidates seen | 59 |
+| REINFORCE-FOOTHOLD fires | **41** — `reinforce_vetoed_by_visits` 47 |
+| REINFORCE-SETUP fires | 90 (of 219 setup fires) |
+| **meeples spent on reinforcement** | **41** (0.68/game) |
+| reinforce plans | **15 / 41 completed = 36.6 %** |
+| invade plans | 43 / 161 = 26.7 % |
+| **plan completion, all kinds** | **58 / 202 = 28.7 %** (S0V2-F2: 33/188 = **17.6 %**) |
+| abandons | 49 — `stub_gone` 27, `merged_not_by_plan` 14, `victim_gone` 8 |
+| merge fires | 57 (S0V2-F2: 61); merge candidates 79 (F2: 88) |
+| `setup_vetoed_by_visits` | 1050 of 2418 candidates — the gate is still doing most of the work |
+
+**Plan completion nearly doubled, 17.6 % → 28.7 %** — the number round 1 said
+this build had to move, and the only one of the amendment's targets that moves
+by more than noise.
+
+### Secondary counters
+
+| | owner (E4) | CTRL2 | S0V2-F2 | S0V2-FM |
+|---|---|---|---|---|
+| champion games farm-ZEROED | 18 % | 5.0 % (pooled) | 10.0 % | **11.7 %** |
+| S0v2's own games farm-zeroed | 0 % | 5.0 % (pooled) | 3.3 % | **1.7 %** |
+| points S0v2 denied the champion | 620 | 154 | 184 | **241** |
+| invader gain (pts) | 1460 | 583 | 644 | 621 |
+| champion big-claim contested rate | 39.1 % | 10.2 % (pooled) | 11.7 % | 10.1 % |
+| deliberate invasions on FARMS | 41 % | 61 % | 68 % | 66 % |
+| foothold → victim (tiles) | **2.75 → 8.29** | 3.98 → 11.60 | 3.80 → 10.07 | **3.62 → 9.90** |
+| late farm captures | 15 | 2 | 2 | **5** |
+| S0v2's OWN farmers scoring ZERO | **5.4 %** | 11.4 % | 28.0 % | **30.0 %** |
+
+## §6.2 ⭐ THE FINDING THAT OUTRANKS THE BARS: G-DAMAGE IS NOT RESOLVABLE AT n=60
+
+`S0V2-F` and `S0V2-F2` are **the same agent** — the same code, the same profile,
+`majority_enabled=False`, pinned bit-for-bit by
+`test_majority_off_is_the_previous_agent_exactly`. Only the deck range differs:
+
+| | round 1 (`…10000`) | round 2 (`…20000`) |
+|---|---|---|
+| census deliberate / game | 0.900 ± 0.111 | 0.933 ± 0.106 |
+| margin | −15.57 ± 3.28 | −8.88 ± 3.52 |
+| champion farmer-zero rate | 17.30 % (n=185) | **24.38 %** (n=201) |
+| CTRL farmer-zero rate | 15.05 % (n=412) | 13.72 % (n=401) |
+| **G-DAMAGE** | **+2.25 pp — FAIL** (z 0.68) | **+10.66 pp — PASS** (z 3.06) |
+
+**An 8.4 pp swing on a +10 pp bar, from the identical agent, between two
+60-game deck ranges.** The nominal SEM of the difference between the two reads
+is 4.79 pp (1.75 σ); under CL-068's measured 1.8–2.2× cross-range
+over-dispersion it is ≈ 0.8–1.0 σ — entirely ordinary. So:
+
+> **"S0V2-F2 is S0v2-VALID" is a statement about a deck range, not about an
+> agent.** The same agent failed the same gate one range earlier. **No arm in
+> either round can be certified as a ruler**, and the honest status of
+> `S0V2-F2`'s green row in §6.1 is *passed on one range, failed on another*.
+
+⚠️ **The fix is NOT more games on one range.** The within-range SEM (3.48 pp) is
+already small enough to decide a +10 pp bar at 2 σ; what is not established is
+**reproducibility across ranges**. Round 1 and round 2 together ARE that
+replication for the majority-off agent, and it fails it. **A ruler-certification
+protocol needs a two-range replication clause on G-DAMAGE** — a gate that passes
+on one range and fails on another has not been measured. That clause does not
+exist in DESIGN §4 and is not being retro-fitted here: it is the amendment the
+NEXT prereg should carry.
+
+## §6.3 The two gates pull against each other — a design fault in the instrument
+
+S0V2-FM's expression *fell* (0.933 → 0.883) while its damage rose. That is not
+noise about a knob; it is mechanical, and the ledger names it:
+
+* **38 of 42 MAJORITY fires were `from_tie`** — they land on features that were
+  **already contested**. The census counts a deliberate invasion only at a
+  feature's **FIRST** contest, so a majority on an already-contested feature
+  scores on **G-DAMAGE and not at all on G-EXPRESS**.
+* **MAJORITY outranks MERGE**, so on plies where both are available the agent
+  spends its one move on the majority. Merge fires fell 61 → 57 and merge
+  candidates 88 → 79.
+
+⇒ **The agent has one move per ply and the two registered gates want it spent
+differently.** G-EXPRESS counts *first contests*; G-DAMAGE needs *majorities on
+contests already made*. An instrument scored on both simultaneously is being
+asked to do two things with one move.
+
+## §6.4 RECOMMENDATION, and the next diagnosed mechanism
+
+**No arm is certified.** `S0V2-F2` passes all three registered bars on range 2
+and fails G-DAMAGE on range 1 as the same agent (§6.2); `S0V2-FM` misses
+G-EXPRESS(a) by 0.017/game, inside its own SEM of 0.098.
+
+What the amendment did establish, and it is worth keeping:
+
+* **The MAJORITY fire works as designed.** 42 fires, 38 from ties, took-all
+  17.9 % → 26.4 % against the owner's 28.9 %, points denied 184 → 241, plan
+  completion 17.6 % → **28.7 %**. Direction and mechanism confirmed; magnitude
+  not resolved at n=60 (z +1.08 vs its own sibling).
+* **It costs ~4 pts/game** (deck-matched −3.93 ± 2.83, z −1.39) and pushes the
+  arm just outside the preferred competitiveness band.
+* **It is cheap.** S0V2-FM was the *fastest* arm at 43.6 worker-s/game — a
+  MAJORITY or MERGE fire returns without running the base search.
+
+### Next diagnosed mechanism — named, NOT built
+
+**`incumbent_held` is 17.0 % for S0V2-FM against the owner's 4.4 %.** After
+MAJORITY, S0v2 wins its invasions about as often as the owner does; what it
+still does four times too often is **lose them** — the champion merges *its* own
+second part in and out-numbers S0v2 back. S0v2 has **no fire that defends a
+contested feature it already holds**: the exact mirror of MAJORITY, call it
+**HOLD** (reinforce a contested feature where the opponent is tied with me or
+about to pass me). It is the same machinery — a second claimed part plus a merge
+— pointed the other way, and it targets the one outcome column where the gap to
+the owner is still 4×.
+
+Two instrument-design items also fall out of §6.2 and §6.3, and they are not
+fires:
+
+1. **A two-range replication clause on G-DAMAGE** before any ruler is certified.
+2. **Separate the gates** — either score MAJORITY and MERGE arms independently,
+   or replace "count + damage" with a single **denial-per-game** statistic that
+   does not make one move serve two counters.
+
+## §6.5 What round 2 cannot say
+
+Everything in §4 still applies, plus: **nothing about the MAJORITY fire's
+magnitude.** Its own contrast against the majority-off sibling is z +1.08 on
+took-all and z −1.39 on margin. The fire ledger (42 fires, 38 from ties) is
+direct evidence the mechanism fires; the outcome shift is direction-consistent
+and under-powered. Realized cost across round 2 was **43.6 – 51.3 worker-s/game**
+(141.9 moves/game) on a **shared** box — an upper bound, not a cell price.
+
+## §6.6 Reproduce
+
+```bash
+measurement/s0v2_scripted_prep/run_smoke.sh play S0V2_FM 400   # resumable
+measurement/s0v2_scripted_prep/run_smoke.sh grade S0V2_FM
+.venv/bin/python measurement/s0v2_scripted_prep/s0v2_bars.py \
+  --root /mnt/c/carc-shared/s0v2_smoke_20260828 --round 2
+```

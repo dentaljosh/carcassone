@@ -1,0 +1,470 @@
+{
+  "per_game": {
+    "seed900000020000_a0.json": {
+      "del_a": 2,
+      "del_b": 1,
+      "farm_a": 12.0,
+      "farm_b": 12.0,
+      "margin": 16.0
+    },
+    "seed900000020000_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 3.0,
+      "farm_b": 27.0,
+      "margin": -59.0
+    },
+    "seed900000020001_a0.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 9.0,
+      "farm_b": 15.0,
+      "margin": -57.0
+    },
+    "seed900000020001_a1.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 15.0,
+      "farm_b": 18.0,
+      "margin": -40.0
+    },
+    "seed900000020002_a0.json": {
+      "del_a": 0,
+      "del_b": 2,
+      "farm_a": 24.0,
+      "farm_b": 30.0,
+      "margin": -35.0
+    },
+    "seed900000020002_a1.json": {
+      "del_a": 0,
+      "del_b": 1,
+      "farm_a": 6.0,
+      "farm_b": 27.0,
+      "margin": -27.0
+    },
+    "seed900000020003_a0.json": {
+      "del_a": 0,
+      "del_b": 1,
+      "farm_a": 9.0,
+      "farm_b": 39.0,
+      "margin": -9.0
+    },
+    "seed900000020003_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 3.0,
+      "farm_b": 33.0,
+      "margin": -18.0
+    },
+    "seed900000020004_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 18.0,
+      "farm_b": 27.0,
+      "margin": -49.0
+    },
+    "seed900000020004_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 21.0,
+      "farm_b": 0.0,
+      "margin": -45.0
+    },
+    "seed900000020005_a0.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 27.0,
+      "farm_b": 0.0,
+      "margin": -3.0
+    },
+    "seed900000020005_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 6.0,
+      "farm_b": 9.0,
+      "margin": -50.0
+    },
+    "seed900000020006_a0.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 33.0,
+      "farm_b": 36.0,
+      "margin": -17.0
+    },
+    "seed900000020006_a1.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 12.0,
+      "farm_b": 24.0,
+      "margin": -86.0
+    },
+    "seed900000020007_a0.json": {
+      "del_a": 0,
+      "del_b": 2,
+      "farm_a": 45.0,
+      "farm_b": 18.0,
+      "margin": 12.0
+    },
+    "seed900000020007_a1.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 24.0,
+      "farm_b": 30.0,
+      "margin": -26.0
+    },
+    "seed900000020008_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 24.0,
+      "farm_b": 6.0,
+      "margin": 25.0
+    },
+    "seed900000020008_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 12.0,
+      "farm_b": 18.0,
+      "margin": -23.0
+    },
+    "seed900000020009_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 21.0,
+      "farm_b": 3.0,
+      "margin": 3.0
+    },
+    "seed900000020009_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 15.0,
+      "farm_b": 15.0,
+      "margin": -13.0
+    },
+    "seed900000020010_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 18.0,
+      "farm_b": 6.0,
+      "margin": 0.0
+    },
+    "seed900000020010_a1.json": {
+      "del_a": 2,
+      "del_b": 1,
+      "farm_a": 30.0,
+      "farm_b": 21.0,
+      "margin": -9.0
+    },
+    "seed900000020011_a0.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 36.0,
+      "farm_b": 9.0,
+      "margin": -1.0
+    },
+    "seed900000020011_a1.json": {
+      "del_a": 0,
+      "del_b": 1,
+      "farm_a": 21.0,
+      "farm_b": 9.0,
+      "margin": -24.0
+    },
+    "seed900000020012_a0.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 24.0,
+      "farm_b": 24.0,
+      "margin": 11.0
+    },
+    "seed900000020012_a1.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 12.0,
+      "farm_b": 15.0,
+      "margin": -30.0
+    },
+    "seed900000020013_a0.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 6.0,
+      "farm_b": 30.0,
+      "margin": 11.0
+    },
+    "seed900000020013_a1.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 9.0,
+      "farm_b": 18.0,
+      "margin": -10.0
+    },
+    "seed900000020014_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 27.0,
+      "farm_b": 0.0,
+      "margin": 11.0
+    },
+    "seed900000020014_a1.json": {
+      "del_a": 2,
+      "del_b": 2,
+      "farm_a": 30.0,
+      "farm_b": 18.0,
+      "margin": -8.0
+    },
+    "seed900000020015_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 21.0,
+      "farm_b": 0.0,
+      "margin": 17.0
+    },
+    "seed900000020015_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 27.0,
+      "farm_b": 6.0,
+      "margin": -15.0
+    },
+    "seed900000020016_a0.json": {
+      "del_a": 3,
+      "del_b": 0,
+      "farm_a": 30.0,
+      "farm_b": 0.0,
+      "margin": -10.0
+    },
+    "seed900000020016_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 21.0,
+      "farm_b": 3.0,
+      "margin": 15.0
+    },
+    "seed900000020017_a0.json": {
+      "del_a": 0,
+      "del_b": 1,
+      "farm_a": 21.0,
+      "farm_b": 18.0,
+      "margin": 4.0
+    },
+    "seed900000020017_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 21.0,
+      "farm_b": 12.0,
+      "margin": 25.0
+    },
+    "seed900000020018_a0.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 24.0,
+      "farm_b": 24.0,
+      "margin": 6.0
+    },
+    "seed900000020018_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 36.0,
+      "farm_b": 27.0,
+      "margin": -5.0
+    },
+    "seed900000020019_a0.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 24.0,
+      "farm_b": 9.0,
+      "margin": -17.0
+    },
+    "seed900000020019_a1.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 33.0,
+      "farm_b": 24.0,
+      "margin": -8.0
+    },
+    "seed900000020020_a0.json": {
+      "del_a": 0,
+      "del_b": 1,
+      "farm_a": 21.0,
+      "farm_b": 36.0,
+      "margin": 27.0
+    },
+    "seed900000020020_a1.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 18.0,
+      "farm_b": 18.0,
+      "margin": -33.0
+    },
+    "seed900000020021_a0.json": {
+      "del_a": 0,
+      "del_b": 1,
+      "farm_a": 0.0,
+      "farm_b": 30.0,
+      "margin": -43.0
+    },
+    "seed900000020021_a1.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 18.0,
+      "farm_b": 18.0,
+      "margin": -18.0
+    },
+    "seed900000020022_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 30.0,
+      "farm_b": 15.0,
+      "margin": -19.0
+    },
+    "seed900000020022_a1.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 9.0,
+      "farm_b": 27.0,
+      "margin": -28.0
+    },
+    "seed900000020023_a0.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 27.0,
+      "farm_b": 15.0,
+      "margin": -57.0
+    },
+    "seed900000020023_a1.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 12.0,
+      "farm_b": 12.0,
+      "margin": 28.0
+    },
+    "seed900000020024_a0.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 33.0,
+      "farm_b": 0.0,
+      "margin": 18.0
+    },
+    "seed900000020024_a1.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 27.0,
+      "farm_b": 0.0,
+      "margin": 7.0
+    },
+    "seed900000020025_a0.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 18.0,
+      "farm_b": 12.0,
+      "margin": -9.0
+    },
+    "seed900000020025_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 18.0,
+      "farm_b": 15.0,
+      "margin": -35.0
+    },
+    "seed900000020026_a0.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 24.0,
+      "farm_b": 27.0,
+      "margin": -4.0
+    },
+    "seed900000020026_a1.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 12.0,
+      "farm_b": 9.0,
+      "margin": -21.0
+    },
+    "seed900000020027_a0.json": {
+      "del_a": 0,
+      "del_b": 0,
+      "farm_a": 18.0,
+      "farm_b": 6.0,
+      "margin": -3.0
+    },
+    "seed900000020027_a1.json": {
+      "del_a": 1,
+      "del_b": 0,
+      "farm_a": 33.0,
+      "farm_b": 3.0,
+      "margin": 13.0
+    },
+    "seed900000020028_a0.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 12.0,
+      "farm_b": 18.0,
+      "margin": 2.0
+    },
+    "seed900000020028_a1.json": {
+      "del_a": 0,
+      "del_b": 1,
+      "farm_a": 27.0,
+      "farm_b": 21.0,
+      "margin": -36.0
+    },
+    "seed900000020029_a0.json": {
+      "del_a": 2,
+      "del_b": 0,
+      "farm_a": 12.0,
+      "farm_b": 12.0,
+      "margin": -39.0
+    },
+    "seed900000020029_a1.json": {
+      "del_a": 1,
+      "del_b": 1,
+      "farm_a": 36.0,
+      "farm_b": 9.0,
+      "margin": 19.0
+    }
+  },
+  "summary": {
+    "a_name": "S0V2",
+    "b_name": "CHAMP",
+    "big_claims_a": 97,
+    "big_claims_b": 159,
+    "big_contested_a": 6,
+    "big_contested_b": 16,
+    "big_contested_rate_a": 0.061855670103092786,
+    "big_contested_rate_b": 0.10062893081761007,
+    "contest_onsets_a": 58,
+    "contest_onsets_b": 37,
+    "deliberate_farm_a": 35,
+    "deliberate_farm_b": 20,
+    "deliberate_invasions_a": 53,
+    "deliberate_invasions_b": 23,
+    "deliberate_per_game_a": 0.8833333333333333,
+    "deliberate_per_game_a_sem": 0.09826651948259948,
+    "deliberate_per_game_b": 0.38333333333333336,
+    "deliberate_per_game_b_sem": 0.07550832133836045,
+    "farm_pts_per_game_a": 20.25,
+    "farm_pts_per_game_b": 16.05,
+    "farm_zeroed_games_a": 1,
+    "farm_zeroed_games_b": 7,
+    "farm_zeroed_rate_a": 0.016666666666666666,
+    "farm_zeroed_rate_b": 0.11666666666666667,
+    "farmer_commits_a": 273,
+    "farmer_commits_b": 207,
+    "farmer_zero_rate_a": 0.30036630036630035,
+    "farmer_zero_rate_b": 0.2608695652173913,
+    "invader_denied_a": 241.0,
+    "invader_denied_b": 126.0,
+    "invader_gain_a": 621.0,
+    "invader_gain_b": 334.0,
+    "label": "S0V2_FM",
+    "late_farm_capture_a": 5,
+    "late_farm_capture_b": 2,
+    "margin_mean_a_minus_b": -12.816666666666666,
+    "margin_sem": 3.211252432394165,
+    "mean_foothold_a": 3.6206896551724137,
+    "mean_foothold_b": 4.675675675675675,
+    "mean_invaded_size_a": 12.413793103448276,
+    "mean_invaded_size_b": 13.432432432432432,
+    "mean_victim_size_a": 9.89655172413793,
+    "mean_victim_size_b": 12.108108108108109,
+    "n_games": 60
+  }
+}

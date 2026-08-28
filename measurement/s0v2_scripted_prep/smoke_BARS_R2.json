@@ -1,0 +1,103 @@
+{
+  "arms": [
+    {
+      "G_COMPETITIVE_hard": true,
+      "G_COMPETITIVE_hard_resolved": true,
+      "G_COMPETITIVE_preferred": true,
+      "G_DAMAGE": true,
+      "G_DAMAGE_pp": 10.662398729544298,
+      "G_EXPRESS": true,
+      "G_EXPRESS_a": true,
+      "G_EXPRESS_b": true,
+      "VALID": true,
+      "agent_fires_vs_census": [
+        61,
+        56
+      ],
+      "arm": "S0V2_F2",
+      "census_deliberate_over_onsets": 0.9180327868852459,
+      "champ_farmer_zero_rate": 0.24378109452736318,
+      "ctrl_farmer_zero_rate": 0.1371571072319202,
+      "deliberate_per_game": 0.9333333333333333,
+      "incumbent_held_rate": 0.19642857142857142,
+      "majority_fires": 0,
+      "majority_from_tie": 0,
+      "margin": -8.883333333333333,
+      "margin_sem": 3.5150275988554673,
+      "meeples_spent_on_reinforcement": 0,
+      "multiple_of_ctrl": 1.7230769230769232,
+      "n": 60,
+      "outnumbering_rate": 0.17857142857142858,
+      "plan_completion_rate": 0.17553191489361702,
+      "reinforce_plans": [
+        0,
+        0
+      ],
+      "sem": 0.10594387882928205,
+      "separation_sigma": 3.1694278456007012,
+      "took_all_rate": 0.17857142857142858,
+      "worker_s_per_game_upper_bound": 46.78661666666667
+    },
+    {
+      "G_COMPETITIVE_hard": true,
+      "G_COMPETITIVE_hard_resolved": true,
+      "G_COMPETITIVE_preferred": false,
+      "G_DAMAGE": true,
+      "G_DAMAGE_pp": 12.37124579854711,
+      "G_EXPRESS": false,
+      "G_EXPRESS_a": false,
+      "G_EXPRESS_b": true,
+      "VALID": false,
+      "agent_fires_vs_census": [
+        57,
+        53
+      ],
+      "arm": "S0V2_FM",
+      "census_deliberate_over_onsets": 0.9137931034482759,
+      "champ_farmer_zero_rate": 0.2608695652173913,
+      "ctrl_farmer_zero_rate": 0.1371571072319202,
+      "deliberate_per_game": 0.8833333333333333,
+      "incumbent_held_rate": 0.16981132075471697,
+      "majority_fires": 42,
+      "majority_from_tie": 38,
+      "margin": -12.816666666666666,
+      "margin_sem": 3.211252432394165,
+      "meeples_spent_on_reinforcement": 41,
+      "multiple_of_ctrl": 1.6307692307692307,
+      "n": 60,
+      "outnumbering_rate": 0.2641509433962264,
+      "plan_completion_rate": 0.2871287128712871,
+      "reinforce_plans": [
+        41,
+        15
+      ],
+      "sem": 0.09826651948259948,
+      "separation_sigma": 2.9186991077789872,
+      "took_all_rate": 0.2641509433962264,
+      "worker_s_per_game_upper_bound": 43.6096
+    }
+  ],
+  "ctrl_arm": "CTRL2",
+  "ctrl_farmer_zero_rate": 0.1371571072319202,
+  "ctrl_rate": 0.5416666666666666,
+  "ctrl_sem": 0.06361631458092343,
+  "ctrl_took_all_rate": 0.13157894736842105,
+  "deck_matched_contrasts": {
+    "S0V2_F2_minus_CTRL2_deck_matched": {
+      "mean": -8.233333333333333,
+      "n": 60,
+      "sem": 3.8710402889947706
+    },
+    "S0V2_FM_minus_CTRL2_deck_matched": {
+      "mean": -12.166666666666666,
+      "n": 60,
+      "sem": 3.961336208584017
+    },
+    "S0V2_FM_minus_S0V2_F2_deck_matched": {
+      "mean": -3.933333333333333,
+      "n": 60,
+      "sem": 2.826015808235907
+    }
+  },
+  "round": 2
+}

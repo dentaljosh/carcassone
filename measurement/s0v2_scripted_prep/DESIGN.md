@@ -7,7 +7,13 @@ the bars — S0v2's invasions TIE where the owner's take a MAJORITY, and a tie
 denies the incumbent nothing under the vendored full-points-on-tie rule — is
 in [SMOKE_READOUT.md](SMOKE_READOUT.md) §2 finding (1).
 AMENDED 2026-08-28 (§4.1): the MAJORITY fire, and a RE-SMOKE on seeds
-`900000020000..029`. The bars did not move.**
+`900000020000..029`. The bars did not move. ROUND 2 RAN 2026-08-28 →
+⛔ STILL NO CERTIFIED RULER, and its headline is a METHOD result: the SAME
+agent reads G-DAMAGE +2.25 pp on one deck range and +10.66 pp on the next, so
+**G-DAMAGE is not resolvable at n=60 and needs a two-range replication clause**
+— [SMOKE_READOUT.md](SMOKE_READOUT.md) §6.2. The MAJORITY fire itself works
+(took-all 17.9 % → 26.4 % vs the owner's 28.9 %; plan completion 17.6 % →
+28.7 %), at ~4 pts/game and under-powered at this n.**
 Owner-funded 2026-08-28 ("start the build now") as the fallback
 [`measurement/s0_exploiter_prep/DESIGN.md`](../s0_exploiter_prep/DESIGN.md) §8.5
 pre-named and [`SMOKE_READOUT.md`](../s0_exploiter_prep/SMOKE_READOUT.md) §3

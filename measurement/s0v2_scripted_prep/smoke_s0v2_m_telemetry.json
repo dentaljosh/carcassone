@@ -6,10 +6,39 @@
   "census_deliberate_sem": 0.08922664174441856,
   "census_deliberate_total": 43,
   "census_onsets_total": 48,
+  "census_outcomes": {
+    "deliberate_total": 43,
+    "meeples_at_score": {
+      "1v1": 17,
+      "1v2": 4,
+      "1v3": 2,
+      "1v4": 3,
+      "2v1": 1,
+      "2v2": 5,
+      "2v3": 4,
+      "3v3": 1,
+      "3v5": 1,
+      "4v3": 3,
+      "5v2": 1,
+      "5v4": 1
+    },
+    "outcome_rates": {
+      "incumbent_held": 0.32558139534883723,
+      "invader_took_all": 0.13953488372093023,
+      "shared_tie": 0.5348837209302325
+    },
+    "outcomes": {
+      "incumbent_held": 14,
+      "invader_took_all": 6,
+      "shared_tie": 23
+    },
+    "outnumbering_at_score": 6,
+    "outnumbering_rate": 0.13953488372093023
+  },
   "fires": {
     "merge": 47
   },
-  "label": "S0V2_M",
+  "label": "s0v2_m",
   "leaf_cost": {},
   "margin_mean": -0.5833333333333334,
   "margin_sem": 2.6876250901558807,

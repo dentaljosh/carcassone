@@ -9,7 +9,12 @@
 #   * NO results.csv row, NO gate ladder, NO blind commit, NO adoption chain.
 #   * Every artifact it writes is stamped "smoke": true.
 #
-# THREE arms (DESIGN.md SS3), all against the CHAMPION OF RECORD at the r3
+# ROUND 1 (DESIGN.md SS3), seeds 900000010000..029:
+#   CTRL / S0V2_M / S0V2_F
+# ROUND 2 (DESIGN.md SS4.1, the MAJORITY amendment), seeds 900000020000..029:
+#   CTRL2 / S0V2_F2 (majority OFF, the deck-matched control) / S0V2_FM
+#
+# THREE arms per round (DESIGN.md SS3), all against the CHAMPION OF RECORD at the r3
 # screening instrument (k4x688 = 2752 both sides, rust both sides, fixed_v1+R9,
 # exact-K 2 marginalized, tie-arbiter off), deck-paired AND deck-matched across
 # arms (all three run the SAME 30 decks):
@@ -34,18 +39,21 @@ REPO=/home/doctor/projects/carcassone
 PY="$REPO/.venv/bin/python"
 OUT=/mnt/c/carc-shared/s0v2_smoke_20260828
 W=8                       # another agent shares the box; W8 is the cap
-SEED=900000010000
 DECKS=30
 export PYTHONPATH="$TREE/src:$TREE/engine"
 
 CENSUS="$REPO/measurement/e4_exploit_grading_20260825/stage_a_census.py"
 SIG="$REPO/measurement/s0_exploiter_prep/s0_signature.py"
 
-arm_plan() {   # $1 = arm -> echoes the --plan profile
+arm_cfg() {   # $1 = arm -> sets PLAN and SEED
   case "$1" in
-    CTRL)   echo off ;;
-    S0V2_M) echo merge ;;
-    S0V2_F) echo full ;;
+    CTRL)    PLAN=off;        SEED=900000010000 ;;
+    S0V2_M)  PLAN=merge;      SEED=900000010000 ;;
+    S0V2_F)  PLAN=full;       SEED=900000010000 ;;
+    # ---- round 2: the MAJORITY amendment (DESIGN.md SS4.1) ----------------- #
+    CTRL2)   PLAN=off;        SEED=900000020000 ;;
+    S0V2_F2) PLAN=full;       SEED=900000020000 ;;
+    S0V2_FM) PLAN=full_major; SEED=900000020000 ;;
     *) echo "FATAL: unknown arm '$1'" >&2; exit 2 ;;
   esac
 }
@@ -55,9 +63,9 @@ cmd="${1:?play|grade|grade-all}"
 case "$cmd" in
   play)
     arm="${2:?arm}"; budget="${3:-400}"
-    plan="$(arm_plan "$arm")"
+    arm_cfg "$arm"
     exec nice -n 19 "$PY" "$DIR/s0v2_smoke.py" \
-        --label "$arm" --plan "$plan" --decks "$DECKS" --seed-start "$SEED" \
+        --label "$arm" --plan "$PLAN" --decks "$DECKS" --seed-start "$SEED" \
         --workers "$W" --out "$OUT/$(echo "$arm" | tr 'A-Z' 'a-z')" \
         --time-budget "$budget"
     ;;
@@ -66,8 +74,8 @@ case "$cmd" in
     lo="$(echo "$arm" | tr 'A-Z' 'a-z')"
     "$PY" "$CENSUS" --games-dir "$OUT/$lo" --out-dir "$OUT/${lo}_rows" \
         --profile fixed_v1 --out-name rows.jsonl
-    aname="S0V2"; [ "$arm" = "CTRL" ] && aname="CHAMP_A"
-    bname="CHAMP"; [ "$arm" = "CTRL" ] && bname="CHAMP_B"
+    aname="S0V2"; bname="CHAMP"
+    case "$arm" in CTRL|CTRL2) aname="CHAMP_A"; bname="CHAMP_B" ;; esac
     "$PY" "$SIG" --rows "$OUT/${lo}_rows/rows.jsonl" \
         --label "$arm" --a-name "$aname" --b-name "$bname" \
         --out "$OUT/${lo}_rows/signature.json"
@@ -76,7 +84,7 @@ case "$cmd" in
         --out "$OUT/${lo}_rows/telemetry.json"
     ;;
   grade-all)
-    for a in CTRL S0V2_M S0V2_F; do
+    for a in CTRL S0V2_M S0V2_F CTRL2 S0V2_F2 S0V2_FM; do
       [ -d "$OUT/$(echo "$a" | tr 'A-Z' 'a-z')" ] || continue
       "$0" grade "$a"
       echo

@@ -20,7 +20,10 @@ import json
 import math
 from pathlib import Path
 
-ARMS = ["CTRL", "S0V2_M", "S0V2_F"]
+ROUNDS = {
+    1: ("CTRL", ["S0V2_M", "S0V2_F"]),
+    2: ("CTRL2", ["S0V2_F2", "S0V2_FM"]),   # the MAJORITY amendment
+}
 
 # DESIGN.md §4
 G_EXPRESS_ABS = 0.90
@@ -51,25 +54,27 @@ def load(root: Path, arm: str):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True)
+    ap.add_argument("--round", type=int, default=1, choices=sorted(ROUNDS))
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     root = Path(args.root)
+    CTRL, ARM_NAMES = ROUNDS[args.round]
 
-    data = {a: load(root, a) for a in ARMS}
+    data = {a: load(root, a) for a in [CTRL] + ARM_NAMES}
 
     # ---- the CTRL base rate: pooled over both seats -------------------------- #
-    _cs, cpg, _ct = data["CTRL"]
+    _cs, cpg, _ct = data[CTRL]
     ctrl_pool = [g["del_a"] for g in cpg.values()] + [g["del_b"] for g in cpg.values()]
     ctrl_rate, ctrl_sem = _mean(ctrl_pool), _sem(ctrl_pool)
 
     # the champion's farmer-zero rate under CTRL, pooled over both seats
-    cs = data["CTRL"][0]
+    cs = data[CTRL][0]
     ctrl_fz = ((cs["farmer_zero_rate_a"] * cs["farmer_commits_a"]
                 + cs["farmer_zero_rate_b"] * cs["farmer_commits_b"])
                / (cs["farmer_commits_a"] + cs["farmer_commits_b"]))
 
     rows = []
-    for arm in ("S0V2_M", "S0V2_F"):
+    for arm in ARM_NAMES:
         s, pg, tel = data[arm]
         rate = s["deliberate_per_game_a"]
         sem = s["deliberate_per_game_a_sem"]
@@ -98,6 +103,17 @@ def main() -> int:
             "G_COMPETITIVE_preferred": margin >= G_COMPETITIVE_PREFERRED,
             "VALID": bool(g_express and g_damage and g_comp_hard),
             "plan_completion_rate": tel["plan_completion_rate"],
+            "took_all_rate": tel["census_outcomes"]["outcome_rates"].get(
+                "invader_took_all", 0.0),
+            "incumbent_held_rate": tel["census_outcomes"]["outcome_rates"].get(
+                "incumbent_held", 0.0),
+            "outnumbering_rate": tel["census_outcomes"]["outnumbering_rate"] or 0.0,
+            "majority_fires": tel["telemetry_totals"].get("majority_fires", 0),
+            "majority_from_tie": tel["telemetry_totals"].get("majority_from_tie", 0),
+            "meeples_spent_on_reinforcement":
+                tel["telemetry_totals"].get("meeples_spent_on_reinforcement", 0),
+            "reinforce_plans": (tel["telemetry_totals"].get("reinforce_plans_started", 0),
+                                tel["telemetry_totals"].get("reinforce_plans_completed", 0)),
             "census_deliberate_over_onsets": tel["census_completion_rate"],
             "agent_fires_vs_census": (tel["agent_merge_fires_total"],
                                       tel["census_deliberate_total"]),
@@ -106,17 +122,26 @@ def main() -> int:
 
     # ---- deck-matched margin contrasts (all arms ran the SAME decks) --------- #
     contrasts = {}
-    for a in ("S0V2_M", "S0V2_F"):
+    for a in ARM_NAMES:
         pg_a = data[a][1]
-        pg_c = data["CTRL"][1]
+        pg_c = data[CTRL][1]
         common = sorted(set(pg_a) & set(pg_c))
         d = [pg_a[g]["margin"] - pg_c[g]["margin"] for g in common]
-        contrasts[f"{a}_minus_CTRL_deck_matched"] = {
+        contrasts[f"{a}_minus_{CTRL}_deck_matched"] = {
+            "n": len(d), "mean": _mean(d), "sem": _sem(d)}
+    if len(ARM_NAMES) == 2:
+        pg_x, pg_y = data[ARM_NAMES[1]][1], data[ARM_NAMES[0]][1]
+        common = sorted(set(pg_x) & set(pg_y))
+        d = [pg_x[g]["margin"] - pg_y[g]["margin"] for g in common]
+        contrasts[f"{ARM_NAMES[1]}_minus_{ARM_NAMES[0]}_deck_matched"] = {
             "n": len(d), "mean": _mean(d), "sem": _sem(d)}
 
     print(f"CTRL base deliberate/game (pooled over both seats, n={len(ctrl_pool)}): "
           f"{ctrl_rate:.4f} +- {ctrl_sem:.4f}")
+    ctrl_took_all = data[CTRL][2]["census_outcomes"]["outcome_rates"].get(
+        "invader_took_all", 0.0)
     print(f"CTRL champion farmer-zero rate (pooled): {100*ctrl_fz:.2f} %")
+    print(f"CTRL invader_took_all rate: {100*ctrl_took_all:.2f} %")
     print()
     hdr = (f"{'arm':8s} {'n':>3s} {'delib/g':>9s} {'sem':>6s} {'xCTRL':>6s} "
            f"{'sep_s':>6s} {'EXPa':>5s} {'EXPb':>5s} {'dmg_pp':>7s} {'DMG':>4s} "
@@ -138,6 +163,9 @@ def main() -> int:
               f"z={v['mean']/v['sem'] if v['sem'] else float('nan'):+.2f}")
     print()
     for r in rows:
+        print(f"{r['arm']}: took_all {100*r['took_all_rate']:.1f}% "
+              f"(CTRL {100*ctrl_took_all:.1f}%, owner 28.9%), "
+              f"out-numbering {100*r['outnumbering_rate']:.1f}%, ")
         print(f"{r['arm']}: plan completion {r['plan_completion_rate']}, "
               f"census deliberate/onset {r['census_deliberate_over_onsets']:.3f}, "
               f"agent fires vs census {r['agent_fires_vs_census']}, "
@@ -145,7 +173,9 @@ def main() -> int:
 
     if args.out:
         Path(args.out).write_text(json.dumps(
-            {"ctrl_rate": ctrl_rate, "ctrl_sem": ctrl_sem,
+            {"round": args.round, "ctrl_arm": CTRL,
+             "ctrl_took_all_rate": ctrl_took_all,
+             "ctrl_rate": ctrl_rate, "ctrl_sem": ctrl_sem,
              "ctrl_farmer_zero_rate": ctrl_fz, "arms": rows,
              "deck_matched_contrasts": contrasts}, indent=2, sort_keys=True))
         print(f"\nwrote {args.out}")

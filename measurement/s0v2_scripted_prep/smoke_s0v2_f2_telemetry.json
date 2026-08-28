@@ -1,0 +1,123 @@
+{
+  "agent_merge_fires_per_game": 1.0166666666666666,
+  "agent_merge_fires_total": 61,
+  "census_completion_rate": 0.9180327868852459,
+  "census_deliberate_per_game": 0.9333333333333333,
+  "census_deliberate_sem": 0.10594387882928205,
+  "census_deliberate_total": 56,
+  "census_onsets_total": 61,
+  "census_outcomes": {
+    "deliberate_total": 56,
+    "meeples_at_score": {
+      "1v1": 26,
+      "1v2": 7,
+      "1v3": 2,
+      "2v1": 3,
+      "2v2": 8,
+      "2v3": 1,
+      "3v1": 1,
+      "3v2": 2,
+      "3v3": 1,
+      "3v4": 1,
+      "4v2": 2,
+      "4v3": 2
+    },
+    "outcome_rates": {
+      "incumbent_held": 0.19642857142857142,
+      "invader_took_all": 0.17857142857142858,
+      "shared_tie": 0.625
+    },
+    "outcomes": {
+      "incumbent_held": 11,
+      "invader_took_all": 10,
+      "shared_tie": 35
+    },
+    "outnumbering_at_score": 10,
+    "outnumbering_rate": 0.17857142857142858
+  },
+  "fires": {
+    "foothold": 188,
+    "merge": 61,
+    "setup": 154
+  },
+  "label": "s0v2_f2",
+  "leaf_cost": {
+    "foothold": {
+      "max": 7.5,
+      "median": 2.25,
+      "min": 0.0,
+      "n": 188
+    },
+    "setup": {
+      "max": 4.0,
+      "median": 0.0,
+      "min": -1.15,
+      "n": 154
+    }
+  },
+  "margin_mean": -8.883333333333333,
+  "margin_sem": 3.5150275988554673,
+  "moves_per_game": 141.93333333333334,
+  "n_games": 60,
+  "note": "worker_s_per_game is an UPPER BOUND: the box was shared. agent merge fires use the CAUSAL detector; the census uses a global union-find over the whole game (DESIGN.md \u00a71.2).",
+  "plan_abandon_reasons": {
+    "merged_not_by_plan": 26,
+    "stub_gone": 40,
+    "victim_gone": 10
+  },
+  "plan_completion_rate": 0.17553191489361702,
+  "plans_abandoned": 76,
+  "plans_completed": 33,
+  "plans_open_at_end": 79,
+  "plans_started": 188,
+  "reconciliation_agent_minus_census": 5,
+  "telemetry_totals": {
+    "base_moves": 3857,
+    "foothold_candidates_seen": 435,
+    "foothold_fires": 188,
+    "foothold_vetoed_by_leaf": 0,
+    "foothold_vetoed_by_visits": 146,
+    "invade_plans_completed": 33,
+    "invade_plans_started": 188,
+    "leaf_evals": 842,
+    "majority_candidates_seen": 0,
+    "majority_fires": 0,
+    "majority_from_tie": 0,
+    "meeples_spent_on_reinforcement": 0,
+    "merge_candidates_seen": 88,
+    "merge_fires": 61,
+    "override_declined_no_visits": 0,
+    "plans_abandoned": 76,
+    "plans_completed": 33,
+    "plans_open_at_end": 79,
+    "plans_started": 188,
+    "plies_seen": 4260,
+    "reinforce_candidates_seen": 0,
+    "reinforce_foothold_fires": 0,
+    "reinforce_plans_completed": 0,
+    "reinforce_plans_started": 0,
+    "reinforce_setup_fires": 0,
+    "reinforce_vetoed_by_leaf": 0,
+    "reinforce_vetoed_by_visits": 0,
+    "scan_plies": 1006,
+    "setup_candidates_seen": 1637,
+    "setup_fires": 154,
+    "setup_vetoed_by_leaf": 0,
+    "setup_vetoed_by_visits": 802
+  },
+  "visit_share": {
+    "foothold": {
+      "max": 1.0,
+      "median": 0.2979,
+      "min": 0.1008,
+      "n": 188
+    },
+    "setup": {
+      "max": 1.0,
+      "median": 0.1718,
+      "min": 0.0,
+      "n": 154
+    }
+  },
+  "worker_s_per_game": 46.78661666666667
+}

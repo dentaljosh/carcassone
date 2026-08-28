@@ -6,12 +6,40 @@
   "census_deliberate_sem": 0.11072437403593537,
   "census_deliberate_total": 54,
   "census_onsets_total": 59,
+  "census_outcomes": {
+    "deliberate_total": 54,
+    "meeples_at_score": {
+      "1v1": 26,
+      "1v2": 6,
+      "1v3": 4,
+      "1v4": 1,
+      "2v1": 2,
+      "2v2": 5,
+      "2v3": 2,
+      "3v2": 1,
+      "3v3": 3,
+      "3v4": 2,
+      "4v3": 2
+    },
+    "outcome_rates": {
+      "incumbent_held": 0.2777777777777778,
+      "invader_took_all": 0.09259259259259259,
+      "shared_tie": 0.6296296296296297
+    },
+    "outcomes": {
+      "incumbent_held": 15,
+      "invader_took_all": 5,
+      "shared_tie": 34
+    },
+    "outnumbering_at_score": 5,
+    "outnumbering_rate": 0.09259259259259259
+  },
   "fires": {
     "foothold": 192,
     "merge": 60,
     "setup": 167
   },
-  "label": "S0V2_F",
+  "label": "s0v2_f",
   "leaf_cost": {
     "foothold": {
       "max": 8.0,

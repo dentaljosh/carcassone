@@ -1,44 +1,43 @@
 {
   "agent_merge_fires_per_game": 0.0,
   "agent_merge_fires_total": 0,
-  "census_completion_rate": 0.7916666666666666,
+  "census_completion_rate": 0.7307692307692307,
   "census_deliberate_per_game": 0.6333333333333333,
-  "census_deliberate_sem": 0.0919551188323559,
+  "census_deliberate_sem": 0.10075047957062032,
   "census_deliberate_total": 38,
-  "census_onsets_total": 48,
+  "census_onsets_total": 52,
   "census_outcomes": {
     "deliberate_total": 38,
     "meeples_at_score": {
-      "1v1": 20,
+      "1v1": 24,
       "1v2": 4,
       "1v3": 2,
-      "2v1": 1,
+      "2v1": 2,
       "2v2": 1,
-      "2v3": 5,
-      "2v4": 1,
-      "3v1": 1,
+      "3v2": 1,
       "3v3": 2,
-      "3v5": 1
+      "4v2": 1,
+      "5v2": 1
     },
     "outcome_rates": {
-      "incumbent_held": 0.34210526315789475,
-      "invader_took_all": 0.05263157894736842,
-      "shared_tie": 0.6052631578947368
+      "incumbent_held": 0.15789473684210525,
+      "invader_took_all": 0.13157894736842105,
+      "shared_tie": 0.7105263157894737
     },
     "outcomes": {
-      "incumbent_held": 13,
-      "invader_took_all": 2,
-      "shared_tie": 23
+      "incumbent_held": 6,
+      "invader_took_all": 5,
+      "shared_tie": 27
     },
-    "outnumbering_at_score": 2,
-    "outnumbering_rate": 0.05263157894736842
+    "outnumbering_at_score": 5,
+    "outnumbering_rate": 0.13157894736842105
   },
   "fires": {},
-  "label": "ctrl",
+  "label": "ctrl2",
   "leaf_cost": {},
-  "margin_mean": -4.0,
-  "margin_sem": 2.6292573761962683,
-  "moves_per_game": 141.91666666666666,
+  "margin_mean": -0.65,
+  "margin_sem": 3.028380354351393,
+  "moves_per_game": 141.95,
   "n_games": 60,
   "note": "worker_s_per_game is an UPPER BOUND: the box was shared. agent merge fires use the CAUSAL detector; the census uses a global union-find over the whole game (DESIGN.md \u00a71.2).",
   "plan_abandon_reasons": {},
@@ -50,5 +49,5 @@
   "reconciliation_agent_minus_census": -38,
   "telemetry_totals": {},
   "visit_share": {},
-  "worker_s_per_game": 55.59838333333334
+  "worker_s_per_game": 51.3456
 }
