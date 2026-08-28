@@ -1,0 +1,417 @@
+{
+ "profile": "fixed_v1",
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "n_games": 47,
+ "n_rows": 277,
+ "by_stratum": {
+  "invasion": 82,
+  "defense": 82,
+  "control": 87,
+  "farm_capture": 26
+ },
+ "k_histogram": {
+  "1": 1,
+  "2": 1,
+  "3": 4,
+  "4": 4,
+  "5": 3,
+  "6": 3,
+  "7": 4,
+  "9": 7,
+  "10": 3,
+  "11": 8,
+  "12": 1,
+  "13": 3,
+  "14": 2,
+  "15": 4,
+  "16": 3,
+  "17": 6,
+  "18": 4,
+  "19": 6,
+  "20": 2,
+  "21": 6,
+  "22": 2,
+  "23": 12,
+  "24": 4,
+  "25": 1,
+  "26": 2,
+  "27": 7,
+  "28": 4,
+  "29": 7,
+  "30": 2,
+  "31": 4,
+  "32": 5,
+  "33": 5,
+  "34": 3,
+  "35": 4,
+  "36": 2,
+  "37": 3,
+  "38": 4,
+  "39": 3,
+  "40": 4,
+  "41": 6,
+  "43": 5,
+  "44": 5,
+  "45": 4,
+  "46": 2,
+  "47": 5,
+  "48": 1,
+  "49": 6,
+  "50": 2,
+  "51": 12,
+  "52": 5,
+  "53": 11,
+  "54": 9,
+  "55": 6,
+  "56": 1,
+  "57": 9,
+  "58": 5,
+  "59": 6,
+  "60": 2,
+  "61": 6,
+  "62": 3,
+  "63": 5,
+  "64": 2,
+  "65": 2,
+  "66": 2,
+  "69": 1,
+  "71": 1
+ },
+ "defense_window_plies": 8,
+ "control_seed": 20260827,
+ "integrity": [
+  {
+   "game": "1785982194_705585.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1785984310_1698417952.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1785986044_1911511187.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786045035_338139.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786074812_935815.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786076853_2116173857.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786113542_627623.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 141,
+   "n_plies_replay": 141,
+   "plies_match": true
+  },
+  {
+   "game": "1786116818_134510.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786118143_1621601234.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 141,
+   "n_plies_replay": 141,
+   "plies_match": true
+  },
+  {
+   "game": "1786142936_703591.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786242001_49628.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786243458_1382293676.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786325073_523563.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786329790_523563.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786337185_638286.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786367787_389099.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786403231_207028.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786417055_68387.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786418867_411846845.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786454767_166575.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786501074_943197.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786503336_446661.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786511848_634689.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786590116_64346.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786591802_1104719504.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786680851_216289.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786684476_1793735743.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786719876_241820.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786851750_988400.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786853357_1865394167.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786904828_407067.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786906191_1630706897.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786939252_94231.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 141,
+   "n_plies_replay": 141,
+   "plies_match": true
+  },
+  {
+   "game": "1786940705_1217326033.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 141,
+   "n_plies_replay": 141,
+   "plies_match": true
+  },
+  {
+   "game": "1786975727_210415.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1786992300_991662233.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787005678_833139.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787017561_548945.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787019007_1477882043.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787277974_331305.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787350915_108813.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787532255_79977.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787540385_436222.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787551302_182159.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787579978_682909.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787618319_251279.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  },
+  {
+   "game": "1787624395_184395.json",
+   "profile": "fixed_v1",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  }
+ ]
+}

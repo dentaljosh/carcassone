@@ -1,0 +1,88 @@
+{
+ "profile": "app_aug2",
+ "env": {
+  "CARCASSONNE_FIX_R9": "0",
+  "r9_env_expected": false,
+  "r9_env_observed": false
+ },
+ "budget": 4000000,
+ "n_positions": 2,
+ "checks": 6,
+ "skipped": 0,
+ "mismatches": [],
+ "positions": [
+  {
+   "game": "1785975832_66810.json",
+   "ply": 138,
+   "k": 2,
+   "stratum": "diffgate",
+   "cells": {
+    "clairvoyant+ab": {
+     "status": "OK",
+     "py_s": 2.1597,
+     "rs_s": 0.0948,
+     "speedup": 22.79,
+     "nodes": 667,
+     "value": 20.0,
+     "n_root_actions": 28
+    },
+    "clairvoyant": {
+     "status": "OK",
+     "py_s": 1.9684,
+     "rs_s": 0.0961,
+     "speedup": 20.49,
+     "nodes": 667,
+     "value": 20.0,
+     "n_root_actions": 28
+    },
+    "marginalized": {
+     "status": "OK",
+     "py_s": 1.9957,
+     "rs_s": 0.0908,
+     "speedup": 21.99,
+     "nodes": 667,
+     "value": 20.0,
+     "n_root_actions": 28
+    }
+   },
+   "desync": false
+  },
+  {
+   "game": "1785975832_66810.json",
+   "ply": 136,
+   "k": 3,
+   "stratum": "diffgate",
+   "cells": {
+    "clairvoyant+ab": {
+     "status": "OK",
+     "py_s": 6.9489,
+     "rs_s": 0.2936,
+     "speedup": 23.66,
+     "nodes": 2663,
+     "value": 20.0,
+     "n_root_actions": 56
+    },
+    "clairvoyant": {
+     "status": "OK",
+     "py_s": 31.2845,
+     "rs_s": 1.3299,
+     "speedup": 23.52,
+     "nodes": 9657,
+     "value": 20.0,
+     "n_root_actions": 56
+    },
+    "marginalized": {
+     "status": "OK",
+     "py_s": 58.9006,
+     "rs_s": 2.5407,
+     "speedup": 23.18,
+     "nodes": 18413,
+     "value": 20.0,
+     "n_root_actions": 56
+    }
+   },
+   "desync": false
+  }
+ ],
+ "ok": true
+}

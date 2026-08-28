@@ -1,0 +1,31 @@
+{
+ "profile": "app_aug2",
+ "env": {
+  "CARCASSONNE_FIX_R9": "0",
+  "r9_env_expected": false,
+  "r9_env_observed": false
+ },
+ "n_games": 1,
+ "n_rows": 3,
+ "by_stratum": {
+  "invasion": 1,
+  "defense": 1,
+  "control": 1
+ },
+ "k_histogram": {
+  "25": 1,
+  "27": 1,
+  "28": 1
+ },
+ "defense_window_plies": 8,
+ "control_seed": 20260827,
+ "integrity": [
+  {
+   "game": "1785975832_66810.json",
+   "profile": "app_aug2",
+   "n_plies_archive": 142,
+   "n_plies_replay": 142,
+   "plies_match": true
+  }
+ ]
+}

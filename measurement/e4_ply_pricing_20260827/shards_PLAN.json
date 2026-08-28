@@ -1,0 +1,27 @@
+{
+ "local": {
+  "n_games": 25,
+  "W": 14,
+  "est_serial_secs": 6139.4,
+  "est_pool_secs": 438.5,
+  "est_wall_secs_lower_bound": 4171.2,
+  "shardfile": "/home/doctor/projects/carcassone/.claude/worktrees/agent-ae2b24ec0bffecafe/measurement/e4_ply_pricing_20260827/shards_local.txt"
+ },
+ "laptop": {
+  "n_games": 25,
+  "W": 22,
+  "est_serial_secs": 9646.6,
+  "est_pool_secs": 438.5,
+  "est_wall_secs_lower_bound": 4461.2,
+  "shardfile": "/home/doctor/projects/carcassone/.claude/worktrees/agent-ae2b24ec0bffecafe/measurement/e4_ply_pricing_20260827/shards_laptop.txt"
+ },
+ "total_est_serial_secs": 15786.0,
+ "est_wall_secs": 4461.2,
+ "est_wall_note": "wall >= the single most expensive GAME (a shard is one game and is never split), so the critical path is that game, not the pool average.",
+ "cost_model": {
+  "cf_secs": 1.4,
+  "marg_secs": 290.0,
+  "clair_secs_per_world": 520.0,
+  "m_worlds": 8
+ }
+}

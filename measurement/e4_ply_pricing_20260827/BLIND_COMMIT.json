@@ -1,0 +1,20 @@
+{
+ "schema": "carcassonne-blind-commit/v1",
+ "instrument": "E4 ply pricing — judge-free pricing of the owner's exploit plies",
+ "branch": "e4-ply-pricing-freeze",
+ "BLIND_COMMIT": "93c24490c53f30ca24b70e456147725137125fde",
+ "stamped_at": "2026-08-27",
+ "what_the_freeze_contains": [
+  "PREREG.md — the pre-registration, including the pricing-mode cut and the pre-registered readouts and falsifiers",
+  "targets.jsonl + targets_<profile>.jsonl + .meta.json — the 290-ply target set, outcome-blind by construction",
+  "k_histogram.json — the frozen K histogram the mode cut is pre-registered against",
+  "MODE_CUT.json — the frozen K -> pricing-mode cut and its measured cost rationale",
+  "DIFF_walled.json / DIFF_fixed_v1.json / DIFF_app_aug2.json — the rust-mirror gate (30 checks, 0 mismatches)",
+  "build_targets.py / price_plies.py / aggregate.py / rust_python_diff.py / cost_probe.py / cf_probe.py / plan_shards.py / emit_endgame_positions.py / freeze_histogram.py — the instrument",
+  "test_ply_pricing.py — 23 tests",
+  "run_pricing.sh / launch_local.sh / launch_laptop.sh / sync_laptop.sh / shards_*.txt — the launch",
+  "DEVIATIONS.md — D-0..D-7, all pre-freeze design decisions"
+ ],
+ "attestation": "NO PRICE HAD BEEN COMPUTED WHEN THIS SHA WAS CUT. The artifacts present at the freeze are the target set, the K histogram, the mode cut, the rust-vs-python correctness gates and the solve-COST probe — no delta_pts_mover, no price_played, no price_counterfactual, no rows_*.jsonl exists at this sha.",
+ "house_pattern": "two-commit: this file's BLIND_COMMIT field names the FREEZE sha, and the commit that adds this file is the stamp."
+}

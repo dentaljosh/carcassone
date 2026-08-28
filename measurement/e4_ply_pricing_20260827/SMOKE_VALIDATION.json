@@ -1,0 +1,50 @@
+{
+ "schema": "carcassonne-e4-ply-pricing-smoke/v1",
+ "run_at": "2026-08-27T19:25:49",
+ "box": "local (5900XT)",
+ "tenancy_note": "one niced 1-core rust-vs-python gate leg (DIFF_fixed_v1_k4marg) was also running; this is a CODE-PATH smoke, not a timing bench, and W=1 of 32 threads.",
+ "knobs": "PRODUCTION: champion k_dets=8 x sims_per_det=1376 (11008), leaf a36d2e15a3b3d71d, backend rust, rust_threads=1, exact-K<=2; solves rust, RLIMIT_AS 8 GB + RLIMIT_CPU 1800 s per solve; rules profile resolved FROM the archive (fixed_v1, CARCASSONNE_FIX_R9=1 observed==expected). Only the ply COUNT differs from the full run.",
+
+ "result": {
+  "rows_written": 10,
+  "rows_well_formed": 10,
+  "errors": 0,
+  "counterfactual_errors": 0,
+  "replay_desyncs": 0,
+  "solve_status": {"OK": 6, "NOT_SOLVED (K above the cut)": 4},
+  "elapsed_s": 114.2,
+  "mean_s_per_ply": 11.42,
+  "eta_note": "the rate is the MEAN over all 10 completed plies, not the first few (order-statistic trap)."
+ },
+
+ "coverage_exercised": {
+  "exact_marginalized": "6 rows at K=1,2,3,3,3,3 — the ground-truth path, end to end",
+  "realized": "4 rows at K=18,29,44,54 — the descriptive path, end to end",
+  "exact_clairvoyant_M": "NOT exercised by the 10-ply stratified smoke (the only K=5 rows live in other games); the per-world isolation and the world-averaging arithmetic are covered by test_ply_pricing.py::test_clairvoyant_M_* against a monkeypatched solver, and set_unseen_deck is exercised by cost_probe.py's clairvoyant leg on real E4 positions."
+ },
+
+ "independent_cross_check": {
+  "what": "10/10 champion agreement in the smoke looked implausible for owner plies with 24-52 legal actions, so it was checked against an INDEPENDENT instrument rather than accepted.",
+  "reference": "measurement/e4_exploit_grading_20260825/graded/fixed_v1/EV_LOSS_*.json — analyzer/ev_loss.grade_archive re-ran the same production champion at EVERY ply of these same games on 2026-08-25 and recorded `agent_action` beside `action_played`.",
+  "result_1": "my counterfactual_action reproduces Stage B's agent_action EXACTLY on all 10 smoke plies (2 independently written harnesses, same answers). The counterfactual is a real search result, not an echo of the archive.",
+  "result_2": "corpus-wide on the same 47 fixed_v1 games, Stage B's champion agrees with the played move on 1587/3032 = 0.523 of unforced OWNER-seat plies and 2084/2842 = 0.733 of unforced CHAMPION-seat plies. Agreement is nowhere near 1.0, so the counterfactual discriminates.",
+  "explanation": "the stratified smoke draws its exact rows from the LOWEST-K plies, i.e. plies 136-140, where the champion latches its exact solver and near-terminal moves are largely forced-by-quality; 5 of the 10 rows are champion-seat (base rate 0.733). A 10/10 draw there is unremarkable, and Stage B's own record agrees ply for ply.",
+  "seed_probe": "the same position re-solved at seeds 0 / 12345 / 777 returns the same action — stable, as an 11008-sim PIMC search should be."
+ },
+
+ "eta_for_the_full_run": {
+  "measured_inputs": {
+   "champion_counterfactual_s_per_decision": 1.4,
+   "champion_construct_s_per_game": 0.23,
+   "archive_replay_s_per_game": 0.013,
+   "exact_marginalized_s_at_K4": [290.4, 483.8],
+   "clairvoyant_per_world_s_at_K4": [29.3, 8.2],
+   "clairvoyant_per_world_s_at_K5_projected": [120, 680]
+  },
+  "total_serial_s": 15786,
+  "est_wall_s": 4461,
+  "est_wall_h": 1.24,
+  "critical_path": "the single most expensive GAME shard (a shard is one game and is never split) — a game carrying a K=5 clairvoyant row is ~9 world-solves ~= 4460 s.",
+  "budget": "the brief's stop-and-report threshold is ~12 h. 1.24 h is well inside it, so the run LAUNCHES."
+ }
+}

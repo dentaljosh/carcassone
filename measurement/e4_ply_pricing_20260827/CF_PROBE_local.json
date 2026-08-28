@@ -1,0 +1,45 @@
+{
+ "profile": "fixed_v1",
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "execution": {
+  "backend": "rust",
+  "rust_threads": 1,
+  "parallel_workers": null,
+  "profile": "desktop",
+  "source": "profile"
+ },
+ "threads": 1,
+ "games": [
+  {
+   "game": "1785982194_705585.json",
+   "n_plies": 142,
+   "construct_s": 0.231,
+   "walk_s_incl_decisions": 4.156,
+   "replay_only_s": 0.013,
+   "n_decisions": 3,
+   "cf_secs": [
+    1.529,
+    1.049,
+    1.565
+   ]
+  }
+ ],
+ "cf_secs": [
+  1.5289571285247803,
+  1.0493977069854736,
+  1.5647509098052979
+ ],
+ "summary": {
+  "n_decisions": 3,
+  "mean_cf_s": 1.381,
+  "median_cf_s": 1.529,
+  "max_cf_s": 1.565,
+  "mean_construct_s": 0.231,
+  "mean_replay_only_s": 0.013,
+  "eta_note": "rate = MEAN over completed decisions, never the first few (order-statistic trap)."
+ }
+}

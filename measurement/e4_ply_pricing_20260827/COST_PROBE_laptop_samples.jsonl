@@ -1,0 +1,12 @@
+{"k": 2, "game": "1785982194_705585.json", "ply": 138, "mode": "exact_clairvoyant_world", "status": "OK", "wall_s": 0.342, "solve_s": 0.22509098052978516, "nodes": 1493}
+{"k": 2, "game": "1785982194_705585.json", "ply": 138, "mode": "exact_marginalized", "status": "OK", "wall_s": 0.92, "solve_s": 0.874459981918335, "nodes": 5126}
+{"k": 2, "game": "1785984310_1698417952.json", "ply": 138, "mode": "exact_clairvoyant_world", "status": "OK", "wall_s": 0.145, "solve_s": 0.10357022285461426, "nodes": 633}
+{"k": 2, "game": "1785984310_1698417952.json", "ply": 138, "mode": "exact_marginalized", "status": "OK", "wall_s": 0.146, "solve_s": 0.10419559478759766, "nodes": 633}
+{"k": 3, "game": "1785982194_705585.json", "ply": 136, "mode": "exact_clairvoyant_world", "status": "OK", "wall_s": 1.254, "solve_s": 1.2118346691131592, "nodes": 11916}
+{"k": 3, "game": "1785982194_705585.json", "ply": 136, "mode": "exact_marginalized", "status": "OK", "wall_s": 29.88, "solve_s": 29.8373601436615, "nodes": 184980}
+{"k": 3, "game": "1785984310_1698417952.json", "ply": 136, "mode": "exact_clairvoyant_world", "status": "OK", "wall_s": 0.583, "solve_s": 0.5402960777282715, "nodes": 6134}
+{"k": 3, "game": "1785984310_1698417952.json", "ply": 136, "mode": "exact_marginalized", "status": "OK", "wall_s": 10.062, "solve_s": 10.019959926605225, "nodes": 54386}
+{"k": 4, "game": "1785982194_705585.json", "ply": 134, "mode": "exact_clairvoyant_world", "status": "OK", "wall_s": 29.348, "solve_s": 29.305920600891113, "nodes": 255160}
+{"k": 4, "game": "1785982194_705585.json", "ply": 134, "mode": "exact_marginalized", "status": "OK", "wall_s": 290.381, "solve_s": 290.3387699127197, "nodes": 418113}
+{"k": 4, "game": "1785984310_1698417952.json", "ply": 134, "mode": "exact_clairvoyant_world", "status": "OK", "wall_s": 8.181, "solve_s": 8.136195659637451, "nodes": 56869}
+{"k": 4, "game": "1785984310_1698417952.json", "ply": 134, "mode": "exact_marginalized", "status": "OK", "wall_s": 483.777, "solve_s": 483.7340476512909, "nodes": 2323048}

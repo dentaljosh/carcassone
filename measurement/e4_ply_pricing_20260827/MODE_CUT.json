@@ -1,0 +1,36 @@
+{
+ "schema": "carcassonne-e4-ply-pricing-mode-cut/v1",
+ "frozen_at": "2026-08-27",
+ "k_definition": "len(state.deck) + (1 if state.next_tile is not None else 0) — the exact solver's convention",
+ "k_marginalized_max": 4,
+ "k_clairvoyant_max": 5,
+ "m_worlds": 8,
+ "per_solve_cpu_cap_s": 1800,
+ "rationale": "Set from the MEASURED rust ladder (COST_PROBE_laptop.json, exclusive tenant on the idle laptop), sized by the TAIL not the mean. Marginalized has NO alpha-beta (chance nodes have no minimax cutoff) and is the cost wall: measured 0.15-0.92 s at K=2, 10.1-29.9 s at K=3, and at K=4 one position solved in 290 s while a second was still running past the probe's 600 s cap — i.e. ~10-30x per K with a heavy tail. So K=4 sits INSIDE the 1800 s cap for the typical position and near it for the worst, and K=5 marginalized (>= ~6000 s projected) is firmly outside. Clairvoyant-per-world gets alpha-beta and is ~10-35x cheaper at the same K (0.15-0.34 s at K=2, 0.58-1.25 s at K=3, 8.2-29.3 s at K=4), so it reaches exactly one K further: K=5 projects to ~120-680 s PER WORLD, and because the cap is applied PER WORLD, the 9 world-solves are ~18-102 min for the ply with ~3x headroom on the worst world.",
+ "expected_attrition": "A K=4 marginalized row whose position is in the heavy tail can exceed the 1800 s cap and is recorded as TIME_SKIPPED (a skip, never a price, never a mismatch). Coverage below is the CEILING; the artifact's `solve.status` per row is the truth.",
+ "measured_ladder_rust_seconds": {
+  "note": "two real E4 fixed_v1 positions per K, laptop, nice -19, exclusive tenant",
+  "clairvoyant_alphabeta_per_world": {"k2": [0.342, 0.145], "k3": [1.254, 0.583], "k4": [29.348, 8.181]},
+  "marginalized": {"k2": [0.920, 0.146], "k3": [29.880, 10.062], "k4": [290.381]}
+ },
+ "coverage_at_this_cut": {
+  "exact_marginalized_rows": 10,
+  "exact_clairvoyant_M_rows": 3,
+  "exact_total_rows": 13,
+  "realized_rows": 277,
+  "total_rows": 290,
+  "exact_pct": 4.5,
+  "note": "STATED UP FRONT: the owner's exploit is a MIDGAME behaviour (invasion onsets at mean ply-fraction 0.47), so exact pricing reaches under a twentieth of it. This is a property of the exploit, not a shortfall of the instrument."
+ },
+ "modes": {
+  "exact_marginalized": "K <= 4. GROUND TRUTH: expectiminimax over the real remaining bag; the value IS the true final-score differential (P0 - P1). No clairvoyance gap, no evaluation function, no search heuristic.",
+  "exact_clairvoyant_M": "K == 5. Clairvoyant exact solver (alpha-beta) over m_worlds=8 INDEPENDENTLY RESAMPLED deck orders, averaged per root action; the archive's TRUE future is solved separately as world -1 and reported alongside, never folded into the mean. CLAIRVOYANCE GAP: each world's optimal line sees that world's future, so this is an OPTIMISTIC bound for BOTH seats, not a calibrated EV.",
+  "realized": "K > 5. Descriptive archive arithmetic only (realized score swing over the next 20 plies and to the end, plus the Stage A feature-attributed gross). Never a price."
+ },
+ "never_pool": [
+  "exact_marginalized",
+  "exact_clairvoyant_M",
+  "realized"
+ ],
+ "costed_option_not_taken": "Extending exact_marginalized to K <= 5 would replace the 3 clairvoyant-bounded rows with GROUND TRUTH ones, at a per-solve cap of 3600 s (projected ~3000 s each) — cheaper in wall-clock than the 9-world clairvoyant it replaces. NOT taken here because it doubles the funded ~1800 s/solve cap; it is a one-flag change if the owner prefers ground truth over a bound for those 3 plies."
+}
