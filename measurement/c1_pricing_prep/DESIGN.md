@@ -4,9 +4,15 @@
 > frozen target set ([`targets_c1.jsonl`](targets_c1.jsonl) /
 > [`TARGETS_C1.json`](TARGETS_C1.json)) and the whole instrument are committed
 > **before any C1 continuation outcome exists anywhere**. House two-commit
-> pattern: this commit is the FREEZE; the next stamps its sha into
-> [`PINNED_SRC_REV.json`](PINNED_SRC_REV.json), which the driver checks on every
-> box. Deviations after the freeze go in a `DEVIATIONS.md`, never here.
+> pattern: this commit is the FREEZE.
+>
+> ⚠️ **[`PINNED_SRC_REV.json`](PINNED_SRC_REV.json) is deliberately left at
+> `PENDING_FREEZE_STAMP` by the freeze commit, and MUST be stamped from `main`
+> AFTER the merge** — `bash measurement/c1_pricing_prep/stamp_pinned_rev.sh`,
+> committed alone. The gate exists to prove local and laptop are running the same
+> bytes, so it has to pin the sha both boxes will actually sit on; a sha from a
+> pre-merge branch would make `run_c1.sh` refuse on `main` (fail-closed, by
+> design). Deviations after the freeze go in a `DEVIATIONS.md`, never here.
 >
 > **No band is claimed.** This instrument plays no fresh competitive games: every
 > game it plays is a continuation of an already-archived E4 position, and the
@@ -499,11 +505,15 @@ gate is the emitted artifact, never the exit code (auto-memory
   is not enough (Mac-sleep SIGHUP and WSL VM teardown both kill tty-attached
   jobs). The laptop driver additionally runs inside a `systemd-run --user` scope
   with `MemoryMax=9G` — a WSL teardown is a *Windows* OOM.
-* **Rev gate.** `PINNED_SRC_REV.json` is stamped in the second (post-freeze)
-  commit; `run_c1.sh` refuses on any box whose `HEAD` differs. The laptop is
-  synced by git bundle (`sync_laptop_c1.sh`) into its own worktree
+* **Rev gate.** `PINNED_SRC_REV.json` is stamped **from `main`, after the merge**
+  (`stamp_pinned_rev.sh`), and `run_c1.sh` refuses on any box whose `HEAD`
+  differs. The laptop is synced by git bundle into its own worktree
   `/home/doctor/carc-c1price` — never a `git checkout` of the laptop's shared
-  tree.
+  tree:
+  ```bash
+  git -C $REPO bundle create /mnt/c/carc-shared/c1_pricing.bundle <branch>
+  BR=<branch> ssh laptop-wsl 'bash -s' < $D/sync_laptop_c1.sh   # BR defaults to c1-pricing-freeze
+  ```
 * **Freeze latch.** Each box writes `RUN_LIVE_<box>_<block>.json` for the
   lifetime of its run; main-tree commits mechanically refuse while it exists.
   A stale sentinel is cleaned only after confirming the run is dead.
