@@ -1,0 +1,16 @@
+{
+  "artifact": "TIER1_SWAP_ENDTOEND",
+  "n_playouts": 216,
+  "identity_gate": {"engine_shadow_mismatches": 0, "decomp_shadow_mismatches": 0, "reference": "carc_core::tier1::tier1_playout", "compared": "(margin, plies)"},
+  "engine_route_s_per_playout": 0.084267,
+  "decomp_route_s_per_playout": 0.010667,
+  "end_to_end_speedup": 7.8995,
+  "by_root_ply": [
+    {"root_ply": 6, "n": 36, "engine_ms": 88.394, "decomp_ms": 11.947, "speedup": 7.399},
+    {"root_ply": 22, "n": 36, "engine_ms": 97.246, "decomp_ms": 12.002, "speedup": 8.102},
+    {"root_ply": 40, "n": 36, "engine_ms": 100.918, "decomp_ms": 12.047, "speedup": 8.377},
+    {"root_ply": 60, "n": 36, "engine_ms": 96.847, "decomp_ms": 11.583, "speedup": 8.361},
+    {"root_ply": 86, "n": 36, "engine_ms": 71.774, "decomp_ms": 9.268, "speedup": 7.745},
+    {"root_ply": 100, "n": 36, "engine_ms": 50.420, "decomp_ms": 7.157, "speedup": 7.045}
+  ]
+}

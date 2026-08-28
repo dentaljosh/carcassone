@@ -1,0 +1,18 @@
+=== build ===
+   Compiling tier1_costprobe v0.1.0 (/home/doctor/costprobe)
+warning: unused variable: `seat`
+   --> src/bin/variant.rs:217:17
+    |
+217 |             let seat = root.state.current_player;
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_seat`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `tier1_costprobe` (bin "variant") generated 1 warning (run `cargo fix --bin "variant" -p tier1_costprobe` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.17s
+=== census ===
+ 15:53:06 up 21:26,  2 users,  load average: 0.82, 0.68, 0.36
+=== run ===
+rc=0
+=== census after ===
+ 15:53:19 up 21:26,  2 users,  load average: 0.86, 0.69, 0.37

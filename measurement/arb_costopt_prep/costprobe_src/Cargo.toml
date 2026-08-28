@@ -1,0 +1,17 @@
+[package]
+name = "tier1_costprobe"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+carc-core = { path = "/home/doctor/projects/carcassone/rust/carc/carc-core" }
+
+[features]
+allocount = []
+
+# EXACTLY the workspace release profile of rust/carc (opt-level 3, thin LTO,
+# default codegen-units) so the probe's carc-core codegen matches the deployed
+# libcarc_rs.so as closely as a separate crate can.
+[profile.release]
+opt-level = 3
+lto = "thin"

@@ -1,0 +1,23 @@
+{
+  "artifact": "TIER1_VARIANT_B_SIZING",
+  "n_seeds": 5, "B": 2,
+  "playouts": 120, "plies": 11376, "decisions": 11376, "candidate_evals": 238203,
+  "identity_gate": {"checked": 238203, "mismatches": 0, "claim": "leaf::decompose_into+flat_base_score == clone+apply+count_final_scores"},
+  "us_per_candidate": {
+    "clone": 0.316,
+    "apply_action": 0.257,
+    "count_final_scores__ENGINE_ROUTE": 44.753,
+    "decompose_into__DECOMP_ROUTE": 5.425,
+    "flat_base_score__DECOMP_ROUTE": 0.281,
+    "extra_clone_for_route_A_isolation_NOT_production": 0.365
+  },
+  "scorer_speedup_engine_over_decomp": 7.843,
+  "buckets": [
+    {"placed_tiles": "0-12", "n": 2818, "cfs_us": 6.361, "decomp_us": 1.238, "fbs_us": 0.116, "clone_us": 0.139, "apply_us": 0.258},
+    {"placed_tiles": "13-25", "n": 17589, "cfs_us": 15.789, "decomp_us": 2.346, "fbs_us": 0.212, "clone_us": 0.198, "apply_us": 0.236},
+    {"placed_tiles": "26-38", "n": 39310, "cfs_us": 27.095, "decomp_us": 3.545, "fbs_us": 0.248, "clone_us": 0.254, "apply_us": 0.231},
+    {"placed_tiles": "39-51", "n": 62140, "cfs_us": 38.961, "decomp_us": 4.835, "fbs_us": 0.264, "clone_us": 0.304, "apply_us": 0.242},
+    {"placed_tiles": "52-64", "n": 74729, "cfs_us": 54.897, "decomp_us": 6.486, "fbs_us": 0.307, "clone_us": 0.351, "apply_us": 0.259},
+    {"placed_tiles": "65-77", "n": 41617, "cfs_us": 66.709, "decomp_us": 7.762, "fbs_us": 0.330, "clone_us": 0.391, "apply_us": 0.307}
+  ]
+}

@@ -1,0 +1,14 @@
+=== build ===
+   Compiling tier1_costprobe v0.1.0 (/home/doctor/costprobe)
+    Finished `release` profile [optimized] target(s) in 1.87s
+=== census ===
+ 15:55:11 up 21:28,  2 users,  load average: 0.24, 0.51, 0.34
+    PID     ELAPSED %CPU COMMAND
+     46    21:28:20  0.0 /usr/lib/systemd/systemd-journald
+      1    21:28:21  0.0 /sbin/init
+  66689    11:32:47  0.0 /usr/lib/polkit-1/polkitd --no-debug --log-level=notice
+=== run ===
+rc=0
+[swap] 108 jobs x 2 arms = 216 playouts
+=== census after ===
+ 15:55:50 up 21:29,  2 users,  load average: 0.61, 0.57, 0.37
