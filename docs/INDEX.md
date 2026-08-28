@@ -134,6 +134,7 @@
 | [../measurement/e4_ply_pricing_20260827/PREREG.md](../measurement/e4_ply_pricing_20260827/PREREG.md) | Judge-free E4 ply pricing — the 74%-vs-34% agreement-gradient inversion; rust-mirrors-E4 by-catch. **closed** |
 | [../measurement/e4_continuation_20260828/PREREG.md](../measurement/e4_continuation_20260828/PREREG.md) | CRN continuation pricing of divergent plies — PRIMARY NULL; per-ply residual dead; steering on 3 instruments. **closed** |
 | [../measurement/external_ref_inventory_20260827/INVENTORY.md](../measurement/external_ref_inventory_20260827/INVENTORY.md) | Third-referee inventory — carcassonne-rust 10/11 rules match, GO as rules referee / NO-GO as opponent. **current** |
+| [../measurement/phasegate_prep/DESIGN.md](../measurement/phasegate_prep/DESIGN.md) · [sizing](../measurement/phasegate_prep/SIZING_ETA.md) | Phase-gated arb decomposition — frozen design + sizing (A1 = 320 core-h / ~13.5 h wall + ply-gate build owed; band 154e9 proposed, unclaimed). **design-only, UNFUNDED** |
 | [../android/README.md](../android/README.md) | **Android app** (side project 2026-07-27): on-device champion via Chaquopy — build/install/assets/difficulty/archive format | LIVE — SHIPPED to Joshua's Pixel (1.7 s/move full budget) |
 
 ## Governance spine
