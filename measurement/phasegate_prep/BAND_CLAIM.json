@@ -1,0 +1,82 @@
+{
+  "_status": "⛔⛔ PROPOSED ONLY — NOT CLAIMED, NOT REGISTERED, NOT APPENDED.",
+  "_what_this_file_is": [
+    "The band claim this round WOULD make, written out in full so the owner can",
+    "read it before anything is spent. ⛔ It has NOT been appended to",
+    "governance/BAND_REGISTRY.csv and this build does not append it.",
+    "The APPEND is a pre-launch checklist act (DESIGN.md §8 item 9), performed by",
+    "the ORCHESTRATOR, and only after re-running the §5 tree sweep."
+  ],
+  "band_id": 154000000000,
+  "proposed": "2026-08-28",
+  "round": "phasegate A1 — judge-free phase decomposition of the tie arbiter's win",
+  "pair": [
+    "measurement/phasegate_prep/DESIGN.md",
+    "measurement/phasegate_prep/READ_RULE.md"
+  ],
+  "why_this_id": [
+    "The highest REGISTERED id is 153000000000 (spent, 2026-08-27, invasion r3);",
+    "154e9 is the next monotone id.",
+    "Tree sweep 2026-08-28: 0 references to 154000000000 anywhere in the tree."
+  ],
+  "⚠️_the_trap": [
+    "146000000000 is ABSENT from governance/BAND_REGISTRY.csv but carries 20",
+    "references in the tree. A 'next free id' search that trusted the registry",
+    "alone would pick it. ⛔ DO NOT REUSE 146e9. The registry is NECESSARY and",
+    "NOT SUFFICIENT — the TREE SWEEP is the binding check, and it is re-run",
+    "immediately before the CSV append, not at design time."
+  ],
+  "deck_allocation": {
+    "IDENT": {
+      "seeds": "154999999000 .. 154999999039",
+      "n_decks": 40,
+      "note": "⛔ A THROWAWAY SUB-RANGE. Never part of the claim — it buys no decks of the round."
+    },
+    "ARB_FULL": {
+      "seeds": "154000000000 .. 154000000399",
+      "n_decks": 400,
+      "box": "laptop"
+    },
+    "ARB_EARLY_L": {
+      "seeds": "154000000000 .. 154000001036",
+      "n_decks": 1037,
+      "box": "local"
+    },
+    "ARB_EARLY_R": {
+      "seeds": "154000001037 .. 154000001199",
+      "n_decks": 163,
+      "box": "laptop"
+    }
+  },
+  "⭐_the_ranges_OVERLAP_BY_DESIGN": [
+    "ARB_FULL's 400 decks are the FIRST 400 of ARB_EARLY's 1,200. This is the",
+    "OPPOSITE of invasion r3's disjoint-ranges rule and it is deliberate: a",
+    "DECOMPOSITION wants ONE deck set (it kills the deck-draw confound, lets",
+    "G-DECKS prove one deck set, and keeps every contrast WITHIN-BAND — the only",
+    "robust class under CL-068), whereas a ladder of unrelated knobs wants",
+    "disjoint ones.",
+    "⛔ The FULL−EARLY deck-paired contrast this enables is a COMPANION and is",
+    "NEVER a branch input.",
+    "⚠️ Deck-matching buys almost nothing in VARIANCE: rho = +0.1237 measured,",
+    "so sqrt(1-rho) = 0.936 — a 6.4% SE reduction. Never size on an assumed CRN gain.",
+    "⭐ WITHIN the ARB_EARLY pool the two sub-ranges ARE disjoint and contiguous,",
+    "and G-SUBPOOL asserts it before anything pools them."
+  ],
+  "retires": "decision_influenced=yes on EVERY branch, per house rule",
+  "_csv_row_TEMPLATE_NOT_APPENDED": {
+    "band_id": 154000000000,
+    "claimed_utc": "<STAMPED BY THE ORCHESTRATOR AT CLAIM TIME>",
+    "round": "phasegate_a1",
+    "pair": "measurement/phasegate_prep/{DESIGN,READ_RULE}.md",
+    "n_decks_total": 1200,
+    "status": "PROPOSED",
+    "decision_influenced": "yes"
+  },
+  "_preconditions_before_this_row_may_be_appended": [
+    "1. The owner FUNDS the round (DESIGN.md §0 row (a) — currently UNFUNDED).",
+    "2. The pair is stamped FROZEN and BLIND_COMMIT carries a real 40-hex sha.",
+    "3. The §5 tree sweep is RE-RUN and still returns 0 references to 154000000000.",
+    "4. IDENT-BITEXACT has passed (measurement/phasegate_prep/IDENT_BITEXACT.json).",
+    "5. Only then: append this row, and only then drop BAND_CLAIMED."
+  ]
+}

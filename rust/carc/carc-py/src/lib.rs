@@ -1245,6 +1245,32 @@ fn side_from_value(v: &str) -> PyResult<tiles::Side> {
 }
 
 /// Semantic digest of the deck **with R9 applied** — the flags-ON drift guard.
+/// ⭐ THE PHASE BUCKET, exposed PURE (`measurement/phasegate_prep/DESIGN.md`
+/// §2.2 / §7.5 test 3). Nothing in the search calls this — it exists so
+/// `tests/test_tiearb_phase_gate.py` can assert the RUST window against the
+/// canonical python `sample_agreement_roots.phase_bucket` **itself**, rather
+/// than against a hand-written table on each side that could drift apart
+/// silently while both stayed green.
+///
+/// ⛔ The argument is `k_remaining` — undrawn deck **plus the tile in hand** —
+/// never `deck_len()`. ⚠️ `k == 48` and `k == 24` match no interval (both cut
+/// ends are strict) and fall through to `"late"`: reproduced deliberately, not
+/// repaired.
+#[pyfunction]
+fn tiearb_phase_bucket(k_remaining: i64) -> &'static str {
+    carc_core::tiearb::phase_bucket(k_remaining)
+}
+
+/// Does a `phase_gate` fire at this `k_remaining`? The predicate the root hook
+/// evaluates, exposed for the same cross-implementation reason as
+/// [`tiearb_phase_bucket`]. Raises on an unknown gate — never a silent `all`.
+#[pyfunction]
+fn tiearb_phase_gate_fires_at(gate: &str, k_remaining: i64) -> PyResult<bool> {
+    let g = carc_core::tiearb::TiearbPhaseGate::parse(gate)
+        .map_err(pyo3::exceptions::PyValueError::new_err)?;
+    Ok(g.fires_at(k_remaining))
+}
+
 #[pyfunction]
 fn tile_data_digest_r9() -> String {
     tiles::generated::SEMANTIC_DIGEST_R9.to_string()
@@ -1534,6 +1560,7 @@ impl PySearchConfig {
         tiearb_b=16,
         tiearb_j=4,
         tiearb_mode="argmax",
+        tiearb_phase_gate="all",
         tiearb_salt=carc_core::tiearb::TIEARB_SALT_OF_RECORD,
         tiearb_eps=0.0,
         tiearb_max_plies=carc_core::tiearb::TIEARB_MAX_PLIES,
@@ -1563,6 +1590,7 @@ impl PySearchConfig {
         tiearb_b: usize,
         tiearb_j: usize,
         tiearb_mode: &str,
+        tiearb_phase_gate: &str,
         tiearb_salt: &str,
         tiearb_eps: f64,
         tiearb_max_plies: usize,
@@ -1634,6 +1662,16 @@ impl PySearchConfig {
         // byte-identical regardless of what the other five carry.
         let tmode = carc_core::tiearb::TiearbMode::parse(tiearb_mode)
             .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        // ⭐⭐ THE PHASE FIRE-GATE (`measurement/phasegate_prep/DESIGN.md`
+        // §7.3). FAIL-CLOSED, and this is the design's single most dangerous
+        // failure mode: a `phase_gate` that silently defaulted to `all` would
+        // make the `ARB_EARLY` cell *BE* `ARB_FULL`, and the round's primary a
+        // guaranteed-meaningless duplicate of its own anchor that looks
+        // perfectly healthy on every other gate. An unparseable or EMPTY value
+        // therefore raises — the `tiearb_salt` shape — and is validated even
+        // when the arbiter is DISABLED so a typo never rides.
+        let tgate = carc_core::tiearb::TiearbPhaseGate::parse(tiearb_phase_gate)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
         if tiearb_b < 1 {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(
                 "tiearb_b (CRN worlds) must be >= 1; got {tiearb_b}"
@@ -1701,6 +1739,7 @@ impl PySearchConfig {
                 tiearb_b,
                 tiearb_j,
                 tiearb_mode: tmode,
+                tiearb_phase_gate: tgate,
                 tiearb_salt: tiearb_salt.to_string(),
                 tiearb_eps,
                 tiearb_max_plies,
@@ -1751,6 +1790,12 @@ impl PySearchConfig {
         d.set_item("B", i.tiearb_b)?;
         d.set_item("J", i.tiearb_j)?;
         d.set_item("mode", i.tiearb_mode.value())?;
+        // ⭐⭐ `G-GATE`'s address. The phase window belongs IN this dict (unlike
+        // `tiearb_threads`, which is a latency knob that moves no number):
+        // it is THE single variable of the phasegate round, and
+        // `eval_fair_puct`'s launch-time `resolved != requested` refusal is
+        // exactly what catches a wheel that predates it.
+        d.set_item("phase_gate", i.tiearb_phase_gate.value())?;
         d.set_item("salt", i.tiearb_salt.clone())?;
         d.set_item("eps", i.tiearb_eps)?;
         Ok(d)
@@ -1814,10 +1859,11 @@ impl PySearchConfig {
         let ta = if i.tiearb_enabled {
             format!(
                 ", tiearb_enabled=true, tiearb_b={}, tiearb_j={}, tiearb_mode={}, \
-                 tiearb_salt={}, tiearb_eps={}",
+                 tiearb_phase_gate={}, tiearb_salt={}, tiearb_eps={}",
                 i.tiearb_b,
                 i.tiearb_j,
                 i.tiearb_mode.value(),
+                i.tiearb_phase_gate.value(),
                 i.tiearb_salt,
                 i.tiearb_eps
             )
@@ -2569,9 +2615,27 @@ impl PyFairAgent {
         d.set_item("tiearb_mode", a.cfg.search.tiearb_mode.value())?;
         d.set_item("tiearb_salt", a.cfg.search.tiearb_salt.clone())?;
         d.set_item("tiearb_eps", a.cfg.search.tiearb_eps)?;
+        // ⭐⭐ THE PHASE FIRE-GATE and its per-phase fire counters
+        // (`measurement/phasegate_prep/DESIGN.md` §7.2/§7.3). ALWAYS present,
+        // the same surface-C convention as the block above, so an ABSENT key
+        // means a STALE WHEEL and never "the phase had no fires" —
+        // `READ_RULE.md` §4 makes `ABSENT` a `FAIL` at both `G-GATE` and
+        // `G-PHI` for exactly that reason.
+        //
+        // `G-GATE` proves the knob was SET (config); `G-PHI` proves it BOUND
+        // (play). The two are independent witnesses and the round needs both:
+        // a silently-defaulted `all` on the `ARB_EARLY` cell would make the
+        // primary a duplicate of the anchor that passes everything else.
+        d.set_item("tiearb_phase_gate", a.cfg.search.tiearb_phase_gate.value())?;
         d.set_item("tiearb_tile_plies", a.tiearb_tile_plies)?;
         d.set_item("tiearb_fired_plies", a.tiearb_fired_plies)?;
+        d.set_item("tiearb_fired_early", a.tiearb_fired_by_phase[0])?;
+        d.set_item("tiearb_fired_mid", a.tiearb_fired_by_phase[1])?;
+        d.set_item("tiearb_fired_late", a.tiearb_fired_by_phase[2])?;
         d.set_item("tiearb_pickchanges", a.tiearb_pickchanges)?;
+        d.set_item("tiearb_pickchanges_early", a.tiearb_pickchanges_by_phase[0])?;
+        d.set_item("tiearb_pickchanges_mid", a.tiearb_pickchanges_by_phase[1])?;
+        d.set_item("tiearb_pickchanges_late", a.tiearb_pickchanges_by_phase[2])?;
         d.set_item("tiearb_arms_total", a.tiearb_arms_total)?;
         d.set_item("tiearb_playouts_total", a.tiearb_playouts_total)?;
         d.set_item("tiearb_secs", a.tiearb_secs)?;
@@ -2800,6 +2864,8 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digest_r9, m)?)?;
     m.add_function(wrap_pyfunction!(r9_enabled, m)?)?;
+    m.add_function(wrap_pyfunction!(tiearb_phase_bucket, m)?)?;
+    m.add_function(wrap_pyfunction!(tiearb_phase_gate_fires_at, m)?)?;
     m.add_function(wrap_pyfunction!(farm_table, m)?)?;
     m.add_function(wrap_pyfunction!(rotated_tile_table, m)?)?;
     Ok(())

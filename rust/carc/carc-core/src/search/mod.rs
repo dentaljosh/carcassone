@@ -186,6 +186,21 @@ pub struct SearchConfig {
     /// `J` — the cap on the deduped tie set, applied by a seeded draw.
     pub tiearb_j: usize,
     pub tiearb_mode: crate::tiearb::TiearbMode,
+    /// THE FIRE-GATE — a PHASE WINDOW on the arbiter's fire decision
+    /// (`measurement/phasegate_prep/DESIGN.md` §7.2). `All` (the default) is
+    /// the pre-change arbiter byte for byte: [`crate::fair::FairAgent`]
+    /// short-circuits on it without reading the deck at all, exactly as
+    /// `tiearb_enabled == false` returns without touching [`crate::tiearb`].
+    ///
+    /// The window is evaluated on `crate::fair::k_remaining(g)` — undrawn deck
+    /// **plus the tile in hand** — and bucketed by
+    /// [`crate::tiearb::phase_bucket`], the canonical census axis
+    /// (`early` = [49,71], `mid` = [25,47], `late` = [0,23] ⚠️ **plus `k=48`
+    /// and `k=24`**, which fall through). ⛔ NEVER `g.state.deck_len()`, which
+    /// is off by one against that axis.
+    ///
+    /// ⛔ Unrelated to [`Self::tiearb_max_plies`], which is a *playout* ceiling.
+    pub tiearb_phase_gate: crate::tiearb::TiearbPhaseGate,
     /// The seed salt of record, `tiearb2-deploy-v1`.
     pub tiearb_salt: String,
     /// Tie membership tolerance. **0.0 is the committed setting** — exact f64
@@ -247,6 +262,10 @@ impl Default for SearchConfig {
             tiearb_b: 16,
             tiearb_j: 4,
             tiearb_mode: crate::tiearb::TiearbMode::Argmax,
+            // ⭐ THE IDENTITY PREMISE of the `IDENT` cell: the default is `All`,
+            // i.e. no gate, i.e. today's arbiter. A build whose default were
+            // anything else would silently re-slice every deployed cell.
+            tiearb_phase_gate: crate::tiearb::TiearbPhaseGate::All,
             tiearb_salt: String::from(crate::tiearb::TIEARB_SALT_OF_RECORD),
             tiearb_eps: 0.0,
             tiearb_max_plies: crate::tiearb::TIEARB_MAX_PLIES,

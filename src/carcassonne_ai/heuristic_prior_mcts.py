@@ -250,6 +250,15 @@ class HeuristicPriorConfig:
     tiearb_mode: str = "argmax"
     tiearb_salt: str = "tiearb2-deploy-v1"
     tiearb_eps: float = 0.0
+    # THE PHASE FIRE-GATE (measurement/phasegate_prep/DESIGN.md §7).
+    # "all" (default) is TODAY'S UNGATED ARBITER, bit-for-bit; "none" is the
+    # unmodified champion with the knob armed (the IDENT cell); "early"/"mid"/
+    # "late" fire only inside the canonical census phase window, keyed on
+    # `k_remaining` = undrawn deck + the tile in hand (⛔ never deck_len()).
+    # ⚠️ NOT a playout ceiling — that is the rust `tiearb_max_plies`.
+    # ⛔ Validated fail-closed even when the arbiter is OFF: a silently
+    # defaulted "all" on an ARB_EARLY cell would make it BE ARB_FULL.
+    tiearb_phase_gate: str = "all"
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -305,6 +314,11 @@ class HeuristicPriorConfig:
                 f"tiearb_eps must be finite and >= 0 (0.0 == exact f64 equality, "
                 f"the committed predicate); got {self.tiearb_eps!r}"
             )
+        if self.tiearb_phase_gate not in ("all", "early", "mid", "late", "none"):
+            raise ValueError(
+                f"tiearb_phase_gate must be 'all'|'early'|'mid'|'late'|'none' "
+                f"('all' == the ungated arbiter); got {self.tiearb_phase_gate!r}"
+            )
         if self.tiearb_enabled and not str(self.tiearb_salt):
             raise ValueError(
                 "tiearb_salt must be non-empty when the arbiter is enabled "
@@ -354,6 +368,9 @@ class HeuristicPriorConfig:
             "tiearb_mode": str(self.tiearb_mode),
             "tiearb_salt": str(self.tiearb_salt),
             "tiearb_eps": float(self.tiearb_eps),
+            # RESOLVED phase fire-gate — `G-GATE`'s address
+            # (measurement/phasegate_prep/READ_RULE.md §4). ABSENT is FAIL.
+            "tiearb_phase_gate": str(self.tiearb_phase_gate),
             "leaf_cfg": leaf,
         }
 

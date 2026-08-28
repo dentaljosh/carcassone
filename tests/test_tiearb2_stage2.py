@@ -1760,11 +1760,17 @@ def test_disabled_knob_leaves_the_repr_and_the_resolved_dict_at_the_champion():
                         tiearb_mode="random", tiearb_salt="not-the-salt", tiearb_eps=2.5)
     assert repr(base) == repr(moved), "a disabled knob leaked into the repr"
     assert "tiearb" not in repr(base)
+    # ⚠️ `phase_gate` joined this dict with the PHASE FIRE-GATE build
+    # (measurement/phasegate_prep, 2026-08-28). `"all"` IS the Stage-2 arbiter —
+    # the ungated one this round measured — so the VALUE here is the incumbent
+    # and only the SHAPE grew. Stage 2's own `G-J4` reads named keys, never an
+    # exact dict, so no Stage-2 gate moves; this assertion did compare exact
+    # dicts and is widened deliberately rather than loosened.
     assert base.tiearb == {"enabled": False, "B": 16, "J": 4, "mode": "argmax",
-                           "salt": SALT, "eps": 0.0}
+                           "phase_gate": "all", "salt": SALT, "eps": 0.0}
     on = _search_cfg(tiearb_enabled=True, tiearb_b=16, tiearb_j=4, tiearb_mode="random")
     assert on.tiearb == {"enabled": True, "B": 16, "J": 4, "mode": "random",
-                         "salt": SALT, "eps": 0.0}
+                         "phase_gate": "all", "salt": SALT, "eps": 0.0}
     assert "tiearb_enabled=true" in repr(on)
 
 
