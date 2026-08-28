@@ -77,14 +77,181 @@
 //! it there is a separate decision with its own blast radius (the same key is
 //! the MCTS transposition key).  Nothing here changes `game_wrapper`.
 
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::action_space::{decode, meeple_farmer_base, meeple_pass_index};
 use crate::compat::mt19937::MT19937;
-use crate::engine::Phase;
+use crate::engine::{GameState, Phase, BOARD_COLS, BOARD_ROWS};
 use crate::fair::reshuffled_determinization;
 use crate::game::{deck_from_seed, Game};
+use crate::leaf::{decompose_into, flat_base_score, Decomp, Scratch};
 use crate::repr_key::string_representation;
+
+// ---------------------------------------------------------------------------
+// The per-candidate scorer (the playout's 97.4 %)
+// ---------------------------------------------------------------------------
+//
+// `_best_by_virtual_score` scores every candidate with the terminal leaf.  Two
+// routes compute that same i64:
+//
+//   * ENGINE ROUTE — `GameState::count_final_scores` on the scratch afterstate.
+//     The literal Python twin (`virtual_score_inplace`), and what this module
+//     called until 2026-08-28.  It re-runs a from-scratch flood fill per placed
+//     meeple, allocating ~690 times per call.
+//   * FLAT ROUTE — `leaf::decompose_into` (whole-board int union-find, allocation
+//     free after warm-up, caller-owned buffers) + `leaf::flat_base_score`.
+//
+// The equality is the two-hop `virtual_score == flat_leaf.flat_base_score ==
+// rust` named in the module docs, gated by the P2 suite on every position, by
+// DECISIONS 2026-07-31 (G1) on 134,172 evaluations across the whole game record,
+// and by `measurement/arb_costopt_prep/PROFILE_TIER1.md` on 238,203 / 238,203
+// tier1 candidate values plus 216 / 216 whole playouts identical in
+// `(margin, plies)`.  The flat route measured **7.90× end to end** there, which
+// is why it is the deployed one.  This is a bit-identical replacement: no flag,
+// no config knob, no strength claim owed.
+//
+// ## ⚠️ THE BORDER HAZARD — why there is still a fallback
+//
+// The two routes read the board through DIFFERENT accessors, and the difference
+// is observable at exactly one place:
+//
+//   * the engine route reaches the board through [`GameState::board_direct`],
+//     which reproduces CPython's `board[row][column]` **including the negative
+//     index wrap** — `board_direct(-1, c)` returns the tile at ROW 34.
+//   * the flat route reads [`GameState::get_tile`], which is honestly
+//     bounds-checked and answers "no tile" outside the grid
+//     (`leaf::decomp` line 487/531, `leaf::cloister_points`).
+//
+// Every index either route can produce is one step off a placed tile (or the
+// cloister 3x3), so a `-1` query needs a tile on row 0 / column 0 — which is
+// constant on the production hot path (row 0 is occupied in 77 % of the recorded
+// champion corpus) — and the wrap only ANSWERS DIFFERENTLY when the cell it
+// wraps to, row 34 / column 34, is occupied.  That same last-row / last-column
+// occupancy is the historical FATAL class: before the 2026-08-23 `board_direct`
+// fix the engine route raised `IndexError` there while `flat_base_score` scored
+// the position fine (DECISIONS 2026-07-31, the fourth border face).
+//
+// So the divergence set and the historical crash set are the same set, and it is
+// named by a purely local predicate: **does any placed tile sit on row 34 or
+// column 34**.  [`border_wrap_hazard`] tests exactly that, and when it fires the
+// candidate is scored by the LEGACY ENGINE ROUTE — including whatever the legacy
+// route would do, panic included.  Behaviour is therefore identical **by
+// construction** on every position, not by an unreachability argument, and the
+// domain is not silently widened.  [`border_fallbacks`] counts the fires so a
+// gate can report the expected 0 rather than assume it.
+
+/// Per-thread buffers for the flat route.
+///
+/// `decompose_into` is allocation-free only if the caller keeps the buffers, so
+/// ONE pair is reused across candidates, plies and playouts.  They live in
+/// thread-local storage rather than on a threaded-through `&mut` because
+/// [`crate::tiearb::arbitrate`] drives playouts from a `Fn + Sync` closure across
+/// `std::thread::scope` workers: TLS gives every worker its own pair with no
+/// sharing, no locks, and no API change (`PROFILE_TIER1.md` §4.6 item 7).
+#[derive(Default)]
+struct ScorerBufs {
+    decomp: Decomp,
+    scratch: Scratch,
+}
+
+thread_local! {
+    static SCORER_BUFS: RefCell<ScorerBufs> = RefCell::new(ScorerBufs::default());
+    /// ⚠️ GATES AND TESTS ONLY — see [`with_legacy_scorer`].
+    static FORCE_LEGACY: Cell<bool> = const { Cell::new(false) };
+}
+
+/// How many candidate evaluations took the legacy fallback because the board
+/// touched the wrapping border.  Process-wide, monotonic, `Relaxed`; only ever
+/// written on the (expected-unreachable) fallback path, so it costs the hot path
+/// nothing.
+static BORDER_FALLBACKS: AtomicU64 = AtomicU64::new(0);
+
+/// Reads [`BORDER_FALLBACKS`] — the identity gate's receipt that the border
+/// class never fired.
+pub fn border_fallbacks() -> u64 {
+    BORDER_FALLBACKS.load(Ordering::Relaxed)
+}
+
+/// Zeroes [`border_fallbacks`] so a gate can scope a count to its own pass.
+pub fn reset_border_fallbacks() {
+    BORDER_FALLBACKS.store(0, Ordering::Relaxed);
+}
+
+/// Does this board occupy the last row or the last column?
+///
+/// The predicate that separates the two scorer routes — see the module comment
+/// above.  A superset of the true divergence set (which additionally needs a
+/// tile on row 0 / column 0 to issue the `-1` query), chosen because it is also
+/// exactly the historical crash class and because it is one pass over
+/// `placed_coords` (≤ 72 entries, once per DECISION, not per candidate).
+#[inline]
+fn border_wrap_hazard(state: &GameState) -> bool {
+    state
+        .placed_coords
+        .iter()
+        .any(|&(r, c)| r >= BOARD_ROWS - 1 || c >= BOARD_COLS - 1)
+}
+
+/// The per-candidate leaf by the LEGACY ENGINE ROUTE — `count_final_scores` on a
+/// clone, `scores[player] - scores[opp]`.
+///
+/// Kept public and callable so the identity gates can contrast the routes on
+/// identical afterstates.  Identical to [`GameState::flat_base_score`]; named
+/// here so a gate reads as what it is testing.
+pub fn candidate_leaf_legacy(after: &GameState, player: usize) -> i64 {
+    let mut s = after.clone();
+    s.count_final_scores();
+    s.scores[player] - s.scores[1 - player]
+}
+
+/// The per-candidate leaf by the FLAT ROUTE, allocating its own buffers.
+///
+/// The deployed path uses the thread-local buffers instead; this is the gate /
+/// test entry point.
+pub fn candidate_leaf_flat(after: &GameState, player: usize) -> i64 {
+    let mut d = Decomp::default();
+    let mut sc = Scratch::default();
+    decompose_into(after, &mut d, &mut sc);
+    flat_base_score(after, player, &d)
+}
+
+/// Restores [`FORCE_LEGACY`] even if `f` unwinds.
+struct LegacyGuard(bool);
+impl Drop for LegacyGuard {
+    fn drop(&mut self) {
+        FORCE_LEGACY.with(|c| c.set(self.0));
+    }
+}
+
+/// ⚠️ **GATES AND TESTS ONLY.** Runs `f` with the per-candidate scorer forced
+/// back to the legacy engine route **on this thread**.
+///
+/// This is not a configuration knob and nothing in production calls it: the swap
+/// is bit-identical, so there is no shape to choose between. It exists so an
+/// identity gate can run BOTH routes over the same seeds — at playout and at
+/// `arbitrate` granularity — instead of re-implementing the RNG contract.
+#[doc(hidden)]
+pub fn with_legacy_scorer<R>(f: impl FnOnce() -> R) -> R {
+    let prev = FORCE_LEGACY.with(|c| c.replace(true));
+    let _g = LegacyGuard(prev);
+    f()
+}
+
+/// The deployed per-candidate scorer: flat route, thread-local buffers, legacy
+/// fallback at the border.  `after` is the scratch afterstate and is consumed
+/// (the legacy route mutates it).
+#[inline]
+fn candidate_leaf(after: &mut GameState, player: usize, bufs: &mut ScorerBufs) -> i64 {
+    if border_wrap_hazard(after) {
+        BORDER_FALLBACKS.fetch_add(1, Ordering::Relaxed);
+        after.count_final_scores();
+        return after.scores[player] - after.scores[1 - player];
+    }
+    decompose_into(after, &mut bufs.decomp, &mut bufs.scratch);
+    flat_base_score(after, player, &bufs.decomp)
+}
 
 /// `game_wrapper.Game._legal_cache` — the per-`Game` legal-mask memo, keyed by
 /// the byte-exact `string_representation`.
@@ -247,25 +414,39 @@ impl RuleBasedPlayer {
         let opp = 1 - player;
         let last_tile_coord = g.state.last_tile_action.map(|lta| lta.coord);
 
+        // The route is read ONCE per decision, not per candidate: it cannot
+        // change inside a decision, and production never sets it at all.
+        let force_legacy = FORCE_LEGACY.with(|c| c.get());
         let mut scores: Vec<i64> = Vec::with_capacity(candidates.len());
-        for &action_idx in &candidates {
-            let action = decode(
-                action_idx,
-                &g.offset,
-                g.state.phase,
-                g.state.next_tile,
-                last_tile_coord,
-            )
-            .map_err(|e| format!("decode({action_idx}) failed: {e:?}"))?;
-            // `copy.deepcopy(board.state)` + `StateUpdater.apply_action_inplace`
-            // + `virtual_score_inplace`.  Note this is the raw GameState apply,
-            // NOT `Game::advance`: the Python scores the scratch STATE and never
-            // touches the window offset.
-            let mut scratch = g.state.clone();
-            scratch.apply_action(action);
-            scratch.count_final_scores();
-            scores.push(scratch.scores[player] - scratch.scores[opp]);
-        }
+        SCORER_BUFS.with(|cell| -> Result<(), String> {
+            let bufs = &mut *cell.borrow_mut();
+            for &action_idx in &candidates {
+                let action = decode(
+                    action_idx,
+                    &g.offset,
+                    g.state.phase,
+                    g.state.next_tile,
+                    last_tile_coord,
+                )
+                .map_err(|e| format!("decode({action_idx}) failed: {e:?}"))?;
+                // `copy.deepcopy(board.state)` + `StateUpdater.apply_action_inplace`
+                // + `virtual_score_inplace`.  Note this is the raw GameState apply,
+                // NOT `Game::advance`: the Python scores the scratch STATE and never
+                // touches the window offset.
+                let mut scratch = g.state.clone();
+                scratch.apply_action(action);
+                // The leaf itself: flat route + thread-local buffers, with the
+                // legacy engine route preserved at the wrapping border (see the
+                // scorer section at the top of this module).
+                scores.push(if force_legacy {
+                    scratch.count_final_scores();
+                    scratch.scores[player] - scratch.scores[opp]
+                } else {
+                    candidate_leaf(&mut scratch, player, bufs)
+                });
+            }
+            Ok(())
+        })?;
 
         let best = *scores.iter().max().expect("len(candidates) >= 2 here");
         // `np.flatnonzero(scores == best)` — indices INTO the candidate list,
@@ -566,6 +747,9 @@ pub fn tier1_leg(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::MeepleType;
+    use crate::game::{DrawRule, GameConfig, StartRule};
+    use crate::tiles::{self, TerrainType};
 
     /// `random.Random(s); r._randbelow(1)` returns 0 but CONSUMES draws — the
     /// stream must be advanced exactly as CPython advances it.
@@ -689,6 +873,335 @@ mod tests {
         )
         .unwrap();
         assert_eq!(off.cache_stats, (0, 0, 0), "no memo when it is switched off");
+    }
+
+    // -----------------------------------------------------------------------
+    // The scorer swap (2026-08-28): flat route == legacy engine route
+    // -----------------------------------------------------------------------
+
+    /// Score every candidate of a decision by BOTH routes; returns the values
+    /// and bumps the coverage counters.
+    #[allow(clippy::type_complexity)]
+    fn score_both_routes(g: &Game, legal: &[i32], cov: &mut Coverage) -> Vec<i64> {
+        let player = g.state.current_player;
+        let last_tile_coord = g.state.last_tile_action.map(|lta| lta.coord);
+        let mut vals = Vec::with_capacity(legal.len());
+        for &a in legal {
+            let action = decode(
+                a,
+                &g.offset,
+                g.state.phase,
+                g.state.next_tile,
+                last_tile_coord,
+            )
+            .expect("a legal action decodes");
+            let mut after = g.state.clone();
+            after.apply_action(action);
+
+            let legacy = candidate_leaf_legacy(&after, player);
+            let flat = candidate_leaf_flat(&after, player);
+            assert_eq!(
+                legacy, flat,
+                "scorer routes diverge on action {a} (player {player})"
+            );
+            // The deployed entry point (thread-local buffers + border guard)
+            // must agree with both.
+            let deployed = SCORER_BUFS.with(|cell| {
+                let bufs = &mut *cell.borrow_mut();
+                let mut s = after.clone();
+                candidate_leaf(&mut s, player, bufs)
+            });
+            assert_eq!(deployed, legacy, "the deployed scorer diverges on action {a}");
+
+            cov.checked += 1;
+            for p in 0..2 {
+                for mp in &after.placed_meeples[p] {
+                    let tid = after
+                        .get_tile(mp.coord.row, mp.coord.col)
+                        .expect("meeple on a placed tile");
+                    match tiles::tile(tid).get_type(mp.side) {
+                        Some(TerrainType::Chapel) | Some(TerrainType::Flowers) => {
+                            cov.cloister += 1
+                        }
+                        Some(TerrainType::City) => cov.city += 1,
+                        Some(TerrainType::Road) => cov.road += 1,
+                        _ => {}
+                    }
+                    if mp.meeple_type == MeepleType::Farmer {
+                        cov.farm += 1;
+                    }
+                }
+            }
+            vals.push(legacy);
+        }
+        let best = *vals.iter().max().expect("a decision has candidates");
+        if vals.iter().filter(|&&v| v == best).count() > 1 {
+            cov.ties += 1;
+        }
+        vals
+    }
+
+    #[derive(Default)]
+    struct Coverage {
+        checked: usize,
+        farm: usize,
+        cloister: usize,
+        city: usize,
+        road: usize,
+        ties: usize,
+        terminal_games: usize,
+    }
+
+    /// **The value gate.** Every candidate afterstate a real tier1 playout would
+    /// score, scored by the legacy engine route AND by the flat route, on a
+    /// corpus that is asserted to contain farms, cloisters, cities, roads,
+    /// argmax ties and full (deck-exhausted) boards.
+    #[test]
+    fn the_two_scorer_routes_agree_on_every_candidate_of_a_played_corpus() {
+        const SAMPLE_EVERY: usize = 6;
+        let mut cov = Coverage::default();
+        for seed in ["28100000001", "77", "140000001096", "5"] {
+            let mut g = Game::from_seed(seed);
+            let mut agent = RuleBasedPlayer::new(4242);
+            let mut plies = 0usize;
+            while !g.is_terminal() && plies < 400 {
+                let legal = g.legal_actions();
+                if legal.len() >= 2 && plies % SAMPLE_EVERY == 0 {
+                    score_both_routes(&g, &legal, &mut cov);
+                }
+                let a = agent
+                    .choose_action(&g, None)
+                    .expect("tier1 always has a legal action");
+                g.advance(a).expect("tier1 only picks legal actions");
+                plies += 1;
+            }
+            // The terminal position itself — the full-board case.
+            if g.is_terminal() {
+                cov.terminal_games += 1;
+                assert_eq!(
+                    candidate_leaf_legacy(&g.state, 0),
+                    candidate_leaf_flat(&g.state, 0),
+                    "routes diverge on the TERMINAL position of seed {seed}"
+                );
+            }
+        }
+        println!(
+            "\n=== tier1 scorer routes: {} candidate values, 0 divergences ===\n               coverage: farm {} cloister {} city {} road {} ties {} terminals {}",
+            cov.checked, cov.farm, cov.cloister, cov.city, cov.road, cov.ties, cov.terminal_games
+        );
+        assert!(cov.checked > 2_000, "thin corpus: {} values", cov.checked);
+        assert!(cov.farm > 0, "no farmer reached — farm scoring untested");
+        assert!(cov.cloister > 0, "no cloister reached");
+        assert!(cov.city > 0 && cov.road > 0, "no city/road reached");
+        assert!(cov.ties > 0, "no argmax tie reached — the tie set is untested");
+        assert_eq!(cov.terminal_games, 4, "every seeded game must reach terminal");
+    }
+
+    /// **The trajectory gate (small, always-on).** Whole playouts under the
+    /// legacy scorer and under the deployed one must agree in `(margin, plies)`
+    /// — which transitively covers the argmax tie set and every downstream
+    /// `randbelow` draw.  The 200-playout version is
+    /// [`the_scorer_swap_is_trajectory_identical_at_scale`].
+    #[test]
+    fn the_scorer_swap_is_trajectory_identical() {
+        for i in 0..12i64 {
+            let seed = (28_100_000_001i64 + i * 7).to_string();
+            let root = Game::from_seed(&seed);
+            let legal = root.legal_actions();
+            let pick = legal[legal.len() / 2];
+            let want = with_legacy_scorer(|| tier1_playout(&root, pick, 0, 900 + i, 400, None))
+                .expect("legacy playout");
+            let got = tier1_playout(&root, pick, 0, 900 + i, 400, None).expect("flat playout");
+            assert_eq!(want, got, "playout {i} (seed {seed}) diverged after the swap");
+        }
+    }
+
+    /// The 200+-playout identity pass over varied roots, both cache shapes.
+    /// `#[ignore]`d only because it is minutes-scale beside a live eval; it is
+    /// the gate the branch is graded on.
+    ///
+    /// `cargo test -p carc-core --release -- --ignored --nocapture \
+    ///     the_scorer_swap_is_trajectory_identical_at_scale`
+    #[test]
+    #[ignore = "identity pass at scale: run deliberately (see GATES_DEFERRED.md)"]
+    fn the_scorer_swap_is_trajectory_identical_at_scale() {
+        reset_border_fallbacks();
+        let mut n = 0usize;
+        for s in 0..20i64 {
+            let seed = (28_100_000_001i64 + s * 977).to_string();
+            for &root_ply in &[0usize, 12, 30, 54, 78] {
+                let mut root = Game::from_seed(&seed);
+                let mut prefix: Vec<i32> = Vec::new();
+                let mut ok = true;
+                for _ in 0..root_ply {
+                    if root.is_terminal() {
+                        ok = false;
+                        break;
+                    }
+                    let l = root.legal_actions();
+                    let a = l[l.len() / 2];
+                    root.advance(a).expect("legal");
+                    prefix.push(a);
+                }
+                if !ok || root.is_terminal() {
+                    continue;
+                }
+                let legal = root.legal_actions();
+                for &pick in [legal[0], legal[legal.len() / 2], legal[legal.len() - 1]]
+                    .iter()
+                    .take(if legal.len() >= 3 { 3 } else { 1 })
+                {
+                    let ps = 4_000 + s * 31 + root_ply as i64;
+                    let want =
+                        with_legacy_scorer(|| tier1_playout(&root, pick, 0, ps, 400, None)).unwrap();
+                    let got = tier1_playout(&root, pick, 0, ps, 400, None).unwrap();
+                    assert_eq!(want, got, "seed {seed} root_ply {root_ply} pick {pick}");
+                    n += 1;
+                }
+            }
+        }
+        println!("\n=== tier1 scorer swap: {n} playouts, (margin, plies) identical ===");
+        println!("  border fallbacks fired: {}", border_fallbacks());
+        assert!(n >= 200, "wanted >= 200 playouts, ran {n}");
+        assert_eq!(
+            border_fallbacks(),
+            0,
+            "the border class fired — the fallback preserved behaviour, but the \
+             unreachability note in the module docs is now false and must be updated"
+        );
+    }
+
+    /// The border predicate is the SUPERSET of the divergence set, and it routes
+    /// to the legacy scorer.
+    ///
+    /// The mechanism it guards is pinned directly: `board_direct(-1, c)` wraps to
+    /// row 34 (CPython semantics, the engine route) while `get_tile(-1, c)`
+    /// answers "no tile" (the flat route).  Those two answers differ exactly when
+    /// row 34 is occupied — which is what the predicate tests.
+    #[test]
+    fn the_border_hazard_predicate_routes_to_the_legacy_scorer() {
+        // A normal game never touches the last row/col, so the predicate is
+        // false throughout and the fast route is always taken.
+        let mut g = Game::from_seed("28100000001");
+        let mut agent = RuleBasedPlayer::new(7);
+        let mut plies = 0;
+        while !g.is_terminal() && plies < 400 {
+            assert!(
+                !border_wrap_hazard(&g.state),
+                "unexpected border contact at ply {plies}"
+            );
+            let a = agent.choose_action(&g, None).unwrap();
+            g.advance(a).unwrap();
+            plies += 1;
+        }
+
+        // A board whose (pre-placed) start tile sits on the LAST ROW / LAST
+        // COLUMN: the predicate fires and the value is the legacy value.
+        let at = |row: i32, col: i32| -> GameState {
+            Game::from_seed_with_config(
+                "28100000001",
+                GameConfig {
+                    window_size: 25,
+                    start_rule: StartRule::Retail,
+                    start_row: row,
+                    start_col: col,
+                    cloister_scan_fix: false,
+                    draw_rule: DrawRule::Engine,
+                },
+            )
+            .expect("a retail start anywhere in-bounds is constructible")
+            .state
+        };
+        let border = at(BOARD_ROWS - 1, 15);
+        assert_eq!(border.placed_coords.len(), 1, "the start tile is placed");
+        assert!(border_wrap_hazard(&border), "row 34 must trip the predicate");
+        assert!(
+            border_wrap_hazard(&at(15, BOARD_COLS - 1)),
+            "col 34 must trip the predicate"
+        );
+
+        reset_border_fallbacks();
+        let before = border_fallbacks();
+        let deployed = SCORER_BUFS.with(|cell| {
+            let bufs = &mut *cell.borrow_mut();
+            let mut s = border.clone();
+            candidate_leaf(&mut s, 0, bufs)
+        });
+        assert_eq!(
+            border_fallbacks() - before,
+            1,
+            "the border candidate must take the legacy fallback"
+        );
+        assert_eq!(
+            deployed,
+            candidate_leaf_legacy(&border, 0),
+            "the fallback must return the LEGACY value, byte for byte"
+        );
+
+        // The accessor asymmetry itself, pinned so this test fails if either
+        // route's board access is ever changed underneath the guard.
+        assert!(
+            border.board_direct(-1, 15).is_some(),
+            "board_direct(-1, ..) must wrap to the occupied row 34 (CPython semantics)"
+        );
+        assert!(
+            border.get_tile(-1, 15).is_none(),
+            "get_tile(-1, ..) must answer 'no tile' (honest bounds)"
+        );
+    }
+
+    /// `with_legacy_scorer` is scoped to its closure and to this thread.
+    #[test]
+    fn the_legacy_override_is_scoped() {
+        assert!(!FORCE_LEGACY.with(|c| c.get()));
+        with_legacy_scorer(|| assert!(FORCE_LEGACY.with(|c| c.get())));
+        assert!(!FORCE_LEGACY.with(|c| c.get()));
+    }
+
+    /// W1 sequential timing of the two routes on the same playouts — the
+    /// realized in-situ factor at the real call site.
+    ///
+    /// `cargo test -p carc-core --release -- --ignored --nocapture tier1_scorer_bench`
+    #[test]
+    #[ignore = "timing bench: exclusive tenant only"]
+    fn tier1_scorer_bench() {
+        use std::time::Instant;
+        let mut roots: Vec<(Game, i32, i64)> = Vec::new();
+        for s in 0..6i64 {
+            let seed = (28_100_000_001i64 + s * 977).to_string();
+            for &root_ply in &[6usize, 30, 60] {
+                let mut root = Game::from_seed(&seed);
+                for _ in 0..root_ply {
+                    let l = root.legal_actions();
+                    let a = l[l.len() / 2];
+                    root.advance(a).unwrap();
+                }
+                let legal = root.legal_actions();
+                roots.push((root, legal[legal.len() / 2], 5_000 + s * 13 + root_ply as i64));
+            }
+        }
+        // Warm up both routes so neither pays first-touch.
+        for (r, p, ps) in roots.iter().take(2) {
+            let _ = tier1_playout(r, *p, 0, *ps, 400, None).unwrap();
+            let _ = with_legacy_scorer(|| tier1_playout(r, *p, 0, *ps, 400, None)).unwrap();
+        }
+
+        let t0 = Instant::now();
+        for (r, p, ps) in &roots {
+            let _ = with_legacy_scorer(|| tier1_playout(r, *p, 0, *ps, 400, None)).unwrap();
+        }
+        let legacy = t0.elapsed().as_secs_f64() / roots.len() as f64;
+
+        let t1 = Instant::now();
+        for (r, p, ps) in &roots {
+            let _ = tier1_playout(r, *p, 0, *ps, 400, None).unwrap();
+        }
+        let flat = t1.elapsed().as_secs_f64() / roots.len() as f64;
+
+        println!("\n=== tier1 playout scorer, W1, n={} playouts/route ===", roots.len());
+        println!("  legacy (count_final_scores) : {:.3} ms/playout", legacy * 1e3);
+        println!("  flat   (decompose_into)     : {:.3} ms/playout", flat * 1e3);
+        println!("  factor                      : {:.2}x", legacy / flat);
     }
 
     /// The memo's KEY is the byte-exact Python `string_representation`, so two
