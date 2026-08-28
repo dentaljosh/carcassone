@@ -1,0 +1,75 @@
+{
+  "arms": [
+    {
+      "G_COMPETITIVE_hard": true,
+      "G_COMPETITIVE_hard_resolved": true,
+      "G_COMPETITIVE_preferred": true,
+      "G_DAMAGE": false,
+      "G_DAMAGE_pp": 2.024627042386931,
+      "G_EXPRESS": false,
+      "G_EXPRESS_a": false,
+      "G_EXPRESS_b": false,
+      "VALID": false,
+      "agent_fires_vs_census": [
+        47,
+        43
+      ],
+      "arm": "S0V2_M",
+      "census_deliberate_over_onsets": 0.8958333333333334,
+      "champ_farmer_zero_rate": 0.17073170731707318,
+      "ctrl_farmer_zero_rate": 0.15048543689320387,
+      "deliberate_per_game": 0.7166666666666667,
+      "margin": -0.5833333333333334,
+      "margin_sem": 2.6876250901558807,
+      "multiple_of_ctrl": 1.303030303030303,
+      "n": 60,
+      "plan_completion_rate": null,
+      "sem": 0.08922664174441856,
+      "separation_sigma": 1.548673745352927,
+      "worker_s_per_game_upper_bound": 54.36915
+    },
+    {
+      "G_COMPETITIVE_hard": true,
+      "G_COMPETITIVE_hard_resolved": true,
+      "G_COMPETITIVE_preferred": false,
+      "G_DAMAGE": false,
+      "G_DAMAGE_pp": 2.2487536079769113,
+      "G_EXPRESS": true,
+      "G_EXPRESS_a": true,
+      "G_EXPRESS_b": true,
+      "VALID": false,
+      "agent_fires_vs_census": [
+        60,
+        54
+      ],
+      "arm": "S0V2_F",
+      "census_deliberate_over_onsets": 0.9152542372881356,
+      "champ_farmer_zero_rate": 0.17297297297297298,
+      "ctrl_farmer_zero_rate": 0.15048543689320387,
+      "deliberate_per_game": 0.9,
+      "margin": -15.566666666666666,
+      "margin_sem": 3.2826686355765666,
+      "multiple_of_ctrl": 1.6363636363636362,
+      "n": 60,
+      "plan_completion_rate": 0.171875,
+      "sem": 0.11072437403593537,
+      "separation_sigma": 2.7773985980513967,
+      "worker_s_per_game_upper_bound": 46.872166666666665
+    }
+  ],
+  "ctrl_farmer_zero_rate": 0.15048543689320387,
+  "ctrl_rate": 0.55,
+  "ctrl_sem": 0.060170160206465366,
+  "deck_matched_contrasts": {
+    "S0V2_F_minus_CTRL_deck_matched": {
+      "mean": -11.566666666666666,
+      "n": 60,
+      "sem": 3.4885095215195525
+    },
+    "S0V2_M_minus_CTRL_deck_matched": {
+      "mean": 3.4166666666666665,
+      "n": 60,
+      "sem": 2.0285103028982174
+    }
+  }
+}
