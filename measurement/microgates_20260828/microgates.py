@@ -129,6 +129,28 @@ def _sname(side) -> str:
 CLS_LONG = {"city": "C", "road": "R", "farm": "F"}
 
 
+def tagged_classes(row: dict) -> set:
+    """The class(es) the BANKED row tags at this ply, as this census spells them.
+
+    `notes.cls` is a plain string on a single-event ply and a LIST on a
+    multi-event one, and `notes.events[*].cls` carries the same information per
+    event — so both are read and unioned. G-DETECT then asks whether the census
+    fired ANY of the tagged classes at the arm ply, which is exactly the
+    multi-event allowance PREREG §4 reserved.
+    """
+    notes = row.get("notes") or {}
+    raw = []
+    c = notes.get("cls")
+    if isinstance(c, list):
+        raw.extend(c)
+    elif c is not None:
+        raw.append(c)
+    for e in notes.get("events") or []:
+        if e.get("cls") is not None:
+            raw.append(e["cls"])
+    return {CLS_LONG[x] for x in raw if x in CLS_LONG}
+
+
 class Census:
     """Streaming Stage-A contest census over ONE rollout.
 
@@ -265,29 +287,40 @@ def _meeple_key(mp, state):
 
 
 # --- farm control / farmer invalidation (PREREG §2.2) ----------------------- #
-def farm_view(state, decomp, flat_leaf):
-    """root -> {keys, counts, finished_cities, control}, plus farmer meeple rows.
+def farm_view(state, decomp, flat_leaf, extra_farmer=None):
+    """root -> {counts, finished_cities, control}, plus farmer meeple rows.
 
     Farm meeples map through `farm_pos0_root`, the key the SCORING path uses.
+
+    `extra_farmer` = `(player, row, col, side, meeple_type)` injects one farmer
+    that is NOT in `state.placed_meeples`. It exists for exactly one case: the
+    game-ending transition performs final scoring and RETURNS EVERY MEEPLE, so a
+    terminal state carries none and the pre-scoring state has to be read instead
+    — and if the game's very last action was a farmer PLACEMENT, that farmer is
+    in neither. See `terminal_farm_view`.
     """
     counts = defaultdict(lambda: [0, 0])
     farmers = []
     from wingedsheep.carcassonne.objects.meeple_type import MeepleType
     from wingedsheep.carcassonne.objects.terrain_type import TerrainType
-    for pl in range(state.players):
-        for mp in state.placed_meeples[pl]:
-            if mp.meeple_type not in (MeepleType.FARMER, MeepleType.BIG_FARMER):
-                continue
-            cws = mp.coordinate_with_side
-            r, c, side = cws.coordinate.row, cws.coordinate.column, cws.side
-            if state.board[r][c].get_type(side) in (TerrainType.CITY, TerrainType.ROAD,
-                                                    TerrainType.CHAPEL, TerrainType.FLOWERS):
-                continue
-            root = decomp.farm_pos0_root.get((r, c, side))
-            if root is None:
-                continue
-            counts[root][pl] += flat_leaf._meeple_weight(mp.meeple_type)
-            farmers.append({"player": pl, "pos": [r, c, _sname(side)], "root": root})
+
+    rows = [(pl, mp.coordinate_with_side.coordinate.row,
+             mp.coordinate_with_side.coordinate.column,
+             mp.coordinate_with_side.side, mp.meeple_type)
+            for pl in range(state.players) for mp in state.placed_meeples[pl]]
+    if extra_farmer is not None:
+        rows.append(tuple(extra_farmer))
+    for pl, r, c, side, mtype in rows:
+        if mtype not in (MeepleType.FARMER, MeepleType.BIG_FARMER):
+            continue
+        if state.board[r][c].get_type(side) in (TerrainType.CITY, TerrainType.ROAD,
+                                                TerrainType.CHAPEL, TerrainType.FLOWERS):
+            continue
+        root = decomp.farm_pos0_root.get((r, c, side))
+        if root is None:
+            continue
+        counts[root][pl] += flat_leaf._meeple_weight(mtype)
+        farmers.append({"player": pl, "pos": [r, c, _sname(side)], "root": root})
     out = {}
     for root, cnt in counts.items():
         if cnt[0] > cnt[1]:
@@ -312,6 +345,49 @@ def _farm_rep_keys(decomp):
 def _farm_key_to_root(decomp):
     return {(r, c, _sname(side)): root
             for (r, c, side), root in decomp.farm_anypos_root.items()}
+
+
+def terminal_farm_view(g, prev_board, term_board, last_action, last_phase, flat_leaf):
+    """The farm structure of the FINISHED position, WITH its farmers still on it.
+
+    ⚠️ The game-ending transition runs final scoring and returns every meeple, so
+    `term_board.state.placed_meeples` is EMPTY and reading farms off it yields a
+    structurally-zero answer (measured: 2,416/2,416 root farm components read as
+    control -> "none"). The pre-scoring position is `prev_board`, and because the
+    terminating action is a MEEPLES-phase action in the ordinary case, its farm
+    GEOMETRY is already the terminal geometry. The one thing `prev_board` can
+    miss is a farmer placed BY that final action, which is injected via
+    `extra_farmer`.
+
+    Returns `(view, farmers, key_to_root, flags)`; `flags.scoring_state` says
+    which board was read and `flags.injected_final_farmer` whether the edge case
+    fired, so neither is invisible in the artifact.
+    """
+    from carcassonne_ai.action_space import decode, meeple_pass_index
+
+    st_term = term_board.state
+    n_term = sum(len(st_term.placed_meeples[p]) for p in range(st_term.players))
+    flags = {"scoring_state": "terminal", "injected_final_farmer": False,
+             "last_action_phase": last_phase}
+    if n_term > 0 or prev_board is None:
+        st = st_term
+        extra = None
+    else:
+        st = prev_board.state
+        flags["scoring_state"] = "pre_scoring"
+        extra = None
+        if last_phase == "meeples" and last_action is not None:
+            pass_idx = meeple_pass_index(prev_board.offset.size)
+            if int(last_action) != pass_idx:
+                act = decode(int(last_action), off=prev_board.offset, phase="meeples",
+                             last_tile_coord=st.last_tile_action.coordinate)
+                cws = act.coordinate_with_side
+                extra = (int(st.current_player), cws.coordinate.row,
+                         cws.coordinate.column, cws.side, act.meeple_type)
+                flags["injected_final_farmer"] = True
+    decomp = flat_leaf.decompose(st)
+    view, farmers = farm_view(st, decomp, flat_leaf, extra_farmer=extra)
+    return view, farmers, _farm_key_to_root(decomp), flags
 
 
 # --------------------------------------------------------------------------- #
@@ -385,6 +461,7 @@ def run_arm(g, root_board, arm_action: int, root_ply: int, seed: int, flat_leaf,
 
     pl = RuleBasedPlayer(seed=int(seed))
     n = 0
+    prev_b, last_action, last_phase = None, None, None
     while not b.state.is_terminated():
         if n >= MAX_PLIES:
             raise RuntimeError("playout exceeded MAX_PLIES")
@@ -396,14 +473,16 @@ def run_arm(g, root_board, arm_action: int, root_ply: int, seed: int, flat_leaf,
             a = int(forced_actions[n])
         else:
             a = int(pl.choose_action(g, b, g.get_valid_moves(b)))
+        # `get_next_state` never mutates its input, so keeping the previous board
+        # is a free reference — and it is the only pre-scoring position there is.
+        prev_b, last_action, last_phase = b, a, phase
         b, _ = g.get_next_state(b, a)
         placed = (phase == "meeples")
         cen.step(b.state, root_ply + 1 + n, actor, phase, placed_meeple=placed)
         n += 1
 
-    term_decomp = flat_leaf.decompose(b.state)
-    term_farms, _ = farm_view(b.state, term_decomp, flat_leaf)
-    term_key_to_root = _farm_key_to_root(term_decomp)
+    term_farms, _tf, term_key_to_root, term_flags = terminal_farm_view(
+        g, prev_b, b, last_action, last_phase, flat_leaf)
 
     # --- farm control change: root component -> its (unique) terminal component
     control_changed = []
@@ -461,6 +540,8 @@ def run_arm(g, root_board, arm_action: int, root_ply: int, seed: int, flat_leaf,
         "n_root_farmers": len(root_farmers),
         "n_root_farmer_zero_no_cities": zero_no_cities,
         "n_root_farmer_zero_lost_majority": zero_lost_majority,
+        "n_term_farm_components_with_farmers": len(term_farms),
+        "terminal_farm_flags": term_flags,
     }
 
 
@@ -664,13 +745,13 @@ def stage_gates(rows: list, outdir: Path, profile: str, workers: int) -> dict:
                                             arch["actions"], ply, -1)
         res = run_arm(g, root, int(r["played_action"]), ply, 0, fl,
                       forced_actions=[int(a) for a in arch["actions"][ply + 1:]])
-        want = CLS_LONG.get((r.get("notes") or {}).get("cls"))
+        want = tagged_classes(r)
         got = [o["cls"] for o in res["arm_ply_onsets"]]
-        if want is not None and want in got:
+        if want and (want & set(got)):
             hits += 1
         else:
             misses.append({"game": r["game"], "ply": ply,
-                           "want": (r.get("notes") or {}).get("cls"),
+                           "want": sorted(want),
                            "got_at_arm_ply": got,
                            "n_events": (r.get("notes") or {}).get("n_events"),
                            "got_in_rollout": [o["cls"] for o in res["rollout_onsets"]]})
