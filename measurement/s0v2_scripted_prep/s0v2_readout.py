@@ -77,7 +77,7 @@ def main() -> int:
     cen = census_deliberate(Path(args.rows))
 
     tel = Counter()
-    per_game_merge, per_game_census = [], []
+    per_game_merge, per_game_census, per_game_onsets = [], [], []
     fires = Counter()
     shares = defaultdict(list)
     costs = defaultdict(list)
@@ -93,8 +93,17 @@ def main() -> int:
             if isinstance(v, (int,)) and not isinstance(v, bool):
                 tel[k] += v
         per_game_merge.append(int(t.get("merge_fires", 0)))
-        d, _o = cen.get(a["_name"], (0, 0))
+        # stage_a_census keys its rows by the archive FILE NAME; be tolerant of
+        # whether that carries the .json suffix.
+        hit = cen.get(a["_name"])
+        if hit is None:
+            hit = cen.get(a["_name"] + ".json")
+        if hit is None:
+            raise SystemExit(f"no census rows for {a['_name']!r}; "
+                             f"have e.g. {next(iter(cen), None)!r}")
+        d, o = hit
         per_game_census.append(d)
+        per_game_onsets.append(o)
         for f in prov.get("fires", []):
             fires[f["kind"]] += 1
             if "visit_share" in f:
@@ -124,6 +133,9 @@ def main() -> int:
         "agent_merge_fires_per_game": _mean(per_game_merge),
         "agent_merge_fires_total": sum(per_game_merge),
         "census_deliberate_total": sum(per_game_census),
+        "census_onsets_total": sum(per_game_onsets),
+        "census_completion_rate": ((sum(per_game_census) / sum(per_game_onsets))
+                                   if sum(per_game_onsets) else None),
         "reconciliation_agent_minus_census": sum(per_game_merge) - sum(per_game_census),
         "fires": dict(fires),
         "telemetry_totals": dict(tel),
@@ -149,6 +161,8 @@ def main() -> int:
     print(f"agent merge fires / game     {out['agent_merge_fires_per_game']:.3f} "
           f"(total {out['agent_merge_fires_total']} vs census "
           f"{out['census_deliberate_total']})")
+    print(f"census onsets total          {out['census_onsets_total']} "
+          f"-> deliberate/onset {out['census_completion_rate']}")
     print(f"fires                        {out['fires']}")
     print(f"plans started/completed      {plan_started}/{plan_done} "
           f"(rate {out['plan_completion_rate']}) abandoned {plan_aband} "

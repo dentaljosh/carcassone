@@ -1,6 +1,11 @@
 # S0v2 — THE SCRIPTED EXPLOITER (design + pre-registration)
 
-**Status: DESIGN + PREREG FROZEN 2026-08-28, BEFORE the first smoke game.**
+**Status: DESIGN + PREREG FROZEN 2026-08-28 (commit `s0v2: PRE-REGISTER the
+scripted exploiter`, BEFORE the first smoke game); SMOKE RAN 2026-08-28 →
+⛔ NEITHER ARM IS S0v2-VALID — both fail G-DAMAGE. The finding that outranks
+the bars — S0v2's invasions TIE where the owner's take a MAJORITY, and a tie
+denies the incumbent nothing under the vendored full-points-on-tie rule — is
+in [SMOKE_READOUT.md](SMOKE_READOUT.md) §2 finding (1).**
 Owner-funded 2026-08-28 ("start the build now") as the fallback
 [`measurement/s0_exploiter_prep/DESIGN.md`](../s0_exploiter_prep/DESIGN.md) §8.5
 pre-named and [`SMOKE_READOUT.md`](../s0_exploiter_prep/SMOKE_READOUT.md) §3
