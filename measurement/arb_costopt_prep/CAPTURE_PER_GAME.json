@@ -1,0 +1,451 @@
+{
+ "artifact": "CAPTURE_PER_GAME",
+ "b16_early": {
+  "B64_minus_B16": {
+   "early": {
+    "n": 516,
+    "pts_per_game": {
+     "ci95": [
+      -0.3595515563114951,
+      1.0129487942243092
+     ],
+     "se": 0.35884389615796575,
+     "value": 0.33799938790702244,
+     "z": 0.9419120445572038
+    },
+    "pts_per_tied_ply": {
+     "ci95": [
+      -0.04633673720472441,
+      0.13054245283018867
+     ],
+     "se": 0.046245538426722355,
+     "value": 0.04355922965116279,
+     "z": 0.9419120445572038
+    }
+   },
+   "late": {
+    "n": 442,
+    "pts_per_game": {
+     "ci95": [
+      0.134690486274332,
+      0.9123735233838322
+     ],
+     "se": 0.2018229140576489,
+     "value": 0.5013442867764512,
+     "z": 2.4840801111079323
+    },
+    "pts_per_tied_ply": {
+     "ci95": [
+      0.016473008083140877,
+      0.1115857314148681
+     ],
+     "se": 0.02468348423557717,
+     "value": 0.061315752262443436,
+     "z": 2.4840801111079323
+    }
+   },
+   "mid": {
+    "n": 382,
+    "pts_per_game": {
+     "ci95": [
+      0.15689464240710743,
+      1.3343944952179008
+     ],
+     "se": 0.2958167278875485,
+     "value": 0.7395227005550944,
+     "z": 2.499935368212902
+    },
+    "pts_per_tied_ply": {
+     "ci95": [
+      0.022336843922651933,
+      0.18997564935064934
+     ],
+     "se": 0.042114963131682046,
+     "value": 0.10528468586387435,
+     "z": 2.499935368212902
+    }
+   }
+  },
+  "B64_minus_B32": {
+   "early": {
+    "n": 516,
+    "pts_per_game": {
+     "ci95": [
+      -0.8527024910729704,
+      0.280604398494582
+     ],
+     "se": 0.28311964361990255,
+     "value": -0.2998173228845052,
+     "z": -1.0589774663852707
+    },
+    "pts_per_tied_ply": {
+     "ci95": [
+      -0.10989091981132075,
+      0.036162525354969575
+     ],
+     "se": 0.0364866742853012,
+     "value": -0.03863856589147287,
+     "z": -1.0589774663852705
+    }
+   },
+   "late": {
+    "n": 442,
+    "pts_per_game": {
+     "ci95": [
+      -0.1133098030795108,
+      0.4360022437002515
+     ],
+     "se": 0.14124625276129935,
+     "value": 0.1685118012053451,
+     "z": 1.1930355525262921
+    },
+    "pts_per_tied_ply": {
+     "ci95": [
+      -0.01385809312638581,
+      0.05332424496644295
+     ],
+     "se": 0.017274795925164413,
+     "value": 0.020609445701357466,
+     "z": 1.1930355525262921
+    }
+   },
+   "mid": {
+    "n": 382,
+    "pts_per_game": {
+     "ci95": [
+      -0.10259281679096972,
+      0.8658091463547988
+     ],
+     "se": 0.24813469301289773,
+     "value": 0.38010432511048553,
+     "z": 1.531846758287557
+    },
+    "pts_per_tied_ply": {
+     "ci95": [
+      -0.014605978260869566,
+      0.1232638888888889
+     ],
+     "se": 0.03532654668502031,
+     "value": 0.05411485602094241,
+     "z": 1.531846758287557
+    }
+   }
+  },
+  "note": "within-position PAIRED difference on identical CRN worlds -- the robust contrast class. 'B=16 early' forgoes early[B64_minus_B16]."
+ },
+ "early_gate": {
+  "B16": {
+   "forgone_early_capture_pts_per_game": {
+    "ci95": [
+     -1.6570218385578013,
+     0.2620814278118511
+    ],
+    "se": 0.4836900965274973,
+    "value": -0.6521496705845957,
+    "z": -1.3482799736163746
+   },
+   "loss_bound_upper_ci95_pts_per_game": 0.2620814278118511,
+   "n_early_positions": 516,
+   "reading": "point estimate NEGATIVE means gating early off is a GAIN in the point estimate; the DECISION-RELEVANT number is the upper CI limit -- the most capture the banked evidence allows the early bucket to be worth."
+  },
+  "B32": {
+   "forgone_early_capture_pts_per_game": {
+    "ci95": [
+     -0.9353520937899812,
+     0.8393823839362492
+    ],
+    "se": 0.4618135448040721,
+    "value": -0.014332959793068038,
+    "z": -0.031036248187889127
+   },
+   "loss_bound_upper_ci95_pts_per_game": 0.8393823839362492,
+   "n_early_positions": 516,
+   "reading": "point estimate NEGATIVE means gating early off is a GAIN in the point estimate; the DECISION-RELEVANT number is the upper CI limit -- the most capture the banked evidence allows the early bucket to be worth."
+  },
+  "B64": {
+   "forgone_early_capture_pts_per_game": {
+    "ci95": [
+     -1.2428560444355603,
+     0.640557671439422
+    ],
+    "se": 0.4633304601317033,
+    "value": -0.3141502826775732,
+    "z": -0.6780263973758058
+   },
+   "loss_bound_upper_ci95_pts_per_game": 0.640557671439422,
+   "n_early_positions": 516,
+   "reading": "point estimate NEGATIVE means gating early off is a GAIN in the point estimate; the DECISION-RELEVANT number is the upper CI limit -- the most capture the banked evidence allows the early bucket to be worth."
+  }
+ },
+ "generated_by": "measurement/arb_costopt_prep/capture_per_game.py",
+ "judge_label": "IN-FAMILY judge-priced (clair-puct oracle / tier1-greedy arbiter). Absolute pts/game are FAMILY-RELATIVE; the phase CONTRAST is the robust part. F4 rider applies.",
+ "per_game": {
+  "B1": {
+   "by_phase": {
+    "early": {
+     "n": 516,
+     "pts_per_game": -0.769397981022972,
+     "pts_per_tied_ply": -0.09915515988372094
+    },
+    "late": {
+     "n": 442,
+     "pts_per_game": 0.5065470525083486,
+     "pts_per_tied_ply": 0.06195206447963801
+    },
+    "mid": {
+     "n": 382,
+     "pts_per_game": 1.130975567496165,
+     "pts_per_tied_ply": 0.1610152159685864
+    }
+   },
+   "midlate_only_pts_per_game": {
+    "ci95": [
+     0.07808479653057576,
+     3.323896297119526
+    ],
+    "se": 0.8108989159922997,
+    "value": 1.6375226200045137,
+    "z": 2.0193917980525007
+   },
+   "total_pts_per_game": {
+    "ci95": [
+     -0.9151365866432195,
+     2.845076911362284
+    ],
+    "se": 0.9509643528163251,
+    "value": 0.8681246389815417,
+    "z": 0.9128887285948735
+   }
+  },
+  "B16": {
+   "by_phase": {
+    "early": {
+     "n": 516,
+     "pts_per_game": -0.6521496705845957,
+     "pts_per_tied_ply": -0.08404493701550388
+    },
+    "late": {
+     "n": 442,
+     "pts_per_game": 1.8133083788365907,
+     "pts_per_tied_ply": 0.2217724830316742
+    },
+    "mid": {
+     "n": 382,
+     "pts_per_game": 2.3095000887381993,
+     "pts_per_tied_ply": 0.3287999018324607
+    }
+   },
+   "midlate_only_pts_per_game": {
+    "ci95": [
+     2.6679659900554746,
+     5.823510879932667
+    ],
+    "se": 0.8094675686598534,
+    "value": 4.1228084675747905,
+    "z": 5.093234895624629
+   },
+   "total_pts_per_game": {
+    "ci95": [
+     1.6850420438122256,
+     5.418640297376895
+    ],
+    "se": 0.9459740788821427,
+    "value": 3.470658796990194,
+    "z": 3.6688730425800573
+   }
+  },
+  "B2": {
+   "by_phase": {
+    "early": {
+     "n": 516,
+     "pts_per_game": -1.376081623411524,
+     "pts_per_tied_ply": -0.1773407218992248
+    },
+    "late": {
+     "n": 442,
+     "pts_per_game": 0.6188400795551352,
+     "pts_per_tied_ply": 0.07568580316742081
+    },
+    "mid": {
+     "n": 382,
+     "pts_per_game": 1.3592392759619856,
+     "pts_per_tied_ply": 0.1935127617801047
+    }
+   },
+   "midlate_only_pts_per_game": {
+    "ci95": [
+     0.3621331265146414,
+     3.8405056082649147
+    ],
+    "se": 0.8778236312015955,
+    "value": 1.9780793555171208,
+    "z": 2.253390413754819
+   },
+   "total_pts_per_game": {
+    "ci95": [
+     -1.1696706589681136,
+     2.6921890400833464
+    ],
+    "se": 0.9824281611910198,
+    "value": 0.6019977321055967,
+    "z": 0.6127651424158905
+   }
+  },
+  "B32": {
+   "by_phase": {
+    "early": {
+     "n": 516,
+     "pts_per_game": -0.014332959793068038,
+     "pts_per_tied_ply": -0.001847141472868217
+    },
+    "late": {
+     "n": 442,
+     "pts_per_game": 2.146140864407697,
+     "pts_per_tied_ply": 0.26247878959276016
+    },
+    "mid": {
+     "n": 382,
+     "pts_per_game": 2.6689184641828083,
+     "pts_per_tied_ply": 0.37996973167539266
+    }
+   },
+   "midlate_only_pts_per_game": {
+    "ci95": [
+     3.3429175847794896,
+     6.552883346151296
+    ],
+    "se": 0.822477918115714,
+    "value": 4.815059328590506,
+    "z": 5.854332648372789
+   },
+   "total_pts_per_game": {
+    "ci95": [
+     2.9948974068001233,
+     6.731850815968644
+    ],
+    "se": 0.9398565689642194,
+    "value": 4.800726368797437,
+    "z": 5.107935111937492
+   }
+  },
+  "B4": {
+   "by_phase": {
+    "early": {
+     "n": 516,
+     "pts_per_game": -0.5060004740060986,
+     "pts_per_tied_ply": -0.06521015019379844
+    },
+    "late": {
+     "n": 442,
+     "pts_per_game": 1.0977835694303613,
+     "pts_per_tied_ply": 0.1342618778280543
+    },
+    "mid": {
+     "n": 382,
+     "pts_per_game": 2.016592787566514,
+     "pts_per_tied_ply": 0.2870991492146597
+    }
+   },
+   "midlate_only_pts_per_game": {
+    "ci95": [
+     1.6272474150111325,
+     4.90139539517895
+    ],
+    "se": 0.8238378062129956,
+    "value": 3.114376356996875,
+    "z": 3.7803270662134216
+   },
+   "total_pts_per_game": {
+    "ci95": [
+     0.8170861942031431,
+     4.652377700582978
+    ],
+    "se": 0.9421564280976417,
+    "value": 2.6083758829907766,
+    "z": 2.76851678256602
+   }
+  },
+  "B64": {
+   "by_phase": {
+    "early": {
+     "n": 516,
+     "pts_per_game": -0.3141502826775732,
+     "pts_per_tied_ply": -0.04048570736434109
+    },
+    "late": {
+     "n": 442,
+     "pts_per_game": 2.3146526656130417,
+     "pts_per_tied_ply": 0.28308823529411764
+    },
+    "mid": {
+     "n": 382,
+     "pts_per_game": 3.0490227892932937,
+     "pts_per_tied_ply": 0.43408458769633507
+    }
+   },
+   "midlate_only_pts_per_game": {
+    "ci95": [
+     3.9024858681737475,
+     7.086625140923667
+    ],
+    "se": 0.810894725309615,
+    "value": 5.3636754549063355,
+    "z": 6.614515161457465
+   },
+   "total_pts_per_game": {
+    "ci95": [
+     3.1855056689145314,
+     7.099212569352357
+    ],
+    "se": 0.9510550257266372,
+    "value": 5.049525172228762,
+    "z": 5.309393290226041
+   }
+  },
+  "B8": {
+   "by_phase": {
+    "early": {
+     "n": 516,
+     "pts_per_game": -0.9225961742210106,
+     "pts_per_tied_ply": -0.1188983769379845
+    },
+    "late": {
+     "n": 442,
+     "pts_per_game": 1.5309138166108236,
+     "pts_per_tied_ply": 0.18723486990950225
+    },
+    "mid": {
+     "n": 382,
+     "pts_per_game": 1.9572643347053535,
+     "pts_per_tied_ply": 0.2786526505235602
+    }
+   },
+   "midlate_only_pts_per_game": {
+    "ci95": [
+     2.028535623657517,
+     5.129884461235238
+    ],
+    "se": 0.7987852476402385,
+    "value": 3.488178151316177,
+    "z": 4.36685349613167
+   },
+   "total_pts_per_game": {
+    "ci95": [
+     0.7388550163845298,
+     4.413549187513914
+    ],
+    "se": 0.9356245856058829,
+    "value": 2.5655819770951664,
+    "z": 2.742106200035104
+   }
+  }
+ },
+ "phi_fired_plies_per_game": {
+  "early": 7.759535478791457,
+  "late": 8.176435390217499,
+  "mid": 7.024029130991043
+ },
+ "phi_source": "census phase SHARES x the 22.96 fired-tile-plies/game of record (COST_MODEL.json::phi_calibration)",
+ "phi_total": 22.96,
+ "prereg": "measurement/arb_costopt_prep/PREREG.md"
+}
