@@ -1,0 +1,26 @@
+=== CENSUS BEFORE ===
+ 15:47:50 up 21:21,  2 users,  load average: 0.28, 0.13, 0.10
+    PID     ELAPSED %CPU COMMAND
+  75156       07:14  0.0 /usr/libexec/wsl-pro-service
+     46    21:20:59  0.0 /usr/lib/systemd/systemd-journald
+      1    21:21:00  0.0 /sbin/init
+  66689    11:25:26  0.0 /usr/lib/polkit-1/polkitd --no-debug --log-level=notice
+    154    21:20:59  0.0 /usr/sbin/rsyslogd -n -iNONE
+=== RUN none ===
+rc=0
+[probe] 240 jobs x 2 arms = 480 playouts, mode=none
+=== RUN cache ===
+rc=0
+[probe] 240 jobs x 2 arms = 480 playouts, mode=cache
+=== RUN allocount (none) ===
+rc=0
+[probe] 60 jobs x 2 arms = 120 playouts, mode=none
+=== CENSUS AFTER ===
+ 15:52:45 up 21:25,  2 users,  load average: 1.05, 0.71, 0.37
+    PID     ELAPSED %CPU COMMAND
+     46    21:25:54  0.0 /usr/lib/systemd/systemd-journald
+      1    21:25:55  0.0 /sbin/init
+  66689    11:30:21  0.0 /usr/lib/polkit-1/polkitd --no-debug --log-level=notice
+    154    21:25:54  0.0 /usr/sbin/rsyslogd -n -iNONE
+    136    21:25:54  0.0 /usr/lib/systemd/systemd-logind
+=== DONE ===
