@@ -1,0 +1,5 @@
+# Raw per-unit JSON (one file per (game, ply, world), ~19 MB for stage 1 alone).
+# House pattern: raw rows live on the share, the tracked artifact is the readout.
+# Everything here is reproducible bit-for-bit from `run.sh` — the units are a pure
+# function of (deck_seed, ply, world, arm).
+out/
