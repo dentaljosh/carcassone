@@ -1,0 +1,126 @@
+{
+ "schema": "carcassonne-c1-outcome-pricing-targets/v1",
+ "built_from": {
+  "microgates": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a33712c658dd97dc9/measurement/microgates_20260828/MICROGATES.json",
+  "banked_rows": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a33712c658dd97dc9/measurement/e4_ply_pricing_20260827/targets.jsonl"
+ },
+ "constants": {
+  "WORLD_BASE": 16,
+  "M_BASE": {
+   "farm_capture": 32,
+   "invasion": 16,
+   "defense": 8,
+   "control": 8
+  },
+  "EXTENSIONS": [
+   {
+    "block": "E1",
+    "strata": [
+     "farm_capture"
+    ],
+    "add": 32
+   },
+   {
+    "block": "E2",
+    "strata": [
+     "invasion"
+    ],
+    "add": 16
+   },
+   {
+    "block": "E3",
+    "strata": [
+     "defense",
+     "control"
+    ],
+    "add": 8
+   }
+  ],
+  "PROFILE": "fixed_v1"
+ },
+ "n_target_plies": 188,
+ "n_games": 45,
+ "excluded": {
+  "profile:walled": 10,
+  "profile:app_aug2": 3,
+  "agree:zero_by_construction": 89
+ },
+ "by_stratum": {
+  "farm_capture": {
+   "n_plies": 14,
+   "n_games": 12,
+   "m_worlds_base": 32,
+   "sum_remaining_plies": 436,
+   "mean_remaining_plies": 31.1,
+   "mean_insample_gap_pts": 6.0,
+   "n_units_base": 448,
+   "continuation_plies_base": 27904,
+   "k_min": 4,
+   "k_median": 19,
+   "n_exact_solvable_k_le_4": 1,
+   "n_near_tie_gap_lt_0p5": 1,
+   "extension_continuation_plies": {
+    "E1": 27904
+   }
+  },
+  "invasion": {
+   "n_plies": 55,
+   "n_games": 34,
+   "m_worlds_base": 16,
+   "sum_remaining_plies": 4416,
+   "mean_remaining_plies": 80.3,
+   "mean_insample_gap_pts": 5.746,
+   "n_units_base": 880,
+   "continuation_plies_base": 141312,
+   "k_min": 3,
+   "k_median": 43,
+   "n_exact_solvable_k_le_4": 1,
+   "n_near_tie_gap_lt_0p5": 2,
+   "extension_continuation_plies": {
+    "E2": 141312
+   }
+  },
+  "defense": {
+   "n_plies": 61,
+   "n_games": 37,
+   "m_worlds_base": 8,
+   "sum_remaining_plies": 4852,
+   "mean_remaining_plies": 79.5,
+   "mean_insample_gap_pts": 6.736,
+   "n_units_base": 488,
+   "continuation_plies_base": 77632,
+   "k_min": 4,
+   "k_median": 41,
+   "n_exact_solvable_k_le_4": 2,
+   "n_near_tie_gap_lt_0p5": 2,
+   "extension_continuation_plies": {
+    "E3": 77632
+   }
+  },
+  "control": {
+   "n_plies": 58,
+   "n_games": 37,
+   "m_worlds_base": 8,
+   "sum_remaining_plies": 4782,
+   "mean_remaining_plies": 82.4,
+   "mean_insample_gap_pts": 6.142,
+   "n_units_base": 464,
+   "continuation_plies_base": 76512,
+   "k_min": 7,
+   "k_median": 47,
+   "n_exact_solvable_k_le_4": 0,
+   "n_near_tie_gap_lt_0p5": 4,
+   "extension_continuation_plies": {
+    "E3": 76512
+   }
+  }
+ },
+ "totals": {
+  "continuation_plies_base": 323360,
+  "n_units_base": 2280,
+  "contested_n_plies": 69,
+  "contested_n_games": 41,
+  "contested_mean_insample_gap_pts": 5.797,
+  "all_mean_insample_gap_pts": 6.208
+ }
+}
