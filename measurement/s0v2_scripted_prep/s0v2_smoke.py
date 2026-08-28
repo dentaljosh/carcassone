@@ -88,9 +88,18 @@ PROFILES = {
     # MERGE-ONLY: the script authors the census event whenever one is available
     # and never spends a meeple or a tile choice on setting one up.
     "merge": dict(setup_enabled=False, foothold_enabled=False,
-                  victim_min_pts=3),
+                  victim_min_pts=3, majority_enabled=False,
+                  reinforce_enabled=False),
     # FULL PLAN: setup -> foothold -> merge, at the dev-calibrated dose.
-    "full": dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6),
+    # MAJORITY is OFF here, so this is the SAME agent the 2026-08-28 smoke ran —
+    # it is re-run on the new seed range purely as the deck-matched control for
+    # the MAJORITY amendment.
+    "full": dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
+                 majority_enabled=False, reinforce_enabled=False),
+    # FULL PLAN + MAJORITY (the 2026-08-28 amendment): identical to `full`, plus
+    # the fourth fire and the REINFORCE foothold/setup that feeds it.
+    "full_major": dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
+                       majority_enabled=True, reinforce_enabled=True),
 }
 
 

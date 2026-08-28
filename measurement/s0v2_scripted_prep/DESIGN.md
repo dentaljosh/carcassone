@@ -5,7 +5,9 @@ scripted exploiter`, BEFORE the first smoke game); SMOKE RAN 2026-08-28 →
 ⛔ NEITHER ARM IS S0v2-VALID — both fail G-DAMAGE. The finding that outranks
 the bars — S0v2's invasions TIE where the owner's take a MAJORITY, and a tie
 denies the incumbent nothing under the vendored full-points-on-tie rule — is
-in [SMOKE_READOUT.md](SMOKE_READOUT.md) §2 finding (1).**
+in [SMOKE_READOUT.md](SMOKE_READOUT.md) §2 finding (1).
+AMENDED 2026-08-28 (§4.1): the MAJORITY fire, and a RE-SMOKE on seeds
+`900000020000..029`. The bars did not move.**
 Owner-funded 2026-08-28 ("start the build now") as the fallback
 [`measurement/s0_exploiter_prep/DESIGN.md`](../s0_exploiter_prep/DESIGN.md) §8.5
 pre-named and [`SMOKE_READOUT.md`](../s0_exploiter_prep/SMOKE_READOUT.md) §3
@@ -107,7 +109,13 @@ ScriptedExploiter(base = the CHAMPION OF RECORD, cfg = PlanConfig)
   move(board):
       pre = Structure(state)                  # flat_leaf.decompose + meeple index
       ledger.refresh(pre)                     # abandon dead plans
-      TILES  : 1. MERGE   fire — scan legal tiles that land in a cell touching
+      TILES  : 0. MAJORITY fire (amendment §4.1) — the tile that merges one of
+                                 my own components into a CONTESTED one where I
+                                 am tied or behind, ending strictly ahead.  A
+                                 tie denies the incumbent nothing under
+                                 full-points-on-tie; a majority denies all of it.
+                                 Outranks MERGE.  Never gated.
+               1. MERGE   fire — scan legal tiles that land in a cell touching
                                  BOTH one of my components and a bigger
                                  opponent-held one of the same class; take the
                                  best child whose invasion_events name ME the
@@ -117,7 +125,10 @@ ScriptedExploiter(base = the CHAMPION OF RECORD, cfg = PlanConfig)
                                  becomes a <= stub_max stub beside a worthwhile
                                  victim, with >= setup_min_merge_cells ways to
                                  merge later.  GATED (see below).
-      MEEPLES: 3. FOOTHOLD fire — claim a <= stub_max unclaimed component that is
+      MEEPLES: 2b. REINFORCE-FOOTHOLD (amendment §4.1) — claim the SECOND part
+                                 that a later MAJORITY merges in.  GATED, plus a
+                                 meeple reserve and a concurrency cap.
+               3. FOOTHOLD fire — claim a <= stub_max unclaimed component that is
                                  merge-plausible with a bigger opponent-held one
                                  of the same class; opens a Plan.  GATED.
       otherwise -> base.move(board), byte for byte.
@@ -164,7 +175,8 @@ that the module is a pure override.
 | [`s0v2_smoke.py`](s0v2_smoke.py) | the smoke driver — `s0_smoke.py`'s instrument, plumbing and archive schema, with the candidate side wrapped instead of leaf-overridden. |
 | [`s0v2_devplay.py`](s0v2_devplay.py) | a search-free dev harness (greedy-leaf base + greedy-leaf opponent) for seconds-per-game iteration. **Not a measurement.** |
 | [`run_smoke.sh`](run_smoke.sh) | play / grade, resumable, time-bounded. |
-| [`../../tests/test_s0v2_agent.py`](../../tests/test_s0v2_agent.py) | 23 tests: detector on constructed fixtures, plan state machine, real-board structural contracts, legality, no-parent-mutation, determinism. |
+| [`s0v2_readout.py`](s0v2_readout.py) / [`s0v2_bars.py`](s0v2_bars.py) | the telemetry ledger + census outcome distribution, and the pre-registered gate table. |
+| [`../../tests/test_s0v2_agent.py`](../../tests/test_s0v2_agent.py) | 33 tests: detector on constructed fixtures, plan state machine, real-board structural contracts, legality, no-parent-mutation, determinism, and the MAJORITY detector + reinforce ledger. |
 
 **No file under `src/carcassonne_ai/`, `engine/`, `scripts/` or `rust/` is
 modified by this work.**
@@ -263,6 +275,102 @@ is used as a ruler. Deck-pairing and deck-matching across arms tighten the
 3. **No leaf, search or dose conclusion may be drawn from any number here** (§0).
 4. Naming a "best of N" when none is valid is promotion by sympathy and is
    forbidden; the honest ranking may be reported WITH its label attached.
+
+---
+
+## §4.1 AMENDMENT 2026-08-28 — the MAJORITY fire
+
+**This is an AMENDMENT, not a rewrite. Every bar in §4 stands exactly as first
+registered and none of them moved:** G-EXPRESS ≥ 0.90/game absolute AND ≥ 2 σ
+over CTRL; G-DAMAGE ≥ +10 pp on the champion's farmer-zero rate; G-COMPETITIVE
+hard floor −25, preferred band −12. What changes is the AGENT (a fourth fire)
+and the TELEMETRY registered below. Committed before the first game of the
+re-smoke.
+
+**Why.** [SMOKE_READOUT.md](SMOKE_READOUT.md) §2 finding (1): S0v2's invasions
+**tie**, the owner's take a **majority** (`invader_took_all` owner 28.9 % vs
+S0V2-F 9.3 %; the invader out-numbers the incumbent at scoring in 26 of the
+owner's 90 invasions and 5 of S0V2-F's 54). Under the vendored
+full-points-on-tie rule a 1-v-1 tie denies the incumbent **exactly zero**, and
+G-DAMAGE's statistic only moves when the incumbent loses the majority — which is
+why S0V2-F could reach the expression bar and still fail the damage bar at
++2.25 pp.
+
+**The rules constraint that determines the design.** The engine forbids placing
+a meeple on a feature the opponent already occupies, so a second meeple can
+**never** be added to a contested feature by placement. A majority is reachable
+only by **merging a second separately-claimed part in**. The fire is therefore a
+TILE-phase fire fed by a meeple-phase one:
+
+| fire | phase | what it does | GATED? |
+|---|---|---|---|
+| **MAJORITY** | tiles | play the tile that merges one of my own components into a contested one where I am tied or behind, ending strictly ahead | **NO** |
+| **REINFORCE-FOOTHOLD** | meeples | claim a small unclaimed component that is merge-plausible with such a contested component | **YES** + two scarcity guards |
+| **REINFORCE-SETUP** | tiles | play a tile whose fresh unclaimed segment could become that second part | **YES**, exactly as SETUP |
+
+`majority_events(pre, post, me)` counts two sub-kinds and flags them:
+`from_tie=True` (a contested part I was tied on or behind flips) and
+`from_tie=False` (two of my parts and one of theirs land 2-v-1 in one ply, which
+the census **also** counts as a deliberate invasion — the two counters overlap by
+construction and the read-out says so). MAJORITY outranks MERGE in the tile
+phase, ranked at 2× a merge's victim points, because a majority takes the
+feature *and* denies it where a tie denies nothing.
+
+### The gating decision, and why it is split
+
+**MAJORITY is NOT gated by the search-grounded visit filter**, for exactly the
+reason MERGE is not: it spends only a tile choice, no meeple, and it *is* the
+mechanism under measurement. Gating the measured mechanism on the champion's own
+preferences would re-import the "the champion doesn't value this" bias the whole
+instrument exists to escape (§2, and the S0 DESIGN §2 ruler argument).
+
+**REINFORCE-FOOTHOLD keeps the visit gate AND adds two guards the other fires do
+not have,** because it is the only fire that commits a **second** meeple to a
+feature already committed — the meeple-lockup trade H3′ is about, and the first
+smoke measured this build already over-spending farmers (S0V2-F's own farmer
+deployments scored ZERO **29.88 %** of the time, against the owner's 5.4 %):
+
+* `min_meeples_for_reinforce = 2` — never spend the last meeple reinforcing;
+* `max_open_reinforcements = 2` — a cap on *concurrent* reinforcement plans, so
+  the agent cannot mortgage its whole supply on unresolved ties.
+
+**REINFORCE-SETUP is gated exactly as SETUP** (same visit filter, same
+`max_setup_fires` cap, same `setup_victim_min_pts` / `setup_min_merge_cells`
+bars). It is the expensive fire and nothing about it is relaxed.
+
+### Arms for the re-smoke, and the CTRL decision
+
+**Both G-EXPRESS(b) and G-DAMAGE are CTRL-RELATIVE**, and `CLAUDE.md`'s CL-068
+rule says cross-range contrasts are over-dispersed 1.8–2.2×. Re-using the first
+smoke's CTRL would make both of those gates cross-range comparisons for the sake
+of ~7 minutes of compute. **CTRL is therefore RE-RUN on the new range**, and so
+is **S0V2-F with MAJORITY off**, so that the amendment's own effect is a
+within-range, deck-matched difference rather than a cross-smoke one.
+
+| arm | `--plan` | what it is |
+|---|---|---|
+| **CTRL** | `off` | champion vs champion, no plan module |
+| **S0V2-F** | `full` | the arm the first smoke ran, `majority_enabled=False` — bit-for-bit the same agent (pinned by `test_majority_off_is_the_previous_agent_exactly`) |
+| **S0V2-FM** | `full_major` | identical, plus MAJORITY + REINFORCE |
+
+**Seeds: `900000020000..900000020029`** — 30 decks / 60 games per arm,
+deck-paired and deck-matched across all three arms. Disjoint from every prior
+range: `900000000000`-area (the S0 smoke), `900000009000`-area (the S0v2
+calibration), `900000010000`-area (the first S0v2 smoke). No band, no
+`results.csv` row, no claim.
+
+### Additional pre-registered telemetry for this amendment
+
+`majority_fires` · `majority_candidates_seen` · **`majority_from_tie`** (ties
+converted to a majority — the amendment's own headline) ·
+`reinforce_foothold_fires` · `reinforce_setup_fires` ·
+`reinforce_candidates_seen` · `reinforce_vetoed_by_visits` ·
+`reinforce_vetoed_by_leaf` · **`meeples_spent_on_reinforcement`** ·
+`reinforce_plans_started` / `reinforce_plans_completed` /
+`reinforce_plan_completion_rate` (and the same three for `invade` plans) ·
+and from the census, the statistic finding (1) named: the **outcome
+distribution** (`invader_took_all` / `shared_tie` / `incumbent_held`) and the
+**out-numbering-at-score rate** (owner 28.9 %, S0V2-F 9.3 %).
 
 ### Pre-registered telemetry (reported for every arm; not gating)
 

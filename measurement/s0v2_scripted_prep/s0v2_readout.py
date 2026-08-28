@@ -41,7 +41,13 @@ def load_games(games_dir: Path):
 
 
 def census_deliberate(rows_path: Path):
-    """game id -> (deliberate invasions BY the candidate, contest onsets by it)."""
+    """game id -> (deliberate invasions BY the candidate, contest onsets by it).
+
+    Also returns the pooled OUTCOME distribution of those deliberate invasions
+    and the rate at which the candidate OUT-NUMBERS the incumbent when the
+    feature finally scores — the statistic the 2026-08-28 finding (1) named
+    (owner 28.9 % took-all / 26 of 90 out-numbering; S0V2-F 9.3 % / 5 of 54).
+    Under the vendored full-points-on-tie rule only out-numbering denies."""
     by_game = defaultdict(list)
     for line in Path(rows_path).open():
         line = line.strip()
@@ -49,6 +55,10 @@ def census_deliberate(rows_path: Path):
             r = json.loads(line)
             by_game[r["game"]].append(r)
     out = {}
+    outcomes = Counter()
+    meeples_at_score = Counter()
+    outnumber = 0
+    total = 0
     for gid, grows in by_game.items():
         g = [r for r in grows if r["row"] == "game"][0]
         hp = int(g["human_player"])
@@ -59,10 +69,25 @@ def census_deliberate(rows_path: Path):
             if int(r["invader"]) != hp:
                 continue
             onsets += 1
-            if int(r.get("actor", -1)) == hp:
-                delib += 1
+            if int(r.get("actor", -1)) != hp:
+                continue
+            delib += 1
+            total += 1
+            outcomes[r.get("outcome") or "?"] += 1
+            mi = r["m0_at_score"] if hp == 0 else r["m1_at_score"]
+            mo = r["m1_at_score"] if hp == 0 else r["m0_at_score"]
+            meeples_at_score[f"{mi}v{mo}"] += 1
+            outnumber += int(mi > mo)
         out[gid] = (delib, onsets)
-    return out
+    stats = {
+        "deliberate_total": total,
+        "outcomes": dict(outcomes),
+        "outcome_rates": {k: v / total for k, v in outcomes.items()} if total else {},
+        "outnumbering_at_score": outnumber,
+        "outnumbering_rate": (outnumber / total) if total else None,
+        "meeples_at_score": dict(sorted(meeples_at_score.items())),
+    }
+    return out, stats
 
 
 def main() -> int:
@@ -74,7 +99,7 @@ def main() -> int:
     args = ap.parse_args()
 
     games = load_games(Path(args.games_dir))
-    cen = census_deliberate(Path(args.rows))
+    cen, outcome_stats = census_deliberate(Path(args.rows))
 
     tel = Counter()
     per_game_merge, per_game_census, per_game_onsets = [], [], []
@@ -138,6 +163,7 @@ def main() -> int:
                                    if sum(per_game_onsets) else None),
         "reconciliation_agent_minus_census": sum(per_game_merge) - sum(per_game_census),
         "fires": dict(fires),
+        "census_outcomes": outcome_stats,
         "telemetry_totals": dict(tel),
         "plans_started": plan_started, "plans_completed": plan_done,
         "plans_abandoned": plan_aband, "plans_open_at_end": plan_open,
@@ -164,6 +190,13 @@ def main() -> int:
     print(f"census onsets total          {out['census_onsets_total']} "
           f"-> deliberate/onset {out['census_completion_rate']}")
     print(f"fires                        {out['fires']}")
+    oc = outcome_stats
+    if oc["deliberate_total"]:
+        rates = {k: f"{100*v:.1f}%" for k, v in sorted(oc["outcome_rates"].items())}
+        print(f"census outcomes              {oc['outcomes']}  {rates}")
+        print(f"OUT-NUMBERING at score       {oc['outnumbering_at_score']}/"
+              f"{oc['deliberate_total']} = {100*oc['outnumbering_rate']:.1f}%  "
+              f"(owner 28.9%)  counts {oc['meeples_at_score']}")
     print(f"plans started/completed      {plan_started}/{plan_done} "
           f"(rate {out['plan_completion_rate']}) abandoned {plan_aband} "
           f"{dict(plan_reasons)}")

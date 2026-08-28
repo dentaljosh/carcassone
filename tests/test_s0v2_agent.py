@@ -28,7 +28,7 @@ os.environ.setdefault("CARCASSONNE_FIX_R9", "1")
 
 from s0v2_agent import (  # noqa: E402
     CLS_CITY, CLS_FARM, PlanConfig, PlanLedger, ScriptedExploiter, Structure,
-    invasion_events, merge_plausible, parse_overrides,
+    invasion_events, majority_events, merge_plausible, parse_overrides,
 )
 
 
@@ -41,11 +41,12 @@ class FakeStruct:
     ``tiles`` maps component key -> tile count; ``counts`` key -> [w0, w1];
     ``members`` key -> meeple keys; ``of_meeple`` is derived."""
 
-    def __init__(self, tiles, counts, members, pts=None):
+    def __init__(self, tiles, counts, members, pts=None, done=()):
         self.tiles = dict(tiles)
         self.counts = {k: list(v) for k, v in counts.items()}
         self.members = {k: list(v) for k, v in members.items()}
         self.pts = dict(pts or {})
+        self.done = set(done)
         self.of_meeple = {m: k for k, ms in self.members.items() for m in ms}
 
     def n_tiles(self, key):
@@ -54,10 +55,16 @@ class FakeStruct:
     def potential_pts(self, key):
         return self.pts.get(key, 10)
 
+    def finished(self, key):
+        return key in self.done
 
-M_ME = ("me", 0, 0, "TOP", "NORMAL")        # a meeple of seat 0
-M_OP = ("op", 1, 1, "TOP", "NORMAL")        # a meeple of seat 1
-M_OP2 = ("op2", 2, 2, "TOP", "NORMAL")
+
+# Meeple positional keys have the SEAT at index 0, exactly as Structure builds
+# them: (player, row, col, side_name, meeple_type_name).
+M_ME = (0, 0, 0, "TOP", "NORMAL")           # seat 0
+M_ME3 = (0, 8, 8, "TOP", "NORMAL")          # seat 0, a second one
+M_OP = (1, 1, 1, "TOP", "NORMAL")           # seat 1
+M_OP2 = (1, 2, 2, "TOP", "NORMAL")          # seat 1, a second one
 
 
 def _merge_fixture(my_tiles, opp_tiles):
@@ -125,28 +132,125 @@ def test_detector_sums_tiles_across_several_parts_per_side():
     pre = FakeStruct(
         tiles={A: 2, B: 2, C: 9},
         counts={A: [1, 0], B: [1, 0], C: [0, 1]},
-        members={A: [M_ME], B: [("me2", 5, 5, "TOP_LEFT", "FARMER")], C: [M_OP]},
+        members={A: [M_ME], B: [(0, 5, 5, "TOP_LEFT", "FARMER")], C: [M_OP]},
     )
     P = (CLS_FARM, 9)
     post = FakeStruct(
         tiles={P: 14},
         counts={P: [2, 1]},
-        members={P: [M_ME, ("me2", 5, 5, "TOP_LEFT", "FARMER"), M_OP]},
+        members={P: [M_ME, (0, 5, 5, "TOP_LEFT", "FARMER"), M_OP]},
         pts={P: 12},
     )
     (ev,) = invasion_events(pre, post)
     assert ev["invader"] == 0
     assert ev["invader_tiles"] == 4 and ev["incumbent_tiles"] == 9
-    assert sorted(ev["stub_meeples"]) == sorted([M_ME, ("me2", 5, 5, "TOP_LEFT", "FARMER")])
+    assert sorted(ev["stub_meeples"]) == sorted([M_ME, (0, 5, 5, "TOP_LEFT", "FARMER")])
 
 
 def test_detector_ignores_two_parts_of_the_same_seat():
     A, B = (CLS_CITY, 1), (CLS_CITY, 2)
     pre = FakeStruct(tiles={A: 2, B: 7}, counts={A: [1, 0], B: [1, 0]},
-                     members={A: [M_ME], B: [M_OP2]})
+                     members={A: [M_ME], B: [M_ME3]})
     P = (CLS_CITY, 9)
-    post = FakeStruct(tiles={P: 10}, counts={P: [2, 0]}, members={P: [M_ME, M_OP2]})
+    post = FakeStruct(tiles={P: 10}, counts={P: [2, 0]}, members={P: [M_ME, M_ME3]})
     assert invasion_events(pre, post) == []
+
+
+# --------------------------------------------------------------------------- #
+# UNIT — the MAJORITY detector (amendment 2026-08-28)                           #
+# --------------------------------------------------------------------------- #
+M_ME2 = (0, 7, 7, "TOP_LEFT", "FARMER")     # seat 0, a farmer
+
+
+def test_majority_converts_a_tie_into_a_strict_majority():
+    """The conversion the amendment exists for: a 1-v-1 `shared_tie` component
+    plus a second owned part merges to 2-v-1."""
+    T, S = (CLS_FARM, 1), (CLS_FARM, 2)          # tied component, my spare stub
+    pre = FakeStruct(tiles={T: 9, S: 2},
+                     counts={T: [1, 1], S: [1, 0]},
+                     members={T: [M_ME, M_OP], S: [M_ME2]})
+    P = (CLS_FARM, 9)
+    post = FakeStruct(tiles={P: 12}, counts={P: [2, 1]},
+                      members={P: [M_ME, M_OP, M_ME2]}, pts={P: 12})
+    (ev,) = majority_events(pre, post, me=0)
+    assert ev["from_tie"] is True
+    assert ev["me_after"] == 2 and ev["opp_after"] == 1
+    assert ev["victim_pts"] == 12
+    assert sorted(ev["my_meeples"]) == sorted([M_ME, M_ME2])
+    # ...and nothing for the opponent, who is now in the minority
+    assert majority_events(pre, post, me=1) == []
+
+
+def test_majority_also_fires_on_a_fresh_two_versus_one_landing():
+    """Two of my parts and one of theirs join in the same ply: 2-v-1 with no
+    contested pre-part.  Counted, and flagged from_tie=False because the census
+    ALSO counts it as a deliberate invasion (the two counters overlap)."""
+    A, B, C = (CLS_CITY, 1), (CLS_CITY, 2), (CLS_CITY, 3)
+    pre = FakeStruct(tiles={A: 1, B: 1, C: 8},
+                     counts={A: [1, 0], B: [1, 0], C: [0, 1]},
+                     members={A: [M_ME], B: [M_ME2], C: [M_OP]})
+    P = (CLS_CITY, 9)
+    post = FakeStruct(tiles={P: 11}, counts={P: [2, 1]},
+                      members={P: [M_ME, M_ME2, M_OP]}, pts={P: 16})
+    (ev,) = majority_events(pre, post, me=0)
+    assert ev["from_tie"] is False and ev["me_after"] == 2
+
+
+def test_majority_does_not_fire_when_i_already_held_the_majority():
+    T, S = (CLS_FARM, 1), (CLS_FARM, 2)
+    pre = FakeStruct(tiles={T: 9, S: 2},
+                     counts={T: [2, 1], S: [1, 0]},
+                     members={T: [M_ME, M_OP, M_ME2], S: [M_ME3]})
+    P = (CLS_FARM, 9)
+    post = FakeStruct(tiles={P: 12}, counts={P: [3, 1]},
+                      members={P: [M_ME, M_OP, M_ME2, M_ME3]})
+    assert majority_events(pre, post, me=0) == []
+
+
+def test_majority_needs_a_merge_not_just_a_lead():
+    P = (CLS_FARM, 9)
+    pre = FakeStruct(tiles={P: 12}, counts={P: [2, 1]}, members={P: [M_ME, M_ME2, M_OP]})
+    post = FakeStruct(tiles={P: 13}, counts={P: [2, 1]}, members={P: [M_ME, M_ME2, M_OP]})
+    assert majority_events(pre, post, me=0) == []
+
+
+def test_majority_needs_the_opponent_still_present():
+    """A component I hold alone is not a majority event — there is nobody to deny."""
+    A, B = (CLS_CITY, 1), (CLS_CITY, 2)
+    pre = FakeStruct(tiles={A: 2, B: 3}, counts={A: [1, 0], B: [1, 0]},
+                     members={A: [M_ME], B: [M_ME2]})
+    P = (CLS_CITY, 9)
+    post = FakeStruct(tiles={P: 6}, counts={P: [2, 0]}, members={P: [M_ME, M_ME2]})
+    assert majority_events(pre, post, me=0) == []
+
+
+def test_a_merge_that_only_restores_a_tie_is_not_a_majority():
+    """2-v-1 against me plus one of mine -> 2-v-2.  Better, but a tie still pays
+    the incumbent in full, so it is not the event G-DAMAGE measures."""
+    T, S = (CLS_FARM, 1), (CLS_FARM, 2)
+    pre = FakeStruct(tiles={T: 9, S: 2}, counts={T: [1, 2], S: [1, 0]},
+                     members={T: [M_ME, M_OP, M_OP2], S: [M_ME2]})
+    P = (CLS_FARM, 9)
+    post = FakeStruct(tiles={P: 12}, counts={P: [2, 2]},
+                      members={P: [M_ME, M_OP, M_OP2, M_ME2]})
+    assert majority_events(pre, post, me=0) == []
+
+
+def test_majority_targets_are_contested_components_i_am_not_ahead_on():
+    cfg = PlanConfig(majority_min_pts=4)
+    keys = {"tied": (CLS_FARM, 1), "behind": (CLS_FARM, 2), "ahead": (CLS_FARM, 3),
+            "mine": (CLS_FARM, 4), "theirs": (CLS_FARM, 5), "cheap": (CLS_FARM, 6),
+            "done": (CLS_CITY, 7)}
+    s = FakeStruct(
+        tiles={k: 6 for k in keys.values()},
+        counts={keys["tied"]: [1, 1], keys["behind"]: [1, 2], keys["ahead"]: [2, 1],
+                keys["mine"]: [1, 0], keys["theirs"]: [0, 1], keys["cheap"]: [1, 1],
+                keys["done"]: [1, 1]},
+        members={k: [] for k in keys.values()},
+        pts={k: 10 for k in keys.values()} | {keys["cheap"]: 2},
+        done={keys["done"]})
+    got = set(Structure.majority_targets(s, 0, cfg))
+    assert got == {keys["tied"], keys["behind"]}
 
 
 # --------------------------------------------------------------------------- #
@@ -169,9 +273,9 @@ def test_plan_completes_when_its_foothold_meeple_takes_part_in_a_merge():
     hit = led.complete(ply=22, stub_meeples=[M_ME])
     assert [x.pid for x in hit] == [p.pid]
     assert p.status == "completed" and p.closed_ply == 22 and p.reason == "merged"
-    assert led.summary() == {"plans_started": 1, "plans_completed": 1,
-                             "plans_abandoned": 0, "plans_open_at_end": 0,
-                             "plan_completion_rate": 1.0}
+    assert led.summary() | {"plans_started": 1, "plans_completed": 1,
+                            "plans_abandoned": 0, "plans_open_at_end": 0,
+                            "plan_completion_rate": 1.0} == led.summary()
 
 
 def test_a_merge_by_another_meeple_does_not_complete_the_plan():
@@ -209,7 +313,23 @@ def test_refresh_leaves_a_live_plan_open():
 
 
 def test_summary_of_an_empty_ledger_has_no_rate():
-    assert PlanLedger().summary()["plan_completion_rate"] is None
+    s = PlanLedger().summary()
+    assert s["plan_completion_rate"] is None
+    assert s["reinforce_plan_completion_rate"] is None
+
+
+def test_ledger_splits_invade_and_reinforce_plans():
+    led = PlanLedger()
+    a = led.start(1, CLS_FARM, M_ME, M_OP, 9, 12, kind="invade")
+    b = led.start(2, CLS_FARM, M_ME2, M_OP, 9, 12, kind="reinforce")
+    assert [p.pid for p in led.open_of_kind("reinforce")] == [b.pid]
+    led.complete(ply=5, stub_meeples=[M_ME2])
+    s = led.summary()
+    assert s["invade_plans_started"] == 1 and s["invade_plans_completed"] == 0
+    assert s["reinforce_plans_started"] == 1 and s["reinforce_plans_completed"] == 1
+    assert s["reinforce_plan_completion_rate"] == 1.0
+    assert a.status == "open" and b.status == "completed"
+    assert led.open_of_kind("reinforce") == []
 
 
 # --------------------------------------------------------------------------- #
@@ -317,8 +437,9 @@ def test_every_move_the_agent_returns_is_legal_and_it_finishes_a_game():
     assert n > 100
     tel = ex.telemetry()
     assert tel["plies_seen"] > 0
-    assert tel["base_moves"] + tel["merge_fires"] + tel["setup_fires"] \
-        + tel["foothold_fires"] >= tel["plies_seen"]
+    assert (tel["base_moves"] + tel["merge_fires"] + tel["setup_fires"]
+            + tel["foothold_fires"] + tel["majority_fires"]
+            + tel["reinforce_foothold_fires"]) >= tel["plies_seen"]
 
 
 # --------------------------------------------------------------------------- #
@@ -345,11 +466,53 @@ def test_the_same_seed_and_config_reproduce_the_game_exactly():
            [(p["pid"], p["status"]) for p in b["s0v2"]["plans"]]
 
 
+def test_majority_on_is_deterministic_and_legal():
+    from s0v2_devplay import RULES_PROFILE, GreedyLeafAgent
+    from carcassonne_ai import rules_profile as RP
+    from carcassonne_ai.game_wrapper import Game
+
+    cfg = PlanConfig(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6,
+                     majority_enabled=True, reinforce_enabled=True)
+    a = _dev_game(555004, 0, cfg)
+    b = _dev_game(555004, 0, cfg)
+    assert a["actions"] == b["actions"]
+    assert a["s0v2"]["telemetry"]["majority_fires"] == \
+        b["s0v2"]["telemetry"]["majority_fires"]
+
+    RP.activate(RULES_PROFILE)
+    random.seed(4242)
+    game = Game(enable_legal_moves_cache=True)
+    board = game.get_init_board()
+    ex = ScriptedExploiter(GreedyLeafAgent(game), game, cfg, label="maj")
+    opp = GreedyLeafAgent(game)
+    while game.get_game_ended(board, 0) == 0.0:
+        legal = set(int(i) for i in np.flatnonzero(game.get_valid_moves(board)))
+        act = ex.move(board) if board.state.current_player == 0 else opp.move(board)
+        assert act in legal
+        board, _ = game.get_next_state(board, act)
+        ex.advance(act)
+    tel = ex.telemetry()
+    assert tel["meeples_spent_on_reinforcement"] == tel["reinforce_foothold_fires"]
+    assert tel["reinforce_plans_started"] == tel["reinforce_foothold_fires"]
+
+
+def test_majority_off_is_the_previous_agent_exactly():
+    """The amendment must be a pure ADDITION: with the new fire off, the agent
+    reproduces the arm the 2026-08-28 smoke ran, move for move."""
+    base = dict(victim_min_pts=3, victim_min_tiles=4, stub_max_tiles=6)
+    off = _dev_game(555005, 0, PlanConfig(**base, majority_enabled=False,
+                                          reinforce_enabled=False))
+    assert off["s0v2"]["telemetry"]["majority_fires"] == 0
+    assert off["s0v2"]["telemetry"]["reinforce_foothold_fires"] == 0
+    assert off["s0v2"]["telemetry"]["meeples_spent_on_reinforcement"] == 0
+
+
 def test_disabling_every_fire_reproduces_the_base_agent_exactly():
-    """The plan module must be a pure OVERRIDE: with all three fires off, the
+    """The plan module must be a pure OVERRIDE: with all four fires off, the
     wrapped agent plays the base agent's game move for move."""
     off = PlanConfig(merge_enabled=False, foothold_enabled=False,
-                     setup_enabled=False)
+                     setup_enabled=False, majority_enabled=False,
+                     reinforce_enabled=False)
     a = _dev_game(555002, 0, off)
     assert a["s0v2"]["telemetry"]["merge_fires"] == 0
     assert a["s0v2"]["telemetry"]["setup_fires"] == 0
@@ -362,11 +525,14 @@ def test_a_different_config_changes_the_game():
     on = _dev_game(555003, 0, PlanConfig())
     off = _dev_game(555003, 0, PlanConfig(merge_enabled=False,
                                           foothold_enabled=False,
-                                          setup_enabled=False))
+                                          setup_enabled=False,
+                                          majority_enabled=False,
+                                          reinforce_enabled=False))
     assert on["s0v2"]["telemetry"]["plies_seen"] > 0
     fired = (on["s0v2"]["telemetry"]["merge_fires"]
              + on["s0v2"]["telemetry"]["setup_fires"]
-             + on["s0v2"]["telemetry"]["foothold_fires"])
+             + on["s0v2"]["telemetry"]["foothold_fires"]
+             + on["s0v2"]["telemetry"]["majority_fires"])
     if fired:
         assert on["actions"] != off["actions"]
 
