@@ -6,3 +6,7 @@
 {"at":"after:SMOKE_EARLY","utc":"2026-08-28T20:58:19Z","role":"local","rev":"49ddcfc3f7f98906421dcb2a2a1c4625876554b6","clean":true}
 {"at":"before","utc":"2026-08-28T21:04:31Z","role":"local","rev":"a6acd9031156b81f963209dd93b1370e91c5b5d6","clean":true}
 {"at":"after:IDENT","utc":"2026-08-28T21:18:05Z","role":"local","rev":"a6acd9031156b81f963209dd93b1370e91c5b5d6","clean":true}
+{"at":"before","utc":"2026-08-29T04:05:04Z","role":"laptop","rev":"3f4fbcc97da6aeb63c5c86813a140be01dce75f0","clean":true}
+{"at":"before","utc":"2026-08-29T04:05:04Z","role":"local","rev":"3f4fbcc97da6aeb63c5c86813a140be01dce75f0","clean":true}
+{"at":"before","utc":"2026-08-29T04:05:20Z","role":"laptop","rev":"3f4fbcc97da6aeb63c5c86813a140be01dce75f0","clean":true}
+{"at":"before","utc":"2026-08-29T04:08:04Z","role":"local","rev":"084367d74b3258cc9b5689b8bce6f3b3ba1b7c88","clean":true}

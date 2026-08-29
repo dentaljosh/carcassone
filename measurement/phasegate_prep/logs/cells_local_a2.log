@@ -1,0 +1,117 @@
+[run_cells 2026-08-29T04:08:04Z Doctor/local] role=local W=30 band=154000000000 tag=phasegate_a1 dry=0 smoke=0
+[run_cells 2026-08-29T04:08:04Z Doctor/local] selftest PASS -> SELFTEST_local.json
+[run_cells 2026-08-29T04:08:04Z Doctor/local] IDENT-BITEXACT PASS
+[run_cells 2026-08-29T04:08:04Z Doctor/local] process census (FULL ARGS):
+        596  8-05:45:19  0.0 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+     474862  2-06:18:58  0.0 tail -F /mnt/c/carc-shared/invasion_screen_logs_driver.log
+     561878  2-04:35:18  0.0 bash /home/doctor/projects/carcassone/scripts/scheduler/work_queue.sh
+     607939  2-00:34:59  0.0 tail -F /mnt/c/carc-shared/invasion_r2_local_driver.log /mnt/c/carc-shared/invasion_r2_laptop_driver.log
+    1057502       00:00  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787846091300-4pisvu.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'cd /home/doctor/projects/carcassone/measurement/phasegate_prep && setsid nohup bash ./run_cells.sh --role local --ext-name ARB_FULL_EXT_L --ext-gate all --ext-seed-start 154000000400 --ext-n 860 >> logs/cells_local_a2.log 2>&1 & disown; sleep 8; echo "launched $(date -u +%FT%TZ)"; tail -3 /home/doctor/projects/carcassone/measurement/phasegate_prep/logs/cells_local_a2.log' < /dev/null && pwd -P >| /tmp/claude-ba4f-cwd
+    1057504       00:00  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787846091300-4pisvu.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'cd /home/doctor/projects/carcassone/measurement/phasegate_prep && setsid nohup bash ./run_cells.sh --role local --ext-name ARB_FULL_EXT_L --ext-gate all --ext-seed-start 154000000400 --ext-n 860 >> logs/cells_local_a2.log 2>&1 & disown; sleep 8; echo "launched $(date -u +%FT%TZ)"; tail -3 /home/doctor/projects/carcassone/measurement/phasegate_prep/logs/cells_local_a2.log' < /dev/null && pwd -P >| /tmp/claude-ba4f-cwd
+[run_cells 2026-08-29T04:08:04Z Doctor/local] A2 extension leg: ARB_FULL_EXT_L gate=all seeds=154000000400.. n=860
+[run_cells 2026-08-29T04:08:04Z Doctor/local] ARB_FULL_EXT_L gate=all seeds=154000000400.. n=860 W=30 -> /mnt/c/carc-shared/phasegate_a1/ARB_FULL_EXT_L
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 16, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0, 'phase_gate': 'all'} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=860 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 860 to play, 30 workers, out=/mnt/c/carc-shared/phasegate_a1/ARB_FULL_EXT_L
+  10/860 played (44.2s/game, ~626 min left)
+  20/860 played (24.5s/game, ~343 min left)
+  30/860 played (19.8s/game, ~274 min left)
+  40/860 played (22.9s/game, ~314 min left)
+  50/860 played (19.7s/game, ~266 min left)
+  60/860 played (19.0s/game, ~253 min left)
+  70/860 played (19.4s/game, ~255 min left)
+  80/860 played (18.4s/game, ~239 min left)
+  90/860 played (18.1s/game, ~232 min left)
+  100/860 played (18.6s/game, ~235 min left)
+  110/860 played (17.7s/game, ~221 min left)
+  120/860 played (17.6s/game, ~217 min left)
+  130/860 played (17.5s/game, ~213 min left)
+  140/860 played (17.3s/game, ~208 min left)
+  150/860 played (17.3s/game, ~205 min left)
+  160/860 played (17.2s/game, ~200 min left)
+  170/860 played (16.8s/game, ~193 min left)
+  180/860 played (17.1s/game, ~194 min left)
+  190/860 played (16.9s/game, ~189 min left)
+  200/860 played (16.7s/game, ~183 min left)
+  210/860 played (16.9s/game, ~183 min left)
+  220/860 played (16.8s/game, ~179 min left)
+  230/860 played (16.8s/game, ~177 min left)
+  240/860 played (16.6s/game, ~171 min left)
+  250/860 played (16.6s/game, ~169 min left)
+  260/860 played (16.7s/game, ~167 min left)
+  270/860 played (16.6s/game, ~163 min left)
+  280/860 played (16.3s/game, ~158 min left)
+  290/860 played (16.5s/game, ~157 min left)
+  300/860 played (16.5s/game, ~154 min left)
+  310/860 played (16.4s/game, ~150 min left)
+  320/860 played (16.4s/game, ~148 min left)
+  330/860 played (16.5s/game, ~146 min left)
+  340/860 played (16.6s/game, ~143 min left)
+  350/860 played (16.4s/game, ~139 min left)
+  360/860 played (16.6s/game, ~138 min left)
+  370/860 played (16.4s/game, ~134 min left)
+  380/860 played (16.3s/game, ~131 min left)
+  390/860 played (16.5s/game, ~129 min left)
+  400/860 played (16.4s/game, ~126 min left)
+  410/860 played (16.3s/game, ~122 min left)
+  420/860 played (16.5s/game, ~121 min left)
+  430/860 played (16.4s/game, ~117 min left)
+  440/860 played (16.3s/game, ~114 min left)
+  450/860 played (16.3s/game, ~112 min left)
+  460/860 played (16.3s/game, ~109 min left)
+  470/860 played (16.3s/game, ~106 min left)
+  480/860 played (16.4s/game, ~104 min left)
+  490/860 played (16.4s/game, ~101 min left)
+  500/860 played (16.4s/game, ~98 min left)
+  510/860 played (16.3s/game, ~95 min left)
+  520/860 played (16.4s/game, ~93 min left)
+  530/860 played (16.3s/game, ~90 min left)
+  540/860 played (16.3s/game, ~87 min left)
+  550/860 played (16.3s/game, ~84 min left)
+  560/860 played (16.4s/game, ~82 min left)
+  570/860 played (16.3s/game, ~79 min left)
+  580/860 played (16.3s/game, ~76 min left)
+  590/860 played (16.3s/game, ~73 min left)
+  600/860 played (16.3s/game, ~71 min left)
+  610/860 played (16.3s/game, ~68 min left)
+  620/860 played (16.2s/game, ~65 min left)
+  630/860 played (16.2s/game, ~62 min left)
+  640/860 played (16.2s/game, ~59 min left)
+  650/860 played (16.2s/game, ~57 min left)
+  660/860 played (16.1s/game, ~54 min left)
+  670/860 played (16.2s/game, ~51 min left)
+  680/860 played (16.1s/game, ~48 min left)
+  690/860 played (16.1s/game, ~46 min left)
+  700/860 played (16.1s/game, ~43 min left)
+  710/860 played (16.0s/game, ~40 min left)
+  720/860 played (16.0s/game, ~37 min left)
+  730/860 played (16.0s/game, ~35 min left)
+  740/860 played (16.0s/game, ~32 min left)
+  750/860 played (16.0s/game, ~29 min left)
+  760/860 played (15.9s/game, ~27 min left)
+  770/860 played (16.0s/game, ~24 min left)
+  780/860 played (15.9s/game, ~21 min left)
+  790/860 played (16.0s/game, ~19 min left)
+  800/860 played (16.0s/game, ~16 min left)
+  810/860 played (15.9s/game, ~13 min left)
+  820/860 played (15.9s/game, ~11 min left)
+  830/860 played (15.9s/game, ~8 min left)
+  840/860 played (15.9s/game, ~5 min left)
+  850/860 played (15.9s/game, ~3 min left)
+  860/860 played (15.8s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 860   candidate: 479W / 20D / 361L   winrate 0.569 (z=+4.02)
+avg score diff (candidate - opponent): +3.53
+ELO: +48.0  (+/- 12.0 1sigma)
+PAIRED: 430 decks   mean seat-balanced margin +3.53   z = +5.47
+prefix ms/move: candidate 4743  opponent 1998  (ratio 2.37x)
+fair endgame: candidate latched 860/860 games, 1.48s solver/game, timeouts=0
+fair endgame: opponent  latched 860/860 games, 1.41s solver/game, timeouts=0
+tie-arbiter: 860 games, mode(s) argmax — phi 17.82 fired tile plies/game (offline prior 22.96; 15322/29649 of tile plies), pick-change 0.595, mean arms 3.29, 806000 playouts, 188.5s/game
+[summary.json] wrote /mnt/c/carc-shared/phasegate_a1/ARB_FULL_EXT_L/summary.json
+[run_cells 2026-08-29T07:43:51Z Doctor/local] !!! ⛔ HEAD MOVED under the round (5e565a55c39465302bcc2da3cfe2ef2d231628bc != 084367d74b3258cc9b5689b8bce6f3b3ba1b7c88) —  refusing rather than banking a MIXED-REV archive.
