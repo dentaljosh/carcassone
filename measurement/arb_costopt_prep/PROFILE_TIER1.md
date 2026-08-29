@@ -1,5 +1,12 @@
 # PROFILE_TIER1 — where the tie-arbiter's playout second actually goes
 
+> **SEQUEL 2026-08-28 — the §4 swap is BUILT and locally gated** on branch
+> `worktree-agent-af441852ab4b1e9fe`. The open gates §4.6 names (banked
+> `G-BITEXACT` at `cache = true`, threaded `arbitrate`) are runnable-command'd in
+> [GATES_DEFERRED.md](GATES_DEFERRED.md) and **block the merge**. The border
+> hazard (§4.6 item 5) was resolved by PRESERVATION, not by an unreachability
+> argument — see `carc_core::tier1::border_wrap_hazard`.
+
 **Status: COMPLETE (measurement only).** Owner-funded 2026-08-28 to size "option B"
 (a bit-identical engine speedup of the tier1 playout). **No engine source was
 modified and nothing here is a deploy claim.** The instrument is an out-of-tree
