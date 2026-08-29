@@ -1,0 +1,1 @@
+# G-LEGAL / G-ROOT drops — consumed by plan_c1.py --exclude

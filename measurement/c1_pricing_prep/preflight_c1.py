@@ -74,7 +74,10 @@ def main():
     from carcassonne_ai.game_wrapper import Game
 
     prof = rules_profile.resolve(profile)
-    if prof.r9_env_expected != prof.r9_env_on():
+    # C1-D1: r9_env_on is a MODULE function, not a RulesProfile method (the
+    # design agent could not execute this script pre-freeze — boxes busy).
+    # Execution-layer, statistics-blind; see DEVIATIONS.md.
+    if prof.r9_env_expected != rules_profile.r9_env_on():
         raise SystemExit("r9_env latch mismatch")
 
     t0 = time.time()
