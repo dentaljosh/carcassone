@@ -226,3 +226,79 @@ DESIGN §9 intends.
 **Corroboration that the gate is not a no-op, from the `gate=early` leg's own telemetry:**
 `fired_early 134 / fired_mid 0 / fired_late 0`, `phase_gates ['early']` — the disjointness property
 `tests/test_tiearb_phase_gate.py` asserts offline, reproduced live in a production-knob archive.
+
+---
+
+## PG-D11 — A2: the widened-anchor extension leg, dispatched without touching the frozen cell table
+
+**2026-08-29, A2 launch.** A2 widens the `ARB_FULL` **anchor** from 400 to 1,200 decks on the
+**same, already-claimed** band 154e9, so the anchor is deck-matched against the finished `ARB_EARLY`
+1,200. The +800 decks are `154000000400..154000001199` — the exact complement of `ARB_FULL`'s first
+400 inside `ARB_EARLY`'s range. ⛔ **No new band is claimed** and no seed is invented.
+
+**The problem.** `run_cells.sh` reads its cell table from `screen_lib.CELLS`, which is **frozen law**
+and whose `sanity_check()` pins the round's shape (`ARB_EARLY` sub-cells sum to 1200, `ARB_FULL`
+starts at `BAND`, sub-ranges disjoint and contiguous). Adding `ARB_FULL_EXT_*` to that table would
+edit the pair after game 1 — **not available**. Duplicating the launcher into a second script would
+re-introduce exactly the launcher-drift the design forbids by construction.
+
+**The fix.** The leg is named on the **command line** (`--ext-name/--ext-gate/--ext-seed-start/--ext-n`)
+and dispatched through the **same `run_cell()`** the frozen cells use. Every other knob still
+resolves from `WORKERS.conf`, and the entire precondition ladder — selftest, `IDENT-BITEXACT`,
+`BLIND_COMMIT`, `BAND_CLAIMED`, `assert_rev` before and after, the full-args census — runs unchanged.
+A guard **refuses** `--ext-name` equal to any frozen cell name, so an extension can never write into
+a finished archive.
+
+**Ground truth that no smoke is owed — the same-role argv diff.** Dry-running `ARB_FULL_EXT_R` at
+`--role laptop` against the frozen `ARB_FULL` at `--role laptop` yields 46 tokens each, differing in
+**exactly three**:
+
+```
+20c20   800            -> 740                    (--n)
+23c23   154000000000   -> 154000000830           (--seed-start)
+29c29   ARB_FULL       -> ARB_FULL_EXT_R         (--out-subdir)
+```
+
+`--paired`, `--rules-profile fixed_v1`, `--cand-tiearb-phase-gate all`, the budget, the endgame, the
+backend, the arbiter rung and the `BLIND_COMMIT` stamp are **byte-identical**. (A cross-role diff
+additionally shows `--workers` and `--out-root`, which are role resolution — the same way A1's own
+two boxes differed from each other.) This is the coordinator's stated condition for waiving a new
+smoke, verified rather than asserted.
+
+**What this leg does NOT do.** It does not re-read, re-run or write into `ARB_FULL`. It does not
+touch a bar, a gate or a branch: A1's verdict is adjudicated (`E-UNRESOLVED`), `G-ANCHOR` already
+fired on the frozen 400 (+3.46, z 5.9), and the `FULL−EARLY` contrast these decks enable is a
+pre-registered **companion** that DESIGN §3.2/§4.4 forbid as a branch input.
+
+⚠️ **A2 owes its own reader.** `analyze_phasegate.py` keys `cells` on `screen_lib.CELLS`, so
+`ARB_FULL_EXT_L/R` are invisible to it — deliberately, and exactly as `SMOKE_*` and `_VOID_*` are.
+Nothing in this launcher adjudicates A2.
+
+### The split, derived from A1's REALIZED costs (not from the design's ratio)
+
+Per-game worker-seconds at 72 moves/side, from each finished cell's own summary, reading
+`champ_prefix_ms_per_move` as the **candidate** side (the field-name trap, DESIGN §6.1):
+
+| cell | box | W | gate | cand ms/move | opp ms/move | worker-s/game |
+|---|---|---:|---|---:|---:|---:|
+| `ARB_FULL` | laptop | 22 | all | 4065.0 | 1714.1 | **416.1** |
+| `ARB_EARLY_R` | laptop | 22 | early | 2601.2 | 1681.2 | 308.3 |
+| `ARB_EARLY_L` | local | 30 | early | 3048.7 | 1972.1 | 361.5 |
+| `IDENT` | local | 30 | none | 1871.4 | 1907.0 | 272.0 |
+
+The laptop ran **both** gates, giving an in-box `all/early` ratio of **1.350**; applying it to local's
+early cost projects local `gate=all` at **488.0** worker-s/game. Throughputs are then
+local `30/488.0 = 0.06148` and laptop `22/416.1 = 0.05287` games/s.
+
+⚠️ **The realized local:laptop advantage is 1.163×, NOT the design's 1.45×.** At `W=30` on a 16C/32T
+box each worker is ~17% slower than the laptop's at `W=22` on 24 threads, so nominal `W` overstates
+local's edge. Balancing on the realized rates rather than the nominal ones:
+
+| leg | box | W | seeds | decks | games | projected wall |
+|---|---|---:|---|---:|---:|---:|
+| `ARB_FULL_EXT_L` | local | 30 | `154000000400..154000000829` | 430 | 860 | 3.89 h |
+| `ARB_FULL_EXT_R` | laptop | 22 | `154000000830..154000001199` | 370 | 740 | 3.89 h |
+
+Disjoint, contiguous, and together exactly the 800 decks `154000000400..154000001199`. The two legs
+finish within ~9 s of each other on the model; the coordinator's illustrative 470/330 would have
+left local ~45 min long.

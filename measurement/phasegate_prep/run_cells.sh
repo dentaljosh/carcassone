@@ -35,12 +35,30 @@ REPO="$(cd "$HERE/../.." && pwd)"
 . "$HERE/WORKERS.conf"
 
 ROLE=""; DRY=0; SMOKE=0; ONLY_CELL=""
+EXT_NAME=""; EXT_GATE=""; EXT_SEED=""; EXT_N=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --role) ROLE="$2"; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     --smoke) SMOKE=1; shift ;;
     --cell) ONLY_CELL="$2"; shift 2 ;;
+    # --- A2, the pre-funded widened-anchor extension (PG-D11) -----------------
+    # ⭐ An EXTENSION leg is NOT a cell of the frozen table and MUST NOT become
+    # one: screen_lib.CELLS is the pair's law and sanity_check() pins its shape
+    # (ARB_EARLY sums to 1200, ARB_FULL starts at BAND, ...). So the leg is named
+    # on the COMMAND LINE and dispatched through the SAME run_cell() the frozen
+    # cells use — the emitted eval_fair_puct argv differs from ARB_FULL's in
+    # EXACTLY --n, --seed-start and --out-subdir, and in nothing else. Every
+    # other knob still resolves from WORKERS.conf, and the whole precondition
+    # ladder above (selftest, IDENT-BITEXACT, BLIND_COMMIT, BAND_CLAIMED,
+    # assert_rev, census) runs unchanged.
+    # ⛔ These legs are DELIBERATELY invisible to analyze_phasegate.py, which
+    # keys `cells` on screen_lib.CELLS — exactly as SMOKE_*/_VOID_* are. A2 owes
+    # its own reader; nothing here adjudicates it.
+    --ext-name) EXT_NAME="$2"; shift 2 ;;
+    --ext-gate) EXT_GATE="$2"; shift 2 ;;
+    --ext-seed-start) EXT_SEED="$2"; shift 2 ;;
+    --ext-n) EXT_N="$2"; shift 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -214,6 +232,39 @@ run_cell() {
   nice -n 19 "$PY" "${args[@]}" || DIE "$name FAILED"
   assert_rev "after:$name"
 }
+
+# --------------------------------------------------------------------------- #
+# 1b. THE A2 EXTENSION LEG (PG-D11) — one ad-hoc cell, same run_cell()          #
+# --------------------------------------------------------------------------- #
+# ⭐ A2 widens the ARB_FULL ANCHOR from 400 to 1,200 decks on the SAME, ALREADY
+# CLAIMED band 154e9, so the anchor is deck-matched against the finished
+# ARB_EARLY 1,200. ⛔ NO NEW BAND IS CLAIMED and NO new seeds are invented: the
+# +800 decks are 154000000400..154000001199, the exact complement of ARB_FULL's
+# first 400 inside ARB_EARLY's range.
+#
+# ⛔⛔ WHAT THIS DOES NOT DO. It does not re-read, re-run or move ARB_FULL — the
+# finished archive is never written into. It does not touch a bar, a gate or a
+# branch: A1's verdict is already adjudicated, and the FULL−EARLY contrast these
+# decks enable is a PRE-REGISTERED COMPANION that DESIGN §3.2/§4.4 forbid as a
+# branch input. The ANCHOR ALREADY CONVICTED (G-ANCHOR fired on the frozen 400).
+if [ -n "$EXT_NAME" ]; then
+  [ -n "$EXT_GATE" ] && [ -n "$EXT_SEED" ] && [ -n "$EXT_N" ] \
+    || DIE "--ext-name needs --ext-gate, --ext-seed-start and --ext-n"
+  case "$EXT_NAME" in
+    ARB_FULL|ARB_EARLY_L|ARB_EARLY_R|IDENT)
+      DIE "⛔ REFUSING: '$EXT_NAME' is a FROZEN CELL of screen_lib.CELLS. An " \
+          "extension leg may never write into a finished cell's archive." ;;
+  esac
+  STAMP "A2 extension leg: $EXT_NAME gate=$EXT_GATE seeds=${EXT_SEED}.. n=$EXT_N"
+  if [ -f "$SHARE/$OUT_TAG/$EXT_NAME/DONE" ]; then
+    STAMP "$EXT_NAME already DONE — skipping"
+  else
+    run_cell "$EXT_NAME" "$EXT_GATE" "$EXT_SEED" "$EXT_N"
+    [ "$DRY" -eq 1 ] || touch "$SHARE/$OUT_TAG/$EXT_NAME/DONE"
+  fi
+  STAMP "EXT DONE role=$ROLE cell=$EXT_NAME"
+  exit 0
+fi
 
 # --------------------------------------------------------------------------- #
 # 2. THE SMOKE (DESIGN.md §9)                                                  #
