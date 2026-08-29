@@ -838,7 +838,10 @@ def main() -> int:
         ap.error("--root or --selftest")
 
     cells = {p.name: load_cell(p) for p in sorted(args.root.iterdir())
-             if p.is_dir() and (p / "manifest.json").is_file()}
+             if p.is_dir() and (p / "manifest.json").is_file()
+             # PG-A1 defect 2: smoke/quarantine archives are not round cells —
+             # they run at the pre-launch commit by design (AMENDMENTS.md).
+             and not p.name.startswith(("SMOKE_", "_VOID_"))}
     pins = {}
     if args.pin_local and args.pin_local.is_file():
         pins["local"] = args.pin_local.read_text().strip()

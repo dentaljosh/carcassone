@@ -1,0 +1,34 @@
+{
+  "smoke_mode": true,
+  "round_gates": [
+    {
+      "gate": "G-WHEEL-SAME",
+      "ok": false,
+      "address": "manifest:carc_rs_binary_sha"
+    },
+    {
+      "gate": "G-REV",
+      "ok": false,
+      "address": "manifests + each box's PINNED_SRC_REV"
+    },
+    {
+      "gate": "G-SUBPOOL",
+      "ok": false,
+      "address": "both sub-cell manifests"
+    },
+    {
+      "gate": "G-BLIND",
+      "ok": true,
+      "address": "manifest:BLIND_COMMIT"
+    },
+    {
+      "gate": "G-ANCHOR",
+      "ok": false,
+      "address": "ABSENT (no address answered) \u2014 ABSENT is FAIL"
+    }
+  ],
+  "round_gates_ok": false,
+  "cells": {},
+  "per_phase_fires": {},
+  "note": "\u2b50 the smoke's one substantive job beyond liveness: it returns the REALIZED per-phase fired counts, the first real measurement of DESIGN \u00a76.2's proxy \u2014 so a materially different early share revises the ETA BEFORE the round starts rather than inside it."
+}

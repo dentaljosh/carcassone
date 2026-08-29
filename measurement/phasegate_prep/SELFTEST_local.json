@@ -1,0 +1,157 @@
+{
+  "problems": [],
+  "fixture": {
+    "healthy": {
+      "branch": "E-LIVE",
+      "failed_round_gates": [],
+      "failed_cell_gates": {},
+      "primary": {
+        "cell": "ARB_EARLY (pooled over _L + _R)",
+        "M": 1.6281166358788035,
+        "se": 0.48475171926561483,
+        "z": 3.358660879729017,
+        "n_paired": 12,
+        "UB95": 2.5976200744100333,
+        "LB95": 0.6586131973475738,
+        "bar": 0.8
+      }
+    },
+    "inverted_liveness_gate_defaulted_to_all": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "G-SUBPOOL",
+        "G-ANCHOR",
+        "G-GATE"
+      ]
+    },
+    "stale_wheel_no_phase_counters": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "G-PHI"
+      ]
+    },
+    "gate_bound_the_wrong_window": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "G-PHI"
+      ]
+    },
+    "leaf_hashes_differ_across_the_two_sides": {
+      "branch": "U-VOID-ANCHOR",
+      "failed": [
+        "G-ANCHOR",
+        "G-LEAF"
+      ]
+    },
+    "opponent_arbiter_armed": {
+      "branch": "U-VOID-ANCHOR",
+      "failed": [
+        "G-ANCHOR",
+        "G-TIEARB-ARM"
+      ]
+    },
+    "subcells_are_not_the_same_cell": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "G-SUBPOOL",
+        "G-ANCHOR",
+        "G-TIEARB-ARM"
+      ]
+    },
+    "mixed_rev_round": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "G-REV",
+        "G-ANCHOR"
+      ]
+    },
+    "anchor_does_not_convict": {
+      "branch": "U-VOID-ANCHOR",
+      "failed": [
+        "G-ANCHOR",
+        "RECON"
+      ]
+    },
+    "recon_disagrees_with_the_summary": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "RECON"
+      ]
+    },
+    "a_deck_was_played_at_one_seat_only": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "G-DECKS",
+        "RECON"
+      ]
+    },
+    "ident_cell_actually_fired": {
+      "branch": "U-VOID-INSTRUMENT",
+      "failed": [
+        "G-PHI"
+      ]
+    }
+  },
+  "branch_grid": {
+    "points": 3005,
+    "histogram": {
+      "E-REVERSED": 1285,
+      "E-DEAD": 200,
+      "E-UNRESOLVED": 270,
+      "E-LIVE": 1250
+    },
+    "reachable": [
+      "E-DEAD",
+      "E-LIVE",
+      "E-REVERSED",
+      "E-UNRESOLVED"
+    ],
+    "all_reachable": true
+  },
+  "phase_windows": {
+    "early": [
+      49,
+      71
+    ],
+    "mid": [
+      25,
+      47
+    ],
+    "late": [
+      0,
+      48
+    ]
+  },
+  "golden_table": [
+    [
+      71,
+      "early"
+    ],
+    [
+      49,
+      "early"
+    ],
+    [
+      48,
+      "late"
+    ],
+    [
+      47,
+      "mid"
+    ],
+    [
+      25,
+      "mid"
+    ],
+    [
+      24,
+      "late"
+    ],
+    [
+      23,
+      "late"
+    ]
+  ]
+}
+
+SELFTEST: PASS (0 problem(s))

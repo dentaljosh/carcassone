@@ -64,7 +64,7 @@ def manifest(name, role, gate_, n_decks, seed_start, fired) -> dict:
             "cand_tiearb": cand_tiearb,
             "cand_leaf_hash": "a36d2e15a3b3d71d",
             "opp_leaf_hash": "a36d2e15a3b3d71d",
-            "cand_leaf_cfg": {"v29_meeple_curve": "curve125"},
+            "cand_leaf_cfg": {"v29_meeple_curve": [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]},
             "band_seed_start": seed_start, "n_decks": n_decks,
             "seatings_per_deck": 2,
             "champion": dict(champ),

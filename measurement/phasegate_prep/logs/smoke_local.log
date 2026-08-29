@@ -1,0 +1,136 @@
+[run_cells 2026-08-28T20:44:06Z Doctor/local] role=local W=30 band=154000000000 tag=phasegate_a1 dry=0 smoke=1
+[run_cells 2026-08-28T20:44:06Z Doctor/local] selftest PASS -> SELFTEST_local.json
+[run_cells 2026-08-28T20:44:06Z Doctor/local] IDENT-BITEXACT PASS
+[run_cells 2026-08-28T20:44:06Z Doctor/local] (dry-run/smoke: EXEMPT from BLIND_COMMIT and BAND_CLAIMED — they spend  no blindness and no band, and play the throwaway sub-range only)
+[run_cells 2026-08-28T20:44:06Z Doctor/local] process census (FULL ARGS):
+        596  7-22:11:38  0.0 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+     410270  7-15:48:34  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787276129951-3dwavs.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'CELL=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell tail -4 $CELL/logs/cells_local.log; ls $CELL/RUN_LIVE.json 2>/dev/null && echo "sentinel down" cp /tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/cell_watchdog.sh $CELL/logs/cell_watchdog.sh && chmod +x $CELL/logs/cell_watchdog.sh cd $CELL/logs && setsid nohup ./cell_watchdog.sh local /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell >> watchdog_local.log 2>&1 & disown echo watchdog-armed' < /dev/null && pwd -P >| /tmp/claude-f54c-cwd
+     410271  7-15:48:34  0.0 /bin/bash ./cell_watchdog.sh local /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell
+     474862  1-22:45:17  0.0 tail -F /mnt/c/carc-shared/invasion_screen_logs_driver.log
+     561878  1-21:01:37  0.0 bash /home/doctor/projects/carcassone/scripts/scheduler/work_queue.sh
+     607939  1-17:01:18  0.0 tail -F /mnt/c/carc-shared/invasion_r2_local_driver.log /mnt/c/carc-shared/invasion_r2_laptop_driver.log
+     989986       00:00  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787846091300-4pisvu.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'cd /home/doctor/projects/carcassone/measurement/phasegate_prep && setsid nohup bash ./run_cells.sh --role local --smoke >> logs/smoke_local.log 2>&1 & disown; sleep 3; echo "launched"; tail -5 /home/doctor/projects/carcassone/measurement/phasegate_prep/logs/smoke_local.log' < /dev/null && pwd -P >| /tmp/claude-4150-cwd
+     989988       00:00  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787846091300-4pisvu.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'cd /home/doctor/projects/carcassone/measurement/phasegate_prep && setsid nohup bash ./run_cells.sh --role local --smoke >> logs/smoke_local.log 2>&1 & disown; sleep 3; echo "launched"; tail -5 /home/doctor/projects/carcassone/measurement/phasegate_prep/logs/smoke_local.log' < /dev/null && pwd -P >| /tmp/claude-4150-cwd
+[run_cells 2026-08-28T20:44:06Z Doctor/local] SMOKE_EARLY gate=early seeds=154999999500.. n=22 W=30 -> /mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY
+usage: eval_fair_puct [-h] [--info {fair,clair,fair-net,fair-netprior}]
+                      [--opponent {h800,greedy,fair-champion,net,bare-net}]
+                      [--opp-net OPP_NET]
+                      [--opp-orch-shm-name OPP_ORCH_SHM_NAME] [--net NET]
+                      [--net-backend {torch,coreml}]
+                      [--backend {python,rust,auto}]
+                      [--rust-threads RUST_THREADS]
+                      [--coreml-model COREML_MODEL]
+                      [--coreml-compute-units COREML_COMPUTE_UNITS]
+                      [--net-mode {replace,residual}]
+                      [--net-lambda NET_LAMBDA]
+                      [--orch-shm-name ORCH_SHM_NAME] [--value-global-pool]
+                      [--no-value-global-pool] [--exact-k EXACT_K]
+                      [--k-dets K_DETS] [--sims SIMS] [--sims-tile SIMS_TILE]
+                      [--sims-meeple SIMS_MEEPLE] [--opp-sims OPP_SIMS]
+                      [--opp-k-dets OPP_K_DETS] [--batch-size BATCH_SIZE]
+                      [--meeple-dedup] [--intra-reuse]
+                      [--oracle-prior-mult ORACLE_PRIOR_MULT]
+                      [--oracle-prior-eps-coef ORACLE_PRIOR_EPS_COEF]
+                      [--rung-sims RUNG_SIMS] [--c-puct C_PUCT]
+                      [--tau-p TAU_P] [--leaf-quantize {int,float}]
+                      [--final-select {Q,visits,lcb}]
+                      [--value-norm VALUE_NORM]
+                      [--cand-leaf-json CAND_LEAF_JSON]
+                      [--cand-jrules-prior-dose CAND_JRULES_PRIOR_DOSE]
+                      [--cand-jrules-prior-mask CAND_JRULES_PRIOR_MASK]
+                      [--cand-jrules-prior-scope {all,own}]
+                      [--cand-jrules-filter-mask CAND_JRULES_FILTER_MASK]
+                      [--cand-jrules-filter-min-keep CAND_JRULES_FILTER_MIN_KEEP]
+                      [--cand-tiearb-enabled] [--cand-tiearb-b CAND_TIEARB_B]
+                      [--cand-tiearb-j CAND_TIEARB_J]
+                      [--cand-tiearb-mode {argmax,random}]
+                      [--cand-tiearb-salt CAND_TIEARB_SALT]
+                      [--cand-tiearb-eps CAND_TIEARB_EPS]
+                      [--cand-tiearb-phase-gate {all,early,mid,late,none}]
+                      [--cand-exact-objective {margin,win}] [--wc-tiebreak]
+                      [--n N] [--games GAMES] [--paired] [--workers WORKERS]
+                      [--seed-start SEED_START] [--allow-selfplay-seeds]
+                      [--out-root OUT_ROOT] [--out-subdir OUT_SUBDIR]
+                      [--retry-failed] [--max-attempts MAX_ATTEMPTS]
+                      [--shared-claim] [--claim-stale-secs CLAIM_STALE_SECS]
+                      [--claim-host CLAIM_HOST] [--allow-leaf-hash-drift]
+                      [--allow-cand-curve-drift] [--stamp-key KEY=VALUE]
+                      [--summary-only] [--no-results-csv] [--smoke]
+                      [--rules-profile {app_aug2,centered18,fixed_v1,retail,walled}]
+eval_fair_puct: error: ambiguous option: --out could match --out-root, --out-subdir
+[run_cells 2026-08-28T20:44:06Z Doctor/local] !!! SMOKE_EARLY FAILED
+[run_cells 2026-08-28T20:45:01Z Doctor/local] role=local W=30 band=154000000000 tag=phasegate_a1 dry=0 smoke=1
+[run_cells 2026-08-28T20:45:01Z Doctor/local] selftest PASS -> SELFTEST_local.json
+[run_cells 2026-08-28T20:45:01Z Doctor/local] IDENT-BITEXACT PASS
+[run_cells 2026-08-28T20:45:01Z Doctor/local] (dry-run/smoke: EXEMPT from BLIND_COMMIT and BAND_CLAIMED — they spend  no blindness and no band, and play the throwaway sub-range only)
+[run_cells 2026-08-28T20:45:01Z Doctor/local] process census (FULL ARGS):
+        596  7-22:12:33  0.0 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+     410270  7-15:49:29  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787276129951-3dwavs.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'CELL=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell tail -4 $CELL/logs/cells_local.log; ls $CELL/RUN_LIVE.json 2>/dev/null && echo "sentinel down" cp /tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/cell_watchdog.sh $CELL/logs/cell_watchdog.sh && chmod +x $CELL/logs/cell_watchdog.sh cd $CELL/logs && setsid nohup ./cell_watchdog.sh local /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell >> watchdog_local.log 2>&1 & disown echo watchdog-armed' < /dev/null && pwd -P >| /tmp/claude-f54c-cwd
+     410271  7-15:49:29  0.0 /bin/bash ./cell_watchdog.sh local /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell
+     474862  1-22:46:12  0.0 tail -F /mnt/c/carc-shared/invasion_screen_logs_driver.log
+     561878  1-21:02:32  0.0 bash /home/doctor/projects/carcassone/scripts/scheduler/work_queue.sh
+     607939  1-17:02:13  0.0 tail -F /mnt/c/carc-shared/invasion_r2_local_driver.log /mnt/c/carc-shared/invasion_r2_laptop_driver.log
+[run_cells 2026-08-28T20:45:01Z Doctor/local] SMOKE_EARLY gate=early seeds=154999999500.. n=22 W=30 -> /mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 16, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0, 'phase_gate': 'early'} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=22 paired=False K=2 k_dets=8 sims=1376 | 0 cached, 22 to play, 30 workers, out=/mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY
+  10/22 played (25.5s/game, ~5 min left)
+  20/22 played (15.0s/game, ~0 min left)
+  22/22 played (16.2s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 22   candidate: 8W / 0D / 14L   winrate 0.364 (z=-1.28)
+avg score diff (candidate - opponent): -0.36
+ELO: -97.2  (+/- 77.0 1sigma)
+prefix ms/move: candidate 2365  opponent 1509  (ratio 1.57x)
+fair endgame: candidate latched 22/22 games, 1.22s solver/game, timeouts=0
+fair endgame: opponent  latched 22/22 games, 0.74s solver/game, timeouts=0
+tie-arbiter: 22 games, mode(s) argmax — phi 6.09 fired tile plies/game (offline prior 22.96; 134/253 of tile plies), pick-change 0.649, mean arms 2.96, 6336 playouts, 56.3s/game
+[summary.json] wrote /mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY/summary.json
+[analyze_phasegate] wrote /home/doctor/projects/carcassone/measurement/phasegate_prep/SMOKE_local.json
+[run_cells 2026-08-28T20:50:59Z Doctor/local] smoke adjudicated -> SMOKE_local.json (structural keys only)
+[run_cells 2026-08-28T20:50:59Z Doctor/local] SMOKE DONE role=local
+[run_cells 2026-08-28T20:52:10Z Doctor/local] role=local W=30 band=154000000000 tag=phasegate_a1 dry=0 smoke=1
+[run_cells 2026-08-28T20:52:10Z Doctor/local] selftest PASS -> SELFTEST_local.json
+[run_cells 2026-08-28T20:52:10Z Doctor/local] IDENT-BITEXACT PASS
+[run_cells 2026-08-28T20:52:10Z Doctor/local] (dry-run/smoke: EXEMPT from BLIND_COMMIT and BAND_CLAIMED — they spend  no blindness and no band, and play the throwaway sub-range only)
+[run_cells 2026-08-28T20:52:10Z Doctor/local] process census (FULL ARGS):
+        596  7-22:19:41  0.0 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+     410270  7-15:56:38  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787276129951-3dwavs.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'CELL=/home/doctor/projects/carcassone/measurement/tiearb_widening_20260817/b32v64_cell tail -4 $CELL/logs/cells_local.log; ls $CELL/RUN_LIVE.json 2>/dev/null && echo "sentinel down" cp /tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/cell_watchdog.sh $CELL/logs/cell_watchdog.sh && chmod +x $CELL/logs/cell_watchdog.sh cd $CELL/logs && setsid nohup ./cell_watchdog.sh local /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell >> watchdog_local.log 2>&1 & disown echo watchdog-armed' < /dev/null && pwd -P >| /tmp/claude-f54c-cwd
+     410271  7-15:56:38  0.0 /bin/bash ./cell_watchdog.sh local /mnt/c/carc-shared/tiearb_widening_20260817_b32v64_cell
+     474862  1-22:53:21  0.0 tail -F /mnt/c/carc-shared/invasion_screen_logs_driver.log
+     561878  1-21:09:41  0.0 bash /home/doctor/projects/carcassone/scripts/scheduler/work_queue.sh
+     607939  1-17:09:22  0.0 tail -F /mnt/c/carc-shared/invasion_r2_local_driver.log /mnt/c/carc-shared/invasion_r2_laptop_driver.log
+     991760       03:29  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787846091300-4pisvu.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval '# allow-path: this command runs LOCALLY (no ssh) — /mnt/c/carc-shared is the correct local mount for the # same share the laptop writes to as /mnt/carc-shared. The word "laptop" in the echo tripped the heuristic. # allow-sleep: prescribed until-loop under run_in_background=true. until [ "$(ls /mnt/c/carc-shared/phasegate_a1/SMOKE_FULL/records 2>/dev/null | wc -l)" -ge 22 ]; do sleep 20; done; echo "SMOKE_FULL records=$(ls /mnt/c/carc-shared/phasegate_a1/SMOKE_FULL/records | wc -l)"' < /dev/null && pwd -P >| /tmp/claude-3dd6-cwd
+     993136       00:00  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787846091300-4pisvu.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'mv /mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY /mnt/c/carc-shared/phasegate_a1/_VOID_unpaired_SMOKE_EARLY_$(date -u +%H%M%S) && mv /home/doctor/projects/carcassone/measurement/phasegate_prep/SMOKE_local.json /tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/SMOKE_local_unpaired_VOID.json && ls /mnt/c/carc-shared/phasegate_a1/ && cd /home/doctor/projects/carcassone/measurement/phasegate_prep && setsid nohup bash ./run_cells.sh --role local --smoke >> logs/smoke_local.log 2>&1 & disown; sleep 9; tail -2 /home/doctor/projects/carcassone/measurement/phasegate_prep/logs/smoke_local.log' < /dev/null && pwd -P >| /tmp/claude-459e-cwd
+     993138       00:00  0.0 /bin/bash -c source /home/doctor/.claude/shell-snapshots/snapshot-bash-1787846091300-4pisvu.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'mv /mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY /mnt/c/carc-shared/phasegate_a1/_VOID_unpaired_SMOKE_EARLY_$(date -u +%H%M%S) && mv /home/doctor/projects/carcassone/measurement/phasegate_prep/SMOKE_local.json /tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/SMOKE_local_unpaired_VOID.json && ls /mnt/c/carc-shared/phasegate_a1/ && cd /home/doctor/projects/carcassone/measurement/phasegate_prep && setsid nohup bash ./run_cells.sh --role local --smoke >> logs/smoke_local.log 2>&1 & disown; sleep 9; tail -2 /home/doctor/projects/carcassone/measurement/phasegate_prep/logs/smoke_local.log' < /dev/null && pwd -P >| /tmp/claude-459e-cwd
+[run_cells 2026-08-28T20:52:10Z Doctor/local] SMOKE_EARLY gate=early seeds=154999999500.. n=22 W=30 -> /mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 16, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0, 'phase_gate': 'early'} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=30 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=22 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 22 to play, 30 workers, out=/mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY
+  10/22 played (27.0s/game, ~5 min left)
+  20/22 played (16.5s/game, ~1 min left)
+  22/22 played (16.7s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 22   candidate: 10W / 0D / 12L   winrate 0.455 (z=-0.43)
+avg score diff (candidate - opponent): -2.05
+ELO: -31.7  (+/- 74.4 1sigma)
+PAIRED: 11 decks   mean seat-balanced margin -2.05   z = -0.40
+prefix ms/move: candidate 2496  opponent 1499  (ratio 1.66x)
+fair endgame: candidate latched 22/22 games, 1.45s solver/game, timeouts=0
+fair endgame: opponent  latched 22/22 games, 0.89s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=22 (1σ≈±74); a >=35-elo verdict needs n>=400.
+tie-arbiter: 22 games, mode(s) argmax — phi 6.59 fired tile plies/game (offline prior 22.96; 145/253 of tile plies), pick-change 0.641, mean arms 3.05, 7072 playouts, 63.2s/game
+[summary.json] wrote /mnt/c/carc-shared/phasegate_a1/SMOKE_EARLY/summary.json
+[analyze_phasegate] wrote /home/doctor/projects/carcassone/measurement/phasegate_prep/SMOKE_local.json
+[run_cells 2026-08-28T20:58:19Z Doctor/local] smoke adjudicated -> SMOKE_local.json (structural keys only)
+[run_cells 2026-08-28T20:58:19Z Doctor/local] SMOKE DONE role=local

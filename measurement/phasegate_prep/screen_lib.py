@@ -665,7 +665,11 @@ def leaf_gate(cand_hash, opp_hash, cand_curve) -> dict:
     and `G-PHI` exist."""
     same = (cand_hash is not None and cand_hash == opp_hash)
     right = cand_hash == LEAF_HASH
-    curve_ok = str(cand_curve) == LEAF_CURVE
+    # PG-A1: compare the RESOLVED curve125 values, not the label string — the
+    # original `str(cand_curve) == "curve125"` was unsatisfiable by construction
+    # (see AMENDMENTS.md PG-A1, defect 1; ground truth = PRODUCTION.yaml C5 fold).
+    curve125_values = [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]
+    curve_ok = list(cand_curve or []) == curve125_values
     ok = same and right and curve_ok
     return gate("G-LEAF", ok,
                 {"cand_leaf_hash": cand_hash, "opp_leaf_hash": opp_hash,

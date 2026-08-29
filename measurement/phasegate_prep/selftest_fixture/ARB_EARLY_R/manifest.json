@@ -39,7 +39,16 @@
   "cand_leaf_hash": "a36d2e15a3b3d71d",
   "opp_leaf_hash": "a36d2e15a3b3d71d",
   "cand_leaf_cfg": {
-   "v29_meeple_curve": "curve125"
+   "v29_meeple_curve": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+   ]
   },
   "band_seed_start": 154999999008,
   "n_decks": 4,
