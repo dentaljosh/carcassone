@@ -92,10 +92,22 @@ BOX="$BOX" W="$W" SHARE="$SHARE" BLOCK="$BLOCK" SUFFIX="$SUFFIX" SMOKE=1 \
 T1=$(date +%s)
 
 echo "=== [3/4] adjudicate FROM THE EMITTED FILES"
-"$PY" - "$DIR" "$DIR/out_$BOX" "$((T1 - T0))" "$MAX_PROJECTED_H" <<'PYEOF'
+"$PY" - "$DIR" "$DIR/out_$BOX" "$((T1 - T0))" "$MAX_PROJECTED_H" "$W" <<'PYEOF'
 import json, sys, glob
 from pathlib import Path
 D, out, elapsed, max_h = Path(sys.argv[1]), Path(sys.argv[2]), int(sys.argv[3]), float(sys.argv[4])
+# ⚠️ C1-D2. The smoke's 4 units are ONE chunk (CHUNK=4, `split -l 4` on a 4-line
+# file), so `run_c1.sh` starts exactly ONE `continue_plies.py` — its own driver
+# log prints `units=4 chunks=1`. The rate measured here is therefore a
+# SINGLE-PROCESS rate, while the base pass runs W chunks CONCURRENTLY. Dividing
+# the whole base block by a 1-process rate answers "how long on ONE CORE", not
+# "on THIS BOX", and overstates the wall by ~W. Scale by W, de-rated by the
+# repo's own measured fleet efficiency.
+W = int(sys.argv[5])
+#: Measured, not invented: phasegate DESIGN §6.4's realized two-box figure —
+#: 36 nominal workers delivered 23.66 worker-s per wall-second = 66%. Held on
+#: this box in A1/A2 (W30 per-worker cost ran ~17% above the laptop's W22).
+PARALLEL_EFFICIENCY = 0.66
 want = [tuple(l.split()) for l in
         json.loads((D / "SMOKE_UNITS.json").read_text())["units"]]
 tg = {(r["game"], int(r["ply"])): r
@@ -133,16 +145,24 @@ for r in rows:
 cp = sum(a["n_continuation_decisions"] for r in rows
          for a in (r.get("arms") or {}).values()
          if a.get("status") == "OK")
-rate = cp / elapsed if elapsed else 0.0            # continuation-plies / s, at W
+rate1 = cp / elapsed if elapsed else 0.0           # continuation-plies / s, ONE process
+rate_box = rate1 * W * PARALLEL_EFFICIENCY         # ... and this box at its own W
 base_cp = 323360
-proj_h = (base_cp / rate / 3600) if rate else float("inf")
+proj_h = (base_cp / rate_box / 3600) if rate_box else float("inf")
+# ⛔ A RESUMED smoke is a VACUOUS pass: the units are already on disk, the runner
+# skips them, `elapsed` collapses to a few seconds while `cp` still sums the
+# emitted files, and the rate goes to infinity. Refuse to certify that.
+vacuous = elapsed < 60
 summary = {
     "n_units": len(rows), "elapsed_s": elapsed,
     "continuation_plies_executed": cp,
-    "measured_rate_cont_plies_per_s_this_box": round(rate, 2),
+    "measured_rate_cont_plies_per_s_ONE_PROCESS": round(rate1, 3),
+    "W_this_box": W, "parallel_efficiency_assumed": PARALLEL_EFFICIENCY,
+    "measured_rate_cont_plies_per_s_this_box": round(rate_box, 2),
     "projected_base_block_hours_THIS_BOX_ALONE": round(proj_h, 2),
     "design_fleet_estimate_hours_BOTH_BOXES": 4.40,
     "max_projected_h_gate": max_h,
+    "resumed_vacuous_rate": vacuous,
     "deltas_seen": [r["pair"].get("delta_pts_mover") for r in rows],
     "arm_s": [a.get("arm_s") for r in rows
               for a in (r.get("arms") or {}).values()],
@@ -152,6 +172,10 @@ summary = {
 print(json.dumps(summary, indent=1))
 if fails:
     print("SMOKE FAIL"); sys.exit(1)
+if vacuous:
+    print(f"SMOKE FAIL: elapsed {elapsed}s — the units were already on disk and "
+          "were skipped, so the rate is vacuous. Move out_*/ aside and re-smoke "
+          "if a fresh timing is wanted."); sys.exit(1)
 if proj_h > max_h:
     print(f"SMOKE FAIL: projected {proj_h:.1f} h on this box alone exceeds the "
           f"{max_h} h gate — do not launch"); sys.exit(1)
