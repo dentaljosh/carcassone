@@ -1,3 +1,5 @@
+> **⭐ STATUS 2026-08-29 — ROUND COMPLETE, ADJUDICATED, CLOSED OUT.** A1 (3,280 games): AMENDED verdict **E-UNRESOLVED** (PG-A1, see AMENDMENTS.md; primary +0.49 ± 0.37 vs bar 0.8); **G-ANCHOR fired: +3.46 z 5.9**. A2 extension (+1,600 games): widened anchor **+3.34 z 9.1**, blind companion **FULL−EARLY +2.85 z 6.6** — mid+late carry ~85% of the arbiter's value. Band 154e9 SPENT. results.csv `phasegate_a1_*`/`phasegate_a2_*`; DECISIONS 2026-08-29.
+
 # PHASE-GATED TIE ARBITRATION — JUDGE-FREE PHASE DECOMPOSITION — DESIGN
 
 > **STATUS: FROZEN** (2026-08-28). This document and [`READ_RULE.md`](READ_RULE.md) are **the
