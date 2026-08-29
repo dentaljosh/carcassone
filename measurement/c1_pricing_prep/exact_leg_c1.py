@@ -47,8 +47,11 @@ def main():
     ap.add_argument("--targets", default=str(HERE / "targets_c1.jsonl"))
     ap.add_argument("--mode-cut", default=str(PRICING / "MODE_CUT.json"))
     ap.add_argument("--out", default=str(HERE / "EXACT_LEG.json"))
-    ap.add_argument("--budget", type=int, default=0,
-                    help="node budget passed to solve_endgame (0 = unlimited, "
+    ap.add_argument("--budget", type=int, default=4_000_000,
+                    # C1-D3: 0 is NOT unlimited — the rust core treats it as a
+                    # zero-node budget and returns BudgetExceeded instantly.
+                    # 4_000_000 is the pyo3 default the e4 pricing solved K<=5 on.
+                    help="node budget passed to solve_endgame (was wrongly 0-as-unlimited, "
                          "the RLIMIT_CPU cap is the real bound)")
     ap.add_argument("--cpu-cap-secs", type=int, default=None)
     ap.add_argument("--mem-cap-gb", type=float, default=8.0)

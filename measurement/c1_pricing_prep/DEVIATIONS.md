@@ -76,3 +76,13 @@ bar, no branch, no estimand and no emitted statistic; `READ_RULE.md`'s readouts
 and `adjudicate_c1.py` never read it. ⛔ The four smoke units' outcome values are
 real base-pass data and are **not read here** — they belong to the frozen read
 rule, and the resumable base pass keeps them.
+
+## C1-D3 — 2026-08-29 ~16:2xZ: exact leg's budget=0 is a zero-node budget, not unlimited
+
+All 4 solves returned BUDGET_EXCEEDED in ~0.13 s against an 1800 s cap — the
+tell. `exact_leg_c1.py` passed `budget=0` believing "0 = unlimited"; the rust
+`solve_endgame` signature defaults to 4,000,000 nodes and treats 0 literally,
+so every solve refused instantly. Fixed to default 4,000,000 (the pyo3 default
+the e4 ply-pricing successfully solved K≤5 with). Statistics-blind: no solve
+had ever succeeded, no value was seen; the leg is pre-registered bonus-only
+("cannot fire a branch") in any case. Re-run in full after the fix.

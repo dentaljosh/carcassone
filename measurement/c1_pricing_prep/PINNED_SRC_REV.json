@@ -1,9 +1,9 @@
 {
  "schema": "carcassonne-c1-outcome-pricing-pinned-rev/v1",
- "pinned_src_rev": "PENDING_FREEZE_STAMP",
+ "pinned_src_rev": "8c63da89ea0d1286cd194f19e9272188ddd0281c",
  "how": "House two-commit pattern. The FREEZE commit contains this file with the placeholder above; the NEXT commit replaces it with that freeze commit's sha (stamp_pinned_rev.sh does it). `run_c1.sh` compares it to each box's `git rev-parse HEAD` and REFUSES to launch on a mismatch, which is what stops a mixed-rev cell across local and laptop.",
  "fail_closed": "The placeholder never equals a real sha, so an unstamped tree cannot launch. That is deliberate.",
- "escape_hatch": "Setting this to the literal string \"any\" disables the gate. Do not — the whole point is that both boxes run the same bytes.",
- "runner_of_record": "measurement/e4_continuation_20260828/continue_plies.py (UNMODIFIED — reused, not forked)",
- "stamped_at": null
+ "escape_hatch": "Setting this to the literal string \"any\" disables the gate. Do not \u2014 the whole point is that both boxes run the same bytes.",
+ "runner_of_record": "measurement/e4_continuation_20260828/continue_plies.py (UNMODIFIED \u2014 reused, not forked)",
+ "stamped_at": "2026-08-29T04:15:33-0400"
 }

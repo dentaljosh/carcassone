@@ -1,3 +1,5 @@
+> **⭐ STATUS 2026-08-29 — RAN IN FULL (base + E1-E3), ADJUDICATED `C1-NULL-BOUNDED`, CLOSED OUT.** P1 farm_capture +2.41 z 1.31 / P2 contested +1.07 z 1.52 (bounded); **winner's curse measured: in-sample +6.54 → out-of-sample ~0, z 16.1** — C1's mechanism dead at these plies. results.csv `c1_outcome_pricing_NULL_BOUNDED_n188plies_judgefree`; DECISIONS 2026-08-29 (afternoon); C1_PRICING.json.
+
 # DESIGN / PRE-REGISTRATION — C1 OUTCOME PRICING
 
 > **⚠️ Status: DESIGN ONLY — FROZEN, PRE-OUTCOME, NOT LAUNCHED.** This file, the

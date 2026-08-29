@@ -1,0 +1,96 @@
+{
+ "schema": "carcassonne-c1-outcome-pricing-exact-leg/v1",
+ "estimand": "value of the arm under OPTIMAL play by both seats \u2014 NOT the continuation estimand (production-champion play). Reported alone. Never pooled. Cannot fire a branch.",
+ "k_marginalized_max": 4,
+ "per_solve_cpu_cap_s": 1800,
+ "profile": "fixed_v1",
+ "r9_env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "n_selected": 4,
+ "n_priced": 2,
+ "n_c1_optimal": 1,
+ "n_champ_optimal": 1,
+ "mean_exact_delta_pts_mover": -5.25,
+ "elapsed_s": 2779.4,
+ "rows": [
+  {
+   "game": "1786045035_338139.json",
+   "ply": 134,
+   "stratum": "defense",
+   "k": 4,
+   "actor": 1,
+   "c1_action": 737,
+   "champ_action": 1537,
+   "insample_gap_pts": 1.0,
+   "solve_status": "OK",
+   "exact_value_c1": -11.5,
+   "exact_value_champ": -10.5,
+   "exact_delta_pts_mover": 1.0,
+   "root_optimal_actions": [
+    737,
+    739
+   ],
+   "c1_is_optimal": true,
+   "champ_is_optimal": false,
+   "nodes": 776174,
+   "solve_s": 358.55558347702026
+  },
+  {
+   "game": "1786904828_407067.json",
+   "ply": 134,
+   "stratum": "defense",
+   "k": 4,
+   "actor": 1,
+   "c1_action": 1527,
+   "champ_action": 350,
+   "insample_gap_pts": 0.687,
+   "solve_status": "BUDGET_EXCEEDED",
+   "detail": {
+    "detail": null,
+    "kill_reason": null,
+    "elapsed_s": 1383.1891086101532
+   }
+  },
+  {
+   "game": "1786939252_94231.json",
+   "ply": 134,
+   "stratum": "farm_capture",
+   "k": 4,
+   "actor": 0,
+   "c1_action": 2502,
+   "champ_action": 2510,
+   "insample_gap_pts": 1.625,
+   "solve_status": "BUDGET_EXCEEDED",
+   "detail": {
+    "detail": null,
+    "kill_reason": null,
+    "elapsed_s": 1025.295531988144
+   }
+  },
+  {
+   "game": "1786045035_338139.json",
+   "ply": 136,
+   "stratum": "invasion",
+   "k": 3,
+   "actor": 0,
+   "c1_action": 444,
+   "champ_action": 1640,
+   "insample_gap_pts": 0.0,
+   "solve_status": "OK",
+   "exact_value_c1": -22.0,
+   "exact_value_champ": -10.5,
+   "exact_delta_pts_mover": -11.5,
+   "root_optimal_actions": [
+    1640,
+    1642
+   ],
+   "c1_is_optimal": false,
+   "champ_is_optimal": true,
+   "nodes": 30705,
+   "solve_s": 12.050759077072144
+  }
+ ]
+}

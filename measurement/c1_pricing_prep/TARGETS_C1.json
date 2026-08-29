@@ -1,8 +1,8 @@
 {
  "schema": "carcassonne-c1-outcome-pricing-targets/v1",
  "built_from": {
-  "microgates": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a33712c658dd97dc9/measurement/microgates_20260828/MICROGATES.json",
-  "banked_rows": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a33712c658dd97dc9/measurement/e4_ply_pricing_20260827/targets.jsonl"
+  "microgates": "/home/doctor/projects/carcassone/measurement/microgates_20260828/MICROGATES.json",
+  "banked_rows": "/home/doctor/projects/carcassone/measurement/e4_ply_pricing_20260827/targets.jsonl"
  },
  "constants": {
   "WORLD_BASE": 16,
