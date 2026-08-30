@@ -148,7 +148,7 @@ def test_a_session_id_bound_to_one_deck_cannot_be_reused_for_another():
     try:
         with pytest.raises(S.SessionError) as e:
             srv.get_or_create(game_id="g1", deck_seed=6, human_seat=0,
-                              opponent=None, n_client_actions=0)
+                              opponent=None, client_actions=[])
         assert e.value.code == "session_mismatch"
     finally:
         s.close()

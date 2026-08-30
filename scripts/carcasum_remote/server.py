@@ -496,6 +496,24 @@ class _Session:
                                        n_actions=len(self.actions))
                 self._cv.wait(timeout=min(remaining, 0.5))
 
+    def wait_finished(self, timeout: float = 30.0) -> bool:
+        """Block until the game thread has published its record.
+
+        `play_one_match` does real work AFTER the last action lands — the
+        endgame farm/terrain audit, the `(deck_seed, actions)` replay check, the
+        manifest. A client whose own board has terminated will call `/end`
+        immediately, and without this wait it would get `record: null` and think
+        the game produced nothing.
+        """
+        deadline = time.time() + float(timeout)
+        with self._cv:
+            while not self.finished:
+                remaining = deadline - time.time()
+                if remaining <= 0:
+                    return False
+                self._cv.wait(timeout=min(remaining, 0.25))
+        return True
+
     def close(self) -> None:
         self._stop.set()
         with self._cv:
@@ -592,13 +610,17 @@ class RemoteOpponentServer:
             self._sessions[game_id] = s
             return s
 
-    def end(self, game_id: str) -> dict:
+    def end(self, game_id: str, *, wait_s: float = 30.0) -> dict:
         with self._lock:
             s = self._sessions.pop(game_id, None)
         if s is None:
             raise SessionError("unknown_session", f"no session {game_id!r}")
+        # Wait BEFORE closing: closing tears the game thread down mid-audit and
+        # the record would come back void.
+        finished = s.wait_finished(timeout=float(wait_s))
         s.close()
-        return {"ok": True, "game_id": game_id, "record": s.record, "info": s.info()}
+        return {"ok": True, "game_id": game_id, "finished": finished,
+                "record": s.record, "info": s.info()}
 
     def health(self) -> dict:
         with self._lock:
