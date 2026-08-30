@@ -1,5 +1,19 @@
 # LEVER-MENU EXECUTION PLAN — the six-item queue from the 2026-08-10 doc sweeps
 
+> **🏁 CAMPAIGN COMPLETE — CLOSED OUT 2026-08-11 (outcome stamped 2026-08-29).** All six items are
+> closed and **nothing from this campaign remains open**; the chained execution (blocks B→C→D→E via
+> `scripts/classical_search/menu_chain.sh`, local W=14 + laptop W=22) finished 2026-08-11 with
+> nothing left running or queued. Per-item verdicts and evidence rows live in
+> [PROGRAM_ROADMAP_2026-07-07.md](PROGRAM_ROADMAP_2026-07-07.md) (the "CHAIN COMPLETE" block) and
+> [STATUS.md](../STATUS.md) (2026-08-10 / 2026-08-11 entries); headlines: item 1 farm-norm replay =
+> branch B (the champion's farm collapse vs Joshua is human-specific), item 2 `farm_growth_off` does
+> **not** confirm at n=1600 (winner's curse, 4th instance), item 3 width residual = BOUNDED NULL,
+> item 4 caps/curve SCALE axis null on all four cells, item 5 = CL-072 pooled n=800 **REFUTES** the
+> rodv3 premise (margin z −2.2015), item 6 JCZ S3 = no conviction (the JCZ steal file is fully
+> closed). Bands 1.18e11 / 1.19e11 / 1.20e11 / 94e9 retired decision-influenced; **`PRODUCTION.yaml`
+> untouched, nothing promoted.** *(The design text below is unchanged and is not live guidance —
+> anything it describes in the present or future tense describes 2026-08-10.)*
+>
 > **Status: ✅ FUNDED IN FULL, 2026-08-10. LAUNCHED.** Joshua: *"its all funded"* (2026-08-10) —
 > **all six items**, including item 5 despite its drop-candidate flag (§5, §6.7). The document
 > below is unchanged as the design of record; this banner converts it from a proposal into the

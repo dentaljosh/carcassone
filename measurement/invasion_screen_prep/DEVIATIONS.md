@@ -30,3 +30,31 @@ IDENT cell. (Instrument-hardening note for future pairs: any launcher-side gate 
 only once per round needs its own selftest fixture.)
 
 **Committed** after RUN_LIVE cleared, per the freeze-latch discipline.
+
+## IS-D2 — 2026-08-29: bar-library import hardened to round 3's by-path form (statistics-blind)
+
+**What was wrong.** `analyze_screen.py` loaded its bar library as a bare `import screen_lib`
+after inserting its own directory on `sys.path`. Rounds 1, 2 and 3 each ship a *different*
+`screen_lib.py` (sha256 `6168b325…` / `0824a3e2…` / `47c01830…`), so in any process that
+touches two rounds — the instrument suite is exactly that — whichever loaded first won
+`sys.modules["screen_lib"]` and the second adjudicator silently read the **wrong round's
+bars**. Round 3 shipped with the fix already; rounds 1 and 2 did not.
+
+**The fix.** Copied round 3's pattern verbatim: load `screen_lib.py` **by path** under the
+directory-qualified module name `screen_lib__invasion_screen_prep`, registered in
+`sys.modules` before `exec_module` (so `@dataclass` can resolve its field annotations). The
+`sys.path` insertion is removed. `screen_lib` itself has no local imports, so nothing else
+depended on that path entry.
+
+**Why it is statistics-blind.** The same `screen_lib.py`, byte-for-byte, from the same
+directory, is what gets loaded — only the *name it is filed under* changes. No bar, gate,
+threshold, branch table, statistic or verdict of this round moves; the round is closed and
+its verdict stands unaltered.
+
+**Verification.** `--selftest` GREEN (0 sanity problems, all 18 gate ids evaluated, ABSENT-is-FAIL
+holds). Cross-round proof: loading all three rounds' adjudicators in one process now gives each
+its own `screen_lib` and leaves no bare `screen_lib` in `sys.modules`. Running the three
+instrument suites **together** went from **50 failures to 4** — and those 4 are exactly the
+failures each suite already produces when run alone (three `BAND_CLAIMED`-sentinel freeze-time
+interlocks, which now trip because the bands have since been claimed, plus one pre-existing
+round-2 wheel-preflight failure). Nothing this edit touched is among them.

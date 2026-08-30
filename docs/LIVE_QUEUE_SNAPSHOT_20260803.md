@@ -7,7 +7,12 @@
 > directive batch** ("apk go for it · ANE closed · anticipation go · f7c launch · g1/g3 moot · wc
 > tie we'll update · push"). Goes stale the moment anything closes. Every line cites its source.
 
-## (a) Running right now
+## (a) Was running at the snapshot moment (2026-08-03 ~19:45)
+
+> *(Heading tense-corrected 2026-08-29; it was written in the present tense, which was true only on
+> 2026-08-03 (git history has the old wording). Nothing in this table is live now — for live state see [STATUS.md](../STATUS.md).
+> The per-row annotations below are as-written on 2026-08-03 and were not re-adjudicated by this
+> edit.)*
 
 | What | Where | Source |
 |---|---|---|

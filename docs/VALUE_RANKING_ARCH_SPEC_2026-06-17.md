@@ -7,7 +7,8 @@
 > No production retrain. NEXT = measurement-first (`docs/MEASUREMENT_FIRST_SPEC_2026-06-18.md`). The
 > original spec text below is the design that was executed (historical).
 >
-> _(orig status: PROPOSED, Phase 0 not yet run.) Direction chosen by Joshua 2026-06-17 after the
+> _(orig status at authoring: PROPOSED, Phase 0 unrun — Phase 0 **subsequently ran and the spec
+> closed 2026-06-18**, verdict in the banner above; stamped 2026-08-29.) Direction chosen by Joshua 2026-06-17 after the
 > strength campaign converged (value can't beat the v2.7 leaf; policy washes out at depth —
 > STATUS "Right now" + DECISIONS 2026-06-17). This spec REFRAMES "architecture swing" from the
 > dead corr-ceiling target to the live τ (sibling-ranking) target, and gates a production retrain
