@@ -179,13 +179,33 @@ pub fn reset_border_fallbacks() {
     BORDER_FALLBACKS.store(0, Ordering::Relaxed);
 }
 
+/// ⚠️ TESTS ONLY. [`BORDER_FALLBACKS`] is PROCESS-WIDE, so any two tests that
+/// read it as a scoped count race under `cargo test`'s parallel runner — a
+/// green solo run and a red suite run, which is exactly how the L1a/L0 sitting
+/// found it (2026-08-30: `tiearb::…the_flat_scorer_matches_the_legacy_scorer…`
+/// passed alone and failed in-suite because the tier1 border test had bumped
+/// the counter). Every test that resets or deltas the counter must hold this
+/// first.
+#[cfg(test)]
+pub(crate) static BORDER_FALLBACK_GATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// Does this board occupy the last row or the last column?
 ///
 /// The predicate that separates the two scorer routes — see the module comment
 /// above.  A superset of the true divergence set (which additionally needs a
 /// tile on row 0 / column 0 to issue the `-1` query), chosen because it is also
-/// exactly the historical crash class and because it is one pass over
-/// `placed_coords` (≤ 72 entries, once per DECISION, not per candidate).
+/// exactly the historical crash class and because it is one cheap pass over
+/// `placed_coords` (≤ 72 entries).
+///
+/// ⚠️ **R12 (2026-08-30) — it runs PER CANDIDATE, on the AFTERSTATE**, not once
+/// per decision: [`candidate_leaf`] calls it on the `scratch` state each
+/// candidate has already been applied to.  That is load-bearing and the cost is
+/// deliberate.  A candidate's tile placement can be what first occupies the last
+/// row or column, so the parent's answer does NOT bound the child's, and a hoist
+/// of this call to the top of `best_by_virtual_score` would route exactly the
+/// afterstates that need the legacy scorer through the flat one.  Do not hoist
+/// it.  (Hoisting is only sound for a decision whose candidates cannot place a
+/// tile — the meeple phase — and even there it buys ≤ 72 integer comparisons.)
 #[inline]
 fn border_wrap_hazard(state: &GameState) -> bool {
     state
@@ -1025,6 +1045,7 @@ mod tests {
     #[test]
     #[ignore = "identity pass at scale: run deliberately (see GATES_DEFERRED.md)"]
     fn the_scorer_swap_is_trajectory_identical_at_scale() {
+        let _lock = BORDER_FALLBACK_GATE.lock().unwrap_or_else(|e| e.into_inner());
         reset_border_fallbacks();
         let mut n = 0usize;
         for s in 0..20i64 {
@@ -1120,6 +1141,7 @@ mod tests {
             "col 34 must trip the predicate"
         );
 
+        let _lock = BORDER_FALLBACK_GATE.lock().unwrap_or_else(|e| e.into_inner());
         reset_border_fallbacks();
         let before = border_fallbacks();
         let deployed = SCORER_BUFS.with(|cell| {

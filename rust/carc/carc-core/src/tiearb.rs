@@ -1326,6 +1326,122 @@ mod tests {
         }
     }
 
+    /// **GATE §3a (`measurement/arb_costopt_prep/GATES_DEFERRED.md`) — the
+    /// tier1 scorer swap is identical to the LEGACY scorer at production
+    /// `arbitrate` shapes, under threads.**
+    ///
+    /// ## The R9 constraint and how this gate answers it
+    ///
+    /// [`crate::tier1::with_legacy_scorer`] sets a THREAD-LOCAL flag. It does
+    /// NOT propagate into [`arbitrate_core`]'s `std::thread::scope` workers, so
+    /// an identity gate written as `with_legacy_scorer(|| arbitrate(.., t))`
+    /// with `t > 1` would run the flat scorer in every worker and compare
+    /// **flat against flat** — a green light that proves nothing. Two ways out:
+    ///
+    /// 1. propagate the TLS into the scoped workers for the legacy leg, or
+    /// 2. **run the LEGACY leg single-threaded and the FLAT leg threaded.**
+    ///
+    /// This gate takes **(2)**, deliberately:
+    ///
+    /// * It needs no production-code change. Option (1) means teaching
+    ///   `arbitrate_core` about a gates-only flag — new code on the deployed
+    ///   path, written to test the deployed path, whose own correctness would
+    ///   then be the thing standing between the gate and the truth.
+    /// * It is the STRICTLY STRONGER contrast. `arbitrate`'s result is
+    ///   thread-count invariant BY DESIGN (the fold is order-preserving; see
+    ///   the module docs and `threading_is_bit_identical_to_sequential`), so
+    ///   `legacy@t=1` is a fixed, thread-free reference. Comparing
+    ///   `flat@t ∈ {1,2,4,8}` against it closes both questions at once — "is
+    ///   the flat scorer the legacy scorer" AND "do the flat scorer's
+    ///   THREAD-LOCAL `Decomp`/`Scratch` buffers leak across workers" — in one
+    ///   assertion. Option (1) would have compared `legacy@8` to `flat@8`,
+    ///   which tests the buffers only against a reference that has no buffers
+    ///   to leak, and adds a TLS-propagation mechanism that could itself paper
+    ///   over a leak.
+    /// * The failure it is built to catch — a shared-buffer race — is
+    ///   thread-count DEPENDENT, so a green run at `t=8` against a `t=1`
+    ///   reference is exactly the receipt owed.
+    ///
+    /// `border_fallbacks` is asserted 0 over the whole gate: the legacy
+    /// fallback never fired, so every compared value came from the flat route.
+    #[test]
+    fn the_flat_scorer_matches_the_legacy_scorer_at_every_thread_count() {
+        let _lock = crate::tier1::BORDER_FALLBACK_GATE
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        crate::tier1::reset_border_fallbacks();
+        let mut n_cases = 0usize;
+        for (seed, from) in [("28000000000", 132usize), ("42", 130)] {
+            let g = tiles_root(seed, from);
+            let legal = g.legal_actions();
+            let seat = g.state.current_player;
+            assert!(legal.len() >= 3, "need >= 3 legal actions at {seed}/{from}");
+            let cases: [(usize, usize, &[TiearbMode]); 4] = [
+                (16, 2, &[TiearbMode::Argmax, TiearbMode::Random]),
+                (16, 3, &[TiearbMode::Argmax, TiearbMode::Random]),
+                (32, 3, &[TiearbMode::Argmax]),
+                (64, 2, &[TiearbMode::Argmax]),
+            ];
+            for (b, n_arms, modes) in cases {
+                let arms: Vec<i32> = legal.iter().copied().take(n_arms).collect();
+                for &mode in modes {
+                    // THE REFERENCE: the legacy `count_final_scores` scorer,
+                    // SINGLE-THREADED so the thread-local force flag is in
+                    // scope for every playout it drives.
+                    let want = crate::tier1::with_legacy_scorer(|| {
+                        arbitrate(
+                            &g,
+                            seat,
+                            &arms,
+                            b,
+                            TIEARB_SALT_OF_RECORD,
+                            "d",
+                            9,
+                            mode,
+                            TIEARB_MAX_PLIES,
+                            1,
+                        )
+                    })
+                    .unwrap();
+                    for t in [1usize, 2, 4, 8] {
+                        let got = arbitrate(
+                            &g,
+                            seat,
+                            &arms,
+                            b,
+                            TIEARB_SALT_OF_RECORD,
+                            "d",
+                            9,
+                            mode,
+                            TIEARB_MAX_PLIES,
+                            t,
+                        )
+                        .unwrap();
+                        assert_eq!(
+                            outcome_bits(&got),
+                            outcome_bits(&want),
+                            "the flat scorer at threads={t} differs from the legacy \
+                             scorer at seed={seed}, from={from}, arms={n_arms}, B={b}, \
+                             mode={}",
+                            mode.value()
+                        );
+                        n_cases += 1;
+                    }
+                }
+            }
+        }
+        assert_eq!(
+            crate::tier1::border_fallbacks(),
+            0,
+            "the border fallback fired — some compared values did NOT come from the \
+             flat route, so this gate did not grade what it claims to"
+        );
+        println!(
+            "GATE 3a: {n_cases} threaded arbitrate outcomes bit-identical to the \
+             single-threaded LEGACY scorer; border fallbacks 0"
+        );
+    }
+
     /// The same identity on the FAILING path, with real playouts: an illegal
     /// arm makes `tier1_playout` error inside every world, and the message that
     /// escapes must be the same one at every thread count. A second case drives

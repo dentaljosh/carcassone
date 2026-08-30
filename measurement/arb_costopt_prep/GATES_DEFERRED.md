@@ -1,5 +1,13 @@
 # GATES_DEFERRED — the tier1 playout scorer swap
 
+> **✅ STATUS 2026-08-30 — §2 BANKED · §3a PASS · §3c PASS · §3b BLOCKED (shared
+> box, timing only).** Results, method and the R9 threading decision:
+> [`GATES_L0_L1A_20260830.md`](GATES_L0_L1A_20260830.md). The §3b PASS criterion
+> (legacy 90–105 ms/playout, factor 6.7–7.9×, EXCLUSIVE tenant) is the one thing
+> still owed — it cannot be met while a funded eval shares the box, and the
+> contaminated read (9.51×, legacy 296.9 ms) must NOT be recorded as a pass.
+> The 2026-08-28 banner below is kept for the record.
+
 > **⚠️ STATUS 2026-08-28 — BRANCH BLOCKED ON THESE GATES.** The swap is landed and
 > locally gated on branch `worktree-agent-af441852ab4b1e9fe`
 > (`/home/doctor/projects/carcassone/.claude/worktrees/agent-af441852ab4b1e9fe`).

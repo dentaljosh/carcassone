@@ -103,7 +103,11 @@ fn count_distinct_per_group(keys: &mut Vec<u32>, stride: u32, out: &mut [usize])
 /// Root-keyed facts are vectors indexed by the root node id; entries for
 /// non-root ids are present but unused, exactly as a Python dict keyed by the
 /// canonical root would be.
-#[derive(Default, Clone)]
+// `PartialEq`/`Eq` are DERIVED FOR THE GATES (L1a, 2026-08-30): every field is
+// an integer or bool vector, so structural equality IS bit-identity, and the
+// meeple-phase hoist gate needs to assert exactly that between a parent and its
+// child. Additive — no field, no method and no signature moves.
+#[derive(Default, Clone, PartialEq, Eq)]
 pub struct Decomp {
     /// Placed cells in row-major order — the Python `for r: for c:` scan order.
     pub placed: Vec<(i32, i32)>,

@@ -44,6 +44,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use crate::compat::{self, LibmFlavor};
+use crate::engine::Phase;
 use crate::game::Game;
 use crate::leaf::{self, LeafConfig, LeafError, LeafScratch};
 use crate::sha256::sha256_hex_prefix;
@@ -56,6 +57,9 @@ fn node_digest(key: &str) -> String {
 }
 
 mod fxhash;
+/// L1a — the meeple-phase decomposition hoist's correctness gates.
+#[cfg(test)]
+mod l1a_hoist_tests;
 /// P6 (Gap 2): the persistent / re-rootable tree.  ADDITIVE — nothing in this
 /// module calls into it, so the fresh-tree path above is byte-identical with the
 /// session unused.
@@ -70,6 +74,41 @@ pub use trace::{JsonlTrace, TraceSink};
 pub use window_diag::{DroppedPlacement, EmptyMaskCause, EmptyMaskDiag};
 
 pub type NodeId = u32;
+
+thread_local! {
+    /// ⚠️ GATES AND TESTS ONLY — see [`with_fresh_decomp`].
+    static FORCE_FRESH_DECOMP: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+#[inline]
+fn force_fresh_decomp() -> bool {
+    FORCE_FRESH_DECOMP.with(|c| c.get())
+}
+
+/// Restores [`FORCE_FRESH_DECOMP`] even if `f` unwinds.
+struct FreshDecompGuard(bool);
+impl Drop for FreshDecompGuard {
+    fn drop(&mut self) {
+        FORCE_FRESH_DECOMP.with(|c| c.set(self.0));
+    }
+}
+
+/// ⚠️ **GATES AND TESTS ONLY.** Runs `f` with the L1a meeple-phase
+/// decomposition hoist disabled **on this thread**, i.e. every child pays its
+/// own `decompose_into` exactly as the pre-L1a code did.
+///
+/// This is not a configuration knob and nothing in production calls it: the
+/// hoist is bit-identical (a meeple action cannot move a tile, and
+/// `decompose_into` reads only the tile board), so there is no shape to choose
+/// between. It exists so an identity gate can run BOTH routes over the same
+/// roots and seeds instead of re-implementing the search. Precedent and shape:
+/// [`crate::tier1::with_legacy_scorer`].
+#[doc(hidden)]
+pub fn with_fresh_decomp<R>(f: impl FnOnce() -> R) -> R {
+    let prev = FORCE_FRESH_DECOMP.with(|c| c.replace(true));
+    let _g = FreshDecompGuard(prev);
+    f()
+}
 
 /// `HeuristicPriorConfig.final_select`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -716,12 +755,63 @@ impl<'a> Searcher<'a> {
             None
         };
 
+        // ── L1a: THE MEEPLE-PHASE DECOMPOSITION HOIST ──────────────────────
+        //
+        // [`leaf::decompose_into`] is a pure function of the TILE BOARD: it
+        // reads `state.placed_coords` and `state.board` and nothing else — no
+        // meeple, no score, no phase, no deck field appears anywhere in its
+        // body. A parent in [`Phase::Meeples`] has only `Action::Meeple` and
+        // `Action::Pass` legal, and neither places a tile (`apply_action`:
+        // `Meeple => play_meeple`, and the meeple-phase `Pass` falls straight
+        // through to `remove_meeples_and_collect_points` / `draw_tile` /
+        // `next_player`). So EVERY child of a meeple-phase node has, bit for
+        // bit, its parent's decomposition, and the per-child `decompose_into`
+        // is redundant work — 52.9–60.5% of PUCT search time is in that one
+        // function (eval-perf sweep, 2026-08-30).
+        //
+        // Bit-identity is therefore by CONSTRUCTION, not by measurement; the
+        // measurement (3,104/3,104 children in the sweep, re-run here as
+        // `every_meeple_phase_child_shares_its_parents_decomposition`, plus the
+        // leaf-VALUE gate `the_meeple_phase_hoist_is_leaf_value_identical`) is
+        // the falsifier, not the argument. No knob: there is no shape to choose
+        // between, so no config field and no strength claim (the tier1-swap
+        // precedent).
+        //
+        // ⚠️ This adds CALL-SITE logic only. `decompose_into`'s interface is
+        // untouched on purpose — the L1 delta-decompose spike restructures the
+        // function itself, and the two changes must compose.
+        let hoist = g.state.phase == Phase::Meeples && !force_fresh_decomp();
+        if hoist && !jr_on && !self.cfg.use_leaf_scratch {
+            // The only route that leaves `scratch.decomp` NOT holding this
+            // node's decomposition: `leaf_at` took the allocating free
+            // function and never touched the scratch. (`use_leaf_scratch`
+            // true ⇒ `leaf_at` just decomposed `g.state` into it; `jr_on`
+            // ⇒ the clock block above did.)
+            leaf::decompose_into(&g.state, &mut self.scratch.decomp, &mut self.scratch.scratch);
+        }
+        let quantize_int = self.cfg.leaf_quantize == LeafQuantize::Int;
+
         // deltas[i] = leaf(child_i, mover) - leaf_parent, in `legal` order.
         let mut deltas: Vec<f64> = Vec::with_capacity(legal.len());
         for &a in &legal {
             let mut child = g.clone();
             child.advance(a).map_err(SearchError::Engine)?;
             match &jr_clock {
+                None if hoist => {
+                    // Same `leaf_terms_with` the scratch path funnels through,
+                    // against the parent's decomposition — which IS the
+                    // child's. `self.scratch.decomp` is NOT overwritten in this
+                    // loop, so it stays valid for every sibling.
+                    self.leaf_evals += 1;
+                    let t = leaf::leaf_terms_with(
+                        &child.state,
+                        mover,
+                        &self.cfg.leaf,
+                        &self.scratch.decomp,
+                    )?;
+                    let leaf_v = if quantize_int { t.value as f64 } else { t.score };
+                    deltas.push(leaf_v - leaf_parent);
+                }
                 None => deltas.push(self.leaf_at(&child, mover)? - leaf_parent),
                 Some(clock) => {
                     // One decomposition serves the leaf AND the prior term.
@@ -729,12 +819,29 @@ impl<'a> Searcher<'a> {
                     // plain path funnels through — bit-identical by
                     // construction; only the prior-softmax input moves.
                     self.leaf_evals += 1;
-                    let (leaf_v, base) = self.scratch.leaf_float_and_base(
-                        &child.state,
-                        mover,
-                        &self.cfg.leaf,
-                        self.cfg.leaf_quantize == LeafQuantize::Int,
-                    )?;
+                    let (leaf_v, base) = if hoist {
+                        // Hoisted: the parent decomp already in the scratch is
+                        // the child's, so BOTH the leaf and the prior term read
+                        // it — one decomposition for the whole expansion
+                        // instead of one per child.
+                        let t = leaf::leaf_terms_with(
+                            &child.state,
+                            mover,
+                            &self.cfg.leaf,
+                            &self.scratch.decomp,
+                        )?;
+                        (
+                            if quantize_int { t.value as f64 } else { t.score },
+                            t.base as f64,
+                        )
+                    } else {
+                        self.scratch.leaf_float_and_base(
+                            &child.state,
+                            mover,
+                            &self.cfg.leaf,
+                            quantize_int,
+                        )?
+                    };
                     let t = leaf::jrules_prior_term(
                         &child.state,
                         mover,
