@@ -292,7 +292,7 @@ laptop  282.1 x 2 = 564.2 worker-s/game   ->  W22 / 564.2 = 140.4 games/h
 | `CELL_CPUCT10` (laptop) | 800 | — | **5.7 h** |
 | **THE ROUND (whole cells per box)** | **2,400** | \multicolumn — **≈ 7.8 h wall** | |
 
-**Core-hours: ≈ 363 worker-h** (2,400 games × ~545 worker-s mean).
+**Core-hours: ≈ 359 worker-h** (2,400 games × 539 worker-s mean = (2 × 526.4 + 564.1) ÷ 3).
 
 ⚠️ **The funding brief's estimate was `~800 games ≈ 1.5 h two-box at W30/W22`.** That is correct
 **at 11008 with a single cell split across both boxes** (`0.114 + 0.078 = 0.192` games/s → 1.16 h).

@@ -82,7 +82,7 @@ That is **correct at 11008 for a single cell split across both boxes** — reali
 |---|---|
 | one cell (800 games), local only | **3.9 h** |
 | one cell (800 games), laptop only | **5.7 h** |
-| **the round** (2 cells local + 1 laptop) | **≈ 7.8 h wall, ≈ 363 core-h** |
+| **the round** (2 cells local + 1 laptop) | **≈ 7.8 h wall, ≈ 359 core-h** |
 
 Re-priced from the realized `phasegate_a1/IDENT` cell (263.2 worker-s/game, local W30, 11008,
 arbiter never fired) ×2.0 for the doubled `k`. ⚠️ `×2.0` is a **conservative upper bound** — the
