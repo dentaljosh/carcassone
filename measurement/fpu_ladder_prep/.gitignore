@@ -1,0 +1,30 @@
+# Executor-owed, BOX-LOCAL artefacts. ⛔ Never committed: PINNED_SRC_REV is the
+# pin THIS BOX made after ITS bundle sync, and SRC_CLEAN.jsonl / SELFTEST_*.json
+# / SMOKE_*.json / FPU_BITEXACT_LADDER.json are that box's own launch ledger.
+# A committed pin would let one box's rev masquerade as the other's — the exact
+# IS-A1 confusion `cross_box_rev_gate` exists to refuse — and a committed golden
+# gate would let one box's WHEEL masquerade as the other's, which is the same
+# defect one layer down (`carc_rs_binary_sha` is BOX-LOCAL: two boxes compiling
+# identical source produce different bytes).
+#
+# ⚠️⚠️ EVERY PATTERN IS ANCHORED WITH A LEADING `/`. An unanchored
+# `PINNED_SRC_REV` matches at ANY DEPTH and therefore swallows
+# `selftest_fixture/PINNED_SRC_REV` — which is a COMMITTED FIXTURE FILE (the
+# synthetic 40-hex pin `aaaa…` that `analyze_ladder.py --selftest` reads to
+# exercise `cross_box_rev_gate`). Without it the selftest raises on a fresh
+# clone, which would make the launcher's precondition ladder fail on every box
+# that had not run make_fixture.py first. (Inherited verbatim from
+# fpu_resurrection_prep, where it was learned the hard way.)
+/PINNED_SRC_REV
+/SRC_CLEAN.jsonl
+/SELFTEST_*.json
+/SMOKE_*.json
+/FPU_BITEXACT_LADDER.json
+/BAND_CLAIMED
+/logs/
+/__pycache__/
+# the golden gate's six raw legs, copied beside its runner for by-hand review
+/golden_gate/OLD.json
+/golden_gate/NEW.json
+/golden_gate/CTRL_*.json
+/golden_gate/__pycache__/

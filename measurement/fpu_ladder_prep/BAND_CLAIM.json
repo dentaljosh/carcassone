@@ -1,0 +1,68 @@
+{
+  "_status": "⛔ PROPOSED, NOT CLAIMED. 0 rows have been appended to governance/BAND_REGISTRY.csv at this commit, and the sibling BAND_CLAIMED file does not exist. run_cells.sh refuses a real rung without it.",
+  "_order_of_operations": [
+    "1. RE-RUN THE TREE SWEEP immediately before the append (not the sweep recorded here — a fresh one), using the COMBINED method in `sweep_2026_08_30.method`.",
+    "2. Append the four rows in `_csv_rows` to governance/BAND_REGISTRY.csv.",
+    "3. THEN drop the sibling file BAND_CLAIMED.",
+    "⚠️⚠️ IN THAT ORDER. 146000000000 is the trap it exists for: absent from the registry but carrying references in the tree. The registry is NECESSARY AND NOT SUFFICIENT; the TREE SWEEP is the binding check."
+  ],
+  "bands": {
+    "164000000000": "CELL_FPU005 — candidate fpu_reduction 0.05. 400 decks: 164000000000..164000000399",
+    "165000000000": "CELL_FPU010 — candidate fpu_reduction 0.10. 400 decks: 165000000000..165000000399",
+    "166000000000": "CELL_FPU015 — candidate fpu_reduction 0.15. 400 decks: 166000000000..166000000399",
+    "167000000000": "CELL_FPU030 — candidate fpu_reduction 0.30. 400 decks: 167000000000..167000000399"
+  },
+  "throwaway": {
+    "base": 167999999000,
+    "span": 1000,
+    "note": "⛔ NEVER IN THE CLAIM. The §9 smoke plays 167999999500+ only. It buys no decks of the round and its archives are excluded from adjudication by the SMOKE_ prefix."
+  },
+  "sweep_2026_08_30": {
+    "highest_registered_id": 161000000000,
+    "highest_registered_owner": "S1 GATE G3 (measurement/s1_asymmetry_prep/, claimed 2026-08-30, commit 8b187c71)",
+    "reserved_not_registered": {
+      "162000000000": "S1 G3 reserved (BAND_CLAIM_G3.json + tests/test_s1_g3_instrument.py). ⛔ NOT TAKEN.",
+      "163000000000": "S1 G3 reserved (same two files). ⛔ NOT TAKEN."
+    },
+    "method": [
+      "⚠️ THE METHOD CHANGED MID-SWEEP and every band below was RE-VERIFIED under the final one, so all four share one method.",
+      "FIRST ATTEMPT (abandoned): a per-band `grep -rIl` over the whole repo — one full-tree pass PER CANDIDATE. The measurement/ artifact tree is multi-GB, so this thrashed the SSD at ~170 MB/s per pass and was stopped by the owner. ⛔ Do not repeat it in a future round.",
+      "FINAL METHOD, ONE COMBINED PASS FOR EVERY CANDIDATE AND TRAP AT ONCE (regex `16[2-9]000000000`):",
+      "  (a) TRACKED files  -> `git grep -lIE '16[2-9]000000000'` (reads PACKED OBJECTS, not the working tree; near-zero filesystem IO).",
+      "  (b) UNTRACKED files -> exactly ONE filesystem pass, `git ls-files --others --exclude-standard -z | xargs -0 grep -lIE ...`.",
+      "  (c) CLASSIFY per band by grepping only the (few) HIT FILES, never the tree again.",
+      "⭐ AND A BOUNDARY READING, which is the part that matters here: a band id is an INTEGER SEED, so a digit run that sits INSIDE A FLOAT MANTISSA can never be one. The classification pass reads one character either side of every hit."
+    ],
+    "combined_pass_result": {
+      "tracked_hit_files": 2,
+      "untracked_hit_files": 0,
+      "hits": {
+        "162000000000": ["measurement/s1_asymmetry_prep/BAND_CLAIM_G3.json", "tests/test_s1_g3_instrument.py"],
+        "163000000000": ["measurement/s1_asymmetry_prep/BAND_CLAIM_G3.json", "tests/test_s1_g3_instrument.py"],
+        "164000000000": [],
+        "165000000000": [],
+        "166000000000": [],
+        "167000000000": [],
+        "168000000000": []
+      }
+    },
+    "incidental_digit_runs_recorded_so_the_next_reader_does_not_rediscover_them": {
+      "file": "measurement/value_resurrection_pilot/data/leaf_audit_rows.jsonl (GIT-IGNORED data)",
+      "what": "The abandoned full-tree pass reported 1-3 raw substring hits for EVERY id in 164e9..169e9 in this ONE file, and 34 for 170e9. Every one of them is a FLOAT MANTISSA TAIL — e.g. `\"regret\": 0.006164000000000003` contains `164000000000`.",
+      "ruling": "⭐ NOT A BAND REFERENCE, AND THE READING IS NOT A JUDGEMENT CALL: a band id is an integer deck seed and these digit runs straddle a decimal point inside a float. A boundary-aware sweep — the id bounded by a non-digit and NOT preceded by `.` or a digit — returns ZERO for 164/165/166/167/168.",
+      "⚠️": "This is recorded because the parent round's rule was 'a band with ANY tree reference is not taken', and a naive substring sweep would refuse EVERY band in this range forever. The refusal rule stands; what is refined here is what counts as a reference."
+    },
+    "dropped_from_consideration": {
+      "158000000000": ["still carries live tree hits (recorded by fpu_resurrection's 2026-08-29 sweep) — NOT reconsidered"],
+      "160000000000": ["same"],
+      "_why": "⭐ Carried forward from measurement/fpu_resurrection_prep/BAND_CLAIM.json so the next reader does not rediscover them as 'free'. This round takes the next monotone ids above the S1 G3 reservation instead of back-filling."
+    }
+  },
+  "_why_four_bands": "⭐ ONE BAND PER RUNG — the fpu_resurrection pattern, deliberately NOT the S1 G3 shared-deck-set pattern. Each rung's PRIMARY is its own deck-paired margin against ZERO, adjudicated on its own realized SE. Nothing is pooled across rungs, nothing is deck-matched across rungs, and NO CROSS-RUNG CONTRAST IS A BRANCH INPUT — so a shared deck set would buy no deck-matching that any gate reads. ⚠️ THE PRICE IS DISCLOSED IN THE PAIR: every rung-vs-rung comparison is CROSS-BAND and carries CL-068's 1.8-2.2x over-dispersion, which is why READ_RULE §5.3 forbids reading a dose-response CURVE off this round and why the round verdict is a CONJUNCTION over independent rungs rather than a shape.",
+  "_csv_rows": [
+    "164000000000,\"FPU DOSE-LADDER, CELL_FPU005: one deck-paired rung, n=800 games (400 seat-balanced decks x 2 seatings), seeds 164000000000..164000000399. CANDIDATE = the production champion with fpu_reduction=0.05 on the CANDIDATE SIDE ONLY (--cand-fpu-reduction; a SEARCH knob that moves NO leaf hash). OPPONENT = the UNMODIFIED production champion, leaf a36d2e15a3b3d71d BOTH SIDES. Both arms FAIR PIMC k16x1376=22016, rust backend, rules_profile fixed_v1 + CARCASSONNE_FIX_R9=1, exact_k 2 marginalized, TIE-ARBITER OFF BOTH SIDES (a deviation from the deployed B=64; DESIGN 2.3). BARS ARE EFFECT-SIZED per the owner ruling of 2026-08-30: ADOPT requires LB95(M) >= +1.5 pts/deck, BOUNDED requires UB95(M) < +1.5. ⭐ THE LOW BRACKET POINT: the incumbent fpu=0.2 (band 155e9, +2.95 z4.32) is a LADDER ENDPOINT and this rung brackets it from below. Pair: measurement/fpu_ladder_prep/{DESIGN,READ_RULE}.md\",claim",
+    "165000000000,\"FPU DOSE-LADDER, CELL_FPU010: identical protocol to 164000000000 at fpu_reduction=0.10. Seeds 165000000000..165000000399. ⛔ NOT POOLED AND NOT DECK-MATCHED with any other rung — every rung sits on its own band, so every rung-vs-rung contrast is CROSS-BAND and carries CL-068 over-dispersion in full. Pair: measurement/fpu_ladder_prep/{DESIGN,READ_RULE}.md\",claim",
+    "166000000000,\"FPU DOSE-LADDER, CELL_FPU015: identical protocol at fpu_reduction=0.15. Seeds 166000000000..166000000399. ⭐ THE NEAR BRACKET POINT — the rung immediately below the incumbent 0.2. ⚠️ A rung adjacent to a fired endpoint is exactly where a winner's-curse crest shows up as a shortfall; READ_RULE 5.3 forbids reading that shortfall as a peak. Pair: measurement/fpu_ladder_prep/{DESIGN,READ_RULE}.md\",claim",
+    "167000000000,\"FPU DOSE-LADDER, CELL_FPU030: identical protocol at fpu_reduction=0.30. Seeds 167000000000..167000000399. ⭐ THE INTERIOR POINT between the fired 0.2 (155e9) and the unresolved 0.4 (156e9). ⛔ It is NOT a test of the 0.2-to-0.4 direction: that contrast is cross-band and CL-068 forbids it. ⚠️ 167999999000..167999999999 inside this band is the THROWAWAY smoke range and is NOT part of the claim. Pair: measurement/fpu_ladder_prep/{DESIGN,READ_RULE}.md\",claim"
+  ]
+}
