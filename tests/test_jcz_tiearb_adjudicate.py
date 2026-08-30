@@ -465,6 +465,40 @@ def test_G_ARB_resolves_the_rung_from_the_champion_manifest_cand_tiearb(tmp_path
     assert "record.champ_tiearb" in cb["addresses_found"]
 
 
+def test_G_ARB_is_indifferent_to_the_post_R5_phase_gate_key(tmp_path, capsys):
+    """⭐ DECISION (merge review R5), locked here: `champion_manifest.cand_tiearb`
+    gained a `phase_gate` key AFTER this round's rung was frozen. `G-ARB` must be
+    indifferent to it in BOTH directions —
+
+      * a POST-R5 archive carrying `phase_gate` must NOT fail (an unexpected key is
+        not a rung drift: the merge is key-wise over `ARB_RUNG_KEYS`), and
+      * a PRE-R5 archive whose `phase_gate` is ABSENT must NOT become a retroactive
+        FAIL — which is exactly what adding it to `ARB_RUNG_KEYS` would have done to
+        every archive this adjudicator exists to read.
+
+    The pre-R5 (absent) leg is what every other `G-ARB` test in this file already
+    fixtures; this one pins the post-R5 (present) leg beside it, and pins the two to
+    the SAME verdict."""
+    assert "phase_gate" not in adj.ARB_RUNG_KEYS
+
+    a, b = write_cells(tmp_path, diffs=_flat)
+    use_champion_manifest_cand_tiearb(b, over={"phase_gate": "all"})
+    s, v = write_support(tmp_path)
+    out, _ = run(tmp_path, a, b, s, v, capsys)
+    assert out["preconditions"]["G-ARB"] is True, out["precondition_detail"]["G-ARB"]
+    cb = out["precondition_detail"]["G-ARB"]["cell_b"]
+    assert cb["conflicts"] == []
+    assert "phase_gate" not in cb["checks"]
+    # ...and a GATED stamp is equally not a rung drift here (this round's cells are
+    # ungated; a round that VARIES the gate pre-registers it in its OWN read rule)
+    (tmp_path / "gated").mkdir()
+    a2, b2 = write_cells(tmp_path / "gated", diffs=_flat)
+    use_champion_manifest_cand_tiearb(b2, over={"phase_gate": "early"})
+    s2, v2 = write_support(tmp_path / "gated")
+    out2, _ = run(tmp_path / "gated", a2, b2, s2, v2, capsys)
+    assert out2["preconditions"]["G-ARB"] is True
+
+
 def test_G_ARB_fails_on_a_wrong_salt_at_the_manifest_address(tmp_path, capsys):
     a, b = write_cells(tmp_path, diffs=_flat)
     use_champion_manifest_cand_tiearb(b, over={"salt": "tiearb2-SOMETHING-ELSE"})
