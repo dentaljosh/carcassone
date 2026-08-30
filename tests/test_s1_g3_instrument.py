@@ -426,7 +426,7 @@ def test_launcher_and_conf_agree_with_the_law(L):
     assert val("RULES_PROFILE") == L.RULES_PROFILE
     assert val("BACKEND") == L.BACKEND
     assert int(val("EXACT_K")) == L.EXACT_K
-    assert int(val("W_LOCAL")) == 30 and int(val("W_LAPTOP")) == 22
+    assert int(val("W_LOCAL")) == 14 and int(val("W_LAPTOP")) == 22  # W_LOCAL 30->14 owner ruling 2026-08-30
 
 
 def test_the_launcher_puts_the_scope_on_the_CANDIDATE_side_only(L):
