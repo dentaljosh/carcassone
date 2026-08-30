@@ -1,0 +1,107 @@
+=== [1] E4 census — one process per rules profile (R9 is import-latched) ===
+[hpm1] corpus=E4 profile=fixed_v1 games=53
+  [25/53] 0.8s
+  [50/53] 1.3s
+[hpm1] done corpus=E4 profile=fixed_v1 reconciled=53/53 rows=418 1.3s -> /home/doctor/hpm1_run/out/rows_E4_fixed_v1.jsonl
+[hpm1] corpus=E4 profile=walled games=2
+[hpm1] done corpus=E4 profile=walled reconciled=2/2 rows=17 0.2s -> /home/doctor/hpm1_run/out/rows_E4_walled.jsonl
+[hpm1] corpus=E4 profile=app_aug2 games=1
+[hpm1] done corpus=E4 profile=app_aug2 reconciled=1/1 rows=5 0.2s -> /home/doctor/hpm1_run/out/rows_E4_app_aug2.jsonl
+=== [2] SP449 profile selection — PREREG 1.1, first with >=99% reconciled ===
+[hpm1] corpus=SP449 profile=walled games=449
+  [25/449] 0.7s
+  [50/449] 1.2s
+  [75/449] 1.7s
+  [100/449] 2.1s
+  [125/449] 2.5s
+  [150/449] 3.0s
+  [175/449] 3.5s
+  [200/449] 3.8s
+  [225/449] 4.3s
+  [250/449] 4.7s
+  [275/449] 5.2s
+  [300/449] 5.7s
+  [325/449] 6.2s
+  [350/449] 6.6s
+  [375/449] 7.0s
+  [400/449] 7.5s
+  [425/449] 7.9s
+[hpm1] done corpus=SP449 profile=walled reconciled=449/449 rows=3080 8.3s -> /home/doctor/hpm1_run/sp_probe_walled/rows_SP449_walled.jsonl
+  profile=walled reconcile_rate=1.0000
+  SP449 profile adopted: walled
+=== [3] adjudicate the bars ===
+{
+ "primary_universe": {
+  "definition": "E4 champion farmer deployments",
+  "profile": "fixed_v1",
+  "n_rows": 199,
+  "n_scoring": 107,
+  "n_zero": 92,
+  "n_games": 53,
+  "zero_rate": 0.4623115577889447
+ },
+ "auc": {
+  "F_FIT_oof": 0.6518183665176758,
+  "F_FIT_oof_ci95": [
+   0.5656565656565656,
+   0.7323814962878356
+  ],
+  "F_PF": 0.6479581470946769,
+  "B_LEAF": 0.5609508329947176,
+  "B_BAG": 0.5609508329947176,
+  "d_F_FIT_minus_B_LEAF": 0.09086753352295818,
+  "ci95": [
+   -0.0013756613756613634,
+   0.185105467068446
+  ],
+  "d_F_FIT_minus_B_BAG": 0.09086753352295818,
+  "ci95_bag": [
+   -0.0013756613756613634,
+   0.185105467068446
+  ],
+  "n_rows_scored": 199,
+  "n_pos": 107,
+  "n_neg": 92
+ },
+ "bars": {
+  "a_AUC_ge_0.70": {
+   "pass": false,
+   "value": 0.6518183665176758,
+   "bar": 0.7,
+   "ci95": [
+    0.5656565656565656,
+    0.7323814962878356
+   ]
+  },
+  "b_beats_B_LEAF_and_B_BAG": {
+   "pass": true,
+   "weak": true,
+   "F_FIT": 0.6518183665176758,
+   "B_LEAF": 0.5609508329947176,
+   "B_BAG": 0.5609508329947176,
+   "d_leaf": 0.09086753352295818,
+   "d_leaf_ci95": [
+    -0.0013756613756613634,
+    0.185105467068446
+   ],
+   "d_bag": 0.09086753352295818,
+   "d_bag_ci95": [
+    -0.0013756613756613634,
+    0.185105467068446
+   ]
+  },
+  "c_seat_owner_high": {
+   "pass": false,
+   "n_owner": 231,
+   "n_champ": 209,
+   "mean_owner": 1.568719017587598,
+   "mean_champ": 1.8709435269163632,
+   "delta": -0.3022245093287652,
+   "perm_p_two_sided": 9.999000099990002e-05,
+   "owner_zero_rate": 0.05627705627705626,
+   "champ_zero_rate": 0.46411483253588515
+  }
+ },
+ "verdict": "MECHANISM DEAD (a bar failed) \u2014 no build, no band, no follow-on cell"
+}
+=== DONE ===

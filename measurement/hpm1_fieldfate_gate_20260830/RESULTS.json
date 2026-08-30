@@ -1,0 +1,112 @@
+{
+ "prereg": "PREREG.md (frozen 2026-08-30)",
+ "seed": 20260830,
+ "n_features": 45,
+ "corpora": {
+  "E4_rows": 440,
+  "SP449_rows": 3080
+ },
+ "e4_seat_counts": {
+  "champion": 209,
+  "owner": 231
+ },
+ "e4_profiles": {
+  "app_aug2": 5,
+  "fixed_v1": 418,
+  "walled": 17
+ },
+ "primary_universe": {
+  "definition": "E4 champion farmer deployments",
+  "profile": "fixed_v1",
+  "n_rows": 199,
+  "n_scoring": 107,
+  "n_zero": 92,
+  "n_games": 53,
+  "zero_rate": 0.4623115577889447
+ },
+ "e4_zero_rate_by_seat": {
+  "champion": 0.46411483253588515,
+  "owner": 0.05627705627705628
+ },
+ "bag_ok_all": false,
+ "bag_ok_fail_n": 264,
+ "auc": {
+  "F_FIT_oof": 0.6518183665176758,
+  "F_FIT_oof_ci95": [
+   0.5656565656565656,
+   0.7323814962878356
+  ],
+  "F_PF": 0.6479581470946769,
+  "B_LEAF": 0.5609508329947176,
+  "B_BAG": 0.5609508329947176,
+  "d_F_FIT_minus_B_LEAF": 0.09086753352295818,
+  "ci95": [
+   -0.0013756613756613634,
+   0.185105467068446
+  ],
+  "d_F_FIT_minus_B_BAG": 0.09086753352295818,
+  "ci95_bag": [
+   -0.0013756613756613634,
+   0.185105467068446
+  ],
+  "n_rows_scored": 199,
+  "n_pos": 107,
+  "n_neg": 92
+ },
+ "sp449": {
+  "n_rows": 3080,
+  "n_scored": 3080,
+  "n_games": 449,
+  "zero_rate": 0.15422077922077926,
+  "AUC_F_FIT_oof": 0.592632387109809,
+  "AUC_F_PF": 0.5467958379634307,
+  "AUC_B_LEAF": 0.5416975452065865,
+  "AUC_B_BAG": 0.5413763006364279
+ },
+ "transfer_SP449_to_E4champ_AUC": 0.6749796830556685,
+ "seat_model_source": "SP449-trained (never saw an E4 row)",
+ "bars": {
+  "a_AUC_ge_0.70": {
+   "pass": false,
+   "value": 0.6518183665176758,
+   "bar": 0.7,
+   "ci95": [
+    0.5656565656565656,
+    0.7323814962878356
+   ]
+  },
+  "b_beats_B_LEAF_and_B_BAG": {
+   "pass": true,
+   "weak": true,
+   "F_FIT": 0.6518183665176758,
+   "B_LEAF": 0.5609508329947176,
+   "B_BAG": 0.5609508329947176,
+   "d_leaf": 0.09086753352295818,
+   "d_leaf_ci95": [
+    -0.0013756613756613634,
+    0.185105467068446
+   ],
+   "d_bag": 0.09086753352295818,
+   "d_bag_ci95": [
+    -0.0013756613756613634,
+    0.185105467068446
+   ]
+  },
+  "c_seat_owner_high": {
+   "pass": false,
+   "n_owner": 231,
+   "n_champ": 209,
+   "mean_owner": 1.568719017587598,
+   "mean_champ": 1.8709435269163632,
+   "delta": -0.3022245093287652,
+   "perm_p_two_sided": 9.999000099990002e-05,
+   "owner_zero_rate": 0.05627705627705626,
+   "champ_zero_rate": 0.46411483253588515
+  }
+ },
+ "verdict": "MECHANISM DEAD (a bar failed) \u2014 no build, no band, no follow-on cell",
+ "bars_failed": [
+  "a_AUC_ge_0.70",
+  "c_seat_owner_high"
+ ]
+}
