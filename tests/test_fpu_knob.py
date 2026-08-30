@@ -148,6 +148,14 @@ def test_python_search_honours_the_knob():
     from carcassonne_ai.heuristic_prior_mcts import make_heuristic_prior_mcts
 
     g = Game(enable_legal_moves_cache=True)
+    # ⛔ SEED THE **GLOBAL** RNG, not just the local one below. `get_init_board()`
+    # shuffles the deck from the `random` MODULE, so without this the DECK depends
+    # on how much global randomness every previously-COLLECTED test module
+    # consumed at import time — an order-of-collection artefact that made the
+    # sibling assertion in tests/test_neural_mcts.py flaky (diagnosed 2026-08-30;
+    # importing tests/test_b64_cell.py is enough to shift the stream). The local
+    # `Random(3)` does not protect against it: it does not drive the deck.
+    random.seed(12345)
     b = g.get_init_board()
     # ⚠️ The INIT board has ~1 legal move (the first tile is forced), so FPU has
     # nothing to reorder there. Advance to a branchy mid-game position — the same

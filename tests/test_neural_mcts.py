@@ -43,6 +43,17 @@ def test_fpu_reduction_changes_search_but_stays_valid() -> None:
     children (q=-0.5) less attractive than legacy (q=0) → selection order differs."""
     import random
     g = Game(enable_legal_moves_cache=True)
+    # ⛔ SEED THE **GLOBAL** RNG, not just the local one below. `get_init_board()`
+    # shuffles the deck from the `random` MODULE, so without this the DECK — and
+    # therefore the whole board — depends on how much global randomness every
+    # previously-COLLECTED test module happened to consume at import time.
+    # Measured 2026-08-30: importing `tests/test_b64_cell.py` (transitively
+    # `scripts/tiletie/analyze_tiearb`) shifts the stream, this test lands on a
+    # different deck, and on some decks the 24-sim legacy and fpu=0.5 searches
+    # coincide — so the assertion below failed as a pure ORDER-OF-COLLECTION
+    # artefact, on the pre-fpu-plumbing source as well as after it. The local
+    # `Random(3)` never protected against this because it does not drive the deck.
+    random.seed(12345)
     board = g.get_init_board()
     # The init board has ~1 legal move (first tile forced to start) — advance to a
     # branchy mid-game position so there are many children for FPU to reorder.
