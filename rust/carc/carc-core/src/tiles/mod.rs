@@ -453,8 +453,231 @@ fn rotate_with_farms(
     }
 }
 
+// ---------------------------------------------------------------------------
+// The FLAT registry — the same data, contiguous (registry flattening, 2026-08-30)
+//
+// `RotTile` is the faithful mirror of the Python `Tile` object and stays as it
+// is: it carries `String`s, `Vec<Vec<Side>>` and a `Vec<FarmerConn>` whose
+// every `FarmerConn` owns three more `Vec`s.  Reading one tile's city groups,
+// road connections and farm connections out of it therefore costs ~10 dependent
+// pointer loads into scattered heap allocations.
+//
+// `decompose_into` reads exactly seven things per placed tile — the city
+// groups, the road connections, each farm's `tile_connections` /
+// `farmer_positions` / `city_sides`, `shield`, and whether `inn` is non-empty —
+// once per placed tile per leaf evaluation, on the hottest path in the engine.
+// `TileFlat` is those seven things and nothing else, in **fixed-size arrays
+// inside one `#[repr(C)]` value** (102 bytes, two cache lines), stored in a flat
+// table parallel to `registry()`.  The pointer chase becomes index arithmetic.
+//
+// **This is a pure representation change.**  The flat table is DERIVED from
+// `registry_for(r9)` (never from `generated::` directly) so it cannot drift from
+// the object registry, and every list keeps its source order — group order,
+// side-within-group order, road-pair order, farm-slot order, and the order of
+// each farm's three lists.  `decompose_into`'s output is bit-identical; see
+// `leaf::decomp::refimpl` and the gates in `examples/registry_flat_gate.rs`.
+// ---------------------------------------------------------------------------
+
+/// Max sides across all city groups of one tile (base deck measures 4).
+pub const MAX_CITY_SIDES: usize = 8;
+/// Max city groups on one tile (base deck measures 2).
+pub const MAX_CITY_GROUPS: usize = 4;
+/// Max road connections on one tile (base deck measures 4 — the crossroads).
+pub const MAX_ROADS: usize = 4;
+/// Max `FarmerConnection`s on one tile (base deck measures 4).
+pub const MAX_FARMS: usize = 4;
+/// Max `farmer_positions` in one `FarmerConnection` (base deck measures 4).
+pub const MAX_FPOS: usize = 4;
+/// Max `tile_connections` in one `FarmerConnection` (base deck measures 8).
+pub const MAX_TCONN: usize = 8;
+/// Max `city_sides` in one `FarmerConnection` (base deck measures 3).
+pub const MAX_CSIDES: usize = 4;
+
+/// `(d_row, d_col)` for `FarmerSide::get_side()` — a const LUT replacing the
+/// two chained `match`es (`get_side()` then `Side -> delta`) on the hot path.
+/// Indexed by `FarmerSide as usize`; identical by construction to
+/// `get_side()`'s cardinal answer.
+pub const FARMER_SIDE_DELTA: [(i8, i8); 8] = [
+    (0, -1), // Tll -> Left
+    (-1, 0), // Tlt -> Top
+    (-1, 0), // Trt -> Top
+    (0, 1),  // Trr -> Right
+    (0, -1), // Bll -> Left
+    (1, 0),  // Blb -> Bottom
+    (1, 0),  // Brb -> Bottom
+    (0, 1),  // Brr -> Right
+];
+
+/// `FarmerSide::opposite() as u8`, as a const LUT (the fixed involution).
+pub const FARMER_SIDE_OPP: [u8; 8] = [
+    FarmerSide::Trr as u8, // Tll
+    FarmerSide::Blb as u8, // Tlt
+    FarmerSide::Brb as u8, // Trt
+    FarmerSide::Tll as u8, // Trr
+    FarmerSide::Brr as u8, // Bll
+    FarmerSide::Tlt as u8, // Blb
+    FarmerSide::Trt as u8, // Brb
+    FarmerSide::Bll as u8, // Brr
+];
+
+/// One `FarmerConn`, flattened.  Sides are stored as their `as u8` discriminant
+/// in **source order**; the counts say how much of each array is live.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
+pub struct FarmFlat {
+    /// `tile_connections`, as `FarmerSide as u8`.
+    pub tconn: [u8; MAX_TCONN],
+    /// `farmer_positions`, as `Side as u8`.
+    pub fpos: [u8; MAX_FPOS],
+    /// `city_sides`, as `Side as u8`.
+    pub csides: [u8; MAX_CSIDES],
+    pub n_tconn: u8,
+    pub n_fpos: u8,
+    pub n_csides: u8,
+}
+
+impl FarmFlat {
+    const EMPTY: FarmFlat = FarmFlat {
+        tconn: [0; MAX_TCONN],
+        fpos: [0; MAX_FPOS],
+        csides: [0; MAX_CSIDES],
+        n_tconn: 0,
+        n_fpos: 0,
+        n_csides: 0,
+    };
+    #[inline]
+    pub fn tconn(&self) -> &[u8] {
+        &self.tconn[..self.n_tconn as usize]
+    }
+    #[inline]
+    pub fn fpos(&self) -> &[u8] {
+        &self.fpos[..self.n_fpos as usize]
+    }
+    #[inline]
+    pub fn csides(&self) -> &[u8] {
+        &self.csides[..self.n_csides as usize]
+    }
+}
+
+/// The decomposition-relevant slice of a [`RotTile`], contiguous.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
+pub struct TileFlat {
+    /// All city-group sides concatenated in group order, `Side as u8`.
+    pub city_sides: [u8; MAX_CITY_SIDES],
+    /// Exclusive end index into `city_sides` for each group, ascending.
+    pub city_group_end: [u8; MAX_CITY_GROUPS],
+    /// Road connections flattened: `road[2*i]`, `road[2*i + 1]`, `Side as u8`.
+    pub road: [u8; MAX_ROADS * 2],
+    pub farms: [FarmFlat; MAX_FARMS],
+    pub n_city_groups: u8,
+    pub n_road: u8,
+    pub n_farms: u8,
+    pub shield: bool,
+    /// `!inn.is_empty()` — precomputed; `decompose` only ever asks that.
+    pub has_inn: bool,
+}
+
+impl TileFlat {
+    /// The sides of city group `gi`, in source order.
+    #[inline]
+    pub fn city_group(&self, gi: usize) -> &[u8] {
+        let start = if gi == 0 {
+            0
+        } else {
+            self.city_group_end[gi - 1] as usize
+        };
+        &self.city_sides[start..self.city_group_end[gi] as usize]
+    }
+    #[inline]
+    pub fn farms(&self) -> &[FarmFlat] {
+        &self.farms[..self.n_farms as usize]
+    }
+}
+
+fn flatten(t: &RotTile) -> TileFlat {
+    let mut out = TileFlat {
+        city_sides: [0; MAX_CITY_SIDES],
+        city_group_end: [0; MAX_CITY_GROUPS],
+        road: [0; MAX_ROADS * 2],
+        farms: [FarmFlat::EMPTY; MAX_FARMS],
+        n_city_groups: 0,
+        n_road: 0,
+        n_farms: 0,
+        shield: t.shield,
+        has_inn: !t.inn.is_empty(),
+    };
+
+    assert!(
+        t.city.len() <= MAX_CITY_GROUPS,
+        "tile {} rot {}: {} city groups > MAX_CITY_GROUPS",
+        t.description,
+        t.rot,
+        t.city.len()
+    );
+    let mut k = 0usize;
+    for (gi, group) in t.city.iter().enumerate() {
+        for &s in group {
+            assert!(
+                k < MAX_CITY_SIDES,
+                "tile {} rot {}: city sides > MAX_CITY_SIDES",
+                t.description,
+                t.rot
+            );
+            out.city_sides[k] = s as u8;
+            k += 1;
+        }
+        out.city_group_end[gi] = k as u8;
+    }
+    out.n_city_groups = t.city.len() as u8;
+
+    assert!(
+        t.road.len() <= MAX_ROADS,
+        "tile {} rot {}: {} roads > MAX_ROADS",
+        t.description,
+        t.rot,
+        t.road.len()
+    );
+    for (i, &(a, b)) in t.road.iter().enumerate() {
+        out.road[2 * i] = a as u8;
+        out.road[2 * i + 1] = b as u8;
+    }
+    out.n_road = t.road.len() as u8;
+
+    assert!(
+        t.farms.len() <= MAX_FARMS,
+        "tile {} rot {}: {} farms > MAX_FARMS",
+        t.description,
+        t.rot,
+        t.farms.len()
+    );
+    for (slot, fc) in t.farms.iter().enumerate() {
+        let f = &mut out.farms[slot];
+        assert!(fc.tile_connections.len() <= MAX_TCONN, "MAX_TCONN");
+        assert!(fc.farmer_positions.len() <= MAX_FPOS, "MAX_FPOS");
+        assert!(fc.city_sides.len() <= MAX_CSIDES, "MAX_CSIDES");
+        for (i, &fs) in fc.tile_connections.iter().enumerate() {
+            f.tconn[i] = fs as u8;
+        }
+        for (i, &s) in fc.farmer_positions.iter().enumerate() {
+            f.fpos[i] = s as u8;
+        }
+        for (i, &s) in fc.city_sides.iter().enumerate() {
+            f.csides[i] = s as u8;
+        }
+        f.n_tconn = fc.tile_connections.len() as u8;
+        f.n_fpos = fc.farmer_positions.len() as u8;
+        f.n_csides = fc.city_sides.len() as u8;
+    }
+    out.n_farms = t.farms.len() as u8;
+
+    out
+}
+
 static REGISTRY: OnceLock<Vec<RotTile>> = OnceLock::new();
 static REGISTRY_R9: OnceLock<Vec<RotTile>> = OnceLock::new();
+static FLAT: OnceLock<Vec<TileFlat>> = OnceLock::new();
+static FLAT_R9: OnceLock<Vec<TileFlat>> = OnceLock::new();
 static R9_ON: OnceLock<bool> = OnceLock::new();
 
 /// The `CARCASSONNE_FIX_R9` env flag, resolved once per process.  Accepts the
@@ -486,6 +709,25 @@ pub fn registry() -> &'static [RotTile] {
 #[inline]
 pub fn tile(id: TileId) -> &'static RotTile {
     &registry()[id as usize]
+}
+
+/// The flat table for an explicit flag state, derived from [`registry_for`].
+pub fn flat_registry_for(r9: bool) -> &'static [TileFlat] {
+    let lock = if r9 { &FLAT_R9 } else { &FLAT };
+    lock.get_or_init(|| registry_for(r9).iter().map(flatten).collect())
+}
+
+/// All `N_BASE * 4` rotated tiles as [`TileFlat`], indexed by [`tile_id`].
+///
+/// Hoist this **once** per hot loop and index it; that is the whole point.
+#[inline]
+pub fn flat_registry() -> &'static [TileFlat] {
+    flat_registry_for(r9_enabled())
+}
+
+#[inline]
+pub fn tile_flat(id: TileId) -> &'static TileFlat {
+    &flat_registry()[id as usize]
 }
 
 /// `base_tile_counts` in dict-insertion order, resolved to base indices.
@@ -531,6 +773,63 @@ mod tests {
             assert_ne!(fs.opposite(), fs);
         }
         assert_eq!(Trt.opposite(), Brb);
+    }
+
+    /// The two const LUTs must equal the `match`es they replace, for all 8
+    /// half-sides.  If `opposite()` or `get_side()` is ever edited, this fires.
+    #[test]
+    fn farmer_side_luts_match_the_functions() {
+        use FarmerSide::*;
+        for fs in [Tll, Tlt, Trt, Trr, Bll, Blb, Brb, Brr] {
+            let i = fs as usize;
+            assert_eq!(FARMER_SIDE_OPP[i], fs.opposite() as u8, "{fs:?}");
+            let want = match fs.get_side() {
+                Side::Top => (-1i8, 0i8),
+                Side::Right => (0, 1),
+                Side::Bottom => (1, 0),
+                Side::Left => (0, -1),
+                other => panic!("farmer side on a non-cardinal edge {other:?}"),
+            };
+            assert_eq!(FARMER_SIDE_DELTA[i], want, "{fs:?}");
+        }
+    }
+
+    /// The flat table must reproduce every list `decompose` reads, in order,
+    /// for every tile in BOTH registry flag states.
+    #[test]
+    fn flat_registry_matches_the_object_registry() {
+        for r9 in [false, true] {
+            let objs = registry_for(r9);
+            let flats = flat_registry_for(r9);
+            assert_eq!(objs.len(), flats.len());
+            for (id, (t, f)) in objs.iter().zip(flats.iter()).enumerate() {
+                let ctx = format!("r9={r9} id={id} {} rot {}", t.description, t.rot);
+                assert_eq!(f.n_city_groups as usize, t.city.len(), "{ctx} groups");
+                for (gi, group) in t.city.iter().enumerate() {
+                    let want: Vec<u8> = group.iter().map(|&s| s as u8).collect();
+                    assert_eq!(f.city_group(gi), &want[..], "{ctx} city group {gi}");
+                }
+                assert_eq!(f.n_road as usize, t.road.len(), "{ctx} roads");
+                for (i, &(a, b)) in t.road.iter().enumerate() {
+                    assert_eq!(f.road[2 * i], a as u8, "{ctx} road {i}.0");
+                    assert_eq!(f.road[2 * i + 1], b as u8, "{ctx} road {i}.1");
+                }
+                assert_eq!(f.shield, t.shield, "{ctx} shield");
+                assert_eq!(f.has_inn, !t.inn.is_empty(), "{ctx} has_inn");
+                assert_eq!(f.n_farms as usize, t.farms.len(), "{ctx} farms");
+                for (slot, fc) in t.farms.iter().enumerate() {
+                    let ff = &f.farms[slot];
+                    let want_t: Vec<u8> =
+                        fc.tile_connections.iter().map(|&x| x as u8).collect();
+                    let want_p: Vec<u8> =
+                        fc.farmer_positions.iter().map(|&x| x as u8).collect();
+                    let want_c: Vec<u8> = fc.city_sides.iter().map(|&x| x as u8).collect();
+                    assert_eq!(ff.tconn(), &want_t[..], "{ctx} farm {slot} tconn");
+                    assert_eq!(ff.fpos(), &want_p[..], "{ctx} farm {slot} fpos");
+                    assert_eq!(ff.csides(), &want_c[..], "{ctx} farm {slot} csides");
+                }
+            }
+        }
     }
 
     #[test]

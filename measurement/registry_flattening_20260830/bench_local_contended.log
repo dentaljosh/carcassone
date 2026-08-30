@@ -1,0 +1,19 @@
+== registry flattening — directional bench ==
+samples: 575
+ref (object registry): -370.1 + 185.66 * placed ns   R2=0.805
+new (flat registry)  : -272.2 + 159.76 * placed ns   R2=0.751
+decompose factor (sum over samples): 1.152x
+slope factor (ns/placed):            1.162x
+decompose+leaf(2 pov) factor:        1.149x
+
+ placed | ref ns | new ns | factor
+   0- 7 |    696 |    634 | 1.098x
+   8-15 |   1928 |   1715 | 1.124x
+  16-23 |   3013 |   2741 | 1.099x
+  24-31 |   4199 |   3735 | 1.124x
+  32-39 |   5890 |   4966 | 1.186x
+  40-47 |   7694 |   6617 | 1.163x
+  48-55 |   9900 |   8504 | 1.164x
+  56-63 |  10729 |   9381 | 1.144x
+  64-71 |  12186 |  10482 | 1.163x
+  72-79 |  11933 |  10604 | 1.125x
