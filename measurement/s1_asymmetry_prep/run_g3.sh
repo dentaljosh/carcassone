@@ -244,26 +244,29 @@ print('[knob] this box binds jrules_prior_scope: ' + r)
 
 # (b) ⭐ THE R7 WITNESS FIELDS. Without them G-WITNESS VOIDS every arm this box
 # runs, so refuse now rather than after 10 hours of compute.
+# G3-D1 (2026-08-30, pre-launch, statistics-blind): the original probe grepped
+# dir(carc_rs) for 'jr_expansions' — but the fields are DICT KEYS returned by
+# FairAgentRs.stats(), invisible to dir() by construction, so the probe refused
+# a HEALTHY wheel (ad211fd3) whose emitted smoke summary carried the real
+# counters (SMOKE_OPP: candidate boosted 4,528,040 / opponent 0, G-WITNESS
+# PASS). Replaced with the honest probe: one throwaway 8-sim search, then read
+# the stats() keys themselves.
 try:
-    import carc_rs
+    from carcassonne_ai.game_wrapper import Game
+    from carcassonne_ai.rust_agent import RustFairAgent
+    from carcassonne_ai.champion_factory import production_prior_cfg
+    _g = Game()
+    _a = RustFairAgent(_g, production_prior_cfg(), sims=4, k_dets=2, seed=1)
+    _a.get_action(_g.get_init_board())
+    _keys = set(_a._rs.stats())
 except Exception as e:
-    print('⛔ carc_rs is not importable on this box: %r' % (e,)); sys.exit(1)
-names = dir(carc_rs)
-blob = ' '.join(names).lower()
-if 'jr_expansions' not in blob:
-    # dir() on a pyo3 module does not always reach nested classes, so probe the
-    # class surfaces too before refusing.
-    for n in names:
-        try:
-            blob += ' ' + ' '.join(dir(getattr(carc_rs, n))).lower()
-        except Exception:
-            pass
-if 'jr_expansions' not in blob:
-    print('⛔⛔ STALE carc_rs WHEEL (probe): no jr_expansions_* surface found on '
-          'this box. G-WITNESS reads the play-derived expansion census and '
-          'ABSENT is VOID, so EVERY arm this box runs would void at '
-          'adjudication. REBUILD AND INSTALL THE WHEEL ON THIS BOX (per-box '
-          'rebuild, then re-pin PINNED_SRC_REV_${ROLE}), then re-run.')
+    print('⛔ witness probe could not run a throwaway search: %r' % (e,)); sys.exit(9)
+_need = {'jr_expansions_total', 'jr_expansions_own_mover', 'jr_expansions_boosted'}
+if not _need <= _keys:
+    print('⛔⛔ STALE carc_rs WHEEL (probe): stats() lacks %s on this box. '
+          'G-WITNESS reads the play-derived expansion census and ABSENT is '
+          'VOID. REBUILD AND INSTALL THE WHEEL ON THIS BOX, re-pin '
+          'PINNED_SRC_REV_${ROLE}, re-run.' % (sorted(_need - _keys),))
     sys.exit(9)
 print('[wheel] the R7 jr_expansions witness surface is present on this box')
 "
