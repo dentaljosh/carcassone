@@ -213,8 +213,30 @@ def search_config_rs(cfg, sims: int):
 
     `exp_fma=True` / `tanh_flavor="glibc_fma"` are the G0 findings for x86-64
     desktop (`np.exp` float64 == glibc `__exp_fma`; `math.tanh` likewise); they
-    are what makes the Rust priors bit-identical here. `fpu_reduction=None` is
-    the NeuralMCTS legacy `q=0` for unvisited children.
+    are what makes the Rust priors bit-identical here.
+
+    ⛔⛔ `fpu_reduction` is now FORWARDED from `cfg`, not hard-coded (the
+    2026-08-29 false-negative audit; `measurement/fpu_resurrection_prep`). Until
+    that date this slot carried a LITERAL `None`, so the CHAMPION COULD NOT
+    EXPRESS THE KNOB AT ALL: `carc_rs` had accepted `Option<f64>` since the
+    rustport and `carc_core::search` implemented it (`mod.rs:816`), but no
+    `HeuristicPriorConfig` value could reach it, and the only leaf-value FPU
+    cells ever measured (`experiments/results.csv` rows 68-69, +45.4 / +31.4
+    elo at n=200, 2026-06-02) were therefore never confirmable on the backend
+    the champion plays on. **This is the same silent-divergence failure `c_lcb`
+    was fixed for below, one surface over** — and it was WORSE, because a
+    caller that set `fpu_reduction` got a config whose python leg honoured it
+    (`mcts.py:1225`) and whose Rust leg did not, i.e. two DIFFERENT agents
+    wearing one config.
+
+    ⭐ `None` remains the default and remains the champion, bit-for-bit: it is
+    the NeuralMCTS legacy optimistic `q = 0` for unvisited children, and it is
+    what keeps the Rust priors bit-identical here. ⚠️ `None` and `0.0` are NOT
+    the same request — `Some(0.0)` takes the `node_q - 0.0` branch (the
+    PARENT's Q), not zero — so the value is passed through without coercion.
+    The bit-exact-when-None property is the round's GOLDEN GATE
+    (`measurement/fpu_resurrection_prep/selftest_fixture/`), and no rust change
+    was needed or made, so the wheel does not move across this fix.
 
     ⚠️ `c_lcb` is now FORWARDED from `cfg`, not hard-coded (ROUND2 C-g). It is
     inert while `final_select` is "Q"/"visits", which is why the hard-coded 1.0
@@ -318,7 +340,11 @@ def search_config_rs(cfg, sims: int):
         float(SCORE_NORM_SCALE),
         str(cfg.leaf_quantize),
         str(cfg.final_select),
-        None,
+        # ⛔ THE FORWARDED FPU (was a hard-coded None until 2026-08-29 — see the
+        # docstring). `getattr` default None keeps every config predating the
+        # field working, and `None` stays `None` rather than becoming `0.0`.
+        (None if getattr(cfg, "fpu_reduction", None) is None
+         else float(cfg.fpu_reduction)),
         float(getattr(cfg, "c_lcb", 1.0)),
         True,
         "glibc_fma",

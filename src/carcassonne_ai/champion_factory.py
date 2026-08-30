@@ -574,6 +574,13 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
             "value_norm": spec.value_norm, "reuse_tree": spec.reuse_tree,
             # reuse_tree is a NO-OP in fair deploy (fresh per-det trees); honest flag:
             "reuse_tree_effective": bool(spec.reuse_tree and mode == "clairvoyant"),
+            # FPU for unvisited children (measurement/fpu_resurrection_prep).
+            # `null` == the champion == the legacy optimistic q=0, and is a
+            # POSITIVE statement rather than a missing key. PRODUCTION.yaml
+            # carries no fpu knob, so this reads null for every champion built
+            # from the YAML; a caller that hands in a cfg WITH one is disclosed
+            # here rather than hidden behind an unchanged leaf hash.
+            "fpu_reduction": getattr(cfg, "fpu_reduction", None),
             "config_hash": _config_hash(cfg.as_manifest()),
         },
         "fair_deploy": {

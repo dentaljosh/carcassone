@@ -316,6 +316,7 @@ import argparse
 import json
 import math
 import multiprocessing as mp
+import re
 import socket
 import sys
 import time
@@ -990,7 +991,7 @@ def _make_bare_net_opponent(net, rep, seed, leaf_cfg=None, handles=None):
 
 def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
                      leaf_cfg=None, jrules_prior=None, jrules_filter=None,
-                     tiearb=None):
+                     tiearb=None, cand_search=None):
     # leaf_cfg=None -> env DEFAULT_CONFIG (byte-identical to the pre-C5 path); a
     # non-None value is the --cand-leaf-json CANDIDATE override for the FAIR agent
     # ONLY (the h800 rung always keeps DEFAULT_CONFIG — see _RungPrefix callers).
@@ -1038,11 +1039,35 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
                   # HeuristicPriorConfig.__post_init__ AND again by the rust
                   # parse, never silently coerced to "all".
                   tiearb_phase_gate=str(tiearb.get("phase_gate", "all")))
+    # ⭐⭐ cand_search: THE CANDIDATE-ONLY PUCT KNOBS (measurement/
+    # fpu_resurrection_prep). `None` — which is what the OPPONENT builder and
+    # every historical caller pass — leaves this function byte-identical to the
+    # pre-round version. A dict may carry:
+    #     {"fpu_reduction": float|None, "c_puct": float|None}
+    #
+    # ⛔⛔ WHY `c_puct` HAS TO LIVE HERE AND CANNOT RIDE `--c-puct`. `--c-puct`
+    # is a SHARED knob: `champ_cfg_dict` is built from it and `_make_opponent`
+    # feeds that SAME dict through `_cfg_from_dict`, so `--c-puct 1.0` moves
+    # BOTH SIDES and measures nothing. The 2026-08-30 build brief asserted a
+    # c_puct cell "needs NO new plumbing"; that is FALSE, and this override is
+    # the correction (see DEVIATIONS.md D1). The override is applied ONLY at the
+    # candidate construction site in `_play_one_inner` / `_smoke`.
+    #
+    # ⚠️ `fpu_reduction=None` inside the dict is NOT "unset" — it is the
+    # champion's legacy optimistic q=0, and it is also the field default, so the
+    # two coincide. `c_puct=None` IS "unset" and falls through to the shared
+    # `--c-puct`, which is what keeps an fpu-only cell single-variable.
+    _cs = {}
+    if cand_search is not None:
+        if cand_search.get("c_puct") is not None:
+            c_puct = float(cand_search["c_puct"])
+        if cand_search.get("fpu_reduction") is not None:
+            _cs["fpu_reduction"] = float(cand_search["fpu_reduction"])
     return HeuristicPriorConfig(
         c_puct=c_puct, tau_p=tau_p, leaf_quantize=leaf_quantize,
         final_select=final_select, value_norm=value_norm,
         leaf_cfg=(leaf_cfg if leaf_cfg is not None else DEFAULT_CONFIG),
-        **jr,
+        **jr, **_cs,
     )
 
 
@@ -1919,8 +1944,15 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
                  netprior_backend=None, backend="python", rust_threads=None,
                  simsplit=None, cand_jrules_prior=None, cand_jrules_filter=None,
-                 cand_exact_objective=None, cand_tiearb=None, wc_tiebreak=False):
+                 cand_exact_objective=None, cand_tiearb=None, wc_tiebreak=False,
+                 cand_search=None):
     _W["info"] = info
+    # CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep). A RESOLVED
+    # dict {fpu_reduction, c_puct} from main(); reaches the CANDIDATE's
+    # `_cfg_from_dict` ONLY — `_make_opponent` never sees it, which is what makes
+    # a c_puct cell single-variable at all (the shared --c-puct moves both sides).
+    # None (or an all-None dict) == byte-identical to every historical cell.
+    _W["cand_search"] = cand_search
     # J-RULES PRIOR surface B (CANDIDATE side ONLY, rust-only; None = OFF =
     # byte-identical). A dict {dose, mask, scope} resolved once in main().
     _W["cand_jrules_prior"] = cand_jrules_prior
@@ -2122,15 +2154,18 @@ def _args_simsplit(args):
 
 
 def _cfg_from_dict(d, leaf_cfg=None, jrules_prior=None, jrules_filter=None,
-                   tiearb=None):
-    # `jrules_prior`/`jrules_filter`/`tiearb` reach ONLY the candidate
-    # construction site in _play_one; the opponent/rung builders never pass them
-    # (None == pre-B/pre-C/pre-arbiter byte-identical).
+                   tiearb=None, cand_search=None):
+    # `jrules_prior`/`jrules_filter`/`tiearb`/`cand_search` reach ONLY the
+    # candidate construction site in _play_one; the opponent/rung builders never
+    # pass them (None == pre-B/pre-C/pre-arbiter/pre-fpu byte-identical).
+    # ⛔ `cand_search` is the ONLY way a PUCT knob becomes candidate-only: the
+    # opponent is built from this SAME `d` (`_make_opponent` -> `_cfg_from_dict`),
+    # so anything read straight off `d` moves BOTH SIDES.
     return _build_champ_cfg(d["c_puct"], d["tau_p"], d["leaf_quantize"],
                             d["final_select"], d["value_norm"], leaf_cfg,
                             jrules_prior=jrules_prior,
                             jrules_filter=jrules_filter,
-                            tiearb=tiearb)
+                            tiearb=tiearb, cand_search=cand_search)
 
 
 def _play_one(args) -> GameResult | GameFailure | None:
@@ -2212,7 +2247,8 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
     cfg = _cfg_from_dict(_W["champ_cfg_dict"], _W.get("cand_leaf_cfg"),
                          jrules_prior=_W.get("cand_jrules_prior"),
                          jrules_filter=_W.get("cand_jrules_filter"),
-                         tiearb=_W.get("cand_tiearb"))
+                         tiearb=_W.get("cand_tiearb"),
+                         cand_search=_W.get("cand_search"))
     champ = _make_champion(_W["info"], cfg, _W["sims"], _W["k_dets"], _W["exact_k"],
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
@@ -2875,7 +2911,7 @@ def _build_work(seed_start, n, paired):
 # --------------------------------------------------------------------------- #
 def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
            opp_label=None, cand_jrules_prior=None, cand_jrules_filter=None,
-           cand_tiearb=None) -> int:
+           cand_tiearb=None, cand_search=None) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
     and print an elo/z summary. Exits 0 on success.
@@ -2891,7 +2927,13 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                            args.final_select, args.value_norm, cand_leaf_cfg,
                            jrules_prior=cand_jrules_prior,
                            jrules_filter=cand_jrules_filter,
-                           tiearb=cand_tiearb)
+                           tiearb=cand_tiearb, cand_search=cand_search)
+    if cand_search is not None and (cand_search.get("fpu_reduction") is not None
+                                    or cand_search.get("c_puct") is not None):
+        print(f"[smoke] CANDIDATE-ONLY PUCT KNOBS LIVE: {cand_search} — resolved "
+              f"cfg carries fpu={cfg.fpu_reduction!r} c_puct={cfg.c_puct!r} "
+              f"(leaf hash does NOT move; the wiring gate is the manifest's "
+              f"config.cand_search)")
     if cand_tiearb is not None and cand_tiearb.get("enabled"):
         print(f"[smoke] TIE ARBITER LIVE on the candidate: {cand_tiearb} "
               f"(leaf hash does NOT move — the wiring gates are the manifest's "
@@ -2907,7 +2949,16 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
               f"per-game jf_dropped counters)")
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
-                      "final_select": args.final_select, "value_norm": args.value_norm}
+                      "final_select": args.final_select, "value_norm": args.value_norm,
+                      # measurement/fpu_resurrection_prep: the SHARED dict is what
+                      # builds the OPPONENT, and it is what lands on the manifest at
+                      # `config.opponent.champ_cfg`. Stating the FPU here POSITIVELY
+                      # (always null — the champion's legacy optimistic q=0) is what
+                      # lets `G-FPU` assert the OPPONENT side without an
+                      # ABSENT-is-FAIL exception. ⚠️ INERT for construction:
+                      # `_cfg_from_dict` reads five keys by name and ignores the rest,
+                      # so the candidate-only override still rides `cand_search` alone.
+                      "fpu_reduction": None}
     # opponent side: `fair-champion` is net-free; `net` loads its OWN checkpoint at
     # its OWN rep (never the candidate's).
     smoke_opp_net = None
@@ -3524,6 +3575,35 @@ def main(argv=None) -> int:
                     help="Tie membership tolerance on the outer chain value. 0.0 is "
                          "the COMMITTED setting — exact f64 equality, NOT a "
                          "tolerance (DESIGN §2).")
+    # --- CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep) --------
+    # ⚠️ Both are CANDIDATE-SIDE, deliberately mirroring --cand-jrules-* /
+    # --cand-tiearb-*: they reach the candidate's `_cfg_from_dict` and NOTHING
+    # else. Neither moves a leaf hash, so the wiring gate is the RESOLVED
+    # `config.cand_search` dict in the manifest (READ_RULE `G-FPU` / `G-CPUCT`).
+    ap.add_argument("--cand-fpu-reduction", type=float, default=None,
+                    help="FIRST-PLAY URGENCY on the CANDIDATE only. Unset "
+                         "(default) == the champion, bit-for-bit: NeuralMCTS's "
+                         "legacy OPTIMISTIC q=0 for unvisited children. A float r "
+                         "scores an unvisited child at q = parent.Q - r "
+                         "(pessimistic FPU; parent.Q is already in the mover's POV "
+                         "so no sign flip is applied — carc_core::search/mod.rs:816 "
+                         "and mcts.py:1225 implement the IDENTICAL rule). "
+                         "⛔ THIS KNOB WAS UNREACHABLE BEFORE 2026-08-29: "
+                         "rust_agent.search_config_rs passed a HARD-CODED None into "
+                         "the SearchConfigRs slot, so no config could express it on "
+                         "the backend the champion plays. The only FPU cells ever "
+                         "measured (results.csv rows 68-69, +45.4/+31.4 elo at "
+                         "n=200, 2026-06-02) were leaf-value-era and never "
+                         "confirmed. ⚠️ 0.0 is NOT 'unset' — Some(0.0) scores an "
+                         "unvisited child at the PARENT's Q, not at zero.")
+    ap.add_argument("--cand-c-puct", type=float, default=None,
+                    help="PUCT exploration constant on the CANDIDATE ONLY. Unset "
+                         "(default) == the shared --c-puct, byte-identical to every "
+                         "historical cell. ⛔⛔ --c-puct CANNOT DO THIS: it builds "
+                         "`champ_cfg_dict`, which `_make_opponent` feeds through the "
+                         "SAME `_cfg_from_dict`, so --c-puct moves BOTH SIDES and a "
+                         "'candidate c_puct' cell built on it would be a "
+                         "champion-vs-champion null wearing a real cell's name.")
     # --- THE PHASE FIRE-GATE (measurement/phasegate_prep) --------------------
     ap.add_argument("--cand-tiearb-phase-gate",
                     choices=("all", "early", "mid", "late", "none"), default="all",
@@ -4126,6 +4206,78 @@ def main(argv=None) -> int:
         print(f"[tiearb] TIE ARBITER LIVE on the candidate: {_cand_tiearb} "
               f"(leaf hash does NOT move; gates = manifest cand_tiearb + "
               f"summary tiearb_phi + the two-sided J13 control)", flush=True)
+    # CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep): same
+    # resolve-once / fail-fast pattern. ⚠️ Like `cand_tiearb` this dict is ALWAYS
+    # built, even when both knobs are unset, because `READ_RULE` `G-FPU` /
+    # `G-CPUCT` make an ABSENT `config.cand_search` a FAIL rather than a default:
+    # an off cell must still say so on disk, in full. `None` INSIDE the dict is a
+    # POSITIVE statement ("the champion's value"), never a missing key.
+    _cand_search = dict(
+        fpu_reduction=(None if args.cand_fpu_reduction is None
+                       else float(args.cand_fpu_reduction)),
+        c_puct=(None if args.cand_c_puct is None else float(args.cand_c_puct)),
+        # The SHARED --c-puct, recorded beside the override so a reader can see
+        # at a glance whether the two sides' c_puct differ WITHOUT having to
+        # cross-reference config.champion vs config.opponent.champ_cfg.
+        shared_c_puct=float(args.c_puct),
+    )
+    _fpu_live = _cand_search["fpu_reduction"] is not None
+    _cpuct_live = _cand_search["c_puct"] is not None
+    if _fpu_live or _cpuct_live:
+        if args.info != "fair":
+            ap.error("--cand-fpu-reduction / --cand-c-puct apply to the FAIR "
+                     f"candidate (--info fair); got --info {args.info}")
+        if _fpu_live and not math.isfinite(_cand_search["fpu_reduction"]):
+            ap.error(f"--cand-fpu-reduction {args.cand_fpu_reduction!r} is not "
+                     "finite (unset == the champion's legacy optimistic q=0)")
+        if _cpuct_live and not (math.isfinite(_cand_search["c_puct"])
+                                and _cand_search["c_puct"] > 0.0):
+            ap.error(f"--cand-c-puct {args.cand_c_puct!r} must be finite and > 0")
+        # Construct once so a malformed value dies at LAUNCH (__post_init__
+        # validates) rather than in a worker, and — on the rust backend — so the
+        # value is proven to REACH `SearchConfigRs` before a single deck is spent.
+        _probe_cfg_f = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
+                                        args.final_select, args.value_norm,
+                                        None, cand_search=_cand_search)
+        _want_fpu = _cand_search["fpu_reduction"]
+        _want_c = (_cand_search["c_puct"] if _cpuct_live else float(args.c_puct))
+        if _probe_cfg_f.fpu_reduction != _want_fpu or _probe_cfg_f.c_puct != _want_c:
+            ap.error(f"the resolved HeuristicPriorConfig carries fpu="
+                     f"{_probe_cfg_f.fpu_reduction!r} c_puct={_probe_cfg_f.c_puct!r}, "
+                     f"not the requested fpu={_want_fpu!r} c_puct={_want_c!r}")
+        if _backend == "rust":
+            from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_f
+            _probe_sc_f = _sc_rs_f(_probe_cfg_f, 8)
+            # ⛔⛔ THE READBACK. `SearchConfigRs` exposes no `fpu_reduction`
+            # getter (and this round makes NO rust change, so the wheel does not
+            # move and none is added), but its __repr__ prints `fpu={:?}` of the
+            # stored Option<f64> — which is a genuine READBACK of what the rust
+            # side actually holds. A wheel/plumbing that dropped the value reads
+            # `fpu=None` here and DIES AT LAUNCH rather than grading a
+            # silently-knob-free candidate as a clean null. That is the exact
+            # failure mode this whole round exists because of.
+            _rep = repr(_probe_sc_f)
+            _m = re.search(r"fpu=(None|Some\(([-0-9.eE+]+)\))", _rep)
+            if _m is None:
+                ap.error("the installed carc_rs SearchConfigRs.__repr__ carries no "
+                         f"`fpu=` field — cannot PROVE the knob bound. repr: {_rep}")
+            _got_fpu = None if _m.group(1) == "None" else float(_m.group(2))
+            if _got_fpu != _want_fpu:
+                ap.error(f"⛔ the rust SearchConfigRs resolved fpu_reduction="
+                         f"{_got_fpu!r}, not the requested {_want_fpu!r} — refusing "
+                         "to launch. This is EXACTLY the hard-coded-None defect "
+                         "measurement/fpu_resurrection_prep was funded to close; a "
+                         "cell run over it would be champion-vs-champion.")
+            # ⚠️ PARSED AND COMPARED NUMERICALLY, never as a substring: rust's
+            # Display for f64 prints 1.0 as "1", so `f"c_puct={1.0}"` ("c_puct=1.0")
+            # would MISS a perfectly healthy config and refuse to launch.
+            _mc = re.search(r"c_puct=([-0-9.eE+]+)", _rep)
+            if _mc is None or float(_mc.group(1)) != _want_c:
+                ap.error(f"⛔ the rust SearchConfigRs resolved a c_puct other than "
+                         f"the requested {_want_c!r}. repr: {_rep}")
+        print(f"[cand-search] CANDIDATE-ONLY PUCT KNOBS LIVE: {_cand_search} "
+              f"(leaf hash does NOT move; the wiring gate is the manifest's "
+              f"config.cand_search — G-FPU / G-CPUCT)", flush=True)
     # E1 exact-K WIN objective: resolve the CANDIDATE-ONLY knob once, fail fast.
     # None == OFF == "margin" == every historical run, byte-identical. Stamped
     # into the manifest as `cand_exact_objective` (the wiring gate — this
@@ -4253,6 +4405,7 @@ def main(argv=None) -> int:
                       cand_jrules_prior=_cand_jrules_prior,
                       cand_jrules_filter=_cand_jrules_filter,
                       cand_tiearb=_cand_tiearb,
+                      cand_search=_cand_search,
                       opp_label=opp_label)
 
     if args.info in ("fair-net", "fair-netprior") and not args.net:
@@ -4308,10 +4461,22 @@ def main(argv=None) -> int:
                            args.final_select, args.value_norm, cand_leaf_cfg,
                            jrules_prior=_cand_jrules_prior,
                            jrules_filter=_cand_jrules_filter,
-                           tiearb=_cand_tiearb)
+                           tiearb=_cand_tiearb, cand_search=_cand_search)
+    # ⚠️ `champ_cfg_dict` is the SHARED dict — `_make_opponent` builds the
+    # opponent from it. The candidate-only overrides deliberately do NOT go in
+    # here; they ride `cand_search` to the candidate construction site alone.
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
-                      "final_select": args.final_select, "value_norm": args.value_norm}
+                      "final_select": args.final_select, "value_norm": args.value_norm,
+                      # measurement/fpu_resurrection_prep: the SHARED dict is what
+                      # builds the OPPONENT, and it is what lands on the manifest at
+                      # `config.opponent.champ_cfg`. Stating the FPU here POSITIVELY
+                      # (always null — the champion's legacy optimistic q=0) is what
+                      # lets `G-FPU` assert the OPPONENT side without an
+                      # ABSENT-is-FAIL exception. ⚠️ INERT for construction:
+                      # `_cfg_from_dict` reads five keys by name and ignores the rest,
+                      # so the candidate-only override still rides `cand_search` alone.
+                      "fpu_reduction": None}
 
     # the `_vs_h{rung_sims}` segment is the OPPONENT identity; a head-to-head must NEVER
     # land in the same auto out-dir as the h800 cell at the same knobs (Trap 1). The
@@ -4341,6 +4506,15 @@ def main(argv=None) -> int:
     # `_vs_<opponent>` identity), so an oracle cell never shares an out-dir with the plain
     # candidate and the OPPONENT label (_opp_label / opponent manifest block) stays clean.
     _cand_oracle = "" if args.oracle_prior_mult is None else f"-oracle{args.oracle_prior_mult}"
+    # measurement/fpu_resurrection_prep: the candidate-only PUCT knobs ride the
+    # CANDIDATE segment (before `_vs_<opponent>`), exactly as `_cand_oracle` does
+    # — otherwise an fpu 0.2 cell and the unmodified champion would share an auto
+    # out-dir at the same shared knobs and one cell's cached per-game .json could
+    # be served to the other (Trap 1: wrong results, not merely a confusing name).
+    _cand_oracle += ("" if args.cand_fpu_reduction is None
+                     else f"-fpu{args.cand_fpu_reduction:g}")
+    _cand_oracle += ("" if args.cand_c_puct is None
+                     else f"-candc{args.cand_c_puct:g}")
     tag = (f"fair_{args.info}_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}"
            f"_kd{args.k_dets}_s{args.sims}{_cand_oracle}_{_vs}_k{args.exact_k}")
     if cand_leaf_cfg is not None:
@@ -4608,6 +4782,19 @@ def main(argv=None) -> int:
         # nothing. The other two gates are summary.json's `tiearb_phi`
         # (`G-FIRE`) and the per-host two-sided J13 positive control.
         "cand_tiearb": _cand_tiearb,
+        # ⭐⭐ CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep).
+        # ⚠️ ALWAYS a full RESOLVED dict — never None, never a bare flag —
+        # because READ_RULE `G-FPU` / `G-CPUCT` make an ABSENT `config.cand_search`
+        # a FAIL rather than a default. `fpu_reduction: null` is a POSITIVE
+        # statement ("the champion's legacy optimistic q=0"), and `c_puct: null`
+        # means "the shared --c-puct" (recorded beside it as `shared_c_puct`).
+        # Same inverted-liveness situation as surfaces B/C and the arbiter: NO
+        # leaf hash moves, so `cand_leaf_hash` EQUALS the opponent's on a live
+        # cell and a moved-hash check proves nothing. The SECOND, independent
+        # witness is the two-sided read `config.champion.{fpu_reduction,c_puct}`
+        # vs `config.opponent.champ_cfg.{fpu_reduction,c_puct}` — derived from
+        # the RESOLVED HeuristicPriorConfig of each side rather than from a flag.
+        "cand_search": _cand_search,
         # E1 exact-K WIN objective (CANDIDATE side only; None == OFF == margin ==
         # every historical cell). Same inverted-liveness convention as surface B:
         # the leaf hash does NOT move on this knob, so THIS resolved field is the
@@ -5014,7 +5201,8 @@ def main(argv=None) -> int:
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
-                          _cand_exact_objective, _cand_tiearb, _wc_tiebreak))
+                          _cand_exact_objective, _cand_tiearb, _wc_tiebreak,
+                          _cand_search))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -5029,7 +5217,8 @@ def main(argv=None) -> int:
                           (True if args.intra_reuse else None),
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
-                          _cand_exact_objective, _cand_tiearb, _wc_tiebreak))
+                          _cand_exact_objective, _cand_tiearb, _wc_tiebreak,
+                          _cand_search))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

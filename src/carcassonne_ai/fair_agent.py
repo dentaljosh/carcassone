@@ -192,7 +192,8 @@ def search_one_world(game, evaluator, det_board: Board, root_key: str, *,
                      batch_size: int = 1, batch_evaluator=None,
                      virtual_loss: float = 1.0, meeple_dedup=None,
                      oracle_prior_mult: int | None = None,
-                     oracle_prior_eps_coef: float = 1e-3):
+                     oracle_prior_eps_coef: float = 1e-3,
+                     fpu_reduction: float | None = None):
     """Run ONE already-determinized world's PUCT search.
 
     Returns ``(tree, stats, telem)`` where ``stats`` is `root_stats_list(root)`
@@ -213,7 +214,8 @@ def search_one_world(game, evaluator, det_board: Board, root_key: str, *,
         # reshuffled deck -> its own pre-search distribution).
         pre = NeuralMCTS(game=game, evaluator=LeafCounter(evaluator),
                          simulations=sims * oracle_prior_mult,
-                         c_puct=c_puct, seed=seed, meeple_dedup=meeple_dedup)
+                         c_puct=c_puct, seed=seed, meeple_dedup=meeple_dedup,
+                         fpu_reduction=fpu_reduction)
         _t = time.perf_counter()
         pre.search(det_board)
         counts, actions = pre.root_visit_distribution(det_board)
@@ -227,7 +229,7 @@ def search_one_world(game, evaluator, det_board: Board, root_key: str, *,
         m = NeuralMCTS(game=game, evaluator=LeafCounter(evaluator), simulations=sims,
                        c_puct=c_puct, seed=seed, batch_size=batch_size,
                        batch_evaluator=batch_evaluator, virtual_loss=virtual_loss,
-                       meeple_dedup=meeple_dedup)
+                       meeple_dedup=meeple_dedup, fpu_reduction=fpu_reduction)
         m.set_root_prior_override(override)   # one-shot, survives the search's expand
         _t = time.perf_counter()
         m.search(det_board)
@@ -237,7 +239,7 @@ def search_one_world(game, evaluator, det_board: Board, root_key: str, *,
         m = NeuralMCTS(game=game, evaluator=evaluator, simulations=sims,
                        c_puct=c_puct, seed=seed, batch_size=batch_size,
                        batch_evaluator=batch_evaluator, virtual_loss=virtual_loss,
-                       meeple_dedup=meeple_dedup)
+                       meeple_dedup=meeple_dedup, fpu_reduction=fpu_reduction)
         m.search(det_board)
     # deck order isn't in the key, so the reshuffled root shares the original
     # board's key (the fallback kept verbatim from the probe).
@@ -1039,7 +1041,8 @@ class FairHeuristicPriorAgent:
                 batch_size=self._batch_size, batch_evaluator=self._batch_evaluator,
                 virtual_loss=self._virtual_loss, meeple_dedup=self._meeple_dedup,
                 oracle_prior_mult=self._oracle_prior_mult,
-                oracle_prior_eps_coef=self._oracle_prior_eps_coef)
+                oracle_prior_eps_coef=self._oracle_prior_eps_coef,
+                fpu_reduction=getattr(self._cfg, "fpu_reduction", None))
             if oracle:
                 _reached = self._absorb_world_telem(telem) and _reached
             _merge_root_stats(stats, agg_n, agg_w)
@@ -1113,6 +1116,12 @@ class FairHeuristicPriorAgent:
             "meeple_dedup": bool(meeple_equiv.resolve(self._meeple_dedup)),
             "oracle_prior_mult": self._oracle_prior_mult,
             "oracle_prior_eps_coef": self._oracle_prior_eps_coef,
+            # FPU (measurement/fpu_resurrection_prep). RESOLVED from the parent's
+            # cfg for the same reason meeple_dedup is: the child must not
+            # re-derive a search knob on the far side of a process boundary.
+            # None == the champion, and the k-parallel split stays
+            # bit-identical to the sequential loop at every value.
+            "fpu_reduction": getattr(self._cfg, "fpu_reduction", None),
         }
 
     def _ensure_pool(self, workers: int):
