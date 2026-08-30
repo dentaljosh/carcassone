@@ -203,7 +203,11 @@ relative/min-of-reps micro-benches + the CPU-light gate).
   `flat_closure_bonus` + `flat_virtual_score_v2`, summed with `math.fsum`
   (CANONICAL_BONUS_SUM semantics — well-defined, hash-seed-independent). Gate vs
   engine under CANONICAL_BONUS_SUM=True: closure-bonus float + full v2 int both
-  **0 mismatches** (n=20 smoke: 1440 each; full n=400 in flight, clean at 160/400).
+  **0 mismatches** (n=20 smoke: 1440 each). *(Outcome stamped 2026-08-29: the full
+  n=400 reconcile **COMPLETED and PASSED** — `scripts/reconcile_flat_leaf.py` n=400,
+  935k+580k+700k partition checks + 28.8k each base/closure/v2/ALT-cfg, **0 mismatches**;
+  see [FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md](FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md)
+  "Where things stand". That completed reconcile is what the 2026-06-09 deploy rested on.)*
   Bonus uses `find_farm_by_coordinate` semantics (membership by ANY
   `farmer_positions`, not just [0]) — separate map from base. Only the v2.7
   schedule path is implemented; a cfg requesting tile-counting/continuous raises.

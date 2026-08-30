@@ -102,7 +102,13 @@ documents the trade we're accepting).
 - 3-box cluster (5800x W14, laptop W20, xeon W10), `nice -n 19`, detached (held-ssh for xeon).
   **State ETA + ask which box(es) before launch** (per standing rules).
 
-## Launch (pending go + machine choice — NOT yet run)
+## Launch (the as-designed launch block — IT LAUNCHED 2026-06-12 and CLOSED 2026-06-17)
+
+> *(Heading stamped 2026-08-29. It previously described the experiment as awaiting Joshua's go and
+> a machine choice, which was the state on 2026-06-11 only (git history has the old wording
+> verbatim). The run happened; the verdict is the banner at the top
+> of this file — TIE vs iter8, champion unchanged. The commands below are the historical launch
+> recipe, not a live instruction.)*
 
 ```bash
 # Phase 0 — one deep iter from iter8, bench the cost:

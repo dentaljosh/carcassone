@@ -98,7 +98,17 @@ Stage C (ruler test) is **not needed** under S1 (the gain isn't value/ruler-limi
 
 ---
 
-## Stage C — ruler test (conditional, not yet run)
+## Stage C — ruler test (conditional — NEVER EXECUTED)
+
+> *(Outcome stamped 2026-08-29.* **Stage C was never run, by design.** *Its precondition did not
+> fire: Stages A+B returned branch S1 — the lineage gain iter0→8 is +46.4 of which **+43.9 is
+> policy and only +2.5 residual**, so the plateau is policy/data saturation, not a ruler problem
+> ("Stage C (ruler test) not needed", DECISIONS 2026-06-10). No `results.csv` row and no artifact
+> exists for it. The question it would have asked — is heur@800-v2.7 the binding ruler? — was
+> answered independently on 2026-06-19 by the matched-v2.7 **same-band depth ladder**
+> heur@800/1600/3200 = **+40.1 / +24.4 / −28.7** (band 3.10e9, n=400 deck-paired per rung), now the
+> one durable contribution of `governance/CLAIM_REGISTRY.csv` CL-010: the edge decays monotonically
+> with heuristic depth and crosses zero by h3200.)*
 
 Only if A+B show internal signals still moving but strength flat → champion vs a **stronger /
 stylistically-different reference** (heur@3200-v2.7) to test whether heur@800-v2.7 is the binding
