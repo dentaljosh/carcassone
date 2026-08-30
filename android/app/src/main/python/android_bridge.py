@@ -592,6 +592,7 @@ class RemoteOpponent:
         self.retries = int(retries)
         self._session = session
         self.last_response: dict | None = None
+        self.finish_response: dict | None = None
         self.health: dict | None = None
         self.n_calls = 0
         self.n_retries = 0
@@ -659,6 +660,26 @@ class RemoteOpponent:
             "the remote Carcasum opponent could not be reached or refused the "
             f"position after {max(1, self.retries)} attempts: {json.dumps(last)[:600]}")
 
+    def finish(self) -> dict | None:
+        """Tell the server the game is over, and hand it the final log.
+
+        ⚠️ Not optional, and not merely tidy. When the HUMAN plays the
+        terminating ply there is no further move request, so without this the
+        server has never been told about that last action: its Carcasum session
+        sits in the loop waiting for it, the endgame farm/terrain audit never
+        runs, and a full core leaks for the session TTL. Best-effort — a failure
+        here must never stop the phone from writing ITS archive, which is the
+        record that actually matters.
+        """
+        try:
+            code, resp = self._post("/end", {
+                "game_id": self.game_id,
+                "actions": [int(a) for a in self._session.action_log]})
+            self.finish_response = resp if code == 200 else {"http_status": code, **resp}
+        except Exception as exc:                          # noqa: BLE001
+            self.finish_response = {"error": f"{type(exc).__name__}: {exc}"}
+        return self.finish_response
+
     @property
     def game_id(self) -> str:
         """One id per (deck_seed, seat) game — stable across retries and across
@@ -677,6 +698,16 @@ class RemoteOpponent:
             "tiny_city_probe": (gate.get("probe") or {}).get("tiny_city_score"),
             "server_profile": (self.health or {}).get("profile"),
             "calls": self.n_calls, "retries": self.n_retries,
+            # What the server said when the game ended: its own final scores and
+            # its divergence audit. A DISAGREEMENT here is the loudest signal we
+            # have that a remote game is not what it looks like, so it is stamped
+            # rather than logged.
+            "server_final": {
+                k: (self.finish_response or {}).get("record", {}).get(k)
+                for k in ("scores", "carcasum_reported_scores", "final_agree",
+                          "void", "real", "replay_ok",
+                          "opp_driver_playouts_per_turn", "opp_driver_ms_per_turn")
+            } if (self.finish_response or {}).get("record") else self.finish_response,
         }
 
 # The reason the last `rust_available()` said no — folded into the session's
@@ -2162,6 +2193,15 @@ class _Session:
         self.last_events = scoring_events(
             before.state, self.board.state, self.human_player, self.opponent_name,
             claims=[claim] if claim is not None else None)
+        # END OF A REMOTE GAME. Told exactly once, from the one place a REAL
+        # decision lands (a replayed restore goes through `apply`, not here, so a
+        # restore cannot re-fire it). The server needs the final log because the
+        # terminating ply is often the HUMAN's, in which case no move request
+        # ever carries it — see `RemoteOpponent.finish`. Best-effort by
+        # construction: this must never stop the phone writing its own archive.
+        if (self.remote is not None and self.remote.finish_response is None
+                and self.board.state.is_terminated()):
+            self.remote.finish()
 
     def auto_pass_forced(self) -> int:
         """Auto-apply a forced pass on the HUMAN seat so the UI never renders a phase

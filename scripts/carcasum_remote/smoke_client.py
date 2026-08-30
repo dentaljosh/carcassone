@@ -146,7 +146,11 @@ def main(argv=None) -> int:
     rp = M.replay_actions(int(args.deck_seed), actions, M.PROFILE)
     replay_ok = bool(rp["ok"] and rp["scores"] == scores)
 
-    code, fin = _post(args.url, "/end", {"game_id": game_id}, timeout=60)
+    # The final log goes with /end: when OUR side plays the terminating ply
+    # there is no further /move, so this is how the server learns about it and
+    # gets to finish (and audit) the game.
+    code, fin = _post(args.url, "/end",
+                      {"game_id": game_id, "actions": actions}, timeout=120)
     rec = (fin or {}).get("record") or {}
 
     out = {

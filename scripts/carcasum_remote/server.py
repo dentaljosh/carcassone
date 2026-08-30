@@ -677,7 +677,7 @@ class _Handler(BaseHTTPRequestHandler):
             if path == "/move":
                 return self._reply(200, self._move(body))
             if path == "/end":
-                return self._reply(200, self.srv.end(str(body.get("game_id"))))
+                return self._reply(200, self._end(body))
             return self._reply(404, {"ok": False, "error": "not_found", "path": path})
         except SessionError as exc:
             code = 409 if exc.code in ("divergence", "session_mismatch",
@@ -687,6 +687,26 @@ class _Handler(BaseHTTPRequestHandler):
         except Exception as exc:                                  # noqa: BLE001
             return self._reply(500, {"ok": False, "error": "internal",
                                      "message": f"{type(exc).__name__}: {exc}"})
+
+    def _end(self, body: dict) -> dict:
+        """Finish a game and hand back the full match record.
+
+        ⚠️ `actions` is not optional in practice. When the HUMAN plays the
+        terminating ply there is no further `/move`, so the server has never been
+        told about that last action and its Carcasum session is still sitting in
+        the loop waiting for it — the record would come back `null` and the
+        endgame farm/terrain audit would never run. So `/end` submits the
+        client's final log first, exactly the way `/move` does, and only then
+        waits for the record.
+        """
+        game_id = str(body.get("game_id") or "")
+        actions = body.get("actions")
+        if actions is not None:
+            with self.srv._lock:
+                s = self.srv._sessions.get(game_id)
+            if s is not None:
+                s.submit([int(a) for a in actions])
+        return self.srv.end(game_id, wait_s=float(body.get("wait_s", 60.0)))
 
     def _move(self, body: dict) -> dict:
         game_id = str(body.get("game_id") or "")

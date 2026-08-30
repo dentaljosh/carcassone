@@ -310,9 +310,10 @@ def test_a_whole_game_plays_through_the_http_api(driver):
         assert rp["ok"] and rp["scores"] == list(board.state.scores)
 
         req = urllib.request.Request(
-            url + "/end", data=json.dumps({"game_id": "t1"}).encode(),
+            url + "/end",
+            data=json.dumps({"game_id": "t1", "actions": actions}).encode(),
             headers={"Content-Type": "application/json"}, method="POST")
-        fin = json.loads(urllib.request.urlopen(req, timeout=60).read())
+        fin = json.loads(urllib.request.urlopen(req, timeout=120).read())
         rec = fin["record"]
         assert rec is not None, fin
         assert list(rec["scores"]) == list(board.state.scores)
