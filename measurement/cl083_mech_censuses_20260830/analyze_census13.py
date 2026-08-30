@@ -113,8 +113,11 @@ def census3_row(r):
             return {"exists": False, "n_tagged": 0, "n_seed": None,
                     "rank": None, "share": None, "well_visited": None}
         n_seed, best = max(vis)
+        # An action the search never visited is absent from the pooled accumulators;
+        # rank it BELOW every visited action rather than dropping it.
         return {"exists": True, "n_tagged": len(tagged), "n_seed": n_seed,
-                "rank": rank.get(best), "share": n_seed / tot,
+                "rank": rank.get(best, len(order) + 1), "share": n_seed / tot,
+                "unvisited": bool(n_seed == 0.0),
                 "well_visited": bool(n_seed >= M_VISITS)}
     return {"primary": blk(seeds), "onset_only": blk(onset),
             "n_legal": r.get("n_legal"), "sum_pooled_n": tot}
@@ -287,6 +290,8 @@ def main() -> int:
                 sorted(r["_c3"][tag]["rank"] for r in ex)[len(ex) // 2] if ex else None),
             "mean_budget_share_of_best_seed": (
                 sum(r["_c3"][tag]["share"] for r in ex) / len(ex)) if ex else None,
+            "P_best_seed_unvisited_given_exists": (
+                sum(r["_c3"][tag]["unvisited"] for r in ex) / len(ex)) if ex else None,
             "mean_n_tagged": sum(r["_c3"][tag]["n_tagged"] for r in rows) / len(rows),
             "mean_n_legal": sum((r["_c3"]["n_legal"] or 0) for r in rows) / len(rows),
         }
