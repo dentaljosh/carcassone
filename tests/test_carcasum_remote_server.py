@@ -154,6 +154,43 @@ def test_a_session_id_bound_to_one_deck_cannot_be_reused_for_another():
         s.close()
 
 
+def test_a_rematch_on_the_same_deck_does_not_inherit_the_finished_game():
+    """`game_id` is (deck_seed, seat), so a repeated seed collides.
+
+    The old E4 seed-reuse bug (deck 523563 twice in one evening) is exactly the
+    shape that produces one. Serving the finished session's log to a caller at
+    ply 0 would hand back the PREVIOUS game's moves as this game's.
+    """
+    srv = object.__new__(S.RemoteOpponentServer)
+    srv._lock = threading.Lock()
+    srv._sessions = {}
+    srv.session_ttl_s = 3600
+    srv.max_sessions = 4
+    srv.binary = Path("/nonexistent")
+    srv.opponent = {}
+    srv.node_labels, srv.periods = {}, {}
+    srv.verify_replay, srv.max_wait_s, srv.records_dir = False, 0.6, None
+
+    old = _bare_session(game_id="phone-5-0", deck_seed=5)
+    old._on_apply(111, 0, "champ_tile")
+    old._on_apply(222, 1, "opp_tile")
+    with old._cv:
+        old.finished = True
+    srv._sessions["phone-5-0"] = old
+    try:
+        # The real constructor would spawn a driver; we only need to see that the
+        # stale session was retired rather than returned.
+        try:
+            srv.get_or_create(game_id="phone-5-0", deck_seed=5, human_seat=0,
+                              opponent=None, client_actions=[])
+        except Exception:                          # noqa: BLE001 — driver absent
+            pass
+        assert srv._sessions.get("phone-5-0") is not old, (
+            "the finished game was handed to a rematch on the same deck")
+    finally:
+        old.close()
+
+
 def test_a_game_the_opponent_has_MOVED_in_cannot_be_picked_up_fresh():
     """Carcasum is not replayable — say so, do not fake a resume.
 

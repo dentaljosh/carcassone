@@ -577,8 +577,23 @@ class RemoteOpponentServer:
                         f"game_id {game_id!r} is already bound to deck_seed "
                         f"{s.deck_seed} seat {s.human_seat}",
                         server_deck_seed=s.deck_seed, server_human_seat=s.human_seat)
-                s.last_seen = time.time()
-                return s
+                # A REMATCH ON THE SAME DECK. `game_id` is derived from
+                # (deck_seed, seat), so a second game on a repeated seed collides
+                # with the first — and if the first is FINISHED and the caller is
+                # at ply 0 of a new one, serving it the old log would hand back
+                # the PREVIOUS game's moves as if they were this game's. The old
+                # E4 seed-reuse bug (deck 523563, twice in one evening) is exactly
+                # the shape that produces a repeated seed, so this is not
+                # hypothetical. A finished session plus a caller the opponent has
+                # not moved for cannot be the same game: retire it and start over.
+                if s.finished and not _count_opponent_plies(
+                        deck_seed, client_actions, human_seat):
+                    s.close()
+                    self._sessions.pop(game_id, None)
+                    s = None
+                else:
+                    s.last_seen = time.time()
+                    return s
             # A NON-EMPTY log on a fresh session is NOT automatically a resume:
             # when the human has seat 0 he plays ply 0 (and possibly his meeple)
             # before the opponent is ever asked, so the FIRST request of a brand
