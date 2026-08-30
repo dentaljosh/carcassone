@@ -234,7 +234,7 @@ def test_a_full_remote_game_archives_with_the_remote_label(fake):
     while guard < 400:
         guard += 1
         st = json.loads(B.get_state())
-        if st.get("terminated"):
+        if st.get("is_terminated"):
             break
         if st["current_player"] == st["human_player"]:
             legal = st["legal"]["action_ids"]
