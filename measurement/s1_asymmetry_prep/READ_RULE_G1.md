@@ -1,5 +1,9 @@
 # READ_RULE — S1 GATE G1 (EXPRESSION)
 
+> ✅ **ADJUDICATED 2026-08-30: `G1-EXPRESSES`, d\* = 0.25** (E1 5.01% point est, the smallest
+> clearing rung; all §5 guards PASS). Verdict of record: [G1_VERDICT.md](G1_VERDICT.md).
+> This file stays frozen as committed pre-outcome.
+
 > # ⛔ COMMITTED BEFORE ANY G1 STATISTIC EXISTS
 >
 > **Status: PRE-OUTCOME.** At the moment this file was committed, `0` G1 searches
