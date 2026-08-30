@@ -215,6 +215,10 @@ class HeuristicPriorConfig:
     # never ran").
     jrules_prior_dose: float = 0.0
     jrules_prior_mask: int = 31
+    # 'all' (every expansion, mover POV — surface B's primary) | 'own' (root-
+    # player nodes only) | 'opp' (S1, measurement/s1_asymmetry_prep — the
+    # complement of 'own': the OPPONENT-MODEL arm, which leaves the champion's
+    # own move ordering, and therefore the ROOT, byte-identical).
     jrules_prior_scope: str = "all"
     # --- J-RULES ROOT FILTER surface C (measurement/jrules_filters_20260814) --
     # SEARCH-level knobs like surface B — they move NO leaf hash (the
@@ -279,9 +283,10 @@ class HeuristicPriorConfig:
         import math as _math
         if not _math.isfinite(float(self.jrules_prior_dose)):
             raise ValueError("jrules_prior_dose must be finite")
-        if self.jrules_prior_scope not in ("all", "own"):
+        if self.jrules_prior_scope not in ("all", "own", "opp"):
             raise ValueError(
-                f"jrules_prior_scope must be 'all'|'own'; got {self.jrules_prior_scope!r}"
+                f"jrules_prior_scope must be 'all'|'own'|'opp'; got "
+                f"{self.jrules_prior_scope!r}"
             )
         m = int(self.jrules_prior_mask)
         if m == 0 or m & ~31:

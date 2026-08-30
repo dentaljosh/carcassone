@@ -30,8 +30,21 @@ The arm tuple is `name:dose[:mask[:scope]]`:
   * dose  — the calibration axis; each legal child's dleaf gets dose*T(child)
             added before the prior softmax (1.0 == the interview's magnitudes).
   * mask  — per-rule ablation bits over J1|J2|J5|J6|J8, default 31.
-  * scope — 'all' (default; every expansion, mover POV) or 'own' (root-player
-            nodes only, the opponent-model-free ablation).
+  * scope — 'all' (default; every expansion, mover POV), 'own' (root-player
+            nodes only, the opponent-model-free ablation) or 'opp' (S1,
+            measurement/s1_asymmetry_prep — opponent-mover nodes only).
+
+⚠️ S1 / scope='opp' READS A DIFFERENT STATISTIC. Under 'opp' the ROOT expansion
+is byte-identical to the champion's BY DESIGN (the root's mover is the root
+player), so E1 — the pick-flip rate — is SEARCH-MEDIATED ONLY and will be
+materially lower than the 13.05% surface B read at scope 'all'. Two consequences,
+both load-bearing:
+  * the positive control is SCOPE-AWARE and INVERTED for 'opp' (root priors must
+    NOT move; root VISITS must; the Own/Opp partition must reproduce All) —
+    DESIGN §9.2, `_assert_surface_b_live`; and
+  * this instrument also reports **E2**, the root visit-distribution TOTAL
+    VARIATION distance vs the champion's pooled root: graded rather than
+    lumpy, and it cannot be zero if the surface is live.
 
 **The pre-registered ladder** (DESIGN §CALIBRATION; the default when no `--arm`
 is passed; all rungs share a single champion search per ply):
@@ -126,8 +139,18 @@ class Arm:
 
     `dose` is the calibration axis. `mask` is an ABLATION surface held at
     JR_ALL in every pre-registered rung. `scope` is 'all' (every expansion,
-    mover POV — the primary) or 'own' (root-player nodes only — the
-    opponent-model-free ablation, a legitimate separate calibration)."""
+    mover POV — the primary), 'own' (root-player nodes only — the
+    opponent-model-free ablation, a legitimate separate calibration) or 'opp'
+    (S1, `measurement/s1_asymmetry_prep/DESIGN.md` — the COMPLEMENT of 'own',
+    i.e. opponent-mover nodes only: the opponent-model arm).
+
+    ⚠️ **`scope='opp'` reads a DIFFERENT statistic.** Under 'opp' the root
+    expansion is byte-identical to the champion's by design, so E1 (the pick
+    flip rate) is search-mediated only and will be materially lower than the
+    13.05 % surface B read at scope 'all'. That is why this instrument also
+    carries E2 — the root visit-distribution total-variation distance — which
+    is graded, cannot be zero if the surface is live, and is immune to the
+    argmax quantisation that makes E1 lumpy (DESIGN §6.2)."""
 
     name: str
     dose: float
@@ -172,10 +195,10 @@ def parse_arm(spec: str) -> Arm:
     name, d_raw = (p.strip() for p in parts[:2])
     m_raw = parts[2].strip() if len(parts) >= 3 else str(DEFAULT_MASK)
     scope = parts[3].strip() if len(parts) == 4 else "all"
-    if scope not in ("all", "own"):
+    if scope not in ("all", "own", "opp"):
         raise ValueError(
-            f"--arm {spec!r}: SCOPE {scope!r} must be 'all' or 'own' — an unknown "
-            "scope would be silently coerced by nothing; refusing")
+            f"--arm {spec!r}: SCOPE {scope!r} must be 'all', 'own' or 'opp' — an "
+            "unknown scope would be silently coerced by nothing; refusing")
 
     if not name:
         raise ValueError(f"--arm {spec!r}: NAME is empty")
@@ -297,6 +320,37 @@ def wilson_ci(k: int, n: int, z: float = Z95) -> tuple:
     return (max(0.0, centre - half), min(1.0, centre + half))
 
 
+def tv_distance(p, q) -> float:
+    """Total-variation distance between two visit distributions — **E2**.
+
+    `p`/`q` are `{action: visits}` maps (the PIMC-pooled root, i.e.
+    `RustFairAgent.last_pooled_visits`). Each is normalized over its OWN total,
+    then TV = 0.5 * sum |p_a - q_a| over the UNION of actions — so an action
+    present in one pool and absent from the other contributes its full mass
+    rather than being silently dropped.
+
+    Range [0, 1]. `0.0` means the two searches distributed their root visits
+    identically; under `scope='opp'`, where the root priors are identical by
+    design, a corpus-wide E2 of 0.0 is the signature of a dead knob.
+
+    An EMPTY pool on either side returns `None` (not 0.0): "no distribution"
+    and "identical distributions" are different facts, and conflating them
+    would let a forced/solved ply read as perfect agreement."""
+    pt = sum(float(v) for v in (p or {}).values())
+    qt = sum(float(v) for v in (q or {}).values())
+    if pt <= 0.0 or qt <= 0.0:
+        return None
+    keys = set(p) | set(q)
+    return 0.5 * sum(abs(float(p.get(k, 0.0)) / pt - float(q.get(k, 0.0)) / qt)
+                     for k in keys)
+
+
+def mean_tv(values) -> float:
+    """Mean of the non-None TV values, or None when there are none."""
+    vals = [float(v) for v in values if v is not None]
+    return (sum(vals) / len(vals)) if vals else None
+
+
 def _arm_order(summaries) -> list:
     """Arm names in first-seen order across the per-game summaries."""
     seen, order = set(), []
@@ -330,10 +384,22 @@ def rollup_from_summaries(summaries) -> dict:
                 ph = str(rec.get("phase", "unknown"))
                 phases[ph] = phases.get(ph, 0) + 1
         n_tiles, n_meeples = phases.get("tiles", 0), phases.get("meeples", 0)
+        # E2 — pooled over games as sum/n, NOT a mean of per-game means: games
+        # carry different graded-ply counts, so averaging the means would
+        # silently weight a 6-ply game like a 90-ply one.
+        tv_n = sum(int(s.get("root_visit_tv_n", {}).get(name, 0)) for s in summaries)
+        tv_sum = sum(float(s.get("root_visit_tv_sum", {}).get(name, 0.0))
+                     for s in summaries)
         per_arm[name] = {
             "flips_total": flips,
             "n_graded": total,
             "flip_rate": (flips / total if total else None),
+            # E2 (DESIGN §6.2): mean root visit-distribution TV vs the
+            # champion's pooled root. Reported for every arm; it is the
+            # LOAD-BEARING statistic for scope='opp', where E1 is
+            # search-mediated only and therefore small by construction.
+            "root_visit_tv_mean": (tv_sum / tv_n if tv_n else None),
+            "root_visit_tv_n": tv_n,
             "wilson95": [lo, hi],
             "wilson95_lo": lo,          # the bar is read on THIS (CALIB_READ_RULE §2)
             "wilson95_half_width": (hi - lo) / 2.0,
@@ -357,7 +423,8 @@ def rollup_from_summaries(summaries) -> dict:
     for s in summaries:
         for a in s.get("arms", []):
             knobs.setdefault(a["name"], {k: a.get(k) for k in
-                                         ("dose", "mask", "rules", "leaf_hash")})
+                                         ("dose", "mask", "scope", "rules",
+                                          "leaf_hash")})
 
     return {
         "schema": SCHEMA + "/rollup",
@@ -369,6 +436,8 @@ def rollup_from_summaries(summaries) -> dict:
         # without walking into `arms`.
         "flips_total": {n: per_arm[n]["flips_total"] for n in arm_names},
         "flip_rate": {n: per_arm[n]["flip_rate"] for n in arm_names},
+        "root_visit_tv_mean": {n: per_arm[n]["root_visit_tv_mean"] for n in arm_names},
+        "root_visit_tv_n": {n: per_arm[n]["root_visit_tv_n"] for n in arm_names},
         "wilson95": {n: per_arm[n]["wilson95"] for n in arm_names},
         "champ_agrees_archive": sum(int(s.get("champ_agrees_archive", 0))
                                     for s in summaries),
@@ -385,6 +454,8 @@ def rollup_from_summaries(summaries) -> dict:
                               for s in summaries},
         "by_game": [{"archive": s.get("archive"), "profile": s.get("rules_profile"),
                      "n_graded": s.get("n_graded"), "flips": s.get("flips"),
+                     "root_visit_tv_mean": s.get("root_visit_tv_mean"),
+                     "root_visit_tv_n": s.get("root_visit_tv_n"),
                      "replay_scores_match": s.get("replay_scores_match"),
                      "budget": s.get("budget"),
                      "recorded_scores": s.get("recorded_scores"),
@@ -419,9 +490,12 @@ def rollup(out_dir) -> dict:
         a = roll["arms"][name]
         lo, hi = a["wilson95"]
         rate = a["flip_rate"]
-        print(f"[jp_e4] {name:>8}: flips {a['flips_total']:>5}/{a['n_graded']:<5} "
+        tv = a.get("root_visit_tv_mean")
+        print(f"[jp_e4] {name:>8}: E1 flips {a['flips_total']:>5}/{a['n_graded']:<5} "
               f"= {'  n/a ' if rate is None else f'{100*rate:6.2f}%'} "
               f"[{100*lo:5.2f}%, {100*hi:5.2f}%]  "
+              f"E2 tv {'  n/a ' if tv is None else f'{tv:6.4f}'} "
+              f"(n {a.get('root_visit_tv_n', 0)})  "
               f"tiles/meeples {a['phase_split']['tiles']}/{a['phase_split']['meeples']}")
     print(f"[jp_e4] rollup: {roll['n_games']} games, {roll['n_graded_plies']} "
           f"graded plies, profiles={roll['rules_profile_histogram']}, "
@@ -488,7 +562,9 @@ def _make_arms(game, spec, ex, seed, sims, k_dets, arms):
               f"{LEAF_HASH_OF_RECORD} (governance/PRODUCTION.yaml) — the champion arm "
               "is NOT the leaf of record; do not read this as a calibration.")
 
-    _assert_surface_b_live()
+    # SCOPE-AWARE positive control (DESIGN §9.2): the legs run depend on which
+    # scopes the arms actually use — 'opp' inverts the root-prior assertion.
+    _assert_surface_b_live(tuple(a.scope for a in arms))
 
     agents, hashes = {}, {}
     for arm in arms:
@@ -518,6 +594,15 @@ def _make_arms(game, spec, ex, seed, sims, k_dets, arms):
                 f"carry the J-rules PRIOR knobs ({e}). Rebuild/install the wheel on "
                 "THIS box and re-run — do NOT work around it: exercising the real "
                 "Rust prior surface is the entire point of this instrument.") from None
+        except ValueError as e:
+            # A wheel that HAS surface B but predates S1 rejects the scope
+            # STRING (pyo3's parse match), which is a ValueError, not a
+            # TypeError — a different stale-wheel shape with the same fix.
+            raise SystemExit(
+                f"[jp_e4] arm {arm.name!r} ({arm.spec()}): the installed carc_rs "
+                f"build rejected scope={arm.scope!r} ({e}). If the scope is 'opp', "
+                "this wheel predates S1 (JrPriorScope::Opp) — rebuild/install on "
+                "THIS box and re-run.") from None
         agents[arm.name] = RustFairAgent(
             game, cfg_a,
             sims=(spec.sims_per_det if sims is None else int(sims)),
@@ -529,15 +614,53 @@ def _make_arms(game, spec, ex, seed, sims, k_dets, arms):
     return champ, agents, base_leaf, champ_hash, hashes
 
 
-def _assert_surface_b_live():
-    """POSITIVE CONTROL (once per process): on a pinned midgame root (deck seed
-    28000000000, 30 centre-policy plies, 22 legal — the root the rust unit gate
-    `jrules_prior_dose0_with_moved_mask_is_bit_identical` also pins), a 32-sim
-    search at dose 1.0 / mask 31 / scope all must move the expansion priors vs
-    dose 0. A wheel or a wiring that zeroes the dose fails HERE, loudly —
-    because surface B moves no leaf hash, NO hash check can catch that failure
-    mode, and without this control it would grade a perfect champion-vs-champion
-    null wearing the shape of a calibration."""
+#: The pinned control root: deck seed 28000000000, 30 centre-policy plies,
+#: 22 legal — the same root the rust unit gates pin.
+_CONTROL_SEED, _CONTROL_PLIES = "28000000000", 30
+#: Sims for the SYMMETRIC legs (root priors move immediately, so 32 suffices).
+_CONTROL_SIMS_ROOT = 32
+#: Sims for the OPP leg. Under scope='opp' the root is untouched by design, so
+#: liveness can only be observed through INTERIOR opponent expansions, which the
+#: search must actually REACH and then propagate back from.
+#:
+#: ⚠️ DEVIATION FROM DESIGN §9.2(b), MEASURED NOT ASSUMED. The design names
+#: ">= 256 sims" and "the root VISIT distribution". Measured on the pinned
+#: control root (and two siblings), 256 sims leaves this surface *entirely*
+#: unexpressed — identical node_count, root_w bits, root visits AND pooled
+#: stats — despite the gate firing at hundreds of opponent expansions; and even
+#: at 1376 the top-level root VISIT COUNTS move on only 2 of 3 probe roots.
+#: What moves on 3 of 3 at 1376 is `pooled_stats`, the deduped/N>0/root-POV
+#: surface the PIMC pool actually argmaxes. So the control runs at the DEPLOY
+#: sims-per-determinization of record (k16 x 1376 = 22016) and asserts on the
+#: decision surface. The rust sibling gates
+#: `s1_opp_moves_the_pooled_root_at_the_deploy_sims_per_det` and
+#: `s1_opp_is_unexpressed_at_shallow_depth_on_the_control_root` pin both halves.
+_CONTROL_SIMS_DEPTH = 1376
+
+
+def _assert_surface_b_live(scopes=("all",)):
+    """POSITIVE CONTROL (once per process), on the pinned midgame root.
+
+    ⚠️ **DESIGN §9.2 — THE TRAP.** The original control asserted that ROOT
+    PRIORS move between dose 0 and dose 1.0. That assertion is **wrong for
+    `scope='opp'`**: the root's mover IS the root player, so the `opp` gate is
+    OFF at the root *by design* and the root priors are identical. The old
+    control would therefore fail on a **correctly wired** build, and — worse —
+    a naive "fix" that made it pass would mean the scope gate was mis-wired.
+
+    So the control is now SCOPE-AWARE and two-sided:
+
+    * `all` / `own` — root priors MUST move (the original leg, unchanged);
+    * `opp` — **(a)** root priors and the root leaf value MUST NOT move
+      (a moved root prior is the defect), and **(b)** the POOLED root stats
+      MUST move at the deploy sims-per-determinization (a bit-identical
+      decision surface means the interior boost is dead-wired);
+    * always — **(c)** the decomposition identity `Own ∪ Opp = All`, disjoint,
+      read off the per-search expansion census.
+
+    Every leg exists because surface B moves NO leaf hash, so no hash check can
+    catch a silently-inert knob; without this the instrument would grade a
+    perfect champion-vs-champion null wearing the shape of a calibration."""
     import carc_rs
 
     from carcassonne_ai.rust_agent import leaf_config_rs
@@ -548,31 +671,131 @@ def _assert_surface_b_live():
             "[jp_e4] installed carc_rs predates J-rules PRIORS surface B "
             "(no MirrorState.jrules_prior_probe). Rebuild the wheel on THIS box "
             "(maturin build in rust/carc/carc-py + reinstall).")
-    m = carc_rs.MirrorState.from_seed("28000000000")
-    for _ in range(30):
+    m = carc_rs.MirrorState.from_seed(_CONTROL_SEED)
+    for _ in range(_CONTROL_PLIES):
         la = m.legal_actions()
         m.advance(la[len(la) // 2])
     leaf = leaf_config_rs(DEFAULT_CONFIG)
 
-    def _cfg(**jr):
-        return carc_rs.SearchConfigRs(leaf, 32, 1.5, 5.0, 15.0, 15.0,
+    def _cfg(sims=_CONTROL_SIMS_ROOT, **jr):
+        return carc_rs.SearchConfigRs(leaf, sims, 1.5, 5.0, 15.0, 15.0,
                                       "float", "visits", None, 1.0, True,
                                       "glibc_fma", **jr)
 
+    scopes = tuple(dict.fromkeys(scopes))          # de-dup, order-preserving
+    unknown = [s for s in scopes if s not in ("all", "own", "opp")]
+    if unknown:
+        raise SystemExit(f"[jp_e4] positive control: unknown scope(s) {unknown}")
+
+    # ---- the symmetric legs: root priors MUST move --------------------------
     off = m.search_single(_cfg())
-    on = m.search_single(_cfg(jrules_prior_dose=1.0))
-    if on["root_priors"] == off["root_priors"]:
+    for scope in [s for s in scopes if s in ("all", "own")]:
+        on = m.search_single(_cfg(jrules_prior_dose=1.0, jrules_prior_scope=scope))
+        if on["root_priors"] == off["root_priors"]:
+            raise SystemExit(
+                f"[jp_e4] POSITIVE CONTROL FAILED (scope={scope!r}): dose 1.0 did not "
+                "move the expansion priors on the pinned control root. The prior "
+                "surface is dead-wired (zeroed dose, dropped kwargs, or a broken "
+                "wheel) — refusing to grade, because every arm would read a perfect "
+                "champion-vs-champion null.")
+        if on["root_leaf_value_bits"] != off["root_leaf_value_bits"]:
+            raise SystemExit(
+                f"[jp_e4] POSITIVE CONTROL FAILED THE OTHER WAY (scope={scope!r}): "
+                "dose 1.0 moved the root LEAF VALUE — surface B must only move "
+                "priors. The installed wheel does not implement the surface this "
+                "instrument thinks it is measuring; refusing to grade.")
+
+    if "opp" not in scopes:
+        return
+
+    # ---- S1: the OPP legs ---------------------------------------------------
+    # Stale-wheel gate FIRST: an old wheel rejects the scope string outright
+    # (ValueError from the pyo3 parse match), which is fail-loud and correct,
+    # but the message should name the fix.
+    try:
+        opp_root = m.search_single(_cfg(jrules_prior_dose=1.0,
+                                        jrules_prior_scope="opp"))
+    except ValueError as e:
         raise SystemExit(
-            "[jp_e4] POSITIVE CONTROL FAILED: dose 1.0 did not move the expansion "
-            "priors on the pinned control root. The prior surface is dead-wired "
-            "(zeroed dose, dropped kwargs, or a broken wheel) — refusing to grade, "
-            "because every arm would read a perfect champion-vs-champion null.")
-    if on["root_leaf_value_bits"] != off["root_leaf_value_bits"]:
+            f"[jp_e4] the installed carc_rs build does NOT carry JrPriorScope::Opp "
+            f"({e}). Rebuild/install the wheel on THIS box and re-run — do NOT work "
+            "around it: exercising the real opponent-node gate is the entire point "
+            "of the S1 instrument.") from None
+    if "jr_expansions_total" not in opp_root:
         raise SystemExit(
-            "[jp_e4] POSITIVE CONTROL FAILED THE OTHER WAY: dose 1.0 moved the "
-            "root LEAF VALUE — surface B must only move priors. The installed "
-            "wheel does not implement the surface this instrument thinks it is "
-            "measuring; refusing to grade.")
+            "[jp_e4] the installed carc_rs build accepts scope='opp' but reports no "
+            "expansion census (no `jr_expansions_total` in the search result). That "
+            "is a HALF-BUILT wheel: DESIGN §9.2 leg (c) cannot be checked, so the "
+            "scope gate cannot be proven to partition anything. Rebuild and re-run.")
+
+    # (a) MUST NOT MOVE — a moved root prior under 'opp' IS the defect.
+    if opp_root["root_priors"] != off["root_priors"]:
+        raise SystemExit(
+            "[jp_e4] S1 CONTROL FAILED, leg (a): scope='opp' MOVED the ROOT priors. "
+            "Under 'opp' the root's mover IS the root player, so the boost must be "
+            "OFF at the root and the root priors must be byte-identical to the "
+            "champion's. A moved root prior means the scope gate is mis-wired "
+            "(inverted, or reading a stale root_player latch) — refusing to grade.")
+    if opp_root["root_leaf_value_bits"] != off["root_leaf_value_bits"]:
+        raise SystemExit(
+            "[jp_e4] S1 CONTROL FAILED, leg (a): scope='opp' moved the root LEAF "
+            "VALUE — surface B must only move priors; refusing to grade.")
+
+    # (b) MUST MOVE — the root VISIT distribution, at a depth that reaches
+    #     interior opponent nodes.
+    deep_off = m.search_single(_cfg(sims=_CONTROL_SIMS_DEPTH))
+    deep_opp = m.search_single(_cfg(sims=_CONTROL_SIMS_DEPTH,
+                                    jrules_prior_dose=1.0,
+                                    jrules_prior_scope="opp"))
+    if int(deep_opp["jr_expansions_boosted"]) <= 0:
+        raise SystemExit(
+            f"[jp_e4] S1 CONTROL FAILED, leg (b): at {_CONTROL_SIMS_DEPTH} sims "
+            "scope='opp' boosted ZERO expansions — the search never reached an "
+            "opponent node, so nothing on this root can speak to liveness.")
+    if deep_opp["pooled_stats"] == deep_off["pooled_stats"]:
+        raise SystemExit(
+            f"[jp_e4] S1 CONTROL FAILED, leg (b): at {_CONTROL_SIMS_DEPTH} sims "
+            "scope='opp' left the POOLED ROOT STATS bit-identical to the "
+            "champion's. With the root priors identical by design (leg a), a "
+            "bit-identical decision surface is the signature of a DEAD knob — "
+            "exactly the silently-inert-knob failure class that would grade a "
+            "perfect champion-vs-champion null. Refusing to grade.")
+
+    # (c) the decomposition identity, read within each tree (the only exact
+    #     form: the three scopes' trees diverge the moment a prior moves).
+    census = {}
+    for scope in ("all", "own", "opp"):
+        r = m.search_single(_cfg(sims=_CONTROL_SIMS_DEPTH, jrules_prior_dose=1.0,
+                                 jrules_prior_scope=scope))
+        census[scope] = (int(r["jr_expansions_total"]),
+                         int(r["jr_expansions_own_mover"]),
+                         int(r["jr_expansions_boosted"]))
+    want = {"all": lambda t, o: t, "own": lambda t, o: o, "opp": lambda t, o: t - o}
+    for scope, (tot, own, boosted) in census.items():
+        if boosted != want[scope](tot, own):
+            raise SystemExit(
+                f"[jp_e4] S1 CONTROL FAILED, leg (c): scope={scope!r} boosted "
+                f"{boosted} of {tot} expansions ({own} own-mover); the "
+                "Own-and-Opp-partition-All identity does not hold, so the scope "
+                "gate is not partitioning the node population it claims to.")
+    tot, own, _ = census["opp"]
+    if own <= 0 or tot <= own:
+        raise SystemExit(
+            f"[jp_e4] S1 CONTROL FAILED, leg (c) is VACUOUS: the control root's "
+            f"expansion population is one-sided ({own} own-mover of {tot}). The "
+            "identity holds trivially and proves nothing — raise the control sims "
+            "or pin a different root.")
+    # ⚠️ Print the triples PER SCOPE, never `own_boosted + opp_boosted` against
+    # `all_total`: the three scopes run three DIFFERENT trees (the boost changes
+    # what gets expanded), so the identity is a within-tree fact and a
+    # cross-tree sum would not add up and would look like a failure.
+    parts = " ".join(f"{sc}={b}/{o}/{t}" for sc, (t, o, b) in census.items())
+    print(f"[jp_e4] S1 positive control PASS: (a) root priors + root leaf value "
+          f"FROZEN under scope=opp; (b) pooled root stats MOVED at "
+          f"{_CONTROL_SIMS_DEPTH} sims ({int(deep_opp['jr_expansions_boosted'])} "
+          f"opponent expansions boosted); (c) partition holds within each tree "
+          f"[boosted/own_mover/total] {parts}.")
+
 
 
 def _leaf_hash_of(cfg) -> str:
@@ -669,10 +892,20 @@ def grade_archive(archive_path: Path, out_dir: Path, *, arms,
                 champ_pick = int(champ.choose_action(board))
                 rec["champ_pick"] = champ_pick
                 rec["champ_agrees_archive"] = bool(champ_pick == int(played))
+                # E2: the champion's POOLED root visit distribution, read once
+                # per ply, immediately after its decision (`last_*` is per
+                # decision — reading it later would grade the wrong search).
+                champ_visits = dict(champ.last_pooled_visits)
                 for name, agent in agents.items():
                     pick = int(agent.choose_action(board))
                     rec[f"pick_{name}"] = pick
                     rec[f"flip_{name}"] = bool(pick != champ_pick)
+                    # E2 (DESIGN §6.2): graded, not lumpy — the statistic that
+                    # can see a live opponent-node surface even on a ply where
+                    # the argmax did not cross a boundary. `None` when either
+                    # pool is empty (forced/solved), never 0.0.
+                    rec[f"tv_{name}"] = tv_distance(champ_visits,
+                                                    dict(agent.last_pooled_visits))
                 rec["secs"] = round(time.time() - s0, 3)
                 fh.write(json.dumps(rec) + "\n")
                 fh.flush()
@@ -717,6 +950,17 @@ def grade_archive(archive_path: Path, out_dir: Path, *, arms,
         "n_searched_this_run": n_searched,
         "champ_agrees_archive": sum(1 for r in recs if r["champ_agrees_archive"]),
         "flips": {n: sum(1 for r in recs if r.get(f"flip_{n}")) for n in arm_names},
+        # E2 — the root visit-distribution TV vs the champion's pooled root.
+        # `tv_n` is how many plies actually carried a comparable pair, so the
+        # rollup can weight the per-game means without assuming they match
+        # `n_graded` (a forced/solved pool yields None, not 0.0).
+        "root_visit_tv_mean": {n: mean_tv(r.get(f"tv_{n}") for r in recs)
+                               for n in arm_names},
+        "root_visit_tv_n": {n: sum(1 for r in recs if r.get(f"tv_{n}") is not None)
+                            for n in arm_names},
+        "root_visit_tv_sum": {n: sum(float(r[f"tv_{n}"]) for r in recs
+                                     if r.get(f"tv_{n}") is not None)
+                              for n in arm_names},
         "flip_plies": {n: [{k: r[k] for k in ("ply", "phase", "k_remaining",
                                               "champ_pick", f"pick_{n}")}
                            for r in recs if r.get(f"flip_{n}")] for n in arm_names},
@@ -732,6 +976,74 @@ def grade_archive(archive_path: Path, out_dir: Path, *, arms,
           f"mean_secs_per_graded_ply={summary['mean_secs_per_graded_ply']} "
           f"({summary['wall_secs']}s)", flush=True)
     return summary
+
+
+def write_manifest(out_dir, args, arms, archives) -> dict:
+    """Write `MANIFEST.json` — the RESOLVED config — BEFORE the first search.
+
+    IS-D1: **config is read from the manifest, statistics from the summary.**
+    Two separate files so a readout can never quote a knob it inferred from a
+    directory name (the "dirname archaeology" failure this house has paid for),
+    and so the config is on disk *before* any number exists — which is what makes
+    a pre-committed read rule checkable after the fact.
+
+    Provenance failures are RECORDED, not raised: the manifest is a stamp, not a
+    gate (the gates are the inverted leaf-hash check and the §9.2 positive
+    control, both of which run in the grading subprocesses)."""
+    prov: dict = {}
+    try:
+        from carcassonne_ai.rust_agent import (backend_provenance,
+                                               carc_rs_binary_sha,
+                                               carc_rs_build_id)
+        prov = {"carc_rs_binary_sha": carc_rs_binary_sha(),
+                "carc_rs_build_id": carc_rs_build_id(),
+                "backend": backend_provenance()}
+    except Exception as e:                              # noqa: BLE001 - a stamp
+        prov = {"error": f"{type(e).__name__}: {e}"}
+
+    man = {
+        "schema": SCHEMA + "/manifest",
+        "written_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "surface": "prior",
+        "instrument": str(Path(__file__).resolve().relative_to(REPO)),
+        "out_dir": str(Path(out_dir).resolve()),
+        # THE ARMS, fully resolved — including SCOPE, which is the only thing
+        # separating S1's `opp` cell from surface B's banked `all` null.
+        "arms": [{**a.as_dict(), "rules": mask_rules(a.mask), "spec": a.spec()}
+                 for a in arms],
+        "scopes": sorted({a.scope for a in arms}),
+        "budget": {
+            "sims_per_det": (int(args.sims) or None),
+            "k_dets": (int(args.k_dets) or None),
+            "total_per_decision": ((int(args.sims) * int(args.k_dets))
+                                   if (args.sims and args.k_dets) else None),
+            "source": ("CLI override" if (args.sims or args.k_dets)
+                       else "each archive's own stamp"),
+        },
+        "seed": int(args.seed),
+        "workers": int(args.workers),
+        "rust_threads": args.rust_threads,
+        "limit_games": int(args.limit_games),
+        "limit_plies": int(args.limit_plies),
+        "partial": bool(args.limit_plies),
+        "archive_dir": str(Path(args.archive_dir).resolve()),
+        "corpus": [p.name for p in archives],
+        "n_archives": len(archives),
+        "leaf_hash_expected": LEAF_HASH_OF_RECORD,
+        "positive_control": {
+            "seed": _CONTROL_SEED,
+            "plies": _CONTROL_PLIES,
+            "sims_root_leg": _CONTROL_SIMS_ROOT,
+            "sims_depth_leg": _CONTROL_SIMS_DEPTH,
+            "legs": ("symmetric scopes: root priors MUST move; "
+                     "scope=opp: (a) root priors + root leaf value MUST NOT move, "
+                     "(b) pooled root stats MUST move at the depth-leg sims, "
+                     "(c) Own and Opp partition All within each tree"),
+        },
+        "provenance": prov,
+    }
+    (Path(out_dir) / "MANIFEST.json").write_text(json.dumps(man, indent=1))
+    return man
 
 
 # ==========================================================================  #
@@ -783,7 +1095,8 @@ def main(argv=None):
     ap.add_argument("--arm", action="append", default=None,
                     metavar="NAME:DOSE[:MASK[:SCOPE]]",
                     help="repeatable calibration rung NAME:DOSE[:MASK[:SCOPE]] (MASK "
-                         f"defaults to {DEFAULT_MASK} == JR_ALL; SCOPE to 'all') — "
+                         f"defaults to {DEFAULT_MASK} == JR_ALL; SCOPE is "
+                         "'all'|'own'|'opp' and defaults to 'all') — "
                          "these are SEARCH-prior knobs, the leaf never moves; default "
                          f"= the pre-registered ladder {list(DEFAULT_ARM_SPECS)}")
     ap.add_argument("--workers", type=int, default=1,
@@ -821,6 +1134,11 @@ def main(argv=None):
     print(f"[jp_e4] {len(archives)} archives, {len(archives)-len(todo)} already "
           f"done, {len(todo)} to grade; workers={args.workers} "
           f"arms={[a.spec() for a in arms]}", flush=True)
+
+    # IS-D1: the RESOLVED config lands on disk BEFORE the first search, so the
+    # read rule is checkable against what actually ran rather than what someone
+    # remembers launching.
+    write_manifest(out_dir, args, arms, archives)
 
     jobs = []
     for p in todo:

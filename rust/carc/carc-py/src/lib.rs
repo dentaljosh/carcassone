@@ -1622,9 +1622,11 @@ impl PySearchConfig {
         let jr_scope = match jrules_prior_scope {
             "all" => search::JrPriorScope::All,
             "own" => search::JrPriorScope::Own,
+            // S1 (measurement/s1_asymmetry_prep): the opponent-model arm.
+            "opp" => search::JrPriorScope::Opp,
             other => {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                    "jrules_prior_scope must be 'all'|'own'; got {other:?}"
+                    "jrules_prior_scope must be 'all'|'own'|'opp'; got {other:?}"
                 )))
             }
         };
@@ -1760,6 +1762,7 @@ impl PySearchConfig {
             match self.inner.jrules_prior_scope {
                 search::JrPriorScope::All => "all",
                 search::JrPriorScope::Own => "own",
+                search::JrPriorScope::Opp => "opp",
             },
         )
     }
@@ -1939,6 +1942,13 @@ fn result_to_dict<'py>(
     )?;
     d.set_item("node_count", r.node_count)?;
     d.set_item("leaf_evals", r.leaf_evals)?;
+    // S1 DESIGN §9.2(c): the J-rules-prior EXPANSION CENSUS. All zero unless
+    // jrules_prior_dose != 0.0. `boosted == total` under scope 'all',
+    // `== own_mover` under 'own', `== total - own_mover` under 'opp' — the
+    // machine-checkable decomposition identity, per search.
+    d.set_item("jr_expansions_total", r.jr_expansions_total)?;
+    d.set_item("jr_expansions_own_mover", r.jr_expansions_own_mover)?;
+    d.set_item("jr_expansions_boosted", r.jr_expansions_boosted)?;
     Ok(d)
 }
 

@@ -39,6 +39,9 @@ fn main() {
         .unwrap_or(0.25);
     let scope = match std::env::args().nth(2).as_deref() {
         Some("own") => carc_core::search::JrPriorScope::Own,
+        // S1 (measurement/s1_asymmetry_prep): the opponent-model arm. This is
+        // the direct measurement of SIZING §3's INFERRED 1.085x overhead.
+        Some("opp") => carc_core::search::JrPriorScope::Opp,
         _ => carc_core::search::JrPriorScope::All,
     };
     let sims = 1376usize;

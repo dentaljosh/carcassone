@@ -3465,12 +3465,19 @@ def main(argv=None) -> int:
     ap.add_argument("--cand-jrules-prior-mask", type=int, default=31,
                     help="surface-B per-rule ablation mask (JR_J1|J2|J5|J6|J8 == 31, the "
                          "default bundle). Only read when the dose is nonzero.")
-    ap.add_argument("--cand-jrules-prior-scope", choices=("all", "own"), default="all",
+    ap.add_argument("--cand-jrules-prior-scope", choices=("all", "own", "opp"),
+                    default="all",
                     help="surface-B scope: 'all' = every expansion, mover POV (the "
                          "primary; the structural analogue of the house priors); 'own' = "
                          "only root-player nodes (the opponent-model-free ablation; "
-                         "measured cheaper, ~1.07x vs ~1.15x). Only read when the dose "
-                         "is nonzero.")
+                         "measured cheaper, ~1.07x vs ~1.15x); 'opp' = S1 "
+                         "(measurement/s1_asymmetry_prep) = the COMPLEMENT of 'own', "
+                         "i.e. opponent-mover nodes only — the opponent-model arm. "
+                         "Under 'opp' the ROOT expansion is byte-identical to the "
+                         "champion's by design, so every behavioural difference is "
+                         "search-mediated; a liveness check that expects moved ROOT "
+                         "PRIORS is WRONG for this scope. Only read when the dose is "
+                         "nonzero.")
     ap.add_argument("--cand-jrules-filter-mask", type=int, default=0,
                     help="J-RULES ROOT FILTER surface C (measurement/"
                          "jrules_filters_20260814): apply the anchor's HARD FILTERS "
