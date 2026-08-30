@@ -344,17 +344,28 @@ def adjudicate_cell(spec, cell) -> dict:
                   "bar_M": L.BAR_M},
         # ⚠️ THE SECONDARY, reported beside the primary on EVERY branch and never
         # quoted bare. READ_RULE §5: the MARGIN carries the branch.
+        # ⭐ R4 (pre-launch merge review): the CI is built on the DECK-PAIRED
+        # sigma, which is the footing BAR_ELO is stated on. The unpaired
+        # binomial figure is carried beside it so the correction is auditable,
+        # and every field NAMES its footing.
         "secondary_elo": {
-            "elo": we["elo"], "sigma_1": we["elo_sig_1sigma"],
+            "elo": we["elo"],
+            "footing": we["elo_footing"],
+            "sigma_1_paired": we["elo_sig_1sigma_paired"],
+            "sigma_1_unpaired": we["elo_sig_1sigma_unpaired"],
+            "pairing_factor": we.get("elo_pairing_factor", L.PAIRING_FACTOR),
             "winrate": we["winrate"], "W": we["W"], "D": we["D"], "L": we["L"],
-            "CI95": (None if we["elo"] is None or we["elo_sig_1sigma"] is None
-                     else [we["elo"] - 2 * we["elo_sig_1sigma"],
-                           we["elo"] + 2 * we["elo_sig_1sigma"]]),
+            "ci95_elo_paired": (
+                None if we["elo"] is None or we["elo_sig_1sigma_paired"] is None
+                else [we["elo"] - 2 * we["elo_sig_1sigma_paired"],
+                      we["elo"] + 2 * we["elo_sig_1sigma_paired"]]),
             "bar_elo": L.BAR_ELO,
+            "bar_elo_footing": "deck-paired 2σ at 800 games / 400 decks — the "
+                               "SAME footing as ci95_elo_paired (R4)",
             "warning": "⚠️ elo may NEVER be quoted bare. It is the SECONDARY; "
                        "the deck-paired MARGIN carries the branch. A "
                        "disagreement between the two is DISCLOSED, not "
-                       "arbitrated.",
+                       "arbitrated. ⛔ NO branch reads this block.",
         },
         "se_anomaly": L.se_anomaly(se, max(1, n)),
         "_per_deck": per_deck,
@@ -495,6 +506,133 @@ def adjudicate(cells_by_name: dict, pins_by_role: dict | None = None,
         }
     out["companions"] = comp
     return out
+
+
+# =========================================================================== #
+# ⭐⭐ R1 — THE SMOKE'S OWN SPECS (pre-launch merge review, 2026-08-30)         #
+# =========================================================================== #
+# ⛔⛔ THE DEFECT THIS CLOSES. `--smoke-mode` adjudicated ZERO cells, by TWO
+# independent mechanisms, and still exited 0 — so `run_cells.sh`'s
+# `|| DIE "the smoke adjudication FAILED"` was UNREACHABLE and the smoke's one
+# substantive job (read the RESOLVED KNOB back out of the EMITTED manifest)
+# silently did nothing:
+#
+#   (1) the cell scan dropped every dir named `SMOKE_*` (the launcher names them
+#       `SMOKE_FPU` / `SMOKE_CPUCT`) — correct for a ROUND read, fatal for a
+#       SMOKE read, which adjudicates at the parent `$SHARE/$OUT_TAG`;
+#   (2) `adjudicate()` iterates `screen_lib.CELLS`, which names only the three
+#       ROUND cells, so a `SMOKE_*` dir had no spec to be adjudicated against.
+#
+# ⚠️ The identical defect is REALIZED in phasegate's banked `SMOKE_local.json`
+# (`"cells": {}`) — see `measurement/phasegate_prep/AMENDMENTS.md` (PG-D10, and
+# the PG-A2 candidate note appended 2026-08-30).
+#
+# The smoke's spec cannot come from `L.CELLS` (it is not a round cell) and must
+# not be invented here (a restated knob proves nothing about the launcher), so
+# `run_cells.sh` PASSES it and the value is then checked against what the
+# harness actually EMITTED.
+
+SMOKE_CELL_SYNTAX = "NAME=knob:value:seed_start:n_games:role"
+
+
+def parse_smoke_cell(text: str) -> "L.CellSpec":
+    """`SMOKE_FPU=fpu_reduction:0.2:157999999500:8:local` -> a `CellSpec`.
+
+    ⛔ The NAME must start with `SMOKE_`: only smoke archives are adjudicable in
+    `--smoke-mode`, and admitting any other name would let a re-smoke at a root
+    that already holds real cells adjudicate a ROUND cell under smoke rules.
+    ⛔ The knob and value are the LAUNCHER'S REQUEST. They are not trusted — they
+    become `G-FPU`/`G-CPUCT`'s frozen expectation, which is then checked against
+    `manifest.json`'s `config.cand_search.*`, i.e. against what was EMITTED.
+    """
+    name, sep, rest = text.partition("=")
+    if not sep:
+        raise ValueError(f"--smoke-cell {text!r}: expected {SMOKE_CELL_SYNTAX}")
+    parts = rest.split(":")
+    if len(parts) != 5:
+        raise ValueError(f"--smoke-cell {text!r}: expected {SMOKE_CELL_SYNTAX} "
+                         f"(got {len(parts)} field(s) after '=')")
+    knob, value, seed_start, n_games, role = parts
+    if role not in ("local", "laptop"):
+        raise ValueError(f"--smoke-cell {text!r}: role must be local|laptop "
+                         "— G-HOST proves the smoke ran on the box whose code "
+                         "path it was written to exercise")
+    if not name.startswith("SMOKE_"):
+        raise ValueError(f"--smoke-cell {text!r}: the name must start with "
+                         "'SMOKE_' — only smoke archives are adjudicable in "
+                         "--smoke-mode, and a round cell must never be")
+    if knob not in ("fpu_reduction", "c_puct"):
+        raise ValueError(f"--smoke-cell {text!r}: unknown knob {knob!r}")
+    n = int(n_games)
+    if n < 2 or n % 2:
+        raise ValueError(f"--smoke-cell {text!r}: n_games {n} is not an even "
+                         "count of deck-paired games")
+    return L.CellSpec(name=name, role=role, knob=knob, value=float(value),
+                      seed_start=int(seed_start), n_decks=n // 2,
+                      purpose="⭐ THE §9 SMOKE — the THROWAWAY sub-range, "
+                              "PRODUCTION knobs, only the game count reduced. "
+                              "⛔ Buys no deck of the round and claims no band.")
+
+
+#: The gates the smoke EXISTS to run. ⛔ A smoke archive legitimately fails
+#: gates about the ROUND (`G-BLIND` — it is stamped with no blind commit;
+#: `G-REV` — it runs at the PRE-LAUNCH commit by design; `G-N` — 8 games, not
+#: 800), so "all gates ok" is the wrong bar and would make the smoke unusable.
+#: These three are the ones whose failure means the LAUNCHER is wrong:
+#:   * `G-FPU`/`G-CPUCT` — the knob was REQUESTED, at the right dose, and the
+#:     emitted manifest says so;
+#:   * `G-TWOSIDED`      — it BOUND, and bound on the CANDIDATE side ONLY. This
+#:     is the `--c-puct` both-sides trap (run_cells.sh:288-291): the shared flag
+#:     builds the opponent too, so a cell built on it is champion-vs-champion
+#:     and every other gate passes it.
+SMOKE_REQUIRED_GATES = ("G-FPU", "G-CPUCT", "G-TWOSIDED")
+
+
+def smoke_problems(v: dict) -> list[str]:
+    """⛔ NON-EMPTY == the smoke FAILED == a non-zero exit, which is what makes
+    `run_cells.sh`'s `|| DIE "the smoke adjudication FAILED"` REACHABLE."""
+    probs: list[str] = []
+    cells = v.get("cells") or {}
+    knobs = v.get("resolved_knobs") or {}
+    if not cells:
+        probs.append(
+            "⛔⛔ THE SMOKE ADJUDICATED ZERO CELLS. Nothing was read, so nothing "
+            "was proven — and an exit 0 here is exactly the R1 defect (an "
+            "unreachable `|| DIE` in the launcher). Check that the smoke "
+            "archive exists under --root, is named SMOKE_*, carries a "
+            "manifest.json, and that its name matches a --smoke-cell "
+            f"({SMOKE_CELL_SYNTAX}).")
+    if not knobs:
+        probs.append("⛔ resolved_knobs is EMPTY — the smoke's one substantive "
+                     "job is to return the knob AS THE HARNESS WROTE IT, read "
+                     "off the emitted manifest.json. Nothing was read.")
+    for name in cells:
+        k = knobs.get(name)
+        if not k:
+            probs.append(f"⛔ {name}: no resolved knob could be read from its "
+                         "manifest.json — ABSENT is FAIL")
+        elif k.get("requested_fpu_reduction") is None and \
+                k.get("requested_c_puct_override") is None:
+            probs.append(f"⛔ {name}: the emitted manifest requested NEITHER a "
+                         "fpu_reduction NOR a c_puct override — the launcher "
+                         "did not put the knob on the wire")
+    for name, c in cells.items():
+        by_id = {g["gate"]: g["ok"] for g in c.get("gates", [])}
+        ran = [g for g in SMOKE_REQUIRED_GATES if g in by_id]
+        if not ran:
+            probs.append(f"⛔ {name}: none of {SMOKE_REQUIRED_GATES} executed")
+        for gid in ran:
+            if not by_id[gid]:
+                probs.append(
+                    f"⛔ {name}: {gid} FAILED. " + (
+                        "The knob did not BIND on the candidate, or it bound on "
+                        "the OPPONENT TOO — the `--c-puct` both-sides trap "
+                        "(run_cells.sh:288-291). A round launched over this is "
+                        "champion-vs-champion."
+                        if gid == "G-TWOSIDED" else
+                        "The emitted manifest does not carry the knob this box "
+                        "was told to smoke."))
+    return probs
 
 
 def _golden_gate_status() -> dict:
@@ -723,6 +861,10 @@ def main() -> int:
     ap.add_argument("--pin-laptop", type=Path, help="laptop's PINNED_SRC_REV")
     ap.add_argument("--smoke-mode", action="store_true",
                     help="structural keys ONLY — ⛔ the smoke emits NO outcome key")
+    ap.add_argument("--smoke-cell", action="append", default=[], metavar=SMOKE_CELL_SYNTAX,
+                    help="⭐ R1: the §9 smoke's own synthetic cell spec, PASSED "
+                         "BY run_cells.sh. Required by (and only legal with) "
+                         "--smoke-mode. Repeatable.")
     ap.add_argument("--out", type=Path)
     args = ap.parse_args()
 
@@ -730,18 +872,44 @@ def main() -> int:
         return selftest()
     if not args.root:
         ap.error("--root or --selftest")
+    if args.smoke_cell and not args.smoke_mode:
+        ap.error("--smoke-cell is only legal with --smoke-mode")
 
-    cells = {p.name: load_cell(p) for p in sorted(args.root.iterdir())
-             if p.is_dir() and (p / "manifest.json").is_file()
-             # smoke/quarantine archives are not round cells — they run at the
-             # pre-launch commit by design.
-             and not p.name.startswith(("SMOKE_", "_VOID_"))}
+    # ⭐⭐ R1 — THE TWO SCANS ARE DISJOINT BY CONSTRUCTION.
+    # ⛔ The real (non-smoke) branch is UNCHANGED, byte for byte: a round read
+    # must never adjudicate a smoke archive, which runs at the PRE-LAUNCH commit
+    # by design, and `_VOID_*` is quarantine.
+    specs = None
+    if args.smoke_mode:
+        # ⛔ THE MIRROR IMAGE, and it is the load-bearing half: a smoke read
+        # adjudicates ONLY `SMOKE_*`. A re-smoke at a root that already holds
+        # the round's real cells must never touch them — otherwise a stale
+        # round cell's knobs would be reported as a smoke PASS.
+        if not args.smoke_cell:
+            ap.error("--smoke-mode requires at least one --smoke-cell "
+                     f"{SMOKE_CELL_SYNTAX} — without a spec there is nothing to "
+                     "adjudicate the smoke archive AGAINST, and the read would "
+                     "vacuously exit 0 (the R1 defect)")
+        try:
+            specs = tuple(parse_smoke_cell(s) for s in args.smoke_cell)
+        except ValueError as e:
+            ap.error(str(e))
+        cells = {p.name: load_cell(p) for p in sorted(args.root.iterdir())
+                 if p.is_dir() and (p / "manifest.json").is_file()
+                 and p.name.startswith("SMOKE_")}
+    else:
+        cells = {p.name: load_cell(p) for p in sorted(args.root.iterdir())
+                 if p.is_dir() and (p / "manifest.json").is_file()
+                 # smoke/quarantine archives are not round cells — they run at
+                 # the pre-launch commit by design.
+                 and not p.name.startswith(("SMOKE_", "_VOID_"))}
     pins = {}
     if args.pin_local and args.pin_local.is_file():
         pins["local"] = args.pin_local.read_text().strip()
     if args.pin_laptop and args.pin_laptop.is_file():
         pins["laptop"] = args.pin_laptop.read_text().strip()
-    v = adjudicate(cells, pins_by_role=pins, smoke_mode=args.smoke_mode)
+    v = adjudicate(cells, pins_by_role=pins, smoke_mode=args.smoke_mode,
+                   specs=specs)
 
     if args.smoke_mode:
         # ⛔⛔ THE SMOKE EMITS NO OUTCOME KEY. The emitter whitelist is a WRITE
@@ -761,9 +929,17 @@ def main() -> int:
                       if g["gate"] in ("G-FPU", "G-CPUCT")), None)
             if not isinstance(d, dict):
                 return None
-            return {k: d.get(k) for k in ("requested_fpu_reduction",
-                                          "requested_c_puct_override",
-                                          "shared_c_puct", "frozen")}
+            out = {k: d.get(k) for k in ("requested_fpu_reduction",
+                                         "requested_c_puct_override",
+                                         "shared_c_puct", "frozen")}
+            # ⭐ R1(c) — THE CANDIDATE-SIDE-ONLY WITNESS, surfaced for the
+            # by-hand review the launcher demands. `G-TWOSIDED`'s detail is the
+            # two sides' RESOLVED config: pure CONFIG, no outcome key.
+            t = next((g["detail"] for g in c["gates"]
+                      if g["gate"] == "G-TWOSIDED"), None)
+            if isinstance(t, dict):
+                out["resolved_two_sided"] = t.get("resolved")
+            return out
 
         v = {"smoke_mode": True,
              "round_gates": [_bare(g) for g in v["round_gates"]],
@@ -774,11 +950,19 @@ def main() -> int:
                            "failed_gates": c["failed_gates"]}
                        for n, c in v["cells"].items()},
              "resolved_knobs": {n: _knob(c) for n, c in v["cells"].items()},
+             "smoke_specs": [{"name": s.name, "knob": s.knob, "value": s.value,
+                              "seed_start": s.seed_start,
+                              "n_games": s.n_games} for s in (specs or ())],
              "note": "⭐ the smoke's one substantive job beyond liveness: it "
                      "returns the RESOLVED KNOB as the harness actually wrote "
                      "it, on the real argparse, on this box — the PG-D7..D9 "
                      "lesson that a smoke which does not exercise the real CLI "
                      "proves nothing about the launcher."}
+        # ⭐⭐ R1(c) — THE EXIT CODE. Zero cells or an empty/rejected knob is a
+        # FAILED smoke, and it exits non-zero so run_cells.sh's
+        # `|| DIE "the smoke adjudication FAILED"` is REACHABLE.
+        v["smoke_problems"] = smoke_problems(v)
+        v["smoke_ok"] = not v["smoke_problems"]
 
     txt = json.dumps(v, indent=2, default=str)
     if args.out:
@@ -786,6 +970,11 @@ def main() -> int:
         print(f"[analyze_fpu] wrote {args.out}")
     else:
         print(txt)
+    if args.smoke_mode and v.get("smoke_problems"):
+        print("\n⛔ SMOKE ADJUDICATION FAILED:", file=sys.stderr)
+        for pr in v["smoke_problems"]:
+            print(f"  {pr}", file=sys.stderr)
+        return 1
     return 0
 
 

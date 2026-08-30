@@ -116,6 +116,19 @@ BAR_M = 1.381                #: pts/deck — 2 * SIGMA_D_MODEL / sqrt(400)
 BAR_ELO = 17.4               #: the SECONDARY's matching resolution. ⚠️ NEVER a
 #:                              branch input on its own — see RIDERS.
 
+#: ⭐ R4 (2026-08-30, pre-launch merge review) — **THE ELO FOOTING.**
+#: `BAR_ELO` is the **DECK-PAIRED** 2σ resolution: 800 games are 400 decks × 2
+#: seatings, and pairing scales the sigma by `1/sqrt(2)`. The textbook binomial
+#: sigma `winrate_elo` computes is the **UNPAIRED** one (±24.6 at 2σ, n=800), so
+#: quoting it beside a paired bar compared two different rulers — the bar looked
+#: clearable when the CI said it was not, and vice versa. The PAIRED footing is
+#: the correct one (it is the footing the primary margin already uses), so the
+#: emitted sigma carries this factor and every emitted field says so in its NAME.
+#: ⛔ This changes NO branch: `branch_for_cell` keys off `M`/`z`/`UB95` vs
+#: `BAR_M` and never sees an elo. `sanity_check()` re-derives `BAR_ELO` from
+#: `elo_sigma_paired` so the constant can never drift from the arithmetic again.
+PAIRING_FACTOR = 1.0 / math.sqrt(2.0)          #: ≈ 0.70711
+
 #: `RECON` tolerance (`READ_RULE.md` §1.1).
 RECON_RTOL, RECON_ATOL = 1e-6, 1e-9
 #: `G-REV`: the minimum short-rev prefix `rev_matches` will canonicalize.
@@ -465,8 +478,30 @@ def paired_margin(records: Iterable[Mapping]):
     return mean, z, n, se, per_deck
 
 
+def elo_sigma_unpaired(wr: float, n_games: int) -> float:
+    """1σ on elo from the plain binomial, treating every GAME as independent.
+
+    ⛔ THIS IS THE WRONG FOOTING FOR THIS ROUND and is emitted only so the
+    correction is auditable: 800 games are 400 decks × 2 seatings, not 800
+    independent draws."""
+    return ((400.0 / math.log(10)) * math.sqrt(wr * (1 - wr) / n_games)
+            / (wr * (1 - wr)))
+
+
+def elo_sigma_paired(wr: float, n_games: int) -> float:
+    """⭐ 1σ on elo on the **DECK-PAIRED** footing — the one `BAR_ELO` is stated
+    on, and the one the primary margin already uses. `PAIRING_FACTOR` applied."""
+    return elo_sigma_unpaired(wr, n_games) * PAIRING_FACTOR
+
+
 def winrate_elo(records: Sequence[Mapping]) -> dict:
     """W/D/L, winrate and elo recomputed from the raw records.
+
+    ⚠️⚠️ **R4: THE EMITTED SIGMA IS DECK-PAIRED.** `elo_sig_1sigma_paired` is
+    the field the read-out's CI is built from; `elo_sig_1sigma_unpaired` is
+    carried beside it so the factor is visible rather than buried. ⛔ The old
+    unlabelled `elo_sig_1sigma` key is GONE ON PURPOSE — a footing that is not
+    in the field name is a footing nobody checks.
 
     ⚠️⚠️ THE ELO IS THIS ROUND'S **SECONDARY**, and it is in an awkward position:
     the FUNDING BRIEF states the bar in elo (`~±17.5 elo` at 2σ) because the
@@ -481,17 +516,23 @@ def winrate_elo(records: Sequence[Mapping]) -> dict:
     n = len(scored)
     if n == 0:
         return {"n": 0, "W": 0, "D": 0, "L": 0, "winrate": None, "elo": None,
-                "elo_sig_1sigma": None, "avg_diff": None}
+                "elo_sig_1sigma_paired": None, "elo_sig_1sigma_unpaired": None,
+                "elo_footing": "deck-paired", "avg_diff": None}
     w = sum(1 for r in scored if r.get("won_by_champ") is True)
     d = sum(1 for r in scored if r.get("drew") is True)
     wr = (w + 0.5 * d) / n
     if 0.0 < wr < 1.0:
         elo = 400.0 * math.log10(wr / (1.0 - wr))
-        sig = (400.0 / math.log(10)) * math.sqrt(wr * (1 - wr) / n) / (wr * (1 - wr))
+        sig_u = elo_sigma_unpaired(wr, n)
+        sig_p = sig_u * PAIRING_FACTOR
     else:
-        elo, sig = math.copysign(800.0, wr - 0.5), float("nan")
+        elo, sig_u, sig_p = (math.copysign(800.0, wr - 0.5),
+                             float("nan"), float("nan"))
     return {"n": n, "W": w, "D": d, "L": n - w - d, "winrate": wr, "elo": elo,
-            "elo_sig_1sigma": sig,
+            "elo_sig_1sigma_paired": sig_p,
+            "elo_sig_1sigma_unpaired": sig_u,
+            "elo_footing": "deck-paired",
+            "elo_pairing_factor": PAIRING_FACTOR,
             "avg_diff": math.fsum(float(r["diff"]) for r in scored) / n}
 
 
@@ -1055,6 +1096,22 @@ def sanity_check() -> list[str]:
     if abs(BAR_M - 2 * se_model(400)) > 2e-3:
         p.append(f"BAR_M {BAR_M} is not the 2-sigma resolution "
                  f"{2 * se_model(400):.4f} at n=400 decks")
+    # ⭐ R4 — BAR_ELO's PROVENANCE ASSERT, the exact twin of BAR_M's above.
+    # `BAR_ELO` is the DECK-PAIRED 2σ at wr=0.5 over 800 games (400 decks x 2
+    # seatings). Deriving it here means the constant and the emitted sigma can
+    # never again sit on different footings without this file failing to build.
+    bar_elo_paired = 2.0 * elo_sigma_paired(0.5, 800)
+    if abs(BAR_ELO - bar_elo_paired) > 0.05:
+        p.append(f"BAR_ELO {BAR_ELO} is not the DECK-PAIRED 2-sigma resolution "
+                 f"{bar_elo_paired:.4f} at 800 games / 400 decks (the UNPAIRED "
+                 f"figure is {2 * elo_sigma_unpaired(0.5, 800):.4f} — that is "
+                 "the mismatch R4 fixed)")
+    if abs(PAIRING_FACTOR - 0.7071) > 1e-4:
+        p.append(f"PAIRING_FACTOR {PAIRING_FACTOR} is not 1/sqrt(2)")
+    # ⛔ elo is NEVER a branch input — asserted, not assumed.
+    if "elo" in branch_for_cell.__code__.co_varnames:
+        p.append("branch_for_cell has taken an elo argument — elo may NEVER be "
+                 "a branch input (READ_RULE §1.1)")
     pw = power_at(BAR_M, se_model(400))
     if not (0.48 <= pw <= 0.52):
         p.append(f"power at a TRUE +{BAR_M} and n=400 is {pw:.3f}; DESIGN §3 "
