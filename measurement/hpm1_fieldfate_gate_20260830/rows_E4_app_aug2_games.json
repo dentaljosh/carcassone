@@ -1,0 +1,19 @@
+[
+ {
+  "game": "1785975832_66810.json",
+  "corpus": "E4",
+  "profile": "app_aug2",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   98,
+   78
+  ],
+  "recorded_scores": [
+   98,
+   78
+  ],
+  "human_player": 0,
+  "n_farm_commits": 5
+ }
+]
