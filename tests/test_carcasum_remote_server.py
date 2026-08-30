@@ -154,17 +154,46 @@ def test_a_session_id_bound_to_one_deck_cannot_be_reused_for_another():
         s.close()
 
 
-def test_a_game_in_progress_cannot_be_picked_up_by_a_fresh_session():
-    """Carcasum is not replayable — say so, do not fake a resume."""
+def test_a_game_the_opponent_has_MOVED_in_cannot_be_picked_up_fresh():
+    """Carcasum is not replayable — say so, do not fake a resume.
+
+    But the discriminator is "has the OPPONENT moved", not "is the log
+    non-empty": with the human on seat 0 he plays ply 0 (and possibly his
+    meeple) before Carcasum is ever asked, so the first request of a brand-new
+    game legitimately carries actions. Getting that wrong makes every
+    human-first game unstartable, which is how this was caught.
+    """
     srv = object.__new__(S.RemoteOpponentServer)
     srv._lock = threading.Lock()
     srv._sessions = {}
     srv.session_ttl_s = 3600
     with pytest.raises(S.SessionError) as e:
+        # An unreplayable log fails CLOSED — counted as "the opponent has moved".
         srv.get_or_create(game_id="gone", deck_seed=1, human_seat=0,
-                          opponent=None, n_client_actions=17)
+                          opponent=None, client_actions=[-1, -2, -3])
     assert e.value.code == "session_lost"
     assert "abandoned" in str(e.value)
+
+
+def test_the_opening_plies_of_a_human_first_game_are_not_a_resume():
+    """A real opening log: replay it and count who owned each ply."""
+    M = S.match_module()
+    from carcassonne_ai import rules_profile
+    from carcassonne_ai.game_wrapper import Game
+
+    prof = rules_profile.activate(M.PROFILE)
+    random.seed(4242)
+    game = Game(enable_legal_moves_cache=True, **prof.game_kwargs())
+    board = game.get_init_board()
+    opening: list[int] = []
+    while int(board.state.current_player) == 0:
+        legal = [i for i, v in enumerate(game.get_valid_moves(board)) if v]
+        board, _ = game.get_next_state(board, legal[0])
+        opening.append(legal[0])
+    assert opening, "seat 0 owns at least the first ply"
+    assert S._count_opponent_plies(4242, opening, human_seat=0) == 0
+    # And the same log read from the OTHER seat is all opponent plies.
+    assert S._count_opponent_plies(4242, opening, human_seat=1) == len(opening)
 
 
 def test_the_anchor_sha_is_the_binary_named_in_the_prep():

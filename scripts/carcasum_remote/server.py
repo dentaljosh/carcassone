@@ -253,6 +253,46 @@ def probe_tiny_city_scores_four(binary: Path, *, budget_ms: int = 20) -> dict:
 # --------------------------------------------------------------------------- #
 # one game                                                                     #
 # --------------------------------------------------------------------------- #
+
+def _count_opponent_plies(deck_seed: int, actions, human_seat: int) -> int:
+    """How many plies in this log were played by the seat Carcasum occupies.
+
+    The one signal that separates "the human opened and it is now my turn" (a
+    brand-new game, human on seat 0, perfectly resumable-as-fresh) from "this
+    game already has Carcasum moves in it" (unresumable — a fresh Carcasum
+    process would be a different opponent inside one game). Replayed with OUR
+    engine, which is the game of record on both ends, under the same rules
+    profile and the same `random.seed(deck_seed)` root_replay contract the phone
+    archives use.
+
+    Never raises on a bad log: an unreplayable log is reported as "opponent has
+    moved", which fails CLOSED — refusing a resumable game is a nuisance,
+    accepting an unresumable one silently swaps the opponent mid-game.
+    """
+    acts = [int(a) for a in (actions or [])]
+    if not acts:
+        return 0
+    M = match_module()
+    import random                                                 # noqa: PLC0415
+
+    from carcassonne_ai import rules_profile                      # noqa: PLC0415
+    from carcassonne_ai.game_wrapper import Game                  # noqa: PLC0415
+
+    try:
+        prof = rules_profile.activate(M.PROFILE)
+        random.seed(int(deck_seed))
+        game = Game(enable_legal_moves_cache=True, **prof.game_kwargs())
+        board = game.get_init_board()
+        n = 0
+        for a in acts:
+            if int(board.state.current_player) != int(human_seat):
+                n += 1
+            board, _ = game.get_next_state(board, int(a))
+        return n
+    except Exception:                                             # noqa: BLE001
+        return len(acts)
+
+
 class SessionError(RuntimeError):
     """A client-visible session fault; `code` is the machine-readable reason."""
 
@@ -508,7 +548,7 @@ class RemoteOpponentServer:
                 self._sessions.pop(gid, None)
 
     def get_or_create(self, *, game_id: str, deck_seed: int, human_seat: int,
-                      opponent: dict | None, n_client_actions: int) -> _Session:
+                      opponent: dict | None, client_actions) -> _Session:
         with self._lock:
             self._reap()
             s = self._sessions.get(game_id)
@@ -521,16 +561,25 @@ class RemoteOpponentServer:
                         server_deck_seed=s.deck_seed, server_human_seat=s.human_seat)
                 s.last_seen = time.time()
                 return s
-            if n_client_actions:
-                # A fresh session cannot pick up a game in progress — see the
-                # module docstring's "one honest limit". Say so, loudly.
+            # A NON-EMPTY log on a fresh session is NOT automatically a resume:
+            # when the human has seat 0 he plays ply 0 (and possibly his meeple)
+            # before the opponent is ever asked, so the FIRST request of a brand
+            # new game legitimately carries a few actions. What cannot be picked
+            # up is a game the opponent has already moved in — see the module
+            # docstring's "one honest limit". So ask the engine which it is, on
+            # the one signal that actually distinguishes them: has any ply in the
+            # client's log belonged to the OPPONENT seat.
+            n_opp = _count_opponent_plies(deck_seed, client_actions, human_seat)
+            if n_opp:
                 raise SessionError(
                     "session_lost",
-                    "no live session for this game_id and the client is already "
-                    f"{n_client_actions} plies in. Carcasum cannot be replayed into "
-                    "a position (compile-time RNG, no history-load in the driver), "
-                    "so this game cannot be resumed; log it as abandoned.",
-                    n_client_actions=int(n_client_actions))
+                    "no live session for this game_id, and the client's log "
+                    f"already contains {n_opp} opponent move(s). Carcasum cannot be "
+                    "replayed into a position (compile-time RNG, no history-load in "
+                    "the driver), so a fresh process would be a DIFFERENT opponent "
+                    "inside one game. This game cannot be resumed; log it as "
+                    "abandoned (PROTOCOL.md 3).",
+                    n_client_actions=len(client_actions), n_opponent_plies=int(n_opp))
             if len(self._sessions) >= self.max_sessions:
                 raise SessionError("too_many_sessions",
                                    f"{len(self._sessions)} live sessions (cap "
@@ -625,7 +674,7 @@ class _Handler(BaseHTTPRequestHandler):
         s = self.srv.get_or_create(
             game_id=game_id, deck_seed=int(body["deck_seed"]),
             human_seat=int(body["human_seat"]), opponent=body.get("opponent"),
-            n_client_actions=len(actions))
+            client_actions=actions)
         s.last_seen = time.time()
         s.submit(actions)
         out = s.next_action(len(actions))
