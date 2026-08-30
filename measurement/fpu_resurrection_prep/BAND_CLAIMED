@@ -1,0 +1,4 @@
+ROUND AUTHORIZED 2026-08-30 ~02:10 EDT.
+Sequence per BAND_CLAIM.json _order_of_operations: (1) fresh tree sweep re-run (0 hits 156/157e9; one proposed-not-claimed S1 SIZING.md hit for 155e9, annotated superseded) -> (2) three rows appended to governance/BAND_REGISTRY.csv status=claimed -> (3) this sentinel.
+BLIND_COMMIT=58dfd9b14f261aa8f0f447d0553d19f4bd80ab35 stamped in WORKERS.conf in the same commit.
+Owner funding: 2026-08-30 "I am funding all 3 conditional" + ratified overnight envelope (FPU round queued behind S1 G1).

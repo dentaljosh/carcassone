@@ -189,6 +189,7 @@ the share lives there. Budget it explicitly and prune after the census.
 
 ## 6. BAND AND DECK PLAN (proposed, unclaimed)
 
+* ⚠️ **SUPERSEDED 2026-08-30: 155e9 (and 156/157e9) were CLAIMED by the FPU-resurrection round** (`governance/BAND_REGISTRY.csv` 2026-08-30 append) — G3 must re-propose from the registry+tree-sweep at its own claim time. The text below stands as the frozen proposal record only.
 * **Band 155000000000** — the next free integer above `154000000000`
   (`governance/BAND_REGISTRY.csv` tail, the phase-gated arbitration band). **Not claimed by
   this document.**
