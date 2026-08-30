@@ -185,9 +185,19 @@ class HeuristicPriorConfig:
                   σ(completedQ) without g. A/B'd via --gumbel-retain-g /
                   --no-gumbel-retain-g. Only read when root_select == "gumbel".
 
-    NOTE: c_lcb / reuse_tree / root_select DEFAULT to a no-op (final_select stays
-    "Q"/"visits", reuse stays off, root_select stays "puct"); the defaults reproduce
-    the champion byte-for-byte
+    fpu_reduction First-Play-Urgency for UNVISITED children (measurement/
+                  fpu_resurrection_prep). None (default) == the NeuralMCTS LEGACY
+                  optimistic `q = 0.0` == the champion, bit-for-bit. A float r
+                  scores an unvisited child at `q = parent.Q - r` — a PESSIMISTIC
+                  FPU that narrows the search. ⚠️ `parent.Q` is already in
+                  `node.player_to_move`'s POV, the same POV the unvisited child is
+                  scored in, so NO sign flip is applied (mcts.py:1225, and
+                  carc_core::search/mod.rs:816 does the identical thing — the two
+                  backends MIRROR).
+
+    NOTE: c_lcb / reuse_tree / root_select / fpu_reduction DEFAULT to a no-op
+    (final_select stays "Q"/"visits", reuse stays off, root_select stays "puct",
+    FPU stays legacy-optimistic); the defaults reproduce the champion byte-for-byte
     (tests/test_heuristic_prior_mcts.py::test_bit_exact_all_flags_off).
     """
 
@@ -263,6 +273,24 @@ class HeuristicPriorConfig:
     # ⛔ Validated fail-closed even when the arbiter is OFF: a silently
     # defaulted "all" on an ARB_EARLY cell would make it BE ARB_FULL.
     tiearb_phase_gate: str = "all"
+    # --- FPU REDUCTION (measurement/fpu_resurrection_prep) --------------------
+    # A SEARCH-level knob like the three surfaces above: it moves NO leaf hash
+    # (a candidate carrying it keeps the champion's a36d2e15a3b3d71d), so the
+    # wiring gate for a live knob is the RESOLVED value in the manifest, never a
+    # moved hash. `None` (default) is the champion, bit-for-bit — the legacy
+    # optimistic `q = 0.0` for unvisited children.
+    #
+    # ⭐ UNLIKE the J-rules surfaces and the tie arbiter this is NOT rust-only.
+    # `carc_core::search` and `mcts.NeuralMCTS` implement the IDENTICAL rule
+    # (`q = parent.Q - r`, no sign flip, both verified 2026-08-29), and both are
+    # threaded, so a python-backend cell is a real cell rather than a silently
+    # knob-free one. ⛔ It was NOT reachable at all before 2026-08-29:
+    # `rust_agent.search_config_rs` passed a HARD-CODED `None` into the
+    # `SearchConfigRs` slot, so no caller could express it on the champion's
+    # backend. That is the audited false-negative this field closes.
+    # ⚠️ Appended at the END of the field list on purpose: every historical
+    # positional construction of this dataclass keeps its meaning.
+    fpu_reduction: float | None = None
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -329,6 +357,19 @@ class HeuristicPriorConfig:
                 "tiearb_salt must be non-empty when the arbiter is enabled "
                 "(the salt of record is 'tiearb2-deploy-v1')"
             )
+        # FPU: validated whenever it is SET so a typo never rides. `None` is the
+        # champion and is the ONLY way to ask for the legacy optimistic q=0 —
+        # note 0.0 is NOT the same thing on the rust side (`Some(0.0)` takes the
+        # `node_q - 0.0` branch, i.e. the PARENT's Q, not zero), so the two are
+        # deliberately distinguished rather than coerced.
+        if self.fpu_reduction is not None:
+            v = float(self.fpu_reduction)
+            if not _math.isfinite(v):
+                raise ValueError(
+                    f"fpu_reduction must be finite or None (None == the legacy "
+                    f"optimistic q=0 for unvisited children, i.e. the champion); "
+                    f"got {self.fpu_reduction!r}")
+            self.fpu_reduction = v
 
     def resolved_leaf_cfg(self):
         return self.leaf_cfg if self.leaf_cfg is not None else DEFAULT_CONFIG
@@ -376,6 +417,16 @@ class HeuristicPriorConfig:
             # RESOLVED phase fire-gate — `G-GATE`'s address
             # (measurement/phasegate_prep/READ_RULE.md §4). ABSENT is FAIL.
             "tiearb_phase_gate": str(self.tiearb_phase_gate),
+            # RESOLVED FPU — `G-FPU`'s address
+            # (measurement/fpu_resurrection_prep/READ_RULE.md §4). ABSENT is FAIL,
+            # and `null` is a POSITIVE statement ("the legacy optimistic q=0"),
+            # never a missing key. ⚠️ Emitted UNCONDITIONALLY, so
+            # `champion_factory._config_hash` moves by exactly one key for EVERY
+            # config, both sides alike — the same one-off move `tiearb_phase_gate`
+            # made. It is never pinned to a literal anywhere (the only consumers
+            # compare two LIVE configs to each other).
+            "fpu_reduction": (None if self.fpu_reduction is None
+                              else float(self.fpu_reduction)),
             "leaf_cfg": leaf,
         }
 
@@ -1220,6 +1271,9 @@ class HeuristicPriorAgent:
             c_puct=cfg.c_puct,
             seed=seed,
             meeple_dedup=meeple_dedup,
+            # FPU: None (the champion) is NeuralMCTS's own default, so this
+            # keyword is byte-identical to omitting it on every historical config.
+            fpu_reduction=getattr(cfg, "fpu_reduction", None),
         )
         # Harness-symmetry counters (mirror the hybrid/exact agents).
         self.neural_moves = 0
@@ -1488,4 +1542,5 @@ def make_heuristic_prior_mcts(
         simulations=simulations,
         c_puct=cfg.c_puct,
         seed=seed,
+        fpu_reduction=getattr(cfg, "fpu_reduction", None),
     )
