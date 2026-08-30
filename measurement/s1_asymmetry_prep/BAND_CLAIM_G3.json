@@ -1,0 +1,65 @@
+{
+  "_status": "⛔ PROPOSED, NOT CLAIMED. 0 rows have been appended to governance/BAND_REGISTRY.csv at this commit, and the sibling BAND_CLAIMED_G3 file does not exist. run_g3.sh refuses a real arm without it.",
+  "_order_of_operations": [
+    "1. RE-RUN THE TREE SWEEP immediately before the append (not the sweep recorded here — a fresh one).",
+    "2. Append the ONE row in `_csv_rows` to governance/BAND_REGISTRY.csv.",
+    "3. THEN drop the sibling file BAND_CLAIMED_G3.",
+    "⚠️⚠️ IN THAT ORDER. 146000000000 is the trap it exists for: absent from the registry but carrying references in the tree. The registry is NECESSARY AND NOT SUFFICIENT; the TREE SWEEP is the binding check."
+  ],
+
+  "_deviation_from_the_brief_ONE_BAND_NOT_THREE": {
+    "what": "The build brief asked for THREE unclaimed bands. This file proposes ONE for the round, and lists two vetted RESERVES that are explicitly NOT claimed.",
+    "why": "⭐ DESIGN §6.4 and SIZING §6 both require ONE SHARED DECK SET across the three arms, and DESIGN is the authority over the brief where they disagree. P2 — `D = margin(OPP) − margin(OWN)` — is a PER-DECK cross-arm contrast; three arms on three bands would put OPP and OWN on DISJOINT decks, which (a) destroys the CRN P2 is funded on, (b) makes the only remaining OPP/OWN comparison a CROSS-BAND one, which CL-068 prices at 1.8–2.2x over-dispersion and DESIGN §10.2 forbids reading as a statistic, and (c) spends THREE bands' decision_influenced retirement on ONE verdict.",
+    "consequence": "One band is claimed, one band retires. The two reserves are recorded so the pre-named follow-on cells (the n>=1600 confirm on S1-FIRES, and the G4 Carcasum guard — DESIGN §6.4/§6.5, both of which REQUIRE a fresh band) have swept candidates and the next reader does not rediscover them as 'free'.",
+    "flagged_to": "the orchestrator, pre-launch. This is a design-authority call, not an improvisation, and it is recorded here rather than buried in a launcher."
+  },
+
+  "bands": {
+    "161000000000": "THE ROUND. One shared deck set, all three arms. 600 decks: 161000000000..161000000599. OPP and OWN play ALL 600; ALL plays the 400-deck PREFIX 161000000000..161000000399."
+  },
+
+  "throwaway": {
+    "base": 161999999000,
+    "span": 1000,
+    "note": "⛔ NEVER IN THE CLAIM. The smoke plays 161999999500 (opp), 161999999520 (all), 161999999540 (own) only. It buys no deck of the round and its archives are excluded from adjudication by the SMOKE_ prefix."
+  },
+
+  "sweep_2026_08_30": {
+    "highest_registered_id": 154000000000,
+    "highest_registered_owner": "phasegate (PHASE-GATED TIE ARBITRATION, 2026-08-28)",
+    "method": "grep -rIoh over the whole tree (excluding .git/.worktrees/.claude) for the 12-digit literal NNN000000000, plus a second pass for the `NNNe9` prose shorthand over .md/.csv/.py/.sh/.yaml/.json. ⛔ THE SWEEP IS A REFUSAL RULE, NOT A DIAGNOSIS: a band with ANY tree reference is not taken, whether or not the hit is an incidental substring.",
+    "tree_references_before_this_commit": {
+      "155000000000": 13,
+      "156000000000": 10,
+      "157000000000": 10,
+      "158000000000": 4,
+      "159000000000": 1,
+      "160000000000": 6,
+      "161000000000": 0,
+      "162000000000": 0,
+      "163000000000": 0
+    },
+    "self_reference_note": "⚠️ AFTER this commit, `161000000000` reads 18 hits — ALL of them inside measurement/s1_asymmetry_prep/ (this file, READ_RULE_G3.md, WORKERS_G3.conf, run_g3.sh, screen_lib_g3.py, the fixture). Verified with `--exclude-dir=s1_asymmetry_prep`, which returns ZERO files. A re-sweep at claim time must discount this prep dir's own references, exactly as the FPU round's BAND_CLAIM.json became its own 159e9 hit.",
+    "dropped_from_consideration": {
+      "146000000000": ["⛔ THE CANONICAL TRAP: 0 registry rows, live tree references."],
+      "155000000000": ["measurement/fpu_resurrection_prep/ — the FPU-RESURRECTION round holds it (CELL_FPU02)."],
+      "156000000000": ["measurement/fpu_resurrection_prep/ — CELL_FPU04."],
+      "157000000000": ["measurement/fpu_resurrection_prep/ — CELL_CPUCT10 + its throwaway sub-range."],
+      "158000000000": ["measurement/probe_b_fair_targets/fair_targets_n200_K12_s800.jsonl", "⛔ 0 registry rows but LIVE tree hits — the 146e9 shape. Dropped by the FPU round for exactly this reason and dropped again here."],
+      "159000000000": ["measurement/fpu_resurrection_prep/BAND_CLAIM.json", "measurement/tiletie_probe_20260822/…/records/*.json", "⚠️ 0 registry rows; the hits are the FPU sweep's own record of it plus incidental substrings. Refused under the same rule."],
+      "160000000000": ["measurement/probe_b_fair_targets/fair_targets_n200_K12_s800.jsonl", "measurement/e4_exploit_grading_20260825/composition.json", "measurement/leaf_residual_mining_20260721/ANALYSIS_688_pooled.json", "⛔ 0 registry rows but LIVE tree hits — dropped by the FPU round, dropped again here."]
+    }
+  },
+
+  "_reserved_not_claimed": {
+    "162000000000": "RESERVED for the n>=1600 CONFIRM cell, which DESIGN §6.4 licenses ONLY on S1-FIRES and which CL-084 requires to run on a FRESH band (the selecting observation is never pooled with the confirming one). ⛔ NOT CLAIMED. 0 registry rows, 0 tree references at the 2026-08-30 sweep.",
+    "163000000000": "RESERVED for the G4 CARCASUM guard (n=400 @22016, arbiter off — DESIGN §6.5, CL-083's own 'without regressing vs champion+Carcasum' clause), conditional on S1-FIRES. ⛔ NOT CLAIMED. 0 registry rows, 0 tree references at the 2026-08-30 sweep.",
+    "_rule": "⛔ NEITHER ROW IS APPENDED BY THIS ROUND. A band appended before it is played is a band spent for nothing, and both of these are conditional on a branch that has not fired. Re-sweep before claiming either."
+  },
+
+  "_why_one_shared_deck_set": "P2 is the leg with the power. At the effect size DESIGN §4's own decomposition arithmetic predicts (+1/−1 on opp/own, D=+2), P1 reads z 1.94 — inconclusive — while P2 reads z 2.75. P2's se is `0.63 * sqrt(2(1-rho)) * sqrt(800/n)`; rho is the residual cross-arm correlation from the shared champion play and it is ONLY non-zero if the two arms play the SAME DECKS. Disjoint bands force rho = 0 by construction AND add CL-068's 1.8–2.2x cross-band over-dispersion on top. The shared deck set is not a convenience; it is what makes P2 a statistic.",
+
+  "_csv_rows": [
+    "161000000000,\"S1 GATE G3 — THE THREE-ARM DECOMPOSITION CELL (measurement/s1_asymmetry_prep/): ONE SHARED DECK SET, three arms, 3,200 games total, every arm deck-paired and seat-balanced against the UNMODIFIED production champion. Seeds 161000000000..161000000599 (600 decks x 2 seatings) for CELL_G3_OPP (n=1,200) and CELL_G3_OWN (n=1,200) — THE SAME DECKS, which is what makes the P2 contrast a statistic — and the 400-deck PREFIX 161000000000..161000000399 for CELL_G3_ALL (n=800). CANDIDATE = the production champion with the anchor's J bundle as EXPANSION PRIORS, dose 0.25 (= d* from the G1 expression gate), mask 31, on the CANDIDATE SIDE ONLY (--cand-jrules-prior-dose/-mask/-scope). THE SINGLE VARIABLE ACROSS ARMS IS `scope`: opp / own / all. ⛔ Surface B moves NO leaf hash — the hash gate is INVERTED (cand_leaf_hash MUST EQUAL a36d2e15a3b3d71d both sides) and the wiring gates are the manifest's resolved cand_jrules_prior dict PLUS the play-derived summary jr_expansions census (G-WITNESS). OPPONENT = the UNMODIFIED champion. Both arms FAIR PIMC k16x1376=22016 (the 2026-08-30 promoted desktop champion), rust backend, rules_profile fixed_v1 + CARCASSONNE_FIX_R9=1, exact_k 2 marginalized, TIE-ARBITER OFF BOTH SIDES (a deliberate deviation from the deployed B=64; deploy transfer is an ASSUMPTION). DUAL PRIMARY, HOLM step-down two-sided alpha 0.05: P1 = deck-paired margin(OPP vs champion); P2 = per-deck margin(OPP) - margin(OWN) on the shared set. CELL_G3_ALL is a CONTROL, outside the Holm family, and no branch reads it. 161999999000..161999999999 inside this band is the THROWAWAY smoke range and is NOT part of the claim. Pair: measurement/s1_asymmetry_prep/{DESIGN.md §6.4, READ_RULE_G3.md}\",claim"
+  ]
+}

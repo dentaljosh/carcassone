@@ -1,0 +1,26 @@
+[
+ {
+  "name": "CELL_G3_OPP",
+  "role": "local",
+  "scope": "opp",
+  "seed_start": 161000000000,
+  "n_decks": 30,
+  "purpose": "fixture arm \u2014 SCALE differs from the round, role and scope do NOT"
+ },
+ {
+  "name": "CELL_G3_OWN",
+  "role": "laptop",
+  "scope": "own",
+  "seed_start": 161000000000,
+  "n_decks": 30,
+  "purpose": "fixture arm \u2014 SCALE differs from the round, role and scope do NOT"
+ },
+ {
+  "name": "CELL_G3_ALL",
+  "role": "local",
+  "scope": "all",
+  "seed_start": 161000000000,
+  "n_decks": 20,
+  "purpose": "fixture arm \u2014 SCALE differs from the round, role and scope do NOT"
+ }
+]

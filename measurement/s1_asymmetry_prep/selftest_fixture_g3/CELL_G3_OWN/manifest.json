@@ -1,0 +1,96 @@
+{
+ "kind": "eval_fair_puct",
+ "game": "carcassonne-base-farmers",
+ "host": "laptop-wsl",
+ "code_rev": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "rust_toolchain": "1.83.0-x86_64-unknown-linux-gnu",
+ "carc_rs_build": "c0ffee1234567890",
+ "carc_rs_binary_sha": "deadbeef01",
+ "carc_rs_version": "0.1.0",
+ "mixed_builds": false,
+ "rules_profile": {
+  "name": "fixed_v1",
+  "r9_env_ok": true,
+  "r9_env_observed": true
+ },
+ "cand_tiearb": null,
+ "stamps": {
+  "BLIND_COMMIT": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ },
+ "config": {
+  "info": "fair",
+  "champion": {
+   "agent": "FairHeuristicPriorAgent",
+   "c_puct": 1.5,
+   "tau_p": 5.0,
+   "leaf_quantize": "float",
+   "final_select": "visits",
+   "value_norm": "tanh",
+   "c_lcb": 0.0,
+   "reuse_tree": false,
+   "root_select": "puct",
+   "jrules_prior_dose": 0.25,
+   "jrules_prior_mask": 31,
+   "jrules_prior_scope": "own",
+   "jrules_filter_mask": 0,
+   "jrules_filter_min_keep": 1,
+   "k_dets": 16,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "leaf": "FROZEN v2.9 curve125 production champion leaf"
+  },
+  "endgame": {
+   "mode": "marginalized",
+   "exact_k": 2,
+   "exact_budget": 200000,
+   "shared_by_both_arms": true
+  },
+  "opponent_mode": "fair-champion",
+  "opponent": {
+   "mode": "fair-champion",
+   "agent": "FairHeuristicPriorAgent",
+   "champ_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "leaf_quantize": "float",
+    "final_select": "visits",
+    "value_norm": "tanh",
+    "fpu_reduction": null
+   },
+   "k_dets": 16,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "endgame": {
+    "mode": "marginalized",
+    "exact_k": 2
+   },
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  "backend": {
+   "name": "rust",
+   "requested": "rust",
+   "mixed_builds": false,
+   "converted_sides": [
+    "candidate",
+    "opponent"
+   ]
+  },
+  "band_seed_start": 161000000000,
+  "n_decks": 30,
+  "seatings_per_deck": 2,
+  "cand_leaf_hash": "a36d2e15a3b3d71d",
+  "opp_leaf_hash": "a36d2e15a3b3d71d",
+  "cand_leaf_json": null,
+  "cand_jrules_prior": {
+   "dose": 0.25,
+   "mask": 31,
+   "scope": "own"
+  },
+  "cand_jrules_filter": null,
+  "cand_tiearb": null,
+  "code_rev": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "stamps": {
+   "BLIND_COMMIT": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+ }
+}
