@@ -197,7 +197,11 @@ def main() -> int:
         "requested_but_unreachable": bool(args.fpu is not None and not has_field),
         "backend": args.backend,
         "src_tree": tree,
-        "carc_rs_binary_sha": CF and _rs_sha(),
+        # ⭐ ONE-WHEEL's witness: identity_diff.py refuses unless all three legs
+        # carry the SAME binary sha. The change is python-only, so the wheel is a
+        # CONSTANT of this comparison — and that is what DESIGN §9.2's "no IDENT
+        # preflight cell" argument rests on.
+        "carc_rs_binary_sha": _rs_sha(),
         "search_config_rs_repr_at_champion": rs_repr,
         "budget": {"k_dets": K_DETS, "sims_per_det": SIMS_PER_DET,
                    "exact_k": EXACT_K,
