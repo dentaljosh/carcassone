@@ -350,12 +350,21 @@ witness build is not on that box.
    The YAML is read; the restatement in `WORKERS_G3.conf` is not trusted.
 4. **The scope knob binds on this box** — `HeuristicPriorConfig(scope='opp')`
    constructs and `search_config_rs` carries it.
-5. ⭐ **The R7 witness wheel is installed on this box.** `carc_rs` must expose a
-   `jr_expansions` surface. ⛔ **G3 MUST NOT LAUNCH UNTIL THE `carc_rs` WHEEL IS
-   REBUILT AND INSTALLED ON EVERY PARTICIPATING BOX.** An armed candidate on a
-   stale wheel now raises `STALE carc_rs wheel` loudly rather than banking a
-   config echo — fail-closed and correct, but it wastes the launch, and on the
-   laptop it wastes it silently until someone reads the log.
+5. ⭐ **The R7 witness wheel is installed on this box.** ⛔ **G3 MUST NOT LAUNCH
+   UNTIL THE `carc_rs` WHEEL IS REBUILT AND INSTALLED ON EVERY PARTICIPATING
+   BOX.** An armed candidate on a stale wheel raises `STALE carc_rs wheel`
+   loudly rather than banking a config echo — fail-closed and correct, but it
+   wastes the launch, and on the laptop it wastes it silently until someone
+   reads the log.
+   ⚠️ **The launcher's probe is deliberately weaker than the gate, and the smoke
+   is the binding check.** The probe walks `dir()` over `carc_rs` and its
+   top-level classes; if the R7 build surfaces the census only as a **key in a
+   returned dict**, `dir()` cannot see it and a healthy box would be refused
+   forever — a launcher-side PG-A1. So a failed probe **refuses a real arm**
+   (fail-closed, as `G-PROD` is) but **lets `--smoke` through, loudly**: the
+   smoke plays real games and `G-WITNESS` reads `jr_expansions` out of the
+   **emitted `summary.json`**, which is the only authoritative answer. **If the
+   smoke's `G-WITNESS` fails, the wheel is stale.**
 6. `BLIND_COMMIT` is a 40-hex sha, not `PENDING`. *A commit cannot name its own
    hash, so the freeze commit is followed by a stamping commit.*
 7. `BAND_CLAIMED_G3` exists — dropped by the orchestrator **only after** a fresh

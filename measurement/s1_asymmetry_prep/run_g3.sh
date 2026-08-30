@@ -259,14 +259,44 @@ if 'jr_expansions' not in blob:
         except Exception:
             pass
 if 'jr_expansions' not in blob:
-    print('⛔⛔ STALE carc_rs WHEEL: no jr_expansions_* surface found on this '
-          'box. G-WITNESS reads the play-derived expansion census and ABSENT '
-          'is VOID, so EVERY arm this box runs would void at adjudication. '
-          'REBUILD AND INSTALL THE WHEEL ON THIS BOX (per-box rebuild, then '
-          're-pin PINNED_SRC_REV_${ROLE}), then re-run.')
-    sys.exit(1)
+    print('⛔⛔ STALE carc_rs WHEEL (probe): no jr_expansions_* surface found on '
+          'this box. G-WITNESS reads the play-derived expansion census and '
+          'ABSENT is VOID, so EVERY arm this box runs would void at '
+          'adjudication. REBUILD AND INSTALL THE WHEEL ON THIS BOX (per-box '
+          'rebuild, then re-pin PINNED_SRC_REV_${ROLE}), then re-run.')
+    sys.exit(9)
 print('[wheel] the R7 jr_expansions witness surface is present on this box')
-" || DIE "the scope knob and/or the R7 witness wheel is NOT usable on this box — REFUSING."
+"
+KNOB_RC=$?
+if [ "$KNOB_RC" -eq 9 ]; then
+  # ⚠️⚠️ THE PROBE IS NECESSARILY WEAKER THAN THE GATE, and saying so is the
+  # point. It walks `dir()` over the module and its top-level classes; if the R7
+  # build surfaces the census only as a KEY IN A RETURNED DICT, `dir()` cannot
+  # see it and a healthy box would be refused forever — a launcher-side PG-A1
+  # (a gate no healthy box can pass).
+  #
+  # ⭐ SO THE SMOKE, NOT THE PROBE, IS THE BINDING CHECK: it plays real games and
+  # `G-WITNESS` reads `jr_expansions` out of the EMITTED `summary.json`, which is
+  # the only authoritative answer. The smoke is therefore allowed through a
+  # failed probe (loudly) — it is 8 games on the throwaway range and it SETTLES
+  # the question. ⛔ A REAL ARM IS NOT: it is fail-closed, exactly as G-PROD is.
+  if [ "$SMOKE" -eq 1 ] || [ "$DRY" -eq 1 ]; then
+    STAMP "⚠️⚠️ THE WHEEL PROBE FOUND NO jr_expansions SURFACE. Continuing " \
+          "ONLY because this is a --smoke/--dry-run: the smoke's own " \
+          "G-WITNESS adjudication reads the EMITTED summary.json and is the " \
+          "binding check. ⛔ IF THE SMOKE'S G-WITNESS FAILS, THE WHEEL IS " \
+          "STALE — REBUILD IT ON THIS BOX BEFORE THE ROUND. A real arm from " \
+          "this tree is REFUSED."
+  else
+    DIE "⛔⛔ THE R7 WITNESS WHEEL IS NOT INSTALLED ON THIS BOX — REFUSING. " \
+        "G3 MUST NOT LAUNCH UNTIL carc_rs IS REBUILT AND INSTALLED ON EVERY " \
+        "PARTICIPATING BOX (READ_RULE_G3 §7.5). If you believe the probe is " \
+        "wrong, run './run_g3.sh --role $ROLE --smoke' — its G-WITNESS reads " \
+        "the EMITTED summary.json and is the authoritative answer."
+  fi
+elif [ "$KNOB_RC" -ne 0 ]; then
+  DIE "the scope knob is NOT usable on this box — REFUSING."
+fi
 
 # --- census by FULL ARGS, never -C python ----------------------------------
 # ⚠️ QUANTIFIED 2026-08-26: ONE niced 1-core DRAM-churner inflated a saturated
