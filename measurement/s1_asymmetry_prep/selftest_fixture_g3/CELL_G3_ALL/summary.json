@@ -1,0 +1,58 @@
+{
+ "info": "fair",
+ "exact_k": 2,
+ "k_dets": 16,
+ "sims": 1376,
+ "total_sims": 22016,
+ "asymmetric_budgets": false,
+ "candidate_k_dets": 16,
+ "candidate_sims": 1376,
+ "candidate_total_sims": 22016,
+ "opp_k_dets": 16,
+ "opp_sims": 1376,
+ "opp_total_sims": 22016,
+ "n_failed": 0,
+ "failure_rate": 0.0,
+ "failed_cells": [],
+ "opponent": "fair-champion",
+ "opponent_label": "FAIR PRODUCTION CHAMPION (k16x1376)",
+ "n": 40,
+ "W": 19,
+ "D": 0,
+ "L": 21,
+ "winrate": 0.475,
+ "elo": -17.386277512436145,
+ "avg_diff": -0.5517174999999999,
+ "paired_mean_margin": -0.5517174999999999,
+ "paired_z": -0.9971483022129375,
+ "n_paired": 20,
+ "champ_prefix_ms_per_move": 3828.0,
+ "rung_ms_per_move": 3547.0,
+ "champ_latched_games": 40,
+ "solver_secs_per_game": 1.9,
+ "champ_timeouts": 0,
+ "wc_tiebreak": false,
+ "wc_tie_resolved_games": 0,
+ "jr_expansions": {
+  "candidate": {
+   "total": 8800000,
+   "own_mover": 4400000,
+   "boosted": 8184000
+  },
+  "opponent": {
+   "total": 0,
+   "own_mover": 0,
+   "boosted": 0
+  }
+ },
+ "cand_jr_expansions": {
+  "total": 8800000,
+  "own_mover": 4400000,
+  "boosted": 8184000
+ },
+ "opp_jr_expansions": {
+  "total": 0,
+  "own_mover": 0,
+  "boosted": 0
+ }
+}

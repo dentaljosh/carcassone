@@ -1,0 +1,25 @@
+# Executor-owed, BOX-LOCAL artefacts of S1 GATE G3. ⛔ Never committed:
+# PINNED_SRC_REV_<role> is the pin THIS BOX made after ITS bundle sync, and
+# SRC_CLEAN_G3.jsonl / SELFTEST_G3_*.json / SMOKE_G3_*.json are that box's own
+# launch ledger. A committed pin would let one box's rev masquerade as the
+# other's — the exact confusion `cross_box_rev_gate` exists to refuse, and it
+# matters more here than in the sibling rounds because P2's two arms run on
+# DIFFERENT BOXES.
+#
+# ⚠️⚠️ EVERY PATTERN IS ANCHORED WITH A LEADING `/` (the FPU round's lesson, commit
+# 381c6361). An unanchored `PINNED_SRC_REV` matches at ANY DEPTH and would
+# swallow `selftest_fixture_g3/PINNED_SRC_REV` — a COMMITTED FIXTURE FILE (the
+# synthetic 40-hex pin `aaaa…` that `analyze_g3.py --selftest` reads to exercise
+# `cross_box_rev_gate`). Without it the selftest raises on a fresh clone, which
+# would make the launcher's precondition ladder fail on every box that had not
+# run make_fixture.py first.
+/PINNED_SRC_REV_*
+/SRC_CLEAN_G3.jsonl
+/SELFTEST_G3_*.json
+/SMOKE_G3_*.json
+# ⛔ BAND_CLAIMED_G3 is a deliberate ACT by the orchestrator (append the registry
+# row, THEN drop the file), not an artefact. It is NOT ignored — if it ever
+# exists in the tree it must be visible in `git status`.
+/logs/
+/g1_smoke_*/
+__pycache__/
