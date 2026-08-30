@@ -239,6 +239,45 @@ def test_a_gate_without_an_arbiter_is_refused_at_launch():
     assert "ap.error(" in guard
 
 
+def test_the_champion_factory_stamps_the_gate_and_refuses_one_without_an_arbiter():
+    """R5 (merge review). The factory FORWARDS `tiearb["phase_gate"]` into the search
+    config, so a gated champion PLAYS differently — the `cand_tiearb` stamp must say
+    so, or ARB_EARLY and ARB_FULL are manifest-IDENTICAL and the cell is
+    unadjudicable. And `phase_gate != "all"` with `enabled=False` is the same silent
+    no-op `eval_fair_puct` refuses at `ap.error`, so the factory refuses it too —
+    otherwise a mis-built config yields an honest-looking PLAIN champion."""
+    sys.path.insert(0, str(REPO / "src"))
+    from carcassonne_ai import champion_factory as CF
+
+    src = (REPO / "src/carcassonne_ai/champion_factory.py").read_text()
+    assert '"phase_gate": str(tiearb.get("phase_gate", "all")),' in src
+
+    off = {"enabled": False, "B": 16, "J": 4, "mode": "argmax",
+           "salt": "tiearb2-deploy-v1", "eps": 0.0}
+    for bad in ("early", "mid", "late", "none"):
+        with pytest.raises(ValueError, match="phase_gate"):
+            CF.production_prior_cfg(tiearb=dict(off, phase_gate=bad))
+    # ⭐ "all" is the UNGATED arbiter, so an off dict spelling it is NOT the
+    # contradiction — it must still build the champion byte-for-byte.
+    assert (CF.production_prior_cfg(tiearb=dict(off, phase_gate="all"))
+            == CF.production_prior_cfg())
+
+
+@pytest.mark.parametrize("driver", ["jcz_match", "carcasum_match"])
+def test_the_external_drivers_resolve_the_gate_like_for_like(driver):
+    """R5. `SearchConfigRs.tiearb` emits `phase_gate` UNCONDITIONALLY, and both
+    drivers' `_worker_init` probes compare `dict(...tiearb) != dict(tiearb)` EXACTLY.
+    A `_resolve_tiearb` without the key kills every armed worker at bootstrap on a
+    like-for-unlike compare. The fix is the resolver, never the probe — the probe is
+    the stale-wheel guard (a wheel predating the gate would run UNGATED, which on an
+    ARB_EARLY cell IS ARB_FULL)."""
+    src = (REPO / f"scripts/{driver}/match.py").read_text()
+    resolver = src.split("def _resolve_tiearb(args)", 1)[1].split("\ndef ", 1)[0]
+    assert '"phase_gate": str(getattr(args, "champ_tiearb_phase_gate", "all")),' \
+        in resolver
+    assert "if resolved != dict(tiearb):" in src, "the guard must NOT be weakened"
+
+
 def test_the_telemetry_subscripts_the_counters_so_a_stale_wheel_raises():
     """⛔ `ABSENT is FAIL` (READ_RULE §4). `.get(key, 0)` on a wheel that
     predates the gate would report `fired_early = 0` — indistinguishable from

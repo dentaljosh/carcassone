@@ -485,12 +485,23 @@ def _resolve_tiearb(args) -> dict | None:
     (measurement/jcz_match_20260809/confirm.jsonl), so an unarmed run must produce a
     record byte-identical to the pre-arbiter one — CELL A of the two-cell design is the
     plain champion, and it is only a control if nothing about it moved.
+
+    ⭐ ``phase_gate`` is ALWAYS in the armed dict, defaulting to ``"all"`` (the ungated
+    arbiter — this harness exposes no flag for it, so "all" is the only value it can
+    take today). It is NOT decoration: ``FairAgentRs``'s ``search_config.tiearb`` getter
+    emits ``phase_gate`` unconditionally since measurement/phasegate_prep, and
+    ``_worker_init``'s ``resolved != dict(tiearb)`` probe below is an EXACT dict
+    comparison. Omitting it here makes every armed worker die at bootstrap on a
+    like-for-unlike compare, which is a false alarm on the guard's part — the guard
+    itself stays as-is, because it is the thing that catches a genuinely stale wheel.
     """
     if not bool(getattr(args, "champ_tiearb_enabled", False)):
         return None
     return {"enabled": True,
             "B": int(args.champ_tiearb_b), "J": int(args.champ_tiearb_j),
-            "mode": str(args.champ_tiearb_mode), "salt": str(args.champ_tiearb_salt),
+            "mode": str(args.champ_tiearb_mode),
+            "phase_gate": str(getattr(args, "champ_tiearb_phase_gate", "all")),
+            "salt": str(args.champ_tiearb_salt),
             "eps": float(args.champ_tiearb_eps)}
 
 

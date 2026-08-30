@@ -43,8 +43,14 @@ from carcassonne_ai import champion_factory as CF  # noqa: E402
 
 #: The committed knob set (DESIGN §2): B=16, J=4, exact f64 equality, the salt of
 #: record. READ_RULE `G-J4` voids a run at any other B/J.
+#:
+#: ⭐ `phase_gate` joined the shape with measurement/phasegate_prep: the rust
+#: `search_config.tiearb` getter emits it unconditionally, so `_resolve_tiearb`,
+#: the factory's `cand_tiearb` stamp and `_worker_init`'s exact-dict probe all
+#: carry it. `"all"` is the ungated arbiter == every pre-gate armed cell (so
+#: `G-ARB`, which reads only {enabled,B,J,mode,salt,eps}, is untouched).
 ARMED = {"enabled": True, "B": 16, "J": 4, "mode": "argmax",
-         "salt": "tiearb2-deploy-v1", "eps": 0.0}
+         "phase_gate": "all", "salt": "tiearb2-deploy-v1", "eps": 0.0}
 DISARMED = dict(ARMED, enabled=False)
 
 
@@ -170,8 +176,8 @@ def test_resolve_tiearb_armed_carries_every_knob():
     assert M._resolve_tiearb(_args(champ_tiearb_enabled=True, champ_tiearb_b=8,
                                    champ_tiearb_j=2, champ_tiearb_mode="random",
                                    champ_tiearb_salt="probe", champ_tiearb_eps=1e-9)) \
-        == {"enabled": True, "B": 8, "J": 2, "mode": "random", "salt": "probe",
-            "eps": 1e-9}
+        == {"enabled": True, "B": 8, "J": 2, "mode": "random",
+            "phase_gate": "all", "salt": "probe", "eps": 1e-9}
 
 
 def test_telemetry_is_None_when_unarmed_and_FAILS_LOUD_when_armed():

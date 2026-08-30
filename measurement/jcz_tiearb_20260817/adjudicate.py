@@ -254,6 +254,16 @@ READING_20260809 = {
 
 #: §3 `G-ARB` — the ONE authorized rung. Any other rung VOIDS (READ_RULE §3,
 #: WORKERS.conf, DESIGN §3). `eps` is compared as a float; everything else exactly.
+#:
+#: ⭐ DECISION (merge review R5): `phase_gate` is DELIBERATELY NOT a rung key.
+#: `champion_manifest.cand_tiearb` gained it after this round's committed rung was
+#: frozen, so making it one would turn every PRE-R5 archive's ABSENT field into a
+#: retroactive `G-ARB` FAIL — a defect of the §0.F.2 class this gate already learned
+#: once. The merge is key-wise (`if k not in ARB_RUNG_KEYS: continue`), so a POST-R5
+#: archive carrying `phase_gate` is read exactly like a pre-R5 one and neither
+#: direction moves. This round's cells are ungated (`phase_gate == "all"` == the
+#: arbiter as committed); a round that VARIES the gate must pre-register it as a
+#: rung key of its OWN read rule, not inherit one silently here.
 ARB_RUNG_KEYS = ("enabled", "B", "J", "mode", "salt", "eps")
 
 # =========================================================================== #

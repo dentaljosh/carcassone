@@ -351,6 +351,21 @@ def production_prior_cfg(spec: ProductionSpec | None = None, leaf_cfg=None, *,
     # (READ_RULE G-J4) plus the per-game firing telemetry the harness reads off
     # `FairAgentRs.stats()`.
     ta = {}
+    # ⛔ A PHASE GATE WITHOUT AN ARBITER is a SILENT NO-OP, and it is exactly the
+    # shape a mis-typed ARB_EARLY launcher takes: the champion would be built with
+    # the dataclass defaults, play as the plain champion, and stamp no
+    # `cand_tiearb` at all — an honest-looking null wearing a gated cell's name.
+    # `eval_fair_puct` refuses that combination at `ap.error` (see its
+    # `--cand-tiearb-phase-gate` block); the factory refuses it here, on the same
+    # terms, so the refusal does not depend on which harness built the champion.
+    if (tiearb is not None and not bool(tiearb.get("enabled"))
+            and str(tiearb.get("phase_gate", "all")) != "all"):
+        raise ValueError(
+            f"tiearb phase_gate={tiearb.get('phase_gate')!r} was passed with "
+            "enabled=False: the gate is a window on the ARBITER's fire decision "
+            "and there is no arbiter to gate. That champion would be the plain "
+            "champion wearing a gated cell's name (the same contradiction "
+            "eval_fair_puct refuses at launch).")
     if tiearb is not None and bool(tiearb.get("enabled")):
         ta.update(tiearb_enabled=True,
                   tiearb_b=int(tiearb["B"]), tiearb_j=int(tiearb["J"]),
@@ -1391,17 +1406,26 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     # terms as every kwarg above — a champion built without it (or with an
     # `enabled=False` dict) carries a manifest byte-identical to the pre-kwarg one,
     # `search.config_hash` included. The KEY and the SHAPE are `cand_tiearb` /
-    # {enabled, B, J, mode, salt, eps} on purpose: that is exactly what
+    # {enabled, B, J, mode, phase_gate, salt, eps} on purpose: that is exactly what
     # eval_fair_puct stamps and what READ_RULE `G-J4` reads, and a gate that has to
     # learn a second spelling is a gate that eventually reads the wrong cell. ⚠️ This
     # stamp is THE wiring gate on the config side, because the arbiter deliberately
     # moves no leaf hash — the liveness half is the per-game firing telemetry.
+    #
+    # ⭐ `phase_gate` is ALWAYS stamped (defaulting to "all" == ungated), matching
+    # `eval_fair_puct.py`'s own resolved dict, which has stamped it unconditionally
+    # since measurement/phasegate_prep. It is NOT optional here either: the factory
+    # forwards `tiearb["phase_gate"]` into the search config, so a gated champion
+    # PLAYS differently — and a stamp that omitted the gate would make ARB_EARLY and
+    # ARB_FULL manifest-identical, i.e. an unstampable (unadjudicable) cell.
     if _tiearb_on:
         manifest = dict(manifest)
         manifest["cand_tiearb"] = {
             "enabled": True,
             "B": int(tiearb["B"]), "J": int(tiearb["J"]),
-            "mode": str(tiearb["mode"]), "salt": str(tiearb["salt"]),
+            "mode": str(tiearb["mode"]),
+            "phase_gate": str(tiearb.get("phase_gate", "all")),
+            "salt": str(tiearb["salt"]),
             "eps": float(tiearb["eps"]),
         }
 
