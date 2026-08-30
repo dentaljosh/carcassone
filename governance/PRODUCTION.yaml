@@ -161,13 +161,24 @@ champion:
     solves in 20 fair games; the marginalized solve is bit-invariant to deck permutation.
   fair_deploy:                          # the human-facing (non-clairvoyant) PIMC deploy config. Clairvoyant dev/ruler
                                         # play uses ONE true deck (no determinizations), so k_dets applies to fair deploy ONLY.
-    k_dets: 8                           # PROMOTED 2026-07-29 (budget_authorized_by above). Determinizations per move.
-                                        # k8 is the MEASURED-OPTIMAL allocation AT total 11008 — width must be re-solved
-                                        # per budget (CL-054's k4 was the optimum measured AT 2752, and remains so there;
-                                        # it is what the `mobile` profile below still runs).
-    sims_per_det: 1376                  # k8 × 1376 = 11008 total per-move budget (floats with compute like the clair sims;
-                                        # the CONFIG is k_dets=8 at ~11008 total, not a fixed sim number).
-                                        # Prior deploy budget was k4×688 = 2752 (2026-07-13 .. 2026-07-29) — now lineage.
+    k_dets: 16                          # ⭐ PROMOTED 2026-08-30 BY OWNER RULING (Joshua, verbatim: "yes, desktop champ
+                                        # becomes 22k"). k16×1376 = 22016 total. EVIDENCE: the within-band deck-paired
+                                        # H2H measurement/h2h_22016_20260824/ (band 148e9, n=700 decks, amended read
+                                        # H-POSITIVE: D=+1.229 pts/deck z+2.52; results.csv h2h22016_* row) — sign
+                                        # resolved positive at 2σ; Type-M rider stands (realized effect below the cell's
+                                        # own MDE ±1.55, so the MAGNITUDE is biased up; the SIGN is the reliable part).
+                                        # COST accepted by the ruling: ~2× search wall vs 11008; post-tier1-swap the
+                                        # TOTAL move cost (search+arb) remains BELOW the pre-swap 11008 figure.
+                                        # Rulers/anchors are NOT re-anchored by this fold (fixed eval reference sides
+                                        # stay as each instrument configures them — the b64-fold precedent). NOTE: k16
+                                        # is UNMEASURED-optimal at 22016 (width must be re-solved per budget; k16×1376
+                                        # is simply the measured-positive cell's allocation). The phone has run
+                                        # k16×1376 since 2026-08-25 — desktop now matches it.
+                                        # PRIOR (2026-07-29 .. 2026-08-30, now lineage): k8, "k8 is the MEASURED-OPTIMAL
+                                        # allocation AT total 11008" (CL-060/curve_k16).
+    sims_per_det: 1376                  # k16 × 1376 = 22016 total per-move budget (floats with compute like the clair sims;
+                                        # the CONFIG is k_dets=16 at ~22016 total, not a fixed sim number).
+                                        # Prior budgets: k8×1376=11008 (07-29..08-30), k4×688=2752 (07-13..07-29) — lineage.
     fair_agent: FairHeuristicPriorAgent # src/carcassonne_ai/fair_agent.py — PIMC wrapper of the champion HeuristicPriorAgent.
                                         # eval_fair_puct.py --k-dets/--sims defaults track the constructor defaults; the
                                         # AUTHORITATIVE budget is these two YAML fields, read by champion_factory.
@@ -268,12 +279,12 @@ champion:
                                         # `null`/absent = today's sequential k-loop, byte-for-byte identical play.
     deploy_profiles:
       desktop:                          # the DEFAULT and the champion of record. Identical to the two fields above.
-        k_dets: 8
+        k_dets: 16                      # 22016 promotion 2026-08-30 (owner ruling above)
         sims_per_det: 1376
-        total_sims: 11008
+        total_sims: 22016
         backend: rust                   # as fair_deploy.backend above — read its comment before quoting this.
         parallel_workers: 8             # the PYTHON engine's spawn split; the rust engine uses rust_threads instead.
-        measured_s_per_move: 2.1595     # quiet 5900XT, W=8 (p90 2.6167) ⇒ ~20.6% of the 900 s clock (corrected 2026-07-30, audit F3)
+        measured_s_per_move: 2.1595     # ⚠️ STALE 2026-08-30: measured at 11008 pre-swap; at 22016 expect ~2x search + ~0.5s arb (post-swap) — re-measure owed. (Was: quiet 5900XT, W=8, p90 2.6167, corrected 2026-07-30 audit F3)
         note: >
           The champion of record. Requires ≥8 usable cores and a multiprocessing-capable runtime.
           Run SEQUENTIALLY it is the same player, just 6.37× slower (13.76 s/move) — that is a clock
