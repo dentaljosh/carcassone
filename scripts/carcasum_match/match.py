@@ -1259,7 +1259,6 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
       That is the whole authoritative action sequence, which is exactly what a
       remote client needs to stay in lockstep. It must not raise; if it does, the
       game faults like any other harness error.
-    """
 
     Carcasum's `Game::step()` owns the turn loop, so this is "read a driver
     line, react", not a loop we drive — see the module docstring's Protocol
