@@ -40,6 +40,42 @@ scripts/carcasum_remote/smoke_client.py --url http://100.x.y.z:8971 \
     --deck-seed 4242 --blip-every 5
 ```
 
+### Build and install the app
+
+⚠️ **The local 5900XT box is the only box that can build a config-identical APK**
+— it is the only one carrying the Android NDK, `cargo` with the Android targets,
+Python 3.12 for Chaquopy's `buildPython`, and the generated tile art. Building
+anywhere else silently drops the `carc_rs` and Cython wheels, which would change
+what the champion runs. And because a Gradle build is a multi-core DRAM churner,
+it must **not** run beside a timing-sensitive eval (auto-memory
+`feedback_no_agent_compute_beside_eval` — one niced core-saturating tenant
+inflated a saturated W=22 eval ~1.8x/move). Census first, then:
+
+```bash
+cd android
+./gradlew assembleDebug                 # ~2-4 min on a quiet box
+sha256sum app/build/outputs/apk/debug/app-debug.apk
+android/tools/adb_connect.sh            # the wireless-debug port drifts
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+⛔ `install -r` ONLY. Never `pm uninstall`, never `pm clear`: the phone holds E4
+archives that exist nowhere else until they are pulled.
+
+The JVM unit tests need neither the NDK nor the tile art, so they run on any box
+with the SDK and a JDK:
+
+```bash
+cd android && ./gradlew testDebugUnitTest \
+  -x installDebugPythonRequirements -x extractDebugPythonBuildPackages \
+  -x generateDebugPythonRequirementsAssets -x generateDebugPythonBuildAssets \
+  -x generateDebugPythonMiscAssets -x generateDebugPythonSourceAssets \
+  -x generateDebugPythonJniLibs -x checkTileAssets
+```
+
+(the `-x` list is only needed where Chaquopy cannot find a Python 3.12; on the
+local box plain `./gradlew testDebugUnitTest` works.)
+
 ---
 
 ## The three things worth knowing before you rely on it
