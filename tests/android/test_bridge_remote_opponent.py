@@ -40,6 +40,7 @@ class _FakeCarcasum:
 
     def __init__(self):
         self.requests: list[dict] = []
+        self.ends: list[dict] = []
         self.fail_next = 0
         h = self
 
@@ -66,6 +67,15 @@ class _FakeCarcasum:
             def do_POST(self):                                    # noqa: N802
                 n = int(self.headers.get("Content-Length") or 0)
                 body = json.loads(self.rfile.read(n).decode())
+                if self.path.split("?")[0] == "/end":
+                    # The phone tells the server the game is over and hands it
+                    # the FINAL log — the terminating ply is often the human's,
+                    # so no /move ever carries it.
+                    h.ends.append(body)
+                    self._send(200, {"ok": True, "finished": True,
+                                     "record": {"scores": [0, 0], "void": None,
+                                                "real": {}, "replay_ok": True}})
+                    return
                 h.requests.append(body)
                 if h.fail_next > 0:
                     h.fail_next -= 1
@@ -244,6 +254,11 @@ def test_a_full_remote_game_archives_with_the_remote_label(fake):
     assert arc["remote"]["tiny_city_probe"] == 4
     assert arc["remote"]["url"] == fake.url
     assert arc["remote"]["calls"] > 0
+    # The server was told the game ended, and got the FINAL log with it.
+    assert len(fake.ends) == 1, fake.ends
+    assert fake.ends[0]["game_id"] == "phone-31337-0"
+    assert fake.ends[0]["actions"] == arc["actions"]
+    assert arc["remote"]["server_final"]["replay_ok"] is True
     # And the E4 reader-side gate agrees this is NOT an anchor game.
     import sys
     from pathlib import Path
