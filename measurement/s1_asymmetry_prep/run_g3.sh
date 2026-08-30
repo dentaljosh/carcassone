@@ -257,7 +257,7 @@ try:
     from carcassonne_ai.champion_factory import production_prior_cfg
     _g = Game()
     _a = RustFairAgent(_g, production_prior_cfg(), sims=4, k_dets=2, seed=1)
-    _a.get_action(_g.get_init_board())
+    _a.choose_action(_g.get_init_board())
     _keys = set(_a._rs.stats())
 except Exception as e:
     print('⛔ witness probe could not run a throwaway search: %r' % (e,)); sys.exit(9)
