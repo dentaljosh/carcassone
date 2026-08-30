@@ -1,0 +1,47 @@
+{
+ "G_ID_1": {
+  "mismatch": [],
+  "n_bit_identical": 37520,
+  "n_cmp": 37520,
+  "n_rows": 1340,
+  "pass": true
+ },
+ "G_ID_3": {
+  "assertion": "world_seeds(rid,256,salt)[:128] == banked record seeds",
+  "examples_bad": [],
+  "n_playout_seed_prefix_ok": 6656,
+  "n_records": 6656,
+  "n_world_seed_prefix_ok": 6656,
+  "pass": true
+ },
+ "G_ID_4_generator": {
+  "n_probe_rids": 200,
+  "pass": true,
+  "playout_seed_shifted_ok": true,
+  "world_seeds_shifted_ok": true
+ },
+ "G_ID_8": {
+  "arm_order_ok": 1340,
+  "champ_pos_ok": 1340,
+  "n_arms_j4_ok": 1340,
+  "n_rows": 1340,
+  "pass": true
+ },
+ "all_pre_gates_pass": true,
+ "artifact": "GATE_IDENTITY_PRE",
+ "assemble_counts": {
+  "analysed": 1340,
+  "failed_rid": 4,
+  "planned": 1344
+ },
+ "assemble_matches_banked_rowset": true,
+ "elapsed_secs": 37.8,
+ "generated_utc": "2026-08-30T01:46:03Z",
+ "n_arms_rids": 1344,
+ "n_assembled": 1340,
+ "n_banked_rows": 1340,
+ "note": "banked-only gates; no new playouts were run to produce this file",
+ "only_in_assembled": [],
+ "only_in_banked": [],
+ "prereg": "measurement/b128_offline_prep/PREREG.md"
+}
