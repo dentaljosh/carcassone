@@ -119,8 +119,75 @@ pub struct SearchSession {
     pub last_reroot: Option<Reroot>,
 }
 
+/// ⛔ **R6 (merge review 2026-08-30) — scope boosts do not survive tree reuse.**
+///
+/// [`super::Searcher`]'s J-rules prior scope is decided ONCE, at the moment a
+/// node is EXPANDED (`search/mod.rs`, the `jrules_prior_dose != 0.0` branch),
+/// from `root_player == mover` for the search that expanded it. Priors are
+/// never recomputed afterwards. On a fresh tree that is exactly the intended
+/// semantics — every node in the tree was expanded under the one root whose
+/// seat the scope is defined against.
+///
+/// A CARRIED tree breaks it. [`SearchSession::search_carry`] lends the same
+/// [`Tree`] into a new [`super::Searcher`] at a new root, and `search()`
+/// re-latches `root_player` for the counters — but every node the previous
+/// searches already expanded keeps the priors it was given under the OLD root.
+/// A node expanded as an opponent node under ply `n` stays boosted when ply
+/// `n+1` re-roots onto it and it becomes an own-mover node (the new root
+/// itself, in the common case). `scope = own`/`opp` therefore silently
+/// degrades toward `all` as a session ages, and no counter in the tree can say
+/// by how much: the census counts EXPANSIONS, and a carried node is not
+/// re-expanded.
+///
+/// `all` is immune (every node is boosted under every root) and so is
+/// `dose == 0.0` (nothing is boosted at all), so this fails closed on exactly
+/// the two scopes that cannot be made to mean anything on a carried tree.
+///
+/// Fresh-tree searches are untouched — [`super::search_single`],
+/// [`crate::fair::search_worlds`]'s per-world `Searcher::new`, every
+/// `Searcher` a caller drives itself. Only the persistent-session object is
+/// refused, and it is refused at CONSTRUCTION rather than at
+/// [`SearchSession::search_carry`], because a session that cannot legally
+/// carry has no business existing (its `search_fresh` would be a fresh
+/// `Searcher` wearing a carried object's name).
+pub fn carried_scope_guard(cfg: &SearchConfig) -> Result<(), String> {
+    if cfg.jrules_prior_dose == 0.0 {
+        return Ok(());
+    }
+    let scope = match cfg.jrules_prior_scope {
+        super::JrPriorScope::All => return Ok(()),
+        super::JrPriorScope::Own => "own",
+        super::JrPriorScope::Opp => "opp",
+    };
+    Err(format!(
+        "R6: a persistent/carried SearchSession refuses jrules_prior_scope={scope:?} \
+         (dose={}). Scope is latched at NODE EXPANSION from the expanding search's \
+         root seat and is never recomputed, so a carried tree keeps boosts a node \
+         earned under a DIFFERENT root — scope={scope:?} silently degrades toward \
+         \"all\" as the session ages, by an amount the expansion census cannot see. \
+         Use a fresh-tree search (search_single / fair::search_worlds), or \
+         jrules_prior_scope=\"all\", or dose=0.",
+        cfg.jrules_prior_dose
+    ))
+}
+
 impl SearchSession {
+    /// R6-checked constructor. See [`carried_scope_guard`].
+    pub fn try_new(cfg: SearchConfig) -> Result<Self, String> {
+        carried_scope_guard(&cfg)?;
+        Ok(SearchSession::build(cfg))
+    }
+
+    /// Panics on an R6-illegal config — see [`SearchSession::try_new`] for the
+    /// recoverable form (which is what the FFI boundary uses).
     pub fn new(cfg: SearchConfig) -> Self {
+        match carried_scope_guard(&cfg) {
+            Ok(()) => SearchSession::build(cfg),
+            Err(e) => panic!("{e}"),
+        }
+    }
+
+    fn build(cfg: SearchConfig) -> Self {
         SearchSession {
             cfg,
             tree: Tree::default(),
@@ -478,5 +545,77 @@ mod tests {
             "the pilot measures a pre-existing root on ~99% of plies; got \
              {preexisting}/{plies}"
         );
+    }
+    /// ⛔ R6 (merge review 2026-08-30) — a CARRIED session refuses a SCOPED
+    /// J-rules prior, at construction.
+    ///
+    /// The bug it fails closed on is invisible by construction: scope is
+    /// decided when a node is EXPANDED and never recomputed, so a node expanded
+    /// as an opponent node under ply `n` stays boosted when ply `n+1` re-roots
+    /// onto it as an own-mover node. The expansion census cannot see it either
+    /// (a carried node is not re-expanded), which is exactly why this is a
+    /// refusal and not a counter.
+    #[test]
+    fn r6_carried_session_refuses_a_scoped_jrules_prior() {
+        let scoped = |dose: f64, scope| SearchConfig {
+            jrules_prior_dose: dose,
+            jrules_prior_scope: scope,
+            ..cfg(8)
+        };
+        for scope in [search::JrPriorScope::Own, search::JrPriorScope::Opp] {
+            let e = SearchSession::try_new(scoped(1.0, scope))
+                .err()
+                .unwrap_or_else(|| panic!("{scope:?} was accepted by a carried session"));
+            assert!(e.contains("R6"), "the refusal must name R6; got {e:?}");
+            assert!(
+                carried_scope_guard(&scoped(1.0, scope)).is_err(),
+                "the free guard and the constructor must agree"
+            );
+        }
+        // scope=all is immune (every node is boosted under every root), and so
+        // is dose=0 (nothing is boosted at all) — both stay allowed, at every
+        // scope value, so the champion and the `all` ladder are untouched.
+        assert!(SearchSession::try_new(scoped(1.0, search::JrPriorScope::All)).is_ok());
+        for scope in [
+            search::JrPriorScope::All,
+            search::JrPriorScope::Own,
+            search::JrPriorScope::Opp,
+        ] {
+            assert!(
+                SearchSession::try_new(scoped(0.0, scope)).is_ok(),
+                "dose=0 must stay allowed at scope={scope:?}"
+            );
+        }
+        // And the default config — the champion — is of course fine.
+        assert!(SearchSession::try_new(cfg(8)).is_ok());
+    }
+
+    /// The infallible constructor is LOUD, not silent: the same R6 refusal.
+    #[test]
+    #[should_panic(expected = "R6")]
+    fn r6_new_panics_rather_than_carrying_a_scoped_prior() {
+        let _ = SearchSession::new(SearchConfig {
+            jrules_prior_dose: 1.0,
+            jrules_prior_scope: search::JrPriorScope::Opp,
+            ..cfg(8)
+        });
+    }
+
+    /// R6 fails closed on the SESSION only — a fresh-tree search at the same
+    /// scoped config is untouched (it is what `fair::search_worlds` runs, and
+    /// what the G3 cell plays).
+    #[test]
+    fn r6_does_not_touch_fresh_tree_searches() {
+        let g = midgame("28000000000", 30);
+        let r = search::search_single(
+            &g,
+            &SearchConfig {
+                jrules_prior_dose: 1.0,
+                jrules_prior_scope: search::JrPriorScope::Opp,
+                ..cfg(64)
+            },
+        )
+        .unwrap();
+        assert!(r.jr_expansions_boosted > 0);
     }
 }

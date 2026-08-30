@@ -319,6 +319,10 @@ pub struct MoveInfo {
     /// `cfg.search.simulations` unless a per-call override was passed — the
     /// sims-split knob's per-move evidence surface.
     pub sims_used: usize,
+    /// S1 §9.2(c) `R7`: the J-rules-prior expansion census of THIS decision,
+    /// summed over its `k_dets` determinized worlds. All-zero on champion
+    /// traffic (`jrules_prior_dose == 0.0`) — see [`search::JrExpansions`].
+    pub jr_expansions: search::JrExpansions,
     /// Surface C: root actions the J-rules filter removed at THIS decision
     /// (empty when the mask is 0, the phase is TILES, or nothing fired).
     pub jf_dropped: Vec<i32>,
@@ -373,6 +377,23 @@ pub struct FairAgent {
     /// Surface C: PIMC decisions on which the filter was APPLICABLE (meeple
     /// phase, >1 legal, mask nonzero) — the yield/fire rates' denominator.
     pub jf_applicable_moves: u64,
+    /// ⭐ S1 §9.2(c) `R7` (merge review 2026-08-30): the J-rules-prior
+    /// EXPANSION CENSUS accumulated over every PIMC world of every decision
+    /// this agent made — i.e. per GAME, since the harness builds one agent per
+    /// game (`scripts/classical_search/eval_fair_puct.py::_play_one_inner`).
+    ///
+    /// ⛔ THE ONLY WITNESS, derived from PLAY rather than from config, that a
+    /// `jrules_prior_scope` arm actually BOUND. A manifest echo proves the knob
+    /// was requested and nothing more; this program has twice banked a cell
+    /// whose knob never bound (the FPU knob, the phasegate smoke). On a scoped
+    /// cell `boosted > 0` is the liveness bit and
+    /// `boosted == total - own_mover` (scope=opp) / `boosted == own_mover`
+    /// (scope=own) is the partition bit.
+    ///
+    /// All-zero on champion traffic — the per-tree counters live inside the
+    /// `jrules_prior_dose != 0.0` branch, so an UNARMED side's assertable
+    /// invariant is `boosted == 0`, never `total > 0`.
+    pub jr_expansions: search::JrExpansions,
     /// The arbiter's leaf scratch — reused across decisions so the detector is
     /// allocation-lean (`Sum_a (1 + n_meeple(a))` leaf calls per tile ply).
     /// Untouched, and never even read, when the knob is off.
@@ -451,6 +472,7 @@ impl FairAgent {
             jf_yields: [0; 4],
             jf_dropped_total: 0,
             jf_applicable_moves: 0,
+            jr_expansions: search::JrExpansions::default(),
             tiearb_scratch: crate::leaf::LeafScratch::new(),
             tiearb_tile_plies: 0,
             tiearb_fired_plies: 0,
@@ -634,7 +656,14 @@ impl FairAgent {
         });
         let scfg = scfg_owned.as_ref().unwrap_or(&self.cfg.search);
         info.sims_used = scfg.simulations;
-        let stats = search_worlds(&worlds, scfg, self.cfg.threads, root_allow.as_deref())?;
+        let (stats, jr_census) =
+            search_worlds(&worlds, scfg, self.cfg.threads, root_allow.as_deref())?;
+        // S1 §9.2(c) `R7`: bank the decision's census on the move record AND on
+        // the game total BEFORE any of the early returns below — a decision
+        // that pooled nothing, or that the arbiter later re-decided, still
+        // performed the expansions the witness is counting.
+        info.jr_expansions = jr_census;
+        self.jr_expansions.add(jr_census);
 
         // (3) merge — a sequential fold in world order, AFTER every join.
         let mut pool = Pool::default();
@@ -785,33 +814,46 @@ impl FairAgent {
 }
 
 /// Search `worlds` on `min(worlds.len(), threads)` scoped threads and return the
-/// per-world [`search::Searcher::root_stats`], **index-addressed**.
+/// per-world [`search::Searcher::root_stats`], **index-addressed**, together
+/// with the S1 §9.2(c) J-rules expansion census SUMMED over the worlds.
 ///
 /// The only thing threads change is when work happens: results are written into
 /// disjoint slots and never combined here, so the caller's sequential fold sees
-/// the identical sequence of `f64` additions at every thread count.
+/// the identical sequence of `f64` additions at every thread count.  The census
+/// is folded in WORLD ORDER after every join for the same reason, even though
+/// `u64` addition could not care (`R7`, merge review 2026-08-30).
 /// `root_allow` (surface C, `None` = the champion, byte-for-byte): a ROOT-only
 /// action allowlist applied identically to every world — see
 /// [`search::Searcher::search_with_root_allow`].
+///
+/// ⚠️ R7: the census is the arm's only PLAY-DERIVED witness. A per-world
+/// [`search::SearchResult`] carried it already, but this function used to drop
+/// it on the floor, so a `jrules_prior_scope` cell could only ever prove its
+/// config echo — the failure mode that burned the FPU knob and the phasegate
+/// smoke. It is [`search::JrExpansions::default()`] on champion traffic.
 pub fn search_worlds(
     worlds: &[Game],
     cfg: &SearchConfig,
     threads: usize,
     root_allow: Option<&[i32]>,
-) -> Result<Vec<Vec<(i32, i64, f64)>>, FairError> {
+) -> Result<(Vec<Vec<(i32, i64, f64)>>, search::JrExpansions), FairError> {
+    type World = (Vec<(i32, i64, f64)>, search::JrExpansions);
     let k = worlds.len();
-    let mut out: Vec<Result<Vec<(i32, i64, f64)>, SearchError>> = Vec::with_capacity(k);
+    let mut out: Vec<Result<World, SearchError>> = Vec::with_capacity(k);
     for _ in 0..k {
-        out.push(Ok(Vec::new()));
+        out.push(Ok((Vec::new(), search::JrExpansions::default())));
     }
     let n_workers = threads.clamp(1, k.max(1));
     if k == 0 {
-        return Ok(Vec::new());
+        return Ok((Vec::new(), search::JrExpansions::default()));
     }
-    let one = |g: &Game| -> Result<Vec<(i32, i64, f64)>, SearchError> {
+    let one = |g: &Game| -> Result<World, SearchError> {
         search::Searcher::new(cfg)
             .search_with_root_allow(g, root_allow)
-            .map(|r| r.pooled_stats)
+            .map(|r| {
+                let jr = search::JrExpansions::of(&r);
+                (r.pooled_stats, jr)
+            })
     };
     if n_workers == 1 {
         for (i, g) in worlds.iter().enumerate() {
@@ -831,14 +873,23 @@ pub fn search_worlds(
             }
         });
     }
-    out.into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(FairError::Search)
+    let joined = out
+        .into_iter()
+        .collect::<Result<Vec<World>, _>>()
+        .map_err(FairError::Search)?;
+    let mut stats = Vec::with_capacity(joined.len());
+    let mut census = search::JrExpansions::default();
+    for (s, jr) in joined {
+        stats.push(s);
+        census.add(jr);
+    }
+    Ok((stats, census))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::search::JrPriorScope;
 
     fn cfg(k: usize, sims: usize, threads: usize) -> FairConfig {
         FairConfig {
@@ -891,6 +942,87 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// ⭐ S1 §9.2(c) `R7` (merge review 2026-08-30) — THE PLAY-DERIVED WITNESS,
+    /// at the level a CELL reads it.
+    ///
+    /// `search::tests::s1_*` already pin the partition inside ONE tree. What R7
+    /// found missing is everything after that: [`search_worlds`] dropped the
+    /// per-world census on the floor and [`FairAgent`] never accumulated it, so
+    /// a played `jrules_prior_scope` cell had no witness but its own manifest
+    /// config echo — the failure mode that burned the FPU knob and the
+    /// phasegate smoke.
+    ///
+    /// So this asserts the identity ON THE FOLD: summed over `k_dets` worlds
+    /// per decision and over the decisions of a game, which is the number that
+    /// reaches `summary.json`.
+    #[test]
+    fn s1_jr_expansion_census_folds_over_worlds_and_decisions() {
+        let scoped = |dose: f64, scope, threads| {
+            let mut c = cfg(4, 256, threads);
+            c.search.jrules_prior_dose = dose;
+            c.search.jrules_prior_scope = scope;
+            c
+        };
+        let root = midgame("28000000000", 30);
+        // Play a short prefix and return (game total, sum of the per-decision
+        // records) — the two must agree, or `last_move` and `stats()` would
+        // tell a cell two different stories.
+        let play = |dose, scope, threads| {
+            let mut a = FairAgent::new(scoped(dose, scope, threads));
+            let mut g = root.clone();
+            let mut per_move = search::JrExpansions::default();
+            for i in 0..2i64 {
+                let act = a.choose_action(&g, Some(i)).unwrap();
+                per_move.add(a.last_move.jr_expansions);
+                g.advance(act).unwrap();
+            }
+            (a.jr_expansions, per_move)
+        };
+
+        for scope in [JrPriorScope::All, JrPriorScope::Own, JrPriorScope::Opp] {
+            let (game, per_move) = play(1.0, scope, 1);
+            assert_eq!(
+                game, per_move,
+                "{scope:?}: the game total and the per-decision records disagree"
+            );
+            // Liveness: the arm BOUND, on play rather than on config.
+            assert!(
+                game.boosted > 0,
+                "{scope:?}: the fold reports ZERO boosted expansions — a scoped \
+                 cell with this census is unwitnessed, not null"
+            );
+            // The partition, summed (it survives summation term by term).
+            let expect = match scope {
+                JrPriorScope::All => game.total,
+                JrPriorScope::Own => game.own_mover,
+                JrPriorScope::Opp => game.total - game.own_mover,
+            };
+            assert_eq!(game.boosted, expect, "{scope:?}: partition identity broken");
+            // Non-vacuity: both halves non-empty, or the identity is trivial.
+            assert!(
+                game.own_mover > 0 && game.total > game.own_mover,
+                "{scope:?}: the expansion population is one-sided (own {} of {})",
+                game.own_mover,
+                game.total
+            );
+        }
+
+        // The champion: the counters live inside the dose branch, so an UNARMED
+        // side reports all-zero. Its assertable invariant is `boosted == 0` —
+        // NEVER `total > 0`, which is what a gate would wrongly demand of the
+        // opponent side of a G3 cell.
+        let (champ, champ_moves) = play(0.0, JrPriorScope::All, 1);
+        assert_eq!(champ, search::JrExpansions::default());
+        assert_eq!(champ_moves, search::JrExpansions::default());
+
+        // Thread-invariance, the same leg `thread_count_invariance` runs on the
+        // pooled floats: the fold is over disjoint per-world counts, so the
+        // census must not move with the worker count.
+        let (t1, _) = play(1.0, JrPriorScope::Opp, 1);
+        let (t4, _) = play(1.0, JrPriorScope::Opp, 4);
+        assert_eq!(t1, t4, "the census moved with the thread count");
     }
 
     /// Determinizations are a pure function of (unseen multiset, rng) — NOT of
