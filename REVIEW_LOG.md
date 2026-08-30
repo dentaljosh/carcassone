@@ -609,3 +609,48 @@ Cleared the entire safe/mechanical backlog. `pytest tests/ -q` green before and 
 
 ### F-2026-07-28 — golden config-hash gate red for 5 days (F6 missed the 10th hash dialect)
 `tests/golden/test_golden.py::test_fixture_present_and_configs_frozen` was red since `ee38534` (F6 soft-cap leaf variant, 2026-07-23): the two default-off `soft_cap_slope`/`opp_soft_cap_slope` LeafConfig fields shifted the golden **full-asdict** cfg hashes (v27 `9d47f45e`→`879c9546`) with zero value change. F6 correctly updated the 9 frozen-recipe/harness hash dialects but missed the golden fixture's — the one dialect that deliberately has NO default-off exclusion (it's the total-drift tripwire; cf. `3060ce7`/C7, which DID regenerate it for an analogous field add). Fix (2026-07-28, this commit): fixture regenerated via `gen_golden.py`; acceptance check confirmed ONLY the 4 hash fields moved, all 4,492 behavior values bit-identical; diagnosed by stash-reproduce + direct hash arithmetic. Process leak: the gate sat red unnoticed because full-suite sweeps ran into unowned terminals. **Standing rule: any new `LeafConfig` field requires a `gen_golden.py` regen in the same commit.**
+
+
+---
+
+## Iteration — 2026-08-30 — weekend merge-set audit (d3aae297..69b7ae08, multi-agent workflow, all-opus verify per owner "flip a")
+
+Scope: the phasegate fire-gate + instrument, the tier1 flat-score swap, S1 `JrPriorScope::Opp`,
+the FPU knob threading, C1 pricing, S0v2, microgates/b128/arb_costopt. 4 defect lenses → 12 filed
+→ adversarial verify → **11 survive (8 CONFIRMED / 3 DOWNGRADED-with-restatement), 1 dup-merged**;
+one verify agent died on an API flag (jrules_priors_e4_replay:404) and its finding was
+orchestrator-ground-truthed instead. Full report: session task `wc1lus90b` output.
+
+### Fixed same night (pre-launch, statistics-blind — commit `d4c8b157`, merge `69b7ae08`)
+| # | File:line | Finding | Fix |
+|---|---|---|---|
+| **R1** | `fpu_resurrection_prep/analyze_fpu.py:733` | `--smoke-mode` adjudicated ZERO cells (scan excludes `SMOKE_*` = the smoke's own dir; second barrier: `adjudicate()` keeps only `screen_lib.CELLS` names). **Already REALIZED in phasegate's banked `SMOKE_local.json`** (`"cells": {}`) despite "both smokes PASS first try". | smoke-mode adjudicates only `SMOKE_*` dirs via `--smoke-cell NAME=knob:val:seed:n:role` spec injection; empty cells/knobs ⇒ non-zero exit (the `|| DIE` is now reachable); knob read from the EMITTED manifest, candidate-side asserted. Phasegate sibling: doc-only PG-A2 note in AMENDMENTS.md (frozen code untouched). |
+| **R2** | `tests/test_fpu_instrument.py:27` | bare `import screen_lib` bound to PHASEGATE's library in any full-suite run (5 same-named files; collection-order race) — 19 tests failed as noise, 2 passed against wrong constants. | importlib load by explicit path under unique module name; suite green both collection orders (36→71 passing). |
+| **R3** | `fpu_resurrection_prep/screen_lib.py:115` | `BAR_M` == exactly 2·se_model(400) (machine-asserted) ⇒ `F-REKILL` needs a NEGATIVE point estimate; a true null reads `F-UNRESOLVED` ~48% of the time. Phasegate's A1 primary landed in the same hole (+0.49±0.37 vs 0.80 bar). | pre-registered bar NOT moved; READ_RULE §8 caveat states the null-read odds + what F-UNRESOLVED costs. Bar-choice reopened for the owner post-round. |
+| **R4** | `screen_lib.py:116` | `BAR_ELO` 17.4 is deck-PAIRED 2σ; the emitted CI95 was UNPAIRED binomial (±24.6) — √2 footing mismatch beside its own bar. | CI emitted on the paired footing, field labeled, provenance assert added; elo confirmed never a branch input (pinned by test). |
+
+### Fixed same night (S1/G3 path — R7 witness branch `316df67d`, merges post-FPU-round)
+| # | File:line | Finding | Fix |
+|---|---|---|---|
+| **R7** | `carc-core/src/fair/mod.rs:810` | `search_worlds` discarded `jr_expansions_*`; `PyFairAgent::stats` never emitted them — a played `scope='opp'` cell had NO play-derived witness the arm bound (config echo only; the exact class R1/G-J4 exist for). | counters folded across worlds/decisions, emitted via stats + harness `summary.json` at two addresses; armed-on-stale-wheel now RAISES. Gate semantics: unarmed side reads all-zeros ⇒ assert `opponent.boosted == 0`, never `total > 0`. |
+| **R6** | `carc-core/src/search/mod.rs:103` | scope boosts written at expansion survive `SearchSession::search_carry` tree reuse (nodes change mover roles; priors never recomputed) — two-directional contamination on carried trees. | investigated: `eval_fair_puct --info fair` builds a FRESH Searcher per world per decision, so no exposure; fail-closed `carried_scope_guard` added anyway (carried session + scoped dose ⇒ error naming R6). |
+
+### Deferred (owner inputs)
+| # | File:line | Finding | Why deferred |
+|---|---|---|---|
+| **R5** | `champion_factory.py:1401` | a phase-gated arbiter is BUILT AND PLAYED but `cand_tiearb` is stamped without `phase_gate` — an ARB_EARLY champion is unresolvable from ARB_FULL at every resolvable manifest address; AND the new wheel's getter now always emits `phase_gate`, so both external drivers' armed legs die at worker bootstrap. | one-line stamp + fixture widening, but it touches production source + both match drivers — owner nod. No adjudicated verdict contaminated (no caller ever passed the key). |
+| **R8** | `tests/test_phasegate_instrument.py:131` | G-LEAF contract test permanently red post-PG-A1 (passes the label to a gate that now compares values); the negative legs are unreachable. | frozen phasegate semantics; fold into a PG-A2 amendment if the owner opens one. |
+| **R9** | `carc-core/src/tier1.rs:236` | `with_legacy_scorer` TLS flag doesn't propagate into `arbitrate_core`'s scoped worker threads — an identity gate at `arbitrate` granularity with threads>1 compares flat-vs-flat. | DOWNGRADED (no frozen instrument does this today); constraint documented for the L0 threading gate in GATES_DEFERRED. |
+| **R10** | `phasegate_prep/read_a2_companion.py:35` | A2 widened anchor pools two EXT legs with no CellSpec/per-cell gates; realized: ARB_FULL at `a6acd903`, EXT legs at `084367d7` (a range containing the 551-line tier1.rs swap — bit-identical by its own gates, so no number moves). | DOWNGRADED; companion-reading label already excludes it from branches; note for any future promotion of that number. |
+| **R11** | `c1_pricing_prep/adjudicate_c1.py:194` | `C1-NULL-BOUNDED` decided on P2's SE alone; P1 (farm_capture) missed its own pre-registered precision by 2.1× and no gate noticed. | DOWNGRADED; the verdict's bounded-clause is P2's, and P1's n=14 cap is stated in the row — a wording amendment travels with any future citation. |
+| **R12** | `carc-core/src/tier1.rs:186` | doc comment says `border_wrap_hazard` runs "once per DECISION" — it must (and does) run per candidate; comment invites an unsafe hoist. | comment fix rides the next tier1 touch (L0 gates). |
+
+Also filed against the live G1 instrument (both handled at the verdict, no code change mid-run):
+the emitter's stale `wilson95_lo` bar comment at `jrules_priors_e4_replay.py:404` (READ_RULE_G1 §3
+point-estimate rule governs — the verdict names the field used), and the resume-mixed-config hazard
+at `:1133` (re-run only config-identical or into a fresh out dir).
+
+Post-review chore filed the same night (found by the launch, not the review): `eval_fair_puct.py:1517`
+`PROD_KNOBS` hard-codes `k_dets: 8` — stale since the 22016 promotion; the 2026-07-30 F9
+banner-inversion class reborn (true-champion cells flagged deviant, stale-budget cells blessed).
+Advisory-only; the fix should READ `PRODUCTION.yaml` instead of restating it (point-don't-copy).

@@ -1,0 +1,2802 @@
+{
+  "round": "fpu_resurrection (3 cells, 3 bands)",
+  "pair": [
+    "measurement/fpu_resurrection_prep/DESIGN.md",
+    "measurement/fpu_resurrection_prep/READ_RULE.md"
+  ],
+  "smoke_mode": false,
+  "budget": {
+    "k_dets": 16,
+    "sims_per_det": 1376,
+    "total_sims": 22016,
+    "note": "the 2026-08-30 promoted desktop champion, BOTH sides"
+  },
+  "round_gates": [
+    {
+      "gate": "G-WHEEL-SAME",
+      "ok": true,
+      "detail": {
+        "binary_sha_by_cell": {
+          "CELL_CPUCT10": "5c53dd8b3085ab4a",
+          "CELL_FPU02": "5c53dd8b3085ab4a",
+          "CELL_FPU04": "5c53dd8b3085ab4a"
+        },
+        "by_role": {
+          "laptop": [
+            "5c53dd8b3085ab4a"
+          ],
+          "local": [
+            "5c53dd8b3085ab4a"
+          ]
+        }
+      },
+      "address": "manifest:carc_rs_binary_sha",
+      "why": "every cell on a box shares that box's binary sha \u26a0\ufe0f the sha is BOX-LOCAL and is never compared ACROSS boxes. \u2b50 This round makes NO rust change, so the wheel should not move at all mid-round."
+    },
+    {
+      "gate": "G-REV",
+      "ok": true,
+      "detail": {
+        "pins": {
+          "local": "2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2"
+        },
+        "revs": {
+          "CELL_CPUCT10": "2c00c8d4f0d-dirty",
+          "CELL_FPU02": "2c00c8d4-dirty",
+          "CELL_FPU04": "2c00c8d4-dirty"
+        },
+        "canonicalized": {
+          "CELL_CPUCT10": {
+            "code_rev": "2c00c8d4f0d-dirty",
+            "ok": true,
+            "why": "code_rev '2c00c8d4f0d-dirty' names PINNED_SRC_REV '2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_FPU02": {
+            "code_rev": "2c00c8d4-dirty",
+            "ok": true,
+            "why": "code_rev '2c00c8d4-dirty' names PINNED_SRC_REV '2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_FPU04": {
+            "code_rev": "2c00c8d4-dirty",
+            "ok": true,
+            "why": "code_rev '2c00c8d4-dirty' names PINNED_SRC_REV '2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          }
+        },
+        "ok": true,
+        "distinct_pins": [
+          "2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2"
+        ],
+        "pin": "2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2",
+        "why": "every cell's emitted code_rev canonicalizes to the ONE pin 2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2 that every box published \u2014 short revs of different lengths are expected and harmless (IS-A1)"
+      },
+      "address": "manifests + each box's PINNED_SRC_REV",
+      "why": "every cell's emitted code_rev canonicalizes to the ONE pin 2c00c8d4f0d85d6e7c2ec0d006501d7532ba85f2 that every box published \u2014 short revs of different lengths are expected and harmless (IS-A1)"
+    },
+    {
+      "gate": "G-BLIND",
+      "ok": true,
+      "detail": {
+        "BLIND_COMMIT_by_cell": {
+          "CELL_CPUCT10": "58dfd9b14f261aa8f0f447d0553d19f4bd80ab35",
+          "CELL_FPU02": "58dfd9b14f261aa8f0f447d0553d19f4bd80ab35",
+          "CELL_FPU04": "58dfd9b14f261aa8f0f447d0553d19f4bd80ab35"
+        }
+      },
+      "address": "manifest:BLIND_COMMIT",
+      "why": "one 40-hex BLIND_COMMIT stamped into every adjudicated manifest"
+    }
+  ],
+  "round_gates_ok": true,
+  "cells": {
+    "CELL_FPU02": {
+      "cell": "CELL_FPU02",
+      "role": "local",
+      "knob": "fpu_reduction",
+      "value": 0.2,
+      "band": 155000000000,
+      "purpose": "\u2b50\u2b50 THE PRIMARY \u2014 the 2026-06-02 screen's OWN dose (+45.4 elo, z 1.85, never confirmed), re-asked of the CLASSICAL champion on the backend where the knob was previously unreachable.",
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": 0.2,
+            "fpu_absent": false,
+            "requested_c_puct_override": null,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": 0.2,
+              "c_puct": null
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this cell's frozen knob (fpu=0.2, c_puct override=None)"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": 0.2,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.5,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "fpu_reduction",
+            "frozen_value": 0.2
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the knob BOUND on the candidate's resolved config and the opponent carries the champion's values"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "fpu_reduction",
+            "frozen_value": 0.2,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.5,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": 0.2,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "armed": [],
+            "tiearb_containers": [
+              "config.cand_tiearb",
+              "cand_tiearb"
+            ]
+          },
+          "address": "manifest (full walk)",
+          "why": "the tie arbiter is DISABLED on both sides \u2014 the cell's knob is the only moving part. \u26a0\ufe0f This DEVIATES from the deployed champion (PRODUCTION.yaml carries B=64 since 2026-08-20); the price rides on every branch (DESIGN \u00a72.3)."
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 neither knob is a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 155000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 155000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the cell is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26a0\ufe0f BOTH knobs are threaded on BOTH backends (unlike the J-rules surfaces and the tie arbiter, which are rust-only), so a python leg would NOT be knob-blind. It is still refused: the champion of record plays on rust, and a mixed-backend round is not one round.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+2c00c8d4f0d8+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "5c53dd8b3085ab4a",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u2b50 THIS ROUND MAKES NO RUST CHANGE: `carc_rs` already accepted Option<f64> in the fpu slot and carc_core::search already implemented the rule, so the wheel is a CONSTANT here and the risk that phasegate's IDENT cell existed for does not arise. The live risk is the PYTHON rev (G-REV), not the binary.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 800,
+            "frozen_n_games": 800,
+            "n_failed": 0,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "notes": [],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "n, n_failed and n_common are at the frozen plan"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.5375,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "Doctor",
+            "frozen_role": "local"
+          },
+          "address": "manifest:host",
+          "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": 2.95125,
+              "summary": 2.95125,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": 4.3236634230592745,
+              "summary": 4.3236634230592745,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 400,
+              "summary": 400,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.5375,
+              "summary": 0.5375,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": 26.106692605036596,
+              "summary": 26.106692605036596,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              155000000000,
+              155000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "range_clashes": [],
+            "all_cell_ranges": [
+              [
+                155000000000,
+                155000000399,
+                "CELL_FPU02"
+              ],
+              [
+                156000000000,
+                156000000399,
+                "CELL_FPU04"
+              ],
+              [
+                157000000000,
+                157000000399,
+                "CELL_CPUCT10"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "every realized seed is inside this cell's own range, both seatings are present on every deck, n_common == the frozen n, and this cell's band does not intersect any other cell's"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": 2.95125,
+        "z": 4.3236634230592745,
+        "n_paired": 400,
+        "se": 0.6825808836692004,
+        "UB95": 4.316411767338401,
+        "LB95": 1.586088232661599,
+        "bar_M": 1.381
+      },
+      "secondary_elo": {
+        "elo": 26.106692605036596,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.710422248272529,
+        "sigma_1_unpaired": 12.318397277503358,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.5375,
+        "W": 424,
+        "D": 12,
+        "L": 364,
+        "ci95_elo_paired": [
+          8.685848108491538,
+          43.52753710158166
+        ],
+        "bar_elo": 17.4,
+        "bar_elo_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f elo may NEVER be quoted bare. It is the SECONDARY; the deck-paired MARGIN carries the branch. A disagreement between the two is DISCLOSED, not arbitrated. \u26d4 NO branch reads this block."
+      },
+      "se_anomaly": {
+        "realized": 0.6825808836692004,
+        "modelled": 0.6905,
+        "ratio": 0.988531330440551,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        3.5,
+        -11.0,
+        0.0,
+        -6.0,
+        0.0,
+        -1.0,
+        -25.0,
+        16.0,
+        9.5,
+        -3.5,
+        7.5,
+        -23.0,
+        -11.5,
+        17.0,
+        -20.0,
+        13.5,
+        15.0,
+        14.0,
+        28.0,
+        -1.5,
+        21.0,
+        5.0,
+        14.0,
+        28.0,
+        -3.0,
+        4.5,
+        18.5,
+        7.5,
+        8.5,
+        11.0,
+        24.0,
+        -24.5,
+        -14.0,
+        -13.5,
+        -11.0,
+        12.5,
+        -10.0,
+        -13.0,
+        11.0,
+        29.5,
+        27.0,
+        7.0,
+        -5.0,
+        19.0,
+        14.5,
+        -11.5,
+        28.0,
+        7.0,
+        -9.5,
+        -4.5,
+        32.5,
+        -5.5,
+        0.5,
+        18.0,
+        8.0,
+        -25.0,
+        6.5,
+        -5.0,
+        -12.0,
+        -4.0,
+        -0.5,
+        2.0,
+        -6.0,
+        3.0,
+        -8.0,
+        6.5,
+        17.5,
+        -16.5,
+        9.0,
+        -24.0,
+        -2.5,
+        20.0,
+        -17.5,
+        9.5,
+        7.5,
+        6.0,
+        -14.5,
+        -11.5,
+        -9.5,
+        21.5,
+        -16.5,
+        1.5,
+        -17.5,
+        2.0,
+        15.5,
+        0.5,
+        -3.0,
+        18.5,
+        -4.0,
+        -16.5,
+        -11.5,
+        26.5,
+        3.0,
+        16.0,
+        6.0,
+        15.5,
+        -1.0,
+        15.5,
+        5.5,
+        8.0,
+        -18.5,
+        -4.0,
+        4.5,
+        16.5,
+        0.5,
+        24.5,
+        6.0,
+        36.0,
+        -1.0,
+        11.0,
+        15.0,
+        -6.0,
+        10.5,
+        -9.0,
+        1.5,
+        -8.5,
+        2.0,
+        10.5,
+        -2.0,
+        -4.5,
+        -2.0,
+        1.0,
+        -22.0,
+        14.5,
+        26.5,
+        -11.0,
+        22.0,
+        -1.5,
+        20.0,
+        17.5,
+        -5.5,
+        -12.5,
+        3.5,
+        -2.5,
+        -6.5,
+        9.0,
+        18.5,
+        7.5,
+        -4.0,
+        11.0,
+        -1.0,
+        1.5,
+        1.5,
+        5.5,
+        21.5,
+        -11.0,
+        -14.5,
+        -1.0,
+        -8.5,
+        19.0,
+        8.5,
+        19.0,
+        3.5,
+        -1.5,
+        9.5,
+        1.5,
+        7.0,
+        13.0,
+        35.0,
+        -10.0,
+        10.5,
+        3.0,
+        11.0,
+        -21.5,
+        4.0,
+        11.5,
+        -10.0,
+        15.5,
+        23.5,
+        12.5,
+        0.5,
+        1.0,
+        1.5,
+        -3.0,
+        -38.5,
+        -4.5,
+        -18.5,
+        -10.0,
+        -2.5,
+        29.0,
+        5.5,
+        9.0,
+        4.5,
+        17.5,
+        -7.5,
+        11.0,
+        18.5,
+        12.0,
+        9.0,
+        14.0,
+        -18.5,
+        -17.0,
+        13.5,
+        4.0,
+        36.5,
+        -10.5,
+        19.0,
+        -24.5,
+        8.5,
+        -7.5,
+        -13.0,
+        -5.5,
+        0.0,
+        10.5,
+        -6.0,
+        3.5,
+        -7.5,
+        5.0,
+        11.5,
+        18.5,
+        -10.5,
+        5.0,
+        -9.0,
+        2.5,
+        -13.0,
+        14.5,
+        11.0,
+        -6.0,
+        12.0,
+        11.5,
+        -13.0,
+        -27.5,
+        -10.0,
+        -2.5,
+        11.0,
+        22.0,
+        -10.5,
+        -14.0,
+        0.5,
+        -3.5,
+        18.0,
+        20.5,
+        18.5,
+        3.0,
+        -21.5,
+        -23.5,
+        9.5,
+        18.5,
+        11.0,
+        3.0,
+        21.5,
+        -5.5,
+        -13.5,
+        -2.0,
+        28.0,
+        14.5,
+        3.5,
+        22.0,
+        -14.0,
+        3.5,
+        -15.5,
+        3.5,
+        3.5,
+        -3.5,
+        2.5,
+        2.5,
+        -3.5,
+        -1.0,
+        -19.0,
+        -16.5,
+        -2.5,
+        13.0,
+        41.5,
+        14.5,
+        15.5,
+        14.0,
+        -4.5,
+        -5.5,
+        9.0,
+        2.0,
+        -3.0,
+        0.0,
+        12.0,
+        -17.0,
+        18.0,
+        18.0,
+        11.0,
+        -17.5,
+        19.0,
+        -21.0,
+        6.5,
+        -4.0,
+        15.0,
+        -1.0,
+        -21.0,
+        -2.0,
+        -2.0,
+        20.5,
+        -24.5,
+        -0.5,
+        16.0,
+        -11.5,
+        36.5,
+        -5.0,
+        7.5,
+        -0.5,
+        -9.5,
+        12.0,
+        19.0,
+        -12.0,
+        31.5,
+        1.5,
+        2.0,
+        -0.5,
+        7.5,
+        3.0,
+        10.5,
+        -26.0,
+        23.5,
+        -7.5,
+        20.0,
+        19.0,
+        9.5,
+        15.5,
+        3.5,
+        -4.0,
+        16.0,
+        5.5,
+        1.0,
+        -4.0,
+        -8.0,
+        -17.0,
+        29.5,
+        16.5,
+        7.5,
+        1.5,
+        32.5,
+        22.0,
+        -1.0,
+        -0.5,
+        2.5,
+        5.5,
+        -34.0,
+        -2.5,
+        6.5,
+        7.0,
+        3.0,
+        -0.5,
+        9.0,
+        2.5,
+        2.0,
+        -1.5,
+        -10.0,
+        3.0,
+        -18.0,
+        4.5,
+        -13.0,
+        -3.5,
+        1.5,
+        11.0,
+        -12.0,
+        4.0,
+        -8.5,
+        28.0,
+        3.0,
+        20.5,
+        28.0,
+        -15.5,
+        6.5,
+        6.0,
+        2.5,
+        10.5,
+        12.0,
+        -7.0,
+        -1.0,
+        -5.0,
+        16.5,
+        -12.5,
+        2.0,
+        -16.0,
+        13.0,
+        -5.0,
+        7.0,
+        -20.0,
+        4.0,
+        29.5,
+        4.5,
+        -38.5,
+        9.0,
+        0.5,
+        17.5,
+        14.5,
+        10.5,
+        1.5,
+        -1.0,
+        -25.5,
+        11.0,
+        -12.0,
+        0.0,
+        18.0,
+        11.5,
+        4.5,
+        -1.0,
+        -18.5,
+        12.0,
+        -7.5,
+        11.5,
+        9.0,
+        5.5,
+        7.5
+      ],
+      "branch": "F-RESURRECT",
+      "riders": [
+        "\u26d4\u26d4 docs/LEVER_INDEX.md:146 RECORDS THIS AXIS AS CLOSED ('M3 later ran the full curve -> peaks at parity, axis CLOSED'). This round is a deliberate REOPENING, and the reopening argument is NARROW: every prior FPU cell measured a NEURAL or VALUE-BLENDED agent, and NONE of them could have measured the classical champion, because the knob was structurally unreachable on the champion's backend until 2026-08-29 (rust_agent.search_config_rs passed a hard-coded None). The prior evidence is not wrong; it is about a different agent.",
+        "\u26d4 The prior-art figures (+45.4 / +31.4 elo at n=200; the M3 curve peaking at parity) are CONTEXT ONLY \u2014 never pooled, never z-combined, never a gate input. They are CROSS-ERA as well as cross-band, which is strictly worse than the 1.8-2.2x cross-band over-dispersion CL-068 measured.",
+        "\u26d4 Nothing here is a bracket. Two fpu doses give a DIRECTION; they do not locate an optimum and no interpolation between 0.2 and 0.4 is licensed (feedback_bracket_hyperparams: a peak at a ladder ENDPOINT is not bracketed, and two points are not a ladder).",
+        "\u26d4 THREE CELLS ARE THREE COMPARISONS. At the 2-sigma bar the family-wise false-fire rate under a global null is ~3 x 2.3% ~= 7%. No correction is applied \u2014 the bars are pre-registered and each cell is its own question \u2014 but the inflation is DISCLOSED on every branch, and a LONE firing cell beside two nulls is read as feedback_results_table_source_of_truth's NOISE SIGNATURE, not as a peak.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind.",
+        "\u26a0\ufe0f elo may never be quoted bare. The deck-paired MARGIN carries every branch; the elo is reported beside it with its own CI, and a disagreement between the two is DISCLOSED rather than arbitrated.",
+        "\u2b50\u2b50 F-RESURRECT is a claim about THE KNOB ON THE CLASSICAL CHAMPION AT k16x1376, ON THIS BAND, AT THIS DOSE. It is NOT a claim that the 2026-06-02 screens replicate \u2014 those were a neural agent at sims=200 and no cross-era comparison is licensed.",
+        "\u26d4 IT DOES NOT LICENSE A PRODUCTION CHANGE. A single 2-sigma cell on a fresh band is one cell; feedback_results_table_source_of_truth requires a confirm before promotion, on a band that has not influenced a decision.",
+        "\u26d4 It says nothing about the OTHER dose or about tau. Each cell is its own question.",
+        "\u26a0\ufe0f It is a k16x1376 result. FPU acts per determinization tree and sims_per_det is unchanged from the 11008 era, so the MECHANISM transfers downward in k \u2014 but that is an ARGUMENT, not a measurement."
+      ]
+    },
+    "CELL_FPU04": {
+      "cell": "CELL_FPU04",
+      "role": "local",
+      "knob": "fpu_reduction",
+      "value": 0.4,
+      "band": 156000000000,
+      "purpose": "\u2b50 THE SECOND DOSE \u2014 the other never-confirmed screen (+31.4 elo, z 1.28). Two doses give a DIRECTION across the axis; \u26d4 they are NOT a bracket and no interpolation between them is licensed.",
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": 0.4,
+            "fpu_absent": false,
+            "requested_c_puct_override": null,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": 0.4,
+              "c_puct": null
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this cell's frozen knob (fpu=0.4, c_puct override=None)"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": 0.4,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.5,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "fpu_reduction",
+            "frozen_value": 0.4
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the knob BOUND on the candidate's resolved config and the opponent carries the champion's values"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "fpu_reduction",
+            "frozen_value": 0.4,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.5,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": 0.4,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 fpu_reduction: candidate 0.4 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 fpu_reduction: candidate 0.4 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "armed": [],
+            "tiearb_containers": [
+              "config.cand_tiearb",
+              "cand_tiearb"
+            ]
+          },
+          "address": "manifest (full walk)",
+          "why": "the tie arbiter is DISABLED on both sides \u2014 the cell's knob is the only moving part. \u26a0\ufe0f This DEVIATES from the deployed champion (PRODUCTION.yaml carries B=64 since 2026-08-20); the price rides on every branch (DESIGN \u00a72.3)."
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 neither knob is a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 156000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 156000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the cell is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26a0\ufe0f BOTH knobs are threaded on BOTH backends (unlike the J-rules surfaces and the tie arbiter, which are rust-only), so a python leg would NOT be knob-blind. It is still refused: the champion of record plays on rust, and a mixed-backend round is not one round.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+2c00c8d4f0d8+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "5c53dd8b3085ab4a",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u2b50 THIS ROUND MAKES NO RUST CHANGE: `carc_rs` already accepted Option<f64> in the fpu slot and carc_core::search already implemented the rule, so the wheel is a CONSTANT here and the risk that phasegate's IDENT cell existed for does not arise. The live risk is the PYTHON rev (G-REV), not the binary.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": false,
+          "detail": {
+            "n": 799,
+            "frozen_n_games": 800,
+            "n_failed": 1,
+            "n_common": 399,
+            "n_common_floor": 320.0,
+            "notes": [
+              "\u26a0\ufe0f n_failed = 1 (0.1250%) \u2014 REPORTED, never silently absorbed (the b32v64 0.100% rust-panic precedent)"
+            ],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "\u26d4 G-N FAILED: n 799 != frozen 800 games"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.4974968710888611,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "Doctor",
+            "frozen_role": "local"
+          },
+          "address": "manifest:host",
+          "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": 0.7543859649122807,
+              "summary": 0.7543859649122807,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": 1.0545957931973815,
+              "summary": 1.0545957931973815,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 399,
+              "summary": 399,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.4974968710888611,
+              "summary": 0.4974968710888611,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": -1.739366648884249,
+              "summary": -1.739366648884249,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": false,
+          "detail": {
+            "range": [
+              156000000000,
+              156000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 399,
+            "frozen_n_decks": 400,
+            "out_of_range": [],
+            "half_played_decks": [
+              156000000329
+            ],
+            "range_clashes": [],
+            "all_cell_ranges": [
+              [
+                155000000000,
+                155000000399,
+                "CELL_FPU02"
+              ],
+              [
+                156000000000,
+                156000000399,
+                "CELL_FPU04"
+              ],
+              [
+                157000000000,
+                157000000399,
+                "CELL_CPUCT10"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "\u26d4 G-DECKS FAILED: 1 deck(s) played at ONE seat only; n_common 399 != frozen 400"
+        }
+      ],
+      "gates_ok": false,
+      "failed_gates": [
+        "G-N",
+        "G-DECKS"
+      ],
+      "stats": {
+        "M": 0.7543859649122807,
+        "z": 1.0545957931973815,
+        "n_paired": 399,
+        "se": 0.7153318548949373,
+        "UB95": 2.1850496747021553,
+        "LB95": -0.676277744877594,
+        "bar_M": 1.381
+      },
+      "secondary_elo": {
+        "elo": -1.739366648884249,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.691432329488464,
+        "sigma_1_unpaired": 12.291541476810568,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.4974968710888611,
+        "W": 388,
+        "D": 19,
+        "L": 392,
+        "ci95_elo_paired": [
+          -19.122231307861178,
+          15.643498010092678
+        ],
+        "bar_elo": 17.4,
+        "bar_elo_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f elo may NEVER be quoted bare. It is the SECONDARY; the deck-paired MARGIN carries the branch. A disagreement between the two is DISCLOSED, not arbitrated. \u26d4 NO branch reads this block."
+      },
+      "se_anomaly": {
+        "realized": 0.7153318548949373,
+        "modelled": 0.691364746738349,
+        "ratio": 1.034666372952422,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        13.0,
+        27.5,
+        -9.0,
+        -19.0,
+        14.5,
+        -12.0,
+        -2.0,
+        9.5,
+        -3.5,
+        -18.0,
+        -3.5,
+        9.5,
+        33.0,
+        -7.0,
+        -3.0,
+        12.0,
+        8.0,
+        -14.0,
+        4.5,
+        -16.5,
+        -26.0,
+        -16.5,
+        23.0,
+        1.0,
+        8.5,
+        20.5,
+        7.0,
+        -1.5,
+        -13.5,
+        -2.5,
+        1.5,
+        -18.5,
+        -16.5,
+        -21.0,
+        -0.5,
+        3.0,
+        3.5,
+        18.5,
+        7.0,
+        -5.5,
+        -2.5,
+        -31.5,
+        14.5,
+        -12.5,
+        -19.0,
+        3.0,
+        35.5,
+        1.5,
+        -18.0,
+        10.0,
+        -2.0,
+        -5.0,
+        7.0,
+        34.0,
+        16.5,
+        23.5,
+        -14.0,
+        -14.0,
+        11.0,
+        9.0,
+        17.5,
+        -7.0,
+        12.5,
+        -6.0,
+        -17.0,
+        8.5,
+        1.5,
+        12.0,
+        23.0,
+        0.5,
+        9.5,
+        -12.0,
+        5.0,
+        3.5,
+        -16.0,
+        2.5,
+        1.0,
+        2.0,
+        -19.0,
+        8.0,
+        -4.0,
+        2.5,
+        4.5,
+        5.5,
+        15.5,
+        -10.5,
+        5.0,
+        -14.0,
+        3.5,
+        0.5,
+        -2.5,
+        7.0,
+        12.5,
+        5.0,
+        30.0,
+        -10.0,
+        -22.0,
+        1.0,
+        -0.5,
+        23.5,
+        -12.0,
+        25.5,
+        -5.5,
+        17.0,
+        11.0,
+        0.0,
+        -19.5,
+        5.0,
+        19.0,
+        -1.5,
+        -16.0,
+        8.5,
+        11.0,
+        -16.0,
+        20.5,
+        -7.5,
+        3.5,
+        -21.0,
+        -6.5,
+        11.5,
+        19.0,
+        0.5,
+        -0.5,
+        1.0,
+        7.5,
+        -4.5,
+        8.0,
+        0.0,
+        1.0,
+        -6.5,
+        2.5,
+        -23.0,
+        8.5,
+        -33.0,
+        19.0,
+        -5.5,
+        -28.5,
+        11.0,
+        18.0,
+        13.5,
+        -15.0,
+        -8.5,
+        -19.0,
+        10.0,
+        -11.5,
+        -13.5,
+        2.5,
+        -8.5,
+        3.5,
+        -21.5,
+        -4.0,
+        -11.5,
+        3.5,
+        26.5,
+        16.5,
+        -7.0,
+        14.0,
+        15.0,
+        1.0,
+        21.0,
+        27.5,
+        5.5,
+        20.0,
+        -6.5,
+        3.5,
+        31.5,
+        13.0,
+        -25.0,
+        0.5,
+        -6.5,
+        5.0,
+        -32.0,
+        26.0,
+        4.5,
+        24.0,
+        0.0,
+        -12.5,
+        2.5,
+        -13.0,
+        -2.0,
+        -17.0,
+        9.0,
+        -1.0,
+        12.0,
+        0.5,
+        -3.5,
+        6.0,
+        6.5,
+        24.5,
+        30.5,
+        11.0,
+        -5.0,
+        3.5,
+        13.0,
+        3.0,
+        25.0,
+        -7.0,
+        21.0,
+        -6.0,
+        0.5,
+        -17.5,
+        -13.5,
+        17.0,
+        12.5,
+        11.5,
+        -3.0,
+        -2.0,
+        -12.5,
+        -14.0,
+        13.5,
+        -20.0,
+        18.5,
+        -14.0,
+        11.0,
+        9.0,
+        -15.5,
+        0.5,
+        3.0,
+        30.5,
+        -1.0,
+        -6.5,
+        17.5,
+        9.0,
+        4.0,
+        2.5,
+        -2.5,
+        1.0,
+        -8.0,
+        -11.5,
+        -8.0,
+        17.5,
+        -18.0,
+        19.0,
+        -27.0,
+        -14.5,
+        8.5,
+        -44.0,
+        -4.5,
+        -19.5,
+        8.0,
+        -6.0,
+        9.0,
+        -14.5,
+        -17.0,
+        13.0,
+        -18.5,
+        -0.5,
+        7.5,
+        -8.0,
+        3.5,
+        10.5,
+        -20.0,
+        -19.5,
+        2.0,
+        -6.5,
+        1.0,
+        -7.5,
+        -1.0,
+        -7.0,
+        -3.5,
+        36.5,
+        -6.5,
+        5.5,
+        11.5,
+        12.0,
+        -16.5,
+        -17.5,
+        -24.5,
+        -20.0,
+        14.5,
+        -2.5,
+        1.0,
+        -5.5,
+        -10.0,
+        -9.0,
+        4.5,
+        -7.0,
+        7.0,
+        35.5,
+        20.5,
+        6.5,
+        0.5,
+        -12.0,
+        19.0,
+        -11.0,
+        27.5,
+        -18.0,
+        22.5,
+        -15.0,
+        2.0,
+        14.5,
+        16.0,
+        -11.0,
+        10.5,
+        -8.0,
+        -14.5,
+        5.0,
+        5.5,
+        -29.0,
+        -0.5,
+        5.5,
+        9.5,
+        7.0,
+        -8.5,
+        -2.0,
+        1.5,
+        -24.5,
+        -12.5,
+        -2.0,
+        -20.0,
+        -11.5,
+        -30.5,
+        -1.0,
+        -5.5,
+        23.0,
+        1.5,
+        -27.0,
+        -10.0,
+        5.0,
+        -12.0,
+        23.0,
+        2.5,
+        -13.5,
+        7.5,
+        14.5,
+        3.0,
+        0.0,
+        -14.0,
+        11.5,
+        9.5,
+        -3.5,
+        -34.0,
+        -15.0,
+        -24.5,
+        27.5,
+        5.0,
+        36.5,
+        -11.0,
+        18.0,
+        -6.0,
+        1.0,
+        13.0,
+        16.0,
+        -11.5,
+        14.5,
+        -6.5,
+        3.5,
+        12.5,
+        9.5,
+        37.5,
+        -11.5,
+        10.0,
+        3.5,
+        10.5,
+        7.0,
+        -15.5,
+        24.0,
+        26.0,
+        -2.0,
+        -10.0,
+        6.0,
+        16.0,
+        -16.5,
+        4.0,
+        6.0,
+        2.0,
+        -10.5,
+        -27.0,
+        7.5,
+        12.5,
+        -14.0,
+        -4.0,
+        2.0,
+        3.5,
+        4.0,
+        -9.0,
+        -12.5,
+        -12.0,
+        -11.5,
+        0.0,
+        26.0,
+        -1.0,
+        7.5,
+        -1.5,
+        7.5,
+        -2.0,
+        16.5,
+        4.0,
+        -17.5,
+        -15.0,
+        28.0,
+        -16.5,
+        -1.0,
+        19.0,
+        -1.5,
+        -1.0,
+        1.5,
+        4.5,
+        2.5
+      ],
+      "branch": "U-VOID-INSTRUMENT",
+      "riders": [
+        "\u26d4\u26d4 docs/LEVER_INDEX.md:146 RECORDS THIS AXIS AS CLOSED ('M3 later ran the full curve -> peaks at parity, axis CLOSED'). This round is a deliberate REOPENING, and the reopening argument is NARROW: every prior FPU cell measured a NEURAL or VALUE-BLENDED agent, and NONE of them could have measured the classical champion, because the knob was structurally unreachable on the champion's backend until 2026-08-29 (rust_agent.search_config_rs passed a hard-coded None). The prior evidence is not wrong; it is about a different agent.",
+        "\u26d4 The prior-art figures (+45.4 / +31.4 elo at n=200; the M3 curve peaking at parity) are CONTEXT ONLY \u2014 never pooled, never z-combined, never a gate input. They are CROSS-ERA as well as cross-band, which is strictly worse than the 1.8-2.2x cross-band over-dispersion CL-068 measured.",
+        "\u26d4 Nothing here is a bracket. Two fpu doses give a DIRECTION; they do not locate an optimum and no interpolation between 0.2 and 0.4 is licensed (feedback_bracket_hyperparams: a peak at a ladder ENDPOINT is not bracketed, and two points are not a ladder).",
+        "\u26d4 THREE CELLS ARE THREE COMPARISONS. At the 2-sigma bar the family-wise false-fire rate under a global null is ~3 x 2.3% ~= 7%. No correction is applied \u2014 the bars are pre-registered and each cell is its own question \u2014 but the inflation is DISCLOSED on every branch, and a LONE firing cell beside two nulls is read as feedback_results_table_source_of_truth's NOISE SIGNATURE, not as a peak.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind.",
+        "\u26a0\ufe0f elo may never be quoted bare. The deck-paired MARGIN carries every branch; the elo is reported beside it with its own CI, and a disagreement between the two is DISCLOSED rather than arbitrated."
+      ]
+    },
+    "CELL_CPUCT10": {
+      "cell": "CELL_CPUCT10",
+      "role": "laptop",
+      "knob": "c_puct",
+      "value": 1.0,
+      "band": 157000000000,
+      "purpose": "\u2b50 THE EXPLORATION-CONSTANT CELL \u2014 champion c_puct is 1.5; this asks 1.0. \u26d4\u26d4 IT IS ALSO THE TRIGGER: a null here RE-KILLS the conditional tau pair (READ_RULE \u00a76), which is the funded conditionality.",
+      "gates": [
+        {
+          "gate": "G-CPUCT",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": null,
+            "fpu_absent": false,
+            "requested_c_puct_override": 1.0,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": null,
+              "c_puct": 1.0
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this cell's frozen knob (fpu=None, c_puct override=1.0)"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": null,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.0,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "c_puct",
+            "frozen_value": 1.0
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the knob BOUND on the candidate's resolved config and the opponent carries the champion's values"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "c_puct",
+            "frozen_value": 1.0,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.0,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": null,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 c_puct: candidate 1.0 vs opponent 1.5 \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 c_puct: candidate 1.0 vs opponent 1.5 \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "armed": [],
+            "tiearb_containers": [
+              "config.cand_tiearb",
+              "cand_tiearb"
+            ]
+          },
+          "address": "manifest (full walk)",
+          "why": "the tie arbiter is DISABLED on both sides \u2014 the cell's knob is the only moving part. \u26a0\ufe0f This DEVIATES from the deployed champion (PRODUCTION.yaml carries B=64 since 2026-08-20); the price rides on every branch (DESIGN \u00a72.3)."
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 neither knob is a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 157000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 157000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the cell is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26a0\ufe0f BOTH knobs are threaded on BOTH backends (unlike the J-rules surfaces and the tie arbiter, which are rust-only), so a python leg would NOT be knob-blind. It is still refused: the champion of record plays on rust, and a mixed-backend round is not one round.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+2c00c8d4f0d8+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "5c53dd8b3085ab4a",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u2b50 THIS ROUND MAKES NO RUST CHANGE: `carc_rs` already accepted Option<f64> in the fpu slot and carc_core::search already implemented the rule, so the wheel is a CONSTANT here and the risk that phasegate's IDENT cell existed for does not arise. The live risk is the PYTHON rev (G-REV), not the binary.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 800,
+            "frozen_n_games": 800,
+            "n_failed": 0,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "notes": [],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "n, n_failed and n_common are at the frozen plan"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.493125,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "laptop-wsl",
+            "frozen_role": "laptop"
+          },
+          "address": "manifest:host",
+          "why": "host 'laptop-wsl' matches box role 'laptop' (via 'laptop')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": -0.6325,
+              "summary": -0.6325,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": -0.9713858957644216,
+              "summary": -0.9713858957644216,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 400,
+              "summary": 400,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.493125,
+              "summary": 0.493125,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": -4.777540400694275,
+              "summary": -4.777540400694275,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              157000000000,
+              157000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "range_clashes": [],
+            "all_cell_ranges": [
+              [
+                155000000000,
+                155000000399,
+                "CELL_FPU02"
+              ],
+              [
+                156000000000,
+                156000000399,
+                "CELL_FPU04"
+              ],
+              [
+                157000000000,
+                157000000399,
+                "CELL_CPUCT10"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "every realized seed is inside this cell's own range, both seatings are present on every deck, n_common == the frozen n, and this cell's band does not intersect any other cell's"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": -0.6325,
+        "z": -0.9713858957644216,
+        "n_paired": 400,
+        "se": 0.6511315459262057,
+        "UB95": 0.6697630918524115,
+        "LB95": -1.9347630918524112,
+        "bar_M": 1.381
+      },
+      "secondary_elo": {
+        "elo": -4.777540400694275,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.686710842515943,
+        "sigma_1_unpaired": 12.284864285899463,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.493125,
+        "W": 385,
+        "D": 19,
+        "L": 396,
+        "ci95_elo_paired": [
+          -22.15096208572616,
+          12.595881284337612
+        ],
+        "bar_elo": 17.4,
+        "bar_elo_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f elo may NEVER be quoted bare. It is the SECONDARY; the deck-paired MARGIN carries the branch. A disagreement between the two is DISCLOSED, not arbitrated. \u26d4 NO branch reads this block."
+      },
+      "se_anomaly": {
+        "realized": 0.6511315459262057,
+        "modelled": 0.6905,
+        "ratio": 0.9429855842522892,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        13.5,
+        -7.5,
+        -24.0,
+        0.5,
+        -23.5,
+        13.5,
+        4.0,
+        31.0,
+        -1.5,
+        -11.5,
+        -13.5,
+        -4.5,
+        -8.0,
+        -11.0,
+        -28.5,
+        6.5,
+        3.0,
+        6.5,
+        3.5,
+        -4.5,
+        -3.0,
+        -45.0,
+        -14.0,
+        7.0,
+        -11.5,
+        -17.0,
+        9.0,
+        -5.5,
+        -13.5,
+        -4.5,
+        7.5,
+        3.0,
+        7.0,
+        2.5,
+        -21.5,
+        13.0,
+        8.5,
+        -12.0,
+        -20.0,
+        -6.5,
+        13.0,
+        4.5,
+        7.5,
+        -18.5,
+        -17.0,
+        -24.5,
+        3.0,
+        4.5,
+        11.0,
+        -10.5,
+        -5.0,
+        -4.0,
+        4.0,
+        3.0,
+        -7.0,
+        8.5,
+        8.5,
+        -18.0,
+        -16.5,
+        18.0,
+        9.0,
+        9.0,
+        6.0,
+        13.5,
+        -18.5,
+        7.0,
+        5.5,
+        23.0,
+        8.5,
+        -2.5,
+        -18.0,
+        14.0,
+        10.5,
+        -14.0,
+        2.0,
+        -13.5,
+        3.0,
+        1.5,
+        -31.5,
+        15.5,
+        -22.0,
+        -15.5,
+        0.0,
+        -2.0,
+        12.5,
+        5.0,
+        1.5,
+        -9.5,
+        7.5,
+        -10.0,
+        8.0,
+        -9.5,
+        -3.0,
+        9.5,
+        12.5,
+        14.0,
+        7.0,
+        -0.5,
+        -21.5,
+        -5.5,
+        -1.5,
+        11.5,
+        -4.5,
+        0.5,
+        -6.5,
+        9.0,
+        -16.5,
+        -20.0,
+        -8.0,
+        7.5,
+        4.0,
+        -2.5,
+        5.5,
+        -11.0,
+        -16.0,
+        -7.0,
+        5.0,
+        -1.5,
+        7.5,
+        20.0,
+        18.0,
+        -7.5,
+        2.0,
+        6.5,
+        -14.0,
+        0.5,
+        -11.0,
+        0.0,
+        -30.5,
+        -6.5,
+        -2.5,
+        14.0,
+        -3.0,
+        7.0,
+        -4.0,
+        8.5,
+        -15.5,
+        -6.0,
+        -1.0,
+        -5.5,
+        27.0,
+        -11.5,
+        -18.0,
+        -12.0,
+        -7.0,
+        -9.0,
+        -7.0,
+        24.0,
+        5.5,
+        -7.0,
+        -19.0,
+        3.5,
+        -3.0,
+        13.0,
+        -11.0,
+        1.0,
+        16.0,
+        22.0,
+        -3.0,
+        -2.5,
+        14.5,
+        33.5,
+        -9.0,
+        13.0,
+        -1.0,
+        4.5,
+        7.0,
+        16.0,
+        -2.5,
+        -6.0,
+        -12.0,
+        -15.5,
+        -7.0,
+        -13.0,
+        1.0,
+        2.5,
+        17.5,
+        -2.0,
+        0.0,
+        4.0,
+        0.0,
+        -5.0,
+        -5.0,
+        -4.5,
+        -17.5,
+        -21.5,
+        6.0,
+        1.0,
+        -3.5,
+        -1.0,
+        -26.0,
+        9.0,
+        5.0,
+        5.0,
+        5.5,
+        0.0,
+        9.5,
+        -7.0,
+        16.0,
+        -0.5,
+        -22.5,
+        -36.0,
+        7.0,
+        0.5,
+        2.0,
+        -18.5,
+        6.0,
+        30.0,
+        7.0,
+        5.0,
+        -26.5,
+        2.5,
+        9.0,
+        -15.0,
+        14.0,
+        10.5,
+        -1.0,
+        -13.0,
+        20.0,
+        -13.0,
+        12.0,
+        -20.0,
+        15.0,
+        -13.0,
+        2.5,
+        13.5,
+        0.5,
+        -36.0,
+        15.0,
+        10.5,
+        -22.0,
+        7.5,
+        0.0,
+        10.0,
+        8.5,
+        13.0,
+        -1.5,
+        32.0,
+        -3.0,
+        -24.5,
+        -10.5,
+        -3.0,
+        3.5,
+        -0.5,
+        0.0,
+        23.5,
+        -2.0,
+        5.5,
+        6.0,
+        6.0,
+        -5.0,
+        -0.5,
+        -1.0,
+        29.5,
+        16.0,
+        3.0,
+        -17.5,
+        8.0,
+        9.0,
+        19.5,
+        -20.0,
+        -5.5,
+        -19.0,
+        12.5,
+        -6.0,
+        2.5,
+        10.0,
+        -12.0,
+        -9.5,
+        -6.0,
+        7.0,
+        17.5,
+        -13.5,
+        -5.5,
+        30.0,
+        -16.0,
+        9.0,
+        -7.0,
+        1.0,
+        2.5,
+        -11.0,
+        -17.0,
+        -16.5,
+        2.5,
+        -4.5,
+        9.5,
+        19.0,
+        -11.5,
+        4.5,
+        -26.0,
+        -2.5,
+        -28.5,
+        -1.5,
+        12.5,
+        -5.5,
+        10.5,
+        -0.5,
+        -22.0,
+        6.5,
+        23.0,
+        0.0,
+        -8.0,
+        -2.5,
+        -9.0,
+        -2.0,
+        3.0,
+        10.0,
+        -4.0,
+        3.0,
+        -8.0,
+        -5.0,
+        -0.5,
+        1.0,
+        -4.5,
+        16.5,
+        8.0,
+        -2.0,
+        -3.0,
+        13.0,
+        5.0,
+        -9.0,
+        -3.5,
+        -16.0,
+        -9.0,
+        27.0,
+        0.0,
+        6.5,
+        5.5,
+        29.5,
+        -12.5,
+        -17.5,
+        -22.5,
+        2.5,
+        7.0,
+        -20.5,
+        7.0,
+        -2.5,
+        -18.5,
+        25.0,
+        -10.5,
+        -4.0,
+        -2.0,
+        -14.0,
+        -3.0,
+        -13.5,
+        15.0,
+        -27.5,
+        23.0,
+        12.0,
+        8.5,
+        -16.0,
+        15.5,
+        -3.0,
+        3.0,
+        26.0,
+        17.0,
+        -4.0,
+        31.0,
+        8.5,
+        5.0,
+        -9.5,
+        1.5,
+        -17.0,
+        -3.0,
+        -31.0,
+        12.5,
+        0.0,
+        13.5,
+        -13.0,
+        4.5,
+        -9.0,
+        -1.5,
+        -11.0,
+        -0.5,
+        -15.5,
+        -2.5,
+        -1.0,
+        -21.5,
+        17.5,
+        -17.0,
+        -19.0,
+        17.5,
+        -7.0,
+        15.0,
+        8.0,
+        5.0,
+        3.5,
+        6.0,
+        -16.5,
+        13.0,
+        -4.0,
+        -7.0,
+        4.5,
+        9.0,
+        -1.5,
+        23.5,
+        6.5,
+        -10.0,
+        -7.5,
+        26.0
+      ],
+      "branch": "F-REKILL",
+      "riders": [
+        "\u26d4\u26d4 docs/LEVER_INDEX.md:146 RECORDS THIS AXIS AS CLOSED ('M3 later ran the full curve -> peaks at parity, axis CLOSED'). This round is a deliberate REOPENING, and the reopening argument is NARROW: every prior FPU cell measured a NEURAL or VALUE-BLENDED agent, and NONE of them could have measured the classical champion, because the knob was structurally unreachable on the champion's backend until 2026-08-29 (rust_agent.search_config_rs passed a hard-coded None). The prior evidence is not wrong; it is about a different agent.",
+        "\u26d4 The prior-art figures (+45.4 / +31.4 elo at n=200; the M3 curve peaking at parity) are CONTEXT ONLY \u2014 never pooled, never z-combined, never a gate input. They are CROSS-ERA as well as cross-band, which is strictly worse than the 1.8-2.2x cross-band over-dispersion CL-068 measured.",
+        "\u26d4 Nothing here is a bracket. Two fpu doses give a DIRECTION; they do not locate an optimum and no interpolation between 0.2 and 0.4 is licensed (feedback_bracket_hyperparams: a peak at a ladder ENDPOINT is not bracketed, and two points are not a ladder).",
+        "\u26d4 THREE CELLS ARE THREE COMPARISONS. At the 2-sigma bar the family-wise false-fire rate under a global null is ~3 x 2.3% ~= 7%. No correction is applied \u2014 the bars are pre-registered and each cell is its own question \u2014 but the inflation is DISCLOSED on every branch, and a LONE firing cell beside two nulls is read as feedback_results_table_source_of_truth's NOISE SIGNATURE, not as a peak.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind.",
+        "\u26a0\ufe0f elo may never be quoted bare. The deck-paired MARGIN carries every branch; the elo is reported beside it with its own CI, and a disagreement between the two is DISCLOSED rather than arbitrated.",
+        "\u26a0\ufe0f F-REKILL BOUNDS; IT DOES NOT ZERO. The reading is 'below the round's own 2-sigma resolution at 95%', never 'FPU is worthless'.",
+        "\u2b50 It DOES discharge the funded decision: on this evidence the never-confirmed 2026-06-02 screens do not reappear as a usable lever on the classical champion, docs/LEVER_INDEX.md:146's CLOSED verdict stands, and the row is updated to say the reopening was measured and failed.",
+        "\u26a0\ufe0f It is a bound at THIS DOSE and THIS BUDGET. A different dose could clear the bar; this round measures two and no interpolation is licensed."
+      ]
+    }
+  },
+  "branches": {
+    "CELL_FPU02": "F-RESURRECT",
+    "CELL_FPU04": "U-VOID-INSTRUMENT",
+    "CELL_CPUCT10": "F-REKILL"
+  },
+  "tau_conditionality": {
+    "triggered": false,
+    "z": -0.9713858957644216,
+    "bar": 2.0,
+    "why": "\u26d4 CELL_CPUCT10 moved |z| = 0.971 < 2.0. \u2b50\u2b50 THE tau PAIR IS RE-KILLED AND NOT FUNDED \u2014 that is this round's funded conditionality, pre-registered before game 1. \u26a0\ufe0f 'Re-killed' means UNFUNDED, not 'proven worthless': a |z| < 2 cell is a bound, and feedback_noisy_plateau_not_a_conclusion binds on any stronger reading."
+  },
+  "golden_gate": {
+    "verdict": "PASS",
+    "ok": true,
+    "failed": [],
+    "checks": {
+      "ONE-WHEEL": true,
+      "TWO-TREES": true,
+      "SAME-SEEDS": true,
+      "SAME-BUDGET": true,
+      "IDENTITY": true,
+      "POSITIVE": true,
+      "AUDIT-ADJUDICATED": true
+    },
+    "why": "\u2b50 bit-exact at fpu=None (the DEFAULT path is unmoved) AND the knob BINDS at 0.2 (the positive control). Without the second half the first is worth nothing: the hard-coded None this round removes would have passed it perfectly."
+  },
+  "riders": [
+    "\u26d4\u26d4 docs/LEVER_INDEX.md:146 RECORDS THIS AXIS AS CLOSED ('M3 later ran the full curve -> peaks at parity, axis CLOSED'). This round is a deliberate REOPENING, and the reopening argument is NARROW: every prior FPU cell measured a NEURAL or VALUE-BLENDED agent, and NONE of them could have measured the classical champion, because the knob was structurally unreachable on the champion's backend until 2026-08-29 (rust_agent.search_config_rs passed a hard-coded None). The prior evidence is not wrong; it is about a different agent.",
+    "\u26d4 The prior-art figures (+45.4 / +31.4 elo at n=200; the M3 curve peaking at parity) are CONTEXT ONLY \u2014 never pooled, never z-combined, never a gate input. They are CROSS-ERA as well as cross-band, which is strictly worse than the 1.8-2.2x cross-band over-dispersion CL-068 measured.",
+    "\u26d4 Nothing here is a bracket. Two fpu doses give a DIRECTION; they do not locate an optimum and no interpolation between 0.2 and 0.4 is licensed (feedback_bracket_hyperparams: a peak at a ladder ENDPOINT is not bracketed, and two points are not a ladder).",
+    "\u26d4 THREE CELLS ARE THREE COMPARISONS. At the 2-sigma bar the family-wise false-fire rate under a global null is ~3 x 2.3% ~= 7%. No correction is applied \u2014 the bars are pre-registered and each cell is its own question \u2014 but the inflation is DISCLOSED on every branch, and a LONE firing cell beside two nulls is read as feedback_results_table_source_of_truth's NOISE SIGNATURE, not as a peak.",
+    "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind.",
+    "\u26a0\ufe0f elo may never be quoted bare. The deck-paired MARGIN carries every branch; the elo is reported beside it with its own CI, and a disagreement between the two is DISCLOSED rather than arbitrated."
+  ],
+  "void_banner": "\u26d4 at least one cell is U-VOID-INSTRUMENT \u2014 the instrument, not the world. That cell's statistics are printed as a COMPANION TABLE only, and no reading of any kind is taken from it. \u26a0\ufe0f The other cells are UNAFFECTED: they are separate questions on separate bands.",
+  "companions": {
+    "_warning": "\u26d4 COMPANIONS \u2014 NEVER A BRANCH INPUT.",
+    "prior_art": {
+      "verdict_fpu02_paired_n200 (2026-06-02)": {
+        "elo": 45.4,
+        "sigma": 24.5,
+        "z": 1.85,
+        "n_games": 200,
+        "agent": "NeuralMCTS, pathb_loop/ckpt/iter_11.pt priors + v2_7 leaf, c=3.0",
+        "note": "a SCREEN (z<2), never confirmed; results.csv row 68"
+      },
+      "verdict_fpu04_paired_n200 (2026-06-02)": {
+        "elo": 31.4,
+        "sigma": 24.5,
+        "z": 1.28,
+        "n_games": 200,
+        "agent": "same, fpu 0.4",
+        "note": "a SCREEN (z<2), never confirmed; results.csv row 69"
+      },
+      "m3 FPU curve (2026-07-02/03, results.csv rows 233-236)": {
+        "winrates": {
+          "0.4": 0.391,
+          "0.6": 0.496,
+          "0.8": 0.4825,
+          "1.0": 0.476
+        },
+        "n_games": 400,
+        "agent": "iter_02+warmstart ADDITIVE value-blend b=0.27 vs pure-v2.9 anchor, sims=100, band 6.0e9",
+        "note": "\u26d4 THE STRONGEST PRIOR AGAINST THIS ROUND: the curve PEAKS AT PARITY (0.496 at fpu 0.6) and rolls off. Recorded reading: 'FPU removes the weak value's HARM but cannot make it EXCEED' the anchor. \u26a0\ufe0f It measures FPU as a RESCUE for a bad learned value, on a 100-sim neural agent \u2014 NOT as a lever on the classical champion's 1376-sim heuristic-prior search."
+      }
+    },
+    "prior_art_warning": "\u26d4 CROSS-ERA AND CROSS-BAND. Never pooled, never z-combined, never a gate input. CL-068 measured 1.8-2.2x over-dispersion on merely CROSS-BAND contrasts; these are also cross-AGENT (neural / value-blended vs the classical champion) and cross-BUDGET.",
+    "fpu_dose_direction": {
+      "M_at_0.2": 2.95125,
+      "M_at_0.4": 0.7543859649122807,
+      "direction": "falling with dose",
+      "warning": "\u26d4\u26d4 NOT A BRACKET AND NOT A BRANCH INPUT. Two points do not locate an optimum, the two cells are on DIFFERENT BANDS (so CL-068's 1.8-2.2x over-dispersion applies to any contrast between them), and no interpolation between 0.2 and 0.4 is licensed (feedback_bracket_hyperparams)."
+    },
+    "family_wise": "\u26d4 THREE CELLS = THREE COMPARISONS. Family-wise false-fire rate under a global null at the 2-sigma bar is ~7%. No correction is applied (the bars are pre-registered and each cell is its own question) but a LONE firing cell beside two nulls is a NOISE SIGNATURE, not a peak."
+  }
+}
