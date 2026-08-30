@@ -1683,6 +1683,15 @@ class GameResult:
     # READ_RULE §2's `phi`: a cell whose sum is 0 never fired the surface and
     # `G-FIRE` VOIDS it — it must NOT be read as a null.
     cand_tiearb: dict | None = None
+    # ⭐ S1 §9.2(c) `R7`: the J-RULES PRIOR expansion census for THIS game, per
+    # side — {"total", "own_mover", "boosted"} read off FairAgentRs.stats() at
+    # game end (see _jr_expansions_telemetry for why a config echo is not
+    # enough). Both sides are ALWAYS stamped by a post-R7 run; None only on a
+    # record written before the field existed, which _jr_expansions_sum reads
+    # as zeros. An UNARMED side reads all-zero by construction — its invariant
+    # is `boosted == 0`, not `total > 0`.
+    cand_jr_expansions: dict | None = None
+    opp_jr_expansions: dict | None = None
     # WC TIE-BREAK (BACKLOG 2026-08-03 "WC tie-break rule flag"). `wc_tiebreak` is
     # the ARMED state this game was played under (rule of the MATCH — both seats,
     # not candidate-only); `wc_tie_resolved` is True only when the flag actually
@@ -2315,6 +2324,14 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
         latch_k=champ.latch_k,
         cand_jf=_cand_jf_telemetry(champ),
         cand_tiearb=_cand_tiearb_telemetry(champ),
+        # S1 §9.2(c) `R7` — the play-derived J-rules-prior witness, BOTH sides.
+        # The opponent is never armed (there is no --opp-jrules-prior knob), so
+        # its census is the zero control that makes the candidate's readable.
+        cand_jr_expansions=_jr_expansions_telemetry(
+            champ, side="candidate",
+            armed=_W.get("cand_jrules_prior") is not None),
+        opp_jr_expansions=_jr_expansions_telemetry(
+            rung, side="opponent", armed=False),
         opponent=_W.get("opponent", "h800"), **_opp_stats(rung),
         # Track-F Gate A: candidate oracle cost telemetry (empty {} for non-oracle cells,
         # so the fields stay at their dataclass-default zeros and _save omits them).
@@ -2427,6 +2444,103 @@ def _cand_tiearb_telemetry(champ) -> dict | None:
         "pickchanges_mid": int(s["tiearb_pickchanges_mid"]),
         "pickchanges_late": int(s["tiearb_pickchanges_late"]),
     }
+
+
+# --------------------------------------------------------------------------- #
+# S1 §9.2(c) `R7` — THE J-RULES-PRIOR EXPANSION CENSUS (both sides).           #
+#                                                                             #
+# ⛔ WHY THIS EXISTS. A cell's manifest is a CONFIG ECHO: it proves the knob   #
+# was REQUESTED. It cannot prove the knob BOUND. This program has banked that  #
+# mistake twice (the FPU knob that never bound; the phasegate smoke that       #
+# adjudicated nothing), and a `jrules_prior_scope` arm is exactly the shape    #
+# that hides it — surface B moves NO leaf hash, and under `scope="opp"` it     #
+# moves no ROOT prior either (the root's mover IS the root player), so a       #
+# dead-wired arm plays as the champion and passes every other gate looking     #
+# healthy.                                                                     #
+#                                                                             #
+# These three counters are derived from PLAY: `carc_core::search` counts every #
+# node EXPANSION inside the dose branch, `fair::search_worlds` sums them over  #
+# the k determinized worlds of a decision, and `fair::FairAgent` accumulates   #
+# them over the game. On a scoped side `boosted > 0` is the liveness bit and   #
+# the partition (`boosted == total - own_mover` under "opp",                   #
+# `boosted == own_mover` under "own") is the scoping bit.                      #
+#                                                                             #
+# ⚠️ AN UNARMED SIDE READS ALL-ZERO. The per-tree counters live INSIDE the     #
+# `jrules_prior_dose != 0.0` branch so champion traffic keeps its pre-change   #
+# short-circuit. The assertable invariant for an unarmed side is therefore     #
+# `boosted == 0`, NEVER `total > 0`.                                          #
+# --------------------------------------------------------------------------- #
+_JR_KEYS = ("total", "own_mover", "boosted")
+
+
+def _jr_zero() -> dict:
+    return {k: 0 for k in _JR_KEYS}
+
+
+def _fair_rs(agent):
+    """The `carc_rs.FairAgentRs` behind an agent, whatever wrapper it wears.
+
+    The rust candidate is a bare `RustFairAgent` (`build_fair_champion` returns
+    the WHOLE handoff, not a prefix); a `_MarginalizedHandoff` keeps its agent
+    at `._prefix`. A python-backend side has no rust agent at all -> None."""
+    for obj in (agent, getattr(agent, "_prefix", None)):
+        rs = getattr(obj, "_rs", None)
+        if rs is not None:
+            return rs
+    return None
+
+
+def _jr_expansions_telemetry(agent, *, side: str, armed: bool) -> dict:
+    """Per-game census for ONE side. ALWAYS a dict with all three keys.
+
+    Never None and never partial: an absent key is indistinguishable from a
+    zero boost, and the whole point of this surface is that "the arm did not
+    fire" and "nobody looked" must not wear the same shape.
+
+    `armed` = this side was configured with a nonzero-dose J-rules prior. When
+    it is, a missing rust agent or a `stats()` without the counters is a WIRING
+    BUG (or a stale `carc_rs` wheel) and raises rather than stamping zeros —
+    zeros there would grade a champion-vs-champion null wearing the arm's name.
+    When it is not, both are legitimate (python backend, pre-R7 wheel) and the
+    side reads all-zero.
+
+    NOTE this does not itself judge `boosted > 0`: liveness is the round's gate
+    to adjudicate over the whole cell, not a per-game abort."""
+    rs = _fair_rs(agent)
+    if rs is None:
+        if armed:
+            raise RuntimeError(
+                f"the {side} is armed with a J-rules prior but has no FairAgentRs "
+                "(surface B's expansion census is rust-only) — the arm cannot "
+                "have bound, and a zero census here would be indistinguishable "
+                "from an inert one")
+        return _jr_zero()
+    s = rs.stats()
+    if "jr_expansions_total" not in s:
+        if armed:
+            raise RuntimeError(
+                f"the {side} is armed with a J-rules prior but FairAgentRs.stats() "
+                "carries no jr_expansions_* counters — a STALE carc_rs wheel that "
+                "predates R7. Rebuild the wheel on THIS box; running the cell "
+                "without the play-derived witness banks a config echo.")
+        return _jr_zero()
+    return {
+        "total": int(s["jr_expansions_total"]),
+        "own_mover": int(s["jr_expansions_own_mover"]),
+        "boosted": int(s["jr_expansions_boosted"]),
+    }
+
+
+def _jr_expansions_sum(results, field: str) -> dict:
+    """Sum one side's per-game censuses over the cell. Missing/None records
+    contribute zeros (a legacy record predates the field entirely), so the
+    summed block is ALWAYS complete."""
+    out = _jr_zero()
+    for r in results:
+        d = getattr(r, field, None) or {}
+        for k in _JR_KEYS:
+            out[k] += int(d.get(k, 0))
+    return out
 
 
 def _paired_z(results):
@@ -2861,6 +2975,37 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             print("  ⛔ G-FIRE: phi < 1.0 — THE ARBITRATION SURFACE IS EFFECTIVELY "
                   "INERT AND THIS CELL IS U-UNREADABLE (READ_RULE §3). Do NOT read "
                   "it as a null.")
+    # ⭐⭐ S1 §9.2(c) `R7` — THE J-RULES-PRIOR EXPANSION CENSUS, per side,
+    # summed over the cell. UNCONDITIONALLY present (the same 3-state
+    # "absent is unknown-not-zero" convention as wc_tiebreak below): a cell that
+    # never armed the surface says so with zeros, and an ABSENT block means a
+    # pre-R7 harness — never "the arm did not boost".
+    #
+    # TWO ADDRESSES for the same three numbers, on purpose, the way
+    # `cand_tiearb.fires`/`fired_plies` are: `jr_expansions.{candidate,opponent}`
+    # is the nested per-side form, `{cand,opp}_jr_expansions` the flat alias.
+    # Voiding a real cell on a key spelling is a worse failure than a duplicated
+    # dict.
+    #
+    # ⚠️ READING IT. On a scoped candidate: `boosted > 0` is LIVENESS (the arm
+    # bound at all) and the partition is SCOPING — under scope="opp",
+    # `boosted == total - own_mover`; under "own", `boosted == own_mover`. The
+    # opponent side is the zero control (no --opp-jrules-prior knob exists), and
+    # an unarmed side reads all-zero because the counters live inside the dose
+    # branch: assert `boosted == 0` on it, never `total > 0`.
+    _jr_cand = _jr_expansions_sum(results, "cand_jr_expansions")
+    _jr_opp = _jr_expansions_sum(results, "opp_jr_expansions")
+    jr_summary = {
+        "jr_expansions": {"candidate": _jr_cand, "opponent": _jr_opp},
+        "cand_jr_expansions": _jr_cand,
+        "opp_jr_expansions": _jr_opp,
+    }
+    if _jr_cand["boosted"] or _jr_opp["boosted"]:
+        print(f"J-rules prior census (expansions, {n} games): candidate "
+              f"{_jr_cand['boosted']} boosted of {_jr_cand['total']} "
+              f"({_jr_cand['own_mover']} own-mover); opponent "
+              f"{_jr_opp['boosted']} boosted of {_jr_opp['total']} "
+              f"({_jr_opp['own_mover']} own-mover)")
     # THE EXCLUSION BLOCK — always present (h2h parity: a zero rate is STATED).
     _fail_block = _failure_block(results, failures, resolved)
     _shout_failures(_fail_block, n)
@@ -2894,6 +3039,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         "champ_timeouts": sum(r.champ_timeouts for r in results),
         **oracle_summary,
         **tiearb_summary,
+        **jr_summary,
         **wc_summary,
     }
 

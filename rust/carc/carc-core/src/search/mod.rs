@@ -65,7 +65,7 @@ pub mod trace;
 pub mod window_diag;
 
 pub use fxhash::FxBuildHasher;
-pub use session::{Reroot, SearchSession};
+pub use session::{carried_scope_guard, Reroot, SearchSession};
 pub use trace::{JsonlTrace, TraceSink};
 pub use window_diag::{DroppedPlacement, EmptyMaskCause, EmptyMaskDiag};
 
@@ -506,6 +506,50 @@ pub struct SearchResult {
     pub jr_expansions_total: u64,
     pub jr_expansions_own_mover: u64,
     pub jr_expansions_boosted: u64,
+}
+
+/// S1 §9.2(c) — the J-rules-prior expansion census SUMMED over many searches.
+///
+/// [`SearchResult`] carries the census of ONE tree, and one tree is not a unit
+/// anybody can read a cell off: a PIMC decision searches `k_dets` determinized
+/// worlds and a game makes dozens of decisions.  The play-derived witness a
+/// cell needs is therefore a SUM — this type, folded world -> decision -> game
+/// ([`crate::fair::search_worlds`] then [`crate::fair::FairAgent`]).
+///
+/// The counters are plain counts over DISJOINT trees, so they add, and the
+/// per-tree decomposition identity survives the summation term by term:
+///
+/// * `All` ⇒ `boosted == total`
+/// * `Own` ⇒ `boosted == own_mover`
+/// * `Opp` ⇒ `boosted == total - own_mover`
+///
+/// ⚠️ All three stay 0 whenever `jrules_prior_dose == 0.0` (the champion) —
+/// the per-tree counters live INSIDE the dose branch so champion traffic keeps
+/// its pre-change short-circuit.  An unarmed side's readable invariant is
+/// therefore `boosted == 0`, not `total > 0`.
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
+pub struct JrExpansions {
+    pub total: u64,
+    pub own_mover: u64,
+    pub boosted: u64,
+}
+
+impl JrExpansions {
+    /// The census of one finished search.
+    pub fn of(r: &SearchResult) -> Self {
+        JrExpansions {
+            total: r.jr_expansions_total,
+            own_mover: r.jr_expansions_own_mover,
+            boosted: r.jr_expansions_boosted,
+        }
+    }
+
+    /// Fold another census in (world -> decision -> game).
+    pub fn add(&mut self, o: JrExpansions) {
+        self.total += o.total;
+        self.own_mover += o.own_mover;
+        self.boosted += o.boosted;
+    }
 }
 
 pub struct Searcher<'a> {

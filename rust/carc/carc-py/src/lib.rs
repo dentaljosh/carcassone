@@ -2013,12 +2013,20 @@ impl PyPersistentSearcher {
     /// over the recorded prefix is the byte-equal counterpart of
     /// `root_replay.replay_actions`, already gated by G1/G4, and duplicating it
     /// here would be a second thing to keep true.
+    ///
+    /// ⛔ FAILS CLOSED on `jrules_prior_scope` "own"/"opp" (R6, merge review
+    /// 2026-08-30): scope is latched at node EXPANSION and never recomputed, so
+    /// a tree that outlives its root keeps boosts earned under a different
+    /// seat. See `carc_core::search::carried_scope_guard` for the full argument
+    /// — this is the earliest point at which a python caller can be told.
     #[new]
-    fn new(mirror: &PyMirrorState, cfg: &PySearchConfig) -> Self {
-        PyPersistentSearcher {
+    fn new(mirror: &PyMirrorState, cfg: &PySearchConfig) -> PyResult<Self> {
+        let session = search::SearchSession::try_new(cfg.inner.clone())
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        Ok(PyPersistentSearcher {
             game: mirror.game.clone(),
-            session: search::SearchSession::new(cfg.inner.clone()),
-        }
+            session,
+        })
     }
 
     // --- the mirror surface (this object owns its own game) ----------------
@@ -2610,6 +2618,40 @@ impl PyFairAgent {
         )?;
         d.set_item("jf_dropped_total", a.jf_dropped_total)?;
         d.set_item("jf_applicable_moves", a.jf_applicable_moves)?;
+        // ⭐⭐ S1 §9.2(c) `R7` — the J-RULES PRIOR (surface B) EXPANSION CENSUS,
+        // accumulated over every PIMC world of every decision this agent made
+        // (one agent per game in the harness, so: per game). Keys are ALWAYS
+        // present, the same surface-C convention as the block above, so a
+        // summary diff between arms is a VALUE diff and an ABSENT key means a
+        // STALE WHEEL — never "the arm did not boost".
+        //
+        // ⛔ THE POINT: `jrules_prior_dose`/`_scope` in a manifest are a CONFIG
+        // ECHO. They prove the knob was requested; they cannot prove it BOUND.
+        // Twice now this program has banked a cell whose knob never bound (the
+        // FPU knob; the phasegate smoke). These three counters are derived from
+        // PLAY: on a scoped cell `boosted > 0` is the liveness bit and the
+        // partition (`boosted == total - own_mover` under scope="opp",
+        // `boosted == own_mover` under scope="own") is the scoping bit.
+        //
+        // An UNARMED side reports all-zero (the per-tree counters live inside
+        // the dose branch, so champion traffic keeps its short-circuit): its
+        // assertable invariant is `boosted == 0`, NOT `total > 0`.
+        d.set_item("jr_expansions_total", a.jr_expansions.total)?;
+        d.set_item("jr_expansions_own_mover", a.jr_expansions.own_mover)?;
+        d.set_item("jr_expansions_boosted", a.jr_expansions.boosted)?;
+        // The RESOLVED prior knobs beside their play witness — a config echo is
+        // not evidence on its own, but reading the two together is how a gate
+        // tells "scope=opp, and it bound" from "scope defaulted to all".
+        d.set_item("jrules_prior_dose", a.cfg.search.jrules_prior_dose)?;
+        d.set_item(
+            "jrules_prior_scope",
+            match a.cfg.search.jrules_prior_scope {
+                search::JrPriorScope::All => "all",
+                search::JrPriorScope::Own => "own",
+                search::JrPriorScope::Opp => "opp",
+            },
+        )?;
+        d.set_item("jrules_prior_mask", a.cfg.search.jrules_prior_mask)?;
         d.set_item("jrules_filter_mask", a.cfg.search.jrules_filter_mask)?;
         d.set_item("jrules_filter_min_keep", a.cfg.search.jrules_filter_min_keep)?;
         // TIE ARBITER (tiearb2 Stage 2 Phase B) cumulative counters. Keys are
@@ -2708,6 +2750,12 @@ impl PyFairAgent {
         d.set_item("jf_dropped", m.jf_dropped.clone())?;
         d.set_item("jf_fires", m.jf_fires.to_vec())?;
         d.set_item("jf_yields", m.jf_yields.to_vec())?;
+        // S1 §9.2(c) `R7`: THIS decision's J-rules-prior expansion census,
+        // summed over its k determinized worlds (the cumulative game total is
+        // in `stats()`). All-zero on champion traffic.
+        d.set_item("jr_expansions_total", m.jr_expansions.total)?;
+        d.set_item("jr_expansions_own_mover", m.jr_expansions.own_mover)?;
+        d.set_item("jr_expansions_boosted", m.jr_expansions.boosted)?;
         // TIE ARBITER per-decision record. `tiearb_champ_pick` is the
         // champion's own `pooled_q_argmax` pick — the pick-change baseline, and
         // meaningful only on a decision where `tiearb_fired` is true.
