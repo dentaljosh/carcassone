@@ -1,0 +1,27 @@
+== L1 delta-decompose SPIKE ==
+decomp fields compared per position: 25 (19 structural + 6 city root arrays)
+GATE 1 (deterministic corpus): 1295 positions, PASS
+GATE 2 (500 random games): 35959 tile edges checked, PASS
+BENCH samples: 575
+  rebuild ns = -87.3 + 76.301 * placed   (R2 0.9962)
+  delta   ns = 139.5 + 61.854 * placed   (R2 0.9266)
+  placed   n   rebuild_ns   delta_ns   factor
+    0-7     56       311.2      422.0    0.74x
+    8-15    64       821.6      888.7    0.92x
+   16-23    64      1337.7     1284.1    1.04x
+   24-31    64      1971.8     1766.3    1.12x
+   32-39    64      2569.5     2266.5    1.13x
+   40-47    64      3149.2     2894.6    1.09x
+   48-55    64      3831.1     3287.9    1.17x
+   56-63    64      4518.8     3728.5    1.21x
+   64-71    64      5090.9     4479.2    1.14x
+   72-79     7      5504.9     5364.9    1.03x
+  BENCH A overall decompose factor: 1.125x (place+undo)   0.675x (clone+place)
+  CEILING (refresh-only, any exact-label delta): 1.576x   [delta realises 22% of it]
+BENCH B roots: 20 (690 candidates total)
+  per candidate: clone+advance 388 ns | +rebuild+leaf 4982 ns | +delta+leaf 4504 ns
+  BENCH B search-slice factor (whole candidate eval): 1.106x
+  BENCH B decompose+leaf-only factor: 1.116x
+--- cpu ---
+model name	: Intel(R) Core(TM) i7-14650HX
+24

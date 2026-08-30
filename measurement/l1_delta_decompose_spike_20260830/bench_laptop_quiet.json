@@ -1,0 +1,26 @@
+{
+  "gate1_corpus_positions": 1295,
+  "gate1_pass": true,
+  "gate2_games": 500,
+  "gate2_tile_edges": 35959,
+  "gate2_pass": true,
+  "rebuild_law": {"intercept_ns": -87.270, "slope_ns_per_placed": 76.3008, "r2": 0.99624},
+  "delta_law": {"intercept_ns": 139.544, "slope_ns_per_placed": 61.8542, "r2": 0.92661},
+  "bench_a_buckets": [
+    {"placed_lo": 0, "n": 56, "rebuild_ns": 311.21, "delta_ns": 421.98, "factor": 0.7375},
+    {"placed_lo": 8, "n": 64, "rebuild_ns": 821.62, "delta_ns": 888.67, "factor": 0.9245},
+    {"placed_lo": 16, "n": 64, "rebuild_ns": 1337.66, "delta_ns": 1284.12, "factor": 1.0417},
+    {"placed_lo": 24, "n": 64, "rebuild_ns": 1971.80, "delta_ns": 1766.30, "factor": 1.1163},
+    {"placed_lo": 32, "n": 64, "rebuild_ns": 2569.53, "delta_ns": 2266.47, "factor": 1.1337},
+    {"placed_lo": 40, "n": 64, "rebuild_ns": 3149.19, "delta_ns": 2894.61, "factor": 1.0880},
+    {"placed_lo": 48, "n": 64, "rebuild_ns": 3831.09, "delta_ns": 3287.87, "factor": 1.1652},
+    {"placed_lo": 56, "n": 64, "rebuild_ns": 4518.76, "delta_ns": 3728.47, "factor": 1.2120},
+    {"placed_lo": 64, "n": 64, "rebuild_ns": 5090.93, "delta_ns": 4479.19, "factor": 1.1366},
+    {"placed_lo": 72, "n": 7, "rebuild_ns": 5504.86, "delta_ns": 5364.89, "factor": 1.0261}
+  ],
+  "bench_a_overall_factor": 1.1252,
+  "bench_a_clone_factor": 0.6746,
+  "bench_a_refresh_only_ceiling_factor": 1.5756,
+  "bench_b": {"candidate_evals": 41400, "advance_ns": 387.74, "rebuild_total_ns": 4981.77, "delta_total_ns": 4503.99, "search_slice_factor": 1.1061, "decompose_plus_leaf_factor": 1.1161},
+  "all_gates_pass": true
+}
