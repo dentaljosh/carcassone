@@ -98,6 +98,25 @@ pub enum JrPriorScope {
     /// analogue of the static cell's `jrules_symmetric = False` open question);
     /// needs its own prereg, never a rung of the primary cell's ladder.
     Own,
+    /// S1 (`measurement/s1_asymmetry_prep/DESIGN.md`): only nodes where the
+    /// root player is **NOT** to move — the OPPONENT-MODEL arm. The champion's
+    /// own move ordering is untouched at every own-mover node (the ROOT
+    /// included, since the root's mover IS the root player), so the whole
+    /// behavioural difference is search-mediated: it arrives through interior
+    /// opponent expansions only, where the modelled opponent now orders its
+    /// moves by the anchor's J bundle (which carries the J2 farm-steal JOIN
+    /// predicate — the invasion predicate). The LEAF VALUE backed up is
+    /// untouched on every path and no leaf hash moves, exactly as under
+    /// [`JrPriorScope::All`]/[`JrPriorScope::Own`].
+    ///
+    /// ⚠️ **This is the exact complement of [`JrPriorScope::Own`]** — see
+    /// [`SearchResult::jr_expansions_boosted`] for the machine-checkable
+    /// decomposition identity (`Own ∪ Opp = All`, disjoint).
+    ///
+    /// ⚠️ **Root priors are IDENTICAL to the champion's by design.** Any
+    /// liveness control that asserts moved ROOT PRIORS is *wrong* for this
+    /// scope and will fail on a correctly wired build (DESIGN §9.2).
+    Opp,
 }
 
 /// `HeuristicPriorConfig.leaf_quantize`.
@@ -467,6 +486,26 @@ pub struct SearchResult {
     pub root_priors: Vec<(i32, f64)>,
     pub node_count: usize,
     pub leaf_evals: u64,
+    /// S1 §9.2(c) — the J-rules-prior EXPANSION CENSUS for this search.
+    /// All three are `0` unless `jrules_prior_dose != 0.0` (the counters live
+    /// inside the dose branch so champion traffic is untouched).
+    ///
+    /// `jr_expansions_total` = every expansion the search performed;
+    /// `jr_expansions_own_mover` = those whose mover IS the root player;
+    /// `jr_expansions_boosted` = those the active scope actually boosted.
+    ///
+    /// The decomposition identity, checkable **within one tree** (and therefore
+    /// exact, unlike a cross-scope set comparison, whose trees diverge the
+    /// moment a prior moves):
+    ///
+    /// * `All` ⇒ `boosted == total`
+    /// * `Own` ⇒ `boosted == own_mover`
+    /// * `Opp` ⇒ `boosted == total - own_mover`
+    ///
+    /// i.e. `Own` and `Opp` boost disjoint sets whose union is `All`'s.
+    pub jr_expansions_total: u64,
+    pub jr_expansions_own_mover: u64,
+    pub jr_expansions_boosted: u64,
 }
 
 pub struct Searcher<'a> {
@@ -479,8 +518,15 @@ pub struct Searcher<'a> {
     scratch: LeafScratch,
     /// The seat this search() call is FOR — latched at [`Searcher::search`],
     /// read ONLY by the J-rules prior surface under
-    /// [`JrPriorScope::Own`]. `None` until a search starts.
+    /// [`JrPriorScope::Own`] and [`JrPriorScope::Opp`]. `None` until a search
+    /// starts.
     root_player: Option<usize>,
+    /// S1 §9.2(c) expansion census — see [`SearchResult::jr_expansions_total`].
+    /// Reset at every [`Searcher::search`] entry so a reused `Searcher`
+    /// reports PER-SEARCH counts, exactly like `root_player`'s latch.
+    jr_expansions_total: u64,
+    jr_expansions_own_mover: u64,
+    jr_expansions_boosted: u64,
     /// J-RULES ROOT FILTER surface C: when set (only ever by
     /// [`Searcher::search_with_root_allow`], only ever by the fair agent), the
     /// ROOT node's legal-action set is restricted to this list BEFORE the prior
@@ -499,6 +545,9 @@ impl<'a> Searcher<'a> {
             leaf_evals: 0,
             scratch: LeafScratch::new(),
             root_player: None,
+            jr_expansions_total: 0,
+            jr_expansions_own_mover: 0,
+            jr_expansions_boosted: 0,
             root_allow: None,
             trace: None,
         }
@@ -511,6 +560,9 @@ impl<'a> Searcher<'a> {
             leaf_evals: 0,
             scratch: LeafScratch::new(),
             root_player: None,
+            jr_expansions_total: 0,
+            jr_expansions_own_mover: 0,
+            jr_expansions_boosted: 0,
             root_allow: None,
             trace: Some(trace),
         }
@@ -631,11 +683,30 @@ impl<'a> Searcher<'a> {
         // rule — blind to what a lookahead draws), and each child's Δleaf gets
         // `dose * jrules_prior_term(child)` added before the softmax. Only the
         // PRIORS move; `leaf_parent`, `value` and everything backed up do not.
-        let jr_on = self.cfg.jrules_prior_dose != 0.0
-            && match self.cfg.jrules_prior_scope {
+        //
+        // S1: the three scopes partition the expansion population by whether
+        // the node's mover is the root player. The census counters below are
+        // the machine-checkable form of that partition (DESIGN §9.2 leg (c));
+        // they are maintained ONLY inside the dose!=0 branch, so dose-0
+        // (champion) traffic keeps the pre-change short-circuit untouched.
+        let jr_on = if self.cfg.jrules_prior_dose != 0.0 {
+            let own_node = self.root_player == Some(mover);
+            let on = match self.cfg.jrules_prior_scope {
                 JrPriorScope::All => true,
-                JrPriorScope::Own => self.root_player == Some(mover),
+                JrPriorScope::Own => own_node,
+                JrPriorScope::Opp => !own_node,
             };
+            self.jr_expansions_total += 1;
+            if own_node {
+                self.jr_expansions_own_mover += 1;
+            }
+            if on {
+                self.jr_expansions_boosted += 1;
+            }
+            on
+        } else {
+            false
+        };
         let jr_clock = if jr_on {
             // Re-decompose the PARENT (the child loop overwrites the scratch
             // decomp per child) — one extra decomposition per expansion.
@@ -956,8 +1027,14 @@ impl<'a> Searcher<'a> {
     /// (`reuse_tree=False` ⇒ `clear()` before every move).
     pub fn search(&mut self, root_game: &Game) -> Result<SearchResult, SearchError> {
         // Latched per search() call (covers the session's search_carry too,
-        // which drives this same entry point). Only JrPriorScope::Own reads it.
+        // which drives this same entry point). Only JrPriorScope::Own and
+        // JrPriorScope::Opp read it.
         self.root_player = Some(root_game.state.current_player);
+        // S1 §9.2(c): the census is PER SEARCH, latched alongside root_player
+        // (a reused Searcher must not report a running total).
+        self.jr_expansions_total = 0;
+        self.jr_expansions_own_mover = 0;
+        self.jr_expansions_boosted = 0;
         let root = self.create_or_get(root_game);
         if !self.tree.get(root).expanded && !self.tree.get(root).is_terminal {
             // `_eval_boards` -> float32 values array -> `float(values_b[0])`.
@@ -1022,6 +1099,9 @@ impl<'a> Searcher<'a> {
                 .collect(),
             node_count: self.tree.len(),
             leaf_evals: self.leaf_evals,
+            jr_expansions_total: self.jr_expansions_total,
+            jr_expansions_own_mover: self.jr_expansions_own_mover,
+            jr_expansions_boosted: self.jr_expansions_boosted,
         })
     }
 
@@ -1441,6 +1521,312 @@ mod tests {
         .unwrap();
         // The ROOT expansion is mover==root_player under both scopes: identical.
         for (x, y) in all.root_priors.iter().zip(own.root_priors.iter()) {
+            assert_eq!((x.0, x.1.to_bits()), (y.0, y.1.to_bits()));
+        }
+    }
+
+    // ---- S1: JrPriorScope::Opp (measurement/s1_asymmetry_prep) ------------ //
+
+    /// Surface B's dose-0 identity gate, re-run with the scope moved to the NEW
+    /// arm: dose 0.0 short-circuits before the scope is read, so `Opp` at dose 0
+    /// is still the champion byte-for-byte. Without this, an `Opp` arm could
+    /// smuggle a behaviour change into "the default" and no hash gate would
+    /// notice (surface B moves no leaf hash by construction).
+    #[test]
+    fn jrules_prior_dose0_with_scope_opp_is_bit_identical() {
+        let g = midgame("28000000000", 30);
+        let base = search_single(&g, &small_cfg(256)).unwrap();
+        let moved = search_single(
+            &g,
+            &SearchConfig {
+                jrules_prior_dose: 0.0,
+                jrules_prior_mask: 27,
+                jrules_prior_scope: JrPriorScope::Opp,
+                ..small_cfg(256)
+            },
+        )
+        .unwrap();
+        assert_same_search(&base, &moved);
+        // The census is inside the dose branch, so dose 0 must count NOTHING.
+        assert_eq!(
+            (
+                moved.jr_expansions_total,
+                moved.jr_expansions_own_mover,
+                moved.jr_expansions_boosted
+            ),
+            (0, 0, 0)
+        );
+    }
+
+    /// ⭐ DESIGN §9.2 leg (a) — THE INVERTED LIVENESS LEG.
+    ///
+    /// Under `Opp` the root's mover IS the root player, so the boost is OFF at
+    /// the root **by design**: root priors and the root's backed-up leaf value
+    /// must be bit-identical to the champion's. A MOVED root prior here is the
+    /// defect (a mis-wired scope gate), not the signal — which is precisely why
+    /// the surface-B positive control (`root priors must move`) cannot serve
+    /// this scope and had to be replaced.
+    #[test]
+    fn s1_opp_leaves_the_root_priors_identical_to_the_champion() {
+        for (seed, plies) in [("28000000000", 30), ("42", 34), ("7", 38)] {
+            let g = midgame(seed, plies);
+            let champ = search_single(&g, &small_cfg(256)).unwrap();
+            let opp = search_single(
+                &g,
+                &SearchConfig {
+                    jrules_prior_dose: 1.0,
+                    jrules_prior_scope: JrPriorScope::Opp,
+                    ..small_cfg(256)
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                champ.root_priors.len(),
+                opp.root_priors.len(),
+                "{seed}: root candidate set moved — Opp must not touch the root"
+            );
+            for (x, y) in champ.root_priors.iter().zip(opp.root_priors.iter()) {
+                assert_eq!(
+                    (x.0, x.1.to_bits()),
+                    (y.0, y.1.to_bits()),
+                    "{seed}: scope=opp MOVED a root prior — the scope gate is \
+                     mis-wired (the root's mover IS the root player)"
+                );
+            }
+            assert_eq!(
+                champ.root_leaf_value.to_bits(),
+                opp.root_leaf_value.to_bits(),
+                "{seed}: scope=opp moved the root LEAF VALUE — surface B moves \
+                 priors only"
+            );
+        }
+    }
+
+    /// ⭐ DESIGN §9.2 leg (b) — the POSITIVE half.
+    ///
+    /// With the root untouched (leg a), the only way `Opp` can be alive is
+    /// through INTERIOR opponent expansions — which the search must be deep
+    /// enough to REACH and then deep enough to let the boost propagate back.
+    ///
+    /// ⚠️ **DEVIATION FROM DESIGN §9.2, measured not assumed.** The design
+    /// names ">= 256 sims" and "the root visit distribution". Both are too
+    /// weak: at 256 sims this surface is *entirely* unexpressed on all three
+    /// probe roots (identical `node_count`, `root_w` bits, root visits and
+    /// pooled stats), and even at 1376 the top-level root VISIT COUNTS move on
+    /// only 2 of the 3. What moves on 3 of 3 at 1376 is `pooled_stats` — the
+    /// deduped, N>0, root-POV-signed surface the PIMC pool actually argmaxes,
+    /// i.e. the decision surface. So this control runs at **1376 sims, the
+    /// deploy sims-per-determinization of record (k16 x 1376 = 22016)**, and
+    /// asserts on the decision surface rather than the raw child counts.
+    ///
+    /// That 256-sim flatline is not a defect — it is a real, cheap prior for
+    /// G1: opponent-node priors need depth to express at all.
+    #[test]
+    fn s1_opp_moves_the_pooled_root_at_the_deploy_sims_per_det() {
+        const DEPLOY_SIMS_PER_DET: usize = 1376;
+        for (seed, plies) in [("28000000000", 30), ("42", 34), ("7", 38)] {
+            let g = midgame(seed, plies);
+            let champ = search_single(&g, &small_cfg(DEPLOY_SIMS_PER_DET)).unwrap();
+            let opp = search_single(
+                &g,
+                &SearchConfig {
+                    jrules_prior_dose: 1.0,
+                    jrules_prior_scope: JrPriorScope::Opp,
+                    ..small_cfg(DEPLOY_SIMS_PER_DET)
+                },
+            )
+            .unwrap();
+            // The boost must have actually fired at interior opponent nodes,
+            // or a flat result would be uninformative rather than damning.
+            assert!(
+                opp.jr_expansions_boosted > 0,
+                "{seed}: scope=opp boosted ZERO expansions at {DEPLOY_SIMS_PER_DET} \
+                 sims — the search never reached an opponent node, so this root \
+                 cannot speak to liveness"
+            );
+            let moved = champ.pooled_stats.len() != opp.pooled_stats.len()
+                || champ
+                    .pooled_stats
+                    .iter()
+                    .zip(opp.pooled_stats.iter())
+                    .any(|(x, y)| x.0 != y.0 || x.1 != y.1 || x.2.to_bits() != y.2.to_bits());
+            assert!(
+                moved,
+                "{seed}: scope=opp left the POOLED root stats bit-identical to the \
+                 champion's at {DEPLOY_SIMS_PER_DET} sims. With the root priors \
+                 identical by design (leg a), a bit-identical decision surface is \
+                 the signature of a dead-wired opponent-node boost"
+            );
+        }
+    }
+
+    /// The measured companion to leg (b), pinned so a future change that makes
+    /// the surface express at shallow depth is NOTICED rather than absorbed:
+    /// at 256 sims `scope=opp` is entirely unexpressed on the control root —
+    /// same node count, same root_w bits, same pooled stats — even though the
+    /// gate demonstrably fired at hundreds of opponent expansions.
+    ///
+    /// This is a DESCRIPTIVE pin, not a contract: if it ever fails, the right
+    /// response is to re-read it as news (the surface got stronger), not to
+    /// delete it.
+    #[test]
+    fn s1_opp_is_unexpressed_at_shallow_depth_on_the_control_root() {
+        let g = midgame("28000000000", 30);
+        let champ = search_single(&g, &small_cfg(256)).unwrap();
+        let opp = search_single(
+            &g,
+            &SearchConfig {
+                jrules_prior_dose: 1.0,
+                jrules_prior_scope: JrPriorScope::Opp,
+                ..small_cfg(256)
+            },
+        )
+        .unwrap();
+        assert!(
+            opp.jr_expansions_boosted > 0,
+            "the gate did not fire at all — this pin is about EXPRESSION, not wiring"
+        );
+        assert_eq!(champ.node_count, opp.node_count);
+        assert_eq!(champ.root_w.to_bits(), opp.root_w.to_bits());
+        assert_eq!(champ.pooled_stats.len(), opp.pooled_stats.len());
+    }
+
+    /// ⭐ DESIGN §9.2 leg (c) — the decomposition identity `Own ∪ Opp = All`,
+    /// disjoint.
+    ///
+    /// Read WITHIN each tree, which is the only exact form: the moment a prior
+    /// moves the three scopes' trees diverge, so a cross-scope set comparison
+    /// of node populations is not well defined. Within one tree the identity is
+    /// exact and non-vacuous, because it pins `boosted` against an
+    /// independently-counted partition of the SAME expansion population.
+    #[test]
+    fn s1_scope_partition_identity_own_plus_opp_equals_all() {
+        for (seed, plies) in [("28000000000", 30), ("42", 34), ("7", 38)] {
+            let g = midgame(seed, plies);
+            let mk = |scope| {
+                search_single(
+                    &g,
+                    &SearchConfig {
+                        jrules_prior_dose: 1.0,
+                        jrules_prior_scope: scope,
+                        ..small_cfg(256)
+                    },
+                )
+                .unwrap()
+            };
+            let all = mk(JrPriorScope::All);
+            let own = mk(JrPriorScope::Own);
+            let opp = mk(JrPriorScope::Opp);
+
+            // All boosts the WHOLE population.
+            assert_eq!(
+                all.jr_expansions_boosted, all.jr_expansions_total,
+                "{seed}: scope=all did not boost every expansion"
+            );
+            // Own boosts exactly the own-mover partition...
+            assert_eq!(
+                own.jr_expansions_boosted, own.jr_expansions_own_mover,
+                "{seed}: scope=own boosted a non-own-mover expansion"
+            );
+            // ...and Opp boosts exactly its complement. Disjoint by
+            // construction (the two predicates are negations), union = total.
+            assert_eq!(
+                opp.jr_expansions_boosted,
+                opp.jr_expansions_total - opp.jr_expansions_own_mover,
+                "{seed}: scope=opp is not the complement of scope=own"
+            );
+            // Non-vacuity: both halves of the partition must be non-empty, or
+            // the identity holds trivially and proves nothing.
+            assert!(
+                opp.jr_expansions_own_mover > 0
+                    && opp.jr_expansions_total > opp.jr_expansions_own_mover,
+                "{seed}: the expansion population is one-sided (own {} of {}) \
+                 — the partition identity would be vacuous here",
+                opp.jr_expansions_own_mover,
+                opp.jr_expansions_total
+            );
+        }
+    }
+
+    /// `root_player` is latched PER SEARCH, and so is the census. Two searches
+    /// from the SAME `Searcher` at roots with different movers must each report
+    /// their own partition — a stale latch would make `Opp` boost the wrong
+    /// half in every PIMC world after the first (each determinized world drives
+    /// this same entry point).
+    #[test]
+    fn s1_root_player_and_census_latch_per_search_not_per_searcher() {
+        let cfg = SearchConfig {
+            jrules_prior_dose: 1.0,
+            jrules_prior_scope: JrPriorScope::Opp,
+            ..small_cfg(256)
+        };
+        // Two roots one ply apart => different movers.
+        let g0 = midgame("28000000000", 30);
+        let mut g1 = g0.clone();
+        let legal = g1.legal_actions();
+        g1.advance(legal[legal.len() / 2]).unwrap();
+
+        let mut s = Searcher::new(&cfg);
+        let a0 = s.search(&g0).unwrap();
+        let a1 = s.search(&g1).unwrap();
+        // Fresh counts, not a running total.
+        assert!(a1.jr_expansions_total < a0.jr_expansions_total + a1.jr_expansions_total);
+        for r in [&a0, &a1] {
+            assert_eq!(
+                r.jr_expansions_boosted,
+                r.jr_expansions_total - r.jr_expansions_own_mover
+            );
+            assert!(r.jr_expansions_own_mover > 0, "root expansion was not counted as own-mover");
+        }
+        // And each matches a fresh Searcher on the same root (no carry-over).
+        let f0 = search_single(&g0, &cfg).unwrap();
+        let f1 = search_single(&g1, &cfg).unwrap();
+        assert_eq!(a0.jr_expansions_total, f0.jr_expansions_total);
+        assert_eq!(a0.jr_expansions_own_mover, f0.jr_expansions_own_mover);
+        assert_eq!(a1.jr_expansions_total, f1.jr_expansions_total);
+        assert_eq!(a1.jr_expansions_own_mover, f1.jr_expansions_own_mover);
+    }
+
+    /// The ROOT is always an own-mover expansion, so at a 1-simulation search
+    /// (root + at most one descent) `Opp`'s root priors are the champion's and
+    /// `Own` counts the root as boosted. The minimal-depth statement of the
+    /// gate: no interior population is needed for leg (a) to bite.
+    ///
+    /// ⚠️ Deliberately does NOT assert `opp.boosted == 0` — the first descent
+    /// can land on either seat (tile and meeple phases share a mover), so the
+    /// child's seat is position-dependent and pinning it would be a fragile
+    /// statement about the engine's phase model, not about this gate.
+    #[test]
+    fn s1_the_root_expansion_is_own_and_opp_skips_it() {
+        let g = midgame("28000000000", 30);
+        let mk = |scope| {
+            search_single(
+                &g,
+                &SearchConfig {
+                    jrules_prior_dose: 1.0,
+                    jrules_prior_scope: scope,
+                    ..small_cfg(1)
+                },
+            )
+            .unwrap()
+        };
+        let own = mk(JrPriorScope::Own);
+        let opp = mk(JrPriorScope::Opp);
+        assert!(
+            own.jr_expansions_own_mover >= 1 && own.jr_expansions_boosted >= 1,
+            "the root expansion was not counted as an own-mover boost"
+        );
+        assert_eq!(
+            opp.jr_expansions_boosted,
+            opp.jr_expansions_total - opp.jr_expansions_own_mover
+        );
+        assert!(
+            opp.jr_expansions_boosted < opp.jr_expansions_total,
+            "scope=opp boosted every expansion including the root"
+        );
+        let champ = search_single(&g, &small_cfg(1)).unwrap();
+        assert_eq!(champ.root_priors.len(), opp.root_priors.len());
+        for (x, y) in champ.root_priors.iter().zip(opp.root_priors.iter()) {
             assert_eq!((x.0, x.1.to_bits()), (y.0, y.1.to_bits()));
         }
     }

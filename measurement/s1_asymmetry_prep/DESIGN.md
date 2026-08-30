@@ -1,15 +1,53 @@
 # S1 — OPPONENT-MODEL ASYMMETRY IN THE CHAMPION'S SEARCH
 
-> # ⚠️ DESIGN ONLY — NOTHING IS BUILT, NOTHING IS FUNDED, NO BAND IS CLAIMED
+> # ✅ BUILD DONE · ⏳ G1 READY (not yet run) · ⛔ CELLS AWAIT G1
 >
-> **0 games · 0 cells · 0 `results.csv` rows · 0 claims · `PRODUCTION.yaml` untouched ·
-> no `src/` or `rust/` file changed by this document.** Every number below is read off
-> an artifact already on disk and cited to it. This is a proposal for the owner to fund,
-> decline or re-shape; it pre-registers nothing until he says so and a `READ_RULE.md`
-> is committed *before* any statistic is read.
+> **Status 2026-08-30.** Owner funded the build (verbatim *"s1 go"*), with the §11
+> questions answered: **Q1** n=1,200 as scoped · **Q2** mask 31 · **Q3** three arms ·
+> **Q5** arbiter OFF · **Q6** stop on `NO-EXPRESSION`. **Q4** (the `CL-083` falsifier
+> amendment, §5.5) is **deferred to close-out** and is NOT adopted by this build.
 >
-> Funded as design work 2026-08-30 (owner, verbatim *"yes, I buy a and b. engineers on
-> them"*), route (a). Companion sizing: [`SIZING.md`](SIZING.md).
+> | gate | state |
+> |---|---|
+> | **G0** build + wiring + the §9.2 positive control | ✅ **DONE** — `JrPriorScope::Opp` shipped, all seven plumbing sites, 6 new rust gates + 20 python tests green |
+> | **G1** EXPRESSION | ⏳ **READY, NOT RUN.** Read rule committed first: [`READ_RULE_G1.md`](READ_RULE_G1.md). Runner: [`run_g1.sh`](run_g1.sh). The full pass is the orchestrator's to launch in a quiet window. |
+> | **G3 / G2 / G4 / G5** | ⛔ **not started, not funded.** Gated on G1 per §6 and the owner's Q6 answer. |
+>
+> **Still true: 0 games · 0 cells · 0 `results.csv` rows · 0 claims · 0 band ·
+> `PRODUCTION.yaml` untouched · `governance/` untouched.** The champion's default
+> traffic is byte-for-byte unchanged (dose 0 short-circuits before the scope is read;
+> pinned by `jrules_prior_dose0_with_scope_opp_is_bit_identical`).
+>
+> **Two measured deviations from this document, both in §9.2's direction of caution:**
+> 1. **§9.2 leg (b) runs at 1376 sims on the POOLED root, not 256 sims on the root
+>    visit counts.** Measured, not assumed: at 256 sims `scope=opp` is *entirely*
+>    unexpressed on all three probe roots — identical `node_count`, `root_w` bits, root
+>    visits **and** pooled stats — despite the gate firing at hundreds of opponent
+>    expansions; and even at 1376 the raw root visit counts move on only 2 of 3 roots,
+>    while `pooled_stats` (the surface the PIMC pool actually argmaxes) moves on 3 of 3.
+>    Both halves are pinned as rust gates. **That 256-sim flatline is itself a real
+>    pre-G1 prior: this surface needs depth to express at all.**
+> 2. **§9.2 leg (c) is checked WITHIN each tree**, not as a cross-scope set comparison —
+>    the three scopes' trees diverge the moment a prior moves, so a cross-tree union
+>    would not add up. The per-search expansion census (`jr_expansions_{total,
+>    own_mover,boosted}`) makes the identity exact and non-vacuous.
+>
+> Companion sizing: [`SIZING.md`](SIZING.md). Everything below §0 is the design as
+> funded and is unchanged.
+>
+> <details><summary>Original pre-build banner (historical)</summary>
+>
+> > ⚠️ DESIGN ONLY — NOTHING IS BUILT, NOTHING IS FUNDED, NO BAND IS CLAIMED.
+> > 0 games · 0 cells · 0 `results.csv` rows · 0 claims · `PRODUCTION.yaml` untouched ·
+> > no `src/` or `rust/` file changed by this document. Every number below is read off
+> > an artifact already on disk and cited to it. This is a proposal for the owner to
+> > fund, decline or re-shape; it pre-registers nothing until he says so and a
+> > `READ_RULE.md` is committed *before* any statistic is read.
+> >
+> > Funded as design work 2026-08-30 (owner, verbatim *"yes, I buy a and b. engineers
+> > on them"*), route (a).
+>
+> </details>
 
 ---
 
