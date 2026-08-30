@@ -60,6 +60,9 @@ mod board_bounds_tests;
 mod board_wall_probe;
 #[cfg(test)]
 mod cloister_scan_fix_tests;
+/// Engine follow-on A — the flat-play-table conversion's correctness gates.
+#[cfg(test)]
+mod flat_play_tests;
 
 pub const BOARD_ROWS: i32 = 35;
 pub const BOARD_COLS: i32 = 35;
@@ -683,7 +686,7 @@ impl GameState {
                     None => continue,
                     Some(t) => t,
                 };
-                let tile = tiles::tile(tid);
+                let tile = tiles::tile_play(tid);
                 let scan = Coord::new(row, column);
                 if !fix {
                     anchor = scan; // LEGACY: the rebinding quirk (RF-D-1)
@@ -734,7 +737,7 @@ impl GameState {
                 let tid = self
                     .board_direct(mp.coord.row, mp.coord.col)
                     .expect("meeple on an empty cell");
-                let terrain = tiles::tile(tid).get_type(mp.side);
+                let terrain = tiles::tile_play(tid).get_type(mp.side);
 
                 if terrain == Some(TerrainType::City) {
                     let city = self.find_city((mp.coord.row, mp.coord.col, mp.side));
@@ -810,9 +813,10 @@ impl GameState {
         let mut points = 0i64;
         let mut has_cathedral = false;
         let mut coordinates: Vec<Coord> = Vec::new();
+        let preg = tiles::play_registry();
         for &(r, c, _s) in &city.positions {
             let tid = self.board_direct(r, c).expect("city position on an empty cell");
-            if !tiles::tile(tid).inn.is_empty() {
+            if preg[tid as usize].has_inn {
                 has_cathedral = true;
             }
             let coord = Coord::new(r, c);
@@ -825,7 +829,7 @@ impl GameState {
         }
         for coord in coordinates {
             let tid = self.board_direct(coord.row, coord.col).unwrap();
-            let tile = tiles::tile(tid);
+            let tile = &preg[tid as usize];
             if tile.shield {
                 points += if has_cathedral {
                     6
@@ -850,9 +854,10 @@ impl GameState {
     fn count_road_points(&self, road: &Road) -> i64 {
         let mut has_inn = false;
         let mut coordinates: Vec<Coord> = Vec::new();
+        let preg = tiles::play_registry();
         for &(r, c, _s) in &road.positions {
             let tid = self.board_direct(r, c).expect("road position on an empty cell");
-            if !tiles::tile(tid).inn.is_empty() {
+            if preg[tid as usize].has_inn {
                 has_inn = true;
             }
             let coord = Coord::new(r, c);
@@ -884,10 +889,18 @@ impl GameState {
         // Dedup touched cities by their POSITION SET (the 2026-06-02 fix).
         let mut counted: HashSet<Vec<CoordSide>> = HashSet::new();
         let mut points = 0i64;
+        // A2: the farm's `city_sides` come off the flat table into a fixed
+        // stack array — same sides, same order — instead of a heap `Vec` clone
+        // per farm node.
+        let mut sides = [Side::Top; tiles::MAX_CSIDES];
         for node in &farm.nodes {
             let tid = self.board_direct(node.coord.row, node.coord.col).unwrap();
-            let sides = tiles::tile(tid).farms[node.slot as usize].city_sides.clone();
-            for city in self.find_cities(node.coord, &sides) {
+            let f = &tiles::tile_flat(tid).farms[node.slot as usize];
+            let n = f.n_csides as usize;
+            for (i, &b) in f.csides().iter().enumerate() {
+                sides[i] = tiles::SIDE_FROM_U8[b as usize];
+            }
+            for city in self.find_cities(node.coord, &sides[..n]) {
                 if !counted.insert(city.positions.clone()) {
                     continue;
                 }
@@ -939,10 +952,13 @@ impl GameState {
             None => return out,
             Some(t) => t,
         };
-        for group in &tiles::tile(tid).city {
-            if group.contains(&side) {
+        let tf = tiles::tile_flat(tid);
+        let sb = side as u8;
+        for gi in 0..tf.n_city_groups as usize {
+            let group = tf.city_group(gi);
+            if group.contains(&sb) {
                 for &s in group {
-                    out.push((r, c, s));
+                    out.push((r, c, tiles::SIDE_FROM_U8[s as usize]));
                 }
             }
         }
@@ -968,9 +984,9 @@ impl GameState {
             None => return out,
             Some(t) => t,
         };
-        let tile = tiles::tile(tid);
+        let tile = tiles::tile_play(tid);
         for &side in sides {
-            if tile.get_type(side) == Some(TerrainType::City) {
+            if tile.is_type(side, TerrainType::City) {
                 let city = self.find_city((coord.row, coord.col, side));
                 if !out.iter().any(|c| c.positions == city.positions) {
                     out.push(city);
@@ -1017,13 +1033,17 @@ impl GameState {
             None => return out,
             Some(t) => t,
         };
-        for &(a, b) in &tiles::tile(tid).road {
-            if a == side || b == side {
-                if a != Side::Center {
-                    out.push((r, c, a));
+        let tf = tiles::tile_flat(tid);
+        let sb = side as u8;
+        const CENTER: u8 = Side::Center as u8;
+        for i in 0..tf.n_road as usize {
+            let (a, b) = (tf.road[2 * i], tf.road[2 * i + 1]);
+            if a == sb || b == sb {
+                if a != CENTER {
+                    out.push((r, c, tiles::SIDE_FROM_U8[a as usize]));
                 }
-                if b != Side::Center {
-                    out.push((r, c, b));
+                if b != CENTER {
+                    out.push((r, c, tiles::SIDE_FROM_U8[b as usize]));
                 }
             }
         }
@@ -1048,9 +1068,9 @@ impl GameState {
             None => return out,
             Some(t) => t,
         };
-        let tile = tiles::tile(tid);
+        let tile = tiles::tile_play(tid);
         for &side in &CARDINALS {
-            if tile.get_type(side) == Some(TerrainType::Road) {
+            if tile.is_type(side, TerrainType::Road) {
                 out.push(self.find_road((coord.row, coord.col, side)));
             }
         }
@@ -1089,8 +1109,9 @@ impl GameState {
 
     fn farm_for_position(&self, coord: Coord, fs: FarmerSide) -> Option<FarmNode> {
         let tid = self.board_direct(coord.row, coord.col)?;
-        for (slot, fc) in tiles::tile(tid).farms.iter().enumerate() {
-            if fc.tile_connections.contains(&fs) {
+        let fsb = fs as u8;
+        for (slot, fc) in tiles::tile_flat(tid).farms().iter().enumerate() {
+            if fc.tconn().contains(&fsb) {
                 return Some(FarmNode {
                     coord,
                     slot: slot as u8,
@@ -1107,8 +1128,9 @@ impl GameState {
         let mut stack = vec![start];
         while let Some(node) = stack.pop() {
             let tid = self.board_direct(node.coord.row, node.coord.col).unwrap();
-            let conns = &tiles::tile(tid).farms[node.slot as usize].tile_connections;
-            for &fs in conns {
+            let conns = tiles::tile_flat(tid).farms[node.slot as usize].tconn();
+            for &fsb in conns {
+                let fs = tiles::FARMER_SIDE_FROM_U8[fsb as usize];
                 let (ncoord, nfs) = farmer_opposite_edge(node.coord, fs);
                 if let Some(neighbor) = self.farm_for_position(ncoord, nfs) {
                     if component.insert(neighbor) {
@@ -1124,8 +1146,9 @@ impl GameState {
 
     pub fn find_farm_by_coordinate(&self, coord: Coord, side: Side) -> Option<Farm> {
         let tid = self.get_tile(coord.row, coord.col)?;
-        for (slot, fc) in tiles::tile(tid).farms.iter().enumerate() {
-            if fc.farmer_positions.contains(&side) {
+        let sb = side as u8;
+        for (slot, fc) in tiles::tile_flat(tid).farms().iter().enumerate() {
+            if fc.fpos().contains(&sb) {
                 return Some(self.find_farm(FarmNode {
                     coord,
                     slot: slot as u8,
@@ -1139,7 +1162,10 @@ impl GameState {
         let mut out: [Vec<MeeplePosition>; 2] = [Vec::new(), Vec::new()];
         for node in &farm.nodes {
             let tid = self.board_direct(node.coord.row, node.coord.col).unwrap();
-            let fp = tiles::tile(tid).farms[node.slot as usize].farmer_positions[0];
+            // `fpos()` is the LIVE slice, so an empty `farmer_positions` still
+            // panics here exactly as `farmer_positions[0]` did.
+            let fp = tiles::SIDE_FROM_U8
+                [tiles::tile_flat(tid).farms[node.slot as usize].fpos()[0] as usize];
             for player in 0..self.players {
                 for mp in &self.placed_meeples[player] {
                     if mp.coord == node.coord && mp.side == fp {
@@ -1165,13 +1191,20 @@ impl GameState {
             return vec![(self.starting_position, 0)];
         }
         let mut out = Vec::new();
+        // A2: the play table is hoisted out of BOTH loops (one `OnceLock` load
+        // per call instead of one per rotation), and the four neighbour lookups
+        // out of the rotation loop — they do not depend on `turns`.  Neither
+        // moves an observable: `get_tile` is a pure read and the emission order
+        // over `(open_positions, turns)` is unchanged.
+        let preg = tiles::play_registry();
         for &(row, col) in &self.open_positions {
+            let top = self.get_tile(row - 1, col);
+            let bottom = self.get_tile(row + 1, col);
+            let left = self.get_tile(row, col - 1);
+            let right = self.get_tile(row, col + 1);
             for turns in 0u8..4 {
-                let top = self.get_tile(row - 1, col);
-                let bottom = self.get_tile(row + 1, col);
-                let left = self.get_tile(row, col - 1);
-                let right = self.get_tile(row, col + 1);
-                if fits(tiles::tile(tile_id(base, turns)), top, bottom, left, right) {
+                let center = &preg[tile_id(base, turns) as usize];
+                if fits_flat(center, top, bottom, left, right) {
                     out.push((Coord::new(row, col), turns));
                 }
             }
@@ -1255,7 +1288,7 @@ impl GameState {
             }
         }
         if self.abbots[cur] > 0 {
-            let tile = tiles::tile(lta.tile);
+            let tile = tiles::tile_play(lta.tile);
             if tile.chapel || tile.flowers {
                 out.push(Action::Meeple(MeepleAction {
                     meeple_type: MeepleType::Abbot,
@@ -1280,20 +1313,20 @@ impl GameState {
 
     fn possible_meeple_positions(&self, lta: &TileAction) -> Vec<(Coord, Side)> {
         let mut out = Vec::new();
-        let tile = tiles::tile(lta.tile);
+        let tile = tiles::tile_play(lta.tile);
         if tile.chapel {
             out.push((lta.coord, Side::Center));
         }
         // NORMAL_MEEPLES_CAN_USE_FLOWERS is not in the locked supplementary set.
         for &side in &CARDINALS {
-            if tile.get_type(side) == Some(TerrainType::City) {
+            if tile.is_type(side, TerrainType::City) {
                 let city = self.find_city((lta.coord.row, lta.coord.col, side));
                 if self.city_contains_meeples(&city) {
                     continue;
                 }
                 out.push((lta.coord, side));
             }
-            if tile.get_type(side) == Some(TerrainType::Road) {
+            if tile.is_type(side, TerrainType::Road) {
                 let road = self.find_road((lta.coord.row, lta.coord.col, side));
                 if self.road_contains_meeples(&road) {
                     continue;
@@ -1306,8 +1339,8 @@ impl GameState {
 
     fn possible_farmer_positions(&self, lta: &TileAction) -> Vec<(Coord, Side)> {
         let mut out = Vec::new();
-        let tile = tiles::tile(lta.tile);
-        for (slot, fc) in tile.farms.iter().enumerate() {
+        let tile = tiles::tile_flat(lta.tile);
+        for (slot, fc) in tile.farms().iter().enumerate() {
             let farm = self.find_farm(FarmNode {
                 coord: lta.coord,
                 slot: slot as u8,
@@ -1315,7 +1348,7 @@ impl GameState {
             if self.farm_has_meeples(&farm) {
                 continue;
             }
-            out.push((lta.coord, fc.farmer_positions[0]));
+            out.push((lta.coord, tiles::SIDE_FROM_U8[fc.fpos()[0] as usize]));
         }
         out
     }
@@ -1495,6 +1528,80 @@ pub fn fits(
     }
     // rivers_fit: `len(center.get_river_ends()) == 0 -> True` for the base deck.
     assert!(center.river_ends.is_empty(), "river tiles are out of scope for v1");
+    true
+}
+
+/// One edge-fit conjunct, on cardinal bitmasks.
+///
+/// `nbrs[i]` is the mask of the neighbour across cardinal `i` (`Top`, `Right`,
+/// `Bottom`, `Left` — discriminants 0..4), or `None` if that cell is empty.  A
+/// cardinal `i` present in `center` demands `(i + 2) % 4` in that neighbour;
+/// non-cardinal sides carry no bit, which is the `_ => false` arm of the
+/// object-path `match` they replace.  Iteration order is not observable — the
+/// answer is a conjunction of independent per-side tests.
+#[inline]
+fn masks_fit(center: u8, nbrs: &[Option<u8>; tiles::N_CARDINALS]) -> bool {
+    for i in 0..tiles::N_CARDINALS as u8 {
+        if center & (1 << i) == 0 {
+            continue;
+        }
+        if let Some(m) = nbrs[i as usize] {
+            if m & (1 << ((i + 2) % tiles::N_CARDINALS as u8)) == 0 {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+/// [`fits`] on the flat play table — bit-for-bit the same predicate, with the
+/// three `Vec<Side>` membership walks replaced by `u8` mask tests.
+///
+/// Pinned against [`fits`] by `engine::flat_tests::fits_flat_matches_fits_*`
+/// (exhaustive over single-neighbour boards, randomized over full quadruples).
+pub fn fits_flat(
+    center: &tiles::TilePlayFlat,
+    top: Option<TileId>,
+    bottom: Option<TileId>,
+    left: Option<TileId>,
+    right: Option<TileId>,
+) -> bool {
+    if top.is_none() && right.is_none() && bottom.is_none() && left.is_none() {
+        return false;
+    }
+    let preg = tiles::play_registry();
+    let at = |o: Option<TileId>| o.map(|id| &preg[id as usize]);
+    // Index by cardinal discriminant: 0 Top, 1 Right, 2 Bottom, 3 Left.
+    let nb = [at(top), at(right), at(bottom), at(left)];
+
+    let grass = [
+        nb[0].map(|t| t.grass_mask),
+        nb[1].map(|t| t.grass_mask),
+        nb[2].map(|t| t.grass_mask),
+        nb[3].map(|t| t.grass_mask),
+    ];
+    if !masks_fit(center.grass_mask, &grass) {
+        return false;
+    }
+    let city = [
+        nb[0].map(|t| t.city_side_mask),
+        nb[1].map(|t| t.city_side_mask),
+        nb[2].map(|t| t.city_side_mask),
+        nb[3].map(|t| t.city_side_mask),
+    ];
+    if !masks_fit(center.city_side_mask, &city) {
+        return false;
+    }
+    let road = [
+        nb[0].map(|t| t.road_end_mask),
+        nb[1].map(|t| t.road_end_mask),
+        nb[2].map(|t| t.road_end_mask),
+        nb[3].map(|t| t.road_end_mask),
+    ];
+    if !masks_fit(center.road_end_mask, &road) {
+        return false;
+    }
+    assert!(center.river_ends_empty, "river tiles are out of scope for v1");
     true
 }
 

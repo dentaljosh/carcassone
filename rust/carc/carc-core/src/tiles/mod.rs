@@ -678,6 +678,8 @@ static REGISTRY: OnceLock<Vec<RotTile>> = OnceLock::new();
 static REGISTRY_R9: OnceLock<Vec<RotTile>> = OnceLock::new();
 static FLAT: OnceLock<Vec<TileFlat>> = OnceLock::new();
 static FLAT_R9: OnceLock<Vec<TileFlat>> = OnceLock::new();
+static PLAY: OnceLock<Vec<TilePlayFlat>> = OnceLock::new();
+static PLAY_R9: OnceLock<Vec<TilePlayFlat>> = OnceLock::new();
 static R9_ON: OnceLock<bool> = OnceLock::new();
 
 /// The `CARCASSONNE_FIX_R9` env flag, resolved once per process.  Accepts the
@@ -728,6 +730,192 @@ pub fn flat_registry() -> &'static [TileFlat] {
 #[inline]
 pub fn tile_flat(id: TileId) -> &'static TileFlat {
     &flat_registry()[id as usize]
+}
+
+// ---------------------------------------------------------------------------
+// THE PLAY VIEW — `TilePlayFlat` (2026-08-30, engine follow-on A)
+//
+// [`TileFlat`] carries the seven things `leaf::decompose_into` reads and
+// nothing else, and its layout is graded by the registry-flattening round's
+// banked oracle.  The OTHER `tiles::tile()` consumers — `engine::mod`'s
+// legality / scoring / move-generation path and `leaf::mod`'s per-term meeple
+// walks — read a DIFFERENT set: `type_cache`, `chapel`, `flowers`, `shield`,
+// `inn`, and (for [`fits`]) the `grass` / `city_sides_set` / `road_ends` edge
+// lists.  Those get their own parallel table rather than being bolted onto
+// `TileFlat`, for two reasons:
+//
+//   1. `TileFlat`'s layout is what the flattening round's gate certificate is
+//      about.  Growing it would perturb a certified structure for the benefit
+//      of code that does not read it.
+//   2. The two views have different access shapes.  The decomposition wants
+//      ordered LISTS; the legality path wants SET MEMBERSHIP on four cardinal
+//      sides, which is one `u8` bitmask and a shift — not a list walk at all.
+//
+// Both tables are derived from `registry_for(r9)` (never from `generated::`),
+// memoised per R9 flag state, and pinned element-by-element against the object
+// registry by `play_registry_matches_the_object_registry`.
+// ---------------------------------------------------------------------------
+
+/// `Side` by discriminant — the inverse of `s as u8`, as a const LUT.
+pub const SIDE_FROM_U8: [Side; N_SIDES] = [
+    Side::Top,
+    Side::Right,
+    Side::Bottom,
+    Side::Left,
+    Side::Center,
+    Side::TopLeft,
+    Side::TopRight,
+    Side::BottomLeft,
+    Side::BottomRight,
+];
+
+/// `FarmerSide` by discriminant — the inverse of `fs as u8`, as a const LUT.
+pub const FARMER_SIDE_FROM_U8: [FarmerSide; 8] = [
+    FarmerSide::Tll,
+    FarmerSide::Tlt,
+    FarmerSide::Trt,
+    FarmerSide::Trr,
+    FarmerSide::Bll,
+    FarmerSide::Blb,
+    FarmerSide::Brb,
+    FarmerSide::Brr,
+];
+
+/// The four cardinals occupy discriminants 0..4 (`Top`, `Right`, `Bottom`,
+/// `Left`), so a cardinal set is a 4-bit mask and the opposite of cardinal `i`
+/// is `(i + 2) % 4`.  Non-cardinal sides are simply absent from the mask, which
+/// matches the `_ => false` arm of every edge-fit `match` they replace.
+pub const N_CARDINALS: usize = 4;
+
+#[inline]
+const fn cardinal_mask_bit(s: Side) -> u8 {
+    let d = s as u8;
+    if (d as usize) < N_CARDINALS {
+        1 << d
+    } else {
+        0
+    }
+}
+
+fn cardinal_mask(sides: &[Side]) -> u8 {
+    let mut m = 0u8;
+    for &s in sides {
+        m |= cardinal_mask_bit(s);
+    }
+    m
+}
+
+/// `None` is encoded as 0 and `Some(t)` as `t as u8 + 1`, so the whole
+/// `type_cache` is nine plain bytes with no niche games.
+#[inline]
+const fn encode_terrain(t: Option<TerrainType>) -> u8 {
+    match t {
+        None => 0,
+        Some(x) => x as u8 + 1,
+    }
+}
+
+#[inline]
+const fn decode_terrain(b: u8) -> Option<TerrainType> {
+    match b {
+        0 => None,
+        1 => Some(TerrainType::City),
+        2 => Some(TerrainType::Grass),
+        3 => Some(TerrainType::Road),
+        4 => Some(TerrainType::Chapel),
+        5 => Some(TerrainType::Flowers),
+        6 => Some(TerrainType::Unplayable),
+        _ => None,
+    }
+}
+
+/// The legality / scoring / move-generation slice of a [`RotTile`], contiguous.
+///
+/// 15 bytes.  Everything here is a byte or a bit test; there is not a single
+/// heap indirection left on the paths that read it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
+pub struct TilePlayFlat {
+    /// [`RotTile::type_cache`], encoded by [`encode_terrain`].
+    pub terrain: [u8; N_SIDES],
+    /// `grass` restricted to the cardinals, as a bitmask.
+    pub grass_mask: u8,
+    /// `city_sides_set` as a bitmask.
+    pub city_side_mask: u8,
+    /// `road_ends` as a bitmask.
+    pub road_end_mask: u8,
+    /// `sum(len(group) for group in city)` — `leaf::bag_stats`' `ne`.
+    pub city_edges: u8,
+    pub chapel: bool,
+    pub flowers: bool,
+    pub shield: bool,
+    /// `!inn.is_empty()`.  (The engine's cathedral / inn tests only ever ask
+    /// that; the `inn` list itself is never read on these paths.)
+    pub has_inn: bool,
+    /// `river.is_empty()` — the `play_tile` scope assert.
+    pub river_empty: bool,
+    /// `river_ends.is_empty()` — the [`fits`] scope assert.
+    pub river_ends_empty: bool,
+}
+
+impl TilePlayFlat {
+    /// [`RotTile::get_type`], from the flat table.
+    #[inline]
+    pub const fn get_type(&self, side: Side) -> Option<TerrainType> {
+        decode_terrain(self.terrain[side as usize])
+    }
+
+    /// `get_type(side) == Some(t)` without materialising the `Option`.
+    #[inline]
+    pub const fn is_type(&self, side: Side, t: TerrainType) -> bool {
+        self.terrain[side as usize] == t as u8 + 1
+    }
+}
+
+fn flatten_play(t: &RotTile) -> TilePlayFlat {
+    let mut terrain = [0u8; N_SIDES];
+    for (i, slot) in t.type_cache.iter().enumerate() {
+        terrain[i] = encode_terrain(*slot);
+    }
+    let city_edges: usize = t.city.iter().map(|g| g.len()).sum();
+    assert!(
+        city_edges <= u8::MAX as usize,
+        "tile {} rot {}: city_edges overflows u8",
+        t.description,
+        t.rot
+    );
+    TilePlayFlat {
+        terrain,
+        grass_mask: cardinal_mask(&t.grass),
+        city_side_mask: cardinal_mask(&t.city_sides_set),
+        road_end_mask: cardinal_mask(&t.road_ends),
+        city_edges: city_edges as u8,
+        chapel: t.chapel,
+        flowers: t.flowers,
+        shield: t.shield,
+        has_inn: !t.inn.is_empty(),
+        river_empty: t.river.is_empty(),
+        river_ends_empty: t.river_ends.is_empty(),
+    }
+}
+
+/// The play table for an explicit flag state, derived from [`registry_for`].
+pub fn play_registry_for(r9: bool) -> &'static [TilePlayFlat] {
+    let lock = if r9 { &PLAY_R9 } else { &PLAY };
+    lock.get_or_init(|| registry_for(r9).iter().map(flatten_play).collect())
+}
+
+/// All `N_BASE * 4` rotated tiles as [`TilePlayFlat`], indexed by [`tile_id`].
+///
+/// Hoist this **once** per hot loop and index it; that is the whole point.
+#[inline]
+pub fn play_registry() -> &'static [TilePlayFlat] {
+    play_registry_for(r9_enabled())
+}
+
+#[inline]
+pub fn tile_play(id: TileId) -> &'static TilePlayFlat {
+    &play_registry()[id as usize]
 }
 
 /// `base_tile_counts` in dict-insertion order, resolved to base indices.
@@ -791,6 +979,142 @@ mod tests {
                 other => panic!("farmer side on a non-cardinal edge {other:?}"),
             };
             assert_eq!(FARMER_SIDE_DELTA[i], want, "{fs:?}");
+        }
+    }
+
+    /// The inverse LUTs must be exactly that, for every discriminant.
+    #[test]
+    fn side_and_farmer_side_from_u8_luts_are_inverses() {
+        for (i, &s) in SIDE_FROM_U8.iter().enumerate() {
+            assert_eq!(s as usize, i, "SIDE_FROM_U8[{i}] = {s:?}");
+        }
+        for (i, &fs) in FARMER_SIDE_FROM_U8.iter().enumerate() {
+            assert_eq!(fs as usize, i, "FARMER_SIDE_FROM_U8[{i}] = {fs:?}");
+        }
+    }
+
+    /// The terrain codec must round-trip every inhabitant of
+    /// `Option<TerrainType>`, including `None`.
+    #[test]
+    fn terrain_codec_round_trips() {
+        use TerrainType::*;
+        for t in [
+            None,
+            Some(City),
+            Some(Grass),
+            Some(Road),
+            Some(Chapel),
+            Some(Flowers),
+            Some(Unplayable),
+        ] {
+            assert_eq!(decode_terrain(encode_terrain(t)), t, "{t:?}");
+        }
+    }
+
+    /// The PLAY table must reproduce every field the legality / scoring /
+    /// move-generation path reads, for every tile in BOTH registry flag states.
+    ///
+    /// This is the gate that pins the play view at the data layer, exactly as
+    /// `flat_registry_matches_the_object_registry` pins the decomposition view.
+    #[test]
+    fn play_registry_matches_the_object_registry() {
+        for r9 in [false, true] {
+            let objs = registry_for(r9);
+            let plays = play_registry_for(r9);
+            assert_eq!(objs.len(), plays.len(), "r9={r9}: table lengths differ");
+            for (id, (o, p)) in objs.iter().zip(plays.iter()).enumerate() {
+                let ctx = format!("r9={r9} id={id} {} rot {}", o.description, o.rot);
+
+                // type_cache, every side, decoded back through the codec.
+                for &s in &SIDE_FROM_U8 {
+                    assert_eq!(p.get_type(s), o.get_type(s), "{ctx}: get_type({s:?})");
+                    if let Some(t) = o.get_type(s) {
+                        assert!(p.is_type(s, t), "{ctx}: is_type({s:?}, {t:?})");
+                    }
+                }
+
+                // The three edge masks: membership must agree on all 9 sides,
+                // and the mask must carry no bit the object list lacks.
+                for &s in &SIDE_FROM_U8 {
+                    let bit = cardinal_mask_bit(s);
+                    let cardinal = bit != 0;
+                    assert_eq!(
+                        p.grass_mask & bit != 0,
+                        cardinal && o.grass.contains(&s),
+                        "{ctx}: grass_mask {s:?}"
+                    );
+                    assert_eq!(
+                        p.city_side_mask & bit != 0,
+                        cardinal && o.city_sides_set.contains(&s),
+                        "{ctx}: city_side_mask {s:?}"
+                    );
+                    assert_eq!(
+                        p.road_end_mask & bit != 0,
+                        cardinal && o.road_ends.contains(&s),
+                        "{ctx}: road_end_mask {s:?}"
+                    );
+                }
+                // ...and the mask drops NOTHING but non-cardinals.
+                //
+                // ⚠️ The edge lists are NOT cardinal-only: `road_ends` carries
+                // `Side::Center` on the crossroads tiles (`chapel_with_road`
+                // rot 0 is the first). A 4-bit cardinal mask cannot hold that,
+                // and does not need to: `engine::fits` reads these lists in
+                // exactly two ways, and `Center` is inert in BOTH —
+                //
+                //   * the CENTER tile's own list is walked by a `match side`
+                //     whose only arms are the four cardinals plus `_ => false`,
+                //     so a non-cardinal member can never make a placement
+                //     illegal; and
+                //   * a NEIGHBOUR's list is only ever asked
+                //     `.contains(&Side::{Top,Right,Bottom,Left})`, so a
+                //     non-cardinal member can never be the answer.
+                //
+                // The equivalence is not argued from that alone —
+                // `engine::flat_play_tests::fits_flat_matches_fits_*` compares
+                // the two predicates exhaustively over single-neighbour boards
+                // and over 200k randomized quadruples. What this assertion
+                // pins is the narrower data claim: the mask's population is
+                // exactly the cardinal members, so a conversion bug that
+                // dropped a CARDINAL would fire here.
+                for (name, list) in [
+                    ("grass", &o.grass),
+                    ("city_sides_set", &o.city_sides_set),
+                    ("road_ends", &o.road_ends),
+                ] {
+                    let mask = match name {
+                        "grass" => p.grass_mask,
+                        "city_sides_set" => p.city_side_mask,
+                        _ => p.road_end_mask,
+                    };
+                    let mut cardinals: Vec<Side> = Vec::new();
+                    for &s in list.iter() {
+                        if (s as usize) < N_CARDINALS && !cardinals.contains(&s) {
+                            cardinals.push(s);
+                        }
+                    }
+                    assert_eq!(
+                        mask.count_ones() as usize,
+                        cardinals.len(),
+                        "{ctx}: {name} mask population {mask:#06b} != {} cardinal \
+                         members of {list:?}",
+                        cardinals.len()
+                    );
+                }
+
+                let city_edges: usize = o.city.iter().map(|g| g.len()).sum();
+                assert_eq!(p.city_edges as usize, city_edges, "{ctx}: city_edges");
+                assert_eq!(p.chapel, o.chapel, "{ctx}: chapel");
+                assert_eq!(p.flowers, o.flowers, "{ctx}: flowers");
+                assert_eq!(p.shield, o.shield, "{ctx}: shield");
+                assert_eq!(p.has_inn, !o.inn.is_empty(), "{ctx}: has_inn");
+                assert_eq!(p.river_empty, o.river.is_empty(), "{ctx}: river_empty");
+                assert_eq!(
+                    p.river_ends_empty,
+                    o.river_ends.is_empty(),
+                    "{ctx}: river_ends_empty"
+                );
+            }
         }
     }
 

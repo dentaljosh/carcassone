@@ -450,7 +450,7 @@ fn final_scores(state: &GameState, d: &Decomp, farm_off: bool) -> [i64; 2] {
     for player in 0..2 {
         for mp in &state.placed_meeples[player] {
             let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
-            let tile = tiles::tile(state.get_tile(r, c).expect("meeple on an empty cell"));
+            let tile = tiles::tile_play(state.get_tile(r, c).expect("meeple on an empty cell"));
             let terrain = tile.get_type(side);
             let w = meeple_weight(mp.meeple_type);
             if terrain == Some(TerrainType::City) {
@@ -548,10 +548,14 @@ pub fn flat_base_score_farm(state: &GameState, player: usize, d: &Decomp, farm_o
 /// `flat_leaf._bag_stats` — `(n, ge1, ge2, ge3, ge4)` over the remaining tiles.
 pub fn bag_stats(state: &GameState) -> [i32; 5] {
     let mut out = [0i32; 5];
+    // A2: this walks the WHOLE remaining deck (up to 72 tiles) once per leaf
+    // evaluation whenever `cfg.bag_close` is on, and the only thing it asks per
+    // tile is `sum(len(g) for g in city)` — precomputed as `city_edges`.  The
+    // table is hoisted out of the closure so the `OnceLock` load is paid once.
+    let preg = tiles::play_registry();
     let mut consider = |base: u16| {
         out[0] += 1;
-        let tile = tiles::tile(tiles::tile_id(base, 0));
-        let ne: usize = tile.city.iter().map(|g| g.len()).sum();
+        let ne = preg[tiles::tile_id(base, 0) as usize].city_edges as usize;
         if ne >= 1 {
             out[1] += 1;
             if ne >= 2 {
@@ -668,7 +672,7 @@ pub fn closure_bonus(
 
     for mp in &state.placed_meeples[player] {
         let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
-        let terrain = tiles::tile(state.get_tile(r, c).unwrap()).get_type(side);
+        let terrain = tiles::tile_play(state.get_tile(r, c).unwrap()).get_type(side);
         if terrain == Some(TerrainType::City) {
             if let Some(root) = d.city_side_root(r, c, side) {
                 if !knight_roots.contains(&root) {
@@ -834,7 +838,7 @@ pub fn return_term(
         let mut plist: Vec<f64> = Vec::new();
         for mp in &state.placed_meeples[p] {
             let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
-            let terrain = tiles::tile(state.get_tile(r, c).unwrap()).get_type(side);
+            let terrain = tiles::tile_play(state.get_tile(r, c).unwrap()).get_type(side);
             if terrain == Some(TerrainType::City) {
                 let root = match d.city_side_root(r, c, side) {
                     Some(x) => x,
@@ -975,7 +979,7 @@ pub fn denial_term(state: &GameState, player: usize, d: &Decomp, cfg: &LeafConfi
     for pl in 0..2 {
         for mp in &state.placed_meeples[pl] {
             let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
-            let tile = tiles::tile(state.get_tile(r, c).expect("meeple on an empty cell"));
+            let tile = tiles::tile_play(state.get_tile(r, c).expect("meeple on an empty cell"));
             if tile.get_type(side) != Some(TerrainType::City) {
                 continue;
             }
@@ -1047,7 +1051,7 @@ pub fn opencity_term(state: &GameState, player: usize, d: &Decomp, cfg: &LeafCon
     for pl in 0..2 {
         for mp in &state.placed_meeples[pl] {
             let (r, c, side) = (mp.coord.row, mp.coord.col, mp.side);
-            let tile = tiles::tile(state.get_tile(r, c).expect("meeple on an empty cell"));
+            let tile = tiles::tile_play(state.get_tile(r, c).expect("meeple on an empty cell"));
             if tile.get_type(side) != Some(TerrainType::City) {
                 continue;
             }
@@ -1206,7 +1210,7 @@ pub(crate) fn jr_counts(
                 Some(t) => t,
                 None => continue,
             };
-            let terrain = tiles::tile(tid).get_type(side);
+            let terrain = tiles::tile_play(tid).get_type(side);
             let w = meeple_weight(mp.meeple_type);
             if terrain == Some(TerrainType::City) {
                 if let Some(root) = d.city_side_root(r, c, side) {
@@ -1391,7 +1395,7 @@ fn jr_unclaimed_value(
             Some(t) => t,
             None => continue,
         };
-        let terrain = tiles::tile(tid).get_type(tiles::Side::Center);
+        let terrain = tiles::tile_play(tid).get_type(tiles::Side::Center);
         if terrain != Some(TerrainType::Chapel) && terrain != Some(TerrainType::Flowers) {
             continue;
         }
