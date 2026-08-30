@@ -49,3 +49,48 @@ change to the gate.
 adjudicator re-run over the SAME emitted archives after the two fixes; the
 amended readout is the reading of record, citing this file. Both fixes carry
 comment pointers to this amendment at the patch sites.
+
+---
+
+## PG-A2 CANDIDATE (flagged 2026-08-30, ⛔ NO CODE CHANGE MADE) — the smoke-mode filter defect is REALIZED in the banked `SMOKE_local.json`
+
+**Raised by:** the `measurement/fpu_resurrection_prep/` pre-launch multi-agent merge review, whose
+finding **R1** is the *same defect in the fork*. Flagged here **for the owner**; ⛔ **nothing in
+`measurement/phasegate_prep/` was edited** — this round is frozen and already adjudicated.
+
+**The observation.** `SMOKE_local.json` — banked, in-tree — reads `"cells": {}`. Defect 2 above
+already named the mechanism in passing (*"smoke archives are not named cells (`cells:{}` —
+PG-D10)"*), but it was recorded as a **reason a cell-level gate went unexercised**, not as a defect
+in the smoke instrument itself. It is both:
+
+1. The smoke's cell scan and `adjudicate()`'s `specs = L.CELLS` iteration between them mean a
+   `SMOKE_*` archive **cannot be adjudicated by either mechanism**, so `cells` is empty by
+   construction whenever `--root` is the parent dir.
+2. `main()` **returns 0 regardless**, so the launcher's `|| DIE "the smoke adjudication FAILED"` is
+   **unreachable** and an empty smoke reads as a passing one.
+
+⚠️ **Read commit `a6acd903`'s subject line against this.** It records *"band 154e9 CLAIMED + three
+launcher fixes — both smokes PASS"*. That is accurate about the **launcher exit code**, and the three
+launcher defects it names (PG-D7/D8/D9) were genuinely caught pre-round. It is **not** evidence that
+any smoke archive was **adjudicated**: `SMOKE_local.json`'s own `round_gates` show `G-WHEEL-SAME`,
+`G-REV`, `G-SUBPOOL` and `G-ANCHOR` all `ok: false` beside that "PASS", and with `cells: {}`
+**no cell-level gate ran at all.** The word "PASS" and the banked file do not agree.
+
+**Scope of the impact — the banked verdict is believed UNAFFECTED, and confirming that is the
+owner's call, not this note's.** The defect is in the **pre-launch smoke**, not in the round read:
+the four named phasegate cells were adjudicated normally. What is worth the owner's attention is the
+*class* — Defects 1 and 2 above are **cell-level gate** defects (`G-LEAF`, and the round sweep's
+treatment of non-cell dirs), i.e. exactly the surface a smoke that adjudicated its own archive would
+have exercised first. ⚠️ Stated as a hypothesis, not a finding: this note has **not** re-run the
+smoke against the fixed adjudicator to establish that it would have fired.
+
+**Proposed remedy (⛔ NOT APPLIED — needs owner authorization):** the fix shipped in the fork, ported.
+`analyze_phasegate.py` would, in `--smoke-mode`, scan **only** `SMOKE_*` dirs (and exclude the real
+round cells, so a re-smoke at a populated root cannot report stale round knobs as a smoke PASS),
+take the smoke's spec from the launcher, and **exit non-zero on zero adjudicated cells** — making the
+existing `|| DIE` reachable. See `measurement/fpu_resurrection_prep/analyze_fpu.py`
+(`parse_smoke_cell`, `SMOKE_REQUIRED_GATES`, `smoke_problems`) and
+`tests/test_fpu_instrument.py::test_smoke_mode_exits_NONZERO_when_it_adjudicates_nothing`.
+
+**Statistics-blind:** this note reads only structural keys (`cells`, `round_gates[].ok`) off a banked
+file and proposes no change to any bar, gate condition, branch or statistic.

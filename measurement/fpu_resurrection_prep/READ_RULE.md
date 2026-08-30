@@ -294,3 +294,64 @@ Measurement only. On **every** branch:
   from confirmatory use.
 - The prior-art figures are **context in the read-out**, never a gate input, never pooled with this
   round's numbers (§1.3).
+
+---
+
+## 8. ⚠️ CAVEAT — WHAT THE BAR COSTS UNDER A TRUE NULL
+
+*Appended 2026-08-30 (pre-launch multi-agent merge review, finding R4→R3). ⛔ **THE BAR DOES NOT
+MOVE** — `BAR_M = 1.381` is pre-registered design and this section changes no number, no gate and no
+branch. It states plainly what the design already implies, so that the read-out cannot be surprised
+by it after the fact.*
+
+**`BAR_M` is exactly `2 × se_model(400)`.** `screen_lib.sanity_check()` asserts that identity, and it
+has an arithmetic consequence worth naming before game 1. `F-REKILL` fires when
+`UB95 = M + 2·se_realized < BAR_M`; at a realized SE close to the modelled one this collapses to
+**`M < 0`**.
+
+So **under a true null (`δ = 0`), on this design:**
+
+| branch | ≈ probability |
+|---|---|
+| **`F-REKILL`** | **≈ 48%** (`M < 0`, less the tail that reads `F-NEGATIVE`) |
+| **`F-UNRESOLVED`** | **≈ 48%** (`M > 0` but short of the bar) |
+| `F-NEGATIVE` | ≈ 2.3% |
+| `F-RESURRECT` | ≈ 2.3% (the pre-registered false-fire rate; §5.3) |
+
+⛔ **A true null is very nearly a coin flip between `F-REKILL` and `F-UNRESOLVED`.** Which of the two
+a null cell lands on is decided by the sign of a noise draw, not by anything about FPU.
+
+### 8.1 ⛔⛔ `F-UNRESOLVED` DOES NOT DISCHARGE THE `LEVER_INDEX` CLOSE-OUT
+
+This is pre-committed here, **before any number exists**, precisely because the temptation after the
+fact is to read a null-shaped `F-UNRESOLVED` as if it were `F-REKILL` — they are the same underlying
+world half the time. It is not licensed:
+
+1. ⛔ **`F-UNRESOLVED` is NOT a null** and is not a bound. §5's branch 4 is *"the cell did not resolve
+   its bar in either direction"*, and `feedback_noisy_plateau_not_a_conclusion` binds. Only
+   `F-REKILL` returns a real 95% upper bound, and only `F-REKILL` carries §5.2's clause 3 — the one
+   that discharges the funded decision.
+2. ⛔ **`docs/LEVER_INDEX.md:146` is still UPDATED** (§7 says *on every branch*), but on
+   `F-UNRESOLVED` it is updated to say **the reopening was measured and did not resolve** — never to
+   say the axis was re-closed, and never to say the 2026-06-02 screens were refuted.
+3. ⛔ **`RIDERS_F_UNRESOLVED` (in `screen_lib.py`) GOVERN** the read-out and travel with every
+   citation, exactly as §5.1/§5.2's riders do. On `CELL_CPUCT10` the §6 τ trigger is unaffected:
+   `F-UNRESOLVED` still **re-kills** the τ pair, because that trigger is `|z| ≥ 2` and is a **funding**
+   decision, not a scientific one.
+
+### 8.2 ⭐ THE PRE-COMMITTED PRICE OF `F-UNRESOLVED`
+
+**A cell that reads `F-UNRESOLVED` is re-runnable ONLY on a NEW BAND and ONLY with fresh owner
+funding.** Stated now so the cost is known before it is incurred:
+
+- ⛔ **The band is spent either way.** §7 retires all three bands `decision_influenced=yes` when the
+  read-out lands. An `F-UNRESOLVED` cell **may not be extended, topped up, or re-read at larger `n`
+  on its own band** — that is the `rodv3` failure mode (`n` bought after seeing the sign), and
+  CL-068's cross-band over-dispersion means the extension could not be pooled with the original
+  anyway.
+- ⛔ **This read-rule is spent when the read-out lands, on every branch** (§7). A re-run is a **new
+  round** needing a new pair, a new band claim, and the owner's funding — it is not a continuation of
+  this one.
+- ⚠️ **The honest description of that outcome is "this round bought no verdict on this cell."** It is
+  a real possibility at ≈48% under a true null, it is disclosed here rather than discovered later,
+  and no reading stronger than §5's branch-4 text may be taken from it.

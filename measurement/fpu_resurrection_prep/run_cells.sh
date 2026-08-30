@@ -321,13 +321,24 @@ if [ "$SMOKE" -eq 1 ]; then
     local)  SMOKE_KNOB=fpu_reduction; SMOKE_VAL=0.2; SMOKE_NAME=SMOKE_FPU ;;
     laptop) SMOKE_KNOB=c_puct;        SMOKE_VAL=1.0; SMOKE_NAME=SMOKE_CPUCT ;;
   esac
+  SMOKE_SEED=$((THROWAWAY_BASE + 500))
   run_cell "$SMOKE_NAME" "$SMOKE_KNOB" "$SMOKE_VAL" \
-           "$((THROWAWAY_BASE + 500))" "$SMOKE_GAMES"
+           "$SMOKE_SEED" "$SMOKE_GAMES"
   if [ "$DRY" -eq 0 ]; then
     # ⭐ Adjudicated against the EMITTED archive, from the smoke's own directory,
     # so `resolved_knobs` in the output is read off manifest.json rather than
     # restated from the command line.
+    # ⭐⭐ R1 (2026-08-30 pre-launch merge review) — `--smoke-cell` IS REQUIRED.
+    # `--root` is the PARENT, and the round's cell table names only the three
+    # ROUND cells, so before this flag existed a smoke read adjudicated ZERO
+    # cells, reported `"cells": {}` / `"resolved_knobs": {}` and STILL EXITED 0
+    # — the `|| DIE` below was unreachable and the smoke proved nothing. The
+    # spec is passed from HERE (the launcher is the only thing that knows what
+    # it asked for) and analyze_fpu then checks it against the EMITTED
+    # manifest.json, including that the knob landed on the CANDIDATE SIDE ONLY
+    # (G-TWOSIDED — the `--c-puct` both-sides trap noted above).
     "$PY" "$HERE/analyze_fpu.py" --root "$SHARE/$OUT_TAG" --smoke-mode \
+      --smoke-cell "${SMOKE_NAME}=${SMOKE_KNOB}:${SMOKE_VAL}:${SMOKE_SEED}:${SMOKE_GAMES}:${ROLE}" \
       --out "$HERE/SMOKE_${ROLE}.json" || DIE "the smoke adjudication FAILED"
     "$PY" -c "
 import json,sys
