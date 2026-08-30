@@ -227,7 +227,7 @@ def test_a_full_remote_game_archives_with_the_remote_label(fake):
         if st.get("terminated"):
             break
         if st["current_player"] == st["human_player"]:
-            legal = st["legal"]["ids"]
+            legal = st["legal"]["action_ids"]
             assert legal, st
             r = json.loads(B.apply_action(int(legal[0])))
             assert r["ok"], r
