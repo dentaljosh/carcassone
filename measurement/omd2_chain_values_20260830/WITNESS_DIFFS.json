@@ -1,0 +1,595 @@
+{
+ "schema": "carcassonne-omd2-localisation/v1",
+ "leaf_hashes": {
+  "harness_leaf_hash": "a36d2e15a3b3d71d",
+  "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+  "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+ },
+ "profile": "walled",
+ "salt": "tiearb2-deploy-v1",
+ "eps": 0.0,
+ "arm_cap_j": 4,
+ "carc_rs": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+ "witnesses": [
+  {
+   "deck_seed": 28000000011,
+   "ply": 24,
+   "seat_rust": 0,
+   "seat_py": 0,
+   "n_legal_rust": 22,
+   "n_cand_rust": 22,
+   "n_cand_py_cache": 22,
+   "n_cand_py_nocache": 22,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    949,
+    951
+   ],
+   "rust_arms": [
+    949,
+    1361
+   ],
+   "py_cache_top1": -9.75,
+   "py_cache_top2": -10.5,
+   "py_cache_gap": 0.75,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    949
+   ],
+   "py_nocache_top1": -9.75,
+   "py_nocache_top2": -10.5,
+   "py_nocache_gap": 0.75,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    949,
+    951
+   ],
+   "banked_census_gap": 0.75,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 22,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 951,
+     "rust": -9.75,
+     "py_cache": -11.5,
+     "py_nocache": -9.75,
+     "rust_bits": "c023800000000000",
+     "py_cache_bits": "c027000000000000",
+     "py_nocache_bits": "c023800000000000",
+     "meeple_rust": 2508,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2508
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 0.24
+  },
+  {
+   "deck_seed": 28000000012,
+   "ply": 112,
+   "seat_rust": 0,
+   "seat_py": 0,
+   "n_legal_rust": 36,
+   "n_cand_rust": 36,
+   "n_cand_py_cache": 36,
+   "n_cand_py_nocache": 36,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    741,
+    743
+   ],
+   "rust_arms": [
+    741,
+    1260
+   ],
+   "py_cache_top1": 5.75,
+   "py_cache_top2": 5.35,
+   "py_cache_gap": 0.40000000000000036,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    741
+   ],
+   "py_nocache_top1": 5.75,
+   "py_nocache_top2": 5.35,
+   "py_nocache_gap": 0.40000000000000036,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    741,
+    743
+   ],
+   "banked_census_gap": 0.40000000000000036,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 36,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 743,
+     "rust": 5.75,
+     "py_cache": 4.1,
+     "py_nocache": 5.75,
+     "rust_bits": "4017000000000000",
+     "py_cache_bits": "4010666666666666",
+     "py_nocache_bits": "4017000000000000",
+     "meeple_rust": 2509,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2509
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 3.98
+  },
+  {
+   "deck_seed": 28000000015,
+   "ply": 72,
+   "seat_rust": 0,
+   "seat_py": 0,
+   "n_legal_rust": 28,
+   "n_cand_rust": 28,
+   "n_cand_py_cache": 28,
+   "n_cand_py_nocache": 28,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    1553,
+    1555
+   ],
+   "rust_arms": [
+    1553,
+    845
+   ],
+   "py_cache_top1": 15.399999999999999,
+   "py_cache_top2": 14.400000000000002,
+   "py_cache_gap": 0.9999999999999964,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    1553
+   ],
+   "py_nocache_top1": 15.399999999999999,
+   "py_nocache_top2": 14.400000000000002,
+   "py_nocache_gap": 0.9999999999999964,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    1553,
+    1555
+   ],
+   "banked_census_gap": 0.9999999999999964,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 28,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 1555,
+     "rust": 15.399999999999999,
+     "py_cache": 14.399999999999999,
+     "py_nocache": 15.399999999999999,
+     "rust_bits": "402ecccccccccccc",
+     "py_cache_bits": "402ccccccccccccc",
+     "py_nocache_bits": "402ecccccccccccc",
+     "meeple_rust": 2508,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2508
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 1.73
+  },
+  {
+   "deck_seed": 28000000017,
+   "ply": 30,
+   "seat_rust": 1,
+   "seat_py": 1,
+   "n_legal_rust": 24,
+   "n_cand_rust": 24,
+   "n_cand_py_cache": 24,
+   "n_cand_py_nocache": 24,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    1061,
+    1063
+   ],
+   "rust_arms": [
+    1061,
+    1444
+   ],
+   "py_cache_top1": -2.45,
+   "py_cache_top2": -2.9500000000000006,
+   "py_cache_gap": 0.5000000000000004,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    1061
+   ],
+   "py_nocache_top1": -2.45,
+   "py_nocache_top2": -2.9500000000000006,
+   "py_nocache_gap": 0.5000000000000004,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    1061,
+    1063
+   ],
+   "banked_census_gap": 0.5000000000000004,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 24,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 1063,
+     "rust": -2.45,
+     "py_cache": -2.9500000000000006,
+     "py_nocache": -2.45,
+     "rust_bits": "c00399999999999a",
+     "py_cache_bits": "c00799999999999b",
+     "py_nocache_bits": "c00399999999999a",
+     "meeple_rust": 2508,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2508
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 0.42
+  },
+  {
+   "deck_seed": 28000000022,
+   "ply": 66,
+   "seat_rust": 1,
+   "seat_py": 1,
+   "n_legal_rust": 28,
+   "n_cand_rust": 28,
+   "n_cand_py_cache": 28,
+   "n_cand_py_nocache": 28,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    1636,
+    1638
+   ],
+   "rust_arms": [
+    1636,
+    1361
+   ],
+   "py_cache_top1": -11.55,
+   "py_cache_top2": -12.3,
+   "py_cache_gap": 0.75,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    1636
+   ],
+   "py_nocache_top1": -11.55,
+   "py_nocache_top2": -12.3,
+   "py_nocache_gap": 0.75,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    1636,
+    1638
+   ],
+   "banked_census_gap": 0.75,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 28,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 1638,
+     "rust": -11.55,
+     "py_cache": -12.3,
+     "py_nocache": -11.55,
+     "rust_bits": "c02719999999999a",
+     "py_cache_bits": "c02899999999999a",
+     "py_nocache_bits": "c02719999999999a",
+     "meeple_rust": 2509,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2509
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 1.29
+  },
+  {
+   "deck_seed": 28000000031,
+   "ply": 110,
+   "seat_rust": 1,
+   "seat_py": 1,
+   "n_legal_rust": 38,
+   "n_cand_rust": 38,
+   "n_cand_py_cache": 38,
+   "n_cand_py_nocache": 38,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    1033,
+    1035
+   ],
+   "rust_arms": [
+    1033,
+    1573
+   ],
+   "py_cache_top1": -15.85,
+   "py_cache_top2": -15.850000000000001,
+   "py_cache_gap": 1.7763568394002505e-15,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    1033
+   ],
+   "py_nocache_top1": -15.85,
+   "py_nocache_top2": -15.850000000000001,
+   "py_nocache_gap": 1.7763568394002505e-15,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    1033,
+    1035
+   ],
+   "banked_census_gap": 1.7763568394002505e-15,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 38,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 1035,
+     "rust": -15.85,
+     "py_cache": -16.85,
+     "py_nocache": -15.85,
+     "rust_bits": "c02fb33333333333",
+     "py_cache_bits": "c030d9999999999a",
+     "py_nocache_bits": "c02fb33333333333",
+     "meeple_rust": 2508,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2508
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 3.38
+  },
+  {
+   "deck_seed": 28000000031,
+   "ply": 114,
+   "seat_rust": 1,
+   "seat_py": 1,
+   "n_legal_rust": 36,
+   "n_cand_rust": 36,
+   "n_cand_py_cache": 36,
+   "n_cand_py_nocache": 36,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    1033,
+    1035
+   ],
+   "rust_arms": [
+    1033,
+    1768
+   ],
+   "py_cache_top1": -14.85,
+   "py_cache_top2": -14.850000000000001,
+   "py_cache_gap": 1.7763568394002505e-15,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    1033
+   ],
+   "py_nocache_top1": -14.85,
+   "py_nocache_top2": -14.850000000000001,
+   "py_nocache_gap": 1.7763568394002505e-15,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    1033,
+    1035
+   ],
+   "banked_census_gap": 1.7763568394002505e-15,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 36,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 1035,
+     "rust": -14.85,
+     "py_cache": -15.850000000000001,
+     "py_nocache": -14.85,
+     "rust_bits": "c02db33333333333",
+     "py_cache_bits": "c02fb33333333334",
+     "py_nocache_bits": "c02db33333333333",
+     "meeple_rust": 2508,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2508
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 3.51
+  },
+  {
+   "deck_seed": 28000000050,
+   "ply": 24,
+   "seat_rust": 0,
+   "seat_py": 0,
+   "n_legal_rust": 18,
+   "n_cand_rust": 18,
+   "n_cand_py_cache": 18,
+   "n_cand_py_nocache": 18,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    1356,
+    1358
+   ],
+   "rust_arms": [
+    1356,
+    1448
+   ],
+   "py_cache_top1": 7.6,
+   "py_cache_top2": 7.1,
+   "py_cache_gap": 0.5,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    1356
+   ],
+   "py_nocache_top1": 7.6,
+   "py_nocache_top2": 7.1,
+   "py_nocache_gap": 0.5,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    1356,
+    1358
+   ],
+   "banked_census_gap": 0.5,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 18,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 1358,
+     "rust": 7.6,
+     "py_cache": 6.5,
+     "py_nocache": 7.6,
+     "rust_bits": "401e666666666666",
+     "py_cache_bits": "401a000000000000",
+     "py_nocache_bits": "401e666666666666",
+     "meeple_rust": 2507,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2507
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 0.27
+  },
+  {
+   "deck_seed": 28000000052,
+   "ply": 48,
+   "seat_rust": 0,
+   "seat_py": 0,
+   "n_legal_rust": 32,
+   "n_cand_rust": 32,
+   "n_cand_py_cache": 32,
+   "n_cand_py_nocache": 32,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    848,
+    850
+   ],
+   "rust_arms": [
+    848,
+    1037
+   ],
+   "py_cache_top1": 8.600000000000001,
+   "py_cache_top2": 8.35,
+   "py_cache_gap": 0.2500000000000018,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    848
+   ],
+   "py_nocache_top1": 8.600000000000001,
+   "py_nocache_top2": 8.35,
+   "py_nocache_gap": 0.2500000000000018,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    848,
+    850
+   ],
+   "banked_census_gap": 0.2500000000000018,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 32,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 850,
+     "rust": 8.600000000000001,
+     "py_cache": 7.0,
+     "py_nocache": 8.600000000000001,
+     "rust_bits": "4021333333333334",
+     "py_cache_bits": "401c000000000000",
+     "py_nocache_bits": "4021333333333334",
+     "meeple_rust": 2509,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2509
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 0.74
+  },
+  {
+   "deck_seed": 28000000059,
+   "ply": 138,
+   "seat_rust": 1,
+   "seat_py": 1,
+   "n_legal_rust": 34,
+   "n_cand_rust": 34,
+   "n_cand_py_cache": 34,
+   "n_cand_py_nocache": 34,
+   "action_set_equal_rust_vs_py_cache": true,
+   "action_set_equal_rust_vs_py_nocache": true,
+   "rust_fired": true,
+   "rust_tie_actions": [
+    964,
+    966
+   ],
+   "rust_arms": [
+    964,
+    1637
+   ],
+   "py_cache_top1": 33.7,
+   "py_cache_top2": 32.7,
+   "py_cache_gap": 1.0,
+   "py_cache_tie_exact": false,
+   "py_cache_tie_actions": [
+    964
+   ],
+   "py_nocache_top1": 33.7,
+   "py_nocache_top2": 32.7,
+   "py_nocache_gap": 1.0,
+   "py_nocache_tie_exact": true,
+   "py_nocache_tie_actions": [
+    964,
+    966
+   ],
+   "banked_census_gap": 1.0,
+   "banked_census_tie_exact": false,
+   "banked_census_n_legal": 34,
+   "n_value_diffs": 1,
+   "value_diffs": [
+    {
+     "action": 966,
+     "rust": 33.7,
+     "py_cache": 32.7,
+     "py_nocache": 33.7,
+     "rust_bits": "4040d9999999999a",
+     "py_cache_bits": "404059999999999a",
+     "py_nocache_bits": "4040d9999999999a",
+     "meeple_rust": 2508,
+     "meeple_py_cache": 2510,
+     "meeple_py_nocache": 2508
+    }
+   ],
+   "py_cache_reproduces_bank": true,
+   "rust_equals_py_nocache": true,
+   "rust_equals_py_cache": false,
+   "secs": 4.22
+  }
+ ]
+}
