@@ -1,0 +1,12 @@
+{
+ "entries": 745,
+ "fix_legal_cache_key": false,
+ "hit_rate": 0.668299,
+ "hits": 1501,
+ "mean_key_bytes": 2232,
+ "misses": 745,
+ "plies_played": 40,
+ "secs": 4.52,
+ "seed": 880777001,
+ "sims": 32
+}

@@ -329,10 +329,17 @@ def test_expected_valid_actions_is_the_legal_mask_when_dedup_is_off(cfg):
 # (D) BIT-EXACT OFF — the production guard                                     #
 # =========================================================================== #
 
-def test_bit_exact_off_matches_pre_change_fixture(golden, cfg):
+def test_bit_exact_off_matches_pre_change_fixture(golden, cfg, legacy_cache_key):
     """Replay the recorded scenario with the flag OFF: identical actions, identical
     pooled visit distributions, identical final position. Any diff is a production
-    regression, not a stale fixture."""
+    regression, not a stale fixture.
+
+    ⚠️ Pinned to the LEGACY transposition key (`legacy_cache_key`). This golden was
+    recorded before the 2026-08-30 `CARCASSONNE_FIX_LEGAL_CACHE_KEY` default flip, and
+    `string_representation` is the MCTS transposition key, so the injective key
+    legitimately moves this scripted line. Banked artifacts keep their numbers
+    (supersede-by-rerun, never retro-edit); the pin keeps this test guarding what it was
+    built to guard — the C3-INTRA off-path — instead of re-litigating the key."""
     game = Game(enable_legal_moves_cache=True)
     random.seed(golden["deck_seed"])
     board = game.get_init_board()
